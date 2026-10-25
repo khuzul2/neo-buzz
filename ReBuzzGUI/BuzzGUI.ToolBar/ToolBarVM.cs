@@ -230,6 +230,7 @@ namespace BuzzGUI.ToolBar
         public SimpleCommand SetWPFThemeCommand { get; private set; }
         public SimpleCommand SettingsCommand { get; private set; }
         public SimpleCommand PreferencesCommand { get; private set; }
+        public SimpleCommand SessionViewCommand { get; private set; }
         public SimpleCommand HelpCommand { get; private set; }
         public SimpleCommand CPUMonitorCommand { get; private set; }
         public SimpleCommand HardDiskRecorderCommand { get; private set; }
@@ -445,6 +446,13 @@ namespace BuzzGUI.ToolBar
                 ExecuteDelegate = x => { Buzz.ExecuteCommand(BuzzCommand.Preferences); }
             };
 
+            // Fork: Session View (docs/specs/session-view.md)
+            SessionViewCommand = new SimpleCommand
+            {
+                CanExecuteDelegate = x => { return true; },
+                ExecuteDelegate = x => { Buzz.ExecuteCommand(BuzzCommand.SessionView); }
+            };
+
             HelpCommand = new SimpleCommand
             {
                 CanExecuteDelegate = x => { return true; },
@@ -614,6 +622,8 @@ namespace BuzzGUI.ToolBar
                     Text = "_View",
                     Children = new MenuItemVM[]
                     {
+                        new MenuItemVM() { Text = "S_ession View", GestureText = "Ctrl+Tab", Command = SessionViewCommand },
+                        new MenuItemVM() { IsSeparator = true },
                         new MenuItemVM() { Text = "_CPU Monitor", IsCheckable = true, IsChecked = Buzz.IsCPUMonitorWindowVisible, Command = CPUMonitorCommand },
                         new MenuItemVM() { Text = "_Debug Console", Command = DebugConsoleCommand },
                         new MenuItemVM() { Text = "_Hard Disk Recorder", IsCheckable = true, IsChecked = Buzz.IsHardDiskRecorderWindowVisible, Command = HardDiskRecorderCommand },

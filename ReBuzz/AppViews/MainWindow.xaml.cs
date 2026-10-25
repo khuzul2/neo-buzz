@@ -40,6 +40,7 @@ namespace ReBuzz
         InfoView InfoView { get; set; }
 
         PreferencesWindow preferencesWindow;
+        AppViews.Session.SessionWindow sessionWindow;   // fork: Session View
 
         readonly DebugWindow debugWindow;
 
@@ -610,6 +611,10 @@ namespace ReBuzz
                     Process.GetCurrentProcess().Kill();
                     //Environment.Exit(0);
                 }
+                else if (cmd == BuzzCommand.SessionView)
+                {
+                    ToggleSessionWindow();
+                }
                 else if (cmd == BuzzCommand.DebugConsole)
                 {
                     debugWindow.Show();
@@ -913,6 +918,12 @@ namespace ReBuzz
                         Buzz.ExecuteCommand(BuzzCommand.OpenFile);
                         e.Handled = true;
                     }
+                    else if (e.Key == Key.Tab)
+                    {
+                        // Fork: Ctrl+Tab switches to the Session View, as in Live.
+                        Buzz.ExecuteCommand(BuzzCommand.SessionView);
+                        e.Handled = true;
+                    }
                 }
 
                 if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
@@ -924,6 +935,27 @@ namespace ReBuzz
                     }
                 }
             };
+        }
+
+        /// <summary>
+        /// Fork: shows the Session View window, or returns to the main window when the Session
+        /// View is already in front (docs/specs/session-view.md).
+        /// </summary>
+        void ToggleSessionWindow()
+        {
+            if (sessionWindow == null)
+            {
+                sessionWindow = new AppViews.Session.SessionWindow(Buzz) { Owner = this };
+            }
+            else if (sessionWindow.IsVisible && sessionWindow.IsActive)
+            {
+                Activate();
+                return;
+            }
+
+            sessionWindow.Show();
+            sessionWindow.Activate();
+            sessionWindow.View.Focus();
         }
 
         private bool CloseReBuzz()
