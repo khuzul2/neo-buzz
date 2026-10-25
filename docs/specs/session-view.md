@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v3 — 0.1 engine merged; 0.1 grid UI implemented (branch `session/ui`, see §5 0.1 status) |
+| Status | Draft v3 — 0.1 engine merged (#1); 0.1 grid UI in review (#2, see §5 0.1 status) |
 | Date | 2026-10-25 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
