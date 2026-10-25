@@ -1181,17 +1181,19 @@ namespace ReBuzz.Core
 
         public void ExecuteCommand(BuzzCommand cmd)
         {
+            // Fork: null-safe like the other commands below. In tests a failing Driver.Start()
+            // left no handler, and the resulting exception in Dispose hid the real error.
             if (cmd == BuzzCommand.DebugConsole)
             {
-                BuzzCommandRaised.Invoke(cmd);
+                BuzzCommandRaised?.Invoke(cmd);
             }
             else if (cmd == BuzzCommand.About)
             {
-                BuzzCommandRaised.Invoke(cmd);
+                BuzzCommandRaised?.Invoke(cmd);
             }
             else if (cmd == BuzzCommand.Exit)
             {
-                BuzzCommandRaised.Invoke(cmd);
+                BuzzCommandRaised?.Invoke(cmd);
             }
             else if (cmd == BuzzCommand.Stop)
             {

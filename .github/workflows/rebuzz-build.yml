@@ -1,10 +1,9 @@
 name: ReBuzz CI Build
 
+# Fork: manual only. Fork CI (fork-ci.yml) builds ReBuzz on pushes to main and on PRs,
+# so running this too would spend the same Actions minutes twice.
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build:
