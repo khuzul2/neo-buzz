@@ -2,8 +2,8 @@
 
   <!--
     Fork addition: fast, platform-independent tests for the Session View engine core.
-    Compiles ReBuzz/Core/Session/SessionScheduler.cs directly (it has no other ReBuzz
-    dependencies), so these run on Linux CI in seconds and need no ReBuzz build.
+    Compiles ReBuzz/Core/Session/SessionScheduler.cs and SessionDocument.cs directly (they have
+    no other ReBuzz dependencies), so these run on Linux CI in seconds and need no ReBuzz build.
     Not part of ReBuzz.sln on purpose: build.ps1 and the upstream workflows are unaffected.
 
       dotnet test ReBuzz.SessionTests
@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <Compile Include="..\ReBuzz\Core\Session\SessionScheduler.cs" Link="Engine\SessionScheduler.cs" />
+    <Compile Include="..\ReBuzz\Core\Session\SessionDocument.cs" Link="Engine\SessionDocument.cs" />
   </ItemGroup>
 
   <ItemGroup>
