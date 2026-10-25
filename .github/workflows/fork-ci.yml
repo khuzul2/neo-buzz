@@ -5,9 +5,11 @@ name: Fork CI
 #  - core-build: compiles ReBuzz.exe and its C# dependencies only (no C++ projects)
 # The full solution + package build is fork-package.yml.
 
+# Pushes to main and PRs only (not every branch push), to keep Actions minutes down on a
+# private repo. Windows minutes count double.
 on:
   push:
-    branches: [ main, 'session/**' ]
+    branches: [ main ]
   pull_request:
   workflow_dispatch:
 
