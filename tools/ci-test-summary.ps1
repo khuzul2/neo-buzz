@@ -45,18 +45,27 @@ $groups = $failed | ForEach-Object {
         ForEach-Object { $_.Trim() } |
         Where-Object { $_ -like 'at *' -and $_ -notmatch 'System\.(Reflection|RuntimeMethodHandle)|InvokeStub_|NUnit\.' } |
         Select-Object -First $StackFrames)
-    [pscustomobject]@{ Test = $_.testName; First = $first; Message = $msg; Stack = $stack }
+    # Warnings/errors the test driver echoed from the ReBuzz log ("[log ...]" lines).
+    $log = @("$($_.Output.StdOut)" -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -like '`[log *' } | Select-Object -First 6)
+    [pscustomobject]@{ Test = $_.testName; First = $first; Message = $msg; Stack = $stack; Log = $log }
 } | Group-Object First | Sort-Object Count -Descending
 
 $lines = New-Object System.Collections.Generic.List[string]
 foreach ($g in $groups) {
     $sample = $g.Group[0]
     if ($g.Count -eq 1) { $lines.Add("## 1x [$($sample.Test)]: $($g.Name)") } else { $lines.Add("## $($g.Count)x: $($g.Name)") }
-    # Small groups are usually the interesting ones: show more of their message.
-    $msgLines = if ($g.Count -le 2) { 25 } else { 4 }
-    $extra = @($sample.Message -split "`n" | Select-Object -Skip 1 | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Select-Object -First $msgLines)
-    foreach ($l in $extra) { $lines.Add("   $l") }
+    if ($g.Count -le 2) {
+        # Small groups are usually the interesting ones. Their messages (assertion dumps) run
+        # over many short lines, so flatten them and keep both ends: expected and actual.
+        $flat = (($sample.Message -split "`n" | Select-Object -Skip 1) -join ' ') -replace '\s+', ' '
+        if ($flat.Length -gt 1800) { $flat = $flat.Substring(0, 900) + ' ... ' + $flat.Substring($flat.Length - 900) }
+        for ($k = 0; $k -lt $flat.Length; $k += 180) { $lines.Add('   ' + $flat.Substring($k, [Math]::Min(180, $flat.Length - $k))) }
+    } else {
+        $extra = @($sample.Message -split "`n" | Select-Object -Skip 1 | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Select-Object -First 4)
+        foreach ($l in $extra) { $lines.Add("   $l") }
+    }
     foreach ($s in $sample.Stack) { $lines.Add("   $s") }
+    foreach ($l in $sample.Log) { $lines.Add("   $l") }
     $names = @($g.Group | ForEach-Object { $_.Test } | Sort-Object -Unique)
     $shown = @($names | Select-Object -First 12)
     $lines.Add("   tests: " + ($shown -join ', ') + $(if ($names.Count -gt $shown.Count) { " (+$($names.Count - $shown.Count) more)" } else { '' }))

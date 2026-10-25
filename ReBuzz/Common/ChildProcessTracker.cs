@@ -30,10 +30,18 @@ namespace ReBuzz.Common
             // assigned when ReBuzz itself runs inside a job that forbids it (CI runners, some
             // sandboxes). Machines still work, they just might outlive a crashed ReBuzz.
             int error = Marshal.GetLastPInvokeError();
-            if (process.HasExited)
-                return;
-            Serilog.Log.Warning("ChildProcessTracker: could not add process {Pid} to the job (error {Error}: {Message})",
-                process.Id, error, new Win32Exception(error).Message);
+            try
+            {
+                // The process may already be gone, and its Process object closed by an Exited
+                // handler on another thread; neither is this method's business.
+                if (process.HasExited)
+                    return;
+                Serilog.Log.Warning("ChildProcessTracker: could not add process {Pid} to the job (error {Error}: {Message})",
+                    process.Id, error, new Win32Exception(error).Message);
+            }
+            catch (InvalidOperationException)
+            {
+            }
         }
 
         static ChildProcessTracker()

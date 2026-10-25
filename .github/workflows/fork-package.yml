@@ -83,6 +83,8 @@ jobs:
         if (-not $dll) { throw 'ReBuzzTests.dll not found under build\' }
         $filter = @()
         if ($env:TEST_FILTER) { $filter = @('--filter', $env:TEST_FILTER) }
+        # UI tests (SessionViewTests) render PNGs here; published below.
+        $env:SESSION_SCREENSHOT_DIR = Join-Path $PWD 'screenshots'
         dotnet test $dll.FullName @filter --logger "trx;LogFileName=tests.trx" --results-directory TestResults --logger "console;verbosity=minimal" *>&1 | Tee-Object -FilePath test.log
 
     # Failed tests grouped by error, with message and top stack frames, as annotations.
@@ -90,6 +92,27 @@ jobs:
       if: always() && hashFiles('TestResults/*.trx') != ''
       shell: pwsh
       run: ./tools/ci-test-summary.ps1 TestResults/tests.trx
+
+    # Screenshots rendered by UI tests, force-pushed as a single commit to the ci-artifacts
+    # branch: viewable in the repo (and fetchable with git) without downloading artifacts.
+    - name: Publish screenshots
+      if: always() && hashFiles('screenshots/*.png') != ''
+      continue-on-error: true
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        $dir = Join-Path $env:RUNNER_TEMP 'ci-artifacts'
+        New-Item -ItemType Directory -Force $dir | Out-Null
+        Copy-Item screenshots/*.png $dir
+        Set-Content (Join-Path $dir 'README.md') "Screenshots from run $env:GITHUB_RUN_ID of $env:GITHUB_REF_NAME at $env:GITHUB_SHA."
+        Push-Location $dir
+        git init -q -b ci-artifacts
+        git add -A
+        git -c user.name='github-actions' -c user.email='github-actions@users.noreply.github.com' commit -q -m "Screenshots: run $env:GITHUB_RUN_ID ($env:GITHUB_REF_NAME $env:GITHUB_SHA)"
+        git push -q -f "https://x-access-token:$env:GH_TOKEN@github.com/$env:GITHUB_REPOSITORY.git" ci-artifacts
+        Pop-Location
+        Write-Host "::notice title=Screenshots::$((Get-ChildItem screenshots/*.png | ForEach-Object Name) -join ', ') pushed to ci-artifacts"
 
     # Why native engine hosts (ReBuzzEngine32/64.exe) die during tests: crash events from
     # the Windows event log, and a standalone start of the host against a named mapping.
