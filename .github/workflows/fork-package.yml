@@ -39,6 +39,13 @@ jobs:
       with:
         dotnet-version: '10.0.x'
 
+    # bin64\dsplib.dll (upstream binary) needs the x64 VC++ 2010 runtime, which the runner
+    # image lacks: without it every 64-bit native machine host dies at start (0xC0000135).
+    # build.ps1 bundles it into the package from here; the tests need it installed.
+    - name: Install VC++ 2010 runtime
+      shell: pwsh
+      run: choco install vcredist2010 -y --no-progress *> vcredist.log; if (-not (Test-Path "$env:WINDIR\System32\msvcr100.dll")) { Get-Content vcredist.log -Tail 20; throw 'msvcr100.dll (x64) not installed' }
+
     # The C++ projects target v145 (VS 2026). build.ps1 falls back to v143 when the
     # runner image only has VS 2022.
     - name: Build and package

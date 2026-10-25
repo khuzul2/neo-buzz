@@ -406,6 +406,24 @@ Get-ChildItem -LiteralPath $OutDir -Recurse -File | Where-Object {
     Copy-Item -LiteralPath $_.FullName -Destination $target
 }
 
+# bin64\dsplib.dll (upstream binary) imports MSVCR100.dll, the x64 VC++ 2010 runtime, which
+# today's VC++ redistributable doesn't include. Without it every 64-bit native machine fails to
+# load (the engine host dies with 0xC0000135). Upstream already ships the x86 one in bin32, so
+# ship the x64 one in bin64 too, taken from this machine's VC++ 2010 runtime when installed.
+$pkgBin64 = [IO.Path]::Combine($pkgDir, 'bin64')
+$sys64 = if ([Environment]::Is64BitProcess) { 'System32' } else { 'Sysnative' }
+$crt100 = [IO.Path]::Combine($env:WINDIR, $sys64, 'msvcr100.dll')
+$crtBundled = Test-Path -LiteralPath ([IO.Path]::Combine($pkgBin64, 'msvcr100.dll'))
+if ((Test-Path -LiteralPath $pkgBin64) -and -not (Test-Path -LiteralPath ([IO.Path]::Combine($pkgBin64, 'msvcr100.dll')))) {
+    if (Test-Path -LiteralPath $crt100) {
+        Copy-Item -LiteralPath $crt100 -Destination $pkgBin64
+        $crtBundled = $true
+        Write-Host "Bundled x64 msvcr100.dll (VC++ 2010 runtime) in bin64"
+    } else {
+        Write-Warning 'x64 msvcr100.dll not found on this machine (install the VC++ 2010 SP1 x64 redistributable); the package will need it installed to load 64-bit native machines'
+    }
+}
+
 # Inventory of machine DLLs and where each came from.
 $inventory = New-Object System.Collections.Generic.List[string]
 $inventory.Add("Machines in this package ($pkgName)")
@@ -432,6 +450,7 @@ $info = @(
     "Built:       $((Get-Date).ToString('u'))",
     "Config:      $Configuration|x64",
     "C++ toolset: $toolsetText",
+    "VC++ 2010 x64 runtime (bin64\msvcr100.dll) bundled: $(if ($crtBundled) { 'yes' } else { 'NO - install the VC++ 2010 SP1 x64 redistributable' })",
     "Machine build failures: $($Failures.Count)"
 )
 $info += @($Failures | ForEach-Object { "  - $_" })
@@ -447,6 +466,8 @@ Needs (same as upstream ReBuzz):
   1. .NET 10 Desktop Runtime x64   https://dotnet.microsoft.com/download/dotnet/10.0
   2. Microsoft Visual C++ Redistributable, x86 AND x64 (latest)
                                     https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist
+     bin64\dsplib.dll also needs the x64 VC++ 2010 runtime (msvcr100.dll). It is bundled in
+     bin64 unless BUILD-INFO.txt says otherwise.
   3. Windows MIDI Services SDK Runtime and Tools   https://microsoft.github.io/MIDI/
 
 GEAR-INVENTORY.txt lists every machine and where it came from. BUILD-INFO.txt lists any machine
