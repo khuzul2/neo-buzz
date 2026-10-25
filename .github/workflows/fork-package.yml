@@ -144,6 +144,22 @@ jobs:
             $map.Dispose()
         }
 
+        # Where the VC++ 2010 runtime that dsplib.dll (x64) imports is found, and whether a
+        # copy of bin64 runs from a temp dir with a minimal PATH (as in the tests' root dir).
+        $lines += 'where msvcr100.dll: ' + ((& where.exe msvcr100.dll 2>$null) -join ', ')
+        $lines += 'System32\msvcr100.dll: ' + (Test-Path "$env:WINDIR\System32\msvcr100.dll") + '; SysWOW64\msvcr100.dll: ' + (Test-Path "$env:WINDIR\SysWOW64\msvcr100.dll")
+        $copy = Join-Path $env:RUNNER_TEMP 'engine-copy'
+        New-Item -ItemType Directory -Force $copy | Out-Null
+        Get-ChildItem (Join-Path $dir 'bin64') -File | Copy-Item -Destination $copy
+        $name = 'neo-buzz-probe-' + [guid]::NewGuid().ToString('N')
+        $map = [System.IO.MemoryMappedFiles.MemoryMappedFile]::CreateNew($name, 64MB)
+        $savedPath = $env:PATH
+        $env:PATH = "$env:WINDIR\system32;$env:WINDIR"
+        $p = Start-Process (Join-Path $copy 'ReBuzzEngine64.exe') -ArgumentList $name -WorkingDirectory $copy -PassThru
+        $env:PATH = $savedPath
+        if ($p.WaitForExit(8000)) { $lines += ('copy of bin64, minimal PATH: exited with 0x{0:X8}' -f $p.ExitCode) } else { $lines += 'copy of bin64, minimal PATH: still running after 8 s'; $p.Kill() }
+        $map.Dispose()
+
         $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
         $dumpbin = & $vswhere -latest -find 'VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe' | Select-Object -First 1
         if ($dumpbin) {

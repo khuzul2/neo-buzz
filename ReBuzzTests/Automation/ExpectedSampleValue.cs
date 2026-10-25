@@ -9,9 +9,11 @@ namespace ReBuzzTests.Automation
     public static class ExpectedSampleValue
     {
         /// <summary>
-        /// Taken from the production code
+        /// DC offset the production code used to add against denormals. Fork: upstream commit
+        /// 6a64352 ("Optimizations") commented that out in MachineCore, so outputs carry no
+        /// offset any more and silence is exactly zero.
         /// </summary>
-        private const float DenormalizationPrevention = -1e-15f;
+        private const float DenormalizationPrevention = 0f;
 
         /// <summary>
         /// Taken from the production code
@@ -41,7 +43,7 @@ namespace ReBuzzTests.Automation
 
         public static Sample Zero()
         {
-            return new Sample(-1.0000305E-15F, -1.0000305E-15F);
+            return From(new Sample(0, 0));
         }
     }
 }
