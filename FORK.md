@@ -18,12 +18,13 @@ Needs Windows with:
 - .NET 10 SDK (x64)
 - git (for submodules)
 
-Clone to a path **without spaces** (the Buzztrax makefiles don't quote paths), then:
+Then:
 
 ```powershell
 .\build.ps1                      # full build -> dist\ReBuzz-<date>-<sha>-x64.zip
 .\build.ps1 -SkipCore            # rebuild machines + package only
 .\build.ps1 -Version 0.1.0       # custom version label
+.\build.ps1 -NativeMachines      # also try the Buzztrax C++ machines (path without spaces; don't compile yet)
 Get-Help .\build.ps1 -Detailed   # all options
 ```
 

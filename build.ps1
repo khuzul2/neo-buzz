@@ -8,9 +8,10 @@
     2. Initialises git submodules.
     3. Builds ReBuzz.sln (Release|x64) into bin\Release\x64\net10.0-windows10.0.26100.0.
        This includes ReBuzz's own machines and copies RunTime\Gear (73 prebuilt machines).
-    4. Builds ExternalMachines:
-         - every 'rebuzz-managed' entry in ExternalMachines\machines.json (dotnet build)
-         - the Buzztrax nmake subset (FSM, Fuzzpilz, Matilde, Oomek) as x64
+    4. Builds ExternalMachines: every 'rebuzz-managed' entry in ExternalMachines\machines.json
+       (dotnet build). With -NativeMachines also the Buzztrax nmake subset (FSM, Fuzzpilz,
+       Matilde, Oomek) as x64; off by default because those 2000s sources don't compile with
+       current MSVC headers yet, and upstream Gear already ships all but one of them.
     5. Merges prebuilt DLLs from ExternalMachines\binaries.
     6. Writes GEAR-INVENTORY.txt, BUILD-INFO.txt and README-FIRST.txt, then zips to dist\.
 
@@ -22,7 +23,8 @@
     A machine that fails to build is reported and skipped (use -StrictMachines to fail).
 
     Run from a normal PowerShell prompt on Windows (Windows PowerShell 5.1 or pwsh 7).
-    Clone the repo to a path without spaces: the Buzztrax makefiles don't quote paths.
+    For -NativeMachines, clone the repo to a path without spaces (the Buzztrax makefiles
+    don't quote paths).
 
 .PARAMETER Version
     Version label for the package. Default: yyyy.MM.dd-<git short sha>.
@@ -37,7 +39,9 @@
 .EXAMPLE
     .\build.ps1
 .EXAMPLE
-    .\build.ps1 -SkipCore -SkipNativeMachines
+    .\build.ps1 -SkipCore
+.EXAMPLE
+    .\build.ps1 -NativeMachines
 .EXAMPLE
     .\build.ps1 -Version 0.1.0-session-mvp
 #>
@@ -49,7 +53,7 @@ param(
     [string]$PlatformToolset,
     [switch]$SkipCore,
     [switch]$SkipManagedMachines,
-    [switch]$SkipNativeMachines,
+    [switch]$NativeMachines,
     [switch]$SkipBinaries,
     [switch]$StrictMachines,
     [switch]$NoZip,
@@ -194,7 +198,7 @@ if (-not $Version) {
     $Version = '{0:yyyy.MM.dd}-{1}' -f (Get-Date), $suffix
 }
 Assert-DotNet10
-$needVs = (-not $SkipCore) -or (-not $SkipNativeMachines)
+$needVs = (-not $SkipCore) -or $NativeMachines
 $vs = $null
 if ($needVs) {
     $vs = Find-VisualStudio
@@ -303,7 +307,7 @@ if (-not $SkipManagedMachines) {
 
 # ---------------------------------------------------------------- 4b. native Buzztrax machines
 
-if (-not $SkipNativeMachines) {
+if ($NativeMachines) {
     $bt = $manifest.machines | Where-Object { $_.kind -eq 'native-nmake' } | Select-Object -First 1
     if ($bt) {
         Write-Step "Building Buzztrax machines ($((Get-Prop $bt 'nmakeBuilds') -join ', ')) as x64"
@@ -468,3 +472,7 @@ if ($Failures.Count -gt 0) {
         $Failures | ForEach-Object { Write-Host "::warning title=Machine build::$_" }
     }
 }
+
+# Machine failures are reported, not fatal (see -StrictMachines). Don't let the last native
+# tool's exit code (nmake, dotnet) leak out as the script's result.
+exit 0

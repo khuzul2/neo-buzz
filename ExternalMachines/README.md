@@ -9,7 +9,7 @@ Third-party Buzz/ReBuzz machines kept inside this repo so we can build, ship and
 | Kind (`machines.json`) | Count | What `build.ps1` does with it |
 |---|---|---|
 | `rebuzz-managed` — C# machines for ReBuzz (.NET 10) | 19 | Built from source against our own ReBuzz build and added to the package |
-| `native-nmake` — Buzztrax collection (~120 classic C++ machines) | 1 repo | Builds the nmake subset (FSM, Fuzzpilz, Matilde, Oomek) as x64. Upstream Gear already has most of these, so today this adds only Fuzzpilz UnwieldyTracker; the build is there so modified machines can be rebuilt. The other authors' folders are source only |
+| `native-nmake` — Buzztrax collection (~120 classic C++ machines) | 1 repo | Only with `build.ps1 -NativeMachines`: builds the nmake subset (FSM, Fuzzpilz, Matilde, Oomek) as x64. **Doesn't compile yet with current MSVC** (old headers clash with `<cmath>`), and upstream Gear already ships all of these except Fuzzpilz UnwieldyTracker. The other authors' folders are source only |
 | `buzz1503-managed` / `buzz1503-native` — written for classic Jeskola Buzz 1503 | 7 | Source only. Porting one to ReBuzz is mostly retargeting to `net10.0-windows` (see the `rebuzz-managed` twins) |
 | `native-source` — Jeskola developer examples, PatternXP | 1 | Source only (no x64 build files yet) |
 | `reference` — bmxplay | 1 | Not a machine. C reimplementations of classic DSP plus demo `.bmx` songs, useful for testing |
