@@ -99,6 +99,11 @@ namespace ReBuzzTests.Automation
         private AbsoluteDirectoryPath SongsDir => reBuzzRootDir.AddDirectoryName("Songs");
 
         private ReBuzzCore reBuzzCore;
+
+        // Fork: direct access for the session engine tests (SessionEngineTests).
+        internal ReBuzzCore Core => reBuzzCore;
+        internal MachineCore MachineFor(DynamicMachineController controller) =>
+            reBuzzMachines.GetSongCoreMachineInstance(controller.InstanceName);
         private readonly FakeFileNameChoice fileNameToLoadChoice = new();
         private readonly FakeUserMessages fakeUserMessages;
         private FakeFileNameChoice fileNameToSaveChoice = new();

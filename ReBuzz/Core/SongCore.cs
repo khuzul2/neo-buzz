@@ -75,7 +75,9 @@ namespace ReBuzz.Core
 
             ReBuzzCore.GlobalState.SongPosition = playPosition;
 
-            Application.Current.Dispatcher.BeginInvoke(() =>
+            // Fork: the injected dispatcher (as in the PlayPosition setter above) instead of
+            // Application.Current, which is null when the engine runs headless (tests).
+            dispatcher.BeginInvoke(() =>
             {
                 PropertyChanged.Raise(this, "PlayPosition");
             });
