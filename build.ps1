@@ -205,6 +205,10 @@ if ($needVs) {
     }
 }
 Write-Host "Version: $Version"
+if ($env:GITHUB_ACTIONS -and $vs) {
+    $tsText = if ($PlatformToolset) { $PlatformToolset } else { 'v145 (project default)' }
+    Write-Host "::notice title=Toolchain::Visual Studio $($vs.Major) at $($vs.Path); C++ toolset $tsText"
+}
 
 # ---------------------------------------------------------------- 2-3. core
 
@@ -459,4 +463,7 @@ if (-not $NoZip) {
 if ($Failures.Count -gt 0) {
     Write-Warning "$($Failures.Count) machine build problem(s); affected machines are missing from the package:"
     $Failures | ForEach-Object { Write-Warning "  $_" }
+    if ($env:GITHUB_ACTIONS) {
+        $Failures | ForEach-Object { Write-Host "::warning title=Machine build::$_" }
+    }
 }

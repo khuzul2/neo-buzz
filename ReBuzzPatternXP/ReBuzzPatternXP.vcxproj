@@ -271,6 +271,12 @@
       <AdditionalDependencies />
     </Link>
   </ItemDefinitionGroup>
+  <!-- Fork: shim for 'using namespace std::tr1;' in PatternXPRE (see tr1_compat.h) -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <ForcedIncludeFiles>$(MSBuildThisFileDirectory)tr1_compat.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
