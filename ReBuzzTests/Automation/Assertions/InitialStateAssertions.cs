@@ -153,7 +153,7 @@ namespace ReBuzzTests.Automation.Assertions
 
         private static void AssertMasterInfoInitialState(MasterInfoExtended masterInfoExtended)
         {
-            AssertMasterInfoInitialState((MasterInfo)ReBuzzCore.masterInfo);
+            AssertMasterInfoInitialState((MasterInfo)ReBuzzCore.masterInfo, hasGrooveBuffer: true);
             masterInfoExtended.AverageSamplesPerTick.Should().Be(5250);
         }
 
@@ -415,11 +415,15 @@ namespace ReBuzzTests.Automation.Assertions
             managedMachine.Should().BeEquivalentTo(new FakeModernPatternEditor(managedMachineHost));
         }
 
-        internal static void AssertMasterInfoInitialState(MasterInfo masterInfo)
+        // Fork: ReBuzzCore's own master info points at a groove buffer it pins at startup
+        // (upstream groove support); the copies handed to machine hosts don't carry it.
+        internal static void AssertMasterInfoInitialState(MasterInfo masterInfo, bool hasGrooveBuffer)
         {
             masterInfo.BeatsPerMin.Should().Be(126);
-            // Fork: ReBuzzCore pins a groove buffer at startup (upstream groove support).
-            masterInfo.GrooveData.Should().NotBe(0, "it points at ReBuzzCore's pinned groove buffer");
+            if (hasGrooveBuffer)
+                masterInfo.GrooveData.Should().NotBe(0, "it points at ReBuzzCore's pinned groove buffer");
+            else
+                masterInfo.GrooveData.Should().Be(0);
             masterInfo.GrooveSize.Should().Be(0);
             masterInfo.PosInGroove.Should().Be(0);
             masterInfo.PosInTick.Should().Be(0);
@@ -440,7 +444,7 @@ namespace ReBuzzTests.Automation.Assertions
             ReBuzzCore reBuzzCore, ManagedMachineHost managedMachineHost)
         {
             AssertFakeModernPatternEditor(managedMachineHost.ManagedMachine, managedMachineHost);
-            AssertMasterInfoInitialState(managedMachineHost.MasterInfo);
+            AssertMasterInfoInitialState(managedMachineHost.MasterInfo, hasGrooveBuffer: false);
             AssertSubTickInfoInitialState(managedMachineHost.SubTickInfo);
             managedMachineHost.Commands.Should()
                 .BeEquivalentTo(new FakeModernPatternEditor(managedMachineHost).Commands);

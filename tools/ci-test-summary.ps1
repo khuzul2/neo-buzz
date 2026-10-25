@@ -50,9 +50,11 @@ $groups = $failed | ForEach-Object {
 
 $lines = New-Object System.Collections.Generic.List[string]
 foreach ($g in $groups) {
-    $lines.Add("## $($g.Count)x: $($g.Name)")
     $sample = $g.Group[0]
-    $extra = @($sample.Message -split "`n" | Select-Object -Skip 1 | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Select-Object -First 4)
+    if ($g.Count -eq 1) { $lines.Add("## 1x [$($sample.Test)]: $($g.Name)") } else { $lines.Add("## $($g.Count)x: $($g.Name)") }
+    # Small groups are usually the interesting ones: show more of their message.
+    $msgLines = if ($g.Count -le 2) { 25 } else { 4 }
+    $extra = @($sample.Message -split "`n" | Select-Object -Skip 1 | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Select-Object -First $msgLines)
     foreach ($l in $extra) { $lines.Add("   $l") }
     foreach ($s in $sample.Stack) { $lines.Add("   $s") }
     $names = @($g.Group | ForEach-Object { $_.Test } | Sort-Object -Unique)
