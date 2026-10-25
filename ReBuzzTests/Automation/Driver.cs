@@ -159,6 +159,9 @@ namespace ReBuzzTests.Automation
             engineSettings);
         public ReBuzzLogDriverExtension ReBuzzLog => new(inMemorySink);
 
+        // Fork: log entries from this driver's lifetime are echoed to the test output.
+        private readonly DateTimeOffset createdAt = DateTimeOffset.Now;
+
         public Driver()
         {
             ResetGlobalState();
@@ -316,6 +319,23 @@ namespace ReBuzzTests.Automation
             reBuzzCore?.ExecuteCommand(BuzzCommand.Exit);
             initialization?.ShutDownReBuzzEngine();
             AttemptToCleanupTestRootDirs();
+            WriteLogWarningsToTestOutput();
+        }
+
+        /// <summary>
+        /// Fork: warnings and errors logged during the test go to the test output (and so into
+        /// .trx files), where CI can show them next to a failure.
+        /// </summary>
+        private void WriteLogWarningsToTestOutput()
+        {
+            var entries = inMemorySink.Entries
+                .Where(e => e.Timestamp >= createdAt && e.Level >= Serilog.Events.LogEventLevel.Warning)
+                .OrderBy(e => e.Timestamp);
+            foreach (var e in entries)
+            {
+                var exception = e.Exception == null ? "" : $" ({e.Exception.GetType().Name}: {e.Exception.Message})";
+                TestContext.Out.WriteLine($"[log {e.Level}] {e.RenderMessage()}{exception}");
+            }
         }
 
         public void AssertInitialStateAfterNewFile()

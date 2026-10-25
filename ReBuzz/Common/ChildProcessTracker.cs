@@ -20,11 +20,27 @@ namespace ReBuzz.Common
         /// <param name="process"></param>
         public static void AddProcess(Process process)
         {
-            if (s_jobHandle != IntPtr.Zero)
+            if (s_jobHandle == IntPtr.Zero)
+                return;
+            if (AssignProcessToJobObject(s_jobHandle, process.Handle))
+                return;
+
+            // Fork: read the error before anything else (process.HasExited) overwrites it, and
+            // don't fail. The job only makes sure engine processes die with ReBuzz; it can't be
+            // assigned when ReBuzz itself runs inside a job that forbids it (CI runners, some
+            // sandboxes). Machines still work, they just might outlive a crashed ReBuzz.
+            int error = Marshal.GetLastPInvokeError();
+            try
             {
-                bool success = AssignProcessToJobObject(s_jobHandle, process.Handle);
-                if (!success && !process.HasExited)
-                    throw new Win32Exception();
+                // The process may already be gone, and its Process object closed by an Exited
+                // handler on another thread; neither is this method's business.
+                if (process.HasExited)
+                    return;
+                Serilog.Log.Warning("ChildProcessTracker: could not add process {Pid} to the job (error {Error}: {Message})",
+                    process.Id, error, new Win32Exception(error).Message);
+            }
+            catch (InvalidOperationException)
+            {
             }
         }
 
