@@ -31,7 +31,13 @@ jobs:
     # runner image only has VS 2022.
     - name: Build and package
       shell: pwsh
-      run: ./build.ps1 -Version "${{ github.ref_type == 'tag' && github.ref_name || format('ci-{0}', github.run_number) }}"
+      run: ./build.ps1 -Version "${{ github.ref_type == 'tag' && github.ref_name || format('ci-{0}', github.run_number) }}" *>&1 | Tee-Object -FilePath build.log
+
+    # Copies error lines and the log tail into annotations, readable through the API.
+    - name: Annotate build log
+      if: failure()
+      shell: pwsh
+      run: ./tools/ci-annotate-log.ps1 build.log
 
     - name: Upload package
       uses: actions/upload-artifact@v4
