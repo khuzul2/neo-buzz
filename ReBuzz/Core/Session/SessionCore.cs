@@ -11,7 +11,14 @@ namespace ReBuzz.Core.Session
     /// Session View engine (fork addition): ReBuzz side of <see cref="SessionScheduler{TTrack,TClip}"/>.
     /// Tracks are sequences, clips are patterns. See docs/specs/session-view.md, section 4.1.
     ///
-    /// Engine hooks, all called with ReBuzzCore.AudioLock held:
+    /// Locking: the scheduler is guarded by its own small lock (<see cref="gate"/>), never by
+    /// ReBuzzCore.AudioLock. The audio thread holds AudioLock while it synchronously invokes the
+    /// UI thread (e.g. when the transport starts), so a UI request that waited for AudioLock
+    /// could deadlock. Engine hooks run on the audio thread with AudioLock held and take the
+    /// gate inside it (order AudioLock -> gate); UI requests take only the gate. Nothing is
+    /// called out to machines or the dispatcher while the gate is held.
+    ///
+    /// Engine hooks:
     ///  - <see cref="OnTick"/> from WorkManager at every tick boundary while playing
     ///  - <see cref="OnTransportStopped"/> from ReBuzzCore.Playing
     ///  - <see cref="OnSequenceRemoved"/>, <see cref="OnPatternDeleted"/>, <see cref="Reset"/>
@@ -23,7 +30,10 @@ namespace ReBuzz.Core.Session
 
         readonly ReBuzzCore buzz;
         readonly SessionScheduler<SequenceCore, PatternCore> scheduler;
-        readonly List<SequenceCore> stoppedScratch = new List<SequenceCore>();
+        readonly object gate = new object();
+
+        // Audio thread only (OnTick): copy of the scheduler's changes, reused to avoid allocation.
+        readonly List<SessionChange<SequenceCore, PatternCore>> tickChanges = new List<SessionChange<SequenceCore, PatternCore>>();
 
         int beatsPerBar = 4;
         LaunchQuantization launchQuantization = LaunchQuantization.Bar;
@@ -89,14 +99,12 @@ namespace ReBuzz.Core.Session
         {
             var seq = ToSequence(track);
             var pat = ToClip(seq, clip);
-            bool startTransport;
-            lock (ReBuzzCore.AudioLock)
+            int quantize = QuantizeTicks(options);
+            lock (gate)
             {
-                scheduler.Launch(seq, pat, QuantizeTicks(options), options?.Loop ?? true);
-                startTransport = !buzz.Playing;
+                scheduler.Launch(seq, pat, quantize, options?.Loop ?? true);
             }
-            if (startTransport)
-                buzz.Playing = true;
+            StartTransportIfStopped();
             RaiseTrackStateChanged(seq);
         }
 
@@ -108,81 +116,76 @@ namespace ReBuzz.Core.Session
                 .Select(s => { var seq = ToSequence(s.Track); return (seq, ToClip(seq, s.Clip)); })
                 .ToList();
             if (list.Count == 0) return;
-            bool startTransport;
-            lock (ReBuzzCore.AudioLock)
+            int quantize = QuantizeTicks(options);
+            lock (gate)
             {
-                scheduler.LaunchScene(list, QuantizeTicks(options), options?.Loop ?? true);
-                startTransport = !buzz.Playing;
+                scheduler.LaunchScene(list, quantize, options?.Loop ?? true);
             }
-            if (startTransport)
-                buzz.Playing = true;
-            foreach (var (seq, _) in list)
-                RaiseTrackStateChanged(seq);
+            StartTransportIfStopped();
+            RaiseTrackStateChanged(list.Select(s => s.Item1).ToArray());
         }
 
         public void Stop(ISequence track, bool immediate = false)
         {
             var seq = ToSequence(track);
-            lock (ReBuzzCore.AudioLock)
+            int quantize = GetQuantizationTicks(launchQuantization);
+            lock (gate)
             {
-                scheduler.Stop(seq, GetQuantizationTicks(launchQuantization), immediate);
+                scheduler.Stop(seq, quantize, immediate);
             }
             RaiseTrackStateChanged(seq);
         }
 
         public void StopAll(bool immediate = false)
         {
-            lock (ReBuzzCore.AudioLock)
+            int quantize = GetQuantizationTicks(launchQuantization);
+            lock (gate)
             {
-                scheduler.StopAll(GetQuantizationTicks(launchQuantization), immediate);
+                scheduler.StopAll(quantize, immediate);
             }
             RaiseAllChanged();
         }
 
         public void BackToArrangement()
         {
-            lock (ReBuzzCore.AudioLock)
+            lock (gate)
             {
                 scheduler.BackToArrangement();
             }
             RaiseAllChanged();
-            PropertyChanged.Raise(this, nameof(IsAnyArrangementOverridden));
+            RaisePropertyChangedOnUi(nameof(IsAnyArrangementOverridden));
         }
 
         /// <summary>
         /// Upstream's ISequence.TriggerEvent, re-implemented on the session: <paramref name="songTime"/>
-        /// is a song position (ticks), converted to a session clock value.
+        /// is a song position (ticks), converted to a session clock value. Time 0 or a null event
+        /// cancels, as upstream.
         /// </summary>
         internal void TriggerFromSequence(SequenceCore seq, int songTime, SequenceEvent e, bool loop)
         {
-            if (songTime == 0 || e == null)
-            {
-                lock (ReBuzzCore.AudioLock)
-                    scheduler.Stop(seq, 0, immediate: true);
-                RaiseTrackStateChanged(seq);
-                return;
-            }
+            var song = buzz.SongCore;
+            int songPosition = song.PlayPosition;
+            int loopLength = song.LoopEnd - song.LoopStart;
+            bool launch = songTime != 0 && e != null && e.Type == SequenceEventType.PlayPattern
+                          && e.Pattern is PatternCore && e.Pattern.Machine == seq.Machine;
 
-            lock (ReBuzzCore.AudioLock)
+            lock (gate)
             {
-                long at;
-                if (!scheduler.IsRunning)
+                if (!launch)
                 {
-                    at = 0;
+                    scheduler.Stop(seq, 0, immediate: true);
                 }
                 else
                 {
-                    var song = buzz.SongCore;
-                    int delta = songTime - song.PlayPosition;
-                    int loopLength = song.LoopEnd - song.LoopStart;
-                    if (delta <= 0 && loopLength > 0) delta += loopLength;
-                    at = scheduler.Clock + Math.Max(1, delta);
+                    long at = 0;
+                    if (scheduler.IsRunning)
+                    {
+                        int delta = songTime - songPosition;
+                        if (delta <= 0 && loopLength > 0) delta += loopLength;
+                        at = scheduler.Clock + Math.Max(1, delta);
+                    }
+                    scheduler.LaunchAt(seq, (PatternCore)e.Pattern, at, loop);
                 }
-
-                if (e.Type == SequenceEventType.PlayPattern && e.Pattern is PatternCore pat && pat.Machine == seq.Machine)
-                    scheduler.LaunchAt(seq, pat, at, loop);
-                else
-                    scheduler.Stop(seq, 0, immediate: true);
             }
             RaiseTrackStateChanged(seq);
         }
@@ -204,99 +207,137 @@ namespace ReBuzz.Core.Session
 
         public bool IsArrangementOverridden(ISequence track) => track is SequenceCore seq && scheduler.IsOverridden(seq);
 
-        public bool IsAnyArrangementOverridden => scheduler.IsAnyOverridden;
+        // These two iterate the scheduler's track list, which Reset/Forget change: take the gate.
+        public bool IsAnyArrangementOverridden { get { lock (gate) return scheduler.IsAnyOverridden; } }
 
         /// <summary>True while a clip plays or waits; the song then keeps running at its loop end.</summary>
-        internal bool HasActivity => scheduler.HasActivity;
+        internal bool HasActivity { get { lock (gate) return scheduler.HasActivity; } }
 
-        // ------------------------------------------------------------------ engine hooks (AudioLock held)
+        // ------------------------------------------------------------------ engine hooks
 
-        /// <summary>Tick boundary while the transport plays. Starts the clock on the first tick.</summary>
+        /// <summary>Tick boundary while the transport plays (audio thread, AudioLock held).
+        /// Starts the clock on the first tick.</summary>
         internal void OnTick(bool transportJustStarted)
         {
-            if (transportJustStarted || !scheduler.IsRunning)
-                scheduler.Start(buzz.SongCore.PlayPosition);
-            else
-                scheduler.Advance();
-
-            var changes = scheduler.Changes;
-            if (changes.Count == 0) return;
-
-            for (int i = 0; i < changes.Count; i++)
+            int songPosition = buzz.SongCore.PlayPosition;
+            tickChanges.Clear();
+            lock (gate)
             {
-                var c = changes[i];
+                if (transportJustStarted || !scheduler.IsRunning)
+                    scheduler.Start(songPosition);
+                else
+                    scheduler.Advance();
+                tickChanges.AddRange(scheduler.Changes);
+            }
+            if (tickChanges.Count == 0) return;
+
+            bool anyOverrideChange = false;
+            for (int i = 0; i < tickChanges.Count; i++)
+            {
+                var c = tickChanges[i];
                 if (c.Kind == SessionChangeKind.Stopped || c.Kind == SessionChangeKind.Ended)
                     Silence(c.Track);
+                if (c.Kind == SessionChangeKind.Launched && c.Previous == null)
+                    anyOverrideChange = true;
             }
-            RaiseTrackStateChanged(changes.Select(c => c.Track).ToArray());
+            RaiseTrackStateChanged(tickChanges.Select(c => c.Track).ToArray());
+            if (anyOverrideChange)
+                RaisePropertyChangedOnUi(nameof(IsAnyArrangementOverridden));
         }
 
-        /// <summary>Transport stopped (machines are stopped by the caller).</summary>
+        /// <summary>Transport stopped (any thread; machines are stopped by the caller).</summary>
         internal void OnTransportStopped()
         {
             SequenceCore[] changed;
-            lock (ReBuzzCore.AudioLock)
+            bool wasOverridden;
+            lock (gate)
             {
-                bool wasOverridden = scheduler.IsAnyOverridden;
+                wasOverridden = scheduler.IsAnyOverridden;
                 scheduler.Halt();
                 changed = scheduler.Changes.Select(c => c.Track).ToArray();
-                if (wasOverridden)
-                    buzz.dispatcher.BeginInvoke(() => PropertyChanged.Raise(this, nameof(IsAnyArrangementOverridden)));
             }
             RaiseTrackStateChanged(changed);
+            if (wasOverridden)
+                RaisePropertyChangedOnUi(nameof(IsAnyArrangementOverridden));
         }
 
+        /// <summary>A sequence was removed (AudioLock held).</summary>
         internal void OnSequenceRemoved(SequenceCore seq)
         {
-            if (scheduler.Forget(seq) != null)
+            PatternCore playing;
+            lock (gate)
+            {
+                playing = scheduler.Forget(seq);
+            }
+            if (playing != null)
                 Silence(seq);
         }
 
+        /// <summary>A pattern was deleted (AudioLock held).</summary>
         internal void OnPatternDeleted(PatternCore pattern)
         {
-            stoppedScratch.Clear();
-            scheduler.ForgetClip(pattern, stoppedScratch);
-            foreach (var seq in stoppedScratch)
+            var stopped = new List<SequenceCore>();
+            lock (gate)
+            {
+                scheduler.ForgetClip(pattern, stopped);
+            }
+            foreach (var seq in stopped)
                 Silence(seq);
-            if (stoppedScratch.Count > 0)
-                RaiseTrackStateChanged(stoppedScratch.ToArray());
+            if (stopped.Count > 0)
+                RaiseTrackStateChanged(stopped.ToArray());
         }
 
+        /// <summary>New song or song loaded.</summary>
         internal void Reset()
         {
-            lock (ReBuzzCore.AudioLock)
+            lock (gate)
             {
                 scheduler.Reset();
             }
         }
 
-        /// <summary>Note-offs for a track whose clip stopped mid-note.</summary>
+        /// <summary>Note-offs for a track whose clip stopped mid-note (audio thread).</summary>
         void Silence(SequenceCore seq)
         {
             var machine = seq.MachineCore;
             if (machine == null || !machine.Ready || machine.DLL == null || machine.DLL.IsCrashed)
                 return;
 
-            // Buzz-style note columns: set every note parameter to Off (sent on the next tick).
-            var groups = machine.ParameterGroupsList;
-            for (int g = 1; g < groups.Count; g++)
+            try
             {
-                var group = groups[g];
-                var parameters = group.ParametersList;
-                for (int p = 0; p < parameters.Count; p++)
+                // Buzz-style note columns: every note parameter to Off (sent on the next tick).
+                var groups = machine.ParameterGroupsList;
+                for (int g = 1; g < groups.Count; g++)
                 {
-                    var parameter = parameters[p];
-                    if (parameter.Type != ParameterType.Note) continue;
-                    for (int t = 0; t < group.TrackCount; t++)
-                        parameter.SetValue(t | DoNotRecordFlag, BuzzNote.Off);
+                    var group = groups[g];
+                    var parameters = group.ParametersList;
+                    for (int p = 0; p < parameters.Count; p++)
+                    {
+                        var parameter = parameters[p];
+                        if (parameter.Type != ParameterType.Note) continue;
+                        for (int t = 0; t < group.TrackCount; t++)
+                            parameter.SetValue(t | DoNotRecordFlag, BuzzNote.Off);
+                    }
                 }
-            }
 
-            // MIDI-driven machines (VST via Polac, piano roll...).
-            buzz.MachineManager.SendMIDIControlChange(machine, MidiAllNotesOff, machine.MIDIInputChannel, 0);
+                // MIDI-driven machines (VSTs via Polac, piano roll...).
+                buzz.MachineManager.SendMIDIControlChange(machine, MidiAllNotesOff, machine.MIDIInputChannel, 0);
+            }
+            catch (Exception ex)
+            {
+                // Never let a misbehaving machine take the audio thread down.
+                buzz.DCWriteLine($"Session: note-offs for '{machine.Name}' failed: {ex.Message}");
+            }
         }
 
         // ------------------------------------------------------------------ helpers
+
+        void StartTransportIfStopped()
+        {
+            // Outside any lock: setting Playing only flags the start for the next tick.
+            if (!buzz.Playing)
+                buzz.Playing = true;
+        }
 
         static SequenceCore ToSequence(ISequence track)
         {
@@ -327,6 +368,12 @@ namespace ReBuzz.Core.Session
         {
             if (TrackStateChanged == null) return;
             RaiseTrackStateChanged(buzz.SongCore.SequencesList.ToArray());
+        }
+
+        void RaisePropertyChangedOnUi(string name)
+        {
+            if (PropertyChanged == null) return;
+            buzz.dispatcher.BeginInvoke(() => PropertyChanged.Raise(this, name));
         }
     }
 }

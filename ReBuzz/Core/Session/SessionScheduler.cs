@@ -4,10 +4,11 @@
 // Pure scheduling logic with no dependency on the rest of ReBuzz, so it can be unit tested
 // on its own (ReBuzz.SessionTests links this file).
 //
-// Threading: requests (Launch*, Stop*, BackToArrangement, Forget*, Reset) and engine calls
-// (Start, Advance, Halt) must be made under one external lock (ReBuzzCore.AudioLock).
-// Read methods (GetPlaying, GetPosition, GetState, ...) are lock-free: they read per-track
-// state through ISessionTrack.SessionState and tolerate running concurrently with the engine.
+// Threading: requests (Launch*, Stop*, BackToArrangement, Forget*, Reset), engine calls
+// (Start, Advance, Halt) and the list-walking properties (HasActivity, IsAnyOverridden) must
+// be made under one external lock (SessionCore's gate). Per-track reads (GetPlaying,
+// GetPosition, GetState, ...) are lock-free: they go through ISessionTrack.SessionState and
+// tolerate running concurrently with the engine.
 
 using System;
 using System.Collections.Generic;
