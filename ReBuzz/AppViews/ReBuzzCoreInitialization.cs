@@ -41,6 +41,7 @@ namespace ReBuzz.AppViews
             var song = new SongCore(dispatcher, engineSettings);
             song.BuzzCore = buzz;
             buzz.SongCore = song;
+            buzz.SessionLayout = new Core.Session.SessionLayout(buzz, song, dispatcher);
 
             buzz.MachineViewHWND = machineViewHwnd;
             buzz.MainWindowHandle = buzz.MachineViewHWND;
