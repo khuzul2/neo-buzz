@@ -1,0 +1,73 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pedal Peer Control — managed control machine for Jeskola Buzz build 1503 (32-bit).
+    Buzz 1503 only; not intended for ReBuzz.
+
+    Target: net48. Buzz 1503 runs managed machines on the .NET Framework 4 CLR
+    and cannot load a .NET 10 assembly — documented exception to the
+    ".NET 10 or higher" rule. Compiled against Buzz 1503's own
+    BuzzGUI.Interfaces.dll, which exports both Buzz.MachineInterface and
+    BuzzGUI.Interfaces.
+
+    Build:
+      dotnet build PedalPeerControl.csproj -c Release
+    Override install dir:
+      -p:BuzzDir="D:\Buzz"
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <OutputType>Library</OutputType>
+
+    <!-- Must end in ".NET" so Buzz treats the DLL as a managed machine. -->
+    <AssemblyName>Pedal Peer Control.NET</AssemblyName>
+    <RootNamespace>BTDSys.PeerCtrl</RootNamespace>
+
+    <!-- Buzz 1503 is a 32-bit process. AnyCPU (as the Buzz wiki recommends)
+         loads as 32-bit there; x64 would fail with BadImageFormatException. -->
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Optimize>true</Optimize>
+
+    <!-- Deployment hygiene (mandatory): only the .dll is needed at runtime. -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+
+    <!-- Transitive reference version complaints from host DLLs. -->
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+
+    <!-- Control machines deploy to the generators gear folder.
+         $(BuzzDir) comes from Directory.Build.props. -->
+    <OutputPath>$(BuzzDir)\Gear\Generators\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+
+    <AssemblyTitle>Pedal Peer Control</AssemblyTitle>
+    <Company>thepedal</Company>
+    <Product>Pedal Peer Control</Product>
+    <Description>Peer control machine for Buzz 1503, based on BTDSys PeerCtrl</Description>
+    <Copyright>Based on BTDSys PeerCtrl © 2002-2008 Ed Powley (BTDSys)</Copyright>
+    <Version>1.0.2</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Buzz 1503's interface assembly — never copied to output. -->
+    <Reference Include="BuzzGUI.Interfaces">
+      <HintPath>$(BuzzDir)\BuzzGUI.Interfaces.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- Lets net48 build without the .NET Framework 4.8 targeting pack installed. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- Fail early with a clear message if the host interface DLL is missing. -->
+  <Target Name="CheckHostRefs" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(BuzzDir)\BuzzGUI.Interfaces.dll')"
+           Text="Buzz 1503 BuzzGUI.Interfaces.dll not found in $(BuzzDir). Set -p:BuzzDir=..." />
+  </Target>
+
+</Project>

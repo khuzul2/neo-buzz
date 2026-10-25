@@ -1,0 +1,5 @@
+!INCLUDE ..\common.nmake
+
+SUBDIRS_ALL = Aggressor.all Masterizer.all Exciter.all
+
+!INCLUDE ..\subdirs.nmake

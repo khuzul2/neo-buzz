@@ -1,0 +1,535 @@
+{
+  "$comment": "Machines vendored into this repo. build.ps1 builds 'rebuzz-managed' and 'native-nmake' entries; tools/fetch-machine-binaries.ps1 reads 'releaseBinaries'. Only '*NET.dll' files are managed machines - other DLLs in a Gear folder are treated as native machines.",
+  "schemaVersion": 1,
+  "machines": [
+    {
+      "id": "pedal-M1",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-M1",
+      "commit": "4cce3df5034b4f90a7e5227dfbf602ba8bcf98f6",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-M1",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Korg M1-style 8-voice PCM synth",
+      "project": "Pedal M1.NET.csproj",
+      "gearFolder": "Generators",
+      "assembly": "Pedal M1.NET",
+      "patches": [
+        "Replaced 3 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-juno106",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-juno106",
+      "commit": "908e217c6068c0eeb519acaa8b6079b5e9f955c2",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-juno106",
+      "license": "GPL-3.0",
+      "notes": "Juno-106 emulation",
+      "project": "PedalJuno106.csproj",
+      "gearFolder": "Generators",
+      "assembly": "Pedal Juno106.NET",
+      "patches": [
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-sh101",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-sh101",
+      "commit": "f9eb53de89d39e8938b4c9427b7077ae3ae84fab",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-sh101",
+      "license": "GPL-3.0",
+      "notes": "SH-101 emulation",
+      "project": "PedalSH101.csproj",
+      "gearFolder": "Generators",
+      "assembly": "Pedal SH101.NET",
+      "patches": [
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-fm",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-fm",
+      "commit": "7e2dd609eb1e9b0d4aac6e54001d3ebecbbc0b83",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-fm",
+      "license": "None found (all rights reserved by default)",
+      "notes": "FM synth",
+      "project": "PedalFM.csproj",
+      "gearFolder": "Generators",
+      "assembly": "Pedal FM.NET",
+      "patches": [
+        "Replaced 2 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-tracker",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-tracker",
+      "commit": "4223c5f81531a37a09a62d62e04f671895c6a712",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-tracker",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Matilde-style sample tracker",
+      "project": "PedalTracker.csproj",
+      "gearFolder": "Generators",
+      "assembly": "Pedal Tracker.NET",
+      "patches": [
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-chord",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-chord",
+      "commit": "ab76c5f90feeccb825b945f6f28831e6fb7b7081",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-chord",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Chord control machine",
+      "project": "PedalChord.csproj",
+      "gearFolder": "Generators",
+      "assembly": "Pedal Chord.NET",
+      "patches": [
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-lfo",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-lfo",
+      "commit": "2add34ced45af0e7b64493bf977164ae438d820d",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-lfo",
+      "license": "None found (all rights reserved by default)",
+      "notes": "LFO control machine",
+      "project": "PedalLFO.csproj",
+      "gearFolder": "Generators",
+      "assembly": "Pedal LFO.NET",
+      "patches": [
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-peer-control",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/BTDSys-PeerCtrl-ReBuzz",
+      "commit": "66d7c0447315f7318f67d994c27b3a90a1352398",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-peer-control",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Port of BTDSys PeerCtrl (repo also reachable as Pedal-Peer-Control-ReBuzz)",
+      "project": "PeerCtrl.csproj",
+      "gearFolder": "Generators",
+      "assembly": "Pedal Peer Control.NET",
+      "patches": [
+        "Directory.Build.props imports ExternalMachines/Directory.Build.props so ReBuzzDir defaults to this repo's build output"
+      ]
+    },
+    {
+      "id": "pedal-chorus",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-chorus",
+      "commit": "406648346c104134ef99619fcd0809253f52e0cd",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-chorus",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Chorus",
+      "project": "PedalChorus.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal Chorus.NET",
+      "patches": [
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-comp",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-comp",
+      "commit": "c55449f214d65066f9cc16e902a1bc91c3be4a1d",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-comp",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Compressor",
+      "project": "PedalComp.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal Comp.NET",
+      "patches": [
+        "Replaced 3 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-mcomp",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-mcomp",
+      "commit": "4bcc0ddcdf5e82763593623ee0542d589af10bde",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-mcomp",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Multiband compressor",
+      "project": "Pedal MComp.NET.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal MComp.NET",
+      "patches": [
+        "Replaced 5 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-drum-matrix",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-drum-matrix",
+      "commit": "5a0b382951ce9355886a8f32bb89b0dc282b7498",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-drum-matrix",
+      "license": "GPL-3.0",
+      "notes": "Drum multi-effect",
+      "project": "PedalDrumMatrix.NET.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal Drum Matrix.NET",
+      "patches": [
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-eq",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-eq",
+      "commit": "f8361eacdc5cc77b988205e3a8b84c6941f77481",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-eq",
+      "license": "None found (all rights reserved by default)",
+      "notes": "EQ",
+      "project": "PedalEQ.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal EQ.NET",
+      "patches": [
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
+        "Directory.Build.props imports ExternalMachines/Directory.Build.props so ReBuzzDir defaults to this repo's build output"
+      ]
+    },
+    {
+      "id": "pedal-filter",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-filter",
+      "commit": "f7611fa7f0931148a6d90028cd5580dc9c48fda5",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-filter",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Filter",
+      "project": "PedalFilter.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal Filter.NET",
+      "patches": [
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-gain",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-gain",
+      "commit": "badf423e2956fe478d54094c6ea2c24409359beb",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-gain",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Gain",
+      "project": "PedalGain.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal Gain.NET",
+      "patches": [
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-gain-multi",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-gain-multi",
+      "commit": "02fb1dcfa2031219bc3b866fecf742301c32876e",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-gain-multi",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Multi-channel gain",
+      "project": "PedalGainMulti.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal Gain Multi.NET",
+      "patches": [
+        "Replaced 2 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-gate",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-gate",
+      "commit": "abf62687c68613fa9c2e66fdccaf48b2e5ef3b52",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-gate",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Gate",
+      "project": "PedalGate.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal Gate.NET",
+      "patches": [
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-plate",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-plate",
+      "commit": "2c0595e001277aa5c5e0259927853271a9206bb8",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-plate",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Plate reverb",
+      "project": "PedalPlate.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal Plate.NET",
+      "patches": [
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-shaper",
+      "kind": "rebuzz-managed",
+      "origin": "https://github.com/thepedal/pedal-shaper",
+      "commit": "7ca3c5bd0ecfdca374bfdfb7a9adc8fa8c376f4f",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/pedal-shaper",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Waveshaper",
+      "project": "Pedal Shaper.NET.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal Shaper.NET",
+      "patches": [
+        "Replaced 3 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+      ]
+    },
+    {
+      "id": "pedal-comp-buzz1503",
+      "kind": "buzz1503-managed",
+      "origin": "https://github.com/thepedal/pedal-comp-buzz-v1503",
+      "commit": "6cfc5c290de878d7e41a258d9570df92066b005a",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/buzz1503/pedal-comp",
+      "license": "GPL-3.0",
+      "notes": "Classic Buzz port",
+      "project": "PedalComp.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal Comp.NET"
+    },
+    {
+      "id": "pedal-mcomp-buzz1503",
+      "kind": "buzz1503-managed",
+      "origin": "https://github.com/thepedal/pedal-mcomp-buzz-v1503",
+      "commit": "1b7fbae2658a04682dc9427a182a974805ac8687",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/buzz1503/pedal-mcomp",
+      "license": "GPL-3.0",
+      "notes": "Classic Buzz port",
+      "project": "Pedal MComp.NET.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal MComp.NET"
+    },
+    {
+      "id": "pedal-drum-matrix-buzz1503",
+      "kind": "buzz1503-managed",
+      "origin": "https://github.com/thepedal/pedal-drum-matrix-buzz-v1503",
+      "commit": "45c6f920068771af8c54c98d35395183ed994fef",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/buzz1503/pedal-drum-matrix",
+      "license": "GPL-3.0",
+      "notes": "Classic Buzz port",
+      "project": "PedalDrumMatrix.NET.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal Drum Matrix.NET"
+    },
+    {
+      "id": "pedal-spectral-buzz1503",
+      "kind": "buzz1503-managed",
+      "origin": "https://github.com/thepedal/pedal-spectral-buzz-1503",
+      "commit": "59f1e3f58a563e8f163b3ccc27f1bc2bd1d1519f",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/buzz1503/pedal-spectral",
+      "license": "GPL-3.0",
+      "notes": "Spectral analysis effect, classic Buzz only so far",
+      "project": "PedalSpectral.NET.csproj",
+      "gearFolder": "Effects",
+      "assembly": "Pedal Spectral.NET"
+    },
+    {
+      "id": "pedal-peer-control-buzz1503",
+      "kind": "buzz1503-managed",
+      "origin": "https://github.com/thepedal/pedal-peer-control-buzz1503",
+      "commit": "1968f3dbfc95c360ae95c817ec3657c207507f0f",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/buzz1503/pedal-peer-control",
+      "license": "BSD-3-Clause",
+      "notes": "Classic Buzz port",
+      "project": "PedalPeerControl.csproj",
+      "gearFolder": "Generators",
+      "assembly": "Pedal Peer Control.NET"
+    },
+    {
+      "id": "pedal-gain-multi-buzz1503",
+      "kind": "buzz1503-native",
+      "origin": "https://github.com/thepedal/pedal-gain-multi-1503",
+      "commit": "44113c83362eb04c8c5d34cd32dfa4396a03c7d3",
+      "vendoredOn": "2026-10-25",
+      "path": "source/thepedal/buzz1503/pedal-gain-multi",
+      "license": "MIT",
+      "notes": "Native machine + .NET 4.8 GUI for classic Buzz",
+      "project": "native/PedalGainMultiN.vcxproj",
+      "gearFolder": "Effects"
+    },
+    {
+      "id": "buzztrax-buzzmachines",
+      "kind": "native-nmake",
+      "origin": "https://github.com/Buzztrax/buzzmachines",
+      "commit": "92aaed2e81edb78c2724c500826dbdf2c05ad6a6",
+      "vendoredOn": "2026-10-25",
+      "path": "source/buzztrax-buzzmachines",
+      "license": "Per author; see COPYING and each author folder",
+      "notes": "~120 classic machines (Arguru, FSM, Geonik, Jeskola, Makk, Oomek, WhiteNoise...). The nmake build covers FSM, Fuzzpilz, Matilde and Oomek; the rest are source only.",
+      "project": "makefile.nmake",
+      "nmakeBuilds": [
+        "FSM",
+        "Fuzzpilz",
+        "Matilde",
+        "Oomek"
+      ]
+    },
+    {
+      "id": "jeskola-dev-examples",
+      "kind": "native-source",
+      "origin": "https://github.com/remithomas/jeskola_buzz",
+      "commit": "d5efd3f095b558d8234052d17551164cf75b7fa3",
+      "vendoredOn": "2026-10-25",
+      "path": "source/jeskola-dev-examples",
+      "license": "None stated; Jeskola developer examples mirrored from jeskola.net",
+      "notes": "Oskari's example machines and PatternXP sources (MachineInterface.h is freeware-only)"
+    },
+    {
+      "id": "retracker",
+      "kind": "buzz1503-managed",
+      "origin": "https://github.com/jobf/retracker",
+      "commit": "e3513cb82a16690918e3284a0c795fd3886bcf1f",
+      "vendoredOn": "2026-10-25",
+      "path": "source/retracker",
+      "license": "None found (all rights reserved by default)",
+      "notes": "Peer tracker machine for classic Buzz .NET",
+      "project": "ReTracker/ReTracker.csproj",
+      "gearFolder": "Generators",
+      "assembly": "ReTracker.NET"
+    },
+    {
+      "id": "bmxplay",
+      "kind": "reference",
+      "origin": "https://github.com/joric/bmxplay",
+      "commit": "e77f921f35caf075876d676a87cc84161b132416",
+      "vendoredOn": "2026-10-25",
+      "path": "source/reference/bmxplay",
+      "license": "Player public domain; machine code non-commercial (see README)",
+      "notes": "Tiny .bmx player with C reimplementations of classic machines, plus demo songs"
+    }
+  ],
+  "releaseBinaries": [
+    {
+      "repo": "thepedal/pedal-M1",
+      "gearFolder": "Generators",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-juno106",
+      "gearFolder": "Generators",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-sh101",
+      "gearFolder": "Generators",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-fm",
+      "gearFolder": "Generators",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-tracker",
+      "gearFolder": "Generators",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-chord",
+      "gearFolder": "Generators",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-lfo",
+      "gearFolder": "Generators",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/BTDSys-PeerCtrl-ReBuzz",
+      "gearFolder": "Generators",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-chorus",
+      "gearFolder": "Effects",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-comp",
+      "gearFolder": "Effects",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-mcomp",
+      "gearFolder": "Effects",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-drum-matrix",
+      "gearFolder": "Effects",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-eq",
+      "gearFolder": "Effects",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-filter",
+      "gearFolder": "Effects",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-gain",
+      "gearFolder": "Effects",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-gain-multi",
+      "gearFolder": "Effects",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-gate",
+      "gearFolder": "Effects",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-plate",
+      "gearFolder": "Effects",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    },
+    {
+      "repo": "thepedal/pedal-shaper",
+      "gearFolder": "Effects",
+      "assetPattern": "*NET.dll|*.prs|*.prs.xml|*.zip"
+    }
+  ]
+}

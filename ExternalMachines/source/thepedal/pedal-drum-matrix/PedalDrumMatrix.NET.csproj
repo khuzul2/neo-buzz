@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Build §1.2 — the six mandatory properties for every managed machine.
+         DebugType/DebugSymbols/GenerateDependencyFile satisfy the project
+         deploy rule (ReBuzz only needs the .dll). -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <NoWarn>MSB3277</NoWarn>
+
+    <!-- Build §2 — .NET suffix is mandatory (routes the DLL to the managed
+         loader); the filename becomes the browser display name. -->
+    <AssemblyName>Pedal Drum Matrix.NET</AssemblyName>
+    <RootNamespace>PedalDrumMatrix</RootNamespace>
+    <Version>1.4.0</Version>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+
+    <!-- Override on the command line if ReBuzz lives elsewhere:
+         dotnet build -c Release -p:ReBuzzDir="D:\ReBuzz" -->
+    <ReBuzzDir Condition="'$(ReBuzzDir)' == ''">$(ReBuzzDir)</ReBuzzDir>
+  </PropertyGroup>
+
+  <!-- Build §1.1 / §6.1 — Buzz SDK assemblies, resolved from the ReBuzz install,
+       never copied (Private=false; they ship with ReBuzz). BuzzGUI.Interfaces
+       carries both the Buzz.MachineInterface and BuzzGUI.Interfaces namespaces;
+       BuzzGUI.Common carries MenuItemVM / SimpleCommand for the About entry. -->
+  <ItemGroup>
+    <Reference Include="BuzzGUI.Interfaces">
+      <HintPath>$(ReBuzzDir)\BuzzGUI.Interfaces.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BuzzGUI.Common">
+      <HintPath>$(ReBuzzDir)\BuzzGUI.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Build §1.3 — deploy the freshly-built .dll and its preset bundle to
+       ReBuzz's effects folder. The bundle must share the DLL base name
+       (AssemblyName) so ReBuzz auto-loads it. ContinueOnError survives a locked
+       DLL when ReBuzz is open during a rebuild. -->
+  <Target Name="DeployToReBuzz" AfterTargets="Build">
+    <PropertyGroup>
+      <PresetFile>$(MSBuildProjectDirectory)\$(AssemblyName).prs.xml</PresetFile>
+    </PropertyGroup>
+    <Message Importance="high" Text="Deploying $(TargetFileName) -> $(ReBuzzDir)\Gear\Effects\" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFolder="$(ReBuzzDir)\Gear\Effects\"
+          ContinueOnError="true" />
+    <Copy Condition="Exists('$(PresetFile)')"
+          SourceFiles="$(PresetFile)"
+          DestinationFolder="$(ReBuzzDir)\Gear\Effects\"
+          ContinueOnError="true" />
+    <Warning Condition="!Exists('$(PresetFile)')" Text="Preset bundle not found: $(PresetFile)" />
+  </Target>
+
+</Project>

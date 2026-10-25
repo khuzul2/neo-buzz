@@ -1,0 +1,65 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+
+    <!-- Deployment hygiene: ReBuzz loads only the .dll. Suppress the .pdb
+         and .deps.json so they don't land in the gear folder. -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <!-- Silence the harmless MSB3277 version-conflict noise from ReBuzz's
+         older transitive deps. -->
+    <NoWarn>MSB3277</NoWarn>
+
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <OutputType>Library</OutputType>
+    <AssemblyName>Pedal Chord.NET</AssemblyName>
+    <RootNamespace>WDE.PedalChord</RootNamespace>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <Optimize>true</Optimize>
+
+    <!--
+      Output goes straight into the ReBuzz Generators gear folder.
+      Override BuzzDir on the command line if ReBuzz lives elsewhere:
+        dotnet build PedalChord.csproj -c Release /p:BuzzDir="D:\ReBuzz"
+    -->
+    <BuzzDir Condition="'$(BuzzDir)' == ''">$(ReBuzzDir)</BuzzDir>
+    <OutputPath>$(BuzzDir)\Gear\Generators</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+  </PropertyGroup>
+
+  <!--
+    ReBuzz managed-machine API DLLs – not on NuGet, they ship with ReBuzz.
+    Private=false keeps them out of the output folder (ReBuzz already has them).
+  -->
+  <ItemGroup>
+    <!-- Buzz.MachineInterface: IBuzzMachine, MachineDecl, ParameterDecl,
+                                IBuzzMachineHost, Sample, WorkModes -->
+    <Reference Include="ReBuzz">
+      <HintPath>$(BuzzDir)\ReBuzz.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- BuzzGUI types: IMenuItem, IMachine, IParameter, IBuzz, ParameterGroupType … -->
+    <Reference Include="BuzzGUI.Interfaces">
+      <HintPath>$(BuzzDir)\BuzzGUI.Interfaces.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- BuzzGUI.Common: Global.Buzz, misc utilities -->
+    <Reference Include="BuzzGUI.Common">
+      <HintPath>$(BuzzDir)\BuzzGUI.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- No XAML – settings UI is built entirely in code to avoid BAML issues -->
+  <ItemGroup>
+    <Page Remove="**\*.xaml" />
+    <EmbeddedResource Remove="**\*.xaml" />
+  </ItemGroup>
+
+</Project>

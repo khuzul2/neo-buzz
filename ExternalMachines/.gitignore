@@ -1,0 +1,8 @@
+# Vendored sources are committed as-is, including folders the root .gitignore skips.
+!source/reference/bmxplay/bin/
+!source/jeskola-dev-examples/x64/
+
+# Build outputs of the Buzztrax nmake build (build.ps1 builds in place).
+source/buzztrax-buzzmachines/**/x64/Release/
+source/buzztrax-buzzmachines/**/x64/Debug/
+source/buzztrax-buzzmachines/**/x86/

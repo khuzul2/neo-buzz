@@ -1,0 +1,5 @@
+!INCLUDE ..\common.nmake
+
+SUBDIRS_ALL = Infector.all KickXP.all PhatMan.all WahMan.all WahManPro.all WahPro2.all Chorus2.all PanzerDelay.all
+
+!INCLUDE ..\subdirs.nmake

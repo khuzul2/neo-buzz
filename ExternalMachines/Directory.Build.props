@@ -1,0 +1,19 @@
+<Project>
+  <!--
+    Shared defaults for the vendored machines under source/.
+
+    ReBuzzDir is where the machines find ReBuzz.dll / BuzzGUI.*.dll and where their
+    deploy targets copy the built machine. It defaults to this repo's own ReBuzz build
+    output, so after one full build.ps1 run you can rebuild a single machine by hand:
+
+      dotnet build "ExternalMachines\source\thepedal\pedal-fm\PedalFM.csproj" -c Release
+
+    build.ps1 always passes ReBuzzDir/ReBuzzPath/BuzzDir explicitly.
+    BuzzDir is deliberately NOT defaulted here: the buzz1503 ports use it for a
+    classic Jeskola Buzz install.
+  -->
+  <PropertyGroup>
+    <ReBuzzDir Condition="'$(ReBuzzDir)' == ''">$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\bin\Release\x64\net10.0-windows10.0.26100.0'))</ReBuzzDir>
+    <ReBuzzPath Condition="'$(ReBuzzPath)' == ''">$(ReBuzzDir)</ReBuzzPath>
+  </PropertyGroup>
+</Project>

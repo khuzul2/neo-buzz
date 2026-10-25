@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>false</UseWPF>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Platforms>x64</Platforms>
+    <AssemblyName>Pedal M1.NET</AssemblyName>
+    <RootNamespace>WDE.PedalM1</RootNamespace>
+
+    <!-- Build §1.2 — mandatory for every managed machine. -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <NoWarn>MSB3277</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="BuzzGUI.Interfaces">
+      <HintPath>$(ReBuzzDir)\BuzzGUI.Interfaces.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="ReBuzz">
+      <HintPath>$(ReBuzzDir)\ReBuzz.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="DeployToReBuzz" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFolder="$(ReBuzzDir)\Gear\Generators"
+          ContinueOnError="true" />
+  </Target>
+
+</Project>

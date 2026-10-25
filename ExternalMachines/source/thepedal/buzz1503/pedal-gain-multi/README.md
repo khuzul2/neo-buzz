@@ -1,0 +1,314 @@
+# Pedal Gain Multi N
+
+Native C++ port of **Pedal Gain Multi** for **Jeskola Buzz build 1503 (32-bit)**,
+with a companion WPF GUI DLL. Buzz 1503 only: 32-bit, installed at
+`C:\Program Files (x86)\Jeskola\Buzz`. It is not intended for ReBuzz.
+
+It exists because Buzz 1503's managed-machine API has no multi-input `Work`
+signature; the native interface does (`MIF_MULTI_IO` + `MultiWork`).
+
+## Features
+
+- **Channels are tracks: 1 … 24.** New machines start with 6. To change the count:
+  - use the **−** / **+** buttons in the GUI's IN header, or
+  - add or delete tracks in the parameter window or pattern editor, as with any Buzz machine.
+
+  The input and output plugs follow the track count. Only existing channels appear in
+  the parameter window.
+- **Channel strips.** Each channel has Mute, Solo, a **Volume** fader, a **Pan**
+  (balance) control and a **Mono** switch, in the GUI and as track parameters you can
+  sequence.
+- **Mono** sums a channel to (L+R)/2 before its fader and pan, so a source with the same
+  signal on both sides keeps its level. Switching crossfades over about 10 ms, so it
+  doesn't click.
+- **Decibel faders.** Volume and Gain run from −∞ and −80 dB up to +10 dB in 0.5 dB steps,
+  with 0 dB as the default. The GUI faders use a console-style taper: 0 dB sits at 75 %
+  of travel, −20 dB at 42 % and −40 dB at 20 %.
+- **Pan laws.** Stereo channels use a balance law (centre = both sides at unity). Mono
+  channels use a constant-power pan law (−3 dB per side at centre), so a mono source
+  keeps the same loudness wherever it's panned. Turning MO on for a centred channel
+  therefore lowers each side by 3 dB, which is the standard pan-law trade-off.
+- **Numbering is 0-based**, matching Buzz's plug menus and track numbers. Track *k*,
+  GUI row *k* and input plug **In *k*** are the same channel.
+- **Multi-out.** Output plug **0 is the master mix**. The direct outs follow it, so the
+  direct out of In *k* is output plug *k*+1, labelled **Direct In *k***. For example,
+  plug 1 carries In 0 and plug 2 carries In 1. The master stays at plug 0 so its cable
+  never moves when channels are added or deleted.
+  - **Master (out 0):** Σ input → Mono → × Mute × Solo × Volume × Pan, then × **Gain**
+    (the master fader), then × Master Mute.
+  - **Direct In k (out k+1):** In k → Mono → × its Mute × Volume × Pan, i.e. the channel
+    strip as-is. Solo, Gain and Master Mute act on the master mix only.
+- **Smooth level changes.** Gain, Volume and Pan glide to new values (about 10 ms), so
+  automation and fader moves don't click or zipper. Mutes keep their Inertia fade.
+- **Inertia** 0 … 500 ms (default 25). The fade time shared by every mute and solo.
+- **Metering:** the panel and the meter window share one scale shape (expanded near the
+  top, so the last few dB are easy to read) and one set of colour zones (green below
+  −12 dB, yellow to −3 dB, red above). The colours are fixed to dB positions, so a
+  quiet signal shows only green.
+  - **Channel meters** switch between **PRE** (raw input) and **POST** (after Mono, Mute,
+    Volume and Pan) with the PRE/POST button in the IN header.
+  - **Master meters** show **true peak**: 4× oversampled, so peaks between samples are
+    caught. On a test tone whose samples all land at −3 dB of the real peak, a plain
+    sample meter reads 3 dB low; this reads within 0.01 dB.
+  - **Exact peaks:** the machine reports the highest peak since the GUI's last check, so
+    no short peak is missed.
+  - **Ballistics:** instant rise, falls about 12 dB/s (20 dB in 1.7 s, IEC 60268-18
+    style), 3 s peak hold with a dB readout.
+  - **Clip lights** turn red at 0 dBFS or above, on the bar end and the readout, and go
+    out 2 s after the last over. Any new over restarts the 2 s. Click any meter to clear
+    all clip lights and peak holds at once.
+- **Parameter window width.** When the panel opens, it widens Buzz's parameter window if
+  that's too narrow to show everything (Buzz 1503 opens it at a fixed width). It never
+  makes a window narrower.
+- **Meter window.** The **METERS** button on the OUT row opens a separate, resizable
+  window with large vertical meters for every channel and the master:
+  - **RMS** as a solid bar (300 ms integration), with the **peak** shown translucent above
+    it. The master shows true peak.
+  - A dB scale expanded near the top, a 3 s peak-hold line, clip lights (out 2 s after
+    the last over), and
+    readouts of the held peak (bold) and current RMS.
+  - Its own PRE/POST switch and a CLEAR button. Clicking the meters also clears them.
+  - The master pair sits in its own shaded MASTER section. The area above 0 dBFS is
+    tinted red, and the scale ticks are drawn over the bars so levels can be read against
+    them.
+  - Readouts are colour-coded: amber above −6 dB, red on a clip, faint in silence. The
+    RMS readout is blank in silence.
+  - Small **M** / **S** badges under a channel show its mute and solo state, and a channel
+    that isn't heard on the master (muted, or left out by someone else's solo) is dimmed.
+  - It redraws at the display rate (about 60 fps) for smooth movement.
+- **Loudness and correlation (v1.7).** A strip at the bottom of the meter window measures
+  the master:
+  - **M** (momentary, 400 ms) and **S** (short-term, 3 s) as bars on an LU scale around
+    the target, blue below it and amber above.
+  - **I** (integrated) in LUFS and relative to the target, using the EBU R128 / BS.1770
+    gating: blocks below −70 LUFS are ignored, then blocks more than 10 LU below the
+    running average. **RESET** restarts the measurement.
+  - **TARGET** switches between −23 LUFS (EBU R128 broadcast) and −14 LUFS (streaming).
+  - **C** is stereo correlation from −1 to +1. +1 means mono-compatible, around 0 is wide
+    stereo, and below 0 means phase problems that will cancel in mono. It shows `--` in
+    silence.
+  - It measures from when the window opens (or RESET), on the master output after Gain and
+    Master Mute. Verified against the EBU Tech 3341 test signals to within 0.02 LU at both
+    44.1 and 48 kHz.
+  - It closes itself when its machine is deleted or the song changes. There's one window
+    per machine: pressing METERS again brings the existing one to the front.
+  - It reads its own meter data, so it never affects the panel's meters.
+
+### GUI controls
+
+- **M / S:** mute and solo per channel. **M** on the OUT row is the Master Mute.
+- **MO:** Mono toggle per channel (teal when on).
+- **VOL / PAN faders:** drag to set, double-click to reset (0 dB or centre). The mouse
+  wheel moves VOL by 1 dB (0.5 dB with Ctrl) and PAN by 5 steps (1 with Ctrl). The
+  tooltip shows the value in dB or L/C/R.
+- **Master fader:** on the OUT row, controls Gain.
+- **− / +:** remove or add a channel (track).
+
+### Parameters
+
+| Group | Parameter | Notes |
+|---|---|---|
+| Global | Gain | master fader in dB (see below), output 0 only |
+| Global | Master Mute | master mix only |
+| Global | Inertia | 0–500 ms |
+| Track *k* | Solo | channel *k*, master mix |
+| Track *k* | Mute | channel *k*, master mix and Direct In *k* |
+| Track *k* | Volume | channel fader in dB (see below), master mix and Direct In *k* |
+| Track *k* | Pan | 0 = left, 64 = centre, 128 = right; balance (stereo) or constant-power (Mono) |
+| Track *k* | Mono | sum to (L+R)/2 before fader and pan, master mix and Direct In *k* |
+
+**Fader values** (Gain and Volume): 0 = −∞, 1 = −80 dB, then 0.5 dB per step, so 149 = −6 dB,
+161 = 0 dB (the default) and 181 = +10 dB. The parameter window and GUI tooltips show dB.
+
+New track parameters are always added at the end (Volume and Pan in v1.3, Mono in
+v1.3.1), so existing ones keep their positions and older songs load with the new
+controls at their defaults.
+
+## Layout
+
+```
+pedalgainmultin/
+├── native/
+│   ├── PedalGainMultiN.cpp        machine + DSP + GUI message handler
+│   ├── PedalGainMultiN.vcxproj
+│   └── sdk/MachineInterface.h     (fetched on first build — not in the repo)
+└── gui/
+    ├── PedalGainMultiNGUI.cs      WPF meter/button panel (code-only, no XAML)
+    ├── PedalGainMultiNMeterWindow.cs  separate large meter window (v1.6)
+    └── PedalGainMultiN.GUI.csproj net48 (Buzz 1503's .NET Framework 4 CLR)
+```
+
+## Requirements
+
+- Visual Studio 2022 or later with **Desktop development with C++** and **.NET desktop development**.
+- Buzz 1503 installed at `C:\Program Files (x86)\Jeskola\Buzz`. Its `BuzzGUI.Interfaces.dll` is referenced by the GUI build.
+- Internet access on the first native build, to download `MachineInterface.h`
+  (MI_VERSION 66, taken from a pinned commit of the ReBuzz repo, which carries a
+  copy; nothing depends on ReBuzz at runtime). Alternatively, place your own copy
+  from Buzz's dev files in `native\sdk\`.
+
+## Building
+
+Run these from a Developer PowerShell for VS, elevated if the install directories are under Program Files:
+
+```powershell
+# Native machine (32-bit only; other platforms are rejected with a build error)
+msbuild native\PedalGainMultiN.vcxproj /p:Configuration=Release /p:Platform=Win32
+
+# GUI (net48)
+dotnet build gui\PedalGainMultiN.GUI.csproj -c Release
+```
+
+`BuzzDir` defaults to `C:\Program Files (x86)\Jeskola\Buzz`. Override it with
+`/p:BuzzDir=…` if Buzz moves.
+
+## What gets deployed
+
+Only `.dll` files are deployed. `.pdb` and `.deps.json` files are never copied.
+
+| Build | File | Destination |
+|---|---|---|
+| native Win32 | `Pedal Gain Multi N.dll` | `C:\Program Files (x86)\Jeskola\Buzz\Gear\Effects` |
+| GUI net48 | `Pedal Gain Multi N.GUI.dll` | `C:\Program Files (x86)\Jeskola\Buzz\Gear\Effects` |
+
+Buzz skips `*GUI.dll` when scanning for machines and loads it as the parameter-window
+GUI of the matching machine DLL.
+
+## How it works
+
+**Channels = tracks.** The machine declares Solo and Mute as track parameters, with 1–24
+tracks. Buzz calls `SetNumTracks(n)` whenever tracks are added or deleted, including on
+load. The machine then calls `SetInputChannelCount(n)` and `SetOutputChannelCount(n + 1)`.
+When the count shrinks, the machine lowers its own count before telling Buzz, and when it
+grows it raises it after, so the audio thread never reads past the arrays Buzz passes in.
+Removed tracks have their Solo/Mute cleared, so a re-added track always starts fresh.
+
+**New vs loaded.** `Save()` writes one version byte. In `Init()`, a machine with no saved
+data is treated as new and given 6 tracks. A machine loaded from a song, template or clone
+keeps its saved track count.
+
+**Multi-I/O.** `MultiWork` gets one interleaved stereo buffer per plug, or `NULL` when a plug
+is unconnected. Direct outs are only computed for connected plugs. If output 0 is
+unconnected, the master mix goes to an internal scratch buffer so the master meters keep
+working.
+
+**GUI link.** The GUI polls every 33 ms with `IMachine.SendGUIMessage`, which
+reaches `HandleGUIMessage` on the C++ side.
+
+- Request: `int32 id` (1 = get meters).
+- Reply (protocol v3): `int32 version (3)`, `int32 channel count N`, then N pairs of
+  pre-fader and post-fader peak floats, then master true-peak L and R floats.
+- Every value is the highest peak since the previous request, and reading resets it.
+  The GUI drops the first reply after the window opens, since it may hold old peaks.
+
+**Meter window link (v1.6).** The meter window sends a separate request: `int32 id` (2)
+and `int32 slot` (1–3). The reply (protocol v4) is `int32 version (4)`, `int32 N`, then
+N × {pre peak, post peak, pre mean square, post mean square}, then master true peak L/R
+and master mean square L/R. A channel's power is the average of its two sides.
+
+The machine keeps a separate set of meter data for each reader (slot 0 for the panel,
+slots 1–3 for meter windows), so reading one never resets another. The panel's request
+and reply are unchanged from v1.5.
+
+**Loudness link (v1.7).** The meter window sends `int32 id` (3) and `int32 slot`. The reply
+(protocol v5) is the v4 reply with version 5, followed by `int32 sampleRate`, `int32 B`,
+`int32 dropped`, B × `float` 100 ms block energies, and the master means `LL`, `LR`, `RR`.
+The machine K-weights the master (BS.1770 high shelf plus high-pass, with coefficients
+derived for the running sample rate) and sums (kL² + kR²) into 100 ms blocks. LUFS =
+−0.691 + 10·log10(block energy). The window computes M, S and gated I from those blocks.
+
+**Compatibility:** v1.6 changes no parameters and no save data, so songs from v1.4 and
+v1.5 load unchanged. A v1.6 GUI paired with a v1.5 machine still works: the panel is
+unaffected, and the meter window shows a notice asking for the newer machine.
+v1.7 is the same: no parameter or save changes, and the v3 (panel) and v4 requests are
+unchanged. A v1.7 GUI with a v1.6 machine falls back to v4, and the loudness strip shows a
+notice.
+- The GUI rebuilds its rows whenever N changes.
+- Meter values are normalised so that 1.0 = 0 dBFS.
+
+Button states are read from the parameters themselves, and clicks go through
+`IParameter.SetValue`. Undo, the pattern editor and save/load therefore stay in sync.
+
+**.NET version.** The GUI targets net48, a deliberate exception to the
+".NET 10 or higher" rule: Buzz 1503 runs on the .NET Framework 4 CLR and cannot
+load a .NET 10 assembly. The source avoids `Math.Clamp` and `MathF`, which
+.NET Framework lacks.
+
+## Verify in Buzz 1503 (v1.7.0)
+
+Not yet checked on a live install:
+
+1. **Opening.** METERS (on the OUT row) opens the meter window. Pressing it again brings
+   the same window to the front. The window stays above Buzz and minimises with it.
+2. **Display.** Channel and master meters move, with RMS solid and peak translucent. The
+   readouts show the held peak and RMS. PRE/POST and CLEAR work.
+3. **Independence.** The panel's meters behave exactly as before while the window is open.
+4. **Channel changes.** Adding or deleting tracks updates the window's meter count.
+5. **Closing.** Deleting the machine, or loading or starting a new song, closes the window
+   without errors.
+6. **Panel width (v1.6.1).** A new instance's parameter window opens wide enough to show
+   the whole panel, including MONO and METERS. A window you've made wider stays as it is.
+7. **Clip lights (v1.6.1).** On a signal that goes over 0 dBFS and then drops back, the
+   clip lights in the panel and the meter window go out about 2 s later. A signal that
+   keeps going over keeps them lit.
+8. **Meter window legend (v1.6.1).** The grey legend shows as three lines beside PRE and
+   CLEAR and is fully readable at the window's default width.
+9. **Panel meters (v1.6.2).** A quiet signal shows only green, and yellow and red appear
+   only near the top. The scale reads −40 −30 −20 −12 −6 −3 0, with more room near 0 dB.
+10. **Meter window look (v1.6.2).**
+    - Unlit clip boxes are grey with a faint red edge.
+    - Ticks show over the bars, and there's no −50 label.
+    - The master pair is in a shaded MASTER section, and the area above 0 dB is tinted.
+    - Readouts go amber above −6 dB.
+    - Muting or soloing channels shows M/S badges and dims the channels you can't hear.
+    - Movement looks smooth.
+11. **Loudness (v1.7).**
+    - The meter window has the loudness strip at the bottom.
+    - With music playing, M and S move and I settles after a few seconds.
+    - RESET restarts I.
+    - TARGET switches between T −23 and T −14, and the LU readout follows.
+12. **Correlation (v1.7).** The C bar sits near +1 on a mono source, lower on wide stereo,
+    and goes red below 0 if one side is inverted. It shows `--` in silence.
+
+## Verified in Buzz 1503 (v1.5.0)
+
+Confirmed on a live Buzz 1503 (32-bit) install:
+
+- **dB faders:** VOL and the master fader read in dB. Double-click resets to 0 dB at about
+  three-quarters of the fader. The mouse wheel moves 1 dB (0.5 dB with Ctrl).
+- **Solo fades:** soloing and unsoloing fade over the Inertia time, with no click.
+- **Mono pan:** with MO on, panning keeps an even loudness, with centre 3 dB down per side.
+- **Meters:** PRE/POST switches the channel meters, and the master shows true peak.
+  Meters fall smoothly, the hold line stays about 3 s, and clip lights latch at 0 dBFS
+  until a meter is clicked.
+- **Labels:** input plugs read `0. In 0`…, outputs `0. Master`, `1. Direct In 0`…
+
+## Verified in Buzz 1503 (v1.2)
+
+Confirmed on a live Buzz 1503 (32-bit) install:
+
+- **New machine:** starts with 6 tracks, 6 input plugs and 7 output plugs (master + 6 direct).
+  The parameter window shows exactly 6 Solo/Mute pairs.
+- **Adding and deleting tracks:** works from the parameter window, the pattern editor and
+  the GUI's −/+. The plugs, parameter window and meter rows all follow.
+- **Deleting a track with a cable attached:** Buzz removes the cable along with the channel.
+- **Save and reload:** a song reloads with its saved track count and Solo/Mute states.
+- **Direct outs:** each follows its input's Mute, with the Inertia fade.
+  (In v1.3 they also follow the channel's Volume fader, and no longer follow Gain.)
+- **GUI:** the meters and the M/S buttons work.
+
+**Songs saved with v1.0 or v1.1 are not compatible.** The parameter layout changed, so
+rebuild any test songs rather than loading them.
+
+## Differences from the managed version
+
+- Parameter changes arrive once per tick in `Tick()` rather than through immediate setters. The Inertia ramp absorbs this.
+- Multi-out (master + direct outs) and a variable channel count (tracks) are new.
+- When nothing is connected to the master output, the meters keep working.
+- This is a separate machine ("Pedal Gain Multi N"). Songs using the managed "Pedal Gain Multi" are not converted automatically.
+
+## License
+
+MIT, as for Pedal Gain Multi. `MachineInterface.h` (© Oskari Tammelin) is not
+included. It is fetched at build time, and its own terms allow its use for
+writing freeware Buzz machines.

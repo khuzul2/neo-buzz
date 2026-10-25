@@ -1,0 +1,2386 @@
+2013-03-14  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FSM/Kick/Kick.cpp:
+	  Fix badly places fmod, which could cause us running into bad audio in
+	  silent buffers. Also avoid names like max for vars (shadow function).
+
+2013-01-25  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FSM/Chorus/Chorus.cpp:
+	* FSM/Chorus2/Chorus2.cpp:
+	* FSM/PanzerDelay/PanzerDelay.cpp:
+	* FSM/Philta/Philta.cpp:
+	* FSM/ScatMan/ScatMan.cpp:
+	* FSM/ScrapMan/ScrapMan.cpp:
+	* FSM/SprayMan/SprayMan.cpp:
+	* FSM/TapMan/TapMan.cpp:
+	* FSM/TunaMan/TunaMan.cpp:
+	* FSM/WahManPro/WahManPro.cpp:
+	  Remove unused variable.
+
+2013-01-25  Stefan Sauer  <ensonic@users.sf.net>
+
+	* gen_makefile_am.sh:
+	  Handle incasesensitive names.
+
+2013-01-25  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FSM/Makefile.am:
+	* FSM/WahPro2/Makefile.am:
+	* FSM/WahPro2/Makefile.am (added):
+	* FSM/WahPro2/WahManPro2.cpp (deleted):
+	* FSM/WahPro2/FSM_WahManPro2.prs (deleted):
+	  Fix machine name.
+
+2013-01-25  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Matilde/Tracker/Makefile.am:
+	  make relative links.
+
+2013-01-06  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FSM/Makefile.am:
+	* FSM/WahManPro2/FSM_WahManPro2.prs:
+	* FSM/WahManPro2/Makefile.am:
+	* FSM/WahManPro2/WahManPro2.cpp:
+	* configure.ac:
+	* FSM/WahManPro2/FSM_WahManPro2.prs (svn:mime-type):
+	* FSM/WahManPro2 (added):
+	* FSM/WahManPro2/FSM_WahManPro2.prs (added):
+	* FSM/WahManPro2/Makefile.am (added):
+	* FSM/WahManPro2/WahManPro2.cpp (added):
+	  Also port WahManPro2 (which comes with a preset).
+
+2013-01-06  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FSM/Chorus/Chorus.cpp:
+	  Fix rounding by using the right version from dspchips.h.
+
+2013-01-01  Stefan Sauer  <ensonic@users.sf.net>
+
+	* configure.ac:
+	  Update autofoo.
+
+2012-08-13  Stefan Sauer  <ensonic@users.sf.net>
+
+	* configure.ac:
+	  Add check for AR to fix the build.
+
+2012-07-26  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FSM/Infector/Infector.cpp:
+	  Remove leftover from debugging.
+
+2012-04-05  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Geonik/BuzzMachines/Mandpluk.h:
+	  Convert the header to use short values instead of the hex
+	  representation of the 2-complements (which contains values that are
+	  out of of range for short).
+
+	* Geonik/BuzzMachines/PrimiFun.cpp:
+	  Fix struct<->class warning.
+
+2012-04-04  Stefan Sauer  <ensonic@users.sf.net>
+
+	patch by: Joe Pea <trusktr@gmail.com>
+
+	* common/MachineInterface.h:
+	  Revert modifications from machineinterface
+
+2012-03-18  Stefan Sauer  <ensonic@users.sf.net>
+
+	* TODO:
+	  Add testing ideas.
+
+2012-03-01  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FSM/Philta/Filters.cpp:
+	* FSM/Philta/Makefile.am:
+	* FSM/Philta/Filters.cpp (added):
+	  Add missing filter implementation.
+
+2012-02-24  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Oomek/Aggressor/303.cpp:
+	  Fix buffer overflow.
+	* Oomek/Aggressor/fft.h:
+	  Make fft func static.
+
+2012-02-24  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FrequencyUnknown/O-Delay/O-Delay.cpp:
+	  Fix gcc error
+ 	  "operation on ‘((mi*)this)->mi::lrbpos’ may be undefined"
+	  [-Werror=sequence-point]
+
+2012-02-24  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Ld/Gate/Makefile.am:
+	* Oomek/Makefile.am:
+	* Ld/Gate/Makefile.am (added):
+	* Oomek/Makefile.am (added):
+	  Add missing makefiles.
+
+2012-02-24  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Makefile.am:
+	* configure.ac:
+	  Add Oomek to the build.
+
+2012-02-24  Stefan Sauer  <ensonic@users.sf.net>
+
+	* HACKING:
+	  Update todo list
+
+2012-02-24  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Zwar/11Stereo/Makefile.am:
+	  Install song.
+	  
+	* Oomek (added):
+	* Oomek/Exciter (added):
+	* Oomek/Exciter/Exciter.int.cpp (added):
+	* Oomek/Exciter/test.bmx (added):
+	* Oomek/Exciter/Exciter.cpp (added):
+	* Oomek/Exciter/909.bmx (added):
+	* Oomek/Exciter/909_excite.bmx (added):
+	* Oomek/Exciter/Exciter.float.cpp (added):
+	* Oomek/Exciter/_README.txt (added):
+	* Oomek/Masterizer (added):
+	* Oomek/Masterizer/Masterizer.cpp (added):
+	* Oomek/Masterizer/Masterizer_test.bmx (added):
+	* Oomek/Masterizer/_README.txt (added):
+	* Oomek/Aggressor (added):
+	* Oomek/Aggressor/Oomek_Aggressor_demo.bmx (added):
+	* Oomek/Aggressor/Oomek_Aggressor_ctrack.bmx (added):
+	* Oomek/Aggressor/fft.h (added):
+	* Oomek/Aggressor/303.cpp (added):
+	* Oomek/Aggressor/Makefile.am (added):
+	  Add sources for Oomek machines and port Aggressor. Thanks a lot to
+	  Oomek!
+
+2012-02-22  Stefan Sauer  <ensonic@users.sf.net>
+
+	* AseDev/a4pFilter01/Makefile.am:
+	* Makefile.am:
+	* configure.ac:
+	* AseDev/a4pFilter01/AseDev_a4pFilter01.html (added):
+	* AseDev/a4pFilter01/AsDev_a4pFilter01.html (deleted):
+	  Fix Author name.
+
+2012-02-22  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Arguru/Distortion/Distortion.cpp:
+	* Arguru/Distortion/Makefile.am:
+	* Arguru/GoaSlicer/goaslicer.cpp:
+	* Arguru/GoaSlicer (added):
+	* Arguru/GoaSlicer/goaslicer.cpp (added):
+	* Arguru/README (added):
+	* Arguru/Distortion/Makefile.am (added):
+	* Arguru/Distortion/Distortion.hpp (deleted):
+	* Arguru/README:
+	  Add a Readme explaining the origin of the sources. Try a backport for
+	  distortion.
+
+	* Ld/Gate/gate.cpp:
+	  Make it build. We can use that to get auxbus working.
+
+	* HACKING:
+	* configure.ac:
+	  Updates for halfported machines.
+	  
+
+2012-02-22  Stefan Sauer  <ensonic@users.sf.net>
+
+	* AsDev/a4pFilter01/AsDev_a4pFilter01.html:
+	* AsDev/a4pFilter01/Makefile.am:
+	* Elenzil/Modulator/Makefile.am:
+	* FrequencyUnknown/Makefile.am:
+	* FrequencyUnknown/O-Delay/Makefile.am:
+	* HACKING:
+	* Makefile.am:
+	* configure.ac:
+	* AsDev/a4pFilter01/AsDev_a4pFilter01.html (added):
+	* FrequencyUnknown/Makefile.am (added):
+	* FrequencyUnknown/O-Delay/FrequencyUnknown_O-Delay_sparkle.bmx (added):
+	* FrequencyUnknown/O-Delay/Makefile.am (added):
+	* FrequencyUnknown/O-Delay/FrequencyUnknown_O-Delay.html (added):
+	* FrequencyUnknown/O-Delay/FrequencyUnknown_O-Delay_delaytest.bmx (added):
+	* Elenzil/Modulator/Elenzil_Modulator.html (added):
+	* FrequencyUnknown/O-Delay/delaytest.bmx (deleted):
+	* FrequencyUnknown/O-Delay/sparkle.bmx (deleted):
+	* FrequencyUnknown/O-Delay/O-Delay.html (deleted):
+	* Elenzil/Modulator/amplitude_modulator.html (deleted):
+	  Added more docs and fixed some doc file names. Ported
+	  FrequencyUnknown/O-Delay.
+
+2012-02-20  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FSM/Infector/FSM_Infector.html:
+	* FSM/Infector/Makefile.am:
+	* FSM/Infector/FSM_Infector.html (added):
+	  Add docs for Infector.
+	* HACKING:
+	  Mention space issues in filenames.
+
+2012-02-18  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Elenzil/Modulator/amplitude_modulator.cpp:
+	* WhiteNoise/StereoDist/Dist.cpp:
+	  Fix more compiler warnings.
+
+2012-02-17  Stefan Sauer  <ensonic@users.sf.net>
+
+	* AsDev/a4pFilter01/a4pFilter01.cpp:
+	* Elenzil/FrequencyBomb/freqbomb.cpp:
+	* Elenzil/Modulator/amplitude_modulator.cpp:
+	* MadBrain/4fm2f/4fm2f.cpp:
+	* MadBrain/Dynamite6/Dynamite6.cpp:
+	* Q/Rebond/rebond.cpp:
+	  Fix compiler warnings/errors.
+
+2012-02-16  flip  <flip10000@users.sf.net>
+
+	* Zwar/Makefile.am:
+	* Zwar/Makefile.am (added):
+	Added Makefile for Zwar.
+
+2012-02-16  flip  <flip10000@users.sf.net>
+
+	* HACKING:
+	* Makefile.am:
+	* configure.ac:
+	Updated HACKING and Makefile.
+
+2012-02-16  flip  <flip10000@users.sf.net>
+
+	* Zwar/11Stereo/11Stereo.bmx:
+	* Zwar/11Stereo/11Stereo.cpp:
+	* Zwar/11Stereo/Makefile.am:
+	* Zwar/Csi/Csi.bmx:
+	* Zwar/Csi/Csi.cpp:
+	* Zwar/Csi/Makefile.am:
+	* Zwar/11Stereo/11Stereo.bmx (svn:mime-type):
+	* Zwar/Csi/Csi.bmx (svn:mime-type):
+	* Zwar/11Stereo (added):
+	* Zwar/11Stereo/11Stereo.cpp (added):
+	* Zwar/11Stereo/11Stereo.bmx (added):
+	* Zwar/11Stereo/Makefile.am (added):
+	* Zwar/Csi/Csi.cpp (added):
+	* Zwar/Csi/Csi.bmx (added):
+	* Zwar/Csi/Makefile.am (added):
+	Ported:
+	Zwar 11Stereo
+	Zwar Csi
+
+2012-02-16  flip  <flip10000@users.sf.net>
+
+	* Zwar/11stereo (deleted):
+	Remove old files.
+
+2012-02-16  flip  <flip10000@users.sf.net>
+
+	* Zwar/11stereo/11-Stereo.cpp (deleted):
+	* Zwar/11stereo/11-Stereo.bmx (deleted):
+	* Zwar/Csi/CSI.CPP (deleted):
+	* Zwar/Csi/CSI.bmx (deleted):
+	Remove old files.
+
+2012-02-16  flip  <flip10000@users.sf.net>
+
+	* AsDev/Makefile.am:
+	* AsDev/a4pFilter01/Makefile.am:
+	* AsDev/a4pFilter01/a4pFilter01.cpp:
+	* Elenzil/FrequencyBomb/Makefile.am:
+	* Elenzil/FrequencyBomb/freqbomb.cpp:
+	* Elenzil/Makefile.am:
+	* Elenzil/Modulator/Makefile.am:
+	* Elenzil/Modulator/amplitude_modulator.cpp:
+	* HACKING:
+	* MadBrain/4fm2f/4fm2f.cpp:
+	* MadBrain/4fm2f/Makefile.am:
+	* MadBrain/Dynamite6/Dynamite6.cpp:
+	* MadBrain/Dynamite6/Makefile.am:
+	* MadBrain/Makefile.am:
+	* Makefile.am:
+	* Q/Makefile.am:
+	* Q/Rebond/Makefile.am:
+	* Q/Rebond/rebond.cpp:
+	* Q/Zfilter/Makefile.am:
+	* Q/Zfilter/zfilter.cpp:
+	* configure.ac:
+	* Q/Zfilter/Makefile.am (added):
+	* Q/Rebond/Makefile.am (added):
+	* Q/Makefile.am (added):
+	* AsDev/Makefile.am (added):
+	* AsDev/a4pFilter01/Makefile.am (added):
+	* Elenzil/FrequencyBomb/Makefile.am (added):
+	* Elenzil/Modulator/Makefile.am (added):
+	* Elenzil/Makefile.am (added):
+	* MadBrain/Dynamite6/Makefile.am (added):
+	* MadBrain/Makefile.am (added):
+	* MadBrain/4fm2f/Makefile.am (added):
+	Ported:
+	AsDev a4pFilter01
+  Elenzil FrequencyBomb
+  Elenzil Modulator
+  MadBrain 4fm2f
+  MadBrain Dynamite6
+  Q Rebond
+  Q Zfilter
+
+2012-02-16  Stefan Sauer  <ensonic@users.sf.net>
+
+	* WhiteNoise/StereoDist/Dist.cpp:
+	  Fix unused variable warnings.
+
+2012-02-16  flip  <flip10000@users.sf.net>
+
+	* HACKING:
+	* Makefile.am:
+	* WhiteNoise/Makefile.am:
+	* WhiteNoise/StereoDist/Dist.cpp:
+	* WhiteNoise/StereoDist/Makefile.am:
+	* configure.ac:
+	* WhiteNoise/StereoDist/Makefile.am (added):
+	* WhiteNoise/Makefile.am (added):
+	  WhiteNoise StereoDist ported.
+
+2012-02-15  Stefan Sauer  <ensonic@users.sf.net>
+
+	* CyanPhase/AtomStereoMeld/atom.cpp:
+	  Add missing DLL_EXPORT.
+
+2012-02-15  Stefan Sauer  <ensonic@users.sf.net>
+
+	* CyanPhase/DTMF/Makefile.am:
+	* HACKING:
+	* Matilde/Tracker/Makefile.am:
+	* TODO:
+	* Matilde/Tracker/Matilde_Tracker2.html (added):
+	* CyanPhase/DTMF/CyanPhase_DTMF_1.txt (added):
+	* CyanPhase/DTMF/CyanPhase_DTMF-1.txt (deleted):
+	  Install docs as well. Update HACKING+TODO.
+
+2012-02-13  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Fuzzpilz/UnwieldyTracker/unwieldy_tracker.cpp:
+	* HACKING:
+	* Fuzzpilz (added):
+	* Fuzzpilz/UnwieldyTracker (added):
+	* Fuzzpilz/UnwieldyTracker/unwieldy_tracker.cpp (added):
+	  And another element.
+
+2012-02-13  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Elenzil/FrequencyBomb/freqbomb.cpp:
+	* Elenzil/Modulator/amplitude_modulator.cpp:
+	* Elenzil/Modulator/amplitude_modulator.html:
+	* Elenzil/Modulator/elenzil_ampmod.bmx:
+	* HACKING:
+	* Elenzil/Modulator/elenzil_ampmod.bmx (svn:mime-type):
+	* Elenzil (added):
+	* Elenzil/FrequencyBomb (added):
+	* Elenzil/FrequencyBomb/freqbomb.cpp (added):
+	* Elenzil/Modulator (added):
+	* Elenzil/Modulator/elenzil_ampmod.bmx (added):
+	* Elenzil/Modulator/amplitude_modulator.cpp (added):
+	* Elenzil/Modulator/amplitude_modulator.html (added):
+	  Add two more machine sources.
+
+2012-02-13  Stefan Sauer  <ensonic@users.sf.net>
+
+	* HACKING:
+	* MadBrain/4fm2f/4fm2f.cpp:
+	* MadBrain/4fm2f/4fm4f.prs:
+	* MadBrain/4fm2f/4fm_wf.c:
+	* MadBrain/4fm2f/waves2.h:
+	* MadBrain/Dynamite6/Dynamite6.cpp:
+	* MadBrain/Dynamite6/Dynamite6.prs:
+	* MadBrain/Dynamite6/Dynamite6_Demo.bmx:
+	* MadBrain/Dynamite6/Dynamite6.prs (svn:mime-type):
+	* MadBrain/4fm2f/4fm4f.prs (svn:mime-type):
+	* MadBrain/Dynamite6/Dynamite6_Demo.bmx (svn:mime-type):
+	* MadBrain (added):
+	* MadBrain/Dynamite6 (added):
+	* MadBrain/Dynamite6/Dynamite6.cpp (added):
+	* MadBrain/Dynamite6/Dynamite6.prs (added):
+	* MadBrain/Dynamite6/Dynamite6_Demo.bmx (added):
+	* MadBrain/4fm2f (added):
+	* MadBrain/4fm2f/4fm2f.cpp (added):
+	* MadBrain/4fm2f/4fm4f.prs (added):
+	* MadBrain/4fm2f/4fm_wf.c (added):
+	* MadBrain/4fm2f/waves2.h (added):
+	  Add two more machine sources.
+
+2012-02-13  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Zwar/Csi/CSI.CPP:
+	* Zwar/Csi/CSI.bmx:
+	* Zwar/Csi/CSI.bmx (svn:mime-type):
+	* Zwar/Csi (added):
+	* Zwar/Csi/CSI.CPP (added):
+	* Zwar/Csi/CSI.bmx (added):
+	* HACKING:
+	  Add another Effect.
+
+2012-02-13  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Ld/SLimit/slimit.cpp:
+	  Fix setting output mode.
+
+2012-02-13  Stefan Sauer  <ensonic@users.sf.net>
+
+	* TODO:
+	  A plan for machine docs.
+
+2012-02-13  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Arguru/Compressor/Compressor.cpp:
+	* Arguru/Compressor/Compressor.hpp:
+	* Arguru/Distortion/Distortion.cpp:
+	* Arguru/Distortion/Distortion.hpp:
+	* CyanPhase/Notch/notch.cpp:
+	* FSM/PanzerDelay/PanzerDelay.cpp:
+	* FrequencyUnknown/O-Delay/O-Delay.cpp:
+	* FrequencyUnknown/O-Delay/delaytest.bmx:
+	* FrequencyUnknown/O-Delay/sparkle.bmx:
+	* HACKING:
+	* Q/Rebond/rebond.cpp:
+	* Q/Zfilter/zfilter.cpp:
+	* WhiteNoise/StereoDist/Dist.cpp:
+	* WhiteNoise/WhiteChorus/Chorus.cpp:
+	* Zwar/11stereo/11-Stereo.bmx:
+	* Zwar/11stereo/11-Stereo.cpp:
+	* FrequencyUnknown/O-Delay/sparkle.bmx (svn:mime-type):
+	* FrequencyUnknown/O-Delay/delaytest.bmx (svn:mime-type):
+	* Zwar/11stereo/11-Stereo.bmx (svn:mime-type):
+	* FrequencyUnknown (added):
+	* FrequencyUnknown/O-Delay (added):
+	* FrequencyUnknown/O-Delay/O-Delay.html (added):
+	* FrequencyUnknown/O-Delay/delaytest.bmx (added):
+	* FrequencyUnknown/O-Delay/sparkle.bmx (added):
+	* FrequencyUnknown/O-Delay/O-Delay.cpp (added):
+	* Zwar (added):
+	* Zwar/11stereo (added):
+	* Zwar/11stereo/11-Stereo.cpp (added):
+	* Zwar/11stereo/11-Stereo.bmx (added):
+	* Q (added):
+	* Q/Zfilter (added):
+	* Q/Zfilter/zfilter.cpp (added):
+	* Q/Rebond (added):
+	* Q/Rebond/rebond.cpp (added):
+	* Arguru (added):
+	* Arguru/Compressor (added):
+	* Arguru/Compressor/Compressor.hpp (added):
+	* Arguru/Compressor/Compressor.cpp (added):
+	* Arguru/Distortion (added):
+	* Arguru/Distortion/Distortion.cpp (added):
+	* Arguru/Distortion/Distortion.hpp (added):
+	* CyanPhase/Notch (added):
+	* CyanPhase/Notch/notch.cpp (added):
+	* WhiteNoise (added):
+	* WhiteNoise/WhiteChorus (added):
+	* WhiteNoise/WhiteChorus/Chorus.cpp (added):
+	* WhiteNoise/StereoDist (added):
+	* WhiteNoise/StereoDist/Dist.cpp (added):
+	  Adding more sources and updating hacking file.
+
+2012-02-10  flip  <flip10000@users.sf.net>
+
+	* Makefile.am:
+	* configure.ac:
+	* Ld/SLimit/slimit.cpp:
+	* Ld/Makefile.am:
+	* Ld/SLimit/Makefile.am:
+	  SLimit ported.
+
+2012-02-10  Stefan Sauer  <ensonic@users.sf.net>
+
+	* AsDev/a4pFilter01/a4pFilter01.cpp:
+	* HACKING:
+	* Ld/Gate/gate.cpp:
+	* Ld/SLimit/slimit.cpp:
+	* Ld (added):
+	* Ld/Gate (added):
+	* Ld/Gate/gate.cpp (added):
+	* Ld/SLimit (added):
+	* Ld/SLimit/slimit.cpp (added):
+	* AsDev (added):
+	* AsDev/a4pFilter01 (added):
+	* AsDev/a4pFilter01/a4pFilter01.cpp (added):
+	  Add more sources. Update the HACKING file.
+
+2011-08-22  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FSM/ArpMan/ArpMan.cpp:
+	  Thanks stupid clipboard for eventually pasting totaly unrelated crap
+	  into the source code.
+
+2011-08-22  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FSM/ArpMan/ArpMan.cpp:
+	  Improve the description for the ArpType parameter.
+
+2011-08-20  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Chimp/Makefile.am:
+	* Chimp/PitchShifter/Makefile.am:
+	* Chimp/PitchShifter/PitchShifter.cpp:
+	* Makefile.am:
+	* configure.ac:
+	* Chimp (added):
+	* Chimp/Makefile.am (added):
+	* Chimp/PitchShifter (added):
+	* Chimp/PitchShifter/Makefile.am (added):
+	* Chimp/PitchShifter/PitchShifter.cpp (added):
+	  Add another effect. Also fix the memset use in the plugin.
+
+2011-08-20  Stefan Sauer  <ensonic@users.sf.net>
+
+	* CyanPhase/AtomStereoMeld/Makefile.am:
+	* CyanPhase/AtomStereoMeld/atom.cpp:
+	* CyanPhase/Makefile.am:
+	* configure.ac:
+	* CyanPhase/AtomStereoMeld (added):
+	* CyanPhase/AtomStereoMeld/atom.cpp (added):
+	* CyanPhase/AtomStereoMeld/Makefile.am (added):
+	  Add another effect.
+
+2011-08-20  Stefan Sauer  <ensonic@users.sf.net>
+
+	* Jeskola/Distortion/Distortion.cpp:
+	* Jeskola/Distortion/Makefile.am:
+	* Jeskola/Makefile.am:
+	* configure.ac:
+	* Jeskola/Distortion/Makefile.am (added):
+	  Port another machine.
+
+2011-08-20  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FSM/Makefile.am:
+	* FSM/ScatMan/Makefile.am:
+	* FSM/ScatMan/ScatMan.cpp:
+	* FSM/ScrapMan/Makefile.am:
+	* FSM/ScrapMan/ScrapMan.cpp:
+	* FSM/SprayMan/Makefile.am:
+	* FSM/SprayMan/SprayMan.cpp:
+	* FSM/TapMan/Makefile.am:
+	* FSM/TapMan/TapMan.cpp:
+	* FSM/TunaMan/Makefile.am:
+	* FSM/TunaMan/TunaMan.cpp:
+	* FSM/WahMan/WahMan.cpp:
+	* FSM/WahManPro/Makefile.am:
+	* FSM/WahManPro/WahManPro.cpp:
+	* configure.ac:
+	* FSM/TapMan/Makefile.am (added):
+	* FSM/ScatMan/Makefile.am (added):
+	* FSM/SprayMan/Makefile.am (added):
+	* FSM/WahManPro/Makefile.am (added):
+	* FSM/TunaMan/Makefile.am (added):
+	* FSM/ScrapMan/Makefile.am (added):
+	  Port more FSM effects.
+
+2011-08-20  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FSM/Makefile.am:
+	* FSM/Philta/Makefile.am:
+	* FSM/Philta/Philta.cpp:
+	* configure.ac:
+	* FSM/Philta/Makefile.am (added):
+	  Ported Philta.
+
+2011-06-25  Stefan Sauer  <ensonic@users.sf.net>
+
+	* FSM/Infector/Infector.cpp:
+	  Fix array size calculation for 64bit arch.
+
+2011-01-28  Stefan Kost  <ensonic@users.sf.net>
+
+	* Jeskola/Mul/Makefile.am:
+	* Jeskola/Mul/Mul.cpp:
+	* common/auxbus/EditorDlg.cpp:
+	* common/auxbus/EditorDlg.h:
+	* common/auxbus/StdAfx.cpp:
+	* common/auxbus/StdAfx.h:
+	* common/auxbus/auxbus.cpp:
+	* common/auxbus/auxbus.dsp:
+	* common/auxbus/auxbus.h:
+	* common/auxbus/auxbus.rc:
+	* common/auxbus/internal.h:
+	* common/auxbus/resource.h:
+	* configure.ac:
+	* common/auxbus/auxbus.cpp (svn:keywords, svn:eol-style):
+	* common/auxbus/auxbus.dsp (svn:eol-style):
+	* common/auxbus/resource.h (svn:keywords, svn:eol-style):
+	* common/auxbus/auxbus.h (svn:keywords, svn:eol-style):
+	* common/auxbus/EditorDlg.h (svn:keywords, svn:eol-style):
+	* common/auxbus/StdAfx.cpp (svn:keywords, svn:eol-style):
+	* common/auxbus/EditorDlg.cpp (svn:keywords, svn:eol-style):
+	* Jeskola/Mul/Makefile.am (svn:keywords, svn:eol-style):
+	* common/auxbus/StdAfx.h (svn:keywords, svn:eol-style):
+	* common/auxbus/internal.h (svn:keywords, svn:eol-style):
+	* common/auxbus (added):
+	* common/auxbus/StdAfx.h (added):
+	* common/auxbus/internal.h (added):
+	* common/auxbus/EditorDlg.h (added):
+	* common/auxbus/auxbus.cpp (added):
+	* common/auxbus/auxbus.rc (added):
+	* common/auxbus/StdAfx.cpp (added):
+	* common/auxbus/auxbus.dsp (added):
+	* common/auxbus/resource.h (added):
+	* common/auxbus/auxbus.h (added):
+	* common/auxbus/EditorDlg.cpp (added):
+	* Jeskola/Mul/Makefile.am (added):
+	  Mul auxbus element is compiling. Move Ausbus lib to the right place.
+	  Needs a better cocncept for the UI (AB_ShowEditor).
+
+2010-09-21  Stefan Kost  <ensonic@users.sf.net>
+
+	* Makefile.am:
+	  Remove some more shave leftovers.
+
+2010-09-01  Stefan Kost  <ensonic@users.sf.net>
+
+	* Geonik/BuzzMachines/Makefile.am:
+	  Commit the changes again.
+
+2010-09-01  Stefan Kost  <ensonic@users.sf.net>
+
+	* Geonik/BuzzMachines/Makefile.am:
+	  Fix la cleaning rule.
+
+2010-08-15  Stefan Kost  <ensonic@users.sf.net>
+
+	* Geonik/DspClasses/BuzzOsc.h:
+	* Jeskola/Freeverb/denormals.h:
+	  Fix pointer aliasing.
+
+	* Makk/M3/M3.cpp:
+	  Fix uninitialized var (typo).
+
+2010-06-18  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/Infector/Track.cpp:
+	  Don't use uninitialized variable.
+
+2010-05-21  Stefan Kost  <ensonic@users.sf.net>
+
+	* Jeskola/Freeverb/Makefile.am:
+	* common/mdk/Makefile.am:
+	  mdk needs dsplib, link it here.
+
+	* common/Makefile.am:
+	  Add missing includes (so that they would get disted).
+
+2010-05-19  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/COPYING:
+	* FSM/Makefile.am:
+	* FSM/COPYING (added):
+	  Add a COPYING file as we have clarified the license for these long
+	  ago.
+
+	* NEWS:
+	  Bump version here to so that we can test make dist.
+
+2010-05-18  Stefan Kost  <ensonic@users.sf.net>
+
+	* README:
+	  Update README.
+
+	* COPYING:
+	* COPYING (added):
+	  Tell more about the legal status (and avoid that we get a GPL COPYING
+	  file from automake placed here).
+	
+
+2010-05-18  Stefan Kost  <ensonic@users.sf.net>
+
+	* HACKING:
+	* exclude.lst:
+	* exclude.lst (added):
+	  Tell how to make a source snapshot (and include an initial exclude-list).
+
+2010-05-17  Stefan Kost  <ensonic@users.sf.net>
+
+	* CyanPhase/DTMF/CyanPhase_DTMF-1.txt:
+	  Add a help file (not yet installed).
+
+	* FSM/Chorus/FSM_Chorus.prs:
+	* FSM/Chorus/Makefile.am:
+	  Add presets.
+
+	* configure.ac:
+	  Bump version.
+
+	* CyanPhase/DTMF/CyanPhase_DTMF-1.txt (svn:eol-style):
+	* FSM/Chorus/FSM_Chorus.prs (svn:mime-type):
+	* FSM/Chorus/FSM_Chorus.prs (added):
+	* CyanPhase/DTMF/CyanPhase_DTMF-1.txt (added):
+
+2010-05-13  Stefan Kost  <ensonic@users.sf.net>
+
+	* autogen.sh:
+	  Also kill shave from default args.
+
+2010-04-16  Stefan Kost  <ensonic@users.sf.net>
+
+	* configure.ac:
+	* shave.in (deleted):
+	* shave-libtool.in (deleted):
+	  Get rid of shave and switch to automake silent rules if available.
+
+2010-01-05  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/Kick/Kick.cpp:
+	  whitespace.
+
+	* Geonik/BuzzMachines/Makefile.am:
+	* Geonik/BuzzMachines/Mandpluk.h:
+	* Geonik/BuzzMachines/Mandpluk.sw:
+	* Geonik/BuzzMachines/Omega1.cpp:
+	* Geonik/BuzzMachines/PrimiFun.cpp:
+	* Geonik/DspClasses/Adsr.h:
+	* Geonik/DspClasses/Buffer.h:
+	* Geonik/DspClasses/BuzzOsc.h:
+	* Geonik/DspClasses/ColorMaps.h:
+	* Geonik/DspClasses/DcOffset.cpp:
+	* Geonik/DspClasses/DcOffset.h:
+	* Geonik/DspClasses/Delay.h:
+	* Geonik/DspClasses/DspAdd.h:
+	* Geonik/DspClasses/DspClasses.cpp:
+	* Geonik/DspClasses/DspClasses.h:
+	* Geonik/DspClasses/Fft.h:
+	* Geonik/DspClasses/Filter.h:
+	* Geonik/DspClasses/Generators.h:
+	* Geonik/DspClasses/InvSqrt.cpp:
+	* Geonik/DspClasses/LookUp.h:
+	* Geonik/DspClasses/Noise.h:
+	* Geonik/DspClasses/Saturator.h:
+	* Geonik/DspClasses/Sqrt.cpp:
+	* Geonik/DspClasses/Volume.h:
+	* Geonik/DspClasses/Wave.h:
+	* Geonik/DspClasses/WinBase.cpp:
+	* Geonik/Makefile.am:
+	* Geonik/readme.txt:
+	* Makefile.am:
+	* Matilde/Tracker/Track.cpp:
+	* Matilde/Tracker/Tracker.cpp:
+	* configure.ac:
+	  Added & ported first two Geonik machines.
+	
+	* Matilde/Tracker (svn:ignore):
+	* Geonik/BuzzMachines/Omega1.cpp (svn:keywords, svn:eol-style):
+	* FSM/PanzerDelay (svn:ignore):
+	* FSM/Chorus2 (svn:ignore):
+	* Jeskola/Trilok (svn:ignore):
+	* FSM/dspchips (svn:ignore):
+	* Geonik/BuzzMachines (svn:ignore):
+	* Elak (svn:ignore):
+	* CyanPhase (svn:ignore):
+	* Geonik/DspClasses/DcOffset.h (svn:keywords, svn:eol-style):
+	* common (svn:ignore):
+	* Geonik/DspClasses/DspClasses.h (svn:keywords, svn:eol-style):
+	* FSM/ScrapMan (svn:ignore):
+	* FSM (svn:ignore):
+	* Geonik/DspClasses/Filter.h (svn:keywords, svn:eol-style):
+	* Geonik/DspClasses/Wave.h (svn:keywords, svn:eol-style):
+	* Jeskola/Freeverb (svn:ignore):
+	* FSM/TunaMan (svn:ignore):
+	* Makk/M4 (svn:ignore):
+	* Makk/M3 (svn:ignore):
+	* FSM/Philta (svn:ignore):
+	* Geonik/DspClasses/Sqrt.cpp (svn:keywords, svn:eol-style):
+	* Ensonic (svn:ignore):
+	* Geonik/DspClasses/Noise.h (svn:keywords, svn:eol-style):
+	* Jeskola/Noise (svn:ignore):
+	* Geonik/BuzzMachines/Mandpluk.sw (svn:mime-type):
+	* Makk/M4/waves (svn:ignore):
+	* Geonik/BuzzMachines/Makefile.am (svn:keywords, svn:eol-style):
+	* Geonik/DspClasses/DcOffset.cpp (svn:keywords, svn:eol-style):
+	* Elak/Dist2 (svn:ignore):
+	* Geonik/DspClasses/ColorMaps.h (svn:keywords, svn:eol-style):
+	* FSM/Infector (svn:ignore):
+	* FSM/Kick (svn:ignore):
+	* Jeskola/Delay (svn:ignore):
+	* Geonik/readme.txt (svn:eol-style):
+	* common/dsplib (svn:ignore):
+	* Geonik/DspClasses/Adsr.h (svn:keywords, svn:eol-style):
+	* Jeskola/CrossDelay (svn:ignore):
+	* Geonik (svn:ignore):
+	* Geonik/Makefile.am (svn:keywords, svn:eol-style):
+	* FSM/ArpMan (svn:ignore):
+	* Geonik/DspClasses/Delay.h (svn:keywords, svn:eol-style):
+	* Geonik/DspClasses/WinBase.cpp (svn:keywords, svn:eol-style):
+	* FSM/TapMan (svn:ignore):
+	* Geonik/DspClasses (svn:ignore):
+	* Geonik/DspClasses/LookUp.h (svn:keywords, svn:eol-style):
+	* CyanPhase/DTMF (svn:ignore):
+	* Geonik/DspClasses/DspClasses.cpp (svn:keywords, svn:eol-style):
+	* Ensonic/CallbackTester (svn:ignore):
+	* Geonik/DspClasses/BuzzOsc.h (svn:keywords, svn:eol-style):
+	* common/mdk (svn:ignore):
+	* Jeskola/Distortion (svn:ignore):
+	* Geonik/DspClasses/DspAdd.h (svn:keywords, svn:eol-style):
+	*  (svn:ignore):
+	* Geonik/DspClasses/InvSqrt.cpp (svn:keywords, svn:eol-style):
+	* FSM/PhatMan (svn:ignore):
+	* Geonik/DspClasses/Saturator.h (svn:keywords, svn:eol-style):
+	* Matilde (svn:ignore):
+	* Geonik/DspClasses/Volume.h (svn:keywords, svn:eol-style):
+	* Geonik/BuzzMachines/Mandpluk.h (svn:keywords, svn:eol-style):
+	* FSM/SprayMan (svn:ignore):
+	* Jeskola/Ninja (svn:ignore):
+	* Matilde/Tracker/SurfsDSPLib (svn:ignore):
+	* Geonik/DspClasses/Fft.h (svn:keywords, svn:eol-style):
+	* FSM/Chorus (svn:ignore):
+	* Jeskola (svn:ignore):
+	* Elak/SVF (svn:ignore):
+	* Jeskola/Mul (svn:ignore):
+	* FSM/WahManPro (svn:ignore):
+	* m4 (svn:ignore):
+	* FSM/ScatMan (svn:ignore):
+	* Makk (svn:ignore):
+	* Geonik/BuzzMachines/PrimiFun.cpp (svn:keywords, svn:eol-style):
+	* Geonik/DspClasses/Generators.h (svn:keywords, svn:eol-style):
+	* Geonik/DspClasses/Buffer.h (svn:keywords, svn:eol-style):
+	* FSM/WahMan (svn:ignore):
+	* Geonik (added):
+	* Geonik/BuzzMachines (added):
+	* Geonik/BuzzMachines/Mandpluk.h (added):
+	* Geonik/BuzzMachines/Mandpluk.sw (added):
+	* Geonik/BuzzMachines/Makefile.am (added):
+	* Geonik/BuzzMachines/Omega1.cpp (added):
+	* Geonik/BuzzMachines/PrimiFun.cpp (added):
+	* Geonik/DspClasses (added):
+	* Geonik/DspClasses/Adsr.h (added):
+	* Geonik/DspClasses/DcOffset.h (added):
+	* Geonik/DspClasses/Delay.h (added):
+	* Geonik/DspClasses/DspClasses.cpp (added):
+	* Geonik/DspClasses/DspAdd.h (added):
+	* Geonik/DspClasses/ColorMaps.h (added):
+	* Geonik/DspClasses/BuzzOsc.h (added):
+	* Geonik/DspClasses/InvSqrt.cpp (added):
+	* Geonik/DspClasses/Wave.h (added):
+	* Geonik/DspClasses/DspClasses.h (added):
+	* Geonik/DspClasses/Volume.h (added):
+	* Geonik/DspClasses/LookUp.h (added):
+	* Geonik/DspClasses/Generators.h (added):
+	* Geonik/DspClasses/Buffer.h (added):
+	* Geonik/DspClasses/Noise.h (added):
+	* Geonik/DspClasses/Fft.h (added):
+	* Geonik/DspClasses/WinBase.cpp (added):
+	* Geonik/DspClasses/Saturator.h (added):
+	* Geonik/DspClasses/Sqrt.cpp (added):
+	* Geonik/DspClasses/Filter.h (added):
+	* Geonik/DspClasses/DcOffset.cpp (added):
+	* Geonik/Makefile.am (added):
+	* Geonik/readme.txt (added):
+	  svn maintenance.
+
+2009-07-30  Patric Schmitz  <berzerka@users.sf.net>
+
+	* FSM/Chorus/Chorus.cpp:
+	* FSM/Chorus2/Chorus2.cpp:
+	  Insert dummy integer attribute into avals to make gcc warning
+	  about type-punned pointer breaking strict aliasing go away.
+	* Jeskola/Freeverb/main.cpp:
+	* Jeskola/Freeverb/revmodel.cpp:
+	* Makk/M3/M3.cpp:
+	* Makk/M4/M4.cpp:
+	  Add explicit casts from floats to integers.
+	* Makk/M4/waves/waves.cpp:
+	  Newline at EOF.
+	* Matilde/Tracker/Tracker.cpp:
+	  Initialize HWND with 0 instead of NULL for when it's not a pointer type.
+
+2009-06-12  Stefan Kost  <ensonic@users.sf.net>
+
+	* HACKING:
+	* Makk/M4/M4.cpp:
+	  Fixing charset and add a note to HACKING.
+
+2009-06-11  Krzysztof Foltman  <kfoltman@users.sf.net>
+
+	* common/dsplib/dsplib.cpp:
+	* common/mdk/mdkimp.cpp:
+	  Use bml's implementations of dsplib functions.
+
+2009-05-20  Stefan Kost  <ensonic@users.sf.net>
+
+	* Makk/M4/waves/303_01.h:
+	* Makk/M4/waves/303_02.h:
+	* Makk/M4/waves/303_03.h:
+	* Makk/M4/waves/303_04.h:
+	* Makk/M4/waves/303_05.h:
+	* Makk/M4/waves/303_06.h:
+	* Makk/M4/waves/303_07.h:
+	* Makk/M4/waves/303_08.h:
+	* Makk/M4/waves/303_09.h:
+	* Makk/M4/waves/303_10.h:
+	* Makk/M4/waves/303_11.h:
+	* Makk/M4/waves/303_12.h:
+	* Makk/M4/waves/BASS01.h:
+	* Makk/M4/waves/BASS02.h:
+	* Makk/M4/waves/BASS03.h:
+	* Makk/M4/waves/BASS04.h:
+	* Makk/M4/waves/BASS05.h:
+	* Makk/M4/waves/BASS06.h:
+	* Makk/M4/waves/BASS07.h:
+	* Makk/M4/waves/BASS08.h:
+	* Makk/M4/waves/BASS09.h:
+	* Makk/M4/waves/BASS10.h:
+	* Makk/M4/waves/BASS11.h:
+	* Makk/M4/waves/BASS12.h:
+	* Makk/M4/waves/BASS13.h:
+	* Makk/M4/waves/BASS14.h:
+	* Makk/M4/waves/BASS15.h:
+	* Makk/M4/waves/BASS16.h:
+	* Makk/M4/waves/BASS17.h:
+	* Makk/M4/waves/BASS18.h:
+	* Makk/M4/waves/BASS19.h:
+	* Makk/M4/waves/HARD01.h:
+	* Makk/M4/waves/HARD02.h:
+	* Makk/M4/waves/HARD03.h:
+	* Makk/M4/waves/HARD04.h:
+	* Makk/M4/waves/HARD05.h:
+	* Makk/M4/waves/HARD06.h:
+	* Makk/M4/waves/HARD07.h:
+	* Makk/M4/waves/SAW01.h:
+	* Makk/M4/waves/SAW02.h:
+	* Makk/M4/waves/SAW03.h:
+	* Makk/M4/waves/SAW04.h:
+	* Makk/M4/waves/SAW05.h:
+	* Makk/M4/waves/SAW06.h:
+	* Makk/M4/waves/SAW07.h:
+	* Makk/M4/waves/SAW08.h:
+	* Makk/M4/waves/SAW09.h:
+	* Makk/M4/waves/SAW10.h:
+	* Makk/M4/waves/SAW_202.h:
+	* Makk/M4/waves/SAW_DIGI.h:
+	* Makk/M4/waves/SAW_MOOG.h:
+	* Makk/M4/waves/SAW_SPEK.h:
+	* Makk/M4/waves/SIN_DIGI.h:
+	* Makk/M4/waves/SMOOTH01.h:
+	* Makk/M4/waves/SMOOTH02.h:
+	* Makk/M4/waves/SMOOTH03.h:
+	* Makk/M4/waves/SMOOTH04.h:
+	* Makk/M4/waves/SMOOTH05.h:
+	* Makk/M4/waves/SPEK01.h:
+	* Makk/M4/waves/SPEK02.h:
+	* Makk/M4/waves/SPEK03.h:
+	* Makk/M4/waves/SPEK04.h:
+	* Makk/M4/waves/SPEK05.h:
+	* Makk/M4/waves/SPEK06.h:
+	* Makk/M4/waves/SPEK07.h:
+	* Makk/M4/waves/SPEK08.h:
+	* Makk/M4/waves/SPEK09.h:
+	* Makk/M4/waves/SPEK10.h:
+	* Makk/M4/waves/SPEK11.h:
+	* Makk/M4/waves/SPEK12.h:
+	* Makk/M4/waves/SQUARE01.h:
+	* Makk/M4/waves/SQUARE02.h:
+	* Makk/M4/waves/SQUARE03.h:
+	* Makk/M4/waves/SQUARE04.h:
+	* Makk/M4/waves/SQUARE05.h:
+	* Makk/M4/waves/SQUARE06.h:
+	* Makk/M4/waves/SQUARE07.h:
+	* Makk/M4/waves/SQUARE08.h:
+	* Makk/M4/waves/SQUARE09.h:
+	* Makk/M4/waves/SQUARE10.h:
+	* Makk/M4/waves/SQUA_DIG.h:
+	* Makk/M4/waves/SQUA_SPK.h:
+	* Makk/M4/waves/SYNTH01.h:
+	* Makk/M4/waves/SYNTH02.h:
+	* Makk/M4/waves/SYNTH03.h:
+	* Makk/M4/waves/SYNTH04.h:
+	* Makk/M4/waves/SYNTH05.h:
+	* Makk/M4/waves/SYNTH06.h:
+	* Makk/M4/waves/SYNTH07.h:
+	* Makk/M4/waves/SYNTH08.h:
+	* Makk/M4/waves/SYNTH09.h:
+	* Makk/M4/waves/SYNTH10.h:
+	* Makk/M4/waves/SYNTH11.h:
+	* Makk/M4/waves/SYNTH12.h:
+	* Makk/M4/waves/SYNTH13.h:
+	* Makk/M4/waves/SYNTH14.h:
+	* Makk/M4/waves/SYNTH15.h:
+	* Makk/M4/waves/SYNTH16.h:
+	* Makk/M4/waves/SYNTH17.h:
+	* Makk/M4/waves/SYNTH18.h:
+	* Makk/M4/waves/SYNTH19.h:
+	* Makk/M4/waves/SYNTH20.h:
+	* Makk/M4/waves/SYNTH21.h:
+	* Makk/M4/waves/SYNTH22.h:
+	* Makk/M4/waves/SYNTH23.h:
+	* Makk/M4/waves/SYNTH24.h:
+	* Makk/M4/waves/SYNTH25.h:
+	* Makk/M4/waves/SYNTH26.h:
+	* Makk/M4/waves/SYNTH27.h:
+	* Makk/M4/waves/SYNTH28.h:
+	* Makk/M4/waves/SYNTH29.h:
+	* Makk/M4/waves/SYNTH30.h:
+	* Makk/M4/waves/SYNTH31.h:
+	* Makk/M4/waves/SYNTH32.h:
+	* Makk/M4/waves/SYNTH33.h:
+	* Makk/M4/waves/SYNTH34.h:
+	* Makk/M4/waves/SYNTH35.h:
+	* Makk/M4/waves/SYNTH36.h:
+	* Makk/M4/waves/SYNTH37.h:
+	* Makk/M4/waves/SYNTH38.h:
+	* Makk/M4/waves/SYNTH39.h:
+	* Makk/M4/waves/SYNTH40.h:
+	* Makk/M4/waves/SYNTH41.h:
+	* Makk/M4/waves/TRI01.h:
+	* Makk/M4/waves/TRI02.h:
+	* Makk/M4/waves/TRI_DIGI.h:
+	* Makk/M4/waves/wav2h.sh:
+	* Makk/M4/waves/wavename.inc:
+	  Add newlines to eof, as some gccs are picky about it.
+
+2009-05-14  Stefan Kost  <ensonic@users.sf.net>
+
+	* Matilde/Tracker/Tracker.cpp:
+	  Do the V1 API fix for attributes too.
+
+2009-05-14  Stefan Kost  <ensonic@users.sf.net>
+
+	* Matilde/Tracker/Tracker.cpp:
+	  V1 API variants where one octave down, as we haven't initialized the
+	  hidden V2 params to their defaults.
+
+2009-05-10  Stefan Kost  <ensonic@users.sf.net>
+
+	* autogen.sh:
+	  aclocal gather all the necessary macros. And libtoolize installs m4 files.
+	  They must be present before running aclocal. Without this patch, autoconf
+	  complains about unknown libtool macros (using 2.2.6a-4 on Debian).
+
+2009-05-09  Stefan Kost  <ensonic@users.sf.net>
+
+	* Elak/Dist2/Elak_Dist2.bmx:
+	* Elak/Dist2/Makefile.am:
+	* Elak/SVF/Elak_SVF.bmx:
+	* Elak/SVF/Makefile.am:
+	* Jeskola/Ninja/Jeskola_NiNjA_dElaY.bmx:
+	* Jeskola/Ninja/Makefile.am:
+	* Makk/M4/Makefile.am:
+	* Makk/M4/Makk_M4.bmw:
+	* Makk/M4/Makk_M4.bmw (added):
+	* Jeskola/Ninja/Jeskola_NiNjA_dElaY.bmx (added):
+	* Elak/Dist2/Elak_Dist2.bmx (added):
+	* Elak/SVF/Elak_SVF.bmx (added):
+	  Add more demo songs and fix Elak/Dist name to be Dist2.
+
+2009-05-07  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/PhatMan/PhatMan.cpp:
+	  Comment out leftover printf.
+
+2009-05-07  Stefan Kost  <ensonic@users.sf.net>
+
+	* Jeskola/README:
+	  First quick study, what we need to rewrite Jeskola Bass from scratch.
+
+2009-05-06  Stefan Kost  <ensonic@users.sf.net>
+
+	* Jeskola/CrossDelay/CrossDelay.cpp:
+	* Jeskola/CrossDelay/Makefile.am:
+	* Jeskola/Makefile.am:
+	* configure.ac:
+	* Jeskola/CrossDelay (added):
+	* Jeskola/CrossDelay/Makefile.am (added):
+	* Jeskola/CrossDelay/CrossDelay.cpp (added):
+	  Rewrite CrossDelay from scratch (no source available).
+
+2009-05-05  Stefan Kost  <ensonic@users.sf.net>
+
+	* Makk/M3/Makefile.am:
+	* Makk/M3/Makk_M3.prs:
+	* Makk/M4/Makefile.am:
+	* Makk/M4/Makk_M4.prs:
+	* Makk/M3/Makk_M3.prs (added):
+	* Makk/M4/Makk_M4.prs (added):
+	  Yes, more presets.
+
+2009-05-05  Stefan Kost  <ensonic@users.sf.net>
+
+	* HACKING:
+	  One more error added.
+
+	* Jeskola/Delay/Delay.cpp:
+	* Jeskola/Delay/Makefile.am:
+	* Jeskola/Makefile.am:
+	* configure.ac:
+	* Jeskola/Delay/Makefile.am (added):
+	  Ported one more.
+
+2009-05-05  Stefan Kost  <ensonic@users.sf.net>
+
+	* CyanPhase/DTMF/Makefile.am:
+	  Fix element name.
+
+2009-05-05  Stefan Kost  <ensonic@users.sf.net>
+
+	* Jeskola/Noise/Makefile.am:
+	* Jeskola/Noise/Makefile.am (added):
+	  Add missing Makefile.am.
+
+2009-05-04  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/dspchips/DSPChips.h:
+	* Matilde/Tracker/BuzzInstrument.cpp:
+	* Matilde/Tracker/BuzzSample.cpp:
+	* Matilde/Tracker/SurfsDSPLib/SRF_Amp.h:
+	* Matilde/Tracker/Tracker.cpp:
+	  Build warning fixes.
+
+2009-05-04  Stefan Kost  <ensonic@users.sf.net>
+
+	* CyanPhase/DTMF/DTMF-1.cpp:
+	* CyanPhase/DTMF/Makefile.am:
+	* Ensonic/CallbackTester/CallbackTester.cpp:
+	* Jeskola/Freeverb/main.cpp:
+	* Jeskola/Freeverb/revmodel.cpp:
+	* Jeskola/Makefile.am:
+	* Jeskola/Ninja/Ninja.cpp:
+	* Jeskola/Noise/Noise.cpp:
+	* Makk/M3/M3.cpp:
+	* Makk/M3/Makefile.am:
+	* Makk/M4/M4.cpp:
+	* Makk/M4/Makefile.am:
+	* common/dsplib/dsplib.cpp:
+	  Masssive dsplib usage fix. We nned to call DSP_Init from the plugins Init
+	  as we link statically to dsplib right now.
+	
+	* HACKING:
+	  More formatting and tips for porting.
+
+	* configure.ac:
+	  Add Jeskola Noise.
+	
+	* gen_makefile_am.sh:
+	  Add LIBADD if plugin uses dsplib or mdk.
+
+2009-05-03  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/PhatMan/FSM_PhatMan.prs:
+	* FSM/PhatMan/Makefile.am:
+	* FSM/PhatMan/FSM_PhatMan.prs (added):
+	* FSM/PhatMan/PhatMan.cpp (added):
+	* FSM/PhatMan/Chorus.cpp (deleted):
+	  Rename cpp and add presets.
+
+	* Jeskola/Freeverb/Makefile.am:
+	* Jeskola/Freeverb/revmodel.cpp:
+	* common/dsplib/dsplib.cpp:
+	* Jeskola/Freeverb/Makefile.am (added):
+	  Fix the linker error and add missing Makefile.am
+
+2009-05-02  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/PanzerDelay/FSM_PanzerDelay.prs:
+	* FSM/PanzerDelay/Makefile.am:
+	* FSM/PanzerDelay/FSM_PanzerDelay.prs (added):
+	  Add presets.
+
+	* Jeskola/Freeverb/denormals.h:
+	* Jeskola/Freeverb/main.cpp:
+	* Jeskola/Freeverb/revmodel.cpp:
+	* Jeskola/Freeverb/revmodel.h:
+	* Jeskola/Makefile.am:
+	* configure.ac:
+	  It build, but I get "undefined symbol: _Z11DSP_BW_WorkR8CBWStatePfmi"
+	  which is DSP_BW_Work(CBWState&, float*, unsigned long, int) at runtime
+	  and this is from dsplib :/ 
+	  
+	* TODO:
+	  Plugin docs.
+
+2009-05-02  Stefan Kost  <ensonic@users.sf.net>
+
+	* Jeskola/Ninja/Jeskola_NiNjA_dElaY.prs:
+	* Jeskola/Ninja/Makefile.am:
+	* Jeskola/Ninja/Jeskola_NiNjA_dElaY.prs (added):
+	  Add presets.
+
+2009-05-02  Stefan Kost  <ensonic@users.sf.net>
+
+	* HACKING:
+	  Point to example for preset and demo song.
+
+	* common/MachineInterface.h:
+	  Make __cdecl__ WIN32 specific. Its kind of superflous and causes compilter
+	  warnings on e.g. NetBSD.
+
+	* FSM/Infector/FSM_Infector_Demo.bmx:
+	* FSM/Infector/Makefile.am:
+	* FSM/Infector/FSM_Infector_Demo.bmx (added):
+	* FSM/Kick/FSM_Kick_Demo.bmx:
+	* FSM/Kick/Makefile.am:
+	* FSM/Kick/FSM_Kick_Demo.bmx (added):
+	  Add more demo songs.
+
+2009-04-30  Stefan Kost  <ensonic@users.sf.net>
+
+	* CyanPhase/DTMF/DTMF-1.cpp:
+	* CyanPhase/DTMF/Makefile.am:
+	* CyanPhase/Makefile.am:
+	* Makefile.am:
+	* configure.ac:
+	* CyanPhase (added):
+	* CyanPhase/Makefile.am (added):
+	* CyanPhase/DTMF (added):
+	* CyanPhase/DTMF/DTMF-1.cpp (added):
+	* CyanPhase/DTMF/Makefile.am (added):
+	* CyanPhase/DTMF/CyanPhase_DTMF-1_Demo.bmx (added):
+	  One more machine ported. This comes with a demo song.
+
+
+2009-04-30  Stefan Kost  <ensonic@users.sf.net>
+
+	* NEWS:
+	  Prepare for pre-releasing.
+
+	* FSM/Infector/FSM_Infector.prs:
+	* FSM/Infector/Makefile.am:
+	* FSM/Kick/FSM_Kick.prs:
+	* FSM/Kick/Makefile.am:
+	  Install presets.
+
+	* Matilde/Tracker/Makefile.am:
+	  Fix typo.
+
+	* configure.ac:
+	  Use date as a version.
+
+2009-04-29  Stefan Kost  <ensonic@users.sf.net>
+
+	* Makefile.am:
+	  Add Makk to the SUBDIRS.
+
+2009-04-29  Stefan Kost  <ensonic@users.sf.net>
+
+	* Makk/M4/M4.cpp:
+	* Makk/M4/waves/303_01.h:
+	* Makk/M4/waves/303_01.wav:
+	* Makk/M4/waves/303_02.h:
+	* Makk/M4/waves/303_02.wav:
+	* Makk/M4/waves/303_03.h:
+	* Makk/M4/waves/303_03.wav:
+	* Makk/M4/waves/303_04.h:
+	* Makk/M4/waves/303_04.wav:
+	* Makk/M4/waves/303_05.h:
+	* Makk/M4/waves/303_05.wav:
+	* Makk/M4/waves/303_06.h:
+	* Makk/M4/waves/303_06.wav:
+	* Makk/M4/waves/303_07.h:
+	* Makk/M4/waves/303_07.wav:
+	* Makk/M4/waves/303_08.h:
+	* Makk/M4/waves/303_08.wav:
+	* Makk/M4/waves/303_09.h:
+	* Makk/M4/waves/303_09.wav:
+	* Makk/M4/waves/303_10.h:
+	* Makk/M4/waves/303_10.wav:
+	* Makk/M4/waves/303_11.h:
+	* Makk/M4/waves/303_11.wav:
+	* Makk/M4/waves/303_12.h:
+	* Makk/M4/waves/303_12.wav:
+	* Makk/M4/waves/BASS01.h:
+	* Makk/M4/waves/BASS02.h:
+	* Makk/M4/waves/BASS03.h:
+	* Makk/M4/waves/BASS04.h:
+	* Makk/M4/waves/BASS05.h:
+	* Makk/M4/waves/BASS06.h:
+	* Makk/M4/waves/BASS07.h:
+	* Makk/M4/waves/BASS08.h:
+	* Makk/M4/waves/BASS09.h:
+	* Makk/M4/waves/BASS10.h:
+	* Makk/M4/waves/BASS11.h:
+	* Makk/M4/waves/BASS12.h:
+	* Makk/M4/waves/BASS13.h:
+	* Makk/M4/waves/BASS14.h:
+	* Makk/M4/waves/BASS15.h:
+	* Makk/M4/waves/BASS16.h:
+	* Makk/M4/waves/BASS17.h:
+	* Makk/M4/waves/BASS18.h:
+	* Makk/M4/waves/BASS19.h:
+	* Makk/M4/waves/Bass01.wav:
+	* Makk/M4/waves/Bass02.wav:
+	* Makk/M4/waves/Bass03.wav:
+	* Makk/M4/waves/Bass04.wav:
+	* Makk/M4/waves/Bass05.wav:
+	* Makk/M4/waves/Bass06.wav:
+	* Makk/M4/waves/Bass07.wav:
+	* Makk/M4/waves/Bass08.wav:
+	* Makk/M4/waves/Bass09.wav:
+	* Makk/M4/waves/Bass10.wav:
+	* Makk/M4/waves/Bass11.wav:
+	* Makk/M4/waves/Bass12.wav:
+	* Makk/M4/waves/Bass13.wav:
+	* Makk/M4/waves/Bass14.wav:
+	* Makk/M4/waves/Bass15.wav:
+	* Makk/M4/waves/Bass16.wav:
+	* Makk/M4/waves/Bass17.wav:
+	* Makk/M4/waves/Bass18.wav:
+	* Makk/M4/waves/Bass19.wav:
+	* Makk/M4/waves/Convert.exe:
+	* Makk/M4/waves/Dir2c.exe:
+	* Makk/M4/waves/HARD01.h:
+	* Makk/M4/waves/HARD02.h:
+	* Makk/M4/waves/HARD03.h:
+	* Makk/M4/waves/HARD04.h:
+	* Makk/M4/waves/HARD05.h:
+	* Makk/M4/waves/HARD06.h:
+	* Makk/M4/waves/HARD07.h:
+	* Makk/M4/waves/Hard01.wav:
+	* Makk/M4/waves/Hard02.wav:
+	* Makk/M4/waves/Hard03.wav:
+	* Makk/M4/waves/Hard04.wav:
+	* Makk/M4/waves/Hard05.wav:
+	* Makk/M4/waves/Hard06.wav:
+	* Makk/M4/waves/Hard07.wav:
+	* Makk/M4/waves/Raw2h.exe:
+	* Makk/M4/waves/SAW01.h:
+	* Makk/M4/waves/SAW02.h:
+	* Makk/M4/waves/SAW03.h:
+	* Makk/M4/waves/SAW04.h:
+	* Makk/M4/waves/SAW05.h:
+	* Makk/M4/waves/SAW06.h:
+	* Makk/M4/waves/SAW07.h:
+	* Makk/M4/waves/SAW08.h:
+	* Makk/M4/waves/SAW09.h:
+	* Makk/M4/waves/SAW10.h:
+	* Makk/M4/waves/SAW_202.h:
+	* Makk/M4/waves/SAW_DIGI.h:
+	* Makk/M4/waves/SAW_MOOG.h:
+	* Makk/M4/waves/SAW_SPEK.h:
+	* Makk/M4/waves/SIN_DIGI.h:
+	* Makk/M4/waves/SMOOTH01.h:
+	* Makk/M4/waves/SMOOTH02.h:
+	* Makk/M4/waves/SMOOTH03.h:
+	* Makk/M4/waves/SMOOTH04.h:
+	* Makk/M4/waves/SMOOTH05.h:
+	* Makk/M4/waves/SPEK01.h:
+	* Makk/M4/waves/SPEK02.h:
+	* Makk/M4/waves/SPEK03.h:
+	* Makk/M4/waves/SPEK04.h:
+	* Makk/M4/waves/SPEK05.h:
+	* Makk/M4/waves/SPEK06.h:
+	* Makk/M4/waves/SPEK07.h:
+	* Makk/M4/waves/SPEK08.h:
+	* Makk/M4/waves/SPEK09.h:
+	* Makk/M4/waves/SPEK10.h:
+	* Makk/M4/waves/SPEK11.h:
+	* Makk/M4/waves/SPEK12.h:
+	* Makk/M4/waves/SQUARE01.h:
+	* Makk/M4/waves/SQUARE02.h:
+	* Makk/M4/waves/SQUARE03.h:
+	* Makk/M4/waves/SQUARE04.h:
+	* Makk/M4/waves/SQUARE05.h:
+	* Makk/M4/waves/SQUARE06.h:
+	* Makk/M4/waves/SQUARE07.h:
+	* Makk/M4/waves/SQUARE08.h:
+	* Makk/M4/waves/SQUARE09.h:
+	* Makk/M4/waves/SQUARE10.h:
+	* Makk/M4/waves/SQUA_DIG.h:
+	* Makk/M4/waves/SQUA_SPK.h:
+	* Makk/M4/waves/SYNTH01.h:
+	* Makk/M4/waves/SYNTH02.h:
+	* Makk/M4/waves/SYNTH03.h:
+	* Makk/M4/waves/SYNTH04.h:
+	* Makk/M4/waves/SYNTH05.h:
+	* Makk/M4/waves/SYNTH06.h:
+	* Makk/M4/waves/SYNTH07.h:
+	* Makk/M4/waves/SYNTH08.h:
+	* Makk/M4/waves/SYNTH09.h:
+	* Makk/M4/waves/SYNTH10.h:
+	* Makk/M4/waves/SYNTH11.h:
+	* Makk/M4/waves/SYNTH12.h:
+	* Makk/M4/waves/SYNTH13.h:
+	* Makk/M4/waves/SYNTH14.h:
+	* Makk/M4/waves/SYNTH15.h:
+	* Makk/M4/waves/SYNTH16.h:
+	* Makk/M4/waves/SYNTH17.h:
+	* Makk/M4/waves/SYNTH18.h:
+	* Makk/M4/waves/SYNTH19.h:
+	* Makk/M4/waves/SYNTH20.h:
+	* Makk/M4/waves/SYNTH21.h:
+	* Makk/M4/waves/SYNTH22.h:
+	* Makk/M4/waves/SYNTH23.h:
+	* Makk/M4/waves/SYNTH24.h:
+	* Makk/M4/waves/SYNTH25.h:
+	* Makk/M4/waves/SYNTH26.h:
+	* Makk/M4/waves/SYNTH27.h:
+	* Makk/M4/waves/SYNTH28.h:
+	* Makk/M4/waves/SYNTH29.h:
+	* Makk/M4/waves/SYNTH30.h:
+	* Makk/M4/waves/SYNTH31.h:
+	* Makk/M4/waves/SYNTH32.h:
+	* Makk/M4/waves/SYNTH33.h:
+	* Makk/M4/waves/SYNTH34.h:
+	* Makk/M4/waves/SYNTH35.h:
+	* Makk/M4/waves/SYNTH36.h:
+	* Makk/M4/waves/SYNTH37.h:
+	* Makk/M4/waves/SYNTH38.h:
+	* Makk/M4/waves/SYNTH39.h:
+	* Makk/M4/waves/SYNTH40.h:
+	* Makk/M4/waves/SYNTH41.h:
+	* Makk/M4/waves/Saw01.wav:
+	* Makk/M4/waves/Saw02.wav:
+	* Makk/M4/waves/Saw03.wav:
+	* Makk/M4/waves/Saw04.wav:
+	* Makk/M4/waves/Saw05.wav:
+	* Makk/M4/waves/Saw06.wav:
+	* Makk/M4/waves/Saw07.wav:
+	* Makk/M4/waves/Saw08.wav:
+	* Makk/M4/waves/Saw09.wav:
+	* Makk/M4/waves/Saw10.wav:
+	* Makk/M4/waves/Saw_202.wav:
+	* Makk/M4/waves/Saw_digi.wav:
+	* Makk/M4/waves/Saw_moog.wav:
+	* Makk/M4/waves/Saw_spek.wav:
+	* Makk/M4/waves/Sin_digi.wav:
+	* Makk/M4/waves/Smooth01.wav:
+	* Makk/M4/waves/Smooth02.wav:
+	* Makk/M4/waves/Smooth03.wav:
+	* Makk/M4/waves/Smooth04.wav:
+	* Makk/M4/waves/Smooth05.wav:
+	* Makk/M4/waves/Spek01.wav:
+	* Makk/M4/waves/Spek02.wav:
+	* Makk/M4/waves/Spek03.wav:
+	* Makk/M4/waves/Spek04.wav:
+	* Makk/M4/waves/Spek05.wav:
+	* Makk/M4/waves/Spek06.wav:
+	* Makk/M4/waves/Spek07.wav:
+	* Makk/M4/waves/Spek08.wav:
+	* Makk/M4/waves/Spek09.wav:
+	* Makk/M4/waves/Spek10.wav:
+	* Makk/M4/waves/Spek11.wav:
+	* Makk/M4/waves/Spek12.wav:
+	* Makk/M4/waves/Squa_dig.wav:
+	* Makk/M4/waves/Squa_spk.wav:
+	* Makk/M4/waves/Square01.wav:
+	* Makk/M4/waves/Square02.wav:
+	* Makk/M4/waves/Square03.wav:
+	* Makk/M4/waves/Square04.wav:
+	* Makk/M4/waves/Square05.wav:
+	* Makk/M4/waves/Square06.wav:
+	* Makk/M4/waves/Square07.wav:
+	* Makk/M4/waves/Square08.wav:
+	* Makk/M4/waves/Square09.wav:
+	* Makk/M4/waves/Square10.wav:
+	* Makk/M4/waves/Synth01.wav:
+	* Makk/M4/waves/Synth02.wav:
+	* Makk/M4/waves/Synth03.wav:
+	* Makk/M4/waves/Synth04.wav:
+	* Makk/M4/waves/Synth05.wav:
+	* Makk/M4/waves/Synth06.wav:
+	* Makk/M4/waves/Synth07.wav:
+	* Makk/M4/waves/Synth08.wav:
+	* Makk/M4/waves/Synth09.wav:
+	* Makk/M4/waves/Synth10.wav:
+	* Makk/M4/waves/Synth11.wav:
+	* Makk/M4/waves/Synth12.wav:
+	* Makk/M4/waves/Synth13.wav:
+	* Makk/M4/waves/Synth14.wav:
+	* Makk/M4/waves/Synth15.wav:
+	* Makk/M4/waves/Synth16.wav:
+	* Makk/M4/waves/Synth17.wav:
+	* Makk/M4/waves/Synth18.wav:
+	* Makk/M4/waves/Synth19.wav:
+	* Makk/M4/waves/Synth20.wav:
+	* Makk/M4/waves/Synth21.wav:
+	* Makk/M4/waves/Synth22.wav:
+	* Makk/M4/waves/Synth23.wav:
+	* Makk/M4/waves/Synth24.wav:
+	* Makk/M4/waves/Synth25.wav:
+	* Makk/M4/waves/Synth26.wav:
+	* Makk/M4/waves/Synth27.wav:
+	* Makk/M4/waves/Synth28.wav:
+	* Makk/M4/waves/Synth29.wav:
+	* Makk/M4/waves/Synth30.wav:
+	* Makk/M4/waves/Synth31.wav:
+	* Makk/M4/waves/Synth32.wav:
+	* Makk/M4/waves/Synth33.wav:
+	* Makk/M4/waves/Synth34.wav:
+	* Makk/M4/waves/Synth35.wav:
+	* Makk/M4/waves/Synth36.wav:
+	* Makk/M4/waves/Synth37.wav:
+	* Makk/M4/waves/Synth38.wav:
+	* Makk/M4/waves/Synth39.wav:
+	* Makk/M4/waves/Synth40.wav:
+	* Makk/M4/waves/Synth41.wav:
+	* Makk/M4/waves/TRI01.h:
+	* Makk/M4/waves/TRI02.h:
+	* Makk/M4/waves/TRI_DIGI.h:
+	* Makk/M4/waves/Tri01.wav:
+	* Makk/M4/waves/Tri02.wav:
+	* Makk/M4/waves/Tri_digi.wav:
+	* Makk/M4/waves/Wav2h.bat:
+	* Makk/M4/waves/wav2h.sh:
+	* Makk/M4/waves/wavename.inc:
+	* Makk/M4/waves/waves.cpp:
+	* Makk/Makefile.am:
+	* TODO:
+	* Makk/M4/waves (added):
+	* Makk/M4/waves/BASS01.h (added):
+	* Makk/M4/waves/Tri_digi.wav (added):
+	* Makk/M4/waves/SQUARE01.h (added):
+	* Makk/M4/waves/BASS09.h (added):
+	* Makk/M4/waves/SAW08.h (added):
+	* Makk/M4/waves/303_10.h (added):
+	* Makk/M4/waves/SPEK12.h (added):
+	* Makk/M4/waves/SQUARE09.h (added):
+	* Makk/M4/waves/SMOOTH01.h (added):
+	* Makk/M4/waves/SYNTH33.h (added):
+	* Makk/M4/waves/Spek03.wav (added):
+	* Makk/M4/waves/SYNTH16.h (added):
+	* Makk/M4/waves/Raw2h.exe (added):
+	* Makk/M4/waves/Synth12.wav (added):
+	* Makk/M4/waves/Spek07.wav (added):
+	* Makk/M4/waves/Synth16.wav (added):
+	* Makk/M4/waves/HARD05.h (added):
+	* Makk/M4/waves/BASS10.h (added):
+	* Makk/M4/waves/Bass03.wav (added):
+	* Makk/M4/waves/SQUARE10.h (added):
+	* Makk/M4/waves/BASS18.h (added):
+	* Makk/M4/waves/Bass07.wav (added):
+	* Makk/M4/waves/SPEK04.h (added):
+	* Makk/M4/waves/303_02.h (added):
+	* Makk/M4/waves/Spek12.wav (added):
+	* Makk/M4/waves/SYNTH25.h (added):
+	* Makk/M4/waves/303_02.wav (added):
+	* Makk/M4/waves/SYNTH08.h (added):
+	* Makk/M4/waves/SAW_202.h (added):
+	* Makk/M4/waves/Synth21.wav (added):
+	* Makk/M4/waves/303_06.wav (added):
+	* Makk/M4/waves/Smooth02.wav (added):
+	* Makk/M4/waves/Synth25.wav (added):
+	* Makk/M4/waves/Saw_202.wav (added):
+	* Makk/M4/waves/wavename.inc (added):
+	* Makk/M4/waves/Hard02.wav (added):
+	* Makk/M4/waves/Synth29.wav (added):
+	* Makk/M4/waves/BASS02.h (added):
+	* Makk/M4/waves/Hard06.wav (added):
+	* Makk/M4/waves/TRI_DIGI.h (added):
+	* Makk/M4/waves/SAW01.h (added):
+	* Makk/M4/waves/Bass12.wav (added):
+	* Makk/M4/waves/SQUARE02.h (added):
+	* Makk/M4/waves/Saw02.wav (added):
+	* Makk/M4/waves/SAW09.h (added):
+	* Makk/M4/waves/Bass16.wav (added):
+	* Makk/M4/waves/303_11.h (added):
+	* Makk/M4/waves/Saw06.wav (added):
+	* Makk/M4/waves/SMOOTH02.h (added):
+	* Makk/M4/waves/SYNTH34.h (added):
+	* Makk/M4/waves/303_11.wav (added):
+	* Makk/M4/waves/SYNTH17.h (added):
+	* Makk/M4/waves/Synth30.wav (added):
+	* Makk/M4/waves/Synth34.wav (added):
+	* Makk/M4/waves/HARD06.h (added):
+	* Makk/M4/waves/Synth38.wav (added):
+	* Makk/M4/waves/SAW_DIGI.h (added):
+	* Makk/M4/waves/BASS11.h (added):
+	* Makk/M4/waves/SAW10.h (added):
+	* Makk/M4/waves/BASS19.h (added):
+	* Makk/M4/waves/SYNTH01.h (added):
+	* Makk/M4/waves/SPEK05.h (added):
+	* Makk/M4/waves/303_03.h (added):
+	* Makk/M4/waves/Square03.wav (added):
+	* Makk/M4/waves/Square07.wav (added):
+	* Makk/M4/waves/SYNTH26.h (added):
+	* Makk/M4/waves/SYNTH09.h (added):
+	* Makk/M4/waves/Synth04.wav (added):
+	* Makk/M4/waves/Synth08.wav (added):
+	* Makk/M4/waves/SIN_DIGI.h (added):
+	* Makk/M4/waves/BASS03.h (added):
+	* Makk/M4/waves/SAW02.h (added):
+	* Makk/M4/waves/SQUARE03.h (added):
+	* Makk/M4/waves/SYNTH10.h (added):
+	* Makk/M4/waves/303_12.h (added):
+	* Makk/M4/waves/Spek04.wav (added):
+	* Makk/M4/waves/SMOOTH03.h (added):
+	* Makk/M4/waves/SYNTH35.h (added):
+	* Makk/M4/waves/SYNTH18.h (added):
+	* Makk/M4/waves/Synth13.wav (added):
+	* Makk/M4/waves/waves.cpp (added):
+	* Makk/M4/waves/Spek08.wav (added):
+	* Makk/M4/waves/Synth17.wav (added):
+	* Makk/M4/waves/HARD07.h (added):
+	* Makk/M4/waves/BASS12.h (added):
+	* Makk/M4/waves/TRI01.h (added):
+	* Makk/M4/waves/Bass04.wav (added):
+	* Makk/M4/waves/Wav2h.bat (added):
+	* Makk/M4/waves/Bass08.wav (added):
+	* Makk/M4/waves/SYNTH02.h (added):
+	* Makk/M4/waves/SPEK06.h (added):
+	* Makk/M4/waves/303_04.h (added):
+	* Makk/M4/waves/Convert.exe (added):
+	* Makk/M4/waves/303_03.wav (added):
+	* Makk/M4/waves/SYNTH27.h (added):
+	* Makk/M4/waves/Synth22.wav (added):
+	* Makk/M4/waves/303_07.wav (added):
+	* Makk/M4/waves/Smooth03.wav (added):
+	* Makk/M4/waves/Synth26.wav (added):
+	* Makk/M4/waves/Hard03.wav (added):
+	* Makk/M4/waves/Hard07.wav (added):
+	* Makk/M4/waves/Squa_spk.wav (added):
+	* Makk/M4/waves/BASS04.h (added):
+	* Makk/M4/waves/SQUA_DIG.h (added):
+	* Makk/M4/waves/SAW03.h (added):
+	* Makk/M4/waves/Dir2c.exe (added):
+	* Makk/M4/waves/Bass13.wav (added):
+	* Makk/M4/waves/Saw03.wav (added):
+	* Makk/M4/waves/SQUARE04.h (added):
+	* Makk/M4/waves/Bass17.wav (added):
+	* Makk/M4/waves/Saw07.wav (added):
+	* Makk/M4/waves/SYNTH11.h (added):
+	* Makk/M4/waves/303_12.wav (added):
+	* Makk/M4/waves/SMOOTH04.h (added):
+	* Makk/M4/waves/SYNTH36.h (added):
+	* Makk/M4/waves/Synth31.wav (added):
+	* Makk/M4/waves/SYNTH19.h (added):
+	* Makk/M4/waves/Synth35.wav (added):
+	* Makk/M4/waves/Synth39.wav (added):
+	* Makk/M4/waves/BASS13.h (added):
+	* Makk/M4/waves/TRI02.h (added):
+	* Makk/M4/waves/SYNTH20.h (added):
+	* Makk/M4/waves/SYNTH03.h (added):
+	* Makk/M4/waves/SPEK07.h (added):
+	* Makk/M4/waves/303_05.h (added):
+	* Makk/M4/waves/Square04.wav (added):
+	* Makk/M4/waves/Synth01.wav (added):
+	* Makk/M4/waves/Square08.wav (added):
+	* Makk/M4/waves/SYNTH28.h (added):
+	* Makk/M4/waves/Synth40.wav (added):
+	* Makk/M4/waves/Synth05.wav (added):
+	* Makk/M4/waves/Synth09.wav (added):
+	* Makk/M4/waves/Sin_digi.wav (added):
+	* Makk/M4/waves/BASS05.h (added):
+	* Makk/M4/waves/SAW04.h (added):
+	* Makk/M4/waves/Squa_dig.wav (added):
+	* Makk/M4/waves/SQUARE05.h (added):
+	* Makk/M4/waves/SYNTH12.h (added):
+	* Makk/M4/waves/Spek01.wav (added):
+	* Makk/M4/waves/Synth10.wav (added):
+	* Makk/M4/waves/SAW_SPEK.h (added):
+	* Makk/M4/waves/Spek05.wav (added):
+	* Makk/M4/waves/SMOOTH05.h (added):
+	* Makk/M4/waves/SYNTH37.h (added):
+	* Makk/M4/waves/HARD01.h (added):
+	* Makk/M4/waves/Synth14.wav (added):
+	* Makk/M4/waves/Spek09.wav (added):
+	* Makk/M4/waves/Synth18.wav (added):
+	* Makk/M4/waves/Saw_digi.wav (added):
+	* Makk/M4/waves/BASS14.h (added):
+	* Makk/M4/waves/Bass01.wav (added):
+	* Makk/M4/waves/Bass05.wav (added):
+	* Makk/M4/waves/Tri01.wav (added):
+	* Makk/M4/waves/Bass09.wav (added):
+	* Makk/M4/waves/SYNTH21.h (added):
+	* Makk/M4/waves/SYNTH04.h (added):
+	* Makk/M4/waves/Spek10.wav (added):
+	* Makk/M4/waves/303_06.h (added):
+	* Makk/M4/waves/SPEK08.h (added):
+	* Makk/M4/waves/303_04.wav (added):
+	* Makk/M4/waves/SYNTH29.h (added):
+	* Makk/M4/waves/Synth23.wav (added):
+	* Makk/M4/waves/303_08.wav (added):
+	* Makk/M4/waves/Smooth04.wav (added):
+	* Makk/M4/waves/Synth27.wav (added):
+	* Makk/M4/waves/Hard04.wav (added):
+	* Makk/M4/waves/BASS06.h (added):
+	* Makk/M4/waves/Bass10.wav (added):
+	* Makk/M4/waves/SAW05.h (added):
+	* Makk/M4/waves/Bass14.wav (added):
+	* Makk/M4/waves/Saw04.wav (added):
+	* Makk/M4/waves/SQUARE06.h (added):
+	* Makk/M4/waves/Bass18.wav (added):
+	* Makk/M4/waves/Saw08.wav (added):
+	* Makk/M4/waves/SYNTH30.h (added):
+	* Makk/M4/waves/SYNTH13.h (added):
+	* Makk/M4/waves/Synth32.wav (added):
+	* Makk/M4/waves/HARD02.h (added):
+	* Makk/M4/waves/SYNTH38.h (added):
+	* Makk/M4/waves/Saw_spek.wav (added):
+	* Makk/M4/waves/Synth36.wav (added):
+	* Makk/M4/waves/BASS15.h (added):
+	* Makk/M4/waves/SPEK01.h (added):
+	* Makk/M4/waves/Square01.wav (added):
+	* Makk/M4/waves/SYNTH22.h (added):
+	* Makk/M4/waves/wav2h.sh (added):
+	* Makk/M4/waves/SYNTH05.h (added):
+	* Makk/M4/waves/SPEK09.h (added):
+	* Makk/M4/waves/303_07.h (added):
+	* Makk/M4/waves/Square05.wav (added):
+	* Makk/M4/waves/Synth02.wav (added):
+	* Makk/M4/waves/Square09.wav (added):
+	* Makk/M4/waves/Synth41.wav (added):
+	* Makk/M4/waves/Synth06.wav (added):
+	* Makk/M4/waves/BASS07.h (added):
+	* Makk/M4/waves/SAW06.h (added):
+	* Makk/M4/waves/SPEK10.h (added):
+	* Makk/M4/waves/SQUARE07.h (added):
+	* Makk/M4/waves/Square10.wav (added):
+	* Makk/M4/waves/SYNTH31.h (added):
+	* Makk/M4/waves/SYNTH14.h (added):
+	* Makk/M4/waves/Spek02.wav (added):
+	* Makk/M4/waves/SAW_MOOG.h (added):
+	* Makk/M4/waves/Synth11.wav (added):
+	* Makk/M4/waves/Spek06.wav (added):
+	* Makk/M4/waves/SYNTH39.h (added):
+	* Makk/M4/waves/HARD03.h (added):
+	* Makk/M4/waves/Saw_moog.wav (added):
+	* Makk/M4/waves/Synth15.wav (added):
+	* Makk/M4/waves/Synth19.wav (added):
+	* Makk/M4/waves/BASS16.h (added):
+	* Makk/M4/waves/Bass02.wav (added):
+	* Makk/M4/waves/Bass06.wav (added):
+	* Makk/M4/waves/SPEK02.h (added):
+	* Makk/M4/waves/Tri02.wav (added):
+	* Makk/M4/waves/SYNTH40.h (added):
+	* Makk/M4/waves/SYNTH23.h (added):
+	* Makk/M4/waves/Spek11.wav (added):
+	* Makk/M4/waves/SYNTH06.h (added):
+	* Makk/M4/waves/303_01.wav (added):
+	* Makk/M4/waves/303_08.h (added):
+	* Makk/M4/waves/Synth20.wav (added):
+	* Makk/M4/waves/303_05.wav (added):
+	* Makk/M4/waves/Smooth01.wav (added):
+	* Makk/M4/waves/Synth24.wav (added):
+	* Makk/M4/waves/303_09.wav (added):
+	* Makk/M4/waves/Smooth05.wav (added):
+	* Makk/M4/waves/Hard01.wav (added):
+	* Makk/M4/waves/Synth28.wav (added):
+	* Makk/M4/waves/Hard05.wav (added):
+	* Makk/M4/waves/Bass11.wav (added):
+	* Makk/M4/waves/BASS08.h (added):
+	* Makk/M4/waves/SAW07.h (added):
+	* Makk/M4/waves/Saw01.wav (added):
+	* Makk/M4/waves/SPEK11.h (added):
+	* Makk/M4/waves/Bass15.wav (added):
+	* Makk/M4/waves/Saw05.wav (added):
+	* Makk/M4/waves/SQUARE08.h (added):
+	* Makk/M4/waves/Bass19.wav (added):
+	* Makk/M4/waves/Saw09.wav (added):
+	* Makk/M4/waves/SYNTH32.h (added):
+	* Makk/M4/waves/SYNTH15.h (added):
+	* Makk/M4/waves/303_10.wav (added):
+	* Makk/M4/waves/Synth33.wav (added):
+	* Makk/M4/waves/HARD04.h (added):
+	* Makk/M4/waves/Synth37.wav (added):
+	* Makk/M4/waves/BASS17.h (added):
+	* Makk/M4/waves/Saw10.wav (added):
+	* Makk/M4/waves/303_01.h (added):
+	* Makk/M4/waves/SPEK03.h (added):
+	* Makk/M4/waves/Square02.wav (added):
+	* Makk/M4/waves/SYNTH41.h (added):
+	* Makk/M4/waves/SYNTH24.h (added):
+	* Makk/M4/waves/SYNTH07.h (added):
+	* Makk/M4/waves/Square06.wav (added):
+	* Makk/M4/waves/303_09.h (added):
+	* Makk/M4/waves/Synth03.wav (added):
+	* Makk/M4/waves/Synth07.wav (added):
+	* Makk/M4/waves/SQUA_SPK.h (added):
+	  Ported Makk M4.
+
+2009-04-27  Stefan Kost  <ensonic@users.sf.net>
+
+	* Matilde/Tracker/Makefile.am:
+	  Fix "commands commence before first target." in Makefile.
+
+2009-04-27  Stefan Kost  <ensonic@users.sf.net>
+
+	* Matilde/Tracker/Makefile.am:
+	  Remove TODO and add missing whitespace.
+
+2009-04-27  Stefan Kost  <ensonic@users.sf.net>
+
+	* README:
+	  Update to mention the machines are to be used via bml+gst-buzztard.
+
+2009-04-26  Stefan Kost  <ensonic@users.sf.net>
+
+	* Jeskola/Ninja/Ninja.cpp:
+	  Use relative includes.
+
+	* Makk/M3/M3.cpp:
+	* Makk/M3/Makefile.am:
+	* Makk/M4/M4.cpp:
+	* Makk/M4/Makefile.am:
+	* Makk/Makefile.am:
+	* configure.ac:
+	* Makk (added):
+	* Makk/M3 (added):
+	* Makk/M3/M3.cpp (added):
+	* Makk/M3/Makefile.am (added):
+	* Makk/M4 (added):
+	* Makk/M4/M4.cpp (added):
+	* Makk/M4/Makefile.am (added):
+	* Makk/Makefile.am (added):
+	  Port M3 and almost M4. For M4 we need to port 2 tools to build the
+	  wavetable tools still.
+
+2009-04-26  Stefan Kost  <ensonic@users.sf.net>
+
+	* HACKING:
+	* gen_makefile_am.sh:
+	* gen_makefile_am.sh (added):
+	  More tips in HACKING. Add script to generate Makefile.am for a machine.
+
+	* Jeskola/Makefile.am:
+	* Jeskola/Trilok/Makefile.am:
+	* Jeskola/Trilok/Trilok.cpp:
+	* configure.ac:
+	* Jeskola/Trilok/Makefile.am (added):
+	  Port Trilok.
+
+2009-04-26  Stefan Kost  <ensonic@users.sf.net>
+
+	* Elak/Dist2/Makefile.am:
+	* Elak/SVF/Makefile.am:
+	* FSM/ArpMan/Makefile.am:
+	* FSM/Chorus/Makefile.am:
+	* FSM/Chorus2/Makefile.am:
+	* FSM/Infector/Makefile.am:
+	* FSM/PanzerDelay/Makefile.am:
+	* FSM/PhatMan/Makefile.am:
+	* FSM/WahMan/Makefile.am:
+	* common/mdk/Makefile.am:
+	  Fix ID tokens
+
+2009-04-25  Stefan Kost  <ensonic@users.sf.net>
+
+	* HACKING:
+	  More howto info.
+
+2009-04-25  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/Makefile.am:
+	* FSM/Philta/Philta.cpp:
+	* FSM/ScatMan/ScatMan.cpp:
+	* FSM/ScrapMan/ScrapMan.cpp:
+	* FSM/SprayMan/SprayMan.cpp:
+	* FSM/TapMan/TapMan.cpp:
+	* FSM/TunaMan/TunaMan.cpp:
+	* FSM/WahManPro/WahManPro.cpp:
+	* FSM/TapMan (added):
+	* FSM/TapMan/TapMan.cpp (added):
+	* FSM/Philta (added):
+	* FSM/Philta/Philta.cpp (added):
+	* FSM/ScatMan (added):
+	* FSM/ScatMan/ScatMan.cpp (added):
+	* FSM/SprayMan (added):
+	* FSM/SprayMan/SprayMan.cpp (added):
+	* FSM/WahManPro (added):
+	* FSM/WahManPro/WahManPro.cpp (added):
+	* FSM/TunaMan (added):
+	* FSM/TunaMan/TunaMan.cpp (added):
+	* FSM/ScrapMan (added):
+	* FSM/ScrapMan/ScrapMan.cpp (added):
+	  Add unported FSM machines.
+
+2009-04-25  Stefan Kost  <ensonic@users.sf.net>
+
+	* Jeskola/Delay/Delay.cpp:
+	* Jeskola/Distortion/Distortion.cpp:
+	* Jeskola/Freeverb/allpass.cpp:
+	* Jeskola/Freeverb/allpass.h:
+	* Jeskola/Freeverb/comb.cpp:
+	* Jeskola/Freeverb/comb.h:
+	* Jeskola/Freeverb/denormals.h:
+	* Jeskola/Freeverb/main.cpp:
+	* Jeskola/Freeverb/main.h:
+	* Jeskola/Freeverb/revmodel.cpp:
+	* Jeskola/Freeverb/revmodel.h:
+	* Jeskola/Freeverb/tuning.h:
+	* Jeskola/Mul/Mul.cpp:
+	* Jeskola/Noise/Noise.cpp:
+	* Jeskola/Trilok/Trilok.cpp:
+	* Jeskola/Freeverb (added):
+	* Jeskola/Freeverb/allpass.cpp (added):
+	* Jeskola/Freeverb/comb.cpp (added):
+	* Jeskola/Freeverb/revmodel.h (added):
+	* Jeskola/Freeverb/main.cpp (added):
+	* Jeskola/Freeverb/allpass.h (added):
+	* Jeskola/Freeverb/comb.h (added):
+	* Jeskola/Freeverb/denormals.h (added):
+	* Jeskola/Freeverb/main.h (added):
+	* Jeskola/Freeverb/tuning.h (added):
+	* Jeskola/Freeverb/revmodel.cpp (added):
+	* Jeskola/Trilok (added):
+	* Jeskola/Trilok/Trilok.cpp (added):
+	* Jeskola/Noise (added):
+	* Jeskola/Noise/Noise.cpp (added):
+	* Jeskola/Mul (added):
+	* Jeskola/Mul/Mul.cpp (added):
+	* Jeskola/Delay (added):
+	* Jeskola/Delay/Delay.cpp (added):
+	* Jeskola/Distortion (added):
+	* Jeskola/Distortion/Distortion.cpp (added):
+	  Add unported Jeskola machines.
+
+2009-04-25  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/Kick/Kick.cpp:
+	* FSM/PanzerDelay/Makefile.am:
+	* FSM/PanzerDelay/PanzerDelay.cpp (added):
+	* FSM/PanzerDelay/Delay.cpp (deleted):
+	  Renamings.
+
+2009-04-19  Stefan Kost  <ensonic@users.sf.net>
+
+	* Matilde/Tracker/Tracker.cpp:
+	  Emulate V1 API.
+
+2009-04-18  Krzysztof Foltman  <kfoltman@users.sf.net>
+
+	* Matilde/Tracker/SurfsDSPLib/SRF_Resampler.cpp:
+	* Matilde/Tracker/Tracker.cpp:
+	  Unbreak and re-enable Matilde's spline interpolation mode by
+	  replacing a floating point hack with plain multiplication.
+
+2009-04-17  Stefan Kost  <ensonic@users.sf.net>
+
+	* Matilde/Tracker/Makefile.am:
+	  Build api version 1 and 2 (its still the same, need to make the changes).
+
+	* Matilde/Tracker/SurfsDSPLib/Makefile.am:
+	  Add -DBUZZ for more resampler variants.
+
+	* Matilde/Tracker/Track.cpp:
+	* Matilde/Tracker/Tracker.cpp:
+	  Set interpolation mode to linear by default until spline is fixed.
+	
+	* common/MachineInterface.h:
+	  Comments.
+
+2009-04-05  Stefan Kost  <ensonic@users.sf.net>
+
+	* Ensonic/CallbackTester/Makefile.am:
+	* Matilde/Tracker/Makefile.am:
+	  Link against dsplib. Fixes #2724592
+
+2009-04-05  Stefan Kost  <ensonic@users.sf.net>
+
+	* Matilde/Tracker/Envelope.h:
+	* Matilde/Tracker/SurfsDSPLib/SRF_Amp.cpp:
+	* Matilde/Tracker/SurfsDSPLib/SRF_Resampler.cpp:
+	  Fix compiler warnings here too.
+
+2009-04-05  Krzysztof Foltman  <kfoltman@users.sf.net>
+
+	* FSM/PanzerDelay/Delay.cpp:
+	* FSM/WahMan/WahMan.cpp:
+	  Clean up, fix a potentially huge bug in PanzerDelay.
+
+2009-04-05  Krzysztof Foltman  <kfoltman@users.sf.net>
+
+	* FSM/Infector/Infector.cpp:
+	* FSM/Infector/Vegetable.cpp:
+	* FSM/Kick/Kick.cpp:
+	  Clean up a bit.
+
+2009-04-05  Stefan Kost  <ensonic@users.sf.net>
+
+	* configure.ac:
+	  Add --enable-debug which is a kind of "developer-mode". Among other things
+	  it turns compile warnings into errors.
+
+	* FSM/ArpMan/ArpMan.cpp:
+	* FSM/Chorus/Chorus.cpp:
+	* FSM/Chorus2/Chorus2.cpp:
+	* FSM/Infector/Filters.cpp:
+	* FSM/dspchips/DSPChips.h:
+	* common/dsplib/dsplib.cpp:
+	  Fix a first batch of warnings.
+
+2009-03-13  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/Kick/Kick.cpp:
+	* FSM/PanzerDelay/Delay.cpp:
+	  Don't access uninitialized values.
+
+2009-02-25  Stefan Kost  <ensonic@users.sf.net>
+
+	* Makefile.am:
+	* autogen.sh:
+	* common/dsplib.h:
+	* m4/shave.m4:
+	* shave-libtool.in:
+	* shave.in:
+	  Update shave.
+
+2009-02-20  Stefan Kost  <ensonic@users.sf.net>
+
+	* configure.ac:
+	* m4/shave.m4:
+	* shave-libtool.in:
+	* shave.in:
+	* m4/shave.m4 (added):
+	* shave.in (added):
+	* shave-libtool.in (added):
+	  Have a less verbose build.
+
+2009-02-18  Stefan Kost  <ensonic@users.sf.net>
+
+	* README:
+	  More instructions.
+
+	* configure.ac:
+	  Strip newline.
+
+2009-01-13  Krzysztof Foltman  <kfoltman@users.sf.net>
+
+	* FSM/Makefile.am:
+	* FSM/WahMan:
+	* FSM/WahMan/Makefile.am:
+	* FSM/WahMan/WahMan.cpp:
+	* FSM/dspchips/DSPChips.h:
+	* configure.ac:
+	  Add ported WahMan.
+
+2008-12-30  Stefan Kost  <ensonic@users.sf.net>
+
+	* Makefile.am:
+	* autogen.sh:
+	* configure.ac:
+	* m4 (added):
+	  Make use of a macro dir.
+
+2008-12-27  Stefan Kost  <ensonic@users.sf.net>
+
+	* configure.ac:
+	  Use more automake features.
+
+2008-12-26  Stefan Kost  <ensonic@users.sf.net>
+
+	* HACKING:
+	  Add more info.
+
+	* configure.ac:
+	  Run 'autoupdate' on configure.ac.
+
+2008-12-08  Stefan Kost  <ensonic@users.sf.net>
+
+	* README:
+	* TODO:
+	* autogen.sh:
+	* configure.ac:
+	  Clean up configure.
+
+2008-12-07  Stefan Kost  <ensonic@users.sf.net>
+
+	* Matilde/Tracker/Makefile.am:
+	  Build mono variant too.
+
+	* TODO:
+	  Proper locations for data files.
+
+2008-12-07  Stefan Kost  <ensonic@users.sf.net>
+
+	* Matilde/Makefile.am:
+	  Add missing Makefile.
+
+2008-12-07  Stefan Kost  <ensonic@users.sf.net>
+
+	* HACKING:
+	  Takes porting notes.
+
+	* TODO:
+	  Next steps.
+
+	* Makefile.am:
+	* Matilde/Tracker/BuzzInstrument.cpp:
+	* Matilde/Tracker/BuzzInstrument.h:
+	* Matilde/Tracker/BuzzSample.cpp:
+	* Matilde/Tracker/BuzzSample.h:
+	* Matilde/Tracker/Channel.cpp:
+	* Matilde/Tracker/Channel.h:
+	* Matilde/Tracker/Envelope.cpp:
+	* Matilde/Tracker/Envelope.h:
+	* Matilde/Tracker/ExtResampler.cpp:
+	* Matilde/Tracker/ExtResampler.h:
+	* Matilde/Tracker/IInstrument.cpp:
+	* Matilde/Tracker/IInstrument.h:
+	* Matilde/Tracker/ISample.cpp:
+	* Matilde/Tracker/ISample.h:
+	* Matilde/Tracker/Makefile.am:
+	* Matilde/Tracker/SurfsDSPLib/Makefile.am:
+	* Matilde/Tracker/SurfsDSPLib/SRF_2PFilter.cpp:
+	* Matilde/Tracker/SurfsDSPLib/SRF_2PFilter.h:
+	* Matilde/Tracker/SurfsDSPLib/SRF_Amp.cpp:
+	* Matilde/Tracker/SurfsDSPLib/SRF_Amp.h:
+	* Matilde/Tracker/SurfsDSPLib/SRF_AutoGain.cpp:
+	* Matilde/Tracker/SurfsDSPLib/SRF_DSP.cpp:
+	* Matilde/Tracker/SurfsDSPLib/SRF_DSP.h:
+	* Matilde/Tracker/SurfsDSPLib/SRF_Resampler.cpp:
+	* Matilde/Tracker/SurfsDSPLib/SRF_Resampler.h:
+	* Matilde/Tracker/SurfsDSPLib/SRF_Types.h:
+	* Matilde/Tracker/Track.cpp:
+	* Matilde/Tracker/Track.h:
+	* Matilde/Tracker/Tracker.cpp:
+	* Matilde/Tracker/Tracker.h:
+	* Matilde/Tracker/WavetableManager.cpp:
+	* Matilde/Tracker/WavetableManager.h:
+	* Matilde/Tracker/resource.h:
+	* Matilde/Tracker/to-do.txt:
+	* common/dsplib/Makefile.am:
+	* configure.ac:
+	  Port Matilde-Tracker. Resampler sounds fishy. Need build stuff for mono
+	  variant.
+
+2008-11-11  Krzysztof Foltman  <kfoltman@users.sf.net>
+
+	* FSM/PanzerDelay/Delay.cpp:
+	  fix initialization order bug causing valgrind warnings
+
+2008-11-11  Stefan Kost  <ensonic@users.sf.net>
+
+	* Ensonic/CallbackTester/CallbackTester.cpp:
+	  Remove some debug output.
+
+2008-08-31  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/Chorus2/Chorus2.cpp:
+	  Rename more.
+
+	* FSM/Makefile.am:
+	  Build both.
+	  
+
+2008-08-31  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/Chorus/Chorus.cpp:
+	* FSM/Chorus2/Makefile.am:
+	* FSM/Chorus2/Chorus.cpp:
+	* FSM/Chorus2/Chorus2.cpp:
+	  Add original Chorus and rename new to Chorus2.
+
+2008-06-23  Krzysztof Foltman  <kfoltman@users.sf.net>
+
+	* common/dsplib.h:
+	  Change calling convention so that function arguments are
+	  passed correctly.
+
+2008-06-22  Stefan Kost  <ensonic@users.sf.net>
+
+	* configure.ac:
+	* common/dsplib/dsplib.cpp:
+	* common/dsplib/Makefile.am:
+	* Jeskola/Ninja/Ninja.cpp:
+	  Readd dsplib. Statically link it to Ninja.
+
+2008-06-03  Krzysztof Foltman  <kfoltman@users.sf.net>
+
+	* FSM/Infector/Infector.cpp:
+	* FSM/Infector/Vegetable.cpp:
+	* FSM/dspchips/DSPChips.h:
+	  Fix Infector crash bug, add assertion to check if waves were built
+	  at all.
+
+2008-05-11  Stefan Kost  <ensonic@users.sf.net>
+
+	* Ensonic/CallbackTester/CallbackTester.cpp:
+	* Ensonic/CallbackTester/Makefile.am:
+	* Ensonic/Makefile.am:
+	* Makefile.am:
+	* configure.ac:
+	  Add test plugin.
+
+	* FSM/Kick/Makefile.am:
+	  Fix Makefile
+	
+	* common/bw.h:
+	* common/dsplib.h:
+	* common/resample.h:
+	  Add more sdk files.
+
+2008-03-21  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/PhatMan/Chorus.cpp:
+	* FSM/dspchips/DSPChips.h:
+	  Use rint() on linux. Revert the changer where I commented f2i out.
+	  Add some comments.
+
+2008-03-20  Krzysztof Foltman <wdev@foltman.com>
+
+	* FSM/PhatMan/Chorus.cpp:
+	* FSM/dspchips/DSPChips.h:
+	  Attempt at making PhatMan actually work as expected.
+
+2008-03-13  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/PhatMan/Chorus.cpp:
+	  Copy result data back.
+
+	* common/mdk/mdk.h:
+	  Formatting.
+
+2008-03-12  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/PhatMan/Chorus.cpp:
+	* common/mdk/mdkimp.cpp:
+	  Get the mdk from host.
+
+2008-03-12  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/PhatMan/Chorus.cpp:
+	  Workaround for crasher on one machine.
+
+2008-03-10  Stefan Kost  <ensonic@users.sf.net>
+
+	* common/MachineInterface.h:
+	  Revert ABI breakage.
+
+2008-03-10  Stefan Kost  <ensonic@users.sf.net>
+
+	* configure.ac:
+	  Add CFLAG to suppress gcc warning, that if we fix it would change the
+	  ABI. Need to revert the changes in the header still.
+
+2008-02-23  Krzysztof Foltman  <wdev@foltman.com>
+
+	* FSM/Makefile.am:
+	* FSM/PanzerDelay:
+	* FSM/PanzerDelay/Delay.cpp:
+	* FSM/PanzerDelay/Makefile.am:
+	* FSM/PanzerDelay/panzer.rc:
+	* FSM/PanzerDelay/resource.h:
+	* FSM/PhatMan:
+	* FSM/PhatMan/Chorus.cpp:
+	* FSM/PhatMan/Makefile.am:
+	* FSM/PhatMan/chorus.rc:
+	* FSM/PhatMan/resource.h:
+	* configure.ac:
+          Add new machines (should work already, but they apparently don't)
+
+2007-12-12  Stefan Kost  <ensonic@users.sf.net>
+
+	* common/MachineInterface.h:
+	  Fix gcc warnings.
+
+2007-12-09  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/ArpMan/ArpMan.cpp:
+	* FSM/Chorus/Chorus.cpp:
+	* FSM/Infector/Channel.cpp:
+	* FSM/Infector/Filters.cpp:
+	* FSM/Infector/Infector.cpp:
+	* FSM/Infector/Infector.h:
+	* FSM/Infector/Track.cpp:
+	* FSM/Infector/Vegetable.cpp:
+	* FSM/Kick/Kick.cpp:
+	* FSM/dspchips/DSPChips.h:
+	  Add license headers.
+
+2007-11-25  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/Infector/Infector.cpp:
+	* FSM/Infector/Infector.h:
+	  Use MAX_BUFFER_LENGTH in code. Remove some assert that where added to
+	  track the problem but add one for numsamples.
+
+	* common/MachineInterface.h:
+	  Comment what MAX_BUFFER_LENGTH is used for.
+
+2007-11-24  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/Infector/Infector.cpp:
+	* FSM/Infector/Infector.h:
+	  Enlarge fixed PWMBuffers. Remove debug log.
+
+2007-11-23  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/Infector/Infector.cpp:
+	* FSM/Infector/Vegetable.cpp:
+	  More debug logging. Enable destructor.
+
+2007-11-23  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/Infector/Infector.cpp:
+	* FSM/Infector/Infector.h:
+	  Some more debug logging and cleanups.
+
+2007-11-21  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/Infector/Channel.cpp:
+	* FSM/Infector/Filters.cpp:
+	* FSM/Infector/Infector.cpp:
+	* FSM/Infector/Track.cpp:
+	* FSM/Infector/Vegetable.cpp:
+	* FSM/Makefile.am:
+	* FSM/dspchips/DSPChips.h:
+	  Cleanup the sources a bit. Try to free the generated wave, but
+	  disabled now as valgrind does not yet like it.
+
+2007-11-19  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/Infector/Infector.cpp:
+	* FSM/Infector/Makefile.am:
+	* FSM/dspchips/DSPChips.h:
+	  More porting. Now loads fine.
+
+2007-11-13  Stefan Kost  <ensonic@users.sf.net>
+
+	* configure.ac:
+	  Also create Makefile for Infector, but not yet build by default.
+
+2007-11-13  Krzysztof Foltman  <kfoltman@users.sourceforge.net>
+
+	* FSM/Infector/Channel.cpp:
+	* FSM/Infector/Filters.cpp:
+	* FSM/Infector/Infector.cpp:
+	* FSM/Infector/Infector.h:
+	* FSM/Infector/Makefile.am:
+	* FSM/Infector/Track.cpp:
+	* FSM/Infector/Vegetable.cpp:
+	  Preliminary commit just to get things going, it's not like it's going
+	  to compile or anything - FFT library and the GUI are still missing.
+
+2007-11-12  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/dspchips/DSPChips.h:
+	  We don't seem to need the fft include.
+
+2007-11-10  Stefan Kost  <ensonic@users.sf.net>
+
+	* FSM/ArpMan/ArpMan.cpp:
+	* FSM/ArpMan/Makefile.am:
+	* FSM/Chorus/Chorus.cpp:
+	* FSM/Chorus/Makefile.am:
+	* FSM/Kick/Kick.cpp:
+	* FSM/Kick/Makefile.am:
+	* FSM/Makefile.am:
+	* FSM/dspchips/DSPChips.h:
+	* Makefile.am:
+	* common/Makefile.am:
+	* common/dsplib.h:
+	* common/mdk/Makefile.am:
+	* common/mdk/mdk.h:
+	* common/mdk/mdkimp.cpp:
+	* common/mdk/mdkimp.h:
+	* configure.ac:
+	  More machines ported. Initial native mdk implementation added.
+
+2007-11-03  Stefan Kost  <ensonic@users.sf.net>
+
+	* AUTHORS:
+	* ChangeLog:
+	* Elak/Dist2/Makefile.am:
+	* Elak/Dist2/dist2.cpp:
+	* Elak/Makefile.am:
+	* Elak/SVF/Makefile.am:
+	* Elak/SVF/svf.cpp:
+	* FSM/Makefile.am:
+	* Makefile.am:
+	* NEWS:
+	* autogen.sh:
+	* common/MachineInterface.h:
+	* common/windef.h:
+	* configure.ac:
+	  Importing sources.
+

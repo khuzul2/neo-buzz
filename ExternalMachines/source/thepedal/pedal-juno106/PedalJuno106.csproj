@@ -1,0 +1,93 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <AssemblyName>Pedal Juno106.NET</AssemblyName>
+    <RootNamespace>PedalJuno106</RootNamespace>
+    <OutputType>Library</OutputType>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+
+    <!-- WPF reference assemblies. Required for the About window's
+         System.Windows.MessageBox, and mandated by Notes_Build §1.2 anyway
+         (BuzzGUI.Interfaces transitively references WPF types). -->
+    <UseWPF>true</UseWPF>
+
+    <!-- Build hygiene per Notes_Build §1.2 — ReBuzz only loads the .dll, so
+         suppress .pdb and .deps.json to keep the gear folder clean. -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+
+    <!-- Suppress the harmless WindowsBase / VisualBasic / System.Drawing
+         version-conflict warnings caused by ReBuzz shipping older framework
+         DLLs (Notes_Build §4). -->
+    <NoWarn>MSB3277</NoWarn>
+
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!-- Adjust ReBuzzPath if your install lives elsewhere. -->
+  <PropertyGroup>
+    <ReBuzzPath>$(ReBuzzDir)</ReBuzzPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="BuzzGUI.Interfaces">
+      <HintPath>$(ReBuzzPath)\BuzzGUI.Interfaces.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- MenuItemVM + SimpleCommand for the right-click About window
+         (AboutWindow §1.1). Ships with ReBuzz; Private=false so it isn't
+         copied into the machine's output. -->
+    <Reference Include="BuzzGUI.Common">
+      <HintPath>$(ReBuzzPath)\BuzzGUI.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- gen_presets.py is a maintenance script, not a build input. Exclude it
+       so MSBuild doesn't trip if a future SDK starts auto-globbing .py files. -->
+  <ItemGroup>
+    <None Remove="gen_presets.py" />
+  </ItemGroup>
+
+  <!-- Auto-deploy the .dll and the preset bundle to ReBuzz\Gear\Generators
+       after build. ContinueOnError keeps the build green if ReBuzz is running
+       and holds a file lock.
+
+       The preset bundle MUST be named exactly "Pedal Juno106.prs.xml" (Build
+       §3.1 auto-load form) and live in the project dir. If it's present we copy
+       it; if a differently-named .prs.xml is there instead (e.g. a leftover
+       "..._Presets.prs.xml"), the exact-name Copy would emit MSB3030
+       "not found" — which ContinueOnError silently downgrades to a warning, so
+       the build goes green with NO preset deployed. To make that failure loud,
+       we guard the Copy on Exists() and emit an explicit Warning that names the
+       file actually found. -->
+  <Target Name="DeployToReBuzz" AfterTargets="Build">
+    <PropertyGroup>
+      <_PresetPath>$(MSBuildProjectDirectory)\Pedal Juno106.prs.xml</_PresetPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <_AnyPreset Include="$(MSBuildProjectDirectory)\*.prs.xml" />
+    </ItemGroup>
+
+    <Message Text="Deploying $(TargetFileName) -> $(ReBuzzPath)\Gear\Generators\"
+             Importance="high" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFolder="$(ReBuzzPath)\Gear\Generators\"
+          ContinueOnError="true" />
+
+    <Message Condition="Exists('$(_PresetPath)')"
+             Text="Deploying preset bundle -> $(ReBuzzPath)\Gear\Generators\"
+             Importance="high" />
+    <Copy Condition="Exists('$(_PresetPath)')"
+          SourceFiles="$(_PresetPath)"
+          DestinationFolder="$(ReBuzzPath)\Gear\Generators\"
+          ContinueOnError="true" />
+    <Warning Condition="!Exists('$(_PresetPath)')"
+             Text="Preset bundle NOT deployed: '$(_PresetPath)' not found. Found instead: @(_AnyPreset). Per Build 3.1 the bundle must be named 'Pedal Juno106.prs.xml' - rename it, or presets won't appear in ReBuzz." />
+  </Target>
+
+</Project>

@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>Pedal Peer Control.NET</AssemblyName>
+    <RootNamespace>Pedal.PeerControl</RootNamespace>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <Optimize>true</Optimize>
+
+    <!-- Output goes straight into the ReBuzz Generators folder.    -->
+    <!-- $(ReBuzzDir) is defined in Directory.Build.props           -->
+    <OutputPath>$(ReBuzzDir)\Gear\Generators\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+
+    <AssemblyTitle>Pedal Peer Control</AssemblyTitle>
+    <Company>The Pedal</Company>
+    <Product>Pedal Peer Control</Product>
+    <Copyright>Based on BTDSys PeerCtrl © 2002-2008 Ed Powley; C# ReBuzz port by The Pedal</Copyright>
+    <Version>1.6.0</Version>
+  </PropertyGroup>
+
+  <!--
+    ReBuzz managed-machine API DLLs – NOT on NuGet, they ship with ReBuzz.
+    HintPath resolves via $(ReBuzzDir) in Directory.Build.props.
+
+    To build inside the ReBuzz solution tree, swap these for:
+      <ProjectReference Include="..\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj"/>
+      <ProjectReference Include="..\BuzzGUI.Common\BuzzGUI.Common.csproj"/>
+  -->
+  <ItemGroup>
+    <!-- Core machine interface: IBuzzMachine, MachineDecl, ParameterDecl, IBuzzMachineHost, Sample, WorkModes -->
+    <Reference Include="ReBuzz">
+      <HintPath>$(ReBuzzDir)\ReBuzz.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- UI interfaces: IMenuItem, IMachineGUI, etc. -->
+    <Reference Include="BuzzGUI.Interfaces">
+      <HintPath>$(ReBuzzDir)\BuzzGUI.Interfaces.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BuzzGUI.Common">
+      <HintPath>$(ReBuzzDir)\BuzzGUI.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- MIDI output for feedback — NAudio.WinMM ships with ReBuzz 1841+ -->
+    <Reference Include="NAudio.WinMM">
+      <HintPath>$(ReBuzzDir)\NAudio.WinMM.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- No XAML pages – SettingsWindow is built entirely in code to avoid BAML load issues in the plugin context -->
+  <ItemGroup>
+    <Page Remove="SettingsWindow.xaml"/>
+    <EmbeddedResource Remove="SettingsWindow.xaml"/>
+  </ItemGroup>
+
+</Project>

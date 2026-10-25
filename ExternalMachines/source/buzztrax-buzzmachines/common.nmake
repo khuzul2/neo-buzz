@@ -1,0 +1,60 @@
+# Common compiler and linker settings to build 32 and 64 bit Bu machines 
+# with Debug and Release configurations. This file is shared by all machine
+# makefiles.
+
+# PLATFORM is an environment variable set by the VS build env to x64 or
+# manually to x86
+
+!IF "$(CONFIGURATION)" != "Debug" && "$(CONFIGURATION)" != "Release"
+CONFIGURATION=Release
+!ENDIF
+
+!IF "$(PLATFORM)" == "X86"
+PLATFORM=x86
+!ELSEIF "$(PLATFORM)" == "X64"
+PLATFORM=x64
+!ELSEIF "$(PLATFORM)" != "x86" && "$(PLATFORM)" != "x64"
+!ERROR Expected PLATFORM=x86 or x64
+!ENDIF
+
+!IF "$(INSTALLDIR)" == ""
+INSTALLDIR=$(PLATFORM)\$(CONFIGURATION)
+!ENDIF
+
+INSTALLDIR_GEAR=$(INSTALLDIR)\Gear
+INSTALLDIR_EFX=$(INSTALLDIR_GEAR)\Effects
+INSTALLDIR_EFX_PRS=$(INSTALLDIR_GEAR)\Effects
+INSTALLDIR_EFX_DOC=$(INSTALLDIR_GEAR)\Effects
+INSTALLDIR_GEN=$(INSTALLDIR_GEAR)\Generators
+INSTALLDIR_GEN_PRS=$(INSTALLDIR_GEAR)\Generators
+INSTALLDIR_GEN_DOC=$(INSTALLDIR_GEAR)\Generators
+
+OUTDIR=$(PLATFORM)\$(CONFIGURATION)
+
+!MESSAGE PLATFORM = $(PLATFORM)
+!MESSAGE CONFIGURATION = $(CONFIGURATION)
+!MESSAGE OUTDIR = $(OUTDIR)
+!MESSAGE INSTALLDIR = $(INSTALLDIR)
+
+!IF "$(PLATFORM)" == "x86"
+CFLAGS = /DWIN32 /D_WINDLL /D__MSVC__ /D_X86_ /I..\..\common
+LINKFLAGS = 
+!ELSEIF "$(PLATFORM)" == "x64"
+CFLAGS = /DWIN32 /DWIN64 /D_WINDLL /D__MSVC__ /D_AMD64_ /I..\..\common
+LINKFLAGS = 
+!ENDIF
+
+!IF "$(CONFIGURATION)" == "Debug"
+CFLAGS = /Od /Zi /MTd /D_DEBUG $(CFLAGS) 
+LINKFLAGS = /LDd $(LINKFLAGS) 
+!ELSEIF "$(CONFIGURATION)" == "Release"
+CFLAGS = /MT $(CFLAGS) 
+LINKFLAGS = /LD $(LINKFLAGS)
+!ENDIF
+
+
+# Default inference rule
+
+.cpp{$(OUTDIR)}.obj:
+	if not exist $(OUTDIR) mkdir $(OUTDIR)
+	$(CC) $(CFLAGS) /c $< /Fo$*.obj

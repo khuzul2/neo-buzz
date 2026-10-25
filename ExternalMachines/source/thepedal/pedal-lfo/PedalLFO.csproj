@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Must match the framework ReBuzz itself is built against.  ReBuzz
+         1817+ ships .NET 10 assemblies; net8.0-windows produces CS1705
+         "uses System.Runtime v10.0.0.0" errors at compile time. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+
+    <!-- Filename = "Pedal LFO.NET.dll".  The ".NET" suffix is mandatory:
+         ReBuzz uses it to route the file to the managed-machine loader
+         (Build §2). -->
+    <AssemblyName>Pedal LFO.NET</AssemblyName>
+    <RootNamespace>WDE.PedalLFO</RootNamespace>
+
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Mandatory project-wide deployment hygiene (Build §1.2).
+         ReBuzz only loads the .dll; .pdb and .deps.json are unused. -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+
+    <!-- Suppresses the harmless WindowsBase / Microsoft.VisualBasic /
+         System.Drawing version-conflict warnings ReBuzz triggers on
+         every build (Build §4). -->
+    <NoWarn>MSB3277</NoWarn>
+
+    <!-- Adjust if ReBuzz is installed elsewhere. -->
+    <ReBuzzPath>$(ReBuzzDir)</ReBuzzPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Single reference: the Buzz.MachineInterface namespace lives inside
+         BuzzGUI.Interfaces.dll, not in a separate assembly. -->
+    <Reference Include="BuzzGUI.Interfaces">
+      <HintPath>$(ReBuzzPath)\BuzzGUI.Interfaces.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Control machines appear in the Generators tab (Core §2), so we
+       deploy to Gear\Generators. -->
+  <Target Name="DeployToReBuzz"
+          AfterTargets="Build"
+          Condition="Exists('$(ReBuzzPath)\Gear\Generators')">
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFolder="$(ReBuzzPath)\Gear\Generators" />
+  </Target>
+
+</Project>

@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <PlatformTarget>x86</PlatformTarget>
+    <Platforms>x86</Platforms>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AssemblyName>Pedal MComp.NET</AssemblyName>
+    <RootNamespace>PedalMComp</RootNamespace>
+    <Version>1.0.0</Version>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <NoWarn>MSB3277</NoWarn>
+    <BuzzDir Condition="'$(BuzzDir)' == ''">C:\Program Files (x86)\Jeskola\Buzz</BuzzDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Build-time only; nothing extra is deployed. -->
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WPF for the embedded GUI: plain framework references on net48. -->
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+    <Reference Include="System.Xaml" />
+
+    <!-- Buzz SDK assemblies: resolved from the Buzz install, never copied. -->
+    <Reference Include="BuzzGUI.Interfaces">
+      <HintPath>$(BuzzDir)\BuzzGUI.Interfaces.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- MenuItemVM / SimpleCommand for the About entry. -->
+    <Reference Include="BuzzGUI.Common">
+      <HintPath>$(BuzzDir)\BuzzGUI.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Effect: deploy the DLL and its preset bundle to Gear\Effects. -->
+  <Target Name="DeployToBuzz" AfterTargets="Build">
+    <PropertyGroup>
+      <PresetFile>$(MSBuildProjectDirectory)\$(AssemblyName).prs.xml</PresetFile>
+    </PropertyGroup>
+    <Message Text="Deploying $(TargetFileName) -> $(BuzzDir)\Gear\Effects\" Importance="high" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFolder="$(BuzzDir)\Gear\Effects\"
+          ContinueOnError="true" />
+    <Message Condition="Exists('$(PresetFile)')" Text="Deploying $(AssemblyName).prs.xml -> $(BuzzDir)\Gear\Effects\" Importance="high" />
+    <Copy Condition="Exists('$(PresetFile)')"
+          SourceFiles="$(PresetFile)"
+          DestinationFolder="$(BuzzDir)\Gear\Effects\"
+          ContinueOnError="true" />
+    <Warning Condition="!Exists('$(PresetFile)')" Text="Preset bundle not found: $(PresetFile)" />
+  </Target>
+
+</Project>

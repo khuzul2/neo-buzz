@@ -1,0 +1,5 @@
+!INCLUDE ..\common.nmake
+
+SUBDIRS_ALL = dsplib.all mdk.all
+
+!INCLUDE ..\subdirs.nmake

@@ -1,0 +1,5 @@
+!INCLUDE ..\common.nmake
+
+SUBDIRS_ALL = Tracker.all
+
+!INCLUDE ..\subdirs.nmake

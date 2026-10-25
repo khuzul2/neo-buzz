@@ -1,0 +1,128 @@
+= Porting =
+
+Below is a list of unported machines in this tree. Please remove them from the
+list when its ported and add them to the list, when you received source for a
+machine.
+We have a page on the wiki where the efforts of obtaining machines sources are
+listed (http://wiki.buzztrax.org/index.php/BuzzMachineSources).
+
+Arguru (never released as buzzmachines)
+  Compressor
+  Distortion
+  GoaSlider
+  Reverb
+Fuzzpilz
+  UnwieldyTracker
+Ld
+  Gate (builds, but needs auxbus)
+
+= Filenames =
+Linux has case-sensitive filenames. Rename all *.CPP .H files to lowercase
+extensions. If the machine consists of a single cpp file, its a good idea to
+make it match the machine name.
+
+Also avoid spaces in file names (this is a limitation of the build system). Use
+underscore characters ('_') instead.
+
+Be careful when editing the file though and please keep them in WINDOWS-1252 
+char format.
+
+
+= Intermediate Files =
+- don't add Release/Debug folders from windows source snapshots.
+- don't add those
+  currently unused Visual Studio files:
+  *.aps, *.clw, *.ncb, *.opt, *.plg
+  intermediate files:
+  *.obj, *.pch, *.exp, *.sbr, *.bsc, *.ilk, *.lib, *.pdb, *.res, *.idb
+
+
+= Initial Build =
+- enter then machine dir (e.g. cd Author/AwesomeFilter)
+- run ../../gen_makefile_am.sh and check the resulting Makefile.am
+- add a Makefile.am for the machine author if not yet there
+- edit configure.ac, go to bottom and add the newly created Makefiles
+- if the port is not fully done, don't add the machine dir the the SUBDIRS var
+  in the Makefile.am on level up. One can still enter the dir directly and run
+  make
+
+
+= Includes =
+- replace any include for MachineInterface.h that uses a path with this
+#include <MachineInterface.h>
+- likewise include other subsystems from common as
+#include <mdk/mdk.h>
+#include <auxbus/auxbus.h>
+- replace any #include <windows.h> with
+#include <windef.h>
+
+
+= Compiler Warnings/Errors =
+error: ‘__min’ was not declared in this scope
+-> #include <windef.h>
+
+error: 'min' was not declared in this scope
+-> change to __min() (and __max() likewise)
+
+error: name lookup of ‘c’ changed for new ISO ‘for’ scoping
+error:   using obsolete binding at ‘c’
+-> move "int c" out of the for-loop
+
+error: dereferencing type-punned pointer will break strict-aliasing rules
+- often used for bitacess of floats
+  can be fixed using unions as in MadBrain/4fm2f/4fm2f.cpp in float_as_bits
+- zero-check *(int*)&float_var -> float_var!=0.0
+
+= Extra files (demo-songs, presets and help) =
+Preset and Help files need to follow the pattern Author_Machine.extension. For
+presets the extension is prs, for help files it can be txt,htm and html (all
+lowercase).
+
+* Preset file:
+  * FSM/Infector
+  * MadBrain Dynamite6
+* Help file:
+  * CyanPhase/DTMF-1
+  * Elenzil Modulator
+  * FrequencyUnknown ODelay
+  * Matilde/Tracker
+* Demo song:
+  * Elenzil Modulator
+  * FrequencyUnknown ODelay
+  * FSM/Infector
+  * MadBrain Dynamite6
+  * Zwar 11Stereo
+  * Zwar Csi
+
+= Misc =
+* Matilde/Tracker is an example of how to build various variants of the same code
+  (mono/stereo and 2 api versions)
+
+= Portability =
+* if the machine has UI, don't rip it out, use #ifdef WIN32, maybe we
+  can do something useful in the future
+* whenever there is something windows specific that is not easily made portable,
+  it would be good to wrap it with a #ifdef WIN32
+* replace uses of MessageBox by pCB->MessageBox and strip extra args
+
+= Testing =
+check if the plugin can be loaded:
+~/projects/buzztrax/bmltest_info ./.libs/libFSM_Kick.so
+
+try to process
+~/projects/buzztrax/bmltest_process ./.libs/libJeskola_Trilok.so /tmp/input.raw /tmp/output.raw
+
+test for memory leaks:
+GLIBCPP_FORCE_NEW=1 GLIBCXX_FORCE_NEW=1 valgrind --tool=memcheck --leak-check=full --leak-resolution=high --trace-children=yes --num-callers=20 -v ~/projects/buzztrax/bmltest_info ./.libs/libFSM_Kick.so
+
+= Check your songs for missing machines =
+Get a list of which machines you are missing most:
+while read -r f; do ./buzztrax-cmd -c i -i "$f" | grep "bml-" ; done < <(find /path/to/my/songs/ -name "*.bm?") | sort | uniq -c | sort -n
+
+Get a list of songs sorted by number of missing machines
+while read -r f; do num=$(./buzztrax-cmd -c i -i "$f" | grep -c "bml-"); if [ "$?" == "0" ]; then echo "$num, $f"; fi; done < <(find /path/to/my/songs/ -name "*.bm?") | sort -
+
+= make a source snapshot (including uncommitted files) =
+cd ..
+zip -r buzzmachines.zip buzzmachines -x@buzzmachines/exclude.lst
+

@@ -1,0 +1,83 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- WPF reference assemblies: required for the About window's
+         System.Windows.MessageBox (AboutWindow §1.1). -->
+    <UseWPF>true</UseWPF>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Browser display name comes from the DLL filename — must end in .NET
+         so ReBuzz routes it to the managed loader. (Build §2)            -->
+    <AssemblyName>Pedal SH101.NET</AssemblyName>
+    <RootNamespace>PedalSH101</RootNamespace>
+
+    <!-- Mandatory deployment hygiene (Build §1.2):
+         ReBuzz only loads the .dll. Don't ship .pdb or .deps.json.       -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+
+    <!-- Suppress harmless ReBuzz/.NET10-SDK assembly version conflicts.
+         (Build §4)                                                       -->
+    <NoWarn>MSB3277</NoWarn>
+  </PropertyGroup>
+
+  <!-- ReBuzz install path. Override on the command line if your install
+       lives elsewhere:  dotnet build -p:ReBuzzPath="D:\ReBuzz"           -->
+  <PropertyGroup>
+    <ReBuzzPath Condition="'$(ReBuzzPath)' == ''">$(ReBuzzDir)</ReBuzzPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="BuzzGUI.Interfaces">
+      <HintPath>$(ReBuzzPath)\BuzzGUI.Interfaces.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Buzz.MachineInterface">
+      <HintPath>$(ReBuzzPath)\Buzz.MachineInterface.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- MenuItemVM + SimpleCommand for the right-click About window
+         (AboutWindow §1.1). -->
+    <Reference Include="BuzzGUI.Common">
+      <HintPath>$(ReBuzzPath)\BuzzGUI.Common.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- Auto-deploy after successful build. Generators go in Gear\Generators.
+       The preset bundle filename matches the machine name + .prs.xml — the
+       auto-load form per Build §3.1.
+
+       The preset Copy is guarded on Exists() with an explicit Warning
+       (Build §3.5.1): a misnamed/absent bundle would otherwise emit MSB3030,
+       which ContinueOnError silently downgrades to a warning — green build,
+       no presets deployed. -->
+  <Target Name="DeployToReBuzz" AfterTargets="Build">
+    <PropertyGroup>
+      <_PresetPath>$(MSBuildProjectDirectory)\Pedal SH101.prs.xml</_PresetPath>
+    </PropertyGroup>
+    <ItemGroup>
+      <_AnyPreset Include="$(MSBuildProjectDirectory)\*.prs.xml" />
+    </ItemGroup>
+
+    <Message Text="Deploying $(TargetFileName) -> $(ReBuzzPath)\Gear\Generators\"
+             Importance="high" />
+    <Copy SourceFiles="$(TargetPath)"
+          DestinationFolder="$(ReBuzzPath)\Gear\Generators\"
+          ContinueOnError="true" />
+
+    <Message Condition="Exists('$(_PresetPath)')"
+             Text="Deploying preset bundle -> $(ReBuzzPath)\Gear\Generators\"
+             Importance="high" />
+    <Copy Condition="Exists('$(_PresetPath)')"
+          SourceFiles="$(_PresetPath)"
+          DestinationFolder="$(ReBuzzPath)\Gear\Generators\"
+          ContinueOnError="true" />
+    <Warning Condition="!Exists('$(_PresetPath)')"
+             Text="Preset bundle NOT deployed: '$(_PresetPath)' not found. Found instead: @(_AnyPreset). Per Build 3.1 it must be named 'Pedal SH101.prs.xml' - rename it, or presets won't appear in ReBuzz." />
+  </Target>
+
+</Project>

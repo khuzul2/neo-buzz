@@ -1,0 +1,10 @@
+<Project>
+  <!--
+    Buzz 1503 (32-bit) install location. Override on the command line:
+      dotnet build -p:BuzzDir="D:\Tools\Buzz"
+    Writing to Program Files needs an elevated prompt.
+  -->
+  <PropertyGroup>
+    <BuzzDir Condition="'$(BuzzDir)'==''">C:\Program Files (x86)\Jeskola\Buzz</BuzzDir>
+  </PropertyGroup>
+</Project>

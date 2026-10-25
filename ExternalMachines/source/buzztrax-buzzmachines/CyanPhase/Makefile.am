@@ -1,0 +1,2 @@
+SUBDIRS = AtomStereoMeld DTMF Notch
+
