@@ -63,6 +63,20 @@
     <Exec Command="IF EXIST obj rmdir obj" />
   </Target>
 
+  <!--
+  Fork: copy the native fake machines next to the test assembly explicitly. The Content-type
+  ProjectReferences above don't copy them in command-line solution builds (msbuild /m), so
+  every test using them failed with FileNotFoundException.
+  -->
+  <Target Name="CopyFakeNativeMachines" AfterTargets="Build">
+    <ItemGroup>
+      <_FakeNativeMachine Include="$(SolutionDir)build\$(Configuration)\$(Platform)\FakeNativeGenerator\bin\FakeNativeGenerator.dll" />
+      <_FakeNativeMachine Include="$(SolutionDir)build\$(Configuration)\$(Platform)\FakeNativeEffect\bin\FakeNativeEffect.dll" />
+    </ItemGroup>
+    <Warning Condition="!Exists('%(_FakeNativeMachine.FullPath)')" Text="Fake native machine not found: %(_FakeNativeMachine.FullPath)" />
+    <Copy SourceFiles="@(_FakeNativeMachine)" DestinationFolder="$(OutDir)" Condition="Exists('%(_FakeNativeMachine.FullPath)')" SkipUnchangedFiles="true" />
+  </Target>
+
   <!-- 
   This small snippet saves a path that requires some build-time info
   so that the tests can read it and use it to find the ReBuzzEngine files.

@@ -96,6 +96,8 @@ namespace ReBuzz.NativeMachine
 
             childProcess.Exited += (sender, e) =>
             {
+                // Fork: say why a host went away (crash codes like 0xC0000005 are telling).
+                Serilog.Log.Warning("Native machine host {Path} exited with code 0x{ExitCode:X8}", path, childProcess.ExitCode);
                 if (childProcess.ExitCode != 0)
                 {
                     if (buzz.MachineManager.IsSingleProcessMode)
