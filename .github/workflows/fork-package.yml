@@ -46,8 +46,9 @@ jobs:
       env:
         QUICK: ${{ inputs.quick }}
       run: |
-        $extra = @()
-        if ($env:QUICK -eq 'true') { $extra = @('-SkipManagedMachines', '-SkipBinaries', '-NoZip') }
+        # Hashtable splatting: an array of '-Switch' strings would bind as positional arguments.
+        $extra = @{}
+        if ($env:QUICK -eq 'true') { $extra = @{ SkipManagedMachines = $true; SkipBinaries = $true; NoZip = $true } }
         ./build.ps1 -Version "${{ github.ref_type == 'tag' && github.ref_name || format('ci-{0}', github.run_number) }}" @extra *>&1 | Tee-Object -FilePath build.log
 
     # Copies error lines and the log tail into annotations, readable through the API.
