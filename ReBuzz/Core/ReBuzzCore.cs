@@ -14,6 +14,7 @@ using Microsoft.Win32;
 using ReBuzz.Audio.Engine;
 using ReBuzz.Common;
 using ReBuzz.Core.Actions.GraphActions;
+using ReBuzz.Core.Session;
 using ReBuzz.FileOps;
 using ReBuzz.MachineManagement;
 using ReBuzz.Midi;
@@ -71,7 +72,7 @@ namespace ReBuzz.Core
     /// The class is large because it brings together many subsystems; comments
     /// are added to explain high-level responsibilities and key public methods.
     /// </summary>
-    public class ReBuzzCore : IBuzz, INotifyPropertyChanged
+    public class ReBuzzCore : IBuzz, INotifyPropertyChanged, ISessionHost
     {
         // Build and runtime info
         public static int buildNumber = int.Parse(Resources.BuildNumber);
@@ -112,6 +113,10 @@ namespace ReBuzz.Core
                 MidiControllerAssignments.Song = songCore;
             }
         }
+
+        // Session View engine (fork addition, docs/specs/session-view.md)
+        internal SessionCore SessionCore { get; }
+        public ISession Session => SessionCore;
 
         // UI related state
         BuzzView activeView = BuzzView.MachineView;
@@ -321,6 +326,7 @@ namespace ReBuzz.Core
                     preparePlaying = false;
                     playing = false;
                     GlobalState.StateFlags &= ~SF_PLAYING;
+                    SessionCore.OnTransportStopped();
                     songCore.WavetableCore.StopPlayingWave();
 
                     foreach (var machine in songCore.MachinesList)
@@ -774,6 +780,8 @@ namespace ReBuzz.Core
             ProcessAndThreadProfile.SetProfile(engineSettings.PriorityProfile);
 
             DefaultPatternEditor = "Modern Pattern Editor";
+
+            SessionCore = new SessionCore(this);
 
             midiActivityTimer = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(0.5) };
             midiActivityTimer.Tick += (sender, e) =>
@@ -2234,6 +2242,7 @@ namespace ReBuzz.Core
             SongCore.SongEnd = 16;
             TPB = 4;
             BPM = 126;
+            SessionCore.Reset();
             Modified = false;
 
             GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;

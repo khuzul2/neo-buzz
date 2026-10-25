@@ -65,6 +65,11 @@ namespace ReBuzz.Audio
         // GetEventsInto). Single audio thread, fully consumed each column iteration.
         readonly List<PatternEvent> playColumnEvents = new List<PatternEvent>();
 
+        // Fork (Session View): patterns given a play position by the last UpdatePatternPositions
+        // call, each once - session clips and arranged patterns. Audio thread only.
+        readonly List<PatternCore> activePatterns = new List<PatternCore>();
+        readonly HashSet<PatternCore> activePatternSet = new HashSet<PatternCore>();
+
         public WorkManager(ReBuzzCore buzzCore, WorkThreadEngine workEngine, int algorithm, EngineSettings settings)
         {
             this.buzzCore = buzzCore;
@@ -258,7 +263,17 @@ namespace ReBuzz.Audio
                             if (buzzCore.Playing && buzzCore.SoloPattern == null)
                             {
                                 buzzCore.SongCore.UpdatePlayPosition(1);
+
+                                // Session View (fork): advance the session clock, apply due launches/stops.
+                                // UpdatePlayPosition may have stopped the transport at the song end.
+                                if (buzzCore.Playing)
+                                    buzzCore.SessionCore.OnTick(transportJustStarted: false);
                             }
+                        }
+                        else if (buzzCore.SoloPattern == null)
+                        {
+                            // Session View (fork): the session clock starts with the transport.
+                            buzzCore.SessionCore.OnTick(transportJustStarted: true);
                         }
                     }
 
@@ -398,8 +413,17 @@ namespace ReBuzz.Audio
             }
         }
 
+        void AddActivePattern(PatternCore pattern)
+        {
+            if (activePatternSet.Add(pattern))
+                activePatterns.Add(pattern);
+        }
+
         internal void UpdatePatternPositions(int sampleCount)
         {
+            activePatterns.Clear();
+            activePatternSet.Clear();
+
             // Clear all pattern play positions
             foreach (var machine in buzzCore.SongCore.MachinesList)
             {
@@ -419,49 +443,30 @@ namespace ReBuzz.Audio
             {
                 var pattern = buzzCore.SoloPattern;
                 pattern.UpdateSoloPlayPosition(sampleCount);
+                AddActivePattern(pattern);
             }
             else
             {
                 var song = buzzCore.SongCore;
+                var session = buzzCore.SessionCore;
                 int songPlayPosition = song.PlayPosition;
+                int posInTickOffset = masterInfo.PosInTick * PatternEvent.TimeBase / masterInfo.SamplesPerTick;
                 foreach (var seq in buzzCore.SongCore.SequencesList)
                 {
-                    // Update trigger event
-                    var te = seq.TriggerEventInfo;
-                    if (te != null && te.se.Type == SequenceEventType.PlayPattern)
+                    // Session View (fork): a launched clip plays from where it was launched (not
+                    // songPosition % length), and an overridden track ignores its arrangement.
+                    var clip = session.GetPlayingCore(seq);
+                    if (clip != null)
                     {
-                        var pattern = te.se.Pattern as PatternCore;
-                        if (!te.started)
+                        int clipTick = session.GetClipPosition(seq);
+                        if (clipTick >= 0)
                         {
-                            if (songPlayPosition == te.time)
-                            {
-                                te.started = true;
-                                pattern.PlayPosition = 0;
-                                te.PreviousPosition = 0;
-                            }
-                        }
-                        else
-                        {
-                            int newPos = (songPlayPosition % pattern.Length) * PatternEvent.TimeBase + (masterInfo.PosInTick * PatternEvent.TimeBase / masterInfo.SamplesPerTick);
-                            if (te.loop)
-                            {
-                                pattern.PlayPosition = newPos;
-                            }
-                            else
-                            {
-                                // We've looped once so stop.
-                                if (te.PreviousPosition > newPos)
-                                {
-                                    seq.TriggerEventInfo = null;
-                                }
-                                else
-                                {
-                                    pattern.PlayPosition = newPos;
-                                    te.PreviousPosition = newPos;
-                                }
-                            }
+                            clip.PlayPosition = clipTick * PatternEvent.TimeBase + posInTickOffset;
+                            AddActivePattern(clip);
                         }
                     }
+                    if (session.IsArrangementOverridden(seq))
+                        continue;
 
                     foreach (var e in seq.EventsList)
                     {
@@ -493,6 +498,8 @@ namespace ReBuzz.Audio
                                         (masterInfo.PosInTick * timeBase / masterInfo.SamplesPerTick);
                                 }
                                 pc.PlayPosition = newPatternPos;
+                                if (newPatternPos != int.MinValue)
+                                    AddActivePattern(pc);
                             }
                         }
                     }
@@ -569,15 +576,17 @@ namespace ReBuzz.Audio
             }
             else
             {
-                foreach (var seq in buzzCore.SongCore.SequencesList)
+                // Fork: play each pattern that has a position once - session clips included (G5).
+                // Upstream called this for every arranged event, so a pattern arranged N times
+                // in one sequence sent its MIDI column events N times.
+                for (int i = 0; i < activePatterns.Count; i++)
                 {
-                    foreach (var se in seq.EventsList)
-                    {
-                        var pattern = se.Value.Pattern as PatternCore;
-                        PlayPatternColumnEvents(pattern, sampleCount);
-                    }
+                    PlayPatternColumnEvents(activePatterns[i], sampleCount);
                 }
             }
+
+            var mi = ReBuzzCore.masterInfo;
+            int windowTicks = ((sampleCount + mi.PosInTick) * PatternEvent.TimeBase) / mi.SamplesPerTick;
 
             // Send note offs. Iterate in reverse: RemoveAt(i) in a forward loop
             // shifts the next element into slot i and skips it this pass, delaying
@@ -588,7 +597,11 @@ namespace ReBuzz.Audio
                 var pe = pes.Pe;
                 var machine = pes.Machine;
 
-                if (pe.Time + pe.Duration < pes.Pattern.PlayPosition)
+                // Fork: also release notes whose pattern stopped (clip stopped or switched, span
+                // ended) or jumped back before the note started (loop wrap, relaunch). Upstream
+                // only released notes the play position had passed, so those hung.
+                int pos = pes.Pattern.PlayPosition;
+                if (pos == int.MinValue || pe.Time > pos + windowTicks || pe.Time + pe.Duration < pos)
                 {
                     buzzCore.MachineManager.SendMIDINote(machine, pes.Channel, pes.MidiNote, 0);
                     playingEvents.RemoveAt(i);

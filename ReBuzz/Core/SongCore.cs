@@ -64,7 +64,8 @@ namespace ReBuzz.Core
             if (playPosition >= LoopEnd)
             {
                 playPosition = LoopStart;
-                if (!Buzz.Looping)
+                // Fork: the song end stops only the arrangement; keep running while session clips play or wait.
+                if (!Buzz.Looping && !BuzzCore.SessionCore.HasActivity)
                 {
                     Buzz.Playing = false;
                 }
@@ -213,6 +214,7 @@ namespace ReBuzz.Core
                 sequences.Remove(sc);
                 PropertyChanged.Raise(this, "Sequences");
                 SequenceRemoved?.Invoke(index, sc);
+                BuzzCore.SessionCore.OnSequenceRemoved(sc);
                 sc.Release();
             }
             Buzz.SetModifiedFlag();

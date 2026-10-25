@@ -584,6 +584,7 @@ namespace ReBuzz.Core
                 (p as PatternCore).ClearEvents();
 
                 var buzz = graph.Buzz as ReBuzzCore;
+                buzz.SessionCore.OnPatternDeleted(p as PatternCore);   // fork: Session View
                 // Remove from sequences
                 foreach (var seq in buzz.SongCore.SequencesList.Where(s => s.Machine == p.Machine))
                 {

@@ -11,6 +11,8 @@
 #include "SampleListControl.h"
 
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 using System::Windows::Forms::UserControl;
 using System::Windows::Forms::KeyEventArgs;
@@ -210,6 +212,7 @@ namespace ReBuzz
             void BuzzSong_PropertyChanged(System::Object^ sender, PropertyChangedEventArgs^ args);
             
             void NotifyOfPlayingPattern(IPattern ^ pat);
+            void StopEndedSequences();
 
             
             RebuzzBuzzLookup<ISequence, int, CSequence>* m_sequenceMap;
@@ -268,6 +271,9 @@ namespace ReBuzz
             PropertyChangedEventHandler^ m_buzzSongPropChangeHandler;
             std::unordered_map<int64_t, int> * m_patternPosTickMap;
             std::mutex* m_lock;
+
+            //Fork: sequences the editor was told to play, so it can be told when they stop
+            std::unordered_set<CSequence*>* m_notifiedSequences;
         };
     }
 }

@@ -1,5 +1,6 @@
 ﻿using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
+using ReBuzz.Core.Session;
 using System;
 using System.ComponentModel;
 using System.Linq;
@@ -7,8 +8,11 @@ using Wintellect.PowerCollections;
 
 namespace ReBuzz.Core
 {
-    internal class SequenceCore : ISequence
+    internal class SequenceCore : ISequence, ISessionTrack
     {
+        // Session View engine state for this track (fork addition)
+        object ISessionTrack.SessionState { get; set; }
+
         private static IntPtr sequenceHandleCounter = 100;
 
         internal MachineCore MachineCore { get; private set; }
@@ -26,15 +30,19 @@ namespace ReBuzz.Core
                 if (buzz.SoloPattern != null && buzz.SoloPattern.Machine == Machine)
                     return buzz.SoloPattern;
 
+                // Session View (fork): a launched clip wins, and a track taken over by the
+                // session ignores its arrangement until "back to arrangement".
+                var session = buzz.SessionCore;
+                var clip = session.GetPlayingCore(this);
+                if (clip != null && clip.PlayPosition != int.MinValue)
+                    return clip;
+                if (session.IsArrangementOverridden(this))
+                    return null;
+
                 foreach (var pe in EventsList.Values)
                 {
                     if (pe.Pattern != null && pe.Pattern.PlayPosition != int.MinValue)
                         return pe.Pattern;
-                }
-
-                if (TriggerEventInfo != null && TriggerEventInfo.se.Pattern != null && TriggerEventInfo.se.Pattern.PlayPosition != int.MinValue)
-                {
-                    return TriggerEventInfo.se.Pattern;
                 }
 
                 return null;
@@ -212,20 +220,11 @@ namespace ReBuzz.Core
             }
         }
 
-        internal TriggerEventData TriggerEventInfo { get; set; }
+        // Fork: live triggering goes through the Session View engine, which quantizes it, keeps
+        // the pattern's phase, and overrides the arrangement (ReBuzz.Core.Session.SessionCore).
         public void TriggerEvent(int time, SequenceEvent e, bool loop)
         {
-            lock (ReBuzzCore.AudioLock)
-            {
-                if (time != 0 && e != null)
-                {
-                    TriggerEventInfo = new TriggerEventData(time, e, loop, false);
-                }
-                else
-                {
-                    TriggerEventInfo = null;
-                }
-            }
+            (MachineCore.Graph.Buzz as ReBuzzCore)?.SessionCore.TriggerFromSequence(this, time, e, loop);
         }
 
         internal void SequenceEventChanged(int time, SequenceEvent e)
@@ -249,22 +248,5 @@ namespace ReBuzz.Core
         {
             PropertyChanged.Raise(this, "Events");
         }
-    }
-
-    internal class TriggerEventData
-    {
-        internal TriggerEventData(int time, SequenceEvent se, bool loop, bool started)
-        {
-            this.time = time;
-            this.se = se;
-            this.loop = loop;
-            this.started = started;
-        }
-        internal int time;
-        internal SequenceEvent se;
-        internal bool loop;
-        internal bool started;
-
-        public int PreviousPosition { get; internal set; }
     }
 }
