@@ -9,7 +9,7 @@ Third-party Buzz/ReBuzz machines kept inside this repo so we can build, ship and
 | Kind (`machines.json`) | Count | What `build.ps1` does with it |
 |---|---|---|
 | `rebuzz-managed` — C# machines for ReBuzz (.NET 10) | 19 | Built from source against our own ReBuzz build and added to the package |
-| `native-nmake` — Buzztrax collection (~120 classic C++ machines) | 1 repo | Builds the nmake subset (FSM, Fuzzpilz, Matilde, Oomek) as x64 and adds any machine the package doesn't already have. The other authors' folders are source only |
+| `native-nmake` — Buzztrax collection (~120 classic C++ machines) | 1 repo | Builds the nmake subset (FSM, Fuzzpilz, Matilde, Oomek) as x64. Upstream Gear already has most of these, so today this adds only Fuzzpilz UnwieldyTracker; the build is there so modified machines can be rebuilt. The other authors' folders are source only |
 | `buzz1503-managed` / `buzz1503-native` — written for classic Jeskola Buzz 1503 | 7 | Source only. Porting one to ReBuzz is mostly retargeting to `net10.0-windows` (see the `rebuzz-managed` twins) |
 | `native-source` — Jeskola developer examples, PatternXP | 1 | Source only (no x64 build files yet) |
 | `reference` — bmxplay | 1 | Not a machine. C reimplementations of classic DSP plus demo `.bmx` songs, useful for testing |
@@ -26,14 +26,17 @@ ExternalMachines/
 │   ├── jeskola-dev-examples/
 │   ├── retracker/
 │   └── reference/bmxplay/
-└── binaries/Gear/{Generators,Effects}/   drop-in prebuilt DLLs merged into the package
+└── binaries/
+    ├── Gear/{Generators,Effects}/                    hand-placed prebuilt DLLs
+    └── repos/<owner>__<repo>/{Generators,Effects}/   fetched GitHub release assets
 ```
 
 ## Prebuilt binaries
 
-`binaries/Gear/` is for machines we only have as DLLs. Anything placed there is copied into the package (never overwriting a file that's already there).
+Precedence in the package: upstream `RunTime/Gear` > built from source > prebuilt. Nothing overwrites a file already in Gear, and `Foo.dll` / `Foo.x64.dll` count as the same machine.
 
-- `tools/fetch-machine-binaries.ps1` downloads the latest GitHub release assets for every repo listed under `releaseBinaries` in `machines.json` into this folder. Run it on Windows; review and commit what it fetches.
+- `binaries/Gear/` is for machines we only have as DLLs. Name 64-bit native machines `*.x64.dll` — ReBuzz loads any other native DLL in its 32-bit host.
+- `tools/fetch-machine-binaries.ps1` downloads the latest GitHub release assets for every repo under `releaseBinaries` in `machines.json` into `binaries/repos/`. `build.ps1` uses a repo's binaries only when that machine failed to build from source, so they're a fallback. Run it on Windows; review `binaries/FETCHED.md` and commit what it fetched.
 - Not scripted, because their download URLs can't be verified from the sandbox this was set up in: the [Buzz x64 2022 edition bundle](https://forums.jeskola.net/viewtopic.php?p=16694#p16694) (robotplanet.dk), jeskola.net's files, and the old buzzmachines.com archive. Download them by hand, unpack, and copy the `Gear/Generators` and `Gear/Effects` DLLs here.
 
 ## Adding or updating a machine

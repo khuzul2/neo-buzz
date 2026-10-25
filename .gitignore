@@ -398,3 +398,7 @@ FodyWeavers.xsd
 *.sln.iml
 /.NCrunch_ReBuzz
 /ReBuzz.v3.ncrunchsolution
+
+# Fork: build.ps1 outputs
+/dist/
+/build/ExternalMachines/
