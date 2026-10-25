@@ -35,7 +35,7 @@ jobs:
 
     # Copies error lines and the log tail into annotations, readable through the API.
     - name: Annotate build log
-      if: failure()
+      if: failure() && hashFiles('test.log') == ''
       shell: pwsh
       run: ./tools/ci-annotate-log.ps1 build.log
 
@@ -51,3 +51,19 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: dist/*.zip
+
+    # Upstream's NUnit suite (ReBuzzTests), built by build.ps1 as part of the solution.
+    # It drives the real audio engine, so it catches regressions in the playback code.
+    - name: Run ReBuzz tests
+      shell: pwsh
+      run: |
+        $dll = Get-ChildItem build -Recurse -Filter ReBuzzTests.dll |
+            Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $dll) { throw 'ReBuzzTests.dll not found under build\' }
+        Write-Host "::notice title=Tests::$($dll.FullName)"
+        dotnet test $dll.FullName --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath test.log
+
+    - name: Annotate test log
+      if: failure() && hashFiles('test.log') != ''
+      shell: pwsh
+      run: ./tools/ci-annotate-log.ps1 test.log
