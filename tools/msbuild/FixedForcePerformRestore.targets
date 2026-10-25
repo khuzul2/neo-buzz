@@ -1,0 +1,19 @@
+<Project>
+  <!--
+    Replaces the upstream per-project "ForcePerformRestore" target (see ../../Directory.Build.targets).
+
+    Why upstream needs a build-time restore at all: projects mapped to "Any CPU" in ReBuzz.sln
+    are restored under build\<Configuration>\Any CPU\... (solution name, with a space) but built
+    as "AnyCPU", so the build looks for project.assets.json in a folder restore never wrote.
+
+    Upstream restores again with "dotnet restore" and then moves files into place, which fails
+    on a clean checkout. This version checks the file the build actually reads, and when it is
+    missing restores the project with the build's own Configuration, Platform and SolutionDir,
+    so the output lands where it is expected. No moving.
+  -->
+  <Target Name="ForcePerformRestore" AfterTargets="BeforeBuild" Condition="!Exists('$(ProjectAssetsFile)')">
+    <Message Importance="high" Text="$(MSBuildProjectName): restoring for $(Configuration)|$(Platform) (assets file missing: $(ProjectAssetsFile))" />
+    <!-- SolutionDir ends in a backslash; doubling it keeps the closing quote from being escaped. -->
+    <Exec Command="dotnet restore &quot;$(MSBuildProjectFullPath)&quot; --no-dependencies -p:Configuration=$(Configuration) &quot;-p:Platform=$(Platform)&quot; &quot;-p:SolutionDir=$(SolutionDir)\&quot;" />
+  </Target>
+</Project>

@@ -1,4 +1,0 @@
-<Project>
-  <!-- Replaces the upstream per-project target of the same name with a no-op (see ../../Directory.Build.targets). -->
-  <Target Name="ForcePerformRestore" />
-</Project>
