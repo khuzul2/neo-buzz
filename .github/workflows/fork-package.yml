@@ -1,11 +1,23 @@
 name: Fork package (ReBuzz + all machines)
 
-# Builds the whole solution plus ExternalMachines with build.ps1 and uploads the zip.
-# Run it by hand from the Actions tab, or push a tag like fork-v0.1.0 to also attach
-# the zip to a GitHub release.
+# Builds the whole solution plus ExternalMachines with build.ps1, uploads the zip and runs
+# upstream's test suite (ReBuzzTests). Run it by hand from the Actions tab, or push a tag
+# like fork-v0.1.0 to also attach the zip to a GitHub release.
+#
+# Manual inputs for test work: "quick" skips the external machines and the zip, and
+# "test_filter" runs a subset of tests (dotnet test --filter syntax).
 
 on:
   workflow_dispatch:
+    inputs:
+      quick:
+        description: 'Quick: build the solution and run tests only (no external machines, no zip)'
+        type: boolean
+        default: false
+      test_filter:
+        description: 'dotnet test --filter expression (empty = all tests)'
+        type: string
+        default: ''
   push:
     tags: [ 'fork-v*' ]
 
@@ -31,15 +43,21 @@ jobs:
     # runner image only has VS 2022.
     - name: Build and package
       shell: pwsh
-      run: ./build.ps1 -Version "${{ github.ref_type == 'tag' && github.ref_name || format('ci-{0}', github.run_number) }}" *>&1 | Tee-Object -FilePath build.log
+      env:
+        QUICK: ${{ inputs.quick }}
+      run: |
+        $extra = @()
+        if ($env:QUICK -eq 'true') { $extra = @('-SkipManagedMachines', '-SkipBinaries', '-NoZip') }
+        ./build.ps1 -Version "${{ github.ref_type == 'tag' && github.ref_name || format('ci-{0}', github.run_number) }}" @extra *>&1 | Tee-Object -FilePath build.log
 
     # Copies error lines and the log tail into annotations, readable through the API.
     - name: Annotate build log
-      if: failure() && hashFiles('test.log') == ''
+      if: failure() && hashFiles('TestResults/*.trx') == ''
       shell: pwsh
       run: ./tools/ci-annotate-log.ps1 build.log
 
     - name: Upload package
+      if: inputs.quick != true
       uses: actions/upload-artifact@v4
       with:
         name: rebuzz-fork-package
@@ -56,14 +74,18 @@ jobs:
     # It drives the real audio engine, so it catches regressions in the playback code.
     - name: Run ReBuzz tests
       shell: pwsh
+      env:
+        TEST_FILTER: ${{ inputs.test_filter }}
       run: |
         $dll = Get-ChildItem build -Recurse -Filter ReBuzzTests.dll |
             Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
         if (-not $dll) { throw 'ReBuzzTests.dll not found under build\' }
-        Write-Host "::notice title=Tests::$($dll.FullName)"
-        dotnet test $dll.FullName --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath test.log
+        $filter = @()
+        if ($env:TEST_FILTER) { $filter = @('--filter', $env:TEST_FILTER) }
+        dotnet test $dll.FullName @filter --logger "trx;LogFileName=tests.trx" --results-directory TestResults --logger "console;verbosity=minimal" *>&1 | Tee-Object -FilePath test.log
 
-    - name: Annotate test log
-      if: failure() && hashFiles('test.log') != ''
+    # Failed tests grouped by error, with message and top stack frames, as annotations.
+    - name: Summarise tests
+      if: always() && hashFiles('TestResults/*.trx') != ''
       shell: pwsh
-      run: ./tools/ci-annotate-log.ps1 test.log
+      run: ./tools/ci-test-summary.ps1 TestResults/tests.trx
