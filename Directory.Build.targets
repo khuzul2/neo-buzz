@@ -1,0 +1,13 @@
+<Project>
+  <!--
+    Fork addition. Imported by every SDK-style project below this folder, after the project's
+    own content, so targets defined in the imported file replace the projects' versions.
+
+    Upstream's C# projects run a "ForcePerformRestore" Exec step that moves restore output
+    into build\...\obj\..\ . On a clean checkout that folder doesn't exist yet and the step
+    fails ("Cannot move multiple files to a single file"). With ReBuzzCleanBuild=true
+    (build.ps1 and CI set it) the step is skipped and restore runs through the normal
+    msbuild /restore path. Visual Studio builds without the property behave as upstream.
+  -->
+  <Import Project="tools\msbuild\SkipForcePerformRestore.targets" Condition="'$(ReBuzzCleanBuild)' == 'true'" />
+</Project>

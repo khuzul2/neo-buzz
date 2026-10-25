@@ -222,7 +222,8 @@ if (-not $SkipCore) {
     $msbuildArgs = @(
         ([IO.Path]::Combine($Root, 'ReBuzz.sln')),
         '/restore', '/m', '/nologo', '/v:minimal',
-        "/p:Configuration=$Configuration", '/p:Platform=x64'
+        "/p:Configuration=$Configuration", '/p:Platform=x64',
+        '/p:ReBuzzCleanBuild=true'   # skip upstream's ForcePerformRestore step (see Directory.Build.targets)
     )
     if ($PlatformToolset) { $msbuildArgs += "/p:PlatformToolset=$PlatformToolset" }
     Invoke-Checked $vs.MSBuild $msbuildArgs
