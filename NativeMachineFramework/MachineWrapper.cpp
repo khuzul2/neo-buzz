@@ -117,7 +117,8 @@ namespace ReBuzz
                                                                 m_editorMessageParamMap(new std::unordered_map<UINT, void*>()),
                                                                 m_onSelectedWaveChange(gcnew System::Collections::Generic::List<OnSelectedWaveChange^>()),
                                                                 m_patternPosTickMap(new std::unordered_map<int64_t, int>()),
-                                                                m_lock(new std::mutex())
+                                                                m_lock(new std::mutex()),
+                                                                m_notifiedSequences(new std::unordered_set<CSequence*>())
         {
             
             //Create machine manager
@@ -225,6 +226,12 @@ namespace ReBuzz
             {
                 delete m_lock;
                 m_lock = NULL;
+            }
+
+            if (m_notifiedSequences != NULL)
+            {
+                delete m_notifiedSequences;
+                m_notifiedSequences = NULL;
             }
         }
 
@@ -484,6 +491,9 @@ namespace ReBuzz
             {
                 NotifyOfPlayingPattern(p);
             }
+
+            //Fork (Session View): stop sequences whose pattern is no longer playing
+            StopEndedSequences();
             
             
             //Tell the machine to tick
@@ -981,9 +991,45 @@ namespace ReBuzz
                             //that pattern.
                             int playpos = pat->PlayPosition / PatternEvent::TimeBase;
                             exInterface->PlayPattern(cpat, cseq, playpos);
+
+                            std::lock_guard<std::mutex> lg(*m_lock);
+                            m_notifiedSequences->insert(cseq);
                         }
                     }
                 }
+            }
+        }
+
+        //Fork (Session View): an editor like PatternXP keeps advancing a pattern by itself once
+        //PlayPattern() started it, and only stops at the pattern's end. When a sequence's pattern
+        //stops early (session clip stopped, Break event in the arrangement), PlayPattern(NULL, ...)
+        //tells the editor to drop it, instead of playing on to the end.
+        void MachineWrapper::StopEndedSequences()
+        {
+            CMachineInterfaceEx* exInterface = m_callbackWrapper->GetExInterface();
+            if (exInterface == NULL)
+                return;
+
+            std::vector<CSequence*> notified;
+            {
+                std::lock_guard<std::mutex> lg(*m_lock);
+                notified.assign(m_notifiedSequences->begin(), m_notifiedSequences->end());
+            }
+
+            for (CSequence* cseq : notified)
+            {
+                ISequence^ s = m_sequenceMap->GetReBuzzTypeByBuzzType(cseq);
+                if (s != nullptr)
+                {
+                    IPattern^ playing = s->PlayingPattern;
+                    if (!s->IsDisabled && (playing != nullptr) && (playing->PlayPosition != int::MinValue))
+                        continue;   //still playing
+
+                    exInterface->PlayPattern(NULL, cseq, 0);
+                }
+
+                std::lock_guard<std::mutex> lg(*m_lock);
+                m_notifiedSequences->erase(cseq);
             }
         }
 

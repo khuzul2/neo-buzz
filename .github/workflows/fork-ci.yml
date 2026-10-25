@@ -1,0 +1,55 @@
+name: Fork CI
+
+# Fast checks for fork work:
+#  - session-tests: Session View engine unit tests (Linux, seconds)
+#  - core-build: compiles ReBuzz.exe and its C# dependencies only (no C++ projects)
+# The full solution + package build is fork-package.yml.
+
+# Pushes to main and PRs only (not every branch push), to keep Actions minutes down on a
+# private repo. Windows minutes count double.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  session-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Test
+      shell: pwsh
+      run: dotnet test ReBuzz.SessionTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath test.log
+
+    - name: Annotate test log
+      if: failure()
+      shell: pwsh
+      run: ./tools/ci-annotate-log.ps1 test.log
+
+  core-build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    # The projects place their output under $(SolutionDir); set it, since we build the
+    # project rather than the solution.
+    - name: Build ReBuzz (C# only)
+      shell: pwsh
+      run: dotnet build ReBuzz/ReBuzz.csproj -c Release "-p:SolutionDir=$($PWD.Path)\" -p:ReBuzzCleanBuild=true -nologo *>&1 | Tee-Object -FilePath build.log
+
+    - name: Annotate build log
+      if: failure()
+      shell: pwsh
+      run: ./tools/ci-annotate-log.ps1 build.log

@@ -64,7 +64,8 @@ namespace ReBuzz.Core
             if (playPosition >= LoopEnd)
             {
                 playPosition = LoopStart;
-                if (!Buzz.Looping)
+                // Fork: the song end stops only the arrangement; keep running while session clips play or wait.
+                if (!Buzz.Looping && !BuzzCore.SessionCore.HasActivity)
                 {
                     Buzz.Playing = false;
                 }
@@ -74,7 +75,9 @@ namespace ReBuzz.Core
 
             ReBuzzCore.GlobalState.SongPosition = playPosition;
 
-            Application.Current.Dispatcher.BeginInvoke(() =>
+            // Fork: the injected dispatcher (as in the PlayPosition setter above) instead of
+            // Application.Current, which is null when the engine runs headless (tests).
+            dispatcher.BeginInvoke(() =>
             {
                 PropertyChanged.Raise(this, "PlayPosition");
             });
@@ -213,6 +216,7 @@ namespace ReBuzz.Core
                 sequences.Remove(sc);
                 PropertyChanged.Raise(this, "Sequences");
                 SequenceRemoved?.Invoke(index, sc);
+                BuzzCore.SessionCore.OnSequenceRemoved(sc);
                 sc.Release();
             }
             Buzz.SetModifiedFlag();

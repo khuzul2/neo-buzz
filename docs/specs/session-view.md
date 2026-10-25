@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v1 |
+| Status | Draft v2 — 0.1 engine implemented (branch `session/engine`), UI not started |
 | Date | 2026-10-25 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -68,9 +68,19 @@ Every phase below ships a version that is **complete and usable on its own** —
 | G6 | A trigger starts only when `songPlayPosition == te.time` exactly | `UpdatePatternPositions` | A position jump (loop wrap, user seek) can skip the start tick and the clip never starts |
 | G7 | No atomic multi-track launch | — | Scenes need all clips to start on the same tick |
 
-### 3.3 Risk to verify first
+Found while implementing (also fixed in 0.1):
 
-Machines whose patterns are edited with the **native PatternXP** editor (`ReBuzzPatternXP`) may not follow `PlayPosition` the way the Modern Pattern Editor does (`UIPlayPattern` exists in `NativeMachine/UIMessage.cs` but has no caller). Phase 0.1 starts with a spike: trigger a PatternXP pattern via `TriggerEvent` and confirm it sounds. If not, add a native "play pattern at offset" message path before building UI.
+| # | Gap | Where | Effect |
+|---|---|---|---|
+| G8 | PatternXP advances a pattern by itself once started and the host never tells it a pattern stopped | `NativeMachineFramework/MachineWrapper.cpp` | A clip stopped mid-pattern (or an arranged `Break`) keeps playing to the pattern's end |
+| G9 | MIDI column events are played once per *arranged event*, not once per playing pattern | `WorkManager.UpdatePatternColumnEvents` | A pattern arranged N times in a sequence sends its MIDI events N times |
+| G10 | MIDI column notes are only released once the play position passes their end | `WorkManager.UpdatePatternColumnEvents` | Notes hang when a pattern stops, is switched, loops, or restarts before the note ends |
+
+### 3.3 PatternXP (resolved)
+
+The concern was that machines edited with the native **PatternXP** editor might not follow `PlayPosition`. Reading the code settles it: `NativeMachineFramework/MachineWrapper.cpp` re-sends `PlayPattern(pattern, sequence, position)` to the editor every tick for each sequence whose `PlayingPattern` has a position, and `PatternCore.Sequences` lists every sequence of the pattern's machine (not only those that arrange it). So launched clips play in PatternXP as long as `SequenceCore.PlayingPattern` reports them, which 0.1 does. The one gap, stopping, is G8.
+
+The default editor is the Modern Pattern Editor (`ReBuzzCore.DefaultPatternEditor`), which reads `PlayPosition` directly.
 
 ## 4. Architecture
 
@@ -97,45 +107,51 @@ A new `SessionCore` owned by `ReBuzzCore`, exposed through a new interface so ex
 
 ```csharp
 // ReBuzzGUI/BuzzGUI.Interfaces/ISession.cs (new)
-public enum ClipState { Empty, Stopped, Queued, Playing, Stopping }
+public enum LaunchQuantization { None, Beat, Bar, TwoBars, FourBars, EightBars }
+public enum ClipState { Stopped, Queued, Playing, Stopping }   // "empty slot" is a UI notion
 
 public interface ISession : INotifyPropertyChanged
 {
-    long Clock { get; }                 // session ticks since transport start; never wraps
-    int BeatsPerBar { get; set; }       // Buzz has no time signature; session setting, default 4
-    int LaunchQuantizeTicks { get; set; } // 0 = immediate (next tick)
+    long Clock { get; }                          // -1 while stopped; never wraps
+    int BeatsPerBar { get; set; }                // Buzz has no time signature; default 4
+    LaunchQuantization LaunchQuantization { get; set; }   // default Bar
+    int GetQuantizationTicks(LaunchQuantization q);
 
-    void Launch(ISequence track, IPattern clip, LaunchOptions options = null);
+    void Launch(ISequence track, IPattern clip, LaunchOptions? options = null);
+    void LaunchScene(IEnumerable<(ISequence Track, IPattern Clip)> slots, LaunchOptions? options = null);
     void Stop(ISequence track, bool immediate = false);
     void StopAll(bool immediate = false);
-    void LaunchScene(IReadOnlyList<(ISequence track, IPattern clip)> slots, LaunchOptions options = null);
 
-    IPattern GetPlaying(ISequence track);
-    IPattern GetQueued(ISequence track);
+    IPattern? GetPlaying(ISequence track);
+    IPattern? GetQueued(ISequence track);
     ClipState GetState(ISequence track, IPattern clip);
-    long GetClipStartClock(ISequence track);    // for progress display
+    long GetClipStartClock(ISequence track);     // for progress display
+    int GetClipPosition(ISequence track);
 
     bool IsArrangementOverridden(ISequence track);
+    bool IsAnyArrangementOverridden { get; }
     void BackToArrangement();
 
-    event Action<ISequence> TrackStateChanged;   // raised on the UI thread
+    event Action<ISequence>? TrackStateChanged;  // raised on the UI thread
 }
 
 public interface ISessionHost { ISession Session { get; } }  // implemented by ReBuzzCore
 ```
 
+`LaunchOptions` carries an optional per-launch quantization and `Loop` (default true; false = one-shot). The scheduling logic is a separate, dependency-free class (`ReBuzz/Core/Session/SessionScheduler.cs`) with its own fast test project (`ReBuzz.SessionTests`); `SessionCore` adapts it to ReBuzz.
+
 Rules:
 
-- **Clock.** `Clock` advances in `SongCore.UpdatePlayPosition` alongside the song position, but never wraps and never stops at `LoopEnd`. It resets to 0 on transport start. Fixes G2.
+- **Clock.** `Clock` advances at each tick boundary alongside the song position, but never wraps and never stops at `LoopEnd`. It starts at the **song position** where the transport started, so the launch grid lines up with the arrangement's bars (until the arrangement loops on a non-bar length). Fixes G2.
 - **Launch queue.** `Launch` computes `launchClock = next multiple of quantize strictly after Clock` (or `Clock + 1` if quantize is 0) and stores one pending launch per track; a later launch on the same track replaces it. Processed at tick boundaries (`PosInTick == 0`) in `WorkManager` before `UpdatePatternPositions`, starting when `Clock >= launchClock`. Fixes G6.
 - **Clip position.** `(Clock − clipStartClock) mod pattern.Length` for looping clips; one-shot clips end at `pattern.Length`. Fixes G1.
-- **Stop.** Quantized like launches unless `immediate`. Sends note-offs (reuse `SendNoteOffs` logic from the sequence editor). Fixes G4.
+- **Stop.** Quantized like launches unless `immediate`. When it takes effect the track's note parameters are set to Off (without recording into patterns) and MIDI "all notes off" is sent; PatternXP is told to drop the pattern (G8). Switching to another clip sends no note-offs, so Buzz-style legato between patterns still works; MIDI column notes of the old clip are released (G10). Fixes G4.
 - **Scenes.** `LaunchScene` enqueues all slots under `ReBuzzCore.AudioLock` with one shared `launchClock`. Tracks absent from the scene keep playing, as in Live (Live's "stop clips not in scene" comes later as an option). Fixes G7.
 - **Arrangement override.** Launching a clip marks its track as overridden; the arrangement's events for that track are ignored until `BackToArrangement()` (Phase 0.3 adds the button; in 0.1, stopping the transport clears overrides). `SequenceCore.PlayingPattern` asks the session first. Fixes G3.
-- **MIDI columns.** `UpdatePatternColumnEvents` also plays the session's playing clips. Fixes G5.
-- **Transport.** Launching while stopped starts the transport and launches on the first tick. Stopping the transport stops all clips. The song-end stop (`!Looping` at `LoopEnd`) is skipped while any clip plays.
+- **MIDI columns.** `UpdatePatternColumnEvents` plays each pattern that has a play position exactly once, session clips included. Fixes G5 and G9.
+- **Transport.** Launching while stopped starts the transport and launches on the first tick. Stopping the transport stops all clips. The song-end stop (`!Looping` at `LoopEnd`) is skipped while any clip plays. The arrangement then wraps to `LoopStart` and keeps playing on tracks the session hasn't taken over (Live would continue silently past the end; revisit with the 0.3 arrangement work).
 - **Compatibility.** `ISequence.TriggerEvent` keeps working and is re-implemented on top of `SessionCore`, so the Modern Sequence Editor's click-to-play and the session grid share one state.
-- **Threading.** All mutations under `ReBuzzCore.AudioLock` (as `SequenceCore` does today). State-change events are marshalled to the UI dispatcher. No allocation on the audio path in steady state.
+- **Threading.** The scheduler has its own lock, not `ReBuzzCore.AudioLock`: the audio thread holds `AudioLock` while it synchronously invokes the UI thread at transport start, so a UI request waiting for `AudioLock` could deadlock. Lock order is `AudioLock` → session lock on the audio thread; UI requests take only the session lock; machines and the dispatcher are never called while it is held. Per-track reads are lock-free. State-change events are marshalled to the UI dispatcher. No allocation on the audio path in steady state (only on ticks where something changes).
 
 ### 4.2 Data model and persistence
 
