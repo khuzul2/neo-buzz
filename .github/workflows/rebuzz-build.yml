@@ -24,10 +24,10 @@ jobs:
     # Fork: the projects put output and restore files under $(SolutionDir), which is only
     # defined when building the .sln; ReBuzzCleanBuild skips a step that breaks clean builds.
     - name: Build ReBuzz
-      run: dotnet build ReBuzz/ReBuzz.csproj -c Release -p:Platform=x64 "-p:SolutionDir=${{ github.workspace }}\" -p:ReBuzzCleanBuild=true
+      run: dotnet build ReBuzz/ReBuzz.csproj -c Release "-p:SolutionDir=${{ github.workspace }}\" -p:ReBuzzCleanBuild=true
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: rebuzz-release-build
-        path: bin/Release/x64/
+        path: bin/Release/
