@@ -418,7 +418,8 @@ namespace ReBuzzTests.Automation.Assertions
         internal static void AssertMasterInfoInitialState(MasterInfo masterInfo)
         {
             masterInfo.BeatsPerMin.Should().Be(126);
-            masterInfo.GrooveData.Should().Be(0);
+            // Fork: ReBuzzCore pins a groove buffer at startup (upstream groove support).
+            masterInfo.GrooveData.Should().NotBe(0, "it points at ReBuzzCore's pinned groove buffer");
             masterInfo.GrooveSize.Should().Be(0);
             masterInfo.PosInGroove.Should().Be(0);
             masterInfo.PosInTick.Should().Be(0);
