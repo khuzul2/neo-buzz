@@ -39,6 +39,7 @@ namespace ReBuzz.AppViews.Session
             public static readonly Brush ClipHover = Make("#4A6A8E");
             public static readonly Brush Playing = Make("#2E9B49");
             public static readonly Brush Progress = Make("#6FD98A");
+            public static readonly Brush Queued = Make("#3E7D50");
             public static readonly Brush Stopping = Make("#B5543A");
             public static readonly Brush Scene = Make("#37373F");
             public static readonly Brush SceneHover = Make("#45454F");
@@ -168,6 +169,12 @@ namespace ReBuzz.AppViews.Session
             timer.Tick += (s, e) => RefreshState();
             Loaded += (s, e) => { Rebuild(); timer.Start(); };
             Unloaded += (s, e) => timer.Stop();
+            // The window is hidden rather than closed: don't poll while nobody can see it.
+            IsVisibleChanged += (s, e) =>
+            {
+                if (IsVisible && IsLoaded) { RefreshState(); timer.Start(); }
+                else timer.Stop();
+            };
 
             layout.Changed += () => { if (IsLoaded) Rebuild(); };
             session.PropertyChanged += (s, e) => SyncSettings();
@@ -516,7 +523,10 @@ namespace ReBuzz.AppViews.Session
                         Background = Palette.Playing;
                         break;
                     case ClipState.Queued:
-                        Background = blinkOn ? Palette.Playing : (hover ? Palette.ClipHover : Palette.Clip);
+                        // Blinks, and keeps a green outline so it reads as "about to play"
+                        // in either phase.
+                        Background = blinkOn ? Palette.Queued : (hover ? Palette.ClipHover : Palette.Clip);
+                        if (!isSelected) BorderBrush = Palette.Progress;
                         break;
                     case ClipState.Stopping:
                         Background = blinkOn ? Palette.Stopping : Palette.Playing;
