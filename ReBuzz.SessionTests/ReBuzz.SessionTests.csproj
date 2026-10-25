@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Fork addition: fast, platform-independent tests for the Session View engine core.
+    Compiles ReBuzz/Core/Session/SessionScheduler.cs directly (it has no other ReBuzz
+    dependencies), so these run on Linux CI in seconds and need no ReBuzz build.
+    Not part of ReBuzz.sln on purpose: build.ps1 and the upstream workflows are unaffected.
+
+      dotnet test ReBuzz.SessionTests
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>ReBuzz.SessionTests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\ReBuzz\Core\Session\SessionScheduler.cs" Link="Engine\SessionScheduler.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="NUnit" Version="4.4.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="5.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+</Project>
