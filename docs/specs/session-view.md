@@ -149,9 +149,9 @@ Rules:
 - **Scenes.** `LaunchScene` enqueues all slots under `ReBuzzCore.AudioLock` with one shared `launchClock`. Tracks absent from the scene keep playing, as in Live (Live's "stop clips not in scene" comes later as an option). Fixes G7.
 - **Arrangement override.** Launching a clip marks its track as overridden; the arrangement's events for that track are ignored until `BackToArrangement()` (Phase 0.3 adds the button; in 0.1, stopping the transport clears overrides). `SequenceCore.PlayingPattern` asks the session first. Fixes G3.
 - **MIDI columns.** `UpdatePatternColumnEvents` plays each pattern that has a play position exactly once, session clips included. Fixes G5 and G9.
-- **Transport.** Launching while stopped starts the transport and launches on the first tick. Stopping the transport stops all clips. The song-end stop (`!Looping` at `LoopEnd`) is skipped while any clip plays.
+- **Transport.** Launching while stopped starts the transport and launches on the first tick. Stopping the transport stops all clips. The song-end stop (`!Looping` at `LoopEnd`) is skipped while any clip plays. The arrangement then wraps to `LoopStart` and keeps playing on tracks the session hasn't taken over (Live would continue silently past the end; revisit with the 0.3 arrangement work).
 - **Compatibility.** `ISequence.TriggerEvent` keeps working and is re-implemented on top of `SessionCore`, so the Modern Sequence Editor's click-to-play and the session grid share one state.
-- **Threading.** All mutations under `ReBuzzCore.AudioLock` (as `SequenceCore` does today). State-change events are marshalled to the UI dispatcher. No allocation on the audio path in steady state.
+- **Threading.** The scheduler has its own lock, not `ReBuzzCore.AudioLock`: the audio thread holds `AudioLock` while it synchronously invokes the UI thread at transport start, so a UI request waiting for `AudioLock` could deadlock. Lock order is `AudioLock` → session lock on the audio thread; UI requests take only the session lock; machines and the dispatcher are never called while it is held. Per-track reads are lock-free. State-change events are marshalled to the UI dispatcher. No allocation on the audio path in steady state (only on ticks where something changes).
 
 ### 4.2 Data model and persistence
 
