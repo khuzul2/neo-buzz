@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v2 — 0.1 engine implemented (branch `session/engine`), UI not started |
+| Status | Draft v3 — 0.1 engine merged; 0.1 grid UI implemented (branch `session/ui`, see §5 0.1 status) |
 | Date | 2026-10-25 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -86,9 +86,9 @@ The default editor is the Modern Pattern Editor (`ReBuzzCore.DefaultPatternEdito
 
 ```
 ┌────────────────────────── UI (WPF) ───────────────────────────┐
-│ ReBuzzGUI/SessionView  (new project)                           │
-│   SessionGrid ─ TrackHeader ─ ClipSlot ─ SceneColumn ─ TopBar  │
-│   reads/writes SessionDocument, calls ISession                  │
+│ ReBuzz/AppViews/Session: SessionWindow ─ SessionView (grid)    │
+│ ReBuzz/Core/Session: SessionLayout ─ SessionDocument (model)   │
+│   reads/writes the layout, calls ISession                      │
 └───────────────┬───────────────────────────────▲────────────────┘
                 │ Launch/Stop/LaunchScene        │ state events (UI thread)
 ┌───────────────▼───────────────────────────────┴────────────────┐
@@ -158,19 +158,22 @@ Rules:
 `SessionDocument` is UI-owned layout data, serialized as XML into a `BGUI` subsection named `SessionView` via `IBuzz.SaveSong`/`OpenSong`:
 
 ```xml
-<Session version="1" beatsPerBar="4" launchQuantize="16">
+<Session version="1" beatsPerBar="4" launchQuantization="Bar">
   <Scenes>
-    <Scene row="0" name="Intro" color="#3A6EA5" />
-    <Scene row="1" name="Drop" />
+    <Scene name="Intro" color="#3A6EA5" />
+    <Scene name="Drop" />
+    <Scene />
   </Scenes>
   <Tracks>
     <Track sequence="0" machine="Juno 1">
-      <Slot row="0" pattern="00" />
-      <Slot row="1" pattern="01" color="#D2691E" />
+      <Slot scene="0" pattern="00" />
+      <Slot scene="1" pattern="01" />
     </Track>
   </Tracks>
 </Session>
 ```
+
+Scenes are listed in row order. `ReBuzz/Core/Session/SessionDocument.cs` is the pure model (no WPF, unit-tested in `ReBuzz.SessionTests`); `SessionLayout.cs` keeps it in step with the live song and does the subsection I/O. A song that never used the session is saved without the subsection.
 
 - **Tracks are sequences**, not machines (a machine can have several sequences). `sequence` is the index in `ISong.Sequences`, `machine` is a check value used to re-match after edits. Follows `SequenceAdded/Removed/Changed`.
 - **Clips reference patterns by name** within the track's machine. Renames are followed via `IPattern.PropertyChanged("Name")`; a deleted pattern leaves the slot empty.
@@ -186,7 +189,7 @@ Rules:
 | B. Main-window view next to Machine/Pattern/Sequence (from 0.3) | Feels native; Live-like Session/Arrangement toggle | Touches `MainWindow`, `BuzzView`, toolbar, themes |
 | C. A managed machine with a GUI (like `QuickNote`) | Zero core UI changes | Several instances per song possible; awkward persistence; engine changes are needed anyway |
 
-Decision: **A for 0.1–0.2, B from 0.3.** All function keys are taken (F1–F12); the toggle shortcut is to be decided (candidate: Ctrl+Tab).
+Decision: **A for 0.1–0.2, B from 0.3.** All function keys are taken (F1–F12); the window toggles with **Ctrl+Tab** (from the main window and from the Session window), the toolbar's Session button (Default theme) and *View → Session View*. The UI lives in the ReBuzz project rather than a new ReBuzzGUI project, because it needs `SessionLayout` and `ReBuzzCore`; it can move once the layout has a public interface (0.3, docked view).
 
 ## 5. Phase plan
 
@@ -233,6 +236,8 @@ Sizes: S ≈ <500 LOC, M ≈ 500–2,000, L ≈ 2,000–5,000, XL > 5,000.
 - No audio dropouts introduced: CPU per buffer with 16 playing clips within 5% of the same patterns playing from the arrangement.
 
 **Out of scope.** Keyboard/MIDI control, mixer, recording, clip properties, follow actions.
+
+**Status (branch `session/ui`).** Features 1–8 are in, with these 0.1 limits: slots are assigned from the right-click menu (drag from the Sequence View pattern list moves to 0.2); clicking a playing clip relaunches it at the next launch point; the Session window is a separate window (§4.3). Tests: `ReBuzz.SessionTests` (scheduler and layout model), `ReBuzzTests/SessionEngineTests.cs` (engine through the audio loop), `ReBuzzTests/SessionViewTests.cs` (layout against a live song, and PNG renders of the grid that CI publishes to the `ci-artifacts` branch). Not yet covered by automated tests: the 5-minute and soak criteria, the CPU comparison, and opening the file in upstream ReBuzz.
 
 ---
 
