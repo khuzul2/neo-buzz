@@ -43,6 +43,10 @@ namespace ReBuzzTests.Automation
             [("Settings", "OpenMidiInDevs")] = "00",
             [("Settings", "OpenMidiOutDevs")] = "",
             [("Settings", "numMidiControllers")] = 0,
+            // Fork: keys added upstream after this fake was written (defaults as in the code).
+            [("Settings", "numMidiDAWControllers")] = 0,
+            [("Settings", "numWaveDirs")] = 0,
+            [("Settings", "WPFTheme")] = "",
             [("Settings", "ProcessorAffinity")] = 65535u,
             [("Settings", "AudioThreadType")] = 0,
             [("Settings", "AudioThreads")] = 8,
@@ -58,7 +62,9 @@ namespace ReBuzzTests.Automation
             [("WASAPI", "SampleRate")] = 44100,
             [("WASAPI", "Mode")] = 1,
             [("WASAPI", "Poll")] = 0,
-            [("WASAPI", "BufferSize")] = 8192
+            [("WASAPI", "BufferSize")] = 8192,
+            [("WASAPI", "LowLatencyMode")] = 0,
+            [("WASAPI", "RawMode")] = 0
         };
 
         public void Write<T>(string key, T x, string path = "BuzzGUI")
