@@ -45,7 +45,7 @@ jobs:
     # project rather than the solution.
     - name: Build ReBuzz (C# only)
       shell: pwsh
-      run: dotnet build ReBuzz/ReBuzz.csproj -c Release -p:Platform=x64 "-p:SolutionDir=$($PWD.Path)\" -nologo *>&1 | Tee-Object -FilePath build.log
+      run: dotnet build ReBuzz/ReBuzz.csproj -c Release -p:Platform=x64 "-p:SolutionDir=$($PWD.Path)\" -p:ReBuzzCleanBuild=true -nologo *>&1 | Tee-Object -FilePath build.log
 
     - name: Annotate build log
       if: failure()
