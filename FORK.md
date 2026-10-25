@@ -17,6 +17,7 @@ Needs Windows with:
 - Visual Studio 2026 with the **Desktop development with C++** and **.NET desktop development** workloads. Visual Studio 2022 works too; `build.ps1` then builds the C++ projects with the v143 toolset instead of v145.
 - .NET 10 SDK (x64)
 - git (for submodules)
+- The **VC++ 2010 SP1 x64 redistributable** (`msvcr100.dll`), which upstream's `bin64\dsplib.dll` imports. Without it no 64-bit native machine loads. `build.ps1` copies it into the package's `bin64`, so people using the zip don't need it.
 
 Then:
 

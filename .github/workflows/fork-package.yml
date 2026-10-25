@@ -39,6 +39,13 @@ jobs:
       with:
         dotnet-version: '10.0.x'
 
+    # bin64\dsplib.dll (upstream binary) needs the x64 VC++ 2010 runtime, which the runner
+    # image lacks: without it every 64-bit native machine host dies at start (0xC0000135).
+    # build.ps1 bundles it into the package from here; the tests need it installed.
+    - name: Install VC++ 2010 runtime
+      shell: pwsh
+      run: choco install vcredist2010 -y --no-progress *> vcredist.log; if (-not (Test-Path "$env:WINDIR\System32\msvcr100.dll")) { Get-Content vcredist.log -Tail 20; throw 'msvcr100.dll (x64) not installed' }
+
     # The C++ projects target v145 (VS 2026). build.ps1 falls back to v143 when the
     # runner image only has VS 2022.
     - name: Build and package
@@ -143,6 +150,22 @@ jobs:
             else { $lines += ('{0}: still running after 8 s' -f (Split-Path $exe -Leaf)); $p.Kill() }
             $map.Dispose()
         }
+
+        # Where the VC++ 2010 runtime that dsplib.dll (x64) imports is found, and whether a
+        # copy of bin64 runs from a temp dir with a minimal PATH (as in the tests' root dir).
+        $lines += 'where msvcr100.dll: ' + ((& where.exe msvcr100.dll 2>$null) -join ', ')
+        $lines += 'System32\msvcr100.dll: ' + (Test-Path "$env:WINDIR\System32\msvcr100.dll") + '; SysWOW64\msvcr100.dll: ' + (Test-Path "$env:WINDIR\SysWOW64\msvcr100.dll")
+        $copy = Join-Path $env:RUNNER_TEMP 'engine-copy'
+        New-Item -ItemType Directory -Force $copy | Out-Null
+        Get-ChildItem (Join-Path $dir 'bin64') -File | Copy-Item -Destination $copy
+        $name = 'neo-buzz-probe-' + [guid]::NewGuid().ToString('N')
+        $map = [System.IO.MemoryMappedFiles.MemoryMappedFile]::CreateNew($name, 64MB)
+        $savedPath = $env:PATH
+        $env:PATH = "$env:WINDIR\system32;$env:WINDIR"
+        $p = Start-Process (Join-Path $copy 'ReBuzzEngine64.exe') -ArgumentList $name -WorkingDirectory $copy -PassThru
+        $env:PATH = $savedPath
+        if ($p.WaitForExit(8000)) { $lines += ('copy of bin64, minimal PATH: exited with 0x{0:X8}' -f $p.ExitCode) } else { $lines += 'copy of bin64, minimal PATH: still running after 8 s'; $p.Kill() }
+        $map.Dispose()
 
         $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
         $dumpbin = & $vswhere -latest -find 'VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe' | Select-Object -First 1

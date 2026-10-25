@@ -242,13 +242,19 @@ namespace ReBuzz.Core
         {
             // If there was latency, copy the latency ring's read position into the output buffer. The ring is a pass-through when addedLatency == 0, so skip this copy in that case.
             if (addedLatency > 0)
-            {   
+            {
+                // Fork: read from the read position, addedLatency samples behind the block
+                // just written, then move the write position past that block. Reading at the
+                // write position (as in upstream 3eac655) returned the block undelayed, which
+                // turned delay compensation off (NativeEffectLatencyCompensationTests).
                 for (int i = 0; i < nSamples; i++)
                 {
-                    buffer[i].L = latencyBuffer[latencyBufferWritePos].L;
-                    buffer[i].R = latencyBuffer[latencyBufferWritePos].R;
-                    if (++latencyBufferWritePos == latencyBuffer.Length) latencyBufferWritePos = 0;
+                    buffer[i].L = latencyBuffer[latencyBufferReadPos].L;
+                    buffer[i].R = latencyBuffer[latencyBufferReadPos].R;
+                    if (++latencyBufferReadPos == latencyBuffer.Length) latencyBufferReadPos = 0;
                 }
+                latencyBufferWritePos += nSamples;
+                if (latencyBufferWritePos >= latencyBuffer.Length) latencyBufferWritePos -= latencyBuffer.Length;
             }
 
             burstProtection.Process(buffer, 0, nSamples, true, true);
