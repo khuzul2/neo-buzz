@@ -232,13 +232,14 @@ namespace ReBuzzTests
             Assert.That(session.GetState(layout.SequenceOf(1)!, line), Is.Not.EqualTo(ClipState.Stopped));
             rig.RunTicks(1);
 
+            Press(rig, Cc(22, 0));                      // back to no quantization: the stop comes at the next tick
             Press(rig, Cc(21, 127));
-            rig.RunTicks(4 * 8 * Bar);
+            rig.RunTicks(2);
             Assert.That(session.GetPlaying(layout.SequenceOf(0)!), Is.Null);
 
-            bool playing = rig.Core.Playing;
+            bool playing = rig.Core.PlayRequested;
             Press(rig, NoteOn(60));
-            Assert.That(rig.Core.Playing, Is.EqualTo(!playing));
+            Assert.That(rig.Core.PlayRequested, Is.EqualTo(!playing));
         }
 
         [Test]
@@ -354,9 +355,11 @@ namespace ReBuzzTests
             view.HandleKey(Key.I, ModifierKeys.Control);
             Assert.That(layout.SceneCount, Is.EqualTo(scenes + 1));
 
-            bool playing = rig.Core.Playing;
+            bool playing = rig.Core.PlayRequested;
             view.HandleKey(Key.Space, ModifierKeys.None);
-            Assert.That(rig.Core.Playing, Is.EqualTo(!playing));
+            Assert.That(rig.Core.PlayRequested, Is.EqualTo(!playing));
+            view.HandleKey(Key.Space, ModifierKeys.None);
+            Assert.That(rig.Core.PlayRequested, Is.EqualTo(playing));
         }
 
         // ------------------------------------------------------------------ look

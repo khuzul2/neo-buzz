@@ -318,6 +318,12 @@ namespace ReBuzz.Core
         bool preparePlaying;
 
         /// <summary>
+        /// Fork: playing, or set to play and waiting for the next tick. Start/stop toggles
+        /// (Session View) go by this, since Playing only turns true on that tick.
+        /// </summary>
+        internal bool PlayRequested => playing || preparePlaying;
+
+        /// <summary>
         /// Gets or sets whether the host is currently playing.
         /// Setting to true prepares playback synchronized on the next tick.
         /// Setting to false stops playback, stops all machines and clears solo state.

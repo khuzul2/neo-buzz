@@ -178,7 +178,7 @@ namespace ReBuzz.AppViews.Session
             }
             if (none && key == Key.Space)
             {
-                buzz.Playing = !buzz.Playing;
+                buzz.Playing = !buzz.PlayRequested;
                 return true;
             }
             if (none && (key >= Key.D1 && key <= Key.D9 || key >= Key.NumPad1 && key <= Key.NumPad9))

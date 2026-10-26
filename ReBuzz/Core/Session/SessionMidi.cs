@@ -222,7 +222,7 @@ namespace ReBuzz.Core.Session
                     session.StopAll();
                     break;
                 case SessionTarget.Transport:
-                    buzz.Playing = !buzz.Playing;
+                    buzz.Playing = !buzz.PlayRequested;
                     break;
                 case SessionTarget.Quantization:
                     layout.SetLaunchQuantization(QuantizationCycle[(Array.IndexOf(QuantizationCycle, session.LaunchQuantization) + 1) % QuantizationCycle.Length]);

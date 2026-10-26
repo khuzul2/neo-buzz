@@ -37,6 +37,7 @@ namespace ReBuzz.AppViews.Session
         readonly TextBlock clockText;
         readonly TextBlock hintText;
         readonly TextBlock statusText;
+        readonly Border statusBar;
         readonly FlatButton backButton;
         readonly FlatButton undoButton;
         readonly FlatButton redoButton;
@@ -80,7 +81,7 @@ namespace ReBuzz.AppViews.Session
             FocusVisualStyle = null;
 
             // ---- top bar
-            var bar = new DockPanel { Background = SessionPalette.Bar, LastChildFill = true };
+            var bar = new DockPanel { Background = SessionPalette.Bar, LastChildFill = false };
             var left = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 4, 6, 4) };
             left.Children.Add(new FlatButton("■  Stop all", () => session.StopAll(), "Stop every clip at the next launch point"));
             backButton = new FlatButton("Back to arrangement", () => session.BackToArrangement(), "Give every track back to the arrangement");
@@ -132,14 +133,15 @@ namespace ReBuzz.AppViews.Session
             DockPanel.SetDock(right, Dock.Right);
             bar.Children.Add(right);
 
+            // Status line under the top bar (MIDI learn), hidden when empty.
             statusText = new TextBlock
             {
-                Foreground = SessionPalette.Learn,
-                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = SessionPalette.DarkText,
+                FontWeight = FontWeights.SemiBold,
                 TextTrimming = TextTrimming.CharacterEllipsis,
-                Margin = new Thickness(8, 0, 8, 0)
+                Margin = new Thickness(10, 3, 10, 3)
             };
-            bar.Children.Add(statusText);
+            statusBar = new Border { Background = SessionPalette.Learn, Child = statusText, Visibility = Visibility.Collapsed };
 
             // ---- grid
             hintText = new TextBlock
@@ -163,6 +165,8 @@ namespace ReBuzz.AppViews.Session
             var root = new DockPanel();
             DockPanel.SetDock(bar, Dock.Top);
             root.Children.Add(bar);
+            DockPanel.SetDock(statusBar, Dock.Top);
+            root.Children.Add(statusBar);
             root.Children.Add(scroll);
             Content = root;
 
@@ -366,7 +370,8 @@ namespace ReBuzz.AppViews.Session
             backButton.IsEnabled = session.IsAnyArrangementOverridden;
             undoButton.IsEnabled = layout.UndoStack.CanUndo;
             redoButton.IsEnabled = layout.UndoStack.CanRedo;
-            statusText.Text = learn is { } target ? $"MIDI learn: press a pad, key or knob for {Describe(target.Target, target.Track, target.Scene)} (Esc cancels)" : "";
+            statusText.Text = learn is { } target ? $"MIDI learn: press a pad, key or knob for {Describe(target.Target, target.Track, target.Scene)}  ·  Esc cancels" : "";
+            statusBar.Visibility = learn != null ? Visibility.Visible : Visibility.Collapsed;
         }
 
         static string Describe(SessionTarget target, int track, int scene) => target switch

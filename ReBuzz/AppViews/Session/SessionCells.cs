@@ -169,9 +169,14 @@ namespace ReBuzz.AppViews.Session
                     return;
                 }
 
-                var color = SessionPalette.ColorBrush(PatternColors.Get(Pattern)) ?? SessionPalette.Clip;
+                var color = SessionPalette.ColorBrush(PatternColors.Get(Pattern));
                 var state = session.GetState(Sequence, Pattern);
-                var background = state == ClipState.Playing || state == ClipState.Stopping ? SessionPalette.Lighten(color, 0.2) : color;
+                bool sounding = state == ClipState.Playing || state == ClipState.Stopping;
+                // Uncoloured clips turn green while playing (as in 0.1); coloured ones keep their
+                // colour, lightened, with the green ▶, outline and progress bar.
+                var background = color == null
+                    ? (sounding ? SessionPalette.Playing : SessionPalette.Clip)
+                    : (sounding ? SessionPalette.Lighten(color, 0.2) : color);
                 if (hover) background = SessionPalette.Lighten(background, 0.1);
                 var text = SessionPalette.TextOn(background);
 
@@ -180,16 +185,16 @@ namespace ReBuzz.AppViews.Session
                 switch (state)
                 {
                     case ClipState.Playing:
-                        glyph.Foreground = SessionPalette.Progress;
-                        border ??= SessionPalette.Playing;
+                        glyph.Foreground = color == null ? text : SessionPalette.Progress;
+                        border ??= color == null ? null : SessionPalette.Playing;
                         break;
                     case ClipState.Queued:
                         glyph.Foreground = blinkOn ? SessionPalette.Progress : text;
                         border ??= blinkOn ? SessionPalette.Progress : null;
                         break;
                     case ClipState.Stopping:
-                        glyph.Foreground = blinkOn ? SessionPalette.Stopping : SessionPalette.Progress;
-                        border ??= SessionPalette.Playing;
+                        glyph.Foreground = blinkOn ? SessionPalette.Stopping : (color == null ? text : SessionPalette.Progress);
+                        border ??= color == null ? null : SessionPalette.Playing;
                         break;
                     default:
                         glyph.Foreground = text;

@@ -299,7 +299,7 @@ namespace ReBuzzTests.Automation
             // the ReBuzzEngine binaries to the test directory.
 
             var reBuzzBinariesDirString =
-                File.ReadLines(AbsoluteDirectoryPath.OfExecutingAssembly().AddFileName("ReBuzzLocation.txt").ToString())
+                File.ReadLines(TestAssemblyDirectory.Value.AddFileName("ReBuzzLocation.txt").ToString())
                     .First().OrThrow();
             var reBuzzBinariesDir = AbsoluteDirectoryPath.Value(reBuzzBinariesDirString);
 
