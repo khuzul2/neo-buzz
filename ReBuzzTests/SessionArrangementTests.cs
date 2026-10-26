@@ -57,12 +57,16 @@ namespace ReBuzzTests
 
             int SamplesPerTick => ReBuzzCore.masterInfo.SamplesPerTick;
 
-            /// <summary>Reads up to the next tick boundary, so later reads cover whole ticks.</summary>
+            /// <summary>
+            /// Reads up to the next tick boundary (a whole tick if already on one), so later reads
+            /// cover whole ticks. With the transport stopped this also clears the pattern play
+            /// positions, which are left over from the last tick played (or 0 in new patterns)
+            /// until the engine runs once.
+            /// </summary>
             public void Align()
             {
                 var mi = ReBuzzCore.masterInfo;
-                if (mi.PosInTick != 0)
-                    Driver.ReadStereoSamples(mi.SamplesPerTick - mi.PosInTick);
+                Driver.ReadStereoSamples(mi.SamplesPerTick - mi.PosInTick);
             }
 
             /// <summary>Renders whole ticks and returns their samples.</summary>

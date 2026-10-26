@@ -82,8 +82,11 @@ namespace ReBuzz.AppViews.Session
             FocusVisualStyle = null;
 
             // ---- top bar
-            var bar = new DockPanel { Background = SessionPalette.Bar, LastChildFill = false };
-            var left = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 4, 6, 4) };
+            // Left group wraps onto a second row when the view is narrow; the right group stays put.
+            var bar = new Grid { Background = SessionPalette.Bar };
+            bar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            bar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var left = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 4, 6, 4) };
             left.Children.Add(new FlatButton("■  Stop all", () => session.StopAll(), "Stop every clip at the next launch point"));
             recordButton = new FlatButton("●  Rec", () => buzz.Recording = !buzz.Recording,
                 "Record into the arrangement (ReBuzz's Record, F7): every launch and stop is written into the sequences\n" +
@@ -121,10 +124,9 @@ namespace ReBuzz.AppViews.Session
                 ToolTip = "Session clock: bar.beat.tick"
             };
             left.Children.Add(clockText);
-            DockPanel.SetDock(left, Dock.Left);
             bar.Children.Add(left);
 
-            var right = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 4, 6, 4) };
+            var right = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 4, 6, 4), VerticalAlignment = VerticalAlignment.Top };
             undoButton = new FlatButton("↶", () => layout.Undo(), "Undo grid edit (Ctrl+Z)") { Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 2, 0) };
             redoButton = new FlatButton("↷", () => layout.Redo(), "Redo grid edit (Ctrl+Y)") { Padding = new Thickness(8, 3, 8, 3) };
             right.Children.Add(undoButton);
@@ -136,7 +138,7 @@ namespace ReBuzz.AppViews.Session
             FlatButton settings = null;
             settings = new FlatButton("⚙", () => ShowSettingsMenu(settings), "New clip length, MIDI mapping, keyboard shortcuts") { Margin = new Thickness(0) };
             right.Children.Add(settings);
-            DockPanel.SetDock(right, Dock.Right);
+            Grid.SetColumn(right, 1);
             bar.Children.Add(right);
 
             // Status line under the top bar (MIDI learn), hidden when empty.
