@@ -61,7 +61,13 @@ namespace ReBuzz.Core
                 playPosition += ticks;
             }
 
-            if (playPosition >= LoopEnd)
+            if (playPosition >= LoopEnd && !Buzz.Looping && Buzz.Recording && BuzzCore.SessionCore.HasActivity)
+            {
+                // Fork: recording the session into the arrangement (docs/specs/session-view.md 0.3)
+                // runs on past the end like Live's arrangement: the song grows a bar at a time.
+                ExtendEnd(playPosition, Math.Max(1, BuzzCore.TPB * BuzzCore.SessionCore.BeatsPerBar));
+            }
+            else if (playPosition >= LoopEnd)
             {
                 playPosition = LoopStart;
                 // Fork: the song end stops only the arrangement; keep running while session clips play or wait.
@@ -83,10 +89,31 @@ namespace ReBuzz.Core
             });
         }
 
+        /// <summary>Audio thread: moves the loop and song end past the play position.</summary>
+        void ExtendEnd(int position, int bar)
+        {
+            int newEnd = position + bar;
+            loopEnd = newEnd;
+            ReBuzzCore.GlobalState.LoopEnd = newEnd;
+            if (songEnd < newEnd)
+            {
+                songEnd = newEnd;
+                ReBuzzCore.GlobalState.SongEnd = newEnd;
+            }
+            dispatcher.BeginInvoke(() =>
+            {
+                PropertyChanged.Raise(this, "LoopEnd");
+                PropertyChanged.Raise(this, "SongEnd");
+            });
+        }
+
         void UpdateSpecialSequeceEvents()
         {
             foreach (var seq in sequences)
             {
+                // Fork: a track the session has taken over ignores its arrangement, Off/Mute/Thru included.
+                if (BuzzCore?.SessionCore.IsArrangementOverridden(seq) == true)
+                    continue;
                 if (seq.Events.TryGetValue(playPosition, out var se))
                 {
                     if (se.Type == SequenceEventType.Mute)

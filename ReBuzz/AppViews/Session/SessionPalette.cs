@@ -24,6 +24,8 @@ namespace ReBuzz.AppViews.Session
         public static readonly Brush Selection = Make("#F0C24B");
         public static readonly Brush Learn = Make("#FF8C2A");
         public static readonly Brush Ring = Make("#E0457B");
+        public static readonly Brush Record = Make("#D23B3B");
+        public static readonly Brush Override = Make("#E8823A");
         public static readonly Brush Mute = Make("#D08A2E");
         public static readonly Brush Solo = Make("#3F8FD8");
         public static readonly Brush Transparent = Brushes.Transparent;

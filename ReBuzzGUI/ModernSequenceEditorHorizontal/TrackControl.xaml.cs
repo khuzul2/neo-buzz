@@ -22,6 +22,8 @@ namespace WDE.ModernSequenceEditorHorizontal
         }
 
         ISequence sequence;
+        // Fork: greyed while the Session View has taken the track over (docs/specs/session-view.md 0.3).
+        global::BuzzGUI.Common.SessionOverrideIndicator overrideIndicator;
         public ISequence Sequence
         {
             get { return sequence; }
@@ -38,6 +40,8 @@ namespace WDE.ModernSequenceEditorHorizontal
                 }
 
                 sequence = value;
+                overrideIndicator?.Dispose();
+                overrideIndicator = global::BuzzGUI.Common.SessionOverrideIndicator.Attach(this, sequence);
                 EventsChanged();
 
                 if (sequence != null)

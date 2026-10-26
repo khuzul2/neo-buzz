@@ -208,5 +208,28 @@ namespace ReBuzzTests
             Assert.That(rig.Core.Session.GetState(layout.SequenceOf(1)!, line), Is.EqualTo(ClipState.Playing));
             Assert.That(rig.Core.Session.GetState(layout.SequenceOf(1)!, lineB), Is.EqualTo(ClipState.Queued));
         }
+
+        [Test]
+        public void RendersRecordingAndTakenOverTracks()
+        {
+            using var rig = new Rig();
+            rig.Pattern(rig.Drums, "Beat", Bar);
+            rig.Pattern(rig.Bass, "Line", Bar);
+            rig.Pattern(rig.Lead, "Hook", Bar);
+            var layout = rig.Core.SessionLayout;
+            layout.Ensure();
+            layout.ClearSlot(2, 0);
+
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            rig.Core.Recording = true;
+            layout.LaunchScene(0);
+            rig.RunTicks(3);
+            view.RefreshState();
+            Screenshot(view, "session-view-recording");
+
+            Assert.That(rig.Core.Session.IsAnyArrangementOverridden, Is.True);
+            rig.Core.Recording = false;
+        }
     }
 }

@@ -39,6 +39,7 @@ namespace ReBuzz.AppViews.Session
         readonly TextBlock statusText;
         readonly Border statusBar;
         readonly FlatButton backButton;
+        readonly FlatButton recordButton;
         readonly FlatButton undoButton;
         readonly FlatButton redoButton;
         readonly ComboBox quantizeBox;
@@ -84,7 +85,12 @@ namespace ReBuzz.AppViews.Session
             var bar = new DockPanel { Background = SessionPalette.Bar, LastChildFill = false };
             var left = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 4, 6, 4) };
             left.Children.Add(new FlatButton("■  Stop all", () => session.StopAll(), "Stop every clip at the next launch point"));
-            backButton = new FlatButton("Back to arrangement", () => session.BackToArrangement(), "Give every track back to the arrangement");
+            recordButton = new FlatButton("●  Rec", () => buzz.Recording = !buzz.Recording,
+                "Record into the arrangement (ReBuzz's Record, F7): every launch and stop is written into the sequences\n" +
+                "at the song position where it happens. With looping off, the song grows while you record.\n" +
+                "Undo removes a whole recording pass (↶ here).");
+            left.Children.Add(recordButton);
+            backButton = new FlatButton("Back to arrangement", () => session.BackToArrangement(), "Lit while the session has taken over tracks: gives every track back to the arrangement");
             left.Children.Add(backButton);
             left.Children.Add(Label("Launch"));
             quantizeBox = new ComboBox { Width = 82, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -367,7 +373,10 @@ namespace ReBuzz.AppViews.Session
                 clockText.Foreground = SessionPalette.Text;
             }
 
-            backButton.IsEnabled = session.IsAnyArrangementOverridden;
+            bool overridden = session.IsAnyArrangementOverridden;
+            backButton.IsEnabled = overridden;
+            backButton.SetLit(overridden ? SessionPalette.Override : null);
+            recordButton.SetLit(buzz.Recording ? SessionPalette.Record : null);
             undoButton.IsEnabled = layout.UndoStack.CanUndo;
             redoButton.IsEnabled = layout.UndoStack.CanRedo;
             statusText.Text = learn is { } target ? $"MIDI learn: press a pad, key or knob for {Describe(target.Target, target.Track, target.Scene)}  ·  Esc cancels" : "";

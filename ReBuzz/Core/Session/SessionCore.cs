@@ -38,6 +38,10 @@ namespace ReBuzz.Core.Session
         int beatsPerBar = 4;
         LaunchQuantization launchQuantization = LaunchQuantization.Bar;
 
+        /// <summary>Arrangement record (0.3); set by ReBuzzCoreInitialization.</summary>
+        internal SessionRecorder Recorder { get; set; }
+        volatile bool wasRecording;       // audio thread: recording on the previous tick
+
         internal SessionCore(ReBuzzCore buzz)
         {
             this.buzz = buzz;
@@ -229,6 +233,7 @@ namespace ReBuzz.Core.Session
                     scheduler.Advance();
                 tickChanges.AddRange(scheduler.Changes);
             }
+            RecordTick(songPosition);
             if (tickChanges.Count == 0) return;
 
             bool anyOverrideChange = false;
@@ -245,9 +250,60 @@ namespace ReBuzz.Core.Session
                 RaisePropertyChangedOnUi(nameof(IsAnyArrangementOverridden));
         }
 
+        /// <summary>
+        /// Arrangement record (audio thread, after the tick's changes): reports clip starts
+        /// (launches and loop restarts) and stops while ReBuzz records. When recording starts
+        /// with clips already playing, their current loop is written from where it began.
+        /// </summary>
+        void RecordTick(int songPosition)
+        {
+            var recorder = Recorder;
+            if (recorder == null) return;
+            if (!buzz.Recording)
+            {
+                if (wasRecording)
+                {
+                    wasRecording = false;
+                    recorder.EndPass(songPosition);
+                }
+                return;
+            }
+            bool starting = !wasRecording;
+            wasRecording = true;
+
+            for (int i = 0; i < tickChanges.Count; i++)
+            {
+                var c = tickChanges[i];
+                if (c.Kind != SessionChangeKind.Stopped && c.Kind != SessionChangeKind.Ended) continue;
+                if (scheduler.IsOverridden(c.Track))
+                    recorder.ClipStopped(c.Track, songPosition);
+                else
+                    recorder.TrackReleased(c.Track, songPosition);   // Back to Arrangement
+            }
+
+            var sequences = buzz.SongCore.SequencesList;
+            for (int i = 0; i < sequences.Count; i++)
+            {
+                var seq = sequences[i];
+                var clip = scheduler.GetPlaying(seq);
+                if (clip == null) continue;
+                int position = scheduler.GetPosition(seq);
+                if (position == 0)
+                    recorder.ClipStarted(seq, clip, songPosition);
+                else if (starting && position > 0 && songPosition - position >= 0)
+                    recorder.ClipStarted(seq, clip, songPosition - position);
+            }
+        }
+
         /// <summary>Transport stopped (any thread; machines are stopped by the caller).</summary>
         internal void OnTransportStopped()
         {
+            if (wasRecording)
+            {
+                wasRecording = false;
+                Recorder?.EndPass(buzz.SongCore.PlayPosition);
+            }
+
             SequenceCore[] changed;
             bool wasOverridden;
             lock (gate)
@@ -294,6 +350,8 @@ namespace ReBuzz.Core.Session
             {
                 scheduler.Reset();
             }
+            wasRecording = false;
+            Recorder?.Reset();
         }
 
         /// <summary>Note-offs for a track whose clip stopped mid-note (audio thread).</summary>

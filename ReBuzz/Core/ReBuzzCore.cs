@@ -1277,7 +1277,7 @@ namespace ReBuzz.Core
             {
                 BuzzCommandRaised?.Invoke(cmd);
             }
-            else if (cmd == BuzzCommand.SessionView)
+            else if (cmd == BuzzCommand.SessionView || cmd == BuzzCommand.SessionWindow)
             {
                 BuzzCommandRaised?.Invoke(cmd);
             }
