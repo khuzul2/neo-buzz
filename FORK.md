@@ -8,7 +8,8 @@ A fork of [wasteddesign/ReBuzz](https://github.com/wasteddesign/ReBuzz) (MIT) th
 | One-command build that produces a portable zip with every machine installed | [`build.ps1`](build.ps1) |
 | Script to pull prebuilt machine DLLs from GitHub releases | [`tools/fetch-machine-binaries.ps1`](tools/fetch-machine-binaries.ps1) |
 | CI job that runs the build and uploads the zip | [`.github/workflows/fork-package.yml`](.github/workflows/fork-package.yml) |
-| Spec for an Ableton-style Session View | [`docs/specs/session-view.md`](docs/specs/session-view.md) |
+| Ableton-style Session View: clip launching engine and launch grid (0.1; Ctrl+Tab or *View → Session View*) | [`docs/specs/session-view.md`](docs/specs/session-view.md), `ReBuzz/Core/Session/`, `ReBuzz/AppViews/Session/` |
+| Fixes found by running upstream's `ReBuzzTests` in CI: machine delay compensation, the x64 VC++ 2010 runtime `bin64\dsplib.dll` needs, stale test expectations | `ReBuzz/Core/MachineConnectionCore.cs`, `build.ps1`, `ReBuzzTests/` |
 
 ## Building the package
 

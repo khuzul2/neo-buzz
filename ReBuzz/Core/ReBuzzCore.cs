@@ -118,6 +118,9 @@ namespace ReBuzz.Core
         internal SessionCore SessionCore { get; }
         public ISession Session => SessionCore;
 
+        // Session View layout of the song; created with the SongCore (ReBuzzCoreInitialization).
+        internal SessionLayout SessionLayout { get; set; }
+
         // UI related state
         BuzzView activeView = BuzzView.MachineView;
         public ReBuzzTheme Theme { get; set; }
@@ -1265,6 +1268,10 @@ namespace ReBuzz.Core
             {
                 BuzzCommandRaised?.Invoke(cmd);
             }
+            else if (cmd == BuzzCommand.SessionView)
+            {
+                BuzzCommandRaised?.Invoke(cmd);
+            }
         }
 
         internal void Release()
@@ -2243,6 +2250,7 @@ namespace ReBuzz.Core
             TPB = 4;
             BPM = 126;
             SessionCore.Reset();
+            SessionLayout?.Reset();
             Modified = false;
 
             GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;

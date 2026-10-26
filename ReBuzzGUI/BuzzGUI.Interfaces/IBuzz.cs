@@ -12,7 +12,9 @@ namespace BuzzGUI.Interfaces
     public enum DCLogLevel { Verbose, Debug, Information, Warning, Error, Fatal }
 
     public enum BuzzView { PatternView, MachineView, SequenceView, WaveTableView, SongInfoView };
-    public enum BuzzCommand { NewFile, OpenFile, SaveFile, SaveFileAs, Cut, Copy, Paste, Undo, Redo, Stop, Exit, About, Preferences, DebugConsole };
+    public enum BuzzCommand { NewFile, OpenFile, SaveFile, SaveFileAs, Cut, Copy, Paste, Undo, Redo, Stop, Exit, About, Preferences, DebugConsole,
+        // Fork addition: show/hide the Session View (docs/specs/session-view.md). Appended so existing values keep their numbers.
+        SessionView };
 
     public interface IBuzz : INotifyPropertyChanged
     {
