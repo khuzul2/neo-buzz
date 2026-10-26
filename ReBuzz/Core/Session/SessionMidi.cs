@@ -227,7 +227,29 @@ namespace ReBuzz.Core.Session
                 case SessionTarget.Quantization:
                     layout.SetLaunchQuantization(QuantizationCycle[(Array.IndexOf(QuantizationCycle, session.LaunchQuantization) + 1) % QuantizationCycle.Length]);
                     break;
+                case SessionTarget.GridUp: MoveGrid(0, -1); break;
+                case SessionTarget.GridDown: MoveGrid(0, 1); break;
+                case SessionTarget.GridLeft: MoveGrid(-1, 0); break;
+                case SessionTarget.GridRight: MoveGrid(1, 0); break;
             }
+        }
+
+        /// <summary>Moves the note grid over the session (like Live's session ring), staying inside it.</summary>
+        public void MoveGrid(int tracks, int scenes)
+        {
+            var grid = active?.Grid;
+            if (grid == null) return;
+            int maxTrack = Math.Max(0, layout.TrackCount - 1);
+            int maxScene = Math.Max(0, layout.SceneCount - 1);
+            int track = Math.Clamp(grid.OriginTrack + tracks, 0, maxTrack);
+            int scene = Math.Clamp(grid.OriginScene + scenes, 0, maxScene);
+            if (track == grid.OriginTrack && scene == grid.OriginScene) return;
+            Modify(m =>
+            {
+                if (m.Grid == null) return;
+                m.Grid.OriginTrack = track;
+                m.Grid.OriginScene = scene;
+            });
         }
     }
 }

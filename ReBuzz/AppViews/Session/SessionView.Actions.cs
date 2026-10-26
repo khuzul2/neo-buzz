@@ -359,6 +359,12 @@ namespace ReBuzz.AppViews.Session
             {
                 menu.Items.Add(new Separator());
                 menu.Items.Add(Item(midi.ActiveMap?.Grid != null ? "MIDI note grid… (on)" : "MIDI note grid…", ShowNoteGridDialog));
+                var move = new MenuItem { Header = "MIDI learn: move the note grid", IsEnabled = midi.ActiveMap?.Grid != null };
+                move.Items.Add(Item("Up", () => midi.BeginLearn(SessionTarget.GridUp, 0, 0)));
+                move.Items.Add(Item("Down", () => midi.BeginLearn(SessionTarget.GridDown, 0, 0)));
+                move.Items.Add(Item("Left", () => midi.BeginLearn(SessionTarget.GridLeft, 0, 0)));
+                move.Items.Add(Item("Right", () => midi.BeginLearn(SessionTarget.GridRight, 0, 0)));
+                menu.Items.Add(move);
                 menu.Items.Add(Item("MIDI learn play/stop", () => midi.BeginLearn(SessionTarget.Transport, 0, 0)));
                 menu.Items.Add(Item("MIDI learn launch quantization", () => midi.BeginLearn(SessionTarget.Quantization, 0, 0)));
                 menu.Items.Add(new MenuItem

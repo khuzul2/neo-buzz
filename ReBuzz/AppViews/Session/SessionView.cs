@@ -269,6 +269,23 @@ namespace ReBuzz.AppViews.Session
                 Place(scene, s + 1, trackCount);
             }
 
+            // Outline of the MIDI note grid (Live's "session ring").
+            if (midi?.ActiveMap?.Grid is NoteGrid ring && ring.OriginTrack < trackCount && ring.OriginScene < sceneCount)
+            {
+                var outline = new Border
+                {
+                    BorderBrush = SessionPalette.Ring,
+                    BorderThickness = new Thickness(2),
+                    Margin = new Thickness(-2, -2, 0, 0),
+                    IsHitTestVisible = false,
+                    ToolTip = "MIDI note grid"
+                };
+                Grid.SetRowSpan(outline, Math.Min(ring.Rows, sceneCount - ring.OriginScene));
+                Grid.SetColumnSpan(outline, Math.Min(ring.Columns, trackCount - ring.OriginTrack));
+                Panel.SetZIndex(outline, 1);
+                Place(outline, ring.OriginScene + 1, ring.OriginTrack);
+            }
+
             if (selected is { } sel && (sel.Track >= trackCount || sel.Scene >= sceneCount))
                 selected = null;
             RefreshState();
@@ -360,6 +377,10 @@ namespace ReBuzz.AppViews.Session
             SessionTarget.StopAll => "Stop all clips",
             SessionTarget.Quantization => "launch quantization",
             SessionTarget.Transport => "play/stop",
+            SessionTarget.GridUp => "move the note grid up",
+            SessionTarget.GridDown => "move the note grid down",
+            SessionTarget.GridLeft => "move the note grid left",
+            SessionTarget.GridRight => "move the note grid right",
             _ => target.ToString()
         };
     }

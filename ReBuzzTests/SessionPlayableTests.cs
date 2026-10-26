@@ -261,6 +261,28 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void MidiMovesTheNoteGridOverTheSession()
+        {
+            using var rig = new Rig();
+            var layout = rig.Core.SessionLayout;
+            layout.Ensure();
+            var midi = rig.Core.SessionMidi;
+            midi.SetGrid(new NoteGrid { FirstNote = 36, Columns = 2, Rows = 2 });
+            midi.BeginLearn(SessionTarget.GridDown, 0, 0); Press(rig, Cc(40, 127));
+            midi.BeginLearn(SessionTarget.GridRight, 0, 0); Press(rig, Cc(41, 127));
+            midi.BeginLearn(SessionTarget.GridUp, 0, 0); Press(rig, Cc(42, 127));
+
+            Press(rig, Cc(40, 127));
+            Press(rig, Cc(40, 127));
+            Press(rig, Cc(41, 127));
+            Assert.That((midi.ActiveMap.Grid!.OriginTrack, midi.ActiveMap.Grid.OriginScene), Is.EqualTo((1, 2)));
+
+            for (int i = 0; i < 10; i++) Press(rig, Cc(42, 127));
+            for (int i = 0; i < 10; i++) Press(rig, Cc(41, 127));
+            Assert.That((midi.ActiveMap.Grid!.OriginTrack, midi.ActiveMap.Grid.OriginScene), Is.EqualTo((layout.TrackCount - 1, 0)), "stays inside the session");
+        }
+
+        [Test]
         public void ASongCanCarryItsOwnMapping()
         {
             using var rig = new Rig();

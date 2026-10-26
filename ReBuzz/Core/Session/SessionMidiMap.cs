@@ -82,7 +82,15 @@ namespace ReBuzz.Core.Session
         /// <summary>Launch quantization: a CC picks a value across its range, a note cycles.</summary>
         Quantization,
         /// <summary>Start/stop the transport.</summary>
-        Transport
+        Transport,
+        /// <summary>Move the note grid one row up (towards scene 1).</summary>
+        GridUp,
+        /// <summary>Move the note grid one row down.</summary>
+        GridDown,
+        /// <summary>Move the note grid one track left.</summary>
+        GridLeft,
+        /// <summary>Move the note grid one track right.</summary>
+        GridRight
     }
 
     internal readonly record struct MidiBinding(MidiControl Control, SessionTarget Target, int Track, int Scene)
