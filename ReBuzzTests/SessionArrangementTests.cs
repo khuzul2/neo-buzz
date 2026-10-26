@@ -11,9 +11,9 @@ namespace ReBuzzTests
 {
     /// <summary>
     /// Fork addition: Session View 0.3 (docs/specs/session-view.md): recording the session into
-    /// the arrangement and scene to arrangement. Uses the Tone test machine, whose output follows
-    /// a pattern-controlled parameter, so audio from the session and from the arrangement can
-    /// be compared sample by sample.
+    /// the arrangement and scene to arrangement. Uses the Tone test machine, whose output shows
+    /// which pattern plays and where, so audio from the session and from the arrangement can be
+    /// compared sample by sample.
     /// </summary>
     public class SessionArrangementTests
     {
@@ -48,15 +48,11 @@ namespace ReBuzzTests
                 }
             }
 
-            /// <summary>A pattern whose Level column has the given (tick, value) events.</summary>
-            public PatternCore Pattern(MachineCore machine, string name, int length, params (int Tick, int Level)[] levels)
+            /// <summary>A pattern (the Tone machine's output shows which one plays, and where).</summary>
+            public PatternCore Pattern(MachineCore machine, string name, int length, params (int Tick, int Level)[] unused)
             {
                 machine.CreatePattern(name, length);
-                var pattern = machine.PatternsList.Single(p => p.Name == name);
-                var level = machine.ParameterGroups[1].Parameters.Single(p => p.Name == "Level");
-                pattern.InsertColumn(0, level, 0);
-                pattern.Columns[0].SetEvents(levels.Select(l => new PatternEvent(l.Tick * PatternEvent.TimeBase, l.Level)).ToArray(), true);
-                return pattern;
+                return machine.PatternsList.Single(p => p.Name == name);
             }
 
             int SamplesPerTick => ReBuzzCore.masterInfo.SamplesPerTick;

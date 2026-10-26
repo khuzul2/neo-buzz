@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v4 — 0.1 (#1, #2) and 0.2 (#3) merged; next: 0.3 Session ↔ Arrangement |
+| Status | Draft v5 — 0.1 (#1, #2) and 0.2 (#3) merged; 0.3 implemented (branch `session/arrangement`) |
 | Date | 2026-10-25 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -149,7 +149,7 @@ Rules:
 - **Scenes.** `LaunchScene` enqueues all slots under `ReBuzzCore.AudioLock` with one shared `launchClock`. Tracks absent from the scene keep playing, as in Live (Live's "stop clips not in scene" comes later as an option). Fixes G7.
 - **Arrangement override.** Launching a clip marks its track as overridden; the arrangement's events for that track are ignored until `BackToArrangement()` (Phase 0.3 adds the button; in 0.1, stopping the transport clears overrides). `SequenceCore.PlayingPattern` asks the session first. Fixes G3.
 - **MIDI columns.** `UpdatePatternColumnEvents` plays each pattern that has a play position exactly once, session clips included. Fixes G5 and G9.
-- **Transport.** Launching while stopped starts the transport and launches on the first tick. Stopping the transport stops all clips. The song-end stop (`!Looping` at `LoopEnd`) is skipped while any clip plays. The arrangement then wraps to `LoopStart` and keeps playing on tracks the session hasn't taken over (Live would continue silently past the end; revisit with the 0.3 arrangement work).
+- **Transport.** Launching while stopped starts the transport and launches on the first tick. Stopping the transport stops all clips. The song-end stop (`!Looping` at `LoopEnd`) is skipped while any clip plays. The arrangement then wraps to `LoopStart` and keeps playing on tracks the session hasn't taken over (Live would continue silently past the end). While recording into the arrangement (0.3) the song grows instead.
 - **Compatibility.** `ISequence.TriggerEvent` keeps working and is re-implemented on top of `SessionCore`, so the Modern Sequence Editor's click-to-play and the session grid share one state.
 - **Threading.** The scheduler has its own lock, not `ReBuzzCore.AudioLock`: the audio thread holds `AudioLock` while it synchronously invokes the UI thread at transport start, so a UI request waiting for `AudioLock` could deadlock. Lock order is `AudioLock` → session lock on the audio thread; UI requests take only the session lock; machines and the dispatcher are never called while it is held. Per-track reads are lock-free. State-change events are marshalled to the UI dispatcher. No allocation on the audio path in steady state (only on ticks where something changes).
 
@@ -286,6 +286,16 @@ Tests: `ReBuzz.SessionTests/SessionMidiMapTests.cs` (mapping model), new cases i
 **Engine.** Arrangement record hooks in `SessionCore` (write events on the UI thread from a lock-free queue filled at tick time). `BuzzView` gets a `SessionView` value (append-only, binary compatible).
 
 **Acceptance criteria.** Record a 2-minute performance and play it back from the Sequence View with identical audio (render diff below noise floor). Back to Arrangement restores arranged playback on the next tick.
+
+**Status (branch `session/arrangement`).** Features 1–5 are in:
+- *Arrangement record*: ReBuzz's Record (F7, or ● Rec in the Session View, lit red) arms it. While recording, every clip start (launch or loop restart) is written as a `PlayPattern` event at the song position where it happened, and every stop as an `Off` event (Buzz's "stop sound" event); arrangement events between those writes on the recorded tracks are removed, so the arrangement plays back what was heard. Clips already playing when recording starts are written from the start of their current loop. Tracks handed back with Back to Arrangement stop being recorded there. With looping off the song grows a bar at a time while recording (Live-style); with looping on the recording stays in the loop. A pass ends when recording or the transport stops and is one undo step in the Session View. `SessionCore` reports from the audio thread into a lock-free queue that `SessionRecorder` drains on the UI thread.
+- *Back to Arrangement* is lit (orange) while any track is taken over.
+- *Scene to arrangement*: scene right-click → *Insert into arrangement…*: at a bar (default: the bar of the play position), for N bars (default: the scene's longest clip, in whole bars), overwriting the scene's tracks or inserting (moving every track's later events back). Clips repeat to fill the length; a last repeat that runs past it is cut with a `Break`. Song and whole-song loop ends grow to fit. One undo step in the Session View.
+- *Docked view*: `BuzzView.SessionView` (appended); the Session View is a main-window view next to the others (toolbar radio button in the Default theme, *View → Session View*); Ctrl+Tab switches between it and the Sequence View, like Live's Tab. *View → Session View in a Window* keeps the separate window. While docked, the view gets its keys before the main window's shortcuts (F-keys, Ctrl+Tab and Ctrl+S/N/O still reach the main window).
+- *Sequence View indicators*: tracks the session has taken over are greyed in all three sequence editors (`BuzzGUI.Common.SessionOverrideIndicator`).
+- Also: arrangement Mute/Thru/Off events no longer fire on tracks the session has taken over (they only skipped `PlayPattern` before).
+
+Differences from Live: a recorded stop plays back as Buzz's `Off` (the machine's Stop), where the live stop sent note-offs, so release tails can be cut shorter on playback; and a recording can't start a pattern mid-way, so a clip is written from the start of its loop. Tests: `ReBuzzTests/SessionArrangementTests.cs` records a performance (launch, switch, stop, relaunch, past the song end) with the `Tone` test machine, whose output encodes which pattern plays and at what position, and plays it back from the arrangement: the audio matches sample for sample (84 ticks, about 10 seconds at the default tempo, rather than 2 minutes). Arrangement edits from the session go on the Session View's undo history, not the Sequence View's (each sequence editor has its own).
 
 ---
 

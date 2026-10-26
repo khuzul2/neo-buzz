@@ -7,9 +7,12 @@ using System.Linq;
 namespace ReBuzzTests.Automation.TestMachines
 {
     /// <summary>
-    /// Fork addition: a stub generator whose output follows a pattern-controlled parameter
-    /// (Level), so tests can compare what patterns sound like when played from the session and
-    /// from the arrangement. Compiled at test time from this file, like <see cref="Synth"/>.
+    /// Fork addition: a stub generator whose output says which of its patterns is playing and
+    /// where: (pattern index + 1) * 1000 + play position (10 per tick, with the fraction within
+    /// the tick), or 0 when none plays. Tests use it to compare playback from the session and
+    /// from the arrangement sample by sample. (Parameter columns can't be used for that: in
+    /// ReBuzz the pattern editor machine plays them, and the tests' editor is a stub.)
+    /// Compiled at test time from this file, like <see cref="Synth"/>.
     /// </summary>
     [MachineDecl(Name = "Tone", ShortName = "Tone", Author = "WDE", MaxTracks = 1, InputCount = 0, OutputCount = 1)]
     public class Tone(IBuzzMachineHost host) : IBuzzMachine
@@ -20,9 +23,22 @@ namespace ReBuzzTests.Automation.TestMachines
 
         public static MachineDecl GetMachineDecl() => typeof(Tone).GetCustomAttributes(false).OfType<MachineDecl>().Single();
 
-        [ParameterDecl(Name = "Level", MinValue = 0, MaxValue = 100, DefValue = 0)]
-        public int Level { get; set; }
+        [ParameterDecl(ValueDescriptions = ["no", "yes"])]
+        public bool Bypass { get; set; }
 
-        public Sample Work() => new Sample(Level * 100, Level * 100);
+        public Sample Work()
+        {
+            var patterns = host.Machine.Patterns;
+            for (int i = 0; i < patterns.Count; i++)
+            {
+                int position = patterns[i].PlayPosition;
+                if (position != int.MinValue)
+                {
+                    float v = (i + 1) * 1000 + position / 24f;
+                    return new Sample(v, v);
+                }
+            }
+            return new Sample(0, 0);
+        }
     }
 }
