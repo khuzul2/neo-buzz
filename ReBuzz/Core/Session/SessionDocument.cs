@@ -28,7 +28,8 @@ namespace ReBuzz.Core.Session
         public sealed class Scene
         {
             public string Name { get; set; } = "";
-            public string Color { get; set; } = "";
+            /// <summary>Index into the theme's pattern colours, -1 for none.</summary>
+            public int ColorIndex { get; set; } = -1;
         }
 
         public sealed class Track
@@ -36,6 +37,8 @@ namespace ReBuzz.Core.Session
             /// <summary>Index in ISong.Sequences when last reconciled.</summary>
             public int Sequence { get; set; }
             public string Machine { get; set; } = "";
+            /// <summary>Index into the theme's pattern colours, -1 for none.</summary>
+            public int ColorIndex { get; set; } = -1;
             /// <summary>Scene index to pattern name.</summary>
             public SortedDictionary<int, string> Slots { get; } = new SortedDictionary<int, string>();
         }
@@ -45,6 +48,10 @@ namespace ReBuzz.Core.Session
 
         public int BeatsPerBar { get; set; } = 4;
         public string LaunchQuantization { get; set; } = "Bar";
+        /// <summary>Length of clips created in the grid, in bars.</summary>
+        public int ClipBars { get; set; } = 1;
+        /// <summary>MIDI mapping stored with this song, overriding the user's; null for none.</summary>
+        public SessionMidiMap SongMidi { get; set; }
         public List<Scene> Scenes { get; } = new List<Scene>();
         public List<Track> Tracks { get; } = new List<Track>();
 
@@ -155,6 +162,35 @@ namespace ReBuzz.Core.Session
             EnsureScenes();
         }
 
+        /// <summary>Inserts a copy of a scene (name, colour, slots) below it.</summary>
+        public void DuplicateScene(int index)
+        {
+            if (index < 0 || index >= Scenes.Count) return;
+            var source = Scenes[index];
+            InsertScene(index + 1);
+            Scenes[index + 1].Name = source.Name;
+            Scenes[index + 1].ColorIndex = source.ColorIndex;
+            foreach (var t in Tracks)
+                if (t.Slots.TryGetValue(index, out var p))
+                    t.Slots[index + 1] = p;
+        }
+
+        /// <summary>
+        /// Moves (or copies) a slot's clip to another scene of the same track, replacing what was
+        /// there. Returns false if the source slot is empty.
+        /// </summary>
+        public bool MoveSlot(int track, int fromScene, int toScene, bool copy)
+        {
+            if (track < 0 || track >= Tracks.Count || toScene < 0) return false;
+            var slots = Tracks[track].Slots;
+            if (!slots.TryGetValue(fromScene, out var pattern)) return false;
+            if (fromScene == toScene) return true;
+            if (!copy) slots.Remove(fromScene);
+            slots[toScene] = pattern;
+            EnsureScenes();
+            return true;
+        }
+
         static void ShiftSlots(Track track, int from, int delta)
         {
             var moved = track.Slots.Where(s => s.Key >= from).ToList();
@@ -191,20 +227,26 @@ namespace ReBuzz.Core.Session
                 new XAttribute("version", FormatVersion),
                 new XAttribute("beatsPerBar", BeatsPerBar),
                 new XAttribute("launchQuantization", LaunchQuantization ?? "Bar"),
+                new XAttribute("clipBars", ClipBars),
                 new XElement("Scenes", Scenes.Select(s =>
                 {
                     var e = new XElement("Scene");
                     if (!string.IsNullOrEmpty(s.Name)) e.SetAttributeValue("name", s.Name);
-                    if (!string.IsNullOrEmpty(s.Color)) e.SetAttributeValue("color", s.Color);
+                    if (s.ColorIndex >= 0) e.SetAttributeValue("colorIndex", s.ColorIndex);
                     return e;
                 })),
                 new XElement("Tracks", Tracks.Select(t =>
-                    new XElement("Track",
+                {
+                    var e = new XElement("Track",
                         new XAttribute("sequence", t.Sequence),
-                        new XAttribute("machine", t.Machine ?? ""),
-                        t.Slots.Select(s => new XElement("Slot",
-                            new XAttribute("scene", s.Key),
-                            new XAttribute("pattern", s.Value)))))));
+                        new XAttribute("machine", t.Machine ?? ""));
+                    if (t.ColorIndex >= 0) e.SetAttributeValue("colorIndex", t.ColorIndex);
+                    e.Add(t.Slots.Select(s => new XElement("Slot",
+                        new XAttribute("scene", s.Key),
+                        new XAttribute("pattern", s.Value))));
+                    return e;
+                })),
+                SongMidi?.ToXml());
             return new XDocument(root);
         }
 
@@ -239,12 +281,19 @@ namespace ReBuzz.Core.Session
                 {
                     BeatsPerBar = Math.Clamp(IntAttr(root, "beatsPerBar", 4), 1, 64),
                     LaunchQuantization = (string)root.Attribute("launchQuantization") ?? "Bar",
+                    ClipBars = Math.Clamp(IntAttr(root, "clipBars", 1), 1, 64),
+                    SongMidi = root.Element("Midi") is XElement midi ? SessionMidiMap.FromXml(midi) : null,
                 };
                 foreach (var s in root.Element("Scenes")?.Elements("Scene") ?? Enumerable.Empty<XElement>())
-                    doc.Scenes.Add(new Scene { Name = (string)s.Attribute("name") ?? "", Color = (string)s.Attribute("color") ?? "" });
+                    doc.Scenes.Add(new Scene { Name = (string)s.Attribute("name") ?? "", ColorIndex = IntAttr(s, "colorIndex", -1) });
                 foreach (var t in root.Element("Tracks")?.Elements("Track") ?? Enumerable.Empty<XElement>())
                 {
-                    var track = new Track { Sequence = IntAttr(t, "sequence", doc.Tracks.Count), Machine = (string)t.Attribute("machine") ?? "" };
+                    var track = new Track
+                    {
+                        Sequence = IntAttr(t, "sequence", doc.Tracks.Count),
+                        Machine = (string)t.Attribute("machine") ?? "",
+                        ColorIndex = IntAttr(t, "colorIndex", -1),
+                    };
                     foreach (var slot in t.Elements("Slot"))
                     {
                         int scene = IntAttr(slot, "scene", -1);

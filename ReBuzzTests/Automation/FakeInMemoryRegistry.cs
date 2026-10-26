@@ -57,6 +57,8 @@ namespace ReBuzzTests.Automation
             [("Settings", "MidiControllerForward")] = "",
             [("Settings", "MidiControllerBackward")] = "",
             [("Settings", "MIDIDeviceFormat")] = 1,
+            // Fork: Session View MIDI mapping (per user), empty by default.
+            [("Session", "MidiMap")] = "",
             [("WASAPI", "DeviceID")] = "{0.0.0.00000000}.{49a443a1-228c-42cf-bcbb-2c9a48480989}",
             [("WASAPI", "DeviceIDIn")] = "",
             [("WASAPI", "SampleRate")] = 44100,

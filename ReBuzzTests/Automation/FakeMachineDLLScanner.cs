@@ -49,7 +49,9 @@ namespace ReBuzzTests.Automation
 
         public void AddPrecompiledMachine(ReBuzzCore reBuzz, ITestMachineInfo info, AbsoluteDirectoryPath targetDir)
         {
-            var assemblySourceLocation = AbsoluteDirectoryPath.OfExecutingAssembly().AddFileName(info.RealDllName);
+            // Fork: not OfExecutingAssembly(), which goes by the calling assembly and, once the JIT
+            // inlines it into a lambda run by List.ForEach, returns the .NET runtime directory.
+            var assemblySourceLocation = TestAssemblyDirectory.Value.AddFileName(info.RealDllName);
             var assemblyTargetLocation = targetDir.AddFileName(info.DllName);
             var machineDll = info.GetMachineDll(reBuzz, assemblyTargetLocation);
             assemblySourceLocation.Copy(assemblyTargetLocation);

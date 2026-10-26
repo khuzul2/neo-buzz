@@ -147,6 +147,45 @@ namespace ReBuzz.SessionTests
             Assert.That(d.SceneSlots(1).ToList(), Is.EqualTo(new[] { (0, "b"), (2, "e") }));
         }
 
+        // ------------------------------------------------------------------ 0.2 editing
+
+        [Test]
+        public void DuplicateSceneCopiesNameColourAndSlotsBelow()
+        {
+            var d = AutoFill(new[] { T("drums", "a", "b"), T("bass", "c") });
+            d.Scenes[0].Name = "Intro";
+            d.Scenes[0].ColorIndex = 4;
+
+            d.DuplicateScene(0);
+
+            Assert.That(d.Scenes[1].Name, Is.EqualTo("Intro"));
+            Assert.That(d.Scenes[1].ColorIndex, Is.EqualTo(4));
+            Assert.That(Slots(d, 0), Is.EqualTo(new Dictionary<int, string> { [0] = "a", [1] = "a", [2] = "b" }));
+            Assert.That(Slots(d, 1), Is.EqualTo(new Dictionary<int, string> { [0] = "c", [1] = "c" }));
+        }
+
+        [Test]
+        public void MoveSlotMovesOrCopiesWithinTheTrack()
+        {
+            var d = AutoFill(new[] { T("drums", "a", "b") });
+
+            Assert.That(d.MoveSlot(0, 0, 5, copy: false), Is.True);
+            Assert.That(Slots(d, 0), Is.EqualTo(new Dictionary<int, string> { [1] = "b", [5] = "a" }));
+
+            Assert.That(d.MoveSlot(0, 1, 5, copy: true), Is.True);
+            Assert.That(Slots(d, 0), Is.EqualTo(new Dictionary<int, string> { [1] = "b", [5] = "b" }));
+
+            Assert.That(d.MoveSlot(0, 3, 4, copy: false), Is.False, "empty source");
+        }
+
+        [Test]
+        public void MoveSlotBelowTheLastSceneAddsScenes()
+        {
+            var d = AutoFill(new[] { T("drums", "a") });
+            d.MoveSlot(0, 0, 11, copy: false);
+            Assert.That(d.Scenes.Count, Is.EqualTo(12));
+        }
+
         // ------------------------------------------------------------------ persistence
 
         [Test]
@@ -156,8 +195,12 @@ namespace ReBuzz.SessionTests
             d.BeatsPerBar = 3;
             d.LaunchQuantization = "TwoBars";
             d.Scenes[0].Name = "Intro";
-            d.Scenes[1].Color = "#3A6EA5";
+            d.Scenes[1].ColorIndex = 7;
+            d.Tracks[0].ColorIndex = 3;
+            d.ClipBars = 2;
             d.SetSlot(1, 9, "c");
+            d.SongMidi = new SessionMidiMap { Grid = new NoteGrid { FirstNote = 48 } };
+            d.SongMidi.Bind(new MidiControl(MidiControlType.ControlChange, 0, 20), SessionTarget.StopAll, 0, 0);
 
             var copy = Load(new MemoryStream(d.ToBytes()))!;
 
@@ -165,7 +208,13 @@ namespace ReBuzz.SessionTests
             Assert.That(copy.LaunchQuantization, Is.EqualTo("TwoBars"));
             Assert.That(copy.Scenes.Count, Is.EqualTo(10));
             Assert.That(copy.Scenes[0].Name, Is.EqualTo("Intro"));
-            Assert.That(copy.Scenes[1].Color, Is.EqualTo("#3A6EA5"));
+            Assert.That(copy.Scenes[1].ColorIndex, Is.EqualTo(7));
+            Assert.That(copy.Scenes[0].ColorIndex, Is.EqualTo(-1));
+            Assert.That(copy.Tracks[0].ColorIndex, Is.EqualTo(3));
+            Assert.That(copy.Tracks[1].ColorIndex, Is.EqualTo(-1));
+            Assert.That(copy.ClipBars, Is.EqualTo(2));
+            Assert.That(copy.SongMidi!.Grid!.FirstNote, Is.EqualTo(48));
+            Assert.That(copy.SongMidi.Bindings.Single().Target, Is.EqualTo(SessionTarget.StopAll));
             Assert.That(copy.Tracks[1].Machine, Is.EqualTo("bass & co <1>"));
             Assert.That(Slots(copy, 1), Is.EqualTo(new Dictionary<int, string> { [0] = "c", [9] = "c" }));
         }
@@ -185,6 +234,8 @@ namespace ReBuzz.SessionTests
 
             Assert.That(d.BeatsPerBar, Is.EqualTo(4));
             Assert.That(d.LaunchQuantization, Is.EqualTo("Bar"));
+            Assert.That(d.ClipBars, Is.EqualTo(1));
+            Assert.That(d.SongMidi, Is.Null);
             Assert.That(d.Tracks[0].Sequence, Is.EqualTo(0));
             Assert.That(Slots(d, 0), Is.EqualTo(new Dictionary<int, string> { [2] = "a" }));
             Assert.That(d.Scenes.Count, Is.EqualTo(MinScenes));

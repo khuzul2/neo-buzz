@@ -265,6 +265,7 @@ namespace ReBuzz
 
                 // Editor view
                 var res = Utils.GetBuzzThemeResources(Buzz.Theme.SequenceEditor.Source, buzzPath);
+                UseThemeSessionColors(res);
                 seqenceEditor = new BuzzGUI.SequenceEditor.SequenceEditor(Buzz, res);
                 seqenceEditor.SetVisibility(true);
                 EditorView = new EditorView(Buzz, registryEx);
@@ -410,6 +411,9 @@ namespace ReBuzz
                     UpdateTitle();
                 }
             };
+
+            // Fork: clip colours set in the Session View are pattern colours; redraw the Sequence View.
+            Core.Session.PatternColors.Changed += p => seqenceEditor?.UpdatePatternBoxes();
 
             Buzz.BuzzCommandRaised += (cmd) =>
             {
@@ -958,6 +962,23 @@ namespace ReBuzz
             sessionWindow.View.Focus();
         }
 
+        /// <summary>
+        /// Fork: the Session View colours clips, tracks and scenes with the theme's pattern
+        /// colours, the same list (and, for clips, the same per-pattern choice) as the Sequence View.
+        /// </summary>
+        static void UseThemeSessionColors(ResourceDictionary res)
+        {
+            try
+            {
+                if (res?["PatternColors"] is NamedColor[] colors)
+                    AppViews.Session.SessionPalette.UseThemeColors(colors.Select(c => (c.Name, c.Color)));
+            }
+            catch (Exception)
+            {
+                // Keep the default colours if the theme has none or a broken list.
+            }
+        }
+
         private bool CloseReBuzz()
         {
             if (Buzz.Modified)
@@ -1203,6 +1224,7 @@ namespace ReBuzz
                 seqenceEditor.Release();
             }
             var res = Utils.GetBuzzThemeResources(Buzz.Theme.SequenceEditor.Source, buzzPath);
+            UseThemeSessionColors(res);
             seqenceEditor = new SequenceEditor(Buzz, res);
             seqenceEditor.SetVisibility(true);
             EditorView.SequenceEditor = seqenceEditor;

@@ -81,6 +81,7 @@ jobs:
     # Upstream's NUnit suite (ReBuzzTests), built by build.ps1 as part of the solution.
     # It drives the real audio engine, so it catches regressions in the playback code.
     - name: Run ReBuzz tests
+      timeout-minutes: 30
       shell: pwsh
       env:
         TEST_FILTER: ${{ inputs.test_filter }}
@@ -92,11 +93,13 @@ jobs:
         if ($env:TEST_FILTER) { $filter = @('--filter', $env:TEST_FILTER) }
         # UI tests (SessionViewTests) render PNGs here; published below.
         $env:SESSION_SCREENSHOT_DIR = Join-Path $PWD 'screenshots'
-        dotnet test $dll.FullName @filter --logger "trx;LogFileName=tests.trx" --results-directory TestResults --logger "console;verbosity=minimal" *>&1 | Tee-Object -FilePath test.log
+        # --blame-hang: a test stuck for 5 minutes (e.g. on a modal dialog) is killed and named.
+        dotnet test $dll.FullName @filter --blame-hang --blame-hang-timeout 5m --logger "trx;LogFileName=tests.trx" --results-directory TestResults --logger "console;verbosity=minimal" *>&1 | Tee-Object -FilePath test.log
 
     # Failed tests grouped by error, with message and top stack frames, as annotations.
     - name: Summarise tests
       if: always() && hashFiles('TestResults/*.trx') != ''
+      timeout-minutes: 10
       shell: pwsh
       run: ./tools/ci-test-summary.ps1 TestResults/tests.trx
 

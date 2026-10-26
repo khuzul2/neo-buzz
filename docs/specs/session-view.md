@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v3 — 0.1 engine merged (#1); 0.1 grid UI in review (#2, see §5 0.1 status) |
+| Status | Draft v4 — 0.1 merged (#1, #2); 0.2 implemented (branch `session/playable`, see §5 0.2 status) |
 | Date | 2026-10-25 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -237,7 +237,7 @@ Sizes: S ≈ <500 LOC, M ≈ 500–2,000, L ≈ 2,000–5,000, XL > 5,000.
 
 **Out of scope.** Keyboard/MIDI control, mixer, recording, clip properties, follow actions.
 
-**Status (branch `session/ui`).** Features 1–8 are in, with these 0.1 limits: slots are assigned from the right-click menu (drag from the Sequence View pattern list moves to 0.2); clicking a playing clip relaunches it at the next launch point; the Session window is a separate window (§4.3). Tests: `ReBuzz.SessionTests` (scheduler and layout model), `ReBuzzTests/SessionEngineTests.cs` (engine through the audio loop), `ReBuzzTests/SessionViewTests.cs` (layout against a live song, and PNG renders of the grid that CI publishes to the `ci-artifacts` branch). Not yet covered by automated tests: the 5-minute and soak criteria, the CPU comparison, and opening the file in upstream ReBuzz.
+**Status (merged).** Features 1–8 are in, with these 0.1 limits: slots are assigned from the right-click menu (dragging from the Sequence View pattern list is still open); clicking a playing clip relaunches it at the next launch point; the Session window is a separate window (§4.3). Tests: `ReBuzz.SessionTests` (scheduler and layout model), `ReBuzzTests/SessionEngineTests.cs` (engine through the audio loop), `ReBuzzTests/SessionViewTests.cs` (layout against a live song, and PNG renders of the grid that CI publishes to the `ci-artifacts` branch). Not yet covered by automated tests: the 5-minute and soak criteria, the CPU comparison, and opening the file in upstream ReBuzz.
 
 ---
 
@@ -259,6 +259,16 @@ Sizes: S ≈ <500 LOC, M ≈ 500–2,000, L ≈ 2,000–5,000, XL > 5,000.
 **Engine.** None beyond 0.1 (MIDI is handled via `IBuzz.MIDIInput`).
 
 **Acceptance criteria.** A full set can be performed from a 4×4 pad controller via note-grid mapping and from the keyboard alone; MIDI-to-launch latency ≤ 1 audio buffer + quantize wait; all edits undoable.
+
+**Status (branch `session/playable`).** Features 1–9 are in:
+- *Keyboard*: arrows, Enter, Space, 1–9, Backspace as specified; also Delete (remove from slot), Shift+Delete (delete pattern), Ctrl+Shift+M (create clip), Ctrl+D (duplicate), F2 (rename), Ctrl+I (insert scene), Ctrl+Z/Ctrl+Y, Esc (cancel MIDI learn). The list is under ⚙ → *Keyboard shortcuts*.
+- *Mouse*: like Live, ▶ launches on mouse down and the rest of a clip selects, so clips can be dragged (move within the track, Ctrl copies) and double-clicked (edit; in an empty slot, create). An empty slot's small ■ stops its track. This replaces 0.1's click-anywhere-to-launch.
+- *MIDI*: right-click a slot, scene, track stop, *Stop all clips* or the quantization box → *MIDI learn…*; ⚙ adds play/stop and note-grid navigation (up/down/left/right, so a 4×4 pad reaches the whole set, like Live's session ring, drawn as an outline). Note on and CC are supported; a quantization CC picks a value across its range, a note cycles. Mapped notes and CCs control the session only (they don't reach machines). The user's mapping lives in the registry (`Session\MidiMap`); ⚙ → *Store MIDI mapping in this song* gives a song its own copy (the `<Midi>` element of the SessionView subsection). Mappings are positional (grid coordinates), so they don't follow inserted or removed scenes.
+- *Colours*: a clip's colour is its pattern colour, the same per-pattern choice the Sequence View shows (`SequenceEditor.ViewSettings.PatternAssociations`, saved by the sequence editor), drawn from the theme's PatternColors. Track and scene colours are stored in the layout (`colorIndex`).
+- *Undo*: the session has its own undo history (↶ ↷ in the top bar, Ctrl+Z/Ctrl+Y in the window), reset with each song. Layout edits are recorded as snapshots; clip edits use BuzzGUI's pattern actions, so deleting a pattern can be undone (its data comes back; arrangement entries don't, which the confirmation says). Mute/solo, MIDI mapping and settings aren't undo steps.
+- *New clip length*: ⚙ → *New clip length* (1, 2, 4 or 8 bars of the session's beats per bar), saved in the song (`clipBars`).
+
+Tests: `ReBuzz.SessionTests/SessionMidiMapTests.cs` (mapping model), new cases in `SessionDocumentTests.cs`, and `ReBuzzTests/SessionPlayableTests.cs` (clip/grid edits with undo, MIDI learn and note grid through `SendMIDIInput`, song mapping, keyboard, a colour render). Not done: dragging patterns in from the Sequence View's pattern list (0.1 feature 6's alternative to the menu). Not covered by tests: drag and drop and the dialogs (manual), MIDI-to-launch latency (by construction: MIDI input reaches the session on the UI thread and launches at the next quantization point).
 
 ---
 

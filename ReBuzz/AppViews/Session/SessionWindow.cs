@@ -23,7 +23,7 @@ namespace ReBuzz.AppViews.Session
             MinHeight = 240;
             ShowInTaskbar = false;
             WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            Background = SessionView.Palette.Window;
+            Background = SessionPalette.Window;
             View = new SessionView(buzz);
             Content = View;
 

@@ -29,7 +29,27 @@ if (-not $file) {
     exit 0
 }
 
-[xml]$trx = Get-Content -LiteralPath $file.FullName -Raw
+$raw = [IO.File]::ReadAllText($file.FullName)
+Write-Host "::notice title=Test results file::$($file.Name), $([math]::Round($file.Length / 1MB, 1)) MB"
+
+# Test output can be huge (a chatty test writes megabytes); keep the last part of each
+# StdOut block so the XML stays small. Cuts happen at line breaks, outside XML entities.
+$big = New-Object System.Collections.Generic.List[string]
+$raw = [regex]::Replace($raw, '(?s)<StdOut>(.*?)</StdOut>', {
+    param($m)
+    $text = $m.Groups[1].Value
+    if ($text.Length -le 40000) { return $m.Value }
+    $cut = $text.IndexOf("`n", $text.Length - 40000)
+    if ($cut -lt 0) { return '<StdOut></StdOut>' }
+    $at = $raw.LastIndexOf('testName="', $m.Index)
+    $name = if ($at -ge 0) { $raw.Substring($at + 10, [Math]::Max(0, $raw.IndexOf('"', $at + 10) - $at - 10)) } else { '?' }
+    $big.Add("$name ($([math]::Round($text.Length / 1MB, 1)) MB)")
+    return '<StdOut>' + $text.Substring($cut + 1) + '</StdOut>'
+})
+if ($big.Count -gt 0) {
+    Write-Host "::notice title=Test output trimmed::Kept the last 40 kB of output of: $(($big | Select-Object -First 10) -join ', ')"
+}
+[xml]$trx = $raw
 $ns = @{ t = 'http://microsoft.com/schemas/VisualStudio/TeamTest/2010' }
 $results = @(Select-Xml -Xml $trx -XPath '//t:UnitTestResult' -Namespace $ns | ForEach-Object { $_.Node })
 $failed = @($results | Where-Object { $_.outcome -eq 'Failed' })
