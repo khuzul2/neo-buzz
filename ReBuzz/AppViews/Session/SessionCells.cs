@@ -337,11 +337,16 @@ namespace ReBuzz.AppViews.Session
             }
         }
 
-        /// <summary>Flat dark button that fits the grid (WPF's default button looks out of place here).</summary>
+        /// <summary>
+        /// Flat dark button that fits the grid (WPF's default button looks out of place here).
+        /// <see cref="SetLit"/> gives it a colour, for buttons that show a state (Rec, Back to arrangement).
+        /// </summary>
         internal sealed class FlatButton : Border
         {
             readonly Action onClick;
             readonly TextBlock text;
+            Brush baseBrush = SessionPalette.Scene;
+            bool hover;
 
             public HorizontalAlignment HorizontalContentAlignment
             {
@@ -358,7 +363,7 @@ namespace ReBuzz.AppViews.Session
             public FlatButton(string label, Action onClick, string tooltip)
             {
                 this.onClick = onClick;
-                Background = SessionPalette.Scene;
+                Background = baseBrush;
                 BorderThickness = new Thickness(1);
                 BorderBrush = SessionPalette.Transparent;
                 Margin = new Thickness(0, 0, 6, 0);
@@ -367,11 +372,24 @@ namespace ReBuzz.AppViews.Session
                 ToolTip = tooltip;
                 text = new TextBlock { Text = label, VerticalAlignment = VerticalAlignment.Center };
                 Child = text;
-                MouseEnter += (s, e) => { if (IsEnabled) Background = SessionPalette.SceneHover; };
-                MouseLeave += (s, e) => Background = SessionPalette.Scene;
+                MouseEnter += (s, e) => { hover = true; UpdateBackground(); };
+                MouseLeave += (s, e) => { hover = false; UpdateBackground(); };
                 MouseLeftButtonDown += (s, e) => { if (IsEnabled) this.onClick(); e.Handled = true; };
-                IsEnabledChanged += (s, e) => Opacity = IsEnabled ? 1.0 : 0.4;
+                IsEnabledChanged += (s, e) => { Opacity = IsEnabled ? 1.0 : 0.4; UpdateBackground(); };
             }
+
+            /// <summary>Colours the button (null: back to normal).</summary>
+            public void SetLit(Brush brush)
+            {
+                var b = brush ?? SessionPalette.Scene;
+                if (ReferenceEquals(b, baseBrush)) return;
+                baseBrush = b;
+                text.Foreground = brush == null ? SessionPalette.Text : SessionPalette.TextOn(brush);
+                UpdateBackground();
+            }
+
+            void UpdateBackground() =>
+                Background = hover && IsEnabled ? SessionPalette.Lighten(baseBrush, 0.12) : baseBrush;
         }
 
         /// <summary>Menu command. A MenuItem with a Command takes IsEnabled from CanExecute.</summary>

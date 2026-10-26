@@ -40,7 +40,8 @@ namespace ReBuzz
         InfoView InfoView { get; set; }
 
         PreferencesWindow preferencesWindow;
-        AppViews.Session.SessionWindow sessionWindow;   // fork: Session View
+        AppViews.Session.SessionWindow sessionWindow;   // fork: Session View in its own window
+        AppViews.Session.SessionView sessionDock;       // fork: docked Session View (BuzzView.SessionView)
 
         readonly DebugWindow debugWindow;
 
@@ -617,6 +618,11 @@ namespace ReBuzz
                 }
                 else if (cmd == BuzzCommand.SessionView)
                 {
+                    // Fork: Session <-> Sequence, like Live's Session/Arrangement switch.
+                    Buzz.ActiveView = Buzz.ActiveView == BuzzView.SessionView ? BuzzView.SequenceView : BuzzView.SessionView;
+                }
+                else if (cmd == BuzzCommand.SessionWindow)
+                {
                     ToggleSessionWindow();
                 }
                 else if (cmd == BuzzCommand.DebugConsole)
@@ -725,6 +731,11 @@ namespace ReBuzz
 
             this.PreviewKeyDown += (sender, e) =>
             {
+                // Fork: the docked Session View gets its keys (Space, arrows, digits, Ctrl+Z...)
+                // before the main window's shortcuts; it leaves F-keys and Ctrl+Tab alone.
+                if (Buzz.ActiveView == BuzzView.SessionView && sessionDock != null && sessionDock.HandleKeyEvent(e))
+                    return;
+
                 if (Keyboard.Modifiers == ModifierKeys.None)
                 {
                     if (e.Key == Key.F1)
@@ -1282,6 +1293,8 @@ namespace ReBuzz
                 currentView = "[Sequences]";
             else if (Buzz.ActiveView == BuzzView.WaveTableView)
                 currentView = "[Wavetable]";
+            else if (Buzz.ActiveView == BuzzView.SessionView)
+                currentView = "[Session]";
 
             this.Title = (Buzz.SongCore.SongName == null ? "Untitled" : Buzz.SongCore.SongName) + (Buzz.Modified == true ? "*" : "") + " | " + "ReBuzz Digital Audio Workstation | " + currentView;
         }
@@ -1313,7 +1326,7 @@ namespace ReBuzz
         private void ChangeActiveview()
         {
             borderEditor.Visibility = borderMachineView.Visibility = borderSequenceEditor.Visibility =
-                borderWavetable.Visibility = borderInfo.Visibility = Visibility.Collapsed;
+                borderWavetable.Visibility = borderInfo.Visibility = borderSession.Visibility = Visibility.Collapsed;
 
             foreach (var rd in contentGrid.RowDefinitions)
             {
@@ -1369,7 +1382,19 @@ namespace ReBuzz
                     borderInfo.Focus();
                     InfoView.Focus();
                     break;
+                case BuzzView.SessionView:
+                    // Fork: docked Session View (docs/specs/session-view.md 0.3).
+                    if (sessionDock == null)
+                    {
+                        sessionDock = new AppViews.Session.SessionView(Buzz);
+                        borderSession.Child = sessionDock;
+                    }
+                    contentGrid.RowDefinitions[5].Height = new GridLength(1, GridUnitType.Star);
+                    borderSession.Visibility = Visibility.Visible;
+                    sessionDock.Focus();
+                    break;
             }
+            UpdateTitle();
         }
 
         internal UserControl GetActiveView()
@@ -1389,6 +1414,8 @@ namespace ReBuzz
                     return WavetableControl;
                 case BuzzView.SongInfoView:
                     return InfoView;
+                case BuzzView.SessionView:
+                    return sessionDock;
                 default:
                     return null;
             }

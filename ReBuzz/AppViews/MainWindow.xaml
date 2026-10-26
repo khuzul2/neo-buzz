@@ -23,6 +23,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
             <Border Grid.Row="0" Name="borderEditor" Visibility="Collapsed">
                 <Grid Name="editorGrid">
@@ -35,6 +36,9 @@
             <Border Grid.Row="3" Name="borderWavetable" Visibility="Collapsed">
             </Border>
             <Border Grid.Row="4" Name="borderInfo" Visibility="Collapsed">
+            </Border>
+            <!-- Fork: docked Session View (docs/specs/session-view.md 0.3) -->
+            <Border Grid.Row="5" Name="borderSession" Visibility="Collapsed">
             </Border>
         </Grid>
 

@@ -14,6 +14,9 @@ namespace ReBuzzTests.Automation
     /// </summary>
     public class TestReadBuffer(int countRead, float[] buffer)
     {
+        /// <summary>Fork addition: a copy of the samples read (interleaved left/right).</summary>
+        public float[] Values => buffer.Take(countRead).ToArray();
+
         public void AssertContainStereoSilence(int count)
         {
             countRead.Should().Be(count * 2);

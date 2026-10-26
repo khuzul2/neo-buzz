@@ -189,6 +189,14 @@
         <RadioButton.ToolTip>Sequence View (F4)</RadioButton.ToolTip>
         <Image Source="gfx/button_se.png"/>
       </bgc:RadioButtonEx>
+      <!-- Fork: docked Session View; Ctrl+Tab switches between it and the Sequence View -->
+      <bgc:RadioButtonEx GroupName="BuzzViewGroup" IsCheckedReal="{Binding Path=ShowSessionView, Mode=TwoWay}">
+        <RadioButton.ToolTip>Session View (Ctrl+Tab)</RadioButton.ToolTip>
+        <Canvas Width="16" Height="16">
+          <Path Fill="#FF55555E" Data="M1,1 h4 v4 h-4 z M6,1 h4 v4 h-4 z M11,1 h4 v4 h-4 z M1,6 h4 v4 h-4 z M11,6 h4 v4 h-4 z M1,11 h4 v4 h-4 z M6,11 h4 v4 h-4 z M11,11 h4 v4 h-4 z"/>
+          <Path Fill="#FF2E9B49" Data="M6,6 h4 v4 h-4 z"/>
+        </Canvas>
+      </bgc:RadioButtonEx>
 
       <Separator/>
 
@@ -219,14 +227,6 @@
         <RadioButton.ToolTip>Info View (F10)</RadioButton.ToolTip>
         <Image Source="gfx/button_blah.png"/>
       </bgc:RadioButtonEx>
-      <!-- Fork: Session View window (Ctrl+Tab) -->
-      <Button Command="{Binding SessionViewCommand}">
-        <Button.ToolTip>Session View (Ctrl+Tab)</Button.ToolTip>
-        <Canvas Width="16" Height="16">
-          <Path Fill="#FF55555E" Data="M1,1 h4 v4 h-4 z M6,1 h4 v4 h-4 z M11,1 h4 v4 h-4 z M1,6 h4 v4 h-4 z M11,6 h4 v4 h-4 z M1,11 h4 v4 h-4 z M6,11 h4 v4 h-4 z M11,11 h4 v4 h-4 z"/>
-          <Path Fill="#FF2E9B49" Data="M6,6 h4 v4 h-4 z"/>
-        </Canvas>
-      </Button>
 
       <Separator/>
 

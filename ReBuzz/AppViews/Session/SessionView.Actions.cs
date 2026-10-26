@@ -27,7 +27,7 @@ namespace ReBuzz.AppViews.Session
             "Ctrl+I\tinsert a scene below the selection\n" +
             "Ctrl+Z / Ctrl+Y\tundo / redo grid edits\n" +
             "Esc\tcancel MIDI learn\n" +
-            "Ctrl+Tab\tswitch between the Session View and the main window\n\n" +
+            "Ctrl+Tab\tswitch between the Session and Sequence views (from the Session window: back to the main window)\n\n" +
             "Mouse: ▶ launches; click selects; double-click edits a clip or creates one in an empty slot; " +
             "drag a clip to move it within its track (hold Ctrl to copy); right-click for menus and MIDI learn.";
 
@@ -119,6 +119,18 @@ namespace ReBuzz.AppViews.Session
             Window.GetWindow(this)?.Owner?.Activate();
         }
 
+        void InsertSceneIntoArrangement(int scene)
+        {
+            int ticksPerBar = Math.Max(1, buzz.TPB * session.BeatsPerBar);
+            int length = SceneToArrangement.SceneLength(layout, scene, ticksPerBar);
+            int position = buzz.SongCore.PlayPosition / ticksPerBar * ticksPerBar;
+            var doc = layout.Ensure();
+            string name = scene < doc.Scenes.Count && !string.IsNullOrEmpty(doc.Scenes[scene].Name) ? doc.Scenes[scene].Name : $"scene {scene + 1}";
+            var answer = ArrangementInsertWindow.Ask(Window.GetWindow(this), name, position / ticksPerBar + 1, length / ticksPerBar);
+            if (answer is not { } a) return;
+            SceneToArrangement.Insert(buzz, layout, scene, (a.Bar - 1) * ticksPerBar, a.Bars * ticksPerBar, a.Insert);
+        }
+
         void RenameScene(int scene)
         {
             var doc = layout.Ensure();
@@ -152,14 +164,23 @@ namespace ReBuzz.AppViews.Session
 
         // ------------------------------------------------------------------ keyboard
 
-        void OnKeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.OriginalSource is TextBox) return;
-            if (e.OriginalSource is DependencyObject d && FindParent<ComboBox>(d) is ComboBox combo && combo.IsDropDownOpen) return;
+        void OnKeyDown(object sender, KeyEventArgs e) => HandleKeyEvent(e);
 
-            var mods = Keyboard.Modifiers;
+        /// <summary>
+        /// Handles a key aimed at this view (focus inside it, not typing in a box). The main
+        /// window calls this first when the view is docked, since its own shortcuts would
+        /// otherwise take Ctrl+Z and friends before the key reaches the view.
+        /// </summary>
+        internal bool HandleKeyEvent(KeyEventArgs e)
+        {
+            if (e.Handled || !IsKeyboardFocusWithin) return false;
+            if (e.OriginalSource is TextBox) return false;
+            if (e.OriginalSource is DependencyObject d && FindParent<ComboBox>(d) is ComboBox combo && combo.IsDropDownOpen) return false;
+
             var key = e.Key == Key.System ? e.SystemKey : e.Key;
-            e.Handled = HandleKey(key, mods);
+            if (!HandleKey(key, Keyboard.Modifiers)) return false;
+            e.Handled = true;
+            return true;
         }
 
         /// <summary>Runs a keyboard command; returns whether the key was used.</summary>
@@ -292,6 +313,9 @@ namespace ReBuzz.AppViews.Session
             menu.Items.Add(Item("Insert scene below", () => layout.InsertScene(scene + 1), "Ctrl+I"));
             menu.Items.Add(Item("Duplicate scene", () => layout.DuplicateScene(scene)));
             menu.Items.Add(Item("Delete scene", () => layout.RemoveScene(scene)));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Item("Insert into arrangement…", () => InsertSceneIntoArrangement(scene), null,
+                () => doc.SceneSlots(scene).Any()));
             menu.Items.Add(new Separator());
             AddMidiItems(menu, SessionTarget.Scene, 0, scene);
             OpenMenu(menu, cell);

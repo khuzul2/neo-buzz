@@ -101,6 +101,7 @@ namespace BuzzGUI.ToolBar
                     PropertyChanged.Raise(this, "ShowSequenceView");
                     PropertyChanged.Raise(this, "ShowWaveTableView");
                     PropertyChanged.Raise(this, "ShowSongInfoView");
+                    PropertyChanged.Raise(this, "ShowSessionView");
                     break;
 
                 case "Song":
@@ -231,6 +232,7 @@ namespace BuzzGUI.ToolBar
         public SimpleCommand SettingsCommand { get; private set; }
         public SimpleCommand PreferencesCommand { get; private set; }
         public SimpleCommand SessionViewCommand { get; private set; }
+        public SimpleCommand SessionWindowCommand { get; private set; }
         public SimpleCommand HelpCommand { get; private set; }
         public SimpleCommand CPUMonitorCommand { get; private set; }
         public SimpleCommand HardDiskRecorderCommand { get; private set; }
@@ -453,6 +455,12 @@ namespace BuzzGUI.ToolBar
                 ExecuteDelegate = x => { Buzz.ExecuteCommand(BuzzCommand.SessionView); }
             };
 
+            SessionWindowCommand = new SimpleCommand
+            {
+                CanExecuteDelegate = x => { return true; },
+                ExecuteDelegate = x => { Buzz.ExecuteCommand(BuzzCommand.SessionWindow); }
+            };
+
             HelpCommand = new SimpleCommand
             {
                 CanExecuteDelegate = x => { return true; },
@@ -556,6 +564,13 @@ namespace BuzzGUI.ToolBar
             set { buzz.ActiveView = BuzzView.SongInfoView; }
         }
 
+        // Fork: the docked Session View (docs/specs/session-view.md 0.3).
+        public bool ShowSessionView
+        {
+            get { return buzz.ActiveView == BuzzView.SessionView; }
+            set { buzz.ActiveView = BuzzView.SessionView; }
+        }
+
         // menu
 
         public IEnumerable<MenuItemVM> ThemeMenuItems
@@ -623,6 +638,7 @@ namespace BuzzGUI.ToolBar
                     Children = new MenuItemVM[]
                     {
                         new MenuItemVM() { Text = "S_ession View", GestureText = "Ctrl+Tab", Command = SessionViewCommand },
+                        new MenuItemVM() { Text = "Session View in a _Window", Command = SessionWindowCommand },
                         new MenuItemVM() { IsSeparator = true },
                         new MenuItemVM() { Text = "_CPU Monitor", IsCheckable = true, IsChecked = Buzz.IsCPUMonitorWindowVisible, Command = CPUMonitorCommand },
                         new MenuItemVM() { Text = "_Debug Console", Command = DebugConsoleCommand },

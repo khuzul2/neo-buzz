@@ -112,7 +112,7 @@ namespace ReBuzz.Core
                 EventsList = od;
                 UpdateSpans();
                 PropertyChanged.Raise(this, "Events");
-                SpanCleared.Invoke(time, span);
+                SpanCleared?.Invoke(time, span);   // fork: ?. like Insert/Delete (no listener without a sequence editor)
 
                 (Global.Buzz as ReBuzzCore).SetModifiedFlag();
             }

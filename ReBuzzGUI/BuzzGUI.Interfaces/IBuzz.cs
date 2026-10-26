@@ -11,10 +11,13 @@ namespace BuzzGUI.Interfaces
 {
     public enum DCLogLevel { Verbose, Debug, Information, Warning, Error, Fatal }
 
-    public enum BuzzView { PatternView, MachineView, SequenceView, WaveTableView, SongInfoView };
+    // Fork addition: SessionView, the docked Session View (docs/specs/session-view.md 0.3). Appended.
+    public enum BuzzView { PatternView, MachineView, SequenceView, WaveTableView, SongInfoView, SessionView };
     public enum BuzzCommand { NewFile, OpenFile, SaveFile, SaveFileAs, Cut, Copy, Paste, Undo, Redo, Stop, Exit, About, Preferences, DebugConsole,
-        // Fork addition: show/hide the Session View (docs/specs/session-view.md). Appended so existing values keep their numbers.
-        SessionView };
+        // Fork additions (docs/specs/session-view.md), appended so existing values keep their numbers:
+        // SessionView switches the main window between the Session and Sequence views,
+        // SessionWindow shows or hides the Session View in its own window.
+        SessionView, SessionWindow };
 
     public interface IBuzz : INotifyPropertyChanged
     {
