@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v5 — 0.1 (#1, #2) and 0.2 (#3) merged; 0.3 implemented (branch `session/arrangement`) |
+| Status | Draft v5 — 0.1 (#1, #2), 0.2 (#3) and 0.3 (#4) merged; next: 0.4 Mixer |
 | Date | 2026-10-25 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -287,7 +287,7 @@ Tests: `ReBuzz.SessionTests/SessionMidiMapTests.cs` (mapping model), new cases i
 
 **Acceptance criteria.** Record a 2-minute performance and play it back from the Sequence View with identical audio (render diff below noise floor). Back to Arrangement restores arranged playback on the next tick.
 
-**Status (branch `session/arrangement`).** Features 1–5 are in:
+**Status (merged, #4).** Features 1–5 are in:
 - *Arrangement record*: ReBuzz's Record (F7, or ● Rec in the Session View, lit red) arms it. While recording, every clip start (launch or loop restart) is written as a `PlayPattern` event at the song position where it happened, and every stop as an `Off` event (Buzz's "stop sound" event); arrangement events between those writes on the recorded tracks are removed, so the arrangement plays back what was heard. Clips already playing when recording starts are written from the start of their current loop. Tracks handed back with Back to Arrangement stop being recorded there. With looping off the song grows a bar at a time while recording (Live-style); with looping on the recording stays in the loop. A pass ends when recording or the transport stops and is one undo step in the Session View. `SessionCore` reports from the audio thread into a lock-free queue that `SessionRecorder` drains on the UI thread.
 - *Back to Arrangement* is lit (orange) while any track is taken over.
 - *Scene to arrangement*: scene right-click → *Insert into arrangement…*: at a bar (default: the bar of the play position), for N bars (default: the scene's longest clip, in whole bars), overwriting the scene's tracks or inserting (moving every track's later events back). Clips repeat to fill the length; a last repeat that runs past it is cut with a `Break`. Song and whole-song loop ends grow to fit. One undo step in the Session View.
