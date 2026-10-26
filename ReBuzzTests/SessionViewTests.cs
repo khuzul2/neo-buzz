@@ -24,7 +24,7 @@ namespace ReBuzzTests
     {
         const int Bar = 16;
 
-        sealed class Rig : IDisposable
+        internal sealed class Rig : IDisposable
         {
             public Driver Driver { get; } = new Driver();
             public ReBuzzCore Core => Driver.Core;
@@ -77,7 +77,7 @@ namespace ReBuzzTests
             }
         }
 
-        static string Screenshot(FrameworkElement element, string name, int width = 880, int height = 400)
+        internal static string Screenshot(FrameworkElement element, string name, int width = 880, int height = 400)
         {
             element.Measure(new Size(width, height));
             element.Arrange(new Rect(0, 0, width, height));

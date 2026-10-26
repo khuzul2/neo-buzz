@@ -1,8 +1,13 @@
+using BuzzGUI.Common;
+using BuzzGUI.Common.Actions.MachineActions;
+using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows.Threading;
 
 namespace ReBuzz.Core.Session
@@ -22,6 +27,9 @@ namespace ReBuzz.Core.Session
     /// an event only marks the layout dirty, and the next read reconciles it against the
     /// settled song. <see cref="Changed"/> is raised once per batch, from the dispatcher.
     /// Renames are applied at once, since they carry the old name.
+    ///
+    /// Grid edits (0.2) go through <see cref="UndoStack"/>, the session's own undo history:
+    /// layout changes as before/after snapshots, clip changes with BuzzGUI's pattern actions.
     /// </summary>
     internal sealed class SessionLayout
     {
@@ -38,6 +46,11 @@ namespace ReBuzz.Core.Session
 
         /// <summary>Structure or contents changed (tracks, scenes, slots, settings).</summary>
         public event Action Changed;
+
+        /// <summary>Undo history of grid edits; starts empty with each song.</summary>
+        public ManagedActionStack UndoStack { get; private set; } = NewUndoStack();
+
+        static ManagedActionStack NewUndoStack() => new ManagedActionStack(500);
 
         internal SessionLayout(ReBuzzCore buzz, SongCore song, IUiDispatcher dispatcher)
         {
@@ -92,6 +105,7 @@ namespace ReBuzz.Core.Session
         {
             document = null;
             dirty = false;
+            UndoStack = NewUndoStack();
             Session.BeatsPerBar = 4;
             Session.LaunchQuantization = LaunchQuantization.Bar;
             RaiseChanged();
@@ -122,35 +136,214 @@ namespace ReBuzz.Core.Session
         public IEnumerable<IMachine> MachinesWithoutTrack() =>
             song.Machines.Where(m => m.DLL?.Info?.Type != MachineType.Master && !song.Sequences.Any(s => s.Machine == m));
 
-        // ------------------------------------------------------------------ editing
+        // ------------------------------------------------------------------ grid edits (undoable)
 
-        public void SetSlot(int track, int scene, IPattern pattern)
-        {
-            Ensure().SetSlot(track, scene, pattern?.Name);
-            ContentChanged();
-        }
+        public void SetSlot(int track, int scene, IPattern pattern) =>
+            Edit(doc => { if (track >= 0 && track < doc.Tracks.Count) doc.SetSlot(track, scene, pattern?.Name); });
 
         public void ClearSlot(int track, int scene) => SetSlot(track, scene, null);
 
-        public void InsertScene(int index)
+        public void InsertScene(int index) => Edit(doc => doc.InsertScene(index));
+
+        public void RemoveScene(int index) => Edit(doc => doc.RemoveScene(index));
+
+        public void DuplicateScene(int index) => Edit(doc => doc.DuplicateScene(index));
+
+        public void RenameScene(int index, string name) => Edit(doc =>
         {
-            Ensure().InsertScene(index);
+            if (index >= 0 && index < doc.Scenes.Count)
+                doc.Scenes[index].Name = name?.Trim() ?? "";
+        });
+
+        public void SetSceneColor(int index, int colorIndex) => Edit(doc =>
+        {
+            if (index >= 0 && index < doc.Scenes.Count)
+                doc.Scenes[index].ColorIndex = colorIndex;
+        });
+
+        public void SetTrackColor(int track, int colorIndex) => Edit(doc =>
+        {
+            if (track >= 0 && track < doc.Tracks.Count)
+                doc.Tracks[track].ColorIndex = colorIndex;
+        });
+
+        /// <summary>Moves (or with <paramref name="copy"/> copies) a clip to another slot of its track.</summary>
+        public bool MoveSlot(int track, int fromScene, int toScene, bool copy)
+        {
+            bool moved = false;
+            Edit(doc => moved = doc.MoveSlot(track, fromScene, toScene, copy));
+            return moved;
+        }
+
+        // ------------------------------------------------------------------ clip edits (undoable)
+
+        /// <summary>Length of new clips: <see cref="SessionDocument.ClipBars"/> bars.</summary>
+        public int NewClipLength => Math.Max(1, buzz.TPB * Session.BeatsPerBar * (Document?.ClipBars ?? 1));
+
+        /// <summary>Creates a pattern on the track's machine and puts it in the slot.</summary>
+        public IPattern CreateClip(int track, int scene)
+        {
+            var machine = SequenceOf(track)?.Machine;
+            if (machine == null || scene < 0) return null;
+            string name = machine.GetNewPatternName();
+            if (name == null) return null;
+            int length = NewClipLength;
+
+            UndoStack.BeginActionGroup();
+            try
+            {
+                UndoStack.Do(new CreatePatternAction(machine, name, length));
+                Edit(doc => doc.SetSlot(track, scene, name));
+            }
+            finally
+            {
+                UndoStack.EndActionGroup();
+            }
+            return machine.Patterns.FirstOrDefault(p => p.Name == name);
+        }
+
+        /// <summary>
+        /// Copies the slot's pattern into a new pattern (Live-style independent copy) in the slot
+        /// below; inserts a scene there if that slot is taken. Returns the copy, or null.
+        /// </summary>
+        public IPattern DuplicateClip(int track, int scene, out int targetScene)
+        {
+            targetScene = scene + 1;
+            var source = PatternAt(track, scene);
+            if (source == null) return null;
+            var machine = source.Machine;
+            string name = CopyName(machine, source.Name);
+            int target = targetScene;
+            int color = PatternColors.Get(source);
+
+            UndoStack.BeginActionGroup();
+            try
+            {
+                if (Ensure().GetSlot(track, target) != null)
+                    Edit(doc => doc.InsertScene(target));
+                UndoStack.Do(new CreatePatternAction(machine, name, source.Length, source));
+                var copy = machine.Patterns.FirstOrDefault(p => p.Name == name);
+                if (copy != null && color >= 0)
+                    UndoStack.Do(new PatternColorAction(copy, color));
+                Edit(doc => doc.SetSlot(track, target, name));
+                return copy;
+            }
+            finally
+            {
+                UndoStack.EndActionGroup();
+            }
+        }
+
+        /// <summary>Renames a pattern. False if the name is empty or taken.</summary>
+        public bool RenameClip(IPattern pattern, string newName)
+        {
+            newName = newName?.Trim();
+            if (pattern?.Machine == null || string.IsNullOrEmpty(newName) || newName == pattern.Name) return false;
+            if (pattern.Machine.Patterns.Any(p => p.Name == newName)) return false;
+            UndoStack.Do(new RenamePatternAction(pattern, newName));
+            buzz.SetModifiedFlag();
+            return true;
+        }
+
+        /// <summary>Deletes a pattern from its machine (and from every slot showing it).</summary>
+        public void DeleteClip(IPattern pattern)
+        {
+            if (pattern?.Machine == null) return;
+            string machine = pattern.Machine.Name;
+            string name = pattern.Name;
+
+            UndoStack.BeginActionGroup();
+            try
+            {
+                // Clear the slots first, so undo puts them back after the pattern is recreated.
+                Edit(doc =>
+                {
+                    foreach (var t in doc.Tracks.Where(t => t.Machine == machine))
+                        foreach (var key in t.Slots.Where(s => s.Value == name).Select(s => s.Key).ToList())
+                            t.Slots.Remove(key);
+                });
+                UndoStack.Do(new DeletePatternAction(pattern));
+            }
+            finally
+            {
+                UndoStack.EndActionGroup();
+            }
+            buzz.SetModifiedFlag();
+        }
+
+        public void SetClipColor(IPattern pattern, int colorIndex)
+        {
+            if (pattern?.Machine == null || PatternColors.Get(pattern) == colorIndex) return;
+            UndoStack.Do(new PatternColorAction(pattern, colorIndex));
+            buzz.SetModifiedFlag();
+            RaiseChanged();
+        }
+
+        public void Undo()
+        {
+            if (!UndoStack.CanUndo) return;
+            UndoStack.Undo();
             ContentChanged();
         }
 
-        public void RemoveScene(int index)
+        public void Redo()
         {
-            Ensure().RemoveScene(index);
+            if (!UndoStack.CanRedo) return;
+            UndoStack.Redo();
             ContentChanged();
         }
 
-        public void RenameScene(int index, string name)
+        /// <summary>
+        /// A free name for a copy of <paramref name="name"/>: the number at its end counted up
+        /// ("00" gives "01", "Beat 2" gives "Beat 3"), or " 2" appended.
+        /// </summary>
+        internal static string CopyName(IMachine machine, string name)
+        {
+            var taken = new HashSet<string>(machine.Patterns.Select(p => p.Name));
+            var m = Regex.Match(name ?? "", @"^(.*?)(\d+)$");
+            string stem = m.Success ? m.Groups[1].Value : (name ?? "") + " ";
+            int number = m.Success ? int.Parse(m.Groups[2].Value) + 1 : 2;
+            int width = m.Success ? m.Groups[2].Value.Length : 1;
+            string candidate;
+            do
+            {
+                candidate = stem + number.ToString().PadLeft(width, '0');
+                number++;
+            }
+            while (taken.Contains(candidate));
+            return candidate;
+        }
+
+        /// <summary>
+        /// Applies a layout edit and records it for undo (as snapshots) if it changed anything.
+        /// </summary>
+        bool Edit(Action<SessionDocument> change)
         {
             var doc = Ensure();
-            if (index < 0 || index >= doc.Scenes.Count) return;
-            doc.Scenes[index].Name = name?.Trim() ?? "";
+            var before = doc.ToBytes();
+            change(doc);
+            var after = doc.ToBytes();
+            if (before.AsSpan().SequenceEqual(after)) return false;
+            UndoStack.Do(new LayoutEditAction(this, before, after));
+            ContentChanged();
+            return true;
+        }
+
+        /// <summary>Puts back a layout snapshot (undo/redo). Session settings and the song's MIDI map stay as they are.</summary>
+        internal void Restore(byte[] snapshot)
+        {
+            var restored = SessionDocument.Load(new MemoryStream(snapshot));
+            if (restored == null) return;
+            restored.SongMidi = document?.SongMidi;
+            restored.ClipBars = document?.ClipBars ?? restored.ClipBars;
+            restored.BeatsPerBar = Session.BeatsPerBar;
+            restored.LaunchQuantization = Session.LaunchQuantization.ToString();
+            document = restored;
+            dirty = true;      // the song may have changed since the snapshot
             ContentChanged();
         }
+
+        // ------------------------------------------------------------------ other edits and actions
 
         /// <summary>Adds a sequence (track) for a machine; the layout follows via SequenceAdded.</summary>
         public void AddTrackFor(IMachine machine)
@@ -170,6 +363,19 @@ namespace ReBuzz.Core.Session
         {
             Session.LaunchQuantization = quantization;
             Ensure().LaunchQuantization = quantization.ToString();
+            ContentChanged();
+        }
+
+        public void SetClipBars(int bars)
+        {
+            Ensure().ClipBars = Math.Clamp(bars, 1, 64);
+            ContentChanged();
+        }
+
+        /// <summary>Stores a MIDI map with the song (overriding the user's), or removes it (null).</summary>
+        internal void SetSongMidi(SessionMidiMap map)
+        {
+            Ensure().SongMidi = map;
             ContentChanged();
         }
 
@@ -324,6 +530,7 @@ namespace ReBuzz.Core.Session
         {
             document = SessionDocument.Load(open.GetSubSection(SessionDocument.SubSectionName));
             dirty = false;
+            UndoStack = NewUndoStack();
             if (document != null)
             {
                 document.Reconcile(Snapshot());

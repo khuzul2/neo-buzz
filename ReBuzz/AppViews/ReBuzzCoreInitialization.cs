@@ -42,6 +42,7 @@ namespace ReBuzz.AppViews
             song.BuzzCore = buzz;
             buzz.SongCore = song;
             buzz.SessionLayout = new Core.Session.SessionLayout(buzz, song, dispatcher);
+            buzz.SessionMidi = new Core.Session.SessionMidi(buzz, buzz.SessionLayout, registryEx);
 
             buzz.MachineViewHWND = machineViewHwnd;
             buzz.MainWindowHandle = buzz.MachineViewHWND;

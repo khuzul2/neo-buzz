@@ -121,6 +121,9 @@ namespace ReBuzz.Core
         // Session View layout of the song; created with the SongCore (ReBuzzCoreInitialization).
         internal SessionLayout SessionLayout { get; set; }
 
+        // MIDI control of the Session View (0.2); created with the layout.
+        internal SessionMidi SessionMidi { get; set; }
+
         // UI related state
         BuzzView activeView = BuzzView.MachineView;
         public ReBuzzTheme Theme { get; set; }
@@ -1520,7 +1523,11 @@ namespace ReBuzz.Core
         /// </summary>
         public void SendMIDIInput(int data)
         {
-            if (midiFocusMachine != null && !midiFocusMachine.DLL.IsMissing)
+            // Fork: notes and CCs mapped to the Session View control the session only
+            // (docs/specs/session-view.md 0.2); they still reach MIDIInput below.
+            bool sessionOnly = SessionMidi?.Consumes(data) == true;
+
+            if (!sessionOnly && midiFocusMachine != null && !midiFocusMachine.DLL.IsMissing)
             {
                 var focusMachine = midiFocusMachine as MachineCore;
                 var editor = (midiFocusMachine as MachineCore).EditorMachine;
