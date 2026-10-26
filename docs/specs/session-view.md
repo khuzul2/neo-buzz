@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v4 — 0.1 merged (#1, #2); 0.2 implemented (branch `session/playable`, see §5 0.2 status) |
+| Status | Draft v4 — 0.1 (#1, #2) and 0.2 (#3) merged; next: 0.3 Session ↔ Arrangement |
 | Date | 2026-10-25 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -260,7 +260,7 @@ Sizes: S ≈ <500 LOC, M ≈ 500–2,000, L ≈ 2,000–5,000, XL > 5,000.
 
 **Acceptance criteria.** A full set can be performed from a 4×4 pad controller via note-grid mapping and from the keyboard alone; MIDI-to-launch latency ≤ 1 audio buffer + quantize wait; all edits undoable.
 
-**Status (branch `session/playable`).** Features 1–9 are in:
+**Status (merged, #3).** Features 1–9 are in:
 - *Keyboard*: arrows, Enter, Space, 1–9, Backspace as specified; also Delete (remove from slot), Shift+Delete (delete pattern), Ctrl+Shift+M (create clip), Ctrl+D (duplicate), F2 (rename), Ctrl+I (insert scene), Ctrl+Z/Ctrl+Y, Esc (cancel MIDI learn). The list is under ⚙ → *Keyboard shortcuts*.
 - *Mouse*: like Live, ▶ launches on mouse down and the rest of a clip selects, so clips can be dragged (move within the track, Ctrl copies) and double-clicked (edit; in an empty slot, create). An empty slot's small ■ stops its track. This replaces 0.1's click-anywhere-to-launch.
 - *MIDI*: right-click a slot, scene, track stop, *Stop all clips* or the quantization box → *MIDI learn…*; ⚙ adds play/stop and note-grid navigation (up/down/left/right, so a 4×4 pad reaches the whole set, like Live's session ring, drawn as an outline). Note on and CC are supported; a quantization CC picks a value across its range, a note cycles. Mapped notes and CCs control the session only (they don't reach machines). The user's mapping lives in the registry (`Session\MidiMap`); ⚙ → *Store MIDI mapping in this song* gives a song its own copy (the `<Midi>` element of the SessionView subsection). Mappings are positional (grid coordinates), so they don't follow inserted or removed scenes.
