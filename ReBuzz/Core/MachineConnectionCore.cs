@@ -87,6 +87,9 @@ namespace ReBuzz.Core
 
         readonly Interpolator interpolatorAmp = new Interpolator();
 
+        /// <summary>Fork: jumps to the current amp without a ramp (for a new connection).</summary>
+        internal void SnapAmp() => interpolatorAmp.SetTarget(amp, 0);
+
         int amp = 0x4000;
         public int Amp
         {

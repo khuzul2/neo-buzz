@@ -308,6 +308,27 @@ namespace ReBuzzTests
             Assert.That(left[^1], Is.EqualTo(before / 2).Within(Math.Abs(before) * 1e-3), "ends at the new level");
         }
 
+        [Test]
+        public void NewConnectionsStartAtTheirAmp()
+        {
+            using var rig = new MixRig(groupBus: false);
+            rig.Play(rig.LeadSynth, 16384, 16384);
+            rig.Driver.ReadStereoSamples(256);
+
+            SessionMixer.UseMeters(true);
+            try
+            {
+                SessionMixer.SetSend(rig.Lead, rig.Reverb, 0x1000);     // -12 dB
+                var send = (MachineConnectionCore)SessionMixer.ConnectionTo(rig.Lead, rig.Reverb)!;
+                rig.Driver.ReadStereoSamples(1024);
+                Assert.That(send.TakePeak().Left, Is.EqualTo(4096).Within(1), "no burst at unity before reaching the send level");
+            }
+            finally
+            {
+                SessionMixer.UseMeters(false);
+            }
+        }
+
         // ------------------------------------------------------------------ groups
 
         [Test]

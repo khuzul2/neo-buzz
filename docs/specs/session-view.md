@@ -320,9 +320,9 @@ Differences from Live: a recorded stop plays back as Buzz's `Off` (the machine's
 - *Cue*: ⚙ → *Cue output* picks the machine the C buttons connect tracks to, at unity: an effect that plays to a second output (ReBuzzAudioOut or Polac Out set to other channels) and isn't connected to the master.
 - *Groups*: each Machine View group (`IMachineGroup`) with a member that has a track gets a column before its first member: click the header to fold the members away (saved with the song), a group slot launches the members' clips in that scene together and shows them playing, the group stop stops them, and the group strip is the group's main output machine's volume, pan and meter.
 - *Master strip* under the scene column: the master volume (the toolbar's) and ReBuzz's master VU meter.
-- Also fixed: a connection's amp ramp (4 blocks after a change) moved the wrong way within each block and jumped back at the next, a click per block while an amp changed. Fader moves now ramp smoothly.
+- Also fixed: a connection's amp ramp (4 blocks after a change) moved the wrong way within each block and jumped back at the next, a click per block while an amp changed; fader moves now ramp smoothly. And a new connection started at unity and ramped to its amp, so a send made at a low level began with a short loud burst; new connections now start at their amp.
 
-Tests: `ReBuzzTests/SessionMixerTests.cs`: the session's fader and pan are the connection's amp and pan both ways (also through the strip controls), balance across several outputs, sends and cue as connections (with undo), the post-fader peak (and nothing measured while no meter is shown), the amp ramp, group columns (launching, folding, keyboard skipping folded tracks), settings vs undo, and a render. Not automated: the frame rate on a real display, and listening for clicks.
+Tests: `ReBuzzTests/SessionMixerTests.cs`: the session's fader and pan are the connection's amp and pan both ways (also through the strip controls), balance across several outputs, sends and cue as connections (with undo), the post-fader peak (and nothing measured while no meter is shown), the amp ramp, new connections starting at their amp, group columns (launching, folding, keyboard skipping folded tracks), settings vs undo, and a render. Not automated: the frame rate on a real display, and listening for clicks.
 
 ---
 
