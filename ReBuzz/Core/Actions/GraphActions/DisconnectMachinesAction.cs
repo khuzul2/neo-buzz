@@ -63,6 +63,8 @@ namespace ReBuzz.Core.Actions.GraphActions
 
         protected override void DoAction()
         {
+            // Fork (0.4.1): ConnectionRemoved is raised after releasing AudioLock (see ConnectMachinesAction).
+            MachineConnectionCore removed = null;
             lock (ReBuzzCore.AudioLock)
             {
                 var machine = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == sourceName);
@@ -89,17 +91,25 @@ namespace ReBuzz.Core.Actions.GraphActions
                     if (!(mc.Source as MachineCore).Hidden && !(mc.Destination as MachineCore).Hidden &&
                         !mc.Source.IsControlMachine)
                     {
-                        buzz.SongCore.InvokeConnectionRemoved(mc as MachineConnectionCore);
+                        removed = mc as MachineConnectionCore;
                     }
-
-                    ((MachineConnectionCore)mc).ClearEvents();
+                    else
+                    {
+                        ((MachineConnectionCore)mc).ClearEvents();
+                    }
                 }
                 buzz.UpdateMachineDelayCompensation();
+            }
+            if (removed != null)
+            {
+                buzz.SongCore.InvokeConnectionRemoved(removed);
+                removed.ClearEvents();
             }
         }
 
         protected override void UndoAction()
         {
+            MachineConnectionCore added = null;
             lock (ReBuzzCore.AudioLock)
             {
                 MachineConnectionCore mc = new MachineConnectionCore(dispatcher, engineSettings);
@@ -132,7 +142,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                     if (!(mc.Source as MachineCore).Hidden && !(mc.Destination as MachineCore).Hidden)
                     {
                         ParameterGroup.AddInputs(mc, group);
-                        buzz.SongCore.InvokeConnectionAdded(mc);
+                        added = mc;
 
                         for (int i = 0; i < group.ParametersList.Count; i++)
                         {
@@ -151,6 +161,8 @@ namespace ReBuzz.Core.Actions.GraphActions
                     buzz.UpdateMachineDelayCompensation();
                 }
             }
+            if (added != null)
+                buzz.SongCore.InvokeConnectionAdded(added);   // fork: after releasing AudioLock
         }
     }
 }

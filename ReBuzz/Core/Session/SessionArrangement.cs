@@ -18,7 +18,7 @@ namespace ReBuzz.Core.Session
     /// </summary>
     internal sealed class SessionRecorder
     {
-        enum Kind { Start, Stop, Release, End }
+        enum Kind { Start, Stop, Cut, Release, End }
 
         readonly record struct Entry(Kind Kind, SequenceCore Sequence, PatternCore Pattern, int Position);
 
@@ -58,6 +58,12 @@ namespace ReBuzz.Core.Session
 
         /// <summary>A clip was stopped (the track stays with the session).</summary>
         internal void ClipStopped(SequenceCore seq, int position) => Post(new Entry(Kind.Stop, seq, null, position));
+
+        /// <summary>
+        /// A clip's pattern moved to another track of the same machine (0.4.1): the pattern ends
+        /// here with a Break, not an Off, which would stop the machine that now plays it there.
+        /// </summary>
+        internal void ClipCut(SequenceCore seq, int position) => Post(new Entry(Kind.Cut, seq, null, position));
 
         /// <summary>A track went back to the arrangement.</summary>
         internal void TrackReleased(SequenceCore seq, int position) => Post(new Entry(Kind.Release, seq, null, position));
@@ -137,6 +143,8 @@ namespace ReBuzz.Core.Session
                 seq.SetEvent(e.Position, new SequenceEvent(SequenceEventType.PlayPattern, e.Pattern));
             else if (e.Kind == Kind.Stop)
                 seq.SetEvent(e.Position, new SequenceEvent(SequenceEventType.Off));
+            else if (e.Kind == Kind.Cut)
+                seq.SetEvent(e.Position, new SequenceEvent(SequenceEventType.Break));
             track.LastWrite = e.Position;
         }
 

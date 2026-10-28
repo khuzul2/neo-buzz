@@ -104,6 +104,8 @@ namespace ReBuzzTests.Automation
         internal ReBuzzCore Core => reBuzzCore;
         internal MachineCore MachineFor(DynamicMachineController controller) =>
             reBuzzMachines.GetSongCoreMachineInstance(controller.InstanceName);
+        // Fork (0.4.1): the test dispatcher, to defer UI work and count synchronous calls.
+        internal FakeDispatcher Dispatcher => dispatcher;
         private readonly FakeFileNameChoice fileNameToLoadChoice = new();
         private readonly FakeUserMessages fakeUserMessages;
         private FakeFileNameChoice fileNameToSaveChoice = new();
@@ -423,6 +425,31 @@ namespace ReBuzzTests.Automation
                 fakeUserMessages.StackStrace.Should().BeEmpty();
             }
         }
+
+        /// <summary>
+        /// Fork (0.4.1): reads audio through one engine instance and one buffer, so a test can
+        /// measure allocation and time per buffer (ReadStereoSamples creates both on every call).
+        /// </summary>
+        internal sealed class AudioReader
+        {
+            readonly WorkManager workManager;
+            readonly float[] buffer;
+
+            internal AudioReader(WorkManager workManager, int maxFrames)
+            {
+                this.workManager = workManager;
+                buffer = new float[maxFrames * 2];
+            }
+
+            public float[] Buffer => buffer;
+            internal WorkManager WorkManager => workManager;
+
+            /// <summary>Renders <paramref name="frames"/> stereo frames into <see cref="Buffer"/>.</summary>
+            public int Read(int frames) => workManager.MainAudioFillBuffer(buffer, 0, Math.Min(frames, buffer.Length / 2) * 2);
+        }
+
+        internal AudioReader CreateAudioReader(int maxFrames) =>
+            new AudioReader(new WorkManager(reBuzzCore, new WorkThreadEngine(1), 0, engineSettings), maxFrames);
 
         public TestReadBuffer ReadStereoSamples(int count)
         {

@@ -57,9 +57,20 @@ namespace ReBuzz.Core
         }
 
         readonly List<IPatternColumn> columns;
+
+        /// <summary>Fork (0.4.1): the columns without a read-only wrapper (one per call), for the audio thread.</summary>
+        internal List<IPatternColumn> ColumnsList => columns;
         public ReadOnlyCollection<IPatternColumn> Columns { get => columns.AsReadOnly(); }
 
-        int playPosition;
+        // Fork (0.4.1): starts "not playing". It was 0 until the engine's next block cleared every
+        // pattern; the engine now clears only the patterns it positioned (WorkManager).
+        int playPosition = int.MinValue;
+
+        /// <summary>
+        /// Fork (0.4.1): the track whose session clip gave this pattern its play position in the
+        /// current block, or null. Audio thread (WorkManager.UpdatePatternPositions).
+        /// </summary>
+        internal SequenceCore SessionTrack;
 
         public event Action<IPattern> OnPatternPlayStart;
         public event Action<IPattern> OnPatternPlayPositionChange;

@@ -32,6 +32,8 @@ namespace BuzzGUI.Interfaces
 
         /// <summary>Loop the clip (default). When false the clip plays once and its track stops.</summary>
         public bool Loop { get; set; } = true;
+        /// <summary>Start this many ticks into the clip (0.4.1; legato and clip start markers build on it).</summary>
+        public int StartOffset { get; set; }
     }
 
     public interface ISession : INotifyPropertyChanged

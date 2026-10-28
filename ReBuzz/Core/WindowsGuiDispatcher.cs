@@ -9,6 +9,9 @@ namespace ReBuzz.Core
         void Invoke(Action action);
         void BeginInvoke(Action action);
         void BeginInvoke(Action action, DispatcherPriority priority);
+
+        /// <summary>Fork: whether the calling thread is the UI thread.</summary>
+        bool CheckAccess() => true;
     }
 
     public class WindowsGuiDispatcher : IUiDispatcher
@@ -27,5 +30,7 @@ namespace ReBuzz.Core
         {
             Application.Current.Dispatcher.BeginInvoke(action, priority);
         }
+
+        public bool CheckAccess() => Application.Current?.Dispatcher.CheckAccess() ?? true;
     }
 }

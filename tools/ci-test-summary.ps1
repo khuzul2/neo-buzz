@@ -56,6 +56,18 @@ $failed = @($results | Where-Object { $_.outcome -eq 'Failed' })
 $passed = @($results | Where-Object { $_.outcome -eq 'Passed' })
 
 Send-Annotation 'notice' 'Test totals' @("$($results.Count) tests: $($passed.Count) passed, $($failed.Count) failed")
+
+# Reports: tests write "[notice] ..." lines (timings, measurements) that should be visible
+# whether they pass or not. One annotation for all of them, so they don't crowd out failures.
+$reports = New-Object System.Collections.Generic.List[string]
+foreach ($r in $results) {
+    foreach ($l in @("$($r.Output.StdOut)" -split "`n")) {
+        $t = $l.Trim()
+        if ($t -like '`[notice`]*') { $reports.Add("[$($r.testName)] " + $t.Substring(8).Trim()) }
+    }
+}
+if ($reports.Count -gt 0) { Send-Annotation 'notice' 'Test reports' @($reports | Select-Object -First 60) }
+
 if ($failed.Count -eq 0) { exit 0 }
 
 $groups = $failed | ForEach-Object {

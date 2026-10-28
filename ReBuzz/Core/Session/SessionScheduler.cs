@@ -31,7 +31,12 @@ namespace ReBuzz.Core.Session
         /// <summary>A one-shot clip reached its end.</summary>
         Ended,
         /// <summary>The transport stopped while the clip was playing.</summary>
-        Halted
+        Halted,
+        /// <summary>
+        /// The clip started on another track (a clip plays in one place, 0.4.1), so it stopped
+        /// here; the machine keeps playing it there, so nothing is silenced.
+        /// </summary>
+        Moved
     }
 
     internal readonly record struct SessionChange<TTrack, TClip>(
@@ -43,15 +48,24 @@ namespace ReBuzz.Core.Session
     {
         sealed class Pending
         {
-            public Pending(bool isStop, TClip clip, long at, bool loop, bool releaseOverride)
+            public Pending(bool isStop, TClip clip, long at, bool loop, bool releaseOverride, long origin = long.MinValue)
             {
-                IsStop = isStop; Clip = clip; At = at; Loop = loop; ReleaseOverride = releaseOverride;
+                IsStop = isStop; Clip = clip; At = at; Loop = loop; ReleaseOverride = releaseOverride; Origin = origin;
             }
             public readonly bool IsStop;
             public readonly TClip Clip;
             public readonly long At;
             public readonly bool Loop;
             public readonly bool ReleaseOverride;
+            /// <summary>
+            /// Clock value the clip counts its position from (position = clock - Origin), or
+            /// long.MinValue for <see cref="At"/>: earlier than At starts the clip partway through
+            /// (catch-up after a late request, or an explicit start offset).
+            /// </summary>
+            public readonly long Origin;
+
+            public Pending Shifted(long delta) =>
+                new Pending(IsStop, Clip, At + delta, Loop, ReleaseOverride, Origin == long.MinValue ? long.MinValue : Origin + delta);
         }
 
         sealed class TrackState
@@ -60,11 +74,14 @@ namespace ReBuzz.Core.Session
             public readonly SessionScheduler<TTrack, TClip> Owner;
             public readonly TTrack Track;
             public volatile TClip Playing;
-            public long StartClock = -1;
+            /// <summary>Clock the playing clip counts from (can be negative with a start offset); NotStarted when none.</summary>
+            public long StartClock = NotStarted;
             public volatile bool Loop;
             public volatile Pending Next;
             public volatile bool Overridden;
         }
+
+        const long NotStarted = long.MinValue;
 
         readonly Func<TClip, int> lengthOf;
         readonly List<TrackState> tracks = new List<TrackState>();
@@ -120,33 +137,89 @@ namespace ReBuzz.Core.Session
             return c < 0 ? 0 : c + 1;
         }
 
-        public void Launch(TTrack track, TClip clip, int quantizeTicks, bool loop)
+        /// <summary>
+        /// When a request made while the listener hears <paramref name="heardClock"/> takes effect.
+        /// The grid point is the first one after what is heard, not after what the engine has
+        /// rendered (which runs ahead by the output latency). If that point has been rendered
+        /// already, the request is late: it takes effect on the next tick, and a launch counts
+        /// its position from the grid point (<paramref name="origin"/>), so the clip plays in step
+        /// and only what was already rendered is skipped. Quantization None never catches up: it
+        /// means "start from the top, now". <paramref name="heardClock"/> is clamped to the
+        /// rendered clock; pass <see cref="Clock"/> for no compensation.
+        /// </summary>
+        public (long At, long Origin) Plan(int quantizeTicks, long heardClock)
         {
-            LaunchAt(track, clip, NextQuantizedClock(quantizeTicks), loop);
+            long c = Clock;
+            if (c < 0) return (0, long.MinValue);
+            if (quantizeTicks <= 0) return (c + 1, long.MinValue);
+            long heard = Math.Min(heardClock, c);
+            if (heard < 0) heard = 0;
+            long boundary = (heard / quantizeTicks + 1) * quantizeTicks;
+            return boundary > c ? (boundary, long.MinValue) : (c + 1, boundary);
         }
 
-        /// <summary>Queues a launch at an absolute clock value (replacing any queued action).</summary>
-        public void LaunchAt(TTrack track, TClip clip, long at, bool loop)
+        public void Launch(TTrack track, TClip clip, int quantizeTicks, bool loop) =>
+            Launch(track, clip, quantizeTicks, loop, Clock, 0);
+
+        /// <summary>
+        /// Queues a launch on the quantization grid (see <see cref="Plan"/>), starting the clip
+        /// <paramref name="startOffset"/> ticks in.
+        /// </summary>
+        public void Launch(TTrack track, TClip clip, int quantizeTicks, bool loop, long heardClock, int startOffset)
+        {
+            var (at, origin) = Plan(quantizeTicks, heardClock);
+            LaunchAt(track, clip, at, loop, OriginWithOffset(at, origin, startOffset));
+        }
+
+        static long OriginWithOffset(long at, long origin, int startOffset)
+        {
+            if (startOffset <= 0) return origin;
+            return (origin == long.MinValue ? at : origin) - startOffset;
+        }
+
+        /// <summary>
+        /// Queues a launch at an absolute clock value (replacing any queued action). With an
+        /// <paramref name="origin"/> before <paramref name="at"/> the clip starts partway through.
+        /// A clip plays in one place at a time (Buzz patterns have one play position): a launch
+        /// of the same clip queued on another track is dropped, and a track playing it hands it
+        /// over when it starts here (<see cref="SessionChangeKind.Moved"/>, without a stop).
+        /// </summary>
+        public void LaunchAt(TTrack track, TClip clip, long at, bool loop, long origin = long.MinValue)
         {
             if (track == null) throw new ArgumentNullException(nameof(track));
             if (clip == null) throw new ArgumentNullException(nameof(clip));
-            GetOrCreate(track).Next = new Pending(false, clip, at, loop, false);
+            var target = GetOrCreate(track);
+            target.Next = new Pending(false, clip, at, loop, false, origin);
+            for (int i = 0; i < tracks.Count; i++)
+            {
+                var st = tracks[i];
+                if (ReferenceEquals(st, target)) continue;
+                var next = st.Next;
+                if (next != null && !next.IsStop && ReferenceEquals(next.Clip, clip))
+                    st.Next = null;
+            }
         }
 
         /// <summary>Queues launches that all start on the same tick.</summary>
-        public void LaunchScene(IEnumerable<(TTrack Track, TClip Clip)> slots, int quantizeTicks, bool loop)
+        public void LaunchScene(IEnumerable<(TTrack Track, TClip Clip)> slots, int quantizeTicks, bool loop) =>
+            LaunchScene(slots, quantizeTicks, loop, Clock);
+
+        public void LaunchScene(IEnumerable<(TTrack Track, TClip Clip)> slots, int quantizeTicks, bool loop, long heardClock)
         {
             if (slots == null) throw new ArgumentNullException(nameof(slots));
-            long at = NextQuantizedClock(quantizeTicks);
+            var (at, origin) = Plan(quantizeTicks, heardClock);
             foreach (var (track, clip) in slots)
             {
                 if (track != null && clip != null)
-                    LaunchAt(track, clip, at, loop);
+                    LaunchAt(track, clip, at, loop, origin);
             }
         }
 
         /// <summary>Queues a stop. With nothing playing, cancels a queued launch instead.</summary>
-        public void Stop(TTrack track, int quantizeTicks, bool immediate)
+        public void Stop(TTrack track, int quantizeTicks, bool immediate) => Stop(track, quantizeTicks, immediate, Clock);
+
+        /// <summary>Queues a stop on the grid after what is heard (a late stop happens on the next tick).</summary>
+        public void Stop(TTrack track, int quantizeTicks, bool immediate, long heardClock)
         {
             var st = Find(track);
             if (st == null) return;
@@ -155,14 +228,16 @@ namespace ReBuzz.Core.Session
                 st.Next = null;
                 return;
             }
-            long at = immediate ? ImmediateClock() : NextQuantizedClock(quantizeTicks);
+            long at = immediate ? ImmediateClock() : Plan(quantizeTicks, heardClock).At;
             st.Next = new Pending(true, null, at, false, false);
         }
 
-        public void StopAll(int quantizeTicks, bool immediate)
+        public void StopAll(int quantizeTicks, bool immediate) => StopAll(quantizeTicks, immediate, Clock);
+
+        public void StopAll(int quantizeTicks, bool immediate, long heardClock)
         {
             for (int i = 0; i < tracks.Count; i++)
-                Stop(tracks[i].Track, quantizeTicks, immediate);
+                Stop(tracks[i].Track, quantizeTicks, immediate, heardClock);
         }
 
         /// <summary>Stops all clips on the next tick and gives every track back to the arrangement.</summary>
@@ -210,7 +285,7 @@ namespace ReBuzz.Core.Session
                 if (ReferenceEquals(st.Playing, clip))
                 {
                     st.Playing = null;
-                    st.StartClock = -1;
+                    st.StartClock = NotStarted;
                     stoppedTracks?.Add(st.Track);
                 }
             }
@@ -245,10 +320,10 @@ namespace ReBuzz.Core.Session
                 for (int i = 0; i < tracks.Count; i++)
                 {
                     var st = tracks[i];
-                    if (st.StartClock >= 0) st.StartClock += delta;
+                    if (st.StartClock != NotStarted) st.StartClock += delta;
                     var n = st.Next;
                     if (n != null)
-                        st.Next = new Pending(n.IsStop, n.Clip, n.At + delta, n.Loop, n.ReleaseOverride);
+                        st.Next = n.Shifted(delta);
                 }
             }
             else
@@ -259,7 +334,7 @@ namespace ReBuzz.Core.Session
                     var st = tracks[i];
                     var n = st.Next;
                     if (n != null && n.At <= 0)
-                        st.Next = new Pending(n.IsStop, n.Clip, initialClock, n.Loop, n.ReleaseOverride);
+                        st.Next = n.Shifted(initialClock - n.At);
                 }
             }
             Volatile.Write(ref clock, initialClock);
@@ -287,7 +362,7 @@ namespace ReBuzz.Core.Session
                 var playing = st.Playing;
                 st.Next = null;
                 st.Playing = null;
-                st.StartClock = -1;
+                st.StartClock = NotStarted;
                 st.Overridden = false;
                 if (playing != null)
                     changes.Add(new SessionChange<TTrack, TClip>(st.Track, playing, null, SessionChangeKind.Halted));
@@ -297,6 +372,7 @@ namespace ReBuzz.Core.Session
         void ProcessDue()
         {
             long c = Clock;
+            int firstChange = changes.Count;
             for (int i = 0; i < tracks.Count; i++)
             {
                 var st = tracks[i];
@@ -305,7 +381,7 @@ namespace ReBuzz.Core.Session
                 if (playing != null && !st.Loop && c - st.StartClock >= Length(playing))
                 {
                     st.Playing = null;
-                    st.StartClock = -1;
+                    st.StartClock = NotStarted;
                     changes.Add(new SessionChange<TTrack, TClip>(st.Track, playing, null, SessionChangeKind.Ended));
                     playing = null;
                 }
@@ -319,18 +395,37 @@ namespace ReBuzz.Core.Session
                     if (playing != null)
                     {
                         st.Playing = null;
-                        st.StartClock = -1;
+                        st.StartClock = NotStarted;
                         changes.Add(new SessionChange<TTrack, TClip>(st.Track, playing, null, SessionChangeKind.Stopped));
                     }
                     if (next.ReleaseOverride) st.Overridden = false;
                 }
                 else
                 {
-                    st.StartClock = c;
+                    st.StartClock = next.Origin == long.MinValue ? c : Math.Min(next.Origin, c);
                     st.Loop = next.Loop;
                     st.Overridden = true;
                     st.Playing = next.Clip;
                     changes.Add(new SessionChange<TTrack, TClip>(st.Track, playing, next.Clip, SessionChangeKind.Launched));
+                }
+            }
+
+            // A clip plays in one place: a clip that started here stops on any other track still
+            // playing it (its stop could have been replaced by a later request on that track).
+            int launchedEnd = changes.Count;
+            for (int k = firstChange; k < launchedEnd; k++)
+            {
+                var launched = changes[k];
+                if (launched.Kind != SessionChangeKind.Launched) continue;
+                for (int i = 0; i < tracks.Count; i++)
+                {
+                    var st = tracks[i];
+                    if (ReferenceEquals(st.Track, launched.Track) || !ReferenceEquals(st.Playing, launched.Current)) continue;
+                    st.Playing = null;
+                    st.StartClock = NotStarted;
+                    var next = st.Next;
+                    if (next != null && next.IsStop) st.Next = null;
+                    changes.Add(new SessionChange<TTrack, TClip>(st.Track, launched.Current, null, SessionChangeKind.Moved));
                 }
             }
         }
@@ -358,7 +453,9 @@ namespace ReBuzz.Core.Session
         public long GetStartClock(TTrack track)
         {
             var st = Find(track);
-            return st != null && st.Playing != null && IsRunning ? st.StartClock : -1;
+            if (st == null || st.Playing == null || !IsRunning) return -1;
+            long start = st.StartClock;
+            return start == NotStarted ? -1 : start;
         }
 
         /// <summary>Position of the playing clip in ticks, or -1.</summary>
@@ -369,7 +466,7 @@ namespace ReBuzz.Core.Session
             var playing = st.Playing;
             long c = Clock;
             long start = st.StartClock;
-            if (playing == null || c < 0 || start < 0) return -1;
+            if (playing == null || c < 0 || start == NotStarted) return -1;
             long elapsed = c - start;
             if (elapsed < 0) return -1;
             int len = Length(playing);

@@ -393,8 +393,8 @@ namespace ReBuzz.SessionTests
         {
             s.Start(0);
             s.Launch(drums, loopA, 0, loop: true);
-            s.Launch(bass, loopA, Bar, loop: true);
             s.Advance();
+            s.Launch(bass, loopA, Bar, loop: true);      // queued here: drums hands it over at the bar
             var stopped = new List<Track>();
             s.ForgetClip(loopA, stopped);
             Assert.That(stopped, Is.EqualTo(new[] { drums }));
@@ -435,6 +435,113 @@ namespace ReBuzz.SessionTests
             Assert.That(s.Clock, Is.EqualTo(-1));
             Assert.That(drums.SessionState, Is.Null);
             Assert.That(s.HasActivity, Is.False);
+        }
+
+        // ------------------------------------------------------------------ 0.4.1: heard position, catch-up, offsets, one place
+
+        [Test]
+        public void ARequestHeardBeforeTheBarLineLandsOnItWithCatchUp()
+        {
+            s.Start(0);
+            RunTo(17);                          // the engine has rendered into bar 2 ...
+            s.Launch(drums, loopA, Bar, loop: true, heardClock: 15, startOffset: 0);   // ... the listener is still in bar 1
+
+            Assert.That(s.GetState(drums, loopA), Is.EqualTo(Queued));
+            s.Advance();                        // clock 18: starts now, in step with bar 2
+            Assert.That(s.GetPlaying(drums), Is.SameAs(loopA));
+            Assert.That(s.GetStartClock(drums), Is.EqualTo(Bar), "counts from the bar line");
+            Assert.That(s.GetPosition(drums), Is.EqualTo(18 - Bar));
+        }
+
+        [Test]
+        public void WithoutLatencyARequestWaitsForTheNextBarLine()
+        {
+            s.Start(0);
+            RunTo(17);
+            s.Launch(drums, loopA, Bar, loop: true, heardClock: 17, startOffset: 0);
+            RunTo(31);
+            Assert.That(s.GetPlaying(drums), Is.Null);
+            s.Advance();
+            Assert.That(s.GetPosition(drums), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void PlanUsesWhatIsHeard()
+        {
+            s.Start(0);
+            RunTo(20);
+            Assert.That(s.Plan(Bar, 20), Is.EqualTo((32L, long.MinValue)), "on time: next bar");
+            Assert.That(s.Plan(Bar, 30), Is.EqualTo((32L, long.MinValue)), "heard can't be ahead of the render");
+            Assert.That(s.Plan(Bar, 14), Is.EqualTo((21L, 16L)), "late: next tick, counted from the missed bar line");
+            Assert.That(s.Plan(0, 14), Is.EqualTo((21L, long.MinValue)), "quantization None never catches up");
+        }
+
+        [Test]
+        public void ALateStopHappensOnTheNextTick()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, 0, loop: true);
+            RunTo(17);
+            s.Stop(drums, Bar, immediate: false, heardClock: 15);
+            s.Advance();
+            Assert.That(s.GetPlaying(drums), Is.Null);
+        }
+
+        [Test]
+        public void ScenesCatchUpTogether()
+        {
+            s.Start(0);
+            RunTo(17);
+            s.LaunchScene(new[] { (drums, loopA), (bass, loopB) }, Bar, loop: true, heardClock: 15);
+            s.Advance();
+            Assert.That(s.GetStartClock(drums), Is.EqualTo(Bar));
+            Assert.That(s.GetStartClock(bass), Is.EqualTo(Bar));
+        }
+
+        [Test]
+        public void AStartOffsetBeginsPartwayThrough()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, 0, loop: true, heardClock: 0, startOffset: 5);
+            s.Advance();
+            Assert.That(s.GetPosition(drums), Is.EqualTo(5));
+            RunTo(1 + Bar - 5);
+            Assert.That(s.GetPosition(drums), Is.EqualTo(0), "loops from the top");
+        }
+
+        [Test]
+        public void AnOffsetLaunchQueuedWhileStoppedKeepsItsOffset()
+        {
+            s.Launch(drums, loopA, 0, loop: true, heardClock: -1, startOffset: 3);
+            s.Start(32);
+            Assert.That(s.GetPosition(drums), Is.EqualTo(3));
+        }
+
+        [Test]
+        public void AClipPlaysInOnePlaceAtATime()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, 0, loop: true);
+            s.Advance();
+            s.Launch(bass, loopA, Bar, loop: true);       // same pattern on another track
+
+            Assert.That(s.GetState(drums, loopA), Is.EqualTo(Playing), "plays on until it starts there");
+            s.Launch(drums, loopB, 2 * Bar, loop: true);  // a later request on that track doesn't keep it there
+            RunTo(Bar);
+            Assert.That(s.GetPlaying(drums), Is.Null);
+            Assert.That(s.GetPlaying(bass), Is.SameAs(loopA));
+            Assert.That(s.Changes.Single(c => ReferenceEquals(c.Track, drums)).Kind, Is.EqualTo(SessionChangeKind.Moved), "handed over, not stopped");
+            Assert.That(s.GetQueued(drums), Is.SameAs(loopB), "its own request stays");
+        }
+
+        [Test]
+        public void AQueuedClipMovesToTheTrackLaunchedLast()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, Bar, loop: true);
+            s.Launch(bass, loopA, Bar, loop: true);
+            Assert.That(s.GetQueued(drums), Is.Null);
+            Assert.That(s.GetQueued(bass), Is.SameAs(loopA));
         }
 
         [Test]

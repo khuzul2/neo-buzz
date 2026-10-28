@@ -1,4 +1,5 @@
 using BuzzGUI.Interfaces;
+using ReBuzz.Core;
 using ReBuzz.Core.Session;
 using System;
 using System.Linq;
@@ -388,6 +389,19 @@ namespace ReBuzz.AppViews.Session
                 length.Items.Add(new MenuItem { Header = b == 1 ? "1 bar" : $"{b} bars", IsChecked = doc.ClipBars == b, Command = new RelayCommand(() => layout.SetClipBars(b)) });
             }
             menu.Items.Add(length);
+            if (session is SessionCore core)
+            {
+                double ms = buzz.OutputLatencySamples * 1000.0 / Math.Max(1, ReBuzzCore.masterInfo.SamplesPerSec);
+                menu.Items.Add(new MenuItem
+                {
+                    Header = ms > 0 ? $"Time launches to what you hear ({ms:F0} ms latency)" : "Time launches to what you hear",
+                    IsChecked = core.LatencyCompensation,
+                    ToolTip = "On: a launch pressed just before a beat or bar line, as you hear it, lands on that line, even if\n" +
+                              "the engine has already rendered past it (the clip starts in step, skipping what already played).\n" +
+                              "Off: launches wait for the next line after what the engine has rendered.",
+                    Command = new RelayCommand(() => core.SetLatencyCompensation(!core.LatencyCompensation))
+                });
+            }
             menu.Items.Add(new Separator());
             AddMixerMenuItems(menu, doc);
 

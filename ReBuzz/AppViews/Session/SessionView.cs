@@ -44,6 +44,8 @@ namespace ReBuzz.AppViews.Session
         readonly Border statusBar;
         readonly FlatButton backButton;
         readonly FlatButton recordButton;
+        readonly FlatButton dropoutButton;
+        long shownDropouts = -1;
         readonly FlatButton undoButton;
         readonly FlatButton redoButton;
         readonly ComboBox quantizeBox;
@@ -101,7 +103,15 @@ namespace ReBuzz.AppViews.Session
             backButton = new FlatButton("Back to arrangement", () => session.BackToArrangement(), "Lit while the session has taken over tracks: gives every track back to the arrangement");
             left.Children.Add(backButton);
             left.Children.Add(Label("Launch"));
-            quantizeBox = new ComboBox { Width = 82, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
+            quantizeBox = new ComboBox
+            {
+                Width = 82,
+                Margin = new Thickness(0, 0, 10, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                ToolTip = "Launch quantization: launches and stops wait for the next beat or bar line you hear.\n" +
+                          "None starts on the next tick (a tick is 1/ticks-per-beat of a beat, 1/16 note at 4 TPB):\n" +
+                          "Buzz machines change on ticks, so raise ticks per beat for finer timing."
+            };
             foreach (var q in QuantizeChoices) quantizeBox.Items.Add(q.Label);
             quantizeBox.SelectionChanged += (s, e) =>
             {
@@ -129,6 +139,12 @@ namespace ReBuzz.AppViews.Session
                 ToolTip = "Session clock: bar.beat.tick"
             };
             left.Children.Add(clockText);
+            dropoutButton = new FlatButton("", () => { buzz.ResetAudioDropoutCounters(); shownDropouts = -1; RefreshState(); }, "")
+            {
+                Margin = new Thickness(10, 0, 0, 0),
+                Padding = new Thickness(8, 3, 8, 3)
+            };
+            left.Children.Add(dropoutButton);
             bar.Children.Add(left);
 
             var right = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 4, 6, 4), VerticalAlignment = VerticalAlignment.Top };
@@ -443,10 +459,32 @@ namespace ReBuzz.AppViews.Session
             backButton.IsEnabled = overridden;
             backButton.SetLit(overridden ? SessionPalette.Override : null);
             recordButton.SetLit(buzz.Recording ? SessionPalette.Record : null);
+            RefreshDropouts();
             undoButton.IsEnabled = layout.UndoStack.CanUndo;
             redoButton.IsEnabled = layout.UndoStack.CanRedo;
             statusText.Text = learn is { } target ? $"MIDI learn: press a pad, key or knob for {Describe(target.Target, target.Track, target.Scene)}  ·  Esc cancels" : "";
             statusBar.Visibility = learn != null ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>
+        /// Dropouts since ReBuzz started or the last reset (click): audio callbacks that took
+        /// longer than the buffer they filled, plus driver resets. Red while there are any.
+        /// </summary>
+        void RefreshDropouts()
+        {
+            long count = buzz.DeadlineMissCount + buzz.DriverResetCount;
+            if (count == shownDropouts) return;
+            shownDropouts = count;
+            dropoutButton.Text = count == 0 ? "No dropouts" : count == 1 ? "1 dropout" : $"{count} dropouts";
+            dropoutButton.SetLit(count > 0 ? SessionPalette.Record : null);
+            double latency = session is SessionCore core ? core.CompensatedLatencyMs : 0;
+            dropoutButton.ToolTip =
+                "Audio dropouts since ReBuzz started or since you last clicked here:\n" +
+                $"  late buffers (the engine took longer than the buffer lasts): {buzz.DeadlineMissCount}\n" +
+                $"  driver resets: {buzz.DriverResetCount}\n" +
+                $"  worst overrun: {buzz.DeadlineWorstOverrunMicros / 1000.0:F1} ms\n" +
+                (latency > 0 ? $"Launches are timed to what you hear, {latency:F0} ms behind the engine (⚙ to turn off).\n" : "") +
+                "Click to reset.";
         }
 
         static string Describe(SessionTarget target, int track, int scene) => target switch
