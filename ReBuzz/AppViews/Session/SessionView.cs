@@ -13,13 +13,14 @@ using System.Windows.Threading;
 namespace ReBuzz.AppViews.Session
 {
     /// <summary>
-    /// Session View grid (fork addition, docs/specs/session-view.md 0.1–0.4): tracks (sequences)
+    /// Session View grid (fork addition, docs/specs/session-view.md 0.1–0.5): tracks (sequences)
     /// as columns, scenes as rows, scene launch buttons on the right, track stop buttons at the
-    /// bottom, and the mixer pinned under the grid. Built in code because its rows and columns
-    /// follow the song. Structure comes from <see cref="SessionLayout"/>; clip states are polled
-    /// from <see cref="ISession"/>. Interaction (menus, keys, drag, MIDI learn) is in
-    /// SessionView.Actions.cs, the cells in SessionCells.cs, groups, returns and the mixer in
-    /// SessionMixerView.cs.
+    /// bottom, the mixer pinned under the grid and the clip panel beside it. Built in code
+    /// because its rows and columns follow the song. Structure comes from
+    /// <see cref="SessionLayout"/>; clip states are polled from <see cref="ISession"/>.
+    /// Interaction (menus, keys, drag, MIDI learn) is in SessionView.Actions.cs, the cells in
+    /// SessionCells.cs, groups, returns and the mixer in SessionMixerView.cs, the clip panel in
+    /// SessionClipPanel.cs.
     /// </summary>
     internal sealed partial class SessionView : UserControl
     {
@@ -38,6 +39,9 @@ namespace ReBuzz.AppViews.Session
         readonly Grid mixerGrid = new Grid { Background = SessionPalette.Window, Margin = new Thickness(6, 0, 6, 4) };
         readonly ScrollViewer mixerPanel;
         readonly FlatButton mixerButton;
+        readonly FlatButton clipButton;
+        readonly ClipPanel clipPanel;
+        internal ClipPanel ClipPanelView => clipPanel;
         readonly TextBlock clockText;
         readonly TextBlock hintText;
         readonly TextBlock statusText;
@@ -68,7 +72,10 @@ namespace ReBuzz.AppViews.Session
         static readonly (LaunchQuantization Value, string Label)[] QuantizeChoices =
         {
             (LaunchQuantization.None, "None"),
+            (LaunchQuantization.Sixteenth, "1/16"),
+            (LaunchQuantization.Eighth, "1/8"),
             (LaunchQuantization.Beat, "1 beat"),
+            (LaunchQuantization.HalfNote, "2 beats"),
             (LaunchQuantization.Bar, "1 bar"),
             (LaunchQuantization.TwoBars, "2 bars"),
             (LaunchQuantization.FourBars, "4 bars"),
@@ -110,7 +117,8 @@ namespace ReBuzz.AppViews.Session
                 VerticalAlignment = VerticalAlignment.Center,
                 ToolTip = "Launch quantization: launches and stops wait for the next beat or bar line you hear.\n" +
                           "None starts on the next tick (a tick is 1/ticks-per-beat of a beat, 1/16 note at 4 TPB):\n" +
-                          "Buzz machines change on ticks, so raise ticks per beat for finer timing."
+                          "Buzz machines change on ticks, so raise ticks per beat for finer timing (1/16 and 1/8 need it).\n" +
+                          "A clip can have its own (clip panel)."
             };
             foreach (var q in QuantizeChoices) quantizeBox.Items.Add(q.Label);
             quantizeBox.SelectionChanged += (s, e) =>
@@ -156,6 +164,9 @@ namespace ReBuzz.AppViews.Session
             FlatButton addTrack = null;
             addTrack = new FlatButton("+ Track", () => ShowAddTrackMenu(addTrack), "Add a track for a machine that has none");
             right.Children.Add(addTrack);
+            clipButton = new FlatButton("Clip", () => layout.SetShowClipPanel(!layout.Ensure().ShowClipPanel),
+                "Show or hide the clip panel: how the selected clip launches (mode, quantization, legato, loop region, velocity)");
+            right.Children.Add(clipButton);
             mixerButton = new FlatButton("Mixer", ToggleMixer, "Show or hide the mixer under the grid (Ctrl+Alt+M)\nReturn tracks and the cue output: ⚙");
             right.Children.Add(mixerButton);
             FlatButton settings = null;
@@ -206,6 +217,7 @@ namespace ReBuzz.AppViews.Session
                 Padding = new Thickness(0, 4, 0, 0)
             };
             scroll.ScrollChanged += (s, e) => mixerPanel.ScrollToHorizontalOffset(scroll.HorizontalOffset);
+            clipPanel = new ClipPanel(this);
 
             var root = new DockPanel();
             DockPanel.SetDock(bar, Dock.Top);
@@ -214,6 +226,8 @@ namespace ReBuzz.AppViews.Session
             root.Children.Add(statusBar);
             DockPanel.SetDock(mixerPanel, Dock.Bottom);
             root.Children.Add(mixerPanel);
+            DockPanel.SetDock(clipPanel, Dock.Right);
+            root.Children.Add(clipPanel);
             root.Children.Add(scroll);
             Content = root;
 
@@ -235,6 +249,8 @@ namespace ReBuzz.AppViews.Session
             session.PropertyChanged += (s, e) => SyncSettings();
 
             PreviewKeyDown += OnKeyDown;
+            PreviewKeyUp += OnKeyUp;
+            IsKeyboardFocusWithinChanged += (s, e) => { if (!IsKeyboardFocusWithin) ReleaseHeldKey(); };
             MouseDown += (s, e) => Focus();
         }
 
@@ -313,7 +329,8 @@ namespace ReBuzz.AppViews.Session
 
                 for (int s = 0; s < sceneCount; s++)
                 {
-                    var cell = new SlotCell(this, t, s, seq, layout.PatternAt(t, s), midi?.Describe(SessionTarget.Slot, t, s));
+                    var pattern = layout.PatternAt(t, s);
+                    var cell = new SlotCell(this, t, s, seq, pattern, midi?.Describe(SessionTarget.Slot, t, s), pattern == null ? null : layout.ClipOf(pattern));
                     slots.Add(cell);
                     Place(cell, s + 1, c);
                 }
@@ -366,6 +383,9 @@ namespace ReBuzz.AppViews.Session
             if (selected is { } sel && (sel.Track >= trackCount || sel.Scene >= sceneCount || trackColumn[sel.Track] < 0))
                 selected = null;
             BuildMixer(doc);
+            clipPanel.Visibility = doc.ShowClipPanel ? Visibility.Visible : Visibility.Collapsed;
+            clipButton.SetLit(doc.ShowClipPanel ? SessionPalette.Fader : null);
+            clipPanel.Follow(selected, force: true);
             RefreshState();
         }
 
@@ -426,6 +446,8 @@ namespace ReBuzz.AppViews.Session
             foreach (var h in headers)
                 h.Refresh();
             RefreshMixer();
+            if (clipPanel.Visibility == Visibility.Visible)
+                clipPanel.Follow(selected);
 
             // Machine groups change without an event the layout hears: look now and then.
             if (++structureCheck >= 20)
@@ -448,9 +470,18 @@ namespace ReBuzz.AppViews.Session
             {
                 int tpb = Math.Max(1, buzz.TPB);
                 int bpb = Math.Max(1, session.BeatsPerBar);
-                long barNumber = clock / (tpb * bpb) + 1;
-                long beat = clock / tpb % bpb + 1;
-                long tick = clock % tpb + 1;
+                // Bars count on from where a scene last changed the time signature (0.5).
+                long origin = 0, originBar = 0;
+                if (session is SessionCore core)
+                {
+                    origin = core.GridOrigin;
+                    originBar = core.GridOriginBar;
+                }
+                long rel = clock - origin;
+                if (rel < 0) { rel = clock; originBar = 0; }
+                long barNumber = originBar + rel / (tpb * bpb) + 1;
+                long beat = rel / tpb % bpb + 1;
+                long tick = rel % tpb + 1;
                 clockText.Text = $"{barNumber}.{beat}.{tick}";
                 clockText.Foreground = SessionPalette.Text;
             }

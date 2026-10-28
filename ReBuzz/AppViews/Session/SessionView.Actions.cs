@@ -16,7 +16,7 @@ namespace ReBuzz.AppViews.Session
     {
         internal const string KeyboardHelp =
             "Arrows\tmove the selection\n" +
-            "Enter\tlaunch the selected slot (stops the track if empty)\n" +
+            "Enter\tlaunch the selected slot (stops the track if empty); release matters for Gate and Repeat clips\n" +
             "Space\tstart/stop the transport\n" +
             "1 – 9\tlaunch scene 1 – 9\n" +
             "Backspace\tstop the selected track\n" +
@@ -30,7 +30,8 @@ namespace ReBuzz.AppViews.Session
             "Ctrl+Alt+M\tshow / hide the mixer\n" +
             "Esc\tcancel MIDI learn\n" +
             "Ctrl+Tab\tswitch between the Session and Sequence views (from the Session window: back to the main window)\n\n" +
-            "Mouse: ▶ launches; click selects; double-click edits a clip or creates one in an empty slot; " +
+            "Mouse: ▶ launches (hold it for Gate and Repeat clips); click selects and shows the clip in the clip panel; " +
+            "double-click edits a clip or creates one in an empty slot; " +
             "drag a clip to move it within its track (hold Ctrl to copy); right-click for menus and MIDI learn.\n" +
             "Mixer: drag a fader, pan or send (Shift for fine), use the wheel, double-click to reset.";
 
@@ -39,26 +40,66 @@ namespace ReBuzz.AppViews.Session
         internal void Select(int track, int scene)
         {
             selected = (track, scene);
-            Focus();
+            Focus();                              // commits a marker being typed for the clip shown so far
+            clipPanel.Follow(selected);
         }
 
         SlotCell CellAt(int track, int scene) => slots.FirstOrDefault(c => c.Track == track && c.Scene == scene);
 
+        /// <summary>A press of a slot's launch control (▶, Enter): launches its clip with its settings.</summary>
         void LaunchSlot(SlotCell cell)
         {
             Select(cell.Track, cell.Scene);
             if (cell.Sequence == null) return;
             if (cell.Pattern != null)
-                session.Launch(cell.Sequence, cell.Pattern);
+                layout.LaunchClip(cell.Sequence, cell.Pattern);
             else
                 session.Stop(cell.Sequence);     // an empty slot works as the track's stop button, as in Live
             RefreshState();
+        }
+
+        /// <summary>The release of a slot's launch control (0.5): Gate clips stop, Repeat clips play on.</summary>
+        void ReleaseSlot(SlotCell cell)
+        {
+            if (cell.Sequence != null && cell.Pattern != null)
+                layout.ReleaseClip(cell.Sequence, cell.Pattern);
+            RefreshState();
+        }
+
+        SlotCell enterHeld;     // slot launched with Enter, released on key up
+
+        void OnKeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.OriginalSource is not TextBox && HandleKeyUp(e.Key))
+                e.Handled = true;
+        }
+
+        /// <summary>A key released: Enter releases the slot it launched. Returns whether the key was used.</summary>
+        internal bool HandleKeyUp(Key key)
+        {
+            if (key != Key.Enter || enterHeld == null) return false;
+            ReleaseHeldKey();
+            return true;
+        }
+
+        void ReleaseHeldKey()
+        {
+            var cell = enterHeld;
+            enterHeld = null;
+            if (cell != null)
+                ReleaseSlot(cell);
         }
 
         void LaunchScene(int scene)
         {
             layout.LaunchScene(scene);
             RefreshState();
+        }
+
+        void ShowClipPanel()
+        {
+            if (!layout.Ensure().ShowClipPanel)
+                layout.SetShowClipPanel(true);
         }
 
         void StopTrack(int track)
@@ -134,6 +175,42 @@ namespace ReBuzz.AppViews.Session
             SceneToArrangement.Insert(buzz, layout, scene, (a.Bar - 1) * ticksPerBar, a.Bars * ticksPerBar, a.Insert);
         }
 
+        /// <summary>Scene tempo (0.5): set when the scene launches.</summary>
+        void AskSceneTempo(int scene)
+        {
+            var doc = layout.Ensure();
+            if (scene < 0 || scene >= doc.Scenes.Count) return;
+            int current = doc.Scenes[scene].Tempo;
+            string text = PromptWindow.Ask(Window.GetWindow(this), "Scene tempo",
+                $"Tempo (BPM, 16–500) set when the scene launches, on its launch beat.\nEmpty for none. Now: {buzz.BPM} BPM.",
+                current > 0 ? current.ToString() : "");
+            if (text == null) return;
+            text = text.Trim();
+            if (text.Length == 0) { layout.SetSceneTempo(scene, 0); return; }
+            if (int.TryParse(text, out int bpm) && bpm >= 16 && bpm <= 500)
+                layout.SetSceneTempo(scene, bpm);
+            else
+                MessageBox.Show(Window.GetWindow(this), $"'{text}' is not a tempo between 16 and 500.", "Scene tempo", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        /// <summary>Scene time signature (0.5): beats per bar set when the scene launches.</summary>
+        void AskSceneBeats(int scene)
+        {
+            var doc = layout.Ensure();
+            if (scene < 0 || scene >= doc.Scenes.Count) return;
+            int current = doc.Scenes[scene].BeatsPerBar;
+            string text = PromptWindow.Ask(Window.GetWindow(this), "Scene beats per bar",
+                "Beats per bar (1–64) set when the scene launches; bars count from there.\nEmpty for none.",
+                current > 0 ? current.ToString() : "");
+            if (text == null) return;
+            text = text.Trim();
+            if (text.Length == 0) { layout.SetSceneBeatsPerBar(scene, 0); return; }
+            if (int.TryParse(text, out int beats) && beats >= 1 && beats <= 64)
+                layout.SetSceneBeatsPerBar(scene, beats);
+            else
+                MessageBox.Show(Window.GetWindow(this), $"'{text}' is not a number of beats between 1 and 64.", "Scene beats per bar", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
         void RenameScene(int scene)
         {
             var doc = layout.Ensure();
@@ -181,6 +258,13 @@ namespace ReBuzz.AppViews.Session
             if (e.OriginalSource is DependencyObject d && FindParent<ComboBox>(d) is ComboBox combo && combo.IsDropDownOpen) return false;
 
             var key = e.Key == Key.System ? e.SystemKey : e.Key;
+            // Held keys repeat: a held Enter or scene key launches once (Repeat clips repeat by themselves).
+            if (e.IsRepeat && Keyboard.Modifiers == ModifierKeys.None &&
+                (key == Key.Enter && selected != null || key >= Key.D1 && key <= Key.D9 || key >= Key.NumPad1 && key <= Key.NumPad9))
+            {
+                e.Handled = true;
+                return true;
+            }
             if (!HandleKey(key, Keyboard.Modifiers)) return false;
             e.Handled = true;
             return true;
@@ -224,7 +308,12 @@ namespace ReBuzz.AppViews.Session
 
             if (none && key == Key.Enter)
             {
-                if (CellAt(at.Track, at.Scene) is SlotCell cell) LaunchSlot(cell);
+                ReleaseHeldKey();
+                if (CellAt(at.Track, at.Scene) is SlotCell cell)
+                {
+                    LaunchSlot(cell);
+                    enterHeld = cell.Pattern != null ? cell : null;
+                }
                 return true;
             }
             if (none && key == Key.Back) { StopTrack(at.Track); return true; }
@@ -279,6 +368,7 @@ namespace ReBuzz.AppViews.Session
             if (pattern != null)
             {
                 menu.Items.Add(Item("Launch", () => LaunchSlot(cell), "Enter"));
+                menu.Items.Add(Item("Clip settings", ShowClipPanel));
                 menu.Items.Add(Item("Edit pattern", () => EditPattern(pattern), "double-click"));
                 menu.Items.Add(Item("Rename…", () => RenameClip(pattern), "F2"));
                 menu.Items.Add(Item("Duplicate", () => DuplicateClip(cell.Track, cell.Scene), "Ctrl+D"));
@@ -319,6 +409,9 @@ namespace ReBuzz.AppViews.Session
             menu.Items.Add(Item("Launch scene", () => LaunchScene(scene), scene < 9 ? (scene + 1).ToString() : null));
             menu.Items.Add(Item("Rename…", () => RenameScene(scene)));
             menu.Items.Add(ColorMenu("Colour", scene < doc.Scenes.Count ? doc.Scenes[scene].ColorIndex : -1, i => layout.SetSceneColor(scene, i)));
+            var info = scene < doc.Scenes.Count ? doc.Scenes[scene] : null;
+            menu.Items.Add(Item(info?.Tempo > 0 ? $"Tempo… ({info.Tempo} BPM)" : "Tempo…", () => AskSceneTempo(scene)));
+            menu.Items.Add(Item(info?.BeatsPerBar > 0 ? $"Beats per bar… ({info.BeatsPerBar})" : "Beats per bar…", () => AskSceneBeats(scene)));
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Insert scene above", () => layout.InsertScene(scene)));
             menu.Items.Add(Item("Insert scene below", () => layout.InsertScene(scene + 1), "Ctrl+I"));

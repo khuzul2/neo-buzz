@@ -544,6 +544,194 @@ namespace ReBuzz.SessionTests
             Assert.That(s.GetQueued(bass), Is.SameAs(loopA));
         }
 
+        // ------------------------------------------------------------------ 0.5: shapes, legato, repeat, gate
+
+        static LaunchSpec Shaped(int start, int loopStart, int loopEnd, bool loop = true) =>
+            new LaunchSpec(new ClipShape(start, loopStart, loopEnd, loop));
+
+        [Test]
+        public void AClipStartsAtItsStartMarkerAndLoopsItsRegion()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, 0, 0, Shaped(4, 8, 12), 0);
+            var positions = new List<int>();
+            for (int i = 0; i < 12; i++)
+            {
+                s.Advance();
+                positions.Add(s.GetPosition(drums));
+            }
+            Assert.That(positions, Is.EqualTo(new[] { 4, 5, 6, 7, 8, 9, 10, 11, 8, 9, 10, 11 }));
+        }
+
+        [Test]
+        public void AOneShotClipEndsAtItsEndMarker()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, 0, 0, Shaped(2, 0, 6, loop: false), 0);
+            RunTo(4);                                            // started at 1, from 2
+            Assert.That(s.GetPosition(drums), Is.EqualTo(5));
+            s.Advance();
+            Assert.That(s.GetPlaying(drums), Is.Null);
+            Assert.That(s.Changes.Single().Kind, Is.EqualTo(SessionChangeKind.Ended));
+        }
+
+        [Test]
+        public void CycleElapsedRestartsAtEachLoopWrap()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, 0, 0, Shaped(0, 4, 8), 0);
+            var cycles = new List<long>();
+            for (int i = 0; i < 12; i++)
+            {
+                s.Advance();
+                cycles.Add(s.GetCycleElapsed(drums));
+            }
+            Assert.That(cycles, Is.EqualTo(new long[] { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3 }));
+        }
+
+        [Test]
+        public void ALegatoLaunchTakesOverThePlayPosition()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, 0, loop: true);
+            RunTo(21);                                           // A at 20
+            s.Launch(drums, loopB, 0, 21, new LaunchSpec(ClipShape.Looped, legato: true), 0);
+            s.Advance();                                         // clock 22: A would be at 5
+            Assert.That(s.GetPlaying(drums), Is.SameAs(loopB));
+            Assert.That(s.GetPosition(drums), Is.EqualTo(5), "B continues where A was");
+        }
+
+        [Test]
+        public void LegatoIntoAShorterClipWrapsIntoItsLoop()
+        {
+            var shortClip = new Clip("short", 8);
+            s.Start(0);
+            s.Launch(drums, loopA, 0, loop: true);
+            RunTo(11);
+            s.Launch(drums, shortClip, 0, 11, new LaunchSpec(ClipShape.Looped, legato: true), 0);
+            s.Advance();                                         // A (started at 1) would be at 11
+            Assert.That(s.GetPosition(drums), Is.EqualTo(3), "11 wraps into the 8-tick clip");
+        }
+
+        [Test]
+        public void WithoutAClipPlayingLegatoStartsFromTheTop()
+        {
+            s.Start(0);
+            RunTo(9);
+            s.Launch(drums, loopA, 0, 9, new LaunchSpec(ClipShape.Looped, legato: true), 0);
+            s.Advance();
+            Assert.That(s.GetPosition(drums), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void RepeatRestartsTheClipWhileHeldThenPlaysOn()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, 0, 0, new LaunchSpec(ClipShape.Looped, repeatTicks: 4), 0);
+            s.Advance();                                         // starts at 1
+            RunTo(4);
+            Assert.That(s.GetPosition(drums), Is.EqualTo(3));
+            s.Advance();                                         // 5: restarts
+            Assert.That(s.GetPosition(drums), Is.EqualTo(0));
+            Assert.That(s.Changes.Single().Kind, Is.EqualTo(SessionChangeKind.Launched));
+            RunTo(9);
+            Assert.That(s.GetPosition(drums), Is.EqualTo(0), "and again at 9");
+
+            s.Release(drums, loopA, 4, s.Clock, stop: false);
+            RunTo(13);
+            Assert.That(s.GetPosition(drums), Is.EqualTo(4), "released: plays on");
+            Assert.That(s.IsRepeating(drums), Is.False);
+        }
+
+        [Test]
+        public void GateReleaseStopsOnTheGrid()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, 0, loop: true);
+            RunTo(5);
+            s.Release(drums, loopA, 4, s.Clock, stop: true);
+            Assert.That(s.GetState(drums, loopA), Is.EqualTo(Stopping));
+            RunTo(8);
+            Assert.That(s.GetPlaying(drums), Is.Null);
+        }
+
+        [Test]
+        public void AGateReleasedBeforeItsStartPlaysOneQuantum()
+        {
+            s.Start(0);
+            RunTo(5);
+            s.Launch(drums, loopA, Bar, loop: true);
+            s.Release(drums, loopA, Bar, s.Clock, stop: true);
+            RunTo(Bar);
+            Assert.That(s.GetPlaying(drums), Is.SameAs(loopA), "still starts");
+            RunTo(2 * Bar - 1);
+            Assert.That(s.GetPlaying(drums), Is.SameAs(loopA));
+            s.Advance();
+            Assert.That(s.GetPlaying(drums), Is.Null, "and stops a bar later");
+        }
+
+        [Test]
+        public void AGateReleaseLeavesTheClipReplacingItQueued()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, 0, loop: true);
+            RunTo(5);
+            s.Launch(drums, loopB, Bar, loop: true);             // B waits for 16
+            s.Release(drums, loopA, 4, s.Clock, stop: true);     // A's gate closes: B still comes
+            Assert.That(s.GetQueued(drums), Is.SameAs(loopB));
+            RunTo(Bar);
+            Assert.That(s.GetPlaying(drums), Is.SameAs(loopB));
+        }
+
+        [Test]
+        public void AGateReleaseKeepsAnEarlierStop()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, 0, loop: true);
+            RunTo(5);
+            s.Stop(drums, 0, immediate: true);                   // stops at 6
+            s.Release(drums, loopA, Bar, s.Clock, stop: true);   // would stop at 16
+            s.Advance();
+            Assert.That(s.GetPlaying(drums), Is.Null);
+        }
+
+        [Test]
+        public void RestartingWhileRunningShiftsAMovedGridOrigin()
+        {
+            s.Start(0);
+            RunTo(12);
+            s.SetGridOrigin(10);
+            s.Start(40);                                         // restarted at song position 40: +28
+            Assert.That(s.GridOrigin, Is.EqualTo(38));
+            s.Halt();
+            s.Start(0);
+            RunTo(12);
+            s.Start(40);
+            Assert.That(s.GridOrigin, Is.EqualTo(0), "origin 0 stays with the song's bars");
+        }
+
+        [Test]
+        public void ReshapingAPlayingClipKeepsItsTime()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, 0, loop: true);
+            RunTo(11);                                           // position 10
+            s.Reshape(drums, loopA, new ClipShape(0, 0, 8, true));
+            Assert.That(s.GetPosition(drums), Is.EqualTo(2), "now loops 0-7: 10 wraps to 2");
+        }
+
+        [Test]
+        public void TheGridCountsFromItsOrigin()
+        {
+            s.Start(0);
+            RunTo(12);
+            s.SetGridOrigin(10);                                 // e.g. a time signature change at 10
+            Assert.That(s.Plan(Bar, 12), Is.EqualTo((26L, long.MinValue)));
+            Assert.That(s.Plan(4, 12), Is.EqualTo((14L, long.MinValue)));
+            s.Halt();
+            Assert.That(s.GridOrigin, Is.EqualTo(0));
+        }
+
         [Test]
         public void ZeroLengthClipsCountAsOneTick()
         {

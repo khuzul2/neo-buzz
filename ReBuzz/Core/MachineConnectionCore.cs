@@ -88,7 +88,11 @@ namespace ReBuzz.Core
         readonly Interpolator interpolatorAmp = new Interpolator();
 
         /// <summary>Fork: jumps to the current amp without a ramp (for a new connection).</summary>
-        internal void SnapAmp() => interpolatorAmp.SetTarget(amp, 0);
+        internal void SnapAmp()
+        {
+            interpolatorAmp.SetTarget(amp, 0);
+            clipGain = Source is MachineCore source ? source.ClipGain : 1f;   // fork (0.5): no fade-in either
+        }
 
         int amp = 0x4000;
         public int Amp
@@ -197,10 +201,15 @@ namespace ReBuzz.Core
         float ampStart;
         float ampCurrent;
         float ampStep;
+        float clipGain = 1f;     // fork (0.5): the source machine's ClipGain, as of the last block
         internal void PreUpdateBufferActions(int nSamples)
         {
-            ampStart = interpolatorAmp.Value / 0x4000;
-            ampCurrent = interpolatorAmp.Tick() / 0x4000;
+            // Fork (0.5): the source's session clip gain (launch velocity) ramps over the block
+            // along with the amp.
+            float gainStart = clipGain;
+            clipGain = Source is MachineCore source ? source.ClipGain : 1f;
+            ampStart = interpolatorAmp.Value / 0x4000 * gainStart;
+            ampCurrent = interpolatorAmp.Tick() / 0x4000 * clipGain;
             // Fork: ramp from the block's start amp to its end amp. Upstream had the difference
             // the wrong way round, so during an amp change each block ramped away from the target
             // and the next one jumped back: a click per block while a fader moves

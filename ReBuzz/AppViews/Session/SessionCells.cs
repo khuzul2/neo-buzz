@@ -13,8 +13,10 @@ namespace ReBuzz.AppViews.Session
     {
         /// <summary>
         /// One slot of the grid. A clip shows its pattern name on its colour; its ▶ area launches
-        /// on mouse down, the rest selects (double-click edits, drag moves within the track). An
-        /// empty slot has a small stop button for its track; double-click creates a clip.
+        /// on mouse down (and releases on mouse up, for Gate and Repeat clips), the rest selects
+        /// (double-click edits, drag moves within the track). Clips with launch settings show
+        /// them in short on the right (0.5). An empty slot has a small stop button for its
+        /// track; double-click creates a clip.
         /// </summary>
         internal sealed class SlotCell : Border
         {
@@ -24,6 +26,7 @@ namespace ReBuzz.AppViews.Session
             readonly Rectangle progress;
             readonly TextBlock glyph;
             readonly TextBlock label;
+            readonly TextBlock flags;
             bool hover;
             Point? pressPoint;
             bool dragging;
@@ -33,7 +36,8 @@ namespace ReBuzz.AppViews.Session
             public ISequence Sequence { get; }
             public IPattern Pattern { get; }
 
-            public SlotCell(SessionView view, int track, int scene, ISequence sequence, IPattern pattern, string midiText)
+            public SlotCell(SessionView view, int track, int scene, ISequence sequence, IPattern pattern, string midiText,
+                            SessionDocument.ClipSettings settings = null)
             {
                 this.view = view;
                 Track = track;
@@ -45,7 +49,7 @@ namespace ReBuzz.AppViews.Session
                 BorderThickness = new Thickness(1);
                 SnapsToDevicePixels = true;
                 Background = SessionPalette.Empty;
-                ToolTip = Tip(pattern, midiText);
+                ToolTip = Tip(pattern, midiText, settings);
 
                 progress = new Rectangle
                 {
@@ -59,14 +63,52 @@ namespace ReBuzz.AppViews.Session
                 var grid = new Grid();
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(22) });
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
                 if (pattern != null)
                 {
                     glyph = new TextBlock { Text = "▶", FontSize = 11, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
                     var launchArea = new Border { Background = SessionPalette.Transparent, Cursor = Cursors.Hand, Child = glyph };
-                    launchArea.MouseLeftButtonDown += (s, e) => { view.LaunchSlot(this); e.Handled = true; };
+                    // Press launches; the release (button up, or the capture lost) is the clip's release.
+                    bool held = false;
+                    launchArea.MouseLeftButtonDown += (s, e) =>
+                    {
+                        view.LaunchSlot(this);
+                        held = launchArea.CaptureMouse();
+                        e.Handled = true;
+                    };
+                    launchArea.MouseLeftButtonUp += (s, e) =>
+                    {
+                        if (launchArea.IsMouseCaptured) launchArea.ReleaseMouseCapture();
+                        e.Handled = true;
+                    };
+                    launchArea.LostMouseCapture += (s, e) =>
+                    {
+                        if (held)
+                        {
+                            held = false;
+                            view.ReleaseSlot(this);
+                        }
+                        e.Handled = true;
+                    };
                     Grid.SetColumn(launchArea, 0);
                     grid.Children.Add(launchArea);
+
+                    string marks = Flags(settings);
+                    if (marks.Length > 0)
+                    {
+                        flags = new TextBlock
+                        {
+                            Text = marks,
+                            FontSize = 9,
+                            Margin = new Thickness(0, 0, 4, 0),
+                            VerticalAlignment = VerticalAlignment.Center,
+                            Opacity = 0.75,
+                            IsHitTestVisible = false
+                        };
+                        Grid.SetColumn(flags, 2);
+                        grid.Children.Add(flags);
+                    }
 
                     label = new TextBlock
                     {
@@ -93,11 +135,11 @@ namespace ReBuzz.AppViews.Session
                         Child = new Rectangle { Width = 5, Height = 5, Fill = SessionPalette.DimText, IsHitTestVisible = false }
                     };
                     stop.MouseLeftButtonDown += (s, e) => { view.Select(Track, Scene); view.StopTrack(Track); e.Handled = true; };
-                    Grid.SetColumnSpan(stop, 2);
+                    Grid.SetColumnSpan(stop, 3);
                     grid.Children.Add(stop);
                 }
 
-                Grid.SetColumnSpan(progress, 2);
+                Grid.SetColumnSpan(progress, 3);
                 grid.Children.Add(progress);
                 Child = grid;
 
@@ -110,12 +152,44 @@ namespace ReBuzz.AppViews.Session
                 MouseRightButtonUp += (s, e) => { view.ShowSlotMenu(this); e.Handled = true; };
             }
 
-            static string Tip(IPattern pattern, string midiText)
+            static string Tip(IPattern pattern, string midiText, SessionDocument.ClipSettings settings)
             {
                 string tip = pattern != null
                     ? $"{pattern.Name} ({pattern.Length} ticks)\n▶ launches · double-click edits · drag moves (Ctrl copies) · right-click for more"
                     : "Empty slot\n■ stops the track · double-click creates a clip · right-click for more";
+                if (pattern != null && settings != null && !settings.IsDefault)
+                    tip += "\n" + Summary(settings);
                 return midiText == null ? tip : tip + "\n" + midiText;
+            }
+
+            /// <summary>Short marks for non-default clip settings: G T R (mode), L (legato), 1× (no loop), v (velocity), ◆ (markers), q (quantization).</summary>
+            internal static string Flags(SessionDocument.ClipSettings c)
+            {
+                if (c == null || c.IsDefault) return "";
+                var parts = new System.Collections.Generic.List<string>();
+                if (c.Mode != nameof(ClipLaunchMode.Trigger) && c.Mode.Length > 0) parts.Add(c.Mode.Substring(0, 1));
+                if (c.Legato) parts.Add("L");
+                if (!c.Loop) parts.Add("1×");
+                if (c.Start != 0 || c.LoopStart != 0 || c.LoopEnd != 0) parts.Add("◆");
+                if (c.Velocity != 0) parts.Add("v");
+                if (c.Quantization != SessionDocument.ClipSettings.GlobalQuantization) parts.Add("q");
+                return string.Join(" ", parts);
+            }
+
+            static string Summary(SessionDocument.ClipSettings c)
+            {
+                var parts = new System.Collections.Generic.List<string> { c.Mode };
+                if (c.Quantization != SessionDocument.ClipSettings.GlobalQuantization)
+                {
+                    int i = Array.FindIndex(ClipPanel.Quantizations, q => q.Value == c.Quantization);
+                    parts.Add("quantize " + (i >= 0 ? ClipPanel.Quantizations[i].Label : c.Quantization));
+                }
+                if (c.Legato) parts.Add("legato");
+                parts.Add(c.Loop ? "loop" : "one shot");
+                if (c.Start != 0 || c.LoopStart != 0 || c.LoopEnd != 0)
+                    parts.Add($"start {c.Start}, loop {c.LoopStart}–{(c.LoopEnd == 0 ? "end" : c.LoopEnd.ToString())}");
+                if (c.Velocity != 0) parts.Add($"velocity {c.Velocity}%");
+                return "Clip: " + string.Join(" · ", parts);
             }
 
             void OnLeftDown(object sender, MouseButtonEventArgs e)
@@ -182,6 +256,7 @@ namespace ReBuzz.AppViews.Session
 
                 Background = background;
                 label.Foreground = text;
+                if (flags != null) flags.Foreground = text;
                 switch (state)
                 {
                     case ClipState.Playing:
@@ -228,8 +303,10 @@ namespace ReBuzz.AppViews.Session
                 Background = SessionPalette.Scene;
                 Cursor = Cursors.Hand;
                 string name = info?.Name;
+                string settings = Settings(info);
                 ToolTip = $"Scene {scene + 1}: click launches the row" + (scene < 9 ? $" (key {scene + 1})" : "") +
-                          "\nright-click for more" + (midiText == null ? "" : "\n" + midiText);
+                          (settings.Length > 0 ? $"\nSets {settings} on its launch beat" : "") +
+                          "\nright-click for more (name, colour, tempo, beats per bar)" + (midiText == null ? "" : "\n" + midiText);
 
                 var strip = new Rectangle { Width = 4, Fill = SessionPalette.ColorBrush(info?.ColorIndex ?? -1) ?? SessionPalette.Transparent, IsHitTestVisible = false };
                 var text = new TextBlock
@@ -244,6 +321,20 @@ namespace ReBuzz.AppViews.Session
                 var panel = new DockPanel { LastChildFill = true };
                 DockPanel.SetDock(strip, Dock.Left);
                 panel.Children.Add(strip);
+                if (settings.Length > 0)
+                {
+                    var tag = new TextBlock
+                    {
+                        Text = settings,
+                        FontSize = 10,
+                        Foreground = SessionPalette.DimText,
+                        Margin = new Thickness(0, 0, 5, 0),
+                        VerticalAlignment = VerticalAlignment.Center,
+                        IsHitTestVisible = false
+                    };
+                    DockPanel.SetDock(tag, Dock.Right);
+                    panel.Children.Add(tag);
+                }
                 panel.Children.Add(text);
                 Child = panel;
 
@@ -254,6 +345,15 @@ namespace ReBuzz.AppViews.Session
             }
 
             public void Refresh(Brush border) => BorderBrush = border ?? SessionPalette.Transparent;
+
+            /// <summary>"140 BPM · 3/4" for a scene's tempo and beats per bar (0.5); "" for none.</summary>
+            internal static string Settings(SessionDocument.Scene info)
+            {
+                if (info == null) return "";
+                string tempo = info.Tempo > 0 ? $"{info.Tempo} BPM" : "";
+                string beats = info.BeatsPerBar > 0 ? $"{info.BeatsPerBar}/4" : "";
+                return tempo.Length > 0 && beats.Length > 0 ? tempo + " · " + beats : tempo + beats;
+            }
         }
 
         /// <summary>Track header: colour strip, machine name, mute and solo.</summary>

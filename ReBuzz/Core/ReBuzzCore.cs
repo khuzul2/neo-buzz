@@ -239,31 +239,40 @@ namespace ReBuzz.Core
         int bpm = 126;
         public int BPM
         {
-            get => bpm; set
+            get => bpm; set => SetBPM(value, record: true);
+        }
+
+        /// <summary>
+        /// Fork (session-view.md 0.5): a scene's tempo, set from the audio thread on its launch
+        /// tick. Not recorded into the master's pattern, which would talk to the pattern editor
+        /// from the audio thread.
+        /// </summary>
+        internal void SetBPMFromEngine(int value) => SetBPM(value, record: false);
+
+        void SetBPM(int value, bool record)
+        {
+            if (value >= 16 && value <= 500 && bpm != value)
             {
-                if (value >= 16 && value <= 500 && bpm != value)
+                bpm = value;
+                if (songCore != null)
                 {
-                    bpm = value;
-                    if (songCore != null)
-                    {
-                        var master = songCore.MachinesList.FirstOrDefault(m => m.DLL.Info.Type == MachineType.Master);
-                        master.ParameterGroups[1].Parameters[1].SetValue(0, value);
-                    }
-                    // Actual BPM is changed in WorkManager
-                    dispatcher.BeginInvoke(() =>
-                    {
-                        try
-                        {
-                            if (PropertyChanged != null)
-                                PropertyChanged?.Raise(this, "BPM");
-                            SetModifiedFlag();
-                        }
-                        catch (Exception ex)
-                        {
-                            DCWriteLine(ex.Message);
-                        }
-                    });
+                    var master = songCore.MachinesList.FirstOrDefault(m => m.DLL.Info.Type == MachineType.Master);
+                    master.ParameterGroups[1].Parameters[1].SetValue(record ? 0 : 1 << 16, value);
                 }
+                // Actual BPM is changed in WorkManager
+                dispatcher.BeginInvoke(() =>
+                {
+                    try
+                    {
+                        if (PropertyChanged != null)
+                            PropertyChanged?.Raise(this, "BPM");
+                        SetModifiedFlag();
+                    }
+                    catch (Exception ex)
+                    {
+                        DCWriteLine(ex.Message);
+                    }
+                });
             }
         }
 
