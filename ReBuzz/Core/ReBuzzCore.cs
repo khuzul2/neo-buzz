@@ -1799,6 +1799,16 @@ namespace ReBuzz.Core
             meterData.UpdateMax(resSamples, true, null, offset, count);
 
             if (MasterTap == null) return;
+            TapMaster(resSamples, offset, count);
+        }
+
+        /// <summary>
+        /// Fork (0.4.1): the tap itself, in its own method. Its lambda captures locals, and C#
+        /// allocates the closure on entry to the method that declares them, so this used to
+        /// allocate on every block even with nobody tapping.
+        /// </summary>
+        void TapMaster(float[] resSamples, int offset, int count)
+        {
             var s = GetSongTime();
 
             // Claim a free reuse buffer (correct size), else allocate. A buffer
@@ -1858,6 +1868,11 @@ namespace ReBuzz.Core
         internal void MasterTapSamplesMultiChannel(float[] samples, int offset, int count)
         {
             if (MasterTapMultiChannel != null)
+                TapMasterMultiChannel(samples, offset, count);   // fork (0.4.1): see TapMaster
+        }
+
+        void TapMasterMultiChannel(float[] samples, int offset, int count)
+        {
             {
                 var s = GetSongTime();
                 float[] resSamples = new float[count * MasterTapChannelCount / 2];

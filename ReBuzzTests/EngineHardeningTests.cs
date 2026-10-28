@@ -412,6 +412,7 @@ namespace ReBuzzTests
                 Measure("CallTick(on tick)", () => { ReBuzzCore.masterInfo.PosInTick = 0; wm.CallTick(); });
                 Measure("ReadWork", () => wm.ReadWork(buffer, 0, 256));
                 Measure("MasterTapSamples", () => rig.Core.MasterTapSamples(buffer, 0, 512));
+                Measure("MasterTapSamplesMultiChannel", () => rig.Core.MasterTapSamplesMultiChannel(buffer, 0, 512));
                 Measure("UpdatePatternPositions", () => wm.UpdatePatternPositions(256));
                 Measure("SessionCore.OnTick", () => rig.Core.SessionCore.OnTick(false));
                 Measure("SongCore.UpdatePlayPosition", () => rig.Song.UpdatePlayPosition(1));
