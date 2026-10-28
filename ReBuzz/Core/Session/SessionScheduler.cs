@@ -185,6 +185,9 @@ namespace ReBuzz.Core.Session
             public volatile ClipShape Shape = ClipShape.Looped;
             public volatile int RepeatTicks;
             public long RepeatFrom;
+            /// <summary>Clock of the tick the playing clip last (re)started on, and how late that was (catch-up ticks).</summary>
+            public long LaunchedAt = NotStarted;
+            public long LaunchLate;
             public double Gain = 1.0;
             public volatile Pending Next;
             public volatile bool Overridden;
@@ -504,6 +507,7 @@ namespace ReBuzz.Core.Session
                 {
                     var st = tracks[i];
                     if (st.StartClock != NotStarted) st.StartClock += delta;
+                    if (st.LaunchedAt != NotStarted) st.LaunchedAt += delta;
                     st.RepeatFrom += delta;
                     var n = st.Next;
                     if (n != null)
@@ -548,6 +552,7 @@ namespace ReBuzz.Core.Session
                 st.Next = null;
                 st.Playing = null;
                 st.StartClock = NotStarted;
+                st.LaunchedAt = NotStarted;
                 st.RepeatTicks = 0;
                 st.Overridden = false;
                 if (playing != null)
@@ -605,6 +610,8 @@ namespace ReBuzz.Core.Session
                         st.Shape = spec.Shape;
                         st.RepeatTicks = spec.RepeatTicks;
                         st.RepeatFrom = launchOrigin;          // repeats stay on the grid after a late (catch-up) start
+                        st.LaunchedAt = c;
+                        st.LaunchLate = c - launchOrigin;
                         st.Gain = spec.Gain;
                         st.Overridden = true;
                         st.Playing = next.Clip;
@@ -624,6 +631,8 @@ namespace ReBuzz.Core.Session
                     if (since > 0 && since % repeat == 0)
                     {
                         st.StartClock = c;
+                        st.LaunchedAt = c;
+                        st.LaunchLate = 0;
                         changes.Add(new SessionChange<TTrack, TClip>(st.Track, current, current, SessionChangeKind.Launched));
                     }
                 }
@@ -702,6 +711,17 @@ namespace ReBuzz.Core.Session
             long start = st.StartClock;
             if (playing == null || c < 0 || start == NotStarted || c < start) return -1;
             return st.Shape.CycleElapsed(c - start, Length(playing));
+        }
+
+        /// <summary>
+        /// Clock of the tick the track's clip last launched or restarted on (Repeat), and how many
+        /// ticks after its grid point that was (a late, catch-up launch); (-1, 0) when none plays.
+        /// </summary>
+        public (long At, long Late) GetLaunch(TTrack track)
+        {
+            var st = Find(track);
+            if (st == null || st.Playing == null || st.LaunchedAt == NotStarted) return (-1, 0);
+            return (st.LaunchedAt, st.LaunchLate);
         }
 
         /// <summary>Gain of the clip playing on the track (1 when none).</summary>

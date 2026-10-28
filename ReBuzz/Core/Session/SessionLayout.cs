@@ -289,6 +289,7 @@ namespace ReBuzz.Core.Session
             if (!UndoStack.CanUndo) return;
             UndoStack.Undo();
             ContentChanged();
+            ReshapeLaunched();
         }
 
         public void Redo()
@@ -296,6 +297,20 @@ namespace ReBuzz.Core.Session
             if (!UndoStack.CanRedo) return;
             UndoStack.Redo();
             ContentChanged();
+            ReshapeLaunched();
+        }
+
+        /// <summary>After undo or redo (0.5): clips that play or wait take their markers as they now are.</summary>
+        void ReshapeLaunched()
+        {
+            if (Session is not SessionCore core || Document == null) return;
+            foreach (var seq in song.Sequences)
+            {
+                var playing = core.GetPlaying(seq);
+                var queued = core.GetQueued(seq);
+                if (playing != null) core.Reshape(seq, playing, OptionsFor(playing));
+                if (queued != null && queued != playing) core.Reshape(seq, queued, OptionsFor(queued));
+            }
         }
 
         /// <summary>

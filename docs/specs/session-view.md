@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Status | Draft v5 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5) and 0.4.1 (#6) merged; next: 0.5 Clip & scene properties |
-| Date | 2026-10-25 |
+| Status | Draft v6 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6) merged; 0.5 Clip & scene properties in review; next: 0.6 Performance |
+| Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
 
@@ -360,13 +360,26 @@ Also: steady playback allocates nothing on the audio thread (removed a per-block
 2. Per-clip **launch quantization** override (Global, None, 1/16 … 8 bars).
 3. **Legato**: new clip starts at the position the previous clip on the track had reached.
 4. **Loop region and start offset** inside the pattern (play from row X, loop rows Y–Z); loop on/off (one-shot).
-5. **Velocity** sensitivity for MIDI-launched clips (scales a chosen parameter, default volume).
+5. **Velocity** sensitivity for MIDI-launched clips: the launch velocity scales the clip's volume (decided in 0.5: volume only, not a chosen parameter).
 6. **Scene tempo and beats-per-bar**: launching the scene changes tempo (`IBuzz.BPM`).
 7. Clip view panel in the session window showing these properties.
 
 **Engine.** `LaunchOptions` gains mode, quantize, legato, loopStart/loopEnd/startOffset; position formula generalised. Tempo change scheduled on the launch tick.
 
 **Acceptance criteria.** Each mode behaves like Live's in a side-by-side test checklist; legato switching between two 1-bar clips is seamless (no restart click).
+
+**Status (PR pending).** Features 1–7 are in. A clip is a pattern, so its settings belong to the pattern (saved in the song's layout, following renames, copied by Duplicate, gone with the pattern). The clip panel beside the grid (**Clip** in the top bar, or *Clip settings* on a clip's menu) shows and edits the selected clip's settings; edits are Session View undo steps. Clips with settings show short marks in their slot (G/T/R for the mode, L legato, 1× one-shot, ◆ markers, v velocity, q quantization) and the settings in their tooltip.
+- *Launch modes*, with Live's press and release: a slot's ▶ (mouse button down and up), Enter (key down and up; a held key doesn't repeat) and MIDI (note on and off; a CC's value 0 is the release). Trigger ignores the release. Gate stops on the clip's quantization after the release; released before it started, it plays one quantization step. Toggle stops on the next press. Repeat restarts the clip at its quantization rate while held and plays on after the release. A release doesn't cancel another clip waiting to replace the one released. Scenes launch their clips as Trigger, on the session's quantization, with each clip's legato, markers and velocity.
+- *Quantization* per clip: Global, None, 1/16, 1/8, 1 beat, 2 beats, 1, 2, 4 or 8 bars (the session's box has the new values too). 1/16 and 1/8 are fractions of a beat in ticks: at 4 ticks per beat, 1/16 is one tick.
+- *Legato*: the new clip starts where the clip it replaces on the track has got to (wrapped into its loop if it is shorter); with nothing playing, from its start. Switching sends no note-offs, so the machine plays on.
+- *Region*: start marker, loop start and loop end in ticks (empty: the clip's end), loop on or off. Without loop the clip plays from its start marker to its end once and the track stops. Moving markers changes a playing clip at once.
+- *Velocity*: the launch velocity scales the volume of the clip's machine (0%: none; at 100% the softest note is silent): its output connections play at that gain, ramped over a block like an amp change, without changing the connection's amp, so the mixer and the Machine View don't move. Back to full when the clip stops or the transport stops. The gain is per machine: two tracks of one machine share the last launched clip's. Mouse, keys and CCs launch at full velocity.
+- *Scenes*: right-click → *Tempo…* and *Beats per bar…*; the scene button shows them ("140 BPM · 3/4"). They change on the scene's launch tick, also for a scene without clips. A time signature change restarts the bar grid there (the clock keeps counting bars). The latest scene launch wins: a scene still waiting to start loses its settings. The tempo isn't recorded into the master's pattern (`ReBuzzCore.SetBPMFromEngine`, which skips recording, since the audio thread sets it).
+- *Engine*: `ClipShape` (markers and loop) and `LaunchSpec` (shape, legato, repeat, gain) in `SessionScheduler`; positions, ends, legato and repeats in its tick; a grid origin for time signature changes; `ISession.Release` and a `LaunchScene` overload with per-clip options and `SceneOptions`; `MachineCore.ClipGain` applied by `MachineConnectionCore`.
+- *Limits*: recording into the arrangement writes a clip that starts after its first row (start marker, loop start, legato) from its first row, and doesn't record velocity: a Buzz sequence starts patterns at their first row and has no gain. *Insert into arrangement* copies whole patterns.
+- Also fixed: the arrangement recorder wrote a clip launched late (the catch-up of 0.4.1) only at its next loop wrap; launches are now written at their grid point, where they are heard to start. Undoing a marker change also changes the playing clip.
+
+Tests: `ReBuzzTests/SessionClipTests.cs`: each launch mode through the audio loop (mouse and keys via the layout and the view's Enter, and MIDI note on/off), per-clip quantization, legato (positions and the machine's output), start marker and loop region, moving markers while playing, one-shot clips, velocity scaling the output (MIDI velocity, sensitivity, back to full on stop and transport stop), scene tempo and beats per bar on the launch tick (and the engine's tempo), a scene replacing a waiting one, settings following renames, duplicates, deletes and undo, the clip panel's controls, and a render; scheduler and layout unit tests in `ReBuzz.SessionTests`. Not automated: a side-by-side check against Live, listening to legato switches, and native pattern editors with markers (positions reach them as for any jump).
 
 ---
 

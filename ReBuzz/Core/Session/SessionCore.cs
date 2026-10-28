@@ -523,15 +523,26 @@ namespace ReBuzz.Core.Session
                     recorder.TrackReleased(c.Track, songPosition);   // Back to Arrangement
             }
 
+            // Launches and Repeat restarts on this tick. A late (catch-up) launch is written at its
+            // grid point, where it is heard to start. A clip that starts after its first row (start
+            // marker, loop start, legato) is written from its first row: Buzz sequences can't start
+            // a pattern partway.
+            long clock = scheduler.Clock;
+            for (int i = 0; i < tickChanges.Count; i++)
+            {
+                var c = tickChanges[i];
+                if (c.Kind != SessionChangeKind.Launched || c.Current == null) continue;
+                var (_, late) = scheduler.GetLaunch(c.Track);
+                recorder.ClipStarted(c.Track, c.Current, (int)Math.Max(0, songPosition - late));
+            }
+
+            // Loop wraps; and when recording starts, the loop each playing clip is in.
             var sequences = buzz.SongCore.SequencesList;
             for (int i = 0; i < sequences.Count; i++)
             {
                 var seq = sequences[i];
                 var clip = scheduler.GetPlaying(seq);
-                if (clip == null) continue;
-                // 0.5: (re)starts are launches, Repeat restarts and loop wraps (cycle back at 0).
-                // A clip that starts after its first row (start marker, loop start) is written from
-                // its first row: Buzz sequences can't start a pattern partway.
+                if (clip == null || scheduler.GetLaunch(seq).At == clock) continue;
                 long cycle = scheduler.GetCycleElapsed(seq);
                 if (cycle == 0)
                     recorder.ClipStarted(seq, clip, songPosition);
@@ -576,7 +587,10 @@ namespace ReBuzz.Core.Session
                 playing = scheduler.Forget(seq);
             }
             if (playing != null)
+            {
                 Silence(seq);
+                if (seq.MachineCore != null) seq.MachineCore.ClipGain = 1f;
+            }
         }
 
         /// <summary>A pattern was deleted (AudioLock held).</summary>
@@ -588,7 +602,10 @@ namespace ReBuzz.Core.Session
                 scheduler.ForgetClip(pattern, stopped);
             }
             foreach (var seq in stopped)
+            {
                 Silence(seq);
+                if (seq.MachineCore != null) seq.MachineCore.ClipGain = 1f;
+            }
             if (stopped.Count > 0)
                 RaiseTrackStateChanged(stopped.ToArray());
         }

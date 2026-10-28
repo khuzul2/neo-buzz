@@ -451,6 +451,7 @@ namespace ReBuzz.SessionTests
             Assert.That(s.GetPlaying(drums), Is.SameAs(loopA));
             Assert.That(s.GetStartClock(drums), Is.EqualTo(Bar), "counts from the bar line");
             Assert.That(s.GetPosition(drums), Is.EqualTo(18 - Bar));
+            Assert.That(s.GetLaunch(drums), Is.EqualTo((18L, 2L)), "launched on 18, two ticks after its grid point (the recorder writes it there)");
         }
 
         [Test]
@@ -637,6 +638,7 @@ namespace ReBuzz.SessionTests
             RunTo(9);
             Assert.That(s.GetPosition(drums), Is.EqualTo(0), "and again at 9");
 
+            Assert.That(s.GetLaunch(drums), Is.EqualTo((9L, 0L)), "a restart is a launch");
             s.Release(drums, loopA, 4, s.Clock, stop: false);
             RunTo(13);
             Assert.That(s.GetPosition(drums), Is.EqualTo(4), "released: plays on");

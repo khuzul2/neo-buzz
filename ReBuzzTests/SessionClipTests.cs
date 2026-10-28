@@ -80,7 +80,11 @@ namespace ReBuzzTests
                     Driver.ReadStereoSamples(SamplesPerTick);
             }
 
-            /// <summary>Starts the transport if needed and plays whole ticks until the session clock is <paramref name="clock"/>.</summary>
+            /// <summary>
+            /// Starts the transport if needed and plays until the session clock is
+            /// <paramref name="clock"/>, stopping one block into that tick (block by block, so a
+            /// tempo change that shortens a tick can't carry it past).
+            /// </summary>
             public void PlayTo(long clock)
             {
                 if (!Core.PlayRequested)
@@ -89,8 +93,11 @@ namespace ReBuzzTests
                     Core.Playing = true;
                 }
                 int guard = 0;
-                while (Session.Clock < clock && guard++ < 10000)
-                    Ticks(1);
+                while (Session.Clock < clock && guard++ < 1000000)
+                {
+                    var mi = ReBuzzCore.masterInfo;
+                    Driver.ReadStereoSamples(Math.Clamp(mi.SamplesPerTick - mi.PosInTick, 1, 256));
+                }
                 Assert.That(Session.Clock, Is.EqualTo(clock));
             }
 
@@ -287,12 +294,11 @@ namespace ReBuzzTests
             rig.PlayTo(5);
             Assert.That(TickOf(a), Is.EqualTo(3));
             rig.Layout.LaunchClip(track, b);                     // at 8, where A has got to: 6
-            rig.PlayTo(7);
-            var tick8 = rig.Driver.ReadStereoSamples(rig.SamplesPerTick).Values;
-            Assert.That(rig.Session.Clock, Is.EqualTo(8));
+            rig.PlayTo(8);
             Assert.That(TickOf(b), Is.EqualTo(6));
             Assert.That(TickOf(a), Is.Null);
-            Assert.That(tick8[0], Is.InRange(2059.5f, 2061f), "the machine plays B from row 6 (Tone: 2000 + 10 per row)");
+            float tone = rig.Driver.ReadStereoSamples(1).Values[0];
+            Assert.That(tone, Is.InRange(2060f, 2061f), "the machine plays B from row 6 (Tone: 2000 + 10 per row), a block in");
 
             rig.Layout.LaunchClip(track, a);                     // A has no legato: from the top, on the next tick
             rig.PlayTo(9);
@@ -323,6 +329,13 @@ namespace ReBuzzTests
             rig.Set(a, c => c.LoopEnd = 8);
             rig.PlayTo(28);
             Assert.That(TickOf(a), Is.InRange(4, 7));
+
+            // Undo puts the loop end back, also for the playing clip: at 33 (31 ticks in) it is at
+            // row 9 with the loop 4-11 (row 5 with 4-7).
+            rig.Layout.Undo();
+            Assert.That(rig.Layout.ClipOf(a).LoopEnd, Is.EqualTo(12));
+            rig.PlayTo(33);
+            Assert.That(TickOf(a), Is.EqualTo(9));
         }
 
         [Test]
@@ -436,6 +449,39 @@ namespace ReBuzzTests
             layout.LaunchScene(2);                               // replaces it: no tempo
             rig.PlayTo(40);
             Assert.That(rig.Core.BPM, Is.EqualTo(90));
+        }
+
+        // ------------------------------------------------------------------ recording
+
+        [Test]
+        public void ALateLaunchIsRecordedWhereItIsHeardToStart()
+        {
+            using var rig = new ClipRig(1);
+            var a = rig.Pattern(rig.Machines[0], "A", Bar);
+            var b = rig.Pattern(rig.Machines[0], "B", Bar);
+            rig.Layout.Ensure();
+            var track = rig.Track(0);
+            rig.Core.Looping = false;
+
+            rig.Align();
+            rig.Core.Recording = true;                           // starts the transport
+            rig.Session.Launch(track, a);
+            rig.PlayTo(17);
+            rig.Driver.ReadStereoSamples(rig.SamplesPerTick / 2); // rendered: about 17.5 ticks
+            rig.Core.OutputLatencySamples = 3 * rig.SamplesPerTick;   // heard: about 14.5
+            rig.Session.Launch(track, b);                        // the bar line at 16 is rendered: B starts at 18, in step with 16
+            rig.PlayTo(18);
+            Assert.That(rig.Session.GetClipStartClock(track), Is.EqualTo(Bar));
+            rig.Core.OutputLatencySamples = 0;
+            rig.PlayTo(20);
+            rig.Core.Recording = false;
+            rig.Ticks(1);
+            rig.Core.Playing = false;
+
+            var events = track.Events.ToDictionary(e => e.Key, e => e.Value.Pattern?.Name ?? e.Value.Type.ToString());
+            Assert.That(events[0], Is.EqualTo("A"));
+            Assert.That(events[Bar], Is.EqualTo("B"), "written on the bar line, not at 18 or at its next loop");
+            Assert.That(events.ContainsKey(18), Is.False);
         }
 
         // ------------------------------------------------------------------ settings follow their pattern
