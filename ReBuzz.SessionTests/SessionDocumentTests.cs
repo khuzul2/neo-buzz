@@ -218,6 +218,85 @@ namespace ReBuzz.SessionTests
             Assert.That(d.CueMachine, Is.EqualTo(""));
         }
 
+        // ------------------------------------------------------------------ 0.5 clip and scene properties
+
+        [Test]
+        public void ClipSettingsDefaultUntilSetAndRoundTrip()
+        {
+            var d = AutoFill(new[] { T("drums", "a", "b"), T("bass", "a") });
+            Assert.That(d.GetClip("drums", "a").IsDefault, Is.True);
+
+            var c = d.GetClip("drums", "a");
+            c.Mode = "Gate";
+            c.Quantization = "Sixteenth";
+            c.Legato = true;
+            c.Loop = false;
+            c.Start = 4;
+            c.LoopStart = 8;
+            c.LoopEnd = 24;
+            c.Velocity = 60;
+            d.SetClip("drums", "a", c);
+            c.Start = 99;                                         // stored as a copy
+            Assert.That(d.GetClip("bass", "a").IsDefault, Is.True, "per machine");
+
+            var copy = Load(new MemoryStream(d.ToBytes()))!;
+            var back = copy.GetClip("drums", "a");
+            Assert.That((back.Mode, back.Quantization, back.Legato, back.Loop), Is.EqualTo(("Gate", "Sixteenth", true, false)));
+            Assert.That((back.Start, back.LoopStart, back.LoopEnd, back.Velocity), Is.EqualTo((4, 8, 24, 60)));
+
+            copy.SetClip("drums", "a", new ClipSettings());
+            Assert.That(copy.Clips, Is.Empty, "default settings are not stored");
+        }
+
+        [Test]
+        public void ClipSettingsFollowRenamesAndDeletedPatterns()
+        {
+            var d = AutoFill(new[] { T("drums", "a", "b") });
+            d.SetClip("drums", "a", new ClipSettings { Legato = true });
+            d.SetClip("drums", "b", new ClipSettings { Velocity = 10 });
+            d.SetClip("gone", "x", new ClipSettings { Velocity = 20 });
+
+            d.RenamePattern("drums", "a", "intro");
+            d.RenameMachine("drums", "beats");
+            Assert.That(d.GetClip("beats", "intro").Legato, Is.True);
+            Assert.That(d.GetClip("drums", "a").IsDefault, Is.True);
+
+            d.Reconcile(new[] { T("beats", "intro") });           // "b" deleted
+            Assert.That(d.GetClip("beats", "b").IsDefault, Is.True);
+            Assert.That(d.GetClip("beats", "intro").Legato, Is.True);
+            Assert.That(d.GetClip("gone", "x").Velocity, Is.EqualTo(20), "a machine without a track keeps its settings");
+        }
+
+        [Test]
+        public void SceneTempoAndBeatsRoundTripAndDuplicate()
+        {
+            var d = AutoFill(new[] { T("drums", "a") });
+            d.Scenes[0].Tempo = 140;
+            d.Scenes[0].BeatsPerBar = 3;
+            d.DuplicateScene(0);
+            Assert.That((d.Scenes[1].Tempo, d.Scenes[1].BeatsPerBar), Is.EqualTo((140, 3)));
+
+            var copy = Load(new MemoryStream(d.ToBytes()))!;
+            Assert.That((copy.Scenes[0].Tempo, copy.Scenes[0].BeatsPerBar), Is.EqualTo((140, 3)));
+            Assert.That((copy.Scenes[2].Tempo, copy.Scenes[2].BeatsPerBar), Is.EqualTo((0, 0)));
+        }
+
+        [Test]
+        public void LoadClampsClipAndSceneValues()
+        {
+            const string xml = """
+                <Session>
+                  <Scenes><Scene tempo="9999" beatsPerBar="-3"/></Scenes>
+                  <Tracks/>
+                  <Clips><Clip machine="m" pattern="p" start="-5" velocity="400"/><Clip pattern="no machine"/></Clips>
+                </Session>
+                """;
+            var d = Load(new MemoryStream(Encoding.UTF8.GetBytes(xml)))!;
+            Assert.That((d.Scenes[0].Tempo, d.Scenes[0].BeatsPerBar), Is.EqualTo((500, 0)));
+            Assert.That(d.Clips.Count, Is.EqualTo(1));
+            Assert.That((d.GetClip("m", "p").Start, d.GetClip("m", "p").Velocity), Is.EqualTo((0, 100)));
+        }
+
         // ------------------------------------------------------------------ persistence
 
         [Test]

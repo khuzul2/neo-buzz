@@ -46,28 +46,43 @@ namespace ReBuzz.Core.Session
         /// </summary>
         internal sealed class Targets
         {
-            public static readonly Targets Empty = new Targets(Array.Empty<ISequence>(), Array.Empty<IPattern[]>(), Array.Empty<(ISequence, IPattern)[]>());
+            public static readonly Targets Empty = new Targets(
+                Array.Empty<ISequence>(), Array.Empty<IPattern[]>(), Array.Empty<SessionDocument.ClipSettings[]>(),
+                Array.Empty<(ISequence, IPattern, SessionDocument.ClipSettings)[]>(), Array.Empty<SceneOptions>());
 
-            public Targets(ISequence[] tracks, IPattern[][] slots, (ISequence, IPattern)[][] scenes)
+            public Targets(ISequence[] tracks, IPattern[][] slots, SessionDocument.ClipSettings[][] settings,
+                           (ISequence, IPattern, SessionDocument.ClipSettings)[][] scenes, SceneOptions[] sceneOptions)
             {
                 Tracks = tracks;
                 Slots = slots;
+                Settings = settings;
                 Scenes = scenes;
+                SceneSettings = sceneOptions;
             }
 
             public ISequence[] Tracks { get; }
             /// <summary>[track][scene]; null for an empty slot.</summary>
             public IPattern[][] Slots { get; }
-            /// <summary>Filled slots of each scene.</summary>
-            public (ISequence, IPattern)[][] Scenes { get; }
+            /// <summary>[track][scene]: clip settings of the slot's pattern (0.5); copies, never modified.</summary>
+            public SessionDocument.ClipSettings[][] Settings { get; }
+            /// <summary>Filled slots of each scene, with their clip settings.</summary>
+            public (ISequence, IPattern, SessionDocument.ClipSettings)[][] Scenes { get; }
+            /// <summary>Tempo and beats per bar of each scene (0.5).</summary>
+            public SceneOptions[] SceneSettings { get; }
 
             public ISequence Track(int track) => track >= 0 && track < Tracks.Length ? Tracks[track] : null;
 
             public IPattern Slot(int track, int scene) =>
                 track >= 0 && track < Slots.Length && scene >= 0 && scene < Slots[track].Length ? Slots[track][scene] : null;
 
-            public (ISequence, IPattern)[] Scene(int scene) =>
-                scene >= 0 && scene < Scenes.Length ? Scenes[scene] : Array.Empty<(ISequence, IPattern)>();
+            public SessionDocument.ClipSettings SettingsOf(int track, int scene) =>
+                track >= 0 && track < Settings.Length && scene >= 0 && scene < Settings[track].Length ? Settings[track][scene] : null;
+
+            public (ISequence, IPattern, SessionDocument.ClipSettings)[] Scene(int scene) =>
+                scene >= 0 && scene < Scenes.Length ? Scenes[scene] : Array.Empty<(ISequence, IPattern, SessionDocument.ClipSettings)>();
+
+            public SceneOptions OptionsOfScene(int scene) =>
+                scene >= 0 && scene < SceneSettings.Length ? SceneSettings[scene] : null;
         }
 
         /// <summary>Learn mode started, completed or was cancelled; or the mapping changed.</summary>
@@ -102,23 +117,31 @@ namespace ReBuzz.Core.Session
             int sceneCount = doc.Scenes.Count;
             var tracks = new ISequence[trackCount];
             var slots = new IPattern[trackCount][];
+            var settings = new SessionDocument.ClipSettings[trackCount][];
             for (int t = 0; t < trackCount; t++)
             {
                 tracks[t] = layout.SequenceOf(t);
                 slots[t] = new IPattern[sceneCount];
+                settings[t] = new SessionDocument.ClipSettings[sceneCount];
                 for (int s = 0; s < sceneCount; s++)
+                {
                     slots[t][s] = tracks[t] == null ? null : layout.PatternAt(t, s);
+                    if (slots[t][s] != null)
+                        settings[t][s] = layout.ClipOf(slots[t][s]);
+                }
             }
-            var scenes = new (ISequence, IPattern)[sceneCount][];
+            var scenes = new (ISequence, IPattern, SessionDocument.ClipSettings)[sceneCount][];
+            var sceneOptions = new SceneOptions[sceneCount];
             for (int s = 0; s < sceneCount; s++)
             {
-                var list = new List<(ISequence, IPattern)>();
+                var list = new List<(ISequence, IPattern, SessionDocument.ClipSettings)>();
                 for (int t = 0; t < trackCount; t++)
                     if (tracks[t] != null && slots[t][s] != null)
-                        list.Add((tracks[t], slots[t][s]));
+                        list.Add((tracks[t], slots[t][s], settings[t][s]));
                 scenes[s] = list.ToArray();
+                sceneOptions[s] = SessionLayout.SceneOptionsOf(doc.Scenes[s]);
             }
-            targets = new Targets(tracks, slots, scenes);
+            targets = new Targets(tracks, slots, settings, scenes, sceneOptions);
         }
 
         string ReadUserMap()
@@ -174,8 +197,12 @@ namespace ReBuzz.Core.Session
                 buzz.dispatcher.BeginInvoke(() => SetQuantizationFromMidi(control, value, isPress));
                 return consumed;
             }
+            // Velocity (0.5): a note's; a CC launches at full velocity.
+            int velocity = control.Type == MidiControlType.Note ? value : 127;
             if (isPress)
-                ExecuteNow(target, track, scene, targets);
+                ExecuteNow(target, track, scene, targets, velocity);
+            else if (target == SessionTarget.Slot)
+                ReleaseNow(track, scene, targets);
             return consumed;
         }
 
@@ -183,7 +210,7 @@ namespace ReBuzz.Core.Session
         /// Any thread: what a pressed target does. Launch, stop and play use the engine (thread-safe)
         /// and the resolved <paramref name="t"/>; everything else is posted to the UI thread.
         /// </summary>
-        void ExecuteNow(SessionTarget target, int track, int scene, Targets t)
+        void ExecuteNow(SessionTarget target, int track, int scene, Targets t, int velocity)
         {
             var session = buzz.Session;
             switch (target)
@@ -194,7 +221,7 @@ namespace ReBuzz.Core.Session
                         if (seq == null) return;
                         var pattern = t.Slot(track, scene);
                         if (pattern != null)
-                            session.Launch(seq, pattern);
+                            session.Launch(seq, pattern, SessionLayout.ToOptions(t.SettingsOf(track, scene), velocity));
                         else
                             session.Stop(seq);
                         break;
@@ -202,8 +229,14 @@ namespace ReBuzz.Core.Session
                 case SessionTarget.Scene:
                     {
                         var slots = t.Scene(scene);
-                        if (slots.Length > 0)
-                            session.LaunchScene(slots);
+                        var options = t.OptionsOfScene(scene);
+                        if (slots.Length > 0 || options != null)
+                        {
+                            var launches = new (ISequence, IPattern, LaunchOptions)[slots.Length];
+                            for (int i = 0; i < slots.Length; i++)
+                                launches[i] = (slots[i].Item1, slots[i].Item2, SessionLayout.ToOptions(slots[i].Item3, velocity));
+                            session.LaunchScene(launches, options ?? new SceneOptions());
+                        }
                         break;
                     }
                 case SessionTarget.TrackStop:
@@ -225,6 +258,17 @@ namespace ReBuzz.Core.Session
                     buzz.dispatcher.BeginInvoke(() => Execute(target, track, scene));
                     break;
             }
+        }
+
+        /// <summary>Any thread: the release of a slot's control (Gate and Repeat clips, 0.5).</summary>
+        void ReleaseNow(int track, int scene, Targets t)
+        {
+            var seq = t.Track(track);
+            var pattern = t.Slot(track, scene);
+            if (seq == null || pattern == null) return;
+            var settings = t.SettingsOf(track, scene);
+            if (settings == null || (settings.Mode != nameof(ClipLaunchMode.Gate) && settings.Mode != nameof(ClipLaunchMode.Repeat))) return;
+            buzz.Session.Release(seq, pattern, SessionLayout.ToOptions(settings, 127));
         }
 
         // ------------------------------------------------------------------ learn and edit
@@ -349,7 +393,7 @@ namespace ReBuzz.Core.Session
                         if (seq == null) return;
                         var pattern = layout.PatternAt(track, scene);
                         if (pattern != null)
-                            session.Launch(seq, pattern);
+                            layout.LaunchClip(seq, pattern);
                         else
                             session.Stop(seq);
                         break;

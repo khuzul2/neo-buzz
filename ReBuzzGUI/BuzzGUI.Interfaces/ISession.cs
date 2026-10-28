@@ -10,7 +10,15 @@ namespace BuzzGUI.Interfaces
     // unlike the song position, never wraps at the loop end.
 
     /// <summary>Grid that launches and stops snap to.</summary>
-    public enum LaunchQuantization { None, Beat, Bar, TwoBars, FourBars, EightBars }
+    public enum LaunchQuantization { None, Beat, Bar, TwoBars, FourBars, EightBars, HalfNote, Eighth, Sixteenth }
+
+    /// <summary>
+    /// What pressing and releasing a clip's launch control does (0.5, as in Live).
+    /// Trigger: press launches, release is ignored. Gate: press launches, release stops (quantized).
+    /// Toggle: press launches, or stops the clip if it plays. Repeat: while held, the clip
+    /// restarts at its quantization rate; after release it plays on.
+    /// </summary>
+    public enum ClipLaunchMode { Trigger, Gate, Toggle, Repeat }
 
     /// <summary>State of a clip on its track.</summary>
     public enum ClipState
@@ -34,6 +42,29 @@ namespace BuzzGUI.Interfaces
         public bool Loop { get; set; } = true;
         /// <summary>Start this many ticks into the clip (0.4.1; legato and clip start markers build on it).</summary>
         public int StartOffset { get; set; }
+        /// <summary>Press and release behaviour (0.5). <see cref="ISession.Launch"/> is a press.</summary>
+        public ClipLaunchMode Mode { get; set; } = ClipLaunchMode.Trigger;
+        /// <summary>Take over the play position of the clip playing on the track (0.5).</summary>
+        public bool Legato { get; set; }
+        /// <summary>Start marker in ticks: where the clip starts playing (0.5).</summary>
+        public int Start { get; set; }
+        /// <summary>Loop region start in ticks (0.5).</summary>
+        public int LoopStart { get; set; }
+        /// <summary>Loop region end in ticks, exclusive; 0 for the clip's end (0.5). With Loop off, where the clip ends.</summary>
+        public int LoopEnd { get; set; }
+        /// <summary>Volume of the clip's machine while it plays, 0..1 (0.5: launch velocity).</summary>
+        public double Gain { get; set; } = 1.0;
+    }
+
+    /// <summary>Scene-wide settings applied when a scene launches (0.5).</summary>
+    public class SceneOptions
+    {
+        /// <summary>Quantization of the scene launch; null uses <see cref="ISession.LaunchQuantization"/>.</summary>
+        public LaunchQuantization? Quantization { get; set; }
+        /// <summary>Tempo (BPM) to set on the launch tick; 0 leaves it.</summary>
+        public int Tempo { get; set; }
+        /// <summary>Beats per bar to set on the launch tick; 0 leaves it.</summary>
+        public int BeatsPerBar { get; set; }
     }
 
     public interface ISession : INotifyPropertyChanged
@@ -59,6 +90,20 @@ namespace BuzzGUI.Interfaces
 
         /// <summary>Launches several clips so they all start on the same tick.</summary>
         void LaunchScene(IEnumerable<(ISequence Track, IPattern Clip)> slots, LaunchOptions? options = null);
+        /// <summary>
+        /// Launches clips together (0.5), each with its own options (shape, legato, gain; their
+        /// mode and quantization don't apply), all on the same tick. With <paramref name="scene"/>
+        /// it is a scene launch: the scene's tempo and beats per bar change on that tick (a scene
+        /// with no clips still changes them), and it replaces a scene still waiting to start.
+        /// Null: clips launched together without scene settings (a group slot).
+        /// </summary>
+        void LaunchScene(IEnumerable<(ISequence Track, IPattern Clip, LaunchOptions? Options)> slots, SceneOptions? scene);
+        /// <summary>
+        /// Release of a clip's launch control (0.5): Gate stops the clip on the next quantization
+        /// point (released before it started: one quantization step after it starts), Repeat stops
+        /// repeating and lets the clip play on; other modes ignore it.
+        /// </summary>
+        void Release(ISequence track, IPattern clip, LaunchOptions? options = null);
 
         /// <summary>Stops a track at the next quantization point, or on the next tick if immediate.
         /// Cancels a queued launch if nothing plays.</summary>

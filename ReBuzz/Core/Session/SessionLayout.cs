@@ -225,7 +225,11 @@ namespace ReBuzz.Core.Session
                 var copy = machine.Patterns.FirstOrDefault(p => p.Name == name);
                 if (copy != null && color >= 0)
                     UndoStack.Do(new PatternColorAction(copy, color));
-                Edit(doc => doc.SetSlot(track, target, name));
+                Edit(doc =>
+                {
+                    doc.SetSlot(track, target, name);
+                    doc.SetClip(machine.Name, name, doc.GetClip(machine.Name, source.Name));   // the copy launches the same way
+                });
                 return copy;
             }
             finally
@@ -261,6 +265,7 @@ namespace ReBuzz.Core.Session
                     foreach (var t in doc.Tracks.Where(t => t.Machine == machine))
                         foreach (var key in t.Slots.Where(s => s.Value == name).Select(s => s.Key).ToList())
                             t.Slots.Remove(key);
+                    doc.SetClip(machine, name, null);
                 });
                 UndoStack.Do(new DeletePatternAction(pattern));
             }
@@ -284,6 +289,7 @@ namespace ReBuzz.Core.Session
             if (!UndoStack.CanUndo) return;
             UndoStack.Undo();
             ContentChanged();
+            ReshapeLaunched();
         }
 
         public void Redo()
@@ -291,6 +297,20 @@ namespace ReBuzz.Core.Session
             if (!UndoStack.CanRedo) return;
             UndoStack.Redo();
             ContentChanged();
+            ReshapeLaunched();
+        }
+
+        /// <summary>After undo or redo (0.5): clips that play or wait take their markers as they now are.</summary>
+        void ReshapeLaunched()
+        {
+            if (Session is not SessionCore core || Document == null) return;
+            foreach (var seq in song.Sequences)
+            {
+                var playing = core.GetPlaying(seq);
+                var queued = core.GetQueued(seq);
+                if (playing != null) core.Reshape(seq, playing, OptionsFor(playing));
+                if (queued != null && queued != playing) core.Reshape(seq, queued, OptionsFor(queued));
+            }
         }
 
         /// <summary>
@@ -340,6 +360,7 @@ namespace ReBuzz.Core.Session
             {
                 // View settings, not edits: they stay as they are.
                 restored.ShowMixer = document.ShowMixer;
+                restored.ShowClipPanel = document.ShowClipPanel;
                 restored.CueMachine = document.CueMachine;
                 restored.CollapsedGroups.Clear();
                 restored.CollapsedGroups.UnionWith(document.CollapsedGroups);
@@ -420,6 +441,14 @@ namespace ReBuzz.Core.Session
             ContentChanged();
         }
 
+        public void SetShowClipPanel(bool show)
+        {
+            var doc = Ensure();
+            if (doc.ShowClipPanel == show) return;
+            doc.ShowClipPanel = show;
+            ContentChanged();
+        }
+
         public void SetGroupCollapsed(string group, bool collapsed)
         {
             var doc = Ensure();
@@ -441,36 +470,123 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Launches the clips of a group's member tracks in a scene (Live's group slot).</summary>
-        public void LaunchGroupScene(IEnumerable<int> tracks, int scene)
+        public void LaunchGroupScene(IEnumerable<int> tracks, int scene, int velocity = 127)
         {
-            var slots = new List<(ISequence, IPattern)>();
+            var slots = new List<(ISequence, IPattern, LaunchOptions)>();
             foreach (int track in tracks)
             {
                 var seq = SequenceOf(track);
                 var pattern = PatternAt(track, scene);
                 if (seq != null && pattern != null)
-                    slots.Add((seq, pattern));
+                    slots.Add((seq, pattern, OptionsFor(pattern, velocity)));
             }
             if (slots.Count > 0)
-                Session.LaunchScene(slots);
+                Session.LaunchScene(slots, null);
         }
 
-        /// <summary>Launches every filled slot of a scene row together.</summary>
-        public void LaunchScene(int scene)
+        /// <summary>
+        /// Launches every filled slot of a scene row together, with the scene's tempo and time
+        /// signature (a scene with only those and no clips still sets them).
+        /// </summary>
+        public void LaunchScene(int scene, int velocity = 127)
         {
             var doc = Document;
-            if (doc == null) return;
-            var slots = new List<(ISequence, IPattern)>();
+            if (doc == null || scene < 0 || scene >= doc.Scenes.Count) return;
+            var slots = new List<(ISequence, IPattern, LaunchOptions)>();
             foreach (var (track, _) in doc.SceneSlots(scene))
             {
                 var seq = SequenceOf(track);
                 var pattern = PatternAt(track, scene);
                 if (seq != null && pattern != null)
-                    slots.Add((seq, pattern));
+                    slots.Add((seq, pattern, OptionsFor(pattern, velocity)));
             }
-            if (slots.Count > 0)
-                Session.LaunchScene(slots);
+            Session.LaunchScene(slots, SceneOptionsOf(doc.Scenes[scene]));
         }
+
+        // ------------------------------------------------------------------ clip and scene properties (0.5)
+
+        /// <summary>A press of a clip's launch control (mouse, key, MIDI note with its velocity).</summary>
+        public void LaunchClip(ISequence track, IPattern pattern, int velocity = 127)
+        {
+            if (track == null || pattern == null) return;
+            Session.Launch(track, pattern, OptionsFor(pattern, velocity));
+        }
+
+        /// <summary>The release of a clip's launch control: matters for Gate and Repeat clips.</summary>
+        public void ReleaseClip(ISequence track, IPattern pattern)
+        {
+            if (track == null || pattern == null) return;
+            Session.Release(track, pattern, OptionsFor(pattern));
+        }
+
+        /// <summary>A pattern's clip settings (a copy; defaults without a layout).</summary>
+        public SessionDocument.ClipSettings ClipOf(IPattern pattern) =>
+            pattern?.Machine == null || Document == null ? new SessionDocument.ClipSettings() : Document.GetClip(pattern.Machine.Name, pattern.Name);
+
+        /// <summary>
+        /// Changes a pattern's clip settings (undoable). Markers apply at once to the clip if it
+        /// plays or waits; the other settings from its next launch.
+        /// </summary>
+        public void SetClipSettings(IPattern pattern, SessionDocument.ClipSettings settings)
+        {
+            if (pattern?.Machine == null || settings == null) return;
+            string machine = pattern.Machine.Name, name = pattern.Name;
+            if (!Edit(doc => doc.SetClip(machine, name, settings))) return;
+            if (Session is SessionCore core)
+            {
+                var options = ToOptions(settings, 127);
+                foreach (var seq in song.Sequences.Where(s => s.Machine == pattern.Machine))
+                    core.Reshape(seq, pattern, options);
+            }
+        }
+
+        /// <summary>Launch options of a pattern's clip settings, at a launch velocity (1..127).</summary>
+        public LaunchOptions OptionsFor(IPattern pattern, int velocity = 127) => ToOptions(ClipOf(pattern), velocity);
+
+        /// <summary>Launch options for clip settings at a launch velocity (any thread).</summary>
+        internal static LaunchOptions ToOptions(SessionDocument.ClipSettings c, int velocity)
+        {
+            c ??= new SessionDocument.ClipSettings();
+            return new LaunchOptions
+            {
+                Mode = Enum.TryParse<ClipLaunchMode>(c.Mode, out var mode) ? mode : ClipLaunchMode.Trigger,
+                Quantization = Enum.TryParse<LaunchQuantization>(c.Quantization, out var q) ? q : null,
+                Legato = c.Legato,
+                Loop = c.Loop,
+                Start = c.Start,
+                LoopStart = c.LoopStart,
+                LoopEnd = c.LoopEnd,
+                Gain = VelocityGain(c.Velocity, velocity)
+            };
+        }
+
+        /// <summary>
+        /// Volume for a launch velocity (Live's clip velocity amount): 0% sensitivity ignores the
+        /// velocity; at 100% it scales the volume all the way, so the softest launch is silent.
+        /// </summary>
+        internal static double VelocityGain(int sensitivityPercent, int velocity)
+        {
+            double amount = Math.Clamp(sensitivityPercent, 0, 100) / 100.0;
+            double v = Math.Clamp(velocity, 0, 127) / 127.0;
+            return 1.0 - amount * (1.0 - v);
+        }
+
+        internal static SceneOptions SceneOptionsOf(SessionDocument.Scene scene) =>
+            new SceneOptions { Tempo = scene?.Tempo ?? 0, BeatsPerBar = scene?.BeatsPerBar ?? 0 };
+
+        /// <summary>Tempo a scene sets when it launches; 0 for none (undoable).</summary>
+        public void SetSceneTempo(int index, int bpm) => Edit(doc =>
+        {
+            if (index >= 0 && index < doc.Scenes.Count)
+                doc.Scenes[index].Tempo = bpm <= 0 ? 0 : Math.Clamp(bpm, 16, 500);
+        });
+
+        /// <summary>Beats per bar a scene sets when it launches; 0 for none (undoable).</summary>
+        public void SetSceneBeatsPerBar(int index, int beats) => Edit(doc =>
+        {
+            if (index >= 0 && index < doc.Scenes.Count)
+                doc.Scenes[index].BeatsPerBar = beats <= 0 ? 0 : Math.Clamp(beats, 1, 64);
+        });
 
         void ContentChanged()
         {

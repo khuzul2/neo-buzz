@@ -30,6 +30,81 @@ namespace ReBuzz.Core.Session
             public string Name { get; set; } = "";
             /// <summary>Index into the theme's pattern colours, -1 for none.</summary>
             public int ColorIndex { get; set; } = -1;
+            /// <summary>Tempo (BPM) set when the scene launches; 0 for none (0.5).</summary>
+            public int Tempo { get; set; }
+            /// <summary>Beats per bar set when the scene launches; 0 for none (0.5).</summary>
+            public int BeatsPerBar { get; set; }
+        }
+
+        /// <summary>
+        /// Launch settings of a clip (0.5, Live's clip view): stored per pattern, since a clip is a
+        /// pattern. Ticks are pattern rows. Launch modes and quantizations are names of
+        /// ClipLaunchMode and LaunchQuantization values ("Global" for the session's).
+        /// </summary>
+        public sealed class ClipSettings
+        {
+            public const string GlobalQuantization = "Global";
+
+            public string Mode { get; set; } = "Trigger";
+            public string Quantization { get; set; } = GlobalQuantization;
+            public bool Legato { get; set; }
+            public bool Loop { get; set; } = true;
+            /// <summary>Start marker in ticks.</summary>
+            public int Start { get; set; }
+            public int LoopStart { get; set; }
+            /// <summary>Loop end (or end, without loop) in ticks, exclusive; 0 for the pattern's end.</summary>
+            public int LoopEnd { get; set; }
+            /// <summary>Velocity sensitivity in percent: 0 none, 100 the softest note is silent.</summary>
+            public int Velocity { get; set; }
+
+            public bool IsDefault =>
+                Mode == "Trigger" && Quantization == GlobalQuantization && !Legato && Loop &&
+                Start == 0 && LoopStart == 0 && LoopEnd == 0 && Velocity == 0;
+
+            public ClipSettings Clone() => (ClipSettings)MemberwiseClone();
+
+            internal XElement ToXml(string machine, string pattern)
+            {
+                var e = new XElement("Clip", new XAttribute("machine", machine), new XAttribute("pattern", pattern));
+                if (Mode != "Trigger") e.SetAttributeValue("mode", Mode);
+                if (Quantization != GlobalQuantization) e.SetAttributeValue("quantization", Quantization);
+                if (Legato) e.SetAttributeValue("legato", "true");
+                if (!Loop) e.SetAttributeValue("loop", "false");
+                if (Start != 0) e.SetAttributeValue("start", Start);
+                if (LoopStart != 0) e.SetAttributeValue("loopStart", LoopStart);
+                if (LoopEnd != 0) e.SetAttributeValue("loopEnd", LoopEnd);
+                if (Velocity != 0) e.SetAttributeValue("velocity", Velocity);
+                return e;
+            }
+
+            internal static ClipSettings FromXml(XElement e) => new ClipSettings
+            {
+                Mode = (string)e.Attribute("mode") ?? "Trigger",
+                Quantization = (string)e.Attribute("quantization") ?? GlobalQuantization,
+                Legato = (string)e.Attribute("legato") == "true",
+                Loop = (string)e.Attribute("loop") != "false",
+                Start = Math.Max(0, IntAttr(e, "start", 0)),
+                LoopStart = Math.Max(0, IntAttr(e, "loopStart", 0)),
+                LoopEnd = Math.Max(0, IntAttr(e, "loopEnd", 0)),
+                Velocity = Math.Clamp(IntAttr(e, "velocity", 0), 0, 100)
+            };
+        }
+
+        /// <summary>Clip settings by (machine, pattern); patterns without an entry use the defaults.</summary>
+        public Dictionary<(string Machine, string Pattern), ClipSettings> Clips { get; } = new Dictionary<(string, string), ClipSettings>();
+
+        /// <summary>A pattern's clip settings (a copy; the defaults if it has none).</summary>
+        public ClipSettings GetClip(string machine, string pattern) =>
+            Clips.TryGetValue((machine ?? "", pattern ?? ""), out var c) ? c.Clone() : new ClipSettings();
+
+        /// <summary>Stores a pattern's clip settings; default settings remove the entry.</summary>
+        public void SetClip(string machine, string pattern, ClipSettings settings)
+        {
+            var key = (machine ?? "", pattern ?? "");
+            if (settings == null || settings.IsDefault)
+                Clips.Remove(key);
+            else
+                Clips[key] = settings.Clone();
         }
 
         public sealed class Track
@@ -56,6 +131,8 @@ namespace ReBuzz.Core.Session
         // Mixer (0.4)
         /// <summary>Whether the mixer section is shown under the grid.</summary>
         public bool ShowMixer { get; set; } = true;
+        /// <summary>Whether the clip panel is shown beside the grid (0.5).</summary>
+        public bool ShowClipPanel { get; set; } = true;
         /// <summary>Machines shown as return tracks (by name, in order); tracks send to them.</summary>
         public List<string> Returns { get; } = new List<string>();
         /// <summary>Machine the Cue buttons connect tracks to (a second output), or "" for none.</summary>
@@ -120,6 +197,18 @@ namespace ReBuzz.Core.Session
             Tracks.Clear();
             Tracks.AddRange(result);
             EnsureScenes();
+
+            // Clip settings of deleted patterns go (machines without a track keep theirs: the
+            // track may come back with an undo).
+            var patternsByMachine = new Dictionary<string, HashSet<string>>();
+            foreach (var t in song)
+            {
+                if (!patternsByMachine.TryGetValue(t.Machine ?? "", out var set))
+                    patternsByMachine[t.Machine ?? ""] = set = new HashSet<string>();
+                set.UnionWith(t.Patterns ?? Array.Empty<string>());
+            }
+            foreach (var key in Clips.Keys.Where(k => patternsByMachine.TryGetValue(k.Machine, out var set) && !set.Contains(k.Pattern)).ToList())
+                Clips.Remove(key);
         }
 
         /// <summary>Makes sure every used scene row exists, and at least <see cref="MinScenes"/>.</summary>
@@ -180,6 +269,8 @@ namespace ReBuzz.Core.Session
             InsertScene(index + 1);
             Scenes[index + 1].Name = source.Name;
             Scenes[index + 1].ColorIndex = source.ColorIndex;
+            Scenes[index + 1].Tempo = source.Tempo;
+            Scenes[index + 1].BeatsPerBar = source.BeatsPerBar;
             foreach (var t in Tracks)
                 if (t.Slots.TryGetValue(index, out var p))
                     t.Slots[index + 1] = p;
@@ -213,12 +304,19 @@ namespace ReBuzz.Core.Session
             foreach (var t in Tracks.Where(t => t.Machine == machine))
                 foreach (var scene in t.Slots.Where(s => s.Value == oldName).Select(s => s.Key).ToList())
                     t.Slots[scene] = newName;
+            if (Clips.Remove((machine, oldName), out var clip))
+                Clips[(machine, newName)] = clip;
         }
 
         public void RenameMachine(string oldName, string newName)
         {
             foreach (var t in Tracks.Where(t => t.Machine == oldName))
                 t.Machine = newName;
+            foreach (var key in Clips.Keys.Where(k => k.Machine == oldName).ToList())
+            {
+                Clips.Remove(key, out var clip);
+                Clips[(newName, key.Pattern)] = clip;
+            }
             for (int i = 0; i < Returns.Count; i++)
                 if (Returns[i] == oldName) Returns[i] = newName;
             if (CueMachine == oldName) CueMachine = newName;
@@ -241,11 +339,14 @@ namespace ReBuzz.Core.Session
                 new XAttribute("beatsPerBar", BeatsPerBar),
                 new XAttribute("launchQuantization", LaunchQuantization ?? "Bar"),
                 new XAttribute("clipBars", ClipBars),
+                ShowClipPanel ? null : new XAttribute("showClipPanel", "false"),
                 new XElement("Scenes", Scenes.Select(s =>
                 {
                     var e = new XElement("Scene");
                     if (!string.IsNullOrEmpty(s.Name)) e.SetAttributeValue("name", s.Name);
                     if (s.ColorIndex >= 0) e.SetAttributeValue("colorIndex", s.ColorIndex);
+                    if (s.Tempo > 0) e.SetAttributeValue("tempo", s.Tempo);
+                    if (s.BeatsPerBar > 0) e.SetAttributeValue("beatsPerBar", s.BeatsPerBar);
                     return e;
                 })),
                 new XElement("Tracks", Tracks.Select(t =>
@@ -260,6 +361,9 @@ namespace ReBuzz.Core.Session
                     return e;
                 })),
                 MixerXml(),
+                Clips.Count == 0 ? null : new XElement("Clips",
+                    Clips.OrderBy(c => c.Key.Machine, StringComparer.Ordinal).ThenBy(c => c.Key.Pattern, StringComparer.Ordinal)
+                         .Select(c => c.Value.ToXml(c.Key.Machine, c.Key.Pattern))),
                 SongMidi?.ToXml());
             return new XDocument(root);
         }
@@ -305,6 +409,7 @@ namespace ReBuzz.Core.Session
                     BeatsPerBar = Math.Clamp(IntAttr(root, "beatsPerBar", 4), 1, 64),
                     LaunchQuantization = (string)root.Attribute("launchQuantization") ?? "Bar",
                     ClipBars = Math.Clamp(IntAttr(root, "clipBars", 1), 1, 64),
+                    ShowClipPanel = (string)root.Attribute("showClipPanel") != "false",
                     SongMidi = root.Element("Midi") is XElement midi ? SessionMidiMap.FromXml(midi) : null,
                 };
                 if (root.Element("Mixer") is XElement mixer)
@@ -319,7 +424,20 @@ namespace ReBuzz.Core.Session
                             doc.CollapsedGroups.Add(name);
                 }
                 foreach (var s in root.Element("Scenes")?.Elements("Scene") ?? Enumerable.Empty<XElement>())
-                    doc.Scenes.Add(new Scene { Name = (string)s.Attribute("name") ?? "", ColorIndex = IntAttr(s, "colorIndex", -1) });
+                    doc.Scenes.Add(new Scene
+                    {
+                        Name = (string)s.Attribute("name") ?? "",
+                        ColorIndex = IntAttr(s, "colorIndex", -1),
+                        Tempo = Math.Clamp(IntAttr(s, "tempo", 0), 0, 500),
+                        BeatsPerBar = Math.Clamp(IntAttr(s, "beatsPerBar", 0), 0, 64)
+                    });
+                foreach (var c in root.Element("Clips")?.Elements("Clip") ?? Enumerable.Empty<XElement>())
+                {
+                    string machine = (string)c.Attribute("machine");
+                    string pattern = (string)c.Attribute("pattern");
+                    if (!string.IsNullOrEmpty(machine) && !string.IsNullOrEmpty(pattern))
+                        doc.SetClip(machine, pattern, ClipSettings.FromXml(c));
+                }
                 foreach (var t in root.Element("Tracks")?.Elements("Track") ?? Enumerable.Empty<XElement>())
                 {
                     var track = new Track

@@ -368,6 +368,13 @@ namespace ReBuzz.Core
             }
         }
 
+        /// <summary>
+        /// Fork (0.5): volume of the machine's output while a session clip launched with
+        /// velocity plays, 0..1 (1 otherwise). Applied by its output connections, ramped over a
+        /// block (MachineConnectionCore), so it never shows as a changed amp.
+        /// </summary>
+        internal volatile float ClipGain = 1f;
+
         int baseOctave = 4;
         public int BaseOctave { get => baseOctave;
             set
