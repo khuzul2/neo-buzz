@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v5 — 0.1 (#1, #2), 0.2 (#3) and 0.3 (#4) merged; 0.4 Mixer in review |
+| Status | Draft v5 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4) and 0.4 (#5) merged; next: 0.5 Clip & scene properties |
 | Date | 2026-10-25 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -313,7 +313,7 @@ Differences from Live: a recorded stop plays back as Buzz's `Off` (the machine's
 
 **Acceptance criteria.** Changing volume/pan in the session and in the Machine View is the same parameter (each reflects the other live); meters update at ≥ 30 fps without audio impact.
 
-**Status (in review).** Features 1–4 are in. The mixer is pinned under the grid and scrolls sideways with it; **Mixer** in the top bar (or Ctrl+Alt+M) shows or hides it, and the choice is saved with the song.
+**Status (merged, #5).** Features 1–4 are in. The mixer is pinned under the grid and scrolls sideways with it; **Mixer** in the top bar (or Ctrl+Alt+M) shows or hides it, and the choice is saved with the song.
 - *Strips* (`SessionMixer`, no DSP of its own): a track's volume and pan are the amp and pan of the machine's *main outputs*, its output connections other than sends and cue (usually the one into the master or a bus). With several main outputs, volume moves them all by the same number of dB and pan sets them all. The fader uses the Machine View's amp knob scale (and ConnectionMixer's): linear in dB from -66 dB to +12 dB. The strips poll the graph, so a change in the Machine View shows within 50 ms, and a change in the session is the connection's amp, which the Machine View reads. Fader, pan and sends: drag (Shift for fine), wheel, double-click to reset. Each strip also has M (mute), S (solo) and C (cue) for its machine, as the track header has M and S.
 - *Meters*: post-fader stereo peak of the main outputs, -60 … +6 dB, green/yellow (-12 dB)/red (0 dB), falling at ~60 dB/s. `MachineConnectionCore` measures the peak of each block on the audio thread only while a mixer is on screen (one pass over the block, no allocation, no locks); the view reads it on the render loop, throttled to one update per 25 ms (≥ 30 fps).
 - *Returns*: ⚙ → *Return tracks* turns effect machines into return columns (A, B, …) after the tracks. A send is the connection from the track's machine to the return: raising it from off connects them (one undo step in the Machine View's history); a send that would make a feedback loop is greyed. Adding or removing a return is a Session View undo step; removing one leaves its connections alone.
