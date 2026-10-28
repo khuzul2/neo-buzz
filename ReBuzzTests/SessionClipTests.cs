@@ -82,8 +82,9 @@ namespace ReBuzzTests
 
             /// <summary>
             /// Starts the transport if needed and plays until the session clock is
-            /// <paramref name="clock"/>, stopping one block into that tick (block by block, so a
-            /// tempo change that shortens a tick can't carry it past).
+            /// <paramref name="clock"/>: that tick is processed (launches, positions) and not yet
+            /// rendered. Reads block by block, so a tempo change that shortens a tick can't carry
+            /// it past.
             /// </summary>
             public void PlayTo(long clock)
             {
@@ -297,8 +298,8 @@ namespace ReBuzzTests
             rig.PlayTo(8);
             Assert.That(TickOf(b), Is.EqualTo(6));
             Assert.That(TickOf(a), Is.Null);
-            float tone = rig.Driver.ReadStereoSamples(1).Values[0];
-            Assert.That(tone, Is.InRange(2060f, 2061f), "the machine plays B from row 6 (Tone: 2000 + 10 per row), a block in");
+            float tone = rig.Driver.ReadStereoSamples(1).Values[0] * 32768f;      // the output is scaled to ±1
+            Assert.That(tone, Is.EqualTo(2060f).Within(0.5f), "the machine plays B from row 6 (Tone: 2000 + 10 per row)");
 
             rig.Layout.LaunchClip(track, a);                     // A has no legato: from the top, on the next tick
             rig.PlayTo(9);
@@ -562,7 +563,7 @@ namespace ReBuzzTests
             rig.Ticks(3);
             view.RefreshState();
             Assert.That(panel.StatusText, Does.Contain("playing"));
-            SessionViewTests.Screenshot(view, "session-view-clip", 1100, 420);
+            SessionViewTests.Screenshot(view, "session-view-clip", 1100, 640);
 
             view.Select(1, 3);                                                  // an empty slot
             Assert.That(panel.Pattern, Is.Null);
