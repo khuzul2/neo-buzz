@@ -444,6 +444,8 @@ namespace ReBuzz.AppViews.Session
             readonly MixerBar fader;
             readonly MeterBar meter;
             readonly TextBlock dbText;
+            readonly Chip mute;
+            readonly Chip solo;
             readonly Chip cue;
             double levelL, levelR;
 
@@ -547,13 +549,18 @@ namespace ReBuzz.AppViews.Session
                 };
                 stack.Children.Add(dbText);
 
-                // Cue and name
+                // Mute, solo, cue and name
                 var bottom = new DockPanel { LastChildFill = true, Height = 18 };
                 if (kind != StripKind.Master)
                 {
-                    cue = new Chip("C", SessionPalette.Cue, "Cue: also play this to the cue output (⚙ → Cue output)", ToggleCue) { Width = 20, Margin = new Thickness(0, 0, 4, 0) };
-                    DockPanel.SetDock(cue, Dock.Left);
-                    bottom.Children.Add(cue);
+                    mute = new Chip("M", SessionPalette.Mute, "Mute", () => { if (Machine != null) Machine.IsMuted = !Machine.IsMuted; }) { Margin = new Thickness(0, 0, 2, 0) };
+                    solo = new Chip("S", SessionPalette.Solo, "Solo", () => { if (Machine != null) Machine.IsSoloed = !Machine.IsSoloed; }) { Margin = new Thickness(0, 0, 2, 0) };
+                    cue = new Chip("C", SessionPalette.Cue, "Cue: also play this to the cue output (⚙ → Cue output)", ToggleCue) { Margin = new Thickness(0, 0, 5, 0) };
+                    foreach (var chip in new[] { mute, solo, cue })
+                    {
+                        DockPanel.SetDock(chip, Dock.Left);
+                        bottom.Children.Add(chip);
+                    }
                 }
                 bottom.Children.Add(new TextBlock
                 {
@@ -626,6 +633,11 @@ namespace ReBuzz.AppViews.Session
                         send.Value = SessionMixer.FaderOf(s);
                     send.ValueText = !can ? "" : s <= 0 ? "off" : SessionMixer.FormatAmp(s);
                 }
+
+                mute.IsEnabled = solo.IsEnabled = Machine != null;
+                mute.Opacity = solo.Opacity = Machine != null ? 1 : 0.4;
+                mute.SetActive(Machine?.IsMuted == true);
+                solo.SetActive(Machine?.IsSoloed == true);
 
                 var cueMachine = view.CueMachine;
                 bool canCue = Machine != null && cueMachine != null && Machine != cueMachine;
