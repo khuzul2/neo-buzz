@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v6 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6) merged; 0.5 Clip & scene properties in review; next: 0.6 Performance |
+| Status | Draft v6 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6) and 0.5 (#7) merged; next: 0.6 Performance |
 | Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -368,7 +368,7 @@ Also: steady playback allocates nothing on the audio thread (removed a per-block
 
 **Acceptance criteria.** Each mode behaves like Live's in a side-by-side test checklist; legato switching between two 1-bar clips is seamless (no restart click).
 
-**Status (PR pending).** Features 1–7 are in. A clip is a pattern, so its settings belong to the pattern (saved in the song's layout, following renames, copied by Duplicate, gone with the pattern). The clip panel beside the grid (**Clip** in the top bar, or *Clip settings* on a clip's menu) shows and edits the selected clip's settings; edits are Session View undo steps. Clips with settings show short marks in their slot (G/T/R for the mode, L legato, 1× one-shot, ◆ markers, v velocity, q quantization) and the settings in their tooltip.
+**Status (merged, #7).** Features 1–7 are in. A clip is a pattern, so its settings belong to the pattern (saved in the song's layout, following renames, copied by Duplicate, gone with the pattern). The clip panel beside the grid (**Clip** in the top bar, or *Clip settings* on a clip's menu) shows and edits the selected clip's settings; edits are Session View undo steps. Clips with settings show short marks in their slot (G/T/R for the mode, L legato, 1× one-shot, ◆ markers, v velocity, q quantization) and the settings in their tooltip.
 - *Launch modes*, with Live's press and release: a slot's ▶ (mouse button down and up), Enter (key down and up; a held key doesn't repeat) and MIDI (note on and off; a CC's value 0 is the release). Trigger ignores the release. Gate stops on the clip's quantization after the release; released before it started, it plays one quantization step. Toggle stops on the next press. Repeat restarts the clip at its quantization rate while held and plays on after the release. A release doesn't cancel another clip waiting to replace the one released. Scenes launch their clips as Trigger, on the session's quantization, with each clip's legato, markers and velocity.
 - *Quantization* per clip: Global, None, 1/16, 1/8, 1 beat, 2 beats, 1, 2, 4 or 8 bars (the session's box has the new values too). 1/16 and 1/8 are fractions of a beat in ticks: at 4 ticks per beat, 1/16 is one tick.
 - *Legato*: the new clip starts where the clip it replaces on the track has got to (wrapped into its loop if it is shorter); with nothing playing, from its start. Switching sends no note-offs, so the machine plays on.
@@ -379,7 +379,7 @@ Also: steady playback allocates nothing on the audio thread (removed a per-block
 - *Limits*: recording into the arrangement writes a clip that starts after its first row (start marker, loop start, legato) from its first row, and doesn't record velocity: a Buzz sequence starts patterns at their first row and has no gain. *Insert into arrangement* copies whole patterns.
 - Also fixed: the arrangement recorder wrote a clip launched late (the catch-up of 0.4.1) only at its next loop wrap; launches are now written at their grid point, where they are heard to start. Undoing a marker change also changes the playing clip.
 
-Tests: `ReBuzzTests/SessionClipTests.cs`: each launch mode through the audio loop (mouse and keys via the layout and the view's Enter, and MIDI note on/off), per-clip quantization, legato (positions and the machine's output), start marker and loop region, moving markers while playing, one-shot clips, velocity scaling the output (MIDI velocity, sensitivity, back to full on stop and transport stop), scene tempo and beats per bar on the launch tick (and the engine's tempo), a scene replacing a waiting one, settings following renames, duplicates, deletes and undo, the clip panel's controls, and a render; scheduler and layout unit tests in `ReBuzz.SessionTests`. Not automated: a side-by-side check against Live, listening to legato switches, and native pattern editors with markers (positions reach them as for any jump).
+Tests (137/137 on CI, 0 bytes allocated per buffer in steady playback): `ReBuzzTests/SessionClipTests.cs` (13): each launch mode through the audio loop (mouse and keys via the layout and the view's Enter, and MIDI note on/off), per-clip quantization, legato (positions and the machine's output), start marker and loop region, moving markers while playing, one-shot clips, velocity scaling the output (MIDI velocity, sensitivity, back to full on stop and transport stop), scene tempo and beats per bar on the launch tick (and the engine's tempo), a scene replacing a waiting one, settings following renames, duplicates, deletes and undo, the clip panel's controls, and a render; scheduler and layout unit tests in `ReBuzz.SessionTests`. Not automated: a side-by-side check against Live, listening to legato switches, and native pattern editors with markers (positions reach them as for any jump).
 
 ---
 
