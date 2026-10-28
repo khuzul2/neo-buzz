@@ -357,7 +357,7 @@ namespace ReBuzz.Audio
             return grooveMul;
         }
 
-        private void UpdateMasterParams()
+        internal void UpdateMasterParams()
         {
             var masterInfo = ReBuzzCore.masterInfo;
             // Update master params on the next tick
@@ -375,7 +375,7 @@ namespace ReBuzz.Audio
                 buzzCore.MachineManager.RefreshMachineParams();
             }
         }
-        private void UpdateSubTickLength()
+        internal void UpdateSubTickLength()
         {
             var masterInfo = ReBuzzCore.masterInfo;
             var subTickInfo = ReBuzzCore.subTickInfo;
@@ -576,7 +576,7 @@ namespace ReBuzz.Audio
         }
 
         readonly List<PlayingEventsStruct> playingEvents = new List<PlayingEventsStruct>();
-        void UpdatePatternColumnEvents(int sampleCount)
+        internal void UpdatePatternColumnEvents(int sampleCount)
         {
             if (!buzzCore.Playing)
             {

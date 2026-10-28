@@ -442,6 +442,7 @@ namespace ReBuzzTests.Automation
             }
 
             public float[] Buffer => buffer;
+            internal WorkManager WorkManager => workManager;
 
             /// <summary>Renders <paramref name="frames"/> stereo frames into <see cref="Buffer"/>.</summary>
             public int Read(int frames) => workManager.MainAudioFillBuffer(buffer, 0, Math.Min(frames, buffer.Length / 2) * 2);

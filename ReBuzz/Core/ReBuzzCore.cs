@@ -306,7 +306,7 @@ namespace ReBuzz.Core
         /// </summary>
         internal void RaiseOutsideAudioLock(string propertyName)
         {
-            if (!System.Threading.Monitor.IsEntered(AudioLock) && dispatcher.CheckAccess())
+            if (!AudioLock.IsHeldByCurrentThread && dispatcher.CheckAccess())
                 PropertyChanged.Raise(this, propertyName);
             else
                 dispatcher.BeginInvoke(() => PropertyChanged.Raise(this, propertyName));

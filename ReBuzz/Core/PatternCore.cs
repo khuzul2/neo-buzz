@@ -59,7 +59,9 @@ namespace ReBuzz.Core
         readonly List<IPatternColumn> columns;
         public ReadOnlyCollection<IPatternColumn> Columns { get => columns.AsReadOnly(); }
 
-        int playPosition;
+        // Fork (0.4.1): starts "not playing". It was 0 until the engine's next block cleared every
+        // pattern; the engine now clears only the patterns it positioned (WorkManager).
+        int playPosition = int.MinValue;
 
         /// <summary>
         /// Fork (0.4.1): the track whose session clip gave this pattern its play position in the

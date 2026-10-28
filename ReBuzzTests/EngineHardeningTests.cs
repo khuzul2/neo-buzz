@@ -113,7 +113,7 @@ namespace ReBuzzTests
             rig.Core.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == "Playing")
-                    raised.Add(Monitor.IsEntered(ReBuzzCore.AudioLock));
+                    raised.Add(ReBuzzCore.AudioLock.IsHeldByCurrentThread);
             };
 
             rig.Align();
@@ -165,7 +165,7 @@ namespace ReBuzzTests
             var a = rig.Machines[0];
             var b = rig.Machines[1];
             var seen = new List<(string Name, bool Locked)>();
-            void Spy(string name) => seen.Add((name, Monitor.IsEntered(ReBuzzCore.AudioLock)));
+            void Spy(string name) => seen.Add((name, ReBuzzCore.AudioLock.IsHeldByCurrentThread));
 
             song.ConnectionAdded += c => Spy("ConnectionAdded");
             song.ConnectionRemoved += c => Spy("ConnectionRemoved");
@@ -364,9 +364,60 @@ namespace ReBuzzTests
             var log = new List<string>();
             long bytes = AllocatedWhileReading(rig, reader, 400, 256, log);   // ~2.3 s: several ticks and a loop wrap
 
-            foreach (var line in log) TestContext.Out.WriteLine(line);
-            TestContext.Out.WriteLine($"Allocated {bytes} bytes in 400 buffers of 256 frames");
-            Assert.That(bytes, Is.EqualTo(0), "steady playback must not allocate on the audio thread (GC pauses are dropouts)");
+            TestContext.Out.WriteLine($"[notice] steady playback allocated {bytes} bytes in 400 buffers of 256 frames");
+            Assert.That(bytes, Is.EqualTo(0),
+                "steady playback must not allocate on the audio thread (GC pauses are dropouts):\n" + string.Join("\n", log));
+        }
+
+        /// <summary>Not a check: reports which engine stages allocate, per call (CI shows the [notice] lines).</summary>
+        [Test]
+        public void ReportAllocationsByEngineStage()
+        {
+            using var rig = new Rig(4, hum: true);
+            for (int i = 0; i < 4; i++)
+            {
+                var m = rig.Machines[i];
+                var p = rig.Pattern(m, "P", Bar);
+                rig.Track(i).SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, p));
+                if (i >= 2)
+                    rig.Session.Launch(rig.Track(i), p);
+            }
+            var reader = rig.Driver.CreateAudioReader(256);
+            rig.Core.Playing = true;
+            for (int i = 0; i < 200; i++)
+                reader.Read(256);
+
+            var wm = reader.WorkManager;
+            var buffer = new float[512];
+            var report = new List<string>();
+            void Measure(string stage, Action action)
+            {
+                action();                                           // first call may allocate lazily
+                long before = GC.GetAllocatedBytesForCurrentThread();
+                for (int i = 0; i < 100; i++)
+                    action();
+                long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+                report.Add($"{stage} {bytes / 100.0:F0}");
+            }
+
+            lock (ReBuzzCore.AudioLock)
+            {
+                Measure("CopyMasterInfo", () => wm.CopyMasterInfo());
+                Measure("CopySubTickInfo", () => wm.CopySubTickInfo());
+                Measure("UpdateMasterParams", () => wm.UpdateMasterParams());
+                Measure("UpdateSubTickLength", () => wm.UpdateSubTickLength());
+                Measure("UpdatePatternColumnEvents", () => wm.UpdatePatternColumnEvents(256));
+                Measure("UpdateMasterAndSubTickInfoToHost", () => rig.Core.MachineManager.UpdateMasterAndSubTickInfoToHost());
+                Measure("CallTick(mid-tick)", () => { ReBuzzCore.masterInfo.PosInTick = 100; wm.CallTick(); });
+                Measure("CallTick(on tick)", () => { ReBuzzCore.masterInfo.PosInTick = 0; wm.CallTick(); });
+                Measure("ReadWork", () => wm.ReadWork(buffer, 0, 256));
+                Measure("MasterTapSamples", () => rig.Core.MasterTapSamples(buffer, 0, 512));
+                Measure("UpdatePatternPositions", () => wm.UpdatePatternPositions(256));
+                Measure("SessionCore.OnTick", () => rig.Core.SessionCore.OnTick(false));
+                Measure("SongCore.UpdatePlayPosition", () => rig.Song.UpdatePlayPosition(1));
+                Measure("SessionCore.PublishRenderedPosition", () => rig.Core.SessionCore.PublishRenderedPosition());
+            }
+            TestContext.Out.WriteLine("[notice] bytes per call: " + string.Join(", ", report));
         }
 
         [Test]
@@ -403,9 +454,9 @@ namespace ReBuzzTests
             double audioMs = buffers * 256 * 1000.0 / ReBuzzCore.masterInfo.SamplesPerSec;
             double budgetMs = 256 * 1000.0 / ReBuzzCore.masterInfo.SamplesPerSec;
             var sorted = times.OrderBy(t => t).ToArray();
-            TestContext.Out.WriteLine($"{machines} machines, {machines} tracks x 32 events, half playing session clips");
-            TestContext.Out.WriteLine($"Rendered {audioMs:F0} ms of audio in {total.Elapsed.TotalMilliseconds:F0} ms ({audioMs / total.Elapsed.TotalMilliseconds:F1}x real time)");
-            TestContext.Out.WriteLine($"Per buffer (budget {budgetMs:F2} ms): median {sorted[buffers / 2]:F3} ms, 99th {sorted[buffers * 99 / 100]:F3} ms, max {sorted[^1]:F3} ms");
+            TestContext.Out.WriteLine($"[notice] {machines} machines, {machines} tracks x 32 events, half playing session clips: " +
+                $"{audioMs / total.Elapsed.TotalMilliseconds:F1}x real time; per 256-frame buffer (budget {budgetMs:F2} ms): " +
+                $"median {sorted[buffers / 2]:F3} ms, 99th {sorted[buffers * 99 / 100]:F3} ms, max {sorted[^1]:F3} ms");
             Assert.That(total.Elapsed.TotalMilliseconds, Is.LessThan(audioMs), "slower than real time");
         }
 
