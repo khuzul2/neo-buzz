@@ -1,5 +1,6 @@
 using BuzzGUI.Interfaces;
 using System;
+using System.Collections.Generic;
 
 namespace ReBuzz.Core.Session
 {
@@ -9,9 +10,14 @@ namespace ReBuzz.Core.Session
     ///
     /// The user's map is stored in the registry and applies to every song; a song can carry its
     /// own map (<see cref="SessionDocument.SongMidi"/>), which then replaces the user's.
-    /// Controls the map uses don't reach machines (<see cref="Consumes"/>, called on the MIDI
-    /// thread from ReBuzzCore.SendMIDIInput), so pads launching clips don't also play notes.
-    /// Everything else runs on the UI thread.
+    /// Controls the map uses don't reach machines, so pads launching clips don't also play notes.
+    ///
+    /// Threading (0.4.1): ReBuzzCore.SendMIDIInput calls <see cref="OnMidiThread"/> on the MIDI
+    /// driver's thread. Launches, stops and play go straight to the session engine (which takes
+    /// requests from any thread), through a snapshot of what each slot, scene and track holds
+    /// (<see cref="Targets"/>) that the UI thread rebuilds whenever the layout changes; so a busy
+    /// UI never delays a launch. Learn, quantization and moving the note grid edit UI-owned
+    /// state and are posted to the UI thread.
     /// </summary>
     internal sealed class SessionMidi
     {
@@ -29,8 +35,40 @@ namespace ReBuzz.Core.Session
         readonly IRegistryEx registry;
         SessionMidiMap userMap;
         volatile SessionMidiMap active;    // read on the MIDI thread; replaced, never modified
+        volatile Targets targets = Targets.Empty;   // likewise
 
         (SessionTarget Target, int Track, int Scene)? learning;
+        volatile bool isLearning;          // learning, for the MIDI thread
+
+        /// <summary>
+        /// What each slot, scene and track stop launches, resolved on the UI thread so the MIDI
+        /// thread needs no layout lookups. Immutable; replaced as a whole.
+        /// </summary>
+        internal sealed class Targets
+        {
+            public static readonly Targets Empty = new Targets(Array.Empty<ISequence>(), Array.Empty<IPattern[]>(), Array.Empty<(ISequence, IPattern)[]>());
+
+            public Targets(ISequence[] tracks, IPattern[][] slots, (ISequence, IPattern)[][] scenes)
+            {
+                Tracks = tracks;
+                Slots = slots;
+                Scenes = scenes;
+            }
+
+            public ISequence[] Tracks { get; }
+            /// <summary>[track][scene]; null for an empty slot.</summary>
+            public IPattern[][] Slots { get; }
+            /// <summary>Filled slots of each scene.</summary>
+            public (ISequence, IPattern)[][] Scenes { get; }
+
+            public ISequence Track(int track) => track >= 0 && track < Tracks.Length ? Tracks[track] : null;
+
+            public IPattern Slot(int track, int scene) =>
+                track >= 0 && track < Slots.Length && scene >= 0 && scene < Slots[track].Length ? Slots[track][scene] : null;
+
+            public (ISequence, IPattern)[] Scene(int scene) =>
+                scene >= 0 && scene < Scenes.Length ? Scenes[scene] : Array.Empty<(ISequence, IPattern)>();
+        }
 
         /// <summary>Learn mode started, completed or was cancelled; or the mapping changed.</summary>
         public event Action Changed;
@@ -42,9 +80,45 @@ namespace ReBuzz.Core.Session
             this.registry = registry;
             userMap = SessionMidiMap.Parse(ReadUserMap());
             UpdateActive();
+            RebuildTargets();
 
-            buzz.MIDIInput += OnMidiInput;
-            layout.Changed += UpdateActive;
+            layout.Changed += () =>
+            {
+                UpdateActive();
+                RebuildTargets();
+            };
+        }
+
+        /// <summary>UI thread: resolves every slot, scene and track for the MIDI thread.</summary>
+        internal void RebuildTargets()
+        {
+            var doc = layout.Document;
+            if (doc == null)
+            {
+                targets = Targets.Empty;
+                return;
+            }
+            int trackCount = doc.Tracks.Count;
+            int sceneCount = doc.Scenes.Count;
+            var tracks = new ISequence[trackCount];
+            var slots = new IPattern[trackCount][];
+            for (int t = 0; t < trackCount; t++)
+            {
+                tracks[t] = layout.SequenceOf(t);
+                slots[t] = new IPattern[sceneCount];
+                for (int s = 0; s < sceneCount; s++)
+                    slots[t][s] = tracks[t] == null ? null : layout.PatternAt(t, s);
+            }
+            var scenes = new (ISequence, IPattern)[sceneCount][];
+            for (int s = 0; s < sceneCount; s++)
+            {
+                var list = new List<(ISequence, IPattern)>();
+                for (int t = 0; t < trackCount; t++)
+                    if (tracks[t] != null && slots[t][s] != null)
+                        list.Add((tracks[t], slots[t][s]));
+                scenes[s] = list.ToArray();
+            }
+            targets = new Targets(tracks, slots, scenes);
         }
 
         string ReadUserMap()
@@ -76,12 +150,90 @@ namespace ReBuzz.Core.Session
             return MidiControl.TryDecode(data, out var control, out _, out _) && map.Handles(control);
         }
 
+        /// <summary>
+        /// MIDI thread: plays a mapped control (launches and stops go to the engine from here;
+        /// UI-owned changes are posted) and feeds learn. Returns whether the message is for the
+        /// session only, i.e. must not reach machines.
+        /// </summary>
+        internal bool OnMidiThread(int data)
+        {
+            if (!MidiControl.TryDecode(data, out var control, out int value, out bool isPress)) return false;
+            var map = active;
+            bool consumed = map != null && !map.IsEmpty && map.Handles(control);
+
+            if (isLearning)
+            {
+                buzz.dispatcher.BeginInvoke(() => Learn(control, isPress));
+                return consumed;
+            }
+
+            if (map == null || !map.TryResolve(control, out var target, out int track, out int scene)) return consumed;
+
+            if (target == SessionTarget.Quantization)
+            {
+                buzz.dispatcher.BeginInvoke(() => SetQuantizationFromMidi(control, value, isPress));
+                return consumed;
+            }
+            if (isPress)
+                ExecuteNow(target, track, scene, targets);
+            return consumed;
+        }
+
+        /// <summary>
+        /// Any thread: what a pressed target does. Launch, stop and play use the engine (thread-safe)
+        /// and the resolved <paramref name="t"/>; everything else is posted to the UI thread.
+        /// </summary>
+        void ExecuteNow(SessionTarget target, int track, int scene, Targets t)
+        {
+            var session = buzz.Session;
+            switch (target)
+            {
+                case SessionTarget.Slot:
+                    {
+                        var seq = t.Track(track);
+                        if (seq == null) return;
+                        var pattern = t.Slot(track, scene);
+                        if (pattern != null)
+                            session.Launch(seq, pattern);
+                        else
+                            session.Stop(seq);
+                        break;
+                    }
+                case SessionTarget.Scene:
+                    {
+                        var slots = t.Scene(scene);
+                        if (slots.Length > 0)
+                            session.LaunchScene(slots);
+                        break;
+                    }
+                case SessionTarget.TrackStop:
+                    if (t.Track(track) is ISequence s)
+                        session.Stop(s);
+                    break;
+                case SessionTarget.StopAll:
+                    session.StopAll();
+                    break;
+                case SessionTarget.Transport:
+                    // Starting only arms the next tick; stopping stops machines and raises UI
+                    // events, so it goes through the UI thread.
+                    if (!buzz.PlayRequested)
+                        buzz.Playing = true;
+                    else
+                        buzz.dispatcher.BeginInvoke(() => buzz.Playing = false);
+                    break;
+                default:
+                    buzz.dispatcher.BeginInvoke(() => Execute(target, track, scene));
+                    break;
+            }
+        }
+
         // ------------------------------------------------------------------ learn and edit
 
         /// <summary>The next note or CC that arrives gets bound to this target.</summary>
         public void BeginLearn(SessionTarget target, int track, int scene)
         {
             learning = (target, track, scene);
+            isLearning = true;
             Changed?.Invoke();
         }
 
@@ -89,6 +241,7 @@ namespace ReBuzz.Core.Session
         {
             if (learning == null) return;
             learning = null;
+            isLearning = false;
             Changed?.Invoke();
         }
 
@@ -165,36 +318,26 @@ namespace ReBuzz.Core.Session
 
         // ------------------------------------------------------------------ playing
 
-        /// <summary>UI thread (ReBuzzCore raises MIDIInput through the dispatcher).</summary>
-        internal void OnMidiInput(int data)
+        /// <summary>UI thread: binds the control to the target being learnt.</summary>
+        void Learn(MidiControl control, bool isPress)
         {
-            if (!MidiControl.TryDecode(data, out var control, out int value, out bool isPress)) return;
-
-            if (learning is { } learn)
-            {
-                if (!isPress) return;     // learn on press, so the release of the previous key doesn't count
-                learning = null;
-                Modify(m => m.Bind(control, learn.Target, learn.Track, learn.Scene));
-                return;
-            }
-
-            var map = active;
-            if (map == null || !map.TryResolve(control, out var t, out var tr, out var sc)) return;
-
-            if (t == SessionTarget.Quantization)
-            {
-                if (control.Type == MidiControlType.ControlChange)
-                    layout.SetLaunchQuantization(QuantizationCycle[Math.Min(QuantizationCycle.Length - 1, value * QuantizationCycle.Length / 128)]);
-                else if (isPress)
-                    layout.SetLaunchQuantization(QuantizationCycle[(Array.IndexOf(QuantizationCycle, buzz.Session.LaunchQuantization) + 1) % QuantizationCycle.Length]);
-                return;
-            }
-
-            if (!isPress) return;
-            Execute(t, tr, sc);
+            if (learning is not { } learn) return;
+            if (!isPress) return;     // learn on press, so the release of the previous key doesn't count
+            learning = null;
+            isLearning = false;
+            Modify(m => m.Bind(control, learn.Target, learn.Track, learn.Scene));
         }
 
-        /// <summary>Does what a target does when its control is pressed.</summary>
+        /// <summary>UI thread: a CC sets the quantization by range, a note steps through it.</summary>
+        void SetQuantizationFromMidi(MidiControl control, int value, bool isPress)
+        {
+            if (control.Type == MidiControlType.ControlChange)
+                layout.SetLaunchQuantization(QuantizationCycle[Math.Min(QuantizationCycle.Length - 1, value * QuantizationCycle.Length / 128)]);
+            else if (isPress)
+                layout.SetLaunchQuantization(QuantizationCycle[(Array.IndexOf(QuantizationCycle, buzz.Session.LaunchQuantization) + 1) % QuantizationCycle.Length]);
+        }
+
+        /// <summary>UI thread: does what a target does when its control is pressed.</summary>
         internal void Execute(SessionTarget target, int track, int scene)
         {
             var session = buzz.Session;

@@ -60,6 +60,10 @@ namespace ReBuzz.Core.Actions.GraphActions
 
         protected override void DoAction()
         {
+            // Fork (0.4.1): the graph changes under AudioLock; ConnectionAdded (the Machine View
+            // builds its controls) is raised after releasing it, so the audio thread isn't held
+            // up while a send or cue is connected during a performance.
+            MachineConnectionCore added = null;
             lock (ReBuzzCore.AudioLock)
             {
                 var mcsrc = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == src);
@@ -86,14 +90,17 @@ namespace ReBuzz.Core.Actions.GraphActions
                 if (!mcsrc.Hidden && !mcdst.Hidden && !mcsrc.DLL.Info.Flags.HasFlag(MachineInfoFlags.CONTROL_MACHINE))
                 {
                     ParameterGroup.AddInputs(mcc, mcdst.ParameterGroupsList[0]);
-                    buzz.SongCore.InvokeConnectionAdded(mcc);
+                    added = mcc;
                 }
                 buzz.UpdateMachineDelayCompensation();
             }
+            if (added != null)
+                buzz.SongCore.InvokeConnectionAdded(added);
         }
 
         protected override void UndoAction()
         {
+            MachineConnectionCore removed = null;
             lock (ReBuzzCore.AudioLock)
             {
                 var mcsrc = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == src);
@@ -105,11 +112,13 @@ namespace ReBuzz.Core.Actions.GraphActions
                     mcdst.RemoveInput(connection);
                     if (!mcsrc.Hidden && !mcdst.Hidden)
                     {
-                        buzz.SongCore.InvokeConnectionRemoved(connection);
+                        removed = connection;
                     }
                 }
                 buzz.UpdateMachineDelayCompensation();
             }
+            if (removed != null)
+                buzz.SongCore.InvokeConnectionRemoved(removed);   // fork: after releasing AudioLock
         }
     }
 }

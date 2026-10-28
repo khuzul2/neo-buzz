@@ -375,7 +375,7 @@ namespace ReBuzz.Core
                 baseOctave = value;
                 baseOctave = baseOctave < 0 ? 0 : baseOctave;
                 baseOctave = baseOctave > 9 ? 9 : baseOctave;
-                dispatcher.Invoke(() => PropertyChanged.Raise(this, "BaseOctave") );
+                dispatcher.BeginInvoke(() => PropertyChanged.Raise(this, "BaseOctave"));   // fork: set from the IPC thread too
             }
         }
 
@@ -541,17 +541,18 @@ namespace ReBuzz.Core
         {
             if (p != null)
             {
+                PatternCore newp = new PatternCore(this, name, p.Length, dispatcher);
                 lock (ReBuzzCore.AudioLock)
                 {
-                    PatternCore newp = new PatternCore(this, name, p.Length, dispatcher);
                     this.patterns.Add(newp);
                     var buzz = graph.Buzz as ReBuzzCore;
                     buzz.MachineManager.CreatePatternCopy(EditorMachine, newp, p);
-                    PatternAdded?.Invoke(newp);
-                    PropertyChanged.Raise(this, "Patterns");
-                    graph.Buzz.SetPatternEditorPattern(newp);
-                    graph.Buzz.SetModifiedFlag();
                 }
+                // Fork (0.4.1): events and UI after releasing AudioLock.
+                PatternAdded?.Invoke(newp);
+                PropertyChanged.Raise(this, "Patterns");
+                graph.Buzz.SetPatternEditorPattern(newp);
+                graph.Buzz.SetModifiedFlag();
             }
         }
 
@@ -576,31 +577,25 @@ namespace ReBuzz.Core
 
         public void DeletePattern(IPattern p)
         {
+            var buzz = graph.Buzz as ReBuzzCore;
+            var changedSequences = new List<SequenceCore>();
             lock (ReBuzzCore.AudioLock)
             {
                 patterns.Remove(p as PatternCore);
-                PatternRemoved?.Invoke(p);
-                PropertyChanged.Raise(this, "Patterns");
-                (p as PatternCore).ClearEvents();
-
-                var buzz = graph.Buzz as ReBuzzCore;
                 buzz.SessionCore.OnPatternDeleted(p as PatternCore);   // fork: Session View
                 // Remove from sequences
                 foreach (var seq in buzz.SongCore.SequencesList.Where(s => s.Machine == p.Machine))
                 {
-                    bool seqChanged = false;
-                    foreach (var e in seq.Events.ToArray())
-                    {
-                        if (e.Value.Pattern == p)
-                        {
-                            seqChanged = true;
-                            seq.EventsList.Remove(e.Key);
-                        }
-                    }
-                    if (seqChanged)
-                        seq.InvokeEvents();
+                    if (seq.RemoveEventsOf(p))
+                        changedSequences.Add(seq);
                 }
             }
+            // Fork (0.4.1): events after releasing AudioLock (listeners redraw editors).
+            PatternRemoved?.Invoke(p);
+            PropertyChanged.Raise(this, "Patterns");
+            (p as PatternCore).ClearEvents();
+            foreach (var seq in changedSequences)
+                seq.InvokeEvents();
         }
 
         public void RenamePattern(IPattern p, string newName)

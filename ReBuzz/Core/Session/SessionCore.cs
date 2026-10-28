@@ -12,11 +12,16 @@ namespace ReBuzz.Core.Session
     /// Tracks are sequences, clips are patterns. See docs/specs/session-view.md, section 4.1.
     ///
     /// Locking: the scheduler is guarded by its own small lock (<see cref="gate"/>), never by
-    /// ReBuzzCore.AudioLock. The audio thread holds AudioLock while it synchronously invokes the
-    /// UI thread (e.g. when the transport starts), so a UI request that waited for AudioLock
-    /// could deadlock. Engine hooks run on the audio thread with AudioLock held and take the
-    /// gate inside it (order AudioLock -> gate); UI requests take only the gate. Nothing is
-    /// called out to machines or the dispatcher while the gate is held.
+    /// ReBuzzCore.AudioLock, so a request (UI or MIDI thread) never waits for a whole audio
+    /// buffer. Engine hooks run on the audio thread with AudioLock held and take the gate
+    /// inside it (order AudioLock -> gate); requests take only the gate. Nothing is called out
+    /// to machines or the dispatcher while the gate is held.
+    ///
+    /// Latency compensation (0.4.1): the engine renders ahead of what the listener hears by the
+    /// output latency. Requests are quantized from what is heard (<see cref="HeardClock"/>), so
+    /// a launch pressed just before a bar line, as heard, lands on that bar line: if the engine
+    /// has rendered past it already, the clip starts on the next tick in step with the bar
+    /// (catch-up) instead of a whole bar late.
     ///
     /// Engine hooks:
     ///  - <see cref="OnTick"/> from WorkManager at every tick boundary while playing
@@ -37,6 +42,42 @@ namespace ReBuzz.Core.Session
 
         int beatsPerBar = 4;
         LaunchQuantization launchQuantization = LaunchQuantization.Bar;
+
+        // Rendered position at the end of the last audio callback (under the gate).
+        double renderedTicks = -1;
+        double renderedSamplesPerTick;
+        long renderedAt;
+
+        /// <summary>Quantize requests from what is heard rather than what is rendered (default on).</summary>
+        internal volatile bool LatencyCompensation = true;
+
+        IRegistryEx settings;
+
+        /// <summary>Reads the session's engine settings (latency compensation) from the registry.</summary>
+        internal void UseSettings(IRegistryEx registry)
+        {
+            settings = registry;
+            try
+            {
+                if (registry != null)
+                    LatencyCompensation = registry.Read("LatencyCompensation", 1, "Session") != 0;
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        internal void SetLatencyCompensation(bool on)
+        {
+            LatencyCompensation = on;
+            try
+            {
+                settings?.Write("LatencyCompensation", on ? 1 : 0, "Session");
+            }
+            catch (Exception)
+            {
+            }
+        }
 
         /// <summary>Arrangement record (0.3); set by ReBuzzCoreInitialization.</summary>
         internal SessionRecorder Recorder { get; set; }
@@ -106,7 +147,7 @@ namespace ReBuzz.Core.Session
             int quantize = QuantizeTicks(options);
             lock (gate)
             {
-                scheduler.Launch(seq, pat, quantize, options?.Loop ?? true);
+                scheduler.Launch(seq, pat, quantize, options?.Loop ?? true, HeardClock(), Math.Max(0, options?.StartOffset ?? 0));
             }
             StartTransportIfStopped();
             RaiseTrackStateChanged(seq);
@@ -123,7 +164,7 @@ namespace ReBuzz.Core.Session
             int quantize = QuantizeTicks(options);
             lock (gate)
             {
-                scheduler.LaunchScene(list, quantize, options?.Loop ?? true);
+                scheduler.LaunchScene(list, quantize, options?.Loop ?? true, HeardClock());
             }
             StartTransportIfStopped();
             RaiseTrackStateChanged(list.Select(s => s.Item1).ToArray());
@@ -135,7 +176,7 @@ namespace ReBuzz.Core.Session
             int quantize = GetQuantizationTicks(launchQuantization);
             lock (gate)
             {
-                scheduler.Stop(seq, quantize, immediate);
+                scheduler.Stop(seq, quantize, immediate, HeardClock());
             }
             RaiseTrackStateChanged(seq);
         }
@@ -145,7 +186,7 @@ namespace ReBuzz.Core.Session
             int quantize = GetQuantizationTicks(launchQuantization);
             lock (gate)
             {
-                scheduler.StopAll(quantize, immediate);
+                scheduler.StopAll(quantize, immediate, HeardClock());
             }
             RaiseAllChanged();
         }
@@ -217,6 +258,55 @@ namespace ReBuzz.Core.Session
         /// <summary>True while a clip plays or waits; the song then keeps running at its loop end.</summary>
         internal bool HasActivity { get { lock (gate) return scheduler.HasActivity; } }
 
+        // ------------------------------------------------------------------ latency compensation
+
+        /// <summary>
+        /// Audio thread, end of each callback (AudioLock held): where the render is now, for
+        /// <see cref="HeardClock"/>.
+        /// </summary>
+        internal void PublishRenderedPosition()
+        {
+            var mi = ReBuzzCore.masterInfo;
+            long c = scheduler.Clock;
+            int spt = Math.Max(1, mi.SamplesPerTick);
+            lock (gate)
+            {
+                renderedTicks = c < 0 ? -1 : c + (double)mi.PosInTick / spt;
+                renderedSamplesPerTick = spt;
+                renderedAt = System.Diagnostics.Stopwatch.GetTimestamp();
+            }
+        }
+
+        /// <summary>
+        /// Tick the listener hears now (call under the gate): the rendered position minus the
+        /// part of the output latency that hasn't played out since the last callback. Equals
+        /// <see cref="Clock"/> without a latency estimate, with compensation off, or when no
+        /// audio has been rendered recently.
+        /// </summary>
+        long HeardClock()
+        {
+            long c = scheduler.Clock;
+            if (c < 0 || !LatencyCompensation || renderedTicks < 0) return c;
+            int latency = buzz.OutputLatencySamples;
+            int rate = ReBuzzCore.masterInfo.SamplesPerSec;
+            if (latency <= 0 || rate <= 0) return c;
+            double sinceRender = (System.Diagnostics.Stopwatch.GetTimestamp() - renderedAt) * (double)rate / System.Diagnostics.Stopwatch.Frequency;
+            double behind = latency - Math.Max(0, sinceRender);
+            if (behind <= 0) return c;
+            double heard = renderedTicks - behind / renderedSamplesPerTick;
+            return Math.Min(c, (long)Math.Floor(heard));
+        }
+
+        /// <summary>Output latency used for compensation, in milliseconds (0 when unknown or off).</summary>
+        internal double CompensatedLatencyMs
+        {
+            get
+            {
+                int rate = ReBuzzCore.masterInfo.SamplesPerSec;
+                return LatencyCompensation && rate > 0 ? buzz.OutputLatencySamples * 1000.0 / rate : 0;
+            }
+        }
+
         // ------------------------------------------------------------------ engine hooks
 
         /// <summary>Tick boundary while the transport plays (audio thread, AudioLock held).
@@ -274,6 +364,11 @@ namespace ReBuzz.Core.Session
             for (int i = 0; i < tickChanges.Count; i++)
             {
                 var c = tickChanges[i];
+                if (c.Kind == SessionChangeKind.Moved)
+                {
+                    recorder.ClipCut(c.Track, songPosition);
+                    continue;
+                }
                 if (c.Kind != SessionChangeKind.Stopped && c.Kind != SessionChangeKind.Ended) continue;
                 if (scheduler.IsOverridden(c.Track))
                     recorder.ClipStopped(c.Track, songPosition);

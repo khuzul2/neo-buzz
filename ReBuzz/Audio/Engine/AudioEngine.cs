@@ -117,6 +117,14 @@ namespace ReBuzz.Audio.Engine
                         SelectedOutDevice = currentDriver.DeviceInfo;
                         SelectedInDevice = currentDriver.InputDeviceInfo;
                         SampleRateIn = currentDriver.SampleRate;
+
+                        // Fork (0.4.1): output latency for the Session View's launch timing. WASAPI
+                        // runs with a 2 x BufferSize buffer, ASIO with BufferSize; the fill thread
+                        // keeps up to two more buffers ready.
+                        int frames = currentDriver.BufferSize * (device.Type == AudioOutType.Wasapi ? 2 : 1);
+                        if (engineSettings.AudioBufferFillThread)
+                            frames += currentDriver.BufferSize * 2;
+                        buzzCore.OutputLatencySamples = Math.Max(0, frames);
                         break;
 
                     case AudioOutType.DirectSound:

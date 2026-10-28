@@ -299,6 +299,19 @@ namespace ReBuzz.Core
         }
         public int Speed { get => speed; set { speed = value; PropertyChanged.Raise(this, "Speed"); } }
 
+        /// <summary>
+        /// Fork: raises PropertyChanged on the UI thread, never under AudioLock. On the UI thread
+        /// outside the lock it raises at once; anywhere else (the audio thread at the song end, a
+        /// MIDI or IPC thread, or code holding AudioLock) it posts to the UI thread.
+        /// </summary>
+        internal void RaiseOutsideAudioLock(string propertyName)
+        {
+            if (!System.Threading.Monitor.IsEntered(AudioLock) && dispatcher.CheckAccess())
+                PropertyChanged.Raise(this, propertyName);
+            else
+                dispatcher.BeginInvoke(() => PropertyChanged.Raise(this, propertyName));
+        }
+
         internal bool StartPlaying()
         {
             if (preparePlaying)
@@ -306,7 +319,10 @@ namespace ReBuzz.Core
                 preparePlaying = false;
                 playing = true;
                 GlobalState.StateFlags |= SF_PLAYING;
-                dispatcher.Invoke(() =>
+                // Fork: posted, not Invoke. This runs on the audio thread under AudioLock: waiting
+                // for the UI here made the first buffer late whenever the UI was busy, and could
+                // deadlock with a UI request waiting for AudioLock.
+                dispatcher.BeginInvoke(() =>
                 {
                     PropertyChanged.Raise(this, "Playing");
                 });
@@ -322,6 +338,13 @@ namespace ReBuzz.Core
         /// (Session View) go by this, since Playing only turns true on that tick.
         /// </summary>
         internal bool PlayRequested => playing || preparePlaying;
+
+        /// <summary>
+        /// Fork (0.4.1): estimated frames between rendering a sample and hearing it (driver buffer
+        /// plus ReBuzz's own buffering), set when the audio driver is created; 0 when unknown.
+        /// The Session View quantizes launches from what is heard (SessionCore.HeardClock).
+        /// </summary>
+        internal int OutputLatencySamples { get; set; }
 
         /// <summary>
         /// Gets or sets whether the host is currently playing.
@@ -352,7 +375,7 @@ namespace ReBuzz.Core
                     }
 
                     SoloPattern = null;
-                    PropertyChanged.Raise(this, "Playing");
+                    RaiseOutsideAudioLock("Playing");   // fork: also set from the audio thread at the song end
                 }
 
                 if (value)
@@ -385,7 +408,7 @@ namespace ReBuzz.Core
                 {
                     Playing = true;
                 }
-                PropertyChanged.Raise(this, "Recording");
+                RaiseOutsideAudioLock("Recording");
             }
         }
         public bool Looping { get => looping; set { looping = value; PropertyChanged.Raise(this, "Looping"); } }
@@ -441,7 +464,9 @@ namespace ReBuzz.Core
                             MachineManager.GotMidiFocus(midiFocusMachine as MachineCore);
                         }
 
-                        dispatcher.Invoke(() => PropertyChanged.Raise(this, "MIDIFocusMachine"));
+                        // Fork: posted (native machines set this from the IPC thread, which the audio
+                        // thread may be waiting on).
+                        dispatcher.BeginInvoke(() => PropertyChanged.Raise(this, "MIDIFocusMachine"));
                     }
                 }
             }
@@ -872,6 +897,8 @@ namespace ReBuzz.Core
             AppDomain currentDomain = AppDomain.CurrentDomain;
             currentDomain.AssemblyResolve += MyResolveEventHandler;
 
+            Autosave = new SongAutosave(this);   // fork (0.4.1)
+
             timerAutomaticBackups = new Timer();
             timerAutomaticBackups.Interval = 10000;
             timerAutomaticBackups.AutoReset = true;
@@ -973,6 +1000,7 @@ namespace ReBuzz.Core
 
         private void DeleteBackup()
         {
+            Autosave?.Discard();   // fork (0.4.1): saved or closed on purpose
             if (SongCore.SongName != null && !generalSettings.KeepBackups)
             {
                 timerAutomaticBackups.Stop();
@@ -1501,6 +1529,23 @@ namespace ReBuzz.Core
             Modified = false;
         }
 
+        /// <summary>Fork (0.4.1): autosave of unsaved changes (the main window drives it).</summary>
+        internal SongAutosave Autosave { get; private set; }
+
+        /// <summary>
+        /// Fork (0.4.1): writes the song to a file without making it the song's file (no name,
+        /// recent files, backup or modified-flag changes). Used by autosave.
+        /// </summary>
+        internal void SaveSongCopy(string filename)
+        {
+            IReBuzzFile file = GetReBuzzFile(filename);
+            SaveSongCore ss = new SaveSongCore();
+            ss.Song = songCore;
+            SaveSong?.Invoke(ss);
+            file.SetSubSections(ss);
+            file.Save(filename);
+        }
+
         public int RenderAudio(float[] buffer, int nsamples, int samplerate)
         {
             var ap = AudioEngine.GetAudioProvider();
@@ -1529,9 +1574,32 @@ namespace ReBuzz.Core
         /// </summary>
         public void SendMIDIInput(int data)
         {
+            try
+            {
+                RouteMidiInput(data);
+            }
+            catch (Exception e)
+            {
+                // Fork: this runs on the MIDI driver's thread, where an exception (e.g. the machine
+                // list changing under the loop) would take the process down.
+                DCWriteLine("MIDI input: " + e.Message, DCLogLevel.Warning);
+            }
+
+            // Some UI components require MIDIInput.Invoke to be called from UI thread (Midi Keyboard)
+            // Fork: posted rather than Invoke, so the MIDI thread never waits for the UI.
+            dispatcher.BeginInvoke(() =>
+            {
+                MIDIActivity = true;
+                MIDIInput?.Invoke(data);
+            });
+        }
+
+        void RouteMidiInput(int data)
+        {
             // Fork: notes and CCs mapped to the Session View control the session only
-            // (docs/specs/session-view.md 0.2); they still reach MIDIInput below.
-            bool sessionOnly = SessionMidi?.Consumes(data) == true;
+            // (docs/specs/session-view.md 0.2). The session handles them here, on the MIDI thread
+            // (0.4.1), so launches don't wait for the UI.
+            bool sessionOnly = SessionMidi?.OnMidiThread(data) == true;
 
             if (!sessionOnly && midiFocusMachine != null && !midiFocusMachine.DLL.IsMissing)
             {
@@ -1598,14 +1666,6 @@ namespace ReBuzz.Core
                     }
                 }
             }
-
-            // Some UI components require MIDIInput.Invoke to be called from UI thread (Midi Keyboard)
-            dispatcher.Invoke(new Action(() =>
-            {
-                MIDIActivity = true;
-                MIDIInput?.Invoke(data);
-                }
-            ));
         }
 
         void SendMidiInput(MachineCore machine, MachineCore editor, int data, bool polacConversion)
@@ -2171,6 +2231,7 @@ namespace ReBuzz.Core
         // Clean up song 
         internal void NewSong()
         {
+            Autosave?.Discard();   // fork (0.4.1)
             Playing = false;
             InfoText = "";
 

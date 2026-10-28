@@ -18,8 +18,79 @@ namespace ReBuzz.Core
         internal MachineCore MachineCore { get; private set; }
         public IMachine Machine { get => MachineCore; }
 
-        public OrderedDictionary<int, SequenceEvent> EventsList { get; set; }
+        OrderedDictionary<int, SequenceEvent> eventsList;
+        public OrderedDictionary<int, SequenceEvent> EventsList
+        {
+            get => eventsList;
+            set
+            {
+                eventsList = value;
+                RebuildArranged();
+            }
+        }
         public ReadOnlyDictionary<int, SequenceEvent> Events { get => new ReadOnlyDictionary<int, SequenceEvent>(EventsList); }
+
+        /// <summary>
+        /// Fork (0.4.1): the events as sorted arrays, for the audio thread and PlayingPattern
+        /// (no tree walk, no allocation). Replaced whenever events are added or removed, which
+        /// happens under AudioLock; events' spans are shared with <see cref="EventsList"/>.
+        /// </summary>
+        internal sealed class ArrangedEvents
+        {
+            public static readonly ArrangedEvents Empty = new ArrangedEvents(Array.Empty<int>(), Array.Empty<SequenceEvent>());
+
+            public ArrangedEvents(int[] times, SequenceEvent[] events)
+            {
+                Times = times;
+                Events = events;
+            }
+
+            public int[] Times { get; }
+            public SequenceEvent[] Events { get; }
+
+            /// <summary>Index of the last event at or before <paramref name="time"/>, or -1.</summary>
+            public int IndexAtOrBefore(int time)
+            {
+                int lo = 0, hi = Times.Length - 1, found = -1;
+                while (lo <= hi)
+                {
+                    int mid = (lo + hi) >> 1;
+                    if (Times[mid] <= time)
+                    {
+                        found = mid;
+                        lo = mid + 1;
+                    }
+                    else
+                    {
+                        hi = mid - 1;
+                    }
+                }
+                return found;
+            }
+        }
+
+        volatile ArrangedEvents arranged = ArrangedEvents.Empty;
+        internal ArrangedEvents Arranged => arranged;
+
+        internal void RebuildArranged()
+        {
+            var list = eventsList;
+            if (list == null || list.Count == 0)
+            {
+                arranged = ArrangedEvents.Empty;
+                return;
+            }
+            var times = new int[list.Count];
+            var events = new SequenceEvent[list.Count];
+            int i = 0;
+            foreach (var kv in list)
+            {
+                times[i] = kv.Key;
+                events[i] = kv.Value;
+                i++;
+            }
+            arranged = new ArrangedEvents(times, events);
+        }
 
         public IPattern PlayingPattern
         {
@@ -39,13 +110,19 @@ namespace ReBuzz.Core
                 if (session.IsArrangementOverridden(this))
                     return null;
 
-                foreach (var pe in EventsList.Values)
-                {
-                    if (pe.Pattern != null && pe.Pattern.PlayPosition != int.MinValue)
-                        return pe.Pattern;
-                }
-
-                return null;
+                // Fork (0.4.1): the pattern of this track's event at the song position, if it plays
+                // here. Upstream returned the first event (in time) whose pattern had a position,
+                // which could be a pattern another track of the same machine was playing.
+                var events = arranged;
+                int songPosition = buzz.SongCore.PlayPosition;
+                int index = events.IndexAtOrBefore(songPosition);
+                if (index < 0) return null;
+                var e = events.Events[index];
+                if (e.Type != SequenceEventType.PlayPattern || songPosition >= events.Times[index] + e.Span) return null;
+                var pattern = e.Pattern as PatternCore;
+                if (pattern == null || pattern.PlayPosition == int.MinValue) return null;
+                if (pattern.SessionTrack != null && pattern.SessionTrack != this) return null;
+                return pattern;
             }
         }
 
@@ -96,26 +173,30 @@ namespace ReBuzz.Core
         public event Action<int, int> SpanCleared;
         public event PropertyChangedEventHandler PropertyChanged;
 
+        // Fork (0.4.1): edits change the events under AudioLock and raise events after releasing
+        // it, so sequence editors redraw without holding up the audio thread (the Session View
+        // writes the arrangement while playing).
+
         public void Clear(int time, int span)
         {
             lock (ReBuzzCore.AudioLock)
             {
                 OrderedDictionary<int, SequenceEvent> od = new OrderedDictionary<int, SequenceEvent>();
-                foreach (var eventTime in Events.Keys.ToArray())
+                foreach (var kv in EventsList)
                 {
-                    if (eventTime < time || eventTime >= time + span)
+                    if (kv.Key < time || kv.Key >= time + span)
                     {
-                        od.Add(eventTime, Events[eventTime]);
+                        od.Add(kv.Key, kv.Value);
                     }
                 }
 
+                UpdateSpans(od);
                 EventsList = od;
-                UpdateSpans();
-                PropertyChanged.Raise(this, "Events");
-                SpanCleared?.Invoke(time, span);   // fork: ?. like Insert/Delete (no listener without a sequence editor)
-
-                (Global.Buzz as ReBuzzCore).SetModifiedFlag();
             }
+            PropertyChanged.Raise(this, "Events");
+            SpanCleared?.Invoke(time, span);   // fork: ?. like Insert/Delete (no listener without a sequence editor)
+
+            (Global.Buzz as ReBuzzCore).SetModifiedFlag();
         }
 
         public void Delete(int time, int span)
@@ -123,9 +204,10 @@ namespace ReBuzz.Core
             lock (ReBuzzCore.AudioLock)
             {
                 OrderedDictionary<int, SequenceEvent> od = new OrderedDictionary<int, SequenceEvent>();
-                foreach (var eventTime in Events.Keys.ToArray())
+                foreach (var kv in EventsList)
                 {
-                    var e = Events[eventTime];
+                    int eventTime = kv.Key;
+                    var e = kv.Value;
                     if (eventTime >= time && eventTime < time + span)
                     {
                         // Don't add events to updated sequence if between time and span (delete)
@@ -140,12 +222,12 @@ namespace ReBuzz.Core
                     }
                 }
 
+                UpdateSpans(od);
                 EventsList = od;
-                UpdateSpans();
-                SpanDeleted?.Invoke(time, span);
-                PropertyChanged.Raise(this, "Events");
-                (Global.Buzz as ReBuzzCore).SetModifiedFlag();
             }
+            SpanDeleted?.Invoke(time, span);
+            PropertyChanged.Raise(this, "Events");
+            (Global.Buzz as ReBuzzCore).SetModifiedFlag();
         }
 
         public void Insert(int time, int span)
@@ -153,9 +235,10 @@ namespace ReBuzz.Core
             lock (ReBuzzCore.AudioLock)
             {
                 OrderedDictionary<int, SequenceEvent> od = new OrderedDictionary<int, SequenceEvent>();
-                foreach (var eventTime in Events.Keys.ToArray())
+                foreach (var kv in EventsList)
                 {
-                    var e = Events[eventTime];
+                    int eventTime = kv.Key;
+                    var e = kv.Value;
                     if (eventTime >= time)
                     {
                         od.Add(eventTime + span, e);
@@ -166,26 +249,27 @@ namespace ReBuzz.Core
                     }
                 }
 
+                UpdateSpans(od);
                 EventsList = od;
-                UpdateSpans();
-                SpanInserted?.Invoke(time, span);
-                PropertyChanged.Raise(this, "Events");
-                (Global.Buzz as ReBuzzCore).SetModifiedFlag();
             }
+            SpanInserted?.Invoke(time, span);
+            PropertyChanged.Raise(this, "Events");
+            (Global.Buzz as ReBuzzCore).SetModifiedFlag();
         }
 
         public void SetEvent(int time, SequenceEvent e)
         {
+            bool changed = false;
             lock (ReBuzzCore.AudioLock)
             {
                 if (e == null)
                 {
-                    if (Events.ContainsKey(time))
+                    if (EventsList.ContainsKey(time))
                     {
                         EventsList.Remove(time);
-                        UpdateSpans();
-                        PropertyChanged.Raise(this, "Events");
-                        EventChanged?.Invoke(time);
+                        UpdateSpans(EventsList);
+                        RebuildArranged();
+                        changed = true;
                     }
                 }
                 else
@@ -194,17 +278,36 @@ namespace ReBuzz.Core
                         e.Span = e.Pattern.Length;
 
                     this.EventsList[time] = e;
-                    UpdateSpans();
-                    PropertyChanged.Raise(this, "Events");
-                    EventChanged?.Invoke(time);
+                    UpdateSpans(EventsList);
+                    RebuildArranged();
+                    changed = true;
                 }
-            (Global.Buzz as ReBuzzCore).SetModifiedFlag();
             }
+            if (changed)
+            {
+                PropertyChanged.Raise(this, "Events");
+                EventChanged?.Invoke(time);
+            }
+            (Global.Buzz as ReBuzzCore).SetModifiedFlag();
         }
 
-        void UpdateSpans()
+        /// <summary>Fork: removes every event of a pattern (it was deleted); call under AudioLock. Returns whether any was removed.</summary>
+        internal bool RemoveEventsOf(IPattern pattern)
         {
-            var events = EventsList.ToArray();
+            var times = new System.Collections.Generic.List<int>();
+            foreach (var kv in EventsList)
+                if (kv.Value.Pattern == pattern)
+                    times.Add(kv.Key);
+            foreach (int t in times)
+                EventsList.Remove(t);
+            if (times.Count > 0)
+                RebuildArranged();
+            return times.Count > 0;
+        }
+
+        static void UpdateSpans(OrderedDictionary<int, SequenceEvent> list)
+        {
+            var events = list.ToArray();
             for (int i = 0; i < events.Length; i++)
             {
                 int time = events[i].Key;
@@ -236,6 +339,7 @@ namespace ReBuzz.Core
         internal void Release()
         {
             EventsList.Clear();
+            RebuildArranged();
             PropertyChanged.Raise(this, "Events");
             PropertyChanged = null;
             EventChanged = null;

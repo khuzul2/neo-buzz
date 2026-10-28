@@ -298,6 +298,7 @@ namespace ReBuzz
                 SetStatusBarText("Ready!", 0);
                 this.InvalidateMeasure();
 
+                StartAutosave();
                 ParseArgs();
 
                 splashScreenWindow.UpdateText("Done");
@@ -1084,6 +1085,48 @@ namespace ReBuzz
         private void ModernSequenceEditorHorizontal_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             ResizeModernSequenceEditor();
+        }
+
+        System.Windows.Threading.DispatcherTimer autosaveTimer;
+
+        /// <summary>
+        /// Fork (0.4.1): offers to recover an autosave left by a session that didn't close
+        /// normally, then autosaves unsaved changes every couple of minutes (SongAutosave).
+        /// </summary>
+        private void StartAutosave()
+        {
+            try
+            {
+                var leftovers = SongAutosave.FindLeftovers();
+                if (leftovers.Count > 0)
+                {
+                    var newest = leftovers[0];
+                    string song = string.IsNullOrEmpty(newest.Song) ? "an untitled song" : "'" + Path.GetFileName(newest.Song) + "'";
+                    var answer = MessageBox.Show(this,
+                        $"ReBuzz didn't close normally last time. There are unsaved changes to {song}, autosaved at {newest.Saved:g}.\n\n" +
+                        "Yes: open them (then save to keep them)\nNo: delete them\nCancel: keep them for next time",
+                        "Recover unsaved changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+                    if (answer == MessageBoxResult.Yes)
+                    {
+                        Buzz.Autosave.Recover(newest);
+                        foreach (var older in leftovers.Skip(1))
+                            SongAutosave.Delete(older.Path);
+                    }
+                    else if (answer == MessageBoxResult.No)
+                    {
+                        foreach (var leftover in leftovers)
+                            SongAutosave.Delete(leftover.Path);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Buzz.DCWriteLine("Autosave recovery: " + e.Message, DCLogLevel.Warning);
+            }
+
+            autosaveTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+            autosaveTimer.Tick += (s, e) => Buzz.Autosave.Tick(DateTime.Now);
+            autosaveTimer.Start();
         }
 
         private void ParseArgs()

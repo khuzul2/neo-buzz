@@ -61,6 +61,12 @@ namespace ReBuzz.Core
 
         int playPosition;
 
+        /// <summary>
+        /// Fork (0.4.1): the track whose session clip gave this pattern its play position in the
+        /// current block, or null. Audio thread (WorkManager.UpdatePatternPositions).
+        /// </summary>
+        internal SequenceCore SessionTrack;
+
         public event Action<IPattern> OnPatternPlayStart;
         public event Action<IPattern> OnPatternPlayPositionChange;
         public event Action<IPattern> OnPatternPlayEnd;

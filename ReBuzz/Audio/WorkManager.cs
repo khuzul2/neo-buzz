@@ -317,6 +317,9 @@ namespace ReBuzz.Audio
 
                 buzzCore.PerformanceCurrent.EnginePerformanceCount += (Stopwatch.GetTimestamp() - time);
 
+                // Session View (fork, 0.4.1): where the render is, for latency-compensated launches.
+                buzzCore.SessionCore.PublishRenderedPosition();
+
                 return count;
             }
         }
@@ -416,7 +419,10 @@ namespace ReBuzz.Audio
         void AddActivePattern(PatternCore pattern)
         {
             if (activePatternSet.Add(pattern))
+            {
                 activePatterns.Add(pattern);
+                buzzCore.SongCore.PositionedPatterns.Add(pattern);
+            }
         }
 
         internal void UpdatePatternPositions(int sampleCount)
@@ -424,15 +430,17 @@ namespace ReBuzz.Audio
             activePatterns.Clear();
             activePatternSet.Clear();
 
-            // Clear all pattern play positions
-            foreach (var machine in buzzCore.SongCore.MachinesList)
+            // Clear the play positions set last time. Fork (0.4.1): only those patterns, not every
+            // pattern of every machine (that was O(song size) per 256-sample block; the result is
+            // the same, since only this method and solo playback give patterns a position, and
+            // both add them to the list).
+            var positioned = buzzCore.SongCore.PositionedPatterns;
+            for (int i = 0; i < positioned.Count; i++)
             {
-                if (machine.Hidden || !machine.Ready) continue;
-                foreach (var pattern in machine.PatternsList)
-                {
-                    pattern.PlayPosition = int.MinValue;
-                }
+                positioned[i].PlayPosition = int.MinValue;
+                positioned[i].SessionTrack = null;
             }
+            positioned.Clear();
 
             if (!buzzCore.Playing)
                 return;
@@ -451,30 +459,47 @@ namespace ReBuzz.Audio
                 var session = buzzCore.SessionCore;
                 int songPlayPosition = song.PlayPosition;
                 int posInTickOffset = masterInfo.PosInTick * PatternEvent.TimeBase / masterInfo.SamplesPerTick;
-                foreach (var seq in buzzCore.SongCore.SequencesList)
+                var sequences = buzzCore.SongCore.SequencesList;
+
+                // Session View (fork): a launched clip plays from where it was launched (not
+                // songPosition % length). Session clips go first: a pattern has one play position,
+                // and when the arrangement of another track holds the same pattern, the session
+                // clip keeps it (0.4.1; before, whichever track came last won).
+                for (int s = 0; s < sequences.Count; s++)
                 {
-                    // Session View (fork): a launched clip plays from where it was launched (not
-                    // songPosition % length), and an overridden track ignores its arrangement.
+                    var seq = sequences[s];
                     var clip = session.GetPlayingCore(seq);
-                    if (clip != null)
+                    if (clip == null) continue;
+                    int clipTick = session.GetClipPosition(seq);
+                    if (clipTick >= 0)
                     {
-                        int clipTick = session.GetClipPosition(seq);
-                        if (clipTick >= 0)
-                        {
-                            clip.PlayPosition = clipTick * PatternEvent.TimeBase + posInTickOffset;
-                            AddActivePattern(clip);
-                        }
+                        clip.PlayPosition = clipTick * PatternEvent.TimeBase + posInTickOffset;
+                        clip.SessionTrack = seq;
+                        AddActivePattern(clip);
                     }
+                }
+
+                for (int s = 0; s < sequences.Count; s++)
+                {
+                    var seq = sequences[s];
+                    // An overridden track ignores its arrangement.
                     if (session.IsArrangementOverridden(seq))
                         continue;
 
-                    foreach (var e in seq.EventsList)
+                    // Fork (0.4.1): the event at the song position by binary search over a sorted
+                    // snapshot, instead of walking (and allocating an enumerator over) every event
+                    // of every sequence each block. Spans are cut at the next event, so only the
+                    // last event at or before the position can cover it.
+                    var arranged = seq.Arranged;
+                    int index = arranged.IndexAtOrBefore(songPlayPosition);
+                    if (index >= 0)
                     {
-                        int eventTime = e.Key;
-                        var seqEvent = e.Value;
+                        int eventTime = arranged.Times[index];
+                        var seqEvent = arranged.Events[index];
                         var pc = (seqEvent.Pattern as PatternCore);
 
-                        if (songPlayPosition >= eventTime && songPlayPosition < eventTime + seqEvent.Span)
+                        if (songPlayPosition >= eventTime && songPlayPosition < eventTime + seqEvent.Span &&
+                            (pc == null || pc.SessionTrack == null))
                         {
                             // Event is playing in sequece
                             if (seqEvent.Type == SequenceEventType.PlayPattern &&

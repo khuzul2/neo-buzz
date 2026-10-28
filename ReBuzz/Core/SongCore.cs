@@ -83,11 +83,12 @@ namespace ReBuzz.Core
 
             // Fork: the injected dispatcher (as in the PlayPosition setter above) instead of
             // Application.Current, which is null when the engine runs headless (tests).
-            dispatcher.BeginInvoke(() =>
-            {
-                PropertyChanged.Raise(this, "PlayPosition");
-            });
+            // 0.4.1: one cached delegate instead of a new closure every tick (audio thread).
+            raisePlayPosition ??= () => PropertyChanged.Raise(this, "PlayPosition");
+            dispatcher.BeginInvoke(raisePlayPosition);
         }
+
+        Action raisePlayPosition;
 
         /// <summary>Audio thread: moves the loop and song end past the play position.</summary>
         void ExtendEnd(int position, int bar)
@@ -114,8 +115,13 @@ namespace ReBuzz.Core
                 // Fork: a track the session has taken over ignores its arrangement, Off/Mute/Thru included.
                 if (BuzzCore?.SessionCore.IsArrangementOverridden(seq) == true)
                     continue;
-                if (seq.Events.TryGetValue(playPosition, out var se))
+                // Fork (0.4.1): look up the sorted snapshot; seq.Events built a new dictionary
+                // wrapper per sequence per tick on the audio thread.
+                var arranged = seq.Arranged;
+                int index = arranged.IndexAtOrBefore(playPosition);
+                if (index >= 0 && arranged.Times[index] == playPosition)
                 {
+                    var se = arranged.Events[index];
                     if (se.Type == SequenceEventType.Mute)
                     {
                         seq.MachineCore.IsSeqMute = true;
@@ -150,8 +156,8 @@ namespace ReBuzz.Core
                     {
                         PlayPosition = loopStart;
                     }
-                    PropertyChanged.Raise(this, "LoopStart");
                 }
+                PropertyChanged.Raise(this, "LoopStart");   // fork (0.4.1): after releasing AudioLock
             }
         }
 
@@ -169,12 +175,12 @@ namespace ReBuzz.Core
                     {
                         PlayPosition = LoopStart;
                     }
-                    if (SongEnd < loopEnd)
-                    {
-                        SongEnd = loopEnd;
-                    }
-                    PropertyChanged.Raise(this, "LoopEnd");
                 }
+                if (SongEnd < loopEnd)
+                {
+                    SongEnd = loopEnd;
+                }
+                PropertyChanged.Raise(this, "LoopEnd");   // fork (0.4.1): after releasing AudioLock
             }
         }
 
@@ -192,8 +198,8 @@ namespace ReBuzz.Core
                     {
                         PlayPosition = LoopStart;
                     }
-                    PropertyChanged.Raise(this, "SongEnd");
                 }
+                PropertyChanged.Raise(this, "SongEnd");   // fork (0.4.1): after releasing AudioLock
             }
         }
 
@@ -221,47 +227,51 @@ namespace ReBuzz.Core
             this.engineSettings = engineSettings;
         }
 
+        // Fork (0.4.1): sequence list changes happen under AudioLock, their events after it.
+
         public void AddSequence(IMachine m, int index)
         {
+            SequenceCore sequenceCore = new SequenceCore(m as MachineCore);
             lock (ReBuzzCore.AudioLock)
             {
-                SequenceCore sequenceCore = new SequenceCore(m as MachineCore);
                 sequences.Insert(index, sequenceCore);
-                PropertyChanged.Raise(this, "Sequences");
-                SequenceAdded?.Invoke(index, sequenceCore);
             }
+            PropertyChanged.Raise(this, "Sequences");
+            SequenceAdded?.Invoke(index, sequenceCore);
 
             Buzz.SetModifiedFlag();
         }
 
         public void RemoveSequence(ISequence s)
         {
+            var sc = s as SequenceCore;
+            int index;
             lock (ReBuzzCore.AudioLock)
             {
-                var sc = s as SequenceCore;
-                int index = sequences.IndexOf(sc);
+                index = sequences.IndexOf(sc);
                 sequences.Remove(sc);
-                PropertyChanged.Raise(this, "Sequences");
-                SequenceRemoved?.Invoke(index, sc);
                 BuzzCore.SessionCore.OnSequenceRemoved(sc);
-                sc.Release();
             }
+            PropertyChanged.Raise(this, "Sequences");
+            SequenceRemoved?.Invoke(index, sc);
+            sc.Release();       // no longer in the list the audio thread reads
             Buzz.SetModifiedFlag();
         }
 
         public void SwapSequences(ISequence s, ISequence t)
         {
+            int indexs, indext;
             lock (ReBuzzCore.AudioLock)
             {
-                int indexs = sequences.IndexOf((SequenceCore)s);
-                int indext = sequences.IndexOf((SequenceCore)t);
+                indexs = sequences.IndexOf((SequenceCore)s);
+                indext = sequences.IndexOf((SequenceCore)t);
                 sequences.RemoveAt(indexs);
                 sequences.Insert(indexs, (SequenceCore)t);
-                SequenceChanged?.Invoke(indexs, t);
                 sequences.RemoveAt(indext);
                 sequences.Insert(indext, (SequenceCore)s);
-                SequenceChanged?.Invoke(indext, s);
             }
+            SequenceChanged?.Invoke(indexs, t);
+            SequenceChanged?.Invoke(indext, s);
 
             Buzz.SetModifiedFlag();
         }
@@ -300,6 +310,12 @@ namespace ReBuzz.Core
         //internal bool Importing { get; set; }
 
         public ManagedActionStack ActionStack { get => actionStack; set => actionStack = value; }
+
+        /// <summary>
+        /// Fork (0.4.1): patterns given a play position in the last block, so the next block
+        /// clears just those. Audio thread (WorkManager, under AudioLock).
+        /// </summary>
+        internal readonly List<PatternCore> PositionedPatterns = new List<PatternCore>();
         public bool SoloMode { get; private set; }
 
         public event Action<IMachine> MachineAdded;
