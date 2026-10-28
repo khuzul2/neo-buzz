@@ -30,6 +30,20 @@ namespace ReBuzz.AppViews.Session
         public static readonly Brush Solo = Make("#3F8FD8");
         public static readonly Brush Transparent = Brushes.Transparent;
 
+        // Mixer (0.4)
+        public static readonly Brush Groove = Make("#141417");
+        public static readonly Brush Fader = Make("#7FA7D9");
+        public static readonly Brush Send = Make("#B48BE0");
+        public static readonly Brush Pan = Make("#D9B45B");
+        public static readonly Brush Cue = Make("#4BB8C8");
+        public static readonly Brush Thumb = Make("#D5D5DC");
+        public static readonly Brush MeterLow = Make("#43C463");
+        public static readonly Brush MeterMid = Make("#E8CD3A");
+        public static readonly Brush MeterHigh = Make("#F0473C");
+        public static readonly Brush GroupHeader = Make("#3D3D47");
+        public static readonly Brush ReturnHeader = Make("#33303D");
+        public static readonly Brush MixerBack = Make("#202024");
+
         /// <summary>
         /// Clip, track and scene colours: an index into the theme's PatternColors, the same list
         /// the Sequence View uses for pattern colours. MainWindow replaces the default (the

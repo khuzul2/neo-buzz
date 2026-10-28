@@ -264,6 +264,8 @@ namespace ReBuzz.AppViews.Session
 
             public int Track { get; }
             public IMachine Machine { get; }
+            /// <summary>Index of the return this header is for, or -1 for a track.</summary>
+            public int Return { get; init; } = -1;
 
             public TrackHeader(SessionView view, int track, IMachine machine, string name, int colorIndex)
             {
@@ -271,7 +273,7 @@ namespace ReBuzz.AppViews.Session
                 Machine = machine;
                 Background = SessionPalette.Header;
                 Margin = new Thickness(0, 0, Gap, Gap);
-                ToolTip = name + "\nright-click: track colour";
+                ToolTip = name + (track < 0 ? "\nright-click for more" : "\nright-click: track colour");
 
                 var strip = new Rectangle { Height = 3, Fill = SessionPalette.ColorBrush(colorIndex) ?? SessionPalette.Transparent, IsHitTestVisible = false };
                 mute = new Chip("M", SessionPalette.Mute, "Mute", () => { if (Machine != null) Machine.IsMuted = !Machine.IsMuted; });
@@ -297,7 +299,12 @@ namespace ReBuzz.AppViews.Session
                 panel.Children.Add(row);
                 Child = panel;
 
-                MouseRightButtonUp += (s, e) => { view.ShowTrackMenu(this); e.Handled = true; };
+                MouseRightButtonUp += (s, e) =>
+                {
+                    if (Return >= 0) view.ShowReturnMenu(this);
+                    else view.ShowTrackMenu(this);
+                    e.Handled = true;
+                };
             }
 
             public void Refresh()

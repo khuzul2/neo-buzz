@@ -186,6 +186,38 @@ namespace ReBuzz.SessionTests
             Assert.That(d.Scenes.Count, Is.EqualTo(12));
         }
 
+        // ------------------------------------------------------------------ 0.4 mixer
+
+        [Test]
+        public void MixerSettingsRoundTripAndFollowRenames()
+        {
+            var d = AutoFill(new[] { T("drums", "a") });
+            Assert.That(d.ShowMixer, Is.True, "shown by default");
+            d.ShowMixer = false;
+            d.Returns.Add("Reverb");
+            d.Returns.Add("Delay & Co");
+            d.CueMachine = "Phones";
+            d.CollapsedGroups.Add("Drums group");
+
+            d.RenameMachine("Reverb", "Hall");
+            d.RenameMachine("Phones", "Cue out");
+            var copy = Load(new MemoryStream(d.ToBytes()))!;
+
+            Assert.That(copy.ShowMixer, Is.False);
+            Assert.That(copy.Returns, Is.EqualTo(new[] { "Hall", "Delay & Co" }));
+            Assert.That(copy.CueMachine, Is.EqualTo("Cue out"));
+            Assert.That(copy.CollapsedGroups.Single(), Is.EqualTo("Drums group"));
+        }
+
+        [Test]
+        public void SongsWithoutMixerDataGetDefaults()
+        {
+            var d = Load(new MemoryStream(Encoding.UTF8.GetBytes("<Session><Tracks/></Session>")))!;
+            Assert.That(d.ShowMixer, Is.True);
+            Assert.That(d.Returns, Is.Empty);
+            Assert.That(d.CueMachine, Is.EqualTo(""));
+        }
+
         // ------------------------------------------------------------------ persistence
 
         [Test]

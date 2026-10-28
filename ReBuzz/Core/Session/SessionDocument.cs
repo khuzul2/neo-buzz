@@ -52,6 +52,16 @@ namespace ReBuzz.Core.Session
         public int ClipBars { get; set; } = 1;
         /// <summary>MIDI mapping stored with this song, overriding the user's; null for none.</summary>
         public SessionMidiMap SongMidi { get; set; }
+
+        // Mixer (0.4)
+        /// <summary>Whether the mixer section is shown under the grid.</summary>
+        public bool ShowMixer { get; set; } = true;
+        /// <summary>Machines shown as return tracks (by name, in order); tracks send to them.</summary>
+        public List<string> Returns { get; } = new List<string>();
+        /// <summary>Machine the Cue buttons connect tracks to (a second output), or "" for none.</summary>
+        public string CueMachine { get; set; } = "";
+        /// <summary>Machine groups shown folded (by name).</summary>
+        public HashSet<string> CollapsedGroups { get; } = new HashSet<string>();
         public List<Scene> Scenes { get; } = new List<Scene>();
         public List<Track> Tracks { get; } = new List<Track>();
 
@@ -209,6 +219,9 @@ namespace ReBuzz.Core.Session
         {
             foreach (var t in Tracks.Where(t => t.Machine == oldName))
                 t.Machine = newName;
+            for (int i = 0; i < Returns.Count; i++)
+                if (Returns[i] == oldName) Returns[i] = newName;
+            if (CueMachine == oldName) CueMachine = newName;
         }
 
         /// <summary>Patterns of a scene row: (track index, pattern name) for every filled slot.</summary>
@@ -246,8 +259,18 @@ namespace ReBuzz.Core.Session
                         new XAttribute("pattern", s.Value))));
                     return e;
                 })),
+                MixerXml(),
                 SongMidi?.ToXml());
             return new XDocument(root);
+        }
+
+        XElement MixerXml()
+        {
+            var e = new XElement("Mixer", new XAttribute("show", ShowMixer ? "true" : "false"));
+            if (!string.IsNullOrEmpty(CueMachine)) e.SetAttributeValue("cue", CueMachine);
+            e.Add(Returns.Select(r => new XElement("Return", new XAttribute("machine", r))));
+            e.Add(CollapsedGroups.OrderBy(g => g, StringComparer.Ordinal).Select(g => new XElement("Collapsed", new XAttribute("group", g))));
+            return e;
         }
 
         public byte[] ToBytes()
@@ -284,6 +307,17 @@ namespace ReBuzz.Core.Session
                     ClipBars = Math.Clamp(IntAttr(root, "clipBars", 1), 1, 64),
                     SongMidi = root.Element("Midi") is XElement midi ? SessionMidiMap.FromXml(midi) : null,
                 };
+                if (root.Element("Mixer") is XElement mixer)
+                {
+                    doc.ShowMixer = (string)mixer.Attribute("show") != "false";
+                    doc.CueMachine = (string)mixer.Attribute("cue") ?? "";
+                    foreach (var r in mixer.Elements("Return"))
+                        if ((string)r.Attribute("machine") is string name && name.Length > 0 && !doc.Returns.Contains(name))
+                            doc.Returns.Add(name);
+                    foreach (var g in mixer.Elements("Collapsed"))
+                        if ((string)g.Attribute("group") is string name && name.Length > 0)
+                            doc.CollapsedGroups.Add(name);
+                }
                 foreach (var s in root.Element("Scenes")?.Elements("Scene") ?? Enumerable.Empty<XElement>())
                     doc.Scenes.Add(new Scene { Name = (string)s.Attribute("name") ?? "", ColorIndex = IntAttr(s, "colorIndex", -1) });
                 foreach (var t in root.Element("Tracks")?.Elements("Track") ?? Enumerable.Empty<XElement>())

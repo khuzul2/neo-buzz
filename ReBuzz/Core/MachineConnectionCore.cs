@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 
 namespace ReBuzz.Core
 {
@@ -197,7 +198,11 @@ namespace ReBuzz.Core
         {
             ampStart = interpolatorAmp.Value / 0x4000;
             ampCurrent = interpolatorAmp.Tick() / 0x4000;
-            ampStep = (ampStart - ampCurrent) / nSamples;
+            // Fork: ramp from the block's start amp to its end amp. Upstream had the difference
+            // the wrong way round, so during an amp change each block ramped away from the target
+            // and the next one jumped back: a click per block while a fader moves
+            // (SessionMixerTests.AmpChangesRampSmoothly).
+            ampStep = (ampCurrent - ampStart) / nSamples;
         }
 
         internal void UpdateBuffer(Sample[] samples, int nSamples)
@@ -258,7 +263,45 @@ namespace ReBuzz.Core
             }
 
             burstProtection.Process(buffer, 0, nSamples, true, true);
+
+            if (Volatile.Read(ref peakMeterUsers) > 0)
+                MeasurePeak(nSamples);
         }
+
+        // Fork addition (docs/specs/session-view.md 0.4): post-fader peak of what this
+        // connection delivers, for the Session View's meters. Measured on the audio thread only
+        // while a meter is shown (one pass over the block, no allocation); the UI takes the peak
+        // since its last look with TakePeak.
+        static int peakMeterUsers;
+        float peakL;
+        float peakR;
+
+        /// <summary>Turns peak metering of all connections on (+1) or off (-1); counted, for several views.</summary>
+        internal static void UsePeakMeters(bool use)
+        {
+            if (use) Interlocked.Increment(ref peakMeterUsers);
+            else if (Interlocked.Decrement(ref peakMeterUsers) < 0) Interlocked.Exchange(ref peakMeterUsers, 0);
+        }
+
+        internal static bool PeakMetersOn => Volatile.Read(ref peakMeterUsers) > 0;
+
+        void MeasurePeak(int nSamples)
+        {
+            float l = peakL, r = peakR;
+            for (int i = 0; i < nSamples; i++)
+            {
+                float a = Math.Abs(buffer[i].L);
+                if (a > l) l = a;
+                a = Math.Abs(buffer[i].R);
+                if (a > r) r = a;
+            }
+            peakL = l;
+            peakR = r;
+        }
+
+        /// <summary>Peak (sample units, 32768 = 0 dBFS) per channel since the last call; resets it.</summary>
+        internal (float Left, float Right) TakePeak() =>
+            (Interlocked.Exchange(ref peakL, 0f), Interlocked.Exchange(ref peakR, 0f));
 
         internal void ClearBuffer(int nSamples)
         {
