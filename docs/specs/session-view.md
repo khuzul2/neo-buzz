@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v5 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4) and 0.4 (#5) merged; next: 0.5 Clip & scene properties |
+| Status | Draft v5 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4) and 0.4 (#5) merged; 0.4.1 Live hardening in review; next: 0.5 Clip & scene properties |
 | Date | 2026-10-25 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -151,7 +151,7 @@ Rules:
 - **MIDI columns.** `UpdatePatternColumnEvents` plays each pattern that has a play position exactly once, session clips included. Fixes G5 and G9.
 - **Transport.** Launching while stopped starts the transport and launches on the first tick. Stopping the transport stops all clips. The song-end stop (`!Looping` at `LoopEnd`) is skipped while any clip plays. The arrangement then wraps to `LoopStart` and keeps playing on tracks the session hasn't taken over (Live would continue silently past the end). While recording into the arrangement (0.3) the song grows instead.
 - **Compatibility.** `ISequence.TriggerEvent` keeps working and is re-implemented on top of `SessionCore`, so the Modern Sequence Editor's click-to-play and the session grid share one state.
-- **Threading.** The scheduler has its own lock, not `ReBuzzCore.AudioLock`: the audio thread holds `AudioLock` while it synchronously invokes the UI thread at transport start, so a UI request waiting for `AudioLock` could deadlock. Lock order is `AudioLock` → session lock on the audio thread; UI requests take only the session lock; machines and the dispatcher are never called while it is held. Per-track reads are lock-free. State-change events are marshalled to the UI dispatcher. No allocation on the audio path in steady state (only on ticks where something changes).
+- **Threading.** The scheduler has its own lock, not `ReBuzzCore.AudioLock`, so a request never waits for a whole audio buffer. (Upstream's audio thread also held `AudioLock` while it synchronously invoked the UI thread at transport start, so a request waiting for `AudioLock` could deadlock; 0.4.1 removed that wait.) Lock order is `AudioLock` → session lock on the audio thread; requests (UI or MIDI thread) take only the session lock; machines and the dispatcher are never called while it is held. Per-track reads are lock-free. State-change events are marshalled to the UI dispatcher. No allocation on the audio path in steady state (only on ticks where something changes).
 
 ### 4.2 Data model and persistence
 
@@ -199,6 +199,7 @@ Decision: **A for 0.1–0.2, B from 0.3.** All function keys are taken (F1–F12
 | 0.2 | Playable | Play it from the computer keyboard and any MIDI controller; edit, create, duplicate and colour clips without leaving the view | M |
 | 0.3 | Session ↔ Arrangement | Record a performance into the Sequence View; go back to the arrangement; docked view | M |
 | 0.4 | Mixer | Mix in the session: volume, pan, sends, meters, mute/solo/cue per track; group tracks | M |
+| 0.4.1 | Live hardening | Perform without the UI getting in the way: launches don't wait for the UI, land on the beat you hear, and the audio thread doesn't allocate or wait; dropouts are visible; unsaved work is autosaved | M |
 | 0.5 | Clip & scene properties | Launch modes, per-clip quantization, legato, loop region and start offset, scene tempo | M |
 | 0.6 | Performance | Follow actions, crossfader, select-on-launch, launch undo, tempo nudge/tap | M |
 | 0.7 | Session recording | Record and overdub MIDI into empty slots, fixed-length recording, capture MIDI, metronome and count-in | L |
@@ -326,6 +327,30 @@ Tests: `ReBuzzTests/SessionMixerTests.cs`: the session's fader and pan are the c
 
 ---
 
+### 0.4.1 — Live hardening
+
+**Outcome.** The foundations for playing live: the engine never waits for the UI, launches land where you hear them, and what can't be heard can be measured. Done before 0.5 so later phases build on it.
+
+**Items**
+1. *No waiting for the UI on engine threads.* Transport start (audio thread, under `AudioLock`), the song-end stop, MIDI input, and MIDI focus and base octave changes from native machines (IPC thread) used `Dispatcher.Invoke`. They now post (`BeginInvoke`); `ReBuzzCore.RaiseOutsideAudioLock` raises property changes on the UI thread, never under `AudioLock`.
+2. *No UI work under `AudioLock`.* Connecting and disconnecting machines (the mixer's sends and cue, during a performance), sequence edits (the arrangement recorder), sequence list changes, pattern clone and delete, and loop and song end changes now change their data under the lock and raise their events after releasing it.
+3. *Session MIDI off the UI thread.* `SessionMidi.OnMidiThread` launches, stops and toggles play straight from the MIDI driver's thread, through a snapshot of what each slot, scene and track holds that the UI thread rebuilds when the layout changes. Learn, quantization and moving the note grid edit UI state and are posted. A busy UI no longer delays a pad.
+4. *Dropouts visible.* Upstream counts audio callbacks that overran their own buffer and driver resets, but only showed them to an external profiler. The Session View's top bar now shows them ("No dropouts" / "3 dropouts", red, with the worst overrun; click resets).
+5. *Starting a clip partway through.* `LaunchOptions.StartOffset` and scheduler launches with an origin before their launch tick. 0.5's legato and clip start markers build on it.
+6. *A pattern plays in one place.* Buzz patterns have one play position, so the same pattern on two tracks (two sequences of one machine, or session and arrangement) used to play at whichever position was set last. Now a session clip keeps its pattern against another track's arrangement, and launching a pattern on a second track hands it over from the first when it starts there (no stop or note-offs, since the machine plays on; recorded into the arrangement as a `Break`).
+7. *Quantized from what is heard.* The engine renders ahead of the speakers by the output latency (estimated from the driver's buffer, plus ReBuzz's fill-thread buffering). Launches, scene launches and stops now pick the grid point after what is heard, not after what has been rendered; if that point has been rendered already, the clip starts on the next tick in step with it (catch-up: only what already played is skipped). Without this, a pad hit within the latency before a bar line started a whole bar late. Quantization None doesn't catch up. ⚙ → *Time launches to what you hear* turns it off.
+8. *Pattern positions in proportion to what plays.* Every 256-sample block, the engine cleared the play position of every pattern of every machine and walked every event of every sequence (with an allocating tree enumerator). Now it clears only the patterns it positioned and finds each track's current event by binary search over a sorted snapshot kept by `SequenceCore`. `ISequence.PlayingPattern` is the track's own current pattern (upstream returned the first event whose pattern had a position, possibly one another track was playing).
+9. *Launch resolution documented.* Quantization None starts on the next tick (1/16 note at 4 ticks per beat): Buzz machines change on ticks. Raising ticks per beat gives finer timing (tooltip on the quantization box).
+10. *Autosave.* `SongAutosave` saves a copy of a song with unsaved changes every two minutes while the transport is stopped, to `%LOCALAPPDATA%\ReBuzz\Autosave`, leaving the song's own file, name and modified flag alone. Saving, opening, a new song and a normal exit delete it; one left at start means ReBuzz didn't close normally, and the main window offers to recover it (as the original song, with unsaved changes).
+
+Also: steady playback allocates nothing on the audio thread (removed a per-block read-only wrapper of pattern columns, a per-block song time object for the master meter, a per-tick dictionary wrapper per sequence, and a per-tick closure); a new pattern starts "not playing" (it was at position 0 until the next block).
+
+**Acceptance criteria.** No synchronous UI call and no UI event under `AudioLock` on the engine paths above (tested with a dispatcher that queues instead of running); MIDI launches with the UI thread blocked; zero bytes allocated per buffer in steady playback; a randomised soak run keeps its invariants.
+
+**Status (in review).** Tests: `ReBuzzTests/EngineHardeningTests.cs` (transport and song end with a blocked UI; MIDI launch with a blocked UI; events of connections, sequences, patterns and loop changes raised outside the lock; one place per pattern against the arrangement and between tracks; heard-position launches with and without latency; arrangement lookup whatever the edit order; allocation per buffer (and a per-stage report); timing of a heavy song (32 machines, 1,024 arrangement events, 16 session clips); a randomised 2,000-step soak run with two tracks on one machine; autosave and crash recovery), and scheduler unit tests in `ReBuzz.SessionTests`. The Hum test machine (constant output, no host calls) measures the engine alone. Not covered by automated tests: real audio drivers (the latency estimate and the dropout counter only run with a device), and native pattern editors with a start offset (PatternXP gets the offset through `PlayPattern`, as for any position change).
+
+---
+
 ### 0.5 — Clip & scene properties
 
 **Outcome.** Live's clip view controls that matter for launching.
@@ -441,7 +466,7 @@ Tests: `ReBuzzTests/SessionMixerTests.cs`: the session's fader and pan are the c
 | Risk / question | Mitigation |
 |---|---|
 | PatternXP patterns may not follow triggered play positions (§3.3) | Spike first in 0.1; add native message path if needed |
-| Clips are shared patterns, unlike Live's independent clips | Explain in UI; Duplicate-as-new in 0.2 |
+| Clips are shared patterns, unlike Live's independent clips | Explain in UI; Duplicate-as-new in 0.2; a pattern plays in one place at a time (0.4.1) |
 | Old native machines that misbehave when patterns jump (e.g. trackers expecting linear position) | Legato/relaunch tested against the upstream Gear set; gear.xml flags for problem machines |
 | Audio-thread cost of the session queue | Fixed-size per-track state, no allocations, benchmark in 0.1 acceptance |
 | Upstream merges touching `WorkManager`/`SequenceCore` | Keep engine changes small and send them upstream as PRs early (G1–G7 are bug fixes on their own) |

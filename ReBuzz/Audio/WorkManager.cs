@@ -324,7 +324,7 @@ namespace ReBuzz.Audio
             }
         }
 
-        float GetGrooveMul()
+        internal float GetGrooveMul()
         {
             // ------------------------------------------------------------
             // GROOVE: Compute effective tick length
@@ -642,7 +642,9 @@ namespace ReBuzz.Audio
                 var masterInfo = ReBuzzCore.masterInfo;
                 int nextPos = ((sampleCount + masterInfo.PosInTick) * PatternEvent.TimeBase) / masterInfo.SamplesPerTick;
 
-                var columns = pattern.Columns;
+                // Fork (0.4.1): the list itself; pattern.Columns wraps it in a new read-only
+                // collection on every call (per pattern per block, on the audio thread).
+                IList<IPatternColumn> columns = pattern is PatternCore core ? core.ColumnsList : pattern.Columns;
 
                 for (int i = 0; i < columns.Count; i++)
                 {

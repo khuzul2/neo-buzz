@@ -1794,10 +1794,12 @@ namespace ReBuzz.Core
         internal Gear Gear { get; }
         internal void MasterTapSamples(float[] resSamples, int offset, int count)
         {
-            var s = GetSongTime();
-            meterData.UpdateMax(resSamples, true, s, offset, count);
+            // Fork (0.4.1): the meter doesn't use the song time; build it (a class) only for a
+            // tap, so a block with nobody tapping allocates nothing.
+            meterData.UpdateMax(resSamples, true, null, offset, count);
 
             if (MasterTap == null) return;
+            var s = GetSongTime();
 
             // Claim a free reuse buffer (correct size), else allocate. A buffer
             // is claimable only if its in-flight flag flips 0 -> 1 atomically AND

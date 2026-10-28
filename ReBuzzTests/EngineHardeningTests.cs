@@ -416,7 +416,11 @@ namespace ReBuzzTests
                 Measure("SessionCore.OnTick", () => rig.Core.SessionCore.OnTick(false));
                 Measure("SongCore.UpdatePlayPosition", () => rig.Song.UpdatePlayPosition(1));
                 Measure("SessionCore.PublishRenderedPosition", () => rig.Core.SessionCore.PublishRenderedPosition());
+                Measure("AudioEngine.ClearChannels", () => rig.Core.AudioEngine.ClearChannels());
+                Measure("GetGrooveMul", () => wm.GetGrooveMul());
+                Measure("IsPlayingWave", () => rig.Song.WavetableCore.IsPlayingWave());
             }
+            Measure("whole buffer (256 frames)", () => reader.Read(256));
             TestContext.Out.WriteLine("[notice] bytes per call: " + string.Join(", ", report));
         }
 

@@ -57,6 +57,9 @@ namespace ReBuzz.Core
         }
 
         readonly List<IPatternColumn> columns;
+
+        /// <summary>Fork (0.4.1): the columns without a read-only wrapper (one per call), for the audio thread.</summary>
+        internal List<IPatternColumn> ColumnsList => columns;
         public ReadOnlyCollection<IPatternColumn> Columns { get => columns.AsReadOnly(); }
 
         // Fork (0.4.1): starts "not playing". It was 0 until the engine's next block cleared every
