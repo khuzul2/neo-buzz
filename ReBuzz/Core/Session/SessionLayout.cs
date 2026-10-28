@@ -336,6 +336,14 @@ namespace ReBuzz.Core.Session
             if (restored == null) return;
             restored.SongMidi = document?.SongMidi;
             restored.ClipBars = document?.ClipBars ?? restored.ClipBars;
+            if (document != null)
+            {
+                // View settings, not edits: they stay as they are.
+                restored.ShowMixer = document.ShowMixer;
+                restored.CueMachine = document.CueMachine;
+                restored.CollapsedGroups.Clear();
+                restored.CollapsedGroups.UnionWith(document.CollapsedGroups);
+            }
             restored.BeatsPerBar = Session.BeatsPerBar;
             restored.LaunchQuantization = Session.LaunchQuantization.ToString();
             document = restored;
@@ -377,6 +385,74 @@ namespace ReBuzz.Core.Session
         {
             Ensure().SongMidi = map;
             ContentChanged();
+        }
+
+        // ------------------------------------------------------------------ mixer (0.4)
+
+        /// <summary>Makes a machine a return track (undoable). Not the cue machine.</summary>
+        public void AddReturn(IMachine machine)
+        {
+            if (machine == null) return;
+            Edit(doc =>
+            {
+                if (!doc.Returns.Contains(machine.Name) && machine.Name != doc.CueMachine)
+                    doc.Returns.Add(machine.Name);
+            });
+        }
+
+        /// <summary>Removes a return track (undoable). Its sends stay connected in the Machine View.</summary>
+        public void RemoveReturn(string machine) => Edit(doc => doc.Returns.Remove(machine));
+
+        /// <summary>The machine Cue connects tracks to, or null for none.</summary>
+        public void SetCueMachine(IMachine machine)
+        {
+            var doc = Ensure();
+            doc.CueMachine = machine?.Name ?? "";
+            doc.Returns.Remove(doc.CueMachine);
+            ContentChanged();
+        }
+
+        public void SetShowMixer(bool show)
+        {
+            var doc = Ensure();
+            if (doc.ShowMixer == show) return;
+            doc.ShowMixer = show;
+            ContentChanged();
+        }
+
+        public void SetGroupCollapsed(string group, bool collapsed)
+        {
+            var doc = Ensure();
+            bool changed = collapsed ? doc.CollapsedGroups.Add(group) : doc.CollapsedGroups.Remove(group);
+            if (changed)
+                ContentChanged();
+        }
+
+        /// <summary>Resolves a machine by name in the song (returns, cue).</summary>
+        public IMachine MachineNamed(string name) =>
+            string.IsNullOrEmpty(name) ? null : song.Machines.FirstOrDefault(m => m.Name == name);
+
+        /// <summary>Return machines that exist in the song, in order.</summary>
+        public IReadOnlyList<IMachine> ReturnMachines()
+        {
+            var doc = Document;
+            if (doc == null) return Array.Empty<IMachine>();
+            return doc.Returns.Select(MachineNamed).Where(m => m != null && m.Name != doc.CueMachine).ToList();
+        }
+
+        /// <summary>Launches the clips of a group's member tracks in a scene (Live's group slot).</summary>
+        public void LaunchGroupScene(IEnumerable<int> tracks, int scene)
+        {
+            var slots = new List<(ISequence, IPattern)>();
+            foreach (int track in tracks)
+            {
+                var seq = SequenceOf(track);
+                var pattern = PatternAt(track, scene);
+                if (seq != null && pattern != null)
+                    slots.Add((seq, pattern));
+            }
+            if (slots.Count > 0)
+                Session.LaunchScene(slots);
         }
 
         /// <summary>Launches every filled slot of a scene row together.</summary>

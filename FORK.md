@@ -8,8 +8,8 @@ A fork of [wasteddesign/ReBuzz](https://github.com/wasteddesign/ReBuzz) (MIT) th
 | One-command build that produces a portable zip with every machine installed | [`build.ps1`](build.ps1) |
 | Script to pull prebuilt machine DLLs from GitHub releases | [`tools/fetch-machine-binaries.ps1`](tools/fetch-machine-binaries.ps1) |
 | CI job that runs the build and uploads the zip | [`.github/workflows/fork-package.yml`](.github/workflows/fork-package.yml) |
-| Ableton-style Session View: clip launching, launch grid, keyboard and MIDI control, clip editing with undo, recording into the arrangement (0.3; Ctrl+Tab switches Session ↔ Sequence) | [`docs/specs/session-view.md`](docs/specs/session-view.md), `ReBuzz/Core/Session/`, `ReBuzz/AppViews/Session/` |
-| Fixes found by running upstream's `ReBuzzTests` in CI: machine delay compensation, the x64 VC++ 2010 runtime `bin64\dsplib.dll` needs, stale test expectations | `ReBuzz/Core/MachineConnectionCore.cs`, `build.ps1`, `ReBuzzTests/` |
+| Ableton-style Session View: clip launching, launch grid, keyboard and MIDI control, clip editing with undo, recording into the arrangement (0.3; Ctrl+Tab switches Session ↔ Sequence), mixer with sends/returns, cue, meters and group tracks (0.4) | [`docs/specs/session-view.md`](docs/specs/session-view.md), `ReBuzz/Core/Session/`, `ReBuzz/AppViews/Session/` |
+| Fixes found by running upstream's `ReBuzzTests` in CI: machine delay compensation, the x64 VC++ 2010 runtime `bin64\dsplib.dll` needs, stale test expectations; and two found building the mixer: connection amp changes ramped the wrong way within each block (clicks), and new connections ramped down from unity (a burst) | `ReBuzz/Core/MachineConnectionCore.cs`, `build.ps1`, `ReBuzzTests/` |
 
 ## Building the package
 

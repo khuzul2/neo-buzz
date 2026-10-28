@@ -65,6 +65,10 @@ namespace ReBuzz.Core.Actions.GraphActions
                 var mcsrc = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == src);
                 var mcdst = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == dst);
                 MachineConnectionCore mcc = new MachineConnectionCore(dispatcher, engineSettings) { Source = mcsrc, Destination = mcdst, Amp = amp, Pan = pan, HasPan = mcdst.HasStereoInput };
+                // Fork: start at the given amp. Setting Amp ramps from the default (unity) over
+                // four blocks, so a connection made at a low level (a Session View send) started
+                // with a short loud burst (SessionMixerTests.NewConnectionsStartAtTheirAmp).
+                mcc.SnapAmp();
                 foreach (var item in srcchn)
                 {
                     mcc.SetSourceChannel(item, true);

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v5 — 0.1 (#1, #2), 0.2 (#3) and 0.3 (#4) merged; next: 0.4 Mixer |
+| Status | Draft v5 — 0.1 (#1, #2), 0.2 (#3) and 0.3 (#4) merged; 0.4 Mixer in review |
 | Date | 2026-10-25 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -312,6 +312,17 @@ Differences from Live: a recorded stop plays back as Buzz's `Off` (the machine's
 **Engine.** Track volume/pan map onto the machine's output connection (`IMachineConnection` amp/pan) rather than new DSP, so the Machine View and the session agree. Sends create/adjust connections to return machines. Investigate reusing `ConnectionMixer`'s logic.
 
 **Acceptance criteria.** Changing volume/pan in the session and in the Machine View is the same parameter (each reflects the other live); meters update at ≥ 30 fps without audio impact.
+
+**Status (in review).** Features 1–4 are in. The mixer is pinned under the grid and scrolls sideways with it; **Mixer** in the top bar (or Ctrl+Alt+M) shows or hides it, and the choice is saved with the song.
+- *Strips* (`SessionMixer`, no DSP of its own): a track's volume and pan are the amp and pan of the machine's *main outputs*, its output connections other than sends and cue (usually the one into the master or a bus). With several main outputs, volume moves them all by the same number of dB and pan sets them all. The fader uses the Machine View's amp knob scale (and ConnectionMixer's): linear in dB from -66 dB to +12 dB. The strips poll the graph, so a change in the Machine View shows within 50 ms, and a change in the session is the connection's amp, which the Machine View reads. Fader, pan and sends: drag (Shift for fine), wheel, double-click to reset. Each strip also has M (mute), S (solo) and C (cue) for its machine, as the track header has M and S.
+- *Meters*: post-fader stereo peak of the main outputs, -60 … +6 dB, green/yellow (-12 dB)/red (0 dB), falling at ~60 dB/s. `MachineConnectionCore` measures the peak of each block on the audio thread only while a mixer is on screen (one pass over the block, no allocation, no locks); the view reads it on the render loop, throttled to one update per 25 ms (≥ 30 fps).
+- *Returns*: ⚙ → *Return tracks* turns effect machines into return columns (A, B, …) after the tracks. A send is the connection from the track's machine to the return: raising it from off connects them (one undo step in the Machine View's history); a send that would make a feedback loop is greyed. Adding or removing a return is a Session View undo step; removing one leaves its connections alone.
+- *Cue*: ⚙ → *Cue output* picks the machine the C buttons connect tracks to, at unity: an effect that plays to a second output (ReBuzzAudioOut or Polac Out set to other channels) and isn't connected to the master.
+- *Groups*: each Machine View group (`IMachineGroup`) with a member that has a track gets a column before its first member: click the header to fold the members away (saved with the song), a group slot launches the members' clips in that scene together and shows them playing, the group stop stops them, and the group strip is the group's main output machine's volume, pan and meter.
+- *Master strip* under the scene column: the master volume (the toolbar's) and ReBuzz's master VU meter.
+- Also fixed: a connection's amp ramp (4 blocks after a change) moved the wrong way within each block and jumped back at the next, a click per block while an amp changed; fader moves now ramp smoothly. And a new connection started at unity and ramped to its amp, so a send made at a low level began with a short loud burst; new connections now start at their amp.
+
+Tests: `ReBuzzTests/SessionMixerTests.cs`: the session's fader and pan are the connection's amp and pan both ways (also through the strip controls), balance across several outputs, sends and cue as connections (with undo), the post-fader peak (and nothing measured while no meter is shown), the amp ramp, new connections starting at their amp, group columns (launching, folding, keyboard skipping folded tracks), settings vs undo, and a render. Not automated: the frame rate on a real display, and listening for clicks.
 
 ---
 

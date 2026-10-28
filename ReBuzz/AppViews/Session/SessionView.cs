@@ -13,12 +13,13 @@ using System.Windows.Threading;
 namespace ReBuzz.AppViews.Session
 {
     /// <summary>
-    /// Session View grid (fork addition, docs/specs/session-view.md 0.1–0.2): tracks (sequences)
+    /// Session View grid (fork addition, docs/specs/session-view.md 0.1–0.4): tracks (sequences)
     /// as columns, scenes as rows, scene launch buttons on the right, track stop buttons at the
-    /// bottom. Built in code because its rows and columns follow the song. Structure comes from
-    /// <see cref="SessionLayout"/>; clip states are polled from <see cref="ISession"/>.
-    /// Interaction (menus, keys, drag, MIDI learn) is in SessionView.Actions.cs, the cells in
-    /// SessionCells.cs.
+    /// bottom, and the mixer pinned under the grid. Built in code because its rows and columns
+    /// follow the song. Structure comes from <see cref="SessionLayout"/>; clip states are polled
+    /// from <see cref="ISession"/>. Interaction (menus, keys, drag, MIDI learn) is in
+    /// SessionView.Actions.cs, the cells in SessionCells.cs, groups, returns and the mixer in
+    /// SessionMixerView.cs.
     /// </summary>
     internal sealed partial class SessionView : UserControl
     {
@@ -34,6 +35,9 @@ namespace ReBuzz.AppViews.Session
         readonly SessionMidi midi;
 
         readonly Grid grid = new Grid { Background = SessionPalette.Window, Margin = new Thickness(6) };
+        readonly Grid mixerGrid = new Grid { Background = SessionPalette.Window, Margin = new Thickness(6, 0, 6, 4) };
+        readonly ScrollViewer mixerPanel;
+        readonly FlatButton mixerButton;
         readonly TextBlock clockText;
         readonly TextBlock hintText;
         readonly TextBlock statusText;
@@ -49,11 +53,12 @@ namespace ReBuzz.AppViews.Session
         readonly List<SlotCell> slots = new List<SlotCell>();
         readonly List<SceneCell> scenes = new List<SceneCell>();
         readonly List<TrackHeader> headers = new List<TrackHeader>();
-        readonly List<FlatButton> trackStops = new List<FlatButton>();
+        readonly List<(int Track, FlatButton Button)> trackStops = new List<(int, FlatButton)>();
         FlatButton stopAllCell;
         int trackCount;
         int sceneCount;
         int blinkPhase;
+        int structureCheck;
         bool syncingSettings;
         (int Track, int Scene)? selected;
         (int Track, int Scene)? dropTarget;
@@ -135,8 +140,10 @@ namespace ReBuzz.AppViews.Session
             FlatButton addTrack = null;
             addTrack = new FlatButton("+ Track", () => ShowAddTrackMenu(addTrack), "Add a track for a machine that has none");
             right.Children.Add(addTrack);
+            mixerButton = new FlatButton("Mixer", ToggleMixer, "Show or hide the mixer under the grid (Ctrl+Alt+M)\nReturn tracks and the cue output: ⚙");
+            right.Children.Add(mixerButton);
             FlatButton settings = null;
-            settings = new FlatButton("⚙", () => ShowSettingsMenu(settings), "New clip length, MIDI mapping, keyboard shortcuts") { Margin = new Thickness(0) };
+            settings = new FlatButton("⚙", () => ShowSettingsMenu(settings), "New clip length, mixer returns and cue output, MIDI mapping, keyboard shortcuts") { Margin = new Thickness(0) };
             right.Children.Add(settings);
             Grid.SetColumn(right, 1);
             bar.Children.Add(right);
@@ -170,23 +177,40 @@ namespace ReBuzz.AppViews.Session
                 Focusable = false
             };
 
+            // Mixer: pinned under the grid, scrolled sideways with it.
+            mixerPanel = new ScrollViewer
+            {
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Hidden,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                Content = mixerGrid,
+                Background = SessionPalette.Window,
+                BorderBrush = SessionPalette.Header,
+                BorderThickness = new Thickness(0, 1, 0, 0),
+                Focusable = false,
+                Padding = new Thickness(0, 4, 0, 0)
+            };
+            scroll.ScrollChanged += (s, e) => mixerPanel.ScrollToHorizontalOffset(scroll.HorizontalOffset);
+
             var root = new DockPanel();
             DockPanel.SetDock(bar, Dock.Top);
             root.Children.Add(bar);
             DockPanel.SetDock(statusBar, Dock.Top);
             root.Children.Add(statusBar);
+            DockPanel.SetDock(mixerPanel, Dock.Bottom);
+            root.Children.Add(mixerPanel);
             root.Children.Add(scroll);
             Content = root;
 
             timer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(50) };
             timer.Tick += (s, e) => RefreshState();
-            Loaded += (s, e) => { Rebuild(); timer.Start(); };
-            Unloaded += (s, e) => timer.Stop();
+            Loaded += (s, e) => { Rebuild(); timer.Start(); UpdateMetering(); };
+            Unloaded += (s, e) => { timer.Stop(); UpdateMetering(); };
             // The window is hidden rather than closed: don't poll while nobody can see it.
             IsVisibleChanged += (s, e) =>
             {
                 if (IsVisible && IsLoaded) { RefreshState(); timer.Start(); }
                 else timer.Stop();
+                UpdateMetering();
             };
 
             layout.Changed += () => { if (IsLoaded) Rebuild(); };
@@ -221,12 +245,16 @@ namespace ReBuzz.AppViews.Session
             scenes.Clear();
             headers.Clear();
             trackStops.Clear();
+            groupSlots.Clear();
+            groupHeaders.Clear();
 
             trackCount = doc.Tracks.Count;
             sceneCount = doc.Scenes.Count;
             hintText.Visibility = trackCount == 0 ? Visibility.Visible : Visibility.Collapsed;
+            PlanColumns(doc);
+            int sceneColumn = columns.Count;
 
-            for (int t = 0; t < trackCount; t++)
+            for (int c = 0; c < columns.Count; c++)
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(ColumnWidth + Gap) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(SceneColumnWidth + Gap) });
 
@@ -235,14 +263,27 @@ namespace ReBuzz.AppViews.Session
                 grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(RowHeight + Gap) });
             grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(RowHeight + 8) });
 
-            // Track headers and stop buttons
-            for (int t = 0; t < trackCount; t++)
+            // Columns: track headers, slots and stop buttons; groups; returns
+            for (int c = 0; c < columns.Count; c++)
             {
+                var col = columns[c];
+                if (col.Kind == ColumnKind.Group)
+                {
+                    PlaceGroupColumn(doc, col, c);
+                    continue;
+                }
+                if (col.Kind == ColumnKind.Return)
+                {
+                    PlaceReturnColumn(col, c);
+                    continue;
+                }
+
+                int t = col.Track;
                 var seq = layout.SequenceOf(t);
                 string name = seq?.Machine?.Name ?? doc.Tracks[t].Machine;
                 var header = new TrackHeader(this, t, seq?.Machine, name, doc.Tracks[t].ColorIndex);
                 headers.Add(header);
-                Place(header, 0, t);
+                Place(header, 0, c);
 
                 int track = t;
                 var stop = new FlatButton("■", () => StopTrack(track), Tip("Stop this track (Backspace stops the selected track)", SessionTarget.TrackStop, t, 0))
@@ -251,8 +292,15 @@ namespace ReBuzz.AppViews.Session
                     HorizontalContentAlignment = HorizontalAlignment.Center
                 };
                 stop.MouseRightButtonUp += (s, e) => { ShowMidiOnlyMenu(stop, SessionTarget.TrackStop, track, 0, "this track's stop button"); e.Handled = true; };
-                trackStops.Add(stop);
-                Place(stop, sceneCount + 1, t);
+                trackStops.Add((t, stop));
+                Place(stop, sceneCount + 1, c);
+
+                for (int s = 0; s < sceneCount; s++)
+                {
+                    var cell = new SlotCell(this, t, s, seq, layout.PatternAt(t, s), midi?.Describe(SessionTarget.Slot, t, s));
+                    slots.Add(cell);
+                    Place(cell, s + 1, c);
+                }
             }
 
             // Scene column header and Stop all
@@ -262,27 +310,28 @@ namespace ReBuzz.AppViews.Session
                 Margin = new Thickness(0, 0, 0, Gap),
                 Padding = new Thickness(6, 0, 6, 0),
                 Child = new TextBlock { Text = "Scenes", Foreground = SessionPalette.DimText, VerticalAlignment = VerticalAlignment.Center }
-            }, 0, trackCount);
+            }, 0, sceneColumn);
             stopAllCell = new FlatButton("■  Stop all clips", () => session.StopAll(), Tip("Stop every clip", SessionTarget.StopAll, 0, 0)) { Margin = new Thickness(0, 6, 0, 0) };
             stopAllCell.MouseRightButtonUp += (s, e) => { ShowMidiOnlyMenu(stopAllCell, SessionTarget.StopAll, 0, 0, "Stop all clips"); e.Handled = true; };
-            Place(stopAllCell, sceneCount + 1, trackCount);
+            Place(stopAllCell, sceneCount + 1, sceneColumn);
 
-            // Slots and scene buttons
+            // Scene buttons
             for (int s = 0; s < sceneCount; s++)
             {
-                for (int t = 0; t < trackCount; t++)
-                {
-                    var cell = new SlotCell(this, t, s, layout.SequenceOf(t), layout.PatternAt(t, s), midi?.Describe(SessionTarget.Slot, t, s));
-                    slots.Add(cell);
-                    Place(cell, s + 1, t);
-                }
                 var scene = new SceneCell(this, s, doc.Scenes[s], midi?.Describe(SessionTarget.Scene, 0, s));
                 scenes.Add(scene);
-                Place(scene, s + 1, trackCount);
+                Place(scene, s + 1, sceneColumn);
             }
 
-            // Outline of the MIDI note grid (Live's "session ring").
-            if (midi?.ActiveMap?.Grid is NoteGrid ring && ring.OriginTrack < trackCount && ring.OriginScene < sceneCount)
+            // Outline of the MIDI note grid (Live's "session ring"), when its tracks are shown.
+            var ring = midi?.ActiveMap?.Grid;
+            int firstColumn = -1, lastColumn = -1;
+            if (ring != null && ring.OriginTrack >= 0 && ring.OriginTrack < trackCount && ring.Columns > 0)
+            {
+                firstColumn = trackColumn[ring.OriginTrack];
+                lastColumn = trackColumn[Math.Min(trackCount, ring.OriginTrack + ring.Columns) - 1];
+            }
+            if (ring != null && ring.OriginScene < sceneCount && firstColumn >= 0 && lastColumn >= firstColumn)
             {
                 var outline = new Border
                 {
@@ -293,13 +342,14 @@ namespace ReBuzz.AppViews.Session
                     ToolTip = "MIDI note grid"
                 };
                 Grid.SetRowSpan(outline, Math.Min(ring.Rows, sceneCount - ring.OriginScene));
-                Grid.SetColumnSpan(outline, Math.Min(ring.Columns, trackCount - ring.OriginTrack));
+                Grid.SetColumnSpan(outline, lastColumn - firstColumn + 1);
                 Panel.SetZIndex(outline, 1);
-                Place(outline, ring.OriginScene + 1, ring.OriginTrack);
+                Place(outline, ring.OriginScene + 1, firstColumn);
             }
 
-            if (selected is { } sel && (sel.Track >= trackCount || sel.Scene >= sceneCount))
+            if (selected is { } sel && (sel.Track >= trackCount || sel.Scene >= sceneCount || trackColumn[sel.Track] < 0))
                 selected = null;
+            BuildMixer(doc);
             RefreshState();
         }
 
@@ -349,14 +399,28 @@ namespace ReBuzz.AppViews.Session
                     border = SessionPalette.Selection;
                 cell.Refresh(session, blinkOn, border);
             }
+            foreach (var cell in groupSlots)
+                cell.Refresh(session, blinkOn);
             foreach (var scene in scenes)
                 scene.Refresh(learn is { } l && l.Target == SessionTarget.Scene && l.Scene == scene.Scene && blinkOn ? SessionPalette.Learn : null);
-            for (int t = 0; t < trackStops.Count; t++)
-                trackStops[t].BorderBrush = learn is { } l && l.Target == SessionTarget.TrackStop && l.Track == t && blinkOn ? SessionPalette.Learn : SessionPalette.Transparent;
+            foreach (var (t, stop) in trackStops)
+                stop.BorderBrush = learn is { } l && l.Target == SessionTarget.TrackStop && l.Track == t && blinkOn ? SessionPalette.Learn : SessionPalette.Transparent;
             if (stopAllCell != null)
                 stopAllCell.BorderBrush = learn is { } la && la.Target == SessionTarget.StopAll && blinkOn ? SessionPalette.Learn : SessionPalette.Transparent;
             foreach (var h in headers)
                 h.Refresh();
+            RefreshMixer();
+
+            // Machine groups change without an event the layout hears: look now and then.
+            if (++structureCheck >= 20)
+            {
+                structureCheck = 0;
+                if (layout.Document != null && StructureKey() != structureKey)
+                {
+                    Rebuild();
+                    return;
+                }
+            }
 
             long clock = session.Clock;
             if (clock < 0)

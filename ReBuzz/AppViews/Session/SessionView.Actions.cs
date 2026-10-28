@@ -26,10 +26,12 @@ namespace ReBuzz.AppViews.Session
             "F2\trename the clip's pattern\n" +
             "Ctrl+I\tinsert a scene below the selection\n" +
             "Ctrl+Z / Ctrl+Y\tundo / redo grid edits\n" +
+            "Ctrl+Alt+M\tshow / hide the mixer\n" +
             "Esc\tcancel MIDI learn\n" +
             "Ctrl+Tab\tswitch between the Session and Sequence views (from the Session window: back to the main window)\n\n" +
             "Mouse: ▶ launches; click selects; double-click edits a clip or creates one in an empty slot; " +
-            "drag a clip to move it within its track (hold Ctrl to copy); right-click for menus and MIDI learn.";
+            "drag a clip to move it within its track (hold Ctrl to copy); right-click for menus and MIDI learn.\n" +
+            "Mixer: drag a fader, pan or send (Shift for fine), use the wheel, double-click to reset.";
 
         // ------------------------------------------------------------------ selection and playing
 
@@ -207,6 +209,7 @@ namespace ReBuzz.AppViews.Session
                 LaunchScene(key >= Key.NumPad1 ? key - Key.NumPad1 : key - Key.D1);
                 return true;
             }
+            if (mods == (ModifierKeys.Control | ModifierKeys.Alt) && key == Key.M) { ToggleMixer(); return true; }
             if (ctrl && key == Key.Z) { layout.Undo(); return true; }
             if ((ctrl && key == Key.Y) || (mods == (ModifierKeys.Control | ModifierKeys.Shift) && key == Key.Z)) { layout.Redo(); return true; }
             if (ctrl && key == Key.I)
@@ -234,16 +237,23 @@ namespace ReBuzz.AppViews.Session
 
         void MoveSelection(Key key)
         {
-            if (trackCount == 0 || sceneCount == 0) return;
-            var (t, s) = selected ?? (0, 0);
-            if (selected != null)
+            // Over the shown tracks: folded group members are skipped.
+            var visible = VisibleTracks();
+            if (visible.Count == 0 || sceneCount == 0) return;
+            int i = selected is { } cur ? visible.IndexOf(cur.Track) : -1;
+            int s = selected?.Scene ?? 0;
+            if (i < 0)
             {
-                if (key == Key.Left) t--;
-                else if (key == Key.Right) t++;
+                i = 0;
+            }
+            else
+            {
+                if (key == Key.Left) i--;
+                else if (key == Key.Right) i++;
                 else if (key == Key.Up) s--;
                 else if (key == Key.Down) s++;
             }
-            selected = (Math.Clamp(t, 0, trackCount - 1), Math.Clamp(s, 0, sceneCount - 1));
+            selected = (visible[Math.Clamp(i, 0, visible.Count - 1)], Math.Clamp(s, 0, sceneCount - 1));
             if (CellAt(selected.Value.Track, selected.Value.Scene) is SlotCell cell)
                 cell.BringIntoView();
             RefreshState();
@@ -378,6 +388,8 @@ namespace ReBuzz.AppViews.Session
                 length.Items.Add(new MenuItem { Header = b == 1 ? "1 bar" : $"{b} bars", IsChecked = doc.ClipBars == b, Command = new RelayCommand(() => layout.SetClipBars(b)) });
             }
             menu.Items.Add(length);
+            menu.Items.Add(new Separator());
+            AddMixerMenuItems(menu, doc);
 
             if (midi != null)
             {
