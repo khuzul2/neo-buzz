@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v5 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4) and 0.4 (#5) merged; 0.4.1 Live hardening in review; next: 0.5 Clip & scene properties |
+| Status | Draft v5 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5) and 0.4.1 (#6) merged; next: 0.5 Clip & scene properties |
 | Date | 2026-10-25 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -347,7 +347,7 @@ Also: steady playback allocates nothing on the audio thread (removed a per-block
 
 **Acceptance criteria.** No synchronous UI call and no UI event under `AudioLock` on the engine paths above (tested with a dispatcher that queues instead of running); MIDI launches with the UI thread blocked; zero bytes allocated per buffer in steady playback; a randomised soak run keeps its invariants.
 
-**Status (in review).** Tests: `ReBuzzTests/EngineHardeningTests.cs` (transport and song end with a blocked UI; MIDI launch with a blocked UI; events of connections, sequences, patterns and loop changes raised outside the lock; one place per pattern against the arrangement and between tracks; heard-position launches with and without latency; arrangement lookup whatever the edit order; allocation per buffer (and a per-stage report: 0 bytes per buffer); timing of a heavy song (32 machines, 1,024 arrangement events, 16 session clips: 7.2x real time on the CI runner, median 0.8 ms and 99th percentile 1.7 ms per 5.8 ms buffer; one buffer in 2,000 took 18 ms there, a shared virtual machine); a randomised 2,000-step soak run with two tracks on one machine; autosave and crash recovery), and scheduler unit tests in `ReBuzz.SessionTests`. The Hum test machine (constant output, no host calls) measures the engine alone. Not covered by automated tests: real audio drivers (the latency estimate and the dropout counter only run with a device), and native pattern editors with a start offset (PatternXP gets the offset through `PlayPattern`, as for any position change).
+**Status (merged, #6).** Tests: `ReBuzzTests/EngineHardeningTests.cs` (transport and song end with a blocked UI; MIDI launch with a blocked UI; events of connections, sequences, patterns and loop changes raised outside the lock; one place per pattern against the arrangement and between tracks; heard-position launches with and without latency; arrangement lookup whatever the edit order; allocation per buffer (and a per-stage report: 0 bytes per buffer); timing of a heavy song (32 machines, 1,024 arrangement events, 16 session clips: 7.2x real time on the CI runner, median 0.8 ms and 99th percentile 1.7 ms per 5.8 ms buffer; one buffer in 2,000 took 18 ms there, a shared virtual machine); a randomised 2,000-step soak run with two tracks on one machine; autosave and crash recovery), and scheduler unit tests in `ReBuzz.SessionTests`. The Hum test machine (constant output, no host calls) measures the engine alone. Not covered by automated tests: real audio drivers (the latency estimate and the dropout counter only run with a device), and native pattern editors with a start offset (PatternXP gets the offset through `PlayPattern`, as for any position change).
 
 ---
 
