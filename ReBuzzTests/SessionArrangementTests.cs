@@ -405,6 +405,8 @@ namespace ReBuzzTests
             rig.TrackA.SetEvent(8, new SequenceEvent(SequenceEventType.PlayPattern, a1));
             rig.TrackB.SetEvent(4, new SequenceEvent(SequenceEventType.PlayPattern, b1) { Gain = 0.5 });
             Assert.That(rig.TrackA.Events[0].Span, Is.EqualTo(4), "plays rows 2-5");
+            rig.Layout.Ensure();
+            rig.Layout.RenameScene(0, "Intro");                    // the Session View layout is a subsection too
 
             string path = System.IO.Path.Combine(TestContext.CurrentContext.WorkDirectory, "regions-" + Guid.NewGuid().ToString("N") + extension);
             rig.Core.SaveSongCopy(path);
@@ -419,6 +421,7 @@ namespace ReBuzzTests
             Assert.That((first.Offset, first.End, first.Gain, first.Span), Is.EqualTo((2, 6, 0.25, 4)));
             Assert.That(trackA.Events[8].IsPlain, Is.True);
             Assert.That(trackB.Events[4].Gain, Is.EqualTo(0.5));
+            Assert.That(rig.Layout.Document?.Scenes[0].Name, Is.EqualTo("Intro"), "the layout loads too (.bmxml lost every subsection before 0.5.1)");
         }
 
         [Test]

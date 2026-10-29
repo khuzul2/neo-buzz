@@ -395,6 +395,8 @@ Tests (137/137 on CI, 0 bytes allocated per buffer in steady playback): `ReBuzzT
 4. *Velocity per machine, well defined.* A machine plays at the gain of the most recently started of the session clips and arrangement events playing on its tracks. Two tracks of one machine are one audio signal and can't have two volumes; when the newest stops, the other's gain applies again (in 0.5 the machine went back to full volume).
 5. *Editing keeps them.* The sequence editors' copy, paste and undo, deleting a machine and undoing it, and replacing a machine keep an event's offset, end and volume. The editors label a partial event with the part played and its volume ("Verse 4–12 50%") and draw it from its offset (the modern editors' event hints and play position).
 
+Also fixed: opening a .bmxml song lost all of its subsections (upstream: `BMXMLFile` cleared them before ReBuzz read them), so .bmxml songs lost their Session View layout, MIDI map and mixer settings; .bmx was not affected.
+
 **Acceptance criteria.** A performance using start markers, loop regions, legato, one-shot clips and velocity, recorded into the arrangement, plays back sample for sample the same; files keep it; songs without these events are saved as before.
 
 ---
