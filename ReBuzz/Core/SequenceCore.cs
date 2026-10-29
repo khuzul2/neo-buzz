@@ -13,6 +13,12 @@ namespace ReBuzz.Core
         // Session View engine state for this track (fork addition)
         object ISessionTrack.SessionState { get; set; }
 
+        // Audio thread (SessionCore.ResolveGains, 0.5.1): what sets this track's volume now (a
+        // session clip or an arrangement event), and when it started (a stamp; later is newer).
+        internal object GainSource;
+        internal long GainSourceKey;
+        internal long GainStamp;
+
         private static IntPtr sequenceHandleCounter = 100;
 
         internal MachineCore MachineCore { get; private set; }
@@ -275,7 +281,7 @@ namespace ReBuzz.Core
                 else
                 {
                     if (e.Type == SequenceEventType.PlayPattern && e.Pattern != null)
-                        e.Span = e.Pattern.Length;
+                        e.Span = e.PlayedLength;    // fork (0.5.1): the part of the pattern the event plays
 
                     this.EventsList[time] = e;
                     UpdateSpans(EventsList);
@@ -305,6 +311,17 @@ namespace ReBuzz.Core
             return times.Count > 0;
         }
 
+        /// <summary>
+        /// Fork (0.5.1): recomputes spans after a pattern's length or an event's offset or end
+        /// changed, and tells the sequence editors. Only the spans (ints the audio thread reads)
+        /// change, so no AudioLock: native pattern editors change lengths from the IPC thread.
+        /// </summary>
+        internal void RefreshSpans()
+        {
+            UpdateSpans(EventsList);
+            PropertyChanged.Raise(this, "Events");
+        }
+
         static void UpdateSpans(OrderedDictionary<int, SequenceEvent> list)
         {
             var events = list.ToArray();
@@ -314,7 +331,7 @@ namespace ReBuzz.Core
                 var se = events[i].Value;
                 if (se.Type == SequenceEventType.PlayPattern)
                 {
-                    se.Span = se.Pattern.Length;
+                    se.Span = se.PlayedLength;      // fork (0.5.1): from its offset to its end
                     if ((i < events.Length - 1) && (time + se.Span > events[i + 1].Key))
                     {
                         events[i].Value.Span = events[i + 1].Key - time;

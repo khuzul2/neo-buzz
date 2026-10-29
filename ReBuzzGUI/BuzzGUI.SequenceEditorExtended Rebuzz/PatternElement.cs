@@ -171,7 +171,7 @@ namespace BuzzGUI.SequenceEditor
 
 
 			int span = se.Pattern != null ? se.Span : 4;
-			string text = se.Pattern != null ? se.Pattern.Name : "";
+			string text = se.Pattern != null ? se.Describe() : "";      // fork (0.5.1): with the part played and the volume
 			double w = span * viewSettings.TickWidth;
 			double h = viewSettings.TrackHeight;
 

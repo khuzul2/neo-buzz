@@ -124,6 +124,9 @@ namespace ReBuzz.Core
         // MIDI control of the Session View (0.2); created with the layout.
         internal SessionMidi SessionMidi { get; set; }
 
+        // Fork (0.5.1): arrangement events' start, end and volume in song files.
+        internal ArrangementEventStore ArrangementEvents { get; set; }
+
         // UI related state
         BuzzView activeView = BuzzView.MachineView;
         public ReBuzzTheme Theme { get; set; }

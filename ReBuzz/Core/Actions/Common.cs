@@ -103,7 +103,7 @@ namespace ReBuzz.Core.Actions
             foreach (var kvSource in sourceEvents)
             {
                 var e = kvSource.Value;
-                targetEvents.Add(kvSource.Key, new SequenceEventRef(e.Type, e.Pattern?.Name, e.Span));
+                targetEvents.Add(kvSource.Key, new SequenceEventRef(e));
             }
             sequences.Add(index, targetEvents);
         }
@@ -128,12 +128,28 @@ namespace ReBuzz.Core.Actions
 
         public int Span { get; set; }
 
+        // Fork (0.5.1): the part of the pattern the event plays, and its volume.
+        public int Offset { get; private set; }
+        public int End { get; private set; }
+        public double Gain { get; private set; } = 1.0;
+
         public SequenceEventRef(SequenceEventType type, string pattern, int span)
         {
             Type = type;
             PatternName = pattern;
             Span = span;
         }
+
+        public SequenceEventRef(SequenceEvent e) : this(e.Type, e.Pattern?.Name, e.Span)
+        {
+            Offset = e.Offset;
+            End = e.End;
+            Gain = e.Gain;
+        }
+
+        /// <summary>The event for a pattern (found by name by the caller).</summary>
+        public SequenceEvent ToEvent(IPattern pattern) =>
+            new SequenceEvent(Type, pattern, Span) { Offset = Offset, End = End, Gain = Gain };
     }
 
     public class ConnectionInfoRef

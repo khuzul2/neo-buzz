@@ -1233,7 +1233,10 @@ namespace ReBuzz.FileOps
                 laodedMachines = machines.Where(m => !m.Hidden && m.DLL.Info.Type != MachineType.Master);
             }
 
-            subSections.Clear();
+            // Fork (0.5.1): keep the subsections. Load(path) ends here before ReBuzzCore reads them
+            // (GetSubSections, for OpenSong), so clearing them lost every subsection of a .bmxml
+            // song: the Session View layout, its MIDI map and mixer, arrangement events. Load
+            // clears them when it starts.
             FileOpsEvent(FileEventType.Close, fileName, laodedMachines);
         }
     }

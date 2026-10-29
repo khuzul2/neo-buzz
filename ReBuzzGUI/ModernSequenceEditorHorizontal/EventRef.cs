@@ -8,6 +8,10 @@ namespace WDE.ModernSequenceEditorHorizontal
         public SequenceEventType Type { get; private set; }
         public string PatternName { get; private set; }
         public int PatternLength { get; private set; }
+        // Fork (0.5.1): the part of the pattern the event plays, and its volume.
+        public int Offset { get; private set; }
+        public int End { get; private set; }
+        public double Gain { get; private set; } = 1.0;
 
         public EventRef(SequenceEvent e)
         {
@@ -16,6 +20,9 @@ namespace WDE.ModernSequenceEditorHorizontal
             {
                 PatternName = e.Pattern.Name;
                 PatternLength = e.Pattern.Length;
+                Offset = e.Offset;
+                End = e.End;
+                Gain = e.Gain;
             }
 
         }
@@ -26,7 +33,7 @@ namespace WDE.ModernSequenceEditorHorizontal
             {
                 var pat = seq.Machine.Patterns.FirstOrDefault(p => p.Name == PatternName);
                 if (pat == null) return;
-                seq.SetEvent(time, new SequenceEvent(Type, pat));
+                seq.SetEvent(time, new SequenceEvent(Type, pat) { Offset = Offset, End = End, Gain = Gain });
             }
             else
             {

@@ -507,11 +507,13 @@ namespace ReBuzz.Audio
                             {
                                 int timeBase = PatternEvent.TimeBase;
                                 int newPatternPos = int.MinValue;
+                                // Fork (0.5.1): an event can start partway into its pattern.
+                                int startTick = songPlayPosition - eventTime + seqEvent.PlayedOffset;
 
                                 // Hack. Pattern editor needs to get adjusted position if play position moved by user or control machine
                                 if (song.AdjustPositionOnTick && masterInfo.PosInTick == 0)
                                 {
-                                    newPatternPos = (songPlayPosition - eventTime) * timeBase +
+                                    newPatternPos = startTick * timeBase +
                                         (ReBuzzCore.masterInfo.PosInTick - 1) * timeBase / masterInfo.SamplesPerTick;
 
                                     if (newPatternPos < 0)
@@ -519,7 +521,7 @@ namespace ReBuzz.Audio
                                 }
                                 else
                                 {
-                                    newPatternPos = (songPlayPosition - eventTime) * timeBase +
+                                    newPatternPos = startTick * timeBase +
                                         (masterInfo.PosInTick * timeBase / masterInfo.SamplesPerTick);
                                 }
                                 pc.PlayPosition = newPatternPos;

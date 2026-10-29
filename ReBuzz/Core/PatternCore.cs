@@ -23,12 +23,14 @@ namespace ReBuzz.Core
         {
             foreach(var seq in Machine.Graph.Buzz.Song.Sequences)
             {
-                foreach (var seqEventKeyValue in seq.Events.Where(e => e.Value.Pattern == this))
-                {
-                    var seqCore = seq as SequenceCore;
-                    seqEventKeyValue.Value.Span = length;
+                var seqCore = seq as SequenceCore;
+                var mine = seq.Events.Where(e => e.Value.Pattern == this).ToList();
+                if (seqCore == null || mine.Count == 0) continue;
+                // Fork (0.5.1): spans are the part each event plays, cut at the next event
+                // (upstream set the whole length, so a pattern that grew ran over the next event).
+                seqCore.RefreshSpans();
+                foreach (var seqEventKeyValue in mine)
                     seqCore.SequenceEventChanged(seqEventKeyValue.Key, seqEventKeyValue.Value);
-                }
             }
         }
 

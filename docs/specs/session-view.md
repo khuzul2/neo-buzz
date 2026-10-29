@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v6 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6) and 0.5 (#7) merged; next: 0.6 Performance |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6) and 0.5 (#7) merged; 0.5.1 Faithful arrangement in review; next: 0.6 Performance |
 | Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -201,6 +201,7 @@ Decision: **A for 0.1–0.2, B from 0.3.** All function keys are taken (F1–F12
 | 0.4 | Mixer | Mix in the session: volume, pan, sends, meters, mute/solo/cue per track; group tracks | M |
 | 0.4.1 | Live hardening | Perform without the UI getting in the way: launches don't wait for the UI, land on the beat you hear, and the audio thread doesn't allocate or wait; dropouts are visible; unsaved work is autosaved | M |
 | 0.5 | Clip & scene properties | Launch modes, per-clip quantization, legato, loop region and start offset, scene tempo | M |
+| 0.5.1 | Faithful arrangement | Record and insert into the arrangement exactly what the session played: partial patterns, loop regions, legato, velocity | M |
 | 0.6 | Performance | Follow actions, crossfader, select-on-launch, launch undo, tempo nudge/tap | M |
 | 0.7 | Session recording | Record and overdub MIDI into empty slots, fixed-length recording, capture MIDI, metronome and count-in | L |
 | 0.8 | Control surfaces & sync | Launchpad/APC/Push-style grid control with LED feedback and session ring; Ableton Link; MIDI clock | L |
@@ -376,10 +377,27 @@ Also: steady playback allocates nothing on the audio thread (removed a per-block
 - *Velocity*: the launch velocity scales the volume of the clip's machine (0%: none; at 100% the softest note is silent): its output connections play at that gain, ramped over a block like an amp change, without changing the connection's amp, so the mixer and the Machine View don't move. Back to full when the clip stops or the transport stops. The gain is per machine: two tracks of one machine share the last launched clip's. Mouse, keys and CCs launch at full velocity.
 - *Scenes*: right-click → *Tempo…* and *Beats per bar…*; the scene button shows them ("140 BPM · 3/4"). They change on the scene's launch tick, also for a scene without clips. A time signature change restarts the bar grid there (the clock keeps counting bars). The latest scene launch wins: a scene still waiting to start loses its settings. The tempo isn't recorded into the master's pattern (`ReBuzzCore.SetBPMFromEngine`, which skips recording, since the audio thread sets it).
 - *Engine*: `ClipShape` (markers and loop) and `LaunchSpec` (shape, legato, repeat, gain) in `SessionScheduler`; positions, ends, legato and repeats in its tick; a grid origin for time signature changes; `ISession.Release` and a `LaunchScene` overload with per-clip options and `SceneOptions`; `MachineCore.ClipGain` applied by `MachineConnectionCore`.
-- *Limits*: recording into the arrangement writes a clip that starts after its first row (start marker, loop start, legato) from its first row, and doesn't record velocity: a Buzz sequence starts patterns at their first row and has no gain. *Insert into arrangement* copies whole patterns.
+- *Limits* (lifted in 0.5.1): recording into the arrangement wrote a clip that starts after its first row (start marker, loop start, legato) from its first row, and didn't record velocity: a Buzz sequence starts patterns at their first row and has no gain. *Insert into arrangement* copied whole patterns.
 - Also fixed: the arrangement recorder wrote a clip launched late (the catch-up of 0.4.1) only at its next loop wrap; launches are now written at their grid point, where they are heard to start. Undoing a marker change also changes the playing clip.
 
 Tests (137/137 on CI, 0 bytes allocated per buffer in steady playback): `ReBuzzTests/SessionClipTests.cs` (13): each launch mode through the audio loop (mouse and keys via the layout and the view's Enter, and MIDI note on/off), per-clip quantization, legato (positions and the machine's output), start marker and loop region, moving markers while playing, one-shot clips, velocity scaling the output (MIDI velocity, sensitivity, back to full on stop and transport stop), scene tempo and beats per bar on the launch tick (and the engine's tempo), a scene replacing a waiting one, settings following renames, duplicates, deletes and undo, the clip panel's controls, and a render; scheduler and layout unit tests in `ReBuzz.SessionTests`. Not automated: a side-by-side check against Live, listening to legato switches, and native pattern editors with markers (positions reach them as for any jump).
+
+---
+
+### 0.5.1 — Faithful arrangement
+
+**Outcome.** What the session plays, the arrangement plays back: recording a performance that uses 0.5's clip properties, or inserting a scene, gives an arrangement that sounds the same. Done before 0.6, whose follow actions and launch undo build on recording.
+
+**Items**
+1. *Arrangement events that play part of a pattern, at a volume.* `SequenceEvent` gains `Offset` (where the pattern starts playing), `End` (where it stops; 0 for its end) and `Gain` (0..1). The engine plays an event from its offset, and its span (`PlayedLength`) is the part played, cut at the next event as before. Song files keep them in an `ArrangementEvents` subsection (.bmx and .bmxml), written only when an event needs it; upstream ReBuzz skips the subsection and plays those events whole at full volume, which is what the fork did before.
+2. *Recording writes what was heard.* A launch is written with the part it plays (from its start marker, or where legato picked it up, to its end marker) and its launch velocity; a loop wrap from the loop start; a late launch at its grid point; and when recording starts while clips play, each from where it is. The last event of a pass stops at the clip's end marker.
+3. *Insert into arrangement follows clip markers*: the start marker, then the loop region over and over (once for a clip without loop), cut at the end. A scene's length is its clips' first pass.
+4. *Velocity per machine, well defined.* A machine plays at the gain of the most recently started of the session clips and arrangement events playing on its tracks. Two tracks of one machine are one audio signal and can't have two volumes; when the newest stops, the other's gain applies again (in 0.5 the machine went back to full volume).
+5. *Editing keeps them.* The sequence editors' copy, paste and undo, deleting a machine and undoing it, and replacing a machine keep an event's offset, end and volume. The editors label a partial event with the part played and its volume ("Verse 4–12 50%") and draw it from its offset (the modern editors' event hints and play position).
+
+Also fixed: opening a .bmxml song lost all of its subsections (upstream: `BMXMLFile` cleared them before ReBuzz read them), so .bmxml songs lost their Session View layout, MIDI map and mixer settings; .bmx was not affected.
+
+**Acceptance criteria.** A performance using start markers, loop regions, legato, one-shot clips and velocity, recorded into the arrangement, plays back sample for sample the same; files keep it; songs without these events are saved as before.
 
 ---
 
