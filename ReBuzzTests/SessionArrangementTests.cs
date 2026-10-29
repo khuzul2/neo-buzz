@@ -393,32 +393,32 @@ namespace ReBuzzTests
             }
         }
 
-        [Test]
-        public void ArrangementEventsKeepTheirRegionAndVolumeInSongFiles()
+        [TestCase(".bmx")]
+        [TestCase(".bmxml")]
+        public void ArrangementEventsKeepTheirRegionAndVolumeInSongFiles(string extension)
         {
-            foreach (var extension in new[] { ".bmx", ".bmxml" })
-            {
-                using var rig = new Rig();
-                var a1 = rig.Pattern(rig.A, "a1", 8);
-                var b1 = rig.Pattern(rig.B, "b1", 8);
-                rig.TrackA.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, a1) { Offset = 2, End = 6, Gain = 0.25 });
-                rig.TrackA.SetEvent(8, new SequenceEvent(SequenceEventType.PlayPattern, a1));
-                rig.TrackB.SetEvent(4, new SequenceEvent(SequenceEventType.PlayPattern, b1) { Gain = 0.5 });
-                Assert.That(rig.TrackA.Events[0].Span, Is.EqualTo(4), "plays rows 2-5");
+            using var rig = new Rig();
+            var a1 = rig.Pattern(rig.A, "a1", 8);
+            var b1 = rig.Pattern(rig.B, "b1", 8);
+            rig.TrackA.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, a1) { Offset = 2, End = 6, Gain = 0.25 });
+            rig.TrackA.SetEvent(8, new SequenceEvent(SequenceEventType.PlayPattern, a1));
+            rig.TrackB.SetEvent(4, new SequenceEvent(SequenceEventType.PlayPattern, b1) { Gain = 0.5 });
+            Assert.That(rig.TrackA.Events[0].Span, Is.EqualTo(4), "plays rows 2-5");
 
-                string path = System.IO.Path.Combine(TestContext.CurrentContext.WorkDirectory, "regions-" + Guid.NewGuid().ToString("N") + extension);
-                rig.Core.SaveSongCopy(path);
-                rig.Core.Modified = false;
-                rig.Core.OpenSongFile(path);
+            string path = System.IO.Path.Combine(TestContext.CurrentContext.WorkDirectory, "regions-" + Guid.NewGuid().ToString("N") + extension);
+            rig.Core.SaveSongCopy(path);
+            rig.Core.Modified = false;
+            rig.Core.OpenSongFile(path);
+            rig.Driver.AssertNoErrorsReportedToUser();
 
-                var song = rig.Core.SongCore;
-                var trackA = song.SequencesList.Single(s => s.Machine.Name == "ToneA");
-                var trackB = song.SequencesList.Single(s => s.Machine.Name == "ToneB");
-                var first = trackA.Events[0];
-                Assert.That((first.Offset, first.End, first.Gain, first.Span), Is.EqualTo((2, 6, 0.25, 4)), extension);
-                Assert.That(trackA.Events[8].IsPlain, Is.True, extension);
-                Assert.That(trackB.Events[4].Gain, Is.EqualTo(0.5), extension);
-            }
+            var song = rig.Core.SongCore;
+            TestContext.Out.WriteLine("[notice] " + extension + ": " + string.Join(", ", song.SequencesList.Select(s => s.Machine.Name + "(" + s.Events.Count + ")")));
+            var trackA = song.SequencesList.Single(s => s.Machine.Name == "ToneA");
+            var trackB = song.SequencesList.Single(s => s.Machine.Name == "ToneB");
+            var first = trackA.Events[0];
+            Assert.That((first.Offset, first.End, first.Gain, first.Span), Is.EqualTo((2, 6, 0.25, 4)));
+            Assert.That(trackA.Events[8].IsPlain, Is.True);
+            Assert.That(trackB.Events[4].Gain, Is.EqualTo(0.5));
         }
 
         [Test]
