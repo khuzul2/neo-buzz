@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6) and 0.5 (#7) merged; 0.5.1 Faithful arrangement in review; next: 0.6 Performance |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7) and 0.5.1 (#8) merged; next: 0.6 Performance |
 | Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -398,6 +398,8 @@ Tests (137/137 on CI, 0 bytes allocated per buffer in steady playback): `ReBuzzT
 Also fixed: opening a .bmxml song lost all of its subsections (upstream: `BMXMLFile` cleared them before ReBuzz read them), so .bmxml songs lost their Session View layout, MIDI map and mixer settings; .bmx was not affected.
 
 **Acceptance criteria.** A performance using start markers, loop regions, legato, one-shot clips and velocity, recorded into the arrangement, plays back sample for sample the same; files keep it; songs without these events are saved as before.
+
+**Status (merged, #8).** Items 1–5 are in. Tests (147/147 on CI, 0 bytes allocated per buffer in steady playback): `ReBuzzTests/SessionArrangementTests.cs` (a performance with every 0.5 property played back sample for sample from the arrangement; recording that starts mid-clip; partial events playing; .bmx and .bmxml keeping event regions, volumes and the layout; plain songs writing no fork data; editor undo; scene insert following markers), `ReBuzzTests/SessionClipTests.cs` (two tracks of one machine; an arrangement event's volume), and a scheduler unit test. Not automated: the sequence editors' drawing of partial events, and PatternXP playing an event from an offset (it gets the position through `PlayPattern`, as for session clips).
 
 ---
 
