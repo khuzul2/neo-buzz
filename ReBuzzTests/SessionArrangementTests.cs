@@ -395,6 +395,7 @@ namespace ReBuzzTests
 
         [TestCase(".bmx")]
         [TestCase(".bmxml")]
+        [Apartment(System.Threading.ApartmentState.STA)]      // the .bmxml loader creates UI objects
         public void ArrangementEventsKeepTheirRegionAndVolumeInSongFiles(string extension)
         {
             using var rig = new Rig();
@@ -412,7 +413,6 @@ namespace ReBuzzTests
             rig.Driver.AssertNoErrorsReportedToUser();
 
             var song = rig.Core.SongCore;
-            TestContext.Out.WriteLine("[notice] " + extension + ": " + string.Join(", ", song.SequencesList.Select(s => s.Machine.Name + "(" + s.Events.Count + ")")));
             var trackA = song.SequencesList.Single(s => s.Machine.Name == "ToneA");
             var trackB = song.SequencesList.Single(s => s.Machine.Name == "ToneB");
             var first = trackA.Events[0];
