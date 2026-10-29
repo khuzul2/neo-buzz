@@ -713,6 +713,19 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
+        public void TheRegionAtATickIsWhatTheRecorderWrites()
+        {
+            s.Start(0);
+            s.Launch(drums, loopA, 0, 0, new LaunchSpec(new ClipShape(2, 4, 12, true)), 0);
+            s.Advance();                                         // starts at 1, from its start marker
+            Assert.That(s.GetRegionAt(drums, 1), Is.EqualTo((2, 12)));
+            Assert.That(s.GetRegionAt(drums, 0), Is.EqualTo((2, 12)), "before it started: its start marker");
+            RunTo(11);                                           // 10 ticks in: wrapped to the loop start
+            Assert.That(s.GetRegionAt(drums, s.Clock), Is.EqualTo((4, 12)));
+            Assert.That(s.GetRegionAt(bass, s.Clock), Is.EqualTo((0, 0)), "nothing playing");
+        }
+
+        [Test]
         public void ReshapingAPlayingClipKeepsItsTime()
         {
             s.Start(0);

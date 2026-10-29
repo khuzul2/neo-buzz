@@ -191,7 +191,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                             // Get pattern
                             var pattern = machine.PatternsList.FirstOrDefault(p => p.Name == seqEvent.PatternName);
                             // Create new seqence event
-                            SequenceEvent sequenceEvent = new SequenceEvent(seqEvent.Type, pattern, seqEvent.Span);
+                            SequenceEvent sequenceEvent = seqEvent.ToEvent(pattern);
                             seqAdded.SetEvent(eventItem.Key, sequenceEvent);
                         }
                     }

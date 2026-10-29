@@ -74,7 +74,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                             var seqEvent = eventItem.Value;
                             machine.CreatePattern(seqEvent.PatternName, seqEvent.Span);
                             var pattern = machine.PatternsList.FirstOrDefault(p => p.Name == seqEvent.PatternName);
-                            SequenceEvent sequenceEvent = new SequenceEvent(seqEvent.Type, pattern, seqEvent.Span);
+                            SequenceEvent sequenceEvent = seqEvent.ToEvent(pattern);
                             seqAdded.SetEvent(eventItem.Key, sequenceEvent);
                         }
                     }
@@ -114,7 +114,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                         foreach (var eventItem in events)
                         {
                             var v = eventItem.Value;
-                            targetEvents[eventItem.Key] = new SequenceEventRef(v.Type, v.Pattern?.Name, v.Span);
+                            targetEvents[eventItem.Key] = new SequenceEventRef(v);
                         }
                         sequences.Add(index, targetEvents);
                     }

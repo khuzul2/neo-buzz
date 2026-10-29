@@ -195,7 +195,7 @@ namespace WDE.ModernSequenceEditorHorizontal
             }
 
             int span = se.Pattern != null ? se.Span : viewSettings.NonPlayPattenSpan;
-            string text = se.Pattern != null ? se.Pattern.Name : "";
+            string text = se.Pattern != null ? se.Describe() : "";      // fork (0.5.1): with the part played and the volume
             double h = viewSettings.TrackHeight;
             double w = span * viewSettings.TickWidth;
             w = Math.Max(w, 10);
@@ -455,7 +455,7 @@ namespace WDE.ModernSequenceEditorHorizontal
                     patternAnimationStarted = true;
                     rectPlayAnim.Height = h;
                     if (se.Pattern.PlayPosition > 0)
-                        rectPlayAnim.Width = (se.Pattern.PlayPosition / (double)PatternEvent.TimeBase) * viewSettings.TickWidth;
+                        rectPlayAnim.Width = Math.Max(0, se.Pattern.PlayPosition / (double)PatternEvent.TimeBase - se.PlayedOffset) * viewSettings.TickWidth;
                 }
                 else if (patternAnimationStarted)
                 {
@@ -537,7 +537,14 @@ namespace WDE.ModernSequenceEditorHorizontal
                 if (eventHintCanvas != null)
                 {
                     eventHintCanvas.Children.Clear();
-                    DrawPatternEvents(eventHintCanvas, se.Pattern, w, h, patternEventHintBrush, patternEventHintBrushOff, patternEventHintParam, patternEventBorder);
+                    // Fork (0.5.1): an event that starts partway shows the pattern from there.
+                    var hintTarget = eventHintCanvas;
+                    if (se.PlayedOffset > 0)
+                    {
+                        hintTarget = new Canvas { RenderTransform = new TranslateTransform(-se.PlayedOffset * viewSettings.TickWidth, 0) };
+                        eventHintCanvas.Children.Add(hintTarget);
+                    }
+                    DrawPatternEvents(hintTarget, se.Pattern, w, h, patternEventHintBrush, patternEventHintBrushOff, patternEventHintParam, patternEventBorder);
                 }
             }
         }

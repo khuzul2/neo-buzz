@@ -12,6 +12,9 @@ namespace ReBuzz.Core.Session
     /// session clip starts (launches and loop restarts) and stops are written into the
     /// sequences at the song position where they happened, replacing what the arrangement had
     /// on those tracks in between. One recording pass is one undo step in the Session View.
+    /// Since 0.5.1 a start carries the part of the pattern played (from a start or loop marker,
+    /// or where legato picked it up, to the clip's end marker) and its launch velocity, so the
+    /// arrangement plays back what was heard (<see cref="SequenceEvent.Offset"/>, End, Gain).
     ///
     /// SessionCore reports from the audio thread (tick time) into a queue; the writes happen
     /// on the UI thread, since ISequence.SetEvent notifies the sequence editors.
@@ -20,7 +23,7 @@ namespace ReBuzz.Core.Session
     {
         enum Kind { Start, Stop, Cut, Release, End }
 
-        readonly record struct Entry(Kind Kind, SequenceCore Sequence, PatternCore Pattern, int Position);
+        readonly record struct Entry(Kind Kind, SequenceCore Sequence, PatternCore Pattern, int Position, int Offset = 0, int End = 0, float Gain = 1f);
 
         sealed class TrackPass
         {
@@ -53,8 +56,13 @@ namespace ReBuzz.Core.Session
 
         // ------------------------------------------------------------------ any thread
 
-        /// <summary>A clip started from its first tick (launch or loop restart) at a song position.</summary>
-        internal void ClipStarted(SequenceCore seq, PatternCore pattern, int position) => Post(new Entry(Kind.Start, seq, pattern, position));
+        /// <summary>
+        /// A clip started (launch, loop restart, Repeat restart) at a song position, playing its
+        /// pattern from <paramref name="offset"/> to <paramref name="end"/> (0: the pattern's end)
+        /// at <paramref name="gain"/>.
+        /// </summary>
+        internal void ClipStarted(SequenceCore seq, PatternCore pattern, int position, int offset = 0, int end = 0, float gain = 1f) =>
+            Post(new Entry(Kind.Start, seq, pattern, position, offset, end, gain));
 
         /// <summary>A clip was stopped (the track stays with the session).</summary>
         internal void ClipStopped(SequenceCore seq, int position) => Post(new Entry(Kind.Stop, seq, null, position));
@@ -140,7 +148,12 @@ namespace ReBuzz.Core.Session
 
             ClearBetween(seq, track.LastWrite, e.Position);
             if (e.Kind == Kind.Start && e.Pattern != null && e.Pattern.Machine == seq.Machine)
-                seq.SetEvent(e.Position, new SequenceEvent(SequenceEventType.PlayPattern, e.Pattern));
+                seq.SetEvent(e.Position, new SequenceEvent(SequenceEventType.PlayPattern, e.Pattern)
+                {
+                    Offset = Math.Max(0, e.Offset),
+                    End = e.End > 0 && e.End < e.Pattern.Length ? e.End : 0,
+                    Gain = Math.Clamp(e.Gain, 0f, 1f)
+                });
             else if (e.Kind == Kind.Stop)
                 seq.SetEvent(e.Position, new SequenceEvent(SequenceEventType.Off));
             else if (e.Kind == Kind.Cut)
@@ -250,10 +263,12 @@ namespace ReBuzz.Core.Session
     {
         /// <summary>
         /// Writes the scene's clips at <paramref name="position"/> (ticks) for
-        /// <paramref name="length"/> ticks, repeating each clip and cutting the last repeat at
-        /// the end. With <paramref name="insert"/>, every sequence's later events move back by
-        /// the length first; otherwise the scene's tracks are overwritten in that range.
-        /// One undo step in the Session View. Returns the number of tracks written.
+        /// <paramref name="length"/> ticks, as launching the scene would play them (0.5.1: from
+        /// each clip's start marker, then its loop region over and over, or once for a clip
+        /// without loop), cutting the last repeat at the end. With <paramref name="insert"/>,
+        /// every sequence's later events move back by the length first; otherwise the scene's
+        /// tracks are overwritten in that range. One undo step in the Session View. Returns the
+        /// number of tracks written.
         /// </summary>
         public static int Insert(ReBuzzCore buzz, SessionLayout layout, int scene, int position, int length, bool insert)
         {
@@ -284,11 +299,20 @@ namespace ReBuzz.Core.Session
 
             foreach (var (seq, pattern) in clips)
             {
-                for (int t = position; t < end; t += pattern.Length)
-                    seq.SetEvent(t, new SequenceEvent(SequenceEventType.PlayPattern, pattern));
+                var c = layout.ClipOf(pattern);
+                var (start, loopStart, regionEnd) = new ClipShape(c.Start, c.LoopStart, c.LoopEnd, c.Loop).Resolve(pattern.Length);
+                int endMark = regionEnd < pattern.Length ? regionEnd : 0;
+                int t = position, offset = start, lastEnd = position;
+                while (t < end)
+                {
+                    seq.SetEvent(t, new SequenceEvent(SequenceEventType.PlayPattern, pattern) { Offset = offset, End = endMark });
+                    lastEnd = t + (regionEnd - offset);
+                    if (!c.Loop) break;
+                    t = lastEnd;
+                    offset = loopStart;
+                }
                 // Cut a last repeat that runs past the end, unless something already starts there.
-                int lastStart = position + (length - 1) / pattern.Length * pattern.Length;
-                if (lastStart + pattern.Length > end && !seq.Events.ContainsKey(end))
+                if (lastEnd > end && !seq.Events.ContainsKey(end))
                     seq.SetEvent(end, new SequenceEvent(SequenceEventType.Break));
             }
 
@@ -309,12 +333,24 @@ namespace ReBuzz.Core.Session
             return clips.Count;
         }
 
-        /// <summary>Length of a scene in ticks: its longest clip, rounded up to whole bars.</summary>
+        /// <summary>
+        /// Length of a scene in ticks: its longest clip (0.5.1: the part a launch plays first,
+        /// from its start marker to its end marker), rounded up to whole bars.
+        /// </summary>
         public static int SceneLength(SessionLayout layout, int scene, int ticksPerBar)
         {
             var doc = layout.Document;
             if (doc == null || ticksPerBar <= 0) return ticksPerBar;
-            int longest = doc.SceneSlots(scene).Select(s => layout.PatternAt(s.Track, scene)?.Length ?? 0).DefaultIfEmpty(0).Max();
+            int longest = doc.SceneSlots(scene)
+                .Select(s => layout.PatternAt(s.Track, scene))
+                .Where(p => p != null)
+                .Select(p =>
+                {
+                    var c = layout.ClipOf(p);
+                    var (start, _, regionEnd) = new ClipShape(c.Start, c.LoopStart, c.LoopEnd, c.Loop).Resolve(p.Length);
+                    return regionEnd - start;
+                })
+                .DefaultIfEmpty(0).Max();
             int bars = Math.Max(1, (longest + ticksPerBar - 1) / ticksPerBar);
             return bars * ticksPerBar;
         }

@@ -192,7 +192,7 @@ namespace WDE.ModernSequenceEditor
             }
 
             int span = se.Pattern != null ? se.Span : viewSettings.NonPlayPattenSpan;
-            string text = se.Pattern != null ? se.Pattern.Name : "";
+            string text = se.Pattern != null ? se.Describe() : "";      // fork (0.5.1): with the part played and the volume
             double w = viewSettings.TrackWidth;
             double h = span * viewSettings.TickHeight;
             h = Math.Max(h, 10);
@@ -419,7 +419,7 @@ namespace WDE.ModernSequenceEditor
                     patternAnimationStarted = true;
                     rectPlayAnim.Width = w;
                     if (se.Pattern.PlayPosition > 0)
-                        rectPlayAnim.Height = (se.Pattern.PlayPosition / (double)PatternEvent.TimeBase) * viewSettings.TickHeight;
+                        rectPlayAnim.Height = Math.Max(0, se.Pattern.PlayPosition / (double)PatternEvent.TimeBase - se.PlayedOffset) * viewSettings.TickHeight;
                 }
                 else if (patternAnimationStarted)
                 {
@@ -501,7 +501,14 @@ namespace WDE.ModernSequenceEditor
                 if (eventHintCanvas != null)
                 {
                     eventHintCanvas.Children.Clear();
-                    DrawPatternEvents(eventHintCanvas, se.Pattern, w, h, patternEventHintBrush, patternEventHintBrushOff, patternEventHintParam, patternEventBorder);
+                    // Fork (0.5.1): an event that starts partway shows the pattern from there.
+                    var hintTarget = eventHintCanvas;
+                    if (se.PlayedOffset > 0)
+                    {
+                        hintTarget = new Canvas { RenderTransform = new TranslateTransform(0, -se.PlayedOffset * viewSettings.TickHeight) };
+                        eventHintCanvas.Children.Add(hintTarget);
+                    }
+                    DrawPatternEvents(hintTarget, se.Pattern, w, h, patternEventHintBrush, patternEventHintBrushOff, patternEventHintParam, patternEventBorder);
                 }
             }
         }

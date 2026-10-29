@@ -724,6 +724,24 @@ namespace ReBuzz.Core.Session
             return (st.LaunchedAt, st.LaunchLate);
         }
 
+        /// <summary>
+        /// For recording (0.5.1): where the track's clip is in its pattern at
+        /// <paramref name="clock"/> (its start marker if that is before it started), and the end
+        /// of its region (exclusive). (0, 0) when none plays.
+        /// </summary>
+        public (int Offset, int End) GetRegionAt(TTrack track, long clock)
+        {
+            var st = Find(track);
+            var playing = st?.Playing;
+            if (playing == null) return (0, 0);
+            int length = Length(playing);
+            var shape = st.Shape;
+            var (start, _, end) = shape.Resolve(length);
+            long elapsed = clock - st.StartClock;
+            int position = elapsed >= 0 ? shape.PositionAt(elapsed, length) : start;
+            return (position < 0 ? start : position, end);
+        }
+
         /// <summary>Gain of the clip playing on the track (1 when none).</summary>
         public double GetGain(TTrack track)
         {

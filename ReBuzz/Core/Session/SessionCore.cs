@@ -459,6 +459,7 @@ namespace ReBuzz.Core.Session
             if (beats > 0)
                 SetBeatsPerBarFromEngine(beats);
             RecordTick(songPosition);
+            ResolveGains(songPosition);
             if (tickChanges.Count == 0) return;
 
             bool anyOverrideChange = false;
@@ -466,25 +467,99 @@ namespace ReBuzz.Core.Session
             {
                 var c = tickChanges[i];
                 if (c.Kind == SessionChangeKind.Stopped || c.Kind == SessionChangeKind.Ended)
-                {
                     Silence(c.Track);
-                    if (c.Track.MachineCore != null)
-                        c.Track.MachineCore.ClipGain = 1f;           // velocity gain ends with the clip
-                }
                 if (c.Kind == SessionChangeKind.Launched && c.Previous == null)
                     anyOverrideChange = true;
-            }
-            // Velocity (0.5): the machine plays at the launched clip's gain (after the stops of
-            // this tick, which may be on another track of the same machine).
-            for (int i = 0; i < tickChanges.Count; i++)
-            {
-                var c = tickChanges[i];
-                if (c.Kind == SessionChangeKind.Launched && c.Track.MachineCore != null)
-                    c.Track.MachineCore.ClipGain = (float)scheduler.GetGain(c.Track);
             }
             RaiseTrackStateChanged(tickChanges.Select(c => c.Track).ToArray());
             if (anyOverrideChange)
                 RaisePropertyChangedOnUi(nameof(IsAnyArrangementOverridden));
+        }
+
+        long gainStamp;     // audio thread: counts gain sources as they start
+
+        /// <summary>
+        /// Velocity (0.5, 0.5.1), audio thread on each tick: a machine plays at the gain of the
+        /// most recently started of what plays on its tracks: a session clip (its launch
+        /// velocity) or an arrangement event (the velocity it was recorded with). Two tracks of
+        /// one machine are one signal, so they can't have two volumes; when the newest stops,
+        /// the one still playing sets it again. Allocation-free.
+        /// </summary>
+        void ResolveGains(int songPosition)
+        {
+            var sequences = buzz.SongCore.SequencesList;
+            for (int i = 0; i < sequences.Count; i++)
+            {
+                var m = sequences[i].MachineCore;
+                if (m == null) continue;
+                m.GainBestStamp = -1;
+                m.GainBest = 1f;
+            }
+            for (int i = 0; i < sequences.Count; i++)
+            {
+                var seq = sequences[i];
+                var m = seq.MachineCore;
+                if (m == null) continue;
+
+                object source = null;
+                long key = 0;
+                float gain = 1f;
+                var clip = scheduler.GetPlaying(seq);
+                if (clip != null)
+                {
+                    source = clip;
+                    key = scheduler.GetLaunch(seq).At;
+                    gain = (float)scheduler.GetGain(seq);
+                }
+                else if (!scheduler.IsOverridden(seq))
+                {
+                    var arranged = seq.Arranged;
+                    int index = arranged.IndexAtOrBefore(songPosition);
+                    if (index >= 0)
+                    {
+                        var e = arranged.Events[index];
+                        int time = arranged.Times[index];
+                        if (e.Type == SequenceEventType.PlayPattern && e.Pattern != null && songPosition < time + e.Span)
+                        {
+                            source = e;
+                            key = time;
+                            gain = (float)Math.Clamp(e.Gain, 0, 1);
+                        }
+                    }
+                }
+
+                if (!ReferenceEquals(source, seq.GainSource) || key != seq.GainSourceKey)
+                {
+                    seq.GainSource = source;
+                    seq.GainSourceKey = key;
+                    seq.GainStamp = ++gainStamp;
+                }
+                if (source != null && seq.GainStamp > m.GainBestStamp)
+                {
+                    m.GainBestStamp = seq.GainStamp;
+                    m.GainBest = gain;
+                }
+            }
+            for (int i = 0; i < sequences.Count; i++)
+            {
+                var m = sequences[i].MachineCore;
+                if (m != null && m.ClipGain != m.GainBest)
+                    m.ClipGain = m.GainBest;
+            }
+        }
+
+        /// <summary>Transport stopped (0.5.1): every machine back to full volume, no sources.</summary>
+        void ResetGains()
+        {
+            var sequences = buzz.SongCore.SequencesList;
+            for (int i = 0; i < sequences.Count; i++)
+            {
+                var seq = sequences[i];
+                seq.GainSource = null;
+                seq.GainSourceKey = 0;
+                if (seq.MachineCore != null)
+                    seq.MachineCore.ClipGain = 1f;
+            }
         }
 
         /// <summary>
@@ -524,19 +599,21 @@ namespace ReBuzz.Core.Session
             }
 
             // Launches and Repeat restarts on this tick. A late (catch-up) launch is written at its
-            // grid point, where it is heard to start. A clip that starts after its first row (start
-            // marker, loop start, legato) is written from its first row: Buzz sequences can't start
-            // a pattern partway.
+            // grid point, where it is heard to start. Each start carries the part of the pattern
+            // it plays (0.5.1: from a start marker or where legato picked it up, to the clip's
+            // end marker) and its velocity, so the arrangement plays back what was heard.
             long clock = scheduler.Clock;
             for (int i = 0; i < tickChanges.Count; i++)
             {
                 var c = tickChanges[i];
                 if (c.Kind != SessionChangeKind.Launched || c.Current == null) continue;
-                var (_, late) = scheduler.GetLaunch(c.Track);
-                recorder.ClipStarted(c.Track, c.Current, (int)Math.Max(0, songPosition - late));
+                var (at, late) = scheduler.GetLaunch(c.Track);
+                var (offset, end) = scheduler.GetRegionAt(c.Track, at - late);
+                recorder.ClipStarted(c.Track, c.Current, (int)Math.Max(0, songPosition - late), offset, end, (float)scheduler.GetGain(c.Track));
             }
 
-            // Loop wraps; and when recording starts, the loop each playing clip is in.
+            // Loop wraps (from the loop start); and when recording starts, each playing clip from
+            // where it is.
             var sequences = buzz.SongCore.SequencesList;
             for (int i = 0; i < sequences.Count; i++)
             {
@@ -544,10 +621,11 @@ namespace ReBuzz.Core.Session
                 var clip = scheduler.GetPlaying(seq);
                 if (clip == null || scheduler.GetLaunch(seq).At == clock) continue;
                 long cycle = scheduler.GetCycleElapsed(seq);
-                if (cycle == 0)
-                    recorder.ClipStarted(seq, clip, songPosition);
-                else if (starting && cycle > 0 && songPosition - cycle >= 0)
-                    recorder.ClipStarted(seq, clip, (int)(songPosition - cycle));
+                if (cycle == 0 || (starting && cycle > 0))
+                {
+                    var (offset, end) = scheduler.GetRegionAt(seq, clock);
+                    recorder.ClipStarted(seq, clip, songPosition, offset, end, (float)scheduler.GetGain(seq));
+                }
             }
         }
 
@@ -570,9 +648,7 @@ namespace ReBuzz.Core.Session
                 sceneAt = -1;
                 System.Threading.Volatile.Write(ref gridOriginBar, 0);
             }
-            foreach (var seq in changed)
-                if (seq.MachineCore != null)
-                    seq.MachineCore.ClipGain = 1f;                    // 0.5: velocity gain ends with the transport
+            ResetGains();                                           // velocity gain ends with the transport
             RaiseTrackStateChanged(changed);
             if (wasOverridden)
                 RaisePropertyChangedOnUi(nameof(IsAnyArrangementOverridden));
@@ -587,10 +663,10 @@ namespace ReBuzz.Core.Session
                 playing = scheduler.Forget(seq);
             }
             if (playing != null)
-            {
                 Silence(seq);
-                if (seq.MachineCore != null) seq.MachineCore.ClipGain = 1f;
-            }
+            // The machine may have no other track to set its gain on the next tick.
+            if (seq.MachineCore != null) seq.MachineCore.ClipGain = 1f;
+            seq.GainSource = null;
         }
 
         /// <summary>A pattern was deleted (AudioLock held).</summary>
@@ -602,10 +678,7 @@ namespace ReBuzz.Core.Session
                 scheduler.ForgetClip(pattern, stopped);
             }
             foreach (var seq in stopped)
-            {
-                Silence(seq);
-                if (seq.MachineCore != null) seq.MachineCore.ClipGain = 1f;
-            }
+                Silence(seq);           // the next tick resolves the machine's gain
             if (stopped.Count > 0)
                 RaiseTrackStateChanged(stopped.ToArray());
         }

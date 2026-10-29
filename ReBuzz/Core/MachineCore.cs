@@ -370,10 +370,16 @@ namespace ReBuzz.Core
 
         /// <summary>
         /// Fork (0.5): volume of the machine's output while a session clip launched with
-        /// velocity plays, 0..1 (1 otherwise). Applied by its output connections, ramped over a
-        /// block (MachineConnectionCore), so it never shows as a changed amp.
+        /// velocity, or an arrangement event recorded from one, plays: 0..1 (1 otherwise).
+        /// Set by SessionCore on each tick (0.5.1: the most recently started of the clips and
+        /// events playing on the machine's tracks). Applied by its output connections, ramped
+        /// over a block (MachineConnectionCore), so it never shows as a changed amp.
         /// </summary>
         internal volatile float ClipGain = 1f;
+
+        // Audio thread scratch for SessionCore.ResolveGains (0.5.1).
+        internal long GainBestStamp;
+        internal float GainBest = 1f;
 
         int baseOctave = 4;
         public int BaseOctave { get => baseOctave;

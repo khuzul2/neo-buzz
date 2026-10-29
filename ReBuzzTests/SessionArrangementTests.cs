@@ -305,6 +305,193 @@ namespace ReBuzzTests
             Assert.That(SceneToArrangement.SceneLength(rig.Layout, 0, 16), Is.EqualTo(32));
         }
 
+        // ------------------------------------------------------------------ 0.5.1: regions and velocity in the arrangement
+
+        static void Set(SessionLayout layout, IPattern pattern, Action<SessionDocument.ClipSettings> change)
+        {
+            var c = layout.ClipOf(pattern);
+            change(c);
+            layout.SetClipSettings(pattern, c);
+        }
+
+        [Test]
+        public void APerformanceWithClipPropertiesPlaysBackIdenticallyFromTheArrangement()
+        {
+            using var rig = new Rig();
+            var a1 = rig.Pattern(rig.A, "a1", 8);
+            var a2 = rig.Pattern(rig.A, "a2", 8);
+            var b1 = rig.Pattern(rig.B, "b1", 16);
+            rig.Core.Looping = false;
+            var layout = rig.Layout;
+            layout.Ensure();
+            Set(layout, a1, c => { c.Start = 2; c.LoopStart = 4; c.LoopEnd = 7; });     // 2-6, then 4-6 over and over
+            Set(layout, a2, c => c.Legato = true);
+            Set(layout, b1, c => { c.Loop = false; c.Start = 3; c.LoopEnd = 13; c.Velocity = 100; });   // rows 3-12 once
+            rig.Session.LaunchQuantization = LaunchQuantization.Beat;
+
+            rig.Align();
+            rig.Core.Recording = true;
+            layout.LaunchClip(rig.TrackA, a1);
+            layout.LaunchClip(rig.TrackB, b1, velocity: 64);
+            var recorded = rig.Ticks(13);
+            layout.LaunchClip(rig.TrackA, a2);                 // legato: picks up where a1 is
+            recorded.AddRange(rig.Ticks(10));
+            layout.LaunchClip(rig.TrackB, b1);                 // again, at full velocity
+            recorded.AddRange(rig.Ticks(14));
+            rig.Core.Recording = false;
+            recorded.AddRange(rig.Ticks(1));
+            rig.Core.Playing = false;
+
+            var a = rig.TrackA.Events.OrderBy(e => e.Key).ToList();
+            Assert.That((a[0].Key, a[0].Value.Pattern, a[0].Value.Offset, a[0].Value.End), Is.EqualTo((0, (IPattern)a1, 2, 7)), "from the start marker to the loop end");
+            Assert.That((a[1].Key, a[1].Value.Offset, a[1].Value.End), Is.EqualTo((5, 4, 7)), "then the loop region");
+            var legato = a.First(e => e.Value.Pattern == a2).Value;
+            Assert.That(legato.Offset, Is.InRange(4, 6), "a2 starts where a1 was");
+            var b = rig.TrackB.Events.OrderBy(e => e.Key).ToList();
+            Assert.That((b[0].Value.Offset, b[0].Value.End), Is.EqualTo((3, 13)));
+            Assert.That(b[0].Value.Gain, Is.EqualTo(64 / 127.0).Within(1e-6), "launch velocity");
+            Assert.That(b[1].Key, Is.EqualTo(10));
+            Assert.That(b[1].Value.Type, Is.EqualTo(SequenceEventType.Off), "the one-shot clip ended");
+            Assert.That(b.Last(e => e.Value.Pattern == b1).Value.Gain, Is.EqualTo(1.0));
+
+            rig.Core.SongCore.PlayPosition = 0;
+            rig.Align();
+            rig.Core.Playing = true;
+            var played = rig.Ticks(recorded.Count / 2 / ReBuzzCore.masterInfo.SamplesPerTick);
+
+            AssertSameAudio(recorded, played, ReBuzzCore.masterInfo.SamplesPerTick);
+        }
+
+        [Test]
+        public void RecordingThatStartsMidClipWritesWhereTheClipIs()
+        {
+            using var rig = new Rig();
+            var a1 = rig.Pattern(rig.A, "a1", 8);
+            rig.Core.Looping = false;
+            var layout = rig.Layout;
+            layout.Ensure();
+            Set(layout, a1, c => { c.LoopStart = 2; c.LoopEnd = 6; });                // 0-5, then 2-5
+            rig.Session.LaunchQuantization = LaunchQuantization.None;
+
+            rig.Align();
+            layout.LaunchClip(rig.TrackA, a1);
+            rig.Ticks(8);                                      // a1 is in its loop region now
+            rig.Core.Recording = true;
+            rig.Ticks(9);
+            rig.Core.Recording = false;
+            rig.Ticks(1);
+            rig.Core.Playing = false;
+
+            var a = rig.TrackA.Events.OrderBy(e => e.Key).ToList();
+            Assert.That(a.Count, Is.GreaterThanOrEqualTo(3));
+            Assert.That(a.All(e => e.Value.Pattern == a1 && e.Value.End == 6), Is.True);
+            Assert.That(a[0].Value.Offset, Is.InRange(3, 5), "written from where the clip was, not from its first row");
+            for (int i = 1; i < a.Count; i++)
+            {
+                Assert.That(a[i].Value.Offset, Is.EqualTo(2), "loop wraps start at the loop start");
+                Assert.That(a[i].Key - a[i - 1].Key, Is.EqualTo(6 - a[i - 1].Value.Offset), "each plays to the loop end");
+            }
+        }
+
+        [Test]
+        public void ArrangementEventsKeepTheirRegionAndVolumeInSongFiles()
+        {
+            foreach (var extension in new[] { ".bmx", ".bmxml" })
+            {
+                using var rig = new Rig();
+                var a1 = rig.Pattern(rig.A, "a1", 8);
+                var b1 = rig.Pattern(rig.B, "b1", 8);
+                rig.TrackA.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, a1) { Offset = 2, End = 6, Gain = 0.25 });
+                rig.TrackA.SetEvent(8, new SequenceEvent(SequenceEventType.PlayPattern, a1));
+                rig.TrackB.SetEvent(4, new SequenceEvent(SequenceEventType.PlayPattern, b1) { Gain = 0.5 });
+                Assert.That(rig.TrackA.Events[0].Span, Is.EqualTo(4), "plays rows 2-5");
+
+                string path = System.IO.Path.Combine(TestContext.CurrentContext.WorkDirectory, "regions-" + Guid.NewGuid().ToString("N") + extension);
+                rig.Core.SaveSongCopy(path);
+                rig.Core.Modified = false;
+                rig.Core.OpenSongFile(path);
+
+                var song = rig.Core.SongCore;
+                var trackA = song.SequencesList.Single(s => s.Machine.Name == "ToneA");
+                var trackB = song.SequencesList.Single(s => s.Machine.Name == "ToneB");
+                var first = trackA.Events[0];
+                Assert.That((first.Offset, first.End, first.Gain, first.Span), Is.EqualTo((2, 6, 0.25, 4)), extension);
+                Assert.That(trackA.Events[8].IsPlain, Is.True, extension);
+                Assert.That(trackB.Events[4].Gain, Is.EqualTo(0.5), extension);
+            }
+        }
+
+        [Test]
+        public void PlainArrangementsSaveNoForkData()
+        {
+            using var rig = new Rig();
+            var a1 = rig.Pattern(rig.A, "a1", 8);
+            rig.TrackA.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, a1));
+            Assert.That(ArrangementEventStore.ToXml(rig.Core.SongCore.Sequences), Is.Null, "upstream-identical files when nothing needs it");
+        }
+
+        [Test]
+        public void SequenceEditorUndoKeepsTheRegion()
+        {
+            using var rig = new Rig();
+            var a1 = rig.Pattern(rig.A, "a1", 8);
+            rig.TrackA.SetEvent(4, new SequenceEvent(SequenceEventType.PlayPattern, a1) { Offset = 3, End = 7, Gain = 0.5 });
+
+            var clear = new BuzzGUI.Common.Actions.SequenceActions.ClearAction(rig.TrackA, 0, 16);
+            clear.Do();
+            Assert.That(rig.TrackA.Events, Is.Empty);
+            clear.Undo();
+
+            var e = rig.TrackA.Events[4];
+            Assert.That((e.Offset, e.End, e.Gain, e.Span), Is.EqualTo((3, 7, 0.5, 4)));
+            Assert.That(e.Describe(), Is.EqualTo("a1 3–7 50%"));
+        }
+
+        [Test]
+        public void TheArrangementPlaysAnEventFromItsOffsetToItsEnd()
+        {
+            using var rig = new Rig();
+            var a1 = rig.Pattern(rig.A, "a1", 8);
+            rig.TrackA.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, a1) { Offset = 3, End = 6 });
+            rig.Core.Looping = false;
+
+            rig.Align();
+            rig.Core.Playing = true;
+            var rows = new List<int?>();
+            for (int i = 0; i < 5; i++)
+            {
+                rig.Ticks(1);
+                rows.Add(a1.PlayPosition == int.MinValue ? null : a1.PlayPosition / PatternEvent.TimeBase);
+            }
+            Assert.That(rows, Is.EqualTo(new int?[] { 3, 4, 5, null, null }));
+        }
+
+        [Test]
+        public void SceneToArrangementFollowsClipMarkers()
+        {
+            using var rig = new Rig();
+            var a1 = rig.Pattern(rig.A, "a1", 8);
+            var b1 = rig.Pattern(rig.B, "b1", 12);
+            var layout = rig.Layout;
+            layout.Ensure();
+            Set(layout, a1, c => { c.Start = 2; c.LoopStart = 4; c.LoopEnd = 7; });
+            Set(layout, b1, c => { c.Loop = false; c.Start = 3; c.LoopEnd = 9; });
+
+            Assert.That(SceneToArrangement.SceneLength(layout, 0, 16), Is.EqualTo(16), "the first pass: 5 and 6 ticks");
+            SceneToArrangement.Insert(rig.Core, layout, 0, 16, 16, insert: false);
+
+            Assert.That(rig.TrackA.Events.OrderBy(e => e.Key).Select(e => (e.Key, e.Value.Type, e.Value.Offset, e.Value.End)), Is.EqualTo(new[]
+            {
+                (16, SequenceEventType.PlayPattern, 2, 7),
+                (21, SequenceEventType.PlayPattern, 4, 7),
+                (24, SequenceEventType.PlayPattern, 4, 7),
+                (27, SequenceEventType.PlayPattern, 4, 7),
+                (30, SequenceEventType.PlayPattern, 4, 7),
+                (32, SequenceEventType.Break, 0, 0),
+            }));
+            Assert.That(rig.TrackB.Events.Select(e => (e.Key, e.Value.Offset, e.Value.End)), Is.EqualTo(new[] { (16, 3, 9) }), "a one-shot clip plays once");
+        }
+
         // ------------------------------------------------------------------ arrangement events on session tracks
 
         [Test]

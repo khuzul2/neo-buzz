@@ -407,6 +407,56 @@ namespace ReBuzzTests
             Assert.That(machine.ClipGain, Is.EqualTo(1f), "and when the transport stops");
         }
 
+        [Test]
+        public void TwoTracksOfOneMachinePlayAtTheNewestClipsVelocity()
+        {
+            // One machine is one signal: its volume follows the clip that started last, and goes
+            // back to the other track's when that one stops (0.5.1; it used to reset to full).
+            using var rig = new ClipRig(1, hum: true);
+            var machine = rig.Machines[0];
+            rig.Core.SongCore.AddSequence(machine, 1);
+            var p = rig.Pattern(machine, "P", Bar);
+            var q = rig.Pattern(machine, "Q", Bar);
+            rig.Layout.Ensure();
+            var first = rig.Layout.SequenceOf(0)!;
+            var second = rig.Layout.SequenceOf(1)!;
+            rig.Set(p, c => { c.Quantization = "None"; c.Velocity = 100; });
+            rig.Set(q, c => { c.Quantization = "None"; c.Velocity = 100; });
+
+            rig.PlayTo(1);
+            rig.Layout.LaunchClip(first, p, velocity: 64);
+            rig.PlayTo(3);
+            Assert.That(machine.ClipGain, Is.EqualTo(64 / 127f).Within(1e-4));
+            rig.Layout.LaunchClip(second, q, velocity: 32);
+            rig.PlayTo(5);
+            Assert.That(machine.ClipGain, Is.EqualTo(32 / 127f).Within(1e-4), "the newest clip");
+            rig.Session.Stop(second, immediate: true);
+            rig.PlayTo(7);
+            Assert.That(machine.ClipGain, Is.EqualTo(64 / 127f).Within(1e-4), "back to the clip still playing");
+            rig.Session.Stop(first, immediate: true);
+            rig.PlayTo(9);
+            Assert.That(machine.ClipGain, Is.EqualTo(1f));
+        }
+
+        [Test]
+        public void AnArrangementEventPlaysAtItsVolume()
+        {
+            using var rig = new ClipRig(1, hum: true);
+            var machine = rig.Machines[0];
+            var p = rig.Pattern(machine, "P", 4);
+            var track = rig.Core.SongCore.SequencesList[0];
+            track.SetEvent(4, new SequenceEvent(SequenceEventType.PlayPattern, p) { Gain = 0.5 });
+            track.SetEvent(8, new SequenceEvent(SequenceEventType.PlayPattern, p));
+
+            rig.PlayTo(2);
+            double full = rig.Level();                           // tick 2: nothing plays, full volume
+            rig.PlayTo(5);
+            Assert.That(machine.ClipGain, Is.EqualTo(0.5f));
+            Assert.That(rig.Level() / full, Is.EqualTo(0.5).Within(0.01), "tick 5: the event's volume");
+            rig.PlayTo(9);
+            Assert.That(machine.ClipGain, Is.EqualTo(1f), "the next event is plain");
+        }
+
         // ------------------------------------------------------------------ scenes
 
         [Test]
