@@ -439,11 +439,15 @@ namespace ReBuzz.Core.Session
         public void RemoveReturn(string machine) => Edit(doc => doc.Returns.Remove(machine));
 
         /// <summary>The machine Cue connects tracks to, or null for none.</summary>
-        public void SetCueMachine(IMachine machine) => Edit(doc =>      // 0.6.1: undoable, as returns are
+        /// <remarks>
+        /// A setting (0.4), not an undo step. 0.6.1: it no longer removes the machine from the
+        /// returns (an undoable list): the returns shown leave the cue machine out instead.
+        /// </remarks>
+        public void SetCueMachine(IMachine machine)
         {
-            doc.CueMachine = machine?.Name ?? "";
-            doc.Returns.Remove(doc.CueMachine);
-        });
+            Ensure().CueMachine = machine?.Name ?? "";
+            ContentChanged();
+        }
 
         public void SetShowMixer(bool show)
         {
@@ -481,17 +485,17 @@ namespace ReBuzz.Core.Session
             return doc.Returns.Select(MachineNamed).Where(m => m != null && m.Name != doc.CueMachine).ToList();
         }
 
+        // One launch path (0.6.1): mouse, keys, MIDI and follow actions all launch what the
+        // launch map says, which is rebuilt as soon as anything changes.
+
         /// <summary>Launches the clips of a group's member tracks in a scene (Live's group slot).</summary>
         public void LaunchGroupScene(IEnumerable<int> tracks, int scene, int velocity = 127)
         {
+            var map = LaunchMap;
             var slots = new List<(ISequence, IPattern, LaunchOptions)>();
             foreach (int track in tracks)
-            {
-                var seq = SequenceOf(track);
-                var pattern = PatternAt(track, scene);
-                if (seq != null && pattern != null)
-                    slots.Add((seq, pattern, OptionsFor(pattern, velocity, scene)));
-            }
+                if (map.Track(track) is ISequence seq && map.Slot(track, scene) is LaunchMap.SlotEntry entry)
+                    slots.Add((seq, entry.Pattern, entry.OptionsAt(velocity)));
             if (slots.Count > 0)
                 Session.LaunchScene(slots, null);
         }
@@ -501,19 +505,16 @@ namespace ReBuzz.Core.Session
         /// signature and follow actions (a scene with only those and no clips still sets them),
         /// stopping the other tracks when the song says so (0.6).
         /// </summary>
-        public void LaunchScene(int scene, int velocity = 127)
+        public void LaunchScene(int scene, int velocity = 127) => LaunchScene(Session, LaunchMap.Scene(scene), velocity);
+
+        /// <summary>Any thread: launches a scene of a launch map (the UI and MIDI share this).</summary>
+        internal static void LaunchScene(ISession session, LaunchMap.SceneEntry entry, int velocity)
         {
-            var doc = Document;
-            if (doc == null || scene < 0 || scene >= doc.Scenes.Count) return;
-            var slots = new List<(ISequence, IPattern, LaunchOptions)>();
-            foreach (var (track, _) in doc.SceneSlots(scene))
-            {
-                var seq = SequenceOf(track);
-                var pattern = PatternAt(track, scene);
-                if (seq != null && pattern != null)
-                    slots.Add((seq, pattern, OptionsFor(pattern, velocity, scene)));
-            }
-            Session.LaunchScene(slots, SceneOptionsOf(scene));
+            if (entry == null) return;
+            var launches = new (ISequence, IPattern, LaunchOptions)[entry.Clips.Length];
+            for (int i = 0; i < entry.Clips.Length; i++)
+                launches[i] = (entry.Clips[i].Track, entry.Clips[i].Slot.Pattern, entry.Clips[i].Slot.OptionsAt(velocity));
+            session.LaunchScene(launches, entry.Options);
         }
 
         // ------------------------------------------------------------------ clip and scene properties (0.5, 0.6)
@@ -522,7 +523,11 @@ namespace ReBuzz.Core.Session
         public void LaunchClip(ISequence track, IPattern pattern, int velocity = 127, int slot = -1)
         {
             if (track == null || pattern == null) return;
-            Session.Launch(track, pattern, OptionsFor(pattern, velocity, slot));
+            var map = LaunchMap;
+            int t = Array.IndexOf(map.Tracks, track);
+            var entry = map.Slot(t, slot);
+            var options = entry != null && ReferenceEquals(entry.Pattern, pattern) ? entry.OptionsAt(velocity) : OptionsFor(pattern, velocity, slot);
+            Session.Launch(track, pattern, options);
         }
 
         /// <summary>The release of a clip's launch control: matters for Gate and Repeat clips.</summary>
@@ -547,7 +552,7 @@ namespace ReBuzz.Core.Session
             if (!Edit(doc => doc.SetClip(machine, name, settings))) return;
             if (Session is SessionCore core)
             {
-                var options = ToOptions(settings, 127);
+                var options = ToOptions(settings, 127, -1, Session.BeatsPerBar, buzz.TPB);
                 foreach (var seq in song.Sequences.Where(s => s.Machine == pattern.Machine))
                     core.Reshape(seq, pattern, options);
             }
@@ -792,12 +797,14 @@ namespace ReBuzz.Core.Session
         /// <summary>Raises <see cref="Changed"/> once, after the current batch of edits.</summary>
         void RaiseChanged()
         {
+            // The MIDI and audio threads (and every launch) use the launch map: at once (0.6.1),
+            // not when the UI is next idle.
+            RebuildLaunchMap();
             if (changePosted) return;
             changePosted = true;
             dispatcher.BeginInvoke(() =>
             {
                 changePosted = false;
-                RebuildLaunchMap();      // for the MIDI and audio threads (0.6)
                 Changed?.Invoke();       // readers reconcile on access
             }, DispatcherPriority.Background);
         }

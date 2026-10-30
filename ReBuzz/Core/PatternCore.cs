@@ -24,8 +24,9 @@ namespace ReBuzz.Core
             foreach(var seq in Machine.Graph.Buzz.Song.Sequences)
             {
                 var seqCore = seq as SequenceCore;
-                var mine = seq.Events.Where(e => e.Value.Pattern == this).ToList();
-                if (seqCore == null || mine.Count == 0) continue;
+                if (seqCore == null) continue;
+                var mine = seqCore.EventsOfPattern(this);        // fork (0.6.1): a copy taken safely (this runs on the IPC thread too)
+                if (mine.Count == 0) continue;
                 // Fork (0.5.1): spans are the part each event plays, cut at the next event
                 // (upstream set the whole length, so a pattern that grew ran over the next event).
                 seqCore.RefreshSpans();

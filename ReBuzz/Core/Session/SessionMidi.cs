@@ -170,10 +170,7 @@ namespace ReBuzz.Core.Session
                         var entry = t.Scene(scene);
                         if (entry != null)
                         {
-                            var launches = new (ISequence, IPattern, LaunchOptions)[entry.Clips.Length];
-                            for (int i = 0; i < entry.Clips.Length; i++)
-                                launches[i] = (entry.Clips[i].Track, entry.Clips[i].Slot.Pattern, entry.Clips[i].Slot.OptionsAt(velocity));
-                            session.LaunchScene(launches, entry.Options);
+                            SessionLayout.LaunchScene(session, entry, velocity);
                             AnnounceLaunch(-1, scene);
                         }
                         break;

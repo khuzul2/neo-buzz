@@ -241,8 +241,8 @@ namespace ReBuzz.Core.Session
         // Mixer (0.4): routing is part of the layout (undoable).
         /// <summary>Machines shown as return tracks (by name, in order); tracks send to them.</summary>
         public List<string> Returns { get; } = new List<string>();
-        /// <summary>Machine the Cue buttons connect tracks to (a second output), or "" for none.</summary>
-        public string CueMachine { get; set; } = "";
+        /// <summary>Machine the Cue buttons connect tracks to (a second output), or "" for none. A setting (0.4).</summary>
+        public string CueMachine { get => Settings.CueMachine; set => Settings.CueMachine = value ?? ""; }
         public List<Scene> Scenes { get; } = new List<Scene>();
         public List<Track> Tracks { get; } = new List<Track>();
 
@@ -693,5 +693,6 @@ namespace ReBuzz.Core.Session
         public bool ShowMixer { get; set; } = true;
         public bool ShowClipPanel { get; set; } = true;
         public HashSet<string> CollapsedGroups { get; } = new HashSet<string>();
+        public string CueMachine { get; set; } = "";
     }
 }
