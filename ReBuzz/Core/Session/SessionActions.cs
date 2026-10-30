@@ -48,81 +48,90 @@ namespace ReBuzz.Core.Session
         }
     }
 
-    /// <summary>Base for session actions that find a pattern by machine and pattern name when run.</summary>
-    internal abstract class PatternRefAction : IAction
+    /// <summary>
+    /// Renames a pattern (0.6.1: holds the pattern, not its old name, and follows it if an undo
+    /// brought it back as another object). Does nothing if the name it would take is taken.
+    /// </summary>
+    internal sealed class RenamePatternAction : IAction
     {
-        readonly ISong song;
-        readonly string machine;
-
-        protected PatternRefAction(IPattern pattern)
-        {
-            song = pattern.Machine.Graph.Buzz.Song;
-            machine = pattern.Machine.Name;
-        }
-
-        protected IPattern Find(string name) =>
-            song.Machines.FirstOrDefault(m => m.Name == machine)?.Patterns.FirstOrDefault(p => p.Name == name);
-
-        public abstract void Do();
-        public abstract void Undo();
-    }
-
-    internal sealed class RenamePatternAction : PatternRefAction
-    {
+        readonly SessionLayout layout;
+        readonly IPattern pattern;
         readonly string oldName;
         readonly string newName;
 
-        public RenamePatternAction(IPattern pattern, string newName) : base(pattern)
+        public RenamePatternAction(SessionLayout layout, IPattern pattern, string newName)
         {
+            this.layout = layout;
+            this.pattern = pattern;
             oldName = pattern.Name;
             this.newName = newName;
         }
 
-        public override void Do() { if (Find(oldName) is IPattern p) p.Name = newName; }
-        public override void Undo() { if (Find(newName) is IPattern p) p.Name = oldName; }
+        public void Do() => Rename(newName);
+        public void Undo() => Rename(oldName);
+
+        void Rename(string name)
+        {
+            var p = layout.Current(pattern);
+            var machine = p?.Machine;
+            if (machine == null || !machine.Patterns.Contains(p) || p.Name == name) return;
+            if (machine.Patterns.Any(x => !ReferenceEquals(x, p) && x.Name == name)) return;
+            p.Name = name;
+        }
     }
 
-    internal sealed class PatternColorAction : PatternRefAction
+    /// <summary>A pattern's colour (0.6.1: holds the pattern, not its name).</summary>
+    internal sealed class PatternColorAction : IAction
     {
-        readonly string name;
+        readonly SessionLayout layout;
+        readonly IPattern pattern;
         readonly int oldIndex;
         readonly int newIndex;
 
-        public PatternColorAction(IPattern pattern, int newIndex) : base(pattern)
+        public PatternColorAction(SessionLayout layout, IPattern pattern, int newIndex)
         {
-            name = pattern.Name;
+            this.layout = layout;
+            this.pattern = pattern;
             oldIndex = PatternColors.Get(pattern);
             this.newIndex = newIndex;
         }
 
-        public override void Do() => PatternColors.Set(Find(name), newIndex);
-        public override void Undo() => PatternColors.Set(Find(name), oldIndex);
+        public void Do() => PatternColors.Set(Live(), newIndex);
+        public void Undo() => PatternColors.Set(Live(), oldIndex);
+
+        IPattern Live()
+        {
+            var p = layout.Current(pattern);
+            return p?.Machine != null && p.Machine.Patterns.Contains(p) ? p : null;
+        }
     }
 
     /// <summary>
-    /// A grid edit as before/after snapshots of the layout. The edit has already been made when
-    /// the action is pushed, so the first Do does nothing.
+    /// A grid edit as before/after snapshots of the layout (0.6.1: documents that share the live
+    /// settings, kept in step with the song by <see cref="SessionLayout"/>'s transforms). The
+    /// edit has already been made when the action is pushed, so the first Do does nothing.
     /// </summary>
     internal sealed class LayoutEditAction : IAction
     {
         readonly SessionLayout layout;
-        readonly byte[] before;
-        readonly byte[] after;
         bool skipDo = true;
 
-        public LayoutEditAction(SessionLayout layout, byte[] before, byte[] after)
+        public LayoutEditAction(SessionLayout layout, SessionDocument before, SessionDocument after)
         {
             this.layout = layout;
-            this.before = before;
-            this.after = after;
+            Before = before;
+            After = after;
         }
+
+        public SessionDocument Before { get; }
+        public SessionDocument After { get; }
 
         public void Do()
         {
             if (skipDo) { skipDo = false; return; }
-            layout.Restore(after);
+            layout.Restore(After);
         }
 
-        public void Undo() => layout.Restore(before);
+        public void Undo() => layout.Restore(Before);
     }
 }

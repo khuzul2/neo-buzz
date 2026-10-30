@@ -205,41 +205,102 @@ namespace ReBuzz.Core.Session
         /// <summary>What the layout needs to know about one sequence of the song.</summary>
         public readonly record struct SongTrack(string Machine, IReadOnlyList<string> Patterns);
 
-        public int BeatsPerBar { get; set; } = 4;
-        public string LaunchQuantization { get; set; } = "Bar";
-        /// <summary>Length of clips created in the grid, in bars.</summary>
-        public int ClipBars { get; set; } = 1;
-        /// <summary>MIDI mapping stored with this song, overriding the user's; null for none.</summary>
-        public SessionMidiMap SongMidi { get; set; }
+        /// <summary>
+        /// The session's settings (0.6.1): time signature and quantization, view and performance
+        /// state, the song's MIDI map. They are saved with the layout but are not grid edits:
+        /// undo snapshots share the live instance, so undoing a grid edit never changes them.
+        /// </summary>
+        public SessionSettings Settings { get; set; } = new SessionSettings();
 
-        // Performance (0.6)
-        /// <summary>Clip and scene follow actions happen (Live's global switch).</summary>
-        public bool FollowActionsEnabled { get; set; } = true;
+        public int BeatsPerBar { get => Settings.BeatsPerBar; set => Settings.BeatsPerBar = value; }
+        public string LaunchQuantization { get => Settings.LaunchQuantization; set => Settings.LaunchQuantization = value; }
+        /// <summary>Length of clips created in the grid, in bars.</summary>
+        public int ClipBars { get => Settings.ClipBars; set => Settings.ClipBars = value; }
+        /// <summary>MIDI mapping stored with this song, overriding the user's; null for none.</summary>
+        public SessionMidiMap SongMidi { get => Settings.SongMidi; set => Settings.SongMidi = value; }
+        /// <summary>Clip and scene follow actions happen (Live's global switch, 0.6).</summary>
+        public bool FollowActionsEnabled { get => Settings.FollowActionsEnabled; set => Settings.FollowActionsEnabled = value; }
+        /// <summary>A scene launch stops the clips of tracks it has no clip for (Live's stop buttons in empty slots).</summary>
+        public bool ScenesStopOtherClips { get => Settings.ScenesStopOtherClips; set => Settings.ScenesStopOtherClips = value; }
+        /// <summary>Crossfader side of a machine: "A" or "B" (none if absent).</summary>
+        public Dictionary<string, string> Crossfade => Settings.Crossfade;
+        /// <summary>Crossfader: 0 all A, 1 all B.</summary>
+        public double CrossfaderPosition { get => Settings.CrossfaderPosition; set => Settings.CrossfaderPosition = value; }
+        /// <summary>Crossfader curve: "Dipless", "Constant power" or "Fast cut".</summary>
+        public string CrossfaderCurve { get => Settings.CrossfaderCurve; set => Settings.CrossfaderCurve = value; }
+        /// <summary>Whether the mixer section is shown under the grid.</summary>
+        public bool ShowMixer { get => Settings.ShowMixer; set => Settings.ShowMixer = value; }
+        /// <summary>Whether the clip panel is shown beside the grid (0.5).</summary>
+        public bool ShowClipPanel { get => Settings.ShowClipPanel; set => Settings.ShowClipPanel = value; }
+        /// <summary>Machine groups shown folded (by name).</summary>
+        public HashSet<string> CollapsedGroups => Settings.CollapsedGroups;
 
         /// <summary>Made up from the song, not edited yet (0.6.1): not saved, so plain songs stay plain. Not serialized.</summary>
         internal bool AutoFilled { get; set; }
-        /// <summary>A scene launch stops the clips of tracks it has no clip for (Live's stop buttons in empty slots).</summary>
-        public bool ScenesStopOtherClips { get; set; }
-        /// <summary>Crossfader side of a machine: "A" or "B" (none if absent).</summary>
-        public Dictionary<string, string> Crossfade { get; } = new Dictionary<string, string>();
-        /// <summary>Crossfader: 0 all A, 1 all B.</summary>
-        public double CrossfaderPosition { get; set; } = 0.5;
-        /// <summary>Crossfader curve: "Dipless", "Constant power" or "Fast cut".</summary>
-        public string CrossfaderCurve { get; set; } = "Dipless";
 
-        // Mixer (0.4)
-        /// <summary>Whether the mixer section is shown under the grid.</summary>
-        public bool ShowMixer { get; set; } = true;
-        /// <summary>Whether the clip panel is shown beside the grid (0.5).</summary>
-        public bool ShowClipPanel { get; set; } = true;
+        // Mixer (0.4): routing is part of the layout (undoable).
         /// <summary>Machines shown as return tracks (by name, in order); tracks send to them.</summary>
         public List<string> Returns { get; } = new List<string>();
         /// <summary>Machine the Cue buttons connect tracks to (a second output), or "" for none.</summary>
         public string CueMachine { get; set; } = "";
-        /// <summary>Machine groups shown folded (by name).</summary>
-        public HashSet<string> CollapsedGroups { get; } = new HashSet<string>();
         public List<Scene> Scenes { get; } = new List<Scene>();
         public List<Track> Tracks { get; } = new List<Track>();
+
+        // ------------------------------------------------------------------ identity (0.6.1)
+
+        /// <summary>
+        /// Marks a retired name: a deleted pattern's or machine's name as the layout keeps it
+        /// (in undo snapshots and the graveyard) until the object comes back, so that a new
+        /// pattern or machine reusing the name inherits nothing. A private-use character no song
+        /// uses; retired names are never written to files.
+        /// </summary>
+        public const char RetiredMark = '\uE000';
+
+        public static string Retire(string name, int id) => $"{RetiredMark}{id}{RetiredMark}{name}";
+
+        public static bool IsRetired(string name) => !string.IsNullOrEmpty(name) && name[0] == RetiredMark;
+
+        /// <summary>A new sequence at <paramref name="index"/> (0.6.1): an empty track there, later ones move down.</summary>
+        public Track InsertTrack(int index, string machine)
+        {
+            index = Math.Clamp(index, 0, Tracks.Count);
+            var track = new Track { Machine = machine ?? "" };
+            Tracks.Insert(index, track);
+            Renumber();
+            return track;
+        }
+
+        /// <summary>The sequence at <paramref name="index"/> was removed (0.6.1): its track goes. Returns it.</summary>
+        public Track RemoveTrack(int index)
+        {
+            if (index < 0 || index >= Tracks.Count) return null;
+            var track = Tracks[index];
+            Tracks.RemoveAt(index);
+            Renumber();
+            return track;
+        }
+
+        /// <summary>Two sequences swapped places (0.6.1): their tracks follow.</summary>
+        public void SwapTracks(int a, int b)
+        {
+            if (a == b || a < 0 || b < 0 || a >= Tracks.Count || b >= Tracks.Count) return;
+            (Tracks[a], Tracks[b]) = (Tracks[b], Tracks[a]);
+            Renumber();
+        }
+
+        void Renumber()
+        {
+            for (int i = 0; i < Tracks.Count; i++)
+                Tracks[i].Sequence = i;
+        }
+
+        /// <summary>A deep copy (retired names included) sharing <see cref="Settings"/>: an undo snapshot.</summary>
+        public SessionDocument CloneLayout()
+        {
+            var copy = Load(new MemoryStream(ToBytes())) ?? new SessionDocument();
+            copy.Settings = Settings;
+            return copy;
+        }
 
         // ------------------------------------------------------------------ building
 
@@ -455,8 +516,13 @@ namespace ReBuzz.Core.Session
 
         // ------------------------------------------------------------------ persistence
 
-        public XDocument ToXml()
+        /// <summary>
+        /// The layout as XML. Retired names (0.6.1) are left out unless
+        /// <paramref name="includeRetired"/> (snapshots and copies keep them; files never do).
+        /// </summary>
+        public XDocument ToXml(bool includeRetired = false)
         {
+            bool Keep(string name) => includeRetired || !IsRetired(name);
             var root = new XElement("Session",
                 new XAttribute("version", FormatVersion),
                 new XAttribute("beatsPerBar", BeatsPerBar),
@@ -479,44 +545,41 @@ namespace ReBuzz.Core.Session
                 {
                     var e = new XElement("Track",
                         new XAttribute("sequence", t.Sequence),
-                        new XAttribute("machine", t.Machine ?? ""));
+                        new XAttribute("machine", Keep(t.Machine) ? t.Machine ?? "" : ""));
                     if (t.ColorIndex >= 0) e.SetAttributeValue("colorIndex", t.ColorIndex);
-                    e.Add(t.Slots.Select(s => new XElement("Slot",
+                    e.Add(t.Slots.Where(s => Keep(s.Value)).Select(s => new XElement("Slot",
                         new XAttribute("scene", s.Key),
                         new XAttribute("pattern", s.Value))));
                     return e;
                 })),
-                MixerXml(),
-                Clips.Count == 0 ? null : new XElement("Clips",
-                    Clips.OrderBy(c => c.Key.Machine, StringComparer.Ordinal).ThenBy(c => c.Key.Pattern, StringComparer.Ordinal)
+                MixerXml(Keep),
+                !Clips.Keys.Any(k => Keep(k.Machine) && Keep(k.Pattern)) ? null : new XElement("Clips",
+                    Clips.Where(c => Keep(c.Key.Machine) && Keep(c.Key.Pattern))
+                         .OrderBy(c => c.Key.Machine, StringComparer.Ordinal).ThenBy(c => c.Key.Pattern, StringComparer.Ordinal)
                          .Select(c => c.Value.ToXml(c.Key.Machine, c.Key.Pattern))),
                 SongMidi?.ToXml());
             return new XDocument(root);
         }
 
-        XElement MixerXml()
+        XElement MixerXml(Func<string, bool> keep)
         {
             var e = new XElement("Mixer", new XAttribute("show", ShowMixer ? "true" : "false"));
-            if (!string.IsNullOrEmpty(CueMachine)) e.SetAttributeValue("cue", CueMachine);
-            e.Add(Returns.Select(r => new XElement("Return", new XAttribute("machine", r))));
+            if (!string.IsNullOrEmpty(CueMachine) && keep(CueMachine)) e.SetAttributeValue("cue", CueMachine);
+            e.Add(Returns.Where(keep).Select(r => new XElement("Return", new XAttribute("machine", r))));
             e.Add(CollapsedGroups.OrderBy(g => g, StringComparer.Ordinal).Select(g => new XElement("Collapsed", new XAttribute("group", g))));
             var x = new XElement("Crossfader",
                 new XAttribute("position", CrossfaderPosition.ToString("0.###", CultureInfo.InvariantCulture)),
                 new XAttribute("curve", CrossfaderCurve ?? "Dipless"),
-                Crossfade.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => new XElement("Assign", new XAttribute("machine", c.Key), new XAttribute("side", c.Value))));
-            if (Crossfade.Count > 0 || CrossfaderPosition != 0.5 || CrossfaderCurve != "Dipless")
+                Crossfade.Where(c => keep(c.Key)).OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => new XElement("Assign", new XAttribute("machine", c.Key), new XAttribute("side", c.Value))));
+            if (Crossfade.Keys.Any(keep) || CrossfaderPosition != 0.5 || CrossfaderCurve != "Dipless")
                 e.Add(x);
             return e;
         }
 
-        public byte[] ToBytes()
-        {
-            using var ms = new MemoryStream();
-            Save(ms);
-            return ms.ToArray();
-        }
+        /// <summary>Everything, retired names included (copies and change detection).</summary>
+        public byte[] ToBytes() => new UTF8Encoding(false).GetBytes(ToXml(includeRetired: true).ToString(SaveOptions.DisableFormatting));
 
-        /// <summary>Writes UTF-8 XML; leaves the stream open.</summary>
+        /// <summary>Writes UTF-8 XML for a song file (no retired names); leaves the stream open.</summary>
         public void Save(Stream stream)
         {
             var bytes = new UTF8Encoding(false).GetBytes(ToXml().ToString(SaveOptions.None));
@@ -610,5 +673,25 @@ namespace ReBuzz.Core.Session
 
         static int IntAttr(XElement e, string name, int fallback) =>
             int.TryParse((string)e.Attribute(name), NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : fallback;
+    }
+
+    /// <summary>
+    /// Session settings (0.6.1): what a song keeps besides its grid. Not grid edits: undo
+    /// snapshots share the live instance (<see cref="SessionDocument.CloneLayout"/>).
+    /// </summary>
+    internal sealed class SessionSettings
+    {
+        public int BeatsPerBar { get; set; } = 4;
+        public string LaunchQuantization { get; set; } = "Bar";
+        public int ClipBars { get; set; } = 1;
+        public SessionMidiMap SongMidi { get; set; }
+        public bool FollowActionsEnabled { get; set; } = true;
+        public bool ScenesStopOtherClips { get; set; }
+        public Dictionary<string, string> Crossfade { get; } = new Dictionary<string, string>();
+        public double CrossfaderPosition { get; set; } = 0.5;
+        public string CrossfaderCurve { get; set; } = "Dipless";
+        public bool ShowMixer { get; set; } = true;
+        public bool ShowClipPanel { get; set; } = true;
+        public HashSet<string> CollapsedGroups { get; } = new HashSet<string>();
     }
 }
