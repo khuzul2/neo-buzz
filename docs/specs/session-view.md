@@ -497,13 +497,36 @@ Known limits (unchanged): no autosave while the transport plays (saving talks to
 
 **Features**
 1. Track **record arm**; record button on empty slots of armed tracks.
-2. **Record MIDI into a new clip** from the machine's MIDI input (creates a pattern, writes notes via the pattern editor's existing recording path, `PlayRecordManager.RecordPlayingMidiNote`).
+2. **Record MIDI into a new clip** from a keyboard played into the armed track's machine: a new pattern (the take) is created in the slot, and notes are written into its note columns by the session's own recorder (see Design).
 3. **Overdub** into the playing clip; **fixed-length** recording (1, 2, 4, 8 bars) that ends and loops automatically.
 4. **Capture MIDI**: keep the last N bars of incoming MIDI per armed track and turn it into a clip on demand.
 5. Parameter automation recording into the clip (knob moves → pattern parameter column).
 6. Metronome and count-in.
 
-**Engine.** Record windows aligned to the session clock; MIDI timestamps converted to pattern rows/sub-ticks via `SubTickInfo`.
+**Design (revised in 0.6.1).** The first draft planned to record through the pattern editor's `PlayRecordManager.RecordPlayingMidiNote`. That can't work:
+- it is internal to the ModernPatternEditor plugin;
+- it writes into every playing pattern of whatever machine the Pattern View has selected, through that editor's own undo stack;
+- upstream disabled it ("ToDo: only record to MIDI columns").
+
+It serves neither per-track arm, nor several armed tracks, nor Capture MIDI. Instead, the session records by itself, over three threads, each doing only what it must.
+- *MIDI thread: timestamp and queue.* `SessionMidi` sees each message first, as it does for mapped controls. For an armed track's machine it stamps the message with the heard session position: clock, tick fraction and sub-tick, from the same rendered-position and latency estimate that launches use (0.4.1). It then pushes the message onto a preallocated lock-free ring, with no allocation and no locks. The message still goes on to the machine for monitoring. Routing changes so that armed tracks' machines receive input, not only the MIDI-focus machine.
+- *Audio thread: record windows.* `OnTick` opens and closes record windows on the launch grid, like launches. A window starts on a grid point after the count-in and ends after its fixed length, after which the take plays on as a looping clip. The metronome is a preallocated click mixed into the master during count-in and recording; it is not a machine.
+- *UI thread: writing patterns.* A drain posted from the queue writes events into the take's pattern through `IPatternColumn.SetEvents`, independently of the Pattern View:
+  - notes go to the machine's note columns, one track per held note, with a note-off at its release;
+  - velocity goes to a velocity column if the machine has one;
+  - sub-tick positions use `SubTickInfo`.
+  
+  Overdub writes at the position modulo the clip's loop. Capture MIDI is a per-track ring of the last N bars, always running while armed, turned into a take on demand.
+- *A take is one undo step* in the session's history. It consists of an object-bound pattern creation (`SessionCreatePatternAction`), its slot, and its events (a diff action on that pattern, as recording into the arrangement does since 0.6.1). Takes get fresh names. Deleted takes' names are retired, so a later take never inherits their slots or settings.
+
+**What 0.6.1 provides for it.**
+- Identity that follows the song exactly, with retired names and object-bound pattern actions.
+- Liveness flags, so a take deleted while recording is never written again.
+- One launch path, through a launch map rebuilt synchronously.
+- `SongLoading`, so nothing records into a song while it loads.
+- Recording that is serialized with the tick.
+- Diff-based arrangement undo.
+- The leaf lock on sequence events.
 
 **Acceptance criteria.** Notes recorded at 120 BPM land within ±1 sub-tick of their played time; fixed-length recording loops seamlessly on the first pass.
 
