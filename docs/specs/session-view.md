@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9) and 0.6.1 A (#10) merged; next: 0.6.1 B, then 0.7 Session recording |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9) and 0.6.1 (#10, #11) merged; next: 0.7 Session recording (redesigned) |
 | Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -503,6 +503,12 @@ Known limits (unchanged): no autosave while the transport plays (saving talks to
    - Sequence events have a leaf lock for readers that can't take the audio lock (span refreshes on the IPC thread), and list swaps take it too.
    - A transport stop from another thread (a native machine's host message) goes through the UI thread, so that thread never waits for the audio lock.
 7. *0.7 redesigned* around the session's own recorder (see 0.7): timestamps on the MIDI thread, record windows on the audio thread, pattern writes on the UI thread, a take as one object-bound undo step.
+
+**Status B (merged, #11).** Tests (178/178 on CI):
+- `ReBuzzTests/SessionIdentityTests.cs` (10): the right track survives when one of a machine's two sequences is removed; undo after a Machine View rename; a new machine with a deleted one's name inherits nothing; session undo never touching another editor's same-named pattern; a Pattern View delete leaving nothing to a new clip of the same name; the session's undo bringing back its own clip after a newcomer took the name; a new sequence starting empty; no ghost pattern for a deleted machine; recording undo keeping later edits.
+- Document tests for track operations and retired names.
+
+The allocation test (`SteadyPlaybackAllocatesNothing`) failed once on CI with 40–80 bytes per buffer and passed when rerun. It needs watching.
 
 An independent review of A and B confirmed fixes 1–13 and found new defects in B's first version, all fixed before merging:
 - Matching objects that another view's undo brings back, by name and contents, can't tell them from new look-alikes: new empty clips, duplicates, session-only tracks, re-added machines. That matching was removed, so names are retired and only the session's own undo brings clips back.
