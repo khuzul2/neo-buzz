@@ -27,11 +27,12 @@ namespace ReBuzzTests
         const int Bar = 16;
         const int TimeBase = PatternEvent.TimeBase;
 
-        static int NoteOn(int note, int velocity) => 0x90 | (note << 8) | (velocity << 16);
-        static int NoteOff(int note) => 0x80 | (note << 8);
+        internal static int NoteOn(int note, int velocity) => 0x90 | (note << 8) | (velocity << 16);
+        internal static int NoteOff(int note) => 0x80 | (note << 8);
+        internal static int ControlChange(int cc, int value) => 0xB0 | (cc << 8) | (value << 16);
 
         /// <summary>Tone generators (output shows which pattern plays and where) or Hum (constant), each with a track.</summary>
-        sealed class ClipRig : IDisposable
+        internal sealed class ClipRig : IDisposable
         {
             public Driver Driver { get; } = new Driver();
             public ReBuzzCore Core => Driver.Core;
@@ -125,7 +126,7 @@ namespace ReBuzzTests
         }
 
         /// <summary>Position of a pattern in whole ticks, or null when it isn't playing.</summary>
-        static int? TickOf(PatternCore p) => p.PlayPosition == int.MinValue ? null : p.PlayPosition / TimeBase;
+        internal static int? TickOf(PatternCore p) => p.PlayPosition == int.MinValue ? null : p.PlayPosition / TimeBase;
 
         // ------------------------------------------------------------------ launch modes
 

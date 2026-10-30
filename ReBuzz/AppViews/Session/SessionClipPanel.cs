@@ -12,8 +12,9 @@ namespace ReBuzz.AppViews.Session
     {
         /// <summary>
         /// Clip panel (docs/specs/session-view.md 0.5, Live's clip view): the launch settings of
-        /// the selected slot's clip. Edits go through <see cref="SessionLayout.SetClipSettings"/>
-        /// (undoable); markers apply at once to the clip if it plays, the rest on its next launch.
+        /// the selected slot's clip, and (0.6) its follow actions and its scene row's settings
+        /// (tempo, beats per bar, scene follow actions). Edits are undoable (the layout's
+        /// history); markers apply at once to the clip if it plays, the rest on its next launch.
         /// </summary>
         internal sealed class ClipPanel : Border
         {
@@ -58,6 +59,12 @@ namespace ReBuzz.AppViews.Session
             readonly TextBlock loopEndLabel;
             readonly TextBlock region;
             readonly MixerBar velocity;
+            readonly FollowEditor clipFollow;
+            readonly StackPanel sceneBody;
+            readonly TextBlock sceneTitle;
+            readonly TextBox sceneTempo;
+            readonly TextBox sceneBeats;
+            readonly FollowEditor sceneFollow;
             bool loading;
 
             (int Track, int Scene)? shownSlot;
@@ -121,12 +128,15 @@ namespace ReBuzz.AppViews.Session
                 loopEndLabel = FieldLabel("Loop end");
                 region = new TextBlock { Foreground = SessionPalette.DimText, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0), FontSize = 11 };
 
+                clipFollow = new FollowEditor(true, change => Commit(c => change(c.Follow)));
+
                 var reset = new FlatButton("Reset", () => Commit(c =>
                 {
                     var d = new SessionDocument.ClipSettings();
                     c.Mode = d.Mode; c.Quantization = d.Quantization; c.Legato = d.Legato; c.Loop = d.Loop;
                     c.Start = d.Start; c.LoopStart = d.LoopStart; c.LoopEnd = d.LoopEnd; c.Velocity = d.Velocity;
-                }), "Back to the defaults: Trigger, global quantization, loop over the whole clip, no legato or velocity")
+                    c.Follow = d.Follow;
+                }), "Back to the defaults: Trigger, global quantization, loop over the whole clip, no legato, velocity or follow actions")
                 {
                     Margin = new Thickness(0, 10, 0, 0),
                     HorizontalAlignment = HorizontalAlignment.Left
@@ -147,8 +157,21 @@ namespace ReBuzz.AppViews.Session
                         Row(loopStartLabel, loopStart),
                         Row(loopEndLabel, loopEnd),
                         region,
+                        Section("Follow action"),
+                        clipFollow,
                         reset
                     }
+                };
+
+                // The selected slot's scene row (0.6): tempo, beats per bar, scene follow actions.
+                sceneTitle = Section("Scene");
+                sceneTempo = NumberBox("Tempo (BPM, 16–500) set when the scene launches, on its launch beat; empty for none.", CommitScene);
+                sceneBeats = NumberBox("Beats per bar (1–64) set when the scene launches; bars count from there. Empty for none.", CommitScene);
+                sceneFollow = new FollowEditor(false, change => CommitSceneFollow(change));
+                sceneBody = new StackPanel
+                {
+                    Margin = new Thickness(0, 6, 0, 0),
+                    Children = { sceneTitle, Row("Tempo", sceneTempo), Row("Beats/bar", sceneBeats), sceneFollow }
                 };
 
                 Child = new ScrollViewer
@@ -156,7 +179,7 @@ namespace ReBuzz.AppViews.Session
                     VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                     HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                     Focusable = false,
-                    Content = new StackPanel { Children = { title, info, status, hint, body } }
+                    Content = new StackPanel { Children = { title, info, status, hint, body, sceneBody } }
                 };
                 Load();
             }
@@ -176,6 +199,10 @@ namespace ReBuzz.AppViews.Session
             internal string RegionText => region.Text;
             internal string StatusText => status.Text;
             internal void CommitTypedMarkers() => CommitMarkers();
+            internal FollowEditor ClipFollow => clipFollow;
+            internal FollowEditor SceneFollow => sceneFollow;
+            internal TextBox SceneTempoBox => sceneTempo;
+            internal void CommitSceneFields() => CommitScene();
 
             /// <summary>Shows the clip of a slot (reloads when it changed, or when <paramref name="force"/>).</summary>
             public void Follow((int Track, int Scene)? slot, bool force = false)
@@ -199,6 +226,7 @@ namespace ReBuzz.AppViews.Session
                 loading = true;
                 try
                 {
+                    LoadScene();
                     if (shownPattern == null)
                     {
                         title.Text = "Clip";
@@ -236,11 +264,55 @@ namespace ReBuzz.AppViews.Session
                     region.Text = c.Loop
                         ? $"Plays from {s}, loops {ls}–{end} of {shownLength} ticks."
                         : $"Plays {s}–{end} of {shownLength} ticks once.";
+                    clipFollow.Load(c.Follow);
                 }
                 finally
                 {
                     loading = false;
                 }
+            }
+
+            /// <summary>The scene row of the selected slot (0.6).</summary>
+            void LoadScene()
+            {
+                var doc = view.layout.Document;
+                if (shownSlot is not { } at || doc == null || at.Scene < 0 || at.Scene >= doc.Scenes.Count)
+                {
+                    sceneBody.Visibility = Visibility.Collapsed;
+                    return;
+                }
+                var info = doc.Scenes[at.Scene];
+                sceneBody.Visibility = Visibility.Visible;
+                sceneTitle.Text = (string.IsNullOrEmpty(info.Name) ? $"Scene {at.Scene + 1}" : $"Scene {at.Scene + 1}: {info.Name}").ToUpperInvariant();
+                sceneTempo.Text = info.Tempo > 0 ? info.Tempo.ToString() : "";
+                sceneBeats.Text = info.BeatsPerBar > 0 ? info.BeatsPerBar.ToString() : "";
+                sceneFollow.Load(info.Follow);
+            }
+
+            void CommitScene()
+            {
+                if (loading || shownSlot is not { } at) return;
+                var doc = view.layout.Document;
+                if (doc == null || at.Scene >= doc.Scenes.Count) return;
+                var info = doc.Scenes[at.Scene];
+                if (!TryTicks(sceneTempo.Text, out int tempo) || (tempo != 0 && (tempo < 16 || tempo > 500)) ||
+                    !TryTicks(sceneBeats.Text, out int beats) || beats > 64)
+                {
+                    Load();
+                    return;
+                }
+                if (tempo != info.Tempo) view.layout.SetSceneTempo(at.Scene, tempo);
+                if (beats != info.BeatsPerBar) view.layout.SetSceneBeatsPerBar(at.Scene, beats);
+            }
+
+            void CommitSceneFollow(Action<SessionDocument.FollowSettings> change)
+            {
+                if (loading || shownSlot is not { } at) return;
+                var doc = view.layout.Document;
+                if (doc == null || at.Scene >= doc.Scenes.Count) return;
+                var f = doc.Scenes[at.Scene].Follow.Clone();
+                change(f);
+                view.layout.SetSceneFollow(at.Scene, f);
             }
 
             string Describe(int ticks)
@@ -274,7 +346,12 @@ namespace ReBuzz.AppViews.Session
                 {
                     int pos = session.GetClipPosition(shownSequence);
                     if (pos >= 0) text += $"  {pos + 1}/{shownLength}";
-                    if (session is SessionCore core && core.IsRepeating(shownSequence)) text += "  repeat";
+                    if (session is SessionCore core)
+                    {
+                        if (core.IsRepeating(shownSequence)) text += "  repeat";
+                        long followAt = core.GetFollowAt(shownSequence);
+                        if (followAt >= 0 && session.Clock >= 0) text += $"  follow in {followAt - session.Clock}";
+                    }
                 }
                 if (status.Text != text) status.Text = text;
             }
@@ -330,8 +407,9 @@ namespace ReBuzz.AppViews.Session
                 return box;
             }
 
-            TextBox NumberBox(string tip)
+            TextBox NumberBox(string tip, Action commit = null)
             {
+                commit ??= CommitMarkers;
                 var box = new TextBox
                 {
                     Width = 64,
@@ -344,10 +422,10 @@ namespace ReBuzz.AppViews.Session
                 };
                 box.KeyDown += (s, e) =>
                 {
-                    if (e.Key == Key.Enter) { CommitMarkers(); e.Handled = true; }
+                    if (e.Key == Key.Enter) { commit(); e.Handled = true; }
                     else if (e.Key == Key.Escape) { Load(); e.Handled = true; }
                 };
-                box.LostKeyboardFocus += (s, e) => CommitMarkers();
+                box.LostKeyboardFocus += (s, e) => commit();
                 return box;
             }
 
@@ -377,6 +455,172 @@ namespace ReBuzz.AppViews.Session
                 row.Children.Add(label);
                 row.Children.Add(control);
                 return row;
+            }
+
+            /// <summary>
+            /// Follow action controls (0.6, Live's): on/off, actions A and B with their chance, the
+            /// follow time (or, for clips, linked to the clip's end times a multiplier), and jump
+            /// targets. Each change is committed through the given callback.
+            /// </summary>
+            internal sealed class FollowEditor : StackPanel
+            {
+                internal static readonly (string Value, string Label)[] Actions =
+                {
+                    ("None", "No action"), ("Stop", "Stop"), ("PlayAgain", "Play again"), ("Previous", "Previous"), ("Next", "Next"),
+                    ("First", "First"), ("Last", "Last"), ("Any", "Any"), ("Other", "Other"), ("Jump", "Jump"),
+                };
+
+                readonly bool clip;
+                readonly Action<Action<SessionDocument.FollowSettings>> commit;
+                readonly CheckBox on;
+                readonly ComboBox a;
+                readonly ComboBox b;
+                readonly MixerBar chance;
+                readonly CheckBox linked;
+                readonly TextBox multiplier;
+                readonly TextBox time;
+                readonly TextBox jumpA;
+                readonly TextBox jumpB;
+                readonly FrameworkElement multiplierRow, timeRow, jumpARow, jumpBRow, details;
+                bool loading;
+
+                public FollowEditor(bool clip, Action<Action<SessionDocument.FollowSettings>> commit)
+                {
+                    this.clip = clip;
+                    this.commit = commit;
+                    on = Check(clip ? "Follow action" : "Scene follow action",
+                        clip ? "At the follow time, action A or B (by their chance) launches another clip of the group\n" +
+                               "(the run of filled slots around this one), stops the track, or plays the clip again.\n" +
+                               "Follow actions don't wait for the global quantization, only for a clip's own."
+                             : "At the follow time after the scene launches, action A or B (by their chance) launches another scene\n" +
+                               "(of the run of non-empty scenes around this one) or stops all clips. Scene follow actions win over clips'.",
+                        () => Commit(f => f.On = on.IsChecked == true));
+                    a = ActionBox(i => Commit(f => f.A = Actions[i].Value));
+                    b = ActionBox(i => Commit(f => f.B = Actions[i].Value));
+                    chance = new MixerBar(false, false, SessionPalette.Send)
+                    {
+                        Height = 18,
+                        Caption = "Chance",
+                        DefaultValue = 1,
+                        Margin = new Thickness(0, 4, 0, 2),
+                        ToolTip = "Chance of A; B gets the rest. Drag, wheel, double-click for 100% A."
+                    };
+                    chance.Changed += v =>
+                    {
+                        chance.ValueText = ChanceText((int)Math.Round(v * 100));
+                        if (!chance.IsDragging) CommitChance();
+                    };
+                    chance.LostMouseCapture += (s, e) => CommitChance();
+                    linked = Check("Linked to the clip's end", "On: at the end of the clip, after it has played its loop × times.\nOff: after the follow time.",
+                        () => Commit(f => f.Linked = linked.IsChecked == true));
+                    multiplier = Box("Passes of the clip (its loop region) before the follow action", CommitFields);
+                    time = Box("Follow time in bars.beats.ticks from where it starts playing (a tick is a sixteenth at 4 ticks per beat)", CommitFields);
+                    jumpA = Box("Scene row A jumps to (1 is the first)", CommitFields);
+                    jumpB = Box("Scene row B jumps to (1 is the first)", CommitFields);
+                    multiplierRow = Row("Loops ×", multiplier);
+                    timeRow = Row("Time", time);
+                    jumpARow = Row("A jumps to", jumpA);
+                    jumpBRow = Row("B jumps to", jumpB);
+                    var linkedRow = clip ? (FrameworkElement)linked : new Border();
+                    details = new StackPanel { Children = { Row("A", a), jumpARow, Row("B", b), jumpBRow, chance, linkedRow, multiplierRow, timeRow } };
+                    Children.Add(on);
+                    Children.Add(details);
+                }
+
+                internal CheckBox OnBox => on;
+                internal ComboBox ABox => a;
+                internal ComboBox BBox => b;
+                internal MixerBar ChanceBar => chance;
+                internal TextBox TimeBox => time;
+                internal CheckBox LinkedBox => linked;
+                internal void CommitTypedFields() => CommitFields();
+
+                public void Load(SessionDocument.FollowSettings f)
+                {
+                    f ??= new SessionDocument.FollowSettings();
+                    loading = true;
+                    try
+                    {
+                        on.IsChecked = f.On;
+                        details.Visibility = f.On ? Visibility.Visible : Visibility.Collapsed;
+                        a.SelectedIndex = Math.Max(0, Array.FindIndex(Actions, x => x.Value == f.A));
+                        b.SelectedIndex = Math.Max(0, Array.FindIndex(Actions, x => x.Value == f.B));
+                        chance.Value = f.ChanceA / 100.0;
+                        chance.ValueText = ChanceText(f.ChanceA);
+                        linked.IsChecked = f.Linked;
+                        multiplier.Text = f.Multiplier.ToString();
+                        time.Text = f.Time;
+                        jumpA.Text = f.JumpA >= 0 ? (f.JumpA + 1).ToString() : "";
+                        jumpB.Text = f.JumpB >= 0 ? (f.JumpB + 1).ToString() : "";
+                        bool isLinked = clip && f.Linked;
+                        multiplierRow.Visibility = isLinked ? Visibility.Visible : Visibility.Collapsed;
+                        timeRow.Visibility = isLinked ? Visibility.Collapsed : Visibility.Visible;
+                        jumpARow.Visibility = f.A == "Jump" ? Visibility.Visible : Visibility.Collapsed;
+                        jumpBRow.Visibility = f.B == "Jump" ? Visibility.Visible : Visibility.Collapsed;
+                    }
+                    finally
+                    {
+                        loading = false;
+                    }
+                }
+
+                static string ChanceText(int percentA) => $"A {percentA}% · B {100 - percentA}%";
+
+                void Commit(Action<SessionDocument.FollowSettings> change)
+                {
+                    if (!loading) commit(change);
+                }
+
+                void CommitChance() => Commit(f => f.ChanceA = (int)Math.Round(chance.Value * 100));
+
+                void CommitFields()
+                {
+                    if (loading) return;
+                    string t = time.Text.Trim();
+                    bool timeOk = SessionDocument.FollowSettings.TicksOf(t, 4, 4) != null;
+                    bool multOk = int.TryParse(multiplier.Text.Trim(), out int m) && m >= 1 && m <= 999;
+                    int ja = ParseJump(jumpA.Text), jb = ParseJump(jumpB.Text);
+                    Commit(f =>
+                    {
+                        if (timeOk) f.Time = t;
+                        if (multOk) f.Multiplier = m;
+                        if (ja >= -1) f.JumpA = ja;
+                        if (jb >= -1) f.JumpB = jb;
+                    });
+                }
+
+                /// <summary>A 1-based scene number as a row; -1 for empty; -2 if it isn't one.</summary>
+                static int ParseJump(string text)
+                {
+                    text = text?.Trim() ?? "";
+                    if (text.Length == 0) return -1;
+                    return int.TryParse(text, out int n) && n >= 1 ? n - 1 : -2;
+                }
+
+                ComboBox ActionBox(Action<int> changed)
+                {
+                    var box = new ComboBox { Width = 110, VerticalAlignment = VerticalAlignment.Center };
+                    foreach (var x in Actions) box.Items.Add(x.Label);
+                    box.SelectionChanged += (s, e) => { if (!loading && box.SelectedIndex >= 0) changed(box.SelectedIndex); };
+                    return box;
+                }
+
+                TextBox Box(string tip, Action commitText)
+                {
+                    var box = new TextBox
+                    {
+                        Width = 64,
+                        Background = SessionPalette.Empty,
+                        Foreground = SessionPalette.Text,
+                        BorderBrush = SessionPalette.Header,
+                        CaretBrush = SessionPalette.Text,
+                        Padding = new Thickness(2, 1, 2, 1),
+                        ToolTip = tip
+                    };
+                    box.KeyDown += (s, e) => { if (e.Key == Key.Enter) { commitText(); e.Handled = true; } };
+                    box.LostKeyboardFocus += (s, e) => commitText();
+                    return box;
+                }
             }
         }
     }

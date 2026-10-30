@@ -377,6 +377,12 @@ namespace ReBuzz.Core
         /// </summary>
         internal volatile float ClipGain = 1f;
 
+        /// <summary>
+        /// Fork (0.6): the crossfader's volume for the machine (1 when it isn't assigned to a
+        /// side), set by SessionCore.SetCrossfader from any thread; multiplies <see cref="ClipGain"/>.
+        /// </summary>
+        internal volatile float CrossfadeGain = 1f;
+
         // Audio thread scratch for SessionCore.ResolveGains (0.5.1).
         internal long GainBestStamp;
         internal float GainBest = 1f;

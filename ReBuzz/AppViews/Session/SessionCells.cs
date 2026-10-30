@@ -162,7 +162,7 @@ namespace ReBuzz.AppViews.Session
                 return midiText == null ? tip : tip + "\n" + midiText;
             }
 
-            /// <summary>Short marks for non-default clip settings: G T R (mode), L (legato), 1× (no loop), v (velocity), ◆ (markers), q (quantization).</summary>
+            /// <summary>Short marks for non-default clip settings: G T R (mode), L (legato), 1× (no loop), v (velocity), ◆ (markers), q (quantization), → (follow action).</summary>
             internal static string Flags(SessionDocument.ClipSettings c)
             {
                 if (c == null || c.IsDefault) return "";
@@ -173,6 +173,7 @@ namespace ReBuzz.AppViews.Session
                 if (c.Start != 0 || c.LoopStart != 0 || c.LoopEnd != 0) parts.Add("◆");
                 if (c.Velocity != 0) parts.Add("v");
                 if (c.Quantization != SessionDocument.ClipSettings.GlobalQuantization) parts.Add("q");
+                if (c.Follow?.On == true) parts.Add("→");
                 return string.Join(" ", parts);
             }
 
@@ -189,7 +190,27 @@ namespace ReBuzz.AppViews.Session
                 if (c.Start != 0 || c.LoopStart != 0 || c.LoopEnd != 0)
                     parts.Add($"start {c.Start}, loop {c.LoopStart}–{(c.LoopEnd == 0 ? "end" : c.LoopEnd.ToString())}");
                 if (c.Velocity != 0) parts.Add($"velocity {c.Velocity}%");
-                return "Clip: " + string.Join(" · ", parts);
+                string text = "Clip: " + string.Join(" · ", parts);
+                if (c.Follow?.On == true) text += "\nFollow action: " + FollowSummary(c.Follow, true);
+                return text;
+            }
+
+            /// <summary>"Next 70% / Other 30%, after 2 loops" (0.6).</summary>
+            internal static string FollowSummary(SessionDocument.FollowSettings f, bool clip)
+            {
+                string Name(string action, int jump)
+                {
+                    int i = Array.FindIndex(ClipPanel.FollowEditor.Actions, x => x.Value == action);
+                    string label = i >= 0 ? ClipPanel.FollowEditor.Actions[i].Label : action;
+                    return action == "Jump" && jump >= 0 ? $"{label} to {jump + 1}" : label;
+                }
+                string actions = f.ChanceA >= 100 ? Name(f.A, f.JumpA)
+                    : f.ChanceA <= 0 ? Name(f.B, f.JumpB)
+                    : $"{Name(f.A, f.JumpA)} {f.ChanceA}% / {Name(f.B, f.JumpB)} {100 - f.ChanceA}%";
+                string when = clip && f.Linked
+                    ? (f.Multiplier > 1 ? $"after {f.Multiplier} loops" : "at the end")
+                    : $"after {f.Time}";
+                return actions + ", " + when;
             }
 
             void OnLeftDown(object sender, MouseButtonEventArgs e)
@@ -352,7 +373,9 @@ namespace ReBuzz.AppViews.Session
                 if (info == null) return "";
                 string tempo = info.Tempo > 0 ? $"{info.Tempo} BPM" : "";
                 string beats = info.BeatsPerBar > 0 ? $"{info.BeatsPerBar}/4" : "";
-                return tempo.Length > 0 && beats.Length > 0 ? tempo + " · " + beats : tempo + beats;
+                string text = tempo.Length > 0 && beats.Length > 0 ? tempo + " · " + beats : tempo + beats;
+                if (info.Follow?.On == true) text = text.Length > 0 ? text + " · →" : "→";     // 0.6: a follow action
+                return text;
             }
         }
 

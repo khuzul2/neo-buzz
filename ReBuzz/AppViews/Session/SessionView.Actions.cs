@@ -27,6 +27,7 @@ namespace ReBuzz.AppViews.Session
             "F2\trename the clip's pattern\n" +
             "Ctrl+I\tinsert a scene below the selection\n" +
             "Ctrl+Z / Ctrl+Y\tundo / redo grid edits\n" +
+            "Ctrl+Alt+Z\tundo the last launch (the previous clip comes back in step)\n" +
             "Ctrl+Alt+M\tshow / hide the mixer\n" +
             "Esc\tcancel MIDI learn\n" +
             "Ctrl+Tab\tswitch between the Session and Sequence views (from the Session window: back to the main window)\n\n" +
@@ -46,13 +47,15 @@ namespace ReBuzz.AppViews.Session
 
         SlotCell CellAt(int track, int scene) => slots.FirstOrDefault(c => c.Track == track && c.Scene == scene);
 
+        bool SelectOnLaunch => session is not SessionCore core || core.SelectOnLaunch;
+
         /// <summary>A press of a slot's launch control (▶, Enter): launches its clip with its settings.</summary>
         void LaunchSlot(SlotCell cell)
         {
-            Select(cell.Track, cell.Scene);
+            if (SelectOnLaunch) Select(cell.Track, cell.Scene);
             if (cell.Sequence == null) return;
             if (cell.Pattern != null)
-                layout.LaunchClip(cell.Sequence, cell.Pattern);
+                layout.LaunchClip(cell.Sequence, cell.Pattern, 127, cell.Scene);
             else
                 session.Stop(cell.Sequence);     // an empty slot works as the track's stop button, as in Live
             RefreshState();
@@ -93,7 +96,21 @@ namespace ReBuzz.AppViews.Session
         void LaunchScene(int scene)
         {
             layout.LaunchScene(scene);
+            if (SelectOnLaunch) SelectLaunched(-1, scene);
             RefreshState();
+        }
+
+        /// <summary>
+        /// A slot (or, with track -1, a scene) was launched (0.6, Live's Select on Launch): the
+        /// selection follows, a scene keeping the selected track.
+        /// </summary>
+        internal void SelectLaunched(int track, int scene)
+        {
+            if (scene < 0 || scene >= sceneCount) return;
+            if (track < 0) track = selected?.Track ?? 0;
+            if (track < 0 || track >= Math.Max(1, trackCount)) return;
+            selected = (track, scene);
+            clipPanel.Follow(selected);
         }
 
         void ShowClipPanel()
@@ -295,6 +312,7 @@ namespace ReBuzz.AppViews.Session
                 return true;
             }
             if (mods == (ModifierKeys.Control | ModifierKeys.Alt) && key == Key.M) { ToggleMixer(); return true; }
+            if (mods == (ModifierKeys.Control | ModifierKeys.Alt) && key == Key.Z) { UndoLaunch(); return true; }
             if (ctrl && key == Key.Z) { layout.Undo(); return true; }
             if ((ctrl && key == Key.Y) || (mods == (ModifierKeys.Control | ModifierKeys.Shift) && key == Key.Z)) { layout.Redo(); return true; }
             if (ctrl && key == Key.I)
@@ -401,6 +419,8 @@ namespace ReBuzz.AppViews.Session
             OpenMenu(menu, cell);
         }
 
+        static string ClipCellFollow(SessionDocument.FollowSettings f) => SlotCell.FollowSummary(f, false);
+
         void ShowSceneMenu(SceneCell cell)
         {
             var doc = layout.Ensure();
@@ -412,6 +432,11 @@ namespace ReBuzz.AppViews.Session
             var info = scene < doc.Scenes.Count ? doc.Scenes[scene] : null;
             menu.Items.Add(Item(info?.Tempo > 0 ? $"Tempo… ({info.Tempo} BPM)" : "Tempo…", () => AskSceneTempo(scene)));
             menu.Items.Add(Item(info?.BeatsPerBar > 0 ? $"Beats per bar… ({info.BeatsPerBar})" : "Beats per bar…", () => AskSceneBeats(scene)));
+            menu.Items.Add(Item(info?.Follow?.On == true ? $"Follow action… ({ClipCellFollow(info.Follow)})" : "Follow action…", () =>
+            {
+                Select(selected?.Track ?? 0, scene);
+                ShowClipPanel();
+            }));
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Insert scene above", () => layout.InsertScene(scene)));
             menu.Items.Add(Item("Insert scene below", () => layout.InsertScene(scene + 1), "Ctrl+I"));
@@ -482,6 +507,24 @@ namespace ReBuzz.AppViews.Session
                 length.Items.Add(new MenuItem { Header = b == 1 ? "1 bar" : $"{b} bars", IsChecked = doc.ClipBars == b, Command = new RelayCommand(() => layout.SetClipBars(b)) });
             }
             menu.Items.Add(length);
+            menu.Items.Add(new MenuItem
+            {
+                Header = "Scenes stop other clips",
+                IsChecked = doc.ScenesStopOtherClips,
+                ToolTip = "On: launching a scene also stops the tracks it has no clip for (as if its empty slots\n" +
+                          "had stop buttons). Off: those tracks play on. Saved with the song.",
+                Command = new RelayCommand(() => layout.SetScenesStopOtherClips(!doc.ScenesStopOtherClips))
+            });
+            if (session is SessionCore performer)
+            {
+                menu.Items.Add(new MenuItem
+                {
+                    Header = "Select on launch",
+                    IsChecked = performer.SelectOnLaunch,
+                    ToolTip = "On: launching a clip or scene (mouse, keys or MIDI) selects it and shows it in the clip panel.",
+                    Command = new RelayCommand(() => performer.SetSelectOnLaunch(!performer.SelectOnLaunch))
+                });
+            }
             if (session is SessionCore core)
             {
                 double ms = buzz.OutputLatencySamples * 1000.0 / Math.Max(1, ReBuzzCore.masterInfo.SamplesPerSec);
@@ -510,6 +553,14 @@ namespace ReBuzz.AppViews.Session
                 menu.Items.Add(move);
                 menu.Items.Add(Item("MIDI learn play/stop", () => midi.BeginLearn(SessionTarget.Transport, 0, 0)));
                 menu.Items.Add(Item("MIDI learn launch quantization", () => midi.BeginLearn(SessionTarget.Quantization, 0, 0)));
+                var perform = new MenuItem { Header = "MIDI learn: performance" };
+                perform.Items.Add(Item("Undo the last launch", () => midi.BeginLearn(SessionTarget.UndoLaunch, 0, 0)));
+                perform.Items.Add(Item("Follow actions on/off", () => midi.BeginLearn(SessionTarget.FollowActions, 0, 0)));
+                perform.Items.Add(Item("Tap tempo", () => midi.BeginLearn(SessionTarget.TapTempo, 0, 0)));
+                perform.Items.Add(Item("Nudge down (hold)", () => midi.BeginLearn(SessionTarget.NudgeDown, 0, 0)));
+                perform.Items.Add(Item("Nudge up (hold)", () => midi.BeginLearn(SessionTarget.NudgeUp, 0, 0)));
+                perform.Items.Add(Item("Crossfader (a knob or fader)", () => midi.BeginLearn(SessionTarget.Crossfader, 0, 0)));
+                menu.Items.Add(perform);
                 menu.Items.Add(new MenuItem
                 {
                     Header = "Store MIDI mapping in this song",

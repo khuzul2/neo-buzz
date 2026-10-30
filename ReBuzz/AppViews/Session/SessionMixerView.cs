@@ -205,6 +205,35 @@ namespace ReBuzz.AppViews.Session
 
         void ToggleMixer() => layout.SetShowMixer(!layout.Ensure().ShowMixer);
 
+        /// <summary>The crossfader's menu (0.6): its curve and MIDI learn.</summary>
+        internal void ShowCrossfaderMenu(FrameworkElement anchor)
+        {
+            var doc = layout.Ensure();
+            var menu = new ContextMenu();
+            menu.Items.Add(new MenuItem { Header = "Crossfader curve", IsEnabled = false });
+            foreach (var curve in SessionCore.CrossfaderCurves)
+            {
+                string c = curve;
+                menu.Items.Add(new MenuItem
+                {
+                    Header = c,
+                    IsChecked = doc.CrossfaderCurve == c,
+                    ToolTip = c switch
+                    {
+                        "Dipless" => "Both sides at full volume in the centre; each fades out over the far half",
+                        "Constant power" => "Equal power across the travel: each side is -3 dB in the centre",
+                        _ => "Each side cuts out right at the far end (scratch style)"
+                    },
+                    Command = new RelayCommand(() => layout.SetCrossfaderCurve(c))
+                });
+            }
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Item("Centre", () => layout.SetCrossfaderPosition(0.5)));
+            menu.Items.Add(new Separator());
+            AddMidiItems(menu, SessionTarget.Crossfader, 0, 0);
+            OpenMenu(menu, anchor);
+        }
+
         /// <summary>Peak metering runs while the mixer is shown and the view is visible.</summary>
         void UpdateMetering()
         {
@@ -447,6 +476,9 @@ namespace ReBuzz.AppViews.Session
             readonly Chip mute;
             readonly Chip solo;
             readonly Chip cue;
+            readonly Chip sideA;
+            readonly Chip sideB;
+            readonly MixerBar crossfader;
             double levelL, levelR;
 
             public StripKind Kind { get; }
@@ -456,6 +488,9 @@ namespace ReBuzz.AppViews.Session
             internal IReadOnlyList<MixerBar> Sends => sends;
             internal MeterBar Meter => meter;
             internal string DbText => dbText.Text;
+            internal MixerBar Crossfader => crossfader;
+            internal Chip SideA => sideA;
+            internal Chip SideB => sideB;
 
             SessionDocument Doc => view.layout.Document;
 
@@ -549,6 +584,36 @@ namespace ReBuzz.AppViews.Session
                 };
                 stack.Children.Add(dbText);
 
+                // Crossfader (0.6): A/B assignment on the strips, the crossfader on the master.
+                var crossRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, Height = 18, Margin = new Thickness(0, 0, 0, 3) };
+                if (kind == StripKind.Master)
+                {
+                    crossfader = new MixerBar(false, true, SessionPalette.Thumb)
+                    {
+                        Width = SceneColumnWidth - 12,
+                        Height = 16,
+                        Caption = "A  ·  B",
+                        DefaultValue = 0.5,
+                        ToolTip = view.Tip("Crossfader: fades between the tracks assigned to A and to B (the A/B chips); others play on.\n" +
+                                           "drag or wheel · Shift for fine · double-click: centre · right-click: curve", SessionTarget.Crossfader, 0, 0)
+                    };
+                    crossfader.Changed += v =>
+                    {
+                        crossfader.ValueText = CrossfaderText(v);
+                        view.layout.SetCrossfaderPosition(v);
+                    };
+                    crossfader.MouseRightButtonUp += (s, e) => { view.ShowCrossfaderMenu(crossfader); e.Handled = true; };
+                    crossRow.Children.Add(crossfader);
+                }
+                else if (machine != null)
+                {
+                    sideA = new Chip("A", SessionPalette.CrossA, "Crossfader side A: the crossfader fades this track out towards B", () => ToggleSide("A"));
+                    sideB = new Chip("B", SessionPalette.CrossB, "Crossfader side B: the crossfader fades this track out towards A", () => ToggleSide("B"));
+                    crossRow.Children.Add(sideA);
+                    crossRow.Children.Add(sideB);
+                }
+                stack.Children.Add(crossRow);
+
                 // Mute, solo, cue and name
                 var bottom = new DockPanel { LastChildFill = true, Height = 18 };
                 if (kind != StripKind.Master)
@@ -577,6 +642,15 @@ namespace ReBuzz.AppViews.Session
                 Child = stack;
                 Refresh();
             }
+
+            void ToggleSide(string side)
+            {
+                if (Machine == null) return;
+                view.layout.SetCrossfade(Machine, view.layout.CrossfadeOf(Machine) == side ? null : side);
+            }
+
+            static string CrossfaderText(double v) =>
+                Math.Abs(v - 0.5) < 0.005 ? "centre" : v < 0.5 ? $"A {(int)Math.Round((0.5 - v) * 200)}%" : $"B {(int)Math.Round((v - 0.5) * 200)}%";
 
             void ToggleCue()
             {
@@ -607,7 +681,18 @@ namespace ReBuzz.AppViews.Session
                     if (!fader.IsDragging)
                         fader.Value = SessionMixer.MasterFaderOf(view.buzz.MasterVolume);
                     UpdateDbText();
+                    if (!crossfader.IsDragging)
+                        crossfader.Value = doc?.CrossfaderPosition ?? 0.5;
+                    crossfader.ValueText = CrossfaderText(crossfader.Value);
+                    var learn = view.midi?.LearnTarget;
+                    crossfader.Opacity = learn is { } l && l.Target == SessionTarget.Crossfader ? 0.6 : 1.0;
                     return;
+                }
+                if (sideA != null)
+                {
+                    string side = view.layout.CrossfadeOf(Machine);
+                    sideA.SetActive(side == "A");
+                    sideB.SetActive(side == "B");
                 }
 
                 int amp = SessionMixer.GetAmp(doc, Machine);

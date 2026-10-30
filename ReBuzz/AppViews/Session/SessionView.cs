@@ -52,6 +52,14 @@ namespace ReBuzz.AppViews.Session
         long shownDropouts = -1;
         readonly FlatButton undoButton;
         readonly FlatButton redoButton;
+        readonly FlatButton undoLaunchButton;
+        readonly FlatButton followButton;
+        readonly FlatButton tapButton;
+        readonly FlatButton nudgeDownButton;
+        readonly FlatButton nudgeUpButton;
+        readonly TextBlock tempoText;
+        string shownLastLaunch = "";
+        int shownTempo = -1;
         readonly ComboBox quantizeBox;
         readonly ComboBox beatsBox;
         readonly DispatcherTimer timer;
@@ -109,6 +117,12 @@ namespace ReBuzz.AppViews.Session
             left.Children.Add(recordButton);
             backButton = new FlatButton("Back to arrangement", () => session.BackToArrangement(), "Lit while the session has taken over tracks: gives every track back to the arrangement");
             left.Children.Add(backButton);
+            undoLaunchButton = new FlatButton("↶ Launch", UndoLaunch, "");
+            undoLaunchButton.MouseRightButtonUp += (s, e) => { ShowMidiOnlyMenu(undoLaunchButton, SessionTarget.UndoLaunch, 0, 0, "Undo the last launch"); e.Handled = true; };
+            left.Children.Add(undoLaunchButton);
+            followButton = new FlatButton("Follow", () => layout.SetFollowActionsEnabled(!(layout.Document?.FollowActionsEnabled ?? true)), "");
+            followButton.MouseRightButtonUp += (s, e) => { ShowMidiOnlyMenu(followButton, SessionTarget.FollowActions, 0, 0, "Follow actions on/off"); e.Handled = true; };
+            left.Children.Add(followButton);
             left.Children.Add(Label("Launch"));
             quantizeBox = new ComboBox
             {
@@ -137,6 +151,28 @@ namespace ReBuzz.AppViews.Session
                     layout.SetBeatsPerBar(beatsBox.SelectedIndex + 1);
             };
             left.Children.Add(beatsBox);
+
+            // Tempo (0.6): tap, and nudge while held (Live's), each MIDI-learnable.
+            tempoText = new TextBlock
+            {
+                FontFamily = new FontFamily("Consolas"),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 6, 0),
+                MinWidth = 56,
+                ToolTip = "Tempo (the song's BPM)"
+            };
+            nudgeDownButton = HoldButton("◀", -1, SessionTarget.NudgeDown, "Nudge down");
+            nudgeUpButton = HoldButton("▶", 1, SessionTarget.NudgeUp, "Nudge up");
+            tapButton = new FlatButton("Tap", () => layout.TapTempo(), "") { Margin = new Thickness(4, 0, 14, 0) };
+            tapButton.MouseRightButtonUp += (s, e) => { ShowMidiOnlyMenu(tapButton, SessionTarget.TapTempo, 0, 0, "Tap tempo"); e.Handled = true; };
+            // One group, so a narrow view wraps it whole.
+            left.Children.Add(new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Children = { tempoText, nudgeDownButton, nudgeUpButton, tapButton }
+            });
+            UpdateBarTips();
+
             clockText = new TextBlock
             {
                 FontFamily = new FontFamily("Consolas"),
@@ -245,13 +281,51 @@ namespace ReBuzz.AppViews.Session
 
             layout.Changed += () => { if (IsLoaded) Rebuild(); };
             if (midi != null)
+            {
                 midi.Changed += () => { if (IsLoaded) Rebuild(); };
+                midi.Launched += (track, scene) => { if (IsLoaded && SelectOnLaunch) SelectLaunched(track, scene); };
+            }
             session.PropertyChanged += (s, e) => SyncSettings();
 
             PreviewKeyDown += OnKeyDown;
             PreviewKeyUp += OnKeyUp;
             IsKeyboardFocusWithinChanged += (s, e) => { if (!IsKeyboardFocusWithin) ReleaseHeldKey(); };
             MouseDown += (s, e) => Focus();
+        }
+
+        /// <summary>A tempo nudge button: slower or faster while the mouse holds it (0.6).</summary>
+        FlatButton HoldButton(string label, int direction, SessionTarget target, string what)
+        {
+            FlatButton button = null;
+            button = new FlatButton(label, () =>
+            {
+                (session as SessionCore)?.Nudge(direction);
+                button.CaptureMouse();
+            }, "")
+            { Padding = new Thickness(7, 3, 7, 3), Margin = new Thickness(0, 0, 2, 0) };
+            button.MouseLeftButtonUp += (s, e) => { if (button.IsMouseCaptured) button.ReleaseMouseCapture(); };
+            button.LostMouseCapture += (s, e) => (session as SessionCore)?.Nudge(0);
+            button.MouseRightButtonUp += (s, e) => { ShowMidiOnlyMenu(button, target, 0, 0, what); e.Handled = true; };
+            return button;
+        }
+
+        /// <summary>Tooltips of the top bar's performance controls, with their MIDI mappings.</summary>
+        void UpdateBarTips()
+        {
+            followButton.ToolTip = Tip("Follow actions on or off for the whole song (Live's switch): clips and scenes\n" +
+                                       "launch the next one at their follow time when lit. Set them in the clip panel.", SessionTarget.FollowActions, 0, 0);
+            tapButton.ToolTip = Tip("Tap tempo: tap the beat; from the third tap the tempo follows the last four.", SessionTarget.TapTempo, 0, 0);
+            nudgeDownButton.ToolTip = Tip("Nudge down: plays 4% slower while held, to bring the session back in step with\n" +
+                                          "another source; the tempo stays as it is.", SessionTarget.NudgeDown, 0, 0);
+            nudgeUpButton.ToolTip = Tip("Nudge up: plays 4% faster while held; the tempo stays as it is.", SessionTarget.NudgeUp, 0, 0);
+            shownLastLaunch = null;   // the undo button's tip, on the next refresh
+        }
+
+        void UndoLaunch()
+        {
+            if (session is SessionCore core)
+                core.UndoLaunch();
+            RefreshState();
         }
 
         static TextBlock Label(string text) => new TextBlock
@@ -383,6 +457,8 @@ namespace ReBuzz.AppViews.Session
             if (selected is { } sel && (sel.Track >= trackCount || sel.Scene >= sceneCount || trackColumn[sel.Track] < 0))
                 selected = null;
             BuildMixer(doc);
+            UpdateBarTips();
+            followButton.SetLit(doc.FollowActionsEnabled ? SessionPalette.Fader : null);
             clipPanel.Visibility = doc.ShowClipPanel ? Visibility.Visible : Visibility.Collapsed;
             clipButton.SetLit(doc.ShowClipPanel ? SessionPalette.Fader : null);
             clipPanel.Follow(selected, force: true);
@@ -493,8 +569,36 @@ namespace ReBuzz.AppViews.Session
             RefreshDropouts();
             undoButton.IsEnabled = layout.UndoStack.CanUndo;
             redoButton.IsEnabled = layout.UndoStack.CanRedo;
+            RefreshPerformance(learn, blinkOn);
             statusText.Text = learn is { } target ? $"MIDI learn: press a pad, key or knob for {Describe(target.Target, target.Track, target.Scene)}  ·  Esc cancels" : "";
             statusBar.Visibility = learn != null ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        /// <summary>Undo-launch, tempo and learn highlights of the top bar (0.6).</summary>
+        void RefreshPerformance((SessionTarget Target, int Track, int Scene)? learn, bool blinkOn)
+        {
+            string last = (session as SessionCore)?.LastLaunch;
+            if (last != shownLastLaunch)
+            {
+                shownLastLaunch = last;
+                undoLaunchButton.Opacity = last != null ? 1.0 : 0.4;   // stays enabled: right-click learns
+                undoLaunchButton.ToolTip = Tip(last == null
+                    ? "Undo the last launch (Ctrl+Alt+Z): nothing launched yet"
+                    : $"Undo the last launch (Ctrl+Alt+Z): {last}.\nA launch still waiting is cancelled; one that has started gives the track(s)\n" +
+                      "back what they played before, in step, as if it had never happened.", SessionTarget.UndoLaunch, 0, 0);
+            }
+            int bpm = buzz.BPM;
+            if (bpm != shownTempo)
+            {
+                shownTempo = bpm;
+                tempoText.Text = $"{bpm} BPM";
+            }
+            bool nudging = buzz.TempoNudge != 1f;
+            tempoText.Foreground = nudging ? SessionPalette.Learn : SessionPalette.Text;
+            foreach (var (button, target) in new[] {
+                (undoLaunchButton, SessionTarget.UndoLaunch), (followButton, SessionTarget.FollowActions), (tapButton, SessionTarget.TapTempo),
+                (nudgeDownButton, SessionTarget.NudgeDown), (nudgeUpButton, SessionTarget.NudgeUp) })
+                button.BorderBrush = learn is { } l && l.Target == target && blinkOn ? SessionPalette.Learn : SessionPalette.Transparent;
         }
 
         /// <summary>
@@ -530,6 +634,12 @@ namespace ReBuzz.AppViews.Session
             SessionTarget.GridDown => "move the note grid down",
             SessionTarget.GridLeft => "move the note grid left",
             SessionTarget.GridRight => "move the note grid right",
+            SessionTarget.UndoLaunch => "undo the last launch",
+            SessionTarget.TapTempo => "tap tempo",
+            SessionTarget.NudgeDown => "nudge the tempo down",
+            SessionTarget.NudgeUp => "nudge the tempo up",
+            SessionTarget.Crossfader => "the crossfader",
+            SessionTarget.FollowActions => "follow actions on/off",
             _ => target.ToString()
         };
     }

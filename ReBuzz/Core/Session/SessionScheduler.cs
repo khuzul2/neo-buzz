@@ -112,18 +112,56 @@ namespace ReBuzz.Core.Session
         }
     }
 
-    /// <summary>How a clip is launched (0.5): its shape, legato, repeat rate, gain. Immutable.</summary>
+    /// <summary>Live's follow actions (0.6). Values match BuzzGUI.Interfaces.ClipFollowAction.</summary>
+    internal enum FollowAction { None, Stop, PlayAgain, Previous, Next, First, Last, Any, Other, Jump }
+
+    /// <summary>
+    /// A clip's follow actions (0.6, Live's): when its follow time comes, action A happens with
+    /// <see cref="ChanceA"/> percent, else action B. Linked: the time is the end of the clip (after
+    /// <see cref="Multiplier"/> passes of a looping clip); unlinked: <see cref="TimeTicks"/> after
+    /// it starts. Jump targets are slot indexes (scene rows) in the track. Immutable.
+    /// </summary>
+    internal sealed class FollowSpec
+    {
+        public FollowSpec(FollowAction a, FollowAction b, int chanceA, bool linked, int multiplier, int timeTicks, int jumpA = -1, int jumpB = -1)
+        {
+            A = a;
+            B = b;
+            ChanceA = Math.Clamp(chanceA, 0, 100);
+            Linked = linked;
+            Multiplier = Math.Max(1, multiplier);
+            TimeTicks = Math.Max(1, timeTicks);
+            JumpA = jumpA;
+            JumpB = jumpB;
+        }
+
+        public FollowAction A { get; }
+        public FollowAction B { get; }
+        public int ChanceA { get; }
+        public bool Linked { get; }
+        public int Multiplier { get; }
+        public int TimeTicks { get; }
+        public int JumpA { get; }
+        public int JumpB { get; }
+
+        /// <summary>The action for a roll of 0..99, and its jump target.</summary>
+        public (FollowAction Action, int Jump) Pick(int roll) => roll < ChanceA ? (A, JumpA) : (B, JumpB);
+    }
+
+    /// <summary>How a clip is launched (0.5): its shape, legato, repeat rate, gain; and (0.6) its follow actions and slot. Immutable.</summary>
     internal sealed class LaunchSpec
     {
         public static readonly LaunchSpec Looped = new LaunchSpec(ClipShape.Looped);
         public static readonly LaunchSpec OneShot = new LaunchSpec(ClipShape.OneShot);
 
-        public LaunchSpec(ClipShape shape, bool legato = false, int repeatTicks = 0, double gain = 1.0)
+        public LaunchSpec(ClipShape shape, bool legato = false, int repeatTicks = 0, double gain = 1.0, FollowSpec follow = null, int slot = -1)
         {
             Shape = shape ?? ClipShape.Looped;
             Legato = legato;
             RepeatTicks = Math.Max(0, repeatTicks);
             Gain = Math.Clamp(gain, 0, 1);
+            Follow = follow;
+            Slot = slot;
         }
 
         public static LaunchSpec For(bool loop) => loop ? Looped : OneShot;
@@ -135,9 +173,13 @@ namespace ReBuzz.Core.Session
         public int RepeatTicks { get; }
         /// <summary>Volume of the clip's machine (velocity), 0..1.</summary>
         public double Gain { get; }
+        /// <summary>Follow actions (0.6), or null.</summary>
+        public FollowSpec Follow { get; }
+        /// <summary>The slot (scene row) the clip is launched from, or -1: where follow actions find its group.</summary>
+        public int Slot { get; }
 
-        public LaunchSpec WithoutRepeat() => RepeatTicks == 0 ? this : new LaunchSpec(Shape, Legato, 0, Gain);
-        public LaunchSpec WithShape(ClipShape shape) => new LaunchSpec(shape, Legato, RepeatTicks, Gain);
+        public LaunchSpec WithoutRepeat() => RepeatTicks == 0 ? this : new LaunchSpec(Shape, Legato, 0, Gain, Follow, Slot);
+        public LaunchSpec WithShape(ClipShape shape) => new LaunchSpec(shape, Legato, RepeatTicks, Gain, Follow, Slot);
     }
 
     internal sealed class SessionScheduler<TTrack, TClip>
@@ -174,6 +216,34 @@ namespace ReBuzz.Core.Session
                 new Pending(IsStop, Clip, At, spec, ReleaseOverride, Origin, stopAfter);
         }
 
+        /// <summary>
+        /// A slot of a track's column, for follow actions (0.6): its clip, how it launches, and its
+        /// own launch quantization (a code for <see cref="QuantizeTicksOf"/>; -1 for None or
+        /// Global, which follow actions don't wait for). Null entries in a column are empty slots.
+        /// </summary>
+        public sealed class Slot
+        {
+            public Slot(TClip clip, LaunchSpec spec, int quantization = -1)
+            {
+                Clip = clip;
+                Spec = spec ?? LaunchSpec.Looped;
+                Quantization = quantization;
+            }
+
+            public TClip Clip { get; }
+            public LaunchSpec Spec { get; }
+            public int Quantization { get; }
+        }
+
+        /// <summary>Snapshot of a track before a launch, for undoing it (0.6).</summary>
+        sealed class Memento
+        {
+            public TClip Playing;
+            public long StartClock;
+            public LaunchSpec Spec;
+            public Pending Next;
+        }
+
         sealed class TrackState
         {
             public TrackState(SessionScheduler<TTrack, TClip> owner, TTrack track) { Owner = owner; Track = track; }
@@ -189,6 +259,10 @@ namespace ReBuzz.Core.Session
             public long LaunchedAt = NotStarted;
             public long LaunchLate;
             public double Gain = 1.0;
+            // Follow actions (0.6): of the playing clip, when they're due, and its slot.
+            public FollowSpec Follow;
+            public long FollowAt = NotStarted;
+            public int Slot = -1;
             public volatile Pending Next;
             public volatile bool Overridden;
         }
@@ -197,6 +271,22 @@ namespace ReBuzz.Core.Session
 
         readonly Func<TClip, int> lengthOf;
         readonly List<TrackState> tracks = new List<TrackState>();
+        Random random = new Random(1);
+
+        /// <summary>The slots of a track's column, for follow actions (0.6); null: no column.</summary>
+        public Func<TTrack, Slot[]> ColumnOf { get; set; }
+
+        /// <summary>Ticks of a slot's quantization code (see <see cref="Slot.Quantization"/>).</summary>
+        public Func<int, int> QuantizeTicksOf { get; set; }
+
+        /// <summary>Follow actions happen (Live's global switch). Off, a due follow action is skipped until the next one.</summary>
+        public volatile bool FollowActionsEnabled = true;
+
+        /// <summary>Seeds the random choices of follow actions (reproducible runs and tests).</summary>
+        public void Seed(int seed) => random = new Random(seed);
+
+        /// <summary>A number 0..max-1 from the follow actions' generator (scene follow actions use it too).</summary>
+        public int NextRandom(int max) => random.Next(max);
         readonly List<SessionChange<TTrack, TClip>> changes = new List<SessionChange<TTrack, TClip>>();
         long clock = -1;
         long gridOrigin;
@@ -413,6 +503,23 @@ namespace ReBuzz.Core.Session
             st.Next = Pending.StopAt(at);
         }
 
+        /// <summary>
+        /// Stops the track at <paramref name="at"/> (0.6: a scene launch stopping the tracks it
+        /// has no clip for). With nothing playing, cancels a queued launch.
+        /// </summary>
+        public void StopAt(TTrack track, long at)
+        {
+            var st = Find(track);
+            if (st == null) return;
+            if (st.Playing == null || !IsRunning)
+            {
+                st.Next = null;
+                return;
+            }
+            st.RepeatTicks = 0;
+            st.Next = Pending.StopAt(at);
+        }
+
         public void StopAll(int quantizeTicks, bool immediate) => StopAll(quantizeTicks, immediate, Clock);
 
         public void StopAll(int quantizeTicks, bool immediate, long heardClock)
@@ -465,8 +572,7 @@ namespace ReBuzz.Core.Session
                     st.Next = null;
                 if (ReferenceEquals(st.Playing, clip))
                 {
-                    st.Playing = null;
-                    st.StartClock = NotStarted;
+                    Clear(st);
                     stoppedTracks?.Add(st.Track);
                 }
             }
@@ -508,6 +614,7 @@ namespace ReBuzz.Core.Session
                     var st = tracks[i];
                     if (st.StartClock != NotStarted) st.StartClock += delta;
                     if (st.LaunchedAt != NotStarted) st.LaunchedAt += delta;
+                    if (st.FollowAt != NotStarted) st.FollowAt += delta;
                     st.RepeatFrom += delta;
                     var n = st.Next;
                     if (n != null)
@@ -550,10 +657,8 @@ namespace ReBuzz.Core.Session
                 var st = tracks[i];
                 var playing = st.Playing;
                 st.Next = null;
-                st.Playing = null;
-                st.StartClock = NotStarted;
+                Clear(st);
                 st.LaunchedAt = NotStarted;
-                st.RepeatTicks = 0;
                 st.Overridden = false;
                 if (playing != null)
                     changes.Add(new SessionChange<TTrack, TClip>(st.Track, playing, null, SessionChangeKind.Halted));
@@ -567,29 +672,36 @@ namespace ReBuzz.Core.Session
             for (int i = 0; i < tracks.Count; i++)
             {
                 var st = tracks[i];
-
                 var playing = st.Playing;
-                if (playing != null && st.Shape.PositionAt(c - st.StartClock, Length(playing)) < 0)
+                var next = st.Next;
+                bool requestDue = next != null && next.At <= c;
+
+                // Follow action (0.6), unless a request takes effect now (it replaces the clip).
+                if (!requestDue && playing != null && st.FollowAt != NotStarted && c >= st.FollowAt)
                 {
-                    st.Playing = null;
-                    st.StartClock = NotStarted;
-                    st.RepeatTicks = 0;
+                    FollowDueNow(st, c, playing);
+                    next = st.Next;
+                    requestDue = next != null && next.At <= c;
+                }
+
+                // A clip without loop ends, unless something replaces or stops it on this very
+                // tick: then it's a switch (no note-offs between the two) or a stop.
+                if (playing != null && !requestDue && st.Shape.PositionAt(c - st.StartClock, Length(playing)) < 0)
+                {
+                    Clear(st);
                     changes.Add(new SessionChange<TTrack, TClip>(st.Track, playing, null, SessionChangeKind.Ended));
                     playing = null;
                 }
 
                 bool launchedNow = false;
-                var next = st.Next;
-                if (next != null && next.At <= c)
+                if (requestDue)
                 {
                     st.Next = null;
                     if (next.IsStop)
                     {
                         if (playing != null)
                         {
-                            st.Playing = null;
-                            st.StartClock = NotStarted;
-                            st.RepeatTicks = 0;
+                            Clear(st);
                             changes.Add(new SessionChange<TTrack, TClip>(st.Track, playing, null, SessionChangeKind.Stopped));
                         }
                         if (next.ReleaseOverride) st.Overridden = false;
@@ -615,6 +727,9 @@ namespace ReBuzz.Core.Session
                         st.Gain = spec.Gain;
                         st.Overridden = true;
                         st.Playing = next.Clip;
+                        st.Follow = spec.Follow;
+                        st.Slot = spec.Slot;
+                        st.FollowAt = FollowDue(st, launchOrigin);
                         launchedNow = true;
                         changes.Add(new SessionChange<TTrack, TClip>(st.Track, playing, next.Clip, SessionChangeKind.Launched));
                         if (next.StopAfter > 0)
@@ -633,6 +748,7 @@ namespace ReBuzz.Core.Session
                         st.StartClock = c;
                         st.LaunchedAt = c;
                         st.LaunchLate = 0;
+                        st.FollowAt = FollowDue(st, c);
                         changes.Add(new SessionChange<TTrack, TClip>(st.Track, current, current, SessionChangeKind.Launched));
                     }
                 }
@@ -649,13 +765,214 @@ namespace ReBuzz.Core.Session
                 {
                     var st = tracks[i];
                     if (ReferenceEquals(st.Track, launched.Track) || !ReferenceEquals(st.Playing, launched.Current)) continue;
-                    st.Playing = null;
-                    st.StartClock = NotStarted;
+                    Clear(st);
                     var next = st.Next;
                     if (next != null && next.IsStop) st.Next = null;
                     changes.Add(new SessionChange<TTrack, TClip>(st.Track, launched.Current, null, SessionChangeKind.Moved));
                 }
             }
+        }
+
+        /// <summary>The track plays nothing any more (its queued request stays).</summary>
+        static void Clear(TrackState st)
+        {
+            st.Playing = null;
+            st.StartClock = NotStarted;
+            st.RepeatTicks = 0;
+            st.Follow = null;
+            st.FollowAt = NotStarted;
+        }
+
+        // ------------------------------------------------------------------ follow actions (0.6)
+
+        /// <summary>
+        /// When the playing clip's follow action is due, counting from <paramref name="origin"/>
+        /// (where playback started as heard): unlinked, its follow time later; linked, when it
+        /// reaches its end (from where it started: its start marker, or where legato picked it
+        /// up), plus Multiplier-1 passes of its loop region. NotStarted without follow actions.
+        /// </summary>
+        long FollowDue(TrackState st, long origin)
+        {
+            var f = st.Follow;
+            var playing = st.Playing;
+            if (f == null || playing == null) return NotStarted;
+            if (!f.Linked) return origin + f.TimeTicks;
+            int length = Length(playing);
+            var shape = st.Shape;
+            var (start, loopStart, end) = shape.Resolve(length);
+            long elapsed = origin - st.StartClock;
+            int position = elapsed >= 0 ? shape.PositionAt(elapsed, length) : start;
+            if (position < 0) position = start;
+            long due = origin + (end - position);
+            if (shape.Loop) due += (long)(f.Multiplier - 1) * (end - loopStart);
+            return due;
+        }
+
+        /// <summary>How long until a skipped follow action comes round again (0: never: the clip ends).</summary>
+        long FollowPeriod(TrackState st)
+        {
+            var f = st.Follow;
+            if (f == null || st.Playing == null) return 0;
+            if (!f.Linked) return f.TimeTicks;
+            if (!st.Shape.Loop) return 0;
+            var (_, loopStart, end) = st.Shape.Resolve(Length(st.Playing));
+            return (long)f.Multiplier * (end - loopStart);
+        }
+
+        /// <summary>
+        /// A follow action is due on this tick: picks A or B and sets the track's request (a
+        /// launch or stop due now, or a launch at the target's own quantization). With follow
+        /// actions switched off, it waits for the next one instead.
+        /// </summary>
+        void FollowDueNow(TrackState st, long c, TClip playing)
+        {
+            var f = st.Follow;
+            if (f == null) { st.FollowAt = NotStarted; return; }
+            if (!FollowActionsEnabled)
+            {
+                long period = FollowPeriod(st);
+                st.FollowAt = period > 0 ? c + period : NotStarted;
+                return;
+            }
+            st.FollowAt = NotStarted;            // once per launch; the launch it makes sets the next
+            var (action, jump) = f.Pick(random.Next(100));
+            if (action == FollowAction.None)
+            {
+                st.Follow = null;                // Live: no other action on this clip until it is launched again
+                return;
+            }
+            if (action == FollowAction.Stop)
+            {
+                st.Next = Pending.StopAt(c);
+                return;
+            }
+
+            var column = ColumnOf?.Invoke(st.Track);
+            int current = CurrentSlot(column, st.Slot, playing);
+            int target = -1;
+            if (action == FollowAction.Jump)
+            {
+                target = jump;
+            }
+            else if (action == FollowAction.PlayAgain)
+            {
+                if (current < 0)
+                {
+                    // Not in the layout (any more): relaunch it as it was.
+                    LaunchAt(st.Track, playing, c, long.MinValue, new LaunchSpec(st.Shape, false, 0, st.Gain, f, st.Slot));
+                    return;
+                }
+                target = current;
+            }
+            else if (current >= 0)
+            {
+                // The group: the run of filled slots around the current one.
+                int lo = current, hi = current;
+                while (lo > 0 && column[lo - 1] != null) lo--;
+                while (hi < column.Length - 1 && column[hi + 1] != null) hi++;
+                int count = hi - lo + 1;
+                switch (action)
+                {
+                    case FollowAction.Previous: target = current > lo ? current - 1 : hi; break;
+                    case FollowAction.Next: target = current < hi ? current + 1 : lo; break;
+                    case FollowAction.First: target = lo; break;
+                    case FollowAction.Last: target = hi; break;
+                    case FollowAction.Any: target = lo + random.Next(count); break;
+                    case FollowAction.Other:
+                        if (count == 1) { target = current; break; }
+                        target = lo + random.Next(count - 1);
+                        if (target >= current) target++;
+                        break;
+                }
+            }
+
+            if (column == null || target < 0 || target >= column.Length || column[target] == null)
+            {
+                if (action == FollowAction.Jump) st.Next = Pending.StopAt(c);   // jumping to an empty slot stops, as its stop button would
+                return;
+            }
+            var slot = column[target];
+            int q = slot.Quantization < 0 ? 0 : QuantizeTicksOf?.Invoke(slot.Quantization) ?? 0;
+            LaunchAt(st.Track, slot.Clip, OnGridFrom(c, q), long.MinValue, slot.Spec);
+        }
+
+        /// <summary><paramref name="c"/> if it is on the grid of <paramref name="q"/> ticks (or q is 0), else the next grid point.</summary>
+        long OnGridFrom(long c, int q)
+        {
+            if (q <= 0) return c;
+            long rel = c - GridOrigin;
+            long r = ((rel % q) + q) % q;
+            return r == 0 ? c : c + (q - r);
+        }
+
+        static int CurrentSlot(Slot[] column, int slot, TClip playing)
+        {
+            if (column == null) return -1;
+            if (slot >= 0 && slot < column.Length && column[slot] != null && ReferenceEquals(column[slot].Clip, playing))
+                return slot;
+            for (int i = 0; i < column.Length; i++)
+                if (column[i] != null && ReferenceEquals(column[i].Clip, playing))
+                    return i;
+            return -1;
+        }
+
+        /// <summary>When the track's follow action is due (session clock), or -1.</summary>
+        public long GetFollowAt(TTrack track)
+        {
+            var st = Find(track);
+            return st == null || st.Playing == null || st.FollowAt == NotStarted ? -1 : st.FollowAt;
+        }
+
+        // ------------------------------------------------------------------ launch undo (0.6)
+
+        /// <summary>What the track plays and has queued now, to undo a launch made after (call under the lock).</summary>
+        public object Capture(TTrack track)
+        {
+            var st = Find(track);
+            if (st == null) return new Memento();
+            return new Memento
+            {
+                Playing = IsRunning ? st.Playing : null,
+                StartClock = st.StartClock,
+                Spec = new LaunchSpec(st.Shape, false, 0, st.Gain, st.Follow, st.Slot),
+                Next = st.Next
+            };
+        }
+
+        /// <summary>
+        /// Undoes the launch of <paramref name="launched"/> on the track, back to what
+        /// <see cref="Capture"/> saw. Still waiting: cancelled (what was queued before comes back).
+        /// Started: on the grid, the clip that played before comes back in step, as if it had never
+        /// stopped (or the track stops, if nothing played). If the track has moved on to another
+        /// clip since, nothing changes.
+        /// </summary>
+        public void Revert(TTrack track, object memento, TClip launched, int quantizeTicks, long heardClock)
+        {
+            var st = Find(track);
+            if (st == null) return;
+            var m = memento as Memento ?? new Memento();
+            var next = st.Next;
+            if (launched == null)
+            {
+                // Undoing a stop (a scene that stops other tracks): cancelled, or the clip comes back in step.
+                if (next != null && next.IsStop) { st.Next = m.Next; return; }
+                if (st.Playing != null || m.Playing == null || !IsRunning) return;
+                LaunchAt(track, m.Playing, Plan(quantizeTicks, heardClock).At, m.StartClock == NotStarted ? long.MinValue : m.StartClock, m.Spec);
+                return;
+            }
+            if (next != null && !next.IsStop && ReferenceEquals(next.Clip, launched))
+            {
+                st.Next = m.Next;
+                return;
+            }
+            if (!ReferenceEquals(st.Playing, launched) || !IsRunning) return;
+            if (m.Playing == null)
+            {
+                Stop(track, quantizeTicks, false, heardClock);
+                return;
+            }
+            long at = Plan(quantizeTicks, heardClock).At;
+            LaunchAt(track, m.Playing, at, m.StartClock == NotStarted ? long.MinValue : m.StartClock, m.Spec);
         }
 
         // ------------------------------------------------------------------ reads (lock-free)

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7) and 0.5.1 (#8) merged; next: 0.6 Performance |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8) and 0.6 (#9) merged; next: 0.7 Session recording |
 | Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -415,6 +415,31 @@ Also fixed: opening a .bmxml song lost all of its subsections (upstream: `BMXMLF
 **Engine.** Follow actions evaluated in `SessionCore` at tick boundaries with a seeded RNG (reproducible in tests).
 
 **Acceptance criteria.** A 4-clip follow-action chain runs unattended for 10 minutes with the expected distribution of transitions (statistical test at 95%).
+
+**Status (merged, #9).** Features 1–5 are in, with Live 12's semantics, and every new control can be MIDI-learnt (right-click it, or ⚙ → *MIDI learn: performance*).
+- *Follow actions* (the clip panel's *Follow action* section): off by default. Actions A and B are No action, Stop, Play again, Previous, Next, First, Last, Any, Other or Jump (to a scene row), with A's chance (B gets the rest). They are linked (at the end of the clip, after ×N passes of its loop) or come after a follow time in bars.beats.ticks. They move within the clip's group: the run of filled slots around it on its track, Next and Previous wrapping, Other never repeating the clip unless it is alone. They happen exactly at their time unless the target has its own quantization, and keep the target's legato. No action ends the chain until the clip is launched again; any launch on the track replaces a pending follow action. Slots with one show →.
+- *Scene follow actions* (the clip panel's *Scene* section, for the selected slot's row, or *Follow action…* on a scene's menu): the same actions over the run of non-empty scenes, after a follow time from the scene's launch. They win over clip follow actions due on the same tick. The section also sets the scene's tempo and beats per bar.
+- *Follow* in the top bar switches all follow actions on or off for the song (saved with it). A follow action skipped while off comes round again a period later.
+- *Crossfader*: A/B chips on the mixer strips assign machines (saved with the song); the crossfader on the master strip fades between them. Right-click it for its curve: Dipless (both sides full in the centre), Constant power or Fast cut. It scales the machine's output connections as velocity does, without moving faders. From MIDI, a CC across its range moves it from the MIDI thread.
+- *Select on launch* (⚙, a preference, on by default): launching from the mouse, keys or MIDI selects the slot, or the scene's row. *Scenes stop other clips* (⚙, saved with the song): a scene launch also stops the tracks it has no clip for, on the same launch point.
+- *Launch undo*: **↶ Launch** in the top bar, Ctrl+Alt+Z, or MIDI undoes the last launch (a history of 32; the tooltip says which). A launch still waiting is cancelled. One that has started gives its tracks back what they played before, on the next launch point, in step as if it had never stopped; tracks that played nothing stop. A scene's stops are undone too.
+- *Tempo*: the top bar shows the tempo. **◀ ▶** nudge it 4% slower or faster while held: ticks stretch or shorten, and the song's whole-number BPM doesn't change. **Tap** sets it from the last four taps, starting at the third; a pause of over 2 s starts again, and taps under 0.1 s apart (a bouncing pad) are ignored.
+- *Engine*: follow actions run in `SessionScheduler`'s tick per track, with a seedable generator, and scene follow actions run in `SessionCore.OnTick`. An immutable `LaunchMap` (slots, scenes and their options), built on the UI thread, is shared with the MIDI and audio threads. `SessionCore` keeps the launch history. Crossfade gains are in `MachineCore.CrossfadeGain`, applied by `MachineConnectionCore`, and the nudge is `ReBuzzCore.TempoNudge`, applied by `WorkManager`.
+
+Tests (158/158 on CI, 0 bytes allocated per buffer in steady playback): `ReBuzzTests/SessionPerformanceTests.cs` (11):
+- follow chains on time, with the machine's output;
+- the song's switch;
+- an unlinked follow time, and a target's own quantization;
+- scene follow actions on time, winning over a clip's;
+- scenes stopping other clips, and undoing that;
+- launch undo in step;
+- crossfader gains for each curve, also from MIDI;
+- nudged tick lengths, also held from MIDI;
+- tap tempo, including a bouncing pad;
+- undo and the follow switch from MIDI;
+- the clip panel's follow and scene sections, with a render.
+
+The acceptance test is a 4-clip chain of Other follow actions playing for 10 minutes at 120 BPM with a seeded generator. It made 1,196 transitions, each exactly at the end of a clip, with no silent tick; the machine's output matched the playing clip on every tick, and chi-square was 9.34 (95% critical value 15.51). Scheduler and document unit tests are in `ReBuzz.SessionTests`; the 15 follow action tests include a 20,000-transition chain (chi-square 6.94). Not automated: a side-by-side check against Live, and listening to the nudge.
 
 ---
 
