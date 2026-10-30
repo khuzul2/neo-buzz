@@ -147,7 +147,9 @@ namespace ReBuzz.Core.Session
             }
 
             ClearBetween(seq, track.LastWrite, e.Position);
-            if (e.Kind == Kind.Start && e.Pattern != null && e.Pattern.Machine == seq.Machine)
+            // 0.6.1: never a deleted pattern (posted just before the delete, or from stale state):
+            // the song would save it as an invalid pattern index.
+            if (e.Kind == Kind.Start && e.Pattern != null && e.Pattern.Machine == seq.Machine && !e.Pattern.IsDeleted)
                 seq.SetEvent(e.Position, new SequenceEvent(SequenceEventType.PlayPattern, e.Pattern)
                 {
                     Offset = Math.Max(0, e.Offset),

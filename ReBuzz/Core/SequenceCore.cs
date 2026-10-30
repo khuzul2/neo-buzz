@@ -23,6 +23,13 @@ namespace ReBuzz.Core
         // scheduler (set on the UI thread, read on the audio thread).
         internal volatile object FollowColumn;
 
+        /// <summary>
+        /// Fork (0.6.1): set (under AudioLock) when the sequence is removed from the song. Removed
+        /// sequences never come back (undo adds a new one), so the Session View rejects launches
+        /// onto one that a stale reference still holds.
+        /// </summary>
+        internal volatile bool IsRemoved;
+
         private static IntPtr sequenceHandleCounter = 100;
 
         internal MachineCore MachineCore { get; private set; }

@@ -105,7 +105,7 @@ namespace ReBuzz.Core
                     if (!seq.EventsList.TryGetValue(time, out var e) || e.Type != SequenceEventType.PlayPattern || e.Pattern == null) continue;
                     e.Offset = Math.Max(0, Int(x, "offset", 0));
                     e.End = Math.Max(0, Int(x, "end", 0));
-                    e.Gain = double.TryParse((string)x.Attribute("gain"), NumberStyles.Float, CultureInfo.InvariantCulture, out double g)
+                    e.Gain = double.TryParse((string)x.Attribute("gain"), NumberStyles.Float, CultureInfo.InvariantCulture, out double g) && !double.IsNaN(g)
                         ? Math.Clamp(g, 0, 1) : 1.0;
                     any = true;
                     changed++;

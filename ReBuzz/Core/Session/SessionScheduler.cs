@@ -188,9 +188,9 @@ namespace ReBuzz.Core.Session
     {
         sealed class Pending
         {
-            public Pending(bool isStop, TClip clip, long at, LaunchSpec spec, bool releaseOverride, long origin = long.MinValue, int stopAfter = 0)
+            public Pending(bool isStop, TClip clip, long at, LaunchSpec spec, bool releaseOverride, long origin = long.MinValue, int stopAfter = 0, long heard = long.MinValue)
             {
-                IsStop = isStop; Clip = clip; At = at; Spec = spec ?? LaunchSpec.Looped; ReleaseOverride = releaseOverride; Origin = origin; StopAfter = stopAfter;
+                IsStop = isStop; Clip = clip; At = at; Spec = spec ?? LaunchSpec.Looped; ReleaseOverride = releaseOverride; Origin = origin; StopAfter = stopAfter; Heard = heard;
             }
 
             public static Pending StopAt(long at, bool releaseOverride = false) => new Pending(true, null, at, null, releaseOverride);
@@ -208,12 +208,21 @@ namespace ReBuzz.Core.Session
             public readonly long Origin;
             /// <summary>Gate released before the clip started: it stops this many ticks after starting.</summary>
             public readonly int StopAfter;
+            /// <summary>
+            /// The grid point the listener hears the clip start on (0.6.1), or long.MinValue for
+            /// the same as <see cref="Origin"/> (or <see cref="At"/>). It differs from Origin when
+            /// the clip starts in step from an earlier phase (a start offset, an undone launch):
+            /// follow actions, repeats and recording count from here, the position from Origin.
+            /// </summary>
+            public readonly long Heard;
+
+            static long Shift(long value, long delta) => value == long.MinValue ? long.MinValue : value + delta;
 
             public Pending Shifted(long delta) =>
-                new Pending(IsStop, Clip, At + delta, Spec, ReleaseOverride, Origin == long.MinValue ? long.MinValue : Origin + delta, StopAfter);
+                new Pending(IsStop, Clip, At + delta, Spec, ReleaseOverride, Shift(Origin, delta), StopAfter, Shift(Heard, delta));
 
             public Pending With(LaunchSpec spec, int stopAfter) =>
-                new Pending(IsStop, Clip, At, spec, ReleaseOverride, Origin, stopAfter);
+                new Pending(IsStop, Clip, At, spec, ReleaseOverride, Origin, stopAfter, Heard);
         }
 
         /// <summary>
@@ -281,6 +290,17 @@ namespace ReBuzz.Core.Session
 
         /// <summary>Follow actions happen (Live's global switch). Off, a due follow action is skipped until the next one.</summary>
         public volatile bool FollowActionsEnabled = true;
+
+        /// <summary>
+        /// Whether a clip or track can still play (0.6.1): false once its pattern was deleted or
+        /// its sequence removed. Launches of a dead clip or onto a dead track are ignored, so
+        /// stale references (a pad's map, a follow column, the undo history) can't bring them back.
+        /// </summary>
+        public Func<TClip, bool> IsLiveClip { get; set; }
+        public Func<TTrack, bool> IsLiveTrack { get; set; }
+
+        bool IsLive(TTrack track, TClip clip) =>
+            (IsLiveClip == null || IsLiveClip(clip)) && (IsLiveTrack == null || IsLiveTrack(track));
 
         /// <summary>Seeds the random choices of follow actions (reproducible runs and tests).</summary>
         public void Seed(int seed) => random = new Random(seed);
@@ -380,7 +400,8 @@ namespace ReBuzz.Core.Session
         public void Launch(TTrack track, TClip clip, int quantizeTicks, long heardClock, LaunchSpec spec, int startOffset)
         {
             var (at, origin) = Plan(quantizeTicks, heardClock);
-            LaunchAt(track, clip, at, OriginWithOffset(at, origin, startOffset), spec);
+            long heard = startOffset > 0 ? (origin == long.MinValue ? at : origin) : long.MinValue;
+            LaunchAt(track, clip, at, OriginWithOffset(at, origin, startOffset), spec, heard);
         }
 
         static long OriginWithOffset(long at, long origin, int startOffset)
@@ -399,12 +420,17 @@ namespace ReBuzz.Core.Session
         public void LaunchAt(TTrack track, TClip clip, long at, bool loop, long origin = long.MinValue) =>
             LaunchAt(track, clip, at, origin, LaunchSpec.For(loop));
 
-        public void LaunchAt(TTrack track, TClip clip, long at, long origin, LaunchSpec spec)
+        public void LaunchAt(TTrack track, TClip clip, long at, long origin, LaunchSpec spec) =>
+            LaunchAt(track, clip, at, origin, spec, long.MinValue);
+
+        /// <summary>As above; <paramref name="heard"/> is the grid point it is heard to start on, when that isn't <paramref name="origin"/>.</summary>
+        public void LaunchAt(TTrack track, TClip clip, long at, long origin, LaunchSpec spec, long heard)
         {
             if (track == null) throw new ArgumentNullException(nameof(track));
             if (clip == null) throw new ArgumentNullException(nameof(clip));
+            if (!IsLive(track, clip)) return;
             var target = GetOrCreate(track);
-            target.Next = new Pending(false, clip, at, spec, false, origin);
+            target.Next = new Pending(false, clip, at, spec, false, origin, 0, heard);
             for (int i = 0; i < tracks.Count; i++)
             {
                 var st = tracks[i];
@@ -428,9 +454,11 @@ namespace ReBuzz.Core.Session
 
         /// <summary>
         /// Queues launches that all start on the same tick, each with its own spec. Returns that
-        /// tick (scene settings such as tempo take effect on it).
+        /// tick (scene settings such as tempo take effect on it), and the grid point it is heard
+        /// on: the same tick, or for a late launch the earlier grid point the clips start in
+        /// step with (a time signature change restarts the bar grid there, 0.6.1).
         /// </summary>
-        public long LaunchScene(IEnumerable<(TTrack Track, TClip Clip, LaunchSpec Spec)> slots, int quantizeTicks, long heardClock)
+        public (long At, long Grid) LaunchScene(IEnumerable<(TTrack Track, TClip Clip, LaunchSpec Spec)> slots, int quantizeTicks, long heardClock)
         {
             if (slots == null) throw new ArgumentNullException(nameof(slots));
             var (at, origin) = Plan(quantizeTicks, heardClock);
@@ -439,7 +467,7 @@ namespace ReBuzz.Core.Session
                 if (track != null && clip != null)
                     LaunchAt(track, clip, at, origin, spec);
             }
-            return at;
+            return (at, origin == long.MinValue ? at : origin);
         }
 
         /// <summary>
@@ -479,10 +507,47 @@ namespace ReBuzz.Core.Session
         {
             var st = Find(track);
             if (st == null || clip == null || shape == null) return;
-            if (ReferenceEquals(st.Playing, clip)) st.Shape = shape;
+            if (ReferenceEquals(st.Playing, clip))
+            {
+                st.Shape = shape;
+                Refollow(st);
+            }
             var next = st.Next;
             if (next != null && !next.IsStop && ReferenceEquals(next.Clip, clip))
                 st.Next = next.With(next.Spec.WithShape(shape), next.StopAfter);
+        }
+
+        /// <summary>
+        /// The clip's length changed (0.6.1): a linked follow action moves with its end, as for
+        /// a marker change.
+        /// </summary>
+        public void ClipLengthChanged(TClip clip)
+        {
+            for (int i = 0; i < tracks.Count; i++)
+                if (ReferenceEquals(tracks[i].Playing, clip))
+                    Refollow(tracks[i]);
+        }
+
+        /// <summary>
+        /// A playing clip's shape or length changed: its linked follow action is due when the
+        /// new shape says (counting from its launch), or at the end of the current pass if that
+        /// is already behind; a clip that no longer loops follows where it ends.
+        /// </summary>
+        void Refollow(TrackState st)
+        {
+            if (st.Follow == null || !st.Follow.Linked || st.FollowAt == NotStarted || st.Playing == null || !IsRunning) return;
+            long c = Clock;
+            long heardStart = st.LaunchedAt == NotStarted ? c : st.LaunchedAt - st.LaunchLate;
+            long due = FollowDue(st, heardStart);
+            if (due > c)
+            {
+                st.FollowAt = due;
+                return;
+            }
+            int length = Length(st.Playing);
+            var (_, _, end) = st.Shape.Resolve(length);
+            int position = st.Shape.PositionAt(c - st.StartClock, length);
+            st.FollowAt = position < 0 ? c + 1 : c + (end - position);
         }
 
         /// <summary>Queues a stop. With nothing playing, cancels a queued launch instead.</summary>
@@ -676,12 +741,21 @@ namespace ReBuzz.Core.Session
                 var next = st.Next;
                 bool requestDue = next != null && next.At <= c;
 
-                // Follow action (0.6), unless a request takes effect now (it replaces the clip).
-                if (!requestDue && playing != null && st.FollowAt != NotStarted && c >= st.FollowAt)
+                // Follow action (0.6). A request queued on the track (a launch, a stop, Stop All, a
+                // Gate release) replaces it, now or later (0.6.1): the follow action waits a period.
+                if (playing != null && st.FollowAt != NotStarted && c >= st.FollowAt)
                 {
-                    FollowDueNow(st, c, playing);
-                    next = st.Next;
-                    requestDue = next != null && next.At <= c;
+                    if (next == null)
+                    {
+                        FollowDueNow(st, c, playing);
+                        next = st.Next;
+                        requestDue = next != null && next.At <= c;
+                    }
+                    else
+                    {
+                        long period = FollowPeriod(st);
+                        st.FollowAt = period > 0 ? c + period : NotStarted;
+                    }
                 }
 
                 // A clip without loop ends, unless something replaces or stops it on this very
@@ -710,6 +784,8 @@ namespace ReBuzz.Core.Session
                     {
                         var spec = next.Spec;
                         long launchOrigin = next.Origin == long.MinValue ? c : Math.Min(next.Origin, c);
+                        // Where it is heard to start: follow actions, repeats and recording count from here (0.6.1).
+                        long heardStart = next.Heard == long.MinValue ? launchOrigin : Math.Min(next.Heard, c);
                         long origin = launchOrigin;
                         if (spec.Legato && playing != null)
                         {
@@ -721,19 +797,19 @@ namespace ReBuzz.Core.Session
                         st.StartClock = origin;
                         st.Shape = spec.Shape;
                         st.RepeatTicks = spec.RepeatTicks;
-                        st.RepeatFrom = launchOrigin;          // repeats stay on the grid after a late (catch-up) start
+                        st.RepeatFrom = heardStart;            // repeats stay on the grid after a late (catch-up) start
                         st.LaunchedAt = c;
-                        st.LaunchLate = c - launchOrigin;
+                        st.LaunchLate = c - heardStart;
                         st.Gain = spec.Gain;
                         st.Overridden = true;
                         st.Playing = next.Clip;
                         st.Follow = spec.Follow;
                         st.Slot = spec.Slot;
-                        st.FollowAt = FollowDue(st, launchOrigin);
+                        st.FollowAt = FollowDue(st, heardStart);
                         launchedNow = true;
                         changes.Add(new SessionChange<TTrack, TClip>(st.Track, playing, next.Clip, SessionChangeKind.Launched));
                         if (next.StopAfter > 0)
-                            st.Next = Pending.StopAt(c + next.StopAfter);     // gate released before the start
+                            st.Next = Pending.StopAt(Math.Max(c + 1, heardStart + next.StopAfter));     // gate released before the start: a step from its grid point
                     }
                 }
 
@@ -761,6 +837,8 @@ namespace ReBuzz.Core.Session
             {
                 var launched = changes[k];
                 if (launched.Kind != SessionChangeKind.Launched) continue;
+                // Launched on two tracks on the same tick: the first keeps it (0.6.1), not neither.
+                if (!ReferenceEquals(Find(launched.Track)?.Playing, launched.Current)) continue;
                 for (int i = 0; i < tracks.Count; i++)
                 {
                     var st = tracks[i];
@@ -955,14 +1033,14 @@ namespace ReBuzz.Core.Session
             if (launched == null)
             {
                 // Undoing a stop (a scene that stops other tracks): cancelled, or the clip comes back in step.
-                if (next != null && next.IsStop) { st.Next = m.Next; return; }
+                if (next != null && next.IsStop) { RestoreRequest(st, m.Next, quantizeTicks, heardClock); return; }
                 if (st.Playing != null || m.Playing == null || !IsRunning) return;
-                LaunchAt(track, m.Playing, Plan(quantizeTicks, heardClock).At, m.StartClock == NotStarted ? long.MinValue : m.StartClock, m.Spec);
+                Resume(st, m, quantizeTicks, heardClock);
                 return;
             }
             if (next != null && !next.IsStop && ReferenceEquals(next.Clip, launched))
             {
-                st.Next = m.Next;
+                RestoreRequest(st, m.Next, quantizeTicks, heardClock);
                 return;
             }
             if (!ReferenceEquals(st.Playing, launched) || !IsRunning) return;
@@ -971,9 +1049,50 @@ namespace ReBuzz.Core.Session
                 Stop(track, quantizeTicks, false, heardClock);
                 return;
             }
-            long at = Plan(quantizeTicks, heardClock).At;
-            LaunchAt(track, m.Playing, at, m.StartClock == NotStarted ? long.MinValue : m.StartClock, m.Spec);
+            Resume(st, m, quantizeTicks, heardClock);
         }
+
+        /// <summary>
+        /// The clip a memento saw playing comes back on the next grid point, in step as if it had
+        /// never stopped; it is heard to start on that grid point (0.6.1), so its follow action,
+        /// repeats and the recording count from there.
+        /// </summary>
+        void Resume(TrackState st, Memento m, int quantizeTicks, long heardClock)
+        {
+            var (at, boundary) = Plan(quantizeTicks, heardClock);
+            long heard = boundary == long.MinValue ? at : boundary;
+            long phase = m.StartClock == NotStarted ? long.MinValue : m.StartClock;
+            LaunchAt(st.Track, m.Playing, at, phase, m.Spec, phase == long.MinValue ? long.MinValue : heard);
+        }
+
+        /// <summary>
+        /// Puts back a request a memento saw queued. One whose time has passed is planned again
+        /// on the grid (0.6.1): a launch in step with when it was due, a stop on the next grid
+        /// point; so nothing starts off the grid or from its top by surprise.
+        /// </summary>
+        void RestoreRequest(TrackState st, Pending p, int quantizeTicks, long heardClock)
+        {
+            if (p == null || !IsRunning || p.At > Clock)
+            {
+                if (p != null && !p.IsStop && !IsLive(st.Track, p.Clip)) p = null;
+                st.Next = p;
+                return;
+            }
+            var (at, boundary) = Plan(quantizeTicks, heardClock);
+            long heard = boundary == long.MinValue ? at : boundary;
+            if (p.IsStop)
+            {
+                st.Next = st.Playing != null ? Pending.StopAt(at, p.ReleaseOverride) : null;
+                return;
+            }
+            long phase = p.Origin == long.MinValue ? p.At : p.Origin;
+            LaunchAt(st.Track, p.Clip, at, phase, p.Spec, heard);
+        }
+
+        /// <summary>Whether a memento refers to the clip (0.6.1: a deleted pattern leaves the undo history).</summary>
+        public bool Refers(object memento, TClip clip) =>
+            memento is Memento m && clip != null &&
+            (ReferenceEquals(m.Playing, clip) || (m.Next != null && !m.Next.IsStop && ReferenceEquals(m.Next.Clip, clip)));
 
         // ------------------------------------------------------------------ reads (lock-free)
 

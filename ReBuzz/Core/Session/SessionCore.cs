@@ -108,6 +108,9 @@ namespace ReBuzz.Core.Session
             // Follow actions (0.6): each track's column comes from the launch map; slot quantization codes are LaunchQuantization values.
             scheduler.ColumnOf = seq => seq.FollowColumn as SessionScheduler<SequenceCore, PatternCore>.Slot[];
             scheduler.QuantizeTicksOf = code => GetQuantizationTicks((LaunchQuantization)code);
+            // 0.6.1: deleted patterns and removed sequences can't come back through stale references.
+            scheduler.IsLiveClip = p => !p.IsDeleted;
+            scheduler.IsLiveTrack = seq => !seq.IsRemoved;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -124,21 +127,22 @@ namespace ReBuzz.Core.Session
             {
                 value = Math.Clamp(value, 1, 64);
                 if (value == beatsPerBar) return;
-                beatsPerBar = value;
+                lock (gate)
+                {
+                    if (scheduler.IsRunning)
+                    {
+                        // 0.6.1: as a scene's change, the bar grid restarts, here on the downbeat
+                        // of the bar playing now, so later bar lines follow the new length.
+                        long bar = (long)Math.Max(1, buzz.TPB) * beatsPerBar;
+                        long origin = scheduler.GridOrigin;
+                        long bars = Math.Max(0, scheduler.Clock - origin) / bar;
+                        System.Threading.Volatile.Write(ref gridOriginBar, gridOriginBar + bars);
+                        scheduler.SetGridOrigin(origin + bars * bar);
+                    }
+                    beatsPerBar = value;
+                }
                 PropertyChanged.Raise(this, nameof(BeatsPerBar));
             }
-        }
-
-        /// <summary>
-        /// Audio thread (scene launch, 0.5): sets beats per bar without raising PropertyChanged
-        /// there (listeners update UI); posts it instead.
-        /// </summary>
-        void SetBeatsPerBarFromEngine(int value)
-        {
-            value = Math.Clamp(value, 1, 64);
-            if (value == beatsPerBar) return;
-            beatsPerBar = value;
-            RaisePropertyChangedOnUi(nameof(BeatsPerBar));
         }
 
         /// <summary>Clock value the bar grid counts from (a scene's time signature change restarts it).</summary>
@@ -202,6 +206,7 @@ namespace ReBuzz.Core.Session
 
         // Scene settings waiting for their launch tick (0.5; 0.6: its row and follow actions), under the gate.
         long sceneAt = -1;
+        long sceneGrid = -1;           // 0.6.1: the grid point it is heard on (earlier than sceneAt for a late launch)
         int sceneTempo;
         int sceneBeatsPerBar;
         int sceneRowPending = -1;
@@ -232,10 +237,11 @@ namespace ReBuzz.Core.Session
         {
             var seq = ToSequence(track);
             var pat = ToClip(seq, clip);
-            int quantize = QuantizeTicks(options);
+            if (pat.IsDeleted || seq.IsRemoved) return;      // 0.6.1: a stale reference (a pad pressed as it was deleted)
             bool stopped = false;
             lock (gate)
             {
+                int quantize = QuantizeTicks(options);
                 if (options?.Mode == ClipLaunchMode.Toggle && ReferenceEquals(scheduler.GetPlaying(seq), pat) && !scheduler.IsStopQueued(seq))
                 {
                     scheduler.Stop(seq, quantize, false, HeardClock());
@@ -259,9 +265,9 @@ namespace ReBuzz.Core.Session
             if (mode != ClipLaunchMode.Gate && mode != ClipLaunchMode.Repeat) return;
             var seq = ToSequence(track);
             var pat = ToClip(seq, clip);
-            int quantize = QuantizeTicks(options);
             lock (gate)
             {
+                int quantize = QuantizeTicks(options);
                 scheduler.Release(seq, pat, quantize, HeardClock(), stop: mode == ClipLaunchMode.Gate);
             }
             RaiseTrackStateChanged(seq);
@@ -312,22 +318,26 @@ namespace ReBuzz.Core.Session
             {
                 // An empty scene launches nothing, but it is still the latest scene launch.
                 if (scene != null)
-                    lock (gate) { sceneAt = -1; sceneFollow = null; sceneFollowAt = -1; }
+                    lock (gate) ClearScene();
                 return;
             }
-            int quantize = GetQuantizationTicks(quantization ?? launchQuantization);
             lock (gate)
             {
+                int quantize = GetQuantizationTicks(quantization ?? launchQuantization);
                 string label = scene == null ? (list.Count == 1 ? $"{list[0].Item2.Name} on {list[0].Item1.Machine?.Name}" : $"{list.Count} clips")
                              : scene.Scene >= 0 ? $"scene {scene.Scene + 1}" : "scene";
                 Remember(label, list.Select(l => (l.Item1, l.Item2, scheduler.Capture(l.Item1)))
-                                    .Concat(stops.Select(t => (t, (PatternCore)null, scheduler.Capture(t)))).ToArray());
-                long at = scheduler.LaunchScene(list.Select(s => (s.Item1, s.Item2, SpecOf(s.Item3, quantize, forScene: true))), quantize, HeardClock());
+                                    .Concat(stops.Select(t => (t, (PatternCore)null, scheduler.Capture(t)))).ToArray(), isScene: scene != null);
+                var (at, grid) = scheduler.LaunchScene(list.Select(s => (s.Item1, s.Item2, SpecOf(s.Item3, quantize, forScene: true))), quantize, HeardClock());
                 foreach (var t in stops)
                     scheduler.StopAt(t, at);
                 if (scene != null)
                 {
+                    // 0.6.1: the scene that played last stops following: this one replaces it.
+                    sceneFollow = null;
+                    sceneFollowAt = -1;
                     sceneAt = at;
+                    sceneGrid = grid;
                     sceneTempo = tempo;
                     sceneBeatsPerBar = beatsPerBar;
                     sceneRowPending = scene.Scene;
@@ -344,6 +354,7 @@ namespace ReBuzz.Core.Session
         sealed class LaunchRecord
         {
             public string Label;
+            public bool IsScene;
             public (SequenceCore Track, PatternCore Clip, object Before)[] Entries;
         }
 
@@ -351,15 +362,29 @@ namespace ReBuzz.Core.Session
         readonly List<LaunchRecord> history = new List<LaunchRecord>();     // under the gate
 
         /// <summary>Call under the gate, before the launch.</summary>
-        void Remember(string label, (SequenceCore, PatternCore, object)[] entries)
+        void Remember(string label, (SequenceCore, PatternCore, object)[] entries, bool isScene = false)
         {
             if (entries.Length == 0) return;
-            history.Add(new LaunchRecord { Label = label, Entries = entries });
+            history.Add(new LaunchRecord { Label = label, Entries = entries, IsScene = isScene });
             if (history.Count > HistoryLength) history.RemoveAt(0);
             lastLaunch = label;
         }
 
         volatile string lastLaunch;     // the newest record's label, for the UI without the gate
+
+        /// <summary>Drops undo entries (under the gate); a launch left with none goes from the history.</summary>
+        void ForgetHistory(Func<(SequenceCore Track, PatternCore Clip, object Before), bool> gone)
+        {
+            for (int i = history.Count - 1; i >= 0; i--)
+            {
+                var entries = history[i].Entries;
+                if (!entries.Any(gone)) continue;
+                history[i].Entries = entries.Where(e => !gone(e)).ToArray();
+                if (history[i].Entries.Length == 0)
+                    history.RemoveAt(i);
+            }
+            lastLaunch = history.Count > 0 ? history[history.Count - 1].Label : null;
+        }
 
         /// <summary>What <see cref="UndoLaunch"/> would undo ("scene 3", "Beat on Drums"), or null.</summary>
         internal string LastLaunch
@@ -376,9 +401,9 @@ namespace ReBuzz.Core.Session
         internal string UndoLaunch()
         {
             LaunchRecord record;
-            int quantize = GetQuantizationTicks(launchQuantization);
             lock (gate)
             {
+                int quantize = GetQuantizationTicks(launchQuantization);
                 if (history.Count == 0) return null;
                 record = history[history.Count - 1];
                 history.RemoveAt(history.Count - 1);
@@ -386,9 +411,14 @@ namespace ReBuzz.Core.Session
                 long heard = HeardClock();
                 foreach (var (track, clip, before) in record.Entries)
                     scheduler.Revert(track, before, clip, quantize, heard);
-                sceneAt = -1;
-                sceneFollow = null;
-                sceneFollowAt = -1;
+                if (record.IsScene)
+                {
+                    // 0.6.1: only a scene's undo drops its settings (still waiting) and its follow action.
+                    sceneAt = -1;
+                    sceneFollowPending = null;
+                    sceneFollow = null;
+                    sceneFollowAt = -1;
+                }
             }
             RaiseTrackStateChanged(record.Entries.Select(e => e.Track).ToArray());
             return record.Label;
@@ -397,22 +427,32 @@ namespace ReBuzz.Core.Session
         public void Stop(ISequence track, bool immediate = false)
         {
             var seq = ToSequence(track);
-            int quantize = GetQuantizationTicks(launchQuantization);
             lock (gate)
             {
+                int quantize = GetQuantizationTicks(launchQuantization);
                 scheduler.Stop(seq, quantize, immediate, HeardClock());
             }
             RaiseTrackStateChanged(seq);
         }
 
+        /// <summary>No scene waiting to start, and none following (under the gate).</summary>
+        void ClearScene()
+        {
+            sceneAt = -1;
+            sceneGrid = -1;
+            sceneRowPending = -1;
+            sceneFollowPending = null;
+            sceneFollow = null;
+            sceneFollowAt = -1;
+        }
+
         public void StopAll(bool immediate = false)
         {
-            int quantize = GetQuantizationTicks(launchQuantization);
             lock (gate)
             {
+                int quantize = GetQuantizationTicks(launchQuantization);
                 scheduler.StopAll(quantize, immediate, HeardClock());
-                sceneFollow = null;                 // 0.6: nothing left for a scene follow action
-                sceneFollowAt = -1;
+                ClearScene();                       // 0.6.1: a queued scene's tempo and follow action go with its clips
             }
             RaiseAllChanged();
         }
@@ -422,8 +462,7 @@ namespace ReBuzz.Core.Session
             lock (gate)
             {
                 scheduler.BackToArrangement();
-                sceneFollow = null;
-                sceneFollowAt = -1;
+                ClearScene();
             }
             RaiseAllChanged();
             RaisePropertyChangedOnUi(nameof(IsAnyArrangementOverridden));
@@ -543,18 +582,29 @@ namespace ReBuzz.Core.Session
         {
             int songPosition = buzz.SongCore.PlayPosition;
             tickChanges.Clear();
-            int tempo = 0, beats = 0;
+            int tempo = 0;
+            bool beatsChanged = false;
             lock (gate)
             {
                 if (transportJustStarted || !scheduler.IsRunning)
                 {
                     long before = scheduler.Clock;
                     if (sceneAt >= 0)
-                        sceneAt = before < 0
+                    {
+                        long shifted = before < 0
                             ? songPosition                          // queued while stopped: on the first tick
                             : sceneAt + songPosition - before;      // restarted while running: shifts with the clips
+                        sceneGrid = before < 0 ? songPosition : sceneGrid + (shifted - sceneAt);
+                        sceneAt = shifted;
+                    }
                     if (sceneFollowAt >= 0 && before >= 0)
                         sceneFollowAt += songPosition - before;
+                    if (before >= 0)
+                    {
+                        // Restarted while running (0.6.1): what the undo history saw is from before the jump.
+                        history.Clear();
+                        lastLaunch = null;
+                    }
                     scheduler.Start(songPosition);
                 }
                 else
@@ -570,26 +620,32 @@ namespace ReBuzz.Core.Session
 
                 if (sceneAt >= 0 && scheduler.Clock >= sceneAt)
                 {
+                    // 0.6.1: counted from the grid point the scene is heard on (a late launch
+                    // starts its clips in step with it), not from the tick it was applied on.
+                    long grid = sceneGrid >= 0 && sceneGrid <= scheduler.Clock ? sceneGrid : scheduler.Clock;
                     tempo = sceneTempo;
-                    beats = sceneBeatsPerBar;
+                    int beats = sceneBeatsPerBar;
                     sceneAt = -1;
+                    sceneGrid = -1;
                     sceneRow = sceneRowPending;
                     sceneFollow = sceneFollowPending;
-                    sceneFollowAt = sceneFollow != null ? scheduler.Clock + sceneFollow.TimeTicks : -1;
+                    sceneFollowAt = sceneFollow != null ? grid + sceneFollow.TimeTicks : -1;
                     if (beats > 0 && beats != beatsPerBar)
                     {
                         // The bar grid restarts with the new time signature (bars so far are kept for display).
                         long bar = (long)Math.Max(1, buzz.TPB) * beatsPerBar;
-                        long bars = Math.Max(0, scheduler.Clock - scheduler.GridOrigin) / bar;
+                        long bars = Math.Max(0, grid - scheduler.GridOrigin) / bar;
                         System.Threading.Volatile.Write(ref gridOriginBar, gridOriginBar + bars);
-                        scheduler.SetGridOrigin(scheduler.Clock);
+                        scheduler.SetGridOrigin(grid);
+                        beatsPerBar = beats;                         // with the grid, under the gate (0.6.1)
+                        beatsChanged = true;
                     }
                 }
             }
             if (tempo > 0)
                 buzz.SetBPMFromEngine(tempo);                        // the engine picks it up on the next block
-            if (beats > 0)
-                SetBeatsPerBarFromEngine(beats);
+            if (beatsChanged)
+                RaisePropertyChangedOnUi(nameof(BeatsPerBar));
             RecordTick(songPosition);
             ResolveGains(songPosition);
             if (tickChanges.Count == 0) return;
@@ -729,6 +785,7 @@ namespace ReBuzz.Core.Session
             for (int i = 0; i < scene.Stops.Length; i++)
                 scheduler.StopAt(scene.Stops[i], at);
             sceneAt = at;
+            sceneGrid = at;
             sceneTempo = scene.Tempo;
             sceneBeatsPerBar = scene.BeatsPerBar;
             sceneRowPending = target;
@@ -746,27 +803,42 @@ namespace ReBuzz.Core.Session
         /// <summary>Crossfader position, 0 (all A) to 1 (all B).</summary>
         internal double CrossfaderPosition => System.Threading.Volatile.Read(ref crossfaderPosition);
 
-        /// <summary>UI thread: the song's crossfader assignments, position and curve.</summary>
-        internal void UseCrossfader(SessionDocument doc, SongCore song)
+        readonly object crossfadeLock = new object();   // 0.6.1: the UI (assignments) and MIDI (position) both set gains
+
+        /// <summary>
+        /// UI thread: the song's crossfader assignments and curve, and with
+        /// <paramref name="applyPosition"/> (a song opened) its position. Otherwise the position
+        /// stays the engine's, which MIDI may have moved since the document last heard of it.
+        /// </summary>
+        internal void UseCrossfader(SessionDocument doc, SongCore song, bool applyPosition = false)
         {
             var list = new List<(MachineCore, int)>();
             if (doc != null)
                 foreach (var m in song.MachinesList)
                     if (doc.Crossfade.TryGetValue(m.Name, out var side))
                         list.Add((m, side == "B" ? 1 : 0));
-            // Machines no longer assigned go back to full volume.
-            foreach (var (m, _) in crossfade)
-                if (!list.Any(l => l.Item1 == m))
-                    m.CrossfadeGain = 1f;
-            crossfade = list.ToArray();
-            crossfaderCurve = Math.Max(0, Array.IndexOf(CrossfaderCurves, doc?.CrossfaderCurve ?? "Dipless"));
-            SetCrossfader(doc?.CrossfaderPosition ?? 0.5);
+            lock (crossfadeLock)
+            {
+                // Machines no longer assigned go back to full volume.
+                foreach (var (m, _) in crossfade)
+                    if (!list.Any(l => l.Item1 == m))
+                        m.CrossfadeGain = 1f;
+                crossfade = list.ToArray();
+                crossfaderCurve = Math.Max(0, Array.IndexOf(CrossfaderCurves, doc?.CrossfaderCurve ?? "Dipless"));
+                ApplyCrossfader(applyPosition ? doc?.CrossfaderPosition ?? 0.5 : CrossfaderPosition);
+            }
         }
 
         /// <summary>Any thread (MIDI too): moves the crossfader; assigned machines change volume on their next block.</summary>
         internal void SetCrossfader(double position)
         {
-            position = Math.Clamp(position, 0, 1);
+            lock (crossfadeLock)
+                ApplyCrossfader(position);
+        }
+
+        void ApplyCrossfader(double position)
+        {
+            position = Math.Clamp(double.IsNaN(position) ? 0.5 : position, 0, 1);
             System.Threading.Volatile.Write(ref crossfaderPosition, position);
             var (a, b) = CrossfadeGains(position, crossfaderCurve);
             foreach (var (m, side) in crossfade)
@@ -986,6 +1058,7 @@ namespace ReBuzz.Core.Session
             lock (gate)
             {
                 playing = scheduler.Forget(seq);
+                ForgetHistory(e => e.Track == seq);          // 0.6.1: undo can't bring a removed track back
             }
             if (playing != null)
                 Silence(seq);
@@ -1001,11 +1074,22 @@ namespace ReBuzz.Core.Session
             lock (gate)
             {
                 scheduler.ForgetClip(pattern, stopped);
+                // 0.6.1: nor a deleted pattern (launched, or what a launch replaced or cancelled).
+                ForgetHistory(e => e.Clip == pattern || scheduler.Refers(e.Before, pattern));
             }
             foreach (var seq in stopped)
                 Silence(seq);           // the next tick resolves the machine's gain
             if (stopped.Count > 0)
                 RaiseTrackStateChanged(stopped.ToArray());
+        }
+
+        /// <summary>A pattern's length changed (any thread: native editors change it from the IPC thread).</summary>
+        internal void OnPatternLengthChanged(PatternCore pattern)
+        {
+            lock (gate)
+            {
+                scheduler.ClipLengthChanged(pattern);
+            }
         }
 
         /// <summary>New song or song loaded.</summary>
@@ -1062,8 +1146,9 @@ namespace ReBuzz.Core.Session
 
         void StartTransportIfStopped()
         {
-            // Outside any lock: setting Playing only flags the start for the next tick.
-            if (!buzz.Playing)
+            // Outside any lock: setting Playing only flags the start for the next tick. Not while
+            // a song loads (0.6.1): a pad pressed then would start a half-loaded song.
+            if (!buzz.Playing && !buzz.SongLoading)
                 buzz.Playing = true;
         }
 

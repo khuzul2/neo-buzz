@@ -52,11 +52,19 @@ namespace ReBuzz.Core
             set
             {   
                 length = value;
-                Math.Max(length, 1);
                 PropertyChanged.Raise(this, "Length");
                 UpdateSequences();
+                // Fork (0.6.1): a linked follow action moves with the clip's end.
+                (Machine?.Graph?.Buzz as ReBuzzCore)?.SessionCore?.OnPatternLengthChanged(this);
             }
         }
+
+        /// <summary>
+        /// Fork (0.6.1): set (under AudioLock) when the pattern is deleted. Deleted patterns never
+        /// come back (undo creates a new one), so the Session View rejects launches of one that a
+        /// stale reference still holds.
+        /// </summary>
+        internal volatile bool IsDeleted;
 
         readonly List<IPatternColumn> columns;
 

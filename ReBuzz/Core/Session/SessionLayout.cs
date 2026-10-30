@@ -92,6 +92,7 @@ namespace ReBuzz.Core.Session
             if (document == null)
             {
                 document = SessionDocument.AutoFill(Snapshot());
+                document.AutoFilled = true;      // 0.6.1: not saved until something is edited (plain songs stay plain)
                 document.BeatsPerBar = Session.BeatsPerBar;
                 document.LaunchQuantization = Session.LaunchQuantization.ToString();
                 dirty = false;
@@ -107,6 +108,10 @@ namespace ReBuzz.Core.Session
         /// <summary>New song: back to no layout and default session settings.</summary>
         internal void Reset()
         {
+            // 0.6.1: at once, not when the UI is next idle: nothing may launch the old song's clips.
+            launchMap = LaunchMap.Empty;
+            (Session as SessionCore)?.UseLaunchMap(LaunchMap.Empty);
+            crossfaderFromDocument = true;
             document = null;
             dirty = false;
             UndoStack = NewUndoStack();
@@ -324,9 +329,10 @@ namespace ReBuzz.Core.Session
         internal static string CopyName(IMachine machine, string name)
         {
             var taken = new HashSet<string>(machine.Patterns.Select(p => p.Name));
-            var m = Regex.Match(name ?? "", @"^(.*?)(\d+)$");
+            // ASCII digits only, at most 9 (0.6.1: longer runs overflowed int.Parse).
+            var m = Regex.Match(name ?? "", @"^(.*?)([0-9]{1,9})$");
             string stem = m.Success ? m.Groups[1].Value : (name ?? "") + " ";
-            int number = m.Success ? int.Parse(m.Groups[2].Value) + 1 : 2;
+            int number = m.Success ? int.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture) + 1 : 2;
             int width = m.Success ? m.Groups[2].Value.Length : 1;
             string candidate;
             do
@@ -365,8 +371,13 @@ namespace ReBuzz.Core.Session
                 // View settings, not edits: they stay as they are.
                 restored.ShowMixer = document.ShowMixer;
                 restored.ShowClipPanel = document.ShowClipPanel;
-                // Performance controls (0.6), not edits.
+                // Performance controls (0.6), not edits: undo never changes them (0.6.1).
                 restored.CrossfaderPosition = document.CrossfaderPosition;
+                restored.CrossfaderCurve = document.CrossfaderCurve;
+                restored.Crossfade.Clear();
+                foreach (var kv in document.Crossfade) restored.Crossfade[kv.Key] = kv.Value;
+                restored.FollowActionsEnabled = document.FollowActionsEnabled;
+                restored.ScenesStopOtherClips = document.ScenesStopOtherClips;
                 restored.CueMachine = document.CueMachine;
                 restored.CollapsedGroups.Clear();
                 restored.CollapsedGroups.UnionWith(document.CollapsedGroups);
@@ -620,7 +631,8 @@ namespace ReBuzz.Core.Session
                 Tempo = info.Tempo,
                 BeatsPerBar = info.BeatsPerBar,
                 Scene = scene,
-                Follow = ToFollow(info.Follow, Session.BeatsPerBar, buzz.TPB, clip: false),
+                // In the scene's own bars when it sets beats per bar (0.6.1): they apply from its launch.
+                Follow = ToFollow(info.Follow, info.BeatsPerBar > 0 ? info.BeatsPerBar : Session.BeatsPerBar, buzz.TPB, clip: false),
                 StopTracks = stops
             };
         }
@@ -743,7 +755,7 @@ namespace ReBuzz.Core.Session
                         if (tracks[t] != null && slots[t][s] != null)
                             clips.Add((tracks[t], slots[t][s]));
                     var info = doc.Scenes[s];
-                    scenes[s] = new LaunchMap.SceneEntry(clips.ToArray(), SceneOptionsOf(s), clips.Count == 0 && info.Tempo <= 0 && info.BeatsPerBar <= 0);
+                    scenes[s] = new LaunchMap.SceneEntry(clips.ToArray(), SceneOptionsOf(s), clips.Count == 0 && info.Tempo <= 0 && info.BeatsPerBar <= 0 && info.Follow?.On != true);
                 }
                 map = new LaunchMap(tracks, slots, scenes);
             }
@@ -752,9 +764,14 @@ namespace ReBuzz.Core.Session
             {
                 core.UseLaunchMap(map);
                 core.FollowActionsEnabled = doc?.FollowActionsEnabled ?? true;
-                core.UseCrossfader(doc, song);
+                // The position comes from the song once, when it is opened; after that the
+                // engine's is the truth (MIDI moves it directly, 0.6.1).
+                core.UseCrossfader(doc, song, crossfaderFromDocument);
+                if (doc != null) crossfaderFromDocument = false;
             }
         }
+
+        bool crossfaderFromDocument = true;
 
         /// <summary>Tempo a scene sets when it launches; 0 for none (undoable).</summary>
         public void SetSceneTempo(int index, int bpm) => Edit(doc =>
@@ -772,6 +789,7 @@ namespace ReBuzz.Core.Session
 
         void ContentChanged()
         {
+            if (document != null) document.AutoFilled = false;
             buzz.SetModifiedFlag();
             RaiseChanged();
         }
@@ -891,7 +909,7 @@ namespace ReBuzz.Core.Session
 
         void OnSaveSong(ISaveSong save)
         {
-            if (document == null) return;
+            if (document == null || document.AutoFilled) return;
             dirty = true;
             Sync();
             document.BeatsPerBar = Session.BeatsPerBar;
@@ -903,7 +921,17 @@ namespace ReBuzz.Core.Session
 
         void OnOpenSong(IOpenSong open)
         {
-            document = SessionDocument.Load(open.GetSubSection(SessionDocument.SubSectionName));
+            try
+            {
+                document = SessionDocument.Load(open.GetSubSection(SessionDocument.SubSectionName));
+            }
+            catch (Exception e)
+            {
+                // 0.6.1: a damaged layout mustn't stop the song from opening.
+                buzz.DCWriteLine("Session layout: " + e.Message, DCLogLevel.Warning);
+                document = null;
+            }
+            crossfaderFromDocument = true;
             dirty = false;
             UndoStack = NewUndoStack();
             if (document != null)
