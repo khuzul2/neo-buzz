@@ -394,6 +394,47 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
+        public void ARetiredPatternKeepsItsPlaceButLooksEmpty()
+        {
+            var d = AutoFill(new[] { T("drums", "a", "b") });
+            d.SetClip("drums", "a", new SessionDocument.ClipSettings { Mode = "Gate" });
+            string gone = SessionDocument.Retire("a", 3);
+            d.RenamePattern("drums", "a", gone);
+
+            Assert.That(d.GetSlot(0, 0), Is.Null, "an empty slot to everyone");
+            Assert.That(d.SceneSlots(0).Any(), Is.False);
+            Assert.That(d.MoveSlot(0, 0, 5, copy: false), Is.False, "nothing to move");
+            d.Reconcile(new[] { T("drums", "b") });             // "a" is gone from the song
+            Assert.That(d.Tracks[0].Slots[0], Is.EqualTo(gone), "its place is kept for an undo");
+            Assert.That(d.GetClip("drums", gone).Mode, Is.EqualTo("Gate"));
+
+            d.InsertScene(0);                                    // edits move it like any slot
+            d.RenamePattern("drums", gone, "a2");                // brought back under another name
+            Assert.That(d.GetSlot(0, 1), Is.EqualTo("a2"));
+            Assert.That(d.GetClip("drums", "a2").Mode, Is.EqualTo("Gate"));
+
+            d.RenamePattern("drums", "a2", gone);
+            d.PurgeRetired(gone);                                // forgotten for good
+            Assert.That(d.Tracks[0].Slots.ContainsKey(1), Is.False);
+            Assert.That(d.Clips.Count, Is.Zero);
+        }
+
+        [Test]
+        public void ARemovedTrackComesBackOnlyIntoAnEmptyTrackOfItsMachine()
+        {
+            var d = AutoFill(new[] { T("synth", "a"), T("drums", "c") });
+            d.Tracks[0].ColorIndex = 4;
+            var removed = d.RemoveTrack(0)!.Clone();
+            d.InsertTrack(0, "synth");
+            Assert.That(d.PutTrack(0, removed), Is.True);
+            Assert.That((d.Tracks[0].Slots[0], d.Tracks[0].ColorIndex, d.Tracks[0].Sequence), Is.EqualTo(("a", 4, 0)));
+            Assert.That(d.PutTrack(1, removed), Is.False, "not into another machine's track");
+            d.InsertTrack(0, "synth");
+            d.Tracks[0].Slots[2] = "x";
+            Assert.That(d.PutTrack(0, removed), Is.False, "nor over one with clips");
+        }
+
+        [Test]
         public void JumpTargetsFollowScenesInsertedAndRemoved()
         {
             var d = AutoFill(new[] { T("drums", "a", "b", "c", "d") });

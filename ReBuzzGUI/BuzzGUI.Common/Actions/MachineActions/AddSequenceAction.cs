@@ -6,6 +6,7 @@ namespace BuzzGUI.Common.Actions.MachineActions
     public class AddSequenceAction : MachineAction
     {
         readonly ISong song;
+        ISequence removed;         // fork (0.6.2): the sequence its undo removed; a redo reports the new one
 
         public AddSequenceAction(IMachine machine)
             : base(machine)
@@ -16,13 +17,19 @@ namespace BuzzGUI.Common.Actions.MachineActions
         protected override void DoAction()
         {
             var mac = Machine;
-            if (mac != null) song.AddSequence(mac, song.Sequences.Count);
+            if (mac == null) return;
+            song.AddSequence(mac, song.Sequences.Count);
+            Restorations.Report(removed, song.Sequences.LastOrDefault());
         }
 
         protected override void UndoAction()
         {
             var seq = song.Sequences.LastOrDefault();
-            if (seq != null) song.RemoveSequence(seq);
+            if (seq != null)
+            {
+                removed = seq;
+                song.RemoveSequence(seq);
+            }
         }
 
     }

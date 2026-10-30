@@ -207,6 +207,108 @@ namespace ReBuzzTests
             Assert.That(m.PatternsList, Is.Empty);
         }
 
+        // ------------------------------------------------------------------ restorations (0.6.2)
+
+        [Test]
+        public void UndoingAPatternDeleteInAnotherViewBringsItsSlotAndSettingsBackWhereTheyAre()
+        {
+            using var rig = new ClipRig(1);
+            var m = rig.Machines[0];
+            rig.Pattern(m, "A", Bar);
+            var b = rig.Pattern(m, "B", Bar);
+            var layout = rig.Layout;
+            layout.Ensure();
+            rig.Set(b, c => c.Mode = "Gate");
+            layout.MoveSlot(0, 1, 3, copy: false);               // B in scene 4
+
+            var delete = new DeletePatternAction(b);             // the Pattern View's delete
+            delete.Do();
+            Assert.That(layout.PatternAt(0, 3), Is.Null);
+            layout.InsertScene(0);                               // the grid changes meanwhile: B's place moves to scene 5
+            delete.Undo();                                       // the Pattern View's undo
+            var back = m.PatternsList.Single(x => x.Name == "B");
+            Assert.That(back, Is.Not.SameAs(b));
+            Assert.That(layout.PatternAt(0, 4), Is.SameAs(back), "its slot came back, where it is now");
+            Assert.That(layout.ClipOf(back).Mode, Is.EqualTo("Gate"), "and its settings");
+            layout.Undo();                                       // the scene insert: B back in scene 4
+            Assert.That(layout.PatternAt(0, 3), Is.SameAs(back), "undo history followed it too");
+        }
+
+        [Test]
+        public void UndoingASequenceDeleteBringsItsTrackBackInTheUndoHistoryToo()
+        {
+            using var rig = new ClipRig(2);
+            rig.Pattern(rig.Machines[0], "A", Bar);
+            var b = rig.Pattern(rig.Machines[1], "B", Bar);
+            var layout = rig.Layout;
+            layout.Ensure();
+            layout.SetTrackColor(1, 5);
+            layout.MoveSlot(1, 0, 2, copy: false);               // B in scene 3 of track 2
+            var song = rig.Core.SongCore;
+
+            var delete = new DeleteSequenceAction(song.SequencesList[1]);   // the Sequence View's delete
+            delete.Do();
+            Assert.That(layout.Document!.Tracks.Count, Is.EqualTo(1));
+            delete.Undo();
+            Assert.That(layout.Document!.Tracks.Count, Is.EqualTo(2));
+            Assert.That(layout.PatternAt(1, 2), Is.SameAs(b), "its track came back");
+            Assert.That(layout.Document!.Tracks[1].ColorIndex, Is.EqualTo(5));
+
+            layout.Undo();                                       // the move: B back in scene 1
+            Assert.That(layout.PatternAt(1, 0), Is.SameAs(b), "the undo history has the track too");
+            Assert.That(layout.PatternAt(1, 2), Is.Null);
+        }
+
+        [Test]
+        public void UndoingAMachineDeleteBringsBackItsTracksClipsAndSettings()
+        {
+            using var rig = new ClipRig(2);
+            var m = rig.Machines[1];
+            rig.Pattern(rig.Machines[0], "A", Bar);
+            var b = rig.Pattern(m, "B", Bar);
+            var layout = rig.Layout;
+            layout.Ensure();
+            rig.Set(b, c => c.Mode = "Gate");
+            layout.SetCrossfade(m, "B");
+            string name = m.Name;
+
+            rig.Core.SongCore.DeleteMachines(new[] { m });       // the Machine View's delete
+            Assert.That(layout.Document!.Tracks.Count, Is.EqualTo(1));
+            rig.Core.SongCore.Undo();                            // and its undo
+            var back = rig.Core.SongCore.MachinesList.Single(x => x.Name == name);
+            Assert.That(back, Is.Not.SameAs(m));
+            var pattern = back.PatternsList.Single(x => x.Name == "B");
+            Assert.That(layout.Document!.Tracks.Count, Is.EqualTo(2));
+            Assert.That(layout.PatternAt(1, 0), Is.SameAs(pattern), "its track and clip came back");
+            Assert.That(layout.ClipOf(pattern).Mode, Is.EqualTo("Gate"));
+            Assert.That(layout.CrossfadeOf(back), Is.EqualTo("B"));
+        }
+
+        [Test]
+        public void RecordingUndoKeepsEditsMadeDuringThePass()
+        {
+            using var rig = new ClipRig(1);
+            var a = rig.Pattern(rig.Machines[0], "A", Bar);
+            var other = rig.Pattern(rig.Machines[0], "Other", Bar);
+            rig.Layout.Ensure();
+            var track = (SequenceCore)rig.Track(0);
+            rig.Core.Looping = false;
+
+            rig.Align();
+            rig.Core.Recording = true;
+            rig.Session.Launch(track, a);
+            rig.PlayTo(8);
+            track.SetEvent(64, new SequenceEvent(SequenceEventType.PlayPattern, other));   // a Sequence View edit during the pass
+            rig.PlayTo(20);
+            rig.Core.Recording = false;
+            rig.Ticks(1);
+            rig.Core.Playing = false;
+
+            rig.Layout.Undo();                                   // the recording pass
+            Assert.That(track.Events.ContainsKey(0), Is.False, "what the pass wrote is taken back");
+            Assert.That(track.Events.ContainsKey(64), Is.True, "the edit made during the pass stays");
+        }
+
         [Test]
         public void RecordingUndoKeepsLaterArrangementEdits()
         {

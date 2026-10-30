@@ -22,6 +22,10 @@ namespace ReBuzz.Core.Actions.GraphActions
 
         readonly Dictionary<int, IEnumerable<KeyValuePair<int, SequenceEventRef>>> sequences = new Dictionary<int, IEnumerable<KeyValuePair<int, SequenceEventRef>>>();
         private string actualName;
+        // Fork (0.6.2): what the undo deleted, so a redo can report what stands for it now.
+        IMachine removedMachine;
+        Dictionary<string, IPattern> removedPatterns;
+        Dictionary<int, ISequence> removedSequences;
 
         public CreateMachineAction(ReBuzzCore buzz, int id, float x, float y)
         {
@@ -94,6 +98,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                         }
                     }
                 }
+                ReportRestored(machine);
             }
         }
 
@@ -121,8 +126,23 @@ namespace ReBuzz.Core.Actions.GraphActions
                     index++;
                 }
 
+                removedMachine = machine;
+                removedPatterns = machine.Patterns.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First());
+                removedSequences = buzz.SongCore.Sequences.Where(s => s.Machine == machine).ToDictionary(s => buzz.SongCore.Sequences.IndexOf(s), s => s);
                 buzz.RemoveMachine(machine);
             }
+        }
+
+        /// <summary>Fork (0.6.2): after a redo, what stands for the objects the undo deleted.</summary>
+        void ReportRestored(MachineCore machine)
+        {
+            if (removedMachine == null || machine == null) return;
+            BuzzGUI.Common.Actions.Restorations.Report(removedMachine, machine);
+            foreach (var p in removedPatterns)
+                BuzzGUI.Common.Actions.Restorations.Report(p.Value, machine.PatternsList.FirstOrDefault(x => x.Name == p.Key));
+            foreach (var s in removedSequences)
+                if (s.Key < buzz.SongCore.SequencesList.Count && buzz.SongCore.SequencesList[s.Key].Machine == machine)
+                    BuzzGUI.Common.Actions.Restorations.Report(s.Value, buzz.SongCore.SequencesList[s.Key]);
         }
     }
 }

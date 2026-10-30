@@ -11,6 +11,9 @@ namespace ReBuzz.Core.Actions.GraphActions
     internal class DeleteMachinesAction : BuzzAction
     {
         readonly List<MachineInfoRef> deleteMachineDatas = new List<MachineInfoRef>();
+        // Fork (0.6.2): what was deleted, so the undo can report what stands for it now.
+        readonly Dictionary<MachineInfoRef, (IMachine Machine, Dictionary<string, IPattern> Patterns, Dictionary<int, ISequence> Sequences)> deleted =
+            new Dictionary<MachineInfoRef, (IMachine, Dictionary<string, IPattern>, Dictionary<int, ISequence>)>();
 
         private readonly ReBuzzCore buzz;
         private readonly IUiDispatcher dispatcher;
@@ -42,9 +45,11 @@ namespace ReBuzz.Core.Actions.GraphActions
                 }
 
                 // Save pattern colors
-                foreach (var pattern in BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings.PatternAssociations.Keys.Where(pa => pa.Machine == machine))
+                // Fork (0.6.2): no sequence editor (headless, tests): no pattern colours to keep.
+                var associations = BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings?.PatternAssociations;
+                foreach (var pattern in associations?.Keys.Where(pa => pa.Machine == machine) ?? Enumerable.Empty<IPattern>())
                 {
-                    if (BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings.PatternAssociations.TryGetValue(pattern, out var pex))
+                    if (associations.TryGetValue(pattern, out var pex))
                     {
                         // Save pattern color
                         machineData.patternAssociations.Add(pattern.Name, pex.ColorIndex);
@@ -96,12 +101,13 @@ namespace ReBuzz.Core.Actions.GraphActions
                     {
 
                         // Remove pattern colors
-                        foreach (var pattern in BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings.PatternAssociations.Keys.Where(pa => pa.Machine == machine))
+                        var associations = BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings?.PatternAssociations;
+                        foreach (var pattern in associations?.Keys.Where(pa => pa.Machine == machine).ToList() ?? new List<IPattern>())
                         {
-                            if (BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings.PatternAssociations.TryGetValue(pattern, out var pex))
+                            if (associations.TryGetValue(pattern, out var pex))
                             {
                                 // remove from dictionary
-                                BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings.PatternAssociations.Remove(pattern);
+                                associations.Remove(pattern);
                             }
                         }
 
@@ -120,6 +126,10 @@ namespace ReBuzz.Core.Actions.GraphActions
                                 }
                             }
                         }
+
+                        deleted[machineData] = (machine,
+                            machine.Patterns.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First()),
+                            buzz.SongCore.Sequences.Where(s => s.Machine == machine).ToDictionary(s => buzz.SongCore.Sequences.IndexOf(s), s => s));
 
                         // Remove machine
                         buzz.RemoveMachine(machine);
@@ -171,7 +181,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                     var pattern = machine.PatternsList.FirstOrDefault(p => p.Name == pa.Key);
                     if (pattern != null)
                     {
-                        BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings.PatternAssociations.Add(pattern, new BuzzGUI.SequenceEditor.PatternEx() { ColorIndex = pa.Value });
+                        BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings?.PatternAssociations.Add(pattern, new BuzzGUI.SequenceEditor.PatternEx() { ColorIndex = pa.Value });
                     }
                 }
 
@@ -208,6 +218,21 @@ namespace ReBuzz.Core.Actions.GraphActions
                     c.Undo();
                 }
             }
+
+            // Fork (0.6.2): report what stands for the deleted objects now (machine, then its patterns and sequences).
+            foreach (var machineData in deleteMachineDatas)
+            {
+                if (!deleted.TryGetValue(machineData, out var old)) continue;
+                var now = buzz.SongCore.MachinesList.FirstOrDefault(x => x.Name == machineData.Name);
+                if (now == null) continue;
+                BuzzGUI.Common.Actions.Restorations.Report(old.Machine, now);
+                foreach (var p in old.Patterns)
+                    BuzzGUI.Common.Actions.Restorations.Report(p.Value, now.PatternsList.FirstOrDefault(x => x.Name == p.Key));
+                foreach (var s in old.Sequences)
+                    if (s.Key < buzz.SongCore.SequencesList.Count && buzz.SongCore.SequencesList[s.Key].Machine == now)
+                        BuzzGUI.Common.Actions.Restorations.Report(s.Value, buzz.SongCore.SequencesList[s.Key]);
+            }
+            deleted.Clear();
         }
     }
 }

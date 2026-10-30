@@ -73,6 +73,9 @@ namespace ReBuzz.Core.Session
             foreach (var m in song.Machines)
                 Watch(m);
             ResetIdentity();
+            // Undos here and in other views report what they bring back (0.6.2).
+            // Each layout acts only on objects of its own song.
+            BuzzGUI.Common.Actions.Restorations.Restored += OnRestored;
 
             // Follow times are in bars, beats and ticks: the engine's copy follows the time signature (0.6).
             buzz.Session.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ISession.BeatsPerBar)) RebuildLaunchMap(); };

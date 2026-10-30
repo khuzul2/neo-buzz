@@ -9,6 +9,7 @@ namespace BuzzGUI.Common.Actions.MachineActions
         readonly ISong song;
         readonly int seqIndex;
         Tuple<int, EventRef>[] events;
+        ISequence deleted;         // fork (0.6.2): reported when the undo adds it again
 
         public DeleteSequenceAction(ISequence s)
             : base(s.Machine)
@@ -24,6 +25,7 @@ namespace BuzzGUI.Common.Actions.MachineActions
 
             events = seq.Events.Select(e => Tuple.Create(e.Key, new EventRef(e.Value))).ToArray();
 
+            deleted = seq;
             song.RemoveSequence(seq);
         }
 
@@ -38,6 +40,8 @@ namespace BuzzGUI.Common.Actions.MachineActions
 
             foreach (var e in events)
                 e.Item2.Set(seq, e.Item1);
+
+            Restorations.Report(deleted, seq);
 
         }
 

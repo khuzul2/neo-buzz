@@ -28,8 +28,13 @@ namespace ReBuzz.Core.Session
         sealed class TrackPass
         {
             public int LastWrite;
-            public KeyValuePair<int, SequenceEvent>[] Before;
             public bool Open = true;
+            /// <summary>
+            /// 0.6.2: every time the pass wrote to, with what was there before its first write and
+            /// what it wrote last. Undo takes back exactly these, so edits made in the Sequence
+            /// View during the pass (on these tracks too) stay.
+            /// </summary>
+            public readonly Dictionary<int, (SequenceEvent Before, SequenceEvent After)> Touched = new Dictionary<int, (SequenceEvent, SequenceEvent)>();
         }
 
         readonly ReBuzzCore buzz;
@@ -130,7 +135,7 @@ namespace ReBuzz.Core.Session
             }
             if (!pass.TryGetValue(seq, out var track))
             {
-                track = new TrackPass { LastWrite = e.Position, Before = seq.Events.ToArray() };
+                track = new TrackPass { LastWrite = e.Position };
                 pass[seq] = track;
             }
             else if (!track.Open)
@@ -141,33 +146,47 @@ namespace ReBuzz.Core.Session
 
             if (e.Kind == Kind.Release)
             {
-                ClearBetween(seq, track.LastWrite, e.Position);
+                ClearBetween(seq, track, track.LastWrite, e.Position);
                 track.Open = false;
                 return;
             }
 
-            ClearBetween(seq, track.LastWrite, e.Position);
+            ClearBetween(seq, track, track.LastWrite, e.Position);
             // 0.6.1: never a deleted pattern (posted just before the delete, or from stale state):
             // the song would save it as an invalid pattern index.
             if (e.Kind == Kind.Start && e.Pattern != null && e.Pattern.Machine == seq.Machine && !e.Pattern.IsDeleted)
-                seq.SetEvent(e.Position, new SequenceEvent(SequenceEventType.PlayPattern, e.Pattern)
+                Write(seq, track, e.Position, new SequenceEvent(SequenceEventType.PlayPattern, e.Pattern)
                 {
                     Offset = Math.Max(0, e.Offset),
                     End = e.End > 0 && e.End < e.Pattern.Length ? e.End : 0,
                     Gain = Math.Clamp(e.Gain, 0f, 1f)
                 });
             else if (e.Kind == Kind.Stop)
-                seq.SetEvent(e.Position, new SequenceEvent(SequenceEventType.Off));
+                Write(seq, track, e.Position, new SequenceEvent(SequenceEventType.Off));
             else if (e.Kind == Kind.Cut)
-                seq.SetEvent(e.Position, new SequenceEvent(SequenceEventType.Break));
+                Write(seq, track, e.Position, new SequenceEvent(SequenceEventType.Break));
             track.LastWrite = e.Position;
         }
 
-        /// <summary>Removes events strictly between two positions (nothing if they wrapped).</summary>
-        static void ClearBetween(SequenceCore seq, int after, int before)
+        /// <summary>Writes (or with null removes) an event, remembering it for undo (0.6.2).</summary>
+        static void Write(SequenceCore seq, TrackPass track, int time, SequenceEvent e)
         {
-            if (before - after > 1 && seq.Events.Keys.Any(t => t > after && t < before))
-                seq.Clear(after + 1, before - after - 1);
+            var before = seq.Events.TryGetValue(time, out var was) ? new SequenceEvent(was) : null;
+            track.Touched[time] = track.Touched.TryGetValue(time, out var t)
+                ? (t.Before, e == null ? null : new SequenceEvent(e))
+                : (before, e == null ? null : new SequenceEvent(e));
+            if (e == null)
+                seq.Clear(time, 1);
+            else
+                seq.SetEvent(time, e);
+        }
+
+        /// <summary>Removes events strictly between two positions (nothing if they wrapped).</summary>
+        static void ClearBetween(SequenceCore seq, TrackPass track, int after, int before)
+        {
+            if (before - after <= 1) return;
+            foreach (int t in seq.Events.Keys.Where(t => t > after && t < before).ToList())
+                Write(seq, track, t, null);
         }
 
         void FinishPass(int position)
@@ -176,14 +195,16 @@ namespace ReBuzz.Core.Session
             var written = pass;
             pass = null;
 
-            var changes = new List<ArrangementSnapshotAction.SequenceChange>();
+            var changes = new List<ArrangementSnapshotAction.EventChange>();
             foreach (var kv in written)
             {
                 var seq = kv.Key;
                 if (!buzz.SongCore.SequencesList.Contains(seq)) continue;
                 if (kv.Value.Open)
-                    ClearBetween(seq, kv.Value.LastWrite, position);
-                changes.Add(new ArrangementSnapshotAction.SequenceChange(seq, kv.Value.Before, seq.Events.ToArray()));
+                    ClearBetween(seq, kv.Value, kv.Value.LastWrite, position);
+                foreach (var t in kv.Value.Touched)
+                    if (!ArrangementSnapshotAction.Same(t.Value.Before, t.Value.After))
+                        changes.Add(new ArrangementSnapshotAction.EventChange(seq, t.Key, t.Value.Before, t.Value.After));
             }
             if (changes.Count == 0) return;
 
@@ -197,80 +218,91 @@ namespace ReBuzz.Core.Session
 
     /// <summary>
     /// Undo step for an arrangement edit made from the session (a recording pass, a scene
-    /// inserted into the arrangement). Since 0.6.1 it keeps what the edit changed, event by
-    /// event, not whole tracks: undo takes out the events it wrote (if they are still as it
-    /// wrote them) and puts back the ones it replaced (where nothing has been written since),
-    /// so edits made since in the Sequence View, anywhere else, stay. The song's loop and song
-    /// end go back only if nothing changed them since. The edit is already made when the
-    /// action is pushed, so the first Do does nothing.
+    /// inserted into the arrangement): the events it changed, one by one (0.6.1; 0.6.2: a
+    /// recording pass lists exactly the events it wrote). Undo puts back what was there where
+    /// the edit's event is still as it left it, so edits made since, in the Sequence View or
+    /// anywhere, stay; redo likewise. The song's loop and song end go back only if nothing
+    /// changed them since. The edit is already made when the action is pushed, so the first Do
+    /// does nothing.
     /// </summary>
     internal sealed class ArrangementSnapshotAction : IAction
     {
         internal readonly record struct SequenceChange(ISequence Sequence, KeyValuePair<int, SequenceEvent>[] Before, KeyValuePair<int, SequenceEvent>[] After);
 
-        sealed class Diff
-        {
-            public ISequence Sequence;
-            public List<KeyValuePair<int, SequenceEvent>> Removed = new List<KeyValuePair<int, SequenceEvent>>();
-            public List<KeyValuePair<int, SequenceEvent>> Added = new List<KeyValuePair<int, SequenceEvent>>();
-        }
+        /// <summary>One event the edit changed: what was there (null: nothing) and what it put there (null: removed).</summary>
+        internal readonly record struct EventChange(ISequence Sequence, int Time, SequenceEvent Before, SequenceEvent After);
 
         readonly SongCore song;
-        readonly List<Diff> diffs = new List<Diff>();
+        readonly List<EventChange> changes;
         readonly (int LoopEnd, int SongEnd) endsBefore;
         readonly (int LoopEnd, int SongEnd) endsAfter;
         bool skipDo = true;
 
-        public ArrangementSnapshotAction(SongCore song, List<SequenceChange> changes, (int, int) endsBefore, (int, int) endsAfter)
+        /// <summary>From the events the edit changed, one by one (a recording pass, 0.6.2).</summary>
+        public ArrangementSnapshotAction(SongCore song, List<EventChange> changes, (int, int) endsBefore, (int, int) endsAfter)
         {
             this.song = song;
+            this.changes = changes;
             this.endsBefore = endsBefore;
             this.endsAfter = endsAfter;
-            foreach (var c in changes)
+        }
+
+        /// <summary>From tracks before and after the edit (a scene inserted): the differences.</summary>
+        public ArrangementSnapshotAction(SongCore song, List<SequenceChange> tracks, (int, int) endsBefore, (int, int) endsAfter)
+            : this(song, Differences(tracks), endsBefore, endsAfter)
+        {
+        }
+
+        static List<EventChange> Differences(List<SequenceChange> tracks)
+        {
+            var list = new List<EventChange>();
+            foreach (var c in tracks)
             {
                 var before = c.Before.ToDictionary(e => e.Key, e => e.Value);
                 var after = c.After.ToDictionary(e => e.Key, e => e.Value);
-                var d = new Diff { Sequence = c.Sequence };
-                foreach (var e in c.Before)
-                    if (!after.TryGetValue(e.Key, out var now) || !Same(now, e.Value))
-                        d.Removed.Add(new KeyValuePair<int, SequenceEvent>(e.Key, new SequenceEvent(e.Value)));
-                foreach (var e in c.After)
-                    if (!before.TryGetValue(e.Key, out var was) || !Same(was, e.Value))
-                        d.Added.Add(new KeyValuePair<int, SequenceEvent>(e.Key, new SequenceEvent(e.Value)));
-                if (d.Removed.Count > 0 || d.Added.Count > 0)
-                    diffs.Add(d);
+                foreach (int time in before.Keys.Union(after.Keys))
+                {
+                    before.TryGetValue(time, out var b);
+                    after.TryGetValue(time, out var a);
+                    if (!Same(b, a))
+                        list.Add(new EventChange(c.Sequence, time, b == null ? null : new SequenceEvent(b), a == null ? null : new SequenceEvent(a)));
+                }
             }
+            return list;
         }
 
         public void Do()
         {
             if (skipDo) { skipDo = false; return; }
-            foreach (var d in diffs) Apply(d.Sequence, take: d.Removed, put: d.Added);
+            foreach (var c in changes) Put(c.Sequence, c.Time, expected: c.Before, value: c.After);
             SetEnds(endsBefore, endsAfter);
         }
 
         public void Undo()
         {
-            foreach (var d in diffs) Apply(d.Sequence, take: d.Added, put: d.Removed);
+            for (int i = changes.Count - 1; i >= 0; i--)
+                Put(changes[i].Sequence, changes[i].Time, expected: changes[i].After, value: changes[i].Before);
             SetEnds(endsAfter, endsBefore);
         }
 
-        static bool Same(SequenceEvent a, SequenceEvent b) =>
+        /// <summary>Two events (or nothing) are the same.</summary>
+        internal static bool Same(SequenceEvent a, SequenceEvent b) =>
+            a == null || b == null ? a == null && b == null :
             a.Type == b.Type && ReferenceEquals(a.Pattern, b.Pattern) && a.Offset == b.Offset && a.End == b.End && a.Gain == b.Gain;
 
-        /// <summary>Takes out events still as given, then puts events back where nothing has been written since.</summary>
-        static void Apply(ISequence seq, List<KeyValuePair<int, SequenceEvent>> take, List<KeyValuePair<int, SequenceEvent>> put)
+        /// <summary>Sets an event (null: removes it) if what is there is still as expected: edits made since stay.</summary>
+        static void Put(ISequence seq, int time, SequenceEvent expected, SequenceEvent value)
         {
             if (!seq.Machine?.Graph?.Buzz?.Song?.Sequences.Contains(seq) ?? true) return;
-            foreach (var e in take)
-                if (seq.Events.TryGetValue(e.Key, out var now) && Same(now, e.Value))
-                    seq.Clear(e.Key, 1);
-            foreach (var e in put)
+            seq.Events.TryGetValue(time, out var now);
+            if (!Same(now, expected)) return;
+            if (value == null)
             {
-                if (seq.Events.ContainsKey(e.Key)) continue;
-                if (e.Value.Pattern != null && !seq.Machine.Patterns.Contains(e.Value.Pattern)) continue;
-                seq.SetEvent(e.Key, new SequenceEvent(e.Value));
+                if (now != null) seq.Clear(time, 1);
+                return;
             }
+            if (value.Pattern != null && !seq.Machine.Patterns.Contains(value.Pattern)) return;
+            seq.SetEvent(time, new SequenceEvent(value));
         }
 
         /// <summary>Sets the loop and song end, unless something else changed them since.</summary>
