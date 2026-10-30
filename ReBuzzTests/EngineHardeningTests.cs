@@ -360,6 +360,20 @@ namespace ReBuzzTests
             rig.Core.Playing = true;
             for (int i = 0; i < 200; i++)
                 reader.Read(256);                                    // warm up: JIT, first launches, tiered compilation
+            // Fork (0.6.2): tiered compilation can still be running methods as first compiled (where
+            // a short-lived object isn't yet kept off the heap) when a busy CI machine gets here: it
+            // failed now and then with 40-80 bytes per buffer. Steady state is after that: read on
+            // until a stretch of 100 buffers allocates nothing (or give up and measure anyway).
+            for (int stretch = 0; stretch < 200; stretch++)
+            {
+                long start = GC.GetAllocatedBytesForCurrentThread();
+                for (int i = 0; i < 100; i++)
+                    reader.Read(256);
+                if (GC.GetAllocatedBytesForCurrentThread() == start)
+                    break;
+                if (stretch == 0)
+                    TestContext.Out.WriteLine("[notice] steady playback: still allocating after the warm-up; reading on until it stops");
+            }
 
             var log = new List<string>();
             long bytes = AllocatedWhileReading(rig, reader, 400, 256, log);   // ~2.3 s: several ticks and a loop wrap
