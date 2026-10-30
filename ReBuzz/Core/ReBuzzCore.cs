@@ -376,6 +376,14 @@ namespace ReBuzz.Core
             {
                 if (!value)
                 {
+                    // Fork (0.6.1): from another thread (a native machine's host message), the
+                    // stop goes through the UI thread, so that thread never waits for AudioLock
+                    // here (a machine call holding AudioLock may be waiting for it).
+                    if (!AudioLock.IsHeldByCurrentThread && !dispatcher.CheckAccess())
+                    {
+                        dispatcher.BeginInvoke(() => Playing = false);
+                        return;
+                    }
                     // Fork (0.6.1): under AudioLock, so the stop can't land between the audio
                     // thread's Playing check and the session's tick (a recording pass left open,
                     // the session clock left running).

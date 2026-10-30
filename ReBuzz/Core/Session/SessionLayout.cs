@@ -62,7 +62,7 @@ namespace ReBuzz.Core.Session
             song.SequenceAdded += OnSequenceAdded;
             song.SequenceRemoved += OnSequenceRemoved;
             song.SequenceChanged += OnSequenceChanged;
-            song.MachineAdded += m => { Watch(m); OnMachineAddedToSong(m); OnStructureChanged(); };
+            song.MachineAdded += m => { Watch(m); OnStructureChanged(); };
             song.MachineRemoved += m =>
             {
                 string name = m != null && machineNames.TryGetValue(m, out var known) ? known : m?.Name;
@@ -376,6 +376,7 @@ namespace ReBuzz.Core.Session
         internal void Restore(SessionDocument snapshot)
         {
             if (snapshot == null) return;
+            FlushTransforms();                 // snapshot changes held back under AudioLock come first
             var restored = snapshot.CloneLayout();
             if (document != null)
                 restored.Settings = document.Settings;
@@ -772,6 +773,18 @@ namespace ReBuzz.Core.Session
         }
 
         bool crossfaderFromDocument = true;
+        bool rebuildPosted;
+
+        void PostLaunchMapRebuild()
+        {
+            if (rebuildPosted) return;
+            rebuildPosted = true;
+            dispatcher.BeginInvoke(() =>
+            {
+                rebuildPosted = false;
+                RebuildLaunchMap();
+            });
+        }
 
         /// <summary>Tempo a scene sets when it launches; 0 for none (undoable).</summary>
         public void SetSceneTempo(int index, int bpm) => Edit(doc =>
@@ -795,11 +808,19 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Raises <see cref="Changed"/> once, after the current batch of edits.</summary>
-        void RaiseChanged()
+        void RaiseChanged() => RaiseChanged(structural: false);
+
+        void RaiseChanged(bool structural)
         {
-            // The MIDI and audio threads (and every launch) use the launch map: at once (0.6.1),
-            // not when the UI is next idle.
-            RebuildLaunchMap();
+            // The MIDI and audio threads (and every launch) use the launch map: rebuilt at once
+            // after an edit (0.6.1), so mouse and MIDI launches agree. Song structure changes
+            // come in bursts (deleting a machine, an import), some under AudioLock: one rebuild
+            // after the burst, outside the lock. Meanwhile stale entries can't launch anything
+            // gone (liveness flags), and a clip launch from the UI falls back to its settings.
+            if (structural || ReBuzzCore.AudioLock.IsHeldByCurrentThread)
+                PostLaunchMapRebuild();
+            else
+                RebuildLaunchMap();
             if (changePosted) return;
             changePosted = true;
             dispatcher.BeginInvoke(() =>
@@ -829,7 +850,7 @@ namespace ReBuzz.Core.Session
         {
             if (document == null) return;
             dirty = true;
-            RaiseChanged();
+            RaiseChanged(structural: true);
         }
 
         void Watch(IMachine machine)
@@ -869,7 +890,6 @@ namespace ReBuzz.Core.Session
         void Machine_PatternAdded(IPattern pattern)
         {
             WatchPattern(pattern);
-            OnPatternAddedToSong(pattern);
             OnStructureChanged();
         }
 

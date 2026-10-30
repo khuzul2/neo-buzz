@@ -125,66 +125,86 @@ namespace ReBuzzTests
         }
 
         [Test]
-        public void UndoingAPatternDeleteInAnotherEditorBringsItsSlotAndSettingsBack()
+        public void APatternDeletedInAnotherViewLeavesNothingToANewClipOfTheSameName()
         {
             using var rig = new ClipRig(1);
             var m = rig.Machines[0];
-            rig.Pattern(m, "A", Bar);
-            var b = rig.Pattern(m, "B", Bar);
             var layout = rig.Layout;
             layout.Ensure();
-            rig.Set(b, c => c.Mode = "Gate");
-            layout.MoveSlot(0, 1, 3, copy: false);               // B in scene 4
+            var first = layout.CreateClip(0, 0)!;
+            string name = first.Name;
+            rig.Set(first, c => c.Mode = "Gate");
 
-            rig.Driver.Dispatcher.Deferred = true;               // as the real dispatcher: checks run after the undo
-            var delete = new DeletePatternAction(b);             // the pattern editor's action
-            delete.Do();
+            rig.Driver.Dispatcher.Deferred = true;               // as the real dispatcher
+            new DeletePatternAction(first).Do();                 // the Pattern View's delete
             rig.Driver.Dispatcher.RunPending();
-            Assert.That(layout.PatternAt(0, 3), Is.Null);
-            m.CreatePattern("B", 4);                             // a different "B" first: inherits nothing
-            rig.Driver.Dispatcher.RunPending();
-            var impostor = m.PatternsList.Single(x => x.Name == "B");
-            Assert.That(layout.ClipOf(impostor).Mode, Is.EqualTo("Trigger"));
-            Assert.That(layout.PatternAt(0, 3), Is.Null);
-            m.DeletePattern(impostor);
-            rig.Driver.Dispatcher.RunPending();
-
-            delete.Undo();                                       // the editor's undo: same name, same contents
+            var second = layout.CreateClip(0, 3)!;               // a new empty clip gets the freed name
             rig.Driver.Dispatcher.RunPending();
             rig.Driver.Dispatcher.Deferred = false;
-            var back = m.PatternsList.Single(x => x.Name == "B");
-            Assert.That(layout.PatternAt(0, 3), Is.SameAs(back), "its slot came back");
-            Assert.That(layout.ClipOf(back).Mode, Is.EqualTo("Gate"), "and its settings");
+
+            Assert.That(second.Name, Is.EqualTo(name));
+            Assert.That(layout.PatternAt(0, 0), Is.Null, "it doesn't take the old clip's slot");
+            Assert.That(layout.PatternAt(0, 3), Is.SameAs(second));
+            Assert.That(layout.ClipOf(second).Mode, Is.EqualTo("Trigger"), "nor its settings");
         }
 
         [Test]
-        public void ASequenceBroughtBackByAnUndoGetsItsTrackBack()
+        public void TheSessionsUndoBringsBackItsOwnDeletedClipEvenIfANewOneTookTheName()
+        {
+            using var rig = new ClipRig(1);
+            var m = rig.Machines[0];
+            var layout = rig.Layout;
+            layout.Ensure();
+            var clip = layout.CreateClip(0, 1)!;
+            string name = clip.Name;
+            rig.Set(clip, c => c.Mode = "Gate");
+
+            layout.DeleteClip(clip);
+            var newcomer = layout.CreateClip(0, 4)!;             // takes the freed name
+            Assert.That(newcomer.Name, Is.EqualTo(name));
+            Assert.That(layout.ClipOf(newcomer).Mode, Is.EqualTo("Trigger"));
+            layout.Undo();                                       // the new clip
+            layout.Undo();                                       // the delete
+            var back = layout.PatternAt(0, 1)!;
+            Assert.That(back, Is.Not.Null, "the slot came back");
+            Assert.That(back.Name, Is.EqualTo(name));
+            Assert.That(layout.ClipOf(back).Mode, Is.EqualTo("Gate"), "and its settings");
+            Assert.That(layout.PatternAt(0, 4), Is.Null);
+        }
+
+        [Test]
+        public void ANewSequenceForAMachineStartsWithAnEmptyTrack()
         {
             using var rig = new ClipRig(2);
             rig.Pattern(rig.Machines[0], "A", Bar);
             var b = rig.Pattern(rig.Machines[1], "B", Bar);
             var layout = rig.Layout;
             layout.Ensure();
-            layout.MoveSlot(1, 0, 2, copy: false);               // B in scene 3 of track 2
             layout.SetTrackColor(1, 5);
             var song = rig.Core.SongCore;
-            var seq = song.SequencesList[1];
-            seq.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, b));
-            var events = seq.Events.ToArray();
-
-            rig.Driver.Dispatcher.Deferred = true;
-            song.RemoveSequence(seq);
-            rig.Driver.Dispatcher.RunPending();
+            song.RemoveSequence(song.SequencesList[1]);
             Assert.That(layout.Document!.Tracks.Count, Is.EqualTo(1));
 
-            song.AddSequence(rig.Machines[1], 1);                // as a sequence editor's undo: same machine, same events
-            var again = song.SequencesList[1];
-            foreach (var e in events)
-                again.SetEvent(e.Key, new SequenceEvent(e.Value));
-            rig.Driver.Dispatcher.RunPending();
-            rig.Driver.Dispatcher.Deferred = false;
-            Assert.That(layout.PatternAt(1, 2), Is.SameAs(b));
-            Assert.That(layout.Document!.Tracks[1].ColorIndex, Is.EqualTo(5));
+            song.AddSequence(rig.Machines[1], 1);
+            Assert.That(layout.Document!.Tracks.Count, Is.EqualTo(2));
+            Assert.That(layout.Document!.Tracks[1].Slots, Is.Empty, "nothing carried over from the removed track");
+            Assert.That(layout.Document!.Tracks[1].ColorIndex, Is.EqualTo(-1));
+            Assert.That(layout.Document!.Tracks[0].Slots.Values, Is.EqualTo(new[] { "A" }), "the other track is untouched");
+            Assert.That(b.Machine, Is.SameAs(rig.Machines[1]));
+        }
+
+        [Test]
+        public void UndoingADeleteAfterItsMachineWasDeletedMakesNoGhostPattern()
+        {
+            using var rig = new ClipRig(1);
+            var m = rig.Machines[0];
+            var a = rig.Pattern(m, "A", Bar);
+            var layout = rig.Layout;
+            layout.Ensure();
+            layout.DeleteClip(a);
+            rig.Core.RemoveMachine(m);
+            layout.Undo();                                       // the clip's machine is gone
+            Assert.That(m.PatternsList, Is.Empty);
         }
 
         [Test]

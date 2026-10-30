@@ -13,44 +13,40 @@ namespace ReBuzz.Core.Session
     ///  - sequences added, removed or swapped move tracks by their exact index (a song may have
     ///    several sequences of one machine);
     ///  - renames rename;
-    ///  - a deleted pattern's or machine's name is retired (<see cref="SessionDocument.Retire"/>),
-    ///    so a new pattern or machine reusing the name inherits nothing, and the slots and
-    ///    settings go to a grave. When an undo, in any view, brings the object back (matched by
-    ///    machine, name and contents), the grave gives them back; the session's own undo does so
-    ///    directly (<see cref="ResurrectAs"/>).
-    /// The session's pattern actions hold objects, not names (<see cref="Current{T}"/> follows
-    /// an object that was deleted and brought back), so they never touch another editor's
-    /// pattern that happens to have the same name.
+    ///  - a deleted pattern's or machine's name is retired (<see cref="SessionDocument.Retire"/>):
+    ///    a new pattern or machine reusing the name inherits nothing.
+    /// The session's own undo brings a pattern it deleted back with its slots and settings
+    /// (<see cref="ResurrectAs"/>), and its pattern actions hold objects, not names
+    /// (<see cref="Current{T}"/> follows a pattern the session made again), so they never touch
+    /// another editor's pattern of the same name. An object another view's undo brings back is
+    /// a new object to the layout: matching it to the old one by name and contents can't tell it
+    /// from a new pattern or machine that merely looks the same, so it isn't attempted.
+    ///
+    /// Song changes made under AudioLock (deleting a machine deletes its sequences and patterns
+    /// under it) only touch the current layout there; undo snapshots and the launch map follow
+    /// once the lock is released (the liveness flags cover the gap).
     /// </summary>
     internal sealed partial class SessionLayout
     {
-        enum GraveKind { Pattern, Machine, Sequence }
-
-        /// <summary>What the layout had for an object that is gone, until it comes back.</summary>
+        /// <summary>What the layout had for a pattern the session deleted, until its undo brings it back.</summary>
         sealed class Grave
         {
-            public GraveKind Kind;
-            public object Original;              // the IPattern, IMachine or ISequence that went
-            public IMachine Machine;             // its machine (for a machine: itself)
+            public IPattern Original;
             public string MachineName = "";      // as the layout knows it now (retired while the machine is gone)
-            public string Name = "";             // the name it had
-            public string Retired = "";          // the name it has in snapshots meanwhile
-            public long Fingerprint;
-            public string Dll = "";
+            public string Retired = "";          // the pattern's name in snapshots meanwhile
             public (int Track, int Scene)[] Slots = Array.Empty<(int, int)>();
             public SessionDocument.ClipSettings Clip;
-            public SortedDictionary<int, string> TrackSlots;   // a sequence's track
-            public int TrackColor = -1;
-            public int TrackIndex = -1;
         }
 
         const int MaxGraves = 256;
         readonly List<Grave> graves = new List<Grave>();
         readonly Dictionary<object, object> forward = new Dictionary<object, object>(ReferenceEqualityComparer.Instance);
         readonly List<ISequence> bound = new List<ISequence>();      // the song's sequences as the layout last saw them
+        readonly List<(SessionDocument[] Targets, Action<SessionDocument> Change)> pendingTransforms = new List<(SessionDocument[], Action<SessionDocument>)>();
+        bool transformsPosted;
         int retiredCounter;
 
-        /// <summary>The object now standing for <paramref name="obj"/>: itself, or what an undo brought back in its place.</summary>
+        /// <summary>The object now standing for <paramref name="obj"/>: itself, or what the session's undo made again in its place.</summary>
         internal T Current<T>(T obj) where T : class
         {
             object o = obj;
@@ -58,6 +54,9 @@ namespace ReBuzz.Core.Session
                 o = next;
             return o as T ?? obj;
         }
+
+        /// <summary>Whether a machine is (still) in the song.</summary>
+        internal bool IsInSong(IMachine machine) => machine != null && song.Machines.Contains(machine);
 
         /// <summary>Applies a change to the layout and to every undo snapshot.</summary>
         void TransformAll(Action<SessionDocument> change)
@@ -67,14 +66,40 @@ namespace ReBuzz.Core.Session
             TransformSnapshots(change);
         }
 
+        /// <summary>
+        /// Applies a change to every undo snapshot there is now; under AudioLock, once it is
+        /// released (in order, and to those snapshots only: later ones are made from the
+        /// already changed layout).
+        /// </summary>
         void TransformSnapshots(Action<SessionDocument> change)
         {
-            foreach (var action in UndoStack.Actions)
-                if (action is LayoutEditAction edit)
+            var targets = UndoStack.Actions.OfType<LayoutEditAction>().SelectMany(a => new[] { a.Before, a.After }).ToArray();
+            if (targets.Length == 0) return;
+            if (ReBuzzCore.AudioLock.IsHeldByCurrentThread)
+            {
+                pendingTransforms.Add((targets, change));
+                if (!transformsPosted)
                 {
-                    change(edit.Before);
-                    change(edit.After);
+                    transformsPosted = true;
+                    dispatcher.BeginInvoke(FlushTransforms);
                 }
+                return;
+            }
+            FlushTransforms();
+            foreach (var d in targets)
+                change(d);
+        }
+
+        /// <summary>Applies the snapshot changes held back under AudioLock (before any undo or redo uses a snapshot).</summary>
+        void FlushTransforms()
+        {
+            transformsPosted = false;
+            if (pendingTransforms.Count == 0) return;
+            var list = pendingTransforms.ToArray();
+            pendingTransforms.Clear();
+            foreach (var (targets, change) in list)
+                foreach (var d in targets)
+                    change(d);
         }
 
         /// <summary>New song or song loaded: nothing to bring back, sequences as they are.</summary>
@@ -82,15 +107,9 @@ namespace ReBuzz.Core.Session
         {
             graves.Clear();
             forward.Clear();
+            pendingTransforms.Clear();
             bound.Clear();
             bound.AddRange(song.Sequences);
-        }
-
-        void Bury(Grave grave)
-        {
-            graves.Add(grave);
-            if (graves.Count > MaxGraves)
-                graves.RemoveAt(0);
         }
 
         // ------------------------------------------------------------------ sequences
@@ -101,8 +120,6 @@ namespace ReBuzz.Core.Session
             bound.Insert(index, seq);
             string machine = seq?.Machine?.Name ?? "";
             TransformAll(d => d.InsertTrack(index, machine));
-            if (document != null && graves.Any(g => g.Kind == GraveKind.Sequence))
-                dispatcher.BeginInvoke(() => TryReturnSequence(seq));   // after the undo that added it has set its events
             OnStructureChanged();
         }
 
@@ -110,29 +127,11 @@ namespace ReBuzz.Core.Session
         {
             int at = bound.IndexOf(seq);
             if (at < 0) at = index;
-            if (at < 0 || at >= bound.Count)
+            if (at >= 0 && at < bound.Count)
             {
-                OnStructureChanged();
-                return;
+                bound.RemoveAt(at);
+                TransformAll(d => d.RemoveTrack(at));
             }
-            bound.RemoveAt(at);
-            if (document != null && at < document.Tracks.Count)
-            {
-                var track = document.Tracks[at];
-                if (track.Slots.Count > 0 || track.ColorIndex >= 0)
-                    Bury(new Grave
-                    {
-                        Kind = GraveKind.Sequence,
-                        Original = seq,
-                        Machine = seq.Machine,
-                        MachineName = track.Machine,
-                        Fingerprint = Fingerprint(seq),
-                        TrackSlots = new SortedDictionary<int, string>(track.Slots),
-                        TrackColor = track.ColorIndex,
-                        TrackIndex = at
-                    });
-            }
-            TransformAll(d => d.RemoveTrack(at));
             OnStructureChanged();
         }
 
@@ -146,26 +145,6 @@ namespace ReBuzz.Core.Session
                 TransformAll(d => d.SwapTracks(at, index));
             }
             OnStructureChanged();
-        }
-
-        void TryReturnSequence(ISequence seq)
-        {
-            if (document == null || seq?.Machine == null) return;
-            int at = bound.IndexOf(seq);
-            if (at < 0 || at >= document.Tracks.Count) return;
-            long print = Fingerprint(seq);
-            var grave = graves.LastOrDefault(g => g.Kind == GraveKind.Sequence && g.MachineName == seq.Machine.Name && g.Fingerprint == print);
-            if (grave == null) return;
-            graves.Remove(grave);
-            forward[grave.Original] = seq;
-            var track = document.Tracks[at];
-            foreach (var slot in grave.TrackSlots)
-                if (!track.Slots.ContainsKey(slot.Key))
-                    track.Slots[slot.Key] = slot.Value;
-            if (track.ColorIndex < 0) track.ColorIndex = grave.TrackColor;
-            document.EnsureScenes();
-            dirty = true;
-            ContentChanged();
         }
 
         // ------------------------------------------------------------------ patterns
@@ -193,35 +172,16 @@ namespace ReBuzz.Core.Session
             document.Clips.TryGetValue((machineName, name), out var clip);
             document.Clips.Remove((machineName, name));
             TransformSnapshots(d => d.RenamePattern(machineName, name, retired));
-            Bury(new Grave
+            graves.Add(new Grave
             {
-                Kind = GraveKind.Pattern,
                 Original = pattern,
-                Machine = machine,
                 MachineName = machineName,
-                Name = name,
                 Retired = retired,
-                Fingerprint = Fingerprint(pattern),
                 Slots = slots.ToArray(),
                 Clip = clip?.Clone()
             });
-        }
-
-        void OnPatternAddedToSong(IPattern pattern)
-        {
-            if (document != null && pattern != null && graves.Any(g => g.Kind == GraveKind.Pattern && g.Name == pattern.Name))
-                dispatcher.BeginInvoke(() => TryReturnPattern(pattern));   // after the undo that added it has copied its data
-        }
-
-        void TryReturnPattern(IPattern pattern)
-        {
-            var machine = pattern?.Machine;
-            if (document == null || machine == null || !machine.Patterns.Contains(pattern)) return;
-            long print = Fingerprint(pattern);
-            var grave = graves.LastOrDefault(g => g.Kind == GraveKind.Pattern && g.Name == pattern.Name &&
-                                                 g.MachineName == machine.Name && g.Fingerprint == print);
-            if (grave != null)
-                Resurrect(grave, pattern);
+            if (graves.Count > MaxGraves)
+                graves.RemoveAt(0);
         }
 
         /// <summary>
@@ -231,18 +191,13 @@ namespace ReBuzz.Core.Session
         /// </summary>
         internal void ResurrectAs(IPattern dead, IPattern alive)
         {
-            if (dead == null || alive == null) return;
+            if (dead == null || alive?.Machine == null) return;
             forward[dead] = alive;
-            var grave = graves.LastOrDefault(g => g.Kind == GraveKind.Pattern && ReferenceEquals(g.Original, dead));
-            if (grave != null)
-                Resurrect(grave, alive);
-        }
-
-        void Resurrect(Grave grave, IPattern alive)
-        {
+            var grave = graves.LastOrDefault(g => ReferenceEquals(g.Original, dead));
+            if (grave == null) return;
             graves.Remove(grave);
-            forward[grave.Original] = alive;
             string machineName = alive.Machine.Name;
+            if (grave.MachineName != machineName) return;      // its machine is gone (retired): nothing to give back
             TransformSnapshots(d => d.RenamePattern(grave.MachineName, grave.Retired, alive.Name));
             if (document != null)
             {
@@ -261,104 +216,12 @@ namespace ReBuzz.Core.Session
         void OnMachineRemovedFromSong(IMachine machine, string name)
         {
             if (document == null || string.IsNullOrEmpty(name) || SessionDocument.IsRetired(name)) return;
-            string retired = SessionDocument.Retire(name, ++retiredCounter);
-            var patternNames = graves.Where(g => g.Kind == GraveKind.Pattern && g.MachineName == name).Select(g => g.Name)
-                                     .OrderBy(n => n, StringComparer.Ordinal).ToList();     // now: the graves are renamed below
-            // Its crossfader side, return, cue and clip settings stay with the retired name: a new
+            // Its crossfader side, return, cue and clip settings stay with a retired name: a new
             // machine called the same gets none of them.
+            string retired = SessionDocument.Retire(name, ++retiredCounter);
             TransformAll(d => d.RenameMachine(name, retired));
             foreach (var g in graves.Where(g => g.MachineName == name))
                 g.MachineName = retired;
-            Bury(new Grave
-            {
-                Kind = GraveKind.Machine,
-                Original = machine,
-                Machine = machine,
-                MachineName = retired,
-                Name = name,
-                Retired = retired,
-                Dll = machine?.DLL?.Name ?? "",
-                Fingerprint = StableHash(string.Join("\n", patternNames))
-            });
-        }
-
-        void OnMachineAddedToSong(IMachine machine)
-        {
-            if (document != null && machine != null && graves.Any(g => g.Kind == GraveKind.Machine && g.Name == machine.Name))
-                dispatcher.BeginInvoke(() => TryReturnMachine(machine));   // after the undo that added it has made its patterns
-        }
-
-        void TryReturnMachine(IMachine machine)
-        {
-            if (document == null || machine == null || !song.Machines.Contains(machine)) return;
-            long print = StableHash(string.Join("\n", machine.Patterns.Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal)));
-            var grave = graves.LastOrDefault(g => g.Kind == GraveKind.Machine && g.Name == machine.Name &&
-                                                 g.Dll == (machine.DLL?.Name ?? "") && g.Fingerprint == print);
-            if (grave == null) return;
-            graves.Remove(grave);
-            forward[grave.Original] = machine;
-            TransformAll(d => d.RenameMachine(grave.Retired, machine.Name));
-            foreach (var g in graves.Where(g => g.MachineName == grave.Retired))
-            {
-                g.MachineName = machine.Name;
-                g.Machine = machine;
-            }
-            // Its patterns and sequences were added before this ran: try them again now that the machine is back.
-            foreach (var p in machine.Patterns)
-                TryReturnPattern(p);
-            foreach (var seq in song.Sequences.Where(s => s.Machine == machine))
-                TryReturnSequence(seq);
-            RaiseChanged();
-        }
-
-        // ------------------------------------------------------------------ fingerprints
-
-        static long Fingerprint(IPattern pattern)
-        {
-            unchecked
-            {
-                long h = 1469598103934665603L;
-                void Mix(long v) { h = (h ^ v) * 1099511628211L; }
-                Mix(pattern.Length);
-                foreach (var column in pattern.Columns)
-                {
-                    Mix(column.Track);
-                    Mix(StableHash(column.Parameter?.Name ?? ""));
-                    foreach (var e in column.GetEvents(int.MinValue + 1, int.MaxValue))
-                    {
-                        Mix(e.Time);
-                        Mix(e.Value);
-                    }
-                }
-                return h;
-            }
-        }
-
-        static long Fingerprint(ISequence seq)
-        {
-            unchecked
-            {
-                long h = 1469598103934665603L;
-                void Mix(long v) { h = (h ^ v) * 1099511628211L; }
-                foreach (var e in seq.Events)
-                {
-                    Mix(e.Key);
-                    Mix((int)e.Value.Type);
-                    Mix(StableHash(e.Value.Pattern?.Name ?? ""));
-                }
-                return h;
-            }
-        }
-
-        static long StableHash(string s)
-        {
-            unchecked
-            {
-                long h = 1469598103934665603L;
-                foreach (char c in s ?? "")
-                    h = (h ^ c) * 1099511628211L;
-                return h;
-            }
         }
     }
 
@@ -375,7 +238,7 @@ namespace ReBuzz.Core.Session
         readonly SessionLayout layout;
         readonly IMachine machine;
         readonly string name;
-        readonly int length;
+        int length;
         readonly IPattern source;
         PatternClip data;
         IPattern created;
@@ -395,7 +258,7 @@ namespace ReBuzz.Core.Session
         public void Do()
         {
             var m = layout.Current(machine);
-            if (m == null) return;
+            if (!layout.IsInSong(m)) return;         // its machine was deleted since
             string free = m.Patterns.Any(p => p.Name == name) ? SessionLayout.CopyName(m, name) : name;
             if (created == null)
             {
@@ -420,8 +283,9 @@ namespace ReBuzz.Core.Session
         {
             var m = layout.Current(machine);
             var p = Created;
-            if (m == null || p == null || !m.Patterns.Contains(p)) return;
+            if (!layout.IsInSong(m) || p == null || !m.Patterns.Contains(p)) return;
             data = new PatternClip(p);
+            length = p.Length;                       // a redo makes it as it is now
             m.DeletePattern(p);
         }
     }
@@ -450,7 +314,7 @@ namespace ReBuzz.Core.Session
         {
             var m = layout.Current(machine);
             var p = layout.Current(pattern);
-            if (m == null || p == null || !m.Patterns.Contains(p)) return;
+            if (!layout.IsInSong(m) || p == null || !m.Patterns.Contains(p)) return;
             name = p.Name;
             length = p.Length;
             data = new PatternClip(p);
@@ -461,7 +325,7 @@ namespace ReBuzz.Core.Session
         public void Undo()
         {
             var m = layout.Current(machine);
-            if (m == null || data == null) return;
+            if (!layout.IsInSong(m) || data == null) return;   // its machine was deleted since: no ghost pattern
             string free = m.Patterns.Any(p => p.Name == name) ? SessionLayout.CopyName(m, name) : name;
             m.CreatePattern(free, length);
             var again = m.Patterns.FirstOrDefault(p => p.Name == free);

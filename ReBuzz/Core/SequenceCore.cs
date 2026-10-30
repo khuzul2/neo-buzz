@@ -197,6 +197,7 @@ namespace ReBuzz.Core
         public void Clear(int time, int span)
         {
             lock (ReBuzzCore.AudioLock)
+            lock (eventsLock)              // fork (0.6.1): spans and the swap together
             {
                 OrderedDictionary<int, SequenceEvent> od = new OrderedDictionary<int, SequenceEvent>();
                 foreach (var kv in EventsList)
@@ -219,6 +220,7 @@ namespace ReBuzz.Core
         public void Delete(int time, int span)
         {
             lock (ReBuzzCore.AudioLock)
+            lock (eventsLock)              // fork (0.6.1): spans and the swap together
             {
                 OrderedDictionary<int, SequenceEvent> od = new OrderedDictionary<int, SequenceEvent>();
                 foreach (var kv in EventsList)
@@ -250,6 +252,7 @@ namespace ReBuzz.Core
         public void Insert(int time, int span)
         {
             lock (ReBuzzCore.AudioLock)
+            lock (eventsLock)              // fork (0.6.1): spans and the swap together
             {
                 OrderedDictionary<int, SequenceEvent> od = new OrderedDictionary<int, SequenceEvent>();
                 foreach (var kv in EventsList)
