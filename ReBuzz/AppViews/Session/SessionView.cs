@@ -161,14 +161,16 @@ namespace ReBuzz.AppViews.Session
                 MinWidth = 56,
                 ToolTip = "Tempo (the song's BPM)"
             };
-            left.Children.Add(tempoText);
             nudgeDownButton = HoldButton("◀", -1, SessionTarget.NudgeDown, "Nudge down");
             nudgeUpButton = HoldButton("▶", 1, SessionTarget.NudgeUp, "Nudge up");
-            left.Children.Add(nudgeDownButton);
-            left.Children.Add(nudgeUpButton);
-            tapButton = new FlatButton("Tap", () => layout.TapTempo(), "") { Margin = new Thickness(0, 0, 14, 0) };
+            tapButton = new FlatButton("Tap", () => layout.TapTempo(), "") { Margin = new Thickness(4, 0, 14, 0) };
             tapButton.MouseRightButtonUp += (s, e) => { ShowMidiOnlyMenu(tapButton, SessionTarget.TapTempo, 0, 0, "Tap tempo"); e.Handled = true; };
-            left.Children.Add(tapButton);
+            // One group, so a narrow view wraps it whole.
+            left.Children.Add(new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Children = { tempoText, nudgeDownButton, nudgeUpButton, tapButton }
+            });
             UpdateBarTips();
 
             clockText = new TextBlock

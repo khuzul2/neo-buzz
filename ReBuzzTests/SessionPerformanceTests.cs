@@ -494,7 +494,7 @@ namespace ReBuzzTests
                     chi += (counts[from, to] - expected) * (counts[from, to] - expected) / expected;
                 }
             }
-            TestContext.Out.WriteLine($"10 minutes, {transitions} transitions: chi-square {chi:F2} (95% critical 15.51)");
+            TestContext.Out.WriteLine($"[notice] 10 minutes at 120 BPM, {transitions} transitions: chi-square {chi:F2} (95% critical 15.51)");
             Assert.That(transitions, Is.EqualTo((totalTicks - Bar) / ClipTicks));
             Assert.That(chi, Is.LessThan(15.507));
         }
