@@ -60,7 +60,25 @@ namespace ReBuzz.Core.Session
             try
             {
                 if (registry != null)
+                {
                     LatencyCompensation = registry.Read("LatencyCompensation", 1, "Session") != 0;
+                    SelectOnLaunch = registry.Read("SelectOnLaunch", 1, "Session") != 0;
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        /// <summary>Launching a slot or scene selects it, from the mouse, keys or MIDI (Live's "Select on Launch", 0.6; a preference).</summary>
+        internal bool SelectOnLaunch { get; private set; } = true;
+
+        internal void SetSelectOnLaunch(bool on)
+        {
+            SelectOnLaunch = on;
+            try
+            {
+                settings?.Write("SelectOnLaunch", on ? 1 : 0, "Session");
             }
             catch (Exception)
             {
@@ -338,12 +356,15 @@ namespace ReBuzz.Core.Session
             if (entries.Length == 0) return;
             history.Add(new LaunchRecord { Label = label, Entries = entries });
             if (history.Count > HistoryLength) history.RemoveAt(0);
+            lastLaunch = label;
         }
+
+        volatile string lastLaunch;     // the newest record's label, for the UI without the gate
 
         /// <summary>What <see cref="UndoLaunch"/> would undo ("scene 3", "Beat on Drums"), or null.</summary>
         internal string LastLaunch
         {
-            get { lock (gate) return history.Count > 0 ? history[history.Count - 1].Label : null; }
+            get => lastLaunch;
         }
 
         /// <summary>
@@ -361,6 +382,7 @@ namespace ReBuzz.Core.Session
                 if (history.Count == 0) return null;
                 record = history[history.Count - 1];
                 history.RemoveAt(history.Count - 1);
+                lastLaunch = history.Count > 0 ? history[history.Count - 1].Label : null;
                 long heard = HeardClock();
                 foreach (var (track, clip, before) in record.Entries)
                     scheduler.Revert(track, before, clip, quantize, heard);
@@ -948,6 +970,7 @@ namespace ReBuzz.Core.Session
                 sceneFollow = null;
                 sceneFollowAt = -1;
                 history.Clear();
+                lastLaunch = null;
                 System.Threading.Volatile.Write(ref gridOriginBar, 0);
             }
             ResetGains();                                           // velocity gain ends with the transport
@@ -992,6 +1015,7 @@ namespace ReBuzz.Core.Session
             {
                 scheduler.Reset();
                 history.Clear();
+                lastLaunch = null;
                 sceneAt = -1;
                 sceneFollow = null;
                 sceneFollowAt = -1;

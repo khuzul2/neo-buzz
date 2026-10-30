@@ -7,11 +7,13 @@ namespace ReBuzz.Core.Session
     /// <summary>
     /// Tap tempo (0.6): the tempo of the last taps. From the third tap (two intervals) on, each
     /// tap gives the average of the last four intervals, rounded to Buzz's whole BPM; a pause
-    /// of over two seconds starts again.
+    /// of over two seconds starts again. A tap under 0.1 s after the last one is ignored (a
+    /// bouncing pad or a double trigger), so taps can't go past 500 BPM.
     /// </summary>
     internal sealed class TapTempoMeter
     {
         const double ResetSeconds = 2.0;
+        const double BounceSeconds = 0.1;
         const int Intervals = 4;
 
         readonly List<double> taps = new List<double>();    // seconds
@@ -19,7 +21,9 @@ namespace ReBuzz.Core.Session
         /// <summary>A tap at <paramref name="seconds"/> (any clock). Returns the tempo once there is one.</summary>
         public int? Tap(double seconds)
         {
-            if (taps.Count > 0 && (seconds - taps[^1] > ResetSeconds || seconds <= taps[^1]))
+            if (taps.Count > 0 && seconds >= taps[^1] && seconds - taps[^1] < BounceSeconds)
+                return null;
+            if (taps.Count > 0 && (seconds - taps[^1] > ResetSeconds || seconds < taps[^1]))
                 taps.Clear();
             taps.Add(seconds);
             if (taps.Count > Intervals + 1)

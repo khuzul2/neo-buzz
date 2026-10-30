@@ -36,6 +36,8 @@ namespace ReBuzz.AppViews.Session
         public static readonly Brush Send = Make("#B48BE0");
         public static readonly Brush Pan = Make("#D9B45B");
         public static readonly Brush Cue = Make("#4BB8C8");
+        public static readonly Brush CrossA = Make("#E8A33A");    // crossfader sides (0.6), Live's colours
+        public static readonly Brush CrossB = Make("#5AA0E0");
         public static readonly Brush Thumb = Make("#D5D5DC");
         public static readonly Brush MeterLow = Make("#43C463");
         public static readonly Brush MeterMid = Make("#E8CD3A");
