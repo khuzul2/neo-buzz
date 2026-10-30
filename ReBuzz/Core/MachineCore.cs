@@ -601,6 +601,7 @@ namespace ReBuzz.Core
             lock (ReBuzzCore.AudioLock)
             {
                 patterns.Remove(p as PatternCore);
+                (p as PatternCore).IsDeleted = true;                    // fork (0.6.1): before the session forgets it
                 buzz.SessionCore.OnPatternDeleted(p as PatternCore);   // fork: Session View
                 // Remove from sequences
                 foreach (var seq in buzz.SongCore.SequencesList.Where(s => s.Machine == p.Machine))

@@ -376,10 +376,16 @@ namespace ReBuzz.Core
             {
                 if (!value)
                 {
-                    preparePlaying = false;
-                    playing = false;
-                    GlobalState.StateFlags &= ~SF_PLAYING;
-                    SessionCore.OnTransportStopped();
+                    // Fork (0.6.1): under AudioLock, so the stop can't land between the audio
+                    // thread's Playing check and the session's tick (a recording pass left open,
+                    // the session clock left running).
+                    lock (AudioLock)
+                    {
+                        preparePlaying = false;
+                        playing = false;
+                        GlobalState.StateFlags &= ~SF_PLAYING;
+                        SessionCore.OnTransportStopped();
+                    }
                     songCore.WavetableCore.StopPlayingWave();
 
                     foreach (var machine in songCore.MachinesList)
@@ -1412,11 +1418,36 @@ namespace ReBuzz.Core
         /// Open and load a song file into the current session. Handles backup,
         /// audio stop/play, song creation and sends events for UI and machines.
         /// </summary>
-        public void OpenSongFile(string filename)
+        public void OpenSongFile(string filename) => TryOpenSongFile(filename);
+
+        /// <summary>
+        /// Fork (0.6.1): true when the song was loaded (crash recovery keeps the autosave
+        /// otherwise). While it loads, <see cref="SongLoading"/> is set.
+        /// </summary>
+        internal bool TryOpenSongFile(string filename)
         {
             if (!File.Exists(filename))
-                return;
+                return false;
+            bool outer = SongLoading;
+            SongLoading = true;
+            try
+            {
+                return OpenSongFileCore(filename);
+            }
+            finally
+            {
+                SongLoading = outer;
+            }
+        }
 
+        /// <summary>
+        /// Fork (0.6.1): a song is being closed or loaded. MIDI pads and the session don't start
+        /// the transport or launch clips meanwhile (they'd play a half-loaded song).
+        /// </summary>
+        internal volatile bool SongLoading;
+
+        bool OpenSongFileCore(string filename)
+        {
             if (CheckSaveSong())
             {
                 masterLoading = true;
@@ -1444,7 +1475,7 @@ namespace ReBuzz.Core
                     userMessages.Error(e.InnerException == null ? e.Message : e.InnerException.Message, "Error loading " + filename, e);
                     bmxFile.EndFileOperation(false);
                     NewSong();
-                    return;
+                    return false;
                 }
 
                 SongCore.SongName = filename;
@@ -1468,8 +1499,9 @@ namespace ReBuzz.Core
                     masterLoading = false;
                     Modified = false;
                 });
-
+                return true;
             }
+            return false;
         }
 
         internal void ImportSong(float x, float y)
@@ -2266,8 +2298,23 @@ namespace ReBuzz.Core
         // Clean up song 
         internal void NewSong()
         {
+            bool outer = SongLoading;
+            SongLoading = true;                 // fork (0.6.1)
+            try
+            {
+                NewSongCore();
+            }
+            finally
+            {
+                SongLoading = outer;
+            }
+        }
+
+        void NewSongCore()
+        {
             Autosave?.Discard();   // fork (0.4.1)
             Playing = false;
+            SessionLayout?.Reset();             // fork (0.6.1): no launches from the old song's map while it closes
             InfoText = "";
 
             // Create status window

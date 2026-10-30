@@ -101,6 +101,7 @@ namespace ReBuzz.Core.Session
             }
 
             if (map == null || !map.TryResolve(control, out var target, out int track, out int scene)) return consumed;
+            if (buzz.SongLoading) return consumed;      // 0.6.1: nothing launches or starts while a song closes or loads
 
             if (target == SessionTarget.Quantization)
             {

@@ -215,6 +215,9 @@ namespace ReBuzz.Core.Session
         // Performance (0.6)
         /// <summary>Clip and scene follow actions happen (Live's global switch).</summary>
         public bool FollowActionsEnabled { get; set; } = true;
+
+        /// <summary>Made up from the song, not edited yet (0.6.1): not saved, so plain songs stay plain. Not serialized.</summary>
+        internal bool AutoFilled { get; set; }
         /// <summary>A scene launch stops the clips of tracks it has no clip for (Live's stop buttons in empty slots).</summary>
         public bool ScenesStopOtherClips { get; set; }
         /// <summary>Crossfader side of a machine: "A" or "B" (none if absent).</summary>
@@ -342,6 +345,7 @@ namespace ReBuzz.Core.Session
             Scenes.Insert(index, new Scene());
             foreach (var t in Tracks)
                 ShiftSlots(t, index, +1);
+            ShiftJumps(index, +1, removed: -1);
         }
 
         /// <summary>Removes a scene and its slots, moving later rows up.</summary>
@@ -354,8 +358,28 @@ namespace ReBuzz.Core.Session
                 t.Slots.Remove(index);
                 ShiftSlots(t, index + 1, -1);
             }
+            ShiftJumps(index + 1, -1, removed: index);
             EnsureScenes();
         }
+
+        /// <summary>
+        /// Follow actions' Jump targets (scene rows) follow rows inserted or removed (0.6.1): rows
+        /// from <paramref name="from"/> move by <paramref name="delta"/>; a jump to the
+        /// <paramref name="removed"/> row has nowhere to go and is cleared.
+        /// </summary>
+        void ShiftJumps(int from, int delta, int removed)
+        {
+            int Shift(int row) => row < 0 ? row : row == removed ? -1 : row >= from ? row + delta : row;
+            var all = Scenes.Select(sc => sc.Follow).Concat(Clips.Values.Select(c => c.Follow)).Where(f => f != null);
+            foreach (var f in all)
+            {
+                f.JumpA = Shift(f.JumpA);
+                f.JumpB = Shift(f.JumpB);
+            }
+        }
+
+        /// <summary>Most scene rows a layout may have (0.6.1: a damaged file can't allocate millions).</summary>
+        public const int MaxScenes = 4096;
 
         /// <summary>Inserts a copy of a scene (name, colour, slots) below it.</summary>
         public void DuplicateScene(int index)
@@ -534,7 +558,7 @@ namespace ReBuzz.Core.Session
                             doc.CollapsedGroups.Add(name);
                     if (mixer.Element("Crossfader") is XElement x)
                     {
-                        if (double.TryParse((string)x.Attribute("position"), NumberStyles.Float, CultureInfo.InvariantCulture, out double pos))
+                        if (double.TryParse((string)x.Attribute("position"), NumberStyles.Float, CultureInfo.InvariantCulture, out double pos) && !double.IsNaN(pos))
                             doc.CrossfaderPosition = Math.Clamp(pos, 0, 1);
                         doc.CrossfaderCurve = (string)x.Attribute("curve") ?? "Dipless";
                         foreach (var a in x.Elements("Assign"))
@@ -570,7 +594,7 @@ namespace ReBuzz.Core.Session
                     {
                         int scene = IntAttr(slot, "scene", -1);
                         string pattern = (string)slot.Attribute("pattern");
-                        if (scene >= 0 && !string.IsNullOrEmpty(pattern))
+                        if (scene >= 0 && scene < MaxScenes && !string.IsNullOrEmpty(pattern))
                             track.Slots[scene] = pattern;
                     }
                     doc.Tracks.Add(track);

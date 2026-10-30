@@ -250,6 +250,7 @@ namespace ReBuzz.Core
             {
                 index = sequences.IndexOf(sc);
                 sequences.Remove(sc);
+                sc.IsRemoved = true;                                    // fork (0.6.1): before the session forgets it
                 BuzzCore.SessionCore.OnSequenceRemoved(sc);
             }
             PropertyChanged.Raise(this, "Sequences");

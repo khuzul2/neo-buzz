@@ -129,26 +129,35 @@ namespace ReBuzz.Core
 
         /// <summary>
         /// Opens a leftover autosave as the song it belongs to, with unsaved changes, then
-        /// deletes it (the open song is autosaved again from here).
+        /// deletes it (the open song is autosaved again from here). If it can't be opened, it is
+        /// kept (0.6.1), so it can be tried again or opened by hand. Returns whether it opened.
         /// </summary>
-        public void Recover(Leftover leftover)
+        public bool Recover(Leftover leftover)
         {
             // OpenSongFile discards the current song's autosave, which may be this very file:
             // open a copy.
             string copy = Path.Combine(Path.GetTempPath(), "ReBuzz-recovered-" + Guid.NewGuid().ToString("N") + Path.GetExtension(leftover.Path));
             File.Copy(leftover.Path, copy, overwrite: true);
+            bool opened;
             try
             {
-                buzz.OpenSongFile(copy);
-                buzz.SongCore.SongName = string.IsNullOrEmpty(leftover.Song) ? null : leftover.Song;
-                // Loading clears the modified flag from the dispatcher once it is done: set it after that.
-                buzz.dispatcher.BeginInvoke(() => buzz.Modified = true);
+                opened = buzz.TryOpenSongFile(copy);
+                if (opened)
+                {
+                    buzz.SongCore.SongName = string.IsNullOrEmpty(leftover.Song) ? null : leftover.Song;
+                    // Loading clears the modified flag from the dispatcher once it is done: set it after that.
+                    buzz.dispatcher.BeginInvoke(() => buzz.Modified = true);
+                }
             }
             finally
             {
                 TryDeleteFile(copy);
             }
-            Delete(leftover.Path);
+            if (opened)
+                Delete(leftover.Path);
+            else
+                buzz.DCWriteLine("Autosave not recovered (it couldn't be opened); kept at " + leftover.Path, DCLogLevel.Warning);
+            return opened;
         }
 
         public static void Delete(string path)

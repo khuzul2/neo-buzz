@@ -349,6 +349,36 @@ namespace ReBuzz.SessionTests
             Assert.That(FollowSettings.TicksOf("-1", 4, 4), Is.Null);
         }
 
+        [Test]
+        public void JumpTargetsFollowScenesInsertedAndRemoved()
+        {
+            var d = AutoFill(new[] { T("drums", "a", "b", "c", "d") });
+            d.Scenes[0].Follow = new FollowSettings { On = true, A = "Jump", JumpA = 2, B = "Jump", JumpB = 3 };
+            var clip = new SessionDocument.ClipSettings();
+            clip.Follow = new FollowSettings { On = true, A = "Jump", JumpA = 1 };
+            d.Clips[("drums", "a")] = clip;
+
+            d.InsertScene(1);                                    // rows 1+ move down
+            Assert.That((d.Scenes[0].Follow.JumpA, d.Scenes[0].Follow.JumpB, clip.Follow.JumpA), Is.EqualTo((3, 4, 2)));
+            d.RemoveScene(3);                                    // the target of A goes; later rows move up
+            Assert.That((d.Scenes[0].Follow.JumpA, d.Scenes[0].Follow.JumpB, clip.Follow.JumpA), Is.EqualTo((-1, 3, 2)));
+            d.DuplicateScene(0);                                 // a copy below: rows 1+ move down, the copy jumps as the original
+            Assert.That((d.Scenes[0].Follow.JumpB, d.Scenes[1].Follow.JumpB, clip.Follow.JumpA), Is.EqualTo((4, 4, 3)));
+        }
+
+        [Test]
+        public void DamagedLayoutsLoadWithoutHarm()
+        {
+            string xml = "<Session version=\"1\"><Tracks><Track sequence=\"0\" machine=\"m\">" +
+                         "<Slot scene=\"99999999\" pattern=\"a\" /><Slot scene=\"2\" pattern=\"b\" /></Track></Tracks>" +
+                         "<Mixer><Crossfader position=\"NaN\" /></Mixer></Session>";
+            var d = SessionDocument.Load(new MemoryStream(System.Text.Encoding.UTF8.GetBytes(xml)));
+            Assert.That(d != null, Is.True);
+            Assert.That(d!.Scenes.Count, Is.LessThan(SessionDocument.MaxScenes + 1));
+            Assert.That(d.Tracks[0].Slots.Keys, Is.EqualTo(new[] { 2 }));
+            Assert.That(d.CrossfaderPosition, Is.EqualTo(0.5));
+        }
+
         // ------------------------------------------------------------------ persistence
 
         [Test]

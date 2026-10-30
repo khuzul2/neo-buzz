@@ -2268,49 +2268,61 @@ namespace ReBuzz.FileOps
             {
                 ushort machineIndex = (ushort)machines.IndexOf(sequence.Machine as MachineCore);
                 WriteUShort(ms, machineIndex);
-                uint events = (uint)sequence.Events.Count;
+                // Fork (0.6.1): events are collected first, so positions past 65,535 ticks get
+                // 4-byte positions (the loader reads either size; upstream always wrote 2 and
+                // truncated them), and an event whose pattern is gone is left out rather than
+                // written as an invalid index.
+                var written = new List<(int Pos, ulong Value)>(sequence.Events.Count);
+                foreach (var kv in sequence.Events)
+                {
+                    int pos = kv.Key;
+                    var sequenceEvent = kv.Value;
+                    ulong value;
+
+                    if (sequenceEvent.Type == SequenceEventType.Mute)
+                    {
+                        // Mute
+                        value = 0;
+                    }
+                    else if (sequenceEvent.Type == SequenceEventType.Break)
+                    {
+                        // Break
+                        value = 1;
+                    }
+                    else if (sequenceEvent.Type == SequenceEventType.Thru)
+                    {
+                        // Thru
+                        value = 2;
+                    }
+                    else if (sequenceEvent.Type == SequenceEventType.Off)
+                    {
+                        // Thru
+                        value = 3;
+                    }
+                    else
+                    {
+                        // machine+value -> pattern id
+                        int ptnidx = sequence.Machine.Patterns.IndexOf(sequenceEvent.Pattern);
+                        if (ptnidx < 0)
+                            continue;
+                        value = (ulong)ptnidx + 0x10;
+                    }
+                    written.Add((pos, value));
+                }
+
+                uint events = (uint)written.Count;
                 WriteUInt(ms, events);
-                byte posSize = 2, eventSize = 2;
+                byte posSize = written.Any(w => w.Pos > ushort.MaxValue || w.Pos < 0) ? (byte)4 : (byte)2;
+                byte eventSize = written.Any(w => w.Value > ushort.MaxValue) ? (byte)4 : (byte)2;
                 if (events > 0)
                 {
                     WriteByte(ms, posSize);
                     WriteByte(ms, eventSize);
 
-                    for (int j = 0; j < events; j++)
+                    foreach (var (pos, value) in written)
                     {
-                        int pos = sequence.Events.Keys.ElementAt(j);
-                        var sequenceEvent = sequence.Events[pos];
-                        ulong value;
-
-                        if (sequenceEvent.Type == SequenceEventType.Mute)
-                        {
-                            // Mute
-                            value = 0;
-                        }
-                        else if (sequenceEvent.Type == SequenceEventType.Break)
-                        {
-                            // Break
-                            value = 1;
-                        }
-                        else if (sequenceEvent.Type == SequenceEventType.Thru)
-                        {
-                            // Thru
-                            value = 2;
-                        }
-                        else if (sequenceEvent.Type == SequenceEventType.Off)
-                        {
-                            // Thru
-                            value = 3;
-                        }
-                        else
-                        {
-                            // machine+value -> pattern id
-                            int ptnidx = sequence.Machine.Patterns.IndexOf(sequenceEvent.Pattern);
-                            value = (ulong)ptnidx + 0x10;
-                        }
-
-                        WriteUShort(ms, (ushort)pos);
-                        WriteUShort(ms, (ushort)value);
+                        if (posSize == 4) WriteUInt(ms, (uint)pos); else WriteUShort(ms, (ushort)pos);
+                        if (eventSize == 4) WriteUInt(ms, (uint)value); else WriteUShort(ms, (ushort)value);
                     }
                 }
             }
