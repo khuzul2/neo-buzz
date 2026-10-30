@@ -25,33 +25,131 @@ namespace ReBuzz.Core.Session
     {
         // ------------------------------------------------------------------ arm
 
-        volatile SequenceCore[] armed = Array.Empty<SequenceCore>();
-        volatile MachineCore[] armedMachines = Array.Empty<MachineCore>();
+        /// <summary>What is armed, published whole (immutable) for the MIDI thread.</summary>
+        sealed class ArmState
+        {
+            public static readonly ArmState None = new ArmState(Array.Empty<SequenceCore>(), Array.Empty<CaptureRing>());
+
+            public ArmState(SequenceCore[] tracks, CaptureRing[] rings)
+            {
+                Tracks = tracks;
+                Rings = rings;
+                Machines = tracks.Select(s => s.MachineCore).Where(m => m != null).Distinct().ToArray();
+            }
+
+            public readonly SequenceCore[] Tracks;
+            public readonly CaptureRing[] Rings;     // one per track: what it was played lately (Capture MIDI)
+            public readonly MachineCore[] Machines;
+        }
+
+        volatile ArmState arm = ArmState.None;
 
         /// <summary>Tracks armed for recording (not saved; a new song starts with none).</summary>
-        internal IReadOnlyList<SequenceCore> ArmedTracks => armed;
+        internal IReadOnlyList<SequenceCore> ArmedTracks => arm.Tracks;
 
-        public bool IsArmed(ISequence track) => track is SequenceCore seq && Array.IndexOf(armed, seq) >= 0;
+        public bool IsArmed(ISequence track) => track is SequenceCore seq && Array.IndexOf(arm.Tracks, seq) >= 0;
 
-        /// <summary>UI thread: arms or disarms a track.</summary>
+        /// <summary>UI thread: arms or disarms a track. An armed track keeps what it is played lately, for Capture MIDI.</summary>
         internal void SetArmed(SequenceCore seq, bool on)
         {
             if (seq == null) return;
-            var current = armed;
-            if ((Array.IndexOf(current, seq) >= 0) == on) return;
-            var next = on ? current.Append(seq).ToArray() : current.Where(s => s != seq).ToArray();
-            armedMachines = next.Select(s => s.MachineCore).Where(m => m != null).Distinct().ToArray();
-            armed = next;
+            var current = arm;
+            int at = Array.IndexOf(current.Tracks, seq);
+            if ((at >= 0) == on) return;
+            arm = on
+                ? new ArmState(current.Tracks.Append(seq).ToArray(), current.Rings.Append(new CaptureRing()).ToArray())
+                : new ArmState(current.Tracks.Where((_, i) => i != at).ToArray(), current.Rings.Where((_, i) => i != at).ToArray());
+            RaisePropertyChangedOnUi(nameof(ArmedTracks));
+        }
+
+        /// <summary>A track's sequence was removed (any thread): it is armed no more, so no input goes to its machine.</summary>
+        void Disarm(SequenceCore seq)
+        {
+            var current = arm;
+            int at = Array.IndexOf(current.Tracks, seq);
+            if (at < 0) return;
+            arm = new ArmState(current.Tracks.Where((_, i) => i != at).ToArray(), current.Rings.Where((_, i) => i != at).ToArray());
             RaisePropertyChangedOnUi(nameof(ArmedTracks));
         }
 
         void DisarmAll()
         {
-            armedMachines = Array.Empty<MachineCore>();
-            armed = Array.Empty<SequenceCore>();
+            arm = ArmState.None;
             recordWindows = Array.Empty<RecordWindow>();
             Array.Clear(heldNotes);
         }
+
+        // ------------------------------------------------------------------ capture (Capture MIDI)
+
+        /// <summary>The last messages an armed track was played, with when they were heard (1/240 tick). Thread-safe.</summary>
+        internal sealed class CaptureRing
+        {
+            public const int Size = 4096;
+            readonly int[] data = new int[Size];
+            readonly long[] time = new long[Size];
+            readonly object sync = new object();
+            int start, count;
+
+            public void Add(int message, long heard)
+            {
+                lock (sync)
+                {
+                    if (count == Size)
+                    {
+                        start = (start + 1) % Size;
+                        count--;
+                    }
+                    int at = (start + count) % Size;
+                    data[at] = message;
+                    time[at] = heard;
+                    count++;
+                }
+            }
+
+            /// <summary>Takes out what was heard from <paramref name="from"/> on, oldest first, and forgets everything.</summary>
+            public List<(long Time, int Data)> TakeSince(long from)
+            {
+                var list = new List<(long, int)>();
+                lock (sync)
+                {
+                    for (int i = 0; i < count; i++)
+                    {
+                        int at = (start + i) % Size;
+                        if (time[at] >= from) list.Add((time[at], data[at]));
+                    }
+                    start = 0;
+                    count = 0;
+                }
+                return list;
+            }
+        }
+
+        /// <summary>UI thread: what an armed track was played since <paramref name="from"/> (heard time), taken out of its ring.</summary>
+        internal List<(long Time, int Data)> TakeCaptured(SequenceCore seq, long from)
+        {
+            var state = arm;
+            int at = Array.IndexOf(state.Tracks, seq);
+            return at < 0 ? new List<(long, int)>() : state.Rings[at].TakeSince(from);
+        }
+
+        /// <summary>
+        /// UI thread (Capture MIDI): launches a clip on the next tick in phase with a grid point
+        /// already passed: it plays from where it would be had it started at <paramref name="originClock"/>.
+        /// </summary>
+        internal void LaunchInPhase(SequenceCore seq, PatternCore clip, long originClock)
+        {
+            if (seq == null || clip == null || clip.IsDeleted || seq.IsRemoved) return;
+            lock (gate)
+            {
+                long c = scheduler.Clock;
+                if (c < 0) return;
+                scheduler.LaunchAt(seq, clip, c + 1, Math.Min(originClock, c + 1), LaunchSpec.Looped, Math.Min(originClock, c + 1));
+            }
+            RaiseTrackStateChanged(seq);
+        }
+
+        /// <summary>The session's bar grid starts here (a scene's time signature change restarts it).</summary>
+        internal long BarGridOrigin => scheduler.GridOrigin;
 
         // ------------------------------------------------------------------ record windows
 
@@ -96,6 +194,9 @@ namespace ReBuzz.Core.Session
             public PatternCore Clip;
             public long ClipStart;
             public TakeStamp Stamp;
+            /// <summary>Automation: the parameter moved (the stamp's data is its value); null for MIDI.</summary>
+            public ParameterCore Parameter;
+            public int ParameterTrack;
         }
 
         const int RingSize = 4096;
@@ -131,7 +232,8 @@ namespace ReBuzz.Core.Session
             bool noteOn = kind == 0x90 && velocity > 0;
             bool noteOff = kind == 0x80 || (kind == 0x90 && velocity == 0);
 
-            var machines = armedMachines;
+            var state = arm;
+            var machines = state.Machines;
             if (noteOff)
             {
                 var pressed = Interlocked.Exchange(ref heldNotes[key], null);
@@ -159,18 +261,18 @@ namespace ReBuzz.Core.Session
             {
                 var machine = machines[i];
                 var dll = machine.DLL;
-                if (dll == null || dll.IsMissing) continue;
+                if (dll == null || dll.IsMissing || dll.IsCrashed || !machine.Ready) continue;
                 bool polac = dll.Name == "Polac VSTi 1.1" || dll.Name == "Polac VST 1.1";
                 buzz.MachineManager.SendMidiInput(machine, data, polac);
             }
 
-            var windows = recordWindows;
-            if (windows.Length > 0 && !buzz.SongLoading)
-                Stamp(data & 0xFFFFFF, windows);
+            bool kept = kind == 0x80 || kind == 0x90 || kind == 0xA0 || kind == 0xB0 || kind == 0xD0 || kind == 0xE0;
+            if (kept && !buzz.SongLoading)
+                Stamp(data & 0xFFFFFF, recordWindows, state);
             return true;
         }
 
-        void Stamp(int data, RecordWindow[] windows)
+        void Stamp(int data, RecordWindow[] windows, ArmState state)
         {
             bool queued = false;
             lock (gate)
@@ -180,6 +282,9 @@ namespace ReBuzz.Core.Session
                 long time = (long)Math.Floor(heard * TakeTime.TimeBase);
                 long tick = time / TakeTime.TimeBase;
                 int fraction = (int)(time - tick * TakeTime.TimeBase);
+                // Capture MIDI: every armed track keeps what it is played, recording or not.
+                for (int i = 0; i < state.Rings.Length; i++)
+                    state.Rings[i].Add(data, time);
                 for (int i = 0; i < windows.Length; i++)
                 {
                     var w = windows[i];
@@ -193,6 +298,57 @@ namespace ReBuzz.Core.Session
                         Clip = clip,
                         ClipStart = start,
                         Stamp = new TakeStamp(data, time, position * TakeTime.TimeBase + fraction, end * TakeTime.TimeBase)
+                    };
+                    lock (ringLock)
+                    {
+                        if (ringCount == RingSize)
+                        {
+                            droppedInputs++;
+                            continue;
+                        }
+                        ring[(ringStart + ringCount) % RingSize] = input;
+                        ringCount++;
+                    }
+                    queued = true;
+                }
+            }
+            if (queued && Interlocked.Exchange(ref drainPosted, 1) == 0)
+                buzz.dispatcher.BeginInvoke(drain ??= OnDrain);
+        }
+
+        /// <summary>
+        /// A parameter was moved by hand (ParameterCore.SetValue without its "don't record" flag;
+        /// the thread that moved it, never the audio thread's): a recording track of its machine
+        /// records it into the clip it records, as automation.
+        /// </summary>
+        internal void OnParameterChange(ParameterCore parameter, int track, int value)
+        {
+            var windows = recordWindows;
+            if (windows.Length == 0 || parameter?.Group?.Machine is not MachineCore machine) return;
+            if (ReBuzzCore.AudioLock.IsHeldByCurrentThread || buzz.SongLoading) return;
+            bool queued = false;
+            lock (gate)
+            {
+                double heard = HeardTicks();
+                if (heard < 0) return;
+                long time = (long)Math.Floor(heard * TakeTime.TimeBase);
+                long tick = time / TakeTime.TimeBase;
+                int fraction = (int)(time - tick * TakeTime.TimeBase);
+                for (int i = 0; i < windows.Length; i++)
+                {
+                    var w = windows[i];
+                    if (!ReferenceEquals(w.Track.MachineCore, machine) || time < w.From || time >= w.Until) continue;
+                    if (!scheduler.TryGetPlayingAt(w.Track, tick, out var clip, out int position, out int end, out long start)) continue;
+                    if (w.Take != null && !ReferenceEquals(clip, w.Take)) continue;
+                    if (w.FirstPassTicks > 0 && tick - start >= w.FirstPassTicks) continue;
+                    var input = new TakeInput
+                    {
+                        Track = w.Track,
+                        Clip = clip,
+                        ClipStart = start,
+                        Stamp = new TakeStamp(value, time, position * TakeTime.TimeBase + fraction, end * TakeTime.TimeBase),
+                        Parameter = parameter,
+                        ParameterTrack = track
                     };
                     lock (ringLock)
                     {

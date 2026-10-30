@@ -677,6 +677,18 @@ namespace ReBuzz.Audio
                     if (column.Machine == null)
                         continue;
 
+                    // Fork (0.7): session automation, recorded into a parameter column the engine plays
+                    // (pattern editors play their own parameter data). Never recorded again.
+                    if (column.Type == PatternColumnType.Parameter)
+                    {
+                        if (column is not PatternColumnCore automation || !automation.EnginePlays || column.Parameter == null)
+                            continue;
+                        column.GetEventsInto(from, to, playColumnEvents);
+                        for (int e = 0; e < playColumnEvents.Count; e++)
+                            column.Parameter.SetValue(column.Track | (1 << 16), playColumnEvents[e].Value);
+                        continue;
+                    }
+
                     column.GetEventsInto(from, to, playColumnEvents);
                     foreach (var pe in playColumnEvents)
                     {

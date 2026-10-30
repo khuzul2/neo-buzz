@@ -243,6 +243,72 @@ namespace ReBuzzTests
             Assert.That(layout.RecordedNoteCount(clip), Is.EqualTo(2));
         }
 
+        // ------------------------------------------------------------------ Capture MIDI and automation
+
+        [Test]
+        public void CaptureTurnsWhatWasJustPlayedIntoAClipThatPlaysOnInPhase()
+        {
+            using var rig = new KeysRig();
+            var layout = rig.Layout;
+            layout.Ensure();
+            layout.SetArmed(0, true);
+            FreezeClock();
+            rig.PlayTo(18);
+            rig.Core.SendMIDIInput(NoteOn(60, 100));             // not recording: just playing
+            rig.PlayTo(19);
+            rig.Core.SendMIDIInput(NoteOff(60));
+            rig.PlayTo(24);
+            rig.Core.SendMIDIInput(NoteOn(62, 100));
+            rig.PlayTo(25);
+            rig.Core.SendMIDIInput(NoteOff(62));
+            rig.PlayTo(30);
+
+            var made = layout.CaptureMidi(0);
+            Assert.That(made.Count, Is.EqualTo(1));
+            var clip = made[0];
+            Assert.That(layout.PatternAt(0, 0), Is.SameAs(clip));
+            Assert.That(clip.Length, Is.EqualTo(Bar), "from the bar line before the first note: one bar");
+            Assert.That(EventsOf(clip), Is.EqualTo(new[] { (2 * TB, NoteOn(60, 100), TB), (8 * TB, NoteOn(62, 100), TB) }));
+
+            var track = layout.SequenceOf(0)!;
+            rig.PlayTo(32);
+            Assert.That(rig.Session.GetPlaying(track), Is.SameAs(clip));
+            Assert.That(rig.Session.GetClipPosition(track), Is.EqualTo(0), "in phase with what was played: bar 3 is its start again");
+            Assert.That(layout.CaptureMidi(0), Is.Empty, "taken out: nothing new to capture");
+
+            layout.Undo();
+            Assert.That(layout.PatternAt(0, 0), Is.Null, "one undo step");
+        }
+
+        [Test]
+        public void AParameterMovedWhileATakeRecordsIsAutomationTheEnginePlaysBack()
+        {
+            using var rig = new KeysRig();
+            var layout = rig.Layout;
+            layout.Ensure();
+            layout.SetRecordBars(1);
+            layout.SetArmed(0, true);
+            var bypass = rig.Keys.ParameterGroups[1].Parameters[0];
+            FreezeClock();
+            var take = layout.RecordTake(0, 0)!;
+
+            rig.PlayTo(2, 500);
+            bypass.SetValue(0, 1);                               // moved by hand
+            Assert.That(layout.RecordedAutomationCount(take), Is.EqualTo(1));
+            var column = take.Columns.Single(c => c.Type == PatternColumnType.Parameter);
+            Assert.That(column.Parameter, Is.SameAs(bypass));
+            var point = column.GetEvents(0, int.MaxValue).Single();
+            Assert.That(point.Time, Is.EqualTo((int)TimeAt(2, 500, rig.SamplesPerTick)));
+            Assert.That(point.Value, Is.EqualTo(1));
+
+            rig.PlayTo(Bar - 2);
+            bypass.SetValue(1 << 16, 0);                         // back, without recording
+            rig.PlayTo(Bar + 4);
+            Assert.That(bypass.GetValue(0), Is.EqualTo(1), "the next pass plays it");
+            layout.PollTakes();
+            Assert.That(layout.RecordedAutomationCount(take), Is.EqualTo(1), "playback isn't recorded again");
+        }
+
         // ------------------------------------------------------------------ songs
 
         [TestCase(".bmx")]

@@ -244,11 +244,13 @@ namespace ReBuzz.AppViews.Session
                     var c = view.layout.ClipOf(shownPattern);
                     shownLength = Math.Max(1, shownPattern.Length);
                     shownNotes = view.layout.RecordedNoteCount(shownPattern);
+                    int moves = view.layout.RecordedAutomationCount(shownPattern);
                     title.Text = shownPattern.Name;
                     info.Text = $"{shownPattern.Machine?.Name} · {Describe(shownLength)}" +
-                                (shownNotes > 0 ? $" · {shownNotes} recorded note{(shownNotes == 1 ? "" : "s")}" : "");
-                    info.ToolTip = shownNotes > 0
-                        ? "Recorded notes are in the clip's MIDI column, which the engine plays to the machine.\n" +
+                                (shownNotes > 0 ? $" · {shownNotes} recorded note{(shownNotes == 1 ? "" : "s")}" : "") +
+                                (moves > 0 ? $" · {moves} automation point{(moves == 1 ? "" : "s")}" : "");
+                    info.ToolTip = shownNotes > 0 || moves > 0
+                        ? "Recorded notes and automation are in the clip's own columns, which the engine plays to the machine.\n" +
                           "The pattern editor doesn't show them. Right-click the slot to clear them (undoable)."
                         : null;
                     hint.Visibility = Visibility.Collapsed;

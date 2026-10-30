@@ -2294,6 +2294,7 @@ namespace ReBuzz.Core
 
         internal void RecordControlChange(ParameterCore parameter, int track, int value)
         {
+            SessionCore.OnParameterChange(parameter, track, value);      // fork (0.7): session automation
             var machine = parameter.Group.Machine as MachineCore;
             var peMachine = machine.EditorMachine;
             if (Recording && peMachine != null)

@@ -31,6 +31,16 @@ namespace ReBuzz.Core
         readonly Dictionary<string, string> metadata = new Dictionary<string, string>();
         public IDictionary<string, string> Metadata { get => metadata; }
 
+        /// <summary>
+        /// Fork (0.7): metadata of a parameter column recorded by the Session View (automation).
+        /// The engine plays such columns itself; other parameter columns belong to pattern
+        /// editors, which play their own data.
+        /// </summary>
+        internal const string SessionAutomationKey = "SessionAutomation";
+
+        /// <summary>Fork (0.7): a parameter column the engine plays (session automation).</summary>
+        internal bool EnginePlays => Type == PatternColumnType.Parameter && metadata.ContainsKey(SessionAutomationKey);
+
         public event Action<IEnumerable<PatternEvent>, bool> EventsChanged;
         public event Action<int> BeatSubdivisionChanged;
         public event PropertyChangedEventHandler PropertyChanged;

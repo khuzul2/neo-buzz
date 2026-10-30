@@ -144,6 +144,12 @@ namespace ReBuzz.AppViews.Session
             RefreshState();
         }
 
+        void Capture()
+        {
+            layout.CaptureMidi(selected?.Scene ?? 0);
+            RefreshState();
+        }
+
         void ToggleSessionRecord()
         {
             layout.SetSessionRecord(!layout.IsSessionRecording, selected?.Scene ?? 0);
@@ -418,6 +424,9 @@ namespace ReBuzz.AppViews.Session
                 int notes = layout.RecordedNoteCount(pattern);
                 if (notes > 0)
                     menu.Items.Add(Item($"Clear recorded notes ({notes})", () => layout.ClearRecordedNotes(pattern)));
+                int moves = layout.RecordedAutomationCount(pattern);
+                if (moves > 0)
+                    menu.Items.Add(Item($"Clear recorded automation ({moves})", () => layout.ClearRecordedAutomation(pattern)));
                 menu.Items.Add(new Separator());
                 menu.Items.Add(Item("Remove from slot", () => layout.ClearSlot(cell.Track, cell.Scene), "Del"));
                 menu.Items.Add(Item("Delete pattern…", () => DeleteClip(pattern), "Shift+Del"));

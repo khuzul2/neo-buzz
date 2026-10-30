@@ -1080,6 +1080,7 @@ namespace ReBuzz.Core.Session
         /// <summary>A sequence was removed (AudioLock held).</summary>
         internal void OnSequenceRemoved(SequenceCore seq)
         {
+            Disarm(seq);                                     // 0.7: its machine may go next
             PatternCore playing;
             lock (gate)
             {

@@ -123,6 +123,11 @@ namespace ReBuzz.AppViews.Session
                 "from the selected scene. Off ends every recording. Each pass is one undo step.\n" +
                 "An armed track's empty slots also have their own ● to record a take there.");
             left.Children.Add(overdubButton);
+            var captureButton = new FlatButton("⤓  Capture", Capture,
+                "Capture MIDI (Live's): what you played lately on armed tracks, recording or not, becomes a clip\n" +
+                "in their first empty slot from the selected scene, from the bar line before the first note\n" +
+                "(1, 2, 4 or 8 bars), and plays on at once in phase. Needs the transport running.");
+            left.Children.Add(captureButton);
             clickButton = new FlatButton("♩", () => layout.SetMetronome(!(layout.Document?.Metronome ?? false)),
                 "Metronome: a click on every beat while the session plays (heard, never recorded).\n" +
                 "Record length and count-in: ⚙.");
