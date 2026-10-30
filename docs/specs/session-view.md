@@ -494,15 +494,29 @@ Known limits (unchanged): no autosave while the transport plays (saving talks to
    - Sequences added, removed or swapped move tracks by their exact index. Deleting one of a machine's two sequences removes that track, not the other (before, tracks were matched by index first).
    - Renames from any view rename everywhere, so an undo after a rename in the Machine View keeps the clip settings.
    - A deleted pattern's or machine's name is *retired*: snapshots keep it under a private-use marker, and files never contain it. A new pattern or machine reusing the name inherits nothing (no crossfader side, no clip settings, no slots).
-   - The slots and settings go to a *grave*. When an undo in any view brings the object back, matched by machine, name and contents (or directly by the session's own undo), they come back too. This also covers a whole machine and a sequence with its track.
-2. *Object-bound session actions.* Creating, duplicating, deleting, renaming and colouring clips hold the pattern object, and follow it when an undo makes it again. Undo never deletes or overwrites another editor's pattern of the same name. A redo whose name was taken meanwhile uses a fresh name, and the slot follows.
+   - Changes made under the audio lock reach the current layout at once; snapshots and the launch map follow when the lock is released. Deleting a machine deletes its sequences and patterns under that lock, so heavy layout work never holds up the audio thread.
+2. *Object-bound session actions.* Creating, duplicating, deleting, renaming and colouring clips hold the pattern object. When the session's own undo makes a pattern again, its slots and settings come back from a *grave* and the actions follow the new object, even when another clip took the name meanwhile (it comes back under a fresh name). Undo never deletes or overwrites another editor's pattern of the same name, and does nothing for a clip whose machine was deleted since.
 3. *Settings apart from the layout.* `SessionSettings` holds the time signature, quantization, clip length, the song's MIDI map, the follow switch, *Scenes stop other clips*, the crossfader, view state, folded groups and the cue output. Undo snapshots share the live instance, so undo never changes a setting. This replaces A's keep-list. The cue output no longer edits the returns list behind undo's back.
-4. *One launch path.* Mouse, keys, MIDI and follow actions all launch what the launch map says. The map is rebuilt synchronously on every change, so they always agree.
+4. *One launch path.* Mouse, keys, MIDI and follow actions all launch what the launch map says. The map is rebuilt synchronously after every edit, and once after a burst of song changes. Meanwhile the liveness flags keep stale entries harmless, and a UI clip launch falls back to the clip's own settings.
 5. *Recording undo by difference.* Undoing a recording pass or a scene inserted into the arrangement takes out only the events it wrote, if they are unchanged, and puts back what they replaced, where nothing has been written since. Later Sequence View edits stay. The loop and song end go back only if nothing changed them since.
-6. *Sequence events* have a leaf lock for readers that can't take the audio lock (span refreshes on the IPC thread).
+6. *Threads.*
+   - Sequence events have a leaf lock for readers that can't take the audio lock (span refreshes on the IPC thread), and list swaps take it too.
+   - A transport stop from another thread (a native machine's host message) goes through the UI thread, so that thread never waits for the audio lock.
 7. *0.7 redesigned* around the session's own recorder (see 0.7): timestamps on the MIDI thread, record windows on the audio thread, pattern writes on the UI thread, a take as one object-bound undo step.
 
----
+An independent review of A and B confirmed fixes 1–13 and found new defects in B's first version, all fixed before merging:
+- Matching objects that another view's undo brings back, by name and contents, can't tell them from new look-alikes: new empty clips, duplicates, session-only tracks, re-added machines. That matching was removed, so names are retired and only the session's own undo brings clips back.
+- Heavy work ran under the audio lock.
+- Transport stops from the IPC thread waited for the audio lock.
+- Pattern actions ran on deleted machines.
+- A redo recreated a pattern at its old length.
+- A Gate request restored by undo lost its stop.
+
+Known limits:
+- Undoing, in another view, the deletion of a pattern, sequence or machine brings the object back without its slots or settings.
+- Undo snapshots don't keep a removed sequence's track.
+- A recording pass's undo also takes back Sequence View edits made during the pass on the tracks it wrote.
+- Undocumented upstream: ReBuzz without the fork drops the fork's subsections when it saves a song, after which partial arrangement events play whole patterns.
 
 ### 0.7 — Session recording
 
