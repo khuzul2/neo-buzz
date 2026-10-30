@@ -22,6 +22,7 @@
     <Compile Include="..\ReBuzz\Core\Session\SessionScheduler.cs" Link="Engine\SessionScheduler.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionDocument.cs" Link="Engine\SessionDocument.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionMidiMap.cs" Link="Engine\SessionMidiMap.cs" />
+    <Compile Include="..\ReBuzz\Core\Session\SessionTake.cs" Link="Engine\SessionTake.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -124,6 +124,7 @@ namespace ReBuzz.Core.Session
             ResetIdentity();
             dirty = false;
             UndoStack = NewUndoStack();
+            ResetTakes();                                                   // 0.7
             Session.BeatsPerBar = 4;
             Session.LaunchQuantization = LaunchQuantization.Bar;
             RaiseChanged();
@@ -511,6 +512,12 @@ namespace ReBuzz.Core.Session
         public void LaunchClip(ISequence track, IPattern pattern, int velocity = 127, int slot = -1)
         {
             if (track == null || pattern == null) return;
+            // 0.7 (Live's): launching the take being recorded ends its recording; it plays on.
+            if (track is SequenceCore seq && recordings.TryGetValue(seq, out var r) && ReferenceEquals(r.Take, pattern))
+            {
+                StopRecording(track);
+                return;
+            }
             var map = LaunchMap;
             int t = Array.IndexOf(map.Tracks, track);
             var entry = map.Slot(t, slot);
@@ -752,6 +759,7 @@ namespace ReBuzz.Core.Session
             {
                 core.UseLaunchMap(map);
                 core.FollowActionsEnabled = doc?.FollowActionsEnabled ?? true;
+                core.MetronomeOn = doc?.Metronome ?? false;                 // 0.7
                 // The position comes from the song once, when it is opened; after that the
                 // engine's is the truth (MIDI moves it directly, 0.6.1).
                 core.UseCrossfader(doc, song, crossfaderFromDocument);
@@ -958,6 +966,7 @@ namespace ReBuzz.Core.Session
             ResetIdentity();
             dirty = false;
             UndoStack = NewUndoStack();
+            ResetTakes();                                                   // 0.7
             if (document != null)
             {
                 document.Reconcile(Snapshot());

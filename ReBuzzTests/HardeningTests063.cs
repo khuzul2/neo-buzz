@@ -26,14 +26,19 @@ namespace ReBuzzTests
         const int TimeBase = PatternEvent.TimeBase;
 
         /// <summary>One Keys machine (reports the MIDI it receives) with a track, and a Tone.</summary>
-        sealed class KeysRig : IDisposable
+        internal sealed class KeysRig : IDisposable
         {
             public Driver Driver { get; } = new Driver();
             public ReBuzzCore Core => Driver.Core;
+            public SessionLayout Layout => Core.SessionLayout;
+            public SessionCore Session => (SessionCore)Core.Session;
             public MachineCore Keys { get; }
             public MachineCore Tone { get; }
             /// <summary>Note-ons received: (session clock, position in the tick in samples, note).</summary>
             public List<(long Clock, int PosInTick, int Note)> NoteOns { get; } = new List<(long, int, int)>();
+            /// <summary>Note-offs received (a note-on of velocity 0, or a note-off).</summary>
+            public List<int> NoteOffs { get; } = new List<int>();
+            Driver.AudioReader reader;
 
             public KeysRig()
             {
@@ -50,6 +55,8 @@ namespace ReBuzzTests
                 {
                     if (kind == 0 && data2 > 0)
                         NoteOns.Add((Core.Session.Clock, ReBuzzCore.masterInfo.PosInTick, data1));
+                    else if (kind == 0)
+                        NoteOffs.Add(data1);
                 }));
                 var song = Core.SongCore;
                 foreach (var m in new[] { Keys, Tone })
@@ -68,8 +75,44 @@ namespace ReBuzzTests
                 return p;
             }
 
+            public int SamplesPerTick => ReBuzzCore.masterInfo.SamplesPerTick;
+
+            /// <summary>Renders through one engine (its held-note list lasts) up to <paramref name="clock"/> and <paramref name="posInTick"/> samples into it.</summary>
+            public void PlayTo(long clock, int posInTick = 0)
+            {
+                reader ??= Driver.CreateAudioReader(256);
+                if (!Core.PlayRequested) Core.Playing = true;
+                int guard = 0;
+                while (guard++ < 1000000)
+                {
+                    long c = Core.Session.Clock;
+                    int pos = ReBuzzCore.masterInfo.PosInTick;
+                    if (c > clock || (c == clock && pos >= posInTick)) break;
+                    int frames = c == clock ? posInTick - pos : SamplesPerTick - pos;
+                    reader.Read(Math.Clamp(frames, 1, 256));
+                }
+                Assert.That((Core.Session.Clock, ReBuzzCore.masterInfo.PosInTick), Is.EqualTo((clock, posInTick)));
+            }
+
+            /// <summary>Renders <paramref name="frames"/> more and returns them (interleaved stereo, output scale).</summary>
+            public float[] Render(int frames)
+            {
+                reader ??= Driver.CreateAudioReader(256);
+                var all = new float[frames * 2];
+                int done = 0;
+                while (done < frames)
+                {
+                    int n = Math.Min(256, frames - done);
+                    reader.Read(n);
+                    Array.Copy(reader.Buffer, 0, all, done * 2, n * 2);
+                    done += n;
+                }
+                return all;
+            }
+
             public void Dispose()
             {
+                SessionCore.Timestamp = System.Diagnostics.Stopwatch.GetTimestamp;
                 Core.Playing = false;
                 Driver.Dispose();
             }

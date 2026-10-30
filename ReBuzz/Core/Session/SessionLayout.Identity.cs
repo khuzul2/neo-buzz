@@ -355,16 +355,19 @@ namespace ReBuzz.Core.Session
         readonly string name;
         int length;
         readonly IPattern source;
+        readonly bool midiColumn;
         EngineColumns data;              // 0.6.3: engine columns (MIDI, takes); editors keep their own data
         IPattern created;
 
-        public SessionCreatePatternAction(SessionLayout layout, IMachine machine, string name, int length, IPattern source = null)
+        /// <param name="midiColumn">0.7: made with an engine MIDI column (a take).</param>
+        public SessionCreatePatternAction(SessionLayout layout, IMachine machine, string name, int length, IPattern source = null, bool midiColumn = false)
         {
             this.layout = layout;
             this.machine = machine;
             this.name = name;
             this.length = length;
             this.source = source;
+            this.midiColumn = midiColumn;
         }
 
         /// <summary>The pattern made (the latest, after a redo).</summary>
@@ -387,6 +390,8 @@ namespace ReBuzz.Core.Session
                 // 0.6.3: a copy gets the engine columns too (the editor copies its own data).
                 if (clone && created != null && created.Columns.Count == 0)
                     EngineColumns.Copy(src, created, layout.SongMachines);
+                if (midiColumn && created != null)
+                    SessionLayout.EnsureMidiColumn(created);
                 return;
             }
             var dead = layout.Current(created);

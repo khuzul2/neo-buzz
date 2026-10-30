@@ -242,6 +242,9 @@ namespace ReBuzz.Audio
                     buzzCore.MasterTapSamples(buffer, workBufferOffset, framesToProcess * 2);
                     buzzCore.MasterTapSamplesMultiChannel(buffer, workBufferOffset, framesToProcess * 2);
 
+                    // Session View (fork, 0.7): the metronome, after the tap (heard, not recorded).
+                    buzzCore.SessionCore.MixMetronome(buffer, workBufferOffset, framesToProcess);
+
                     workBufferOffset += framesToProcess * 2;
                     reminingBuffer -= framesToProcess * 2;
 

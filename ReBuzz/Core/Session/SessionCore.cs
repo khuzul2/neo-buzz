@@ -625,6 +625,11 @@ namespace ReBuzz.Core.Session
                         lastLaunch = null;
                     }
                     scheduler.Start(songPosition);
+                    // 0.7: a take started from a stopped transport counts in from the first tick.
+                    if (before < 0)
+                        StartCountIn(songPosition);
+                    else if (countInUntil >= 0)
+                        countInUntil += songPosition - before;
                 }
                 else
                 {
@@ -1063,7 +1068,9 @@ namespace ReBuzz.Core.Session
                 history.Clear();
                 lastLaunch = null;
                 System.Threading.Volatile.Write(ref gridOriginBar, 0);
+                ResetCountIn();                                     // 0.7
             }
+            StopMetronome();
             ResetGains();                                           // velocity gain ends with the transport
             RaiseTrackStateChanged(changed);
             if (wasOverridden)
@@ -1122,9 +1129,14 @@ namespace ReBuzz.Core.Session
                 sceneAt = -1;
                 sceneFollow = null;
                 sceneFollowAt = -1;
+                ResetCountIn();
             }
             wasRecording = false;
             Recorder?.Reset();
+            // 0.7: a new song starts with nothing armed or recording and the metronome off.
+            DisarmAll();
+            MetronomeOn = false;
+            StopMetronome();
         }
 
         /// <summary>Note-offs for a track whose clip stopped mid-note (audio thread).</summary>

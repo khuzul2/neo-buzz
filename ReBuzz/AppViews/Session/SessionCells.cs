@@ -27,6 +27,8 @@ namespace ReBuzz.AppViews.Session
             readonly TextBlock glyph;
             readonly TextBlock label;
             readonly TextBlock flags;
+            readonly FrameworkElement stopButton;     // empty slot: stops the track
+            readonly FrameworkElement recordButton;   // empty slot of an armed track: records a take (0.7)
             bool hover;
             Point? pressPoint;
             bool dragging;
@@ -137,6 +139,25 @@ namespace ReBuzz.AppViews.Session
                     stop.MouseLeftButtonDown += (s, e) => { view.Select(Track, Scene); view.StopTrack(Track); e.Handled = true; };
                     Grid.SetColumnSpan(stop, 3);
                     grid.Children.Add(stop);
+                    stopButton = stop;
+
+                    var record = new Border
+                    {
+                        Width = 13,
+                        Height = 13,
+                        Background = SessionPalette.Header,
+                        Cursor = Cursors.Hand,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center,
+                        Visibility = Visibility.Collapsed,
+                        ToolTip = "Record a take here (the track is armed): a new clip, recording what you play\n" +
+                                  "from the next launch point (⚙: record length, count-in, metronome)",
+                        Child = new Ellipse { Width = 7, Height = 7, Fill = SessionPalette.Record, IsHitTestVisible = false }
+                    };
+                    record.MouseLeftButtonDown += (s, e) => { view.RecordInto(this); e.Handled = true; };
+                    Grid.SetColumnSpan(record, 3);
+                    grid.Children.Add(record);
+                    recordButton = record;
                 }
 
                 Grid.SetColumnSpan(progress, 3);
@@ -261,6 +282,12 @@ namespace ReBuzz.AppViews.Session
                 {
                     Background = hover ? SessionPalette.EmptyHover : SessionPalette.Empty;
                     BorderBrush = border ?? SessionPalette.Transparent;
+                    if (stopButton != null && recordButton != null)
+                    {
+                        bool armed = Sequence != null && view.layout.IsArmedTrack(Sequence);
+                        stopButton.Visibility = armed ? Visibility.Collapsed : Visibility.Visible;
+                        recordButton.Visibility = armed ? Visibility.Visible : Visibility.Collapsed;
+                    }
                     return;
                 }
 
@@ -295,6 +322,17 @@ namespace ReBuzz.AppViews.Session
                     default:
                         glyph.Foreground = text;
                         break;
+                }
+                // 0.7: a take waiting or recording, or the clip an armed track overdubs: red.
+                if (view.layout.IsRecordingInto(Sequence, Pattern))
+                {
+                    glyph.Text = "●";
+                    glyph.Foreground = state == ClipState.Playing || blinkOn ? SessionPalette.Record : text;
+                    border ??= SessionPalette.Record;
+                }
+                else if (glyph.Text != "▶")
+                {
+                    glyph.Text = "▶";
                 }
                 BorderBrush = border ?? SessionPalette.Transparent;
 
@@ -382,8 +420,10 @@ namespace ReBuzz.AppViews.Session
         /// <summary>Track header: colour strip, machine name, mute and solo.</summary>
         internal sealed class TrackHeader : Border
         {
+            readonly SessionView view;
             readonly Chip mute;
             readonly Chip solo;
+            readonly Chip arm;         // 0.7: record arm (tracks only)
 
             public int Track { get; }
             public IMachine Machine { get; }
@@ -392,6 +432,7 @@ namespace ReBuzz.AppViews.Session
 
             public TrackHeader(SessionView view, int track, IMachine machine, string name, int colorIndex)
             {
+                this.view = view;
                 Track = track;
                 Machine = machine;
                 Background = SessionPalette.Header;
@@ -402,6 +443,14 @@ namespace ReBuzz.AppViews.Session
                 mute = new Chip("M", SessionPalette.Mute, "Mute", () => { if (Machine != null) Machine.IsMuted = !Machine.IsMuted; });
                 solo = new Chip("S", SessionPalette.Solo, "Solo", () => { if (Machine != null) Machine.IsSoloed = !Machine.IsSoloed; });
                 var chips = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(2, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center };
+                if (track >= 0)
+                {
+                    arm = new Chip("●", SessionPalette.Record,
+                        "Arm for recording: MIDI you play goes to this track's machine and is recorded\n" +
+                        "(● in its empty slots records a take; ◉ Overdub records into what it plays)",
+                        () => view.ToggleArm(Track));
+                    chips.Children.Add(arm);
+                }
                 chips.Children.Add(mute);
                 chips.Children.Add(solo);
                 var title = new TextBlock
@@ -434,6 +483,7 @@ namespace ReBuzz.AppViews.Session
             {
                 mute.SetActive(Machine?.IsMuted == true);
                 solo.SetActive(Machine?.IsSoloed == true);
+                arm?.SetActive(Track >= 0 && Return < 0 && view.layout.IsArmed(Track));
             }
         }
 

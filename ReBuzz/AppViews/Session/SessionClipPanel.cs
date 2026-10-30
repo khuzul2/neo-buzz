@@ -71,6 +71,7 @@ namespace ReBuzz.AppViews.Session
             ISequence shownSequence;
             IPattern shownPattern;
             int shownLength;
+            int shownNotes;              // 0.7: notes recorded into the clip's engine MIDI column
 
             public ClipPanel(SessionView view)
             {
@@ -211,7 +212,7 @@ namespace ReBuzz.AppViews.Session
                 var seq = slot is { } s ? layout.SequenceOf(s.Track) : null;
                 var pattern = slot is { } p && seq != null ? layout.PatternAt(p.Track, p.Scene) : null;
                 if (force || slot != shownSlot || !ReferenceEquals(seq, shownSequence) || !ReferenceEquals(pattern, shownPattern) ||
-                    (pattern != null && pattern.Length != shownLength))
+                    (pattern != null && (pattern.Length != shownLength || layout.RecordedNoteCount(pattern) != shownNotes)))
                 {
                     shownSlot = slot;
                     shownSequence = seq;
@@ -242,8 +243,14 @@ namespace ReBuzz.AppViews.Session
 
                     var c = view.layout.ClipOf(shownPattern);
                     shownLength = Math.Max(1, shownPattern.Length);
+                    shownNotes = view.layout.RecordedNoteCount(shownPattern);
                     title.Text = shownPattern.Name;
-                    info.Text = $"{shownPattern.Machine?.Name} · {Describe(shownLength)}";
+                    info.Text = $"{shownPattern.Machine?.Name} · {Describe(shownLength)}" +
+                                (shownNotes > 0 ? $" · {shownNotes} recorded note{(shownNotes == 1 ? "" : "s")}" : "");
+                    info.ToolTip = shownNotes > 0
+                        ? "Recorded notes are in the clip's MIDI column, which the engine plays to the machine.\n" +
+                          "The pattern editor doesn't show them. Right-click the slot to clear them (undoable)."
+                        : null;
                     hint.Visibility = Visibility.Collapsed;
                     body.Visibility = Visibility.Visible;
 
