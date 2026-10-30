@@ -12,8 +12,9 @@ namespace ReBuzz.Core.Actions.GraphActions
     {
         readonly List<MachineInfoRef> deleteMachineDatas = new List<MachineInfoRef>();
         // Fork (0.6.2): what was deleted, so the undo can report what stands for it now.
-        readonly Dictionary<MachineInfoRef, (IMachine Machine, Dictionary<string, IPattern> Patterns, Dictionary<int, ISequence> Sequences)> deleted =
-            new Dictionary<MachineInfoRef, (IMachine, Dictionary<string, IPattern>, Dictionary<int, ISequence>)>();
+        // 0.6.3: with each pattern's engine columns (MIDI columns, session takes), which the undo puts back.
+        readonly Dictionary<MachineInfoRef, (IMachine Machine, Dictionary<string, IPattern> Patterns, Dictionary<int, ISequence> Sequences, Dictionary<string, EngineColumns> Columns)> deleted =
+            new Dictionary<MachineInfoRef, (IMachine, Dictionary<string, IPattern>, Dictionary<int, ISequence>, Dictionary<string, EngineColumns>)>();
 
         private readonly ReBuzzCore buzz;
         private readonly IUiDispatcher dispatcher;
@@ -93,6 +94,21 @@ namespace ReBuzz.Core.Actions.GraphActions
                     }
                 }
 
+                // Fork (0.6.3): capture what goes before anything is removed: sequence indices as
+                // they are now (removing one machine renumbers the sequences after its own), and
+                // the engine columns before the loop below deletes those of the machine.
+                deleted.Clear();
+                foreach (var machineData in deleteMachineDatas)
+                {
+                    var machine = buzz.SongCore.MachinesList.FirstOrDefault(x => x.Name == machineData.Name);
+                    if (machine == null) continue;
+                    var patterns = machine.Patterns.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First());
+                    deleted[machineData] = (machine,
+                        patterns,
+                        buzz.SongCore.Sequences.Where(s => s.Machine == machine).ToDictionary(s => buzz.SongCore.Sequences.IndexOf(s), s => s),
+                        patterns.ToDictionary(p => p.Key, p => EngineColumns.Capture(p.Value)));
+                }
+
                 // Remove machines
                 foreach (var machineData in deleteMachineDatas)
                 {
@@ -112,13 +128,15 @@ namespace ReBuzz.Core.Actions.GraphActions
                         }
 
                         // Delete all pattern Columns that are linked to deleted machine
+                        // Fork (0.6.3): linked to the deleted machine. Upstream compared with the
+                        // loop's machine, deleting every pattern's columns of its own machine.
                         foreach (var m in buzz.SongCore.MachinesList)
                         {
                             foreach (var p in m.Patterns)
                             {
                                 for (int i = 0; i < p.Columns.Count; i++)
                                 {
-                                    if (p.Columns[i].Machine == m)
+                                    if (p.Columns[i].Machine == machine)
                                     {
                                         p.DeleteColumn(i);
                                         i--;
@@ -126,10 +144,6 @@ namespace ReBuzz.Core.Actions.GraphActions
                                 }
                             }
                         }
-
-                        deleted[machineData] = (machine,
-                            machine.Patterns.GroupBy(p => p.Name).ToDictionary(g => g.Key, g => g.First()),
-                            buzz.SongCore.Sequences.Where(s => s.Machine == machine).ToDictionary(s => buzz.SongCore.Sequences.IndexOf(s), s => s));
 
                         // Remove machine
                         buzz.RemoveMachine(machine);
@@ -140,6 +154,9 @@ namespace ReBuzz.Core.Actions.GraphActions
 
         protected override void UndoAction()
         {
+            // Fork (0.6.3): the machines made again, to report those (not whichever has the name).
+            var madeAgain = new Dictionary<MachineInfoRef, MachineCore>();
+
             // Create machines
             foreach (var machineData in deleteMachineDatas.OrderBy(md => md.sequences.Count > 0 ? md.sequences.Keys.OrderBy(o => o).First() : 0))
             {
@@ -169,10 +186,24 @@ namespace ReBuzz.Core.Actions.GraphActions
                     }
                 }
 
+                madeAgain[machineData] = machine;
+
                 // Create Patterns
                 foreach (var pattern in machineData.patterns)
                 {
                     machine.CreatePattern(pattern.Name, pattern.Lenght);
+                }
+
+                // Fork (0.6.3): their engine columns (MIDI columns, session takes).
+                if (deleted.TryGetValue(machineData, out var gone))
+                {
+                    var songMachines = buzz.SongCore.MachinesList.Cast<IMachine>().ToList();
+                    foreach (var columns in gone.Columns)
+                    {
+                        var again = machine.PatternsList.FirstOrDefault(p => p.Name == columns.Key);
+                        if (again != null && again.Columns.Count == 0)
+                            columns.Value.RestoreInto(again, songMachines);
+                    }
                 }
 
                 // add patterncolors
@@ -223,8 +254,7 @@ namespace ReBuzz.Core.Actions.GraphActions
             foreach (var machineData in deleteMachineDatas)
             {
                 if (!deleted.TryGetValue(machineData, out var old)) continue;
-                var now = buzz.SongCore.MachinesList.FirstOrDefault(x => x.Name == machineData.Name);
-                if (now == null) continue;
+                if (!madeAgain.TryGetValue(machineData, out var now) || !buzz.SongCore.MachinesList.Contains(now)) continue;
                 BuzzGUI.Common.Actions.Restorations.Report(old.Machine, now);
                 foreach (var p in old.Patterns)
                     BuzzGUI.Common.Actions.Restorations.Report(p.Value, now.PatternsList.FirstOrDefault(x => x.Name == p.Key));

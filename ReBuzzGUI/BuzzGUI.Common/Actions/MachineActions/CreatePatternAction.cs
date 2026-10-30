@@ -23,16 +23,20 @@ namespace BuzzGUI.Common.Actions.MachineActions
 
         protected override void DoAction()
         {
+            // Fork (0.6.3): a redo makes it under a free name if its own was taken meanwhile, and
+            // holds the pattern it made (not an older one that has the name).
+            var before = Machine.Patterns.ToList();
+            string free = PatternNames.Free(Machine, name);
             if (cloneName != null)
             {
                 var clone = Machine.Patterns.FirstOrDefault(p => p.Name == cloneName);
-                if (clone != null) Machine.ClonePattern(name, clone);
+                if (clone != null) Machine.ClonePattern(free, clone);
             }
             else
             {
-                Machine.CreatePattern(name, length);
+                Machine.CreatePattern(free, length);
             }
-            var made = Machine.Patterns.FirstOrDefault(p => p.Name == name);
+            var made = PatternNames.Added(Machine, before);
             if (created != null && made != null)
                 Restorations.Report(created, made);
             if (made != null) created = made;

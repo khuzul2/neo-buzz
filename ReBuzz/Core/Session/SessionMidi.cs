@@ -1,5 +1,6 @@
 using BuzzGUI.Interfaces;
 using System;
+using System.Threading;
 using System.Collections.Generic;
 
 namespace ReBuzz.Core.Session
@@ -91,16 +92,37 @@ namespace ReBuzz.Core.Session
         internal bool OnMidiThread(int data)
         {
             if (!MidiControl.TryDecode(data, out var control, out int value, out bool isPress)) return false;
+
+            // 0.6.3: a release does what its press did, whatever changed in between (a key learnt
+            // while held, the map edited, the grid moved): a note that went to machines ends
+            // there, a held Gate pad releases the clip it launched.
+            int key = HeldKey(control);
+            if (!isPress && Interlocked.Exchange(ref held[key], null) is Held pressed)
+            {
+                if (!pressed.Session) return false;
+                if (pressed.Clip != null && !buzz.SongLoading)
+                    buzz.Session.Release(pressed.Track, pressed.Clip, pressed.Options);
+                if (pressed.Nudge)
+                    (buzz.Session as SessionCore)?.Nudge(0);
+                return true;
+            }
+
             var map = active;
             bool consumed = map != null && !map.IsEmpty && map.Handles(control);
 
             if (isLearning)
             {
+                if (isPress) Remember(control, consumed ? Consumed : PassedOn);
                 buzz.dispatcher.BeginInvoke(() => Learn(control, isPress));
                 return consumed;
             }
 
-            if (map == null || !map.TryResolve(control, out var target, out int track, out int scene)) return consumed;
+            if (map == null || !map.TryResolve(control, out var target, out int track, out int scene))
+            {
+                if (isPress) Remember(control, consumed ? Consumed : PassedOn);
+                return consumed;
+            }
+            if (isPress) Remember(control, Consumed);
             if (buzz.SongLoading) return consumed;      // 0.6.1: nothing launches or starts while a song closes or loads
 
             if (target == SessionTarget.Quantization)
@@ -122,6 +144,7 @@ namespace ReBuzz.Core.Session
             if (target == SessionTarget.NudgeDown || target == SessionTarget.NudgeUp)
             {
                 // 0.6: while held.
+                if (isPress) Remember(control, NudgeHeld);
                 (buzz.Session as SessionCore)?.Nudge(isPress ? (target == SessionTarget.NudgeUp ? 1 : -1) : 0);
                 return consumed;
             }
@@ -129,10 +152,44 @@ namespace ReBuzz.Core.Session
             int velocity = control.Type == MidiControlType.Note ? value : 127;
             var launchMap = layout.LaunchMap;
             if (isPress)
+            {
+                if (target == SessionTarget.Slot && launchMap.Track(track) is ISequence seq && launchMap.Slot(track, scene) is LaunchMap.SlotEntry slot)
+                    Remember(control, new Held { Session = true, Track = seq, Clip = slot.Pattern, Options = slot.Options });
                 ExecuteNow(target, track, scene, launchMap, velocity);
+            }
             else if (target == SessionTarget.Slot)
                 ReleaseNow(track, scene, launchMap);
             return consumed;
+        }
+
+        // ------------------------------------------------------------------ held controls (0.6.3)
+
+        /// <summary>What a pressed note or controller did: went to machines, or to the session (and which clip it launched).</summary>
+        sealed class Held
+        {
+            public bool Session;
+            public ISequence Track;
+            public IPattern Clip;
+            public LaunchOptions Options;
+            public bool Nudge;
+        }
+
+        static readonly Held PassedOn = new Held();
+        static readonly Held Consumed = new Held { Session = true };
+        static readonly Held NudgeHeld = new Held { Session = true, Nudge = true };
+
+        // Notes, then controllers, per channel. Each MIDI device calls from its own thread: entries are swapped whole.
+        readonly Held[] held = new Held[2 * 16 * 128];
+
+        static int HeldKey(MidiControl control) =>
+            ((control.Type == MidiControlType.Note ? 0 : 1) * 16 + (control.Channel & 15)) * 128 + (control.Number & 127);
+
+        void Remember(MidiControl control, Held what)
+        {
+            // Controllers are often knobs, where 0 is a value rather than a release: only a
+            // launch is remembered for them (a pad sending CC 127/0 for Gate).
+            if (control.Type == MidiControlType.ControlChange && what.Clip == null) return;
+            Volatile.Write(ref held[HeldKey(control)], what);
         }
 
         /// <summary>A slot or scene was launched from MIDI (UI thread, after the launch): the view may select it.</summary>

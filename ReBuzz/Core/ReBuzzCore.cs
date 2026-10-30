@@ -660,7 +660,9 @@ namespace ReBuzz.Core
                 masterInfo.TicksPerSec = masterInfo.BeatsPerMin * masterInfo.TicksPerBeat / 60.0f;
                 masterInfo.PosInTick = (int)(masterInfo.PosInTick * masterInfo.AverageSamplesPerTick / currentASPT);
 
-                int subTickCount = masterInfo.SamplesPerTick / SubTickSize / (int)engineSettings.SubTickResolution;
+                // Fork (0.6.3): at least one. Short ticks (high tempo and TPB) gave 0, and the audio
+                // thread divided by it (UpdateSubTickLength).
+                int subTickCount = Math.Max(1, masterInfo.SamplesPerTick / SubTickSize / Math.Max(1, (int)engineSettings.SubTickResolution));
                 subTickInfo.AverageSamplesPerSubTick = masterInfo.SamplesPerTick / (double)subTickCount;
                 subTickInfo.SamplesPerSubTick = (int)(subTickInfo.AverageSamplesPerSubTick);
                 subTickInfo.SubTicksPerTick = subTickCount;
@@ -1349,6 +1351,7 @@ namespace ReBuzz.Core
             generalSettings.PropertyChanged -= GeneralSettings_PropertyChanged;
 
             MidiControllerAssignments.Song = null;
+            SessionLayout?.Detach();       // fork (0.6.3): off the static restoration bus
 
             timerAutomaticBackups.Stop();
             MidiInOutEngine.ReleaseAll();
