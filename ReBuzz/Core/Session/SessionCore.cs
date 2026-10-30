@@ -87,6 +87,9 @@ namespace ReBuzz.Core.Session
         {
             this.buzz = buzz;
             scheduler = new SessionScheduler<SequenceCore, PatternCore>(p => p.Length);
+            // Follow actions (0.6): each track's column comes from the launch map; slot quantization codes are LaunchQuantization values.
+            scheduler.ColumnOf = seq => seq.FollowColumn as SessionScheduler<SequenceCore, PatternCore>.Slot[];
+            scheduler.QuantizeTicksOf = code => GetQuantizationTicks((LaunchQuantization)code);
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -131,6 +134,9 @@ namespace ReBuzz.Core.Session
         /// <summary>Whether the track's clip repeats (Repeat mode, held).</summary>
         internal bool IsRepeating(ISequence track) => track is SequenceCore seq && scheduler.IsRepeating(seq);
 
+        /// <summary>Clock value the track's follow action is due at, or -1 if none is (0.6).</summary>
+        internal long GetFollowAt(ISequence track) => track is SequenceCore seq ? scheduler.GetFollowAt(seq) : -1;
+
         public LaunchQuantization LaunchQuantization
         {
             get => launchQuantization;
@@ -164,19 +170,42 @@ namespace ReBuzz.Core.Session
         int QuantizeTicks(LaunchOptions options) =>
             GetQuantizationTicks(options?.Quantization ?? launchQuantization);
 
-        /// <summary>The scheduler's view of a launch (0.5): shape, legato, repeat, gain.</summary>
+        /// <summary>The scheduler's view of a launch: shape, legato, repeat, gain (0.5); follow actions and slot (0.6).</summary>
         static LaunchSpec SpecOf(LaunchOptions options, int quantize, bool forScene = false)
         {
             if (options == null) return LaunchSpec.Looped;
             var shape = new ClipShape(options.Start, options.LoopStart, options.LoopEnd, options.Loop);
             int repeat = !forScene && options.Mode == ClipLaunchMode.Repeat ? Math.Max(1, quantize) : 0;
-            return new LaunchSpec(shape, options.Legato, repeat, options.Gain);
+            return new LaunchSpec(shape, options.Legato, repeat, options.Gain, FollowSpecOf(options.Follow, linkable: true), options.Slot);
         }
 
-        // Scene settings waiting for their launch tick (0.5), under the gate.
+        static FollowSpec FollowSpecOf(FollowOptions f, bool linkable) =>
+            f == null ? null : new FollowSpec((FollowAction)(int)f.A, (FollowAction)(int)f.B, f.ChanceA, linkable && f.Linked, f.Multiplier, f.TimeTicks, f.JumpA, f.JumpB);
+
+        // Scene settings waiting for their launch tick (0.5; 0.6: its row and follow actions), under the gate.
         long sceneAt = -1;
         int sceneTempo;
         int sceneBeatsPerBar;
+        int sceneRowPending = -1;
+        FollowSpec sceneFollowPending;
+
+        // The scene that launched last and its follow action (0.6), under the gate.
+        int sceneRow = -1;
+        FollowSpec sceneFollow;
+        long sceneFollowAt = -1;
+
+        /// <summary>Clip and scene follow actions happen (Live's global switch, 0.6).</summary>
+        internal bool FollowActionsEnabled
+        {
+            get => scheduler.FollowActionsEnabled;
+            set => scheduler.FollowActionsEnabled = value;
+        }
+
+        /// <summary>Seeds the random choices of follow actions (tests).</summary>
+        internal void SeedFollowActions(int seed)
+        {
+            lock (gate) scheduler.Seed(seed);
+        }
 
         // ------------------------------------------------------------------ requests (any thread)
 
@@ -196,6 +225,7 @@ namespace ReBuzz.Core.Session
                 }
                 else
                 {
+                    Remember($"{pat.Name} on {seq.Machine?.Name}", new[] { (seq, pat, scheduler.Capture(seq)) });
                     scheduler.Launch(seq, pat, quantize, HeardClock(), SpecOf(options, quantize), Math.Max(0, options?.StartOffset ?? 0));
                 }
             }
@@ -231,8 +261,9 @@ namespace ReBuzz.Core.Session
 
         /// <summary>
         /// Clips launched together with their own options (0.5). With <paramref name="scene"/>, a
-        /// scene launch: its settings replace those of a scene still waiting to start, as its
-        /// clips replace that scene's. Null: a group slot, no scene settings.
+        /// scene launch: its settings (tempo, beats, follow actions) replace those of a scene still
+        /// waiting to start, as its clips replace that scene's, and it stops the tracks in
+        /// <see cref="SceneOptions.StopTracks"/>. Null: a group slot, no scene settings.
         /// </summary>
         public void LaunchScene(IEnumerable<(ISequence Track, IPattern Clip, LaunchOptions Options)> slots, SceneOptions scene) =>
             LaunchTogether(slots, scene?.Quantization, scene);
@@ -251,29 +282,94 @@ namespace ReBuzz.Core.Session
                 .Where(s => s.Track != null && s.Clip != null)
                 .Select(s => { var seq = ToSequence(s.Track); return (seq, ToClip(seq, s.Clip), s.Options); })
                 .ToList();
+            var stops = (scene?.StopTracks ?? Array.Empty<ISequence>())
+                .OfType<SequenceCore>()
+                .Where(t => !list.Any(l => l.Item1 == t))
+                .Distinct()
+                .ToList();
             int tempo = Math.Clamp(scene?.Tempo ?? 0, 0, 500);
             int beatsPerBar = Math.Clamp(scene?.BeatsPerBar ?? 0, 0, 64);
-            if (list.Count == 0 && tempo <= 0 && beatsPerBar <= 0)
+            var follow = FollowSpecOf(scene?.Follow, linkable: false);
+            if (list.Count == 0 && stops.Count == 0 && tempo <= 0 && beatsPerBar <= 0 && follow == null)
             {
                 // An empty scene launches nothing, but it is still the latest scene launch.
                 if (scene != null)
-                    lock (gate) sceneAt = -1;
+                    lock (gate) { sceneAt = -1; sceneFollow = null; sceneFollowAt = -1; }
                 return;
             }
             int quantize = GetQuantizationTicks(quantization ?? launchQuantization);
             lock (gate)
             {
+                string label = scene == null ? (list.Count == 1 ? $"{list[0].Item2.Name} on {list[0].Item1.Machine?.Name}" : $"{list.Count} clips")
+                             : scene.Scene >= 0 ? $"scene {scene.Scene + 1}" : "scene";
+                Remember(label, list.Select(l => (l.Item1, l.Item2, scheduler.Capture(l.Item1)))
+                                    .Concat(stops.Select(t => (t, (PatternCore)null, scheduler.Capture(t)))).ToArray());
                 long at = scheduler.LaunchScene(list.Select(s => (s.Item1, s.Item2, SpecOf(s.Item3, quantize, forScene: true))), quantize, HeardClock());
+                foreach (var t in stops)
+                    scheduler.StopAt(t, at);
                 if (scene != null)
                 {
-                    sceneAt = tempo > 0 || beatsPerBar > 0 ? at : -1;
+                    sceneAt = at;
                     sceneTempo = tempo;
                     sceneBeatsPerBar = beatsPerBar;
+                    sceneRowPending = scene.Scene;
+                    sceneFollowPending = follow;
                 }
             }
             StartTransportIfStopped();
-            if (list.Count > 0)
-                RaiseTrackStateChanged(list.Select(s => s.Item1).ToArray());
+            if (list.Count > 0 || stops.Count > 0)
+                RaiseTrackStateChanged(list.Select(s => s.Item1).Concat(stops).ToArray());
+        }
+
+        // ------------------------------------------------------------------ launch undo (0.6)
+
+        sealed class LaunchRecord
+        {
+            public string Label;
+            public (SequenceCore Track, PatternCore Clip, object Before)[] Entries;
+        }
+
+        const int HistoryLength = 32;
+        readonly List<LaunchRecord> history = new List<LaunchRecord>();     // under the gate
+
+        /// <summary>Call under the gate, before the launch.</summary>
+        void Remember(string label, (SequenceCore, PatternCore, object)[] entries)
+        {
+            if (entries.Length == 0) return;
+            history.Add(new LaunchRecord { Label = label, Entries = entries });
+            if (history.Count > HistoryLength) history.RemoveAt(0);
+        }
+
+        /// <summary>What <see cref="UndoLaunch"/> would undo ("scene 3", "Beat on Drums"), or null.</summary>
+        internal string LastLaunch
+        {
+            get { lock (gate) return history.Count > 0 ? history[history.Count - 1].Label : null; }
+        }
+
+        /// <summary>
+        /// Undoes the last launch (0.6): a launch still waiting is cancelled; one that started puts
+        /// back, on the launch grid, what its tracks played before, in step as if it had never
+        /// stopped (tracks that played nothing stop). Tracks that moved on since are left alone.
+        /// Returns what was undone, or null.
+        /// </summary>
+        internal string UndoLaunch()
+        {
+            LaunchRecord record;
+            int quantize = GetQuantizationTicks(launchQuantization);
+            lock (gate)
+            {
+                if (history.Count == 0) return null;
+                record = history[history.Count - 1];
+                history.RemoveAt(history.Count - 1);
+                long heard = HeardClock();
+                foreach (var (track, clip, before) in record.Entries)
+                    scheduler.Revert(track, before, clip, quantize, heard);
+                sceneAt = -1;
+                sceneFollow = null;
+                sceneFollowAt = -1;
+            }
+            RaiseTrackStateChanged(record.Entries.Select(e => e.Track).ToArray());
+            return record.Label;
         }
 
         public void Stop(ISequence track, bool immediate = false)
@@ -293,6 +389,8 @@ namespace ReBuzz.Core.Session
             lock (gate)
             {
                 scheduler.StopAll(quantize, immediate, HeardClock());
+                sceneFollow = null;                 // 0.6: nothing left for a scene follow action
+                sceneFollowAt = -1;
             }
             RaiseAllChanged();
         }
@@ -302,6 +400,8 @@ namespace ReBuzz.Core.Session
             lock (gate)
             {
                 scheduler.BackToArrangement();
+                sceneFollow = null;
+                sceneFollowAt = -1;
             }
             RaiseAllChanged();
             RaisePropertyChangedOnUi(nameof(IsAnyArrangementOverridden));
@@ -431,10 +531,17 @@ namespace ReBuzz.Core.Session
                         sceneAt = before < 0
                             ? songPosition                          // queued while stopped: on the first tick
                             : sceneAt + songPosition - before;      // restarted while running: shifts with the clips
+                    if (sceneFollowAt >= 0 && before >= 0)
+                        sceneFollowAt += songPosition - before;
                     scheduler.Start(songPosition);
                 }
                 else
                 {
+                    // Scene follow action (0.6): due on the tick about to start, so the scene it
+                    // launches lands exactly on it (Live: follow actions aren't quantized).
+                    long upcoming = scheduler.Clock + 1;
+                    if (sceneFollowAt >= 0 && upcoming >= sceneFollowAt)
+                        SceneFollowDue(upcoming);
                     scheduler.Advance();
                 }
                 tickChanges.AddRange(scheduler.Changes);
@@ -444,6 +551,9 @@ namespace ReBuzz.Core.Session
                     tempo = sceneTempo;
                     beats = sceneBeatsPerBar;
                     sceneAt = -1;
+                    sceneRow = sceneRowPending;
+                    sceneFollow = sceneFollowPending;
+                    sceneFollowAt = sceneFollow != null ? scheduler.Clock + sceneFollow.TimeTicks : -1;
                     if (beats > 0 && beats != beatsPerBar)
                     {
                         // The bar grid restarts with the new time signature (bars so far are kept for display).
@@ -475,6 +585,195 @@ namespace ReBuzz.Core.Session
             if (anyOverrideChange)
                 RaisePropertyChangedOnUi(nameof(IsAnyArrangementOverridden));
         }
+
+        // ------------------------------------------------------------------ scene follow actions (0.6)
+
+        /// <summary>A scene as the audio thread launches it: resolved from the launch map, allocation-free to launch.</summary>
+        sealed class SceneLaunch
+        {
+            public SequenceCore[] Tracks;
+            public PatternCore[] Clips;
+            public LaunchSpec[] Specs;
+            public SequenceCore[] Stops;
+            public int Tempo;
+            public int BeatsPerBar;
+            public FollowSpec Follow;
+            public bool IsEmpty;
+        }
+
+        volatile SceneLaunch[] sceneLaunches = Array.Empty<SceneLaunch>();
+
+        /// <summary>
+        /// UI thread (0.6): takes the layout's launch map: each track's column for its clips'
+        /// follow actions, and each scene for scene follow actions.
+        /// </summary>
+        internal void UseLaunchMap(LaunchMap map)
+        {
+            var columns = new Dictionary<SequenceCore, SessionScheduler<SequenceCore, PatternCore>.Slot[]>();
+            for (int t = 0; t < map.Tracks.Length; t++)
+            {
+                if (map.Tracks[t] is not SequenceCore seq || columns.ContainsKey(seq)) continue;
+                var entries = map.Slots[t];
+                var column = new SessionScheduler<SequenceCore, PatternCore>.Slot[entries.Length];
+                for (int s = 0; s < entries.Length; s++)
+                {
+                    var e = entries[s];
+                    if (e?.Pattern is not PatternCore p || p.Machine != seq.Machine) continue;
+                    // Follow actions circumvent global quantization, not a clip's own (Live).
+                    var q = e.Options.Quantization;
+                    int code = q == null || q == LaunchQuantization.None ? -1 : (int)q.Value;
+                    column[s] = new SessionScheduler<SequenceCore, PatternCore>.Slot(p, SpecOf(e.Options, 0, forScene: true), code);
+                }
+                columns[seq] = column;
+            }
+            foreach (var seq in buzz.SongCore.SequencesList)
+                seq.FollowColumn = columns.TryGetValue(seq, out var c) ? c : null;
+
+            var scenes = new SceneLaunch[map.Scenes.Length];
+            for (int s = 0; s < scenes.Length; s++)
+            {
+                var entry = map.Scenes[s];
+                var clips = entry.Clips.Where(c => c.Track is SequenceCore && c.Slot.Pattern is PatternCore).ToArray();
+                scenes[s] = new SceneLaunch
+                {
+                    Tracks = clips.Select(c => (SequenceCore)c.Track).ToArray(),
+                    Clips = clips.Select(c => (PatternCore)c.Slot.Pattern).ToArray(),
+                    Specs = clips.Select(c => SpecOf(c.Slot.Options, 0, forScene: true)).ToArray(),
+                    Stops = (entry.Options.StopTracks ?? Array.Empty<ISequence>()).OfType<SequenceCore>().ToArray(),
+                    Tempo = entry.Options.Tempo,
+                    BeatsPerBar = entry.Options.BeatsPerBar,
+                    Follow = FollowSpecOf(entry.Options.Follow, linkable: false),
+                    IsEmpty = entry.IsEmpty
+                };
+            }
+            sceneLaunches = scenes;
+        }
+
+        /// <summary>When the last scene's follow action is due (session clock), or -1.</summary>
+        internal long SceneFollowAt { get { lock (gate) return sceneFollowAt; } }
+
+        /// <summary>Under the gate, audio thread: the scene follow action is due on <paramref name="at"/>, the tick about to start.</summary>
+        void SceneFollowDue(long at)
+        {
+            var f = sceneFollow;
+            sceneFollowAt = -1;
+            if (f == null) return;
+            if (!scheduler.FollowActionsEnabled)
+            {
+                sceneFollowAt = at + f.TimeTicks;          // skipped: comes round again
+                return;
+            }
+            var (action, jump) = f.Pick(scheduler.NextRandom(100));
+            var scenes = sceneLaunches;
+            int current = sceneRow >= 0 && sceneRow < scenes.Length && !scenes[sceneRow].IsEmpty ? sceneRow : -1;
+            int target = -1;
+            switch (action)
+            {
+                case FollowAction.None:
+                    sceneFollow = null;
+                    return;
+                case FollowAction.Stop:
+                    scheduler.StopAll(0, immediate: true);     // on the next tick: this one
+                    sceneFollow = null;
+                    return;
+                case FollowAction.PlayAgain: target = current; break;
+                case FollowAction.Jump: target = jump; break;
+                default:
+                    if (current < 0) break;
+                    int lo = current, hi = current;
+                    while (lo > 0 && !scenes[lo - 1].IsEmpty) lo--;
+                    while (hi < scenes.Length - 1 && !scenes[hi + 1].IsEmpty) hi++;
+                    int count = hi - lo + 1;
+                    switch (action)
+                    {
+                        case FollowAction.Previous: target = current > lo ? current - 1 : hi; break;
+                        case FollowAction.Next: target = current < hi ? current + 1 : lo; break;
+                        case FollowAction.First: target = lo; break;
+                        case FollowAction.Last: target = hi; break;
+                        case FollowAction.Any: target = lo + scheduler.NextRandom(count); break;
+                        case FollowAction.Other:
+                            if (count == 1) { target = current; break; }
+                            target = lo + scheduler.NextRandom(count - 1);
+                            if (target >= current) target++;
+                            break;
+                    }
+                    break;
+            }
+            if (target < 0 || target >= scenes.Length || scenes[target].IsEmpty) return;
+
+            var scene = scenes[target];
+            for (int i = 0; i < scene.Tracks.Length; i++)
+                scheduler.LaunchAt(scene.Tracks[i], scene.Clips[i], at, long.MinValue, scene.Specs[i]);
+            for (int i = 0; i < scene.Stops.Length; i++)
+                scheduler.StopAt(scene.Stops[i], at);
+            sceneAt = at;
+            sceneTempo = scene.Tempo;
+            sceneBeatsPerBar = scene.BeatsPerBar;
+            sceneRowPending = target;
+            sceneFollowPending = scene.Follow;
+        }
+
+        // ------------------------------------------------------------------ crossfader (0.6)
+
+        volatile (MachineCore Machine, int Side)[] crossfade = Array.Empty<(MachineCore, int)>();
+        double crossfaderPosition = 0.5;
+        int crossfaderCurve;               // 0 dipless, 1 constant power, 2 fast cut
+
+        internal static readonly string[] CrossfaderCurves = { "Dipless", "Constant power", "Fast cut" };
+
+        /// <summary>Crossfader position, 0 (all A) to 1 (all B).</summary>
+        internal double CrossfaderPosition => System.Threading.Volatile.Read(ref crossfaderPosition);
+
+        /// <summary>UI thread: the song's crossfader assignments, position and curve.</summary>
+        internal void UseCrossfader(SessionDocument doc, SongCore song)
+        {
+            var list = new List<(MachineCore, int)>();
+            if (doc != null)
+                foreach (var m in song.MachinesList)
+                    if (doc.Crossfade.TryGetValue(m.Name, out var side))
+                        list.Add((m, side == "B" ? 1 : 0));
+            // Machines no longer assigned go back to full volume.
+            foreach (var (m, _) in crossfade)
+                if (!list.Any(l => l.Item1 == m))
+                    m.CrossfadeGain = 1f;
+            crossfade = list.ToArray();
+            crossfaderCurve = Math.Max(0, Array.IndexOf(CrossfaderCurves, doc?.CrossfaderCurve ?? "Dipless"));
+            SetCrossfader(doc?.CrossfaderPosition ?? 0.5);
+        }
+
+        /// <summary>Any thread (MIDI too): moves the crossfader; assigned machines change volume on their next block.</summary>
+        internal void SetCrossfader(double position)
+        {
+            position = Math.Clamp(position, 0, 1);
+            System.Threading.Volatile.Write(ref crossfaderPosition, position);
+            var (a, b) = CrossfadeGains(position, crossfaderCurve);
+            foreach (var (m, side) in crossfade)
+                m.CrossfadeGain = (float)(side == 0 ? a : b);
+        }
+
+        /// <summary>Gains of sides A and B at a position (0: all A), for a curve: dipless (both full in the middle), constant power, or fast cut.</summary>
+        internal static (double A, double B) CrossfadeGains(double x, int curve)
+        {
+            x = Math.Clamp(x, 0, 1);
+            switch (curve)
+            {
+                case 1: return (Math.Cos(x * Math.PI / 2), Math.Sin(x * Math.PI / 2));
+                case 2: return (x < 0.95 ? 1 : (1 - x) / 0.05, x > 0.05 ? 1 : x / 0.05);
+                default: return (Math.Min(1, 2 * (1 - x)), Math.Min(1, 2 * x));
+            }
+        }
+
+        // ------------------------------------------------------------------ tempo nudge (0.6)
+
+        /// <summary>
+        /// Nudges the tempo while held, as Live's nudge buttons: -1 slower, +1 faster, 0 back.
+        /// Buzz's tempo is a whole number of BPM, so the engine stretches or shortens ticks by
+        /// <see cref="NudgeAmount"/> instead; the song's tempo doesn't change.
+        /// </summary>
+        internal void Nudge(int direction) =>
+            buzz.TempoNudge = (float)(1 + NudgeAmount * Math.Sign(direction));
+
+        internal const double NudgeAmount = 0.04;
 
         long gainStamp;     // audio thread: counts gain sources as they start
 
@@ -646,6 +945,9 @@ namespace ReBuzz.Core.Session
                 scheduler.Halt();
                 changed = scheduler.Changes.Select(c => c.Track).ToArray();
                 sceneAt = -1;
+                sceneFollow = null;
+                sceneFollowAt = -1;
+                history.Clear();
                 System.Threading.Volatile.Write(ref gridOriginBar, 0);
             }
             ResetGains();                                           // velocity gain ends with the transport
@@ -689,6 +991,10 @@ namespace ReBuzz.Core.Session
             lock (gate)
             {
                 scheduler.Reset();
+                history.Clear();
+                sceneAt = -1;
+                sceneFollow = null;
+                sceneFollowAt = -1;
             }
             wasRecording = false;
             Recorder?.Reset();

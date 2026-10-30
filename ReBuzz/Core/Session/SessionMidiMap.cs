@@ -90,7 +90,19 @@ namespace ReBuzz.Core.Session
         /// <summary>Move the note grid one track left.</summary>
         GridLeft,
         /// <summary>Move the note grid one track right.</summary>
-        GridRight
+        GridRight,
+        /// <summary>Undo the last launch (0.6).</summary>
+        UndoLaunch,
+        /// <summary>Tap tempo (0.6).</summary>
+        TapTempo,
+        /// <summary>Slow down while held (0.6).</summary>
+        NudgeDown,
+        /// <summary>Speed up while held (0.6).</summary>
+        NudgeUp,
+        /// <summary>Crossfader position: a CC across its range (0.6).</summary>
+        Crossfader,
+        /// <summary>Switch follow actions on or off (0.6).</summary>
+        FollowActions
     }
 
     internal readonly record struct MidiBinding(MidiControl Control, SessionTarget Target, int Track, int Scene)

@@ -68,6 +68,10 @@ namespace ReBuzz.Core.Session
             song.MachineRemoved += m => { Unwatch(m); OnStructureChanged(); };
             foreach (var m in song.Machines)
                 Watch(m);
+
+            // Follow times are in bars, beats and ticks: the engine's copy follows the time signature (0.6).
+            buzz.Session.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ISession.BeatsPerBar)) RebuildLaunchMap(); };
+            buzz.PropertyChanged += (s, e) => { if (e.PropertyName == "TPB") RebuildLaunchMap(); };
         }
 
         ISession Session => buzz.Session;
@@ -361,6 +365,8 @@ namespace ReBuzz.Core.Session
                 // View settings, not edits: they stay as they are.
                 restored.ShowMixer = document.ShowMixer;
                 restored.ShowClipPanel = document.ShowClipPanel;
+                // Performance controls (0.6), not edits.
+                restored.CrossfaderPosition = document.CrossfaderPosition;
                 restored.CueMachine = document.CueMachine;
                 restored.CollapsedGroups.Clear();
                 restored.CollapsedGroups.UnionWith(document.CollapsedGroups);
@@ -478,15 +484,16 @@ namespace ReBuzz.Core.Session
                 var seq = SequenceOf(track);
                 var pattern = PatternAt(track, scene);
                 if (seq != null && pattern != null)
-                    slots.Add((seq, pattern, OptionsFor(pattern, velocity)));
+                    slots.Add((seq, pattern, OptionsFor(pattern, velocity, scene)));
             }
             if (slots.Count > 0)
                 Session.LaunchScene(slots, null);
         }
 
         /// <summary>
-        /// Launches every filled slot of a scene row together, with the scene's tempo and time
-        /// signature (a scene with only those and no clips still sets them).
+        /// Launches every filled slot of a scene row together, with the scene's tempo, time
+        /// signature and follow actions (a scene with only those and no clips still sets them),
+        /// stopping the other tracks when the song says so (0.6).
         /// </summary>
         public void LaunchScene(int scene, int velocity = 127)
         {
@@ -498,18 +505,18 @@ namespace ReBuzz.Core.Session
                 var seq = SequenceOf(track);
                 var pattern = PatternAt(track, scene);
                 if (seq != null && pattern != null)
-                    slots.Add((seq, pattern, OptionsFor(pattern, velocity)));
+                    slots.Add((seq, pattern, OptionsFor(pattern, velocity, scene)));
             }
-            Session.LaunchScene(slots, SceneOptionsOf(doc.Scenes[scene]));
+            Session.LaunchScene(slots, SceneOptionsOf(scene));
         }
 
-        // ------------------------------------------------------------------ clip and scene properties (0.5)
+        // ------------------------------------------------------------------ clip and scene properties (0.5, 0.6)
 
-        /// <summary>A press of a clip's launch control (mouse, key, MIDI note with its velocity).</summary>
-        public void LaunchClip(ISequence track, IPattern pattern, int velocity = 127)
+        /// <summary>A press of a clip's launch control (mouse, key, MIDI note with its velocity), from a slot (scene row) if known.</summary>
+        public void LaunchClip(ISequence track, IPattern pattern, int velocity = 127, int slot = -1)
         {
             if (track == null || pattern == null) return;
-            Session.Launch(track, pattern, OptionsFor(pattern, velocity));
+            Session.Launch(track, pattern, OptionsFor(pattern, velocity, slot));
         }
 
         /// <summary>The release of a clip's launch control: matters for Gate and Repeat clips.</summary>
@@ -540,11 +547,12 @@ namespace ReBuzz.Core.Session
             }
         }
 
-        /// <summary>Launch options of a pattern's clip settings, at a launch velocity (1..127).</summary>
-        public LaunchOptions OptionsFor(IPattern pattern, int velocity = 127) => ToOptions(ClipOf(pattern), velocity);
+        /// <summary>Launch options of a pattern's clip settings, at a launch velocity (1..127), from a slot if known.</summary>
+        public LaunchOptions OptionsFor(IPattern pattern, int velocity = 127, int slot = -1) =>
+            ToOptions(ClipOf(pattern), velocity, slot, Session.BeatsPerBar, buzz.TPB);
 
         /// <summary>Launch options for clip settings at a launch velocity (any thread).</summary>
-        internal static LaunchOptions ToOptions(SessionDocument.ClipSettings c, int velocity)
+        internal static LaunchOptions ToOptions(SessionDocument.ClipSettings c, int velocity, int slot = -1, int beatsPerBar = 4, int ticksPerBeat = 4)
         {
             c ??= new SessionDocument.ClipSettings();
             return new LaunchOptions
@@ -556,7 +564,26 @@ namespace ReBuzz.Core.Session
                 Start = c.Start,
                 LoopStart = c.LoopStart,
                 LoopEnd = c.LoopEnd,
-                Gain = VelocityGain(c.Velocity, velocity)
+                Gain = VelocityGain(c.Velocity, velocity),
+                Follow = ToFollow(c.Follow, beatsPerBar, ticksPerBeat, clip: true),
+                Slot = slot
+            };
+        }
+
+        /// <summary>Follow options of follow settings (0.6), or null when they're off. Scenes are never linked.</summary>
+        internal static FollowOptions ToFollow(SessionDocument.FollowSettings f, int beatsPerBar, int ticksPerBeat, bool clip)
+        {
+            if (f == null || !f.On) return null;
+            return new FollowOptions
+            {
+                A = Enum.TryParse<ClipFollowAction>(f.A, out var a) ? a : ClipFollowAction.None,
+                B = Enum.TryParse<ClipFollowAction>(f.B, out var b) ? b : ClipFollowAction.None,
+                ChanceA = Math.Clamp(f.ChanceA, 0, 100),
+                Linked = clip && f.Linked,
+                Multiplier = Math.Max(1, f.Multiplier),
+                TimeTicks = SessionDocument.FollowSettings.TicksOf(f.Time, beatsPerBar, ticksPerBeat) ?? Math.Max(1, beatsPerBar * ticksPerBeat),
+                JumpA = f.JumpA,
+                JumpB = f.JumpB
             };
         }
 
@@ -571,8 +598,163 @@ namespace ReBuzz.Core.Session
             return 1.0 - amount * (1.0 - v);
         }
 
-        internal static SceneOptions SceneOptionsOf(SessionDocument.Scene scene) =>
-            new SceneOptions { Tempo = scene?.Tempo ?? 0, BeatsPerBar = scene?.BeatsPerBar ?? 0 };
+        /// <summary>
+        /// A scene row's settings: tempo, beats per bar, follow actions (0.6), and with
+        /// <see cref="SessionDocument.ScenesStopOtherClips"/> the tracks it has no clip for.
+        /// </summary>
+        internal SceneOptions SceneOptionsOf(int scene)
+        {
+            var doc = Document;
+            if (doc == null || scene < 0 || scene >= doc.Scenes.Count) return new SceneOptions();
+            var info = doc.Scenes[scene];
+            List<ISequence> stops = null;
+            if (doc.ScenesStopOtherClips)
+            {
+                stops = new List<ISequence>();
+                for (int t = 0; t < doc.Tracks.Count; t++)
+                    if (SequenceOf(t) is ISequence seq && PatternAt(t, scene) == null && !stops.Contains(seq))
+                        stops.Add(seq);
+            }
+            return new SceneOptions
+            {
+                Tempo = info.Tempo,
+                BeatsPerBar = info.BeatsPerBar,
+                Scene = scene,
+                Follow = ToFollow(info.Follow, Session.BeatsPerBar, buzz.TPB, clip: false),
+                StopTracks = stops
+            };
+        }
+
+        /// <summary>Scene follow actions (0.6, undoable).</summary>
+        public void SetSceneFollow(int index, SessionDocument.FollowSettings follow) => Edit(doc =>
+        {
+            if (index >= 0 && index < doc.Scenes.Count && follow != null)
+                doc.Scenes[index].Follow = follow.Clone();
+        });
+
+        // ------------------------------------------------------------------ performance (0.6)
+
+        /// <summary>Clip and scene follow actions on or off, for the song (Live's global switch).</summary>
+        public void SetFollowActionsEnabled(bool on)
+        {
+            var doc = Ensure();
+            if (doc.FollowActionsEnabled == on) return;
+            doc.FollowActionsEnabled = on;
+            if (Session is SessionCore core) core.FollowActionsEnabled = on;
+            ContentChanged();
+        }
+
+        /// <summary>Scene launches stop the clips of tracks they have no clip for (Live's stop buttons).</summary>
+        public void SetScenesStopOtherClips(bool on)
+        {
+            var doc = Ensure();
+            if (doc.ScenesStopOtherClips == on) return;
+            doc.ScenesStopOtherClips = on;
+            ContentChanged();
+        }
+
+        /// <summary>A machine's crossfader side: "A", "B", or null for none.</summary>
+        public string CrossfadeOf(IMachine machine) =>
+            machine != null && Document is SessionDocument doc && doc.Crossfade.TryGetValue(machine.Name, out var side) ? side : null;
+
+        public void SetCrossfade(IMachine machine, string side)
+        {
+            if (machine == null) return;
+            var doc = Ensure();
+            if (side == "A" || side == "B") doc.Crossfade[machine.Name] = side;
+            else doc.Crossfade.Remove(machine.Name);
+            (Session as SessionCore)?.UseCrossfader(doc, song);
+            ContentChanged();
+        }
+
+        public void SetCrossfaderPosition(double position)
+        {
+            var doc = Ensure();
+            doc.CrossfaderPosition = Math.Clamp(position, 0, 1);
+            (Session as SessionCore)?.SetCrossfader(doc.CrossfaderPosition);
+            buzz.SetModifiedFlag();
+        }
+
+        /// <summary>The crossfader moved from MIDI (already applied): the song keeps the position.</summary>
+        internal void NoteCrossfaderPosition(double position)
+        {
+            if (document == null) return;
+            document.CrossfaderPosition = Math.Clamp(position, 0, 1);
+            buzz.SetModifiedFlag();
+        }
+
+        public void SetCrossfaderCurve(string curve)
+        {
+            var doc = Ensure();
+            if (Array.IndexOf(SessionCore.CrossfaderCurves, curve) < 0 || doc.CrossfaderCurve == curve) return;
+            doc.CrossfaderCurve = curve;
+            (Session as SessionCore)?.UseCrossfader(doc, song);
+            ContentChanged();
+        }
+
+        readonly TapTempoMeter tapTempo = new TapTempoMeter();
+
+        /// <summary>A tap of tap tempo (at a Stopwatch timestamp, or now). Returns the tempo set, if any.</summary>
+        public int? TapTempo(long? timestamp = null)
+        {
+            long ts = timestamp ?? System.Diagnostics.Stopwatch.GetTimestamp();
+            int? bpm = tapTempo.Tap(ts / (double)System.Diagnostics.Stopwatch.Frequency);
+            if (bpm is int value && value != buzz.BPM)
+                buzz.BPM = value;
+            return bpm;
+        }
+
+        // ------------------------------------------------------------------ launch map (0.6)
+
+        volatile LaunchMap launchMap = LaunchMap.Empty;
+
+        /// <summary>What each slot and scene launches, for the MIDI and audio threads.</summary>
+        public LaunchMap LaunchMap => launchMap;
+
+        /// <summary>UI thread: resolves every slot and scene, and hands the result to the engine.</summary>
+        internal void RebuildLaunchMap()
+        {
+            var doc = Document;
+            var map = LaunchMap.Empty;
+            if (doc != null)
+            {
+                int beats = Session.BeatsPerBar, tpb = buzz.TPB;
+                int trackCount = doc.Tracks.Count, sceneCount = doc.Scenes.Count;
+                var tracks = new ISequence[trackCount];
+                var slots = new LaunchMap.SlotEntry[trackCount][];
+                for (int t = 0; t < trackCount; t++)
+                {
+                    tracks[t] = SequenceOf(t);
+                    slots[t] = new LaunchMap.SlotEntry[sceneCount];
+                    if (tracks[t] == null) continue;
+                    for (int s = 0; s < sceneCount; s++)
+                    {
+                        var pattern = PatternAt(t, s);
+                        if (pattern == null) continue;
+                        var settings = ClipOf(pattern);
+                        slots[t][s] = new LaunchMap.SlotEntry(pattern, settings, ToOptions(settings, 127, s, beats, tpb));
+                    }
+                }
+                var scenes = new LaunchMap.SceneEntry[sceneCount];
+                for (int s = 0; s < sceneCount; s++)
+                {
+                    var clips = new List<(ISequence, LaunchMap.SlotEntry)>();
+                    for (int t = 0; t < trackCount; t++)
+                        if (tracks[t] != null && slots[t][s] != null)
+                            clips.Add((tracks[t], slots[t][s]));
+                    var info = doc.Scenes[s];
+                    scenes[s] = new LaunchMap.SceneEntry(clips.ToArray(), SceneOptionsOf(s), clips.Count == 0 && info.Tempo <= 0 && info.BeatsPerBar <= 0);
+                }
+                map = new LaunchMap(tracks, slots, scenes);
+            }
+            launchMap = map;
+            if (Session is SessionCore core)
+            {
+                core.UseLaunchMap(map);
+                core.FollowActionsEnabled = doc?.FollowActionsEnabled ?? true;
+                core.UseCrossfader(doc, song);
+            }
+        }
 
         /// <summary>Tempo a scene sets when it launches; 0 for none (undoable).</summary>
         public void SetSceneTempo(int index, int bpm) => Edit(doc =>
@@ -602,6 +784,7 @@ namespace ReBuzz.Core.Session
             dispatcher.BeginInvoke(() =>
             {
                 changePosted = false;
+                RebuildLaunchMap();      // for the MIDI and audio threads (0.6)
                 Changed?.Invoke();       // readers reconcile on access
             }, DispatcherPriority.Background);
         }

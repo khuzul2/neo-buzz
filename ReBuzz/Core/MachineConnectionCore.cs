@@ -91,7 +91,7 @@ namespace ReBuzz.Core
         internal void SnapAmp()
         {
             interpolatorAmp.SetTarget(amp, 0);
-            clipGain = Source is MachineCore source ? source.ClipGain : 1f;   // fork (0.5): no fade-in either
+            clipGain = Source is MachineCore source ? source.ClipGain * source.CrossfadeGain : 1f;   // fork (0.5): no fade-in either
         }
 
         int amp = 0x4000;
@@ -207,7 +207,7 @@ namespace ReBuzz.Core
             // Fork (0.5): the source's session clip gain (launch velocity) ramps over the block
             // along with the amp.
             float gainStart = clipGain;
-            clipGain = Source is MachineCore source ? source.ClipGain : 1f;
+            clipGain = Source is MachineCore source ? source.ClipGain * source.CrossfadeGain : 1f;   // 0.6: and the crossfader
             ampStart = interpolatorAmp.Value / 0x4000 * gainStart;
             ampCurrent = interpolatorAmp.Tick() / 0x4000 * clipGain;
             // Fork: ramp from the block's start amp to its end amp. Upstream had the difference

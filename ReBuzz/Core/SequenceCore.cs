@@ -19,6 +19,10 @@ namespace ReBuzz.Core
         internal long GainSourceKey;
         internal long GainStamp;
 
+        // Follow actions (0.6): this track's column of slots from the layout's launch map, for the
+        // scheduler (set on the UI thread, read on the audio thread).
+        internal volatile object FollowColumn;
+
         private static IntPtr sequenceHandleCounter = 100;
 
         internal MachineCore MachineCore { get; private set; }

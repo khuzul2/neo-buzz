@@ -297,6 +297,58 @@ namespace ReBuzz.SessionTests
             Assert.That((d.GetClip("m", "p").Start, d.GetClip("m", "p").Velocity), Is.EqualTo((0, 100)));
         }
 
+        // ------------------------------------------------------------------ 0.6 performance
+
+        [Test]
+        public void FollowActionsCrossfaderAndOptionsRoundTrip()
+        {
+            var d = AutoFill(new[] { T("drums", "a", "b"), T("bass", "c") });
+            var c = d.GetClip("drums", "a");
+            c.Follow.On = true;
+            c.Follow.A = "Other";
+            c.Follow.B = "Jump";
+            c.Follow.ChanceA = 70;
+            c.Follow.Linked = false;
+            c.Follow.Multiplier = 3;
+            c.Follow.Time = "2.1.0";
+            c.Follow.JumpB = 4;
+            d.SetClip("drums", "a", c);
+            d.Scenes[1].Follow.On = true;
+            d.Scenes[1].Follow.Time = "8";
+            d.FollowActionsEnabled = false;
+            d.ScenesStopOtherClips = true;
+            d.Crossfade["drums"] = "A";
+            d.Crossfade["bass"] = "B";
+            d.CrossfaderPosition = 0.25;
+            d.CrossfaderCurve = "Constant power";
+            d.RenameMachine("bass", "sub");
+
+            var copy = Load(new MemoryStream(d.ToBytes()))!;
+            var f = copy.GetClip("drums", "a").Follow;
+            Assert.That((f.On, f.A, f.B, f.ChanceA, f.Linked, f.Multiplier, f.Time, f.JumpA, f.JumpB),
+                Is.EqualTo((true, "Other", "Jump", 70, false, 3, "2.1.0", -1, 4)));
+            Assert.That((copy.Scenes[1].Follow.On, copy.Scenes[1].Follow.Time), Is.EqualTo((true, "8")));
+            Assert.That(copy.Scenes[0].Follow.IsDefault, Is.True);
+            Assert.That((copy.FollowActionsEnabled, copy.ScenesStopOtherClips), Is.EqualTo((false, true)));
+            Assert.That(copy.Crossfade, Is.EqualTo(new Dictionary<string, string> { ["drums"] = "A", ["sub"] = "B" }));
+            Assert.That((copy.CrossfaderPosition, copy.CrossfaderCurve), Is.EqualTo((0.25, "Constant power")));
+
+            var clone = copy.GetClip("drums", "a");
+            clone.Follow.ChanceA = 1;
+            Assert.That(copy.GetClip("drums", "a").Follow.ChanceA, Is.EqualTo(70), "settings are copied, follow actions too");
+        }
+
+        [Test]
+        public void FollowTimesAreBarsBeatsTicks()
+        {
+            Assert.That(FollowSettings.TicksOf("1.0.0", 4, 4), Is.EqualTo(16));
+            Assert.That(FollowSettings.TicksOf("2.1.3", 3, 4), Is.EqualTo(2 * 12 + 4 + 3));
+            Assert.That(FollowSettings.TicksOf("8", 4, 4), Is.EqualTo(128));
+            Assert.That(FollowSettings.TicksOf("0.0.0", 4, 4), Is.Null);
+            Assert.That(FollowSettings.TicksOf("1.x", 4, 4), Is.Null);
+            Assert.That(FollowSettings.TicksOf("-1", 4, 4), Is.Null);
+        }
+
         // ------------------------------------------------------------------ persistence
 
         [Test]

@@ -34,6 +34,81 @@ namespace ReBuzz.Core.Session
             public int Tempo { get; set; }
             /// <summary>Beats per bar set when the scene launches; 0 for none (0.5).</summary>
             public int BeatsPerBar { get; set; }
+            /// <summary>Scene follow actions (0.6); never linked.</summary>
+            public FollowSettings Follow { get; set; } = new FollowSettings();
+        }
+
+        /// <summary>
+        /// Follow actions of a clip or scene (0.6, Live's): off by default; when on, at the follow
+        /// time action A happens with <see cref="ChanceA"/> percent, else B. Actions are names of
+        /// ClipFollowAction values. The time is "bars.beats.ticks" (Live's bars-beats-sixteenths;
+        /// a tick is a sixteenth at 4 ticks per beat). Jump targets are scene rows, -1 for none.
+        /// </summary>
+        public sealed class FollowSettings
+        {
+            public const string DefaultTime = "1.0.0";
+
+            public bool On { get; set; }
+            public string A { get; set; } = "Next";
+            public string B { get; set; } = "None";
+            public int ChanceA { get; set; } = 100;
+            /// <summary>Clips: at the end of the clip (after <see cref="Multiplier"/> loops) rather than after the time.</summary>
+            public bool Linked { get; set; } = true;
+            public int Multiplier { get; set; } = 1;
+            public string Time { get; set; } = DefaultTime;
+            public int JumpA { get; set; } = -1;
+            public int JumpB { get; set; } = -1;
+
+            public bool IsDefault =>
+                !On && A == "Next" && B == "None" && ChanceA == 100 && Linked && Multiplier == 1 &&
+                Time == DefaultTime && JumpA == -1 && JumpB == -1;
+
+            public FollowSettings Clone() => (FollowSettings)MemberwiseClone();
+
+            /// <summary>Ticks of a "bars.beats.ticks" time ("2", "1.2", "0.0.3" too); null if it isn't one.</summary>
+            public static int? TicksOf(string time, int beatsPerBar, int ticksPerBeat)
+            {
+                var parts = (time ?? "").Trim().Split('.');
+                if (parts.Length < 1 || parts.Length > 3) return null;
+                var v = new int[3];
+                for (int i = 0; i < parts.Length; i++)
+                    if (!int.TryParse(parts[i], NumberStyles.None, CultureInfo.InvariantCulture, out v[i])) return null;
+                long ticks = ((long)v[0] * Math.Max(1, beatsPerBar) + v[1]) * Math.Max(1, ticksPerBeat) + v[2];
+                return ticks > 0 && ticks <= 1_000_000 ? (int)ticks : null;
+            }
+
+            internal XElement ToXml()
+            {
+                var e = new XElement("Follow");
+                if (On) e.SetAttributeValue("on", "true");
+                if (A != "Next") e.SetAttributeValue("a", A);
+                if (B != "None") e.SetAttributeValue("b", B);
+                if (ChanceA != 100) e.SetAttributeValue("chanceA", ChanceA);
+                if (!Linked) e.SetAttributeValue("linked", "false");
+                if (Multiplier != 1) e.SetAttributeValue("multiplier", Multiplier);
+                if (Time != DefaultTime) e.SetAttributeValue("time", Time);
+                if (JumpA != -1) e.SetAttributeValue("jumpA", JumpA);
+                if (JumpB != -1) e.SetAttributeValue("jumpB", JumpB);
+                return e;
+            }
+
+            internal static FollowSettings FromXml(XElement e)
+            {
+                if (e == null) return new FollowSettings();
+                string time = (string)e.Attribute("time") ?? DefaultTime;
+                return new FollowSettings
+                {
+                    On = (string)e.Attribute("on") == "true",
+                    A = (string)e.Attribute("a") ?? "Next",
+                    B = (string)e.Attribute("b") ?? "None",
+                    ChanceA = Math.Clamp(IntAttr(e, "chanceA", 100), 0, 100),
+                    Linked = (string)e.Attribute("linked") != "false",
+                    Multiplier = Math.Clamp(IntAttr(e, "multiplier", 1), 1, 999),
+                    Time = TicksOf(time, 4, 4) != null ? time : DefaultTime,
+                    JumpA = Math.Max(-1, IntAttr(e, "jumpA", -1)),
+                    JumpB = Math.Max(-1, IntAttr(e, "jumpB", -1))
+                };
+            }
         }
 
         /// <summary>
@@ -56,12 +131,19 @@ namespace ReBuzz.Core.Session
             public int LoopEnd { get; set; }
             /// <summary>Velocity sensitivity in percent: 0 none, 100 the softest note is silent.</summary>
             public int Velocity { get; set; }
+            /// <summary>Follow actions (0.6).</summary>
+            public FollowSettings Follow { get; set; } = new FollowSettings();
 
             public bool IsDefault =>
                 Mode == "Trigger" && Quantization == GlobalQuantization && !Legato && Loop &&
-                Start == 0 && LoopStart == 0 && LoopEnd == 0 && Velocity == 0;
+                Start == 0 && LoopStart == 0 && LoopEnd == 0 && Velocity == 0 && (Follow == null || Follow.IsDefault);
 
-            public ClipSettings Clone() => (ClipSettings)MemberwiseClone();
+            public ClipSettings Clone()
+            {
+                var c = (ClipSettings)MemberwiseClone();
+                c.Follow = (Follow ?? new FollowSettings()).Clone();
+                return c;
+            }
 
             internal XElement ToXml(string machine, string pattern)
             {
@@ -74,6 +156,7 @@ namespace ReBuzz.Core.Session
                 if (LoopStart != 0) e.SetAttributeValue("loopStart", LoopStart);
                 if (LoopEnd != 0) e.SetAttributeValue("loopEnd", LoopEnd);
                 if (Velocity != 0) e.SetAttributeValue("velocity", Velocity);
+                if (Follow != null && !Follow.IsDefault) e.Add(Follow.ToXml());
                 return e;
             }
 
@@ -86,7 +169,8 @@ namespace ReBuzz.Core.Session
                 Start = Math.Max(0, IntAttr(e, "start", 0)),
                 LoopStart = Math.Max(0, IntAttr(e, "loopStart", 0)),
                 LoopEnd = Math.Max(0, IntAttr(e, "loopEnd", 0)),
-                Velocity = Math.Clamp(IntAttr(e, "velocity", 0), 0, 100)
+                Velocity = Math.Clamp(IntAttr(e, "velocity", 0), 0, 100),
+                Follow = FollowSettings.FromXml(e.Element("Follow"))
             };
         }
 
@@ -127,6 +211,18 @@ namespace ReBuzz.Core.Session
         public int ClipBars { get; set; } = 1;
         /// <summary>MIDI mapping stored with this song, overriding the user's; null for none.</summary>
         public SessionMidiMap SongMidi { get; set; }
+
+        // Performance (0.6)
+        /// <summary>Clip and scene follow actions happen (Live's global switch).</summary>
+        public bool FollowActionsEnabled { get; set; } = true;
+        /// <summary>A scene launch stops the clips of tracks it has no clip for (Live's stop buttons in empty slots).</summary>
+        public bool ScenesStopOtherClips { get; set; }
+        /// <summary>Crossfader side of a machine: "A" or "B" (none if absent).</summary>
+        public Dictionary<string, string> Crossfade { get; } = new Dictionary<string, string>();
+        /// <summary>Crossfader: 0 all A, 1 all B.</summary>
+        public double CrossfaderPosition { get; set; } = 0.5;
+        /// <summary>Crossfader curve: "Dipless", "Constant power" or "Fast cut".</summary>
+        public string CrossfaderCurve { get; set; } = "Dipless";
 
         // Mixer (0.4)
         /// <summary>Whether the mixer section is shown under the grid.</summary>
@@ -271,6 +367,7 @@ namespace ReBuzz.Core.Session
             Scenes[index + 1].ColorIndex = source.ColorIndex;
             Scenes[index + 1].Tempo = source.Tempo;
             Scenes[index + 1].BeatsPerBar = source.BeatsPerBar;
+            Scenes[index + 1].Follow = source.Follow.Clone();
             foreach (var t in Tracks)
                 if (t.Slots.TryGetValue(index, out var p))
                     t.Slots[index + 1] = p;
@@ -317,6 +414,8 @@ namespace ReBuzz.Core.Session
                 Clips.Remove(key, out var clip);
                 Clips[(newName, key.Pattern)] = clip;
             }
+            if (Crossfade.Remove(oldName, out var side))
+                Crossfade[newName] = side;
             for (int i = 0; i < Returns.Count; i++)
                 if (Returns[i] == oldName) Returns[i] = newName;
             if (CueMachine == oldName) CueMachine = newName;
@@ -340,6 +439,8 @@ namespace ReBuzz.Core.Session
                 new XAttribute("launchQuantization", LaunchQuantization ?? "Bar"),
                 new XAttribute("clipBars", ClipBars),
                 ShowClipPanel ? null : new XAttribute("showClipPanel", "false"),
+                FollowActionsEnabled ? null : new XAttribute("followActions", "false"),
+                ScenesStopOtherClips ? new XAttribute("scenesStopOtherClips", "true") : null,
                 new XElement("Scenes", Scenes.Select(s =>
                 {
                     var e = new XElement("Scene");
@@ -347,6 +448,7 @@ namespace ReBuzz.Core.Session
                     if (s.ColorIndex >= 0) e.SetAttributeValue("colorIndex", s.ColorIndex);
                     if (s.Tempo > 0) e.SetAttributeValue("tempo", s.Tempo);
                     if (s.BeatsPerBar > 0) e.SetAttributeValue("beatsPerBar", s.BeatsPerBar);
+                    if (s.Follow != null && !s.Follow.IsDefault) e.Add(s.Follow.ToXml());
                     return e;
                 })),
                 new XElement("Tracks", Tracks.Select(t =>
@@ -374,6 +476,12 @@ namespace ReBuzz.Core.Session
             if (!string.IsNullOrEmpty(CueMachine)) e.SetAttributeValue("cue", CueMachine);
             e.Add(Returns.Select(r => new XElement("Return", new XAttribute("machine", r))));
             e.Add(CollapsedGroups.OrderBy(g => g, StringComparer.Ordinal).Select(g => new XElement("Collapsed", new XAttribute("group", g))));
+            var x = new XElement("Crossfader",
+                new XAttribute("position", CrossfaderPosition.ToString("0.###", CultureInfo.InvariantCulture)),
+                new XAttribute("curve", CrossfaderCurve ?? "Dipless"),
+                Crossfade.OrderBy(c => c.Key, StringComparer.Ordinal).Select(c => new XElement("Assign", new XAttribute("machine", c.Key), new XAttribute("side", c.Value))));
+            if (Crossfade.Count > 0 || CrossfaderPosition != 0.5 || CrossfaderCurve != "Dipless")
+                e.Add(x);
             return e;
         }
 
@@ -410,6 +518,8 @@ namespace ReBuzz.Core.Session
                     LaunchQuantization = (string)root.Attribute("launchQuantization") ?? "Bar",
                     ClipBars = Math.Clamp(IntAttr(root, "clipBars", 1), 1, 64),
                     ShowClipPanel = (string)root.Attribute("showClipPanel") != "false",
+                    FollowActionsEnabled = (string)root.Attribute("followActions") != "false",
+                    ScenesStopOtherClips = (string)root.Attribute("scenesStopOtherClips") == "true",
                     SongMidi = root.Element("Midi") is XElement midi ? SessionMidiMap.FromXml(midi) : null,
                 };
                 if (root.Element("Mixer") is XElement mixer)
@@ -422,6 +532,15 @@ namespace ReBuzz.Core.Session
                     foreach (var g in mixer.Elements("Collapsed"))
                         if ((string)g.Attribute("group") is string name && name.Length > 0)
                             doc.CollapsedGroups.Add(name);
+                    if (mixer.Element("Crossfader") is XElement x)
+                    {
+                        if (double.TryParse((string)x.Attribute("position"), NumberStyles.Float, CultureInfo.InvariantCulture, out double pos))
+                            doc.CrossfaderPosition = Math.Clamp(pos, 0, 1);
+                        doc.CrossfaderCurve = (string)x.Attribute("curve") ?? "Dipless";
+                        foreach (var a in x.Elements("Assign"))
+                            if ((string)a.Attribute("machine") is string m && m.Length > 0 && (string)a.Attribute("side") is string side && (side == "A" || side == "B"))
+                                doc.Crossfade[m] = side;
+                    }
                 }
                 foreach (var s in root.Element("Scenes")?.Elements("Scene") ?? Enumerable.Empty<XElement>())
                     doc.Scenes.Add(new Scene
@@ -429,7 +548,8 @@ namespace ReBuzz.Core.Session
                         Name = (string)s.Attribute("name") ?? "",
                         ColorIndex = IntAttr(s, "colorIndex", -1),
                         Tempo = Math.Clamp(IntAttr(s, "tempo", 0), 0, 500),
-                        BeatsPerBar = Math.Clamp(IntAttr(s, "beatsPerBar", 0), 0, 64)
+                        BeatsPerBar = Math.Clamp(IntAttr(s, "beatsPerBar", 0), 0, 64),
+                        Follow = FollowSettings.FromXml(s.Element("Follow"))
                     });
                 foreach (var c in root.Element("Clips")?.Elements("Clip") ?? Enumerable.Empty<XElement>())
                 {

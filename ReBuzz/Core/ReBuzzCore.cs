@@ -127,6 +127,12 @@ namespace ReBuzz.Core
         // Fork (0.5.1): arrangement events' start, end and volume in song files.
         internal ArrangementEventStore ArrangementEvents { get; set; }
 
+        /// <summary>
+        /// Fork (0.6): tempo nudge, a tempo factor while a nudge button is held (1: none). The
+        /// engine divides each tick's length by it; the song's BPM doesn't change.
+        /// </summary>
+        internal volatile float TempoNudge = 1f;
+
         // UI related state
         BuzzView activeView = BuzzView.MachineView;
         public ReBuzzTheme Theme { get; set; }

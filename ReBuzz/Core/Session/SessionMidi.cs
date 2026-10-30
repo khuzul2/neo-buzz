@@ -15,7 +15,7 @@ namespace ReBuzz.Core.Session
     /// Threading (0.4.1): ReBuzzCore.SendMIDIInput calls <see cref="OnMidiThread"/> on the MIDI
     /// driver's thread. Launches, stops and play go straight to the session engine (which takes
     /// requests from any thread), through a snapshot of what each slot, scene and track holds
-    /// (<see cref="Targets"/>) that the UI thread rebuilds whenever the layout changes; so a busy
+    /// (the layout's <see cref="LaunchMap"/>) that the UI thread rebuilds whenever the layout changes; so a busy
     /// UI never delays a launch. Learn, quantization and moving the note grid edit UI-owned
     /// state and are posted to the UI thread.
     /// </summary>
@@ -35,55 +35,9 @@ namespace ReBuzz.Core.Session
         readonly IRegistryEx registry;
         SessionMidiMap userMap;
         volatile SessionMidiMap active;    // read on the MIDI thread; replaced, never modified
-        volatile Targets targets = Targets.Empty;   // likewise
 
         (SessionTarget Target, int Track, int Scene)? learning;
         volatile bool isLearning;          // learning, for the MIDI thread
-
-        /// <summary>
-        /// What each slot, scene and track stop launches, resolved on the UI thread so the MIDI
-        /// thread needs no layout lookups. Immutable; replaced as a whole.
-        /// </summary>
-        internal sealed class Targets
-        {
-            public static readonly Targets Empty = new Targets(
-                Array.Empty<ISequence>(), Array.Empty<IPattern[]>(), Array.Empty<SessionDocument.ClipSettings[]>(),
-                Array.Empty<(ISequence, IPattern, SessionDocument.ClipSettings)[]>(), Array.Empty<SceneOptions>());
-
-            public Targets(ISequence[] tracks, IPattern[][] slots, SessionDocument.ClipSettings[][] settings,
-                           (ISequence, IPattern, SessionDocument.ClipSettings)[][] scenes, SceneOptions[] sceneOptions)
-            {
-                Tracks = tracks;
-                Slots = slots;
-                Settings = settings;
-                Scenes = scenes;
-                SceneSettings = sceneOptions;
-            }
-
-            public ISequence[] Tracks { get; }
-            /// <summary>[track][scene]; null for an empty slot.</summary>
-            public IPattern[][] Slots { get; }
-            /// <summary>[track][scene]: clip settings of the slot's pattern (0.5); copies, never modified.</summary>
-            public SessionDocument.ClipSettings[][] Settings { get; }
-            /// <summary>Filled slots of each scene, with their clip settings.</summary>
-            public (ISequence, IPattern, SessionDocument.ClipSettings)[][] Scenes { get; }
-            /// <summary>Tempo and beats per bar of each scene (0.5).</summary>
-            public SceneOptions[] SceneSettings { get; }
-
-            public ISequence Track(int track) => track >= 0 && track < Tracks.Length ? Tracks[track] : null;
-
-            public IPattern Slot(int track, int scene) =>
-                track >= 0 && track < Slots.Length && scene >= 0 && scene < Slots[track].Length ? Slots[track][scene] : null;
-
-            public SessionDocument.ClipSettings SettingsOf(int track, int scene) =>
-                track >= 0 && track < Settings.Length && scene >= 0 && scene < Settings[track].Length ? Settings[track][scene] : null;
-
-            public (ISequence, IPattern, SessionDocument.ClipSettings)[] Scene(int scene) =>
-                scene >= 0 && scene < Scenes.Length ? Scenes[scene] : Array.Empty<(ISequence, IPattern, SessionDocument.ClipSettings)>();
-
-            public SceneOptions OptionsOfScene(int scene) =>
-                scene >= 0 && scene < SceneSettings.Length ? SceneSettings[scene] : null;
-        }
 
         /// <summary>Learn mode started, completed or was cancelled; or the mapping changed.</summary>
         public event Action Changed;
@@ -95,53 +49,9 @@ namespace ReBuzz.Core.Session
             this.registry = registry;
             userMap = SessionMidiMap.Parse(ReadUserMap());
             UpdateActive();
-            RebuildTargets();
 
-            layout.Changed += () =>
-            {
-                UpdateActive();
-                RebuildTargets();
-            };
-        }
-
-        /// <summary>UI thread: resolves every slot, scene and track for the MIDI thread.</summary>
-        internal void RebuildTargets()
-        {
-            var doc = layout.Document;
-            if (doc == null)
-            {
-                targets = Targets.Empty;
-                return;
-            }
-            int trackCount = doc.Tracks.Count;
-            int sceneCount = doc.Scenes.Count;
-            var tracks = new ISequence[trackCount];
-            var slots = new IPattern[trackCount][];
-            var settings = new SessionDocument.ClipSettings[trackCount][];
-            for (int t = 0; t < trackCount; t++)
-            {
-                tracks[t] = layout.SequenceOf(t);
-                slots[t] = new IPattern[sceneCount];
-                settings[t] = new SessionDocument.ClipSettings[sceneCount];
-                for (int s = 0; s < sceneCount; s++)
-                {
-                    slots[t][s] = tracks[t] == null ? null : layout.PatternAt(t, s);
-                    if (slots[t][s] != null)
-                        settings[t][s] = layout.ClipOf(slots[t][s]);
-                }
-            }
-            var scenes = new (ISequence, IPattern, SessionDocument.ClipSettings)[sceneCount][];
-            var sceneOptions = new SceneOptions[sceneCount];
-            for (int s = 0; s < sceneCount; s++)
-            {
-                var list = new List<(ISequence, IPattern, SessionDocument.ClipSettings)>();
-                for (int t = 0; t < trackCount; t++)
-                    if (tracks[t] != null && slots[t][s] != null)
-                        list.Add((tracks[t], slots[t][s], settings[t][s]));
-                scenes[s] = list.ToArray();
-                sceneOptions[s] = SessionLayout.SceneOptionsOf(doc.Scenes[s]);
-            }
-            targets = new Targets(tracks, slots, settings, scenes, sceneOptions);
+            // What slots and scenes launch comes from the layout's launch map (0.6), rebuilt with it.
+            layout.Changed += UpdateActive;
         }
 
         string ReadUserMap()
@@ -197,20 +107,47 @@ namespace ReBuzz.Core.Session
                 buzz.dispatcher.BeginInvoke(() => SetQuantizationFromMidi(control, value, isPress));
                 return consumed;
             }
+            if (target == SessionTarget.Crossfader)
+            {
+                // 0.6: a CC across its range moves it, at once, from here; the song keeps the position.
+                if (control.Type == MidiControlType.ControlChange)
+                {
+                    double position = value / 127.0;
+                    (buzz.Session as SessionCore)?.SetCrossfader(position);
+                    buzz.dispatcher.BeginInvoke(() => layout.NoteCrossfaderPosition(position));
+                }
+                return consumed;
+            }
+            if (target == SessionTarget.NudgeDown || target == SessionTarget.NudgeUp)
+            {
+                // 0.6: while held.
+                (buzz.Session as SessionCore)?.Nudge(isPress ? (target == SessionTarget.NudgeUp ? 1 : -1) : 0);
+                return consumed;
+            }
             // Velocity (0.5): a note's; a CC launches at full velocity.
             int velocity = control.Type == MidiControlType.Note ? value : 127;
+            var launchMap = layout.LaunchMap;
             if (isPress)
-                ExecuteNow(target, track, scene, targets, velocity);
+                ExecuteNow(target, track, scene, launchMap, velocity);
             else if (target == SessionTarget.Slot)
-                ReleaseNow(track, scene, targets);
+                ReleaseNow(track, scene, launchMap);
             return consumed;
+        }
+
+        /// <summary>A slot or scene was launched from MIDI (UI thread, after the launch): the view may select it.</summary>
+        public event Action<int, int> Launched;      // track (-1 for a scene), scene
+
+        void AnnounceLaunch(int track, int scene)
+        {
+            if (Launched != null)
+                buzz.dispatcher.BeginInvoke(() => Launched?.Invoke(track, scene));
         }
 
         /// <summary>
         /// Any thread: what a pressed target does. Launch, stop and play use the engine (thread-safe)
         /// and the resolved <paramref name="t"/>; everything else is posted to the UI thread.
         /// </summary>
-        void ExecuteNow(SessionTarget target, int track, int scene, Targets t, int velocity)
+        void ExecuteNow(SessionTarget target, int track, int scene, LaunchMap t, int velocity)
         {
             var session = buzz.Session;
             switch (target)
@@ -219,24 +156,34 @@ namespace ReBuzz.Core.Session
                     {
                         var seq = t.Track(track);
                         if (seq == null) return;
-                        var pattern = t.Slot(track, scene);
-                        if (pattern != null)
-                            session.Launch(seq, pattern, SessionLayout.ToOptions(t.SettingsOf(track, scene), velocity));
+                        var slot = t.Slot(track, scene);
+                        if (slot != null)
+                            session.Launch(seq, slot.Pattern, slot.OptionsAt(velocity));
                         else
                             session.Stop(seq);
+                        AnnounceLaunch(track, scene);
                         break;
                     }
                 case SessionTarget.Scene:
                     {
-                        var slots = t.Scene(scene);
-                        var options = t.OptionsOfScene(scene);
-                        if (slots.Length > 0 || options != null)
+                        var entry = t.Scene(scene);
+                        if (entry != null)
                         {
-                            var launches = new (ISequence, IPattern, LaunchOptions)[slots.Length];
-                            for (int i = 0; i < slots.Length; i++)
-                                launches[i] = (slots[i].Item1, slots[i].Item2, SessionLayout.ToOptions(slots[i].Item3, velocity));
-                            session.LaunchScene(launches, options ?? new SceneOptions());
+                            var launches = new (ISequence, IPattern, LaunchOptions)[entry.Clips.Length];
+                            for (int i = 0; i < entry.Clips.Length; i++)
+                                launches[i] = (entry.Clips[i].Track, entry.Clips[i].Slot.Pattern, entry.Clips[i].Slot.OptionsAt(velocity));
+                            session.LaunchScene(launches, entry.Options);
+                            AnnounceLaunch(-1, scene);
                         }
+                        break;
+                    }
+                case SessionTarget.UndoLaunch:
+                    (session as SessionCore)?.UndoLaunch();
+                    break;
+                case SessionTarget.TapTempo:
+                    {
+                        long when = System.Diagnostics.Stopwatch.GetTimestamp();   // the tap's time, not the UI's
+                        buzz.dispatcher.BeginInvoke(() => layout.TapTempo(when));
                         break;
                     }
                 case SessionTarget.TrackStop:
@@ -261,14 +208,14 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Any thread: the release of a slot's control (Gate and Repeat clips, 0.5).</summary>
-        void ReleaseNow(int track, int scene, Targets t)
+        void ReleaseNow(int track, int scene, LaunchMap t)
         {
             var seq = t.Track(track);
-            var pattern = t.Slot(track, scene);
-            if (seq == null || pattern == null) return;
-            var settings = t.SettingsOf(track, scene);
-            if (settings == null || (settings.Mode != nameof(ClipLaunchMode.Gate) && settings.Mode != nameof(ClipLaunchMode.Repeat))) return;
-            buzz.Session.Release(seq, pattern, SessionLayout.ToOptions(settings, 127));
+            var slot = t.Slot(track, scene);
+            if (seq == null || slot == null) return;
+            var mode = slot.Options.Mode;
+            if (mode != ClipLaunchMode.Gate && mode != ClipLaunchMode.Repeat) return;
+            buzz.Session.Release(seq, slot.Pattern, slot.Options);
         }
 
         // ------------------------------------------------------------------ learn and edit
@@ -393,7 +340,7 @@ namespace ReBuzz.Core.Session
                         if (seq == null) return;
                         var pattern = layout.PatternAt(track, scene);
                         if (pattern != null)
-                            layout.LaunchClip(seq, pattern);
+                            layout.LaunchClip(seq, pattern, 127, scene);
                         else
                             session.Stop(seq);
                         break;
@@ -413,6 +360,15 @@ namespace ReBuzz.Core.Session
                     break;
                 case SessionTarget.Quantization:
                     layout.SetLaunchQuantization(QuantizationCycle[(Array.IndexOf(QuantizationCycle, session.LaunchQuantization) + 1) % QuantizationCycle.Length]);
+                    break;
+                case SessionTarget.UndoLaunch:
+                    (session as SessionCore)?.UndoLaunch();
+                    break;
+                case SessionTarget.TapTempo:
+                    layout.TapTempo();
+                    break;
+                case SessionTarget.FollowActions:
+                    layout.SetFollowActionsEnabled(!(layout.Document?.FollowActionsEnabled ?? true));
                     break;
                 case SessionTarget.GridUp: MoveGrid(0, -1); break;
                 case SessionTarget.GridDown: MoveGrid(0, 1); break;

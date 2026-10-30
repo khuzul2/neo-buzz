@@ -20,6 +20,32 @@ namespace BuzzGUI.Interfaces
     /// </summary>
     public enum ClipLaunchMode { Trigger, Gate, Toggle, Repeat }
 
+    /// <summary>
+    /// What happens when a clip's or scene's follow time comes (0.6, Live's follow actions).
+    /// Previous, Next, First, Last, Any and Other work within the clip's group (the run of
+    /// filled slots around it; scenes: the run of non-empty scenes); Next wraps to the first.
+    /// Other never picks the current one (unless it's alone). Jump goes to a slot (scene row).
+    /// No action ends the chain until the clip is launched again.
+    /// </summary>
+    public enum ClipFollowAction { None, Stop, PlayAgain, Previous, Next, First, Last, Any, Other, Jump }
+
+    /// <summary>Follow actions of a clip or scene (0.6).</summary>
+    public class FollowOptions
+    {
+        public ClipFollowAction A { get; set; } = ClipFollowAction.Next;
+        public ClipFollowAction B { get; set; } = ClipFollowAction.None;
+        /// <summary>Chance of A in percent (B gets the rest).</summary>
+        public int ChanceA { get; set; } = 100;
+        /// <summary>At the end of the clip (after <see cref="Multiplier"/> passes of its loop) rather than after <see cref="TimeTicks"/>. Clips only.</summary>
+        public bool Linked { get; set; } = true;
+        public int Multiplier { get; set; } = 1;
+        /// <summary>Follow time in ticks from where the clip (scene) started playing.</summary>
+        public int TimeTicks { get; set; } = 16;
+        /// <summary>Slot (scene row) for Jump, for A and for B.</summary>
+        public int JumpA { get; set; } = -1;
+        public int JumpB { get; set; } = -1;
+    }
+
     /// <summary>State of a clip on its track.</summary>
     public enum ClipState
     {
@@ -54,6 +80,10 @@ namespace BuzzGUI.Interfaces
         public int LoopEnd { get; set; }
         /// <summary>Volume of the clip's machine while it plays, 0..1 (0.5: launch velocity).</summary>
         public double Gain { get; set; } = 1.0;
+        /// <summary>Follow actions (0.6); null for none.</summary>
+        public FollowOptions? Follow { get; set; }
+        /// <summary>The slot (scene row) the clip is launched from, -1 if unknown (0.6: its follow action group).</summary>
+        public int Slot { get; set; } = -1;
     }
 
     /// <summary>Scene-wide settings applied when a scene launches (0.5).</summary>
@@ -65,6 +95,12 @@ namespace BuzzGUI.Interfaces
         public int Tempo { get; set; }
         /// <summary>Beats per bar to set on the launch tick; 0 leaves it.</summary>
         public int BeatsPerBar { get; set; }
+        /// <summary>The scene's row (0.6: for its follow actions); -1 if none.</summary>
+        public int Scene { get; set; } = -1;
+        /// <summary>Scene follow actions (0.6): A or B launches another scene (or stops all clips) at the follow time. Not linked.</summary>
+        public FollowOptions? Follow { get; set; }
+        /// <summary>Tracks the scene stops on its launch tick (0.6: Live's stop buttons in a scene's empty slots).</summary>
+        public System.Collections.Generic.IReadOnlyList<ISequence>? StopTracks { get; set; }
     }
 
     public interface ISession : INotifyPropertyChanged

@@ -163,7 +163,11 @@ namespace ReBuzz.Audio
                     if (masterInfo.PosInTick == 0)
                     {
                         var grooveMul = GetGrooveMul();
-                        masterInfo.SamplesPerTick = (int)(masterInfo.AverageSamplesPerTick * grooveMul);
+                        // Fork (0.6): a held tempo nudge shortens or stretches the tick.
+                        float nudge = buzzCore.TempoNudge;
+                        masterInfo.SamplesPerTick = nudge == 1f
+                            ? (int)(masterInfo.AverageSamplesPerTick * grooveMul)
+                            : Math.Max(1, (int)(masterInfo.AverageSamplesPerTick * grooveMul / nudge));
                     }
 
                     UpdateMasterParams();
