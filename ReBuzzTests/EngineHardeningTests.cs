@@ -365,8 +365,50 @@ namespace ReBuzzTests
             long bytes = AllocatedWhileReading(rig, reader, 400, 256, log);   // ~2.3 s: several ticks and a loop wrap
 
             TestContext.Out.WriteLine($"[notice] steady playback allocated {bytes} bytes in 400 buffers of 256 frames");
+            string types = bytes > 0 ? AllocatedTypes(reader) : "";
             Assert.That(bytes, Is.EqualTo(0),
-                "steady playback must not allocate on the audio thread (GC pauses are dropouts):\n" + string.Join("\n", log));
+                "steady playback must not allocate on the audio thread (GC pauses are dropouts):\n" + string.Join("\n", log) + types);
+        }
+
+        /// <summary>
+        /// When steady playback allocates (it did now and then on CI), what: the runtime samples
+        /// an allocation about every 100 KB (GCAllocationTick, with the type's name), so keep
+        /// reading until there are a few samples.
+        /// </summary>
+        static string AllocatedTypes(Driver.AudioReader reader)
+        {
+            using var listener = new AllocationListener();
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 20000 && listener.Count < 5; i++)
+                reader.Read(256);
+            long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+            return $"\nthen {bytes} bytes in up to 20000 buffers; sampled types: {listener.Describe()}";
+        }
+
+        sealed class AllocationListener : System.Diagnostics.Tracing.EventListener
+        {
+            readonly System.Collections.Concurrent.ConcurrentDictionary<string, int> types = new();
+            int count;
+            readonly int thread = Environment.CurrentManagedThreadId;
+
+            public int Count => Volatile.Read(ref count);
+
+            protected override void OnEventSourceCreated(System.Diagnostics.Tracing.EventSource source)
+            {
+                if (source.Name == "Microsoft-Windows-DotNETRuntime")
+                    EnableEvents(source, System.Diagnostics.Tracing.EventLevel.Verbose, (System.Diagnostics.Tracing.EventKeywords)0x1);   // GC
+            }
+
+            protected override void OnEventWritten(System.Diagnostics.Tracing.EventWrittenEventArgs e)
+            {
+                if (e.EventName == null || !e.EventName.StartsWith("GCAllocationTick")) return;
+                int i = e.PayloadNames?.IndexOf("TypeName") ?? -1;
+                string name = i >= 0 ? e.Payload[i] as string ?? "?" : "?";
+                types.AddOrUpdate(name, 1, (_, n) => n + 1);
+                Interlocked.Increment(ref count);
+            }
+
+            public string Describe() => types.IsEmpty ? "none" : string.Join(", ", types.Select(t => $"{t.Key} x{t.Value}"));
         }
 
         /// <summary>Not a check: reports which engine stages allocate, per call (CI shows the [notice] lines).</summary>
