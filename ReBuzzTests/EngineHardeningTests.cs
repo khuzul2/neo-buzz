@@ -360,10 +360,10 @@ namespace ReBuzzTests
             rig.Core.Playing = true;
             for (int i = 0; i < 200; i++)
                 reader.Read(256);                                    // warm up: JIT, first launches, tiered compilation
-            // Fork (0.6.2): tiered compilation can still be running methods as first compiled (where
-            // a short-lived object isn't yet kept off the heap) when a busy CI machine gets here: it
-            // failed now and then with 40-80 bytes per buffer. Steady state is after that: read on
-            // until a stretch of 100 buffers allocates nothing (or give up and measure anyway).
+            // Fork (0.6.2): steady state comes after one-time costs: read on until a stretch of 100
+            // buffers allocates nothing (or give up and measure anyway). 0.6.3: the 40-80 bytes per
+            // buffer this test met now and then were LINQ's First() boxing the work set's
+            // enumerator, unless profile-guided optimisation removed the box; fixed in WorkManager.
             for (int stretch = 0; stretch < 200; stretch++)
             {
                 long start = GC.GetAllocatedBytesForCurrentThread();
