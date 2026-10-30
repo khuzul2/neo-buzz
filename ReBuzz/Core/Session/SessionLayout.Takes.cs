@@ -304,8 +304,12 @@ namespace ReBuzz.Core.Session
                 r.Take.Length = (int)(bars * bar);
         }
 
-        /// <summary>The track's recording is over: held notes end at <paramref name="end"/>, an overdub becomes undo steps.</summary>
-        void Finish(Recording r, long end)
+        /// <summary>
+        /// The track's recording is over: held notes end at <paramref name="end"/>, an overdub
+        /// becomes undo steps. A take whose first pass ended (<paramref name="passEnded"/>) is
+        /// overdubbed on while Session Record is on; one stopped by hand isn't.
+        /// </summary>
+        void Finish(Recording r, long end, bool passEnded = false)
         {
             recordings.Remove(r.Track);
             PublishWindows();
@@ -332,7 +336,7 @@ namespace ReBuzz.Core.Session
                 }
             }
             // Session Record goes on: an armed track's finished take is overdubbed from here.
-            if (sessionRecord && r.Take != null && Engine.IsArmed(r.Track) && ReferenceEquals(Engine.GetPlayingCore(r.Track), r.Take))
+            if (passEnded && sessionRecord && r.Take != null && Engine.IsArmed(r.Track) && ReferenceEquals(Engine.GetPlayingCore(r.Track), r.Take))
                 BeginOverdub(r.Track);
             RecordingChanged?.Invoke();
         }
@@ -432,7 +436,7 @@ namespace ReBuzz.Core.Session
                 {
                     DrainInputs();
                     if (recordings.TryGetValue(r.Track, out var still) && ReferenceEquals(still, r))
-                        Finish(r, passEnd);
+                        Finish(r, passEnd, passEnded: true);
                 }
             }
         }
