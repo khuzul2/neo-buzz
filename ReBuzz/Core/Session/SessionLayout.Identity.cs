@@ -262,7 +262,8 @@ namespace ReBuzz.Core.Session
         {
             if (document == null || string.IsNullOrEmpty(name) || SessionDocument.IsRetired(name)) return;
             string retired = SessionDocument.Retire(name, ++retiredCounter);
-            var patternNames = graves.Where(g => g.Kind == GraveKind.Pattern && g.MachineName == name).Select(g => g.Name).OrderBy(n => n, StringComparer.Ordinal);
+            var patternNames = graves.Where(g => g.Kind == GraveKind.Pattern && g.MachineName == name).Select(g => g.Name)
+                                     .OrderBy(n => n, StringComparer.Ordinal).ToList();     // now: the graves are renamed below
             // Its crossfader side, return, cue and clip settings stay with the retired name: a new
             // machine called the same gets none of them.
             TransformAll(d => d.RenameMachine(name, retired));
