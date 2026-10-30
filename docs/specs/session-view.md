@@ -518,6 +518,8 @@ Known limits:
 - A recording pass's undo also takes back Sequence View edits made during the pass on the tracks it wrote.
 - Undocumented upstream: ReBuzz without the fork drops the fork's subsections when it saves a song, after which partial arrangement events play whole patterns.
 
+---
+
 ### 0.7 — Session recording
 
 **Features**
