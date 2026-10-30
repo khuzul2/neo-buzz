@@ -28,7 +28,7 @@ namespace ReBuzz.Core.Session
     ///  - <see cref="OnTransportStopped"/> from ReBuzzCore.Playing
     ///  - <see cref="OnSequenceRemoved"/>, <see cref="OnPatternDeleted"/>, <see cref="Reset"/>
     /// </summary>
-    internal sealed class SessionCore : ISession
+    internal sealed partial class SessionCore : ISession
     {
         const int DoNotRecordFlag = 1 << 16;    // ParameterCore.SetValue: don't record into patterns
         const int MidiAllNotesOff = 123;
@@ -540,7 +540,7 @@ namespace ReBuzz.Core.Session
             {
                 renderedTicks = c < 0 ? -1 : c + (double)mi.PosInTick / spt;
                 renderedSamplesPerTick = spt;
-                renderedAt = System.Diagnostics.Stopwatch.GetTimestamp();
+                renderedAt = Timestamp();
             }
         }
 
@@ -557,12 +557,31 @@ namespace ReBuzz.Core.Session
             int latency = buzz.OutputLatencySamples;
             int rate = ReBuzzCore.masterInfo.SamplesPerSec;
             if (latency <= 0 || rate <= 0) return c;
-            double sinceRender = (System.Diagnostics.Stopwatch.GetTimestamp() - renderedAt) * (double)rate / System.Diagnostics.Stopwatch.Frequency;
-            double behind = latency - Math.Max(0, sinceRender);
-            if (behind <= 0) return c;
-            double heard = renderedTicks - behind / renderedSamplesPerTick;
+            double heard = TakeTime.Heard(renderedTicks, renderedSamplesPerTick, latency, SamplesSinceRender(rate));
             return Math.Min(c, (long)Math.Floor(heard));
         }
+
+        /// <summary>
+        /// Session position the listener hears now, in ticks with the fraction (0.7, recording;
+        /// call under the gate): the rendered position less the output latency still to play
+        /// (none with compensation off); -1 while stopped.
+        /// </summary>
+        double HeardTicks()
+        {
+            long c = scheduler.Clock;
+            if (c < 0) return -1;
+            if (renderedTicks < 0) return c;
+            int rate = ReBuzzCore.masterInfo.SamplesPerSec;
+            int latency = LatencyCompensation ? buzz.OutputLatencySamples : 0;
+            double heard = TakeTime.Heard(renderedTicks, renderedSamplesPerTick, Math.Max(0, latency), rate > 0 ? SamplesSinceRender(rate) : 0);
+            return Math.Min(heard, renderedTicks);
+        }
+
+        /// <summary>Clock for latency estimates; tests replace it to stamp at exact moments.</summary>
+        internal static Func<long> Timestamp = System.Diagnostics.Stopwatch.GetTimestamp;
+
+        double SamplesSinceRender(int rate) =>
+            (Timestamp() - renderedAt) * (double)rate / System.Diagnostics.Stopwatch.Frequency;
 
         /// <summary>Output latency used for compensation, in milliseconds (0 when unknown or off).</summary>
         internal double CompensatedLatencyMs

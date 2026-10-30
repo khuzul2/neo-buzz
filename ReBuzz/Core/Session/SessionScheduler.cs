@@ -688,13 +688,14 @@ namespace ReBuzz.Core.Session
             }
             else
             {
-                // Launches queued while stopped were stamped "0" (= at start).
+                // Launches queued while stopped count from the start: "0" is the first tick,
+                // "n" (a take after a count-in, 0.7) n ticks later.
                 for (int i = 0; i < tracks.Count; i++)
                 {
                     var st = tracks[i];
                     var n = st.Next;
-                    if (n != null && n.At <= 0)
-                        st.Next = n.Shifted(initialClock - n.At);
+                    if (n != null)
+                        st.Next = n.Shifted(initialClock - Math.Min(0, n.At));
                 }
             }
             Volatile.Write(ref clock, initialClock);
@@ -1179,6 +1180,34 @@ namespace ReBuzz.Core.Session
             long elapsed = clock - st.StartClock;
             int position = elapsed >= 0 ? shape.PositionAt(elapsed, length) : start;
             return (position < 0 ? start : position, end);
+        }
+
+        /// <summary>
+        /// For recording (0.7): the clip the track plays at <paramref name="atClock"/> (now, or a
+        /// little earlier as heard), where it is in its pattern then (ticks), the end of its region
+        /// (exclusive) and the clock it counts from. False when none plays, or the clip (re)started
+        /// after that moment. Call under the gate.
+        /// </summary>
+        public bool TryGetPlayingAt(TTrack track, long atClock, out TClip clip, out int position, out int end, out long startClock)
+        {
+            clip = null;
+            position = -1;
+            end = 0;
+            startClock = -1;
+            var st = Find(track);
+            var playing = st?.Playing;
+            if (playing == null || Clock < 0) return false;
+            long start = st.StartClock;
+            if (start == NotStarted || atClock < start) return false;
+            int length = Length(playing);
+            var shape = st.Shape;
+            int p = shape.PositionAt(atClock - start, length);
+            if (p < 0) return false;
+            clip = playing;
+            position = p;
+            end = shape.Resolve(length).End;
+            startClock = start;
+            return true;
         }
 
         /// <summary>Gain of the clip playing on the track (1 when none).</summary>
