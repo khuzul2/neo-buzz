@@ -200,6 +200,15 @@ namespace ReBuzz.Core.Session
             public int ColorIndex { get; set; } = -1;
             /// <summary>Scene index to pattern name.</summary>
             public SortedDictionary<int, string> Slots { get; } = new SortedDictionary<int, string>();
+
+            public Track Clone()
+            {
+                var t = new Track { Sequence = Sequence, Machine = Machine, ColorIndex = ColorIndex };
+                foreach (var s in Slots) t.Slots[s.Key] = s.Value;
+                return t;
+            }
+
+            public bool IsEmpty => Slots.Count == 0 && ColorIndex < 0;
         }
 
         /// <summary>What the layout needs to know about one sequence of the song.</summary>
@@ -260,6 +269,26 @@ namespace ReBuzz.Core.Session
 
         public static bool IsRetired(string name) => !string.IsNullOrEmpty(name) && name[0] == RetiredMark;
 
+        /// <summary>
+        /// Forgets a retired name for good (0.6.2: nothing will bring it back): its places become
+        /// empty and its settings go.
+        /// </summary>
+        public void PurgeRetired(string retired)
+        {
+            if (!IsRetired(retired)) return;
+            foreach (var t in Tracks)
+            {
+                if (t.Machine == retired) t.Machine = "";
+                foreach (var key in t.Slots.Where(s => s.Value == retired).Select(s => s.Key).ToList())
+                    t.Slots.Remove(key);
+            }
+            foreach (var key in Clips.Keys.Where(k => k.Machine == retired || k.Pattern == retired).ToList())
+                Clips.Remove(key);
+            Crossfade.Remove(retired);
+            Returns.Remove(retired);
+            if (CueMachine == retired) CueMachine = "";
+        }
+
         /// <summary>A new sequence at <paramref name="index"/> (0.6.1): an empty track there, later ones move down.</summary>
         public Track InsertTrack(int index, string machine)
         {
@@ -278,6 +307,23 @@ namespace ReBuzz.Core.Session
             Tracks.RemoveAt(index);
             Renumber();
             return track;
+        }
+
+        /// <summary>
+        /// A removed sequence came back at <paramref name="index"/> (0.6.2): the empty track made
+        /// for it there gets <paramref name="track"/>'s contents, if it is still empty and of
+        /// the same machine. Returns whether it did.
+        /// </summary>
+        public bool PutTrack(int index, Track track)
+        {
+            if (track == null || index < 0 || index >= Tracks.Count) return false;
+            var here = Tracks[index];
+            if (!here.IsEmpty || here.Machine != track.Machine) return false;
+            var copy = track.Clone();
+            copy.Sequence = index;
+            Tracks[index] = copy;
+            EnsureScenes();
+            return true;
         }
 
         /// <summary>Two sequences swapped places (0.6.1): their tracks follow.</summary>
@@ -348,7 +394,8 @@ namespace ReBuzz.Core.Session
                 track.Machine = machine;
 
                 var patterns = new HashSet<string>(song[i].Patterns ?? Array.Empty<string>());
-                foreach (var scene in track.Slots.Where(s => !patterns.Contains(s.Value)).Select(s => s.Key).ToList())
+                // A retired pattern keeps its place (0.6.2): an undo may bring it back there.
+                foreach (var scene in track.Slots.Where(s => !patterns.Contains(s.Value) && !IsRetired(s.Value)).Select(s => s.Key).ToList())
                     track.Slots.Remove(scene);
 
                 result.Add(track);
@@ -367,7 +414,7 @@ namespace ReBuzz.Core.Session
                     patternsByMachine[t.Machine ?? ""] = set = new HashSet<string>();
                 set.UnionWith(t.Patterns ?? Array.Empty<string>());
             }
-            foreach (var key in Clips.Keys.Where(k => patternsByMachine.TryGetValue(k.Machine, out var set) && !set.Contains(k.Pattern)).ToList())
+            foreach (var key in Clips.Keys.Where(k => !IsRetired(k.Pattern) && patternsByMachine.TryGetValue(k.Machine, out var set) && !set.Contains(k.Pattern)).ToList())
                 Clips.Remove(key);
         }
 
@@ -383,8 +430,9 @@ namespace ReBuzz.Core.Session
 
         // ------------------------------------------------------------------ editing
 
+        /// <summary>The pattern in a slot, or null (a retired pattern's place counts as empty, 0.6.2).</summary>
         public string GetSlot(int track, int scene) =>
-            track >= 0 && track < Tracks.Count && Tracks[track].Slots.TryGetValue(scene, out var p) ? p : null;
+            track >= 0 && track < Tracks.Count && Tracks[track].Slots.TryGetValue(scene, out var p) && !IsRetired(p) ? p : null;
 
         public void SetSlot(int track, int scene, string pattern)
         {
@@ -466,7 +514,7 @@ namespace ReBuzz.Core.Session
         {
             if (track < 0 || track >= Tracks.Count || toScene < 0) return false;
             var slots = Tracks[track].Slots;
-            if (!slots.TryGetValue(fromScene, out var pattern)) return false;
+            if (!slots.TryGetValue(fromScene, out var pattern) || IsRetired(pattern)) return false;
             if (fromScene == toScene) return true;
             if (!copy) slots.Remove(fromScene);
             slots[toScene] = pattern;
@@ -510,7 +558,7 @@ namespace ReBuzz.Core.Session
         public IEnumerable<(int Track, string Pattern)> SceneSlots(int scene)
         {
             for (int i = 0; i < Tracks.Count; i++)
-                if (Tracks[i].Slots.TryGetValue(scene, out var p))
+                if (Tracks[i].Slots.TryGetValue(scene, out var p) && !IsRetired(p))
                     yield return (i, p);
         }
 

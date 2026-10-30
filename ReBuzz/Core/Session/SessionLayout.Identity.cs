@@ -15,12 +15,14 @@ namespace ReBuzz.Core.Session
     ///  - renames rename;
     ///  - a deleted pattern's or machine's name is retired (<see cref="SessionDocument.Retire"/>):
     ///    a new pattern or machine reusing the name inherits nothing.
-    /// The session's own undo brings a pattern it deleted back with its slots and settings
-    /// (<see cref="ResurrectAs"/>), and its pattern actions hold objects, not names
-    /// (<see cref="Current{T}"/> follows a pattern the session made again), so they never touch
-    /// another editor's pattern of the same name. An object another view's undo brings back is
-    /// a new object to the layout: matching it to the old one by name and contents can't tell it
-    /// from a new pattern or machine that merely looks the same, so it isn't attempted.
+    /// An undo that brings a deleted pattern, sequence or machine back, in the session or in any
+    /// other view, reports which new object stands for the old one
+    /// (<see cref="BuzzGUI.Common.Actions.Restorations"/>, 0.6.2): its slots, settings, track
+    /// (in every undo snapshot that had it) and machine name come back exactly. Nothing is
+    /// matched by name or contents, which can't tell an object brought back from a new one that
+    /// merely looks the same. The session's pattern actions hold objects, not names
+    /// (<see cref="Current{T}"/> follows an object brought back), so they never touch another
+    /// editor's pattern of the same name.
     ///
     /// Song changes made under AudioLock (deleting a machine deletes its sequences and patterns
     /// under it) only touch the current layout there; undo snapshots and the launch map follow
@@ -28,18 +30,31 @@ namespace ReBuzz.Core.Session
     /// </summary>
     internal sealed partial class SessionLayout
     {
-        /// <summary>What the layout had for a pattern the session deleted, until its undo brings it back.</summary>
+        /// <summary>
+        /// A deleted pattern, until an undo brings it back. Its slots and clip settings stay in
+        /// the layout and every snapshot under its retired name, so they keep their places
+        /// through every edit and transform since (0.6.2).
+        /// </summary>
         sealed class Grave
         {
             public IPattern Original;
             public string MachineName = "";      // as the layout knows it now (retired while the machine is gone)
-            public string Retired = "";          // the pattern's name in snapshots meanwhile
-            public (int Track, int Scene)[] Slots = Array.Empty<(int, int)>();
-            public SessionDocument.ClipSettings Clip;
+            public string Retired = "";          // the pattern's name in the layout meanwhile
+        }
+
+        /// <summary>A removed sequence's track, as the layout and each undo snapshot had it (0.6.2).</summary>
+        sealed class TrackGrave
+        {
+            public ISequence Original;
+            public SessionDocument.Track Live;                 // the layout's, when it was removed
+            public readonly Dictionary<SessionDocument, SessionDocument.Track> InSnapshots =
+                new Dictionary<SessionDocument, SessionDocument.Track>(ReferenceEqualityComparer.Instance);
         }
 
         const int MaxGraves = 256;
         readonly List<Grave> graves = new List<Grave>();
+        readonly List<TrackGrave> trackGraves = new List<TrackGrave>();
+        readonly Dictionary<IMachine, (string Name, string Retired)> retiredMachines = new Dictionary<IMachine, (string, string)>(ReferenceEqualityComparer.Instance);
         readonly Dictionary<object, object> forward = new Dictionary<object, object>(ReferenceEqualityComparer.Instance);
         readonly List<ISequence> bound = new List<ISequence>();      // the song's sequences as the layout last saw them
         readonly List<(SessionDocument[] Targets, Action<SessionDocument> Change)> pendingTransforms = new List<(SessionDocument[], Action<SessionDocument>)>();
@@ -106,6 +121,8 @@ namespace ReBuzz.Core.Session
         void ResetIdentity()
         {
             graves.Clear();
+            trackGraves.Clear();
+            retiredMachines.Clear();
             forward.Clear();
             pendingTransforms.Clear();
             bound.Clear();
@@ -130,7 +147,22 @@ namespace ReBuzz.Core.Session
             if (at >= 0 && at < bound.Count)
             {
                 bound.RemoveAt(at);
-                TransformAll(d => d.RemoveTrack(at));
+                // The track goes from the layout and every snapshot, each keeping its own copy
+                // in the grave, for an undo that brings the sequence back (0.6.2).
+                var grave = new TrackGrave { Original = seq };
+                if (document != null && at < document.Tracks.Count)
+                    grave.Live = document.Tracks[at].Clone();
+                if (document != null)
+                    document.RemoveTrack(at);
+                TransformSnapshots(d =>
+                {
+                    if (at < d.Tracks.Count && !grave.InSnapshots.ContainsKey(d))
+                        grave.InSnapshots[d] = d.Tracks[at].Clone();
+                    d.RemoveTrack(at);
+                });
+                trackGraves.Add(grave);
+                if (trackGraves.Count > MaxGraves)
+                    trackGraves.RemoveAt(0);
             }
             OnStructureChanged();
         }
@@ -156,38 +188,22 @@ namespace ReBuzz.Core.Session
             string machineName = machineNames.TryGetValue(machine, out var known) ? known : machine.Name;
             string name = pattern.Name;
             string retired = SessionDocument.Retire(name, ++retiredCounter);
-
-            // The layout's slots and settings for it go to the grave; snapshots keep them under the retired name.
-            var slots = new List<(int, int)>();
-            for (int t = 0; t < document.Tracks.Count; t++)
-            {
-                var track = document.Tracks[t];
-                if (track.Machine != machineName) continue;
-                foreach (var key in track.Slots.Where(s => s.Value == name).Select(s => s.Key).ToList())
-                {
-                    slots.Add((t, key));
-                    track.Slots.Remove(key);
-                }
-            }
-            document.Clips.TryGetValue((machineName, name), out var clip);
-            document.Clips.Remove((machineName, name));
-            TransformSnapshots(d => d.RenamePattern(machineName, name, retired));
-            graves.Add(new Grave
-            {
-                Original = pattern,
-                MachineName = machineName,
-                Retired = retired,
-                Slots = slots.ToArray(),
-                Clip = clip?.Clone()
-            });
+            // Its slots and settings stay where they are under the retired name: empty to everyone
+            // (a newcomer with its name inherits nothing), until an undo brings it back.
+            TransformAll(d => d.RenamePattern(machineName, name, retired));
+            graves.Add(new Grave { Original = pattern, MachineName = machineName, Retired = retired });
             if (graves.Count > MaxGraves)
+            {
+                var gone = graves[0];
                 graves.RemoveAt(0);
+                TransformAll(d => d.PurgeRetired(gone.Retired));
+            }
         }
 
         /// <summary>
-        /// The session's own undo brought back <paramref name="dead"/> as <paramref name="alive"/>
-        /// (maybe under another name, if its own was taken meanwhile): its slots and settings
-        /// come back, and the session's actions follow it.
+        /// An undo brought back <paramref name="dead"/> as <paramref name="alive"/> (maybe under
+        /// another name, if its own was taken meanwhile): its slots and settings come back where
+        /// they are, and the session's actions follow it.
         /// </summary>
         internal void ResurrectAs(IPattern dead, IPattern alive)
         {
@@ -198,16 +214,7 @@ namespace ReBuzz.Core.Session
             graves.Remove(grave);
             string machineName = alive.Machine.Name;
             if (grave.MachineName != machineName) return;      // its machine is gone (retired): nothing to give back
-            TransformSnapshots(d => d.RenamePattern(grave.MachineName, grave.Retired, alive.Name));
-            if (document != null)
-            {
-                foreach (var (t, scene) in grave.Slots)
-                    if (t < document.Tracks.Count && document.Tracks[t].Machine == machineName && !document.Tracks[t].Slots.ContainsKey(scene))
-                        document.Tracks[t].Slots[scene] = alive.Name;
-                if (grave.Clip != null && !document.Clips.ContainsKey((machineName, alive.Name)))
-                    document.SetClip(machineName, alive.Name, grave.Clip);
-                document.EnsureScenes();
-            }
+            TransformAll(d => d.RenamePattern(grave.MachineName, grave.Retired, alive.Name));
             RaiseChanged();
         }
 
@@ -222,6 +229,60 @@ namespace ReBuzz.Core.Session
             TransformAll(d => d.RenameMachine(name, retired));
             foreach (var g in graves.Where(g => g.MachineName == name))
                 g.MachineName = retired;
+            if (machine != null)
+                retiredMachines[machine] = (name, retired);
+        }
+
+        // ------------------------------------------------------------------ restorations (0.6.2)
+
+        /// <summary>An undo (here or in another view) brought back <paramref name="previous"/> as <paramref name="restored"/>.</summary>
+        void OnRestored(object previous, object restored)
+        {
+            switch (restored)
+            {
+                case IMachine machine when previous is IMachine old && IsInSong(machine):
+                    RestoreMachine(old, machine);
+                    break;
+                case IPattern pattern when previous is IPattern old && pattern.Machine != null && IsInSong(pattern.Machine):
+                    ResurrectAs(old, pattern);
+                    break;
+                case ISequence sequence when previous is ISequence old && song.Sequences.Contains(sequence):
+                    RestoreSequence(old, sequence);
+                    break;
+            }
+        }
+
+        void RestoreMachine(IMachine old, IMachine machine)
+        {
+            forward[old] = machine;
+            if (!retiredMachines.Remove(old, out var record)) return;
+            // Its crossfader side, return, cue and clip settings come back under its name.
+            TransformAll(d => d.RenameMachine(record.Retired, machine.Name));
+            foreach (var g in graves.Where(g => g.MachineName == record.Retired))
+                g.MachineName = machine.Name;
+            RaiseChanged();
+        }
+
+        void RestoreSequence(ISequence old, ISequence sequence)
+        {
+            forward[old] = sequence;
+            var grave = trackGraves.LastOrDefault(g => ReferenceEquals(g.Original, old));
+            if (grave == null) return;
+            trackGraves.Remove(grave);
+            int at = bound.IndexOf(sequence);
+            if (at < 0) return;
+            if (document != null)
+            {
+                // The layout gets back the track it had when the sequence was removed.
+                document.PutTrack(at, grave.Live);
+            }
+            TransformSnapshots(d =>
+            {
+                if (grave.InSnapshots.TryGetValue(d, out var copy))
+                    d.PutTrack(at, copy);
+            });
+            dirty = true;
+            ContentChanged();
         }
     }
 
