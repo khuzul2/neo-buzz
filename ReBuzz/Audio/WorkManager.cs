@@ -769,6 +769,19 @@ namespace ReBuzz.Audio
             return workSamplesCount;
         }
 
+        /// <summary>
+        /// Fork (0.6.3): the work set's first machine through its own struct enumerator. LINQ's
+        /// First() boxed one (40 bytes per call, once or twice per block) unless the JIT's
+        /// profile-guided optimisation happened to remove the box: that was the allocation test
+        /// failing now and then since 0.4.1.
+        /// </summary>
+        MachineCore FirstOfWorkSet()
+        {
+            foreach (var m in workSet)
+                return m;
+            return null;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         private void HandleWorkAlgorithmGroups(MachineCore master, int workSamplesCount)
         {
@@ -783,7 +796,7 @@ namespace ReBuzz.Audio
                 HandleWorkList(workSamplesCount);
                 CollectMachinesThatCanWork(master);
 
-                if (workSet.Count == 1 && workSet.First().DLL.Info.Type == MachineType.Master) // Master
+                if (workSet.Count == 1 && FirstOfWorkSet().DLL.Info.Type == MachineType.Master) // Master
                 {
                     break;
                 }
@@ -791,7 +804,7 @@ namespace ReBuzz.Audio
                 // If workList.Count == 1 then call work from this thread
                 if (workSet.Count == 1)
                 {
-                    var machine = workSet.First();
+                    var machine = FirstOfWorkSet();
 
                     // Call work and update machine activity flag
 
@@ -976,7 +989,7 @@ namespace ReBuzz.Audio
                 HandleWorkList(workSamplesCount);
                 CollectMachinesThatCanWork(master);
 
-                if ((workSet.Count == 1) && (workSet.First().DLL.Info.Type == MachineType.Master)) // Master
+                if ((workSet.Count == 1) && (FirstOfWorkSet().DLL.Info.Type == MachineType.Master)) // Master
                 {
                     break;
                 }
@@ -1306,7 +1319,7 @@ namespace ReBuzz.Audio
                 CollectControlMachinesThatCanWork();
                 CollectMachinesThatCanWork(master);
 
-                if (workSet.Count == 1 && workSet.First().DLL.Info.Type == MachineType.Master) // Master
+                if (workSet.Count == 1 && FirstOfWorkSet().DLL.Info.Type == MachineType.Master) // Master
                 {
                     break;
                 }

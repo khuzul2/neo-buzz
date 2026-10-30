@@ -567,6 +567,7 @@ Known limits (the first three were lifted in 0.6.2):
    - The layout leaves the static restoration bus when ReBuzz closes.
    - Retired machines are bounded.
    - Hidden Session Views rebuild when shown, not on every change.
+8. *The allocation test's occasional failure is explained.* Its type sampling (0.6.2) caught the culprit: the work loop's `workSet.First()` (LINQ on a `HashSet`) boxed an enumerator, 40 bytes once or twice per block. The JIT's profile-guided optimisation usually removed the box, so the test failed only on some runs. The work loop now takes the first machine through the set's own enumerator.
 
 ---
 
