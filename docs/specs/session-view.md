@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11) and 0.6.2 (#12) merged; next: 0.7 Session recording (redesigned) |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11), 0.6.2 (#12) and 0.6.3 (#13) merged; next: 0.7 Session recording (redesigned) |
 | Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -546,6 +546,27 @@ Known limits (the first three were lifted in 0.6.2):
 4. Also fixed in passing:
    - Deleting machines without a sequence editor (headless, tests) no longer throws.
    - Undo of the Machine View's machine delete no longer modifies the pattern-colour table while enumerating it.
+
+### 0.6.3 — Foundations for recording
+
+**Outcome.** A fourth review, of the paths 0.7 builds on, found defects there; they are fixed.
+
+1. *Engine MIDI columns play each event once, at its position.* `WorkManager` read each block's events from the play position to a window end that counted the part of the tick before the block twice. Windows overlapped, so events late in a tick were sent up to a dozen times. A window is now exactly its block; one block's end is the next one's start. (Upstream code; it affected Note Matrix too.)
+2. *Engine columns survive.*
+   - Deleting a machine deleted, in every pattern, the columns of the pattern's own machine (upstream compared with the wrong machine). Now it deletes only those of the deleted machine.
+   - Undo made patterns again without their engine columns: upstream's `PatternClip` fills only columns that exist, and a new pattern has none. `EngineColumns` copies them, events and metadata included. It is used by the machine delete undo, the session's pattern actions, and the session's duplicates.
+   - Columns are copy-on-write: the audio thread never walks a list being changed. `SetEvents` applies a batch under one lock.
+3. *Machine delete undo is exact for several machines.* Sequence indices are captured before any machine goes, so every track comes back with its clips. The undo reports the machine it made, not whichever has the name.
+4. *Undo never makes a second pattern of one name.* Pattern editors keep data by name, and a machine accepts a taken name. Undo and redo in other views (`DeletePatternAction`, both `CreatePatternAction`s) make a pattern again under a free name if its own was taken meanwhile, and act on the pattern they made (`PatternNames`).
+5. *A MIDI release does what its press did.* A table of held notes records whether each press went to machines or to the session, and which clip it launched. A key learnt while held, a map edited, or a grid moved no longer hangs a note or a Gate clip. Controllers record only launches, since 0 is a knob value.
+6. *Removed tracks kept for undo follow the song.* Their copies follow renames, retirements and restorations, as the layout does. Snapshots made after the removal get the track too. A restoration counts only for the same machine, or the one an undo made in its place, so a newcomer with the old name inherits nothing.
+7. Also:
+   - Native machines' renames (IPC thread) reach the layout on the UI thread.
+   - Short ticks can't make 0 sub-ticks; that divided by zero on the audio thread.
+   - Deleted patterns leave the song's events at once. Upstream relied on a finalizer that never ran.
+   - The layout leaves the static restoration bus when ReBuzz closes.
+   - Retired machines are bounded.
+   - Hidden Session Views rebuild when shown, not on every change.
 
 ---
 

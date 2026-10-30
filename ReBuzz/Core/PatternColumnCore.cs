@@ -102,9 +102,11 @@ namespace ReBuzz.Core
 
         public void SetEvents(IEnumerable<PatternEvent> patternEvents, bool set)
         {
-            foreach (var pe in patternEvents)
+            // Fork (0.6.3): one batch under one lock, so the audio thread sees all of it or none.
+            var batch = patternEvents as ICollection<PatternEvent> ?? patternEvents.ToList();
+            lock (patternEventsLock)
             {
-                lock (patternEventsLock)
+                foreach (var pe in batch)
                 {
                     if (set)
                         this.patternEvents.Add(pe);
@@ -112,7 +114,7 @@ namespace ReBuzz.Core
                         this.patternEvents.Remove(pe);
                 }
             }
-            EventsChanged?.Invoke(patternEvents, set);
+            EventsChanged?.Invoke(batch, set);
         }
     }
 }

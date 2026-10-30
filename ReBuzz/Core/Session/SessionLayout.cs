@@ -339,23 +339,7 @@ namespace ReBuzz.Core.Session
         /// A free name for a copy of <paramref name="name"/>: the number at its end counted up
         /// ("00" gives "01", "Beat 2" gives "Beat 3"), or " 2" appended.
         /// </summary>
-        internal static string CopyName(IMachine machine, string name)
-        {
-            var taken = new HashSet<string>(machine.Patterns.Select(p => p.Name));
-            // ASCII digits only, at most 9 (0.6.1: longer runs overflowed int.Parse).
-            var m = Regex.Match(name ?? "", @"^(.*?)([0-9]{1,9})$");
-            string stem = m.Success ? m.Groups[1].Value : (name ?? "") + " ";
-            int number = m.Success ? int.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture) + 1 : 2;
-            int width = m.Success ? m.Groups[2].Value.Length : 1;
-            string candidate;
-            do
-            {
-                candidate = stem + number.ToString().PadLeft(width, '0');
-                number++;
-            }
-            while (taken.Contains(candidate));
-            return candidate;
-        }
+        internal static string CopyName(IMachine machine, string name) => BuzzGUI.Common.Actions.PatternNames.Copy(machine, name);
 
         /// <summary>
         /// Applies a layout edit and records it for undo (as snapshots) if it changed anything.
@@ -906,11 +890,17 @@ namespace ReBuzz.Core.Session
         void Machine_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName != "Name" || sender is not IMachine machine) return;
+            // 0.6.3: native machines rename from their IPC thread; the layout is the UI thread's.
+            if (!dispatcher.CheckAccess())
+            {
+                dispatcher.BeginInvoke(() => Machine_PropertyChanged(sender, e));
+                return;
+            }
             if (machineNames.TryGetValue(machine, out var old) && old != machine.Name)
             {
                 machineNames[machine] = machine.Name;
                 // In the layout and every undo snapshot (0.6.1), before any reconcile.
-                TransformAll(d => d.RenameMachine(old, machine.Name));
+                TransformNames(d => d.RenameMachine(old, machine.Name));
                 foreach (var g in graves.Where(g => g.MachineName == old))
                     g.MachineName = machine.Name;
                 if (document != null)
@@ -921,12 +911,17 @@ namespace ReBuzz.Core.Session
         void Pattern_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName != "Name" || sender is not IPattern pattern) return;
+            if (!dispatcher.CheckAccess())
+            {
+                dispatcher.BeginInvoke(() => Pattern_PropertyChanged(sender, e));
+                return;
+            }
             if (patternNames.TryGetValue(pattern, out var old) && old != pattern.Name)
             {
                 patternNames[pattern] = pattern.Name;
                 if (pattern.Machine != null)
                 {
-                    TransformAll(d => d.RenamePattern(pattern.Machine.Name, old, pattern.Name));
+                    TransformNames(d => d.RenamePattern(pattern.Machine.Name, old, pattern.Name));
                     if (document != null)
                         RaiseChanged();
                 }

@@ -274,15 +274,22 @@ namespace ReBuzz.AppViews.Session
             // The window is hidden rather than closed: don't poll while nobody can see it.
             IsVisibleChanged += (s, e) =>
             {
-                if (IsVisible && IsLoaded) { RefreshState(); timer.Start(); }
+                if (IsVisible && IsLoaded)
+                {
+                    if (stale) Rebuild();
+                    RefreshState();
+                    timer.Start();
+                }
                 else timer.Stop();
                 UpdateMetering();
             };
 
-            layout.Changed += () => { if (IsLoaded) Rebuild(); };
+            // 0.6.3: a hidden view (the docked one while the window shows, or the hidden window)
+            // rebuilds when it is shown again, not on every change.
+            layout.Changed += RebuildWhenSeen;
             if (midi != null)
             {
-                midi.Changed += () => { if (IsLoaded) Rebuild(); };
+                midi.Changed += RebuildWhenSeen;
                 midi.Launched += (track, scene) => { if (IsLoaded && SelectOnLaunch) SelectLaunched(track, scene); };
             }
             session.PropertyChanged += (s, e) => SyncSettings();
@@ -339,8 +346,18 @@ namespace ReBuzz.AppViews.Session
         // ------------------------------------------------------------------ structure
 
         /// <summary>Rebuilds the grid from the layout (auto-filling one for songs without).</summary>
+        bool stale;
+
+        void RebuildWhenSeen()
+        {
+            if (!IsLoaded) return;
+            if (IsVisible) Rebuild();
+            else stale = true;
+        }
+
         internal void Rebuild()
         {
+            stale = false;
             var doc = layout.Ensure();
             SyncSettings();
 
