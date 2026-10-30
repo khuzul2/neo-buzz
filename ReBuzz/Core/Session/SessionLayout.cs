@@ -1,5 +1,4 @@
 using BuzzGUI.Common;
-using BuzzGUI.Common.Actions.MachineActions;
 using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
 using System;
@@ -22,16 +21,15 @@ namespace ReBuzz.Core.Session
     /// auto-fills it) or when it is loaded with one. Songs that never use the session are saved
     /// without a SessionView subsection.
     ///
-    /// Structural song changes are reconciled lazily: SongCore raises some events on
-    /// intermediate states (SwapSequences briefly holds the same sequence at both indexes), so
-    /// an event only marks the layout dirty, and the next read reconciles it against the
-    /// settled song. <see cref="Changed"/> is raised once per batch, from the dispatcher.
-    /// Renames are applied at once, since they carry the old name.
+    /// Structural song changes are followed exactly, in the layout and in every undo snapshot
+    /// (0.6.1, SessionLayout.Identity.cs): sequences by index, renames, deleted patterns and
+    /// machines retired and brought back. A reconcile against the song stays as a safety net
+    /// on the next read. <see cref="Changed"/> is raised once per batch, from the dispatcher.
     ///
     /// Grid edits (0.2) go through <see cref="UndoStack"/>, the session's own undo history:
     /// layout changes as before/after snapshots, clip changes with BuzzGUI's pattern actions.
     /// </summary>
-    internal sealed class SessionLayout
+    internal sealed partial class SessionLayout
     {
         readonly ReBuzzCore buzz;
         readonly SongCore song;
@@ -61,13 +59,20 @@ namespace ReBuzz.Core.Session
             buzz.SaveSong += OnSaveSong;
             buzz.OpenSong += OnOpenSong;
 
-            song.SequenceAdded += (i, s) => OnStructureChanged();
-            song.SequenceRemoved += (i, s) => OnStructureChanged();
-            song.SequenceChanged += (i, s) => OnStructureChanged();
+            song.SequenceAdded += OnSequenceAdded;
+            song.SequenceRemoved += OnSequenceRemoved;
+            song.SequenceChanged += OnSequenceChanged;
             song.MachineAdded += m => { Watch(m); OnStructureChanged(); };
-            song.MachineRemoved += m => { Unwatch(m); OnStructureChanged(); };
+            song.MachineRemoved += m =>
+            {
+                string name = m != null && machineNames.TryGetValue(m, out var known) ? known : m?.Name;
+                Unwatch(m);
+                OnMachineRemovedFromSong(m, name);
+                OnStructureChanged();
+            };
             foreach (var m in song.Machines)
                 Watch(m);
+            ResetIdentity();
 
             // Follow times are in bars, beats and ticks: the engine's copy follows the time signature (0.6).
             buzz.Session.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ISession.BeatsPerBar)) RebuildLaunchMap(); };
@@ -113,6 +118,7 @@ namespace ReBuzz.Core.Session
             (Session as SessionCore)?.UseLaunchMap(LaunchMap.Empty);
             crossfaderFromDocument = true;
             document = null;
+            ResetIdentity();
             dirty = false;
             UndoStack = NewUndoStack();
             Session.BeatsPerBar = 4;
@@ -201,14 +207,16 @@ namespace ReBuzz.Core.Session
             UndoStack.BeginActionGroup();
             try
             {
-                UndoStack.Do(new CreatePatternAction(machine, name, length));
-                Edit(doc => doc.SetSlot(track, scene, name));
+                var create = new SessionCreatePatternAction(this, machine, name, length);
+                UndoStack.Do(create);
+                if (create.Created == null) return null;
+                Edit(doc => doc.SetSlot(track, scene, create.Created.Name));
+                return create.Created;
             }
             finally
             {
                 UndoStack.EndActionGroup();
             }
-            return machine.Patterns.FirstOrDefault(p => p.Name == name);
         }
 
         /// <summary>
@@ -230,14 +238,16 @@ namespace ReBuzz.Core.Session
             {
                 if (Ensure().GetSlot(track, target) != null)
                     Edit(doc => doc.InsertScene(target));
-                UndoStack.Do(new CreatePatternAction(machine, name, source.Length, source));
-                var copy = machine.Patterns.FirstOrDefault(p => p.Name == name);
-                if (copy != null && color >= 0)
-                    UndoStack.Do(new PatternColorAction(copy, color));
+                var create = new SessionCreatePatternAction(this, machine, name, source.Length, source);
+                UndoStack.Do(create);
+                var copy = create.Created;
+                if (copy == null) return null;
+                if (color >= 0)
+                    UndoStack.Do(new PatternColorAction(this, copy, color));
                 Edit(doc =>
                 {
-                    doc.SetSlot(track, target, name);
-                    doc.SetClip(machine.Name, name, doc.GetClip(machine.Name, source.Name));   // the copy launches the same way
+                    doc.SetSlot(track, target, copy.Name);
+                    doc.SetClip(machine.Name, copy.Name, doc.GetClip(machine.Name, source.Name));   // the copy launches the same way
                 });
                 return copy;
             }
@@ -253,7 +263,7 @@ namespace ReBuzz.Core.Session
             newName = newName?.Trim();
             if (pattern?.Machine == null || string.IsNullOrEmpty(newName) || newName == pattern.Name) return false;
             if (pattern.Machine.Patterns.Any(p => p.Name == newName)) return false;
-            UndoStack.Do(new RenamePatternAction(pattern, newName));
+            UndoStack.Do(new RenamePatternAction(this, pattern, newName));
             buzz.SetModifiedFlag();
             return true;
         }
@@ -276,7 +286,7 @@ namespace ReBuzz.Core.Session
                             t.Slots.Remove(key);
                     doc.SetClip(machine, name, null);
                 });
-                UndoStack.Do(new DeletePatternAction(pattern));
+                UndoStack.Do(new SessionDeletePatternAction(this, pattern));
             }
             finally
             {
@@ -288,7 +298,7 @@ namespace ReBuzz.Core.Session
         public void SetClipColor(IPattern pattern, int colorIndex)
         {
             if (pattern?.Machine == null || PatternColors.Get(pattern) == colorIndex) return;
-            UndoStack.Do(new PatternColorAction(pattern, colorIndex));
+            UndoStack.Do(new PatternColorAction(this, pattern, colorIndex));
             buzz.SetModifiedFlag();
             RaiseChanged();
         }
@@ -350,38 +360,26 @@ namespace ReBuzz.Core.Session
         bool Edit(Action<SessionDocument> change)
         {
             var doc = Ensure();
-            var before = doc.ToBytes();
+            var before = doc.CloneLayout();
+            var bytes = doc.ToBytes();
             change(doc);
-            var after = doc.ToBytes();
-            if (before.AsSpan().SequenceEqual(after)) return false;
-            UndoStack.Do(new LayoutEditAction(this, before, after));
+            if (bytes.AsSpan().SequenceEqual(doc.ToBytes())) return false;
+            UndoStack.Do(new LayoutEditAction(this, before, doc.CloneLayout()));
             ContentChanged();
             return true;
         }
 
-        /// <summary>Puts back a layout snapshot (undo/redo). Session settings and the song's MIDI map stay as they are.</summary>
-        internal void Restore(byte[] snapshot)
+        /// <summary>
+        /// Puts back a layout snapshot (undo/redo). The session's settings (view, performance,
+        /// time signature, the song's MIDI map) are not part of it (0.6.1): the live ones stay.
+        /// </summary>
+        internal void Restore(SessionDocument snapshot)
         {
-            var restored = SessionDocument.Load(new MemoryStream(snapshot));
-            if (restored == null) return;
-            restored.SongMidi = document?.SongMidi;
-            restored.ClipBars = document?.ClipBars ?? restored.ClipBars;
+            if (snapshot == null) return;
+            FlushTransforms();                 // snapshot changes held back under AudioLock come first
+            var restored = snapshot.CloneLayout();
             if (document != null)
-            {
-                // View settings, not edits: they stay as they are.
-                restored.ShowMixer = document.ShowMixer;
-                restored.ShowClipPanel = document.ShowClipPanel;
-                // Performance controls (0.6), not edits: undo never changes them (0.6.1).
-                restored.CrossfaderPosition = document.CrossfaderPosition;
-                restored.CrossfaderCurve = document.CrossfaderCurve;
-                restored.Crossfade.Clear();
-                foreach (var kv in document.Crossfade) restored.Crossfade[kv.Key] = kv.Value;
-                restored.FollowActionsEnabled = document.FollowActionsEnabled;
-                restored.ScenesStopOtherClips = document.ScenesStopOtherClips;
-                restored.CueMachine = document.CueMachine;
-                restored.CollapsedGroups.Clear();
-                restored.CollapsedGroups.UnionWith(document.CollapsedGroups);
-            }
+                restored.Settings = document.Settings;
             restored.BeatsPerBar = Session.BeatsPerBar;
             restored.LaunchQuantization = Session.LaunchQuantization.ToString();
             document = restored;
@@ -442,11 +440,13 @@ namespace ReBuzz.Core.Session
         public void RemoveReturn(string machine) => Edit(doc => doc.Returns.Remove(machine));
 
         /// <summary>The machine Cue connects tracks to, or null for none.</summary>
+        /// <remarks>
+        /// A setting (0.4), not an undo step. 0.6.1: it no longer removes the machine from the
+        /// returns (an undoable list): the returns shown leave the cue machine out instead.
+        /// </remarks>
         public void SetCueMachine(IMachine machine)
         {
-            var doc = Ensure();
-            doc.CueMachine = machine?.Name ?? "";
-            doc.Returns.Remove(doc.CueMachine);
+            Ensure().CueMachine = machine?.Name ?? "";
             ContentChanged();
         }
 
@@ -486,17 +486,17 @@ namespace ReBuzz.Core.Session
             return doc.Returns.Select(MachineNamed).Where(m => m != null && m.Name != doc.CueMachine).ToList();
         }
 
+        // One launch path (0.6.1): mouse, keys, MIDI and follow actions all launch what the
+        // launch map says, which is rebuilt as soon as anything changes.
+
         /// <summary>Launches the clips of a group's member tracks in a scene (Live's group slot).</summary>
         public void LaunchGroupScene(IEnumerable<int> tracks, int scene, int velocity = 127)
         {
+            var map = LaunchMap;
             var slots = new List<(ISequence, IPattern, LaunchOptions)>();
             foreach (int track in tracks)
-            {
-                var seq = SequenceOf(track);
-                var pattern = PatternAt(track, scene);
-                if (seq != null && pattern != null)
-                    slots.Add((seq, pattern, OptionsFor(pattern, velocity, scene)));
-            }
+                if (map.Track(track) is ISequence seq && map.Slot(track, scene) is LaunchMap.SlotEntry entry)
+                    slots.Add((seq, entry.Pattern, entry.OptionsAt(velocity)));
             if (slots.Count > 0)
                 Session.LaunchScene(slots, null);
         }
@@ -506,19 +506,16 @@ namespace ReBuzz.Core.Session
         /// signature and follow actions (a scene with only those and no clips still sets them),
         /// stopping the other tracks when the song says so (0.6).
         /// </summary>
-        public void LaunchScene(int scene, int velocity = 127)
+        public void LaunchScene(int scene, int velocity = 127) => LaunchScene(Session, LaunchMap.Scene(scene), velocity);
+
+        /// <summary>Any thread: launches a scene of a launch map (the UI and MIDI share this).</summary>
+        internal static void LaunchScene(ISession session, LaunchMap.SceneEntry entry, int velocity)
         {
-            var doc = Document;
-            if (doc == null || scene < 0 || scene >= doc.Scenes.Count) return;
-            var slots = new List<(ISequence, IPattern, LaunchOptions)>();
-            foreach (var (track, _) in doc.SceneSlots(scene))
-            {
-                var seq = SequenceOf(track);
-                var pattern = PatternAt(track, scene);
-                if (seq != null && pattern != null)
-                    slots.Add((seq, pattern, OptionsFor(pattern, velocity, scene)));
-            }
-            Session.LaunchScene(slots, SceneOptionsOf(scene));
+            if (entry == null) return;
+            var launches = new (ISequence, IPattern, LaunchOptions)[entry.Clips.Length];
+            for (int i = 0; i < entry.Clips.Length; i++)
+                launches[i] = (entry.Clips[i].Track, entry.Clips[i].Slot.Pattern, entry.Clips[i].Slot.OptionsAt(velocity));
+            session.LaunchScene(launches, entry.Options);
         }
 
         // ------------------------------------------------------------------ clip and scene properties (0.5, 0.6)
@@ -527,7 +524,11 @@ namespace ReBuzz.Core.Session
         public void LaunchClip(ISequence track, IPattern pattern, int velocity = 127, int slot = -1)
         {
             if (track == null || pattern == null) return;
-            Session.Launch(track, pattern, OptionsFor(pattern, velocity, slot));
+            var map = LaunchMap;
+            int t = Array.IndexOf(map.Tracks, track);
+            var entry = map.Slot(t, slot);
+            var options = entry != null && ReferenceEquals(entry.Pattern, pattern) ? entry.OptionsAt(velocity) : OptionsFor(pattern, velocity, slot);
+            Session.Launch(track, pattern, options);
         }
 
         /// <summary>The release of a clip's launch control: matters for Gate and Repeat clips.</summary>
@@ -552,7 +553,7 @@ namespace ReBuzz.Core.Session
             if (!Edit(doc => doc.SetClip(machine, name, settings))) return;
             if (Session is SessionCore core)
             {
-                var options = ToOptions(settings, 127);
+                var options = ToOptions(settings, 127, -1, Session.BeatsPerBar, buzz.TPB);
                 foreach (var seq in song.Sequences.Where(s => s.Machine == pattern.Machine))
                     core.Reshape(seq, pattern, options);
             }
@@ -772,6 +773,18 @@ namespace ReBuzz.Core.Session
         }
 
         bool crossfaderFromDocument = true;
+        bool rebuildPosted;
+
+        void PostLaunchMapRebuild()
+        {
+            if (rebuildPosted) return;
+            rebuildPosted = true;
+            dispatcher.BeginInvoke(() =>
+            {
+                rebuildPosted = false;
+                RebuildLaunchMap();
+            });
+        }
 
         /// <summary>Tempo a scene sets when it launches; 0 for none (undoable).</summary>
         public void SetSceneTempo(int index, int bpm) => Edit(doc =>
@@ -795,14 +808,24 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Raises <see cref="Changed"/> once, after the current batch of edits.</summary>
-        void RaiseChanged()
+        void RaiseChanged() => RaiseChanged(structural: false);
+
+        void RaiseChanged(bool structural)
         {
+            // The MIDI and audio threads (and every launch) use the launch map: rebuilt at once
+            // after an edit (0.6.1), so mouse and MIDI launches agree. Song structure changes
+            // come in bursts (deleting a machine, an import), some under AudioLock: one rebuild
+            // after the burst, outside the lock. Meanwhile stale entries can't launch anything
+            // gone (liveness flags), and a clip launch from the UI falls back to its settings.
+            if (structural || ReBuzzCore.AudioLock.IsHeldByCurrentThread)
+                PostLaunchMapRebuild();
+            else
+                RebuildLaunchMap();
             if (changePosted) return;
             changePosted = true;
             dispatcher.BeginInvoke(() =>
             {
                 changePosted = false;
-                RebuildLaunchMap();      // for the MIDI and audio threads (0.6)
                 Changed?.Invoke();       // readers reconcile on access
             }, DispatcherPriority.Background);
         }
@@ -827,7 +850,7 @@ namespace ReBuzz.Core.Session
         {
             if (document == null) return;
             dirty = true;
-            RaiseChanged();
+            RaiseChanged(structural: true);
         }
 
         void Watch(IMachine machine)
@@ -872,6 +895,7 @@ namespace ReBuzz.Core.Session
 
         void Machine_PatternRemoved(IPattern pattern)
         {
+            OnPatternRemovedFromSong(pattern);
             UnwatchPattern(pattern);
             OnStructureChanged();
         }
@@ -882,12 +906,12 @@ namespace ReBuzz.Core.Session
             if (machineNames.TryGetValue(machine, out var old) && old != machine.Name)
             {
                 machineNames[machine] = machine.Name;
+                // In the layout and every undo snapshot (0.6.1), before any reconcile.
+                TransformAll(d => d.RenameMachine(old, machine.Name));
+                foreach (var g in graves.Where(g => g.MachineName == old))
+                    g.MachineName = machine.Name;
                 if (document != null)
-                {
-                    // Snapshots already carry the new name, so rename before any reconcile.
-                    document.RenameMachine(old, machine.Name);
                     RaiseChanged();
-                }
             }
         }
 
@@ -897,10 +921,11 @@ namespace ReBuzz.Core.Session
             if (patternNames.TryGetValue(pattern, out var old) && old != pattern.Name)
             {
                 patternNames[pattern] = pattern.Name;
-                if (document != null && pattern.Machine != null)
+                if (pattern.Machine != null)
                 {
-                    document.RenamePattern(pattern.Machine.Name, old, pattern.Name);
-                    RaiseChanged();
+                    TransformAll(d => d.RenamePattern(pattern.Machine.Name, old, pattern.Name));
+                    if (document != null)
+                        RaiseChanged();
                 }
             }
         }
@@ -932,6 +957,7 @@ namespace ReBuzz.Core.Session
                 document = null;
             }
             crossfaderFromDocument = true;
+            ResetIdentity();
             dirty = false;
             UndoStack = NewUndoStack();
             if (document != null)

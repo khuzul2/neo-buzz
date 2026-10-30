@@ -350,6 +350,50 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
+        public void TracksFollowSequencesInsertedRemovedAndSwapped()
+        {
+            var d = AutoFill(new[] { T("synth", "a"), T("synth", "b"), T("drums", "c") });
+            d.RemoveTrack(0);                                    // the first of the two synth sequences
+            Assert.That(d.Tracks.Select(t => (t.Sequence, t.Machine, t.Slots[0])), Is.EqualTo(new[] { (0, "synth", "b"), (1, "drums", "c") }));
+            d.InsertTrack(1, "bass");
+            Assert.That(d.Tracks.Select(t => t.Machine), Is.EqualTo(new[] { "synth", "bass", "drums" }));
+            Assert.That(d.Tracks[1].Slots, Is.Empty);
+            d.SwapTracks(0, 2);
+            Assert.That(d.Tracks.Select(t => (t.Sequence, t.Machine)), Is.EqualTo(new[] { (0, "drums"), (1, "bass"), (2, "synth") }));
+        }
+
+        [Test]
+        public void RetiredNamesStayInCopiesButNeverInFiles()
+        {
+            var d = AutoFill(new[] { T("drums", "a", "b") });
+            d.SetClip("drums", "a", new SessionDocument.ClipSettings { Mode = "Gate" });
+            d.Crossfade["drums"] = "A";
+            string gone = SessionDocument.Retire("a", 7);
+            d.RenamePattern("drums", "a", gone);
+            Assert.That(SessionDocument.IsRetired(gone), Is.True);
+            Assert.That(SessionDocument.IsRetired("a"), Is.False);
+
+            var copy = d.CloneLayout();
+            Assert.That(copy.Tracks[0].Slots[0], Is.EqualTo(gone), "a snapshot keeps the retired name, to bring it back");
+            Assert.That(copy.GetClip("drums", gone).Mode, Is.EqualTo("Gate"));
+            Assert.That(ReferenceEquals(copy.Settings, d.Settings), Is.True, "snapshots share the settings");
+
+            var file = new MemoryStream();
+            d.Save(file);
+            file.Position = 0;
+            var loaded = SessionDocument.Load(file)!;
+            Assert.That(loaded.Tracks[0].Slots.Values, Is.EqualTo(new[] { "b" }), "a file has no retired names");
+            Assert.That(loaded.Clips.Count, Is.Zero);
+
+            d.RenameMachine("drums", SessionDocument.Retire("drums", 8));
+            file = new MemoryStream();
+            d.Save(file);
+            file.Position = 0;
+            loaded = SessionDocument.Load(file)!;
+            Assert.That(loaded.Crossfade.Count, Is.Zero, "nor retired machines");
+        }
+
+        [Test]
         public void JumpTargetsFollowScenesInsertedAndRemoved()
         {
             var d = AutoFill(new[] { T("drums", "a", "b", "c", "d") });

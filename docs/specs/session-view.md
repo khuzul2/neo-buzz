@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9) and 0.6.1 A (#10) merged; next: 0.6.1 B, then 0.7 Session recording |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9) and 0.6.1 (#10, #11) merged; next: 0.7 Session recording (redesigned) |
 | Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -489,7 +489,40 @@ Two PRs:
 
 Known limits (unchanged): no autosave while the transport plays (saving talks to native machines); a solo pattern holds back session launches; with the real WPF dispatcher, upstream allocates one dispatcher operation per tick.
 
-**B: foundations.** In progress: object-bound identity and undo, a layout/settings split, one launch path, and the 0.7 recorder design.
+**B: foundations**
+1. *Identity follows the song exactly* (`SessionLayout.Identity.cs`). The layout keeps names, as song files do, and applies every change in the song to the layout and to every undo snapshot.
+   - Sequences added, removed or swapped move tracks by their exact index. Deleting one of a machine's two sequences removes that track, not the other (before, tracks were matched by index first).
+   - Renames from any view rename everywhere, so an undo after a rename in the Machine View keeps the clip settings.
+   - A deleted pattern's or machine's name is *retired*: snapshots keep it under a private-use marker, and files never contain it. A new pattern or machine reusing the name inherits nothing (no crossfader side, no clip settings, no slots).
+   - Changes made under the audio lock reach the current layout at once; snapshots and the launch map follow when the lock is released. Deleting a machine deletes its sequences and patterns under that lock, so heavy layout work never holds up the audio thread.
+2. *Object-bound session actions.* Creating, duplicating, deleting, renaming and colouring clips hold the pattern object. When the session's own undo makes a pattern again, its slots and settings come back from a *grave* and the actions follow the new object, even when another clip took the name meanwhile (it comes back under a fresh name). Undo never deletes or overwrites another editor's pattern of the same name, and does nothing for a clip whose machine was deleted since.
+3. *Settings apart from the layout.* `SessionSettings` holds the time signature, quantization, clip length, the song's MIDI map, the follow switch, *Scenes stop other clips*, the crossfader, view state, folded groups and the cue output. Undo snapshots share the live instance, so undo never changes a setting. This replaces A's keep-list. The cue output no longer edits the returns list behind undo's back.
+4. *One launch path.* Mouse, keys, MIDI and follow actions all launch what the launch map says. The map is rebuilt synchronously after every edit, and once after a burst of song changes. Meanwhile the liveness flags keep stale entries harmless, and a UI clip launch falls back to the clip's own settings.
+5. *Recording undo by difference.* Undoing a recording pass or a scene inserted into the arrangement takes out only the events it wrote, if they are unchanged, and puts back what they replaced, where nothing has been written since. Later Sequence View edits stay. The loop and song end go back only if nothing changed them since.
+6. *Threads.*
+   - Sequence events have a leaf lock for readers that can't take the audio lock (span refreshes on the IPC thread), and list swaps take it too.
+   - A transport stop from another thread (a native machine's host message) goes through the UI thread, so that thread never waits for the audio lock.
+7. *0.7 redesigned* around the session's own recorder (see 0.7): timestamps on the MIDI thread, record windows on the audio thread, pattern writes on the UI thread, a take as one object-bound undo step.
+
+**Status B (merged, #11).** Tests (178/178 on CI):
+- `ReBuzzTests/SessionIdentityTests.cs` (10): the right track survives when one of a machine's two sequences is removed; undo after a Machine View rename; a new machine with a deleted one's name inherits nothing; session undo never touching another editor's same-named pattern; a Pattern View delete leaving nothing to a new clip of the same name; the session's undo bringing back its own clip after a newcomer took the name; a new sequence starting empty; no ghost pattern for a deleted machine; recording undo keeping later edits.
+- Document tests for track operations and retired names.
+
+The allocation test (`SteadyPlaybackAllocatesNothing`) failed once on CI with 40–80 bytes per buffer and passed when rerun. It needs watching.
+
+An independent review of A and B confirmed fixes 1–13 and found new defects in B's first version, all fixed before merging:
+- Matching objects that another view's undo brings back, by name and contents, can't tell them from new look-alikes: new empty clips, duplicates, session-only tracks, re-added machines. That matching was removed, so names are retired and only the session's own undo brings clips back.
+- Heavy work ran under the audio lock.
+- Transport stops from the IPC thread waited for the audio lock.
+- Pattern actions ran on deleted machines.
+- A redo recreated a pattern at its old length.
+- A Gate request restored by undo lost its stop.
+
+Known limits:
+- Undoing, in another view, the deletion of a pattern, sequence or machine brings the object back without its slots or settings.
+- Undo snapshots don't keep a removed sequence's track.
+- A recording pass's undo also takes back Sequence View edits made during the pass on the tracks it wrote.
+- Undocumented upstream: ReBuzz without the fork drops the fork's subsections when it saves a song, after which partial arrangement events play whole patterns.
 
 ---
 
@@ -497,13 +530,36 @@ Known limits (unchanged): no autosave while the transport plays (saving talks to
 
 **Features**
 1. Track **record arm**; record button on empty slots of armed tracks.
-2. **Record MIDI into a new clip** from the machine's MIDI input (creates a pattern, writes notes via the pattern editor's existing recording path, `PlayRecordManager.RecordPlayingMidiNote`).
+2. **Record MIDI into a new clip** from a keyboard played into the armed track's machine: a new pattern (the take) is created in the slot, and notes are written into its note columns by the session's own recorder (see Design).
 3. **Overdub** into the playing clip; **fixed-length** recording (1, 2, 4, 8 bars) that ends and loops automatically.
 4. **Capture MIDI**: keep the last N bars of incoming MIDI per armed track and turn it into a clip on demand.
 5. Parameter automation recording into the clip (knob moves → pattern parameter column).
 6. Metronome and count-in.
 
-**Engine.** Record windows aligned to the session clock; MIDI timestamps converted to pattern rows/sub-ticks via `SubTickInfo`.
+**Design (revised in 0.6.1).** The first draft planned to record through the pattern editor's `PlayRecordManager.RecordPlayingMidiNote`. That can't work:
+- it is internal to the ModernPatternEditor plugin;
+- it writes into every playing pattern of whatever machine the Pattern View has selected, through that editor's own undo stack;
+- upstream disabled it ("ToDo: only record to MIDI columns").
+
+It serves neither per-track arm, nor several armed tracks, nor Capture MIDI. Instead, the session records by itself, over three threads, each doing only what it must.
+- *MIDI thread: timestamp and queue.* `SessionMidi` sees each message first, as it does for mapped controls. For an armed track's machine it stamps the message with the heard session position: clock, tick fraction and sub-tick, from the same rendered-position and latency estimate that launches use (0.4.1). It then pushes the message onto a preallocated lock-free ring, with no allocation and no locks. The message still goes on to the machine for monitoring. Routing changes so that armed tracks' machines receive input, not only the MIDI-focus machine.
+- *Audio thread: record windows.* `OnTick` opens and closes record windows on the launch grid, like launches. A window starts on a grid point after the count-in and ends after its fixed length, after which the take plays on as a looping clip. The metronome is a preallocated click mixed into the master during count-in and recording; it is not a machine.
+- *UI thread: writing patterns.* A drain posted from the queue writes events into the take's pattern through `IPatternColumn.SetEvents`, independently of the Pattern View:
+  - notes go to the machine's note columns, one track per held note, with a note-off at its release;
+  - velocity goes to a velocity column if the machine has one;
+  - sub-tick positions use `SubTickInfo`.
+  
+  Overdub writes at the position modulo the clip's loop. Capture MIDI is a per-track ring of the last N bars, always running while armed, turned into a take on demand.
+- *A take is one undo step* in the session's history. It consists of an object-bound pattern creation (`SessionCreatePatternAction`), its slot, and its events (a diff action on that pattern, as recording into the arrangement does since 0.6.1). Takes get fresh names. Deleted takes' names are retired, so a later take never inherits their slots or settings.
+
+**What 0.6.1 provides for it.**
+- Identity that follows the song exactly, with retired names and object-bound pattern actions.
+- Liveness flags, so a take deleted while recording is never written again.
+- One launch path, through a launch map rebuilt synchronously.
+- `SongLoading`, so nothing records into a song while it loads.
+- Recording that is serialized with the tick.
+- Diff-based arrangement undo.
+- The leaf lock on sequence events.
 
 **Acceptance criteria.** Notes recorded at 120 BPM land within ±1 sub-tick of their played time; fixed-length recording loops seamlessly on the first pass.
 

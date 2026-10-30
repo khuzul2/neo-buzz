@@ -197,16 +197,26 @@ namespace ReBuzz.Core.Session
 
     /// <summary>
     /// Undo step for an arrangement edit made from the session (a recording pass, a scene
-    /// inserted into the arrangement): the events of the sequences it touched, and the song's
-    /// loop and song end, before and after. The edit is already made when the action is
-    /// pushed, so the first Do does nothing.
+    /// inserted into the arrangement). Since 0.6.1 it keeps what the edit changed, event by
+    /// event, not whole tracks: undo takes out the events it wrote (if they are still as it
+    /// wrote them) and puts back the ones it replaced (where nothing has been written since),
+    /// so edits made since in the Sequence View, anywhere else, stay. The song's loop and song
+    /// end go back only if nothing changed them since. The edit is already made when the
+    /// action is pushed, so the first Do does nothing.
     /// </summary>
     internal sealed class ArrangementSnapshotAction : IAction
     {
         internal readonly record struct SequenceChange(ISequence Sequence, KeyValuePair<int, SequenceEvent>[] Before, KeyValuePair<int, SequenceEvent>[] After);
 
+        sealed class Diff
+        {
+            public ISequence Sequence;
+            public List<KeyValuePair<int, SequenceEvent>> Removed = new List<KeyValuePair<int, SequenceEvent>>();
+            public List<KeyValuePair<int, SequenceEvent>> Added = new List<KeyValuePair<int, SequenceEvent>>();
+        }
+
         readonly SongCore song;
-        readonly List<SequenceChange> changes;
+        readonly List<Diff> diffs = new List<Diff>();
         readonly (int LoopEnd, int SongEnd) endsBefore;
         readonly (int LoopEnd, int SongEnd) endsAfter;
         bool skipDo = true;
@@ -214,27 +224,60 @@ namespace ReBuzz.Core.Session
         public ArrangementSnapshotAction(SongCore song, List<SequenceChange> changes, (int, int) endsBefore, (int, int) endsAfter)
         {
             this.song = song;
-            this.changes = changes;
             this.endsBefore = endsBefore;
             this.endsAfter = endsAfter;
+            foreach (var c in changes)
+            {
+                var before = c.Before.ToDictionary(e => e.Key, e => e.Value);
+                var after = c.After.ToDictionary(e => e.Key, e => e.Value);
+                var d = new Diff { Sequence = c.Sequence };
+                foreach (var e in c.Before)
+                    if (!after.TryGetValue(e.Key, out var now) || !Same(now, e.Value))
+                        d.Removed.Add(new KeyValuePair<int, SequenceEvent>(e.Key, new SequenceEvent(e.Value)));
+                foreach (var e in c.After)
+                    if (!before.TryGetValue(e.Key, out var was) || !Same(was, e.Value))
+                        d.Added.Add(new KeyValuePair<int, SequenceEvent>(e.Key, new SequenceEvent(e.Value)));
+                if (d.Removed.Count > 0 || d.Added.Count > 0)
+                    diffs.Add(d);
+            }
         }
 
         public void Do()
         {
             if (skipDo) { skipDo = false; return; }
-            foreach (var c in changes) Restore(c.Sequence, c.After);
-            SetEnds(endsAfter);
+            foreach (var d in diffs) Apply(d.Sequence, take: d.Removed, put: d.Added);
+            SetEnds(endsBefore, endsAfter);
         }
 
         public void Undo()
         {
-            foreach (var c in changes) Restore(c.Sequence, c.Before);
-            SetEnds(endsBefore);
+            foreach (var d in diffs) Apply(d.Sequence, take: d.Added, put: d.Removed);
+            SetEnds(endsAfter, endsBefore);
         }
 
-        void SetEnds((int LoopEnd, int SongEnd) ends)
+        static bool Same(SequenceEvent a, SequenceEvent b) =>
+            a.Type == b.Type && ReferenceEquals(a.Pattern, b.Pattern) && a.Offset == b.Offset && a.End == b.End && a.Gain == b.Gain;
+
+        /// <summary>Takes out events still as given, then puts events back where nothing has been written since.</summary>
+        static void Apply(ISequence seq, List<KeyValuePair<int, SequenceEvent>> take, List<KeyValuePair<int, SequenceEvent>> put)
+        {
+            if (!seq.Machine?.Graph?.Buzz?.Song?.Sequences.Contains(seq) ?? true) return;
+            foreach (var e in take)
+                if (seq.Events.TryGetValue(e.Key, out var now) && Same(now, e.Value))
+                    seq.Clear(e.Key, 1);
+            foreach (var e in put)
+            {
+                if (seq.Events.ContainsKey(e.Key)) continue;
+                if (e.Value.Pattern != null && !seq.Machine.Patterns.Contains(e.Value.Pattern)) continue;
+                seq.SetEvent(e.Key, new SequenceEvent(e.Value));
+            }
+        }
+
+        /// <summary>Sets the loop and song end, unless something else changed them since.</summary>
+        void SetEnds((int LoopEnd, int SongEnd) expected, (int LoopEnd, int SongEnd) ends)
         {
             if (ends.LoopEnd <= 0) return;
+            if (song.LoopEnd != expected.LoopEnd || song.SongEnd != expected.SongEnd) return;
             if (ends.SongEnd >= song.SongEnd)
             {
                 song.SongEnd = ends.SongEnd;
@@ -244,18 +287,6 @@ namespace ReBuzz.Core.Session
             {
                 song.LoopEnd = ends.LoopEnd;
                 song.SongEnd = ends.SongEnd;
-            }
-        }
-
-        static void Restore(ISequence seq, KeyValuePair<int, SequenceEvent>[] events)
-        {
-            if (!seq.Machine?.Graph?.Buzz?.Song?.Sequences.Contains(seq) ?? true) return;
-            if (seq.Events.Count > 0)
-                seq.Clear(0, int.MaxValue);
-            foreach (var e in events)
-            {
-                if (e.Value.Pattern != null && !seq.Machine.Patterns.Contains(e.Value.Pattern)) continue;
-                seq.SetEvent(e.Key, new SequenceEvent(e.Value));
             }
         }
     }

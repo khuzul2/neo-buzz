@@ -1087,6 +1087,9 @@ namespace ReBuzz.Core.Session
             }
             long phase = p.Origin == long.MinValue ? p.At : p.Origin;
             LaunchAt(st.Track, p.Clip, at, phase, p.Spec, heard);
+            var queued = st.Next;
+            if (p.StopAfter > 0 && queued != null && !queued.IsStop && ReferenceEquals(queued.Clip, p.Clip))
+                st.Next = queued.With(queued.Spec, p.StopAfter);     // a Gate released before it started still stops after a step
         }
 
         /// <summary>Whether a memento refers to the clip (0.6.1: a deleted pattern leaves the undo history).</summary>
