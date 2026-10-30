@@ -426,7 +426,7 @@ Also fixed: opening a .bmxml song lost all of its subsections (upstream: `BMXMLF
 - *Tempo*: the top bar shows the tempo. **◀ ▶** nudge it 4% slower or faster while held: ticks stretch or shorten, and the song's whole-number BPM doesn't change. **Tap** sets it from the last four taps, starting at the third; a pause of over 2 s starts again, and taps under 0.1 s apart (a bouncing pad) are ignored.
 - *Engine*: follow actions run in `SessionScheduler`'s tick per track, with a seedable generator, and scene follow actions run in `SessionCore.OnTick`. An immutable `LaunchMap` (slots, scenes and their options), built on the UI thread, is shared with the MIDI and audio threads. `SessionCore` keeps the launch history. Crossfade gains are in `MachineCore.CrossfadeGain`, applied by `MachineConnectionCore`, and the nudge is `ReBuzzCore.TempoNudge`, applied by `WorkManager`.
 
-Tests (TOTALS on CI): `ReBuzzTests/SessionPerformanceTests.cs` (10):
+Tests (158/158 on CI, 0 bytes allocated per buffer in steady playback): `ReBuzzTests/SessionPerformanceTests.cs` (11):
 - follow chains on time, with the machine's output;
 - the song's switch;
 - an unlinked follow time, and a target's own quantization;
@@ -439,7 +439,7 @@ Tests (TOTALS on CI): `ReBuzzTests/SessionPerformanceTests.cs` (10):
 - undo and the follow switch from MIDI;
 - the clip panel's follow and scene sections, with a render.
 
-The acceptance test is a 4-clip chain of Other follow actions playing for 10 minutes at 120 BPM with a seeded generator: CHAIN. Scheduler and document unit tests are in `ReBuzz.SessionTests`; the 15 follow action tests include a 20,000-transition chain (chi-square 6.94). Not automated: a side-by-side check against Live, and listening to the nudge.
+The acceptance test is a 4-clip chain of Other follow actions playing for 10 minutes at 120 BPM with a seeded generator. It made 1,196 transitions, each exactly at the end of a clip, with no silent tick; the machine's output matched the playing clip on every tick, and chi-square was 9.34 (95% critical value 15.51). Scheduler and document unit tests are in `ReBuzz.SessionTests`; the 15 follow action tests include a 20,000-transition chain (chi-square 6.94). Not automated: a side-by-side check against Live, and listening to the nudge.
 
 ---
 
