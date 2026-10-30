@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9) and 0.6.1 (#10, #11) merged; next: 0.7 Session recording (redesigned) |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11) and 0.6.2 (#12) merged; next: 0.7 Session recording (redesigned) |
 | Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -518,11 +518,34 @@ An independent review of A and B confirmed fixes 1–13 and found new defects in
 - A redo recreated a pattern at its old length.
 - A Gate request restored by undo lost its stop.
 
-Known limits:
+Known limits (the first three were lifted in 0.6.2):
 - Undoing, in another view, the deletion of a pattern, sequence or machine brings the object back without its slots or settings.
 - Undo snapshots don't keep a removed sequence's track.
 - A recording pass's undo also takes back Sequence View edits made during the pass on the tracks it wrote.
 - Undocumented upstream: ReBuzz without the fork drops the fork's subsections when it saves a song, after which partial arrangement events play whole patterns.
+
+---
+
+### 0.6.2 — Exact restorations
+
+**Outcome.** 0.6.1's three known limits are gone.
+
+1. *Undo in any view brings back what the session had.* Undo actions that bring back a pattern, sequence or machine they deleted report the old object and the new one standing for it (`BuzzGUI.Common.Actions.Restorations`). The same goes for a redo that makes again what its undo deleted. Reporting actions:
+   - the pattern editors' `DeletePatternAction` and `CreatePatternAction`;
+   - the sequence editors' `DeleteSequenceAction` and `AddSequenceAction`;
+   - the Machine View's `DeleteMachinesAction` and `CreateMachineAction`;
+   - the session's own pattern actions.
+
+   The layout acts only on these reports, never on guesses by name or contents.
+   - A deleted pattern's slots and clip settings stay in the layout and every snapshot under its retired name. Everyone sees them as empty slots, so a newcomer with the name inherits nothing. They move with every edit and transform meanwhile, so when an undo brings the pattern back they reappear where they are now, in the undo history too.
+   - A removed sequence's track is kept as the layout and each undo snapshot had it. Each gets its own copy back.
+   - A deleted machine's crossfader side, returns, cue and clip settings come back with it.
+   - Unrestored places are forgotten after 256 deletions.
+2. *Recording undo is exact.* A recording pass lists every event it wrote: what was there before its first write, and what it wrote last. Undo takes back exactly those, where they are unchanged, so edits made in the Sequence View during the pass stay, even on the tracks it recorded.
+3. *The allocation test.* It failed now and then with 40–80 bytes per buffer, in an identical pattern each time. That fits tiered compilation still running some methods in their first compiled form on a busy CI machine, where a short-lived object isn't yet kept off the heap. The test now waits until a stretch of 100 buffers allocates nothing (logging a notice if it had to) before measuring steady playback. If it ever fails, it reports the types being allocated.
+4. Also fixed in passing:
+   - Deleting machines without a sequence editor (headless, tests) no longer throws.
+   - Undo of the Machine View's machine delete no longer modifies the pattern-colour table while enumerating it.
 
 ---
 
