@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8) and 0.6 (#9) merged; next: 0.7 Session recording |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9) and 0.6.1 A (#10) merged; next: 0.6.1 B, then 0.7 Session recording |
 | Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -440,6 +440,56 @@ Tests (158/158 on CI, 0 bytes allocated per buffer in steady playback): `ReBuzzT
 - the clip panel's follow and scene sections, with a render.
 
 The acceptance test is a 4-clip chain of Other follow actions playing for 10 minutes at 120 BPM with a seeded generator. It made 1,196 transitions, each exactly at the end of a clip, with no silent tick; the machine's output matched the playing clip on every tick, and chi-square was 9.34 (95% critical value 15.51). Scheduler and document unit tests are in `ReBuzz.SessionTests`; the 15 follow action tests include a 20,000-transition chain (chi-square 6.94). Not automated: a side-by-side check against Live, and listening to the nudge.
+
+---
+
+### 0.6.1 — Solid ground
+
+**Outcome.** A hardening pass before session recording. Three independent reviews covered:
+- concurrency and real-time safety;
+- launch timing;
+- the model, persistence and architecture.
+
+They found about 30 issues in 0.1–0.6. Locks are taken in the documented order, and nothing allocates per buffer. The defects were in four areas:
+- how 0.6's features interact;
+- stale references to deleted objects;
+- identity (names and indices);
+- undo.
+
+Two PRs:
+- **A** fixes the defects, with a regression test for each.
+- **B** reworks the foundations 0.7 builds on.
+
+**A: fixes**
+1. *Follow actions and queued requests.* A follow action no longer replaces a stop, Stop all, a scene's stop or a launch that is already queued on its track. It waits a period instead. A scene's follow action ends when another scene is queued.
+2. *Queued scenes.* Stop all and Back to arrangement drop a queued scene's tempo, beats per bar and follow action along with its clips. Undoing a clip launch leaves a queued scene's settings alone; only undoing a scene clears them.
+3. *Where a clip is heard to start.* A launch now carries the grid point it is heard on, separately from the phase its position counts from. An undone launch then counts its follow action, repeats and recording from where it comes back in step, and so does a start offset (before, from its original start). A Gate release before a late start stops a step after the grid point.
+4. *Stale requests.* An undo that puts back a queued launch whose time has passed plans it again on the grid, in step with when it was due. Undo history from before a transport restart is dropped.
+5. *Late scenes.* A scene launched late (latency compensation) restarts the bar grid, and counts its follow action, from the grid point it is heard on. Changing beats per bar while playing restarts the grid on the bar playing now, as a scene's change does. The bar length changes under the session lock.
+6. *Markers and length.* Changing a playing clip's markers or its pattern's length moves its linked follow action. If the loop is turned off, it follows where the clip ends instead of falling silent.
+7. *One clip, two tracks.* A clip launched on two tracks on the same tick plays on the first, not on neither.
+8. *Deleted patterns and removed sequences.* They are flagged under the audio lock (`PatternCore.IsDeleted`, `SequenceCore.IsRemoved`). The scheduler rejects launches of them from any stale reference (pads, follow columns, launch undo), and the undo history forgets them. The recorder never writes a deleted pattern, and .bmx files no longer write an invalid pattern index.
+9. *Songs closing and loading.* `ReBuzzCore.SongLoading` is set for the duration. MIDI pads don't launch or start the transport meanwhile. The launch map is cleared at once, not when the UI is next idle.
+10. *Transport stop.* The stop runs under the audio lock, so it can't land between the audio thread's playing check and the session's tick. Before, it could leave a recording pass open, the session clock running, or a gain behind.
+11. *Undo keeps performance settings.* Undoing a grid edit no longer reverts the follow switch, *Scenes stop other clips*, crossfader assignments or the curve. The crossfader's position belongs to the engine: MIDI moves it, and the song sets it only when it is opened. The UI and the MIDI thread no longer race on its gains.
+12. *Layouts.*
+    - Jump targets follow scene rows as they are inserted, removed or duplicated.
+    - A damaged layout loads safely: scene rows are capped at 4,096, NaN positions and volumes are ignored, and a load error is logged instead of stopping the song from opening.
+    - Duplicating a clip whose name ends in a long number no longer throws.
+    - A song only looked at in the Session View saves no layout; it is saved once something is edited.
+13. *Files.*
+    - .bmx sequences use 4-byte positions when an event lies past 65,535 ticks. Before, those positions were truncated, which takes about 17 minutes at 32 ticks per beat.
+    - An autosave that can't be opened is kept, not deleted.
+    - Scene follow times use the scene's own beats per bar.
+
+**Status A (merged, #10).** Tests (169/169 on CI):
+- `ReBuzz.SessionTests/SessionHardeningTests.cs` (11 scheduler regressions; each one fails on the 0.6 scheduler);
+- two document tests (jump targets, damaged input);
+- `ReBuzzTests/SessionSolidGroundTests.cs` (11 engine regressions): queued scenes against Stop all and undo, a late scene's grid, beats per bar changed while playing, undo keeping performance settings, the crossfader's position, a deleted pattern against undo and a follow action with a stale map, MIDI during a load, plain songs, .bmx past 65,535 ticks, and an autosave that won't open.
+
+Known limits (unchanged): no autosave while the transport plays (saving talks to native machines); a solo pattern holds back session launches; with the real WPF dispatcher, upstream allocates one dispatcher operation per tick.
+
+**B: foundations.** In progress: object-bound identity and undo, a layout/settings split, one launch path, and the 0.7 recorder design.
 
 ---
 
