@@ -62,6 +62,8 @@ namespace ReBuzz.AppViews.Session
         readonly TextBlock tempoText;
         readonly TextBlock syncText;          // 0.8: Link, MIDI clock
         string shownSync, shownSyncTip;
+        readonly List<Border> ringBoxes = new List<Border>();     // 0.8: controllers' session rings
+        string shownRings;
         string shownLastLaunch = "";
         int shownTempo = -1;
         readonly ComboBox quantizeBox;
@@ -390,6 +392,8 @@ namespace ReBuzz.AppViews.Session
             SyncSettings();
 
             grid.Children.Clear();
+            ringBoxes.Clear();                // 0.8: drawn again on the new grid
+            shownRings = null;
             grid.RowDefinitions.Clear();
             grid.ColumnDefinitions.Clear();
             slots.Clear();
@@ -516,6 +520,39 @@ namespace ReBuzz.AppViews.Session
             return m == null ? text + "\nright-click: MIDI learn" : text + "\n" + m;
         }
 
+        /// <summary>Each connected controller's session ring, as a red box round its slots (0.8, Live's).</summary>
+        void UpdateRings()
+        {
+            var rings = buzz.SessionControllers?.Rings.ToList() ?? new List<(int, int, int, int)>();
+            string key = string.Join(";", rings);
+            if (key == shownRings) return;
+            shownRings = key;
+            foreach (var box in ringBoxes) grid.Children.Remove(box);
+            ringBoxes.Clear();
+            foreach (var (track, scene, width, height) in rings)
+            {
+                var cells = slots.Where(c => c.Track >= track && c.Track < track + width && c.Scene >= scene && c.Scene < scene + height).ToList();
+                if (cells.Count == 0) continue;
+                int r0 = cells.Min(Grid.GetRow), r1 = cells.Max(Grid.GetRow);
+                int c0 = cells.Min(Grid.GetColumn), c1 = cells.Max(Grid.GetColumn);
+                var ring = new Border
+                {
+                    BorderBrush = SessionPalette.Ring,
+                    BorderThickness = new Thickness(2),
+                    Margin = new Thickness(-1, -1, Gap - 1, Gap - 1),
+                    IsHitTestVisible = false,
+                    ToolTip = "A controller's session ring: the slots its pads play"
+                };
+                Grid.SetRow(ring, r0);
+                Grid.SetRowSpan(ring, r1 - r0 + 1);
+                Grid.SetColumn(ring, c0);
+                Grid.SetColumnSpan(ring, c1 - c0 + 1);
+                Panel.SetZIndex(ring, 50);
+                grid.Children.Add(ring);
+                ringBoxes.Add(ring);
+            }
+        }
+
         void Place(UIElement element, int row, int column)
         {
             Grid.SetRow(element, row);
@@ -558,6 +595,7 @@ namespace ReBuzz.AppViews.Session
             }
             foreach (var cell in groupSlots)
                 cell.Refresh(session, blinkOn);
+            UpdateRings();
             foreach (var scene in scenes)
                 scene.Refresh(learn is { } l && l.Target == SessionTarget.Scene && l.Scene == scene.Scene && blinkOn ? SessionPalette.Learn : null);
             foreach (var (t, stop) in trackStops)

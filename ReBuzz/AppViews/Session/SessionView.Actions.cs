@@ -636,6 +636,7 @@ namespace ReBuzz.AppViews.Session
                 });
             }
             AddSyncMenu(menu);
+            AddControllersMenu(menu);
             menu.Items.Add(new Separator());
             AddMixerMenuItems(menu, doc);
 
@@ -673,6 +674,56 @@ namespace ReBuzz.AppViews.Session
             menu.Items.Add(Item("Keyboard shortcuts…", () =>
                 MessageBox.Show(Window.GetWindow(this), KeyboardHelp, "Session View shortcuts", MessageBoxButton.OK, MessageBoxImage.None)));
             OpenMenu(menu, anchor);
+        }
+
+        /// <summary>Control surfaces (0.8): the controllers the MIDI ports offer, on or off.</summary>
+        void AddControllersMenu(ContextMenu menu)
+        {
+            var controllers = buzz.SessionControllers;
+            if (controllers == null) return;
+            var item = new MenuItem { Header = "Controllers" };
+            var available = controllers.Available();
+            foreach (var candidate in available)
+            {
+                var script = candidate.Script;
+                bool on = controllers.Wanted.Contains(script.Name);
+                bool connected = controllers.IsConnected(script.Name);
+                item.Items.Add(new MenuItem
+                {
+                    Header = $"{script.Name} ({candidate.InputName})" + (on && !connected ? " (not answering)" : ""),
+                    IsChecked = on,
+                    ToolTip = "On: its pads launch the slots in its session ring (the red box), its lights follow the session.\n" +
+                              "Its MIDI ports are then its own: leave them off in ReBuzz's MIDI settings.",
+                    Command = new RelayCommand(() =>
+                    {
+                        if (on) controllers.TurnOff(script);
+                        else
+                        {
+                            string problem = controllers.TurnOn(script);
+                            if (problem != null)
+                                MessageBox.Show(Window.GetWindow(this), problem, script.Name, MessageBoxButton.OK, MessageBoxImage.Information);
+                        }
+                        RefreshState();
+                    })
+                });
+            }
+            foreach (var name in controllers.Wanted.Where(n => available.All(a => a.Script.Name != n)).ToList())
+            {
+                var script = controllers.Scripts.FirstOrDefault(s => s.Name == name);
+                if (script == null) continue;
+                item.Items.Add(new MenuItem { Header = $"{name} (not connected)", IsChecked = true, Command = new RelayCommand(() => controllers.TurnOff(script)) });
+            }
+            if (item.Items.Count == 0)
+                item.Items.Add(new MenuItem
+                {
+                    Header = "No controller found",
+                    IsEnabled = false,
+                    ToolTip = "Known: " + string.Join(", ", controllers.Scripts.Select(s => s.Name)) +
+                              ".\nMore can be added as scripts (.dll) in the Controllers folder next to ReBuzz.exe."
+                });
+            foreach (var problem in controllers.ScriptProblems)
+                item.Items.Add(new MenuItem { Header = "Script not loaded: " + problem, IsEnabled = false });
+            menu.Items.Add(item);
         }
 
         /// <summary>Sync (0.8): Ableton Link, MIDI clock in and out.</summary>

@@ -205,7 +205,7 @@ namespace ReBuzz.Core.Session
         /// Any thread: what a pressed target does. Launch, stop and play use the engine (thread-safe)
         /// and the resolved <paramref name="t"/>; everything else is posted to the UI thread.
         /// </summary>
-        void ExecuteNow(SessionTarget target, int track, int scene, LaunchMap t, int velocity)
+        internal void ExecuteNow(SessionTarget target, int track, int scene, LaunchMap t, int velocity)
         {
             var session = buzz.Session;
             switch (target)
@@ -263,7 +263,7 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>Any thread: the release of a slot's control (Gate and Repeat clips, 0.5).</summary>
-        void ReleaseNow(int track, int scene, LaunchMap t)
+        internal void ReleaseNow(int track, int scene, LaunchMap t)
         {
             var seq = t.Track(track);
             var slot = t.Slot(track, scene);

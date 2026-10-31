@@ -28,6 +28,8 @@
     <Compile Include="..\ReBuzz\Core\Sync\SyncTime.cs" Link="Engine\SyncTime.cs" />
     <Compile Include="..\ReBuzz\Core\Sync\MidiClock.cs" Link="Engine\MidiClock.cs" />
     <Compile Include="..\ReBuzz\Core\Sync\SyncClock.cs" Link="Engine\SyncClock.cs" />
+    <Compile Include="..\ReBuzz\Core\Control\ControlSurface.cs" Link="Engine\ControlSurface.cs" />
+    <Compile Include="..\ReBuzz\Core\Control\BuiltInScripts.cs" Link="Engine\BuiltInScripts.cs" />
   </ItemGroup>
 
   <ItemGroup>
