@@ -691,8 +691,7 @@ namespace ReBuzz.AppViews.Session
             {
                 Header = !sync.LinkEnabled ? "Ableton Link" : sync.LinkPeers > 0 ? $"Ableton Link ({sync.LinkPeers} peer{(sync.LinkPeers == 1 ? "" : "s")})" : "Ableton Link (no peers yet)",
                 IsChecked = sync.LinkEnabled,
-                ToolTip = "On: tempo and bar phase follow Live and other Link apps on the network; alone, they follow the session.
-" +
+                ToolTip = "On: tempo and bar phase follow Live and other Link apps on the network; alone, they follow the session.\n" +
                           "A start waits for Link's next bar line, so it lands in step. Runs Link in a helper program (ReBuzzLink).",
                 Command = new RelayCommand(() => { sync.SetLink(!sync.LinkEnabled); Report("Ableton Link"); })
             });
@@ -709,8 +708,7 @@ namespace ReBuzz.AppViews.Session
             {
                 Header = "Follow MIDI clock in",
                 IsChecked = sync.FollowMidiClock,
-                ToolTip = "On: tempo and beat follow the MIDI clock coming in (any open MIDI input), and so do Start, Continue and Stop.
-" +
+                ToolTip = "On: tempo and beat follow the MIDI clock coming in (any open MIDI input), and so do Start, Continue and Stop.\n" +
                           "Turns Link off.",
                 Command = new RelayCommand(() => { sync.SetFollowMidiClock(!sync.FollowMidiClock); Report("MIDI clock in"); })
             });
