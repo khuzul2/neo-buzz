@@ -204,6 +204,15 @@ namespace ReBuzz.Control
             return messages;
         }
 
+        /// <summary>Messages turning off every light of the frame: each light's first message, at 0.</summary>
+        public List<int> Off()
+        {
+            var messages = new List<int>();
+            foreach (var (_, value) in leds.OrderBy(kv => kv.Key))
+                messages.Add((int)(uint)value & 0xFFFF);
+            return messages;
+        }
+
         public LedFrame Copy()
         {
             var copy = new LedFrame();

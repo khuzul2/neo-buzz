@@ -97,7 +97,8 @@ namespace ReBuzz.Control
             if (IsNote(message) && n >= 11 && n <= 88 && n % 10 >= 1 && n % 10 <= 8)
             {
                 int x = n % 10 - 1, y = 8 - n / 10;
-                if (shift) return pressed ? new ControlEvent(ControlKind.TrackStop, x, 0, true, 127) : ControlEvent.None;
+                // With shift a press stops the track; a release is still a pad's (one held before shift).
+                if (shift && pressed) return new ControlEvent(ControlKind.TrackStop, x, 0, true, 127);
                 return new ControlEvent(ControlKind.Pad, x, y, pressed, Data2(message));
             }
             if (!IsCc(message)) return ControlEvent.None;

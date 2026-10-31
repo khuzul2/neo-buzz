@@ -61,7 +61,10 @@ namespace ReBuzzTests
             var track = layout.SequenceOf(0)!;
             Assert.That(rig.Session.GetState(track, a), Is.EqualTo(BuzzGUI.Interfaces.ClipState.Queued));
             controllers.Refresh(c);
-            Assert.That(port.Sent, Is.EqualTo(new[] { On(0, 81, Uncoloured), On(1, 81, ControllerPalette.Green) }), "waiting: flashing green");
+            int waiting = port.Sent.IndexOf(On(0, 81, Uncoloured));
+            Assert.That(waiting, Is.GreaterThanOrEqualTo(0));
+            Assert.That(port.Sent[waiting + 1], Is.EqualTo(On(1, 81, ControllerPalette.Green)), "waiting: its colour, flashing green");
+            Assert.That(port.Sent, Does.Contain(Cc(1, 89, ControllerPalette.Green)), "its scene: flashing too");
 
             rig.PlayTo(2);
             port.Sent.Clear();
@@ -82,7 +85,10 @@ namespace ReBuzzTests
             rig.PlayTo(Bar * 2 + 1);
             Assert.That(rig.Session.GetPlaying(track), Is.Null, "stopped");
 
+            port.Sent.Clear();
             controllers.Detach(c);
+            Assert.That(port.Sent, Does.Contain(Cc(0, 95, 0)), "every light off, Session (shift) too");
+            Assert.That(port.Sent, Does.Contain(On(0, 81, 0)));
             Assert.That(port.SysEx[^1], Is.EqualTo(new byte[] { 0xF0, 0x00, 0x20, 0x29, 0x02, 0x0D, 0x0E, 0x00, 0xF7 }), "Live mode again");
             Assert.That(port.Disposed, Is.True);
         }
@@ -108,6 +114,27 @@ namespace ReBuzzTests
             Assert.That(layout.IsRecordingInto(layout.SequenceOf(0)!, layout.PatternAt(0, 0)), Is.True);
             controllers.Refresh(c);
             Assert.That(port.Sent, Does.Contain(On(14, 32, ControllerPalette.Red)), "a take waiting: blinking red");
+        }
+
+        [Test]
+        public void PadsOutsideTheSessionDoNothingAndAReleaseGoesWhereItsPressWent()
+        {
+            using var rig = new KeysRig();
+            var layout = rig.Layout;
+            layout.Ensure();
+            while (layout.SceneCount > 2) layout.RemoveScene(layout.SceneCount - 1);
+            using var controllers = new SessionControllers(rig.Core, null, loadScripts: false, autoRefresh: false);
+            var port = new FakePort();
+            var c = controllers.Attach(new LaunchpadMiniMk3Script(), port, "test");
+            layout.SetArmed(0, true);
+            port.Press(On(0, 11, 100));                               // bottom left: scene 7, which the session hasn't
+            Assert.That(layout.SceneCount, Is.EqualTo(2), "no take, no scene made for it");
+            Assert.That(layout.PatternAt(0, 7), Is.Null);
+            Assert.That(c.Held, Is.Empty);
+            port.Press(On(0, 81, 100));                               // scene 0: held
+            Assert.That(c.Held.Count, Is.EqualTo(1));
+            port.Press(On(0, 81, 0));
+            Assert.That(c.Held, Is.Empty, "released where it was pressed");
         }
 
         [Test]

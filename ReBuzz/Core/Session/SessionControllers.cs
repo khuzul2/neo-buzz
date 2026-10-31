@@ -44,6 +44,7 @@ namespace ReBuzz.Core.Session
         readonly bool autoRefresh;
         int pending, ticks;
         HashSet<string> wanted;
+        volatile bool disposed;
 
         /// <summary>Controllers connected or let go, rings moved (UI thread).</summary>
         public event Action Changed;
@@ -62,6 +63,8 @@ namespace ReBuzz.Core.Session
             public volatile bool Shift;
             public int TrackOffset, SceneOffset;     // UI thread
             public volatile bool Broken;
+            /// <summary>Pads held (driver thread): the slot each press played, so its release goes there.</summary>
+            public readonly Dictionary<(int X, int Y), (int Track, int Scene)> Held = new Dictionary<(int, int), (int, int)>();
         }
 
         /// <param name="autoRefresh">Lights refreshed every 20 ms (tests call <see cref="Refresh"/> themselves).</param>
@@ -137,15 +140,22 @@ namespace ReBuzz.Core.Session
             foreach (var script in scripts)
             {
                 int bestIn = -1, bestOut = -1, inScore = 0, outScore = 0;
-                for (int i = 0; i < inputs.Count; i++)
+                try
                 {
-                    int score = script.MatchInput(inputs[i]);
-                    if (score > inScore) { inScore = score; bestIn = i; }
+                    for (int i = 0; i < inputs.Count; i++)
+                    {
+                        int score = script.MatchInput(inputs[i]);
+                        if (score > inScore) { inScore = score; bestIn = i; }
+                    }
+                    for (int i = 0; i < outputs.Count; i++)
+                    {
+                        int score = script.MatchOutput(outputs[i]);
+                        if (score > outScore) { outScore = score; bestOut = i; }
+                    }
                 }
-                for (int i = 0; i < outputs.Count; i++)
+                catch (Exception)
                 {
-                    int score = script.MatchOutput(outputs[i]);
-                    if (score > outScore) { outScore = score; bestOut = i; }
+                    continue;                                   // a script that throws offers nothing
                 }
                 if (bestIn >= 0 && bestOut >= 0)
                     found.Add(new Candidate(script, bestIn, inputs[bestIn], bestOut, outputs[bestOut]));
@@ -202,7 +212,14 @@ namespace ReBuzz.Core.Session
                 Label = label,
                 State = new SurfaceState(script.Width, script.Height)
             };
-            foreach (var message in script.Hello()) Send(c, message);
+            try
+            {
+                foreach (var message in script.Hello()) Send(c, message);
+            }
+            catch (Exception e)
+            {
+                buzz.DCWriteLine($"{script.Name}: {e.Message}");
+            }
             port.Received += m => OnInput(c, m);
             connections.Add(c);
             EnsureTimer();
@@ -219,10 +236,9 @@ namespace ReBuzz.Core.Session
             {
                 try
                 {
-                    c.State.Clear();
-                    var dark = new LedFrame();
-                    c.Script.Render(c.State, dark);
-                    foreach (int m in LedFrame.Changes(c.Shown, dark)) c.Port.Send(m);
+                    // Every light it was sent, off; then its own mode back.
+                    if (c.Shown != null)
+                        foreach (int m in c.Shown.Off()) c.Port.Send(m);
                     foreach (var message in c.Script.Goodbye()) Send(c, message);
                 }
                 catch (Exception) { }
@@ -244,7 +260,7 @@ namespace ReBuzz.Core.Session
             try
             {
                 var e = c.Script.Read(message, c.Shift);
-                if (e.Kind == ControlKind.None) return;
+                if (e.Kind == ControlKind.None || disposed) return;
                 var layout = buzz.SessionLayout;
                 var midi = buzz.SessionMidi;
                 if (layout == null || midi == null) return;
@@ -258,13 +274,16 @@ namespace ReBuzz.Core.Session
                         break;
                     case ControlKind.Pad:
                         {
-                            var seq = map.Track(track);
-                            if (seq == null) break;
                             if (!e.Pressed)
                             {
-                                midi.ReleaseNow(track, scene, map);
+                                // The release goes where the press went (the ring may have moved since).
+                                if (c.Held.Remove((e.X, e.Y), out var held))
+                                    midi.ReleaseNow(held.Track, held.Scene, map);
                                 break;
                             }
+                            var seq = map.Track(track);
+                            if (seq == null || map.Scene(scene) == null) break;      // outside the session: nothing
+                            c.Held[(e.X, e.Y)] = (track, scene);
                             if (map.Slot(track, scene) == null && (buzz.Session as SessionCore)?.IsArmed(seq) == true)
                                 buzz.dispatcher.BeginInvoke(() => buzz.SessionLayout?.RecordTake(track, scene));
                             else
@@ -343,7 +362,7 @@ namespace ReBuzz.Core.Session
 
         void EnsureTimer()
         {
-            if (timer != null || !autoRefresh) return;
+            if (timer != null || !autoRefresh || disposed) return;
             timer = new Timer(_ =>
             {
                 if (Interlocked.Exchange(ref pending, 1) == 1) return;      // the UI hasn't caught up: skip
@@ -357,9 +376,26 @@ namespace ReBuzz.Core.Session
 
         void Tick()
         {
+            if (disposed) return;
             foreach (var c in connections.ToList()) Refresh(c);
-            // Now and then: connect controllers turned on whose ports came (back).
-            if (++ticks % (2000 / RefreshMs) == 0 && wanted.Count > connections.Count(c => !c.Broken))
+            if (++ticks % (2000 / RefreshMs) != 0) return;
+            // Now and then: a controller unplugged with its lights unchanged would go unnoticed; one
+            // light sent again finds out.
+            foreach (var c in connections.Where(c => !c.Broken && c.Shown != null && c.Shown.Count > 0).ToList())
+            {
+                try
+                {
+                    var first = LedFrame.Changes(null, c.Shown);
+                    c.Port.Send(first[0]);
+                }
+                catch (Exception)
+                {
+                    c.Broken = true;
+                    RaiseChanged();
+                }
+            }
+            // And connect controllers turned on whose ports came (back).
+            if (wanted.Count > connections.Count(c => !c.Broken))
             {
                 foreach (var c in connections.Where(c => c.Broken).ToList()) Detach(c);
                 foreach (var candidate in Available().Where(a => wanted.Contains(a.Script.Name) && !IsConnected(a.Script.Name)))
@@ -373,7 +409,18 @@ namespace ReBuzz.Core.Session
             if (c.Broken) return;
             Fill(c);
             var frame = new LedFrame();
-            c.Script.Render(c.State, frame);
+            try
+            {
+                c.Script.Render(c.State, frame);
+            }
+            catch (Exception e)
+            {
+                // A script's fault: let its controller go rather than throw every 20 ms.
+                c.Broken = true;
+                buzz.DCWriteLine($"{c.Script.Name}: its lights failed ({e.Message}); turn it off and on to try again.");
+                RaiseChanged();
+                return;
+            }
             var changes = LedFrame.Changes(c.Shown, frame);
             try
             {
@@ -472,15 +519,23 @@ namespace ReBuzz.Core.Session
         public void ConnectWanted()
         {
             if (wanted.Count == 0) return;
-            foreach (var candidate in Available().Where(a => wanted.Contains(a.Script.Name)))
+            try
             {
-                string problem = Connect(candidate);
-                if (problem != null) buzz.DCWriteLine(problem);
+                foreach (var candidate in Available().Where(a => wanted.Contains(a.Script.Name)))
+                {
+                    string problem = Connect(candidate);
+                    if (problem != null) buzz.DCWriteLine(problem);
+                }
+            }
+            catch (Exception e)
+            {
+                buzz.DCWriteLine("Controllers: " + e.Message);
             }
         }
 
         public void Dispose()
         {
+            disposed = true;
             timer?.Dispose();
             timer = null;
             foreach (var c in connections.ToList()) Detach(c);

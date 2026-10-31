@@ -822,7 +822,9 @@ An independent review of 0.7.1 and of the paths 0.8 builds on (MIDI in and out, 
 - It finds controllers by matching every script against the MIDI port names. It opens a controller's ports itself, with NAudio, apart from ReBuzz's MIDI settings.
 - *Presses* are read on the driver's thread. Launches, stops and play go straight to the session engine through the layout's launch map, as mapped MIDI does (`SessionMidi.ExecuteNow`, 0.4.1), so a busy UI doesn't delay them. Arming, recording, Session Record and moving the ring are posted to the UI.
 - *Lights.* Every 20 ms (a tick at 120 BPM is 125 ms), the UI thread fills each controller's `SurfaceState` from the layout and the engine. The script renders it, and only the lights that changed are sent.
-- A controller that stops answering is let go and connected again when its ports come back (checked every 2 s).
+- A controller that stops answering is let go and connected again when its ports come back. Every 2 s one light is sent again, so an unplugged controller is noticed even while nothing changes.
+- A pad's release goes to the slot its press played, even if the ring moved or shift was pressed in between. Pads outside the session do nothing.
+- A script that throws (matching, saying hello, lighting) is let go and logged, never taking ReBuzz down. Let go, every light it was sent is turned off before its own mode comes back.
 
 *New controllers.* Any class deriving from `ControllerScript` in a .dll in the `Controllers` folder next to `ReBuzz.exe` is loaded at start. Build it against `ReBuzz.dll`. For example, a 4 × 4 pad box:
 
@@ -859,9 +861,10 @@ public sealed class MyPadsScript : ControllerScript
 
 **Tests.**
 - `ReBuzz.SessionTests/ControllerTests.cs` (8): the palette; only changed lights sent; ports matched; each built-in script's messages for its grid, buttons, lights and SysEx, against the published protocols.
-- `ReBuzzTests/SessionControllerTests.cs` (3), through a fake port:
+- `ReBuzzTests/SessionControllerTests.cs` (4), through a fake port:
   - a Launchpad launching the clips in its ring, its lights following (waiting, playing), the ring moving down, and shift stopping a track;
   - an APC40 arming a track and recording into an armed empty slot;
+  - pads outside the session doing nothing, and a release going where its press went;
   - scripts picking their ports among many.
 
 **Not automated.** The real devices. The scripts follow the makers' documents but haven't met the hardware.
