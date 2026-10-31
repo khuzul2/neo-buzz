@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11), 0.6.2 (#12), 0.6.3 (#13), 0.7 (#14), 0.7.1 (#15), 0.7.2 (#16) and 0.8a (#17) merged; next: 0.8b control surfaces |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11), 0.6.2 (#12), 0.6.3 (#13), 0.7 (#14), 0.7.1 (#15), 0.7.2 (#16), 0.8a (#17) and 0.8b (#18) merged; next: 1.0 Audio clips |
 | Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -783,6 +783,91 @@ An independent review of 0.7.1 and of the paths 0.8 builds on (MIDI in and out, 
 **Known.** A restart while playing and following (F5 at a song position off the bar) isn't re-aligned like a start: the lock pulls the session back into phase over a few seconds.
 
 **Not automated.** A 30-minute run against Live (the simulation and the real-time test stand in). Real audio devices' latency reports, since the latency is 0.4.1's estimate.
+
+#### 0.8b — Control surfaces
+
+**What it does.** ⚙ › Controllers lists the controllers found among the MIDI ports, each with a checkbox.
+- Turned on, a controller gets its ports to itself, and a session ring: a red box in the Session View round the slots its grid plays.
+- Its pads launch the clips in the ring. An empty slot of an armed track records a take; any other empty slot stops its track. Releasing a pad releases a Gate or Repeat clip.
+- Its scene buttons launch scenes. Its arrows move the ring, a page at a time with shift.
+- Its lights follow the session (Live's conventions):
+  - clips: their colour;
+  - playing: pulsing green;
+  - waiting: their colour flashing green;
+  - recording: pulsing red;
+  - an armed track's empty slots: dim red;
+  - arrows: lit where the ring can go.
+- Controllers turned on are remembered, and connected whenever their ports appear.
+- Turned off (or when ReBuzz quits), a controller's lights go out and it gets its own mode back.
+
+| Controller | Ports | Grid and buttons |
+|---|---|---|
+| Launchpad Mini MK3, X | "LPMiniMK3 MIDI", "LPX MIDI" (not DAW) | Programmer mode. Pads: notes 11–88. Scenes: CCs 89…19. ▲▼◀▶: 91–94. Session (95) is shift: shift with a pad stops its track, with a scene stops all. |
+| Launchpad Pro MK3 | "LPProMK3 MIDI" | As above. Shift is 90, ◀▶ are 91–92 and ▲▼ are 80 and 70. The bottom row (1–8) stops tracks; Play is 20. The left and bottom rows' numbers aren't in Novation's manual's text, so check them on hardware. |
+| APC mini mk2 | "APC mini mk2" (not MIDIIN2) | Pads: notes 0–63. The bottom row stops tracks, or with Shift moves the ring (104–107). The right column launches scenes, or with Shift stops all. Pad lights take a channel for brightness or animation. |
+| APC40 mkII | "APC40 mkII" | Ableton Live mode (introduction SysEx). A 5 × 8 grid (notes 0–39, top row 32–39). Scenes: 82–86. Clip Stop (52) and Record Arm (48) are on the track's channel. Also Stop All, bank arrows, Shift, Play and Session Record. |
+| Push 2 | User port (MIDIIN2/MIDIOUT2) | User mode. Pads: notes 36–99. Scenes: CCs 43–36. Below the display (20–27) stops tracks; above it (102–109) arms them. Also arrows, Shift, Play, Record (Session Record) and Stop Clip (stop all). The shared palette's entries are written into its palette when it connects. |
+
+**Design.**
+
+*Scripts* (`ReBuzz.Control`, pure and public). A script says:
+- which ports are its (`MatchInput`, `MatchOutput`: a score);
+- what to send when it connects and leaves (`Hello`, `Goodbye`);
+- what a MIDI message means (`Read`: a `ControlEvent`, such as Pad (x, y), Scene, TrackStop, TrackArm, StopAll, the arrows, Play, SessionRecord or Shift);
+- what its lights show for a state of the session (`Render`: a `SurfaceState` in, a `LedFrame` of messages out).
+
+`PaletteScript` covers controllers that take a palette colour as velocity, with a channel for still, pulsing or blinking. `ControllerPalette` holds the palette Novation and Akai share: greys, then families of four (light, full, dim, dark) round the colour wheel from red at 4. Clip colours go to the nearest family.
+
+*The manager* (`SessionControllers`).
+- It finds controllers by matching every script against the MIDI port names. It opens a controller's ports itself, with NAudio, apart from ReBuzz's MIDI settings.
+- *Presses* are read on the driver's thread. Launches, stops and play go straight to the session engine through the layout's launch map, as mapped MIDI does (`SessionMidi.ExecuteNow`, 0.4.1), so a busy UI doesn't delay them. Arming, recording, Session Record and moving the ring are posted to the UI.
+- *Lights.* Every 20 ms (a tick at 120 BPM is 125 ms), the UI thread fills each controller's `SurfaceState` from the layout and the engine. The script renders it, and only the lights that changed are sent.
+- A controller that stops answering is let go and connected again when its ports come back. Every 2 s one light is sent again, so an unplugged controller is noticed even while nothing changes.
+- A pad's release goes to the slot its press played, even if the ring moved or shift was pressed in between. Pads outside the session do nothing.
+- A script that throws (matching, saying hello, lighting) is let go and logged, never taking ReBuzz down. Let go, every light it was sent is turned off before its own mode comes back.
+
+*New controllers.* Any class deriving from `ControllerScript` in a .dll in the `Controllers` folder next to `ReBuzz.exe` is loaded at start. Build it against `ReBuzz.dll`. For example, a 4 × 4 pad box:
+
+```csharp
+using ReBuzz.Control;
+
+public sealed class MyPadsScript : ControllerScript
+{
+    public override string Name => "My pads";
+    public override int Width => 4;
+    public override int Height => 4;
+    public override int MatchInput(string port) => Has(port, "My Pads") ? 10 : 0;
+    public override int MatchOutput(string port) => MatchInput(port);
+
+    public override ControlEvent Read(int message, bool shift)
+    {
+        int n = Data1(message) - 36;                         // pads: notes 36-51, from the bottom left
+        if (!IsNote(message) || n < 0 || n >= 16) return ControlEvent.None;
+        return new ControlEvent(ControlKind.Pad, n % 4, 3 - n / 4, IsPress(message), Data2(message));
+    }
+
+    public override void Render(SurfaceState s, LedFrame leds)
+    {
+        for (int y = 0; y < 4; y++)
+            for (int x = 0; x < 4; x++)
+            {
+                int note = 36 + (3 - y) * 4 + x;
+                int value = s.Pad(x, y) switch { PadState.Playing => 127, PadState.Stopped => 20, _ => 0 };
+                leds.Set(note, Note(0, note, value));
+            }
+    }
+}
+```
+
+**Tests.**
+- `ReBuzz.SessionTests/ControllerTests.cs` (8): the palette; only changed lights sent; ports matched; each built-in script's messages for its grid, buttons, lights and SysEx, against the published protocols.
+- `ReBuzzTests/SessionControllerTests.cs` (4), through a fake port:
+  - a Launchpad launching the clips in its ring, its lights following (waiting, playing), the ring moving down, and shift stopping a track;
+  - an APC40 arming a track and recording into an armed empty slot;
+  - pads outside the session doing nothing, and a release going where its press went;
+  - scripts picking their ports among many.
+
+**Not automated.** The real devices. The scripts follow the makers' documents but haven't met the hardware.
 
 ---
 

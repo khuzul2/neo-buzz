@@ -127,6 +127,9 @@ namespace ReBuzz.Core
         // Fork (0.8): Link, MIDI clock in and out; created with the layout.
         internal SessionSync SessionSync { get; set; }
 
+        // Fork (0.8): control surfaces (Launchpad, APC, Push 2 and scripts); created with the layout.
+        internal SessionControllers SessionControllers { get; set; }
+
         // Fork (0.5.1): arrangement events' start, end and volume in song files.
         internal ArrangementEventStore ArrangementEvents { get; set; }
 
@@ -1360,6 +1363,8 @@ namespace ReBuzz.Core
             SessionLayout?.Detach();       // fork (0.6.3): off the static restoration bus
             SessionSync?.Dispose();        // fork (0.8): the Link helper and the clock thread end
             SessionSync = null;
+            SessionControllers?.Dispose(); // fork (0.8): controllers' lights off, their own modes back
+            SessionControllers = null;
 
             timerAutomaticBackups.Stop();
             MidiInOutEngine.ReleaseAll();

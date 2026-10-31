@@ -45,6 +45,7 @@ namespace ReBuzz.AppViews.Session
         public static readonly Brush GroupHeader = Make("#3D3D47");
         public static readonly Brush ReturnHeader = Make("#33303D");
         public static readonly Brush MixerBack = Make("#202024");
+        public static readonly Brush ControllerRing = Make("#E8473C");   // a controller's session ring (0.8), Live's red box
 
         /// <summary>
         /// Clip, track and scene colours: an index into the theme's PatternColors, the same list
