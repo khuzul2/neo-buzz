@@ -14,8 +14,13 @@ namespace ReBuzz.Midi
     {
         private readonly IRegistryEx registryEx;
         private readonly ReBuzzCore buzz;
+        // Fork (0.8 groundwork): the device watcher's thread, the UI and the audio thread (MIDI out
+        // machines) all use these, so each is guarded: midiIns by midiInLock, midiOuts by
+        // midiOutLock (taken after AudioLock, never before it). Devices are opened and closed
+        // outside the locks, so a send never waits for a driver.
         private readonly Dictionary<int, MidiInDevice> midiIns = new Dictionary<int, MidiInDevice>();
         private readonly Dictionary<int, MidiOutDevice> midiOuts = new Dictionary<int, MidiOutDevice>();
+        private readonly Lock midiInLock = new Lock();
         private DeviceWatcher _watcher;
 
         Midi2 midi2;
@@ -106,32 +111,30 @@ namespace ReBuzz.Midi
                 {
                     buzz.DCWriteLine("Device disconnected: " + info.Name);
 
-                    var inputsInfo = registryEx.ReadDictionary("MIDI In List");
-                    if (inputsInfo.ContainsKey(info.Name))
+                    // Fork: closed, not only forgotten, so the device opens again when it comes back.
+                    MidiInDevice goneIn = null;
+                    lock (midiInLock)
                     {
-                        for (int i = 0; i < midiIns.Count; i++)
+                        var key = midiIns.FirstOrDefault(kv => kv.Value.ProductName == info.Name);
+                        if (key.Value != null)
                         {
-                            if (midiIns.ElementAt(i).Value.ProductName == info.Name)
-                            {
-                                midiIns.ElementAt(i).Value.UnsubscribeEvents();
-                                midiIns.Remove(midiIns.ElementAt(i).Key);
-                                break;
-                            }
+                            goneIn = key.Value;
+                            midiIns.Remove(key.Key);
                         }
                     }
+                    goneIn?.DisposeMidiIn();
 
-                    var outputsInfo = registryEx.ReadDictionary("MIDI Out List");
-                    if (outputsInfo.ContainsKey(info.Name))
+                    MidiOutDevice goneOut = null;
+                    lock (midiOutLock)
                     {
-                        for (int i = 0; i < midiOuts.Count; i++)
+                        var key = midiOuts.FirstOrDefault(kv => kv.Value.ProductName == info.Name);
+                        if (key.Value != null)
                         {
-                            if (midiOuts.ElementAt(i).Value.ProductName == info.Name)
-                            {
-                                midiOuts.Remove(midiOuts.ElementAt(i).Key);
-                                break;
-                            }
+                            goneOut = key.Value;
+                            midiOuts.Remove(key.Key);
                         }
                     }
+                    goneOut?.Dispose();
                 }
             }
             catch (Exception ex)
@@ -176,17 +179,19 @@ namespace ReBuzz.Midi
         {
             try
             {
-                if (midiIns.ContainsKey(selectedDeviceIndex))
+                // Fork: the old handle is closed first (opening a device twice fails).
+                MidiInDevice old;
+                lock (midiInLock)
                 {
-                    //midiIns[selectedDeviceIndex].DisposeMidiIn();
-                    midiIns.Remove(selectedDeviceIndex);
+                    midiIns.Remove(selectedDeviceIndex, out old);
                 }
+                old?.DisposeMidiIn();
 
-                if (!midiIns.ContainsKey(selectedDeviceIndex))
+                var midiIn = new MidiInDevice(buzz);
+                midiIn.CreateMidiIn(selectedDeviceIndex);
+                lock (midiInLock)
                 {
-                    var midiIn = new MidiInDevice(buzz);
-                    midiIn.CreateMidiIn(selectedDeviceIndex);
-                    midiIns.Add(selectedDeviceIndex, midiIn);
+                    midiIns[selectedDeviceIndex] = midiIn;
                 }
             }
             catch (Exception e)
@@ -197,26 +202,35 @@ namespace ReBuzz.Midi
 
         public void DisposeMidiIn()
         {
-            foreach (var md in midiIns.Values)
+            List<MidiInDevice> devices;
+            lock (midiInLock)
+            {
+                devices = midiIns.Values.ToList();
+                midiIns.Clear();
+            }
+            foreach (var md in devices)
             {
                 md.DisposeMidiIn();
             }
-            midiIns.Clear();
         }
 
         public void CreateMidiOut(int selectedDeviceIndex)
         {
             try
             {
-                if (midiOuts.ContainsKey(selectedDeviceIndex))
+                // Fork: the old handle is closed first (opening a device twice fails), and
+                // outside the lock, so the audio thread's sends don't wait for the driver.
+                MidiOutDevice old;
+                lock (midiOutLock)
                 {
-                    //midiOuts[selectedDeviceIndex].MidiOut.Dispose();
-                    midiOuts.Remove(selectedDeviceIndex);
+                    midiOuts.Remove(selectedDeviceIndex, out old);
                 }
+                old?.Dispose();
 
-                if (!midiOuts.ContainsKey(selectedDeviceIndex))
+                var device = new MidiOutDevice(selectedDeviceIndex);
+                lock (midiOutLock)
                 {
-                    midiOuts.Add(selectedDeviceIndex, new MidiOutDevice(selectedDeviceIndex));
+                    midiOuts[selectedDeviceIndex] = device;
                 }
             }
             catch (Exception e)
@@ -225,61 +239,61 @@ namespace ReBuzz.Midi
             }
         }
 
-        Lock midiOutLock = new Lock();
+        readonly Lock midiOutLock = new Lock();
 
         public void SendMidiOut(int device, int message)
         {
-            if (midiOuts.ContainsKey(device))
+            lock (midiOutLock)
             {
-                lock (midiOutLock)
+                if (!midiOuts.TryGetValue(device, out var d)) return;
+                try
                 {
-                    try
-                    {
-                        midiOuts[device].MidiOut.Send(message);
-                    }
-                    catch (Exception e)
-                    {
-                        buzz.DCWriteLine(e.Message);
-                    }
+                    d.MidiOut.Send(message);
+                }
+                catch (Exception e)
+                {
+                    buzz.DCWriteLine(e.Message);
                 }
             }
         }
 
         public void SendMidiOut(int device, byte[] message)
         {
-            if (midiOuts.ContainsKey(device))
+            lock (midiOutLock)
             {
-                lock (midiOutLock)
+                if (!midiOuts.TryGetValue(device, out var d)) return;
+                try
                 {
-                    try
-                    {
-                        midiOuts[device].MidiOut.SendBuffer(message);
-                    }
-                    catch (Exception e)
-                    {
-                        buzz.DCWriteLine(e.Message);
-                    }
+                    d.MidiOut.SendBuffer(message);
+                }
+                catch (Exception e)
+                {
+                    buzz.DCWriteLine(e.Message);
                 }
             }
         }
 
         public void DisposeMidiOuts()
         {
+            List<MidiOutDevice> devices;
             lock (ReBuzzCore.AudioLock)
             {
-                foreach (var midiOut in midiOuts.Values)
+                lock (midiOutLock)
                 {
-                    try
-                    {
-                        midiOut.MidiOut.Dispose();
-                    }
-                    catch (Exception e)
-                    {
-                        buzz.DCWriteLine(e.Message);
-                    }
+                    devices = midiOuts.Values.ToList();
+                    midiOuts.Clear();
                 }
-
-                midiOuts.Clear();
+            }
+            foreach (var midiOut in devices)
+            {
+                try
+                {
+                    midiOut.Dispose();
+                }
+                catch (Exception e)
+                {
+                    buzz.DCWriteLine(e.Message);
+                }
             }
         }
 
@@ -340,7 +354,7 @@ namespace ReBuzz.Midi
 
         internal IEnumerable<int> GetMidiInputDevices()
         {
-            return midiIns.Keys.ToReadOnlyCollection();
+            lock (midiInLock) return midiIns.Keys.ToList();
         }
 
         internal void OpenMidiInDevices()
@@ -380,15 +394,17 @@ namespace ReBuzz.Midi
 
         internal IEnumerable<int> GetMidiOutputDevices()
         {
-            return midiOuts.Keys.ToReadOnlyCollection();
+            lock (midiOutLock) return midiOuts.Keys.ToList();
         }
 
         internal IEnumerable<Tuple<int, string>> GetMidiOuts()
         {
             List<Tuple<int, string>> moList = new List<Tuple<int, string>>();
-            foreach (var mo in midiOuts.ToList())
-                moList.Add(new Tuple<int, string>(mo.Key, mo.Value.ProductName));
-
+            lock (midiOutLock)
+            {
+                foreach (var mo in midiOuts)
+                    moList.Add(new Tuple<int, string>(mo.Key, mo.Value.ProductName));
+            }
             return moList;
         }
 

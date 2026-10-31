@@ -90,6 +90,15 @@ namespace ReBuzz.Core.Session
         /// <summary>Whether the track records now (or waits to, a take that hasn't started).</summary>
         public bool IsRecording(ISequence track) => track is SequenceCore seq && recordings.ContainsKey(seq);
 
+        /// <summary>Whether any track records into the clip (a take of it, or overdubbing it).</summary>
+        public bool IsRecordingClip(IPattern clip)
+        {
+            if (clip == null) return false;
+            foreach (var (seq, r) in recordings)
+                if (r.Take != null ? ReferenceEquals(r.Take, clip) : ReferenceEquals(Engine?.GetPlayingCore(seq), clip)) return true;
+            return false;
+        }
+
         /// <summary>Whether the clip is a take waiting or recording on the track, or the clip the track overdubs.</summary>
         public bool IsRecordingInto(ISequence track, IPattern clip)
         {
@@ -645,7 +654,7 @@ namespace ReBuzz.Core.Session
                 foreach (var seq in engine.ArmedTracks.ToList())
                 {
                     var played = engine.TakeCapturedWhileStopped(seq);
-                    int first = played.FindIndex(m => (m.Data & 0xF0) == 0x90 && ((m.Data >> 16) & 0x7F) > 0);
+                    int first = PhraseStart(played, bar * frequency / ticksPerSecond, MaxCaptureBars * bar * frequency / ticksPerSecond);
                     if (first < 0) continue;
                     long t0 = played[first].Wall;
                     long TimeOf(long wall) => (long)Math.Round((wall - t0) / frequency * ticksPerSecond * TakeTime.TimeBase);
@@ -695,6 +704,43 @@ namespace ReBuzz.Core.Session
                 RecordingChanged?.Invoke();
             }
             return made;
+        }
+
+        static bool IsNoteOn(int data) => (data & 0xF0) == 0x90 && ((data >> 16) & 0x7F) > 0;
+
+        static bool IsRelease(int data) => (data & 0xF0) == 0x80 || ((data & 0xF0) == 0x90 && ((data >> 16) & 0x7F) == 0);
+
+        /// <summary>
+        /// Where the phrase played while stopped starts (0.7.1 hardening): the first note after
+        /// the last silence of a bar or more (no note held, none played), and no more than the
+        /// longest capture before the last thing played. -1 if no note was played.
+        /// </summary>
+        internal static int PhraseStart(IReadOnlyList<(long Wall, int Data)> played, double barWall, double maxWall)
+        {
+            if (played.Count == 0) return -1;
+            long end = played[played.Count - 1].Wall;
+            int start = -1, held = 0;
+            long lastNoteEvent = long.MinValue;
+            for (int i = 0; i < played.Count; i++)
+            {
+                var (wall, data) = played[i];
+                if (IsNoteOn(data))
+                {
+                    bool afterSilence = held == 0 && (lastNoteEvent == long.MinValue || wall - lastNoteEvent >= barWall);
+                    if (start < 0 || afterSilence) start = i;
+                    held++;
+                    lastNoteEvent = wall;
+                }
+                else if (IsRelease(data))
+                {
+                    held = Math.Max(0, held - 1);
+                    lastNoteEvent = wall;
+                }
+            }
+            if (start < 0) return -1;
+            // Too long ago: the first note within the longest capture.
+            while (start < played.Count && (end - played[start].Wall > maxWall || !IsNoteOn(played[start].Data))) start++;
+            return start < played.Count ? start : -1;
         }
 
         /// <summary>New song or song loaded: nothing records, Session Record is off.</summary>

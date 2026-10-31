@@ -38,6 +38,7 @@ namespace ReBuzz.AppViews.Session
         int downTime, downNote, keyNote = -1;
         List<ClipNote> dragFrom;
         List<ClipNote> dragTo;
+        bool dragging;
         Rect? box;
         int lastVelocity = 100;
         int lastDuration;
@@ -48,15 +49,25 @@ namespace ReBuzz.AppViews.Session
             this.layout = layout;
             session = buzz.Session;
             Track = track;
-            Clip = clip;
+            original = clip;
             Focusable = true;
             FocusVisualStyle = null;
             ClipToBounds = true;
             Reload();
         }
 
+        readonly IPattern original;
+
         public ISequence Track { get; }
-        public IPattern Clip { get; }
+
+        /// <summary>The clip, as it stands now: the session's undo may have made it again (0.7.1 hardening).</summary>
+        public IPattern Clip => layout.Current(original);
+
+        /// <summary>Whether the clip is in the song (not deleted, or brought back by an undo).</summary>
+        public bool IsLive => Clip is PatternCore p && !p.IsDeleted && layout.IsInSong(p.Machine);
+
+        /// <summary>Whether the clip records now (edits wait until it stops).</summary>
+        public bool IsRecording => layout.IsRecordingClip(Clip);
 
         /// <summary>Snap grid in pattern time (1/240 tick); 1 for none.</summary>
         public int Grid { get; set; } = ClipNotes.TimeBase;
@@ -107,7 +118,7 @@ namespace ReBuzz.AppViews.Session
         public void Reload()
         {
             var keep = selected.Where(i => i < notes.Count).Select(i => notes[i]).ToList();
-            notes = layout.NotesOf(Clip);
+            notes = IsLive ? layout.NotesOf(Clip) : new List<ClipNote>();
             selected.Clear();
             foreach (var n in keep)
             {
@@ -121,6 +132,11 @@ namespace ReBuzz.AppViews.Session
 
         void Commit(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added)
         {
+            if (!IsLive || IsRecording)
+            {
+                Reload();                                    // nothing changes: show the notes as they are
+                return;
+            }
             layout.EditNotes(Clip, removed, added);
             notes = layout.NotesOf(Clip);
             selected.Clear();
@@ -376,6 +392,13 @@ namespace ReBuzz.AppViews.Session
                 Cursor = hit >= 0 && p.X >= RectOf(notes[hit]).Right - EdgeGrab ? Cursors.SizeWE : hit >= 0 ? Cursors.SizeAll : null;
                 return;
             }
+            // A click that wobbles a pixel is no drag (it would snap the note to the grid).
+            if (!dragging && (drag == Drag.Move || drag == Drag.Resize || drag == Drag.Velocity))
+            {
+                if (Math.Abs(p.X - down.X) < SystemParameters.MinimumHorizontalDragDistance &&
+                    Math.Abs(p.Y - down.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+                dragging = true;
+            }
             switch (drag)
             {
                 case Drag.Move:
@@ -433,6 +456,7 @@ namespace ReBuzz.AppViews.Session
             if (drag == Drag.None) return;
             var mode = drag;
             drag = Drag.None;
+            dragging = false;
             if (keyNote >= 0 && (mode == Drag.Key || mode == Drag.Move))
                 layout.PreviewNote(Clip, keyNote, 0, false);
             keyNote = -1;
@@ -527,7 +551,8 @@ namespace ReBuzz.AppViews.Session
         public static PianoRollWindow Show(Window owner, ReBuzzCore buzz, SessionLayout layout, ISequence track, IPattern clip)
         {
             if (clip == null) return null;
-            if (open.TryGetValue(clip, out var existing))
+            var existing = open.Values.FirstOrDefault(w => ReferenceEquals(w.roll.Clip, layout.Current(clip)));
+            if (existing != null)
             {
                 existing.Activate();
                 return existing;
@@ -538,6 +563,9 @@ namespace ReBuzz.AppViews.Session
             window.Show();
             return window;
         }
+
+        /// <summary>Open piano roll windows (tests).</summary>
+        internal static int OpenCount => open.Count;
 
         internal PianoRollWindow(ReBuzzCore buzz, SessionLayout layout, ISequence track, IPattern clip)
         {
@@ -633,15 +661,19 @@ namespace ReBuzz.AppViews.Session
                 }
             };
             Loaded += (s, e) => timer.Start();
-            Closed += (s, e) => timer.Stop();
+            // A new or opened song ends the old one's clips, and its undo: close (0.7.1 hardening).
+            Action reset = () => Dispatcher.BeginInvoke(new Action(Close));
+            layout.Resetting += reset;
+            Closed += (s, e) => { timer.Stop(); layout.Resetting -= reset; };
         }
 
         internal PianoRoll Roll => roll;
 
         (int, long) Signature()
         {
+            if (!roll.IsLive) return (-1, roll.IsRecording ? 1 : 0);
             var notes = layout.NotesOf(roll.Clip);
-            long sum = 0;
+            long sum = roll.IsRecording ? 1 : 0;
             foreach (var n in notes) sum = sum * 31 + n.Time * 7 + n.Duration * 3 + n.Note * 131 + n.Velocity;
             return (notes.Count, sum);
         }
@@ -657,7 +689,9 @@ namespace ReBuzz.AppViews.Session
         {
             int count = roll.Notes.Count;
             int sel = roll.Selection.Count;
-            summary.Text = count == 0 ? "No notes yet: double-click to draw one."
+            summary.Text = !roll.IsLive ? "The clip was deleted: undo in the Session View brings it back."
+                : roll.IsRecording ? "Recording: edits wait until it stops."
+                : count == 0 ? "No notes yet: double-click to draw one."
                 : sel == 0 ? $"{count} note{(count == 1 ? "" : "s")}"
                 : $"{sel} of {count} selected" + (sel == 1 ? $" · {ClipNotes.Name(roll.Notes[roll.Selection.First()].Note)}, velocity {roll.Notes[roll.Selection.First()].Velocity}" : "");
             seen = Signature();

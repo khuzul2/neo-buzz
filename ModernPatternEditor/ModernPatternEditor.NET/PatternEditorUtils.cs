@@ -782,32 +782,52 @@ namespace WDE.ModernPatternEditor
         #region Clip notes (fork: neo-buzz Session View 0.7.1)
 
         // A pattern's MIDI note lanes (the MIDI Note, Velocity, Note Delay and Note Cut columns
-        // of each track) as notes, and back: the Session View moves a clip's recorded notes into
-        // the Pattern View and back with these. Notes are int triples (time in 1/240 tick,
-        // note-on message, duration); the layout on rows is BuzzGUI.Common.TrackerNotes'.
+        // of each track of the pattern's own machine) as notes, and back: the Session View moves
+        // a clip's recorded notes into the Pattern View and back with these. Notes are int
+        // triples (time in 1/240 tick, note-on message, duration); the layout on rows is
+        // BuzzGUI.Common.TrackerNotes'. Notes the lanes can hold: MIDI 0-119 (BuzzNote's range).
+
+        public const int MaxClipNote = 119;
 
         static readonly InternalParameter[] NoteLanes =
             { InternalParameter.MidiNote, InternalParameter.MidiVelocity, InternalParameter.MidiNoteDelay, InternalParameter.MidiNoteCut };
 
-        static MPEPatternColumn Lane(MPEPattern pattern, InternalParameter type, int track) =>
-            pattern.MPEPatternColumns.FirstOrDefault(c => c.Parameter is MPEInternalParameter p && p.InternalType == type && c.ParamTrack == track);
+        static bool IsLane(MPEPatternColumn c, IMachine machine, InternalParameter type) =>
+            c.Machine == machine && c.Parameter is MPEInternalParameter p && p.InternalType == type;
 
-        static int RowLength(MPEPattern pattern) =>
-            MPEPatternColumn.BUZZ_TICKS_PER_BEAT * PatternEvent.TimeBase / Math.Max(1, pattern.RowsPerBeat);
+        static bool IsAnyLane(MPEPatternColumn c, IMachine machine) =>
+            c.Machine == machine && c.Parameter is MPEInternalParameter p && NoteLanes.Contains(p.InternalType);
+
+        static MPEPatternColumn Lane(MPEPattern pattern, InternalParameter type, int track) =>
+            pattern.MPEPatternColumns.FirstOrDefault(c => IsLane(c, pattern.Pattern.Machine, type) && c.ParamTrack == track);
 
         static int ValueAt(MPEPatternColumn column, int time) =>
             column == null ? 0 : column.GetEvents(time, time + 1).Select(e => e.Value).FirstOrDefault();
 
+        static int BeatsOf(MPEPattern pattern) =>
+            Math.Max(1, (pattern.Pattern.Length + MPEPatternColumn.BUZZ_TICKS_PER_BEAT - 1) / MPEPatternColumn.BUZZ_TICKS_PER_BEAT);
+
+        /// <summary>Rows in each beat of a lane (its own subdivisions, else the pattern's rows per beat).</summary>
+        static List<int> BeatRows(MPEPattern pattern, MPEPatternColumn lane)
+        {
+            int beats = BeatsOf(pattern);
+            var list = new List<int>(beats);
+            for (int b = 0; b < beats; b++)
+                list.Add(lane != null && b < lane.BeatRowsList.Count ? lane.BeatRowsList[b] : Math.Max(1, pattern.RowsPerBeat));
+            return list;
+        }
+
         /// <summary>The notes the pattern's MIDI note lanes play.</summary>
         public static int[] ExportClipNotes(MPEPattern pattern)
         {
-            if (pattern?.Pattern == null) return Array.Empty<int>();
-            int rowLength = RowLength(pattern);
+            if (pattern?.Pattern?.Machine == null) return Array.Empty<int>();
+            var machine = pattern.Pattern.Machine;
             int length = pattern.Pattern.Length * PatternEvent.TimeBase;
             var rows = new List<TrackerRow>();
-            foreach (var lane in pattern.MPEPatternColumns.Where(c => c.Parameter is MPEInternalParameter p && p.InternalType == InternalParameter.MidiNote).ToList())
+            foreach (var lane in pattern.MPEPatternColumns.Where(c => IsLane(c, machine, InternalParameter.MidiNote)).ToList())
             {
                 int t = lane.ParamTrack;
+                var grid = RowGrid.Beats(BeatRows(pattern, lane));
                 var velocity = Lane(pattern, InternalParameter.MidiVelocity, t);
                 var delay = Lane(pattern, InternalParameter.MidiNoteDelay, t);
                 var cut = Lane(pattern, InternalParameter.MidiNoteCut, t);
@@ -819,47 +839,60 @@ namespace WDE.ModernPatternEditor
                         try { midi = BuzzNote.ToMIDINote(e.Value); }
                         catch { continue; }
                     }
-                    rows.Add(new TrackerRow(t, e.Time / rowLength, midi, ValueAt(velocity, e.Time), ValueAt(delay, e.Time), ValueAt(cut, e.Time)));
+                    int row = grid.RowAt(e.Time);
+                    rows.Add(new TrackerRow(t, grid.Start(row), grid.Length(row), midi, ValueAt(velocity, e.Time), ValueAt(delay, e.Time), ValueAt(cut, e.Time)));
                 }
             }
-            return TrackerNotes.Pack(TrackerNotes.FromRows(rows, rowLength, length, MPEInternalParameter.DefaultMidiVolume));
+            return TrackerNotes.Pack(TrackerNotes.FromRows(rows, length, MPEInternalParameter.DefaultMidiVolume));
         }
 
         /// <summary>
-        /// Replaces what the pattern's MIDI note lanes play with these notes: one track a voice
-        /// (the machine gets more tracks if it can take them). False if notes were left out.
+        /// How notes would lie on the pattern's MIDI note lanes, changing nothing: one track a
+        /// voice, on the rows of the lanes there are (or the pattern's rows per beat). Null if
+        /// they don't fit: more voices than the machine can have tracks, notes above B7 (MIDI
+        /// 119), or lanes with rows of their own that differ from track to track.
         /// </summary>
-        public static bool ImportClipNotes(MPEPattern pattern, int[] data)
+        public static List<TrackerRow> PlanClipNotes(MPEPattern pattern, int[] data, out int tracks)
         {
+            tracks = 0;
             var machine = pattern?.Pattern?.Machine;
-            if (machine == null) return false;
-            int rowLength = RowLength(pattern);
+            if (machine == null) return null;
+            var lanes = pattern.MPEPatternColumns.Where(c => IsAnyLane(c, machine)).ToList();
+            var beatRows = BeatRows(pattern, lanes.FirstOrDefault(c => IsLane(c, machine, InternalParameter.MidiNote)));
+            if (lanes.Any(c => !BeatRows(pattern, c).SequenceEqual(beatRows))) return null;
             int length = pattern.Pattern.Length * PatternEvent.TimeBase;
-            int maxTracks = Math.Max(machine.TrackCount, machine.DLL?.Info?.MaxTracks ?? 1);
-            var rows = TrackerNotes.ToRows(TrackerNotes.Unpack(data), rowLength, length, Math.Max(1, maxTracks), out int tracks, out int dropped);
-            if (tracks > machine.TrackCount)
-                machine.TrackCount = tracks;
+            int maxTracks = Math.Max(1, Math.Max(machine.TrackCount, machine.DLL?.Info?.MaxTracks ?? 1));
+            var rows = TrackerNotes.ToRows(TrackerNotes.Unpack(data), RowGrid.Beats(beatRows), length, maxTracks, out tracks, out int dropped, MaxClipNote);
+            return dropped == 0 ? rows : null;
+        }
 
-            foreach (var c in pattern.MPEPatternColumns.Where(c => c.Parameter is MPEInternalParameter p && NoteLanes.Contains(p.InternalType)).ToList())
+        /// <summary>
+        /// Replaces what the pattern's MIDI note lanes play with planned rows (<see cref="PlanClipNotes"/>).
+        /// Call under the editor's lock, with the machine already given the tracks.
+        /// </summary>
+        public static void WriteClipNotes(MPEPattern pattern, List<TrackerRow> rows, int tracks)
+        {
+            var machine = pattern.Pattern.Machine;
+            var reference = Lane(pattern, InternalParameter.MidiNote, 0) ?? pattern.MPEPatternColumns.FirstOrDefault(c => IsAnyLane(c, machine));
+            var beatRows = BeatRows(pattern, reference);
+            foreach (var c in pattern.MPEPatternColumns.Where(c => IsAnyLane(c, machine)).ToList())
                 c.Clear();
             for (int t = 0; t < tracks; t++)
                 foreach (var type in NoteLanes)
                     if (Lane(pattern, type, t) == null)
-                        pattern.CreateNewColumn(MPEInternalParameter.GetInternalParameter(machine, type), t);
+                        pattern.CreateNewColumn(MPEInternalParameter.GetInternalParameter(machine, type), t).SetBeats(new List<int>(beatRows));
             pattern.UpdateData();
 
             foreach (var r in rows)
             {
-                int time = r.Row * rowLength;
-                Lane(pattern, InternalParameter.MidiNote, r.Track)?.SetEvents(new[] { new PatternEvent(time, r.Midi >= 0 ? BuzzNote.FromMIDINote(r.Midi) : BuzzNote.Off) }, true, false);
+                Lane(pattern, InternalParameter.MidiNote, r.Track)?.SetEvents(new[] { new PatternEvent(r.Time, r.Midi >= 0 ? BuzzNote.FromMIDINote(r.Midi) : BuzzNote.Off) }, true, false);
                 if (r.Velocity > 0)
-                    Lane(pattern, InternalParameter.MidiVelocity, r.Track)?.SetEvents(new[] { new PatternEvent(time, r.Velocity) }, true, false);
+                    Lane(pattern, InternalParameter.MidiVelocity, r.Track)?.SetEvents(new[] { new PatternEvent(r.Time, r.Velocity) }, true, false);
                 if (r.Delay > 0)
-                    Lane(pattern, InternalParameter.MidiNoteDelay, r.Track)?.SetEvents(new[] { new PatternEvent(time, r.Delay) }, true, false);
+                    Lane(pattern, InternalParameter.MidiNoteDelay, r.Track)?.SetEvents(new[] { new PatternEvent(r.Time, r.Delay) }, true, false);
                 if (r.Cut > 0)
-                    Lane(pattern, InternalParameter.MidiNoteCut, r.Track)?.SetEvents(new[] { new PatternEvent(time, r.Cut) }, true, false);
+                    Lane(pattern, InternalParameter.MidiNoteCut, r.Track)?.SetEvents(new[] { new PatternEvent(r.Time, r.Cut) }, true, false);
             }
-            return dropped == 0;
         }
 
         #endregion
