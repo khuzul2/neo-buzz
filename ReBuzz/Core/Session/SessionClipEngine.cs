@@ -10,8 +10,8 @@ namespace ReBuzz.Core.Session
     /// Audio tracks, engine side (docs/specs/session-view.md 1.0): the Session Clip Player
     /// machine's work. Each block, the machine's patterns that play (session clips, and the
     /// arrangement's) render their audio clips at the beat they are at, a take records its input,
-    /// and its input is heard when it should be (Monitor). Takes resampling the master record in
-    /// the master tap (<see cref="TapMaster"/>). Audio thread; no allocation.
+    /// and its input is heard when it should be (Monitor). After the mix (<see cref="AfterMix"/>),
+    /// takes resampling the master record it. Audio thread; no allocation.
     /// </summary>
     internal static class SessionClipEngine
     {
@@ -22,32 +22,62 @@ namespace ReBuzz.Core.Session
             public readonly float[] InputLeft = new float[256], InputRight = new float[256];
         }
 
-        /// <summary>A take recording the master output (resampling) while its pattern plays.</summary>
-        internal sealed class MasterCapture
+        /// <summary>
+        /// A take recording while its pattern plays: the master output (resampling) or its
+        /// track's input (which the player writes in its Work).
+        /// </summary>
+        internal sealed class TakeCapture
         {
-            public MasterCapture(PatternCore take, AudioCapture capture)
+            public TakeCapture(PatternCore take, AudioCapture capture, bool master)
             {
                 Take = take;
                 Capture = capture;
+                Master = master;
             }
 
             public PatternCore Take { get; }
             public AudioCapture Capture { get; }
+            public bool Master { get; }
+        }
+
+        /// <summary>The beat of a pattern playing in this block, at its first sample.</summary>
+        static double BeatOf(PatternCore pattern, MasterInfo mi)
+        {
+            int samplesPerTick = mi.SamplesPerTick > 0 ? mi.SamplesPerTick : 1;
+            int ticksPerBeat = mi.TicksPerBeat > 0 ? mi.TicksPerBeat : 4;
+            int position = pattern.PlayPosition;
+            // The play position is the block's start in 1/TimeBase ticks; the tick exactly.
+            int tick = position >= 0 ? position / PatternEvent.TimeBase : -((-position + PatternEvent.TimeBase - 1) / PatternEvent.TimeBase);
+            return (tick + mi.PosInTick / (double)samplesPerTick) / ticksPerBeat;
         }
 
         /// <summary>
         /// Audio thread, after the master tap of each block: takes resampling the master record
-        /// what was just mixed (before the metronome), while their pattern plays.
+        /// what was just mixed (before the metronome), and takes of a track's input whose machine
+        /// didn't work this block (muted) record silence, so they keep their time.
         /// </summary>
-        internal static void TapMaster(ReBuzzCore buzz, float[] buffer, int offset, int frames)
+        internal static void AfterMix(ReBuzzCore buzz, float[] buffer, int offset, int frames)
         {
-            var captures = buzz.SessionCore.MasterCaptures;
+            var captures = buzz.SessionCore.TakeCaptures;
             if (captures.Length == 0 || !buzz.Playing) return;
+            var mi = ReBuzzCore.masterInfo;
+            int block = ReBuzzCore.GlobalState.AudioFrame;
             for (int i = 0; i < captures.Length; i++)
             {
                 var c = captures[i];
-                if (c.Take.PlayPosition != int.MinValue && !c.Capture.IsDone)
-                    c.Capture.WriteInterleaved(buffer, offset, frames, 1f / 32768);
+                var capture = c.Capture;
+                if (c.Take.PlayPosition == int.MinValue || capture.IsDone) continue;
+                if (c.Master)
+                {
+                    capture.StartAt(BeatOf(c.Take, mi));
+                    capture.WriteInterleaved(buffer, offset, frames, 1f / 32768);
+                }
+                else if (capture.LastBlock != block)
+                {
+                    capture.StartAt(BeatOf(c.Take, mi));
+                    capture.WriteSilence(frames);
+                    capture.LastBlock = block;
+                }
             }
         }
 
@@ -70,21 +100,21 @@ namespace ReBuzz.Core.Session
                 int samplesPerTick = mi.SamplesPerTick > 0 ? mi.SamplesPerTick : 1;
                 int ticksPerBeat = mi.TicksPerBeat > 0 ? mi.TicksPerBeat : 4;
                 double beatsPerSample = 1.0 / ((double)samplesPerTick * ticksPerBeat);
-                double inTick = mi.PosInTick / (double)samplesPerTick;
                 var positioned = buzz.SongCore.PositionedPatterns;
                 for (int i = 0; i < positioned.Count; i++)
                 {
                     var pattern = positioned[i];
                     var clip = pattern.SessionAudio;
-                    if (clip == null || pattern.Machine != machine) continue;
-                    int position = pattern.PlayPosition;
-                    if (position == int.MinValue) continue;
+                    if (clip == null || pattern.Machine != machine || pattern.PlayPosition == int.MinValue) continue;
+                    double beat = BeatOf(pattern, mi);
                     var capture = clip.Capture;
-                    if (capture != null && !capture.IsDone)
+                    if (capture != null && !capture.IsDone && capture.LastBlock != ReBuzzCore.GlobalState.AudioFrame)
+                    {
+                        capture.StartAt(beat);
                         Record(player, capture, input, n, mode);
-                    // The play position is the block's start in 1/TimeBase ticks; the tick exactly.
-                    int tick = position >= 0 ? position / PatternEvent.TimeBase : -((-position + PatternEvent.TimeBase - 1) / PatternEvent.TimeBase);
-                    mixer.Play(clip, (tick + inTick) / ticksPerBeat, beatsPerSample, mi.SamplesPerSec, n);
+                        capture.LastBlock = ReBuzzCore.GlobalState.AudioFrame;
+                    }
+                    mixer.Play(clip, beat, beatsPerSample, mi.SamplesPerSec, n);
                 }
             }
             bool sound = mixer.End(n);

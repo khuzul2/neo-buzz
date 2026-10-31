@@ -38,6 +38,8 @@ namespace ReBuzz.AppViews.Session
                 readonly TextBox transpose;
                 readonly TextBox detune;
                 readonly TextBlock markers;
+                readonly FrameworkElement transposeRow, detuneRow;
+                string shownBpm, shownGain, shownTranspose, shownDetune;     // as loaded: a box commits only when typed in
                 bool loading;
 
                 public AudioEditor(Action<Action<SessionDocument.AudioSettings>> commit, Func<double> detect, Action editMarkers)
@@ -75,8 +77,11 @@ namespace ReBuzz.AppViews.Session
                     var bpmRow = new StackPanel { Orientation = Orientation.Horizontal, Children = { bpm, half, twice, find } };
 
                     gain = Box("Clip gain in dB (−70 to +24)", CommitFields);
-                    transpose = Box("Transpose in semitones (−48 to 48). Off and Re-Pitch: played faster or slower, as a sampler would.", CommitFields);
+                    transpose = Box("Transpose in semitones (−48 to 48). Beats and Off: played faster or slower, as a sampler would;\n" +
+                                    "Complex: the pitch alone. Re-Pitch has none: the tempo sets its pitch.", CommitFields);
                     detune = Box("Detune in cents (−50 to 50)", CommitFields);
+                    transposeRow = Row("Transpose", transpose);
+                    detuneRow = Row("Detune (ct)", detune);
 
                     markers = new TextBlock { Foreground = SessionPalette.DimText, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 0, 0), FontSize = 11 };
                     var editButton = new FlatButton("Warp markers…", () => { if (!loading) editMarkers(); },
@@ -89,8 +94,8 @@ namespace ReBuzz.AppViews.Session
                     Children.Add(preserveRow);
                     Children.Add(Row("Tempo", bpmRow));
                     Children.Add(Row("Gain (dB)", gain));
-                    Children.Add(Row("Transpose", transpose));
-                    Children.Add(Row("Detune (ct)", detune));
+                    Children.Add(transposeRow);
+                    Children.Add(detuneRow);
                     Children.Add(markerRow);
                 }
 
@@ -114,11 +119,13 @@ namespace ReBuzz.AppViews.Session
                         warp.SelectedIndex = Math.Max(0, Array.FindIndex(Warps, w => w.Value == a.Warp));
                         preserve.SelectedIndex = Math.Max(0, Array.FindIndex(Preserves, p => p.Value == a.Preserve));
                         preserveRow.Visibility = a.Warp == "Beats" ? Visibility.Visible : Visibility.Collapsed;
-                        bpm.Text = a.Bpm.ToString("0.##", CultureInfo.InvariantCulture);
+                        bpm.Text = shownBpm = a.Bpm.ToString("0.##", CultureInfo.InvariantCulture);
                         bpm.IsEnabled = a.Markers.Count < 2;
-                        gain.Text = a.GainDb.ToString("0.#", CultureInfo.InvariantCulture);
-                        transpose.Text = a.Transpose.ToString(CultureInfo.InvariantCulture);
-                        detune.Text = a.Detune.ToString(CultureInfo.InvariantCulture);
+                        gain.Text = shownGain = a.GainDb.ToString("0.#", CultureInfo.InvariantCulture);
+                        transpose.Text = shownTranspose = a.Transpose.ToString(CultureInfo.InvariantCulture);
+                        detune.Text = shownDetune = a.Detune.ToString(CultureInfo.InvariantCulture);
+                        // Re-Pitch's pitch is its speed: no transposition.
+                        transposeRow.Visibility = detuneRow.Visibility = a.Warp == "Repitch" ? Visibility.Collapsed : Visibility.Visible;
                         markers.Text = a.Markers.Count >= 2 ? $"{a.Markers.Count} markers" : "none";
                     }
                     finally
@@ -135,10 +142,13 @@ namespace ReBuzz.AppViews.Session
                 void CommitFields()
                 {
                     if (loading) return;
-                    bool bpmOk = Number(bpm.Text, out double b) && b >= 1 && b <= 999;
-                    bool gainOk = Number(gain.Text, out double g) && g >= -70 && g <= 24;
-                    bool transposeOk = Number(transpose.Text, out double t) && t >= -48 && t <= 48;
-                    bool detuneOk = Number(detune.Text, out double d) && d >= -50 && d <= 50;
+                    // Only what was typed in: the others show rounded values, which mustn't be written back.
+                    double b = 0, g = 0, t = 0, d = 0;
+                    bool bpmOk = bpm.Text != shownBpm && Number(bpm.Text, out b) && b >= 1 && b <= 999;
+                    bool gainOk = gain.Text != shownGain && Number(gain.Text, out g) && g >= -70 && g <= 24;
+                    bool transposeOk = transpose.Text != shownTranspose && Number(transpose.Text, out t) && t >= -48 && t <= 48;
+                    bool detuneOk = detune.Text != shownDetune && Number(detune.Text, out d) && d >= -50 && d <= 50;
+                    if (!bpmOk && !gainOk && !transposeOk && !detuneOk) return;
                     Commit(a =>
                     {
                         if (bpmOk && Math.Abs(b - a.Bpm) > 1e-9 && a.Markers.Count < 2) a.Bpm = b;

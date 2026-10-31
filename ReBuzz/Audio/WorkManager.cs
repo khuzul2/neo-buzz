@@ -261,8 +261,8 @@ namespace ReBuzz.Audio
                     // Master Tap
                     buzzCore.MasterTapSamples(buffer, workBufferOffset, framesToProcess * 2);
                     buzzCore.MasterTapSamplesMultiChannel(buffer, workBufferOffset, framesToProcess * 2);
-                    // Session View (fork, 1.0): takes resampling the master record what was just mixed.
-                    global::ReBuzz.Core.Session.SessionClipEngine.TapMaster(buzzCore, buffer, workBufferOffset, framesToProcess);
+                    // Session View (fork, 1.0): audio takes: resampling records what was just mixed.
+                    global::ReBuzz.Core.Session.SessionClipEngine.AfterMix(buzzCore, buffer, workBufferOffset, framesToProcess);
 
                     // Session View (fork, 0.7): the metronome, after the tap (heard, not recorded).
                     buzzCore.SessionCore.MixMetronome(buffer, workBufferOffset, framesToProcess);

@@ -154,8 +154,22 @@ namespace ReBuzzTests
                 return GC.GetAllocatedBytesForCurrentThread() - before;
             }
 
+            /// <summary>Plays in short blocks until the session clock reaches a tick.</summary>
+            public void PlayToClock(long clock)
+            {
+                for (int guard = 0; Session.Clock < clock && guard < 100_000; guard++) reader.Read(64);
+            }
+
+            /// <summary>Plays in short blocks until a pattern plays (or for a while); its tick then.</summary>
+            public int PlayUntilPlaying(PatternCore p)
+            {
+                for (int guard = 0; p.PlayPosition == int.MinValue && guard < 10_000; guard++) reader.Read(64);
+                return p.PlayPosition == int.MinValue ? -1 : p.PlayPosition / PatternEvent.TimeBase;
+            }
+
             public void Dispose()
             {
+                SessionCore.Timestamp = System.Diagnostics.Stopwatch.GetTimestamp;
                 Core.Playing = false;
                 Driver.Dispose();
             }
@@ -420,6 +434,119 @@ namespace ReBuzzTests
             float level = source.Left.Skip(1000).Take(source.Length - 2000).Average(v => Math.Abs(v));
             TestContext.Out.WriteLine($"[notice] resampled level {level} (the hum is {HumLevel} before the master)");
             Assert.That(level, Is.GreaterThan(HumLevel / 4), "the master's sound");
+        }
+
+        // ------------------------------------------------------------------ hardening (1.0, review)
+
+        [Test]
+        public void ALoopASampleLongerThanItsBarsIsItsBars()
+        {
+            using var rig = new Rig();
+            rig.Layout.Ensure();
+            // Two bars at 93 BPM are 227,612.9 samples; exporters write 227,613.
+            var x = new float[227_613];
+            int perBeat = (int)(44100 * 60 / 93.0);
+            for (int b = 0; b < 8; b++)
+                for (int i = 0; i < 800; i++)
+                    x[b * perBeat + i] = (float)(0.8 * Math.Sin(2 * Math.PI * 1000 * i / 44100) * Math.Exp(-i / 220.0));
+            string path = Path.Combine(TestContext.CurrentContext.WorkDirectory, "loop93-" + Guid.NewGuid().ToString("N") + ".wav");
+            WriteWav(path, x, 44100);
+            var clip = rig.Layout.ImportAudio(-1, 0, path, out var error);
+            if (clip == null && error != null && (error.Contains("sndfile") || error.Contains("DLL") || error.Contains("dll")))
+                Assert.Inconclusive("libsndfile isn't loadable here: " + error);
+            Assert.That(clip, Is.Not.Null, error);
+            Assert.That(rig.Layout.AudioOf(clip!)!.Bpm, Is.EqualTo(93).Within(0.001));
+            Assert.That(clip!.Length, Is.EqualTo(8 * rig.Core.TPB), "8 beats, not a tick more");
+            Assert.That(SessionLayout.ClipTicks(8.0000034, 4), Is.EqualTo(32));
+            Assert.That(SessionLayout.ClipTicks(8.1, 4), Is.EqualTo(33), "a real part of a tick more is kept");
+        }
+
+        [Test]
+        public void UndoAfterTheAudioTracksRenameChangesTheLengthBack()
+        {
+            using var rig = new Rig();
+            var (_, clip) = rig.AudioClip(rig.Wave(Clicks(100, 8, rig.Rate), rig.Rate), 100);
+            var audio = rig.Layout.AudioOf(clip)!;
+            audio.Bpm = 50;
+            rig.Layout.SetAudio(clip, audio);
+            Assert.That(clip.Length, Is.EqualTo(4 * rig.Core.TPB));
+            clip.Machine.Name = "Drums";                                // in the Machine View
+            Assert.DoesNotThrow(() => rig.Layout.Undo());
+            Assert.That(clip.Length, Is.EqualTo(8 * rig.Core.TPB));
+            Assert.That(rig.Layout.AudioOf(clip)!.Bpm, Is.EqualTo(100));
+            Assert.DoesNotThrow(() => rig.Layout.Redo());
+            Assert.That(clip.Length, Is.EqualTo(4 * rig.Core.TPB));
+        }
+
+        [Test]
+        public void AGainChangeKeepsALengthSetByHand()
+        {
+            using var rig = new Rig();
+            var (_, clip) = rig.AudioClip(rig.Wave(Clicks(100, 8, rig.Rate), rig.Rate), 100);
+            clip.Length = 4 * rig.Core.TPB;                             // the first half only
+            var audio = rig.Layout.AudioOf(clip)!;
+            audio.GainDb = -3;
+            rig.Layout.SetAudio(clip, audio);
+            Assert.That(clip.Length, Is.EqualTo(4 * rig.Core.TPB));
+        }
+
+        [Test]
+        public void ATakeLaunchedLateKeepsItsPatternsTime()
+        {
+            using var rig = new Rig(hum: true);
+            rig.Core.BPM = 120;
+            var (_, track) = HumTrack(rig);
+            rig.Layout.SetRecordBars(1);
+            SessionCore.Timestamp = () => 1_000_000;                   // heard = rendered − latency, exactly
+            rig.Core.Playing = true;
+            int samplesPerTick = ReBuzzCore.masterInfo.SamplesPerTick;
+            rig.Core.OutputLatencySamples = 3 * samplesPerTick;
+            rig.PlayToClock(17);                                        // heard: tick 14, before the bar line at 16
+            var take = (PatternCore)rig.Layout.RecordTake(track, 0)!;
+            int k = rig.PlayUntilPlaying(take);
+            TestContext.Out.WriteLine($"[notice] the take started at its tick {k}");
+            Assert.That(k, Is.GreaterThan(0), "late: it starts into its pattern");
+            rig.PlayPolling(2.6);
+            var source = rig.Layout.AudioSourceOf(take)!;
+            Assert.That(source.Length, Is.EqualTo(2 * rig.Rate).Within(1), "a bar");
+            int silent = 0;
+            while (silent < source.Length && source.Left[silent] == 0) silent++;
+            double expected = k * rig.Rate * 60.0 / (120 * rig.Core.TPB);
+            Assert.That(silent, Is.EqualTo(expected).Within(2), "silence for the ticks it missed, then what came in, in its place");
+        }
+
+        [Test]
+        public void ANewTakeOnATrackFinishingOneKeepsTheFirst()
+        {
+            using var rig = new Rig(hum: true);
+            rig.Core.BPM = 120;
+            var (_, track) = HumTrack(rig);
+            rig.Layout.SetRecordBars(0);
+            var first = rig.Layout.RecordTake(track, 0)!;
+            rig.PlayPolling(2.7);
+            rig.Layout.StopRecording(rig.Layout.SequenceOf(track)!);  // finishing its second bar
+            var second = rig.Layout.RecordTake(track, 1)!;
+            Assert.That(second, Is.Not.Null);
+            Assert.That(rig.Layout.IsRecordingClip(first), Is.False, "the first is done");
+            var source = rig.Layout.AudioSourceOf(first)!;
+            Assert.That(source.Length, Is.GreaterThan(rig.Rate * 2), "what it had");
+            Assert.That(source.Left.Skip(rig.Rate).Take(rig.Rate / 2).Average(v => Math.Abs(v)), Is.EqualTo(HumLevel).Within(0.001f));
+            Assert.That(rig.Session.TakeCaptures.Length, Is.EqualTo(1), "only the new take records");
+        }
+
+        [Test]
+        public void AWaveEditedInPlacePlaysAsEdited()
+        {
+            using var rig = new Rig();
+            var tone = Enumerable.Repeat(0.25f, rig.Rate * 2).ToArray();
+            int wave = rig.Wave(tone, rig.Rate);
+            var (_, clip) = rig.AudioClip(wave, 120, "Repitch");
+            Assert.That(clip.SessionAudio!.Params!.Source.Left[1000], Is.EqualTo(0.25f));
+            var layer = rig.Core.SongCore.Wavetable.Waves[wave].Layers[0];
+            var half = Enumerable.Repeat(0.125f, tone.Length).ToArray();
+            layer.SetDataAsFloat(half, 0, 1, 0, 0, half.Length);          // as Normalize or Fade would
+            layer.InvalidateData();
+            Assert.That(clip.SessionAudio!.Params!.Source.Left[1000], Is.EqualTo(0.125f), "read again");
         }
 
         /// <summary>A 16-bit mono WAV file.</summary>

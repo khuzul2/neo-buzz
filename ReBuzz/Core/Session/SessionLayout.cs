@@ -519,7 +519,8 @@ namespace ReBuzz.Core.Session
         {
             if (track == null || pattern == null) return;
             // 0.7 (Live's): launching the take being recorded ends its recording; it plays on.
-            if (track is SequenceCore seq && recordings.TryGetValue(seq, out var r) && ReferenceEquals(r.Take, pattern))
+            if (track is SequenceCore seq && (recordings.TryGetValue(seq, out var r) && ReferenceEquals(r.Take, pattern) ||
+                                              audioTakes.TryGetValue(seq, out var a) && ReferenceEquals(a.Take, pattern)))   // 1.0: an audio take too
             {
                 StopRecording(track);
                 return;

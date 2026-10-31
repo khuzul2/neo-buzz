@@ -35,7 +35,10 @@ namespace ReBuzz.AppViews.Session
                 // On a slot: there (a new audio track for it if the slot's track isn't one).
                 // Anywhere else: a new audio track, from the selected scene.
                 var cell = e.OriginalSource is DependencyObject d ? FindParent<SlotCell>(d) : null;
-                ImportAudioFiles(cell?.Track ?? -1, cell?.Scene ?? selected?.Scene ?? 0, files);
+                int track = cell?.Track ?? -1, scene = cell?.Scene ?? selected?.Scene ?? 0;
+                // After the drop returns: reading and analysing files (and any message) mustn't
+                // hold up the program the files were dragged from.
+                Dispatcher.BeginInvoke(new Action(() => ImportAudioFiles(track, scene, files)));
             }));
         }
 

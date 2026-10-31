@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11), 0.6.2 (#12), 0.6.3 (#13), 0.7 (#14), 0.7.1 (#15), 0.7.2 (#16), 0.8a (#17), 0.8b (#18) and 1.0 (#19) merged |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11), 0.6.2 (#12), 0.6.3 (#13), 0.7 (#14), 0.7.1 (#15), 0.7.2 (#16), 0.8a (#17), 0.8b (#18), 1.0 (#19) and 1.0.1 (#20) merged |
 | Date | 2026-10-31 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -908,7 +908,8 @@ public sealed class MyPadsScript : ControllerScript
 
 *Recording* (Live's). Arm an audio track, connect what it records to it (ReBuzz Audio In, or any machine), and record a take: its empty slots' ●, ◉ Session record, or a controller's pad.
 - A take is a new audio clip, launched on the grid (from a stopped transport, after the count-in). It records the record length, or until stopped and then whole bars (it records on to the end of the last bar).
-- What it records starts a round trip after its launch (the output latency, when launches are timed to what is heard), so it starts where it was played.
+- A take of a hardware input (ReBuzz Audio In, through any machines) starts a round trip after its launch (the output latency, when launches are timed to what is heard), so it starts where it was played. The master and the engine's own machines are in time with what it renders: no round trip.
+- A take whose launch came late (the grid point heard was already rendered) starts into its pattern; the frames it missed stay silent, so its audio keeps the pattern's time.
 - When the take is done its audio goes into a wave of the song, at the tempo it was recorded at, and the clip plays it from its next pass. The take is one undo step.
 - Monitor (a parameter of the player): **auto** hears the input while the track is armed, **in** always, **off** never.
 - Session record never overdubs audio: an armed audio track playing a clip records a new take in the next empty slot.
@@ -951,9 +952,29 @@ public sealed class MyPadsScript : ControllerScript
   - a take recording an armed track's input and playing it from its next pass; a take until stopped keeping whole bars; a resampling track recording the master.
 
 **Known.**
-- Recording takes the output latency as the round trip; the input's own latency isn't known.
+- A hardware take's round trip is taken as the output latency; the input's own latency isn't known.
 - A song imported into another (rather than opened) can move its waves to other slots; its audio clips keep the old numbers.
-- Complex's transients are softer than Beats' (as Live's are); its transposition moves partials whole (no formant keeping).
+- Complex's transients are softer than Beats' (as Live's are), and softer again where a loop goes round (its frames overlap there rather than starting fresh); its transposition moves partials whole (no formant keeping). Launching many Complex clips in one block computes four frames each at once.
+- Changing ticks per beat changes audio clips' length in beats, as it does every pattern's; their tempo (×2, ÷2, Detect) sets it again.
+- The tempo found for a one-bar loop faster than 160 BPM is half its own (×2 puts it right).
+- Undoing a dropped file takes its clip away; a new audio track made for it and the wave it was loaded into stay (the song's undo removes the track).
+
+#### 1.0.1 — Hardening (an independent review of 1.0)
+
+- A loop a sample longer than its bars (as exporters round) was a tick longer, drifting against the bars: the tempo found is kept exact, and a length within a fiftieth of a tick is that tick.
+- Session undo of a clip's length (its tempo changed) after the audio track was renamed threw, and every later undo with it: the length is an undo step that holds the pattern, as the session's others do.
+- A take launched late recorded its audio from the pattern's start, a tick or more early: it starts into its pattern now. Resampling, and machines the engine plays, no longer drop the output latency's worth of their start.
+- A new take on a track whose take recorded until stopped was finishing lost that take's audio: it keeps what it has.
+- The first time a Beats slice ran out it jumped back without the crossfade, and a new slice's first sample missed the old one's fade: both are smooth now. Steady sound no longer counts as transients (leakage far under what sounds was read as change).
+- Complex no longer computes a fresh start at every loop wrap (four frames in one block, for every clip looping in step).
+- Dropping files no longer holds up the program they came from, and decoding a file no longer holds the audio lock (the wavetable's own load does); files are read at most 30 minutes long.
+- An edit of a wave in place (normalize, fade) reaches its clips.
+- A muted audio track's take keeps its time (silence while the machine doesn't work).
+- Launching the take being recorded ends its recording, as a MIDI take's does.
+- A gain change kept a length set by hand no longer; the clip panel writes only the boxes typed in (rounded values aren't written back). Off mode goes on through a change of gain or pitch rather than jumping to where the beat is. Re-Pitch shows no transposition (its tempo is its pitch).
+- Wave slots audio clips play aren't reused by imports and takes; a take stopped before it began records nothing; a take whose track went keeps what it had.
+- Complex mode's vocoder is made only for clips that use it.
+- Tests: `AudioClipTests` (+4): a late take starting into its pattern, a Beats slice running out without a click, Off going on through a gain change, steady sound without transients. `SessionAudioTests` (+6): a loop a sample longer than its bars, undo after a rename, a gain change keeping a hand-set length, a late take in the pattern's time, a new take keeping the one finishing, a wave edited in place. CI's totals name tests that neither passed nor failed, and the tests get libsndfile (the import test ran inconclusive without it).
 
 **Not automated.** How it sounds: the measures above stand in for listening. Real audio inputs. Drag and drop from Explorer, and the warp marker editor's mouse handling.
 
