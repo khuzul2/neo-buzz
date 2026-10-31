@@ -70,7 +70,11 @@ namespace ReBuzz.Core.Session
             scripts = BuiltInScripts.All().ToList();
             if (loadScripts) scripts.AddRange(LoadScripts(Path.Combine(AppContext.BaseDirectory, "Controllers")));
             wanted = new HashSet<string>(Read().Split('|', StringSplitOptions.RemoveEmptyEntries));
-            if (wanted.Count > 0) EnsureTimer();
+            if (wanted.Count > 0)
+            {
+                EnsureTimer();
+                ConnectWanted();
+            }
         }
 
         public IReadOnlyList<ControllerScript> Scripts => scripts;
