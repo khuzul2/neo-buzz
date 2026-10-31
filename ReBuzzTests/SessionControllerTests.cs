@@ -44,7 +44,7 @@ namespace ReBuzzTests
             while (layout.SceneCount < 12) layout.InsertScene(layout.SceneCount);
             layout.SetSlot(0, 0, a);
             layout.SetSlot(0, 1, b);
-            using var controllers = new SessionControllers(rig.Core, null, loadScripts: false);
+            using var controllers = new SessionControllers(rig.Core, null, loadScripts: false, autoRefresh: false);
             var port = new FakePort();
             var c = controllers.Attach(new LaunchpadMiniMk3Script(), port, "test");
 
@@ -93,7 +93,7 @@ namespace ReBuzzTests
             using var rig = new KeysRig();
             var layout = rig.Layout;
             layout.Ensure();
-            using var controllers = new SessionControllers(rig.Core, null, loadScripts: false);
+            using var controllers = new SessionControllers(rig.Core, null, loadScripts: false, autoRefresh: false);
             var port = new FakePort();
             var c = controllers.Attach(new Apc40Mk2Script(), port, "test");
             port.Press(On(0, 48, 127));                               // Record Arm, track 1 (channel 0)

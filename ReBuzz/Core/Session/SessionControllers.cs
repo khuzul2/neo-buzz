@@ -41,6 +41,7 @@ namespace ReBuzz.Core.Session
         readonly List<Connection> connections = new List<Connection>();
         readonly List<string> scriptProblems = new List<string>();
         Timer timer;
+        readonly bool autoRefresh;
         int pending, ticks;
         HashSet<string> wanted;
 
@@ -63,10 +64,12 @@ namespace ReBuzz.Core.Session
             public volatile bool Broken;
         }
 
-        public SessionControllers(ReBuzzCore buzz, IRegistryEx registry, bool loadScripts = true)
+        /// <param name="autoRefresh">Lights refreshed every 20 ms (tests call <see cref="Refresh"/> themselves).</param>
+        public SessionControllers(ReBuzzCore buzz, IRegistryEx registry, bool loadScripts = true, bool autoRefresh = true)
         {
             this.buzz = buzz;
             this.registry = registry;
+            this.autoRefresh = autoRefresh;
             scripts = BuiltInScripts.All().ToList();
             if (loadScripts) scripts.AddRange(LoadScripts(Path.Combine(AppContext.BaseDirectory, "Controllers")));
             wanted = new HashSet<string>(Read().Split('|', StringSplitOptions.RemoveEmptyEntries));
@@ -340,7 +343,7 @@ namespace ReBuzz.Core.Session
 
         void EnsureTimer()
         {
-            if (timer != null) return;
+            if (timer != null || !autoRefresh) return;
             timer = new Timer(_ =>
             {
                 if (Interlocked.Exchange(ref pending, 1) == 1) return;      // the UI hasn't caught up: skip
