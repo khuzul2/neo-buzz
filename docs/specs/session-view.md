@@ -739,7 +739,7 @@ An independent review of 0.7.1 and of the paths 0.8 builds on (MIDI in and out, 
   - Each tick aims at an absolute time, so whole-sample rounding never adds up.
   - A tick is at most 8% longer or shorter than the clock's own, so a large error closes smoothly: half a bar at 120 BPM in about 6 seconds.
   - Groove and the nudge give way while following.
-- A start waits for the clock's start time, and the tick before it ends there. That is Link's next bar line, or MIDI clock's beat 0. The transport starts on that tick (`StartDue`).
+- A start waits until the clock's phase is the session's at its start position (the session clock starts at the song position, its bars at 0), and the tick before it ends right then; the transport starts on that tick (`StartDue`). From a bar's start that is Link's next bar line, as in Live. MIDI clock has beats but no bars, so it locks beats (quantum 1) and a start waits for its beat 0, or the next beat if that has passed.
 - The session's own beat line, as heard, is published to MIDI clock out and the Session View (`SyncClock.Ours`, a sequence lock: no allocation, no lock on the audio thread).
 
 *Link (`SessionSync`, `LinkClient`).*
@@ -767,7 +767,7 @@ An independent review of 0.7.1 and of the paths 0.8 builds on (MIDI in and out, 
 **Tests.**
 - `ReBuzz.SessionTests`:
   - `SyncTimeTests` (7). It includes the acceptance run, simulated: 30 minutes against a clock at 120.37 BPM, starting 1.3 beats out of phase, through ±1 ms callback jitter and a device clock 30 ppm slow, with a tempo change at 10 minutes. The worst error after locking was 210 µs.
-  - `SyncClockTests` (3): without a source, a start landing on the clock's bar line within a sample, and following at 127.3 BPM within 1 ms.
+  - `SyncClockTests` (5): without a source; a start landing on the clock's bar line within a sample; a start from the middle of a bar waiting for the clock to be there too; MIDI clock locking beats; following at 127.3 BPM within 1 ms.
   - `MidiClockTests` (6): tempo through jitter; Start making the next pulse beat 0; the song position; sending Start then a pulse every 1/24 beat; joining while playing; the Link protocol's lines.
 - `ReBuzzTests/SessionSyncTests.cs` runs on CI with the helper `build.ps1` built:
   - two Link helpers finding each other and agreeing within 1 ms;

@@ -234,12 +234,11 @@ namespace ReBuzz.Core.Session
                 return HostClock.Now() - line.Micros < MidiClockReceiver.GapMicros;
             }
 
-            /// <summary>Beat 0 (the pulse after Start) if it is still ahead; else at once, and the phase lock catches up.</summary>
-            public double StartTarget(in Timeline line, double heardMicros, double quantum)
-            {
-                double zero = line.MicrosAt(0);
-                return zero >= heardMicros ? zero : double.NaN;
-            }
+            /// <summary>MIDI clock has beats, not bars: phases match over a beat.</summary>
+            public double QuantumFor(int beatsPerBar) => 1;
+
+            /// <summary>Not before beat 0 (the pulse after Start); late for it, the next beat.</summary>
+            public double EarliestStart(in Timeline line, double heardMicros) => Math.Max(heardMicros, line.MicrosAt(0));
         }
 
         // ------------------------------------------------------------------ MIDI clock out

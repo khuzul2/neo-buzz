@@ -15,11 +15,15 @@ namespace ReBuzz.Core.Sync
         /// <summary>The clock's beat line now, if there is one to follow (Link with peers, MIDI clock running).</summary>
         bool TryGetTimeline(out Timeline timeline);
 
+        /// <summary>The beats phases match over: Link's quantum (the session's bar); 1 for MIDI clock, which has no bars.</summary>
+        double QuantumFor(int beatsPerBar);
+
         /// <summary>
-        /// When a start should be heard, after <paramref name="heardMicros"/> (the earliest it
-        /// can be): Link's next bar line, MIDI clock's beat 0. NaN to start at once.
+        /// The earliest a start may be heard, from <paramref name="heardMicros"/> (the earliest it
+        /// can be): at once for Link, not before beat 0 for MIDI clock. The start then waits for
+        /// the clock's phase to match the session's at its start position.
         /// </summary>
-        double StartTarget(in Timeline timeline, double heardMicros, double quantum);
+        double EarliestStart(in Timeline timeline, double heardMicros);
     }
 
     /// <summary>
@@ -83,12 +87,13 @@ namespace ReBuzz.Core.Sync
         /// </summary>
         /// <param name="clock">The session clock of the tick starting (its index; -1 while stopped).</param>
         /// <param name="gridOrigin">The clock value bars count from.</param>
+        /// <param name="startClock">Where the session clock starts when the transport does (the song position).</param>
         /// <param name="latencyMicros">From rendering a sample to hearing it.</param>
-        public int TickLength(int nominal, bool playing, bool startPending, long clock, long gridOrigin, int ticksPerBeat, int beatsPerBar, double latencyMicros)
+        public int TickLength(int nominal, bool playing, bool startPending, long clock, long gridOrigin, long startClock, int ticksPerBeat, int beatsPerBar, double latencyMicros)
         {
             ticksPerBeat = Math.Max(1, ticksPerBeat);
-            double quantum = Math.Max(1, beatsPerBar);
             var src = source;
+            double quantum = Math.Max(1e-6, src?.QuantumFor(Math.Max(1, beatsPerBar)) ?? Math.Max(1, beatsPerBar));
             if (filter == null || filter.Count == 0)
             {
                 startDue = true;
@@ -124,14 +129,18 @@ namespace ReBuzz.Core.Sync
                 startDue = true;
                 return nominal;
             }
-            // Following: a start waits for the clock's start time, which a tick boundary must meet.
-            double target = src.StartTarget(external, heard, quantum);
-            if (double.IsNaN(target) || target <= heard)
+            // Following: a start waits until the clock's phase is the session's at its start
+            // position (bars count from 0 when the transport starts), and a tick ends right then.
+            double from = Math.Max(heard + slope, src.EarliestStart(external, heard));      // a sample ahead at least
+            double fromBeat = external.BeatAt(from);
+            double startPhase = SyncMath.Mod(Math.Max(0, startClock) / (double)ticksPerBeat, quantum);
+            double target = external.MicrosAt(fromBeat + SyncMath.Mod(startPhase - fromBeat, quantum));
+            double remaining = (target - heard) / slope;
+            if (remaining < 0.5)
             {
                 startDue = true;
                 return nominal;
             }
-            double remaining = (target - heard) / slope;
             if (!startPending)
             {
                 // Not asked yet: no start at this tick's end (asked during it, the next tick aims).
