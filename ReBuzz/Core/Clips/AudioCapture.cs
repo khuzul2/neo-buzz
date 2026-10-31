@@ -26,12 +26,15 @@ namespace ReBuzz.Core.Clips
         long written;
         long length;
         long dropped;
+        bool started;
 
         /// <param name="lengthFrames">Frames to keep; long.MaxValue until stopped.</param>
         /// <param name="maxFrames">The most it keeps, until stopped.</param>
-        public AudioCapture(int sampleRate, long skipFrames, long lengthFrames, long maxFrames)
+        /// <param name="framesPerBeat">Frames a beat of the take lasts: where <see cref="StartAt"/> starts.</param>
+        public AudioCapture(int sampleRate, long skipFrames, long lengthFrames, long maxFrames, double framesPerBeat = 0)
         {
             SampleRate = Math.Max(1, sampleRate);
+            FramesPerBeat = Math.Max(0, framesPerBeat);
             skip = Math.Max(0, skipFrames);
             capacity = Math.Max(1, lengthFrames == long.MaxValue ? maxFrames : Math.Min(lengthFrames, Math.Max(1, maxFrames)));
             length = lengthFrames == long.MaxValue ? long.MaxValue : Math.Clamp(lengthFrames, 0, capacity);
@@ -40,6 +43,24 @@ namespace ReBuzz.Core.Clips
         }
 
         public int SampleRate { get; }
+
+        public double FramesPerBeat { get; }
+
+        /// <summary>Audio thread: the block (engine frame count) last written, to keep time when the track's machine didn't work.</summary>
+        public long LastBlock = long.MinValue;
+
+        /// <summary>
+        /// Audio thread, before the first frames: the take's beat then. A take whose launch came
+        /// late starts into its pattern; the frames before stay silent, so the audio keeps the
+        /// pattern's time.
+        /// </summary>
+        public void StartAt(double beat)
+        {
+            if (started) return;
+            started = true;
+            if (FramesPerBeat > 0 && beat > 0)
+                Volatile.Write(ref written, Math.Min(Math.Min(Length, capacity), (long)Math.Round(beat * FramesPerBeat)));
+        }
 
         /// <summary>Frames kept so far.</summary>
         public long Written => Volatile.Read(ref written);
@@ -68,6 +89,7 @@ namespace ReBuzz.Core.Clips
         /// <summary>Audio thread: frames from separate channels (times <paramref name="scale"/>).</summary>
         public void Write(float[] left, float[] right, int count, float scale)
         {
+            started = true;
             long w = written, end = Length;
             for (int i = 0; i < count && w < end; i++)
             {
@@ -84,6 +106,7 @@ namespace ReBuzz.Core.Clips
         /// <summary>Audio thread: interleaved frames (times <paramref name="scale"/>).</summary>
         public void WriteInterleaved(float[] buffer, int offset, int frames, float scale)
         {
+            started = true;
             long w = written, end = Length;
             for (int i = 0; i < frames && w < end; i++)
             {
@@ -100,6 +123,7 @@ namespace ReBuzz.Core.Clips
         /// <summary>Audio thread: silent frames (no input this block), keeping time.</summary>
         public void WriteSilence(int frames)
         {
+            started = true;
             long w = written, end = Length;
             for (int i = 0; i < frames && w < end; i++)
             {

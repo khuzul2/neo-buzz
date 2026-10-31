@@ -13,6 +13,8 @@ namespace ReBuzz.Core.Clips
     {
         const int FrameSize = 1024;
         const int FrameHop = 256;
+        /// <summary>Spectral flux below this is no transient (log-magnitude rises summed over the bins).</summary>
+        const double MinFlux = 1.0;
 
         /// <summary>
         /// Transients: peaks of spectral flux (how much louder each frequency got) above a
@@ -26,6 +28,9 @@ namespace ReBuzz.Core.Clips
             if (flux.Length < 3) return onsets;
             int minGap = Math.Max(1, (int)(0.05 * source.SampleRate / FrameHop));
             double mean = flux.Average();
+            // Steady sound changes by rounding only: a transient is at least this much flux, and
+            // a tenth of the strongest (a loud bar's ghost notes still count, its hiss doesn't).
+            double floor = Math.Max(MinFlux, 0.1 * flux.Max());
             int lastPeak = -minGap;
             for (int i = 1; i < flux.Length - 1; i++)
             {
@@ -35,7 +40,7 @@ namespace ReBuzz.Core.Clips
                 Array.Copy(flux, from, around, 0, around.Length);
                 Array.Sort(around);
                 double threshold = around[around.Length / 2] * 1.5 + mean * 0.5 + 1e-6;
-                if (flux[i] <= threshold || i - lastPeak < minGap) continue;
+                if (flux[i] <= threshold || flux[i] < floor || i - lastPeak < minGap) continue;
                 lastPeak = i;
                 onsets.Add(Refine(source, (long)i * FrameHop + FrameSize / 2));
             }
@@ -61,10 +66,19 @@ namespace ReBuzz.Core.Clips
                     im[n] = 0;
                 }
                 fft.Transform(re, im);
+                // Amplitudes (a full-scale sine is about 1), floored 60 dB under the frame's
+                // loudest, so leakage far from what sounds doesn't count as change.
+                double loudest = 0;
+                for (int k = 1; k < FrameSize / 2; k++)
+                {
+                    re[k] = Math.Sqrt(re[k] * re[k] + im[k] * im[k]) * (4.0 / FrameSize);
+                    if (re[k] > loudest) loudest = re[k];
+                }
+                double floor = Math.Max(1e-5, loudest * 1e-3);
                 double sum = 0;
                 for (int k = 1; k < FrameSize / 2; k++)
                 {
-                    double mag = Math.Log(1 + 100 * Math.Sqrt(re[k] * re[k] + im[k] * im[k]));
+                    double mag = Math.Log(1 + 100 * Math.Max(re[k], floor));
                     double rise = mag - previous[k];
                     if (rise > 0) sum += rise;
                     previous[k] = mag;

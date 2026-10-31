@@ -54,6 +54,12 @@
   <ItemGroup>
     <Using Include="NUnit.Framework" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- Fork (1.0): the wavetable reads audio files with libsndfile, which ReBuzz.exe has beside it
+         (RunTime copies it there); the tests import WAV files too (SessionAudioTests). -->
+    <None Include="..\3rdParty\libsndfile-1.dll" Link="libsndfile-1.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
   
    <Target Name="ForcePerformRestore" AfterTargets="BeforeBuild">	
     <Exec Command="IF NOT EXIST  &quot;$(IntermediateOutputPath)..\project.assets.json&quot;  echo restore to $(IntermediateOutputPath)..\project.assets.json &amp;&amp;  dotnet restore &quot;$(ProjectName).csproj&quot; --no-dependencies &amp;&amp; move &quot;build\$(ProjectName)\obj\*&quot; &quot;$(IntermediateOutputPath)..\&quot; &amp;&amp; rmdir /Q /S build	 " /> 

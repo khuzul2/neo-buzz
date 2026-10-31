@@ -40,6 +40,7 @@ namespace ReBuzz.SessionTests
         /// <summary>Plays <paramref name="beats"/> beats from <paramref name="from"/> at a tempo, in blocks as the engine would.</summary>
         static float[] Play(ClipVoice voice, AudioClipParams p, double bpm, double from, double beats, int block = 256, int rate = Rate)
         {
+            voice.Prepare(p);
             double bps = bpm / 60.0 / rate;
             int n = (int)Math.Round(beats / bps);
             var l = new float[n];
@@ -164,6 +165,13 @@ namespace ReBuzz.SessionTests
             for (int b = 1; b < 8; b++)
                 Assert.That(onsets.Any(o => Math.Abs(o - b * perBeat) <= 0.005 * Rate), Is.True, $"a click on beat {b}");
             Assert.That(onsets.All(o => Enumerable.Range(0, 8).Any(b => Math.Abs(o - b * perBeat) <= 0.005 * Rate)), Is.True, "nothing else");
+        }
+
+        [Test]
+        public void ASteadySoundHasNoTransients()
+        {
+            Assert.That(AudioAnalysis.Onsets(Sine(317, 3)), Is.Empty);
+            Assert.That(AudioAnalysis.Onsets(Clicks(100, 8, freq: 600)).Count, Is.EqualTo(7), "clicks still are, but the first (at 0)");
         }
 
         [TestCase(100, 4)]          // a bar
@@ -291,6 +299,7 @@ namespace ReBuzz.SessionTests
             var mode = (WarpMode)which;
             var p = Clip(Sine(300, 2), 120, mode);   // 4 beats at 120
             var voice = new ClipVoice();
+            voice.Prepare(p);
             double bps = 120 / 60.0 / Rate;
             var l = new float[Rate * 2];
             var r = new float[Rate * 2];
@@ -413,6 +422,55 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
+        public void ATakeLaunchedLateStartsIntoItsPattern()
+        {
+            var cap = new AudioCapture(1000, 10, 2000, 10_000, framesPerBeat: 500);
+            cap.StartAt(0.25);                                         // a tick in at 4 per beat
+            var ones = Enumerable.Repeat(1f, 100).ToArray();
+            cap.Write(ones, ones, 100, 1);
+            cap.StartAt(1.5);                                          // once only
+            Assert.That(cap.Written, Is.EqualTo(125L + 90), "125 frames of silence, then what came after the round trip");
+            var (left, _) = cap.Collect(cap.Length);
+            Assert.That(left[124], Is.EqualTo(0f));
+            Assert.That(left[125], Is.EqualTo(1f));
+        }
+
+        [Test]
+        public void BeatsLoopsASliceThatRunsOutWithoutAClick()
+        {
+            // A held note (no transients: a slice each beat) at 100 BPM played at 80: each slice
+            // runs out a fifth of a beat early and loops its end, the first time round too.
+            var p = Clip(Sine(317, 2.4), 100, WarpMode.Beats);          // not a whole number of periods in the loop
+            var x = Play(new ClipVoice(), p, 80, 0, 4);
+            Assert.That(MaxStep(x.Skip(64).ToArray()), Is.LessThan(0.05));
+        }
+
+        [Test]
+        public void OffGoesOnThroughAGainChange()
+        {
+            var s = Sine(300, 4);
+            var map = WarpMap.Straight(s.Length, 8);
+            var loud = new AudioClipParams(s, map, WarpMode.Off, null!, 1f, 0);
+            var soft = new AudioClipParams(s, map, WarpMode.Off, null!, 0.5f, 0);
+            double bps = 150 / 60.0 / Rate;                          // not its tempo: Off doesn't follow it
+            var voice = new ClipVoice();
+            var reference = new ClipVoice();
+            var a = new float[512];
+            var b = new float[512];
+            var r = new float[512];
+            for (int block = 0; block < 100; block++)
+                voice.Render(loud, block * 512 * bps, bps, Rate, a, r, 0, 512);
+            for (int block = 0; block < 100; block++)
+                reference.Render(loud, block * 512 * bps, bps, Rate, b, r, 0, 512);
+            Array.Clear(a);
+            Array.Clear(b);
+            voice.Render(soft, 100 * 512 * bps, bps, Rate, a, r, 0, 512);
+            reference.Render(loud, 100 * 512 * bps, bps, Rate, b, r, 0, 512);
+            for (int i = 0; i < 512; i++)
+                Assert.That(Math.Abs(a[i] - 0.5f * b[i]), Is.LessThan(1e-5), $"sample {i}: the audio goes on where it was, softer");
+        }
+
+        [Test]
         public void AudioSettingsGoThroughXml()
         {
             var a = new ReBuzz.Core.Session.SessionDocument.AudioSettings
@@ -443,6 +501,7 @@ namespace ReBuzz.SessionTests
             var modes = new[] { WarpMode.Off, WarpMode.Repitch, WarpMode.Beats, WarpMode.Complex };
             var clips = modes.Select(m => Clip(Clicks(100, 8), 100, m, 2)).ToArray();
             var voice = new ClipVoice();
+            foreach (var c in clips) voice.Prepare(c);
             var l = new float[256];
             var r = new float[256];
             double bps = 130 / 60.0 / Rate;

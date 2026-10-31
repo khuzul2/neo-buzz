@@ -1,5 +1,4 @@
 using BuzzGUI.Common;
-using BuzzGUI.Common.Actions.PatternActions;
 using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core.Clips;
@@ -41,6 +40,7 @@ namespace ReBuzz.Core.Session
         readonly Dictionary<PatternCore, string> audioKeys = new Dictionary<PatternCore, string>();
         int waveVersion;
         bool audioRefreshPosted;
+        readonly HashSet<int> changedWaves = new HashSet<int>();
 
         /// <summary>Whether the machine is a Session Clip Player: its tracks are audio tracks.</summary>
         public static bool IsClipPlayer(IMachine machine) => machine?.DLL?.Info?.Name == SessionClipHost.MachineName;
@@ -64,12 +64,25 @@ namespace ReBuzz.Core.Session
 
         void OnWaveChanged(int index)
         {
-            // Any thread: read again on the UI thread, once per burst.
-            if (audioRefreshPosted) return;
-            audioRefreshPosted = true;
+            // Any thread: the wave is read again on the UI thread (an edit in place keeps its
+            // layer and length: only this says it changed), once per burst.
+            lock (changedWaves)
+            {
+                changedWaves.Add(index);
+                if (audioRefreshPosted) return;
+                audioRefreshPosted = true;
+            }
             dispatcher.BeginInvoke(() =>
             {
-                audioRefreshPosted = false;
+                int[] changed;
+                lock (changedWaves)
+                {
+                    changed = changedWaves.ToArray();
+                    changedWaves.Clear();
+                    audioRefreshPosted = false;
+                }
+                foreach (int i in changed)
+                    waveAudio.Remove(i);
                 RefreshAudio();
             }, DispatcherPriority.Background);
         }
@@ -161,21 +174,26 @@ namespace ReBuzz.Core.Session
                 return null;
             }
             string name = System.IO.Path.GetFileNameWithoutExtension(path);
+            AudioSource source;
             try
             {
-                song.Wavetable.LoadWave(wave, path, name, false);
+                source = ReadAudioFile(path);
             }
             catch (Exception e)
             {
-                ClearWave(wave);
                 error = $"Couldn't read {System.IO.Path.GetFileName(path)}: {e.Message}";
                 return null;
             }
-            var audio = WaveAudioOf(wave);
-            if (audio == null || audio.Source.Length == 0)
+            if (source.Length == 0)
+            {
+                error = $"{System.IO.Path.GetFileName(path)} holds no audio.";
+                return null;
+            }
+            var audio = PutWave(wave, path, name, source);
+            if (audio == null)
             {
                 ClearWave(wave);
-                error = $"{System.IO.Path.GetFileName(path)} holds no audio.";
+                error = "Couldn't make a wave of it.";
                 return null;
             }
             var (bpm, _) = AudioAnalysis.Tempo(audio.Source, Session.BeatsPerBar);
@@ -192,7 +210,73 @@ namespace ReBuzz.Core.Session
                     return null;
                 }
             }
-            return AddAudioClip(track, scene, machine, name, new SessionDocument.AudioSettings { Wave = wave, Bpm = Math.Round(bpm, 2) });
+            // The tempo as found (a loop's bars exactly): rounding it would make the clip a tick longer.
+            return AddAudioClip(track, scene, machine, name, new SessionDocument.AudioSettings { Wave = wave, Bpm = bpm });
+        }
+
+        /// <summary>The longest audio file a clip takes.</summary>
+        public const int MaxImportMinutes = 30;
+
+        /// <summary>
+        /// A file's audio (libsndfile, as the wavetable reads it), its first two channels. Read
+        /// here rather than by the wavetable's LoadWave, which holds the audio lock while it reads.
+        /// </summary>
+        static AudioSource ReadAudioFile(string path)
+        {
+            using var file = libsndfile.SoundFile.OpenRead(path);
+            int channels = file.ChannelCount;
+            int rate = file.SampleRate;
+            if (channels < 1 || rate <= 0) throw new InvalidDataException("not an audio file");
+            long frames = file.FrameCount;
+            if (frames > (long)MaxImportMinutes * 60 * rate) throw new InvalidDataException($"it is longer than {MaxImportMinutes} minutes");
+            var left = new float[Math.Max(0, frames)];
+            var right = channels > 1 ? new float[left.Length] : left;
+            const int Chunk = 4096;
+            var buffer = new float[Chunk * channels];
+            long at = 0;
+            while (at < frames)
+            {
+                long n = file.ReadFloat(buffer, Math.Min(Chunk, frames - at));
+                if (n <= 0) break;
+                for (int i = 0; i < n; i++)
+                {
+                    left[at + i] = buffer[i * channels];
+                    if (channels > 1) right[at + i] = buffer[i * channels + 1];
+                }
+                at += n;
+            }
+            if (at < frames)
+            {
+                Array.Resize(ref left, (int)at);
+                right = channels > 1 ? right[..(int)at] : left;
+            }
+            return new AudioSource(left, right, rate);
+        }
+
+        /// <summary>Puts audio into a wave of the song (float, mono or stereo) and keeps it as read; null if it can't.</summary>
+        WaveAudio PutWave(int index, string path, string name, AudioSource source)
+        {
+            bool stereo = !ReferenceEquals(source.Left, source.Right);
+            // A free slot: nothing plays it, so this needn't hold the audio lock.
+            song.Wavetable.AllocateWave(index, path ?? "", name, source.Length, WaveFormat.Float32, stereo, 65, false, false);
+            var layer = song.Wavetable.Waves[index]?.Layers.FirstOrDefault();
+            if (layer == null) return null;
+            layer.SampleRate = source.SampleRate;
+            layer.SetDataAsFloat(source.Left, 0, 1, 0, 0, source.Length);
+            if (stereo) layer.SetDataAsFloat(source.Right, 0, 1, 1, 0, source.Length);
+            layer.InvalidateData();
+            var w = new WaveAudio
+            {
+                Layer = layer,
+                Path = layer.Path,
+                Count = layer.SampleCount,
+                Rate = layer.SampleRate,
+                Channels = layer.ChannelCount,
+                Source = source,
+                Version = ++waveVersion
+            };
+            waveAudio[index] = w;
+            return w;
         }
 
         /// <summary>Makes an audio clip of a wave in a slot (undoable); the slot's clip, if any, makes way (its pattern stays).</summary>
@@ -221,19 +305,32 @@ namespace ReBuzz.Core.Session
             }
         }
 
-        /// <summary>A clip's length in ticks: its audio's beats, rounded up to a tick.</summary>
-        int AudioClipLength(AudioSource source, SessionDocument.AudioSettings audio)
+        /// <summary>
+        /// A clip's length in ticks: its audio's beats, rounded up to a tick, but to the nearest
+        /// when that is within a fiftieth (a loop a sample longer than its bars is its bars).
+        /// </summary>
+        int AudioClipLength(AudioSource source, SessionDocument.AudioSettings audio) =>
+            ClipTicks(MapOf(source, audio).BeatAt(source.Length), buzz.TPB);
+
+        internal static int ClipTicks(double beats, int ticksPerBeat)
         {
-            double beats = MapOf(source, audio).BeatAt(source.Length);
-            return Math.Clamp((int)Math.Ceiling(beats * Math.Max(1, buzz.TPB) - 1e-6), 1, 1 << 20);
+            double ticks = beats * Math.Max(1, ticksPerBeat);
+            double nearest = Math.Round(ticks);
+            int n = Math.Abs(ticks - nearest) < 0.02 ? (int)nearest : (int)Math.Ceiling(ticks);
+            return Math.Clamp(n, 1, 1 << 20);
         }
 
+        /// <summary>A wave slot to fill: empty, and not one an audio clip of the layout or a take plays.</summary>
         int FreeWave()
         {
             var waves = song.Wavetable?.Waves;
             if (waves == null) return -1;
+            var used = new HashSet<int>(audioTakes.Values.Select(t => t.Wave));
+            if (document != null)
+                foreach (var c in document.Clips.Values)
+                    if (c.Audio != null) used.Add(c.Audio.Wave);
             for (int i = 0; i < waves.Count; i++)
-                if (waves[i] == null || waves[i].Layers.Count == 0) return i;
+                if ((waves[i] == null || waves[i].Layers.Count == 0) && !used.Contains(i)) return i;
             return -1;
         }
 
@@ -256,14 +353,17 @@ namespace ReBuzz.Core.Session
             var settings = ClipOf(pattern);
             if (settings.Audio == null) return;
             var source = WaveAudioOf(audio.Wave)?.Source;
+            // Only a new tempo or new markers make it another length: a length set by hand stays through a gain change.
+            bool timing = audio.Bpm != settings.Audio.Bpm || audio.Wave != settings.Audio.Wave ||
+                          !(audio.Markers ?? new List<(double, double)>()).SequenceEqual(settings.Audio.Markers ?? new List<(double, double)>());
             UndoStack.BeginActionGroup();
             try
             {
-                if (source != null)
+                if (source != null && timing)
                 {
                     int length = AudioClipLength(source, audio);
                     if (length != pattern.Length)
-                        UndoStack.Do(new SetLengthAction(pattern, length));
+                        UndoStack.Do(new SessionPatternLengthAction(this, pattern, length));
                 }
                 settings.Audio = audio.Clone();
                 SetClipSettings(pattern, settings);
@@ -281,7 +381,7 @@ namespace ReBuzz.Core.Session
             var source = audio == null ? null : WaveAudioOf(audio.Wave)?.Source;
             if (source == null) return 0;
             var (bpm, _) = AudioAnalysis.Tempo(source, Session.BeatsPerBar);
-            audio.Bpm = Math.Round(bpm, 2);
+            audio.Bpm = bpm;
             audio.Markers.Clear();
             SetAudio(pattern, audio);
             return audio.Bpm;
@@ -322,7 +422,7 @@ namespace ReBuzz.Core.Session
             public SequenceCore Track;
             public PatternCore Take;
             public AudioCapture Capture;
-            public SessionClipEngine.MasterCapture Master;
+            public SessionClipEngine.TakeCapture Capturing;
             public int Wave;
             public string Name;
             public double Bpm;
@@ -363,6 +463,25 @@ namespace ReBuzz.Core.Session
 
         int SampleRate => Math.Max(1, ReBuzzCore.masterInfo?.SamplesPerSec ?? 44100);
 
+        /// <summary>The ReBuzz Audio In machine: an audio track fed by it records a hardware input.</summary>
+        const string AudioInName = "ReBuzz Audio In";
+
+        /// <summary>Whether what the machine records comes from a hardware input (ReBuzz Audio In, through any machines).</summary>
+        static bool HearsHardware(IMachine machine)
+        {
+            var seen = new HashSet<IMachine>();
+            var next = new Stack<IMachine>();
+            next.Push(machine);
+            while (next.Count > 0 && seen.Count < 256)
+            {
+                var m = next.Pop();
+                if (m == null || !seen.Add(m)) continue;
+                if (m.DLL?.Info?.Name == AudioInName) return true;
+                foreach (var input in m.Inputs) next.Push(input.Source);
+            }
+            return false;
+        }
+
         /// <summary>Frames of audio a number of ticks lasts at a tempo.</summary>
         long FramesOf(long ticks, double bpm, int ticksPerBeat) =>
             (long)Math.Round(ticks * 60.0 * SampleRate / (Math.Max(1, bpm) * Math.Max(1, ticksPerBeat)));
@@ -376,6 +495,13 @@ namespace ReBuzz.Core.Session
         IPattern RecordAudioTake(int track, int scene, SequenceCore seq)
         {
             var machine = seq.Machine;
+            StopRecording(seq);
+            if (audioTakes.TryGetValue(seq, out var stopping))
+            {
+                // One recording until stopped, finishing its bar: it keeps what it has now.
+                stopping.Capture.SetLength(Math.Min(stopping.Capture.Length, stopping.Capture.Written));
+                FinishAudioTake(stopping);
+            }
             int wave = FreeWave();
             string name = machine?.GetNewPatternName();
             if (wave < 0 || name == null) return null;
@@ -385,7 +511,6 @@ namespace ReBuzz.Core.Session
             int ticks = (bars > 0 ? bars : TakeRoomBars) * bar;
             double bpm = buzz.BPM;
             int tpb = Math.Max(1, buzz.TPB);
-            StopRecording(seq);
 
             // The wave's slot is kept (a frame of silence) until the take's audio fills it.
             string waveName = $"{machine.Name} {name}";
@@ -397,7 +522,11 @@ namespace ReBuzz.Core.Session
                 var create = new SessionCreatePatternAction(this, machine, name, ticks);
                 UndoStack.Do(create);
                 take = create.Created as PatternCore;
-                if (take == null) return null;
+                if (take == null)
+                {
+                    ClearWave(wave);
+                    return null;
+                }
                 Edit(d =>
                 {
                     d.SetSlot(track, scene, take.Name);
@@ -412,21 +541,17 @@ namespace ReBuzz.Core.Session
                 UndoStack.EndActionGroup();
             }
 
-            // From the bar heard: the input came back a round trip late (the output latency; the
-            // input's own isn't known).
-            long skip = Engine.LatencyCompensation ? buzz.OutputLatencySamples : 0;
+            // A hardware input comes back a round trip late: what was played to the bar heard
+            // arrives the output latency after it (the input's own isn't known). The master, and
+            // machines played by the engine, are in time with what it renders.
+            bool master = InputOf(machine) == 1;
+            long skip = !master && Engine.LatencyCompensation && HearsHardware(machine) ? buzz.OutputLatencySamples : 0;
             long length = bars > 0 ? FramesOf(ticks, bpm, tpb) : long.MaxValue;
-            var capture = new AudioCapture(SampleRate, skip, length, (long)MaxAudioTakeMinutes * 60 * SampleRate);
+            var capture = new AudioCapture(SampleRate, skip, length, (long)MaxAudioTakeMinutes * 60 * SampleRate, FramesOf(tpb, bpm, tpb));
             var t = new AudioTake { Track = seq, Take = take, Capture = capture, Wave = wave, Name = waveName, Bpm = bpm, TicksPerBeat = tpb, UntilStopped = bars == 0 };
-            if (InputOf(machine) == 1)
-            {
-                t.Master = new SessionClipEngine.MasterCapture(take, capture);
-                Engine.MasterCaptures = Engine.MasterCaptures.Append(t.Master).ToArray();
-            }
-            else
-            {
-                (take.SessionAudio ??= new ClipPlayback()).Capture = capture;
-            }
+            t.Capturing = new SessionClipEngine.TakeCapture(take, capture, master);
+            if (!master) (take.SessionAudio ??= new ClipPlayback()).Capture = capture;
+            Engine.TakeCaptures = Engine.TakeCaptures.Append(t.Capturing).ToArray();
             audioTakes[seq] = t;
 
             int countIn = 0;
@@ -449,8 +574,10 @@ namespace ReBuzz.Core.Session
         void StopAudioTake(SequenceCore seq)
         {
             if (!audioTakes.TryGetValue(seq, out var t)) return;
-            if (!t.UntilStopped)
+            if (!t.UntilStopped || t.Capture.Written == 0)
             {
+                // A fixed length stopped early keeps what it has (the rest silence); a take
+                // stopped before it began records nothing, as a MIDI take does.
                 t.Capture.SetLength(t.Capture.Written);
                 FinishAudioTake(t);
                 return;
@@ -475,7 +602,8 @@ namespace ReBuzz.Core.Session
             {
                 if (t.Track.IsRemoved || t.Take.IsDeleted)
                 {
-                    t.Capture.SetLength(0);
+                    // Its clip stays with what it has, if it is still there.
+                    t.Capture.SetLength(t.Take.IsDeleted ? 0 : Math.Min(t.Capture.Length, t.Capture.Written));
                     FinishAudioTake(t);
                     continue;
                 }
@@ -513,9 +641,8 @@ namespace ReBuzz.Core.Session
         {
             if (!audioTakes.TryGetValue(t.Track, out var current) || !ReferenceEquals(current, t)) return;
             audioTakes.Remove(t.Track);
-            if (t.Master != null)
-                Engine.MasterCaptures = Engine.MasterCaptures.Where(m => !ReferenceEquals(m, t.Master)).ToArray();
-            else if (t.Take.SessionAudio != null)
+            Engine.TakeCaptures = Engine.TakeCaptures.Where(c => !ReferenceEquals(c, t.Capturing)).ToArray();
+            if (t.Take.SessionAudio != null && ReferenceEquals(t.Take.SessionAudio.Capture, t.Capture))
                 t.Take.SessionAudio.Capture = null;
             long frames = Math.Min(t.Capture.Length, t.Capture.Written);
             if (frames > 0 && !t.Take.IsDeleted)
@@ -541,8 +668,10 @@ namespace ReBuzz.Core.Session
 
         void ResetAudioTakes()
         {
+            foreach (var t in audioTakes.Values)
+                if (t.Take.SessionAudio != null) t.Take.SessionAudio.Capture = null;
             audioTakes.Clear();
-            if (Engine != null) Engine.MasterCaptures = null;
+            if (Engine != null) Engine.TakeCaptures = null;
         }
 
         /// <summary>Whether an audio take records (or waits to) on the track.</summary>
@@ -652,6 +781,36 @@ namespace ReBuzz.Core.Session
                 if (gone.SessionAudio != null) gone.SessionAudio.Params = null;
                 audioKeys.Remove(gone);
             }
+        }
+    }
+
+    /// <summary>
+    /// A pattern's length (an audio clip's following its tempo), as a session undo step that
+    /// holds the pattern itself, not its name: renames and undone deletions don't lose it.
+    /// </summary>
+    internal sealed class SessionPatternLengthAction : IAction
+    {
+        readonly SessionLayout layout;
+        readonly IPattern pattern;
+        readonly int from, to;
+
+        public SessionPatternLengthAction(SessionLayout layout, IPattern pattern, int length)
+        {
+            this.layout = layout;
+            this.pattern = pattern;
+            from = pattern.Length;
+            to = length;
+        }
+
+        public void Do() => Set(to);
+
+        public void Undo() => Set(from);
+
+        void Set(int length)
+        {
+            var p = layout.Current(pattern);
+            if (p?.Machine == null || !layout.IsInSong(p.Machine) || !p.Machine.Patterns.Contains(p)) return;
+            p.Length = length;
         }
     }
 }

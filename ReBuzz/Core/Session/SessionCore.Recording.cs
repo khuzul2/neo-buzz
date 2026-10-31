@@ -49,13 +49,13 @@ namespace ReBuzz.Core.Session
 
         public bool IsArmed(ISequence track) => track is SequenceCore seq && Array.IndexOf(arm.Tracks, seq) >= 0;
 
-        volatile SessionClipEngine.MasterCapture[] masterCaptures = Array.Empty<SessionClipEngine.MasterCapture>();
+        volatile SessionClipEngine.TakeCapture[] takeCaptures = Array.Empty<SessionClipEngine.TakeCapture>();
 
-        /// <summary>1.0: takes resampling the master output (published whole by the UI thread; read by the audio thread).</summary>
-        internal SessionClipEngine.MasterCapture[] MasterCaptures
+        /// <summary>1.0: audio takes recording (published whole by the UI thread; read by the audio thread).</summary>
+        internal SessionClipEngine.TakeCapture[] TakeCaptures
         {
-            get => masterCaptures;
-            set => masterCaptures = value ?? Array.Empty<SessionClipEngine.MasterCapture>();
+            get => takeCaptures;
+            set => takeCaptures = value ?? Array.Empty<SessionClipEngine.TakeCapture>();
         }
 
         /// <summary>Whether a track of this machine is armed (any thread; no allocation).</summary>

@@ -15,10 +15,15 @@ namespace ReBuzz.Core.Clips
     {
         volatile AudioClipParams current;
 
+        /// <summary>How it plays; set on the UI thread (which makes what the voice needs first).</summary>
         public AudioClipParams Params
         {
             get => current;
-            set => current = value;
+            set
+            {
+                Voice.Prepare(value);
+                current = value;
+            }
         }
 
         /// <summary>Audio thread only.</summary>
