@@ -470,6 +470,27 @@ foreach ($sub in 'Generators', 'Effects') {
 }
 $inventory | Set-Content -LiteralPath ([IO.Path]::Combine($pkgDir, 'GEAR-INVENTORY.txt')) -Encoding UTF8
 
+# On CI, the inventory in short as an annotation (the package itself is an artifact to download).
+if ($env:GITHUB_ACTIONS -eq 'true') {
+    $parts = @()
+    $origins = @{}
+    foreach ($sub in 'Generators', 'Effects') {
+        $dir = [IO.Path]::Combine($pkgDir, 'Gear', $sub)
+        $dlls = if (Test-Path -LiteralPath $dir) { @(Get-ChildItem -LiteralPath $dir -File -Filter '*.dll') } else { @() }
+        $parts += "$($dlls.Count) $($sub.ToLowerInvariant())"
+        foreach ($d in $dlls) {
+            $o = $Origins["$sub\$($d.Name)"]
+            $o = if (-not $o) { 'unknown' } elseif ($o -like 'external:*') { 'built from ExternalMachines' } elseif ($o -like 'binaries*') { 'prebuilt binaries' } else { 'upstream and own' }
+            $origins[$o] = 1 + [int]$origins[$o]
+        }
+    }
+    $total = ($origins.Values | Measure-Object -Sum).Sum
+    $byOrigin = ($origins.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Value) $($_.Name)" }) -join ', '
+    $vst = [IO.Path]::Combine($pkgDir, 'Gear', 'vst')
+    $vstCount = if (Test-Path -LiteralPath $vst) { @(Get-ChildItem -LiteralPath $vst -Recurse -File -Filter '*.dll').Count } else { 0 }
+    Write-Host "::notice title=Package::$total machine DLLs in Gear: $($parts -join ', ') ($byOrigin); $vstCount DLLs in Gear\vst; machine build failures: $($Failures.Count)"
+}
+
 $toolsetText = if ($PlatformToolset) { $PlatformToolset } else { 'project default (v145)' }
 $shaText = if ($sha) { $sha } else { 'unknown' }
 $info = @(
