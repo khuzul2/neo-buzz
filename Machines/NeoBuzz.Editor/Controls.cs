@@ -183,7 +183,7 @@ namespace NeoBuzz.Editor
 
         protected override void OnRender(DrawingContext dc)
         {
-            Theme.Text(dc, this, Label, 1, 0, 11, Theme.DimText);
+            Theme.DrawText(dc, this, Label, 1, 0, 11, Theme.DimText);
             var accent = Theme.Solid(ctx.Accent);
             var accentFill = Theme.Solid(ctx.Accent, 0x38);
             for (int i = 0; i < names.Length; i++)

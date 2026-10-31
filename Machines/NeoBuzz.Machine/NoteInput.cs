@@ -4,26 +4,10 @@
 
 using System;
 using System.Threading;
+using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Machine
 {
-    /// <summary>What a synth engine does with notes and controllers.</summary>
-    internal interface INoteSink
-    {
-        /// <summary><paramref name="key"/>: a track (0 … 15) or 1000 + a MIDI note. Velocity 0 … 1.</summary>
-        void NoteOn(int key, int note, float velocity);
-        void NoteOff(int key);
-        /// <summary>Mod wheel, 0 … 1.</summary>
-        void ModWheel(float value);
-        /// <summary>Pitch bend, −1 … 1.</summary>
-        void PitchBend(float value);
-        void Sustain(bool down);
-        /// <summary>Channel pressure, 0 … 1.</summary>
-        void Aftertouch(float value);
-        /// <summary>Release everything (transport stop); hard: silence at once.</summary>
-        void AllNotesOff(bool hard);
-    }
-
     internal sealed class NoteInput
     {
         public const int MidiKeyBase = 1000;

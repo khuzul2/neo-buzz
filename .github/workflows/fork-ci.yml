@@ -32,7 +32,19 @@ jobs:
     - name: Machine DSP tests
       if: always()
       shell: pwsh
+      env:
+        MEASUREMENTS_DIR: ${{ github.workspace }}/measurements
       run: dotnet test NeoBuzz.MachineTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath machine-test.log
+
+    # The measured figures (aliasing, decay times, speed…) as one notice, readable through the API.
+    - name: Machine measurements
+      if: always() && hashFiles('measurements/machine-measurements.txt') != ''
+      shell: pwsh
+      run: |
+        $lines = Get-Content measurements/machine-measurements.txt | Sort-Object
+        $text = ($lines -join "`n")
+        if ($text.Length -gt 3800) { $text = $text.Substring(0, 3800) }
+        Write-Host "::notice title=Machine measurements::$($text -replace '%', '%25' -replace "`n", '%0A')"
 
     - name: Annotate test log
       if: failure()

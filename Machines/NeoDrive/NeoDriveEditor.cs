@@ -103,7 +103,7 @@ namespace NeoBuzz.Drive
                 double y = DriveEngine.Transfer(values, x) * scale;
                 dc.DrawEllipse(accent, null, new Point(c.X + x * half, c.Y - y * half), 4, 4);
             }
-            Theme.Text(dc, v, ((DriveMode)values.Choice(P.Mode)).ToString(), r.X + 6, r.Y + 4, 10, Theme.DimText);
+            Theme.DrawText(dc, v, ((DriveMode)values.Choice(P.Mode)).ToString(), r.X + 6, r.Y + 4, 10, Theme.DimText);
         }
     }
 }

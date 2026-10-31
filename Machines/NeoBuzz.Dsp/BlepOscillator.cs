@@ -75,8 +75,33 @@ namespace NeoBuzz.Dsp
         bool Advance(double inc, double startAgo, double fraction, out double wrapAgo)
         {
             wrapAgo = 0;
-            bool wrapped = false;
             double p = phase;
+            // Fast path: no breakpoint crossed in this step (almost every sample).
+            double end = p + inc * fraction;
+            if (inc > 0)
+            {
+                double next = 1.0;
+                if (wTri != 0 && p < 0.5) next = 0.5;
+                if (wSq != 0 && p < pw && pw < next) next = pw;
+                if (end < next)
+                {
+                    phase = end;
+                    return false;
+                }
+            }
+            else if (inc < 0)
+            {
+                double next = 0.0;
+                if (wTri != 0 && p > 0.5) next = 0.5;
+                if (wSq != 0 && p > pw && pw > next) next = pw;
+                if (end > next)
+                {
+                    phase = end;
+                    return false;
+                }
+            }
+            else return false;
+            bool wrapped = false;
             double t = 0;   // elapsed, in samples, of this segment
             int guard = 0;
             if (inc > 0)

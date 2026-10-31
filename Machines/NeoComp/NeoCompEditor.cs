@@ -94,7 +94,7 @@ namespace NeoBuzz.Comp
                     double outDb = inDb - machine.Engine.GainReductionDb;
                     dc.DrawEllipse(accent, null, new Point(X(Math.Min(hi, inDb)), Y(outDb)), 4, 4);
                 }
-                Theme.Text(dc, v, $"GR {machine.Engine.GainReductionDb:F1} dB", r.X + 6, r.Y + 4, 10, Theme.DimText);
+                Theme.DrawText(dc, v, $"GR {machine.Engine.GainReductionDb:F1} dB", r.X + 6, r.Y + 4, 10, Theme.DimText);
             }
         }
     }

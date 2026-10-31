@@ -99,10 +99,10 @@ namespace NeoBuzz.Verb
             Band(VerbEngine.DecayAt(values, 1000), AccentColor, "Mid");
             Band(VerbEngine.DecayAt(values, 20000), HighColor, "High");
 
-            Theme.Text(dc, v, freeze ? "Frozen" : $"T60 {ParamDef.Time(t60)}", r.X + 6, r.Y + 3, 10, Theme.DimText);
-            Theme.Text(dc, v, "low", r.Right - 70, r.Y + 3, 10, Theme.Solid(LowColor));
-            Theme.Text(dc, v, "mid", r.Right - 48, r.Y + 3, 10, Theme.Solid(AccentColor));
-            Theme.Text(dc, v, "high", r.Right - 26, r.Y + 3, 10, Theme.Solid(HighColor));
+            Theme.DrawText(dc, v, freeze ? "Frozen" : $"T60 {ParamDef.Time(t60)}", r.X + 6, r.Y + 3, 10, Theme.DimText);
+            Theme.DrawText(dc, v, "low", r.Right - 70, r.Y + 3, 10, Theme.Solid(LowColor));
+            Theme.DrawText(dc, v, "mid", r.Right - 48, r.Y + 3, 10, Theme.Solid(AccentColor));
+            Theme.DrawText(dc, v, "high", r.Right - 26, r.Y + 3, 10, Theme.Solid(HighColor));
         }
     }
 }

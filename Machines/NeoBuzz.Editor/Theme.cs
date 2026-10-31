@@ -77,7 +77,7 @@ namespace NeoBuzz.Editor
             dc.DrawText(ft, new Point(x - ft.Width / 2, y));
         }
 
-        public static void Text(DrawingContext dc, Visual v, string text, double x, double y, double size, Brush brush, bool bold = false)
+        public static void DrawText(DrawingContext dc, Visual v, string text, double x, double y, double size, Brush brush, bool bold = false)
         {
             dc.DrawText(Format(v, text, size, brush, bold), new Point(x, y));
         }

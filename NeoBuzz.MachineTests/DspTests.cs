@@ -173,7 +173,7 @@ namespace NeoBuzz.MachineTests
             var y = RenderOsc(osc, Measure.BinFrequency(bin), Warm + Measure.N);
             var mag = Measure.Spectrum(y, Warm);
             double floor = Measure.AliasFloorDb(mag, bin);
-            TestContext.Out.WriteLine($"shape {shape} pw {pw}: alias floor {floor:F1} dB");
+            Measure.Report($"BLEP oscillator, shape {shape} pw {pw} at 1.72 kHz: alias floor {floor:F1} dB");
             Assert.That(floor, Is.LessThan(limit));
         }
 
@@ -209,7 +209,7 @@ namespace NeoBuzz.MachineTests
             }
             var mag = Measure.Spectrum(y, Warm);
             double floor = Measure.AliasFloorDb(mag, bin);
-            TestContext.Out.WriteLine($"sync alias floor {floor:F1} dB");
+            Measure.Report($"BLEP hard sync: alias floor {floor:F1} dB");
             Assert.That(floor, Is.LessThan(-70));
         }
 
@@ -265,7 +265,7 @@ namespace NeoBuzz.MachineTests
             double freq = Measure.PeakFrequency(y, 48000, n);
             double cents = Measure.Cents(freq, hz);
             double level = Measure.Peak(y, 48000, n);
-            TestContext.Out.WriteLine($"{hz} Hz: oscillates at {freq:F2} Hz ({cents:F1} cents), peak {level:F3}");
+            Measure.Report($"Ladder self-oscillation at {hz} Hz: {cents:+0.0;−0.0} cents");
             Assert.That(Math.Abs(cents), Is.LessThan(25));
             Assert.That(level, Is.InRange(0.1, 1.0));
         }

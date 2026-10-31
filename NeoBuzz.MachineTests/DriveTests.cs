@@ -58,7 +58,7 @@ namespace NeoBuzz.MachineTests
             var y = Run(e, Measure.Sine(Measure.BinFrequency(bin), Warm + Measure.N, 0.25));
             var mag = Measure.Spectrum(y, Warm);
             double floor = Measure.AliasFloorDb(mag, bin);
-            TestContext.Out.WriteLine($"{mode} {1 << quality}×: alias floor {floor:F1} dB, THD {Measure.Thd(mag, bin) * 100:F1} %");
+            Measure.Report($"Neo Drive {mode} {1 << quality}×, +30 dB drive: alias floor {floor:F1} dB");
             Assert.That(floor, Is.LessThan(limit));
         }
 
@@ -116,7 +116,7 @@ namespace NeoBuzz.MachineTests
             var y = Run(e, Measure.Sine(Measure.BinFrequency(bin), Warm + Measure.N, 0.25));
             var mag = Measure.Spectrum(y, Warm);
             double thd = Measure.Thd(mag, bin);
-            TestContext.Out.WriteLine($"{mode}: THD {thd * 100:F3} %");
+            Measure.Report($"Neo Drive {mode}, 0 dB drive, −12 dBFS: THD {thd * 100:F2} %");
             // Tube is asymmetric by design: a little second harmonic even when clean.
             Assert.That(thd, Is.LessThan(mode == DriveMode.Tube ? 0.02 : 0.01));
         }

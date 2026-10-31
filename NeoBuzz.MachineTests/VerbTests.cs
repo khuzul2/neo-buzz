@@ -98,7 +98,7 @@ namespace NeoBuzz.MachineTests
             int length = (int)((t60 * 0.75 + 0.5) * Measure.Rate);
             var (l, _) = Impulse(e, length);
             double measured = T60At1k(l);
-            TestContext.Out.WriteLine($"T60 {t60} s: measured {measured:F3} s ({(measured / t60 - 1) * 100:+0.0;−0.0} %)");
+            Measure.Report($"Neo Verb T60 {t60} s: measured {measured:F3} s ({(measured / t60 - 1) * 100:+0.0;−0.0} %)");
             Assert.That(measured / t60, Is.InRange(0.9, 1.1));
         }
 
@@ -135,7 +135,7 @@ namespace NeoBuzz.MachineTests
             var (l, _) = Impulse(e, (int)(0.4 * Measure.Rate));
             int start = (int)(at * Measure.Rate);
             double k = Kurtosis(l, start, 960);
-            TestContext.Out.WriteLine($"{(VerbMode)mode}: kurtosis {k:F2} at {at * 1000} ms");
+            Measure.Report($"Neo Verb {(VerbMode)mode}: kurtosis {k:F2} at {at * 1000} ms");
             Assert.That(k, Is.LessThan(4));
         }
 
@@ -152,7 +152,7 @@ namespace NeoBuzz.MachineTests
                 slr += l[i] * (double)r[i];
             }
             double rho = slr / Math.Sqrt(sl * sr);
-            TestContext.Out.WriteLine($"correlation {rho:F3}");
+            Measure.Report($"Neo Verb tail L/R correlation {rho:F3}");
             Assert.That(Math.Abs(rho), Is.LessThan(0.3));
         }
 
@@ -167,7 +167,7 @@ namespace NeoBuzz.MachineTests
             var (l, _) = Run(e, silence, silence);
             double a = Measure.Rms(l, (int)(0.5 * Measure.Rate), Measure.Rate);
             double b = Measure.Rms(l, 10 * Measure.Rate, Measure.Rate);
-            TestContext.Out.WriteLine($"frozen: {Measure.Db(a):F2} dB → {Measure.Db(b):F2} dB after 10 s");
+            Measure.Report($"Neo Verb freeze: {Measure.Db(b / a):+0.00;−0.00} dB over 10 s");
             Assert.That(Math.Abs(Measure.Db(b / a)), Is.LessThan(1.0));
         }
 

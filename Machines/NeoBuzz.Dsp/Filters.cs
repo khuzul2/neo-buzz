@@ -137,6 +137,7 @@ namespace NeoBuzz.Dsp
     {
         float s1, s2, s3, s4;
         float G, k, gainComp;
+        float c1, c2, c3, c4, g4, invDen;
 
         /// <summary><paramref name="g"/> = tan(π f / fs); <paramref name="resonance"/> 0 … 1 (1 self-oscillates).</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -147,6 +148,15 @@ namespace NeoBuzz.Dsp
             // Passband loss of the ladder is 1/(1+k); give back about half of it, as most
             // ladder synths do, so resonance thins the sound without collapsing it.
             gainComp = 1f + 0.5f * k;
+            // Each stage: y = G x + (1−G) s; the cascade's output in terms of its input u is
+            // G⁴u + G³(1−G)s1 + G²(1−G)s2 + G(1−G)s3 + (1−G)s4.
+            float gg = G, g2 = gg * gg, om = 1f - gg;
+            g4 = g2 * g2;
+            c1 = g2 * gg * om;
+            c2 = g2 * om;
+            c3 = gg * om;
+            c4 = om;
+            invDen = 1f / (1f + k * g4);
         }
 
         /// <summary>
@@ -159,21 +169,17 @@ namespace NeoBuzz.Dsp
         public float Process(float x, float drive, bool lp12)
         {
             float g = G;
-            float g2 = g * g;
-            float g4 = g2 * g2;
-            float oneMinus = 1f - g;
-            // Each stage: y = G x + (1−G) s; the cascade's output in terms of its input u.
-            float sigma = g2 * g * oneMinus * s1 + g2 * oneMinus * s2 + g * oneMinus * s3 + oneMinus * s4;
-            float d = Math.Max(1f, drive) * 0.5f;
+            float sigma = c1 * s1 + c2 * s2 + c3 * s3 + c4 * s4;
+            float d = drive > 1f ? drive * 0.5f : 0.5f;
             float xin = x * gainComp * d;
-            float y4est = (g4 * xin + sigma) / (1f + k * g4);
+            float y4est = (g4 * xin + sigma) * invDen;
             float u = DspMath.FastTanh(xin - k * y4est);
 
             float v = (u - s1) * g; float y1 = v + s1; s1 = y1 + v;
             v = (y1 - s2) * g; float y2 = v + s2; s2 = y2 + v;
             v = (y2 - s3) * g; float y3 = v + s3; s3 = y3 + v;
             v = (y3 - s4) * g; float y4 = v + s4; s4 = y4 + v;
-            return (lp12 ? y2 : y4) / d;
+            return (lp12 ? y2 : y4) * (drive > 1f ? 2f / drive : 2f);
         }
 
         public void Reset() { s1 = s2 = s3 = s4 = 0; }

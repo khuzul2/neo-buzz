@@ -90,6 +90,22 @@ namespace NeoBuzz.MachineTests
         /// <summary>Cents between two frequencies.</summary>
         public static double Cents(double f, double reference) => 1200 * Math.Log2(f / reference);
 
+        /// <summary>
+        /// Records a measured figure (for the spec): appended to machine-measurements.txt in
+        /// MEASUREMENTS_DIR (CI shows it), else ignored.
+        /// </summary>
+        public static void Report(string what)
+        {
+            TestContext.Out.WriteLine(what);
+            var dir = Environment.GetEnvironmentVariable("MEASUREMENTS_DIR");
+            if (string.IsNullOrEmpty(dir)) return;
+            lock (typeof(Measure))
+            {
+                Directory.CreateDirectory(dir);
+                File.AppendAllText(Path.Combine(dir, "machine-measurements.txt"), what + Environment.NewLine);
+            }
+        }
+
         /// <summary>Deterministic pink-ish test noise.</summary>
         public static float[] PinkNoise(int length, double rmsTarget = 0.1, uint seed = 12345)
         {

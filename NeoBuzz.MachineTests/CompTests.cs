@@ -80,6 +80,7 @@ namespace NeoBuzz.MachineTests
                 worst = Math.Max(worst, Math.Abs(err));
                 TestContext.Out.WriteLine($"{(CompMode)modeIndex} in {inDb} dB → {outDb:F2} dB (ideal {Ideal(inDb, -20, 4):F2})");
             }
+            Measure.Report($"Neo Comp {(CompMode)modeIndex} static curve: worst error {worst:F3} dB");
             Assert.That(worst, Is.LessThan(0.25));
         }
 
@@ -105,7 +106,7 @@ namespace NeoBuzz.MachineTests
                 if (gr >= 0.632 * full) { hit = i - 2400; break; }
             }
             double t = hit / (double)Measure.Rate;
-            TestContext.Out.WriteLine($"attack {attack * 1000} ms: 63 % after {t * 1000:F3} ms");
+            Measure.Report($"Neo Comp attack {attack * 1000} ms: 63 % after {t * 1000:F3} ms");
             Assert.That(t / attack, Is.InRange(0.9, 1.1));
         }
 
@@ -131,7 +132,7 @@ namespace NeoBuzz.MachineTests
                 if (gr <= 0.368 * full) { hit = i - 4800; break; }
             }
             double t = hit / (double)Measure.Rate;
-            TestContext.Out.WriteLine($"release {release * 1000} ms: back to 37 % after {t * 1000:F1} ms");
+            Measure.Report($"Neo Comp release {release * 1000} ms: 37 % after {t * 1000:F1} ms");
             Assert.That(t / release, Is.InRange(0.9, 1.1));
         }
 
