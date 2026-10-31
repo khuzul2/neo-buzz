@@ -72,16 +72,18 @@ namespace NeoBuzz.Wave
         internal float ModWheelValue, PitchBendSemis, AftertouchValue, GlobalLfo1, GlobalLfo2;
         public double Tempo { get => bpm; set => bpm = value > 0 ? value : 120; }
 
+        volatile Wavetable pendingUser;
+        volatile bool tablesDirty;
+        bool tablesPending;   // a chosen built-in table is still being built: look again next block
+
         /// <summary>The table "User" plays (loaded by the machine from a file or its saved state).</summary>
-        public Wavetable UserTable
+        public Wavetable UserTable => pendingUser ?? userTable;
+
+        /// <summary>Any thread: plays <paramref name="table"/> as "User" from the next block.</summary>
+        public void SetUserTable(Wavetable table)
         {
-            get => userTable;
-            set
-            {
-                userTable = value;
-                values.Set(P.ATable, values[P.ATable]);
-                Update(true);
-            }
+            pendingUser = table;
+            tablesDirty = true;
         }
 
         public bool IsActive
@@ -105,6 +107,23 @@ namespace NeoBuzz.Wave
 
         internal WaveVoice Voice(int i) => voices[i];
 
+        /// <summary>For editors: the modulated position and warp of the loudest sounding voice.</summary>
+        internal bool Live(int osc, out float pos, out float warp)
+        {
+            WaveVoice best = null;
+            float loudest = 0.001f;
+            foreach (var v in voices)
+                if (v.IsActive && v.Loudness > loudest)
+                {
+                    best = v;
+                    loudest = v.Loudness;
+                }
+            pos = warp = 0;
+            if (best == null) return false;
+            (pos, warp) = best.Live(osc);
+            return true;
+        }
+
         public void SetSampleRate(float sr)
         {
             sampleRate = sr;
@@ -122,7 +141,14 @@ namespace NeoBuzz.Wave
 
         void Update(bool force)
         {
-            if (!force && !values.AnyDirty && S.Table[0] != null && S.Table[1] != null) return;
+            if (!force && !values.AnyDirty && !tablesDirty && !tablesPending) return;
+            if (tablesDirty)
+            {
+                tablesDirty = false;
+                var p = pendingUser;
+                if (p != null) userTable = p;
+                pendingUser = null;
+            }
             var s = S;
             s.Mode = (VoiceMode)values.Choice(P.VoiceMode);
             s.Polyphony = (int)values.Value(P.Polyphony);
@@ -139,8 +165,11 @@ namespace NeoBuzz.Wave
             s.VelAmp = values.F(P.VelAmp);
 
             // Keep playing the previous table until a newly chosen one is built.
-            s.Table[0] = Pick(values.Choice(P.ATable)) ?? s.Table[0];
-            s.Table[1] = Pick(values.Choice(P.BTable)) ?? s.Table[1];
+            var ta = Pick(values.Choice(P.ATable));
+            var tb = Pick(values.Choice(P.BTable));
+            tablesPending = ta == null || tb == null;
+            s.Table[0] = ta ?? s.Table[0];
+            s.Table[1] = tb ?? s.Table[1];
             s.Pos[0] = values.F(P.APos); s.Pos[1] = values.F(P.BPos);
             s.WarpMode[0] = (Warp)values.Choice(P.AWarp); s.WarpMode[1] = (Warp)values.Choice(P.BWarp);
             s.WarpAmt[0] = values.F(P.AWarpAmt); s.WarpAmt[1] = values.F(P.BWarpAmt);
@@ -432,7 +461,10 @@ namespace NeoBuzz.Wave
             }
         }
 
-        static double WarpPhase(Warp w, float a, double p)
+        /// <summary>What the editor draws: the modulated position and warp amount of an oscillator.</summary>
+        internal (float Pos, float Warp) Live(int osc) => osc == 0 ? (posA, warpA) : (posB, warpB);
+
+        internal static double WarpPhase(Warp w, float a, double p)
         {
             switch (w)
             {
@@ -507,8 +539,9 @@ namespace NeoBuzz.Wave
             lvlSub = DspMath.Clamp(s.SubLevel + dst[(int)WaveDest.SubLevel], 0, 1);
             noise = DspMath.Clamp(s.Noise + dst[(int)WaveDest.NoiseLevel], 0, 1);
 
-            // Mip levels: every harmonic below (2 fs − 20 kHz), counting the warp's speed-up.
-            double limit = Math.Max(0.25, (sr - 20000.0) / sr);
+            // Mip levels: harmonics up to 44 kHz (below the oversampled Nyquist, so nothing
+            // aliases; the decimator removes what's above 20 kHz), counting the warp's speed-up.
+            double limit = Math.Min(44000.0, sr * 0.5 - 100) / sr;
             levelA = Wavetable.LevelFor(incA * WarpSpeed(s.WarpMode[0], warpA), limit);
             levelB = Wavetable.LevelFor(incB * WarpSpeed(s.WarpMode[1], warpB), limit);
             levelSub = Wavetable.LevelFor(incSub, limit);

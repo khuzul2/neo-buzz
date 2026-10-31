@@ -34,8 +34,11 @@ namespace NeoBuzz.Dsp
         /// <summary>Highest harmonic kept at a level.</summary>
         public static int MaxHarmonic(int level) => 1024 >> level;
 
-        /// <summary>Samples per cycle stored at a level: at least four per highest harmonic, at least 256.</summary>
-        public static int LevelLength(int level) => level <= 1 ? 2048 : Math.Max(256, 4096 >> level);
+        /// <summary>
+        /// Samples per cycle stored at a level: at least 8 per highest harmonic (16 where that
+        /// fits in 2048), so cubic reads stay ~90 dB clean; at least 256.
+        /// </summary>
+        public static int LevelLength(int level) => level == 0 ? 8192 : level == 1 ? 4096 : Math.Clamp(16 * MaxHarmonic(level), 256, 2048);
 
         /// <summary>
         /// Builds a table from single-cycle frames of <see cref="FrameSize"/> samples (other lengths

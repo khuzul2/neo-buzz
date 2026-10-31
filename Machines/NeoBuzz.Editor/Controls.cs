@@ -424,3 +424,41 @@ namespace NeoBuzz.Editor
         }
     }
 }
+
+namespace NeoBuzz.Editor
+{
+    /// <summary>A small button drawn in the theme.</summary>
+    internal sealed class ActionButton : FrameworkElement
+    {
+        readonly Color accent;
+        bool hover;
+
+        public ActionButton(string text, Color accent, double width = 90)
+        {
+            Text = text;
+            this.accent = accent;
+            Width = width;
+            Height = 24;
+            Cursor = System.Windows.Input.Cursors.Hand;
+        }
+
+        public string Text { get; set; }
+        public event Action Click;
+
+        protected override void OnMouseEnter(System.Windows.Input.MouseEventArgs e) { hover = true; InvalidateVisual(); }
+        protected override void OnMouseLeave(System.Windows.Input.MouseEventArgs e) { hover = false; InvalidateVisual(); }
+
+        protected override void OnMouseLeftButtonUp(System.Windows.Input.MouseButtonEventArgs e)
+        {
+            Click?.Invoke();
+            e.Handled = true;
+        }
+
+        protected override void OnRender(DrawingContext dc)
+        {
+            var r = new Rect(0, 0, Width, Height);
+            dc.DrawRoundedRectangle(hover ? Theme.Solid(accent, 0x38) : Theme.Panel, Theme.Pen(Theme.Solid(accent), 1), r, 4, 4);
+            Theme.TextCentered(dc, this, Text, Width / 2, 4, 11.5, Theme.Solid(accent));
+        }
+    }
+}

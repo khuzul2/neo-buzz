@@ -21,9 +21,17 @@ namespace NeoBuzz.MachineTests
             ["Neo Comp"] = (NeoBuzz.Comp.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Comp(v).Process(l, r, null, null, n))),
             ["Neo Verb"] = (NeoBuzz.Verb.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Verb(v).Process(l, r, n))),
             ["Neo Poly"] = (NeoBuzz.Poly.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Poly.PolyEngine(v), (e, l, r, n) => ((NeoBuzz.Poly.PolyEngine)e).Process(l, r, n), x.Length)),
+            ["Neo Wave"] = (NeoBuzz.Wave.Params.Table, (v, x) => RenderSynth(WaveEngine(v), (e, l, r, n) => ((NeoBuzz.Wave.WaveEngine)e).Process(l, r, n), x.Length)),
         };
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave" };
+
+        static NeoBuzz.Wave.WaveEngine WaveEngine(ParamValues v)
+        {
+            // Built-in tables build in the background in the machine; here, before the first note.
+            for (int i = 0; i < NeoBuzz.Wave.Tables.Names.Length; i++) NeoBuzz.Wave.Tables.GetNow(i);
+            return new NeoBuzz.Wave.WaveEngine(v);
+        }
 
         /// <summary>A chord (C3 E3 G3 B3) held for two thirds of the length, then released.</summary>
         static float[] RenderSynth(INoteSink engine, Func<INoteSink, float[], float[], int, bool> process, int length)
