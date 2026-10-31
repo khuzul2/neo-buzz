@@ -28,7 +28,7 @@ ALevel    "A level"     0 1000 1000 pct | Level
 group Osc B
 BTable    "B table"     0 10   3 enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: the table loaded in the editor)
 BPos      "B position"  0 1000 0 pct | Position in the table (frames morph smoothly)
-BWarp     "B warp"      0 7    0    enum None Bend+ Bend− Squeeze Mirror Asym Window_sync PM_from_B | How the cycle is read
+BWarp     "B warp"      0 7    0    enum None Bend+ Bend− Squeeze Mirror Asym Window_sync PM_from_B | How the cycle is read (PM from B acts on osc A only; here it reads plainly)
 BWarpAmt  "B warp amt"  0 1000 0    pct | Warp amount
 BOct      "B octave"    0 6    3    int -3 oct signed | Octave
 BSemi     "B semi"      0 24   12   int -12 st signed | Semitones

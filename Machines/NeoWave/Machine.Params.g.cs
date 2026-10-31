@@ -67,7 +67,7 @@ namespace NeoBuzz.Wave
         [ParameterDecl(Name = "B position", Description = "Position in the table (frames morph smoothly)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int BPos { get => Values[P.BPos]; set => Values.Set(P.BPos, value); }
 
-        [ParameterDecl(Name = "B warp", Description = "How the cycle is read", MinValue = 0, MaxValue = 7, DefValue = 0)]
+        [ParameterDecl(Name = "B warp", Description = "How the cycle is read (PM from B acts on osc A only; here it reads plainly)", MinValue = 0, MaxValue = 7, DefValue = 0)]
         public int BWarp { get => Values[P.BWarp]; set => Values.Set(P.BWarp, value); }
 
         [ParameterDecl(Name = "B warp amt", Description = "Warp amount", MinValue = 0, MaxValue = 1000, DefValue = 0)]

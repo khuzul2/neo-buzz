@@ -50,6 +50,11 @@ namespace NeoBuzz.Wave
                 TextTrimming = TextTrimming.CharacterEllipsis,
                 Text = UserLabel(machine),
             };
+            Poll.Every(userName, 0.5, () =>
+            {
+                string label = UserLabel(machine);
+                if (userName.Text != label) userName.Text = label;
+            });
             var load = new ActionButton("Load table…", AccentColor, 128);
             load.Click += () =>
             {

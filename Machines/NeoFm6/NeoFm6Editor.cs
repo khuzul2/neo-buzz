@@ -229,11 +229,14 @@ namespace NeoBuzz.Fm6
             void Show()
             {
                 int count = machine?.Bank.Count ?? 0;
-                name.Text = count == 0 ? "No bank loaded" : $"{machine.BankName} ({count})";
+                string label = count == 0 ? "No bank loaded" : $"{machine.BankName} ({count})";
+                if (name.Text == label) return;
+                name.Text = label;
                 voices.Text = count == 0 ? "Voices ▾" : "Choose a voice ▾";
                 voices.InvalidateVisual();
             }
             Show();
+            Poll.Every(name, 0.5, Show);   // a bank can also arrive with the song or a preset
 
             var load = new ActionButton("Load bank…", AccentColor, 132);
             load.Click += () =>

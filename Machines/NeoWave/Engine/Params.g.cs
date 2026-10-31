@@ -121,7 +121,7 @@ namespace NeoBuzz.Wave
             new ParamDef(P.ALevel, "ALevel", "A level", 0, 1000, 1000, MapKind.Percent, group: "Osc A", description: "Level"),
             new ParamDef(P.BTable, "BTable", "B table", 0, 10, 3, MapKind.Enum, names: new[] { "Basic", "PWM", "Harmonics", "Formants", "Sync sweep", "FM sweep", "Organ", "Resonant", "Digital", "Grit", "User" }, group: "Osc B", description: "Wavetable (User: the table loaded in the editor)"),
             new ParamDef(P.BPos, "BPos", "B position", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Position in the table (frames morph smoothly)"),
-            new ParamDef(P.BWarp, "BWarp", "B warp", 0, 7, 0, MapKind.Enum, names: new[] { "None", "Bend+", "Bend−", "Squeeze", "Mirror", "Asym", "Window sync", "PM from B" }, group: "Osc B", description: "How the cycle is read"),
+            new ParamDef(P.BWarp, "BWarp", "B warp", 0, 7, 0, MapKind.Enum, names: new[] { "None", "Bend+", "Bend−", "Squeeze", "Mirror", "Asym", "Window sync", "PM from B" }, group: "Osc B", description: "How the cycle is read (PM from B acts on osc A only; here it reads plainly)"),
             new ParamDef(P.BWarpAmt, "BWarpAmt", "B warp amt", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Warp amount"),
             new ParamDef(P.BOct, "BOct", "B octave", 0, 6, 3, MapKind.Int, a: -3, b: 0, flag: true, unit: "oct", group: "Osc B", description: "Octave"),
             new ParamDef(P.BSemi, "BSemi", "B semi", 0, 24, 12, MapKind.Int, a: -12, b: 0, flag: true, unit: "st", group: "Osc B", description: "Semitones"),

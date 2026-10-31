@@ -5,6 +5,7 @@
 // keeps the full audible band without aliasing. Pure.
 
 using System;
+using System.Threading;
 using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Wave
@@ -72,18 +73,18 @@ namespace NeoBuzz.Wave
         internal float ModWheelValue, PitchBendSemis, AftertouchValue, GlobalLfo1, GlobalLfo2;
         public double Tempo { get => bpm; set => bpm = value > 0 ? value : 120; }
 
-        volatile Wavetable pendingUser;
-        volatile bool tablesDirty;
+        volatile Wavetable requestedUser;   // the latest table asked for (any thread); null: none
+        int userChanged;                    // 1: the audio thread hasn't picked up requestedUser yet
         bool tablesPending;   // a chosen built-in table is still being built: look again next block
 
-        /// <summary>The table "User" plays (loaded by the machine from a file or its saved state).</summary>
-        public Wavetable UserTable => pendingUser ?? userTable;
+        /// <summary>The table "User" plays (loaded by the machine from a file or its saved state); null when none.</summary>
+        public Wavetable UserTable => requestedUser;
 
-        /// <summary>Any thread: plays <paramref name="table"/> as "User" from the next block.</summary>
+        /// <summary>Any thread: plays <paramref name="table"/> as "User" from the next block (null: no user table).</summary>
         public void SetUserTable(Wavetable table)
         {
-            pendingUser = table;
-            tablesDirty = true;
+            requestedUser = table;
+            Volatile.Write(ref userChanged, 1);
         }
 
         public bool IsActive
@@ -141,14 +142,10 @@ namespace NeoBuzz.Wave
 
         void Update(bool force)
         {
-            if (!force && !values.AnyDirty && !tablesDirty && !tablesPending) return;
-            if (tablesDirty)
-            {
-                tablesDirty = false;
-                var p = pendingUser;
-                if (p != null) userTable = p;
-                pendingUser = null;
-            }
+            bool userNew = Interlocked.Exchange(ref userChanged, 0) == 1;
+            if (!force && !values.AnyDirty && !userNew && !tablesPending) return;
+            // Read after clearing the flag: a table asked for meanwhile sets the flag again and is picked up next block.
+            if (userNew) userTable = requestedUser;
             var s = S;
             s.Mode = (VoiceMode)values.Choice(P.VoiceMode);
             s.Polyphony = (int)values.Value(P.Polyphony);
@@ -301,7 +298,7 @@ namespace NeoBuzz.Wave
 
         float note, velocity, randomValue, unisonPos;
         float pitch, pitchTarget, glideStep;
-        bool pending;
+        bool pending, pendRelease;
         float pendNote, pendVel, pendGlideFrom;
         int pendUni, pendUniCount;
 
@@ -339,6 +336,7 @@ namespace NeoBuzz.Wave
             {
                 bool start = !pending;
                 pending = true;
+                pendRelease = false;
                 pendNote = n; pendVel = vel; pendUni = unisonIndex; pendUniCount = unisonCount; pendGlideFrom = glideFrom;
                 if (start) steal.Start(sr);
                 return;
@@ -398,9 +396,9 @@ namespace NeoBuzz.Wave
         {
             if (pending)
             {
-                pending = false;
-                steal.Cancel();
-                Start(pendNote, pendVel, pendUni, pendUniCount, pendGlideFrom);
+                // Released before the steal finished: the pending note starts when the fade ends and releases at once.
+                pendRelease = true;
+                return;
             }
             ampEnv.Gate(false);
             fltEnv.Gate(false);
@@ -410,6 +408,7 @@ namespace NeoBuzz.Wave
         public void Kill()
         {
             pending = false;
+            pendRelease = false;
             if (ampEnv.IsActive) steal.Start(sr, 0.004f);
             ampEnv.Gate(false);
             fltEnv.Gate(false);
@@ -543,7 +542,8 @@ namespace NeoBuzz.Wave
             // aliases; the decimator removes what's above 20 kHz), counting the warp's speed-up.
             double limit = Math.Min(44000.0, sr * 0.5 - 100) / sr;
             levelA = Wavetable.LevelFor(incA * WarpSpeed(s.WarpMode[0], warpA), limit);
-            levelB = Wavetable.LevelFor(incB * WarpSpeed(s.WarpMode[1], warpB), limit);
+            // "PM from B" only means something for osc A; on osc B it reads the cycle plainly.
+            levelB = Wavetable.LevelFor(incB * (s.WarpMode[1] == Warp.PhaseMod ? 1f : WarpSpeed(s.WarpMode[1], warpB)), limit);
             levelSub = Wavetable.LevelFor(incSub, limit);
 
             float key = (note - 60f) / 12f;
@@ -614,6 +614,12 @@ namespace NeoBuzz.Wave
                         {
                             pending = false;
                             Start(pendNote, pendVel, pendUni, pendUniCount, pendGlideFrom);
+                            if (pendRelease)
+                            {
+                                pendRelease = false;
+                                NoteOff();
+                            }
+                            Control(Math.Max(1, count - i));   // the rest of this block plays the new note's settings
                         }
                         sg = 0;
                     }

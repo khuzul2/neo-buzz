@@ -25,7 +25,10 @@ namespace NeoBuzz.Wave
             while (br.BaseStream.Position + 8 <= br.BaseStream.Length)
             {
                 string id = Encoding.ASCII.GetString(br.ReadBytes(4));
-                int size = br.ReadInt32();
+                // Streaming writers leave the size unset (0xFFFFFFFF) and files get cut short: trust only what is there.
+                long remaining = br.BaseStream.Length - br.BaseStream.Position - 4;
+                uint declared = br.ReadUInt32();
+                int size = (int)Math.Min(declared, (ulong)Math.Max(0, remaining));
                 long next = br.BaseStream.Position + size + (size & 1);
                 if (id == "fmt ")
                 {
@@ -58,6 +61,7 @@ namespace NeoBuzz.Wave
                 {
                     if (channels <= 0 || bits <= 0) throw new InvalidDataException("data before format");
                     int bytesPer = bits / 8;
+                    if (bytesPer <= 0) throw new InvalidDataException($"{bits}-bit samples aren't supported");
                     int count = size / (bytesPer * channels);
                     samples = new float[count];
                     for (int i = 0; i < count; i++)

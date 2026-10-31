@@ -79,8 +79,14 @@ namespace NeoBuzz.Machine
             }
             bool stopped = wasPlaying && !playing;
             wasPlaying = playing;
+            if (stopped) stoppedAt = Environment.TickCount64;
             return stopped;
         }
+
+        long stoppedAt = long.MinValue / 2;
+
+        /// <summary>The transport has been stopped for a while (as of the last <see cref="TransportStopped"/> poll).</summary>
+        protected bool StoppedForAWhile => !wasPlaying && Environment.TickCount64 - stoppedAt > 400;
 
         /// <summary>Buzz samples (±32768) to two float channels (±1).</summary>
         protected static void Split(Sample[] input, float[] left, float[] right, int n)

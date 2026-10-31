@@ -1,7 +1,8 @@
 #nullable disable
 // Neo machines' Buzz glue (docs/specs/machines.md §3): what the Neo synths share. Notes from
 // tracks and MIDI are queued and applied at the start of each block; the transport stopping
-// (or ReBuzz's Stop) releases every note.
+// (or ReBuzz's Stop) releases every note, and Stop again once stopped silences everything (a
+// panic for sounds that ring on after release, such as DX7 patches whose level 4 isn't 0).
 
 using Buzz.MachineInterface;
 using NeoBuzz.Dsp;
@@ -26,17 +27,17 @@ namespace NeoBuzz.Machine
         /// <summary>ReBuzz: a MIDI controller, pitch bend (0xE0/0xFF) or channel pressure (0xD0/0xFC).</summary>
         public void MidiControlChange(int ctrl, int channel, int value) => Notes.MidiControl(ctrl, channel, value);
 
-        /// <summary>ReBuzz: stop (release everything at the next block).</summary>
+        /// <summary>ReBuzz: stop (release everything at the next block; silence everything if already stopped).</summary>
         public void Stop() => stopRequested = true;
 
         /// <summary>At the start of each block: transport stop, then the queued notes and controllers.</summary>
         internal void BeginBlock(INoteSink sink)
         {
-            if (TransportStopped() || stopRequested)
-            {
-                stopRequested = false;
-                sink.AllNotesOff(false);
-            }
+            bool edge = TransportStopped();
+            bool stop = stopRequested;
+            stopRequested = false;
+            if (edge) sink.AllNotesOff(false);
+            else if (stop) sink.AllNotesOff(StoppedForAWhile);
             Notes.Drain(sink);
         }
     }

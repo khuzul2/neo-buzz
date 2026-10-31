@@ -214,7 +214,8 @@ namespace NeoBuzz.Fm6
             if (ix < 4)
             {
                 double left = staticLeft;
-                Advance(ix);
+                // Sustaining (segment 3 while the key is down doesn't move): head for the new level 3.
+                Advance(down && ix == 3 ? 2 : ix);
                 if (left > 0 && staticLeft > 0) staticLeft = left;   // a wait already under way goes on
             }
         }
@@ -319,7 +320,7 @@ namespace NeoBuzz.Fm6
         {
             Array.Copy(r, rates, 4);
             Array.Copy(l, levels, 4);
-            if (ix < 4) Advance(ix);
+            if (ix < 4) Advance(down && ix == 3 ? 2 : ix);
         }
 
         public void KeyDown(bool d)

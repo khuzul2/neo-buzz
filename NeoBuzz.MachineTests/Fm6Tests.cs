@@ -365,6 +365,38 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void AHeldNoteFollowsLevelChanges()
+        {
+            // The FM brightness sweep: automating a level while a note sustains.
+            var (e, v) = Make();
+            e.NoteOn(0, 69, 0.8f);
+            var before = Render(e, Measure.Rate / 2);
+            v.Set(P.O1Level, 70);
+            var after = Render(e, Measure.Rate / 2);
+            double drop = Measure.Db(Measure.Rms(after, Measure.Rate / 4, Measure.Rate / 4) / Measure.Rms(before, Measure.Rate / 4, Measure.Rate / 4));
+            double expected = -(Dx7.ScaleOutLevel(99) - Dx7.ScaleOutLevel(70)) * 32 / 256.0 * 6.0206;
+            Measure.Report($"Neo FM6: level 99 → 70 on a held note: {drop:F2} dB (DX7: {expected:F2} dB)");
+            Assert.That(drop, Is.EqualTo(expected).Within(0.3));
+        }
+
+        [Test]
+        public void TremoloStartsUnattenuatedLikeTheDx7()
+        {
+            var (e, _) = Make(v =>
+            {
+                v.Set(P.LfoAmd, 99);
+                v.Set(P.LfoSpeed, 10);
+                v.Set(P.O1AmpSens, 3);
+            });
+            var (plain, _) = Make();
+            e.NoteOn(0, 69, 0.8f);
+            plain.NoteOn(0, 69, 0.8f);
+            int w = Measure.Rate / 50;
+            double start = Measure.Rms(Render(e, w), w / 2, w / 2), reference = Measure.Rms(Render(plain, w), w / 2, w / 2);
+            Assert.That(Measure.Db(start / reference), Is.GreaterThan(-3), "key-synced triangle: the note starts near full level (inverted, it would start about 35 dB down)");
+        }
+
+        [Test]
         public void AnOperatorSwitchedOffIsSilent()
         {
             var (e, _) = Make(v => v.Set(P.O1On, 0));

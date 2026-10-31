@@ -377,7 +377,7 @@ namespace NeoBuzz.Fm6
         double sinceNoteOn;
         float fb1, fb2;
         bool keyDown, finished = true;
-        bool pending;
+        bool pending, pendRelease;
         float pendNote, pendVel, pendGlideFrom;
         int pendUni, pendUniCount;
 
@@ -406,6 +406,7 @@ namespace NeoBuzz.Fm6
             {
                 bool start = !pending;
                 pending = true;
+                pendRelease = false;
                 pendNote = n; pendVel = vel; pendUni = unisonIndex; pendUniCount = unisonCount; pendGlideFrom = glideFrom;
                 if (start) steal.Start(sr);
                 return;
@@ -485,9 +486,9 @@ namespace NeoBuzz.Fm6
         {
             if (pending)
             {
-                pending = false;
-                steal.Cancel();
-                Start(pendNote, pendVel, pendUni, pendUniCount, pendGlideFrom);
+                // Released before the steal finished: the pending note starts when the fade ends and releases at once.
+                pendRelease = true;
+                return;
             }
             keyDown = false;
             foreach (var e in env) e.KeyDown(false);
@@ -497,6 +498,7 @@ namespace NeoBuzz.Fm6
         public void Kill()
         {
             pending = false;
+            pendRelease = false;
             if (!finished) steal.Start(sr, 0.004f);
             keyDown = false;
             foreach (var e in env) e.KeyDown(false);
@@ -539,20 +541,25 @@ namespace NeoBuzz.Fm6
             double pmdCtl = Math.Max(Dx7.Depth(s.WheelPitch) * engine.ModWheelValue, Dx7.Depth(s.AtPitch) * engine.AftertouchValue);
             double pitchMod = Math.Max(Math.Abs(Dx7.PitchMod(pmdLfo, s.PitchSens, lfo)), Math.Abs(Dx7.PitchMod(pmdCtl, s.PitchSens, lfo)));
             if (lfo < 0.5) pitchMod = -pitchMod;
+            // Amplitude modulation attenuates by the inverted LFO, as the DX7 (a key-synced triangle starts unattenuated).
             double amd = Math.Max(Dx7.Depth(s.LfoAmd) / 255.0 * fade,
-                                  Math.Max(Dx7.Depth(s.WheelAmp) / 255.0 * engine.ModWheelValue, Dx7.Depth(s.AtAmp) / 255.0 * engine.AftertouchValue)) * lfo;
+                                  Math.Max(Dx7.Depth(s.WheelAmp) / 255.0 * engine.ModWheelValue, Dx7.Depth(s.AtAmp) / 255.0 * engine.AftertouchValue)) * (1 - lfo);
 
             double modOct = peg.Next(dt) + pitchMod;
             double noteHz = DspMath.NoteToHz(pitch + s.Transpose + engine.PitchBendSemis + unisonPos * s.UniDetune * 0.25f);
             double modMul = Math.Pow(2, modOct);
+            // Fixed-frequency operators follow pitch bend only (as Dexed: no pitch envelope, no vibrato).
+            double fixedMul = Math.Pow(2, engine.PitchBendSemis / 12.0);
             float loud = 0;
             bool carriersDone = true;
             var alg = s.Algorithm;
             for (int k = 0; k < 6; k++)
             {
                 var o = s.Ops[k];
-                double hz = o.Fixed ? fixedHz[k] * modMul : noteHz * ratio[k] * modMul;
-                inc[k] = (uint)(Math.Min(hz / sr, 0.5) * Cycle);
+                double hz = o.Fixed ? fixedHz[k] * fixedMul : noteHz * ratio[k] * modMul;
+                // Above the Nyquist frequency an operator folds back, as on the DX7 (the phase wraps).
+                double cycles = hz / sr;
+                inc[k] = (uint)((cycles - Math.Floor(cycles)) * Cycle);
                 double level = env[k].Next(count);
                 if (o.AmpSens > 0 && amd > 0) level -= 256 * Dx7.AmpModDoublings(amd, o.AmpSens);
                 float target = o.On ? (float)Dx7Envelope.Amplitude(level) : 0f;
@@ -623,7 +630,12 @@ namespace NeoBuzz.Fm6
                         {
                             pending = false;
                             Start(pendNote, pendVel, pendUni, pendUniCount, pendGlideFrom);
-                            Control(count - i);
+                            if (pendRelease)
+                            {
+                                pendRelease = false;
+                                NoteOff();
+                            }
+                            Control(Math.Max(1, count - i));
                         }
                         sg = 0;
                     }

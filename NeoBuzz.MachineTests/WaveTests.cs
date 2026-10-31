@@ -48,6 +48,26 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void TheUserTableCanBeClearedAndReplacedFromAnyThread()
+        {
+            var (e, _) = Make(Clean);
+            var t1 = Wavetable.FromHarmonics("one", 1, (f, h) => (h == 1 ? 1.0 : 0, 0));
+            var t2 = Wavetable.FromHarmonics("two", 1, (f, h) => (h == 2 ? 1.0 : 0, 0));
+            var l = new float[64];
+            var r = new float[64];
+            e.SetUserTable(t1);
+            e.Process(l, r, 64);
+            Assert.That(e.UserTable, Is.SameAs(t1));
+            e.SetUserTable(null);
+            e.Process(l, r, 64);
+            Assert.That(e.UserTable, Is.Null, "a preset or song without a table clears it");
+            e.SetUserTable(t1);
+            e.SetUserTable(t2);
+            e.Process(l, r, 64);
+            Assert.That(e.UserTable, Is.SameAs(t2), "the latest one wins");
+        }
+
+        [Test]
         public void BuiltInTablesAreSane()
         {
             var sw = Stopwatch.StartNew();

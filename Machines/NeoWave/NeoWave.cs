@@ -29,9 +29,14 @@ namespace NeoBuzz.Wave
         int rate;
         NeoWaveState state = new NeoWaveState();
 
+        /// <summary>The longest single cycle a file may hold (longer ones are sounds, not cycles).</summary>
+        internal const int MaxSingleCycle = 8192;
+
         public NeoWaveMachine(IBuzzMachineHost host) : base(host, Params.Table, Params.Tracks)
         {
             Engine = new WaveEngine(Values);
+            // Build the built-in tables in the background now, not when the audio thread first asks.
+            for (int i = 0; i < Tables.Names.Length; i++) Tables.Get(i);
         }
 
         internal WaveEngine Engine { get; }
@@ -70,6 +75,8 @@ namespace NeoBuzz.Wave
             var (samples, frameSize) = WavReader.Read(File.ReadAllBytes(path));
             if (samples == null || samples.Length < 16) throw new InvalidDataException("the file holds no audio");
             int size = frameSize > 0 ? frameSize : samples.Length >= 2 * Wavetable.FrameSize && samples.Length % Wavetable.FrameSize == 0 ? Wavetable.FrameSize : samples.Length;
+            if (size > MaxSingleCycle)
+                throw new InvalidDataException($"it reads as one cycle of {samples.Length} samples; wavetables are frames of 2048 samples (or say their frame size in a clm chunk) or one short cycle (up to {MaxSingleCycle})");
             int keep = Math.Min(samples.Length, size * Wavetable.MaxFrames);
             var kept = new float[keep];
             Array.Copy(samples, kept, keep);

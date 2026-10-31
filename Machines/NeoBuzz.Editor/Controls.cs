@@ -462,3 +462,21 @@ namespace NeoBuzz.Editor
         }
     }
 }
+
+namespace NeoBuzz.Editor
+{
+    /// <summary>
+    /// Runs an action now and then while an element is shown: for state that changes without a
+    /// parameter changing (a table or bank loaded with the song or a preset).
+    /// </summary>
+    internal static class Poll
+    {
+        public static void Every(FrameworkElement owner, double seconds, Action action)
+        {
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(seconds) };
+            timer.Tick += (s, e) => action();
+            owner.Loaded += (s, e) => timer.Start();
+            owner.Unloaded += (s, e) => timer.Stop();
+        }
+    }
+}

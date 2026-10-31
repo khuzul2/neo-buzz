@@ -435,6 +435,37 @@ namespace NeoBuzz.MachineTests
             Assert.That(v.Single(x => x.Note == 67).Glide, Is.EqualTo(60));
         }
 
+        [Test]
+        public void ChangingTheVoiceModeWhileNotesAreHeldLeavesNoneStuck()
+        {
+            var v = Enumerable.Range(0, 4).Select(_ => new FakeVoice()).ToArray();
+            var a = new VoiceAllocator(v) { Polyphony = 4 };
+            a.NoteOn(1, 60, 1);
+            a.Mode = VoiceMode.Mono;
+            a.NoteOff(1);
+            Assert.That(v.Count(x => x.Held), Is.EqualTo(0), "poly → mono");
+
+            a.NoteOn(1, 57, 1);
+            a.Mode = VoiceMode.Poly;
+            a.NoteOff(1);
+            a.Mode = VoiceMode.Mono;
+            a.NoteOn(2, 62, 1);
+            a.NoteOff(2);
+            Assert.That(v.Count(x => x.Held), Is.EqualTo(0), "mono → poly → mono: no stale note comes back");
+        }
+
+        [Test]
+        public void LoweringUnisonWhileHoldingAMonoNoteStillReleasesItAll()
+        {
+            var v = Enumerable.Range(0, 8).Select(_ => new FakeVoice()).ToArray();
+            var a = new VoiceAllocator(v) { Mode = VoiceMode.Mono, Unison = 4 };
+            a.NoteOn(1, 60, 1);
+            Assert.That(v.Count(x => x.Held), Is.EqualTo(4));
+            a.Unison = 2;
+            a.NoteOff(1);
+            Assert.That(v.Count(x => x.Held), Is.EqualTo(0));
+        }
+
         // ── wavetables ──────────────────────────────────────────────────────
 
         [Test]

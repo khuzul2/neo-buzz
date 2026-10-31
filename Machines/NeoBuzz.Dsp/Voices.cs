@@ -80,7 +80,19 @@ namespace NeoBuzz.Dsp
             for (int i = 0; i < n; i++) voiceKey[i] = -1;
         }
 
-        public VoiceMode Mode = VoiceMode.Poly;
+        VoiceMode mode = VoiceMode.Poly;
+
+        /// <summary>Poly, mono or legato. Changing it releases every held note (the two keep different books).</summary>
+        public VoiceMode Mode
+        {
+            get => mode;
+            set
+            {
+                if (value == mode) return;
+                mode = value;
+                AllNotesOff(false);
+            }
+        }
         /// <summary>Notes that can sound at once (poly).</summary>
         public int Polyphony = 8;
         /// <summary>Voices per note.</summary>
@@ -356,7 +368,8 @@ namespace NeoBuzz.Dsp
                 lastNote = note;
                 return;
             }
-            for (int u = 0; u < unison; u++)
+            // Every held voice, not just the current unison count (it may have been lowered meanwhile).
+            for (int u = 0; u < voices.Length; u++)
             {
                 if (!voiceHeld[u]) continue;
                 if (sustainDown)
@@ -400,8 +413,9 @@ namespace NeoBuzz.Dsp
 
         public void Start(float sampleRate, float seconds = 0.003f)
         {
+            // A fade already under way goes on from where it is (no jump back to full level).
+            if (!fading) gain = 1f;
             fading = true;
-            gain = 1f;
             step = 1f / Math.Max(1f, seconds * sampleRate);
         }
 

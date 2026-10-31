@@ -271,7 +271,7 @@ namespace NeoBuzz.Poly
         // Note state.
         float note, velocity, randomValue, unisonPos;
         float pitch, pitchTarget, glideStep;
-        bool pending;
+        bool pending, pendRelease;
         float pendNote, pendVel, pendGlideFrom;
         int pendUni, pendUniCount;
 
@@ -314,6 +314,7 @@ namespace NeoBuzz.Poly
             {
                 // Steal: fade the old note out, then start this one.
                 pending = true;
+                pendRelease = false;
                 pendNote = n; pendVel = vel; pendUni = unisonIndex; pendUniCount = unisonCount; pendGlideFrom = glideFrom;
                 steal.Start(sr);
                 return;
@@ -378,10 +379,9 @@ namespace NeoBuzz.Poly
         {
             if (pending)
             {
-                // Released before the steal finished: start it anyway (it will release at once).
-                pending = false;
-                steal.Cancel();
-                Start(pendNote, pendVel, pendUni, pendUniCount, pendGlideFrom);
+                // Released before the steal finished: the pending note starts when the fade ends and releases at once.
+                pendRelease = true;
+                return;
             }
             ampEnv.Gate(false);
             fltEnv.Gate(false);
@@ -391,6 +391,7 @@ namespace NeoBuzz.Poly
         public void Kill()
         {
             pending = false;
+            pendRelease = false;
             if (ampEnv.IsActive) steal.Start(sr, 0.004f);
             ampEnv.Gate(false);
             fltEnv.Gate(false);
@@ -579,6 +580,12 @@ namespace NeoBuzz.Poly
                         {
                             pending = false;
                             Start(pendNote, pendVel, pendUni, pendUniCount, pendGlideFrom);
+                            if (pendRelease)
+                            {
+                                pendRelease = false;
+                                NoteOff();
+                            }
+                            Control(Math.Max(1, count - i));   // the rest of this block plays the new note's settings
                         }
                         sg = 0;
                     }
