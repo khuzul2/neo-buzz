@@ -122,8 +122,8 @@ namespace NeoBuzz.Wave
             }
 
             return Layout.Column(
-                Layout.Row(oscA, oscB, Layout.Column(sub, user)),
-                Layout.Row(filter, voice, S("Out", meter)),
+                Layout.Row(oscA, oscB, user),
+                Layout.Row(filter, voice, sub, S("Out", meter)),
                 Layout.Row(MakeEnv("Amp envelope", P.AmpA, P.AmpD, P.AmpS, P.AmpR),
                            MakeEnv("Filter envelope", P.FltA, P.FltD, P.FltS, P.FltR),
                            MakeEnv("Mod envelope", P.ModA, P.ModD, P.ModS, P.ModR)),
