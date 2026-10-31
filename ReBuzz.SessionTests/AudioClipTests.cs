@@ -324,6 +324,60 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
+        public void AMixerFadesOutWhatStopsPlaying()
+        {
+            var a = new ClipPlayback { Params = Clip(Sine(300, 2), 120, WarpMode.Repitch) };
+            var b = new ClipPlayback { Params = Clip(Sine(500, 2), 120, WarpMode.Repitch) };
+            var mixer = new ClipMixer();
+            double bps = 2.0 / Rate;
+            mixer.Begin(256);
+            mixer.Play(a, 0, bps, Rate, 256);
+            mixer.Play(b, 0, bps, Rate, 256);
+            mixer.Play(a, 0, bps, Rate, 256);                          // once a block
+            Assert.That(mixer.End(256), Is.True);
+            Assert.That(mixer.Sounding, Is.EqualTo(2));
+            mixer.Begin(256);
+            mixer.Play(b, 256 * bps, bps, Rate, 256);                   // a stopped
+            Assert.That(mixer.End(256), Is.True);
+            Assert.That(mixer.Sounding, Is.EqualTo(1), "a has faded out within the block");
+            Assert.That(a.Voice.IsSounding, Is.False);
+            mixer.Begin(256);
+            Assert.That(mixer.End(256), Is.True, "b fades out");
+            mixer.Begin(256);
+            Assert.That(mixer.End(256), Is.False, "then nothing");
+            Assert.That(mixer.Left.Take(256).All(v => v == 0), Is.True);
+            b.Params = null;
+            mixer.Begin(256);
+            mixer.Play(b, 0, bps, Rate, 256);
+            Assert.That(mixer.End(256), Is.False, "no audio: nothing plays");
+        }
+
+        [Test]
+        public void AudioSettingsGoThroughXml()
+        {
+            var a = new ReBuzz.Core.Session.SessionDocument.AudioSettings
+            {
+                Wave = 7, Bpm = 123.45, Warp = "Complex", Preserve = "1/8", GainDb = -3.5, Transpose = -5, Detune = 12,
+                Markers = new List<(double, double)> { (0, 0), (22050.5, 1.25) },
+            };
+            var c = new ReBuzz.Core.Session.SessionDocument.ClipSettings { Audio = a };
+            Assert.That(c.IsDefault, Is.False, "an audio clip's settings are kept");
+            var again = ReBuzz.Core.Session.SessionDocument.AudioSettings.FromXml(a.ToXml())!;
+            Assert.That(again.ToXml().ToString(), Is.EqualTo(a.ToXml().ToString()));
+            Assert.That(again.Markers[1], Is.EqualTo((22050.5, 1.25)));
+            Assert.That(again.Semitones, Is.EqualTo(-4.88));
+            Assert.That(again.Grid, Is.EqualTo(0.5));
+            Assert.That(again.PreservesTransients, Is.False);
+            var clone = c.Clone();
+            clone.Audio!.Markers.Add((44100, 2));
+            Assert.That(a.Markers.Count, Is.EqualTo(2), "a clone's markers are its own");
+            var odd = ReBuzz.Core.Session.SessionDocument.AudioSettings.FromXml(System.Xml.Linq.XElement.Parse(
+                "<Audio wave='-3' bpm='9999' warp='Stretchy' preserve='?' gain='x' transpose='99' detune='-77'><Marker sample='1' beat='NaN'/></Audio>"))!;
+            Assert.That((odd.Wave, odd.Bpm, odd.Warp, odd.Preserve, odd.GainDb, odd.Transpose, odd.Detune, odd.Markers.Count),
+                Is.EqualTo((0, 999.0, "Beats", "Transients", 0.0, 48, -50, 0)));
+        }
+
+        [Test]
         public void PlayingAllocatesNothing()
         {
             var modes = new[] { WarpMode.Off, WarpMode.Repitch, WarpMode.Beats, WarpMode.Complex };

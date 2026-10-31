@@ -257,7 +257,7 @@ namespace ReBuzz.AppViews.Session
                 Margin = new Thickness(16),
                 TextWrapping = TextWrapping.Wrap,
                 Text = "No tracks yet. Every sequence of the song is a track: add one with \"+ Track\", " +
-                       "or create machines in the Machine View.",
+                       "or create machines in the Machine View. Drop audio files here for audio tracks.",
                 Visibility = Visibility.Collapsed
             };
             var scroll = new ScrollViewer
@@ -328,6 +328,7 @@ namespace ReBuzz.AppViews.Session
             PreviewKeyUp += OnKeyUp;
             IsKeyboardFocusWithinChanged += (s, e) => { if (!IsKeyboardFocusWithin) ReleaseHeldKey(); };
             MouseDown += (s, e) => Focus();
+            InitAudioDrop();                                     // 1.0: drop audio files on slots
         }
 
         /// <summary>A tempo nudge button: slower or faster while the mouse holds it (0.6).</summary>

@@ -862,6 +862,7 @@ namespace ReBuzz.Core
             DefaultPatternEditor = "Modern Pattern Editor";
 
             SessionCore = new SessionCore(this);
+            global::ReBuzz.Core.Session.SessionClipEngine.Install();      // fork (1.0): audio tracks
 
             midiActivityTimer = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(0.5) };
             midiActivityTimer.Tick += (sender, e) =>

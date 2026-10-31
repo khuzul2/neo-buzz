@@ -462,6 +462,11 @@ namespace ReBuzz.AppViews.Session
                 menu.Items.Add(Item("Create clip", () => CreateClip(cell.Track, cell.Scene), "Ctrl+Shift+M", () => machine != null));
                 menu.Items.Add(Item("Record a take here", () => RecordInto(cell), null, () => layout.IsArmed(cell.Track)));
             }
+            // 1.0: audio files into the slot (a new audio track for them if this track isn't one).
+            menu.Items.Add(Item(SessionLayout.IsClipPlayer(machine) ? "Import audio…" : "Import audio (new audio track)…",
+                () => ImportAudioInto(cell.Track, cell.Scene), "or drop files", () => layout.CanMakeAudioTracks));
+            if (pattern != null && layout.IsAudioClip(pattern))
+                menu.Items.Add(Item("Warp markers…", () => EditWarpMarkers(cell.Sequence, pattern)));
 
             if (machine != null)
             {
@@ -547,6 +552,9 @@ namespace ReBuzz.AppViews.Session
         void ShowAddTrackMenu(FrameworkElement anchor)
         {
             var menu = new ContextMenu();
+            // 1.0: an audio track (a Session Clip Player): drop audio files on its slots.
+            menu.Items.Add(Item("New audio track", NewAudioTrack, null, () => layout.CanMakeAudioTracks));
+            menu.Items.Add(new Separator());
             var machines = layout.MachinesWithoutTrack().ToList();
             foreach (var m in machines)
             {

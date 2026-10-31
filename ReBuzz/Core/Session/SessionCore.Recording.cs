@@ -49,6 +49,9 @@ namespace ReBuzz.Core.Session
 
         public bool IsArmed(ISequence track) => track is SequenceCore seq && Array.IndexOf(arm.Tracks, seq) >= 0;
 
+        /// <summary>Whether a track of this machine is armed (any thread; no allocation).</summary>
+        internal bool IsArmedMachine(IMachine machine) => machine is MachineCore m && Array.IndexOf(arm.Machines, m) >= 0;
+
         /// <summary>UI thread: arms or disarms a track. An armed track keeps what it is played lately, for Capture MIDI.</summary>
         internal void SetArmed(SequenceCore seq, bool on)
         {

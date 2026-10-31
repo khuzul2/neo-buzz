@@ -85,6 +85,12 @@ namespace ReBuzz.Core
         /// </summary>
         internal SequenceCore SessionTrack;
 
+        /// <summary>
+        /// Fork (Session View 1.0): the pattern's audio clip, for its machine if that is a Session
+        /// Clip Player (the layout makes it once and keeps it in step; the audio thread plays it).
+        /// </summary>
+        internal volatile Clips.ClipPlayback SessionAudio;
+
         public event Action<IPattern> OnPatternPlayStart;
         public event Action<IPattern> OnPatternPlayPositionChange;
         public event Action<IPattern> OnPatternPlayEnd;
