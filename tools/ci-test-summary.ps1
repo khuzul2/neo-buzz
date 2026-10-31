@@ -55,7 +55,13 @@ $results = @(Select-Xml -Xml $trx -XPath '//t:UnitTestResult' -Namespace $ns | F
 $failed = @($results | Where-Object { $_.outcome -eq 'Failed' })
 $passed = @($results | Where-Object { $_.outcome -eq 'Passed' })
 
-Send-Annotation 'notice' 'Test totals' @("$($results.Count) tests: $($passed.Count) passed, $($failed.Count) failed")
+# Neither passed nor failed: inconclusive (a test that can't run here says why) or not run.
+$other = @($results | Where-Object { $_.outcome -ne 'Passed' -and $_.outcome -ne 'Failed' })
+$totals = "$($results.Count) tests: $($passed.Count) passed, $($failed.Count) failed"
+if ($other.Count -gt 0) {
+    $totals += ", $($other.Count) other: " + (($other | Select-Object -First 10 | ForEach-Object { "$($_.testName) ($($_.outcome))" }) -join ', ')
+}
+Send-Annotation 'notice' 'Test totals' @($totals)
 
 # Reports: tests write "[notice] ..." lines (timings, measurements) that should be visible
 # whether they pass or not. One annotation for all of them, so they don't crowd out failures.

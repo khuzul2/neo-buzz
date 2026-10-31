@@ -462,6 +462,11 @@ namespace ReBuzz.AppViews.Session
                 menu.Items.Add(Item("Create clip", () => CreateClip(cell.Track, cell.Scene), "Ctrl+Shift+M", () => machine != null));
                 menu.Items.Add(Item("Record a take here", () => RecordInto(cell), null, () => layout.IsArmed(cell.Track)));
             }
+            // 1.0: audio files into the slot (a new audio track for them if this track isn't one).
+            menu.Items.Add(Item(SessionLayout.IsClipPlayer(machine) ? "Import audio…" : "Import audio (new audio track)…",
+                () => ImportAudioInto(cell.Track, cell.Scene), "or drop files", () => layout.CanMakeAudioTracks));
+            if (pattern != null && layout.IsAudioClip(pattern))
+                menu.Items.Add(Item("Warp markers…", () => EditWarpMarkers(cell.Sequence, pattern)));
 
             if (machine != null)
             {
@@ -523,6 +528,15 @@ namespace ReBuzz.AppViews.Session
             {
                 menu.Items.Add(new MenuItem { Header = "Mute", IsChecked = header.Machine.IsMuted, Command = new RelayCommand(() => header.Machine.IsMuted = !header.Machine.IsMuted) });
                 menu.Items.Add(new MenuItem { Header = "Solo", IsChecked = header.Machine.IsSoloed, Command = new RelayCommand(() => header.Machine.IsSoloed = !header.Machine.IsSoloed) });
+                if (SessionLayout.IsClipPlayer(header.Machine))
+                {
+                    // 1.0: what an audio track's takes record.
+                    var machine = header.Machine;
+                    bool master = SessionLayout.IsResampling(machine);
+                    menu.Items.Add(new Separator());
+                    menu.Items.Add(new MenuItem { Header = "Record its input (machines connected to it)", IsChecked = !master, Command = new RelayCommand(() => SessionLayout.SetInputOf(machine, 0)) });
+                    menu.Items.Add(new MenuItem { Header = "Record the master (resampling)", IsChecked = master, Command = new RelayCommand(() => SessionLayout.SetInputOf(machine, 1)) });
+                }
             }
             OpenMenu(menu, header);
         }
@@ -547,6 +561,10 @@ namespace ReBuzz.AppViews.Session
         void ShowAddTrackMenu(FrameworkElement anchor)
         {
             var menu = new ContextMenu();
+            // 1.0: an audio track (a Session Clip Player): drop audio files on its slots.
+            menu.Items.Add(Item("New audio track", NewAudioTrack, null, () => layout.CanMakeAudioTracks));
+            menu.Items.Add(Item("New resampling track (records the master)", NewResamplingTrack, null, () => layout.CanMakeAudioTracks));
+            menu.Items.Add(new Separator());
             var machines = layout.MachinesWithoutTrack().ToList();
             foreach (var m in machines)
             {

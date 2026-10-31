@@ -80,6 +80,7 @@ namespace ReBuzz.Core.Session
             // Follow times are in bars, beats and ticks: the engine's copy follows the time signature (0.6).
             buzz.Session.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ISession.BeatsPerBar)) RebuildLaunchMap(); };
             buzz.PropertyChanged += (s, e) => { if (e.PropertyName == "TPB") RebuildLaunchMap(); };
+            InitAudio();                                                    // 1.0
         }
 
         ISession Session => buzz.Session;
@@ -129,6 +130,7 @@ namespace ReBuzz.Core.Session
             dirty = false;
             UndoStack = NewUndoStack();
             ResetTakes();                                                   // 0.7
+            ResetAudio();                                                   // 1.0
             Session.BeatsPerBar = 4;
             Session.LaunchQuantization = LaunchQuantization.Bar;
             RaiseChanged();
@@ -769,6 +771,7 @@ namespace ReBuzz.Core.Session
                 core.UseCrossfader(doc, song, crossfaderFromDocument);
                 if (doc != null) crossfaderFromDocument = false;
             }
+            RefreshAudio();                                                 // 1.0: audio clips play as now set
         }
 
         bool crossfaderFromDocument = true;
@@ -971,6 +974,7 @@ namespace ReBuzz.Core.Session
             dirty = false;
             UndoStack = NewUndoStack();
             ResetTakes();                                                   // 0.7
+            ResetAudio();                                                   // 1.0
             if (document != null)
             {
                 document.Reconcile(Snapshot());

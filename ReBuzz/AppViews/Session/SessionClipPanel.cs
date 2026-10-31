@@ -16,7 +16,7 @@ namespace ReBuzz.AppViews.Session
         /// (tempo, beats per bar, scene follow actions). Edits are undoable (the layout's
         /// history); markers apply at once to the clip if it plays, the rest on its next launch.
         /// </summary>
-        internal sealed class ClipPanel : Border
+        internal sealed partial class ClipPanel : Border
         {
             internal const double PanelWidth = 232;
 
@@ -65,6 +65,8 @@ namespace ReBuzz.AppViews.Session
             readonly TextBox sceneTempo;
             readonly TextBox sceneBeats;
             readonly FollowEditor sceneFollow;
+            readonly AudioEditor audio;              // 1.0: an audio clip's audio
+            readonly StackPanel audioBody;
             bool loading;
 
             (int Track, int Scene)? shownSlot;
@@ -143,10 +145,14 @@ namespace ReBuzz.AppViews.Session
                     HorizontalAlignment = HorizontalAlignment.Left
                 };
 
+                audio = new AudioEditor(CommitAudio, () => view.layout.DetectTempo(shownPattern), () => view.EditWarpMarkers(shownSequence, shownPattern));
+                audioBody = new StackPanel { Children = { Section("Audio"), audio } };
+
                 body = new StackPanel
                 {
                     Children =
                     {
+                        audioBody,
                         Section("Launch"),
                         Row("Mode", mode),
                         Row("Quantize", quantize),
@@ -246,7 +252,10 @@ namespace ReBuzz.AppViews.Session
                     shownNotes = view.layout.RecordedNoteCount(shownPattern);
                     int moves = view.layout.RecordedAutomationCount(shownPattern);
                     title.Text = shownPattern.Name;
-                    info.Text = $"{shownPattern.Machine?.Name} · {Describe(shownLength)}" +
+                    var audioSettings = view.layout.AudioOf(shownPattern);
+                    audioBody.Visibility = audioSettings != null ? Visibility.Visible : Visibility.Collapsed;
+                    if (audioSettings != null) audio.Load(audioSettings, view.layout.AudioInfo(shownPattern));
+                    info.Text = $"{(audioSettings != null ? "∿ " : "")}{shownPattern.Machine?.Name} · {Describe(shownLength)}" +
                                 (shownNotes > 0 ? $" · {shownNotes} recorded note{(shownNotes == 1 ? "" : "s")}" : "") +
                                 (moves > 0 ? $" · {moves} automation point{(moves == 1 ? "" : "s")}" : "");
                     info.ToolTip = shownNotes > 0 || moves > 0
@@ -373,6 +382,18 @@ namespace ReBuzz.AppViews.Session
                 view.layout.SetClipSettings(shownPattern, c);
                 // The layout's Changed event reloads the panel (and shows the result).
             }
+
+            /// <summary>1.0: an audio clip's audio settings changed (undoable; its length follows its tempo).</summary>
+            void CommitAudio(Action<SessionDocument.AudioSettings> change)
+            {
+                if (loading || shownPattern == null) return;
+                var a = view.layout.AudioOf(shownPattern);
+                if (a == null) return;
+                change(a);
+                view.layout.SetAudio(shownPattern, a);
+            }
+
+            internal AudioEditor Audio => audio;
 
             void CommitVelocity() => Commit(c => c.Velocity = (int)Math.Round(velocity.Value * 100));
 

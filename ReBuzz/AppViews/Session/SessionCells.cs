@@ -114,7 +114,7 @@ namespace ReBuzz.AppViews.Session
 
                     label = new TextBlock
                     {
-                        Text = pattern.Name,
+                        Text = (settings?.Audio != null ? "∿ " : "") + pattern.Name,         // 1.0: an audio clip
                         Margin = new Thickness(0, 0, 4, 0),
                         VerticalAlignment = VerticalAlignment.Center,
                         TextTrimming = TextTrimming.CharacterEllipsis,
@@ -212,6 +212,9 @@ namespace ReBuzz.AppViews.Session
                     parts.Add($"start {c.Start}, loop {c.LoopStart}–{(c.LoopEnd == 0 ? "end" : c.LoopEnd.ToString())}");
                 if (c.Velocity != 0) parts.Add($"velocity {c.Velocity}%");
                 string text = "Clip: " + string.Join(" · ", parts);
+                if (c.Audio is { } a)
+                    text += $"\nAudio: wave {a.Wave + 1:X2} · {a.Bpm:0.##} BPM · {a.Warp}" + (a.Transpose != 0 || a.Detune != 0 ? $" · {a.Semitones:+0.##;-0.##} st" : "") +
+                            (a.GainDb != 0 ? $" · {a.GainDb:+0.#;-0.#} dB" : "") + (a.Markers.Count >= 2 ? $" · {a.Markers.Count} warp markers" : "");
                 if (c.Follow?.On == true) text += "\nFollow action: " + FollowSummary(c.Follow, true);
                 return text;
             }

@@ -133,15 +133,18 @@ namespace ReBuzz.Core.Session
             public int Velocity { get; set; }
             /// <summary>Follow actions (0.6).</summary>
             public FollowSettings Follow { get; set; } = new FollowSettings();
+            /// <summary>An audio clip's audio (1.0); null for a pattern clip.</summary>
+            public AudioSettings Audio { get; set; }
 
             public bool IsDefault =>
                 Mode == "Trigger" && Quantization == GlobalQuantization && !Legato && Loop &&
-                Start == 0 && LoopStart == 0 && LoopEnd == 0 && Velocity == 0 && (Follow == null || Follow.IsDefault);
+                Start == 0 && LoopStart == 0 && LoopEnd == 0 && Velocity == 0 && (Follow == null || Follow.IsDefault) && Audio == null;
 
             public ClipSettings Clone()
             {
                 var c = (ClipSettings)MemberwiseClone();
                 c.Follow = (Follow ?? new FollowSettings()).Clone();
+                c.Audio = Audio?.Clone();
                 return c;
             }
 
@@ -157,6 +160,7 @@ namespace ReBuzz.Core.Session
                 if (LoopEnd != 0) e.SetAttributeValue("loopEnd", LoopEnd);
                 if (Velocity != 0) e.SetAttributeValue("velocity", Velocity);
                 if (Follow != null && !Follow.IsDefault) e.Add(Follow.ToXml());
+                if (Audio != null) e.Add(Audio.ToXml());
                 return e;
             }
 
@@ -170,8 +174,86 @@ namespace ReBuzz.Core.Session
                 LoopStart = Math.Max(0, IntAttr(e, "loopStart", 0)),
                 LoopEnd = Math.Max(0, IntAttr(e, "loopEnd", 0)),
                 Velocity = Math.Clamp(IntAttr(e, "velocity", 0), 0, 100),
-                Follow = FollowSettings.FromXml(e.Element("Follow"))
+                Follow = FollowSettings.FromXml(e.Element("Follow")),
+                Audio = AudioSettings.FromXml(e.Element("Audio"))
             };
+        }
+
+        /// <summary>
+        /// An audio clip's audio (1.0): the wave it plays (an index into the song's wavetable),
+        /// the audio's tempo, how it follows the song's (its warp mode, and for Beats what is kept:
+        /// the transients, or a grid), its warp markers, gain and pitch.
+        /// </summary>
+        public sealed class AudioSettings
+        {
+            public static readonly string[] WarpModes = { "Off", "Repitch", "Beats", "Complex" };
+            public static readonly string[] PreserveModes = { "Transients", "1/4", "1/8", "1/16" };
+
+            /// <summary>Index into the wavetable (0-based).</summary>
+            public int Wave { get; set; }
+            /// <summary>The audio's tempo: its length in beats is its seconds times this over 60.</summary>
+            public double Bpm { get; set; } = 120;
+            public string Warp { get; set; } = "Beats";
+            public string Preserve { get; set; } = "Transients";
+            /// <summary>Warp markers: this audio sample is heard on this clip beat. Fewer than two: straight, from <see cref="Bpm"/>.</summary>
+            public List<(double Sample, double Beat)> Markers { get; set; } = new List<(double, double)>();
+            public double GainDb { get; set; }
+            /// <summary>Semitones, -48 to 48.</summary>
+            public int Transpose { get; set; }
+            /// <summary>Cents, -50 to 50.</summary>
+            public int Detune { get; set; }
+
+            public double Semitones => Transpose + Detune / 100.0;
+            public float Gain => (float)Math.Pow(10, GainDb / 20);
+
+            /// <summary>The grid Beats mode slices on (in beats; with transients, beats too), by <see cref="Preserve"/>.</summary>
+            public double Grid => Preserve switch { "1/8" => 0.5, "1/16" => 0.25, _ => 1 };
+            public bool PreservesTransients => Preserve != "1/4" && Preserve != "1/8" && Preserve != "1/16";
+
+            public AudioSettings Clone()
+            {
+                var a = (AudioSettings)MemberwiseClone();
+                a.Markers = new List<(double, double)>(Markers ?? new List<(double, double)>());
+                return a;
+            }
+
+            internal XElement ToXml()
+            {
+                var e = new XElement("Audio", new XAttribute("wave", Wave), new XAttribute("bpm", Num(Bpm)));
+                if (Warp != "Beats") e.SetAttributeValue("warp", Warp);
+                if (Preserve != "Transients") e.SetAttributeValue("preserve", Preserve);
+                if (GainDb != 0) e.SetAttributeValue("gain", Num(GainDb));
+                if (Transpose != 0) e.SetAttributeValue("transpose", Transpose);
+                if (Detune != 0) e.SetAttributeValue("detune", Detune);
+                foreach (var (sample, beat) in Markers ?? new List<(double, double)>())
+                    e.Add(new XElement("Marker", new XAttribute("sample", Num(sample)), new XAttribute("beat", Num(beat))));
+                return e;
+            }
+
+            internal static AudioSettings FromXml(XElement e)
+            {
+                if (e == null) return null;
+                string warp = (string)e.Attribute("warp") ?? "Beats";
+                string preserve = (string)e.Attribute("preserve") ?? "Transients";
+                var a = new AudioSettings
+                {
+                    Wave = Math.Max(0, IntAttr(e, "wave", 0)),
+                    Bpm = Math.Clamp(DoubleAttr(e, "bpm", 120), 1, 999),
+                    Warp = Array.IndexOf(WarpModes, warp) >= 0 ? warp : "Beats",
+                    Preserve = Array.IndexOf(PreserveModes, preserve) >= 0 ? preserve : "Transients",
+                    GainDb = Math.Clamp(DoubleAttr(e, "gain", 0), -70, 24),
+                    Transpose = Math.Clamp(IntAttr(e, "transpose", 0), -48, 48),
+                    Detune = Math.Clamp(IntAttr(e, "detune", 0), -50, 50),
+                };
+                foreach (var m in e.Elements("Marker"))
+                {
+                    double sample = DoubleAttr(m, "sample", double.NaN), beat = DoubleAttr(m, "beat", double.NaN);
+                    if (double.IsFinite(sample) && double.IsFinite(beat)) a.Markers.Add((sample, beat));
+                }
+                return a;
+            }
+
+            static string Num(double v) => v.ToString("R", CultureInfo.InvariantCulture);
         }
 
         /// <summary>Clip settings by (machine, pattern); patterns without an entry use the defaults.</summary>
@@ -741,6 +823,9 @@ namespace ReBuzz.Core.Session
 
         static int IntAttr(XElement e, string name, int fallback) =>
             int.TryParse((string)e.Attribute(name), NumberStyles.Integer, CultureInfo.InvariantCulture, out var v) ? v : fallback;
+
+        static double DoubleAttr(XElement e, string name, double fallback) =>
+            double.TryParse((string)e.Attribute(name), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && double.IsFinite(v) ? v : fallback;
     }
 
     /// <summary>

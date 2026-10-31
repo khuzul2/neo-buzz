@@ -510,7 +510,9 @@ namespace ReBuzz.FileOps
                         WaveLayerCore waveLayer = wave.LayersList[i];
 
                         // Convert byte [] to float [] and copy to ReBuzz
-                        waveLayer.Init(waveLayer.Path, waveLayer.Format, waveLayer.RootNote, waveLayer.ChannelCount == 2, waveLayer.SampleCount);
+                        // Fork (1.0): Init takes the size in 16-bit units, which SampleCount16Bit
+                        // holds; SampleCount (frames) cut 24-bit, 32-bit and float waves to a half or less.
+                        waveLayer.Init(waveLayer.Path, waveLayer.Format, waveLayer.RootNote, waveLayer.ChannelCount == 2, waveLayer.SampleCount16Bit);
 
                         float[] floatBuffer = new float[waveLayer.SampleCount * waveLayer.ChannelCount];
                         Buffer.BlockCopy(layer.Samples, 0, floatBuffer, 0, waveLayer.SampleCount * waveLayer.ChannelCount * sizeof(float));
