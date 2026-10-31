@@ -730,34 +730,37 @@ An independent review of 0.7.1 and of the paths 0.8 builds on (MIDI in and out, 
 - ReBuzz sends commands: `enable`, `startstop`, `quantum`, `tempo`, `beat <beat> <µs>` and `play <0|1> <µs>`.
 - The helper answers with `state <µs> <beat> <bpm> <peers> <playing> <enabled>`, a hundred times a second.
 - It exits when ReBuzz closes its input, so it never outlives ReBuzz.
-- Times are host microseconds. On Windows, Link's clock is `QueryPerformanceCounter`, the clock behind .NET's `Stopwatch` (`HostClock`), so a time means the same moment in both processes. On Linux both use `CLOCK_MONOTONIC`. Two helpers on one machine agreed to 9 µs here.
+- Times are host microseconds. On Windows, Link's clock is `QueryPerformanceCounter`, the clock behind .NET's `Stopwatch` (`HostClock`), so a time means the same moment in both processes. (On Linux, where the pure tests run, Link uses `CLOCK_MONOTONIC_RAW` and `Stopwatch` `CLOCK_MONOTONIC`; they differ only by NTP's slewing.) Two helpers on one machine agreed within 10 µs.
 
 *Following a clock.* WorkManager asks `SyncClock` how long each tick is.
 - The audio clock is learnt against host time (`HostTimeFilter`, as in Link's examples). It is a least-squares line through the last 512 callbacks: the frame count at each callback's start against the time then. This averages out when callbacks run, and learns the device's own rate.
 - A tick is heard when its first sample is rendered plus the output latency (0.4.1's estimate).
 - While a clock is followed, each tick's length is set so the next tick starts, as heard, where the clock's bar phase says (`PhaseLock`). Bars come from the session's grid origin and beats per bar, which is the Link quantum.
   - Each tick aims at an absolute time, so whole-sample rounding never adds up.
-  - A tick is at most 8% longer or shorter than the clock's own, so a large error closes smoothly: half a bar at 120 BPM in about 6 seconds.
+  - A tick is at most 8% longer or shorter than the clock's own, so a large error closes smoothly: half a bar of 4/4 at 120 BPM in about 12.5 seconds.
   - Groove and the nudge give way while following.
-- A start waits until the clock's phase is the session's at its start position (the session clock starts at the song position, its bars at 0), and the tick before it ends right then; the transport starts on that tick (`StartDue`). From a bar's start that is Link's next bar line, as in Live. MIDI clock has beats but no bars, so it locks beats (quantum 1) and a start waits for its beat 0, or the next beat if that has passed.
+- A start waits until the clock's phase is the session's at its start position (the session clock starts at the song position, its bars at 0), and the tick before it ends right then; the transport starts on that tick (`StartDue`). From a bar's start that is Link's next bar line, as in Live. MIDI clock's bars count from its Start (beat 0, the pulse after it) and its song positions. Its beat 0 comes one pulse after Start, nearly always sooner than a start can be heard, so a start up to a quarter beat late goes at once and the lock catches up; a later one waits for the bar.
 - The session's own beat line, as heard, is published to MIDI clock out and the Session View (`SyncClock.Ours`, a sequence lock: no allocation, no lock on the audio thread).
 
 *Link (`SessionSync`, `LinkClient`).*
 - With peers, the session follows Link's exact tempo and bar phase. The song's whole-number BPM follows the tempo rounded (`SetBPMFromEngine`, not recorded); the ticks follow the exact tempo.
 - Alone, Link follows the session. The session's tempo is sent when it changes by more than half a BPM, so a rounded tempo never echoes. While the transport plays, the session's beat is sent four times a second as a `beat` request, so peers that join find it in phase.
 - The tempo is set before Link is enabled, so joining a session takes that session's tempo.
-- Start/stop sync (Live's) shares play and stop with the peers that have it on.
+- Start/stop sync (Live's) shares play and stop with the peers that have it on. A start is sent with the time it was heard (it landed on Link's bar line), so peers start on that bar. ReBuzz acts on changes of Link's play state, so a start of its own waiting for the bar line isn't undone by a state line from before it.
+- The BPM set from Link is never sent back (ReBuzz's 16-500 may have clamped it).
 - A helper that stops talking (no state line for a second) isn't followed. A helper that exits turns Link off and says so.
 
 *MIDI clock in (`MidiClockReceiver`).* When the session follows MIDI clock in, ReBuzz takes the real-time messages from any open MIDI input before routing them.
 - A least-squares line through the last two beats of pulses gives the tempo and beat. Its axis is the pulse count, so Start and Song Position Pointer don't bend it, and a pause of half a second starts it over.
-- Start projects beat 0 onto the next pulse and starts the transport. Continue starts it from the position. Stop stops it.
+- Start projects beat 0 onto the next pulse and starts the transport. Continue starts it from the position. Stop stops it. While stopped, pulses keep the tempo but not the position. A Stop still on its way through the UI holds a Start or Continue behind it (a master relocating sends Stop, position, Continue).
+- The song's whole-number BPM shows the clock's tempo.
+- One clock source at a time: clock from two inputs would count twice.
 - Link and MIDI clock in are one or the other.
 
 *MIDI clock out (`MidiClockSender`, `MidiClockOutput`).* A thread of its own sends to the chosen MIDI outputs.
 - Start goes 1 ms before beat 0. Then a pulse goes every 1/24 beat, at the time the session's beat line says, as heard.
 - It sleeps on a high-resolution waitable timer and spins the last 0.6 ms. It looks at the beat line again on each wake, so tempo and phase changes are followed at once.
-- Joining while playing sends the Song Position Pointer (the next 16th) and Continue. Stop goes when the transport stops.
+- Joining while playing sends the Song Position Pointer (the next 16th) and Continue; past the pointer's 16,383 16ths, Continue alone. When the beat line jumps by more than a beat (a restart elsewhere in the song), Stop, then the position and Continue from where it is. Stop goes when the transport stops.
 
 *Sync menu* (⚙ › Sync).
 - Ableton Link (with its peers), start and stop with Link peers, follow MIDI clock in, and send MIDI clock to each open MIDI output.
@@ -767,8 +770,8 @@ An independent review of 0.7.1 and of the paths 0.8 builds on (MIDI in and out, 
 **Tests.**
 - `ReBuzz.SessionTests`:
   - `SyncTimeTests` (7). It includes the acceptance run, simulated: 30 minutes against a clock at 120.37 BPM, starting 1.3 beats out of phase, through ±1 ms callback jitter and a device clock 30 ppm slow, with a tempo change at 10 minutes. The worst error after locking was 210 µs.
-  - `SyncClockTests` (5): without a source; a start landing on the clock's bar line within a sample; a start from the middle of a bar waiting for the clock to be there too; MIDI clock locking beats; following at 127.3 BPM within 1 ms.
-  - `MidiClockTests` (6): tempo through jitter; Start making the next pulse beat 0; the song position; sending Start then a pulse every 1/24 beat; joining while playing; the Link protocol's lines.
+  - `SyncClockTests` (5): without a source; a start landing on the clock's bar line within a sample; a start from the middle of a bar waiting for the clock to be there too; a start a little late for MIDI clock's beat 0 catching up; following at 127.3 BPM within 1 ms.
+  - `MidiClockTests` (9): tempo through jitter; Start making the next pulse beat 0; the song position; pulses while stopped keeping it; sending Start then a pulse every 1/24 beat; joining while playing; a jump of the beat line; past the song position's range; the Link protocol's lines.
 - `ReBuzzTests/SessionSyncTests.cs` runs on CI with the helper `build.ps1` built:
   - two Link helpers finding each other and agreeing within 1 ms;
   - the session following a Link peer at 123.4 BPM, rendering in real time: its tempo, the song's BPM (123), and its bar phase within 1 ms;
@@ -776,6 +779,8 @@ An independent review of 0.7.1 and of the paths 0.8 builds on (MIDI in and out, 
   - MIDI clock out timing on a real thread.
 
   Where the runner allows no multicast, the Link tests report inconclusive rather than failing.
+
+**Known.** A restart while playing and following (F5 at a song position off the bar) isn't re-aligned like a start: the lock pulls the session back into phase over a few seconds.
 
 **Not automated.** A 30-minute run against Live (the simulation and the real-time test stand in). Real audio devices' latency reports, since the latency is 0.4.1's estimate.
 

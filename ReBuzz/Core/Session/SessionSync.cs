@@ -39,6 +39,10 @@ namespace ReBuzz.Core.Session
         string status = "";
         string problem;
         int devicesRefresh;
+        bool linkPlaying;                    // Link's play state as last acted on (start/stop sync acts on changes)
+        int bpmFromLink = -1;                // the BPM set from Link's tempo (not sent back: it may be clamped)
+        readonly object clockLock = new object();     // every MIDI input's thread feeds the one receiver
+        volatile bool stopPending;           // a MIDI Stop posted to the UI, not yet done
 
         /// <summary>The settings or the status changed (UI thread).</summary>
         public event Action Changed;
@@ -148,19 +152,27 @@ namespace ReBuzz.Core.Session
             {
                 var client = link;
                 if (client == null) return;
-                if (state.Peers > 0)
+                if (client.Peers > 0)
                 {
                     // Follow the session's tempo (the audio thread follows its exact tempo and phase).
-                    double tempo = state.Timeline.Tempo;
+                    double tempo = client.Tempo;
                     int rounded = Math.Clamp((int)Math.Round(tempo), 16, 500);
                     if (rounded != buzz.BPM && Math.Abs(buzz.BPM - tempo) > 0.5)
+                    {
+                        bpmFromLink = rounded;
                         buzz.SetBPMFromEngine(rounded);
+                    }
                 }
-                if (linkStartStop && state.Peers > 0)
+                // Start/stop sync acts on changes of Link's play state (read now, not as the line
+                // said): a start of ours waiting for Link's bar line isn't undone by a line from
+                // before it.
+                bool playing = client.IsPlaying;
+                if (linkStartStop && client.Peers > 0 && playing != linkPlaying)
                 {
-                    if (state.Playing && !buzz.PlayRequested) buzz.Playing = true;
-                    else if (!state.Playing && buzz.PlayRequested) buzz.Playing = false;
+                    if (playing && !buzz.PlayRequested) buzz.Playing = true;
+                    else if (!playing && buzz.PlayRequested) buzz.Playing = false;
                 }
+                linkPlaying = playing;
                 UpdateStatus();
             });
         }
@@ -171,11 +183,19 @@ namespace ReBuzz.Core.Session
             if (client == null) return;
             if (e.PropertyName == "BPM")
             {
-                if (Math.Abs(buzz.BPM - client.Tempo) > 0.5)
+                // Not the tempo Link gave (rounded, maybe clamped to ReBuzz's 16-500): only the user's or a scene's.
+                if (buzz.BPM != bpmFromLink && Math.Abs(buzz.BPM - client.Tempo) > 0.5)
                     client.Send(LinkProtocol.Tempo(buzz.BPM));
+                bpmFromLink = -1;
             }
             else if (e.PropertyName == "Playing" && linkStartStop)
-                client.Send(LinkProtocol.Play(buzz.Playing, HostClock.Now()));
+            {
+                // A start as heard (it landed on Link's bar line), so peers start on that bar.
+                double at = buzz.SyncClock.StartedHeardMicros;
+                if (!buzz.Playing || double.IsNaN(at) || HostClock.Now() - at > 1_000_000) at = HostClock.Now();
+                client.Send(LinkProtocol.Play(buzz.Playing, at));
+                linkPlaying = buzz.Playing;
+            }
         }
 
         void OnSessionChanged(object sender, PropertyChangedEventArgs e)
@@ -205,16 +225,28 @@ namespace ReBuzz.Core.Session
         internal bool OnClockInput(int data)
         {
             if (!followMidiClock) return false;
-            switch (clockIn.OnMessage(data, HostClock.Now()))
+            MidiClockEvent e;
+            lock (clockLock) e = clockIn.OnMessage(data, HostClock.Now());
+            switch (e)
             {
                 case MidiClockEvent.None:
                     return false;
                 case MidiClockEvent.Start:
                 case MidiClockEvent.Continue:
-                    if (!buzz.PlayRequested && !buzz.SongLoading) buzz.Playing = true;
+                    // After a Stop still on its way through the UI (a master relocating sends Stop,
+                    // position, Continue), the start goes the same way, after it.
+                    if (stopPending)
+                        buzz.dispatcher.BeginInvoke(() => { if (!buzz.PlayRequested && !buzz.SongLoading) buzz.Playing = true; });
+                    else if (!buzz.PlayRequested && !buzz.SongLoading)
+                        buzz.Playing = true;
                     break;
                 case MidiClockEvent.Stop:
-                    if (buzz.PlayRequested) buzz.Playing = false;     // from this thread, the stop goes through the UI's
+                    stopPending = true;
+                    buzz.dispatcher.BeginInvoke(() =>
+                    {
+                        stopPending = false;
+                        if (buzz.PlayRequested) buzz.Playing = false;
+                    });
                     break;
             }
             return true;
@@ -234,10 +266,13 @@ namespace ReBuzz.Core.Session
                 return HostClock.Now() - line.Micros < MidiClockReceiver.GapMicros;
             }
 
-            /// <summary>MIDI clock has beats, not bars: phases match over a beat.</summary>
-            public double QuantumFor(int beatsPerBar) => 1;
+            /// <summary>Bars count from the clock's Start (and its song positions), the session's length.</summary>
+            public double QuantumFor(int beatsPerBar) => beatsPerBar;
 
-            /// <summary>Not before beat 0 (the pulse after Start); late for it, the next beat.</summary>
+            /// <summary>Beat 0 is one pulse after Start: a start a little late catches up.</summary>
+            public double CatchUpBeats => 0.25;
+
+            /// <summary>Not before beat 0 (the pulse after Start).</summary>
             public double EarliestStart(in Timeline line, double heardMicros) => Math.Max(heardMicros, line.MicrosAt(0));
         }
 
@@ -295,6 +330,13 @@ namespace ReBuzz.Core.Session
                     double barBeat = ours.Beat - (buzz.SessionCore?.GridOrigin ?? 0) / (double)tpb;
                     client.Send(LinkProtocol.Beat(barBeat, ours.Micros));
                 }
+                // Following MIDI clock: the song's (whole) tempo shows the clock's.
+                if (followMidiClock && clockInSource.TryGetTimeline(out var clock))
+                {
+                    int rounded = Math.Clamp((int)Math.Round(clock.Tempo), 16, 500);
+                    if (rounded != buzz.BPM && Math.Abs(buzz.BPM - clock.Tempo) > 0.5)
+                        buzz.dispatcher.BeginInvoke(() => buzz.SetBPMFromEngine(rounded));
+                }
                 // Outputs come and go (unplugged, opened in the MIDI settings): look again now and then.
                 if (clockOutNames.Count > 0 && ++devicesRefresh % 8 == 0)
                     clockOutDevices = Outputs.Where(o => clockOutNames.Contains(o.Name)).Select(o => o.Index).ToArray();
@@ -310,7 +352,9 @@ namespace ReBuzz.Core.Session
         {
             string s = "";
             var client = link;
-            if (client != null)
+            if (client == null && problem != null && !followMidiClock)
+                s = "Link stopped";
+            else if (client != null)
                 s = client.Peers > 0 ? $"Link · {client.Peers} peer{(client.Peers == 1 ? "" : "s")} · {client.Tempo:0.##}" : "Link · alone";
             else if (followMidiClock)
                 s = clockIn.Timeline.TryRead(out var line) && HostClock.Now() - line.Micros < MidiClockReceiver.GapMicros

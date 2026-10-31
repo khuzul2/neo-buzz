@@ -110,13 +110,17 @@ namespace ReBuzzTests
                 var reader = rig.Driver.CreateAudioReader(256);
                 PlayRealTime(reader, 1.0);                          // the audio clock is learnt
                 rig.Core.Playing = true;
-                PlayRealTime(reader, 8.0);
+                PlayRealTime(reader, 6.0);
                 var clock = rig.Core.SyncClock;
+                Assert.That(clock.Ours.TryRead(out var before), Is.True);
+                PlayRealTime(reader, 2.0);
                 Assert.That(rig.Core.Playing, Is.True);
                 Assert.That(clock.IsFollowing, Is.True);
                 Assert.That(rig.Core.BPM, Is.EqualTo(123), "the song's (whole) tempo follows, rounded");
                 Assert.That(clock.Ours.TryRead(out var ours), Is.True);
-                Assert.That(Math.Abs(ours.Tempo - 123.4), Is.LessThan(0.2), $"plays at Link's exact tempo: {ours.Tempo}");
+                // Each tick's own length moves a little as the lock follows; over two seconds, Link's tempo.
+                double tempo = (ours.Beat - before.Beat) / (ours.Micros - before.Micros) * 60e6;
+                Assert.That(Math.Abs(tempo - 123.4), Is.LessThan(0.05), $"plays at Link's exact tempo: {tempo:F3}");
                 Assert.That(peer.TryGetState(out var line), Is.True);
                 int tpb = Math.Max(1, rig.Core.TPB);
                 double barBeat = ours.Beat - rig.Session.GridOrigin / (double)tpb;

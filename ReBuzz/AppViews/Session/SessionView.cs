@@ -185,7 +185,7 @@ namespace ReBuzz.AppViews.Session
             tapButton = new FlatButton("Tap", () => layout.TapTempo(), "") { Margin = new Thickness(4, 0, 14, 0) };
             tapButton.MouseRightButtonUp += (s, e) => { ShowMidiOnlyMenu(tapButton, SessionTarget.TapTempo, 0, 0, "Tap tempo"); e.Handled = true; };
             // One group, so a narrow view wraps it whole.
-            // Sync (0.8): Link or MIDI clock, when on; right-click for the Sync menu.
+            // Sync (0.8): Link or MIDI clock, when on; the tooltip says how far off the clock the session is.
             syncText = new TextBlock
             {
                 VerticalAlignment = VerticalAlignment.Center,
