@@ -141,6 +141,27 @@ namespace ReBuzzTests
             Assert.That(rig.Session.GetClipPosition(layout.SequenceOf(0)!), Is.EqualTo(1), "it loops in step");
         }
 
+        /// <summary>
+        /// 0.8 groundwork: a tick is a whole number of samples, and the fraction left over is
+        /// carried, so the tempo is exact on average (at 44.1 kHz and 120 BPM a tick is 5512.5).
+        /// </summary>
+        [Test]
+        public void TicksKeepTheExactTempoOnAverage()
+        {
+            using var rig = new KeysRig();
+            rig.Core.BPM = 120;
+            var mi = ReBuzzCore.masterInfo;
+            rig.PlayTo(1);
+            long sum = 0;
+            for (long t = 2; t <= 401; t++)
+            {
+                rig.PlayTo(t);
+                sum += mi.SamplesPerTick;                            // the tick just played
+            }
+            double exact = 400 * mi.AverageSamplesPerTick;
+            Assert.That(Math.Abs(sum - exact), Is.LessThanOrEqualTo(1.0), $"{sum} samples in 400 ticks, {exact} exactly");
+        }
+
         [Test]
         public void ATakeRecordedUntilStoppedGrowsPastItsFirstRoomWithoutWrapping()
         {

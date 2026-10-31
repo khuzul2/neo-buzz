@@ -165,9 +165,14 @@ namespace ReBuzz.Audio
                         var grooveMul = GetGrooveMul();
                         // Fork (0.6): a held tempo nudge shortens or stretches the tick.
                         float nudge = buzzCore.TempoNudge;
-                        masterInfo.SamplesPerTick = nudge == 1f
-                            ? (int)(masterInfo.AverageSamplesPerTick * grooveMul)
-                            : Math.Max(1, (int)(masterInfo.AverageSamplesPerTick * grooveMul / nudge));
+                        // Fork (0.8 groundwork): ticks are whole samples, so the fraction left
+                        // over is carried to the next tick: the tempo is exact on average (at
+                        // 44.1 kHz and 120 BPM a tick is 5512.5 samples; dropping the half ran
+                        // 163 ms ahead in 30 minutes). From the first tick of a start, the same.
+                        double exact = masterInfo.AverageSamplesPerTick * grooveMul / nudge + tickRemainder;
+                        int samples = Math.Max(1, (int)Math.Floor(exact));
+                        tickRemainder = buzzCore.Playing ? Math.Clamp(exact - samples, 0, 0.999999) : 0;
+                        masterInfo.SamplesPerTick = samples;
                     }
 
                     UpdateMasterParams();
@@ -402,6 +407,9 @@ namespace ReBuzz.Audio
                 ReBuzzCore.masterInfoStructDirty = true;
             }
         }
+
+        /// <summary>Fork: the fraction of a sample the last tick left over (see the tick length).</summary>
+        double tickRemainder;
 
         private void UpdateMasterSamplesPerTick()
         {

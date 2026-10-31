@@ -1056,11 +1056,26 @@ namespace WDE.ModernPatternEditor
         public bool ImportClipNotes(IPattern pat, int[] data)
         {
             if (pat == null) return false;
-            bool done;
+            var mpePattern = MPEPatternsDB.GetMPEPattern(pat);
+            List<TrackerRow> rows;
+            int tracks;
             lock (syncLock)
             {
-                done = PatternEditorUtils.ImportClipNotes(MPEPatternsDB.GetMPEPattern(pat), data);
+                // Planned first: notes that don't fit change nothing.
+                rows = PatternEditorUtils.PlanClipNotes(mpePattern, data, out tracks);
             }
+            if (rows == null) return false;
+            // Outside the lock: a native machine's track count takes the audio lock, and the audio
+            // thread holds that while it runs this editor's Work, which takes ours.
+            var machine = pat.Machine;
+            if (machine != null && tracks > machine.TrackCount)
+                machine.TrackCount = tracks;
+            if (machine == null || machine.TrackCount < tracks) return false;
+            lock (syncLock)
+            {
+                PatternEditorUtils.WriteClipNotes(mpePattern, rows, tracks);
+            }
+            bool done = true;
             // The pattern shown here shows its lanes as they are now.
             var shown = SelectedMachine?.SelectedPattern;
             if (shown != null && shown.Pattern == pat)

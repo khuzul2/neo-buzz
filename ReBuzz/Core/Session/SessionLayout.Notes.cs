@@ -29,6 +29,8 @@ namespace ReBuzz.Core.Session
         public void EditNotes(IPattern clip, IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added)
         {
             if (clip?.Machine == null || (clip is PatternCore core && core.IsDeleted)) return;
+            // A pass being recorded is undone by value when it ends: an edit under it would outlive that undo.
+            if (IsRecordingClip(clip)) return;
             removed ??= Array.Empty<ClipNote>();
             added ??= Array.Empty<ClipNote>();
             if (removed.Count == 0 && added.Count == 0) return;
@@ -69,32 +71,34 @@ namespace ReBuzz.Core.Session
         public bool CanMoveNotes(IPattern clip) =>
             clip is PatternCore p && !p.IsDeleted && clip.Machine is MachineCore m && buzz.MachineManager.HasClipNotesEditor(m);
 
-        /// <summary>The notes on the clip's MIDI note lanes in the Pattern View (empty if its editor has none).</summary>
+        /// <summary>The notes on the clip's MIDI note lanes in the Pattern View, in time order (empty if its editor has none).</summary>
         public List<ClipNote> PatternViewNotesOf(IPattern clip) =>
-            TrackerNotes.Unpack(ExportFromEditor(clip)).Select(n => new ClipNote(n.Time, n.Duration, n.Midi, n.Velocity)).ToList();
+            TrackerNotes.Unpack(ExportFromEditor(clip)).Select(n => new ClipNote(n.Time, n.Duration, n.Midi, n.Velocity))
+                .OrderBy(n => n.Time).ThenBy(n => n.Note).ToList();
 
         /// <summary>
         /// Moves the clip's notes (its engine MIDI column's, where takes and the piano roll put
         /// them) onto its MIDI note lanes in the Pattern View, beside the notes already there:
-        /// one undo step. Null when done, else why not (the clip is recording, or the notes need
-        /// more tracks than the machine has; nothing changes then). Controllers stay in the clip.
+        /// one undo step. Null when done, else why not (nothing changes then). Controllers stay
+        /// in the clip.
         /// </summary>
         public string MoveNotesToPatternView(ISequence track, IPattern clip)
         {
             if (!CanMoveNotes(clip)) return "The clip's pattern editor doesn't take notes.";
-            if (IsRecordingInto(track, clip)) return "The clip is recording.";
+            if (IsRecordingClip(clip)) return "The clip is recording.";
             var notes = NotesOf(clip);
             if (notes.Count == 0) return "The clip has no notes outside the Pattern View.";
             var before = ExportFromEditor(clip) ?? Array.Empty<int>();
-            var after = before.Concat(TrackerNotes.Pack(notes.Select(n => new TrackerNote(n.Time, n.Duration, n.Note, n.Velocity)))).ToArray();
-            if (!ImportToEditor(clip, after))
-            {
-                ImportToEditor(clip, before);
-                return $"The notes need more voices than {clip.Machine.Name} has tracks.";
-            }
+            var moved = TrackerNotes.Pack(notes.Select(n => new TrackerNote(n.Time, n.Duration, n.Note, n.Velocity)));
+            if (!ImportToEditor(clip, before.Concat(moved).ToArray()))
+                return $"The notes don't fit the Pattern View's note lanes: more notes at once than {clip.Machine.Name} has tracks, " +
+                       "notes above B7, or lanes whose beats are split differently.";
+            // The moved notes as the lanes hold them (rows of 1/95), so undo takes back exactly those.
+            var added = TrackerNotes.Added(before, ExportFromEditor(clip) ?? Array.Empty<int>());
             var removed = notes.Select(ToEvent).ToArray();
             MidiColumnOf(clip)?.SetEvents(removed, false);
-            UndoStack.Do(new ClipNotesMoveAction(this, clip, before, after, removed, Array.Empty<PatternEvent>(), done: true));
+            UndoStack.Do(new ClipNotesMoveAction(this, clip, lanesAdded: added, lanesRemoved: Array.Empty<int>(),
+                columnRemoved: removed, columnAdded: Array.Empty<PatternEvent>(), done: true));
             buzz.SetModifiedFlag();
             return null;
         }
@@ -107,20 +111,17 @@ namespace ReBuzz.Core.Session
         public string MoveNotesFromPatternView(ISequence track, IPattern clip)
         {
             if (!CanMoveNotes(clip)) return "The clip's pattern editor doesn't take notes.";
-            if (IsRecordingInto(track, clip)) return "The clip is recording.";
-            var before = ExportFromEditor(clip) ?? Array.Empty<int>();
-            var notes = PatternViewNotesOf(clip);
+            if (IsRecordingClip(clip)) return "The clip is recording.";
+            var taken = ExportFromEditor(clip) ?? Array.Empty<int>();
+            var notes = TrackerNotes.Unpack(taken);
             if (notes.Count == 0) return "The clip has no notes in the Pattern View.";
-            if (!ImportToEditor(clip, Array.Empty<int>())) return "The Pattern View didn't let go of the notes.";
-            var added = notes.Select(ToEvent).ToArray();
             var column = ColumnFor(clip, ColumnKey.Midi, create: true);
-            if (column == null)
-            {
-                ImportToEditor(clip, before);
-                return "The clip can't take MIDI.";
-            }
+            if (column == null) return "The clip can't take MIDI.";
+            if (!ImportToEditor(clip, Array.Empty<int>())) return "The Pattern View didn't let go of the notes.";
+            var added = notes.Select(n => ToEvent(new ClipNote(n.Time, n.Duration, n.Midi, n.Velocity))).ToArray();
             column.SetEvents(added, true);
-            UndoStack.Do(new ClipNotesMoveAction(this, clip, before, Array.Empty<int>(), Array.Empty<PatternEvent>(), added, done: true));
+            UndoStack.Do(new ClipNotesMoveAction(this, clip, lanesAdded: Array.Empty<int>(), lanesRemoved: taken,
+                columnRemoved: Array.Empty<PatternEvent>(), columnAdded: added, done: true));
             buzz.SetModifiedFlag();
             return null;
         }
@@ -140,26 +141,28 @@ namespace ReBuzz.Core.Session
 
     /// <summary>
     /// Moves notes between a clip's engine MIDI column and its pattern editor's MIDI note lanes
-    /// (0.7.1): the editor's notes become <c>editorAfter</c>, the column loses
-    /// <c>columnRemoved</c> and gains <c>columnAdded</c>; undo does the opposite. Holds the clip.
+    /// (0.7.1): the lanes gain <c>lanesAdded</c> and lose <c>lanesRemoved</c>, the column loses
+    /// <c>columnRemoved</c> and gains <c>columnAdded</c>; undo does the opposite. The lanes
+    /// change by those notes only, so edits made in the Pattern View since stay (hardening).
+    /// If the lanes can't take the change any more, neither side changes. Holds the clip.
     /// </summary>
     internal sealed class ClipNotesMoveAction : IAction
     {
         readonly SessionLayout layout;
         readonly IPattern clip;
-        readonly int[] editorBefore;
-        readonly int[] editorAfter;
+        readonly int[] lanesAdded;
+        readonly int[] lanesRemoved;
         readonly PatternEvent[] columnRemoved;
         readonly PatternEvent[] columnAdded;
         bool skip;
 
-        public ClipNotesMoveAction(SessionLayout layout, IPattern clip, int[] editorBefore, int[] editorAfter,
+        public ClipNotesMoveAction(SessionLayout layout, IPattern clip, int[] lanesAdded, int[] lanesRemoved,
             PatternEvent[] columnRemoved, PatternEvent[] columnAdded, bool done)
         {
             this.layout = layout;
             this.clip = clip;
-            this.editorBefore = editorBefore;
-            this.editorAfter = editorAfter;
+            this.lanesAdded = lanesAdded;
+            this.lanesRemoved = lanesRemoved;
             this.columnRemoved = columnRemoved;
             this.columnAdded = columnAdded;
             skip = done;
@@ -168,21 +171,19 @@ namespace ReBuzz.Core.Session
         public void Do()
         {
             if (skip) { skip = false; return; }    // done (and checked) before it was pushed
-            layout.ImportToEditor(layout.Current(clip), editorAfter);
-            Column(columnAdded.Length > 0, columnRemoved, columnAdded);
+            Apply(lanesRemoved, lanesAdded, columnRemoved, columnAdded);
         }
 
-        public void Undo()
-        {
-            layout.ImportToEditor(layout.Current(clip), editorBefore);
-            Column(columnRemoved.Length > 0, columnAdded, columnRemoved);
-        }
+        public void Undo() => Apply(lanesAdded, lanesRemoved, columnAdded, columnRemoved);
 
-        void Column(bool create, PatternEvent[] take, PatternEvent[] put)
+        void Apply(int[] laneTake, int[] lanePut, PatternEvent[] take, PatternEvent[] put)
         {
             var p = layout.Current(clip);
             if (p == null || (p is PatternCore core && core.IsDeleted)) return;
-            var c = SessionLayout.ColumnFor(p, ColumnKey.Midi, create);
+            var lanes = layout.ExportFromEditor(p);
+            if (lanes == null) return;
+            if (!layout.ImportToEditor(p, TrackerNotes.Without(lanes, laneTake).Concat(lanePut).ToArray())) return;
+            var c = SessionLayout.ColumnFor(p, ColumnKey.Midi, put.Length > 0);
             if (c == null) return;
             if (take.Length > 0) c.SetEvents(take, false);
             if (put.Length > 0) c.SetEvents(put, true);

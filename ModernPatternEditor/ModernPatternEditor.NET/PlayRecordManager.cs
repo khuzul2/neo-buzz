@@ -287,6 +287,7 @@ namespace WDE.ModernPatternEditor
                         ces.eventType = CollectedEventType.MidiNote;
                         ces.midiChannel = midiNoteData.midiChannel.value;
                         ces.parameter = mpeColumn.Parameter;
+                        ces.ParamTrack = mpeColumn.ParamTrack;      // fork (neo-buzz 0.7.1): each track its own voice
                         ces.time = noteTime;
 
                         midiEvents.Add(ces);
@@ -303,12 +304,13 @@ namespace WDE.ModernPatternEditor
                         ces.eventType = CollectedEventType.MidiNote;
                         ces.midiChannel = midiNoteData.midiChannel.value;
                         ces.parameter = mpeColumn.Parameter;
+                        ces.ParamTrack = mpeColumn.ParamTrack;      // fork (neo-buzz 0.7.1): each track its own voice
                         ces.time = noteOffTime;
                         midiEvents.Add(ces);
                     }
                     if (midiNoteData.noteOff)
                     {
-                        PlayingTrackInfo pti = PlayingNotesList.FirstOrDefault(x => x.track == mpeColumn.ParamTrack);
+                        PlayingTrackInfo pti = PlayingNotesList.FirstOrDefault(x => x.track == mpeColumn.ParamTrack && x.parameter == mpeColumn.Parameter);
                         if (pti != null) // Need to know playing note so that we can stop it.
                         {
                             int noteOffTime = midiNoteData.midiNoteTimeQ + midiNoteData.midiDelay.value;
@@ -321,6 +323,7 @@ namespace WDE.ModernPatternEditor
                             ces.eventType = CollectedEventType.MidiNote;
                             ces.midiChannel = midiNoteData.midiChannel.value;
                             ces.parameter = mpeColumn.Parameter;
+                            ces.ParamTrack = mpeColumn.ParamTrack;
                             ces.time = noteOffTime;
                             midiEvents.Add(ces);
                         }

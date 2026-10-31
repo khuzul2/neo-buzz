@@ -113,9 +113,13 @@ namespace ReBuzz.Core.Session
             return document;
         }
 
+        /// <summary>A new or opened song is replacing this one (windows holding its clips close).</summary>
+        internal event Action Resetting;
+
         /// <summary>New song: back to no layout and default session settings.</summary>
         internal void Reset()
         {
+            Resetting?.Invoke();
             // 0.6.1: at once, not when the UI is next idle: nothing may launch the old song's clips.
             launchMap = LaunchMap.Empty;
             (Session as SessionCore)?.UseLaunchMap(LaunchMap.Empty);
