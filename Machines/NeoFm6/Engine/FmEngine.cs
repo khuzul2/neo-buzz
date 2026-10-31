@@ -359,7 +359,12 @@ namespace NeoBuzz.Fm6
         readonly FmEngine engine;
         readonly Dx7Envelope[] env = { new(), new(), new(), new(), new(), new() };
         readonly Dx7PitchEnvelope peg = new Dx7PitchEnvelope();
-        readonly double[] phase = new double[6], inc = new double[6], ratio = new double[6], fixedHz = new double[6];
+        // Phases are 32-bit fixed point (2^32 = one cycle): they wrap by themselves and index the table directly.
+        readonly uint[] phase = new uint[6], inc = new uint[6];
+        readonly double[] ratio = new double[6], fixedHz = new double[6];
+        const double Cycle = 4294967296.0;
+        const uint FracMask = (1u << (32 - FmEngine.TableBits)) - 1;
+        const float FracScale = 1f / (1 << (32 - FmEngine.TableBits));
         readonly float[] gain = new float[6], gainStep = new float[6], outs = new float[6];
         readonly float[][] tables = new float[6][];
         Rng rng;
@@ -430,7 +435,7 @@ namespace NeoBuzz.Fm6
             {
                 var o = s.Ops[k];
                 env[k].Start(o.Rates, o.Levels, OutLevel(o), Dx7.ScaleRate(midiNote, o.RateScale));
-                if (unisonCount > 1) phase[k] = rng.NextUnipolar();
+                if (unisonCount > 1) phase[k] = rng.NextUInt();
                 else if (s.OscSync || finished) phase[k] = 0;
                 gain[k] = 0;
                 gainStep[k] = 0;
@@ -547,7 +552,7 @@ namespace NeoBuzz.Fm6
             {
                 var o = s.Ops[k];
                 double hz = o.Fixed ? fixedHz[k] * modMul : noteHz * ratio[k] * modMul;
-                inc[k] = Math.Min(hz / sr, 0.5);
+                inc[k] = (uint)(Math.Min(hz / sr, 0.5) * Cycle);
                 double level = env[k].Next(count);
                 if (o.AmpSens > 0 && amd > 0) level -= 256 * Dx7.AmpModDoublings(amd, o.AmpSens);
                 float target = o.On ? (float)Dx7Envelope.Amplitude(level) : 0f;
@@ -575,7 +580,6 @@ namespace NeoBuzz.Fm6
             int fbFrom = alg.FeedbackFrom, fbTo = alg.FeedbackTo;
             float fbScale = s.Feedback == 0 ? 0f : MathF.Pow(2f, s.Feedback - 8) * 0.5f;
             float norm = CarrierNorm[alg.CarrierCount];
-            const float size = FmEngine.TableSize;
             for (int i = 0; i < count; i++)
             {
                 float sum = 0;
@@ -593,19 +597,16 @@ namespace NeoBuzz.Fm6
                             m &= m - 1;
                         }
                         if (k == fbTo) mod += fbScale * (fb1 + fb2);
-                        double p = phase[k] + mod;
-                        p -= Math.Floor(p);
-                        float fi = (float)(p * size);
-                        int idx = (int)fi;
-                        float fr = fi - idx;
+                        uint p = phase[k] + (uint)(long)(mod * Cycle);
+                        int idx = (int)(p >> (32 - FmEngine.TableBits));
+                        float fr = (p & FracMask) * FracScale;
                         var t = tables[k];
                         y = (t[idx] + fr * (t[idx + 1] - t[idx])) * g;
                         gain[k] = g + gainStep[k];
                     }
                     outs[k] = y;
                     if (((carriers >> k) & 1) != 0) sum += y;
-                    double ph = phase[k] + inc[k];
-                    phase[k] = ph >= 1 ? ph - 1 : ph;
+                    phase[k] += inc[k];
                 }
                 fb2 = fb1;
                 fb1 = outs[fbFrom];
