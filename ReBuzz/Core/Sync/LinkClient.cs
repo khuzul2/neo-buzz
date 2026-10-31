@@ -151,8 +151,11 @@ namespace ReBuzz.Core.Sync
             return timeline.TryRead(out line);
         }
 
-        /// <summary>A start lands on Link's next bar line (Live's).</summary>
-        public double StartTarget(in Timeline line, double heardMicros, double quantum) => line.NextBarAt(heardMicros, quantum);
+        /// <summary>Phases match over the session's bar (Link's quantum).</summary>
+        public double QuantumFor(int beatsPerBar) => beatsPerBar;
+
+        /// <summary>A start may be heard at once; it waits for Link's phase (Live's: the next bar line from a bar's start).</summary>
+        public double EarliestStart(in Timeline line, double heardMicros) => heardMicros;
 
         public void Dispose()
         {

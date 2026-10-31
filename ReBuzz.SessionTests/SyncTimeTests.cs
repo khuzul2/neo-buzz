@@ -159,9 +159,10 @@ namespace ReBuzz.SessionTests
         {
             public Timeline Line;
             public bool Has = true;
-            public bool AlignOnBar = true;
+            public double Quantum = Bpb;
             public bool TryGetTimeline(out Timeline t) { t = Line; return Has; }
-            public double StartTarget(in Timeline t, double heard, double quantum) => AlignOnBar ? t.NextBarAt(heard, quantum) : double.NaN;
+            public double QuantumFor(int beatsPerBar) => Quantum;
+            public double EarliestStart(in Timeline t, double heard) => heard;
         }
 
         const int Rate = 48000, Tpb = 4, Bpb = 4, Buffer = 256;
@@ -176,6 +177,7 @@ namespace ReBuzz.SessionTests
             public int PosInTick, TickLength = 1;
             public bool Playing, PlayRequested;
             public long Clock = -1;
+            public long StartAt;                     // the song position the transport starts at
             public int Nominal = Rate * 60 / (120 * Tpb);
             public readonly System.Collections.Generic.List<(long Clock, double Heard)> Ticks = new();
             public double StartedHeard = double.NaN;
@@ -188,7 +190,7 @@ namespace ReBuzz.SessionTests
                 {
                     if (PosInTick == 0)
                     {
-                        TickLength = Sync.TickLength(Nominal, Playing, PlayRequested && !Playing, Clock, 0, Tpb, Bpb, Latency);
+                        TickLength = Sync.TickLength(Nominal, Playing, PlayRequested && !Playing, Clock, 0, StartAt, Tpb, Bpb, Latency);
                         if (Playing) Ticks.Add((Clock, Heard(Frames)));
                     }
                     int n = Math.Min(left, TickLength - PosInTick);
@@ -203,7 +205,7 @@ namespace ReBuzz.SessionTests
                         else if (PlayRequested && Sync.StartDue)
                         {
                             Playing = true;
-                            Clock = 0;
+                            Clock = StartAt;
                             StartedHeard = Heard(Frames);
                         }
                     }
@@ -244,9 +246,36 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
+        public void AStartFromTheMiddleOfABarWaitsForTheClockToBeThereToo()
+        {
+            var source = new FakeSource { Line = new Timeline(1e9 + 77_777, 0, 120) };
+            var e = new Engine { StartAt = 6 };                     // the song at beat 1.5 (4 ticks a beat)
+            e.Sync.Source = source;
+            for (int i = 0; i < 20; i++) e.Callback();
+            e.PlayRequested = true;
+            for (int i = 0; i < 1000 && !e.Playing; i++) e.Callback();
+            Assert.That(e.Playing, Is.True);
+            double phase = source.Line.PhaseAt(e.StartedHeard, Bpb);
+            Assert.That(Math.Abs(phase - 1.5), Is.LessThan(0.001), $"the clock at beat 1.5 of its bar too: {phase}");
+            Assert.That(Math.Abs(e.Sync.ErrorMicros), Is.LessThan(100), "in phase from the start");
+        }
+
+        [Test]
+        public void MidiClockLocksBeatsNotBars()
+        {
+            var source = new FakeSource { Line = new Timeline(1e9, 0, 120), Quantum = 1 };
+            var e = new Engine { PlayRequested = true };
+            e.Sync.Source = source;
+            for (int i = 0; i < 400; i++) e.Callback();
+            Assert.That(e.Playing, Is.True);
+            double phase = SyncMath.Mod(source.Line.BeatAt(e.StartedHeard), 1);
+            Assert.That(phase < 0.001 || phase > 0.999, Is.True, $"started on a beat: {phase}");
+        }
+
+        [Test]
         public void WhilePlayingItStaysOnTheClocksPhaseAndPublishesItsTempo()
         {
-            var source = new FakeSource { Line = new Timeline(1e9, 0.37, 127.3), AlignOnBar = false };
+            var source = new FakeSource { Line = new Timeline(1e9, 0.37, 127.3) };
             var e = new Engine { PlayRequested = true };
             e.Sync.Source = source;
             for (int i = 0; i < 20 * Rate / Buffer; i++) e.Callback();              // 20 s

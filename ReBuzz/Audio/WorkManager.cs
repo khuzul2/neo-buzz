@@ -181,7 +181,7 @@ namespace ReBuzz.Audio
                         // phase says (groove and nudge give way); a start waits for its bar line.
                         var session = buzzCore.SessionCore;
                         int synced = sync.TickLength(samples, buzzCore.Playing, buzzCore.PlayRequested && !buzzCore.Playing,
-                            session.Clock, session.GridOrigin, masterInfo.TicksPerBeat, session.BeatsPerBar, latencyMicros);
+                            session.Clock, session.GridOrigin, buzzCore.SongCore.PlayPosition, masterInfo.TicksPerBeat, session.BeatsPerBar, latencyMicros);
                         if (synced != samples)
                         {
                             samples = synced;
