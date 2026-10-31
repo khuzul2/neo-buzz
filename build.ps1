@@ -547,6 +547,9 @@ if ($env:GITHUB_ACTIONS -eq 'true') {
     $vst = [IO.Path]::Combine($pkgDir, 'Gear', 'vst')
     $vstCount = if (Test-Path -LiteralPath $vst) { @(Get-ChildItem -LiteralPath $vst -Recurse -File -Filter '*.dll').Count } else { 0 }
     Write-Host "::notice title=Package::$total machines in Gear: $($parts -join ', ') ($originText). DLLs: $files. Gear\vst: $vstCount DLLs. Machine build failures: $($Failures.Count)"
+    # GEAR-INVENTORY.txt itself, whole (a workflow command is one line: newlines escaped).
+    $text = ($inventory -join "`n").Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+    Write-Host "::notice title=Gear inventory::$text"
 }
 
 $toolsetText = if ($PlatformToolset) { $PlatformToolset } else { 'project default (v145)' }
