@@ -265,7 +265,7 @@ namespace NeoBuzz.MachineTests
             double freq = Measure.PeakFrequency(y, 48000, n);
             double cents = Measure.Cents(freq, hz);
             double level = Measure.Peak(y, 48000, n);
-            Measure.Report($"Ladder self-oscillation at {hz} Hz: {cents:+0.0;−0.0} cents");
+            Measure.Report($"Ladder self-oscillation at {hz} Hz: {Math.Round(cents, 1):+0.0;−0.0;0.0} cents");
             Assert.That(Math.Abs(cents), Is.LessThan(25));
             Assert.That(level, Is.InRange(0.1, 1.0));
         }

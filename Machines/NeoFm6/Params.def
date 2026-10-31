@@ -49,7 +49,7 @@ AtAmp       "AT amp"        0 99   0    int 0                           | Aftert
 
 group Output
 Tone        "Tone"          0 1000 1000 freq 1000 20000                 | Gentle low-pass on the output (20 kHz: open)
-Engine      "Engine"        0 1    0    enum Clean_2× Raw_1×             | Clean: 2× oversampled; Raw: the original's aliasing grit
+EngineMode  "Engine"        0 1    0    enum Clean_2× Raw_1×             | Clean: 2× oversampled; Raw: the original's aliasing grit
 Volume      "Volume"        0 1000 739  db -40 6 inf                    | Output level
 
 group Operator 1

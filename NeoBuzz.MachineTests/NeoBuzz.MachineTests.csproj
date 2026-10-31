@@ -15,8 +15,10 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <RootNamespace>NeoBuzz.MachineTests</RootNamespace>
-    <!-- Measurements are heavy: run them optimised even in Debug. -->
+    <!-- Measurements are heavy: run them optimised even in Debug, and fully optimised from the
+         first call (no tier-0 code), so CPU figures don't depend on when the JIT tiers up. -->
     <Optimize>true</Optimize>
+    <TieredCompilation>false</TieredCompilation>
   </PropertyGroup>
 
   <ItemGroup>

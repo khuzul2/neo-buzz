@@ -104,7 +104,7 @@ namespace NeoBuzz.Fm6
         public int Tone { get => Values[P.Tone]; set => Values.Set(P.Tone, value); }
 
         [ParameterDecl(Name = "Engine", Description = "Clean: 2× oversampled; Raw: the original's aliasing grit", MinValue = 0, MaxValue = 1, DefValue = 0)]
-        public int Engine { get => Values[P.Engine]; set => Values.Set(P.Engine, value); }
+        public int EngineMode { get => Values[P.EngineMode]; set => Values.Set(P.EngineMode, value); }
 
         [ParameterDecl(Name = "Volume", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 739)]
         public int Volume { get => Values[P.Volume]; set => Values.Set(P.Volume, value); }

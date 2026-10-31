@@ -54,7 +54,7 @@ namespace NeoBuzz.Fm6
 
             var meter = new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 118);
             var output = S("Output", Layout.Row(Layout.Column(
-                new ParamChoice(ctx, P.Engine, cellWidth: 56),
+                new ParamChoice(ctx, P.EngineMode, cellWidth: 56),
                 Layout.Row(new ParamKnob(ctx, P.Tone, diameter: D), new ParamKnob(ctx, P.Volume, diameter: D))), Layout.Gap(6), meter));
 
             var bank = S("DX7 voices", BankPanel(ctx, machine));

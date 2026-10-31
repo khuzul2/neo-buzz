@@ -40,7 +40,7 @@ namespace NeoBuzz.Fm6
         public const int AtPitch = 29;
         public const int AtAmp = 30;
         public const int Tone = 31;
-        public const int Engine = 32;
+        public const int EngineMode = 32;
         public const int Volume = 33;
         public const int O1On = 34;
         public const int O1Level = 35;
@@ -222,7 +222,7 @@ namespace NeoBuzz.Fm6
             new ParamDef(P.AtPitch, "AtPitch", "AT pitch", 0, 99, 0, MapKind.Int, a: 0, b: 0, group: "Controllers", description: "Aftertouch → pitch modulation"),
             new ParamDef(P.AtAmp, "AtAmp", "AT amp", 0, 99, 0, MapKind.Int, a: 0, b: 0, group: "Controllers", description: "Aftertouch → amplitude modulation"),
             new ParamDef(P.Tone, "Tone", "Tone", 0, 1000, 1000, MapKind.Freq, a: 1000, b: 20000, group: "Output", description: "Gentle low-pass on the output (20 kHz: open)"),
-            new ParamDef(P.Engine, "Engine", "Engine", 0, 1, 0, MapKind.Enum, names: new[] { "Clean 2×", "Raw 1×" }, group: "Output", description: "Clean: 2× oversampled; Raw: the original's aliasing grit"),
+            new ParamDef(P.EngineMode, "EngineMode", "Engine", 0, 1, 0, MapKind.Enum, names: new[] { "Clean 2×", "Raw 1×" }, group: "Output", description: "Clean: 2× oversampled; Raw: the original's aliasing grit"),
             new ParamDef(P.Volume, "Volume", "Volume", 0, 1000, 739, MapKind.Db, a: -40, b: 6, flag: true, group: "Output", description: "Output level"),
             new ParamDef(P.O1On, "O1On", "Op1 on", 0, 1, 1, MapKind.Switch, group: "Operator 1", description: "Operator 1 sounds (off: silent, as on the DX7)"),
             new ParamDef(P.O1Level, "O1Level", "Op1 level", 0, 99, 99, MapKind.Int, a: 0, b: 0, group: "Operator 1", description: "Output level (carriers: loudness; modulators: brightness)"),

@@ -383,7 +383,7 @@ namespace NeoBuzz.MachineTests
                 var (e, _) = Make(v =>
                 {
                     v.Set(O(2, P.O1Level), 99);
-                    v.Set(P.Engine, engine);
+                    v.Set(P.EngineMode, engine);
                 });
                 e.NoteOn(0, 96, 1f);
                 var y = Render(e, 8192 + Measure.N);
@@ -406,8 +406,8 @@ namespace NeoBuzz.MachineTests
             for (int k = 0; k < 16; k++) e.NoteOn(k, 40 + 3 * k, 0.8f);
             Render(e, 4800);
             var sw = Stopwatch.StartNew();
-            Render(e, Measure.Rate * 2);
-            double factor = 2.0 / sw.Elapsed.TotalSeconds;
+            Render(e, Measure.Rate * 10);
+            double factor = 10.0 / sw.Elapsed.TotalSeconds;
             Measure.Report($"Neo FM6: 16 voices × 6 operators, Clean 2×: {factor:F1}× real time");
             Assert.That(factor, Is.GreaterThan(2), "a guard; the figure is reported");
         }

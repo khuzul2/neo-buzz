@@ -180,7 +180,7 @@ namespace NeoBuzz.Fm6
             toneR1.Set(Math.Min(s.Tone, sampleRate * 0.45), sampleRate);
             toneR2.Set(Math.Min(s.Tone, sampleRate * 0.45), sampleRate);
 
-            int os = values.Choice(P.Engine) == 0 ? 2 : 1;
+            int os = values.Choice(P.EngineMode) == 0 ? 2 : 1;
             if (os != s.Oversample)
             {
                 s.Oversample = os;
