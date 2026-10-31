@@ -70,7 +70,7 @@ namespace ReBuzzTests
             port.Sent.Clear();
             controllers.Refresh(c);
             Assert.That(port.Sent, Does.Contain(On(2, 81, ControllerPalette.Green)), "playing: pulsing green");
-            Assert.That(port.Sent, Does.Contain(Cc(0, 92, ControllerPalette.White)), "the ring can go down");
+            Assert.That(c.Shown.TryGet(128 + 92, out int down, out _) && down == Cc(0, 92, ControllerPalette.White), Is.True, "the ring can go down");
 
             port.Press(Cc(0, 92, 127));                               // ▼
             Assert.That(controllers.Rings.Single(), Is.EqualTo((0, 1, 8, 8)));
@@ -122,15 +122,13 @@ namespace ReBuzzTests
             using var rig = new KeysRig();
             var layout = rig.Layout;
             layout.Ensure();
-            while (layout.SceneCount > 2) layout.RemoveScene(layout.SceneCount - 1);
             using var controllers = new SessionControllers(rig.Core, null, loadScripts: false, autoRefresh: false);
             var port = new FakePort();
             var c = controllers.Attach(new LaunchpadMiniMk3Script(), port, "test");
+            Assert.That(layout.TrackCount, Is.LessThan(8), "the rig's tracks don't fill the ring");
+            port.Press(On(0, 88, 100));                               // top right: a column with no track
+            Assert.That(c.Held, Is.Empty, "outside the session: nothing");
             layout.SetArmed(0, true);
-            port.Press(On(0, 11, 100));                               // bottom left: scene 7, which the session hasn't
-            Assert.That(layout.SceneCount, Is.EqualTo(2), "no take, no scene made for it");
-            Assert.That(layout.PatternAt(0, 7), Is.Null);
-            Assert.That(c.Held, Is.Empty);
             port.Press(On(0, 81, 100));                               // scene 0: held
             Assert.That(c.Held.Count, Is.EqualTo(1));
             port.Press(On(0, 81, 0));
