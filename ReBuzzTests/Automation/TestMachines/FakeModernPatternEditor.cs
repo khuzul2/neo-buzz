@@ -58,6 +58,32 @@ namespace ReBuzzTests.Automation.TestMachines
             return s;
         }
 
+        // The Session View's clip notes (neo-buzz 0.7.1), as the real editor exchanges them:
+        // int triples (time, note-on, duration) a pattern, kept by name. More than MaxVoices notes
+        // at once don't fit (the real one runs out of tracks).
+        public const int MaxVoices = 4;
+        private readonly Dictionary<string, int[]> clipNotes = new();
+
+        public int[] ExportClipNotes(IPattern pattern)
+        {
+            return pattern != null && clipNotes.TryGetValue(pattern.Name, out var notes) ? (int[])notes.Clone() : new int[0];
+        }
+
+        public bool ImportClipNotes(IPattern pattern, int[] notes)
+        {
+            if (pattern == null) return false;
+            notes ??= new int[0];
+            for (int i = 0; i + 2 < notes.Length; i += 3)
+            {
+                int start = notes[i], end = notes[i] + notes[i + 2], sounding = 0;
+                for (int j = 0; j + 2 < notes.Length; j += 3)
+                    if (notes[j] < end && notes[j] + notes[j + 2] > start) sounding++;
+                if (sounding > MaxVoices) return false;
+            }
+            clipNotes[pattern.Name] = (int[])notes.Clone();
+            return true;
+        }
+
         // actual machine ends here. the stuff below demonstrates some other features of the api.
 
         public class State : INotifyPropertyChanged

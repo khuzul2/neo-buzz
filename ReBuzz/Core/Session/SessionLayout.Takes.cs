@@ -176,6 +176,13 @@ namespace ReBuzz.Core.Session
 
         int BarTicks => Math.Max(1, buzz.TPB) * Math.Max(1, Session.BeatsPerBar);
 
+        /// <summary>A take recorded until stopped starts with room for this many bars, and grows by as many when it nears its end (0.7.1).</summary>
+        public const int TakeRoomBars = 64;
+        /// <summary>A take recorded until stopped grows while fewer than this many bars are left.</summary>
+        const int TakeGrowMarginBars = 8;
+        /// <summary>The longest take, in bars.</summary>
+        public const int MaxTakeBars = 4096;
+
         /// <summary>
         /// Records a new take into an empty slot of an armed track: a new pattern there (the
         /// record length, or the longest take while recording until stopped), launched on the
@@ -193,7 +200,7 @@ namespace ReBuzz.Core.Session
             var doc = Ensure();
             int bar = BarTicks;
             int bars = doc.RecordBars;
-            int length = (bars > 0 ? bars : SessionDocument.MaxRecordBars) * bar;
+            int length = (bars > 0 ? bars : TakeRoomBars) * bar;
 
             StopRecording(seq);
             PatternCore take;
@@ -323,6 +330,23 @@ namespace ReBuzz.Core.Session
             return r.LastHeard >= 0 ? r.LastHeard : long.MaxValue;
         }
 
+        /// <summary>
+        /// A take recorded until stopped nearing the end of its room grows (0.7.1): longer by
+        /// <see cref="TakeRoomBars"/>, so it never wraps onto itself. Lengthening a playing clip
+        /// keeps its position; the record window moves its end with it.
+        /// </summary>
+        void Grow(Recording r, long elapsedTicks)
+        {
+            int bar = BarTicks;
+            if (r.FirstPassTicks - elapsedTicks >= (long)TakeGrowMarginBars * bar || r.FirstPassTicks >= MaxTakeBars * bar) return;
+            int grown = (int)Math.Min((long)r.FirstPassTicks + (long)TakeRoomBars * bar, (long)MaxTakeBars * bar);
+            r.Take.Length = grown;
+            r.FirstPassTicks = grown;
+            var w = r.Window;
+            r.Window = new SessionCore.RecordWindow(w.Track, w.Take, grown, w.From, w.Until, w.ThenOverdub);
+            PublishWindows();
+        }
+
         /// <summary>A take recorded until stopped gets the bars it recorded, rounded up (at least one).</summary>
         void Trim(Recording r, long end)
         {
@@ -332,7 +356,7 @@ namespace ReBuzz.Core.Session
             long ticks = r.Start >= 0 && end != long.MaxValue
                 ? Math.Max(1, (end + TakeTime.TimeBase - 1) / TakeTime.TimeBase - r.Start)
                 : bar;
-            long bars = Math.Clamp((ticks + bar - 1) / bar, 1, SessionDocument.MaxRecordBars);
+            long bars = Math.Clamp((ticks + bar - 1) / bar, 1, MaxTakeBars);
             if (r.Take.Length != bars * bar)
                 r.Take.Length = (int)(bars * bar);
         }
@@ -482,6 +506,8 @@ namespace ReBuzz.Core.Session
                     continue;
                 }
                 r.Start = start;
+                if (r.UntilStopped && now >= 0)
+                    Grow(r, now / TakeTime.TimeBase - start);
                 long passEnd = (start + r.FirstPassTicks) * TakeTime.TimeBase;
                 if (now >= passEnd)
                 {
@@ -523,7 +549,7 @@ namespace ReBuzz.Core.Session
             var engine = Engine;
             if (engine == null) return made;
             long now = engine.HeardTimeNow();
-            if (now < 0) return made;
+            if (now < 0) return CaptureWhileStopped(scene);
             var doc = Ensure();
             int bar = BarTicks;
             long origin = engine.BarGridOrigin;
@@ -594,6 +620,78 @@ namespace ReBuzz.Core.Session
                 if (sessionRecord)
                     foreach (var seq in armed)
                         if (!recordings.ContainsKey(seq)) BeginOverdub(seq);
+                RecordingChanged?.Invoke();
+            }
+            return made;
+        }
+
+        /// <summary>
+        /// Capture MIDI with the transport stopped (0.7.1, Live's): each armed track's phrase,
+        /// timed by when it was played at the current tempo, becomes a clip from its first note,
+        /// 1, 2, 4 or 8 bars long (later notes are left out). It doesn't start playing.
+        /// </summary>
+        IReadOnlyList<IPattern> CaptureWhileStopped(int scene)
+        {
+            var made = new List<IPattern>();
+            var engine = Engine;
+            var doc = Ensure();
+            int bar = BarTicks;
+            double ticksPerSecond = Math.Max(1, buzz.BPM) * Math.Max(1, buzz.TPB) / 60.0;
+            double frequency = System.Diagnostics.Stopwatch.Frequency;
+
+            UndoStack.BeginActionGroup();
+            try
+            {
+                foreach (var seq in engine.ArmedTracks.ToList())
+                {
+                    var played = engine.TakeCapturedWhileStopped(seq);
+                    int first = played.FindIndex(m => (m.Data & 0xF0) == 0x90 && ((m.Data >> 16) & 0x7F) > 0);
+                    if (first < 0) continue;
+                    long t0 = played[first].Wall;
+                    long TimeOf(long wall) => (long)Math.Round((wall - t0) / frequency * ticksPerSecond * TakeTime.TimeBase);
+                    long last = TimeOf(played[^1].Wall);
+                    long span = last / TakeTime.TimeBase + 1;
+                    int bars = 1;
+                    while (bars < MaxCaptureBars && (long)bars * bar < span) bars *= 2;
+                    int length = bars * bar;
+                    long room = (long)length * TakeTime.TimeBase;
+
+                    int track = -1;
+                    for (int t = 0; t < doc.Tracks.Count && track < 0; t++)
+                        if (ReferenceEquals(SequenceOf(t), seq)) track = t;
+                    if (track < 0 || seq.Machine?.GetNewPatternName() is not string name) continue;
+                    int s = Math.Max(0, scene);
+                    while (s < doc.Scenes.Count && PatternAt(track, s) != null) s++;
+                    if (s >= doc.Scenes.Count) InsertScene(doc.Scenes.Count);
+
+                    var create = new SessionCreatePatternAction(this, seq.Machine, name, length, midiColumn: true);
+                    UndoStack.Do(create);
+                    if (create.Created is not PatternCore clip) continue;
+                    int slot = s;
+                    Edit(d => d.SetSlot(track, slot, clip.Name));
+
+                    var writer = new TakeWriter();
+                    takeEvents.Clear();
+                    foreach (var (wall, data) in played.Skip(first))
+                    {
+                        long time = TimeOf(wall);
+                        bool release = (data & 0xF0) == 0x80 || ((data & 0xF0) == 0x90 && ((data >> 16) & 0x7F) == 0);
+                        if (time >= room && !release) continue;          // past the clip: left out (a release ends its note)
+                        writer.Add(new TakeStamp(data, time, (int)Math.Clamp(time, 0, room - 1), (int)room), takeEvents);
+                    }
+                    writer.CloseAll(Math.Min(last, room), takeEvents);
+                    EnsureMidiColumn(clip)?.SetEvents(takeEvents.Select(e => new PatternEvent(e.Time, e.Value, e.Duration)).ToArray(), true);
+                    takeEvents.Clear();
+                    made.Add(clip);
+                }
+            }
+            finally
+            {
+                UndoStack.EndActionGroup();
+            }
+            if (made.Count > 0)
+            {
+                buzz.SetModifiedFlag();
                 RecordingChanged?.Invoke();
             }
             return made;

@@ -73,6 +73,11 @@ namespace ReBuzz.ManagedMachine
 
         private delegate void SetPatternEditorMachineMIDIEventsDelegate(IPattern pattern, int[] data);
 
+        // Fork (neo-buzz 0.7.1): a pattern editor's MIDI note lanes as notes, and back (the Session View).
+        private delegate int[] ExportClipNotesDelegate(IPattern pattern);
+
+        private delegate bool ImportClipNotesDelegate(IPattern pattern, int[] notes);
+
         private delegate IEnumerable<IPatternEditorColumn> GetPatternEditorEventsDelegate(IPattern pattern, int tbegin, int tend);
 
         private delegate void ActivateDelegate();
@@ -136,6 +141,10 @@ namespace ReBuzz.ManagedMachine
         private GetPatternEditorMachineMIDIEventsDelegate GetPatternEditorMachineMIDIEventsFunction;
 
         private SetPatternEditorMachineMIDIEventsDelegate SetPatternEditorMachineMIDIEventsFunction;
+
+        private ExportClipNotesDelegate ExportClipNotesFunction;
+
+        private ImportClipNotesDelegate ImportClipNotesFunction;
 
         private GetPatternEditorEventsDelegate GetPatternEditorEventsFunction;
 
@@ -251,6 +260,8 @@ namespace ReBuzz.ManagedMachine
             ExecuteCommandFunction = (ExecuteCommandDelegate)GetMethod(typeof(ExecuteCommandDelegate), "ExecuteCommand");
             GetPatternEditorMachineMIDIEventsFunction = (GetPatternEditorMachineMIDIEventsDelegate)GetMethod(typeof(GetPatternEditorMachineMIDIEventsDelegate), "GetPatternEditorMachineMIDIEvents");
             SetPatternEditorMachineMIDIEventsFunction = (SetPatternEditorMachineMIDIEventsDelegate)GetMethod(typeof(SetPatternEditorMachineMIDIEventsDelegate), "SetPatternEditorMachineMIDIEvents");
+            ExportClipNotesFunction = (ExportClipNotesDelegate)GetMethod(typeof(ExportClipNotesDelegate), "ExportClipNotes");
+            ImportClipNotesFunction = (ImportClipNotesDelegate)GetMethod(typeof(ImportClipNotesDelegate), "ImportClipNotes");
             GetPatternEditorEventsFunction = (GetPatternEditorEventsDelegate)GetMethod(typeof(GetPatternEditorEventsDelegate), "GetPatternEditorEvents");
             DescribeValueFunction = (DescribeValueDelegate)GetMethod(typeof(DescribeValueDelegate), "DescribeValue");
             ActivateFunction = (ActivateDelegate)GetMethod(typeof(ActivateDelegate), "Activate");
@@ -672,6 +683,15 @@ namespace ReBuzz.ManagedMachine
                 SetPatternEditorMachineMIDIEventsFunction(pattern, data);
             }
         }
+
+        /// <summary>Fork (0.7.1): whether this pattern editor exchanges clip notes with the Session View.</summary>
+        internal bool HasClipNotes => ExportClipNotesFunction != null && ImportClipNotesFunction != null;
+
+        internal int[] ExportClipNotes(PatternCore pattern) =>
+            ExportClipNotesFunction != null ? ExportClipNotesFunction(pattern) ?? new int[0] : null;
+
+        internal bool ImportClipNotes(PatternCore pattern, int[] notes) =>
+            ImportClipNotesFunction != null && ImportClipNotesFunction(pattern, notes);
 
         internal IEnumerable<IPatternEditorColumn> GetPatternCloumnEvents(PatternCore pattern, int tbegin, int tend)
         {

@@ -23,6 +23,8 @@
     <Compile Include="..\ReBuzz\Core\Session\SessionDocument.cs" Link="Engine\SessionDocument.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionMidiMap.cs" Link="Engine\SessionMidiMap.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionTake.cs" Link="Engine\SessionTake.cs" />
+    <Compile Include="..\ReBuzz\Core\Session\ClipNotes.cs" Link="Engine\ClipNotes.cs" />
+    <Compile Include="..\ReBuzzGUI\BuzzGUI.Common\TrackerNotes.cs" Link="Engine\TrackerNotes.cs" />
   </ItemGroup>
 
   <ItemGroup>

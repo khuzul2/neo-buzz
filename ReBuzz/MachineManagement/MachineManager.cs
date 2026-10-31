@@ -1173,6 +1173,22 @@ namespace ReBuzz.MachineManagement
             return new int[0];
         }
 
+        /// <summary>Fork (0.7.1): the machine's pattern editor, if it exchanges clip notes with the Session View.</summary>
+        ManagedMachineHost ClipNotesEditor(MachineCore machine)
+        {
+            var editor = machine?.EditorMachine;
+            return editor != null && managedMachines.TryGetValue(editor, out var host) && host.HasClipNotes ? host : null;
+        }
+
+        internal bool HasClipNotesEditor(MachineCore machine) => ClipNotesEditor(machine) != null;
+
+        /// <summary>Fork (0.7.1): the notes of the pattern's MIDI note lanes in its editor (triples), or null.</summary>
+        internal int[] ExportClipNotes(MachineCore machine, PatternCore pattern) => ClipNotesEditor(machine)?.ExportClipNotes(pattern);
+
+        /// <summary>Fork (0.7.1): replaces the notes of the pattern's MIDI note lanes in its editor; false if some didn't fit.</summary>
+        internal bool ImportClipNotes(MachineCore machine, PatternCore pattern, int[] notes) =>
+            ClipNotesEditor(machine)?.ImportClipNotes(pattern, notes) == true;
+
         internal void SetPatternEditorMachineMIDIEvents(MachineCore machine, PatternCore pattern, int[] data)
         {
             var editor = machine.EditorMachine;

@@ -1044,6 +1044,31 @@ namespace WDE.ModernPatternEditor
             }
         }
 
+        // Fork (neo-buzz 0.7.1): a pattern's MIDI note lanes as notes, and back (the Session View).
+        public int[] ExportClipNotes(IPattern pat)
+        {
+            lock (syncLock)
+            {
+                return pat == null ? new int[0] : PatternEditorUtils.ExportClipNotes(MPEPatternsDB.GetMPEPattern(pat));
+            }
+        }
+
+        public bool ImportClipNotes(IPattern pat, int[] data)
+        {
+            if (pat == null) return false;
+            bool done;
+            lock (syncLock)
+            {
+                done = PatternEditorUtils.ImportClipNotes(MPEPatternsDB.GetMPEPattern(pat), data);
+            }
+            // The pattern shown here shows its lanes as they are now.
+            var shown = SelectedMachine?.SelectedPattern;
+            if (shown != null && shown.Pattern == pat)
+                shown.Pattern = pat;
+            SetModifiedFlag();
+            return done;
+        }
+
         public bool ImportMidiEvents(IPattern pat, int [] data)
         {
             lock (syncLock)
