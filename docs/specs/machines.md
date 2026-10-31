@@ -176,3 +176,5 @@ Each phase: pure tests (Linux CI), integration tests in ReBuzzTests (the machine
 ## 7. Not in this batch
 
 Additive and physical-modelling synths, convolution, tape delay, ensemble/phaser, multiband, limiter: candidates for the next batch.
+
+The MCP server spec (docs/specs/mcp-server.md §8) sets the next batch's priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak), Neo Utility and Neo Analyzer first; then Neo Delay, Neo Multiband, Neo Scope and Neo Sampler. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.
