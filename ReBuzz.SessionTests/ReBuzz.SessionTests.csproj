@@ -30,6 +30,11 @@
     <Compile Include="..\ReBuzz\Core\Sync\SyncClock.cs" Link="Engine\SyncClock.cs" />
     <Compile Include="..\ReBuzz\Core\Control\ControlSurface.cs" Link="Engine\ControlSurface.cs" />
     <Compile Include="..\ReBuzz\Core\Control\BuiltInScripts.cs" Link="Engine\BuiltInScripts.cs" />
+    <Compile Include="..\ReBuzz\Core\Clips\AudioClip.cs" Link="Engine\AudioClip.cs" />
+    <Compile Include="..\ReBuzz\Core\Clips\AudioAnalysis.cs" Link="Engine\AudioAnalysis.cs" />
+    <Compile Include="..\ReBuzz\Core\Clips\ClipVoice.cs" Link="Engine\ClipVoice.cs" />
+    <Compile Include="..\ReBuzz\Core\Clips\Fft.cs" Link="Engine\Fft.cs" />
+    <Compile Include="..\ReBuzz\Core\Clips\PhaseVocoder.cs" Link="Engine\PhaseVocoder.cs" />
   </ItemGroup>
 
   <ItemGroup>
