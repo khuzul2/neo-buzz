@@ -15,8 +15,15 @@ namespace ReBuzz.Core.Sync
         /// <summary>The clock's beat line now, if there is one to follow (Link with peers, MIDI clock running).</summary>
         bool TryGetTimeline(out Timeline timeline);
 
-        /// <summary>The beats phases match over: Link's quantum (the session's bar); 1 for MIDI clock, which has no bars.</summary>
+        /// <summary>The beats phases match over: the session's bar (Link's quantum; MIDI clock's bars count from its Start).</summary>
         double QuantumFor(int beatsPerBar);
+
+        /// <summary>
+        /// How late (in beats) a start may land and catch up instead of waiting a bar: 0 for Link
+        /// (Live waits for the bar line); a little for MIDI clock, whose beat 0 is one pulse after
+        /// its Start, nearly always sooner than a start can be heard.
+        /// </summary>
+        double CatchUpBeats { get; }
 
         /// <summary>
         /// The earliest a start may be heard, from <paramref name="heardMicros"/> (the earliest it
@@ -39,6 +46,8 @@ namespace ReBuzz.Core.Sync
         long frames;
         double lastCallback = double.NaN;
         double errorMicros = double.NaN;
+        double startedHeard = double.NaN;
+        bool wasPlaying;
         volatile ISyncSource source;
         bool startDue = true;
         bool following;
@@ -51,6 +60,9 @@ namespace ReBuzz.Core.Sync
 
         /// <summary>How far ahead of the clock followed the last tick started, in µs (behind if negative); NaN when not following.</summary>
         public double ErrorMicros => Volatile.Read(ref errorMicros);
+
+        /// <summary>When the transport's last start was heard (host µs; NaN before one).</summary>
+        public double StartedHeardMicros => Volatile.Read(ref startedHeard);
 
         /// <summary>Whether the last tick followed a clock.</summary>
         public bool IsFollowing => Volatile.Read(ref following);
@@ -108,6 +120,8 @@ namespace ReBuzz.Core.Sync
 
             if (playing && clock >= 0)
             {
+                if (!wasPlaying) Volatile.Write(ref startedHeard, heard);
+                wasPlaying = true;
                 int length = nominal;
                 double barBeat = (clock - gridOrigin) / (double)ticksPerBeat;
                 if (follow)
@@ -122,6 +136,7 @@ namespace ReBuzz.Core.Sync
                 return length;
             }
 
+            wasPlaying = false;
             Ours.Clear();
             Volatile.Write(ref errorMicros, double.NaN);
             if (!follow)
@@ -131,9 +146,25 @@ namespace ReBuzz.Core.Sync
             }
             // Following: a start waits until the clock's phase is the session's at its start
             // position (bars count from 0 when the transport starts), and a tick ends right then.
-            double from = Math.Max(heard + slope, src.EarliestStart(external, heard));      // a sample ahead at least
+            double earliest = src.EarliestStart(external, heard);
+            double from = Math.Max(heard + slope, earliest);      // a sample ahead at least
             double fromBeat = external.BeatAt(from);
             double startPhase = SyncMath.Mod(Math.Max(0, startClock) / (double)ticksPerBeat, quantum);
+            double catchUp = src.CatchUpBeats;
+            if (startPending && catchUp > 0)
+            {
+                // Starting at this tick's end lands a little late: start, and the lock catches up.
+                double end = heard + nominal * slope;
+                if (end >= earliest)
+                {
+                    double late = SyncMath.Wrap(external.BeatAt(end) - startPhase, quantum);
+                    if (late >= 0 && late <= catchUp)
+                    {
+                        startDue = true;
+                        return nominal;
+                    }
+                }
+            }
             double target = external.MicrosAt(fromBeat + SyncMath.Mod(startPhase - fromBeat, quantum));
             double remaining = (target - heard) / slope;
             if (remaining < 0.5)

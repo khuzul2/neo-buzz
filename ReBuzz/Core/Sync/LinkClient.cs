@@ -154,6 +154,9 @@ namespace ReBuzz.Core.Sync
         /// <summary>Phases match over the session's bar (Link's quantum).</summary>
         public double QuantumFor(int beatsPerBar) => beatsPerBar;
 
+        /// <summary>A start waits for Link's phase, as Live's does.</summary>
+        public double CatchUpBeats => 0;
+
         /// <summary>A start may be heard at once; it waits for Link's phase (Live's: the next bar line from a bar's start).</summary>
         public double EarliestStart(in Timeline line, double heardMicros) => heardMicros;
 

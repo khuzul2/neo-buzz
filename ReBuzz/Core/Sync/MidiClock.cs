@@ -73,7 +73,7 @@ namespace ReBuzz.Core.Sync
         {
             if (!double.IsNaN(lastMicros) && (micros - lastMicros > GapMicros || micros < lastMicros)) fit.Reset();
             lastMicros = micros;
-            pulse++;
+            if (running) pulse++;            // stopped, the position holds (Continue goes on from it)
             count++;
             // The fit runs on the pulse count, so a Start or a position (which move the beat) doesn't bend it.
             fit.Add(count, micros);
@@ -114,8 +114,12 @@ namespace ReBuzz.Core.Sync
 
         enum Phase { Stopped, Positioned, Running }
 
+        /// <summary>The Song Position Pointer's range: 14 bits of 16ths.</summary>
+        public const long MaxSixteenth = 0x3FFF;
+
         Phase phase;
         long next;
+        long positioned;                     // the pulse a position message points at (unwrapped)
 
         public bool IsRunning => phase == Phase.Running;
 
@@ -139,14 +143,28 @@ namespace ReBuzz.Core.Sync
                         at = Math.Max(now, ours.MicrosAt(0) - StartLead);
                         return Start;
                     }
-                    // Joined while playing: the position (to the next 16th), then Continue there.
+                    // Joined while playing (or the line jumped): the position (to the next 16th),
+                    // then Continue there. Past the pointer's range: Continue without it.
                     at = now;
                     long sixteenth = (first + 5) / 6;
+                    positioned = sixteenth * 6;
+                    if (sixteenth > MaxSixteenth)
+                    {
+                        at = Math.Max(now, ours.MicrosAt(positioned / (double)PulsesPerBeat) - StartLead);
+                        return Continue;
+                    }
                     return SongPosition | (int)((sixteenth & 0x7F) << 8) | (int)(((sixteenth >> 7) & 0x7F) << 16);
                 case Phase.Positioned:
                     at = Math.Max(now, ours.MicrosAt(next / (double)PulsesPerBeat) - StartLead);
                     return Continue;
                 default:
+                    // The line jumped (a restart, a loop of the song) by more than a beat: stop, and
+                    // start again from where it is now.
+                    if (Math.Abs(ours.BeatAt(now) * PulsesPerBeat - next) > PulsesPerBeat)
+                    {
+                        at = now;
+                        return Stop;
+                    }
                     at = ours.MicrosAt(next / (double)PulsesPerBeat);
                     return Clock;
             }
@@ -166,10 +184,10 @@ namespace ReBuzz.Core.Sync
                     break;
                 case SongPosition:
                     phase = Phase.Positioned;
-                    long sixteenth = ((message >> 8) & 0x7F) | (((message >> 16) & 0x7F) << 7);
-                    next = sixteenth * 6;
+                    next = positioned;
                     break;
                 case Continue:
+                    if (phase != Phase.Positioned) next = positioned;          // past the pointer's range: no position sent
                     phase = Phase.Running;
                     break;
                 case Clock:

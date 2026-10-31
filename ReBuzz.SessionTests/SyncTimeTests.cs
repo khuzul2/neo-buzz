@@ -160,9 +160,12 @@ namespace ReBuzz.SessionTests
             public Timeline Line;
             public bool Has = true;
             public double Quantum = Bpb;
+            public double CatchUp;
+            public double Earliest = double.NaN;
             public bool TryGetTimeline(out Timeline t) { t = Line; return Has; }
             public double QuantumFor(int beatsPerBar) => Quantum;
-            public double EarliestStart(in Timeline t, double heard) => heard;
+            public double CatchUpBeats => CatchUp;
+            public double EarliestStart(in Timeline t, double heard) => double.IsNaN(Earliest) ? heard : Math.Max(heard, Earliest);
         }
 
         const int Rate = 48000, Tpb = 4, Bpb = 4, Buffer = 256;
@@ -261,15 +264,22 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
-        public void MidiClockLocksBeatsNotBars()
+        public void AStartAlittleLateForMidiClocksBeatZeroCatchesUpInsteadOfWaitingABar()
         {
-            var source = new FakeSource { Line = new Timeline(1e9, 0, 120), Quantum = 1 };
-            var e = new Engine { PlayRequested = true };
+            // MIDI clock: Start came, beat 0 is the next pulse, which the session can't be heard by.
+            var e = new Engine();
+            var source = new FakeSource { CatchUp = 0.25 };
             e.Sync.Source = source;
-            for (int i = 0; i < 400; i++) e.Callback();
+            for (int i = 0; i < 20; i++) e.Callback();
+            double zero = e.Heard(e.Frames) - 5_000;                 // beat 0 was 5 ms before the earliest start
+            source.Line = new Timeline(zero, 0, 120);
+            source.Earliest = zero;
+            e.PlayRequested = true;
+            for (int i = 0; i < 400 && !e.Playing; i++) e.Callback();
             Assert.That(e.Playing, Is.True);
-            double phase = SyncMath.Mod(source.Line.BeatAt(e.StartedHeard), 1);
-            Assert.That(phase < 0.001 || phase > 0.999, Is.True, $"started on a beat: {phase}");
+            Assert.That(e.StartedHeard - zero, Is.LessThan(150_000), "started at once (within a tick), not a bar later");
+            for (int i = 0; i < 3 * Rate / Buffer; i++) e.Callback();          // 3 s
+            Assert.That(Math.Abs(e.Sync.ErrorMicros), Is.LessThan(1000), "caught up, in the bar the clock counts from Start");
         }
 
         [Test]
@@ -389,6 +399,60 @@ namespace ReBuzz.SessionTests
             m = tx.Peek(true, ours, at, out at);
             Assert.That(m, Is.EqualTo(MidiClockSender.Clock));
             Assert.That(Math.Abs(at - ours.MicrosAt(2.5)), Is.LessThan(0.01));
+        }
+
+        [Test]
+        public void PulsesWhileStoppedDontMoveThePosition()
+        {
+            var rx = new MidiClockReceiver();
+            double t = 1e9;
+            rx.OnMessage(0xF2 | (8 << 8), t);                            // beat 2
+            for (int i = 0; i < 37; i++, t += Pulse120) rx.OnMessage(0xF8, t);
+            Assert.That(rx.NextBeat, Is.EqualTo(2), "a free-running clock while stopped keeps the position");
+            rx.OnMessage(0xFB, t);
+            rx.OnMessage(0xF8, t);
+            rx.Timeline.TryRead(out var line);
+            Assert.That(Math.Abs(line.BeatAt(t) - 2), Is.LessThan(0.001), "Continue goes on from it");
+        }
+
+        [Test]
+        public void WhenTheBeatLineJumpsClockOutStopsAndGoesOnFromWhereItIs()
+        {
+            var tx = new MidiClockSender();
+            var ours = new Timeline(2e9, 0, 120);
+            double at = 0;
+            int m = tx.Peek(true, ours, 2e9 - 50_000, out at);
+            tx.Sent(m, ours, at);
+            for (int p = 0; p < 48; p++)
+            {
+                m = tx.Peek(true, ours, at, out at);
+                tx.Sent(m, ours, at);
+            }
+            // The line jumped (a restart elsewhere in the song).
+            var looped = new Timeline(at, 26, 120);                        // 26 beats on, where the clock had sent 2
+            m = tx.Peek(true, looped, at, out at);
+            Assert.That(m, Is.EqualTo(MidiClockSender.Stop), "a jump: Stop");
+            tx.Sent(m, looped, at);
+            m = tx.Peek(true, looped, at, out at);
+            Assert.That(m & 0xFF, Is.EqualTo(MidiClockSender.SongPosition), "then where it is");
+            int sixteenth = ((m >> 8) & 0x7F) | (((m >> 16) & 0x7F) << 7);
+            Assert.That(sixteenth, Is.EqualTo(26 * 4), "the 16th it is at");
+            tx.Sent(m, looped, at);
+            Assert.That(tx.Peek(true, looped, at, out _), Is.EqualTo(MidiClockSender.Continue));
+        }
+
+        [Test]
+        public void PastTheSongPositionsRangeClockOutContinuesWithoutOne()
+        {
+            var tx = new MidiClockSender();
+            var ours = new Timeline(2e9, 0, 120);
+            double now = ours.MicrosAt(5000);                              // 20,000 16ths in: past 16,383
+            int m = tx.Peek(true, ours, now, out double at);
+            Assert.That(m, Is.EqualTo(MidiClockSender.Continue));
+            tx.Sent(m, ours, at);
+            m = tx.Peek(true, ours, at, out at);
+            Assert.That(m, Is.EqualTo(MidiClockSender.Clock));
+            Assert.That(Math.Abs(at - ours.MicrosAt(5000)), Is.LessThan(0.01), "on, from where it is, not a burst");
         }
 
         [Test]
