@@ -36,19 +36,20 @@ namespace NeoBuzz.Fm6
 
             // Pitch envelope.
             var peg = S("Pitch envelope", Layout.Column(
-                EnvelopeView(ctx, P.PegR1, P.PegL1, 4 * SmallWidth, 52, true),
-                Compact(ctx, 4, P.PegR1, "R1", P.PegR2, "R2", P.PegR3, "R3", P.PegR4, "R4"),
-                Compact(ctx, 4, P.PegL1, "L1", P.PegL2, "L2", P.PegL3, "L3", P.PegL4, "L4")));
+                EnvelopeView(ctx, P.PegR1, P.PegL1, 4 * 54, 52, true),
+                CompactW(ctx, 4, 54, P.PegR1, "R1", P.PegR2, "R2", P.PegR3, "R3", P.PegR4, "R4"),
+                CompactW(ctx, 4, 54, P.PegL1, "L1", P.PegL2, "L2", P.PegL3, "L3", P.PegL4, "L4")));
 
             // LFO and controllers.
             var lfo = S("LFO", Layout.Column(
                 Layout.Row(new ParamDropdown(ctx, P.LfoWave, width: 96), Layout.Gap(6), new ParamChoice(ctx, P.LfoSync, "Key sync", 34)),
-                Compact(ctx, 3, P.LfoSpeed, "Speed", P.LfoDelay, "Delay", P.PitchSens, "P sens",
-                                P.LfoPmd, "Pitch", P.LfoAmd, "Amp"),
+                CompactW(ctx, 3, 64, P.LfoSpeed, "Speed", P.LfoDelay, "Delay", P.PitchSens, "P sens",
+                                     P.LfoPmd, "Pitch", P.LfoAmd, "Amp"),
                 Compact(ctx, 4, P.WheelPitch, "Whl P", P.WheelAmp, "Whl A", P.AtPitch, "AT P", P.AtAmp, "AT A")));
 
             var voice = S("Voice", Layout.Column(
-                Layout.Row(new ParamChoice(ctx, P.VoiceMode, cellWidth: 48), Layout.Gap(6), new ParamChoice(ctx, P.GlideMode, cellWidth: 48)),
+                new ParamChoice(ctx, P.VoiceMode, cellWidth: 52),
+                new ParamChoice(ctx, P.GlideMode, cellWidth: 52),
                 Compact(ctx, 4, P.Polyphony, "Poly", P.Unison, "Unison", P.UniDetune, "Detune", P.UniSpread, "Spread",
                                 P.Glide, "Glide", P.BendRange, "Bend", P.Transpose, "Transp")));
 
@@ -69,11 +70,14 @@ namespace NeoBuzz.Fm6
         }
 
         /// <summary>Small knobs with short labels, <paramref name="columns"/> to a row: (parameter, label) pairs.</summary>
-        static UniformGrid Compact(EditorContext ctx, int columns, params object[] pairs)
+        static UniformGrid Compact(EditorContext ctx, int columns, params object[] pairs) => CompactW(ctx, columns, SmallWidth, pairs);
+
+        /// <summary>As <see cref="Compact"/>, with cells <paramref name="width"/> wide (for longer value texts).</summary>
+        static UniformGrid CompactW(EditorContext ctx, int columns, double width, params object[] pairs)
         {
             var g = new UniformGrid { Columns = columns, HorizontalAlignment = HorizontalAlignment.Left };
             for (int i = 0; i + 1 < pairs.Length; i += 2)
-                g.Children.Add(new ParamKnob(ctx, (int)pairs[i], (string)pairs[i + 1], Small) { Width = SmallWidth });
+                g.Children.Add(new ParamKnob(ctx, (int)pairs[i], (string)pairs[i + 1], Small) { Width = width });
             return g;
         }
 
@@ -129,10 +133,9 @@ namespace NeoBuzz.Fm6
                 Compact(ctx, 4, Op(op, P.O1L1), "L1", Op(op, P.O1L2), "L2", Op(op, P.O1L3), "L3", Op(op, P.O1L4), "L4"));
 
             var scaling = Layout.Column(
-                ScalingView(ctx, op, 2 * SmallWidth + 8, 46),
-                Compact(ctx, 2, Op(op, P.O1Break), "Break", Op(op, P.O1RateSc), "Rate sc",
-                                Op(op, P.O1LDepth), "L dep", Op(op, P.O1RDepth), "R dep",
-                                Op(op, P.O1LCurve), "L crv", Op(op, P.O1RCurve), "R crv"));
+                ScalingView(ctx, op, 3 * SmallWidth, 46),
+                Compact(ctx, 3, Op(op, P.O1Break), "Break", Op(op, P.O1LDepth), "L dep", Op(op, P.O1RDepth), "R dep",
+                                Op(op, P.O1RateSc), "Rate sc", Op(op, P.O1LCurve), "L crv", Op(op, P.O1RCurve), "R crv"));
 
             return new Section($"Operator {op + 1}", AccentColor, Layout.Column(
                 top,

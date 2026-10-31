@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Status | Draft v1 — M0 foundation, M1 effects, M2 synths in progress |
-| Date | 2026-10-31 |
+| Status | v1 — core six built (M0–M2): measured values below are from Linux CI, 2026-11-01 |
+| Date | 2026-11-01 |
 | Scope | New high-quality machines for sound design, written in C# with custom editors: first batch "core six" |
 
 ---
@@ -87,27 +87,27 @@ Drive → pre-emphasis → oversampled shaper with first-order anti-derivative a
 
 Modes: **Tape** (pre/de-emphasis, soft symmetric curve, head bump), **Tube** (asymmetric, bias that sags with level → even harmonics), **Transistor** (harder knee), **Diode** (asymmetric exponential), **Fold** (sine wavefolder). Parameters: Mode, Drive (0–36 dB), Bias, Character, Tone, Low cut, Output, Auto gain, Mix, Quality (2×/4×/8×).
 
-| Criterion | Target |
-|---|---|
-| Alias floor, 3.1 kHz sine at +30 dB drive, Transistor, 4× | ≤ −90 dB |
-| Mix 0 % | output equals the input delayed by the reported latency |
-| Drive 0 dB, Tape/Tube/Transistor | THD ≤ 1 % at −12 dBFS |
-| Tube | 2nd harmonic ≥ 3rd harmonic (even-order character) |
-| Auto gain | output RMS within ±1.5 dB of input across 0–36 dB drive (pink noise) |
-| Latency | constant across Quality settings, reported to ReBuzz |
+| Criterion | Target | Measured |
+|---|---|---|
+| Alias floor, 3.1 kHz sine at +30 dB drive, Transistor, 4× | ≤ −90 dB | −100.2 dB (Tape −96.2, Tube −91.0, Diode −105.1, Fold −130.0; Transistor 2× −77.1, 8× −123.5) |
+| Mix 0 % | output equals the input delayed by the reported latency | passes |
+| Drive 0 dB, −12 dBFS | THD ≤ 1 % (Tube ≤ 2 %: its even-order character is the point) | Tape 0.34 %, Transistor 0.37 %, Tube 1.44 % |
+| Tube | 2nd harmonic ≥ 3rd harmonic (even-order character) | passes |
+| Auto gain | output RMS within ±1.5 dB of input across 0–36 dB drive (pink noise; Fold to 24 dB) | passes |
+| Latency | constant across Quality settings, reported to ReBuzz | 62 samples at every setting; ReBuzz sees it |
 
 ### Neo Comp (compressor)
 
 Log-domain gain computer with soft knee; modes: **Clean** (feed-forward VCA, peak/RMS), **Glue** (bus VCA, stepped ratios, auto release), **FET** (feedback, very fast attack, program-dependent release, light harmonics), **Opto** (program-dependent attack, two-stage release). Parameters: Mode, Threshold, Ratio, Knee, Attack, Release, Auto release, Makeup, Auto makeup, Lookahead, SC low cut, Stereo link, Character, Mix, Output, Sidechain (internal/external input 2).
 
-| Criterion | Target |
-|---|---|
-| Static curve (Clean, ratio 4, knee 0, threshold −20 dB, steady sine) | within ±0.25 dB of ideal from −60 to 0 dBFS |
-| Attack / release (Clean) | time to 63 % of the gain change within ±10 % of the setting |
-| Below threshold (Clean, Character 0) | THD+N ≤ −100 dB |
-| Stereo link 100 % | identical gain on both channels |
-| Mix 0 % | output equals the input delayed by the latency |
-| Lookahead | peaks above threshold are caught (overshoot ≤ 1 dB with ratio ∞, attack 0) |
+| Criterion | Target | Measured |
+|---|---|---|
+| Static curve (Clean, ratio 4, knee 0, threshold −20 dB, steady sine) | within ±0.25 dB of ideal from −60 to 0 dBFS | 0.015 dB (FET 0.015, Glue 0.073) |
+| Attack / release (Clean) | time to 63 % of the gain change within ±10 % of the setting | within 0.5 % (1 ms … 2 s) |
+| Below threshold (Clean, Character 0) | THD+N ≤ −100 dB | passes |
+| Stereo link 100 % | identical gain on both channels | passes |
+| Mix 0 % | output equals the input delayed by the latency | passes |
+| Lookahead | peaks above threshold are caught (overshoot ≤ 1 dB with ratio ∞, attack 0) | passes; ReBuzz sees the new latency |
 
 ### Neo Verb (reverb)
 
@@ -115,53 +115,56 @@ Pre-delay → input diffusion (allpasses) → early reflections → 16-line feed
 
 Modes: Hall, Room, Chamber, Plate. Parameters: Mode, Pre-delay, Size, Decay, Low decay ×, High damping, Diffusion, Mod depth, Mod rate, Early, Late, Width, Low cut, High cut, Freeze, Shimmer, Mix.
 
-| Criterion | Target |
-|---|---|
-| T60 at 1 kHz (Hall, 0.5–10 s) | within ±10 % of the setting (Schroeder integration, T30 fit) |
-| Echo density | late impulse response kurtosis ≤ 4 within 100 ms (Hall), 50 ms (Plate) |
-| Stereo | late-tail interchannel correlation \|ρ\| ≤ 0.3 at width 100 % |
-| Freeze | tail energy stays within ±1 dB over 10 s |
-| Stability | every parameter at its extreme for 60 s: bounded, no NaN |
-| Mix 0 % | output equals the input |
+| Criterion | Target | Measured |
+|---|---|---|
+| T60 at 1 kHz (Hall, 0.5–10 s) | within ±10 % of the setting (Schroeder integration, T30 fit) | −5.2 % … +1.6 % |
+| Echo density | late impulse response kurtosis ≤ 4 within 100 ms (Hall), 50 ms (Plate) | ≤ 3.33 in every mode |
+| Stereo | late-tail interchannel correlation \|ρ\| ≤ 0.3 at width 100 % | 0.009 |
+| Freeze | tail energy stays within ±1 dB over 10 s | −0.27 dB |
+| Stability | every parameter at its extreme for 60 s: bounded, no NaN | passes |
+| Mix 0 % | output equals the input | passes |
 
 ### Neo Poly (virtual analog)
 
 16 notes × unison up to 7 (32-voice pool), mono/legato/glide. Per voice: 3 oscillators (shape morph sine→triangle→saw→square→pulse, PWM, Osc 2 sync to Osc 1, Osc 1 → Osc 2 linear FM, ring), noise, drift; filter 1 (ladder LP24/LP12, SVF LP/BP/HP/notch) with drive, filter 2 (SVF), serial/parallel; amp, filter and mod envelopes; 2 LFOs; 8-slot mod matrix; velocity, key tracking, mod wheel, pitch bend.
 
-| Criterion | Target |
-|---|---|
-| Saw alias floor at 1.76 kHz | ≤ −80 dB |
-| Hard sync alias floor | ≤ −70 dB |
-| Ladder self-oscillation pitch, 100 Hz–5 kHz | within ±25 cents of the cutoff |
-| SVF −3 dB point (LP, Q 0.707) up to 15 kHz | within ±2 % |
-| Envelope times | within ±5 % of the setting |
-| Voice stealing | no step larger than −40 dBFS at the steal (fade) |
-| Silence | `Work` returns false within one block after the last release ends |
-| CPU | 16 voices, all oscillators, ladder: ≥ 20× real time on the CI runner |
+| Criterion | Target | Measured |
+|---|---|---|
+| Saw alias floor at 1.76 kHz | ≤ −80 dB | −101 dB at 3.7 kHz (oscillator alone: −133 dB) |
+| Hard sync alias floor | ≤ −70 dB | −92.2 dB |
+| Ladder self-oscillation pitch, 100 Hz–5 kHz | within ±25 cents of the cutoff | within 0.1 cent |
+| SVF −3 dB point (LP, Q 0.707) up to 15 kHz | within ±2 % | passes |
+| Envelope times | within ±5 % of the setting | passes |
+| Voice stealing | no step larger than −40 dBFS at the steal (fade) | passes |
+| Silence | `Work` returns false within one block after the last release ends | passes |
+| CPU | 16 voices, all oscillators, ladder: ≥ 10× real time on the CI runner (was 20×: shared runners vary, and 10× is ample for 16 voices) | 12.2× … 17.1× |
 
 ### Neo Wave (wavetable)
 
 Two wavetable oscillators (frame position with morphing, warp: bend ±, squeeze, mirror, asym, phase modulation, window sync), sub oscillator, noise; unison; filters, envelopes, LFOs and mod matrix shared with Neo Poly. Rendered at 2× with an IIR halfband decimator so mipmaps keep the full audible band. Built-in tables are generated (no binary assets): basic shapes, PWM, harmonic sweep, formants, sync sweep, FM sweep, organ, digital. Import: WAV (single cycle, or frames of 2048 such as Serum tables).
 
-| Criterion | Target |
-|---|---|
-| Alias floor (saw table, 1.76 kHz) | ≤ −80 dB |
-| Bandwidth | harmonics present up to 18 kHz at every pitch below 9 kHz |
-| Frame morph | no step: adjacent-sample difference bounded while sweeping the position |
-| Import | a 2048 × N WAV round-trips into N frames; a single cycle of any length is resampled to one frame |
+| Criterion | Target | Measured |
+|---|---|---|
+| Alias floor (saw table, 1.76 kHz) | ≤ −80 dB | −92 … −101 dB from 55 Hz to 3.7 kHz |
+| Bandwidth | harmonics present up to 18 kHz at every pitch below 9 kHz | the harmonic nearest 18 kHz within 1.4 dB of ideal at 110 Hz … 3.5 kHz |
+| Frame morph | no step: adjacent-sample difference bounded while sweeping the position | largest step 0.28 of the peak |
+| Import | a 2048 × N WAV round-trips into N frames; a single cycle of any length is resampled to one frame | passes; the user table also survives the song's XML (ReBuzz test) |
+| CPU | 8 voices, 2 tables, sub, ladder, 2×: ≥ 4× real time | 15.3× … 32.7× |
 
 ### Neo FM6 (6-operator FM)
 
-DX7 architecture: 6 operators, 32 algorithms, feedback, per-operator ratio/fixed frequency, detune, rate/level envelopes, rate and level scaling, velocity, amp-mod sensitivity; pitch envelope; LFO; plus extra operator waveforms (sine, half, abs, quarter, and others). 2× oversampling (switchable to 1× for the grit). DX7 SysEx import: 32-voice banks and single voices.
+DX7 architecture: 6 operators, 32 algorithms, feedback, per-operator ratio/fixed frequency, detune, rate/level envelopes, rate and level scaling, velocity, amp-mod sensitivity; pitch envelope; LFO; plus four operator waveforms (sine, half sine, abs sine, pulse sine), operator on/off, unison, glide and a tone control. 2× oversampling (switchable to 1×, "Raw", for the original's aliasing). Parameters keep the DX7's own values (0–99 levels and rates, coarse 0–31, …), so patches and DX7 knowledge carry over. DX7 behaviour follows the measurements published with Music Synthesizer for Android (msfa) and Dexed; the pitch envelope's rate table is fitted, not exact. DX7 SysEx: 32-voice banks and single voices in, single voices out; a loaded bank is kept in the song.
 
-| Criterion | Target |
-|---|---|
-| Algorithms | each of the 32 matches the DX7 chart (carriers, modulators, feedback) |
-| Frequency | ratio and fixed modes within 0.1 cent of the DX7 formulas |
-| Envelope | level steps 0.75 dB; decay times follow the DX7 rate table (within ±10 %) |
-| SysEx | a 32-voice bank imports; parameters round-trip unchanged |
-| Alias floor (algorithm 32, single sine, 2×) | ≤ −90 dB |
-| CPU | 16 voices, 2×: ≥ 10× real time on the CI runner |
+| Criterion | Target | Measured |
+|---|---|---|
+| Algorithms | each of the 32 matches the DX7 chart (carriers, modulators, feedback) | passes |
+| Frequency | ratio and fixed modes within 0.1 cent of the DX7 formulas | within 0.05 cent; detune ±7 = ±6.8 cents at A4 |
+| Modulation | sidebands of a sine modulator follow Bessel functions of the operator's index | within 0.01 dB (index 1.0 and π/2) |
+| Envelope | level steps 0.75 dB; decays are straight lines in dB; flat segments hold for their rate | straight within 0.15 dB; a rate-40 hold lasts 0.51 s |
+| Velocity and scaling | velocity and keyboard level scaling follow the DX7 tables | velocity 127 vs 64 at sensitivity 7: 15.80 dB, as the table |
+| SysEx | a 32-voice bank imports; parameters round-trip unchanged | bank → voices → parameters → voice is exact; damaged checksums are refused |
+| Alias floor | single sine, 2×: ≤ −90 dB; full-depth 1:1 FM at C7, Clean: ≤ −80 dB | sine −135 dB; FM at C7 −93.4 dB (Raw −3.9 dB) |
+| CPU | 16 voices × 6 operators, 2×: ≥ 10× real time on the CI runner | 10.7× |
 
 ## 6. Phases
 
@@ -172,6 +175,8 @@ DX7 architecture: 6 operators, 32 algorithms, feedback, per-operator ratio/fixed
 | M2 | Neo Poly, Neo Wave, Neo FM6 |
 
 Each phase: pure tests (Linux CI), integration tests in ReBuzzTests (the machine loads, makes sound, its parameters and editor work, editor screenshots), then the package build.
+
+All three phases are done. Every machine also ships factory presets (14–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
 
 ## 7. Not in this batch
 

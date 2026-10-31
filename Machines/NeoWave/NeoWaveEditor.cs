@@ -29,7 +29,7 @@ namespace NeoBuzz.Wave
             UIElement Osc(string title, int osc, int table, int pos, int warp, int warpAmt, int oct, int semi, int fine, int level) => S(title, Layout.Column(
                 Layout.Row(new ParamDropdown(ctx, table, width: 120), Layout.Gap(8), new ParamDropdown(ctx, warp, width: 110)),
                 Layout.Gap(1, 6),
-                TableView(ctx, machine, osc, 6 * 64, 124),
+                TableView(ctx, machine, osc, 6 * 64, 104),
                 Layout.Gap(1, 4),
                 Build.Knobs(ctx, 6, D, pos, warpAmt, oct, semi, fine, level)));
 
@@ -123,13 +123,13 @@ namespace NeoBuzz.Wave
 
             return Layout.Column(
                 Layout.Row(oscA, oscB, Layout.Column(sub, user)),
-                Layout.Row(filter, voice, S("Out", meter),
-                           MakeEnv("Amp envelope", P.AmpA, P.AmpD, P.AmpS, P.AmpR)),
-                Layout.Row(MakeEnv("Filter envelope", P.FltA, P.FltD, P.FltS, P.FltR),
-                           MakeEnv("Mod envelope", P.ModA, P.ModD, P.ModS, P.ModR),
-                           MakeLfo("LFO 1", P.L1Shape, P.L1Rate, P.L1Sync, P.L1Retrig, P.L1Fade),
-                           MakeLfo("LFO 2", P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade)),
-                S("Modulation matrix", matrix));
+                Layout.Row(filter, voice, S("Out", meter)),
+                Layout.Row(MakeEnv("Amp envelope", P.AmpA, P.AmpD, P.AmpS, P.AmpR),
+                           MakeEnv("Filter envelope", P.FltA, P.FltD, P.FltS, P.FltR),
+                           MakeEnv("Mod envelope", P.ModA, P.ModD, P.ModS, P.ModR)),
+                Layout.Row(MakeLfo("LFO 1", P.L1Shape, P.L1Rate, P.L1Sync, P.L1Retrig, P.L1Fade),
+                           MakeLfo("LFO 2", P.L2Shape, P.L2Rate, P.L2Sync, P.L2Retrig, P.L2Fade),
+                           S("Modulation matrix", matrix)));
         }
 
         static string UserLabel(NeoWaveMachine machine) =>
