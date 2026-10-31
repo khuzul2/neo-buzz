@@ -80,6 +80,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Drive = new("Neo Drive", "Drive", false);
         internal static readonly NeoInfo Comp = new("Neo Comp", "Comp", false, multiIo: true);
         internal static readonly NeoInfo Verb = new("Neo Verb", "Verb", false);
+        internal static readonly NeoInfo Poly = new("Neo Poly", "Poly", true);
+        internal static readonly NeoInfo Wave = new("Neo Wave", "Wave", true);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -179,22 +181,45 @@ namespace ReBuzzTests
             public MachineCore Sine { get; }
             public MachineCore Effect { get; }
 
-            /// <summary>Sine → the Neo effect → master.</summary>
-            public Rig(NeoInfo effect)
+            /// <summary>Effects: sine → the Neo effect → master. Generators: the Neo synth → master.</summary>
+            public Rig(NeoInfo machine)
             {
-                if (!File.Exists(effect.BuiltPath))
-                    Assert.Inconclusive($"{effect.Name} not built ({effect.BuiltPath}); build the solution first");
-                Driver.Gear.AddDynamicGenerator(SineInfo);
-                Driver.Gear.AddBuiltMachine(effect, AbsoluteFilePath.Value(effect.BuiltPath), effect.Generator);
+                if (!File.Exists(machine.BuiltPath))
+                    Assert.Inconclusive($"{machine.Name} not built ({machine.BuiltPath}); build the solution first");
+                if (!machine.Generator) Driver.Gear.AddDynamicGenerator(SineInfo);
+                Driver.Gear.AddBuiltMachine(machine, AbsoluteFilePath.Value(machine.BuiltPath), machine.Generator);
                 Driver.Start();
-                var sine = new DynamicMachineController("Neo Test Sine", "Sine");
-                var fx = new DynamicMachineController(effect.Name, effect.Name);
-                Driver.MachineGraph.InsertMachineInstanceFor(sine);
+                var fx = new DynamicMachineController(machine.Name, machine.Name);
                 Driver.MachineGraph.InsertMachineInstanceConnectedToMasterFor(fx);
-                Driver.MachineGraph.Connect(sine, fx);
-                Sine = Driver.MachineFor(sine);
+                if (!machine.Generator)
+                {
+                    var sine = new DynamicMachineController("Neo Test Sine", "Sine");
+                    Driver.MachineGraph.InsertMachineInstanceFor(sine);
+                    Driver.MachineGraph.Connect(sine, fx);
+                    Sine = Driver.MachineFor(sine);
+                }
                 Effect = Driver.MachineFor(fx);
                 reader = Driver.CreateAudioReader(256);
+            }
+
+            /// <summary>Synths: notes on tracks 0, 1, … (Buzz note values; 255 = off).</summary>
+            public void Notes(params int[] notes)
+            {
+                if (Effect.TrackCount < notes.Length) Effect.TrackCount = notes.Length;
+                var note = Effect.ParameterGroups[2].Parameters.Single(p => p.Name == "Note");
+                for (int t = 0; t < notes.Length; t++) note.SetValue(t, notes[t]);
+            }
+
+            /// <summary>Plays in short steps until there is sound (background work such as table builds may come first).</summary>
+            public float[] PlayUntilSound(double seconds, double atLeast = 1e-3)
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    var x = Play(seconds);
+                    if (Rms(x) > atLeast) return x;
+                    Thread.Sleep(20);
+                }
+                return Play(seconds);
             }
 
             public int Rate => ReBuzzCore.masterInfo.SamplesPerSec;
@@ -339,10 +364,70 @@ namespace ReBuzzTests
             ShootEditor(rig.Effect, "neo-verb-editor");
         }
 
+        static int BuzzNote(int octave, int semitone) => (octave << 4) + semitone + 1;   // semitone 0 = C
+
+        [Test]
+        public void NeoPolyPlaysAChordStopsAndShowsItsEditor()
+        {
+            using var rig = new Rig(Poly);
+            Assert.That(rig.Param("F1 cutoff").DescribeValue(rig.Param("F1 cutoff").DefValue), Does.EndWith("Hz"));
+            rig.Notes(BuzzNote(4, 0), BuzzNote(4, 4), BuzzNote(4, 7));
+            var chord = rig.PlayUntilSound(0.3);
+            TestContext.Out.WriteLine($"chord {Db(Rms(chord)):F1} dB");
+            Assert.That(Rms(chord), Is.GreaterThan(1e-3), "the chord sounds");
+            rig.Notes(255, 255, 255);
+            rig.Play(3);
+            Assert.That(Rms(rig.Play(0.3)), Is.LessThan(Rms(chord) / 1000), "and stops after note-off");
+
+            ShootEditor(rig.Effect, "neo-poly-editor");
+        }
+
+        [Test]
+        public void NeoWavePlaysItsTablesAndAUserTableAndShowsItsEditor()
+        {
+            using var rig = new Rig(Wave);
+            rig.Notes(BuzzNote(4, 0), BuzzNote(4, 7));
+            var basic = rig.PlayUntilSound(0.3);
+            TestContext.Out.WriteLine($"basic table {Db(Rms(basic)):F1} dB");
+            Assert.That(Rms(basic), Is.GreaterThan(1e-3), "the built-in table sounds once built");
+
+            // A user table: four frames from a WAV file, kept in the machine state.
+            var machine = rig.Effect.ManagedMachine;
+            var asm = machine.GetType().Assembly;
+            var frames = new float[4 * 2048];
+            for (int f = 0; f < 4; f++)
+                for (int i = 0; i < 2048; i++)
+                    for (int h = 1; h <= 1 + 4 * f; h++) frames[f * 2048 + i] += (float)(Math.Sin(2 * Math.PI * h * i / 2048) / h);
+            var wav = (byte[])asm.GetType("NeoBuzz.Wave.WavReader")!.GetMethod("Write")!.Invoke(null, new object[] { frames, 48000, 2048 })!;
+            var path = Path.Combine(Path.GetTempPath(), "Neo Wave test table.wav");
+            File.WriteAllBytes(path, wav);
+            machine.GetType().GetMethod("LoadUserTable", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(machine, new object[] { path });
+            var stateProperty = machine.GetType().GetProperty("MachineState")!;
+            var state = stateProperty.GetValue(machine)!;
+            Assert.That((string)state.GetType().GetProperty("UserTableName")!.GetValue(state)!, Is.EqualTo("Neo Wave test table"));
+            Assert.That(((string)state.GetType().GetProperty("UserTableData")!.GetValue(state)!).Length, Is.GreaterThan(4 * 2048 * 4));
+
+            // Through XML, as songs store it, into the machine again.
+            var xml = new System.Xml.Serialization.XmlSerializer(state.GetType());
+            using var ms = new MemoryStream();
+            xml.Serialize(ms, state);
+            ms.Position = 0;
+            stateProperty.SetValue(machine, xml.Deserialize(ms));
+
+            rig.Param("A table").SetValue(0, 10);   // User
+            rig.Param("A position").SetValue(0, 1000);
+            rig.Play(0.1);
+            var user = rig.Play(0.3);
+            TestContext.Out.WriteLine($"user table {Db(Rms(user)):F1} dB");
+            Assert.That(Rms(user), Is.GreaterThan(1e-3), "the user table sounds after a state round trip");
+
+            ShootEditor(rig.Effect, "neo-wave-editor");
+        }
+
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");
