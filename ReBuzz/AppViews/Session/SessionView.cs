@@ -537,7 +537,7 @@ namespace ReBuzz.AppViews.Session
                 int c0 = cells.Min(Grid.GetColumn), c1 = cells.Max(Grid.GetColumn);
                 var ring = new Border
                 {
-                    BorderBrush = SessionPalette.Ring,
+                    BorderBrush = SessionPalette.ControllerRing,
                     BorderThickness = new Thickness(2),
                     Margin = new Thickness(-1, -1, Gap - 1, Gap - 1),
                     IsHitTestVisible = false,
