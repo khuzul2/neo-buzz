@@ -452,23 +452,120 @@ if ((Test-Path -LiteralPath $pkgBin64) -and -not (Test-Path -LiteralPath ([IO.Pa
     }
 }
 
-# Inventory of machine DLLs and where each came from.
+# What a DLL in Gear is: a managed machine (it references MachineDecl), a native Buzz machine
+# (it exports GetInfo) or a library machines use. Needs System.Reflection.Metadata (PowerShell 7);
+# 'unknown' where it isn't there (Windows PowerShell 5.1).
+function Get-MachineKind([string]$Path) {
+    $stream = $null
+    try {
+        $stream = [IO.File]::OpenRead($Path)
+        $pe = [System.Reflection.PortableExecutable.PEReader]::new($stream)
+        $headers = $pe.PEHeaders
+        if ($headers.CorHeader) {
+            if (-not $pe.HasMetadata) { return 'other' }
+            $md = [System.Reflection.Metadata.PEReaderExtensions]::GetMetadataReader($pe)
+            foreach ($handle in $md.TypeReferences) {
+                if ($md.GetString($md.GetTypeReference($handle).Name) -eq 'MachineDecl') { return 'managed' }
+            }
+            return 'other'
+        }
+        # Native: its export names, read from the file (an RVA's offset by its section).
+        $dir = $headers.PEHeader.ExportTableDirectory
+        if ($dir.Size -le 0) { return 'other' }
+        $bytes = [IO.File]::ReadAllBytes($Path)
+        $sections = @($headers.SectionHeaders)
+        $offsetOf = {
+            param([int]$rva)
+            foreach ($h in $sections) {
+                $size = [Math]::Max($h.VirtualSize, $h.SizeOfRawData)
+                if ($rva -ge $h.VirtualAddress -and $rva -lt $h.VirtualAddress + $size) { return $rva - $h.VirtualAddress + $h.PointerToRawData }
+            }
+            return -1
+        }
+        $at = & $offsetOf $dir.RelativeVirtualAddress
+        if ($at -lt 0) { return 'other' }
+        $count = [BitConverter]::ToInt32($bytes, $at + 24)
+        $table = & $offsetOf ([BitConverter]::ToInt32($bytes, $at + 32))
+        if ($table -lt 0) { return 'other' }
+        for ($i = 0; $i -lt [Math]::Min($count, 4096); $i++) {
+            $name = & $offsetOf ([BitConverter]::ToInt32($bytes, $table + 4 * $i))
+            if ($name -lt 0) { continue }
+            $end = [Array]::IndexOf($bytes, [byte]0, $name)
+            if ($end -gt $name -and [Text.Encoding]::ASCII.GetString($bytes, $name, $end - $name) -eq 'GetInfo') { return 'native' }
+        }
+        return 'other'
+    } catch {
+        return 'unknown'
+    } finally {
+        if ($stream) { $stream.Dispose() }
+    }
+}
+
+$canReadDlls = $true
+try { Add-Type -AssemblyName System.Reflection.Metadata -ErrorAction Stop } catch { $canReadDlls = $false }
+if ($canReadDlls -and -not ('System.Reflection.PortableExecutable.PEReader' -as [type])) { $canReadDlls = $false }
+
+# Inventory of machine DLLs and where each came from (and, where it can be read, what each is).
+# "Foo" and "Foo.x64" count as one machine.
 $inventory = New-Object System.Collections.Generic.List[string]
 $inventory.Add("Machines in this package ($pkgName)")
 $inventory.Add('Origin: rebuzz = upstream ReBuzz (RunTime\Gear or its own machines), external:<id> = built from ExternalMachines, binaries[:repo] = prebuilt from ExternalMachines\binaries')
+if ($canReadDlls) { $inventory.Add('Kind: managed or native machine, or a library machines use') }
+$machineNames = New-Object 'System.Collections.Generic.HashSet[string]'
+$summary = @()
+$kinds = @{}
+$byOrigin = @{}
 foreach ($sub in 'Generators', 'Effects') {
     $dir = [IO.Path]::Combine($pkgDir, 'Gear', $sub)
     if (-not (Test-Path -LiteralPath $dir)) { continue }
     $dlls = @(Get-ChildItem -LiteralPath $dir -File -Filter '*.dll' | Sort-Object Name)
-    $inventory.Add('')
-    $inventory.Add("[$sub] $($dlls.Count) DLLs")
+    $rows = New-Object System.Collections.Generic.List[string]
+    $machines = 0
     foreach ($d in $dlls) {
         $origin = $Origins["$sub\$($d.Name)"]
         if (-not $origin) { $origin = 'unknown' }
-        $inventory.Add(('  {0,-48} {1}' -f $d.Name, $origin))
+        if (-not $canReadDlls) {
+            $rows.Add(('  {0,-48} {1}' -f $d.Name, $origin))
+            continue
+        }
+        $kind = Get-MachineKind $d.FullName
+        $kinds[$kind] = 1 + [int]$kinds[$kind]
+        $label = switch ($kind) { 'managed' { 'managed machine' } 'native' { 'native machine' } 'other' { 'library' } default { 'unknown' } }
+        $rows.Add(('  {0,-48} {1,-28} {2}' -f $d.Name, $origin, $label))
+        if (($kind -eq 'managed' -or $kind -eq 'native') -and $machineNames.Add("$sub\" + ($d.BaseName -replace '\.x64$', ''))) {
+            $machines++
+            $where = if ($origin -like 'external:*') { 'built from ExternalMachines' } elseif ($origin -like 'binaries*') { 'prebuilt binaries' } elseif ($origin -eq 'unknown') { 'unknown' } else { 'upstream and own' }
+            $byOrigin[$where] = 1 + [int]$byOrigin[$where]
+        }
     }
+    $inventory.Add('')
+    $inventory.Add($(if ($canReadDlls) { "[$sub] $machines machines, $($dlls.Count) DLLs" } else { "[$sub] $($dlls.Count) DLLs" }))
+    $inventory.AddRange($rows)
+    $summary += "$machines $($sub.ToLowerInvariant())"
 }
 $inventory | Set-Content -LiteralPath ([IO.Path]::Combine($pkgDir, 'GEAR-INVENTORY.txt')) -Encoding UTF8
+
+# On CI, the inventory as annotations (the package itself is an artifact to download): a summary,
+# then the file in pieces under GitHub's 4 kB a message (a workflow command is one line).
+if ($env:GITHUB_ACTIONS -eq 'true') {
+    $vst = [IO.Path]::Combine($pkgDir, 'Gear', 'vst')
+    $vstCount = if (Test-Path -LiteralPath $vst) { @(Get-ChildItem -LiteralPath $vst -Recurse -File -Filter '*.dll').Count } else { 0 }
+    $originText = ($byOrigin.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Value) $($_.Name)" }) -join ', '
+    $kindText = ($kinds.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Value) $($_.Name)" }) -join ', '
+    $head = if ($canReadDlls) { "$($machineNames.Count) machines in Gear: $($summary -join ', ') ($originText). DLLs: $kindText." } else { 'Machine count unavailable (no System.Reflection.Metadata).' }
+    Write-Host "::notice title=Package::$head Gear\vst: $vstCount DLLs. Machine build failures: $($Failures.Count)"
+    $pieces = New-Object System.Collections.Generic.List[string]
+    $piece = ''
+    foreach ($line in $inventory) {
+        if ($piece.Length + $line.Length + 1 -gt 3500) { $pieces.Add($piece); $piece = '' }
+        $piece += $line + "`n"
+    }
+    if ($piece.Length -gt 0) { $pieces.Add($piece) }
+    for ($i = 0; $i -lt $pieces.Count; $i++) {
+        $text = $pieces[$i].TrimEnd("`n").Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+        Write-Host "::notice title=GEAR-INVENTORY.txt ($($i + 1)/$($pieces.Count))::$text"
+    }
+}
 
 $toolsetText = if ($PlatformToolset) { $PlatformToolset } else { 'project default (v145)' }
 $shaText = if ($sha) { $sha } else { 'unknown' }
