@@ -25,6 +25,7 @@
     <Compile Include="..\ReBuzz\Core\Session\SessionTake.cs" Link="Engine\SessionTake.cs" />
     <Compile Include="..\ReBuzz\Core\Session\ClipNotes.cs" Link="Engine\ClipNotes.cs" />
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Common\TrackerNotes.cs" Link="Engine\TrackerNotes.cs" />
+    <Compile Include="..\ReBuzz\Core\Sync\SyncTime.cs" Link="Engine\SyncTime.cs" />
   </ItemGroup>
 
   <ItemGroup>
