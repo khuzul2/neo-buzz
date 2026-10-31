@@ -96,7 +96,12 @@ namespace ReBuzzTests
             roll.Quantize();
             Assert.That(layout.NotesOf(clip).Select(n => n.Time), Is.EqualTo(new[] { 0, 4 * TB, 9 * TB, 12 * TB }));
 
-            SessionViewTests.Screenshot(roll, "piano-roll", 900, 500);
+            // Shown as the window shows it: scrolled to the notes.
+            var host = new System.Windows.Controls.Canvas { Width = 900, Height = 500, ClipToBounds = true, Background = SessionPalette.Window };
+            System.Windows.Controls.Canvas.SetTop(roll, -roll.FocusOffset());
+            host.Children.Add(roll);
+            SessionViewTests.Screenshot(host, "piano-roll", 900, 500);
+            host.Children.Remove(roll);
 
             roll.DeleteSelected();
             Assert.That(layout.NotesOf(clip), Is.Empty);
@@ -141,6 +146,73 @@ namespace ReBuzzTests
             rig.Session.Launch(track, clip);
             rig.PlayTo(12);
             Assert.That(rig.NoteOns.Select(n => n.Note), Is.EqualTo(new[] { 60, 64, 67 }), "the engine plays them again");
+        }
+
+        [Test]
+        public void UndoingAMoveKeepsWhatWasEditedInThePatternViewSince()
+        {
+            using var rig = new KeysRig();
+            var clip = rig.Clip("A", Bar, (0, 60), (4 * TB, 64));
+            var layout = rig.Layout;
+            layout.Ensure();
+            var track = layout.SequenceOf(0)!;
+            Assert.That(layout.MoveNotesToPatternView(track, clip), Is.Null);
+
+            // An edit in the Pattern View: a note drawn on the lanes.
+            var drawn = BuzzGUI.Common.TrackerNotes.Pack(new[] { new BuzzGUI.Common.TrackerNote(8 * TB, TB, 67, 90) });
+            Assert.That(layout.ImportToEditor(clip, layout.ExportFromEditor(clip).Concat(drawn).ToArray()), Is.True);
+
+            layout.Undo();
+            Assert.That(layout.NotesOf(clip).Select(n => n.Note), Is.EqualTo(new[] { 60, 64 }), "the moved notes are back in the clip");
+            Assert.That(layout.PatternViewNotesOf(clip).Select(n => n.Note), Is.EqualTo(new[] { 67 }), "the drawn note stays");
+            layout.Redo();
+            Assert.That(layout.PatternViewNotesOf(clip).Select(n => n.Note), Is.EqualTo(new[] { 60, 64, 67 }));
+            Assert.That(layout.NotesOf(clip), Is.Empty);
+        }
+
+        [Test]
+        public void ThePianoRollFollowsItsClipThroughADeleteAndItsUndo()
+        {
+            using var rig = new KeysRig();
+            var clip = rig.Clip("A", Bar, (0, 60));
+            var layout = rig.Layout;
+            layout.Ensure();
+            var roll = new PianoRoll(rig.Core, layout, layout.SequenceOf(0)!, clip) { Grid = TB };
+            layout.DeleteClip(clip);
+            Assert.That(roll.IsLive, Is.False);
+            roll.AddNote(4 * TB, 64);                                 // refused: there is no clip
+            roll.Reload();
+            Assert.That(roll.Notes, Is.Empty);
+
+            layout.Undo();
+            Assert.That(roll.IsLive, Is.True, "the undo brought it back");
+            roll.Reload();
+            Assert.That(roll.Notes.Select(n => n.Note), Is.EqualTo(new[] { 60 }));
+            roll.AddNote(4 * TB, 64);
+            Assert.That(layout.NotesOf(roll.Clip).Select(n => n.Note), Is.EqualTo(new[] { 60, 64 }), "edits reach the clip as it stands now");
+        }
+
+        [Test]
+        public void ThePhrasePlayedWhileStoppedStartsAfterTheLastSilence()
+        {
+            static int On(int note) => 0x90 | (note << 8) | (100 << 16);
+            static int Off(int note) => 0x80 | (note << 8);
+            const long Bar = 1000;                                    // wall-clock units a bar
+            var played = new System.Collections.Generic.List<(long, int)>
+            {
+                (0, On(48)), (100, Off(48)),                          // a note to check the sound
+                (60_000, On(60)), (60_200, Off(60)), (60_400, On(62)), (61_900, On(64)), (62_000, Off(62)), (63_000, Off(64)),
+            };
+            Assert.That(SessionLayout.PhraseStart(played, Bar, 8 * Bar), Is.EqualTo(2), "after the minute of silence");
+            // A pause under a bar, or with a note held, is part of the phrase.
+            var held = new System.Collections.Generic.List<(long, int)> { (0, On(48)), (5_000, On(50)), (5_100, Off(48)), (5_200, Off(50)) };
+            Assert.That(SessionLayout.PhraseStart(held, Bar, 8 * Bar), Is.EqualTo(0));
+            // Too long to capture: the first note within the last 8 bars.
+            var busy = Enumerable.Range(0, 40).SelectMany(i => new[] { ((long)i * 500, On(60)), ((long)i * 500 + 100, Off(60)) }).ToList();
+            int start = SessionLayout.PhraseStart(busy, Bar, 8 * Bar);
+            Assert.That(busy[^1].Item1 - busy[start].Item1, Is.LessThanOrEqualTo(8 * Bar));
+            Assert.That(busy[^1].Item1 - busy[start - 2].Item1, Is.GreaterThan(8 * Bar));
+            Assert.That(SessionLayout.PhraseStart(new System.Collections.Generic.List<(long, int)> { (0, Off(60)) }, Bar, 8 * Bar), Is.EqualTo(-1));
         }
 
         [Test]

@@ -1635,6 +1635,12 @@ namespace ReBuzz.Core
         /// </summary>
         public void SendMIDIInput(int data)
         {
+            // Fork (0.8 groundwork): active sensing (0xFE, every 300 ms from many keyboards) means
+            // nothing here; clock and other real-time bytes go to the machines but not to the UI
+            // (48 a second of posted work for nothing).
+            int status = data & 0xFF;
+            if (status == 0xFE) return;
+            bool realTime = status >= 0xF8;
             try
             {
                 RouteMidiInput(data);
@@ -1645,6 +1651,8 @@ namespace ReBuzz.Core
                 // list changing under the loop) would take the process down.
                 DCWriteLine("MIDI input: " + e.Message, DCLogLevel.Warning);
             }
+
+            if (realTime) return;
 
             // Some UI components require MIDIInput.Invoke to be called from UI thread (Midi Keyboard)
             // Fork: posted rather than Invoke, so the MIDI thread never waits for the UI.

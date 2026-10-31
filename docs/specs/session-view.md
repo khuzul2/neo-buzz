@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11), 0.6.2 (#12), 0.6.3 (#13), 0.7 (#14) and 0.7.1 (#15) merged; next: 0.8 Control surfaces & sync |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11), 0.6.2 (#12), 0.6.3 (#13), 0.7 (#14), 0.7.1 (#15) and 0.7.2 (#16) merged; next: 0.8 Control surfaces & sync |
 | Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -205,6 +205,7 @@ Decision: **A for 0.1–0.2, B from 0.3.** All function keys are taken (F1–F12
 | 0.6 | Performance | Follow actions, crossfader, select-on-launch, launch undo, tempo nudge/tap | M |
 | 0.7 | Session recording | Record and overdub MIDI into empty slots, fixed-length recording, capture MIDI, metronome and count-in | L |
 | 0.7.1 | Recording without its limits | Piano roll; notes to and from the Pattern View; takes growing as they record; Capture while stopped; native editor moves recorded | M |
+| 0.7.2 | Hardening before 0.8 | Fixes from a review of 0.7.1 and of the MIDI and tempo paths 0.8 builds on | S |
 | 0.8 | Control surfaces & sync | Launchpad/APC/Push-style grid control with LED feedback and session ring; Ableton Link; MIDI clock | L |
 | **1.0** | Audio clips (parity) | Audio clips in slots with warping, audio recording into slots | XL |
 
@@ -655,19 +656,57 @@ All of it is one undo step. In 0.7 Capture needs the transport running, since a 
 - `BuzzGUI.Common.TrackerNotes` (pure) lays notes on the lanes and reads them back. Each voice gets a track; the machine gets more tracks if it can take them. A note sits on a row with its velocity and its delay (in 1/95 of a row). A note ending in its own row gets a cut; otherwise a note-off goes on its end row, unless the track's next note starts by then. A round trip keeps notes to 1/95 of a row.
 - *Move notes to the Pattern View* puts the clip's notes beside the lanes' own. If they need more voices than the machine has tracks, nothing moves and the menu says why.
 - *Move notes from the Pattern View* empties the lanes into the clip's MIDI column, where the piano roll edits them.
-- Each move is one undo step (`ClipNotesMoveAction`), refused while the clip records. Tracks the editor gained stay. The editor's own undo doesn't see the move.
+- Each move is one undo step (`ClipNotesMoveAction`), refused while the clip records. Tracks the editor gained stay. The editor's own undo doesn't see the move. (0.7.2: undo and redo move only those notes, and notes above B7 don't fit.)
 
 *Takes grow.* A take recorded until stopped starts with 64 bars of room. The layout's poll grows it 8 bars ahead of where it plays, up to 4,096 bars. It is cut to the bars recorded when it stops, as in 0.7.
 
-*Capture while stopped.* With the transport stopped, the MIDI thread stamps messages with the wall clock (`Stopwatch`) instead of the session time. Capture times the phrase at the song's tempo. The clip starts at the phrase's first note, is 1, 2, 4 or 8 bars long, and doesn't launch: there is nothing to be in phase with.
+*Capture while stopped.* With the transport stopped, the MIDI thread stamps messages with the wall clock (`Stopwatch`) instead of the session time. Capture times the phrase at the song's tempo: the notes after the last silence of a bar or more, within 8 bars (0.7.2). The clip starts at the phrase's first note, is 1, 2, 4 or 8 bars long, and doesn't launch: there is nothing to be in phase with.
 
-*Native editor moves.* A native machine's own window moves a parameter through an IPC message on its UI or host channel. ReBuzz marks that move (`SessionCore.MoveFromEditor`, per thread), so it records like a move in a parameter window. Moves the machine makes while processing (the audio channel) still aren't recorded.
+*Native editor moves.* A native machine's own window moves a parameter through an IPC message on its UI or host channel (0.7.2: only those; its MIDI handler's moves come on the MIDI channel and aren't recorded). ReBuzz marks that move (`SessionCore.MoveFromEditor`, per thread), so it records like a move in a parameter window. Moves the machine makes while processing (the audio channel) still aren't recorded.
 
 **Tests.**
 - `ReBuzz.SessionTests`: `ClipNotesTests` (9) and `TrackerNotesTests` (5, including a random round trip).
 - `ReBuzzTests/PianoRollTests.cs` (6): one undo step per edit; drawing into a clip without a MIDI column; quantize; the control's commands and a render; moving notes to the Pattern View and back, with undo and playback; notes that don't fit staying in the clip.
 - `ReBuzzTests/SessionRecordingTests.cs`: a take growing past its room; Capture with the transport stopped.
 - The fake Modern Pattern Editor exchanges notes as the real one does. The real one's lane code is compiled on CI but not run there.
+
+---
+
+### 0.7.2 — Hardening before 0.8
+
+An independent review of 0.7.1 and of the paths 0.8 builds on (MIDI in and out, tempo). Every finding below was checked against the code before it was fixed.
+
+**Pattern View notes**
+- *Deadlock.* Moving notes could give a native machine more tracks while the editor's lock was held. The track count takes the audio lock, and the audio thread holds that lock while it runs the editor, which takes the editor's lock. The move is now planned first, changing nothing (`PatternEditorUtils.PlanClipNotes`). The tracks are set outside the lock, and only then are the lanes written (`WriteClipNotes`).
+- *Notes above B7 (MIDI 119)* threw half way through, after the lanes had been cleared. They are now counted as not fitting, and nothing moves.
+- *Chords played as one voice.* The editor's playback gave every MIDI-lane event track 0, so each note ended the one before and note-offs on other tracks were lost. Each event now carries its lane's track (`PlayRecordManager`, an upstream bug that this feature exposed).
+- *Undo restored whole lanes,* wiping Pattern View edits made after the move. A move's undo and redo now add and remove only the notes it moved (`ClipNotesMoveAction`, `TrackerNotes.Without`/`Added`). If the lanes can't take the change any more, neither side changes.
+- *Lanes of other machines* in the same pattern were exported and wiped. Only the clip machine's lanes count now.
+- *Rows.* Rows are placed as the editor places them (`RowGrid`: beat + beat × row / rows, rounded down), including rows per beat that don't divide the beat (7, 9, …) and beats split their own way. Lanes whose beats are split differently from track to track aren't written. A note ending on a row line before a note delayed into that row now keeps its note-off: the delayed note takes another track. Two notes never share a row of a track.
+
+**Piano roll**
+- The window follows its clip through a delete and its undo (`layout.Current`). While the clip is gone or recording, it says so and doesn't edit.
+- It closes when a song is opened or a new one started (`SessionLayout.Resetting`). Before, it kept the old song's undo and pattern alive.
+- A click that wobbles a pixel is no longer a drag that snaps the note to the grid.
+- Edits wait while the clip records: an overdub pass is undone by value when it ends, so an edit made under it would outlive that undo. `EditNotes` refuses them, as the moves do.
+
+**Recording**
+- *Capture while stopped* now takes the phrase only: notes after the last silence of a bar or more (no note held or played), within the last 8 bars. Before, a test note played a minute earlier started the clip, and the phrase fell past its end.
+- *Native editor moves.* Only moves on the UI and host channels are recorded. A machine's MIDI handler moving a parameter (the MIDI channel) is caused by a note or CC that is recorded already.
+
+**Paths 0.8 builds on**
+- *Exact tempo.* A tick is a whole number of samples, and the fraction used to be dropped. At 44.1 kHz and 120 BPM a tick is 5,512.5 samples, so the engine ran 163 ms ahead of true time in 30 minutes. The fraction is now carried to the next tick, from 0 at each start, so playback is the same every time.
+- *MIDI devices.* The device watcher's thread, the UI and the audio thread all used the device tables, and none of them took a lock. Each table now has its own lock (MIDI out's after `AudioLock`). Devices open and close outside the locks, so a send never waits for a driver. A disconnected device is closed, not just forgotten. Opening a device again closes the old handle first; before, the second open failed.
+- *MIDI input.* Active sensing (0xFE) is dropped. Clock and other real-time bytes still reach machines, but no longer post work to the UI, which happened 48 times a second under MIDI clock.
+
+**Tests.**
+- `TrackerNotesTests`: 9 tests, adding the review's row-line case, the editor's range, uneven rows per beat, and notes taken off and put back one for one.
+- `PianoRollTests`: undo keeping Pattern View edits; the piano roll following its clip through a delete and its undo; the phrase played while stopped.
+- `SessionRecordingTests`: ticks keeping the exact tempo over 400 ticks at 120 BPM.
+
+**Known, left for later.**
+- MIDI devices are still keyed by their WinMM index, which shifts when devices are plugged in.
+- The MIDI input's timestamps are still dropped. 0.8 stamps its clock input itself.
 
 ---
 

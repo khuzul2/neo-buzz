@@ -561,8 +561,9 @@ namespace ReBuzz.NativeMachine
                                 {
                                     // Fork (0.7.1): from a machine's own window (host or UI channel), a
                                     // move the Session View records; from its processing (audio
-                                    // channel), modulation it doesn't.
-                                    global::ReBuzz.Core.Session.SessionCore.MoveFromEditor = Channel != ChannelType.AudioChannel;
+                                    // channel) or its MIDI handler (MIDI channel: the note or CC that
+                                    // caused it is recorded already), one it doesn't.
+                                    global::ReBuzz.Core.Session.SessionCore.MoveFromEditor = Channel == ChannelType.UIChannel || Channel == ChannelType.HostChannel;
                                     machine.ParameterGroups[group].Parameters[param].SetValue(track, value);
                                 }
                                 catch
@@ -596,7 +597,7 @@ namespace ReBuzz.NativeMachine
                                 {
                                     //Application.Current.Dispatcher.Invoke(() =>
                                     //{
-                                    global::ReBuzz.Core.Session.SessionCore.MoveFromEditor = Channel != ChannelType.AudioChannel;   // fork (0.7.1)
+                                    global::ReBuzz.Core.Session.SessionCore.MoveFromEditor = Channel == ChannelType.UIChannel || Channel == ChannelType.HostChannel;   // fork (0.7.1)
                                     machine.ParameterGroups[group].Parameters[param].SetValue(track, value);
                                     //});
 
