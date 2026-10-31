@@ -771,7 +771,7 @@ An independent review of 0.7.1 and of the paths 0.8 builds on (MIDI in and out, 
   - `MidiClockTests` (6): tempo through jitter; Start making the next pulse beat 0; the song position; sending Start then a pulse every 1/24 beat; joining while playing; the Link protocol's lines.
 - `ReBuzzTests/SessionSyncTests.cs` runs on CI with the helper `build.ps1` built:
   - two Link helpers finding each other and agreeing within 1 ms;
-  - the session following a Link peer at 123.5 BPM, rendering in real time: its tempo, the song's BPM (124), and its bar phase within 1 ms;
+  - the session following a Link peer at 123.4 BPM, rendering in real time: its tempo, the song's BPM (123), and its bar phase within 1 ms;
   - MIDI clock in starting and stopping the transport;
   - MIDI clock out timing on a real thread.
 
