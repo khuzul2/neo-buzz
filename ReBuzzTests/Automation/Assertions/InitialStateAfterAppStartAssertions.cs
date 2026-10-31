@@ -68,19 +68,26 @@ namespace ReBuzzTests.Automation.Assertions
             ManagedMachineHost managedMachineHost, 
             IAdditionalInitialStateAssertions additionalInitialStateAssertions)
         {
+            // Fork: parametersChanged is keyed by (parameter, track) (docs/specs/machines.md 3.1).
+            static KeyValuePair<ParameterCore, int> Changed(MachineCore m, string name)
+            {
+                var key = m.parametersChanged.Keys.Single(k => k.Parameter.Name == name);
+                return new KeyValuePair<ParameterCore, int>(key.Parameter, key.Track);
+            }
+
             machineCore.workLock.IsHeldByCurrentThread.Should().BeFalse();
             machineCore.Graph.Should().Be(reBuzzCore.SongCore);
             machineCore.parametersChanged.Should().HaveCount(5);
             KeyValuePair<ParameterCore, int> ampParam =
-                machineCore.parametersChanged.ToList().Single(p => p.Key.Name == "Amp");
+                Changed(machineCore, "Amp");
             KeyValuePair<ParameterCore, int> panParam =
-                machineCore.parametersChanged.ToList().Single(p => p.Key.Name == "Pan");
+                Changed(machineCore, "Pan");
             KeyValuePair<ParameterCore, int> gainParam =
-                machineCore.parametersChanged.ToList().Single(p => p.Key.Name == "Gain");
+                Changed(machineCore, "Gain");
             KeyValuePair<ParameterCore, int> bypassParam =
-                machineCore.parametersChanged.ToList().Single(p => p.Key.Name == "Bypass");
+                Changed(machineCore, "Bypass");
             KeyValuePair<ParameterCore, int> aTrackParam =
-                machineCore.parametersChanged.ToList().Single(p => p.Key.Name == "ATrackParam");
+                Changed(machineCore, "ATrackParam");
 
             InitialStateAssertions.AssertMasterParameters(
                 ((IMachine)machineCore).ParameterGroups[0],

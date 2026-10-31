@@ -1,0 +1,353 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Hall — Concert">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="100" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="700" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="496" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="595" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="650" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="750" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="250" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="540" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="696" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="870" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="389" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="804" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="250" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Hall — Cathedral">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="160" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="736" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="646" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="537" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="850" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="350" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="540" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="609" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="870" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="389" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="804" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="300" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Hall — Dark Strings">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="120" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="800" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="571" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="566" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="418" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="700" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="300" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="540" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="739" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="870" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="389" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="673" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="280" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Room — Small Studio">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="20" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="350" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="219" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="566" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="733" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="700" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="300" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="540" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="826" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="804" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="389" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="804" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="200" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Room — Live Drums">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="32" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="550" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="340" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="566" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="694" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="700" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="300" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="540" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="870" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="826" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="540" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="804" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="220" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Chamber — Vocal">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="80" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="550" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="439" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="566" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="694" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="800" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="300" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="540" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="739" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="870" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="389" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="804" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="220" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Chamber — Echo Chamber">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="48" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="650" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="512" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="566" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="598" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="700" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="300" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="540" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="739" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="870" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="389" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="804" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="250" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Plate — Bright Vocal">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="60" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="449" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="420" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="881" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="700" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="300" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="540" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="739" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="870" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="588" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="804" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="200" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Plate — Snare">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="400" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="358" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="566" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="829" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="700" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="300" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="540" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="739" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="870" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="651" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="804" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="250" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Ambient — Shimmer">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="240" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="760" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="566" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="733" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="700" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="540" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="450" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="739" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="870" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="389" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="804" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="400" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Ambient — Infinite Pad">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="80" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="919" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="566" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="598" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="700" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="600" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="389" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="739" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="870" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="389" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="804" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Ambient — Long Dark Hall">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="80" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="900" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="679" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="670" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="306" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="700" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="400" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="540" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="739" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="870" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="389" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="804" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="450" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Send — Hall (100% wet)">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="80" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="479" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="566" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="598" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="700" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="300" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="540" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="739" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="870" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="588" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="745" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Send — Plate (100% wet)">
+    <Preset Machine="Neo Verb">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Pre-delay" Group="1" Index="1" Track="0" Value="80" />
+        <Parameter Name="Size" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Decay" Group="1" Index="3" Track="0" Value="415" />
+        <Parameter Name="Low decay" Group="1" Index="4" Track="0" Value="566" />
+        <Parameter Name="High damping" Group="1" Index="5" Track="0" Value="829" />
+        <Parameter Name="Diffusion" Group="1" Index="6" Track="0" Value="700" />
+        <Parameter Name="Mod depth" Group="1" Index="7" Track="0" Value="300" />
+        <Parameter Name="Mod rate" Group="1" Index="8" Track="0" Value="540" />
+        <Parameter Name="Freeze" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Shimmer" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Early" Group="1" Index="11" Track="0" Value="739" />
+        <Parameter Name="Late" Group="1" Index="12" Track="0" Value="870" />
+        <Parameter Name="Width" Group="1" Index="13" Track="0" Value="667" />
+        <Parameter Name="Low cut" Group="1" Index="14" Track="0" Value="651" />
+        <Parameter Name="High cut" Group="1" Index="15" Track="0" Value="804" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

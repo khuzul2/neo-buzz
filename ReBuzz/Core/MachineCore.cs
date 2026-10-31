@@ -40,7 +40,10 @@ namespace ReBuzz.Core
         MachineDLL machineDLL;
         public IMachineDLL DLL { get => machineDLL; }
 
-        internal ConcurrentDictionary<ParameterCore, int> parametersChanged = new ConcurrentDictionary<ParameterCore, int>();
+        // Fork (docs/specs/machines.md 3.1): keyed by parameter and track. Keyed by parameter
+        // alone, a parameter changed on several tracks in one tick (a chord) reached managed
+        // machines and value listeners for the last track only.
+        internal ConcurrentDictionary<(ParameterCore Parameter, int Track), byte> parametersChanged = new ConcurrentDictionary<(ParameterCore Parameter, int Track), byte>();
         internal ConcurrentBag<int> wavesEventsPending = new ConcurrentBag<int>();
 
         internal MachineDLL MachineDLL { get => machineDLL; set => machineDLL = value; }
@@ -339,6 +342,18 @@ namespace ReBuzz.Core
                     PropertyChanged.Raise(this, " Latency");
                 }
             }
+        }
+
+        /// <summary>
+        /// Fork (docs/specs/machines.md 3.1): the machine's own latency changed (e.g. a lookahead
+        /// setting); applied on the UI thread, where delay compensation is recomputed.
+        /// </summary>
+        internal void UpdateLatencyFromMachine(int samples)
+        {
+            dispatcher.BeginInvoke(() =>
+            {
+                if (latency != samples) Latency = samples;
+            });
         }
 
         int overrideLatency = -1;

@@ -1,0 +1,24 @@
+# Neo Comp parameters (docs/specs/machines.md §5). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoComp
+namespace NeoBuzz.Comp
+class NeoCompMachine
+
+group Dynamics
+Mode        "Mode"          0 3    0    enum Clean Glue FET Opto       | Clean: transparent VCA. Glue: bus VCA. FET: fast feedback. Opto: smooth, program-dependent
+Threshold   "Threshold"     0 1000 700  lin -60 0 dB 1                 | Level where compression starts
+Ratio       "Ratio"         0 1000 463  ratio 1 20 inf                 | Compression ratio (top: limiting)
+Knee        "Knee"          0 1000 250  lin 0 24 dB 1                  | Width of the soft knee
+Attack      "Attack"        0 1000 639  time 0.00005 0.2               | Time to 63 % of the gain change
+Release     "Release"       0 1000 532  time 0.005 3                   | Time back to 37 % of the gain change
+AutoRelease "Auto release"  0 1    0    switch                         | Program-dependent release: fast after transients, slow under sustained compression
+group Sidechain
+Sidechain   "Sidechain"     0 1    0    enum Internal External         | Detect from the input, or from input 2 (connect a machine to the second input)
+ScLowCut    "SC low cut"    0 1000 0    freq 10 500                    | High-pass on the detector: lets the lows through uncompressed
+Lookahead   "Lookahead"     0 1000 0    lin 0 5 ms 2                   | Delays the audio so the detector sees peaks coming (adds latency)
+Link        "Stereo link"   0 1000 1000 pct                            | 100 %: both channels get the same gain
+group Output
+Makeup      "Makeup"        0 1000 0    lin 0 24 dB 1                  | Gain after compression
+AutoMakeup  "Auto makeup"   0 1    0    switch                         | Adds the gain a −12 dBFS signal loses
+Character   "Character"     0 1000 0    pct                            | Mode colour: Glue VCA, FET and Opto saturation (Clean ignores it)
+Mix         "Mix"           0 1000 1000 pct                            | Dry/wet (parallel compression)
+Output      "Output"        0 1000 500  db -24 24                      | Output level

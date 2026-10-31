@@ -1,0 +1,139 @@
+# Neo Comp factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoComp
+machine "Neo Comp"
+
+preset "Clean — Gentle Leveler"
+Mode = Clean
+Threshold = -24
+Ratio = 2
+Knee = 12
+Attack = 0.02
+Release = 0.25
+Auto makeup = On
+
+preset "Clean — Vocal Control"
+Mode = Clean
+Threshold = -20
+Ratio = 3.5
+Knee = 6
+Attack = 0.005
+Release = 0.12
+Auto makeup = On
+
+preset "Clean — Brickwall"
+Mode = Clean
+Threshold = -6
+Ratio = inf
+Knee = 0
+Attack = 0.00005
+Release = 0.08
+Lookahead = 2
+
+preset "Glue — Mix Bus"
+Mode = Glue
+Threshold = -18
+Ratio = 2
+Knee = 6
+Attack = 0.01
+Release = 0.3
+Auto release = On
+Character = 30
+Auto makeup = On
+
+preset "Glue — Drum Bus"
+Mode = Glue
+Threshold = -22
+Ratio = 4
+Knee = 3
+Attack = 0.003
+Release = 0.1
+Character = 50
+Makeup = 4
+
+preset "FET — Vocal Grab"
+Mode = FET
+Threshold = -24
+Ratio = 4
+Knee = 2
+Attack = 0.00025
+Release = 0.05
+Character = 40
+Auto makeup = On
+
+preset "FET — All Buttons"
+Mode = FET
+Threshold = -30
+Ratio = 20
+Knee = 0
+Attack = 0.0001
+Release = 0.06
+Character = 100
+Makeup = 16
+
+preset "FET — Bass Tamer"
+Mode = FET
+Threshold = -20
+Ratio = 8
+Knee = 4
+Attack = 0.001
+Release = 0.15
+Character = 30
+Auto makeup = On
+
+preset "Opto — Smooth Vocal"
+Mode = Opto
+Threshold = -24
+Ratio = 3
+Knee = 18
+Attack = 0.01
+Release = 1.5
+Character = 30
+Auto makeup = On
+
+preset "Opto — Bass Leveler"
+Mode = Opto
+Threshold = -20
+Ratio = 4
+Knee = 18
+Attack = 0.01
+Release = 0.8
+Auto makeup = On
+
+preset "Parallel — New York Drums"
+Mode = FET
+Threshold = -35
+Ratio = 8
+Knee = 0
+Attack = 0.001
+Release = 0.08
+Makeup = 12
+Character = 40
+Mix = 35
+
+preset "Sidechain — Kick Duck"
+Mode = Clean
+Sidechain = External
+Threshold = -30
+Ratio = 8
+Knee = 0
+Attack = 0.001
+Release = 0.15
+
+preset "Sidechain — Pump"
+Mode = Clean
+Sidechain = External
+Threshold = -36
+Ratio = inf
+Knee = 0
+Attack = 0.0005
+Release = 0.3
+
+preset "Mastering — Transparent"
+Mode = Clean
+Threshold = -12
+Ratio = 1.5
+Knee = 12
+Attack = 0.03
+Release = 0.3
+Auto release = On
+Lookahead = 1
+SC low cut = 80

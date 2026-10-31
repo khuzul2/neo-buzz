@@ -1,0 +1,19 @@
+# Neo Drive parameters (docs/specs/machines.md §5). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoDrive
+namespace NeoBuzz.Drive
+class NeoDriveMachine
+
+group Drive
+Mode       "Mode"       0 4    0    enum Tape Tube Transistor Diode Fold | Saturation model
+Drive      "Drive"      0 1000 250  lin 0 36 dB 1          | Gain into the saturation
+Bias       "Bias"       0 1000 500  bip                    | Shifts the curve off centre: even harmonics
+Character  "Character"  0 1000 500  pct                    | Tape: emphasis. Tube: sag. Transistor: hardness. Diode: asymmetry. Fold: folds
+group Tone
+LowCut     "Low cut"    0 1000 0    freq 10 1000           | High-pass before the saturation
+Tone       "Tone"       0 1000 500  bip                    | Tilt after the saturation: darker or brighter
+HighCut    "High cut"   0 1000 1000 freq 1000 22000        | Low-pass after the saturation
+group Output
+Output     "Output"     0 1000 500  db -24 24              | Output level
+AutoGain   "Auto gain"  0 1    1    switch                 | Holds the level steady as the drive changes
+Mix        "Mix"        0 1000 1000 pct                    | Dry/wet (the dry signal is delayed to match)
+Quality    "Quality"    0 2    1    enum 2× 4× 8×          | Oversampling

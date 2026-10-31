@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Fork addition (docs/specs/machines.md §3): measurement tests for the Neo machines' DSP. Links
+    the shared DSP library and every machine's Engine folder (all pure C#), so the tests run on
+    Linux CI in seconds and need no ReBuzz build. Not part of ReBuzz.sln on purpose.
+
+      dotnet test NeoBuzz.MachineTests
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>NeoBuzz.MachineTests</RootNamespace>
+    <!-- Measurements are heavy: run them optimised even in Debug. -->
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Machines\Neo*\Engine\**\*.cs" Link="Engines\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="NUnit" Version="4.4.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="5.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+</Project>

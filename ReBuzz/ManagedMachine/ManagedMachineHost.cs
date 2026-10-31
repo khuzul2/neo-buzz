@@ -752,14 +752,28 @@ namespace ReBuzz.ManagedMachine
             dll = null;
         }
 
+        // Fork (docs/specs/machines.md 3.1): the latency the machine last reported.
+        int lastLatency = int.MinValue;
+
         internal unsafe void Tick(MachineCore machine)
         {
+            // Fork: a machine whose latency changes with its settings (a lookahead) reports it
+            // here; ReBuzz used to read it only when the machine was created.
+            if (GetLatencyFunction != null)
+            {
+                int latency = GetLatencyFunction();
+                if (latency != lastLatency)
+                {
+                    lastLatency = latency;
+                    if (latency != machine.Latency) machine.UpdateLatencyFromMachine(latency);
+                }
+            }
+
             foreach (var paramTrack in machine.parametersChanged)
             {
-                var par = paramTrack.Key;
+                var (par, track) = paramTrack.Key;
                 if (par.Group.Type != ParameterGroupType.Input)
                 {
-                    var track = paramTrack.Value;
                     int index = par.Group.Type == ParameterGroupType.Global ? par.IndexInGroup : par.IndexInGroup + machine.ParameterGroups[1].Parameters.Count;
                     var val = par.GetPValue(track);
 

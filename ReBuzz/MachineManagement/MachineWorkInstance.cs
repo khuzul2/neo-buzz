@@ -642,8 +642,7 @@ namespace ReBuzz.MachineManagement
                 {
                     foreach (var paramTrack in Machine.parametersChanged)
                     {
-                        var par = paramTrack.Key;
-                        var track = paramTrack.Value;
+                        var (par, track) = paramTrack.Key;
 
                         par.InvokeEvents(buzz, track);
                     }
@@ -655,7 +654,7 @@ namespace ReBuzz.MachineManagement
                     // parametersChanged too — so the changed set covers every dirty pval.
                     // ClearPVal fills all tracks of the parameter; must run before Clear().
                     foreach (var paramTrack in Machine.parametersChanged)
-                        paramTrack.Key.ClearPVal();
+                        paramTrack.Key.Parameter.ClearPVal();
 
                     Machine.parametersChanged.Clear();
                 }
