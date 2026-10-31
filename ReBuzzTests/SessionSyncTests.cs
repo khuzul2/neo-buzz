@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Threading;
+using ReBuzzTests.Automation;
 using static ReBuzzTests.HardeningTests063;
 
 namespace ReBuzzTests
