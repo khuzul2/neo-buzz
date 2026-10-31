@@ -353,6 +353,66 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
+        public void ACaptureSkipsTheRoundTripAndKeepsItsLength()
+        {
+            var cap = new AudioCapture(Rate, skipFrames: 100, lengthFrames: 1000, maxFrames: Rate * 60);
+            var l = Enumerable.Range(0, 300).Select(i => (float)i).ToArray();
+            var r = l.Select(v => -v).ToArray();
+            cap.Write(l, r, 300, 0.5f);
+            Assert.That(cap.Written, Is.EqualTo(200L), "the first 100 frames were the round trip");
+            cap.WriteSilence(500);
+            cap.Write(l, r, 300, 1f);
+            Assert.That(cap.Written, Is.EqualTo(1000L), "no more than its length");
+            Assert.That(cap.IsDone, Is.True);
+            var (left, right) = cap.Collect(cap.Length);
+            Assert.That(left[0], Is.EqualTo(50f), "frame 100, halved");
+            Assert.That(right[199], Is.EqualTo(-149.5f));
+            Assert.That(left[200], Is.EqualTo(0f), "silence");
+            Assert.That(left[700], Is.EqualTo(0f));
+            Assert.That(left[999], Is.EqualTo(299f));
+            Assert.That(cap.Dropped, Is.EqualTo(0L));
+        }
+
+        [Test]
+        public void ACaptureUntilStoppedNeedsItsChunksAhead()
+        {
+            int chunk = AudioCapture.ChunkFrames;
+            var cap = new AudioCapture(1000, 0, long.MaxValue, 10L * chunk);    // made ahead: 8 s at 1 kHz, one chunk
+            var ones = Enumerable.Repeat(1f, chunk).ToArray();
+            cap.Write(ones, ones, chunk, 1);
+            cap.Write(ones, ones, 10, 1);                                        // no second chunk yet
+            Assert.That(cap.Dropped, Is.EqualTo(10L), "kept as silence");
+            Assert.That(cap.IsDone, Is.False, "until stopped");
+            cap.Prepare(chunk);
+            cap.Write(ones, ones, 10, 1);
+            Assert.That(cap.Dropped, Is.EqualTo(10L));
+            cap.SetLength(chunk + 15);
+            cap.Write(ones, ones, 10, 1);
+            Assert.That(cap.IsDone, Is.True, "stopped: the length it was given");
+            var (left, _) = cap.Collect(cap.Length);
+            Assert.That(left[chunk + 5], Is.EqualTo(0f), "the dropped frames");
+            Assert.That(left[chunk + 12], Is.EqualTo(1f));
+            Assert.That(left.Length, Is.EqualTo(chunk + 15));
+        }
+
+        [Test]
+        public void ACaptureAllocatesNothingOnTheAudioThread()
+        {
+            var cap = new AudioCapture(Rate, 64, long.MaxValue, Rate * 120);
+            var l = new float[256];
+            var buffer = new float[512];
+            cap.Write(l, l, 256, 1);
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 100; i++)
+            {
+                cap.Write(l, l, 256, 1);
+                cap.WriteInterleaved(buffer, 0, 256, 1);
+                cap.WriteSilence(256);
+            }
+            Assert.That(GC.GetAllocatedBytesForCurrentThread() - before, Is.EqualTo(0L));
+        }
+
+        [Test]
         public void AudioSettingsGoThroughXml()
         {
             var a = new ReBuzz.Core.Session.SessionDocument.AudioSettings

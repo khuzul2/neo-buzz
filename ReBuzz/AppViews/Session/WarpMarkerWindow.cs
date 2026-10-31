@@ -92,7 +92,8 @@ namespace ReBuzz.AppViews.Session
             var source = layout.AudioSourceOf(pattern);
             if (audio == null || source == null || pattern.Machine == null)
             {
-                Close();
+                // The clip is gone (or no audio clip now): the window goes, once it can.
+                Dispatcher.BeginInvoke(new Action(Close));
                 return;
             }
             view.Load(audio, source, layout.TransientsOf(pattern));

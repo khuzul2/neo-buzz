@@ -32,6 +32,7 @@
     <Compile Include="..\ReBuzz\Core\Control\BuiltInScripts.cs" Link="Engine\BuiltInScripts.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioClip.cs" Link="Engine\AudioClip.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\AudioAnalysis.cs" Link="Engine\AudioAnalysis.cs" />
+    <Compile Include="..\ReBuzz\Core\Clips\AudioCapture.cs" Link="Engine\AudioCapture.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\ClipMixer.cs" Link="Engine\ClipMixer.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\ClipVoice.cs" Link="Engine\ClipVoice.cs" />
     <Compile Include="..\ReBuzz\Core\Clips\Fft.cs" Link="Engine\Fft.cs" />

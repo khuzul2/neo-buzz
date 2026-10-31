@@ -23,6 +23,15 @@ namespace ReBuzz.Core.Clips
 
         /// <summary>Audio thread only.</summary>
         public ClipVoice Voice { get; } = new ClipVoice();
+
+        volatile AudioCapture capture;
+
+        /// <summary>A take recording its track's input while this pattern plays; null when none.</summary>
+        public AudioCapture Capture
+        {
+            get => capture;
+            set => capture = value;
+        }
     }
 
     /// <summary>

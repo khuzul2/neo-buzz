@@ -133,6 +133,18 @@ namespace ReBuzzTests
                 return output;
             }
 
+            /// <summary>Plays for a while, polling takes as the view's timer would (headless tests poll themselves).</summary>
+            public float[] PlayPolling(double seconds)
+            {
+                var all = new List<float>();
+                for (double t = 0; t < seconds; t += 0.1)
+                {
+                    all.AddRange(Play(Math.Min(0.1, seconds - t)));
+                    Layout.PollTakes();
+                }
+                return all.ToArray();
+            }
+
             /// <summary>Bytes the audio loop allocated while playing for a while (nothing else allocating meanwhile).</summary>
             public long AllocatedWhilePlaying(double seconds)
             {
@@ -165,7 +177,7 @@ namespace ReBuzzTests
         /// <summary>Where sound starts (above a fifth of the loudest) with nothing as loud in the 20 ms before, in seconds.</summary>
         static List<double> SoundStarts(float[] x, int rate)
         {
-            float peak = x.Length == 0 ? 0 : x.Max(Math.Abs);
+            float peak = x.Length == 0 ? 0 : x.Max(v => Math.Abs(v));
             float threshold = peak / 5;
             var starts = new List<double>();
             int loud = -rate;
@@ -208,10 +220,10 @@ namespace ReBuzzTests
             var (track, clip) = rig.AudioClip(rig.Wave(tone, rig.Rate), 120, "Complex");
             rig.Layout.LaunchClip(track, clip, 127);
             var playing = rig.Play(1.0);
-            Assert.That(playing.Skip(rig.Rate / 2).Max(Math.Abs), Is.GreaterThan(0.1f), "it plays");
+            Assert.That(playing.Skip(rig.Rate / 2).Max(v => Math.Abs(v)), Is.GreaterThan(0.1f), "it plays");
             rig.Session.Stop(track);
             var after = rig.Play(2.5);                               // the stop waits for the next bar (2 s at 120)
-            Assert.That(after.Skip(after.Length - rig.Rate / 4).Max(Math.Abs), Is.EqualTo(0f), "silent after the stop");
+            Assert.That(after.Skip(after.Length - rig.Rate / 4).Max(v => Math.Abs(v)), Is.EqualTo(0f), "silent after the stop");
             double maxStep = 0;
             for (int i = 1; i < after.Length; i++) maxStep = Math.Max(maxStep, Math.Abs(after[i] - after[i - 1]));
             Assert.That(maxStep, Is.LessThan(0.1), "no click at the stop (a 220 Hz sine at 0.5 moves 0.016 a sample)");
@@ -247,14 +259,14 @@ namespace ReBuzzTests
             rig.Core.SongCore.ConnectMachines(hum, player, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
             int track = rig.Layout.FirstTrackOf(player);
 
-            Assert.That(rig.Play(0.1).Skip(1000).Max(Math.Abs), Is.EqualTo(0f), "auto, not armed: not heard");
+            Assert.That(rig.Play(0.1).Skip(1000).Max(v => Math.Abs(v)), Is.EqualTo(0f), "auto, not armed: not heard");
             rig.Layout.SetArmed(track, true);
-            Assert.That(rig.Play(0.1).Skip(1000).Max(Math.Abs), Is.GreaterThan(0f), "auto, armed: heard");
+            Assert.That(rig.Play(0.1).Skip(1000).Max(v => Math.Abs(v)), Is.GreaterThan(0f), "auto, armed: heard");
             rig.Layout.SetArmed(track, false);
             Monitor(player, 2);                                                // off
-            Assert.That(rig.Play(0.1).Skip(1000).Max(Math.Abs), Is.EqualTo(0f), "off: not heard");
+            Assert.That(rig.Play(0.1).Skip(1000).Max(v => Math.Abs(v)), Is.EqualTo(0f), "off: not heard");
             Monitor(player, 1);                                                // in
-            Assert.That(rig.Play(0.1).Skip(1000).Max(Math.Abs), Is.GreaterThan(0f), "in: heard");
+            Assert.That(rig.Play(0.1).Skip(1000).Max(v => Math.Abs(v)), Is.GreaterThan(0f), "in: heard");
         }
 
         [TestCase(".bmx")]
@@ -330,6 +342,85 @@ namespace ReBuzzTests
 
         static void Monitor(IMachine player, int value) =>
             player.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters.Single(p => p.Name == "Monitor").SetValue(-1, value);
+
+        // ------------------------------------------------------------------ recording
+
+        /// <summary>An audio track with the Hum (a constant 1000 of 32768) coming in, armed.</summary>
+        static (MachineCore Player, int Track) HumTrack(Rig rig)
+        {
+            rig.Layout.Ensure();
+            var player = (MachineCore)rig.Layout.NewAudioTrack()!;
+            var hum = rig.Driver.MachineFor(rig.Hum!);
+            rig.Core.SongCore.ConnectMachines(hum, player, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            int track = rig.Layout.FirstTrackOf(player);
+            rig.Layout.SetArmed(track, true);
+            return (player, track);
+        }
+
+        const float HumLevel = 1000f / 32768;
+
+        [Test]
+        public void AnArmedAudioTrackRecordsItsInputIntoATakeThatPlaysFromItsNextPass()
+        {
+            using var rig = new Rig(hum: true);
+            rig.Core.BPM = 120;
+            var (_, track) = HumTrack(rig);
+            rig.Layout.SetRecordBars(1);
+            var take = rig.Layout.RecordTake(track, 0)!;
+            Assert.That(take, Is.Not.Null);
+            Assert.That(rig.Layout.IsAudioClip(take), Is.True);
+            Assert.That(rig.Layout.IsRecordingClip(take), Is.True);
+            rig.PlayPolling(2.6);                                   // the bar (2 s at 120), and a little
+            Assert.That(rig.Layout.IsRecordingClip(take), Is.False, "the take is done");
+            var source = rig.Layout.AudioSourceOf(take)!;
+            Assert.That(source.Length, Is.EqualTo(2 * rig.Rate).Within(1), "one bar of audio");
+            Assert.That(source.Left.Skip(1000).Take(source.Length - 2000).Min(), Is.EqualTo(HumLevel).Within(0.0005f), "what came in");
+            Assert.That(rig.Layout.AudioOf(take)!.Bpm, Is.EqualTo(120));
+
+            rig.Layout.SetArmed(track, false);                      // not heard now: only the clip plays
+            var played = rig.Play(1.0);
+            Assert.That(played.Skip(rig.Rate / 4).Take(rig.Rate / 2).Average(v => Math.Abs(v)), Is.EqualTo(HumLevel).Within(0.003f), "the take plays it");
+        }
+
+        [Test]
+        public void ATakeRecordedUntilStoppedKeepsWholeBars()
+        {
+            using var rig = new Rig(hum: true);
+            rig.Core.BPM = 120;
+            var (_, track) = HumTrack(rig);
+            rig.Layout.SetRecordBars(0);
+            var take = rig.Layout.RecordTake(track, 1)!;
+            rig.PlayPolling(2.7);                                   // into the second bar
+            rig.Layout.StopRecording(rig.Layout.SequenceOf(track)!);
+            Assert.That(take.Length, Is.EqualTo(2 * 4 * rig.Core.TPB), "two bars");
+            Assert.That(rig.Layout.IsRecordingClip(take), Is.True, "records to the end of the bar");
+            rig.PlayPolling(2.0);
+            Assert.That(rig.Layout.IsRecordingClip(take), Is.False);
+            Assert.That(rig.Layout.AudioSourceOf(take)!.Length, Is.EqualTo(4 * rig.Rate).Within(1));
+        }
+
+        [Test]
+        public void AResamplingTrackRecordsTheMaster()
+        {
+            using var rig = new Rig(hum: true);
+            rig.Core.BPM = 120;
+            var hum = rig.Driver.MachineFor(rig.Hum!);
+            var master = rig.Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            rig.Core.SongCore.ConnectMachines(hum, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            rig.Layout.Ensure();
+            var resampler = rig.Layout.NewResamplingTrack()!;
+            Assert.That(SessionLayout.IsResampling(resampler), Is.True);
+            int track = rig.Layout.FirstTrackOf(resampler);
+            Assert.That(rig.Layout.IsArmed(track), Is.True, "made armed");
+            rig.Layout.SetRecordBars(1);
+            var take = rig.Layout.RecordTake(track, 0)!;
+            rig.PlayPolling(2.6);
+            var source = rig.Layout.AudioSourceOf(take)!;
+            Assert.That(source.Length, Is.EqualTo(2 * rig.Rate).Within(1));
+            float level = source.Left.Skip(1000).Take(source.Length - 2000).Average(v => Math.Abs(v));
+            TestContext.Out.WriteLine($"[notice] resampled level {level} (the hum is {HumLevel} before the master)");
+            Assert.That(level, Is.GreaterThan(HumLevel / 4), "the master's sound");
+        }
 
         /// <summary>A 16-bit mono WAV file.</summary>
         static void WriteWav(string path, float[] samples, int rate)

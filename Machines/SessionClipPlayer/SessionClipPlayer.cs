@@ -2,7 +2,8 @@
 //
 // A Session Clip Player plays the audio clips (patterns with audio, made by dropping a WAV,
 // AIFF or FLAC file on a slot) its track launches, warped to the song's tempo, and records what
-// comes in (connect ReBuzz Audio In, or any machine, to it) into a slot while its track is armed.
+// comes in (connect ReBuzz Audio In, or any machine, to it), or the master output (Input:
+// master, resampling), into a slot while its track is armed.
 // The work is ReBuzz's (BuzzGUI.Common.SessionClipHost): this machine only hands it the block.
 
 using Buzz.MachineInterface;
@@ -27,6 +28,11 @@ namespace NeoBuzz.SessionClipPlayer
         [ParameterDecl(Name = "Monitor", MinValue = 0, MaxValue = 2, DefValue = 0, ValueDescriptions = new[] { "auto", "in", "off" },
             Description = "Hear the input: auto (while armed), in (always) or off")]
         public int Monitor { get; set; }
+
+        /// <summary>What a take records: the input (machines connected to this one) or the master output (resampling).</summary>
+        [ParameterDecl(Name = "Input", MinValue = 0, MaxValue = 1, DefValue = 0, ValueDescriptions = new[] { "in", "master" },
+            Description = "What a take records: the input, or the master output (resampling)")]
+        public int Input { get; set; }
 
         public bool Work(Sample[] output, Sample[] input, int n, WorkModes mode)
         {

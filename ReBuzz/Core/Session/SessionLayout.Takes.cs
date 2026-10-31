@@ -77,7 +77,7 @@ namespace ReBuzz.Core.Session
             HookTakes();
             if (!on) StopRecording(seq);
             Engine.SetArmed(seq, on);
-            if (on && sessionRecord && Engine.GetPlayingCore(seq) != null)
+            if (on && sessionRecord && Engine.GetPlayingCore(seq) != null && !IsClipPlayer(seq.Machine))
                 BeginOverdub(seq);
             RecordingChanged?.Invoke();
         }
@@ -88,12 +88,13 @@ namespace ReBuzz.Core.Session
         public bool IsSessionRecording => sessionRecord;
 
         /// <summary>Whether the track records now (or waits to, a take that hasn't started).</summary>
-        public bool IsRecording(ISequence track) => track is SequenceCore seq && recordings.ContainsKey(seq);
+        public bool IsRecording(ISequence track) => track is SequenceCore seq && (recordings.ContainsKey(seq) || audioTakes.ContainsKey(seq));
 
         /// <summary>Whether any track records into the clip (a take of it, or overdubbing it).</summary>
         public bool IsRecordingClip(IPattern clip)
         {
             if (clip == null) return false;
+            if (IsAudioTake(clip)) return true;                             // 1.0
             foreach (var (seq, r) in recordings)
                 if (r.Take != null ? ReferenceEquals(r.Take, clip) : ReferenceEquals(Engine?.GetPlayingCore(seq), clip)) return true;
             return false;
@@ -102,6 +103,7 @@ namespace ReBuzz.Core.Session
         /// <summary>Whether the clip is a take waiting or recording on the track, or the clip the track overdubs.</summary>
         public bool IsRecordingInto(ISequence track, IPattern clip)
         {
+            if (track is SequenceCore audio && audioTakes.TryGetValue(audio, out var a)) return ReferenceEquals(a.Take, clip);   // 1.0
             if (track is not SequenceCore seq || clip == null || !recordings.TryGetValue(seq, out var r)) return false;
             return r.Take != null ? ReferenceEquals(r.Take, clip) : ReferenceEquals(Engine?.GetPlayingCore(seq), clip);
         }
@@ -202,6 +204,7 @@ namespace ReBuzz.Core.Session
         {
             if (SequenceOf(track) is not SequenceCore seq || Engine == null || !Engine.IsArmed(seq) || scene < 0) return null;
             if (PatternAt(track, scene) != null) return null;
+            if (IsClipPlayer(seq.Machine)) return RecordAudioTake(track, scene, seq);      // 1.0: an audio take
             var machine = seq.Machine;
             string name = machine?.GetNewPatternName();
             if (name == null) return null;
@@ -260,6 +263,7 @@ namespace ReBuzz.Core.Session
                 var doc = Ensure();
                 foreach (var seq in Engine.ArmedTracks.ToList())
                 {
+                    if (audioTakes.ContainsKey(seq)) continue;                // 1.0: an audio take records on
                     if (recordings.TryGetValue(seq, out var running))
                     {
                         // A take recording now goes on as an overdub after its first pass.
@@ -271,7 +275,7 @@ namespace ReBuzz.Core.Session
                         }
                         continue;
                     }
-                    if (Engine.GetPlayingCore(seq) != null)
+                    if (Engine.GetPlayingCore(seq) != null && !IsClipPlayer(seq.Machine))   // audio isn't overdubbed: a new take
                     {
                         BeginOverdub(seq);
                         continue;
@@ -288,7 +292,7 @@ namespace ReBuzz.Core.Session
             }
             else
             {
-                foreach (var seq in recordings.Keys.ToList())
+                foreach (var seq in recordings.Keys.Concat(audioTakes.Keys).ToList())
                     StopRecording(seq);
             }
             RecordingChanged?.Invoke();
@@ -310,6 +314,11 @@ namespace ReBuzz.Core.Session
         /// </summary>
         public void StopRecording(ISequence track)
         {
+            if (track is SequenceCore audio && audioTakes.ContainsKey(audio))
+            {
+                StopAudioTake(audio);                                        // 1.0
+                return;
+            }
             if (track is not SequenceCore seq || !recordings.TryGetValue(seq, out var r)) return;
             DrainInputs();
             if (!recordings.TryGetValue(seq, out var still) || !ReferenceEquals(still, r)) return;
@@ -465,6 +474,7 @@ namespace ReBuzz.Core.Session
         /// </summary>
         public void PollTakes()
         {
+            if (!polling) PollAudioTakes();                                  // 1.0
             if (polling || recordings.Count == 0 || Engine == null) return;
             polling = true;
             try
@@ -747,6 +757,7 @@ namespace ReBuzz.Core.Session
         void ResetTakes()
         {
             recordings.Clear();
+            ResetAudioTakes();                                              // 1.0
             sessionRecord = false;
             Engine?.SetRecordWindows(null);
             UpdatePollTimer();
@@ -761,7 +772,7 @@ namespace ReBuzz.Core.Session
         /// </summary>
         void UpdatePollTimer()
         {
-            bool needed = recordings.Count > 0;
+            bool needed = recordings.Count > 0 || audioTakes.Count > 0;
             if (pollTimer == null)
             {
                 if (!needed) return;

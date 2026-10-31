@@ -21,12 +21,13 @@ namespace ReBuzz.AppViews.Session
         void InitAudioDrop()
         {
             AllowDrop = true;
-            DragOver += (s, e) =>
+            // Events added by name would be this view's DragOver method (moving clips).
+            AddHandler(DragOverEvent, new DragEventHandler((s, e) =>
             {
                 e.Effects = AudioFiles(e.Data).Count > 0 ? DragDropEffects.Copy : DragDropEffects.None;
                 e.Handled = true;
-            };
-            Drop += (s, e) =>
+            }));
+            AddHandler(DropEvent, new DragEventHandler((s, e) =>
             {
                 var files = AudioFiles(e.Data);
                 if (files.Count == 0) return;
@@ -35,7 +36,7 @@ namespace ReBuzz.AppViews.Session
                 // Anywhere else: a new audio track, from the selected scene.
                 var cell = e.OriginalSource is DependencyObject d ? FindParent<SlotCell>(d) : null;
                 ImportAudioFiles(cell?.Track ?? -1, cell?.Scene ?? selected?.Scene ?? 0, files);
-            };
+            }));
         }
 
         static List<string> AudioFiles(IDataObject data)
@@ -102,10 +103,19 @@ namespace ReBuzz.AppViews.Session
             }
         }
 
+        void NewResamplingTrack()
+        {
+            if (layout.NewResamplingTrack() is IMachine machine)
+            {
+                int track = layout.FirstTrackOf(machine);
+                if (track >= 0) Select(track, selected?.Scene ?? 0);
+            }
+        }
+
         /// <summary>Opens the warp marker editor of an audio clip.</summary>
         internal void EditWarpMarkers(ISequence sequence, IPattern pattern)
         {
-            if (pattern == null || !layout.IsAudioClip(pattern)) return;
+            if (pattern == null || !layout.IsAudioClip(pattern) || layout.AudioSourceOf(pattern) == null) return;
             var window = new WarpMarkerWindow(layout, session, sequence, pattern) { Owner = Window.GetWindow(this) };
             window.Show();
         }

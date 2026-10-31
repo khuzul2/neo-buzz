@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11), 0.6.2 (#12), 0.6.3 (#13), 0.7 (#14), 0.7.1 (#15), 0.7.2 (#16), 0.8a (#17) and 0.8b (#18) merged; next: 1.0 Audio clips |
-| Date | 2026-10-28 |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11), 0.6.2 (#12), 0.6.3 (#13), 0.7 (#14), 0.7.1 (#15), 0.7.2 (#16), 0.8a (#17), 0.8b (#18) and 1.0 (#19) merged |
+| Date | 2026-10-31 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
 
@@ -882,32 +882,109 @@ public sealed class MyPadsScript : ControllerScript
 
 **Acceptance criteria.** A loop at 100 BPM plays in time at 80–160 BPM in Beats mode; the Live parity matrix (§6) is all ✅ except the listed non-goals.
 
+**Decisions.** A new machine, the **Session Clip Player**, rather than AudioBlock (an arrangement editor of its own, with its own timeline). The warping is our own code (`ReBuzz/Core/Clips/`): no library, so no licence question, and it runs on the audio thread without allocating. Consolidating is done Live's way in the Session View: by **resampling**, recording the master into an audio track's slot.
+
+#### What it does
+
+*Audio tracks.* An audio track is a track of a Session Clip Player (`Machines/SessionClipPlayer`, in Gear\Effects). "+ Track" › New audio track makes one, connected to the master.
+- Dropping audio files on a slot puts them there as audio clips (several go down the track). On a track that isn't an audio track, or anywhere else in the view, a new audio track gets them, named after the file. An empty slot's menu has Import audio… too.
+- The file is loaded into a free wave of the song's wavetable (the song keeps it, as it keeps any wave). The clip is a pattern of the player, as long as the audio in beats; its slot shows ∿.
+- The clip's tempo is found from the audio (`AudioAnalysis.Tempo`). A loop is a whole number of bars, which puts it in 80–160 BPM exactly; that is taken when the tempo of its transients agrees within 4% (or they have none clear). Otherwise, the transients' tempo.
+- Audio clips launch, stop, loop, follow and record into the arrangement as any clip does; the launch settings (region, legato, follow actions…) apply. Clips in the arrangement play too.
+
+*The clip panel's Audio section.*
+- Warp mode (Live's): **Beats** (the default: drums, loops), **Complex** (any material), **Re-Pitch** (a turntable), **Off** (its own speed from the clip's start).
+- What Beats keeps: the transients (and a beat grid where they are further apart than a beat), or a 1/4, 1/8 or 1/16 grid.
+- Tempo, with ÷2, ×2 and Detect. Without warp markers the clip's length follows it: 4 beats at 120 BPM are 8 at 60.
+- Gain (dB), transpose (semitones) and detune (cents).
+- Warp markers…: the warp marker editor.
+- Each change is one undo step of the session.
+
+*Warp markers* (the editor, Live's). The audio drawn along the clip's beats as it plays, with its transients, the playing position and the bar grid. A marker pins a moment of the audio to a beat; the audio between two markers is stretched to fit.
+- Double-click adds one where the audio already is (nothing moves until it is dragged).
+- Dragging moves it along the beats (snapped to 1/16 beat; Shift for none), between its neighbours.
+- Right-click removes one; Clear markers goes back to straight, at the clip's tempo.
+- The clip's length follows its last marker.
+
+*Recording* (Live's). Arm an audio track, connect what it records to it (ReBuzz Audio In, or any machine), and record a take: its empty slots' ●, ◉ Session record, or a controller's pad.
+- A take is a new audio clip, launched on the grid (from a stopped transport, after the count-in). It records the record length, or until stopped and then whole bars (it records on to the end of the last bar).
+- What it records starts a round trip after its launch (the output latency, when launches are timed to what is heard), so it starts where it was played.
+- When the take is done its audio goes into a wave of the song, at the tempo it was recorded at, and the clip plays it from its next pass. The take is one undo step.
+- Monitor (a parameter of the player): **auto** hears the input while the track is armed, **in** always, **off** never.
+- Session record never overdubs audio: an armed audio track playing a clip records a new take in the next empty slot.
+
+*Consolidating: resampling.* "+ Track" › New resampling track makes an audio track whose takes record the master output (its Input parameter: in or master; the track's menu switches it), armed. Record a take on it while the session plays: what was heard becomes an audio clip.
+
+#### Design
+
+*The machine.* Managed machines are separate DLLs loaded with `Assembly.LoadFile`, so the player can't live in ReBuzz.dll. Its Work hands the block to ReBuzz through a static hook in BuzzGUI.Common (`SessionClipHost`). `SessionClipEngine` renders, on the audio thread, every pattern of the machine that plays in the block (`SongCore.PositionedPatterns`: the session's clips and the arrangement's). Its beat is exact: the tick of its play position plus the place in the tick (`PosInTick / SamplesPerTick`), over ticks per beat.
+
+*How a clip plays.* The layout gives each audio clip's pattern a `ClipPlayback` after every edit (with the launch map) and whenever a wave changes. It holds how the clip plays now (`AudioClipParams`: the audio, read once from the wave; the warp map; Beats' slices; gain; pitch) and its `ClipVoice`. The parameters are swapped whole; the audio thread never sees them half made.
+
+*The voice* renders a block from the beat it starts on and how fast beats go.
+- Repitch reads the audio where the warp map puts each beat (cubic Hermite).
+- Off reads it at its own speed from where it started.
+- Beats plays the slice a beat falls in from its start, at the audio's own speed times the transposition, so each attack lands on its beat whatever the tempo. A slice that runs out before the next one starts loops its last 80 ms or less, crossfaded where it goes round. At a new slice the last fades out under it.
+- Complex is a phase vocoder (`PhaseVocoder`): frames of 2048 every 512 samples. Each frame reads the audio around where the warp map puts that moment, and measures each bin's frequency from two analysis frames a hop apart, so any stretch keeps the pitch. Phases are locked to their nearest spectral peak (Laroche and Dolson's identity locking). Both channels follow the phase of their sum. Transposing (and another sample rate) moves each peak, with the bins round it, to its frequency times the ratio.
+- A block that doesn't go on from the last (a launch, a loop going round, new settings) starts again there. What sounded fades out over 64 samples (1.5 ms) as the new start fades in, so nothing clicks. A clip that stops fades out the same way.
+- Nothing allocates after construction.
+
+*Analysis* (`AudioAnalysis`, when a clip is made, not on the audio thread). Transients are peaks of spectral flux (log magnitudes) over a running median. Each is placed on the steepest rise of the waveform's energy near it, 2 ms early so its attack is kept whole.
+
+*Recording.* A take's audio goes into an `AudioCapture`: chunks of 65,536 frames that the UI thread makes ahead of it (8 seconds ahead, polling as MIDI takes do). The audio thread writes into them and never allocates or waits. A take of the input records in the player's Work. A take of the master records in WorkManager's master tap, after the mix and before the metronome (heard, never recorded). The take's wave slot is kept with a frame of silence until its audio fills it.
+
+**Tests.**
+- `ReBuzz.SessionTests/AudioClipTests.cs` (37):
+  - warp maps both ways; reading between samples; the FFT;
+  - transients at each click; the tempo of 1, 2 and 4-bar loops and of audio that isn't bars long; slices filling the beat grid;
+  - **the acceptance test**: a loop of clicks at 100 BPM played in Beats mode at 80, 100, 120 and 160 BPM, every click within 5 ms of its beat and its pitch kept;
+  - Repitch faster and higher; Off at its own speed; Complex keeping 440 Hz at 80 and 160 BPM, transposing ±12 semitones, at its level, and resampling 48 kHz audio;
+  - blocks of any size playing the same in every mode; a loop going round without a click in every mode; stopping fading out; nothing allocated while playing;
+  - the mixer fading out what stops; audio settings through XML; captures skipping the round trip, keeping their length, needing their chunks ahead, and allocating nothing.
+- `ReBuzzTests/SessionAudioTests.cs` (13), with the real Session Clip Player compiled from its source:
+  - a loop at 100 BPM in time at 80, 120 and 160 BPM through the audio loop;
+  - stopping without a click and falling silent; clip settings (gain, tempo and the length following it, undo);
+  - Monitor (auto, in, off);
+  - songs keeping their audio clips (.bmx and .bmxml);
+  - dropping a WAV file: a new audio track at its tempo, in its slot, one undo step (inconclusive where libsndfile can't load);
+  - four clips in every warp mode playing without allocating;
+  - a take recording an armed track's input and playing it from its next pass; a take until stopped keeping whole bars; a resampling track recording the master.
+
+**Known.**
+- Recording takes the output latency as the round trip; the input's own latency isn't known.
+- A song imported into another (rather than opened) can move its waves to other slots; its audio clips keep the old numbers.
+- Complex's transients are softer than Beats' (as Live's are); its transposition moves partials whole (no formant keeping).
+
+**Not automated.** How it sounds: the measures above stand in for listening. Real audio inputs. Drag and drop from Explorer, and the warp marker editor's mouse handling.
+
 ## 6. Parity matrix
 
-| Ableton Session View feature | Phase |
-|---|---|
-| Clip grid, scenes, clip/scene launch | 0.1 |
-| Global launch quantization | 0.1 |
-| Track stop buttons, Stop All Clips | 0.1 |
-| One clip per track, scene launches atomically | 0.1 |
-| Arrangement override | 0.1 (auto-clear on stop), 0.3 (Back to Arrangement) |
-| Keyboard/MIDI mapping of launch controls | 0.2 |
-| Create/duplicate/colour/rename clips, edit in clip view | 0.2 (editing via pattern editor) |
-| Insert/duplicate scenes, drag clips | 0.2 |
-| Record session into arrangement | 0.3 |
-| Session/Arrangement toggle | 0.3 |
-| Mixer section, sends/returns, group tracks | 0.4 |
-| Clip launch modes, per-clip quantize, legato | 0.5 |
-| Clip loop/start markers | 0.5 |
-| Scene tempo / time signature | 0.5 |
-| Follow actions (clip and scene) | 0.6 |
-| Crossfader | 0.6 |
-| Session record, overdub, fixed length, Capture MIDI | 0.7 |
-| Metronome, count-in | 0.7 |
-| Controller grid with session ring | 0.8 |
-| Ableton Link | 0.8 |
-| Audio clips, warping, audio recording | 1.0 |
-| Max for Live, Live devices, Groove Pool | Non-goal |
+| Ableton Session View feature | Phase | Status |
+|---|---|---|
+| Clip grid, scenes, clip/scene launch | 0.1 | ✅ |
+| Global launch quantization | 0.1 | ✅ |
+| Track stop buttons, Stop All Clips | 0.1 | ✅ |
+| One clip per track, scene launches atomically | 0.1 | ✅ |
+| Arrangement override | 0.1 (auto-clear on stop), 0.3 (Back to Arrangement) | ✅ |
+| Keyboard/MIDI mapping of launch controls | 0.2 | ✅ |
+| Create/duplicate/colour/rename clips, edit in clip view | 0.2 (editing via pattern editor) | ✅ |
+| Insert/duplicate scenes, drag clips | 0.2 | ✅ |
+| Record session into arrangement | 0.3 | ✅ |
+| Session/Arrangement toggle | 0.3 | ✅ |
+| Mixer section, sends/returns, group tracks | 0.4 | ✅ |
+| Clip launch modes, per-clip quantize, legato | 0.5 | ✅ |
+| Clip loop/start markers | 0.5 | ✅ |
+| Scene tempo / time signature | 0.5 | ✅ |
+| Follow actions (clip and scene) | 0.6 | ✅ |
+| Crossfader | 0.6 | ✅ |
+| Session record, overdub, fixed length, Capture MIDI | 0.7 | ✅ |
+| Metronome, count-in | 0.7 | ✅ |
+| Controller grid with session ring | 0.8 | ✅ |
+| Ableton Link | 0.8 | ✅ |
+| Audio clips, warping, audio recording | 1.0 | ✅ |
+| Warp markers, tempo detection, clip gain and transpose | 1.0 | ✅ |
+| Resampling (consolidating a performance to audio) | 1.0 | ✅ |
+| Max for Live, Live devices, Groove Pool | Non-goal | Non-goal |
 
 ## 7. Testing strategy
 
