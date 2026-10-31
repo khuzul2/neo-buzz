@@ -93,6 +93,9 @@ jobs:
         if ($env:TEST_FILTER) { $filter = @('--filter', $env:TEST_FILTER) }
         # UI tests (SessionViewTests) render PNGs here; published below.
         $env:SESSION_SCREENSHOT_DIR = Join-Path $PWD 'screenshots'
+        # Link tests (SessionSyncTests) run the helper build.ps1 built.
+        $link = Get-ChildItem build -Recurse -Filter ReBuzzLink.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($link) { $env:REBUZZ_LINK_HELPER = $link.FullName }
         # --blame-hang: a test stuck for 5 minutes (e.g. on a modal dialog) is killed and named.
         dotnet test $dll.FullName @filter --blame-hang --blame-hang-timeout 5m --logger "trx;LogFileName=tests.trx" --results-directory TestResults --logger "console;verbosity=minimal" *>&1 | Tee-Object -FilePath test.log
 

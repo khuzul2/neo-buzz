@@ -43,6 +43,7 @@ namespace ReBuzz.AppViews
             buzz.SongCore = song;
             buzz.SessionLayout = new Core.Session.SessionLayout(buzz, song, dispatcher);
             buzz.SessionMidi = new Core.Session.SessionMidi(buzz, buzz.SessionLayout, registryEx);
+            buzz.SessionSync = new Core.Session.SessionSync(buzz, registryEx);
             buzz.SessionCore.Recorder = new Core.Session.SessionRecorder(buzz, buzz.SessionLayout);
             buzz.SessionCore.UseSettings(registryEx);
             buzz.ArrangementEvents = new Core.ArrangementEventStore(buzz);

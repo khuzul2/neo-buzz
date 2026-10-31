@@ -16,3 +16,6 @@
 [submodule "ReBuzzPatternXP/PatternXPRE"]
 	path = ReBuzzPatternXP/PatternXPRE
 	url = https://github.com/wasteddesign/PatternXPRE
+[submodule "LinkHelper/link"]
+	path = LinkHelper/link
+	url = https://github.com/Ableton/link
