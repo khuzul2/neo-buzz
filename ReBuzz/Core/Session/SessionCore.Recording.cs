@@ -77,6 +77,7 @@ namespace ReBuzz.Core.Session
             arm = ArmState.None;
             recordWindows = Array.Empty<RecordWindow>();
             Array.Clear(heldNotes);
+            Array.Clear(heldPedals);
         }
 
         // ------------------------------------------------------------------ capture (Capture MIDI)
@@ -106,6 +107,15 @@ namespace ReBuzz.Core.Session
                 }
             }
 
+            public void Clear()
+            {
+                lock (sync)
+                {
+                    start = 0;
+                    count = 0;
+                }
+            }
+
             /// <summary>Takes out what was heard from <paramref name="from"/> on, oldest first, and forgets everything.</summary>
             public List<(long Time, int Data)> TakeSince(long from)
             {
@@ -122,6 +132,24 @@ namespace ReBuzz.Core.Session
                 }
                 return list;
             }
+        }
+
+        /// <summary>
+        /// Audio thread, the transport starting or jumping: what armed tracks were played
+        /// before is on another timeline, not something to capture.
+        /// </summary>
+        void ForgetCaptured()
+        {
+            var rings = arm.Rings;
+            for (int i = 0; i < rings.Length; i++)
+                rings[i].Clear();
+        }
+
+        /// <summary>Audio thread: a clip stopped on a track at a clock (exclusive end).</summary>
+        static void NoteStopped(SequenceCore seq, PatternCore clip, long clock)
+        {
+            Volatile.Write(ref seq.SessionStoppedAt, clock);
+            seq.SessionStoppedClip = clip;
         }
 
         /// <summary>UI thread: what an armed track was played since <paramref name="from"/> (heard time), taken out of its ring.</summary>
@@ -160,13 +188,14 @@ namespace ReBuzz.Core.Session
         /// </summary>
         internal sealed class RecordWindow
         {
-            public RecordWindow(SequenceCore track, PatternCore take, int firstPassTicks, long from, long until)
+            public RecordWindow(SequenceCore track, PatternCore take, int firstPassTicks, long from, long until, bool thenOverdub = false)
             {
                 Track = track;
                 Take = take;
                 FirstPassTicks = firstPassTicks;
                 From = from;
                 Until = until;
+                ThenOverdub = thenOverdub;
             }
 
             public SequenceCore Track { get; }
@@ -174,8 +203,8 @@ namespace ReBuzz.Core.Session
             public int FirstPassTicks { get; }
             public long From { get; }
             public long Until { get; }
-
-            public RecordWindow ClosedAt(long until) => new RecordWindow(Track, Take, FirstPassTicks, From, until);
+            /// <summary>Session Record is on: after its first pass the take goes on recording, as an overdub.</summary>
+            public bool ThenOverdub { get; }
         }
 
         volatile RecordWindow[] recordWindows = Array.Empty<RecordWindow>();
@@ -197,6 +226,8 @@ namespace ReBuzz.Core.Session
             /// <summary>Automation: the parameter moved (the stamp's data is its value); null for MIDI.</summary>
             public ParameterCore Parameter;
             public int ParameterTrack;
+            /// <summary>A take's input after its first pass (Session Record on): an overdub.</summary>
+            public bool PastFirstPass;
         }
 
         const int RingSize = 4096;
@@ -217,6 +248,7 @@ namespace ReBuzz.Core.Session
         // routing (an empty array). A release goes the same way (0.6.3).
         static readonly MachineCore[] FocusRouted = Array.Empty<MachineCore>();
         readonly MachineCore[][] heldNotes = new MachineCore[16 * 128][];
+        readonly MachineCore[][] heldPedals = new MachineCore[16][];
 
         /// <summary>
         /// MIDI thread: plays and records the input of armed tracks. True when it went to armed
@@ -228,15 +260,20 @@ namespace ReBuzz.Core.Session
             if (status >= 0xF0) return false;            // system messages go where they always did
             int kind = status & 0xF0;
             int velocity = (data >> 16) & 0x7F;
-            int key = ((status & 0x0F) << 7) | ((data >> 8) & 0x7F);
-            bool noteOn = kind == 0x90 && velocity > 0;
-            bool noteOff = kind == 0x80 || (kind == 0x90 && velocity == 0);
+            int channel = status & 0x0F;
+            int key = (channel << 7) | ((data >> 8) & 0x7F);
+            // The sustain pedal pairs like a note (down, up), per channel: its release must reach
+            // the machines its press held, or their notes ring on.
+            bool pedal = kind == 0xB0 && ((data >> 8) & 0x7F) == 64;
+            bool noteOn = (kind == 0x90 && velocity > 0) || (pedal && velocity >= 64);
+            bool noteOff = kind == 0x80 || (kind == 0x90 && velocity == 0) || (pedal && velocity < 64);
+            ref MachineCore[] held = ref pedal ? ref heldPedals[channel] : ref heldNotes[key];
 
             var state = arm;
             var machines = state.Machines;
             if (noteOff)
             {
-                var pressed = Interlocked.Exchange(ref heldNotes[key], null);
+                var pressed = Interlocked.Exchange(ref held, null);
                 if (pressed != null)
                 {
                     if (pressed.Length == 0) return false;
@@ -251,10 +288,10 @@ namespace ReBuzz.Core.Session
             {
                 if (machines.Length == 0)
                 {
-                    if (noteOn) Volatile.Write(ref heldNotes[key], FocusRouted);
+                    if (noteOn) Volatile.Write(ref held, FocusRouted);
                     return false;
                 }
-                if (noteOn) Volatile.Write(ref heldNotes[key], machines);
+                if (noteOn) Volatile.Write(ref held, machines);
             }
 
             for (int i = 0; i < machines.Length; i++)
@@ -291,13 +328,15 @@ namespace ReBuzz.Core.Session
                     if (time < w.From || time >= w.Until) continue;
                     if (!scheduler.TryGetPlayingAt(w.Track, tick, out var clip, out int position, out int end, out long start)) continue;
                     if (w.Take != null && !ReferenceEquals(clip, w.Take)) continue;
-                    if (w.FirstPassTicks > 0 && tick - start >= w.FirstPassTicks) continue;
+                    bool past = w.FirstPassTicks > 0 && tick - start >= w.FirstPassTicks;
+                    if (past && !w.ThenOverdub) continue;
                     var input = new TakeInput
                     {
                         Track = w.Track,
                         Clip = clip,
                         ClipStart = start,
-                        Stamp = new TakeStamp(data, time, position * TakeTime.TimeBase + fraction, end * TakeTime.TimeBase)
+                        Stamp = new TakeStamp(data, time, position * TakeTime.TimeBase + fraction, end * TakeTime.TimeBase),
+                        PastFirstPass = past
                     };
                     lock (ringLock)
                     {
@@ -317,15 +356,18 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>
-        /// A parameter was moved by hand (ParameterCore.SetValue without its "don't record" flag;
-        /// the thread that moved it, never the audio thread's): a recording track of its machine
-        /// records it into the clip it records, as automation.
+        /// A parameter was moved (ParameterCore.SetValue without its "don't record" flag), on the
+        /// UI thread: a recording track of its machine records it into the clip it records, as
+        /// automation.
         /// </summary>
         internal void OnParameterChange(ParameterCore parameter, int track, int value)
         {
             var windows = recordWindows;
             if (windows.Length == 0 || parameter?.Group?.Machine is not MachineCore machine) return;
-            if (ReBuzzCore.AudioLock.IsHeldByCurrentThread || buzz.SongLoading) return;
+            // Moves made in ReBuzz (parameter windows, MIDI controller mappings) come on the UI
+            // thread. Machines move parameters themselves from the audio and IPC threads (a
+            // peer controller, an LFO): that's not a performance to record.
+            if (ReBuzzCore.AudioLock.IsHeldByCurrentThread || !buzz.dispatcher.CheckAccess() || buzz.SongLoading) return;
             bool queued = false;
             lock (gate)
             {
@@ -340,7 +382,8 @@ namespace ReBuzz.Core.Session
                     if (!ReferenceEquals(w.Track.MachineCore, machine) || time < w.From || time >= w.Until) continue;
                     if (!scheduler.TryGetPlayingAt(w.Track, tick, out var clip, out int position, out int end, out long start)) continue;
                     if (w.Take != null && !ReferenceEquals(clip, w.Take)) continue;
-                    if (w.FirstPassTicks > 0 && tick - start >= w.FirstPassTicks) continue;
+                    bool past = w.FirstPassTicks > 0 && tick - start >= w.FirstPassTicks;
+                    if (past && !w.ThenOverdub) continue;
                     var input = new TakeInput
                     {
                         Track = w.Track,
@@ -348,7 +391,8 @@ namespace ReBuzz.Core.Session
                         ClipStart = start,
                         Stamp = new TakeStamp(value, time, position * TakeTime.TimeBase + fraction, end * TakeTime.TimeBase),
                         Parameter = parameter,
-                        ParameterTrack = track
+                        ParameterTrack = track,
+                        PastFirstPass = past
                     };
                     lock (ringLock)
                     {

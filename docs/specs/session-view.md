@@ -597,7 +597,7 @@ The Modern Pattern Editor also keeps every pattern's notes in its own store, key
 *Three threads, each doing only what it must.*
 - *MIDI thread.* `SessionMidi` sees each message first, as it does for mapped controls. What it doesn't take goes to `SessionCore.OnMidiInput`:
   - Armed tracks take the keyboard: their machines play it, directly rather than through their editors, and the MIDI focus routing is skipped.
-  - A release goes where its press went (0.6.3's rule), so arming or disarming mid-note hangs nothing.
+  - A release goes where its press went (0.6.3's rule), so arming or disarming mid-note hangs nothing. The sustain pedal pairs the same way, per channel.
   - While a track records, each message is stamped under the gate: the heard session time (1/240 tick, from the same rendered-position and latency estimate that launches use, 0.4.1), and where the track's clip was then (`SessionScheduler.TryGetPlayingAt`). The stamp goes into a preallocated ring guarded by a leaf lock. Several devices call from their own threads; the audio thread never touches the ring. A drain is posted to the UI thread.
 - *Audio thread.* Takes launch like clips, looped from their start, on the launch grid. From a stopped transport a take waits its count-in (`SessionScheduler.Start` places launches queued while stopped relative to the first tick). The metronome is a decaying sine (`MetronomeClick`), not a machine. It is mixed into the output after the master tap, so it is heard and never recorded, on each beat while it is on and during a count-in.
 - *UI thread.* The drain turns stamps into events (`TakeWriter`) and writes them through `IPatternColumn.SetEvents`:
@@ -605,7 +605,9 @@ The Modern Pattern Editor also keeps every pattern's notes in its own store, key
   - controllers, pitch bend and aftertouch are events of no length.
 
 *Record windows.* A track records while its window is open (`SessionCore.RecordWindow`, immutable, replaced by the UI thread):
-- *A take* records its first pass only: its length in bars, or up to 64 bars until stopped. A take recorded until stopped is cut to the bars recorded, rounded up, so it loops on in step.
+- *A take* records its first pass only: its length in bars, or up to 64 bars until stopped. A take recorded until stopped is cut to the bars recorded, rounded up, so it loops on in step. It may be stopped by launching it, a stop (quantized or not), Stop all, or the transport. The engine notes the tick each clip stops on, so the length counts to there, and notes still held end there.
+- With Session Record on, a take goes on after its first pass as an overdub, without a gap. Each later pass is its own undo step.
+- Takes are polled by the layout's own timer, whether a Session View shows or not.
 - *Overdub* (Session Record, Live's) records into whatever clip the track plays. An armed track playing nothing gets a take in its first empty slot from the selected scene.
 
 *Capture MIDI.* Every armed track keeps the last 4096 messages it was played, with when they were heard, recording or not. Capture makes each track's phrase a clip in its first empty slot from the selected scene:
@@ -613,9 +615,9 @@ The Modern Pattern Editor also keeps every pattern's notes in its own store, key
 - it is 1, 2, 4 or 8 bars long;
 - it starts playing on the next tick, in phase with what was played (`SessionCore.LaunchInPhase`).
 
-All of it is one undo step. Capture needs the transport running, since a phrase is placed by the session clock.
+All of it is one undo step. Capture needs the transport running, since a phrase is placed by the session clock. What was played before the transport last started or jumped is forgotten.
 
-*Automation.* A parameter moved by hand while its machine's track records goes into the clip's automation column for it. Any thread counts except the audio thread's: ParameterCore.SetValue without its "don't record" flag reaches `SessionCore.OnParameterChange`. An automation column is a parameter column marked `SessionAutomation`.
+*Automation.* A parameter moved in ReBuzz while its machine's track records goes into the clip's automation column for it. Moves in ReBuzz are those made in a parameter window or by a MIDI controller mapping: ParameterCore.SetValue without its "don't record" flag, on the UI thread, reaches `SessionCore.OnParameterChange`. Machines moving parameters themselves aren't recorded: peer controllers and LFOs on the audio thread, native editors on their own thread. An automation column is a parameter column marked `SessionAutomation`, marked before the engine can see it.
 - The engine plays it, with the "don't record" flag, so playback is never recorded again.
 - Other parameter columns belong to the pattern editors, which play their own data.
 - MIDI controllers, pitch bend and aftertouch played on an armed track are recorded as MIDI events in the MIDI column.

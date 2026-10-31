@@ -608,6 +608,7 @@ namespace ReBuzz.Core.Session
                 if (transportJustStarted || !scheduler.IsRunning)
                 {
                     long before = scheduler.Clock;
+                    ForgetCaptured();                               // 0.7: Capture MIDI counts from here
                     if (sceneAt >= 0)
                     {
                         long shifted = before < 0
@@ -641,6 +642,13 @@ namespace ReBuzz.Core.Session
                     scheduler.Advance();
                 }
                 tickChanges.AddRange(scheduler.Changes);
+                // 0.7: where clips stopped, for takes recorded until stopped.
+                for (int i = 0; i < tickChanges.Count; i++)
+                {
+                    var ch = tickChanges[i];
+                    if (ch.Previous != null && !ReferenceEquals(ch.Previous, ch.Current))
+                        NoteStopped(ch.Track, ch.Previous, scheduler.Clock);
+                }
 
                 if (sceneAt >= 0 && scheduler.Clock >= sceneAt)
                 {
@@ -1060,6 +1068,12 @@ namespace ReBuzz.Core.Session
             lock (gate)
             {
                 wasOverridden = scheduler.IsAnyOverridden;
+                // 0.7: the clips stop where the render is (a tick begun counts).
+                long stoppedAt = scheduler.Clock + (ReBuzzCore.masterInfo.PosInTick > 0 ? 1 : 0);
+                if (scheduler.IsRunning)
+                    foreach (var seq in buzz.SongCore.SequencesList)
+                        if (scheduler.GetPlaying(seq) is PatternCore playing)
+                            NoteStopped(seq, playing, stoppedAt);
                 scheduler.Halt();
                 changed = scheduler.Changes.Select(c => c.Track).ToArray();
                 sceneAt = -1;

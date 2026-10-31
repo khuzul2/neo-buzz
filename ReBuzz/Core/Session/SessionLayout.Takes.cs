@@ -31,6 +31,8 @@ namespace ReBuzz.Core.Session
             public bool UntilStopped;
             /// <summary>The clock the take counts from, once it has started (-1 before).</summary>
             public long Start = -1;
+            /// <summary>Heard time last seen while it recorded (1/240 tick), -1 before.</summary>
+            public long LastHeard = -1;
             public SessionCore.RecordWindow Window;
             public readonly Dictionary<PatternCore, TakeWriter> Writers = new Dictionary<PatternCore, TakeWriter>(ReferenceEqualityComparer.Instance);
             /// <summary>Overdub: what this pass wrote into each column of each clip, for its undo step.</summary>
@@ -129,12 +131,11 @@ namespace ReBuzz.Core.Session
             IPatternColumn Find() => clip.Columns.FirstOrDefault(c => c.Type == PatternColumnType.Parameter && ReferenceEquals(c.Parameter, parameter)
                 && c.Track == key.Track && c.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey));
             var column = Find();
-            if (column != null || !create) return column;
-            clip.InsertColumn(clip.Columns.Count, parameter, key.Track);
+            if (column != null || !create || clip is not PatternCore core) return column;
+            // Marked before the engine can see it: the audio thread reads the mark (EnginePlays).
+            core.InsertColumn(clip.Columns.Count, parameter, key.Track, new Dictionary<string, string> { [PatternColumnCore.SessionAutomationKey] = "1" });
             var made = clip.Columns.LastOrDefault();
-            if (made == null || !ReferenceEquals(made.Parameter, parameter)) return null;
-            made.Metadata[PatternColumnCore.SessionAutomationKey] = "1";
-            return made;
+            return made != null && ReferenceEquals(made.Parameter, parameter) ? made : null;
         }
 
         /// <summary>Automation recorded into a clip: parameter events in its automation columns.</summary>
@@ -219,10 +220,11 @@ namespace ReBuzz.Core.Session
                 countIn = (int)Math.Min(int.MaxValue, target - from);
             }
             var r = new Recording { Track = seq, Take = take, FirstPassTicks = length, UntilStopped = bars == 0 };
-            r.Window = new SessionCore.RecordWindow(seq, take, length, long.MinValue, long.MaxValue);
+            r.Window = new SessionCore.RecordWindow(seq, take, length, long.MinValue, long.MaxValue, thenOverdub: sessionRecord);
             recordings[seq] = r;
             PublishWindows();
             Engine.LaunchTake(seq, take, countIn);
+            UpdatePollTimer();
             RecordingChanged?.Invoke();
             return take;
         }
@@ -242,7 +244,17 @@ namespace ReBuzz.Core.Session
                 var doc = Ensure();
                 foreach (var seq in Engine.ArmedTracks.ToList())
                 {
-                    if (recordings.ContainsKey(seq)) continue;
+                    if (recordings.TryGetValue(seq, out var running))
+                    {
+                        // A take recording now goes on as an overdub after its first pass.
+                        var w = running.Window;
+                        if (running.Take != null && !w.ThenOverdub)
+                        {
+                            running.Window = new SessionCore.RecordWindow(w.Track, w.Take, w.FirstPassTicks, w.From, w.Until, thenOverdub: true);
+                            PublishWindows();
+                        }
+                        continue;
+                    }
                     if (Engine.GetPlayingCore(seq) != null)
                     {
                         BeginOverdub(seq);
@@ -273,6 +285,7 @@ namespace ReBuzz.Core.Session
             r.Window = new SessionCore.RecordWindow(seq, null, 0, now < 0 ? long.MinValue : now, long.MaxValue);
             recordings[seq] = r;
             PublishWindows();
+            UpdatePollTimer();
         }
 
         /// <summary>
@@ -283,34 +296,54 @@ namespace ReBuzz.Core.Session
         {
             if (track is not SequenceCore seq || !recordings.TryGetValue(seq, out var r)) return;
             DrainInputs();
-            long now = Engine.HeardTimeNow();
+            if (!recordings.TryGetValue(seq, out var still) || !ReferenceEquals(still, r)) return;
+            long end = EndOf(r, Engine.HeardTimeNow());
+            Finish(r, end);
+            Trim(r, end);
+        }
+
+        /// <summary>
+        /// When the recording ends (1/240 tick of the session clock): where its take stopped, if
+        /// it did (the engine notes the tick); else what is heard now; else the last tick it was
+        /// seen playing; long.MaxValue when it never played.
+        /// </summary>
+        long EndOf(Recording r, long now)
+        {
             if (r.Take != null)
             {
-                long start = Engine.StartOf(seq, r.Take);
+                long start = Engine.StartOf(r.Track, r.Take);
                 if (start >= 0) r.Start = start;
+                if (start < 0 && ReferenceEquals(r.Track.SessionStoppedClip, r.Take))
+                {
+                    long stopped = System.Threading.Volatile.Read(ref r.Track.SessionStoppedAt);
+                    if (r.Start >= 0 && stopped > r.Start) return stopped * TakeTime.TimeBase;
+                }
             }
-            Finish(r, now < 0 ? long.MaxValue : now);
-            Trim(r, now);
+            if (now >= 0) return now;
+            return r.LastHeard >= 0 ? r.LastHeard : long.MaxValue;
         }
 
         /// <summary>A take recorded until stopped gets the bars it recorded, rounded up (at least one).</summary>
-        void Trim(Recording r, long now)
+        void Trim(Recording r, long end)
         {
             if (r.Take == null || !r.UntilStopped || r.Take.IsDeleted) return;
             int bar = BarTicks;
-            long ticks = r.Start >= 0 && now >= 0 ? Math.Max(1, now / TakeTime.TimeBase - r.Start + 1) : bar;
+            // A tick heard partly counts; a stop on a tick boundary ends before it.
+            long ticks = r.Start >= 0 && end != long.MaxValue
+                ? Math.Max(1, (end + TakeTime.TimeBase - 1) / TakeTime.TimeBase - r.Start)
+                : bar;
             long bars = Math.Clamp((ticks + bar - 1) / bar, 1, SessionDocument.MaxRecordBars);
             if (r.Take.Length != bars * bar)
                 r.Take.Length = (int)(bars * bar);
         }
 
         /// <summary>
-        /// The track's recording is over: held notes end at <paramref name="end"/>, an overdub
-        /// becomes undo steps. A take whose first pass ended (<paramref name="passEnded"/>) is
-        /// overdubbed on while Session Record is on; one stopped by hand isn't.
+        /// The track's recording is over: held notes end at <paramref name="end"/>
+        /// (long.MaxValue: dropped), an overdub becomes undo steps. Finishing twice does nothing.
         /// </summary>
-        void Finish(Recording r, long end, bool passEnded = false)
+        void Finish(Recording r, long end)
         {
+            if (!recordings.TryGetValue(r.Track, out var current) || !ReferenceEquals(current, r)) return;   // finished already
             recordings.Remove(r.Track);
             PublishWindows();
             foreach (var (clip, writer) in r.Writers)
@@ -335,9 +368,7 @@ namespace ReBuzz.Core.Session
                     UndoStack.EndActionGroup();
                 }
             }
-            // Session Record goes on: an armed track's finished take is overdubbed from here.
-            if (passEnded && sessionRecord && r.Take != null && Engine.IsArmed(r.Track) && ReferenceEquals(Engine.GetPlayingCore(r.Track), r.Take))
-                BeginOverdub(r.Track);
+            UpdatePollTimer();
             RecordingChanged?.Invoke();
         }
 
@@ -369,23 +400,24 @@ namespace ReBuzz.Core.Session
                     int group = machine?.ParameterGroups.IndexOf(input.Parameter.Group) ?? -1;
                     if (group < 0) continue;
                     takeEvents.Add(new TakeEvent(input.Stamp.Position, input.Stamp.Data, 0));
-                    Write(r, input.Clip, new ColumnKey(group, input.Parameter.IndexInGroup, input.ParameterTrack), takeEvents);
+                    Write(r, input.Clip, new ColumnKey(group, input.Parameter.IndexInGroup, input.ParameterTrack), takeEvents, input.PastFirstPass);
                     continue;
                 }
                 r.WriterFor(input.Clip).Add(input.Stamp, takeEvents);
                 if (takeEvents.Count > 0)
-                    Write(r, input.Clip, ColumnKey.Midi, takeEvents);
+                    Write(r, input.Clip, ColumnKey.Midi, takeEvents, input.PastFirstPass);
             }
             takeInputs.Clear();
         }
 
-        void Write(Recording r, PatternCore clip, ColumnKey key, List<TakeEvent> events)
+        /// <param name="overdub">An overdub of the take (after its first pass): its own undo step.</param>
+        void Write(Recording r, PatternCore clip, ColumnKey key, List<TakeEvent> events, bool overdub = false)
         {
             var column = ColumnFor(clip, key, create: true);
             if (column == null) return;
             var batch = events.Select(e => new PatternEvent(e.Time, e.Value, e.Duration)).ToArray();
             column.SetEvents(batch, true);
-            if (!ReferenceEquals(clip, r.Take))
+            if (overdub || !ReferenceEquals(clip, r.Take))
             {
                 if (!r.Written.TryGetValue((clip, key), out var list))
                     r.Written[(clip, key)] = list = new List<PatternEvent>();
@@ -400,10 +432,28 @@ namespace ReBuzz.Core.Session
         /// </summary>
         public void PollTakes()
         {
-            if (recordings.Count == 0 || Engine == null) return;
+            if (polling || recordings.Count == 0 || Engine == null) return;
+            polling = true;
+            try
+            {
+                Poll();
+            }
+            finally
+            {
+                polling = false;
+            }
+            UpdatePollTimer();
+        }
+
+        bool polling;
+
+        void Poll()
+        {
             long now = Engine.HeardTimeNow();
             foreach (var r in recordings.Values.ToList())
             {
+                if (!recordings.TryGetValue(r.Track, out var current) || !ReferenceEquals(current, r)) continue;
+                if (now >= 0) r.LastHeard = now;
                 if (r.Track.IsRemoved)
                 {
                     Finish(r, long.MaxValue);
@@ -411,7 +461,7 @@ namespace ReBuzz.Core.Session
                 }
                 if (r.Take == null)
                 {
-                    if (!sessionRecord || !Engine.IsArmed(r.Track)) Finish(r, now < 0 ? long.MaxValue : now);
+                    if (!sessionRecord || !Engine.IsArmed(r.Track)) Finish(r, EndOf(r, now));
                     continue;
                 }
                 if (r.Take.IsDeleted)
@@ -422,11 +472,12 @@ namespace ReBuzz.Core.Session
                 long start = Engine.StartOf(r.Track, r.Take);
                 if (start < 0)
                 {
-                    // Not playing: still waiting to start, or stopped or replaced.
+                    // Not playing: still waiting to start, or stopped (the transport too) or replaced.
                     if (!Engine.IsPlayingOrQueued(r.Track, r.Take))
                     {
-                        Finish(r, now < 0 ? long.MaxValue : now);
-                        Trim(r, now);
+                        long end = EndOf(r, now);
+                        Finish(r, end);
+                        Trim(r, end);
                     }
                     continue;
                 }
@@ -435,8 +486,21 @@ namespace ReBuzz.Core.Session
                 if (now >= passEnd)
                 {
                     DrainInputs();
-                    if (recordings.TryGetValue(r.Track, out var still) && ReferenceEquals(still, r))
-                        Finish(r, passEnd, passEnded: true);
+                    if (!recordings.TryGetValue(r.Track, out var still) || !ReferenceEquals(still, r)) continue;
+                    if (r.Window.ThenOverdub && sessionRecord && Engine.IsArmed(r.Track))
+                    {
+                        // Session Record: the take goes on as an overdub of whatever the track
+                        // plays (its window took everything since its first pass ended).
+                        r.Take = null;
+                        r.UntilStopped = false;
+                        r.Window = new SessionCore.RecordWindow(r.Track, null, 0, passEnd, long.MaxValue);
+                        PublishWindows();
+                        RecordingChanged?.Invoke();
+                    }
+                    else
+                    {
+                        Finish(r, passEnd);
+                    }
                 }
             }
         }
@@ -465,13 +529,18 @@ namespace ReBuzz.Core.Session
             long origin = engine.BarGridOrigin;
             long nowTick = now / TakeTime.TimeBase;
             long earliestBar = origin + Math.Max(0, (nowTick - origin) / bar - (MaxCaptureBars - 1)) * bar;
+            var armed = engine.ArmedTracks.ToList();
+            // Recordings on these tracks end first: their undo steps stay their own.
+            foreach (var seq in armed)
+                StopRecording(seq);
 
             UndoStack.BeginActionGroup();
             try
             {
-                foreach (var seq in engine.ArmedTracks.ToList())
+                foreach (var seq in armed)
                 {
                     var played = engine.TakeCaptured(seq, earliestBar * TakeTime.TimeBase);
+                    played.RemoveAll(m => m.Time > now);              // a clock that jumped back meanwhile
                     int first = played.FindIndex(m => (m.Data & 0xF0) == 0x90 && ((m.Data >> 16) & 0x7F) > 0);
                     if (first < 0) continue;
                     long firstTick = played[first].Time / TakeTime.TimeBase;
@@ -489,7 +558,6 @@ namespace ReBuzz.Core.Session
                     while (s < doc.Scenes.Count && PatternAt(track, s) != null) s++;
                     if (s >= doc.Scenes.Count) InsertScene(doc.Scenes.Count);
 
-                    StopRecording(seq);
                     var create = new SessionCreatePatternAction(this, seq.Machine, name, length, midiColumn: true);
                     UndoStack.Do(create);
                     if (create.Created is not PatternCore clip) continue;
@@ -502,7 +570,10 @@ namespace ReBuzz.Core.Session
                     long from = startBar * TakeTime.TimeBase;
                     long room = (long)length * TakeTime.TimeBase;
                     foreach (var (time, data) in played.Skip(first))
-                        writer.Add(new TakeStamp(data, time, (int)((time - from) % room), (int)room), takeEvents);
+                    {
+                        long at = Math.Clamp(time - from, 0, room - 1);
+                        writer.Add(new TakeStamp(data, time, (int)at, (int)room), takeEvents);
+                    }
                     writer.CloseAll(now, takeEvents);
                     var column = EnsureMidiColumn(clip);
                     column?.SetEvents(takeEvents.Select(e => new PatternEvent(e.Time, e.Value, e.Duration)).ToArray(), true);
@@ -519,6 +590,10 @@ namespace ReBuzz.Core.Session
             if (made.Count > 0)
             {
                 buzz.SetModifiedFlag();
+                // Session Record goes on, into the captured clips.
+                if (sessionRecord)
+                    foreach (var seq in armed)
+                        if (!recordings.ContainsKey(seq)) BeginOverdub(seq);
                 RecordingChanged?.Invoke();
             }
             return made;
@@ -530,6 +605,32 @@ namespace ReBuzz.Core.Session
             recordings.Clear();
             sessionRecord = false;
             Engine?.SetRecordWindows(null);
+            UpdatePollTimer();
+        }
+
+        System.Windows.Threading.DispatcherTimer pollTimer;
+
+        /// <summary>
+        /// Polls takes while anything records, whether a Session View shows or not (its timer
+        /// polls too): a first pass ends, a take stops. Only where the UI thread runs a WPF
+        /// dispatcher (not in headless tests, which poll themselves).
+        /// </summary>
+        void UpdatePollTimer()
+        {
+            bool needed = recordings.Count > 0;
+            if (pollTimer == null)
+            {
+                if (!needed) return;
+                var wpf = System.Windows.Threading.Dispatcher.FromThread(System.Threading.Thread.CurrentThread);
+                if (wpf == null) return;
+                pollTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Background, wpf)
+                {
+                    Interval = TimeSpan.FromMilliseconds(40)
+                };
+                pollTimer.Tick += (s, e) => PollTakes();
+            }
+            if (needed && !pollTimer.IsEnabled) pollTimer.Start();
+            else if (!needed && pollTimer.IsEnabled) pollTimer.Stop();
         }
 
         /// <summary>Removes the automation recorded into a clip (undoable).</summary>

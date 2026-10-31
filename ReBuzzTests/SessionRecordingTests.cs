@@ -177,6 +177,7 @@ namespace ReBuzzTests
             int spt = rig.SamplesPerTick;
             var levels = Enumerable.Range(0, 8).Select(_ => (double)rig.Render(spt).Take(400).Max(v => Math.Abs(v))).ToArray();
             Assert.That(levels.Select(l => l > 0.05), Is.EqualTo(new[] { true, false, false, false, true, false, false, false }));
+            Assert.That(levels[0] > levels[4] * 1.2, Is.True, $"the bar line louder than the beat ({levels[0]:F3} vs {levels[4]:F3})");
             rig.Layout.SetMetronome(false);
             Assert.That(rig.Render(4 * spt).Max(v => Math.Abs(v)), Is.LessThan(0.05), "off");
         }
@@ -305,8 +306,71 @@ namespace ReBuzzTests
             bypass.SetValue(1 << 16, 0);                         // back, without recording
             rig.PlayTo(Bar + 4);
             Assert.That(bypass.GetValue(0), Is.EqualTo(1), "the next pass plays it");
+        }
+
+        [Test]
+        public void AutomationPlaysBackDuringAnOverdubWithoutBeingRecordedAgain()
+        {
+            using var rig = new KeysRig();
+            var clip = rig.Clip("A", Bar);
+            var bypass = rig.Keys.ParameterGroups[1].Parameters[0];
+            var automation = SessionLayout.ColumnFor(clip, new ColumnKey(1, 0, 0), create: true)!;
+            automation.SetEvents(new[] { new PatternEvent(2 * TB, 1) }, true);
+            var layout = rig.Layout;
+            layout.Ensure();
+            var track = layout.SequenceOf(0)!;
+            rig.Session.Launch(track, clip);
+            rig.PlayTo(1);
+            layout.SetArmed(0, true);
+            layout.SetSessionRecord(true);
+            Assert.That(layout.IsRecordingInto(track, clip), Is.True, "overdubbing");
+
+            rig.PlayTo(4);
+            Assert.That(bypass.GetValue(0), Is.EqualTo(1), "played back");
+            layout.SetSessionRecord(false);
+            Assert.That(layout.RecordedAutomationCount(clip), Is.EqualTo(1),
+                "not recorded again (playback sets it with the don't-record flag, from the audio thread)");
+            Assert.That(layout.UndoStack.CanUndo, Is.False, "an overdub pass that recorded nothing is no undo step");
+        }
+
+        [Test]
+        public void ATakeRecordedUntilStoppedEndsWhereTheTransportStopped()
+        {
+            using var rig = new KeysRig();
+            var layout = rig.Layout;
+            layout.Ensure();
+            layout.SetRecordBars(0);
+            layout.SetArmed(0, true);
+            FreezeClock();
+            var take = layout.RecordTake(0, 0)!;
+            rig.PlayTo(Bar + 4);
+            rig.Core.SendMIDIInput(NoteOn(60, 100));             // held when the transport stops
+            rig.PlayTo(Bar + 6);
+            layout.PollTakes();                                  // the view's timer
+            rig.Core.Playing = false;
             layout.PollTakes();
-            Assert.That(layout.RecordedAutomationCount(take), Is.EqualTo(1), "playback isn't recorded again");
+            Assert.That(layout.IsRecording(layout.SequenceOf(0)!), Is.False);
+            Assert.That(take.Length, Is.EqualTo(2 * Bar), "1 bar and 6 ticks: two bars (not one, nor the longest)");
+            Assert.That(EventsOf(take).Single().Duration, Is.EqualTo(2 * TB), "the held note ends where it stopped");
+        }
+
+        [Test]
+        public void ATakeRecordedUntilStoppedAndStoppedOnTheBarLineHasTheBarsBeforeIt()
+        {
+            using var rig = new KeysRig();
+            var layout = rig.Layout;
+            layout.Ensure();
+            layout.SetRecordBars(0);
+            layout.SetArmed(0, true);
+            var take = layout.RecordTake(0, 0)!;
+            var track = layout.SequenceOf(0)!;
+            rig.PlayTo(Bar + 6);
+            layout.PollTakes();                                  // the view's timer
+            rig.Session.StopAll();                               // on the next bar line: 32
+            rig.PlayTo(2 * Bar + 3);
+            Assert.That(rig.Session.GetPlaying(track), Is.Null);
+            layout.PollTakes();
+            Assert.That(take.Length, Is.EqualTo(2 * Bar), "stopped on tick 32: two bars, not three");
         }
 
         // ------------------------------------------------------------------ songs

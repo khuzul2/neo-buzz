@@ -341,6 +341,23 @@ namespace ReBuzz.Core
             }
         }
 
+        /// <summary>
+        /// Fork (0.7): a parameter column with its metadata set before the audio thread can see
+        /// the column (the engine reads the session automation mark while it plays).
+        /// </summary>
+        internal void InsertColumn(int index, IParameter p, int track, Dictionary<string, string> metadata)
+        {
+            lock (patternLock)
+            {
+                PatternColumnType type = p.IndexInGroup == (int)InternalParameter.MidiNote || p.IndexInGroup == -1 ? PatternColumnType.MIDI : PatternColumnType.Parameter;
+                PatternColumnCore pcc = new PatternColumnCore(type, this, p.Group.Machine, p, track, null, metadata);
+                var changed = new List<IPatternColumn>(columns);
+                changed.Insert(Math.Clamp(index, 0, changed.Count), pcc);
+                columns = changed;
+                ColumnAdded?.Invoke(pcc);
+            }
+        }
+
         public void InsertColumn(int index, IMachine? m)
         {
             lock (patternLock)
