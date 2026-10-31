@@ -67,7 +67,9 @@ namespace ReBuzz.Core
         /// </summary>
         internal volatile bool IsDeleted;
 
-        readonly List<IPatternColumn> columns;
+        // Fork (0.6.3): copy on write. The audio thread walks the list without a lock; a change
+        // makes a new list, so a walk in progress never sees one inserted or removed under it.
+        volatile List<IPatternColumn> columns;
 
         /// <summary>Fork (0.4.1): the columns without a read-only wrapper (one per call), for the audio thread.</summary>
         internal List<IPatternColumn> ColumnsList => columns;
@@ -232,9 +234,10 @@ namespace ReBuzz.Core
                 }
             }
 
-            Global.Buzz.Song.SequenceAdded += Song_SequenceAdded;
-            Global.Buzz.Song.SequenceRemoved += Song_SequenceRemoved;
-            Global.Buzz.Song.SequenceChanged += Song_SequenceAdded;
+            subscribedSong = Global.Buzz.Song;
+            subscribedSong.SequenceAdded += Song_SequenceAdded;
+            subscribedSong.SequenceRemoved += Song_SequenceRemoved;
+            subscribedSong.SequenceChanged += Song_SequenceAdded;
 
             /*
             foreach (var parTrackTuple in Machine.AllParametersAndTracks())
@@ -247,6 +250,7 @@ namespace ReBuzz.Core
         }
 
         HashSet<ISequence> _owningSequences = new HashSet<ISequence>();
+        ISong subscribedSong;
 
 
 
@@ -314,7 +318,9 @@ namespace ReBuzz.Core
                 if (index < columns.Count)
                 {
                     var pcc = columns[index];
-                    columns.RemoveAt(index);
+                    var changed = new List<IPatternColumn>(columns);
+                    changed.RemoveAt(index);
+                    columns = changed;
                     ColumnRemoved?.Invoke(pcc);
                 }
             }
@@ -328,7 +334,9 @@ namespace ReBuzz.Core
                 PatternColumnCore pcc = new PatternColumnCore(type, this, p.Group.Machine, p, track, null, null);
                 //int newIndex = Math.Min(index, columns.Count);
                 //columns.Insert(newIndex, pcc);
-                columns.Insert(index, pcc);
+                var changed = new List<IPatternColumn>(columns);
+                changed.Insert(index, pcc);
+                columns = changed;
                 ColumnAdded?.Invoke(pcc);
             }
         }
@@ -350,7 +358,9 @@ namespace ReBuzz.Core
                     ParameterCore parameter = ParameterCore.GetMidiParameter(Machine as MachineCore, dispatcher);
 
                     PatternColumnCore pcc = new PatternColumnCore(PatternColumnType.MIDI, this, Machine, parameter, 0, null, null);
-                    columns.Insert(index, pcc);
+                    var changed = new List<IPatternColumn>(columns);
+                    changed.Insert(index, pcc);
+                    columns = changed;
                     ColumnAdded?.Invoke(pcc);
                 }
             }
@@ -362,6 +372,7 @@ namespace ReBuzz.Core
 
         double nextTick = 0;
         private readonly IUiDispatcher dispatcher;
+        internal IUiDispatcher Dispatcher => dispatcher;
 
         internal void UpdateSoloPlayPosition(int sampleCount)
         {
@@ -386,6 +397,17 @@ namespace ReBuzz.Core
 
         internal void ClearEvents()
         {
+            // Fork (0.6.3): off the song's events. Upstream left that to the finalizer, which the
+            // song's own reference to this pattern kept from ever running: every deleted pattern
+            // lived (and listened) as long as the song.
+            var song = subscribedSong;
+            subscribedSong = null;
+            if (song != null)
+            {
+                song.SequenceAdded -= Song_SequenceAdded;
+                song.SequenceRemoved -= Song_SequenceRemoved;
+                song.SequenceChanged -= Song_SequenceAdded;
+            }
             PatternChanged = null;
             ColumnAdded = null;
             ColumnRemoved = null;

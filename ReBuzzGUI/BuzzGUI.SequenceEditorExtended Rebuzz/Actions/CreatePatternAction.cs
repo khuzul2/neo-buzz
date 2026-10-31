@@ -22,8 +22,10 @@ namespace BuzzGUI.SequenceEditor.Actions
 
 		protected override void DoAction()
 		{
-			Machine.CreatePattern(name, length);
-			var made = Machine.Patterns.FirstOrDefault(p => p.Name == name);
+			// Fork (0.6.3): under a free name if its own was taken meanwhile; holds what it made.
+			var before = Machine.Patterns.ToList();
+			Machine.CreatePattern(PatternNames.Free(Machine, name), length);
+			var made = PatternNames.Added(Machine, before);
 			if (created != null && made != null)
 				Restorations.Report(created, made);
 			if (made != null) created = made;

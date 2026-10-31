@@ -384,7 +384,7 @@ namespace ReBuzz.Audio
             var masterInfo = ReBuzzCore.masterInfo;
             var subTickInfo = ReBuzzCore.subTickInfo;
 
-            if (subTickInfo.PosInSubTick == 0)
+            if (subTickInfo.PosInSubTick == 0 && subTickInfo.SubTicksPerTick > 0)   // fork (0.6.3): never divide by 0
             {
                 var subTickRemainder = masterInfo.SamplesPerTick % subTickInfo.SubTicksPerTick;
 
@@ -616,8 +616,7 @@ namespace ReBuzz.Audio
                 }
             }
 
-            var mi = ReBuzzCore.masterInfo;
-            int windowTicks = ((sampleCount + mi.PosInTick) * PatternEvent.TimeBase) / mi.SamplesPerTick;
+            int windowTicks = BlockLength(ReBuzzCore.masterInfo, sampleCount);
 
             // Send note offs. Iterate in reverse: RemoveAt(i) in a forward loop
             // shifts the next element into slot i and skips it this pass, delaying
@@ -640,13 +639,30 @@ namespace ReBuzz.Audio
             }
         }
 
+        /// <summary>
+        /// Fork (0.6.3): length of the block starting at PosInTick, in pattern time (1/240 tick),
+        /// as the difference of the positions UpdatePatternPositions gives its start and end.
+        /// </summary>
+        static int BlockLength(MasterInfoExtended masterInfo, int sampleCount)
+        {
+            int spt = Math.Max(1, masterInfo.SamplesPerTick);
+            return (masterInfo.PosInTick + sampleCount) * PatternEvent.TimeBase / spt
+                 - masterInfo.PosInTick * PatternEvent.TimeBase / spt;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void PlayPatternColumnEvents(IPattern pattern, int sampleCount)
         {
             if (pattern != null)
             {
                 var masterInfo = ReBuzzCore.masterInfo;
-                int nextPos = ((sampleCount + masterInfo.PosInTick) * PatternEvent.TimeBase) / masterInfo.SamplesPerTick;
+                // Fork (0.6.3): the window is this block, [PlayPosition, PlayPosition + its length).
+                // PlayPosition already includes the part of the tick before the block; adding
+                // PosInTick again made windows overlap, so events late in a tick were sent up to
+                // a dozen times. Ends are computed as UpdatePatternPositions computes starts, so
+                // one block's end is the next block's start: every position is sent exactly once.
+                int from = pattern.PlayPosition;
+                int to = from + BlockLength(masterInfo, sampleCount);
 
                 // Fork (0.4.1): the list itself; pattern.Columns wraps it in a new read-only
                 // collection on every call (per pattern per block, on the audio thread).
@@ -658,7 +674,7 @@ namespace ReBuzz.Audio
                     if (column.Machine == null)
                         continue;
 
-                    column.GetEventsInto(pattern.PlayPosition, pattern.PlayPosition + nextPos, playColumnEvents);
+                    column.GetEventsInto(from, to, playColumnEvents);
                     foreach (var pe in playColumnEvents)
                     {
                         if (column.Type == PatternColumnType.MIDI)
@@ -753,6 +769,19 @@ namespace ReBuzz.Audio
             return workSamplesCount;
         }
 
+        /// <summary>
+        /// Fork (0.6.3): the work set's first machine through its own struct enumerator. LINQ's
+        /// First() boxed one (40 bytes per call, once or twice per block) unless the JIT's
+        /// profile-guided optimisation happened to remove the box: that was the allocation test
+        /// failing now and then since 0.4.1.
+        /// </summary>
+        MachineCore FirstOfWorkSet()
+        {
+            foreach (var m in workSet)
+                return m;
+            return null;
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         private void HandleWorkAlgorithmGroups(MachineCore master, int workSamplesCount)
         {
@@ -767,7 +796,7 @@ namespace ReBuzz.Audio
                 HandleWorkList(workSamplesCount);
                 CollectMachinesThatCanWork(master);
 
-                if (workSet.Count == 1 && workSet.First().DLL.Info.Type == MachineType.Master) // Master
+                if (workSet.Count == 1 && FirstOfWorkSet().DLL.Info.Type == MachineType.Master) // Master
                 {
                     break;
                 }
@@ -775,7 +804,7 @@ namespace ReBuzz.Audio
                 // If workList.Count == 1 then call work from this thread
                 if (workSet.Count == 1)
                 {
-                    var machine = workSet.First();
+                    var machine = FirstOfWorkSet();
 
                     // Call work and update machine activity flag
 
@@ -960,7 +989,7 @@ namespace ReBuzz.Audio
                 HandleWorkList(workSamplesCount);
                 CollectMachinesThatCanWork(master);
 
-                if ((workSet.Count == 1) && (workSet.First().DLL.Info.Type == MachineType.Master)) // Master
+                if ((workSet.Count == 1) && (FirstOfWorkSet().DLL.Info.Type == MachineType.Master)) // Master
                 {
                     break;
                 }
@@ -1290,7 +1319,7 @@ namespace ReBuzz.Audio
                 CollectControlMachinesThatCanWork();
                 CollectMachinesThatCanWork(master);
 
-                if (workSet.Count == 1 && workSet.First().DLL.Info.Type == MachineType.Master) // Master
+                if (workSet.Count == 1 && FirstOfWorkSet().DLL.Info.Type == MachineType.Master) // Master
                 {
                     break;
                 }
