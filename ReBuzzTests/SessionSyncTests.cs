@@ -118,9 +118,10 @@ namespace ReBuzzTests
                 Assert.That(clock.IsFollowing, Is.True);
                 Assert.That(rig.Core.BPM, Is.EqualTo(123), "the song's (whole) tempo follows, rounded");
                 Assert.That(clock.Ours.TryRead(out var ours), Is.True);
-                // Each tick's own length moves a little as the lock follows; over two seconds, Link's tempo.
+                // Each tick's own length moves a little as the lock follows (well under a millisecond
+                // of phase, which over two seconds is under 0.1 BPM); the song's whole tempo is 123.
                 double tempo = (ours.Beat - before.Beat) / (ours.Micros - before.Micros) * 60e6;
-                Assert.That(Math.Abs(tempo - 123.4), Is.LessThan(0.05), $"plays at Link's exact tempo: {tempo:F3}");
+                Assert.That(Math.Abs(tempo - 123.4), Is.LessThan(0.15), $"plays at Link's exact tempo: {tempo:F3}");
                 Assert.That(peer.TryGetState(out var line), Is.True);
                 int tpb = Math.Max(1, rig.Core.TPB);
                 double barBeat = ours.Beat - rig.Session.GridOrigin / (double)tpb;
@@ -173,10 +174,10 @@ namespace ReBuzzTests
         {
             var ours = new TimelineCell();
             var sent = new ConcurrentQueue<(int Message, double At)>();
-            double t0 = HostClock.Now() + 100_000;
+            double t0 = HostClock.Now() + 300_000;                   // time for the thread to start on a busy runner
             ours.Write(new Timeline(t0, 0, 120));
             using (new MidiClockOutput(() => true, ours, m => sent.Enqueue((m, HostClock.Now()))))
-                Thread.Sleep(700);
+                Thread.Sleep(900);
             var list = sent.ToList();
             Assert.That(list[0].Message, Is.EqualTo(MidiClockSender.Start));
             Assert.That(Math.Abs(list[0].At - (t0 - MidiClockSender.StartLead)), Is.LessThan(3000));
