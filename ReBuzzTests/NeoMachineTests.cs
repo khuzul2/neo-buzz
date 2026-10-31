@@ -82,6 +82,7 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Verb = new("Neo Verb", "Verb", false);
         internal static readonly NeoInfo Poly = new("Neo Poly", "Poly", true);
         internal static readonly NeoInfo Wave = new("Neo Wave", "Wave", true);
+        internal static readonly NeoInfo Fm6 = new("Neo FM6", "FM6", true);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -425,9 +426,55 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void NeoFm6PlaysLoadsADx7BankAndShowsItsEditor()
+        {
+            using var rig = new Rig(Fm6);
+            Assert.That(rig.Param("Op1 break").DescribeValue(39), Is.EqualTo("39 · C4"), "the machine's own value texts reach ReBuzz");
+            rig.Notes(BuzzNote(4, 0), BuzzNote(4, 4), BuzzNote(4, 7));
+            var chord = rig.PlayUntilSound(0.3);
+            TestContext.Out.WriteLine($"init chord {Db(Rms(chord)):F1} dB");
+            Assert.That(Rms(chord), Is.GreaterThan(1e-3), "the chord sounds");
+
+            // A 32-voice bank written by the machine's own SysEx code, loaded as a user would.
+            var machine = rig.Effect.ManagedMachine;
+            var asm = machine.GetType().Assembly;
+            var sysex = asm.GetType("NeoBuzz.Fm6.Sysex")!;
+            var voiceType = sysex.GetNestedType("Voice", BindingFlags.NonPublic)!;
+            var init = (byte[])sysex.GetMethod("InitVoice")!.Invoke(null, null)!;
+            var list = (System.Collections.IList)Activator.CreateInstance(typeof(System.Collections.Generic.List<>).MakeGenericType(voiceType))!;
+            list.Add(Activator.CreateInstance(voiceType, "INIT VOICE", init));
+            var bank = (byte[])sysex.GetMethod("WriteBank")!.Invoke(null, new object[] { list })!;
+            var path = Path.Combine(Path.GetTempPath(), "Neo FM6 test bank.syx");
+            File.WriteAllBytes(path, bank);
+            machine.GetType().GetMethod("LoadBank", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(machine, new object[] { path });
+
+            var stateProperty = machine.GetType().GetProperty("MachineState")!;
+            var state = stateProperty.GetValue(machine)!;
+            Assert.That((string)state.GetType().GetProperty("BankName")!.GetValue(state)!, Is.EqualTo("Neo FM6 test bank"));
+            var xml = new System.Xml.Serialization.XmlSerializer(state.GetType());
+            using var ms = new MemoryStream();
+            xml.Serialize(ms, state);
+            ms.Position = 0;
+            stateProperty.SetValue(machine, xml.Deserialize(ms));
+            var voices = (System.Collections.ICollection)machine.GetType().GetProperty("Bank", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(machine)!;
+            Assert.That(voices.Count, Is.EqualTo(32), "the bank survives the song's XML");
+
+            // Algorithm 32 with all six operators: still sounds after the change.
+            rig.Param("Algorithm").SetValue(0, 31);
+            for (int op = 2; op <= 6; op++) rig.Param($"Op{op} level").SetValue(0, 80);
+            rig.Notes(255, 255, 255);
+            rig.Play(0.5);
+            rig.Notes(BuzzNote(4, 0));
+            var organ = rig.PlayUntilSound(0.3);
+            Assert.That(Rms(organ), Is.GreaterThan(1e-3));
+
+            ShootEditor(rig.Effect, "neo-fm6-editor");
+        }
+
+        [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6 })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

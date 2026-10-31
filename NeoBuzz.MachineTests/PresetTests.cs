@@ -22,9 +22,10 @@ namespace NeoBuzz.MachineTests
             ["Neo Verb"] = (NeoBuzz.Verb.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Verb(v).Process(l, r, n))),
             ["Neo Poly"] = (NeoBuzz.Poly.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Poly.PolyEngine(v), (e, l, r, n) => ((NeoBuzz.Poly.PolyEngine)e).Process(l, r, n), x.Length)),
             ["Neo Wave"] = (NeoBuzz.Wave.Params.Table, (v, x) => RenderSynth(WaveEngine(v), (e, l, r, n) => ((NeoBuzz.Wave.WaveEngine)e).Process(l, r, n), x.Length)),
+            ["Neo FM6"] = (NeoBuzz.Fm6.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Fm6.FmEngine(v), (e, l, r, n) => ((NeoBuzz.Fm6.FmEngine)e).Process(l, r, n), x.Length)),
         };
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6" };
 
         static NeoBuzz.Wave.WaveEngine WaveEngine(ParamValues v)
         {

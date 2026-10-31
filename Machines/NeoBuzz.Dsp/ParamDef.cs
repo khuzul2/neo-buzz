@@ -127,10 +127,14 @@ namespace NeoBuzz.Dsp
             return Math.Clamp((int)Math.Round(Min + t * (Max - Min)), Min, Max);
         }
 
+        /// <summary>Optional: the machine's own text for a raw value (note names, ratios, …).</summary>
+        public Func<int, string> Describer { get; set; }
+
         /// <summary>The text shown for a raw value.</summary>
         public string Describe(int raw)
         {
             raw = Math.Clamp(raw, Min, Max);
+            if (Describer != null) return Describer(raw);
             double v = Value(raw);
             var c = CultureInfo.InvariantCulture;
             switch (Kind)
