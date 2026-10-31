@@ -148,9 +148,11 @@ namespace ReBuzzTests
             {
                 Assert.That(rig.Core.SyncClock.Source, Is.Not.Null);
                 for (int i = 0; i < 48; i++) rig.Core.SendMIDIInput(0xF8);
-                Assert.That(sync.ClockIn.NextBeat, Is.EqualTo(2), "pulses reach the clock in: 48 make two beats");
+                Assert.That(sync.ClockIn.NextBeat, Is.EqualTo(0), "stopped, pulses keep the tempo, not the position");
                 rig.Core.SendMIDIInput(0xFA);
                 Assert.That(rig.Core.PlayRequested, Is.True, "Start starts");
+                for (int i = 0; i < 24; i++) rig.Core.SendMIDIInput(0xF8);
+                Assert.That(sync.ClockIn.NextBeat, Is.EqualTo(1), "after Start, 24 pulses make a beat");
                 rig.Core.SendMIDIInput(0xFC);
                 Assert.That(rig.Core.PlayRequested, Is.False, "Stop stops");
                 rig.Core.SendMIDIInput(0xFB);
