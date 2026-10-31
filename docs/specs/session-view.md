@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11), 0.6.2 (#12) and 0.6.3 (#13) merged; next: 0.7 Session recording (redesigned) |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11), 0.6.2 (#12), 0.6.3 (#13) and 0.7 (#14) merged; next: 0.8 Control surfaces & sync |
 | Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -575,36 +575,59 @@ Known limits (the first three were lifted in 0.6.2):
 
 **Features**
 1. Track **record arm**; record button on empty slots of armed tracks.
-2. **Record MIDI into a new clip** from a keyboard played into the armed track's machine: a new pattern (the take) is created in the slot, and notes are written into its note columns by the session's own recorder (see Design).
+2. **Record MIDI into a new clip** (a take) from a keyboard played into the armed track's machine.
 3. **Overdub** into the playing clip; **fixed-length** recording (1, 2, 4, 8 bars) that ends and loops automatically.
-4. **Capture MIDI**: keep the last N bars of incoming MIDI per armed track and turn it into a clip on demand.
-5. Parameter automation recording into the clip (knob moves → pattern parameter column).
+4. **Capture MIDI**: keep the last bars of incoming MIDI per armed track and turn it into a clip on demand.
+5. Automation recording into the clip.
 6. Metronome and count-in.
 
-**Design (revised in 0.6.1).** The first draft planned to record through the pattern editor's `PlayRecordManager.RecordPlayingMidiNote`. That can't work:
-- it is internal to the ModernPatternEditor plugin;
+**Design (revised in 0.6.1, settled in 0.7).**
+
+*Where notes go.* The first draft planned to record through the pattern editor's `PlayRecordManager.RecordPlayingMidiNote`. That can't work:
+- it is internal to the Modern Pattern Editor plugin;
 - it writes into every playing pattern of whatever machine the Pattern View has selected, through that editor's own undo stack;
 - upstream disabled it ("ToDo: only record to MIDI columns").
 
-It serves neither per-track arm, nor several armed tracks, nor Capture MIDI. Instead, the session records by itself, over three threads, each doing only what it must.
-- *MIDI thread: timestamp and queue.* `SessionMidi` sees each message first, as it does for mapped controls. For an armed track's machine it stamps the message with the heard session position: clock, tick fraction and sub-tick, from the same rendered-position and latency estimate that launches use (0.4.1). It then pushes the message onto a preallocated lock-free ring, with no allocation and no locks. The message still goes on to the machine for monitoring. Routing changes so that armed tracks' machines receive input, not only the MIDI-focus machine.
-- *Audio thread: record windows.* `OnTick` opens and closes record windows on the launch grid, like launches. A window starts on a grid point after the count-in and ends after its fixed length, after which the take plays on as a looping clip. The metronome is a preallocated click mixed into the master during count-in and recording; it is not a machine.
-- *UI thread: writing patterns.* A drain posted from the queue writes events into the take's pattern through `IPatternColumn.SetEvents`, independently of the Pattern View:
-  - notes go to the machine's note columns, one track per held note, with a note-off at its release;
-  - velocity goes to a velocity column if the machine has one;
-  - sub-tick positions use `SubTickInfo`.
-  
-  Overdub writes at the position modulo the clip's loop. Capture MIDI is a per-track ring of the last N bars, always running while armed, turned into a take on demand.
-- *A take is one undo step* in the session's history. It consists of an object-bound pattern creation (`SessionCreatePatternAction`), its slot, and its events (a diff action on that pattern, as recording into the arrangement does since 0.6.1). Takes get fresh names. Deleted takes' names are retired, so a later take never inherits their slots or settings.
+The Modern Pattern Editor also keeps every pattern's notes in its own store, keyed by name, which nothing else can write. So a take goes into the clip's *engine MIDI column*: a `PatternColumnType.MIDI` column of `PatternCore`, the one Note Matrix uses.
+- `WorkManager` plays it itself, to any machine that takes MIDI, with note-offs at each note's end. 0.6.3 made it play each event once.
+- Songs save it (.bmx TAP2 section, .bmxml).
+- Undo keeps it (`EngineColumns`, 0.6.3).
+- The pattern editors don't show it. The clip panel shows the count of recorded notes, and the slot menu clears them.
 
-**What 0.6.1 provides for it.**
-- Identity that follows the song exactly, with retired names and object-bound pattern actions.
-- Liveness flags, so a take deleted while recording is never written again.
-- One launch path, through a launch map rebuilt synchronously.
-- `SongLoading`, so nothing records into a song while it loads.
-- Recording that is serialized with the tick.
-- Diff-based arrangement undo.
-- The leaf lock on sequence events.
+*Three threads, each doing only what it must.*
+- *MIDI thread.* `SessionMidi` sees each message first, as it does for mapped controls. What it doesn't take goes to `SessionCore.OnMidiInput`:
+  - Armed tracks take the keyboard: their machines play it, directly rather than through their editors, and the MIDI focus routing is skipped.
+  - A release goes where its press went (0.6.3's rule), so arming or disarming mid-note hangs nothing. The sustain pedal pairs the same way, per channel.
+  - While a track records, each message is stamped under the gate: the heard session time (1/240 tick, from the same rendered-position and latency estimate that launches use, 0.4.1), and where the track's clip was then (`SessionScheduler.TryGetPlayingAt`). The stamp goes into a preallocated ring guarded by a leaf lock. Several devices call from their own threads; the audio thread never touches the ring. A drain is posted to the UI thread.
+- *Audio thread.* Takes launch like clips, looped from their start, on the launch grid. From a stopped transport a take waits its count-in (`SessionScheduler.Start` places launches queued while stopped relative to the first tick). The metronome is a decaying sine (`MetronomeClick`), not a machine. It is mixed into the output after the master tap, so it is heard and never recorded, on each beat while it is on and during a count-in.
+- *UI thread.* The drain turns stamps into events (`TakeWriter`) and writes them through `IPatternColumn.SetEvents`:
+  - a note is one event from its press to its release, cut at the end of the clip's region;
+  - controllers, pitch bend and aftertouch are events of no length.
+
+*Record windows.* A track records while its window is open (`SessionCore.RecordWindow`, immutable, replaced by the UI thread):
+- *A take* records its first pass only: its length in bars, or up to 64 bars until stopped. A take recorded until stopped is cut to the bars recorded, rounded up, so it loops on in step. It may be stopped by launching it, a stop (quantized or not), Stop all, or the transport. The engine notes the tick each clip stops on, so the length counts to there, and notes still held end there.
+- With Session Record on, a take goes on after its first pass as an overdub, without a gap. Each later pass is its own undo step.
+- Takes are polled by the layout's own timer, whether a Session View shows or not.
+- *Overdub* (Session Record, Live's) records into whatever clip the track plays. An armed track playing nothing gets a take in its first empty slot from the selected scene.
+
+*Capture MIDI.* Every armed track keeps the last 4096 messages it was played, with when they were heard, recording or not. Capture makes each track's phrase a clip in its first empty slot from the selected scene:
+- it starts at the bar line before the phrase's first note (looking back 8 bars at most);
+- it is 1, 2, 4 or 8 bars long;
+- it starts playing on the next tick, in phase with what was played (`SessionCore.LaunchInPhase`).
+
+All of it is one undo step. Capture needs the transport running, since a phrase is placed by the session clock. What was played before the transport last started or jumped is forgotten.
+
+*Automation.* A parameter moved in ReBuzz while its machine's track records goes into the clip's automation column for it. Moves in ReBuzz are those made in a parameter window or by a MIDI controller mapping: ParameterCore.SetValue without its "don't record" flag, on the UI thread, reaches `SessionCore.OnParameterChange`. Machines moving parameters themselves aren't recorded: peer controllers and LFOs on the audio thread, native editors on their own thread. An automation column is a parameter column marked `SessionAutomation`, marked before the engine can see it.
+- The engine plays it, with the "don't record" flag, so playback is never recorded again.
+- Other parameter columns belong to the pattern editors, which play their own data.
+- MIDI controllers, pitch bend and aftertouch played on an armed track are recorded as MIDI events in the MIDI column.
+
+*Undo.*
+- A take is one undo step: its pattern, made with its MIDI column (`SessionCreatePatternAction`), and its slot. Undo keeps what it recorded, for a redo.
+- Each overdub pass is one step per clip: a `ClipEventsAction` holding the clip itself.
+- Takes get fresh names; deleted takes' names are retired (0.6.1).
+
+**What 0.6.1–0.6.3 provide for it.** Identity that follows the song, with object-bound pattern actions. Liveness flags, so a take deleted while recording is never written again. One launch path. `SongLoading`. Diff-based undo. Engine MIDI columns that play once and survive deletes and undo. A MIDI release that does what its press did.
 
 **Acceptance criteria.** Notes recorded at 120 BPM land within ±1 sub-tick of their played time; fixed-length recording loops seamlessly on the first pass.
 

@@ -243,6 +243,12 @@ namespace ReBuzz.Core.Session
         public bool ShowClipPanel { get => Settings.ShowClipPanel; set => Settings.ShowClipPanel = value; }
         /// <summary>Machine groups shown folded (by name).</summary>
         public HashSet<string> CollapsedGroups => Settings.CollapsedGroups;
+        /// <summary>Length of new takes in bars (0.7); 0 records until stopped.</summary>
+        public int RecordBars { get => Settings.RecordBars; set => Settings.RecordBars = value; }
+        /// <summary>Bars the metronome counts in before a take recorded from a stopped transport (0.7).</summary>
+        public int CountInBars { get => Settings.CountInBars; set => Settings.CountInBars = value; }
+        /// <summary>The metronome clicks while the session plays (0.7).</summary>
+        public bool Metronome { get => Settings.Metronome; set => Settings.Metronome = value; }
 
         /// <summary>Made up from the song, not edited yet (0.6.1): not saved, so plain songs stay plain. Not serialized.</summary>
         internal bool AutoFilled { get; set; }
@@ -489,6 +495,10 @@ namespace ReBuzz.Core.Session
 
         /// <summary>Most scene rows a layout may have (0.6.1: a damaged file can't allocate millions).</summary>
         public const int MaxScenes = 4096;
+        /// <summary>Longest fixed take, in bars (0.7).</summary>
+        public const int MaxRecordBars = 64;
+        /// <summary>Longest count-in, in bars (0.7).</summary>
+        public const int MaxCountInBars = 4;
 
         /// <summary>Inserts a copy of a scene (name, colour, slots) below it.</summary>
         public void DuplicateScene(int index)
@@ -601,6 +611,10 @@ namespace ReBuzz.Core.Session
                     return e;
                 })),
                 MixerXml(Keep),
+                RecordBars == 0 && CountInBars == 0 && !Metronome ? null : new XElement("Record",
+                    RecordBars == 0 ? null : new XAttribute("bars", RecordBars),
+                    CountInBars == 0 ? null : new XAttribute("countIn", CountInBars),
+                    Metronome ? new XAttribute("metronome", "true") : null),
                 !Clips.Keys.Any(k => Keep(k.Machine) && Keep(k.Pattern)) ? null : new XElement("Clips",
                     Clips.Where(c => Keep(c.Key.Machine) && Keep(c.Key.Pattern))
                          .OrderBy(c => c.Key.Machine, StringComparer.Ordinal).ThenBy(c => c.Key.Pattern, StringComparer.Ordinal)
@@ -657,6 +671,12 @@ namespace ReBuzz.Core.Session
                     ScenesStopOtherClips = (string)root.Attribute("scenesStopOtherClips") == "true",
                     SongMidi = root.Element("Midi") is XElement midi ? SessionMidiMap.FromXml(midi) : null,
                 };
+                if (root.Element("Record") is XElement record)
+                {
+                    doc.RecordBars = Math.Clamp(IntAttr(record, "bars", 0), 0, MaxRecordBars);
+                    doc.CountInBars = Math.Clamp(IntAttr(record, "countIn", 0), 0, MaxCountInBars);
+                    doc.Metronome = (string)record.Attribute("metronome") == "true";
+                }
                 if (root.Element("Mixer") is XElement mixer)
                 {
                     doc.ShowMixer = (string)mixer.Attribute("show") != "false";
@@ -742,5 +762,8 @@ namespace ReBuzz.Core.Session
         public bool ShowClipPanel { get; set; } = true;
         public HashSet<string> CollapsedGroups { get; } = new HashSet<string>();
         public string CueMachine { get; set; } = "";
+        public int RecordBars { get; set; }
+        public int CountInBars { get; set; }
+        public bool Metronome { get; set; }
     }
 }

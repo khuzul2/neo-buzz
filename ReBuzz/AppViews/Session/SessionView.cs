@@ -48,6 +48,8 @@ namespace ReBuzz.AppViews.Session
         readonly Border statusBar;
         readonly FlatButton backButton;
         readonly FlatButton recordButton;
+        readonly FlatButton overdubButton;       // 0.7: Session Record
+        readonly FlatButton clickButton;         // 0.7: metronome
         readonly FlatButton dropoutButton;
         long shownDropouts = -1;
         readonly FlatButton undoButton;
@@ -115,6 +117,21 @@ namespace ReBuzz.AppViews.Session
                 "at the song position where it happens. With looping off, the song grows while you record.\n" +
                 "Undo removes a whole recording pass (↶ here).");
             left.Children.Add(recordButton);
+            overdubButton = new FlatButton("◉  Overdub", ToggleSessionRecord,
+                "Session record (Live's): tracks armed with ● in their header record what you play into their clips.\n" +
+                "A track playing a clip overdubs it; a track playing none records a new take into its first empty slot\n" +
+                "from the selected scene. Off ends every recording. Each pass is one undo step.\n" +
+                "An armed track's empty slots also have their own ● to record a take there.");
+            left.Children.Add(overdubButton);
+            var captureButton = new FlatButton("⤓  Capture", Capture,
+                "Capture MIDI (Live's): what you played lately on armed tracks, recording or not, becomes a clip\n" +
+                "in their first empty slot from the selected scene, from the bar line before the first note\n" +
+                "(1, 2, 4 or 8 bars), and plays on at once in phase. Needs the transport running.");
+            left.Children.Add(captureButton);
+            clickButton = new FlatButton("♩", () => layout.SetMetronome(!(layout.Document?.Metronome ?? false)),
+                "Metronome: a click on every beat while the session plays (heard, never recorded).\n" +
+                "Record length and count-in: ⚙.");
+            left.Children.Add(clickButton);
             backButton = new FlatButton("Back to arrangement", () => session.BackToArrangement(), "Lit while the session has taken over tracks: gives every track back to the arrangement");
             left.Children.Add(backButton);
             undoLaunchButton = new FlatButton("↶ Launch", UndoLaunch, "");
@@ -287,6 +304,7 @@ namespace ReBuzz.AppViews.Session
             // 0.6.3: a hidden view (the docked one while the window shows, or the hidden window)
             // rebuilds when it is shown again, not on every change.
             layout.Changed += RebuildWhenSeen;
+            layout.RecordingChanged += () => { if (IsLoaded && IsVisible) RefreshState(); };
             if (midi != null)
             {
                 midi.Changed += RebuildWhenSeen;
@@ -583,6 +601,9 @@ namespace ReBuzz.AppViews.Session
             backButton.IsEnabled = overridden;
             backButton.SetLit(overridden ? SessionPalette.Override : null);
             recordButton.SetLit(buzz.Recording ? SessionPalette.Record : null);
+            layout.PollTakes();                                       // 0.7: takes whose first pass is over finish
+            overdubButton.SetLit(layout.IsSessionRecording ? SessionPalette.Record : null);
+            clickButton.SetLit(layout.Document?.Metronome == true ? SessionPalette.Fader : null);
             RefreshDropouts();
             undoButton.IsEnabled = layout.UndoStack.CanUndo;
             redoButton.IsEnabled = layout.UndoStack.CanRedo;

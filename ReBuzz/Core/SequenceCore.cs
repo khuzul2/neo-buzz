@@ -23,6 +23,12 @@ namespace ReBuzz.Core
         // scheduler (set on the UI thread, read on the audio thread).
         internal volatile object FollowColumn;
 
+        // Session recording (0.7): the clip that last stopped here (or was replaced), and the
+        // clock it stopped on (exclusive): written by the audio thread, read by the UI thread to
+        // give a take recorded until stopped its length.
+        internal long SessionStoppedAt = -1;
+        internal volatile PatternCore SessionStoppedClip;
+
         /// <summary>
         /// Fork (0.6.1): set (under AudioLock) when the sequence is removed from the song. Removed
         /// sequences never come back (undo adds a new one), so the Session View rejects launches

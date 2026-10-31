@@ -122,7 +122,37 @@ namespace ReBuzz.AppViews.Session
         void StopTrack(int track)
         {
             if (layout.SequenceOf(track) is ISequence s)
+            {
+                layout.StopRecording(s);                     // 0.7: a take recording until stopped gets its length
                 session.Stop(s);
+            }
+            RefreshState();
+        }
+
+        // ------------------------------------------------------------------ recording (0.7)
+
+        void ToggleArm(int track)
+        {
+            layout.SetArmed(track, !layout.IsArmed(track));
+            RefreshState();
+        }
+
+        void RecordInto(SlotCell cell)
+        {
+            Select(cell.Track, cell.Scene);
+            layout.RecordTake(cell.Track, cell.Scene);
+            RefreshState();
+        }
+
+        void Capture()
+        {
+            layout.CaptureMidi(selected?.Scene ?? 0);
+            RefreshState();
+        }
+
+        void ToggleSessionRecord()
+        {
+            layout.SetSessionRecord(!layout.IsSessionRecording, selected?.Scene ?? 0);
             RefreshState();
         }
 
@@ -391,6 +421,12 @@ namespace ReBuzz.AppViews.Session
                 menu.Items.Add(Item("Rename…", () => RenameClip(pattern), "F2"));
                 menu.Items.Add(Item("Duplicate", () => DuplicateClip(cell.Track, cell.Scene), "Ctrl+D"));
                 menu.Items.Add(ColorMenu("Colour", PatternColors.Get(pattern), i => layout.SetClipColor(pattern, i)));
+                int notes = layout.RecordedNoteCount(pattern);
+                if (notes > 0)
+                    menu.Items.Add(Item($"Clear recorded notes ({notes})", () => layout.ClearRecordedNotes(pattern)));
+                int moves = layout.RecordedAutomationCount(pattern);
+                if (moves > 0)
+                    menu.Items.Add(Item($"Clear recorded automation ({moves})", () => layout.ClearRecordedAutomation(pattern)));
                 menu.Items.Add(new Separator());
                 menu.Items.Add(Item("Remove from slot", () => layout.ClearSlot(cell.Track, cell.Scene), "Del"));
                 menu.Items.Add(Item("Delete pattern…", () => DeleteClip(pattern), "Shift+Del"));
@@ -398,6 +434,7 @@ namespace ReBuzz.AppViews.Session
             else
             {
                 menu.Items.Add(Item("Create clip", () => CreateClip(cell.Track, cell.Scene), "Ctrl+Shift+M", () => machine != null));
+                menu.Items.Add(Item("Record a take here", () => RecordInto(cell), null, () => layout.IsArmed(cell.Track)));
             }
 
             if (machine != null)
@@ -507,6 +544,40 @@ namespace ReBuzz.AppViews.Session
                 length.Items.Add(new MenuItem { Header = b == 1 ? "1 bar" : $"{b} bars", IsChecked = doc.ClipBars == b, Command = new RelayCommand(() => layout.SetClipBars(b)) });
             }
             menu.Items.Add(length);
+
+            // 0.7: recording.
+            var takeLength = new MenuItem { Header = "Record length" };
+            foreach (int bars in new[] { 0, 1, 2, 4, 8 })
+            {
+                int b = bars;
+                takeLength.Items.Add(new MenuItem
+                {
+                    Header = b == 0 ? "Until stopped" : b == 1 ? "1 bar" : $"{b} bars",
+                    IsChecked = doc.RecordBars == b,
+                    Command = new RelayCommand(() => layout.SetRecordBars(b))
+                });
+            }
+            menu.Items.Add(takeLength);
+            var countIn = new MenuItem { Header = "Count-in" };
+            foreach (int bars in new[] { 0, 1, 2 })
+            {
+                int b = bars;
+                countIn.Items.Add(new MenuItem
+                {
+                    Header = b == 0 ? "None" : b == 1 ? "1 bar" : $"{b} bars",
+                    IsChecked = doc.CountInBars == b,
+                    Command = new RelayCommand(() => layout.SetCountInBars(b))
+                });
+            }
+            menu.Items.Add(countIn);
+            menu.Items.Add(new MenuItem
+            {
+                Header = "Metronome",
+                IsChecked = doc.Metronome,
+                ToolTip = "A click on every beat while the session plays (louder on the bar line). Heard, never recorded.",
+                Command = new RelayCommand(() => layout.SetMetronome(!doc.Metronome))
+            });
+            menu.Items.Add(new Separator());
             menu.Items.Add(new MenuItem
             {
                 Header = "Scenes stop other clips",

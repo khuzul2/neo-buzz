@@ -242,6 +242,9 @@ namespace ReBuzz.Audio
                     buzzCore.MasterTapSamples(buffer, workBufferOffset, framesToProcess * 2);
                     buzzCore.MasterTapSamplesMultiChannel(buffer, workBufferOffset, framesToProcess * 2);
 
+                    // Session View (fork, 0.7): the metronome, after the tap (heard, not recorded).
+                    buzzCore.SessionCore.MixMetronome(buffer, workBufferOffset, framesToProcess);
+
                     workBufferOffset += framesToProcess * 2;
                     reminingBuffer -= framesToProcess * 2;
 
@@ -673,6 +676,18 @@ namespace ReBuzz.Audio
                     var column = columns[i];
                     if (column.Machine == null)
                         continue;
+
+                    // Fork (0.7): session automation, recorded into a parameter column the engine plays
+                    // (pattern editors play their own parameter data). Never recorded again.
+                    if (column.Type == PatternColumnType.Parameter)
+                    {
+                        if (column is not PatternColumnCore automation || !automation.EnginePlays || column.Parameter == null)
+                            continue;
+                        column.GetEventsInto(from, to, playColumnEvents);
+                        for (int e = 0; e < playColumnEvents.Count; e++)
+                            column.Parameter.SetValue(column.Track | (1 << 16), playColumnEvents[e].Value);
+                        continue;
+                    }
 
                     column.GetEventsInto(from, to, playColumnEvents);
                     foreach (var pe in playColumnEvents)

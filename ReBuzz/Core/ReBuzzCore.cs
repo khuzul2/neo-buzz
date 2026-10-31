@@ -1662,6 +1662,10 @@ namespace ReBuzz.Core
             // (0.4.1), so launches don't wait for the UI.
             bool sessionOnly = SessionMidi?.OnMidiThread(data) == true;
 
+            // Fork (0.7): armed tracks take the keyboard: their machines play it and it is recorded.
+            if (!sessionOnly && SessionCore.OnMidiInput(data))
+                return;
+
             if (!sessionOnly && midiFocusMachine != null && !midiFocusMachine.DLL.IsMissing)
             {
                 var focusMachine = midiFocusMachine as MachineCore;
@@ -2290,6 +2294,7 @@ namespace ReBuzz.Core
 
         internal void RecordControlChange(ParameterCore parameter, int track, int value)
         {
+            SessionCore.OnParameterChange(parameter, track, value);      // fork (0.7): session automation
             var machine = parameter.Group.Machine as MachineCore;
             var peMachine = machine.EditorMachine;
             if (Recording && peMachine != null)

@@ -28,7 +28,7 @@ namespace ReBuzz.Core.Session
     ///  - <see cref="OnTransportStopped"/> from ReBuzzCore.Playing
     ///  - <see cref="OnSequenceRemoved"/>, <see cref="OnPatternDeleted"/>, <see cref="Reset"/>
     /// </summary>
-    internal sealed class SessionCore : ISession
+    internal sealed partial class SessionCore : ISession
     {
         const int DoNotRecordFlag = 1 << 16;    // ParameterCore.SetValue: don't record into patterns
         const int MidiAllNotesOff = 123;
@@ -540,7 +540,7 @@ namespace ReBuzz.Core.Session
             {
                 renderedTicks = c < 0 ? -1 : c + (double)mi.PosInTick / spt;
                 renderedSamplesPerTick = spt;
-                renderedAt = System.Diagnostics.Stopwatch.GetTimestamp();
+                renderedAt = Timestamp();
             }
         }
 
@@ -557,12 +557,31 @@ namespace ReBuzz.Core.Session
             int latency = buzz.OutputLatencySamples;
             int rate = ReBuzzCore.masterInfo.SamplesPerSec;
             if (latency <= 0 || rate <= 0) return c;
-            double sinceRender = (System.Diagnostics.Stopwatch.GetTimestamp() - renderedAt) * (double)rate / System.Diagnostics.Stopwatch.Frequency;
-            double behind = latency - Math.Max(0, sinceRender);
-            if (behind <= 0) return c;
-            double heard = renderedTicks - behind / renderedSamplesPerTick;
+            double heard = TakeTime.Heard(renderedTicks, renderedSamplesPerTick, latency, SamplesSinceRender(rate));
             return Math.Min(c, (long)Math.Floor(heard));
         }
+
+        /// <summary>
+        /// Session position the listener hears now, in ticks with the fraction (0.7, recording;
+        /// call under the gate): the rendered position less the output latency still to play
+        /// (none with compensation off); -1 while stopped.
+        /// </summary>
+        double HeardTicks()
+        {
+            long c = scheduler.Clock;
+            if (c < 0) return -1;
+            if (renderedTicks < 0) return c;
+            int rate = ReBuzzCore.masterInfo.SamplesPerSec;
+            int latency = LatencyCompensation ? buzz.OutputLatencySamples : 0;
+            double heard = TakeTime.Heard(renderedTicks, renderedSamplesPerTick, Math.Max(0, latency), rate > 0 ? SamplesSinceRender(rate) : 0);
+            return Math.Min(heard, renderedTicks);
+        }
+
+        /// <summary>Clock for latency estimates; tests replace it to stamp at exact moments.</summary>
+        internal static Func<long> Timestamp = System.Diagnostics.Stopwatch.GetTimestamp;
+
+        double SamplesSinceRender(int rate) =>
+            (Timestamp() - renderedAt) * (double)rate / System.Diagnostics.Stopwatch.Frequency;
 
         /// <summary>Output latency used for compensation, in milliseconds (0 when unknown or off).</summary>
         internal double CompensatedLatencyMs
@@ -589,6 +608,7 @@ namespace ReBuzz.Core.Session
                 if (transportJustStarted || !scheduler.IsRunning)
                 {
                     long before = scheduler.Clock;
+                    ForgetCaptured();                               // 0.7: Capture MIDI counts from here
                     if (sceneAt >= 0)
                     {
                         long shifted = before < 0
@@ -606,6 +626,11 @@ namespace ReBuzz.Core.Session
                         lastLaunch = null;
                     }
                     scheduler.Start(songPosition);
+                    // 0.7: a take started from a stopped transport counts in from the first tick.
+                    if (before < 0)
+                        StartCountIn(songPosition);
+                    else if (countInUntil >= 0)
+                        countInUntil += songPosition - before;
                 }
                 else
                 {
@@ -617,6 +642,13 @@ namespace ReBuzz.Core.Session
                     scheduler.Advance();
                 }
                 tickChanges.AddRange(scheduler.Changes);
+                // 0.7: where clips stopped, for takes recorded until stopped.
+                for (int i = 0; i < tickChanges.Count; i++)
+                {
+                    var ch = tickChanges[i];
+                    if (ch.Previous != null && !ReferenceEquals(ch.Previous, ch.Current))
+                        NoteStopped(ch.Track, ch.Previous, scheduler.Clock);
+                }
 
                 if (sceneAt >= 0 && scheduler.Clock >= sceneAt)
                 {
@@ -1036,6 +1068,12 @@ namespace ReBuzz.Core.Session
             lock (gate)
             {
                 wasOverridden = scheduler.IsAnyOverridden;
+                // 0.7: the clips stop where the render is (a tick begun counts).
+                long stoppedAt = scheduler.Clock + (ReBuzzCore.masterInfo.PosInTick > 0 ? 1 : 0);
+                if (scheduler.IsRunning)
+                    foreach (var seq in buzz.SongCore.SequencesList)
+                        if (scheduler.GetPlaying(seq) is PatternCore playing)
+                            NoteStopped(seq, playing, stoppedAt);
                 scheduler.Halt();
                 changed = scheduler.Changes.Select(c => c.Track).ToArray();
                 sceneAt = -1;
@@ -1044,7 +1082,9 @@ namespace ReBuzz.Core.Session
                 history.Clear();
                 lastLaunch = null;
                 System.Threading.Volatile.Write(ref gridOriginBar, 0);
+                ResetCountIn();                                     // 0.7
             }
+            StopMetronome();
             ResetGains();                                           // velocity gain ends with the transport
             RaiseTrackStateChanged(changed);
             if (wasOverridden)
@@ -1054,6 +1094,7 @@ namespace ReBuzz.Core.Session
         /// <summary>A sequence was removed (AudioLock held).</summary>
         internal void OnSequenceRemoved(SequenceCore seq)
         {
+            Disarm(seq);                                     // 0.7: its machine may go next
             PatternCore playing;
             lock (gate)
             {
@@ -1103,9 +1144,14 @@ namespace ReBuzz.Core.Session
                 sceneAt = -1;
                 sceneFollow = null;
                 sceneFollowAt = -1;
+                ResetCountIn();
             }
             wasRecording = false;
             Recorder?.Reset();
+            // 0.7: a new song starts with nothing armed or recording and the metronome off.
+            DisarmAll();
+            MetronomeOn = false;
+            StopMetronome();
         }
 
         /// <summary>Note-offs for a track whose clip stopped mid-note (audio thread).</summary>
