@@ -23,7 +23,8 @@ namespace ReBuzz.Core.Sync
         public const double GapMicros = 500_000;
 
         readonly HostTimeFilter fit = new HostTimeFilter(2 * PulsesPerBeat, 0);
-        long pulse = -1;
+        long pulse = -1;                 // the last pulse's place (beat = pulse / 24)
+        long count;                      // pulses since the start: the fit's axis, which never jumps
         double lastMicros = double.NaN;
         volatile bool running;
 
@@ -50,6 +51,7 @@ namespace ReBuzz.Core.Sync
                 case 0xFA:
                     pulse = -1;
                     running = true;
+                    Project();
                     return MidiClockEvent.Start;
                 case 0xFB:
                     running = true;
@@ -60,6 +62,7 @@ namespace ReBuzz.Core.Sync
                 case 0xF2:
                     int sixteenths = ((message >> 8) & 0x7F) | (((message >> 16) & 0x7F) << 7);
                     pulse = sixteenths * (PulsesPerBeat / 4) - 1;
+                    Project();
                     return MidiClockEvent.Position;
                 default:
                     return MidiClockEvent.None;
@@ -71,12 +74,26 @@ namespace ReBuzz.Core.Sync
             if (!double.IsNaN(lastMicros) && (micros - lastMicros > GapMicros || micros < lastMicros)) fit.Reset();
             lastMicros = micros;
             pulse++;
-            // The fit runs on pulse counts since its reset, so a Start or a position doesn't bend it.
-            fit.Add(pulse, micros);
-            if (fit.Count < 6 || fit.Slope <= 0) return;
-            double tempo = 60e6 / (PulsesPerBeat * fit.Slope);
-            if (tempo < 10 || tempo > 1000) return;
-            Timeline.Write(new Timeline(fit.YAt(pulse), pulse / (double)PulsesPerBeat, tempo));
+            count++;
+            // The fit runs on the pulse count, so a Start or a position (which move the beat) doesn't bend it.
+            fit.Add(count, micros);
+            if (TempoOfFit(out double tempo))
+                Timeline.Write(new Timeline(fit.YAt(count), pulse / (double)PulsesPerBeat, tempo));
+        }
+
+        bool TempoOfFit(out double tempo)
+        {
+            tempo = 0;
+            if (fit.Count < 6 || fit.Slope <= 0) return false;
+            tempo = 60e6 / (PulsesPerBeat * fit.Slope);
+            return tempo >= 10 && tempo <= 1000;
+        }
+
+        /// <summary>After Start or a position: where the next pulse lands, at the tempo the pulses had, is its beat.</summary>
+        void Project()
+        {
+            if (TempoOfFit(out double tempo))
+                Timeline.Write(new Timeline(fit.YAt(count + 1), (pulse + 1) / (double)PulsesPerBeat, tempo));
         }
     }
 

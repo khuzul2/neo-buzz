@@ -237,6 +237,34 @@ if (-not (Test-Path -LiteralPath ([IO.Path]::Combine($OutDir, 'ReBuzz.exe')))) {
     throw "ReBuzz.exe not found in $OutDir. Run without -SkipCore first."
 }
 
+# ---------------------------------------------------------------- 3b. Link helper (fork, 0.8)
+
+# ReBuzzLink.exe runs Ableton Link for the Session View in its own process: it is GPL-2.0-or-later
+# (as Link is), ReBuzz talks to it over stdin/stdout. Its source and Link's licence go with it.
+if (-not $SkipCore) {
+    $linkSrc = [IO.Path]::Combine($Root, 'LinkHelper')
+    if (Test-Path -LiteralPath ([IO.Path]::Combine($linkSrc, 'link', 'AbletonLinkConfig.cmake'))) {
+        Write-Step 'Building the Link helper (ReBuzzLink.exe)'
+        $linkBuild = [IO.Path]::Combine($Root, 'build', 'LinkHelper')
+        Invoke-Checked cmake @('-S', $linkSrc, '-B', $linkBuild, '-A', 'x64')
+        Invoke-Checked cmake @('--build', $linkBuild, '--config', $Configuration)
+        $linkExe = [IO.Path]::Combine($linkBuild, $Configuration, 'ReBuzzLink.exe')
+        if (-not (Test-Path -LiteralPath $linkExe)) { throw "ReBuzzLink.exe not built ($linkExe)" }
+        Copy-Item -LiteralPath $linkExe -Destination $OutDir -Force
+        $linkDoc = [IO.Path]::Combine($OutDir, 'LinkHelper')
+        New-Dir $linkDoc
+        foreach ($f in 'main.cpp', 'CMakeLists.txt', 'README.md') {
+            Copy-Item -LiteralPath ([IO.Path]::Combine($linkSrc, $f)) -Destination $linkDoc -Force
+        }
+        foreach ($f in 'LICENSE.md', 'GNU-GPL-v2.0.md') {
+            Copy-Item -LiteralPath ([IO.Path]::Combine($linkSrc, 'link', $f)) -Destination ([IO.Path]::Combine($linkDoc, "Link-$f")) -Force
+        }
+        Write-Host "ReBuzzLink.exe -> $OutDir"
+    } else {
+        Write-Warning 'LinkHelper\link (Ableton Link) is missing: run "git submodule update --init --recursive". The Session View works without Link.'
+    }
+}
+
 # Remove what a previous run added, so Gear holds only upstream files again.
 New-Dir $StageRoot
 if (Test-Path -LiteralPath $AddedList) {

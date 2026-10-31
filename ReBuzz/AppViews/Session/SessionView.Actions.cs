@@ -635,6 +635,7 @@ namespace ReBuzz.AppViews.Session
                     Command = new RelayCommand(() => core.SetLatencyCompensation(!core.LatencyCompensation))
                 });
             }
+            AddSyncMenu(menu);
             menu.Items.Add(new Separator());
             AddMixerMenuItems(menu, doc);
 
@@ -672,6 +673,62 @@ namespace ReBuzz.AppViews.Session
             menu.Items.Add(Item("Keyboard shortcuts…", () =>
                 MessageBox.Show(Window.GetWindow(this), KeyboardHelp, "Session View shortcuts", MessageBoxButton.OK, MessageBoxImage.None)));
             OpenMenu(menu, anchor);
+        }
+
+        /// <summary>Sync (0.8): Ableton Link, MIDI clock in and out.</summary>
+        void AddSyncMenu(ContextMenu menu)
+        {
+            var sync = buzz.SessionSync;
+            if (sync == null) return;
+            var item = new MenuItem { Header = sync.Status.Length > 0 ? $"Sync ({sync.Status})" : "Sync" };
+            void Report(string title)
+            {
+                if (sync.Problem != null)
+                    MessageBox.Show(Window.GetWindow(this), sync.Problem, title, MessageBoxButton.OK, MessageBoxImage.Information);
+                RefreshState();
+            }
+            item.Items.Add(new MenuItem
+            {
+                Header = !sync.LinkEnabled ? "Ableton Link" : sync.LinkPeers > 0 ? $"Ableton Link ({sync.LinkPeers} peer{(sync.LinkPeers == 1 ? "" : "s")})" : "Ableton Link (no peers yet)",
+                IsChecked = sync.LinkEnabled,
+                ToolTip = "On: tempo and bar phase follow Live and other Link apps on the network; alone, they follow the session.
+" +
+                          "A start waits for Link's next bar line, so it lands in step. Runs Link in a helper program (ReBuzzLink).",
+                Command = new RelayCommand(() => { sync.SetLink(!sync.LinkEnabled); Report("Ableton Link"); })
+            });
+            item.Items.Add(new MenuItem
+            {
+                Header = "Start and stop with Link peers",
+                IsChecked = sync.LinkStartStop,
+                IsEnabled = sync.LinkEnabled,
+                ToolTip = "On: play and stop are shared with peers that have start/stop sync on (Live: Link › Start Stop Sync).",
+                Command = new RelayCommand(() => sync.SetLinkStartStop(!sync.LinkStartStop))
+            });
+            item.Items.Add(new Separator());
+            item.Items.Add(new MenuItem
+            {
+                Header = "Follow MIDI clock in",
+                IsChecked = sync.FollowMidiClock,
+                ToolTip = "On: tempo and beat follow the MIDI clock coming in (any open MIDI input), and so do Start, Continue and Stop.
+" +
+                          "Turns Link off.",
+                Command = new RelayCommand(() => { sync.SetFollowMidiClock(!sync.FollowMidiClock); Report("MIDI clock in"); })
+            });
+            var outs = new MenuItem { Header = "Send MIDI clock to" };
+            var open = sync.Outputs;
+            foreach (var (_, name) in open)
+            {
+                string device = name;
+                bool on = sync.ClockOutNames.Contains(device);
+                outs.Items.Add(new MenuItem { Header = device, IsChecked = on, Command = new RelayCommand(() => sync.SetClockOut(device, !on)) });
+            }
+            foreach (var missing in sync.ClockOutNames.Where(n => open.All(o => o.Name != n)).ToList())
+                outs.Items.Add(new MenuItem { Header = $"{missing} (not open)", IsChecked = true, Command = new RelayCommand(() => sync.SetClockOut(missing, false)) });
+            if (outs.Items.Count == 0)
+                outs.Items.Add(new MenuItem { Header = "No MIDI outputs open (Preferences › MIDI)", IsEnabled = false });
+            item.Items.Add(outs);
+            menu.Items.Add(new Separator());
+            menu.Items.Add(item);
         }
 
         void ShowNoteGridDialog()

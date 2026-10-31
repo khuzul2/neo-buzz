@@ -60,6 +60,8 @@ namespace ReBuzz.AppViews.Session
         readonly FlatButton nudgeDownButton;
         readonly FlatButton nudgeUpButton;
         readonly TextBlock tempoText;
+        readonly TextBlock syncText;          // 0.8: Link, MIDI clock
+        string shownSync, shownSyncTip;
         string shownLastLaunch = "";
         int shownTempo = -1;
         readonly ComboBox quantizeBox;
@@ -183,10 +185,18 @@ namespace ReBuzz.AppViews.Session
             tapButton = new FlatButton("Tap", () => layout.TapTempo(), "") { Margin = new Thickness(4, 0, 14, 0) };
             tapButton.MouseRightButtonUp += (s, e) => { ShowMidiOnlyMenu(tapButton, SessionTarget.TapTempo, 0, 0, "Tap tempo"); e.Handled = true; };
             // One group, so a narrow view wraps it whole.
+            // Sync (0.8): Link or MIDI clock, when on; right-click for the Sync menu.
+            syncText = new TextBlock
+            {
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 14, 0),
+                Foreground = SessionPalette.DimText,
+                Visibility = Visibility.Collapsed
+            };
             left.Children.Add(new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Children = { tempoText, nudgeDownButton, nudgeUpButton, tapButton }
+                Children = { tempoText, nudgeDownButton, nudgeUpButton, tapButton, syncText }
             });
             UpdateBarTips();
 
@@ -633,6 +643,24 @@ namespace ReBuzz.AppViews.Session
             }
             bool nudging = buzz.TempoNudge != 1f;
             tempoText.Foreground = nudging ? SessionPalette.Learn : SessionPalette.Text;
+            string sync = buzz.SessionSync?.Status ?? "";
+            if (sync != shownSync)
+            {
+                shownSync = sync;
+                syncText.Text = sync;
+                syncText.Visibility = sync.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+            }
+            bool following = buzz.SyncClock.IsFollowing;
+            syncText.Foreground = following ? SessionPalette.Text : SessionPalette.DimText;
+            double error = buzz.SyncClock.ErrorMicros;
+            string tip = following && !double.IsNaN(error)
+                ? $"Following: the session is {Math.Abs(error) / 1000:0.0} ms {(error >= 0 ? "ahead of" : "behind")} the clock (⚙ › Sync)."
+                : "⚙ › Sync: Ableton Link, MIDI clock in and out.";
+            if (tip != shownSyncTip)
+            {
+                shownSyncTip = tip;
+                syncText.ToolTip = tip;
+            }
             foreach (var (button, target) in new[] {
                 (undoLaunchButton, SessionTarget.UndoLaunch), (followButton, SessionTarget.FollowActions), (tapButton, SessionTarget.TapTempo),
                 (nudgeDownButton, SessionTarget.NudgeDown), (nudgeUpButton, SessionTarget.NudgeUp) })

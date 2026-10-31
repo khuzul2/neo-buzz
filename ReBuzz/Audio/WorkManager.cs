@@ -146,7 +146,12 @@ namespace ReBuzz.Audio
 
                 var subTickInfo = ReBuzzCore.subTickInfo;
                 var masterInfo = ReBuzzCore.masterInfo;
-                
+
+                // Fork (0.8): the audio clock against host time, for following Link or MIDI clock.
+                var sync = buzzCore.SyncClock;
+                sync.OnCallback(global::ReBuzz.Core.Sync.HostClock.Micros(time), masterInfo.SamplesPerSec);
+                double latencyMicros = masterInfo.SamplesPerSec > 0 ? buzzCore.OutputLatencySamples * 1e6 / masterInfo.SamplesPerSec : 0;
+
                 int reminingBuffer = count;
                 workBufferOffset = offset;
 
@@ -172,6 +177,16 @@ namespace ReBuzz.Audio
                         double exact = masterInfo.AverageSamplesPerTick * grooveMul / nudge + tickRemainder;
                         int samples = Math.Max(1, (int)Math.Floor(exact));
                         tickRemainder = buzzCore.Playing ? Math.Clamp(exact - samples, 0, 0.999999) : 0;
+                        // Fork (0.8): following Link or MIDI clock, the tick ends where the clock's
+                        // phase says (groove and nudge give way); a start waits for its bar line.
+                        var session = buzzCore.SessionCore;
+                        int synced = sync.TickLength(samples, buzzCore.Playing, buzzCore.PlayRequested && !buzzCore.Playing,
+                            session.Clock, session.GridOrigin, masterInfo.TicksPerBeat, session.BeatsPerBar, latencyMicros);
+                        if (synced != samples)
+                        {
+                            samples = synced;
+                            tickRemainder = 0;
+                        }
                         masterInfo.SamplesPerTick = samples;
                     }
 
@@ -269,8 +284,9 @@ namespace ReBuzz.Audio
                         // Reset subtick counter at tick boundary
                         subTickInfo.CurrentSubTick = 0;
 
-                        // Advance song position (Buzz behavior)
-                        if (!buzzCore.StartPlaying())
+                        // Advance song position (Buzz behavior). Fork (0.8): a start following
+                        // a clock waits for the tick that ends on its bar line.
+                        if (!(sync.StartDue && buzzCore.StartPlaying()))
                         {
                             if (buzzCore.Playing && buzzCore.SoloPattern == null)
                             {
@@ -294,6 +310,7 @@ namespace ReBuzz.Audio
 
                     // Update frame count
                     unchecked { ReBuzzCore.GlobalState.AudioFrame += framesToProcess; }
+                    sync.OnFrames(framesToProcess);
                 }
 
                 float audioOutMul = 1 / 32768.0f;

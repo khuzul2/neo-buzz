@@ -124,6 +124,9 @@ namespace ReBuzz.Core
         // MIDI control of the Session View (0.2); created with the layout.
         internal SessionMidi SessionMidi { get; set; }
 
+        // Fork (0.8): Link, MIDI clock in and out; created with the layout.
+        internal SessionSync SessionSync { get; set; }
+
         // Fork (0.5.1): arrangement events' start, end and volume in song files.
         internal ArrangementEventStore ArrangementEvents { get; set; }
 
@@ -132,6 +135,9 @@ namespace ReBuzz.Core
         /// engine divides each tick's length by it; the song's BPM doesn't change.
         /// </summary>
         internal volatile float TempoNudge = 1f;
+
+        /// <summary>Fork (0.8): the audio thread's side of following Link or MIDI clock (docs/specs/session-view.md 0.8).</summary>
+        internal readonly Sync.SyncClock SyncClock = new Sync.SyncClock();
 
         // UI related state
         BuzzView activeView = BuzzView.MachineView;
@@ -1352,6 +1358,8 @@ namespace ReBuzz.Core
 
             MidiControllerAssignments.Song = null;
             SessionLayout?.Detach();       // fork (0.6.3): off the static restoration bus
+            SessionSync?.Dispose();        // fork (0.8): the Link helper and the clock thread end
+            SessionSync = null;
 
             timerAutomaticBackups.Stop();
             MidiInOutEngine.ReleaseAll();
@@ -1641,6 +1649,9 @@ namespace ReBuzz.Core
             int status = data & 0xFF;
             if (status == 0xFE) return;
             bool realTime = status >= 0xF8;
+            // Fork (0.8): MIDI clock in, when the session follows it, takes clock, Start,
+            // Continue, Stop and the song position.
+            if ((realTime || status == 0xF2) && SessionSync?.OnClockInput(data) == true) return;
             try
             {
                 RouteMidiInput(data);

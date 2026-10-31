@@ -146,3 +146,234 @@ namespace ReBuzz.SessionTests
         }
     }
 }
+
+namespace ReBuzz.SessionTests
+{
+    using ReBuzz.Core.Sync;
+
+    /// <summary>The audio thread's sync (0.8), driven as WorkManager drives it.</summary>
+    [TestFixture]
+    public class SyncClockTests
+    {
+        sealed class FakeSource : ISyncSource
+        {
+            public Timeline Line;
+            public bool Has = true;
+            public bool AlignOnBar = true;
+            public bool TryGetTimeline(out Timeline t) { t = Line; return Has; }
+            public double StartTarget(in Timeline t, double heard, double quantum) => AlignOnBar ? t.NextBarAt(heard, quantum) : double.NaN;
+        }
+
+        const int Rate = 48000, Tpb = 4, Bpb = 4, Buffer = 256;
+        const double Latency = 10_000;
+
+        /// <summary>An engine: callbacks of 256 frames in real time, ticks as the clock says, the transport as asked.</summary>
+        sealed class Engine
+        {
+            public readonly SyncClock Sync = new SyncClock();
+            public double Now = 1e9;                 // host µs at the next callback
+            public long Frames;                      // rendered
+            public int PosInTick, TickLength = 1;
+            public bool Playing, PlayRequested;
+            public long Clock = -1;
+            public int Nominal = Rate * 60 / (120 * Tpb);
+            public readonly System.Collections.Generic.List<(long Clock, double Heard)> Ticks = new();
+            public double StartedHeard = double.NaN;
+
+            public void Callback()
+            {
+                Sync.OnCallback(Now, Rate);
+                int left = Buffer;
+                while (left > 0)
+                {
+                    if (PosInTick == 0)
+                    {
+                        TickLength = Sync.TickLength(Nominal, Playing, PlayRequested && !Playing, Clock, 0, Tpb, Bpb, Latency);
+                        if (Playing) Ticks.Add((Clock, Heard(Frames)));
+                    }
+                    int n = Math.Min(left, TickLength - PosInTick);
+                    Frames += n;
+                    Sync.OnFrames(n);
+                    PosInTick += n;
+                    left -= n;
+                    if (PosInTick >= TickLength)
+                    {
+                        PosInTick = 0;
+                        if (Playing) Clock++;
+                        else if (PlayRequested && Sync.StartDue)
+                        {
+                            Playing = true;
+                            Clock = 0;
+                            StartedHeard = Heard(Frames);
+                        }
+                    }
+                }
+                Now += Buffer * 1e6 / Rate;
+            }
+
+            /// <summary>When a frame is heard: the callback rendering it plus the latency (as the filter models it).</summary>
+            public double Heard(long frame) => 1e9 + frame * 1e6 / Rate + Latency;
+        }
+
+        [Test]
+        public void WithoutASourceTicksAreTheEnginesOwn()
+        {
+            var e = new Engine { PlayRequested = true };
+            for (int i = 0; i < 200; i++) e.Callback();
+            Assert.That(e.Playing, Is.True);
+            Assert.That(e.TickLength, Is.EqualTo(e.Nominal));
+            Assert.That(e.Sync.IsFollowing, Is.False);
+            Assert.That(e.Sync.Ours.TryRead(out var ours), Is.True, "our beat line is published");
+            Assert.That(ours.Tempo, Is.InRange(119.99, 120.01));
+        }
+
+        [Test]
+        public void AStartWaitsForTheClocksBarLineAndLandsOnIt()
+        {
+            var source = new FakeSource { Line = new Timeline(1e9 + 123_456, 0, 120) };   // bars every 2 s from there
+            var e = new Engine();
+            e.Sync.Source = source;
+            for (int i = 0; i < 20; i++) e.Callback();
+            e.PlayRequested = true;
+            for (int i = 0; i < 1000 && !e.Playing; i++) e.Callback();
+            Assert.That(e.Playing, Is.True);
+            double bar = source.Line.MicrosAt(Math.Round(source.Line.BeatAt(e.StartedHeard) / Bpb) * Bpb);
+            Assert.That(Math.Abs(e.StartedHeard - bar), Is.LessThan(1e6 / Rate), "heard on the bar line, within a sample");
+            double phase = source.Line.PhaseAt(e.StartedHeard, Bpb);
+            Assert.That(phase < 0.001 || phase > Bpb - 0.001, Is.True, $"phase {phase}");
+        }
+
+        [Test]
+        public void WhilePlayingItStaysOnTheClocksPhaseAndPublishesItsTempo()
+        {
+            var source = new FakeSource { Line = new Timeline(1e9, 0.37, 127.3), AlignOnBar = false };
+            var e = new Engine { PlayRequested = true };
+            e.Sync.Source = source;
+            for (int i = 0; i < 20 * Rate / Buffer; i++) e.Callback();              // 20 s
+            var late = e.Ticks.Where(t => t.Heard > 1e9 + 15e6).ToList();
+            Assert.That(late.Count, Is.InRange(40, int.MaxValue));          // 5 s of ticks
+            double worst = late.Max(t => Math.Abs(PhaseLock.Error(source.Line, Bpb, t.Clock / (double)Tpb, t.Heard))) * 60e6 / 127.3;
+            Assert.That(worst, Is.LessThan(1000), $"worst {worst:F0} µs");
+            Assert.That(e.Sync.Ours.TryRead(out var ours), Is.True);
+            Assert.That(Math.Abs(ours.Tempo - 127.3), Is.LessThan(0.5));
+            Assert.That(Math.Abs(e.Sync.ErrorMicros), Is.LessThan(1000));
+        }
+    }
+}
+
+namespace ReBuzz.SessionTests
+{
+    using ReBuzz.Core.Sync;
+
+    /// <summary>MIDI clock in and out (0.8), pure.</summary>
+    [TestFixture]
+    public class MidiClockTests
+    {
+        const double Pulse120 = 60e6 / (120 * 24);                   // µs between pulses at 120 BPM
+
+        [Test]
+        public void PulsesGiveTheTempoAndBeatThroughJitter()
+        {
+            var rx = new MidiClockReceiver();
+            var rnd = new Random(5);
+            double t = 1e9;
+            for (int i = 0; i < 96; i++, t += Pulse120)
+                rx.OnMessage(0xF8, t + (rnd.NextDouble() - 0.5) * 1000);
+            Assert.That(rx.Timeline.TryRead(out var line), Is.True);
+            Assert.That(Math.Abs(line.Tempo - 120), Is.LessThan(0.3), $"tempo {line.Tempo}");
+            Assert.That(rx.Running, Is.False, "no Start yet: tempo only");
+        }
+
+        [Test]
+        public void AfterStartTheNextPulseIsBeatZero()
+        {
+            var rx = new MidiClockReceiver();
+            double t = 1e9;
+            for (int i = 0; i < 48; i++, t += Pulse120) rx.OnMessage(0xF8, t);
+            Assert.That(rx.OnMessage(0xFA, t - Pulse120 / 2), Is.EqualTo(MidiClockEvent.Start));
+            Assert.That(rx.Running, Is.True);
+            Assert.That(rx.Timeline.TryRead(out var projected), Is.True);
+            Assert.That(Math.Abs(projected.MicrosAt(0) - t), Is.LessThan(50), "beat 0 where the next pulse will be");
+            rx.OnMessage(0xF8, t);
+            rx.Timeline.TryRead(out var line);
+            Assert.That(Math.Abs(line.BeatAt(t)), Is.LessThan(0.001));
+            for (int i = 1; i <= 24; i++) rx.OnMessage(0xF8, t + i * Pulse120);
+            rx.Timeline.TryRead(out line);
+            Assert.That(Math.Abs(line.BeatAt(t + 24 * Pulse120) - 1), Is.LessThan(0.001), "a beat a 24 pulses");
+            Assert.That(rx.OnMessage(0xFC, t), Is.EqualTo(MidiClockEvent.Stop));
+            Assert.That(rx.Running, Is.False);
+        }
+
+        [Test]
+        public void ASongPositionSetsTheNextPulsesBeat()
+        {
+            var rx = new MidiClockReceiver();
+            double t = 1e9;
+            for (int i = 0; i < 48; i++, t += Pulse120) rx.OnMessage(0xF8, t);
+            rx.OnMessage(0xF2 | (16 << 8), t);                           // 16 sixteenths: beat 4
+            Assert.That(rx.NextBeat, Is.EqualTo(4));
+            rx.OnMessage(0xFB, t);
+            rx.OnMessage(0xF8, t);
+            rx.Timeline.TryRead(out var line);
+            Assert.That(Math.Abs(line.BeatAt(t) - 4), Is.LessThan(0.001));
+        }
+
+        [Test]
+        public void SendingStartsWithStartThenAPulseEveryTwentyFourthOfABeat()
+        {
+            var tx = new MidiClockSender();
+            var ours = new Timeline(2e9, 0, 120);                     // beat 0 heard at 2e9
+            double now = 2e9 - 50_000;
+            Assert.That(tx.Peek(false, default, now, out _), Is.EqualTo(0), "stopped: nothing");
+            int m = tx.Peek(true, ours, now, out double at);
+            Assert.That(m, Is.EqualTo(MidiClockSender.Start));
+            Assert.That(at, Is.EqualTo(2e9 - MidiClockSender.StartLead));
+            tx.Sent(m, ours, at);
+            for (int p = 0; p < 30; p++)
+            {
+                m = tx.Peek(true, ours, at, out at);
+                Assert.That(m, Is.EqualTo(MidiClockSender.Clock));
+                Assert.That(Math.Abs(at - (2e9 + p * Pulse120)), Is.LessThan(0.01), $"pulse {p}");
+                tx.Sent(m, ours, at);
+            }
+            m = tx.Peek(false, ours, at, out _);
+            Assert.That(m, Is.EqualTo(MidiClockSender.Stop));
+            tx.Sent(m, ours, at);
+            Assert.That(tx.Peek(false, ours, at, out _), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void JoiningWhilePlayingSendsThePositionThenContinues()
+        {
+            var tx = new MidiClockSender();
+            var ours = new Timeline(2e9, 0, 120);
+            double now = ours.MicrosAt(2.3);
+            int m = tx.Peek(true, ours, now, out double at);
+            Assert.That(m & 0xFF, Is.EqualTo(MidiClockSender.SongPosition));
+            int sixteenth = ((m >> 8) & 0x7F) | (((m >> 16) & 0x7F) << 7);
+            Assert.That(sixteenth, Is.EqualTo(10), "the next 16th after beat 2.3");
+            tx.Sent(m, ours, at);
+            m = tx.Peek(true, ours, now, out at);
+            Assert.That(m, Is.EqualTo(MidiClockSender.Continue));
+            Assert.That(at, Is.EqualTo(ours.MicrosAt(2.5) - MidiClockSender.StartLead));
+            tx.Sent(m, ours, at);
+            m = tx.Peek(true, ours, at, out at);
+            Assert.That(m, Is.EqualTo(MidiClockSender.Clock));
+            Assert.That(Math.Abs(at - ours.MicrosAt(2.5)), Is.LessThan(0.01));
+        }
+
+        [Test]
+        public void LinkStateLinesParse()
+        {
+            Assert.That(LinkProtocol.ParseHello("hello 1"), Is.EqualTo(1));
+            Assert.That(LinkProtocol.ParseHello("hi"), Is.EqualTo(-1));
+            Assert.That(LinkProtocol.TryParseState("state 2140458497 6.170473000 123.500000 1 0 1", out var s), Is.True);
+            Assert.That(s.Timeline, Is.EqualTo(new Timeline(2140458497, 6.170473, 123.5)));
+            Assert.That((s.Peers, s.Playing, s.Enabled), Is.EqualTo((1, false, true)));
+            Assert.That(LinkProtocol.TryParseState("state 1 x 120 0 0 1", out _), Is.False);
+            Assert.That(LinkProtocol.TryParseState("state 1 2 0 0 0 1", out _), Is.False, "no tempo");
+            Assert.That(LinkProtocol.Beat(1.5, 1234.4), Is.EqualTo("beat 1.5 1234"));
+            Assert.That(LinkProtocol.Tempo(120.25), Is.EqualTo("tempo 120.25"));
+        }
+    }
+}
