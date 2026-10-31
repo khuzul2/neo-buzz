@@ -76,7 +76,8 @@ namespace ReBuzzTests
                 Assert.Inconclusive("no Link peer discovery on this machine (multicast)");
             Assert.That(WaitFor(() => Math.Abs(b.Tempo - 131.25) < 0.01, 5), Is.True, $"the joining peer takes the tempo: {b.Tempo}");
             Thread.Sleep(100);
-            Assert.That(a.TryGetTimeline(out var la) && b.TryGetTimeline(out var lb), Is.True);
+            Assert.That(a.TryGetTimeline(out var la), Is.True);
+            Assert.That(b.TryGetTimeline(out var lb), Is.True);
             double now = HostClock.Now();
             double diff = SyncMath.Wrap(la.BeatAt(now) - lb.BeatAt(now), 4) * 60e6 / la.Tempo;
             TestContext.Out.WriteLine($"Link peers' phase difference: {diff:F1} µs");
