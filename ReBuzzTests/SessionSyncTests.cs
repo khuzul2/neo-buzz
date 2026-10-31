@@ -94,7 +94,7 @@ namespace ReBuzzTests
         {
             RequireHelper();
             using var rig = new KeysRig();
-            using var peer = Peer(123.5);
+            using var peer = Peer(123.4);
             Thread.Sleep(1000);                                     // the peer's session is the older: the session joins it
             rig.Core.SessionSync?.Dispose();
             var sync = new SessionSync(rig.Core, null, () => Helper);
@@ -105,7 +105,7 @@ namespace ReBuzzTests
                 Assert.That(sync.Problem, Is.Null);
                 if (!WaitFor(() => sync.LinkPeers > 0 && peer.Peers > 0, 10))
                     Assert.Inconclusive("no Link peer discovery on this machine (multicast)");
-                Assert.That(WaitFor(() => Math.Abs(sync.LinkTempo - 123.5) < 0.01, 5), Is.True, "the session took the peer's tempo");
+                Assert.That(WaitFor(() => Math.Abs(sync.LinkTempo - 123.4) < 0.01, 5), Is.True, "the session took the peer's tempo");
 
                 var reader = rig.Driver.CreateAudioReader(256);
                 PlayRealTime(reader, 1.0);                          // the audio clock is learnt
@@ -114,9 +114,9 @@ namespace ReBuzzTests
                 var clock = rig.Core.SyncClock;
                 Assert.That(rig.Core.Playing, Is.True);
                 Assert.That(clock.IsFollowing, Is.True);
-                Assert.That(rig.Core.BPM, Is.EqualTo(124), "the song's (whole) tempo follows");
+                Assert.That(rig.Core.BPM, Is.EqualTo(123), "the song's (whole) tempo follows, rounded");
                 Assert.That(clock.Ours.TryRead(out var ours), Is.True);
-                Assert.That(Math.Abs(ours.Tempo - 123.5), Is.LessThan(0.2), $"plays at Link's exact tempo: {ours.Tempo}");
+                Assert.That(Math.Abs(ours.Tempo - 123.4), Is.LessThan(0.2), $"plays at Link's exact tempo: {ours.Tempo}");
                 Assert.That(peer.TryGetState(out var line), Is.True);
                 int tpb = Math.Max(1, rig.Core.TPB);
                 double barBeat = ours.Beat - rig.Session.GridOrigin / (double)tpb;
