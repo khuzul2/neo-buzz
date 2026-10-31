@@ -1,0 +1,358 @@
+# Neo Poly factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoPoly
+machine "Neo Poly"
+
+preset "Pad — Warm Strings"
+O1 shape = 2
+O2 shape = 2
+O2 fine = 7
+O2 level = 80
+Unison = 3
+Uni detune = 30
+Uni spread = 70
+F1 type = Ladder 24
+F1 cutoff = 1800
+F1 reso = 15
+F1 env = 20
+Amp attack = 0.6
+Amp decay = 1.5
+Amp sustain = 85
+Amp release = 1.8
+Flt attack = 0.8
+Flt decay = 2
+Flt sustain = 50
+Flt release = 1.5
+LFO1 shape = Triangle
+LFO1 rate = 0.25
+M1 source = LFO 1
+M1 dest = F1 cutoff
+M1 amount = 10
+Volume = -15
+
+preset "Pad — Glass"
+O1 shape = 1
+O2 shape = 0
+O2 octave = 1
+O2 level = 60
+F1 type = SVF LP
+F1 cutoff = 6000
+F1 reso = 30
+F1 env = 10
+Amp attack = 1.2
+Amp decay = 2
+Amp sustain = 80
+Amp release = 3
+LFO2 shape = Sine
+LFO2 rate = 0.15
+M4 source = LFO 2
+M4 dest = Osc 2 level
+M4 amount = 40
+Volume = -11
+
+preset "Pad — Dark Choir"
+O1 shape = 3
+O1 PW = 30
+O2 shape = 2
+O2 octave = -1
+O2 level = 50
+F1 type = Ladder 12
+F1 cutoff = 900
+F1 reso = 35
+F2 type = BP
+F2 cutoff = 1200
+F2 reso = 40
+Routing = Parallel
+Amp attack = 0.9
+Amp sustain = 90
+Amp release = 2.5
+LFO1 shape = Sine
+LFO1 rate = 0.4
+M1 source = LFO 1
+M1 dest = Osc 1 PW
+M1 amount = 40
+Volume = -8
+
+preset "Pad — Evolving PWM"
+O1 shape = 3
+O2 shape = 3
+O2 fine = -9
+O2 level = 90
+Unison = 2
+Uni detune = 20
+F1 type = Ladder 24
+F1 cutoff = 2500
+F1 reso = 20
+Amp attack = 1.5
+Amp sustain = 90
+Amp release = 2.5
+LFO1 rate = 0.3
+LFO2 rate = 0.17
+M1 source = LFO 1
+M1 dest = Osc 1 PW
+M1 amount = 35
+M4 source = LFO 2
+M4 dest = Osc 2 PW
+M4 amount = 35
+Volume = -13
+
+preset "Bass — Classic Sub"
+Voice mode = Mono
+O1 shape = 2
+O1 octave = -1
+O3 shape = 0
+O3 octave = -2
+O3 level = 70
+F1 type = Ladder 24
+F1 cutoff = 400
+F1 reso = 30
+F1 env = 40
+Flt decay = 0.25
+Flt sustain = 10
+Amp decay = 0.4
+Amp sustain = 80
+Amp release = 0.08
+Volume = -3
+
+preset "Bass — Acid"
+Voice mode = Legato
+Glide mode = Legato
+Glide = 0.08
+O1 shape = 2
+O1 octave = -1
+F1 type = Ladder 24
+F1 cutoff = 300
+F1 reso = 80
+F1 env = 60
+F1 drive = 9
+Flt attack = 0.001
+Flt decay = 0.18
+Flt sustain = 0
+Amp attack = 0.001
+Amp sustain = 100
+Amp release = 0.05
+Volume = 0
+
+preset "Bass — Reese"
+Voice mode = Mono
+O1 shape = 2
+O1 octave = -1
+O2 shape = 2
+O2 octave = -1
+O2 fine = 12
+O2 level = 100
+Unison = 2
+Uni detune = 25
+Uni spread = 20
+F1 type = Ladder 24
+F1 cutoff = 700
+F1 reso = 20
+F1 env = 0
+LFO1 rate = 0.2
+M1 source = LFO 1
+M1 dest = F1 cutoff
+M1 amount = 15
+Amp sustain = 100
+Amp release = 0.1
+Volume = -4
+
+preset "Bass — FM Growl"
+Voice mode = Mono
+O1 shape = 0
+O1 octave = -1
+O1 level = 0
+O2 shape = 2
+O2 octave = -1
+O2 level = 100
+FM 1 → 2 = 1.5
+F1 type = Ladder 12
+F1 cutoff = 900
+F1 reso = 40
+F1 env = 30
+Mod decay = 0.3
+M3 source = Mod env
+M3 dest = FM amount
+M3 amount = 40
+Amp sustain = 90
+Amp release = 0.08
+Volume = 0
+
+preset "Lead — Sync Scream"
+Voice mode = Legato
+Glide mode = Legato
+Glide = 0.06
+O1 level = 0
+O2 shape = 2
+O2 level = 100
+O2 sync = On
+O2 semi = 7
+Mod attack = 0.001
+Mod decay = 0.6
+Mod sustain = 0
+M3 source = Mod env
+M3 dest = Osc 2 pitch
+M3 amount = 40
+F1 type = Ladder 24
+F1 cutoff = 5000
+F1 reso = 20
+Drift = 10
+Volume = -2
+
+preset "Lead — Smooth Saw"
+Voice mode = Legato
+Glide mode = Legato
+Glide = 0.05
+O1 shape = 2
+O2 shape = 2
+O2 fine = 5
+O2 level = 80
+Unison = 2
+Uni detune = 15
+F1 type = Ladder 24
+F1 cutoff = 3000
+F1 reso = 25
+F1 env = 25
+LFO1 shape = Sine
+LFO1 rate = 5.5
+LFO1 fade = 0.6
+M1 source = LFO 1
+M1 dest = Pitch
+M1 amount = 1
+Volume = -6
+
+preset "Lead — Square Chip"
+Voice mode = Mono
+O1 shape = 3
+O1 PW = 50
+F1 type = SVF LP
+F1 cutoff = 12000
+F1 env = 0
+Amp attack = 0.001
+Amp decay = 0.2
+Amp sustain = 70
+Amp release = 0.05
+Volume = -2
+
+preset "Pluck — Bright"
+O1 shape = 2
+O2 shape = 3
+O2 PW = 40
+O2 octave = -1
+O2 level = 50
+F1 type = Ladder 24
+F1 cutoff = 500
+F1 reso = 25
+F1 env = 70
+Flt attack = 0.001
+Flt decay = 0.25
+Flt sustain = 0
+Flt release = 0.2
+Amp attack = 0.001
+Amp decay = 0.6
+Amp sustain = 0
+Amp release = 0.3
+Volume = -6
+
+preset "Pluck — Marimba"
+O1 shape = 0
+O3 shape = 1
+O3 octave = 2
+O3 level = 30
+F1 type = SVF LP
+F1 cutoff = 3000
+F1 env = 20
+Amp attack = 0.001
+Amp decay = 0.5
+Amp sustain = 0
+Amp release = 0.3
+Volume = -6
+
+preset "Keys — Poly Brass"
+O1 shape = 2
+O2 shape = 2
+O2 fine = 4
+O2 level = 90
+F1 type = Ladder 24
+F1 cutoff = 1200
+F1 reso = 10
+F1 env = 45
+Flt attack = 0.06
+Flt decay = 0.5
+Flt sustain = 40
+Amp attack = 0.04
+Amp sustain = 90
+Amp release = 0.25
+Drift = 25
+Volume = -12
+
+preset "Keys — Electric Piano"
+O1 shape = 0
+O1 octave = 1
+O1 level = 0
+O2 shape = 0
+O2 level = 100
+FM 1 → 2 = 0.9
+F1 type = SVF LP
+F1 cutoff = 9000
+F1 env = 0
+Mod attack = 0.001
+Mod decay = 1.2
+Mod sustain = 0
+M3 source = Mod env
+M3 dest = FM amount
+M3 amount = 40
+Amp attack = 0.001
+Amp decay = 2.5
+Amp sustain = 0
+Amp release = 0.4
+Volume = -8
+
+preset "Keys — Organ"
+O1 shape = 0
+O2 shape = 0
+O2 octave = 1
+O2 level = 70
+O3 shape = 0
+O3 octave = 1
+O3 semi = 7
+O3 level = 50
+F1 type = SVF LP
+F1 cutoff = 12000
+F1 env = 0
+Amp attack = 0.005
+Amp sustain = 100
+Amp release = 0.05
+Volume = -14
+
+preset "FX — Noise Sweep"
+O1 level = 0
+Noise = 100
+Noise colour = 50
+F1 type = SVF BP
+F1 cutoff = 600
+F1 reso = 45
+F1 env = 0
+LFO1 shape = Saw up
+LFO1 rate = 0.1
+M1 source = LFO 1
+M1 dest = F1 cutoff
+M1 amount = 60
+Amp attack = 0.3
+Amp sustain = 100
+Amp release = 3
+Volume = 0
+
+preset "FX — Laser Drop"
+O1 shape = 2
+F1 type = Ladder 24
+F1 cutoff = 4000
+F1 env = 0
+Mod attack = 0.001
+Mod decay = 0.4
+Mod sustain = 0
+M3 source = Mod env
+M3 dest = Pitch
+M3 amount = 60
+Amp attack = 0.001
+Amp decay = 0.5
+Amp sustain = 0
+Amp release = 0.2
+Volume = -6

@@ -1,0 +1,103 @@
+# Neo Drive factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoDrive
+machine "Neo Drive"
+
+preset "Tape — Warm Bus"
+Mode = Tape
+Drive = 6
+Character = 40
+Tone = -10
+High cut = 18000
+
+preset "Tape — Hot Reels"
+Mode = Tape
+Drive = 15
+Character = 70
+Tone = -15
+Low cut = 25
+
+preset "Tape — Cassette"
+Mode = Tape
+Drive = 18
+Character = 100
+Tone = -40
+Low cut = 60
+High cut = 9000
+
+preset "Tube — Glow"
+Mode = Tube
+Drive = 8
+Character = 30
+Bias = 10
+
+preset "Tube — Preamp Push"
+Mode = Tube
+Drive = 16
+Character = 50
+Bias = 20
+Tone = 10
+
+preset "Tube — Parallel Thickener"
+Mode = Tube
+Drive = 24
+Character = 60
+Mix = 35
+
+preset "Transistor — Crunch"
+Mode = Transistor
+Drive = 18
+Character = 40
+Low cut = 80
+Tone = 10
+
+preset "Transistor — Fuzz Wall"
+Mode = Transistor
+Drive = 34
+Character = 100
+Bias = 15
+Low cut = 120
+High cut = 6000
+Tone = -20
+
+preset "Transistor — Drum Smash"
+Mode = Transistor
+Drive = 20
+Character = 70
+Mix = 50
+Low cut = 30
+
+preset "Diode — Overdrive"
+Mode = Diode
+Drive = 20
+Character = 50
+Low cut = 100
+High cut = 7000
+
+preset "Diode — Edge"
+Mode = Diode
+Drive = 12
+Character = 80
+Tone = 20
+
+preset "Fold — West Coast"
+Mode = Fold
+Drive = 14
+Character = 100
+Low cut = 40
+Tone = -10
+
+preset "Fold — Harmonic Bloom"
+Mode = Fold
+Drive = 8
+Character = 60
+Mix = 60
+
+preset "Utility — Subtle Glue"
+Mode = Tape
+Drive = 3
+Character = 20
+
+preset "Utility — Bass Grit"
+Mode = Transistor
+Drive = 14
+Character = 50
+Mix = 40

@@ -1,0 +1,338 @@
+# Neo Wave factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoWave
+machine "Neo Wave"
+
+preset "Init — Basic"
+A table = Basic
+A position = 66
+Cutoff = 8000
+Filter env = 10
+Volume = -6
+
+preset "Pad — Vowel Choir"
+A table = Formants
+A position = 0
+B table = Formants
+B position = 50
+B level = 70
+B fine = 8
+Unison = 3
+Uni detune = 25
+Uni spread = 80
+Filter type = SVF LP
+Cutoff = 5000
+Reso = 10
+Filter env = 0
+Amp attack = 0.9
+Amp decay = 2
+Amp sustain = 90
+Amp release = 2.2
+LFO1 shape = Triangle
+LFO1 rate = 0.12
+LFO1 retrig = 0
+M1 source = LFO 1
+M1 dest = A position
+M1 amount = 45
+M2 source = LFO 2
+M2 dest = B position
+M2 amount = -40
+LFO2 rate = 0.07
+Volume = -10
+
+preset "Pad — Organ Drift"
+A table = Organ
+A position = 30
+B table = Organ
+B position = 70
+B level = 60
+B fine = 6
+Filter type = Ladder 12
+Cutoff = 4500
+Filter env = 0
+Amp attack = 0.4
+Amp sustain = 100
+Amp release = 1.2
+M1 source = LFO 1
+M1 dest = A position
+M1 amount = 25
+LFO1 rate = 0.2
+LFO1 retrig = 0
+Volume = -6
+
+preset "Pad — Glass Harmonics"
+A table = Harmonics
+A position = 20
+A warp = Asym
+A warp amt = 40
+B table = Basic
+B position = 0
+B octave = 1
+B level = 35
+Unison = 2
+Uni detune = 15
+Filter type = SVF LP
+Cutoff = 9000
+Filter env = 0
+Amp attack = 1.5
+Amp decay = 3
+Amp sustain = 70
+Amp release = 3
+M1 source = Mod env
+M1 dest = A position
+M1 amount = 50
+Mod attack = 4
+Mod sustain = 100
+Volume = -10
+
+preset "Lead — Sync Scream"
+Voice mode = Mono
+Glide mode = Legato
+Glide = 0.06
+A table = Sync sweep
+A position = 20
+B table = Basic
+B position = 66
+B octave = -1
+B level = 40
+Filter type = Ladder 24
+Cutoff = 3500
+Reso = 25
+Filter env = 30
+Amp attack = 0.003
+Amp sustain = 90
+Amp release = 0.25
+M1 source = Mod env
+M1 dest = A position
+M1 amount = 60
+Mod attack = 0.001
+Mod decay = 0.5
+Mod sustain = 20
+M2 source = Mod wheel
+M2 dest = A position
+M2 amount = 30
+Volume = -2
+
+preset "Lead — Digital Steps"
+Voice mode = Mono
+A table = Digital
+A position = 40
+A warp = Bend+
+A warp amt = 25
+Filter type = SVF LP
+Cutoff = 7000
+Filter env = 15
+Amp attack = 0.002
+Amp release = 0.2
+M1 source = LFO 1
+M1 dest = A position
+M1 amount = 30
+LFO1 sync = 1/8
+Volume = -4
+
+preset "Bass — Wave Sub"
+Voice mode = Mono
+A table = Basic
+A position = 70
+Sub level = 70
+Sub octave = -1
+Filter type = Ladder 24
+Cutoff = 300
+Reso = 20
+Filter env = 45
+Key track = 30
+Amp attack = 0.001
+Amp decay = 0.6
+Amp sustain = 70
+Amp release = 0.08
+Flt attack = 0.001
+Flt decay = 0.25
+Flt sustain = 10
+Volume = -2
+
+preset "Bass — FM Growl"
+Voice mode = Mono
+A table = FM sweep
+A position = 25
+Sub level = 50
+Filter type = Ladder 12
+Cutoff = 900
+Reso = 30
+Drive = 8
+Filter env = 30
+Amp attack = 0.001
+Amp sustain = 85
+Amp release = 0.1
+M1 source = LFO 1
+M1 dest = A position
+M1 amount = 35
+LFO1 shape = Sine
+LFO1 sync = 1/8
+Volume = -3
+
+preset "Bass — Reso Pluck"
+A table = Resonant
+A position = 60
+Filter type = SVF LP
+Cutoff = 2500
+Filter env = 30
+Amp attack = 0.001
+Amp decay = 0.35
+Amp sustain = 0
+Amp release = 0.15
+M1 source = Filter env
+M1 dest = A position
+M1 amount = 35
+Flt attack = 0.001
+Flt decay = 0.3
+Flt sustain = 0
+Volume = 0
+
+preset "Pluck — PWM Keys"
+A table = PWM
+A position = 30
+B table = PWM
+B position = 60
+B level = 70
+B fine = 7
+Filter type = Ladder 24
+Cutoff = 1200
+Reso = 10
+Filter env = 45
+Amp attack = 0.002
+Amp decay = 0.9
+Amp sustain = 20
+Amp release = 0.4
+Flt attack = 0.001
+Flt decay = 0.5
+Flt sustain = 15
+M1 source = LFO 1
+M1 dest = A position
+M1 amount = 20
+LFO1 rate = 4
+Volume = -8
+
+preset "Pluck — Mirror Bell"
+A table = Harmonics
+A position = 60
+A warp = Mirror
+A warp amt = 60
+B table = FM sweep
+B position = 40
+B octave = 1
+B level = 40
+Filter type = Off
+Amp attack = 0.001
+Amp decay = 1.6
+Amp sustain = 0
+Amp release = 1.2
+M1 source = Amp env
+M1 dest = A warp
+M1 amount = 30
+Volume = -12
+
+preset "Keys — Squeeze EP"
+A table = Basic
+A position = 10
+A warp = Squeeze
+A warp amt = 35
+Filter type = SVF LP
+Cutoff = 6000
+Filter env = 10
+Amp attack = 0.002
+Amp decay = 2
+Amp sustain = 30
+Amp release = 0.5
+M1 source = Velocity
+M1 dest = A warp
+M1 amount = 40
+M2 source = LFO 1
+M2 dest = Amp
+M2 amount = 10
+LFO1 rate = 5
+Volume = -8
+
+preset "Texture — Grit Motion"
+A table = Grit
+A position = 0
+B table = Grit
+B position = 100
+B level = 60
+B semi = 7
+Noise = 8
+Filter type = SVF BP
+Cutoff = 1500
+Reso = 35
+Filter env = 0
+Amp attack = 0.5
+Amp sustain = 90
+Amp release = 1.5
+M1 source = LFO 1
+M1 dest = A position
+M1 amount = 50
+LFO1 shape = Smooth
+LFO1 rate = 0.5
+M2 source = LFO 2
+M2 dest = Cutoff
+M2 amount = 30
+LFO2 shape = Triangle
+LFO2 rate = 0.15
+LFO2 retrig = 0
+Volume = -1
+
+preset "Texture — Window Sync Sweep"
+A table = Basic
+A position = 50
+A warp = Window sync
+A warp amt = 20
+Filter type = Ladder 24
+Cutoff = 5000
+Reso = 15
+Filter env = 0
+Amp attack = 0.3
+Amp sustain = 90
+Amp release = 1
+M1 source = LFO 1
+M1 dest = A warp
+M1 amount = 40
+LFO1 shape = Triangle
+LFO1 rate = 0.3
+Volume = 4
+
+preset "Texture — PM Bloom"
+A table = Basic
+A position = 0
+A warp = PM from B
+A warp amt = 30
+B table = Harmonics
+B position = 30
+B level = 0
+Filter type = SVF LP
+Cutoff = 8000
+Filter env = 0
+Amp attack = 0.8
+Amp sustain = 80
+Amp release = 2
+M1 source = Mod env
+M1 dest = A warp
+M1 amount = 50
+Mod attack = 3
+Mod sustain = 60
+Volume = -13
+
+preset "Arp — Stepped Saw"
+A table = Digital
+A position = 70
+Filter type = Ladder 24
+Cutoff = 1800
+Reso = 25
+Filter env = 35
+Amp attack = 0.001
+Amp decay = 0.3
+Amp sustain = 0
+Amp release = 0.12
+Flt attack = 0.001
+Flt decay = 0.2
+Flt sustain = 0
+M1 source = Random
+M1 dest = A position
+M1 amount = 30
+Volume = -6

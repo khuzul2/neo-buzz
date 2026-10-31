@@ -1,0 +1,339 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Clean — Gentle Leveler">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="600" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="231" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="722" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="612" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Clean — Vocal Control">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="667" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="418" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="250" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="555" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="497" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Clean — Brickwall">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="900" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="433" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="400" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Glue — Mix Bus">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="700" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="231" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="250" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="639" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="640" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="1" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="300" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Glue — Drum Bus">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="633" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="463" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="125" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="494" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="468" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="167" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="FET — Vocal Grab">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="600" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="463" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="83" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="194" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="360" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="400" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="FET — All Buttons">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="500" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="84" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="388" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="667" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="FET — Bass Tamer">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="667" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="694" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="167" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="361" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="532" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="300" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Opto — Smooth Vocal">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="600" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="367" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="750" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="639" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="892" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="300" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Opto — Bass Leveler">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="667" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="463" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="750" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="639" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="793" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Parallel — New York Drums">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="417" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="694" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="361" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="433" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="400" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="350" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sidechain — Kick Duck">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="500" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="694" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="361" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="532" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sidechain — Pump">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="400" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="278" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="640" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Transparent">
+    <Preset Machine="Neo Comp">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Threshold" Group="1" Index="1" Track="0" Value="800" />
+        <Parameter Name="Ratio" Group="1" Index="2" Track="0" Value="135" />
+        <Parameter Name="Knee" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Attack" Group="1" Index="4" Track="0" Value="771" />
+        <Parameter Name="Release" Group="1" Index="5" Track="0" Value="640" />
+        <Parameter Name="Auto release" Group="1" Index="6" Track="0" Value="1" />
+        <Parameter Name="Sidechain" Group="1" Index="7" Track="0" Value="0" />
+        <Parameter Name="SC low cut" Group="1" Index="8" Track="0" Value="532" />
+        <Parameter Name="Lookahead" Group="1" Index="9" Track="0" Value="200" />
+        <Parameter Name="Stereo link" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Makeup" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Auto makeup" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="Character" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="500" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

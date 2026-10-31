@@ -42,6 +42,13 @@ namespace ReBuzzTests.Automation
             addMachineActions.Add((scanner, reBuzz) => scanner.AddDynamicMachine(reBuzz, info, targetPath));
         }
 
+        /// <summary>Fork: a machine DLL from the solution build (see FakeMachineDLLScanner.AddBuiltMachine).</summary>
+        public void AddBuiltMachine(ITestMachineInfo info, AbsoluteFilePath builtDll, bool generator)
+        {
+            var dir = generator ? gearGeneratorsDir : gearEffectsDir;
+            addMachineActions.Add((scanner, reBuzz) => scanner.AddBuiltMachine(reBuzz, info, dir, builtDll));
+        }
+
         public void AddPrecompiledEffect(ITestMachineInfo info)
         {
             addMachineActions.Add((scanner, reBuzz) => scanner.AddPrecompiledMachine(reBuzz, info, gearEffectsDir));

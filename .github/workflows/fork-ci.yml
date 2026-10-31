@@ -1,7 +1,8 @@
 name: Fork CI
 
 # Fast checks for fork work:
-#  - session-tests: Session View engine unit tests (Linux, seconds)
+#  - session-tests: Session View engine unit tests and the Neo machines' DSP measurements
+#    (Linux, seconds)
 #  - core-build: compiles ReBuzz.exe and its C# dependencies only (no C++ projects)
 # The full solution + package build is fork-package.yml.
 
@@ -27,10 +28,30 @@ jobs:
       shell: pwsh
       run: dotnet test ReBuzz.SessionTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath test.log
 
+    # Neo machines (docs/specs/machines.md): aliasing, decay times, envelopes, presets…
+    - name: Machine DSP tests
+      if: always()
+      shell: pwsh
+      env:
+        MEASUREMENTS_DIR: ${{ github.workspace }}/measurements
+      run: dotnet test NeoBuzz.MachineTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath machine-test.log
+
+    # The measured figures (aliasing, decay times, speed…) as one notice, readable through the API.
+    - name: Machine measurements
+      if: always() && hashFiles('measurements/machine-measurements.txt') != ''
+      shell: pwsh
+      run: |
+        $lines = Get-Content measurements/machine-measurements.txt | Sort-Object
+        $text = ($lines -join "`n")
+        if ($text.Length -gt 3800) { $text = $text.Substring(0, 3800) }
+        Write-Host "::notice title=Machine measurements::$($text -replace '%', '%25' -replace "`n", '%0A')"
+
     - name: Annotate test log
       if: failure()
       shell: pwsh
-      run: ./tools/ci-annotate-log.ps1 test.log
+      run: |
+        if (Test-Path test.log) { ./tools/ci-annotate-log.ps1 test.log }
+        if (Test-Path machine-test.log) { ./tools/ci-annotate-log.ps1 machine-test.log }
 
   core-build:
     runs-on: windows-latest

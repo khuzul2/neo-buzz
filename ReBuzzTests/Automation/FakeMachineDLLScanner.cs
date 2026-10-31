@@ -47,6 +47,18 @@ namespace ReBuzzTests.Automation
             machineDllsByName[machineDll.Name] = machineDll;
         }
 
+        /// <summary>
+        /// Fork (docs/specs/machines.md): a machine DLL the solution build made (a Neo machine),
+        /// copied from where the build put it.
+        /// </summary>
+        public void AddBuiltMachine(ReBuzzCore reBuzz, ITestMachineInfo info, AbsoluteDirectoryPath targetDir, AbsoluteFilePath builtDll)
+        {
+            var assemblyTargetLocation = targetDir.AddFileName(info.DllName);
+            var machineDll = info.GetMachineDll(reBuzz, assemblyTargetLocation);
+            builtDll.Copy(assemblyTargetLocation);
+            machineDllsByName[machineDll.Name] = machineDll;
+        }
+
         public void AddPrecompiledMachine(ReBuzzCore reBuzz, ITestMachineInfo info, AbsoluteDirectoryPath targetDir)
         {
             // Fork: not OfExecutingAssembly(), which goes by the calling assembly and, once the JIT

@@ -1,0 +1,25 @@
+# Neo Verb parameters (docs/specs/machines.md §5). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoVerb
+namespace NeoBuzz.Verb
+class NeoVerbMachine
+
+group Space
+Mode       "Mode"          0 3    0    enum Hall Room Chamber Plate    | Algorithm: delay lengths, diffusion and early reflections
+PreDelay   "Pre-delay"     0 1000 80   lin 0 250 ms 1                  | Gap before the reverb starts
+Size       "Size"          0 1000 500  pct                             | Scales the space (delay lengths and reflections)
+Decay      "Decay"         0 1000 504  time 0.2 30                     | Reverb time (T60) in the mid band
+LowDecay   "Low decay"     0 1000 566  exp 0.25 4 × 2                  | Low-frequency decay time relative to the mid band
+Damping    "High damping"  0 1000 598  freq 1000 20000                 | Above this, the tail decays four times faster
+Diffusion  "Diffusion"     0 1000 700  pct                             | Density of the build-up
+group Motion
+ModDepth   "Mod depth"     0 1000 300  pct                             | Movement in the tail (breaks up metallic ringing)
+ModRate    "Mod rate"      0 1000 540  freq 0.05 5                     | Speed of the movement
+Freeze     "Freeze"        0 1    0    switch                          | Holds the tail forever and stops taking input
+Shimmer    "Shimmer"       0 1000 0    pct                             | Feeds the tail back an octave up
+group Output
+Early      "Early"         0 1000 739  db -40 6 inf                    | Early reflections level
+Late       "Late"          0 1000 870  db -40 6 inf                    | Tail level
+Width      "Width"         0 1000 667  lin 0 150 % 0                   | Stereo width of the reverb
+LowCut     "Low cut"       0 1000 389  freq 10 1000                    | High-pass on the reverb
+HighCut    "High cut"      0 1000 804  freq 1000 22000                 | Low-pass on the reverb
+Mix        "Mix"           0 1000 300  pct                             | Dry/wet (100 % for a send)

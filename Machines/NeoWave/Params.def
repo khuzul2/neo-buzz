@@ -1,0 +1,106 @@
+# Neo Wave parameters (docs/specs/machines.md §5). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoWave
+namespace NeoBuzz.Wave
+class NeoWaveMachine
+tracks 16
+
+group Voice
+VoiceMode   "Voice mode"    0 2    0    enum Poly Mono Legato           | Poly; Mono retriggers; Legato glides without retriggering
+Polyphony   "Polyphony"     1 16   8    int 0                           | Notes that sound at once
+Unison      "Unison"        1 8    1    int 0                           | Voices per note
+UniDetune   "Uni detune"    0 1000 200  pct                             | Detune between unison voices (up to ±50 cents)
+UniSpread   "Uni spread"    0 1000 600  pct                             | Stereo spread of unison voices
+GlideMode   "Glide mode"    0 2    0    enum Off Always Legato          | When notes glide
+Glide       "Glide"         0 1000 200  pow 0 2 3 s 3                   | Glide time
+BendRange   "Bend range"    0 24   2    int 0 st                        | Pitch bend range
+Volume      "Volume"        0 1000 739  db -40 6 inf                    | Output level
+VelAmp      "Vel → amp"     0 1000 700  pct                             | How much velocity changes loudness
+
+group Osc A
+ATable    "A table"     0 10   0 enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: the table loaded in the editor)
+APos      "A position"  0 1000 0 pct | Position in the table (frames morph smoothly)
+AWarp     "A warp"      0 7    0    enum None Bend+ Bend− Squeeze Mirror Asym Window_sync PM_from_B | How the cycle is read
+AWarpAmt  "A warp amt"  0 1000 0    pct | Warp amount
+AOct      "A octave"    0 6    3    int -3 oct signed | Octave
+ASemi     "A semi"      0 24   12   int -12 st signed | Semitones
+AFine     "A fine"      0 1000 500  lin -50 50 ct 0 | Fine tune
+ALevel    "A level"     0 1000 1000 pct | Level
+group Osc B
+BTable    "B table"     0 10   3 enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: the table loaded in the editor)
+BPos      "B position"  0 1000 0 pct | Position in the table (frames morph smoothly)
+BWarp     "B warp"      0 7    0    enum None Bend+ Bend− Squeeze Mirror Asym Window_sync PM_from_B | How the cycle is read (PM from B acts on osc A only; here it reads plainly)
+BWarpAmt  "B warp amt"  0 1000 0    pct | Warp amount
+BOct      "B octave"    0 6    3    int -3 oct signed | Octave
+BSemi     "B semi"      0 24   12   int -12 st signed | Semitones
+BFine     "B fine"      0 1000 540  lin -50 50 ct 0 | Fine tune
+BLevel    "B level"     0 1000 0 pct | Level
+
+group Sub · noise
+SubShape    "Sub shape"     0 1    0    enum Sine Square                | Sub oscillator wave
+SubOct      "Sub octave"    0 1    0    enum -1 -2                      | Octaves below the note
+SubLevel    "Sub level"     0 1000 0    pct                             | Sub level
+NoiseLevel  "Noise"         0 1000 0    pct                             | Noise level
+
+group Filter
+FType       "Filter type"   0 6    0    enum Ladder_24 Ladder_12 SVF_LP SVF_BP SVF_HP SVF_Notch Off | Filter model
+FCutoff     "Cutoff"        0 1000 750  freq 20 20000                   | Cutoff
+FReso       "Reso"          0 1000 150  pct                             | Resonance
+FDrive      "Drive"         0 1000 0    lin 0 24 dB 1                   | Drive into the filter
+FEnv        "Filter env"    0 1000 600  bip                             | Filter envelope amount (±6 octaves)
+FKey        "Key track"     0 1000 500  pct                             | Cutoff follows the keyboard
+FVel        "Filter vel"    0 1000 300  pct                             | Softer notes close the filter (up to 3 octaves)
+
+group Amp env
+AmpA        "Amp attack"    0 1000 100  time 0.0005 20                  | Attack time
+AmpD        "Amp decay"     0 1000 500  time 0.0005 20                  | Decay time
+AmpS        "Amp sustain"   0 1000 800  pct                             | Sustain level
+AmpR        "Amp release"   0 1000 450  time 0.0005 20                  | Release time
+group Filter env
+FltA        "Flt attack"    0 1000 100  time 0.0005 20                  | Attack time
+FltD        "Flt decay"     0 1000 520  time 0.0005 20                  | Decay time
+FltS        "Flt sustain"   0 1000 300  pct                             | Sustain level
+FltR        "Flt release"   0 1000 450  time 0.0005 20                  | Release time
+group Mod env
+ModA        "Mod attack"    0 1000 300  time 0.0005 20                  | Attack time
+ModD        "Mod decay"     0 1000 600  time 0.0005 20                  | Decay time
+ModS        "Mod sustain"   0 1000 0    pct                             | Sustain level
+ModR        "Mod release"   0 1000 500  time 0.0005 20                  | Release time
+
+group LFO 1
+L1Shape     "LFO1 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L1Rate      "LFO1 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+L1Sync      "LFO1 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+L1Retrig    "LFO1 retrig"   0 1    1    switch                          | Restart with each note (per voice); off: one free LFO
+L1Fade      "LFO1 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+group LFO 2
+L2Shape     "LFO2 shape"    0 6    1    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L2Rate      "LFO2 rate"     0 1000 300  freq 0.02 50                    | Rate (free)
+L2Sync      "LFO2 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+L2Retrig    "LFO2 retrig"   0 1    0    switch                          | Restart with each note (per voice); off: one free LFO
+L2Fade      "LFO2 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+
+group Matrix
+M1Src "M1 source" 0 11 1 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+M1Dst "M1 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+M1Amt "M1 amount" 0 1000 500 bip | Amount
+M2Src "M2 source" 0 11 8 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+M2Dst "M2 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+M2Amt "M2 amount" 0 1000 500 bip | Amount
+M3Src "M3 source" 0 11 3 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+M3Dst "M3 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+M3Amt "M3 amount" 0 1000 500 bip | Amount
+M4Src "M4 source" 0 11 2 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+M4Dst "M4 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+M4Amt "M4 amount" 0 1000 500 bip | Amount
+M5Src "M5 source" 0 11 0 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+M5Dst "M5 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+M5Amt "M5 amount" 0 1000 500 bip | Amount
+M6Src "M6 source" 0 11 0 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+M6Dst "M6 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+M6Amt "M6 amount" 0 1000 500 bip | Amount
+M7Src "M7 source" 0 11 0 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+M7Dst "M7 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+M7Amt "M7 amount" 0 1000 500 bip | Amount
+M8Src "M8 source" 0 11 0 enum Off LFO_1 LFO_2 Mod_env Filter_env Amp_env Velocity Key Mod_wheel Aftertouch Random Unison | Modulation source
+M8Dst "M8 dest"   0 17 0 enum Off Pitch A_pitch B_pitch A_position B_position A_warp B_warp A_level B_level Sub_level Noise_level Cutoff Reso Amp Pan LFO_1_rate LFO_2_rate | Modulation destination
+M8Amt "M8 amount" 0 1000 500 bip | Amount
