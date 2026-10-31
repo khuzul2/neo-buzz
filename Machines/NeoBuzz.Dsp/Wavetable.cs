@@ -96,6 +96,43 @@ namespace NeoBuzz.Dsp
             return FromFrames(name, frames);
         }
 
+        /// <summary>
+        /// Builds a table from a function of (frame, t ∈ [0, 1)) sampled 16 times finer than a
+        /// frame, so even discontinuous shapes (sync, steps) get clean harmonics.
+        /// </summary>
+        public static Wavetable FromFunction(string name, int frameCount, Func<int, double, double> f)
+        {
+            const int over = 16;
+            int n = FrameSize * over;
+            var frames = new float[frameCount][];
+            var re = new double[n];
+            var im = new double[n];
+            for (int fr = 0; fr < frameCount; fr++)
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    re[i] = f(fr, (double)i / n);
+                    im[i] = 0;
+                }
+                Fft.Transform(re, im, false);
+                // Keep harmonics below the frame's Nyquist; back to FrameSize samples.
+                var fre = new double[FrameSize];
+                var fim = new double[FrameSize];
+                double scale = 1.0 / over;
+                for (int h = 1; h < FrameSize / 2; h++)
+                {
+                    fre[h] = re[h] * scale;
+                    fim[h] = im[h] * scale;
+                    fre[FrameSize - h] = fre[h];
+                    fim[FrameSize - h] = -fim[h];
+                }
+                Fft.Transform(fre, fim, true);
+                frames[fr] = new float[FrameSize];
+                for (int i = 0; i < FrameSize; i++) frames[fr][i] = (float)fre[i];
+            }
+            return FromFrames(name, frames);
+        }
+
         static (double[] Re, double[] Im) Spectrum(float[] frame)
         {
             var re = new double[FrameSize];

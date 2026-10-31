@@ -20,7 +20,30 @@ namespace NeoBuzz.MachineTests
             ["Neo Drive"] = (NeoBuzz.Drive.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Drive(v).Process(l, r, n))),
             ["Neo Comp"] = (NeoBuzz.Comp.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Comp(v).Process(l, r, null, null, n))),
             ["Neo Verb"] = (NeoBuzz.Verb.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Verb(v).Process(l, r, n))),
+            ["Neo Poly"] = (NeoBuzz.Poly.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Poly.PolyEngine(v), (e, l, r, n) => ((NeoBuzz.Poly.PolyEngine)e).Process(l, r, n), x.Length)),
         };
+
+        static readonly HashSet<string> Synths = new() { "Neo Poly" };
+
+        /// <summary>A chord (C3 E3 G3 B3) held for two thirds of the length, then released.</summary>
+        static float[] RenderSynth(INoteSink engine, Func<INoteSink, float[], float[], int, bool> process, int length)
+        {
+            ((dynamic)engine).SetSampleRate((float)Measure.Rate);
+            var y = new float[length];
+            var l = new float[256];
+            var r = new float[256];
+            int[] chord = { 48, 52, 55, 59 };
+            for (int k = 0; k < chord.Length; k++) engine.NoteOn(k, chord[k], 0.8f);
+            for (int pos = 0; pos < length; pos += 256)
+            {
+                if (pos <= length * 2 / 3 && pos + 256 > length * 2 / 3)
+                    for (int k = 0; k < chord.Length; k++) engine.NoteOff(k);
+                int n = Math.Min(256, length - pos);
+                process(engine, l, r, n);
+                for (int i = 0; i < n; i++) y[pos + i] = Math.Max(Math.Abs(l[i]), Math.Abs(r[i])) * Math.Sign(l[i] + r[i] + 1e-12f);
+            }
+            return y;
+        }
 
         // One engine per preset render (created lazily by the closures above).
         static NeoBuzz.Drive.DriveEngine driveEngine; static ParamValues driveValues;
@@ -114,7 +137,7 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
-        public void EveryEffectPresetSoundsSensible()
+        public void EveryPresetSoundsSensible()
         {
             var x = Measure.PinkNoise(Measure.Rate, DspMath.DbToGain(-18));
             double inRms = Measure.Rms(x, Measure.Rate / 2, Measure.Rate / 2);
@@ -124,6 +147,19 @@ namespace NeoBuzz.MachineTests
                 var v = new ParamValues(table);
                 foreach (var kv in values) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
                 var y = render(v, x);
+                if (Synths.Contains(machine))
+                {
+                    // The loudest 50 ms while the chord is held, and the peak.
+                    double loudest = 0;
+                    for (int at = 0; at + 2400 <= y.Length * 2 / 3; at += 1200) loudest = Math.Max(loudest, Measure.Rms(y, at, 2400));
+                    double level = Measure.Db(loudest);
+                    double top = Measure.Db(Measure.Peak(y, 0, y.Length));
+                    TestContext.Out.WriteLine($"{machine} / {name}: chord {level:+0.0;−0.0} dB RMS (loudest 50 ms), peak {top:+0.0;−0.0} dBFS");
+                    Assert.That(double.IsFinite(top), Is.True, name);
+                    Assert.That(level, Is.InRange(-30.0, -6.0), $"{machine} / {name}: level");
+                    Assert.That(top, Is.InRange(-20.0, -1.0), $"{machine} / {name}: peak");
+                    continue;
+                }
                 double rms = Measure.Rms(y, Measure.Rate / 2, Measure.Rate / 2);
                 double peak = Measure.Peak(y, 0, y.Length);
                 double db = Measure.Db(rms / inRms);

@@ -244,7 +244,7 @@ namespace NeoBuzz.Poly
             }
             for (int i = 0; i < n; i++)
             {
-                float g = volume.Next() * 0.25f;
+                float g = volume.Next() * 0.5f;
                 left[i] *= g;
                 right[i] *= g;
             }

@@ -327,3 +327,100 @@ namespace NeoBuzz.Editor
         }
     }
 }
+
+namespace NeoBuzz.Editor
+{
+    /// <summary>A compact drop-down for an enum parameter with many choices (click for the list).</summary>
+    internal sealed class ParamDropdown : FrameworkElement
+    {
+        readonly EditorContext ctx;
+        readonly string[] names;
+        int selected;
+
+        public ParamDropdown(EditorContext ctx, int index, string label = null, double width = 110)
+        {
+            this.ctx = ctx;
+            var def = ctx.Table[index];
+            names = def.Names ?? new[] { "Off", "On" };
+            Label = label ?? def.Name;
+            Width = width;
+            Height = 18 + 22;
+            Binding = ctx.Bind(index, raw => { selected = raw - def.Min; InvalidateVisual(); });
+            selected = Binding.Value - def.Min;
+            ToolTip = def.Description;
+            Cursor = System.Windows.Input.Cursors.Hand;
+        }
+
+        public ParamBinding Binding { get; }
+        public string Label { get; }
+
+        protected override void OnMouseLeftButtonDown(System.Windows.Input.MouseButtonEventArgs e)
+        {
+            var menu = new ContextMenu();
+            for (int i = 0; i < names.Length; i++)
+            {
+                int choice = i;
+                var item = new MenuItem { Header = names[i], IsChecked = i == selected };
+                item.Click += (s, a) => Binding.Set(Binding.Def.Min + choice);
+                menu.Items.Add(item);
+            }
+            menu.PlacementTarget = this;
+            menu.Placement = PlacementMode.Bottom;
+            menu.IsOpen = true;
+            e.Handled = true;
+        }
+
+        protected override void OnRender(DrawingContext dc)
+        {
+            Theme.DrawText(dc, this, Label, 1, 0, 11, Theme.DimText);
+            var r = new Rect(0, 18, Width, 22);
+            dc.DrawRoundedRectangle(Theme.Background, Theme.Pen(Theme.PanelEdge, 1), r, 3, 3);
+            string text = selected >= 0 && selected < names.Length ? names[selected] : "?";
+            var ft = Theme.Format(this, text, 11.5, Theme.Text);
+            ft.MaxTextWidth = Math.Max(10, Width - 22);
+            ft.MaxLineCount = 1;
+            ft.Trimming = TextTrimming.CharacterEllipsis;
+            dc.DrawText(ft, new Point(6, 21));
+            Theme.DrawText(dc, this, "▾", Width - 14, 21, 11, Theme.Solid(ctx.Accent));
+        }
+    }
+
+    /// <summary>Shortcuts editors use to lay out many parameters.</summary>
+    internal static class Build
+    {
+        /// <summary>Knobs for parameters in a grid of <paramref name="columns"/> columns.</summary>
+        public static UniformGrid Knobs(EditorContext ctx, int columns, double diameter, params int[] indices)
+        {
+            var g = new UniformGrid { Columns = columns };
+            foreach (int i in indices) g.Children.Add(new ParamKnob(ctx, i, diameter: diameter));
+            return g;
+        }
+
+        /// <summary>A picture of an ADSR envelope from four parameters (times in seconds, sustain 0 … 1).</summary>
+        public static GraphView Envelope(EditorContext ctx, int attack, int decay, int sustain, int release, double width = 150, double height = 56)
+        {
+            var view = new GraphView(width, height, (dc, r, v) =>
+            {
+                double a = ctx.Value(attack), d = ctx.Value(decay), s = ctx.Value(sustain), rl = ctx.Value(release);
+                // Segment widths grow with the square root of time, so short and long both read.
+                double wa = Math.Sqrt(a), wd = Math.Sqrt(d), ws = 0.35, wr = Math.Sqrt(rl);
+                double total = wa + wd + ws + wr;
+                double x0 = r.Left + 6, w = r.Width - 12, top = r.Top + 6, bottom = r.Bottom - 6, h = bottom - top;
+                double X(double t) => x0 + t / total * w;
+                var g = new StreamGeometry();
+                using (var c = g.Open())
+                {
+                    c.BeginFigure(new Point(X(0), bottom), true, true);
+                    c.LineTo(new Point(X(wa), top), true, false);
+                    c.LineTo(new Point(X(wa + wd), bottom - s * h), true, false);
+                    c.LineTo(new Point(X(wa + wd + ws), bottom - s * h), true, false);
+                    c.LineTo(new Point(X(total), bottom), true, false);
+                }
+                g.Freeze();
+                dc.DrawGeometry(Theme.Solid(ctx.Accent, 0x30), Theme.Pen(Theme.Solid(ctx.Accent), 1.5), g);
+            });
+            ctx.Changed += view.InvalidateVisual;
+            return view;
+        }
+    }
+}

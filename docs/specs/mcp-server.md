@@ -24,7 +24,7 @@ The server runs **inside ReBuzz**. It works with the window open, where the user
 
 ## 2. What exists today
 
-From a code inventory (file references in §12):
+From a code inventory (file references in §13):
 
 | Area | Today | Consequence |
 |---|---|---|
@@ -130,13 +130,14 @@ Phases (§9) are marked A1 … A7.
 
 | Tool | Phase | Purpose |
 |---|---|---|
-| `gear_list` | A1 | Available machines: name, generator/effect, author, a one-line description, whether it has a manual and units (Neo), preset count. Filter by kind or text |
+| `gear_list` | A1 | Available machines: name, generator/effect, category, a one-line description, manifest quality (generated, curated, profiled draft), health, preset count. Filter by kind, category or text |
 | `machine_list` | A1 | The song's machines: gear, inputs and outputs with gain dB and pan, mute/solo/bypass, tracks, latency |
 | `machine_add` | A1 | Adds a machine from the gear list; optional name, track count, preset, and where to connect it (`"Master"`, or between two machines). Returns its name and its parameter summary |
 | `machine_remove` | A1 | Deletes machines; reconnects the chain around effects when asked |
 | `machine_set` | A1 | Rename, mute, solo, bypass, track count |
 | `connect`, `disconnect` | A1 | Audio connections with gain dB and pan; `input: "sidechain"` for machines with a second input (Neo Comp) |
 | `connection_set` | A1 | Gain and pan of existing connections, in a batch |
+| `machine_replace` | A4 | Swaps a machine for another (a classic for its Neo successor, §12.5), keeping connections and patterns. Maps parameters through manifest roles and units, then renders before and after and reports the difference |
 
 ### 5.4 Sound design
 
@@ -266,21 +267,17 @@ Today an agent could compress and saturate with Neo Comp and Neo Drive, but it h
 | **Neo Multiband** | 3–4 band compressor/expander with linear-phase crossovers | Mastering and bus control | Medium |
 | **Neo Sampler** | Plays waves: multi-sample zones, velocity layers, ADSR, filter, choke groups; drum-kit mode | Drums and sampled sounds with clear units, driven by `wave_import` | Medium |
 
-### 8.3 The Neo manifest
+### 8.3 Machine manifests
 
-Every Neo machine already declares its parameters once (Params.def) with units, mappings and descriptions. Each machine class gets a public static method the server finds by reflection:
-
-```csharp
-public static string GetManifest() // JSON
-```
-
-The JSON covers:
+Every Neo machine already declares its parameters once (Params.def) with units, mappings and descriptions. The build writes them out as a **manifest**, a sidecar file next to the DLL: `Neo Poly.machine.json`. It holds:
 
 - every parameter: id, name, group, unit, kind (linear, exponential, dB, time, frequency, enum…), range and mapping, choices, description;
 - the machine's data imports (a wavetable WAV, a DX7 bank);
 - its readings (Neo Analyzer).
 
-With it, `param_set("Bass", [{"F1 cutoff": "800 Hz"}])` lands on the exact raw value. `machine_describe` speaks in units, and the manual is generated. Legacy machines get the best the server can do: raw ranges plus their own value texts, searched to resolve units.
+With it, `param_set("Bass", [{"F1 cutoff": "800 Hz"}])` lands on the exact raw value. `machine_describe` speaks in units, and the manual is generated.
+
+The same sidecar format describes **every other machine** too, profiled and curated rather than compiled (§12). The server never needs a machine's code to understand it.
 
 ## 9. Phases
 
@@ -339,7 +336,115 @@ param_set("Pad", [{"F1 cutoff":"+40%"}, {"F2 type":"HP"}, {"F2 cutoff":"180 Hz"}
 render(range={bars:[1,17]}) … compare(r1, r2)
 ```
 
-## 12. Inventory notes (for implementers)
+## 12. Upgrading the existing machines
+
+The package ships 101 machines: 82 from upstream ReBuzz (prebuilt DLLs in `RunTime/Gear`, plus ReBuzz's own) and 19 Pedal machines built from source. By code, 46 are managed (C#) and 55 native (C++). An agent can drive all of them through `IParameter` today, but most are hard to use well:
+
+- Values are raw integers whose meaning lives in a description string.
+- Note pitch conventions differ between machines (some play `A-4` at 440 Hz, others `A-5`).
+- Parameter names are terse.
+- Nothing says what a machine is for.
+
+Their editors are the generic parameter list.
+
+There is a path for every one of them, in four tiers. The tiers cost more as they go, and each helps on its own.
+
+### 12.1 What we can touch
+
+| Group | Examples | Source | What's possible |
+|---|---|---|---|
+| Neo machines | Neo Drive, Comp, Verb, Poly, Wave, FM6 | ours | Everything; manifests from Params.def |
+| ReBuzz's own machines | Session Clip Player, Audio In/Out, Groove, Modern Pianoroll, QuickNote, Envelope/Audio Block, MIDI Output, Connection Mixer | this repo (C#) | Tiers 1–3 |
+| Pedal machines (19) | Juno106, SH-101, FM, M1, Drum Matrix, Comp, MComp, Plate, EQ, Filter, Gate, Shaper, Chorus… | `ExternalMachines/source/thepedal` (C#) | Tiers 1–3. Most have no licence file: changes are fine for private builds; redistribution needs the authors' consent (GPL-3.0 for Juno106, SH-101 and Drum Matrix) |
+| Classic natives with sources in Buzztrax | FSM Infector, KickXP, PhatMan, PanzerDelay, Chorus2, WahMan; Jeskola Delay, Cross Delay, Distortion, NiNjA dElaY, Trilok, Noise; Oomek Aggressor, Exciter, Masterizer | `ExternalMachines/source/buzztrax-buzzmachines` (C++, per-author licences) | Tiers 1–2 now. Rebuilding them needs the known MSVC header fix first |
+| Closed binaries | Jeskola Bass 2/3, Organ, Tracker, Reverb, Raverb, Stereo Reverb, Filter/2, EQ-3, Flanger, Chorus, Wave Shaper; Joachims Jupiter, Saturn, Neptune, Mars, Hyperion, Chopper; Polac VST hosts; Matilde Tracker2; Rout 909… | none | Tiers 1 and 4 only |
+
+### 12.2 Tier 1: describe every machine (no code changes)
+
+A **profiler** loads each machine headlessly, then measures it. It produces a draft manifest, which a person curates and commits to the repo. The package ships it beside the DLL.
+
+The profiler, per machine:
+
+- **Parameters.** Lists every parameter and reads `DescribeValue` across its range: every value for byte parameters, a dense grid for word parameters. From that it infers:
+  - the unit (Hz, dB, ms, %, semitones, note, choice) from the text;
+  - the mapping (linear, exponential, dB, table) by fitting the parsed numbers;
+  - whether the parameter is a switch or a choice list.
+- **Audio, effects.** Renders impulse, sine sweep, noise and level-step tests. Reads off:
+  - what kind of effect it is (filter, EQ, delay, reverb, distortion, dynamics, modulation, utility);
+  - its latency, tail length, gain at default, and whether it is linear;
+  - for each parameter, what moving it changes (cutoff moves the response's corner; time moves the echo), which suggests roles.
+- **Audio, generators.** Plays notes on several tracks and reads off:
+  - the pitch convention (which note plays 440 Hz: the manifest records a pitch offset);
+  - whether it is pitched, polyphonic or drum-like;
+  - velocity response, envelope length, and level at default.
+- **Health.** Crashes, NaN or infinite output, denormal slowdowns, CPU per voice or instance, silence handling (does `Work` report silence), behaviour at parameter extremes.
+
+**Curated manifests** add a summary ("what it's for"), plain-English parameter names and descriptions, roles (`filter.cutoff`, `env.release`, `mix.wet`, `drive`), safe ranges, and quirks ("track 0 only", "needs a wave", "stereo in, mono out").
+
+The `machine-health.md` report sits next to the inventory. Machines that crash or emit NaN go on a list the server won't offer to agents unless asked.
+
+Result: every machine becomes usable in real units through `param_set`. `notes_write` plays the written pitch on every generator, because the server applies each machine's pitch offset. `gear_list` can say what everything is for. Curation starts with the 25 most useful machines; the rest ship with their profiled draft.
+
+### 12.3 Tier 2: a better face for every machine (host-side)
+
+- **Manifest editor.** A Neo-style editor generated from any machine's manifest (§8.3): groups, knobs with units, choice buttons, ADSR pictures for envelope roles, a response plot for filters and EQs. It is built with the editor kit. Machines without their own GUI can open it instead of the parameter list (a per-machine setting, on by default for curated manifests). Their design improves without touching their code.
+- **Presets for everything.** Curated factory presets for the top machines in `.prs.xml` beside them, with names that say what they do. The agent can start from a sound, not from zero.
+- **Song-safe.** None of this changes a machine's DLL, parameters or saved data, so every existing song plays exactly as before.
+
+### 12.4 Tier 3: fix and modernise machines we have the source of
+
+For the C# machines (ReBuzz's own and the Pedal set), each gets:
+
+- **Manifests from code.** A Params.def (or an equivalent attribute table) generates the manifest, so it can never drift from the code.
+- **Bug and quality fixes.** Remove the multi-track note workarounds now that the core delivers chords whole (machines spec §3.1). Add denormal guards, smoothing where parameters zipper, and silence reporting.
+- **Editors** on the shared kit, where the manifest editor isn't enough (Drum Matrix, MComp, Juno106).
+- **Tests.** The same measurement suite as the Neo machines: aliasing, levels, NaN and CPU.
+
+Parameter order, ranges and saved state stay as they are: songs and presets keep working. Changes that would break them become a new machine instead (tier 4).
+
+For the native machines with Buzztrax sources, the first step is the build fix (current MSVC headers). Then the same treatment minus the editors: fixes, x64 builds of the ones upstream lacks, and generated manifests.
+
+### 12.5 Tier 4: successors, with migration
+
+Where a machine's design limits its quality (2000s-era reverbs and delays, unlabelled EQs, aliasing distortions, fixed-voice synths), the answer is a Neo successor. Originals stay installed so old songs play. A replacement tool moves a song over: `machine_replace(name, gear)` uses ReBuzz's `ReplaceMachine` with a mapping built from manifest roles:
+
+1. it maps cutoff to cutoff and wet to mix;
+2. it converts values through units, not raw numbers;
+3. it renders before and after with the analysis library, and reports the difference.
+
+The tool works for agents and, from the machine menu, for people.
+
+| Classic machines | Successor | Status |
+|---|---|---|
+| Jeskola Reverb, Stereo Reverb, Raverb; Pedal Plate | Neo Verb | built (machines spec M1) |
+| Jeskola Distortion, Wave Shaper; FSM Philthy | Neo Drive | built |
+| Pedal Comp; Jeskola Limiter (as a compressor) | Neo Comp | built |
+| Jeskola EQ-3, Joachims Enceladus, Pedal EQ | Neo EQ | next batch (§8.2) |
+| Jeskola Limiter, Oomek Masterizer | Neo Limiter | next batch |
+| Jeskola Gain, Pedal Gain | Neo Utility | next batch |
+| Jeskola Delay, Cross Delay, NiNjA dElaY; FSM PanzerDelay | Neo Delay | next batch |
+| Jeskola Chorus, Flanger; FSM Chorus2; Pedal Chorus | Neo Ensemble (chorus/flanger/phaser) | proposed |
+| Jeskola Filter, Filter 2; Joachims Mars; FSM WahMan; Pedal Filter | Neo Filter (the Neo Poly filters as an effect, with envelope follower and LFO) | proposed |
+| Jeskola Bass 2/3, Oomek Aggressor 303, Pedal SH-101 | Neo Poly (mono/legato presets) | built (M2) |
+| FSM Infector, Pedal Juno106 | Neo Poly, Neo Wave | built (M2) |
+| Jeskola Organ | Neo Wave (organ table), or a dedicated tonewheel organ | proposed |
+| Pedal FM | Neo FM6 | in progress (M2) |
+| Rout 909, FSM KickXP, Pedal Drum Matrix | Neo Drums (synthesised kit with per-voice outputs) | proposed |
+| Jeskola Tracker, Matilde Tracker2, Pedal M1 | Neo Sampler | next batch (§8.2) |
+
+### 12.6 How the tiers fit the phases
+
+| Phase (§9) | Machine upgrade work |
+|---|---|
+| A1 | Pitch offsets and hand-written manifests for the 10 machines agents reach for first (Neo machines generated; Juno106, SH-101, Drum Matrix, Infector, Jeskola Delay, Pedal EQ…) |
+| A2 | The profiler and health report over all 101; draft manifests for everything |
+| A3 | Curated manifests for the top 25; the manifest editor; factory presets for the top machines |
+| A4 | Neo EQ, Limiter, Utility (successors); `machine_replace` with role mapping and render comparison |
+| A5+ | Tier 3 for the Pedal and ReBuzz machines; the Buzztrax build fix; Neo Delay, Ensemble, Filter, Drums, Sampler as the next machine batches |
+
+**Done when** every machine in the package has a manifest; `notes_write` plays the written pitch on every pitched generator; the health report is clean or every exception is listed; and an old song converted with `machine_replace` measures within a stated tolerance of the original, or the report says why not.
+
+## 13. Inventory notes (for implementers)
 
 - **Undoable graph operations:** `IMachineGraph` (`I/IMachineGraph.cs`). Connection gain is unity at 0x4000; pan runs 0…0x8000 with 0x4000 the centre (`Core/Session/SessionMixer.cs`). `SetConnectionParameter` is not undoable today.
 - **Parameters:** `IParameter.SetValue(track | 1<<16, v)` sets a value without recording it into patterns (`Core/ParameterCore.cs:303`).
