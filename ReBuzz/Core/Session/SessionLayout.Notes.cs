@@ -71,9 +71,10 @@ namespace ReBuzz.Core.Session
         public bool CanMoveNotes(IPattern clip) =>
             clip is PatternCore p && !p.IsDeleted && clip.Machine is MachineCore m && buzz.MachineManager.HasClipNotesEditor(m);
 
-        /// <summary>The notes on the clip's MIDI note lanes in the Pattern View (empty if its editor has none).</summary>
+        /// <summary>The notes on the clip's MIDI note lanes in the Pattern View, in time order (empty if its editor has none).</summary>
         public List<ClipNote> PatternViewNotesOf(IPattern clip) =>
-            TrackerNotes.Unpack(ExportFromEditor(clip)).Select(n => new ClipNote(n.Time, n.Duration, n.Midi, n.Velocity)).ToList();
+            TrackerNotes.Unpack(ExportFromEditor(clip)).Select(n => new ClipNote(n.Time, n.Duration, n.Midi, n.Velocity))
+                .OrderBy(n => n.Time).ThenBy(n => n.Note).ToList();
 
         /// <summary>
         /// Moves the clip's notes (its engine MIDI column's, where takes and the piano roll put
