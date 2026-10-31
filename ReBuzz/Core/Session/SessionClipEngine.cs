@@ -91,7 +91,14 @@ namespace ReBuzz.Core.Session
 
             bool hear = (mode & WorkModes.WM_READ) != 0 &&
                         (monitor == 1 || (monitor == 0 && buzz != null && buzz.SessionCore.IsArmedMachine(machine)));
-            if (!sound && !hear) return false;
+            if (!sound && !hear)
+            {
+                // ReBuzz works a managed effect in place: what came in goes on out unless the
+                // output is written. Input not heard is written over with silence.
+                if ((mode & WorkModes.WM_READ) == 0 || !HasSound(input, n)) return false;
+                for (int i = 0; i < n; i++) output[i] = default;
+                return true;
+            }
             var left = mixer.Left;
             var right = mixer.Right;
             for (int i = 0; i < n; i++)
@@ -106,6 +113,13 @@ namespace ReBuzz.Core.Session
                 output[i].R = r;
             }
             return true;
+        }
+
+        static bool HasSound(Sample[] samples, int n)
+        {
+            for (int i = 0; i < n; i++)
+                if (samples[i].L != 0 || samples[i].R != 0) return true;
+            return false;
         }
 
         /// <summary>A take of the track's input records this block (silence when nothing comes in).</summary>
