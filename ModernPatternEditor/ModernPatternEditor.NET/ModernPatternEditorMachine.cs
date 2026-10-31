@@ -176,6 +176,17 @@ namespace WDE.ModernPatternEditor
             ModernPatternEditor.ImportMidiEvents(pattern, data);
         }
 
+        // Fork (neo-buzz 0.7.1): the Session View moves a clip's notes into the MIDI note lanes and back.
+        public int[] ExportClipNotes(IPattern pattern)
+        {
+            return ModernPatternEditor.ExportClipNotes(pattern);
+        }
+
+        public bool ImportClipNotes(IPattern pattern, int[] notes)
+        {
+            return ModernPatternEditor.ImportClipNotes(pattern, notes);
+        }
+
         public IEnumerable<IPatternEditorColumn> GetPatternEditorEvents(IPattern pattern, int tbegin, int tend)
         {
             return ModernPatternEditor.GetPatternColumnEvents(pattern, tbegin, tend);

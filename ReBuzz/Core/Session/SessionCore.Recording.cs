@@ -88,10 +88,12 @@ namespace ReBuzz.Core.Session
             public const int Size = 4096;
             readonly int[] data = new int[Size];
             readonly long[] time = new long[Size];
+            readonly long[] wall = new long[Size];
             readonly object sync = new object();
             int start, count;
 
-            public void Add(int message, long heard)
+            /// <summary>A message heard at <paramref name="heard"/> (1/240 tick; long.MinValue while the transport is stopped, with the wall clock instead).</summary>
+            public void Add(int message, long heard, long wallClock = 0)
             {
                 lock (sync)
                 {
@@ -103,8 +105,26 @@ namespace ReBuzz.Core.Session
                     int at = (start + count) % Size;
                     data[at] = message;
                     time[at] = heard;
+                    wall[at] = wallClock;
                     count++;
                 }
+            }
+
+            /// <summary>Takes out what was played while the transport was stopped (wall clock, Stopwatch ticks), oldest first, and forgets everything.</summary>
+            public List<(long Wall, int Data)> TakeStopped()
+            {
+                var list = new List<(long, int)>();
+                lock (sync)
+                {
+                    for (int i = 0; i < count; i++)
+                    {
+                        int at = (start + i) % Size;
+                        if (time[at] == long.MinValue) list.Add((wall[at], data[at]));
+                    }
+                    start = 0;
+                    count = 0;
+                }
+                return list;
             }
 
             public void Clear()
@@ -150,6 +170,14 @@ namespace ReBuzz.Core.Session
         {
             Volatile.Write(ref seq.SessionStoppedAt, clock);
             seq.SessionStoppedClip = clip;
+        }
+
+        /// <summary>UI thread: what an armed track was played while the transport was stopped (wall clock), taken out of its ring.</summary>
+        internal List<(long Wall, int Data)> TakeCapturedWhileStopped(SequenceCore seq)
+        {
+            var state = arm;
+            int at = Array.IndexOf(state.Tracks, seq);
+            return at < 0 ? new List<(long, int)>() : state.Rings[at].TakeStopped();
         }
 
         /// <summary>UI thread: what an armed track was played since <paramref name="from"/> (heard time), taken out of its ring.</summary>
@@ -315,7 +343,14 @@ namespace ReBuzz.Core.Session
             lock (gate)
             {
                 double heard = HeardTicks();
-                if (heard < 0) return;
+                if (heard < 0)
+                {
+                    // Stopped: Capture MIDI (0.7.1) places a phrase by when it was played.
+                    long now = Timestamp();
+                    for (int i = 0; i < state.Rings.Length; i++)
+                        state.Rings[i].Add(data, long.MinValue, now);
+                    return;
+                }
                 long time = (long)Math.Floor(heard * TakeTime.TimeBase);
                 long tick = time / TakeTime.TimeBase;
                 int fraction = (int)(time - tick * TakeTime.TimeBase);
@@ -356,9 +391,17 @@ namespace ReBuzz.Core.Session
         }
 
         /// <summary>
+        /// Set (on the thread making the change) while a native machine's own window moves a
+        /// parameter (0.7.1): its host and UI channels, unlike its audio channel, carry what the
+        /// user does, not what the machine modulates while it plays.
+        /// </summary>
+        [ThreadStatic]
+        internal static bool MoveFromEditor;
+
+        /// <summary>
         /// A parameter was moved (ParameterCore.SetValue without its "don't record" flag), on the
-        /// UI thread: a recording track of its machine records it into the clip it records, as
-        /// automation.
+        /// UI thread or from a native machine's window: a recording track of its machine records
+        /// it into the clip it records, as automation.
         /// </summary>
         internal void OnParameterChange(ParameterCore parameter, int track, int value)
         {
@@ -367,7 +410,7 @@ namespace ReBuzz.Core.Session
             // Moves made in ReBuzz (parameter windows, MIDI controller mappings) come on the UI
             // thread. Machines move parameters themselves from the audio and IPC threads (a
             // peer controller, an LFO): that's not a performance to record.
-            if (ReBuzzCore.AudioLock.IsHeldByCurrentThread || !buzz.dispatcher.CheckAccess() || buzz.SongLoading) return;
+            if (ReBuzzCore.AudioLock.IsHeldByCurrentThread || !(buzz.dispatcher.CheckAccess() || MoveFromEditor) || buzz.SongLoading) return;
             bool queued = false;
             lock (gate)
             {

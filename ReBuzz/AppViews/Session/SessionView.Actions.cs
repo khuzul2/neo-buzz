@@ -129,6 +129,20 @@ namespace ReBuzz.AppViews.Session
             RefreshState();
         }
 
+        /// <summary>The clip's notes in the piano roll (0.7.1).</summary>
+        void EditNotes(ISequence track, IPattern pattern) =>
+            PianoRollWindow.Show(Window.GetWindow(this), buzz, layout, track, pattern);
+
+        /// <summary>Moves the clip's notes to its MIDI note lanes in the Pattern View, or back (0.7.1).</summary>
+        void MoveNotes(ISequence track, IPattern pattern, bool toPatternView)
+        {
+            var problem = toPatternView ? layout.MoveNotesToPatternView(track, pattern) : layout.MoveNotesFromPatternView(track, pattern);
+            if (problem != null)
+                MessageBox.Show(Window.GetWindow(this), problem, toPatternView ? "Move notes to the Pattern View" : "Move notes from the Pattern View",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+            RefreshState();
+        }
+
         // ------------------------------------------------------------------ recording (0.7)
 
         void ToggleArm(int track)
@@ -158,7 +172,9 @@ namespace ReBuzz.AppViews.Session
 
         void SlotDoubleClicked(SlotCell cell)
         {
-            if (cell.Pattern != null)
+            if (cell.Pattern != null && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                EditNotes(cell.Sequence, cell.Pattern);
+            else if (cell.Pattern != null)
                 EditPattern(cell.Pattern);
             else
                 CreateClip(cell.Track, cell.Scene);
@@ -418,6 +434,16 @@ namespace ReBuzz.AppViews.Session
                 menu.Items.Add(Item("Launch", () => LaunchSlot(cell), "Enter"));
                 menu.Items.Add(Item("Clip settings", ShowClipPanel));
                 menu.Items.Add(Item("Edit pattern", () => EditPattern(pattern), "double-click"));
+                menu.Items.Add(Item("Edit notes (piano roll)…", () => EditNotes(cell.Sequence, pattern), "Ctrl+double-click"));
+                if (layout.CanMoveNotes(pattern))
+                {
+                    int clipNotes = layout.NotesOf(pattern).Count;
+                    if (clipNotes > 0)
+                        menu.Items.Add(Item($"Move notes to the Pattern View ({clipNotes})", () => MoveNotes(cell.Sequence, pattern, toPatternView: true)));
+                    int laneNotes = layout.PatternViewNotesOf(pattern).Count;
+                    if (laneNotes > 0)
+                        menu.Items.Add(Item($"Move notes from the Pattern View ({laneNotes})", () => MoveNotes(cell.Sequence, pattern, toPatternView: false)));
+                }
                 menu.Items.Add(Item("Rename…", () => RenameClip(pattern), "F2"));
                 menu.Items.Add(Item("Duplicate", () => DuplicateClip(cell.Track, cell.Scene), "Ctrl+D"));
                 menu.Items.Add(ColorMenu("Colour", PatternColors.Get(pattern), i => layout.SetClipColor(pattern, i)));

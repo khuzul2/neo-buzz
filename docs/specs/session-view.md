@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11), 0.6.2 (#12), 0.6.3 (#13) and 0.7 (#14) merged; next: 0.8 Control surfaces & sync |
+| Status | Draft v7 — 0.1 (#1, #2), 0.2 (#3), 0.3 (#4), 0.4 (#5), 0.4.1 (#6), 0.5 (#7), 0.5.1 (#8), 0.6 (#9), 0.6.1 (#10, #11), 0.6.2 (#12), 0.6.3 (#13), 0.7 (#14) and 0.7.1 (#15) merged; next: 0.8 Control surfaces & sync |
 | Date | 2026-10-28 |
 | Scope | An Ableton Live–style Session View (clip launcher) inside ReBuzz, delivered in usable increments from MVP to feature parity |
 | Code baseline | upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -204,6 +204,7 @@ Decision: **A for 0.1–0.2, B from 0.3.** All function keys are taken (F1–F12
 | 0.5.1 | Faithful arrangement | Record and insert into the arrangement exactly what the session played: partial patterns, loop regions, legato, velocity | M |
 | 0.6 | Performance | Follow actions, crossfader, select-on-launch, launch undo, tempo nudge/tap | M |
 | 0.7 | Session recording | Record and overdub MIDI into empty slots, fixed-length recording, capture MIDI, metronome and count-in | L |
+| 0.7.1 | Recording without its limits | Piano roll; notes to and from the Pattern View; takes growing as they record; Capture while stopped; native editor moves recorded | M |
 | 0.8 | Control surfaces & sync | Launchpad/APC/Push-style grid control with LED feedback and session ring; Ableton Link; MIDI clock | L |
 | **1.0** | Audio clips (parity) | Audio clips in slots with warping, audio recording into slots | XL |
 
@@ -592,7 +593,7 @@ The Modern Pattern Editor also keeps every pattern's notes in its own store, key
 - `WorkManager` plays it itself, to any machine that takes MIDI, with note-offs at each note's end. 0.6.3 made it play each event once.
 - Songs save it (.bmx TAP2 section, .bmxml).
 - Undo keeps it (`EngineColumns`, 0.6.3).
-- The pattern editors don't show it. The clip panel shows the count of recorded notes, and the slot menu clears them.
+- The pattern editors don't show it. The clip panel shows the count of recorded notes, and the slot menu clears them. (0.7.1: the piano roll edits them, and the slot menu moves them to the Pattern View's note lanes and back.)
 
 *Three threads, each doing only what it must.*
 - *MIDI thread.* `SessionMidi` sees each message first, as it does for mapped controls. What it doesn't take goes to `SessionCore.OnMidiInput`:
@@ -605,7 +606,7 @@ The Modern Pattern Editor also keeps every pattern's notes in its own store, key
   - controllers, pitch bend and aftertouch are events of no length.
 
 *Record windows.* A track records while its window is open (`SessionCore.RecordWindow`, immutable, replaced by the UI thread):
-- *A take* records its first pass only: its length in bars, or up to 64 bars until stopped. A take recorded until stopped is cut to the bars recorded, rounded up, so it loops on in step. It may be stopped by launching it, a stop (quantized or not), Stop all, or the transport. The engine notes the tick each clip stops on, so the length counts to there, and notes still held end there.
+- *A take* records its first pass only: its length in bars, or until stopped (64 bars in 0.7; growing as it records since 0.7.1). A take recorded until stopped is cut to the bars recorded, rounded up, so it loops on in step. It may be stopped by launching it, a stop (quantized or not), Stop all, or the transport. The engine notes the tick each clip stops on, so the length counts to there, and notes still held end there.
 - With Session Record on, a take goes on after its first pass as an overdub, without a gap. Each later pass is its own undo step.
 - Takes are polled by the layout's own timer, whether a Session View shows or not.
 - *Overdub* (Session Record, Live's) records into whatever clip the track plays. An armed track playing nothing gets a take in its first empty slot from the selected scene.
@@ -615,9 +616,9 @@ The Modern Pattern Editor also keeps every pattern's notes in its own store, key
 - it is 1, 2, 4 or 8 bars long;
 - it starts playing on the next tick, in phase with what was played (`SessionCore.LaunchInPhase`).
 
-All of it is one undo step. Capture needs the transport running, since a phrase is placed by the session clock. What was played before the transport last started or jumped is forgotten.
+All of it is one undo step. In 0.7 Capture needs the transport running, since a phrase is placed by the session clock (0.7.1 lifts this). What was played before the transport last started or jumped is forgotten.
 
-*Automation.* A parameter moved in ReBuzz while its machine's track records goes into the clip's automation column for it. Moves in ReBuzz are those made in a parameter window or by a MIDI controller mapping: ParameterCore.SetValue without its "don't record" flag, on the UI thread, reaches `SessionCore.OnParameterChange`. Machines moving parameters themselves aren't recorded: peer controllers and LFOs on the audio thread, native editors on their own thread. An automation column is a parameter column marked `SessionAutomation`, marked before the engine can see it.
+*Automation.* A parameter moved in ReBuzz while its machine's track records goes into the clip's automation column for it. Moves in ReBuzz are those made in a parameter window or by a MIDI controller mapping: ParameterCore.SetValue without its "don't record" flag, on the UI thread, reaches `SessionCore.OnParameterChange`. Machines moving parameters themselves aren't recorded: peer controllers and LFOs on the audio thread, native editors on their own thread (0.7.1 records moves in a native machine's own window). An automation column is a parameter column marked `SessionAutomation`, marked before the engine can see it.
 - The engine plays it, with the "don't record" flag, so playback is never recorded again.
 - Other parameter columns belong to the pattern editors, which play their own data.
 - MIDI controllers, pitch bend and aftertouch played on an armed track are recorded as MIDI events in the MIDI column.
@@ -630,6 +631,43 @@ All of it is one undo step. Capture needs the transport running, since a phrase 
 **What 0.6.1–0.6.3 provide for it.** Identity that follows the song, with object-bound pattern actions. Liveness flags, so a take deleted while recording is never written again. One launch path. `SongLoading`. Diff-based undo. Engine MIDI columns that play once and survive deletes and undo. A MIDI release that does what its press did.
 
 **Acceptance criteria.** Notes recorded at 120 BPM land within ±1 sub-tick of their played time; fixed-length recording loops seamlessly on the first pass.
+
+---
+
+### 0.7.1 — Recording without its limits
+
+**Features**
+1. A **piano roll** for a clip's notes: Ctrl+double-click a slot, or *Edit notes (piano roll)…* on its menu.
+2. **Notes in the Pattern View**: the slot menu moves a clip's notes onto the Modern Pattern Editor's MIDI note lanes, and back.
+3. Takes recorded until stopped grow as they record, past 64 bars.
+4. **Capture MIDI with the transport stopped.**
+5. Knob moves in a native machine's own window are recorded as automation.
+
+**Design.**
+
+*Piano roll.* Its notes are the note-ons of the clip's engine MIDI column (where takes go), each with its length.
+- `ClipNotes` (pure) makes the edits. A drawn note snaps down to the grid and is one step long. A moved group snaps its first note and keeps its shape. Everything stays inside the clip and the MIDI range. Quantize moves starts by a strength, and ends if asked.
+- `SessionLayout.EditNotes` makes each edit one Session View undo step (`ClipEventsReplaceAction`, holding the clip). Drawing into a clip without a MIDI column gives it one. Controllers in the column stay, unshown.
+- Mouse: double-click adds or deletes a note; drag moves (Shift: off the grid); a note's right edge resizes; Alt+drag changes velocity; dragging on empty space selects; the keys play their note.
+- Keys: Del, Ctrl+A, arrows (Shift: an octave), Ctrl+Up/Down for velocity, Q to quantize, Ctrl+Z/Y.
+
+*Pattern View.* The Modern Pattern Editor keeps its notes in its own store. It gained two calls, `ExportClipNotes` and `ImportClipNotes`, which ReBuzz reaches through its managed editor bridge, as it does `GetPatternEditorMachineMIDIEvents`. Notes cross as int triples: time, note-on, length.
+- `BuzzGUI.Common.TrackerNotes` (pure) lays notes on the lanes and reads them back. Each voice gets a track; the machine gets more tracks if it can take them. A note sits on a row with its velocity and its delay (in 1/95 of a row). A note ending in its own row gets a cut; otherwise a note-off goes on its end row, unless the track's next note starts by then. A round trip keeps notes to 1/95 of a row.
+- *Move notes to the Pattern View* puts the clip's notes beside the lanes' own. If they need more voices than the machine has tracks, nothing moves and the menu says why.
+- *Move notes from the Pattern View* empties the lanes into the clip's MIDI column, where the piano roll edits them.
+- Each move is one undo step (`ClipNotesMoveAction`), refused while the clip records. Tracks the editor gained stay. The editor's own undo doesn't see the move.
+
+*Takes grow.* A take recorded until stopped starts with 64 bars of room. The layout's poll grows it 8 bars ahead of where it plays, up to 4,096 bars. It is cut to the bars recorded when it stops, as in 0.7.
+
+*Capture while stopped.* With the transport stopped, the MIDI thread stamps messages with the wall clock (`Stopwatch`) instead of the session time. Capture times the phrase at the song's tempo. The clip starts at the phrase's first note, is 1, 2, 4 or 8 bars long, and doesn't launch: there is nothing to be in phase with.
+
+*Native editor moves.* A native machine's own window moves a parameter through an IPC message on its UI or host channel. ReBuzz marks that move (`SessionCore.MoveFromEditor`, per thread), so it records like a move in a parameter window. Moves the machine makes while processing (the audio channel) still aren't recorded.
+
+**Tests.**
+- `ReBuzz.SessionTests`: `ClipNotesTests` (9) and `TrackerNotesTests` (5, including a random round trip).
+- `ReBuzzTests/PianoRollTests.cs` (6): one undo step per edit; drawing into a clip without a MIDI column; quantize; the control's commands and a render; moving notes to the Pattern View and back, with undo and playback; notes that don't fit staying in the clip.
+- `ReBuzzTests/SessionRecordingTests.cs`: a take growing past its room; Capture with the transport stopped.
+- The fake Modern Pattern Editor exchanges notes as the real one does. The real one's lane code is compiled on CI but not run there.
 
 ---
 

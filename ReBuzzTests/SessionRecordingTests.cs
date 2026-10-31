@@ -132,13 +132,41 @@ namespace ReBuzzTests
             layout.SetArmed(0, true);
             FreezeClock();
             var take = layout.RecordTake(0, 0)!;
-            Assert.That(take.Length, Is.EqualTo(SessionDocument.MaxRecordBars * Bar), "until stopped: room for the longest take");
+            Assert.That(take.Length, Is.EqualTo(SessionLayout.TakeRoomBars * Bar), "until stopped: room to start with");
             rig.PlayTo(Bar + 6);
             layout.LaunchClip(layout.SequenceOf(0)!, take);       // launching the take ends its recording
             Assert.That(layout.IsRecording(layout.SequenceOf(0)!), Is.False);
             Assert.That(take.Length, Is.EqualTo(2 * Bar), "1 bar and 6 ticks: two bars");
             rig.PlayTo(2 * Bar + 1);
             Assert.That(rig.Session.GetClipPosition(layout.SequenceOf(0)!), Is.EqualTo(1), "it loops in step");
+        }
+
+        [Test]
+        public void ATakeRecordedUntilStoppedGrowsPastItsFirstRoomWithoutWrapping()
+        {
+            using var rig = new KeysRig();
+            rig.Core.BPM = 500;                                  // short ticks: a quick test
+            var layout = rig.Layout;
+            layout.Ensure();
+            layout.SetRecordBars(0);
+            layout.SetArmed(0, true);
+            FreezeClock();
+            var take = layout.RecordTake(0, 0)!;
+            var track = layout.SequenceOf(0)!;
+            int room = SessionLayout.TakeRoomBars * Bar;
+            for (int bar = 1; bar <= SessionLayout.TakeRoomBars + 6; bar++)
+            {
+                rig.PlayTo((long)bar * Bar);
+                layout.PollTakes();                              // the layout's timer
+            }
+            Assert.That(take.Length, Is.EqualTo(2 * room), "it grew before reaching its end");
+            Assert.That(rig.Session.GetClipPosition(track), Is.EqualTo(room + 6 * Bar), "still going: no wrap");
+            rig.Core.SendMIDIInput(NoteOn(60, 100));
+            rig.PlayTo((SessionLayout.TakeRoomBars + 6) * Bar + 2);
+            rig.Core.SendMIDIInput(NoteOff(60));
+            Assert.That(EventsOf(take).Single().Time, Is.EqualTo((room + 6 * Bar) * TB), "recorded where it was played, past the first room");
+            layout.LaunchClip(track, take);                      // stop recording
+            Assert.That(take.Length, Is.EqualTo(SessionLayout.TakeRoomBars * Bar + 7 * Bar), "cut to the bars recorded");
         }
 
         [Test]
@@ -279,6 +307,32 @@ namespace ReBuzzTests
 
             layout.Undo();
             Assert.That(layout.PatternAt(0, 0), Is.Null, "one undo step");
+        }
+
+        [Test]
+        public void WithTheTransportStoppedCaptureTimesThePhraseAtTheTempo()
+        {
+            using var rig = new KeysRig();
+            rig.Core.BPM = 120;                                  // 8 ticks a second at 4 ticks per beat
+            var layout = rig.Layout;
+            layout.Ensure();
+            layout.SetArmed(0, true);
+            long wall = 0;
+            SessionCore.Timestamp = () => wall;
+            long Seconds(double s) => (long)(s * System.Diagnostics.Stopwatch.Frequency);
+            wall = Seconds(10);    rig.Core.SendMIDIInput(NoteOn(60, 100));
+            wall = Seconds(10.25); rig.Core.SendMIDIInput(NoteOff(60));
+            wall = Seconds(11);    rig.Core.SendMIDIInput(NoteOn(62, 90));
+            wall = Seconds(11.125); rig.Core.SendMIDIInput(NoteOff(62));
+
+            var made = layout.CaptureMidi(0);
+            Assert.That(made.Count, Is.EqualTo(1));
+            var clip = made[0];
+            Assert.That(clip.Length, Is.EqualTo(Bar), "9 ticks: one bar");
+            Assert.That(EventsOf(clip), Is.EqualTo(new[] { (0, NoteOn(60, 100), 2 * TB), (8 * TB, NoteOn(62, 90), TB) }),
+                "from its first note, at the tempo");
+            Assert.That(rig.Core.PlayRequested, Is.False, "it doesn't start playing");
+            Assert.That(layout.CaptureMidi(0), Is.Empty, "taken out");
         }
 
         [Test]

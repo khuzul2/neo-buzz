@@ -251,7 +251,7 @@ namespace ReBuzz.AppViews.Session
                                 (moves > 0 ? $" · {moves} automation point{(moves == 1 ? "" : "s")}" : "");
                     info.ToolTip = shownNotes > 0 || moves > 0
                         ? "Recorded notes and automation are in the clip's own columns, which the engine plays to the machine.\n" +
-                          "The pattern editor doesn't show them. Right-click the slot to clear them (undoable)."
+                          "Edit them in the piano roll (Ctrl+double-click the slot), or move them to the Pattern View's note lanes and back (right-click the slot)."
                         : null;
                     hint.Visibility = Visibility.Collapsed;
                     body.Visibility = Visibility.Visible;
