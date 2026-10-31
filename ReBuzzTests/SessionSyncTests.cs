@@ -67,6 +67,7 @@ namespace ReBuzzTests
         {
             RequireHelper();
             using var a = Peer(131.25);
+            Thread.Sleep(1000);                                     // Link: the older session (by over 0.5 s) is the one joined
             using var b = new LinkClient(Helper);
             Assert.That(b.Start(), Is.Null);
             b.Send(LinkProtocol.Quantum(4));
@@ -93,6 +94,7 @@ namespace ReBuzzTests
             RequireHelper();
             using var rig = new KeysRig();
             using var peer = Peer(123.5);
+            Thread.Sleep(1000);                                     // the peer's session is the older: the session joins it
             rig.Core.SessionSync?.Dispose();
             var sync = new SessionSync(rig.Core, null, () => Helper);
             rig.Core.SessionSync = sync;
