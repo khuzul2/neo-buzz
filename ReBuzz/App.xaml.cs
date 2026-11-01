@@ -24,11 +24,13 @@ namespace ReBuzz
         {
             if (ReBuzz.Agent.HeadlessAgent.Requested(e.Args))
             {
-                StartupUri = null;
                 base.OnStartup(e);
                 ReBuzz.Agent.HeadlessAgent.Start(this, e.Args);
                 return;
             }
+            // Fork: the main window is chosen here rather than in App.xaml, so --agent opens none
+            // (StartupUri can't be cleared once set: WPF throws on null).
+            StartupUri = new Uri("AppViews/MainWindow.xaml", UriKind.Relative);
             base.OnStartup(e);
         }
 
@@ -50,6 +52,12 @@ namespace ReBuzz
         {
             // Fork (agent server): headless, or inside an agent call, nobody can answer a dialog.
             if (ReBuzz.Agent.NonModal.TryCapture(GetFullExceptionMessage(ex), "Unhandled exception")) return;
+            if (ReBuzz.Agent.HeadlessAgent.Requested(Environment.GetCommandLineArgs()))
+            {
+                // Headless and not serving yet: report on stderr and exit; a dialog would hang the client.
+                Console.Error.WriteLine("[ReBuzz] Unhandled exception: " + GetFullExceptionMessage(ex));
+                Environment.Exit(1);
+            }
 
             var result = MessageBox.Show(
                 GetFullExceptionMessage(ex)
