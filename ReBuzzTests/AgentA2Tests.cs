@@ -78,6 +78,38 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void MixAnalysisComparisonAndPlots()
+        {
+            using var rig = new Rig(NeoMachineTests.Poly);
+            Ok(rig, "song_set", new JsonObject { ["tempo_bpm"] = 120 });
+            Ok(rig, "machine_add", new JsonObject { ["gear"] = "Neo Poly", ["name"] = "Bass" });
+            Ok(rig, "machine_add", new JsonObject { ["gear"] = "Neo Poly", ["name"] = "Sub" });
+            foreach (var m in new[] { "Bass", "Sub" })
+            {
+                Ok(rig, "pattern_create", new JsonObject { ["machine"] = m, ["name"] = "P", ["length_beats"] = 8 });
+                Ok(rig, "notes_write", new JsonObject { ["machine"] = m, ["pattern"] = "P", ["notes"] = Chord(m == "Bass" ? "A1" : "A1") });
+                Ok(rig, "arrangement_place", new JsonObject { ["machine"] = m, ["pattern"] = "P", ["at"] = 0 });
+            }
+            var mix = Ok(rig, "analyze_mix");
+            Assert.That(mix["tracks"]!.AsArray().Count, Is.EqualTo(2));
+            Assert.That(mix["masking"]!.AsArray().Count, Is.GreaterThan(0), "two basses on one note mask each other");
+            string id = mix["render"]!.GetValue<string>();
+            var full = Ok(rig, "analyze", new JsonObject { ["source"] = id, ["metrics"] = new JsonArray("spectrum", "stereo", "key") });
+            Assert.That(full["spectrum"]!["bands_db"], Is.Not.Null);
+            Assert.That(full["stereo"]!["correlation"], Is.Not.Null);
+
+            Ok(rig, "connection_set", new JsonObject { ["changes"] = new JsonArray(new JsonObject { ["from"] = "Sub", ["to"] = "Master", ["gain_db"] = -12 }) });
+            var after = Ok(rig, "render", new JsonObject { ["tail_seconds"] = 1 });
+            var cmp = Ok(rig, "compare", new JsonObject { ["a"] = id, ["b"] = after["id"]!.GetValue<string>() });
+            Assert.That(cmp["reads"]!.AsArray().Count, Is.GreaterThan(0), "turning a track down shows up");
+
+            var plot = rig.Call("plot", new JsonObject { ["kind"] = "spectrum", ["sources"] = new JsonArray(id + ":Bass", id + ":Sub") });
+            Assert.That(plot.Error, Is.False, plot.Text);
+            var png = File.ReadAllBytes(plot.Data["file"]!.GetValue<string>());
+            Assert.That(png.Take(8), Is.EqualTo(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }), "a PNG");
+        }
+
+        [Test]
         public void WavesImportIntoSlotsAndUndo()
         {
             using var rig = new Rig();
