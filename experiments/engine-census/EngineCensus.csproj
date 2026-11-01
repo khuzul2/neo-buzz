@@ -1,0 +1,155 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Experiment (docs/specs/engine-split.md): P1 step 0, the engine census.
+    Compiles the engine-side sources of ReBuzz as plain net10.0 (no WPF, no Windows TFM) by
+    linking them where they are, so the compiler lists what keeps the engine from being portable.
+    It is EXPECTED TO FAIL: the errors are the census. Not part of ReBuzz.sln; no NuGet packages.
+
+      dotnet build experiments/engine-census -p:CensusStage=5 -p:TreatWarningsAsErrors=false
+      python3 experiments/engine-census/census.py      (all stages, every error, categorised)
+
+    csc stops after declaration errors, so "dotnet build" alone under-counts; census.py also
+    compiles the same file list through Roslyn (tool/) to see errors inside method bodies.
+
+    Stages (each one narrows the previous):
+      0  raw: every .cs in the engine folders, BuzzGUI.Interfaces and BuzzGUI.Common
+      1  + the repo's own portable binaries (3rdParty NAudio.Core, NAudio.Midi, SharpZipLib)
+      2  - UI files: *.xaml.cs, WPF implementations of existing seams, WPF-only BuzzGUI.Common files
+      3  - Windows platform code: WASAPI/ASIO drivers, WinMM and Windows MIDI Services devices, registry
+      4  BuzzGUI.Common reduced to the files the engine actually uses (its compile closure)
+      5  simulated mechanical PRs: seam interfaces on their own, engine helpers from ReBuzz/Common
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <AssemblyName>EngineCensus</AssemblyName>
+    <RootNamespace>ReBuzz</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);CS0108;CS0114;CS0162;CS0168;CS0169;CS0219;CS0414;CS0618;CS0649;CS0067;CS8632;SYSLIB0011;SYSLIB0014</NoWarn>
+    <CensusStage Condition="'$(CensusStage)' == ''">5</CensusStage>
+    <R>..\..\ReBuzz\</R>
+    <G>..\..\ReBuzzGUI\</G>
+    <C>..\..\ReBuzzGUI\BuzzGUI.Common\</C>
+  </PropertyGroup>
+
+  <!--
+    BuzzGUI.Interfaces builds with ImplicitUsings=enable; ReBuzz and BuzzGUI.Common don't. One
+    compilation can't mix both, so this file adds the three implicit usings the Interfaces need.
+  -->
+  <ItemGroup>
+    <Compile Include="InterfacesImplicitUsings.cs" />
+  </ItemGroup>
+
+  <!-- ===== Engine folders of ReBuzz (cross-platform.md §2.1 "Engine side") ===== -->
+  <ItemGroup>
+    <Compile Include="$(R)Core\**\*.cs" Link="ReBuzz\Core\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(R)Audio\**\*.cs" Link="ReBuzz\Audio\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(R)MachineManagement\**\*.cs" Link="ReBuzz\MachineManagement\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(R)FileOps\**\*.cs" Link="ReBuzz\FileOps\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(R)ManagedMachine\**\*.cs" Link="ReBuzz\ManagedMachine\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(R)NativeMachine\**\*.cs" Link="ReBuzz\NativeMachine\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(R)Midi\**\*.cs" Link="ReBuzz\Midi\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(R)Agent\**\*.cs" Link="ReBuzz\Agent\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- ===== Machine API ===== -->
+  <ItemGroup>
+    <Compile Include="$(G)BuzzGUI.Interfaces\**\*.cs" Exclude="$(G)BuzzGUI.Interfaces\obj\**;$(G)BuzzGUI.Interfaces\bin\**" Link="BuzzGUI.Interfaces\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- ===== BuzzGUI.Common, stages 0-3: non-XAML .cs, same removals as its own csproj ===== -->
+  <ItemGroup Condition="$(CensusStage) &lt; 4">
+    <Compile Include="$(C)**\*.cs"
+             Exclude="$(C)**\*.xaml.cs;$(C)obj\**;$(C)bin\**;
+                      $(C)Sanford.Multimedia.Midi\Clocks\**;
+                      $(C)Sanford.Multimedia.Midi\Device Classes\**;
+                      $(C)Sanford.Multimedia.Midi\Messages\Message Builders\**;
+                      $(C)Sanford.Multimedia.Midi\Processing\**;
+                      $(C)Sanford.Multimedia.Midi\UI\**;
+                      $(C)PowerCollections\AssemblyInfo.cs;
+                      $(C)Properties\AssemblyInfo.cs;
+                      $(C)Sanford.Multimedia.Midi\AssemblyInfo.cs;
+                      $(C)Sanford.Multimedia.Midi\GeneralMidi.cs;
+                      $(C)Sanford.Multimedia.Midi\MidiNoteConverter.cs;
+                      $(C)Sanford.Multimedia.Midi\Sequencing\Sequencer.cs"
+             Link="BuzzGUI.Common\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(C)Sanford.Multimedia.Midi\Clocks\IClock.cs;
+                      $(C)Sanford.Multimedia.Midi\Clocks\PpqnClock.cs;
+                      $(C)Sanford.Multimedia.Midi\Messages\Message Builders\*.cs;
+                      $(C)Sanford.Multimedia.Midi\Processing\ChannelChaser.cs;
+                      $(C)Sanford.Multimedia.Midi\Processing\ChannelStopper.cs;
+                      $(C)Sanford.Multimedia.Midi\Processing\ChasedEventArgs.cs;
+                      $(C)Sanford.Multimedia.Midi\Processing\StoppedEventArgs.cs"
+             Link="BuzzGUI.Common\Sanford\%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- ===== Stage 1: the repo's own portable binaries (not NuGet) ===== -->
+  <ItemGroup Condition="$(CensusStage) &gt;= 1">
+    <Reference Include="NAudio.Core"><HintPath>..\..\3rdParty\NAudio\NAudio.Core.dll</HintPath></Reference>
+    <Reference Include="NAudio.Midi"><HintPath>..\..\3rdParty\NAudio\NAudio.Midi.dll</HintPath></Reference>
+    <Reference Include="ICSharpCode.SharpZipLib"><HintPath>..\..\3rdParty\ICSharpCode.SharpZipLib.dll</HintPath></Reference>
+  </ItemGroup>
+
+  <!-- ===== Stage 2: drop UI files ===== -->
+  <ItemGroup Condition="$(CensusStage) &gt;= 2">
+    <!-- XAML code-behind -->
+    <Compile Remove="$(R)**\*.xaml.cs" />
+    <!-- WPF implementations of seams that already exist (IUserMessages, IUiDispatcher, IFileNameChoice, IKeyboard) -->
+    <Compile Remove="$(R)Core\UserMessagesViaMessageBox.cs;$(R)Core\WindowsGuiDispatcher.cs;
+                     $(R)Core\FileNameChoiceThroughOpenFileDialog.cs;$(R)Core\FileNameToSaveChoiceThroughSaveFileDialog.cs;
+                     $(R)MachineManagement\WindowsKeyboard.cs" />
+    <!-- HWND hosting of native editors; the app hosts for studio and headless mode -->
+    <Compile Remove="$(R)NativeMachine\NativeEditorHost.cs;$(R)Agent\StudioAgent.cs;$(R)Agent\HeadlessAgent.cs" />
+    <!-- BuzzGUI.Common: controls, behaviours, window chrome, converters, WPF helpers -->
+    <Compile Remove="$(C)AttachedCommandBehavior\**;$(C)Microsoft.Windows.Shell\**;
+                     $(C)Knob.cs;$(C)SnappyKnob.cs;$(C)ParameterSlider.cs;$(C)NumericUpDown.cs;$(C)SearchTextBox.cs;
+                     $(C)ComboBoxEx.cs;$(C)RadioButtonEx.cs;$(C)MachineGUIWindow.cs;$(C)MachineGUIUpdateTimer.cs;
+                     $(C)PersistentWindowPlacement.cs;$(C)WPFExtensions.cs;$(C)WPFScreen.cs;$(C)Win32Mouse.cs;
+                     $(C)DragMouseGesture.cs;$(C)DragTargetBehavior.cs;$(C)Dragger.cs;$(C)ItemSelectedBehavior.cs;
+                     $(C)ListBoxItemDragSource.cs;$(C)ListViewDragBehavior.cs;$(C)CommandSinkBinding.cs;
+                     $(C)XamlReaderEx.cs;$(C)DebugConverter.cs;$(C)EnumBooleanConverter.cs;$(C)MulConverter.cs;
+                     $(C)PropertyChangeNotifier.cs;$(C)SessionOverrideIndicator.cs;$(C)ApplicationExtensions.cs;
+                     $(C)BuzzGUIStartup.cs;$(C)ClipboardEx.cs;$(C)DispatcherAction.cs" />
+  </ItemGroup>
+
+  <!-- ===== Stage 3: drop Windows platform code (it moves to a Windows-only assembly) ===== -->
+  <ItemGroup Condition="$(CensusStage) &gt;= 3">
+    <Compile Remove="$(R)Audio\Driver\AsioAudioDriver.cs;$(R)Audio\Driver\WasapiAudioDriver.cs;
+                     $(R)Midi\Midi2.cs;$(R)Midi\MidiInDevice.cs;$(R)Midi\MidiOutDevice.cs;
+                     $(R)Core\WindowsRegistry.cs;$(R)Core\WindowsRegistryKey.cs" />
+  </ItemGroup>
+
+  <!-- ===== Stage 4: BuzzGUI.Common = the engine's compile closure (found by census.py closure) ===== -->
+  <Import Project="CommonClosure.props" Condition="$(CensusStage) &gt;= 4 And Exists('CommonClosure.props')" />
+
+  <!--
+    ===== Stage 5: simulate the mechanical PRs (engine-split.md steps 1-2) =====
+    The seam interfaces on their own (sim/SeamShims.cs), the engine helpers that sit in the app's
+    ReBuzz/Common folder or in a UI project (r8brain interop in BuzzGUI.WaveformControl), and
+    ReBuzzCoreInitialization from ReBuzz/AppViews.
+  -->
+  <ItemGroup Condition="$(CensusStage) &gt;= 5">
+    <Compile Include="sim\SeamShims.cs" />
+    <Compile Include="$(R)Common\Utils.cs;$(R)Common\BurstProtectionEngine.cs;$(R)Common\MultimediaTimer.cs;
+                      $(R)Common\ChildProcessTracker.cs;$(R)Common\Interfaces\IMachineExtension.cs"
+             Link="ReBuzz\Common\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(G)BuzzGUI.WaveformControl\r8brain\*.cs" Link="BuzzGUI.WaveformControl\r8brain\%(Filename)%(Extension)" />
+    <!-- Engine start-up; the test Driver and headless mode use it without a window. -->
+    <Compile Include="$(R)AppViews\ReBuzzCoreInitialization.cs" Link="ReBuzz\AppViews\ReBuzzCoreInitialization.cs" />
+  </ItemGroup>
+
+  <!-- The agent server's portable core: plain net10.0, no packages. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\ReBuzz.Agent\ReBuzz.Agent.csproj" />
+  </ItemGroup>
+
+</Project>
