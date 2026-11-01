@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | A0 built (2026-11-01); A1 in progress. As built: §3.5 |
+| Status | A0 and A1 built (2026-11-01); A2 next. As built: §3.5 |
 | Date | 2026-10-31, updated 2026-11-01 |
 | Scope | An MCP server that lets an AI agent (Claude Code or any MCP client) compose, design sounds, mix and master in this ReBuzz fork, with tools clear enough to use without guessing, guides for the craft, and the analysis needed to check its own work |
 | Protocol | MCP 2026-07-28, also negotiates 2025-11-25, 2025-06-18 and 2025-03-26 (stdio and Streamable HTTP; structured tool output; progress). Own protocol layer, no SDK (§3.5) |
