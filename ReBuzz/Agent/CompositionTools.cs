@@ -224,6 +224,7 @@ namespace ReBuzz.Agent
                         {
                             if (only != null && !string.Equals(col.Parameter.Name, only, StringComparison.OrdinalIgnoreCase)) continue;
                             var events = col.GetEvents(int.MinValue, int.MaxValue).OrderBy(e => e.Time).ToList();
+                            if (events.Count == 0) continue;
                             var o = new JsonObject { ["param"] = col.Parameter.Name };
                             if (col.Parameter.Group.Type == ParameterGroupType.Track) o["track"] = col.Track;
                             o["events"] = events.Count;

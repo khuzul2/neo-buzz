@@ -260,6 +260,13 @@ namespace ReBuzz.Agent
                         wm.MainAudioFillBuffer(buffer, 0, 512);
                         quiet = buffer.All(x => Math.Abs(x) < 1e-5f) ? quiet + 256 : 0;
                     }
+                    // Machines still preparing (Neo Wave building a table in the background) get up to 5 s.
+                    var clock = System.Diagnostics.Stopwatch.StartNew();
+                    while (clock.ElapsedMilliseconds < 5000 && machines.Any(Busy))
+                    {
+                        wm.MainAudioFillBuffer(buffer, 0, 512);
+                        System.Threading.Thread.Sleep(5);
+                    }
                     // Playback starts at the end of the tick under way: run silently up to it.
                     core.Playing = true;
                     for (int guard = 0; !core.Playing && guard < 100000; guard++)
@@ -374,6 +381,15 @@ namespace ReBuzz.Agent
             public void Stop() { on = false; connection.Tap -= handler; }
 
             public StereoAudio Audio(int rate) => new() { Left = left.ToArray(), Right = right.ToArray(), Rate = rate };
+        }
+
+        /// <summary>A machine's own "still preparing" flag (a public bool Busy on its managed machine), if it has one.</summary>
+        static bool Busy(MachineCore m)
+        {
+            var target = m.ManagedMachine;
+            if (target == null) return false;
+            try { return target.GetType().GetProperty("Busy")?.GetValue(target) is true; }
+            catch (Exception) { return false; }
         }
 
         /// <summary>Whether a machine is kept quiet for a render's solo and mute lists.</summary>

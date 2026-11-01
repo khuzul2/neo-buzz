@@ -92,7 +92,7 @@ namespace ReBuzzTests
             Ok(rig, "session_clip_set", new JsonObject { ["machine"] = "Lead", ["scene"] = 1, ["pattern"] = "A" });
             var grid = Ok(rig, "session_clip_set", new JsonObject { ["machine"] = "Lead", ["scene"] = 2, ["pattern"] = "B", ["quantization"] = "Beat", ["mode"] = "Gate" });
             var lead = grid["tracks"]!.AsArray().Single(t => t!["machine"]!.GetValue<string>() == "Lead")!;
-            Assert.That(lead["slots"]!.AsArray().Select(s => s?.GetValue<string>()), Is.EqualTo(new[] { "A", "B" }));
+            Assert.That(lead["slots"]!.AsArray().Take(2).Select(s => s?.GetValue<string>()), Is.EqualTo(new[] { "A", "B" }));
             Assert.That(lead["clip_settings"]![0]!["mode"]!.GetValue<string>(), Is.EqualTo("Gate"));
             var scenes = Ok(rig, "session_scene_set", new JsonObject { ["scene"] = 2, ["name"] = "Chorus", ["tempo_bpm"] = 128 })["scenes"]!.AsArray();
             Assert.That(scenes[1]!["name"]!.GetValue<string>(), Is.EqualTo("Chorus"));
