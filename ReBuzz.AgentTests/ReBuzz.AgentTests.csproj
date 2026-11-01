@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Fork addition (docs/specs/mcp-server.md §10): tests for the agent server's portable core
+    (protocol, transports, engine queue, units). Plain net10.0: runs on Linux CI in seconds.
+    Not part of ReBuzz.sln on purpose.
+
+      dotnet test ReBuzz.AgentTests
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>ReBuzz.AgentTests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReBuzz.Agent\ReBuzz.Agent.csproj" />
+    <!-- Pure engine files the agent relies on (docs/specs/cross-platform.md P0). -->
+    <Compile Include="..\ReBuzz\Core\Settings\SettingsStore.cs" Link="Linked\SettingsStore.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="NUnit" Version="4.4.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="5.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+</Project>

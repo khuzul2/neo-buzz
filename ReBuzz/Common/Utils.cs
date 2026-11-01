@@ -295,6 +295,9 @@ namespace ReBuzz.Common
 
         public static MessageBoxResult MessageBox(string message, string caption = null, MessageBoxButton messageBoxButton = MessageBoxButton.OK)
         {
+            // Fork (agent server): no dialogs during an agent call or in headless mode.
+            if (ReBuzz.Agent.NonModal.TryCapture(message, caption, messageBoxButton, out var captured)) return captured;
+
             var handle = new WindowInteropHelper(Application.Current.MainWindow).Handle;
 
             Utils.mainWindow.Topmost = true;

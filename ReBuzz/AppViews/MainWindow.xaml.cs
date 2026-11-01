@@ -83,6 +83,7 @@ namespace ReBuzz
         private readonly string buzzPath = Global.BuzzPath;
 
         private ReBuzzCoreInitialization reBuzzCoreInitialization;
+        private Agent.StudioAgent studioAgent;   // fork: agent server (studio mode)
 
         public string StatusBarItem2
         {
@@ -292,6 +293,10 @@ namespace ReBuzz
 
                 song.SongEnd = 16;
                 song.LoopEnd = 16;
+
+                // Fork (docs/specs/mcp-server.md §3.1): agents in studio mode (Settings → Agent; Ctrl+Shift+A).
+                studioAgent = new Agent.StudioAgent(Buzz, windowsGuiDispatcher, text => SetStatusBarText(text, 1));
+                InputBindings.Add(new KeyBinding(new Agent.ActionCommand(() => studioAgent.ShowConnection()), Key.A, ModifierKeys.Control | ModifierKeys.Shift));
 
                 UpdateTitle();
 
@@ -1013,6 +1018,8 @@ namespace ReBuzz
             debugWindow.CloseWindow();
 
             Buzz.Playing = false;
+
+            studioAgent?.Dispose();   // fork: agent server
             
             reBuzzCoreInitialization.ShutDownReBuzzEngine();
 

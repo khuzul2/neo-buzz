@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Fork addition (docs/specs/mcp-server.md): the agent server's portable core. The MCP protocol
+    (JSON-RPC over stdio and Streamable HTTP), tool/prompt/resource registries, the engine queue,
+    units and the agent log. Plain net10.0 with no UI and no NuGet packages, so it builds and is
+    tested on Linux (ReBuzz.AgentTests) and runs on macOS later. The ReBuzz-specific tools live in
+    ReBuzz/Agent/ and register here.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>ReBuzz.Agent</RootNamespace>
+    <AssemblyName>ReBuzz.Agent</AssemblyName>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ReBuzz.AgentTests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The analysis library (docs/specs/mcp-server.md §7), shared with the analysis machines. -->
+    <Compile Include="..\Machines\NeoBuzz.Analysis\**\*.cs" Link="Analysis\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

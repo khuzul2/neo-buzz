@@ -12,6 +12,8 @@ namespace ReBuzz.Core
     {
         public void Error(string message, string caption, Exception exception)
         {
+            // Fork (agent server): no dialogs during an agent call or in headless mode.
+            if (ReBuzz.Agent.NonModal.TryCapture(message, caption)) return;
             MessageBox.Show(message, caption);
         }
     }

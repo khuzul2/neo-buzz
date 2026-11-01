@@ -16,6 +16,22 @@ namespace ReBuzz
             base.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         }
 
+        /// <summary>
+        /// Fork (docs/specs/mcp-server.md §3.1): `--agent` runs headless (no window, MCP on stdio);
+        /// otherwise the main window opens as usual.
+        /// </summary>
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            if (ReBuzz.Agent.HeadlessAgent.Requested(e.Args))
+            {
+                StartupUri = null;
+                base.OnStartup(e);
+                ReBuzz.Agent.HeadlessAgent.Start(this, e.Args);
+                return;
+            }
+            base.OnStartup(e);
+        }
+
         public static void ExHandler(object sender, DispatcherUnhandledExceptionEventArgs e)
         {
             ExitOrIgnoreDependingOnUserChoice(e.Exception);
@@ -32,6 +48,9 @@ namespace ReBuzz
 
         private static void ExitOrIgnoreDependingOnUserChoice(Exception ex)
         {
+            // Fork (agent server): headless, or inside an agent call, nobody can answer a dialog.
+            if (ReBuzz.Agent.NonModal.TryCapture(GetFullExceptionMessage(ex), "Unhandled exception")) return;
+
             var result = MessageBox.Show(
                 GetFullExceptionMessage(ex)
                 + "Do you want the application to terminate? " +
