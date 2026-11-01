@@ -39,7 +39,7 @@ namespace ReBuzz.Agent
 
     internal sealed class AgentHost : IDisposable
     {
-        public const string Version = "0.2 (A1)";
+        public const string Version = "0.3 (A2)";
 
         readonly List<HttpTransport> http = new();
 
@@ -57,6 +57,9 @@ namespace ReBuzz.Agent
             ParamTools.Register(tools, this);
             PatternTools.Register(tools, this);
             RenderTools.Register(tools, this);
+            AnalysisTools.Register(tools, this);
+            StateTools.Register(tools, this);
+            WaveTools.Register(tools, this);
             Server = new McpServer(new ServerInfo
             {
                 Name = "rebuzz",
@@ -89,6 +92,9 @@ namespace ReBuzz.Agent
         /// </summary>
         internal bool FailedCallOnRedo { get; set; }
         internal int UndosSinceFailedCall { get; set; }
+
+        /// <summary>This session's snapshots by name.</summary>
+        internal ConcurrentDictionary<string, Snapshot> Snapshots { get; } = new();
 
         /// <summary>This session's renders by id ("r1"…).</summary>
         internal ConcurrentDictionary<string, RenderInfo> Renders { get; } = new();
