@@ -92,7 +92,7 @@ ReBuzz process
 - File access is limited to the song's folder, the user's configured sample and project folders, and the server's render folder.
 - An agent log (call, arguments, result, duration) is kept per session. The user can open it from the Agent badge.
 
-### 3.5 As built (A0)
+### 3.5 As built (A0, A1)
 
 **Two projects.**
 
@@ -121,6 +121,30 @@ ReBuzz process
 - `times`: `2`, `0.5`.
 
 Neo machines resolve through their exact mappings. Legacy machines resolve by searching their value descriptions, with log distance for Hz and seconds. A wrong unit or choice is an error that lists examples.
+
+**Manifests (A1).** `tools/gen-machine-params.py` writes `<Name>.machine.json` from each Neo machine's Params.def, next to its generated code. The build copies it next to the DLL. It holds:
+
+- a summary line (`summary` in Params.def);
+- each parameter's kind, mapping, unit, choices and group.
+
+`NeoBuzz.MachineTests` fails if a manifest drifts from its parameter table. The server ignores a manifest entry whose range doesn't match the machine's, and falls back to the machine's value texts.
+
+**Undo (A1).**
+- Each changing call is one undo group. Steps ReBuzz has no action for get their own `IAction`s (`AgentActions`): parameter sets, connection gain and pan, mute, solo and bypass, notes, pattern renames, tempo and ticks per beat. These find machines and patterns by name when they run, as BuzzGUI's actions do.
+- Pattern creation, deletion, arrangement places and markers reuse BuzzGUI's actions.
+- A call that fails part-way undoes its own group, so it changes nothing.
+
+**Notes (A1)** go into each pattern's *engine MIDI column*, the one the Session View records takes into (session-view.md 0.7):
+- The engine plays it to the machine as MIDI. Songs save it, and undo keeps it.
+- The Session View's piano roll edits it.
+- The Pattern View doesn't show it. The slot menu's "Move notes to the Pattern View" moves the notes onto the Modern Pattern Editor's note lanes.
+- Writing into the pattern editor's own store instead is a later option. It would need the editor created per machine, and its undo is separate.
+
+**Render (A1)** runs a second `WorkManager`, as `ReBuzzTests`' Driver does, on the engine thread and under the audio lock:
+- It temporarily sets the loop to the range, aligns to the next tick, plays, then stops for the tail.
+- Afterwards it puts back the play position, loop, markers, mutes (solo and mute lists are applied as temporary mutes) and the unsaved-changes flag.
+- In studio mode the user's audio output pauses for the duration.
+- Output is a 32-bit float WAV under the agent log folder's `renders/`, plus the loudness and peak report.
 
 ## 4. Tool design rules
 

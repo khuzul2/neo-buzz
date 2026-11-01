@@ -186,7 +186,7 @@ namespace ReBuzz.Agent
                 Description =
                     "Changes the tempo, ticks per beat (pattern resolution), song end and loop. Positions are in beats from the start " +
                     "(rounded to the nearest tick). Change ticks_per_beat before writing patterns: patterns keep their length in ticks, so it moves " +
-                    "everything in beats. One undo step. Returns the values as they now are. Example: song_set(tempo_bpm=124, loop_start_beats=0, loop_end_beats=64).
+                    "everything in beats. One undo step. Returns the values as they now are. Example: song_set(tempo_bpm=124, loop_start_beats=0, loop_end_beats=64).",
                 Input = Object(null,
                     Opt("tempo_bpm", Number("Tempo in beats per minute (rounded to a whole number)", 16, 500)),
                     Opt("ticks_per_beat", Integer("Pattern rows per beat (4 = 16th notes)", 1, 32)),
