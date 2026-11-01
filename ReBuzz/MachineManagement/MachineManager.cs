@@ -303,7 +303,7 @@ namespace ReBuzz.MachineManagement
             if (askSkip && machine.DLL.Name.StartsWith("Polac"))
             {
                 // Debug
-                if (MessageBox.Show("Skip initializing " + machine.Name + "?", "Safe load machine?", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                if (buzz.UserMessages.Ask("Skip initializing " + machine.Name + "?", "Safe load machine?", UserButtons.YesNo) == UserAnswer.Yes)
                 {
                     uiMessage.UIInit(machine, new byte[0]);
                 }

@@ -124,7 +124,7 @@ namespace ReBuzz.Core
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message, path);
+                    ((Buzz ?? Global.Buzz) as ReBuzzCore)?.UserMessages.Error(ex.Message, path, ex);
                 }
                 return null;
             }
