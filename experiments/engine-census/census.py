@@ -346,6 +346,9 @@ def seam_of(d):
 DEFINES = ('TRACE', 'DEBUG', 'NET', 'NET10_0', 'NETCOREAPP', 'NET5_0_OR_GREATER', 'NET6_0_OR_GREATER',
            'NET7_0_OR_GREATER', 'NET8_0_OR_GREATER', 'NET9_0_OR_GREATER', 'NET10_0_OR_GREATER')
 _ANALYZERS = []
+# What the SDK adds for ImplicitUsings=enable (Microsoft.NET.Sdk).
+SDK_IMPLICIT_USINGS = ('System', 'System.Collections.Generic', 'System.IO', 'System.Linq', 'System.Net.Http',
+                       'System.Threading', 'System.Threading.Tasks')
 
 
 def analyzer_dir():
@@ -360,8 +363,13 @@ def analyzer_dir():
 def roslyn(srcs, refs, tag, outdir, idx, analyzers=True):
     """Compile through tool/ and return classified, de-duplicated diagnostics."""
     types, exts, ui, namespaces = idx
+    # BuzzGUI.Interfaces has ImplicitUsings; the engine files don't. InterfacesImplicitUsings.cs
+    # (global usings, for "dotnet build") would leak them into every engine file and hide errors:
+    # SequenceCore's OrderedDictionary<,> is Wintellect's on Windows but would bind to .NET's.
+    srcs = [x for x in srcs if os.path.basename(x) != 'InterfacesImplicitUsings.cs']
     args_path = os.path.join(outdir, f'{tag}.args')
     with open(args_path, 'w') as f:
+        f.write(f'implicit:ReBuzzGUI/BuzzGUI.Interfaces/|{";".join(SDK_IMPLICIT_USINGS)}\n')
         f.writelines(f'src:{x}\n' for x in srcs)
         f.writelines(f'ref:{x}\n' for x in refs)
         f.writelines(f'def:{x}\n' for x in DEFINES)
