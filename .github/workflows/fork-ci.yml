@@ -1,8 +1,8 @@
 name: Fork CI
 
 # Fast checks for fork work:
-#  - session-tests: Session View engine unit tests and the Neo machines' DSP measurements
-#    (Linux, seconds)
+#  - session-tests: Session View engine unit tests, the agent server's core and the Neo
+#    machines' DSP measurements (Linux, seconds)
 #  - core-build: compiles ReBuzz.exe and its C# dependencies only (no C++ projects)
 # The full solution + package build is fork-package.yml.
 
@@ -28,6 +28,12 @@ jobs:
       shell: pwsh
       run: dotnet test ReBuzz.SessionTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath test.log
 
+    # Agent server core (docs/specs/mcp-server.md): MCP protocol, stdio and HTTP transports, engine queue.
+    - name: Agent server tests
+      if: always()
+      shell: pwsh
+      run: dotnet test ReBuzz.AgentTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath agent-test.log
+
     # Neo machines (docs/specs/machines.md): aliasing, decay times, envelopes, presets…
     - name: Machine DSP tests
       if: always()
@@ -52,6 +58,7 @@ jobs:
       run: |
         if (Test-Path test.log) { ./tools/ci-annotate-log.ps1 test.log }
         if (Test-Path machine-test.log) { ./tools/ci-annotate-log.ps1 machine-test.log }
+        if (Test-Path agent-test.log) { ./tools/ci-annotate-log.ps1 agent-test.log }
 
   core-build:
     runs-on: windows-latest

@@ -1440,6 +1440,17 @@ namespace ReBuzz.Core
         internal event Action<string> OpenFile;
 
         /// <summary>
+        /// Fork (agent server): opens a song by path as the Open command would, without a file
+        /// dialog. False when it couldn't be loaded (the reason went to the user messages).
+        /// </summary>
+        internal bool OpenSongForAgent(string filename)
+        {
+            if (!TryOpenSongFile(filename)) return false;
+            BuzzCommandRaised?.Invoke(BuzzCommand.OpenFile);
+            return true;
+        }
+
+        /// <summary>
         /// Open and load a song file into the current session. Handles backup,
         /// audio stop/play, song creation and sends events for UI and machines.
         /// </summary>

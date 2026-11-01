@@ -101,12 +101,14 @@ namespace ReBuzz.AppViews
         }
 
 
-        internal void StartReBuzzEngineStep6()
+        /// <param name="openAudioDevice">Fork: false in headless agent mode (renders need no device).</param>
+        internal void StartReBuzzEngineStep6(bool openAudioDevice = true)
         {
             // Need to get the HWND from Buzz
             buzz.MachineManager.Buzz = buzz;
             buzz.CreateMaster();
 
+            if (!openAudioDevice) return;
             var audioDriver = registryEx.Read("AudioDriver", "WASAPI", "Settings");
             buzz.SelectedAudioDriver = audioDriver;
         }
