@@ -148,7 +148,7 @@ namespace ReBuzz.Agent
             var l = new float[n];
             var r = new float[n];
             layer.GetDataAsFloat(l, 0, 1, 0, 0, n);
-            if (ch > 1) layer.GetDataAsFloat(r, 0, 1, 1, 0, n); else Array.Copy(l, r, n);
+            if (ch > 1) layer.GetDataAsFloat(r, 0, 1, 1, 0, n); else System.Array.Copy(l, r, n);
             var interleaved = new float[n * 2];
             for (int i = 0; i < n; i++) { interleaved[2 * i] = l[i]; interleaved[2 * i + 1] = r[i]; }
             Wav.WriteStereoFloat(path, interleaved, n, Math.Max(1, layer.SampleRate));

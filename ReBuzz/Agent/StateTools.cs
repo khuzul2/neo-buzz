@@ -208,7 +208,7 @@ namespace ReBuzz.Agent
                             pd.Remove(name);
                             throw new ToolError($"Couldn't write {pd.Filename}: {e.Message}. The gear folder may be read-only (install ReBuzz somewhere writable).");
                         }
-                        presetFiles.TryRemove(pd.Filename, out _);
+                        presetFiles.TryRemove(pd.Filename, out var stale);
                         return new JsonObject { ["machine"] = m.Name, ["preset"] = name, ["file"] = pd.Filename };
                     }, c.Cancellation);
                     return ToolResult.Ok($"Saved {r["machine"]}'s sound as \"{r["preset"]}\" in {r["file"]}.", r);
