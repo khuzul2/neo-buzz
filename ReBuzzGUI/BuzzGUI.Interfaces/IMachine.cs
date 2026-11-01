@@ -55,7 +55,10 @@ namespace BuzzGUI.Interfaces
 
         IntPtr CMachinePtr { get; }                                         // native CMachine *
 
-        System.Windows.Window ParameterWindow { get; }                      // null if the window hasn't been opened
+#if WINDOWS
+        // WPF type: Windows build only; the default body asks the WPF app (WpfMachineApi, §4.3).
+        System.Windows.Window ParameterWindow => WpfMachineApi.ParameterWindow?.Invoke(this)!;  // null if the window hasn't been opened
+#endif
 
         MachinePerformanceData PerformanceData { get; }
 

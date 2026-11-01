@@ -4,16 +4,6 @@ using System.Windows.Threading;
 
 namespace ReBuzz.Core
 {
-    public interface IUiDispatcher
-    {
-        void Invoke(Action action);
-        void BeginInvoke(Action action);
-        void BeginInvoke(Action action, DispatcherPriority priority);
-
-        /// <summary>Fork: whether the calling thread is the UI thread.</summary>
-        bool CheckAccess() => true;
-    }
-
     public class WindowsGuiDispatcher : IUiDispatcher
     {
         public void Invoke(Action action)
@@ -26,9 +16,9 @@ namespace ReBuzz.Core
             Application.Current.Dispatcher.BeginInvoke(action);
         }
 
-        public void BeginInvoke(Action action, DispatcherPriority priority)
+        public void BeginInvoke(Action action, UiPriority priority)
         {
-            Application.Current.Dispatcher.BeginInvoke(action, priority);
+            Application.Current.Dispatcher.BeginInvoke(action, (DispatcherPriority)priority);
         }
 
         public bool CheckAccess() => Application.Current?.Dispatcher.CheckAccess() ?? true;

@@ -1,14 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!--
+    Fork (docs/specs/engine-split.md §4): one assembly identity, two builds, as for
+    BuzzGUI.Interfaces. The Windows build is the library as it always was; the portable net10.0
+    build compiles only the files the engine needs (PortableFiles.props), with their WPF parts
+    under #if WINDOWS. Windows ships the Windows build. Off Windows only the portable build is made.
+  -->
   <PropertyGroup>
-    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <TargetFrameworks>net10.0-windows10.0.26100.0;net10.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">net10.0</TargetFrameworks>
     <Nullable>enable</Nullable>
-    <UseWPF>true</UseWPF>
-    <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>disable</ImplicitUsings>
     <BaseOutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\BuzzGUI.Common\bin</BaseOutputPath>
     <IntermediateOutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\BuzzGUI.Common\obj</IntermediateOutputPath>
     <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+  <PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Sanford.Multimedia.Midi\Clocks\**" />
@@ -60,7 +69,7 @@
   </ItemGroup>
  
   <ItemGroup>
-    <ProjectReference Include="..\..\3rdParty\7Zip\7zip.csproj">
+    <ProjectReference Include="..\..\3rdParty\7Zip\7zip.csproj" Condition="$(TargetFramework.Contains('-windows'))">
 		<Private>False</Private>
 		<CopyLocalSatelliteAssemblies>False</CopyLocalSatelliteAssemblies>
 	</ProjectReference>
@@ -188,12 +197,18 @@
       <HintPath>..\..\3rdParty\ICSharpCode.SharpZipLib.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+  <!-- Fork (docs/specs/engine-split.md §4.4): the portable build compiles only the files the engine needs. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <Compile Remove="@(Compile)" />
+  </ItemGroup>
+  <Import Project="PortableFiles.props" Condition="'$(TargetFramework)' == 'net10.0'" />
   
-  <Target Name="ForcePerformRestore" AfterTargets="BeforeBuild">	
+  <Target Name="ForcePerformRestore" AfterTargets="BeforeBuild" Condition="'$(OS)' == 'Windows_NT'">	
     <Exec Command="IF NOT EXIST  $(IntermediateOutputPath)..\project.assets.json  echo restore to $(IntermediateOutputPath)..\project.assets.json &amp;&amp;  dotnet restore $(ProjectName).csproj --no-dependencies &amp;&amp; move build\$(ProjectName)\obj\* $(IntermediateOutputPath)..\ &amp;&amp; rmdir /Q /S build	 " />
   </Target>
   
-  <Target Name="RemoveEmptyObj" AfterTargets="AfterBuild">
+  <Target Name="RemoveEmptyObj" AfterTargets="AfterBuild" Condition="'$(OS)' == 'Windows_NT'">
     <Exec Command="IF EXIST obj rmdir obj" />
   </Target>
 </Project>

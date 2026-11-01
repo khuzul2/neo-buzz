@@ -7,7 +7,7 @@ namespace ReBuzz.AppViews
     {
         public ToolBarControl()
         {
-            UserControl toolBarXaml = Common.Utils.GetUserControlXAML<UserControl>("ToolBar.xaml", Global.BuzzPath);
+            UserControl toolBarXaml = Common.UiUtils.GetUserControlXAML<UserControl>("ToolBar.xaml", Global.BuzzPath);
             toolBarXaml.BeginInit();
 
         }

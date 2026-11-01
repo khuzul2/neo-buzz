@@ -43,8 +43,14 @@ namespace BuzzGUI.Common
 
         public event EventHandler CanExecuteChanged
         {
+#if WINDOWS
             add { CommandManager.RequerySuggested += value; }
             remove { CommandManager.RequerySuggested -= value; }
+#else
+            // No WPF CommandManager in the portable build (engine-split.md §4.4).
+            add { }
+            remove { }
+#endif
         }
 
         /// <summary>
