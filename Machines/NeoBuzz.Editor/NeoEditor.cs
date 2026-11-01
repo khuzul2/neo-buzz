@@ -23,7 +23,7 @@ namespace NeoBuzz.Editor
         readonly List<ParamBinding> bindings = new List<ParamBinding>();
         readonly IParameterGroup globals;
 
-        public EditorContext(IMachine machine, ParamDef[] table, Color accent)
+        public EditorContext(IMachine machine, ParamDef[] table, NeoColor accent)
         {
             Machine = machine;
             Table = table;
@@ -33,7 +33,7 @@ namespace NeoBuzz.Editor
 
         public IMachine Machine { get; }
         public ParamDef[] Table { get; }
-        public Color Accent { get; }
+        public NeoColor Accent { get; }
 
         public IParameter Parameter(int index) =>
             globals != null && index >= 0 && index < globals.Parameters.Count ? globals.Parameters[index] : null;
@@ -94,7 +94,7 @@ namespace NeoBuzz.Editor
         }
 
         protected abstract string Title { get; }
-        protected abstract Color Accent { get; }
+        protected abstract NeoColor Accent { get; }
         internal abstract ParamDef[] Table { get; }
 
         /// <summary>Builds the editor's body.</summary>
@@ -120,7 +120,7 @@ namespace NeoBuzz.Editor
             var title = new TextBlock
             {
                 Text = Title,
-                Foreground = Theme.Solid(Accent),
+                Foreground = Theme.Brush(Accent),
                 FontFamily = Theme.FontFamily,
                 FontSize = 16,
                 FontWeight = FontWeights.SemiBold,
@@ -155,16 +155,17 @@ namespace NeoBuzz.Editor
     internal sealed class PresetBar : FrameworkElement
     {
         readonly IMachine machine;
-        readonly Brush accent;
+        readonly NeoColor accent;
+        readonly WpfCanvas canvas;
         string current = "Presets";
-        const double ArrowW = 22, NameW = 170, SaveW = 44, H = 24;
 
-        public PresetBar(IMachine machine, Color accent)
+        public PresetBar(IMachine machine, NeoColor accent)
         {
             this.machine = machine;
-            this.accent = Theme.Solid(accent);
-            Width = ArrowW * 2 + NameW + SaveW + 8;
-            Height = H;
+            this.accent = accent;
+            canvas = new WpfCanvas(this);
+            Width = PresetBarFace.Width;
+            Height = PresetBarFace.H;
             Cursor = Cursors.Hand;
             ToolTip = "Presets: click the name for the list, arrows to step, Save to store the current sound";
         }
@@ -259,32 +260,18 @@ namespace NeoBuzz.Editor
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
-            double x = e.GetPosition(this).X;
-            if (x < ArrowW) Step(-1);
-            else if (x < ArrowW + NameW) ShowList();
-            else if (x < ArrowW * 2 + NameW) Step(1);
-            else if (x > ArrowW * 2 + NameW + 8) Save();
+            switch (PresetBarFace.ZoneAt(e.GetPosition(this).X))
+            {
+                case PresetBarFace.Zone.Previous: Step(-1); break;
+                case PresetBarFace.Zone.List: ShowList(); break;
+                case PresetBarFace.Zone.Next: Step(1); break;
+                case PresetBarFace.Zone.Save: Save(); break;
+            }
             e.Handled = true;
         }
 
-        protected override void OnRender(DrawingContext dc)
-        {
-            var edge = Theme.Pen(Theme.PanelEdge, 1);
-            dc.DrawRoundedRectangle(Theme.Panel, edge, new Rect(0, 0, ArrowW * 2 + NameW, H), 4, 4);
-            Theme.TextCentered(dc, this, "◀", ArrowW / 2, 4, 11, Theme.DimText);
-            Theme.TextCentered(dc, this, "▶", ArrowW * 1.5 + NameW, 4, 11, Theme.DimText);
-            dc.DrawLine(edge, new Point(ArrowW, 3), new Point(ArrowW, H - 3));
-            dc.DrawLine(edge, new Point(ArrowW + NameW, 3), new Point(ArrowW + NameW, H - 3));
-            string label = current == "<default>" ? "Init" : current;
-            var ft = Theme.Format(this, label, 12, Theme.Text);
-            ft.MaxTextWidth = NameW - 12;
-            ft.MaxLineCount = 1;
-            ft.Trimming = TextTrimming.CharacterEllipsis;
-            dc.DrawText(ft, new Point(ArrowW + 6, 4));
-            double sx = ArrowW * 2 + NameW + 8;
-            dc.DrawRoundedRectangle(Theme.Panel, Theme.Pen(accent, 1), new Rect(sx, 0, SaveW, H), 4, 4);
-            Theme.TextCentered(dc, this, "Save", sx + SaveW / 2, 4, 11, accent);
-        }
+        protected override void OnRender(DrawingContext dc) =>
+            PresetBarFace.Draw(canvas.On(dc), current == "<default>" ? "Init" : current, accent);
     }
 
     /// <summary>A small dialog asking for a preset name.</summary>

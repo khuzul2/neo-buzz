@@ -4,7 +4,6 @@
 
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
 
@@ -12,11 +11,11 @@ namespace NeoBuzz.Poly
 {
     internal sealed class NeoPolyEditor : NeoEditor
     {
-        static readonly Color AccentColor = Color.FromRgb(0xFF, 0x5C, 0x8A);
+        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xFF, 0x5C, 0x8A);
         const double D = 38;
 
         protected override string Title => "Neo Poly";
-        protected override Color Accent => AccentColor;
+        protected override NeoColor Accent => AccentColor;
         internal override ParamDef[] Table => Params.Table;
 
         internal override UIElement BuildBody(EditorContext ctx)
