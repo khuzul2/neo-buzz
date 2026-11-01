@@ -14,14 +14,14 @@ You can't hear, so you measure: probes on every part, the master analyzed after 
 
 | Point | Target | Measured with |
 |---|---|---|
-| Each source, on its probe | sample peak -12 to -6 dBFS | `render(probes=[…])`: each probe's peaks |
-| The loudest source (kick or bass) | peak about -6 dBFS | the same |
-| Into level-sensitive effects (Neo Comp, Neo Drive) | peaks -12 to -6 dBFS, as their presets assume | the probe of the machine feeding them |
+| Each source, on its probe | sample peak -16 to -8 dBFS | `render(probes=[…])`: each probe's peaks |
+| The loudest source (kick or bass) | peak about -10 dBFS | the same |
+| Into level-sensitive effects (Neo Comp, Neo Drive) | the same; set thresholds from a measurement, not from the preset | the probe of the machine feeding them |
 | Master before mastering | true peak -6 dBTP or lower; integrated about -23 to -16 LUFS | `render`'s loudness and peaks |
 | Anywhere | 0 clipped samples | `analyze(source=…, metrics=["peaks"])` |
 
 - Neo synths start at `Volume` −6 dB; their presets are levelled so a chord's loudest 50 ms sits between −30 and −6 dB RMS.
-- Parts add up: two equal, unrelated parts are +3 dB; the same sound twice in time is up to +6 dB; a 4-note chord is about +6 dB over one note; 7 unison voices about +8.5 dB.
+- The sum decides: parts peaking together add up, so if the master peaks above −6 dBTP, lower everything by the excess. Two equal, unrelated parts are +3 dB; the same sound twice, in phase, is +6 dB; a 4-note chord is about +6 dB over one note; 7 unison voices about +8.5 dB.
 - Too hot at the master: lower every connection into Master by the same dB in one `connection_set`, not the loudest part alone (that changes the balance).
 
 ## Balance
@@ -161,7 +161,7 @@ Ducking the bass (or pads) under the kick with Neo Comp's second input.
 6. Ghost trigger, to keep ducking where the kick stops (breakdowns): `machine_add(gear="Neo Poly", name="SC Kick", connect_to="none")` with the kick recipe from the sound-design guide, a note on every beat, and `connect(from="SC Kick", to="Bass Duck", input="Sidechain")`. Never connect it to Master.
 7. Measure: `render(from=…, to=…, probes=["Bass Duck"])`, then `analyze(source="r5:Bass Duck", metrics=["dynamics"])`. `rms_over_time` should dip by the planned depth on each kick; the step is in `step_seconds` (render 2–4 bars so the steps are short).
 
-The threshold follows the trigger: set it at the kick's peak level at input 2 (its probe) minus depth × ratio ÷ (ratio − 1).
+The threshold follows the trigger: set it at the kick's peak level arriving at input 2 minus depth × ratio ÷ (ratio − 1). The kick's probe reads it after its Master connection; add the difference between the sidechain connection's gain and that one.
 
 ## Space: sends with Neo Verb
 
@@ -219,7 +219,7 @@ One or two send reverbs for the whole mix: a short one (Room or Plate, 0.6–1.8
 | Tonal balance | `analyze(source=…, metrics=["spectrum"])` | tilt −2 to −3.5 dB/oct; no band 3 dB over the slope unless the genre wants it |
 | Stereo | `analyze(source=…, metrics=["stereo"])` | correlation 0.2–0.9; `sub` and `low` above 0.9; mono loss under 3 dB |
 | Dynamics | `analyze(source=…, metrics=["dynamics"])` | PLR 12–18 dB before mastering; transients present |
-| Parts | each probe's peaks and loudness | peaks −12 to −6 dBFS; loudness in the balance table's range |
+| Parts | each probe's peaks and loudness | peaks −16 to −8 dBFS; loudness in the balance table's range |
 | Fights | each probe's `spectrum` bands | no two main parts within 6 dB in their main band at once |
 
 ## Checklist

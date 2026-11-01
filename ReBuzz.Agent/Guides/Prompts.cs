@@ -203,7 +203,7 @@ Report the final parameters that matter (with units), the measured targets, and 
             sb.Append(@"Plan. Change one thing at a time and measure it; keep a snapshot of the mix before each stage.
 1. Inventory: `studio_status`, `machine_list` (every source, effect and connection gain), `arrangement_markers` (the loudest section to work on).
 2. Baseline: `snapshot_save(name=""mix 0"")`; `render(section=…, probes=[every source and bus])`; `analyze` the master with metrics loudness, peaks, spectrum, stereo, dynamics, and each probe (""rN:Bass"") with spectrum.
-3. Gain staging: `connection_set` so sources peak -12 to -6 dBFS and the master peaks at or below -6 dBTP, before any processing.
+3. Gain staging: `connection_set` so sources peak -16 to -8 dBFS and the master peaks at or below -6 dBTP, before any processing.
 4. Balance: set the faders (connection gains) against the guide's relative loudness table and a reference if the user gave one (`analyze(source=""<reference.wav>"", …)`).
 5. Slots: high-pass everything that isn't bass or kick; resolve kick and bass (sidechain with Neo Comp's Sidechain input: `connect(from=""Kick"", to=…, input=""Sidechain"")`); find fights by comparing the probes' bands.
 6. EQ and compression per source from the guide's tables (Neo EQ when installed; read its parameter names with `machine_describe`).
