@@ -23,7 +23,23 @@ namespace NeoBuzz.MachineTests
             ["Neo Poly"] = (NeoBuzz.Poly.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Poly.PolyEngine(v), (e, l, r, n) => ((NeoBuzz.Poly.PolyEngine)e).Process(l, r, n), x.Length)),
             ["Neo Wave"] = (NeoBuzz.Wave.Params.Table, (v, x) => RenderSynth(WaveEngine(v), (e, l, r, n) => ((NeoBuzz.Wave.WaveEngine)e).Process(l, r, n), x.Length)),
             ["Neo FM6"] = (NeoBuzz.Fm6.Params.Table, (v, x) => RenderSynth(new NeoBuzz.Fm6.FmEngine(v), (e, l, r, n) => ((NeoBuzz.Fm6.FmEngine)e).Process(l, r, n), x.Length)),
+            ["Neo EQ"] = (NeoBuzz.Eq.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Eq.EqEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
+            ["Neo Utility"] = (NeoBuzz.Utility.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Utility.UtilityEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
+            ["Neo Limiter"] = (NeoBuzz.Limiter.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Limiter.LimiterEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
         };
+
+        // The mix and master batch: one engine per preset render, keyed by its parameter values.
+        static readonly Dictionary<ParamValues, object> fresh = new(ReferenceEqualityComparer.Instance);
+
+        static T Fresh<T>(ParamValues v, Func<T> make)
+        {
+            if (!fresh.TryGetValue(v, out var e))
+            {
+                fresh.Clear();
+                fresh[v] = e = make();
+            }
+            return (T)e;
+        }
 
         static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6" };
 

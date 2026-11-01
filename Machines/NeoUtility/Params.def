@@ -1,0 +1,19 @@
+# Neo Utility parameters (docs/specs/machines.md §5). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoUtility
+namespace NeoBuzz.Utility
+class NeoUtilityMachine
+summary Gain staging and stereo fixes, each exact: gain in 0.1 dB steps, balance or mono pan, width 0–200 %, bass mono below a frequency, polarity invert per channel, channel swap and DC removal. Zero latency; at its defaults it passes the input bit for bit.
+
+group Level
+Gain      "Gain"           0 841   601  db -60.1 24 inf        | Output gain in 0.1 dB steps, −60 … +24 dB (bottom: −∞, silence)
+Pan       "Pan"            0 1000  500  bip                    | −100 % left … +100 % right
+PanLaw    "Pan law"        0 1     0    enum Balance Mono_pan  | Balance: the far side fades linearly, 0 dB at centre (stereo sources). Mono pan: sums to mono, sine/cosine law, −3 dB per side at centre
+group Stereo
+Width     "Width"          0 200   100  lin 0 200 % 0          | Side signal × width: 0 % is mono, 100 % unchanged, 200 % twice the side
+BassMono  "Bass mono"      0 1     0    switch                 | Makes everything below Bass mono freq mono
+BassFreq  "Bass mono freq" 0 10000 5566 freq 20 500            | Below this the side signal is removed (4th-order Butterworth high-pass, −3 dB here)
+group Channels
+InvertL   "Invert L"       0 1     0    switch                 | Flips the polarity of the left input (before Swap)
+InvertR   "Invert R"       0 1     0    switch                 | Flips the polarity of the right input (before Swap)
+Swap      "Swap"           0 1     0    switch                 | Swaps left and right
+DcRemove  "DC removal"     0 1     0    switch                 | Removes DC offset: 2nd-order high-pass at 5 Hz (20 Hz passes within 0.02 dB)

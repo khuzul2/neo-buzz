@@ -1,0 +1,64 @@
+# Neo EQ parameters (docs/specs/machines.md §5). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoEq
+namespace NeoBuzz.Eq
+class NeoEqMachine
+summary Eight-band parametric EQ, minimum phase and zero latency: bell, low and high shelf, low and high cut at 12/24/48 dB/oct, notch; frequency in Hz, gain in 0.1 dB steps, Q. Bands 2–7 start on at 0 dB (transparent until a gain is set); the cuts, bands 1 and 8, start off. Use it for precise, labelled moves such as "B3: Bell, 320 Hz, −3 dB, Q 1.4".
+
+group Band 1
+B1On     "B1 on"     0 1     0     switch                                         | Band 1 in or out (an off band passes the signal untouched)
+B1Type   "B1 type"   0 5     3     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 1: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+B1Freq   "B1 freq"   0 10000 587   freq 20 20000                                  | Band 1 frequency: centre, shelf midpoint or cutoff
+B1Gain   "B1 gain"   0 480   240   db -24 24                                      | Band 1 gain in 0.1 dB steps (bells and shelves)
+B1Q      "B1 Q"      0 2000  686   exp 0.1 30 2                                   | Band 1 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+B1Slope  "B1 slope"  0 2     1     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 1 slope (low and high cut)
+group Band 2
+B2On     "B2 on"     0 1     1     switch                                         | Band 2 in or out (an off band passes the signal untouched)
+B2Type   "B2 type"   0 5     1     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 2: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+B2Freq   "B2 freq"   0 10000 2330  freq 20 20000                                  | Band 2 frequency: centre, shelf midpoint or cutoff
+B2Gain   "B2 gain"   0 480   240   db -24 24                                      | Band 2 gain in 0.1 dB steps (bells and shelves)
+B2Q      "B2 Q"      0 2000  686   exp 0.1 30 2                                   | Band 2 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+B2Slope  "B2 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 2 slope (low and high cut)
+group Band 3
+B3On     "B3 on"     0 1     1     switch                                         | Band 3 in or out (an off band passes the signal untouched)
+B3Type   "B3 type"   0 5     0     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 3: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+B3Freq   "B3 freq"   0 10000 3656  freq 20 20000                                  | Band 3 frequency: centre, shelf midpoint or cutoff
+B3Gain   "B3 gain"   0 480   240   db -24 24                                      | Band 3 gain in 0.1 dB steps (bells and shelves)
+B3Q      "B3 Q"      0 2000  807   exp 0.1 30 2                                   | Band 3 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+B3Slope  "B3 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 3 slope (low and high cut)
+group Band 4
+B4On     "B4 on"     0 1     1     switch                                         | Band 4 in or out (an off band passes the signal untouched)
+B4Type   "B4 type"   0 5     0     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 4: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+B4Freq   "B4 freq"   0 10000 4924  freq 20 20000                                  | Band 4 frequency: centre, shelf midpoint or cutoff
+B4Gain   "B4 gain"   0 480   240   db -24 24                                      | Band 4 gain in 0.1 dB steps (bells and shelves)
+B4Q      "B4 Q"      0 2000  807   exp 0.1 30 2                                   | Band 4 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+B4Slope  "B4 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 4 slope (low and high cut)
+group Band 5
+B5On     "B5 on"     0 1     1     switch                                         | Band 5 in or out (an off band passes the signal untouched)
+B5Type   "B5 type"   0 5     0     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 5: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+B5Freq   "B5 freq"   0 10000 6250  freq 20 20000                                  | Band 5 frequency: centre, shelf midpoint or cutoff
+B5Gain   "B5 gain"   0 480   240   db -24 24                                      | Band 5 gain in 0.1 dB steps (bells and shelves)
+B5Q      "B5 Q"      0 2000  807   exp 0.1 30 2                                   | Band 5 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+B5Slope  "B5 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 5 slope (low and high cut)
+group Band 6
+B6On     "B6 on"     0 1     1     switch                                         | Band 6 in or out (an off band passes the signal untouched)
+B6Type   "B6 type"   0 5     0     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 6: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+B6Freq   "B6 freq"   0 10000 7670  freq 20 20000                                  | Band 6 frequency: centre, shelf midpoint or cutoff
+B6Gain   "B6 gain"   0 480   240   db -24 24                                      | Band 6 gain in 0.1 dB steps (bells and shelves)
+B6Q      "B6 Q"      0 2000  807   exp 0.1 30 2                                   | Band 6 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+B6Slope  "B6 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 6 slope (low and high cut)
+group Band 7
+B7On     "B7 on"     0 1     1     switch                                         | Band 7 in or out (an off band passes the signal untouched)
+B7Type   "B7 type"   0 5     2     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 7: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+B7Freq   "B7 freq"   0 10000 8674  freq 20 20000                                  | Band 7 frequency: centre, shelf midpoint or cutoff
+B7Gain   "B7 gain"   0 480   240   db -24 24                                      | Band 7 gain in 0.1 dB steps (bells and shelves)
+B7Q      "B7 Q"      0 2000  686   exp 0.1 30 2                                   | Band 7 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+B7Slope  "B7 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 7 slope (low and high cut)
+group Band 8
+B8On     "B8 on"     0 1     0     switch                                         | Band 8 in or out (an off band passes the signal untouched)
+B8Type   "B8 type"   0 5     4     enum Bell Low_shelf High_shelf Low_cut High_cut Notch | Band 8: bell, shelves (half the gain at the frequency), Butterworth cuts (−3 dB at the frequency with Q 0.71), notch
+B8Freq   "B8 freq"   0 10000 9847  freq 20 20000                                  | Band 8 frequency: centre, shelf midpoint or cutoff
+B8Gain   "B8 gain"   0 480   240   db -24 24                                      | Band 8 gain in 0.1 dB steps (bells and shelves)
+B8Q      "B8 Q"      0 2000  686   exp 0.1 30 2                                   | Band 8 Q: bell and notch width, shelf and cut resonance (0.71 is flat)
+B8Slope  "B8 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 8 slope (low and high cut)
+group Output
+Output   "Output"     0 480   240   db -24 24                                      | Output gain in 0.1 dB steps

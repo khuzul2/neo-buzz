@@ -166,6 +166,70 @@ DX7 architecture: 6 operators, 32 algorithms, feedback, per-operator ratio/fixed
 | Alias floor | single sine, 2×: ≤ −90 dB; full-depth 1:1 FM at C7, Clean: ≤ −80 dB | sine −135 dB; FM at C7 −93.4 dB (Raw −3.9 dB) |
 | CPU | 16 voices × 6 operators, 2×: ≥ 10× real time on the CI runner | 10.7× |
 
+### Mix and master batch (MCP A4)
+
+The three machines an agent mixes and masters with (docs/specs/mcp-server.md §8.2). Their parameters speak the agent's units (Hz, dB, dBTP, Q, %, ms), with exact steps where an agent names values: gains in 0.1 dB, frequencies in 0.07 % steps (a requested "320 Hz" lands within 0.04 %), Q in 0.3 % steps.
+
+### Neo EQ (parametric equalizer)
+
+Eight bands in series, then the output gain. Each band is one second-order section, or a cascade of them for the steeper cuts: a topology-preserving (TPT) state-variable filter in double precision, whose response is the RBJ cookbook biquad's (the bilinear transform of the analog prototype, prewarped at the band frequency). Minimum phase, zero latency.
+
+| Type | Prototype |
+|---|---|
+| Bell | RBJ peaking: the gain at the frequency, half the gain (in dB) at the edges of a bandwidth set by Q; boost and cut mirror each other |
+| Low shelf, High shelf | RBJ shelves: half the gain at the frequency; Q 0.71 is the steepest shelf without overshoot, higher Q adds a dip and a bump |
+| Low cut, High cut | Butterworth, 12, 24 or 48 dB/oct (1, 2 or 4 sections): −3 dB at the frequency with Q 0.71 (maximally flat); another Q scales the resonance of the sharpest section |
+| Notch | RBJ notch: a null at the frequency, bandwidth from Q |
+
+Parameters per band (B1 … B8): On, Type, Freq (20 Hz – 20 kHz), Gain (±24 dB, bells and shelves), Q (0.1 – 30), Slope (12/24/48 dB/oct, cuts). Then Output (±24 dB). Frequency, gain and Q glide (20 ms one-pole, the sections recomputed every sample while they move); type, slope and on/off changes crossfade the band in and out over 5 ms. The defaults spread the bands over the spectrum, all off: B1 low cut 30 Hz, B2 low shelf 100 Hz, bells at 250 Hz, 600 Hz, 1.5 kHz and 4 kHz, B7 high shelf 8 kHz, B8 high cut 18 kHz.
+
+The editor draws the response the engine runs (the same function) over 20 Hz – 20 kHz with a handle per band: drag to set frequency and gain, the wheel sets Q, a double-click switches the band; the output spectrum runs behind the curve. Below it, a strip of controls per band.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Response = design | measured response (impulse response, 65,536-point FFT) within ±0.1 dB of the drawn design curve, 20 Hz – 16 kHz, at 44.1 and 48 kHz: a mix curve (all 8 bands), a mastering curve, extremes (Q 30 at 20 Hz, ±24 dB, 48 dB/oct cuts) | — |
+| Labels | a bell's gain at its frequency equals the setting (±0.01 dB); a shelf is at half its gain at its frequency and within 0.1 dB of its gain 4 octaves past it; a notch is ≥ 60 dB deep at its frequency | — |
+| Cut slopes | Q 0.71: −3.01 dB at the cutoff (±0.05 dB) for every slope; the slope from the 3rd to the 4th octave past the cutoff is 12, 24 or 48 dB/oct within ±3 % | — |
+| Parameter moves | a +12 dB bell swept 100 Hz – 5 kHz and its gain swept ±12 dB, one value per 256-sample block as automation arrives, on a 220 Hz sine: energy above 2 kHz ≤ −90 dB relative to the sine (a plain biquad switched per block measures it at ≥ −70 dB) | — |
+| Flat | every band at 0 dB or off: output equals the input (±1e-6) | — |
+| CPU | 8 bands with 48 dB/oct cuts at both ends, stereo: ≥ 100× real time on the CI runner | — |
+
+Later: analog-matched (decramped) designs, so a bell or shelf above a few kHz keeps its analog shape up to Nyquist (the bilinear transform squeezes it: a Q 1 bell at 8 kHz is narrower than its analog prototype near 16 kHz); linear-phase mode; dynamic bands; mid/side bands.
+
+### Neo Utility (gain, pan, width)
+
+DC removal → phase invert → channel swap → width (mid/side) → bass mono → pan → gain. Zero latency; gain, pan and width glide over 20 ms; the default passes the input bit for bit.
+
+Parameters: Gain (−∞, −60 … +24 dB in 0.1 dB steps), Pan (−100 … +100 %), Pan law (**Balance**: the far side fades linearly to silence, 0 dB at centre, for stereo sources; **Mono pan**: sums to mono, then the sine/cosine law, −3 dB per side at centre), Width (0 – 200 %: the side signal times the width; 0 % is mono), Bass mono (Off/On) and Bass mono freq (20 – 500 Hz: the side signal through a 4th-order Butterworth high-pass), Invert L, Invert R, Swap, DC removal (2nd-order Butterworth high-pass at 5 Hz). The editor shows the stereo image (width and pan) and the live correlation.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Gain | settled output/input = setting within ±0.001 dB, −60 … +24 dB; −∞ is silence | — |
+| Pan | Balance: far side 1 − \|pan\|, near side 0 dB; Mono pan: L = cos θ and R = sin θ times the mono sum, θ = (pan + 1) · 45°; each within ±0.001 dB | — |
+| Width | the side/mid ratio scales by the setting (±0.01 dB); 0 %: L = R exactly; 100 %: the input unchanged | — |
+| Bass mono | side −3 dB at the frequency (±0.1 dB), ≥ 45 dB down two octaves below, within 0.1 dB two octaves above; the mid untouched (±1e-6) | — |
+| Invert, swap | exact, sample for sample | — |
+| DC removal | a DC offset falls below −100 dB within 1 s; 20 Hz passes within ±0.05 dB | — |
+| Default | the input bit for bit, zero latency | — |
+
+### Neo Limiter (true-peak limiter)
+
+Input gain → 4× true-peak detector (the BS.1770 interpolator NeoBuzz.Analysis measures with: windowed sinc, 24 taps per phase) → the gain each sample needs to stay under the ceiling (a sample also answers for the inter-sample points on both sides of it) → stereo link → hold over the lookahead → release (one-pole in dB; Auto: a fast and a slow path, the larger reduction wins, so transients recover fast and sustained limiting slowly) → two box filters over the lookahead, so the gain arrives at the needed value exactly when the peak does → gain on the audio delayed to match → output. The latency (lookahead + interpolator) is reported to ReBuzz and follows the lookahead setting.
+
+Parameters: Input gain (−12 … +24 dB), Ceiling (−12 … 0 dBTP, 0.1 dB steps), Release (1 ms … 1 s), Auto release, Lookahead (0.5 – 5 ms), Link (0 – 100 %). The editor shows input, output and gain reduction over the last few seconds, and true-peak meters.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| True peak | output true peak (4× oversampled, `Loudness.TruePeak`) ≤ ceiling + 0.1 dB: naive square waves (997 Hz, 5.5 kHz), a drum loop and pink noise, each pushed +12 dB over full scale; ceilings −1.0 and −0.1 dBTP; lookahead 0.5 and 2 ms | — |
+| Below the ceiling | a sine 6 dB under the ceiling: output equals the input delayed by the latency (±1e-6); THD+N ≤ −100 dB | — |
+| Limiting distortion | 100 Hz sine limited by 6 dB, Auto release: THD ≤ 1 % | — |
+| Release | after a 12 dB reduction, 63 % of it recovers in the Release time ±10 % (Auto off) | — |
+| Stereo link | 100 %: identical gain on both channels | — |
+| Latency | lookahead + 12 samples, reported to ReBuzz, follows the setting | — |
+| CPU | stereo: ≥ 100× real time on the CI runner | — |
+
+Not built: a target-LUFS mode. Integrated loudness needs the whole programme, so a live machine can only guess it, and limiting makes loudness grow slower than the input gain; the agent instead renders, measures (`analyze`) and sets Input gain, which is exact.
+
 ## 6. Phases
 
 | Phase | Content |
