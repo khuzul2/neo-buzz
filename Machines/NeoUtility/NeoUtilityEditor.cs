@@ -24,7 +24,7 @@ namespace NeoBuzz.Utility
 
             var level = Layout.Column(
                 new ParamKnob(ctx, P.Gain, diameter: 58),
-                Layout.Row(new ParamKnob(ctx, P.Pan)),
+                new ParamKnob(ctx, P.Pan),
                 new ParamChoice(ctx, P.PanLaw, cellWidth: 62));
 
             var image = new GraphView(176, 132, (g, r) => DrawImage(g, r, ctx, machine), animate: true);

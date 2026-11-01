@@ -586,8 +586,14 @@ namespace ReBuzzTests
             rig.Play(0.1);
             Assert.That(rig.Effect.Latency, Is.EqualTo(LimiterLatency(5, rig.Rate)), "the new latency reached ReBuzz");
 
+            // Four seconds of a level that moves, so the editor's history shows limiting come and go.
             rig.Param("Lookahead").SetValue(0, rig.Param("Lookahead").DefValue);
-            rig.Play(0.6);
+            var level = rig.Sine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters[0];
+            foreach (int l in new[] { 20, 100, 45, 100, 30, 70, 100 })
+            {
+                level.SetValue(0, l);
+                rig.Play(0.6);
+            }
             ShootEditor(rig.Effect, "neo-limiter-editor");
         }
 

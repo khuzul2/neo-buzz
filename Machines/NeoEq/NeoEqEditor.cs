@@ -36,7 +36,7 @@ namespace NeoBuzz.Eq
             var handles = new BandHandleInput(graph, new Bands(ctx));
             handles.Select(2);
             var spectrum = new SpectrumView();
-            var view = new InteractiveGraph(680, 260, (g, r) => Draw(g, r, ctx, graph, handles, machine, spectrum), handles, animate: true)
+            var view = new InteractiveGraph(680, 298, (g, r) => Draw(g, r, ctx, graph, handles, machine, spectrum), handles, animate: true)
             {
                 ToolTip = "Drag a handle: frequency and gain (Shift: fine). Wheel: Q. Double-click: band on/off.",
             };
@@ -242,8 +242,9 @@ namespace NeoBuzz.Eq
             if (values.On(EqDesign.On(sel)))
             {
                 var s = EqDesign.Settings(values, sel);
-                g.Path(graph.Area(hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(s, hz, rate)))),
-                    colour.WithAlpha(0x2C), new NeoStroke(colour.WithAlpha(0xA0), 1));
+                Func<double, double> own = hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(s, hz, rate)));
+                g.Path(graph.Area(own), colour.WithAlpha(0x2C), NeoStroke.None);
+                g.Path(graph.Curve(own, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(0xB0), 1.2));
             }
             g.Path(graph.Curve(hz => EqDesign.ResponseDb(values, hz, rate)), NeoFill.None, new NeoStroke(AccentColor, 2.2));
             handles.Draw(g, BandColors);

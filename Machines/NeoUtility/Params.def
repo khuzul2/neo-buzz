@@ -2,7 +2,7 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoUtility
 namespace NeoBuzz.Utility
 class NeoUtilityMachine
-summary Gain staging and stereo fixes, each exact: gain in 0.1 dB steps, balance or mono pan, width 0–200 %, bass mono below a frequency, polarity invert per channel, channel swap and DC removal. Zero latency; at its defaults it passes the input bit for bit.
+summary Gain, balance or mono pan, width 0–200 %, bass mono below a frequency, polarity invert per channel, channel swap and DC removal, each exact (gain in 0.1 dB steps). Zero latency; at its defaults it passes the input bit for bit. Use it for gain staging and stereo fixes as one-parameter moves: trim a track, narrow or widen it, make the lows mono, fix a flipped channel.
 
 group Level
 Gain      "Gain"           0 841   601  db -60.1 24 inf        | Output gain in 0.1 dB steps, −60 … +24 dB (bottom: −∞, silence)

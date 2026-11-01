@@ -12,7 +12,8 @@ namespace NeoBuzz.Limiter
 {
     internal sealed class NeoLimiterEditor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xF2, 0x5C, 0x7A);
+        // Violet: clear of the meters' red for "over 0 dB", which a limiter's output never is.
+        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xBE, 0x7C, 0xFF);
         static readonly NeoColor InputColor = NeoColor.FromRgb(0x4A, 0x52, 0x60);
 
         protected override string Title => "Neo Limiter";
@@ -58,46 +59,56 @@ namespace NeoBuzz.Limiter
         }
 
         /// <summary>
-        /// Levels over time (dB, −36 … +12): the input after the gain (grey), the output's true peak
-        /// (accent) under the ceiling line, and the gain reduction hanging from the top (0 … 24 dB).
+        /// The last four seconds in two lanes. Above: levels (dB, −36 … +12), the input after the
+        /// gain (grey) and the output's true peak (accent) under the ceiling line. Below: the gain
+        /// reduction, growing down from 0 to 24 dB.
         /// </summary>
         static void DrawHistory(INeoCanvas g, NeoRect r, EditorContext ctx, NeoLimiterMachine machine, HistoryBuffers h)
         {
             const double lo = -36, hi = 12, grRange = 24;
-            var plot = new NeoRect(r.X + 30, r.Y + 6, r.Width - 36, r.Height - 12);
-            double Y(double db) => plot.Bottom - (Math.Clamp(db, lo, hi) - lo) / (hi - lo) * plot.Height;
+            var levels = new NeoRect(r.X + 32, r.Y + 8, r.Width - 40, (r.Height - 16) * 0.68);
+            var gr = new NeoRect(levels.X, levels.Bottom + 8, levels.Width, r.Bottom - 8 - (levels.Bottom + 8));
+            double Y(double db) => levels.Bottom - (Math.Clamp(db, lo, hi) - lo) / (hi - lo) * levels.Height;
+            double G(double db) => gr.Top + Math.Clamp(db, 0, grRange) / grRange * gr.Height;
             var grid = new NeoStroke(Palette.Grid, 1, false);
-            for (double d = -30; d <= hi; d += 6)
+            for (double d = lo; d <= hi; d += 12)
             {
-                g.Line(plot.Left, Y(d), plot.Right, Y(d), grid);
-                if (((int)d) % 12 == 0) g.Text(d.ToString("+0;−0;0"), r.X + 26, Y(d) - 7, 9.5, Palette.DimText, align: NeoAlign.Right);
+                g.Line(levels.Left, Y(d), levels.Right, Y(d), grid);
+                g.Text(d.ToString("+0;−0;0"), r.X + 28, Y(d) - 7, 9.5, Palette.DimText, align: NeoAlign.Right);
             }
+            foreach (double d in new[] { 0.0, 12, 24 })
+            {
+                g.Line(gr.Left, G(d), gr.Right, G(d), grid);
+                g.Text(d == 0 ? "GR" : "−" + d.ToString("0"), r.X + 28, G(d) - 7, 9.5, Palette.DimText, align: NeoAlign.Right);
+            }
+
             double ceiling = ctx.Value(P.Ceiling);
             int count = LimiterEngine.HistoryLength;
             if (machine != null) machine.Engine.History(h.In, h.Out, h.Gr, count);
-            double X(int i) => plot.Left + i * plot.Width / (count - 1);
-
-            var input = new NeoPath().MoveTo(X(0), plot.Bottom);
-            var output = new NeoPath().MoveTo(X(0), plot.Bottom);
-            var reduction = new NeoPath().MoveTo(X(0), plot.Top);
+            double X(int i) => levels.Left + i * levels.Width / (count - 1);
+            var input = new NeoPath().MoveTo(X(0), levels.Bottom);
+            var output = new NeoPath().MoveTo(X(0), levels.Bottom);
+            var reduction = new NeoPath().MoveTo(X(0), gr.Top);
             for (int i = 0; i < count; i++)
             {
                 input.LineTo(X(i), Y(DspMath.GainToDb(Math.Max(1e-6f, h.In[i]))));
                 output.LineTo(X(i), Y(DspMath.GainToDb(Math.Max(1e-6f, h.Out[i]))));
-                reduction.LineTo(X(i), plot.Top + Math.Clamp(h.Gr[i], 0, grRange) / grRange * plot.Height * 0.5);
+                reduction.LineTo(X(i), G(h.Gr[i]));
             }
-            input.LineTo(X(count - 1), plot.Bottom).Close();
-            output.LineTo(X(count - 1), plot.Bottom).Close();
-            reduction.LineTo(X(count - 1), plot.Top).Close();
+            input.LineTo(X(count - 1), levels.Bottom).Close();
+            output.LineTo(X(count - 1), levels.Bottom).Close();
+            reduction.LineTo(X(count - 1), gr.Top).Close();
             g.Path(input, InputColor, NeoStroke.None);
-            g.Path(output, AccentColor.WithAlpha(0x90), NeoStroke.None);
-            g.Path(reduction, AccentColor.Tint(0.35).WithAlpha(0x60), new NeoStroke(AccentColor.Tint(0.35), 1));
-            g.Line(plot.Left, Y(ceiling), plot.Right, Y(ceiling), new NeoStroke(Palette.Text.WithAlpha(0xA0), 1, false));
-            g.Text($"ceiling {Params.Table[P.Ceiling].Describe(ctx.Raw(P.Ceiling))}TP", plot.Right - 4, Y(ceiling) - 15, 10, Palette.Text, align: NeoAlign.Right);
+            g.Path(output, AccentColor.WithAlpha(0xC0), NeoStroke.None);
+            g.Path(reduction, AccentColor.Tint(0.25).WithAlpha(0x80), new NeoStroke(AccentColor.Tint(0.25), 1));
+            g.Line(levels.Left, Y(ceiling), levels.Right, Y(ceiling), new NeoStroke(Palette.Text.WithAlpha(0xB0), 1, false));
+            g.Text($"ceiling {Params.Table[P.Ceiling].Describe(ctx.Raw(P.Ceiling))}TP", levels.Right - 4, Y(ceiling) - 15, 10, Palette.Text, align: NeoAlign.Right);
+            g.Text("in", levels.Left + 4, levels.Top + 2, 10, Palette.DimText);
+            g.Text("out", levels.Left + 22, levels.Top + 2, 10, AccentColor);
             if (machine != null)
             {
-                g.Text($"GR {machine.Engine.GainReductionDb:F1} dB", plot.Left + 4, plot.Top + 2, 10, Palette.Text);
-                g.Text($"latency {machine.Engine.Latency} samples", plot.Left + 4, plot.Bottom - 16, 9.5, Palette.DimText);
+                g.Text($"{machine.Engine.GainReductionDb:F1} dB", gr.Right - 4, gr.Bottom - 16, 10, Palette.Text, align: NeoAlign.Right);
+                g.Text($"latency {machine.Engine.Latency} samples", levels.Left + 4, levels.Bottom - 16, 9.5, Palette.DimText);
             }
         }
     }
