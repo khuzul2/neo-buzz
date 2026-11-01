@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Windows.Threading;
 
 namespace ReBuzz.Core.Session
 {
@@ -84,7 +83,7 @@ namespace ReBuzz.Core.Session
                 foreach (int i in changed)
                     waveAudio.Remove(i);
                 RefreshAudio();
-            }, DispatcherPriority.Background);
+            }, UiPriority.Background);
         }
 
         void ResetAudio()

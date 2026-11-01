@@ -13,9 +13,15 @@ engine set, cascade) and one seam (engine-split.md section 3).
     python3 experiments/engine-census/census.py [stages...] [--out DIR]   all stages by default
     python3 experiments/engine-census/census.py closure                   rewrite CommonClosure.props
     python3 experiments/engine-census/census.py machines                  scan RunTime/Gear machine DLLs
+    python3 experiments/engine-census/census.py --check [--update]        the ratchet (Linux CI)
 
 Writes DIR/stage<N>.tsv and .json (raw and classified diagnostics), DIR/report.md and
 DIR/machines.md. DIR defaults to experiments/engine-census/out (git-ignored).
+
+--check compiles the ratchet stage (CHECK_STAGE) through Roslyn only and compares its error
+count with baseline.json: more errors than the baseline fails (exit 1) and lists the files that
+gained errors; fewer passes and asks for the baseline to be lowered. --update rewrites
+baseline.json with the current counts (each P1 PR lowers it, engine-split.md §5).
 """
 import json, os, re, subprocess, sys
 from collections import defaultdict, Counter
@@ -351,7 +357,7 @@ def analyzer_dir():
     return _ANALYZERS[0]
 
 
-def roslyn(srcs, refs, tag, outdir, idx):
+def roslyn(srcs, refs, tag, outdir, idx, analyzers=True):
     """Compile through tool/ and return classified, de-duplicated diagnostics."""
     types, exts, ui, namespaces = idx
     args_path = os.path.join(outdir, f'{tag}.args')
@@ -360,7 +366,8 @@ def roslyn(srcs, refs, tag, outdir, idx):
         f.writelines(f'ref:{x}\n' for x in refs)
         f.writelines(f'def:{x}\n' for x in DEFINES)
         for a in ('Microsoft.CodeAnalysis.NetAnalyzers.dll', 'Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll'):
-            f.write(f'analyzer:{os.path.join(analyzer_dir(), a)}\n')
+            if analyzers:
+                f.write(f'analyzer:{os.path.join(analyzer_dir(), a)}\n')
     tsv = os.path.join(outdir, f'{tag}.tsv')
     t = run(['dotnet', 'run', '--no-build', '--project', TOOL, '-c', 'Release', '--', args_path, tsv])
     if t.returncode != 0:
@@ -586,6 +593,78 @@ def machines(outdir):
     print('\n'.join(out))
 
 
+# ---------------------------------------------------------------- ratchet (Linux CI)
+
+CHECK_STAGE = 5
+BASELINE = os.path.join(HERE, 'baseline.json')
+
+
+def gh(kind, msg, title=None, file=None, line=None):
+    """A GitHub Actions annotation when running there; plain text otherwise."""
+    if not os.environ.get('GITHUB_ACTIONS'):
+        where = f'{file}({line}): ' if file else ''
+        print(f'{where}{kind}: {msg}')
+        return
+    props = []
+    if file:
+        props.append(f'file={file}')
+    if line:
+        props.append(f'line={line}')
+    if title:
+        props.append(f'title={title}')
+    msg = msg.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+    print(f"::{kind} {','.join(props)}::{msg}")
+
+
+def check(outdir, idx, update):
+    """Compare the ratchet stage's error count with baseline.json (engine-split.md §5)."""
+    r = run(['dotnet', 'restore', PROJ, '-nologo', '-v:q'])
+    if r.returncode != 0:
+        print(r.stdout, r.stderr)
+        sys.exit(1)
+    srcs, refs = stage_inputs(CHECK_STAGE)
+    diags, _ = roslyn(srcs, refs, 'check', outdir, idx, analyzers=False)
+    errs = [d for d in diags if d['sev'] == 'Error']
+    per_file = Counter(d['file'] for d in errs)
+    total = len(errs)
+    print(f'census stage {CHECK_STAGE}: {len(srcs)} files, {total} errors in {len(per_file)} files')
+
+    if update:
+        with open(BASELINE, 'w', newline='\n') as f:
+            json.dump({'stage': CHECK_STAGE, 'errors': total,
+                       'files': dict(sorted(per_file.items()))}, f, indent=2)
+            f.write('\n')
+        print(f'baseline.json: {total} errors')
+        return 0
+
+    base = json.load(open(BASELINE))
+    if base.get('stage') != CHECK_STAGE:
+        gh('error', f"baseline.json is for stage {base.get('stage')}, the check measures stage {CHECK_STAGE}",
+           title='Engine census')
+        return 1
+    limit, base_files = base['errors'], base.get('files', {})
+    rose = {f: (base_files.get(f, 0), n) for f, n in per_file.items() if n > base_files.get(f, 0)}
+    for f, (was, now) in sorted(rose.items()):
+        print(f'  {f}: {was} -> {now}')
+    if total > limit:
+        shown = 0
+        for d in sorted(errs, key=lambda d: (d['file'], d['line'])):
+            if d['file'] in rose and shown < 50:
+                gh('error', f"{d['id']}: {d['msg']}", file=d['file'], line=d['line'])
+                shown += 1
+        gh('error', f'{total} errors, baseline {limit}: the engine gained {total - limit} errors that keep it '
+           f'from compiling as plain net10.0. Files that gained errors: '
+           f"{', '.join(sorted(rose)) or '(none; errors moved)'}. See docs/specs/engine-split.md.",
+           title='Engine census')
+        return 1
+    if total < limit:
+        gh('warning', f'{total} errors, baseline {limit}: lower the baseline with '
+           f'"python3 experiments/engine-census/census.py --check --update".', title='Engine census')
+    else:
+        gh('notice', f'{total} errors (baseline {limit})', title='Engine census')
+    return 0
+
+
 def main():
     argv = sys.argv[1:]
     outdir = os.path.join(HERE, 'out')
@@ -599,6 +678,8 @@ def main():
         print(r.stdout)
         sys.exit(1)
     idx = index_repo()
+    if '--check' in argv:
+        sys.exit(check(outdir, idx, '--update' in argv))
     if argv and argv[0] == 'closure':
         closure(outdir, idx)
         return

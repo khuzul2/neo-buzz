@@ -7,7 +7,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Windows.Threading;
 
 namespace ReBuzz.Core.Session
 {
@@ -830,7 +829,7 @@ namespace ReBuzz.Core.Session
             {
                 changePosted = false;
                 Changed?.Invoke();       // readers reconcile on access
-            }, DispatcherPriority.Background);
+            }, UiPriority.Background);
         }
 
         // ------------------------------------------------------------------ keeping in step with the song

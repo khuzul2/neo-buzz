@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Plan from a measured census (P1 step 0). Nothing in ReBuzz has changed yet |
+| Status | In progress. PR 1 done: the seam interfaces stand alone and Linux CI runs the census ratchet, baseline 351 (§5, Progress) |
 | Date | 2026-11-01 |
 | Scope | What keeps the engine from compiling as plain `net10.0` (no WPF, no Windows); the seams that fix it; how `BuzzGUI.Interfaces` and `BuzzGUI.Common` stay binary compatible; the PR sequence for P1 |
 | Code baseline | fork `a90558a` (main, 2026-11-01). The MCP work is editing `ReBuzz/Agent/*` and `ReBuzzCore.cs` in parallel, so re-run the census after it merges |
@@ -339,6 +339,12 @@ Error counts are stage-5 census numbers. Expect small upward corrections from hi
 | 9 | **S8 `IAudioDriverFactory`, `IMidiBackend`** | `MidiEngine`, `SessionControllers`, `AudioDriverFactory`, `AudioDriverService`, `AudioEngine` | 55 | census = 0; ASIO, WASAPI, MIDI in and out, and hot-plug unchanged |
 | 10 | **Flip.** `ReBuzz.csproj` stops compiling the engine files (`Compile Remove`) and references `ReBuzz.Engine`, which gets `InternalsVisibleTo` for `ReBuzz` and `ReBuzzTests`. The `ReBuzz/Agent` glue moves onto the engine and `ReBuzz.Agent` references only the engine. Linux CI builds `ReBuzz.Engine`; the ratchet retires | `ReBuzz.csproj`, `ReBuzz.Engine.csproj`, `ReBuzz.sln`, `fork-ci.yml` | – | cross-platform.md P1 exit: the engine builds on Linux CI; ReBuzzTests pass on Windows against it; `ReBuzz.exe --agent` runs headless |
 
+**Progress.** The ratchet is `census.py --check` in the `session-tests` job: Roslyn errors at stage 5 against `experiments/engine-census/baseline.json`. More errors fail the job and list the files that gained them; fewer pass with a warning to lower the baseline (`--check --update`).
+
+| PR | Census baseline (stage 5) | Notes |
+|---|---|---|
+| 1 | 351 | Main had moved since the census: the A1 agent tools (`PatternTools`, `MachineTools`, `StudioTools`) use 10 `BuzzGUI.Common` action files outside the closure, so stage 5 with the shims stood at 369, not 356. `census.py closure` now gives 57 files (was 47), which removes those 18 errors. PR 1 itself removed 104 at stage 4 (plan: 101) and 5 at stage 5 (the priority callers). `IKeyboard` keeps `HasModifierKeyPressed(Enum)`; `WindowsKeyboard` also accepts `KeyModifiers`, so PR 5 only switches callers |
+
 **Order.**
 
 - PRs 1–3 are mechanical and take the count from 457 to 249, with no behaviour change.
@@ -366,6 +372,8 @@ python3 experiments/engine-census/census.py              # stages 0-5 → experi
 python3 experiments/engine-census/census.py closure      # regenerate CommonClosure.props
 python3 experiments/engine-census/census.py machines     # prebuilt machine scan → out/machines.md
 python3 experiments/engine-census/dim_check.py           # §4.3 proof
+python3 experiments/engine-census/census.py --check      # the CI ratchet against baseline.json (~15 s)
+python3 experiments/engine-census/census.py --check --update   # lower the baseline after removing errors
 dotnet build experiments/engine-census -p:CensusStage=5  # csc's view; fails by design
 ```
 

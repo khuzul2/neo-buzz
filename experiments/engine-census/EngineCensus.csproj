@@ -18,7 +18,8 @@
       2  - UI files: *.xaml.cs, WPF implementations of existing seams, WPF-only BuzzGUI.Common files
       3  - Windows platform code: WASAPI/ASIO drivers, WinMM and Windows MIDI Services devices, registry
       4  BuzzGUI.Common reduced to the files the engine actually uses (its compile closure)
-      5  simulated mechanical PRs: seam interfaces on their own, engine helpers from ReBuzz/Common
+      5  + engine helpers from ReBuzz/Common, the r8brain interop and ReBuzzCoreInitialization;
+         the stage the Linux CI ratchet checks (census.py in check mode, baseline.json)
   -->
 
   <PropertyGroup>
@@ -132,13 +133,13 @@
   <Import Project="CommonClosure.props" Condition="$(CensusStage) &gt;= 4 And Exists('CommonClosure.props')" />
 
   <!--
-    ===== Stage 5: simulate the mechanical PRs (engine-split.md steps 1-2) =====
-    The seam interfaces on their own (sim/SeamShims.cs), the engine helpers that sit in the app's
-    ReBuzz/Common folder or in a UI project (r8brain interop in BuzzGUI.WaveformControl), and
-    ReBuzzCoreInitialization from ReBuzz/AppViews.
+    ===== Stage 5: the engine helpers outside the engine folders (engine-split.md §5, PR 2) =====
+    The helpers that sit in the app's ReBuzz/Common folder or in a UI project (r8brain interop in
+    BuzzGUI.WaveformControl), and ReBuzzCoreInitialization from ReBuzz/AppViews. (Until PR 1 this
+    stage also simulated the seam interfaces on their own; they are now real files in Core/ and
+    MachineManagement/.) The Linux CI ratchet (census.py in check mode) measures this stage.
   -->
   <ItemGroup Condition="$(CensusStage) &gt;= 5">
-    <Compile Include="sim\SeamShims.cs" />
     <Compile Include="$(R)Common\Utils.cs;$(R)Common\BurstProtectionEngine.cs;$(R)Common\MultimediaTimer.cs;
                       $(R)Common\ChildProcessTracker.cs;$(R)Common\Interfaces\IMachineExtension.cs"
              Link="ReBuzz\Common\%(RecursiveDir)%(Filename)%(Extension)" />
