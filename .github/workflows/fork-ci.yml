@@ -1,8 +1,8 @@
 name: Fork CI
 
 # Fast checks for fork work:
-#  - session-tests: Session View engine unit tests, the agent server's core and the Neo
-#    machines' DSP measurements (Linux, seconds)
+#  - session-tests: Session View engine unit tests, the agent server's core, the Neo
+#    machines' DSP measurements and the engine census ratchet (Linux, a few minutes)
 #  - core-build: compiles ReBuzz.exe and its C# dependencies only (no C++ projects)
 # The full solution + package build is fork-package.yml.
 
@@ -51,6 +51,13 @@ jobs:
         $text = ($lines -join "`n")
         if ($text.Length -gt 3800) { $text = $text.Substring(0, 3800) }
         Write-Host "::notice title=Machine measurements::$($text -replace '%', '%25' -replace "`n", '%0A')"
+
+    # Engine census ratchet (docs/specs/engine-split.md §5): the errors that keep the engine
+    # from compiling as plain net10.0 (no WPF) may only go down. A PR that removes some lowers
+    # experiments/engine-census/baseline.json with "census.py --check --update".
+    - name: Engine census
+      if: always()
+      run: python3 experiments/engine-census/census.py --check
 
     - name: Annotate test log
       if: failure()

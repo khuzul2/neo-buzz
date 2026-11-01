@@ -3,8 +3,18 @@
   <ItemGroup>
     <Compile Include="$(C)Actions\ActionException.cs" Link="BuzzGUI.Common\Actions\ActionException.cs" />
     <Compile Include="$(C)Actions\BuzzAction.cs" Link="BuzzGUI.Common\Actions\BuzzAction.cs" />
+    <Compile Include="$(C)Actions\EventRef.cs" Link="BuzzGUI.Common\Actions\EventRef.cs" />
+    <Compile Include="$(C)Actions\MachineAction.cs" Link="BuzzGUI.Common\Actions\MachineAction.cs" />
+    <Compile Include="$(C)Actions\MachineActions\AddSequenceAction.cs" Link="BuzzGUI.Common\Actions\MachineActions\AddSequenceAction.cs" />
+    <Compile Include="$(C)Actions\MachineActions\CreatePatternAction.cs" Link="BuzzGUI.Common\Actions\MachineActions\CreatePatternAction.cs" />
+    <Compile Include="$(C)Actions\MachineActions\SetTrackCountAction.cs" Link="BuzzGUI.Common\Actions\MachineActions\SetTrackCountAction.cs" />
     <Compile Include="$(C)Actions\PatternNames.cs" Link="BuzzGUI.Common\Actions\PatternNames.cs" />
     <Compile Include="$(C)Actions\Restorations.cs" Link="BuzzGUI.Common\Actions\Restorations.cs" />
+    <Compile Include="$(C)Actions\SequenceAction.cs" Link="BuzzGUI.Common\Actions\SequenceAction.cs" />
+    <Compile Include="$(C)Actions\SequenceActions\ClearAction.cs" Link="BuzzGUI.Common\Actions\SequenceActions\ClearAction.cs" />
+    <Compile Include="$(C)Actions\SequenceActions\SetEventAction.cs" Link="BuzzGUI.Common\Actions\SequenceActions\SetEventAction.cs" />
+    <Compile Include="$(C)Actions\SongAction.cs" Link="BuzzGUI.Common\Actions\SongAction.cs" />
+    <Compile Include="$(C)Actions\SongActions\SetMarkerAction.cs" Link="BuzzGUI.Common\Actions\SongActions\SetMarkerAction.cs" />
     <Compile Include="$(C)BuzzNote.cs" Link="BuzzGUI.Common\BuzzNote.cs" />
     <Compile Include="$(C)DSP\DSP.cs" Link="BuzzGUI.Common\DSP\DSP.cs" />
     <Compile Include="$(C)Decibel.cs" Link="BuzzGUI.Common\Decibel.cs" />

@@ -1,5 +1,4 @@
 using System;
-using System.Windows.Threading;
 using ReBuzz.Core;
 
 namespace ReBuzzTests.Automation
@@ -38,7 +37,7 @@ namespace ReBuzzTests.Automation
                 action();
         }
 
-        public void BeginInvoke(Action action, DispatcherPriority priority)
+        public void BeginInvoke(Action action, UiPriority priority)
         {
             // this is a little stretch, but BeginInvoke does not guarantee when
             // the action will be executed, so might as well get executed immediately.
