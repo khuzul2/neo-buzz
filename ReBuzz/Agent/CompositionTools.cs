@@ -28,7 +28,7 @@ namespace ReBuzz.Agent
         /// <summary>A marker's range: from it to the next marker (or the song end), in ticks.</summary>
         internal static (int From, int To) Section(ReBuzzCore core, string name)
         {
-            var all = core.MarkerStore?.All ?? Array.Empty<(string, int)>();
+            var all = core.MarkerStore?.All ?? System.Array.Empty<(string, int)>();
             int i = all.ToList().FindIndex(m => string.Equals(m.Name, name, StringComparison.OrdinalIgnoreCase));
             if (i < 0)
                 throw new ToolError($"No marker \"{name}\"." + (all.Count > 0 ? $" Markers: {string.Join(", ", all.Select(m => m.Name))}." : " Set them with arrangement_markers."));
@@ -272,7 +272,7 @@ namespace ReBuzz.Agent
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         string kind = c.RequiredString("kind");
                         var manifest = SongModel.Manifest(m.DLL);
-                        var imports = manifest?.Imports ?? Array.Empty<ManifestImport>();
+                        var imports = manifest?.Imports ?? System.Array.Empty<ManifestImport>();
                         var import = imports.FirstOrDefault(i => string.Equals(i.Kind, kind, StringComparison.OrdinalIgnoreCase));
                         if (import == null)
                             throw new ToolError(imports.Count == 0 ? $"{m.Name} ({m.DLL?.Name}) takes no data files." :
