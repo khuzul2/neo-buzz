@@ -23,16 +23,29 @@ namespace ReBuzzTests
     {
         static readonly string LogDir = Path.Combine(Path.GetTempPath(), "ReBuzzAgentTestLogs");
 
-        sealed class Rig : IDisposable
+        internal sealed class Rig : IDisposable
         {
             public readonly Driver Driver = new();
             public readonly AgentHost Host;
             readonly McpSession session = new();
             int id;
 
-            public Rig()
+            /// <summary>A headless studio; <paramref name="gear"/>: Neo machines from the solution build, with their manifests.</summary>
+            public Rig(params NeoMachineTests.NeoInfo[] gear)
             {
+                foreach (var g in gear)
+                {
+                    if (!File.Exists(g.BuiltPath)) Assert.Inconclusive($"{g.Name} not built ({g.BuiltPath}); build the solution first");
+                    Driver.Gear.AddBuiltMachine(g, AtmaFileSystem.AbsoluteFilePath.Value(g.BuiltPath), g.Generator);
+                }
                 Driver.Start();
+                foreach (var g in gear)
+                {
+                    // The manifest goes beside the DLL, as the build puts it.
+                    string manifest = Path.Combine(Path.GetDirectoryName(g.BuiltPath)!, g.Name + ".machine.json");
+                    string dll = Driver.Core.MachineDLLs[g.Name].Path;
+                    if (File.Exists(manifest)) File.Copy(manifest, Path.Combine(Path.GetDirectoryName(dll)!, g.Name + ".machine.json"), overwrite: true);
+                }
                 Host = new AgentHost(Driver.Core, Driver.Dispatcher, "headless", LogDir);
                 Send(new JsonObject
                 {

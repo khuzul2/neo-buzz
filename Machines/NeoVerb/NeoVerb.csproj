@@ -23,6 +23,7 @@
     <Compile Include="..\NeoBuzz.Editor\**\*.cs" Link="Shared\Editor\%(RecursiveDir)%(Filename)%(Extension)" />
     <None Include="Params.def" />
     <None Include="Neo Verb.prs.xml" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Neo Verb.machine.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

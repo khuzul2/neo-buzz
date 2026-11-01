@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-01: D1–D5 as recommended, run as a track parallel to the MCP work. P0 in progress |
+| Status | Decided 2026-11-01: D1–D5 as recommended, run as a track parallel to the MCP work. P0 done: the Neo editor kit draws through `INeoCanvas` (CI screenshots pixel-identical), settings go through `ISettingsStore`; the `IMidiBackend` seam moves to P2. P1 step 0 done: the engine census and a 10-PR split plan ([`engine-split.md`](engine-split.md)) |
 | Date | 2026-11-01 |
 | Scope | One codebase that runs on macOS (Apple silicon) and Windows; keep C# if possible; what to do with Windows-only machines (keep, bridge, rebuild) |
 | Code baseline | fork `22ff4a9` on upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |

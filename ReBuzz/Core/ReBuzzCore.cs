@@ -2472,6 +2472,8 @@ namespace ReBuzz.Core
         internal readonly string registryRoot;
         private readonly GeneralSettings generalSettings;
         private readonly EngineSettings engineSettings;
+        /// <summary>Fork (docs/specs/mcp-server.md): the engine settings, for the agent server's offline renders.</summary>
+        internal EngineSettings EngineSettings => engineSettings;
         private readonly string buzzPath;
         private readonly IMachineDLLScanner machineDllScanner;
         internal readonly IUiDispatcher dispatcher;

@@ -96,6 +96,16 @@ namespace ReBuzz.AgentTests
             return Request(id, "tools/call", p);
         }
 
+        /// <summary>Calls a tool and unwraps the result: (isError, text summary, structured content).</summary>
+        public static (bool Error, string Text, JsonObject Data) CallTool(McpServer server, string tool, JsonObject? args = null)
+        {
+            var r = server.HandleAsync(Call(7, tool, args), new McpSession(), _ => Task.CompletedTask, CancellationToken.None).GetAwaiter().GetResult()!;
+            if (r["error"] is JsonObject error) return (true, error["message"]!.GetValue<string>(), new JsonObject());
+            var result = r["result"]!.AsObject();
+            string text = result["content"]!.AsArray().FirstOrDefault()?["text"]?.GetValue<string>() ?? "";
+            return (result["isError"]?.GetValue<bool>() == true, text, result["structuredContent"] as JsonObject ?? new JsonObject());
+        }
+
         public static JsonObject Initialize(int id = 1, string version = "2025-06-18") => Request(id, "initialize", new JsonObject
         {
             ["protocolVersion"] = version,

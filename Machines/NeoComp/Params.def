@@ -2,6 +2,7 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoComp
 namespace NeoBuzz.Comp
 class NeoCompMachine
+summary Compressor with four characters (Clean VCA, Glue bus, FET, Opto), knee, lookahead, an external sidechain on input 2 and parallel mix. Use it to control dynamics, glue a bus, or duck a track under a kick.
 
 group Dynamics
 Mode        "Mode"          0 3    0    enum Clean Glue FET Opto       | Clean: transparent VCA. Glue: bus VCA. FET: fast feedback. Opto: smooth, program-dependent

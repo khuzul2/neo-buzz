@@ -1,3 +1,4 @@
+#nullable disable
 // Agent server (docs/specs/mcp-server.md §3.3): pitches. Agents use MIDI numbers or scientific
 // names (60 = "C4", 69 = "A4" = 440 Hz). Buzz patterns store notes as (octave << 4) | (semitone + 1)
 // and show them an octave higher ("C-5" for MIDI 60); the server converts and never mixes them.
@@ -87,18 +88,18 @@ namespace ReBuzz.Agent.Model
         /// A position in beats from a number (beats from the song start) or "bar.beat" text:
         /// "17.1" is bar 17's first beat, "17" its start, "17.2.5" half a beat after its second beat.
         /// </summary>
-        public static double ParseBeats(System.Text.Json.Nodes.JsonNode value, int beatsPerBar, string what)
+        public static double ParseBeats(System.Text.Json.Nodes.JsonNode value, int beatsPerBar, string what, string origin = "the song start")
         {
             if (Schema.TryNumber(value, out double beats))
             {
-                if (beats < 0) throw new ToolError($"{what}: {beats} is before the song start (beats count from 0).");
+                if (beats < 0) throw new ToolError($"{what}: {beats} is before {origin} (beats count from 0).");
                 return beats;
             }
             string text = value is System.Text.Json.Nodes.JsonValue v && v.TryGetValue(out string s) ? s.Trim() : null;
             if (text == null) throw new ToolError($"{what}: give beats (a number) or \"bar.beat\" text like \"17.1\".");
             var parts = text.Split('.', 2);
             if (parts.Length > 2 || !int.TryParse(parts[0], out int bar) || bar < 1)
-                throw new ToolError($"{what}: \"{text}\" isn't \"bar.beat\" (bars and beats count from 1: \"1.1\" is the song start).");
+                throw new ToolError($"{what}: \"{text}\" isn't \"bar.beat\" (bars and beats count from 1: \"1.1\" is {origin}).");
             double beat = 1;
             if (parts.Length == 2 && (!double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out beat) || beat < 1 || beat >= beatsPerBar + 1))
                 throw new ToolError($"{what}: beat \"{parts[1]}\" must be from 1 to {beatsPerBar} (there are {beatsPerBar} beats per bar).");

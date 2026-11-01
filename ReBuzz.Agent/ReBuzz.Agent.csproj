@@ -24,6 +24,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The craft guides (docs/specs/mcp-server.md §6), served by the guide tool and as resources. -->
+    <EmbeddedResource Include="Guides\*.md" LogicalName="ReBuzz.Agent.Guides.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- The analysis library (docs/specs/mcp-server.md §7), shared with the analysis machines. -->
     <Compile Include="..\Machines\NeoBuzz.Analysis\**\*.cs" Link="Analysis\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>

@@ -3,6 +3,7 @@
 namespace NeoBuzz.Poly
 class NeoPolyMachine
 tracks 16
+summary Virtual analog polysynth: three oscillators, two filters (ladder and SVF), amp, filter and mod envelopes, two LFOs and a mod matrix. Use it for pads, basses, leads, plucks, brass and keys.
 
 group Voice
 VoiceMode   "Voice mode"    0 2    0    enum Poly Mono Legato           | Poly; Mono retriggers; Legato glides without retriggering

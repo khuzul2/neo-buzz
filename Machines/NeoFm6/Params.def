@@ -5,6 +5,7 @@
 namespace NeoBuzz.Fm6
 class NeoFm6Machine
 tracks 16
+summary Six-operator FM synth in the DX7 style: 32 algorithms, DX7 ranges and envelopes, loads DX7 SysEx banks. Use it for electric pianos, bells, FM basses, brass and metallic tones.
 
 group Algorithm
 Algorithm   "Algorithm"     0 31   0    int 1                           | Which operators modulate which (the 32 DX7 algorithms)

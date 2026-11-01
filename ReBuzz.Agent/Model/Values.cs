@@ -1,3 +1,4 @@
+#nullable disable
 // Agent server (docs/specs/mcp-server.md §3.3): parameter values in units. Agents write
 // "800 Hz", "-6 dB", "35%", "Saw", "1/8", "raw:512", or change a value by an amount or a factor;
 // the server finds the raw Buzz value. Neo machines publish exact mappings (their manifest);
@@ -64,7 +65,14 @@ namespace ReBuzz.Agent.Model
                 default: t = value; break;
             }
             t = Math.Clamp(double.IsNaN(t) ? 0 : t, 0, 1);
-            return Math.Clamp((int)Math.Round(min + t * (max - min)), min, max);
+            int r = Math.Clamp((int)Math.Round(min + t * (max - min)), min, max);
+            // A finite value never lands on the end that means -inf dB or ∞:1.
+            if (Flag && max > min && !double.IsInfinity(value))
+            {
+                if (Kind == MappingKind.Db && r == min) r = min + 1;
+                if (Kind == MappingKind.Ratio && r == max) r = max - 1;
+            }
+            return r;
         }
 
         /// <summary>The quantity the physical value is in (for unit conversion of what the agent writes).</summary>
@@ -173,6 +181,8 @@ namespace ReBuzz.Agent.Model
 
             if (mode == Mode.Value && text != null)
             {
+                // A machine's own text for a value ("1/8", "1 bar", "Off") is taken as it is.
+                if (p.Mapping == null && MatchDescription(p, text) is int exact) return exact;
                 string lower = text.ToLowerInvariant();
                 if (lower.StartsWith("raw:"))
                 {
@@ -191,6 +201,8 @@ namespace ReBuzz.Agent.Model
                 if (double.IsNaN(factor) || factor <= 0) throw new ToolError($"{p.Name}: times needs a positive factor such as 2 or 0.5.");
                 double now = Physical(p, current, out string dim);
                 if (double.IsNaN(now)) throw new ToolError($"{p.Name} has no numeric value to scale (it reads \"{p.Describe(current)}\"); set a value instead.");
+                if (dim == "dB") throw new ToolError($"{p.Name} is in dB: change it by an amount instead, e.g. by \"+6 dB\" (twice the amplitude) or \"-3 dB\".");
+                if (dim.Length == 0) dim = Dimension(p);
                 return ToRaw(p, now * factor, dim);
             }
 
@@ -206,20 +218,25 @@ namespace ReBuzz.Agent.Model
                 if (mode == Mode.Value && p.Mapping == null && MatchDescription(p, text) is int byText) return byText;
                 throw new ToolError($"{p.Name}: \"{text}\" isn't a value it takes. {Examples(p)}");
             }
-            double physicalNow = Physical(p, current, out string dimension);
+            double physicalNow = Physical(p, current, out string dimensionNow);
+            string dimension = p.Mapping != null || dimensionNow.Length > 0 ? dimensionNow : Dimension(p);
             if (!Quantity.ToBase(value, unit, out double inBase, out string inDim))
                 throw new ToolError($"{p.Name}: unknown unit \"{unit}\". {Examples(p)}");
             if (inDim != null && dimension.Length > 0 && inDim != dimension)
                 throw new ToolError($"{p.Name} is in {dimension}, not {inDim}. {Examples(p)}");
-            // Percentages: "35%" and a bare 35 on a % parameter both mean 35 % (0.35 of the scale).
-            if (dimension == "%" && (inDim == "%" || inDim == null)) inBase /= 100;
+            // Percentages: "35%" and a bare 35 on a % parameter both mean 35 %. Percent and bipolar
+            // mappings (and described values) hold fractions; a linear "2 … 98 %" holds percents.
+            if (dimension == "%" && (inDim == "%" || inDim == null) && Fractional(p)) inBase /= 100;
             if (mode == Mode.By)
             {
-                if (double.IsNaN(physicalNow)) throw new ToolError($"{p.Name} has no numeric value to change by an amount (it reads \"{p.Describe(current)}\"); set a value instead.");
+                if (double.IsNaN(physicalNow) || dimensionNow != dimension) throw new ToolError($"{p.Name} has no numeric value to change by an amount (it reads \"{p.Describe(current)}\"); set a value instead.");
+                if (double.IsInfinity(physicalNow)) throw new ToolError($"{p.Name} is at {p.Describe(current)}; set a value instead of changing it by an amount.");
                 inBase = physicalNow + inBase;
             }
             return ToRaw(p, inBase, dimension);
         }
+
+        static bool Fractional(ParamInfo p) => p.Mapping == null || p.Mapping.Kind is MappingKind.Percent or MappingKind.Bipolar;
 
         static int ResolveChoice(ParamInfo p, ParamMapping m, JsonNode input, string text, bool isNumber, double number, int current, Mode mode)
         {
@@ -270,14 +287,16 @@ namespace ReBuzz.Agent.Model
         static int ToRaw(ParamInfo p, double target, string dimension)
         {
             if (p.Mapping != null) return p.Mapping.Raw(target, p.Min, p.Max);
-            // Described values: the raw whose description is nearest (log scale for Hz and seconds).
-            bool log = dimension is "Hz" or "s";
+            // Described values: the raw whose description is nearest (log scale for Hz and seconds,
+            // among the positive values when the target is positive).
+            bool log = dimension is "Hz" or "s" && target > 0 && Candidates(p).Any(r => Physical(p, r, out string d) > 0 && d == dimension);
             int best = -1;
             double bestDistance = double.MaxValue;
             foreach (int raw in Candidates(p))
             {
                 double v = Physical(p, raw, out string dim);
                 if (double.IsNaN(v) || (dimension.Length > 0 && dim != dimension)) continue;
+                if (log && v <= 0) continue;
                 double d = log && v > 0 && target > 0 ? Math.Abs(Math.Log(v / target)) : Math.Abs(v - target);
                 if (double.IsInfinity(target) && double.IsInfinity(v) && Math.Sign(target) == Math.Sign(v)) d = 0;
                 if (d < bestDistance) { bestDistance = d; best = raw; }
@@ -293,6 +312,25 @@ namespace ReBuzz.Agent.Model
             if (span <= 4096) return Enumerable.Range(p.Min, span + 1);
             int step = (int)Math.Ceiling(span / 4096.0);
             return Enumerable.Range(0, span / step + 1).Select(i => p.Min + i * step).Append(p.Max);
+        }
+
+        /// <summary>
+        /// The quantity a described parameter is in: what most of its value texts read as (one
+        /// value may read "Off" or "Sync"), "" when they aren't numbers with units.
+        /// </summary>
+        static string Dimension(ParamInfo p)
+        {
+            if (p.Mapping != null) return p.Mapping.Dimension;
+            var counts = new Dictionary<string, int>();
+            int span = p.Max - p.Min;
+            int step = Math.Max(1, span / 64);
+            for (int raw = p.Min; raw <= p.Max; raw += step)
+            {
+                double v = Physical(p, raw, out string d);
+                if (double.IsNaN(v) || d.Length == 0) continue;
+                counts[d] = counts.TryGetValue(d, out int n) ? n + 1 : 1;
+            }
+            return counts.Count == 0 ? "" : counts.OrderByDescending(kv => kv.Value).First().Key;
         }
 
         static int? MatchDescription(ParamInfo p, string text)
