@@ -11,6 +11,8 @@ namespace ReBuzz
     {
         public App()
         {
+            // Fork (docs/specs/engine-split.md §4.3): before the first machine loads.
+            ReBuzz.AppViews.WpfMachineApiHooks.Install();
             Dispatcher.CurrentDispatcher.UnhandledException += ExHandler;
             AppDomain.CurrentDomain.UnhandledException += ADExHandler;
             base.ShutdownMode = ShutdownMode.OnExplicitShutdown;

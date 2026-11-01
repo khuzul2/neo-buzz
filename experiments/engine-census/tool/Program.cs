@@ -5,6 +5,7 @@
 //                    | implicit:<path fragment>|<namespace>;<namespace>…
 //   out.tsv columns: severity, id, file, line, column, message
 // or:    CensusTool refs <out.tsv> <dll>...   (see MachineRefs.cs)
+// or:    CensusTool surface <out.txt> <dll>   (see Surface.cs)
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -21,6 +22,7 @@ static class Program
     static int Main(string[] args)
     {
         if (args.Length > 0 && args[0] == "refs") return MachineRefs.Run(args);
+        if (args.Length > 0 && args[0] == "surface") return Surface.Run(args);
 
         var sources = new List<string>();
         var refs = new List<string>();
@@ -50,15 +52,15 @@ static class Program
         var parse = new CSharpParseOptions(LanguageVersion.Latest, preprocessorSymbols: defines);
         // implicit:<path fragment>|<ns>;<ns>… gives the files whose path contains the fragment
         // those usings, as their project's ImplicitUsings would, without making them global for
-        // every file (BuzzGUI.Interfaces has ImplicitUsings; the engine files don't). They go on
-        // the first line, so line numbers don't move.
+        // every file (BuzzGUI.Interfaces has ImplicitUsings; the engine files don't). They go on a
+        // line of their own before the file; "#line 1" keeps the reported line numbers.
         string Text(string p)
         {
             var text = File.ReadAllText(p);
             var norm = p.Replace('\\', '/');
             foreach (var (fragment, usings) in implicitUsings)
                 if (norm.Contains(fragment))
-                    return string.Concat(usings.Select(u => $"using {u}; ")) + text;
+                    return string.Concat(usings.Select(u => $"using {u}; ")) + "\n#line 1\n" + text;
             return text;
         }
         var trees = sources.Distinct().Select(p =>
@@ -99,7 +101,7 @@ static class Program
         using var w = new StreamWriter(args[1]);
         foreach (var d in diags)
         {
-            var span = d.Location.GetLineSpan();
+            var span = d.Location.GetMappedLineSpan();
             var msg = d.GetMessage().Replace('\t', ' ').Replace('\n', ' ').Replace('\r', ' ');
             w.WriteLine($"{d.Severity}\t{d.Id}\t{span.Path}\t{span.StartLinePosition.Line + 1}\t{span.StartLinePosition.Character + 1}\t{msg}");
         }
