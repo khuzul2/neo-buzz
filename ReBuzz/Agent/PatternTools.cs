@@ -123,7 +123,7 @@ namespace ReBuzz.Agent
                                 placed++;
                             }
                         var notes = SongModel.Notes(p);
-                        if (notes.Count > 0) AgentActions.ReplaceNotes(core, p, notes, Array.Empty<NoteEvent>());
+                        if (notes.Count > 0) AgentActions.ReplaceNotes(core, p, notes, System.Array.Empty<NoteEvent>());
                         string name = p.Name;
                         AgentActions.Do(core, new DeletePatternAction(p));
                         return new JsonObject { ["machine"] = m.Name, ["deleted"] = name, ["was_placed"] = placed, ["notes"] = notes.Count };
@@ -183,7 +183,7 @@ namespace ReBuzz.Agent
                         var notes = SongModel.Notes(p);
                         AgentActions.Do(core, new CreatePatternAction(m, name, p.Length));
                         var copy = m.Patterns.FirstOrDefault(x => x.Name == name) ?? throw new ToolError($"ReBuzz didn't create \"{name}\".");
-                        if (notes.Count > 0) AgentActions.ReplaceNotes(core, copy, Array.Empty<NoteEvent>(), notes);
+                        if (notes.Count > 0) AgentActions.ReplaceNotes(core, copy, System.Array.Empty<NoteEvent>(), notes);
                         return new JsonObject { ["machine"] = m.Name, ["from"] = p.Name, ["pattern"] = PatternJson(core, copy) };
                     }, c.Cancellation);
                     return ToolResult.Ok($"Copied {r["machine"]}'s \"{r["from"]}\" to \"{r["pattern"]!["name"]}\" ({r["pattern"]!["notes"]} notes).", r);
