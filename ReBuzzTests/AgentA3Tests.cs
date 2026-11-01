@@ -101,7 +101,8 @@ namespace ReBuzzTests
             Assert.That(Ok(rig, "session_get")["scenes"]!.AsArray()[1]!["name"], Is.Null, "undo takes the scene's name back");
             Ok(rig, "undo");
             var undone = Ok(rig, "session_get")["tracks"]!.AsArray().Single(t => t!["machine"]!.GetValue<string>() == "Lead")!;
-            Assert.That(undone["slots"]!.AsArray().Count(s => s != null), Is.EqualTo(1), "undo empties the slot again");
+            // (The grid filled itself from the song's patterns when first used, so the slot stays; its launch settings go.)
+            Assert.That(undone["clip_settings"], Is.Null, "undo takes the clip's launch settings back");
 
             // A render becomes a sample.
             Ok(rig, "notes_write", new JsonObject { ["machine"] = "Lead", ["pattern"] = "A", ["notes"] = new JsonArray(new JsonObject { ["pitch"] = 64, ["start"] = 0, ["length"] = 2 }) });
