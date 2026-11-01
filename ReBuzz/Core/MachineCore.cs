@@ -716,7 +716,7 @@ namespace ReBuzz.Core
                 ParameterWindowVM pWindowVM = new ParameterWindowVM();
                 pWindowVM.Machine = this;
 
-                parameterWindow = Utils.GetUserControlXAML<ParameterWindow>("ParameterWindow.xaml", buzzPath);
+                parameterWindow = UiUtils.GetUserControlXAML<ParameterWindow>("ParameterWindow.xaml", buzzPath);
                 Window window = (Window)HwndSource.FromHwnd(graph.Buzz.MachineViewHWND).RootVisual;
                 parameterWindow.Owner = window;
 
@@ -786,7 +786,7 @@ namespace ReBuzz.Core
                 {
                     if (DLL.GUIFactoryDecl.UseThemeStyles)
                     {
-                        var r = Utils.GetUserControlXAML<Window>("ParameterWindow.xaml", buzzPath);
+                        var r = UiUtils.GetUserControlXAML<Window>("ParameterWindow.xaml", buzzPath);
                         machineGUIWindow.Resources.MergedDictionaries.Add(r.Resources);
                     }
                 };
@@ -844,7 +844,7 @@ namespace ReBuzz.Core
                 }
                 catch (Exception ex)
                 {
-                    Utils.MessageBox(ex.ToString());
+                    UiUtils.MessageBox(ex.ToString());
                 }
             }
 
@@ -863,7 +863,7 @@ namespace ReBuzz.Core
             }
             catch (Exception ex)
             {
-                Utils.MessageBox(ex.ToString());
+                UiUtils.MessageBox(ex.ToString());
             }
         }
 

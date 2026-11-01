@@ -1,10 +1,8 @@
 ﻿using BuzzGUI.Common.Actions;
-using BuzzGUI.Common.Templates;
 using BuzzGUI.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Media;
 
 namespace ReBuzz.Core.Actions.GraphActions
 {

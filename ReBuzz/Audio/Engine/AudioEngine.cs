@@ -236,7 +236,7 @@ namespace ReBuzz.Audio.Engine
                 asio.ShowControlPanel();
             };
 
-            var rd = Utils.GetUserControlXAML<ResourceDictionary>(
+            var rd = UiUtils.GetUserControlXAML<ResourceDictionary>(
                 "MachineView\\MVResources.xaml",
                 buzzPath);
 
@@ -259,7 +259,7 @@ namespace ReBuzz.Audio.Engine
 
             wasapiConfigWindow = new WasapiConfigWindow(registryEx);
 
-            var rd = Utils.GetUserControlXAML<ResourceDictionary>(
+            var rd = UiUtils.GetUserControlXAML<ResourceDictionary>(
                 "MachineView\\MVResources.xaml",
                 buzzPath);
 

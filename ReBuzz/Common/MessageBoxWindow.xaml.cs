@@ -78,7 +78,7 @@ namespace BespokeFusion
                 }
                 msg.BtnOk.Focus();
 
-                var md = Utils.GetUserControlXAML<ResourceDictionary>("MainWindow.xaml", Global.BuzzPath);
+                var md = UiUtils.GetUserControlXAML<ResourceDictionary>("MainWindow.xaml", Global.BuzzPath);
                 if (md != null)
                 {
                     msg.Resources.MergedDictionaries.Add(md);
@@ -105,7 +105,7 @@ namespace BespokeFusion
                 msg.BtnOk.Focus();
                 msg.BtnCancel.Visibility = Visibility.Collapsed;
 
-                var md = Utils.GetUserControlXAML<ResourceDictionary>("MainWindow.xaml", Global.BuzzPath);
+                var md = UiUtils.GetUserControlXAML<ResourceDictionary>("MainWindow.xaml", Global.BuzzPath);
                 if (md != null)
                 {
                     msg.Resources.MergedDictionaries.Add(md);
