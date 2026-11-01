@@ -42,9 +42,12 @@ namespace ReBuzzTests
                 foreach (var g in gear)
                 {
                     // The manifest goes beside the DLL, as the build puts it.
-                    string manifest = Path.Combine(Path.GetDirectoryName(g.BuiltPath)!, g.Name + ".machine.json");
                     string dll = Driver.Core.MachineDLLs[g.Name].Path;
-                    if (File.Exists(manifest)) File.Copy(manifest, Path.Combine(Path.GetDirectoryName(dll)!, g.Name + ".machine.json"), overwrite: true);
+                    foreach (var sidecar in new[] { g.Name + ".machine.json", g.Name + ".prs.xml" })
+                    {
+                        string from = Path.Combine(Path.GetDirectoryName(g.BuiltPath)!, sidecar);
+                        if (File.Exists(from)) File.Copy(from, Path.Combine(Path.GetDirectoryName(dll)!, sidecar), overwrite: true);
+                    }
                 }
                 Host = new AgentHost(Driver.Core, Driver.Dispatcher, "headless", LogDir);
                 Send(new JsonObject
