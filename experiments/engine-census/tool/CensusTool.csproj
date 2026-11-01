@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Experiment helper (docs/specs/engine-split.md). csc stops after declaration errors, so a plain
+    "dotnet build" of EngineCensus.csproj hides every error inside method bodies. This tool compiles
+    the same file list with Roslyn's API and prints ALL diagnostics (declaration and method body),
+    plus CA1416 (Windows-only API reached from portable code).
+
+    Roslyn and the .NET analyzers come from the installed SDK, not NuGet (NuGet may be blocked).
+    Run it through census.py, which passes the file list and references.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <SdkRoslynDir Condition="'$(SdkRoslynDir)' == ''">$(NetCoreRoot)sdk/$(NETCoreSdkVersion)/Roslyn/bincore/</SdkRoslynDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="Microsoft.CodeAnalysis">
+      <HintPath>$(SdkRoslynDir)Microsoft.CodeAnalysis.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.CSharp">
+      <HintPath>$(SdkRoslynDir)Microsoft.CodeAnalysis.CSharp.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
