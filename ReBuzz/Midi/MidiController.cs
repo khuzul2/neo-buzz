@@ -1,5 +1,4 @@
 ﻿using BuzzGUI.Common;
-using Sanford.Multimedia.Midi;
 using System.ComponentModel;
 
 namespace ReBuzz.Midi
