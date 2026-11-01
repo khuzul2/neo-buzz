@@ -83,6 +83,29 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void TheoryWritesAProgressionAndTransformsReshapeIt()
+        {
+            using var rig = new Rig(NeoMachineTests.Poly);
+            Ok(rig, "machine_add", new JsonObject { ["gear"] = "Neo Poly", ["name"] = "Keys" });
+            Ok(rig, "pattern_create", new JsonObject { ["machine"] = "Keys", ["name"] = "Chords", ["length_beats"] = 16 });
+            var prog = Ok(rig, "theory", new JsonObject { ["op"] = "progression", ["progression"] = "i-VI-III-VII", ["key"] = "A minor", ["beats_per_chord"] = 4 });
+            var notes = prog["notes"]!.AsArray();
+            Assert.That(notes.Count, Is.GreaterThanOrEqualTo(12), "four chords of three notes or more");
+            Ok(rig, "notes_write", new JsonObject { ["machine"] = "Keys", ["pattern"] = "Chords", ["notes"] = notes.DeepClone() });
+            var before = Ok(rig, "notes_read", new JsonObject { ["machine"] = "Keys", ["pattern"] = "Chords" })["notes"]!.AsArray();
+            Ok(rig, "notes_transform", new JsonObject
+            {
+                ["machine"] = "Keys", ["pattern"] = "Chords",
+                ["transforms"] = new JsonArray(new JsonObject { ["op"] = "transpose", ["semitones"] = 12 }),
+            });
+            var after = Ok(rig, "notes_read", new JsonObject { ["machine"] = "Keys", ["pattern"] = "Chords" })["notes"]!.AsArray();
+            Assert.That(after.Select(n => n!["pitch"]!.GetValue<int>()), Is.EqualTo(before.Select(n => n!["pitch"]!.GetValue<int>() + 12)));
+            Ok(rig, "undo");
+            var undone = Ok(rig, "notes_read", new JsonObject { ["machine"] = "Keys", ["pattern"] = "Chords" })["notes"]!.AsArray();
+            Assert.That(undone.Select(n => n!["pitch"]!.GetValue<int>()), Is.EqualTo(before.Select(n => n!["pitch"]!.GetValue<int>())));
+        }
+
+        [Test]
         public void SessionGridAndRendersAsSamples()
         {
             using var rig = new Rig(NeoMachineTests.Poly);

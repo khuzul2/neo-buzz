@@ -61,6 +61,25 @@ namespace ReBuzz.Agent
         {
             var core = host.Core;
 
+            // theory (pure) and notes_transform, whose engine is pure and whose notes live in the pattern.
+            Model.CompositionTools.Register(tools, async c =>
+            {
+                var r = await host.Engine("notes_transform", true, _ =>
+                {
+                    var m = SongModel.Machine(core, c.RequiredString("machine"));
+                    var p = SongModel.Pattern(m, c.RequiredString("pattern"));
+                    int tpb = SongModel.Tpb(core);
+                    var before = SongModel.Notes(p);
+                    var outcome = NotesTransform.Run(c.Arguments, before, tpb, p.Length, SongModel.BeatsPerBar(core));
+                    var removed = before.Except(outcome.Notes).ToList();
+                    var added = outcome.Notes.Except(before).ToList();
+                    if (removed.Count > 0 || added.Count > 0) AgentActions.ReplaceNotes(core, p, removed, added);
+                    outcome.Problems.AddRange(NoteList.Clashes(outcome.Notes.OrderBy(n => n.Time).ToList(), tpb));
+                    return (Machine: m.Name, Pattern: p.Name, Outcome: outcome, Tpb: tpb);
+                }, c.Cancellation);
+                return NotesTransform.Result(r.Machine, r.Pattern, r.Outcome, r.Tpb);
+            });
+
             tools.Add(new ToolDef
             {
                 Name = "arrangement_markers",
