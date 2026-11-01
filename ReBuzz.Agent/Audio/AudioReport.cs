@@ -38,7 +38,8 @@ namespace ReBuzz.Agent.Audio
             var reads = new JsonArray();
             bool silent = double.IsNegativeInfinity(r.SamplePeakDb) || r.SamplePeakDb < -90;
             var result = new JsonObject { ["seconds"] = Math.Round(audio.Seconds, 3), ["silent"] = silent };
-            if (silent) reads.Add("Silent: nothing above -90 dBFS. Check that notes are placed in the arrangement and the machine is connected to Master.");
+            if (silent) reads.Add("Silent: nothing above -90 dBFS. Check that the patterns are placed in the range (arrangement_get), have notes (notes_read), " +
+                                  "and that their machines reach Master (machine_list). Some older native machines don't play MIDI notes.");
             if (metrics.Contains("loudness"))
             {
                 result["loudness"] = new JsonObject

@@ -172,9 +172,9 @@ namespace ReBuzz.Agent
                             foreach (var o in outs)
                             {
                                 var dst = o.Destination;
-                                int oAmp = o.Amp, oPan = o.Pan;
+                                int oAmp = o.Amp, oPan = o.Pan, oChannel = o.DestinationChannel;
                                 core.SongCore.DisconnectMachines(o);
-                                core.SongCore.ConnectMachines(made, dst, new[] { 0 }, new[] { 0 }, oAmp, oPan);
+                                core.SongCore.ConnectMachines(made, dst, new[] { 0 }, new[] { oChannel }, oAmp, oPan);
                             }
                             core.SongCore.ConnectMachines(after, made, new[] { 0 }, new[] { 0 }, amp, Levels.PanCenter);
                         }
@@ -255,7 +255,8 @@ namespace ReBuzz.Agent
                 Title = "Rename, mute, solo, bypass",
                 Description =
                     "Changes a machine's name, mute, solo, bypass (effects pass the sound through untouched) or track count. One undo step. " +
-                    "Mute and solo change the song; to hear parts alone without changing it, use render(solo=[…]). " +
+                    "Mute and solo change the song (ReBuzz's solo: soloing an effect silences the generators). To hear parts alone without " +
+                    "changing the song, use render(solo=[…]). " +
                     "Example: machine_set(machine=\"Pad\", rename=\"Strings\", mute=false).",
                 Input = Object(null,
                     Req("machine", String("The machine")),

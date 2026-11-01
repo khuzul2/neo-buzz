@@ -93,6 +93,14 @@ namespace ReBuzz.Agent.Model
                 _ => throw new FormatException($"Unknown parameter kind \"{kind}\"."),
             };
             var choices = (p["choices"] as JsonArray)?.Select(c => (string)c ?? "").ToList();
+            double a = (double?)p["a"] ?? 0, b = (double?)p["b"] ?? (mappingKind == MappingKind.Int ? 0 : 1);
+            string unit = (string)p["unit"] ?? "";
+            // Values in ms or kHz are kept in the base unit (s, Hz), as the agent's input is converted.
+            if (mappingKind is MappingKind.Linear or MappingKind.Exp or MappingKind.Power)
+            {
+                if (unit == "ms") { a /= 1000; b /= 1000; unit = "s"; }
+                else if (unit == "kHz") { a *= 1000; b *= 1000; unit = "Hz"; }
+            }
             return new ManifestParameter
             {
                 Index = (int?)p["index"] ?? 0,
@@ -106,11 +114,11 @@ namespace ReBuzz.Agent.Model
                 Mapping = new ParamMapping
                 {
                     Kind = mappingKind,
-                    A = (double?)p["a"] ?? 0,
-                    B = (double?)p["b"] ?? (mappingKind == MappingKind.Int ? 0 : 1),
+                    A = a,
+                    B = b,
                     Exponent = (double?)p["exponent"] ?? 1,
                     Flag = (bool?)p["flag"] ?? false,
-                    Unit = (string)p["unit"] ?? "",
+                    Unit = unit,
                     Names = mappingKind == MappingKind.Switch && choices == null ? new[] { "Off", "On" } : choices,
                 },
             };

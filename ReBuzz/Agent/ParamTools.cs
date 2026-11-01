@@ -66,7 +66,8 @@ namespace ReBuzz.Agent
                         o["parameters"] = new JsonArray(shown.Select(p => (JsonNode)Describe(m, p)).ToArray());
                         if (all.Any(p => p.IsTrack)) o["tracks"] = m.TrackCount;
                         if (m.ParameterGroups.Count > 2 && m.ParameterGroups[2].Parameters.Any(p => p.Type == BuzzGUI.Interfaces.ParameterType.Note))
-                            o["notes"] = "Plays notes: write them with notes_write.";
+                            o["notes"] = "Plays notes: notes_write puts them in patterns, and ReBuzz sends them to it as MIDI. Neo machines and most " +
+                                         "managed machines play MIDI; some older native machines ignore it (render and check).";
                         return o;
                     }, c.Cancellation);
                     var ps = r["parameters"]!.AsArray();
@@ -98,7 +99,7 @@ namespace ReBuzz.Agent
                     Req("param", String("Name")),
                     Req("value", String("As the machine shows it now")),
                     Req("was", String("Before"))), "Each change"))),
-                Annotations = ToolAnnotations.WriteIdempotent,
+                Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
                     var changes = c.List("changes")!;
@@ -190,6 +191,7 @@ namespace ReBuzz.Agent
         static JsonObject Describe(MachineCore m, AgentParam p)
         {
             var o = new JsonObject { ["name"] = p.Name };
+            if (!p.IsTrack) o["index"] = p.Parameter.IndexInGroup;
             if (p.Info.Group.Length > 0) o["group"] = p.Info.Group;
             if (p.IsTrack)
             {

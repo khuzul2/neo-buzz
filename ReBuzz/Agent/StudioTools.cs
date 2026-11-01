@@ -56,6 +56,7 @@ namespace ReBuzz.Agent
                     var stack = core.SongCore.ActionStack;
                     if (!stack.CanUndo) throw new ToolError("Nothing to undo: the song has no changes on its undo stack (opening or creating a song clears it).");
                     stack.Undo();
+                    if (host.FailedCallOnRedo) host.UndosSinceFailedCall++;
                     core.SetModifiedFlag();
                     return ToolResult.Ok("Undone. " + (stack.CanUndo ? "More steps can be undone." : "Nothing more to undo."),
                         new JsonObject { ["can_undo"] = stack.CanUndo, ["can_redo"] = stack.CanRedo });
@@ -72,8 +73,10 @@ namespace ReBuzz.Agent
                 Handler = async c => await host.Engine("redo", false, _ =>
                 {
                     var stack = core.SongCore.ActionStack;
-                    if (!stack.CanRedo) throw new ToolError("Nothing to redo: nothing was undone since the last change.");
+                    if (!stack.CanRedo || (host.FailedCallOnRedo && host.UndosSinceFailedCall == 0))
+                        throw new ToolError("Nothing to redo: nothing was undone since the last change.");
                     stack.Redo();
+                    if (host.FailedCallOnRedo) host.UndosSinceFailedCall--;
                     core.SetModifiedFlag();
                     return ToolResult.Ok("Redone.", new JsonObject { ["can_undo"] = stack.CanUndo, ["can_redo"] = stack.CanRedo });
                 }, c.Cancellation),
@@ -212,7 +215,13 @@ namespace ReBuzz.Agent
                         void Marker(BuzzGUI.Interfaces.SongMarkers marker, int ticks) =>
                             AgentActions.Do(core, new BuzzGUI.Common.Actions.SongActions.SetMarkerAction(song, marker, ticks));
                         if (c.Number("song_end_beats") is double end) Marker(BuzzGUI.Interfaces.SongMarkers.SongEnd, Math.Max(1, Ticks(end)));
-                        if (le is double loopEnd) Marker(BuzzGUI.Interfaces.SongMarkers.LoopEnd, Math.Max(1, Ticks(loopEnd)));
+                        if (le is double loopEnd)
+                        {
+                            int t = Math.Max(1, Ticks(loopEnd));
+                            // The loop end pushes the song end out with it; as its own step, so undo brings it back.
+                            if (song.SongEnd < t) Marker(BuzzGUI.Interfaces.SongMarkers.SongEnd, t);
+                            Marker(BuzzGUI.Interfaces.SongMarkers.LoopEnd, t);
+                        }
                         if (ls is double loopStart) Marker(BuzzGUI.Interfaces.SongMarkers.LoopStart, Math.Min(Ticks(loopStart), song.LoopEnd - 1));
                         core.SetModifiedFlag();
                         return Status(host);
@@ -262,7 +271,8 @@ namespace ReBuzz.Agent
             var song = core.SongCore;
             int tpb = core.TPB;
             var stack = song.ActionStack;
-            var undo = new JsonObject { ["can_undo"] = stack.CanUndo, ["can_redo"] = stack.CanRedo };
+            bool canRedo = stack.CanRedo && !(host.FailedCallOnRedo && host.UndosSinceFailedCall == 0);
+            var undo = new JsonObject { ["can_undo"] = stack.CanUndo, ["can_redo"] = canRedo };
             if (stack.CanUndo && host.LastAgentUndo != null && stack.Actions.Count() == host.ActionsAfterLastAgentCall)
                 undo["next_undo"] = host.LastAgentUndo;
             var songObject = new JsonObject { ["unsaved_changes"] = core.Modified };

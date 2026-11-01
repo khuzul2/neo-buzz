@@ -45,6 +45,9 @@ namespace ReBuzz.Agent
             var stdin = Console.OpenStandardInput();
             Console.SetOut(Console.Error);   // stdout carries the protocol only
             NonModal.CaptureAlways(m => Console.Error.WriteLine("[ReBuzz] " + m.Replace('\n', ' ')));
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            void Step(string what) => Console.Error.WriteLine($"[ReBuzz] {clock.Elapsed.TotalSeconds:F1} s: {what}");
+            Step("starting headless");
 
             var engineSettings = Global.EngineSettings;
             var dispatcher = new WindowsGuiDispatcher();
@@ -66,14 +69,20 @@ namespace ReBuzz.Agent
                 new UserMessagesViaMessageBox(),
                 keyboard);
             var init = new ReBuzzCoreInitialization(core, buzzPath, dispatcher, registry, keyboard, engineSettings);
+            Step("engine step 1");
             init.StartReBuzzEngineStep1((s, e) => { });
             // Native machines want a parent window: a message-only window, never shown.
             var hidden = new HwndSource(new HwndSourceParameters("ReBuzz agent") { ParentWindow = new IntPtr(-3), WindowStyle = 0, Width = 0, Height = 0 });
+            Step("engine step 2");
             init.StartReBuzzEngineStep2(hidden.Handle);
+            Step("engine step 3 (gear scan)");
             init.StartReBuzzEngineStep3(engineSettings, new Observer());
             var machineDb = new MachineDatabase(core, buzzPath, dispatcher, engineSettings);
+            Step("engine step 4 (machine database)");
             init.StartReBuzzEngineStep4(machineDb, s => { }, () => { }, () => { }, s => { }, c => { }, b => { }, t => { });
+            Step("engine step 5");
             init.StartReBuzzEngineStep5(f => { });
+            Step("engine step 6");
             init.StartReBuzzEngineStep6(openAudioDevice: false);
             core.SongCore.SongEnd = 16;
             core.SongCore.LoopEnd = 16;

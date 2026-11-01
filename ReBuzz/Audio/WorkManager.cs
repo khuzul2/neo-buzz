@@ -631,6 +631,32 @@ namespace ReBuzz.Audio
                 return;
             }
 
+            int windowTicks = BlockLength(ReBuzzCore.masterInfo, sampleCount);
+
+            // Send note offs. Iterate in reverse: RemoveAt(i) in a forward loop
+            // shifts the next element into slot i and skips it this pass, delaying
+            // a due note-off by a chunk or more.
+            // Fork (docs/specs/mcp-server.md A1): note-offs due in this block go out before its
+            // note-ons, as note-ons go out at the block's start. Upstream sent them a block late
+            // and after the note-ons, so a note ending where the next note of the same pitch
+            // starts (repeated bass notes, a loop wrap) cut the new note off after ~6 ms.
+            for (int i = playingEvents.Count - 1; i >= 0; i--)
+            {
+                var pes = playingEvents[i];
+                var pe = pes.Pe;
+                var machine = pes.Machine;
+
+                // Fork: also release notes whose pattern stopped (clip stopped or switched, span
+                // ended) or jumped back before the note started (loop wrap, relaunch). Upstream
+                // only released notes the play position had passed, so those hung.
+                int pos = pes.Pattern.PlayPosition;
+                if (pos == int.MinValue || pe.Time > pos + windowTicks || pe.Time + pe.Duration < pos + windowTicks)
+                {
+                    buzzCore.MachineManager.SendMIDINote(machine, pes.Channel, pes.MidiNote, 0);
+                    playingEvents.RemoveAt(i);
+                }
+            }
+
             if (buzzCore.SoloPattern != null)
             {
                 PlayPatternColumnEvents(buzzCore.SoloPattern, sampleCount);
@@ -643,28 +669,6 @@ namespace ReBuzz.Audio
                 for (int i = 0; i < activePatterns.Count; i++)
                 {
                     PlayPatternColumnEvents(activePatterns[i], sampleCount);
-                }
-            }
-
-            int windowTicks = BlockLength(ReBuzzCore.masterInfo, sampleCount);
-
-            // Send note offs. Iterate in reverse: RemoveAt(i) in a forward loop
-            // shifts the next element into slot i and skips it this pass, delaying
-            // a due note-off by a chunk or more.
-            for (int i = playingEvents.Count - 1; i >= 0; i--)
-            {
-                var pes = playingEvents[i];
-                var pe = pes.Pe;
-                var machine = pes.Machine;
-
-                // Fork: also release notes whose pattern stopped (clip stopped or switched, span
-                // ended) or jumped back before the note started (loop wrap, relaunch). Upstream
-                // only released notes the play position had passed, so those hung.
-                int pos = pes.Pattern.PlayPosition;
-                if (pos == int.MinValue || pe.Time > pos + windowTicks || pe.Time + pe.Duration < pos)
-                {
-                    buzzCore.MachineManager.SendMIDINote(machine, pes.Channel, pes.MidiNote, 0);
-                    playingEvents.RemoveAt(i);
                 }
             }
         }

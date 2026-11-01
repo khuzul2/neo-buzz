@@ -40,7 +40,42 @@ namespace ReBuzzTests
                 process.BeginErrorReadLine();
             }
 
-            public string Errors => string.Join("\n", stderr.TakeLast(40));
+            public string Errors => string.Join("\n", stderr.TakeLast(40)) + Windows();
+
+            /// <summary>The process's windows and their texts (a dialog nobody can answer shows up here).</summary>
+            string Windows()
+            {
+                var lines = new StringBuilder();
+                try
+                {
+                    uint pid = (uint)process.Id;
+                    EnumWindows((h, _) =>
+                    {
+                        GetWindowThreadProcessId(h, out uint owner);
+                        if (owner != pid || !IsWindowVisible(h)) return true;
+                        lines.Append("\nwindow: \"").Append(Text(h)).Append('"');
+                        EnumChildWindows(h, (c, __) => { string t = Text(c); if (t.Length > 0) lines.Append(" | ").Append(t); return true; }, IntPtr.Zero);
+                        return true;
+                    }, IntPtr.Zero);
+                }
+                catch (Exception e) { lines.Append("\n(windows: ").Append(e.Message).Append(')'); }
+                return lines.Length == 0 ? "\n(no visible windows)" : lines.ToString();
+            }
+
+            static string Text(IntPtr h)
+            {
+                var sb = new StringBuilder(512);
+                GetWindowText(h, sb, sb.Capacity);
+                return sb.ToString();
+            }
+
+            delegate bool EnumProc(IntPtr hwnd, IntPtr param);
+            [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool EnumWindows(EnumProc proc, IntPtr param);
+            [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool EnumChildWindows(IntPtr parent, EnumProc proc, IntPtr param);
+            [System.Runtime.InteropServices.DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
+            [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr hwnd);
+            [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+            static extern int GetWindowText(IntPtr hwnd, StringBuilder text, int count);
 
             public void Send(JsonObject message)
             {

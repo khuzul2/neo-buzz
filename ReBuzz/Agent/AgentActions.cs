@@ -46,7 +46,8 @@ namespace ReBuzz.Agent
                 var machine = Find(core, name);
                 if (machine == null || group >= machine.ParameterGroups.Count) return;
                 var ps = machine.ParameterGroups[group].Parameters;
-                if (index < ps.Count) ps[index].SetValue(track, v);
+                // Not recorded into patterns or session automation while the user records.
+                if (index < ps.Count) ps[index].SetValue(track | (1 << 16), v);
             }
             Do(core, new DelegateAction(() => Set(value), () => Set(old)));
         }
@@ -105,6 +106,58 @@ namespace ReBuzz.Agent
         }
 
         static PatternEvent ToEvent(NoteEvent n) => new PatternEvent(n.Time, n.Value, n.Duration);
+
+        /// <summary>Deletes a pattern; undo makes it again with its engine columns (notes, automation).</summary>
+        public static void DeletePattern(ReBuzzCore core, IPattern pattern)
+        {
+            string machine = pattern.Machine.Name, name = pattern.Name;
+            int length = pattern.Length;
+            EngineColumns data = null;
+            IPattern deleted = null;
+            void Delete()
+            {
+                var m = Find(core, machine);
+                var p = m?.Patterns.FirstOrDefault(x => x.Name == name);
+                if (p == null) return;
+                data = EngineColumns.Capture(p);
+                deleted = p;
+                m.DeletePattern(p);
+            }
+            void Restore()
+            {
+                var m = Find(core, machine);
+                if (m == null || data == null || m.Patterns.Any(x => x.Name == name)) return;
+                m.CreatePattern(name, length);
+                var again = m.Patterns.FirstOrDefault(x => x.Name == name);
+                if (again == null) return;
+                data.RestoreInto(again, core.SongCore.Machines);
+                BuzzGUI.Common.Actions.Restorations.Report(deleted, again);
+            }
+            Do(core, new DelegateAction(Delete, Restore));
+        }
+
+        /// <summary>Copies a pattern: the pattern editor's data (when it has an editor) and the engine columns.</summary>
+        public static void DuplicatePattern(ReBuzzCore core, IPattern source, string copyName)
+        {
+            string machine = source.Machine.Name, from = source.Name;
+            void Copy()
+            {
+                var m = Find(core, machine);
+                var src = m?.Patterns.FirstOrDefault(x => x.Name == from);
+                if (src == null || m.Patterns.Any(x => x.Name == copyName)) return;
+                if (m.EditorMachine != null) m.ClonePattern(copyName, src);
+                else m.CreatePattern(copyName, src.Length);
+                var copy = m.Patterns.FirstOrDefault(x => x.Name == copyName);
+                if (copy != null) EngineColumns.Copy(src, copy, core.SongCore.Machines);
+            }
+            void Remove()
+            {
+                var m = Find(core, machine);
+                var copy = m?.Patterns.FirstOrDefault(x => x.Name == copyName);
+                if (copy != null) m.DeletePattern(copy);
+            }
+            Do(core, new DelegateAction(Copy, Remove));
+        }
 
         public static void RenamePattern(ReBuzzCore core, IPattern pattern, string newName)
         {

@@ -182,15 +182,16 @@ namespace ReBuzz.Agent
             if (string.IsNullOrWhiteSpace(name)) throw new ToolError("param: give a parameter's name (machine_describe lists them).");
             if (name.StartsWith("#") && int.TryParse(name.Substring(1), out int index))
             {
-                var byIndex = all.Where(p => p.Group == 1).ElementAtOrDefault(index);
+                var byIndex = all.FirstOrDefault(p => p.Group == 1 && p.Parameter.IndexInGroup == index);
                 if (byIndex != null) return byIndex;
-                throw new ToolError($"{m.Name} has no global parameter #{index} (it has {all.Count(p => p.Group == 1)}).");
+                throw new ToolError($"{m.Name} has no global parameter #{index}. machine_describe lists each parameter's index.");
             }
             var found = all.Where(p => p.Name == name).ToList();
             if (found.Count == 0) found = all.Where(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
             if (found.Count == 1) return found[0];
             if (found.Count > 1)
-                throw new ToolError($"{m.Name} has {found.Count} parameters named \"{name}\"; address one as #index (machine_describe shows the indices).");
+                throw new ToolError($"{m.Name} has {found.Count} parameters named \"{name}\": " +
+                                    string.Join(", ", found.Select(p => p.IsTrack ? "a track parameter" : $"#{p.Parameter.IndexInGroup}")) + ". Address one by its #index.");
             var near = Text.Closest(name, all.Select(p => p.Name));
             throw new ToolError($"Unknown parameter \"{name}\" on \"{m.Name}\" ({m.DLL?.Name})." + (near.Count > 0 ? $" Did you mean \"{near[0]}\"?" : "") +
                                 $" Call machine_describe(machine=\"{m.Name}\") for the list.");

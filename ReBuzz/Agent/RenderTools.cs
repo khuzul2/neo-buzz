@@ -39,8 +39,9 @@ namespace ReBuzz.Agent
                 Description =
                     "Plays part of the song faster than real time into a WAV file and measures it (loudness, true peak, clipping). Range: from/to " +
                     "in beats or \"bar.beat\" (default the whole song), or range=\"loop\". tail_seconds lets reverbs and releases ring out after " +
-                    "the end (default 2). solo and mute hear parts without changing the song. Returns a render id for analyze, the file and the " +
-                    "measurements. Changes nothing in the song. Example: render(from=0, to=32, solo=[\"Bass\", \"Drums\"]).",
+                    "the end (default 2). solo and mute hear parts without changing the song (solo keeps what feeds a soloed effect). Follows the " +
+                    "song's tempo changes. Returns a render id for analyze, the file and the measurements. Changes nothing in the song, but stops " +
+                    "playback if it's running; in studio mode ReBuzz pauses while it renders. Example: render(from=0, to=32, solo=[\"Bass\", \"Drums\"]).",
                 Input = Object(null,
                     Opt("from", AnyOf("Start", Number("Beats", 0), String("\"bar.beat\""))),
                     Opt("to", AnyOf("End (exclusive)", Number("Beats", 0), String("\"bar.beat\""))),
@@ -87,7 +88,7 @@ namespace ReBuzz.Agent
                         string id = "r" + n.ToString(CultureInfo.InvariantCulture);
                         string folder = Path.Combine(Path.GetDirectoryName(host.Log.FilePath) ?? Path.GetTempPath(), "renders");
                         string file = Path.Combine(folder, $"{Path.GetFileNameWithoutExtension(host.Log.FilePath)}-{id}{SafeLabel(label)}.wav");
-                        var audio = Render(core, from, to, tail, solo, mute, c, warnings);
+                        var audio = Render(host, from, to, tail, solo, mute, c, warnings);
                         var interleaved = new float[audio.Frames * 2];
                         for (int i = 0; i < audio.Frames; i++)
                         {
@@ -169,26 +170,35 @@ namespace ReBuzz.Agent
             return "-" + new string(chars);
         }
 
-        /// <summary>Renders [from, to) ticks plus a tail on the engine thread; puts the song back as it was.</summary>
-        static StereoAudio Render(ReBuzzCore core, int from, int to, double tailSeconds, HashSet<MachineCore> solo, HashSet<MachineCore> mute,
+        /// <summary>
+        /// Renders [from, to) ticks plus a tail on the engine thread, and puts the song back as it
+        /// was. Playback ends where the song's own playback would (tempo changes included): the
+        /// loop is set to the range with looping off, so the engine stops at its end.
+        /// </summary>
+        static StereoAudio Render(AgentHost host, int from, int to, double tailSeconds, HashSet<MachineCore> solo, HashSet<MachineCore> mute,
             ToolContext c, List<string> warnings)
         {
+            var core = host.Core;
             var song = core.SongCore;
             var info = ReBuzzCore.masterInfo;
             int rate = info.SamplesPerSec;
             double samplesPerTick = 60.0 * rate / (core.BPM * (double)Math.Max(1, core.TPB));
-            long playFrames = (long)Math.Round((to - from) * samplesPerTick);
+            long expected = (long)Math.Round((to - from) * samplesPerTick);
             long tailFrames = (long)Math.Round(tailSeconds * rate);
-            if ((playFrames + tailFrames) / (double)rate > MaxSeconds)
-                throw new ToolError($"That's {Math.Round((playFrames + tailFrames) / (double)rate)} s; renders are limited to {MaxSeconds} s. Render a part (from/to).");
-            var left = new float[playFrames + tailFrames];
-            var right = new float[playFrames + tailFrames];
+            long cap = (long)(MaxSeconds * rate);
+            if (expected + tailFrames > cap)
+                throw new ToolError($"That's about {Math.Round((expected + tailFrames) / (double)rate)} s; renders are limited to {MaxSeconds} s. Render a part (from/to).");
+            var left = new List<float>((int)Math.Min(cap, expected + tailFrames + rate));
+            var right = new List<float>(left.Capacity);
 
             // What to put back.
             bool wasPlaying = core.Playing, wasLooping = core.Looping, wasModified = core.Modified;
+            bool metronome = core.SessionCore.MetronomeOn;
+            int bpm = core.BPM, tpb = core.TPB;
             int loopStart = song.LoopStart, loopEnd = song.LoopEnd, songEnd = song.SongEnd, position = song.PlayPosition;
             var machines = SongModel.Machines(core).Where(m => !SongModel.IsMaster(m)).ToList();
             var mutedBefore = machines.ToDictionary(m => m, m => m.IsMuted);
+            var soloedBefore = machines.Where(m => m.IsSoloed).ToList();
             if (wasPlaying) warnings.Add("Playback was running; the render stopped it.");
 
             lock (ReBuzzCore.AudioLock)
@@ -196,6 +206,8 @@ namespace ReBuzz.Agent
                 try
                 {
                     core.Playing = false;
+                    core.SessionCore.MetronomeOn = false;
+                    foreach (var m in soloedBefore) m.IsSoloed = false;
                     foreach (var m in machines.Where(m => Silenced(m, solo, mute) && !m.IsMuted)) m.IsMuted = true;
                     core.Looping = false;
                     song.LoopStart = 0;
@@ -205,6 +217,12 @@ namespace ReBuzz.Agent
 
                     var wm = new WorkManager(core, new WorkThreadEngine(1), 0, core.EngineSettings);
                     var buffer = new float[512];
+                    // Tails of what played before (reverbs, delays) die away first, so renders compare.
+                    for (long quiet = 0, run = 0; run < 5L * rate && quiet < rate / 10; run += 256)
+                    {
+                        wm.MainAudioFillBuffer(buffer, 0, 512);
+                        quiet = buffer.All(x => Math.Abs(x) < 1e-5f) ? quiet + 256 : 0;
+                    }
                     // Playback starts at the end of the tick under way: run silently up to it.
                     core.Playing = true;
                     for (int guard = 0; !core.Playing && guard < 100000; guard++)
@@ -215,41 +233,64 @@ namespace ReBuzz.Agent
                     }
                     if (!core.Playing) throw new ToolError("Playback didn't start (is ReBuzz following an external clock?).");
 
-                    long done = 0, total = playFrames + tailFrames, nextReport = rate;
-                    while (done < total)
+                    void Take(int n)
                     {
-                        c.Cancellation.ThrowIfCancellationRequested();
-                        if (done >= playFrames && core.Playing) core.Playing = false;   // the tail rings out stopped
-                        long limit = done < playFrames ? playFrames : total;
-                        int n = (int)Math.Min(256, limit - done);
-                        wm.MainAudioFillBuffer(buffer, 0, n * 2);
                         for (int i = 0; i < n; i++)
                         {
-                            left[done + i] = buffer[2 * i];
-                            right[done + i] = buffer[2 * i + 1];
-                        }
-                        done += n;
-                        if (done >= nextReport)
-                        {
-                            c.Progress(done / (double)rate, total / (double)rate, "seconds rendered");
-                            nextReport += rate * 5L;
+                            left.Add(buffer[2 * i]);
+                            right.Add(buffer[2 * i + 1]);
                         }
                     }
+                    long nextReport = 5L * rate;
+                    int last = song.PlayPosition;
+                    // Until the engine stops at the range's end (or the position wraps, if something keeps it going).
+                    while (core.Playing && left.Count < cap)
+                    {
+                        c.Cancellation.ThrowIfCancellationRequested();
+                        wm.MainAudioFillBuffer(buffer, 0, 512);
+                        Take(256);
+                        int now = song.PlayPosition;
+                        if (now < last) break;
+                        last = now;
+                        if (left.Count >= nextReport)
+                        {
+                            c.Progress(left.Count / (double)rate, (expected + tailFrames) / (double)rate, "seconds rendered");
+                            nextReport += 5L * rate;
+                        }
+                    }
+                    core.Playing = false;   // the tail rings out stopped (note-offs go out in its first block)
+                    long tailEnd = left.Count + tailFrames;
+                    do
+                    {
+                        wm.MainAudioFillBuffer(buffer, 0, 512);
+                        Take((int)Math.Clamp(tailEnd - left.Count, 0, 256));
+                    }
+                    while (left.Count < tailEnd);
+                    if (Math.Abs(left.Count - tailFrames - expected) > rate / 20)
+                        warnings.Add($"The range played {Math.Round((left.Count - tailFrames) / (double)rate, 2)} s (tempo changes in the song).");
                 }
                 finally
                 {
                     core.Playing = false;
                     foreach (var m in machines) if (m.IsMuted != mutedBefore[m]) m.IsMuted = mutedBefore[m];
+                    foreach (var m in soloedBefore) m.IsSoloed = true;
+                    core.SessionCore.MetronomeOn = metronome;
                     core.Looping = wasLooping;
+                    if (core.TPB != tpb) core.TPB = tpb;
+                    if (core.BPM != bpm) core.BPM = bpm;
                     song.LoopStart = 0;
                     song.LoopEnd = loopEnd;
                     song.LoopStart = loopStart;
                     song.SongEnd = songEnd;
                     song.PlayPosition = position;
-                    if (!wasModified) core.Modified = false;
+                    if (!wasModified)
+                    {
+                        core.Modified = false;
+                        host.Dispatcher.BeginInvoke(() => core.Modified = false);   // after deferred updates
+                    }
                 }
             }
-            return new StereoAudio { Left = left, Right = right, Rate = rate };
+            return new StereoAudio { Left = left.ToArray(), Right = right.ToArray(), Rate = rate };
         }
 
         /// <summary>Whether a machine is kept quiet for a render's solo and mute lists.</summary>
@@ -257,6 +298,8 @@ namespace ReBuzz.Agent
         {
             if (mute != null && mute.Contains(m)) return true;
             if (solo == null || solo.Count == 0 || SongModel.Kind(m) != "generator") return false;
+            // Control machines (peer controllers, LFOs) shape what they control; they stay.
+            if (m.IsControlMachine || (m.DLL?.Info != null && (m.DLL.Info.Flags & MachineInfoFlags.CONTROL_MACHINE) != 0)) return false;
             if (solo.Contains(m)) return false;
             // A generator feeding a soloed effect (directly or through other effects) stays.
             var seen = new HashSet<IMachine>();

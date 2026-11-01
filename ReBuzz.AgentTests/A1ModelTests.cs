@@ -86,6 +86,37 @@ namespace ReBuzz.AgentTests
         }
 
         [Test]
+        public void ReviewedEdgesOfValuesInUnits()
+        {
+            // Milliseconds in a manifest are kept in seconds, as the agent's input is.
+            var verb = MachineManifest.Load(Path.Combine(RepoRoot(), "Machines", "NeoVerb", "Neo Verb" + MachineManifest.Suffix))!;
+            var pre = Info(verb.Find("Pre-delay")!);
+            int p20 = V.Resolve(pre, JsonValue.Create("20 ms"), pre.Default);
+            Assert.That(pre.Mapping.Value(p20, pre.Min, pre.Max), Is.EqualTo(0.020).Within(0.0005));
+            int p30 = V.Resolve(pre, JsonValue.Create("+10 ms"), p20, V.Mode.By);
+            Assert.That(pre.Mapping.Value(p30, pre.Min, pre.Max), Is.EqualTo(0.030).Within(0.0005));
+
+            // A finite dB never lands on the -inf end; a finite ratio never on ∞:1.
+            var poly = MachineManifest.Load(Path.Combine(RepoRoot(), "Machines", "NeoPoly", "Neo Poly" + MachineManifest.Suffix))!;
+            var volume = Info(poly.Find("Volume")!);
+            int quiet = V.Resolve(volume, JsonValue.Create("-40 dB"), volume.Default);
+            Assert.That(quiet, Is.EqualTo(volume.Min + 1));
+            var times = Assert.Throws<ToolError>(() => V.Resolve(volume, JsonValue.Create(2), volume.Default, V.Mode.Times));
+            Assert.That(times!.Message, Does.Contain("by \"+6 dB\""));
+            var fromInf = Assert.Throws<ToolError>(() => V.Resolve(volume, JsonValue.Create("+6 dB"), volume.Min, V.Mode.By));
+            Assert.That(fromInf!.Message, Does.Contain("set a value"));
+
+            // Machines without a manifest: their own texts.
+            string[] delays = { "Off", "1/16", "1/8", "1/4" };
+            var sync = new ParamInfo { Name = "Sync", Min = 0, Max = 3, Default = 0, Describe = r => delays[r] };
+            Assert.That(V.Resolve(sync, JsonValue.Create("1/8"), 0), Is.EqualTo(2), "a text starting with a digit is a choice");
+            var time = new ParamInfo { Name = "Decay", Min = 0, Max = 100, Default = 0, Describe = r => r == 0 ? "0 ms" : $"{r * 10} ms" };
+            Assert.That(V.Resolve(time, JsonValue.Create("5 ms"), 50), Is.EqualTo(1), "log search among positive values (10 ms is nearest, not 0)");
+            var mix = new ParamInfo { Name = "Mix", Min = 0, Max = 100, Default = 0, Describe = r => r == 0 ? "Off" : $"{r}%" };
+            Assert.That(V.Resolve(mix, JsonValue.Create("35%"), 0), Is.EqualTo(35), "the unit comes from the parameter, not its current text");
+        }
+
+        [Test]
         public void LevelsInDecibelsAndPan()
         {
             Assert.That(Levels.AmpToDb(Levels.UnityAmp), Is.EqualTo(0));

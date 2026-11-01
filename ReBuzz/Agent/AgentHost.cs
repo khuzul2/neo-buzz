@@ -83,6 +83,13 @@ namespace ReBuzz.Agent
         /// <summary>The last changing agent call ("Agent: song_set") and the undo stack's size right after it.</summary>
         internal string LastAgentUndo { get; private set; }
 
+        /// <summary>
+        /// A failed call's steps were taken back and sit next on the redo stack (the stack can't
+        /// drop them): redo refuses them until something else is done or undone.
+        /// </summary>
+        internal bool FailedCallOnRedo { get; set; }
+        internal int UndosSinceFailedCall { get; set; }
+
         /// <summary>This session's renders by id ("r1"…).</summary>
         internal ConcurrentDictionary<string, RenderInfo> Renders { get; } = new();
         internal int ActionsAfterLastAgentCall { get; private set; } = -1;
@@ -129,11 +136,16 @@ namespace ReBuzz.Agent
                         if (failed && steps > 0)
                         {
                             try { stack.Undo(); } catch (Exception) { }
+                            FailedCallOnRedo = true;
+                            UndosSinceFailedCall = 0;
                         }
                         else if (!failed && steps > 0)
                         {
                             LastAgentUndo = "Agent: " + what;
                             ActionsAfterLastAgentCall = stack.Actions.Count();
+                            FailedCallOnRedo = false;
+                            // Not every engine change marks the song (parameter sets, connection gains, notes).
+                            Core.SetModifiedFlag();
                         }
                     }
                 }

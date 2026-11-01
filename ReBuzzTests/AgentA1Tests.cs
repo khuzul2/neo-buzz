@@ -152,6 +152,32 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void RepeatedNotesOfOnePitchEachSoundTheirFullLength()
+        {
+            // Engine fix: a note-off due where the next note of the same pitch starts went out a
+            // block late, after the new note-on, and cut it to a few milliseconds.
+            using var rig = new Rig(NeoMachineTests.Poly);
+            Ok(rig, "song_set", new JsonObject { ["tempo_bpm"] = 120 });
+            Ok(rig, "machine_add", new JsonObject { ["gear"] = "Neo Poly", ["name"] = "Bass" });
+            Ok(rig, "pattern_create", new JsonObject { ["machine"] = "Bass", ["name"] = "Eighths", ["length_beats"] = 4 });
+            Ok(rig, "pattern_create", new JsonObject { ["machine"] = "Bass", ["name"] = "Held", ["length_beats"] = 4 });
+            Ok(rig, "notes_write", new JsonObject
+            {
+                ["machine"] = "Bass", ["pattern"] = "Eighths",
+                ["notes"] = Notes(Enumerable.Range(0, 8).Select(i => ((object)"A2", i * 0.5, 0.5)).ToArray()),
+            });
+            Ok(rig, "notes_write", new JsonObject { ["machine"] = "Bass", ["pattern"] = "Held", ["notes"] = Notes(("A2", 0, 4)) });
+            Ok(rig, "arrangement_place", new JsonObject { ["machine"] = "Bass", ["pattern"] = "Eighths", ["at"] = 0 });
+            Ok(rig, "arrangement_place", new JsonObject { ["machine"] = "Bass", ["pattern"] = "Held", ["at"] = 4 });
+            var r = Ok(rig, "render", new JsonObject { ["from"] = 0, ["to"] = 8, ["tail_seconds"] = 0 }).Data;
+            string id = r["id"]!.GetValue<string>();
+            // Beats 1–4 of each pattern (0.5–2 s and 2.5–4 s at 120 BPM): the repeated notes sound about as loud as the held one.
+            double eighths = Ok(rig, "analyze", new JsonObject { ["source"] = id, ["from_seconds"] = 0.5, ["to_seconds"] = 2 }).Data["loudness"]!["integrated_lufs"]!.GetValue<double>();
+            double held = Ok(rig, "analyze", new JsonObject { ["source"] = id, ["from_seconds"] = 2.5, ["to_seconds"] = 4 }).Data["loudness"]!["integrated_lufs"]!.GetValue<double>();
+            Assert.That(eighths, Is.GreaterThan(held - 6), $"repeated notes {eighths:F1} LUFS vs held {held:F1} LUFS");
+        }
+
+        [Test]
         public void PatternsRenameDuplicateAndDeleteWithTheirNotesAndPlaces()
         {
             using var rig = new Rig(NeoMachineTests.Poly);

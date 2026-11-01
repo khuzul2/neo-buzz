@@ -13,12 +13,12 @@ using ReBuzz.Agent.Mcp;
 namespace ReBuzz.Agent.Model
 {
     /// <summary>A note in pattern time (1/240 tick).</summary>
-    public readonly record struct NoteEvent(int Time, int Duration, int Pitch, int Velocity)
+    public readonly record struct NoteEvent(int Time, int Duration, int Pitch, int Velocity, int Channel = 0)
     {
         public int End => Time + Duration;
 
-        /// <summary>The MIDI column event value: its note-on on channel 1.</summary>
-        public int Value => 0x90 | ((Pitch & 0x7F) << 8) | ((Velocity & 0x7F) << 16);
+        /// <summary>The MIDI column event value: its note-on (channel 0 = MIDI channel 1).</summary>
+        public int Value => 0x90 | (Channel & 0x0F) | ((Pitch & 0x7F) << 8) | ((Velocity & 0x7F) << 16);
 
         /// <summary>The note a MIDI column event is, if it is a note-on.</summary>
         public static bool TryFrom(int time, int value, int duration, out NoteEvent note)
@@ -29,7 +29,7 @@ namespace ReBuzz.Agent.Model
                 note = default;
                 return false;
             }
-            note = new NoteEvent(time, duration, (value >> 8) & 0x7F, velocity);
+            note = new NoteEvent(time, duration, (value >> 8) & 0x7F, velocity, status & 0x0F);
             return true;
         }
     }
@@ -115,14 +115,19 @@ namespace ReBuzz.Agent.Model
         }
 
         /// <summary>A note as the agent reads it back: the same shape notes_write takes, plus its name.</summary>
-        public static JsonObject ToJson(NoteEvent n, int ticksPerBeat) => new()
+        public static JsonObject ToJson(NoteEvent n, int ticksPerBeat)
         {
-            ["pitch"] = n.Pitch,
-            ["name"] = Pitch.Name(n.Pitch),
-            ["start"] = Beats(n.Time, ticksPerBeat),
-            ["length"] = Beats(n.Duration, ticksPerBeat),
-            ["velocity"] = n.Velocity,
-        };
+            var o = new JsonObject
+            {
+                ["pitch"] = n.Pitch,
+                ["name"] = Pitch.Name(n.Pitch),
+                ["start"] = Beats(n.Time, ticksPerBeat),
+                ["length"] = Beats(n.Duration, ticksPerBeat),
+                ["velocity"] = n.Velocity,
+            };
+            if (n.Channel != 0) o["midi_channel"] = n.Channel + 1;   // recorded on another channel
+            return o;
+        }
 
         /// <summary>Overlapping notes of the same pitch (they cut each other off on most synths).</summary>
         public static List<string> Clashes(IReadOnlyList<NoteEvent> notes, int ticksPerBeat)

@@ -123,9 +123,8 @@ namespace ReBuzz.Agent
                                 placed++;
                             }
                         var notes = SongModel.Notes(p);
-                        if (notes.Count > 0) AgentActions.ReplaceNotes(core, p, notes, System.Array.Empty<NoteEvent>());
                         string name = p.Name;
-                        AgentActions.Do(core, new DeletePatternAction(p));
+                        AgentActions.DeletePattern(core, p);
                         return new JsonObject { ["machine"] = m.Name, ["deleted"] = name, ["was_placed"] = placed, ["notes"] = notes.Count };
                     }, c.Cancellation);
                     return ToolResult.Ok($"Deleted {r["machine"]}'s pattern \"{r["deleted"]}\" ({r["notes"]} notes, {r["was_placed"]} places in the arrangement).", r);
@@ -165,7 +164,7 @@ namespace ReBuzz.Agent
                 Name = "pattern_duplicate",
                 Title = "Duplicate a pattern",
                 Description =
-                    "Copies a pattern with its notes under a new name, to make a variation (a fill, a second verse). One undo step. " +
+                    "Copies a pattern under a new name, with its notes, automation and its Pattern View data, to make a variation (a fill, a second verse). One undo step. " +
                     "Example: pattern_duplicate(machine=\"Drums\", pattern=\"Beat\", new_name=\"Beat fill\").",
                 Input = Object(null, Req("machine", String("The machine")), Req("pattern", String("The pattern to copy")), Opt("new_name", String("The copy's name (default: numbered)"))),
                 Output = Object(null, Req("pattern", Object(null, Req("name", String("The copy's name"))))),
@@ -180,10 +179,8 @@ namespace ReBuzz.Agent
                         if (name != null && m.Patterns.Any(x => string.Equals(x.Name, name, StringComparison.OrdinalIgnoreCase)))
                             throw new ToolError($"{m.Name} already has a pattern \"{name}\".");
                         name ??= BuzzGUI.Common.Actions.PatternNames.Copy(m, p.Name);
-                        var notes = SongModel.Notes(p);
-                        AgentActions.Do(core, new CreatePatternAction(m, name, p.Length));
+                        AgentActions.DuplicatePattern(core, p, name);
                         var copy = m.Patterns.FirstOrDefault(x => x.Name == name) ?? throw new ToolError($"ReBuzz didn't create \"{name}\".");
-                        if (notes.Count > 0) AgentActions.ReplaceNotes(core, copy, System.Array.Empty<NoteEvent>(), notes);
                         return new JsonObject { ["machine"] = m.Name, ["from"] = p.Name, ["pattern"] = PatternJson(core, copy) };
                     }, c.Cancellation);
                     return ToolResult.Ok($"Copied {r["machine"]}'s \"{r["from"]}\" to \"{r["pattern"]!["name"]}\" ({r["pattern"]!["notes"]} notes).", r);
@@ -408,6 +405,8 @@ namespace ReBuzz.Agent
                             for (int i = 0; i < list.Count; i++) starts.Add(SongModel.ParseTicks(core, list[i], $"at[{i}]"));
                         else starts.Add(SongModel.ParseTicks(core, c.Arguments["at"], "at"));
                         int times = c.Int("times") ?? 1;
+                        if (c.Number("repeat_every_beats") != null && c.Int("times") == null)
+                            throw new ToolError("repeat_every_beats needs times: how many places in all (times=4 places it 4 times).");
                         if (times > 1)
                         {
                             if (c.Number("repeat_every_beats") is not double every) throw new ToolError("times needs repeat_every_beats.");
@@ -424,6 +423,7 @@ namespace ReBuzz.Agent
                             seq = core.SongCore.Sequences.LastOrDefault(s => s.Machine == m) ?? throw new ToolError($"ReBuzz didn't make a lane for {m.Name}.");
                         }
                         var notes = new List<string>();
+                        int loopEndBefore = core.SongCore.LoopEnd;
                         foreach (int t in starts)
                         {
                             if (seq.Events.TryGetValue(t, out var old) && old.Pattern != p)
@@ -440,6 +440,8 @@ namespace ReBuzz.Agent
                                 notes.Add($"the place at {SongModel.Where(core, t)} is cut at beat {NoteList.Fmt(SongModel.Beats(core, next.Key))} by the next pattern");
                         }
                         if (SongModel.Notes(p).Count == 0) notes.Add($"\"{p.Name}\" has no notes yet");
+                        if (core.SongCore.LoopEnd != loopEndBefore)
+                            notes.Add($"the loop end moved to beat {NoteList.Fmt(SongModel.Beats(core, core.SongCore.LoopEnd))} to cover it");
                         return new JsonObject
                         {
                             ["machine"] = m.Name,
