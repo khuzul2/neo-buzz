@@ -137,9 +137,10 @@ namespace ReBuzz.Agent
                 Name = "analyze",
                 Title = "Measure audio",
                 Description =
-                    "Measures a render (its id) or a WAV file (a full path, e.g. a reference track): loudness (integrated, short-term and momentary " +
-                    "max in LUFS, loudness range in LU) and peaks (true peak dBTP, sample peak dBFS, clipped samples), each with a plain read. " +
-                    "Optionally a part, from_seconds to to_seconds. Read-only. Example: analyze(source=\"r3\", metrics=[\"loudness\"]).",
+                    "Measures a render, a probe (\"r3:Bass\") or a WAV file (a full path, e.g. a reference track), each number with a plain read: " +
+                    "loudness (LUFS, range), peaks (true peak dBTP, clipping), dynamics (crest, PLR), spectrum (bands, third octaves, tilt, centroid), " +
+                    "stereo (correlation, width per band, mono loss), pitch (monophonic notes and cents), key, tempo. Default: all; pick metrics to be " +
+                    "quick. Optionally a part, from_seconds to to_seconds. Read-only. Example: analyze(source=\"r3\", metrics=[\"spectrum\", \"stereo\"]).",
                 Input = Object(null,
                     Req("source", String("A render id (\"r1\") or a WAV file's full path")),
                     Opt("metrics", Array(String("A metric", AudioReport.Metrics), "Which measures (default all)")),
@@ -155,23 +156,31 @@ namespace ReBuzz.Agent
                 {
                     string source = c.RequiredString("source").Trim();
                     var metrics = c.List("metrics")?.Select(x => x!.GetValue<string>()).ToList() ?? AudioReport.Metrics.ToList();
-                    string file = host.Renders.TryGetValue(source, out var render) ? render.File : null;
-                    if (file == null)
-                    {
-                        if (System.Text.RegularExpressions.Regex.IsMatch(source, @"^r\d+$"))
-                            throw new ToolError($"No render \"{source}\" in this session." + (host.Renders.Count > 0 ? $" Renders: {string.Join(", ", host.Renders.Keys)}." : " Make one with render()."));
-                        file = Path.GetFullPath(source.Trim('"'));
-                    }
-                    var audio = await System.Threading.Tasks.Task.Run(() => Wav.Read(file), c.Cancellation);
+                    var (label, file, audio) = await Load(host, source, c);
                     double? fromS = c.Number("from_seconds"), toS = c.Number("to_seconds");
                     if (fromS.HasValue && toS.HasValue && toS <= fromS) throw new ToolError("to_seconds must be after from_seconds.");
                     var part = AudioReport.Slice(audio, fromS, toS);
-                    var m = AudioReport.Measure(part, metrics);
-                    m["source"] = render != null ? $"{source} ({file})" : file;
-                    return ToolResult.Ok($"{(render != null ? source : Path.GetFileName(file))}: {m["seconds"]} s, {AudioReport.Line(m)}. " +
+                    var m = await System.Threading.Tasks.Task.Run(() => AudioReport.Measure(part, metrics), c.Cancellation);
+                    m["source"] = label == file ? file : $"{label} ({file})";
+                    return ToolResult.Ok($"{label}: {m["seconds"]} s, {AudioReport.Line(m)}. " +
                                          string.Join(" ", m["reads"]!.AsArray().Select(x => x!.GetValue<string>())), m);
                 },
             });
+        }
+
+        /// <summary>A render or probe by id, or a WAV file by path: (label, file, audio).</summary>
+        internal static async System.Threading.Tasks.Task<(string Label, string File, StereoAudio Audio)> Load(AgentHost host, string source, ToolContext c)
+        {
+            source = source.Trim();
+            string file = host.Renders.TryGetValue(source, out var render) ? render.File : null;
+            if (file == null)
+            {
+                if (System.Text.RegularExpressions.Regex.IsMatch(source, @"^r\d+(:.+)?$"))
+                    throw new ToolError($"No render \"{source}\" in this session." + (host.Renders.IsEmpty ? " Make one with render()." : $" Renders: {string.Join(", ", host.Renders.Keys.OrderBy(k => k))}."));
+                file = Path.GetFullPath(source.Trim('"'));
+            }
+            var audio = await System.Threading.Tasks.Task.Run(() => Wav.Read(file), c.Cancellation);
+            return (render != null ? source : Path.GetFileName(file), file, audio);
         }
 
         /// <summary>What render reports by itself; analyze has the rest.</summary>

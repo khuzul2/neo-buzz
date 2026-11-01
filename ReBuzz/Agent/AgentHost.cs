@@ -57,6 +57,7 @@ namespace ReBuzz.Agent
             ParamTools.Register(tools, this);
             PatternTools.Register(tools, this);
             RenderTools.Register(tools, this);
+            AnalysisTools.Register(tools, this);
             StateTools.Register(tools, this);
             WaveTools.Register(tools, this);
             Server = new McpServer(new ServerInfo
