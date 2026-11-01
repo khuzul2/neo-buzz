@@ -1,13 +1,10 @@
 ﻿using BuzzGUI.Common;
 using BuzzGUI.Common.Actions;
-using BuzzGUI.Common.Templates;
 using BuzzGUI.Interfaces;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Controls;
-using System.Windows.Media;
 using System.Xml.Linq;
 
 namespace ReBuzz.Core.Actions.GraphActions

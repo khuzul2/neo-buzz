@@ -11,11 +11,23 @@ Each error gets one cause (WPF, WinForms, Win32/GDI+, a library, a type declared
 engine set, cascade) and one seam (engine-split.md section 3).
 
     python3 experiments/engine-census/census.py [stages...] [--out DIR]   all stages by default
-    python3 experiments/engine-census/census.py closure                   rewrite CommonClosure.props
+    python3 experiments/engine-census/census.py closure                   rewrite BuzzGUI.Common/PortableFiles.props
     python3 experiments/engine-census/census.py machines                  scan RunTime/Gear machine DLLs
+    python3 experiments/engine-census/census.py --check [--update]        the ratchet (Linux CI)
 
 Writes DIR/stage<N>.tsv and .json (raw and classified diagnostics), DIR/report.md and
 DIR/machines.md. DIR defaults to experiments/engine-census/out (git-ignored).
+
+--check compiles ReBuzz.Engine.csproj's files through Roslyn only, against the portable builds of
+BuzzGUI.Interfaces and BuzzGUI.Common, and compares the error count with baseline.json: more
+errors than the baseline fails (exit 1) and lists the files that gained errors; fewer passes and
+asks for the baseline to be lowered. --update rewrites baseline.json with the current counts
+(each P1 PR lowers it, engine-split.md §5).
+
+    python3 experiments/engine-census/census.py surface [msbuild -p: args]
+
+builds both builds of BuzzGUI.Interfaces and BuzzGUI.Common (Windows only) and checks that the
+public surface of the portable build is a subset of the Windows build's (engine-split.md §4.3).
 """
 import json, os, re, subprocess, sys
 from collections import defaultdict, Counter
@@ -112,14 +124,23 @@ def rel(p):
 
 
 def run(cmd, **kw):
-    return subprocess.run(cmd, cwd=REPO, capture_output=True, text=True, **kw)
+    return subprocess.run(cmd, cwd=REPO, capture_output=True, text=True, encoding='utf-8', errors='replace', **kw)
 
 
-def msbuild_items(stage, target, item):
-    args = ['dotnet', 'msbuild', PROJ, f'-p:CensusStage={stage}', f'-getItem:{item}', '-nologo']
+def msbuild_items(stage, target, item, proj=PROJ):
+    args = ['dotnet', 'msbuild', proj, f'-getItem:{item}', '-nologo']
+    if stage is not None:
+        args.append(f'-p:CensusStage={stage}')
     if target:
         args.insert(3, f'-t:{target}')
     r = run(args)
+    if r.returncode != 0 or '{' not in r.stdout:
+        # e.g. a referenced project (the portable BuzzGUI.Common) failed to build
+        print(r.stdout[-6000:], r.stderr[-2000:])
+        for m in re.finditer(r'^\s*(.*?)\((\d+),\d+\): error (\w+): (.*?)(?: \[.*)?$', r.stdout, re.M):
+            gh('error', f'{m.group(3)}: {m.group(4)}', file=rel(m.group(1)), line=m.group(2))
+        gh('error', f'msbuild {rel(proj)} -t:{target} failed', title='Engine census')
+        sys.exit(1)
     data = json.loads(r.stdout[r.stdout.index('{'):])
     return data['Items'].get(item, [])
 
@@ -340,6 +361,9 @@ def seam_of(d):
 DEFINES = ('TRACE', 'DEBUG', 'NET', 'NET10_0', 'NETCOREAPP', 'NET5_0_OR_GREATER', 'NET6_0_OR_GREATER',
            'NET7_0_OR_GREATER', 'NET8_0_OR_GREATER', 'NET9_0_OR_GREATER', 'NET10_0_OR_GREATER')
 _ANALYZERS = []
+# What the SDK adds for ImplicitUsings=enable (Microsoft.NET.Sdk).
+SDK_IMPLICIT_USINGS = ('System', 'System.Collections.Generic', 'System.IO', 'System.Linq', 'System.Net.Http',
+                       'System.Threading', 'System.Threading.Tasks')
 
 
 def analyzer_dir():
@@ -351,16 +375,22 @@ def analyzer_dir():
     return _ANALYZERS[0]
 
 
-def roslyn(srcs, refs, tag, outdir, idx):
+def roslyn(srcs, refs, tag, outdir, idx, analyzers=True):
     """Compile through tool/ and return classified, de-duplicated diagnostics."""
     types, exts, ui, namespaces = idx
+    # BuzzGUI.Interfaces has ImplicitUsings; the engine files don't. InterfacesImplicitUsings.cs
+    # (global usings, for "dotnet build") would leak them into every engine file and hide errors:
+    # SequenceCore's OrderedDictionary<,> is Wintellect's on Windows but would bind to .NET's.
+    srcs = [x for x in srcs if os.path.basename(x) != 'InterfacesImplicitUsings.cs']
     args_path = os.path.join(outdir, f'{tag}.args')
     with open(args_path, 'w') as f:
+        f.write(f'implicit:ReBuzzGUI/BuzzGUI.Interfaces/|{";".join(SDK_IMPLICIT_USINGS)}\n')
         f.writelines(f'src:{x}\n' for x in srcs)
         f.writelines(f'ref:{x}\n' for x in refs)
         f.writelines(f'def:{x}\n' for x in DEFINES)
         for a in ('Microsoft.CodeAnalysis.NetAnalyzers.dll', 'Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll'):
-            f.write(f'analyzer:{os.path.join(analyzer_dir(), a)}\n')
+            if analyzers:
+                f.write(f'analyzer:{os.path.join(analyzer_dir(), a)}\n')
     tsv = os.path.join(outdir, f'{tag}.tsv')
     t = run(['dotnet', 'run', '--no-build', '--project', TOOL, '-c', 'Release', '--', args_path, tsv])
     if t.returncode != 0:
@@ -424,7 +454,7 @@ def measure(stage, outdir, idx):
 
 
 def closure(outdir, idx):
-    """Smallest BuzzGUI.Common subset the stage-5 engine set needs; writes CommonClosure.props.
+    """Smallest BuzzGUI.Common subset the stage-5 engine set needs; writes PortableFiles.props.
 
     Candidates are the stage-3 BuzzGUI.Common files (UI files already removed). Starting from
     none, add every candidate that declares a type the compilation misses, until nothing changes.
@@ -449,17 +479,32 @@ def closure(outdir, idx):
         if not add:
             break
         chosen |= add
+    write_portable_files(sorted(rel(x) for x in chosen))
+    print(f'{rel(PORTABLE_FILES)}: {len(chosen)} of {len(common)} BuzzGUI.Common files (stage-5 engine set)')
+
+
+# BuzzGUI.Common's portable build compiles these files (engine-split.md §4.4); the census imports
+# the same list for stages 4 and 5. "census.py closure" rewrites it.
+PORTABLE_FILES = os.path.join(REPO, 'ReBuzzGUI', 'BuzzGUI.Common', 'PortableFiles.props')
+
+
+def write_portable_files(rels):
     bs = '\\'
     lines = ['<Project>',
-             '  <!-- Generated by "census.py closure": the BuzzGUI.Common files the stage-5 engine set needs. -->',
+             '  <!--',
+             '    Fork (docs/specs/engine-split.md §4.4): the files of the portable (net10.0) build of',
+             '    BuzzGUI.Common, the ones the engine needs. BuzzGUI.Common.csproj and the engine census',
+             '    (experiments/engine-census, stages 4 and 5) import this list. Generated by',
+             '    "python3 experiments/engine-census/census.py closure"; WPF parts of these files go under',
+             '    #if WINDOWS.',
+             '  -->',
              '  <ItemGroup>']
-    for x in sorted(chosen, key=rel):
-        r = rel(x)[len('ReBuzzGUI/BuzzGUI.Common/'):].replace('/', bs)
-        lines.append(f'    <Compile Include="$(C){r}" Link="BuzzGUI.Common{bs}{r}" />')
+    for r in rels:
+        r = r[len('ReBuzzGUI/BuzzGUI.Common/'):].replace('/', bs)
+        lines.append(f'    <Compile Include="$(MSBuildThisFileDirectory){r}" />')
     lines += ['  </ItemGroup>', '</Project>', '']
-    with open(os.path.join(HERE, 'CommonClosure.props'), 'w') as f:
+    with open(PORTABLE_FILES, 'w', newline='\n') as f:
         f.write('\n'.join(lines))
-    print(f'CommonClosure.props: {len(chosen)} of {len(common)} BuzzGUI.Common files (stage-5 engine set)')
 
 
 def short(f):
@@ -560,10 +605,11 @@ def machines(outdir):
     for r in rows:
         by[r[0]].append(r)
     closure_types = set()
-    props = os.path.join(HERE, 'CommonClosure.props')
+    props = PORTABLE_FILES
     if os.path.exists(props):
         types, exts, ui, namespaces = index_repo()
-        files = {('ReBuzzGUI/BuzzGUI.Common/' + m.replace(chr(92), '/')) for m in re.findall(r'Include="\$\(C\)([^"]+)"', open(props).read())}
+        files = {('ReBuzzGUI/BuzzGUI.Common/' + m.replace(chr(92), '/'))
+                 for m in re.findall(r'Include="\$\(MSBuildThisFileDirectory\)([^"]+)"', open(props).read())}
         for name, decls in types.items():
             for f, ns in decls:
                 if f in files:
@@ -586,6 +632,137 @@ def machines(outdir):
     print('\n'.join(out))
 
 
+# ---------------------------------------------------------------- ratchet (Linux CI)
+
+# The ratchet measures ReBuzz.Engine.csproj: the engine files, compiled against the portable
+# builds of BuzzGUI.Interfaces and BuzzGUI.Common (engine-split.md §5, PR 3). Until PR 3 it
+# measured stage 5 of EngineCensus.csproj, which compiled those libraries' files in as well.
+ENGINE = os.path.join(REPO, 'ReBuzz.Engine', 'ReBuzz.Engine.csproj')
+BASELINE = os.path.join(HERE, 'baseline.json')
+
+
+def gh(kind, msg, title=None, file=None, line=None):
+    """A GitHub Actions annotation when running there; plain text otherwise."""
+    if not os.environ.get('GITHUB_ACTIONS'):
+        where = f'{file}({line}): ' if file else ''
+        print(f'{where}{kind}: {msg}')
+        return
+    props = []
+    if file:
+        props.append(f'file={file}')
+    if line:
+        props.append(f'line={line}')
+    if title:
+        props.append(f'title={title}')
+    msg = msg.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+    print(f"::{kind} {','.join(props)}::{msg}")
+
+
+def check(outdir, idx, update):
+    """Compare ReBuzz.Engine's error count with baseline.json (engine-split.md §5).
+
+    Resolving its references builds the portable BuzzGUI.Interfaces and BuzzGUI.Common; if they
+    don't build, the check fails.
+    """
+    r = run(['dotnet', 'restore', ENGINE, '-nologo', '-v:q'])
+    if r.returncode != 0:
+        print(r.stdout, r.stderr)
+        sys.exit(1)
+    srcs = sorted({os.path.normpath(c['FullPath']) for c in msbuild_items(None, None, 'Compile', ENGINE)})
+    refs = [x['FullPath'] for x in msbuild_items(None, 'ResolveReferences', 'ReferencePath', ENGINE)]
+    diags, _ = roslyn(srcs, refs, 'check', outdir, idx, analyzers=False)
+    errs = [d for d in diags if d['sev'] == 'Error']
+    per_file = Counter(d['file'] for d in errs)
+    total = len(errs)
+    project = rel(ENGINE)
+    print(f'census {project}: {len(srcs)} files, {total} errors in {len(per_file)} files')
+
+    if update:
+        with open(BASELINE, 'w', newline='\n') as f:
+            json.dump({'project': project, 'errors': total,
+                       'files': dict(sorted(per_file.items()))}, f, indent=2)
+            f.write('\n')
+        print(f'baseline.json: {total} errors')
+        return 0
+
+    base = json.load(open(BASELINE))
+    if base.get('project') != project:
+        gh('error', f"baseline.json is for {base.get('project') or 'stage ' + str(base.get('stage'))}, "
+           f'the check measures {project}', title='Engine census')
+        return 1
+    limit, base_files = base['errors'], base.get('files', {})
+    rose = {f: (base_files.get(f, 0), n) for f, n in per_file.items() if n > base_files.get(f, 0)}
+    for f, (was, now) in sorted(rose.items()):
+        print(f'  {f}: {was} -> {now}')
+    if total > limit:
+        shown = 0
+        for d in sorted(errs, key=lambda d: (d['file'], d['line'])):
+            if d['file'] in rose and shown < 50:
+                gh('error', f"{d['id']}: {d['msg']}", file=d['file'], line=d['line'])
+                shown += 1
+        gh('error', f'{total} errors, baseline {limit}: the engine gained {total - limit} errors that keep it '
+           f'from compiling as plain net10.0. Files that gained errors: '
+           f"{', '.join(sorted(rose)) or '(none; errors moved)'}. See docs/specs/engine-split.md.",
+           title='Engine census')
+        return 1
+    if total < limit:
+        gh('warning', f'{total} errors, baseline {limit}: lower the baseline with '
+           f'"python3 experiments/engine-census/census.py --check --update".', title='Engine census')
+    else:
+        gh('notice', f'{total} errors (baseline {limit})', title='Engine census')
+    return 0
+
+
+# ---------------------------------------------------------------- surface check (Windows CI)
+
+WIN_TFM = 'net10.0-windows10.0.26100.0'
+API_PROJECTS = [os.path.join(REPO, 'ReBuzzGUI', 'BuzzGUI.Interfaces', 'BuzzGUI.Interfaces.csproj'),
+                os.path.join(REPO, 'ReBuzzGUI', 'BuzzGUI.Common', 'BuzzGUI.Common.csproj')]
+
+
+def surface(outdir, extra):
+    """The portable build's public surface is a subset of the Windows build's (engine-split.md §4.3).
+
+    Builds both target frameworks of each library (Windows only: the Windows build needs the
+    Windows targeting pack) and compares one line per visible type and member.
+    """
+    failed = 0
+    for proj in API_PROJECTS:
+        name = os.path.splitext(os.path.basename(proj))[0]
+        b = run(['dotnet', 'build', proj, '-c', 'Release', '-nologo', '-v:q'] + extra)
+        if b.returncode != 0:
+            print(b.stdout[-6000:], b.stderr[-2000:])
+            gh('error', f'{name}: build failed', title='Surface check')
+            return 1
+        lines = {}
+        for tfm in (WIN_TFM, 'net10.0'):
+            q = run(['dotnet', 'msbuild', proj, '-getProperty:TargetPath', f'-p:TargetFramework={tfm}',
+                     '-p:Configuration=Release', '-nologo'] + extra)
+            dll = q.stdout.strip().splitlines()[-1].strip() if q.stdout.strip() else ''
+            out = os.path.join(outdir, f'surface-{name}-{tfm}.txt')
+            t = run(['dotnet', 'run', '--no-build', '--project', TOOL, '-c', 'Release', '--', 'surface', out, dll])
+            if t.returncode != 0 or not os.path.exists(out):
+                print(q.stdout, q.stderr, t.stdout, t.stderr)
+                gh('error', f'{name} ({tfm}): could not read {dll}', title='Surface check')
+                return 1
+            lines[tfm] = set(open(out, encoding='utf-8').read().splitlines())
+        missing = sorted(lines['net10.0'] - lines[WIN_TFM])
+        extra_win = len(lines[WIN_TFM] - lines['net10.0'])
+        print(f'{name}: portable {len(lines["net10.0"])} lines, Windows {len(lines[WIN_TFM])} '
+              f'({extra_win} Windows-only), {len(missing)} portable lines missing from Windows')
+        for m in missing[:50]:
+            print('  ' + m)
+        if missing:
+            failed += 1
+            gh('error', f'{name}: {len(missing)} public types or members of the portable build differ from the '
+               f'Windows build (first: {missing[0]}). #if WINDOWS may add members, never change them.',
+               title='Surface check')
+        else:
+            gh('notice', f'{name}: the portable build ({len(lines["net10.0"])} lines) is a subset of the '
+               f'Windows build ({extra_win} Windows-only lines)', title='Surface check')
+    return 1 if failed else 0
+
+
 def main():
     argv = sys.argv[1:]
     outdir = os.path.join(HERE, 'out')
@@ -599,6 +776,10 @@ def main():
         print(r.stdout)
         sys.exit(1)
     idx = index_repo()
+    if '--check' in argv:
+        sys.exit(check(outdir, idx, '--update' in argv))
+    if argv and argv[0] == 'surface':
+        sys.exit(surface(outdir, argv[1:]))
     if argv and argv[0] == 'closure':
         closure(outdir, idx)
         return

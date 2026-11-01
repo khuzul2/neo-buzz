@@ -217,7 +217,7 @@ namespace ReBuzz.Core
                         {
                             buzz.DCWriteLine(e.Message);
                         }
-                    }, DispatcherPriority.Normal);
+                    }, UiPriority.Normal);
                 }
             }
 

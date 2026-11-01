@@ -189,6 +189,8 @@ namespace BuzzGUI.Common
             }
         }
 
+#if WINDOWS
+        // A WPF save dialog: the Windows build only (engine-split.md §4.4).
         public static void SaveToFile(IWaveLayer wave, string name = "temp")
         {
             int WriteBufferSize = 4096;
@@ -291,6 +293,7 @@ namespace BuzzGUI.Common
             }
 
         }
+#endif
 
         public static bool IsSlotConversionNeeded(IWavetable wavetable, int sourceSlotIndex, ref WaveFormat wf, ref int ChannelCount, ref bool ConvertSlotToFloat, ref bool ConvertSlotToStereo)
         {
