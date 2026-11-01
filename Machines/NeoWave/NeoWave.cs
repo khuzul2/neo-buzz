@@ -69,6 +69,17 @@ namespace NeoBuzz.Wave
             }
         }
 
+        /// <summary>
+        /// Agent server (mcp-server.md A3, machine_data_import): "wavetable" loads a WAV as the user
+        /// table. Pick it with A table or B table = User.
+        /// </summary>
+        public string ImportData(string kind, string path, int item, Action<int, int> setParameter)
+        {
+            if (kind != "wavetable") throw new ArgumentException($"Neo Wave doesn't import \"{kind}\"; it takes wavetable.");
+            LoadUserTable(path);
+            return $"Loaded the wavetable \"{state.UserTableName}\" as the User table; set A table or B table to User to play it.";
+        }
+
         /// <summary>Loads a WAV file as the user table (UI thread). Throws with a readable message on bad files.</summary>
         internal void LoadUserTable(string path)
         {

@@ -38,7 +38,7 @@ namespace ReBuzz.Agent
                 Title = "Render audio",
                 Description =
                     "Plays part of the song faster than real time into a WAV file and measures it (loudness, true peak, clipping). Range: from/to " +
-                    "in beats or \"bar.beat\" (default the whole song), or range=\"loop\". tail_seconds lets reverbs and releases ring out after " +
+                    "in beats or \"bar.beat\" (default the whole song), range=\"loop\", or section=\"Verse\" (a marker). tail_seconds lets reverbs and releases ring out after " +
                     "the end (default 2). solo and mute hear parts without changing the song (solo keeps what feeds a soloed effect). probes also " +
                     "capture chosen machines' outputs (after their connection gain), each with its own id \"r3:Bass\" for analyze. Follows the " +
                     "song's tempo changes. Returns a render id for analyze, the file and the measurements. Changes nothing in the song, but stops " +
@@ -47,6 +47,7 @@ namespace ReBuzz.Agent
                     Opt("from", AnyOf("Start", Number("Beats", 0), String("\"bar.beat\""))),
                     Opt("to", AnyOf("End (exclusive)", Number("Beats", 0), String("\"bar.beat\""))),
                     Opt("range", String("song (default) or loop", "song", "loop")),
+                    Opt("section", String("A marker's name: from it to the next marker (arrangement_markers)")),
                     Opt("tail_seconds", Number("Seconds rendered after the end, playback stopped (default 2)", 0, 30)),
                     Opt("solo", Array(String("A machine"), "Hear only these (and what feeds soloed effects)")),
                     Opt("mute", Array(String("A machine"), "Silence these")),
@@ -71,7 +72,9 @@ namespace ReBuzz.Agent
                     {
                         var song = core.SongCore;
                         int from, to;
-                        if (c.String("range") == "loop")
+                        if (c.String("section") is string section)
+                            (from, to) = CompositionTools.Section(core, section);
+                        else if (c.String("range") == "loop")
                         {
                             from = song.LoopStart;
                             to = song.LoopEnd;

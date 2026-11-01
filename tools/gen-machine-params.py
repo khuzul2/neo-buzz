@@ -15,6 +15,7 @@ Params.def lines:
   class NeoDriveMachine            the machine class (a partial class)
   tracks 16                        optional: Note and Velocity track parameters for 16 tracks
   summary What it is. Use it for…   optional: the machine in a sentence or two (the manifest's summary)
+  import kind .ext[,.ext] | what     optional: a data file the machine loads (machine_data_import)
   group Shape                      group shown in the editor for the following parameters
   Id  "Name"  min max def  kind args...  | description
 
@@ -56,7 +57,7 @@ def num(x):
 
 
 def parse(path):
-    spec = {'namespace': None, 'class': None, 'tracks': 0, 'summary': '', 'params': []}
+    spec = {'namespace': None, 'class': None, 'tracks': 0, 'summary': '', 'imports': [], 'params': []}
     group = ''
     with open(path, encoding='utf-8') as f:
         for lineno, line in enumerate(f, 1):
@@ -65,6 +66,12 @@ def parse(path):
                 continue
             if line.lstrip().startswith('summary '):
                 spec['summary'] = line.strip()[len('summary '):].strip()
+                continue
+            if line.lstrip().startswith('import '):
+                head, _, what = line.strip()[len('import '):].partition('|')
+                parts = head.split()
+                spec['imports'].append({'kind': parts[0], 'extensions': [e.lower() for e in (parts[1].split(',') if len(parts) > 1 else [])],
+                                        'description': what.strip()})
                 continue
             desc = ''
             if '|' in line:
@@ -245,6 +252,8 @@ def write_manifest(folder, spec, rel):
         'track_parameters': ['Note', 'Velocity'] if spec['tracks'] > 0 else [],
         'parameters': [manifest_param(i, p) for i, p in enumerate(spec['params'])],
     }
+    if spec['imports']:
+        doc['imports'] = spec['imports']
     out = os.path.join(folder, gear + '.machine.json')
     with open(out, 'w', encoding='utf-8', newline='\n') as f:
         json.dump(doc, f, ensure_ascii=False, indent=1)
