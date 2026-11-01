@@ -1,10 +1,10 @@
 #nullable disable
 // Neo Drive's editor (docs/specs/machines.md §4): mode, drive and curve on the left, the transfer
-// curve with the live input level, tone and output on the right.
+// curve with the live input level, tone and output on the right. WPF lays the editor out; the
+// curve draws on the kit's canvas (INeoCanvas).
 
 using System;
 using System.Windows;
-using System.Windows.Media;
 using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
 
@@ -12,16 +12,16 @@ namespace NeoBuzz.Drive
 {
     internal sealed class NeoDriveEditor : NeoEditor
     {
-        static readonly Color AccentColor = Color.FromRgb(0xFF, 0x8A, 0x3D);
+        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xFF, 0x8A, 0x3D);
 
         protected override string Title => "Neo Drive";
-        protected override Color Accent => AccentColor;
+        protected override NeoColor Accent => AccentColor;
         internal override ParamDef[] Table => Params.Table;
 
         internal override UIElement BuildBody(EditorContext ctx)
         {
             var machine = ctx.Machine?.ManagedMachine as NeoDriveMachine;
-            var curve = new GraphView(180, 180, (dc, r, v) => DrawCurve(dc, r, v, ctx, machine), animate: true);
+            var curve = new GraphView(180, 180, (g, r) => DrawCurve(g, r, ctx, machine), animate: true);
 
             var drive = Layout.Row(
                 new ParamChoice(ctx, P.Mode, vertical: true, cellWidth: 78),
@@ -36,7 +36,7 @@ namespace NeoBuzz.Drive
                 new ParamKnob(ctx, P.HighCut));
 
             var meters = Layout.Row(
-                new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Theme.DimTextColor, 150),
+                new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 150),
                 Layout.Gap(4),
                 new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 150));
 
@@ -58,16 +58,16 @@ namespace NeoBuzz.Drive
                 new Section("Output", AccentColor, output));
         }
 
-        static void DrawCurve(DrawingContext dc, Rect r, Visual v, EditorContext ctx, NeoDriveMachine machine)
+        static void DrawCurve(INeoCanvas g, NeoRect r, EditorContext ctx, NeoDriveMachine machine)
         {
             var values = new ParamValues(Params.Table);
             for (int i = 0; i < Params.Table.Length; i++) values.Set(i, ctx.Raw(i));
-            var c = new Point(r.X + r.Width / 2, r.Y + r.Height / 2);
+            var c = new NeoPoint(r.X + r.Width / 2, r.Y + r.Height / 2);
             double half = r.Width / 2 - 8;
-            var grid = Theme.Pen(Theme.Grid, 1, false);
-            dc.DrawLine(grid, new Point(r.Left, c.Y), new Point(r.Right, c.Y));
-            dc.DrawLine(grid, new Point(c.X, r.Top), new Point(c.X, r.Bottom));
-            dc.DrawLine(Theme.Pen(Theme.Grid, 1, false), new Point(c.X - half, c.Y + half), new Point(c.X + half, c.Y - half));
+            var grid = new NeoStroke(Palette.Grid, 1, false);
+            g.Line(r.Left, c.Y, r.Right, c.Y, grid);
+            g.Line(c.X, r.Top, c.X, r.Bottom, grid);
+            g.Line(c.X - half, c.Y + half, c.X + half, c.Y - half, grid);
 
             // Curve over input −1 … 1, scaled so its largest output fills the frame.
             const int steps = 160;
@@ -80,20 +80,13 @@ namespace NeoBuzz.Drive
                 peak = Math.Max(peak, Math.Abs(ys[i]));
             }
             double scale = 1 / Math.Max(1, peak);
-            var g = new StreamGeometry();
-            using (var s = g.Open())
+            var curve = new NeoPath();
+            for (int i = 0; i <= steps; i++)
             {
-                for (int i = 0; i <= steps; i++)
-                {
-                    double x = -1 + 2.0 * i / steps;
-                    var p = new Point(c.X + x * half, c.Y - ys[i] * scale * half);
-                    if (i == 0) s.BeginFigure(p, false, false);
-                    else s.LineTo(p, true, false);
-                }
+                double x = -1 + 2.0 * i / steps;
+                curve.LineTo(c.X + x * half, c.Y - ys[i] * scale * half);
             }
-            g.Freeze();
-            var accent = Theme.Solid(AccentColor);
-            dc.DrawGeometry(null, Theme.Pen(accent, 2), g);
+            g.Path(curve, NeoFill.None, new NeoStroke(AccentColor, 2));
 
             // The input's current peak, on the curve.
             float level = machine?.Engine.InMeter.Peak ?? 0;
@@ -101,9 +94,9 @@ namespace NeoBuzz.Drive
             {
                 double x = Math.Min(1, level);
                 double y = DriveEngine.Transfer(values, x) * scale;
-                dc.DrawEllipse(accent, null, new Point(c.X + x * half, c.Y - y * half), 4, 4);
+                g.Ellipse(new NeoPoint(c.X + x * half, c.Y - y * half), 4, 4, AccentColor, NeoStroke.None);
             }
-            Theme.DrawText(dc, v, ((DriveMode)values.Choice(P.Mode)).ToString(), r.X + 6, r.Y + 4, 10, Theme.DimText);
+            g.Text(((DriveMode)values.Choice(P.Mode)).ToString(), r.X + 6, r.Y + 4, 10, Palette.DimText);
         }
     }
 }

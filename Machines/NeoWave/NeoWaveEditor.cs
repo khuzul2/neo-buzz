@@ -2,11 +2,11 @@
 // Neo Wave's editor (docs/specs/machines.md §5): the two oscillators, each with a 3-D view of its
 // table (the frame playing now drawn bright, warp applied, following modulation while notes
 // sound), the user-table loader, then filter, voice, envelopes, LFOs and the modulation matrix.
+// WPF lays the editor out; the table views draw on the kit's canvas (INeoCanvas).
 
 using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
 
@@ -14,11 +14,11 @@ namespace NeoBuzz.Wave
 {
     internal sealed class NeoWaveEditor : NeoEditor
     {
-        static readonly Color AccentColor = Color.FromRgb(0x3D, 0xD6, 0x8C);
+        static readonly NeoColor AccentColor = NeoColor.FromRgb(0x3D, 0xD6, 0x8C);
         const double D = 36;
 
         protected override string Title => "Neo Wave";
-        protected override Color Accent => AccentColor;
+        protected override NeoColor Accent => AccentColor;
         internal override ParamDef[] Table => Params.Table;
 
         internal override UIElement BuildBody(EditorContext ctx)
@@ -151,52 +151,48 @@ namespace NeoBuzz.Wave
             int warpParam = osc == 0 ? P.AWarp : P.BWarp;
             int warpAmtParam = osc == 0 ? P.AWarpAmt : P.BWarpAmt;
             Wavetable cached = null;
-            Geometry back = null;
-            Size cachedSize = default;
+            var back = new NeoPath();   // kept while the table and size stay: the backend builds it once
+            double cachedWidth = 0, cachedHeight = 0;
             const int Shown = 20, Points = 128, NowPoints = 256;
 
-            return new GraphView(width, height, (dc, r, v) =>
+            return new GraphView(width, height, (g, r) =>
             {
                 int choice = ctx.Raw(tableParam);
                 bool isUser = choice >= Tables.Names.Length;
                 var table = isUser ? machine?.Engine.UserTable : Tables.Get(choice);
                 if (table == null)
                 {
-                    Theme.TextCentered(dc, v, isUser ? "No user table: load a WAV" : "Building…", r.Width / 2, r.Height / 2 - 8, 11.5, Theme.DimText);
+                    g.Text(isUser ? "No user table: load a WAV" : "Building…", r.Width / 2, r.Height / 2 - 8, 11.5, Palette.DimText, align: NeoAlign.Center);
                     return;
                 }
                 double depthX = r.Width * 0.24, depthY = r.Height * 0.36;
                 double frameWidth = r.Width - depthX - 12;
                 double amp = (r.Height - depthY - 14) * 0.45;
-                Point At(double depth, double t, double y) =>
-                    new Point(r.Left + 6 + depth * depthX + t * frameWidth, r.Bottom - 7 - amp - depth * depthY - y * amp);
+                NeoPoint At(double depth, double t, double y) =>
+                    new NeoPoint(r.Left + 6 + depth * depthX + t * frameWidth, r.Bottom - 7 - amp - depth * depthY - y * amp);
 
-                if (!ReferenceEquals(table, cached) || cachedSize != r.Size)
+                if (!ReferenceEquals(table, cached) || cachedWidth != r.Width || cachedHeight != r.Height)
                 {
-                    var g = new StreamGeometry();
-                    using (var c = g.Open())
+                    back.Clear();
+                    int shown = Math.Min(Shown, table.FrameCount);
+                    for (int k = 0; k < shown; k++)
                     {
-                        int shown = Math.Min(Shown, table.FrameCount);
-                        for (int k = 0; k < shown; k++)
+                        int frame = shown == 1 ? 0 : (int)Math.Round(k * (table.FrameCount - 1) / (double)(shown - 1));
+                        double depth = table.FrameCount == 1 ? 0 : frame / (double)(table.FrameCount - 1);
+                        var samples = table.FrameSamples(frame, 4);
+                        for (int i = 0; i <= Points; i++)
                         {
-                            int frame = shown == 1 ? 0 : (int)Math.Round(k * (table.FrameCount - 1) / (double)(shown - 1));
-                            double depth = table.FrameCount == 1 ? 0 : frame / (double)(table.FrameCount - 1);
-                            var samples = table.FrameSamples(frame, 4);
-                            for (int i = 0; i <= Points; i++)
-                            {
-                                double t = i / (double)Points;
-                                var p = At(depth, t, samples[Math.Min(samples.Length - 1, (int)(t * samples.Length))]);
-                                if (i == 0) c.BeginFigure(p, false, false);
-                                else c.LineTo(p, true, false);
-                            }
+                            double t = i / (double)Points;
+                            var p = At(depth, t, samples[Math.Min(samples.Length - 1, (int)(t * samples.Length))]);
+                            if (i == 0) back.MoveTo(p);
+                            else back.LineTo(p);
                         }
                     }
-                    g.Freeze();
-                    back = g;
                     cached = table;
-                    cachedSize = r.Size;
+                    cachedWidth = r.Width;
+                    cachedHeight = r.Height;
                 }
-                dc.DrawGeometry(null, Theme.Pen(Theme.Solid(ctx.Accent, 0x48), 1), back);
+                g.Path(back, NeoFill.None, new NeoStroke(ctx.Accent.WithAlpha(0x48), 1));
 
                 float pos = (float)ctx.Value(posParam);
                 float warp = (float)ctx.Value(warpAmtParam);
@@ -207,23 +203,17 @@ namespace NeoBuzz.Wave
                     warp = liveWarp;
                 }
                 float framePos = pos * (table.FrameCount - 1);
-                var now = new StreamGeometry();
-                using (var c = now.Open())
+                var now = new NeoPath();
+                for (int i = 0; i <= NowPoints; i++)
                 {
-                    for (int i = 0; i <= NowPoints; i++)
-                    {
-                        double t = i / (double)NowPoints;
-                        double phase = mode == Warp.PhaseMod ? t : WaveVoice.WarpPhase(mode, warp, Math.Min(t, 0.999999));
-                        float y = table.Read(framePos, phase, 3);
-                        if (mode == Warp.WindowSync) y *= (float)(0.5 - 0.5 * Math.Cos(2 * Math.PI * t));
-                        var p = At(pos, t, y);
-                        if (i == 0) c.BeginFigure(p, false, false);
-                        else c.LineTo(p, true, false);
-                    }
+                    double t = i / (double)NowPoints;
+                    double phase = mode == Warp.PhaseMod ? t : WaveVoice.WarpPhase(mode, warp, Math.Min(t, 0.999999));
+                    float y = table.Read(framePos, phase, 3);
+                    if (mode == Warp.WindowSync) y *= (float)(0.5 - 0.5 * Math.Cos(2 * Math.PI * t));
+                    now.LineTo(At(pos, t, y));
                 }
-                now.Freeze();
-                dc.DrawGeometry(null, Theme.Pen(Theme.Solid(ctx.Accent), 2), now);
-                Theme.DrawText(dc, v, $"{table.Name} · frame {(int)Math.Round(framePos) + 1} of {table.FrameCount}", r.Left + 7, r.Top + 4, 10.5, Theme.DimText);
+                g.Path(now, NeoFill.None, new NeoStroke(ctx.Accent, 2));
+                g.Text($"{table.Name} · frame {(int)Math.Round(framePos) + 1} of {table.FrameCount}", r.Left + 7, r.Top + 4, 10.5, Palette.DimText);
             }, animate: true);
         }
     }
