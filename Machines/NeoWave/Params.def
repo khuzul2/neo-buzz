@@ -3,6 +3,7 @@
 namespace NeoBuzz.Wave
 class NeoWaveMachine
 tracks 16
+summary Wavetable synth: two table oscillators with warps, sub and noise, a filter, three envelopes, two LFOs and a mod matrix; loads WAV wavetables. Use it for evolving pads, digital leads and modern basses.
 
 group Voice
 VoiceMode   "Voice mode"    0 2    0    enum Poly Mono Legato           | Poly; Mono retriggers; Legato glides without retriggering

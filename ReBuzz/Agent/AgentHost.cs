@@ -5,12 +5,14 @@
 // when it is split out for macOS (docs/specs/cross-platform.md P1).
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BuzzGUI.Common;
+using ReBuzz.Agent.Guides;
 using ReBuzz.Agent.Mcp;
 using ReBuzz.Core;
 
@@ -37,7 +39,7 @@ namespace ReBuzz.Agent
 
     internal sealed class AgentHost : IDisposable
     {
-        public const string Version = "0.1 (A0)";
+        public const string Version = "0.2 (A1)";
 
         readonly List<HttpTransport> http = new();
 
@@ -50,6 +52,11 @@ namespace ReBuzz.Agent
             Log = new AgentLog(logFolder, mode);
             var tools = new ToolRegistry();
             StudioTools.Register(tools, this);
+            GuideLibrary.Register(tools);
+            MachineTools.Register(tools, this);
+            ParamTools.Register(tools, this);
+            PatternTools.Register(tools, this);
+            RenderTools.Register(tools, this);
             Server = new McpServer(new ServerInfo
             {
                 Name = "rebuzz",
@@ -57,9 +64,10 @@ namespace ReBuzz.Agent
                 Version = Version,
                 Instructions =
                     "ReBuzz is a modular music studio (Buzz): generators and effects connected in a graph, patterns placed in an arrangement. " +
-                    "Start every session with studio_status. Times are in beats from the song start; pitches are MIDI numbers (60 = C4); levels in dB. " +
-                    "Every changing call is one undo step (undo reverts it). Errors say what to do next.",
-            }, tools);
+                    "Start every session with studio_status, and read guide(topic=\"workflow\") once. Times are in beats from the song start " +
+                    "(or \"bar.beat\" text); pitches are MIDI numbers or names (60 = C4); levels in dB. Every changing call is one undo step " +
+                    "(undo reverts it); a call that fails changes nothing. Hear your work with render and check it with analyze. Errors say what to do next.",
+            }, tools, resources: GuideLibrary.Resources());
             Server.ToolCalled += Log.Write;
         }
 
@@ -74,6 +82,9 @@ namespace ReBuzz.Agent
 
         /// <summary>The last changing agent call ("Agent: song_set") and the undo stack's size right after it.</summary>
         internal string LastAgentUndo { get; private set; }
+
+        /// <summary>This session's renders by id ("r1"…).</summary>
+        internal ConcurrentDictionary<string, RenderInfo> Renders { get; } = new();
         internal int ActionsAfterLastAgentCall { get; private set; } = -1;
 
         /// <summary>
@@ -86,26 +97,43 @@ namespace ReBuzz.Agent
             {
                 using var messages = NonModal.Capture();
                 var stack = Core.SongCore.ActionStack;
-                int before = stack.Actions.Count();
-                if (changes) stack.BeginActionGroup();
+                int steps = 0;
+                void Count(IEnumerable<BuzzGUI.Interfaces.IAction> actions, bool done) { if (done) steps++; }
+                bool failed = false;
+                if (changes)
+                {
+                    stack.BeginActionGroup();
+                    stack.PostDoOrUndoGroup += Count;
+                }
                 try
                 {
                     return work(messages.Messages);
                 }
                 catch (ToolError e) when (messages.Messages.Count > 0 && !e.Message.Contains("ReBuzz said:"))
                 {
+                    failed = true;
                     throw new ToolError(e.Message + " ReBuzz said: " + string.Join(" | ", messages.Messages));
+                }
+                catch (Exception)
+                {
+                    failed = true;
+                    throw;
                 }
                 finally
                 {
                     if (changes)
                     {
+                        stack.PostDoOrUndoGroup -= Count;
                         stack.EndActionGroup();
-                        int after = stack.Actions.Count();
-                        if (after != before)
+                        // A call that fails changes nothing: take back the steps it made before failing.
+                        if (failed && steps > 0)
+                        {
+                            try { stack.Undo(); } catch (Exception) { }
+                        }
+                        else if (!failed && steps > 0)
                         {
                             LastAgentUndo = "Agent: " + what;
-                            ActionsAfterLastAgentCall = after;
+                            ActionsAfterLastAgentCall = stack.Actions.Count();
                         }
                     }
                 }

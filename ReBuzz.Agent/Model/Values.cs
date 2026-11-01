@@ -1,3 +1,4 @@
+#nullable disable
 // Agent server (docs/specs/mcp-server.md §3.3): parameter values in units. Agents write
 // "800 Hz", "-6 dB", "35%", "Saw", "1/8", "raw:512", or change a value by an amount or a factor;
 // the server finds the raw Buzz value. Neo machines publish exact mappings (their manifest);
@@ -211,8 +212,9 @@ namespace ReBuzz.Agent.Model
                 throw new ToolError($"{p.Name}: unknown unit \"{unit}\". {Examples(p)}");
             if (inDim != null && dimension.Length > 0 && inDim != dimension)
                 throw new ToolError($"{p.Name} is in {dimension}, not {inDim}. {Examples(p)}");
-            // Percentages: "35%" and a bare 35 on a % parameter both mean 35 % (0.35 of the scale).
-            if (dimension == "%" && (inDim == "%" || inDim == null)) inBase /= 100;
+            // Percentages: "35%" and a bare 35 on a % parameter both mean 35 %. Percent and bipolar
+            // mappings (and described values) hold fractions; a linear "2 … 98 %" holds percents.
+            if (dimension == "%" && (inDim == "%" || inDim == null) && Fractional(p)) inBase /= 100;
             if (mode == Mode.By)
             {
                 if (double.IsNaN(physicalNow)) throw new ToolError($"{p.Name} has no numeric value to change by an amount (it reads \"{p.Describe(current)}\"); set a value instead.");
@@ -220,6 +222,8 @@ namespace ReBuzz.Agent.Model
             }
             return ToRaw(p, inBase, dimension);
         }
+
+        static bool Fractional(ParamInfo p) => p.Mapping == null || p.Mapping.Kind is MappingKind.Percent or MappingKind.Bipolar;
 
         static int ResolveChoice(ParamInfo p, ParamMapping m, JsonNode input, string text, bool isNumber, double number, int current, Mode mode)
         {

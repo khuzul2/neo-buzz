@@ -2,6 +2,7 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoDrive
 namespace NeoBuzz.Drive
 class NeoDriveMachine
+summary Saturator: tape, tube, transistor, diode and wavefolder models with bias, tone filters, auto gain and oversampling. Use it for warmth and grit on tracks, glue on buses, or as a distortion effect.
 
 group Drive
 Mode       "Mode"       0 4    0    enum Tape Tube Transistor Diode Fold | Saturation model

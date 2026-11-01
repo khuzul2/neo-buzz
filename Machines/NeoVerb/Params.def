@@ -2,6 +2,7 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoVerb
 namespace NeoBuzz.Verb
 class NeoVerbMachine
+summary Algorithmic reverb (Hall, Room, Chamber, Plate) with pre-delay, size, decay, damping, modulation, freeze and shimmer. Use it for space and depth, best on a send at 100% wet.
 
 group Space
 Mode       "Mode"          0 3    0    enum Hall Room Chamber Plate    | Algorithm: delay lengths, diffusion and early reflections

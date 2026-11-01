@@ -185,7 +185,8 @@ namespace ReBuzz.Agent
                 Title = "Set song properties",
                 Description =
                     "Changes the tempo, ticks per beat (pattern resolution), song end and loop. Positions are in beats from the start " +
-                    "(rounded to the nearest tick). Returns the values as they now are. Example: song_set(tempo_bpm=124, loop_start_beats=0, loop_end_beats=64).",
+                    "(rounded to the nearest tick). Change ticks_per_beat before writing patterns: patterns keep their length in ticks, so it moves " +
+                    "everything in beats. One undo step. Returns the values as they now are. Example: song_set(tempo_bpm=124, loop_start_beats=0, loop_end_beats=64).
                 Input = Object(null,
                     Opt("tempo_bpm", Number("Tempo in beats per minute (rounded to a whole number)", 16, 500)),
                     Opt("ticks_per_beat", Integer("Pattern rows per beat (4 = 16th notes)", 1, 32)),
@@ -199,17 +200,20 @@ namespace ReBuzz.Agent
                 {
                     var s = await host.Engine("song_set", true, _ =>
                     {
-                        if (c.Int("ticks_per_beat") is int tpb) core.TPB = tpb;
-                        if (c.Number("tempo_bpm") is double bpm) core.BPM = (int)Math.Round(bpm);
-                        int tpbNow = core.TPB;
-                        int Ticks(double beats) => (int)Math.Round(beats * tpbNow);
                         var song = core.SongCore;
-                        if (c.Number("song_end_beats") is double end) song.SongEnd = Math.Max(1, Ticks(end));
                         double? ls = c.Number("loop_start_beats"), le = c.Number("loop_end_beats");
                         if (ls.HasValue && le.HasValue && le <= ls) throw new ToolError($"loop_end_beats ({le}) must be after loop_start_beats ({ls}).");
-                        if (le is double loopEnd) song.LoopEnd = Math.Max(1, Ticks(loopEnd));
-                        if (ls is double loopStart) song.LoopStart = Math.Min(Ticks(loopStart), song.LoopEnd - 1);
-                        if (c.Bool("looping") is bool loop) core.Looping = loop;
+                        int tpbNow = c.Int("ticks_per_beat") ?? core.TPB;
+                        int bpmNow = c.Number("tempo_bpm") is double bpm ? (int)Math.Round(bpm) : core.BPM;
+                        bool loopingNow = c.Bool("looping") ?? core.Looping;
+                        if (tpbNow != core.TPB || bpmNow != core.BPM || loopingNow != core.Looping)
+                            AgentActions.SetTransport(core, bpmNow, tpbNow, loopingNow);
+                        int Ticks(double beats) => (int)Math.Round(beats * tpbNow);
+                        void Marker(BuzzGUI.Interfaces.SongMarkers marker, int ticks) =>
+                            AgentActions.Do(core, new BuzzGUI.Common.Actions.SongActions.SetMarkerAction(song, marker, ticks));
+                        if (c.Number("song_end_beats") is double end) Marker(BuzzGUI.Interfaces.SongMarkers.SongEnd, Math.Max(1, Ticks(end)));
+                        if (le is double loopEnd) Marker(BuzzGUI.Interfaces.SongMarkers.LoopEnd, Math.Max(1, Ticks(loopEnd)));
+                        if (ls is double loopStart) Marker(BuzzGUI.Interfaces.SongMarkers.LoopStart, Math.Min(Ticks(loopStart), song.LoopEnd - 1));
                         core.SetModifiedFlag();
                         return Status(host);
                     }, c.Cancellation);
@@ -240,6 +244,7 @@ namespace ReBuzz.Agent
             Req("song", Object(null, Opt("file", String("The song's file; absent when never saved")), Req("unsaved_changes", Boolean("Changes since the last save")))),
             Req("tempo_bpm", Number("Beats per minute")),
             Req("ticks_per_beat", Integer("Pattern rows per beat")),
+            Req("beats_per_bar", Integer("Beats per bar, for \"bar.beat\" positions")),
             Req("length_beats", Number("Song end, in beats")),
             Req("loop", Object(null, Req("start_beats", Number("Loop start")), Req("end_beats", Number("Loop end")), Req("on", Boolean("Looping")))),
             Req("sample_rate", Integer("Samples per second")),
@@ -267,6 +272,7 @@ namespace ReBuzz.Agent
                 ["song"] = songObject,
                 ["tempo_bpm"] = core.BPM,
                 ["ticks_per_beat"] = tpb,
+                ["beats_per_bar"] = SongModel.BeatsPerBar(core),
                 ["length_beats"] = Beats(song.SongEnd, tpb),
                 ["loop"] = new JsonObject { ["start_beats"] = Beats(song.LoopStart, tpb), ["end_beats"] = Beats(song.LoopEnd, tpb), ["on"] = core.Looping },
                 ["sample_rate"] = ReBuzzCore.masterInfo.SamplesPerSec,
@@ -274,8 +280,8 @@ namespace ReBuzz.Agent
                 ["transport"] = new JsonObject { ["playing"] = core.Playing, ["recording"] = core.Recording, ["position_beats"] = Beats(song.PlayPosition, tpb) },
                 ["counts"] = new JsonObject
                 {
-                    ["machines"] = song.Machines.Count,
-                    ["patterns"] = song.Machines.Sum(m => m.Patterns.Count),
+                    ["machines"] = SongModel.Machines(core).Count(),
+                    ["patterns"] = SongModel.Machines(core).Sum(m => m.Patterns.Count),
                     ["waves"] = song.Wavetable.Waves.Count(w => w != null),
                 },
                 ["undo"] = undo,
