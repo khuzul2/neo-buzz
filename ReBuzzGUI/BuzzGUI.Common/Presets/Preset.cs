@@ -135,7 +135,7 @@ namespace BuzzGUI.Common.Presets
                 }
                 catch (Exception e)
                 {
-                    System.Windows.MessageBox.Show(e.Message, "Get IMachine.Data");
+                    PortableMessageBox.Show(e.Message, "Get IMachine.Data");
                 }
 
             }
@@ -270,7 +270,7 @@ namespace BuzzGUI.Common.Presets
             }
             catch (Exception e)
             {
-                System.Windows.MessageBox.Show(string.Format("xml serialization failed: {0}", e.Message));
+                PortableMessageBox.Show(string.Format("xml serialization failed: {0}", e.Message));
                 return "";
             }
         }
@@ -359,7 +359,7 @@ namespace BuzzGUI.Common.Presets
                 }
                 catch (Exception e)
                 {
-                    System.Windows.MessageBox.Show(e.Message, "Set IMachine.Data");
+                    PortableMessageBox.Show(e.Message, "Set IMachine.Data");
                 }
             }
 

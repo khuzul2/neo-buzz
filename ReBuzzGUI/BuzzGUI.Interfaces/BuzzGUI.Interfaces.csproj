@@ -1,20 +1,29 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!--
+    Fork (docs/specs/engine-split.md §4): one assembly identity, two builds. The Windows build is
+    the machine API as it always was (the WPF-typed members under #if WINDOWS); the portable
+    net10.0 build is a strict subset of it, for the engine off Windows. Windows ships the Windows
+    build. Off Windows only the portable build is made (no Windows targeting pack there).
+  -->
   <PropertyGroup>
-    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <TargetFrameworks>net10.0-windows10.0.26100.0;net10.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">net10.0</TargetFrameworks>
     <Nullable>enable</Nullable>
-    <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <BaseOutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\$(MSBuildProjectName)\bin</BaseOutputPath>
 	<IntermediateOutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\$(MSBuildProjectName)\obj</IntermediateOutputPath>
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
+  <PropertyGroup Condition="$(TargetFramework.Contains('-windows'))">
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
   
-  <Target Name="ForcePerformRestore" AfterTargets="BeforeBuild">	
+  <Target Name="ForcePerformRestore" AfterTargets="BeforeBuild" Condition="'$(OS)' == 'Windows_NT'">	
     <Exec Command="IF NOT EXIST  $(IntermediateOutputPath)..\project.assets.json  echo restore to $(IntermediateOutputPath)..\project.assets.json &amp;&amp;  dotnet restore $(ProjectName).csproj --no-dependencies &amp;&amp; move build\$(ProjectName)\obj\* $(IntermediateOutputPath)..\ &amp;&amp; rmdir /Q /S build	 " />
   </Target>
   
-  <Target Name="RemoveEmptyObj" AfterTargets="AfterBuild">
+  <Target Name="RemoveEmptyObj" AfterTargets="AfterBuild" Condition="'$(OS)' == 'Windows_NT'">
     <Exec Command="IF EXIST obj rmdir obj" />
   </Target>
 </Project>
