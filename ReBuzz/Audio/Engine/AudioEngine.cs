@@ -1,5 +1,4 @@
-﻿using BespokeFusion;
-using BuzzDotNet.Audio;
+﻿using BuzzDotNet.Audio;
 using BuzzGUI.Common.Settings;
 using Helios.Concurrency;
 using NAudio.Wave;
@@ -48,7 +47,7 @@ namespace ReBuzz.Audio.Engine
 
         private IAudioDriver currentDriver;
         private readonly AudioBufferManager bufferManager = new();
-        private readonly AudioDeviceService deviceService = new();
+        private readonly AudioDeviceService deviceService;
 
         private WasapiConfigWindow wasapiConfigWindow;
         private AsioConfigWindow asioConfigWindow;
@@ -71,6 +70,7 @@ namespace ReBuzz.Audio.Engine
             this.buzzCore = buzzCore;
             this.engineSettings = settings;
             this.dispatcher = dispatcher;
+            deviceService = new AudioDeviceService(buzzCore.UserMessages);
 
             CreateScheduler();
         }

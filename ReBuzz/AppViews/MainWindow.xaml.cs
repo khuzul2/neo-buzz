@@ -728,7 +728,7 @@ namespace ReBuzz
                                 catch { }
                             }
 
-                            Utils.SetProcessorAffinityMask(registryEx, true);
+                            Utils.SetProcessorAffinityMask(registryEx, Buzz.UserMessages, true);
                         }
                         preferencesWindow = null;
                     }

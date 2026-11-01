@@ -80,7 +80,7 @@ namespace ReBuzz.Common
             return ret;
         }
 
-        internal static void SetProcessorAffinityMask(IRegistryEx registryEx, bool ideal)
+        internal static void SetProcessorAffinityMask(IRegistryEx registryEx, IUserMessages userMessages, bool ideal)
         {
             var process = Process.GetCurrentProcess();
             long processorAffinityMask = registryEx.Read("ProcessorAffinity", 0xFFFFFFFF, "Settings");
@@ -91,7 +91,7 @@ namespace ReBuzz.Common
             }
             catch (Exception ex)
             {
-                UiUtils.MessageBox(ex.Message);
+                userMessages.Error(ex.Message, null, ex);
             }
 
             /*
