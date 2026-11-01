@@ -26,6 +26,20 @@
     <Compile Include="$(C)MIDI.cs" Link="BuzzGUI.Common\MIDI.cs" />
     <Compile Include="$(C)ManagedActionStack.cs" Link="BuzzGUI.Common\ManagedActionStack.cs" />
     <Compile Include="$(C)MenuItemVM.cs" Link="BuzzGUI.Common\MenuItemVM.cs" />
+    <Compile Include="$(C)PowerCollections\Algorithms.cs" Link="BuzzGUI.Common\PowerCollections\Algorithms.cs" />
+    <Compile Include="$(C)PowerCollections\Bag.cs" Link="BuzzGUI.Common\PowerCollections\Bag.cs" />
+    <Compile Include="$(C)PowerCollections\CollectionBase.cs" Link="BuzzGUI.Common\PowerCollections\CollectionBase.cs" />
+    <Compile Include="$(C)PowerCollections\Comparers.cs" Link="BuzzGUI.Common\PowerCollections\Comparers.cs" />
+    <Compile Include="$(C)PowerCollections\DictionaryBase.cs" Link="BuzzGUI.Common\PowerCollections\DictionaryBase.cs" />
+    <Compile Include="$(C)PowerCollections\Hash.cs" Link="BuzzGUI.Common\PowerCollections\Hash.cs" />
+    <Compile Include="$(C)PowerCollections\ListBase.cs" Link="BuzzGUI.Common\PowerCollections\ListBase.cs" />
+    <Compile Include="$(C)PowerCollections\OrderedDictionary.cs" Link="BuzzGUI.Common\PowerCollections\OrderedDictionary.cs" />
+    <Compile Include="$(C)PowerCollections\Pair.cs" Link="BuzzGUI.Common\PowerCollections\Pair.cs" />
+    <Compile Include="$(C)PowerCollections\ReadOnlyCollectionBase.cs" Link="BuzzGUI.Common\PowerCollections\ReadOnlyCollectionBase.cs" />
+    <Compile Include="$(C)PowerCollections\RedBlack.cs" Link="BuzzGUI.Common\PowerCollections\RedBlack.cs" />
+    <Compile Include="$(C)PowerCollections\Set.cs" Link="BuzzGUI.Common\PowerCollections\Set.cs" />
+    <Compile Include="$(C)PowerCollections\Strings.cs" Link="BuzzGUI.Common\PowerCollections\Strings.cs" />
+    <Compile Include="$(C)PowerCollections\Util.cs" Link="BuzzGUI.Common\PowerCollections\Util.cs" />
     <Compile Include="$(C)Presets\Ascii85.cs" Link="BuzzGUI.Common\Presets\Ascii85.cs" />
     <Compile Include="$(C)Presets\Preset.cs" Link="BuzzGUI.Common\Presets\Preset.cs" />
     <Compile Include="$(C)Presets\PresetDictionary.cs" Link="BuzzGUI.Common\Presets\PresetDictionary.cs" />
