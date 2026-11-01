@@ -23,4 +23,9 @@
     <InternalsVisibleTo Include="ReBuzz.AgentTests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The analysis library (docs/specs/mcp-server.md §7), shared with the analysis machines. -->
+    <Compile Include="..\Machines\NeoBuzz.Analysis\**\*.cs" Link="Analysis\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

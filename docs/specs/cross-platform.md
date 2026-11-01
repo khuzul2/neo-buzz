@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v1 — analysis and options, no code. Hypothetical: port right before or right after the MCP work |
+| Status | Decided 2026-11-01: D1–D5 as recommended, run as a track parallel to the MCP work. P0 in progress |
 | Date | 2026-11-01 |
 | Scope | One codebase that runs on macOS (Apple silicon) and Windows; keep C# if possible; what to do with Windows-only machines (keep, bridge, rebuild) |
 | Code baseline | fork `22ff4a9` on upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
@@ -43,9 +43,9 @@
 
 **The fast alternative is Avalonia XPF**, a commercial layer that runs WPF apps on macOS. It costs about 12–19 pw plus €19,500, and upstream merges stay free. Pick it only if you want full parity on Mac in months rather than a year, and accept a closed, paid dependency.
 
-### Decisions for you
+### Decisions (taken 2026-11-01, all as recommended)
 
-| # | Decision | Options | Pick |
+| # | Decision | Options | Decided |
 |---|---|---|---|
 | D1 | UI stack | **A** Avalonia: open source, rewrite the views · **B** Avalonia XPF: €19.5k, keep WPF · **C** headless engine + web UI · **D** no port; run Windows in a VM on the Mac | **A** |
 | D2 | Legacy native machines on Mac | **A** not on Mac: recompile the open-source ones, use successors, clone the few the census picks · **B** Wine/CrossOver bridge · **C** not on Mac and no rebuilds (songs show placeholders) | **A** |
@@ -354,8 +354,8 @@ Windows keeps the WPF UI through P3. New UI built during that time goes on the p
 
 | Phase | When | Delivers | Exit criteria | pw |
 |---|---|---|---|---|
-| **P0 Guardrails** | now, before A0 | The rules in §8; editor-kit drawing behind `INeoCanvas`; `ISettingsStore`; an `IMidiBackend` seam; Linux CI compiles every new pure file | Neo editors draw through the canvas (WPF backend), with no visual change | 1–2 |
-| **P1 Engine assembly** | inside A0 | `ReBuzz.Engine` (net10.0, no WPF) compiles the engine files where they are, by linking. WPF calls go behind `IUserMessages` and `IMachineUiHost`; colours become ARGB. `BuzzGUI.Interfaces` multi-targets one assembly identity: a portable subset plus the current Windows superset. `ReBuzz.Agent` references the engine only | The engine builds on Linux CI; ReBuzzTests pass on Windows against it; `ReBuzz.exe --agent` runs headless | 4–6 |
+| **P0 Guardrails** | now, in parallel with A0/A1 | The rules in §8; editor-kit drawing behind `INeoCanvas`; `ISettingsStore`; an `IMidiBackend` seam; Linux CI compiles every new pure file | Neo editors draw through the canvas (WPF backend), with no visual change | 1–2 |
+| **P1 Engine assembly** | alongside A1 (A0 shipped first: its protocol layer is already pure, so P1 moves only the `ReBuzz/Agent` glue onto the engine) | `ReBuzz.Engine` (net10.0, no WPF) compiles the engine files where they are, by linking. WPF calls go behind `IUserMessages` and `IMachineUiHost`; colours become ARGB. `BuzzGUI.Interfaces` multi-targets one assembly identity: a portable subset plus the current Windows superset. `ReBuzz.Agent` references the engine only | The engine builds on Linux CI; ReBuzzTests pass on Windows against it; `ReBuzz.exe --agent` runs headless | 4–6 |
 | **P2 Mac engine** | after A1/A2 | PortAudio driver, DryWetMIDI backend, JSON settings, real-time threads with the audio workgroup, MIDI clock, Link helper, osx-arm64 native libraries. Managed machines load even when WPF types are missing; native machines appear as placeholders. Headless `--agent` on macOS | The A1 scripted suite passes on `macos-15`; Neo renders null-test against Windows at ≤ −100 dBFS; a 1-hour play test at 128 samples has no dropouts | 5–8 |
 | **P3 Studio MVP** (Avalonia, Mac first) | after A5 | Shell, machine view, one sequence editor, Modern Pattern Editor, generic parameter window, Session View with mixer, Neo editors (Avalonia canvas backend), preferences, one dark theme; MCP studio mode | Compose a song from scratch on a Mac with Neo and Pedal machines; old songs open (natives as placeholders) and save back without loss | 10–15 |
 | **P4 Parity and Windows switch** | after P3 | AudioBlock, EnvelopeBlock, ConnectionMixer, Pianoroll; wave editing, file browser, HD recorder, signal analysis; the manifest editor for machines without a GUI; the Windows build moves to Avalonia, with native editors through `NativeControlHost`; the WPF UI is retired | Parity checklist signed off; ReBuzzTests and the MCP suite green on both OSes | 10–16 (themes included) |

@@ -98,7 +98,14 @@ namespace ReBuzz.Agent
                         RefuseUnsaved(core, c.Bool("discard_unsaved") == true, "start a new song");
                         core.Modified = false;
                         core.ExecuteCommand(BuzzGUI.Interfaces.BuzzCommand.NewFile);
-                        if (c.Number("tempo_bpm") is double bpm) core.BPM = (int)Math.Round(bpm);
+                        if (c.Number("tempo_bpm") is double bpm)
+                        {
+                            core.BPM = (int)Math.Round(bpm);
+                            // The tempo marks the song modified from a deferred update; a fresh song isn't
+                            // "unsaved work", so clear the flag after it (the dispatcher runs in order).
+                            core.Modified = false;
+                            host.Dispatcher.BeginInvoke(() => core.Modified = false);
+                        }
                         return Status(host);
                     }, c.Cancellation);
                     return ToolResult.Ok($"New empty song at {s["tempo_bpm"]} BPM.", s);

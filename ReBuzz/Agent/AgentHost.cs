@@ -44,6 +44,7 @@ namespace ReBuzz.Agent
         public AgentHost(ReBuzzCore core, IUiDispatcher dispatcher, string mode, string logFolder, TimeSpan? timeout = null)
         {
             Core = core;
+            Dispatcher = dispatcher;
             Mode = mode;
             Queue = new EngineQueue(new DispatcherEngineThread(dispatcher), timeout ?? TimeSpan.FromSeconds(120));
             Log = new AgentLog(logFolder, mode);
@@ -63,6 +64,8 @@ namespace ReBuzz.Agent
         }
 
         public ReBuzzCore Core { get; }
+        /// <summary>ReBuzz's dispatcher; work queued here runs after the engine's own deferred updates.</summary>
+        public IUiDispatcher Dispatcher { get; }
         /// <summary>"studio" or "headless".</summary>
         public string Mode { get; }
         public EngineQueue Queue { get; }

@@ -2,10 +2,10 @@
 
 | | |
 |---|---|
-| Status | Draft v1 — design, no code yet |
-| Date | 2026-10-31 |
+| Status | A0 built (2026-11-01); A1 in progress. As built: §3.5 |
+| Date | 2026-10-31, updated 2026-11-01 |
 | Scope | An MCP server that lets an AI agent (Claude Code or any MCP client) compose, design sounds, mix and master in this ReBuzz fork, with tools clear enough to use without guessing, guides for the craft, and the analysis needed to check its own work |
-| Protocol | MCP 2026-07-28 (stdio and Streamable HTTP; structured tool output; tasks extension for long renders), C# SDK `ModelContextProtocol` 2.x |
+| Protocol | MCP 2026-07-28, also negotiates 2025-11-25, 2025-06-18 and 2025-03-26 (stdio and Streamable HTTP; structured tool output; progress). Own protocol layer, no SDK (§3.5) |
 | Related | docs/specs/machines.md (Neo machines), docs/specs/session-view.md |
 
 ---
@@ -45,8 +45,8 @@ Claude Code ──(stdio)──────────► ReBuzz.exe --agent   
 Claude Code ──(Streamable HTTP)─► ReBuzz.exe (window open)     http://127.0.0.1:<port>/mcp, token
 
 ReBuzz process
-  ReBuzz.Agent (new assembly, InternalsVisibleTo from ReBuzz)
-    McpHost          C# MCP SDK: tools, resources, prompts, tasks, progress
+  ReBuzz.Agent (new assembly, pure C#: builds and tests on Linux)
+    Mcp              JSON-RPC 2.0, schemas and validation, tools, resources, prompts, progress; stdio and HTTP
     EngineQueue      every call runs on the engine/UI thread, one at a time, with a timeout
     Model            stable names, units, time in beats, notes as MIDI numbers
     Render           offline renders (WorkManager), probes on any machine's output
@@ -91,6 +91,36 @@ ReBuzz process
 - Destructive calls carry the MCP `destructiveHint` annotation and use elicitation to confirm in studio mode: deleting machines, a new song over unsaved changes, overwriting files.
 - File access is limited to the song's folder, the user's configured sample and project folders, and the server's render folder.
 - An agent log (call, arguments, result, duration) is kept per session. The user can open it from the Agent badge.
+
+### 3.5 As built (A0)
+
+**Two projects.**
+
+| Project | What | Tests |
+|---|---|---|
+| `ReBuzz.Agent` | Pure C#, no ReBuzz reference: the protocol (`Mcp/`), stdio and HTTP transports, the engine queue, the agent log, the model (pitches, beats, values in units) and, linked in, `NeoBuzz.Analysis` | `ReBuzz.AgentTests` on Linux, in Fork CI |
+| `ReBuzz/Agent` | The glue inside ReBuzz: `AgentHost` (engine calls on ReBuzz's dispatcher, one undo group per changing call, dialogs captured), the tools, headless `--agent`, studio mode (settings page, token, connection window, Ctrl+Shift+A) | `ReBuzzTests/AgentServerTests` on Windows, in the package workflow |
+
+**Own protocol layer instead of the C# SDK.** Decided while building A0:
+
+- NuGet is unreachable from the build sandbox, so an SDK dependency could only be compiled in CI. The protocol layer is the part that most needs fast local tests.
+- What the server uses of MCP is small: JSON-RPC, tools with schemas and structured output, resources, prompts, progress, cancellation, logging. About 1,500 lines with tests.
+- Error quality is the product. The layer validates arguments against each tool's schema and answers in the agent's terms: `tempo: unknown argument (known: tempo_bpm, …)`, `notes[1].start: missing (required)`, and unknown tools with "Did you mean".
+- The SDK can replace the layer later behind the same `ToolDef`s if the protocol moves faster than we can follow. The tasks extension (long renders) is the first candidate for that.
+
+**HTTP.** A `TcpListener` on 127.0.0.1 (no HttpListener URL ACLs, no admin rights):
+
+- bearer token, `Host`/`Origin` checks, `Mcp-Session-Id`;
+- 202 for notifications, 405 for GET; DELETE ends a session;
+- server-sent events when the client sends a `progressToken` and accepts `text/event-stream`.
+
+**Values in units** (`Model/Values.cs`). `param_set` changes take one of three forms:
+
+- `value`: `"800 Hz"`, `"-6 dB"`, `"35%"`, `"4:1"`, `"Saw"`, `min`/`max`/`default`, `raw:512`;
+- `by`: `"+3 dB"`, `"-2 st"`;
+- `times`: `2`, `0.5`.
+
+Neo machines resolve through their exact mappings. Legacy machines resolve by searching their value descriptions, with log distance for Hz and seconds. A wrong unit or choice is an error that lists examples.
 
 ## 4. Tool design rules
 
@@ -144,7 +174,7 @@ Phases (§9) are marked A1 … A7.
 | Tool | Phase | Purpose |
 |---|---|---|
 | `machine_describe` | A1 | Everything about one machine:<br>• parameters by group, each with name, current value (text, number and unit), range, default and description<br>• track parameters<br>• the manual link (Neo)<br>• presets and commands |
-| `param_set` | A1 | Many changes in one call, values in units (§3.3), global or per track. Returns the values as the machine now describes them |
+| `param_set` | A1 | Many changes in one call, global or per track. Each change is `value` (in units, §3.3), `by` (relative, in units) or `times` (a factor). Returns the values as the machine now describes them |
 | `param_get` | A1 | Current values (a subset, or all) |
 | `preset_list`, `preset_load`, `preset_save` | A2 | ReBuzz presets (the factory `.prs.xml` files and the user's own) |
 | `snapshot_save`, `snapshot_restore`, `snapshot_diff` | A2 | Named whole-song parameter snapshots (all machines, connections, mutes) for A/B comparison of mixes and sounds |
