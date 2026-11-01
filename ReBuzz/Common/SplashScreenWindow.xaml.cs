@@ -24,7 +24,7 @@ namespace ReBuzz.Common
             DataContext = this;
 
             //this.Title = BuzzGUI.Common.Win32.CompactPath(wndName, 40);
-            var md = Utils.GetUserControlXAML<Window>("ParameterWindowShell.xaml", buzzPath);
+            var md = UiUtils.GetUserControlXAML<Window>("ParameterWindowShell.xaml", buzzPath);
             if (md != null)
             {
                 //this.Resources.MergedDictionaries.Add(md.Resources);

@@ -634,7 +634,7 @@ namespace ReBuzz.Core
                     }
                     catch (Exception e)
                     {
-                        Utils.MessageBox("Selected Audio Driver Error: " + e.Message, "Selected Audio Driver Error");
+                        UiUtils.MessageBox("Selected Audio Driver Error: " + e.Message, "Selected Audio Driver Error");
                     }
                 }
             }
@@ -1381,7 +1381,7 @@ namespace ReBuzz.Core
         {
             if (Modified)
             {
-                var result = Utils.MessageBox("Save changes to " + (SongCore.SongName == null ? "Untitled" : SongCore.SongName), "ReBuzz", MessageBoxButton.YesNoCancel);
+                var result = UiUtils.MessageBox("Save changes to " + (SongCore.SongName == null ? "Untitled" : SongCore.SongName), "ReBuzz", MessageBoxButton.YesNoCancel);
                 if (result == MessageBoxResult.Yes)
                 {
                     SaveSongFile(SongCore.SongName);
@@ -1609,7 +1609,7 @@ namespace ReBuzz.Core
             }
             catch (Exception ex)
             {
-                Utils.MessageBox("Error saving file " + filename + "\n\n" + ex, "Error saving file.");
+                UiUtils.MessageBox("Error saving file " + filename + "\n\n" + ex, "Error saving file.");
             }
 
             Modified = false;

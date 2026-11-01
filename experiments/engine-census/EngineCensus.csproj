@@ -45,6 +45,9 @@
   <!--
     BuzzGUI.Interfaces builds with ImplicitUsings=enable; ReBuzz and BuzzGUI.Common don't. One
     compilation can't mix both, so this file adds the three implicit usings the Interfaces need.
+    Only "dotnet build" uses it: the global usings would also reach the engine files and hide
+    errors there, so census.py's Roslyn pass drops it and gives the usings to the Interfaces
+    files alone.
   -->
   <ItemGroup>
     <Compile Include="InterfacesImplicitUsings.cs" />

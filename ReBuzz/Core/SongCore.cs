@@ -1,7 +1,6 @@
 ﻿using BuzzGUI.Common;
 using BuzzGUI.Common.Settings;
 using BuzzGUI.Interfaces;
-using BuzzGUI.MachineView;
 using ReBuzz.Common;
 using ReBuzz.Core.Actions.GraphActions;
 using ReBuzz.MachineManagement;

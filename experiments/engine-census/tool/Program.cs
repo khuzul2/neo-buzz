@@ -2,6 +2,7 @@
 //
 // Usage: CensusTool <args.txt> <out.tsv>
 //   args.txt lines:  src:<path> | ref:<path> | def:<symbol> | analyzer:<path>
+//                    | implicit:<path fragment>|<namespace>;<namespace>…
 //   out.tsv columns: severity, id, file, line, column, message
 // or:    CensusTool refs <out.tsv> <dll>...   (see MachineRefs.cs)
 using System;
@@ -25,6 +26,7 @@ static class Program
         var refs = new List<string>();
         var defines = new List<string>();
         var analyzerPaths = new List<string>();
+        var implicitUsings = new List<(string Fragment, string[] Usings)>();
         foreach (var raw in File.ReadAllLines(args[0]))
         {
             var line = raw.Trim();
@@ -38,12 +40,29 @@ static class Program
                 case "ref": refs.Add(val); break;
                 case "def": defines.Add(val); break;
                 case "analyzer": analyzerPaths.Add(val); break;
+                case "implicit":
+                    var parts = val.Split('|');
+                    implicitUsings.Add((parts[0], parts[1].Split(';', StringSplitOptions.RemoveEmptyEntries)));
+                    break;
             }
         }
 
         var parse = new CSharpParseOptions(LanguageVersion.Latest, preprocessorSymbols: defines);
+        // implicit:<path fragment>|<ns>;<ns>… gives the files whose path contains the fragment
+        // those usings, as their project's ImplicitUsings would, without making them global for
+        // every file (BuzzGUI.Interfaces has ImplicitUsings; the engine files don't). They go on
+        // the first line, so line numbers don't move.
+        string Text(string p)
+        {
+            var text = File.ReadAllText(p);
+            var norm = p.Replace('\\', '/');
+            foreach (var (fragment, usings) in implicitUsings)
+                if (norm.Contains(fragment))
+                    return string.Concat(usings.Select(u => $"using {u}; ")) + text;
+            return text;
+        }
         var trees = sources.Distinct().Select(p =>
-            CSharpSyntaxTree.ParseText(File.ReadAllText(p), parse, path: p)).ToList();
+            CSharpSyntaxTree.ParseText(Text(p), parse, path: p)).ToList();
         var metadata = refs.Distinct().Select(r => MetadataReference.CreateFromFile(r)).ToList();
         var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary,
             allowUnsafe: true, nullableContextOptions: NullableContextOptions.Disable);
