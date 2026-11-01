@@ -28,5 +28,11 @@ namespace ReBuzz.Core
 
         /// <summary>Fork: whether the calling thread is the UI thread.</summary>
         bool CheckAccess() => true;
+
+        /// <summary>
+        /// Fork (engine-split.md S2): a stopped timer that runs <paramref name="tick"/> on the UI
+        /// thread every <paramref name="interval"/>. The default queues ticks from a thread-pool timer.
+        /// </summary>
+        IUiTimer CreateTimer(TimeSpan interval, Action tick) => new ThreadPoolUiTimer(this, interval, tick);
     }
 }
