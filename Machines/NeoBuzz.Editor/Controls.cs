@@ -1,6 +1,7 @@
 #nullable disable
 // Neo machines' editor kit (docs/specs/machines.md §4): controls bound to ReBuzz parameters, and
-// the frames, meters and graph surfaces editors are built from.
+// the frames, meters and graph surfaces editors are built from. WPF does the layout and routes
+// input; layout maths, hit-testing and drawing are toolkit-free (Core/), drawn through WpfCanvas.
 
 using System;
 using System.Collections.Generic;
@@ -61,9 +62,9 @@ namespace NeoBuzz.Editor
 
         public void Detach() => Parameter?.UnsubscribeEvents(0, handler, null);
 
-        public int RawFromNormalized(double t) => Def.Min + (int)Math.Round(Math.Clamp(t, 0, 1) * (Def.Max - Def.Min));
+        public int RawFromNormalized(double t) => ParamMapping.RawFromNormalized(Def, t);
 
-        public double Normalized(int raw) => Def.Max == Def.Min ? 0 : (raw - Def.Min) / (double)(Def.Max - Def.Min);
+        public double Normalized(int raw) => ParamMapping.Normalized(Def, raw);
     }
 
     /// <summary>A knob for a parameter.</summary>
@@ -74,8 +75,7 @@ namespace NeoBuzz.Editor
         {
             var def = ctx.Table[index];
             Label = label ?? def.Name;
-            Bipolar = def.Kind == MapKind.Bipolar || (def.Kind == MapKind.Int && def.Flag) ||
-                      (def.Kind == MapKind.Db && def.A < 0 && def.B > 0 && !def.Flag);
+            Bipolar = ParamMapping.IsBipolar(def);
             Steps = def.Max - def.Min;
             Binding = ctx.Bind(index, Show);
             Default = Binding.Normalized(def.Default);
@@ -98,29 +98,19 @@ namespace NeoBuzz.Editor
     internal sealed class ParamChoice : FrameworkElement
     {
         readonly EditorContext ctx;
-        readonly string[] names;
-        readonly double cellWidth;
+        readonly ChoiceStrip strip;
+        readonly WpfCanvas canvas;
         int selected;
         int hover = -1;
 
         public ParamChoice(EditorContext ctx, int index, string label = null, double cellWidth = 0, bool vertical = false)
         {
             this.ctx = ctx;
+            canvas = new WpfCanvas(this);
             var def = ctx.Table[index];
-            names = def.Names ?? (def.Kind == MapKind.Switch ? new[] { "Off", "On" } : BuildNames(def));
-            Label = label ?? def.Name;
-            Vertical = vertical;
-            this.cellWidth = cellWidth > 0 ? cellWidth : Math.Max(34, MeasureLongest() + 14);
-            if (vertical)
-            {
-                Width = this.cellWidth;
-                Height = 18 + names.Length * 22;
-            }
-            else
-            {
-                Width = this.cellWidth * names.Length;
-                Height = 18 + 24;
-            }
+            strip = new ChoiceStrip(label ?? def.Name, ParamMapping.ChoiceNames(def), cellWidth, vertical, canvas);
+            Width = strip.Width;
+            Height = strip.Height;
             Binding = ctx.Bind(index, Show);
             ToolTip = def.Description;
             Cursor = Cursors.Hand;
@@ -128,22 +118,8 @@ namespace NeoBuzz.Editor
         }
 
         public ParamBinding Binding { get; }
-        public string Label { get; }
-        public bool Vertical { get; }
-
-        static string[] BuildNames(ParamDef def)
-        {
-            var n = new string[def.Max - def.Min + 1];
-            for (int i = 0; i < n.Length; i++) n[i] = def.Describe(def.Min + i);
-            return n;
-        }
-
-        double MeasureLongest()
-        {
-            double w = 0;
-            foreach (var n in names) w = Math.Max(w, Theme.Format(this, n, 11, Theme.Text).Width);
-            return w;
-        }
+        public string Label => strip.Label;
+        public bool Vertical => strip.Vertical;
 
         void Show(int raw)
         {
@@ -151,23 +127,22 @@ namespace NeoBuzz.Editor
             InvalidateVisual();
         }
 
-        int CellAt(Point p)
+        int CellAt(MouseEventArgs e)
         {
-            if (p.Y < 18) return -1;
-            int i = Vertical ? (int)((p.Y - 18) / 22) : (int)(p.X / cellWidth);
-            return i >= 0 && i < names.Length ? i : -1;
+            var p = e.GetPosition(this);
+            return strip.CellAt(p.X, p.Y);
         }
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
-            int i = CellAt(e.GetPosition(this));
+            int i = CellAt(e);
             if (i >= 0) Binding.Set(Binding.Def.Min + i);
             e.Handled = true;
         }
 
         protected override void OnMouseMove(MouseEventArgs e)
         {
-            int i = CellAt(e.GetPosition(this));
+            int i = CellAt(e);
             if (i != hover)
             {
                 hover = i;
@@ -181,26 +156,13 @@ namespace NeoBuzz.Editor
             InvalidateVisual();
         }
 
-        protected override void OnRender(DrawingContext dc)
-        {
-            Theme.DrawText(dc, this, Label, 1, 0, 11, Theme.DimText);
-            var accent = Theme.Solid(ctx.Accent);
-            var accentFill = Theme.Solid(ctx.Accent, 0x38);
-            for (int i = 0; i < names.Length; i++)
-            {
-                Rect r = Vertical ? new Rect(0, 18 + i * 22, cellWidth, 20) : new Rect(i * cellWidth, 18, cellWidth - 2, 22);
-                bool on = i == selected;
-                dc.DrawRoundedRectangle(on ? accentFill : i == hover ? Theme.Track : Theme.Panel,
-                    Theme.Pen(on ? accent : Theme.PanelEdge, 1), r, 3, 3);
-                Theme.TextCentered(dc, this, names[i], r.X + r.Width / 2, r.Y + (r.Height - 15) / 2, 11, on ? accent : Theme.Text, on);
-            }
-        }
+        protected override void OnRender(DrawingContext dc) => strip.Draw(canvas.On(dc), selected, hover, ctx.Accent);
     }
 
     /// <summary>A titled panel holding controls.</summary>
     internal sealed class Section : Border
     {
-        public Section(string title, Color accent, UIElement content)
+        public Section(string title, NeoColor accent, UIElement content)
         {
             Background = Theme.Panel;
             BorderBrush = Theme.PanelEdge;
@@ -212,7 +174,7 @@ namespace NeoBuzz.Editor
             stack.Children.Add(new TextBlock
             {
                 Text = title.ToUpperInvariant(),
-                Foreground = Theme.Solid(accent),
+                Foreground = Theme.Brush(accent),
                 FontFamily = Theme.FontFamily,
                 FontSize = 10.5,
                 FontWeight = FontWeights.SemiBold,
@@ -252,19 +214,22 @@ namespace NeoBuzz.Editor
     }
 
     /// <summary>
-    /// A surface redrawn by a callback, on demand and (when <see cref="Animate"/>) about 30 times
-    /// a second while visible: curves, envelopes, waves, meters.
+    /// A surface redrawn by a callback, on demand and (when <c>animate</c>) about 30 times a
+    /// second while visible: curves, envelopes, waves, meters. The callback draws on an
+    /// INeoCanvas, inside the frame (Core/Graphs.cs: GraphFrame).
     /// </summary>
     internal class GraphView : FrameworkElement
     {
-        readonly Action<DrawingContext, Rect, GraphView> draw;
+        readonly Action<INeoCanvas, NeoRect> draw;
+        readonly WpfCanvas canvas;
         DispatcherTimer timer;
 
-        public GraphView(double width, double height, Action<DrawingContext, Rect, GraphView> draw, bool animate = false)
+        public GraphView(double width, double height, Action<INeoCanvas, NeoRect> draw, bool animate = false)
         {
             Width = width;
             Height = height;
             this.draw = draw;
+            canvas = new WpfCanvas(this);
             if (animate)
             {
                 timer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(33) };
@@ -277,53 +242,19 @@ namespace NeoBuzz.Editor
 
         protected override void OnRender(DrawingContext dc)
         {
-            var r = new Rect(0, 0, ActualWidth > 0 ? ActualWidth : Width, ActualHeight > 0 ? ActualHeight : Height);
-            dc.DrawRoundedRectangle(Theme.Background, Theme.Pen(Theme.PanelEdge, 1), r, 4, 4);
-            dc.PushClip(new RectangleGeometry(r, 4, 4));
-            try
-            {
-                draw(dc, r, this);
-            }
-            catch (Exception)
-            {
-                // A drawing error must never take the editor down.
-            }
-            dc.Pop();
+            var r = new NeoRect(0, 0, ActualWidth > 0 ? ActualWidth : Width, ActualHeight > 0 ? ActualHeight : Height);
+            GraphFrame.Draw(canvas.On(dc), r, draw);
         }
     }
 
     /// <summary>Vertical level meter in dB (−60 … +6), reading a value 30 times a second.</summary>
     internal sealed class Meter : GraphView
     {
-        public Meter(string label, Func<float> level, Color color, double height = 120, bool reduction = false)
-            : base(16, height, (dc, r, v) => Draw(dc, r, v, label, level, color, reduction), animate: true)
+        /// <param name="level">The level as a gain; with <paramref name="reduction"/>, the gain applied (≤ 1), drawn as a bar growing down from 0 dB.</param>
+        public Meter(string label, Func<float> level, NeoColor color, double height = 120, bool reduction = false)
+            : base(16, height, (c, r) => MeterPainter.Draw(c, r, level(), color, reduction), animate: true)
         {
             ToolTip = label;
-        }
-
-        static void Draw(DrawingContext dc, Rect r, Visual v, string label, Func<float> level, Color color, bool reduction)
-        {
-            const double lo = -60, hi = 6;
-            float a = level();
-            double db = DspMath.GainToDb(Math.Max(1e-9f, a));
-            Rect inner = new Rect(r.X + 3, r.Y + 3, r.Width - 6, r.Height - 6);
-            double Y(double d) => inner.Bottom - (Math.Clamp(d, lo, hi) - lo) / (hi - lo) * inner.Height;
-            if (reduction)
-            {
-                // Gain reduction: a bar growing down from 0 dB (a is the gain, ≤ 1).
-                double top = Y(0);
-                double bottom = inner.Top + Math.Clamp(-db, 0, 30) / 30 * inner.Height;
-                if (bottom > inner.Top + 0.5)
-                    dc.DrawRectangle(Theme.Solid(color), null, new Rect(inner.X, inner.Top, inner.Width, bottom - inner.Top));
-                return;
-            }
-            double y = Y(db);
-            var brush = db > 0 ? Theme.Solid(Color.FromRgb(0xFF, 0x4D, 0x4D)) : Theme.Solid(color);
-            if (y < inner.Bottom)
-                dc.DrawRectangle(brush, null, new Rect(inner.X, y, inner.Width, inner.Bottom - y));
-            // 0 dB and −12/−24 ticks.
-            foreach (double t in new[] { 0.0, -12, -24, -48 })
-                dc.DrawLine(Theme.Pen(Theme.Grid, 1, false), new Point(inner.X, Y(t)), new Point(inner.Right, Y(t)));
         }
     }
 }
@@ -335,6 +266,7 @@ namespace NeoBuzz.Editor
     {
         readonly EditorContext ctx;
         readonly string[] names;
+        readonly WpfCanvas canvas;
         int selected;
 
         public ParamDropdown(EditorContext ctx, int index, string label = null, double width = 110)
@@ -344,7 +276,8 @@ namespace NeoBuzz.Editor
             names = def.Names ?? new[] { "Off", "On" };
             Label = label ?? def.Name;
             Width = width;
-            Height = 18 + 22;
+            Height = DropdownFace.Height;
+            canvas = new WpfCanvas(this);
             Binding = ctx.Bind(index, raw => { selected = raw - def.Min; InvalidateVisual(); });
             selected = Binding.Value - def.Min;
             ToolTip = def.Description;
@@ -370,19 +303,8 @@ namespace NeoBuzz.Editor
             e.Handled = true;
         }
 
-        protected override void OnRender(DrawingContext dc)
-        {
-            Theme.DrawText(dc, this, Label, 1, 0, 11, Theme.DimText);
-            var r = new Rect(0, 18, Width, 22);
-            dc.DrawRoundedRectangle(Theme.Background, Theme.Pen(Theme.PanelEdge, 1), r, 3, 3);
-            string text = selected >= 0 && selected < names.Length ? names[selected] : "?";
-            var ft = Theme.Format(this, text, 11.5, Theme.Text);
-            ft.MaxTextWidth = Math.Max(10, Width - 22);
-            ft.MaxLineCount = 1;
-            ft.Trimming = TextTrimming.CharacterEllipsis;
-            dc.DrawText(ft, new Point(6, 21));
-            Theme.DrawText(dc, this, "▾", Width - 14, 21, 11, Theme.Solid(ctx.Accent));
-        }
+        protected override void OnRender(DrawingContext dc) =>
+            DropdownFace.Draw(canvas.On(dc), Width, Label, DropdownFace.TextOf(names, selected), ctx.Accent);
     }
 
     /// <summary>Shortcuts editors use to lay out many parameters.</summary>
@@ -399,25 +321,10 @@ namespace NeoBuzz.Editor
         /// <summary>A picture of an ADSR envelope from four parameters (times in seconds, sustain 0 … 1).</summary>
         public static GraphView Envelope(EditorContext ctx, int attack, int decay, int sustain, int release, double width = 150, double height = 56)
         {
-            var view = new GraphView(width, height, (dc, r, v) =>
+            var view = new GraphView(width, height, (c, r) =>
             {
                 double a = ctx.Value(attack), d = ctx.Value(decay), s = ctx.Value(sustain), rl = ctx.Value(release);
-                // Segment widths grow with the square root of time, so short and long both read.
-                double wa = Math.Sqrt(a), wd = Math.Sqrt(d), ws = 0.35, wr = Math.Sqrt(rl);
-                double total = wa + wd + ws + wr;
-                double x0 = r.Left + 6, w = r.Width - 12, top = r.Top + 6, bottom = r.Bottom - 6, h = bottom - top;
-                double X(double t) => x0 + t / total * w;
-                var g = new StreamGeometry();
-                using (var c = g.Open())
-                {
-                    c.BeginFigure(new Point(X(0), bottom), true, true);
-                    c.LineTo(new Point(X(wa), top), true, false);
-                    c.LineTo(new Point(X(wa + wd), bottom - s * h), true, false);
-                    c.LineTo(new Point(X(wa + wd + ws), bottom - s * h), true, false);
-                    c.LineTo(new Point(X(total), bottom), true, false);
-                }
-                g.Freeze();
-                dc.DrawGeometry(Theme.Solid(ctx.Accent, 0x30), Theme.Pen(Theme.Solid(ctx.Accent), 1.5), g);
+                EnvelopePainter.Adsr(c, r, a, d, s, rl, ctx.Accent);
             });
             ctx.Changed += view.InvalidateVisual;
             return view;
@@ -430,15 +337,17 @@ namespace NeoBuzz.Editor
     /// <summary>A small button drawn in the theme.</summary>
     internal sealed class ActionButton : FrameworkElement
     {
-        readonly Color accent;
+        readonly NeoColor accent;
+        readonly WpfCanvas canvas;
         bool hover;
 
-        public ActionButton(string text, Color accent, double width = 90)
+        public ActionButton(string text, NeoColor accent, double width = 90)
         {
             Text = text;
             this.accent = accent;
+            canvas = new WpfCanvas(this);
             Width = width;
-            Height = 24;
+            Height = ButtonFace.Height;
             Cursor = System.Windows.Input.Cursors.Hand;
         }
 
@@ -454,12 +363,7 @@ namespace NeoBuzz.Editor
             e.Handled = true;
         }
 
-        protected override void OnRender(DrawingContext dc)
-        {
-            var r = new Rect(0, 0, Width, Height);
-            dc.DrawRoundedRectangle(hover ? Theme.Solid(accent, 0x38) : Theme.Panel, Theme.Pen(Theme.Solid(accent), 1), r, 4, 4);
-            Theme.TextCentered(dc, this, Text, Width / 2, 4, 11.5, Theme.Solid(accent));
-        }
+        protected override void OnRender(DrawingContext dc) => ButtonFace.Draw(canvas.On(dc), Width, Height, Text, hover, accent);
     }
 }
 

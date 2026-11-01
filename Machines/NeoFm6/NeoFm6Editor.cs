@@ -1,14 +1,15 @@
 #nullable disable
 // Neo FM6's editor (docs/specs/machines.md §5): the algorithm as a live diagram (operators light
 // up with their level), pitch envelope, LFO, voice, output and the DX7 bank on top; the six
-// operators below, each with its frequency, level, envelope and keyboard scaling.
+// operators below, each with its frequency, level, envelope and keyboard scaling. WPF lays the
+// editor out; the graphs draw on the kit's canvas (INeoCanvas), the algorithm with the kit's
+// OperatorDiagram.
 
 using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
-using System.Windows.Media;
 using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
 
@@ -16,11 +17,11 @@ namespace NeoBuzz.Fm6
 {
     internal sealed class NeoFm6Editor : NeoEditor
     {
-        static readonly Color AccentColor = Color.FromRgb(0xFF, 0xC4, 0x3D);
+        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xFF, 0xC4, 0x3D);
         const double D = 34, Small = 24, SmallWidth = 46;
 
         protected override string Title => "Neo FM6";
-        protected override Color Accent => AccentColor;
+        protected override NeoColor Accent => AccentColor;
         internal override ParamDef[] Table => Params.Table;
 
         internal override UIElement BuildBody(EditorContext ctx)
@@ -87,7 +88,7 @@ namespace NeoBuzz.Fm6
         {
             var freq = new TextBlock
             {
-                Foreground = Theme.Solid(AccentColor),
+                Foreground = Theme.Brush(AccentColor),
                 FontFamily = Theme.FontFamily,
                 FontSize = 15,
                 FontWeight = FontWeights.SemiBold,
@@ -101,12 +102,12 @@ namespace NeoBuzz.Fm6
             ShowFreq();
             ctx.Changed += ShowFreq;
 
-            var activity = new GraphView(10, 40, (dc, r, v) =>
+            var activity = new GraphView(10, 40, (c, r) =>
             {
                 float g = machine?.Engine.OpLevel(op) ?? 0;
                 double db = DspMath.GainToDb(Math.Max(1e-9f, g / 2f));
                 double h = Math.Clamp((db + 60) / 60, 0, 1) * (r.Height - 4);
-                if (h > 0.5) dc.DrawRectangle(Theme.Solid(AccentColor), null, new Rect(r.X + 2, r.Bottom - 2 - h, r.Width - 4, h));
+                if (h > 0.5) c.Rect(new NeoRect(r.X + 2, r.Bottom - 2 - h, r.Width - 4, h), AccentColor, NeoStroke.None);
             }, animate: true) { ToolTip = "Operator level now" };
 
             var top = Layout.Row(
@@ -147,11 +148,11 @@ namespace NeoBuzz.Fm6
         /// <summary>A DX7 envelope: four rates and four levels; pitch envelopes centre on level 50.</summary>
         static GraphView EnvelopeView(EditorContext ctx, int rate1, int level1, double width, double height, bool pitch)
         {
-            var view = new GraphView(width, height, (dc, r, v) =>
+            var view = new GraphView(width, height, (c, r) =>
             {
                 double left = r.Left + 5, top = r.Top + 5, h = r.Height - 10, w = r.Width - 10;
                 double Y(int level) => top + h - level / 99.0 * h;
-                if (pitch) dc.DrawLine(Theme.Pen(Theme.Grid, 1, false), new Point(left, Y(50)), new Point(left + w, Y(50)));
+                if (pitch) c.Line(left, Y(50), left + w, Y(50), new NeoStroke(Palette.Grid, 1, false));
                 // Segment widths: slower rates are wider (about the log of the time); the sustain gets a fixed width.
                 var widths = new double[5];
                 for (int i = 0; i < 4; i++) widths[i < 3 ? i : 4] = 0.15 + Math.Pow((99 - ctx.Raw(rate1 + i)) / 99.0, 1.5) * 1.6;
@@ -160,26 +161,24 @@ namespace NeoBuzz.Fm6
                 foreach (var x in widths) total += x;
                 double X(double t) => left + t / total * w;
                 int l4 = ctx.Raw(level1 + 3);
-                var g = new StreamGeometry();
-                using (var c = g.Open())
+                var env = new NeoPath();
                 {
                     double t = 0;
-                    c.BeginFigure(new Point(X(0), Y(l4)), false, false);
+                    env.MoveTo(X(0), Y(l4));
                     for (int i = 0; i < 3; i++)
                     {
                         t += widths[i];
-                        c.LineTo(new Point(X(t), Y(ctx.Raw(level1 + i))), true, true);
+                        env.LineTo(X(t), Y(ctx.Raw(level1 + i)), smoothJoin: true);
                     }
                     t += widths[3];
-                    c.LineTo(new Point(X(t), Y(ctx.Raw(level1 + 2))), true, true);
+                    env.LineTo(X(t), Y(ctx.Raw(level1 + 2)), smoothJoin: true);
                     t += widths[4];
-                    c.LineTo(new Point(X(t), Y(l4)), true, true);
+                    env.LineTo(X(t), Y(l4), smoothJoin: true);
                 }
-                g.Freeze();
-                dc.DrawGeometry(null, Theme.Pen(Theme.Solid(ctx.Accent), 1.5), g);
+                c.Path(env, NeoFill.None, new NeoStroke(ctx.Accent, 1.5));
                 // Key-off marker.
                 double off = X(widths[0] + widths[1] + widths[2] + widths[3]);
-                dc.DrawLine(Theme.Pen(Theme.Solid(ctx.Accent, 0x50), 1, false), new Point(off, top), new Point(off, top + h));
+                c.Line(off, top, off, top + h, new NeoStroke(ctx.Accent.WithAlpha(0x50), 1, false));
             });
             ctx.Changed += view.InvalidateVisual;
             return view;
@@ -188,27 +187,21 @@ namespace NeoBuzz.Fm6
         /// <summary>Keyboard level scaling across the keys: the level offset each note gets.</summary>
         static GraphView ScalingView(EditorContext ctx, int op, double width, double height)
         {
-            var view = new GraphView(width, height, (dc, r, v) =>
+            var view = new GraphView(width, height, (c, r) =>
             {
                 int bp = ctx.Raw(Op(op, P.O1Break)), ld = ctx.Raw(Op(op, P.O1LDepth)), rd = ctx.Raw(Op(op, P.O1RDepth));
                 int lc = ctx.Raw(Op(op, P.O1LCurve)), rc = ctx.Raw(Op(op, P.O1RCurve));
                 double left = r.Left + 4, w = r.Width - 8, mid = r.Top + r.Height / 2, h = r.Height / 2 - 4;
-                dc.DrawLine(Theme.Pen(Theme.Grid, 1, false), new Point(left, mid), new Point(left + w, mid));
+                c.Line(left, mid, left + w, mid, new NeoStroke(Palette.Grid, 1, false));
                 double bx = left + (bp + 21 - 21) / 99.0 * w;
-                dc.DrawLine(Theme.Pen(Theme.Solid(ctx.Accent, 0x50), 1, false), new Point(bx, r.Top + 3), new Point(bx, r.Bottom - 3));
-                var g = new StreamGeometry();
-                using (var c = g.Open())
+                c.Line(bx, r.Top + 3, bx, r.Bottom - 3, new NeoStroke(ctx.Accent.WithAlpha(0x50), 1, false));
+                var curve = new NeoPath();
+                for (int note = 21; note <= 120; note++)
                 {
-                    for (int note = 21; note <= 120; note++)
-                    {
-                        int s = Dx7.ScaleLevel(note, bp, ld, rd, lc, rc);
-                        var p = new Point(left + (note - 21) / 99.0 * w, mid - Math.Clamp(s / 127.0, -1, 1) * h);
-                        if (note == 21) c.BeginFigure(p, false, false);
-                        else c.LineTo(p, true, false);
-                    }
+                    int s = Dx7.ScaleLevel(note, bp, ld, rd, lc, rc);
+                    curve.LineTo(left + (note - 21) / 99.0 * w, mid - Math.Clamp(s / 127.0, -1, 1) * h);
                 }
-                g.Freeze();
-                dc.DrawGeometry(null, Theme.Pen(Theme.Solid(ctx.Accent), 1.5), g);
+                c.Path(curve, NeoFill.None, new NeoStroke(ctx.Accent, 1.5));
             }) { ToolTip = "Keyboard level scaling: level offset from the lowest to the highest key" };
             ctx.Changed += view.InvalidateVisual;
             return view;
@@ -316,7 +309,7 @@ namespace NeoBuzz.Fm6
             readonly EditorContext ctx;
 
             public AlgorithmView(EditorContext ctx, NeoFm6Machine machine, double width, double height)
-                : base(width, height, (dc, r, v) => Draw(dc, r, v, ctx, machine), animate: true)
+                : base(width, height, (c, r) => Draw(c, r, ctx, machine), animate: true)
             {
                 this.ctx = ctx;
                 Cursor = Cursors.Hand;
@@ -343,80 +336,17 @@ namespace NeoBuzz.Fm6
                 e.Handled = true;
             }
 
-            static void Draw(DrawingContext dc, Rect r, Visual v, EditorContext ctx, NeoFm6Machine machine)
+            /// <summary>The diagram of algorithm 1 … 32 (Engine/Algorithms.cs), laid out by the kit.</summary>
+            internal static OperatorDiagram Diagram(int number)
             {
-                var alg = Algorithms.Get(ctx.Raw(P.Algorithm) + 1);
-                var pos = Algorithms.Layout(alg);
-                int columns = 1, rows = 1;
-                foreach (var (c, row) in pos)
-                {
-                    columns = Math.Max(columns, c + 1);
-                    rows = Math.Max(rows, row + 1);
-                }
-                const double bw = 24, bh = 18, gx = 32, gy = 27;
-                double x0 = r.Left + (r.Width - ((columns - 1) * gx + bw)) / 2;
-                double yBottom = r.Bottom - 22;
-                Rect Box(int op) => new Rect(x0 + pos[op].Column * gx, yBottom - bh - pos[op].Row * gy, bw, bh);
-                var accent = Theme.Solid(ctx.Accent);
-                var line = Theme.Pen(Theme.Solid(ctx.Accent, 0xA0), 1.2);
-
-                Theme.DrawText(dc, v, $"Algorithm {alg.Number}", r.Left + 6, r.Top + 4, 11, Theme.DimText, true);
-
-                // Output bus under the carriers.
-                double busY = r.Bottom - 12;
-                double busLeft = double.MaxValue, busRight = double.MinValue;
-                for (int op = 0; op < 6; op++)
-                {
-                    if (!alg.IsCarrier(op)) continue;
-                    var b = Box(op);
-                    double cx = b.X + bw / 2;
-                    dc.DrawLine(line, new Point(cx, b.Bottom), new Point(cx, busY));
-                    busLeft = Math.Min(busLeft, cx);
-                    busRight = Math.Max(busRight, cx);
-                }
-                dc.DrawLine(line, new Point(busLeft, busY), new Point(busRight, busY));
-
-                // Modulation links.
-                for (int to = 0; to < 6; to++)
-                    for (int from = 0; from < 6; from++)
-                    {
-                        if ((alg.Modulators[to] & (1 << from)) == 0) continue;
-                        var a = Box(from);
-                        var b = Box(to);
-                        dc.DrawLine(line, new Point(a.X + bw / 2, a.Bottom), new Point(b.X + bw / 2, b.Top));
-                    }
-
-                // Feedback: a loop on the right of the operator (or from one operator back up to another).
-                {
-                    var f = Box(alg.FeedbackFrom);
-                    var t = Box(alg.FeedbackTo);
-                    double xr = Math.Max(f.Right, t.Right) + 5;
-                    var g = new StreamGeometry();
-                    using (var c = g.Open())
-                    {
-                        c.BeginFigure(new Point(f.Right, f.Y + bh / 2), false, false);
-                        c.LineTo(new Point(xr, f.Y + bh / 2), true, false);
-                        c.LineTo(new Point(xr, t.Y - 5), true, false);
-                        c.LineTo(new Point(t.X + bw / 2, t.Y - 5), true, false);
-                        c.LineTo(new Point(t.X + bw / 2, t.Y), true, false);
-                    }
-                    g.Freeze();
-                    int fb = ctx.Raw(P.Feedback);
-                    dc.DrawGeometry(null, Theme.Pen(Theme.Solid(ctx.Accent, (byte)(fb == 0 ? 0x40 : 0xC0)), fb == 0 ? 1 : 1.6), g);
-                }
-
-                // Operators, lit by their level.
-                for (int op = 0; op < 6; op++)
-                {
-                    var b = Box(op);
-                    bool on = ctx.Raw(Op(op, P.O1On)) != 0;
-                    float level = machine?.Engine.OpLevel(op) ?? 0;
-                    double glow = Math.Clamp((DspMath.GainToDb(Math.Max(1e-9f, level / 2f)) + 60) / 60, 0, 1);
-                    byte alpha = (byte)(alg.IsCarrier(op) ? 0x40 + 0x90 * glow : 0x10 + 0xA0 * glow);
-                    dc.DrawRoundedRectangle(Theme.Solid(ctx.Accent, alpha), Theme.Pen(on ? accent : Theme.PanelEdge, 1.2), b, 3, 3);
-                    Theme.TextCentered(dc, v, (op + 1).ToString(), b.X + bw / 2, b.Y + 1, 11.5, on ? Theme.Text : Theme.DimText, true);
-                }
+                var alg = Algorithms.Get(number);
+                return new OperatorDiagram(alg.Number, Algorithms.Layout(alg), alg.Carriers, alg.Modulators, alg.FeedbackFrom, alg.FeedbackTo);
             }
+
+            static void Draw(INeoCanvas c, NeoRect r, EditorContext ctx, NeoFm6Machine machine) =>
+                Diagram(ctx.Raw(P.Algorithm) + 1).Draw(c, r, ctx.Accent, ctx.Raw(P.Feedback),
+                    op => ctx.Raw(Op(op, P.O1On)) != 0,
+                    op => machine?.Engine.OpLevel(op) ?? 0);
         }
     }
 }
