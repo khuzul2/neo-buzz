@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | In progress (2026-11-03). Merged: M0 and the PortAudio binding (#43), M6's precise waiter (#44), M1 `rebuzz-headless` (#47), M2 placeholders (#48). This PR: M5 (PortAudio driver, live mode) and M4's Mac job, where the A6 suite passes on `macos-15`. Under way: M3's null test, M6 (MIDI, Link). Then M7 |
+| Status | In progress (2026-11-03). Merged: M0 and the PortAudio binding (#43), M6's precise waiter (#44), M1 `rebuzz-headless` (#47), M2 placeholders (#48). M5 PortAudio driver and live mode, with M4's Mac job, where the A6 suite passes on `macos-15` (#49). This PR: M7 (render workers in the audio workgroup). Under way: M3's null test, M6 (MIDI, Link). Then the user's play test (§4) |
 | Scope | cross-platform.md §5.2 P2: the engine running headless on macOS (arm64), with real audio and MIDI, and the MCP server on stdio. No UI: the Avalonia studio is P3 |
 | Exit | The A6 scripted suite passes on `macos-15`; Neo renders null-test against the Windows package at ≤ −100 dBFS; a 1-hour play test at 128 samples has no dropouts (run by hand on a Mac) |
 | Related | cross-platform.md (decisions D1–D5, §3.2 the pieces), engine-split.md (P1), mcp-server.md §10 (the A6 suite) |
