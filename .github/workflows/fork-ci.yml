@@ -25,6 +25,19 @@ jobs:
       with:
         dotnet-version: '10.0.x'
 
+    # PortAudio for the Mac engine's audio binding (docs/specs/mac-engine.md M5), tested here on
+    # Linux: same LP64 ABI as macOS. The runner has no sound card, so a PulseAudio server with a
+    # null sink is the default device (PortAudio 19.7 initialises its PulseAudio host, and fails
+    # without a server): streams open and run their callbacks in real time, and play nothing.
+    - name: PortAudio
+      run: |
+        sudo apt-get update -q
+        sudo apt-get install -y -q --no-install-recommends libportaudio2 pulseaudio pulseaudio-utils
+        pulseaudio -D --exit-idle-time=-1 --system=false
+        pactl load-module module-null-sink sink_name=ci_null
+        pactl set-default-sink ci_null
+        pactl info | grep -i "default sink"
+
     - name: Test
       shell: pwsh
       run: dotnet test ReBuzz.SessionTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath test.log
