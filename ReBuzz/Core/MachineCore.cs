@@ -2,7 +2,6 @@
 using BuzzGUI.Common;
 using BuzzGUI.Common.Settings;
 using BuzzGUI.Interfaces;
-using BuzzGUI.MachineView;
 using ReBuzz.Common;
 using ReBuzz.Common.Interfaces;
 using ReBuzz.MachineManagement;
@@ -311,7 +310,7 @@ namespace ReBuzz.Core
                 int newValue = value % 7;
                 lastEngineThread = newValue;
 
-                if (MachineView.StaticSettings.ShowEngineThreads)
+                if (MachineViewState.ShowsEngineThreads)   // engine-split.md S7
                 {
                     if (newValue != oldValue)
                     PropertyChanged?.Raise(this, "LastEngineThread");

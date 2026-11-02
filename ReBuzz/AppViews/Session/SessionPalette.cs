@@ -52,7 +52,20 @@ namespace ReBuzz.AppViews.Session
         /// the Sequence View uses for pattern colours. MainWindow replaces the default (the
         /// Default theme's list) with the active theme's.
         /// </summary>
-        public static (string Name, Color Color)[] ColorChoices { get; set; } =
+        public static (string Name, Color Color)[] ColorChoices
+        {
+            get => colorChoices;
+            set
+            {
+                colorChoices = value;
+                // Fork (engine-split.md S7): controller pads (SessionControllers) read the same list as ARGB.
+                ReBuzz.Core.Session.SessionColourChoices.Choices = value?.Select(c => (c.Name, Argb(c.Color))).ToArray();
+            }
+        }
+
+        internal static uint Argb(Color c) => (uint)(c.A << 24 | c.R << 16 | c.G << 8 | c.B);
+
+        static (string Name, Color Color)[] colorChoices =
         {
             ("Powder Blue", C("#8EB9C2")), ("Moss Green", C("#C7DBAE")), ("Wheat", C("#F5DEB3")), ("Light Blue", C("#A8C5DD")),
             ("Ochre", C("#C47E29")), ("Camouflage Green", C("#677665")), ("Asparagus", C("#678443")), ("Slate Blue", C("#5A6BA1")),

@@ -1,5 +1,4 @@
 using NAudio.Midi;
-using ReBuzz.AppViews.Session;
 using ReBuzz.Control;
 using System;
 using System.Collections.Generic;
@@ -493,10 +492,10 @@ namespace ReBuzz.Core.Session
         /// <summary>A clip's colour (its colour index in the theme's list); uncoloured clips: the Session View's clip grey-blue.</summary>
         static Rgb ColorOf(int index)
         {
-            var choices = SessionPalette.ColorChoices;
+            var choices = SessionColourChoices.Choices;   // engine-split.md S7: SessionPalette's list as ARGB
             if (index < 0 || choices == null || choices.Length == 0) return new Rgb(0x8E, 0xB9, 0xC2);
-            var color = choices[index % choices.Length].Color;
-            return new Rgb(color.R, color.G, color.B);
+            uint argb = choices[index % choices.Length].Argb;
+            return new Rgb((byte)(argb >> 16), (byte)(argb >> 8), (byte)argb);
         }
 
         void RaiseChanged()
