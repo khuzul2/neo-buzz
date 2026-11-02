@@ -134,12 +134,11 @@ namespace ReBuzz.SessionTests
         }
 
         /// <summary>
-        /// A virtual source is listed while it exists. CoreMIDI doesn't tell a client of the
-        /// endpoints its own process makes, so hot-plug notifications are checked from another
-        /// process, end to end (tools/headless-midi.py); this only says whether one came.
+        /// Hot-plug: a virtual source coming and going is notified, and listed while it exists.
+        /// tools/headless-midi.py checks the same across processes.
         /// </summary>
         [Test]
-        public void AVirtualSourceIsListedWhileItExists()
+        public void ANewVirtualSourceIsNotifiedAndListedThenGone()
         {
             OnlyOnMac();
             _ = CoreMidi.Client;
@@ -148,15 +147,18 @@ namespace ReBuzz.SessionTests
             CoreMidi.SetupChanged += Changed;
             try
             {
+                Thread.Sleep(200);
+                Interlocked.Exchange(ref changes, 0);
                 uint made;
                 using (var plugged = new CoreMidi.VirtualSource("ReBuzz Test Plug"))
                 {
                     made = plugged.Ref;
-                    Assert.That(CoreMidi.Sources().Any(e => e.Ref == made && e.Name == "ReBuzz Test Plug" && e.Own), Is.True);
-                    Wait(() => Volatile.Read(ref changes) > 0, 1000);
+                    Assert.That(CoreMidi.Sources().Any(e => e.Ref == made && e.Name == "ReBuzz Test Plug" && e.Own), Is.True, "listed");
+                    Assert.That(Wait(() => Volatile.Read(ref changes) > 0), Is.True, "CoreMIDI notified the client");
+                    Interlocked.Exchange(ref changes, 0);
                 }
+                Assert.That(Wait(() => Volatile.Read(ref changes) > 0), Is.True, "and when it went");
                 Assert.That(CoreMidi.Sources().Any(e => e.Ref == made), Is.False, "gone once disposed");
-                TestContext.Out.WriteLine($"notifications for our own virtual source: {Volatile.Read(ref changes)}; all so far: {CoreMidi.Notifications}");
             }
             finally
             {

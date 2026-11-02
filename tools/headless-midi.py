@@ -67,7 +67,6 @@ cm.MIDIObjectGetStringProperty.argtypes = [Ref, ctypes.c_void_p, ctypes.POINTER(
 cm.MIDIReceived.argtypes = [Ref, ctypes.c_char_p]
 cm.MIDISend.argtypes = [Ref, Ref, ctypes.c_char_p]
 cm.MIDIEndpointDispose.argtypes = [Ref]
-NAME = ctypes.c_void_p.in_dll(cm, "kMIDIPropertyName").value
 ALIGNED = platform.machine() in ("arm64", "aarch64")
 
 
@@ -76,9 +75,12 @@ def cfstr(text):
 
 
 def name_of(endpoint):
+    # The property's key, read once the client is made (CoreMIDI sets its constants up then).
+    key = ctypes.c_void_p.in_dll(cm, "kMIDIPropertyName").value
     value = ctypes.c_void_p()
-    if cm.MIDIObjectGetStringProperty(endpoint, NAME, ctypes.byref(value)) != 0 or not value.value:
-        return None
+    status = cm.MIDIObjectGetStringProperty(endpoint, key, ctypes.byref(value))
+    if status != 0 or not value.value:
+        return f"(no name: {status}, key {key})"
     buf = ctypes.create_string_buffer(1024)
     cf.CFStringGetCString(value.value, buf, 1024, UTF8)
     cf.CFRelease(value.value)
