@@ -51,7 +51,8 @@ cf.CFRunLoopRunInMode.restype = ctypes.c_int32
 cf.CFRunLoopRunInMode.argtypes = [ctypes.c_void_p, ctypes.c_double, ctypes.c_bool]
 DEFAULT_MODE = ctypes.c_void_p.in_dll(cf, "kCFRunLoopDefaultMode").value
 READ = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
-cm.MIDIClientCreate.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(Ref)]
+NOTIFY = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p)
+cm.MIDIClientCreate.argtypes = [ctypes.c_void_p, NOTIFY, ctypes.c_void_p, ctypes.POINTER(Ref)]
 cm.MIDISourceCreate.argtypes = [Ref, ctypes.c_void_p, ctypes.POINTER(Ref)]
 cm.MIDIOutputPortCreate.argtypes = [Ref, ctypes.c_void_p, ctypes.POINTER(Ref)]
 cm.MIDIInputPortCreate.argtypes = [Ref, ctypes.c_void_p, READ, ctypes.c_void_p, ctypes.POINTER(Ref)]
@@ -84,15 +85,27 @@ def name_of(endpoint):
     return buf.value.decode()
 
 
-def find(sources, name):
-    # A client sees other processes' endpoints come and go only as its run loop runs (the one
-    # current when it was made: this thread's).
-    cf.CFRunLoopRunInMode(DEFAULT_MODE, 0.5, False)
-    count = cm.MIDIGetNumberOfSources() if sources else cm.MIDIGetNumberOfDestinations()
-    for i in range(count):
-        e = cm.MIDIGetSource(i) if sources else cm.MIDIGetDestination(i)
-        if name_of(e) == name:
-            return e
+def find(sources, name, seconds=5):
+    # A client sees other processes' endpoints come and go as its run loop runs (the one current
+    # when it was made: this thread's), so it runs while looking.
+    end = time.monotonic() + seconds
+    while True:
+        count = cm.MIDIGetNumberOfSources() if sources else cm.MIDIGetNumberOfDestinations()
+        for i in range(count):
+            e = cm.MIDIGetSource(i) if sources else cm.MIDIGetDestination(i)
+            if name_of(e) == name:
+                return e
+        if time.monotonic() > end:
+            return None
+        cf.CFRunLoopRunInMode(DEFAULT_MODE, 0.2, False)
+
+
+def wait_for_log(text, seconds=5):
+    start = time.monotonic()
+    while time.monotonic() - start < seconds:
+        if text in open(stderr_path).read():
+            return time.monotonic() - start
+        cf.CFRunLoopRunInMode(DEFAULT_MODE, 0.1, False)
     return None
 
 
@@ -102,7 +115,9 @@ def packets(data):
 
 
 client = Ref()
-check(cm.MIDIClientCreate(cfstr("headless-midi test"), None, None, ctypes.byref(client)) == 0, "a CoreMIDI client (the test's)")
+notified = []
+notify = NOTIFY(lambda message, ref_con: notified.append(time.monotonic()))
+check(cm.MIDIClientCreate(cfstr("headless-midi test"), notify, None, ctypes.byref(client)) == 0, "a CoreMIDI client (the test's)")
 
 
 def make_keys():
@@ -169,7 +184,9 @@ check(not heard, f"silence before any note ({rms} dBFS RMS)")
 # The keyboard, plugged in now: ReBuzz hears of it and opens it (it is in --midi-in).
 keys = make_keys()
 check(keys is not None, "the keyboard plugged in")
-time.sleep(1.5)
+opened = wait_for_log(f"MIDI {KEYS}: open")
+check(opened is not None, f"ReBuzz hears of it and opens it ({opened if opened is None else round(opened, 2)} s)")
+time.sleep(0.2)
 chord = [60, 64, 67]
 for n in chord:
     cm.MIDIReceived(keys, packets([0x90, n, 100]))
@@ -252,8 +269,9 @@ cm.MIDIEndpointDispose(keys)
 
 log = open(stderr_path).read()
 for line in log.splitlines():
-    if "MIDI" in line or "Link" in line or "playing through" in line:
+    if "MIDI" in line or "Link" in line or "playing through" in line or "warning" in line or "error" in line:
         print("     " + line.strip())
+print(f"     the test's client was notified {len(notified)} times")
 print(f"\n{len(failures)} failed" if failures else "\nall passed")
 if failures:
     print("stderr tail:\n" + log[-3000:])

@@ -66,6 +66,12 @@ namespace ReBuzz.Headless
             public void NotifyMachineManagerCreated(MachineManager machineManager) { }
         }
 
+        /// <summary>The engine's warnings and errors (DCWriteLine), on stderr.</summary>
+        sealed class StderrLog : Serilog.Core.ILogEventSink
+        {
+            public void Emit(Serilog.Events.LogEvent e) => Console.Error.WriteLine($"[ReBuzz] {e.Level.ToString().ToLowerInvariant()}: {e.RenderMessage()}");
+        }
+
         static int Main(string[] args)
         {
             // Native libraries (libsndfile for wave import, PortAudio) from where each OS keeps them.
@@ -114,6 +120,7 @@ namespace ReBuzz.Headless
             var stdin = Console.OpenStandardInput();
             Console.SetOut(Console.Error);                  // stdout carries the protocol only
             NonModal.CaptureAlways(m => Console.Error.WriteLine("[ReBuzz] " + m.Replace('\n', ' ')));
+            Serilog.Log.Logger = new Serilog.LoggerConfiguration().MinimumLevel.Warning().WriteTo.Sink(new StderrLog()).CreateLogger();
             var clock = System.Diagnostics.Stopwatch.StartNew();
             void Step(string what) => Console.Error.WriteLine($"[ReBuzz] {clock.Elapsed.TotalSeconds:F1} s: {what}");
 

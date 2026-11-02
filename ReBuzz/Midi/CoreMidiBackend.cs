@@ -75,13 +75,29 @@ namespace ReBuzz.Midi
         public IMidiInput OpenInput(int index)
         {
             var port = devices.Inputs[index];
-            return new Input(port.Name, new CoreMidi.Input(port.Ref, toCore));
+            return Logged(port.Name, () => new Input(port.Name, new CoreMidi.Input(port.Ref, toCore)));
         }
 
         public IMidiOutput OpenOutput(int index)
         {
             var port = devices.Outputs[index];
-            return new Output(port.Name, Sender(port), owned: !port.Virtual);
+            return Logged(port.Name, () => new Output(port.Name, Sender(port), owned: !port.Virtual));
+        }
+
+        /// <summary>Opens a device, saying so, or why not (the engine's own log may go nowhere).</summary>
+        T Logged<T>(string name, Func<T> open)
+        {
+            try
+            {
+                var device = open();
+                log($"MIDI {name}: open");
+                return device;
+            }
+            catch (Exception e)
+            {
+                log($"MIDI {name} didn't open: {e.Message}");
+                throw;
+            }
         }
 
         CoreMidi.Sender Sender(Port port)
@@ -141,6 +157,7 @@ namespace ReBuzz.Midi
 
         void Report(Action<MidiDeviceChange> report, MidiDeviceChange change)
         {
+            log($"MIDI {change.Name}: {(change.Connected ? "connected" : "gone")}");
             try
             {
                 report(change);
