@@ -92,7 +92,7 @@ namespace NeoBuzz.Analyzer
                 Command = new SimpleCommand
                 {
                     CanExecuteDelegate = _ => true,
-                    ExecuteDelegate = _ => System.Windows.MessageBox.Show(
+                    ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Analyzer — spectrum (FFT with peak hold, third-octave bars), loudness (momentary, " +
                         "short-term and integrated LUFS, loudness range, true peak) and stereo (correlation, width, " +
                         "goniometer). Audio passes through untouched. The numbers are the analysis library's, which " +
@@ -102,9 +102,11 @@ namespace NeoBuzz.Analyzer
         };
     }
 
+#if WINDOWS   // fork (mac-engine.md M2): the editor is WPF; portable builds have none
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {
         public IMachineGUI CreateGUI(IMachineGUIHost host) => new NeoAnalyzerEditor();
     }
+#endif
 }

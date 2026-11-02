@@ -66,7 +66,7 @@ namespace NeoBuzz.Limiter
                 Command = new SimpleCommand
                 {
                     CanExecuteDelegate = _ => true,
-                    ExecuteDelegate = _ => System.Windows.MessageBox.Show(
+                    ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Limiter — true-peak lookahead limiter: the output's 4× oversampled peak (as BS.1770 " +
                         "measures it) stays under the ceiling. Auto or set release, stereo link.\n\n" +
                         "Part of neo-buzz (docs/specs/machines.md).", "Neo Limiter"),
@@ -75,9 +75,11 @@ namespace NeoBuzz.Limiter
         };
     }
 
+#if WINDOWS   // fork (mac-engine.md M2): the editor is WPF; portable builds have none
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {
         public IMachineGUI CreateGUI(IMachineGUIHost host) => new NeoLimiterEditor();
     }
+#endif
 }

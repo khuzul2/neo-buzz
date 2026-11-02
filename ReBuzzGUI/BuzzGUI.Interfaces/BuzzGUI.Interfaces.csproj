@@ -26,4 +26,10 @@
   <Target Name="RemoveEmptyObj" AfterTargets="AfterBuild" Condition="'$(OS)' == 'Windows_NT'">
     <Exec Command="IF EXIST obj rmdir obj" />
   </Target>
+  <!-- Fork (mac-engine.md M2): built outside the solution (no SolutionDir), the build folders are
+       inside the project: their generated files aren't sources (a second configuration otherwise
+       compiled the first one's AssemblyInfo twice). -->
+  <ItemGroup>
+    <Compile Remove="build/**" />
+  </ItemGroup>
 </Project>

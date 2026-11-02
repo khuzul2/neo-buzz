@@ -80,6 +80,15 @@ jobs:
         git submodule update --init --depth 1 3rdParty/serilog/serilog
         dotnet build ReBuzz.Engine/ReBuzz.Engine.csproj -nologo -v:q
 
+    # rebuzz-headless (docs/specs/mac-engine.md M1): the engine with the MCP server on stdio, no UI
+    # toolkit, with the Neo machines built for net10.0. The smoke test drives it as a client does:
+    # a chord through Neo Poly and Neo Verb, rendered, measured, saved, reopened, undone.
+    - name: Headless engine on Linux
+      if: always()
+      run: |
+        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
+        python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
+
     - name: Annotate test log
       if: failure()
       shell: pwsh

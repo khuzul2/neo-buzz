@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Analyzer, portable (docs/specs/mac-engine.md M2): see ../NeoPortable.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoAnalyzer</NeoFolder>
+    <NeoName>Neo Analyzer</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoPortable.targets" />
+  <ItemGroup>
+    <!-- As NeoAnalyzer.csproj: the meters it shares with the agent server. -->
+    <Compile Include="$(M)NeoBuzz.Analysis\Fft.cs;$(M)NeoBuzz.Analysis\Loudness.cs;$(M)NeoBuzz.Analysis\LoudnessMeter.cs;$(M)NeoBuzz.Analysis\Spectrum.cs;$(M)NeoBuzz.Analysis\Stereo.cs" Link="Shared\Analysis\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

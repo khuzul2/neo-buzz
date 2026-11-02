@@ -55,22 +55,26 @@ namespace ReBuzz.FileOps
 
         public void CreateDB()
         {
-            string filepath = Path.Combine(buzzPath, @"gear\index.txt");
+            string filepath = Path.Combine(buzzPath, "Gear", "index.txt");
             try
             {
-                nativeMachineHost = new NativeMachine.NativeMachineHost("Index", buzzPath, dispatcher, engineSettings);
-                nativeMachineHost.InitHost(buzz, false); // 32 bit
+                // Fork (mac-engine.md M2): no native machine hosts off Windows.
+                if (NativeMachine.NativeMachineHost.Supported)
+                {
+                    nativeMachineHost = new NativeMachine.NativeMachineHost("Index", buzzPath, dispatcher, engineSettings);
+                    nativeMachineHost.InitHost(buzz, false); // 32 bit
 
-                nativeMachineHost64 = new NativeMachine.NativeMachineHost("Index64", buzzPath, dispatcher, engineSettings);
-                nativeMachineHost64.InitHost(buzz, true); // 64 bit
+                    nativeMachineHost64 = new NativeMachine.NativeMachineHost("Index64", buzzPath, dispatcher, engineSettings);
+                    nativeMachineHost64.InitHost(buzz, true); // 64 bit
+                }
 
                 IndexMenu = ParseMenu(filepath);
-                nativeMachineHost.Dispose();
-                nativeMachineHost64.Dispose();
+                nativeMachineHost?.Dispose();
+                nativeMachineHost64?.Dispose();
             }
             catch (Exception ex)
             {
-                buzz.DCWriteLine(ex.InnerException.Message, DCLogLevel.Error);
+                buzz.DCWriteLine((ex.InnerException ?? ex).Message, DCLogLevel.Error);
                 buzz.UserMessages.Error(ex.Message, "", ex);
             }
         }

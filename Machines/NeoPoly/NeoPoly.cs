@@ -47,7 +47,7 @@ namespace NeoBuzz.Poly
                 Command = new SimpleCommand
                 {
                     CanExecuteDelegate = _ => true,
-                    ExecuteDelegate = _ => System.Windows.MessageBox.Show(
+                    ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Poly — polyphonic virtual analog: three band-limited oscillators with sync, FM and " +
                         "ring, ladder and state-variable filters, three envelopes, two LFOs and an 8-slot " +
                         "modulation matrix. 16 tracks (Note, Velocity) and MIDI (mod wheel, pitch bend, " +
@@ -57,9 +57,11 @@ namespace NeoBuzz.Poly
         };
     }
 
+#if WINDOWS   // fork (mac-engine.md M2): the editor is WPF; portable builds have none
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {
         public IMachineGUI CreateGUI(IMachineGUIHost host) => new NeoPolyEditor();
     }
+#endif
 }

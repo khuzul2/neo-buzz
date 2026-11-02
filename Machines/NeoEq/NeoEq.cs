@@ -64,7 +64,7 @@ namespace NeoBuzz.Eq
                 Command = new SimpleCommand
                 {
                     CanExecuteDelegate = _ => true,
-                    ExecuteDelegate = _ => System.Windows.MessageBox.Show(
+                    ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo EQ — eight-band parametric equaliser: bell, shelves, cuts at 12/24/48 dB/oct and notch, " +
                         "minimum phase, zero latency. Drag a band's handle for frequency and gain, the wheel for Q, " +
                         "double-click to switch it.\n\nPart of neo-buzz (docs/specs/machines.md).", "Neo EQ"),
@@ -73,9 +73,11 @@ namespace NeoBuzz.Eq
         };
     }
 
+#if WINDOWS   // fork (mac-engine.md M2): the editor is WPF; portable builds have none
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {
         public IMachineGUI CreateGUI(IMachineGUIHost host) => new NeoEqEditor();
     }
+#endif
 }

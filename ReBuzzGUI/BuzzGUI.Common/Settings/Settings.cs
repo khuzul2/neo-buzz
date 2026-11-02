@@ -162,6 +162,23 @@ namespace BuzzGUI.Common.Settings
 
         public void Load()
         {
+            // Fork (mac-engine.md M1): off the Windows registry, through RegistryEx's store.
+            if (RegistryEx.Portable)
+            {
+                string path = registryLocation.Substring(Global.RegistryRoot.Length);
+                foreach (var p in List)
+                {
+                    string v = RegistryEx.Store?.Get(path, p.Name);
+                    if (v == null) continue;
+                    try
+                    {
+                        p.Value = v;
+                        p.IsModified = false;
+                    }
+                    catch (Exception) { }
+                }
+                return;
+            }
             RegistryKey key = Registry.CurrentUser.OpenSubKey(registryLocation);
             if (key == null) key = Registry.CurrentUser.CreateSubKey(registryLocation);
 
@@ -184,6 +201,19 @@ namespace BuzzGUI.Common.Settings
 
         public void Save()
         {
+            if (RegistryEx.Portable)
+            {
+                string path = registryLocation.Substring(Global.RegistryRoot.Length);
+                foreach (var p in List)
+                {
+                    if (p.IsModified && p.ValueObject != null)
+                    {
+                        RegistryEx.Store?.Set(path, p.Name, p.ValueObject.ToString());
+                        p.IsModified = false;
+                    }
+                }
+                return;
+            }
             RegistryKey key = Registry.CurrentUser.OpenSubKey(registryLocation, true);
             if (key == null) key = Registry.CurrentUser.CreateSubKey(registryLocation);
 

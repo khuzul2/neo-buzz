@@ -1,0 +1,18 @@
+<Project>
+  <!--
+    Fork (docs/specs/mac-engine.md M2): builds every Neo machine for plain net10.0 into $(GearDir)
+    (Generators and Effects), for rebuzz-headless and the Mac:
+      dotnet build Machines/Portable/Portable.proj -p:GearDir=<folder>
+  -->
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <GearDir Condition="'$(GearDir)' == ''">$(MSBuildThisFileDirectory)bin/Gear/</GearDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <NeoPortable Include="*/*.Portable.csproj" />
+  </ItemGroup>
+  <Target Name="Build">
+    <MSBuild Projects="@(NeoPortable)" Targets="Restore;Build" Properties="GearDir=$(GearDir);Configuration=$(Configuration)" />
+  </Target>
+  <Target Name="Restore" />
+</Project>

@@ -923,8 +923,8 @@ namespace ReBuzz.Core
 
             VUMeterLevel = new Tuple<double, double>(0, 0);
 
-            Gear = Gear.LoadGearFile(buzzPath + "\\Gear\\gear_defaults.xml");
-            var moreGear = Gear.LoadGearFile(buzzPath + "\\Gear\\gear.xml");
+            Gear = Gear.LoadGearFile(Path.Combine(buzzPath, "Gear", "gear_defaults.xml"));
+            var moreGear = Gear.LoadGearFile(Path.Combine(buzzPath, "Gear", "gear.xml"));
             Gear.Merge(moreGear);
 
             try
@@ -1853,6 +1853,12 @@ namespace ReBuzz.Core
                     CreateEditor(mc, null, null);
                     em = mc.EditorMachine;
                 }
+                // Fork (mac-engine.md M2): no pattern editor machine in this host: nothing to link.
+                if (em == null)
+                {
+                    SetPatternEditorPatternChanged?.Invoke(p);
+                    return;
+                }
 
                 object patternEditorControl = MachineManager.GetPatternEditorControl(em);
 
@@ -1866,7 +1872,7 @@ namespace ReBuzz.Core
             }
             else
             {
-                SetPatternEditorControl.Invoke(null);
+                SetPatternEditorControl?.Invoke(null);
             }
             SetPatternEditorPatternChanged?.Invoke(p);
         }
@@ -2075,6 +2081,12 @@ namespace ReBuzz.Core
             // Create pattern editor but keep it hidden
             MachineCore peMachine = null;
             IMachineDLL editorMachineDll = null;
+
+            // Fork (docs/specs/mac-engine.md M2): a host without the pattern editor machine (the Modern
+            // Pattern Editor is WPF; rebuzz-headless off Windows has none) gives machines no editor.
+            // Their patterns keep the engine-played note and automation columns, which play without one.
+            if (!(patternEditor != null && MachineDLLs.ContainsKey(patternEditor)) && !MachineDLLs.ContainsKey(DefaultPatternEditor))
+                return;
 
             if (patternEditor != null)
             {

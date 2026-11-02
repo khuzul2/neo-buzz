@@ -38,7 +38,10 @@ namespace ReBuzz.Common
             List<string> themes = new List<string>();
             themes.Add("<default>");
 
-            foreach (var file in Directory.GetFiles(buzzPath + "\\Themes", "*.col"))
+            // Fork (mac-engine.md M1): portable path; a host without themes (headless) has none.
+            string folder = Path.Combine(buzzPath, "Themes");
+            if (!Directory.Exists(folder)) return themes;
+            foreach (var file in Directory.GetFiles(folder, "*.col"))
             {
                 themes.Add(Path.GetFileNameWithoutExtension(file));
             }

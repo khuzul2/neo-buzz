@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Planned 2026-11-02. Starts once engine-split PR 10 (the flip) lands; M0 can go in before it |
+| Status | In progress. M0 and the PortAudio binding are merged (#43); M6's precise waiter is in PR (#44). M1 is built: `rebuzz-headless` runs on Linux with the portable Neo machines, stacked on the flip. M2 is partly done (§6) |
 | Scope | cross-platform.md §5.2 P2: the engine running headless on macOS (arm64), with real audio and MIDI, and the MCP server on stdio. No UI: the Avalonia studio is P3 |
 | Exit | The A6 scripted suite passes on `macos-15`; Neo renders null-test against the Windows package at ≤ −100 dBFS; a 1-hour play test at 128 samples has no dropouts (run by hand on a Mac) |
 | Related | cross-platform.md (decisions D1–D5, §3.2 the pieces), engine-split.md (P1), mcp-server.md §10 (the A6 suite) |
@@ -65,3 +65,29 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
 - **macOS minutes** cost about 10× Linux. The Mac job runs on PRs into main and by hand, never on every push. M3 on Linux catches portability problems before they reach the Mac job.
 - **Real-time from .NET.** The engine allocates nothing per buffer (0.4.1 hardening), and GC pauses are what's left. Use `GCSettings.LatencyMode = SustainedLowLatency` while playing. The play test is the check.
 - **Floating-point drift** between x64 and arm64 can exceed −100 dBFS in feedback-heavy patches (FM feedback, resonant filters at self-oscillation). If a Neo song fails the null test, the fix is in the machine (deterministic denormal handling, no `MathF` intrinsics with different rounding), and the threshold doesn't change.
+
+## 6. Progress
+
+**M1, `rebuzz-headless`** (`ReBuzz.Headless/`). It is stacked on engine-split PR 10.
+- **Start-up** is `HeadlessAgent`'s with M0's seams, and `--settings <folder>` sets where its settings live.
+- **Settings.** Off Windows, BuzzGUI's `RegistryEx` and its settings classes go through a store: `RegistryEx.Store` (`IRegistryStore`), which `JsonRegistry` implements. Without a store, reads give the defaults.
+- **Linux.** The smoke test (`tools/headless-smoke.py`) passes there, and Linux CI runs it. It drives the tools as a client does:
+  - a chord through Neo Poly and Neo Verb renders at −21.7 LUFS and reads in tune;
+  - the song saves and reopens, and renders the same;
+  - `param_set "800 Hz"` reads back, and undo restores it;
+  - the server exits when stdin closes.
+
+**M2, done so far.**
+- **Neo machines build for plain `net10.0`** (`Machines/Portable/`: one tiny project per machine, built by `Portable.proj` into the host's `Gear`).
+  - Their editors and About boxes are under `#if WINDOWS`: `NeoAbout` writes a line instead.
+  - Same assembly names as on Windows, so songs and the scanner take them as they are.
+- **Native machines** are skipped off Windows (`NativeMachineHost.Supported`). The scanner and the machine index start no host processes.
+- **No pattern editor machine.** The Modern Pattern Editor is WPF, so off Windows machines get no editor. Patterns keep the engine-played note and automation columns, which play without one.
+- **Fixes on the way, which help Windows too:**
+  - the DLL cache stayed open when a rescan rewrote it;
+  - a failed scan left the cache file open;
+  - gear and theme paths were built with backslashes;
+  - missing gear folders threw.
+
+**Still to do in M2:** a song with a native machine opening as placeholders and saving back unchanged. **M3–M7:** as in §3.
+

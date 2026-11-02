@@ -65,7 +65,7 @@ namespace NeoBuzz.Utility
                 Command = new SimpleCommand
                 {
                     CanExecuteDelegate = _ => true,
-                    ExecuteDelegate = _ => System.Windows.MessageBox.Show(
+                    ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Utility — gain in 0.1 dB steps, balance or mono pan, width, bass mono, polarity, " +
                         "channel swap and DC removal, each exact. At its defaults it passes the input bit for bit.\n\n" +
                         "Part of neo-buzz (docs/specs/machines.md).", "Neo Utility"),
@@ -74,9 +74,11 @@ namespace NeoBuzz.Utility
         };
     }
 
+#if WINDOWS   // fork (mac-engine.md M2): the editor is WPF; portable builds have none
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {
         public IMachineGUI CreateGUI(IMachineGUIHost host) => new NeoUtilityEditor();
     }
+#endif
 }

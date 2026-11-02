@@ -55,7 +55,7 @@ namespace NeoBuzz.Verb
                 Command = new SimpleCommand
                 {
                     CanExecuteDelegate = _ => true,
-                    ExecuteDelegate = _ => System.Windows.MessageBox.Show(
+                    ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Verb — algorithmic reverb: hall, room, chamber and plate on a 16-line feedback " +
                         "delay network with modulation, exact decay per band, freeze and shimmer.\n\n" +
                         "Part of neo-buzz (docs/specs/machines.md).", "Neo Verb"),
@@ -64,9 +64,11 @@ namespace NeoBuzz.Verb
         };
     }
 
+#if WINDOWS   // fork (mac-engine.md M2): the editor is WPF; portable builds have none
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {
         public IMachineGUI CreateGUI(IMachineGUIHost host) => new NeoVerbEditor();
     }
+#endif
 }

@@ -66,7 +66,7 @@ namespace NeoBuzz.Drive
                 Command = new SimpleCommand
                 {
                     CanExecuteDelegate = _ => true,
-                    ExecuteDelegate = _ => System.Windows.MessageBox.Show(
+                    ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Drive — saturator: tape, tube, transistor, diode and fold, oversampled with " +
                         "anti-derivative anti-aliasing.\n\nPart of neo-buzz (docs/specs/machines.md).", "Neo Drive"),
                 },
@@ -74,9 +74,11 @@ namespace NeoBuzz.Drive
         };
     }
 
+#if WINDOWS   // fork (mac-engine.md M2): the editor is WPF; portable builds have none
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {
         public IMachineGUI CreateGUI(IMachineGUIHost host) => new NeoDriveEditor();
     }
+#endif
 }
