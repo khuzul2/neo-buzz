@@ -32,7 +32,7 @@ jobs:
     - name: PortAudio
       run: |
         sudo apt-get update -q
-        sudo apt-get install -y -q --no-install-recommends libportaudio2 pulseaudio pulseaudio-utils
+        sudo apt-get install -y -q --no-install-recommends libportaudio2 libsndfile1 pulseaudio pulseaudio-utils
         pulseaudio -D --exit-idle-time=-1 --system=false
         pactl load-module module-null-sink sink_name=ci_null
         pactl set-default-sink ci_null

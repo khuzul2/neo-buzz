@@ -89,6 +89,20 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
   - gear and theme paths were built with backslashes;
   - missing gear folders threw.
 
+**Waves and native libraries.**
+- Wave import works headless on Linux. `NativeLibraries` now resolves libsndfile for BuzzGUI.Common's binding too.
+- Wave buffers use anonymous memory maps off Windows. Named maps exist only so that native hosts can share waves, and they aren't supported there.
+
+**The A6 scripted suite against `rebuzz-headless` on Linux.** It ran locally with the evaluation from PR #40.
+- **Tasks:** all five reference tasks score 1.00 (Beat, Sound match, Fix the mix, Master at −14.1 LUFS/−2.0 dBTP, Song).
+- **Checks:** notes, units and analysis pass.
+- **Three checks wait for fixes that are on #40's branch, not here yet:**
+  - the undo/redo output schemas;
+  - render tick-phase reproducibility;
+  - a connection's pan lost on undo.
+
+  M3 is mostly done once #40 lands.
+
 **Native machines as placeholders: they open, but the round trip loses data.**
 - **Opening works.** Ten of the first twelve buzztrax demo songs (`ExternalMachines/source/**/*.bmx`) open headless on Linux. Their native machines show as missing machines with their connections.
 - **Two "super old" BMX files don't open.** Their parameter data can't be parsed without the machine DLL, the same as on Windows without those machines.

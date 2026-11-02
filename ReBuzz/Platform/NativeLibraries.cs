@@ -16,7 +16,7 @@ namespace ReBuzz.Platform
     public static class NativeLibraries
     {
         static readonly object gate = new object();
-        static bool registered;
+        static readonly HashSet<Assembly> registered = new HashSet<Assembly>();
 
         /// <summary>The file names a library goes by on this OS, most specific first.</summary>
         public static IEnumerable<string> FileNames(string name)
@@ -71,16 +71,24 @@ namespace ReBuzz.Platform
             return null;
         }
 
-        /// <summary>Installs the resolver for the engine's assembly (once; later calls do nothing).</summary>
+        /// <summary>
+        /// Installs the resolver for the engine's assembly and BuzzGUI.Common's (whose libsndfile
+        /// binding imports "libsndfile-1"); once per assembly, later calls do nothing.
+        /// </summary>
         public static void Register()
+        {
+            Register(typeof(NativeLibraries).Assembly);
+            Register(typeof(BuzzGUI.Common.Global).Assembly);
+        }
+
+        public static void Register(Assembly assembly)
         {
             lock (gate)
             {
-                if (registered) return;
-                registered = true;
+                if (!registered.Add(assembly)) return;
                 try
                 {
-                    NativeLibrary.SetDllImportResolver(typeof(NativeLibraries).Assembly, Resolve);
+                    NativeLibrary.SetDllImportResolver(assembly, Resolve);
                 }
                 catch (InvalidOperationException)
                 {

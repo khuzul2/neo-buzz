@@ -65,7 +65,9 @@ namespace ReBuzz.Core
             if (bufferSize > 0)
             {
                 mappedFileId = "WaveLayer_" + DateTime.Now.Ticks;
-                mappedFile = MemoryMappedFile.CreateNew(mappedFileId, bufferSize);
+                // Fork (mac-engine.md M2): named so native machine hosts can map the wave; off
+                // Windows there are none, and named maps aren't supported there.
+                mappedFile = MemoryMappedFile.CreateNew(OperatingSystem.IsWindows() ? mappedFileId : null, bufferSize);
                 accessor = mappedFile.CreateViewAccessor();
 
                 accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref basePointer);

@@ -58,6 +58,9 @@ namespace ReBuzz.Headless
                 else if (!args[i].StartsWith("-")) song = args[i];
             }
 
+            // Native libraries (libsndfile for wave import, PortAudio) from where each OS keeps them.
+            NativeLibraries.Register();
+
             // Before anything touches Global: its settings load from the JSON registry, not the Windows one.
             Directory.CreateDirectory(settings);
             var registry = new JsonRegistry(Path.Combine(settings, "registry.json"), @"Software\ReBuzz");
