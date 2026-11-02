@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | A0–A5 and A7 built (2026-11-02); A6 (evaluation) and Neo Analyzer in progress. As built: §3.5 |
+| Status | A0–A5 and A7 built, with Neo Analyzer (2026-11-02); A6 (evaluation) in progress. As built: §3.5 |
 | Date | 2026-10-31, updated 2026-11-02 |
 | Scope | An MCP server that lets an AI agent (Claude Code or any MCP client) compose, design sounds, mix and master in this ReBuzz fork, with tools clear enough to use without guessing, guides for the craft, and the analysis needed to check its own work |
 | Protocol | MCP 2026-07-28, also negotiates 2025-11-25, 2025-06-18 and 2025-03-26 (stdio and Streamable HTTP; structured tool output; progress). Own protocol layer, no SDK (§3.5) |
