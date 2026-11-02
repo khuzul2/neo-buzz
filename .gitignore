@@ -402,3 +402,4 @@ FodyWeavers.xsd
 # Fork: build.ps1 outputs
 /dist/
 /build/ExternalMachines/
+/build/LinkHelper/
