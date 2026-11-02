@@ -1,6 +1,5 @@
 ﻿using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
-using BuzzGUI.MachineView;
 using ReBuzz.ManagedMachine;
 using System;
 using System.Collections.ObjectModel;
@@ -70,7 +69,7 @@ namespace ReBuzz.Core
         {
             get
             {
-                if (MachineView.StaticSettings.EnableSkins && SkinImage != null)
+                if (MachineViewState.SkinsEnabled && SkinImage != null)   // engine-split.md S7
                 {
                     return SkinTextColorArgb;
                 }

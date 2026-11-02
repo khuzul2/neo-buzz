@@ -21,24 +21,22 @@ namespace ReBuzz.Core.Session
         public static int Get(IPattern pattern)
         {
             if (pattern == null) return -1;
-            var associations = BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings?.PatternAssociations;
+            var associations = PatternColours.Current;   // engine-split.md S7
             if (associations != null)
-                return associations.TryGetValue(pattern, out var ex) ? ex.ColorIndex : -1;
+                return associations.TryGet(pattern, out var index) ? index : -1;
             return fallback.TryGetValue(pattern, out var box) ? box.Value : -1;
         }
 
         public static void Set(IPattern pattern, int index)
         {
             if (pattern == null) return;
-            var associations = BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings?.PatternAssociations;
+            var associations = PatternColours.Current;
             if (associations != null)
             {
                 if (index < 0)
                     associations.Remove(pattern);
-                else if (associations.TryGetValue(pattern, out var ex))
-                    ex.ColorIndex = index;
                 else
-                    associations[pattern] = new BuzzGUI.SequenceEditor.PatternEx { ColorIndex = index };
+                    associations.Set(pattern, index);
             }
             else
             {

@@ -32,6 +32,12 @@ namespace ReBuzz.AppViews
             WpfMachineApi.SkinLEDPosition = d => d is MachineDLL m ? new Point(m.SkinLedX, m.SkinLedY) : default;
             WpfMachineApi.TextColor = d => d is MachineDLL m ? UiUtils.ColorFromArgb(m.TextColorArgb) : default;
             RawImage.Viewer = SkinBitmap;
+
+            // View state and UI settings the engine used to read or set itself (S6, S7).
+            ReBuzzCore.SoftwareRendering = on => RenderOptions.ProcessRenderMode = on ? RenderMode.SoftwareOnly : RenderMode.Default;
+            MachineViewState.ShowEngineThreads = () => BuzzGUI.MachineView.MachineView.StaticSettings.ShowEngineThreads;
+            MachineViewState.EnableSkins = () => BuzzGUI.MachineView.MachineView.StaticSettings.EnableSkins;
+            PatternColours.Source = SequenceEditorPatternColours.Current;
         }
 
         /// <summary>

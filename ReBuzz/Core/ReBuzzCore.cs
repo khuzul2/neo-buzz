@@ -31,7 +31,6 @@ using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
-using System.Windows.Media;
 using System.Xml.Linq;
 using Timer = System.Timers.Timer;
 
@@ -986,7 +985,7 @@ namespace ReBuzz.Core
 
             if (generalSettings.WPFSoftwareRendering)
             {
-                RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
+                SoftwareRendering?.Invoke(true);   // fork (engine-split.md S6): the UI sets WPF's render mode
             }
 
             // These are not good for real time audio. Just use defaults.
@@ -1090,14 +1089,7 @@ namespace ReBuzz.Core
             }
             else if (e.PropertyName == "WPFSoftwareRendering")
             {
-                if (generalSettings.WPFSoftwareRendering)
-                {
-                    RenderOptions.ProcessRenderMode = RenderMode.SoftwareOnly;
-                }
-                else
-                {
-                    RenderOptions.ProcessRenderMode = RenderMode.Default;
-                }
+                SoftwareRendering?.Invoke(generalSettings.WPFSoftwareRendering);
             }
         }
 
@@ -2502,6 +2494,12 @@ namespace ReBuzz.Core
         /// Null: no windows (the machines remember which ones a song wants open).
         /// </summary>
         internal IMachineUiHost UiHost { get; set; } = DefaultUiHost;
+
+        /// <summary>
+        /// Fork (engine-split.md S6): the WPFSoftwareRendering setting, applied by the UI (WPF's
+        /// RenderOptions.ProcessRenderMode). Called at start-up when on, and when it changes.
+        /// </summary>
+        internal static Action<bool> SoftwareRendering { get; set; }
 
         /// <summary>Fork (S3): the host new cores get; the WPF app sets it before the first core.</summary>
         internal static IMachineUiHost DefaultUiHost { get; set; }

@@ -47,13 +47,14 @@ namespace ReBuzz.Core.Actions.GraphActions
 
                 // Save pattern colors
                 // Fork (0.6.2): no sequence editor (headless, tests): no pattern colours to keep.
-                var associations = BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings?.PatternAssociations;
-                foreach (var pattern in associations?.Keys.Where(pa => pa.Machine == machine) ?? Enumerable.Empty<IPattern>())
+                // Fork (engine-split.md S7): through PatternColours.
+                var associations = PatternColours.Current;
+                foreach (var pattern in associations?.Patterns.Where(pa => pa.Machine == machine) ?? Enumerable.Empty<IPattern>())
                 {
-                    if (associations.TryGetValue(pattern, out var pex))
+                    if (associations.TryGet(pattern, out var colorIndex))
                     {
                         // Save pattern color
-                        machineData.patternAssociations.Add(pattern.Name, pex.ColorIndex);
+                        machineData.patternAssociations.Add(pattern.Name, colorIndex);
                     }
                 }
             }
@@ -117,10 +118,10 @@ namespace ReBuzz.Core.Actions.GraphActions
                     {
 
                         // Remove pattern colors
-                        var associations = BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings?.PatternAssociations;
-                        foreach (var pattern in associations?.Keys.Where(pa => pa.Machine == machine).ToList() ?? new List<IPattern>())
+                        var associations = PatternColours.Current;
+                        foreach (var pattern in associations?.Patterns.Where(pa => pa.Machine == machine).ToList() ?? new List<IPattern>())
                         {
-                            if (associations.TryGetValue(pattern, out var pex))
+                            if (associations.TryGet(pattern, out _))
                             {
                                 // remove from dictionary
                                 associations.Remove(pattern);
@@ -212,7 +213,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                     var pattern = machine.PatternsList.FirstOrDefault(p => p.Name == pa.Key);
                     if (pattern != null)
                     {
-                        BuzzGUI.SequenceEditor.SequenceEditor.ViewSettings?.PatternAssociations.Add(pattern, new BuzzGUI.SequenceEditor.PatternEx() { ColorIndex = pa.Value });
+                        PatternColours.Current?.Add(pattern, pa.Value);
                     }
                 }
 
