@@ -35,6 +35,13 @@ jobs:
       shell: pwsh
       run: dotnet test ReBuzz.AgentTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath agent-test.log
 
+    # The agent server's evaluation (docs/specs/mcp-server.md §10): its MCP client against our
+    # protocol layer, its scorers on synthetic signals and its regression gate. The suite itself
+    # runs on Windows in fork-package.yml.
+    - name: Agent evaluation self-test
+      if: always()
+      run: dotnet run --project ReBuzz.AgentEval -c Release -- selftest
+
     # Neo machines (docs/specs/machines.md): aliasing, decay times, envelopes, presets…
     - name: Machine DSP tests
       if: always()

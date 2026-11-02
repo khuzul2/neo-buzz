@@ -146,6 +146,7 @@ namespace ReBuzz.AgentEval
             string md = run.Markdown("Agent server evaluation (scripted)", gate);
             File.WriteAllText(Path.Combine(outDir, "eval-summary.md"), md);
             Summary(md);
+            Annotate(run, gate);
             if (a.Flag("update-baseline"))
             {
                 var b = Baseline(run.ToJson(), tolerance);
@@ -154,6 +155,41 @@ namespace ReBuzz.AgentEval
                 return 0;
             }
             return gate.Blocking.Count == 0 ? 0 : 1;
+        }
+
+        /// <summary>
+        /// On GitHub Actions, the results as annotations too (readable through the API, unlike the
+        /// step summary): notices with every check and task, an error per blocking finding.
+        /// </summary>
+        static void Annotate(EvalRun run, Gate gate)
+        {
+            if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
+            static string Esc(string s) => s.Replace("%", "%25").Replace("\r", "").Replace("\n", "%0A");
+            void Emit(string kind, string title, IEnumerable<string> lines, int max)
+            {
+                var chunk = new List<string>();
+                int n = 0, size = 0;
+                foreach (var line in lines)
+                {
+                    if (size + line.Length > 3500 && chunk.Count > 0)
+                    {
+                        if (n++ < max) Console.WriteLine($"::{kind} title={title}::{Esc(string.Join("\n", chunk))}");
+                        chunk.Clear();
+                        size = 0;
+                    }
+                    chunk.Add(line);
+                    size += line.Length + 1;
+                }
+                if (chunk.Count > 0 && n < max) Console.WriteLine($"::{kind} title={title}::{Esc(string.Join("\n", chunk))}");
+            }
+            Emit("notice", "Agent evaluation checks", run.Checks.Select(c =>
+                $"{c.Name}: {(c.Passed ? "pass" : "FAIL")} ({c.Calls} calls, {c.Seconds:F1} s)" +
+                (c.Failures.Count > 0 ? " — " + string.Join(" | ", c.Failures.Take(6)) : "") + (c.Notes.Count > 0 ? " — " + string.Join(" | ", c.Notes) : "")), 3);
+            Emit("notice", "Agent evaluation tasks", run.Tasks.Select(t =>
+                $"{t.Name}: {t.Total:F2} {(t.Passed ? "pass" : "FAIL")} (start {t.StartTotal:F2}; {t.Calls} calls, {t.Errors} errors, {t.Seconds:F1} s)" +
+                (t.Error != null ? " ERROR " + t.Error : "") + " — " + string.Join(" | ", t.Criteria.Select(c => $"{c.Name} {c.Score:F2}: {c.Detail}"))), 4);
+            Emit("notice", "Agent evaluation totals", new[] { $"{run.Seconds:F0} s, server {run.Server}" }.Concat(run.Problems), 1);
+            foreach (var b in gate.Blocking.Take(8)) Console.WriteLine($"::error title=Agent evaluation::{Esc(b)}");
         }
 
         /// <summary>A baseline from results: each check passed or not; each task's total, pass and criteria.</summary>
