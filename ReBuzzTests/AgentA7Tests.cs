@@ -273,6 +273,25 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void MachineReadingsReadTheAnalyzerAsTheLibraryMeasures()
+        {
+            using var rig = new Rig(NeoMachineTests.Poly, NeoMachineTests.Analyzer);
+            Song(rig, "Keys");
+            Ok(rig, "arrangement_place", new JsonObject { ["machine"] = "Keys", ["pattern"] = "A", ["at"] = new JsonArray(0, 4) });
+            Ok(rig, "machine_add", new JsonObject { ["gear"] = "Neo Analyzer", ["name"] = "Analyzer", ["insert_after"] = "Keys" });
+            var render = Ok(rig, "render", new JsonObject { ["from"] = 0, ["to"] = 8, ["tail_seconds"] = 0 });
+            double rendered = render["measure"]!["loudness"]!["integrated_lufs"]!.GetValue<double>();
+
+            var r = Ok(rig, "machine_readings", new JsonObject { ["machine"] = "Analyzer" });
+            var readings = r["readings"]!.AsObject();
+            Assert.That(readings.Count, Is.EqualTo(48), "every reading the analyzer shows");
+            Assert.That(readings["integrated_lufs"]!.GetValue<double>(), Is.EqualTo(rendered).Within(0.3),
+                "headless: what the render played through it, as analyze measures the render (the analyzer sits before Master)");
+            Assert.That(readings["correlation"]!.GetValue<double>(), Is.InRange(-1.0, 1.0));
+            Assert.That(r["machine"]!.GetValue<string>(), Is.EqualTo("Analyzer"));
+        }
+
+        [Test]
         public void AStoppedTransportPlaysAPhraseNowAndStopLetsGo()
         {
             using var rig = new Rig("studio", NeoMachineTests.Poly);

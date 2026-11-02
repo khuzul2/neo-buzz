@@ -78,6 +78,8 @@ namespace ReBuzzTests
         }
 
         internal static readonly NeoInfo Drive = new("Neo Drive", "Drive", false);
+        // Neo Analyzer (docs/specs/machines.md §5, MCP A4): measures what passes, changes nothing.
+        internal static readonly NeoInfo Analyzer = new("Neo Analyzer", "Analyzer", false);
         internal static readonly NeoInfo Comp = new("Neo Comp", "Comp", false, multiIo: true);
         internal static readonly NeoInfo Verb = new("Neo Verb", "Verb", false);
         internal static readonly NeoInfo Poly = new("Neo Poly", "Poly", true);
@@ -169,6 +171,51 @@ namespace ReBuzzTests
                         if (track >= 0 && track < 8) { Calls[track]++; Last[track] = value.Value; }
                     }
                     public bool Work(Sample[] output, int n, WorkModes mode) => false;
+                }
+            }
+            """;
+
+        // Neo Analyzer's test signal: a 1 kHz sine at −20 dBFS on both channels (Mode 0), or a small
+        // stereo mix (Mode 1): a pulsing 55 Hz bass, a chord spread across the image, darkened noise
+        // and hats, so the analyzer's editor has something to show.
+        const string MixSource = """
+            using Buzz.MachineInterface;
+            using BuzzGUI.Interfaces;
+            using System;
+            namespace NeoTest
+            {
+                [MachineDecl(Name = "Neo Test Mix", ShortName = "Mix", Author = "neo-buzz", MaxTracks = 0, InputCount = 0, OutputCount = 1)]
+                public class Mix : IBuzzMachine
+                {
+                    readonly IBuzzMachineHost host;
+                    double t, nl, nr;
+                    uint seed = 22222;
+                    public Mix(IBuzzMachineHost host) { this.host = host; }
+                    [ParameterDecl(Name = "Mode", MinValue = 0, MaxValue = 1, DefValue = 0)]
+                    public int Mode { get; set; }
+                    double Noise() { seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5; return seed / 2147483648.0 - 1; }
+                    static double S(double hz, double t, double phase = 0) => Math.Sin(2 * Math.PI * hz * t + phase);
+                    public bool Work(Sample[] output, int n, WorkModes mode)
+                    {
+                        double dt = 1.0 / Math.Max(1, host.MasterInfo.SamplesPerSec);
+                        for (int i = 0; i < n; i++)
+                        {
+                            double l, r;
+                            if (Mode == 0) l = r = 0.1 * S(1000, t);
+                            else
+                            {
+                                double bass = 0.25 * S(55, t) * (0.6 + 0.4 * S(2, t));
+                                double hat = Math.Pow(Math.Max(0, S(4, t)), 40) * 0.15;
+                                nl = 0.98 * nl + 0.02 * Noise();
+                                nr = 0.98 * nr + 0.02 * Noise();
+                                l = bass + 0.06 * (S(220, t) + S(277.2, t) + S(329.6, t)) + 1.5 * nl + hat * Noise() + 0.01 * Noise();
+                                r = bass + 0.06 * (S(220, t, 0.6) + S(277.2, t, 1.1) + S(329.6, t, 1.7)) + 1.5 * nr + hat * Noise() + 0.01 * Noise();
+                            }
+                            output[i] = new Sample((float)(l * 32768), (float)(r * 32768));
+                            t += dt;
+                        }
+                        return true;
+                    }
                 }
             }
             """;
@@ -388,6 +435,92 @@ namespace ReBuzzTests
             ShootEditor(rig.Effect, "neo-verb-editor");
         }
 
+        static readonly SourceInfo MixInfo = new("Neo Test Mix", MixSource, true);
+
+        [Test]
+        public void NeoAnalyzerPassesAudioThroughReadsWhatItMeasuresAndShowsItsEditor()
+        {
+            if (!File.Exists(Analyzer.BuiltPath)) Assert.Inconclusive($"{Analyzer.Name} not built ({Analyzer.BuiltPath}); build the solution first");
+            Assert.That(File.Exists(Path.Combine(Path.GetDirectoryName(Analyzer.BuiltPath)!, "Neo Analyzer.prs.xml")), Is.True, "presets ship beside the DLL");
+            Assert.That(File.Exists(Path.Combine(Path.GetDirectoryName(Analyzer.BuiltPath)!, "Neo Analyzer.machine.json")), Is.True, "and the manifest");
+            using var driver = new Driver();
+            driver.Gear.AddDynamicGenerator(MixInfo);
+            driver.Gear.AddBuiltMachine(Analyzer, AbsoluteFilePath.Value(Analyzer.BuiltPath), false);
+            driver.Start();
+            var fx = new DynamicMachineController(Analyzer.Name, Analyzer.Name);
+            driver.MachineGraph.InsertMachineInstanceConnectedToMasterFor(fx);
+            var source = new DynamicMachineController("Neo Test Mix", "Mix");
+            driver.MachineGraph.InsertMachineInstanceFor(source);
+            driver.MachineGraph.Connect(source, fx);
+            var analyzer = driver.MachineFor(fx);
+            var mix = driver.MachineFor(source);
+            var reader = driver.CreateAudioReader(256);
+            IParameter Param(string name) => analyzer.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters.Single(p => p.Name == name);
+            float[] Play(double seconds)
+            {
+                int frames = (int)(seconds * ReBuzzCore.masterInfo.SamplesPerSec);
+                var left = new float[frames];
+                for (int at = 0; at < frames; at += 256)
+                {
+                    int n = Math.Min(256, frames - at);
+                    reader.Read(n);
+                    for (int i = 0; i < n; i++) left[at + i] = reader.Buffer[2 * i];
+                }
+                return left;
+            }
+            var instance = analyzer.ManagedMachine;
+            System.Collections.Generic.IReadOnlyDictionary<string, double> Readings() =>
+                (System.Collections.Generic.IReadOnlyDictionary<string, double>)instance.GetType().GetProperty("Readings")!.GetValue(instance)!;
+
+            Assert.That(Param("Smoothing").DescribeValue(Param("Smoothing").DefValue), Is.EqualTo("1/6 oct"));
+            Assert.That(Param("Tilt").DescribeValue(2), Is.EqualTo("4.5 dB/oct"));
+            Assert.That(Param("Target").DescribeValue(Param("Target").DefValue), Is.EqualTo("−14.0 dB"));
+            Assert.That(Param("Peak hold").DescribeValue(Param("Peak hold").DefValue), Is.EqualTo("2.00 s"));
+            Assert.That(analyzer.Latency, Is.EqualTo(0));
+
+            // A 1 kHz sine peaking at −20 dBFS on both channels, through ReBuzz: the master gets it
+            // unchanged, and the readings are what BS.1770 and the library say (EBU Tech 3341 case 1, at −20).
+            var heard = Play(4);
+            double rms = Rms(heard, heard.Length / 2);
+            var r = Readings();
+            TestContext.Out.WriteLine(string.Join(", ", r.Where(kv => !kv.Key.StartsWith("band_")).Select(kv => $"{kv.Key} {kv.Value:F3}")));
+            Assert.That(Db(rms), Is.EqualTo(Db(0.1 / Math.Sqrt(2))).Within(0.01), "the master hears the sine as it was");
+            Assert.That(r.Count, Is.EqualTo(48), "the manifest's 48 readings");
+            Assert.That(r["integrated_lufs"], Is.EqualTo(-20).Within(0.1));
+            Assert.That(r["short_term_lufs"], Is.EqualTo(-20).Within(0.1));
+            Assert.That(r["true_peak_dbtp"], Is.EqualTo(-20).Within(0.1));
+            Assert.That(r["band_1000hz_db"], Is.EqualTo(-23.01).Within(0.1), "a sine's band level is its RMS");
+            Assert.That(r["mid_db"], Is.EqualTo(-23.01).Within(0.1));
+            Assert.That(r["correlation"], Is.EqualTo(1).Within(1e-6));
+            Assert.That(r["width"], Is.EqualTo(0).Within(1e-6));
+            Assert.That(r["range_lu"], Is.EqualTo(0).Within(0.1));
+
+            // Output equals input, bit for bit, at the machine's Work (loud random samples).
+            instance.GetType().GetMethod("ResetReadings")!.Invoke(instance, null);
+            var work = instance.GetType().GetMethod("Work", new[] { typeof(Sample[]), typeof(Sample[]), typeof(int), typeof(WorkModes) })!;
+            var rng = new Random(5);
+            var input = Enumerable.Range(0, 1024).Select(_ => new Sample((float)(rng.NextDouble() * 2 - 1) * 32000f, (float)(rng.NextDouble() * 2 - 1) * 32000f)).ToArray();
+            var output = new Sample[1024];
+            Assert.That((bool)work.Invoke(instance, new object[] { output, input, 1024, WorkModes.WM_READWRITE })!, Is.True, "sound: true");
+            Assert.That(output.Zip(input).All(p => BitConverter.SingleToInt32Bits(p.First.L) == BitConverter.SingleToInt32Bits(p.Second.L)
+                && BitConverter.SingleToInt32Bits(p.First.R) == BitConverter.SingleToInt32Bits(p.Second.R)), Is.True, "bit for bit");
+
+            // The mix, after a reset through the parameter: the measures start again.
+            mix.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters[0].SetValue(0, 1);
+            Param("Reset").SetValue(0, 1);
+            Play(5);
+            r = Readings();
+            TestContext.Out.WriteLine(string.Join(", ", r.Select(kv => $"{kv.Key} {kv.Value:F2}")));
+            Assert.That(r["seconds"], Is.InRange(4.5, 5.1), "measured since the reset");
+            Assert.That(r["integrated_lufs"], Is.InRange(-30.0, -5.0));
+            Assert.That(r["correlation"], Is.InRange(0.2, 0.98), "a stereo mix");
+            Assert.That(r["sub_db"], Is.GreaterThan(r["air_db"] + 10), "the 55 Hz bass is far louder than the air");
+
+            Param("Tilt").SetValue(0, 1);
+            Param("Target").SetValue(0, 180);   // −18
+            ShootEditor(analyzer, "neo-analyzer-editor");
+        }
+
         static int BuzzNote(int octave, int semitone) => (octave << 4) + semitone + 1;   // semitone 0 = C
 
         [Test]
@@ -600,7 +733,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");
