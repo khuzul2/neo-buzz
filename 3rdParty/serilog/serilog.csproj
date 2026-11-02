@@ -24,6 +24,9 @@
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <TreatSpecificWarningsAsErrors />
     <IsTrimmable>true</IsTrimmable>
+    <!-- Fork (engine-split.md S10): off Windows not trimmable, so the build needs no ILLink package
+         (Microsoft.NET.ILLink.Tasks) and restores with no package source at all. -->
+    <IsTrimmable Condition="'$(OS)' != 'Windows_NT'">false</IsTrimmable>
     <NoWarn>$(NoWarn);CS1437;CS1570</NoWarn>
     <PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
