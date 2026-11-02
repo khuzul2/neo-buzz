@@ -14,6 +14,9 @@ namespace ReBuzz.Core.Actions.GraphActions
         private IEnumerable<int> destinationChannels;
         private readonly int amp;
         private readonly int pan;
+        // Fork (A6): undo gives the connection back its pan; without it a stereo connection came back
+        // without one (the agent evaluation's undo check found it).
+        private readonly bool hasPan;
 
         //private MachineConnectionCore mc;
         private readonly ReBuzzCore buzz;
@@ -35,6 +38,7 @@ namespace ReBuzz.Core.Actions.GraphActions
             this.destinationChannels = mc.DestinationChannels.ToArray();
             this.amp = mc.Amp;
             this.pan = mc.Pan;
+            this.hasPan = mc.HasPan;
             this.buzz = buzz;
             this.engineSettings = engineSettings;
         }
@@ -57,6 +61,7 @@ namespace ReBuzz.Core.Actions.GraphActions
             this.destinationChannels = destinationChannels;
             this.amp = amp;
             this.pan = pan;
+            this.hasPan = dst is MachineCore d && d.HasStereoInput;   // as ConnectMachinesAction makes it
             this.dispatcher = dispatcher;
             this.engineSettings = engineSettings;
         }
@@ -126,6 +131,7 @@ namespace ReBuzz.Core.Actions.GraphActions
 
                 mc.Amp = amp;
                 mc.Pan = pan;
+                mc.HasPan = hasPan;
 
                 var machine = mc.Source as MachineCore;
                 if (machine != null)

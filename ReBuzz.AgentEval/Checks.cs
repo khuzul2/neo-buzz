@@ -400,7 +400,20 @@ namespace ReBuzz.AgentEval
             foreach (var k in new[] { "song", "undo", "transport", "agent", "warnings", "mode" }) status.Remove(k);
             s["status"] = status;
             var machines = c.Ok("machine_list")["machines"]!.DeepClone();
-            s["machines"] = machines;
+            // Content compares by name; the order (of machines, connections, lanes, session tracks) is kept apart:
+            // undo puts a restored machine or connection at the end of its list.
+            var order = new JsonObject
+            {
+                ["machines"] = J.Strings(J.Objects(machines).Select(m => J.Str(m["name"]))),
+                ["connections"] = new JsonObject(J.Objects(machines).Select(m => KeyValuePair.Create(J.Str(m["name"]),
+                    (JsonNode)J.Strings(J.Objects(m["inputs"]).Select(i => "in:" + J.Str(i["from"])).Concat(J.Objects(m["outputs"]).Select(o => "out:" + J.Str(o["to"]))))))),
+            };
+            s["order"] = order;
+            s["machines"] = ByName(machines, "name", m =>
+            {
+                foreach (var (k, key) in new[] { ("inputs", "from"), ("outputs", "to") })
+                    if (m[k] is JsonArray list) m[k] = ByName(list, key);
+            });
             var ps = new JsonObject();
             foreach (var m in J.Objects(machines))
             {
@@ -413,7 +426,7 @@ namespace ReBuzz.AgentEval
                 ps[name] = perTrack;
             }
             s["params"] = ps;
-            var patterns = c.Ok("pattern_list")["machines"]!.DeepClone();
+            var patterns = ByName(c.Ok("pattern_list")["machines"]!, "machine");
             s["patterns"] = patterns;
             var notes = new JsonObject();
             foreach (var m in J.Objects(patterns))
@@ -427,18 +440,40 @@ namespace ReBuzz.AgentEval
                     };
                 }
             s["pattern_data"] = notes;
-            s["arrangement"] = c.Ok("arrangement_get");
+            var arrangement = c.Ok("arrangement_get");
+            order["lanes"] = J.Strings(J.Objects(arrangement["lanes"]).Select(l => J.Str(l["machine"])));
+            arrangement["lanes"] = ByName(arrangement["lanes"]!, "machine");
+            s["arrangement"] = arrangement;
             s["markers"] = c.Ok("arrangement_markers")["markers"]!.DeepClone();
-            s["session"] = c.Ok("session_get");
+            var session = c.Ok("session_get");
+            if (session["tracks"] is JsonArray sessionTracks)
+            {
+                order["session_tracks"] = J.Strings(J.Objects(sessionTracks).Select(t => J.Str(t["machine"])));
+                session["tracks"] = ByName(sessionTracks, "machine");
+            }
+            s["session"] = session;
             s["waves"] = c.Ok("wave_list")["waves"]!.DeepClone();
             return s;
+        }
+
+        /// <summary>A copy of a list of objects sorted by one of their fields, each optionally adjusted.</summary>
+        static JsonArray ByName(JsonNode list, string key, Action<JsonObject> adjust = null) =>
+            new(J.Objects(list).Select(o => (JsonObject)o.DeepClone()).OrderBy(o => J.Str(o[key]), StringComparer.Ordinal)
+                .Select(o => { adjust?.Invoke(o); return (JsonNode)o; }).ToArray());
+
+        /// <summary>A state without its order record (content only).</summary>
+        static JsonObject Content(JsonObject state)
+        {
+            var copy = (JsonObject)state.DeepClone();
+            copy.Remove("order");
+            return copy;
         }
 
         /// <summary>Paths where two JSON trees differ (the first few).</summary>
         static List<string> Diff(JsonNode a, JsonNode b, string path = "$", List<string> into = null)
         {
             into ??= new List<string>();
-            if (into.Count >= 8) return into;
+            if (into.Count >= 12) return into;
             if (a is JsonObject oa && b is JsonObject ob)
             {
                 foreach (var k in oa.Select(kv => kv.Key).Union(ob.Select(kv => kv.Key)))
@@ -519,15 +554,17 @@ namespace ReBuzz.AgentEval
                 if (u.IsError) { r.Expect(false, $"undo {i + 1} of {done}: {u.Text}"); break; }
             }
             var back = State(c);
-            var d0 = Diff(s0, back);
+            var d0 = Diff(Content(s0), Content(back));
             r.Expect(d0.Count == 0, $"after {done} undos the song differs from before: " + string.Join("; ", d0));
+            var o0 = Diff(s0["order"], back["order"]);
+            if (o0.Count > 0) r.Note("after undo, restored machines and connections sit at the end of their lists: " + string.Join("; ", o0.Take(3)));
             for (int i = 0; i < done; i++)
             {
                 var u = c.Call("redo");
                 if (u.IsError) { r.Expect(false, $"redo {i + 1} of {done}: {u.Text}"); break; }
             }
             var again = State(c);
-            var d1 = Diff(s1, again);
+            var d1 = Diff(Content(s1), Content(again));
             r.Expect(d1.Count == 0, $"after {done} redos the song differs from after the changes: " + string.Join("; ", d1));
             // A call that fails changes nothing, and leaves undo where it was.
             string next = J.Str(s.Status()["undo"]?["next_undo"]);

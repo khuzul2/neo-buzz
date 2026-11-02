@@ -96,6 +96,11 @@ namespace ReBuzz.AgentEval
         /// </summary>
         public static void MasterBus(Studio s, double ceilingDb = -1.2)
         {
+            // Measure the mix first: the glue's threshold sits under its peaks.
+            var r = s.C.Ok("render", new JsonObject { ["tail_seconds"] = 0.5, ["name"] = "premaster" }, seconds: 600);
+            var m = s.C.Ok("analyze", new JsonObject { ["source"] = J.Str(r["id"]), ["metrics"] = J.A("peaks", "dynamics") });
+            double peak = J.Num(m["peaks"]?["true_peak_dbtp"]);
+            double threshold = double.IsNaN(peak) || double.IsInfinity(peak) ? -24 : System.Math.Clamp(peak - 12, -60, 0);
             var g = s.Graph();
             var feeds = g.Master.Inputs.Where(i => i.Main).ToList();
             Add(s, "Neo EQ", "Tone", 0);
@@ -107,7 +112,8 @@ namespace ReBuzz.AgentEval
                 s.C.Ok("connect", new JsonObject { ["from"] = f.From, ["to"] = "Tone", ["gain_db"] = double.IsNaN(f.GainDb) || double.IsInfinity(f.GainDb) ? 0 : f.GainDb });
             }
             Set(s, "Tone", ("B1 on", "On"), ("B1 type", "Low cut"), ("B1 freq", "30 Hz"), ("B1 slope", "24 dB/oct"));
-            Set(s, "Glue", ("Mode", "Glue"), ("Threshold", "-18 dB"), ("Ratio", "2:1"), ("Attack", "10 ms"), ("Release", "200 ms"), ("Knee", "6 dB"));
+            Set(s, "Glue", ("Mode", "Glue"), ("Threshold", $"{threshold.ToString("0.0", J.C)} dB"), ("Ratio", "3:1"), ("Attack", "3 ms"),
+                ("Release", "150 ms"), ("Knee", "6 dB"), ("Auto makeup", "Off"));
             Set(s, "Limit", ("Ceiling", $"{ceilingDb.ToString("0.0", J.C)} dB"), ("Auto release", "On"), ("Lookahead", "2 ms"), ("Input gain", "0 dB"));
         }
 
