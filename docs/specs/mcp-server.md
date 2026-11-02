@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | A0–A5 and A7 built (2026-11-02); A6 (evaluation) and Neo Analyzer in progress. As built: §3.5 |
+| Status | A0–A5 and A7 built, with Neo Analyzer (2026-11-02); A6 (evaluation) in progress. As built: §3.5 |
 | Date | 2026-10-31, updated 2026-11-02 |
 | Scope | An MCP server that lets an AI agent (Claude Code or any MCP client) compose, design sounds, mix and master in this ReBuzz fork, with tools clear enough to use without guessing, guides for the craft, and the analysis needed to check its own work |
 | Protocol | MCP 2026-07-28, also negotiates 2025-11-25, 2025-06-18 and 2025-03-26 (stdio and Streamable HTTP; structured tool output; progress). Own protocol layer, no SDK (§3.5) |
@@ -155,6 +155,7 @@ Neo machines resolve through their exact mappings. Legacy machines resolve by se
 - **Automation** goes into the pattern's engine-played parameter columns (`SessionAutomation`), the same columns the Session View records into. Linear ramps are written as events every quarter tick.
 - **Session grid edits** go through `SessionLayout`, and the agent's undo step restores layout snapshots. The Session View's own undo also sees them.
 - **Machine data imports** follow a convention. The manifest lists `imports` (Params.def `import` lines), and the managed machine has `public string ImportData(string kind, string path, int item, Action<int,int> setParameter)`. The machine's data before and after, plus any parameters it sets, make up one undo step. Neo Wave takes `wavetable`; Neo FM6 takes `dx7_bank`.
+- **Machine readings** (A4, for `machine_readings`) follow a convention too. The manifest lists `readings` (Params.def `reading` lines: key, unit, meaning), and the managed machine has `public IReadOnlyDictionary<string, double> Readings { get; }`, read by reflection from any thread: each get returns a new read-only dictionary copied from the machine's newest snapshot (published by the audio thread through a lock-free triple buffer), which nothing changes afterwards. Keys are snake_case with their unit; silence is −∞. Neo Analyzer has 48: `momentary_lufs`, `short_term_lufs`, `integrated_lufs`, `range_lu`, `true_peak_dbtp`, `momentary_max_lufs`, `short_term_max_lufs`, `seconds`, `correlation`, `width`, the named bands `sub_db` … `air_db` and the third octaves `band_20hz_db` … `band_31_5hz_db` … `band_20000hz_db` (windows: 400 ms, 3 s, or since the reset; machines.md §5). The values stay after the transport stops or a render ends; `public void ResetReadings()` (or the Reset parameter) starts the integrated ones again.
 - **Theory and transforms** are pure (`ReBuzz.Agent/Model/Theory.cs`, `Transforms.cs`, 98 chord symbols tested). `notes_transform` replaces a pattern's notes in one undo step.
 
 **Guides (A5)** live in `ReBuzz.Agent/Guides/`, embedded:
