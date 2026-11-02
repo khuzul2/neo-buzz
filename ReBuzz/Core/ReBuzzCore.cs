@@ -31,6 +31,7 @@ using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
+using System.Windows.Interop;   // RenderMode (S6, PR 8)
 using System.Windows.Media;
 using System.Xml.Linq;
 using Timer = System.Timers.Timer;
