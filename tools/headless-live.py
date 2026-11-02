@@ -86,7 +86,8 @@ ok, _, _ = call("midi_play", machine="Keys", start="now",
 check(ok, "midi_play a chord now")
 ok, _, m = call("meters_read", window_seconds=1)
 level = master(m).get("rms_dbfs")
-check(ok and not master(m).get("silent", True) and isinstance(level, (int, float)) and level > -60, f"meters_read hears the chord ({level} dBFS RMS)")
+check(ok and not master(m).get("silent", True) and isinstance(level, (int, float)) and level > -60,
+      f"meters_read hears the chord ({level} dBFS RMS over {master(m).get('seconds')} s)")
 check(call("midi_play", stop=True)[0], "midi_play stop lets go")
 
 # The arrangement, played in real time.
@@ -99,7 +100,8 @@ ok, _, t = call("transport", action="play", at="1.1")
 check(ok, "transport play")
 ok, _, m = call("meters_read", window_seconds=1)
 level = master(m).get("rms_dbfs")
-check(ok and m.get("playing") is True and not master(m).get("silent", True), f"meters_read hears the song playing ({level} dBFS RMS)")
+check(ok and m.get("playing") is True and not master(m).get("silent", True),
+      f"meters_read hears the song playing ({level} dBFS RMS over {master(m).get('seconds')} s)")
 # 120 BPM: two beats a second, if the device takes audio in real time (a clocked device does;
 # ALSA's bare null device doesn't, so this check needs a real or virtual sound device).
 ok1, _, t1 = call("transport", action="status")

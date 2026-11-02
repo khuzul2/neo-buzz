@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-01: D1–D5 as recommended, run as a track parallel to the MCP work. P0 done: the Neo editor kit draws through `INeoCanvas` (CI screenshots pixel-identical), settings go through `ISettingsStore`; the `IMidiBackend` seam moves to P2. P1 step 0 done: the engine census and a 10-PR split plan ([`engine-split.md`](engine-split.md)). P1 PRs 1–6 merged (census 142). P2 planned: [`mac-engine.md`](mac-engine.md) |
+| Status | Decided 2026-11-01: D1–D5 as recommended, run as a track parallel to the MCP work. P0 done: the Neo editor kit draws through `INeoCanvas` (CI screenshots pixel-identical), settings go through `ISettingsStore`; the `IMidiBackend` seam moves to P2. P1 done: the engine census, then 10 PRs ([`engine-split.md`](engine-split.md)); `ReBuzz.Engine` builds as plain `net10.0` and `ReBuzz.exe` references it. P2 in progress ([`mac-engine.md`](mac-engine.md)): `rebuzz-headless` runs the engine with the MCP server on Linux and macOS (the A6 suite passes on `macos-15`), native machines are placeholders that save back unchanged, and it plays through PortAudio (CoreAudio) |
 | Date | 2026-11-01 |
 | Scope | One codebase that runs on macOS (Apple silicon) and Windows; keep C# if possible; what to do with Windows-only machines (keep, bridge, rebuild) |
 | Code baseline | fork `22ff4a9` on upstream `wasteddesign/ReBuzz` @ `af162b9` (2026-10-24) |
