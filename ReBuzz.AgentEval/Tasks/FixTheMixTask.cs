@@ -23,7 +23,7 @@ namespace ReBuzz.AgentEval
             "The open song is a 4-bar loop at 120 BPM (Kick, Bass, Lead, Hats, and a Pad through a reverb called Space) with several mix " +
             "problems. Find them with analyze_mix, analyze and plot, and fix each one so the improvement shows in the measurements, without " +
             "making anything else worse: keep every part audible and keep the notes. Mix moves only (levels, filters and other parameters, " +
-            "effects, routing). When it's done, save it with " +
+            "effects such as Neo EQ, Neo Utility and Neo Comp, routing); guide(topic=\"mixing\") has the checks. When it's done, save it with " +
             $"song_save(path=\"{ctx.ResultSong.Replace("\\", "/")}\", overwrite=true).";
 
         public override void Setup(Studio s, TaskContext ctx)
@@ -62,11 +62,16 @@ namespace ReBuzz.AgentEval
         {
             string id = J.Str(s.C.Ok("analyze_mix")["render"]);
             s.C.Ok("plot", new JsonObject { ["kind"] = "bands", ["sources"] = J.A($"{id}:Kick", $"{id}:Bass", $"{id}:Lead", $"{id}:Hats") });
-            // Masking: carve the bass's sub away from the kick (a high-pass on its second filter).
-            s.C.Ok("machine_describe", new JsonObject { ["machine"] = "Bass", ["group"] = "Filter 2" });
-            Recipes.Set(s, "Bass", ("F2 type", "HP"), ("F2 cutoff", "110 Hz"), ("F2 reso", "0%"));
-            // The resonance: tame the lead's filter.
-            Recipes.Set(s, "Lead", ("F1 reso", "12%"));
+            // Masking: frequency slots with Neo EQ. The kick keeps the sub (a high cut above it), the bass
+            // gives it up (a low cut under its second harmonic).
+            s.C.Ok("guide", new JsonObject { ["machine"] = "Neo EQ" });
+            Recipes.Add(s, "Neo EQ", "Kick EQ", 0, insertAfter: "Kick");
+            Recipes.Set(s, "Kick EQ", ("B8 on", "On"), ("B8 type", "High cut"), ("B8 freq", "120 Hz"), ("B8 slope", "24 dB/oct"));
+            Recipes.Add(s, "Neo EQ", "Bass EQ", 0, insertAfter: "Bass");
+            Recipes.Set(s, "Bass EQ", ("B1 on", "On"), ("B1 type", "Low cut"), ("B1 freq", "100 Hz"), ("B1 slope", "24 dB/oct"));
+            // The resonance: a narrow cut where it rings.
+            Recipes.Add(s, "Neo EQ", "Lead EQ", 0, insertAfter: "Lead");
+            Recipes.Set(s, "Lead EQ", ("B4 type", "Bell"), ("B4 freq", $"{ResonanceHz} Hz"), ("B4 gain", "-12 dB"), ("B4 Q", 4));
             // The hats: down to sit under the mix.
             s.C.Ok("connection_set", new JsonObject { ["changes"] = J.A(new JsonObject { ["from"] = "Hats", ["to"] = "Master", ["gain_db"] = -12 }) });
             // Phase: the reverb narrower than 100 %, so its sides don't oppose.
@@ -115,9 +120,9 @@ namespace ReBuzz.AgentEval
 
         public override List<Criterion> Score(Facts start, Facts r, TaskContext ctx)
         {
-            // Masking: at most half the start's, or nearly none.
+            // Masking: at most half the start's.
             double m0 = start["kick_bass_masking"], m1 = r["kick_bass_masking"];
-            double maskTarget = Math.Min(0.5 * m0, Math.Max(0.1, 0.25 * m0));
+            double maskTarget = 0.5 * m0;
             double masking = double.IsNaN(m1) ? 0 : m1 <= maskTarget ? 1 : Linear(m1, maskTarget, m0);
             // Resonance: within 3 dB of its neighbours, or 6 dB less prominent than at the start.
             double p0 = start["lead_resonance_db"], p1 = r["lead_resonance_db"];

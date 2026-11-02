@@ -127,7 +127,7 @@ namespace ReBuzz.AgentEval
             r.Expect(JsonNode.DeepEquals(again, new JsonArray(read.Select(n => (JsonNode)n.DeepClone()).ToArray())), "writing back what notes_read gave changes the notes: " + again?.ToJsonString());
             // A range reads the notes that start in it.
             var range = J.Objects(c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["pattern"] = "A", ["range_start"] = 1, ["range_end"] = 2 })["notes"]).ToList();
-            r.Expect(range.Count == 3, $"notes_read from beat 1 to 2 gave {range.Count} notes, not 3");
+            r.Expect(range.Count == 2, $"notes_read from beat 1 to 2 gave {range.Count} notes, not 2 (F#3 at 1.25, Bb2 at 1.5)");
             // And a copy of the pattern carries them all.
             c.Ok("pattern_duplicate", new JsonObject { ["machine"] = "Keys", ["pattern"] = "A", ["new_name"] = "B" });
             var copy = c.Ok("notes_read", new JsonObject { ["machine"] = "Keys", ["pattern"] = "B" })["notes"];
@@ -173,7 +173,9 @@ namespace ReBuzz.AgentEval
                 ("Comp", "Threshold", "value", "-18 dB", -18, 0.035, "dB"),
                 ("Comp", "Attack", "value", "5 ms", 0.005, 0.005 * 0.012, "s"),
                 ("Verb", "Mix", "value", "25%", 25, 0.06, "%"),
-                ("Verb", "Pre-delay", "value", 20, 20, 0.11, "ms"),
+                ("Verb", "Pre-delay", "value", "20 ms", 0.02, 0.00026, "s"),
+                // A bare number is in the unit param_get reports (seconds here, though the knob shows ms).
+                ("Verb", "Pre-delay", "value", 0.03, 0.03, 0.00026, "s"),
             };
             foreach (var (m, p, form, value, want, tol, unit) in cases)
             {
@@ -183,6 +185,13 @@ namespace ReBuzz.AgentEval
                 double n = J.Num(got["number"]);
                 r.Expect(Math.Abs(n - want) <= tol && J.Str(got["unit"]) == unit, $"{m} {p} {form} {value.ToJsonString()}: reads {got["value"]} = {n} {got["unit"]}, want {want} {unit} (±{tol})");
             }
+            // Out of range: recorded, not failed (values clamp by design, A1). An agent meaning 20 ms who
+            // passes a bare 20 gets the top of the range; a warning or an error would serve it better.
+            var clamp = c.Call("param_set", new JsonObject { ["machine"] = "Verb", ["changes"] = J.A(new JsonObject { ["param"] = "Pre-delay", ["value"] = 20 }) });
+            if (!clamp.IsError)
+                r.Note($"a bare 20 for Verb Pre-delay (read in seconds) lands at {J.Str(Get("Verb", "Pre-delay")["value"])} without a warning" +
+                       (clamp.Text.Contains("range", StringComparison.OrdinalIgnoreCase) ? " (the summary mentions the range)" : ""));
+
             // Choices, min/max/default and raw.
             foreach (var (m, p, value, want) in new[] { ("Synth", "Voice mode", "Mono", "Mono"), ("Synth", "F1 type", "SVF HP", "SVF HP"), ("Synth", "LFO1 sync", "1/8T", "1/8T"), ("Comp", "Mode", "Opto", "Opto") })
             {

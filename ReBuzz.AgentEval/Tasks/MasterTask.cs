@@ -20,8 +20,8 @@ namespace ReBuzz.AgentEval
             "The open song is a finished but unmastered mix: 8 bars at 120 BPM (Kick, Hats, Bass, Pad, Lead). Master it for streaming: " +
             "integrated loudness -14 LUFS (within 1 LU), true peak at most -1 dBTP, natural dynamics (a crest factor of 6 to 14 dB, no " +
             "squashing), no clipping, and the mix's balance as it is (don't remove or rebalance parts). Build the master chain on a bus: " +
-            "route what feeds Master through effects into Master (Neo Comp and Neo Drive are available; Neo Comp at its top ratio with the " +
-            "fastest attack and lookahead works as a peak limiter). Measure with render and analyze after each change. When it's done, " +
+            "route what feeds Master through effects into Master (Neo EQ, Neo Comp, Neo Drive and Neo Limiter are available; " +
+            "guide(topic=\"mastering\") has the chain). Measure with render and analyze after each change. When it's done, " +
             $"save it with song_save(path=\"{ctx.ResultSong.Replace("\\", "/")}\", overwrite=true).";
 
         public override void Setup(Studio s, TaskContext ctx)

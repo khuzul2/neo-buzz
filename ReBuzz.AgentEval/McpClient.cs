@@ -245,6 +245,9 @@ namespace ReBuzz.AgentEval
             args ??= new JsonObject();
             var clock = Stopwatch.StartNew();
             var r = Request("tools/call", new JsonObject { ["name"] = tool, ["arguments"] = args.DeepClone() }, seconds);
+            // Detached from the response, so callers can put the results into their own trees.
+            var structured = r["structuredContent"] as JsonObject;
+            r.Remove("structuredContent");
             var content = r["content"] as JsonArray ?? new JsonArray();
             var call = new ToolCall
             {
@@ -252,7 +255,7 @@ namespace ReBuzz.AgentEval
                 Arguments = args,
                 IsError = r["isError"]?.GetValue<bool>() == true,
                 Text = content.OfType<JsonObject>().FirstOrDefault(b => b["type"]?.GetValue<string>() == "text")?["text"]?.GetValue<string>() ?? "",
-                Data = r["structuredContent"] as JsonObject ?? new JsonObject(),
+                Data = structured ?? new JsonObject(),
                 Content = content,
                 Seconds = clock.Elapsed.TotalSeconds,
             };

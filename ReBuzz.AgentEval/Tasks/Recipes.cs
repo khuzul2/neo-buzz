@@ -87,31 +87,34 @@ namespace ReBuzz.AgentEval
         public static IEnumerable<JsonObject> Every(object pitch, double beats, double step, double offset = 0, double length = 0.25, int velocity = 110) =>
             Enumerable.Range(0, (int)(beats / step)).Select(i => J.Note(pitch, offset + i * step, length, velocity)).Where(n => J.Num(n["start"]) < beats);
 
+
         /// <summary>
-        /// Puts every machine feeding Master through a bus: "Glue" (a gentle Neo Comp) then "Limit"
-        /// (a Neo Comp set as a peak limiter: fastest attack, ∞:1, lookahead), each connection's gain kept.
-        /// TODO(A4): use Neo Limiter (true-peak, target LUFS) for "Limit" once A4 is on main.
+        /// The mastering chain (the mastering guide's order): every machine feeding Master goes into
+        /// "Tone" (Neo EQ: a 30 Hz low cut, corrective), then "Glue" (Neo Comp, gentle bus
+        /// compression), then "Limit" (Neo Limiter: true peak under <paramref name="ceilingDb"/> dBTP),
+        /// each connection's gain kept.
         /// </summary>
-        public static void MasterBus(Studio s, double ceilingDb = -2.5)
+        public static void MasterBus(Studio s, double ceilingDb = -1.2)
         {
             var g = s.Graph();
             var feeds = g.Master.Inputs.Where(i => i.Main).ToList();
-            Add(s, "Neo Comp", "Glue", 0);
-            Add(s, "Neo Comp", "Limit", 0, insertAfter: "Glue");
+            Add(s, "Neo EQ", "Tone", 0);
+            Add(s, "Neo Comp", "Glue", 0, insertAfter: "Tone");
+            Add(s, "Neo Limiter", "Limit", 0, insertAfter: "Glue");
             foreach (var f in feeds)
             {
                 s.C.Ok("disconnect", new JsonObject { ["from"] = f.From, ["to"] = "Master" });
-                s.C.Ok("connect", new JsonObject { ["from"] = f.From, ["to"] = "Glue", ["gain_db"] = double.IsNaN(f.GainDb) || double.IsInfinity(f.GainDb) ? 0 : f.GainDb });
+                s.C.Ok("connect", new JsonObject { ["from"] = f.From, ["to"] = "Tone", ["gain_db"] = double.IsNaN(f.GainDb) || double.IsInfinity(f.GainDb) ? 0 : f.GainDb });
             }
+            Set(s, "Tone", ("B1 on", "On"), ("B1 type", "Low cut"), ("B1 freq", "30 Hz"), ("B1 slope", "24 dB/oct"));
             Set(s, "Glue", ("Mode", "Glue"), ("Threshold", "-18 dB"), ("Ratio", "2:1"), ("Attack", "10 ms"), ("Release", "200 ms"), ("Knee", "6 dB"));
-            Set(s, "Limit", ("Mode", "Clean"), ("Threshold", $"{ceilingDb.ToString("0.0", J.C)} dB"), ("Ratio", "max"), ("Knee", "0 dB"),
-                ("Attack", "min"), ("Release", "60 ms"), ("Lookahead", "5 ms"));
+            Set(s, "Limit", ("Ceiling", $"{ceilingDb.ToString("0.0", J.C)} dB"), ("Auto release", "On"), ("Lookahead", "2 ms"), ("Input gain", "0 dB"));
         }
 
         /// <summary>
-        /// Brings the song to <paramref name="targetLufs"/> through the bus from <see cref="MasterBus"/>,
-        /// measuring with analyze after each change (as an agent would): the gain into the limiter is
-        /// Glue's Output. Returns the last measurement (integrated LUFS, true peak dBTP).
+        /// Brings the song to <paramref name="targetLufs"/> through the chain from <see cref="MasterBus"/>,
+        /// as the Neo Limiter page says: render, read the integrated loudness, raise the limiter's
+        /// Input gain by the difference, again. Returns the last measurement (LUFS, dBTP).
         /// </summary>
         public static (double Lufs, double TruePeak) MasterTo(Studio s, double targetLufs, double maxTruePeak = -1, int rounds = 3)
         {
@@ -123,18 +126,16 @@ namespace ReBuzz.AgentEval
                 lufs = J.Num(m["loudness"]?["integrated_lufs"]);
                 tp = J.Num(m["peaks"]?["true_peak_dbtp"]);
                 if (double.IsNaN(lufs) || double.IsInfinity(lufs) || i >= rounds) break;
-                bool close = System.Math.Abs(lufs - targetLufs) <= 0.3 && tp <= maxTruePeak;
-                if (close) break;
-                if (tp > maxTruePeak && System.Math.Abs(lufs - targetLufs) <= 0.3)
+                if (System.Math.Abs(lufs - targetLufs) <= 0.3 && tp <= maxTruePeak) break;
+                if (tp > maxTruePeak)
                 {
-                    // Peaks over the ceiling at the right loudness: limit harder.
-                    var lim = s.C.Ok("param_get", new JsonObject { ["machine"] = "Limit", ["params"] = J.A("Threshold") });
-                    double th = J.Num(J.Objects(lim["values"]).First()["number"]);
-                    Set(s, "Limit", ("Threshold", $"{(th - (tp - maxTruePeak) - 0.5).ToString("0.0", J.C)} dB"));
-                    continue;
+                    // The ceiling is a true-peak ceiling, so this shouldn't happen; lower it if it does.
+                    var lim = s.C.Ok("param_get", new JsonObject { ["machine"] = "Limit", ["params"] = J.A("Ceiling") });
+                    double ceiling = J.Num(J.Objects(lim["values"]).First()["number"]);
+                    Set(s, "Limit", ("Ceiling", $"{(ceiling - (tp - maxTruePeak) - 0.2).ToString("0.0", J.C)} dB"));
                 }
-                gain = System.Math.Clamp(gain + (targetLufs - lufs), -24, 24);
-                Set(s, "Glue", ("Output", $"{gain.ToString("+0.0;-0.0", J.C)} dB"));
+                gain = System.Math.Clamp(gain + (targetLufs - lufs), -12, 24);
+                Set(s, "Limit", ("Input gain", $"{gain.ToString("+0.0;-0.0", J.C)} dB"));
             }
             return (lufs, tp);
         }
