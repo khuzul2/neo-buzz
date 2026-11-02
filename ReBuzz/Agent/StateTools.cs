@@ -93,6 +93,27 @@ namespace ReBuzz.Agent
             return pd;
         }
 
+        /// <summary>
+        /// A gear's preset names from its .prs.xml beside the DLL, without a machine of it (for its
+        /// manual). Binary .prs files need a machine to read, so they show up in preset_list only.
+        /// </summary>
+        internal static IReadOnlyList<string> PresetNames(IMachineDLL dll)
+        {
+            string dir = Path.GetDirectoryName(dll?.Path ?? "");
+            if (string.IsNullOrEmpty(dir)) return System.Array.Empty<string>();
+            string xml = Path.Combine(dir, dll.Name + ".prs.xml");
+            if (!File.Exists(xml)) return System.Array.Empty<string>();
+            try
+            {
+                return System.Xml.Linq.XDocument.Load(xml).Root?.Elements("Item").Select(e => (string)e.Attribute("Key")).Where(k => !string.IsNullOrEmpty(k)).ToList()
+                       ?? (IReadOnlyList<string>)System.Array.Empty<string>();
+            }
+            catch (Exception)
+            {
+                return System.Array.Empty<string>();
+            }
+        }
+
         public static void Register(ToolRegistry tools, AgentHost host)
         {
             var core = host.Core;

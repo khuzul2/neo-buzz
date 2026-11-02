@@ -77,6 +77,9 @@ namespace NeoBuzz.Wave
         int userChanged;                    // 1: the audio thread hasn't picked up requestedUser yet
         bool tablesPending;   // a chosen built-in table is still being built: look again next block
 
+        /// <summary>A chosen table is still being built (the voices play the previous one, or nothing yet).</summary>
+        public bool TablesPending => Volatile.Read(ref tablesPending);
+
         /// <summary>The table "User" plays (loaded by the machine from a file or its saved state); null when none.</summary>
         public Wavetable UserTable => requestedUser;
 

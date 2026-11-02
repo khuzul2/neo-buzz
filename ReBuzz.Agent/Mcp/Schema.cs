@@ -153,6 +153,9 @@ namespace ReBuzz.Agent.Mcp
                 case "boolean":
                     if (value is not JsonValue bv || !bv.TryGetValue(out bool _)) errors.Add($"{Where(path)}: expected true or false");
                     return;
+                case "null":
+                    if (value != null) errors.Add($"{Where(path)}: expected null");
+                    return;
             }
         }
 
