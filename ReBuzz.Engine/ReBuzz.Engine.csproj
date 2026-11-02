@@ -35,6 +35,8 @@
     <Compile Include="$(R)NativeMachine\**\*.cs" Link="NativeMachine\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="$(R)Midi\**\*.cs" Link="Midi\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="$(R)Agent\**\*.cs" Link="Agent\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Seams for hosts without Windows or a UI toolkit (mac-engine.md M0). -->
+    <Compile Include="$(R)Platform\**\*.cs" Link="Platform\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <!-- They stay in ReBuzz.exe: XAML code-behind, the WPF implementations of the seams, the HWND
