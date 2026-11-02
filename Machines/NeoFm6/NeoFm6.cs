@@ -75,6 +75,22 @@ namespace NeoBuzz.Fm6
             state = new NeoFm6State { BankName = Path.GetFileNameWithoutExtension(path), BankData = Convert.ToBase64String(data) };
         }
 
+        /// <summary>
+        /// Agent server (mcp-server.md A3, machine_data_import): "dx7_bank" loads a .syx bank and
+        /// plays voice <paramref name="item"/> (1–32, 0 = 1) by setting its parameters through
+        /// <paramref name="setParameter"/> (index, raw value), so the host can make them undoable.
+        /// </summary>
+        public string ImportData(string kind, string path, int item, Action<int, int> setParameter)
+        {
+            if (kind != "dx7_bank") throw new ArgumentException($"Neo FM6 doesn't import \"{kind}\"; it takes dx7_bank.");
+            LoadBank(path);
+            if (bank.Count == 0) return $"Loaded {Path.GetFileName(path)}, which holds no voices.";
+            int voice = item <= 0 ? 1 : item;
+            if (voice > bank.Count) throw new ArgumentException($"the bank has {bank.Count} voice(s); item {voice} doesn't exist");
+            foreach (var (p, value) in Sysex.ToParams(bank[voice - 1].Data)) setParameter(p, value);
+            return $"Loaded the bank {state.BankName} ({bank.Count} voices) and set voice {voice}, \"{bank[voice - 1].Name.Trim()}\".";
+        }
+
         /// <summary>Writes the current parameters as a DX7 single-voice .syx file.</summary>
         internal void ExportVoice(string path, string name)
         {

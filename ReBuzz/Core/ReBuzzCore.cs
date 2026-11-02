@@ -133,6 +133,9 @@ namespace ReBuzz.Core
         // Fork (0.5.1): arrangement events' start, end and volume in song files.
         internal ArrangementEventStore ArrangementEvents { get; set; }
 
+        // Fork (mcp-server.md A3): named sections of the song, saved in song files.
+        internal SongMarkerStore MarkerStore { get; set; }
+
         /// <summary>
         /// Fork (0.6): tempo nudge, a tempo factor while a nudge button is held (1: none). The
         /// engine divides each tick's length by it; the song's BPM doesn't change.
@@ -2367,6 +2370,7 @@ namespace ReBuzz.Core
             Autosave?.Discard();   // fork (0.4.1)
             Playing = false;
             SessionLayout?.Reset();             // fork (0.6.1): no launches from the old song's map while it closes
+            MarkerStore?.Clear();               // fork (mcp-server.md A3)
             InfoText = "";
 
             // Create status window

@@ -107,6 +107,24 @@ namespace ReBuzz.Agent
 
         static PatternEvent ToEvent(NoteEvent n) => new PatternEvent(n.Time, n.Value, n.Duration);
 
+        /// <summary>Replaces events in one of a pattern's engine columns (automation): <paramref name="removed"/> go, <paramref name="added"/> come.</summary>
+        public static void ReplaceColumnEvents(ReBuzzCore core, IPattern pattern, ColumnKey key, IReadOnlyList<PatternEvent> removed, IReadOnlyList<PatternEvent> added)
+        {
+            string machine = pattern.Machine.Name, name = pattern.Name;
+            var take = removed.ToArray();
+            var put = added.ToArray();
+            void Apply(PatternEvent[] gone, PatternEvent[] come)
+            {
+                var p = Find(core, machine, name);
+                if (p == null) return;
+                var column = SessionLayout.ColumnFor(p, key, create: come.Length > 0);
+                if (column == null) return;
+                if (gone.Length > 0) column.SetEvents(gone, false);
+                if (come.Length > 0) column.SetEvents(come, true);
+            }
+            Do(core, new DelegateAction(() => Apply(take, put), () => Apply(put, take)));
+        }
+
         /// <summary>Deletes a pattern; undo makes it again with its engine columns (notes, automation).</summary>
         public static void DeletePattern(ReBuzzCore core, IPattern pattern)
         {
