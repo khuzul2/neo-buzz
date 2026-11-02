@@ -579,6 +579,7 @@ namespace ReBuzz.Core
             if (p != null)
             {
                 PatternCore newp = new PatternCore(this, name, p.Length, dispatcher);
+                newp.BuiltInData = (p as PatternCore)?.BuiltInData;    // fork (mac-engine.md M2): kept contents are never changed, so the copy shares them
                 lock (ReBuzzCore.AudioLock)
                 {
                     this.patterns.Add(newp);
