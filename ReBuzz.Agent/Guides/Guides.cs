@@ -1,30 +1,39 @@
 #nullable disable
 // Agent server (docs/specs/mcp-server.md §6): the craft guides. One source, three ways in: the
-// `guide` tool, resources rebuzz://guides/<topic>, and (later) prompts. The guides are markdown
-// files embedded in this assembly (Guides/*.md).
+// `guide` tool, resources rebuzz://guides/<topic> (and rebuzz://machines/<gear>/manual, see
+// MachineManual.cs), and prompts (Prompts.cs). The guides are markdown files embedded in this
+// assembly (Guides/*.md, curated machine pages Guides/machines/*.md).
 
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.Json.Nodes;
+using System.Threading.Tasks;
 using ReBuzz.Agent.Mcp;
 using static ReBuzz.Agent.Mcp.Schema;
 
 namespace ReBuzz.Agent.Guides
 {
-    public static class GuideLibrary
+    public static partial class GuideLibrary
     {
         public const string UriPrefix = "rebuzz://guides/";
 
         static readonly (string Topic, string Title, string Description)[] Topics =
         {
-            ("workflow", "Working in ReBuzz", "The loop (build, render, measure, adjust), which tool for what, undo, and the checks before calling something done. Read first."),
-            ("concepts", "ReBuzz in five minutes", "Machines and the graph, parameters and tracks, patterns and the arrangement, beats, pitches and levels."),
+            ("workflow", "Working in ReBuzz", "The loop (build, render, measure, adjust), which tool for what, which guide for what, undo, and the checks before calling something done. Read first."),
+            ("concepts", "ReBuzz in five minutes", "Machines and the graph, parameters and tracks, patterns, the arrangement and the session grid, beats, pitches and levels."),
+            ("composition", "Composition", "Forms and section lengths by genre, harmony and voice leading, melody, drum grids with swing and humanizing, arrangement energy, and templates (tempo, key, structure) for house, techno, DnB, synthwave, hip-hop, ambient, pop and lo-fi."),
+            ("sound-design", "Sound design", "Reading a sound (envelope, spectrum, movement, space) and recipes with exact values for Neo Poly, Neo Wave and Neo FM6: pads, basses, leads, plucks, keys, bells, drums, textures, wavetable sweeps; Neo Drive, Comp and Verb as sound tools."),
+            ("mixing", "Mixing", "Gain staging targets, balance by reference, frequency slots per instrument, EQ and compression starting points by source, sidechain, sends and pre-delay against tempo, mono lows, and the checks with render probes and analyze."),
+            ("mastering", "Mastering", "Loudness and true-peak targets (streaming, club, broadcast), the chain (corrective EQ, glue compression, saturation, limiter), measuring after every change, and what not to do."),
+            ("troubleshooting", "Troubleshooting", "Silence, clipping, phase, latency, CPU, missing machines, machines that ignore notes, hanging notes, and a render that differs from the last one."),
         };
 
         public static IEnumerable<string> TopicNames => Topics.Select(t => t.Topic);
+
+        /// <summary>A guide's title, or null.</summary>
+        public static string Title(string topic) => Topics.FirstOrDefault(t => t.Topic == topic).Title;
 
         /// <summary>A guide's markdown, or null.</summary>
         public static string Get(string topic)
@@ -34,6 +43,15 @@ namespace ReBuzz.Agent.Guides
             if (stream == null) return null;
             using var reader = new StreamReader(stream);
             return reader.ReadToEnd();
+        }
+
+        /// <summary>A guide's closing checklist (from "## Checklist" to the end), or null.</summary>
+        public static string Checklist(string topic)
+        {
+            string text = Get(topic);
+            if (text == null) return null;
+            int at = text.LastIndexOf("\n## Checklist", StringComparison.Ordinal);
+            return at < 0 ? null : text.Substring(at + 1).Trim();
         }
 
         public static IEnumerable<ResourceDef> Resources() =>
@@ -46,7 +64,12 @@ namespace ReBuzz.Agent.Guides
                 Read = () => Get(t.Topic) ?? "",
             });
 
-        public static void Register(ToolRegistry tools)
+        /// <summary>
+        /// Registers the guide tool. <paramref name="manual"/> builds a gear's full manual
+        /// (MachineManual.Build with its manifest and presets) from a gear name, or returns null for
+        /// gear it doesn't know; without it, guide(machine=…) serves the curated page alone.
+        /// </summary>
+        public static void Register(ToolRegistry tools, Func<string, string> manual = null)
         {
             tools.Add(new ToolDef
             {
@@ -54,24 +77,51 @@ namespace ReBuzz.Agent.Guides
                 Title = "Read a guide",
                 Description =
                     "Returns a guide as markdown: 'workflow' (how to work here; read it first), 'concepts' (machines, patterns, the arrangement, " +
-                    "beats, pitches, levels). Without a topic, lists the topics. Read-only. Example: guide(topic=\"workflow\").",
-                Input = Object(null, Opt("topic", String("The guide to read", TopicNames.ToArray()))),
+                    "beats, pitches, levels), 'composition', 'sound-design', 'mixing', 'mastering', 'troubleshooting'. machine gives a gear's manual " +
+                    "(every parameter, how to use it, presets). Without arguments, lists the topics. Read-only. " +
+                    "Example: guide(topic=\"mixing\"), guide(machine=\"Neo Poly\").",
+                Input = Object(null,
+                    Opt("topic", String("The guide to read", TopicNames.ToArray())),
+                    Opt("machine", String("A gear's manual instead: its gear name from gear_list (\"Neo Poly\")"))),
                 Output = Object(null,
                     Opt("topic", String("The guide returned")),
+                    Opt("machine", String("The gear whose manual was returned")),
                     Opt("markdown", String("Its text")),
-                    Req("topics", Array(Object(null, Req("topic", String("Its name")), Req("title", String("Its title")), Req("about", String("What it covers"))), "Every guide"))),
+                    Req("topics", Array(Object(null, Req("topic", String("Its name")), Req("title", String("Its title")), Req("about", String("What it covers"))), "Every guide")),
+                    Opt("manuals", Array(String("A gear name"), "Gear with a curated manual page"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = c =>
                 {
                     var list = new JsonArray(Topics.Select(t => (JsonNode)new JsonObject { ["topic"] = t.Topic, ["title"] = t.Title, ["about"] = t.Description }).ToArray());
+                    var manuals = new JsonArray(MachineManual.CuratedGear.Select(g => (JsonNode)g).ToArray());
                     string topic = c.String("topic");
+                    string machine = c.String("machine");
+                    if (topic != null && machine != null) throw new ToolError("Give topic or machine, not both.");
+                    if (machine != null)
+                    {
+                        string text = manual?.Invoke(machine) ?? CuratedOnly(machine)
+                            ?? throw new ToolError($"No manual for \"{machine}\". Manuals: {string.Join(", ", MachineManual.CuratedGear)}; " +
+                                                   "machine_describe(machine=…) lists any machine's parameters.");
+                        return Task.FromResult(ToolResult.Ok(text, new JsonObject { ["machine"] = machine, ["markdown"] = text, ["topics"] = list, ["manuals"] = manuals }));
+                    }
                     if (topic == null)
-                        return System.Threading.Tasks.Task.FromResult(ToolResult.Ok(
-                            "Guides: " + string.Join("; ", Topics.Select(t => $"{t.Topic} ({t.Description})")), new JsonObject { ["topics"] = list }));
-                    string text = Get(topic) ?? throw new ToolError($"No guide \"{topic}\". Topics: {string.Join(", ", TopicNames)}.");
-                    return System.Threading.Tasks.Task.FromResult(ToolResult.Ok(text, new JsonObject { ["topic"] = topic, ["markdown"] = text, ["topics"] = list }));
+                        return Task.FromResult(ToolResult.Ok(
+                            "Guides: " + string.Join("; ", Topics.Select(t => $"{t.Topic} ({t.Description})")) +
+                            $" Machine manuals: guide(machine=…) for {string.Join(", ", MachineManual.CuratedGear)}.",
+                            new JsonObject { ["topics"] = list, ["manuals"] = manuals }));
+                    string guide = Get(topic) ?? throw new ToolError($"No guide \"{topic}\". Topics: {string.Join(", ", TopicNames)}.");
+                    return Task.FromResult(ToolResult.Ok(guide, new JsonObject { ["topic"] = topic, ["markdown"] = guide, ["topics"] = list, ["manuals"] = manuals }));
                 },
             });
+        }
+
+        /// <summary>The curated page alone, titled, when no manifest is at hand.</summary>
+        static string CuratedOnly(string gear)
+        {
+            string curated = MachineManual.Curated(gear);
+            if (curated == null) return null;
+            string name = MachineManual.CuratedGear.First(g => MachineManual.Slug(g) == MachineManual.Slug(gear));
+            return $"# {name} manual\n\n{curated.Trim()}\n\n`machine_describe(machine=…)` lists every parameter with its unit, range and default.\n";
         }
     }
 }

@@ -61,11 +61,19 @@
     <Compile Include="$(R)AppViews\ReBuzzCoreInitialization.cs" Link="AppViews\ReBuzzCoreInitialization.cs" />
   </ItemGroup>
 
+  <!-- Build number and date (S10), read by Core/BuildInfo.cs; ReBuzz.csproj embeds them the same way. -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(R)BuildNumber.txt" LogicalName="ReBuzz.BuildNumber.txt" Link="BuildNumber.txt" />
+    <EmbeddedResource Include="$(R)BuildDate.txt" LogicalName="ReBuzz.BuildDate.txt" Link="BuildDate.txt" />
+  </ItemGroup>
+
   <ItemGroup>
     <!-- Portable builds (net10.0) of the machine API: engine-split.md §4. -->
     <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" />
     <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" />
     <ProjectReference Include="..\ReBuzz.Agent\ReBuzz.Agent.csproj" />
+    <!-- The vendored Serilog (a submodule): net9.0 on Windows, net10.0 elsewhere (S10). -->
+    <ProjectReference Include="..\3rdParty\serilog\serilog.csproj" />
     <!-- The repo's own portable binaries (not NuGet). -->
     <Reference Include="NAudio.Core"><HintPath>..\3rdParty\NAudio\NAudio.Core.dll</HintPath></Reference>
     <Reference Include="NAudio.Midi"><HintPath>..\3rdParty\NAudio\NAudio.Midi.dll</HintPath></Reference>

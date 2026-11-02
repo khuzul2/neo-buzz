@@ -2241,5 +2241,14 @@
    "a": 0.0,
    "description": "How much velocity changes the level"
   }
+ ],
+ "imports": [
+  {
+   "kind": "dx7_bank",
+   "extensions": [
+    ".syx"
+   ],
+   "description": "A DX7 SysEx file: a 32-voice bank or one voice. item picks the voice to play (1–32; default 1); its parameters are set."
+  }
  ]
 }

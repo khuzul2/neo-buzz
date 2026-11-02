@@ -31,5 +31,12 @@ namespace ReBuzzTests.Automation
             fileNameToSaveChoice.SetTo(source);
             reBuzzCore.ExecuteCommand(BuzzCommand.SaveFileAs);
         }
+
+        /// <summary>Fork (engine-split.md S9): Import Song asks the same file choice as Open.</summary>
+        public void ImportSong(DialogChoices.FileNameSource source)
+        {
+            fileNameToLoadChoice.SetTo(source);
+            reBuzzCore.ImportSong(0, 0);
+        }
     }
 }

@@ -61,6 +61,13 @@ namespace ReBuzz.Agent
                         var o = new JsonObject { ["machine"] = SongModel.MachineJson(core, m) };
                         var manifest = SongModel.Manifest(m.DLL);
                         if (!string.IsNullOrEmpty(manifest?.Summary)) o["summary"] = manifest.Summary;
+                        if (manifest?.Imports.Count > 0)
+                            o["data_imports"] = new JsonArray(manifest.Imports.Select(i => (JsonNode)new JsonObject
+                            {
+                                ["kind"] = i.Kind,
+                                ["extensions"] = new JsonArray(i.Extensions.Select(e => (JsonNode)e).ToArray()),
+                                ["about"] = i.Description,
+                            }).ToArray());
                         o["exact_units"] = all.Any(p => p.Manifest != null);
                         o["groups"] = new JsonArray(groups.Select(g => (JsonNode)g).ToArray());
                         o["parameters"] = new JsonArray(shown.Select(p => (JsonNode)Describe(m, p)).ToArray());

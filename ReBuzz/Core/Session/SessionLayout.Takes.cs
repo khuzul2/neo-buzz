@@ -763,12 +763,12 @@ namespace ReBuzz.Core.Session
             UpdatePollTimer();
         }
 
-        System.Windows.Threading.DispatcherTimer pollTimer;
+        IUiTimer pollTimer;
 
         /// <summary>
         /// Polls takes while anything records, whether a Session View shows or not (its timer
-        /// polls too): a first pass ends, a take stops. Only where the UI thread runs a WPF
-        /// dispatcher (not in headless tests, which poll themselves).
+        /// polls too): a first pass ends, a take stops. The timer is made on the UI thread (in
+        /// tests the fake dispatcher's timer never ticks: they poll themselves).
         /// </summary>
         void UpdatePollTimer()
         {
@@ -776,13 +776,8 @@ namespace ReBuzz.Core.Session
             if (pollTimer == null)
             {
                 if (!needed) return;
-                var wpf = System.Windows.Threading.Dispatcher.FromThread(System.Threading.Thread.CurrentThread);
-                if (wpf == null) return;
-                pollTimer = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Background, wpf)
-                {
-                    Interval = TimeSpan.FromMilliseconds(40)
-                };
-                pollTimer.Tick += (s, e) => PollTakes();
+                if (!dispatcher.CheckAccess()) return;
+                pollTimer = dispatcher.CreateTimer(TimeSpan.FromMilliseconds(40), PollTakes);
             }
             if (needed && !pollTimer.IsEnabled) pollTimer.Start();
             else if (!needed && pollTimer.IsEnabled) pollTimer.Stop();

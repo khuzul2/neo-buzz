@@ -18,7 +18,6 @@ using ReBuzz.Core.Session;
 using ReBuzz.FileOps;
 using ReBuzz.MachineManagement;
 using ReBuzz.Midi;
-using ReBuzz.Properties;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -35,7 +34,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
-using System.Windows.Threading;
 using System.Xml.Linq;
 using Timer = System.Timers.Timer;
 
@@ -75,7 +73,7 @@ namespace ReBuzz.Core
     public class ReBuzzCore : IBuzz, INotifyPropertyChanged, ISessionHost
     {
         // Build and runtime info
-        public static int buildNumber = int.Parse(Resources.BuildNumber);
+        public static int buildNumber = int.Parse(BuildInfo.Number);
         public static MasterInfoExtended masterInfo;
         public static SubTickInfoExtended subTickInfo;
         internal static volatile bool masterInfoStructDirty = true;
@@ -132,6 +130,9 @@ namespace ReBuzz.Core
 
         // Fork (0.5.1): arrangement events' start, end and volume in song files.
         internal ArrangementEventStore ArrangementEvents { get; set; }
+
+        // Fork (mcp-server.md A3): named sections of the song, saved in song files.
+        internal SongMarkerStore MarkerStore { get; set; }
 
         /// <summary>
         /// Fork (0.6): tempo nudge, a tempo factor while a nudge button is held (1: none). The
@@ -194,10 +195,33 @@ namespace ReBuzz.Core
 
         public System.Drawing.Color GetThemeColour(string name)
         {
-            var wpfColour = ThemeColors[name];
+            // Fork (engine-split.md S4): from the ARGB table; black for a name it lacks, as before.
+            return System.Drawing.Color.FromArgb(unchecked((int)GetThemeColourArgb(name)));
+        }
 
-            // Convert to System.Drawing.Color
-            return System.Drawing.Color.FromArgb(wpfColour.A, wpfColour.R, wpfColour.G, wpfColour.B);
+        internal uint GetThemeColourArgb(string name) =>
+            ThemeColourTable.TryGetValue(name, out uint argb) ? argb : ThemeColours.Missing;
+
+        /// <summary>
+        /// Fork (engine-split.md S4): the theme's colours, ARGB. The WPF app builds IBuzz.ThemeColors
+        /// from this table; a new table (another instance) means the theme changed.
+        /// </summary>
+        internal IReadOnlyDictionary<string, uint> ThemeColourTable { get; private set; } = new Dictionary<string, uint>();
+
+        /// <summary>
+        /// Fork (engine-split.md S4): the UI's view of the theme colours, the same object as
+        /// IBuzz.ThemeColors in the WPF app. It stays by name for theme XAML that binds
+        /// Buzz.ThemeColors[...]; null when no UI set <see cref="ThemeColorsView"/>.
+        /// </summary>
+        public object ThemeColors => ThemeColorsView?.Invoke(this);
+
+        /// <summary>Fork (S4): makes <see cref="ThemeColors"/>; set by the WPF app.</summary>
+        public static Func<ReBuzzCore, object> ThemeColorsView { get; set; }
+
+        /// <summary>Fork: (re)loads the selected theme's colours (start-up and theme change).</summary>
+        internal void LoadThemeColours()
+        {
+            ThemeColourTable = ThemeColours.Load(buzzPath, SelectedTheme);
         }
 
         public BuzzView ActiveView { get { return activeView; } set { activeView = value; PropertyChanged.Raise(this, "ActiveView"); } }
@@ -210,7 +234,7 @@ namespace ReBuzz.Core
         // MIDI and controller assignment management
         internal MidiControllerAssignments MidiControllerAssignments { get; set; }
 
-        internal DispatcherTimer dtEngineThread;
+        internal IUiTimer dtEngineThread;
 
         public int OutputChannels { get => AudioEngine.GetAudioProvider().AudioSampleProvider.OutputChannels; }
         public int InputChannels { get => AudioEngine.SelectedInDevice != null ? AudioEngine.SelectedInDevice.WaveFormat.Channels : 0; }
@@ -475,8 +499,6 @@ namespace ReBuzz.Core
             }
         }
 
-        IIndex<string, Color> themeColors;
-        public IIndex<string, Color> ThemeColors { get => themeColors; set => themeColors = value; }
 
         public IMenuItem MachineIndex { get; set; }
 
@@ -519,7 +541,7 @@ namespace ReBuzz.Core
         private bool midiActivity;
 
         // Timer to set MIDIActivity to false afeter 0.5 seconds
-        DispatcherTimer midiActivityTimer;
+        IUiTimer midiActivityTimer;
         
         public bool MIDIActivity
         {
@@ -594,8 +616,8 @@ namespace ReBuzz.Core
             }
         }
 
-        public int BuildNumber { get => int.Parse(Resources.BuildNumber); }
-        public string BuildString { get => "ReBuzz Build " + BuildNumber + " " + Resources.BuildDate; }
+        public int BuildNumber { get => int.Parse(BuildInfo.Number); }
+        public string BuildString { get => "ReBuzz Build " + BuildNumber + " " + BuildInfo.Date; }
 
         Dictionary<string, MachineDLL> machineDLLsList = new Dictionary<string, MachineDLL>();
         internal Dictionary<string, MachineDLL> MachineDLLsList { get => machineDLLsList; set => machineDLLsList = value; }
@@ -822,7 +844,7 @@ namespace ReBuzz.Core
 
         internal MidiEngine MidiInOutEngine { get; }
 
-        DispatcherTimer dtVUMeter;
+        IUiTimer dtVUMeter;
 
         readonly Timer timerAutomaticBackups;
 
@@ -864,13 +886,12 @@ namespace ReBuzz.Core
             SessionCore = new SessionCore(this);
             global::ReBuzz.Core.Session.SessionClipEngine.Install();      // fork (1.0): audio tracks
 
-            midiActivityTimer = new DispatcherTimer() { Interval = TimeSpan.FromSeconds(0.5) };
-            midiActivityTimer.Tick += (sender, e) =>
+            midiActivityTimer = dispatcher.CreateTimer(TimeSpan.FromSeconds(0.5), () =>
             {
                 MIDIActivity = false;
                 PropertyChanged.Raise(this, "MIDIActivity");
                 midiActivityTimer.Stop();
-            };
+            });
 
             generalSettings.PropertyChanged += GeneralSettings_PropertyChanged;
             engineSettings.PropertyChanged += EngineSettings_PropertyChanged;
@@ -987,16 +1008,14 @@ namespace ReBuzz.Core
             Process.GetCurrentProcess().PriorityClass = ProcessAndThreadProfile.ProcessPriorityClassMainProcess;
             Utils.SetProcessorAffinityMask(registryEx, userMessages, true);
 
-            dtEngineThread = new DispatcherTimer();
-            dtEngineThread.Interval = TimeSpan.FromSeconds(1 / 30.0);
-            dtEngineThread.Tick += (s, e) =>
+            dtEngineThread = dispatcher.CreateTimer(TimeSpan.FromSeconds(1 / 30.0), () =>
             {
                 foreach (var m in Song.Machines)
                 {
                     var machine = m as MachineCore;
                     machine.UpdateLastEngineThread();
                 }
-            };
+            });
             this.keyboard = keyboard;
         }
 
@@ -1142,9 +1161,7 @@ namespace ReBuzz.Core
 
         public void StartTimer()
         {
-            dtVUMeter = new DispatcherTimer();
-            dtVUMeter.Interval = TimeSpan.FromMilliseconds(1000 / 30);
-            dtVUMeter.Tick += (sender, e) =>
+            dtVUMeter = dispatcher.CreateTimer(TimeSpan.FromMilliseconds(1000 / 30), () =>
             {
                 var lr = meterData.GetLevels();
                 double left = lr.Item1;
@@ -1155,7 +1172,7 @@ namespace ReBuzz.Core
                     VUMeterLevel = new Tuple<double, double>(left, right);
                     PropertyChanged.Raise(this, "VUMeterLevel");
                 }
-            };
+            });
             dtVUMeter.Start();
         }
 
@@ -1542,12 +1559,12 @@ namespace ReBuzz.Core
 
         internal void ImportSong(float x, float y)
         {
-            OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "All songs (*.bmw, *.bmx, *bmxml)|*.bmw;*.bmx;*.bmxml|Songs with waves (*.bmx)|*.bmx|Songs without waves (*.bmw)|*.bmw|ReBuzz XML (*.bmxml)|*.bmxml";
-            if (openFileDialog.ShowDialog() == true)
+            // The same dialog as File > Open (engine-split.md S9).
+            ChosenValue<string> chosen = fileNameToLoadChoice.SelectFileName();
+            if (chosen.HasValue)
             {
-                IReBuzzFile rebuzzFile = GetReBuzzFile(openFileDialog.FileName);
-                var filename = openFileDialog.FileName;
+                var filename = chosen.Value();
+                IReBuzzFile rebuzzFile = GetReBuzzFile(filename);
 
                 var impotAction = new ImportSongAction(this, rebuzzFile, filename, x, y, this.dispatcher, engineSettings);
                 songCore.ActionStack.Do(impotAction);
@@ -2367,6 +2384,7 @@ namespace ReBuzz.Core
             Autosave?.Discard();   // fork (0.4.1)
             Playing = false;
             SessionLayout?.Reset();             // fork (0.6.1): no launches from the old song's map while it closes
+            MarkerStore?.Clear();               // fork (mcp-server.md A3)
             InfoText = "";
 
             // Create status window
@@ -2484,6 +2502,8 @@ namespace ReBuzz.Core
         /// <summary>Fork (engine-split.md S1): messages for the engine classes this core owns.</summary>
         internal IUserMessages UserMessages => userMessages;
         private readonly IKeyboard keyboard;
+        /// <summary>Fork (engine-split.md S5): the keyboard for the engine classes this core owns.</summary>
+        internal IKeyboard Keyboard => keyboard;
 
         public string InfoText { get => infoText; set
             {
