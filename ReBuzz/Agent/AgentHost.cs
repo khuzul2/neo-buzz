@@ -39,7 +39,7 @@ namespace ReBuzz.Agent
 
     internal sealed class AgentHost : IDisposable
     {
-        public const string Version = "0.3 (A2)";
+        public const string Version = "0.4 (A3)";
 
         readonly List<HttpTransport> http = new();
 
@@ -59,6 +59,7 @@ namespace ReBuzz.Agent
             RenderTools.Register(tools, this);
             AnalysisTools.Register(tools, this);
             StateTools.Register(tools, this);
+            CompositionTools.Register(tools, this);
             WaveTools.Register(tools, this);
             Server = new McpServer(new ServerInfo
             {

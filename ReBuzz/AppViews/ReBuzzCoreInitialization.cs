@@ -48,6 +48,7 @@ namespace ReBuzz.AppViews
             buzz.SessionCore.Recorder = new Core.Session.SessionRecorder(buzz, buzz.SessionLayout);
             buzz.SessionCore.UseSettings(registryEx);
             buzz.ArrangementEvents = new Core.ArrangementEventStore(buzz);
+            buzz.MarkerStore = new Core.SongMarkerStore(buzz);
 
             buzz.MachineViewHWND = machineViewHwnd;
             buzz.MainWindowHandle = buzz.MachineViewHWND;
