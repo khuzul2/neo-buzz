@@ -16,6 +16,7 @@ Params.def lines:
   tracks 16                        optional: Note and Velocity track parameters for 16 tracks
   summary What it is. Use it for…   optional: the machine in a sentence or two (the manifest's summary)
   group Shape                      group shown in the editor for the following parameters
+  reading key unit | what           optional: a value the machine measures (its public Readings, machine_readings)
   Id  "Name"  min max def  kind args...  | description
 
 Kinds and their arguments:
@@ -82,6 +83,9 @@ def parse(path):
                 continue
             if head == 'group':
                 group = ' '.join(toks[1:])
+                continue
+            if head == 'reading':
+                spec.setdefault('readings', []).append({'key': toks[1], 'unit': toks[2] if len(toks) > 2 else '', 'description': desc})
                 continue
             if len(toks) < 6:
                 sys.exit(f'{path}:{lineno}: expected Id "Name" min max def kind args...')
@@ -244,6 +248,7 @@ def write_manifest(folder, spec, rel):
         'tracks': spec['tracks'],
         'track_parameters': ['Note', 'Velocity'] if spec['tracks'] > 0 else [],
         'parameters': [manifest_param(i, p) for i, p in enumerate(spec['params'])],
+        **({'readings': spec['readings']} if spec.get('readings') else {}),
     }
     out = os.path.join(folder, gear + '.machine.json')
     with open(out, 'w', encoding='utf-8', newline='\n') as f:

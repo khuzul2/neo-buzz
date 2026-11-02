@@ -73,7 +73,7 @@ namespace NeoBuzz.Analysis
             }
         }
 
-        static double Lufs(double meanSquare) => meanSquare <= 0 ? double.NegativeInfinity : Offset + 10 * Math.Log10(meanSquare);
+        internal static double Lufs(double meanSquare) => meanSquare <= 0 ? double.NegativeInfinity : Offset + 10 * Math.Log10(meanSquare);
 
         /// <summary>Measures a stereo (or mono: <paramref name="right"/> null) signal at <paramref name="rate"/> Hz, ±1 full scale.</summary>
         public static LoudnessResult Measure(float[] left, float[] right, int rate)
@@ -179,8 +179,9 @@ namespace NeoBuzz.Analysis
         }
 
         // True peak: 4× oversampling with a windowed-sinc interpolator (24 taps per phase, Kaiser).
-        const int Phases = 4, Taps = 24;
-        static readonly double[][] Interpolator = BuildInterpolator();
+        // The streaming meter (LoudnessMeter.cs: TruePeakMeter) runs the same coefficients.
+        internal const int Phases = 4, Taps = 24;
+        internal static readonly double[][] Interpolator = BuildInterpolator();
 
         static double[][] BuildInterpolator()
         {
