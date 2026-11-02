@@ -25,6 +25,15 @@ namespace ReBuzz.Agent.Model
         public string Description { get; init; } = "";
     }
 
+    /// <summary>A kind of data file a machine loads (machine_data_import): a wavetable, a DX7 bank…</summary>
+    public sealed class ManifestImport
+    {
+        public required string Kind { get; init; }
+        /// <summary>Lower-case extensions with the dot (".wav"); empty: any.</summary>
+        public IReadOnlyList<string> Extensions { get; init; } = Array.Empty<string>();
+        public string Description { get; init; } = "";
+    }
+
     public sealed class MachineManifest
     {
         public const string Format = "rebuzz-machine-manifest/1";
@@ -37,6 +46,7 @@ namespace ReBuzz.Agent.Model
         public string Source { get; init; } = "";
         public int Tracks { get; init; }
         public IReadOnlyList<ManifestParameter> Parameters { get; init; } = Array.Empty<ManifestParameter>();
+        public IReadOnlyList<ManifestImport> Imports { get; init; } = Array.Empty<ManifestImport>();
 
         public ManifestParameter Find(string name) =>
             Parameters.FirstOrDefault(p => p.Name == name) ?? Parameters.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
@@ -70,6 +80,12 @@ namespace ReBuzz.Agent.Model
                 Source = (string)root["source"] ?? "",
                 Tracks = (int?)root["tracks"] ?? 0,
                 Parameters = parameters,
+                Imports = (root["imports"] as JsonArray)?.OfType<JsonObject>().Select(i => new ManifestImport
+                {
+                    Kind = (string)i["kind"] ?? "",
+                    Extensions = (i["extensions"] as JsonArray)?.Select(e => ((string)e ?? "").ToLowerInvariant()).ToList() ?? new List<string>(),
+                    Description = (string)i["description"] ?? "",
+                }).Where(i => i.Kind.Length > 0).ToList() ?? new List<ManifestImport>(),
             };
         }
 

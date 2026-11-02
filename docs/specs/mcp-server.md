@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | A0 and A1 built (2026-11-01); A2 next. As built: §3.5 |
+| Status | A0–A3 built (2026-11-01); A4 (mix and master machines) and A5 (guides) in progress. As built: §3.5 |
 | Date | 2026-10-31, updated 2026-11-01 |
 | Scope | An MCP server that lets an AI agent (Claude Code or any MCP client) compose, design sounds, mix and master in this ReBuzz fork, with tools clear enough to use without guessing, guides for the craft, and the analysis needed to check its own work |
 | Protocol | MCP 2026-07-28, also negotiates 2025-11-25, 2025-06-18 and 2025-03-26 (stdio and Streamable HTTP; structured tool output; progress). Own protocol layer, no SDK (§3.5) |
@@ -145,6 +145,24 @@ Neo machines resolve through their exact mappings. Legacy machines resolve by se
 - Afterwards it puts back the play position, loop, markers, mutes (solo and mute lists are applied as temporary mutes) and the unsaved-changes flag.
 - In studio mode the user's audio output pauses for the duration.
 - Output is a 32-bit float WAV under the agent log folder's `renders/`, plus the loudness and peak report.
+
+**A2–A3 as built.**
+- **Probes** subscribe to the first output connection's tap (it runs on the engine thread, in order), scale by that connection's gain and pad or trim to the master's length. Each gets its own id (`r3:Bass`).
+- **Renders wait for machines that are still preparing.** A managed machine can expose `public bool Busy`, and renders wait up to 5 s while any reports it. Neo Wave reports it while it builds a table in the background.
+- **Presets** are read from the gear's `.prs.xml`/`.prs` beside its DLL, without ReBuzz's dialogs. Loading one is an undo step that captures the whole machine state, data included.
+- **Snapshots** live for the session in the host. A restore is one undo step made of parameter, flag and connection actions.
+- **Song markers** are a new `SongMarkerStore` in the engine, saved in a "SongMarkers" subsection that upstream ignores.
+- **Automation** goes into the pattern's engine-played parameter columns (`SessionAutomation`), the same columns the Session View records into. Linear ramps are written as events every quarter tick.
+- **Session grid edits** go through `SessionLayout`, and the agent's undo step restores layout snapshots. The Session View's own undo also sees them.
+- **Machine data imports** follow a convention. The manifest lists `imports` (Params.def `import` lines), and the managed machine has `public string ImportData(string kind, string path, int item, Action<int,int> setParameter)`. The machine's data before and after, plus any parameters it sets, make up one undo step. Neo Wave takes `wavetable`; Neo FM6 takes `dx7_bank`.
+- **Theory and transforms** are pure (`ReBuzz.Agent/Model/Theory.cs`, `Transforms.cs`, 98 chord symbols tested). `notes_transform` replaces a pattern's notes in one undo step.
+
+**Guides (A5)** live in `ReBuzz.Agent/Guides/`, embedded:
+- Seven guides (§6). Each ends with a checklist whose items name the call that checks them.
+- A curated page per Neo machine (`Guides/machines/<Gear>.md`). `MachineManual.Build(manifest, curated, presets)` merges it with tables generated from the manifest (unit, range, default and meaning of every parameter; numbered groups that repeat, such as the FM6 operators, shown once) and the presets. `MachineManual.Resource(manifest, presets)` serves it as `rebuzz://machines/<slug>/manual` (`neo-poly`), and `guide(machine=…)` returns it when the ReBuzz side passes a provider to `GuideLibrary.Register`.
+- Prompts from `GuideLibrary.Prompts()`: a step plan with the brief worked out (bars from a length, a loudness target from a platform), then the guides in full.
+- Neo EQ, Limiter and Utility appear as moves in units until their parameter names are final.
+- `GuideTests` keep them true: tool names and arguments against a table of the built tools, Neo parameter names and values against the manifests, preset names against the factory presets.
 
 ## 4. Tool design rules
 
