@@ -36,7 +36,7 @@ Reproduce, measure, isolate, fix one thing, measure again. Each section: what yo
 
 - Causes: a polarity-flipped copy; the same sound on two routes with different delays (a parallel route through Neo Drive's 62 samples or Neo Comp's lookahead) making a comb filter; unison spread on a bass; widened lows.
 - Comb filters show as regularly spaced dips in the third octaves (`analyze(source=…, metrics=["spectrum"])`, or `plot(kind="spectrum", sources=[…])`); confirm by rendering with one route muted (`render(mute=[…])`). `plot(kind="goniometer", sources=[…])` shows the stereo field: a horizontal smear is out of phase.
-- Fixes: parallel processing with the effect's own `Mix` (its dry path is delay-matched) instead of two routes; basses with `Unison` 1 or `Uni spread` 0%; kick and bass panned 0; Neo Utility's polarity flip and mono-below when it is installed.
+- Fixes: parallel processing with the effect's own `Mix` (its dry path is delay-matched) instead of two routes; basses with `Unison` 1 or `Uni spread` 0%; kick and bass panned 0; Neo Utility's `Invert L`/`Invert R` for a flipped channel and `Bass mono` (with `Bass mono freq` 120 Hz) for the lows.
 
 ## Latency
 

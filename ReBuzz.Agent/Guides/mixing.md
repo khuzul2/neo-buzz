@@ -71,7 +71,7 @@ Parts add up in power, so they can't all sit at the loud end of their range: if 
 
 ## EQ starting points
 
-Neo EQ is being built; its parameter names aren't final. Read them with `machine_describe(machine=…)` and set each band's type, frequency, gain and Q (or slope) from this table. Until it's installed: the synths' own filters (Neo Poly `F2 type` HP), Neo Verb's `Low cut` and `High cut` on returns, Neo Drive's `Low cut`, `High cut` and `Tone` (it still saturates a little).
+Neo EQ has eight bands, each `B<n> on`, `B<n> type` (Bell, Low shelf, High shelf, Low cut, High cut, Notch), `B<n> freq`, `B<n> gain` (bells and shelves, 0.1 dB steps), `B<n> Q` and `B<n> slope` (12, 24 or 48 dB/oct, cuts). Bands 2–7 start on at 0 dB, so they change nothing until given a gain; bands 1 (Low cut) and 8 (High cut) start off: `B1 on` On for a high-pass. One move per band, as in `param_set(machine="Bass EQ", changes=[{"param": "B3 type", "value": "Bell"}, {"param": "B3 freq", "value": "320 Hz"}, {"param": "B3 gain", "value": "-3 dB"}, {"param": "B3 Q", "value": 1.4}])`. Without it: the synths' own filters (Neo Poly `F2 type` HP), Neo Verb's `Low cut` and `High cut` on returns, Neo Drive's `Low cut`, `High cut` and `Tone` (it still saturates a little).
 
 | Part | Move | Frequency | Gain | Q or slope |
 |---|---|---|---|---|
@@ -200,7 +200,7 @@ One or two send reverbs for the whole mix: a short one (Room or Plate, 0.6–1.8
 ## Stereo
 
 - Mono below about 120 Hz: kick, bass and sub centred (pan 0). Basses on Neo Poly or Neo Wave: `Unison` 1 or `Uni spread` 0%.
-- Neo Utility (being built; read its names with `machine_describe`): mono below 120 Hz on basses or the mix bus, width 100–130 % on pads, polarity flip, channel swap.
+- Neo Utility: `Bass mono` On with `Bass mono freq` 120 Hz on basses or the mix bus, `Width` 100–130 % on pads, `Invert L`/`Invert R` for a flipped channel, `Swap`, `Gain` for trims in 0.1 dB steps. At its defaults it changes nothing.
 - Pans with `connection_set`: hats ±0.2–0.4, percussion ±0.3–0.6, doubled or answering parts ±0.5–0.8 on opposite sides; lead and snare centre; pads centre with width from unison.
 - Targets on the master (`analyze(source=…, metrics=["stereo"])`): correlation 0.2–0.9, never below 0; `sub` and `low` correlation above 0.9 and width under 0.1 (the analyzer warns above 0.25 or under 0.5); mono loss under 3 dB; balance within ±1.5 dB.
 

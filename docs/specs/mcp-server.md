@@ -161,7 +161,7 @@ Neo machines resolve through their exact mappings. Legacy machines resolve by se
 - Seven guides (§6). Each ends with a checklist whose items name the call that checks them.
 - A curated page per Neo machine (`Guides/machines/<Gear>.md`). `MachineManual.Build(manifest, curated, presets)` merges it with tables generated from the manifest (unit, range, default and meaning of every parameter; numbered groups that repeat, such as the FM6 operators, shown once) and the presets. `MachineManual.Resource(manifest, presets)` serves it as `rebuzz://machines/<slug>/manual` (`neo-poly`), and `guide(machine=…)` returns it when the ReBuzz side passes a provider to `GuideLibrary.Register`.
 - Prompts from `GuideLibrary.Prompts()`: a step plan with the brief worked out (bars from a length, a loudness target from a platform), then the guides in full.
-- Neo EQ, Limiter and Utility appear as moves in units until their parameter names are final.
+- Neo EQ, Limiter and Utility are named by their parameters (A4).
 - `GuideTests` keep them true: tool names and arguments against a table of the built tools, Neo parameter names and values against the manifests, preset names against the factory presets.
 
 **A7 as built (live, studio mode).**
