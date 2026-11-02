@@ -169,9 +169,23 @@ namespace ReBuzz.FileOps
             return t;
         }
 
+        /// <summary>
+        /// Fork (mac-engine.md M5): where the cache lives when not in the per-user application
+        /// data folder (rebuzz-headless keeps it in its settings folder).
+        /// </summary>
+        internal static string CacheFolder { get; set; }
+
+        /// <summary>
+        /// The per-user application data folder, created if missing: off Windows it can be missing
+        /// (~/.config on a fresh Mac), and GetFolderPath then gives "", which would put the cache in
+        /// the current folder.
+        /// </summary>
+        static string Folder => CacheFolder ??
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), ReBuzzCore.AppDataPath);
+
         public static string GetFullFileName()
         {
-            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ReBuzzCore.AppDataPath);
+            var dir = Folder;
 
             // Check if the directory exists
             if (!Directory.Exists(dir))
@@ -186,8 +200,7 @@ namespace ReBuzz.FileOps
 
         public static string GetFilePath()
         {
-            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ReBuzzCore.AppDataPath);
-            return dir;
+            return Folder;
         }
 
         public static XMLMachineDLLs RescanMachineDLLs(

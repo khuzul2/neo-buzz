@@ -80,6 +80,9 @@ namespace ReBuzz.Headless
             Directory.CreateDirectory(settings);
             var registry = new JsonRegistry(Path.Combine(settings, "registry.json"), @"Software\ReBuzz");
             RegistryEx.Store = registry;
+            // Everything per-user in the settings folder: the machine DLL cache and autosaves too.
+            MachineDLLScanner.CacheFolder = settings;
+            SongAutosave.Folder = Path.Combine(settings, "Autosave");
             if (audio != null)
             {
                 // The engine reads these when it opens the device (PortAudioDriver).

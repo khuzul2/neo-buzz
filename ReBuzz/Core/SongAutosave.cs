@@ -27,7 +27,7 @@ namespace ReBuzz.Core
 
         /// <summary>Where autosaves go (tests point it elsewhere).</summary>
         internal static string Folder { get; set; } =
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ReBuzz", "Autosave");
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData, Environment.SpecialFolderOption.Create), "ReBuzz", "Autosave");
 
         const string Marker = ".autosave";
 
