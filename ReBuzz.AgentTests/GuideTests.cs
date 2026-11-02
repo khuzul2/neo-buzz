@@ -18,7 +18,7 @@ namespace ReBuzz.AgentTests
     public class GuideTests
     {
         static readonly string[] Topics = { "workflow", "concepts", "composition", "sound-design", "mixing", "mastering", "troubleshooting" };
-        static readonly string[] NeoGear = { "Neo Comp", "Neo Drive", "Neo EQ", "Neo FM6", "Neo Limiter", "Neo Poly", "Neo Utility", "Neo Verb", "Neo Wave" };
+        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Comp", "Neo Drive", "Neo EQ", "Neo FM6", "Neo Limiter", "Neo Poly", "Neo Utility", "Neo Verb", "Neo Wave" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
         static readonly string[] PendingGear = System.Array.Empty<string>();
@@ -92,6 +92,13 @@ namespace ReBuzz.AgentTests
             // A3 (origin/agent/a3-tools: ReBuzz.Agent/Model/CompositionTools.cs, Transforms.cs)
             ["theory"] = new[] { "op", "chord", "progression", "key", "octave", "register", "voicing", "inversion", "voice_leading", "previous", "beats_per_chord", "start", "pitches", "steps", "notes" },
             ["notes_transform"] = new[] { "machine", "pattern", "transforms", "range_start", "range_end", "pitch_low", "pitch_high" },
+            // A7 (ReBuzz/Agent/LiveTools.cs)
+            ["transport"] = new[] { "action", "at", "loop" },
+            ["session_launch"] = new[] { "scene", "machine", "pattern", "stop", "immediate", "back_to_arrangement" },
+            ["session_record"] = new[] { "action", "machine", "scene", "bars" },
+            ["midi_play"] = new[] { "machine", "notes", "start", "stop" },
+            ["meters_read"] = new[] { "machines", "window_seconds" },
+            ["machine_readings"] = new[] { "machine" },
         };
 
         /// <summary>analyze's metrics (AudioReport.Metrics on agent/a2-analysis).</summary>

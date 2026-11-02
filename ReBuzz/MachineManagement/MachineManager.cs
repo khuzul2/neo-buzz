@@ -1,7 +1,6 @@
 using BuzzGUI.Common;
 using BuzzGUI.Common.Settings;
 using BuzzGUI.Interfaces;
-using BuzzGUI.ParameterWindow;
 using ReBuzz.Core;
 using ReBuzz.ManagedMachine;
 using ReBuzz.NativeMachine;
@@ -11,7 +10,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
 
 namespace ReBuzz.MachineManagement
 {
@@ -675,13 +673,7 @@ namespace ReBuzz.MachineManagement
                     gui = null;
                 }
 
-                var pw = machine.ParameterWindow;
-                if (pw != null)
-                {
-                    var dc = machine.ParameterWindow.DataContext as ParameterWindowVM;
-                    if (dc != null)
-                        dc.Machine = null;
-                }
+                (machine.Graph?.Buzz as ReBuzzCore)?.UiHost?.ReleaseMachine(machine);   // fork (engine-split.md S3): the parameter window lets go
 
                 if (nativeMachines.ContainsKey(machine))
                 {
@@ -844,9 +836,10 @@ namespace ReBuzz.MachineManagement
             return ret;
         }
 
-        internal UserControl GetPatternEditorControl(MachineCore machine)
+        /// <summary>The pattern editor machine's control (a WPF UserControl in the app), or null.</summary>
+        internal object GetPatternEditorControl(MachineCore machine)
         {
-            UserControl ret = null;
+            object ret = null;
             if (machine != null && machine.DLL.IsManaged && managedMachines.ContainsKey(machine))
             {
                 var machineHost = ManagedMachines[machine];

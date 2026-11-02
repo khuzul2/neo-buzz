@@ -31,7 +31,12 @@ namespace ReBuzzTests
             int id;
 
             /// <summary>A headless studio; <paramref name="gear"/>: Neo machines from the solution build, with their manifests.</summary>
-            public Rig(params NeoMachineTests.NeoInfo[] gear)
+            public Rig(params NeoMachineTests.NeoInfo[] gear) : this("headless", gear)
+            {
+            }
+
+            /// <summary>As above, with the host in <paramref name="mode"/> ("studio": the live tools play; tests pump the audio).</summary>
+            public Rig(string mode, params NeoMachineTests.NeoInfo[] gear)
             {
                 foreach (var g in gear)
                 {
@@ -49,7 +54,7 @@ namespace ReBuzzTests
                         if (File.Exists(from)) File.Copy(from, Path.Combine(Path.GetDirectoryName(dll)!, sidecar), overwrite: true);
                     }
                 }
-                Host = new AgentHost(Driver.Core, Driver.Dispatcher, "headless", LogDir);
+                Host = new AgentHost(Driver.Core, Driver.Dispatcher, mode, LogDir);
                 Send(new JsonObject
                 {
                     ["jsonrpc"] = "2.0", ["id"] = ++id, ["method"] = "initialize",

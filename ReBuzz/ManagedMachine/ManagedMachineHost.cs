@@ -1,7 +1,6 @@
 ﻿using Buzz.MachineInterface;
 using BuzzGUI.Common;
 using BuzzGUI.Common.InterfaceExtensions;
-using BuzzGUI.Common.Templates;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
 using System;
@@ -9,7 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Windows.Controls;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -48,12 +46,13 @@ namespace ReBuzz.ManagedMachine
         private delegate string GetChannelNameDelegate(bool input, int index);
 
         #region Pattern Editor
-        private delegate System.Windows.Controls.UserControl PatternEditorControlDelegate();
+        // Fork (engine-split.md S3): to the engine a pattern editor's control is an object: a WPF
+        // UserControl, or, for machines that do not support .NET 9.0 WPF (such as CLR), a .NET
+        // Framework 4.x WinForms UserControl that the UI wraps (WrapWinFormsControl).
+        private delegate object PatternEditorControlDelegate();
 
-
-        //For machines that do not support .NET 9.0 WPF (such as CLR), and will return
-        //a .NET Framework 4.x WinForms UserControl instead.
-        private delegate System.Windows.Forms.UserControl OldPatternEditorControlDelegate();
+        /// <summary>Wraps a WinForms pattern editor control (NativeMachineFrameworkUI in the app).</summary>
+        internal static Func<object, object> WrapWinFormsControl { get; set; }
 
         private delegate void SetEditorPatternDelegate(IPattern pattern);
 
@@ -226,29 +225,7 @@ namespace ReBuzz.ManagedMachine
             GetLatencyFunction = (GetLatencyDelegate)GetMethod(typeof(GetLatencyDelegate), "GetLatency");
             //Take into consideration that some more native machines may want to return System.Windows.Forms.UserControl.
             //In this situation, we can use NativeMachineFrameworkUI to wrap around the System.Windows.Forms.UserControl
-            try
-            {
-                PatternEditorControlFunction = (PatternEditorControlDelegate)GetMethod(typeof(PatternEditorControlDelegate), "PatternEditorControl");
-            }
-            catch(System.ArgumentException) //This is thrown because the return types are not the same
-            {
-                //Try the System.Windows.Forms.UserControl delegate instead
-                OldPatternEditorControlDelegate oldDelegate = (OldPatternEditorControlDelegate)GetMethod(typeof(OldPatternEditorControlDelegate), "PatternEditorControl");
-                if(oldDelegate != null)
-                {
-                    //Create an inline delegate to wrap around the old System.Windows.Forms.UserControl
-                    PatternEditorControlFunction = () =>
-                    {
-                        var control = oldDelegate();
-                        return new NativeMachineFrameworkUI.WinFormsControl(control);
-                    };
-                }
-                else
-                {
-                    //Also not found - throw the original exception
-                    throw;
-                }
-            }
+            PatternEditorControlFunction = PatternEditorControlOf(dll.machineType.GetMethod("PatternEditorControl"));
             
             SetEditorPatternFunction = (SetEditorPatternDelegate)GetMethod(typeof(SetEditorPatternDelegate), "SetEditorPattern");
             RecordControlChangeFunction = (RecordControlChangeDelegate)GetMethod(typeof(RecordControlChangeDelegate), "RecordControlChange");
@@ -302,7 +279,7 @@ namespace ReBuzz.ManagedMachine
             }
         }
 
-        public UserControl PatternEditorControl
+        public object PatternEditorControl
         {
             get
             {
@@ -401,6 +378,43 @@ namespace ReBuzz.ManagedMachine
             {
                 RecordControlChangeFunction(parameter, track, value);
             }
+        }
+
+        /// <summary>
+        /// The machine's PatternEditorControl(): a WPF UserControl as it is, a WinForms UserControl
+        /// wrapped by the UI. Any other return type fails as binding the WPF delegate type did.
+        /// </summary>
+        private PatternEditorControlDelegate PatternEditorControlOf(MethodInfo method)
+        {
+            if (method == null)
+            {
+                return null;
+            }
+            if (IsOrDerivesFrom(method.ReturnType, "System.Windows.Controls.UserControl"))
+            {
+                return (PatternEditorControlDelegate)Delegate.CreateDelegate(typeof(PatternEditorControlDelegate), machine, method);
+            }
+            if (IsOrDerivesFrom(method.ReturnType, "System.Windows.Forms.UserControl"))
+            {
+                var winForms = (PatternEditorControlDelegate)Delegate.CreateDelegate(typeof(PatternEditorControlDelegate), machine, method);
+                return () =>
+                {
+                    var control = winForms();
+                    var wrap = WrapWinFormsControl;
+                    return wrap != null ? wrap(control) : control;
+                };
+            }
+            throw new ArgumentException("PatternEditorControl must return a WPF or WinForms UserControl: " + method.ReturnType.FullName);
+        }
+
+        static bool IsOrDerivesFrom(Type type, string fullName)
+        {
+            for (var t = type; t != null; t = t.BaseType)
+            {
+                if (t.FullName == fullName)
+                    return true;
+            }
+            return false;
         }
 
         private Delegate GetMethod(Type t, string name)

@@ -13,9 +13,9 @@ namespace ReBuzzTests
 {
     /// <summary>
     /// docs/specs/engine-split.md §4.3: the Windows build of BuzzGUI.Interfaces gives the WPF-typed
-    /// members default bodies that ask WpfMachineApi, and the app sets every hook. MachineCore still
-    /// implements ParameterWindow (S3). Since S4 the engine keeps the theme colours and skins as
-    /// portable data and the hooks answer with the WPF values the engine made before.
+    /// members default bodies that ask WpfMachineApi, and the app sets every hook. The engine
+    /// implements none of those members: the theme colours and skins are portable data (S4) and the
+    /// parameter window is the UI host's (S3); the hooks answer with the WPF values as before.
     /// </summary>
     public class WpfMachineApiTests
     {
@@ -35,12 +35,7 @@ namespace ReBuzzTests
             Assert.That(ReBuzzCore.ThemeColorsView, Is.Not.Null);
         }
 
-        [TestCase(typeof(MachineCore), typeof(IMachine), "get_ParameterWindow")]
-        public void TheEngineImplementsTheWpfMemberItself(Type engineType, Type api, string getter)
-        {
-            Assert.That(TargetOf(engineType, api, getter).DeclaringType, Is.EqualTo(engineType), getter);
-        }
-
+        [TestCase(typeof(MachineCore), typeof(IMachine), "get_ParameterWindow")]   // S3: the UI host's window
         [TestCase(typeof(ReBuzzCore), typeof(IBuzz), "get_ThemeColors")]
         [TestCase(typeof(MachineDLL), typeof(IMachineDLL), "get_Skin")]
         [TestCase(typeof(MachineDLL), typeof(IMachineDLL), "get_SkinLED")]
