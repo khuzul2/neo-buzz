@@ -42,6 +42,11 @@ namespace ReBuzz.AgentEval
             var prog = s.C.Ok("theory", new JsonObject { ["op"] = "progression", ["key"] = "A minor", ["progression"] = "i VI III VII", ["octave"] = 3, ["beats_per_chord"] = 4 });
             s.C.Ok("pattern_create", new JsonObject { ["machine"] = "Chords", ["name"] = "Prog", ["length_beats"] = 16 });
             s.C.Ok("notes_write", new JsonObject { ["machine"] = "Chords", ["pattern"] = "Prog", ["notes"] = prog["notes"]!.DeepClone() });
+            // The same chords played softly, for the intro and the outro.
+            var soft = prog["notes"]!.DeepClone().AsArray();
+            foreach (var n in soft.OfType<JsonObject>()) n["velocity"] = 50;
+            s.C.Ok("pattern_create", new JsonObject { ["machine"] = "Chords", ["name"] = "Soft", ["length_beats"] = 16 });
+            s.C.Ok("notes_write", new JsonObject { ["machine"] = "Chords", ["pattern"] = "Soft", ["notes"] = soft });
             var roots = J.Objects(prog["chords"]).Select(c => J.Str(c["root"])).ToList();
             var bass = new List<JsonObject>();
             for (int bar = 0; bar < roots.Count; bar++)
@@ -59,11 +64,13 @@ namespace ReBuzz.AgentEval
             // Check the hook against the key before using it.
             s.C.Ok("theory", new JsonObject { ["op"] = "fit", ["key"] = "A minor", ["notes"] = new JsonArray(hook.Select(n => (JsonNode)n.Item1).ToArray()) });
 
-            // 48 bars: intro 8 (chords, hats), verse 16 (+ drums, bass), chorus 16 (+ lead), outro 8 (chords, bass, hats).
-            Recipes.Place(s, "Chords", "Prog", 0, 16, 12);
-            Recipes.Place(s, "Hats", "Eighths", 0, 16, 12);
+            // 48 bars: intro 8 (soft chords), verse 16 (chords, kick, hats, bass), chorus 16 (+ snare, lead), outro 8 (soft chords, bass).
+            Recipes.Place(s, "Chords", "Soft", 0, 16, 2);
+            Recipes.Place(s, "Chords", "Prog", 32, 16, 8);
+            Recipes.Place(s, "Chords", "Soft", 160, 16, 2);
+            Recipes.Place(s, "Hats", "Eighths", 32, 16, 8);
             Recipes.Place(s, "Kick", "Four", 32, 16, 8);
-            Recipes.Place(s, "Snare", "Back", 32, 16, 8);
+            Recipes.Place(s, "Snare", "Back", 96, 16, 4);
             Recipes.Place(s, "Bass", "Drive", 32, 16, 10);
             Recipes.Place(s, "Lead", "Hook", 96, 16, 4);
             s.C.Ok("arrangement_markers", new JsonObject
@@ -73,8 +80,10 @@ namespace ReBuzz.AgentEval
                     new JsonObject { ["name"] = "Chorus", ["at"] = "25.1" }, new JsonObject { ["name"] = "Outro", ["at"] = "41.1" }),
             });
             s.C.Ok("analyze_mix", new JsonObject { ["section"] = "Chorus" });
-            Recipes.MasterBus(s);
+            // Gentle glue: the sections keep their difference in level.
+            Recipes.MasterBus(s, glueDb: 6, ratio: "2:1");
             Recipes.MasterTo(s, -14, rounds: 3);
+            s.C.Ok("analyze", new JsonObject { ["source"] = J.Str(s.C.Ok("render", new JsonObject { ["section"] = "Intro", ["tail_seconds"] = 0 })["id"]), ["metrics"] = J.A("loudness") });
         }
 
         public override Facts Measure(Studio s, TaskContext ctx)

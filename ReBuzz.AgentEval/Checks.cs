@@ -508,6 +508,13 @@ namespace ReBuzz.AgentEval
             Recipes.Place(s, "Bass", "Riff", 0, 8, 2);
             Recipes.Place(s, "Pad", "P", 0, 8, 2);
             string tone = WriteSignal(env, "tone", 1, (i, rate) => { float v = (float)(0.4 * Math.Sin(2 * Math.PI * 330 * i / rate)); return (v, v); });
+            // The Session View's grid fills itself from the song the first time it's edited, and stays when that
+            // edit is undone (A3): make it exist before taking the starting state, and record it.
+            int gridBefore = J.Objects(c.Ok("session_get")["tracks"]).Count();
+            c.Ok("session_scene_set", new JsonObject { ["scene"] = 1, ["name"] = "First" });
+            c.Ok("undo");
+            int gridAfter = J.Objects(c.Ok("session_get")["tracks"]).Count();
+            if (gridAfter != gridBefore) r.Note($"the session grid fills itself on its first edit ({gridBefore} → {gridAfter} tracks) and stays when that edit is undone");
             c.Ok("snapshot_save", new JsonObject { ["name"] = "start" });
             var s0 = State(c);
 

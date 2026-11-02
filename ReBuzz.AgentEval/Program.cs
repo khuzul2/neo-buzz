@@ -146,7 +146,7 @@ namespace ReBuzz.AgentEval
             string md = run.Markdown("Agent server evaluation (scripted)", gate);
             File.WriteAllText(Path.Combine(outDir, "eval-summary.md"), md);
             Summary(md);
-            Annotate(run, gate);
+            Annotate(run, gate, Baseline(run.ToJson(), tolerance));
             if (a.Flag("update-baseline"))
             {
                 var b = Baseline(run.ToJson(), tolerance);
@@ -161,7 +161,7 @@ namespace ReBuzz.AgentEval
         /// On GitHub Actions, the results as annotations too (readable through the API, unlike the
         /// step summary): notices with every check and task, an error per blocking finding.
         /// </summary>
-        static void Annotate(EvalRun run, Gate gate)
+        static void Annotate(EvalRun run, Gate gate, JsonObject baseline)
         {
             if (Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != "true") return;
             static string Esc(string s) => s.Replace("%", "%25").Replace("\r", "").Replace("\n", "%0A");
@@ -189,6 +189,8 @@ namespace ReBuzz.AgentEval
                 $"{t.Name}: {t.Total:F2} {(t.Passed ? "pass" : "FAIL")} (start {t.StartTotal:F2}; {t.Calls} calls, {t.Errors} errors, {t.Seconds:F1} s)" +
                 (t.Error != null ? " ERROR " + t.Error : "") + " — " + string.Join(" | ", t.Criteria.Select(c => $"{c.Name} {c.Score:F2}: {c.Detail}"))), 4);
             Emit("notice", "Agent evaluation totals", new[] { $"{run.Seconds:F0} s, server {run.Server}" }.Concat(run.Problems), 1);
+            // The baseline this run would write (artifacts may be out of reach): commit it as eval/baseline.json to accept the scores.
+            Console.WriteLine($"::notice title=Agent evaluation baseline::{Esc(baseline.ToJsonString())}");
             foreach (var b in gate.Blocking.Take(8)) Console.WriteLine($"::error title=Agent evaluation::{Esc(b)}");
         }
 

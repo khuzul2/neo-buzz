@@ -51,7 +51,9 @@ namespace ReBuzz.AgentEval
         {
             var r = s.C.Ok("render", new JsonObject { ["tail_seconds"] = 0.5 });
             s.C.Ok("analyze", new JsonObject { ["source"] = J.Str(r["id"]), ["metrics"] = J.A("loudness", "peaks", "dynamics", "spectrum") });
-            Recipes.MasterBus(s);
+            // A ceiling under -1 dBTP leaves room for the crest factor: at -14 LUFS this bright, kick-led mix's
+            // crest is about 1.9 dB more than its peak-to-loudness ratio.
+            Recipes.MasterBus(s, ceilingDb: -2);
             Recipes.MasterTo(s, -14, rounds: 4);
         }
 
