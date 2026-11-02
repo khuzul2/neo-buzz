@@ -1,0 +1,168 @@
+name: Agent evaluation (real agent)
+
+# The agent server's periodic evaluation with a real agent (docs/specs/mcp-server.md §10, A6).
+# For each task brief, Claude Code runs headless (claude -p) with only the rebuzz MCP tools, on the
+# package's ReBuzz.exe --agent; ReBuzz.AgentEval then scores the song it saved with the same scorers
+# as the scripted suite. Transcripts, songs and scores are uploaded; the step summary has the table.
+#
+# Needs the repository secret ANTHROPIC_API_KEY (Settings → Secrets and variables → Actions). Without
+# it the run skips with a notice. Weekly, or by hand from the Actions tab.
+#
+# Claude Code flags (checked against the CLI's own help, 2.1.316): -p (non-interactive), --bare
+# (no hooks, plugins, memory or CLAUDE.md discovery; auth strictly ANTHROPIC_API_KEY), --mcp-config
+# with --strict-mcp-config (only our server), --tools "" (no built-in tools: no shell, no files)
+# with --allowedTools "mcp__rebuzz__*" and --permission-mode dontAsk (the rebuzz tools run, anything
+# else is denied without a prompt), --max-turns and --max-budget-usd (caps), --output-format
+# stream-json with --verbose (the transcript), --no-session-persistence.
+
+on:
+  schedule:
+    - cron: '17 3 * * 1'   # Mondays 03:17 UTC
+  workflow_dispatch:
+    inputs:
+      tasks:
+        description: 'Tasks, comma-separated (empty = all: beat, sound_match, fix_the_mix, master, song)'
+        type: string
+        default: ''
+      model:
+        description: 'Model alias or name (empty = the CLI default)'
+        type: string
+        default: ''
+      max_turns:
+        description: 'Turn cap per task'
+        type: string
+        default: '80'
+      max_budget_usd:
+        description: 'Spending cap per task, USD'
+        type: string
+        default: '5'
+      claude_code_version:
+        description: 'npm version of @anthropic-ai/claude-code'
+        type: string
+        default: 'latest'
+
+permissions:
+  contents: read
+
+jobs:
+  check-secret:
+    runs-on: ubuntu-latest
+    outputs:
+      has_key: ${{ steps.key.outputs.has_key }}
+    steps:
+    - id: key
+      env:
+        KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      run: |
+        if [ -n "$KEY" ]; then
+          echo "has_key=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has_key=false" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Agent evaluation skipped::The ANTHROPIC_API_KEY secret is not set, so no real-agent run. Add it under Settings → Secrets and variables → Actions to enable this workflow."
+          {
+            echo "## Agent evaluation (real agent): skipped"
+            echo
+            echo "The repository secret \`ANTHROPIC_API_KEY\` is not set. Add it under Settings → Secrets and variables → Actions → New repository secret, then run this workflow again."
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+  agents:
+    needs: check-secret
+    if: needs.check-secret.outputs.has_key == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 300
+
+    steps:
+    - name: Checkout (with submodules)
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup .NET 10 SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    # The engine's upstream bin64\dsplib.dll needs the x64 VC++ 2010 runtime (see fork-package.yml).
+    - name: Install VC++ 2010 runtime
+      shell: pwsh
+      run: choco install vcredist2010 -y --no-progress *> vcredist.log; if (-not (Test-Path "$env:WINDIR\System32\msvcr100.dll")) { Get-Content vcredist.log -Tail 20; throw 'msvcr100.dll (x64) not installed' }
+
+    # The solution with the Neo machines; no external machines or zip (as fork-package's quick mode).
+    - name: Build ReBuzz
+      shell: pwsh
+      run: ./build.ps1 -Version "agent-eval-${{ github.run_number }}" -SkipManagedMachines -SkipBinaries -NoZip *>&1 | Tee-Object -FilePath build.log
+
+    - name: Annotate build log
+      if: failure()
+      shell: pwsh
+      run: ./tools/ci-annotate-log.ps1 build.log
+
+    - name: Build the evaluation
+      shell: pwsh
+      run: dotnet build ReBuzz.AgentEval -c Release -nologo -v:q
+
+    - name: Install Claude Code
+      shell: pwsh
+      run: |
+        npm install -g "@anthropic-ai/claude-code@${{ inputs.claude_code_version || 'latest' }}"
+        claude --version
+
+    - name: Run the agents and score them
+      shell: bash
+      env:
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        # ReBuzz's headless start-up (the gear scan) can take longer than the CLI's 30 s default for an
+        # MCP server to answer, and a 2-minute song renders in tens of seconds.
+        MCP_TIMEOUT: '240000'
+        MCP_TOOL_TIMEOUT: '600000'
+        TASKS: ${{ inputs.tasks }}
+        MODEL: ${{ inputs.model }}
+        MAX_TURNS: ${{ inputs.max_turns || '80' }}
+        MAX_BUDGET: ${{ inputs.max_budget_usd || '5' }}
+      run: |
+        # Paths as D:/a/… : both bash and the Windows programs read them.
+        EXE="$(cygpath -m "$(find "$PWD/bin" -name ReBuzz.exe -not -path '*/obj/*' | head -n 1)")"
+        EVAL="dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll"
+        OUT="$(cygpath -m "$PWD/agent-eval")"
+        mkdir -p "$OUT" "$RUNNER_TEMP/agent-cwd"
+        if [ -z "$TASKS" ]; then TASKS="$($EVAL tasks | tr -d '\r' | paste -sd, -)"; fi
+        MODEL_ARGS=()
+        if [ -n "$MODEL" ]; then MODEL_ARGS=(--model "$MODEL"); fi
+        for t in ${TASKS//,/ }; do
+          echo "::group::$t"
+          $EVAL prepare --exe "$EXE" --task "$t" --out "$OUT" || { echo "::error title=Agent evaluation::prepare failed for $t"; echo "::endgroup::"; continue; }
+          dir="$OUT/$t"
+          # The agent works in an empty folder: no repository context, only the brief and the tools.
+          ( cd "$RUNNER_TEMP/agent-cwd" && claude -p "$(cat "$dir/brief.md")" \
+              --bare --mcp-config "$dir/mcp.json" --strict-mcp-config \
+              --tools "" --allowedTools "mcp__rebuzz__*" --permission-mode dontAsk \
+              --max-turns "$MAX_TURNS" --max-budget-usd "$MAX_BUDGET" \
+              --output-format stream-json --verbose --no-session-persistence "${MODEL_ARGS[@]}" \
+              > "$dir/transcript.jsonl" 2> "$dir/claude-stderr.txt" ) || echo "::warning title=Agent evaluation::claude exited with $? on $t"
+          $EVAL score --exe "$EXE" --task "$t" --out "$OUT" --transcript "$dir/transcript.jsonl" --results "$OUT/agent-results.json" \
+            || echo "::error title=Agent evaluation::scoring failed for $t"
+          echo "::endgroup::"
+        done
+        if [ -f "$OUT/agent-results.json" ]; then
+          $EVAL report --results "$OUT/agent-results.json" --title "Agent server evaluation (real agent${MODEL:+, $MODEL})"
+        fi
+
+    - name: Upload transcripts and scores
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: agent-eval
+        path: |
+          agent-eval/**/*.json
+          agent-eval/**/*.jsonl
+          agent-eval/**/*.md
+          agent-eval/**/*.txt
+          agent-eval/**/*.bmxml
+          agent-eval/**/*.wav
+        if-no-files-found: warn

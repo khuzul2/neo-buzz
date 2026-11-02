@@ -1,0 +1,76 @@
+{
+  "about": "Scores of the scripted evaluation (ReBuzz.AgentEval run, docs/specs/mcp-server.md §10). A change that makes a passing check fail, or a task fail or drop by more than the tolerance, blocks. Rewrite: ReBuzz.AgentEval rebaseline --results eval-results.json (or run --update-baseline).",
+  "server": "0.4 (A3) (protocol 2025-06-18)",
+  "commit": "d9871d3",
+  "tolerance": 0.05,
+  "checks": {
+    "protocol": true,
+    "notes_roundtrip": true,
+    "param_units": true,
+    "render_bit_identical": true,
+    "analyze_reference": true,
+    "undo_exact": true
+  },
+  "tasks": {
+    "beat": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "renders": 1,
+        "tempo": 1,
+        "parts": 1,
+        "kick_on_beats": 1,
+        "clap_on_2_and_4": 1,
+        "bass_in_key": 1,
+        "no_clipping": 1
+      }
+    },
+    "sound_match": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "spectrum": 1,
+        "envelope": 1,
+        "loudness": 1,
+        "notes_kept": 1
+      }
+    },
+    "fix_the_mix": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "masking_kick_bass": 1,
+        "harsh_resonance": 1,
+        "hat_level": 1,
+        "phase": 1,
+        "nothing_worse": 1
+      }
+    },
+    "master": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "loudness": 1,
+        "true_peak": 1,
+        "dynamics": 1,
+        "no_clipping": 1,
+        "balance_kept": 1
+      }
+    },
+    "song": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "length": 1,
+        "tempo": 1,
+        "sections": 1,
+        "section_energy": 1,
+        "key_consistency": 1,
+        "loudness": 1,
+        "true_peak": 1,
+        "no_silent_gaps": 1,
+        "parts": 1
+      }
+    }
+  }
+}
