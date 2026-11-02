@@ -369,7 +369,7 @@ namespace ReBuzz.Agent.Audio
             var wideLow = low.Where(b => b.Width > 0.25 || b.Correlation < 0.5).ToList();
             if (wideLow.Count > 0)
                 yield return "The low end is wide or out of phase (" + string.Join(", ", wideLow.Select(b => $"{b.Name}: width {F(b.Width, 2)}, correlation {F(b.Correlation, 2)}, mono loss {F(b.MonoLossDb)} dB")) +
-                             "): keep below about 120 Hz mono (Neo Utility's mono-below, or pan the bass and kick centre).";
+                             "): keep below about 120 Hz mono (Neo Utility's Bass mono at 120 Hz, or pan the bass and kick centre).";
             if (Math.Abs(s.BalanceDb) > 1.5) yield return $"Off centre: the {(s.BalanceDb > 0 ? "left" : "right")} channel is {F(Math.Abs(s.BalanceDb))} dB louder.";
         }
 

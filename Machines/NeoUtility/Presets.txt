@@ -1,0 +1,53 @@
+# Neo Utility factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoUtility
+machine "Neo Utility"
+
+preset "Gain — Trim −6 dB"
+Gain = -6
+
+preset "Gain — Boost +6 dB"
+Gain = 6
+
+preset "Gain — Stage to −18 dBFS (−12 dB)"
+Gain = -12
+
+preset "Stereo — Mono"
+Width = 0
+
+preset "Stereo — Narrow 50 %"
+Width = 50
+
+preset "Stereo — Wide 140 %"
+Width = 140
+
+preset "Mastering — Bass Mono 120 Hz"
+Bass mono = On
+Bass mono freq = 120
+
+preset "Mastering — Clean Up (Bass Mono 80 Hz, DC)"
+Bass mono = On
+Bass mono freq = 80
+DC removal = On
+
+preset "Mixing — Mono Pan Left 30 %"
+Pan law = Mono pan
+Pan = -30
+
+preset "Mixing — Mono Pan Right 30 %"
+Pan law = Mono pan
+Pan = 30
+
+preset "Mixing — Balance Left 20 %"
+Pan = -20
+
+preset "Fix — Flip Polarity"
+Invert L = On
+Invert R = On
+
+preset "Fix — Right Channel Out of Phase"
+Invert R = On
+
+preset "Fix — Swap Channels"
+Swap = On
+
+preset "Fix — DC Offset"
+DC removal = On
