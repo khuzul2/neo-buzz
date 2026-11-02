@@ -50,6 +50,7 @@ namespace ReBuzz.Agent
                     "Reverts the last change to the song: one agent call is one step (a person's edit in the window is one step too). " +
                     "Use it to back out of a change that measured worse. Returns what is now on top of the undo stack. Example: undo().",
                 Input = Object(null),
+                Output = UndoSchema(),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c => await host.Engine("undo", false, _ =>
                 {
@@ -69,6 +70,7 @@ namespace ReBuzz.Agent
                 Title = "Redo",
                 Description = "Re-applies the last undone step. Example: redo().",
                 Input = Object(null),
+                Output = UndoSchema(),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c => await host.Engine("redo", false, _ =>
                 {
@@ -248,6 +250,8 @@ namespace ReBuzz.Agent
         }
 
         static double Beats(int ticks, int tpb) => Math.Round(ticks / (double)Math.Max(1, tpb), 4);
+
+        static JsonObject UndoSchema() => Object(null, Req("can_undo", Boolean("Something left to undo")), Req("can_redo", Boolean("Something to redo")));
 
         static JsonObject StatusSchema() => Object("The studio's state",
             Req("song", Object(null, Opt("file", String("The song's file; absent when never saved")), Req("unsaved_changes", Boolean("Changes since the last save")))),

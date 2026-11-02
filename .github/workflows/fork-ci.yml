@@ -48,6 +48,13 @@ jobs:
       shell: pwsh
       run: dotnet test ReBuzz.AgentTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath agent-test.log
 
+    # The agent server's evaluation (docs/specs/mcp-server.md §10): its MCP client against our
+    # protocol layer, its scorers on synthetic signals and its regression gate. The suite itself
+    # runs on Windows in fork-package.yml.
+    - name: Agent evaluation self-test
+      if: always()
+      run: dotnet run --project ReBuzz.AgentEval -c Release -- selftest
+
     # Neo machines (docs/specs/machines.md): aliasing, decay times, envelopes, presets…
     - name: Machine DSP tests
       if: always()
@@ -88,6 +95,14 @@ jobs:
       run: |
         dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
         python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
+
+    # The A6 scripted suite (docs/specs/mcp-server.md §10) against rebuzz-headless on Linux
+    # (mac-engine.md M3): the same checks, tasks and baseline as the Windows package run.
+    - name: Agent evaluation on Linux (rebuzz-headless)
+      if: always()
+      run: |
+        dotnet build ReBuzz.AgentEval/ReBuzz.AgentEval.csproj -c Release -nologo -v:q
+        dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll run --exe ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless --out "$RUNNER_TEMP/eval" --baseline eval/baseline.json
 
     # Songs with missing machines (mac-engine.md M2): off Windows every native machine is a
     # placeholder, which must save back what the song says about it. The demo songs open, save as

@@ -4,7 +4,6 @@
 // happens to run.
 
 using System;
-using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace ReBuzz.Core.Sync
@@ -17,7 +16,7 @@ namespace ReBuzz.Core.Sync
         readonly MidiClockSender sender = new MidiClockSender();
         readonly Thread thread;
         volatile bool stopping;
-        IntPtr timer;
+        readonly ReBuzz.Platform.PreciseWaiter waiter = new ReBuzz.Platform.PreciseWaiter();   // fork (mac-engine.md M6): each OS's own timer
 
         /// <param name="playing">Whether the transport plays (any thread).</param>
         /// <param name="ours">The session's beat line as heard (<see cref="SyncClock.Ours"/>).</param>
@@ -33,14 +32,6 @@ namespace ReBuzz.Core.Sync
 
         void Run()
         {
-            try
-            {
-                timer = CreateWaitableTimerExW(IntPtr.Zero, null, CreateWaitableTimerHighResolution, TimerAllAccess);
-            }
-            catch (Exception)
-            {
-                timer = IntPtr.Zero;
-            }
             try
             {
                 while (!stopping)
@@ -72,43 +63,16 @@ namespace ReBuzz.Core.Sync
             }
             finally
             {
-                if (timer != IntPtr.Zero) CloseHandle(timer);
+                waiter.Dispose();
             }
         }
 
-        void Wait(double micros)
-        {
-            if (timer != IntPtr.Zero)
-            {
-                long due = -(long)(micros * 10);            // relative, in 100 ns
-                if (SetWaitableTimer(timer, ref due, 0, IntPtr.Zero, IntPtr.Zero, false))
-                {
-                    WaitForSingleObject(timer, 100);
-                    return;
-                }
-            }
-            Thread.Sleep(Math.Max(1, (int)(micros / 1000)));
-        }
+        void Wait(double micros) => waiter.Micros(micros);
 
         public void Dispose()
         {
             stopping = true;
             thread.Join(500);
         }
-
-        const uint CreateWaitableTimerHighResolution = 0x2;
-        const uint TimerAllAccess = 0x1F0003;
-
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        static extern IntPtr CreateWaitableTimerExW(IntPtr attributes, string name, uint flags, uint access);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        static extern bool SetWaitableTimer(IntPtr timer, ref long dueTime, int period, IntPtr completion, IntPtr argument, bool resume);
-
-        [DllImport("kernel32.dll")]
-        static extern uint WaitForSingleObject(IntPtr handle, uint milliseconds);
-
-        [DllImport("kernel32.dll")]
-        static extern bool CloseHandle(IntPtr handle);
     }
 }
