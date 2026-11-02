@@ -67,7 +67,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                 }
                 catch (Exception ex)
                 {
-                    UiUtils.MessageBox("Error importing file " + filename + "\n\n" + ex.ToString(), "Error importing file.");
+                    buzz.UserMessages.Error("Error importing file " + filename + "\n\n" + ex.ToString(), "Error importing file.", ex);
                 }
                 buzz.Playing = playing;
             }

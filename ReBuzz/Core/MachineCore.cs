@@ -844,7 +844,7 @@ namespace ReBuzz.Core
                 }
                 catch (Exception ex)
                 {
-                    UiUtils.MessageBox(ex.ToString());
+                    (graph.Buzz as ReBuzzCore)?.UserMessages.Error(ex.ToString(), null, ex);
                 }
             }
 
@@ -863,7 +863,7 @@ namespace ReBuzz.Core
             }
             catch (Exception ex)
             {
-                UiUtils.MessageBox(ex.ToString());
+                (graph.Buzz as ReBuzzCore)?.UserMessages.Error(ex.ToString(), null, ex);
             }
         }
 

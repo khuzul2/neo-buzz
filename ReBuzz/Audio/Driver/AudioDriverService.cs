@@ -1,15 +1,22 @@
 ﻿using BuzzDotNet.Audio;
 using NAudio.Wave;
 using ReBuzz.Audio.Engine;
+using ReBuzz.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows;
 
 namespace ReBuzz.Audio
 {
     public sealed class AudioDeviceService
     {
+        private readonly IUserMessages userMessages;
+
+        public AudioDeviceService(IUserMessages userMessages)
+        {
+            this.userMessages = userMessages;
+        }
+
         public List<AudioEngine.AudioOutDevice> GetOutputDevices()
         {
             var devices = new List<AudioEngine.AudioOutDevice>();
@@ -36,7 +43,7 @@ namespace ReBuzz.Audio
             }
             catch (Exception e)
             {
-                MessageBox.Show("AudioDevices Error: " + e.Message, "Audio Devices Error");
+                userMessages.Error("AudioDevices Error: " + e.Message, "Audio Devices Error", e);
             }
 
             return devices;

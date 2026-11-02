@@ -282,21 +282,21 @@ Guide numbers are starting points the agent verifies with measurements, never ru
 
 ## 7. Analysis library
 
-`Machines/NeoBuzz.Analysis` is pure C#, tested on Linux like the DSP library. The server and the analysis machines (§8) share it.
+`Machines/NeoBuzz.Analysis` is pure C#, tested on Linux like the DSP library. The server and the analysis machines (§8) share it. All of it is built (loudness and true peak in A1, the rest in A2); the last column is what `ReBuzz.AgentTests` measures, with the tolerance it asserts in brackets.
 
-| Measure | Method | Verified against |
-|---|---|---|
-| Loudness | ITU-R BS.1770-5: K-weighting, 400 ms momentary, 3 s short-term, gated integrated, EBU R128 loudness range | EBU Tech 3341/3342 test signals, generated in the tests |
-| True peak | 4× oversampled peak (BS.1770 Annex 2) | Tech 3341 true-peak cases |
-| Spectrum | Welch-averaged FFT, third-octave and named bands, centroid, roll-off, flatness, tilt (dB/octave fit) | Pink noise reads flat in third-octave bands within ±0.5 dB; sine bins |
-| Dynamics | Crest factor, PLR, RMS envelope, transient density | Known signals |
-| Stereo | Correlation, per-band width (mid/side ratio), mono fold-down loss | Mono, anti-phase and decorrelated noise |
-| Masking | Per critical band, both tracks above a level and within a few dB of each other, weighted by time overlap | Constructed overlaps |
-| Pitch | YIN with confidence, cents from equal temperament | Synth notes from Neo Poly |
-| Key | Chroma plus key profiles (Krumhansl–Schmuckler) | Rendered scales and progressions |
-| Tempo and onsets | The existing `AudioAnalysis` (spectral flux), moved into the library | Its existing tests |
+| Measure | Method | Verified against | Built: measured (asserted) |
+|---|---|---|---|
+| Loudness | ITU-R BS.1770-5: K-weighting, 400 ms momentary, 3 s short-term, gated integrated, EBU R128 loudness range | EBU Tech 3341/3342 test signals, generated in the tests | A1. Integrated, momentary, short-term (±0.1 LU); loudness range (±1 LU) |
+| True peak | 4× oversampled peak (BS.1770 Annex 2) | Tech 3341 true-peak cases | A1. Inter-sample peak of a quarter-rate sine at 45° (±0.2 dB); a 1 kHz sine (±0.05 dB) |
+| Spectrum | Welch-averaged FFT (Hann, 50% overlap, 32768 points at 44.1/48 kHz), scaled so the bins sum to the mean square. Levels are plain RMS dB: a full-scale sine reads −3 dB, and bands add up to the total. ISO third octaves 20 Hz – 20 kHz and the named bands (sub 20–60, low 60–250, low-mid 250–500, mid 500–2k, high-mid 2–4k, presence 4–6k, air 6–20k Hz). Centroid and 85% roll-off are amplitude-weighted; flatness is on power. Tilt is the least-squares slope of the third octaves, 50 Hz – 16 kHz, in dB per octave (pink 0, white +3) | Pink noise reads flat in third-octave bands within ±0.5 dB; sine bins | A2. Periodic pink noise reads flat in all 31 third octaves within ±0.013 dB (±0.5); tilt 0.000 (±0.05); white noise +3.010 dB/oct (±0.05). Random pink noise (4 s) reads flat 100 Hz – 10 kHz within ±0.45 dB (±1.0). Sines at 97 Hz, 1 kHz and 12.3 kHz: right peak bin, own band within 0.001 dB (±0.05), bands two away > 40 dB down, centroid within 0.1 Hz |
+| Dynamics | Crest factor (louder channel), PLR (true peak − integrated), RMS envelope (50 ms), transient density (onsets per second) | Known signals | A2. Sine crest 3.010 dB (±0.02); square 0 (±0.01); PLR of a 1 kHz stereo sine −0.007 (±0.2); a 20 dB level step spreads the envelope 20 dB (±0.5); 16 of 16 clicks counted |
+| Stereo | Correlation (overall and per 200 ms), width as side/mid energy (overall and per named band, from the Welch cross spectrum), mono fold-down loss of (L+R)/2 | Mono, anti-phase and decorrelated noise | A2. Mono, level-offset and anti-phase cases exact (1e-6). Unrelated noise: correlation 0.005 (±0.02), width 0.99 (±0.05), mono loss −2.99 dB (±0.1), per band width 0.95–1.02 (±0.3). An inverted sub under centred mids: sub correlation < −0.99, mid width < 0.001 |
+| Masking | Bark bands, 85 ms frames. A band fights in a frame when both tracks are at −50 dB or above, within 24 dB of their own loudest band, and within 6 dB of each other. Severity is the sum over fighting frames of 1 − (Δ/6 dB)², divided by the frames where the less active track plays in that band. Pairs → bands → severity, for N tracks (`Masking.Table`) | Constructed overlaps | A2. A kick and a 55 Hz bass fight at 20–100 Hz, severity 0.43 (> 0.35), and nothing else does. 20 dB apart, or one after the other: none. Half the overlap gives half the severity (±0.15) |
+| Pitch | YIN on audio decimated to about 6× the highest pitch, a Hann-weighted difference function, threshold 0.15, the dip refined by Newton steps on its band-limited Fourier form. Confidence 1 − d′, cents from equal temperament, notes split at gaps, at pitch jumps over 0.6 semitones and at onsets | Synth notes from Neo Poly | A2. Band-limited sawtooth notes A1–A6 (55–1760 Hz), detuned −7 to +21 cents: each note's cents exact to 0.01 (±1), worst frame 2.0 cents (< 5). A melody with a repeated note splits into its notes. Neo Poly renders themselves are left to the ReBuzz-side tests |
+| Key | Chroma from the Welch spectrum's peaks, 55 Hz – 5 kHz, leaving out overtones (peaks at a whole multiple of a stronger, lower peak); Krumhansl–Kessler profiles in all 24 keys; best key, correlation, runner-up | Rendered scales and progressions | A2. C major scale (r 0.71), A natural minor scale and triad (0.89), F# I–IV–V–I (0.89), E minor i–iv–V–i (0.85), Bb I–vi–ii–V–I (0.84), a lone C triad (0.83): all found |
+| Tempo and onsets | The Session View's spectral flux (`Core/Clips/AudioAnalysis.cs`), ported to sample arrays (that file is unchanged): onsets as flux peaks over a running median. Tempo from the flux autocorrelation over 60–200 BPM (beat to bar multiples, a mild prior around 120), then a least-squares beat grid fitted to the onsets on it | Its existing tests | A2. Click tracks at 90, 120 and 128 BPM within 0.001 BPM (±0.05), every onset within 5 ms; 124 BPM with off-beat hats within 0.001 (±0.1) |
 
-Plots (spectrum, spectrogram, waveform, loudness, goniometer) are drawn to PNG by the server with the same code in headless and studio mode.
+Plots (spectrum, spectrogram, waveform, loudness, goniometer, per-track bands) are drawn to PNG by the server with the same code in headless and studio mode (`ReBuzz.Agent/Audio/Plot*.cs`). They use a small rasterizer, a built-in 5×7 font and a PNG encoder on `ZLibStream`, with no System.Drawing. The tests decode every plot: the signature, each chunk's CRC, and IDAT inflating to height × (1 + 3 × width) bytes.
 
 ## 8. Machines for agentic work
 

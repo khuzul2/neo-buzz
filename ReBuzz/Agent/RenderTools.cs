@@ -39,7 +39,8 @@ namespace ReBuzz.Agent
                 Description =
                     "Plays part of the song faster than real time into a WAV file and measures it (loudness, true peak, clipping). Range: from/to " +
                     "in beats or \"bar.beat\" (default the whole song), or range=\"loop\". tail_seconds lets reverbs and releases ring out after " +
-                    "the end (default 2). solo and mute hear parts without changing the song (solo keeps what feeds a soloed effect). Follows the " +
+                    "the end (default 2). solo and mute hear parts without changing the song (solo keeps what feeds a soloed effect). probes also " +
+                    "capture chosen machines' outputs (after their connection gain), each with its own id \"r3:Bass\" for analyze. Follows the " +
                     "song's tempo changes. Returns a render id for analyze, the file and the measurements. Changes nothing in the song, but stops " +
                     "playback if it's running; in studio mode ReBuzz pauses while it renders. Example: render(from=0, to=32, solo=[\"Bass\", \"Drums\"]).",
                 Input = Object(null,
@@ -49,6 +50,7 @@ namespace ReBuzz.Agent
                     Opt("tail_seconds", Number("Seconds rendered after the end, playback stopped (default 2)", 0, 30)),
                     Opt("solo", Array(String("A machine"), "Hear only these (and what feeds soloed effects)")),
                     Opt("mute", Array(String("A machine"), "Silence these")),
+                    Opt("probes", Array(String("A machine"), "Also capture these machines' outputs")),
                     Opt("name", String("A label for the file name"))),
                 Output = Object(null,
                     Req("id", String("Pass to analyze(source=…)")),
@@ -63,6 +65,7 @@ namespace ReBuzz.Agent
                     double tail = c.Number("tail_seconds") ?? 2;
                     var soloNames = c.List("solo")?.Select(x => x?.GetValue<string>()).ToList();
                     var muteNames = c.List("mute")?.Select(x => x?.GetValue<string>()).ToList();
+                    var probeNames = c.List("probes")?.Select(x => x?.GetValue<string>()).ToList();
                     string label = c.String("name");
                     var r = await host.Engine("render", false, _ =>
                     {
@@ -81,6 +84,8 @@ namespace ReBuzz.Agent
                         if (to <= from) throw new ToolError($"to (beat {NoteList.Fmt(SongModel.Beats(core, to))}) must be after from (beat {NoteList.Fmt(SongModel.Beats(core, from))}).");
                         var solo = soloNames?.Select(n => SongModel.Machine(core, n, "solo")).ToHashSet();
                         var mute = muteNames?.Select(n => SongModel.Machine(core, n, "mute")).ToHashSet();
+                        var probes = probeNames?.Select(n => SongModel.Machine(core, n, "probes")).Distinct().ToList() ?? new List<MachineCore>();
+                        if (probes.Any(SongModel.IsMaster)) throw new ToolError("probes: Master is the render itself; probe the machines feeding it.");
                         var warnings = new List<string>();
                         if (to > song.SongEnd)
                             warnings.Add($"The range runs past the song end (beat {NoteList.Fmt(SongModel.Beats(core, song.SongEnd))}); patterns placed there still play.");
@@ -88,18 +93,21 @@ namespace ReBuzz.Agent
                         string id = "r" + n.ToString(CultureInfo.InvariantCulture);
                         string folder = Path.Combine(Path.GetDirectoryName(host.Log.FilePath) ?? Path.GetTempPath(), "renders");
                         string file = Path.Combine(folder, $"{Path.GetFileNameWithoutExtension(host.Log.FilePath)}-{id}{SafeLabel(label)}.wav");
-                        var audio = Render(host, from, to, tail, solo, mute, c, warnings);
-                        var interleaved = new float[audio.Frames * 2];
-                        for (int i = 0; i < audio.Frames; i++)
+                        var (audio, probed) = Render(host, from, to, tail, solo, mute, probes, c, warnings);
+                        double fromBeats = SongModel.Beats(core, from), toBeats = SongModel.Beats(core, to);
+                        Write(file, audio);
+                        host.Renders[id] = new RenderInfo(id, file, fromBeats, toBeats, audio.Seconds);
+                        var measure = AudioReport.Measure(audio, Summary);
+                        var probeList = new JsonArray();
+                        foreach (var (machine, pa) in probed)
                         {
-                            interleaved[2 * i] = audio.Left[i];
-                            interleaved[2 * i + 1] = audio.Right[i];
+                            string pid = id + ":" + machine;
+                            string pfile = Path.Combine(folder, $"{Path.GetFileNameWithoutExtension(file)}-{SafeLabel(machine).TrimStart('-')}.wav");
+                            Write(pfile, pa);
+                            host.Renders[pid] = new RenderInfo(pid, pfile, fromBeats, toBeats, pa.Seconds);
+                            probeList.Add(new JsonObject { ["id"] = pid, ["machine"] = machine, ["file"] = pfile, ["measure"] = AudioReport.Measure(pa, Summary) });
                         }
-                        Wav.WriteStereoFloat(file, interleaved, audio.Frames, audio.Rate);
-                        var info = new RenderInfo(id, file, SongModel.Beats(core, from), SongModel.Beats(core, to), audio.Seconds);
-                        host.Renders[id] = info;
-                        var measure = AudioReport.Measure(audio, AudioReport.Metrics);
-                        // The played part alone, for loudness without the tail's silence.
+                        var info = host.Renders[id];
                         return new JsonObject
                         {
                             ["id"] = id,
@@ -109,13 +117,16 @@ namespace ReBuzz.Agent
                             ["to_beats"] = info.ToBeats,
                             ["sample_rate"] = audio.Rate,
                             ["measure"] = measure,
+                            ["probes"] = probeList,
                             ["warnings"] = new JsonArray(warnings.Select(w => (JsonNode)w).ToArray()),
                         };
                     }, c.Cancellation);
                     var m = r["measure"]!.AsObject();
                     var warn = r["warnings"]!.AsArray().Select(w => w!.GetValue<string>()).ToList();
+                    var probeLines = r["probes"]!.AsArray().Select(pr => $"{pr!["id"]}: {AudioReport.Line(pr["measure"]!.AsObject())}").ToList();
                     return ToolResult.Ok($"Rendered {r["id"]}: beats {r["from_beats"]}–{r["to_beats"]}, {r["seconds"]} s → {r["file"]}. " +
                                          $"{AudioReport.Line(m)}. " + string.Join(" ", m["reads"]!.AsArray().Select(x => x!.GetValue<string>())) +
+                                         (probeLines.Count > 0 ? " Probes: " + string.Join("; ", probeLines) + "." : "") +
                                          (warn.Count > 0 ? " " + string.Join(" ", warn) : ""), r)
                         .WithLink(new Uri(r["file"]!.GetValue<string>()).AbsoluteUri, Path.GetFileName(r["file"]!.GetValue<string>()), "audio/wav", "The render");
                 },
@@ -126,9 +137,10 @@ namespace ReBuzz.Agent
                 Name = "analyze",
                 Title = "Measure audio",
                 Description =
-                    "Measures a render (its id) or a WAV file (a full path, e.g. a reference track): loudness (integrated, short-term and momentary " +
-                    "max in LUFS, loudness range in LU) and peaks (true peak dBTP, sample peak dBFS, clipped samples), each with a plain read. " +
-                    "Optionally a part, from_seconds to to_seconds. Read-only. Example: analyze(source=\"r3\", metrics=[\"loudness\"]).",
+                    "Measures a render, a probe (\"r3:Bass\") or a WAV file (a full path, e.g. a reference track), each number with a plain read: " +
+                    "loudness (LUFS, range), peaks (true peak dBTP, clipping), dynamics (crest, PLR), spectrum (bands, third octaves, tilt, centroid), " +
+                    "stereo (correlation, width per band, mono loss), pitch (monophonic notes and cents), key, tempo. Default: all; pick metrics to be " +
+                    "quick. Optionally a part, from_seconds to to_seconds. Read-only. Example: analyze(source=\"r3\", metrics=[\"spectrum\", \"stereo\"]).",
                 Input = Object(null,
                     Req("source", String("A render id (\"r1\") or a WAV file's full path")),
                     Opt("metrics", Array(String("A metric", AudioReport.Metrics), "Which measures (default all)")),
@@ -144,23 +156,45 @@ namespace ReBuzz.Agent
                 {
                     string source = c.RequiredString("source").Trim();
                     var metrics = c.List("metrics")?.Select(x => x!.GetValue<string>()).ToList() ?? AudioReport.Metrics.ToList();
-                    string file = host.Renders.TryGetValue(source, out var render) ? render.File : null;
-                    if (file == null)
-                    {
-                        if (System.Text.RegularExpressions.Regex.IsMatch(source, @"^r\d+$"))
-                            throw new ToolError($"No render \"{source}\" in this session." + (host.Renders.Count > 0 ? $" Renders: {string.Join(", ", host.Renders.Keys)}." : " Make one with render()."));
-                        file = Path.GetFullPath(source.Trim('"'));
-                    }
-                    var audio = await System.Threading.Tasks.Task.Run(() => Wav.Read(file), c.Cancellation);
+                    var (label, file, audio) = await Load(host, source, c);
                     double? fromS = c.Number("from_seconds"), toS = c.Number("to_seconds");
                     if (fromS.HasValue && toS.HasValue && toS <= fromS) throw new ToolError("to_seconds must be after from_seconds.");
                     var part = AudioReport.Slice(audio, fromS, toS);
-                    var m = AudioReport.Measure(part, metrics);
-                    m["source"] = render != null ? $"{source} ({file})" : file;
-                    return ToolResult.Ok($"{(render != null ? source : Path.GetFileName(file))}: {m["seconds"]} s, {AudioReport.Line(m)}. " +
+                    var m = await System.Threading.Tasks.Task.Run(() => AudioReport.Measure(part, metrics), c.Cancellation);
+                    m["source"] = label == file ? file : $"{label} ({file})";
+                    return ToolResult.Ok($"{label}: {m["seconds"]} s, {AudioReport.Line(m)}. " +
                                          string.Join(" ", m["reads"]!.AsArray().Select(x => x!.GetValue<string>())), m);
                 },
             });
+        }
+
+        /// <summary>A render or probe by id, or a WAV file by path: (label, file, audio).</summary>
+        internal static async System.Threading.Tasks.Task<(string Label, string File, StereoAudio Audio)> Load(AgentHost host, string source, ToolContext c)
+        {
+            source = source.Trim();
+            string file = host.Renders.TryGetValue(source, out var render) ? render.File : null;
+            if (file == null)
+            {
+                if (System.Text.RegularExpressions.Regex.IsMatch(source, @"^r\d+(:.+)?$"))
+                    throw new ToolError($"No render \"{source}\" in this session." + (host.Renders.IsEmpty ? " Make one with render()." : $" Renders: {string.Join(", ", host.Renders.Keys.OrderBy(k => k))}."));
+                file = Path.GetFullPath(source.Trim('"'));
+            }
+            var audio = await System.Threading.Tasks.Task.Run(() => Wav.Read(file), c.Cancellation);
+            return (render != null ? source : Path.GetFileName(file), file, audio);
+        }
+
+        /// <summary>What render reports by itself; analyze has the rest.</summary>
+        static readonly string[] Summary = { "loudness", "peaks" };
+
+        static void Write(string file, StereoAudio audio)
+        {
+            var interleaved = new float[audio.Frames * 2];
+            for (int i = 0; i < audio.Frames; i++)
+            {
+                interleaved[2 * i] = audio.Left[i];
+                interleaved[2 * i + 1] = audio.Right?[i] ?? audio.Left[i];
+            }
+            Wav.WriteStereoFloat(file, interleaved, audio.Frames, audio.Rate);
         }
 
         static string SafeLabel(string label)
@@ -175,8 +209,8 @@ namespace ReBuzz.Agent
         /// was. Playback ends where the song's own playback would (tempo changes included): the
         /// loop is set to the range with looping off, so the engine stops at its end.
         /// </summary>
-        static StereoAudio Render(AgentHost host, int from, int to, double tailSeconds, HashSet<MachineCore> solo, HashSet<MachineCore> mute,
-            ToolContext c, List<string> warnings)
+        static (StereoAudio Master, List<(string Machine, StereoAudio Audio)> Probes) Render(AgentHost host, int from, int to, double tailSeconds,
+            HashSet<MachineCore> solo, HashSet<MachineCore> mute, IReadOnlyList<MachineCore> probes, ToolContext c, List<string> warnings)
         {
             var core = host.Core;
             var song = core.SongCore;
@@ -200,6 +234,15 @@ namespace ReBuzz.Agent
             var mutedBefore = machines.ToDictionary(m => m, m => m.IsMuted);
             var soloedBefore = machines.Where(m => m.IsSoloed).ToList();
             if (wasPlaying) warnings.Add("Playback was running; the render stopped it.");
+
+            // Probes: a machine's output as its first connection carries it (taps run on the engine's thread, in order).
+            var taps = new List<Probe>();
+            foreach (var m in probes)
+            {
+                var conn = m.Outputs.FirstOrDefault(o => !((MachineCore)o.Destination).Hidden);
+                if (conn == null) { warnings.Add($"{m.Name} feeds nothing, so there's nothing to probe."); continue; }
+                taps.Add(new Probe(m.Name, conn));
+            }
 
             lock (ReBuzzCore.AudioLock)
             {
@@ -233,6 +276,7 @@ namespace ReBuzz.Agent
                     }
                     if (!core.Playing) throw new ToolError("Playback didn't start (is ReBuzz following an external clock?).");
 
+                    foreach (var t in taps) t.Start();
                     void Take(int n)
                     {
                         for (int i = 0; i < n; i++)
@@ -240,6 +284,7 @@ namespace ReBuzz.Agent
                             left.Add(buffer[2 * i]);
                             right.Add(buffer[2 * i + 1]);
                         }
+                        foreach (var t in taps) t.Align(left.Count);
                     }
                     long nextReport = 5L * rate;
                     int last = song.PlayPosition;
@@ -271,6 +316,7 @@ namespace ReBuzz.Agent
                 }
                 finally
                 {
+                    foreach (var t in taps) t.Stop();
                     core.Playing = false;
                     foreach (var m in machines) if (m.IsMuted != mutedBefore[m]) m.IsMuted = mutedBefore[m];
                     foreach (var m in soloedBefore) m.IsSoloed = true;
@@ -290,7 +336,50 @@ namespace ReBuzz.Agent
                     }
                 }
             }
-            return new StereoAudio { Left = left.ToArray(), Right = right.ToArray(), Rate = rate };
+            var master = new StereoAudio { Left = left.ToArray(), Right = right.ToArray(), Rate = rate };
+            return (master, taps.Select(t => (t.Machine, t.Audio(rate))).ToList());
+        }
+
+        /// <summary>A machine's output captured from its connection's tap, scaled by the connection's gain, aligned to the render.</summary>
+        sealed class Probe
+        {
+            readonly IMachineConnection connection;
+            readonly Action<float[], bool, BuzzGUI.Interfaces.SongTime> handler;
+            readonly List<float> left = new(), right = new();
+            readonly float gain;
+            bool on;
+
+            public Probe(string machine, IMachineConnection connection)
+            {
+                Machine = machine;
+                this.connection = connection;
+                gain = connection.Amp / (float)Levels.UnityAmp / 32768f;
+                handler = (samples, stereo, _) =>
+                {
+                    if (!on) return;
+                    for (int i = 0; i + 1 < samples.Length; i += 2)
+                    {
+                        left.Add(samples[i] * gain);
+                        right.Add(samples[i + 1] * gain);
+                    }
+                };
+                connection.Tap += handler;
+            }
+
+            public string Machine { get; }
+
+            public void Start() { left.Clear(); right.Clear(); on = true; }
+
+            /// <summary>Pads (a block the machine didn't work) or trims to the render's length.</summary>
+            public void Align(int frames)
+            {
+                if (left.Count < frames) { left.AddRange(new float[frames - left.Count]); right.AddRange(new float[frames - right.Count]); }
+                else if (left.Count > frames) { left.RemoveRange(frames, left.Count - frames); right.RemoveRange(frames, right.Count - frames); }
+            }
+
+            public void Stop() { on = false; connection.Tap -= handler; }
+
+            public StereoAudio Audio(int rate) => new() { Left = left.ToArray(), Right = right.ToArray(), Rate = rate };
         }
 
         /// <summary>Whether a machine is kept quiet for a render's solo and mute lists.</summary>
