@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<MachineDLLs xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <NumDLLsInEffectsFolder>7</NumDLLsInEffectsFolder>
+  <NumDLLsGeneratorsFolder>3</NumDLLsGeneratorsFolder>
+  <EffectMachineDLLs>
+    <MachineDLL>
+      <Name>Neo Comp</Name>
+      <Path>/tmp/claude-0/-home-claude/b18d67b6-dcfb-5893-8c6e-23e254f49871/scratchpad/m5/ReBuzz.Headless/bin/Release/net10.0/Gear/Effects/Neo Comp.NET.dll</Path>
+      <MachineInfo Type="Effect" Version="66" InternalVersion="0" Flags="MULTI_IO LOAD_DATA_RUNTIME" MinTracks="0" MaxTracks="0" Name="Neo Comp" ShortName="Comp" Author="neo-buzz" />
+      <IsOutOfProcess>false</IsOutOfProcess>
+      <IsManaged>true</IsManaged>
+      <Is64Bit>true</Is64Bit>
+    </MachineDLL>
+    <MachineDLL>
+      <Name>Neo Limiter</Name>
+      <Path>/tmp/claude-0/-home-claude/b18d67b6-dcfb-5893-8c6e-23e254f49871/scratchpad/m5/ReBuzz.Headless/bin/Release/net10.0/Gear/Effects/Neo Limiter.NET.dll</Path>
+      <MachineInfo Type="Effect" Version="66" InternalVersion="0" Flags="LOAD_DATA_RUNTIME" MinTracks="0" MaxTracks="0" Name="Neo Limiter" ShortName="Limiter" Author="neo-buzz" />
+      <IsOutOfProcess>false</IsOutOfProcess>
+      <IsManaged>true</IsManaged>
+      <Is64Bit>true</Is64Bit>
+    </MachineDLL>
+    <MachineDLL>
+      <Name>Neo Analyzer</Name>
+      <Path>/tmp/claude-0/-home-claude/b18d67b6-dcfb-5893-8c6e-23e254f49871/scratchpad/m5/ReBuzz.Headless/bin/Release/net10.0/Gear/Effects/Neo Analyzer.NET.dll</Path>
+      <MachineInfo Type="Effect" Version="66" InternalVersion="0" Flags="LOAD_DATA_RUNTIME" MinTracks="0" MaxTracks="0" Name="Neo Analyzer" ShortName="Analyzer" Author="neo-buzz" />
+      <IsOutOfProcess>false</IsOutOfProcess>
+      <IsManaged>true</IsManaged>
+      <Is64Bit>true</Is64Bit>
+    </MachineDLL>
+    <MachineDLL>
+      <Name>Neo Drive</Name>
+      <Path>/tmp/claude-0/-home-claude/b18d67b6-dcfb-5893-8c6e-23e254f49871/scratchpad/m5/ReBuzz.Headless/bin/Release/net10.0/Gear/Effects/Neo Drive.NET.dll</Path>
+      <MachineInfo Type="Effect" Version="66" InternalVersion="0" Flags="LOAD_DATA_RUNTIME" MinTracks="0" MaxTracks="0" Name="Neo Drive" ShortName="Drive" Author="neo-buzz" />
+      <IsOutOfProcess>false</IsOutOfProcess>
+      <IsManaged>true</IsManaged>
+      <Is64Bit>true</Is64Bit>
+    </MachineDLL>
+    <MachineDLL>
+      <Name>Neo EQ</Name>
+      <Path>/tmp/claude-0/-home-claude/b18d67b6-dcfb-5893-8c6e-23e254f49871/scratchpad/m5/ReBuzz.Headless/bin/Release/net10.0/Gear/Effects/Neo EQ.NET.dll</Path>
+      <MachineInfo Type="Effect" Version="66" InternalVersion="0" Flags="LOAD_DATA_RUNTIME" MinTracks="0" MaxTracks="0" Name="Neo EQ" ShortName="EQ" Author="neo-buzz" />
+      <IsOutOfProcess>false</IsOutOfProcess>
+      <IsManaged>true</IsManaged>
+      <Is64Bit>true</Is64Bit>
+    </MachineDLL>
+    <MachineDLL>
+      <Name>Neo Verb</Name>
+      <Path>/tmp/claude-0/-home-claude/b18d67b6-dcfb-5893-8c6e-23e254f49871/scratchpad/m5/ReBuzz.Headless/bin/Release/net10.0/Gear/Effects/Neo Verb.NET.dll</Path>
+      <MachineInfo Type="Effect" Version="66" InternalVersion="0" Flags="LOAD_DATA_RUNTIME" MinTracks="0" MaxTracks="0" Name="Neo Verb" ShortName="Verb" Author="neo-buzz" />
+      <IsOutOfProcess>false</IsOutOfProcess>
+      <IsManaged>true</IsManaged>
+      <Is64Bit>true</Is64Bit>
+    </MachineDLL>
+    <MachineDLL>
+      <Name>Neo Utility</Name>
+      <Path>/tmp/claude-0/-home-claude/b18d67b6-dcfb-5893-8c6e-23e254f49871/scratchpad/m5/ReBuzz.Headless/bin/Release/net10.0/Gear/Effects/Neo Utility.NET.dll</Path>
+      <MachineInfo Type="Effect" Version="66" InternalVersion="0" Flags="LOAD_DATA_RUNTIME" MinTracks="0" MaxTracks="0" Name="Neo Utility" ShortName="Utility" Author="neo-buzz" />
+      <IsOutOfProcess>false</IsOutOfProcess>
+      <IsManaged>true</IsManaged>
+      <Is64Bit>true</Is64Bit>
+    </MachineDLL>
+  </EffectMachineDLLs>
+  <GeneratorMachineDLLs>
+    <MachineDLL>
+      <Name>Neo Poly</Name>
+      <Path>/tmp/claude-0/-home-claude/b18d67b6-dcfb-5893-8c6e-23e254f49871/scratchpad/m5/ReBuzz.Headless/bin/Release/net10.0/Gear/Generators/Neo Poly.NET.dll</Path>
+      <MachineInfo Type="Generator" Version="66" InternalVersion="0" Flags="LOAD_DATA_RUNTIME" MinTracks="1" MaxTracks="16" Name="Neo Poly" ShortName="Poly" Author="neo-buzz" />
+      <IsOutOfProcess>false</IsOutOfProcess>
+      <IsManaged>true</IsManaged>
+      <Is64Bit>true</Is64Bit>
+    </MachineDLL>
+    <MachineDLL>
+      <Name>Neo Wave</Name>
+      <Path>/tmp/claude-0/-home-claude/b18d67b6-dcfb-5893-8c6e-23e254f49871/scratchpad/m5/ReBuzz.Headless/bin/Release/net10.0/Gear/Generators/Neo Wave.NET.dll</Path>
+      <MachineInfo Type="Generator" Version="66" InternalVersion="0" Flags="LOAD_DATA_RUNTIME" MinTracks="1" MaxTracks="16" Name="Neo Wave" ShortName="Wave" Author="neo-buzz" />
+      <IsOutOfProcess>false</IsOutOfProcess>
+      <IsManaged>true</IsManaged>
+      <Is64Bit>true</Is64Bit>
+    </MachineDLL>
+    <MachineDLL>
+      <Name>Neo FM6</Name>
+      <Path>/tmp/claude-0/-home-claude/b18d67b6-dcfb-5893-8c6e-23e254f49871/scratchpad/m5/ReBuzz.Headless/bin/Release/net10.0/Gear/Generators/Neo FM6.NET.dll</Path>
+      <MachineInfo Type="Generator" Version="66" InternalVersion="0" Flags="LOAD_DATA_RUNTIME" MinTracks="1" MaxTracks="16" Name="Neo FM6" ShortName="FM6" Author="neo-buzz" />
+      <IsOutOfProcess>false</IsOutOfProcess>
+      <IsManaged>true</IsManaged>
+      <Is64Bit>true</Is64Bit>
+    </MachineDLL>
+  </GeneratorMachineDLLs>
+</MachineDLLs>

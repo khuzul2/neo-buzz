@@ -110,7 +110,8 @@ namespace ReBuzz.Audio.Engine
                 }
             };
 
-            if (Global.EngineSettings.AudioBufferFillThread)
+            // The fill thread runs on the Windows multimedia timer (winmm): Windows only.
+            if (Global.EngineSettings.AudioBufferFillThread && OperatingSystem.IsWindows())
             {
                 multimediaTimer.Start();
             }

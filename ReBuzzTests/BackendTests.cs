@@ -112,6 +112,38 @@ namespace ReBuzzTests
             Assert.That(messages.Caption, Is.EqualTo("Audio Devices Error"));
         }
 
+        [Test]
+        public void PortAudioDevicesAreFoundByLabelNameOrDefault()
+        {
+            // mac-engine.md M5: what --device and --input name, and the settings' "PortAudio: …" labels.
+            var devices = new[]
+            {
+                new ReBuzz.Platform.PortAudio.Device(0, "Built-in Microphone", "Core Audio", 1, 0, 48000, 0.01),
+                new ReBuzz.Platform.PortAudio.Device(1, "MacBook Pro Speakers", "Core Audio", 0, 2, 48000, 0.01),
+                new ReBuzz.Platform.PortAudio.Device(2, "Studio Interface", "Core Audio", 8, 8, 96000, 0.003),
+            };
+            bool output(ReBuzz.Platform.PortAudio.Device d) => d.Outputs >= 2;
+
+            Assert.That(PortAudioDriverFactory.Label(devices[2]), Is.EqualTo("PortAudio: Studio Interface (Core Audio)"));
+            Assert.That(PortAudioDriverFactory.Find(devices, PortAudioDriverFactory.DefaultName, 1, output)!.Index, Is.EqualTo(1));
+            Assert.That(PortAudioDriverFactory.Find(devices, "", 1, output)!.Index, Is.EqualTo(1), "no name: the default");
+            Assert.That(PortAudioDriverFactory.Find(devices, "PortAudio: Studio Interface (Core Audio)", 1, output)!.Index, Is.EqualTo(2));
+            Assert.That(PortAudioDriverFactory.Find(devices, "studio interface", 1, output)!.Index, Is.EqualTo(2), "its bare name");
+            Assert.That(PortAudioDriverFactory.Find(devices, "Studio", 1, output)!.Index, Is.EqualTo(2), "the start of its name");
+            Assert.That(PortAudioDriverFactory.Find(devices, "Built-in Microphone", 1, output), Is.Null, "no outputs");
+            Assert.That(PortAudioDriverFactory.Find(devices, "default", 0, output)!.Index, Is.EqualTo(1),
+                "a default that can't play: the first device that can");
+        }
+
+        [Test]
+        public void PortAudioFactoryOpensOnlyPortAudio()
+        {
+            var factory = new PortAudioDriverFactory();
+            Assert.That(factory.AsioSupported, Is.False);
+            Assert.That(factory.ShowConfig(new AudioEngine.AudioOutDevice { Type = AudioEngine.AudioOutType.PortAudio }, null!, null!, ""), Is.False);
+            Assert.Throws<NotSupportedException>(() => factory.Create(AudioEngine.AudioOutType.Wasapi, "WASAPI", null!, null!, null!));
+        }
+
         sealed class FakeAudioDrivers(bool asio, params string[] names) : IAudioDriverFactory
         {
             public bool Broken { get; init; }
