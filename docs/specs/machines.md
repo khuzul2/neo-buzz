@@ -166,6 +166,31 @@ DX7 architecture: 6 operators, 32 algorithms, feedback, per-operator ratio/fixed
 | Alias floor | single sine, 2×: ≤ −90 dB; full-depth 1:1 FM at C7, Clean: ≤ −80 dB | sine −135 dB; FM at C7 −93.4 dB (Raw −3.9 dB) |
 | CPU | 16 voices × 6 operators, 2×: ≥ 10× real time on the CI runner | 10.7× |
 
+### Neo Analyzer (spectrum, loudness, stereo; MCP A4)
+
+An effect whose output is its input, bit for bit, with zero latency. It measures what passes with the analysis library the agent server's `analyze` uses (docs/specs/mcp-server.md §7), so the editor, `machine_readings` and `analyze` give the same numbers.
+
+- **Loudness**: NeoBuzz.Analysis `LoudnessMeter`, the streaming form of `Loudness.Measure`: the same K-weighting and 100 ms steps, momentary (400 ms) and short-term (3 s) every step, and since the reset the BS.1770 gated integrated loudness and the EBU Tech 3342 loudness range. These two come from histograms of 0.01 LU bins (−70 … +30 LUFS) that keep each bin's exact energy, so memory doesn't grow with time and only the bin a gate falls in is approximate.
+- **True peak**: `TruePeakMeter`, `Loudness.TruePeak`'s interpolator and shortcut run sample by sample (the points around a sample are known 11 samples later). Shown as the recent true peak (falling 20 dB/s), a held marker and the maximum since the reset.
+- **Spectrum**: an 8192-point FFT (at 44.1 and 48 kHz; about 0.17 s) every 2048 samples, Hann, both channels in one complex transform, the channels' mean power per bin on the library's scale (the bins sum to the mean square, so levels are plain RMS dB). Speed averages it exponentially over 0.1, 0.3, 1 or 3 s. The 31 third-octave bars and the curve (48 points per octave) integrate the average over bands, as `Spectrum.Integrate` does. The curve's bands are 1/24, 1/12, 1/6 or 1/3 octave wide (Smoothing), so a tone reads its level at every smoothing, and at 1/3 octave the curve passes through the bars. Held peaks hold for Peak hold, then fall 20 dB/s. Tilt (0, 3 or 4.5 dB/oct around 1 kHz) is for viewing only: at 0 pink noise draws flat, at 3 a typical finished mix (about −3 dB/oct in third octaves) does.
+- **Stereo**: correlation and width (side/mid energy, `Stereo.Measures`) over 400 ms for the meter and over 3 s for the readings; a goniometer of the last 1024 samples.
+- **Threads**: the audio thread fills a snapshot and publishes it through a lock-free triple buffer (NeoBuzz.Dsp `TripleBuffer`): one atomic exchange per publish, never a lock or an allocation. Readers (the editor, the agent server) copy the newest snapshot out, taking a lock among themselves only.
+- **Readings** (docs/specs/mcp-server.md §3.5): `Readings` returns a new read-only dictionary of 48 values, keyed as the manifest's `readings`: `momentary_lufs`, `short_term_lufs`, `integrated_lufs`, `range_lu`, `true_peak_dbtp`, `momentary_max_lufs`, `short_term_max_lufs`, `seconds`, `correlation`, `width`, the named bands `sub_db` … `air_db` and the third octaves `band_20hz_db` … `band_20000hz_db` (both over 3 s). They stay after the transport stops, so a render leaves its measures.
+
+Parameters: Smoothing, Speed, Peak hold (0.25 – 20 s), Tilt, Target (the loudness the meters are coloured against, written in dB: within 1 LU green, under blue, up to 3 LU over amber, beyond red) and Reset (On starts the integrated loudness, range, maxima and held peaks again; `ResetReadings()` and the editor's Reset button do it without the parameter). Presets: Mix (−18), Mastering (−14, slow, tilted 4.5), K-14, Broadcast R128 (−23), Tones (1/24 octave, fast). The editor shows the spectrum, the loudness meters and readouts, and the goniometer with the correlation bar.
+
+Levels follow the library: plain RMS dB, so a full-scale sine reads −3 dB. A sine at −20 dB RMS reads −20 dB in its band; one peaking at −20 dBFS reads −23.01 dB, as `analyze` reads it.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Pass-through | output = input bit for bit; latency 0 | MEAS_PASS |
+| Same numbers as the library | over whole signals (a 1 kHz tone, pink noise stepping by 10 dB, noise bursts with silences, a quarter-rate sine at 45°; in blocks of 256 and of 117): integrated loudness and the momentary and short-term maxima within 0.05 LU of `Loudness.Measure`, loudness range within 0.05 LU, true peak within 0.05 dB | MEAS_LIB |
+| A tone in its band | a 1 kHz sine at −20 dB RMS: −20 dB in its third octave, in the mid band and on the curve (±0.05 dB); two third octaves away, over 40 dB down | MEAS_TONE |
+| Bands | named bands within 0.5 dB of `Spectrum.Measure` (3 s of pink noise and tones); third octaves of pink noise within 0.5 dB, 100 Hz – 20 kHz | MEAS_BANDS |
+| Correlation | 1 for mono and −1 for anti-phase (±1e-9); 0 ± 0.02 for unrelated noise, width 1 ± 0.05 | MEAS_CORR |
+| Threads | no allocation while processing (parameter changes and a reset included); no torn snapshot with a writer and two readers (200,000 publishes) | MEAS_THREADS |
+| CPU | stereo at 48 kHz: under 2 % of real time on the CI runner (TieredCompilation off, as the other tests) | MEAS_CPU |
+
 ## 6. Phases
 
 | Phase | Content |
