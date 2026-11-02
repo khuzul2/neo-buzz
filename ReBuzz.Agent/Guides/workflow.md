@@ -23,6 +23,17 @@ Build, listen, measure, adjust. Never claim a result you haven't rendered and me
 - `plot(kind="spectrum", sources=["r3:Bass", "r3:Kick"])` draws an image you can look at: spectrum, spectrogram, waveform, loudness over time, goniometer, bands.
 - Compare versions: `snapshot_save(name=…)` before a change, `snapshot_diff(a=…)` after, `snapshot_restore(name=…)` or `undo` when it measured worse.
 
+## Live, with the user (studio mode)
+`studio_status` says the mode. In studio mode the user listens through ReBuzz's audio output, and these tools play with them. Headless, they answer with the way to hear instead, so use render there.
+- `transport(action="play", at="9.1")`, `transport(action="stop")`, `transport(action="status")`: the song as it plays, with the session's clips.
+- `session_launch(scene=2)` launches a scene on the next bar (or at the clip's quantization). `session_launch(machine="Bass", pattern="Fill")` launches one clip; `session_launch(stop=true)` stops everything.
+- `meters_read(machines=["Bass"], window_seconds=2)`: loudness and peaks now, measured as analyze measures renders.
+- `midi_play(machine="Keys", notes=[…])` plays a phrase on the next bar for the user to hear.
+- `session_record(action="start", machine="Keys", bars=4)` records a take of what is played on the keyboard (the user, or midi_play); `session_record(action="capture")` keeps what armed tracks were just played.
+- `machine_readings(machine="Analyzer")` reads an analysis machine where the user put it.
+
+These change what plays, not the song: they aren't undo steps.
+
 ## Guides
 Read the one for the job with `guide(topic=…)` (or the resource rebuzz://guides/<topic>):
 
