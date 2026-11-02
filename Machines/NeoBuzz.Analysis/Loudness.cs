@@ -71,6 +71,28 @@ namespace NeoBuzz.Analysis
                 u2 = u1; u1 = y; v2 = v1; v1 = z;
                 return z;
             }
+
+            /// <summary>
+            /// Filters <paramref name="n"/> samples as <see cref="Process"/> does, one by one, and
+            /// returns the sum of the outputs' squares (for streaming meters: the state stays in registers).
+            /// </summary>
+            public double SumOfSquares(float[] x, int offset, int n)
+            {
+                double sb0 = b0, sb1 = b1, sb2 = b2, sa1 = a1, sa2 = a2, sc0 = c0, sc1 = c1, sc2 = c2, sd1 = d1, sd2 = d2;
+                double sx1 = x1, sx2 = x2, sy1 = y1, sy2 = y2, su1 = u1, su2 = u2, sv1 = v1, sv2 = v2;
+                double sum = 0;
+                for (int i = offset, end = offset + n; i < end; i++)
+                {
+                    double xi = x[i];
+                    double y = sb0 * xi + sb1 * sx1 + sb2 * sx2 - sa1 * sy1 - sa2 * sy2;
+                    sx2 = sx1; sx1 = xi; sy2 = sy1; sy1 = y;
+                    double z = sc0 * y + sc1 * su1 + sc2 * su2 - sd1 * sv1 - sd2 * sv2;
+                    su2 = su1; su1 = y; sv2 = sv1; sv1 = z;
+                    sum += z * z;
+                }
+                x1 = sx1; x2 = sx2; y1 = sy1; y2 = sy2; u1 = su1; u2 = su2; v1 = sv1; v2 = sv2;
+                return sum;
+            }
         }
 
         internal static double Lufs(double meanSquare) => meanSquare <= 0 ? double.NegativeInfinity : Offset + 10 * Math.Log10(meanSquare);

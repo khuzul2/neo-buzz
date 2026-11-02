@@ -164,7 +164,7 @@ namespace NeoBuzz.Analyzer
         int size, mask, half, hop, toHop, frames;
         double binHz, nyquist, alpha, holdSeconds, windowSquares;
         SpectrumFft fft;
-        double[] window, re, im, frame, average, cumulative;
+        double[] window, re, im, frame, average, cumulative, frameCumulative;
         float[] ringL, ringR;
         int ringPos;
         double[] thirdLo, thirdHi, curveLo, curveHi;
@@ -219,6 +219,7 @@ namespace NeoBuzz.Analyzer
             frame = new double[half + 1];
             average = new double[half + 1];
             cumulative = new double[half + 2];
+            frameCumulative = new double[half + 2];
             ringL = new float[size];
             ringR = new float[size];
             ringPos = 0;
@@ -410,32 +411,27 @@ namespace NeoBuzz.Analyzer
             else for (int k = 0; k <= half; k++) average[k] += alpha * (frame[k] - average[k]);
             frames++;
 
-            double running = 0;
-            for (int k = 0; k <= half; k++)
-            {
-                cumulative[k] = running;
-                running += average[k];
-            }
-            cumulative[half + 1] = running;
+            RunningSums(average, cumulative);
+            RunningSums(frame, frameCumulative);
 
             double dt = hop / (double)rate;
             for (int i = 0; i < ThirdCount; i++)
             {
-                float v = thirdLo[i] >= nyquist ? float.NegativeInfinity : (float)Spectrum.Db(Spectrum.Integrate(average, binHz, thirdLo[i], thirdHi[i]));
+                float v = thirdLo[i] >= nyquist ? float.NegativeInfinity : (float)Spectrum.Db(Integrate(average, cumulative, thirdLo[i], thirdHi[i]));
                 thirds[i] = v;
                 Hold(ref thirdsPeak[i], ref thirdsHold[i], v, dt);
             }
             for (int i = 0; i < CurvePoints; i++)
             {
-                float v = curveLo[i] >= nyquist ? float.NegativeInfinity : (float)Spectrum.Db(Integrate(curveLo[i], curveHi[i]));
+                float v = curveLo[i] >= nyquist ? float.NegativeInfinity : (float)Spectrum.Db(Integrate(average, cumulative, curveLo[i], curveHi[i]));
                 curve[i] = v;
                 Hold(ref curvePeak[i], ref curveHold[i], v, dt);
             }
 
             // The readings' bands over the last 3 s of frames (each frame on its own, not the average).
             int nn = Bands.Named.Length, nb = nn + ThirdCount, at0 = bandPos * nb;
-            for (int b = 0; b < nn; b++) bandFrames[at0 + b] = Spectrum.Integrate(frame, binHz, Bands.Named[b].Lo, Bands.Named[b].Hi);
-            for (int i = 0; i < ThirdCount; i++) bandFrames[at0 + nn + i] = thirdLo[i] >= nyquist ? 0 : Spectrum.Integrate(frame, binHz, thirdLo[i], thirdHi[i]);
+            for (int b = 0; b < nn; b++) bandFrames[at0 + b] = Integrate(frame, frameCumulative, Bands.Named[b].Lo, Bands.Named[b].Hi);
+            for (int i = 0; i < ThirdCount; i++) bandFrames[at0 + nn + i] = thirdLo[i] >= nyquist ? 0 : Integrate(frame, frameCumulative, thirdLo[i], thirdHi[i]);
             bandPos = bandPos + 1 == bandLength ? 0 : bandPos + 1;
             if (bandFilled < bandLength) bandFilled++;
             for (int b = 0; b < nb; b++)
@@ -449,19 +445,32 @@ namespace NeoBuzz.Analyzer
         }
 
         /// <summary>
-        /// Spectrum.Integrate over the average, from its running sums (the curve has 479 points;
-        /// the bars and bands use Spectrum.Integrate itself).
+        /// Spectrum.Integrate's sum (bin k covers (k ± ½)·binHz; bins straddling an edge count in
+        /// proportion) from running sums <paramref name="cum"/> of <paramref name="p"/>, so each band
+        /// costs the same whatever its width. Equal to Spectrum.Integrate within rounding.
         /// </summary>
-        double Integrate(double lo, double hi)
+        double Integrate(double[] p, double[] cum, double lo, double hi)
         {
             int last = half;
             double a = lo / binHz, b = Math.Min(hi / binHz, last + 0.5);
             if (b <= a) return 0;
             int k0 = Math.Max(0, (int)Math.Floor(a + 0.5)), k1 = Math.Min(last, (int)Math.Floor(b + 0.5));
-            if (k0 >= k1) return k0 == k1 ? average[k0] * Math.Clamp(Math.Min(b, k0 + 0.5) - Math.Max(a, k0 - 0.5), 0, 1) : 0;
-            double first = average[k0] * Math.Clamp(k0 + 0.5 - Math.Max(a, k0 - 0.5), 0, 1);
-            double end = average[k1] * Math.Clamp(Math.Min(b, k1 + 0.5) - (k1 - 0.5), 0, 1);
-            return first + end + Math.Max(0, cumulative[k1] - cumulative[k0 + 1]);
+            if (k0 >= k1) return k0 == k1 ? p[k0] * Math.Clamp(Math.Min(b, k0 + 0.5) - Math.Max(a, k0 - 0.5), 0, 1) : 0;
+            double first = p[k0] * Math.Clamp(k0 + 0.5 - Math.Max(a, k0 - 0.5), 0, 1);
+            double end = p[k1] * Math.Clamp(Math.Min(b, k1 + 0.5) - (k1 - 0.5), 0, 1);
+            return first + end + Math.Max(0, cum[k1] - cum[k0 + 1]);
+        }
+
+        /// <summary>cum[k] = p[0] + … + p[k − 1].</summary>
+        static void RunningSums(double[] p, double[] cum)
+        {
+            double running = 0;
+            for (int k = 0; k < p.Length; k++)
+            {
+                cum[k] = running;
+                running += p[k];
+            }
+            cum[p.Length] = running;
         }
 
         /// <summary>A held peak: follows rises at once, holds for the hold time, then falls at 20 dB/s (never below the value).</summary>

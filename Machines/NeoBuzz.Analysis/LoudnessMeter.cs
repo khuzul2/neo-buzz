@@ -191,16 +191,15 @@ namespace NeoBuzz.Analysis
         public int Process(float[] left, float[] right, int offset, int n)
         {
             int done = 0;
-            for (int i = offset, end = offset + n; i < end; i++)
+            while (n > 0)
             {
-                double l = kl.Process(left[i]);
-                stepSum += l * l;
-                if (right != null)
-                {
-                    double r = kr.Process(right[i]);
-                    stepSum += r * r;
-                }
-                if (++inStep == hop)
+                int m = Math.Min(n, hop - inStep);
+                stepSum += kl.SumOfSquares(left, offset, m);
+                if (right != null) stepSum += kr.SumOfSquares(right, offset, m);
+                offset += m;
+                n -= m;
+                inStep += m;
+                if (inStep == hop)
                 {
                     CompleteStep(right == null);
                     done++;
@@ -258,7 +257,8 @@ namespace NeoBuzz.Analysis
     /// <summary>
     /// True peak of a stream (BS.1770 Annex 2): the largest of the samples and of the 4×
     /// interpolated points between them, with Loudness.TruePeak's interpolator and its shortcut
-    /// (neighbourhoods that can't beat the peak are skipped). The points around a sample are known
+    /// (neighbourhoods that can't beat the peak are skipped, so <see cref="Peak"/> is exact while
+    /// a window's peak is exact within 6 dB of it). The points around a sample are known
     /// <see cref="Delay"/> samples after it arrives; <see cref="Flush"/> ends a signal as the
     /// batch does (silence after it).
     /// </summary>
@@ -336,7 +336,9 @@ namespace NeoBuzz.Analysis
             var h = history;
             double near = Math.Max(Math.Max(Math.Abs(h[start + 12]), Math.Abs(h[start + 11])),
                 Math.Max(Math.Abs(h[start + 13]), Math.Abs(h[start + 10])));
-            if (2 * near < windowPeak) return;   // as Loudness.TruePeak: can't beat the peak so far
+            // As Loudness.TruePeak: skip what can't beat the peak so far (the window's, or since the
+            // reset). The maximum stays exact; a window more than 6 dB under it may read its samples' peak.
+            if (2 * near < Math.Max(windowPeak, peak)) return;
             for (int p = 0; p < Loudness.Phases - 1; p++)
             {
                 double s = Dot(h, start, p * Taps);
