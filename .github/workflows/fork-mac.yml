@@ -1,0 +1,64 @@
+name: Fork Mac
+
+# The portable parts on Apple silicon (docs/specs/mac-engine.md M4), ahead of the Mac engine
+# itself: the Session View core, the agent server's core and the Neo machines' DSP measurements
+# run on macos-15 (arm64), and the PortAudio binding runs a stream through CoreAudio. Catches
+# arm64 numerical drift in the machines early (mac-engine.md §5).
+#
+# macOS minutes cost about 10× Linux on a private repo: PRs into main that touch portable code,
+# and by hand. Never on every push.
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Machines/**'
+      - 'ReBuzz/Platform/**'
+      - 'ReBuzz/Core/Session/**'
+      - 'ReBuzz.Agent/**'
+      - 'ReBuzz.SessionTests/**'
+      - 'ReBuzz.AgentTests/**'
+      - 'NeoBuzz.MachineTests/**'
+      - '.github/workflows/fork-mac.yml'
+  workflow_dispatch:
+
+jobs:
+  portable-tests:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    # PortAudio from Homebrew (/opt/homebrew/lib, which the engine's resolver searches). The
+    # runner has no sound card, but CoreAudio offers "Apple Virtual Sound Device" and a "Null
+    # Audio Device", so a stream opens and runs in real time.
+    - name: PortAudio
+      run: brew install portaudio
+
+    - name: Session View core and platform seams
+      run: dotnet test ReBuzz.SessionTests --logger "console;verbosity=normal" 2>&1 | tee test.log
+
+    - name: Agent server core
+      if: always()
+      run: dotnet test ReBuzz.AgentTests --logger "console;verbosity=normal" 2>&1 | tee agent-test.log
+
+    - name: Machine DSP tests (arm64)
+      if: always()
+      env:
+        MEASUREMENTS_DIR: ${{ github.workspace }}/measurements
+      run: dotnet test NeoBuzz.MachineTests --logger "console;verbosity=normal" 2>&1 | tee machine-test.log
+
+    - name: Summary
+      if: always()
+      run: |
+        for f in test.log agent-test.log machine-test.log; do
+          [ -f "$f" ] || continue
+          total=$(grep -E "^\s*Total tests:" "$f" | tail -1 | sed 's/[^0-9]//g')
+          passed=$(grep -E "^\s*Passed:" "$f" | tail -1 | sed 's/[^0-9]//g')
+          failed=$(grep -E "^\s*Failed:" "$f" | tail -1 | sed 's/[^0-9]//g')
+          echo "::notice title=$f::total ${total:-?}, passed ${passed:-?}, failed ${failed:-0}"
+          grep -E "^\s+Failed " "$f" | head -20 | while read -r line; do echo "::error title=$f::$line"; done
+        done

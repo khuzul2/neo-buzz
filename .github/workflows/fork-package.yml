@@ -49,6 +49,7 @@ jobs:
     # The C++ projects target v145 (VS 2026). build.ps1 falls back to v143 when the
     # runner image only has VS 2022.
     - name: Build and package
+      id: build
       shell: pwsh
       env:
         QUICK: ${{ inputs.quick }}
@@ -105,6 +106,37 @@ jobs:
       timeout-minutes: 10
       shell: pwsh
       run: ./tools/ci-test-summary.ps1 TestResults/tests.trx
+
+    # The agent server's evaluation (docs/specs/mcp-server.md §10, A6): ReBuzz.AgentEval drives the
+    # built ReBuzz.exe --agent over MCP stdio, as a client does: the scripted checks, then each task's
+    # setup, scripted reference solution and score. Runs in quick and full builds alike (the Neo
+    # machines are part of the solution). Fails on a regression against eval/baseline.json; the
+    # results are in the step summary, as annotations, and in the eval-results artifact.
+    - name: Agent evaluation
+      if: (success() || failure()) && steps.build.outcome == 'success'
+      timeout-minutes: 15
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
+        dotnet build ReBuzz.AgentEval -c Release -nologo -v:q
+        if ($LASTEXITCODE -ne 0) { throw 'ReBuzz.AgentEval did not build' }
+        dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll run --exe $exe.FullName --out eval-out --baseline eval/baseline.json *>&1 | Tee-Object -FilePath eval.log
+        exit $LASTEXITCODE
+
+    - name: Upload evaluation results
+      if: always() && hashFiles('eval-out/eval-results.json') != ''
+      uses: actions/upload-artifact@v4
+      with:
+        name: eval-results
+        path: |
+          eval-out/*.json
+          eval-out/*.md
+          eval-out/tasks/**/*.md
+          eval-out/tasks/**/*.bmxml
+          eval-out/tasks/**/*.wav
+          eval.log
+        if-no-files-found: warn
 
     # Screenshots rendered by UI tests, force-pushed as a single commit to the ci-artifacts
     # branch: viewable in the repo (and fetchable with git) without downloading artifacts.
