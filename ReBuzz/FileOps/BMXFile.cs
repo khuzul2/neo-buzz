@@ -438,7 +438,9 @@ namespace ReBuzz.FileOps
                 }
 
                 // If editor and missing, replace with default
-                if (machineDLL.IsMissing && machineProto.Hidden)
+                // Fork (mac-engine.md M2): unless there's no default either (rebuzz-headless off
+                // Windows). Then the editor stays as a placeholder that keeps its data.
+                if (machineDLL.IsMissing && machineProto.Hidden && HasDefaultPatternEditor(buzz))
                 {
                     if (!buzz.Gear.HasSameDataFormat(machineLibrary, buzz.DefaultPatternEditor))
                     {
@@ -503,6 +505,12 @@ namespace ReBuzz.FileOps
                         AddGroup(machineProto, machineNew, 1);
                         AddGroup(machineProto, machineNew, 2);
                         machineNew.MachineDLL.MachineInfo.Type = (MachineType)type;
+
+                        // Fork (mac-engine.md M2): a placeholder keeps its tracks' values (the track
+                        // group came without its track count, so they saved as no tracks) and the
+                        // song's attributes (CopyAttributes copies only onto a machine's own).
+                        machineNew.ParameterGroupsList[2].TrackCount = tracks;
+                        KeepAttributes(machineProto.AttributesList.Select(a => (a.Name, a.Value)), machineNew);
                     }
                     machines[j] = machineNew;
 
@@ -659,6 +667,36 @@ namespace ReBuzz.FileOps
                     paramtersTo[i].SetValue(track, paramtersFrom[i].GetValue(track));
                 }
             }
+        }
+
+        // Fork (mac-engine.md M2): whether the default pattern editor is installed. Off Windows it
+        // isn't (the Modern Pattern Editor is WPF).
+        internal static bool HasDefaultPatternEditor(ReBuzzCore buzz) =>
+            buzz.DefaultPatternEditor != null && buzz.MachineDLLs.ContainsKey(buzz.DefaultPatternEditor);
+
+        // Fork (mac-engine.md M2): a machine without an editor whose patterns kept the built-in
+        // editor's contents (a host without a pattern editor). All its patterns stay the built-in
+        // editor's when the song is saved.
+        internal static bool KeepsBuiltInPatterns(MachineCore machine) =>
+            machine.EditorMachine == null && machine.PlaceholderEditor == null && machine.PatternsList.Any(p => p.BuiltInData != null);
+
+        // Fork (mac-engine.md M2): links a machine to its pattern editor. One that isn't installed
+        // (only when there's no default to replace it) is a placeholder the engine mustn't drive,
+        // so it is kept as the machine's PlaceholderEditor instead.
+        internal static void SetEditor(MachineCore machine, MachineCore editor)
+        {
+            if (editor.DLL.IsMissing)
+                machine.PlaceholderEditor = editor;
+            else
+                machine.EditorMachine = editor;
+        }
+
+        // Fork (mac-engine.md M2): a placeholder (a missing machine) has no attributes of its own,
+        // so it takes the song's as they are.
+        internal static void KeepAttributes(IEnumerable<(string Name, int Value)> attributes, MachineCore placeholder)
+        {
+            foreach (var (name, value) in attributes)
+                placeholder.AttributesList.Add(new AttributeCore(placeholder) { Name = name, Value = value });
         }
 
         internal static void AddGroup(MachineCore machineFrom, MachineCore machineTo, int group)
@@ -855,25 +893,20 @@ namespace ReBuzz.FileOps
 
                 foreach (MachineCore machine in machines)
                 {
-                    List<Tuple<string, int>> patternsAndRows = new List<Tuple<string, int>>();
                     ushort patterns = ReadUShort(fs);
                     ushort tracks = ReadUShort(fs);
 
-                    // Use this to convert built in pattern editor data to PXP
-                    MemoryStream msConvertToPXP = new MemoryStream();
-                    WriteByte(msConvertToPXP, 3);                               // Write PXP Version
-                    WriteInt(msConvertToPXP, patterns);                         // Write pattern count
+                    // Fork (mac-engine.md M2): each pattern's contents are read once (BuiltInPattern),
+                    // then converted to PXP for the pattern editor as before, or kept on the pattern
+                    // when there's no editor to take them.
+                    var contents = new List<(string Name, BuiltInPattern Data)>();
+                    Func<int, int> read = size => size == 1 ? ReadByte(fs) : size == 2 ? ReadUShort(fs) : 0;
 
                     for (int j = 0; j < patterns; j++)
                     {
                         string name = ReadString(fs);
                         ushort rows = ReadUShort(fs);
-
-                        // We only use name and rows for non-built in editors. Read other stuff from the file to convert to PXP
-                        patternsAndRows.Add(new Tuple<string, int>(name, rows));
-
-                        WriteString(msConvertToPXP, name);                      // Write pattern name
-                        WriteInt(msConvertToPXP, 4);                            // Write rows per beat
+                        var data = new BuiltInPattern();
 
                         // ----
                         // Rest of the code used by built in buzz PE. We convert the data to PXP format
@@ -898,48 +931,30 @@ namespace ReBuzz.FileOps
                             var sourceMachine = machines[sourceMachineIndex];
                             var conn = machine.AllInputs.FirstOrDefault(mc => mc.Source == sourceMachine);
 
+                            var ampPan = new ushort[rows * 2];
+                            for (int k1 = 0; k1 < rows * 2; k1++)
+                            {
+                                ampPan[k1] = ReadUShort(fs);
+                            }
+
+                            // If conn is null the connection was saved, but not successfully reconnected. Just skip it.
                             if (conn != null)
                             {
-                                List<PatternEvent> ampEvents = new List<PatternEvent>();
-                                List<PatternEvent> panEvents = new List<PatternEvent>();
-                                for (int k1 = 0; k1 < rows; k1++)
-                                {
-                                    ushort ampvalue = ReadUShort(fs);
-                                    ushort panvalue = ReadUShort(fs);
-
-                                    if (ampvalue != 65535)
-                                    {
-                                        ampEvents.Add(new PatternEvent(k1 * PatternEvent.TimeBase, ampvalue));
-                                    }
-                                    if (panvalue != 65535)
-                                    {
-                                        panEvents.Add(new PatternEvent(k1 * PatternEvent.TimeBase, panvalue));
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                // If we come here the connection was saved, but not successfully reconnected.
-                                // Just skip it.
-                                for (int k1 = 0; k1 < rows; k1++)
-                                {
-                                    ushort ampvalue = ReadUShort(fs);
-                                    ushort panvalue = ReadUShort(fs);
-                                }
+                                data.Inputs.Add(new BuiltInPattern.Input { Source = sourceMachine, AmpPan = ampPan });
                             }
                         }
-
-                        int numberOfColumns = machine.ParameterGroups[1].Parameters.Count + machine.ParameterGroups[2].Parameters.Count * tracks;
-                        WriteInt(msConvertToPXP, numberOfColumns);              // Write number of columns (global + tracks)
 
                         // Global
-                        ReadTrack(machine, 1, 0, rows, msConvertToPXP);
+                        data.Global = BuiltInPattern.ReadRows(read, machine, 1, rows);
 
                         // Tracks
+                        data.Tracks = new int[tracks][][];
                         for (int l = 0; l < tracks; l++)
                         {
-                            ReadTrack(machine, 2, l, rows, msConvertToPXP);
+                            data.Tracks[l] = BuiltInPattern.ReadRows(read, machine, 2, rows);
                         }
+
+                        contents.Add((name, data));
                     }
 
                     // Don't import Master patterns
@@ -949,75 +964,28 @@ namespace ReBuzz.FileOps
                     }
 
                     // Create patterns
-                    foreach (var nameRow in patternsAndRows)
+                    int first = machine.PatternsList.Count;
+                    foreach (var (name, data) in contents)
                     {
-                        //if (!machine.DLL.IsMissing)
-                        {
-                            machine.CreatePattern(nameRow.Item1, nameRow.Item2);
-                        }
+                        machine.CreatePattern(name, data.Global.Length);
                     }
 
                     // Does machine use built in editor?
                     if (builtInPeDictionary.ContainsKey(machine.Name) && patterns > 0)
                     {
-                        byte[] data = msConvertToPXP.ToArray();
                         // Create PXP compatible editor and input converted data
-                        buzz.CreateEditor(machine, buzz.DefaultPatternEditor, data);
+                        buzz.CreateEditor(machine, buzz.DefaultPatternEditor, BuiltInPattern.ToPXP(machine, contents));
+
+                        // Fork (mac-engine.md M2): no pattern editor here, so the patterns keep their contents.
+                        if (machine.EditorMachine == null)
+                        {
+                            for (int j = 0; j < contents.Count && first + j < machine.PatternsList.Count; j++)
+                            {
+                                machine.PatternsList[first + j].BuiltInData = contents[j].Data;
+                            }
+                        }
                     }
                 }
-            }
-
-            return true;
-        }
-
-        private bool ReadTrack(MachineCore machine, int group, int track, int rows, MemoryStream msConvertToPXP)
-        {
-            Dictionary<int, List<PatternEvent>> columnEventsDictionary = new Dictionary<int, List<PatternEvent>>();
-            int columnCount = machine.ParameterGroups[group].Parameters.Count;
-
-            for (int i = 0; i < columnCount; i++)
-            {
-                columnEventsDictionary[i] = new List<PatternEvent>();
-            }
-
-            for (int i = 0; i < rows; i++)
-            {
-                for (int j = 0; j < machine.ParameterGroups[group].Parameters.Count; j++)
-                {
-                    List<PatternEvent> events = columnEventsDictionary[j];
-                    ParameterCore param = machine.ParameterGroupsList[group].ParametersList[j];
-
-                    int value = 0;
-                    int typeSize = param.GetTypeSize();
-                    if (typeSize == 1)
-                        value = ReadByte(fs);
-                    else if (typeSize == 2)
-                        value = ReadUShort(fs);
-
-                    if (value != param.NoValue)
-                        events.Add(new PatternEvent(i * PatternEvent.TimeBase, value));
-                }
-            }
-
-            // Convert to PXP data
-            int index = group == 1 ? 0 : machine.ParameterGroups[1].Parameters.Count;
-            for (int i = 0; i < columnCount; i++)
-            {
-                WriteString(msConvertToPXP, machine.Name);              // Name
-                WriteInt(msConvertToPXP, index);                        // Parameter Index
-                WriteInt(msConvertToPXP, track);                        // Track
-                WriteByte(msConvertToPXP, 0);                           // Bool graphical
-
-                var columnEvents = columnEventsDictionary[i];
-                int eventCount = columnEvents.Count;
-                WriteInt(msConvertToPXP, eventCount);                   // Number of events in Column
-                for (int j = 0; j < eventCount; j++)
-                {
-                    var pe = columnEvents[j];
-                    WriteInt(msConvertToPXP, pe.Time / PatternEvent.TimeBase);
-                    WriteInt(msConvertToPXP, pe.Value);
-                }
-                index++;
             }
 
             return true;
@@ -1066,7 +1034,7 @@ namespace ReBuzz.FileOps
                                 else
                                 {
                                     var editor = machines[patternEditorIndex];
-                                    machine.EditorMachine = editor;
+                                    SetEditor(machine, editor);     // fork (mac-engine.md M2)
                                 }
                             }
                         }
@@ -2106,10 +2074,12 @@ namespace ReBuzz.FileOps
 
                         if (conn != null)
                         {
+                            // Fork (mac-engine.md M2): a pattern that kept its built-in contents writes its input columns back.
+                            var builtIn = pattern.BuiltInData;
                             for (int k1 = 0; k1 < rows; k1++)
                             {
-                                WriteUShort(ms, 65535);
-                                WriteUShort(ms, 65535);
+                                WriteUShort(ms, builtIn != null ? builtIn.AmpPanAt(sourceMachine, 2 * k1) : (ushort)65535);
+                                WriteUShort(ms, builtIn != null ? builtIn.AmpPanAt(sourceMachine, 2 * k1 + 1) : (ushort)65535);
                             }
                         }
                         else
@@ -2142,19 +2112,22 @@ namespace ReBuzz.FileOps
         private bool WriteTrack(MemoryStream ms, MachineCore machine, PatternCore Pattern, int group, int track, int rows)
         {
             // We don't use these so write no values
+            // Fork (mac-engine.md M2): except a pattern's kept built-in contents (BuiltInData).
+            var builtIn = Pattern.BuiltInData;
             for (int i = 0; i < rows; i++)
             {
                 List<PatternEvent> events = new List<PatternEvent>();
                 for (int j = 0; j < machine.ParameterGroups[group].Parameters.Count; j++)
                 {
                     ParameterCore param = machine.ParameterGroupsList[group].ParametersList[j];
+                    int value = builtIn != null ? builtIn.ValueAt(group, track, i, j, param) : param.NoValue;
 
                     //int value = 0;
                     int typeSize = param.GetTypeSize();
                     if (typeSize == 1)
-                        WriteByte(ms, (byte)param.NoValue);
+                        WriteByte(ms, (byte)value);
                     else if (typeSize == 2)
-                        WriteUShort(ms, (ushort)param.NoValue);
+                        WriteUShort(ms, (ushort)value);
 
                     //if (value != param.NoValue)
                     //    events.Add(new PatternEvent(i * PatternEvent.TimeBase, value));
@@ -2178,8 +2151,13 @@ namespace ReBuzz.FileOps
                 var machine = machines[i];
                 ushort numPatterns = (ushort)machine.Patterns.Count;
 
-                var editor = machine.EditorMachine;
+                // Fork (mac-engine.md M2): a placeholder editor is still the patterns' editor, and
+                // patterns that kept built-in contents stay the built-in editor's (65535), so a host
+                // with a pattern editor converts them as it does for an old song.
+                var editor = machine.EditorMachine ?? machine.PlaceholderEditor;
                 int editorIndex = buzz.SongCore.MachinesList.IndexOf(editor);
+                if (editorIndex == -1 && KeepsBuiltInPatterns(machine))
+                    editorIndex = 65535;
                 if (editorIndex == -1)
                     numPatterns = 0; // Ensure editor is correct. Should not go here.
 
@@ -2803,7 +2781,9 @@ namespace ReBuzz.FileOps
 
         public static void WriteString(MemoryStream ms, string str)
         {
-            byte[] buffer = Encoding.ASCII.GetBytes(str);
+            // Fork (mac-engine.md M2): Latin-1, as ReadString reads a byte per character. ASCII
+            // wrote '?' for every byte above 127, so names such as "Attack time (µs)" changed.
+            byte[] buffer = Encoding.Latin1.GetBytes(str);
             ms.Write(buffer, 0, buffer.Length);
             WriteByte(ms, 0);
         }

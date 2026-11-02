@@ -67,6 +67,13 @@ namespace ReBuzz.Core
         /// </summary>
         internal volatile bool IsDeleted;
 
+        /// <summary>
+        /// Fork (mac-engine.md M2): the built-in pattern editor's contents of an old song's pattern,
+        /// kept when no pattern editor took them (a host without one), so the song saves back with
+        /// them. Null otherwise. See <see cref="FileOps.BuiltInPattern"/>.
+        /// </summary>
+        internal FileOps.BuiltInPattern BuiltInData;
+
         // Fork (0.6.3): copy on write. The audio thread walks the list without a lock; a change
         // makes a new list, so a walk in progress never sees one inserted or removed under it.
         volatile List<IPatternColumn> columns;

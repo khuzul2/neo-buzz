@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | In progress. M0 and the PortAudio binding are merged (#43); M6's precise waiter is in PR (#44). M1 is built: `rebuzz-headless` runs on Linux with the portable Neo machines, stacked on the flip. M2 is partly done (§6) |
+| Status | In progress. M0 and the PortAudio binding are merged (#43); M6's precise waiter is in PR (#44). M1 is built: `rebuzz-headless` runs on Linux with the portable Neo machines, stacked on the flip. M2 is partly done (§6): songs with native machines open and save back headless (#48) |
 | Scope | cross-platform.md §5.2 P2: the engine running headless on macOS (arm64), with real audio and MIDI, and the MCP server on stdio. No UI: the Avalonia studio is P3 |
 | Exit | The A6 scripted suite passes on `macos-15`; Neo renders null-test against the Windows package at ≤ −100 dBFS; a 1-hour play test at 128 samples has no dropouts (run by hand on a Mac) |
 | Related | cross-platform.md (decisions D1–D5, §3.2 the pieces), engine-split.md (P1), mcp-server.md §10 (the A6 suite) |
@@ -103,14 +103,53 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
 
   With #40 merged, the whole scripted suite passes against `rebuzz-headless` on Linux, with the same baseline as Windows. Linux CI runs it ("Agent evaluation on Linux"), which covers M3's first check. The null test against Windows renders is still to come.
 
-**Native machines as placeholders: they open, but the round trip loses data.**
-- **Opening works.** Ten of the first twelve buzztrax demo songs (`ExternalMachines/source/**/*.bmx`) open headless on Linux. Their native machines show as missing machines with their connections.
-- **Two "super old" BMX files don't open.** Their parameter data can't be parsed without the machine DLL, the same as on Windows without those machines.
-- **Saving back loses data, so this is the open part of M2.**
-  - An old demo saved as BMX, reopened and saved again changes size (8,178 → 9,872 → 9,216 bytes).
-  - A BMXML round trip drops placeholder machines' parameter values.
-  - Fix: a placeholder carries its machine's section as loaded (parameters, data, attributes, pattern columns) and writes it back unchanged.
-  - Check whether Windows with missing machines does the same, since it's the same code.
+**Native machines as placeholders: they open and save back what the song says about them** (PR #48).
+- **Opening.** 35 of the 36 demo songs under `ExternalMachines/source` open headless on Linux, 11 of the first 12. Their native machines are missing machines, with their connections.
+  - One "super old" BMX doesn't open: `FSM_Kick_Demo.bmx` has no PARA section, so its parameters can't be read without the machine's DLL. Windows without the machine is the same.
+- **What saving lost, and why.** The code is the engine's, so Windows lost the same with missing machines (except the pattern contents, below).
+  - BMX: a placeholder's track values and its attributes. Its track group came from PARA with no track count, so it saved as no tracks (8,178 → 9,872 → 9,216 bytes). Attributes were copied only onto a machine's own, and a missing machine has none.
+  - BMXML: all of a placeholder's parameter values and track counts (its groups were rebuilt from the XML without them), its attributes, and its pattern columns (skipped for missing machines).
+  - Old songs' pattern contents: the built-in editor's, in PATT. They go to the default pattern editor, converted to its PXP format. There is none off Windows, so they were dropped, the Master's tempo changes included. Windows has the editor and kept them.
+  - A song with a pattern editor machine that isn't installed, and no default to replace it, didn't open: a song from Windows ReBuzz, off Windows.
+  - For every machine:
+    - BMX wrote names as ASCII, so "µs" became "?s";
+    - BMXML encoded a missing machine's parameter descriptions once more on each save;
+    - BMXML reloaded a machine's inputs in their sources' order, and wrote an empty channel set (BMX connections have none) that loads as `[0]`;
+    - a wave with the envelope flag didn't save as BMXML at all, and BMXML waves lost their last sample on each open.
+- **The fix.**
+  - A placeholder keeps its tracks, values and attributes in both formats, and BMXML keeps its pattern columns.
+  - Built-in pattern contents that no editor takes stay on the pattern (`FileOps/BuiltInPattern.cs`, `PatternCore.BuiltInData`):
+    - BMX writes them back into PATT, and XTAP keeps the patterns the built-in editor's, so Windows converts them as it does for an old song;
+    - BMXML writes them as the pattern's `BuiltInPattern` element; older readers skip it (checked: the previous build opens these files);
+    - the PXP conversion gives the same bytes as before (checked against a port of the old code, for the 29 machines with patterns in the first 12 songs).
+  - A missing pattern editor with no default stays as a hidden placeholder with its data (`MachineCore.PlaceholderEditor`). The engine doesn't drive it, and the song saves back with it as the machine's editor.
+  - For every machine: BMX strings in Latin-1, as they're read; BMXML connections in input order, an empty channel set written as it loads, descriptions decoded once; `WaveFlags.Envelope`; the last sample.
+- **Checked by `tools/song-roundtrip.py`**, which Linux CI runs. The first save rewrites a song in ReBuzz's own format (its sections, uncompressed waves, its build string), and keeps every machine's values, data, attributes, tracks, pattern contents, connections and sequences. Later saves are identical:
+
+  | Song (first 12) | Original | BMX A = B | BMXML A = B (but stamps) |
+  |---|---:|---:|---:|
+  | CyanPhase_DTMF-1_Demo | 3,904 | 4,989 | 45,792 |
+  | Elak_Dist2 | 2,172 | 2,601 | 20,127 |
+  | Elak_SVF | 1,606 | 2,055 | 17,197 |
+  | elenzil_ampmod | 5,845 | 7,819 | 92,920 |
+  | FSM_Infector_Demo | 378,333 | 380,570 | 699,550 |
+  | FSM_Kick_Demo | 1,277 | doesn't open | – |
+  | FrequencyUnknown_O-Delay_delaytest | 109,764 | 324,755 | 890,269 |
+  | FrequencyUnknown_O-Delay_sparkle | 1,844 | 2,428 | 25,010 |
+  | Jeskola_NiNjA_dElaY | 73,043 | 73,440 | 123,867 |
+  | MadBrain_Dynamite6_Demo | 59,235 | 62,173 | 251,063 |
+  | Oomek_Aggressor_ctrack | 1,356 | 1,597 | 13,900 |
+  | Oomek_Aggressor_demo | 8,178 | 10,463 | 115,388 |
+
+  - The other 24 demo songs pass too.
+  - A Windows-style song, with a Modern Pattern Editor machine per machine and an automation column, round-trips in both formats with its editors kept as placeholders (synthetic editor data).
+- **Installed machines don't change.** A Neo song saved by the previous build and by this one gives the same BMXML. BMX differs only in a name that isn't ASCII: Neo Poly's "Ring 1×2" was written "Ring 1?2", so it no longer matched on reload.
+- **Not run on Windows yet:**
+  - a song saved here, opened in ReBuzz.exe: its built-in contents should convert into the Modern Pattern Editor as the original song's do;
+  - the same for a BMXML `BuiltInPattern`;
+  - a real Windows song with Modern Pattern Editor data, opened here;
+  - ReBuzzTests' song save and load tests.
+- **Left:** deleting a machine here leaves its placeholder editor behind. It is hidden and unused, and saves with the song.
 
 **M3–M7:** as in §3.
 

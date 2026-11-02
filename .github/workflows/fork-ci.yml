@@ -104,6 +104,15 @@ jobs:
         dotnet build ReBuzz.AgentEval/ReBuzz.AgentEval.csproj -c Release -nologo -v:q
         dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll run --exe ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless --out "$RUNNER_TEMP/eval" --baseline eval/baseline.json
 
+    # Songs with missing machines (mac-engine.md M2): off Windows every native machine is a
+    # placeholder, which must save back what the song says about it. The demo songs open, save as
+    # BMX and BMXML, reopen and save again: the two saves are identical, and the first keeps every
+    # machine's values, data, attributes, tracks and pattern contents. So does a Windows-style song
+    # whose pattern editor machines are missing too.
+    - name: Songs with placeholders round-trip
+      if: always()
+      run: python3 tools/song-roundtrip.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/roundtrip"
+
     - name: Annotate test log
       if: failure()
       shell: pwsh
