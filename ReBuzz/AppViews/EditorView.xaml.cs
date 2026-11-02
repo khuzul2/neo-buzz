@@ -147,7 +147,7 @@ namespace ReBuzz
                 if (editor != null)
                 {
                     var patternEditorControl = ReBuzz.MachineManager.GetPatternEditorControl(editor);
-                    editorBorder.Children.Remove(patternEditorControl);
+                    editorBorder.Children.Remove(patternEditorControl as UIElement);
                 }
             };
 
