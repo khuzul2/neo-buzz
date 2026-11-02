@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Mastering — Streaming (−1 dBTP)">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="160" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="110" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="150" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Transparent">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="140" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="110" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="1239" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="450" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Loud">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="200" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="110" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="1088" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="250" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Dense Electronic">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="220" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="115" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="952" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="50" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — CD (−0.3 dBTP)">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="160" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="117" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="150" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Broadcast (−2 dBTP)">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="140" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="100" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="1151" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="250" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bus — Mix Bus Safety">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="120" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="110" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="849" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bus — Drum Peak Catcher">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="150" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="90" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="651" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="50" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Track — Vocal Peaks">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="180" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="60" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="849" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Track — Clean Bass">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="160" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="90" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="1239" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="450" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Safety — Brickwall (−0.1 dBTP)">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="120" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="119" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="849" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Creative — Smash">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="240" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="110" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>
