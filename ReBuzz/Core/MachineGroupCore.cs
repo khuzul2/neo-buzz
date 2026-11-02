@@ -41,11 +41,11 @@ namespace ReBuzz.Core
         {
             if (d == MachineGroupDialog.Rename)
             {
-                RenameMachineWindow rmw = new RenameMachineWindow("Rename Groups", Name, false);
-                rmw.SetStartUpLocation(x, y);
-                if (rmw.ShowDialog() == true)
+                // Fork (engine-split.md S3): the UI host asks.
+                var asked = (Global.Buzz as ReBuzzCore)?.UiHost?.AskName("Rename Groups", Name, x, y);
+                if (asked != null)
                 {
-                    var newName = rmw.tbName.Text.Trim();
+                    var newName = asked.Trim();
                     var song = Global.Buzz.Song as SongCore;
                     newName = song.GetNewGroupName(newName);
                     song.RenameMachineGroupUndoable(this, newName);

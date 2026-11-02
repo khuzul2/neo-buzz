@@ -2,7 +2,6 @@
 using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Common.Settings;
 using BuzzGUI.Interfaces;
-using BuzzGUI.MachineView;
 using ReBuzz.Core;
 using ReBuzz.Core.Actions.GraphActions;
 using ReBuzz.MachineManagement;
@@ -1724,7 +1723,7 @@ namespace ReBuzz.FileOps
                             var machine = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == name);
                             if (machine != null)
                             {
-                                machine.OpenWindowedGUI(new System.Windows.Rect(leftPos, topPos, RightPos - leftPos, bottomPos - topPos));
+                                machine.OpenWindowedGUI(new WindowPlacement(leftPos, topPos, RightPos - leftPos, bottomPos - topPos));
                             }
                         }
 
@@ -1738,7 +1737,7 @@ namespace ReBuzz.FileOps
                             var machine = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == name);
                             if (machine != null)
                             {
-                                machine.OpenParameterWindow(new System.Windows.Rect(leftPos, topPos, RightPos - leftPos, bottomPos - topPos));
+                                machine.OpenParameterWindow(new WindowPlacement(leftPos, topPos, RightPos - leftPos, bottomPos - topPos));
                             }
                         }
                     }
@@ -2591,11 +2590,13 @@ namespace ReBuzz.FileOps
             foreach (var m in buzz.Song.Machines)
             {
                 var machine = m as MachineCore;
-                var pw = machine.ParameterWindow;
-                var mGUI = machine.MachineGUIWindow;
+                // Fork (engine-split.md S3): the UI host knows the windows.
+                var windows = machine.GetWindowState();
+                var pw = windows.ParameterWindow;
+                var mGUI = windows.GuiWindow;
 
-                bool parameterWindowVisible = pw != null && pw.Visibility == System.Windows.Visibility.Visible;
-                bool guiWindowVisible = mGUI != null && mGUI.Visibility == System.Windows.Visibility.Visible;
+                bool parameterWindowVisible = windows.ParameterWindowVisible;
+                bool guiWindowVisible = windows.GuiWindowVisible;
 
                 if (parameterWindowVisible || guiWindowVisible)
                 {
@@ -2609,8 +2610,8 @@ namespace ReBuzz.FileOps
                     {
                         WriteInt(ms, (int)mGUI.Left);                                     // Left
                         WriteInt(ms, (int)mGUI.Top);                                      // Top
-                        WriteInt(ms, (int)(mGUI.Left + mGUI.ActualWidth));                  // Right
-                        WriteInt(ms, (int)(mGUI.Top + mGUI.ActualHeight));                  // Bottom
+                        WriteInt(ms, (int)(mGUI.Left + mGUI.Width));                        // Right
+                        WriteInt(ms, (int)(mGUI.Top + mGUI.Height));                        // Bottom
                     }
                     else
                     {
@@ -2624,8 +2625,8 @@ namespace ReBuzz.FileOps
                     {
                         WriteInt(ms, (int)pw.Left);                                     // Left
                         WriteInt(ms, (int)pw.Top);                                      // Top
-                        WriteInt(ms, (int)(pw.Left + pw.ActualWidth));                  // Right
-                        WriteInt(ms, (int)(pw.Top + pw.ActualHeight));                  // Bottom
+                        WriteInt(ms, (int)(pw.Left + pw.Width));                        // Right
+                        WriteInt(ms, (int)(pw.Top + pw.Height));                        // Bottom
                     }
                     else
                     {

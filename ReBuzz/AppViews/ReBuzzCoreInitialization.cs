@@ -1,8 +1,6 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
-using System.Windows.Controls;
-using System.Windows.Interop;
 using BuzzGUI.Common;
 using BuzzGUI.Common.Settings;
 using ReBuzz.Audio;
@@ -51,7 +49,7 @@ namespace ReBuzz.AppViews
 
             buzz.MachineViewHWND = machineViewHwnd;
             buzz.MainWindowHandle = buzz.MachineViewHWND;
-            Global.MachineViewHwndSource = HwndSource.FromHwnd(buzz.MachineViewHWND);
+            buzz.UiHost?.AttachMachineView(buzz.MachineViewHWND);   // fork (S3): was Global.MachineViewHwndSource
 
             buzz.StartEvents();
         }
@@ -73,7 +71,7 @@ namespace ReBuzz.AppViews
             Action onPatternEditorActivated,
             Action onSequenceEditorActivated,
             Action<string> onShowSettings,
-            Action<UserControl> onSetPatternEditorControl,
+            Action<object> onSetPatternEditorControl,
             Action<bool> onFullScreenChanged,
             Action<string> onThemeChanged)
         {
