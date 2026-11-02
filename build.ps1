@@ -300,7 +300,7 @@ if (-not $SkipManagedMachines) {
     if (Test-Path -LiteralPath $refDir) { Remove-Item -LiteralPath $refDir -Recurse -Force }
     New-Dir ([IO.Path]::Combine($refDir, 'Gear', 'Generators'))
     New-Dir ([IO.Path]::Combine($refDir, 'Gear', 'Effects'))
-    foreach ($asm in 'ReBuzz.dll', 'BuzzGUI.Interfaces.dll', 'BuzzGUI.Common.dll', 'NAudio.WinMM.dll') {
+    foreach ($asm in 'ReBuzz.dll', 'ReBuzz.Engine.dll', 'BuzzGUI.Interfaces.dll', 'BuzzGUI.Common.dll', 'NAudio.WinMM.dll') {
         $src = [IO.Path]::Combine($OutDir, $asm)
         if (Test-Path -LiteralPath $src) { Copy-Item -LiteralPath $src -Destination $refDir }
         else { Write-Warning "$asm not found in the ReBuzz build; machines that reference it will fail" }

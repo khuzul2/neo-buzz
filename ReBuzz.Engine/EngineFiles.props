@@ -1,0 +1,49 @@
+<Project>
+
+  <!--
+    Fork (docs/specs/engine-split.md §5, PR 10): the engine's source files, where they are.
+    ReBuzz.Engine.csproj compiles them (EngineSource); ReBuzz.csproj imports this file and leaves
+    them out, so each file is compiled once, into ReBuzz.Engine.dll.
+  -->
+
+  <PropertyGroup>
+    <EngineRoot>$(MSBuildThisFileDirectory)..\ReBuzz\</EngineRoot>
+  </PropertyGroup>
+
+  <!-- Engine folders (cross-platform.md §2.1 "Engine side"), plus the platform implementations
+       that are portable (ReBuzz/Platform). -->
+  <ItemGroup>
+    <EngineSource Include="$(EngineRoot)Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
+    <EngineSource Include="$(EngineRoot)Audio\**\*.cs" Link="Audio\%(RecursiveDir)%(Filename)%(Extension)" />
+    <EngineSource Include="$(EngineRoot)MachineManagement\**\*.cs" Link="MachineManagement\%(RecursiveDir)%(Filename)%(Extension)" />
+    <EngineSource Include="$(EngineRoot)FileOps\**\*.cs" Link="FileOps\%(RecursiveDir)%(Filename)%(Extension)" />
+    <EngineSource Include="$(EngineRoot)ManagedMachine\**\*.cs" Link="ManagedMachine\%(RecursiveDir)%(Filename)%(Extension)" />
+    <EngineSource Include="$(EngineRoot)NativeMachine\**\*.cs" Link="NativeMachine\%(RecursiveDir)%(Filename)%(Extension)" />
+    <EngineSource Include="$(EngineRoot)Midi\**\*.cs" Link="Midi\%(RecursiveDir)%(Filename)%(Extension)" />
+    <EngineSource Include="$(EngineRoot)Agent\**\*.cs" Link="Agent\%(RecursiveDir)%(Filename)%(Extension)" />
+    <EngineSource Include="$(EngineRoot)Platform\**\*.cs" Link="Platform\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <!-- They stay in ReBuzz.exe: XAML code-behind, the WPF implementations of the seams, the HWND
+       host of native editors, the app hosts of studio and headless mode, and the Windows audio,
+       MIDI and registry implementations (engine-split.md §2.2, stages 2 and 3). -->
+  <ItemGroup>
+    <EngineSource Remove="$(EngineRoot)**\*.xaml.cs" />
+    <EngineSource Remove="$(EngineRoot)Core\UserMessagesViaMessageBox.cs;$(EngineRoot)Core\WindowsGuiDispatcher.cs;
+                          $(EngineRoot)Core\FileNameChoiceThroughOpenFileDialog.cs;$(EngineRoot)Core\FileNameToSaveChoiceThroughSaveFileDialog.cs;
+                          $(EngineRoot)MachineManagement\WindowsKeyboard.cs" />
+    <EngineSource Remove="$(EngineRoot)NativeMachine\NativeEditorHost.cs;$(EngineRoot)Agent\StudioAgent.cs;$(EngineRoot)Agent\HeadlessAgent.cs" />
+    <EngineSource Remove="$(EngineRoot)Audio\Driver\AsioAudioDriver.cs;$(EngineRoot)Audio\Driver\WasapiAudioDriver.cs;$(EngineRoot)Audio\Driver\WindowsAudioDriverFactory.cs;
+                          $(EngineRoot)Midi\Midi2.cs;$(EngineRoot)Midi\MidiInDevice.cs;$(EngineRoot)Midi\MidiOutDevice.cs;$(EngineRoot)Midi\WindowsMidiBackend.cs;
+                          $(EngineRoot)Core\WindowsRegistry.cs;$(EngineRoot)Core\WindowsRegistryKey.cs" />
+  </ItemGroup>
+
+  <!-- Engine code outside the engine folders: helpers in ReBuzz/Common and engine start-up. -->
+  <ItemGroup>
+    <EngineSource Include="$(EngineRoot)Common\Utils.cs;$(EngineRoot)Common\BurstProtectionEngine.cs;$(EngineRoot)Common\MultimediaTimer.cs;
+                           $(EngineRoot)Common\ChildProcessTracker.cs;$(EngineRoot)Common\Interfaces\IMachineExtension.cs"
+                  Link="Common\%(RecursiveDir)%(Filename)%(Extension)" />
+    <EngineSource Include="$(EngineRoot)AppViews\ReBuzzCoreInitialization.cs" Link="AppViews\ReBuzzCoreInitialization.cs" />
+  </ItemGroup>
+
+</Project>

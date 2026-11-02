@@ -2,7 +2,7 @@ name: Fork CI
 
 # Fast checks for fork work:
 #  - session-tests: Session View engine unit tests, the agent server's core, the Neo
-#    machines' DSP measurements and the engine census ratchet (Linux, a few minutes)
+#    machines' DSP measurements and the engine's net10.0 build (Linux, a few minutes)
 #  - core-build: compiles ReBuzz.exe and its C# dependencies only (no C++ projects), and checks
 #    that the portable machine API is a subset of the Windows one
 # The full solution + package build is fork-package.yml.
@@ -58,15 +58,14 @@ jobs:
       if: always()
       run: dotnet build ReBuzzGUI/BuzzGUI.Common/BuzzGUI.Common.csproj -nologo -v:q
 
-    # Engine census ratchet (docs/specs/engine-split.md §5): the errors that keep the engine
-    # (ReBuzz.Engine.csproj) from compiling as plain net10.0 (no WPF) may only go down. A PR that
-    # removes some lowers experiments/engine-census/baseline.json with "census.py --check --update".
-    # The engine references the vendored Serilog, a submodule (engine-split.md S10).
-    - name: Engine census
+    # The engine (docs/specs/engine-split.md §5, PR 10): ReBuzz.Engine builds as plain net10.0,
+    # with no WPF and no Windows targeting; ReBuzz.exe references it. This replaced the census
+    # ratchet. The engine references the vendored Serilog, a submodule (engine-split.md S10).
+    - name: Engine (net10.0)
       if: always()
       run: |
         git submodule update --init --depth 1 3rdParty/serilog/serilog
-        python3 experiments/engine-census/census.py --check
+        dotnet build ReBuzz.Engine/ReBuzz.Engine.csproj -nologo -v:q
 
     - name: Annotate test log
       if: failure()

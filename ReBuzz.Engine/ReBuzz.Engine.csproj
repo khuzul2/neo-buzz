@@ -2,13 +2,11 @@
 
   <!--
     Fork (docs/specs/engine-split.md §5, cross-platform.md §5.2 P1): the engine as a plain net10.0
-    assembly. It compiles the engine files of ReBuzz where they are, by linking, against the
-    portable builds of BuzzGUI.Interfaces and BuzzGUI.Common. ("ReBuzz.Engine" is this managed
-    engine; ReBuzzEngine/ is the native host.)
-
-    It does NOT compile yet: until the seam PRs land, its errors are what the Linux CI ratchet
-    counts (experiments/engine-census/census.py in check mode, against baseline.json). It is
-    not in ReBuzz.sln and nothing references it; the last P1 PR flips ReBuzz.csproj onto it.
+    assembly, with no WPF and no Windows targeting. It compiles the engine files of ReBuzz where
+    they are (EngineFiles.props), against the portable builds of BuzzGUI.Interfaces and
+    BuzzGUI.Common. ReBuzz.exe references it and leaves those files out; on Windows the app ships
+    the Windows builds of the two libraries, which are supersets of the portable ones (§4.3).
+    Linux CI builds it. ("ReBuzz.Engine" is this managed engine; ReBuzzEngine/ is the native host.)
   -->
 
   <PropertyGroup>
@@ -21,56 +19,39 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
-    <NoWarn>$(NoWarn);CS0108;CS0114;CS0162;CS0168;CS0169;CS0219;CS0414;CS0618;CS0649;CS0067;CS8632;SYSLIB0011;SYSLIB0014</NoWarn>
-    <R>..\ReBuzz\</R>
+    <Platforms>AnyCPU;x64</Platforms>
+    <NoWarn>$(NoWarn);CS0108;CS0114;CS0162;CS0168;CS0169;CS0219;CS0414;CS0618;CS0649;CS0067;CS8632;SYSLIB0011;SYSLIB0014;CA1416</NoWarn>
   </PropertyGroup>
 
-  <!-- Engine folders (cross-platform.md §2.1 "Engine side"). -->
-  <ItemGroup>
-    <Compile Include="$(R)Core\**\*.cs" Link="Core\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="$(R)Audio\**\*.cs" Link="Audio\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="$(R)MachineManagement\**\*.cs" Link="MachineManagement\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="$(R)FileOps\**\*.cs" Link="FileOps\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="$(R)ManagedMachine\**\*.cs" Link="ManagedMachine\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="$(R)NativeMachine\**\*.cs" Link="NativeMachine\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="$(R)Midi\**\*.cs" Link="Midi\%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="$(R)Agent\**\*.cs" Link="Agent\%(RecursiveDir)%(Filename)%(Extension)" />
-  </ItemGroup>
+  <Import Project="EngineFiles.props" />
 
-  <!-- They stay in ReBuzz.exe: XAML code-behind, the WPF implementations of the seams, the HWND
-       host of native editors, the app hosts of studio and headless mode, and the Windows audio,
-       MIDI and registry implementations (engine-split.md §2.2, stages 2 and 3). -->
   <ItemGroup>
-    <Compile Remove="$(R)**\*.xaml.cs" />
-    <Compile Remove="$(R)Core\UserMessagesViaMessageBox.cs;$(R)Core\WindowsGuiDispatcher.cs;
-                     $(R)Core\FileNameChoiceThroughOpenFileDialog.cs;$(R)Core\FileNameToSaveChoiceThroughSaveFileDialog.cs;
-                     $(R)MachineManagement\WindowsKeyboard.cs" />
-    <Compile Remove="$(R)NativeMachine\NativeEditorHost.cs;$(R)Agent\StudioAgent.cs;$(R)Agent\HeadlessAgent.cs" />
-    <Compile Remove="$(R)Audio\Driver\AsioAudioDriver.cs;$(R)Audio\Driver\WasapiAudioDriver.cs;$(R)Audio\Driver\WindowsAudioDriverFactory.cs;
-                     $(R)Midi\Midi2.cs;$(R)Midi\MidiInDevice.cs;$(R)Midi\MidiOutDevice.cs;$(R)Midi\WindowsMidiBackend.cs;
-                     $(R)Core\WindowsRegistry.cs;$(R)Core\WindowsRegistryKey.cs" />
-  </ItemGroup>
-
-  <!-- Engine code outside the engine folders: helpers in ReBuzz/Common, the r8brain resampler
-       interop (in BuzzGUI.WaveformControl) and engine start-up. -->
-  <ItemGroup>
-    <Compile Include="$(R)Common\Utils.cs;$(R)Common\BurstProtectionEngine.cs;$(R)Common\MultimediaTimer.cs;
-                      $(R)Common\ChildProcessTracker.cs;$(R)Common\Interfaces\IMachineExtension.cs"
-             Link="Common\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="@(EngineSource)" />
+    <!-- The r8brain resampler interop (its own copy; BuzzGUI.WaveformControl compiles the same files). -->
     <Compile Include="..\ReBuzzGUI\BuzzGUI.WaveformControl\r8brain\*.cs" Link="r8brain\%(Filename)%(Extension)" />
-    <Compile Include="$(R)AppViews\ReBuzzCoreInitialization.cs" Link="AppViews\ReBuzzCoreInitialization.cs" />
-  </ItemGroup>
-
-  <!-- Build number and date (S10), read by Core/BuildInfo.cs; ReBuzz.csproj embeds them the same way. -->
-  <ItemGroup>
-    <EmbeddedResource Include="$(R)BuildNumber.txt" LogicalName="ReBuzz.BuildNumber.txt" Link="BuildNumber.txt" />
-    <EmbeddedResource Include="$(R)BuildDate.txt" LogicalName="ReBuzz.BuildDate.txt" Link="BuildDate.txt" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Portable builds (net10.0) of the machine API: engine-split.md §4. -->
-    <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" />
-    <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" />
+    <InternalsVisibleTo Include="ReBuzz" />
+    <InternalsVisibleTo Include="ReBuzzTests" />
+  </ItemGroup>
+
+  <!-- Build number and date (S10), read by Core/BuildInfo.cs. ReBuzz.exe's About box reads the
+       same files from its resources. -->
+  <ItemGroup>
+    <EmbeddedResource Include="$(EngineRoot)BuildNumber.txt" LogicalName="ReBuzz.BuildNumber.txt" Link="BuildNumber.txt" />
+    <EmbeddedResource Include="$(EngineRoot)BuildDate.txt" LogicalName="ReBuzz.BuildDate.txt" Link="BuildDate.txt" />
+  </ItemGroup>
+  <!-- The build date is stamped here (it was ReBuzz.csproj's pre-build step): the engine builds first. -->
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <PreBuildEvent>powershell -Command "((Get-Date).ToUniversalTime()).ToString('s') | Out-File '$(MSBuildProjectDirectory)\..\ReBuzz\BuildDate.txt'"</PreBuildEvent>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Portable builds (net10.0) of the machine API: engine-split.md §4. Not copied: the app
+         ships the Windows builds, which machines bind to. -->
+    <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" Private="false" />
+    <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" Private="false" />
     <ProjectReference Include="..\ReBuzz.Agent\ReBuzz.Agent.csproj" />
     <!-- The vendored Serilog (a submodule): net9.0 on Windows, net10.0 elsewhere (S10). -->
     <ProjectReference Include="..\3rdParty\serilog\serilog.csproj" />
