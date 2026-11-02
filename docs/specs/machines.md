@@ -183,13 +183,13 @@ Levels follow the library: plain RMS dB, so a full-scale sine reads −3 dB. A s
 
 | Criterion | Target | Measured |
 |---|---|---|
-| Pass-through | output = input bit for bit; latency 0 | MEAS_PASS |
-| Same numbers as the library | over whole signals (a 1 kHz tone, pink noise stepping by 10 dB, noise bursts with silences, a quarter-rate sine at 45°; in blocks of 256 and of 117): integrated loudness and the momentary and short-term maxima within 0.05 LU of `Loudness.Measure`, loudness range within 0.05 LU, true peak within 0.05 dB | MEAS_LIB |
-| A tone in its band | a 1 kHz sine at −20 dB RMS: −20 dB in its third octave, in the mid band and on the curve (±0.05 dB); two third octaves away, over 40 dB down | MEAS_TONE |
-| Bands | named bands within 0.5 dB of `Spectrum.Measure` (3 s of pink noise and tones); third octaves of pink noise within 0.5 dB, 100 Hz – 20 kHz | MEAS_BANDS |
-| Correlation | 1 for mono and −1 for anti-phase (±1e-9); 0 ± 0.02 for unrelated noise, width 1 ± 0.05 | MEAS_CORR |
-| Threads | no allocation while processing (parameter changes and a reset included); no torn snapshot with a writer and two readers (200,000 publishes) | MEAS_THREADS |
-| CPU | stereo at 48 kHz: under 2 % of real time on the CI runner (TieredCompilation off, as the other tests) | MEAS_CPU |
+| Pass-through | output = input bit for bit; latency 0 | bit for bit at the machine's Work (1,024 loud random samples); inside ReBuzz a −20 dBFS sine reaches the master within 0.01 dB; latency 0 |
+| Same numbers as the library | over whole signals (a 1 kHz tone, pink noise stepping by 10 dB, noise bursts with silences, a quarter-rate sine at 45°; in blocks of 256 and of 117): integrated loudness and the momentary and short-term maxima within 0.05 LU of `Loudness.Measure`, loudness range within 0.05 LU, true peak within 0.05 dB | integrated and maxima within 0.0000 LU, range within 0.0003 LU, true peak within 0.0000 dB; every momentary and short-term value within 9e-11 LU. Inside ReBuzz a stereo 1 kHz sine at −20 dBFS reads −20.0 LUFS integrated and −20.0 dBTP |
+| A tone in its band | a 1 kHz sine at −20 dB RMS: −20 dB in its third octave, in the mid band and on the curve (±0.05 dB); two third octaves away, over 40 dB down | −20.000 dB in the third octave, the mid band and on the curve; the next third octaves −103.4 and −105.9 dB |
+| Bands | named bands within 0.5 dB of `Spectrum.Measure` (3 s of pink noise and tones); third octaves of pink noise within 0.5 dB, 100 Hz – 20 kHz | named bands within 0.07 dB; third octaves within 0.21 dB (the bars, 12 s) and 0.47 dB (the 3 s readings) |
+| Correlation | 1 for mono and −1 for anti-phase (±1e-9); 0 ± 0.02 for unrelated noise, width 1 ± 0.05 | mono 1.000000 (width 0), anti-phase −1.000000 (width ∞), unrelated noise 0.0009 (width 0.998); the 400 ms meter 0.006 |
+| Threads | no allocation while processing (parameter changes and a reset included); no torn snapshot with a writer and two readers (200,000 publishes) | 0 bytes; no torn snapshot |
+| CPU | stereo at 48 kHz: under 2 % of real time on the CI runner (TieredCompilation off, as the other tests) | 0.46 % (220× real time) |
 
 ## 6. Phases
 

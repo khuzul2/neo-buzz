@@ -25,7 +25,7 @@ namespace NeoBuzz.Analyzer
         sealed class Live
         {
             readonly AnalyzerEngine engine;
-            long last = long.MinValue;
+            long last = long.MinValue / 2;   // far enough back that the first draw reads, without overflow
             public readonly AnalyzerSnapshot Snapshot = new AnalyzerSnapshot();
 
             public Live(AnalyzerEngine engine) { this.engine = engine; }
