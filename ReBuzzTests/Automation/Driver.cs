@@ -108,6 +108,8 @@ namespace ReBuzzTests.Automation
         internal FakeDispatcher Dispatcher => dispatcher;
         // Fork (engine-split.md S1): the messages and questions the engine raised.
         internal FakeUserMessages UserMessages => fakeUserMessages;
+        // Fork (engine-split.md S8): MIDI devices for this driver's core (set before Start); default: Windows'.
+        internal Func<ReBuzzCore, ReBuzz.Midi.IMidiBackend> MidiBackend { get; set; }
         private readonly FakeFileNameChoice fileNameToLoadChoice = new();
         private readonly FakeUserMessages fakeUserMessages;
         private FakeFileNameChoice fileNameToSaveChoice = new();
@@ -204,6 +206,7 @@ namespace ReBuzzTests.Automation
         {
             // Fork (engine-split.md §4.3, S4): as App does, before the first machine loads.
             ReBuzz.AppViews.WpfMachineApiHooks.Install();
+            if (MidiBackend != null) ReBuzzCore.DefaultMidiBackend = MidiBackend;   // fork (S8): a test's own devices
             SetupDirectoryStructure();
 
             var buzzPath = reBuzzRootDir.ToString();
@@ -222,6 +225,7 @@ namespace ReBuzzTests.Automation
                 fileNameToSaveChoice,
                 fakeUserMessages, 
                 new FakeKeyboard());
+            if (MidiBackend != null) ReBuzz.AppViews.WpfMachineApiHooks.Install();   // back to the app's defaults
             fakeMachineDllScanner.AddFakeModernPatternEditor(reBuzzCore);
             addMachineActions.ForEach(addMachine => addMachine(fakeMachineDllScanner, reBuzzCore));
             initialization = new ReBuzzCoreInitialization(reBuzzCore, buzzPath, dispatcher, fakeRegistry, new FakeKeyboard(), engineSettings);

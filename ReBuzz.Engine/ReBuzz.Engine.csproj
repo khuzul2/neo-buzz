@@ -46,8 +46,8 @@
                      $(R)Core\FileNameChoiceThroughOpenFileDialog.cs;$(R)Core\FileNameToSaveChoiceThroughSaveFileDialog.cs;
                      $(R)MachineManagement\WindowsKeyboard.cs" />
     <Compile Remove="$(R)NativeMachine\NativeEditorHost.cs;$(R)Agent\StudioAgent.cs;$(R)Agent\HeadlessAgent.cs" />
-    <Compile Remove="$(R)Audio\Driver\AsioAudioDriver.cs;$(R)Audio\Driver\WasapiAudioDriver.cs;
-                     $(R)Midi\Midi2.cs;$(R)Midi\MidiInDevice.cs;$(R)Midi\MidiOutDevice.cs;
+    <Compile Remove="$(R)Audio\Driver\AsioAudioDriver.cs;$(R)Audio\Driver\WasapiAudioDriver.cs;$(R)Audio\Driver\WindowsAudioDriverFactory.cs;
+                     $(R)Midi\Midi2.cs;$(R)Midi\MidiInDevice.cs;$(R)Midi\MidiOutDevice.cs;$(R)Midi\WindowsMidiBackend.cs;
                      $(R)Core\WindowsRegistry.cs;$(R)Core\WindowsRegistryKey.cs" />
   </ItemGroup>
 

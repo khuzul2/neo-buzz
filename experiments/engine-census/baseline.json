@@ -1,11 +1,5 @@
 {
   "project": "ReBuzz.Engine/ReBuzz.Engine.csproj",
-  "errors": 62,
-  "files": {
-    "ReBuzz/Audio/Driver/AudioDriverFactory.cs": 2,
-    "ReBuzz/Audio/Driver/AudioDriverService.cs": 3,
-    "ReBuzz/Audio/Engine/AudioEngine.cs": 11,
-    "ReBuzz/Core/Session/SessionControllers.cs": 8,
-    "ReBuzz/Midi/MidiEngine.cs": 38
-  }
+  "errors": 0,
+  "files": {}
 }

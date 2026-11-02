@@ -650,7 +650,7 @@ namespace ReBuzz
                         if (preferencesWindow.ShowDialog() == true)
                         {
                             Buzz.MidiInOutEngine.ReleaseAll();
-                            Buzz.MidiInOutEngine.Midi2.CreateMidi2Endpoint();
+                            Buzz.MidiInOutEngine.CreateMidi2Endpoint();
 
                             Dictionary<string, Int32> midiIns = new Dictionary<string, Int32>();
                             foreach (var item in preferencesWindow.MidiInControllerCheckboxes)
