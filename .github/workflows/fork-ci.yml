@@ -96,6 +96,14 @@ jobs:
         dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
         python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
 
+    # The A6 scripted suite (docs/specs/mcp-server.md §10) against rebuzz-headless on Linux
+    # (mac-engine.md M3): the same checks, tasks and baseline as the Windows package run.
+    - name: Agent evaluation on Linux (rebuzz-headless)
+      if: always()
+      run: |
+        dotnet build ReBuzz.AgentEval/ReBuzz.AgentEval.csproj -c Release -nologo -v:q
+        dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll run --exe ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless --out "$RUNNER_TEMP/eval" --baseline eval/baseline.json
+
     - name: Annotate test log
       if: failure()
       shell: pwsh

@@ -101,7 +101,7 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
   - render tick-phase reproducibility;
   - a connection's pan lost on undo.
 
-  M3 is mostly done once #40 lands.
+  With #40 merged, the whole scripted suite passes against `rebuzz-headless` on Linux, with the same baseline as Windows. Linux CI runs it ("Agent evaluation on Linux"), which covers M3's first check. The null test against Windows renders is still to come.
 
 **Native machines as placeholders: they open, but the round trip loses data.**
 - **Opening works.** Ten of the first twelve buzztrax demo songs (`ExternalMachines/source/**/*.bmx`) open headless on Linux. Their native machines show as missing machines with their connections.
