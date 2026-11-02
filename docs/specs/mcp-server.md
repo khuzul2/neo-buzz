@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Status | A0–A3 built (2026-11-01); A4 (mix and master machines) and A5 (guides) in progress. As built: §3.5 |
-| Date | 2026-10-31, updated 2026-11-01 |
+| Status | A0–A5 and A7 built (2026-11-02); A6 (evaluation) and Neo Analyzer in progress. As built: §3.5 |
+| Date | 2026-10-31, updated 2026-11-02 |
 | Scope | An MCP server that lets an AI agent (Claude Code or any MCP client) compose, design sounds, mix and master in this ReBuzz fork, with tools clear enough to use without guessing, guides for the craft, and the analysis needed to check its own work |
 | Protocol | MCP 2026-07-28, also negotiates 2025-11-25, 2025-06-18 and 2025-03-26 (stdio and Streamable HTTP; structured tool output; progress). Own protocol layer, no SDK (§3.5) |
 | Related | docs/specs/machines.md (Neo machines), docs/specs/session-view.md |
@@ -165,6 +165,27 @@ Neo machines resolve through their exact mappings. Legacy machines resolve by se
 - Neo EQ, Limiter and Utility are named by their parameters (A4).
 - `GuideTests` keep them true: tool names and arguments against a table of the built tools, Neo parameter names and values against the manifests, preset names against the factory presets.
 
+**A7 as built (live, studio mode).**
+- **Headless answers with the way to hear instead.** `transport`, `session_launch`, `session_record`, `midi_play` and `meters_read` play live for the user. Headless ReBuzz has no audio output, so they answer there with the way to hear instead: render, `arrangement_place`, `notes_write`.
+- **Not undo steps.** These calls change what plays, not the song. A take goes on the Session View's own undo history, and `pattern_delete` removes one.
+- **Launching** goes through the Session View's own entry points (`SessionLayout.LaunchScene` and `LaunchClip`, `SessionCore.Stop`, `StopAll`, `BackToArrangement`). So a launch waits for the clip's or the session's quantization exactly as a pad press does, and it starts a stopped transport. The state returned names, per track, the clip playing and the clip waiting.
+- **Takes.** `session_record` can:
+  - arm a track;
+  - start a take in its first empty slot (bars given for that take only; the Session View's setting is put back);
+  - stop a take, disarming a track it armed;
+  - capture what armed tracks were played lately (`SessionLayout.CaptureMidi`).
+- **`midi_play`** runs phrases on a thread of its own (`LivePlayer`).
+  - **Timing.** Phrases are timed by the session's clock as heard, the clock a take stamps. A phrase started on the bar lands on the bar in a take and follows tempo changes. On Windows the thread waits on a high-resolution waitable timer, as the MIDI clock output does. With the transport stopped, the wall clock times it from the tempo.
+  - **Routing.** An armed machine gets the notes through the session's keyboard input (`SessionCore.OnMidiInput`), so it plays and records them. Any other machine gets them directly.
+- **`meters_read`** fills `LiveMeter` windows (pure, in `ReBuzz.Agent/Audio`):
+  - from the master's tap, on the UI thread;
+  - from machines' first output connection, on the audio thread, through arrays allocated up front, so the audio thread neither allocates nor waits.
+
+  It then measures each window with the analysis library, so live numbers mean what `analyze`'s do: momentary loudness now, short-term from a 3 s window, integrated over the window, true peak, RMS and clipped samples. The window is counted in audio frames, with a wall-clock limit for an output that isn't running.
+- **Subscriptions are not built.** §5.8's subscribable meters resource was dropped for now: clients surface tools, not resource updates, to the model, and Streamable HTTP would need a GET stream for server-sent updates. A windowed `meters_read` covers "react to live levels".
+- **`machine_readings`** reads a managed machine's `public IReadOnlyDictionary<string, double> Readings`, a snapshot it swaps in from the audio thread. Neo Analyzer is the first machine to have one. In headless mode the values are what the last render played through it.
+- **Tests** pump the audio as the device would, and freeze the session's timestamp for exact take stamps: `AgentA7Tests` in the package run, `LiveMeterTests` on Linux.
+
 ## 4. Tool design rules
 
 These rules are what makes the server "extremely clear":
@@ -237,6 +258,8 @@ Phases (§9) are marked A1 … A7.
 | `arrangement_place` | A1 | Puts patterns at bars (one, a list, or repeated every N bars); `arrangement_clear` removes a range |
 | `arrangement_markers` | A3 | Named sections (intro, verse…), used by renders and guides |
 | `session_get`, `session_clip_set`, `session_scene_set`, `session_launch` | A3/A7 | The Session View grid: clips, scenes, follow actions, launching (live in studio mode) |
+| `session_record` | A7 | Takes in the Session View: arm a track, record a take of what is played on its keyboard (bars long or until stopped), stop it, capture what armed tracks were played lately (studio mode) |
+| `midi_play` | A7 | Plays a phrase into a machine live, on the next beat or bar, as a keyboard player would; an armed track's take records it (studio mode) |
 | `theory` | A3 | Music theory without arithmetic slips:<br>• chord symbols → pitches (`"Am9/E"`), voicings and inversions, scale degrees<br>• key and scale notes; roman-numeral progressions → chords in a key<br>• a melody's fit to a key<br>Read-only; nothing in the song changes |
 
 ### 5.6 Samples
@@ -262,7 +285,7 @@ Phases (§9) are marked A1 … A7.
 
 | Tool | Phase | Purpose |
 |---|---|---|
-| `meters_read` | A7 | Live peak and loudness of the master and chosen machines while the user plays the song. Subscribable as a resource that updates |
+| `meters_read` | A7 | Live peak and loudness of the master and chosen machines while the user plays the song, over a window (§3.5: subscriptions not built) |
 | `machine_readings` | A7 | Values an analysis machine shows (Neo Analyzer: spectrum, LUFS, correlation), from wherever the user put it |
 
 ## 6. Guides: prompts, resources and the `guide` tool
