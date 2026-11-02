@@ -55,8 +55,8 @@ KEYS = [n("C4", 0, 1), n("E4", 0, 1), n("G4", 0, 1), n("D4", 1, 0.5, 60), n("F4"
 BELLS = [n("C5", 0, 0.5), n("G5", 0.5, 0.5, 80), n("E5", 1, 1, 60), n("C6", 2, 0.25, 120), n("A4", 3, 1)]
 
 # The source for the effects: Neo FM6 brass (feedback 7, bright, with a pitch envelope), a chord stab, a
-# bass and a high note, then silence for the tails. FM6 renders identically on every platform, so what
-# an effect case measures is the effect's own difference.
+# bass and a high note, then silence for the tails. FM6 rendered identically on Linux, macOS and
+# Windows, so what an effect case measures is the effect's own difference.
 SOURCE = ("Neo FM6", "Brass — Bright Section", [("Unison", 3), ("Uni spread", "100%")],
           [n(p, 0, 0.5, 120) for p in ("C3", "G3", "E4")] + [n("C2", 1, 1, 100), n("G5", 2, 0.25, 127), n("C4", 2.5, 0.75, 60)])
 LONG = [n(p, 0, 15, 90) for p in ("A2", "E3", "C4", "G4")] + [n(p, 15, 13, 100) for p in ("F2", "C3", "A3", "E4")] + [n("C5", 2, 24, 50)]
@@ -66,9 +66,11 @@ def gen(name, gear, preset, params, notes, beats=4, tail=1.0):
     return {"name": name, "gen": (gear, preset, params, notes), "fx": [], "beats": beats, "tail": tail}
 
 
-def fx(name, gear, preset, params=(), tail=1.0, extra=(), source=SOURCE, beats=4):
-    """An effect (or a chain: extra effects after it) on the shared source."""
-    return {"name": name, "gen": source, "fx": [(gear, preset, list(params))] + list(extra), "beats": beats, "tail": tail}
+def fx(name, gear, preset, params=(), tail=1.0, extra=(), source=SOURCE, beats=4, auto=()):
+    """An effect (or a chain: extra effects after it) on the shared source; auto: the effect's
+    parameters automated in steps, [(param, [(beat, value), ...])]."""
+    return {"name": name, "gen": source, "fx": [(gear, preset, list(params))] + list(extra), "beats": beats, "tail": tail,
+            "auto": list(auto)}
 
 
 CASES = [
@@ -124,13 +126,15 @@ CASES = [
     fx("utility-bass-mono-wide", "Neo Utility", "Mastering — Bass Mono 120 Hz", [("Width", "180%"), ("Gain", "-3.5 dB")]),
     fx("utility-pan-dc-swap", "Neo Utility", "Mastering — Clean Up (Bass Mono 80 Hz, DC)",
        [("Pan law", "Mono pan"), ("Pan", "-30%"), ("Swap", "on"), ("Invert R", "on")]),
-    # Neo Verb: the four algorithms, modulation, shimmer, freeze-length tails.
+    # Neo Verb: the four algorithms, modulation, shimmer, a 20-second decay, and freeze switched on
+    # mid-render by automation (the tail held with no loss).
     fx("verb-hall", "Neo Verb", "Hall — Concert", tail=2.5),
     fx("verb-room", "Neo Verb", "Room — Live Drums", tail=1.5),
     fx("verb-chamber", "Neo Verb", "Chamber — Echo Chamber", tail=2.0),
     fx("verb-plate", "Neo Verb", "Plate — Snare", tail=1.5),
     fx("verb-shimmer", "Neo Verb", "Ambient — Shimmer", tail=2.5),
     fx("verb-infinite", "Neo Verb", "Ambient — Infinite Pad", tail=2.5),
+    fx("verb-freeze", "Neo Verb", "Hall — Cathedral", [("Mix", "60%")], tail=1.5, auto=[("Freeze", [(0, "off"), (1.5, "on")])]),
     # Long: what drifts with time (oscillator and LFO phases, modulated delays) shows here. 16 s each.
     gen("long-poly", "Neo Poly", "Pad — Evolving PWM", [], LONG, beats=32),
     gen("long-wave", "Neo Wave", "Pad — Organ Drift", [], LONG, beats=32),
@@ -241,6 +245,12 @@ def render_case(exe, case, out_dir, work):
             if fpreset:
                 c.call("preset_load", machine=name, preset=fpreset)
             set_params(c, name, fparams)
+            if i == 0 and case.get("auto"):
+                c.call("pattern_create", machine=name, name="A", length_beats=case["beats"])
+                for param, points in case["auto"]:
+                    c.call("automation_write", machine=name, pattern="A", param=param, shape="step",
+                           points=[{"at": at, "value": v} for at, v in points])
+                c.call("arrangement_place", machine=name, pattern="A", at=[0])
             last = name
         r = c.call("render", **{"from": 0, "to": case["beats"], "tail_seconds": case["tail"], "name": case["name"]})
         os.makedirs(out_dir, exist_ok=True)
@@ -411,7 +421,6 @@ def main(argv):
         rows, failed = compare_dirs(argv[1], argv[2], only)
         report(rows, failed, "Null test")
         return 1 if failed else 0
-    print(__doc__ if __doc__ else open(__file__).read().split("\n\n")[0])
     print("usage: null-test.py render <exe> <out-dir> | compare <exe> <ref-dir> <work-dir> | diff <ref-dir> <dir> [--only a,b]")
     return 2
 
