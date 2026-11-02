@@ -11,6 +11,7 @@ using BuzzGUI.Common;
 using BuzzGUI.Common.Settings;
 using BuzzGUI.Interfaces;
 using Microsoft.Win32;
+using ReBuzz.Audio;
 using ReBuzz.Audio.Engine;
 using ReBuzz.Common;
 using ReBuzz.Core.Actions.GraphActions;
@@ -940,7 +941,7 @@ namespace ReBuzz.Core
             DCWriteLine(BuildString);
 
             MidiInOutEngine = new MidiEngine(this, registryEx);
-            MidiInOutEngine.Midi2.CreateMidi2Endpoint();
+            MidiInOutEngine.CreateMidi2Endpoint();
             MidiInOutEngine.OpenMidiInDevices();
             MidiInOutEngine.OpenMidiOutDevices();
 
@@ -2507,6 +2508,15 @@ namespace ReBuzz.Core
 
         /// <summary>Fork (S3): the host new cores get; the WPF app sets it before the first core.</summary>
         internal static IMachineUiHost DefaultUiHost { get; set; }
+
+        /// <summary>
+        /// Fork (engine-split.md S8): the platform's audio drivers (ASIO and WASAPI on Windows) and
+        /// MIDI devices. New cores take the defaults, which the app sets before the first core; with
+        /// none there are no ASIO drivers and no MIDI devices.
+        /// </summary>
+        internal IAudioDriverFactory AudioDriverFactory { get; } = DefaultAudioDriverFactory;
+        internal static IAudioDriverFactory DefaultAudioDriverFactory { get; set; }
+        internal static Func<ReBuzzCore, IMidiBackend> DefaultMidiBackend { get; set; }
 
         /// <summary>Fork (engine-split.md S5): the keyboard for the engine classes this core owns.</summary>
         internal IKeyboard Keyboard => keyboard;

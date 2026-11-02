@@ -1,4 +1,3 @@
-using NAudio.Midi;
 using ReBuzz.Control;
 using System;
 using System.Collections.Generic;
@@ -123,8 +122,9 @@ namespace ReBuzz.Core.Session
             var outputs = new List<string>();
             try
             {
-                for (int i = 0; i < MidiIn.NumberOfDevices; i++) inputs.Add(MidiIn.DeviceInfo(i).ProductName);
-                for (int i = 0; i < MidiOut.NumberOfDevices; i++) outputs.Add(MidiOut.DeviceInfo(i).ProductName);
+                var midi = buzz.MidiInOutEngine.Backend;   // engine-split.md S8
+                for (int i = 0; i < midi.InputCount; i++) inputs.Add(midi.InputName(i));
+                for (int i = 0; i < midi.OutputCount; i++) outputs.Add(midi.OutputName(i));
             }
             catch (Exception)
             {
@@ -190,7 +190,7 @@ namespace ReBuzz.Core.Session
             IControllerPort port;
             try
             {
-                port = new NAudioPort(candidate.Input, candidate.Output);
+                port = buzz.MidiInOutEngine.Backend.OpenControllerPort(candidate.Input, candidate.Output);
             }
             catch (Exception e)
             {
@@ -540,50 +540,6 @@ namespace ReBuzz.Core.Session
             foreach (var c in connections.ToList()) Detach(c);
         }
 
-        // ------------------------------------------------------------------ ports
-
-        /// <summary>A controller's ports through NAudio (WinMM), opened for the controller alone.</summary>
-        sealed class NAudioPort : IControllerPort
-        {
-            readonly MidiIn input;
-            readonly MidiOut output;
-            readonly Lock sendLock = new Lock();
-
-            public event Action<int> Received;
-
-            public NAudioPort(int inputIndex, int outputIndex)
-            {
-                output = new MidiOut(outputIndex);
-                try
-                {
-                    input = new MidiIn(inputIndex);
-                    input.MessageReceived += (s, e) => Received?.Invoke(e.RawMessage);
-                    input.Start();
-                }
-                catch
-                {
-                    output.Dispose();
-                    input?.Dispose();
-                    throw;
-                }
-            }
-
-            public void Send(int message)
-            {
-                lock (sendLock) output.Send(message);
-            }
-
-            public void Send(byte[] message)
-            {
-                lock (sendLock) output.SendBuffer(message);
-            }
-
-            public void Dispose()
-            {
-                try { input.Stop(); } catch (Exception) { }
-                try { input.Dispose(); } catch (Exception) { }
-                try { output.Dispose(); } catch (Exception) { }
-            }
-        }
+        // Ports: the MIDI backend opens them (engine-split.md S8; NAudio/WinMM on Windows).
     }
 }

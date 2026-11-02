@@ -39,6 +39,10 @@ namespace ReBuzz.AppViews
             MachineViewState.ShowEngineThreads = () => BuzzGUI.MachineView.MachineView.StaticSettings.ShowEngineThreads;
             MachineViewState.EnableSkins = () => BuzzGUI.MachineView.MachineView.StaticSettings.EnableSkins;
             PatternColours.Source = SequenceEditorPatternColours.Current;
+
+            // Windows audio and MIDI (S8): ASIO, WASAPI, WinMM, Windows MIDI Services.
+            ReBuzzCore.DefaultAudioDriverFactory = new ReBuzz.Audio.WindowsAudioDriverFactory();
+            ReBuzzCore.DefaultMidiBackend = core => new ReBuzz.Midi.WindowsMidiBackend(core);
         }
 
         /// <summary>

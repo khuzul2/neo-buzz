@@ -1,12 +1,10 @@
 ﻿using BuzzGUI.Common;
-using NAudio.Midi;
 using ReBuzz.Common;
 using ReBuzz.Core;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using Windows.Devices.Enumeration;
 
 namespace ReBuzz.Midi
 {
@@ -18,60 +16,40 @@ namespace ReBuzz.Midi
         // machines) all use these, so each is guarded: midiIns by midiInLock, midiOuts by
         // midiOutLock (taken after AudioLock, never before it). Devices are opened and closed
         // outside the locks, so a send never waits for a driver.
-        private readonly Dictionary<int, MidiInDevice> midiIns = new Dictionary<int, MidiInDevice>();
-        private readonly Dictionary<int, MidiOutDevice> midiOuts = new Dictionary<int, MidiOutDevice>();
+        private readonly Dictionary<int, IMidiInput> midiIns = new Dictionary<int, IMidiInput>();
+        private readonly Dictionary<int, IMidiOutput> midiOuts = new Dictionary<int, IMidiOutput>();
         private readonly Lock midiInLock = new Lock();
-        private DeviceWatcher _watcher;
 
-        Midi2 midi2;
+        // Fork (engine-split.md S8): the platform's MIDI devices (WinMM, Windows MIDI Services and
+        // the WinRT device watcher on Windows); none without a backend.
+        private readonly IMidiBackend backend;
 
-        internal Midi2 Midi2 { get => midi2; }
+        internal IMidiBackend Backend => backend;
 
         public MidiEngine(ReBuzzCore buzz, IRegistryEx registryEx)
         {
             this.registryEx = registryEx;
             this.buzz = buzz;
 
-            midi2 = new Midi2(buzz);
+            backend = ReBuzzCore.DefaultMidiBackend?.Invoke(buzz) ?? new NoMidiBackend();
 
             CheckRegistryDataFormat();
 
-            // Use empty selector to get all MIDI devices
-            string selector = "";// "System.Devices.InterfaceClassGuid:=\"{6DC23320-AB33-4CE4-80D4-BBB3EBBF2814}\"";
-
-            _watcher = DeviceInformation.CreateWatcher(selector);
-            _watcher.Added += OnDeviceAdded;
-            _watcher.Removed += OnDeviceRemoved;
-            _watcher.Updated += OnDeviceUpdated;
-            _watcher.EnumerationCompleted += OnEnumerationCompleted;
-            _watcher.Stopped += OnWatcherStopped;
-            _watcher.Start();
-
-        }
-        private void OnDeviceAdded(DeviceWatcher sender, DeviceInformation args)
-        {
-            // New device spotted. Called a lot when watcher is started as it enumerates the installed (not connected) MIDI devices
-            //buzz.DCWriteLine("OnDeviceAdded");
+            backend.StartWatching(OnDeviceUpdated);
         }
 
-        private void OnDeviceRemoved(DeviceWatcher sender, DeviceInformationUpdate args)
+        /// <summary>The MIDI 2 (Windows MIDI Services) endpoint.</summary>
+        internal bool CreateMidi2Endpoint() => backend.CreateMidi2Endpoint();
+
+        private void OnDeviceUpdated(MidiDeviceChange info)
         {
-            // A known device was removed (uninstalled)
-            //buzz.DCWriteLine("OnDeviceRemoved");
-        }
+            // A device that we already know about has changed somehow (connected, disconnected, other?).
+            // The device counts were taken when the change was noticed; the backend logs what this throws.
+            int midiInDevsCount = info.InputCount;
+            int midiOutDevsCount = info.OutputCount;
 
-        private async void OnDeviceUpdated(DeviceWatcher sender, DeviceInformationUpdate args)
-        {
-            // A device that we already know about has changed somehow (connected, disconnected, other?)
-
-            int midiInDevsCount = MidiIn.NumberOfDevices;
-            int midiOutDevsCount = MidiOut.NumberOfDevices;
-
-            try
             {
-                var info = await DeviceInformation.CreateFromIdAsync(args.Id);
-
-                if (info.IsEnabled)
+                if (info.Connected)
                 {
                     buzz.DCWriteLine("Device connected: " + info.Name);
 
@@ -82,7 +60,7 @@ namespace ReBuzz.Midi
                         {
                             for (int i = 0; i < midiInDevsCount; i++)
                             {
-                                if (MidiIn.DeviceInfo(i).ProductName == info.Name)
+                                if (backend.InputName(i) == info.Name)
                                 {
                                     CreateMidiIn(i);
                                     break;
@@ -98,7 +76,7 @@ namespace ReBuzz.Midi
                         {
                             for (int i = 0; i < midiOutDevsCount; i++)
                             {
-                                if (MidiOut.DeviceInfo(i).ProductName == info.Name)
+                                if (backend.OutputName(i) == info.Name)
                                 {
                                     CreateMidiOut(i);
                                     break;
@@ -112,7 +90,7 @@ namespace ReBuzz.Midi
                     buzz.DCWriteLine("Device disconnected: " + info.Name);
 
                     // Fork: closed, not only forgotten, so the device opens again when it comes back.
-                    MidiInDevice goneIn = null;
+                    IMidiInput goneIn = null;
                     lock (midiInLock)
                     {
                         var key = midiIns.FirstOrDefault(kv => kv.Value.ProductName == info.Name);
@@ -122,9 +100,9 @@ namespace ReBuzz.Midi
                             midiIns.Remove(key.Key);
                         }
                     }
-                    goneIn?.DisposeMidiIn();
+                    goneIn?.Close();
 
-                    MidiOutDevice goneOut = null;
+                    IMidiOutput goneOut = null;
                     lock (midiOutLock)
                     {
                         var key = midiOuts.FirstOrDefault(kv => kv.Value.ProductName == info.Name);
@@ -137,42 +115,11 @@ namespace ReBuzz.Midi
                     goneOut?.Dispose();
                 }
             }
-            catch (Exception ex)
-            {
-                buzz.DCWriteLine(ex.Message, BuzzGUI.Interfaces.DCLogLevel.Error);
-            }
-        }
-
-        private void OnEnumerationCompleted(DeviceWatcher sender, object args)
-        {
-            // Watcher has finished enumerating devices
-            //buzz.DCWriteLine("OnEnumerationCompleted");
-        }
-
-        private void OnWatcherStopped(DeviceWatcher sender, object args)
-        {
-            // The watcher has stopped watching
-            //buzz.DCWriteLine("OnWatcherStopped");
         }
 
         public void DisposeWatcher()
         {
-            if (_watcher != null)
-            {
-                _watcher.Added -= OnDeviceAdded;
-                _watcher.Removed -= OnDeviceRemoved;
-                _watcher.Updated -= OnDeviceUpdated;
-                _watcher.EnumerationCompleted -= OnEnumerationCompleted;
-                _watcher.Stopped -= OnWatcherStopped;
-
-                if (_watcher.Status == DeviceWatcherStatus.Started ||
-                    _watcher.Status == DeviceWatcherStatus.EnumerationCompleted)
-                {
-                    _watcher.Stop();
-                }
-
-                _watcher = null;
-            }
+            backend.StopWatching();
         }
 
         public void CreateMidiIn(int selectedDeviceIndex)
@@ -180,15 +127,14 @@ namespace ReBuzz.Midi
             try
             {
                 // Fork: the old handle is closed first (opening a device twice fails).
-                MidiInDevice old;
+                IMidiInput old;
                 lock (midiInLock)
                 {
                     midiIns.Remove(selectedDeviceIndex, out old);
                 }
-                old?.DisposeMidiIn();
+                old?.Close();
 
-                var midiIn = new MidiInDevice(buzz);
-                midiIn.CreateMidiIn(selectedDeviceIndex);
+                var midiIn = backend.OpenInput(selectedDeviceIndex);
                 lock (midiInLock)
                 {
                     midiIns[selectedDeviceIndex] = midiIn;
@@ -202,7 +148,7 @@ namespace ReBuzz.Midi
 
         public void DisposeMidiIn()
         {
-            List<MidiInDevice> devices;
+            List<IMidiInput> devices;
             lock (midiInLock)
             {
                 devices = midiIns.Values.ToList();
@@ -210,7 +156,7 @@ namespace ReBuzz.Midi
             }
             foreach (var md in devices)
             {
-                md.DisposeMidiIn();
+                md.Close();
             }
         }
 
@@ -220,14 +166,14 @@ namespace ReBuzz.Midi
             {
                 // Fork: the old handle is closed first (opening a device twice fails), and
                 // outside the lock, so the audio thread's sends don't wait for the driver.
-                MidiOutDevice old;
+                IMidiOutput old;
                 lock (midiOutLock)
                 {
                     midiOuts.Remove(selectedDeviceIndex, out old);
                 }
                 old?.Dispose();
 
-                var device = new MidiOutDevice(selectedDeviceIndex);
+                var device = backend.OpenOutput(selectedDeviceIndex);
                 lock (midiOutLock)
                 {
                     midiOuts[selectedDeviceIndex] = device;
@@ -248,7 +194,7 @@ namespace ReBuzz.Midi
                 if (!midiOuts.TryGetValue(device, out var d)) return;
                 try
                 {
-                    d.MidiOut.Send(message);
+                    d.Send(message);
                 }
                 catch (Exception e)
                 {
@@ -264,7 +210,7 @@ namespace ReBuzz.Midi
                 if (!midiOuts.TryGetValue(device, out var d)) return;
                 try
                 {
-                    d.MidiOut.SendBuffer(message);
+                    d.Send(message);
                 }
                 catch (Exception e)
                 {
@@ -275,7 +221,7 @@ namespace ReBuzz.Midi
 
         public void DisposeMidiOuts()
         {
-            List<MidiOutDevice> devices;
+            List<IMidiOutput> devices;
             lock (ReBuzzCore.AudioLock)
             {
                 lock (midiOutLock)
@@ -302,7 +248,7 @@ namespace ReBuzz.Midi
             DisposeMidiIn();
             DisposeMidiOuts();
 
-            Midi2.Release();
+            backend.ReleaseMidi2();
         }
 
 
@@ -361,7 +307,7 @@ namespace ReBuzz.Midi
         {
             var inputsInfo = registryEx.ReadDictionary("MIDI In List").KeyValuesToStringInt();
             
-            int midiInDevsCount = MidiIn.NumberOfDevices;
+            int midiInDevsCount = backend.InputCount;
 
             foreach (var item in inputsInfo)
             {
@@ -369,7 +315,7 @@ namespace ReBuzz.Midi
                 {
                     for (int i = 0; i < midiInDevsCount; i++)
                     {
-                        if (MidiIn.DeviceInfo(i).ProductName == item.Key)
+                        if (backend.InputName(i) == item.Key)
                         {
                             CreateMidiIn(i);
                             break;
@@ -425,7 +371,7 @@ namespace ReBuzz.Midi
         {
             var outputsInfo = registryEx.ReadDictionary("MIDI Out List").KeyValuesToStringInt();
 
-            int midiOutDevsCount = MidiOut.NumberOfDevices;
+            int midiOutDevsCount = backend.OutputCount;
 
             foreach (var item in outputsInfo)
             {
@@ -433,7 +379,7 @@ namespace ReBuzz.Midi
                 {
                     for (int i = 0; i < midiOutDevsCount; i++)
                     {
-                        if (MidiOut.DeviceInfo(i).ProductName == item.Key)
+                        if (backend.OutputName(i) == item.Key)
                         {
                             CreateMidiOut(i);
                             break;

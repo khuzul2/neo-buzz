@@ -1,6 +1,4 @@
-﻿using BuzzDotNet.Audio;
-using NAudio.Wave;
-using ReBuzz.Audio.Engine;
+﻿using ReBuzz.Audio.Engine;
 using ReBuzz.Core;
 using System;
 using System.Collections.Generic;
@@ -11,10 +9,13 @@ namespace ReBuzz.Audio
     public sealed class AudioDeviceService
     {
         private readonly IUserMessages userMessages;
+        private readonly IAudioDriverFactory drivers;
 
-        public AudioDeviceService(IUserMessages userMessages)
+        /// <param name="drivers">The platform's drivers (engine-split.md S8); null: no ASIO drivers.</param>
+        internal AudioDeviceService(IUserMessages userMessages, IAudioDriverFactory drivers)
         {
             this.userMessages = userMessages;
+            this.drivers = drivers;
         }
 
         public List<AudioEngine.AudioOutDevice> GetOutputDevices()
@@ -23,9 +24,9 @@ namespace ReBuzz.Audio
 
             try
             {
-                if (AsioOut.isSupported())
+                if (drivers != null && drivers.AsioSupported)
                 {
-                    foreach (var name in AsioOut.GetDriverNames())
+                    foreach (var name in drivers.AsioDriverNames())
                     {
                         devices.Add(new AudioEngine.AudioOutDevice
                         {

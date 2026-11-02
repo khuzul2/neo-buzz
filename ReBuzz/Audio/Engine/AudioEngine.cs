@@ -1,5 +1,4 @@
-﻿using BuzzDotNet.Audio;
-using BuzzGUI.Common.Settings;
+﻿using BuzzGUI.Common.Settings;
 using Helios.Concurrency;
 using NAudio.Wave;
 using ReBuzz.Common;
@@ -8,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace ReBuzz.Audio.Engine
 {
@@ -48,9 +46,7 @@ namespace ReBuzz.Audio.Engine
         private IAudioDriver currentDriver;
         private readonly AudioBufferManager bufferManager = new();
         private readonly AudioDeviceService deviceService;
-
-        private WasapiConfigWindow wasapiConfigWindow;
-        private AsioConfigWindow asioConfigWindow;
+        private readonly IAudioDriverFactory drivers;   // engine-split.md S8
 
         internal static DedicatedThreadPoolTaskScheduler TaskSchedulerAudio { get; private set; }
         internal static TaskFactory TaskFactoryAudio { get; private set; }
@@ -70,7 +66,8 @@ namespace ReBuzz.Audio.Engine
             this.buzzCore = buzzCore;
             this.engineSettings = settings;
             this.dispatcher = dispatcher;
-            deviceService = new AudioDeviceService(buzzCore.UserMessages);
+            drivers = buzzCore.AudioDriverFactory;
+            deviceService = new AudioDeviceService(buzzCore.UserMessages, drivers);
 
             CreateScheduler();
         }
@@ -106,7 +103,7 @@ namespace ReBuzz.Audio.Engine
                 {
                     case AudioOutType.ASIO:
                     case AudioOutType.Wasapi:
-                        currentDriver = AudioDriverFactory.Create(
+                        currentDriver = (drivers ?? throw new NotSupportedException($"Unsupported audio driver type: {device.Type}")).Create(
                             device.Type,
                             device.Name,
                             buzzCore,
@@ -205,74 +202,22 @@ namespace ReBuzz.Audio.Engine
             if (SelectedOutDevice == null)
                 return;
 
+            // Fork (engine-split.md S8): the ASIO and WASAPI settings windows are the driver
+            // factory's; when the user accepts, the device reopens with the new settings.
             switch (SelectedOutDevice.Type)
             {
                 case AudioOutType.ASIO:
-                    ShowAsioControlPanel();
-                    break;
-
                 case AudioOutType.Wasapi:
-                    ShowWasapiControlPanel();
+                    if (drivers != null && drivers.ShowConfig(SelectedOutDevice, buzzCore, registryEx, buzzPath))
+                    {
+                        CreateAudioOut(SelectedOutDevice.Name);
+                        Play();
+                    }
                     break;
 
                 case AudioOutType.DirectSound:
                     break;
             }
-        }
-
-        private void ShowAsioControlPanel()
-        {
-            if (asioConfigWindow != null)
-                return;
-
-            var asio = SelectedOutDevice.WavePlayer as AsioDevice;
-            if (asio == null)
-                return;
-
-            asioConfigWindow = new AsioConfigWindow(buzzCore, asio.DriverName, registryEx);
-
-            asioConfigWindow.OpenAsioControlPanel += () =>
-            {
-                asio.ShowControlPanel();
-            };
-
-            var rd = UiUtils.GetUserControlXAML<ResourceDictionary>(
-                "MachineView\\MVResources.xaml",
-                buzzPath);
-
-            asioConfigWindow.Resources.MergedDictionaries.Add(rd);
-
-            if (asioConfigWindow.ShowDialog() == true)
-            {
-                asioConfigWindow.SaveSelection();
-                CreateAudioOut(SelectedOutDevice.Name);
-                Play();
-            }
-
-            asioConfigWindow = null;
-        }
-
-        private void ShowWasapiControlPanel()
-        {
-            if (wasapiConfigWindow != null)
-                return;
-
-            wasapiConfigWindow = new WasapiConfigWindow(registryEx);
-
-            var rd = UiUtils.GetUserControlXAML<ResourceDictionary>(
-                "MachineView\\MVResources.xaml",
-                buzzPath);
-
-            wasapiConfigWindow.Resources.MergedDictionaries.Add(rd);
-
-            if (wasapiConfigWindow.ShowDialog() == true)
-            {
-                wasapiConfigWindow.SaveSelection();
-                CreateAudioOut(SelectedOutDevice.Name);
-                Play();
-            }
-
-            wasapiConfigWindow = null;
         }
 
         internal void ClearAudioBuffer()
@@ -303,10 +248,7 @@ namespace ReBuzz.Audio.Engine
 
         internal int GetASIOCurrentBufferSize(string deviceName)
         {
-            var device = AsioDevice.Open(deviceName);
-            int size = device.Capabilities.BufferPreferredSize;
-            device.Dispose();
-            return size;
+            return drivers.AsioPreferredBufferSize(deviceName);
         }
     }
 }

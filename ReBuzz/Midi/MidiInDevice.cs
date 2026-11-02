@@ -11,7 +11,7 @@ using System.Xml.Serialization;
 
 namespace ReBuzz.Midi
 {
-    internal class MidiInDevice
+    internal class MidiInDevice : IMidiInput
     {
         internal MidiIn midiIn;
         private readonly IBuzz buzz;
@@ -60,6 +60,9 @@ namespace ReBuzz.Midi
             }
             catch { }
         }
+        /// <summary>Fork (engine-split.md S8): IMidiInput.</summary>
+        public void Close() => DisposeMidiIn();
+
         public void DisposeMidiIn()
         {
             stopped = true;
