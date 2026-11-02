@@ -32,7 +32,7 @@ The engine itself changes only behind seams P1 created. Each new implementation 
 ## 2. Decisions
 
 1. **Headless first, as its own app.** The P3 studio will host the same engine, so nothing here is thrown away. A separate console app avoids pulling WPF or Avalonia into P2.
-2. **Single-threaded rendering on macOS first.** The CoreAudio I/O thread is already real-time and in the device's workgroup. `WorkThreadEngine(1)` renders on it, which needs no thread policy work. Multi-core rendering joins worker threads to the device's `os_workgroup` and gives them a time-constraint policy. That is step M7, kept separate, since dropouts from unjoined threads are the main risk (cross-platform.md §7).
+2. **Single-threaded rendering on macOS first.** The CoreAudio I/O thread is already real-time and in the device's workgroup. `WorkThreadEngine(1)` renders on it, which needs no thread policy work. Multi-core rendering joins worker threads to the device's `os_workgroup` and gives them a time-constraint policy. That is step M7, kept separate, since dropouts from unjoined threads are the main risk (cross-platform.md §7). (As built, M5 rendered with the engine's usual worker threads, Multithreading being on by default; M7 put them in the workgroup.)
 3. **PortAudio through our own P/Invoke** (about 300 lines: init, devices, open and start a stream, a callback, latency). No NuGet runtime package, so the dylib we sign is the one we build (P5).
 4. **Managed machines load without WPF.** A machine DLL built for `net10.0-windows` is IL; it fails only when a WPF type is touched.
    - The loader treats `FileNotFoundException`/`TypeLoadException` for WPF assemblies (`PresentationFramework`, `PresentationCore`, `WindowsBase`, `System.Xaml`) as "no GUI", not "broken machine".
@@ -176,5 +176,18 @@ The null test (exit check 2) is M3's.
   - a device that goes away;
   - the 1-hour play test (§4).
 
-**M3, M6, M7:** as in §3.
+**M7, render workers in the audio workgroup** (`ReBuzz/Platform/AudioWorkgroup.cs`).
+- **Attach.** When the PortAudio stream starts, the driver asks CoreAudio for the device's I/O workgroup (`kAudioDevicePropertyIOThreadOSWorkgroup`, on the device `PaMacCore_GetStreamOutputDevice` names). It detaches it when the stream stops.
+- **Join.** Both kinds of render worker call `AudioWorkgroup.Enter()` before their work: the audio thread pool (`DedicatedThreadPool`, used by the default algorithm) and `WorkThreadEngine`.
+  - Enter reads one number. Only when the workgroup changed does it leave the old one, set a time-constraint policy for the buffer period, and `os_workgroup_join` the new one.
+  - Each joined thread holds its own reference (`os_retain`), so detaching never frees a workgroup that a thread is still in.
+  - Workers leave when they end.
+  - Off macOS it does nothing.
+- **Reported.** `studio_status` has an `audio` object in studio and live mode: device, buffer, latency, render threads, threads in the workgroup, dropouts (deadline misses).
+- **Checked.**
+  - `ReBuzz.SessionTests` on macOS: a worker joins a running stream's workgroup and leaves it, and a worker joined when the device stops leaves at its next Enter.
+  - The live test on macOS: four synths play at once, and `studio_status` must show render threads in the workgroup.
+- **Left for the play test (§4):** the hour at 128 samples, with the default four render threads.
+
+**M3, M6:** as in §3.
 

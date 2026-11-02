@@ -145,12 +145,21 @@ namespace ReBuzz.Audio
             if (stream == null || running) return;
             stream.Start();
             running = true;
+            // macOS (mac-engine.md M7): the render workers join the device's I/O workgroup.
+            if (AudioWorkgroup.Supported)
+            {
+                if (AudioWorkgroup.Attach(stream.MacOutputDevice, BufferSize / (double)SampleRate))
+                    buzzCore.DCWriteLine($"PortAudio: render threads join the device's audio workgroup (up to {AudioWorkgroup.MaxParallelThreads} in parallel)");
+                else
+                    buzzCore.DCWriteLine("PortAudio: no audio workgroup: " + AudioWorkgroup.LastError);
+            }
         }
 
         public void Stop()
         {
             if (stream == null || !running) return;
             running = false;
+            AudioWorkgroup.Detach();
             stream.Stop();
         }
 
@@ -170,6 +179,7 @@ namespace ReBuzz.Audio
         public void Dispose()
         {
             running = false;
+            AudioWorkgroup.Detach();
             stream?.Dispose();          // stops it first if it runs
             stream = null;
         }

@@ -54,6 +54,9 @@ namespace ReBuzz.Audio
                             seen = generation;
                         }
 
+                        // macOS (mac-engine.md M7): work in the audio device's workgroup.
+                        ReBuzz.Platform.AudioWorkgroup.Enter();
+
                         // B2 drain: pull ready INDICES until none are runnable, then park.
                         // Parking on an empty ready list is correct even mid-buffer: any
                         // machine still in flight will pulse the gate when it releases a
@@ -131,6 +134,7 @@ namespace ReBuzz.Audio
                             }
                         }
                     }
+                    ReBuzz.Platform.AudioWorkgroup.Leave();
                 });
                 t.IsBackground = true;
                 t.Priority = ProcessAndThreadProfile.WorkThreadEngineThread;
