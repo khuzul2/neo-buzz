@@ -54,19 +54,21 @@ KEYS = [n("C4", 0, 1), n("E4", 0, 1), n("G4", 0, 1), n("D4", 1, 0.5, 60), n("F4"
         n("A3", 2, 2, 110), n("C5", 2, 2, 110), n("E5", 3, 1, 40)]
 BELLS = [n("C5", 0, 0.5), n("G5", 0.5, 0.5, 80), n("E5", 1, 1, 60), n("C6", 2, 0.25, 120), n("A4", 3, 1)]
 
-# The source for the effects: a bright Neo Poly with no drift, a chord stab, a bass and a hit of noise
-# (transients, lows, highs and stereo), then silence for the tails.
-SOURCE = ("Neo Poly", "Pluck — Bright", [("Drift", "0%"), ("Unison", 3), ("Noise", "20%")],
-          [n(p, 0, 0.5, 120) for p in ("C3", "G3", "E4")] + [n("C2", 1, 1, 100), n("G4", 2, 0.25, 127), n("C4", 2.5, 0.75, 60)])
+# The source for the effects: Neo FM6 brass (feedback 7, bright, with a pitch envelope), a chord stab, a
+# bass and a high note, then silence for the tails. FM6 renders identically on every platform, so what
+# an effect case measures is the effect's own difference.
+SOURCE = ("Neo FM6", "Brass — Bright Section", [("Unison", 3), ("Uni spread", "100%")],
+          [n(p, 0, 0.5, 120) for p in ("C3", "G3", "E4")] + [n("C2", 1, 1, 100), n("G5", 2, 0.25, 127), n("C4", 2.5, 0.75, 60)])
+LONG = [n(p, 0, 15, 90) for p in ("A2", "E3", "C4", "G4")] + [n(p, 15, 13, 100) for p in ("F2", "C3", "A3", "E4")] + [n("C5", 2, 24, 50)]
 
 
 def gen(name, gear, preset, params, notes, beats=4, tail=1.0):
     return {"name": name, "gen": (gear, preset, params, notes), "fx": [], "beats": beats, "tail": tail}
 
 
-def fx(name, gear, preset, params=(), tail=1.0, extra=()):
+def fx(name, gear, preset, params=(), tail=1.0, extra=(), source=SOURCE, beats=4):
     """An effect (or a chain: extra effects after it) on the shared source."""
-    return {"name": name, "gen": SOURCE, "fx": [(gear, preset, list(params))] + list(extra), "beats": 4, "tail": tail}
+    return {"name": name, "gen": source, "fx": [(gear, preset, list(params))] + list(extra), "beats": beats, "tail": tail}
 
 
 CASES = [
@@ -129,6 +131,12 @@ CASES = [
     fx("verb-plate", "Neo Verb", "Plate — Snare", tail=1.5),
     fx("verb-shimmer", "Neo Verb", "Ambient — Shimmer", tail=2.5),
     fx("verb-infinite", "Neo Verb", "Ambient — Infinite Pad", tail=2.5),
+    # Long: what drifts with time (oscillator and LFO phases, modulated delays) shows here. 16 s each.
+    gen("long-poly", "Neo Poly", "Pad — Evolving PWM", [], LONG, beats=32),
+    gen("long-wave", "Neo Wave", "Pad — Organ Drift", [], LONG, beats=32),
+    gen("long-fm6", "Neo FM6", "Pad — FM Strings", [], LONG, beats=32),
+    fx("long-verb", "Neo Verb", "Ambient — Long Dark Hall", tail=3.0, beats=32,
+       source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 2) for p in ("C4", "E4", "G4")])),
 ]
 
 
@@ -362,6 +370,7 @@ def report(rows, failed, title):
                  + ("" if status == "ok" else f" [{status}]") for name, status, lv, text in rows]
         body = summary + "\n" + "\n".join(short)
         kind = "error" if failed else "notice"
+        title = title.replace("%", "%25").replace(":", "%3A").replace(",", "%2C")
         print(f"::{kind} title={title}::" + body.replace("%", "%25").replace("\r", "").replace("\n", "%0A"), flush=True)
         step = os.environ.get("GITHUB_STEP_SUMMARY")
         if step:
