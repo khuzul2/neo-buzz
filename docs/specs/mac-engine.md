@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | In progress. M0 and the PortAudio binding are merged (#43); M6's precise waiter is in PR (#44). M1 is built: `rebuzz-headless` runs on Linux with the portable Neo machines, stacked on the flip. M2 is partly done (§6): songs with native machines open and save back headless (#48) |
+| Status | In progress (2026-11-03). Merged: M0 and the PortAudio binding (#43), M6's precise waiter (#44), M1 `rebuzz-headless` (#47), M2 placeholders (#48). This PR: M5 (PortAudio driver, live mode) and M4's Mac job, where the A6 suite passes on `macos-15`. Under way: M3's null test, M6 (MIDI, Link). Then M7 |
 | Scope | cross-platform.md §5.2 P2: the engine running headless on macOS (arm64), with real audio and MIDI, and the MCP server on stdio. No UI: the Avalonia studio is P3 |
 | Exit | The A6 scripted suite passes on `macos-15`; Neo renders null-test against the Windows package at ≤ −100 dBFS; a 1-hour play test at 128 samples has no dropouts (run by hand on a Mac) |
 | Related | cross-platform.md (decisions D1–D5, §3.2 the pieces), engine-split.md (P1), mcp-server.md §10 (the A6 suite) |
@@ -151,5 +151,30 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
   - ReBuzzTests' song save and load tests.
 - **Left:** deleting a machine here leaves its placeholder editor behind. It is hidden and unused, and saves with the song.
 
-**M3–M7:** as in §3.
+**M4, the Mac job** (`fork-mac.yml`, on PRs into main and by hand). It builds `rebuzz-headless` for osx-arm64 and runs:
+- the smoke test;
+- the A6 scripted suite: 6/6 checks and 5/5 tasks, against the same baseline as Windows and Linux (exit check 1);
+- the live test (M5).
+The null test (exit check 2) is M3's.
+
+**M5, audio through PortAudio.**
+- **The driver.** `PortAudioDriver` and `PortAudioDriverFactory` (`ReBuzz/Audio/Driver/`). One stereo float stream; the device's thread renders, as ASIO's does on Windows.
+  - Input is optional, for audio takes, and off by default, so macOS doesn't ask for the microphone.
+  - The device's reported latency goes to the session's launch timing.
+  - Settings in the registry's `PortAudio` section: `BufferSize` (default 256), `SampleRate` (0: the device's), `Input`.
+- **Device lists.** `IAudioDriverFactory.OutputDevices()` lets a factory list its own devices. Windows still lists the ASIO drivers, then WASAPI. PortAudio's are "PortAudio: default" and "PortAudio: <device> (<host API>)".
+- **`rebuzz-headless --audio`** `[--device <name>] [--input <name|default>] [--buffer <frames>] [--rate <hz>]`, and `--list-devices`.
+  - With the device open the agent runs in **live mode**: the A7 live tools work as in studio mode, with no window.
+  - The GC runs in `SustainedLowLatency` mode.
+- **Checked by `tools/headless-live.py`.** It plays a phrase and the arrangement, meters them, renders with the device open, and exits.
+  - Linux CI: PortAudio 19.7 on a PulseAudio null sink, 44.1 kHz. It plays in real time: 2.00 beats/s at 120 BPM.
+  - macOS CI: CoreAudio on the runner's Apple Virtual Sound Device, 48 kHz. 2.03 beats/s.
+  - ALSA's bare null device takes audio as fast as it comes, so the real-time check needs a clocked device.
+- **Found on the way.** Off Windows the per-user application data folder can be missing (`~/.config` on a fresh Mac). `GetFolderPath` then returns "", and the DLL cache landed in the current folder. Fixed. `rebuzz-headless` now keeps its cache and autosaves in its settings folder.
+- **Not covered yet:**
+  - following a change of the system's default output while playing (PortAudio opens a device, not "the default");
+  - a device that goes away;
+  - the 1-hour play test (§4).
+
+**M3, M6, M7:** as in §3.
 

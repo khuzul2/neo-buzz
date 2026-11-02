@@ -71,7 +71,7 @@ namespace ReBuzz.Agent
                     "ReBuzz is a modular music studio (Buzz): generators and effects connected in a graph, patterns placed in an arrangement. " +
                     "Start every session with studio_status, and read guide(topic=\"workflow\") once. Times are in beats from the song start " +
                     "(or \"bar.beat\" text); pitches are MIDI numbers or names (60 = C4); levels in dB. Every changing call is one undo step " +
-                    "(undo reverts it); a call that fails changes nothing. Hear your work with render and check it with analyze. In studio mode the user " +
+                    "(undo reverts it); a call that fails changes nothing. Hear your work with render and check it with analyze. In studio and live mode the user " +
                     "listens live too: transport, session_launch and meters_read play with them. Errors say what to do next.",
             }, tools, GuideLibrary.Prompts(), GuideLibrary.Resources().Concat(Manuals(core)));
             Server.ToolCalled += Log.Write;
@@ -97,8 +97,14 @@ namespace ReBuzz.Agent
         public ReBuzzCore Core { get; }
         /// <summary>ReBuzz's dispatcher; work queued here runs after the engine's own deferred updates.</summary>
         public IUiDispatcher Dispatcher { get; }
-        /// <summary>"studio" or "headless".</summary>
+        /// <summary>
+        /// "studio" (ReBuzz open), "live" (rebuzz-headless playing through an audio device:
+        /// mac-engine.md M5) or "headless" (renders only).
+        /// </summary>
         public string Mode { get; }
+
+        /// <summary>Whether an audio device plays, so the live tools work: studio or live mode.</summary>
+        public bool Live => Mode is "studio" or "live";
         public EngineQueue Queue { get; }
         public AgentLog Log { get; }
         public McpServer Server { get; }

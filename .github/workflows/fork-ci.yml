@@ -96,6 +96,12 @@ jobs:
         dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
         python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
 
+    # Live audio (mac-engine.md M5): rebuzz-headless --audio through PortAudio on the PulseAudio
+    # null sink (clocked, so in real time); the live tools play, meter and stop it.
+    - name: Live audio on Linux (PortAudio)
+      if: always()
+      run: python3 tools/headless-live.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/live"
+
     # The A6 scripted suite (docs/specs/mcp-server.md §10) against rebuzz-headless on Linux
     # (mac-engine.md M3): the same checks, tasks and baseline as the Windows package run.
     - name: Agent evaluation on Linux (rebuzz-headless)

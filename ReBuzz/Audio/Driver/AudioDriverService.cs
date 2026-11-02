@@ -24,23 +24,18 @@ namespace ReBuzz.Audio
 
             try
             {
-                if (drivers != null && drivers.AsioSupported)
+                if (drivers != null)
                 {
-                    foreach (var name in drivers.AsioDriverNames())
-                    {
-                        devices.Add(new AudioEngine.AudioOutDevice
-                        {
-                            Name = name,
-                            Type = AudioEngine.AudioOutType.ASIO
-                        });
-                    }
+                    devices.AddRange(drivers.OutputDevices());
                 }
-
-                devices.Add(new AudioEngine.AudioOutDevice
+                else
                 {
-                    Name = "WASAPI",
-                    Type = AudioEngine.AudioOutType.Wasapi
-                });
+                    devices.Add(new AudioEngine.AudioOutDevice
+                    {
+                        Name = "WASAPI",
+                        Type = AudioEngine.AudioOutType.Wasapi
+                    });
+                }
             }
             catch (Exception e)
             {

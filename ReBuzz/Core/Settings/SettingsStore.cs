@@ -34,7 +34,7 @@ namespace ReBuzz.Core.Settings
 
         /// <summary>The user's settings file: settings.json in the per-user application data folder.</summary>
         public static string DefaultPath =>
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ReBuzz", "settings.json");
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData, Environment.SpecialFolderOption.Create), "ReBuzz", "settings.json");
 
         public string FilePath => path;
 

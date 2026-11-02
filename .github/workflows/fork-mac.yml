@@ -18,6 +18,9 @@ on:
       - 'ReBuzzGUI/BuzzGUI.Common/**'
       - 'ReBuzzGUI/BuzzGUI.Interfaces/**'
       - 'tools/headless-smoke.py'
+      - 'tools/headless-live.py'
+      - 'ReBuzz.AgentEval/**'
+      - 'eval/**'
       - 'ReBuzz/Core/Session/**'
       - 'ReBuzz.Agent/**'
       - 'ReBuzz.SessionTests/**'
@@ -65,6 +68,20 @@ jobs:
         git submodule update --init --depth 1 3rdParty/serilog/serilog
         dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
         python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
+
+    # The A6 scripted suite (docs/specs/mcp-server.md §10) on Apple silicon: mac-engine.md M4's
+    # first exit check. Same checks, tasks and baseline as Windows and Linux.
+    - name: Agent evaluation on macOS (rebuzz-headless)
+      if: always()
+      run: |
+        dotnet build ReBuzz.AgentEval/ReBuzz.AgentEval.csproj -c Release -nologo -v:q
+        dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll run --exe ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless --out "$RUNNER_TEMP/eval" --baseline eval/baseline.json
+
+    # Live audio through CoreAudio (mac-engine.md M5): rebuzz-headless --audio on the runner's
+    # virtual sound device, in real time; the live tools play and meter it.
+    - name: Live audio on macOS (CoreAudio)
+      if: always()
+      run: python3 tools/headless-live.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/live"
 
     - name: Summary
       if: always()

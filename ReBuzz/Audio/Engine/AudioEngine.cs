@@ -16,7 +16,8 @@ namespace ReBuzz.Audio.Engine
         {
             ASIO,
             Wasapi,
-            DirectSound
+            DirectSound,
+            PortAudio       // Fork (docs/specs/mac-engine.md M5): macOS and Linux
         }
 
         public class AudioOutDevice
@@ -103,6 +104,7 @@ namespace ReBuzz.Audio.Engine
                 {
                     case AudioOutType.ASIO:
                     case AudioOutType.Wasapi:
+                    case AudioOutType.PortAudio:
                         currentDriver = (drivers ?? throw new NotSupportedException($"Unsupported audio driver type: {device.Type}")).Create(
                             device.Type,
                             device.Name,
@@ -118,8 +120,11 @@ namespace ReBuzz.Audio.Engine
                         // Fork (0.4.1): output latency for the Session View's launch timing. WASAPI
                         // runs with a 2 x BufferSize buffer, ASIO with BufferSize; the fill thread
                         // keeps up to two more buffers ready.
-                        int frames = currentDriver.BufferSize * (device.Type == AudioOutType.Wasapi ? 2 : 1);
-                        if (engineSettings.AudioBufferFillThread)
+                        // PortAudio reports the device's own latency (mac-engine.md M5).
+                        int frames = currentDriver is PortAudioDriver portAudio
+                            ? portAudio.LatencyFrames
+                            : currentDriver.BufferSize * (device.Type == AudioOutType.Wasapi ? 2 : 1);
+                        if (engineSettings.AudioBufferFillThread && OperatingSystem.IsWindows())
                             frames += currentDriver.BufferSize * 2;
                         buzzCore.OutputLatencySamples = Math.Max(0, frames);
                         break;

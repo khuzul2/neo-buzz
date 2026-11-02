@@ -44,12 +44,12 @@ namespace ReBuzz.Agent
             Readings(tools, host);
         }
 
-        /// <summary>Playing tools need someone listening: studio mode.</summary>
+        /// <summary>Playing tools need someone listening: studio or live mode (an audio device plays).</summary>
         static void RequireStudio(AgentHost host, string tool, string instead)
         {
-            if (host.Mode != "studio")
-                throw new ToolError($"{tool} plays live for the user to hear, which needs studio mode (ReBuzz open, Settings → Agent → Allow agents). " +
-                                    $"This is headless ReBuzz, with no audio output: {instead}");
+            if (!host.Live)
+                throw new ToolError($"{tool} plays live for the user to hear, which needs studio mode (ReBuzz open, Settings → Agent → Allow agents) " +
+                                    $"or rebuzz-headless --audio. This is headless ReBuzz, with no audio output: {instead}");
         }
 
         // ------------------------------------------------------------------ what plays now

@@ -261,7 +261,7 @@ namespace ReBuzz.Agent
             Req("length_beats", Number("Song end, in beats")),
             Req("loop", Object(null, Req("start_beats", Number("Loop start")), Req("end_beats", Number("Loop end")), Req("on", Boolean("Looping")))),
             Req("sample_rate", Integer("Samples per second")),
-            Req("mode", String("studio (window open) or headless", "studio", "headless")),
+            Req("mode", String("studio (window open), live (no window, an audio device plays) or headless (renders only)", "studio", "live", "headless")),
             Req("transport", Object(null, Req("playing", Boolean("Playing")), Req("recording", Boolean("Recording")), Req("position_beats", Number("Play position")))),
             Req("counts", Object(null, Req("machines", Integer("Machines (with Master)")), Req("patterns", Integer("Patterns")), Req("waves", Integer("Waves in the wavetable")))),
             Req("undo", Object(null, Req("can_undo", Boolean("Something to undo")), Req("can_redo", Boolean("Something to redo")), Opt("next_undo", String("What undo would revert, when it's an agent call")))),
