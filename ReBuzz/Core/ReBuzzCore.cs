@@ -31,8 +31,7 @@ using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Interop;
+using System.Windows.Interop;   // RenderMode (S6, PR 8)
 using System.Windows.Media;
 using System.Xml.Linq;
 using Timer = System.Timers.Timer;
@@ -1810,7 +1809,8 @@ namespace ReBuzz.Core
             MidiInOutEngine.SendMidiOut(device, data);
         }
 
-        public event Action<UserControl> SetPatternEditorControl;
+        /// <summary>The pattern editor's control (a WPF UserControl in the app), or null.</summary>
+        public event Action<object> SetPatternEditorControl;
         public event Action<IPattern> SetPatternEditorPatternChanged;
         public event Action<IMachine> SelectedMachineChanged;
 
@@ -1818,7 +1818,7 @@ namespace ReBuzz.Core
         public void SetPatternEditorMachine(IMachine m)
         {
             PatternEditorMachine = m;
-            UserControl patternEditorControl;
+            object patternEditorControl;
             MachineCore mc;
             if (m != null)
             {
@@ -1862,7 +1862,7 @@ namespace ReBuzz.Core
                     em = mc.EditorMachine;
                 }
 
-                UserControl patternEditorControl = MachineManager.GetPatternEditorControl(em);
+                object patternEditorControl = MachineManager.GetPatternEditorControl(em);
 
                 // Calling this first time will link editor machine to machine owning pattern p.
                 // Make "AssingEditorToMachineMethod"?
@@ -2502,6 +2502,15 @@ namespace ReBuzz.Core
         /// <summary>Fork (engine-split.md S1): messages for the engine classes this core owns.</summary>
         internal IUserMessages UserMessages => userMessages;
         private readonly IKeyboard keyboard;
+        /// <summary>
+        /// Fork (engine-split.md S3): shows machine windows; <see cref="DefaultUiHost"/> unless set.
+        /// Null: no windows (the machines remember which ones a song wants open).
+        /// </summary>
+        internal IMachineUiHost UiHost { get; set; } = DefaultUiHost;
+
+        /// <summary>Fork (S3): the host new cores get; the WPF app sets it before the first core.</summary>
+        internal static IMachineUiHost DefaultUiHost { get; set; }
+
         /// <summary>Fork (engine-split.md S5): the keyboard for the engine classes this core owns.</summary>
         internal IKeyboard Keyboard => keyboard;
 

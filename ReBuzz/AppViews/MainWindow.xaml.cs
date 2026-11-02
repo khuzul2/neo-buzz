@@ -196,7 +196,7 @@ namespace ReBuzz
               },
               onSetPatternEditorControl: (control) =>
               {
-                  EditorView.SetEditorControl(control);
+                  EditorView.SetEditorControl(control as System.Windows.Controls.UserControl);
               },
               onFullScreenChanged: (fullScreen) =>
               {
@@ -812,7 +812,7 @@ namespace ReBuzz
                         foreach (var m in song.Machines)
                         {
                             var mac = m as MachineCore;
-                            var pw = mac.ParameterWindow;
+                            var pw = WpfMachineUiHost.ParameterWindowOf(mac);
                             if (pw != null)
                             {
                                 if (pw.Visibility == Visibility.Visible)
@@ -825,7 +825,7 @@ namespace ReBuzz
                                 }
                             }
 
-                            var mgw = mac.MachineGUIWindow; ;
+                            var mgw = WpfMachineUiHost.GuiWindowOf(mac);
                             if (mgw != null)
                             {
                                 if (mgw.Visibility == Visibility.Visible)

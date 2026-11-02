@@ -3,7 +3,6 @@ using BuzzGUI.Common.DSP;
 using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Common.Settings;
 using BuzzGUI.Interfaces;
-using BuzzGUI.MachineView;
 using ReBuzz.Core;
 using ReBuzz.Core.Actions.GraphActions;
 using ReBuzz.MachineManagement;
@@ -557,13 +556,13 @@ namespace ReBuzz.FileOps
                     if (machineData.ParameterWindowVisible && machineData.ParameterWindow != null)
                     {
                         var pw = machineData.ParameterWindow;
-                        machine.OpenParameterWindow(new Rect(pw.Left, pw.Top, pw.Right - pw.Left, pw.Bottom - pw.Top));
+                        machine.OpenParameterWindow(new WindowPlacement(pw.Left, pw.Top, pw.Right - pw.Left, pw.Bottom - pw.Top));
                     }
 
                     if (machineData.GUIWindowVisible && machineData.GUIWindow != null)
                     {
                         var gw = machineData.GUIWindow;
-                        machine.OpenWindowedGUI(new Rect(gw.Left, gw.Top, gw.Right - gw.Left, gw.Bottom - gw.Top));
+                        machine.OpenWindowedGUI(new WindowPlacement(gw.Left, gw.Top, gw.Right - gw.Left, gw.Bottom - gw.Top));
                     }
                 }
             }
@@ -987,19 +986,21 @@ namespace ReBuzz.FileOps
                 bmxm.Patterns = patterns.ToArray();
 
                 // Machine Windows
-                var pw = m.ParameterWindow;
-                var mGUI = m.MachineGUIWindow;
+                // Fork (engine-split.md S3): the UI host knows the windows.
+                var windows = m.GetWindowState();
+                var pw = windows.ParameterWindow;
+                var mGUI = windows.GuiWindow;
 
-                bmxm.ParameterWindowVisible = pw != null && pw.Visibility == System.Windows.Visibility.Visible;
-                bmxm.GUIWindowVisible = mGUI != null && mGUI.Visibility == System.Windows.Visibility.Visible;
+                bmxm.ParameterWindowVisible = windows.ParameterWindowVisible;
+                bmxm.GUIWindowVisible = windows.GuiWindowVisible;
 
                 if (bmxm.ParameterWindowVisible)
                 {
                     BMXMLMachineWindow w = new BMXMLMachineWindow();
                     w.Left = pw.Left;
                     w.Top = pw.Top;
-                    w.Right = pw.Left + pw.ActualWidth;
-                    w.Bottom = pw.Top + pw.ActualHeight;
+                    w.Right = pw.Left + pw.Width;
+                    w.Bottom = pw.Top + pw.Height;
                     bmxm.ParameterWindow = w;
                 }
 
@@ -1008,8 +1009,8 @@ namespace ReBuzz.FileOps
                     BMXMLMachineWindow w = new BMXMLMachineWindow();
                     w.Left = mGUI.Left;
                     w.Top = mGUI.Top;
-                    w.Right = mGUI.Left + mGUI.ActualWidth;
-                    w.Bottom = mGUI.Top + mGUI.ActualHeight;
+                    w.Right = mGUI.Left + mGUI.Width;
+                    w.Bottom = mGUI.Top + mGUI.Height;
                     bmxm.GUIWindow = w;
                 }
 

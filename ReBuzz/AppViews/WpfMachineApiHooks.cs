@@ -12,7 +12,7 @@ namespace ReBuzz.AppViews
     /// WPF-typed members of the machine API (IMachine.ParameterWindow, IBuzz.ThemeColors and the
     /// IMachineDLL skin members) have default bodies that ask WpfMachineApi. App sets the hooks
     /// before the first machine loads.
-    /// - ParameterWindow: MachineCore still implements it, so the hook only forwards (S3 takes it).
+    /// - ParameterWindow and the machine windows (S3): WpfMachineUiHost, every core's default host.
     /// - ThemeColors and the skin members (S4): the engine keeps portable data (an ARGB theme table,
     ///   raw skin pixels); the hooks answer with WPF types, made as the engine made them before.
     /// </summary>
@@ -20,7 +20,10 @@ namespace ReBuzz.AppViews
     {
         internal static void Install()
         {
-            WpfMachineApi.ParameterWindow = m => (m as MachineCore)?.ParameterWindow;
+            WpfMachineApi.ParameterWindow = WpfMachineUiHost.ParameterWindowOf;
+            ReBuzzCore.DefaultUiHost = new WpfMachineUiHost();
+            ReBuzz.ManagedMachine.ManagedMachineHost.WrapWinFormsControl =
+                c => new NativeMachineFrameworkUI.WinFormsControl((System.Windows.Forms.UserControl)c);
             WpfMachineApi.ThemeColors = b => UiUtils.GetThemeColors(b as ReBuzzCore);
             ReBuzzCore.ThemeColorsView = UiUtils.GetThemeColors;   // theme XAML binds Buzz.ThemeColors[...]
             WpfMachineApi.Skin = d => (d as MachineDLL)?.Skin as ImageSource;

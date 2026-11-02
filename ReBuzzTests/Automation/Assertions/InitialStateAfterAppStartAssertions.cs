@@ -152,7 +152,7 @@ namespace ReBuzzTests.Automation.Assertions
             machineCore.PatternEditorData.Should().BeNull();
 
             machineCore.CMachinePtr.Should().Be(IntPtr.Zero);
-            machineCore.ParameterWindow.Should().BeNull();
+            ((IMachine)machineCore).ParameterWindow.Should().BeNull();   // fork (S3): from the UI host
 
             InitialStateAssertions.AssertInitialPerformanceData(machineCore.PerformanceDataCurrent);
             InitialStateAssertions.AssertInitialPerformanceData(machineCore.PerformanceData);
@@ -175,7 +175,8 @@ namespace ReBuzzTests.Automation.Assertions
             machineCore.Hidden.Should().BeTrue();
             machineCore.EditorMachine.Should().BeNull();
 
-            machineCore.MachineGUIWindow.Should().BeNull();
+            ReBuzz.AppViews.WpfMachineUiHost.GuiWindowOf(machineCore).Should().BeNull();
+            machineCore.GetWindowState().Should().Be(default(MachineWindowState));
 
             machineCore.DLL.Should().Be(machineCore.MachineDLL);
             InitialStateAssertions.AssertFakeModernPatternEditor(reBuzzCore, gearDir, machineCore.MachineDLL, true, MachineInfoFlags.STEREO_EFFECT | MachineInfoFlags.LOAD_DATA_RUNTIME, new ModernPatternEditorManagedDllAssertions());

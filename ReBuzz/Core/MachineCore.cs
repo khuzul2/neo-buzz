@@ -3,7 +3,6 @@ using BuzzGUI.Common;
 using BuzzGUI.Common.Settings;
 using BuzzGUI.Interfaces;
 using BuzzGUI.MachineView;
-using BuzzGUI.ParameterWindow;
 using ReBuzz.Common;
 using ReBuzz.Common.Interfaces;
 using ReBuzz.MachineManagement;
@@ -22,9 +21,7 @@ using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Interop;
 
 namespace ReBuzz.Core
 {
@@ -452,7 +449,8 @@ namespace ReBuzz.Core
         IntPtr cMachinePtr;
         public IntPtr CMachinePtr { get => cMachinePtr; set => cMachinePtr = value; }
 
-        public Window ParameterWindow { get => parameterWindow; }
+        // IMachine.ParameterWindow (a WPF Window) is answered by the UI host through the Windows
+        // build's default body (engine-split.md S3, WpfMachineApi.ParameterWindow).
 
         readonly MachinePerformanceData performanceDataCurrent = new MachinePerformanceData();
         public MachinePerformanceData PerformanceDataCurrent { get => performanceDataCurrent; }
@@ -703,180 +701,63 @@ namespace ReBuzz.Core
             }
         }
 
-        internal MachineGUIHostWindow MachineGUIWindow { get => machineGUIWindow; }
-        MachineGUIHostWindow machineGUIWindow;
-        ParameterWindow parameterWindow;
+        // Fork (engine-split.md S3): the windows themselves belong to the UI host (WpfMachineUiHost
+        // in the app). Without one the machine only remembers which windows a song wants open, so
+        // saving the song keeps them.
+        static IMachineUiHost UiHostOf(IMachineGraph graph) => (graph?.Buzz as ReBuzzCore)?.UiHost;
+        MachineWindowState windowsWanted;
 
-        internal void OpenParameterWindow(Rect rect = default)
+        internal string BuzzPath => buzzPath;
+
+        internal void OpenParameterWindow(WindowPlacement? at = null)
         {
-            if (parameterWindow == null)
+            var host = UiHostOf(graph);
+            if (host != null)
             {
-                ParameterWindowVM pWindowVM = new ParameterWindowVM();
-                pWindowVM.Machine = this;
-
-                parameterWindow = UiUtils.GetUserControlXAML<ParameterWindow>("ParameterWindow.xaml", buzzPath);
-                Window window = (Window)HwndSource.FromHwnd(graph.Buzz.MachineViewHWND).RootVisual;
-                parameterWindow.Owner = window;
-
-                parameterWindow.DataContext = pWindowVM;
-                parameterWindow.Closing += (s, e) =>
-                {
-                    if (parameterWindow != null)
-                    {
-                        parameterWindow.Hide();
-                    }
-                    e.Cancel = true;
-                };
+                host.OpenParameterWindow(this, at);
+                return;
             }
-
-            if (rect.Width != 0)
+            windowsWanted = windowsWanted with
             {
-                parameterWindow.Left = rect.Left;
-                parameterWindow.Top = rect.Top;
-                parameterWindow.Width = rect.Width;
-                parameterWindow.Height = rect.Height;
-            }
-
-            parameterWindow.Show();
-            parameterWindow.InvalidateMeasure();
-            parameterWindow.UpdateLayout();
+                ParameterWindowVisible = true,
+                ParameterWindow = at is { Width: not 0 } p ? p : windowsWanted.ParameterWindow,
+            };
         }
 
-        internal void OpenWindowedGUI(Rect rect = default)
+        internal void OpenWindowedGUI(WindowPlacement? at = null)
         {
             if (!(DLL.GUIFactoryDecl != null && DLL.GUIFactoryDecl.PreferWindowedGUI))
             {
                 return;
             }
 
-            if (machineGUIWindow == null)
+            var host = UiHostOf(graph);
+            if (host != null)
             {
-                machineGUIWindow = new MachineGUIHostWindow();
-
-                if (DLL.GUIFactoryDecl.Width > 0 && DLL.GUIFactoryDecl.Height > 0)
-                {
-                    machineGUIWindow.SizeToContent = SizeToContent.Manual;
-                    machineGUIWindow.Width = DLL.GUIFactoryDecl.Width;
-                    machineGUIWindow.Height = DLL.GUIFactoryDecl.Height;
-                }
-                else
-                {
-                    machineGUIWindow.SizeToContent = SizeToContent.WidthAndHeight;
-                }
-
-                this.gui = DLL.GUIFactory.CreateGUI(machineGUIWindow);
-                gui.Machine = this;
-                var guiUIElement = gui as UserControl;
-
-                machineGUIWindow.Title = Name;
-                machineGUIWindow.ResizeMode = DLL.GUIFactoryDecl.IsGUIResizable ? ResizeMode.CanResize : ResizeMode.NoResize;
-
-                machineGUIWindow.Closing += (s, e) =>
-                {
-                    machineGUIWindow.Hide();
-                    e.Cancel = true;
-                };
-
-                var interop = new WindowInteropHelper(machineGUIWindow);
-                interop.Owner = Graph.Buzz.MachineViewHWND;
-
-                machineGUIWindow.Loaded += (s, e) =>
-                {
-                    if (DLL.GUIFactoryDecl.UseThemeStyles)
-                    {
-                        var r = UiUtils.GetUserControlXAML<Window>("ParameterWindow.xaml", buzzPath);
-                        machineGUIWindow.Resources.MergedDictionaries.Add(r.Resources);
-                    }
-                };
-
-                try
-                {
-                    if (!DLL.IsManaged)
-                    {
-
-                        // Add mouse wheel zoom
-                        Viewbox vb = new Viewbox();
-                        vb.Stretch = System.Windows.Media.Stretch.Fill;
-                        vb.Child = guiUIElement;
-                        machineGUIWindow.Content = vb;
-
-                        double scale = 1.0;
-
-                        guiUIElement.SizeChanged += (sender, e) =>
-                        {
-                            vb.Width = guiUIElement.ActualWidth * scale;
-                            vb.Height = guiUIElement.ActualHeight * scale;
-
-                            machineGUIWindow.Width = vb.Width;
-                            machineGUIWindow.Height = vb.Height;
-                        };
-
-                        machineGUIWindow.SizeChanged += (sender, e) =>
-                        {
-                            machineGUIWindow.Width = vb.Width + SystemParameters.VerticalScrollBarWidth;
-                            machineGUIWindow.Height = vb.Height + SystemParameters.HorizontalScrollBarHeight + SystemParameters.ResizeFrameHorizontalBorderHeight;
-                        };
-
-                        machineGUIWindow.PreviewMouseWheel += (sender, e) =>
-                        {
-                            if (Keyboard.Modifiers == ModifierKeys.Control)
-                            {
-                                scale += e.Delta / 600.0;
-                                if (scale < 0.5)
-                                    scale = 0.5;
-
-                                vb.Width = guiUIElement.ActualWidth * scale;
-                                vb.Height = guiUIElement.ActualHeight * scale;
-
-                                machineGUIWindow.Width = vb.Width;
-                                machineGUIWindow.Height = vb.Height;
-
-                                e.Handled = true;
-                            }
-                        };
-                    }
-                    else
-                    {
-                        machineGUIWindow.Content = guiUIElement;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    (graph.Buzz as ReBuzzCore)?.UserMessages.Error(ex.ToString(), null, ex);
-                }
+                host.OpenGui(this, at);
+                return;
             }
-
-            if (rect.Width != 0)
+            windowsWanted = windowsWanted with
             {
-                machineGUIWindow.Left = rect.Left;
-                machineGUIWindow.Top = rect.Top;
-                machineGUIWindow.Width = rect.Width;
-                machineGUIWindow.Height = rect.Height;
-            }
-
-            try
-            {
-                if (machineGUIWindow != null)
-                    machineGUIWindow.Show();
-            }
-            catch (Exception ex)
-            {
-                (graph.Buzz as ReBuzzCore)?.UserMessages.Error(ex.ToString(), null, ex);
-            }
+                GuiWindowVisible = true,
+                GuiWindow = at is { Width: not 0 } p ? p : windowsWanted.GuiWindow,
+            };
         }
 
         internal void CloseWindows()
         {
-            if (parameterWindow != null)
+            var host = UiHostOf(graph);
+            if (host != null)
             {
-                parameterWindow.Close();
+                host.CloseWindows(this);
+                return;
             }
-
-            if (machineGUIWindow != null)
-            {
-                machineGUIWindow.Close();
-            }
+            // The windows only hide when closed (their Closing is cancelled).
+            windowsWanted = windowsWanted with { ParameterWindowVisible = false, GuiWindowVisible = false };
         }
+
+        /// <summary>Which windows are open and where (saved with the song).</summary>
+        internal MachineWindowState GetWindowState() => UiHostOf(graph)?.GetWindowState(this) ?? windowsWanted;
 
         public void ExecuteCommand(int id)
         {
@@ -972,13 +853,10 @@ namespace ReBuzz.Core
                     OpenParameterWindow();
                     break;
                 case MachineDialog.Rename:
-                    var renameWindow = new RenameMachineWindow("Rename Machine", name, false);
-                    renameWindow.SetStartUpLocation(x, y);
-
-                    if (renameWindow.ShowDialog() == true)
+                    var newName = UiHostOf(graph)?.AskName("Rename Machine", name, x, y);
+                    if (newName != null)
                     {
-                        var newName = renameWindow.tbName.Text.Trim();
-                        (graph.Buzz as ReBuzzCore).SongCore.RenameMachineUndoable(this, newName);
+                        (graph.Buzz as ReBuzzCore).SongCore.RenameMachineUndoable(this, newName.Trim());
                     }
                     break;
                 case MachineDialog.Delay:
