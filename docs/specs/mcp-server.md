@@ -175,7 +175,7 @@ Neo machines resolve through their exact mappings. Legacy machines resolve by se
   - stop a take, disarming a track it armed;
   - capture what armed tracks were played lately (`SessionLayout.CaptureMidi`).
 - **`midi_play`** runs phrases on a thread of its own (`LivePlayer`).
-  - **Timing.** Phrases are timed by the session's clock as heard, the clock a take stamps. A phrase started on the bar lands on the bar in a take and follows tempo changes. On Windows the thread waits on a high-resolution waitable timer, as the MIDI clock output does. With the transport stopped, the wall clock times it from the tempo.
+  - **Timing.** Phrases are timed by the session's clock as heard, the clock a take stamps. A phrase started on the bar lands on the bar in a take and follows tempo changes. The thread waits on each OS's own precise timer (`PreciseWaiter`: a high-resolution waitable timer on Windows, `mach_wait_until` on macOS, `clock_nanosleep` on Linux), as the MIDI clock output does. With the transport stopped, the wall clock times it from the tempo.
   - **Routing.** An armed machine gets the notes through the session's keyboard input (`SessionCore.OnMidiInput`), so it plays and records them. Any other machine gets them directly.
 - **`meters_read`** fills `LiveMeter` windows (pure, in `ReBuzz.Agent/Audio`):
   - from the master's tap, on the UI thread;

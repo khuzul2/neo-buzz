@@ -145,7 +145,7 @@ namespace ReBuzz.Agent
 
         void Run()
         {
-            using var wait = new Waiter();
+            using var wait = new ReBuzz.Platform.PreciseWaiter();
             while (!stopping)
             {
                 double ahead;
@@ -163,51 +163,6 @@ namespace ReBuzz.Agent
                 if (ahead > 800) wait.Micros(Math.Min(ahead - 600, 5000));
                 else Thread.SpinWait(50);
             }
-        }
-
-        /// <summary>Waits of a millisecond or less: a high-resolution waitable timer on Windows (as the MIDI clock's), else Sleep.</summary>
-        sealed class Waiter : IDisposable
-        {
-            IntPtr timer;
-
-            public Waiter()
-            {
-                if (!OperatingSystem.IsWindows()) return;
-                try { timer = CreateWaitableTimerExW(IntPtr.Zero, null, 0x2 /* high resolution */, 0x1F0003); }
-                catch (Exception) { timer = IntPtr.Zero; }
-            }
-
-            public void Micros(double micros)
-            {
-                if (timer != IntPtr.Zero)
-                {
-                    long due = -(long)(micros * 10);            // relative, in 100 ns
-                    if (SetWaitableTimer(timer, ref due, 0, IntPtr.Zero, IntPtr.Zero, false))
-                    {
-                        WaitForSingleObject(timer, 100);
-                        return;
-                    }
-                }
-                Thread.Sleep(Math.Max(1, (int)(micros / 1000)));
-            }
-
-            public void Dispose()
-            {
-                if (timer != IntPtr.Zero) CloseHandle(timer);
-                timer = IntPtr.Zero;
-            }
-
-            [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
-            static extern IntPtr CreateWaitableTimerExW(IntPtr attributes, string name, uint flags, uint access);
-
-            [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
-            static extern bool SetWaitableTimer(IntPtr timer, ref long dueTime, int period, IntPtr completion, IntPtr argument, bool resume);
-
-            [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-            static extern uint WaitForSingleObject(IntPtr handle, uint milliseconds);
-
-            [System.Runtime.InteropServices.DllImport("kernel32.dll")]
-            static extern bool CloseHandle(IntPtr handle);
         }
 
         public void Dispose()
