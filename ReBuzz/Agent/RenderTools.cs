@@ -263,6 +263,15 @@ namespace ReBuzz.Agent
 
                     var wm = new WorkManager(core, new WorkThreadEngine(1), 0, core.EngineSettings);
                     var buffer = new float[512];
+                    // A6: every render starts on a tick boundary, wherever the engine's tick phase was
+                    // left, so its blocks (and so every machine's state when the first note plays) are
+                    // the same each time: renders of a freshly opened song are bit-identical, in this
+                    // process or another (docs/specs/mcp-server.md §10).
+                    info.PosInTick = 0;
+                    var sub = ReBuzzCore.subTickInfo;
+                    sub.PosInSubTick = 0;
+                    sub.CurrentSubTick = 0;
+                    sub.SubTickReminderCounter = 0;
                     // Tails of what played before (reverbs, delays) die away first, so renders compare.
                     for (long quiet = 0, run = 0; run < 5L * rate && quiet < rate / 10; run += 256)
                     {
