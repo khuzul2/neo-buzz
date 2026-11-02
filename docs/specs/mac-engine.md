@@ -89,5 +89,14 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
   - gear and theme paths were built with backslashes;
   - missing gear folders threw.
 
-**Still to do in M2:** a song with a native machine opening as placeholders and saving back unchanged. **M3–M7:** as in §3.
+**Native machines as placeholders: they open, but the round trip loses data.**
+- **Opening works.** Ten of the first twelve buzztrax demo songs (`ExternalMachines/source/**/*.bmx`) open headless on Linux. Their native machines show as missing machines with their connections.
+- **Two "super old" BMX files don't open.** Their parameter data can't be parsed without the machine DLL, the same as on Windows without those machines.
+- **Saving back loses data, so this is the open part of M2.**
+  - An old demo saved as BMX, reopened and saved again changes size (8,178 → 9,872 → 9,216 bytes).
+  - A BMXML round trip drops placeholder machines' parameter values.
+  - Fix: a placeholder carries its machine's section as loaded (parameters, data, attributes, pattern columns) and writes it back unchanged.
+  - Check whether Windows with missing machines does the same, since it's the same code.
+
+**M3–M7:** as in §3.
 
