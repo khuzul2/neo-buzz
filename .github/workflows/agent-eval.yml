@@ -117,6 +117,10 @@ jobs:
       shell: bash
       env:
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        # ReBuzz's headless start-up (the gear scan) can take longer than the CLI's 30 s default for an
+        # MCP server to answer, and a 2-minute song renders in tens of seconds.
+        MCP_TIMEOUT: '240000'
+        MCP_TOOL_TIMEOUT: '600000'
         TASKS: ${{ inputs.tasks }}
         MODEL: ${{ inputs.model }}
         MAX_TURNS: ${{ inputs.max_turns || '80' }}
