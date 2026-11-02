@@ -1,3 +1,4 @@
+#nullable disable
 // Fork (docs/specs/mac-engine.md M0): the engine's UI-thread seam (IUiDispatcher) for hosts with
 // no UI toolkit: one thread that runs queued work, highest priority first and in order within a
 // priority, as WPF's dispatcher does, plus its timers. The headless host runs it on its main

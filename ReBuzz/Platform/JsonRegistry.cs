@@ -1,3 +1,4 @@
+#nullable disable
 // Fork (docs/specs/mac-engine.md M0): the engine's registry seam (IRegistryEx) kept in a JSON
 // file, for headless and macOS hosts where there is no Windows registry. Paths are the
 // registry's: Write/Read take a path under the registry root ("Settings",

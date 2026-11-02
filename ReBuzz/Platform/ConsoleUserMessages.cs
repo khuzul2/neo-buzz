@@ -1,3 +1,4 @@
+#nullable disable
 // Fork (docs/specs/mac-engine.md M0): the engine's message seam (IUserMessages) for hosts with no
 // window: messages are written as lines (stderr by default, which keeps stdout for the MCP
 // protocol), and questions get the answer that does the least: No, Cancel, or OK when that is
