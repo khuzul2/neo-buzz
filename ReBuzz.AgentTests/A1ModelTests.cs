@@ -240,7 +240,7 @@ namespace ReBuzz.AgentTests
         [Test]
         public void GuidesAreServedAsToolAndResources()
         {
-            Assert.That(GuideLibrary.TopicNames, Is.EquivalentTo(new[] { "workflow", "concepts" }));
+            Assert.That(GuideLibrary.TopicNames, Is.EquivalentTo(new[] { "workflow", "concepts", "composition", "sound-design", "mixing", "mastering", "troubleshooting" }));
             foreach (var topic in GuideLibrary.TopicNames)
                 Assert.That(GuideLibrary.Get(topic), Does.StartWith("# "), topic + " is embedded");
             Assert.That(GuideLibrary.Get("nonsense"), Is.Null);
@@ -252,11 +252,11 @@ namespace ReBuzz.AgentTests
             var read = TestTools.CallTool(server, "guide", new JsonObject { ["topic"] = "workflow" });
             Assert.That(read.Error, Is.False, read.Text);
             Assert.That(read.Data["markdown"]!.GetValue<string>(), Does.Contain("render"));
-            var bad = TestTools.CallTool(server, "guide", new JsonObject { ["topic"] = "mixing" });
+            var bad = TestTools.CallTool(server, "guide", new JsonObject { ["topic"] = "nonsense" });
             Assert.That(bad.Error, Is.True, "unknown topics fail schema validation");
             Assert.That(bad.Text, Does.Contain("workflow"));
             var list = TestTools.CallTool(server, "guide", new JsonObject());
-            Assert.That(list.Data["topics"]!.AsArray().Count, Is.EqualTo(2));
+            Assert.That(list.Data["topics"]!.AsArray().Count, Is.EqualTo(7));
         }
     }
 }
