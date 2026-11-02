@@ -35,7 +35,10 @@ namespace ReBuzz.AgentTests
         public void EveryNeoManifestParsesWithExactMappings()
         {
             var files = Directory.GetFiles(Path.Combine(RepoRoot(), "Machines"), "*" + MachineManifest.Suffix, SearchOption.AllDirectories);
-            Assert.That(files.Length, Is.EqualTo(6), "one manifest per Neo machine");
+            // One per Neo machine: every machine folder with a Params.def (the core six, the mix and master batch, …).
+            int machines = Directory.GetDirectories(Path.Combine(RepoRoot(), "Machines"), "Neo*").Count(d => File.Exists(Path.Combine(d, "Params.def")));
+            Assert.That(machines, Is.AtLeast(9));
+            Assert.That(files.Length, Is.EqualTo(machines), "one manifest per Neo machine");
             foreach (var file in files)
             {
                 var m = MachineManifest.Load(file)!;
