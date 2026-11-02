@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| Status | v1 — core six built (M0–M2): measured values below are from Linux CI, 2026-11-01 |
+| Status | v1.1 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter) built: measured values below are from Linux CI, 2026-11-01 |
 | Date | 2026-11-01 |
-| Scope | New high-quality machines for sound design, written in C# with custom editors: first batch "core six" |
+| Scope | New high-quality machines for sound design, mixing and mastering, written in C# with custom editors: first batch "core six", second batch "mix and master" |
 
 ---
 
@@ -25,6 +25,14 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Wave | generator | Wavetable synth: 2 morphing oscillators with warp modes, table import, mod matrix |
 | Neo FM6 | generator | 6-operator FM: the 32 DX7 algorithms, DX7 envelopes, DX7 SysEx import |
 
+**Second batch (mix and master, for the agent server: docs/specs/mcp-server.md §8.2)**
+
+| Machine | Kind | One line |
+|---|---|---|
+| Neo EQ | effect | 8-band parametric EQ: bell, shelves, cuts at 12/24/48 dB/oct, notch; minimum phase; response graph with draggable bands over the spectrum |
+| Neo Utility | effect | Gain, balance or mono pan, width, bass mono, polarity, swap and DC removal, each exact |
+| Neo Limiter | effect | True-peak lookahead limiter: a ceiling in dBTP as BS.1770 measures it, auto or set release, stereo link |
+
 ## 2. Decisions
 
 - **C#**, managed machines (`IBuzzMachine`), like the Pedal set: no native build, no 32-bit bridge.
@@ -40,12 +48,14 @@ Machines/
   NeoBuzz.Dsp/        Pure DSP (no Buzz or WPF references), internal types, linked as source
   NeoBuzz.Machine/    Buzz glue shared by the machines (parameters, notes, MIDI), linked as source
   NeoBuzz.Editor/     WPF editor kit (knobs, switches, meters, graphs, preset bar), linked as source
-  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/
+  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/ NeoEq/ NeoUtility/ NeoLimiter/
     Engine/           the machine's DSP: pure, tested on Linux
     Params.def        the parameter table (source of truth)
+    Presets.txt       factory presets in units
     *.cs              the machine class and its editor
-NeoBuzz.MachineTests/ Linux NUnit project: links NeoBuzz.Dsp and every Engine/ folder
-tools/gen-machine-params.py   Params.def → Engine/Params.g.cs + Machine.Params.g.cs
+NeoBuzz.MachineTests/ Linux NUnit project: links NeoBuzz.Dsp, every Engine/ folder, the editor kit's Core/ and the analysis library's true peak
+tools/gen-machine-params.py   Params.def → Engine/Params.g.cs + Machine.Params.g.cs + <Name>.machine.json
+tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 ```
 
 - **Linked as source, not a shared DLL.** ReBuzz loads managed machines with `Assembly.LoadFile`, so a shared library DLL would load once per machine folder and version clashes would be silent. Each machine compiles its own copy; types are `internal`.
@@ -65,17 +75,17 @@ tools/gen-machine-params.py   Params.def → Engine/Params.g.cs + Machine.Params
 | Block | What |
 |---|---|
 | Math | fast tanh/exp2, dB, note → Hz, denormal-safe helpers, xorshift noise (white, pink) |
-| Smoothing | one-pole and linear-ramp parameter smoothers |
+| Smoothing | one-pole and linear-ramp parameter smoothers (the ramp lands exactly on its target, for gains that must end bit-exact) |
 | Oscillators | band-limited step/ramp tables (BLEP/BLAMP): saw, pulse with PWM, triangle, hard sync, through-zero FM |
 | Wavetables | frames with per-octave band-limited mipmaps built by FFT; morphing reads |
-| Filters | zero-delay-feedback SVF (LP/BP/HP/notch/peak/allpass/shelves), nonlinear ZDF ladder (LP24/LP12), one-pole, RBJ biquads, DC blocker |
+| Filters | zero-delay-feedback SVF (LP/BP/HP/notch/peak/allpass/shelves), nonlinear ZDF ladder (LP24/LP12), one-pole, RBJ biquads, DC blocker; (M3) a double-precision TPT section for equalisers and crossovers (`SvfSection`, with its exact magnitude response) and Butterworth cascades (12/24/48 dB/oct) |
 | Resampling | linear-phase FIR halfband (2×/4×/8×, fixed latency), polyphase IIR halfband (synths) |
 | Modulation | analog-style ADSR, DX7 rate/level envelope, LFO (7 shapes, tempo sync, fade-in), 8-slot mod matrix |
 | Voices | allocator: poly with stealing (released first, then oldest; stolen voices fade), mono/legato with note stack, glide, unison |
 | Delay | fractional delay lines (cubic/allpass), modulated allpass diffusers |
 | Analysis | peak/RMS meters for the editors |
 
-**Editor kit (`NeoBuzz.Editor`)**: dark theme with one accent per machine; rotary knob (drag, Shift for fine, wheel, double-click for default, value shown while dragging); segmented switch; section frame; level and gain-reduction meters; graph surface for curves, envelopes, waves and algorithms; preset bar (ReBuzz presets: browse, previous/next, save). Controls bind to `IParameter` and follow automation.
+**Editor kit (`NeoBuzz.Editor`)**: dark theme with one accent per machine; rotary knob (drag, Shift for fine, wheel, double-click for default, value shown while dragging); segmented switch; section frame; level and gain-reduction meters; graph surface for curves, envelopes, waves and algorithms; (M3) a frequency-response graph with draggable band handles (toolkit-free axes, hit-testing and drags in `Core/ResponseGraph.cs`, the pointer routed by `InteractiveGraph`); preset bar (ReBuzz presets: browse, previous/next, save). Controls bind to `IParameter` and follow automation.
 
 ## 5. Machines and acceptance criteria
 
@@ -166,6 +176,77 @@ DX7 architecture: 6 operators, 32 algorithms, feedback, per-operator ratio/fixed
 | Alias floor | single sine, 2×: ≤ −90 dB; full-depth 1:1 FM at C7, Clean: ≤ −80 dB | sine −135 dB; FM at C7 −93.4 dB (Raw −3.9 dB) |
 | CPU | 16 voices × 6 operators, 2×: ≥ 10× real time on the CI runner | 10.7× |
 
+### Mix and master batch (M3, MCP A4)
+
+The three machines an agent mixes and masters with (docs/specs/mcp-server.md §8.2). Their parameters speak the agent's units (Hz, dB, Q, %, ms), with exact steps where an agent names values: gains in 0.1 dB steps, frequencies in 0.07 % steps (a requested "320 Hz" lands within 0.04 % and reads back as "320 Hz"), Q in 0.3 % steps. The ceiling is in dB of true peak (dBTP), written as dB, which the agent server already parses.
+
+### Neo EQ (parametric equalizer)
+
+Eight bands in series, then the output gain. Each band is one second-order section, or a cascade of them for the steeper cuts: a topology-preserving (TPT) state-variable filter in double precision (NeoBuzz.Dsp `SvfSection`), whose response is the RBJ cookbook biquad's: the bilinear transform of the analog prototype, prewarped at the band frequency. Minimum phase, zero latency. One function (`EqDesign`) designs the sections the engine runs, the curve the editor draws and the reference the tests measure against.
+
+| Type | Prototype |
+|---|---|
+| Bell | RBJ peaking: the gain at the frequency, half the gain (in dB) at the edges of a bandwidth set by Q; boost and cut mirror each other |
+| Low shelf, High shelf | RBJ shelves: half the gain at the frequency; Q 0.71 is the steepest shelf without overshoot, higher Q adds a dip and a bump |
+| Low cut, High cut | Butterworth, 12, 24 or 48 dB/oct (1, 2 or 4 sections): −3 dB at the frequency with Q 0.71 (maximally flat); another Q scales the resonance of the sharpest section |
+| Notch | RBJ notch: a null at the frequency, bandwidth from Q |
+
+Parameters per band (B1 … B8): On, Type, Freq (20 Hz – 20 kHz), Gain (±24 dB, bells and shelves), Q (0.1 – 30), Slope (12/24/48 dB/oct, cuts). Then Output (±24 dB). Frequency, gain and Q glide (20 ms one-pole in log frequency, dB and log Q; the sections are recomputed every sample while they move and land exactly on the design); type, slope and on/off changes fade the band out over 5 ms, switch, and fade it back in. The defaults spread the bands over the spectrum: B1 low cut 30 Hz and B8 high cut 18 kHz start off; B2 low shelf 100 Hz, bells at 250 Hz, 600 Hz, 1.5 kHz and 4 kHz, and B7 high shelf 8 kHz start on at 0 dB, which is exactly transparent, so an agent's first move is just a gain.
+
+The editor draws the response over 20 Hz – 20 kHz with a numbered handle per band (drag: frequency and gain, Shift for fine; wheel: Q; double-click: on/off; dragging a band that is off switches it on), the selected band's own curve shaded, and the output spectrum behind it (4096-point FFT, 1/6 octave, tilted +3 dB/oct so pink noise reads flat). Below, a band selector and the selected band's controls. The graph's axes, hit-testing and drags are toolkit-free (NeoBuzz.Editor `Core/ResponseGraph.cs`), tested on Linux.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Response = design | measured response (the engine's impulse response, DTFT at 160 frequencies) within ±0.1 dB of the drawn design curve, 20 Hz – 16 kHz, at 44.1 and 48 kHz: a mix curve (all 8 bands), a mastering curve, extremes (Q 30 at 20 Hz, ±24 dB, 48 dB/oct cuts) | worst 0.005 dB (48 kHz), 0.002 dB (44.1 kHz): the extremes at 20 Hz |
+| Labels | a bell's gain at its frequency equals the setting (±0.01 dB); a shelf is at half its gain at its frequency (±0.01 dB) and within 0.1 dB of its gain 4 octaves past it; a notch is ≥ 60 dB deep at its frequency | bells exact to 0.0001 dB; shelves 3.000 / 6.000 dB (+6 low) and −3.000 / −6.000 dB (−6 high); notch −170 dB |
+| Cut slopes | Q 0.71: −3.01 dB at the cutoff (±0.05 dB) for every slope; the slope over the second octave past the cutoff (where the asymptote has taken over and float audio still resolves 48 dB/oct) is 12, 24 or 48 dB/oct within ±3 % | −3.007 dB at every slope; low cuts 11.80, 24.08, 48.18 dB/oct; high cuts 12.10, 24.67, 49.38 dB/oct (1 kHz) |
+| Parameter moves | a +12 dB bell swept 100 Hz – 5 kHz and its gain swept ±12 dB, one value per 256-sample block as automation arrives, on a 220 Hz sine: energy above 2 kHz ≤ −90 dB relative to the sine (the same moves on a plain biquad switched per block measure ≥ −70 dB, so the test hears zipper noise when there is some) | −124.8 dB (switched biquad: −54.0 dB); type and on/off switches: no step larger than the signal's own |
+| Flat | every band at 0 dB or off: output equals the input (±1e-6) | defaults: identical; all bands off: bit for bit |
+| CPU | 8 bands with 48 dB/oct cuts at both ends, stereo: ≥ 50× real time on the CI runner (was 100×: shared runners vary, and 50× is 2 % of a core) | 144× |
+
+Later: analog-matched (decramped) designs, so a bell or shelf above a few kHz keeps its analog shape up to Nyquist. The bilinear transform squeezes it: against the analog prototype, RBJ sections stay within 0.2 dB up to 16 kHz for bands below about 1 kHz, but a wide bell at 8 kHz differs by about 3 dB near 16 kHz. (Prototypes of a 5-point magnitude match and of Orfanidis' prescribed-Nyquist bell were 3–10× closer for bells but not robust near Nyquist, so they wait.) Also later: linear-phase mode, dynamic bands, mid/side bands.
+
+### Neo Utility (gain, pan, width)
+
+DC removal → polarity invert → channel swap → width (mid/side) → bass mono → pan → gain. Zero latency. Every move is a linear ramp that lands exactly on its value (gain, pan and width over 20 ms, switches over 5 ms), and a stage at its identity is skipped, so settled values are exact and the defaults pass the input bit for bit.
+
+Parameters: Gain (−∞, −60 … +24 dB in 0.1 dB steps), Pan (−100 … +100 %), Pan law (**Balance**: the far side fades linearly to silence, 0 dB at centre, for stereo sources; **Mono pan**: sums to mono, then the sine/cosine law, −3 dB per side at centre), Width (0 – 200 %: the side signal times the width; 0 % is mono), Bass mono (Off/On) and Bass mono freq (20 – 500 Hz: the side signal through a 4th-order Butterworth high-pass; the mid is untouched, so the lows become mono), Invert L and Invert R (the inputs, before the swap), Swap, DC removal (2nd-order Butterworth high-pass at 5 Hz). The editor shows the stereo image (width and pan as a wedge, the mono lows, polarity and swap tags) and the live output correlation.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Gain | settled output/input = setting within ±0.001 dB, −60 … +24 dB; −∞ is silence | exact (0.00000 dB); −∞ silent |
+| Pan | Balance: far side 1 − \|pan\|, near side 0 dB; Mono pan: L = cos θ and R = sin θ times the mono sum, θ = (pan + 1) · 45°; each within ±0.001 dB | within 0.0001 dB; the silent side exactly 0 |
+| Width | the side/mid ratio scales by the setting (±0.01 dB); 0 %: L = R exactly; 100 %: the input unchanged | within 0.00005 dB; 0 % mono; 100 % bit for bit |
+| Bass mono | side −3 dB at the frequency (±0.1 dB), ≥ 45 dB down two octaves below, within 0.1 dB two octaves above; the mid untouched (±1e-6) | 120 Hz: −3.008 dB, −48.2 dB, −0.0001 dB; mid untouched |
+| Invert, swap | exact, sample for sample | exact |
+| DC removal | a DC offset falls below −100 dB within 1 s; 20 Hz passes within ±0.05 dB | below −100 dB after 534 ms; 20 Hz −0.017 dB |
+| Moves | no steps: a −24 dB gain move and a polarity flip on DC move at most 0.001 per sample | 0.00049 per sample |
+| Default | the input bit for bit, zero latency | bit for bit, latency 0 |
+
+### Neo Limiter (true-peak limiter)
+
+Input gain → 4× true-peak detector → the reduction each sample needs to stay under the ceiling (dB ≥ 0) → stereo link → hold over the lookahead (a sliding maximum) → release → two box filters over the lookahead → gain on the audio, delayed to match → output.
+
+- **Detector**: the BS.1770 interpolator NeoBuzz.Analysis measures true peak with (windowed sinc, 24 taps per phase, Kaiser β 8, the same phase positions), run sample by sample, so the limiter holds exactly what the meter reads. A sample answers for the interpolated points on both sides of it.
+- **Lookahead**: the hold keeps the largest reduction of the last `lookahead` samples; the two box filters (lengths summing to the lookahead plus one) average it into a smooth ramp that reaches the needed value exactly when the peak's sample leaves. Each value averaged is at least what that sample needs, so the guarantee holds by construction, not by tuning.
+- **Release**: one-pole in dB; the Release time is the time constant (63 % recovered). **Auto release** slides the rate from five times faster (an isolated peak) to the Release time (sustained limiting), by the ratio of the reduction's 0.3 s average to its value now: transients recover quickly, dense material slowly, with no more ripple on low frequencies than a set release.
+- **Latency**: lookahead + 11 samples (the interpolator), reported to ReBuzz; it follows the Lookahead setting. Fully linked (the default), one gain chain serves both channels.
+
+Parameters: Input gain (−12 … +24 dB), Ceiling (−12 … 0 dB true peak, 0.1 dB steps), Release (1 ms … 1 s), Auto release, Lookahead (0.5 – 5 ms), Stereo link (0 – 100 %). The editor shows input, output true peak and gain reduction over the last four seconds against the ceiling, and input, output true-peak and gain-reduction meters.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| True peak | output true peak (4× oversampled, NeoBuzz.Analysis `Loudness.TruePeak`) ≤ ceiling + 0.1 dB: naive square waves (997 Hz, 5.5 kHz), a drum loop and pink noise, each pushed +12 dB over full scale; ceilings −1.0 and −0.1 dBTP; lookahead 0.5 and 2 ms; auto and set release | worst +0.002 dB (drums, 0.5 ms); squares +0.000 dB |
+| Below the ceiling | a sine 6 dB under the ceiling: output equals the input delayed by the latency (±1e-6); THD+N ≤ −100 dB | identical (difference 0); THD+N −153 dB |
+| Limiting distortion | 100 Hz sine limited by 6 dB, Auto release: THD ≤ 1 % | 0.32 % (Release 100 ms set: 0.31 %) |
+| Release | a 12 dB reduction recovers exponentially with the Release time as its time constant (80 % → 29 %), ±10 % (Auto off) | 10.00, 100.00 and 498.9 ms for 10, 100 and 500 ms |
+| Auto release | an isolated 5 ms peak recovers 63 % in under 50 ms; 2 s of limiting in 80 – 130 ms (Release 100 ms) | 24 ms; 108 ms |
+| Stereo link | 100 %: identical gain on both channels | identical |
+| Latency | lookahead + 11 samples, reported to ReBuzz, follows the setting | 107 samples at 2 ms, 48 kHz; an impulse arrives exactly then; ReBuzz sees the new latency |
+| CPU | stereo, limiting a drum loop: ≥ 50× real time on the CI runner (was 100×: shared runners vary, and 50× is 2 % of a core) | 120× |
+
+Not built: a target-LUFS mode. Integrated loudness needs the whole programme, so a live machine can only guess it, and limiting makes loudness grow slower than the input gain; the agent instead renders, measures (`analyze`) and sets Input gain, which is exact.
+
 ## 6. Phases
 
 | Phase | Content |
@@ -173,13 +254,14 @@ DX7 architecture: 6 operators, 32 algorithms, feedback, per-operator ratio/fixed
 | M0 | Spec, core fix (§3.1), DSP library, editor kit, parameter generator, Linux test project |
 | M1 | Neo Drive, Neo Comp, Neo Verb |
 | M2 | Neo Poly, Neo Wave, Neo FM6 |
+| M3 (MCP A4) | Neo EQ, Neo Utility, Neo Limiter |
 
 Each phase: pure tests (Linux CI), integration tests in ReBuzzTests (the machine loads, makes sound, its parameters and editor work, editor screenshots), then the package build.
 
-All three phases are done. Every machine also ships factory presets (14–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
+M0–M3 are done. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
 
 ## 7. Not in this batch
 
-Additive and physical-modelling synths, convolution, tape delay, ensemble/phaser, multiband, limiter: candidates for the next batch.
+Additive and physical-modelling synths, convolution, tape delay, ensemble/phaser, multiband: candidates for the next batch. Neo Analyzer, the fourth A4 machine, belongs with the analysis library (docs/specs/mcp-server.md §8.1).
 
-The MCP server spec (docs/specs/mcp-server.md §8) sets the next batch's priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak), Neo Utility and Neo Analyzer first; then Neo Delay, Neo Multiband, Neo Scope and Neo Sampler. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.
+The MCP server spec (docs/specs/mcp-server.md §8) sets the priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak) and Neo Utility are built (M3); Neo Analyzer next; then Neo Delay, Neo Multiband, Neo Scope and Neo Sampler. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.

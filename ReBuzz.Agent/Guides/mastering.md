@@ -45,7 +45,7 @@ Without Neo EQ, start the chain with the compressor. Without Neo Limiter, end it
 
 ### 1. Corrective EQ (Neo EQ)
 
-Neo EQ is being built; read its parameter names with `machine_describe(machine="M EQ")` and set these moves in units.
+One move per band of Neo EQ: `B1` (Low cut) is the high-pass (`B1 on` On), bands 2–7 are bells and shelves (`B<n> type`, `B<n> freq`, `B<n> gain`, `B<n> Q`), `B8` (High cut) a low-pass if ever needed.
 
 | Move | Setting | When |
 |---|---|---|
@@ -91,7 +91,7 @@ After it: PLR 0.5–1 dB lower, tilt within ±0.3 dB/oct, `high_mid` up no more 
 
 ### 4. Limiter
 
-Neo Limiter is being built; read its names with `machine_describe(machine="M Limit")` and set:
+Neo Limiter: `Ceiling` (dBTP), `Input gain` (how hard it is driven), `Auto release` or `Release`, `Lookahead` (default is fine), `Stereo link` 100 %. Set:
 
 | Setting | Streaming | Club | Broadcast |
 |---|---|---|---|
@@ -100,7 +100,7 @@ Neo Limiter is being built; read its names with `machine_describe(machine="M Lim
 | Gain into it | until the integrated target | the same | the same |
 | Reduction on the loudest peaks | 3–4 dB at most | 6–8 dB at most | little or none |
 
-A target-LUFS mode, if it has one, sets the gain from a measurement: still render and check the result.
+It has no target-LUFS mode: render, read `integrated_lufs`, and raise `Input gain` by the difference (it is close to dB for dB until the limiting is heavy), then render again.
 
 Without Neo Limiter, Neo Comp as the last stage (it catches peaks within about 1 dB, but isn't a true-peak limiter, so the threshold sits 1.5 dB under the ceiling):
 

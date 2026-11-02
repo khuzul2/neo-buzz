@@ -1,0 +1,136 @@
+# Neo EQ factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoEq
+# Bands a preset doesn't name keep their defaults: bands 2–7 on at 0 dB, the cuts (1 and 8) off.
+machine "Neo EQ"
+
+preset "Mixing — Vocal Clarity"
+B1 on = On
+B1 freq = 90
+B1 slope = 24 dB/oct
+B3 freq = 250
+B3 gain = -2
+B3 Q = 1.2
+B5 freq = 3000
+B5 gain = 2
+B5 Q = 1
+B7 freq = 10000
+B7 gain = 2
+
+preset "Mixing — Kick Punch"
+B1 on = On
+B1 freq = 30
+B1 slope = 24 dB/oct
+B2 type = Bell
+B2 freq = 60
+B2 gain = 3
+B2 Q = 1.2
+B4 freq = 350
+B4 gain = -4
+B4 Q = 1.5
+B6 freq = 4000
+B6 gain = 3
+B6 Q = 1.5
+
+preset "Mixing — Bass Tighten"
+B1 on = On
+B1 freq = 35
+B1 slope = 24 dB/oct
+B3 freq = 250
+B3 gain = -3
+B3 Q = 1
+B5 freq = 800
+B5 gain = 2
+B5 Q = 1.4
+
+preset "Mixing — Snare Crack"
+B1 on = On
+B1 freq = 80
+B3 freq = 200
+B3 gain = 2
+B3 Q = 1.5
+B4 freq = 500
+B4 gain = -3
+B4 Q = 1.2
+B6 freq = 5000
+B6 gain = 3
+B6 Q = 1.2
+
+preset "Mixing — Acoustic Guitar"
+B1 on = On
+B1 freq = 80
+B1 slope = 24 dB/oct
+B3 freq = 200
+B3 gain = -2
+B3 Q = 1
+B7 freq = 8000
+B7 gain = 2
+
+preset "Mixing — De-mud"
+B3 freq = 300
+B3 gain = -3
+B3 Q = 1.4
+
+preset "Mixing — Telephone"
+B1 on = On
+B1 freq = 400
+B1 slope = 48 dB/oct
+B8 on = On
+B8 freq = 3000
+B8 slope = 48 dB/oct
+B5 freq = 1500
+B5 gain = 4
+B5 Q = 1
+
+preset "Mastering — Gentle Smile"
+B2 freq = 80
+B2 gain = 1
+B2 Q = 0.6
+B3 freq = 300
+B3 gain = -0.7
+B3 Q = 0.8
+B7 freq = 12000
+B7 gain = 1.5
+
+preset "Mastering — Air Shelf"
+B7 freq = 12000
+B7 gain = 2
+B7 Q = 0.7
+
+preset "Mastering — Tame Harshness"
+B5 freq = 3500
+B5 gain = -1.5
+B5 Q = 1.5
+B6 freq = 7000
+B6 gain = -1
+B6 Q = 2
+
+preset "Mastering — Low Cut 25 Hz"
+B1 on = On
+B1 freq = 25
+B1 slope = 48 dB/oct
+
+preset "Fix — Rumble Filter"
+B1 on = On
+B1 freq = 40
+B1 slope = 24 dB/oct
+
+preset "Fix — Hum Notch 50 Hz"
+B2 type = Notch
+B2 freq = 50
+B2 Q = 10
+B3 type = Notch
+B3 freq = 100
+B3 Q = 10
+B4 type = Notch
+B4 freq = 150
+B4 Q = 10
+
+preset "Fix — Hum Notch 60 Hz"
+B2 type = Notch
+B2 freq = 60
+B2 Q = 10
+B3 type = Notch
+B3 freq = 120
+B3 Q = 10
+B4 type = Notch
+B4 freq = 180
+B4 Q = 10
