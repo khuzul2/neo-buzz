@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | In progress. M0 and the PortAudio binding are merged (#43); M6's precise waiter is in PR (#44). M1 is built: `rebuzz-headless` runs on Linux with the portable Neo machines, stacked on the flip. M2 is partly done (§6): songs with native machines now open and save back headless |
+| Status | In progress. M0 and the PortAudio binding are merged (#43); M6's precise waiter is in PR (#44). M1 is built: `rebuzz-headless` runs on Linux with the portable Neo machines, stacked on the flip. M2 is partly done (§6): songs with native machines open and save back headless (#48) |
 | Scope | cross-platform.md §5.2 P2: the engine running headless on macOS (arm64), with real audio and MIDI, and the MCP server on stdio. No UI: the Avalonia studio is P3 |
 | Exit | The A6 scripted suite passes on `macos-15`; Neo renders null-test against the Windows package at ≤ −100 dBFS; a 1-hour play test at 128 samples has no dropouts (run by hand on a Mac) |
 | Related | cross-platform.md (decisions D1–D5, §3.2 the pieces), engine-split.md (P1), mcp-server.md §10 (the A6 suite) |
@@ -103,7 +103,7 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
 
   M3 is mostly done once #40 lands.
 
-**Native machines as placeholders: they open and save back what the song says about them** (branch `platform/p2-m2-placeholders`).
+**Native machines as placeholders: they open and save back what the song says about them** (PR #48).
 - **Opening.** 35 of the 36 demo songs under `ExternalMachines/source` open headless on Linux, 11 of the first 12. Their native machines are missing machines, with their connections.
   - One "super old" BMX doesn't open: `FSM_Kick_Demo.bmx` has no PARA section, so its parameters can't be read without the machine's DLL. Windows without the machine is the same.
 - **What saving lost, and why.** The code is the engine's, so Windows lost the same with missing machines (except the pattern contents, below).
