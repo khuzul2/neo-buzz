@@ -1,7 +1,6 @@
 ﻿using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
-using Sanford.Multimedia.Midi;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

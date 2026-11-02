@@ -7,8 +7,10 @@ using System.Linq;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Input;
+#if WINDOWS
 using System.Windows.Interop;
 using System.Windows.Media;
+#endif
 
 namespace BuzzGUI.Common.InterfaceExtensions
 {
@@ -96,7 +98,7 @@ namespace BuzzGUI.Common.InterfaceExtensions
                 }
                 catch (Exception e)
                 {
-                    System.Windows.MessageBox.Show(string.Format("Couldn't load preset file '{0}' ({1})", xmlpath, e.Message));
+                    PortableMessageBox.Show(string.Format("Couldn't load preset file '{0}' ({1})", xmlpath, e.Message));
                 }
             }
 
@@ -112,7 +114,7 @@ namespace BuzzGUI.Common.InterfaceExtensions
                 }
                 catch (Exception e)
                 {
-                    System.Windows.MessageBox.Show(string.Format("Couldn't load preset file '{0}' ({1})", prspath, e.Message));
+                    PortableMessageBox.Show(string.Format("Couldn't load preset file '{0}' ({1})", prspath, e.Message));
                 }
             }
 
@@ -155,7 +157,7 @@ namespace BuzzGUI.Common.InterfaceExtensions
             }
             catch (Exception e)
             {
-                System.Windows.MessageBox.Show(string.Format("Couldn't save preset file '{0}' ({1})", pd.Filename, e.Message));
+                PortableMessageBox.Show(string.Format("Couldn't save preset file '{0}' ({1})", pd.Filename, e.Message));
             }
 
         }
@@ -173,7 +175,7 @@ namespace BuzzGUI.Common.InterfaceExtensions
                 }
                 catch (Exception e)
                 {
-                    System.Windows.MessageBox.Show(string.Format("Couldn't import preset file '{0}' ({1})", filename, e.Message));
+                    PortableMessageBox.Show(string.Format("Couldn't import preset file '{0}' ({1})", filename, e.Message));
                 }
             }
 
@@ -183,7 +185,7 @@ namespace BuzzGUI.Common.InterfaceExtensions
             }
             catch (Exception e)
             {
-                System.Windows.MessageBox.Show(string.Format("Couldn't save preset file '{0}' ({1})", pd.Filename, e.Message));
+                PortableMessageBox.Show(string.Format("Couldn't save preset file '{0}' ({1})", pd.Filename, e.Message));
             }
 
         }
@@ -198,6 +200,7 @@ namespace BuzzGUI.Common.InterfaceExtensions
             return machine.Attributes.Where(p => p.Name == name).First();
         }
 
+#if WINDOWS
         public static Color GetThemeColor(this IMachine machine)
         {
             if (machine.IsControlMachine)
@@ -212,6 +215,7 @@ namespace BuzzGUI.Common.InterfaceExtensions
 
             return Colors.LightCyan;
         }
+#endif
 
         public static string GetNewPatternName(this IMachine machine)
         {
@@ -254,6 +258,8 @@ namespace BuzzGUI.Common.InterfaceExtensions
             machine.SendGUIMessage(request.ToArray());
         }
 
+#if WINDOWS
+        // WPF (the "Other..." value popup), so the Windows build only (engine-split.md §4.4).
         #region Attribute menu
 
         static IEnumerable<IMenuItem> GetAttributeValues(this IMachine machine, int index, ICommand setcmd, ICommand othercmd)
@@ -351,6 +357,7 @@ namespace BuzzGUI.Common.InterfaceExtensions
         }
 
         #endregion
+#endif
 
     }
 }

@@ -1,5 +1,4 @@
-﻿using BespokeFusion;
-using BuzzGUI.Common;
+﻿using BuzzGUI.Common;
 using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Common.Settings;
 using BuzzGUI.Interfaces;
@@ -588,7 +587,7 @@ namespace ReBuzz.FileOps
                     }
                 }
 
-                if (MessageBoxWindow.ShowYesNoWindow("Wait more?", "Loading machines below is taking a long time. Do you want to wait more?\n\n" + machinesMessage) == MessageBoxResult.No)
+                if (!buzz.UserMessages.KeepWaiting("Loading machines below is taking a long time. Do you want to wait more?\n\n" + machinesMessage, "Wait more?"))
                 {
                     // Init on some machine was not completed
                     foreach (var badMachine in badMachinesList)

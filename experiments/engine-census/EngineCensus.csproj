@@ -45,6 +45,9 @@
   <!--
     BuzzGUI.Interfaces builds with ImplicitUsings=enable; ReBuzz and BuzzGUI.Common don't. One
     compilation can't mix both, so this file adds the three implicit usings the Interfaces need.
+    Only "dotnet build" uses it: the global usings would also reach the engine files and hide
+    errors there, so census.py's Roslyn pass drops it and gives the usings to the Interfaces
+    files alone.
   -->
   <ItemGroup>
     <Compile Include="InterfacesImplicitUsings.cs" />
@@ -64,13 +67,13 @@
 
   <!-- ===== Machine API ===== -->
   <ItemGroup>
-    <Compile Include="$(G)BuzzGUI.Interfaces\**\*.cs" Exclude="$(G)BuzzGUI.Interfaces\obj\**;$(G)BuzzGUI.Interfaces\bin\**" Link="BuzzGUI.Interfaces\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(G)BuzzGUI.Interfaces\**\*.cs" Exclude="$(G)BuzzGUI.Interfaces\obj\**;$(G)BuzzGUI.Interfaces\bin\**;$(G)BuzzGUI.Interfaces\build\**" Link="BuzzGUI.Interfaces\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <!-- ===== BuzzGUI.Common, stages 0-3: non-XAML .cs, same removals as its own csproj ===== -->
   <ItemGroup Condition="$(CensusStage) &lt; 4">
     <Compile Include="$(C)**\*.cs"
-             Exclude="$(C)**\*.xaml.cs;$(C)obj\**;$(C)bin\**;
+             Exclude="$(C)**\*.xaml.cs;$(C)obj\**;$(C)bin\**;$(C)build\**;
                       $(C)Sanford.Multimedia.Midi\Clocks\**;
                       $(C)Sanford.Multimedia.Midi\Device Classes\**;
                       $(C)Sanford.Multimedia.Midi\Messages\Message Builders\**;
@@ -129,8 +132,11 @@
                      $(R)Core\WindowsRegistry.cs;$(R)Core\WindowsRegistryKey.cs" />
   </ItemGroup>
 
-  <!-- ===== Stage 4: BuzzGUI.Common = the engine's compile closure (found by census.py closure) ===== -->
-  <Import Project="CommonClosure.props" Condition="$(CensusStage) &gt;= 4 And Exists('CommonClosure.props')" />
+  <!--
+    ===== Stage 4: BuzzGUI.Common = the engine's compile closure (found by census.py closure) =====
+    The same list is the file set of BuzzGUI.Common's portable build (engine-split.md §4.4).
+  -->
+  <Import Project="..\..\ReBuzzGUI\BuzzGUI.Common\PortableFiles.props" Condition="$(CensusStage) &gt;= 4" />
 
   <!--
     ===== Stage 5: the engine helpers outside the engine folders (engine-split.md §5, PR 2) =====

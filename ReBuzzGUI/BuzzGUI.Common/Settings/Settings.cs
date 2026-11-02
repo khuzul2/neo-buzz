@@ -5,7 +5,9 @@ using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Windows;
+#if WINDOWS
 using System.Windows.Media;
+#endif
 
 namespace BuzzGUI.Common.Settings
 {
@@ -122,6 +124,8 @@ namespace BuzzGUI.Common.Settings
                     Description = decl.Description,
                 };
 
+#if WINDOWS
+                // Font lists come from WPF: the Windows build only (engine-split.md §4.4).
                 if (decl.Type == BuzzSettingType.FontFamily)
                     s.Options = Fonts.SystemFontFamilies.Select(ff => ff.Source).OrderBy(n => n).ToArray();
                 else if (decl.Type == BuzzSettingType.FontStyle)
@@ -130,7 +134,9 @@ namespace BuzzGUI.Common.Settings
                     s.Options = typeof(FontWeights).GetProperties(BindingFlags.Public | BindingFlags.Static).Select(fi => fi.Name).ToArray();
                 else if (decl.Type == BuzzSettingType.FontStretch)
                     s.Options = typeof(FontStretches).GetProperties(BindingFlags.Public | BindingFlags.Static).Select(fi => fi.Name).ToArray();
-                else if (p.PropertyType == typeof(int))
+                else
+#endif
+                if (p.PropertyType == typeof(int))
                     s.Options = Enumerable.Range(decl.Minimum, decl.Maximum - decl.Minimum + 1).Select(x => x.ToString()).ToArray();
                 else if (p.PropertyType == typeof(bool))
                     s.Options = new[] { "True", "False" };

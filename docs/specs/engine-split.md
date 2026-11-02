@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | In progress. PR 1 done: the seam interfaces stand alone and Linux CI runs the census ratchet, baseline 351 (§5, Progress) |
+| Status | In progress. PRs 1–4 done: the seam interfaces stand alone, `Utils` is split, `BuzzGUI.Interfaces` and `BuzzGUI.Common` build twice (Windows and portable), `ReBuzz.Engine.csproj` exists, and the engine's message boxes go through `IUserMessages`. Linux CI runs the census ratchet against it, baseline 220; Windows CI checks the portable API surface. PRs 5–9 next (§5, Progress) |
 | Date | 2026-11-01 |
 | Scope | What keeps the engine from compiling as plain `net10.0` (no WPF, no Windows); the seams that fix it; how `BuzzGUI.Interfaces` and `BuzzGUI.Common` stay binary compatible; the PR sequence for P1 |
 | Code baseline | fork `a90558a` (main, 2026-11-01). The MCP work is editing `ReBuzz/Agent/*` and `ReBuzzCore.cs` in parallel, so re-run the census after it merges |
@@ -54,7 +54,7 @@
   - Win32, registry or GDI+;
   - WinForms;
   - cascade.
-- **Closure.** Stage 4 keeps only the `BuzzGUI.Common` files the engine needs. It compiles without `BuzzGUI.Common` and adds back each file that declares a missing type, until nothing changes: 7 passes. The result is `CommonClosure.props`.
+- **Closure.** Stage 4 keeps only the `BuzzGUI.Common` files the engine needs. It compiles without `BuzzGUI.Common` and adds back each file that declares a missing type, until nothing changes: 7 passes. The result was `CommonClosure.props`; since PR 3 it is `ReBuzzGUI/BuzzGUI.Common/PortableFiles.props`, the file set of the library's portable build.
 - **Limit: counts are lower bounds.** Roslyn suppresses errors in expressions that already involve a missing type. Example: the second `Keyboard.Modifiers` in `MachineCore.cs` (line 824) sits inside a lambda on the missing `MachineGUIHostWindow`, and appears only once that window is fixed. Expect a few new errors in each PR.
 
 ### 2.2 Iterations
@@ -307,7 +307,7 @@ On Windows the app loads the Windows build of `BuzzGUI.Interfaces`, where `IMach
 ### 4.4 The portable subsets
 
 - **`BuzzGUI.Interfaces`, 46 files.** Put the 7 members and 2 `using` lines under `#if WINDOWS`, with default bodies for the members.
-- **`BuzzGUI.Common`, 47 of 174 files** (`experiments/engine-census/CommonClosure.props`). 31 errors in 7 files go under `#if WINDOWS`:
+- **`BuzzGUI.Common`, 47 of 174 files** (72 after PR 3: `ReBuzzGUI/BuzzGUI.Common/PortableFiles.props`). 31 errors in 7 files go under `#if WINDOWS`:
   - `MachineExtensions` (17): preset error message boxes, theme colour, the parameter value popup;
   - `Settings` (5): font lists;
   - `Preset` (3): message boxes;
@@ -329,8 +329,8 @@ Error counts are stage-5 census numbers. Expect small upward corrections from hi
 | # | PR | Main files | Errors removed | Exit check |
 |---|---|---|---|---|
 | 1 | **Seam interfaces stand alone; census ratchet.** Move `IUiDispatcher`, `IUserMessages`, `IRegistryEx` with `IRegistryKey`, and `IKeyboard` into their own files (same namespaces). `UiPriority` replaces `DispatcherPriority`; add `KeyModifiers`. Delete `sim/SeamShims.cs`. The Linux CI job runs `census.py --check` against `baseline.json` | 4 interface files out of `WindowsGuiDispatcher`, `UserMessagesViaMessageBox`, `WindowsRegistry`, `WindowsRegistryKey`, `WindowsKeyboard`; 3 priority callers; `FakeDispatcher` | 101 (at stage 4) | Windows build and ReBuzzTests green; census ≤ 356 |
-| 2 | **Engine helpers out of UI files; dead `using` lines.** Split `ReBuzz/Common/Utils.cs` into portable `Utils.cs` and WPF `UiUtils.cs`. The engine links `BurstProtectionEngine`, `MultimediaTimer`, `ChildProcessTracker`, `IMachineExtension`, `ReBuzzCoreInitialization` and the r8brain interop where they are | `Utils.cs` and its UI callers; 12 files with only `using` errors | 68 | census ≤ 288 |
-| 3 | **Multi-target `BuzzGUI.Interfaces` and `BuzzGUI.Common`** (§4): portable subset, default bodies plus `WpfMachineApi` hooks set by `App`, the surface check. Add `ReBuzz.Engine.csproj` (`net10.0`, linking the engine set); it is not yet referenced, and the ratchet reads its file list | 2 csproj files, 10 files with `#if`, `App.xaml.cs` | 39 | both libraries build `net10.0` on Linux; surface check passes; the 19 prebuilt machines load on Windows (the 5 in §2.5 opened by hand); census ≤ 249 |
+| 2 | **Engine helpers out of UI files; dead `using` lines.** Split `ReBuzz/Common/Utils.cs` into portable `Utils.cs` and WPF `UiUtils.cs`. The engine links `BurstProtectionEngine`, `MultimediaTimer`, `ChildProcessTracker`, `IMachineExtension`, `ReBuzzCoreInitialization` and the r8brain interop where they are | `Utils.cs` and its callers; 11 files with only `using` errors (done: 56 removed, see Progress) | 68 | census ≤ 288 (done: 295) |
+| 3 | **Multi-target `BuzzGUI.Interfaces` and `BuzzGUI.Common`** (§4): portable subset, default bodies plus `WpfMachineApi` hooks set by `App`, the surface check. Add `ReBuzz.Engine.csproj` (`net10.0`, linking the engine set); it is not yet referenced, and the ratchet reads its file list | 2 csproj files, 10 files with `#if`, `App.xaml.cs` | 39 | both libraries build `net10.0` on Linux; surface check passes; the 19 prebuilt machines load on Windows (the 5 in §2.5 opened by hand); census ≤ 249 (done: 258, see Progress) |
 | 4 | **S1 messages** | `NonModal`, `MachineDLLScanner`, `MachineManager`, `ReBuzzCore`, `BMXFile`, `BMXMLFile`, 4 more | 31 | census ≤ 218; dialogs unchanged on Windows; `FakeUserMessages` captures the new calls |
 | 5 | **S2 timers, S5 keyboard, S9 dialogs, S10 build info and Serilog** | `ReBuzzCore`, `ParameterCore`, `MachineCore`, `SessionLayout*`, `BMX*`, `NativeMachineHost`, `ChildProcessTracker` | 45 | census ≤ 173 |
 | 6 | **S4 colours and skins** | `UIMessage`, `MachineDLL`, `MachineManager`, `ReBuzzCore`, `MachineCore` | 35 | census ≤ 138; native skins, LEDs and machine text colours unchanged in the machine view |
@@ -343,7 +343,10 @@ Error counts are stage-5 census numbers. Expect small upward corrections from hi
 
 | PR | Census baseline (stage 5) | Notes |
 |---|---|---|
-| 1 | 351 | Main had moved since the census: the A1 agent tools (`PatternTools`, `MachineTools`, `StudioTools`) use 10 `BuzzGUI.Common` action files outside the closure, so stage 5 with the shims stood at 369, not 356. `census.py closure` now gives 57 files (was 47), which removes those 18 errors. PR 1 itself removed 104 at stage 4 (plan: 101) and 5 at stage 5 (the priority callers). `IKeyboard` keeps `HasModifierKeyPressed(Enum)`; `WindowsKeyboard` also accepts `KeyModifiers`, so PR 5 only switches callers |
+| 1 (#27) | 351 | Main had moved since the census: the A1 agent tools (`PatternTools`, `MachineTools`, `StudioTools`) use 10 `BuzzGUI.Common` action files outside the closure, so stage 5 with the shims stood at 369, not 356. `census.py closure` now gives 57 files (was 47), which removes those 18 errors. PR 1 itself removed 104 at stage 4 (plan: 101) and 5 at stage 5 (the priority callers). `IKeyboard` keeps `HasModifierKeyPressed(Enum)`; `WindowsKeyboard` also accepts `KeyModifiers`, so PR 5 only switches callers |
+| 2 (#28) | 295 | **Census fix:** `InterfacesImplicitUsings.cs` made `System.Collections.Generic` global for every file, so `SequenceCore`'s `OrderedDictionary<,>` (Wintellect's on Windows) bound to .NET 9's and hid 7 errors; its `using Wintellect.PowerCollections` looked dead and isn't. The Roslyn pass now gives the SDK's implicit usings to the `BuzzGUI.Interfaces` files only, and the closure grows to 71 files (PowerCollections). **Row deviation:** the engine calls WPF members of `Utils` at 11 counted sites: `MessageBox` ×7 (one inside `Utils.SetProcessorAffinityMask`), `GetUserControlXAML` ×3, `GetThemeColors` ×1. The split shows them as `UiUtils` errors; they go with S1, S3, S4 and S6. Removed: `Utils` 47 → 1, `using` lines 20 (11 files, plus `SequenceCore`'s, which now resolves); added: 10 call sites in other files |
+| 3 (#29) | 258 | **Ratchet:** `census.py --check` now compiles `ReBuzz.Engine.csproj`'s 144 files against the real portable builds, which it builds first; the two libraries no longer count. Removed: the 40 library errors and `MachineCore`'s missing `ParameterWindow`; 3 hidden engine errors appear (`MachineDLL` reads `IBuzz.ThemeColors` ×2, S4; `ReBuzzCoreInitialization` sets `Global.MachineViewHwndSource`, S3). **Builds:** off Windows the libraries target only `net10.0` (no Windows targeting pack); the `cmd` build steps run on Windows only; `BuzzGUI.Common`'s portable build compiles `PortableFiles.props` (72 files: the closure plus `PortableMessageBox`), written by `census.py closure`. **`#if WINDOWS`:** whole members where only UI uses them (`GetThemeColor`, the attribute menu, `SaveToFile`, `MachineViewHwndSource`, the font lists); message boxes in `MachineExtensions` and `Preset` go through an internal `PortableMessageBox` (stderr off Windows); `SimpleCommand.CanExecuteChanged` has empty accessors off Windows. **Hooks:** `App` sets `WpfMachineApi` before anything loads; they forward to the engine classes, which still implement the 7 members, so the default bodies are unused until S3/S4. A test asserts both. **Machines:** the surface check runs in the Windows `core-build` job (Linux can't build the Windows TFM). Instead of opening the 5 machines by hand, `PrebuiltMachineBindingTests` resolves every type and member reference of the 19 prebuilt machines into the two libraries. It found a break that predates P1: upstream changed `ISong.SequenceAdded/Removed/Changed` to `Action<int, ISequence>`, so Jeskola Live and Yitten Mongoose can't subscribe (listed as known breaks) |
+| 4 (#PR4) | 220 | Removed 38 (plan: 31; PR 2 moved 7 `UiUtils.MessageBox` sites here). `IUserMessages` gains `Info`, `Ask` and **`KeepWaiting`** (not in §3): the two "Wait more?" prompts in `BMXFile`/`BMXMLFile` used the themed `MessageBoxWindow`, which the WPF implementation keeps; the default body asks a Yes/No question. `UserButtons`/`UserAnswer` have WPF's values, so `UiUtils.MessageBox` casts. Callers reach the instance through `ReBuzzCore.UserMessages`; `Utils.SetProcessorAffinityMask` and `MachineDLLScanner.Save` take it as a parameter, `AudioDeviceService` in its constructor. **Windows:** every message box shows as `UiUtils.MessageBox` did (main window topmost while open, when on its thread); the 6 sites that called `MessageBox.Show` directly gain that. The "Wait more?" and "Safe load machine?" prompts and the direct `MessageBox.Show` errors are now captured during an agent call and in headless mode, like every other message. Tests: `UserMessagesTests` (save prompt through the engine, capture of all four methods, enum values) |
 
 **Order.**
 
@@ -369,11 +372,12 @@ Error counts are stage-5 census numbers. Expect small upward corrections from hi
 
 ```sh
 python3 experiments/engine-census/census.py              # stages 0-5 → experiments/engine-census/out/report.md
-python3 experiments/engine-census/census.py closure      # regenerate CommonClosure.props
+python3 experiments/engine-census/census.py closure      # regenerate ReBuzzGUI/BuzzGUI.Common/PortableFiles.props
 python3 experiments/engine-census/census.py machines     # prebuilt machine scan → out/machines.md
 python3 experiments/engine-census/dim_check.py           # §4.3 proof
 python3 experiments/engine-census/census.py --check      # the CI ratchet against baseline.json (~15 s)
 python3 experiments/engine-census/census.py --check --update   # lower the baseline after removing errors
+python3 experiments/engine-census/census.py surface "-p:SolutionDir=$PWD\" -p:ReBuzzCleanBuild=true   # Windows: portable surface ⊆ Windows surface
 dotnet build experiments/engine-census -p:CensusStage=5  # csc's view; fails by design
 ```
 

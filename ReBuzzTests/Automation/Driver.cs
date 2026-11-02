@@ -106,6 +106,8 @@ namespace ReBuzzTests.Automation
             reBuzzMachines.GetSongCoreMachineInstance(controller.InstanceName);
         // Fork (0.4.1): the test dispatcher, to defer UI work and count synchronous calls.
         internal FakeDispatcher Dispatcher => dispatcher;
+        // Fork (engine-split.md S1): the messages and questions the engine raised.
+        internal FakeUserMessages UserMessages => fakeUserMessages;
         private readonly FakeFileNameChoice fileNameToLoadChoice = new();
         private readonly FakeUserMessages fakeUserMessages;
         private FakeFileNameChoice fileNameToSaveChoice = new();

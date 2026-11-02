@@ -15,7 +15,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Threading;
-using static ReBuzz.Common.Utils;
+using static ReBuzz.Common.UiUtils;
 
 namespace ReBuzz.Common
 {
@@ -150,7 +150,7 @@ namespace ReBuzz.Common
             {
                 if (Global.Buzz != null)
                 {
-                    var rd = Utils.GetUserControlXAML<Window>("ParameterWindowShell.xaml", buzzPath);
+                    var rd = UiUtils.GetUserControlXAML<Window>("ParameterWindowShell.xaml", buzzPath);
                     Resources.MergedDictionaries.Add(rd.Resources);
                 }
 

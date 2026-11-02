@@ -9,7 +9,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using Cryptography = System.Security.Cryptography;
-using System.Windows;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -60,7 +59,7 @@ namespace ReBuzz.FileOps
             }
             catch (Exception e)
             {
-                MessageBox.Show("Error loading Machine DLL Cache Data:\n\n" + e.ToString(), "Machine DLL Cache Load Error", MessageBoxButton.OK);
+                buzz.UserMessages.Error("Error loading Machine DLL Cache Data:\n\n" + e.ToString(), "Machine DLL Cache Load Error", e);
                 if (f != null)
                     f.Close();
             }
@@ -74,7 +73,7 @@ namespace ReBuzz.FileOps
             }
             catch (Exception e)
             {
-                MessageBox.Show("RescanMachineDLLs error:\n\n" + e.ToString(), "Machine DLL Cache Load Error", MessageBoxButton.OK);
+                buzz.UserMessages.Error("RescanMachineDLLs error:\n\n" + e.ToString(), "Machine DLL Cache Load Error", e);
             }
 
 
@@ -218,7 +217,7 @@ namespace ReBuzz.FileOps
             machineDLLs.EffectMachineDLLs = effectsList.ToArray();
             machineDLLs.GeneratorMachineDLLs = generatorsList.ToArray();
 
-            Save(f, machineDLLs);
+            Save(f, machineDLLs, buzz.UserMessages);
 
             nativeMachineHost.Dispose();
             nativeMachineHost64.Dispose();
@@ -226,7 +225,7 @@ namespace ReBuzz.FileOps
             return machineDLLs;
         }
 
-        public static void Save(Stream output, object obj)
+        public static void Save(Stream output, object obj, IUserMessages userMessages)
         {
             var ws = new XmlWriterSettings() { NamespaceHandling = System.Xml.NamespaceHandling.OmitDuplicates, NewLineOnAttributes = false, Indent = true };
             var w = XmlWriter.Create(output, ws);
@@ -237,7 +236,7 @@ namespace ReBuzz.FileOps
             }
             catch (Exception e)
             {
-                MessageBox.Show(e.ToString(), "Save Error", MessageBoxButton.OK);
+                userMessages.Error(e.ToString(), "Save Error", e);
             }
 
             w.Close();

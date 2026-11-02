@@ -3,7 +3,8 @@ name: Fork CI
 # Fast checks for fork work:
 #  - session-tests: Session View engine unit tests, the agent server's core, the Neo
 #    machines' DSP measurements and the engine census ratchet (Linux, a few minutes)
-#  - core-build: compiles ReBuzz.exe and its C# dependencies only (no C++ projects)
+#  - core-build: compiles ReBuzz.exe and its C# dependencies only (no C++ projects), and checks
+#    that the portable machine API is a subset of the Windows one
 # The full solution + package build is fork-package.yml.
 
 # Pushes to main and PRs only (not every branch push), to keep Actions minutes down on a
@@ -52,9 +53,14 @@ jobs:
         if ($text.Length -gt 3800) { $text = $text.Substring(0, 3800) }
         Write-Host "::notice title=Machine measurements::$($text -replace '%', '%25' -replace "`n", '%0A')"
 
+    # The portable (net10.0) builds of BuzzGUI.Interfaces and BuzzGUI.Common (docs/specs/engine-split.md §4).
+    - name: Portable machine API
+      if: always()
+      run: dotnet build ReBuzzGUI/BuzzGUI.Common/BuzzGUI.Common.csproj -nologo -v:q
+
     # Engine census ratchet (docs/specs/engine-split.md §5): the errors that keep the engine
-    # from compiling as plain net10.0 (no WPF) may only go down. A PR that removes some lowers
-    # experiments/engine-census/baseline.json with "census.py --check --update".
+    # (ReBuzz.Engine.csproj) from compiling as plain net10.0 (no WPF) may only go down. A PR that
+    # removes some lowers experiments/engine-census/baseline.json with "census.py --check --update".
     - name: Engine census
       if: always()
       run: python3 experiments/engine-census/census.py --check
@@ -83,6 +89,14 @@ jobs:
     - name: Build ReBuzz (C# only)
       shell: pwsh
       run: dotnet build ReBuzz/ReBuzz.csproj -c Release "-p:SolutionDir=$($PWD.Path)\" -p:ReBuzzCleanBuild=true -nologo *>&1 | Tee-Object -FilePath build.log
+
+    # Machine API (docs/specs/engine-split.md §4.3): the portable builds of BuzzGUI.Interfaces and
+    # BuzzGUI.Common must stay a subset of the Windows builds that machine DLLs bind to.
+    - name: Surface check
+      shell: pwsh
+      env:
+        PYTHONIOENCODING: utf-8
+      run: python experiments/engine-census/census.py surface "-p:SolutionDir=$($PWD.Path)\" -p:ReBuzzCleanBuild=true
 
     - name: Annotate build log
       if: failure()

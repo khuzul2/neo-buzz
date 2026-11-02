@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Windows.Documents;
 
 namespace ReBuzz.Core.Actions.GraphActions
 {
@@ -68,7 +67,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                 }
                 catch (Exception ex)
                 {
-                    Utils.MessageBox("Error importing file " + filename + "\n\n" + ex.ToString(), "Error importing file.");
+                    buzz.UserMessages.Error("Error importing file " + filename + "\n\n" + ex.ToString(), "Error importing file.", ex);
                 }
                 buzz.Playing = playing;
             }

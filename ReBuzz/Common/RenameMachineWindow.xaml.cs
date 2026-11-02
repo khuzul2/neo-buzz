@@ -46,7 +46,7 @@ namespace ReBuzz.Common
             DataContext = this;
             InitializeComponent();
 
-            var rd = Utils.GetUserControlXAML<ResourceDictionary>("MachineView\\MVResources.xaml", Global.BuzzPath);
+            var rd = UiUtils.GetUserControlXAML<ResourceDictionary>("MachineView\\MVResources.xaml", Global.BuzzPath);
             this.Resources.MergedDictionaries.Add(rd);
 
             this.Title = title;

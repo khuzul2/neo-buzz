@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Windows;
 
 namespace ReBuzz.FileOps
 {
@@ -72,7 +71,7 @@ namespace ReBuzz.FileOps
             catch (Exception ex)
             {
                 buzz.DCWriteLine(ex.InnerException.Message, DCLogLevel.Error);
-                MessageBox.Show(ex.Message);
+                buzz.UserMessages.Error(ex.Message, "", ex);
             }
         }
 

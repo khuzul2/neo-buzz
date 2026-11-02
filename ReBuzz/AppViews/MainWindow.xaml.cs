@@ -233,19 +233,19 @@ namespace ReBuzz
             {
                 splashScreenWindow.UpdateText("Init views");
 
-                Utils.RestoreWindowStateFromRegistry(this, registryEx, "MainWindowWP");
-                Utils.RestoreWindowStateFromRegistry(debugWindow, registryEx, "DebugWindowWP");
+                UiUtils.RestoreWindowStateFromRegistry(this, registryEx, "MainWindowWP");
+                UiUtils.RestoreWindowStateFromRegistry(debugWindow, registryEx, "DebugWindowWP");
 
-                Utils.InitUtils(this);
+                UiUtils.InitUtils(this);
 
                 Buzz.StartTimer();
 
-                var rd = Utils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.MainWindow.Source, buzzPath);
+                var rd = UiUtils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.MainWindow.Source, buzzPath);
                 this.Style = rd["ThemeWindowStyle"] as Style;
                 this.Resources.MergedDictionaries.Add(rd);
 
                 // Machine View
-                rd = Utils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.MachineView.Source, buzzPath);
+                rd = UiUtils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.MachineView.Source, buzzPath);
                 MachineView = new MachineView(buzzCore, rd);
                 MachineView.MachineGraph = song;
                 MachineView.Foreground = new SolidColorBrush(Global.Buzz.ThemeColors["MV Text"]);
@@ -255,18 +255,18 @@ namespace ReBuzz
 
                 // Wavetable
                 WavetableVM = new WavetableVM();
-                WavetableControl = Utils.GetUserControlXAML<UserControl>(Buzz.Theme.WavetableView.Source, buzzPath);
+                WavetableControl = UiUtils.GetUserControlXAML<UserControl>(Buzz.Theme.WavetableView.Source, buzzPath);
                 WavetableControl.DataContext = WavetableVM;
                 WavetableVM.Wavetable = song.Wavetable;
 
                 // Info view
                 InfoView = new InfoView(Buzz);
-                rd = Utils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.InfoView.Source, buzzPath);
+                rd = UiUtils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.InfoView.Source, buzzPath);
                 InfoView.Resources.MergedDictionaries.Add(rd);
                 borderInfo.Child = InfoView;
 
                 // Editor view
-                var res = Utils.GetBuzzThemeResources(Buzz.Theme.SequenceEditor.Source, buzzPath);
+                var res = UiUtils.GetBuzzThemeResources(Buzz.Theme.SequenceEditor.Source, buzzPath);
                 UseThemeSessionColors(res);
                 seqenceEditor = new BuzzGUI.SequenceEditor.SequenceEditor(Buzz, res);
                 seqenceEditor.SetVisibility(true);
@@ -278,7 +278,7 @@ namespace ReBuzz
                 ToolBarVM = new ToolBarVM();
                 ToolBarVM.Buzz = Buzz;
                 ToolBarVM.Song = song;
-                ToolBarControl = Common.Utils.GetUserControlXAML<UserControl>(Buzz.Theme.ToolBar.Source, buzzPath);
+                ToolBarControl = Common.UiUtils.GetUserControlXAML<UserControl>(Buzz.Theme.ToolBar.Source, buzzPath);
                 ToolBarControl.DataContext = ToolBarVM;
                 mainGrid.Children.Add(ToolBarControl);
                 Grid.SetRow(ToolBarControl, 0);
@@ -321,7 +321,7 @@ namespace ReBuzz
 
             mainGrid.Loaded += (s, e2) =>
             {
-                Utils.UpdateDpi(mainGrid);
+                UiUtils.UpdateDpi(mainGrid);
             };
 
             this.Closing += (sender, e) =>
@@ -359,7 +359,7 @@ namespace ReBuzz
                     if (hDRecorderWindow == null && Buzz.IsHardDiskRecorderWindowVisible == true)
                     {
                         hDRecorderWindow = new HDRecorderWindow();
-                        var rd = Utils.GetUserControlXAML<ResourceDictionary>("MachineView\\MachineView.xaml", buzzPath);
+                        var rd = UiUtils.GetUserControlXAML<ResourceDictionary>("MachineView\\MachineView.xaml", buzzPath);
                         hDRecorderWindow.Resources.MergedDictionaries.Add(rd);
 
                         hDRecorderWindow.MachineGraph = Buzz.SongCore;
@@ -397,7 +397,7 @@ namespace ReBuzz
                         var interop = new WindowInteropHelper(keyboardWindow);
                         interop.Owner = Buzz.MachineViewHWND;
 
-                        Utils.RestoreWindowStateFromRegistry(keyboardWindow, registryEx, "PianoKeyboardWP");
+                        UiUtils.RestoreWindowStateFromRegistry(keyboardWindow, registryEx, "PianoKeyboardWP");
                     }
 
                     if (Buzz.IsPianoKeyboardVisible == true)
@@ -598,7 +598,7 @@ namespace ReBuzz
                     AboutWindow aboutWindow = new AboutWindow(buzzCore, "(build " + Buzz.BuildNumber + ")");
                     aboutWindow.Owner = this;
                     aboutWindow.Topmost = true;
-                    var rdw = Utils.GetUserControlXAML<Window>("ParameterWindowShell.xaml", buzzPath);
+                    var rdw = UiUtils.GetUserControlXAML<Window>("ParameterWindowShell.xaml", buzzPath);
 
                     aboutWindow.Resources.MergedDictionaries.Add(rdw.Resources);
                     aboutWindow.ShowDialog();
@@ -645,7 +645,7 @@ namespace ReBuzz
                             Owner = this
                         };
 
-                        var rd = Utils.GetUserControlXAML<ResourceDictionary>("MachineView\\MVResources.xaml", buzzPath);
+                        var rd = UiUtils.GetUserControlXAML<ResourceDictionary>("MachineView\\MVResources.xaml", buzzPath);
                         preferencesWindow.Resources.MergedDictionaries.Add(rd);
                         if (preferencesWindow.ShowDialog() == true)
                         {
@@ -728,7 +728,7 @@ namespace ReBuzz
                                 catch { }
                             }
 
-                            Utils.SetProcessorAffinityMask(registryEx, true);
+                            Utils.SetProcessorAffinityMask(registryEx, Buzz.UserMessages, true);
                         }
                         preferencesWindow = null;
                     }
@@ -1001,7 +1001,7 @@ namespace ReBuzz
             if (Buzz.Modified)
             {
                 var song = Buzz.Song;
-                var result = Utils.MessageBox("Save changes to " + (song.SongName == null ? "Untitled" : song.SongName), "ReBuzz", MessageBoxButton.YesNoCancel);
+                var result = UiUtils.MessageBox("Save changes to " + (song.SongName == null ? "Untitled" : song.SongName), "ReBuzz", MessageBoxButton.YesNoCancel);
                 if (result == MessageBoxResult.Yes)
                 {
                     Buzz.SaveSongFile(song.SongName);
@@ -1011,9 +1011,9 @@ namespace ReBuzz
                     return false;
                 }
             }
-            Utils.SaveWindowStateToRegistry(this, registryEx, "MainWindowWP");
-            Utils.SaveWindowStateToRegistry(debugWindow, registryEx, "DebugWindowWP");
-            Utils.SaveWindowStateToRegistry(keyboardWindow, registryEx, "PianoKeyboardWP");
+            UiUtils.SaveWindowStateToRegistry(this, registryEx, "MainWindowWP");
+            UiUtils.SaveWindowStateToRegistry(debugWindow, registryEx, "DebugWindowWP");
+            UiUtils.SaveWindowStateToRegistry(keyboardWindow, registryEx, "PianoKeyboardWP");
 
             debugWindow.CloseWindow();
 
@@ -1059,7 +1059,7 @@ namespace ReBuzz
 
             if (Global.GeneralSettings.SequenceView == SequenceEditorType.ModernVertical)
             {
-                ModernSequenceEditor = new WDE.ModernSequenceEditor.SequenceEditor(Buzz, Utils.GetBuzzThemeResources(Buzz.Theme.SequenceEditor.Source, buzzPath), true);
+                ModernSequenceEditor = new WDE.ModernSequenceEditor.SequenceEditor(Buzz, UiUtils.GetBuzzThemeResources(Buzz.Theme.SequenceEditor.Source, buzzPath), true);
                 borderSequenceEditor.Child = ModernSequenceEditor;
                 ModernSequenceEditor.SizeChanged += ModernSequenceEditorHorizontal_SizeChanged;
 
@@ -1071,7 +1071,7 @@ namespace ReBuzz
             }
             else
             {
-                ModernSequenceEditorHorizontal = new WDE.ModernSequenceEditorHorizontal.SequenceEditor(Buzz, Utils.GetBuzzThemeResources(Buzz.Theme.SequenceEditor.Source, buzzPath), true);
+                ModernSequenceEditorHorizontal = new WDE.ModernSequenceEditorHorizontal.SequenceEditor(Buzz, UiUtils.GetBuzzThemeResources(Buzz.Theme.SequenceEditor.Source, buzzPath), true);
                 borderSequenceEditor.Child = ModernSequenceEditorHorizontal;
                 ModernSequenceEditorHorizontal.SizeChanged += ModernSequenceEditorHorizontal_SizeChanged;
 
@@ -1086,7 +1086,7 @@ namespace ReBuzz
         protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
             base.OnDpiChanged(oldDpi, newDpi);
-            Utils.UpdateDpi(mainGrid);
+            UiUtils.UpdateDpi(mainGrid);
         }
 
         private void ModernSequenceEditorHorizontal_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -1172,7 +1172,7 @@ namespace ReBuzz
             }
             else if (e.PropertyName == "DpiScaling")
             {
-                Utils.UpdateDpi(mainGrid);
+                UiUtils.UpdateDpi(mainGrid);
             }
         }
 
@@ -1181,7 +1181,7 @@ namespace ReBuzz
             if (type == FileEventType.StatusUpdate)
             {
                 statusWindow?.UpdateText(text);
-                Utils.AllowUIToUpdate();
+                UiUtils.AllowUIToUpdate();
             }
             else if (type == FileEventType.Close)
             {
@@ -1226,11 +1226,11 @@ namespace ReBuzz
                 EditorView.SetEditorControl(null);
             }
 
-            Buzz.ThemeColors = Utils.GetThemeColors(buzzPath);
+            Buzz.ThemeColors = UiUtils.GetThemeColors(buzzPath);
             var song = Buzz.Song;
 
             // Main Window
-            var rd = Utils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.MainWindow.Source, buzzPath);
+            var rd = UiUtils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.MainWindow.Source, buzzPath);
             this.Style = rd["ThemeWindowStyle"] as Style;
             this.Resources.MergedDictionaries.Clear();
             this.Resources.MergedDictionaries.Add(rd);
@@ -1243,7 +1243,7 @@ namespace ReBuzz
                 MachineView.Release();
 
             }
-            rd = Utils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.MachineView.Source, buzzPath);
+            rd = UiUtils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.MachineView.Source, buzzPath);
             MachineView = new MachineView(Buzz, rd);
             MachineView.MachineGraph = song;
             MachineView.Foreground = new SolidColorBrush(Global.Buzz.ThemeColors["MV Text"]);
@@ -1268,13 +1268,13 @@ namespace ReBuzz
                 WavetableControl.DataContext = null;
             }
             WavetableVM = new WavetableVM();
-            WavetableControl = Utils.GetUserControlXAML<UserControl>(Buzz.Theme.WavetableView.Source, buzzPath);
+            WavetableControl = UiUtils.GetUserControlXAML<UserControl>(Buzz.Theme.WavetableView.Source, buzzPath);
             WavetableControl.DataContext = WavetableVM;
             WavetableVM.Wavetable = song.Wavetable;
 
             // Info view
             InfoView = new InfoView(Buzz);
-            rd = Utils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.InfoView.Source, buzzPath);
+            rd = UiUtils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.InfoView.Source, buzzPath);
             InfoView.Resources.MergedDictionaries.Add(rd);
             borderInfo.Child = InfoView;
 
@@ -1284,7 +1284,7 @@ namespace ReBuzz
                 seqenceEditor.Song = null;
                 seqenceEditor.Release();
             }
-            var res = Utils.GetBuzzThemeResources(Buzz.Theme.SequenceEditor.Source, buzzPath);
+            var res = UiUtils.GetBuzzThemeResources(Buzz.Theme.SequenceEditor.Source, buzzPath);
             UseThemeSessionColors(res);
             seqenceEditor = new SequenceEditor(Buzz, res);
             seqenceEditor.SetVisibility(true);
@@ -1304,7 +1304,7 @@ namespace ReBuzz
             ToolBarVM = new ToolBarVM();
             ToolBarVM.Buzz = Buzz;
             ToolBarVM.Song = song;
-            ToolBarControl = Utils.GetUserControlXAML<UserControl>(Buzz.Theme.ToolBar.Source, buzzPath);
+            ToolBarControl = UiUtils.GetUserControlXAML<UserControl>(Buzz.Theme.ToolBar.Source, buzzPath);
             ToolBarControl.DataContext = ToolBarVM;
             mainGrid.Children.Add(ToolBarControl);
             Grid.SetRow(ToolBarControl, 0);
@@ -1391,7 +1391,7 @@ namespace ReBuzz
                     borderEditor.Focus();
 
                     // Force draw to that editor can get keyboard focus
-                    Utils.Refresh(this);
+                    UiUtils.Refresh(this);
 
                     if (Buzz.NewSequenceEditorActivate)
                     {
