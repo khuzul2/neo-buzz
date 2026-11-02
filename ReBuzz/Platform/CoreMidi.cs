@@ -65,21 +65,11 @@ namespace ReBuzz.Platform
         [DllImport(Midi)] static extern void* MIDIPacketListInit(void* packets);
         [DllImport(Midi)] static extern void* MIDIPacketListAdd(void* packets, nuint listSize, void* current, ulong time, nuint length, byte* data);
 
-        /// <summary>Whether CoreMIDI is here (macOS).</summary>
-        public static bool Available
-        {
-            get
-            {
-                if (!OperatingSystem.IsMacOS()) return false;
-                try
-                {
-                    MIDIGetNumberOfDestinations();
-                    return true;
-                }
-                catch (DllNotFoundException) { return false; }
-                catch (EntryPointNotFoundException) { return false; }
-            }
-        }
+        /// <summary>
+        /// Whether CoreMIDI is here (macOS). It only loads the framework: the first call into
+        /// CoreMIDI must be <see cref="Client"/>'s, on its own thread (see there).
+        /// </summary>
+        public static bool Available => OperatingSystem.IsMacOS() && NativeLibrary.TryLoad(Midi, out _);
 
         // ------------------------------------------------------------------ the client
 
@@ -95,7 +85,15 @@ namespace ReBuzz.Platform
         /// </summary>
         public static event Action SetupChanged;
 
-        /// <summary>The process's client (made on first use, with its notification thread).</summary>
+        /// <summary>Notifications so far (any kind).</summary>
+        public static int Notifications => Volatile.Read(ref notified);
+        static int notified;
+
+        /// <summary>
+        /// The process's client, made on first use on the notification thread, before any other
+        /// call into CoreMIDI: CoreMIDI ties notifications to the run loop of the thread that first
+        /// calls it (even a call that only counts devices), and only that thread runs one.
+        /// </summary>
         public static uint Client
         {
             get
@@ -150,6 +148,7 @@ namespace ReBuzz.Platform
                 // MIDINotification: messageID, then its size. 1 setup changed, 2 object added,
                 // 3 object removed, 4 property changed (offline, names).
                 int id = *(int*)message;
+                Interlocked.Increment(ref notified);
                 if (id >= 1 && id <= 4) SetupChanged?.Invoke();
             }
             catch (Exception)

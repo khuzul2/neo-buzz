@@ -85,6 +85,11 @@ def name_of(endpoint):
     return buf.value.decode()
 
 
+def names(sources):
+    count = cm.MIDIGetNumberOfSources() if sources else cm.MIDIGetNumberOfDestinations()
+    return [name_of(cm.MIDIGetSource(i) if sources else cm.MIDIGetDestination(i)) for i in range(count)]
+
+
 def find(sources, name, seconds=5):
     # A client sees other processes' endpoints come and go as its run loop runs (the one current
     # when it was made: this thread's), so it runs while looking.
@@ -96,6 +101,7 @@ def find(sources, name, seconds=5):
             if name_of(e) == name:
                 return e
         if time.monotonic() > end:
+            print(f"     the test sees sources {names(True)}, destinations {names(False)}")
             return None
         cf.CFRunLoopRunInMode(DEFAULT_MODE, 0.2, False)
 

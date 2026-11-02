@@ -156,7 +156,7 @@ namespace ReBuzz.SessionTests
                     Wait(() => Volatile.Read(ref changes) > 0, 1000);
                 }
                 Assert.That(CoreMidi.Sources().Any(e => e.Ref == made), Is.False, "gone once disposed");
-                TestContext.Out.WriteLine($"notifications for our own virtual source: {Volatile.Read(ref changes)}");
+                TestContext.Out.WriteLine($"notifications for our own virtual source: {Volatile.Read(ref changes)}; all so far: {CoreMidi.Notifications}");
             }
             finally
             {
