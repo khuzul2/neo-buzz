@@ -39,7 +39,7 @@ namespace ReBuzz.Agent
 
     internal sealed class AgentHost : IDisposable
     {
-        public const string Version = "0.4 (A3)";
+        public const string Version = "0.7 (A7)";
 
         readonly List<HttpTransport> http = new();
 
@@ -61,6 +61,7 @@ namespace ReBuzz.Agent
             StateTools.Register(tools, this);
             CompositionTools.Register(tools, this);
             WaveTools.Register(tools, this);
+            LiveTools.Register(tools, this);
             Server = new McpServer(new ServerInfo
             {
                 Name = "rebuzz",
@@ -70,7 +71,8 @@ namespace ReBuzz.Agent
                     "ReBuzz is a modular music studio (Buzz): generators and effects connected in a graph, patterns placed in an arrangement. " +
                     "Start every session with studio_status, and read guide(topic=\"workflow\") once. Times are in beats from the song start " +
                     "(or \"bar.beat\" text); pitches are MIDI numbers or names (60 = C4); levels in dB. Every changing call is one undo step " +
-                    "(undo reverts it); a call that fails changes nothing. Hear your work with render and check it with analyze. Errors say what to do next.",
+                    "(undo reverts it); a call that fails changes nothing. Hear your work with render and check it with analyze. In studio mode the user " +
+                    "listens live too: transport, session_launch and meters_read play with them. Errors say what to do next.",
             }, tools, GuideLibrary.Prompts(), GuideLibrary.Resources().Concat(Manuals(core)));
             Server.ToolCalled += Log.Write;
         }
@@ -113,6 +115,11 @@ namespace ReBuzz.Agent
 
         /// <summary>This session's snapshots by name.</summary>
         internal ConcurrentDictionary<string, Snapshot> Snapshots { get; } = new();
+        /// <summary>Phrases midi_play plays (A7).</summary>
+        internal LivePlayer Player => player ??= new LivePlayer(Core);
+        LivePlayer player;
+        /// <summary>Tracks session_record armed to record a take, disarmed when it stops (machine names).</summary>
+        internal HashSet<string> ArmedByAgent { get; } = new(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>This session's renders by id ("r1"…).</summary>
         internal ConcurrentDictionary<string, RenderInfo> Renders { get; } = new();
@@ -194,6 +201,10 @@ namespace ReBuzz.Agent
             http.Clear();
         }
 
-        public void Dispose() => StopHttp();
+        public void Dispose()
+        {
+            player?.Dispose();
+            StopHttp();
+        }
     }
 }
