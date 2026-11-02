@@ -72,8 +72,8 @@ namespace ReBuzz.Agent.Model
                 "Music theory without arithmetic slips: chord symbols to pitches (\"Am9/E\", voicings, inversions, voice leading), roman-numeral " +
                 "progressions in a key (\"ii7–V7–Imaj7\", bVII, V7/V), scales, key signatures and diatonic chords, scale degrees and in-key " +
                 "transposition, and how well notes fit a key. Use it before notes_write to get exact pitches, or to check a melody; it is read-only. " +
-                "Returns pitches as MIDI numbers with names spelled for the key (Bb in F major), and progressions also as notes ready for notes_write; " +
-                "example: theory(op=\"progression\", key=\"C major\", progression=\"ii7–V7–Imaj7\", octave=3).",
+                "Returns pitches as MIDI numbers with names spelled for the key (Bb in F major), and progressions also as notes ready for notes_write. " +
+                "Example: theory(op=\"progression\", key=\"C major\", progression=\"ii7–V7–Imaj7\", octave=3).",
             Input = Object(null,
                 Req("op", String("chord: a symbol → pitches. progression: numerals or symbols → chords and notes. scale: a key's notes. " +
                                  "key: signature, relative key, diatonic chords. degree: pitches' scale degrees, transposition in the key. " +
