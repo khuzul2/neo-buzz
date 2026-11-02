@@ -27,6 +27,9 @@
     <!-- The editor kit's toolkit-free core (docs/specs/cross-platform.md §8.3): canvas, layout,
          hit-testing and graphs. Compiling it here keeps it free of WPF. -->
     <Compile Include="..\Machines\NeoBuzz.Editor\Core\**\*.cs" Link="EditorCore\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- The analysis library's BS.1770 true peak: Neo Limiter's ceiling is measured with what the
+         agent server measures with (docs/specs/mcp-server.md §7). Only this file, by name. -->
+    <Compile Include="..\Machines\NeoBuzz.Analysis\Loudness.cs" Link="Analysis\Loudness.cs" />
   </ItemGroup>
 
   <ItemGroup>

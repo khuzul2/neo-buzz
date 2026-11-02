@@ -83,6 +83,10 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Poly = new("Neo Poly", "Poly", true);
         internal static readonly NeoInfo Wave = new("Neo Wave", "Wave", true);
         internal static readonly NeoInfo Fm6 = new("Neo FM6", "FM6", true);
+        // Mix and master batch (docs/specs/machines.md §5, MCP A4).
+        internal static readonly NeoInfo Eq = new("Neo EQ", "EQ", false);
+        internal static readonly NeoInfo Utility = new("Neo Utility", "Utility", false);
+        internal static readonly NeoInfo Limiter = new("Neo Limiter", "Limiter", false);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -236,6 +240,25 @@ namespace ReBuzzTests
                     for (int i = 0; i < n; i++) output[at + i] = reader.Buffer[2 * i];
                 }
                 return output;
+            }
+
+            /// <summary>Both channels (the mix and master machines change the image).</summary>
+            public (float[] L, float[] R) PlayStereo(double seconds)
+            {
+                int frames = (int)(seconds * Rate);
+                var l = new float[frames];
+                var r = new float[frames];
+                for (int at = 0; at < frames; at += 256)
+                {
+                    int n = Math.Min(256, frames - at);
+                    reader.Read(n);
+                    for (int i = 0; i < n; i++)
+                    {
+                        l[at + i] = reader.Buffer[2 * i];
+                        r[at + i] = reader.Buffer[2 * i + 1];
+                    }
+                }
+                return (l, r);
             }
 
             public IParameter Param(string name) =>
@@ -471,10 +494,113 @@ namespace ReBuzzTests
             ShootEditor(rig.Effect, "neo-fm6-editor");
         }
 
+        /// <summary>Neo Limiter's latency for a lookahead, rounded as the engine rounds it.</summary>
+        static int LimiterLatency(double ms, int rate) => (int)Math.Round(ms * 0.001 * (double)(float)rate) + 11;
+
+        [Test]
+        public void NeoEqShapesTheSoundAndShowsItsEditor()
+        {
+            using var rig = new Rig(Eq);
+            Assert.That(rig.Param("B3 freq").DescribeValue(rig.Param("B3 freq").DefValue), Is.EqualTo("250 Hz"));
+            Assert.That(rig.Param("B3 gain").DescribeValue(rig.Param("B3 gain").DefValue), Is.EqualTo("0.0 dB"));
+            Assert.That(rig.Param("B1 type").DescribeValue(3), Is.EqualTo("Low cut"));
+            Assert.That(rig.Param("B1 slope").DescribeValue(2), Is.EqualTo("48 dB/oct"));
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0), "minimum phase: no latency");
+
+            rig.Play(0.2);
+            double flat = Rms(rig.Play(0.3));
+            // Band 3 as a +12 dB bell on the test sine (220 Hz): B3 freq raw for 220 Hz is log(11)/log(1000) of the range.
+            rig.Param("B3 freq").SetValue(0, (int)Math.Round(Math.Log(220 / 20.0) / Math.Log(1000) * 10000));
+            rig.Param("B3 gain").SetValue(0, 480);   // +24 dB
+            rig.Param("B3 Q").SetValue(0, 600);
+            rig.Play(0.3);
+            double boosted = Rms(rig.Play(0.3));
+            rig.Param("B3 on").SetValue(0, 0);
+            rig.Play(0.3);
+            double off = Rms(rig.Play(0.3));
+            TestContext.Out.WriteLine($"flat {Db(flat):F2} dB, +24 dB bell on the sine {Db(boosted):F2} dB, band off {Db(off):F2} dB");
+            Assert.That(flat, Is.GreaterThan(1e-3), "sound passes");
+            Assert.That(Db(boosted / flat), Is.EqualTo(24).Within(0.5), "the bell's gain at its frequency");
+            Assert.That(Db(off / flat), Is.EqualTo(0).Within(0.01), "an off band passes the input");
+
+            rig.Param("B3 on").SetValue(0, 1);
+            rig.Param("B3 gain").SetValue(0, 180);   // −6 dB
+            rig.Param("B7 gain").SetValue(0, 300);   // +6 dB high shelf
+            rig.Param("B1 on").SetValue(0, 1);
+            ShootEditor(rig.Effect, "neo-eq-editor");
+        }
+
+        [Test]
+        public void NeoUtilityStagesGainAndPansAndShowsItsEditor()
+        {
+            using var rig = new Rig(Utility);
+            Assert.That(rig.Param("Gain").DescribeValue(rig.Param("Gain").DefValue), Is.EqualTo("0.0 dB"));
+            Assert.That(rig.Param("Gain").DescribeValue(0), Is.EqualTo("−∞ dB"));
+            Assert.That(rig.Param("Width").DescribeValue(150), Is.EqualTo("150%"));
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0));
+
+            rig.Play(0.2);
+            var (l0, r0) = rig.PlayStereo(0.3);
+            rig.Param("Gain").SetValue(0, rig.Param("Gain").DefValue - 60);   // −6.0 dB
+            rig.Play(0.1);
+            var (l1, _) = rig.PlayStereo(0.3);
+            rig.Param("Gain").SetValue(0, rig.Param("Gain").DefValue);
+            rig.Param("Pan").SetValue(0, 0);   // −100 %: balance, the right side silent
+            rig.Play(0.1);
+            var (l2, r2) = rig.PlayStereo(0.3);
+            TestContext.Out.WriteLine($"in {Db(Rms(l0)):F3} dB; gain −6: {Db(Rms(l1) / Rms(l0)):F3} dB; balance left: L {Db(Rms(l2) / Rms(l0)):F3} dB, R {Db(Rms(r2)):F1} dB");
+            Assert.That(Rms(l0), Is.GreaterThan(1e-3));
+            Assert.That(Rms(r0), Is.EqualTo(Rms(l0)).Within(1e-6), "a mono sine stays centred");
+            Assert.That(Db(Rms(l1) / Rms(l0)), Is.EqualTo(-6).Within(0.001), "gain in exact dB");
+            Assert.That(Db(Rms(l2) / Rms(l0)), Is.EqualTo(0).Within(0.001));
+            Assert.That(Rms(r2), Is.LessThan(1e-7), "balance −100 %: right silent");
+
+            rig.Param("Pan").SetValue(0, 400);
+            rig.Param("Width").SetValue(0, 140);
+            rig.Param("Bass mono").SetValue(0, 1);
+            rig.Param("Invert R").SetValue(0, 1);
+            rig.Play(0.2);
+            ShootEditor(rig.Effect, "neo-utility-editor");
+        }
+
+        [Test]
+        public void NeoLimiterHoldsTheCeilingReportsItsLatencyAndShowsItsEditor()
+        {
+            using var rig = new Rig(Limiter);
+            Assert.That(rig.Param("Ceiling").DescribeValue(rig.Param("Ceiling").DefValue), Is.EqualTo("−1.0 dB"));
+            Assert.That(rig.Param("Input gain").DescribeValue(rig.Param("Input gain").MaxValue), Is.EqualTo("+24.0 dB"));
+            // Lookahead 2 ms (the default) and the true-peak interpolator's 11 samples.
+            rig.Play(0.05);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(LimiterLatency(2, rig.Rate)), "the latency is reported");
+
+            rig.Sine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters[0].SetValue(0, 100);   // 0 dBFS
+            rig.Param("Input gain").SetValue(0, 240);   // +12 dB into a −1 dBTP ceiling
+            rig.Play(0.5);
+            var y = rig.Play(0.5);
+            double peak = y.Max(s => Math.Abs((double)s));
+            TestContext.Out.WriteLine($"peak {Db(peak):F3} dBFS with the ceiling at −1 dBTP and +12 dB in");
+            Assert.That(Db(peak), Is.LessThanOrEqualTo(-1 + 0.01), "under the ceiling");
+            Assert.That(Db(peak), Is.GreaterThan(-1.2), "and limiting, not muting");
+
+            rig.Param("Lookahead").SetValue(0, rig.Param("Lookahead").MaxValue);   // 5 ms
+            rig.Play(0.1);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(LimiterLatency(5, rig.Rate)), "the new latency reached ReBuzz");
+
+            // Four seconds of a level that moves, so the editor's history shows limiting come and go.
+            rig.Param("Lookahead").SetValue(0, rig.Param("Lookahead").DefValue);
+            var level = rig.Sine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters[0];
+            foreach (int l in new[] { 20, 100, 45, 100, 30, 70, 100 })
+            {
+                level.SetValue(0, l);
+                rig.Play(0.6);
+            }
+            ShootEditor(rig.Effect, "neo-limiter-editor");
+        }
+
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6 })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

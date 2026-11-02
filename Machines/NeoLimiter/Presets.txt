@@ -1,0 +1,86 @@
+# Neo Limiter factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLimiter
+machine "Neo Limiter"
+
+preset "Mastering — Streaming (−1 dBTP)"
+Input gain = 4
+Ceiling = -1
+Release = 0.1
+Auto release = On
+Lookahead = 2
+
+preset "Mastering — Transparent"
+Input gain = 2
+Ceiling = -1
+Release = 0.3
+Auto release = On
+Lookahead = 5
+
+preset "Mastering — Loud"
+Input gain = 8
+Ceiling = -1
+Release = 0.15
+Auto release = On
+Lookahead = 3
+
+preset "Mastering — Dense Electronic"
+Input gain = 10
+Ceiling = -0.5
+Release = 0.08
+Auto release = On
+Lookahead = 1
+
+preset "Mastering — CD (−0.3 dBTP)"
+Input gain = 4
+Ceiling = -0.3
+Release = 0.1
+Auto release = On
+Lookahead = 2
+
+preset "Mastering — Broadcast (−2 dBTP)"
+Input gain = 2
+Ceiling = -2
+Release = 0.2
+Auto release = On
+Lookahead = 3
+
+preset "Bus — Mix Bus Safety"
+Input gain = 0
+Ceiling = -1
+Release = 0.05
+Auto release = On
+Lookahead = 1.5
+
+preset "Bus — Drum Peak Catcher"
+Input gain = 3
+Ceiling = -3
+Release = 0.02
+Auto release = Off
+Lookahead = 1
+
+preset "Track — Vocal Peaks"
+Input gain = 6
+Ceiling = -6
+Release = 0.05
+Auto release = On
+Lookahead = 1.5
+
+preset "Track — Clean Bass"
+Input gain = 4
+Ceiling = -3
+Release = 0.3
+Auto release = Off
+Lookahead = 5
+
+preset "Safety — Brickwall (−0.1 dBTP)"
+Input gain = 0
+Ceiling = -0.1
+Release = 0.05
+Auto release = On
+Lookahead = 0.5
+
+preset "Creative — Smash"
+Input gain = 12
+Ceiling = -1
+Release = 0.01
+Auto release = Off
+Lookahead = 0.5

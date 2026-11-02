@@ -1,0 +1,14 @@
+# Neo Limiter parameters (docs/specs/machines.md §5). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoLimiter
+namespace NeoBuzz.Limiter
+class NeoLimiterMachine
+summary True-peak lookahead limiter: input gain drives the signal into a ceiling in dBTP, detected 4× oversampled as BS.1770 measures it, so the output's true peak stays under the ceiling. Program-dependent (auto) or set release, stereo link. Use it last on the master to reach a loudness target without overs, or to catch peaks on a bus.
+
+group Limiter
+InputGain   "Input gain"   0 360  120  db -12 24        | Gain into the limiter in 0.1 dB steps: raises loudness by pushing the signal into the ceiling
+Ceiling     "Ceiling"      0 120  110  db -12 0         | The output's true-peak limit (dBTP), 0.1 dB steps
+Release     "Release"      0 1500 1000 time 0.001 1     | Time for 63 % of a reduction to recover; with Auto release, the time sustained limiting recovers in (short peaks recover faster)
+AutoRelease "Auto release" 0 1    1    switch           | Program-dependent release: short peaks recover fast, sustained limiting slowly (less distortion on dense material)
+group Detector
+Lookahead   "Lookahead"    0 450  150  lin 0.5 5 ms 2   | The gain starts falling this long before a peak arrives (longer: smoother, less distortion; adds latency)
+Link        "Stereo link"  0 1000 1000 pct              | 100 %: both channels get the same gain (the image stays put); 0 %: each channel on its own
