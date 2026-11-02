@@ -234,7 +234,7 @@ Moves, with tools:
 - Fade: `automation_write(machine="Pad", pattern="Outro", param="Volume", points=[{"at": 0, "value": "-6 dB"}, {"at": 64, "value": "-40 dB"}])`.
 - A beat of silence before the drop: clear the last beat of each part's build pattern with `notes_write(machine=…, pattern="Build", notes=[], mode="replace_range", range_start=28, range_end=32)`.
 
-Measure the contrast: render each section and compare integrated loudness. The drop or chorus should read 2–6 LU above the breakdown or verse; under 1 LU, it doesn't lift.
+Measure the contrast: render each section and compare integrated loudness. The drop or chorus should read 2–6 LU above the breakdown or verse; under 1 LU, it doesn't lift. `plot(kind="loudness", sources=["r7"])` of the whole song shows the energy curve.
 
 ## Templates
 

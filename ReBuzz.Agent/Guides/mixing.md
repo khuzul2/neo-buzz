@@ -8,6 +8,7 @@ You can't hear, so you measure: probes on every part, the master analyzed after 
 - The **fader** is the connection gain into Master: `connection_set(changes=[{"from": "Bass", "to": "Master", "gain_db": -4}])`. A Neo synth's `Volume` is its trim.
 - A **send** is a second connection from the source to a reverb at 100 % mix: `connect(from="Pad", to="Hall", gain_db=-10)`. Its level is that connection's gain, independent of the fader: when you lower a fader, lower its send by the same dB to keep the wet/dry ratio.
 - **Probes** capture parts during a render without changing the song: `render(from=…, to=…, probes=["Kick", "Bass", "Pad"])`. Each probe is a machine's output after its first connection's gain, aligned with the master, with its own id ("r4:Bass") for `analyze`. Probe the last machine of a chain (the "Bass Duck" compressor, not "Bass") to measure the processed part.
+- `analyze_mix(section="Drop")` probes every track feeding Master in one call and reports per-track loudness, peaks, crest and bands, the masking pairs, the headroom and the biggest problems, worst first. Run it before and after each stage.
 - `machine_list` shows every connection with its gain and pan; read it before changing gains, since `connection_set` takes absolute values.
 
 ## Gain staging
@@ -43,8 +44,8 @@ Start with the most important part at its level (the kick in dance music, the le
 
 Parts add up in power, so they can't all sit at the loud end of their range: if most do, something has to come down.
 
-**By reference.** When the user gives a reference track (a WAV path), measure it like the mix: `analyze(source="C:/Refs/track.wav", metrics=["loudness", "spectrum", "stereo", "dynamics"])`.
-- Compare shapes, not levels: each band's `bands_db` minus `total_db`, for both. Within ±2 dB per band is close; a band 3 dB off is a real difference.
+**By reference.** When the user gives a reference track (a WAV path), `compare(a="r6", b="C:/Refs/track.wav")` lists loudness, dynamics, stereo and band differences, with the bands level-matched so only tone differences show. `analyze(source="C:/Refs/track.wav", metrics=["loudness", "spectrum", "stereo", "dynamics"])` gives its full numbers.
+- Compare shapes, not levels: level-matched band differences within ±2 dB are close; 3 dB off is a real difference.
 - Tilt within ±0.5 dB/oct of the reference. Without one: −2 to −3.5 dB/oct is balanced (third-octave levels, pink noise 0); above −2 bright, below −4 dark.
 - Stereo: compare correlation and the per-band width.
 - A mastered reference is louder and denser: compare loudness and PLR only after mastering.
@@ -66,7 +67,7 @@ Parts add up in power, so they can't all sit at the loud end of their range: if 
 | Reverb returns | | | mud below 300 Hz, fizz above 10 kHz | 200–400 Hz |
 
 - One of kick and bass owns 40–60 Hz. The other gives way: sidechain ducking, a high-pass at 40–50 Hz, or a different note. Tune the kick to the key's root or fifth.
-- **Finding fights.** Analyze each probe's spectrum over the same range (`analyze(source="r4:Bass", metrics=["spectrum"])`). Two parts fight in a band when both play at once, both are within 10 dB of their own loudest band there, and they are within 6 dB of each other. Cut the less important one there (−2 to −4 dB, Q 1–2), or move it: another octave, a pan, sidechain.
+- **Finding fights.** `analyze_mix` lists the masking pairs and their bands, worst first. To see one, `plot(kind="spectrum", sources=["r4:Kick", "r4:Bass"])` overlays the two. By hand: analyze each probe's spectrum over the same range (`analyze(source="r4:Bass", metrics=["spectrum"])`); two parts fight in a band when both play at once, both are within 10 dB of their own loudest band there, and they are within 6 dB of each other. Cut the less important one there (−2 to −4 dB, Q 1–2), or move it: another octave, a pan, sidechain.
 
 ## EQ starting points
 
@@ -207,12 +208,13 @@ One or two send reverbs for the whole mix: a short one (Room or Plate, 0.6–1.8
 
 1. Static balance with faders only. 2. High-pass everything that isn't kick or bass. 3. Kick against bass: who owns the sub, sidechain. 4. EQ by slots. 5. Compression. 6. Space. 7. Stereo. 8. Rides: automation per section (`Volume` on the Neo synths with `automation_write`). 9. Headroom and the final checks.
 
-`snapshot_save(name="mix 1 balance")` before each stage, `snapshot_diff(a="mix 1 balance")` after, and `undo` or `snapshot_restore(name=…)` when a stage measures worse. Compare versions at the same loudness (within 0.5 LU), or louder will seem better.
+`snapshot_save(name="mix 1 balance")` before each stage, `snapshot_diff(a="mix 1 balance")` after, and `undo` or `snapshot_restore(name=…)` when a stage measures worse. `compare(a="r7", b="r8")` puts the two renders side by side. Compare versions at the same loudness (within 0.5 LU), or louder will seem better.
 
 ## The checks
 
 | Check | Call | Pass |
 |---|---|---|
+| Everything at once | `analyze_mix(section=…)` | its problems list is empty, or each one is explained |
 | Clipping | `render(probes=[…])` | 0 clipped samples on the master and every probe |
 | Headroom | `render` | master true peak −6 dBTP or lower |
 | Level | `analyze(source=…, metrics=["loudness"])` | about −23 to −16 LUFS integrated before mastering |
@@ -227,7 +229,8 @@ One or two send reverbs for the whole mix: a short one (Room or Plate, 0.6–1.8
 - [ ] No clipping on the master or any part: `render(probes=[…])` reports 0 clipped samples everywhere.
 - [ ] Headroom for mastering: the master's true peak is -6 dBTP or lower in `render`'s measure.
 - [ ] Balance: each probe's integrated loudness against the master sits in the balance table's range (`analyze(source="rN:Part", metrics=["loudness"])`).
-- [ ] Kick and bass don't fight: `analyze(source=…, metrics=["spectrum"])` on both probes, plus the sidechain dip in `analyze(source=…, metrics=["dynamics"])`.
+- [ ] No part masks another in its main band: `analyze_mix(section=…)` lists no masking pair among the main parts (or each is resolved by sidechain, EQ or arrangement).
+- [ ] Kick and bass don't fight: the sidechain dip shows in `analyze(source=…, metrics=["dynamics"])` on the ducked part.
 - [ ] Tonal balance: `analyze(source=…, metrics=["spectrum"])` reads a tilt of −2 to −3.5 dB/oct, or matches the reference within ±0.5.
 - [ ] Mono lows and safe width: `analyze(source=…, metrics=["stereo"])` shows correlation 0.2–0.9 and `sub`/`low` above 0.9.
 - [ ] Reverb returns are filtered and timed: `param_get(machine=…)` shows Low cut 200–400 Hz and a pre-delay from the tempo table.

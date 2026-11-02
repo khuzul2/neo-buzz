@@ -133,7 +133,7 @@ Without Neo Limiter, Neo Comp as the last stage (it catches peaks within about 1
 | Limiter | integrated on target; true peak at or under the ceiling; 0 clipped samples; PLR in the style's range |
 | The whole chain | stereo correlation and per-band width within ±0.05 of the mix; lows mono |
 
-`snapshot_save(name="master 1 eq")` before each stage, `snapshot_diff(a="master 0")` to list what changed, `undo` a stage that measures worse. When comparing the master with the mix, subtract their loudness difference first: louder always seems better.
+`snapshot_save(name="master 1 eq")` before each stage, `snapshot_diff(a="master 0")` to list what changed, `undo` a stage that measures worse. `compare(a=<the mix render>, b=<the master render>)` shows what the chain did: loudness, peaks, dynamics, stereo, and the bands level-matched (louder always seems better, so judge tone on those). `plot(kind="loudness", sources=[…])` shows loudness over the whole song.
 
 ## What not to do
 
@@ -152,7 +152,7 @@ Without Neo Limiter, Neo Comp as the last stage (it catches peaks within about 1
 - [ ] Integrated loudness on target for the whole song: `analyze(source=…, metrics=["loudness"])` on a full `render()`.
 - [ ] True peak at or under the ceiling and no clipping: `analyze(source=…, metrics=["peaks"])`.
 - [ ] Dynamics in the style's range: PLR and loudness range from `analyze(source=…, metrics=["dynamics", "loudness"])`.
-- [ ] Tonal balance as intended: `analyze(source=…, metrics=["spectrum"])` against the mix render; tilt within ±0.5 dB/oct unless that was the point.
+- [ ] Tonal balance as intended: `compare(a=…, b=…)` of the mix and the master shows level-matched bands within ±1 dB, and the tilt within ±0.5 dB/oct, unless that was the point.
 - [ ] Stereo safe: `analyze(source=…, metrics=["stereo"])` shows correlation above 0 and `sub`/`low` above 0.9.
 - [ ] The chain is the only way to Master: `machine_list`.
 - [ ] Every stage earned its place: `snapshot_diff(a="master 0")`, each change with its before and after numbers in your report.

@@ -27,11 +27,11 @@ namespace ReBuzz.AgentTests
         /// Every tool a guide may name, with its arguments (null: not checked). Taken from the tool
         /// files, not from the spec:
         /// - main: ReBuzz/Agent/StudioTools.cs, MachineTools.cs, ParamTools.cs, PatternTools.cs,
-        ///   RenderTools.cs and ReBuzz.Agent/Guides/Guides.cs (guide);
-        /// - origin/agent/a2-tools and origin/agent/a3-tools: StateTools.cs (presets, snapshots),
-        ///   WaveTools.cs, CompositionTools.cs (markers, automation, session grid, data imports,
-        ///   wave_from_render) and RenderTools.cs (render probes);
-        /// - agent/a3-theory: ReBuzz.Agent/Model/CompositionTools.cs (theory) and Transforms.cs (notes_transform).
+        ///   RenderTools.cs (render with probes), AnalysisTools.cs (analyze_mix, compare, plot),
+        ///   StateTools.cs (presets, snapshots), WaveTools.cs, and ReBuzz.Agent/Guides/Guides.cs (guide);
+        /// - origin/agent/a3-tools: ReBuzz/Agent/CompositionTools.cs (markers, automation, session grid,
+        ///   data imports, wave_from_render), RenderTools.cs (render's section), and
+        ///   ReBuzz.Agent/Model/CompositionTools.cs (theory) and Transforms.cs (notes_transform).
         /// When a tool or an argument is added, renamed or removed, update this table with it.
         /// </summary>
         static readonly Dictionary<string, string[]> KnownTools = new()
@@ -67,7 +67,10 @@ namespace ReBuzz.AgentTests
             ["arrangement_clear"] = new[] { "machine", "from", "to" },
             ["render"] = new[] { "from", "to", "range", "section", "tail_seconds", "solo", "mute", "probes", "name" },
             ["analyze"] = new[] { "source", "metrics", "from_seconds", "to_seconds" },
-            // A2 (origin/agent/a2-tools)
+            // A2 (main: ReBuzz/Agent/AnalysisTools.cs, StateTools.cs, WaveTools.cs)
+            ["analyze_mix"] = new[] { "from", "to", "section", "machines" },
+            ["compare"] = new[] { "a", "b", "from_seconds", "to_seconds" },
+            ["plot"] = new[] { "kind", "sources", "title", "from_seconds", "to_seconds" },
             ["preset_list"] = new[] { "machine", "search" },
             ["preset_load"] = new[] { "machine", "preset" },
             ["preset_save"] = new[] { "machine", "name", "comment", "overwrite" },
@@ -77,7 +80,7 @@ namespace ReBuzz.AgentTests
             ["snapshot_diff"] = new[] { "a", "b" },
             ["wave_list"] = new string[0],
             ["wave_import"] = new[] { "path", "slot", "name", "root_note", "replace" },
-            // A3 (origin/agent/a3-tools)
+            // A3 (origin/agent/a3-tools: ReBuzz/Agent/CompositionTools.cs)
             ["arrangement_markers"] = new[] { "set", "remove" },
             ["automation_write"] = new[] { "machine", "pattern", "param", "track", "points", "shape", "clear" },
             ["automation_read"] = new[] { "machine", "pattern", "param" },
@@ -86,13 +89,15 @@ namespace ReBuzz.AgentTests
             ["session_get"] = new string[0],
             ["session_clip_set"] = new[] { "machine", "scene", "pattern", "mode", "quantization", "loop", "legato" },
             ["session_scene_set"] = new[] { "scene", "insert", "name", "tempo_bpm", "beats_per_bar" },
-            // A3 (agent/a3-theory)
+            // A3 (origin/agent/a3-tools: ReBuzz.Agent/Model/CompositionTools.cs, Transforms.cs)
             ["theory"] = new[] { "op", "chord", "progression", "key", "octave", "register", "voicing", "inversion", "voice_leading", "previous", "beats_per_chord", "start", "pitches", "steps", "notes" },
             ["notes_transform"] = new[] { "machine", "pattern", "transforms", "range_start", "range_end", "pitch_low", "pitch_high" },
         };
 
         /// <summary>analyze's metrics (AudioReport.Metrics on agent/a2-analysis).</summary>
         static readonly string[] Metrics = { "loudness", "peaks", "dynamics", "spectrum", "stereo", "pitch", "key", "tempo" };
+        /// <summary>plot's kinds (AudioPlot.Kinds).</summary>
+        static readonly string[] PlotKinds = { "spectrum", "spectrogram", "waveform", "loudness", "goniometer", "bands" };
         static readonly string[] TheoryOps = { "chord", "progression", "scale", "key", "degree", "fit" };
         static readonly string[] TransformOps = { "transpose", "quantize", "humanize", "velocity", "shift", "stretch", "reverse", "invert", "legato", "staccato" };
 
@@ -348,6 +353,8 @@ namespace ReBuzz.AgentTests
                     if (tool == "analyze")
                         foreach (Match metric in Regex.Matches(Regex.Match(args, @"metrics=\[([^\]]*)\]").Groups[1].Value, "\"([^\"]+)\""))
                             if (!Metrics.Contains(metric.Groups[1].Value)) problems.Add($"{where}: analyze has no metric \"{metric.Groups[1].Value}\"");
+                    if (tool == "plot" && Regex.Match(args, "kind=\"([^\"]+)\"") is { Success: true } kind && !PlotKinds.Contains(kind.Groups[1].Value))
+                        problems.Add($"{where}: plot has no kind \"{kind.Groups[1].Value}\"");
                     if (tool == "theory" && Regex.Match(args, "op=\"([^\"]+)\"") is { Success: true } op && !TheoryOps.Contains(op.Groups[1].Value))
                         problems.Add($"{where}: theory has no op \"{op.Groups[1].Value}\"");
                 }

@@ -35,7 +35,7 @@ Reproduce, measure, isolate, fix one thing, measure again. Each section: what yo
 `analyze(source=…, metrics=["stereo"])` reads a correlation below 0, a band with correlation under 0.5, mono loss over 3 dB, or "the low end is wide or out of phase".
 
 - Causes: a polarity-flipped copy; the same sound on two routes with different delays (a parallel route through Neo Drive's 62 samples or Neo Comp's lookahead) making a comb filter; unison spread on a bass; widened lows.
-- Comb filters show as regularly spaced dips in the third octaves (`analyze(source=…, metrics=["spectrum"])`); confirm by rendering with one route muted (`render(mute=[…])`).
+- Comb filters show as regularly spaced dips in the third octaves (`analyze(source=…, metrics=["spectrum"])`, or `plot(kind="spectrum", sources=[…])`); confirm by rendering with one route muted (`render(mute=[…])`). `plot(kind="goniometer", sources=[…])` shows the stereo field: a horizontal smear is out of phase.
 - Fixes: parallel processing with the effect's own `Mix` (its dry path is delay-matched) instead of two routes; basses with `Unison` 1 or `Uni spread` 0%; kick and bass panned 0; Neo Utility's polarity flip and mono-below when it is installed.
 
 ## Latency
@@ -85,7 +85,7 @@ The same song state over the same range renders the same audio. When two renders
 4. Tails from before: renders first wait (up to 5 s) for earlier audio to die away; a frozen reverb never does.
 5. Tempo changes inside the range: the render follows them and says so.
 
-Compare the two with `analyze` on both: the same state reads the same loudness to 0.1 LU and the same bands.
+Compare the two with `compare(a="r4", b="r5")`: the same state reads the same loudness to 0.1 LU and the same bands. `plot(kind="waveform", sources=["r4", "r5"])` shows where they part.
 
 ## Tool errors
 

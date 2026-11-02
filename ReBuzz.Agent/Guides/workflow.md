@@ -18,6 +18,9 @@ Build, listen, measure, adjust. Never claim a result you haven't rendered and me
 - `render(from=…, to=…)` renders faster than real time and returns a render id, the WAV file and a loudness/peak summary. Render a short range while you iterate (4–8 bars, or `section="Drop"`), the whole song to finish.
 - `render(solo=["Bass"])` hears one part without changing the song; `render(probes=["Kick", "Bass"])` captures parts alongside the master, each with its own id ("r3:Bass").
 - `analyze(source=<render id>, metrics=[…])` measures loudness, peaks, dynamics, spectrum, stereo, pitch, key and tempo, each with a plain read.
+- `analyze_mix(section="Drop")` renders with a probe on every track feeding Master: per-track loudness, peaks and bands, which pairs mask each other, the headroom, and the worst problems first.
+- `compare(a="r2", b="r3")`: two renders, probes or WAV files (before and after, or your mix against a reference), with the bands level-matched.
+- `plot(kind="spectrum", sources=["r3:Bass", "r3:Kick"])` draws an image you can look at: spectrum, spectrogram, waveform, loudness over time, goniometer, bands.
 - Compare versions: `snapshot_save(name=…)` before a change, `snapshot_diff(a=…)` after, `snapshot_restore(name=…)` or `undo` when it measured worse.
 
 ## Guides
