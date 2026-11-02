@@ -195,10 +195,33 @@ namespace ReBuzz.Core
 
         public System.Drawing.Color GetThemeColour(string name)
         {
-            var wpfColour = ThemeColors[name];
+            // Fork (engine-split.md S4): from the ARGB table; black for a name it lacks, as before.
+            return System.Drawing.Color.FromArgb(unchecked((int)GetThemeColourArgb(name)));
+        }
 
-            // Convert to System.Drawing.Color
-            return System.Drawing.Color.FromArgb(wpfColour.A, wpfColour.R, wpfColour.G, wpfColour.B);
+        internal uint GetThemeColourArgb(string name) =>
+            ThemeColourTable.TryGetValue(name, out uint argb) ? argb : ThemeColours.Missing;
+
+        /// <summary>
+        /// Fork (engine-split.md S4): the theme's colours, ARGB. The WPF app builds IBuzz.ThemeColors
+        /// from this table; a new table (another instance) means the theme changed.
+        /// </summary>
+        internal IReadOnlyDictionary<string, uint> ThemeColourTable { get; private set; } = new Dictionary<string, uint>();
+
+        /// <summary>
+        /// Fork (engine-split.md S4): the UI's view of the theme colours, the same object as
+        /// IBuzz.ThemeColors in the WPF app. It stays by name for theme XAML that binds
+        /// Buzz.ThemeColors[...]; null when no UI set <see cref="ThemeColorsView"/>.
+        /// </summary>
+        public object ThemeColors => ThemeColorsView?.Invoke(this);
+
+        /// <summary>Fork (S4): makes <see cref="ThemeColors"/>; set by the WPF app.</summary>
+        public static Func<ReBuzzCore, object> ThemeColorsView { get; set; }
+
+        /// <summary>Fork: (re)loads the selected theme's colours (start-up and theme change).</summary>
+        internal void LoadThemeColours()
+        {
+            ThemeColourTable = ThemeColours.Load(buzzPath, SelectedTheme);
         }
 
         public BuzzView ActiveView { get { return activeView; } set { activeView = value; PropertyChanged.Raise(this, "ActiveView"); } }
@@ -476,8 +499,6 @@ namespace ReBuzz.Core
             }
         }
 
-        IIndex<string, Color> themeColors;
-        public IIndex<string, Color> ThemeColors { get => themeColors; set => themeColors = value; }
 
         public IMenuItem MachineIndex { get; set; }
 

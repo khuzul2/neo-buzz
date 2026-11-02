@@ -1226,7 +1226,7 @@ namespace ReBuzz
                 EditorView.SetEditorControl(null);
             }
 
-            Buzz.ThemeColors = UiUtils.GetThemeColors(buzzPath);
+            Buzz.LoadThemeColours();
             var song = Buzz.Song;
 
             // Main Window

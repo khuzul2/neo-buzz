@@ -85,107 +85,36 @@ namespace ReBuzz.Common
             public Color this[string index] => Colors.ContainsKey(index) ? Colors[index] : System.Windows.Media.Colors.Black;
         }
 
-        public static IIndex<string, Color> GetThemeColors(string buzzPath)
+        static readonly object themeLock = new object();
+        static IReadOnlyDictionary<string, uint> themeTable;
+        static ColIndex themeIndex;
+
+        /// <summary>
+        /// Fork (engine-split.md S4): IBuzz.ThemeColors, the engine's ARGB theme table as WPF
+        /// colours. The same index until the engine loads another table (a theme change).
+        /// </summary>
+        public static IIndex<string, Color> GetThemeColors(ReBuzzCore buzz)
         {
-            ColIndex colIndex = new ColIndex();
-
-            // Add defaults?
-            InitThemeColors(colIndex);
-
-            string selectedTheme = Global.Buzz.SelectedTheme == "<default>" ? "Default" : Global.Buzz.SelectedTheme + ".col";
-
-            if (selectedTheme != "Default")
+            var table = buzz?.ThemeColourTable;
+            if (table == null)
+                return null;
+            lock (themeLock)
             {
-                string skinPath = buzzPath + "\\Themes\\" + selectedTheme;
-
-                string[] readText = File.ReadAllLines(skinPath);
-                string[] delimiterChars = {
-                            "\t",
-                            "  "
-                          };
-                foreach (string s in readText)
+                if (!ReferenceEquals(table, themeTable))
                 {
-                    try
-                    {
-                        if (!s.Trim().StartsWith("#") && s.Trim().Length > 0)
-                        {
-                            string[] items = s.Trim().Split(delimiterChars, StringSplitOptions.RemoveEmptyEntries);
-                            string key = items[0].Trim();
-                            Color value = (Color)ColorConverter.ConvertFromString("#ff" + items.Last().Trim());
-                            colIndex.Add(key, value);
-                        }
-                    }
-                    catch { }
+                    var index = new ColIndex();
+                    foreach (var (name, argb) in table)
+                        index.Add(name, ColorFromArgb(argb));
+                    themeIndex = index;
+                    themeTable = table;
                 }
-            }
-
-            return colIndex;
-        }
-
-        static readonly (string Name, uint Color)[] defaultColors =
-        [
-            ("DC BG", 0xFF000000),
-            ("DC Text", 0xFFC0C0C0),
-            ("IV BG", 0xFF000000),
-            ("IV Text", 0xFF000000),
-            ("MV Amp BG", 0xFFFFFFFF),
-            ("MV Amp Handle", 0xFF000000),
-            ("MV Arrow", 0xFFFFFFFF),
-            ("MV Background", 0xFFDAD6C9),
-            ("MV Control", 0xFFADADAD),
-            ("MV Effect", 0xFFC7ADA9),
-            ("MV Effect LED Border", 0xFF000000),
-            ("MV Effect LED Off", 0xFF641E1E),
-            ("MV Effect LED On", 0xFFFF6464),
-            ("MV Effect Mute", 0xFF9F8A87),
-            ("MV Effect Pan BG", 0xFF92655F),
-            ("MV Generator", 0xFFA9AEC7),
-            ("MV Generator LED Border", 0xFF000000),
-            ("MV Generator LED Off", 0xFF28288C),
-            ("MV Generator LED On", 0xFF6464FF),
-            ("MV Generator Mute", 0xFF878B9F),
-            ("MV Generator Pan BG", 0xFF5F6792),
-            ("MV Line", 0xFF000000),
-            ("MV Machine Border", 0xFF000000),
-            ("MV Machine Select 1", 0xFFFFFFFF),
-            ("MV Machine Select 2", 0xFF000000),
-            ("MV Machine Text", 0xFF000000),
-            ("MV Master", 0xFFC6BEAA),
-            ("MV Master LED Border", 0xFF000000),
-            ("MV Master LED Off", 0xFF595922),
-            ("MV Master LED On", 0xFFE8E8C1),
-            ("MV Pan Handle", 0xFF000000),
-            ("PE BG", 0xFFDAD6C9),
-            ("PE BG Dark", 0xFFBDB59F),
-            ("PE BG Very Dark", 0xFF9F9373),
-            ("PE Sel BG", 0xFFF7F7F4),
-            ("PE Text", 0xFF303021),
-            ("SA Amp BG", 0xFF000000),
-            ("SA Amp Line", 0xFF00C800),
-            ("SA Freq BG", 0xFF000000),
-            ("SA Freq Line", 0xFF00C800),
-            ("SE BG", 0xFFDAD6C9),
-            ("SE BG Dark", 0xFFBDB59F),
-            ("SE BG Very Dark", 0xFF9F9373),
-            ("SE Break Box", 0xFFE0B06D),
-            ("SE Line", 0xFF000000),
-            ("SE Mute Box", 0xFFDD816C),
-            ("SE Pattern Box", 0xFFC6BEA9),
-            ("SE Sel BG", 0xFFF7F7F4),
-            ("SE Song Position", 0xFFFFFF00),
-            ("SE Text", 0xFF303021),
-            ("SE Off Box", 0xFF606060),
-            ("black", 0xFF000000)
-        ];
-
-        static void InitThemeColors(ColIndex colIndex)
-        {
-            foreach (var col in defaultColors)
-            {
-                byte[] bytes = BitConverter.GetBytes(col.Color);
-                colIndex.Add(col.Name, Color.FromArgb(bytes[3], bytes[2], bytes[1], bytes[0]));
+                return themeIndex;
             }
         }
+
+        /// <summary>Fork (engine-split.md S4): an engine ARGB colour as a WPF colour.</summary>
+        public static Color ColorFromArgb(uint argb) =>
+            Color.FromArgb((byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb);
 
         static Window mainWindow = null;
 
