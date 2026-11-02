@@ -16,11 +16,6 @@ name: Agent evaluation (real agent)
 # stream-json with --verbose (the transcript), --no-session-persistence.
 
 on:
-  # TEMPORARY (A6 branch only, removed before merging): proves the run skips cleanly without the
-  # secret before the workflow is on main, where workflow_dispatch becomes available.
-  push:
-    branches: [ agent/a6-eval ]
-    paths: [ '.github/workflows/agent-eval.yml' ]
   schedule:
     - cron: '17 3 * * 1'   # Mondays 03:17 UTC
   workflow_dispatch:
