@@ -92,5 +92,72 @@ namespace ReBuzz.SessionTests
                 PortAudio.Release();
             }
         }
+
+        [Test]
+        public void WorkersJoinTheDevicesAudioWorkgroupAndLeaveIt()
+        {
+            // mac-engine.md M7: render workers join the playing device's I/O workgroup (macOS).
+            if (!AudioWorkgroup.Supported)
+            {
+                Assert.That(AudioWorkgroup.Attach(1, 0.005), Is.False, "nothing to attach off macOS");
+                AudioWorkgroup.Enter();
+                Assert.That(AudioWorkgroup.JoinedThreads, Is.Zero);
+                Assert.Ignore("audio workgroups are macOS's");
+            }
+            if (!PortAudio.Available) Assert.Ignore("PortAudio isn't here");
+            PortAudio.Acquire();
+            try
+            {
+                int device = PortAudio.DefaultOutput;
+                if (device == PortAudio.NoDevice) Assert.Ignore("no output device on this machine");
+                using var stream = new PortAudio.Stream(device, PortAudio.NoDevice, 0, 48000, 256, 0.05, (output, input, n) => Array.Clear(output, 0, 2 * n));
+                stream.Start();
+                Assert.That(stream.MacOutputDevice, Is.Not.EqualTo(0u), "the CoreAudio device behind the stream");
+                Assert.That(AudioWorkgroup.Attach(stream.MacOutputDevice, 256 / 48000.0), Is.True, AudioWorkgroup.LastError);
+                TestContext.Out.WriteLine($"max parallel threads: {AudioWorkgroup.MaxParallelThreads}");
+
+                int joinedInside = -1, failures = AudioWorkgroup.Failures;
+                var worker = new Thread(() =>
+                {
+                    AudioWorkgroup.Enter();
+                    AudioWorkgroup.Enter();             // nothing changed: nothing to do
+                    joinedInside = AudioWorkgroup.JoinedThreads;
+                    AudioWorkgroup.Leave();
+                });
+                worker.Start();
+                worker.Join();
+                Assert.That(AudioWorkgroup.Failures, Is.EqualTo(failures), AudioWorkgroup.LastError);
+                Assert.That(joinedInside, Is.EqualTo(1));
+                Assert.That(AudioWorkgroup.JoinedThreads, Is.Zero, "it left when it ended");
+
+                // A worker in the workgroup when the device stops leaves at its next Enter.
+                using var go = new ManualResetEventSlim();
+                using var detached = new ManualResetEventSlim();
+                int afterDetach = -1;
+                worker = new Thread(() =>
+                {
+                    AudioWorkgroup.Enter();
+                    go.Set();
+                    detached.Wait();
+                    AudioWorkgroup.Enter();
+                    afterDetach = AudioWorkgroup.JoinedThreads;
+                    AudioWorkgroup.Leave();
+                });
+                worker.Start();
+                go.Wait();
+                Assert.That(AudioWorkgroup.JoinedThreads, Is.EqualTo(1));
+                AudioWorkgroup.Detach();
+                detached.Set();
+                worker.Join();
+                Assert.That(afterDetach, Is.Zero);
+                Assert.That(AudioWorkgroup.Attached, Is.False);
+                stream.Stop();
+            }
+            finally
+            {
+                AudioWorkgroup.Detach();
+                PortAudio.Release();
+            }
+        }
     }
 }

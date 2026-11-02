@@ -96,6 +96,8 @@ namespace ReBuzz.Platform
         [DllImport(Lib)] static extern int Pa_StopStream(IntPtr stream);
         [DllImport(Lib)] static extern int Pa_CloseStream(IntPtr stream);
         [DllImport(Lib)] static extern StreamInfo* Pa_GetStreamInfo(IntPtr stream);
+        // macOS builds only (pa_mac_core.h): the CoreAudio device a stream plays on.
+        [DllImport(Lib)] static extern uint PaMacCore_GetStreamOutputDevice(IntPtr stream);
 
         static PortAudio() => NativeLibraries.Register();
 
@@ -220,6 +222,17 @@ namespace ReBuzz.Platform
             public long Callbacks => System.Threading.Interlocked.Read(ref callbacks);
             /// <summary>Callbacks bigger than the buffers allocated up front (they got silence).</summary>
             public long Underruns => System.Threading.Interlocked.Read(ref underruns);
+
+            /// <summary>The CoreAudio device (AudioDeviceID) it plays on; 0 off macOS.</summary>
+            public uint MacOutputDevice
+            {
+                get
+                {
+                    if (!OperatingSystem.IsMacOS() || stream == IntPtr.Zero) return 0;
+                    try { return PaMacCore_GetStreamOutputDevice(stream); }
+                    catch (EntryPointNotFoundException) { return 0; }
+                }
+            }
 
             public void Start() => Check(Pa_StartStream(stream), "Pa_StartStream");
             public void Stop() => Check(Pa_StopStream(stream), "Pa_StopStream");
