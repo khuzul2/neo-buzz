@@ -98,9 +98,6 @@
   <ItemGroup>
     <Resource Include="BuildDate.txt" />
     <Resource Include="BuildNumber.txt" />
-    <!-- Fork (engine-split.md S10): read by Core/BuildInfo.cs, which the engine compiles too. -->
-    <EmbeddedResource Include="BuildDate.txt" LogicalName="ReBuzz.BuildDate.txt" />
-    <EmbeddedResource Include="BuildNumber.txt" LogicalName="ReBuzz.BuildNumber.txt" />
     <Resource Include="Common\gfx\bear.jpeg" />
     <Resource Include="Common\gfx\fox.jpeg" />
   </ItemGroup>
@@ -123,6 +120,8 @@
     <ProjectReference Include="..\3rdParty\serilog\serilog.csproj" />
     <!-- Fork (docs/specs/mcp-server.md): the agent server's portable core. -->
     <ProjectReference Include="..\ReBuzz.Agent\ReBuzz.Agent.csproj" />
+    <!-- Fork (docs/specs/engine-split.md §5, PR 10): the engine, a plain net10.0 assembly. -->
+    <ProjectReference Include="..\ReBuzz.Engine\ReBuzz.Engine.csproj" />
     <ProjectReference Include="..\3rdParty\serilog\Serilog.Sinks.RichTextBox.Wpf.csproj" />
     <ProjectReference Include="..\ModernPatternEditor\ModernPatternEditor.NET\ModernPatternEditor.NET.csproj" />
     <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.BuzzUpdate\BuzzGUI.BuzzUpdate.csproj" />
@@ -205,7 +204,7 @@
     <PostBuildEvent>REM powershell -Command "Start-Process cmd -ArgumentList('/C', 'COPY /Y \"$(SolutionDir)Rebuzz\bin\Debug\ReBuzz.*\" \"C:\Program Files\ReBuzz\"')"  -Verb RunAs</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PreBuildEvent>powershell -Command "((Get-Date).ToUniversalTime()).ToString('s') | Out-File '$(MSBuildProjectDirectory)\BuildDate.txt'"</PreBuildEvent>
+    <!-- Fork (engine-split.md PR 10): ReBuzz.Engine stamps BuildDate.txt before it builds, before this project. -->
     <ProduceReferenceAssembly>True</ProduceReferenceAssembly>
     <Title>ReBuzz</Title>
   </PropertyGroup>
@@ -223,5 +222,12 @@
   <Target Name="RemoveEmptyObj" AfterTargets="AfterBuild">
     <Exec Command="IF EXIST obj rmdir obj" />
   </Target>
+
+  <!-- Fork (docs/specs/engine-split.md §5, PR 10): the engine's files are compiled once, into
+       ReBuzz.Engine.dll (referenced above), so this project leaves them out. -->
+  <Import Project="..\ReBuzz.Engine\EngineFiles.props" />
+  <ItemGroup>
+    <Compile Remove="@(EngineSource)" />
+  </ItemGroup>
 
 </Project>
