@@ -71,16 +71,14 @@ namespace ReBuzz.Platform
             return null;
         }
 
-        /// <summary>
-        /// Installs the resolver for the engine's assembly and BuzzGUI.Common's (whose libsndfile
-        /// binding imports "libsndfile-1"); once per assembly, later calls do nothing.
-        /// </summary>
-        public static void Register()
-        {
-            Register(typeof(NativeLibraries).Assembly);
-            Register(typeof(BuzzGUI.Common.Global).Assembly);
-        }
+        /// <summary>Installs the resolver for the engine's assembly (PortAudio).</summary>
+        public static void Register() => Register(typeof(NativeLibraries).Assembly);
 
+        /// <summary>
+        /// Installs the resolver for an assembly that imports native libraries by their Windows
+        /// names (BuzzGUI.Common's libsndfile binding imports "libsndfile-1"); once per assembly,
+        /// later calls do nothing. This file stays free of other references: the seam tests link it.
+        /// </summary>
         public static void Register(Assembly assembly)
         {
             lock (gate)

@@ -60,6 +60,7 @@ namespace ReBuzz.Headless
 
             // Native libraries (libsndfile for wave import, PortAudio) from where each OS keeps them.
             NativeLibraries.Register();
+            NativeLibraries.Register(typeof(Global).Assembly);  // BuzzGUI.Common: libsndfile
 
             // Before anything touches Global: its settings load from the JSON registry, not the Windows one.
             Directory.CreateDirectory(settings);

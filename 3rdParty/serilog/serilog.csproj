@@ -58,6 +58,9 @@
    <Compile Remove="serilog\src\Serilog\Properties\**" />
    <Compile Remove="serilog\obj\**" />
    <Compile Remove="serilog\test\**" />
+   <!-- Fork: the output folders sit inside the project folder when SolutionDir is empty (a
+        project build, as on Linux CI); a Debug build's generated sources would join a Release build. -->
+   <Compile Remove="build\**" />
    <EmbeddedResource Remove="serilog-sinks-richtextbox\**" />
    <EmbeddedResource Remove="serilog\assets\**" />
    <EmbeddedResource Remove="serilog\results\**" />
