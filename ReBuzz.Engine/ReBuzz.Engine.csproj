@@ -34,6 +34,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="ReBuzz" />
     <InternalsVisibleTo Include="ReBuzzTests" />
+    <InternalsVisibleTo Include="rebuzz-headless" />
   </ItemGroup>
 
   <!-- Build number and date (S10), read by Core/BuildInfo.cs. ReBuzz.exe's About box reads the

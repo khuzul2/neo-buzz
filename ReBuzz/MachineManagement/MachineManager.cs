@@ -510,7 +510,7 @@ namespace ReBuzz.MachineManagement
             dll.IsOutOfProcess = false;
             dll.Is64Bit = true;
             dll.Buzz = buzz;
-            dll.Path = buzzPath + "\\Gear";
+            dll.Path = Path.Combine(buzzPath, "Gear");
             dll.Name = "Master";
 
             //dll.TextColor = Global.Buzz.ThemeColors["MV Machine Text"] != null ? Global.Buzz.ThemeColors["MV Machine Text"] : Colors.GhostWhite;
@@ -850,6 +850,7 @@ namespace ReBuzz.MachineManagement
 
         internal void SetPatternEditorPattern(MachineCore machine, IPattern p)
         {
+            if (machine == null) return;                // fork (mac-engine.md M2): no editor machine
             if (machine.DLL.IsManaged && managedMachines.ContainsKey(machine) && p != null)
             {
                 try
@@ -872,6 +873,7 @@ namespace ReBuzz.MachineManagement
 
         internal void CreatePatternCopy(MachineCore machine, IPattern newp, IPattern p)
         {
+            if (machine == null) return;                // fork (mac-engine.md M2): no editor machine
             if (machine.DLL.IsManaged && managedMachines.ContainsKey(machine))
             {
                 var machineHost = ManagedMachines[machine];

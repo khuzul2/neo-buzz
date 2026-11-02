@@ -118,7 +118,7 @@ namespace NeoBuzz.Fm6
                 Command = new SimpleCommand
                 {
                     CanExecuteDelegate = _ => true,
-                    ExecuteDelegate = _ => System.Windows.MessageBox.Show(
+                    ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo FM6 — six-operator FM synth: the 32 DX7 algorithms, DX7 envelopes, keyboard and " +
                         "velocity scaling, pitch envelope and LFO with the DX7's own parameter values; loads " +
                         "DX7 banks (.syx). Beyond the DX7: four operator waveforms, unison, glide, a tone " +
@@ -129,9 +129,11 @@ namespace NeoBuzz.Fm6
         };
     }
 
+#if WINDOWS   // fork (mac-engine.md M2): the editor is WPF; portable builds have none
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {
         public IMachineGUI CreateGUI(IMachineGUIHost host) => new NeoFm6Editor();
     }
+#endif
 }

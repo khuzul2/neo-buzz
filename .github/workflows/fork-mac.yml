@@ -12,7 +12,12 @@ on:
     branches: [ main ]
     paths:
       - 'Machines/**'
-      - 'ReBuzz/Platform/**'
+      - 'ReBuzz/**'
+      - 'ReBuzz.Engine/**'
+      - 'ReBuzz.Headless/**'
+      - 'ReBuzzGUI/BuzzGUI.Common/**'
+      - 'ReBuzzGUI/BuzzGUI.Interfaces/**'
+      - 'tools/headless-smoke.py'
       - 'ReBuzz/Core/Session/**'
       - 'ReBuzz.Agent/**'
       - 'ReBuzz.SessionTests/**'
@@ -50,6 +55,16 @@ jobs:
       env:
         MEASUREMENTS_DIR: ${{ github.workspace }}/measurements
       run: dotnet test NeoBuzz.MachineTests --logger "console;verbosity=normal" 2>&1 | tee machine-test.log
+
+    # rebuzz-headless on Apple silicon (docs/specs/mac-engine.md M1/M4): the engine and the Neo
+    # machines built for osx-arm64, driven over MCP stdio by the same smoke test as Linux.
+    - name: Headless engine on macOS
+      if: always()
+      run: |
+        brew install libsndfile || true
+        git submodule update --init --depth 1 3rdParty/serilog/serilog
+        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
+        python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
 
     - name: Summary
       if: always()

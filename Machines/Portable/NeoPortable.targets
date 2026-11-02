@@ -1,0 +1,41 @@
+<Project>
+  <!--
+    Fork (docs/specs/mac-engine.md M2): a Neo machine built for plain net10.0, with no editor (its
+    editor is WPF; the portable studio, P3, draws it through INeoCanvas). Same assembly name as the
+    Windows build ("<Name>.NET.dll"), so the engine's scanner takes it as a managed machine, with
+    its manifest and presets beside it. Each machine has a tiny project here that sets NeoFolder,
+    NeoName and NeoKind (Generators or Effects) and imports this file; Portable.proj builds them
+    all into $(GearDir) (default: Machines/Portable/bin/Gear).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>$(NeoName).NET</AssemblyName>
+    <RootNamespace>NeoBuzz</RootNamespace>
+    <Optimize>true</Optimize>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>$(NoWarn);MSB3277;CS1591;CS0067;CS0414;CS0169;CS0649</NoWarn>
+    <M>$(MSBuildThisFileDirectory)..\</M>
+    <GearDir Condition="'$(GearDir)' == ''">$(MSBuildThisFileDirectory)bin\Gear\</GearDir>
+    <OutDir>$([MSBuild]::EnsureTrailingSlash('$(GearDir)'))$(NeoKind)\</OutDir>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(M)$(NeoFolder)\**\*.cs" Exclude="$(M)$(NeoFolder)\**\*Editor.cs;$(M)$(NeoFolder)\obj\**;$(M)$(NeoFolder)\bin\**" />
+    <Compile Include="$(M)NeoBuzz.Dsp\**\*.cs" Link="Shared\Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoBuzz.Machine\**\*.cs" Link="Shared\Machine\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoBuzz.Editor\Core\**\*.cs" Link="Shared\EditorCore\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="$(M)$(NeoFolder)\$(NeoName).prs.xml" Link="$(NeoName).prs.xml" CopyToOutputDirectory="PreserveNewest" Condition="Exists('$(M)$(NeoFolder)\$(NeoName).prs.xml')" />
+    <None Include="$(M)$(NeoFolder)\$(NeoName).machine.json" Link="$(NeoName).machine.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The engine's portable machine API; the host provides it at run time (not copied). -->
+    <ProjectReference Include="$(M)..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" Private="false" GlobalPropertiesToRemove="GearDir" />
+    <ProjectReference Include="$(M)..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" Private="false" GlobalPropertiesToRemove="GearDir" />
+  </ItemGroup>
+</Project>

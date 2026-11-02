@@ -27,8 +27,11 @@ namespace ReBuzz.Platform
             _ => UserAnswer.Ok,
         };
 
+        /// <summary>REBUZZ_TRACE=1 adds the exception's stack to errors (for finding what a host lacks).</summary>
+        static readonly bool trace = Environment.GetEnvironmentVariable("REBUZZ_TRACE") == "1";
+
         public void Error(string message, string caption, Exception exception) =>
-            Write("error", caption, message + (exception != null ? $" ({exception.GetType().Name}: {exception.Message})" : ""));
+            Write("error", caption, message + (exception == null ? "" : trace ? " " + exception : $" ({exception.GetType().Name}: {exception.Message})"));
 
         public void Info(string message, string caption) => Write("info", caption, message);
 

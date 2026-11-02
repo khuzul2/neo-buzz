@@ -74,7 +74,7 @@ namespace NeoBuzz.Comp
                 Command = new SimpleCommand
                 {
                     CanExecuteDelegate = _ => true,
-                    ExecuteDelegate = _ => System.Windows.MessageBox.Show(
+                    ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Comp — compressor: clean VCA, glue bus, FET and opto, with soft knee, lookahead, " +
                         "sidechain low cut, external sidechain (input 2) and parallel mix.\n\n" +
                         "Part of neo-buzz (docs/specs/machines.md).", "Neo Comp"),
@@ -83,9 +83,11 @@ namespace NeoBuzz.Comp
         };
     }
 
+#if WINDOWS   // fork (mac-engine.md M2): the editor is WPF; portable builds have none
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {
         public IMachineGUI CreateGUI(IMachineGUIHost host) => new NeoCompEditor();
     }
+#endif
 }

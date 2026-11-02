@@ -131,7 +131,7 @@ namespace NeoBuzz.Wave
                 Command = new SimpleCommand
                 {
                     CanExecuteDelegate = _ => true,
-                    ExecuteDelegate = _ => System.Windows.MessageBox.Show(
+                    ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Wave — wavetable synth: two morphing wavetable oscillators with warp modes, a sub " +
                         "oscillator, ladder and state-variable filters, three envelopes, two LFOs and an " +
                         "8-slot matrix, oversampled 2×. Ten generated tables plus your own (WAV, Serum-style " +
@@ -141,9 +141,11 @@ namespace NeoBuzz.Wave
         };
     }
 
+#if WINDOWS   // fork (mac-engine.md M2): the editor is WPF; portable builds have none
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {
         public IMachineGUI CreateGUI(IMachineGUIHost host) => new NeoWaveEditor();
     }
+#endif
 }

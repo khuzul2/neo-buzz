@@ -32,7 +32,7 @@ jobs:
     - name: PortAudio
       run: |
         sudo apt-get update -q
-        sudo apt-get install -y -q --no-install-recommends libportaudio2 pulseaudio pulseaudio-utils
+        sudo apt-get install -y -q --no-install-recommends libportaudio2 libsndfile1 pulseaudio pulseaudio-utils
         pulseaudio -D --exit-idle-time=-1 --system=false
         pactl load-module module-null-sink sink_name=ci_null
         pactl set-default-sink ci_null
@@ -86,6 +86,23 @@ jobs:
       run: |
         git submodule update --init --depth 1 3rdParty/serilog/serilog
         dotnet build ReBuzz.Engine/ReBuzz.Engine.csproj -nologo -v:q
+
+    # rebuzz-headless (docs/specs/mac-engine.md M1): the engine with the MCP server on stdio, no UI
+    # toolkit, with the Neo machines built for net10.0. The smoke test drives it as a client does:
+    # a chord through Neo Poly and Neo Verb, rendered, measured, saved, reopened, undone.
+    - name: Headless engine on Linux
+      if: always()
+      run: |
+        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
+        python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
+
+    # The A6 scripted suite (docs/specs/mcp-server.md §10) against rebuzz-headless on Linux
+    # (mac-engine.md M3): the same checks, tasks and baseline as the Windows package run.
+    - name: Agent evaluation on Linux (rebuzz-headless)
+      if: always()
+      run: |
+        dotnet build ReBuzz.AgentEval/ReBuzz.AgentEval.csproj -c Release -nologo -v:q
+        dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll run --exe ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless --out "$RUNNER_TEMP/eval" --baseline eval/baseline.json
 
     - name: Annotate test log
       if: failure()

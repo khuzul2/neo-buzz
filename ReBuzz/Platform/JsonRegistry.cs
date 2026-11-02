@@ -19,7 +19,7 @@ using ReBuzz.Core;
 
 namespace ReBuzz.Platform
 {
-    public sealed class JsonRegistry : IRegistryEx
+    public sealed class JsonRegistry : IRegistryEx, BuzzGUI.Common.IRegistryStore
     {
         readonly object gate = new object();
         readonly string path;
@@ -127,6 +127,19 @@ namespace ReBuzz.Platform
                 if (section != null && section.Remove(value)) Save();
             }
         }
+
+        // ------------------------------------------------------------------ BuzzGUI's RegistryEx and settings (IRegistryStore)
+
+        string BuzzGUI.Common.IRegistryStore.Get(string path, string key) => Read<string>(key, null, path);
+
+        void BuzzGUI.Common.IRegistryStore.Set(string path, string key, string value) => Write(key, value, path);
+
+        IEnumerable<string> BuzzGUI.Common.IRegistryStore.Names(string path)
+        {
+            lock (gate) return Section(Normalize(path), create: false)?.Keys.ToList() ?? new List<string>();
+        }
+
+        IReadOnlyDictionary<string, object> BuzzGUI.Common.IRegistryStore.Values(string path) => ReadDictionary(path);
 
         sealed class Key : IRegistryKey
         {

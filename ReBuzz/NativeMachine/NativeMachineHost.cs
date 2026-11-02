@@ -14,6 +14,12 @@ namespace ReBuzz.NativeMachine
 {
     internal class NativeMachineHost : IDisposable
     {
+        /// <summary>
+        /// Fork (docs/specs/mac-engine.md M2): native machines are Windows DLLs run in Windows host
+        /// processes, over named shared memory. Elsewhere there is none: they load as placeholders.
+        /// </summary>
+        internal static bool Supported => OperatingSystem.IsWindows();
+
         private readonly string sharedId;
         internal Process childProcess;
         private MemoryMappedFile mappedFile;
@@ -54,7 +60,7 @@ namespace ReBuzz.NativeMachine
                 return;
 
             Host64 = host64;
-            string path = host64 ? buzzPath + "\\bin64\\ReBuzzEngine64.exe" : buzzPath + "\\bin32\\ReBuzzEngine32.exe";
+            string path = host64 ? System.IO.Path.Combine(buzzPath, "bin64", "ReBuzzEngine64.exe") : System.IO.Path.Combine(buzzPath, "bin32", "ReBuzzEngine32.exe");
 
             int mapSize = IPC.GetSharedPageSize();
             mappedFile = MemoryMappedFile.CreateNew(sharedId, mapSize);

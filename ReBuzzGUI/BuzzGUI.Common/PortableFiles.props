@@ -52,6 +52,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Presets\PresetDictionary.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Presets\SerializableDictionary.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PropertyChangedRaiser.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IRegistryStore.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RegistryEx.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)RegistryMonitor.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SessionClipHost.cs" />

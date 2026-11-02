@@ -36,13 +36,17 @@ namespace ReBuzz.FileOps
                 {
                     f = File.OpenRead(xmlFilePath);
                     xmlMachines = LoadMachineDLLs(f, buzz);
+                    // Fork (mac-engine.md M1): closed before a rescan rewrites the file (File.Create
+                    // failed while it was open: "used by another process").
+                    f.Dispose();
+                    f = null;
 
                     if (xmlMachines != null)
                     {
                         // Check dll counts
-                        string filepath = Path.Combine(buzzPath, @"Gear\Effects");
+                        string filepath = Path.Combine(buzzPath, "Gear", "Effects");
                         var effectDllFiles = GetDllList(filepath);
-                        filepath = Path.Combine(buzzPath, @"Gear\Generators");
+                        filepath = Path.Combine(buzzPath, "Gear", "Generators");
                         var generatorDllFiles = GetDllList(filepath);
                         if (Global.GeneralSettings.PluginRescanStrategy == PluginRescanStrategyType.Always ||
                             (Global.GeneralSettings.PluginRescanStrategy == PluginRescanStrategyType.WhenChanged && (xmlMachines.NumDLLsInEffectsFolder != effectDllFiles.Count || xmlMachines.NumDLLsGeneratorsFolder != generatorDllFiles.Count)))
@@ -194,17 +198,22 @@ namespace ReBuzz.FileOps
         {
             buzz.DCWriteLine("RescanMachineDLLs");
             var xFileName = GetFullFileName();
-            var f = File.Create(xFileName);
 
-            NativeMachine.NativeMachineHost nativeMachineHost = new NativeMachine.NativeMachineHost("ScanDLLs", buzzPath, dispatcher, engineSettings);
-            nativeMachineHost.InitHost(buzz, false);
+            // Fork (mac-engine.md M2): native machines run in Windows host processes; elsewhere
+            // only managed machines are scanned (native ones load as placeholders from songs).
+            NativeMachine.NativeMachineHost nativeMachineHost = null, nativeMachineHost64 = null;
+            if (NativeMachine.NativeMachineHost.Supported)
+            {
+                nativeMachineHost = new NativeMachine.NativeMachineHost("ScanDLLs", buzzPath, dispatcher, engineSettings);
+                nativeMachineHost.InitHost(buzz, false);
 
-            NativeMachine.NativeMachineHost nativeMachineHost64 = new NativeMachine.NativeMachineHost("ScanDLLs64", buzzPath, dispatcher, engineSettings);
-            nativeMachineHost64.InitHost(buzz, true);
+                nativeMachineHost64 = new NativeMachine.NativeMachineHost("ScanDLLs64", buzzPath, dispatcher, engineSettings);
+                nativeMachineHost64.InitHost(buzz, true);
+            }
 
-            string filepath = Path.Combine(buzzPath, @"Gear\Effects");
+            string filepath = Path.Combine(buzzPath, "Gear", "Effects");
             var effectDllFiles = GetDllList(filepath);
-            filepath = Path.Combine(buzzPath, @"Gear\Generators");
+            filepath = Path.Combine(buzzPath, "Gear", "Generators");
             var generatorDllFiles = GetDllList(filepath);
 
             XMLMachineDLLs machineDLLs = new XMLMachineDLLs();
@@ -217,10 +226,12 @@ namespace ReBuzz.FileOps
             machineDLLs.EffectMachineDLLs = effectsList.ToArray();
             machineDLLs.GeneratorMachineDLLs = generatorsList.ToArray();
 
-            Save(f, machineDLLs, buzz.UserMessages);
+            // Fork: created only now, so a scan that fails doesn't leave the file open (a rescan
+            // then failed with "used by another process").
+            Save(File.Create(xFileName), machineDLLs, buzz.UserMessages);
 
-            nativeMachineHost.Dispose();
-            nativeMachineHost64.Dispose();
+            nativeMachineHost?.Dispose();
+            nativeMachineHost64?.Dispose();
 
             return machineDLLs;
         }
@@ -254,8 +265,8 @@ namespace ReBuzz.FileOps
         {
             List<XMLMachineDLL> machineDLLs = new List<XMLMachineDLL>();
 
-            var uiMessage = nativeMachineHost.UIMessage;
-            var uiMessage64 = nativeMachineHost64.UIMessage;
+            var uiMessage = nativeMachineHost?.UIMessage;
+            var uiMessage64 = nativeMachineHost64?.UIMessage;
 
             foreach (FileInfo file in machineDllFiles)
             {
@@ -293,8 +304,8 @@ namespace ReBuzz.FileOps
             IUiDispatcher dispatcher,
             EngineSettings engineSettings)
         {
-            var uiMessage = nativeMachineHost.UIMessage;
-            var uiMessage64 = nativeMachineHost64.UIMessage;
+            var uiMessage = nativeMachineHost?.UIMessage;
+            var uiMessage64 = nativeMachineHost64?.UIMessage;
 
             if (libName.EndsWith("GUI.dll"))
                 return null;
@@ -340,6 +351,10 @@ namespace ReBuzz.FileOps
                 return mDll;
             }
             // 64 bit native machines
+            else if (nativeMachineHost == null || nativeMachineHost64 == null)
+            {
+                return null;        // fork (mac-engine.md M2): a native machine, and no native host here
+            }
             else if (libName.EndsWith("x64.dll"))
             {
                 libName = libName.Remove(libName.Length - 8);
@@ -404,15 +419,19 @@ namespace ReBuzz.FileOps
 
         public XMLMachineDLL ValidateDll(ReBuzzCore buzz, string libName, string path, string buzzPath)
         {
-            NativeMachine.NativeMachineHost nativeMachineHost = new NativeMachine.NativeMachineHost("ScanDLLs", buzzPath, dispatcher, engineSettings);
-            nativeMachineHost.InitHost(buzz, false);
+            NativeMachine.NativeMachineHost nativeMachineHost = null, nativeMachineHost64 = null;
+            if (NativeMachine.NativeMachineHost.Supported)
+            {
+                nativeMachineHost = new NativeMachine.NativeMachineHost("ScanDLLs", buzzPath, dispatcher, engineSettings);
+                nativeMachineHost.InitHost(buzz, false);
 
-            NativeMachine.NativeMachineHost nativeMachineHost64 = new NativeMachine.NativeMachineHost("ScanDLLs64", buzzPath, dispatcher, engineSettings);
-            nativeMachineHost64.InitHost(buzz, true);
+                nativeMachineHost64 = new NativeMachine.NativeMachineHost("ScanDLLs64", buzzPath, dispatcher, engineSettings);
+                nativeMachineHost64.InitHost(buzz, true);
+            }
 
             var ret = ValidateDll(buzz, libName, path, nativeMachineHost, nativeMachineHost64, buzzPath, dispatcher, engineSettings);
-            nativeMachineHost.Dispose();
-            nativeMachineHost64.Dispose();
+            nativeMachineHost?.Dispose();
+            nativeMachineHost64?.Dispose();
 
             return ret;
         }
@@ -421,6 +440,7 @@ namespace ReBuzz.FileOps
         {
             List<string> list = new List<string>();
             DirectoryInfo d = new DirectoryInfo(filepath);
+            if (!d.Exists) return new List<FileInfo>();      // fork (mac-engine.md M2): a host without that gear folder
 
             return d.GetFiles().Where(f => f.Name.EndsWith(".dll")).ToList();
         }
