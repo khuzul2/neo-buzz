@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Windows;
+using ReBuzz.Core;
 
 namespace ReBuzz.Agent
 {
@@ -57,14 +57,14 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>A question: captured with the safe answer (No, Cancel or OK).</summary>
-        public static bool TryCapture(string message, string caption, MessageBoxButton buttons, out MessageBoxResult answer)
+        public static bool TryCapture(string message, string caption, UserButtons buttons, out UserAnswer answer)
         {
             answer = buttons switch
             {
-                MessageBoxButton.OKCancel => MessageBoxResult.Cancel,
-                MessageBoxButton.YesNo => MessageBoxResult.No,
-                MessageBoxButton.YesNoCancel => MessageBoxResult.Cancel,
-                _ => MessageBoxResult.OK,
+                UserButtons.OkCancel => UserAnswer.Cancel,
+                UserButtons.YesNo => UserAnswer.No,
+                UserButtons.YesNoCancel => UserAnswer.Cancel,
+                _ => UserAnswer.Ok,
             };
             return TryCapture(message, caption);
         }

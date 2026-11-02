@@ -189,6 +189,9 @@ namespace ReBuzz.Common
 
         static Window mainWindow = null;
 
+        /// <summary>The window message boxes keep on top (set by <see cref="InitUtils"/>); null before.</summary>
+        internal static Window AppWindow => mainWindow;
+
         public static void InitUtils(Window appWindow)
         {
             UiUtils.mainWindow = appWindow;
@@ -197,7 +200,7 @@ namespace ReBuzz.Common
         public static MessageBoxResult MessageBox(string message, string caption = null, MessageBoxButton messageBoxButton = MessageBoxButton.OK)
         {
             // Fork (agent server): no dialogs during an agent call or in headless mode.
-            if (ReBuzz.Agent.NonModal.TryCapture(message, caption, messageBoxButton, out var captured)) return captured;
+            if (ReBuzz.Agent.NonModal.TryCapture(message, caption, (UserButtons)messageBoxButton, out var captured)) return (MessageBoxResult)captured;
 
             var handle = new WindowInteropHelper(Application.Current.MainWindow).Handle;
 

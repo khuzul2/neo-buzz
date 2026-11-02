@@ -637,7 +637,7 @@ namespace ReBuzz.Core
                     }
                     catch (Exception e)
                     {
-                        UiUtils.MessageBox("Selected Audio Driver Error: " + e.Message, "Selected Audio Driver Error");
+                        userMessages.Error("Selected Audio Driver Error: " + e.Message, "Selected Audio Driver Error", e);
                     }
                 }
             }
@@ -988,7 +988,7 @@ namespace ReBuzz.Core
             */
 
             Process.GetCurrentProcess().PriorityClass = ProcessAndThreadProfile.ProcessPriorityClassMainProcess;
-            Utils.SetProcessorAffinityMask(registryEx, true);
+            Utils.SetProcessorAffinityMask(registryEx, userMessages, true);
 
             dtEngineThread = new DispatcherTimer();
             dtEngineThread.Interval = TimeSpan.FromSeconds(1 / 30.0);
@@ -1384,14 +1384,14 @@ namespace ReBuzz.Core
         {
             if (Modified)
             {
-                var result = UiUtils.MessageBox("Save changes to " + (SongCore.SongName == null ? "Untitled" : SongCore.SongName), "ReBuzz", MessageBoxButton.YesNoCancel);
-                if (result == MessageBoxResult.Yes)
+                var result = userMessages.Ask("Save changes to " + (SongCore.SongName == null ? "Untitled" : SongCore.SongName), "ReBuzz", UserButtons.YesNoCancel);
+                if (result == UserAnswer.Yes)
                 {
                     SaveSongFile(SongCore.SongName);
                     return true;
                 }
 
-                if (result == MessageBoxResult.Cancel)
+                if (result == UserAnswer.Cancel)
                 {
                     return false;
                 }
@@ -1612,7 +1612,7 @@ namespace ReBuzz.Core
             }
             catch (Exception ex)
             {
-                UiUtils.MessageBox("Error saving file " + filename + "\n\n" + ex, "Error saving file.");
+                userMessages.Error("Error saving file " + filename + "\n\n" + ex, "Error saving file.", ex);
             }
 
             Modified = false;
@@ -2485,6 +2485,8 @@ namespace ReBuzz.Core
         private readonly IFileNameChoice fileNameToLoadChoice;
         private readonly IFileNameChoice fileNameToSaveChoice;
         private readonly IUserMessages userMessages;
+        /// <summary>Fork (engine-split.md S1): messages for the engine classes this core owns.</summary>
+        internal IUserMessages UserMessages => userMessages;
         private readonly IKeyboard keyboard;
 
         public string InfoText { get => infoText; set
