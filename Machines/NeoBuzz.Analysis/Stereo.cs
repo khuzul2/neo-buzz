@@ -114,7 +114,7 @@ namespace NeoBuzz.Analysis
         }
 
         /// <summary>Correlation, side/mid energy and mono loss from the channels' energies and their in-phase product.</summary>
-        static (double Correlation, double Width, double MonoLossDb) Measures(double ll, double rr, double lr)
+        internal static (double Correlation, double Width, double MonoLossDb) Measures(double ll, double rr, double lr)
         {
             double mid = ll + rr + 2 * lr, side = ll + rr - 2 * lr;
             if (ll + rr <= 0) return (1, 0, 0);

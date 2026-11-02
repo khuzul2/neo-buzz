@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Status | v1.1 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter) built: measured values below are from Linux CI, 2026-11-01 |
-| Date | 2026-11-01 |
+| Status | v1.2 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02 |
+| Date | 2026-11-02 |
 | Scope | New high-quality machines for sound design, mixing and mastering, written in C# with custom editors: first batch "core six", second batch "mix and master" |
 
 ---
@@ -32,6 +32,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo EQ | effect | 8-band parametric EQ: bell, shelves, cuts at 12/24/48 dB/oct, notch; minimum phase; response graph with draggable bands over the spectrum |
 | Neo Utility | effect | Gain, balance or mono pan, width, bass mono, polarity, swap and DC removal, each exact |
 | Neo Limiter | effect | True-peak lookahead limiter: a ceiling in dBTP as BS.1770 measures it, auto or set release, stereo link |
+| Neo Analyzer | effect | Spectrum (FFT with peak hold, third-octave bars), loudness (momentary, short-term, integrated LUFS, range, true peak) and stereo (correlation, width, goniometer) with the analysis library's numbers; readings for agents; audio untouched |
 
 ## 2. Decisions
 
@@ -48,12 +49,12 @@ Machines/
   NeoBuzz.Dsp/        Pure DSP (no Buzz or WPF references), internal types, linked as source
   NeoBuzz.Machine/    Buzz glue shared by the machines (parameters, notes, MIDI), linked as source
   NeoBuzz.Editor/     WPF editor kit (knobs, switches, meters, graphs, preset bar), linked as source
-  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/ NeoEq/ NeoUtility/ NeoLimiter/
+  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/ NeoEq/ NeoUtility/ NeoLimiter/ NeoAnalyzer/
     Engine/           the machine's DSP: pure, tested on Linux
     Params.def        the parameter table (source of truth)
     Presets.txt       factory presets in units
     *.cs              the machine class and its editor
-NeoBuzz.MachineTests/ Linux NUnit project: links NeoBuzz.Dsp, every Engine/ folder, the editor kit's Core/ and the analysis library's true peak
+NeoBuzz.MachineTests/ Linux NUnit project: links NeoBuzz.Dsp, every Engine/ folder, the editor kit's Core/ and the analysis library's loudness, streaming meters, FFT, spectrum and stereo files
 tools/gen-machine-params.py   Params.def → Engine/Params.g.cs + Machine.Params.g.cs + <Name>.machine.json
 tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 ```
@@ -83,9 +84,9 @@ tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 | Modulation | analog-style ADSR, DX7 rate/level envelope, LFO (7 shapes, tempo sync, fade-in), 8-slot mod matrix |
 | Voices | allocator: poly with stealing (released first, then oldest; stolen voices fade), mono/legato with note stack, glide, unison |
 | Delay | fractional delay lines (cubic/allpass), modulated allpass diffusers |
-| Analysis | peak/RMS meters for the editors |
+| Analysis | peak/RMS meters for the editors; (A4) a lock-free triple buffer that hands whole snapshots from the audio thread to readers (`TripleBuffer`) |
 
-**Editor kit (`NeoBuzz.Editor`)**: dark theme with one accent per machine; rotary knob (drag, Shift for fine, wheel, double-click for default, value shown while dragging); segmented switch; section frame; level and gain-reduction meters; graph surface for curves, envelopes, waves and algorithms; (M3) a frequency-response graph with draggable band handles (toolkit-free axes, hit-testing and drags in `Core/ResponseGraph.cs`, the pointer routed by `InteractiveGraph`); preset bar (ReBuzz presets: browse, previous/next, save). Controls bind to `IParameter` and follow automation.
+**Editor kit (`NeoBuzz.Editor`)**: dark theme with one accent per machine; rotary knob (drag, Shift for fine, wheel, double-click for default, value shown while dragging); segmented switch; section frame; level and gain-reduction meters; graph surface for curves, envelopes, waves and algorithms; (M3) a frequency-response graph with draggable band handles (toolkit-free axes, hit-testing and drags in `Core/ResponseGraph.cs`, the pointer routed by `InteractiveGraph`); (A4) analysis graphs: a spectrum with third-octave bars, held peaks and a viewing tilt, loudness bars and readouts coloured against a target, a goniometer and a correlation bar (`Core/AnalysisGraphs.cs`); preset bar (ReBuzz presets: browse, previous/next, save). Controls bind to `IParameter` and follow automation.
 
 ## 5. Machines and acceptance criteria
 
@@ -247,6 +248,31 @@ Parameters: Input gain (−12 … +24 dB), Ceiling (−12 … 0 dB true peak, 0.
 
 Not built: a target-LUFS mode. Integrated loudness needs the whole programme, so a live machine can only guess it, and limiting makes loudness grow slower than the input gain; the agent instead renders, measures (`analyze`) and sets Input gain, which is exact.
 
+### Neo Analyzer (spectrum, loudness, stereo; MCP A4)
+
+An effect whose output is its input, bit for bit, with zero latency. It measures what passes with the analysis library the agent server's `analyze` uses (docs/specs/mcp-server.md §7), so the editor, `machine_readings` and `analyze` give the same numbers.
+
+- **Loudness**: NeoBuzz.Analysis `LoudnessMeter`, the streaming form of `Loudness.Measure`: the same K-weighting and 100 ms steps, momentary (400 ms) and short-term (3 s) every step, and since the reset the BS.1770 gated integrated loudness and the EBU Tech 3342 loudness range. These two come from histograms of 0.01 LU bins (−70 … +30 LUFS) that keep each bin's exact energy, so memory doesn't grow with time and only the bin a gate falls in is approximate.
+- **True peak**: `TruePeakMeter`, `Loudness.TruePeak`'s interpolator and shortcut run sample by sample (the points around a sample are known 11 samples later). Shown as the recent true peak (falling 20 dB/s), a held marker and the maximum since the reset.
+- **Spectrum**: an 8192-point FFT (at 44.1 and 48 kHz; about 0.17 s) every 2048 samples, Hann, both channels in one complex transform, the channels' mean power per bin on the library's scale (the bins sum to the mean square, so levels are plain RMS dB). Speed averages it exponentially over 0.1, 0.3, 1 or 3 s. The 31 third-octave bars and the curve (48 points per octave) integrate the average over bands, as `Spectrum.Integrate` does. The curve's bands are 1/24, 1/12, 1/6 or 1/3 octave wide (Smoothing), so a tone reads its level at every smoothing, and at 1/3 octave the curve passes through the bars. Held peaks hold for Peak hold, then fall 20 dB/s. Tilt (0, 3 or 4.5 dB/oct around 1 kHz) is for viewing only: at 0 pink noise draws flat, at 3 a typical finished mix (about −3 dB/oct in third octaves) does.
+- **Stereo**: correlation and width (side/mid energy, `Stereo.Measures`) over 400 ms for the meter and over 3 s for the readings; a goniometer of the last 1024 samples.
+- **Threads**: the audio thread fills a snapshot and publishes it through a lock-free triple buffer (NeoBuzz.Dsp `TripleBuffer`): one atomic exchange per publish, never a lock or an allocation. Readers (the editor, the agent server) copy the newest snapshot out, taking a lock among themselves only.
+- **Readings** (docs/specs/mcp-server.md §3.5): `Readings` returns a new read-only dictionary of 48 values, keyed as the manifest's `readings`: `momentary_lufs`, `short_term_lufs`, `integrated_lufs`, `range_lu`, `true_peak_dbtp`, `momentary_max_lufs`, `short_term_max_lufs`, `seconds`, `correlation`, `width`, the named bands `sub_db` … `air_db` and the third octaves `band_20hz_db` … `band_20000hz_db` (both over 3 s). They stay after the transport stops, so a render leaves its measures.
+
+Parameters: Smoothing, Speed, Peak hold (0.25 – 20 s), Tilt, Target (the loudness the meters are coloured against, written in dB: within 1 LU green, under blue, up to 3 LU over amber, beyond red) and Reset (On starts the integrated loudness, range, maxima and held peaks again; `ResetReadings()` and the editor's Reset button do it without the parameter). Presets: Mix (−18), Mastering (−14, slow, tilted 4.5), K-14, Broadcast R128 (−23), Tones (1/24 octave, fast). The editor shows the spectrum, the loudness meters and readouts, and the goniometer with the correlation bar.
+
+Levels follow the library: plain RMS dB, so a full-scale sine reads −3 dB. A sine at −20 dB RMS reads −20 dB in its band; one peaking at −20 dBFS reads −23.01 dB, as `analyze` reads it.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Pass-through | output = input bit for bit; latency 0 | bit for bit at the machine's Work (1,024 loud random samples); inside ReBuzz a −20 dBFS sine reaches the master within 0.01 dB; latency 0 |
+| Same numbers as the library | over whole signals (a 1 kHz tone, pink noise stepping by 10 dB, noise bursts with silences, a quarter-rate sine at 45°; in blocks of 256 and of 117): integrated loudness and the momentary and short-term maxima within 0.05 LU of `Loudness.Measure`, loudness range within 0.05 LU, true peak within 0.05 dB | integrated and maxima within 0.0000 LU, range within 0.0003 LU, true peak within 0.0000 dB; every momentary and short-term value within 9e-11 LU. Inside ReBuzz a stereo 1 kHz sine at −20 dBFS reads −20.0 LUFS integrated and −20.0 dBTP |
+| A tone in its band | a 1 kHz sine at −20 dB RMS: −20 dB in its third octave, in the mid band and on the curve (±0.05 dB); two third octaves away, over 40 dB down | −20.000 dB in the third octave, the mid band and on the curve; the next third octaves −103.4 and −105.9 dB |
+| Bands | named bands within 0.5 dB of `Spectrum.Measure` (3 s of pink noise and tones); third octaves of pink noise within 0.5 dB, 100 Hz – 20 kHz | named bands within 0.07 dB; third octaves within 0.21 dB (the bars, 12 s) and 0.47 dB (the 3 s readings) |
+| Correlation | 1 for mono and −1 for anti-phase (±1e-9); 0 ± 0.02 for unrelated noise, width 1 ± 0.05 | mono 1.000000 (width 0), anti-phase −1.000000 (width ∞), unrelated noise 0.0009 (width 0.998); the 400 ms meter 0.006 |
+| Threads | no allocation while processing (parameter changes and a reset included); no torn snapshot with a writer and two readers (200,000 publishes) | 0 bytes; no torn snapshot |
+| CPU | stereo at 48 kHz: under 2 % of real time on the CI runner (TieredCompilation off, as the other tests) | 0.46 % (220× real time) |
+
 ## 6. Phases
 
 | Phase | Content |
@@ -254,7 +280,7 @@ Not built: a target-LUFS mode. Integrated loudness needs the whole programme, so
 | M0 | Spec, core fix (§3.1), DSP library, editor kit, parameter generator, Linux test project |
 | M1 | Neo Drive, Neo Comp, Neo Verb |
 | M2 | Neo Poly, Neo Wave, Neo FM6 |
-| M3 (MCP A4) | Neo EQ, Neo Utility, Neo Limiter |
+| M3 (MCP A4) | Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer |
 
 Each phase: pure tests (Linux CI), integration tests in ReBuzzTests (the machine loads, makes sound, its parameters and editor work, editor screenshots), then the package build.
 
@@ -262,6 +288,6 @@ M0–M3 are done. Every machine also ships factory presets (12–18 each), check
 
 ## 7. Not in this batch
 
-Additive and physical-modelling synths, convolution, tape delay, ensemble/phaser, multiband: candidates for the next batch. Neo Analyzer, the fourth A4 machine, belongs with the analysis library (docs/specs/mcp-server.md §8.1).
+Additive and physical-modelling synths, convolution, tape delay, ensemble/phaser, multiband: candidates for the next batch.
 
-The MCP server spec (docs/specs/mcp-server.md §8) sets the priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak) and Neo Utility are built (M3); Neo Analyzer next; then Neo Delay, Neo Multiband, Neo Scope and Neo Sampler. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.
+The MCP server spec (docs/specs/mcp-server.md §8) sets the priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak), Neo Utility and Neo Analyzer are built (M3); next Neo Delay, Neo Multiband, Neo Scope and Neo Sampler. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.
