@@ -307,7 +307,8 @@ namespace NeoBuzz.MachineTests
             Run(e, l, r);
             double speed = 10.0 / sw.Elapsed.TotalSeconds;
             Measure.Report($"Neo EQ CPU: {speed:F0}× real time (8 bands, 48 dB/oct cuts at both ends, stereo)");
-            Assert.That(speed, Is.GreaterThan(100));
+            // 50× is 2 % of a core; shared CI runners vary (measured 144× there).
+            Assert.That(speed, Is.GreaterThan(50));
         }
 
         [Test]

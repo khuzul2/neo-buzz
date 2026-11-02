@@ -202,7 +202,7 @@ The editor draws the response over 20 Hz – 20 kHz with a numbered handle per b
 | Cut slopes | Q 0.71: −3.01 dB at the cutoff (±0.05 dB) for every slope; the slope over the second octave past the cutoff (where the asymptote has taken over and float audio still resolves 48 dB/oct) is 12, 24 or 48 dB/oct within ±3 % | −3.007 dB at every slope; low cuts 11.80, 24.08, 48.18 dB/oct; high cuts 12.10, 24.67, 49.38 dB/oct (1 kHz) |
 | Parameter moves | a +12 dB bell swept 100 Hz – 5 kHz and its gain swept ±12 dB, one value per 256-sample block as automation arrives, on a 220 Hz sine: energy above 2 kHz ≤ −90 dB relative to the sine (the same moves on a plain biquad switched per block measure ≥ −70 dB, so the test hears zipper noise when there is some) | −124.8 dB (switched biquad: −54.0 dB); type and on/off switches: no step larger than the signal's own |
 | Flat | every band at 0 dB or off: output equals the input (±1e-6) | defaults: identical; all bands off: bit for bit |
-| CPU | 8 bands with 48 dB/oct cuts at both ends, stereo: ≥ 100× real time on the CI runner | CPU_EQ |
+| CPU | 8 bands with 48 dB/oct cuts at both ends, stereo: ≥ 50× real time on the CI runner (was 100×: shared runners vary, and 50× is 2 % of a core) | 144× |
 
 Later: analog-matched (decramped) designs, so a bell or shelf above a few kHz keeps its analog shape up to Nyquist. The bilinear transform squeezes it: against the analog prototype, RBJ sections stay within 0.2 dB up to 16 kHz for bands below about 1 kHz, but a wide bell at 8 kHz differs by about 3 dB near 16 kHz. (Prototypes of a 5-point magnitude match and of Orfanidis' prescribed-Nyquist bell were 3–10× closer for bells but not robust near Nyquist, so they wait.) Also later: linear-phase mode, dynamic bands, mid/side bands.
 
@@ -243,7 +243,7 @@ Parameters: Input gain (−12 … +24 dB), Ceiling (−12 … 0 dB true peak, 0.
 | Auto release | an isolated 5 ms peak recovers 63 % in under 50 ms; 2 s of limiting in 80 – 130 ms (Release 100 ms) | 24 ms; 108 ms |
 | Stereo link | 100 %: identical gain on both channels | identical |
 | Latency | lookahead + 11 samples, reported to ReBuzz, follows the setting | 107 samples at 2 ms, 48 kHz; an impulse arrives exactly then; ReBuzz sees the new latency |
-| CPU | stereo, limiting a drum loop: ≥ 100× real time on the CI runner | CPU_LIM |
+| CPU | stereo, limiting a drum loop: ≥ 50× real time on the CI runner (was 100×: shared runners vary, and 50× is 2 % of a core) | 120× |
 
 Not built: a target-LUFS mode. Integrated loudness needs the whole programme, so a live machine can only guess it, and limiting makes loudness grow slower than the input gain; the agent instead renders, measures (`analyze`) and sets Input gain, which is exact.
 

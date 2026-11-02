@@ -315,7 +315,8 @@ namespace NeoBuzz.MachineTests
             Run(e, l, r);
             double speed = 10.0 / sw.Elapsed.TotalSeconds;
             Measure.Report($"Neo Limiter CPU: {speed:F0}× real time (stereo, limiting drums)");
-            Assert.That(speed, Is.GreaterThan(100));
+            // 50× is 2 % of a core; shared CI runners vary (measured 120× there).
+            Assert.That(speed, Is.GreaterThan(50));
         }
 
         [Test]
