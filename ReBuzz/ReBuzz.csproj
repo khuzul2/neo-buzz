@@ -98,6 +98,9 @@
   <ItemGroup>
     <Resource Include="BuildDate.txt" />
     <Resource Include="BuildNumber.txt" />
+    <!-- Fork (engine-split.md S10): read by Core/BuildInfo.cs, which the engine compiles too. -->
+    <EmbeddedResource Include="BuildDate.txt" LogicalName="ReBuzz.BuildDate.txt" />
+    <EmbeddedResource Include="BuildNumber.txt" LogicalName="ReBuzz.BuildNumber.txt" />
     <Resource Include="Common\gfx\bear.jpeg" />
     <Resource Include="Common\gfx\fox.jpeg" />
   </ItemGroup>

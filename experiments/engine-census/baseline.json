@@ -1,27 +1,23 @@
 {
   "project": "ReBuzz.Engine/ReBuzz.Engine.csproj",
-  "errors": 220,
+  "errors": 179,
   "files": {
     "ReBuzz/AppViews/ReBuzzCoreInitialization.cs": 6,
     "ReBuzz/Audio/Driver/AudioDriverFactory.cs": 2,
     "ReBuzz/Audio/Driver/AudioDriverService.cs": 3,
     "ReBuzz/Audio/Engine/AudioEngine.cs": 11,
-    "ReBuzz/Common/ChildProcessTracker.cs": 1,
     "ReBuzz/Core/Actions/GraphActions/DeleteMachinesAction.cs": 4,
-    "ReBuzz/Core/MachineCore.cs": 34,
+    "ReBuzz/Core/MachineCore.cs": 29,
     "ReBuzz/Core/MachineDLL.cs": 12,
     "ReBuzz/Core/MachineGroupCore.cs": 2,
-    "ReBuzz/Core/ParameterCore.cs": 3,
-    "ReBuzz/Core/ReBuzzCore.cs": 34,
+    "ReBuzz/Core/ReBuzzCore.cs": 14,
     "ReBuzz/Core/Session/SessionActions.cs": 3,
     "ReBuzz/Core/Session/SessionControllers.cs": 10,
-    "ReBuzz/Core/Session/SessionLayout.Takes.cs": 4,
-    "ReBuzz/FileOps/BMXFile.cs": 7,
-    "ReBuzz/FileOps/BMXMLFile.cs": 10,
+    "ReBuzz/FileOps/BMXFile.cs": 5,
+    "ReBuzz/FileOps/BMXMLFile.cs": 5,
     "ReBuzz/MachineManagement/MachineManager.cs": 10,
     "ReBuzz/ManagedMachine/ManagedMachineHost.cs": 6,
     "ReBuzz/Midi/MidiEngine.cs": 38,
-    "ReBuzz/NativeMachine/NativeMachineHost.cs": 1,
     "ReBuzz/NativeMachine/UIMessage.cs": 19
   }
 }
