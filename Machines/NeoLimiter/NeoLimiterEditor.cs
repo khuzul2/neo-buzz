@@ -108,7 +108,7 @@ namespace NeoBuzz.Limiter
             if (machine != null)
             {
                 g.Text($"{machine.Engine.GainReductionDb:F1} dB", gr.Right - 4, gr.Bottom - 16, 10, Palette.Text, align: NeoAlign.Right);
-                g.Text($"latency {machine.Engine.Latency} samples", levels.Left + 4, levels.Bottom - 16, 9.5, Palette.DimText);
+                g.Text($"latency {machine.Engine.Latency} samples", levels.Left + 50, levels.Top + 2, 9.5, Palette.DimText);
             }
         }
     }
