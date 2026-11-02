@@ -263,7 +263,9 @@ namespace ReBuzz.Core
                     if (j >= input.Length)
                         return;
 
-                    if (bufferIndex < 0 || bufferIndex + bytesPerSample >= bufferSize)
+                    // Fork (mac-engine.md M2): ">", so the last sample is written too (">=" left it
+                    // zero, so a BMXML wave lost its last sample on every open).
+                    if (bufferIndex < 0 || bufferIndex + bytesPerSample > bufferSize)
                         return;
                     else
                     {
