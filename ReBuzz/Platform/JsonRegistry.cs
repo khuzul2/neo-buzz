@@ -204,9 +204,15 @@ namespace ReBuzz.Platform
             {
                 if (v.TryGetValue(out string s)) return s;
                 if (v.TryGetValue(out bool b)) return b;
-                if (v.TryGetValue(out int i)) return i;
-                if (v.TryGetValue(out long l)) return l;
-                if (v.TryGetValue(out double d)) return d;
+                // Numbers by their text: a value written in this run holds a decimal, which
+                // TryGetValue won't give as int (one read from the file would).
+                if (v.GetValueKind() == JsonValueKind.Number)
+                {
+                    string n = v.ToJsonString();
+                    if (int.TryParse(n, NumberStyles.Integer, CultureInfo.InvariantCulture, out int i)) return i;
+                    if (long.TryParse(n, NumberStyles.Integer, CultureInfo.InvariantCulture, out long l)) return l;
+                    if (double.TryParse(n, NumberStyles.Float, CultureInfo.InvariantCulture, out double d)) return d;
+                }
             }
             return node?.ToJsonString();
         }

@@ -87,9 +87,12 @@ namespace ReBuzz.SessionTests
             var inputs = r.CreateCurrentUserSubKey(Root + @"\MIDI In List");
             inputs.SetValue("IAC Driver Bus 1", 1);
             inputs.SetValue("Keystation", "0");
-            var d = new JsonRegistry(File1, Root).ReadDictionary("MIDI In List");
-            Assert.That(d["IAC Driver Bus 1"] is int one && one == 1, Is.True, "a DWORD comes back as int");
-            Assert.That(d["Keystation"], Is.EqualTo("0"));
+            // As written (MidiEngine reads the lists it just wrote, on hot-plug), and as read from the file.
+            foreach (var d in new[] { r.ReadDictionary("MIDI In List"), new JsonRegistry(File1, Root).ReadDictionary("MIDI In List") })
+            {
+                Assert.That(d["IAC Driver Bus 1"] is int one && one == 1, Is.True, "a DWORD comes back as int");
+                Assert.That(d["Keystation"], Is.EqualTo("0"));
+            }
         }
 
         [Test]

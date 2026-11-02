@@ -47,6 +47,9 @@ cf.CFStringCreateWithCString.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctype
 cf.CFStringGetCString.restype = ctypes.c_bool
 cf.CFStringGetCString.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_long, ctypes.c_uint32]
 cf.CFRelease.argtypes = [ctypes.c_void_p]
+cf.CFRunLoopRunInMode.restype = ctypes.c_int32
+cf.CFRunLoopRunInMode.argtypes = [ctypes.c_void_p, ctypes.c_double, ctypes.c_bool]
+DEFAULT_MODE = ctypes.c_void_p.in_dll(cf, "kCFRunLoopDefaultMode").value
 READ = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
 cm.MIDIClientCreate.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(Ref)]
 cm.MIDISourceCreate.argtypes = [Ref, ctypes.c_void_p, ctypes.POINTER(Ref)]
@@ -82,6 +85,9 @@ def name_of(endpoint):
 
 
 def find(sources, name):
+    # A client sees other processes' endpoints come and go only as its run loop runs (the one
+    # current when it was made: this thread's).
+    cf.CFRunLoopRunInMode(DEFAULT_MODE, 0.5, False)
     count = cm.MIDIGetNumberOfSources() if sources else cm.MIDIGetNumberOfDestinations()
     for i in range(count):
         e = cm.MIDIGetSource(i) if sources else cm.MIDIGetDestination(i)
