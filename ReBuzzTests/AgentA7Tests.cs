@@ -121,7 +121,9 @@ namespace ReBuzzTests
             Assert.That(s["position_beats"]!.GetValue<double>(), Is.GreaterThan(5), "the song moved on from beat 4");
 
             s = Ok(rig, "transport", new JsonObject { ["action"] = "seek", ["at"] = 0, ["loop"] = true });
-            Assert.That(s["position"]!.GetValue<string>(), Is.EqualTo("1.1"));
+            Assert.That(s["position"]!.GetValue<string>(), Is.EqualTo("1.1"), "where the seek goes (it lands on the next tick)");
+            pump.Ticks(2);
+            Assert.That(Ok(rig, "transport", new JsonObject { ["action"] = "status" })["position_beats"]!.GetValue<double>(), Is.LessThan(1), "and it did");
             Assert.That(s["looping"]!.GetValue<bool>(), Is.True);
             Assert.That(Fails(rig, "transport", new JsonObject { ["action"] = "seek" }), Does.Contain("at"));
             Assert.That(Fails(rig, "transport", new JsonObject { ["action"] = "play", ["at"] = "99.1" }), Does.Contain("song end"));
@@ -166,7 +168,7 @@ namespace ReBuzzTests
             s = Ok(rig, "session_launch", new JsonObject { ["machine"] = "Keys", ["pattern"] = "A" });
             pump.To(origin + 2 * bar + 1);
             Assert.That(Playing("Keys"), Is.EqualTo("A"));
-            Assert.That(Fails(rig, "session_launch", new JsonObject { ["machine"] = "Keys", ["scene"] = 3 }), Does.Contain("scenes"));
+            Assert.That(Fails(rig, "session_launch", new JsonObject { ["machine"] = "Keys", ["scene"] = 99 }), Does.Contain("scenes"));
             s = Ok(rig, "session_launch", new JsonObject { ["stop"] = true, ["immediate"] = true });
             pump.Ticks(1);
             Assert.That(Playing("Bass"), Is.Null);

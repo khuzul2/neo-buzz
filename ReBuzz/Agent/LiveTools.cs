@@ -59,7 +59,9 @@ namespace ReBuzz.Agent
         {
             var song = core.SongCore;
             int tpb = SongModel.Tpb(core), bpb = SongModel.BeatsPerBar(core);
-            double beats = SongModel.Beats(core, song.PlayPosition);
+            // A seek while playing lands on the next tick: report where it goes.
+            int position = song.PlayPositionSetNextTick >= 0 ? song.PlayPositionSetNextTick : song.PlayPosition;
+            double beats = SongModel.Beats(core, position);
             var o = new JsonObject
             {
                 ["playing"] = core.PlayRequested,
