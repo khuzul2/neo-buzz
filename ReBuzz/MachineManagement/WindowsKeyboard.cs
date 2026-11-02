@@ -12,5 +12,7 @@ namespace ReBuzz.MachineManagement
                 return Keyboard.Modifiers.HasFlag((ModifierKeys)portable);
             return Keyboard.Modifiers.HasFlag(modifierKey);
         }
+
+        public KeyModifiers Modifiers => (KeyModifiers)Keyboard.Modifiers;
     }
 }

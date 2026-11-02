@@ -12,6 +12,9 @@
     all active LTS versions, and optionally the latest RTM version, when releasing new
     major Serilog versions. -->
     <TargetFrameworks>net9.0</TargetFrameworks>
+    <!-- Fork (docs/specs/engine-split.md S10): off Windows only net10.0, for ReBuzz.Engine on Linux
+         CI (one targeting pack). Windows builds net9.0 as before. -->
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">net10.0</TargetFrameworks>
 	
 	<LangVersion>12.0</LangVersion>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
@@ -37,7 +40,7 @@
 
  
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'net9.0' ">
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'net9.0' Or '$(TargetFramework)' == 'net10.0' ">
     <DefineConstants>$(DefineConstants);FEATURE_DEFAULT_INTERFACE;FEATURE_SPAN;FEATURE_ITUPLE;FEATURE_DATE_AND_TIME_ONLY;FEATURE_ASYNCDISPOSABLE;FEATURE_WRITE_STRINGBUILDER;FEATURE_TOHEXSTRING;FEATURE_DICTIONARYTRYADD</DefineConstants>
 	
   </PropertyGroup>
@@ -101,11 +104,11 @@
     <PackageReference Include="System.Threading.Channels" Version="8.0.0" />
   </ItemGroup>
 
-  <Target Name="ForcePerformRestore" AfterTargets="BeforeBuild">	
+  <Target Name="ForcePerformRestore" AfterTargets="BeforeBuild" Condition="'$(OS)' == 'Windows_NT'">	
     <Exec Command="IF NOT EXIST  &quot;$(IntermediateOutputPath)..\project.assets.json&quot;  echo restore to $(IntermediateOutputPath)..\project.assets.json &amp;&amp;  dotnet restore &quot;$(ProjectName).csproj&quot; --no-dependencies &amp;&amp; move &quot;build\$(ProjectName)\obj\*&quot; &quot;$(IntermediateOutputPath)..\&quot; &amp;&amp; rmdir /Q /S build	 " /> 
   </Target>
   
-  <Target Name="RemoveEmptyObj" AfterTargets="AfterBuild">
+  <Target Name="RemoveEmptyObj" AfterTargets="AfterBuild" Condition="'$(OS)' == 'Windows_NT'">
     <Exec Command="IF EXIST obj rmdir obj" />
   </Target>
   

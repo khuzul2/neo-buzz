@@ -68,9 +68,12 @@ jobs:
     # Engine census ratchet (docs/specs/engine-split.md §5): the errors that keep the engine
     # (ReBuzz.Engine.csproj) from compiling as plain net10.0 (no WPF) may only go down. A PR that
     # removes some lowers experiments/engine-census/baseline.json with "census.py --check --update".
+    # The engine references the vendored Serilog, a submodule (engine-split.md S10).
     - name: Engine census
       if: always()
-      run: python3 experiments/engine-census/census.py --check
+      run: |
+        git submodule update --init --depth 1 3rdParty/serilog/serilog
+        python3 experiments/engine-census/census.py --check
 
     - name: Annotate test log
       if: failure()
