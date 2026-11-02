@@ -4,7 +4,6 @@ using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Common.Settings;
 using BuzzGUI.Interfaces;
 using BuzzGUI.MachineView;
-using Microsoft.Windows.Devices.Midi2;
 using ReBuzz.Core;
 using ReBuzz.Core.Actions.GraphActions;
 using ReBuzz.MachineManagement;
@@ -653,7 +652,7 @@ namespace ReBuzz.FileOps
 
         internal void InitMachines(IEnumerable<KeyValuePair<MachineCore, MachineInitData>> dictInitData, bool multiThread)
         {
-            bool askSkip = Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
+            bool askSkip = buzz.Keyboard.Modifiers.HasFlag(KeyModifiers.Control) && buzz.Keyboard.Modifiers.HasFlag(KeyModifiers.Alt);
             List<Task> initTasks = new List<Task>();
 
             // Native control machines need to have all machines "visible" before calling init

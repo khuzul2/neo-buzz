@@ -10,9 +10,9 @@
 - Values are written in the parameter's unit. Neo machines publish exact units; older machines are read through the text they show for each value.
 
 ## Patterns, the arrangement and the session grid
-- A **pattern** belongs to one machine and holds its notes (and, later, automation). Its length is in beats.
-- The **arrangement** (sequence) places patterns on a timeline, one lane per machine. A pattern placed at beat 16 plays from there until it ends or the lane's next pattern starts. The song plays from 0 to its end; the loop range is what plays on repeat.
-- The **Session View** grid launches patterns as clips (Ableton-style). The agent tools work on the arrangement; the session grid comes in a later phase.
+- A **pattern** belongs to one machine and holds its notes and automation (a parameter's movement, played whenever the pattern plays). Its length is in beats.
+- The **arrangement** (sequence) places patterns on a timeline, one lane per machine. A pattern placed at beat 16 plays from there until it ends or the lane's next pattern starts. The song plays from 0 to its end; the loop range is what plays on repeat. **Markers** name its sections ("Verse", "Drop").
+- The **Session View** grid launches patterns as clips (Ableton-style): `session_get`, `session_clip_set`, `session_scene_set`. Renders play the arrangement, so a finished song lives there.
 
 ## Time
 - Tools speak **beats** from the song start (0 = the start), or "bar.beat" text ("17.1" = bar 17, beat 1; bars and beats count from 1). Inside a pattern, times count from the pattern's start.
@@ -31,3 +31,10 @@
 ## Headless and studio
 - **Headless** (`ReBuzz.exe --agent`): no window and no audio device. You hear only through `render`.
 - **Studio**: the user's ReBuzz with its window open; they see every change and share the undo history. Rendering pauses their audio output for its duration.
+
+## Checklist
+- [ ] You know the tempo, beats per bar and ticks per beat: `studio_status`.
+- [ ] You know the machines and how they connect: `machine_list`.
+- [ ] Parameter names and units come from the machine, not from memory: `machine_describe(machine=…)`.
+- [ ] Positions are beats from the start (or "bar.beat"): `arrangement_get` shows them both ways.
+- [ ] Pitches are MIDI numbers or scientific names: `notes_read` returns both.

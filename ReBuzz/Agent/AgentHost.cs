@@ -52,7 +52,7 @@ namespace ReBuzz.Agent
             Log = new AgentLog(logFolder, mode);
             var tools = new ToolRegistry();
             StudioTools.Register(tools, this);
-            GuideLibrary.Register(tools);
+            GuideLibrary.Register(tools, gear => Manual(core, gear));
             MachineTools.Register(tools, this);
             ParamTools.Register(tools, this);
             PatternTools.Register(tools, this);
@@ -73,8 +73,25 @@ namespace ReBuzz.Agent
                     "(or \"bar.beat\" text); pitches are MIDI numbers or names (60 = C4); levels in dB. Every changing call is one undo step " +
                     "(undo reverts it); a call that fails changes nothing. Hear your work with render and check it with analyze. In studio mode the user " +
                     "listens live too: transport, session_launch and meters_read play with them. Errors say what to do next.",
-            }, tools, resources: GuideLibrary.Resources());
+            }, tools, GuideLibrary.Prompts(), GuideLibrary.Resources().Concat(Manuals(core)));
             Server.ToolCalled += Log.Write;
+        }
+
+        /// <summary>The installed gear with a manifest, by name.</summary>
+        static IEnumerable<(BuzzGUI.Interfaces.IMachineDLL Dll, ReBuzz.Agent.Model.MachineManifest Manifest)> Described(ReBuzzCore core) =>
+            core.MachineDLLs.Values.Select(d => (Dll: d, Manifest: SongModel.Manifest(d))).Where(x => x.Manifest != null);
+
+        /// <summary>One manual resource per gear with a manifest (A5): rebuzz://machines/&lt;slug&gt;/manual.</summary>
+        static IEnumerable<ResourceDef> Manuals(ReBuzzCore core) =>
+            Described(core).Select(x => MachineManual.Resource(x.Manifest, () => StateTools.PresetNames(x.Dll))).ToList();
+
+        /// <summary>guide(machine=…): the gear's full manual, or null for gear without a manifest.</summary>
+        static string Manual(ReBuzzCore core, string gear)
+        {
+            var dll = core.MachineDLLs.Values.FirstOrDefault(d => string.Equals(d.Name, gear, StringComparison.OrdinalIgnoreCase))
+                      ?? core.MachineDLLs.Values.FirstOrDefault(d => MachineManual.Slug(d.Name) == MachineManual.Slug(gear));
+            var manifest = dll == null ? null : SongModel.Manifest(dll);
+            return manifest == null ? null : MachineManual.Build(manifest, StateTools.PresetNames(dll));
         }
 
         public ReBuzzCore Core { get; }

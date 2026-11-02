@@ -25,7 +25,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Threading;
 
 namespace ReBuzz.Core
 {
@@ -554,17 +553,16 @@ namespace ReBuzz.Core
                 CanExecuteDelegate = x => true,
                 ExecuteDelegate = x =>
                 {
-                    // Wait a small amount of time to let context menu close. Use DispatcherTimer to ensure we are in UI thread.
-                    DispatcherTimer dt = new DispatcherTimer();
-                    dt.Interval = TimeSpan.FromMilliseconds(200);
-                    dt.Tick += (sender, e) =>
+                    // Wait a small amount of time to let context menu close. Use a UI timer to ensure we are in UI thread.
+                    IUiTimer dt = null;
+                    dt = dispatcher.CreateTimer(TimeSpan.FromMilliseconds(200), () =>
                     {
                         dt.Stop();
                         (Graph.Buzz as ReBuzzCore).MachineManager.Command(this, (int)x);
 
                         // Update machine latency if instrument or something else changed
                         Latency = (graph.Buzz as ReBuzzCore).MachineManager.GetMachineLatency(this);
-                    };
+                    });
                     dt.Start();
                 }
             };
@@ -658,7 +656,7 @@ namespace ReBuzz.Core
                 return;
 
 #if DEBUG
-            if (Keyboard.Modifiers == ModifierKeys.Control)
+            if ((graph.Buzz as ReBuzzCore)?.Keyboard.Modifiers == KeyModifiers.Control)
             {
                 this.MachineDLL.IsCrashed = true;
                 return;

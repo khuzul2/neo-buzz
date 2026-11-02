@@ -202,6 +202,8 @@ namespace ReBuzzTests.Automation
 
         public void Start()
         {
+            // Fork (engine-split.md §4.3, S4): as App does, before the first machine loads.
+            ReBuzz.AppViews.WpfMachineApiHooks.Install();
             SetupDirectoryStructure();
 
             var buzzPath = reBuzzRootDir.ToString();

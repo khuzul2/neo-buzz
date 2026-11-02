@@ -9,10 +9,6 @@ using System.IO.MemoryMappedFiles;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
-using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace ReBuzz.NativeMachine
 {
@@ -773,9 +769,13 @@ namespace ReBuzz.NativeMachine
             }
         }
 
-        internal void UIGetResources(MachineCore machine, out BitmapSource skinImage, out BitmapSource ledImage, out Point ledPosition)
+        /// <summary>
+        /// The machine's skin, LED image and LED position (engine-split.md S4: raw pixels; the UI
+        /// makes its images from them). Also picks the machine's text colour from the skin.
+        /// </summary>
+        internal void UIGetResources(MachineCore machine, out RawImage skinImage, out RawImage ledImage, out int ledX, out int ledY)
         {
-            skinImage = null; ledImage = null; ledPosition = (default);
+            skinImage = null; ledImage = null; ledX = 0; ledY = 0;
             if (machine.DLL.IsCrashed)
             {
                 return;
@@ -815,14 +815,14 @@ namespace ReBuzz.NativeMachine
 
                     if (colorLightness < 128)
                     {
-                        machine.MachineDLL.SkinTextColor = Colors.White;
+                        machine.MachineDLL.SkinTextColorArgb = 0xFFFFFFFF;   // white
                     }
                     else
                     {
-                        machine.MachineDLL.SkinTextColor = Colors.Black;
+                        machine.MachineDLL.SkinTextColorArgb = 0xFF000000;   // black
                     }
 
-                    skinImage = GetImageSource(data, size, width, height);
+                    skinImage = new RawImage(width, height, data);
                 }
 
                 // SkinLed
@@ -837,43 +837,17 @@ namespace ReBuzz.NativeMachine
                         data[i] = GetMessageByte();
                     }
 
-                    ledImage = GetImageSource(data, size, width, height);
+                    ledImage = new RawImage(width, height, data);
                 }
 
-                int x = GetMessageByte();
-                int y = GetMessageByte();
-                ledPosition = new Point(x, y);
+                ledX = GetMessageByte();
+                ledY = GetMessageByte();
             }
             catch (Exception e)
             {
                 MachineCrashed(machine, e);
             }
         }
-
-        internal BitmapSource GetImageSource(byte[] data, int size, int width, int height)
-        {
-            System.Drawing.Bitmap bmp = new System.Drawing.Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppRgb);
-            System.Drawing.Imaging.BitmapData bmpData =
-                        bmp.LockBits(new System.Drawing.Rectangle(0, 0, width, height), System.Drawing.Imaging.ImageLockMode.ReadWrite,
-            bmp.PixelFormat);
-
-            // Get the address of the first line.
-            IntPtr ptr = bmpData.Scan0;
-
-            // Copy data to bitmap
-            Marshal.Copy(data, 0, ptr, size);
-
-            // Unlock the bits.
-            bmp.UnlockBits(bmpData);
-            var bmpHandle = bmp.GetHbitmap();
-            BitmapSource s = Imaging.CreateBitmapSourceFromHBitmap(bmpHandle, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-            DeleteObject(bmpHandle);
-            return s;
-        }
-
-        [DllImport("gdi32.dll", EntryPoint = "DeleteObject")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        public static extern bool DeleteObject([In] IntPtr hObject);
 
 
         // MIF_PATTERN_EDITOR
