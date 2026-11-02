@@ -12,7 +12,6 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media.Imaging;
 
 namespace ReBuzz.MachineManagement
 {
@@ -259,17 +258,15 @@ namespace ReBuzz.MachineManagement
             uiMessage.UINewMISync(machine, machine.DLL.Name);
 
             // Machine Skin
-            uiMessage.UIGetResources(machine, out BitmapSource skin, out BitmapSource led, out Point ledPosition);
+            uiMessage.UIGetResources(machine, out RawImage skin, out RawImage led, out int ledX, out int ledY);
 
-            machine.MachineDLL.Skin = skin;
-            machine.MachineDLL.SkinLED = led;
-            if (led != null)
-            {
-                machine.MachineDLL.SkinLEDSize = new Size(led.Width, led.Height);
-            }
+            // The LED's size is the LED image's (engine-split.md S4).
+            machine.MachineDLL.SkinImage = skin;
+            machine.MachineDLL.SkinLedImage = led;
 
             machine.IsControlMachine = machine.MachineDLL.Info.Flags.HasFlag(MachineInfoFlags.CONTROL_MACHINE);
-            machine.MachineDLL.SkinLEDPosition = ledPosition;
+            machine.MachineDLL.SkinLedX = ledX;
+            machine.MachineDLL.SkinLedY = ledY;
 
             // Add machine here so that it is visible when machine does callbacks
             lock (ReBuzzCore.AudioLock)

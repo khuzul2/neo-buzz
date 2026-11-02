@@ -98,7 +98,9 @@ namespace ReBuzzTests.Automation.Assertions
 
             foreach (var (key, value) in ColorDictionary)
             {
-                reBuzzCore.ThemeColors[key].Should().Be(value);
+                // Fork (engine-split.md S4): the WPF colours machines see, and the engine's ARGB table.
+                ((IBuzz)reBuzzCore).ThemeColors[key].Should().Be(value);
+                reBuzzCore.GetThemeColour(key).ToArgb().Should().Be(System.Drawing.Color.FromArgb(value.A, value.R, value.G, value.B).ToArgb());
             }
 
             reBuzzCore.MachineIndex.Should().BeEquivalentTo(new MenuItemCore());

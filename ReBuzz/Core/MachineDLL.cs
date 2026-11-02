@@ -8,8 +8,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Windows;
-using System.Windows.Media;
 
 namespace ReBuzz.Core
 {
@@ -53,25 +51,32 @@ namespace ReBuzz.Core
 
         public bool IsManaged { get; set; }
 
-        public ImageSource Skin { get; set; }
+        // Fork (engine-split.md S4): a native machine's skin as portable data. IMachineDLL's WPF
+        // members (Skin, SkinLED, SkinLEDSize, SkinLEDPosition, TextColor) have default bodies in the
+        // Windows build that the WPF app answers from these (WpfMachineApiHooks).
+        public RawImage SkinImage { get; set; }
+        public RawImage SkinLedImage { get; set; }
+        public int SkinLedX { get; set; }
+        public int SkinLedY { get; set; }
 
-        public ImageSource SkinLED { get; set; }
+        // Theme XAML binds these by name ({Binding Machine.DLL.SkinLED}, SkinLEDSize.Width,
+        // SkinLEDPosition.X), so they stay, with the UI's image and WPF's property names.
+        public object Skin => SkinImage?.View;
+        public object SkinLED => SkinLedImage?.View;
+        public SkinSize SkinLEDSize => SkinLedImage == null ? default : new SkinSize(SkinLedImage.Width, SkinLedImage.Height);
+        public SkinPoint SkinLEDPosition => new SkinPoint(SkinLedX, SkinLedY);
 
-        public Size SkinLEDSize { get; set; }
-
-        public Point SkinLEDPosition { get; set; }
-
-        public Color TextColor
+        public uint TextColorArgb
         {
             get
             {
-                if (MachineView.StaticSettings.EnableSkins && Skin != null)
+                if (MachineView.StaticSettings.EnableSkins && SkinImage != null)
                 {
-                    return SkinTextColor;
+                    return SkinTextColorArgb;
                 }
                 else
                 {
-                    return Global.Buzz.ThemeColors["MV Machine Text"] != null ? Global.Buzz.ThemeColors["MV Machine Text"] : Colors.White;
+                    return unchecked((uint)Global.Buzz.GetThemeColour("MV Machine Text").ToArgb());
                 }
             }
         }
@@ -148,7 +153,7 @@ namespace ReBuzz.Core
             set => guiFactoryDecl = value;
         }
 
-        public Color SkinTextColor { get; internal set; }
+        public uint SkinTextColorArgb { get; internal set; }
         public bool Is64Bit { get; internal set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -160,10 +165,10 @@ namespace ReBuzz.Core
         {
             MachineDLL dll = new MachineDLL();
             dll.Buzz = Buzz;
-            dll.SkinLEDSize = SkinLEDSize;
-            dll.SkinLED = SkinLED;
-            dll.Skin = Skin;
-            dll.SkinLEDPosition = SkinLEDPosition;
+            dll.SkinLedImage = SkinLedImage;
+            dll.SkinImage = SkinImage;
+            dll.SkinLedX = SkinLedX;
+            dll.SkinLedY = SkinLedY;
             dll.Is64Bit = Is64Bit;
             dll.IsCrashed = IsCrashed;
             dll.IsLoaded = IsLoaded;

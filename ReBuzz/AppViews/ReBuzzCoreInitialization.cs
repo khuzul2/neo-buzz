@@ -85,7 +85,7 @@ namespace ReBuzz.AppViews
             buzz.MachineDB = machineDb;
 
             // Init stuff before loading anything else
-            buzz.ThemeColors = Common.UiUtils.GetThemeColors(buzzPath);
+            buzz.LoadThemeColours();
 
             buzz.PatternEditorActivated += onPatternEditorActivated;
             buzz.SequenceEditorActivated += onSequenceEditorActivated;
