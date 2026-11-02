@@ -1425,5 +1425,14 @@
    "unit": "%",
    "description": "Amount"
   }
+ ],
+ "imports": [
+  {
+   "kind": "wavetable",
+   "extensions": [
+    ".wav"
+   ],
+   "description": "A WAV wavetable: frames of 2048 samples (or a clm chunk saying the frame size), or one short single cycle. Becomes the \"User\" table (A table or B table = User)."
+  }
  ]
 }
