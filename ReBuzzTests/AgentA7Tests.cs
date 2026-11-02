@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ReBuzz.Core;
 using ReBuzz.Core.Session;
+using ReBuzzTests.Automation;
 using Rig = ReBuzzTests.AgentServerTests.Rig;
 
 namespace ReBuzzTests
