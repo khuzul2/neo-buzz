@@ -6,8 +6,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
-using System.Windows;
-using System.Windows.Threading;
 
 namespace ReBuzz.Core
 {
@@ -193,8 +191,8 @@ namespace ReBuzz.Core
 
         public ParameterCore(IUiDispatcher dispatcher)
         {
-            dtDescribeEvent = new DispatcherTimer();
-            dtDescribeEvent.Interval = TimeSpan.FromMilliseconds(1000 / 30.0);
+            // Its handlers add up, as the DispatcherTimer's Tick handlers did (engine-split.md S2).
+            dtDescribeEvent = dispatcher.CreateTimer(TimeSpan.FromMilliseconds(1000 / 30.0), () => DescribeTick?.Invoke());
             this.dispatcher = dispatcher;
 
             Description = "";
@@ -248,7 +246,8 @@ namespace ReBuzz.Core
         }
 
         static bool describeValueEventPending = false;
-        readonly DispatcherTimer dtDescribeEvent;
+        readonly IUiTimer dtDescribeEvent;
+        event Action DescribeTick;   // an event, so adding a handler is thread-safe as Tick's was
         private readonly IUiDispatcher dispatcher;
 
         internal void InvokeEvents(IBuzz buzz, int track)
@@ -265,7 +264,7 @@ namespace ReBuzz.Core
                 {
                     describeValueEventPending = true;
 
-                    dtDescribeEvent.Tick += (s, e) =>
+                    DescribeTick += () =>
                     {
                         emd.CallEventDesc(this, track);
                         dtDescribeEvent.Stop();
