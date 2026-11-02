@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Fork addition (docs/specs/mcp-server.md §10, A6): the evaluation suite. A console app that
+    drives the packaged ReBuzz.exe in agent mode over MCP stdio the way a real client does, runs
+    the scripted checks and the agent tasks (with their reference solutions), scores the outcomes
+    with our own meters (ReBuzz.Agent's WAV reader and NeoBuzz.Analysis) and compares the scores
+    with eval/baseline.json. Plain net10.0 with no packages and no WPF: the scoring builds and
+    self-tests on Linux; the suite itself needs ReBuzz.exe (Windows). Usage: Program.cs, and
+    docs/specs/mcp-server.md §10 "A6 as built".
+  -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>ReBuzz.AgentEval</RootNamespace>
+    <AssemblyName>ReBuzz.AgentEval</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReBuzz.Agent\ReBuzz.Agent.csproj" />
+  </ItemGroup>
+
+</Project>

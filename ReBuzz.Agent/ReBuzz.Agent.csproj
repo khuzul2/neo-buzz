@@ -21,6 +21,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="ReBuzz.AgentTests" />
+    <!-- The evaluation (docs/specs/mcp-server.md §10) measures with the analysis library. -->
+    <InternalsVisibleTo Include="ReBuzz.AgentEval" />
   </ItemGroup>
 
   <ItemGroup>
