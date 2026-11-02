@@ -20,6 +20,8 @@ using ReBuzz.Agent.Model;
 using ReBuzz.Core;
 using ReBuzz.Core.Session;
 using static ReBuzz.Agent.Mcp.Schema;
+using SongTime = ReBuzz.Agent.Model.SongTime;
+using TapTime = BuzzGUI.Interfaces.SongTime;
 
 namespace ReBuzz.Agent
 {
@@ -535,8 +537,8 @@ namespace ReBuzz.Agent
                     int rate = ReBuzzCore.masterInfo.SamplesPerSec;
                     int frames = (int)Math.Round(window * rate);
                     var master = new LiveMeter("Master", frames, 1 / 32768f);
-                    var taps = new List<(LiveMeter Meter, IMachineConnection Connection, Action<float[], bool, SongTime> Handler)>();
-                    Action<float[], bool, SongTime> masterHandler = (samples, stereo, _) => master.Add(samples, stereo);
+                    var taps = new List<(LiveMeter Meter, IMachineConnection Connection, Action<float[], bool, TapTime> Handler)>();
+                    Action<float[], bool, TapTime> masterHandler = (samples, stereo, _) => master.Add(samples, stereo);
                     bool playing = await host.Engine("meters_read", false, _ =>
                     {
                         foreach (var name in names)
@@ -547,7 +549,7 @@ namespace ReBuzz.Agent
                                        ?? throw new ToolError($"{m.Name} feeds nothing, so there's nothing to meter; connect it (connect) first.");
                             float gain = conn.Amp / (float)Levels.UnityAmp;
                             var meter = new LiveMeter(m.Name, frames, 1 / 32768f);
-                            Action<float[], bool, SongTime> handler = (samples, stereo, _) => meter.Add(samples, 0, samples.Length, stereo, gain);
+                            Action<float[], bool, TapTime> handler = (samples, stereo, _) => meter.Add(samples, 0, samples.Length, stereo, gain);
                             taps.Add((meter, conn, handler));
                         }
                         core.MasterTap += masterHandler;
