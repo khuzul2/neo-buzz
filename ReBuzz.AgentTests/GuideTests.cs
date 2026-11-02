@@ -18,7 +18,7 @@ namespace ReBuzz.AgentTests
     public class GuideTests
     {
         static readonly string[] Topics = { "workflow", "concepts", "composition", "sound-design", "mixing", "mastering", "troubleshooting" };
-        static readonly string[] NeoGear = { "Neo Comp", "Neo Drive", "Neo FM6", "Neo Poly", "Neo Verb", "Neo Wave" };
+        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Comp", "Neo Drive", "Neo FM6", "Neo Poly", "Neo Verb", "Neo Wave" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
         static readonly string[] PendingGear = { "Neo EQ", "Neo Utility", "Neo Limiter" };
