@@ -33,14 +33,10 @@ jobs:
         dotnet-version: '10.0.x'
 
     # PortAudio from Homebrew (/opt/homebrew/lib, which the engine's resolver searches). The
-    # runner has no audio device; BlackHole, a virtual one, gives CoreAudio an output to open.
-    - name: Audio
-      run: |
-        brew install portaudio
-        brew install --cask blackhole-2ch || echo "::warning::BlackHole didn't install; the stream test will be skipped"
-        sudo killall coreaudiod || true
-        sleep 3
-        system_profiler SPAudioDataType | grep -E "^\s+[A-Za-z].*:$" || true
+    # runner has no sound card, but CoreAudio offers "Apple Virtual Sound Device" and a "Null
+    # Audio Device", so a stream opens and runs in real time.
+    - name: PortAudio
+      run: brew install portaudio
 
     - name: Session View core and platform seams
       run: dotnet test ReBuzz.SessionTests --logger "console;verbosity=normal" 2>&1 | tee test.log
