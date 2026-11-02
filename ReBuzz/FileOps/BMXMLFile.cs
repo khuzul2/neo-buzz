@@ -217,7 +217,9 @@ namespace ReBuzz.FileOps
                 byte[] data = machineData.Data;
 
                 // If editor and missing, replace with default
-                if (machineDLL.IsMissing && machineProto.Hidden)
+                // Fork (mac-engine.md M2): unless there's no default either (rebuzz-headless off
+                // Windows). Then the editor stays as a placeholder that keeps its data.
+                if (machineDLL.IsMissing && machineProto.Hidden && BMXFile.HasDefaultPatternEditor(buzz))
                 {
                     if (!buzz.Gear.HasSameDataFormat(machineLibrary, buzz.DefaultPatternEditor))
                     {
@@ -289,9 +291,12 @@ namespace ReBuzz.FileOps
                     }
                     else
                     {
-                        AddGroup(machineData.ParameterGroups[1], machineNew, 1);
-                        AddGroup(machineData.ParameterGroups[2], machineNew, 2);
+                        // Fork (mac-engine.md M2): a placeholder keeps its parameters' values and
+                        // track counts (upstream dropped them), and the song's attributes.
+                        AddGroup(machineData.ParameterGroups[1], machineNew, 1, keepValues: true);
+                        AddGroup(machineData.ParameterGroups[2], machineNew, 2, keepValues: true);
                         machineNew.MachineDLL.MachineInfo.Type = machineData.Type;
+                        BMXFile.KeepAttributes((machineData.Attributes ?? []).Select(a => (a.Name, a.Value)), machineNew);
                     }
                     if (import)
                     {
@@ -336,7 +341,7 @@ namespace ReBuzz.FileOps
                         }
                         else
                         {
-                            machine.EditorMachine = editorMachine;
+                            BMXFile.SetEditor(machine, editorMachine);     // fork (mac-engine.md M2)
                         }
                     }
                 }
@@ -401,10 +406,13 @@ namespace ReBuzz.FileOps
                         continue;
                     }
 
+                    int first = machine.PatternsList.Count;
                     foreach (var p in machineData.Patterns)
                     {
                         machine.CreatePattern(p.Name, p.Length);
                     }
+
+                    LoadBuiltInPatterns(machineData, machine, first);   // fork (mac-engine.md M2)
                 }
             }
 
@@ -419,7 +427,9 @@ namespace ReBuzz.FileOps
                     foreach (var p in machineData.Patterns)
                     {
                         var pattern = machine.Patterns.FirstOrDefault(pat => pat.Name == p.Name);
-                        if (!machine.DLL.IsMissing && pattern != null && p.Columns != null)
+                        // Fork (mac-engine.md M2): a placeholder keeps its columns too (upstream
+                        // skipped missing machines), those whose parameter the song defines.
+                        if (pattern != null && p.Columns != null)
                         {
                             // Columns
                             int j = 0;
@@ -429,6 +439,11 @@ namespace ReBuzz.FileOps
                                 int group = c.Group;
                                 int track = c.Track;
                                 int indexInGroup = c.IndexInGroup;
+
+                                if (machine.DLL.IsMissing && !ColumnTargetExists(targetMachine, group, indexInGroup))
+                                {
+                                    continue;
+                                }
 
                                 IParameter targetParameter = targetMachine != null && (group != -1 && indexInGroup != -1) ? targetMachine.ParameterGroups[group].Parameters[indexInGroup] : ParameterCore.GetMidiParameter(targetMachine, dispatcher);
                                 pattern.InsertColumn(j, targetParameter, track);
@@ -741,7 +756,77 @@ namespace ReBuzz.FileOps
             }
         }
 
-        private void AddGroup(BMXMLParameterGroup pgFrom, MachineCore machineNew, int group)
+        // Fork (mac-engine.md M2): whether a pattern column's parameter exists, for a placeholder's
+        // columns (MIDI columns have group or index -1).
+        static bool ColumnTargetExists(MachineCore target, int group, int indexInGroup)
+        {
+            if (target == null)
+                return false;
+            if (group == -1 || indexInGroup == -1)
+                return true;
+            return group >= 0 && group < target.ParameterGroups.Count && indexInGroup >= 0 && indexInGroup < target.ParameterGroups[group].Parameters.Count;
+        }
+
+        // Fork (mac-engine.md M2): the built-in pattern editor's contents of patterns (an old song
+        // saved by a host without a pattern editor) go to the default editor as an old BMX song's
+        // do; with no editor here, they stay on the patterns.
+        void LoadBuiltInPatterns(BMXMLMachine machineData, MachineCore machine, int first)
+        {
+            if (machine.EditorMachine != null || machine.PlaceholderEditor != null || !machineData.Patterns.Any(p => p.BuiltInPattern != null))
+                return;
+
+            var contents = new List<(string Name, BuiltInPattern Data)>();
+            foreach (var p in machineData.Patterns)
+            {
+                var b = p.BuiltInPattern;
+                int tracks = b?.Tracks ?? machine.TrackCount;
+                // Without contents, a pattern has no values (BuiltInPattern.ValueAt gives "no value").
+                var data = b?.Values != null ? BuiltInPattern.UnpackValues(machine, p.Length, tracks, b.Values)
+                    : new BuiltInPattern { Tracks = Enumerable.Range(0, tracks).Select(_ => Array.Empty<int[]>()).ToArray() };
+                foreach (var input in b?.Inputs ?? [])
+                {
+                    var source = buzz.SongCore.MachinesList.FirstOrDefault(m => m.Name == GetImportedName(XmlConvert.DecodeName(input.Source)));
+                    if (source != null)
+                    {
+                        data.Inputs.Add(new BuiltInPattern.Input { Source = source, AmpPan = BuiltInPattern.UnpackAmpPan(input.AmpPan) });
+                    }
+                }
+                contents.Add((p.Name, data));
+            }
+
+            buzz.CreateEditor(machine, buzz.DefaultPatternEditor, BuiltInPattern.ToPXP(machine, contents));
+            if (machine.EditorMachine == null)
+            {
+                for (int j = 0; j < contents.Count && first + j < machine.PatternsList.Count; j++)
+                {
+                    machine.PatternsList[first + j].BuiltInData = contents[j].Data;
+                }
+            }
+        }
+
+        // Fork (mac-engine.md M2): a pattern's built-in contents for BMXML. A machine keeping them
+        // writes them for all its patterns, as BMX's XTAP gives them all to the built-in editor.
+        static BMXMLBuiltInPattern SaveBuiltInPattern(MachineCore machine, PatternCore pattern)
+        {
+            if (!BMXFile.KeepsBuiltInPatterns(machine))
+                return null;
+
+            var data = pattern.BuiltInData ?? new BuiltInPattern();
+            int tracks = machine.TrackCount;
+            return new BMXMLBuiltInPattern()
+            {
+                Tracks = tracks,
+                Values = data.PackValues(machine, pattern.Length, tracks),
+                Inputs = machine.AllInputs.Where(input => !(input.Source as MachineCore).Hidden)
+                    .Select(input => new BMXMLBuiltInInput()
+                    {
+                        Source = XmlConvert.EncodeName(input.Source.Name),
+                        AmpPan = BuiltInPattern.PackAmpPan(data, input.Source as MachineCore, pattern.Length)
+                    }).ToArray()
+            };
+        }
+
+        private void AddGroup(BMXMLParameterGroup pgFrom, MachineCore machineNew, int group, bool keepValues = false)
         {
             ParameterGroupType type = ParameterGroupType.Global;
             if (group == 2)
@@ -760,13 +845,27 @@ namespace ReBuzz.FileOps
                 pTo.MaxValue = pFrom.MaxValue;
                 pTo.DefValue = pFrom.DefValue;
                 pTo.NoValue = pFrom.NoValue;
-                pTo.Description = pFrom.Description;
+                // Fork (mac-engine.md M2): the decoded description stays (upstream set it again
+                // undecoded, so each save encoded it once more).
                 pTo.Type = pFrom.Type;
                 pTo.Flags = pFrom.Flags;
 
                 pgTo.AddParameter(pTo);
+
+                // Fork (mac-engine.md M2): a placeholder's values, as the song has them.
+                if (keepValues)
+                {
+                    foreach (var v in pFrom.Values ?? [])
+                    {
+                        pTo.DirectSetValue(v.Track, v.Value);
+                    }
+                }
             }
 
+            if (keepValues)
+            {
+                pgTo.TrackCount = pgFrom.TrackCount;
+            }
             machineNew.ParameterGroupsList.Add(pgTo);
         }
 
@@ -865,9 +964,11 @@ namespace ReBuzz.FileOps
                 bmxm.IsWireless = m.IsWireless;
                 bmxm.BaseOctave = m.BaseOctave;
 
-                if (m.EditorMachine != null)
+                // Fork (mac-engine.md M2): or the placeholder editor that stands for it.
+                var editor = m.EditorMachine ?? m.PlaceholderEditor;
+                if (editor != null)
                 {
-                    bmxm.EditorMachine = XmlConvert.EncodeName(m.EditorMachine.Name);
+                    bmxm.EditorMachine = XmlConvert.EncodeName(editor.Name);
                 }
 
                 List<BMXMLParameterGroup> pgs = new List<BMXMLParameterGroup>();
@@ -979,6 +1080,7 @@ namespace ReBuzz.FileOps
                         columns.Add(bPatternColumn);
                     }
                     bmxmPattern.Columns = columns.ToArray();
+                    bmxmPattern.BuiltInPattern = SaveBuiltInPattern(m, p);     // fork (mac-engine.md M2)
 
                     patterns.Add(bmxmPattern);
                 }
@@ -1100,6 +1202,9 @@ namespace ReBuzz.FileOps
                 }
             }
 
+            // Fork (mac-engine.md M2): every machine's inputs first, in order, so that loading makes
+            // each machine's inputs in the same order (its input group's tracks). Taking a machine's
+            // outputs along with its inputs put a later machine's inputs in the order of their sources.
             Dictionary<MachineConnectionCore, bool> connections = new Dictionary<MachineConnectionCore, bool>();
             foreach (var machine in buzz.SongCore.MachinesList)
             {
@@ -1107,6 +1212,9 @@ namespace ReBuzz.FileOps
                 {
                     connections[input as MachineConnectionCore] = true;
                 }
+            }
+            foreach (var machine in buzz.SongCore.MachinesList)
+            {
                 foreach (var output in machine.AllOutputs)
                 {
                     connections[output as MachineConnectionCore] = true;
@@ -1123,8 +1231,10 @@ namespace ReBuzz.FileOps
                 c.Pan = connection.Pan;
                 c.SourceChannel = connection.SourceChannel;
                 c.DestinationChannel = connection.DestinationChannel;
-                c.SourceChannels = connection.SourceChannels.ToList();
-                c.DestinationChannels = connection.DestinationChannels.ToList();
+                // Fork (mac-engine.md M2): an empty channel set (a BMX song's connections have none)
+                // is written as the set it loads as: the loader adds SourceChannel and DestinationChannel.
+                c.SourceChannels = connection.SourceChannels.Any() ? connection.SourceChannels.ToList() : [connection.SourceChannel];
+                c.DestinationChannels = connection.DestinationChannels.Any() ? connection.DestinationChannels.ToList() : [connection.DestinationChannel];
                 bMXMLMachineConnections.Add(c);
             }
 
@@ -1414,6 +1524,29 @@ namespace ReBuzz.FileOps
         public string Name { get; set; }
         public int Length { get; set; }
         public BMXMLPatternColumn[] Columns { get; set; }
+
+        // Fork (mac-engine.md M2): the built-in pattern editor's contents, kept by a host without a
+        // pattern editor (BuiltInPattern). Absent otherwise; readers that don't know it skip it.
+        public BMXMLBuiltInPattern BuiltInPattern { get; set; }
+    }
+
+    // Fork (mac-engine.md M2): a pattern's contents as BMX's PATT section has them.
+    [XmlType(TypeName = "BuiltInPattern")]
+    public class BMXMLBuiltInPattern
+    {
+        public int Tracks { get; set; }
+        // A row per tick of the global parameters' values, then of each track's: each value by its
+        // parameter type's size (byte or little-endian word), as in PATT.
+        public byte[] Values { get; set; }
+        public BMXMLBuiltInInput[] Inputs { get; set; }
+    }
+
+    [XmlType(TypeName = "BuiltInInput")]
+    public class BMXMLBuiltInInput
+    {
+        public string Source { get; set; }
+        // Amp and pan for each row, little-endian words (65535: no value).
+        public byte[] AmpPan { get; set; }
     }
 
     [XmlType(TypeName = "Wave")]

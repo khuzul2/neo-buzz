@@ -526,6 +526,14 @@ namespace ReBuzz.Core
         public bool Hidden { get; internal set; }
         public MachineCore EditorMachine { get; internal set; }
 
+        /// <summary>
+        /// Fork (mac-engine.md M2): the song's pattern editor for this machine when it isn't
+        /// installed and no default editor replaces it (rebuzz-headless off Windows has none). It is
+        /// a hidden missing machine that keeps its data; it isn't <see cref="EditorMachine"/>, which
+        /// the engine drives, but the song saves back with it as the machine's editor.
+        /// </summary>
+        internal MachineCore PlaceholderEditor { get; set; }
+
         public MachineCore(SongCore machineGraph, string buzzPath, IUiDispatcher dispatcher, EngineSettings settings, bool is64Bit = false)
         {
             engineSettings = settings;
