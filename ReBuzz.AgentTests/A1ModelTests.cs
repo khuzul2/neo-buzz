@@ -37,7 +37,7 @@ namespace ReBuzz.AgentTests
             var files = Directory.GetFiles(Path.Combine(RepoRoot(), "Machines"), "*" + MachineManifest.Suffix, SearchOption.AllDirectories);
             // One per Neo machine: every machine folder with a Params.def (the core six, the mix and master batch, …).
             int machines = Directory.GetDirectories(Path.Combine(RepoRoot(), "Machines"), "Neo*").Count(d => File.Exists(Path.Combine(d, "Params.def")));
-            Assert.That(machines, Is.AtLeast(7));
+            Assert.That(machines, Is.AtLeast(10));
             Assert.That(files.Length, Is.EqualTo(machines), "one manifest per Neo machine");
             foreach (var file in files)
             {
