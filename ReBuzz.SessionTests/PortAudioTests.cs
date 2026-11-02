@@ -61,7 +61,7 @@ namespace ReBuzz.SessionTests
                 if (device == PortAudio.NoDevice)
                 {
                     if (Environment.GetEnvironmentVariable("CI") == "true" && OperatingSystem.IsLinux())
-                        Assert.Fail("CI makes ALSA's null device the default (~/.asoundrc), so there should be an output");
+                        Assert.Fail("CI runs a PulseAudio null sink, so there should be an output");
                     Assert.Ignore("no output device on this machine");
                 }
                 long frames = 0, allocated = -1;
