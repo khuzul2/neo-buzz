@@ -4,6 +4,10 @@ name: Fork package (ReBuzz + all machines)
 # upstream's test suite (ReBuzzTests). Run it by hand from the Actions tab, or push a tag
 # like fork-v0.1.0 to also attach the zip to a GitHub release.
 #
+# It also renders the null test's references (Neo machines, tools/null-test.py) with ReBuzz.exe;
+# two jobs then render the same cases with rebuzz-headless on Linux and macOS and compare
+# (docs/specs/mac-engine.md M3/M4).
+#
 # Manual inputs for test work: "quick" skips the external machines and the zip, and
 # "test_filter" runs a subset of tests (dotnet test --filter syntax).
 
@@ -138,6 +142,27 @@ jobs:
           eval.log
         if-no-files-found: warn
 
+    # The null test's references (docs/specs/mac-engine.md decision 6, M3/M4): every Neo machine, in
+    # fixed cases, rendered by the built ReBuzz.exe --agent, one fresh process per case. The Linux and
+    # macOS jobs below render the same cases with rebuzz-headless and compare, sample by sample.
+    - name: Null test references
+      if: (success() || failure()) && steps.build.outcome == 'success'
+      timeout-minutes: 15
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
+        python tools/null-test.py render $exe.FullName null-ref
+        exit $LASTEXITCODE
+
+    - name: Upload null test references
+      if: always() && hashFiles('null-ref/*.wav') != ''
+      uses: actions/upload-artifact@v4
+      with:
+        name: null-test-references
+        path: null-ref/*.wav
+        if-no-files-found: error
+
     # Screenshots rendered by UI tests, force-pushed as a single commit to the ci-artifacts
     # branch: viewable in the repo (and fetchable with git) without downloading artifacts.
     - name: Publish screenshots
@@ -215,3 +240,76 @@ jobs:
         }
         $i = 0
         foreach ($l in $lines) { $i++; Write-Host "::notice title=Engine diagnostics $i::$l" }
+
+  # The null test (docs/specs/mac-engine.md decision 6, M3/M4): rebuzz-headless renders the same cases
+  # as the package job's ReBuzz.exe, and each must match the Windows reference sample by sample, to
+  # -100 dBFS. The per-case figures are a notice annotation and in the step summary.
+  null-test-linux:
+    needs: package
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Build rebuzz-headless
+      run: |
+        git submodule update --init --depth 1 3rdParty/serilog/serilog
+        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
+
+    - name: Download the Windows references
+      uses: actions/download-artifact@v4
+      with:
+        name: null-test-references
+        path: null-ref
+
+    - name: Null test, Linux x64 vs Windows
+      run: python3 tools/null-test.py compare ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless null-ref "$RUNNER_TEMP/null-test"
+
+    - name: Upload renders that differ
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: null-test-linux
+        path: ${{ runner.temp }}/null-test/renders/*.wav
+        if-no-files-found: ignore
+
+  # The same on Apple silicon. macOS minutes cost about 10× Linux: this job runs once per package
+  # run, after the references exist.
+  null-test-macos:
+    needs: package
+    if: ${{ !cancelled() }}
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Build rebuzz-headless (osx-arm64)
+      run: |
+        git submodule update --init --depth 1 3rdParty/serilog/serilog
+        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
+
+    - name: Download the Windows references
+      uses: actions/download-artifact@v4
+      with:
+        name: null-test-references
+        path: null-ref
+
+    - name: Null test, macOS arm64 vs Windows
+      run: python3 tools/null-test.py compare ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless null-ref "$RUNNER_TEMP/null-test"
+
+    - name: Upload renders that differ
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: null-test-macos
+        path: ${{ runner.temp }}/null-test/renders/*.wav
+        if-no-files-found: ignore
