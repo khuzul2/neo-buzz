@@ -17,6 +17,8 @@ namespace NeoBuzz.MachineTests
         /// <summary>Machine display name → parameter table and a renderer (pink noise in, output out).</summary>
         internal static readonly Dictionary<string, (ParamDef[] Table, Func<ParamValues, float[], float[]> Render)> Machines = new()
         {
+            // Neo Analyzer passes its input through: its presets only change what it shows.
+            ["Neo Analyzer"] = (NeoBuzz.Analyzer.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Analyzer(v).Process(l, r, n))),
             ["Neo Drive"] = (NeoBuzz.Drive.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Drive(v).Process(l, r, n))),
             ["Neo Comp"] = (NeoBuzz.Comp.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Comp(v).Process(l, r, null, null, n))),
             ["Neo Verb"] = (NeoBuzz.Verb.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Verb(v).Process(l, r, n))),
@@ -58,6 +60,14 @@ namespace NeoBuzz.MachineTests
         static NeoBuzz.Drive.DriveEngine driveEngine; static ParamValues driveValues;
         static NeoBuzz.Comp.CompEngine compEngine; static ParamValues compValues;
         static NeoBuzz.Verb.VerbEngine verbEngine; static ParamValues verbValues;
+
+        static NeoBuzz.Analyzer.AnalyzerEngine analyzerEngine; static ParamValues analyzerValues;
+
+        static NeoBuzz.Analyzer.AnalyzerEngine Analyzer(ParamValues v)
+        {
+            if (!ReferenceEquals(v, analyzerValues)) { analyzerValues = v; analyzerEngine = new NeoBuzz.Analyzer.AnalyzerEngine(v); analyzerEngine.SetSampleRate(Measure.Rate); }
+            return analyzerEngine;
+        }
 
         static NeoBuzz.Drive.DriveEngine Drive(ParamValues v)
         {

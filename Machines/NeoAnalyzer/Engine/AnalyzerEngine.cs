@@ -9,6 +9,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Linq;
 using NeoBuzz.Analysis;
 using NeoBuzz.Dsp;
 using AFft = NeoBuzz.Analysis.Fft;
@@ -35,6 +38,9 @@ namespace NeoBuzz.Analyzer
         /// <summary>Levels of Bands.Named over 3 s, dB RMS.</summary>
         public readonly double[] NamedDb = new double[Bands.Named.Length];
 
+        /// <summary>Levels of the 31 third-octave bands over 3 s, dB RMS (the readings; the bars follow Speed).</summary>
+        public readonly double[] ThirdsDb = new double[AnalyzerEngine.ThirdCount];
+
         /// <summary>The spectrum curve at <see cref="AnalyzerEngine.CurveHz"/> and its held peaks, dB (untilted).</summary>
         public readonly float[] Curve = new float[AnalyzerEngine.CurvePoints], CurvePeak = new float[AnalyzerEngine.CurvePoints];
 
@@ -52,6 +58,7 @@ namespace NeoBuzz.Analyzer
             TruePeakMax = TruePeakNow = TruePeakHold = ninf;
             Correlation = CorrelationNow = 1;
             Array.Fill(NamedDb, ninf);
+            Array.Fill(ThirdsDb, ninf);
             Array.Fill(Curve, float.NegativeInfinity);
             Array.Fill(CurvePeak, float.NegativeInfinity);
             Array.Fill(Thirds, float.NegativeInfinity);
@@ -66,6 +73,7 @@ namespace NeoBuzz.Analyzer
             o.TruePeakMax = TruePeakMax; o.TruePeakNow = TruePeakNow; o.TruePeakHold = TruePeakHold;
             o.Correlation = Correlation; o.Width = Width; o.CorrelationNow = CorrelationNow; o.WidthNow = WidthNow;
             Array.Copy(NamedDb, o.NamedDb, NamedDb.Length);
+            Array.Copy(ThirdsDb, o.ThirdsDb, ThirdsDb.Length);
             Array.Copy(Curve, o.Curve, Curve.Length);
             Array.Copy(CurvePeak, o.CurvePeak, CurvePeak.Length);
             Array.Copy(Thirds, o.Thirds, Thirds.Length);
@@ -75,8 +83,15 @@ namespace NeoBuzz.Analyzer
             o.GonioCount = GonioCount;
         }
 
-        /// <summary>The readings agents get (docs/specs/mcp-server.md §3.5): the keys of Params.def's reading lines.</summary>
-        public Dictionary<string, double> ToReadings()
+        /// <summary>The third-octave readings' keys: band_20hz_db … band_31_5hz_db … band_20000hz_db (nominal centres).</summary>
+        public static readonly string[] ThirdKeys = Bands.ThirdOctaveNominal
+            .Select(f => "band_" + f.ToString(CultureInfo.InvariantCulture).Replace('.', '_') + "hz_db").ToArray();
+
+        /// <summary>
+        /// The readings agents get (docs/specs/mcp-server.md §3.5), keyed as Params.def's reading
+        /// lines: a new dictionary each time, which nothing changes afterwards.
+        /// </summary>
+        public IReadOnlyDictionary<string, double> ToReadings()
         {
             var r = new Dictionary<string, double>
             {
@@ -92,7 +107,8 @@ namespace NeoBuzz.Analyzer
                 ["width"] = Width,
             };
             for (int i = 0; i < Bands.Named.Length; i++) r[Bands.Named[i].Name + "_db"] = NamedDb[i];
-            return r;
+            for (int i = 0; i < ThirdKeys.Length; i++) r[ThirdKeys[i]] = ThirdsDb[i];
+            return new ReadOnlyDictionary<string, double>(r);
         }
     }
 
@@ -105,6 +121,14 @@ namespace NeoBuzz.Analyzer
 
         /// <summary>The spectrum curve's frequencies: 48 per octave from 20 Hz to 20 kHz.</summary>
         public static readonly double[] CurveHz = MakeCurveHz();
+
+        /// <summary>The third-octave bands' edges (Bands.ThirdOctaveEdges), Hz.</summary>
+        public static readonly double[] ThirdLo = new double[ThirdCount], ThirdHi = new double[ThirdCount];
+
+        static AnalyzerEngine()
+        {
+            for (int i = 0; i < ThirdCount; i++) (ThirdLo[i], ThirdHi[i]) = Bands.ThirdOctaveEdges(i);
+        }
 
         /// <summary>Speed: averaging time constants, seconds.</summary>
         public static readonly double[] SpeedSeconds = { 0.1, 0.3, 1, 3 };
@@ -146,10 +170,11 @@ namespace NeoBuzz.Analyzer
         double[] thirdLo, thirdHi, curveLo, curveHi;
         readonly float[] curve = new float[CurvePoints], curvePeak = new float[CurvePoints], thirds = new float[ThirdCount], thirdsPeak = new float[ThirdCount];
         readonly double[] curveHold = new double[CurvePoints], thirdsHold = new double[ThirdCount];
-        double[] bandFrames;   // per frame, the named bands' powers
+        double[] bandFrames;   // per frame, the named bands' and the third octaves' powers
         int bandLength, bandPos, bandFilled;
-        readonly double[] namedDb = new double[Bands.Named.Length];
+        readonly double[] namedDb = new double[Bands.Named.Length], thirdsDb = new double[ThirdCount];
         int smoothing = -1;
+        volatile bool resetRequested;
 
         // Goniometer.
         readonly float[] gonioL = new float[AnalyzerSnapshot.GonioPoints], gonioR = new float[AnalyzerSnapshot.GonioPoints];
@@ -200,13 +225,14 @@ namespace NeoBuzz.Analyzer
             frames = 0;
             binHz = rate / (double)size;
             nyquist = rate / 2.0;
-            thirdLo = new double[ThirdCount];
-            thirdHi = new double[ThirdCount];
-            for (int i = 0; i < ThirdCount; i++) (thirdLo[i], thirdHi[i]) = Bands.ThirdOctaveEdges(i);
+            thirdLo = ThirdLo;
+            thirdHi = ThirdHi;
             curveLo = new double[CurvePoints];
             curveHi = new double[CurvePoints];
             bandLength = Math.Max(1, (int)Math.Round(BandSeconds * rate / hop));
-            bandFrames = new double[bandLength * Bands.Named.Length];
+            bandFrames = new double[bandLength * (Bands.Named.Length + ThirdCount)];
+            Array.Fill(namedDb, double.NegativeInfinity);
+            Array.Fill(thirdsDb, double.NegativeInfinity);
             bandPos = bandFilled = 0;
             Array.Clear(stepLL); Array.Clear(stepRR); Array.Clear(stepLR);
             ll = rr = lr = 0;
@@ -257,6 +283,9 @@ namespace NeoBuzz.Analyzer
             ClearHeld();
         }
 
+        /// <summary>Any thread (the editor's Reset button, the machine's menu): a reset at the next block.</summary>
+        public void RequestReset() => resetRequested = true;
+
         void ClearHeld()
         {
             peakHoldDb = double.NegativeInfinity;
@@ -279,6 +308,11 @@ namespace NeoBuzz.Analyzer
         public void Process(float[] left, float[] right, int n)
         {
             if (values.AnyDirty) ApplyParameters(false);
+            if (resetRequested)
+            {
+                resetRequested = false;
+                Reset();
+            }
             bool changed = false;
             int at = 0;
             while (at < n)
@@ -398,16 +432,19 @@ namespace NeoBuzz.Analyzer
                 Hold(ref curvePeak[i], ref curveHold[i], v, dt);
             }
 
-            // Named bands over the last 3 s of frames (each frame on its own, not the average).
-            int nb = Bands.Named.Length;
-            for (int b = 0; b < nb; b++) bandFrames[bandPos * nb + b] = Spectrum.Integrate(frame, binHz, Bands.Named[b].Lo, Bands.Named[b].Hi);
+            // The readings' bands over the last 3 s of frames (each frame on its own, not the average).
+            int nn = Bands.Named.Length, nb = nn + ThirdCount, at0 = bandPos * nb;
+            for (int b = 0; b < nn; b++) bandFrames[at0 + b] = Spectrum.Integrate(frame, binHz, Bands.Named[b].Lo, Bands.Named[b].Hi);
+            for (int i = 0; i < ThirdCount; i++) bandFrames[at0 + nn + i] = thirdLo[i] >= nyquist ? 0 : Spectrum.Integrate(frame, binHz, thirdLo[i], thirdHi[i]);
             bandPos = bandPos + 1 == bandLength ? 0 : bandPos + 1;
             if (bandFilled < bandLength) bandFilled++;
             for (int b = 0; b < nb; b++)
             {
                 double sum = 0;
                 for (int f = 0; f < bandFilled; f++) sum += bandFrames[f * nb + b];
-                namedDb[b] = Spectrum.Db(sum / bandFilled);
+                double db = Spectrum.Db(sum / bandFilled);
+                if (b < nn) namedDb[b] = db;
+                else thirdsDb[b - nn] = db;
             }
         }
 
@@ -474,6 +511,7 @@ namespace NeoBuzz.Analyzer
             s.CorrelationNow = correlationNow;
             s.WidthNow = widthNow;
             Array.Copy(namedDb, s.NamedDb, namedDb.Length);
+            Array.Copy(thirdsDb, s.ThirdsDb, thirdsDb.Length);
             Array.Copy(curve, s.Curve, CurvePoints);
             Array.Copy(curvePeak, s.CurvePeak, CurvePoints);
             Array.Copy(thirds, s.Thirds, ThirdCount);

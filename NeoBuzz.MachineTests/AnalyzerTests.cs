@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using NeoBuzz.Analysis;
 using NeoBuzz.Analyzer;
 using NeoBuzz.Dsp;
+using NeoBuzz.Editor;
 using P = NeoBuzz.Analyzer.P;
 using Params = NeoBuzz.Analyzer.Params;
 
@@ -517,6 +518,125 @@ namespace NeoBuzz.MachineTests
             Assert.That(readings["mid_db"], Is.EqualTo(s.NamedDb[3]));
             Assert.That(readings["correlation"], Is.EqualTo(1).Within(1e-9));
             Assert.That(readings["mid_db"], Is.EqualTo(Measure.Db(0.3 / Math.Sqrt(2))).Within(0.05));
+            Assert.That(readings["band_1000hz_db"], Is.EqualTo(Measure.Db(0.3 / Math.Sqrt(2))).Within(0.05), "the 1 kHz third octave");
+            Assert.That(readings["band_31_5hz_db"], Is.LessThan(-100));
+            Assert.That(AnalyzerSnapshot.ThirdKeys[2], Is.EqualTo("band_31_5hz_db"));
+            // A copy: what the audio thread does next doesn't change it.
+            var before = readings["integrated_lufs"];
+            Run(e, Scale(x, 12), Scale(x, 12));
+            Assert.That(readings["integrated_lufs"], Is.EqualTo(before));
+            Assert.That(e.Readings()["integrated_lufs"], Is.GreaterThan(before + 3));
+            Assert.That(readings is System.Collections.ObjectModel.ReadOnlyDictionary<string, double>, Is.True, "read-only");
+        }
+
+        [Test]
+        public void ThirdOctaveReadingsAgreeWithTheLibrary()
+        {
+            var l = Measure.PinkNoise(3 * Rate, 0.1, 61);
+            var r = Measure.PinkNoise(3 * Rate, 0.1, 62);
+            var (e, _) = Make();
+            Run(e, l, r);
+            var readings = e.Readings();
+            var lib = Spectrum.Measure(l, r, Rate);
+            double worst = 0;
+            for (int i = 0; i < AnalyzerEngine.ThirdCount; i++)
+            {
+                // Below 100 Hz a third octave holds a few of the analyzer's 5.9 Hz bins, and 3 s of noise vary there.
+                if (Bands.ThirdOctaveNominal[i] < 100) continue;
+                worst = Math.Max(worst, Math.Abs(readings[AnalyzerSnapshot.ThirdKeys[i]] - lib.ThirdOctaveDb[i]));
+            }
+            Measure.Report($"Neo Analyzer: third-octave readings (3 s of pink noise) within {worst:F2} dB of Spectrum.Measure, 100 Hz – 20 kHz");
+            Assert.That(worst, Is.LessThan(0.5));
+        }
+
+        // ------------------------------------------------------------------ display (toolkit-free)
+
+        static readonly NeoColor Accent = NeoColor.FromRgb(0x5C, 0xD6, 0xF2);
+
+        [Test]
+        public void TheSpectrumGraphDrawsBarsCurveAndPeaksInsideItsPlot()
+        {
+            var x = Measure.Sine(1000, 2 * Rate, 0.5);
+            var (e, _) = Make();
+            Run(e, x, x);
+            var s = Snapshot(e);
+            var c = new RecordingCanvas();
+            var r = new NeoRect(0, 0, 600, 240);
+            SpectrumGraph.Draw(c, r, AnalyzerEngine.CurveHz, s.Curve, s.CurvePeak, AnalyzerEngine.ThirdLo, AnalyzerEngine.ThirdHi, s.Thirds, s.ThirdsPeak, 0, Accent);
+            Assert.That(c.ClipDepth == 0 && !c.Unbalanced, Is.True);
+            var plot = SpectrumGraph.Plot(r);
+            var paths = c.Of(NeoDrawKind.Path).ToList();
+            Assert.That(paths.Count, Is.EqualTo(3), "peak curve, curve area, curve");
+            var curve = paths.Last();
+            Assert.That(curve.Points.Length, Is.EqualTo(AnalyzerEngine.CurvePoints));
+            // The curve's highest point is the tone: at 1 kHz, at −9 dB.
+            var top = curve.Points.OrderBy(p => p.Y).First();
+            Assert.That(top.X, Is.EqualTo(SpectrumGraph.X(plot, 1000)).Within(plot.Width / 200));
+            Assert.That(top.Y, Is.EqualTo(SpectrumGraph.Y(plot, -9.03, 0, -96)).Within(0.5));
+            // The 1 kHz bar reaches the same level.
+            var bar = c.Of(NeoDrawKind.Rect).Where(b => b.Bounds.Left < SpectrumGraph.X(plot, 1000) && b.Bounds.Right > SpectrumGraph.X(plot, 1000)).OrderBy(b => b.Bounds.Top).First();
+            Assert.That(bar.Bounds.Top, Is.EqualTo(top.Y).Within(0.5));
+            // A tilt lifts the highs: +3 dB/oct moves 8 kHz up by 9 dB.
+            var tilted = SpectrumGraph.CurvePath(plot, AnalyzerEngine.CurveHz, Enumerable.Repeat(-40f, AnalyzerEngine.CurvePoints).ToArray(), 3, 0, -96);
+            int at8k = Array.FindIndex(AnalyzerEngine.CurveHz, f => f >= 8000);
+            double lift = (tilted.Point(Array.FindIndex(AnalyzerEngine.CurveHz, f => f >= 1000)).Y - tilted.Point(at8k).Y) / plot.Height * 96;
+            Assert.That(lift, Is.EqualTo(3 * Math.Log2(AnalyzerEngine.CurveHz[at8k] / AnalyzerEngine.CurveHz[Array.FindIndex(AnalyzerEngine.CurveHz, f => f >= 1000)])).Within(0.01));
+        }
+
+        [Test]
+        public void LoudnessColoursFollowTheTarget()
+        {
+            Assert.That(AnalysisColors.Loudness(-14.5, -14), Is.EqualTo(AnalysisColors.OnTarget));
+            Assert.That(AnalysisColors.Loudness(-20, -14), Is.EqualTo(AnalysisColors.Under));
+            Assert.That(AnalysisColors.Loudness(-12, -14), Is.EqualTo(AnalysisColors.Over));
+            Assert.That(AnalysisColors.Loudness(-9, -14), Is.EqualTo(AnalysisColors.Hot));
+            Assert.That(AnalysisColors.Loudness(double.NegativeInfinity, -14), Is.EqualTo(Palette.DimText));
+            Assert.That(AnalysisColors.TruePeak(-0.5), Is.EqualTo(AnalysisColors.Hot));
+            var c = new RecordingCanvas();
+            var view = new LoudnessView { Momentary = -12, ShortTerm = -14.2, Integrated = -14.4, Range = 6.25, TruePeakNow = -3, TruePeakHold = -1.5, TruePeakMax = -0.8, Target = -14, Seconds = 75, ShortTermMax = -11, MomentaryMax = -9 };
+            LoudnessGraph.Draw(c, new NeoRect(0, 0, 250, 240), view, Accent);
+            var texts = c.Of(NeoDrawKind.Text).ToList();
+            var integrated = texts.Single(t => t.Text == "−14.4");
+            Assert.That(integrated.Color, Is.EqualTo(AnalysisColors.OnTarget));
+            Assert.That(texts.Any(t => t.Text == "6.3 LU"), Is.True);
+            Assert.That(texts.Single(t => t.Text == "−0.8 dBTP").Color, Is.EqualTo(AnalysisColors.Hot));
+            Assert.That(texts.Any(t => t.Text == "measured 1:15"), Is.True);
+            var bars = LoudnessGraph.Bars(new NeoRect(0, 0, 250, 240));
+            var fills = c.Of(NeoDrawKind.Rect).Where(x => x.Fill.IsGradient).ToList();
+            Assert.That(fills.Count, Is.EqualTo(3), "M, S and TP");
+            Assert.That(fills[0].Bounds.Top, Is.EqualTo(LoudnessGraph.Y(bars, -12)).Within(1e-9));
+            Assert.That(LoudnessGraph.Lu(double.NegativeInfinity), Is.EqualTo("—"));
+        }
+
+        [Test]
+        public void TheGoniometerDrawsMonoUpAndOneSideDiagonally()
+        {
+            var centre = new NeoPoint(100, 100);
+            var mono = Goniometer.Point(centre, 80, 1, 0.5f, 0.5f);
+            var left = Goniometer.Point(centre, 80, 1, 0.5f, 0f);
+            var right = Goniometer.Point(centre, 80, 1, 0f, 0.5f);
+            Assert.That(mono.X, Is.EqualTo(100).Within(1e-9));
+            Assert.That(mono.Y, Is.LessThan(100), "mono goes straight up");
+            Assert.That(left.X < 100 && left.Y < 100 && Math.Abs((100 - left.X) - (100 - left.Y)) < 1e-9, Is.True, "left alone: up-left at 45°");
+            Assert.That(right.X > 100 && right.Y < 100, Is.True, "right alone: up-right");
+            var c = new RecordingCanvas();
+            var l = Measure.Sine(220, 1024, 0.3);
+            Goniometer.Draw(c, new NeoRect(0, 0, 170, 170), l, l, 1024, Accent);
+            var path = c.Of(NeoDrawKind.Path).Single();
+            Assert.That(path.Points.All(p => Math.Abs(p.X - 85) < 1e-6), Is.True, "a mono signal is a vertical line");
+            Assert.That(path.Points.Max(p => 85 - p.Y), Is.EqualTo(0.92 * (170 - 8) / 2).Within(0.5), "scaled to the loudest point");
+        }
+
+        [Test]
+        public void TheCorrelationBarFillsFromTheCentre()
+        {
+            var r = new NeoRect(0, 0, 170, 34);
+            var c = new RecordingCanvas();
+            CorrelationBar.Draw(c, r, -0.5, 0.2, Accent);
+            var fill = c.Of(NeoDrawKind.Rect).Skip(1).First();
+            Assert.That(fill.Bounds.Right, Is.EqualTo(CorrelationBar.X(r, 0)).Within(1e-9));
+            Assert.That(fill.Bounds.Left, Is.EqualTo(CorrelationBar.X(r, -0.5)).Within(1e-9));
+            Assert.That(fill.Fill.Color, Is.EqualTo(AnalysisColors.Hot), "negative: red");
         }
 
         // ------------------------------------------------------------------ CPU

@@ -186,6 +186,161 @@
    "key": "air_db",
    "unit": "dB",
    "description": "Level of 6–20 kHz over the last 3 s, dB RMS"
+  },
+  {
+   "key": "band_20hz_db",
+   "unit": "dB",
+   "description": "Third octave at 20 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_25hz_db",
+   "unit": "dB",
+   "description": "Third octave at 25 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_31_5hz_db",
+   "unit": "dB",
+   "description": "Third octave at 31.5 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_40hz_db",
+   "unit": "dB",
+   "description": "Third octave at 40 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_50hz_db",
+   "unit": "dB",
+   "description": "Third octave at 50 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_63hz_db",
+   "unit": "dB",
+   "description": "Third octave at 63 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_80hz_db",
+   "unit": "dB",
+   "description": "Third octave at 80 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_100hz_db",
+   "unit": "dB",
+   "description": "Third octave at 100 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_125hz_db",
+   "unit": "dB",
+   "description": "Third octave at 125 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_160hz_db",
+   "unit": "dB",
+   "description": "Third octave at 160 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_200hz_db",
+   "unit": "dB",
+   "description": "Third octave at 200 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_250hz_db",
+   "unit": "dB",
+   "description": "Third octave at 250 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_315hz_db",
+   "unit": "dB",
+   "description": "Third octave at 315 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_400hz_db",
+   "unit": "dB",
+   "description": "Third octave at 400 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_500hz_db",
+   "unit": "dB",
+   "description": "Third octave at 500 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_630hz_db",
+   "unit": "dB",
+   "description": "Third octave at 630 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_800hz_db",
+   "unit": "dB",
+   "description": "Third octave at 800 Hz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_1000hz_db",
+   "unit": "dB",
+   "description": "Third octave at 1 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_1250hz_db",
+   "unit": "dB",
+   "description": "Third octave at 1.25 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_1600hz_db",
+   "unit": "dB",
+   "description": "Third octave at 1.6 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_2000hz_db",
+   "unit": "dB",
+   "description": "Third octave at 2 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_2500hz_db",
+   "unit": "dB",
+   "description": "Third octave at 2.5 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_3150hz_db",
+   "unit": "dB",
+   "description": "Third octave at 3.15 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_4000hz_db",
+   "unit": "dB",
+   "description": "Third octave at 4 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_5000hz_db",
+   "unit": "dB",
+   "description": "Third octave at 5 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_6300hz_db",
+   "unit": "dB",
+   "description": "Third octave at 6.3 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_8000hz_db",
+   "unit": "dB",
+   "description": "Third octave at 8 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_10000hz_db",
+   "unit": "dB",
+   "description": "Third octave at 10 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_12500hz_db",
+   "unit": "dB",
+   "description": "Third octave at 12.5 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_16000hz_db",
+   "unit": "dB",
+   "description": "Third octave at 16 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
+  },
+  {
+   "key": "band_20000hz_db",
+   "unit": "dB",
+   "description": "Third octave at 20 kHz over the last 3 s, dB RMS (ISO 266 nominal centre)"
   }
  ]
 }
