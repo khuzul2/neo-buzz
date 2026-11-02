@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | A0–A5 and A7 built, with Neo Analyzer (2026-11-02); A6 (evaluation) in progress. As built: §3.5 |
+| Status | A0–A7 built, with Neo Analyzer (2026-11-02). As built: §3.5, §10.1 (A6) |
 | Date | 2026-10-31, updated 2026-11-02 |
 | Scope | An MCP server that lets an AI agent (Claude Code or any MCP client) compose, design sounds, mix and master in this ReBuzz fork, with tools clear enough to use without guessing, guides for the craft, and the analysis needed to check its own work |
 | Protocol | MCP 2026-07-28, also negotiates 2025-11-25, 2025-06-18 and 2025-03-26 (stdio and Streamable HTTP; structured tool output; progress). Own protocol layer, no SDK (§3.5) |
@@ -175,7 +175,7 @@ Neo machines resolve through their exact mappings. Legacy machines resolve by se
   - stop a take, disarming a track it armed;
   - capture what armed tracks were played lately (`SessionLayout.CaptureMidi`).
 - **`midi_play`** runs phrases on a thread of its own (`LivePlayer`).
-  - **Timing.** Phrases are timed by the session's clock as heard, the clock a take stamps. A phrase started on the bar lands on the bar in a take and follows tempo changes. On Windows the thread waits on a high-resolution waitable timer, as the MIDI clock output does. With the transport stopped, the wall clock times it from the tempo.
+  - **Timing.** Phrases are timed by the session's clock as heard, the clock a take stamps. A phrase started on the bar lands on the bar in a take and follows tempo changes. The thread waits on each OS's own precise timer (`PreciseWaiter`: a high-resolution waitable timer on Windows, `mach_wait_until` on macOS, `clock_nanosleep` on Linux), as the MIDI clock output does. With the transport stopped, the wall clock times it from the tempo.
   - **Routing.** An armed machine gets the notes through the session's keyboard input (`SessionCore.OnMidiInput`), so it plays and records them. Any other machine gets them directly.
 - **`meters_read`** fills `LiveMeter` windows (pure, in `ReBuzz.Agent/Audio`):
   - from the master's tap, on the UI thread;
@@ -409,6 +409,105 @@ The server is only as good as what agents achieve with it. There are two layers.
 - *Song:* "2-minute synthwave at 92 BPM" → structure with sections, key consistency, loudness target, no silence gaps; then a human rating.
 
 Scores per task and tool-call counts (fewer wrong calls means clearer tools) are tracked over time. Tools whose errors agents hit often get rewritten.
+
+### 10.1 A6 as built
+
+**What runs where.**
+
+| Layer | Where | When | Takes |
+|---|---|---|---|
+| Self-test | Fork CI, Linux (`ReBuzz.AgentEval selftest`) | every PR and push to main | seconds |
+| Scripted suite | `fork-package.yml`, step "Agent evaluation", after the tests, on the built `ReBuzz.exe` (quick and full builds) | every package run | about 2 minutes, its build included |
+| Real agent | `agent-eval.yml` | weekly (Monday 03:17 UTC) and by hand | per task, up to the turn and budget caps |
+
+**`ReBuzz.AgentEval`** is a net10.0 console app with no packages and no WPF. It references `ReBuzz.Agent` for its WAV reader and `NeoBuzz.Analysis`, so every score comes from our own meters on the files `render` wrote, never from a tool's report of itself.
+
+- **The client** (`McpClient.cs`) is the one from `AgentHeadlessTests`, made reusable. It starts `ReBuzz.exe --agent [song]` and does `initialize`, `tools/list` and `tools/call`, with structured results, `isError` and timeouts. It counts calls and error calls. On failure it reports ReBuzz's stderr and, on Windows, the process's visible windows.
+- **The self-test** runs without ReBuzz:
+  - the client against our protocol layer, in process;
+  - the meters on signals with known answers: spectral and envelope distance, masking, resonance prominence, correlation of a widened noise, silent gaps;
+  - the scoring rules, and the gate's rules.
+
+**Scripted checks.** Each runs through the real protocol and asserts exact results:
+
+| Check | Asserts |
+|---|---|
+| `protocol` | The handshake and instructions. Every tool is named `area_verb` and has an example, an object input schema, an output schema and `openWorldHint: false` (§4). An unknown tool says "Did you mean". An unknown argument names the right one. stdout carries only JSON-RPC |
+| `notes_roundtrip` | Names, sharps and flats, MIDI numbers, chords, 16ths, triplets and velocities 1–127 read back exactly. What `notes_read` returns, `notes_write` takes back unchanged. Ranges, `pattern_duplicate` and save/open keep the notes |
+| `param_units` | `"800 Hz"` reads back `800 Hz`. Units, `by`, `times`, choices, `min`/`max`/`default` and `raw:` each land within one step of the parameter's resolution. A misspelt parameter or a wrong unit is an error that says what next, and a call with one bad change changes nothing |
+| `render_bit_identical` | A song (LFOs, drift, reverb, saturation, compression) renders to the same bits, probes included, each time it is opened afresh, and in a second ReBuzz process |
+| `analyze_reference` | EBU Tech 3341's 1 kHz sine at −23 dBFS reads −23 LUFS and −23 dBTP, crest 3.01 dB. Anti-phase noise reads correlation −1. 120 BPM clicks read 120 BPM. A sawtooth on A3 reads A3 at 0 cents. A C major scale reads C major. On a render, the tool's loudness, true peak, tilt and correlation equal our meters' |
+| `undo_exact` | 24 changing calls of every kind (song, machines, routing, parameters, presets, patterns, notes, transforms, automation, markers, the session grid, waves, snapshots), undone one by one, give back the full tool-read state exactly; redone, the state after them. A call that fails changes nothing and leaves undo where it was |
+
+**Agent tasks.** Each task (`Tasks/*.cs`) has four parts:
+
+- a brief, the exact prompt with where to save the song;
+- a setup that builds the starting song;
+- a scorer: named criteria, 0–1 each;
+- a scripted reference solution.
+
+A task passes with a total (the mean) of at least 0.85 and no criterion under 0.5. In the suite, each reference solution must pass, and its starting song, scored the same way, must not.
+
+| Task | Setup | Criteria (1 at, falling to 0 at) |
+|---|---|---|
+| Beat | an empty song | renders (16 beats, audible); tempo 124; four parts audible (Kick, Clap, Hats, Bass); an onset within 35 ms of ≥ 90 % of the beats on the kick (0 at 40 %); claps on ≥ 85 % of beats 2 and 4; the bass's note time in one scale ≥ 95 % (0 at 70 %) and heard on its written pitches; true peak < 0 dBTP, no clipped sample |
+| Sound match | renders a Neo Poly pluck to `reference.wav`, then leaves a default Neo Poly on the same notes | level-matched third-octave distance ≤ 1.5 dB (0 at 6); 10 ms envelope distance ≤ 2 dB (0 at 8); loudness within 1 LU (0 at 6); notes kept |
+| Fix the mix | kick and bass both on 55 Hz; a lead at 88 % ladder resonance fixed at 3.15 kHz; hats at +4 dB; a pad only through a 100 % wet reverb at 150 % width | kick/bass masking (summed severity, each part probed where it reaches Master) at most half the start's; the resonance ≤ 3 dB above its neighbours; hats 9–30 LU under the master; the pad's correlation ≥ +0.1; nothing worse: every part audible within 12 LU of its start, the master not clipping or 8 LU quieter |
+| Master | an 8-bar mix at about −31 LUFS | −14 ±1 LUFS (0 at ±3); true peak ≤ −1 dBTP (0 at +0.5); crest factor 6–14 dB (0 at 3 dB outside); no clipping; every part's loudness against the others' mean within 3 LU of the start's |
+| Song | an empty song | 105–140 s long (0 at 40 s outside); tempo 92; at least 4 markers; sections ≥ 2 LU apart in loudness (0 at 0.3); every section's key the song's or its relative; −14 ±1.5 LUFS (0 at ±4); true peak ≤ −1 dBTP; no stretch under −60 dBFS longer than 0.5 s (0 at 2 s); 4 or more audible generators. The human rating is recorded by hand |
+
+The reference solutions use the tools as an agent would:
+
+- presets and parameters in units;
+- `theory` for the song's chords and to check the hook;
+- `analyze_mix`, `plot` and `compare` before and after;
+- Neo EQ for the mix moves: a high cut on the kick, a low cut on the bass, a bell on the resonance;
+- a mastering chain on a bus (Neo EQ 30 Hz low cut, Neo Comp glue under the measured peaks, Neo Limiter at −1.2 dBTP), with the loudness reached by raising the limiter's `Input gain` and measuring again.
+
+**Results.** Per check: pass, failures, notes, tool calls, error calls and seconds. Per task, the same for the reference solution, plus:
+
+- each criterion with what was measured, and the total;
+- the starting song's total;
+- everything measured, for both songs (`facts`, `start_facts`).
+
+These go to `eval-out/eval-results.json` and `eval-summary.md`, the step summary (`$GITHUB_STEP_SUMMARY`), annotations (readable through the API) and the `eval-results` artifact, with the songs and briefs.
+
+**Regressions block.** `eval/baseline.json` holds each check's pass and each task's total and criteria. The run exits 1 when:
+
+- a check that passed fails;
+- a task that passed fails, or its total drops more than the tolerance (0.05);
+- a check or task without a baseline entry fails;
+- a starting song passes.
+
+Known failures (failing in the baseline too) are reported but don't block. `run --update-baseline`, or `rebaseline --results eval-out/eval-results.json`, rewrites the baseline.
+
+**Found by the suite and fixed.**
+- **Renders weren't reproducible.** Each started wherever the previous render left the engine's tick phase, so renders of the same song differed by up to 0.12 in sample value. `render` now starts on a tick boundary.
+- **Undo lost a connection's pan.** Undoing a disconnect, or a machine deletion, re-created the connection without its pan (`DisconnectMachinesAction`), so `connection_set(pan=…)` then failed.
+- `undo` and `redo` had no output schema.
+
+**Found and recorded (notes in the results, not failures):**
+- A bare number out of a parameter's range is clamped without a warning. A bare `20` for Neo Verb's Pre-delay is read in seconds and lands at 250 ms.
+- A second render in one session differs from the first, because voices, random phases and envelopes carry over. A freshly opened song renders identically.
+- Undo puts a restored machine or connection at the end of its list. The content is exact.
+- The Session View's grid fills itself from the song on its first edit, and stays when that edit is undone (as in A3). The check makes it exist before it starts.
+
+**Running it locally** (Windows, after `build.ps1`):
+
+```
+dotnet build ReBuzz.AgentEval -c Release
+dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll run --exe bin/Release/x64/net10.0-windows10.0.26100.0/ReBuzz.exe [--only beat,undo_exact] [--verbose]
+dotnet run --project ReBuzz.AgentEval -- selftest          # any OS, no ReBuzz
+```
+
+**Real-agent runs** (`agent-eval.yml`).
+- **The secret.** It needs the repository secret `ANTHROPIC_API_KEY`: Settings → Secrets and variables → Actions → New repository secret. Without it, the run posts a notice and skips the Windows job; the workflow stays green.
+- **Each task:**
+  1. `prepare` builds the starting song, `brief.md` and an `mcp.json` that runs `ReBuzz.exe --agent start.bmxml`.
+  2. Claude Code runs headless from an empty folder (no repository context): `claude -p "<brief>" --bare --mcp-config mcp.json --strict-mcp-config --tools "" --allowedTools "mcp__rebuzz__*" --permission-mode dontAsk --max-turns 80 --max-budget-usd 5 --output-format stream-json --verbose --no-session-persistence`. Flags were checked against the CLI's own help, 2.1.316: only the rebuzz tools are available and allowed, everything else is denied without a prompt. `MCP_TIMEOUT` is raised to 240 s, since the CLI waits 30 s by default for a server to answer and ReBuzz's start-up can take longer.
+  3. `score` opens the starting song and the saved one in a fresh headless ReBuzz, scores them, and reads the transcript: rebuzz tool calls, error calls with their texts, turns, cost, how it stopped.
+- **Inputs:** tasks, model, turn cap, budget, CLI version.
+- **Uploads:** transcripts, songs and scores. The step summary has the table, and the tools whose errors the agent hit, worst first.
 
 ## 11. Example
 
