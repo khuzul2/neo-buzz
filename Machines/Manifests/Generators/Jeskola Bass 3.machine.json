@@ -1,0 +1,111 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Jeskola Bass 3",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "unpitched",
+ "summary": "Unpitched (profiled draft): unpitched; monophonic; takes notes in its tracks; one note at the defaults -11 LUFS.",
+ "tracks": 8,
+ "notes": {
+  "input": "tracks",
+  "pitched": false,
+  "polyphony": 1
+ },
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "level": {
+   "note": "A4 at velocity 100, 1.5 beats",
+   "integrated_lufs": -10.9,
+   "sample_peak_dbfs": -2.51,
+   "true_peak_dbtp": -2.51
+  },
+  "extremes": {}
+ },
+ "parameters": [],
+ "track_parameters": [
+  {
+   "index": 0,
+   "id": "Cutoff",
+   "name": "Cutoff",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 128,
+   "kind": "linear",
+   "a": 0.00353,
+   "b": 100.002671,
+   "unit": "%",
+   "description": "Cutoff frequency (0-80)",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Resonance",
+   "name": "Resonance",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.00353,
+   "b": 100.002671,
+   "unit": "%",
+   "description": "Resonance (0-80)",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Envmod",
+   "name": "Envmod",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.00353,
+   "b": 100.002671,
+   "unit": "%",
+   "description": "Cutoff envelope modulation (0-80)",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Decay",
+   "name": "Decay",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 64,
+   "kind": "linear",
+   "a": 0.00353,
+   "b": 100.002671,
+   "unit": "%",
+   "description": "Cutoff envelope decay (0-80)",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Waveform",
+   "name": "Waveform",
+   "group": "",
+   "min": 0,
+   "max": 5,
+   "default": 1,
+   "kind": "enum",
+   "choices": [
+    "sine",
+    "sawtooth",
+    "pulse",
+    "triangle",
+    "noise",
+    "303 saw"
+   ],
+   "description": "Waveform (0=sine, 1=sawtooth, 2=pulse, 3=triangle, 4=noise, 5=tb303 sawtooth)",
+   "confidence": "values"
+  }
+ ]
+}

@@ -1,0 +1,98 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Jeskola Filter 2",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "utility",
+ "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 1 samples; gain +6.0 dB at the defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": 6.02,
+   "latency_samples": 1,
+   "latency_ms": 0.02,
+   "tail_seconds": 0.0,
+   "echoes": 0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 0.1,
+   "tilt_db": 0.0,
+   "sine": {
+    "loud": {
+     "gain_db": 6.02,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.13
+    },
+    "quiet": {
+     "gain_db": 6.02,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.13
+    }
+   },
+   "traits": [
+    "utility"
+   ]
+  },
+  "extremes": {
+   "min": {
+    "silent": false,
+    "sample_peak_dbfs": -50.47
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": -36.64
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Type",
+   "name": "Type",
+   "group": "",
+   "min": 0,
+   "max": 2,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 2.0,
+   "description": "Type: 0=lowpass (def), 1=highpass, 2=bandpass",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Cutoff",
+   "name": "Cutoff",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 128,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 128.0,
+   "description": "Cutoff Frequency (0-80)",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "Resonance",
+   "name": "Resonance",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 128.0,
+   "description": "Resonance (0-80)",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

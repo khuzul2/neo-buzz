@@ -82,8 +82,16 @@ namespace ReBuzz.Agent
                                 $" Its patterns: {string.Join(", ", machine.Patterns.Select(x => x.Name))}.");
         }
 
-        /// <summary>The pattern's notes (its engine MIDI column's note-ons), in time order.</summary>
-        public static List<NoteEvent> Notes(IPattern p)
+        /// <summary>
+        /// The pattern's notes as the agent reads them, in time order: its engine MIDI column's
+        /// note-ons, or its Note track columns for a machine that takes notes in tracks, with the
+        /// machine's pitch offset taken off (§12.2, MachineNotes).
+        /// </summary>
+        public static List<NoteEvent> Notes(IPattern p) =>
+            p.Machine is MachineCore m ? MachineNotes.Read(p, MachineNotes.For(m)) : MidiColumnNotes(p);
+
+        /// <summary>The note-ons in the pattern's engine MIDI column as stored (no pitch offset).</summary>
+        public static List<NoteEvent> MidiColumnNotes(IPattern p)
         {
             var column = SessionLayout.ColumnFor(p, ColumnKey.Midi, create: false);
             if (column == null) return new List<NoteEvent>();
@@ -143,7 +151,7 @@ namespace ReBuzz.Agent
                     if (p.Type == ParameterType.Internal || p.Type == ParameterType.Note) continue;
                     // Track parameters that don't hold a value (a note's velocity) are played, not set.
                     if (g == 2 && (p.Flags & ParameterFlags.State) == 0) continue;
-                    var entry = g == 1 ? manifest?.Find(p.Name) : null;
+                    var entry = g == 1 ? manifest?.Find(p.Name) : manifest?.FindTrack(p.Name);
                     if (entry != null && (entry.Min != p.MinValue || entry.Max != p.MaxValue)) entry = null;   // a stale manifest: trust the machine
                     var param = p;
                     list.Add(new AgentParam
@@ -161,6 +169,7 @@ namespace ReBuzz.Agent
                             Max = p.MaxValue,
                             Default = p.DefValue,
                             Mapping = entry?.Mapping,
+                            TextsFirst = entry != null && manifest.IsDraft,
                             Describe = raw => Describe(param, raw),
                         },
                     });
@@ -210,6 +219,7 @@ namespace ReBuzz.Agent
                 if (dim.Length > 0) o["unit"] = dim == "ratio" ? ":1" : dim;
             }
             o["raw"] = raw;
+            if (p.Manifest?.Approximate == true) o["approximate"] = true;
             return o;
         }
 

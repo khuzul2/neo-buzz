@@ -1,0 +1,655 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Joachims Mars filter 2",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "distortion",
+ "summary": "Distortion (profiled draft): traits: distortion, dynamics, filter or EQ; tail 0.01 s; latency 0 samples; gain +1.5 dB at the defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": 1.48,
+   "latency_samples": 0,
+   "latency_ms": 0.0,
+   "tail_seconds": 0.01,
+   "echoes": 0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 32.4,
+   "tilt_db": -25.7,
+   "sine": {
+    "loud": {
+     "gain_db": 2.52,
+     "thd_percent": 3.78,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.15
+    },
+    "quiet": {
+     "gain_db": 12.53,
+     "thd_percent": 3.78,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.15
+    }
+   },
+   "traits": [
+    "distortion",
+    "dynamics",
+    "filter or EQ"
+   ]
+  },
+  "extremes": {
+   "min": {
+    "silent": false,
+    "sample_peak_dbfs": -32.72
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": -7.96
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Distortion mode",
+   "name": "Distortion mode",
+   "group": "",
+   "min": 0,
+   "max": 13,
+   "default": 1,
+   "kind": "enum",
+   "choices": [
+    "bypass",
+    "Red crust",
+    "Phobos",
+    "Deimos",
+    "Cratered",
+    "God of iron",
+    "Battle axe",
+    "Scarred",
+    "Bruises",
+    "Rusty",
+    "Steel pain",
+    "Crunch",
+    "Shatter",
+    "Cannon"
+   ],
+   "description": "Distortion mode (0=bypass)",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "PreGain",
+   "name": "PreGain",
+   "group": "",
+   "min": 1,
+   "max": 128,
+   "default": 71,
+   "kind": "table",
+   "unit": "dB",
+   "points": [
+    [
+     1,
+     -100.0
+    ],
+    [
+     2,
+     -97.7
+    ],
+    [
+     3,
+     -89.3
+    ],
+    [
+     4,
+     -80.8
+    ],
+    [
+     5,
+     -73.9
+    ],
+    [
+     6,
+     -68.3
+    ],
+    [
+     7,
+     -63.6
+    ],
+    [
+     8,
+     -59.7
+    ],
+    [
+     9,
+     -56.2
+    ],
+    [
+     10,
+     -53.2
+    ],
+    [
+     11,
+     -50.5
+    ],
+    [
+     12,
+     -48.0
+    ],
+    [
+     13,
+     -45.7
+    ],
+    [
+     14,
+     -43.7
+    ],
+    [
+     15,
+     -41.7
+    ],
+    [
+     16,
+     -40.0
+    ],
+    [
+     17,
+     -38.3
+    ],
+    [
+     18,
+     -36.7
+    ],
+    [
+     19,
+     -35.2
+    ],
+    [
+     20,
+     -33.8
+    ],
+    [
+     21,
+     -32.5
+    ],
+    [
+     22,
+     -31.2
+    ],
+    [
+     23,
+     -30.0
+    ],
+    [
+     24,
+     -28.9
+    ],
+    [
+     25,
+     -27.8
+    ],
+    [
+     26,
+     -26.7
+    ],
+    [
+     27,
+     -25.7
+    ],
+    [
+     28,
+     -24.7
+    ],
+    [
+     29,
+     -23.8
+    ],
+    [
+     30,
+     -22.8
+    ],
+    [
+     31,
+     -22.0
+    ],
+    [
+     32,
+     -21.1
+    ],
+    [
+     33,
+     -20.3
+    ],
+    [
+     34,
+     -19.5
+    ],
+    [
+     35,
+     -18.7
+    ],
+    [
+     36,
+     -18.0
+    ],
+    [
+     37,
+     -17.2
+    ],
+    [
+     38,
+     -16.5
+    ],
+    [
+     39,
+     -15.8
+    ],
+    [
+     40,
+     -15.1
+    ],
+    [
+     41,
+     -14.5
+    ],
+    [
+     42,
+     -13.9
+    ],
+    [
+     43,
+     -13.2
+    ],
+    [
+     44,
+     -12.6
+    ],
+    [
+     45,
+     -12.0
+    ],
+    [
+     46,
+     -11.4
+    ],
+    [
+     47,
+     -10.9
+    ],
+    [
+     48,
+     -10.3
+    ],
+    [
+     49,
+     -9.8
+    ],
+    [
+     50,
+     -9.2
+    ],
+    [
+     51,
+     -8.7
+    ],
+    [
+     52,
+     -8.2
+    ],
+    [
+     53,
+     -7.7
+    ],
+    [
+     54,
+     -7.2
+    ],
+    [
+     55,
+     -6.7
+    ],
+    [
+     56,
+     -6.2
+    ],
+    [
+     57,
+     -5.8
+    ],
+    [
+     58,
+     -5.3
+    ],
+    [
+     59,
+     -4.8
+    ],
+    [
+     60,
+     -4.4
+    ],
+    [
+     61,
+     -4.0
+    ],
+    [
+     62,
+     -3.5
+    ],
+    [
+     63,
+     -3.1
+    ],
+    [
+     64,
+     -2.7
+    ],
+    [
+     65,
+     -2.3
+    ],
+    [
+     66,
+     -1.9
+    ],
+    [
+     67,
+     -1.5
+    ],
+    [
+     68,
+     -1.1
+    ],
+    [
+     69,
+     -0.7
+    ],
+    [
+     70,
+     -0.3
+    ],
+    [
+     71,
+     0.0
+    ],
+    [
+     72,
+     0.4
+    ],
+    [
+     73,
+     0.8
+    ],
+    [
+     74,
+     1.1
+    ],
+    [
+     75,
+     1.5
+    ],
+    [
+     76,
+     1.8
+    ],
+    [
+     77,
+     2.2
+    ],
+    [
+     78,
+     2.5
+    ],
+    [
+     79,
+     2.9
+    ],
+    [
+     80,
+     3.2
+    ],
+    [
+     81,
+     3.5
+    ],
+    [
+     82,
+     3.8
+    ],
+    [
+     83,
+     4.1
+    ],
+    [
+     84,
+     4.5
+    ],
+    [
+     85,
+     4.8
+    ],
+    [
+     86,
+     5.1
+    ],
+    [
+     87,
+     5.4
+    ],
+    [
+     88,
+     5.7
+    ],
+    [
+     89,
+     6.0
+    ],
+    [
+     90,
+     6.3
+    ],
+    [
+     91,
+     6.6
+    ],
+    [
+     92,
+     6.9
+    ],
+    [
+     93,
+     7.1
+    ],
+    [
+     94,
+     7.4
+    ],
+    [
+     95,
+     7.7
+    ],
+    [
+     96,
+     8.0
+    ],
+    [
+     97,
+     8.2
+    ],
+    [
+     98,
+     8.5
+    ],
+    [
+     99,
+     8.8
+    ],
+    [
+     100,
+     9.0
+    ],
+    [
+     101,
+     9.3
+    ],
+    [
+     102,
+     9.6
+    ],
+    [
+     103,
+     9.8
+    ],
+    [
+     104,
+     10.1
+    ],
+    [
+     105,
+     10.3
+    ],
+    [
+     106,
+     10.6
+    ],
+    [
+     107,
+     10.8
+    ],
+    [
+     108,
+     11.1
+    ],
+    [
+     109,
+     11.3
+    ],
+    [
+     110,
+     11.5
+    ],
+    [
+     111,
+     11.8
+    ],
+    [
+     112,
+     12.0
+    ],
+    [
+     113,
+     12.2
+    ],
+    [
+     114,
+     12.5
+    ],
+    [
+     115,
+     12.7
+    ],
+    [
+     116,
+     12.9
+    ],
+    [
+     117,
+     13.2
+    ],
+    [
+     118,
+     13.4
+    ],
+    [
+     119,
+     13.6
+    ],
+    [
+     120,
+     13.8
+    ],
+    [
+     121,
+     14.0
+    ],
+    [
+     122,
+     14.3
+    ],
+    [
+     123,
+     14.5
+    ],
+    [
+     124,
+     14.7
+    ],
+    [
+     125,
+     14.9
+    ],
+    [
+     126,
+     15.1
+    ],
+    [
+     127,
+     15.3
+    ],
+    [
+     128,
+     15.5
+    ]
+   ],
+   "description": "Input volume gain",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "Amount",
+   "name": "Amount",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 63,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "Distortion amount",
+   "confidence": "values"
+  },
+  {
+   "index": 3,
+   "id": "Treble behavior",
+   "name": "Treble behavior",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 127,
+   "kind": "linear",
+   "a": -127.0,
+   "b": 0.0,
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "Bass behavior",
+   "name": "Bass behavior",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 127,
+   "kind": "linear",
+   "a": -127.0,
+   "b": 0.0,
+   "description": "",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

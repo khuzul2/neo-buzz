@@ -1,0 +1,93 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "JumpLoop",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "control",
+ "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {},
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Type",
+   "name": "Type",
+   "group": "",
+   "min": 0,
+   "max": 2,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Tick",
+    "Beat",
+    "Pattern"
+   ],
+   "description": "Define how jump target is calculated (Tick, Beat, Pattern)",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Jump",
+   "name": "Jump",
+   "group": "",
+   "min": 0,
+   "max": 2000,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 2000.0,
+   "description": "How many times to jump. Resets when play is pressed. If not set or 0 then jump infinitely.",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "Reset",
+   "name": "Reset",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 1,
+   "kind": "switch",
+   "choices": [
+    "No",
+    "Yes"
+   ],
+   "description": "Reset counter when zero?",
+   "confidence": "values"
+  },
+  {
+   "index": 3,
+   "id": "Target",
+   "name": "Target",
+   "group": "",
+   "min": 0,
+   "max": 32767,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 32767.0,
+   "description": "Jump target",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "Hold",
+   "name": "Hold",
+   "group": "",
+   "min": 0,
+   "max": 20000,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 20000.0,
+   "description": "Hold x ticks.",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

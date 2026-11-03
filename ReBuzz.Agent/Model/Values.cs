@@ -14,7 +14,7 @@ using ReBuzz.Agent.Mcp;
 
 namespace ReBuzz.Agent.Model
 {
-    public enum MappingKind { Linear, Exp, Power, Db, Time, Freq, Percent, Bipolar, Int, Enum, Switch, Ratio }
+    public enum MappingKind { Linear, Exp, Power, Db, Time, Freq, Percent, Bipolar, Int, Enum, Switch, Ratio, Table }
 
     /// <summary>An exact raw ↔ physical mapping (Neo machines' Params.def, via their manifest).</summary>
     public sealed class ParamMapping
@@ -26,9 +26,12 @@ namespace ReBuzz.Agent.Model
         public bool Flag { get; init; }
         public string Unit { get; init; } = "";
         public IReadOnlyList<string> Names { get; init; }
+        /// <summary>Table mappings (profiled drafts): (raw, value) points by raw, joined linearly.</summary>
+        public IReadOnlyList<(int Raw, double Value)> Points { get; init; }
 
         public double Value(int raw, int min, int max)
         {
+            if (Kind == MappingKind.Table) return TableValue(raw);
             double t = max == min ? 0 : Math.Clamp((raw - min) / (double)(max - min), 0, 1);
             return Kind switch
             {
@@ -45,11 +48,46 @@ namespace ReBuzz.Agent.Model
             };
         }
 
+        double TableValue(int raw)
+        {
+            var pts = Points;
+            if (raw <= pts[0].Raw) return pts[0].Value;
+            if (raw >= pts[^1].Raw) return pts[^1].Value;
+            int lo = 0, hi = pts.Count - 1;
+            while (hi - lo > 1)
+            {
+                int mid = (lo + hi) / 2;
+                if (pts[mid].Raw <= raw) lo = mid; else hi = mid;
+            }
+            var (r0, v0) = pts[lo];
+            var (r1, v1) = pts[hi];
+            if (r1 == r0 || double.IsInfinity(v0) || double.IsInfinity(v1)) return raw - r0 < r1 - raw ? v0 : v1;
+            return v0 + (v1 - v0) * (raw - r0) / (r1 - r0);
+        }
+
+        /// <summary>A table's raw value nearest a value (on a log scale for Hz and seconds).</summary>
+        int TableRaw(double value, int min, int max)
+        {
+            bool log = Dimension is "Hz" or "s" && value > 0;
+            int best = min;
+            double bestDistance = double.MaxValue;
+            int step = Math.Max(1, (max - min) / 65536);
+            for (int r = min; r <= max; r += step)
+            {
+                double v = TableValue(r);
+                double d = double.IsInfinity(value) || double.IsInfinity(v) ? (value == v ? 0 : double.MaxValue)
+                         : log && v > 0 ? Math.Abs(Math.Log(v / value)) : Math.Abs(v - value);
+                if (d < bestDistance) { bestDistance = d; best = r; }
+            }
+            return best;
+        }
+
         public int Raw(double value, int min, int max)
         {
             double t;
             switch (Kind)
             {
+                case MappingKind.Table: return TableRaw(value, min, max);
                 case MappingKind.Linear: t = (value - A) / (B - A); break;
                 case MappingKind.Exp:
                 case MappingKind.Time:
@@ -99,6 +137,11 @@ namespace ReBuzz.Agent.Model
         public int Default { get; init; }
         /// <summary>Exact mapping (Neo machines); null: read values through <see cref="Describe"/>.</summary>
         public ParamMapping Mapping { get; init; }
+        /// <summary>
+        /// A profiled draft's mapping (§12.2): the machine's own texts ("Off", "1/8") are matched
+        /// first, and the mapping takes what reads as a number with a unit.
+        /// </summary>
+        public bool TextsFirst { get; init; }
         /// <summary>The machine's own text for a raw value (null when it has none).</summary>
         public required Func<int, string> Describe { get; init; }
     }
@@ -182,7 +225,7 @@ namespace ReBuzz.Agent.Model
             if (mode == Mode.Value && text != null)
             {
                 // A machine's own text for a value ("1/8", "1 bar", "Off") is taken as it is.
-                if (p.Mapping == null && MatchDescription(p, text) is int exact) return exact;
+                if ((p.Mapping == null || p.TextsFirst) && MatchDescription(p, text) is int exact) return exact;
                 string lower = text.ToLowerInvariant();
                 if (lower.StartsWith("raw:"))
                 {

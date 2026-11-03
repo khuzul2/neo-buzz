@@ -1,0 +1,302 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Pedal Comp",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "type": "dynamics",
+ "summary": "Dynamics (profiled draft): traits: dynamics; tail 0.0 s; latency 0 samples; gain -0.3 dB at the defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": -0.32,
+   "latency_samples": 0,
+   "latency_ms": 0.0,
+   "tail_seconds": 0.0,
+   "echoes": 0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 0.1,
+   "tilt_db": -0.0,
+   "sine": {
+    "loud": {
+     "gain_db": -2.49,
+     "thd_percent": 1.98,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.13
+    },
+    "quiet": {
+     "gain_db": 0.0,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.14
+    }
+   },
+   "traits": [
+    "dynamics"
+   ]
+  },
+  "extremes": {
+   "min": {
+    "silent": false,
+    "sample_peak_dbfs": -32.72
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": -12.04
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Threshold",
+   "name": "Threshold",
+   "group": "",
+   "min": 0,
+   "max": 60,
+   "default": 18,
+   "kind": "db",
+   "a": 0.0,
+   "b": -60.0,
+   "unit": "dB",
+   "description": "Compression threshold.  0 = 0 dBFS (no effect), 60 = −60 dBFS (maximum).",
+   "confidence": "description"
+  },
+  {
+   "index": 1,
+   "id": "Ratio",
+   "name": "Ratio",
+   "group": "",
+   "min": 1,
+   "max": 30,
+   "default": 4,
+   "kind": "linear",
+   "a": 1.0,
+   "b": 30.0,
+   "description": "Compression ratio N:1.  1 = no compression, 30 = near-limiting.",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "Knee",
+   "name": "Knee",
+   "group": "",
+   "min": 0,
+   "max": 12,
+   "default": 0,
+   "kind": "db",
+   "a": 0.0,
+   "b": 12.0,
+   "unit": "dB",
+   "description": "Soft-knee width in dB.  0 = hard knee, 12 = widest soft knee.",
+   "confidence": "description"
+  },
+  {
+   "index": 3,
+   "id": "Attack",
+   "name": "Attack",
+   "group": "",
+   "min": 1,
+   "max": 200,
+   "default": 10,
+   "kind": "linear",
+   "a": 3e-06,
+   "b": 0.001002,
+   "unit": "s",
+   "description": "Attack time in milliseconds.",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "Release",
+   "name": "Release",
+   "group": "",
+   "min": 10,
+   "max": 2000,
+   "default": 100,
+   "kind": "linear",
+   "a": 2e-06,
+   "b": 0.001002,
+   "unit": "s",
+   "description": "Release time in milliseconds.",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "Makeup Gain",
+   "name": "Makeup Gain",
+   "group": "",
+   "min": 0,
+   "max": 24,
+   "default": 0,
+   "kind": "table",
+   "unit": "dB",
+   "points": [
+    [
+     0,
+     "-inf"
+    ],
+    [
+     1,
+     -27.6
+    ],
+    [
+     2,
+     -21.6
+    ],
+    [
+     3,
+     -18.1
+    ],
+    [
+     4,
+     -15.6
+    ],
+    [
+     5,
+     -13.6
+    ],
+    [
+     6,
+     -12.0
+    ],
+    [
+     7,
+     -10.7
+    ],
+    [
+     8,
+     -9.5
+    ],
+    [
+     9,
+     -8.5
+    ],
+    [
+     10,
+     -7.6
+    ],
+    [
+     11,
+     -6.8
+    ],
+    [
+     12,
+     -6.0
+    ],
+    [
+     13,
+     -5.3
+    ],
+    [
+     14,
+     -4.7
+    ],
+    [
+     15,
+     -4.1
+    ],
+    [
+     16,
+     -3.5
+    ],
+    [
+     17,
+     -3.0
+    ],
+    [
+     18,
+     -2.5
+    ],
+    [
+     19,
+     -2.0
+    ],
+    [
+     20,
+     -1.6
+    ],
+    [
+     21,
+     -1.2
+    ],
+    [
+     22,
+     -0.8
+    ],
+    [
+     23,
+     -0.4
+    ],
+    [
+     24,
+     0.0
+    ]
+   ],
+   "description": "Output makeup gain in dB. Ignored when Auto Makeup is on.",
+   "confidence": "values"
+  },
+  {
+   "index": 6,
+   "id": "Auto Makeup",
+   "name": "Auto Makeup",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "description": "Compute makeup gain automatically from threshold and ratio. Overrides Makeup Gain.",
+   "confidence": "values"
+  },
+  {
+   "index": 7,
+   "id": "Wet/Dry",
+   "name": "Wet/Dry",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 100,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Mix between compressed (wet) and original (dry) signal.  100 = fully wet.",
+   "confidence": "values"
+  },
+  {
+   "index": 8,
+   "id": "Lookahead",
+   "name": "Lookahead",
+   "group": "",
+   "min": 0,
+   "max": 20,
+   "default": 0,
+   "kind": "linear",
+   "a": 4e-06,
+   "b": 0.000996,
+   "unit": "s",
+   "description": "Lookahead delay in milliseconds.  0 = off.  Adds equivalent latency.",
+   "confidence": "values"
+  },
+  {
+   "index": 9,
+   "id": "Detection",
+   "name": "Detection",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Peak",
+    "RMS"
+   ],
+   "description": "Envelope detection mode. Peak = fast transient response, RMS = smoother on full mixes.",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

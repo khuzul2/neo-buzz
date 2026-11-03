@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Status | A0–A7 built, with Neo Analyzer (2026-11-02). As built: §3.5, §10.1 (A6) |
-| Date | 2026-10-31, updated 2026-11-02 |
+| Status | A0–A7 built, with Neo Analyzer (2026-11-02); U1 of the machine upgrades (2026-11-03). As built: §3.5, §10.1 (A6), §12.8 (U1) |
+| Date | 2026-10-31, updated 2026-11-03 |
 | Scope | An MCP server that lets an AI agent (Claude Code or any MCP client) compose, design sounds, mix and master in this ReBuzz fork, with tools clear enough to use without guessing, guides for the craft, and the analysis needed to check its own work |
 | Protocol | MCP 2026-07-28, also negotiates 2025-11-25, 2025-06-18 and 2025-03-26 (stdio and Streamable HTTP; structured tool output; progress). Own protocol layer, no SDK (§3.5) |
 | Related | docs/specs/machines.md (Neo machines), docs/specs/session-view.md |
@@ -225,7 +225,7 @@ Phases (§9) are marked A1 … A7.
 
 | Tool | Phase | Purpose |
 |---|---|---|
-| `gear_list` | A1 | Available machines: name, generator/effect, category, a one-line description, manifest quality (generated, curated, profiled draft), health, preset count. Filter by kind, category or text |
+| `gear_list` | A1, U1 | Available machines: name, generator/effect, type and a one-line description (from the manifest), manifest quality (generated, curated, profiled draft), health (unhealthy ones last, with why), preset count. Filter by kind or text |
 | `machine_list` | A1 | The song's machines: gear, inputs and outputs with gain dB and pan, mute/solo/bypass, tracks, latency |
 | `machine_add` | A1 | Adds a machine from the gear list; optional name, track count, preset, and where to connect it (`"Master"`, or between two machines). Returns its name and its parameter summary |
 | `machine_remove` | A1 | Deletes machines; reconnects the chain around effects when asked |
@@ -238,8 +238,8 @@ Phases (§9) are marked A1 … A7.
 
 | Tool | Phase | Purpose |
 |---|---|---|
-| `machine_describe` | A1 | Everything about one machine:<br>• parameters by group, each with name, current value (text, number and unit), range, default and description<br>• track parameters<br>• the manual link (Neo)<br>• presets and commands |
-| `param_set` | A1 | Many changes in one call, global or per track. Each change is `value` (in units, §3.3), `by` (relative, in units) or `times` (a factor). Returns the values as the machine now describes them |
+| `machine_describe` | A1, U1 | Everything about one machine:<br>• parameters by group, each with name, current value (text, number and unit), range, default and description<br>• track parameters<br>• the manual link (Neo)<br>• presets and commands<br>• `gear_info` (U1): its DLL under Gear, track range, Note track parameter, whether it takes MIDI (managed machines), the manifest's note input and pitch offset<br>• `value_table=true` (U1): each parameter's value texts across its range, every value up to 256 values, else `table_points` (default 1025) evenly spaced, with its raw range and default. What the profiler infers units from; agents can read an unlabelled machine with it |
+| `param_set` | A1 | Many changes in one call, global or per track. Each change is `value` (in units, §3.3), `by` (relative, in units) or `times` (a factor). Returns the values as the machine now describes them; with a draft manifest (U1) it says so, and marks values whose unit came from a description as approximate |
 | `param_get` | A1 | Current values (a subset, or all) |
 | `preset_list`, `preset_load`, `preset_save` | A2 | ReBuzz presets (the factory `.prs.xml` files and the user's own) |
 | `snapshot_save`, `snapshot_restore`, `snapshot_diff` | A2 | Named whole-song parameter snapshots (all machines, connections, mutes) for A/B comparison of mixes and sounds |
@@ -251,8 +251,8 @@ Phases (§9) are marked A1 … A7.
 |---|---|---|
 | `pattern_list` | A1 | Patterns per machine: name, length in beats, note count, where it is used (arrangement, session) |
 | `pattern_create`, `pattern_delete`, `pattern_rename`, `pattern_duplicate` | A1 | Length in beats |
-| `notes_write` | A1 | Notes into a pattern:<br>• each note is pitch, start beat, length in beats, velocity 1–127<br>• `mode: add \| replace \| replace_range`<br>• chords are notes with the same start<br>• returns a short summary and clashes (overlaps on a monophonic track, notes outside the pattern) |
-| `notes_read` | A1 | The same shape back, optionally for a range |
+| `notes_write` | A1, U1 | Notes into a pattern:<br>• each note is pitch, start beat, length in beats, velocity 1–127<br>• `mode: add \| replace \| replace_range`<br>• chords are notes with the same start<br>• returns a short summary and clashes (overlaps on a monophonic track, notes outside the pattern)<br>• U1: the written pitch is the pitch heard. A machine's manifest can say it takes notes in its tracks (`input: tracks`, a voice per track) and give a pitch offset; `input` and `apply_pitch_offset=false` override both |
+| `notes_read` | A1, U1 | The same shape back, optionally for a range; the same `input` and `apply_pitch_offset` |
 | `notes_transform` | A3 | Transpose (semitones or in-scale steps), quantize (grid, strength, swing), humanize, velocity curve, shift, stretch, reverse, invert, legato. Each runs on a selection by range or pitch |
 | `automation_write`, `automation_read` | A3 | A parameter's curve in a pattern: points at beats, step or linear, values in units. Written as engine-played automation columns |
 | `arrangement_get` | A1 | The timeline: one lane per machine with its pattern placements in bars and beats, mutes, markers, loop, song end |
@@ -615,16 +615,16 @@ The tool works for agents and, from the machine menu, for people.
 | Jeskola Reverb, Stereo Reverb, Raverb; Pedal Plate | Neo Verb | built (machines spec M1) |
 | Jeskola Distortion, Wave Shaper; FSM Philthy | Neo Drive | built |
 | Pedal Comp; Jeskola Limiter (as a compressor) | Neo Comp | built |
-| Jeskola EQ-3, Joachims Enceladus, Pedal EQ | Neo EQ | next batch (§8.2) |
-| Jeskola Limiter, Oomek Masterizer | Neo Limiter | next batch |
-| Jeskola Gain, Pedal Gain | Neo Utility | next batch |
-| Jeskola Delay, Cross Delay, NiNjA dElaY; FSM PanzerDelay | Neo Delay | next batch |
+| Jeskola EQ-3, Joachims Enceladus, Pedal EQ | Neo EQ | built (A4, machines spec M3) |
+| Jeskola Limiter, Oomek Masterizer | Neo Limiter | built (A4, M3) |
+| Jeskola Gain, Pedal Gain | Neo Utility | built (A4, M3) |
+| Jeskola Delay, Cross Delay, NiNjA dElaY; FSM PanzerDelay | Neo Delay | next batch (§8.2) |
 | Jeskola Chorus, Flanger; FSM Chorus2; Pedal Chorus | Neo Ensemble (chorus/flanger/phaser) | proposed |
 | Jeskola Filter, Filter 2; Joachims Mars; FSM WahMan; Pedal Filter | Neo Filter (the Neo Poly filters as an effect, with envelope follower and LFO) | proposed |
 | Jeskola Bass 2/3, Oomek Aggressor 303, Pedal SH-101 | Neo Poly (mono/legato presets) | built (M2) |
 | FSM Infector, Pedal Juno106 | Neo Poly, Neo Wave | built (M2) |
 | Jeskola Organ | Neo Wave (organ table), or a dedicated tonewheel organ | proposed |
-| Pedal FM | Neo FM6 | in progress (M2) |
+| Pedal FM | Neo FM6 | built (M2) |
 | Rout 909, FSM KickXP, Pedal Drum Matrix | Neo Drums (synthesised kit with per-voice outputs) | proposed |
 | Jeskola Tracker, Matilde Tracker2, Pedal M1 | Neo Sampler | next batch (§8.2) |
 
@@ -639,6 +639,101 @@ The tool works for agents and, from the machine menu, for people.
 | A5+ | Tier 3 for the Pedal and ReBuzz machines; the Buzztrax build fix; Neo Delay, Ensemble, Filter, Drums, Sampler as the next machine batches |
 
 **Done when** every machine in the package has a manifest; `notes_write` plays the written pitch on every pitched generator; the health report is clean or every exception is listed; and an old song converted with `machine_replace` measures within a stated tolerance of the original, or the report says why not.
+
+As of A7 the phases above ran ahead of this work: A0–A7 are built, with the Neo successors of §12.5 marked built and their generated manifests, but nothing of tiers 1–4 for the other machines. §12.7 is the plan from here.
+
+### 12.7 Build plan
+
+PR-sized phases. Each ends with its exit check passing in CI (Linux for the portable machines, the Windows package run for the natives) and the agent eval unchanged.
+
+| Phase | Delivers | Exit check | Effort |
+|---|---|---|---|
+| **U1 Profile and describe** (tier 1, first half) | `tools/machine-profiler.py` over MCP: value tables, unit and mapping inference, pitch convention, note input, polyphony, effect kind, latency, tail, gain, health. Draft manifests in `Machines/Manifests/`, copied beside their DLLs; `docs/machine-health.md`. The server reads drafts: units in `param_set`/`param_get`, pitch offsets and track notes in `notes_write`/`notes_read`/`midi_play`, kind and health in `gear_list` | A Pedal synth plays A4 at 440 Hz through `notes_write` after profiling; `param_set` in units on a Pedal machine; the Linux job profiles the portable machines and the Windows package job all of them | L |
+| **U2 Profile in depth** (tier 1, second half) | A test-signal source for effects (sweep, impulse, level steps through a general tool), per-parameter sweeps (what moving each one changes) as suggested roles, velocity response and envelope length, denormal and extreme-value checks per parameter. `gear_list` leaves unhealthy machines out unless asked | Suggested roles for the filter, time and mix parameters of the 25 most used machines; every unhealthy machine has a reason in the report | M |
+| **U3 Curate** (tier 1 done) | Curated manifests for the top 25 (summary, plain names, roles, safe ranges, quirks); manuals (`rebuzz://machines/…`) for every machine with a manifest; `GuideTests` check curated names and values | 25 curated, the rest drafts: every machine in the package has a manifest | M |
+| **U4 A better face** (tier 2) | The manifest editor on the editor kit (groups, knobs in units, choices, ADSR and response plots), a per-machine setting; factory presets for the top machines | The editor opens for every curated machine in the studio and ReBuzz.exe; its presets load through `preset_load` | L |
+| **U5 `machine_replace`** (tier 4) | Role mapping, unit conversion, render before and after with `compare`; one undo step; the machine menu's Replace | Jeskola Reverb → Neo Verb, Pedal EQ → Neo EQ, Jeskola Distortion → Neo Drive and Pedal Gain → Neo Utility convert within a stated tolerance, or say why not | M |
+| **U6 Source fixes** (tier 3, C#) | Pedal and ReBuzz machines: manifests from code, MIDI input for the Pedal synths, denormal guards, smoothing, silence reporting; the Neo measurement suite on them | Their health report is clean; their manifests no longer drafts; old songs render as before | L |
+| **U7 Natives with sources** (tier 3) | The Buzztrax MSVC header fix, x64 builds, fixes and generated manifests | The Buzztrax machines build in the package; §12.6's "Done when" holds | L |
+
+The successors of §12.5 still to build (Neo Delay, Ensemble, Filter, Drums, Sampler) are machine batches of their own (machines spec); `machine_replace` takes each one's mapping as it lands.
+
+### 12.8 U1 as built
+
+**The profiler** (`tools/machine-profiler.py`, standard library only) is an MCP client like any other: `rebuzz-headless --agent` on Linux and macOS, `ReBuzz.exe --agent` on Windows. A machine that crashes or hangs the server (no answer in 90 s) is recorded and the server restarted; one that takes its native host down is caught through `gear_list`'s `crashed`. Per machine, in a fresh song:
+
+- **Parameters.** `machine_describe(value_table=true)`. `tools/machine_infer.py` reads each table:
+  - the unit from the texts (`kHz`, `ms`, `dBFS`, `−inf`, `L 50%`, `4:1`, tracker-style `0040 (−54.2 dB)`);
+  - the mapping, the simplest that reproduces every text to its precision (or 1 %): linear, dB (with −∞ at the bottom), exponential (`freq`, `time`), ratio, power, else a table of up to 129 points;
+  - choices and switches.
+  Where the texts are bare numbers, a unit can come from the name or description (`in ms`, `Attack ms`, `(1 ms – 4 s exponential)`, `0 = 0 dBFS, 60 = −60 dBFS`, `0=Sine, 1=Triangle…`), marked `confidence: description`. Descriptions whose anchors contradict the texts (`0 = slow (0.1 Hz)` over texts 0…100) give no unit. On the Neo machines, whose manifests are exact, the inference reproduces 460 of 461 parameters (the other is a two-value choice read as numbers).
+- **Generators.** An A4 sent as MIDI, then into the Note track parameter (or the other way round when the machine has no `MidiNote`); if both are silent, again with a sine rooted on A4 in wave slot 1 (samplers, trackers). The `pitch` metric on A3, A4 and A5 gives the pitch convention: an offset when all three agree within 0.6 semitones, else unpitched. Chords of 1, 2, 4 and 8 notes (a tritone, fourth or seventh apart) give the polyphony: each voice must add 1.5 dB. Then level, true peak and CPU.
+- **Effects.** A Neo Poly feeds it, with probes on both sides:
+  - white noise for 0.5 s: gain, latency (first sample), output correlation, spectrum change (third octaves, level-matched);
+  - a 20 ms noise click with 3 s to ring out: the tail (until 60 dB down) and echoes (from 60 ms on, a 10 dB rise from a dip);
+  - a 440 Hz sine at −6 and −26 dB: THD over the input's, level dependence, movement.
+
+  These give traits, the first of which is its type: delay (two echoes, or one after a near-silent gap), reverb (a long smooth tail), distortion, modulation, dynamics (level dependence, unless the output moves on its own), filter or EQ, stereo, utility. An effect that does nothing at its defaults is typed by its parameters' units (frequencies and gains: EQ; threshold or ratio: dynamics).
+- **Health.** Load failures, crashes and hangs, NaN or a runaway level (over +24 dBFS) at the defaults and with every parameter at its minimum and at its maximum, sound from silence, silence from a note. CPU is milliseconds of render time per second of audio over a render without the machine (rough: a few ms/s of noise).
+
+**Outputs.**
+
+| Output | What |
+|---|---|
+| `Machines/Manifests/<Generators\|Effects>/<Gear>.machine.json` | A draft per machine, in the manifest format plus: `status: draft`, `type`, `notes` (`input`, `pitch_offset`, `pitched`, `polyphony`), `health` (`status`, `problems`), `profile` (the measurements), `track_parameters` described in full, each parameter's `confidence`, and `kind: table` with `points` (`"-inf"` for −∞). Neo machines keep their generated manifests |
+| `Machines/Manifests/machine-profile.json` | The summary, keyed by gear: a run merges its machines into it and keeps the other platforms' |
+| `docs/machine-health.md` | Generated from the summary: unhealthy, warnings, generators, effects |
+
+`--repo .` writes all three. A Windows run's artifact merges in with `--merge <artifact folder> --repo .`, and `--report .` rewrites the report. The package job also prints its results into its log (`--pack`, gzipped base64 lines), and `--unpack <job log> --out <folder>` takes them back out where artifacts can't be fetched. Drafts keep the measurements, not the timings (CPU, load time vary run to run); the summary and the report have those. Render files are deleted once read.
+
+**Into Gear.** `ReBuzz.Host/AppGear.targets` (rebuzz-headless, the studio) and `build.ps1` step 5b (ReBuzz.exe's bin and the package, through `Copy-IntoGear`) copy the drafts beside the DLLs. There `MachineManifest.PathFor` finds them as it finds the Neo ones. Drafts of machines a host doesn't have are copied too, and ignored.
+
+**The server.**
+- **Units.** Drafts map global and track parameters (`SongModel.Params`). A draft matches the machine's own texts first (`ParamInfo.TextsFirst`: "Off", "1/8"), then its mapping. `param_set` and `param_get` say `manifest: draft`. Values whose unit came from a description are `approximate`. `exact_units` stays for generated and curated manifests.
+- **Notes.** `notes_write`, `notes_read` and `notes_transform` go through `MachineNotes`. For `input: tracks` (from the manifest, or given), notes get a voice each (`TrackNotes.Allocate`), Note events go into the pattern's engine-played Note track columns, and offs at each end, a note to the pattern's end let go on its last tick. Velocity goes into a track parameter named like "velocity" if there is one. The track count rises when a chord needs it, in the same undo step. `pitch_offset` is added on the way in and taken off on the way out, so `notes_read` gives what was written. `apply_pitch_offset=false` and an explicit `input` are how the profiler measures. `midi_play` applies the offset too, and warns that live MIDI may not reach a tracks-only machine. `automation_read` leaves note columns out.
+- **`gear_list`** gives `type`, `summary`, `manifest` and `health` with `problems`: generated and curated first, then drafts, then the rest, unhealthy last. `machine_add` warns when the gear is unhealthy. `machine_describe` adds `gear_info` and `value_table`.
+- Songs: nothing a song saves changes meaning. Notes written to a tracks machine are ordinary Note column events (engine-played, as automation is), and an old song plays as it did. The Session View's piano roll edits MIDI columns, so it doesn't show them, and `notes_read` on such a machine doesn't show notes left in its MIDI column, which it never played.
+
+**Tests.**
+- `tools/test_machine_infer.py`: 24 inference cases from known tables.
+- `ReBuzz.AgentTests/DraftManifestTests.cs`: parsing, units through drafts, table mappings with −∞, texts first, voices, the track-note round trip, offsets and their limits.
+- `tools/headless-manifests.py`, in Fork CI on rebuzz-headless:
+  - Pedal SH101 plays A4 at 440 Hz through `notes_write` and is silent through MIDI alone;
+  - `notes_read` round-trips;
+  - a copy of the app with a +12 offset sends A5 and reads back A4;
+  - `param_set` in Hz, dB, ms, ratios and choices on Pedal EQ, MComp and Juno106;
+  - the unhealthy flags and warning; every Pedal machine has a manifest.
+- Fork CI also runs the profiler on every portable machine (artifact `machine-profile-linux`), and the package job on everything in ReBuzz.exe's Gear (artifact `machine-profile-windows`, never failing the job).
+
+**Found.** 108 machines: 29 on Linux (10 Neo, 19 Pedal) and 89 in the Windows package's Gear (quick build: the 73 upstream machines, ReBuzz's own and the Neo ones). `docs/machine-health.md` has them all.
+- **Notes.** Apart from the three Neo synths, no generator in the package plays a MIDI note: every Pedal synth and every native one takes notes only in its Note track parameter. Before U1, `notes_write` left all of them silent.
+- **Pitch conventions.** Most pitched generators play A4 at 440 Hz as written (offset 0). Three don't:
+  - **FSM Infector** and **kibibu Green Milk** play an octave low (offset +12);
+  - **KrimZon AY-3-8910** plays 13 semitones high (offset −13).
+  `notes_write` corrects all three through their drafts. Juno106 is 11 cents flat (its analog drift).
+- **Unhealthy** (listed last by `gear_list`, warned about by `machine_add`):
+  - **Pedal Plate** diverged at its default Decay (+26 dBFS on noise). Its modulated all-pass was fixed in P3 (studio-mvp.md S2), and it profiles clean since (a 2.5 s tail; typed "delay", a U2 check for reverb vs delay);
+  - **Jeskola Flanger** runs away with every parameter at its minimum or at its maximum, **Jeskola Bass** and **Joachims Hyperion** at their maximum;
+  - **Info** doesn't load headless.
+- **The server bug it found.** Jeskola Bass 2 and 3 and Joachims Neptune made `render` fail ("infinity cannot be written as JSON"). Fixed: levels and loudness write `"inf"`, and every tool result replaces non-finite numbers.
+- **Chords** through tracks are heard on Juno106, FM, Infector and the AY-3-8910. **Pedal M1** and **Pedal Tracker** play one voice of a chord: tier 3's multi-track note workaround.
+- **Silent at the defaults**:
+  - Pedal M1, Tracker and Matilde Tracker2 until wave slot 1 has a wave; Jeskola Tracker and Polac VSTi even then (a wave or plugin to choose);
+  - Rout 909, Jeskola Noise Generator, Trilok and Intoxicat ACloud15, which have no Note parameter (triggers: U2);
+  - the audio inputs, MIDI output and controllers, as expected.
+- **Effects** type as expected: delays (Jeskola Delay, Cross Delay, NiNjA dElaY, FSM PanzerDelay, Joachims Neptune), reverbs (Jeskola Reverb, Stereo Reverb, Raverb, Neo Verb), choruses and flangers as modulation, Neo Drive and Jeskola Distortion as distortion. Latencies: Neo Limiter 99 samples (lookahead), Neo Drive 62 (oversampling), Pedal Gate 37.
+- **Parameters.** 349 of the Pedal machines' 361 parameters got a mapping, 25 of them from descriptions; 580 of the Windows machines' 629. The rest have texts that say nothing (Drum Matrix's twelve "-" parameters).
+
+**Left for U2** (§12.7):
+- pitch where the analysis hears none at the defaults: Jeskola Bass 1–3, Oomek Aggressor 303 and Pedal FM sound but read as unpitched (offset 0 assumed);
+- triggers for generators without a Note parameter (Rout 909, Jeskola Noise Generator, Trilok), and choosing a wave or plugin (Jeskola Tracker, Polac VSTi);
+- per-parameter sweeps and suggested roles;
+- swept-sine and impulse responses (a test-signal source);
+- velocity response and envelope length;
+- denormal slowdowns;
+- whether `Work` reports silence (the engine doesn't expose it);
+- hiding unhealthy machines from `gear_list` by default. The Pedal check expects all 19 listed, so for now they are flagged and listed last.
+- `midi_play` into a tracks-only machine (it would set the Note parameter live).
 
 ## 13. Inventory notes (for implementers)
 

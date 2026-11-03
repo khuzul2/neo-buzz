@@ -71,7 +71,7 @@ namespace ReBuzz.Agent.Mcp
         public ToolError(string message) : base(message) { }
     }
 
-    public sealed class ToolResult
+    public sealed partial class ToolResult
     {
         public JsonObject? Structured { get; init; }
         public string Summary { get; init; } = "";
@@ -98,6 +98,8 @@ namespace ReBuzz.Agent.Mcp
 
         public JsonObject ToJson()
         {
+            // JSON has no infinities or NaN; a result that holds one would fail to serialize (§12.8).
+            if (Structured != null) Finite(Structured);
             var content = new JsonArray { new JsonObject { ["type"] = "text", ["text"] = Summary } };
             if (Structured != null)
                 content.Add(new JsonObject { ["type"] = "text", ["text"] = JsonRpc.Serialize(Structured) });
@@ -105,6 +107,36 @@ namespace ReBuzz.Agent.Mcp
             var o = new JsonObject { ["content"] = content, ["isError"] = IsError };
             if (Structured != null) o["structuredContent"] = Structured.DeepClone();
             return o;
+        }
+    }
+
+    public sealed partial class ToolResult
+    {
+        /// <summary>Replaces non-finite numbers in place: "inf" and "-inf" as text, NaN as null.</summary>
+        static void Finite(JsonNode node)
+        {
+            if (node is JsonObject o)
+            {
+                foreach (var key in o.Select(kv => kv.Key).ToList())
+                    if (o[key] is JsonNode child && !Replace(child, r => o[key] = r)) Finite(child);
+            }
+            else if (node is JsonArray a)
+            {
+                for (int i = 0; i < a.Count; i++)
+                    if (a[i] is JsonNode child && !Replace(child, r => a[i] = r)) Finite(child);
+            }
+        }
+
+        static bool Replace(JsonNode n, Action<JsonNode?> set)
+        {
+            if (n is not JsonValue v) return false;
+            double d;
+            if (v.TryGetValue(out double dv)) d = dv;
+            else if (v.TryGetValue(out float fv)) d = fv;
+            else return false;
+            if (double.IsFinite(d)) return false;
+            set(double.IsNaN(d) ? null : JsonValue.Create(d > 0 ? "inf" : "-inf"));
+            return true;
         }
     }
 

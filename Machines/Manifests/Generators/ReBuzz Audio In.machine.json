@@ -1,0 +1,50 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "ReBuzz Audio In",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "generator (silent at its defaults)",
+ "summary": "Generator (silent at its defaults) (profiled draft): no sound from a note at its defaults.",
+ "tracks": 0,
+ "notes": {
+  "input": "none"
+ },
+ "health": {
+  "status": "warn",
+  "problems": [
+   "no sound from a MIDI note at its defaults (it has no Note track parameter)"
+  ]
+ },
+ "profile": {
+  "extremes": {
+   "min": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   },
+   "max": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Bypass",
+   "name": "Bypass",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "choices": [
+    "no",
+    "yes"
+   ],
+   "description": "",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

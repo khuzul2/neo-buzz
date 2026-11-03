@@ -34,6 +34,17 @@
     <MSBuild Projects="$(MSBuildThisFileDirectory)..\ExternalMachines\portable\Pedal.proj" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
   </Target>
 
+  <!-- The profiled draft manifests (docs/specs/mcp-server.md §12.2: Machines/Manifests/<Generators|Effects>,
+       written by tools/machine-profiler.py) beside the machines' DLLs, where the agent server looks for
+       "<Gear>.machine.json". Drafts of machines that aren't here (Windows natives) are copied too and
+       ignored. The Neo machines' generated manifests come with their builds and are never replaced. -->
+  <Target Name="DraftManifests" AfterTargets="Build">
+    <ItemGroup>
+      <_DraftManifest Include="$(MSBuildThisFileDirectory)..\Machines\Manifests\**\*.machine.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_DraftManifest)" DestinationFiles="@(_DraftManifest->'$(OutDir)Gear/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
   <!-- The Link helper, once built with CMake (LinkHelper/CMakeLists.txt, into build/LinkHelper), beside
        the app, where LinkClient looks for it (mac-engine.md M6). Without it, Link stays off. -->
   <Target Name="LinkHelper" AfterTargets="Build">

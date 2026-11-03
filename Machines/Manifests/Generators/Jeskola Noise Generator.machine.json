@@ -1,0 +1,98 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Jeskola Noise Generator",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "generator (silent at its defaults)",
+ "summary": "Generator (silent at its defaults) (profiled draft): no sound from a note at its defaults.",
+ "tracks": 8,
+ "notes": {
+  "input": "none"
+ },
+ "health": {
+  "status": "warn",
+  "problems": [
+   "no sound from a MIDI note at its defaults (it has no Note track parameter)"
+  ]
+ },
+ "profile": {
+  "extremes": {}
+ },
+ "parameters": [],
+ "track_parameters": [
+  {
+   "index": 0,
+   "id": "Attack",
+   "name": "Attack",
+   "group": "",
+   "min": 1,
+   "max": 65535,
+   "default": 16,
+   "kind": "linear",
+   "a": 0.001,
+   "b": 65.535,
+   "unit": "s",
+   "description": "Attack time in ms",
+   "confidence": "description"
+  },
+  {
+   "index": 0,
+   "id": "Sustain",
+   "name": "Sustain",
+   "group": "",
+   "min": 1,
+   "max": 65535,
+   "default": 16,
+   "kind": "linear",
+   "a": 0.001,
+   "b": 65.535,
+   "unit": "s",
+   "description": "Sustain time in ms",
+   "confidence": "description"
+  },
+  {
+   "index": 0,
+   "id": "Release",
+   "name": "Release",
+   "group": "",
+   "min": 1,
+   "max": 65535,
+   "default": 512,
+   "kind": "linear",
+   "a": 0.001,
+   "b": 65.535,
+   "unit": "s",
+   "description": "Release time in ms",
+   "confidence": "description"
+  },
+  {
+   "index": 0,
+   "id": "Color",
+   "name": "Color",
+   "group": "",
+   "min": 0,
+   "max": 4096,
+   "default": 4096,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 4096.0,
+   "description": "Noise color (0=black, 1000=white)",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Volume",
+   "name": "Volume",
+   "group": "",
+   "min": 0,
+   "max": 254,
+   "default": 128,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 254.0,
+   "description": "Volume [sustain level] (0=0%, 80=100%, FE=~200%)",
+   "confidence": "values"
+  }
+ ]
+}
