@@ -224,7 +224,7 @@ The null test (exit check 2) is M3's.
 - **No machine needed a fix, and nothing is excluded** (`EXCLUDED` in the script is empty).
 - **Found on the way:** a relative `--settings` folder made `render` fail (its file URI). `rebuzz-headless` now makes it absolute.
 
-**M6, MIDI and Link on macOS** .
+**M6, MIDI and Link on macOS.**
 - **The CoreMIDI binding** (`ReBuzz/Platform/CoreMidi.cs`, decision 7).
   - One client per process, made on a thread of its own that runs a CFRunLoop. CoreMIDI ties a process's notifications to the run loop of the thread that first calls it, even for a call that only counts devices. So the client is the first call, on that thread.
   - Endpoints carry CoreMIDI's display names. A client sees other processes' endpoints come and go as its run loop runs.
