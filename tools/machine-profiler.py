@@ -248,8 +248,12 @@ def finite_peak(measure):
 
 def blown(measure):
     """NaN, infinity or a level above +60 dBFS (a diverging machine reaches hundreds of dB). The
-    server writes a NaN peak as null and an infinite one as "inf"."""
+    server writes a NaN peak as null and an infinite one as "inf". Since the engine's guard
+    (docs/specs/machine-safety.md §3.2) no NaN or level above +60 dBFS reaches a render: the render
+    lists the machine under "diverged" instead (render() below marks the measure)."""
     m = measure or {}
+    if m.get("diverged"):
+        return True
     p = (m.get("peaks") or {}).get("sample_peak_dbfs")
     if p == "inf":
         return True
@@ -283,6 +287,8 @@ def peaks_per_second(path):
 def peak_text(measure):
     """A render's sample peak as words: "+157 dBFS", "infinite", "NaN"."""
     m = measure or {}
+    if m.get("diverged"):
+        return f"{m['diverged'][0] or 'diverged'}: the engine's guard caught it"
     p = (m.get("peaks") or {}).get("sample_peak_dbfs")
     if p == "inf":
         return "infinite peak"
@@ -352,6 +358,11 @@ def render(c, frm, to, tail, probes=None, name=None):
     t = time.time()
     r = c.call("render", timeout=max(c.timeout, 120), **args)
     r["_wall"] = time.time() - t
+    # The guard silenced and muted a machine that diverged (machine-safety.md §3.2): note it in the
+    # measure, for blown(), and reset the machine for the next render.
+    for d in r.get("diverged") or []:
+        r.setdefault("measure", {}).setdefault("diverged", []).append(d.get("reason"))
+        c.call("machine_set", machine=d.get("machine"), reset=True)
     # The WAVs are read here and then deleted (forget_renders): a run makes thousands.
     c.renders += [r.get("file")] + [p.get("file") for p in r.get("probes", [])]
     return r
@@ -769,39 +780,36 @@ class Bench:
                 return "error", {"error": str(e)[:200]}
             for ch, got in zip(changes, r.get("changed", [])):
                 self.texts[(ch["param"], ch.get("track"), ch["value"])] = got.get("value", "")
+        # The engine's guard (machine-safety.md §3.2) silences a machine whose block holds NaN, infinity or
+        # a peak above +60 dBFS, and render() resets it: the render lists it under "diverged" instead.
+        guard = []
         if changes:
             # Machines that smooth parameter changes only while sound flows (Neo Utility's gain) get there first.
-            render(c, 0, WARM_BEATS, 0.0)
+            guard += render(c, 0, WARM_BEATS, 0.0)["measure"].get("diverged") or []
         out = render(c, 0, LEVEL_BEATS, 0.0)
         self.renders += 1
+        guard += out["measure"].get("diverged") or []
         peaks, nonfinite = peaks_per_second(out["file"])
         verdict, facts = mi.level_verdict(peaks, nonfinite or (out["measure"].get("peaks") or {}).get("sample_peak_dbfs") == "inf")
-        if verdict == "growing" or mi.piling_up(verdict, facts):
+        if not guard and (verdict == "growing" or mi.piling_up(verdict, facts)):
             # Over 30 s: a runaway keeps growing; a lossless loop (feedback at ±100 %) piles noise up for good.
             longer = render(c, 0, CONFIRM_BEATS, 0.0)
             self.renders += 1
             peaks, nonfinite = peaks_per_second(longer["file"])
             verdict, facts = mi.growth_verdict(peaks, nonfinite)
             facts["over_seconds"] = round(CONFIRM_BEATS * 60 / TEMPO)
-            if verdict != "diverging" and mi.never_decays(peaks):
+            guard += longer["measure"].get("diverged") or []
+            if verdict != "diverging" and not guard and mi.never_decays(peaks):
                 facts["never_decays"] = True
         forget_renders(c)
-        if verdict != "diverging" and self.guard_tripped():
-            verdict, facts = "diverging", dict(facts, guard=True)
+        if guard:
+            verdict, facts = "diverging", dict(facts, guard=str(guard[0] or "diverged"))
         if verdict == "diverging":
             self.build()
         elif changes and reset:
             c.call("param_set", machine="M", changes=[{k: v for k, v in ch.items() if k != "value"} | {"value": "default"} for ch in changes],
                    allow_unsafe=True)
         return verdict, facts
-
-    def guard_tripped(self):
-        """The engine's guard (machine-safety.md §3.2) mutes a machine whose block runs away and marks it diverged."""
-        try:
-            d = self.c.call("machine_describe", machine="M")
-        except ToolFailed:
-            return False
-        return bool(d.get("diverged") or (d.get("machine") or {}).get("diverged"))
 
     def text(self, change):
         return self.texts.get((change["param"], change.get("track"), change["value"]), change["value"])
@@ -813,7 +821,7 @@ def describe_level(verdict, facts):
     if facts.get("nonfinite"):
         return "NaN or infinity"
     if facts.get("guard"):
-        return "the engine's guard tripped"
+        return f"{facts['guard']}: the engine's guard caught it"
     peak = "infinite" if p == "inf" else "silent" if p is None else f"{p:+.1f} dBFS peak"
     if facts.get("over_seconds") and p is not None and p != "inf":
         peak += f" over {facts['over_seconds']} s"

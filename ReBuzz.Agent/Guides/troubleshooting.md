@@ -9,7 +9,7 @@ Reproduce, measure, isolate, fix one thing, measure again. Each section: what yo
 1. Placed in the range? `arrangement_get(from=…, to=…)`. A pattern only plays where it is placed, and the render's range must cover it.
 2. Notes in the pattern? `pattern_list(machine=…)`, `notes_read(machine=…, pattern=…)`. Notes past the pattern's end are dropped (`notes_write` lists them under problems).
 3. A path to Master? `machine_list`: follow the connections; a gain of −inf is silence. An effect with nothing feeding it is silent.
-4. Muted or soloed? `machine_list` shows both; `machine_set(machine=…, mute=false)`. A render's own `solo` list silences the other generators for that render.
+4. Muted or soloed? `machine_list` shows both; `machine_set(machine=…, mute=false)`. A render's own `solo` list silences the other generators for that render. A machine marked `diverged` was muted by its guard: see "A diverged machine".
 5. The sound itself: `param_get(machine=…)`. Look for `Volume` at -inf, oscillator levels at 0 % (Neo Poly O1–O3, Neo Wave A and B), amp sustain 0 % with a very short decay, a filter cutoff near 20 Hz, Neo FM6 carriers at level 0 or switched off (`Op1 on`).
 6. Does the machine play notes at all? See "Machines that don't play notes".
 7. Effects: Neo Verb with `Freeze` On takes no new input. Neo Comp with `Sidechain` External still needs its main input. `Mix` 0 % on an effect passes the dry sound (quiet effect, not silence).
@@ -29,6 +29,14 @@ Reproduce, measure, isolate, fix one thing, measure again. Each section: what yo
   - Neo FM6 with feedback 7 on loud operators.
 - Fix at the source: `param_set` on its `Volume`, or its connection gain with `connection_set`. When the whole master is too hot, lower every connection into Master by the same dB in one call.
 - Renders are 32-bit float, so the WAV keeps peaks above 0 dBFS, but every export and playback clips them: treat anything above 0 as clipped, and keep the master's true peak at −6 dBTP or lower before mastering.
+- Live, a safety limiter on the audio output keeps the speakers under its ceiling (0 dBFS by default), and the master's clip indicator keeps the highest over: `meters_read` reports both under `safety`, and `meters_read(clear_clip=true)` starts it over. Renders get the true signal: fix the mix, not the limiter.
+
+## A diverged machine
+
+`studio_status` lists it under `safety.diverged`, `machine_list` marks it `diverged`, or a render warns: its output went to NaN, infinity or above +60 dBFS, so the guard silenced, stopped and muted it. The rest of the song plays on.
+
+- Usual causes: a feedback or resonance parameter at its end (a flanger's feedback at ±100 %), every band of a graphic EQ at full boost, a filter driven unstable.
+- Fix: pull that parameter back with `param_set`, then `machine_set(machine=…, reset=true)` and render again. If it is still broken, the guard trips again; nothing reaches the speakers.
 
 ## Phase and mono
 

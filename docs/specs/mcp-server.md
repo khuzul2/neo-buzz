@@ -208,7 +208,7 @@ Phases (§9) are marked A1 … A7.
 
 | Tool | Phase | Purpose |
 |---|---|---|
-| `studio_status` | A1 | Song name and path, tempo, beats per bar, length, loop, sample rate, mode (studio/headless), transport, counts, unsaved changes, what undo would undo. The first call of every session |
+| `studio_status` | A1 | Song name and path, tempo, beats per bar, length, loop, sample rate, mode (studio/headless), transport, counts, unsaved changes, what undo would undo. The first call of every session. `safety` ([machine-safety.md](machine-safety.md) §3.6): whether the machine guard is on, the diverged machines (reason, time, song position), the safety limiter (on, ceiling, whether it acted since the clip indicator was cleared) and the clip indicator (threshold, latched over) |
 | `guide` | A1 | Returns a guide by topic (`workflow`, `concepts`, `composition`, `sound-design/neo-poly`, `mixing`, `mastering`, …). Same content as the resources and prompts (§6), for clients that only use tools |
 | `undo`, `redo` | A1 | One agent call at a time; returns what was undone or redone |
 
@@ -226,10 +226,10 @@ Phases (§9) are marked A1 … A7.
 | Tool | Phase | Purpose |
 |---|---|---|
 | `gear_list` | A1, U1, U2 | Available machines: name, generator/effect, type and a one-line description (from the manifest), manifest quality (generated, curated, profiled draft), health, preset count. Filter by kind or text. U2 (machine-safety.md §3.1): health says diverging (`diverging: true`), hot (a warning naming the setting) or `needs_window` ("works in ReBuzz on Windows with its window"); each parameter's `safe_ranges`. Order: exact units, drafts, the rest, machines that need a window, unhealthy last |
-| `machine_list` | A1 | The song's machines: gear, inputs and outputs with gain dB and pan, mute/solo/bypass, tracks, latency |
+| `machine_list` | A1 | The song's machines: gear, inputs and outputs with gain dB and pan, mute/solo/bypass, tracks, latency; `diverged`, `diverged_at` and `diverged_reason` when the guard tripped (machine-safety.md §3.2) |
 | `machine_add` | A1, U2 | Adds a machine from the gear list; optional name, track count, preset, and where to connect it (`"Master"`, or between two machines). Returns its name and its parameter summary. U2: a warning only for diverging gear, naming its safe ranges (not for hot machines, nor for other problems in a profile); gear that needs a window says so when it can't be built |
 | `machine_remove` | A1 | Deletes machines; reconnects the chain around effects when asked |
-| `machine_set` | A1 | Rename, mute, solo, bypass, track count |
+| `machine_set` | A1 | Rename, mute, solo, bypass, track count. `reset: true` is Reset and unmute for a diverged machine (machine-safety.md §3.2); `mute: false` does the same |
 | `connect`, `disconnect` | A1 | Audio connections with gain dB and pan; `input: "sidechain"` for machines with a second input (Neo Comp) |
 | `connection_set` | A1 | Gain and pan of existing connections, in a batch |
 | `machine_replace` | A4 | Swaps a machine for another (a classic for its Neo successor, §12.5), keeping connections and patterns. Maps parameters through manifest roles and units, then renders before and after and reports the difference |
@@ -238,7 +238,7 @@ Phases (§9) are marked A1 … A7.
 
 | Tool | Phase | Purpose |
 |---|---|---|
-| `machine_describe` | A1, U1 | Everything about one machine:<br>• parameters by group, each with name, current value (text, number and unit), range, default and description<br>• track parameters<br>• the manual link (Neo)<br>• presets and commands<br>• `gear_info` (U1): its DLL under Gear, track range, Note track parameter, whether it takes MIDI (managed machines), the manifest's note input and pitch offset<br>• `value_table=true` (U1): each parameter's value texts across its range, every value up to 256 values, else `table_points` (default 1025) evenly spaced, with its raw range and default. What the profiler infers units from; agents can read an unlabelled machine with it<br>• `safe_range` (U2, machine-safety.md §3.4): where a parameter was found to diverge, the range `param_set` keeps to (the machine's texts, raw values and why); the health with `diverging`, `hot` and `needs_window` |
+| `machine_describe` | A1, U1 | Everything about one machine:<br>• parameters by group, each with name, current value (text, number and unit), range, default and description<br>• track parameters<br>• the manual link (Neo)<br>• presets and commands<br>• `gear_info` (U1): its DLL under Gear, track range, Note track parameter, whether it takes MIDI (managed machines), the manifest's note input and pitch offset<br>• `value_table=true` (U1): each parameter's value texts across its range, every value up to 256 values, else `table_points` (default 1025) evenly spaced, with its raw range and default. What the profiler infers units from; agents can read an unlabelled machine with it<br>• `safe_range` (U2, machine-safety.md §3.4): where a parameter was found to diverge, the range `param_set` keeps to (the machine's texts, raw values and why); the health with `diverging`, `hot` and `needs_window`<br>• `machine.diverged`, `diverged_at`, `diverged_reason` when its guard tripped (machine-safety.md §3.2) |
 | `param_set` | A1, U2 | Many changes in one call, global or per track. Each change is `value` (in units, §3.3), `by` (relative, in units) or `times` (a factor). Returns the values as the machine now describes them; with a draft manifest (U1) it says so, and marks values whose unit came from a description as approximate. U2 (machine-safety.md §3.4): a value outside the parameter's `safe_range` refuses the whole call with the reason, unless `allow_unsafe: true`, which sets it and marks the change `unsafe` with why. People keep the full range in every UI |
 | `param_get` | A1 | Current values (a subset, or all) |
 | `preset_list`, `preset_load`, `preset_save` | A2 | ReBuzz presets (the factory `.prs.xml` files and the user's own) |
@@ -275,7 +275,7 @@ Phases (§9) are marked A1 … A7.
 
 | Tool | Phase | Purpose |
 |---|---|---|
-| `render` | A1 | Renders faster than real time:<br>• **range:** beats/bars, a marker, the loop, a pattern played alone, or seconds<br>• **mix overrides:** solo, mute and bypass lists that do not touch the song<br>• **probes:** any machines' outputs, captured alongside the master<br>Returns a render id, WAV resource links, duration, and a loudness and peak summary. A task when long |
+| `render` | A1 | Renders faster than real time (the true signal: the safety limiter is on the audio device only; a machine whose guard trips stays muted, listed under `diverged` with a warning):<br>• **range:** beats/bars, a marker, the loop, a pattern played alone, or seconds<br>• **mix overrides:** solo, mute and bypass lists that do not touch the song<br>• **probes:** any machines' outputs, captured alongside the master<br>Returns a render id, WAV resource links, duration, and a loudness and peak summary. A task when long |
 | `analyze` | A1/A2 | Measures a render, a probe or a file, by metric:<br>• `loudness`: integrated, short-term max, momentary max LUFS, loudness range<br>• `peaks`: true peak dBTP, sample peak, clipping count<br>• `dynamics`: crest factor, PLR, RMS over time<br>• `spectrum`: per third-octave and per band (sub, low, low-mid, mid, high-mid, presence, air), centroid, tilt<br>• `stereo`: correlation, width per band, mono compatibility<br>• `pitch`: fundamental and cents over time (monophonic)<br>• `key`; `tempo` and onsets<br>Numbers come with plain-language reads ("tilt −4.2 dB/oct: dark") |
 | `analyze_mix` | A2 | One render with a probe on every machine feeding the mix:<br>• per track: loudness, peak, spectrum bands, crest<br>• a masking table: which pairs fight in which bands, how much<br>• headroom and the master's measures<br>• a short list of the biggest problems |
 | `compare` | A2 | Two sources (two renders, a render and a reference file, before/after snapshots): differences per band, loudness, dynamics and stereo |
@@ -286,7 +286,7 @@ Phases (§9) are marked A1 … A7.
 
 | Tool | Phase | Purpose |
 |---|---|---|
-| `meters_read` | A7 | Live peak and loudness of the master and chosen machines while the user plays the song, over a window (§3.5: subscriptions not built) |
+| `meters_read` | A7 | Live peak and loudness of the master and chosen machines while the user plays the song, over a window (§3.5: subscriptions not built). Measured before the safety limiter; `safety` gives the master's latched over and whether the limiter acted during the window, and `clear_clip` clears the indicator first (machine-safety.md §3.3) |
 | `machine_readings` | A7 | Values an analysis machine shows (Neo Analyzer: spectrum, LUFS, correlation), from wherever the user put it |
 
 ## 6. Guides: prompts, resources and the `guide` tool
