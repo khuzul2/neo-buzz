@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Planned 2026-11-03. P2 done (mac-engine.md) except the user's hands-on Mac test |
+| Status | S0–S9 built 2026-11-03 (§7). The exit test passes headless on Linux and arm64, and the A7 live scenarios pass against the studio app on Linux (Xvfb) and against ReBuzz.app on macOS CI. Left: the user's hand test on a Mac (§5), and P2's hands-on test (mac-engine.md) |
 | Scope | cross-platform.md §5.2 P3: ReBuzz's studio UI on Avalonia, Mac first. Windows keeps the WPF app until P4 |
 | Exit | On a Mac: compose a song from scratch with Neo and Pedal machines; old songs open (native machines as placeholders) and save back without loss; the MCP server works in studio mode |
 | Related | cross-platform.md (D1–D5, §3.1 O2), mac-engine.md (the engine on macOS), machines.md §4 (the Neo editor kit), session-view.md (the Session View) |
@@ -377,7 +377,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - *Saved and reopened:* ⇧⌘/Ctrl+Shift+S as BMXML and BMX, ⌘/Ctrl+N, ⌘/Ctrl+O each. The same machines (gear, place, tracks, data, every state parameter), wires (amp, pan), patterns (the editor's events and the engine's columns), pattern editors' data, sequences, markers, tempo and session slots. The same play renders bit-identical samples.
   - Screenshots: `exit-1-empty` to `exit-11-reopened-bmx`.
 - **Old songs** (the same test class): the 37 Buzz songs in the repository (the machines' demos and bmxplay's), made on Windows, open through File ▸ Open.
-  - 35 open. Every native machine is a placeholder ("missing"); the machine view, the sequence editor, the Pattern tab (the converted patterns in the Modern Pattern Editor) and the Session View show them.
+  - 35 open. Every native machine is a placeholder ("missing"); the machine view, the sequence editor, the Pattern tab (F2: the pattern it names in the Modern Pattern Editor, the old patterns converted) and the Session View show them.
   - Each is saved as BMX and BMXML, reopened and saved again. `song-roundtrip.py --compare`, the tool's own checks on saves made elsewhere, finds the two saves the same and nothing lost.
   - Two (FSM Kick's, Makk M4's) have no PARA section and don't open, as on Windows without those machines.
   - None of them has pattern editor data (they predate it). `--windows-style` writes Modern Pattern Editor data, in the editor's format, into the richest one; it opens in the studio and saves byte for byte both ways (`--check-windows-style`).
@@ -390,4 +390,5 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 - **Found:**
   - **BMXML songs replay their stateless values when they open** (the engine, Windows too). `BMXMLFile.CopyParameters` gives each machine the last saved value of every parameter, notes included; BMX's loader (`BMXFile.CopyParameters`) gives state parameters only, as Buzz does. So a song saved after playing opens with its last note sounding until a note-off comes. The fix is one condition there (state, not a note, not the input group), but it changes Windows' engine, so it is left to the user. The test sets those values to "no value" before saving.
   - A machine's pattern editor without patterns (Master's, made when Master is selected) isn't in a BMX file, which links editors through patterns; BMXML keeps it. Nothing is lost.
+  - **Fixed in the studio:** after a song opened, F2 showed the Pattern tab naming a pattern above an empty page, until another pattern was picked. The loader sets several patterns and machines in a row, and the last editor it hands over can be another machine's, or none. Now the page follows the engine's pattern when its update runs, and asks the engine for that pattern's editor when another one, or none, is showing (`PatternPage.ShowPatternsEditor`; only the newest page asks, so two windows' pages can't take it from each other forever).
 - **Not done:** the hand test (§5). No real Windows song with pattern editor data was available (the Windows-style one is built from the editor's format code).

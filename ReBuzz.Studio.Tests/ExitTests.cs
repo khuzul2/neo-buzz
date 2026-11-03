@@ -653,6 +653,12 @@ namespace ReBuzz.Studio.Tests
                     Key(window, PhysicalKey.F4);
                     var sequence = (SequenceView)((TabItem)window.Tabs.SelectedItem!).Content!;
                     Assert.That(sequence.Canvas.Rows, Is.EqualTo(Core.Song.Sequences.Count), $"{name}: the arrangement's tracks");
+                    // F2: the Pattern tab, as the song left it. A pattern it names is the one its editor shows.
+                    Key(window, PhysicalKey.F2);
+                    Assert.That(((TabItem)window.Tabs.SelectedItem!).Header, Is.EqualTo("Pattern"));
+                    var page = PatternView.Page;
+                    if (page.Pattern != null)
+                        Assert.That(page.EditorControl, Is.Not.Null, $"{name}: the Pattern tab names {page.Machine?.Name}'s {page.Pattern.Name}, and shows its editor");
                     var patterned = Core.Song.Machines.FirstOrDefault(m => m.Patterns.Count > 0 && !((MachineCore)m).Hidden && m.DLL.Info.Type != MachineType.Master);
                     if (patterned != null)
                     {
