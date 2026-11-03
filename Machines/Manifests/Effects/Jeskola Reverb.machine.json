@@ -8,8 +8,11 @@
  "summary": "Reverb (profiled draft): traits: reverb; tail 0.7 s; latency 0 samples; gain +6.2 dB at the defaults.",
  "tracks": 0,
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "warn",
+  "problems": [
+   "hot (loud but steady) with Rev Out at its maximum (0.0dB): +3.3 dBFS peak; ER Out at its maximum (0.0dB): +2.3 dBFS peak"
+  ],
+  "hot": true
  },
  "profile": {
   "effect": {
@@ -39,14 +42,46 @@
     "reverb"
    ]
   },
-  "extremes": {
-   "min": {
-    "silent": true,
-    "sample_peak_dbfs": null
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -2.26,
+    "growth_db": -0.63,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": -17.27
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    },
+    "max": {
+     "peak_dbfs": 12.28,
+     "growth_db": -0.43,
+     "verdict": "hot"
+    }
+   },
+   "swept_because": [
+    "every parameter at its maximum at once: hot"
+   ],
+   "renders": 12
+  },
+  "sweeps": {
+   "Rev Out": {
+    "max": {
+     "peak_dbfs": 3.27,
+     "growth_db": -0.15,
+     "verdict": "hot",
+     "raw": 4096,
+     "text": "0.0dB"
+    }
+   },
+   "ER Out": {
+    "max": {
+     "peak_dbfs": 2.34,
+     "growth_db": 0.95,
+     "verdict": "hot",
+     "raw": 4096,
+     "text": "0.0dB"
+    }
    }
   }
  },

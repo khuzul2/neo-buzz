@@ -24,14 +24,20 @@
    "sample_peak_dbfs": -12.71,
    "true_peak_dbtp": -12.71
   },
-  "extremes": {
-   "min": {
-    "silent": true,
-    "sample_peak_dbfs": null
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -12.71,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": -11.87
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    },
+    "max": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    }
    }
   }
  },

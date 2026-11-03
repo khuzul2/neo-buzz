@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-03: H1 a global safeguard for every machine, plus a safety limiter on the master output with a clip indicator; H2 A; H3 A; H4 A. **§3.2 and §3.3 built** (§3.6) |
+| Status | Decided 2026-11-03: H1 a global safeguard for every machine, plus a safety limiter on the master output with a clip indicator; H2 A; H3 A; H4 A. **§3.2 and §3.3 built** (§3.6); §3.1 and §3.4 built 2026-11-03 (U2 health) |
 | Scope | What the profiler's "unhealthy" means; how ReBuzz keeps any machine from blowing up the song or the speakers; how agents stay in safe ranges; which machines get Neo successors |
 | Related | mcp-server.md §12 (machine upgrades U1–U7, `docs/machine-health.md`), machines.md (Neo machines), studio-mvp.md (the studio), daw-modes.md (AR0 runs beside this), plugin-host.md (plugins get the same guard) |
 
@@ -41,6 +41,35 @@ The 14 warnings are mostly the profiler's own limits: drum machines played by tr
   - *needs a window:* a managed machine whose construction fails without a UI (WPF types in the exception, or a known GUI-only machine): its own status, not unhealthy, and `gear_list` says "works in ReBuzz on Windows with its window".
 - **`safe_range` per parameter** in the draft (min and max raw values) where a sweep finds the edge, with the reason ("feedback at ±100 % diverges").
 - Re-profile the natives in the Windows package run and the Pedal machines on Linux; `docs/machine-health.md` shows the three categories.
+
+**Built** (2026-11-03, `tools/machine-profiler.py`). A *level test* renders 4 s of the machine alone: effects fed white noise from a Neo Poly (peaks near −9 dBFS), generators holding A4 as they take notes. It runs at the defaults, with every global parameter at its minimum and at its maximum at once, and, for machines that misbehave that way (diverging or hot) and effects with a feedback, resonance, gain or Q parameter, each parameter alone at each end (global and track parameters). Details:
+
+- Each change gets a 0.5 s render first, so machines that smooth a parameter only while sound flows (Neo Utility's gain) get there before the test.
+- A level that grew over 4 s is rendered again for 30 s: an attack settles; a runaway keeps growing (the last 10 s more than 6 dB over the 10 s before). A long attack at its maximum (Neo Wave's, with every parameter at its maximum) otherwise reads as growth.
+- With the engine's guard (§3.2, §3.6) no NaN or level above +60 dBFS reaches a render: `render` lists the machine as diverged, the profiler counts it as diverging (with the guard's reason) and resets it (`machine_set(reset=true)`).
+- **Never decays** (decided after the first run): a steady end whose level still rose 2 dB or more over the 4 s render is rendered for 30 s; when its peak rises 2 dB or more per doubling of time from 4–8 s to 8–16 s and again to 16–30 s, the loop never decays (a lossless loop, feedback at ±100 %). That end gets a safe range too, for agents, with the reason "never decays"; the machine stays hot (a warning), not unhealthy.
+- Where an end diverges, never decays or crashes the server, a bisection from the default finds the edge: the draft's `safe_range` (raw `min`, `max`, the machine's texts there and the reason). A render that diverges leaves the machine's state running away, so the song is built again after one.
+- A machine that diverges at its defaults is tried in a second fresh instance, which tells a fault from one that varies with uninitialised state.
+- *Needs a window:* WPF names in the exception (the server now reports the cause inside reflection's TargetInvocationException), or a known GUI-only machine (Info).
+- The drafts carry `health.diverging`, `health.hot`, `health.needs_window`, `profile.level_test` and `profile.sweeps`. Neo machines keep their generated manifests: their findings are in the summary and the report only.
+
+What it found (89 machines on Windows, 29 on Linux, with the guard on; `docs/machine-health.md`: 4 diverging, 39 hot, none needing a window, 5 safe ranges):
+
+| Machine | Expected (§1) | Found |
+|---|---|---|
+| Jeskola Flanger | Diverges at feedback ±100 % | **Diverges at +100 %** (the guard trips at +60 dBFS); `safe_range` −100 % … 98.4 %. At −100 % alone it is hot (+24 dBFS) and settles over 30 s, so it keeps that end. With every parameter at its minimum at once (−100 % feedback, no delay) it diverges: a warning, as no single range covers a combination |
+| Joachims Hyperion | Hot or diverging per band | **Hot per band**: each band at +18 dB alone peaks at +3 to +7 dBFS; no band diverges. Every band at +18 dB at the widest bandwidth at once: +226 dBFS before the guard, a warning (the test, not the machine) |
+| Jeskola Bass | Hot | **Hot**: Resonance at its maximum, +16 dBFS. At its defaults it peaks at 0.0 dBFS |
+| Info | Needs a window | **Healthy since a theme fix.** It builds itself from `Themes/<theme>/Gear/Info/RTFBoxInfo.xaml`, falling back to the Default theme's, but only Mire (extended) had one: under the Default theme it failed on that file (`WebException: Could not find a part of the path …RTFBoxInfo.xaml`), not for want of a window. With the Mire (extended) theme's `Gear/Info` folder copied into `RunTime/Themes/Default` (which the build copies whole), it loads in `ReBuzz.exe --agent` and profiles clean: a control machine (its own flag) with no audio output |
+
+Found besides:
+
+- **Joachims Neptune 1.2** puts out infinity with Threshold at its minimum (−100 dB): `safe_range` from −97.7 dB. With every parameter at its minimum it puts out NaN (U1 read that as silence). The server bug U1 found, infinities in `render`'s JSON, came from this.
+- **Jeskola Delay** never decays with Feedback at −100 % (+30 dBFS after 30 s and rising): `safe_range` −98.4 % … 100 %, hot. At +100 % it settles; so do Jeskola Cross Delay, NiNjA dElaY, Chorus, Flanger and FSM PhatMan at both ends (hot, no range).
+- **FSM WahPro2** put out infinity on noise at its defaults in one run and was clean in the others (U1's and two since): it varies from instance to instance. Hot now, no range.
+- **Pedal Plate** diverges with Feedback above 78 (at its maximum, 95, the guard trips): the outer feedback around its Dattorro tank, whose output taps sum to more than 1/Feedback. `safe_range` 0–78. Its Decay is fine since its P3 fix.
+- **Neo Verb** diverges with High damping below 1.17 kHz. Its lines are scaled so the decay is exact at 1 kHz, dividing out the high shelf's gain there; with the shelf's corner near 1 kHz that lifts the band below it over unity. Its generated manifest has no `safe_range`; the source fix is in a machines PR, as is Pedal Plate's.
+- **Hot**, a warning naming the settings: most gains, makeups and outputs at their maximum (Neo EQ, Comp, Drive, Utility, Pedal EQ, MComp, Shaper, Jeskola EQ-3, Gain…), Jeskola Filter and Filter 2 with Resonance at its maximum (+44 dBFS), the delays and choruses with feedback at ±100 %, and a few at their defaults (Jeskola Distortion +6 dBFS, FSM WahManPro +7, WahMan, NiNjA dElaY, Chorus, Flanger, Organ).
 
 ### 3.2 Layer 2: a guard on every machine (engine, Windows and macOS)
 
@@ -97,6 +126,13 @@ The final output to the audio device gets a **safety limiter**:
 - `param_set` keeps an agent inside a parameter's `safe_range` (from the draft or a curated manifest). Outside it the call is refused with the reason, unless the agent passes `allow_unsafe: true`. People keep the full range in every UI.
 - `gear_list` and `machine_describe` show the safe ranges; `machine_add` warns only for diverging machines.
 
+**Built** (2026-11-03). `safe_range` is read from any manifest (`ManifestParameter.SafeRange`), so curated ones can carry it too.
+
+- `param_set` and `automation_write` (decided after the first run: every agent tool that writes parameter values) refuse a value outside the range: the whole call fails, nothing changes, and the error names the value, the range in the machine's texts and raw values, and the reason ("Feedback = 95 (raw 95) is outside its safe range, 0 … 78 (raw 0–78): it diverges at its maximum (95: …). Choose a value inside it, or pass allow_unsafe=true…"). With `allow_unsafe: true` the value is set and the change marked `unsafe` with why (`automation_write`: a problem line). A ramp between two safe points stays inside. Presets, snapshots and machine data imports are left as they are.
+- `machine_describe` gives each ranged parameter a `safe_range` (`range`, `min_raw`, `max_raw`, `reason`), and the health its `diverging`, `hot` and `needs_window`. `gear_list` adds `safe_ranges`, `diverging` and `needs_window` ("Works in ReBuzz on Windows with its window…"), and lists machines that need a window after the drafts and before the unhealthy ones. The machine manual (`guide(machine=…)`) has a "Safe ranges" section, and the troubleshooting guide says what the categories mean.
+- `machine_add` warns only for diverging gear, naming its safe ranges. Gear that needs a window says so when it can't be built.
+- Safe ranges now: Jeskola Flanger (feedback, +100 %), Joachims Neptune 1.2 (Threshold, −100 dB), Pedal Plate (Feedback above 78), Jeskola Delay (Feedback at −100 %, never decays). Not Neo Verb: its manifest is generated (its source fix is in a machines PR). Above all of them the guard (§3.2) stops what gets through.
+
 ### 3.5 Song Notes (H3)
 
 - A **Song Notes** panel in the studio (a tab or a side panel): rich text (bold, italic, lists, links), saved in the song as a "SongNotes" subsection, in .bmx and .bmxml.
@@ -120,5 +156,5 @@ The final output to the audio device gets a **safety limiter**:
 - The null test and the bit-identical render tests stay byte-equal with the guard and limiter on.
 - 0 bytes allocated per buffer with the guard and limiter on (the 0.4.1 allocation test).
 - The limiter: a +12 dBFS sine reaches the device at no more than the ceiling; the clip indicator latches +12 dB; a render of the same song still measures +12 dBFS.
-- The profiler: Jeskola Flanger diverging at feedback ±100 % (its `safe_range` excludes both ends); Hyperion hot or diverging per band; Jeskola Bass hot; Info "needs a window".
+- The profiler: Jeskola Flanger diverging at feedback ±100 % (its `safe_range` excludes both ends); Hyperion hot or diverging per band; Jeskola Bass hot; Info "needs a window". *Built:* the Windows package run and Fork CI profile them, `tools/test_machine_infer.py` tests the categories and the edge's bisection, `DraftManifestTests` the parsing, `param_set`'s refusal and the statuses, and `tools/headless-manifests.py` the tools end to end (Pedal Plate's real range; synthetic ones in an app copy). Found: the Flanger diverges at +100 % only, and Info is healthy since its theme fix (§3.1).
 - Song Notes round-trips in both formats; an Info machine's text is imported and the song saves back byte-equal in its core sections.

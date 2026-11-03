@@ -395,3 +395,146 @@ def agrees(entry, manifest_param, table):
         if got is None or math.isinf(got) or abs(got - p[0]) > max(1.2 * _resolution(p), 0.01 * abs(p[0]), 1e-9):
             return False
     return True
+
+
+# ------------------------------------------------------------------ health (U2)
+# docs/specs/machine-safety.md §3.1: what a level test's render says. A machine is "diverging" when
+# its output runs away (NaN or infinity, above +60 dBFS, or still growing), "hot" when it is loud but
+# steady (above 0 dBFS, under +60), and "needs a window" when it can't be built without its UI.
+
+DIVERGE_DBFS = 60.0         # 1000 × full scale: nothing musical gets there (the engine guard's trip, §3.2)
+HOT_DBFS = 0.0
+GROWTH_DB = 6.0             # the last second louder than the second by more than this: growing
+
+
+def dbfs(x):
+    return 20 * math.log10(x) if x > 0 else -math.inf
+
+
+def level_verdict(peaks, nonfinite=False):
+    """
+    (verdict, facts) for a render's per-second peaks (linear, full scale 1.0; a 4 s render gives 4):
+    "diverging" (NaN or infinity, or a peak above +60 dBFS), "growing" (the last second more than
+    6 dB louder than the second, and still rising: confirm with a 30 s render, growth_verdict),
+    "hot" (above 0 dBFS, steady), "silent" or "ok". facts has peak_dbfs and growth_db.
+    """
+    peak = max(peaks) if peaks else 0.0
+    facts = {"peak_dbfs": "inf" if nonfinite else _round_db(dbfs(peak))}
+    if nonfinite:
+        facts["nonfinite"] = True
+        return "diverging", facts
+    if len(peaks) >= 3 and peaks[1] > 1e-5 and peaks[-1] > 0:
+        growth = dbfs(peaks[-1]) - dbfs(peaks[1])
+        facts["growth_db"] = _round_db(growth)
+        if dbfs(peak) <= DIVERGE_DBFS and growth > GROWTH_DB and peaks[-1] >= peaks[-2]:
+            return "growing", facts
+    return _steady(peak), facts
+
+
+def growth_verdict(peaks, nonfinite=False):
+    """
+    The longer render (30 s) for a level that grew over 4 s: still diverging when its last third
+    peaks more than 6 dB above its middle third (a loop that never settles), else an attack or a
+    slow build that settled: hot, ok or silent by its peak.
+    """
+    peak = max(peaks) if peaks else 0.0
+    facts = {"peak_dbfs": "inf" if nonfinite else _round_db(dbfs(peak))}
+    if nonfinite:
+        facts["nonfinite"] = True
+        return "diverging", facts
+    third = max(1, len(peaks) // 3)
+    middle, last = max(peaks[third:2 * third] or [0.0]), max(peaks[2 * third:] or [0.0])
+    if middle > 0 and last > 0:
+        facts["growth_db"] = _round_db(dbfs(last) - dbfs(middle))
+    if dbfs(peak) > DIVERGE_DBFS or (middle > 1e-5 and dbfs(last) - dbfs(middle) > GROWTH_DB):
+        return "diverging", facts
+    return _steady(peak), facts
+
+
+PILE_UP_DB = 2.0            # dB per doubling of time: a loop that never decays piles its input up
+
+
+def piling_up(verdict, facts):
+    """A steady verdict whose level still rose over the 4 s render by 2 dB or more (second to last second, a
+    doubling of time): look again over 30 s, for a loop that never decays."""
+    g = facts.get("growth_db")
+    return verdict in ("hot", "ok") and isinstance(g, (int, float)) and g >= PILE_UP_DB
+
+
+def never_decays(peaks):
+    """
+    Over a 30 s render's per-second peaks: a lossless loop (feedback at ±100 %) never decays, so noise
+    fed into it piles up, about 3 dB per doubling of time, for good. True when the peak rises by 2 dB
+    or more from 4–8 s to 8–16 s and again to 16–30 s; a loop that decays settles instead.
+    """
+    if len(peaks) < 24:
+        return False
+    a, b, c = max(peaks[4:8]), max(peaks[8:16]), max(peaks[16:])
+    if a <= 1e-5 or b <= 0 or c <= 0:
+        return False
+    return dbfs(b) - dbfs(a) >= PILE_UP_DB and dbfs(c) - dbfs(b) >= PILE_UP_DB
+
+
+def _steady(peak):
+    db_ = dbfs(peak)
+    if db_ > DIVERGE_DBFS:
+        return "diverging"
+    if db_ > HOT_DBFS:
+        return "hot"
+    return "silent" if peak <= 1e-5 else "ok"
+
+
+def _round_db(x):
+    """dB for JSON: None for silence (−∞), "inf" above any number."""
+    if math.isinf(x):
+        return None if x < 0 else "inf"
+    return round(x, 2) + 0.0   # never -0.0
+
+
+# A managed machine built with WPF (its editor, or a UI that is the machine) throws on construction
+# without a window. The exception names WPF's assemblies and types, or the machine is known.
+WINDOW_MARKERS = re.compile(r"System\.Windows|PresentationFramework|PresentationCore|WindowsBase|Xaml|\bSTA\b|"
+                            r"Dispatcher|RichTextBox|FlowDocument|HwndSource|UI components", re.I)
+WINDOW_MACHINES = {
+    "Info": "WDE's song notes (Info.NET.dll): a WPF rich-text box that is the machine",
+}
+
+
+def needs_window(gear, error):
+    """Why a machine that didn't load needs a window, or None (it failed for another reason)."""
+    if gear in WINDOW_MACHINES:
+        return WINDOW_MACHINES[gear]
+    m = WINDOW_MARKERS.search(error or "")
+    return f"its construction needs a UI ({m.group(0)} in the exception)" if m else None
+
+
+SWEEP_NAMES = re.compile(r"feed\s*back|f\.?back|\bfb\b|resonan|\breso?\b|gain|\bq\b|regen", re.I)
+
+
+def sweep_worthy(names):
+    """The parameters whose names say feedback, resonance, gain or Q (effects with one get per-parameter sweeps)."""
+    return [n for n in names if SWEEP_NAMES.search(n or "")]
+
+
+def edge(safe, bad, diverges):
+    """
+    The last raw value from safe towards bad that doesn't diverge (diverges(raw) → bool, assumed
+    monotonic between them): a bisection, about log2(|bad − safe|) tests.
+    """
+    step = 1 if bad > safe else -1
+    while abs(bad - safe) > 1:
+        mid = (safe + bad) // 2 if step > 0 else -((-safe - bad) // 2)
+        if mid == safe or mid == bad:
+            break
+        if diverges(mid):
+            bad = mid
+        else:
+            safe = mid
+    return safe
+
+
+def health_status(problems, warnings, window=False):
+    """A draft's health: "needs_window" (its own status, not unhealthy), "unhealthy", "warn" or "ok"."""
+    if window:
+        return "needs_window"
+    return "unhealthy" if problems else "warn" if warnings else "ok"

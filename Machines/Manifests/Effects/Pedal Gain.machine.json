@@ -39,16 +39,28 @@
     "utility"
    ]
   },
-  "extremes": {
-   "min": {
-    "silent": true,
-    "sample_peak_dbfs": null
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -9.22,
+    "growth_db": -0.15,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": true,
-    "sample_peak_dbfs": null
-   }
-  }
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    },
+    "max": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    }
+   },
+   "swept_because": [
+    "an effect with Gain"
+   ],
+   "renders": 8
+  },
+  "sweeps": {}
  },
  "parameters": [
   {

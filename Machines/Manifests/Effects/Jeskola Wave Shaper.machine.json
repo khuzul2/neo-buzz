@@ -43,7 +43,19 @@
     "distortion"
    ]
   },
-  "extremes": {}
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": 0.0,
+    "growth_db": 0.0,
+    "verdict": "ok"
+   },
+   "all_at_once": {},
+   "swept_because": [
+    "an effect with gain"
+   ],
+   "renders": 4
+  },
+  "sweeps": {}
  },
  "parameters": [],
  "track_parameters": [

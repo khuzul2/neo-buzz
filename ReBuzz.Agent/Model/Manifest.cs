@@ -6,6 +6,9 @@
 // (§12.2, U1), marked "status": "draft": units inferred from the machine's own value texts, the
 // pitch convention and note input heard, health measured. Drafts live in Machines/Manifests and
 // are copied beside their DLLs. They change nothing a song saves: every conversion is the agent's.
+// U2 (docs/specs/machine-safety.md §3.1, §3.4): health says diverging, hot or needs a window, and a
+// parameter can carry a safe_range, the raw range the profiler found it doesn't diverge in, which
+// param_set keeps agents inside unless they pass allow_unsafe.
 
 using System;
 using System.Collections.Generic;
@@ -33,6 +36,62 @@ namespace ReBuzz.Agent.Model
         /// </summary>
         public string Confidence { get; init; } = "";
         public bool Approximate => Confidence == "description";
+        /// <summary>Where agents may set it (machine-safety.md §3.4); null: its whole range.</summary>
+        public SafeRange SafeRange { get; init; }
+    }
+
+    /// <summary>
+    /// A parameter's safe range (machine-safety.md §3.4): the raw values the profiler found it doesn't
+    /// diverge in, with the others at their defaults, and why the rest is unsafe ("diverges at its
+    /// maximum (100%)"). param_set refuses values outside it unless the agent passes allow_unsafe;
+    /// people keep the full range in every UI.
+    /// </summary>
+    public sealed class SafeRange
+    {
+        public int Min { get; init; }
+        public int Max { get; init; }
+        public string Reason { get; init; } = "";
+        /// <summary>The machine's texts at Min and Max when profiled (for gear_list, which has no machine to ask).</summary>
+        public string MinText { get; init; } = "";
+        public string MaxText { get; init; } = "";
+
+        public bool Contains(int raw) => raw >= Min && raw <= Max;
+
+        /// <summary>"-98.4% … 98.4%": the machine's texts when it can say them, else the profiled ones, else raw.</summary>
+        public string Text(Func<int, string> describe = null) => $"{Say(Min, MinText, describe)} … {Say(Max, MaxText, describe)}";
+
+        static string Say(int raw, string stored, Func<int, string> describe)
+        {
+            string text = null;
+            try { text = describe?.Invoke(raw); } catch (Exception) { }
+            return !string.IsNullOrWhiteSpace(text) ? text : !string.IsNullOrWhiteSpace(stored) ? stored : raw.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>Why param_set won't set this raw value without allow_unsafe, or null when it's inside the range (or there is none).</summary>
+        public static string Refusal(ParamInfo p, int raw)
+        {
+            var r = p?.SafeRange;
+            if (r == null || r.Contains(raw)) return null;
+            string value = Say(raw, "", p.Describe);
+            return $"{p.Name} = {value} (raw {raw}) is outside its safe range, {r.Text(p.Describe)} (raw {r.Min}–{r.Max})" +
+                   (r.Reason.Length > 0 ? $": it {r.Reason}" : "") +
+                   ". Choose a value inside it, or pass allow_unsafe=true to set it anyway (then render and check the level).";
+        }
+
+        internal static SafeRange Parse(JsonObject o, int min, int max)
+        {
+            if (o == null) return null;
+            int lo = (int?)o["min"] ?? min, hi = (int?)o["max"] ?? max;
+            if (lo > hi) throw new FormatException($"A safe_range runs from {lo} to {hi}.");
+            return new SafeRange
+            {
+                Min = lo,
+                Max = hi,
+                Reason = (string)o["reason"] ?? "",
+                MinText = (string)o["min_text"] ?? "",
+                MaxText = (string)o["max_text"] ?? "",
+            };
+        }
     }
 
     /// <summary>How a generator takes notes (drafts, §12.2): heard by the profiler.</summary>
@@ -48,12 +107,24 @@ namespace ReBuzz.Agent.Model
         public int Polyphony { get; init; }
     }
 
-    /// <summary>What the profiler found wrong (drafts): "ok", "warn" or "unhealthy", with the problems.</summary>
+    /// <summary>
+    /// What the profiler found wrong (drafts): "ok", "warn", "unhealthy" or "needs_window", with the
+    /// problems. machine-safety.md §3.1: unhealthy machines that diverge (NaN, infinity, a runaway
+    /// level) say so; hot ones (loud but steady) are warnings; a managed machine that can't be built
+    /// without its UI needs a window, its own status.
+    /// </summary>
     public sealed class ManifestHealth
     {
         public string Status { get; init; } = "ok";
         public IReadOnlyList<string> Problems { get; init; } = Array.Empty<string>();
         public bool Unhealthy => Status == "unhealthy";
+        /// <summary>Its output runs away somewhere (machine_add warns): at its defaults, or at a parameter's end its safe range leaves out.</summary>
+        public bool Diverging { get; init; }
+        /// <summary>Loud but steady (above 0 dBFS) at some setting: a warning.</summary>
+        public bool Hot { get; init; }
+        public bool NeedsWindow => Status == "needs_window";
+        /// <summary>Why it needs a window ("a WPF rich-text box that is the machine").</summary>
+        public string Window { get; init; } = "";
     }
 
     /// <summary>A kind of data file a machine loads (machine_data_import): a wavetable, a DX7 bank…</summary>
@@ -140,6 +211,9 @@ namespace ReBuzz.Agent.Model
                 {
                     Status = (string)h["status"] ?? "ok",
                     Problems = (h["problems"] as JsonArray)?.Select(x => (string)x ?? "").Where(x => x.Length > 0).ToList() ?? new List<string>(),
+                    Diverging = (bool?)h["diverging"] ?? false,
+                    Hot = (bool?)h["hot"] ?? false,
+                    Window = (string)h["needs_window"] ?? "",
                 };
             return new MachineManifest
             {
@@ -209,17 +283,19 @@ namespace ReBuzz.Agent.Model
                     unit = unit == "ms" ? "s" : "Hz";
                 }
             }
+            int min = (int?)p["min"] ?? 0, max = (int?)p["max"] ?? 0;
             return new ManifestParameter
             {
                 Index = (int?)p["index"] ?? 0,
                 Id = (string)p["id"] ?? "",
                 Name = (string)p["name"] ?? throw new FormatException("A manifest parameter has a name."),
                 Group = (string)p["group"] ?? "",
-                Min = (int?)p["min"] ?? 0,
-                Max = (int?)p["max"] ?? 0,
+                Min = min,
+                Max = max,
                 Default = (int?)p["default"] ?? 0,
                 Description = (string)p["description"] ?? "",
                 Confidence = (string)p["confidence"] ?? "",
+                SafeRange = SafeRange.Parse(p["safe_range"] as JsonObject, min, max),
                 Mapping = new ParamMapping
                 {
                     Kind = mappingKind,

@@ -148,11 +148,12 @@ jobs:
     # `python tools/machine-profiler.py --merge <artifact folder> --repo .`. They are also packed into the
     # log (--pack; --unpack takes them out of a downloaded job log), for where artifacts can't be fetched.
     # A machine that crashes or hangs is a finding (the profiler restarts ReBuzz and goes on), and the
-    # step never fails the job.
+    # step never fails the job. U2 (docs/specs/machine-safety.md §3.1) adds the level tests and
+    # per-parameter sweeps: diverging, hot, needs a window, and safe ranges in the drafts.
     - name: Machine profile
       id: profile
       if: (success() || failure()) && steps.build.outcome == 'success'
-      timeout-minutes: 45
+      timeout-minutes: 75
       continue-on-error: true
       shell: pwsh
       run: |
