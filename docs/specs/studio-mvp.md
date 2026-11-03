@@ -113,9 +113,9 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - Seams: `IUiDispatcher` on Avalonia's dispatcher, with DispatcherTimer timers. The engine's messages appear as dialogs; its synchronous questions run in a nested dispatcher frame. File choice goes through the storage provider. Modifier keys come from the windows' input.
   - **The main window:**
     - a menu (File, Edit, Transport) with Command on macOS and Control elsewhere;
-    - a transport bar: play, stop, record, loop, BPM, position;
+    - a transport bar: play, stop, record, loop, BPM, position; the master meter, with the clip indicator and the limiting lamp (machine-safety.md §3.3);
     - one tab per view (`StudioViews`, placeholders until S3–S6);
-    - a status line: audio device, rate, buffer, dropouts.
+    - a status line: audio device, rate, buffer, dropouts; machines whose guard tripped (machine-safety.md §3.2).
   - **Song files:** new, open, save and save as. The studio asks about unsaved changes itself (async) before the engine acts, so the engine never has to.
   - **Machine windows** (`StudioMachineUiHost`, the engine's `IMachineUiHost`): one parameter window and one GUI window per machine, kept as long as the machine and saved with the song. Their content comes from `ParameterWindowContent` (S2) and `GuiContent` (S1). A machine with no GUI here opens its parameter window. Renaming asks through `Dialogs.AskText`.
   - Arguments: `ReBuzz.Studio [song] [--settings <folder>] [--no-audio] [--smoke]`.
@@ -334,7 +334,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 
 **S7, Preferences and the rest of the shell** (`ReBuzz.Studio/Shell`, `Shell/Preferences`).
 - **Preferences** (Command+, on a Mac, Edit ▸ Preferences… elsewhere): ReBuzz.exe's Preferences and Settings windows in one, a page each. Choices apply and are saved as they are made (no OK or Cancel, as macOS settings windows do).
-  - *Audio:* the output device from the PortAudio factory ("PortAudio: …"; a saved device that's gone shows as not connected), the input, sample rate and buffer (the registry's PortAudio section, which `PortAudioDriver` reads). Each choice reopens the device: a new device through `SelectedAudioDriver`, as WPF's toolbar; the same one closed and opened again. Render threads and the work algorithm as WPF's Preferences ▸ Engine has them, with the engine's defaults (4 and Recursive Tasks; WPF's window shows 2 and Threads when nothing is saved). "Restart audio" (and F12, WPF's Reset Audio) reopens it.
+  - *Audio:* the output device from the PortAudio factory ("PortAudio: …"; a saved device that's gone shows as not connected), the input, sample rate and buffer (the registry's PortAudio section, which `PortAudioDriver` reads). Each choice reopens the device: a new device through `SelectedAudioDriver`, as WPF's toolbar; the same one closed and opened again. Render threads and the work algorithm as WPF's Preferences ▸ Engine has them, with the engine's defaults (4 and Recursive Tasks; WPF's window shows 2 and Threads when nothing is saved). "Restart audio" (and F12, WPF's Reset Audio) reopens it. *Safety* ([machine-safety.md](machine-safety.md) §3.6): the safety limiter on the output (off asks first), its ceiling, the clip indicator's threshold, and the guard on every machine (off for this song only, after asking).
   - *MIDI:* the backend's inputs and outputs (CoreMIDI on macOS; none on Linux) and the remembered ones that aren't connected, checked to open them, with their state (open, not connected, didn't open). A change saves the device by name and opens the inputs (or outputs) again as WPF's OK does. The page follows plugging (polled each second while shown; the engine's watcher opens remembered devices). Below them, `MIDISettings`.
   - *Sync:* Ableton Link (with its peers and tempo), start/stop with peers, follow MIDI clock in, and MIDI clock out per open output (and the chosen ones not open). `SessionSync` keeps them.
   - *Agent:* S8.
