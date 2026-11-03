@@ -23,6 +23,9 @@ on:
       - 'ReBuzzGUI/BuzzGUI.Common/**'
       - 'ReBuzzGUI/BuzzGUI.Interfaces/**'
       - 'tools/headless-smoke.py'
+      - 'tools/headless-pedal.py'
+      - 'ExternalMachines/portable/**'
+      - 'ExternalMachines/source/thepedal/**'
       - 'tools/headless-live.py'
       - 'tools/headless-midi.py'
       - 'LinkHelper/**'
@@ -90,6 +93,11 @@ jobs:
         git submodule update --init --depth 1 3rdParty/serilog/serilog
         dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
         python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
+
+    # The Pedal machines (docs/specs/studio-mvp.md S2) on Apple silicon, as on Linux.
+    - name: Pedal machines on macOS
+      if: always()
+      run: python3 tools/headless-pedal.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/pedal"
 
     # The A6 scripted suite (docs/specs/mcp-server.md §10) on Apple silicon: mac-engine.md M4's
     # first exit check. Same checks, tasks and baseline as Windows and Linux.

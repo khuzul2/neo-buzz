@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pedal Gain Multi, portable (docs/specs/studio-mvp.md S2): see ../PedalPortable.targets. -->
+  <PropertyGroup>
+    <PedalFolder>pedal-gain-multi</PedalFolder>
+    <PedalAssembly>Pedal Gain Multi.NET</PedalAssembly>
+    <PedalKind>Effects</PedalKind>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- WPF only: the GUI, which the studio replaces with its parameter window. -->
+    <PedalGui Include="PedalGainMultiGUI.cs" />
+    <PedalGui Include="PedalGainMultiMeterWindow.cs" />
+  </ItemGroup>
+  <Import Project="../PedalPortable.targets" />
+</Project>

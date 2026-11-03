@@ -3,11 +3,15 @@ using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 using System.ComponentModel;
 using System.Windows;
+#if WINDOWS   // fork (studio-mvp.md S2): the GUI is WPF; portable builds have none
 using System.Windows.Controls;
+#endif
 using System.Windows.Input;
+#if WINDOWS
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+#endif
 
 namespace WDE.PedalComp
 {
@@ -398,6 +402,7 @@ namespace WDE.PedalComp
         public event PropertyChangedEventHandler? PropertyChanged;
     }
 
+#if WINDOWS   // fork (studio-mvp.md S2): the GUI is WPF; portable builds have none
     // ─────────────────────────────────────────────────────────────────────────
     //  GUI
     // ─────────────────────────────────────────────────────────────────────────
@@ -771,4 +776,5 @@ namespace WDE.PedalComp
         void SetLevel(Rectangle rect, float norm) =>
             rect.Height = norm * (TrackH - 2);
     }
+#endif
 }

@@ -29,7 +29,7 @@ namespace ReBuzz.Studio.Platform
         static readonly ConditionalWeakTable<IMachine, Windows> windows = new();
 
         /// <summary>The generic parameter window's content for a machine (S2); null: a placeholder.</summary>
-        public static Func<IMachine, Control> ParameterWindowContent { get; set; }
+        public static Func<IMachine, Control> ParameterWindowContent { get; set; } = m => new Parameters.ParameterWindowView(m);
 
         /// <summary>
         /// A machine's own GUI as an Avalonia control (S1: the Neo editors), or null when it has none
