@@ -57,6 +57,8 @@ namespace ReBuzz.Studio.Views.Notes
         static readonly IBrush LinkBrush = new SolidColorBrush(Color.FromRgb(0x6C, 0xB4, 0xFF));
         static readonly IBrush CodeBrush = new SolidColorBrush(Color.FromRgb(0x33, 0x34, 0x38));
         static readonly IBrush BannerBrush = new SolidColorBrush(Color.FromRgb(0x23, 0x3A, 0x55));
+        static Cursor hand;
+        static Cursor Hand => hand ??= new Cursor(StandardCursorType.Hand);     // made once the platform runs
         static readonly FontFamily Mono = new FontFamily("Cascadia Mono, Menlo, Consolas, DejaVu Sans Mono, monospace");
 
         /// <summary>Opens a link from the notes (tests replace it); true when it was handled.</summary>
@@ -350,7 +352,7 @@ namespace ReBuzz.Studio.Views.Notes
                 // (which selects text, as anywhere on the page).
                 string pressed = null;
                 Point pressedAt = default;
-                t.PointerMoved += (s, e) => t.Cursor = LinkAt(t, links, e.GetPosition(t)) != null ? new Cursor(StandardCursorType.Hand) : Cursor.Default;
+                t.PointerMoved += (s, e) => t.Cursor = LinkAt(t, links, e.GetPosition(t)) != null ? Hand : Cursor.Default;
                 t.AddHandler(PointerPressedEvent, (s, e) =>
                 {
                     pressedAt = e.GetPosition(t);
@@ -602,7 +604,7 @@ namespace ReBuzz.Studio.Views.Notes
             return false;
         }
 
-        SelectableTextBlock SelectedPageText => page.GetVisualDescendantsOfType<SelectableTextBlock>().FirstOrDefault(t => t.SelectionStart != t.SelectionEnd);
+        SelectableTextBlock SelectedPageText => Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(page).OfType<SelectableTextBlock>().FirstOrDefault(t => t.SelectionStart != t.SelectionEnd);
 
         public bool Copy()
         {
@@ -613,9 +615,4 @@ namespace ReBuzz.Studio.Views.Notes
         }
     }
 
-    internal static class VisualExtensions
-    {
-        public static IEnumerable<T> GetVisualDescendantsOfType<T>(this Visual v) where T : Visual =>
-            Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(v).OfType<T>();
-    }
 }

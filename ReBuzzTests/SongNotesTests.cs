@@ -25,7 +25,7 @@ namespace ReBuzzTests
     [Apartment(ApartmentState.STA)]
     public class SongNotesTests
     {
-        static string InfoDll()
+        static string? InfoDll()
         {
             for (var d = new DirectoryInfo(TestContext.CurrentContext.TestDirectory); d != null; d = d.Parent)
             {
@@ -96,9 +96,9 @@ namespace ReBuzzTests
         [Test]
         public void InfosOwnStateReadsAsMarkdown()
         {
-            string dll = InfoDll();
+            string? dll = InfoDll();
             if (dll == null) Assert.Inconclusive("RunTime/Gear/Generators/Info.NET.dll isn't in this checkout");
-            var asm = Assembly.LoadFrom(dll);
+            var asm = Assembly.LoadFrom(dll!);
 
             // The notes as Info's box holds them: its own SetRTF and GetRTF.
             var boxType = asm.GetType("WDE.Info.RTFBoxInfo", true)!;
