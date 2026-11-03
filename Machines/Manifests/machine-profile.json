@@ -5380,7 +5380,7 @@
      "reverb"
     ]
    },
-   "cpu_ms_per_s": 19.5,
+   "cpu_ms_per_s": 13.6,
    "type": "reverb",
    "level_test": {
     "defaults": {
@@ -5406,7 +5406,7 @@
     "renders": 34
    },
    "sweeps": {},
-   "seconds": 24.9,
+   "seconds": 22.0,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],

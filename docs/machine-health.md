@@ -190,7 +190,7 @@ Everything else the profile noticed (most are the profiler's own limits: trigger
 | Neo EQ | utility | 0.0 | 0 | 0.0 | 0.0 | hot |
 | Neo Limiter | utility | 0.0 | 99 | 0.0 | 0.0 | hot |
 | Neo Utility | utility | 0.0 | 0 | 0.0 | 0.0 | hot |
-| Neo Verb | reverb | -2.8 | 0 | 1.52 | 19.5 | hot |
+| Neo Verb | reverb | -2.8 | 0 | 1.52 | 13.6 | hot |
 | Oomek Exciter | filter or EQ | 7.22 | 0 | 0.0 | 0.0 | ok |
 | Oomek Masterizer | utility | -1.0 | 176 | 0.0 | 10.3 | ok |
 | Pedal Chorus | modulation, filter or EQ | -4.31 | 0 | 0.01 | 0.0 | ok |
