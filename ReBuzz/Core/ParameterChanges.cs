@@ -89,6 +89,14 @@ namespace ReBuzz.Core
         /// <summary>
         /// After the changes taken are sent: clears the pvals of each parameter changed (all its
         /// tracks, as upstream's Tick did) and forgets them.
+        /// <para>
+        /// Known race, as upstream's (left; docs/specs/daw-modes.md §8.1): a UI or MIDI write that
+        /// lands after the tick read its pval (the managed host's pass, or a native machine's
+        /// AudioTick, which reads every pval before Take) and before this is lost, as is a write
+        /// to another track of a parameter taken. Holding workLock from the read to here would
+        /// close it, but SendGUIMessage holds workLock across a native machine's UI round trip,
+        /// which the audio thread would then wait for.
+        /// </para>
         /// </summary>
         internal void Release()
         {
