@@ -126,7 +126,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - The LED mutes. A double click opens the machine's GUI (`UiHost.OpenGui`).
   - Right click on empty space: New ▸ Generators / Effects / Control (the installed machines by kind, as the machine list filters them), Unmute all, Snap Machines, Select All, Deselect.
   - Right click on a machine: Mute, Solo or Bypass, Oversample, Parameters..., MIDI Input Channel, Replace, Rename... (`AskName`), Delete. Master has Parameters... only.
-  - Keys: Delete (Backspace on a Mac), and Ctrl/Command + A, D, U, M.
+  - Keys: Delete (Backspace on a Mac), and Ctrl/Command + A, D, U, M, as the view's own key bindings. Their commands are `MachineCanvas` methods, ready for the shell's Edit routing.
   - Zoom: Ctrl/Command + wheel or a trackpad pinch, around the pointer; or the top bar's slider (-8..8, ×2^(level/8)). A middle double click resets.
   - Scroll: the wheel or a trackpad, the scroll bars, a middle drag, or Shift-drag on empty space.
 - **Edits** (`MachineEdits`) go through the engine's undo stack, with the SongCore calls the WPF view makes:

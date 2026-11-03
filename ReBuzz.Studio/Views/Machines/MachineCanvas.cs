@@ -861,42 +861,32 @@ namespace ReBuzz.Studio.Views.Machines
 
         #endregion
 
-        #region Keys
+        #region Commands
 
-        protected override void OnKeyDown(KeyEventArgs e)
+        // The view's shortcuts call these (MachineView's key bindings); the shell's Edit menu can too.
+
+        IReadOnlyList<IMachine> SelectedNow()
         {
-            base.OnKeyDown(e);
-            var mods = e.KeyModifiers;
-            bool cmd = mods == CommandKey;
-            var sel = selected.Where(Machines.Contains).ToList();
-            switch (e.Key)
-            {
-                case Key.Delete:
-                case Key.Back when OperatingSystem.IsMacOS():
-                    if (mods == KeyModifiers.None && sel.Count > 0)
-                    {
-                        MachineEdits.Delete(core, sel);
-                        e.Handled = true;
-                    }
-                    break;
-                case Key.A when cmd:
-                    SelectAll();
-                    e.Handled = true;
-                    break;
-                case Key.D when cmd:
-                    ClearSelection();
-                    e.Handled = true;
-                    break;
-                case Key.U when cmd:
-                    MachineEdits.UnmuteAll(core);
-                    e.Handled = true;
-                    break;
-                case Key.M when cmd:
-                    if (sel.Count > 0) MachineEdits.Mute(core, sel, !sel[0].IsMuted);
-                    e.Handled = true;
-                    break;
-            }
+            var shown = Machines.ToHashSet();
+            return selected.Where(shown.Contains).ToList();
         }
+
+        /// <summary>Delete (Backspace on a Mac): the selected machines (MachineView.DeleteSelectedCommand).</summary>
+        public void DeleteSelection()
+        {
+            var sel = SelectedNow();
+            if (sel.Count > 0) MachineEdits.Delete(core, sel);
+        }
+
+        /// <summary>Ctrl+M: mutes the selection, or unmutes it if the first is muted (MachineControl.MuteCommand).</summary>
+        public void ToggleMuteSelection()
+        {
+            var sel = SelectedNow();
+            if (sel.Count > 0) MachineEdits.Mute(core, sel, !sel[0].IsMuted);
+        }
+
+        /// <summary>Ctrl+U.</summary>
+        public void UnmuteAll() => MachineEdits.UnmuteAll(core);
 
         #endregion
     }

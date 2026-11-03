@@ -57,7 +57,7 @@ namespace ReBuzz.Studio.Views.Machines
                 var m = MachineEdits.Create(core, i, (float)at.X, (float)at.Y);
                 if (m != null) canvas.Select(new[] { m });
             })));
-            menu.Items.Add(Item("Unmute all machines", () => MachineEdits.UnmuteAll(core), key: new KeyGesture(Key.U, CommandKey)));
+            menu.Items.Add(Item("Unmute all machines", canvas.UnmuteAll, key: new KeyGesture(Key.U, CommandKey)));
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Snap Machines", () => MachineEdits.Snap(core, canvas.Selection.Count > 0 ? canvas.Selection.ToList() : core.SongCore.Machines.ToList(), 10)));
             menu.Items.Add(new Separator());

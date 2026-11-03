@@ -7,6 +7,7 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using BuzzGUI.Interfaces;
@@ -56,10 +57,27 @@ namespace ReBuzz.Studio.Views.Machines
             var layer = new Avalonia.Controls.Canvas { Children = { Amp } };
             Children.Add(new Panel { Children = { Canvas, horizontal, vertical, layer } });
 
+            AddKeys();
             Canvas.ViewChanged += Sync;
             horizontal.ValueChanged += (s, e) => { if (!syncing) Canvas.ScrollTo(new Vector(e.NewValue, Canvas.Offset.Y)); };
             vertical.ValueChanged += (s, e) => { if (!syncing) Canvas.ScrollTo(new Vector(Canvas.Offset.X, e.NewValue)); };
             zoom.ValueChanged += (s, e) => { if (!syncing) Canvas.SetZoom((int)Math.Round(e.NewValue)); };
+        }
+
+        /// <summary>
+        /// The view's shortcuts as its own key bindings (MachineView.Commands' input bindings), so they
+        /// work wherever the focus is inside it. Ctrl is Command on a Mac.
+        /// </summary>
+        void AddKeys()
+        {
+            var cmd = OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control;
+            void Bind(Key key, KeyModifiers mods, Action run) => KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(key, mods), Command = new Command(run) });
+            Bind(Key.Delete, KeyModifiers.None, Canvas.DeleteSelection);
+            if (OperatingSystem.IsMacOS()) Bind(Key.Back, KeyModifiers.None, Canvas.DeleteSelection);
+            Bind(Key.A, cmd, Canvas.SelectAll);
+            Bind(Key.D, cmd, Canvas.ClearSelection);
+            Bind(Key.U, cmd, Canvas.UnmuteAll);
+            Bind(Key.M, cmd, Canvas.ToggleMuteSelection);
         }
 
         static Control Right(Control c)
