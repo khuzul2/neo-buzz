@@ -112,3 +112,43 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - The window is saved as PNGs, which CI uploads (`studio-screenshots`).
 - **Dev NuGet cache** (§3.8): `dev-nuget-cache.yml` keeps the restored packages as one release asset (`dev-nuget-cache`, a prerelease, not a ReBuzz release). Locally: `dotnet restore <project> --configfile <a nuget.config whose only source is that unpacked folder>`. The test projects also run locally that way.
 - **The Mac app:** `tools/mac-bundle.sh` builds `ReBuzz.app`. It is self-contained osx-arm64, with PortAudio, libsndfile (and its libraries) and the Link helper inside, and ad-hoc signed. The Mac job runs the headless view tests on arm64, then builds the app and starts it for real (`--smoke`, with the runner's audio device), and uploads it (`ReBuzz-macos-arm64`).
+
+**S2, the generic parameter window and the portable Pedal machines.**
+- **The parameter window** (`ReBuzz.Studio/Parameters`) is BuzzGUI.ParameterWindow ported. `StudioMachineUiHost.ParameterWindowContent` makes it, so every machine without its own GUI here shows it (all but S1's Neo editors), from its GUI or its parameters.
+  - **Rows:** every state parameter of every group and track, named as on Windows ("a-"/"p-" for an input's amp and pan, "2-Volume" for track 2), the description as tooltip, the slider and the value as the machine describes it.
+  - **The slider** is code-drawn, with the WPF control's geometry: drag the thumb; click either side to page by a sixth of the range (repeating while held); the wheel and the arrow keys step by one; a digit opens the value editor.
+  - **Presets:** the box applies one (`<default>` too). Presets… adds, updates, deletes and imports them, in the machine's `.prs.xml` beside it in Gear, as on Windows.
+  - **Edit mode:** preset B, the randomize and morph functions with their amount, locks, and which parameters show (`ParameterWindowProperties.xml`, now in the settings folder).
+  - **The right-click menu**, as on Windows:
+    - MIDI: Bind… (learns the controller moved), the controllers named in the MIDI settings, Unbind All;
+    - the attributes;
+    - Copy Preset (ASCII, XML) and Paste Preset;
+    - Unlock All, Invert Locks;
+    - Add Track, Delete Last Track;
+    - the keyboard playing the machine (MIDI notes), a check item where Windows has "Settings…".
+  - **New here:** a track choice, every track (as Windows lists them) or one.
+  - **Undo:** every change is a step on the song's undo stack: a slider gesture (wheel and arrow steps merge), a preset, a paste, an edit function, a track count. On Windows, slider moves don't undo, and presets and edit functions undo on the window's own stack.
+  - **Not ported:** the "Editor" tab (WPF XAML templates in `ParameterEditors/`, with RangeSlider and RibbonSlider), and a machine's WPF GUI embedded above the rows.
+- **The Pedal machines** (`ExternalMachines/portable`, as `Machines/Portable` for Neo): the 19 build plain `net10.0` from their own sources, without their WPF GUIs. `AppGear.targets` puts them in the studio's and rebuzz-headless's Gear, with their preset files.
+  - Six sources gained `#if WINDOWS` around WPF code: Comp's and Gate's GUIs; Chord's dialogs and timer; LFO's dispatcher; Tracker's and Peer Control's menu entries; Peer Control's settings window and NAudio MIDI out. Off Windows, Peer Control sends through the engine's MIDI outputs. `machines.json` lists the patches.
+  - The Windows builds compile the same text as before (the SDK defines `WINDOWS` for `net10.0-windows` only).
+  - About boxes go to the debug console (`PortableMessageBox.cs`).
+- **What the checks found:**
+  - Every Pedal machine loads, plays and shows its parameters on Linux.
+  - **The synths take notes only in their Note column**, not as MIDI: M1, Juno106, SH101, FM, Tracker. So until the pattern editor (S6), neither the Session View's piano roll nor the agent's `notes_write` plays them. The check writes Note columns into the song file.
+  - **Chord, LFO and Peer Control** set their targets in WPF dialogs. Off Windows they work with targets saved in a song (made on Windows), and their menu commands say so.
+  - **Pedal Plate's reverb diverges at its default Decay** (75), on any platform: its modulated all-pass reads 1–17 samples behind its write position instead of its length behind. That makes it a comb with a gain of up to 5.7 inside the tank's loop. The check runs it at Decay 0. Not fixed here: it would change the Windows build's sound.
+- **Tests** (`ParameterWindowTests`):
+  - a Neo machine's window, and each Pedal machine's (screenshots `parameters-*.png`);
+  - a slider drag changes the value, the undo button restores it, and redo brings it back; three wheel steps undo as one;
+  - a digit opens the value editor, and the arrow keys step;
+  - track parameters on Pedal Gain Multi: the track choice, one track's change, and Add Track with its undo;
+  - a preset loads from the box, and undo restores the values; Presets… saves and deletes one;
+  - the menu binds a MIDI controller; copy and paste of the values;
+  - edit mode: hiding a parameter, locks, randomize and its undo;
+  - the slider's geometry against the WPF control's arithmetic.
+- **`tools/headless-pedal.py`** (Linux CI, and the Mac job) drives rebuzz-headless over MCP:
+  - each synth plays a note (Tracker plays a wave cut from a render);
+  - each effect passes a Neo Poly chord;
+  - Chord plays a chord on its target, and LFO moves its target's parameter;
+  - the whole song renders with Peer Control in it.
