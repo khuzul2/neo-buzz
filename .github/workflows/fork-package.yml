@@ -242,8 +242,9 @@ jobs:
         foreach ($l in $lines) { $i++; Write-Host "::notice title=Engine diagnostics $i::$l" }
 
   # The null test (docs/specs/mac-engine.md decision 6, M3/M4): rebuzz-headless renders the same cases
-  # as the package job's ReBuzz.exe, and each must match the Windows reference sample by sample, to
-  # -100 dBFS. The per-case figures are a notice annotation and in the step summary.
+  # as the package job's ReBuzz.exe, and each must be bit-identical to the Windows reference, every
+  # sample. A case that differs reports its first differing sample and its largest difference (dBFS).
+  # The per-case results are a notice annotation and in the step summary.
   null-test-linux:
     needs: package
     if: ${{ !cancelled() }}

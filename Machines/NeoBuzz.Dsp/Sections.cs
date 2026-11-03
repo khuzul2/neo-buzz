@@ -24,7 +24,7 @@ namespace NeoBuzz.Dsp
 
         /// <summary>Prewarped frequency for <paramref name="hz"/> (clamped below Nyquist).</summary>
         public static double Prewarp(double hz, double sampleRate) =>
-            Math.Tan(Math.PI * Math.Clamp(hz, 0.01, sampleRate * 0.4999) / sampleRate);
+            PortableMath.Tan(Math.PI * Math.Clamp(hz, 0.01, sampleRate * 0.4999) / sampleRate);
 
         public void Set(double g, double k, double m0, double m1, double m2)
         {
@@ -72,7 +72,7 @@ namespace NeoBuzz.Dsp
         {
             // On the unit circle the bilinear transform's s is j·tan(π f / fs) / g.
             double f = Math.Clamp(hz, 0, sampleRate * 0.5);
-            double w = f >= sampleRate * 0.5 ? 1e12 : Math.Tan(Math.PI * f / sampleRate) / g;
+            double w = f >= sampleRate * 0.5 ? 1e12 : PortableMath.Tan(Math.PI * f / sampleRate) / g;
             double w2 = w * w;
             double n2 = m0, n1 = m0 * k + m1, n0 = m0 + m2;
             double nr = n0 - n2 * w2, ni = n1 * w;
@@ -95,7 +95,7 @@ namespace NeoBuzz.Dsp
         public static double[] SectionQs(int order)
         {
             var q = new double[order / 2];
-            for (int i = 1; i <= order / 2; i++) q[i - 1] = 1 / (2 * Math.Cos((2 * i - 1) * Math.PI / (2 * order)));
+            for (int i = 1; i <= order / 2; i++) q[i - 1] = 1 / (2 * PortableMath.Cos((2 * i - 1) * Math.PI / (2 * order)));
             Array.Sort(q);
             return q;
         }

@@ -6,7 +6,7 @@
 // (≥ 0). Pure: tested by NeoBuzz.MachineTests.
 
 using System;
-using System.Numerics;
+using System.Runtime.Intrinsics;
 using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Limiter
@@ -47,9 +47,9 @@ namespace NeoBuzz.Limiter
                 {
                     // As NeoBuzz.Analysis.Loudness: tap k of phase p sits at (k − Taps/2 + 1) − p/Phases.
                     double t = (k - Taps / 2 + 1) - p / (double)Phases;
-                    double sinc = Math.Abs(t) < 1e-12 ? 1 : Math.Sin(Math.PI * t) / (Math.PI * t);
+                    double sinc = Math.Abs(t) < 1e-12 ? 1 : PortableMath.Sin(Math.PI * t) / (Math.PI * t);
                     double pos = (t + Taps / 2.0) / Taps;
-                    double w = Math.Abs(pos - 0.5) <= 0.5 ? I0(beta * Math.Sqrt(1 - Math.Pow(2 * pos - 1, 2))) / I0(beta) : 0;
+                    double w = Math.Abs(pos - 0.5) <= 0.5 ? I0(beta * Math.Sqrt(1 - PortableMath.Pow(2 * pos - 1, 2))) / I0(beta) : 0;
                     // Tap k multiplies x[i − (k − 11)] with i = t − 11: x[t − k], which is ring offset q = 23 − k.
                     h[Taps - 1 - k] = (float)(sinc * w);
                 }
@@ -73,24 +73,33 @@ namespace NeoBuzz.Limiter
             ring[pos + 32] = x;
             int s = (pos - 23) & 31;
             // The points between x[t − 12] and x[t − 11]: right of the sample returned, left of the next.
+            // Summed in one order on every CPU (docs/specs/machines.md §4, portable maths): eight lanes,
+            // lane j taking taps j, j + 8 and j + 16, then lane j + lane j + 4, then (0 + 1) + (2 + 3).
+            // One 8-wide vector where the CPU has it (x64), two 4-wide halves elsewhere (arm64): the
+            // same additions, so the same bits. (Vector<float> was 8 lanes on x64 and 4 on arm64.)
             float right = 0;
-            int w = Vector<float>.Count;
             for (int p = 0; p < Phases - 1; p++)
             {
                 var k = Kernel[p];
-                float acc;
-                if (Taps % w == 0)
+                Vector128<float> lo, hi;
+                if (Vector256.IsHardwareAccelerated)
                 {
-                    var sum = Vector<float>.Zero;
-                    for (int q = 0; q < Taps; q += w) sum += new Vector<float>(ring, s + q) * new Vector<float>(k, q);
-                    acc = Vector.Sum(sum);
+                    var sum = Vector256<float>.Zero;
+                    for (int q = 0; q < Taps; q += 8) sum += Vector256.Create(ring, s + q) * Vector256.Create(k, q);
+                    lo = sum.GetLower();
+                    hi = sum.GetUpper();
                 }
                 else
                 {
-                    acc = 0;
-                    for (int q = 0; q < Taps; q++) acc += ring[s + q] * k[q];
+                    lo = hi = Vector128<float>.Zero;
+                    for (int q = 0; q < Taps; q += 8)
+                    {
+                        lo += Vector128.Create(ring, s + q) * Vector128.Create(k, q);
+                        hi += Vector128.Create(ring, s + q + 4) * Vector128.Create(k, q + 4);
+                    }
                 }
-                acc = MathF.Abs(acc);
+                var four = lo + hi;
+                float acc = MathF.Abs((four.GetElement(0) + four.GetElement(1)) + (four.GetElement(2) + four.GetElement(3)));
                 if (acc > right) right = acc;
             }
             float centre = MathF.Abs(ring[s + 11]);
@@ -218,7 +227,7 @@ namespace NeoBuzz.Limiter
             grNow = 0;
         }
 
-        static double Coef(double seconds, double sr) => seconds <= 0 ? 0 : Math.Exp(-1.0 / (seconds * sr));
+        static double Coef(double seconds, double sr) => seconds <= 0 ? 0 : PortableMath.Exp(-1.0 / (seconds * sr));
 
         void Update(bool force)
         {
@@ -345,8 +354,8 @@ namespace NeoBuzz.Limiter
 
                 // The reduction the detected sample needs (dB ≥ 0), then linked.
                 float tp0 = c0.Detector.Process(x0), tp1 = c1.Detector.Process(x1);
-                double n0 = tp0 > ceil ? 20 * MathF.Log10(tp0 / ceil) : 0;
-                double n1 = tp1 > ceil ? 20 * MathF.Log10(tp1 / ceil) : 0;
+                double n0 = tp0 > ceil ? DspMath.DbPerNeper * PortableMath.Log(tp0 / ceil) : 0;
+                double n1 = tp1 > ceil ? DspMath.DbPerNeper * PortableMath.Log(tp1 / ceil) : 0;
                 if (link > 0)
                 {
                     double m = Math.Max(n0, n1);
@@ -362,8 +371,8 @@ namespace NeoBuzz.Limiter
                 // Fully linked, both channels need the same: one gain chain serves both.
                 double r0 = Chain(c0, n0, j, slot, inv1, inv2);
                 double r1 = shared ? r0 : Chain(c1, n1, j, slot, inv1, inv2);
-                float gain0 = r0 > 0 ? MathF.Exp((float)(-r0 * Ln10Over20)) : 1f;
-                float gain1 = shared ? gain0 : r1 > 0 ? MathF.Exp((float)(-r1 * Ln10Over20)) : 1f;
+                float gain0 = r0 > 0 ? PortableMathF.Exp((float)(-r0 * Ln10Over20)) : 1f;
+                float gain1 = shared ? gain0 : r1 > 0 ? PortableMathF.Exp((float)(-r1 * Ln10Over20)) : 1f;
                 left[i] = c0.Audio.Read(delay) * gain0;
                 right[i] = c1.Audio.Read(delay) * gain1;
                 float gr = (float)Math.Max(r0, r1);

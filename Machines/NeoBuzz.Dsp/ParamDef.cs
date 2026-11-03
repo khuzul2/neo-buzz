@@ -90,15 +90,15 @@ namespace NeoBuzz.Dsp
                 case MapKind.Linear: return A + t * (B - A);
                 case MapKind.Exp:
                 case MapKind.Time:
-                case MapKind.Freq: return A * Math.Pow(B / A, t);
-                case MapKind.Power: return A + Math.Pow(t, Exponent) * (B - A);
+                case MapKind.Freq: return A * PortableMath.Pow(B / A, t);
+                case MapKind.Power: return A + PortableMath.Pow(t, Exponent) * (B - A);
                 case MapKind.Db: return Flag && raw <= Min ? double.NegativeInfinity : A + t * (B - A);
                 case MapKind.Percent: return t;
                 case MapKind.Bipolar: return t * 2.0 - 1.0;
                 case MapKind.Int: return Math.Clamp(raw, Min, Max) + A;
                 case MapKind.Enum:
                 case MapKind.Switch: return Math.Clamp(raw, Min, Max) - Min;
-                case MapKind.Ratio: return Flag && raw >= Max ? double.PositiveInfinity : A * Math.Pow(B / A, t);
+                case MapKind.Ratio: return Flag && raw >= Max ? double.PositiveInfinity : A * PortableMath.Pow(B / A, t);
                 default: return t;
             }
         }
@@ -112,15 +112,15 @@ namespace NeoBuzz.Dsp
                 case MapKind.Linear: t = (value - A) / (B - A); break;
                 case MapKind.Exp:
                 case MapKind.Time:
-                case MapKind.Freq: t = value <= 0 ? 0 : Math.Log(value / A) / Math.Log(B / A); break;
-                case MapKind.Power: t = Math.Pow(Math.Max(0, (value - A) / (B - A)), 1.0 / Exponent); break;
+                case MapKind.Freq: t = value <= 0 ? 0 : PortableMath.Log(value / A) / PortableMath.Log(B / A); break;
+                case MapKind.Power: t = PortableMath.Pow(Math.Max(0, (value - A) / (B - A)), 1.0 / Exponent); break;
                 case MapKind.Db: t = double.IsNegativeInfinity(value) ? 0 : (value - A) / (B - A); break;
                 case MapKind.Percent: t = value; break;
                 case MapKind.Bipolar: t = (value + 1.0) * 0.5; break;
                 case MapKind.Int: return Math.Clamp((int)Math.Round(value - A), Min, Max);
                 case MapKind.Enum:
                 case MapKind.Switch: return Math.Clamp((int)Math.Round(value) + Min, Min, Max);
-                case MapKind.Ratio: t = double.IsPositiveInfinity(value) ? 1 : Math.Log(value / A) / Math.Log(B / A); break;
+                case MapKind.Ratio: t = double.IsPositiveInfinity(value) ? 1 : PortableMath.Log(value / A) / PortableMath.Log(B / A); break;
                 default: t = value; break;
             }
             t = Math.Clamp(double.IsNaN(t) ? 0 : t, 0.0, 1.0);

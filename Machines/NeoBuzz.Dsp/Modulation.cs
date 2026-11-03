@@ -27,7 +27,7 @@ namespace NeoBuzz.Dsp
         /// <summary>Advances <paramref name="n"/> samples at once (for control-rate values).</summary>
         public float Advance(int n)
         {
-            Value += (Target - Value) * (1f - MathF.Pow(1f - coeff, n));
+            Value += (Target - Value) * (1f - PortableMathF.Pow(1f - coeff, n));
             return Value;
         }
 
@@ -45,8 +45,8 @@ namespace NeoBuzz.Dsp
     internal sealed class Adsr
     {
         const float AttackTarget = 1.5f;
-        static readonly float AttackLn = MathF.Log(AttackTarget / (AttackTarget - 1f));
-        static readonly float SixtyDb = MathF.Log(1000f);
+        static readonly float AttackLn = PortableMathF.Log(AttackTarget / (AttackTarget - 1f));
+        static readonly float SixtyDb = PortableMathF.Log(1000f);
         const float IdleLevel = 1e-5f;   // −100 dB
 
         float sampleRate = 48000;
@@ -65,9 +65,9 @@ namespace NeoBuzz.Dsp
         {
             // Attack: dL = (T − L)·c per sample, from 0 reaches 1 after attack seconds when
             // (1 − c)^(n) = (T − 1)/T  →  c = 1 − exp(−ln(T/(T−1)) / n).
-            attackCoeff = attack <= 0.0002f ? 1f : 1f - MathF.Exp(-AttackLn / (attack * sampleRate));
-            decayCoeff = decay <= 0.0002f ? 1f : 1f - MathF.Exp(-SixtyDb / (decay * sampleRate));
-            releaseCoeff = release <= 0.0002f ? 1f : 1f - MathF.Exp(-SixtyDb / (release * sampleRate));
+            attackCoeff = attack <= 0.0002f ? 1f : 1f - PortableMathF.Exp(-AttackLn / (attack * sampleRate));
+            decayCoeff = decay <= 0.0002f ? 1f : 1f - PortableMathF.Exp(-SixtyDb / (decay * sampleRate));
+            releaseCoeff = release <= 0.0002f ? 1f : 1f - PortableMathF.Exp(-SixtyDb / (release * sampleRate));
             sustain = DspMath.Clamp(sustainLevel, 0f, 1f);
         }
 
@@ -182,7 +182,7 @@ namespace NeoBuzz.Dsp
             float p = (float)phase;
             switch (Shape)
             {
-                case LfoShape.Sine: return MathF.Sin(DspMath.TwoPi * p);
+                case LfoShape.Sine: return PortableMathF.Sin(DspMath.TwoPi * p);
                 case LfoShape.Triangle: return p < 0.25f ? 4 * p : p < 0.75f ? 2 - 4 * p : 4 * p - 4;
                 case LfoShape.SawUp: return 2 * p - 1;
                 case LfoShape.SawDown: return 1 - 2 * p;
@@ -191,7 +191,7 @@ namespace NeoBuzz.Dsp
                 default:
                 {
                     // Cosine interpolation between random points.
-                    float t = 0.5f - 0.5f * MathF.Cos(DspMath.Pi * p);
+                    float t = 0.5f - 0.5f * PortableMathF.Cos(DspMath.Pi * p);
                     return prevHeld + (held - prevHeld) * t;
                 }
             }

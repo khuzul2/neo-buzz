@@ -65,8 +65,8 @@ namespace NeoBuzz.Utility
             double g = SvfSection.Prewarp(DcHz, sr);
             dcL.SetHighPass(g, Math.Sqrt(0.5));
             dcR.SetHighPass(g, Math.Sqrt(0.5));
-            bassCoeff = 1 - Math.Exp(-1 / (GlideSeconds * sr));
-            corrCoeff = 1 - Math.Exp(-1 / (CorrelationSeconds * sr));
+            bassCoeff = 1 - PortableMath.Exp(-1 / (GlideSeconds * sr));
+            corrCoeff = 1 - PortableMath.Exp(-1 / (CorrelationSeconds * sr));
             InMeter.SetSampleRate(sr);
             OutLeft.SetSampleRate(sr);
             OutRight.SetSampleRate(sr);
@@ -93,8 +93,8 @@ namespace NeoBuzz.Utility
             else
             {
                 double theta = (pan + 1) * Math.PI / 4;
-                left = (float)Math.Cos(theta);
-                right = (float)Math.Sin(theta);
+                left = (float)PortableMath.Cos(theta);
+                right = (float)PortableMath.Sin(theta);
             }
         }
 

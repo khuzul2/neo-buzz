@@ -39,11 +39,11 @@ namespace NeoBuzz.Dsp
             {
                 double t = -Z + (double)k / Os;
                 double x = 2 * cutoff * t;
-                double sinc = Math.Abs(x) < 1e-12 ? 1 : Math.Sin(Math.PI * x) / (Math.PI * x);
+                double sinc = Math.Abs(x) < 1e-12 ? 1 : PortableMath.Sin(Math.PI * x) / (Math.PI * x);
                 // 4-term Blackman–Harris over [−Z, Z].
                 double w = (t + Z) / (2.0 * Z);
-                double win = 0.35875 - 0.48829 * Math.Cos(2 * Math.PI * w) + 0.14128 * Math.Cos(4 * Math.PI * w)
-                             - 0.01168 * Math.Cos(6 * Math.PI * w);
+                double win = 0.35875 - 0.48829 * PortableMath.Cos(2 * Math.PI * w) + 0.14128 * PortableMath.Cos(4 * Math.PI * w)
+                             - 0.01168 * PortableMath.Cos(6 * Math.PI * w);
                 impulse[k] = 2 * cutoff * sinc * win;
             }
             // Integrate (Simpson-corrected trapezoid) to the step; normalise its end to exactly 1.
