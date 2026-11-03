@@ -219,8 +219,8 @@ namespace ReBuzz.Agent
                         return new JsonObject
                         {
                             ["machine"] = m.Name, ["pattern"] = p.Name, ["param"] = param.Name, ["events"] = now.Count,
-                            ["from"] = points.Count > 0 ? SongModel.Describe(param.Parameter, points[0].Raw) : null,
-                            ["to"] = points.Count > 0 ? SongModel.Describe(param.Parameter, points[^1].Raw) : null,
+                            ["from"] = points.Count > 0 ? param.Info.Describe(points[0].Raw) : null,
+                            ["to"] = points.Count > 0 ? param.Info.Describe(points[^1].Raw) : null,
                             ["problems"] = problems,
                         };
                     }, c.Cancellation);

@@ -130,10 +130,27 @@ namespace ReBuzz.AgentTests
         static Dictionary<string, MachineManifest>? manifests;
         static Dictionary<string, List<string>>? presets;
 
-        /// <summary>The Neo manifests by gear name (Machines/*/*.machine.json; not the profiled drafts in Machines/Manifests).</summary>
+        /// <summary>The Neo manifests by gear name (Machines/*/*.machine.json, generated; not the drafts and curated manifests in Machines/Manifests).</summary>
         static Dictionary<string, MachineManifest> Manifests() =>
             manifests ??= Directory.GetFiles(Path.Combine(RepoRoot(), "Machines"), "*" + MachineManifest.Suffix, SearchOption.AllDirectories)
-                .Select(f => MachineManifest.Load(f)!).Where(m => !m.IsDraft).ToDictionary(m => m.Gear);
+                .Select(f => MachineManifest.Load(f)!).Where(m => m.Quality == "generated").ToDictionary(m => m.Gear);
+
+        static Dictionary<string, MachineManifest>? exact;
+
+        /// <summary>Every manifest with exact units: the Neo machines' and the curated ones (U3), by gear name.</summary>
+        static Dictionary<string, MachineManifest> Exact() =>
+            exact ??= Manifests().Values.Concat(CuratedManifestTests.Curated().Values).ToDictionary(m => m.Gear);
+
+        /// <summary>
+        /// A manifest's parameters by name (as a table shows it: trimmed) or, curated, by plain name; global and track
+        /// (Pedal M1 has a global and a track Volume).
+        /// </summary>
+        static List<ManifestParameter> Named(MachineManifest m, string name)
+        {
+            var all = m.Parameters.Concat(m.TrackParameters).ToList();
+            var found = all.Where(p => p.Name.Trim() == name.Trim()).ToList();
+            return found.Count > 0 ? found : all.Where(p => p.PlainName.Length > 0 && p.PlainName == name).ToList();
+        }
 
         /// <summary>The factory presets by gear (Machines/*/Presets.txt).</summary>
         static Dictionary<string, List<string>> Presets()
@@ -167,6 +184,8 @@ namespace ReBuzz.AgentTests
             foreach (var t in Topics) yield return ($"guide {t}", GuideLibrary.Get(t)!, null);
             foreach (var g in MachineManual.CuratedGear) yield return ($"curated page {g}", MachineManual.Curated(g)!, g);
             foreach (var m in Manifests().Values) yield return ($"manual {m.Gear}", MachineManual.Build(m, Presets().GetValueOrDefault(m.Gear)), m.Gear);
+            // U3: the curated manifests' manuals (their pages, if any, come with them).
+            foreach (var m in CuratedManifestTests.Curated().Values) yield return ($"manual {m.Gear}", MachineManual.Build(m, null), m.Gear);
             foreach (var (name, args) in PromptCases()) yield return ($"prompt {name}({string.Join(", ", args.Select(a => a.Key + "=" + a.Value))})", Render(name, args), null);
         }
 
@@ -404,7 +423,7 @@ namespace ReBuzz.AgentTests
                 {
                     int level = heading.Groups[1].Value.Length;
                     stack.RemoveAll(s => s.Level >= level);
-                    var named = NeoGear.Concat(PendingGear).Where(g => heading.Groups[2].Value.Contains(g)).ToList();
+                    var named = NeoGear.Concat(PendingGear).Concat(CuratedManifestTests.Curated().Keys).Where(g => heading.Groups[2].Value.Contains(g)).ToList();
                     stack.Add((level, named.Count == 1 ? named[0] : stack.LastOrDefault().Gear ?? pageGear));
                     inParameterTable = false;
                     continue;
@@ -413,7 +432,7 @@ namespace ReBuzz.AgentTests
                 string trimmed = line.Trim();
                 if (trimmed.StartsWith("|"))
                 {
-                    var cells = trimmed.Trim('|').Split('|').Select(c => c.Trim().Trim('`').Trim()).ToList();
+                    var cells = Regex.Split(trimmed.Trim('|'), @"(?<!\\)\|").Select(c => c.Trim().Trim('`').Trim()).ToList();
                     if (cells[0] == "Parameter")
                     {
                         inParameterTable = true;
@@ -452,19 +471,25 @@ namespace ReBuzz.AgentTests
             return target < lo - eps || target > hi + eps ? $"outside {MachineManual.Range(p)}: it lands on {MachineManual.Format(p, raw)}" : null;
         }
 
+        /// <summary>
+        /// Every parameter name a guide, page or manual quotes is a parameter of the gear it is about (the Neo
+        /// machines, and since U3 the curated ones, by name or plain name), and every value it gives lands in range.
+        /// </summary>
         [Test]
-        public void EveryNeoParameterTheGuidesQuoteExistsWithAValueInRange()
+        public void EveryParameterTheGuidesQuoteExistsWithAValueInRange()
         {
             var problems = new List<string>();
-            int checkedNames = 0, checkedValues = 0;
+            int checkedNames = 0, checkedValues = 0, curatedNames = 0, curatedValues = 0;
             foreach (var (where, text, pageGear) in Texts())
                 foreach (var (gear, name, value, line) in QuotedParameters(text, pageGear))
                 {
                     if (gear != null && PendingGear.Contains(gear)) continue;
                     var candidates = gear != null
-                        ? new[] { Manifests()[gear] }.Where(m => m.Parameters.Any(p => p.Name == name)).ToList()
-                        : Manifests().Values.Where(m => m.Parameters.Any(p => p.Name == name)).ToList();
+                        ? new[] { Exact()[gear] }.Where(m => Named(m, name).Count > 0).ToList()
+                        : Manifests().Values.Where(m => Named(m, name).Count > 0).ToList();
                     checkedNames++;
+                    bool curated = gear != null && Exact()[gear].IsCurated;
+                    if (curated) curatedNames++;
                     if (candidates.Count == 0)
                     {
                         problems.Add($"{where}: \"{name}\" isn't a parameter of {gear ?? "any Neo machine"} ({line.Trim()})");
@@ -472,12 +497,14 @@ namespace ReBuzz.AgentTests
                     }
                     if (value == null) continue;
                     checkedValues++;
-                    var why = candidates.Select(m => ValueProblem(m.Parameters.First(p => p.Name == name), value)).ToList();
+                    if (curated) curatedValues++;
+                    var why = candidates.SelectMany(m => Named(m, name)).Select(p => ValueProblem(p, value)).ToList();
                     if (why.All(w => w != null))
                         problems.Add($"{where}: {gear ?? candidates[0].Gear} \"{name}\" = \"{value}\": {why[0]}");
                 }
             Assert.That(problems, Is.Empty, string.Join("\n", problems));
             Assert.That(checkedValues, Is.GreaterThan(300), $"{checkedNames} names, {checkedValues} values checked");
+            Assert.That(curatedValues, Is.GreaterThan(400), $"{curatedNames} curated names, {curatedValues} curated values checked");
         }
 
         [Test]
@@ -611,6 +638,23 @@ namespace ReBuzz.AgentTests
             var withManifest = TestTools.CallTool(new McpServer(new ServerInfo { Name = "t", Title = "t", Version = "1" }, full), "guide", new JsonObject { ["machine"] = "neo verb" });
             Assert.That(withManifest.Data["markdown"]!.GetValue<string>(), Does.Contain("| Pre-delay | 0 ms … 250 ms |"));
             Assert.That(withManifest.Data["markdown"]!.GetValue<string>(), Does.Contain("- Plate — Snare"));
+
+            // U3: every installed gear with a manifest has a manual, drafts and curated ones too, and the list says so.
+            var gear = new ToolRegistry();
+            var profiled = CuratedManifestTests.Profiled();
+            GuideLibrary.Register(gear, g => profiled.Values.FirstOrDefault(m => MachineManual.Slug(m.Gear) == MachineManual.Slug(g)) is { } m ? MachineManual.Build(m, null) : null,
+                () => profiled.Keys.ToList());
+            var server2 = new McpServer(new ServerInfo { Name = "t", Title = "t", Version = "1" }, gear);
+            var listed = TestTools.CallTool(server2, "guide", new JsonObject()).Data["manuals"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
+            Assert.That(listed, Is.SupersetOf(profiled.Keys).And.SupersetOf(NeoGear));
+            var draft = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "jeskola noise generator" });
+            Assert.That(draft.Error, Is.False, draft.Text);
+            Assert.That(draft.Data["markdown"]!.GetValue<string>(), Does.StartWith("# Jeskola Noise Generator manual").And.Contain("profiled draft"));
+            var sh101 = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "Pedal SH101" }).Data["markdown"]!.GetValue<string>();
+            Assert.That(sh101, Does.Contain("**Filter cutoff** (`filter.cutoff`)").And.Contain("## Quirks"));
+            var typo = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "Pedal SH-1O1" });
+            Assert.That(typo.Error, Is.True);
+            Assert.That(typo.Text, Does.Contain("Did you mean \"Pedal SH101\""));
         }
     }
 }

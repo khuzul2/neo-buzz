@@ -259,5 +259,67 @@ class EdgeTests(unittest.TestCase):
         self.assertEqual(mi.edge(64, 65, lambda raw: True), 64)
 
 
+class RecurateTests(unittest.TestCase):
+    """U3 (mcp-server.md §12.9): a new profile updates a curated manifest's measurements, never its curation."""
+
+    curated = {
+        "status": "curated", "summary": "A delay for echoes.", "quirks": ["Feedback is per track."],
+        "health": {"status": "warn", "problems": ["old"]}, "profile": {"old": True},
+        "parameters": [{"index": 0, "name": "Dry", "plain_name": "Dry signal", "min": 0, "max": 1}],
+        "track_parameters": [
+            {"index": 2, "name": "Feedback", "plain_name": "Echo feedback", "role": "delay.feedback", "min": 0, "max": 128,
+             "safe_range": {"min": 1, "max": 128, "reason": "never decays at its minimum"}},
+            {"index": 3, "name": "Wet", "plain_name": "Echo level", "min": 0, "max": 128},
+        ],
+    }
+
+    def draft(self, **changes):
+        d = {"status": "draft", "summary": "Delay (profiled draft).", "health": {"status": "ok", "problems": []}, "profile": {"new": True},
+             "parameters": [{"index": 0, "name": "Dry", "min": 0, "max": 1}],
+             "track_parameters": [{"index": 0, "name": "Feedback", "min": 0, "max": 128,
+                                   "safe_range": {"min": 1, "max": 128, "reason": "never decays at its minimum"}},
+                                  {"index": 0, "name": "Wet", "min": 0, "max": 128}]}
+        d.update(changes)
+        return d
+
+    def test_keeps_the_curation_and_takes_the_measurements(self):
+        m, warnings = mi.recurate(self.curated, self.draft())
+        self.assertEqual(m["status"], "curated")
+        self.assertEqual(m["summary"], "A delay for echoes.")
+        self.assertEqual(m["track_parameters"][0]["plain_name"], "Echo feedback")
+        self.assertEqual(m["profile"], {"new": True})
+        self.assertEqual(m["health"]["status"], "ok")
+        self.assertEqual(warnings, [])
+        self.assertEqual(self.curated["profile"], {"old": True}, "the input is left alone")
+
+    def test_safe_ranges_follow_the_profile_but_never_widen(self):
+        d = self.draft()
+        d["track_parameters"][0]["safe_range"] = {"min": 4, "max": 120, "reason": "diverges", "min_text": "-93.8%", "max_text": "87.5%"}
+        d["track_parameters"][1]["safe_range"] = {"min": 0, "max": 100, "reason": "hot"}
+        m, warnings = mi.recurate(self.curated, d)
+        self.assertEqual((m["track_parameters"][0]["safe_range"]["min"], m["track_parameters"][0]["safe_range"]["max"]), (4, 120))
+        self.assertEqual(m["track_parameters"][1]["safe_range"]["max"], 100, "a new range is added")
+        self.assertEqual(len(warnings), 2)
+        d = self.draft()
+        del d["track_parameters"][0]["safe_range"]
+        m, warnings = mi.recurate(self.curated, d)
+        self.assertEqual(m["track_parameters"][0]["safe_range"]["min"], 1, "one the profile no longer finds stays, reported")
+        self.assertIn("no longer finds", warnings[0])
+
+    def test_a_curated_pitch_convention_stays_and_a_new_one_is_reported(self):
+        c = dict(self.curated, notes={"input": "tracks", "pitched": True, "pitch_offset": 0})
+        m, warnings = mi.recurate(c, self.draft(notes={"input": "tracks", "pitched": False}))
+        self.assertTrue(m["notes"]["pitched"], "from its source, where the profile heard no pitch")
+        self.assertEqual(warnings, ["notes: the profile now hears pitched False, curated True"])
+
+    def test_reports_renamed_and_resized_parameters(self):
+        d = self.draft(parameters=[{"index": 0, "name": "Dry thru", "min": 0, "max": 1}])
+        d["track_parameters"][1]["max"] = 255
+        _, warnings = mi.recurate(self.curated, d)
+        self.assertTrue(any("Dry: not in the new profile" in w for w in warnings), warnings)
+        self.assertTrue(any("Dry thru: new in the profile" in w for w in warnings), warnings)
+        self.assertTrue(any("track Wet: its range is now 0…255" in w for w in warnings), warnings)
+
+
 if __name__ == "__main__":
     unittest.main()

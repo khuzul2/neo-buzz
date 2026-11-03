@@ -164,6 +164,19 @@ jobs:
         if (Test-Path machine-profile/machine-profile.json) { python tools/machine-profiler.py --pack machine-profile }
         exit $code
 
+    # U3 (docs/specs/mcp-server.md §12.9): each curated manifest whose machine this build has (the natives;
+    # the Pedal machines too in a full build) against the machine itself: its ranges, and its own value texts
+    # wherever the manifest keeps them. Fails on a disagreement.
+    - name: Curated manifests against the machines
+      if: (success() || failure()) && steps.build.outcome == 'success'
+      timeout-minutes: 15
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
+        python tools/curated-check.py $exe.FullName curated-check
+        exit $LASTEXITCODE
+
     - name: Upload machine profile
       if: always() && hashFiles('machine-profile/machine-profile.json') != ''
       uses: actions/upload-artifact@v4

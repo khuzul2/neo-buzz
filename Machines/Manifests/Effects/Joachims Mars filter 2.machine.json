@@ -2,10 +2,20 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Joachims Mars filter 2",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "distortion",
- "summary": "Distortion (profiled draft): traits: distortion, dynamics, filter or EQ; tail 0.01 s; latency 0 samples; gain +1.5 dB at the defaults.",
+ "summary": "Distortion with 13 characters, from soft and round (Red crust, Deimos) through tube simulations (Cratered, God of iron, Scarred) to ring-mod and FM mangling (Battle axe, Crunch, Shatter), with pre-gain and treble and bass attenuators.",
+ "quirks": [
+  "Mode 0 (bypass) does nothing: good for comparing.",
+  "Amount means something slightly different per mode; in Steel pain PreGain and Amount do the same; in Cannon the bass control keeps the bass out of the distortion (its documentation).",
+  "Crunch adds a slight delay (its documentation).",
+  "PreGain at its top (+15.5 dB) or Amount at its top peaks above 0 dBFS (profile: +2.5 and +0.8 dBFS)."
+ ],
+ "evidence": [
+  "RunTime/Gear/Effects/Joachims Mars filter 2.html — the author's reference: modes, PreGain, Amount, treble and bass behaviour",
+  "profile (tools/machine-profiler.py, windows 2026-11-03) — distortion, +1.5 dB at the defaults; hot with PreGain or Amount at the top"
+ ],
  "tracks": 0,
  "health": {
   "status": "warn",
@@ -94,7 +104,9 @@
    "index": 0,
    "id": "Distortion mode",
    "name": "Distortion mode",
-   "group": "",
+   "plain_name": "Distortion character",
+   "role": "drive.type",
+   "group": "Distortion",
    "min": 0,
    "max": 13,
    "default": 1,
@@ -115,14 +127,15 @@
     "Shatter",
     "Cannon"
    ],
-   "description": "Distortion mode (0=bypass)",
-   "confidence": "values"
+   "description": "0 bypass, 1 Red crust, 2 Phobos, 3 Deimos, 4 Cratered, 5 God of iron, 6 Battle axe, 7 Scarred, 8 Bruised, 9 Rusty, 10 Steel pain, 11 Crunch, 12 Shatter, 13 Cannon."
   },
   {
    "index": 1,
    "id": "PreGain",
    "name": "PreGain",
-   "group": "",
+   "plain_name": "Input gain",
+   "role": "gain.input",
+   "group": "Distortion",
    "min": 1,
    "max": 128,
    "default": 71,
@@ -642,50 +655,52 @@
      15.5
     ]
    ],
-   "description": "Input volume gain",
-   "confidence": "values"
+   "description": "Level into the distortion, −100 to +15.5 dB."
   },
   {
    "index": 2,
    "id": "Amount",
    "name": "Amount",
-   "group": "",
+   "plain_name": "Amount",
+   "role": "drive",
+   "group": "Distortion",
    "min": 0,
    "max": 127,
    "default": 63,
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "Distortion amount",
-   "confidence": "values"
+   "description": "Intensity of the distortion (its meaning varies a little by mode)."
   },
   {
    "index": 3,
    "id": "Treble behavior",
    "name": "Treble behavior",
-   "group": "",
+   "plain_name": "Treble attenuator",
+   "role": "drive.treble",
+   "group": "Tone",
    "min": 0,
    "max": 127,
    "default": 127,
    "kind": "linear",
    "a": -127.0,
    "b": 0.0,
-   "description": "",
-   "confidence": "values"
+   "description": "0 (the top, its default) turns it off; lower values attenuate the treble (differs in Bruised mode)."
   },
   {
    "index": 4,
    "id": "Bass behavior",
    "name": "Bass behavior",
-   "group": "",
+   "plain_name": "Bass attenuator",
+   "role": "drive.bass",
+   "group": "Tone",
    "min": 0,
    "max": 127,
    "default": 127,
    "kind": "linear",
    "a": -127.0,
    "b": 0.0,
-   "description": "",
-   "confidence": "values"
+   "description": "0 (the top, its default) turns it off; lower values high-pass the bass (differs in Cannon mode)."
   }
  ],
  "track_parameters": []

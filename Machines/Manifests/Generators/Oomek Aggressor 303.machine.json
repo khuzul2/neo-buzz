@@ -2,14 +2,26 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Oomek Aggressor 303",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
- "type": "unpitched",
- "summary": "Unpitched (profiled draft): unpitched; monophonic; takes notes in its tracks; one note at the defaults -18 LUFS.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
+ "type": "monosynth",
+ "summary": "TB-303-style acid bass: saw or square into a resonant low-pass with envelope, accent and slide. For acid lines and squelchy basses.",
+ "quirks": [
+  "Monophonic, one track.",
+  "Slide and Accent are per-note pattern switches: param_set can't set them and notes_write doesn't write them yet.",
+  "The profiler heard no steady pitch on its default patch (a resonant sweep); its source plays 440 · 2^((note − 69)/12) plus Finetune, the same note conversion as machines measured at 440 Hz, so notes play as written.",
+  "Volume above 100% gets hot: +4.3 dBFS at 200% (profile)."
+ ],
+ "evidence": [
+  "ExternalMachines/source/buzztrax-buzzmachines/Oomek/Aggressor/303.cpp — parameters, Tick (cutoff, resonance, envelope, accent, finetune, volume), the pitch table, DescribeValue",
+  "ExternalMachines/source/buzztrax-buzzmachines/Oomek/Aggressor/Oomek_Aggressor_demo.bmx — a demo song using it",
+  "profile (tools/machine-profiler.py, windows 2026-11-03) — monophonic, −18 LUFS for a note, hot with Volume at its maximum"
+ ],
  "tracks": 1,
  "notes": {
   "input": "tracks",
-  "pitched": false,
+  "pitch_offset": 0,
+  "pitched": true,
   "polyphony": 1
  },
  "health": {
@@ -63,7 +75,9 @@
    "index": 0,
    "id": "Osc Type",
    "name": "Osc Type",
-   "group": "",
+   "plain_name": "Oscillator wave",
+   "role": "osc.wave",
+   "group": "Oscillator",
    "min": 0,
    "max": 1,
    "default": 0,
@@ -72,84 +86,94 @@
     "Saw",
     "Square"
    ],
-   "description": "Oscillator type (0 = Saw, 1 = Square)",
-   "confidence": "values"
+   "description": "Saw or square."
   },
   {
    "index": 1,
    "id": "Cutoff",
    "name": "Cutoff",
-   "group": "",
+   "plain_name": "Filter cutoff",
+   "role": "filter.cutoff",
+   "group": "Filter",
    "min": 0,
    "max": 240,
    "default": 120,
    "kind": "linear",
    "a": 0.0,
    "b": 240.0,
-   "description": "Filter cutoff",
-   "confidence": "values"
+   "description": "Low-pass cutoff before the envelope (0–240, square-law inside)."
   },
   {
    "index": 2,
    "id": "Res",
    "name": "Res",
-   "group": "",
+   "plain_name": "Filter resonance",
+   "role": "filter.resonance",
+   "group": "Filter",
    "min": 0,
    "max": 128,
    "default": 64,
    "kind": "linear",
    "a": 0.0,
    "b": 128.0,
-   "description": "Filter resonance",
-   "confidence": "values"
+   "description": "Resonance (0–128)."
   },
   {
    "index": 3,
    "id": "Env.Mod",
    "name": "Env.Mod",
-   "group": "",
+   "plain_name": "Filter envelope amount",
+   "role": "filter.env_amount",
+   "group": "Filter",
    "min": 0,
    "max": 128,
    "default": 64,
    "kind": "linear",
    "a": 0.0,
-   "b": 128.0,
-   "description": "Envelope modulation",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Envelope to cutoff."
   },
   {
    "index": 4,
    "id": "Decay",
    "name": "Decay",
-   "group": "",
+   "plain_name": "Envelope decay",
+   "role": "filter.env.decay",
+   "group": "Filter",
    "min": 0,
    "max": 128,
    "default": 64,
    "kind": "linear",
    "a": 0.0,
    "b": 128.0,
-   "description": "Envelope decay time",
-   "confidence": "values"
+   "description": "Decay of the filter envelope (0–128)."
   },
   {
    "index": 5,
    "id": "Accent Level",
    "name": "Accent Level",
-   "group": "",
+   "plain_name": "Accent level",
+   "role": "accent",
+   "group": "Filter",
    "min": 0,
    "max": 128,
    "default": 64,
    "kind": "linear",
    "a": 0.0,
-   "b": 128.0,
-   "description": "Accent level",
-   "confidence": "values"
+   "b": 200.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "How strongly accented notes open the filter and the level, 0–200%."
   },
   {
    "index": 6,
    "id": "Finetune",
    "name": "Finetune",
-   "group": "",
+   "plain_name": "Fine tune",
+   "role": "pitch.fine",
+   "group": "Oscillator",
    "min": 0,
    "max": 200,
    "default": 100,
@@ -157,14 +181,15 @@
    "a": -100.0,
    "b": 100.0,
    "unit": "ct",
-   "description": "",
-   "confidence": "values"
+   "description": "±100 cents."
   },
   {
    "index": 7,
    "id": "Volume",
    "name": "Volume",
-   "group": "",
+   "plain_name": "Volume",
+   "role": "level",
+   "group": "Output",
    "min": 0,
    "max": 200,
    "default": 100,
@@ -172,8 +197,7 @@
    "a": 0.0,
    "b": 200.0,
    "unit": "%",
-   "description": "",
-   "confidence": "values"
+   "description": "Output level, 0–200%."
   }
  ],
  "track_parameters": []

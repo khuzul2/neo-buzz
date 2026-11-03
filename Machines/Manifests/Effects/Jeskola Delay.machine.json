@@ -2,10 +2,21 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Jeskola Delay",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "delay",
- "summary": "Delay (profiled draft): traits: delay; tail 3.38 s; latency 0 samples; gain +6.2 dB at the defaults.",
+ "summary": "Classic Buzz mono delay with up to 8 taps, one per track, each with its own length (ticks, ms or samples), feedback and level. For tempo echoes and slapback.",
+ "quirks": [
+  "Each track is its own tap (delay line) with its own length, feedback and level (8 at most).",
+  "Lengths count in Length unit, ticks by default, so echoes follow the tempo; the Max Delay attribute (1 s by default) caps them.",
+  "Mono: ReBuzz feeds it left + right summed, so a centred signal comes out about 6 dB louder with Dry thru on (profile: +6.2 dB), and the output is mono.",
+  "Feedback at −100% never decays (+30 dBFS after 30 s): param_set keeps it at −98.4% or above."
+ ],
+ "evidence": [
+  "ExternalMachines/source/buzztrax-buzzmachines/Jeskola/Delay/Delay.cpp — parameters, DescribeValue, length units",
+  "ReBuzz/NativeMachine/NativeMessage.cs — a mono native effect gets left + right summed",
+  "profile (tools/machine-profiler.py, windows 2026-11-03) — delay, 7 echoes from 375 ms, +6.2 dB at the defaults; Feedback at −100% never decays"
+ ],
  "tracks": 8,
  "health": {
   "status": "warn",
@@ -102,15 +113,19 @@
    "index": 0,
    "id": "Dry thru",
    "name": "Dry thru",
-   "group": "",
+   "plain_name": "Dry signal through",
+   "role": "mix.dry",
+   "group": "Global",
    "min": 0,
    "max": 1,
    "default": 1,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 1.0,
-   "description": "Dry thru (1 = yes, 0 = no)",
-   "confidence": "values"
+   "kind": "switch",
+   "choices": [
+    "Off",
+    "On"
+   ],
+   "own_texts": false,
+   "description": "Passes the input through as well (on by default)."
   }
  ],
  "track_parameters": [
@@ -118,21 +133,24 @@
    "index": 0,
    "id": "Length",
    "name": "Length",
-   "group": "",
+   "plain_name": "Delay length",
+   "role": "delay.time",
+   "group": "Track",
    "min": 1,
    "max": 32768,
    "default": 3,
    "kind": "linear",
    "a": 1.0,
    "b": 32768.0,
-   "description": "Length in length units",
-   "confidence": "values"
+   "description": "Delay time in Length unit (3 ticks by default)."
   },
   {
-   "index": 0,
+   "index": 1,
    "id": "Length unit",
    "name": "Length unit",
-   "group": "",
+   "plain_name": "Delay time unit",
+   "role": "delay.unit",
+   "group": "Track",
    "min": 0,
    "max": 3,
    "default": 0,
@@ -143,23 +161,23 @@
     "sample",
     "tick/256"
    ],
-   "description": "Length unit (0 = tick (default), 1 = ms, 2 = sample, 3 = 256th of tick)",
-   "confidence": "values"
+   "description": "What the length counts: ticks (the default: it follows the tempo), ms, samples or 1/256 ticks."
   },
   {
-   "index": 0,
+   "index": 2,
    "id": "Feedback",
    "name": "Feedback",
-   "group": "",
+   "plain_name": "Feedback",
+   "role": "delay.feedback",
+   "group": "Track",
    "min": 0,
    "max": 128,
    "default": 96,
    "kind": "linear",
-   "a": -100.008301,
-   "b": 100.008301,
+   "a": -100.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Feedback (00 = -100%, 40=0%, 80 = 100%)",
-   "confidence": "values",
+   "description": "Echoes fed back, −100% to +100% (0% at raw 64; negative inverts each repeat).",
    "safe_range": {
     "min": 1,
     "max": 128,
@@ -169,19 +187,20 @@
    }
   },
   {
-   "index": 0,
+   "index": 3,
    "id": "Wet out",
    "name": "Wet out",
-   "group": "",
+   "plain_name": "Echo level",
+   "role": "mix.wet",
+   "group": "Track",
    "min": 0,
    "max": 128,
    "default": 48,
    "kind": "linear",
-   "a": 0.00353,
-   "b": 100.002671,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Wet out (00 = 0%, 80 = 100%)",
-   "confidence": "values"
+   "description": "Level of this track's echoes, 0–100%."
   }
  ]
 }

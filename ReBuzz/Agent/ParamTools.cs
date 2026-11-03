@@ -30,6 +30,7 @@ namespace ReBuzz.Agent
                 Description =
                     "Everything about one machine's sound: each parameter with its group, current value (text, number and unit), range, default, " +
                     "choices, meaning and safe_range (where the machine was found to diverge: param_set keeps to it); track parameters per track; the gear's summary, its manifest (generated, curated or a profiled draft) and how it takes notes. " +
+                    "Curated manifests add each parameter's plain name and role, and the gear's quirks. " +
                     "Read it before param_set. Big machines (Neo FM6 has 172 parameters): pass group to read one section. value_table=true adds each " +
                     "parameter's texts across its range (every value up to 256 values, else table_points of them), for machines whose texts are all you have. " +
                     "Example: machine_describe(machine=\"Bass\", group=\"Filter 1\").",
@@ -44,9 +45,12 @@ namespace ReBuzz.Agent
                     Opt("manifest", String("generated, curated or draft (profiled, not yet curated: units approximate where marked)")),
                     Req("exact_units", Boolean("Values in units land exactly")),
                     Opt("gear_info", Object("The gear: its file, track range, how it takes notes", Req("file", String("Its DLL, under Gear")))),
+                    Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it (track 0 only, needs a wave…)")),
                     Req("groups", Array(String("Group"), "All parameter groups")),
                     Req("parameters", Array(Object("A parameter",
                         Req("name", String("Pass this to param_set")),
+                        Opt("plain_name", String("Curated: what it is in plain English; param_set takes it too")),
+                        Opt("role", String("Curated: what it does (filter.cutoff, env.release, mix.wet, drive…)")),
                         Req("value", String("Current value as the machine shows it"))), "Parameters"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
@@ -83,6 +87,7 @@ namespace ReBuzz.Agent
                             o["health"] = h;
                         }
                         o["gear_info"] = GearInfo(m);
+                        if (manifest?.Quirks.Count > 0) o["quirks"] = new JsonArray(manifest.Quirks.Select(x => (JsonNode)x).ToArray());
                         if (manifest?.Imports.Count > 0)
                             o["data_imports"] = new JsonArray(manifest.Imports.Select(i => (JsonNode)new JsonObject
                             {
@@ -132,7 +137,7 @@ namespace ReBuzz.Agent
                 Input = Object(null,
                     Req("machine", String("The machine")),
                     Req("changes", Array(Object("One change",
-                        Req("param", String("Parameter name (or #index for global parameters)")),
+                        Req("param", String("Parameter name (a curated manifest's plain name works too, or #index for global parameters)")),
                         Opt("value", AnyOf("The new value", String("With its unit, a choice, min/max/default or raw:N"), Number("A number in the parameter's unit"))),
                         Opt("by", AnyOf("Change by this amount", String("With its unit: \"+3 dB\""), Number("In the parameter's unit"))),
                         Opt("times", Number("Multiply the value by this factor", 0)),
@@ -180,7 +185,7 @@ namespace ReBuzz.Agent
                             // machine-safety.md §3.4: outside the safe range only when the agent says so.
                             string refusal = SafeRange.Refusal(p.Info, raw);
                             if (refusal != null && !allowUnsafe) throw new ToolError($"{at}: {refusal}");
-                            plan.Add((p, track, raw, SongModel.Describe(p.Parameter, p.Parameter.GetValue(track)),
+                            plan.Add((p, track, raw, p.Info.Describe(p.Parameter.GetValue(track)),
                                       refusal != null ? $"outside its safe range, {p.Info.SafeRange.Text(p.Info.Describe)}: {p.Info.SafeRange.Reason}" : null));
                         }
                         foreach (var (p, track, raw, _, _) in plan) AgentActions.SetParameter(core, m, p.Parameter, track, raw);
@@ -304,6 +309,9 @@ namespace ReBuzz.Agent
         static JsonObject Describe(MachineCore m, AgentParam p)
         {
             var o = new JsonObject { ["name"] = p.Name };
+            // A curated manifest (U3): what it is in plain English (param_set takes it too) and its role.
+            if (p.Manifest is { PlainName.Length: > 0 } named) o["plain_name"] = named.PlainName;
+            if (p.Manifest is { Role.Length: > 0 } roled) o["role"] = roled.Role;
             if (!p.IsTrack) o["index"] = p.Parameter.IndexInGroup;
             if (p.Info.Group.Length > 0) o["group"] = p.Info.Group;
             if (p.IsTrack)
@@ -311,20 +319,20 @@ namespace ReBuzz.Agent
                 o["per_track"] = true;
                 foreach (var kv in SongModel.Value(p, 0)) o[kv.Key] = kv.Value?.DeepClone();
                 if (m.TrackCount > 1)
-                    o["track_values"] = new JsonArray(Enumerable.Range(0, m.TrackCount).Select(t => (JsonNode)SongModel.Describe(p.Parameter, p.Parameter.GetValue(t))).ToArray());
+                    o["track_values"] = new JsonArray(Enumerable.Range(0, m.TrackCount).Select(t => (JsonNode)p.Info.Describe(p.Parameter.GetValue(t))).ToArray());
             }
             else
             {
                 foreach (var kv in SongModel.Value(p, 0)) o[kv.Key] = kv.Value?.DeepClone();
             }
-            o["range"] = $"{SongModel.Describe(p.Parameter, p.Info.Min)} … {SongModel.Describe(p.Parameter, p.Info.Max)}";
-            o["default"] = SongModel.Describe(p.Parameter, p.Info.Default);
+            o["range"] = $"{p.Info.Describe(p.Info.Min)} … {p.Info.Describe(p.Info.Max)}";
+            o["default"] = p.Info.Describe(p.Info.Default);
             if (p.Info.Mapping is { Kind: MappingKind.Enum or MappingKind.Switch })
                 o["choices"] = new JsonArray(ValueResolver.Choices(p.Info).Select(x => (JsonNode)x).ToArray());
             else if (p.Info.Mapping == null && p.Info.Max - p.Info.Min <= 12 && p.Info.Max > p.Info.Min)
             {
                 // A small range without a manifest: its texts are its choices.
-                var texts = Enumerable.Range(p.Info.Min, p.Info.Max - p.Info.Min + 1).Select(v => SongModel.Describe(p.Parameter, v)).ToList();
+                var texts = Enumerable.Range(p.Info.Min, p.Info.Max - p.Info.Min + 1).Select(v => p.Info.Describe(v)).ToList();
                 if (texts.Any(t => !int.TryParse(t, out _))) o["choices"] = new JsonArray(texts.Select(x => (JsonNode)x).ToArray());
             }
             if (!string.IsNullOrWhiteSpace(p.Info.Description) && p.Info.Description != p.Name) o["description"] = p.Info.Description;
