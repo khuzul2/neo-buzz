@@ -80,6 +80,15 @@ namespace NeoBuzz.Wave
         /// <summary>A chosen table is still being built (the voices play the previous one, or nothing yet).</summary>
         public bool TablesPending => Volatile.Read(ref tablesPending);
 
+        /// <summary>
+        /// Whether a built-in table is still being built. Any thread, and current without a block
+        /// being processed: an offline render waits for it without running the machines, so how long
+        /// the build takes changes nothing in the render (mac-engine.md §6, the null test). All of
+        /// them, not just the ones chosen now: the engine applies parameter changes (a preset's
+        /// table) at its next tick, after the wait.
+        /// </summary>
+        public bool TablesBuilding => !Tables.AllBuilt();
+
         /// <summary>The table "User" plays (loaded by the machine from a file or its saved state); null when none.</summary>
         public Wavetable UserTable => requestedUser;
 
@@ -470,8 +479,8 @@ namespace NeoBuzz.Wave
         {
             switch (w)
             {
-                case Warp.BendUp: return Math.Pow(p, 1 + 3 * a);
-                case Warp.BendDown: return 1 - Math.Pow(1 - p, 1 + 3 * a);
+                case Warp.BendUp: return PortableMath.Pow(p, 1 + 3 * a);
+                case Warp.BendDown: return 1 - PortableMath.Pow(1 - p, 1 + 3 * a);
                 case Warp.Squeeze:
                 {
                     double width = 1 - 0.96 * a;
@@ -482,7 +491,7 @@ namespace NeoBuzz.Wave
                     double m = p < 0.5 ? 2 * p : 2 - 2 * p;
                     return (1 - a) * p + a * m * 0.5;
                 }
-                case Warp.Asym: return p + a * 0.15 * Math.Sin(2 * Math.PI * p);
+                case Warp.Asym: return p + a * 0.15 * PortableMath.Sin(2 * Math.PI * p);
                 case Warp.WindowSync:
                 {
                     double q = p * (1 + 7 * a);
@@ -500,14 +509,14 @@ namespace NeoBuzz.Wave
             if (s.LfoRetrigs[0])
             {
                 lfo1.Shape = s.LfoShapes[0];
-                lfo1.Rate = s.LfoRates[0] * MathF.Pow(2, dst[(int)WaveDest.Lfo1Rate] * 4);
+                lfo1.Rate = s.LfoRates[0] * PortableMathF.Pow(2, dst[(int)WaveDest.Lfo1Rate] * 4);
                 l1 = lfo1.Advance(n, sr);
             }
             else l1 = engine.GlobalLfo1;
             if (s.LfoRetrigs[1])
             {
                 lfo2.Shape = s.LfoShapes[1];
-                lfo2.Rate = s.LfoRates[1] * MathF.Pow(2, dst[(int)WaveDest.Lfo2Rate] * 4);
+                lfo2.Rate = s.LfoRates[1] * PortableMathF.Pow(2, dst[(int)WaveDest.Lfo2Rate] * 4);
                 l2 = lfo2.Advance(n, sr);
             }
             else l2 = engine.GlobalLfo2;
@@ -551,7 +560,7 @@ namespace NeoBuzz.Wave
 
             float key = (note - 60f) / 12f;
             float oct = key * s.FKey + fenv * s.FEnv + s.FVel * (velocity - 1f) + dst[(int)WaveDest.Cutoff] * 6f;
-            float cut = DspMath.Clamp(s.Cutoff * MathF.Pow(2, oct), 16f, 22000f);
+            float cut = DspMath.Clamp(s.Cutoff * PortableMathF.Pow(2, oct), 16f, 22000f);
             float reso = DspMath.Clamp(s.Reso + dst[(int)WaveDest.Reso], 0, 1);
             float g = Svf.Prewarp(cut, sr);
             if (s.FType <= 1) ladder.Set(g, reso);
@@ -590,11 +599,11 @@ namespace NeoBuzz.Wave
                 if (lvlB > 0 || wA == Warp.PhaseMod)
                 {
                     b = tB.Read(fB, WarpPhase(wB, warpB, phB), levelB);
-                    if (wB == Warp.WindowSync) b *= (float)(0.5 - 0.5 * Math.Cos(2 * Math.PI * phB));
+                    if (wB == Warp.WindowSync) b *= (float)(0.5 - 0.5 * PortableMath.Cos(2 * Math.PI * phB));
                 }
                 double pa = wA == Warp.PhaseMod ? phA + warpA * 0.5 * b : WarpPhase(wA, warpA, phA);
                 float a = lvlA > 0 ? tA.Read(fA, pa - Math.Floor(pa), levelA) : 0f;
-                if (wA == Warp.WindowSync) a *= (float)(0.5 - 0.5 * Math.Cos(2 * Math.PI * phA));
+                if (wA == Warp.WindowSync) a *= (float)(0.5 - 0.5 * PortableMath.Cos(2 * Math.PI * phA));
                 float x = a * lvlA + b * lvlB;
                 if (lvlSub > 0 && tSub != null) x += tSub.Read(subFrame, phSub, levelSub) * lvlSub;
                 if (noise > 0) x += rng.NextBipolar() * noise;

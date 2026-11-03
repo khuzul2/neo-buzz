@@ -226,7 +226,7 @@ namespace NeoBuzz.Drive
             }
             float b = bias.Advance(n);
             double fb = shaper.F(b);
-            float sagCoeff = 1f - MathF.Exp(-1f / (0.015f * sampleRate * factor));
+            float sagCoeff = 1f - PortableMathF.Exp(-1f / (0.015f * sampleRate * factor));
 
             for (int ch = 0; ch < 2; ch++)
             {

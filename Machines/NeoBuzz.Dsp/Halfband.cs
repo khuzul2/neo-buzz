@@ -21,13 +21,13 @@ namespace NeoBuzz.Dsp
             int n = 4 * K - 1;
             int centre = 2 * K - 1;
             double beta = attenuationDb > 50 ? 0.1102 * (attenuationDb - 8.7)
-                : attenuationDb >= 21 ? 0.5842 * Math.Pow(attenuationDb - 21, 0.4) + 0.07886 * (attenuationDb - 21) : 0;
+                : attenuationDb >= 21 ? 0.5842 * PortableMath.Pow(attenuationDb - 21, 0.4) + 0.07886 * (attenuationDb - 21) : 0;
             double i0b = BesselI0(beta);
             Taps = new double[n];
             for (int i = 0; i < n; i++)
             {
                 int m = i - centre;
-                double sinc = m == 0 ? 0.5 : Math.Sin(Math.PI * m / 2) / (Math.PI * m);
+                double sinc = m == 0 ? 0.5 : PortableMath.Sin(Math.PI * m / 2) / (Math.PI * m);
                 double r = (double)m / centre;
                 double w = BesselI0(beta * Math.Sqrt(Math.Max(0, 1 - r * r))) / i0b;
                 Taps[i] = m != 0 && m % 2 == 0 ? 0 : sinc * w;
@@ -70,8 +70,8 @@ namespace NeoBuzz.Dsp
             double re = 0, im = 0;
             for (int i = 0; i < Taps.Length; i++)
             {
-                re += Taps[i] * Math.Cos(2 * Math.PI * f * i);
-                im -= Taps[i] * Math.Sin(2 * Math.PI * f * i);
+                re += Taps[i] * PortableMath.Cos(2 * Math.PI * f * i);
+                im -= Taps[i] * PortableMath.Sin(2 * Math.PI * f * i);
             }
             return Math.Sqrt(re * re + im * im);
         }
@@ -170,9 +170,9 @@ namespace NeoBuzz.Dsp
 
         static void TransitionParam(double transition, out double k, out double q)
         {
-            k = Math.Tan((1 - transition * 2) * Math.PI / 4);
+            k = PortableMath.Tan((1 - transition * 2) * Math.PI / 4);
             k *= k;
-            double kksqrt = Math.Pow(1 - k * k, 0.25);
+            double kksqrt = PortableMath.Pow(1 - k * k, 0.25);
             double e = 0.5 * (1 - kksqrt) / (1 + kksqrt);
             double e2 = e * e;
             double e4 = e2 * e2;
@@ -182,9 +182,9 @@ namespace NeoBuzz.Dsp
         static double[] ComputeCoefs(double attenuation, double transition)
         {
             TransitionParam(transition, out double k, out double q);
-            double attnP2 = Math.Pow(10.0, -attenuation / 10);
+            double attnP2 = PortableMath.Pow(10.0, -attenuation / 10);
             double a = attnP2 / (1 - attnP2);
-            int order = (int)Math.Ceiling(Math.Log(a * a / 16) / Math.Log(q));
+            int order = (int)Math.Ceiling(PortableMath.Log(a * a / 16) / PortableMath.Log(q));
             if ((order & 1) == 0) order++;
             if (order == 1) order = 3;
             int n = (order - 1) / 2;
@@ -192,7 +192,7 @@ namespace NeoBuzz.Dsp
             for (int i = 0; i < n; i++)
             {
                 int ci = i + 1;
-                double num = AccNum(q, order, ci) * Math.Pow(q, 0.25);
+                double num = AccNum(q, order, ci) * PortableMath.Pow(q, 0.25);
                 double den = AccDen(q, order, ci) + 0.5;
                 double ww = num / den;
                 double wwsq = ww * ww;
@@ -208,7 +208,7 @@ namespace NeoBuzz.Dsp
             int i = 0, j = 1;
             do
             {
-                term = Math.Pow(q, i * (i + 1)) * Math.Sin((i * 2 + 1) * c * Math.PI / order) * j;
+                term = PortableMath.Pow(q, i * (i + 1)) * PortableMath.Sin((i * 2 + 1) * c * Math.PI / order) * j;
                 acc += term;
                 j = -j;
                 i++;
@@ -222,7 +222,7 @@ namespace NeoBuzz.Dsp
             int i = 1, j = -1;
             do
             {
-                term = Math.Pow(q, i * i) * Math.Cos(i * 2 * c * Math.PI / order) * j;
+                term = PortableMath.Pow(q, i * i) * PortableMath.Cos(i * 2 * c * Math.PI / order) * j;
                 acc += term;
                 j = -j;
                 i++;

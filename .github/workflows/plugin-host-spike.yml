@@ -1,0 +1,173 @@
+name: Plugin host spike (H0)
+
+# docs/specs/plugin-host.md §6.1, H0: the neoplug hosting library (VST3 SDK 3.8.1 + CLAP 1.2.10), its
+# probe, the throwaway Neo Plug Spike machine inside rebuzz-headless, the sandbox's IPC round trip,
+# plugin GUIs in an Avalonia 12 NativeControlHost, and the plugin census. Spike code
+# (experiments/plugin-host-h0/): nothing in the product builds it.
+#
+# Fixtures: the SDK's AGain and Note Expression Synth (built here), neoplug-test.clap (ours), and
+# Surge XT (GPL-3.0), downloaded and installed on the runner only, never shipped.
+#
+# macOS minutes cost about 10× Linux: pushes run Linux and Windows; macOS joins on a dispatch
+# (unless macos=false) or when the commit message says [mac].
+on:
+  workflow_dispatch:
+    inputs:
+      macos:
+        description: Include the macOS (arm64) runner
+        type: boolean
+        default: true
+  push:
+    branches: [ experiments/plugin-host-h0 ]
+    paths:
+      - 'experiments/plugin-host-h0/**'
+      - 'tools/plugin-census.py'
+      - '.github/workflows/plugin-host-spike.yml'
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.m.outputs.os }}
+    steps:
+    - id: m
+      env:
+        EVENT: ${{ github.event_name }}
+        MAC: ${{ inputs.macos }}
+        MSG: ${{ github.event.head_commit.message }}
+      run: |
+        os='["ubuntu-latest","windows-latest"]'
+        if { [ "$EVENT" = workflow_dispatch ] && [ "$MAC" != false ]; } || printf '%s' "$MSG" | grep -qF '[mac]'; then
+          os='["ubuntu-latest","windows-latest","macos-15"]'
+        fi
+        echo "os=$os" >> "$GITHUB_OUTPUT"
+
+  spike:
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(needs.plan.outputs.os) }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Paths
+      run: |
+        if [ "$RUNNER_OS" = Windows ]; then T=$(cygpath -m "$RUNNER_TEMP"); W=$(pwd -W); X=.exe; L=neoplug.dll
+        else T=$RUNNER_TEMP; W=$PWD; X=; L=libneoplug.so; fi
+        [ "$RUNNER_OS" = macOS ] && L=libneoplug.dylib
+        { echo "T=$T"; echo "W=$W"; echo "X=$X"; echo "B=$T/h0"; echo "LIB=$T/h0/bin/$L"; echo "OUT=$W/h0-results"; } >> "$GITHUB_ENV"
+
+    - name: Linux packages (VSTGUI for the SDK's examples)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update -q
+        sudo apt-get install -y -q ninja-build libx11-xcb-dev libxcb-util-dev libxcb-cursor-dev libxcb-xkb-dev libxkbcommon-dev \
+          libxkbcommon-x11-dev libfontconfig1-dev libcairo2-dev libgtkmm-3.0-dev libsqlite3-dev libxcb-keysyms1-dev
+
+    - name: SDKs (VST3 3.8.1, CLAP 1.2.10)
+      run: |
+        git clone -q --depth 1 --branch v3.8.1_build_84 https://github.com/steinbergmedia/vst3sdk "$T/vst3sdk"
+        git -C "$T/vst3sdk" -c advice.detachedHead=false submodule update -q --init --depth 1 base pluginterfaces public.sdk cmake vstgui4
+        git -c advice.detachedHead=false clone -q --depth 1 --branch 1.2.10 https://github.com/free-audio/clap "$T/clap"
+
+    - name: Build neoplug, the probe, neoplug-test.clap, the bench and the SDK's examples
+      run: |
+        case "$RUNNER_OS" in
+          Windows) gen=(-A x64) ;;
+          Linux) gen=(-G Ninja) ;;
+          *) gen=() ;;
+        esac
+        cmake -S experiments/plugin-host-h0 -B "$B" "${gen[@]}" -DCMAKE_BUILD_TYPE=Release -DNEOPLUG_VST3_SDK="$T/vst3sdk" -DNEOPLUG_CLAP="$T/clap"
+        cmake --build "$B" --config Release -j 4
+        ls -la "$B/bin" "$B/VST3/Release/again.vst3/Contents" "$B/VST3/Release/note-expression-synth.vst3/Contents"
+
+    - name: Surge XT (GPL, a test fixture on the runner only)
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: python experiments/plugin-host-h0/get-surge.py "$T/surge" "$T/surge.txt" || echo "::warning::Surge XT could not be installed"
+
+    - name: rebuzz-headless with the Neo Plug Spike machines
+      run: |
+        git submodule update --init --depth 1 3rdParty/serilog/serilog
+        # On Windows the projects' restore hack needs SolutionDir and ReBuzzCleanBuild, as fork-ci's core-build.
+        win=(); [ "$RUNNER_OS" = Windows ] && win=("-p:SolutionDir=$W/" -p:ReBuzzCleanBuild=true)
+        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q "${win[@]}"
+        G="$W/ReBuzz.Headless/bin/Release/net10.0/Gear/"
+        for p in gen/NeoPlugSpike fx/NeoPlugSpikeFX; do
+          dotnet build experiments/plugin-host-h0/machine/$p.csproj -c Release -nologo -v:q "-p:GearDir=$G" "-p:NeoPlugLib=$LIB" "${win[@]}"
+        done
+        ls ReBuzz.Headless/bin/Release/net10.0/Gear/Generators ReBuzz.Headless/bin/Release/net10.0/Gear/Effects
+
+    - name: GUI spike (Avalonia 12)
+      if: runner.os != 'Linux'
+      run: dotnet build experiments/plugin-host-h0/guispike/NeoPlugGuiSpike.csproj -c Release -nologo -v:q "-p:NeoPlugLib=$LIB"
+
+    - name: H0 checks (probe, engine, GUI, IPC round trip)
+      run: |
+        python experiments/plugin-host-h0/run-h0.py --fixtures --surge-list "$T/surge.txt" --bin "$B/bin" --vst3 "$B/VST3/Release" \
+          --headless "$W/ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless$X" \
+          --guispike "$W/experiments/plugin-host-h0/guispike/bin/Release/net10.0/NeoPlugGuiSpike$X" \
+          --bench --out "$OUT"
+
+    - name: IPC round trip with real-time priority (Linux, as root)
+      if: always() && runner.os == 'Linux'
+      run: sudo "$B/bin/neoplug-ipc-bench" --json "$OUT/ipc-linux-rt.json" > /dev/null
+
+    # Thumbnails of the GUI snapshots in the log (base64 PNG), for reading the run without its artifacts.
+    - name: GUI snapshots in the log (macOS)
+      if: always() && runner.os == 'macOS'
+      run: |
+        screencapture -x "$OUT/screen-end.png" || true
+        python experiments/plugin-host-h0/dump-images.py "$OUT"
+
+    - name: Plugin census (self-test, then this runner's folders)
+      if: always()
+      run: |
+        mkdir -p "$OUT"
+        python tools/plugin-census.py --self-test
+        python tools/plugin-census.py --songs ExternalMachines/source --out "$OUT/census.md" --json "$OUT/census.json" --quiet
+        cat "$OUT/census.md" | tee -a "$GITHUB_STEP_SUMMARY"
+
+    # What you run on your own computer with your commercial plugins (run-h0.py --plugin ...).
+    - name: Package the spike for a manual test
+      if: always() && runner.os != 'Linux'
+      run: |
+        P="$T/pkg/neoplug-h0"
+        mkdir -p "$P/bin" "$P/VST3" "$P/headless" "$P/guispike"
+        for f in "$B"/bin/*; do [ "$(basename "$f")" = Release ] || cp -R "$f" "$P/bin/"; done
+        cp -R "$B/VST3/Release/again.vst3" "$B/VST3/Release/note-expression-synth.vst3" "$P/VST3/"
+        cp -R ReBuzz.Headless/bin/Release/net10.0/. "$P/headless/"
+        cp -R experiments/plugin-host-h0/guispike/bin/Release/net10.0/. "$P/guispike/" || true
+        cp experiments/plugin-host-h0/run-h0.py experiments/plugin-host-h0/headless-test.py "$P/"
+        cd "$T/pkg"
+        if [ "$RUNNER_OS" = Windows ]; then 7z a -bd -tzip neoplug-h0.zip neoplug-h0 > /dev/null; else ditto -c -k --keepParent neoplug-h0 neoplug-h0.zip; fi
+
+    - name: Upload the spike package
+      if: always() && runner.os != 'Linux'
+      uses: actions/upload-artifact@v4
+      with:
+        name: neoplug-h0-${{ runner.os }}-${{ runner.arch }}
+        path: ${{ runner.temp }}/pkg/neoplug-h0.zip
+        if-no-files-found: ignore
+
+    - name: Upload results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: h0-results-${{ runner.os }}-${{ runner.arch }}
+        path: h0-results
+        if-no-files-found: ignore

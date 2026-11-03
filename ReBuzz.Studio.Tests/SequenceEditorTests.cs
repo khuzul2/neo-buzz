@@ -442,9 +442,20 @@ namespace ReBuzz.Studio.Tests
             // Edit ▸ Copy on the block under the cursor, Edit ▸ Paste two bars on, Edit ▸ Cut, Edit ▸ Undo.
             void Edit(string header)
             {
-                var item = rig.Window.GetLogicalDescendants().OfType<MenuItem>().Single(m => m.Header as string == header);
-                Assert.That(item.Command!.CanExecute(null), Is.True, $"{header} is enabled");
-                item.Command.Execute(null);
+                if (OperatingSystem.IsMacOS())
+                {
+                    // On a Mac the menus are the menu bar's (NativeMenu), not the window's: run the same model entry.
+                    var entry = AppMenu.Find(rig.Window.MenuModel(mac: true), "Edit/" + header.Replace("_", ""));
+                    Assert.That(entry, Is.Not.Null, $"the Edit menu has {header}");
+                    Assert.That(entry!.CanRun?.Invoke() ?? true, Is.True, $"{header} is enabled");
+                    entry.Run();
+                }
+                else
+                {
+                    var item = rig.Window.GetLogicalDescendants().OfType<MenuItem>().Single(m => m.Header as string == header);
+                    Assert.That(item.Command!.CanExecute(null), Is.True, $"{header} is enabled");
+                    item.Command.Execute(null);
+                }
                 Settle();
             }
             rig.Click(rig.At(0, 0, dx: 12));

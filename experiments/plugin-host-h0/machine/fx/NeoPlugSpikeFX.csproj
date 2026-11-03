@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- H0 spike: the effect build of NeoPlugSpike.cs (see NeoPlugSpike.Machine.targets). -->
+  <PropertyGroup>
+    <NeoName>Neo Plug Spike FX</NeoName>
+    <NeoKind>Effects</NeoKind>
+    <DefineConstants>$(DefineConstants);FX</DefineConstants>
+  </PropertyGroup>
+  <Import Project="../NeoPlugSpike.Machine.targets" />
+</Project>

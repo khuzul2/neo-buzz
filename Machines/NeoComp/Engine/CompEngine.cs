@@ -156,7 +156,7 @@ namespace NeoBuzz.Comp
             grMeter = 0;
         }
 
-        static double Coef(double seconds, double sr) => seconds <= 0 ? 0 : Math.Exp(-1.0 / (seconds * sr));
+        static double Coef(double seconds, double sr) => seconds <= 0 ? 0 : PortableMath.Exp(-1.0 / (seconds * sr));
 
         void Update(bool force)
         {
@@ -227,11 +227,11 @@ namespace NeoBuzz.Comp
             switch (m)
             {
                 case CompMode.Glue:
-                    return MathF.Tanh(1.6f * y) / 1.6f;
+                    return PortableMathF.Tanh(1.6f * y) / 1.6f;
                 case CompMode.Fet:
-                    return y >= 0 ? MathF.Tanh(1.8f * y) / 1.8f : 0.8f * MathF.Tanh(1.8f * y / 0.8f) / 1.8f;
+                    return y >= 0 ? PortableMathF.Tanh(1.8f * y) / 1.8f : 0.8f * PortableMathF.Tanh(1.8f * y / 0.8f) / 1.8f;
                 default:
-                    return y >= 0 ? MathF.Tanh(1.3f * y) / 1.3f : 0.85f * MathF.Tanh(1.3f * y / 0.85f) / 1.3f;
+                    return y >= 0 ? PortableMathF.Tanh(1.3f * y) / 1.3f : 0.85f * PortableMathF.Tanh(1.3f * y / 0.85f) / 1.3f;
             }
         }
 
@@ -273,13 +273,13 @@ namespace NeoBuzz.Comp
                     c0.Ms = k0 * k0 + (c0.Ms - k0 * k0) * rmsA;
                     c1.Ms = k1 * k1 + (c1.Ms - k1 * k1) * rmsA;
                     // RMS reads a sine 3 dB under its peak; +3 dB keeps the threshold on the same scale.
-                    level[0] = 10 * Math.Log10(c0.Ms + 1e-30) + 3.0103;
-                    level[1] = 10 * Math.Log10(c1.Ms + 1e-30) + 3.0103;
+                    level[0] = 0.5 * DspMath.DbPerNeper * PortableMath.Log(c0.Ms + 1e-30) + 3.0103;
+                    level[1] = 0.5 * DspMath.DbPerNeper * PortableMath.Log(c1.Ms + 1e-30) + 3.0103;
                 }
                 else
                 {
-                    level[0] = 20 * Math.Log10(Math.Abs(k0) + 1e-15);
-                    level[1] = 20 * Math.Log10(Math.Abs(k1) + 1e-15);
+                    level[0] = DspMath.DbPerNeper * PortableMath.Log(Math.Abs(k0) + 1e-15);
+                    level[1] = DspMath.DbPerNeper * PortableMath.Log(Math.Abs(k1) + 1e-15);
                 }
                 if (lk > 0)
                 {
@@ -337,7 +337,7 @@ namespace NeoBuzz.Comp
                     if (g > blockGr) blockGr = (float)g;
 
                     float dry = c == 0 ? d0 : d1;
-                    float y = dry * (float)Math.Pow(10, (mk - g) / 20);
+                    float y = dry * (float)PortableMath.Pow(10, (mk - g) / 20);
                     if (character > 0)
                     {
                         float sat = Saturate(y, mode);
@@ -352,7 +352,7 @@ namespace NeoBuzz.Comp
             c0.G = DspMath.Flush(c0.G); c1.G = DspMath.Flush(c1.G);
             c0.Ms = DspMath.Flush(c0.Ms); c1.Ms = DspMath.Flush(c1.Ms);
             c0.ScLowCut.Flush(); c1.ScLowCut.Flush();
-            float fall = MathF.Pow(10f, -20f / 20f * n / sampleRate * 1.5f);
+            float fall = PortableMathF.Pow(10f, -20f / 20f * n / sampleRate * 1.5f);
             grMeter = Math.Max(blockGr, grMeter * fall);
             OutMeter.Feed(left, right, n);
         }

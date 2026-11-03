@@ -59,7 +59,7 @@ namespace NeoBuzz.Eq
         {
             double g = SvfSection.Prewarp(b.Hz, sampleRate);
             double q = Math.Max(0.01, b.Q);
-            double A = Math.Pow(10, b.GainDb / 40);
+            double A = PortableMath.Pow(10, b.GainDb / 40);
             switch (b.Type)
             {
                 case BandType.Bell:
@@ -118,7 +118,7 @@ namespace NeoBuzz.Eq
         {
             double db = v.Value(P.Output);
             for (int b = 0; b < Bands; b++)
-                if (v.On(On(b))) db += 20 * Math.Log10(Math.Max(1e-12, Magnitude(Settings(v, b), hz, sampleRate)));
+                if (v.On(On(b))) db += 20 * PortableMath.Log10(Math.Max(1e-12, Magnitude(Settings(v, b), hz, sampleRate)));
             return db;
         }
     }
@@ -181,7 +181,7 @@ namespace NeoBuzz.Eq
         public void SetSampleRate(float sr)
         {
             sampleRate = sr;
-            glideA = 1 - Math.Exp(-1 / (GlideSeconds * sr));
+            glideA = 1 - PortableMath.Exp(-1 / (GlideSeconds * sr));
             output.Setup(GlideSeconds, sr);
             foreach (var b in bands) b.Mix.Setup(FadeSeconds, sr);
             InMeter.SetSampleRate(sr);
@@ -207,9 +207,9 @@ namespace NeoBuzz.Eq
                 b.WantOn = values.On(EqDesign.On(i));
                 b.WantType = s.Type;
                 b.WantSlope = s.Slope;
-                b.TLf = Math.Log2(s.Hz);
+                b.TLf = PortableMath.Log2(s.Hz);
                 b.TGdb = s.GainDb;
-                b.TLq = Math.Log2(s.Q);
+                b.TLq = PortableMath.Log2(s.Q);
                 if (force)
                 {
                     b.Now = s;
@@ -235,9 +235,9 @@ namespace NeoBuzz.Eq
         /// <summary>Recomputes a band's sections from its glide state.</summary>
         void Apply(Band b)
         {
-            b.Now.Hz = Math.Pow(2, b.Lf);
+            b.Now.Hz = PortableMath.Pow(2, b.Lf);
             b.Now.GainDb = b.Gdb;
-            b.Now.Q = Math.Pow(2, b.Lq);
+            b.Now.Q = PortableMath.Pow(2, b.Lq);
             b.Count = EqDesign.Design(b.Now, sampleRate, b.L);
             for (int k = 0; k < b.Count; k++)
             {

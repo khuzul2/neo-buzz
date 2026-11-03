@@ -14,18 +14,21 @@ namespace NeoBuzz.Dsp
         public const float TwoPi = 2f * MathF.PI;
         public const double TwoPiD = 2.0 * Math.PI;
 
+        /// <summary>dB per neper, 20/ln 10: 20·log10(r) = DbPerNeper·ln(r), the cheaper form per sample.</summary>
+        public const double DbPerNeper = 8.685889638065037;
+
         /// <summary>Buzz volumes are ±32768; the engines work in ±1.</summary>
         public const float BuzzScale = 32768f;
 
-        public static float DbToGain(float db) => MathF.Pow(10f, db * 0.05f);
-        public static double DbToGain(double db) => Math.Pow(10.0, db * 0.05);
-        public static float GainToDb(float gain) => gain > 1e-12f ? 20f * MathF.Log10(gain) : -240f;
-        public static double GainToDb(double gain) => gain > 1e-12 ? 20.0 * Math.Log10(gain) : -240.0;
+        public static float DbToGain(float db) => PortableMathF.Pow(10f, db * 0.05f);
+        public static double DbToGain(double db) => PortableMath.Pow(10.0, db * 0.05);
+        public static float GainToDb(float gain) => gain > 1e-12f ? 20f * PortableMathF.Log10(gain) : -240f;
+        public static double GainToDb(double gain) => gain > 1e-12 ? 20.0 * PortableMath.Log10(gain) : -240.0;
 
         /// <summary>MIDI note (a Buzz note's octave × 12 + semitone) to Hz, A-5 = MIDI 69 = 440 Hz.</summary>
-        public static double NoteToHz(double note) => 440.0 * Math.Pow(2.0, (note - 69.0) / 12.0);
+        public static double NoteToHz(double note) => 440.0 * PortableMath.Pow(2.0, (note - 69.0) / 12.0);
 
-        public static double HzToNote(double hz) => 69.0 + 12.0 * Math.Log2(hz / 440.0);
+        public static double HzToNote(double hz) => 69.0 + 12.0 * PortableMath.Log2(hz / 440.0);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Clamp(float x, float lo, float hi) => x < lo ? lo : x > hi ? hi : x;
@@ -57,18 +60,18 @@ namespace NeoBuzz.Dsp
 
         /// <summary>2^x for |x| up to ~60, relative error ~1e-7.</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Exp2(float x) => MathF.Pow(2f, x);
+        public static float Exp2(float x) => PortableMathF.Pow(2f, x);
 
         /// <summary>One-pole coefficient for a time constant (time to 1 − 1/e) at a sample rate.</summary>
         public static float OnePoleCoeff(double seconds, double sampleRate) =>
-            seconds <= 0 ? 1f : (float)(1.0 - Math.Exp(-1.0 / (seconds * sampleRate)));
+            seconds <= 0 ? 1f : (float)(1.0 - PortableMath.Exp(-1.0 / (seconds * sampleRate)));
 
         /// <summary>Equal-power pan: −1 left … +1 right.</summary>
         public static void PanGains(float pan, out float left, out float right)
         {
             float a = (Clamp(pan, -1f, 1f) + 1f) * 0.25f * Pi;
-            left = MathF.Cos(a) * 1.41421356f;
-            right = MathF.Sin(a) * 1.41421356f;
+            left = PortableMathF.Cos(a) * 1.41421356f;
+            right = PortableMathF.Sin(a) * 1.41421356f;
         }
     }
 

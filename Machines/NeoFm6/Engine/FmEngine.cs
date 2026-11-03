@@ -249,7 +249,7 @@ namespace NeoBuzz.Fm6
                 case 1: { double v = 1.5 - p; return v >= 1 ? v - 1 : v; }    // saw down
                 case 2: { double v = p + 0.5; return v >= 1 ? v - 1 : v; }    // saw up
                 case 3: return p < 0.5 ? 1 : 0;                              // square
-                case 4: return 0.5 + 0.5 * Math.Sin(2 * Math.PI * p);        // sine
+                case 4: return 0.5 + 0.5 * PortableMath.Sin(2 * Math.PI * p);        // sine
                 default: return sampleHold;                                  // sample and hold
             }
         }
@@ -336,7 +336,7 @@ namespace NeoBuzz.Fm6
                 for (int i = 0; i < TableSize + 2; i++)
                 {
                     double p = (double)(i % TableSize) / TableSize;
-                    double s = Math.Sin(2 * Math.PI * p);
+                    double s = PortableMath.Sin(2 * Math.PI * p);
                     w[k][i] = (float)(k switch
                     {
                         0 => s,
@@ -463,8 +463,8 @@ namespace NeoBuzz.Fm6
             for (int k = 0; k < 6; k++)
             {
                 var o = s.Ops[k];
-                ratio[k] = Dx7.Ratio(o.Coarse, o.Fine) * Math.Pow(2, Dx7.DetuneOctaves(noteHz, o.Detune));
-                fixedHz[k] = Dx7.FixedHz(o.Coarse, o.Fine) * Math.Pow(2, Dx7.FixedDetuneOctaves(o.Detune));
+                ratio[k] = Dx7.Ratio(o.Coarse, o.Fine) * PortableMath.Pow(2, Dx7.DetuneOctaves(noteHz, o.Detune));
+                fixedHz[k] = Dx7.FixedHz(o.Coarse, o.Fine) * PortableMath.Pow(2, Dx7.FixedDetuneOctaves(o.Detune));
                 tables[k] = FmEngine.Waves[Math.Clamp(o.Wave, 0, 3)];
             }
         }
@@ -547,9 +547,9 @@ namespace NeoBuzz.Fm6
 
             double modOct = peg.Next(dt) + pitchMod;
             double noteHz = DspMath.NoteToHz(pitch + s.Transpose + engine.PitchBendSemis + unisonPos * s.UniDetune * 0.25f);
-            double modMul = Math.Pow(2, modOct);
+            double modMul = PortableMath.Pow(2, modOct);
             // Fixed-frequency operators follow pitch bend only (as Dexed: no pitch envelope, no vibrato).
-            double fixedMul = Math.Pow(2, engine.PitchBendSemis / 12.0);
+            double fixedMul = PortableMath.Pow(2, engine.PitchBendSemis / 12.0);
             float loud = 0;
             bool carriersDone = true;
             var alg = s.Algorithm;
@@ -585,7 +585,7 @@ namespace NeoBuzz.Fm6
             var mods = alg.Modulators;
             int carriers = alg.Carriers;
             int fbFrom = alg.FeedbackFrom, fbTo = alg.FeedbackTo;
-            float fbScale = s.Feedback == 0 ? 0f : MathF.Pow(2f, s.Feedback - 8) * 0.5f;
+            float fbScale = s.Feedback == 0 ? 0f : PortableMathF.Pow(2f, s.Feedback - 8) * 0.5f;
             float norm = CarrierNorm[alg.CarrierCount];
             for (int i = 0; i < count; i++)
             {

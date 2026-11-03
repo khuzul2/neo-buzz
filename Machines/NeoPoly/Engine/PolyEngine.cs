@@ -438,14 +438,14 @@ namespace NeoBuzz.Poly
             if (s.LfoRetrigs[0])
             {
                 lfo1.Shape = s.LfoShapes[0];
-                lfo1.Rate = s.LfoRates[0] * MathF.Pow(2, dst[(int)ModDest.Lfo1Rate] * 4);
+                lfo1.Rate = s.LfoRates[0] * PortableMathF.Pow(2, dst[(int)ModDest.Lfo1Rate] * 4);
                 l1 = lfo1.Advance(n, sr);
             }
             else l1 = engine.GlobalLfo1;
             if (s.LfoRetrigs[1])
             {
                 lfo2.Shape = s.LfoShapes[1];
-                lfo2.Rate = s.LfoRates[1] * MathF.Pow(2, dst[(int)ModDest.Lfo2Rate] * 4);
+                lfo2.Rate = s.LfoRates[1] * PortableMathF.Pow(2, dst[(int)ModDest.Lfo2Rate] * 4);
                 l2 = lfo2.Advance(n, sr);
             }
             else l2 = engine.GlobalLfo2;
@@ -500,7 +500,7 @@ namespace NeoBuzz.Poly
             float key = (note - 60f) / 12f;
             float velOct = s.F1Vel * (velocity - 1f);
             float oct1 = key * s.F1Key + fenv * s.F1Env + velOct + dst[(int)ModDest.F1Cutoff] * 6f + driftCut;
-            float cut1 = DspMath.Clamp(s.F1Cutoff * MathF.Pow(2, oct1), 16f, sr * 0.48f);
+            float cut1 = DspMath.Clamp(s.F1Cutoff * PortableMathF.Pow(2, oct1), 16f, sr * 0.48f);
             float reso1 = DspMath.Clamp(s.F1Reso + dst[(int)ModDest.F1Reso], 0, 1);
             float g1 = Svf.Prewarp(cut1, sr);
             if (s.F1Type <= 1) ladder.Set(g1, reso1);
@@ -512,7 +512,7 @@ namespace NeoBuzz.Poly
             if (s.F2Type > 0)
             {
                 float oct2 = key * s.F1Key + fenv * s.F2Env + dst[(int)ModDest.F2Cutoff] * 6f + driftCut;
-                float cut2 = DspMath.Clamp(s.F2Cutoff * MathF.Pow(2, oct2), 16f, sr * 0.48f);
+                float cut2 = DspMath.Clamp(s.F2Cutoff * PortableMathF.Pow(2, oct2), 16f, sr * 0.48f);
                 float reso2 = DspMath.Clamp(s.F2Reso + dst[(int)ModDest.F2Reso], 0, 1);
                 svf2.Mode = s.F2Type == 1 ? SvfMode.LowPass : s.F2Type == 2 ? SvfMode.BandPass : s.F2Type == 3 ? SvfMode.HighPass : SvfMode.Notch;
                 svf2.SetFast(Svf.Prewarp(cut2, sr), 2f - 1.96f * reso2);

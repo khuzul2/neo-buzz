@@ -27,7 +27,7 @@ namespace NeoBuzz.Dsp
             for (int len = 2; len <= n; len <<= 1)
             {
                 double ang = 2 * Math.PI / len * (inverse ? 1 : -1);
-                double wr = Math.Cos(ang), wi = Math.Sin(ang);
+                double wr = PortableMath.Cos(ang), wi = PortableMath.Sin(ang);
                 for (int i = 0; i < n; i += len)
                 {
                     double cr = 1, ci = 0;

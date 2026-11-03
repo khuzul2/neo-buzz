@@ -150,7 +150,7 @@ namespace NeoBuzz.Verb
             int prev = 0;
             for (int i = 0; i < N; i++)
             {
-                double ms = m.Min * Math.Pow(m.Max / m.Min, i / (double)(N - 1));
+                double ms = m.Min * PortableMath.Pow(m.Max / m.Min, i / (double)(N - 1));
                 int len = Math.Max(prev + 1, (int)(ms * size * 0.001 * sampleRate));
                 while (!IsPrime(len)) len++;
                 lengths[i] = len;
@@ -168,9 +168,9 @@ namespace NeoBuzz.Verb
             for (int i = 0; i < N; i++)
             {
                 double d = lengths[i];
-                double gMid = Math.Pow(10, -3 * d / (sampleRate * t60));
-                double gLow = Math.Pow(10, -3 * d / (sampleRate * t60Low));
-                double gHigh = Math.Pow(10, -3 * d / (sampleRate * t60High));
+                double gMid = PortableMath.Pow(10, -3 * d / (sampleRate * t60));
+                double gLow = PortableMath.Pow(10, -3 * d / (sampleRate * t60Low));
+                double gHigh = PortableMath.Pow(10, -3 * d / (sampleRate * t60High));
                 double aLow = gLow / gMid, aHigh = gHigh / gMid;
                 // The shelves' gain at 1 kHz, divided out so the mid band is exact there.
                 double at1k = ShelfLowMag(aLow, LowCrossover, 1000) * ShelfHighMag(aHigh, damp, 1000);
@@ -196,13 +196,13 @@ namespace NeoBuzz.Verb
             {
                 double r = rate * (0.7 + 0.6 * rng.NextUnipolar());
                 double w = 2 * Math.PI * r / sampleRate;
-                modStepCos[i] = Math.Cos(w);
-                modStepSin[i] = Math.Sin(w);
+                modStepCos[i] = PortableMath.Cos(w);
+                modStepSin[i] = PortableMath.Sin(w);
                 if (force)
                 {
                     double ph = 2 * Math.PI * rng.NextUnipolar();
-                    modCos[i] = Math.Cos(ph);
-                    modSin[i] = Math.Sin(ph);
+                    modCos[i] = PortableMath.Cos(ph);
+                    modSin[i] = PortableMath.Sin(ph);
                 }
                 modDepth[i] = (float)(depth * (0.6 + 0.4 * rng.NextUnipolar()));
             }
@@ -224,7 +224,7 @@ namespace NeoBuzz.Verb
             {
                 double t = m.ErMin + (m.ErMax - m.ErMin) * (k + 0.5 * er.NextUnipolar()) / erTaps;
                 double t2 = m.ErMin + (m.ErMax - m.ErMin) * (k + 0.5 * er.NextUnipolar()) / erTaps;
-                double decay = Math.Exp(-2.2 * (t - m.ErMin) / (m.ErMax - m.ErMin));
+                double decay = PortableMath.Exp(-2.2 * (t - m.ErMin) / (m.ErMax - m.ErMin));
                 erTimeL[k] = (float)(t * size * 0.001 * sampleRate);
                 erTimeR[k] = (float)(t2 * size * 0.001 * sampleRate);
                 erGainL[k] = (float)(decay * (0.8 + 0.4 * er.NextUnipolar()) * ((er.NextUInt() & 1) == 0 ? 1 : -1) / Math.Sqrt(erTaps / 4.0));
@@ -271,7 +271,7 @@ namespace NeoBuzz.Verb
 
         float TptG(double hz)
         {
-            double w = Math.Tan(Math.PI * Math.Clamp(hz, 1, sampleRate * 0.49) / sampleRate);
+            double w = PortableMath.Tan(Math.PI * Math.Clamp(hz, 1, sampleRate * 0.49) / sampleRate);
             return (float)(w / (1 + w));
         }
 
@@ -430,7 +430,7 @@ namespace NeoBuzz.Verb
             if (p2 >= 1) p2 -= 1;
             float d1 = (float)((1 - p1) * shimmerWindow) + 2;
             float d2 = (float)((1 - p2) * shimmerWindow) + 2;
-            float g1 = (float)Math.Sin(Math.PI * p1), g2 = (float)Math.Sin(Math.PI * p2);
+            float g1 = (float)PortableMath.Sin(Math.PI * p1), g2 = (float)PortableMath.Sin(Math.PI * p2);
             return shimmerLine.ReadLinear(d1) * g1 + shimmerLine.ReadLinear(d2) * g2;
         }
     }
