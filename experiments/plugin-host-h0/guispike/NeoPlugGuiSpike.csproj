@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    H0 spike (docs/specs/plugin-host.md §3.6, §6.1): can an Avalonia 12 NativeControlHost embed a
+    plugin's own view (VST3 IPlugView or CLAP gui) on macOS, as the studio's GuiContent would? A
+    headed app: one window per plugin, then a floating window, with snapshots and the view tree
+    written to the output folder. Also runs on Windows (HWND).
+      dotnet run -c Release -p:NeoPlugLib=<libneoplug.dylib> - - - -out <dir> - -plugin "<path>|<id>" ...
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>NeoPlugGuiSpike</AssemblyName>
+    <RootNamespace>NeoPlugGuiSpike</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+  </ItemGroup>
+  <Target Name="CopyNeoPlug" AfterTargets="Build" Condition="'$(NeoPlugLib)' != ''">
+    <Copy SourceFiles="$(NeoPlugLib)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

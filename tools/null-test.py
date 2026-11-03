@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # Fork (docs/specs/mac-engine.md decision 6, M3/M4): the null test. Neo machine renders on Linux and
-# macOS (rebuzz-headless) must match the Windows package's (ReBuzz.exe --agent) sample by sample, to
-# -100 dBFS or less.
+# macOS (rebuzz-headless) must be bit-identical to the Windows package's (ReBuzz.exe --agent): every
+# sample the same. The Neo machines compute only with IEEE basic operations (NeoBuzz.Dsp's portable
+# maths, docs/specs/machines.md §4), so nothing may differ.
 #
 # A fixed set of cases covers every Neo machine, with presets and settings that take their distinct
 # code paths (filters, oscillators, FM feedback, saturation, reverb tails). Each case runs in a fresh
@@ -14,9 +15,10 @@
 #   python3 tools/null-test.py diff    <ref-dir> <dir>               compares two folders of renders
 #   ... [--only case,case]
 #
-# <exe> is ReBuzz.exe (Windows) or rebuzz-headless. compare reports, per case, the largest absolute
-# difference in dBFS and where it is, and fails above -100 dBFS, on a length or rate mismatch, or on a
-# case missing from either side. Under GitHub Actions it writes the figures as a notice annotation
+# <exe> is ReBuzz.exe (Windows) or rebuzz-headless. compare fails a case on any differing sample, on a
+# length or rate mismatch, or when it is missing from either side. A case that differs reports its
+# first differing sample (frame, time, channel, both values, how many samples differ) and its largest
+# difference in dBFS and where. Under GitHub Actions it writes the figures as a notice annotation
 # (readable through the API) and to the step summary. The Windows package job renders the
 # references; the Linux and macOS jobs compare.
 
@@ -33,7 +35,6 @@ import sys
 import threading
 import time
 
-THRESHOLD_DB = -100.0
 TEMPO = 120   # 1 beat = 0.5 s
 
 # Cases excluded on purpose, with the reason: {"case": "why"}. Empty: every case must match.
@@ -318,26 +319,36 @@ def db(x):
 
 
 def compare_one(ref, got):
-    """(ok, max difference dBFS, text)."""
+    """(identical, max difference dBFS, text)."""
     r_rate, r_ch, a = read_wav(ref)
     g_rate, g_ch, b = read_wav(got)
     if (r_rate, r_ch) != (g_rate, g_ch):
         return False, None, f"format differs: reference {r_rate} Hz × {r_ch}, this {g_rate} Hz × {g_ch}"
     if len(a) != len(b):
         return False, None, f"length differs: reference {len(a) // r_ch} frames, this {len(b) // g_ch}"
-    worst, at, peak = 0.0, 0, 0.0
-    for i, (x, y) in enumerate(zip(a, b)):
-        d = abs(x - y)
-        if d > worst:
-            worst, at = d, i
-        if abs(x) > peak:
-            peak = abs(x)
-    level = db(worst)
-    if worst == 0:
-        return True, level, f"identical ({len(a) // r_ch} frames, peak {db(peak):.1f} dBFS)"
-    frame, ch = divmod(at, r_ch)
-    where = f"frame {frame} ({frame / r_rate:.3f} s, {'LR'[ch] if r_ch == 2 else ch})"
-    return level <= THRESHOLD_DB, level, f"max difference {level:.1f} dBFS at {where}; peak {db(peak):.1f} dBFS"
+    peak = max((abs(x) for x in a), default=0.0)
+    # The bits, not the values: a NaN or a -0.0 counts.
+    if a.tobytes() == b.tobytes():
+        return True, float("-inf"), f"identical ({len(a) // r_ch} frames, peak {db(peak):.1f} dBFS)"
+    ia, ib = array.array("I", a.tobytes()), array.array("I", b.tobytes())
+    worst, at, first, count = 0.0, 0, None, 0
+    for i in range(len(ia)):
+        if ia[i] != ib[i]:
+            count += 1
+            if first is None:
+                first = at = i
+            d = abs(a[i] - b[i])
+            if d > worst or math.isnan(d):
+                worst, at = d, i
+
+    def where(i):
+        frame, ch = divmod(i, r_ch)
+        return f"frame {frame} ({frame / r_rate:.3f} s, {'LR'[ch] if r_ch == 2 else ch})"
+
+    level = float("inf") if math.isnan(worst) else db(worst)
+    return False, level, (f"differs: first at {where(first)}, reference {a[first]:.9g}, this {b[first]:.9g}; "
+                          f"{count} of {len(a)} samples differ, by up to {level:.1f} dBFS (at {where(at)}); "
+                          f"peak {db(peak):.1f} dBFS")
 
 
 def compare_dirs(ref_dir, got_dir, only):
@@ -372,11 +383,12 @@ def report(rows, failed, title):
         lines.append(f"{status:<8} {name:<26} {text}")
     print("\n".join(lines), flush=True)
     worst = max((lv for _, _, lv, _ in rows if lv is not None), default=float("-inf"))
-    summary = f"{len(rows) - len(failed)} of {len(rows)} cases within {THRESHOLD_DB:.0f} dBFS; worst {worst:.1f} dBFS"
+    summary = (f"{len(rows) - len(failed)} of {len(rows)} cases identical"
+               + ("" if worst == float("-inf") else f"; largest difference {worst:.1f} dBFS"))
     print(summary, flush=True)
     if os.environ.get("GITHUB_ACTIONS"):
         # One notice with a line per case (readable through the API), and the step summary.
-        short = [f"{name}: " + ("identical" if lv == float("-inf") else f"{lv:.1f} dBFS" if lv is not None else text)
+        short = [f"{name}: " + ("identical" if lv == float("-inf") else text)
                  + ("" if status == "ok" else f" [{status}]") for name, status, lv, text in rows]
         body = summary + "\n" + "\n".join(short)
         kind = "error" if failed else "notice"
@@ -385,7 +397,7 @@ def report(rows, failed, title):
         step = os.environ.get("GITHUB_STEP_SUMMARY")
         if step:
             with open(step, "a", encoding="utf-8") as f:
-                f.write(f"### {title}\n\n{summary}\n\n| Case | Result | Max difference |\n|---|---|---|\n")
+                f.write(f"### {title}\n\n{summary}\n\n| Case | Result | Samples |\n|---|---|---|\n")
                 for name, status, lv, text in rows:
                     f.write(f"| {name} | {status} | {text} |\n")
                 f.write("\n")

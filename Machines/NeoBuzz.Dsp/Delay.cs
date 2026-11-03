@@ -104,14 +104,14 @@ namespace NeoBuzz.Dsp
         public void SetSampleRate(float sampleRate)
         {
             // About 20 dB per second.
-            fall = MathF.Pow(10f, -20f / 20f / sampleRate);
+            fall = PortableMathF.Pow(10f, -20f / 20f / sampleRate);
         }
 
         /// <summary>Audio thread: one block of samples.</summary>
         public void Feed(float[] x, int offset, int n)
         {
             float p = peak;
-            float decay = MathF.Pow(fall, n);
+            float decay = PortableMathF.Pow(fall, n);
             p *= decay;
             for (int i = 0; i < n; i++)
             {
@@ -124,7 +124,7 @@ namespace NeoBuzz.Dsp
         /// <summary>Audio thread: one stereo block.</summary>
         public void Feed(float[] left, float[] right, int n)
         {
-            float p = peak * MathF.Pow(fall, n);
+            float p = peak * PortableMathF.Pow(fall, n);
             for (int i = 0; i < n; i++)
             {
                 float a = MathF.Max(MathF.Abs(left[i]), MathF.Abs(right[i]));
@@ -136,7 +136,7 @@ namespace NeoBuzz.Dsp
         /// <summary>Audio thread: a value already in linear amplitude (gain reduction, levels).</summary>
         public void FeedValue(float a, int n)
         {
-            float p = peak * MathF.Pow(fall, n);
+            float p = peak * PortableMathF.Pow(fall, n);
             peak = a > p ? a : p;
         }
 

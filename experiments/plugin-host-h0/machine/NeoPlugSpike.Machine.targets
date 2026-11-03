@@ -1,0 +1,39 @@
+<Project>
+  <!--
+    H0 spike: Neo Plug Spike(FX), built for plain net10.0 like the portable Neo machines
+    (Machines/Portable/NeoPortable.targets), into $(GearDir)$(NeoKind), with the neoplug library
+    (from $(NeoPlugLib), the CMake build) copied beside it.
+      dotnet build experiments/plugin-host-h0/machine/gen/NeoPlugSpike.csproj (and fx/NeoPlugSpikeFX.csproj) -p:GearDir=<gear>/ -p:NeoPlugLib=<lib>
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>$(NeoName).NET</AssemblyName>
+    <RootNamespace>NeoBuzz.PlugSpike</RootNamespace>
+    <Optimize>true</Optimize>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <NoWarn>$(NoWarn);MSB3277;CS1591</NoWarn>
+    <R>$(MSBuildThisFileDirectory)..\..\..\</R>
+    <GearDir Condition="'$(GearDir)' == ''">$(MSBuildThisFileDirectory)bin\Gear\</GearDir>
+    <OutDir>$([MSBuild]::EnsureTrailingSlash('$(GearDir)'))$(NeoKind)\</OutDir>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)NeoPlugSpike.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The engine's portable machine API; the host provides it at run time (not copied). -->
+    <ProjectReference Include="$(R)ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" Private="false" GlobalPropertiesToRemove="GearDir;NeoPlugLib" />
+    <ProjectReference Include="$(R)ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" Private="false" GlobalPropertiesToRemove="GearDir;NeoPlugLib" />
+  </ItemGroup>
+
+  <Target Name="CopyNeoPlug" AfterTargets="Build" Condition="'$(NeoPlugLib)' != ''">
+    <Copy SourceFiles="$(NeoPlugLib)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

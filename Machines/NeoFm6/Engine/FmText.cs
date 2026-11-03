@@ -21,7 +21,7 @@ namespace NeoBuzz.Fm6
         {
             if (isFixed)
             {
-                double hz = Dx7.FixedHz(coarse, fine) * Math.Pow(2, Dx7.FixedDetuneOctaves(detune));
+                double hz = Dx7.FixedHz(coarse, fine) * PortableMath.Pow(2, Dx7.FixedDetuneOctaves(detune));
                 return hz >= 1000 ? (hz / 1000).ToString(hz >= 10000 ? "F1" : "F2", C) + " kHz" : hz.ToString(hz >= 100 ? "F0" : hz >= 10 ? "F1" : "F2", C) + " Hz";
             }
             double r = Dx7.Ratio(coarse, fine);

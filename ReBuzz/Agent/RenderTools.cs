@@ -272,18 +272,21 @@ namespace ReBuzz.Agent
                     sub.PosInSubTick = 0;
                     sub.CurrentSubTick = 0;
                     sub.SubTickReminderCounter = 0;
+                    // Machines still preparing (Neo Wave building a table in the background) get up to
+                    // 30 s. The wait runs no audio: had it run the machines, how long it took would move
+                    // their free-running state (control grids, free LFOs) and so the render, from run to
+                    // run (mac-engine.md §6, the null test).
+                    var clock = System.Diagnostics.Stopwatch.StartNew();
+                    while (clock.ElapsedMilliseconds < 30000 && machines.Any(Busy))
+                        System.Threading.Thread.Sleep(5);
+                    var preparing = machines.Where(Busy).Select(m => m.Name).ToList();
+                    if (preparing.Count > 0)
+                        warnings.Add($"{string.Join(", ", preparing)} still preparing after 30 s: the render may differ from run to run.");
                     // Tails of what played before (reverbs, delays) die away first, so renders compare.
                     for (long quiet = 0, run = 0; run < 5L * rate && quiet < rate / 10; run += 256)
                     {
                         wm.MainAudioFillBuffer(buffer, 0, 512);
                         quiet = buffer.All(x => Math.Abs(x) < 1e-5f) ? quiet + 256 : 0;
-                    }
-                    // Machines still preparing (Neo Wave building a table in the background) get up to 5 s.
-                    var clock = System.Diagnostics.Stopwatch.StartNew();
-                    while (clock.ElapsedMilliseconds < 5000 && machines.Any(Busy))
-                    {
-                        wm.MainAudioFillBuffer(buffer, 0, 512);
-                        System.Threading.Thread.Sleep(5);
                     }
                     // Playback starts at the end of the tick under way: run silently up to it.
                     core.Playing = true;

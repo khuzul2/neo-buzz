@@ -87,8 +87,8 @@ namespace NeoBuzz.Dsp
                     var (a, ph) = harmonic(f, h);
                     if (a == 0) continue;
                     // x = Σ a·sin(2π h t + ph)  →  bin h = a·(sin ph − i cos ph)·N/2
-                    re[h] = a * Math.Sin(ph) * FrameSize / 2;
-                    im[h] = -a * Math.Cos(ph) * FrameSize / 2;
+                    re[h] = a * PortableMath.Sin(ph) * FrameSize / 2;
+                    im[h] = -a * PortableMath.Cos(ph) * FrameSize / 2;
                     re[FrameSize - h] = re[h];
                     im[FrameSize - h] = -im[h];
                 }
@@ -156,8 +156,8 @@ namespace NeoBuzz.Dsp
                 for (int i = 0; i < n; i++)
                 {
                     double a = -2 * Math.PI * h * i / n;
-                    sr += frame[i] * Math.Cos(a);
-                    si += frame[i] * Math.Sin(a);
+                    sr += frame[i] * PortableMath.Cos(a);
+                    si += frame[i] * PortableMath.Sin(a);
                 }
                 double scale = (double)FrameSize / n;
                 re[h] = sr * scale;
