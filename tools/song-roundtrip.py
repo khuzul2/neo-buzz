@@ -440,7 +440,9 @@ def compare_bmxml(orig, saved, problems, where):
         if tvals != o["track_values"]:
             problems.append(f"{tag}: track values {short(o['track_values'])} became {short(tvals)}")
         if o["type"] != 0 and orig["para"]:
-            defs = [[p["def"][1], p["def"][2], p["def"][3], p["def"][4], p["def"][6]] for p in g["params"] + t["params"]]
+            # Names as BMX holds them: Latin-1, '?' for anything beyond (BMXFile.WriteString), so "Vel → amp" is "Vel ? amp" there.
+            latin1 = lambda s: s.encode("latin-1", "replace").decode("latin-1")
+            defs = [[latin1(p["def"][1]), p["def"][2], p["def"][3], p["def"][4], p["def"][6]] for p in g["params"] + t["params"]]
             odefs = [[d[1], d[2], d[3], d[4], d[6]] for d in o["gdefs"] + o["tdefs"]]
             if defs != odefs:
                 problems.append(f"{tag}: parameter definitions changed")

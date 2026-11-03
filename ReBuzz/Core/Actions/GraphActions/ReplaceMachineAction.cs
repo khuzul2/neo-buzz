@@ -192,7 +192,7 @@ namespace ReBuzz.Core.Actions.GraphActions
                                 var seOld = e.Item2;
                                 var time = e.Item1;
                                 var pattern = newMachine.Patterns.FirstOrDefault(p => p.Name == e.Item2.Pattern.Name);
-                                SequenceEvent seNew = new SequenceEvent(seOld.Type, pattern, seOld.Span) { Offset = seOld.Offset, End = seOld.End, Gain = seOld.Gain };
+                                SequenceEvent seNew = new SequenceEvent(seOld.Type, pattern, seOld.Span) { Offset = seOld.Offset, End = seOld.End, Gain = seOld.Gain, Clip = seOld.Clip };
                                 newSeq.SetEvent(time, seNew);
                             }
                         }

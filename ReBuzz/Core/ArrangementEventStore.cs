@@ -18,11 +18,15 @@ namespace ReBuzz.Core
     /// volume, as it did before.
     ///
     /// Events are identified by sequence index and time, which the song file keeps.
+    ///
+    /// Version 2 (docs/specs/daw-modes.md S2) adds each event's arrangement clip
+    /// (<see cref="SequenceEvent.Clip"/>) and each clip's loop (<see cref="ArrangementClips"/>).
+    /// Readers of version 1 skip both.
     /// </summary>
     internal sealed class ArrangementEventStore
     {
         public const string SubSectionName = "ArrangementEvents";
-        const int FormatVersion = 1;
+        const int FormatVersion = 2;
 
         readonly ReBuzzCore buzz;
 
@@ -35,7 +39,7 @@ namespace ReBuzz.Core
 
         void OnSaveSong(ISaveSong save)
         {
-            var xml = ToXml(buzz.SongCore.Sequences);
+            var xml = ToXml(buzz.SongCore.Sequences, buzz.Clips);
             if (xml == null) return;      // nothing upstream can't hold: no subsection
             var stream = save.CreateSubSection(SubSectionName);
             if (stream == null) return;
@@ -51,29 +55,42 @@ namespace ReBuzz.Core
                 var stream = open.GetSubSection(SubSectionName);
                 if (stream == null) return;
                 var root = XDocument.Load(stream).Root;
-                Apply(root, buzz.SongCore.SequencesList);
+                Apply(root, buzz.SongCore.SequencesList, buzz.Clips);
             }
             catch (Exception e)
             {
                 buzz.DCWriteLine("Arrangement events: " + e.Message, DCLogLevel.Warning);
             }
+            finally
+            {
+                buzz.Clips.ContinueAfter(buzz.SongCore.SequencesList);
+            }
         }
 
-        /// <summary>The events with a start, end or volume of their own, or null if there are none.</summary>
-        internal static XElement ToXml(IEnumerable<ISequence> sequences)
+        /// <summary>
+        /// The events with a start, end, volume or clip of their own, and the loops of those clips
+        /// (daw-modes.md S2); null if there are none.
+        /// </summary>
+        internal static XElement ToXml(IEnumerable<ISequence> sequences, ArrangementClips clips = null)
         {
             var root = new XElement("ArrangementEvents", new XAttribute("version", FormatVersion));
+            var ids = new SortedSet<int>();
             int index = 0;
             foreach (var seq in sequences)
             {
                 var events = seq.Events
-                    .Where(e => e.Value.Type == SequenceEventType.PlayPattern && e.Value.Pattern != null && !e.Value.IsPlain)
+                    .Where(e => e.Value.Type == SequenceEventType.PlayPattern && e.Value.Pattern != null && (!e.Value.IsPlain || e.Value.Clip != 0))
                     .Select(e =>
                     {
                         var x = new XElement("Event", new XAttribute("time", e.Key));
                         if (e.Value.Offset != 0) x.SetAttributeValue("offset", e.Value.Offset);
                         if (e.Value.End != 0) x.SetAttributeValue("end", e.Value.End);
                         if (e.Value.Gain != 1.0) x.SetAttributeValue("gain", e.Value.Gain.ToString("R", CultureInfo.InvariantCulture));
+                        if (e.Value.Clip != 0)
+                        {
+                            x.SetAttributeValue("clip", e.Value.Clip);
+                            ids.Add(e.Value.Clip);
+                        }
                         return x;
                     })
                     .ToList();
@@ -81,16 +98,29 @@ namespace ReBuzz.Core
                     root.Add(new XElement("Sequence", new XAttribute("index", index), events));
                 index++;
             }
+            // The loops of the clips in the song, by id.
+            if (clips != null)
+                foreach (int id in ids)
+                    if (clips.TryGetLoop(id, out var loop))
+                        root.Add(new XElement("Clip", new XAttribute("id", id), new XAttribute("loopStart", loop.Start),
+                            new XAttribute("loopEnd", loop.End), new XAttribute("loop", loop.On ? 1 : 0)));
             return root.HasElements ? root : null;
         }
 
         /// <summary>
-        /// Gives the song's events their start, end and volume. Unknown content and events that
-        /// aren't there (any more) are ignored. Returns how many events were changed.
+        /// Gives the song's events their start, end, volume and clip, and the clips their loops.
+        /// Unknown content and events that aren't there (any more) are ignored. Returns how many
+        /// events were changed.
         /// </summary>
-        internal static int Apply(XElement root, IReadOnlyList<SequenceCore> sequences)
+        internal static int Apply(XElement root, IReadOnlyList<SequenceCore> sequences, ArrangementClips clips = null)
         {
             if (root == null || root.Name.LocalName != "ArrangementEvents") return 0;
+            if (clips != null)
+                foreach (var c in root.Elements("Clip"))
+                {
+                    int id = Int(c, "id", 0);
+                    if (id > 0) clips.SetLoop(id, new ClipLoop(Int(c, "loopStart", 0), Int(c, "loopEnd", 0), Int(c, "loop", 0) != 0));
+                }
             int changed = 0;
             foreach (var s in root.Elements("Sequence"))
             {
@@ -107,6 +137,7 @@ namespace ReBuzz.Core
                     e.End = Math.Max(0, Int(x, "end", 0));
                     e.Gain = double.TryParse((string)x.Attribute("gain"), NumberStyles.Float, CultureInfo.InvariantCulture, out double g) && !double.IsNaN(g)
                         ? Math.Clamp(g, 0, 1) : 1.0;
+                    e.Clip = Math.Max(0, Int(x, "clip", 0));
                     any = true;
                     changed++;
                 }

@@ -340,13 +340,23 @@ namespace ReBuzz.Agent
                 Title = "Read the arrangement",
                 Description =
                     "The timeline: one lane per machine with its patterns' places (start and end in beats and bar.beat), plus the song end and " +
-                    "loop. Optionally only from/to (beats). Example: arrangement_get().",
+                    "loop. A place that plays part of its pattern says which (part_beats) and its volume (gain); places joined into a clip " +
+                    "(a start, then loop repeats, cut at its end) carry the clip's id, and each lane lists its clips with their loop. " +
+                    "meter: the song's bars, as the sequence editor sets them. Optionally only from/to (beats). Example: arrangement_get().",
                 Input = Object(null, Opt("from", Position("From here")), Opt("to", Position("To here (exclusive)"))),
                 Output = Object(null,
                     Req("lanes", Array(Object(null, Req("machine", String("Machine")), Req("events", Array(Object(null,
-                        Req("at", Number("Start, beats")), Req("pattern", String("Pattern")), Req("ends", Number("Where it stops, beats"))), "Placements"))), "Lanes")),
+                        Req("at", Number("Start, beats")), Req("pattern", String("Pattern")), Req("ends", Number("Where it stops, beats")),
+                        Opt("clip", Integer("The clip it belongs to")), Opt("part_beats", Array(Number("Beats into the pattern"), "The part of the pattern it plays: from, to")),
+                        Opt("gain", Number("Its volume, 0-1"))), "Placements")),
+                        Opt("clips", Array(Object(null, Req("id", Integer("Clip id")), Req("pattern", String("Pattern")), Req("at", Number("Start, beats")),
+                            Req("ends", Number("End, beats")), Req("start_beats", Number("Where its first place starts in the pattern, beats")),
+                            Req("places", Integer("Places it is made of: the start and its repeats")),
+                            Opt("loop", Object(null, Req("start_beats", Number("Loop start in the pattern")), Req("end_beats", Number("Loop end in the pattern")), Req("on", Boolean("Whether it loops"))))),
+                            "Clips: places joined by a clip id"))), "Lanes")),
                     Req("song_end_beats", Number("Song end")),
-                    Req("beats_per_bar", Integer("Beats per bar"))),
+                    Req("beats_per_bar", Integer("Beats per bar")),
+                    Req("meter", Array(Object(null, Req("from_beats", Number("From here")), Req("bar_beats", Number("Each bar's length, beats"))), "The song's bars"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
                 {
@@ -377,23 +387,59 @@ namespace ReBuzz.Agent
                                     o["pattern"] = e.Pattern.Name;
                                     o["ends"] = SongModel.Beats(core, end);
                                     if (end - t < e.PlayedLength) o["cut_by_next"] = true;
+                                    // Fork (daw-modes.md S2): the part played, the volume, the clip.
+                                    if (e.Clip != 0) o["clip"] = e.Clip;
+                                    if (e.Offset != 0 || e.End != 0)
+                                        o["part_beats"] = new JsonArray(SongModel.Beats(core, e.PlayedOffset), SongModel.Beats(core, e.PlayedOffset + e.PlayedLength));
+                                    if (e.Gain != 1.0) o["gain"] = Math.Round(e.Gain, 4);
                                 }
                                 else o["event"] = e.Type.ToString().ToLowerInvariant();
                                 events.Add(o);
                             }
-                            lanes.Add(new JsonObject { ["machine"] = seq.Machine.Name, ["muted"] = seq.IsDisabled, ["events"] = events });
+                            var lane = new JsonObject { ["machine"] = seq.Machine.Name, ["muted"] = seq.IsDisabled, ["events"] = events };
+                            var clips = new JsonArray();
+                            foreach (var clip in core.Clips.Of(seq))
+                            {
+                                if (clip.Id == 0 || clip.Time >= to || clip.End <= from) continue;
+                                var co = new JsonObject
+                                {
+                                    ["id"] = clip.Id,
+                                    ["pattern"] = clip.Pattern.Name,
+                                    ["at"] = SongModel.Beats(core, clip.Time),
+                                    ["ends"] = SongModel.Beats(core, clip.End),
+                                    ["start_beats"] = SongModel.Beats(core, clip.Offset),
+                                    ["places"] = clip.Events,
+                                };
+                                if (clip.Loop is ClipLoop loop)
+                                    co["loop"] = new JsonObject
+                                    {
+                                        ["start_beats"] = SongModel.Beats(core, loop.Start),
+                                        ["end_beats"] = SongModel.Beats(core, loop.End > 0 ? loop.End : clip.Pattern.Length),
+                                        ["on"] = loop.On,
+                                    };
+                                clips.Add(co);
+                            }
+                            if (clips.Count > 0) lane["clips"] = clips;
+                            lanes.Add(lane);
                         }
+                        // Fork (daw-modes.md S1): the song's bars.
+                        var meter = new JsonArray();
+                        foreach (var m in core.SongMeter.Entries)
+                            meter.Add(new JsonObject { ["from_beats"] = SongModel.Beats(core, m.Key), ["bar_beats"] = SongModel.Beats(core, m.Value) });
                         return new JsonObject
                         {
                             ["lanes"] = lanes,
                             ["song_end_beats"] = SongModel.Beats(core, core.SongCore.SongEnd),
                             ["loop"] = new JsonObject { ["start_beats"] = SongModel.Beats(core, core.SongCore.LoopStart), ["end_beats"] = SongModel.Beats(core, core.SongCore.LoopEnd) },
                             ["beats_per_bar"] = bpb,
+                            ["meter"] = meter,
                         };
                     }, c.Cancellation);
                     var lines = r["lanes"]!.AsArray().Select(l => $"{l!["machine"]}: " + (l["events"]!.AsArray().Count == 0 ? "empty"
                         : string.Join(", ", l["events"]!.AsArray().Select(e => $"{e!["pattern"] ?? e["event"]} at {e["at"]}"))));
-                    return ToolResult.Ok($"Song end at beat {r["song_end_beats"]}. " + (r["lanes"]!.AsArray().Count == 0 ? "No lanes yet." : string.Join("; ", lines)), r);
+                    var bars = r["meter"]!.AsArray();
+                    string meterText = bars.Count <= 1 ? "" : " Bars: " + string.Join(", ", bars.Select(b => $"{b!["bar_beats"]} beats from beat {b["from_beats"]}")) + ".";
+                    return ToolResult.Ok($"Song end at beat {r["song_end_beats"]}.{meterText} " + (r["lanes"]!.AsArray().Count == 0 ? "No lanes yet." : string.Join("; ", lines)), r);
                 },
             });
 
