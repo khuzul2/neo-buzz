@@ -2,6 +2,7 @@
 // Neo machines' editor kit (docs/specs/machines.md §4): controls bound to ReBuzz parameters, and
 // the frames, meters and graph surfaces editors are built from. WPF does the layout and routes
 // input; layout maths, hit-testing and drawing are toolkit-free (Core/), drawn through WpfCanvas.
+// ParamBinding is in Params/EditorContext.cs (shared with the studio's Avalonia kit).
 
 using System;
 using System.Collections.Generic;
@@ -16,57 +17,6 @@ using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Editor
 {
-    /// <summary>
-    /// Ties a control to one global parameter: user edits set the parameter, automation and other
-    /// editors move the control.
-    /// </summary>
-    internal sealed class ParamBinding
-    {
-        readonly Action<int> onValue;
-        readonly Action<IParameter, int> handler;
-
-        public ParamBinding(IParameter parameter, ParamDef def, Action<int> onValue)
-        {
-            Parameter = parameter;
-            Def = def;
-            this.onValue = onValue;
-            handler = (p, track) => onValue(Value);
-            Parameter?.SubscribeEvents(0, handler, null);
-        }
-
-        public IParameter Parameter { get; }
-        public ParamDef Def { get; }
-
-        public int Value
-        {
-            get
-            {
-                try
-                {
-                    return Parameter != null ? Parameter.GetValue(0) : Def.Default;
-                }
-                catch (Exception)
-                {
-                    return Def.Default;
-                }
-            }
-        }
-
-        public void Set(int raw)
-        {
-            raw = Math.Clamp(raw, Def.Min, Def.Max);
-            if (Parameter == null || raw == Value) return;
-            Parameter.SetValue(0, raw);
-            onValue(raw);
-        }
-
-        public void Detach() => Parameter?.UnsubscribeEvents(0, handler, null);
-
-        public int RawFromNormalized(double t) => ParamMapping.RawFromNormalized(Def, t);
-
-        public double Normalized(int raw) => ParamMapping.Normalized(Def, raw);
-    }
-
     /// <summary>A knob for a parameter.</summary>
     internal sealed class ParamKnob : Knob
     {

@@ -88,6 +88,8 @@ tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 
 **Editor kit (`NeoBuzz.Editor`)**: dark theme with one accent per machine; rotary knob (drag, Shift for fine, wheel, double-click for default, value shown while dragging); segmented switch; section frame; level and gain-reduction meters; graph surface for curves, envelopes, waves and algorithms; (M3) a frequency-response graph with draggable band handles (toolkit-free axes, hit-testing and drags in `Core/ResponseGraph.cs`, the pointer routed by `InteractiveGraph`); (A4) analysis graphs: a spectrum with third-octave bars, held peaks and a viewing tilt, loudness bars and readouts coloured against a target, a goniometer and a correlation bar (`Core/AnalysisGraphs.cs`); preset bar (ReBuzz presets: browse, previous/next, save). Controls bind to `IParameter` and follow automation.
 
+The kit has two backends, and each machine's editor is one source file for both. WPF (`NeoBuzz.Editor/*.cs`, `WpfCanvas`) builds the Windows machines. Avalonia (`NeoBuzz.Editor.Avalonia/`: `AvaloniaCanvas` on Avalonia's `DrawingContext`, and the same controls with the same API) builds their studio flavour (`Machines/Studio`, studio-mvp.md S1). `EditorContext` and `ParamBinding` are shared (`Params/`). In the studio, a gesture's edits (a drag, a click, a preset) are one step on the song's undo history (`ParamEdits`).
+
 ## 5. Machines and acceptance criteria
 
 Tests run at 48 kHz unless noted. "Alias floor" is the loudest component that is not a harmonic, 20 Hz–20 kHz, relative to the fundamental, from a coherent 65,536-point FFT.

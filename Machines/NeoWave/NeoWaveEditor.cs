@@ -5,8 +5,10 @@
 // WPF lays the editor out; the table views draw on the kit's canvas (INeoCanvas).
 
 using System;
+#if !AVALONIA   // the studio's flavour takes these names from its kit (NeoBuzz.Editor.Avalonia/WpfNames.cs)
 using System.Windows;
 using System.Windows.Controls;
+#endif
 using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
 
@@ -59,25 +61,22 @@ namespace NeoBuzz.Wave
             load.Click += () =>
             {
                 if (machine == null) return;
-                var dialog = new Microsoft.Win32.OpenFileDialog
+                EditorFiles.Open(load, "Load a wavetable", "Wavetables (*.wav)|*.wav|All files (*.*)|*.*", file =>
                 {
-                    Title = "Load a wavetable",
-                    Filter = "Wavetables (*.wav)|*.wav|All files (*.*)|*.*",
-                };
-                if (dialog.ShowDialog() != true) return;
-                try
-                {
-                    machine.LoadUserTable(dialog.FileName);
-                    userName.Text = UserLabel(machine);
-                    // Play it right away: put osc A on "User" unless an oscillator already is.
-                    int user = Tables.Names.Length;
-                    if (ctx.Raw(P.ATable) != user && ctx.Raw(P.BTable) != user) ctx.Set(P.ATable, user);
-                    ctx.RaiseChanged();
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show($"Couldn't load {System.IO.Path.GetFileName(dialog.FileName)}: {e.Message}", "Neo Wave", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
+                    try
+                    {
+                        machine.LoadUserTable(file);
+                        userName.Text = UserLabel(machine);
+                        // Play it right away: put osc A on "User" unless an oscillator already is.
+                        int user = Tables.Names.Length;
+                        if (ctx.Raw(P.ATable) != user && ctx.Raw(P.BTable) != user) ctx.Set(P.ATable, user);
+                        ctx.RaiseChanged();
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show($"Couldn't load {System.IO.Path.GetFileName(file)}: {e.Message}", "Neo Wave", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                });
             };
             var hint = new TextBlock
             {

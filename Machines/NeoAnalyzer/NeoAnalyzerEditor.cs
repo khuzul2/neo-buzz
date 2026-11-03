@@ -6,7 +6,9 @@
 
 using System;
 using System.Globalization;
+#if !AVALONIA   // the studio's flavour takes these names from its kit (NeoBuzz.Editor.Avalonia/WpfNames.cs)
 using System.Windows;
+#endif
 using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
 
