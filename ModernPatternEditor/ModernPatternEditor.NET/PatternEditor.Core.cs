@@ -797,8 +797,12 @@ namespace WDE.ModernPatternEditor
 
                 // Notify patterns changed so seq editor can update the pattern block UI.
                 // This limits the amount of messages.
-                if (songTime.PosInTick == 0)
+                // Fork (neo-buzz audio hygiene): Keys made a list and its collection on every call
+                // (this runs on the audio thread on every buffer), and IsEmpty takes every lock of an
+                // empty dictionary: only when a pattern changed since, as a flag says.
+                if (songTime.PosInTick == 0 && patternsChanged)
                 {
+                    patternsChanged = false;
                     foreach (var pattern in changedPatternsSinceLastTick.Keys)
                     {
                         pattern.NotifyPatternChanged();
@@ -828,9 +832,12 @@ namespace WDE.ModernPatternEditor
 
         ConcurrentDictionary<IPattern, bool> changedPatternsSinceLastTick = new ConcurrentDictionary<IPattern, bool>();
 
+        volatile bool patternsChanged;
+
         internal void PatternChanged(IPattern pattern)
         {
             changedPatternsSinceLastTick.TryAdd(pattern, true);
+            patternsChanged = true;                     // after: Work's drain sees the pattern
         }
 
         private static MPEPatternColumn? GetNoteVelocityColumn(MPEPattern mpePattern, int track)

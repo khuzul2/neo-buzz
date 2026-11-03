@@ -70,6 +70,26 @@ namespace WDE.ModernPatternEditor.MPEStructures
             return patternEventsList.ToArray();
         }
 
+        /// <summary>
+        /// Fork (neo-buzz audio hygiene): the events in [<paramref name="start"/>, <paramref name="end"/>)
+        /// into <paramref name="into"/> (cleared first), which it returns: GetEvents without its array,
+        /// for playback on the audio thread.
+        /// </summary>
+        internal List<PatternEvent> GetEventsInto(int start, int end, List<PatternEvent> into)
+        {
+            into.Clear();
+            lock (patternEventsLock)
+            {
+                for (int i = 0; i < eventList.Count; i++)
+                {
+                    var pe = eventList[i];
+                    if (pe.Time >= start && pe.Time < end)
+                        into.Add(pe);
+                }
+            }
+            return into;
+        }
+
         internal void SetEvents(PatternEvent[] events, bool set, bool play = true)
         {
             int patternLenght = int.MaxValue;
@@ -152,12 +172,16 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         internal void PlayColumnEvents(IPattern pat, int start, int end, List<CollectedEventState> collectEvents)
         {
-            var events = GetEvents(start, end).ToArray();
+            // Fork (neo-buzz audio hygiene): straight from the column's list, under its lock as
+            // GetEvents read it (it made two arrays of them on every call).
+            lock (patternEventsLock)
             {
-                foreach (var e in events)
+                for (int i = 0; i < eventList.Count; i++)
                 {
-                    //Parameter.SetValue(ParamTrack, e.Value);
-                     collectEvents.Add(new CollectedEventState() { parameter = Parameter, time = e.Time, ParamTrack = ParamTrack, value = e.Value, eventType = CollectedEventType.Buzz });
+                    var e = eventList[i];
+                    if (e.Time >= start && e.Time < end)
+                        //Parameter.SetValue(ParamTrack, e.Value);
+                        collectEvents.Add(new CollectedEventState() { parameter = Parameter, time = e.Time, ParamTrack = ParamTrack, value = e.Value, eventType = CollectedEventType.Buzz });
                 }
             }
         }

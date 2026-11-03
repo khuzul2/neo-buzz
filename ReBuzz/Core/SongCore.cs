@@ -13,7 +13,7 @@ using System.Windows;
 
 namespace ReBuzz.Core
 {
-    public class SongCore : ISong, INotifyPropertyChanged
+    public class SongCore : ISong, INotifyPropertyChanged, UiEventQueue.ITarget
     {
         #region ISong_Interface
 
@@ -83,11 +83,29 @@ namespace ReBuzz.Core
             // Fork: the injected dispatcher (as in the PlayPosition setter above) instead of
             // Application.Current, which is null when the engine runs headless (tests).
             // 0.4.1: one cached delegate instead of a new closure every tick (audio thread).
-            raisePlayPosition ??= () => PropertyChanged.Raise(this, "PlayPosition");
-            dispatcher.BeginInvoke(raisePlayPosition);
+            // Audio hygiene: through the engine's UI event queue, once until delivered (a post
+            // made the dispatcher's operation on every tick).
+            if (uiEvents != null)
+            {
+                if (System.Threading.Interlocked.Exchange(ref playPositionEventPending, 1) == 0)
+                    uiEvents.Enqueue(this, 0, 0);
+            }
+            else
+            {
+                raisePlayPosition ??= () => PropertyChanged.Raise(this, "PlayPosition");
+                dispatcher.BeginInvoke(raisePlayPosition);
+            }
         }
 
         Action raisePlayPosition;
+        readonly UiEventQueue uiEvents;
+        int playPositionEventPending;
+
+        void UiEventQueue.ITarget.Deliver(int arg, int kind)
+        {
+            System.Threading.Volatile.Write(ref playPositionEventPending, 0);
+            PropertyChanged.Raise(this, "PlayPosition");
+        }
 
         /// <summary>Audio thread: moves the loop and song end past the play position.</summary>
         void ExtendEnd(int position, int bar)
@@ -204,7 +222,10 @@ namespace ReBuzz.Core
 
         List<SequenceCore> sequences = new List<SequenceCore>();
 
-        public ReadOnlyCollection<ISequence> Sequences { get => sequences.Cast<ISequence>().ToReadOnlyCollection(); }
+        // Fork (audio hygiene): the copy is kept while the list holds the same sequences (it was made
+        // on every call; the Modern Pattern Editor reads it on the audio thread on every tick).
+        ReadOnlyCollection<ISequence> sequencesView;
+        public ReadOnlyCollection<ISequence> Sequences { get => ParameterGroup.ViewOf(ref sequencesView, sequences); }
 
         internal List<SequenceCore> SequencesList { get => sequences; set => sequences = value; }
         internal WavetableCore WavetableCore { get; set; }
@@ -224,6 +245,11 @@ namespace ReBuzz.Core
         {
             this.dispatcher = dispatcher;
             this.engineSettings = engineSettings;
+            if (dispatcher != null)
+            {
+                uiEvents = UiEventQueue.For(dispatcher);
+                uiEvents.Reserve(1);                    // its PlayPosition event
+            }
         }
 
         // Fork (0.4.1): sequence list changes happen under AudioLock, their events after it.

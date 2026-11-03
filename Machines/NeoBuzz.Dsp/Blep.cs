@@ -98,6 +98,10 @@ namespace NeoBuzz.Dsp
         {
             acc = new float[Len];
             pos = 0;
+            // Fork (audio hygiene): the shared tables are made here, where the oscillator is (with
+            // its machine, off the audio thread), not on the first note: the audio thread built
+            // them there (about 200 KB, and the loop's compilation).
+            _ = BlepTable.Shared;
         }
 
         public void Reset()

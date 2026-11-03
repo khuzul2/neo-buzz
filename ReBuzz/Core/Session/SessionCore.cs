@@ -1076,7 +1076,12 @@ namespace ReBuzz.Core.Session
                         if (scheduler.GetPlaying(seq) is PatternCore playing)
                             NoteStopped(seq, playing, stoppedAt);
                 scheduler.Halt();
-                changed = scheduler.Changes.Select(c => c.Track).ToArray();
+                // Fork (audio hygiene): a loop, not LINQ's Select over the changes (its generic
+                // code was compiled by the audio thread on the transport's first stop).
+                var changes = scheduler.Changes;
+                changed = new SequenceCore[changes.Count];
+                for (int i = 0; i < changed.Length; i++)
+                    changed[i] = changes[i].Track;
                 sceneAt = -1;
                 sceneFollow = null;
                 sceneFollowAt = -1;

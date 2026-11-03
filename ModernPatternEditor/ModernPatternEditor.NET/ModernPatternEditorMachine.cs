@@ -38,9 +38,12 @@ namespace WDE.ModernPatternEditor
         [ParameterDecl()]
         public bool Dummy { get; set; }
 
+        // Fork (neo-buzz audio hygiene): one SongTime, reused (Work made one on every buffer, on the
+        // audio thread); the editor reads it during the call only.
+        readonly SongTime songTime = new SongTime();
+
         public void Work()
         {
-            SongTime songTime = new SongTime();
             songTime.PosInSubTick = host.SubTickInfo.PosInSubTick;
 
             ModernPatternEditor.Work(songTime);

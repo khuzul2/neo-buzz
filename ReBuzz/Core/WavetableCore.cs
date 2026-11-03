@@ -20,7 +20,10 @@ namespace ReBuzz.Core
         private readonly ReBuzzCore buzz;
 
         public List<WaveCore> WavesList { get => waves; }
-        public ReadOnlyCollection<IWave> Waves { get => waves.Cast<IWave>().ToReadOnlyCollection(); }
+        // Fork (audio hygiene): the copy is kept while the slots hold the same waves (200 of them were
+        // copied on every call; the studio asked several times a second while playing).
+        ReadOnlyCollection<IWave> wavesView;
+        public ReadOnlyCollection<IWave> Waves { get => ParameterGroup.ViewOf(ref wavesView, waves); }
 
         private float volume = 1f;
         public float Volume { get => volume; set => volume = value; }

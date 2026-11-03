@@ -74,6 +74,9 @@ namespace ReBuzz.Audio.Engine
             deviceService = new AudioDeviceService(buzzCore.UserMessages, drivers);
 
             CreateScheduler();
+
+            // Fork (audio hygiene): the audio path compiled in the background before it first runs.
+            AudioWarmUp.Begin();
         }
 
         internal void CreateScheduler()
@@ -85,6 +88,10 @@ namespace ReBuzz.Audio.Engine
 
             TaskSchedulerAudio = new DedicatedThreadPoolTaskScheduler(dedicatedPool);
             TaskFactoryAudio = new TaskFactory(TaskSchedulerAudio);
+
+            // Fork (audio hygiene): the work algorithms dispatch to render threads of their own
+            // (RenderJobs), with nothing allocated per dispatch.
+            RenderThreads.Ensure(ThreadCount);
         }
 
         public List<AudioOutDevice> AudioDevices()

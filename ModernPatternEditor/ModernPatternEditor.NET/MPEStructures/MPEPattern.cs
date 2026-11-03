@@ -424,7 +424,15 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         internal MPEPatternColumn GetColumn(IMachine machine, int indexInGroup, int track)
         {
-            return MPEPatternColumns.FirstOrDefault(x => x.Machine == machine && x.Parameter.Group.Type == ParameterGroupType.Track && x.Parameter.IndexInGroup == indexInGroup && x.ParamTrack == track);
+            // Fork (neo-buzz audio hygiene): a loop; the lambda's closure was made on every call
+            // (for each MIDI note lane on every tick, on the audio thread).
+            for (int i = 0; i < MPEPatternColumns.Count; i++)
+            {
+                var x = MPEPatternColumns[i];
+                if (x.Machine == machine && x.Parameter.Group.Type == ParameterGroupType.Track && x.Parameter.IndexInGroup == indexInGroup && x.ParamTrack == track)
+                    return x;
+            }
+            return null;
         }
 
         internal void InsertColumn(int index, IParameter p, int track)

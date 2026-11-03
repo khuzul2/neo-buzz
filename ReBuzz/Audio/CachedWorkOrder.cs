@@ -77,8 +77,9 @@ namespace ReBuzz.Audio
         // detects it deterministically instead.)
         public bool HasCycle;
 
+        // Fork (audio hygiene): a bit test; HasFlag boxes in unoptimized (tier-0, Debug) code.
         private static bool IsControlOrEditor(MachineCore m)
-            => m.DLL.Info.Flags.HasFlag(MachineInfoFlags.CONTROL_MACHINE);
+            => (m.DLL.Info.Flags & MachineInfoFlags.CONTROL_MACHINE) != 0;
 
         public void Rebuild(SongCore song)
         {
