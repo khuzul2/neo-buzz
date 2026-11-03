@@ -271,6 +271,12 @@ namespace ReBuzz.Audio.Engine
                 }
             }
 
+            // Fork (machine-safety.md §3.3): the safe master, on what goes to the device only (renders
+            // and exports call WorkManager.MainAudioFillBuffer and never come here): NaN and infinity
+            // scrubbed, then the safety limiter; the clip indicator measures before it.
+            if (offset > 0)
+                buzz.SafeMaster.Process(buffer.Slice(0, offset), OutputChannels, deadlineSampleRate);
+
             // Did this callback overrun its OWN block period? Deadline is derived
             // per-call from frames/sampleRate (the driver hands blocks far larger
             // than the nominal buffer size, so the nominal size is the wrong number).

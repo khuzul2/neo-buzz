@@ -883,6 +883,8 @@ namespace ReBuzz.Core
             this.machineDllScanner = machineDllScanner;
             this.dispatcher = dispatcher;
             this.userMessages = userMessages;
+            SafeMaster.Load(registryEx);                // fork (machine-safety.md §3.3)
+            ClearMasterOverCommand = new SimpleCommand { CanExecuteDelegate = _ => true, ExecuteDelegate = _ => ClearMasterOver() };
 
             // Init process and thread priorities
             ProcessAndThreadProfile.SetProfile(engineSettings.PriorityProfile);
@@ -1171,8 +1173,57 @@ namespace ReBuzz.Core
                     VUMeterLevel = new Tuple<double, double>(left, right);
                     PropertyChanged.Raise(this, "VUMeterLevel");
                 }
+                RefreshMasterLamps();
             });
             dtVUMeter.Start();
+        }
+
+        // Fork (docs/specs/machine-safety.md §3.2–3.3): the guard's notices and the safe master.
+
+        /// <summary>The device output's safety limiter and clip indicator.</summary>
+        internal SafeMaster SafeMaster { get; } = new SafeMaster();
+
+        /// <summary>A machine's guard tripped (on the UI thread, after it was stopped).</summary>
+        internal event Action<MachineCore> MachineDiverged;
+
+        internal void RaiseMachineDiverged(MachineCore machine) => MachineDiverged?.Invoke(machine);
+
+        /// <summary>WPF's toolbar lamp: the latched over ("+3.2 dB"), empty when there is none.</summary>
+        public string MasterOverText { get; private set; } = "";
+
+        /// <summary>WPF's toolbar lamp: the master went over the clip threshold since the lamp was cleared.</summary>
+        public bool MasterOver { get; private set; }
+
+        /// <summary>WPF's toolbar lamp: the safety limiter turned the output down in the last moment.</summary>
+        public bool MasterLimiting { get; private set; }
+
+        /// <summary>A click on the clip lamp clears it.</summary>
+        public System.Windows.Input.ICommand ClearMasterOverCommand { get; }
+
+        public void ClearMasterOver()
+        {
+            SafeMaster.ClearOver();
+            RefreshMasterLamps();
+        }
+
+        /// <summary>UI thread: the lamps from the safe master's latch and gain (WPF's VU timer).</summary>
+        internal void RefreshMasterLamps()
+        {
+            var over = SafeMaster.LatchedOverDb;
+            string text = over is double db ? $"{db:+0.0;-0.0} dB" : "";
+            bool limiting = SafeMaster.TakeGain() < 1f;
+            if (text != MasterOverText)
+            {
+                MasterOverText = text;
+                MasterOver = text.Length > 0;
+                PropertyChanged.Raise(this, "MasterOverText");
+                PropertyChanged.Raise(this, "MasterOver");
+            }
+            if (limiting != MasterLimiting)
+            {
+                MasterLimiting = limiting;
+                PropertyChanged.Raise(this, "MasterLimiting");
+            }
         }
 
         public void ActivatePatternEditor()
@@ -2402,6 +2453,7 @@ namespace ReBuzz.Core
         void NewSongCore()
         {
             Autosave?.Discard();   // fork (0.4.1)
+            MachineGuard.Enabled = true;        // fork (machine-safety.md §3.2): off only for a song's session
             Playing = false;
             SessionLayout?.Reset();             // fork (0.6.1): no launches from the old song's map while it closes
             MarkerStore?.Clear();               // fork (mcp-server.md A3)

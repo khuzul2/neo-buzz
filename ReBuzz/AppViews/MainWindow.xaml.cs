@@ -299,6 +299,9 @@ namespace ReBuzz
                 studioAgent = new Agent.StudioAgent(Buzz, windowsGuiDispatcher, text => SetStatusBarText(text, 1));
                 InputBindings.Add(new KeyBinding(new Agent.ActionCommand(() => studioAgent.ShowConnection()), Key.A, ModifierKeys.Control | ModifierKeys.Shift));
 
+                // Fork (docs/specs/machine-safety.md §3.2): a machine whose guard tripped shows muted; say why.
+                Buzz.MachineDiverged += m => SetStatusBarText($"{m.Name} diverged ({m.DivergedReason}): the guard silenced, stopped and muted it. Unmute it to reset it.", 0);
+
                 UpdateTitle();
 
                 SetStatusBarText("Ready!", 0);

@@ -236,8 +236,12 @@ def finite_peak(measure):
 
 def blown(measure):
     """NaN, infinity or a runaway level (a diverging machine reaches hundreds of dB). The server
-    writes a NaN peak as null and an infinite one as "inf"."""
+    writes a NaN peak as null and an infinite one as "inf". Since the engine's guard
+    (docs/specs/machine-safety.md §3.2) no NaN or level above +60 dBFS reaches a render: the render
+    lists the machine under "diverged" instead (render() below marks the measure)."""
     m = measure or {}
+    if m.get("diverged"):
+        return True
     p = (m.get("peaks") or {}).get("sample_peak_dbfs")
     if p == "inf":
         return True
@@ -295,6 +299,11 @@ def render(c, frm, to, tail, probes=None, name=None):
     t = time.time()
     r = c.call("render", timeout=max(c.timeout, 120), **args)
     r["_wall"] = time.time() - t
+    # The guard silenced and muted a machine that diverged (machine-safety.md §3.2): note it in the
+    # measure, for blown(), and reset the machine for the next render.
+    for d in r.get("diverged") or []:
+        r.setdefault("measure", {}).setdefault("diverged", []).append(d.get("reason"))
+        c.call("machine_set", machine=d.get("machine"), reset=True)
     # The WAVs are read here and then deleted (forget_renders): a run makes thousands.
     c.renders += [r.get("file")] + [p.get("file") for p in r.get("probes", [])]
     return r

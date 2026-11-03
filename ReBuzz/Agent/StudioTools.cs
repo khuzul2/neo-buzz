@@ -26,7 +26,9 @@ namespace ReBuzz.Agent
                 Title = "Studio status",
                 Description =
                     "The state of the studio: the song's file and unsaved changes, tempo, ticks per beat, length and loop in beats, " +
-                    "sample rate, mode (studio with a window, or headless), transport, how many machines/patterns/waves, and what undo would revert. " +
+                    "sample rate, mode (studio with a window, or headless), transport, how many machines/patterns/waves, and what undo would revert; " +
+                    "safety: machines whose guard tripped (diverged: muted until machine_set(reset=true)), the master's latched over and whether " +
+                    "the safety limiter on the audio output acted. " +
                     "Call it first in every session and whenever you're unsure what the song looks like. Example: studio_status().",
                 Input = Object(null),
                 Output = StatusSchema(),
@@ -38,7 +40,7 @@ namespace ReBuzz.Agent
                     return ToolResult.Ok(
                         $"{file}{(s["song"]!["unsaved_changes"]!.GetValue<bool>() ? ", unsaved changes" : "")}; " +
                         $"{s["tempo_bpm"]} BPM, {s["ticks_per_beat"]} ticks per beat, {s["length_beats"]} beats long; " +
-                        $"{s["counts"]!["machines"]} machines, {s["counts"]!["patterns"]} patterns; {host.Mode} mode.", s);
+                        $"{s["counts"]!["machines"]} machines, {s["counts"]!["patterns"]} patterns; {host.Mode} mode." + SafetyLine(s), s);
                 },
             });
 
@@ -273,7 +275,60 @@ namespace ReBuzz.Agent
                 Req("render_threads", Integer("Threads rendering machines (1: the device's own thread only)")),
                 Opt("workgroup_threads", Integer("Render threads in the device's audio workgroup now (macOS)")),
                 Req("dropouts", Integer("Buffers that missed their deadline since ReBuzz started")))),
+            Opt("safety", SafetySchema()),
             Opt("warnings", Array(String("A message"), "Messages ReBuzz raised during the call")));
+
+        // Fork (machine-safety.md §3.2–3.3): the guard on every machine and the safe master.
+
+        internal static JsonObject SafetySchema() => Object("The guard on every machine and the safe master on the audio output",
+            Req("guard", Boolean("The guard is on (off only for this song's session, from the studio's preferences)")),
+            Req("diverged", Array(Object("A machine whose guard tripped: silent and muted until machine_set(reset=true)",
+                Req("machine", String("The machine")),
+                Req("reason", String("NaN, infinity or its peak (above +60 dBFS)")),
+                Req("at", String("When (UTC, ISO 8601)")),
+                Req("position_beats", Number("Where the song was"))), "Diverged machines")),
+            Req("limiter", Object("The safety limiter on the audio device's output (renders get the true signal)",
+                Req("on", Boolean("On (the default)")),
+                Req("ceiling_dbfs", Number("Its ceiling")),
+                Req("acted", Boolean("It caught peaks over its ceiling since the clip indicator was cleared")))),
+            Req("clip", Object("The master's clip indicator (before the limiter)",
+                Req("threshold_dbfs", Number("Overs above this latch")),
+                Opt("latched_over_dbfs", Number("The highest peak over the threshold since it was cleared; absent: none")))));
+
+        internal static JsonObject Safety(ReBuzzCore core)
+        {
+            var safe = core.SafeMaster;
+            int tpb = Math.Max(1, core.TPB);
+            var diverged = new JsonArray(SongModel.Machines(core).Where(m => m.IsDiverged).Select(m => (JsonNode)new JsonObject
+            {
+                ["machine"] = m.Name,
+                ["reason"] = m.DivergedReason,
+                ["at"] = m.DivergedAt.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
+                ["position_beats"] = Beats(m.DivergedPosition, tpb),
+            }).ToArray());
+            var clip = new JsonObject { ["threshold_dbfs"] = safe.ClipThresholdDb };
+            if (safe.LatchedOverDb is double over) clip["latched_over_dbfs"] = over;
+            return new JsonObject
+            {
+                ["guard"] = ReBuzz.Audio.MachineGuard.Enabled,
+                ["diverged"] = diverged,
+                ["limiter"] = new JsonObject { ["on"] = safe.LimiterOn, ["ceiling_dbfs"] = safe.CeilingDb, ["acted"] = safe.LimitedSinceClear },
+                ["clip"] = clip,
+            };
+        }
+
+        /// <summary>The safety part of a status line: diverged machines, a latched over (empty when all is well).</summary>
+        static string SafetyLine(JsonObject status)
+        {
+            if (status["safety"] is not JsonObject safety) return "";
+            var parts = new System.Collections.Generic.List<string>();
+            foreach (var d in safety["diverged"]!.AsArray())
+                parts.Add($"{d!["machine"]} diverged ({d["reason"]}) and is muted");
+            if (safety["guard"]?.GetValue<bool>() == false) parts.Add("the machine guard is off");
+            if (safety["clip"]?["latched_over_dbfs"] is JsonNode over) parts.Add($"the master went over: {over.GetValue<double>():+0.0;-0.0} dBFS (latched)");
+            if (safety["limiter"]?["acted"]?.GetValue<bool>() == true) parts.Add("the safety limiter acted");
+            return parts.Count > 0 ? " Safety: " + string.Join("; ", parts) + "." : "";
+        }
 
         /// <summary>The audio output when one plays, else null.</summary>
         static JsonObject Audio(ReBuzzCore core)
@@ -326,6 +381,7 @@ namespace ReBuzz.Agent
                 },
                 ["undo"] = undo,
                 ["agent"] = new JsonObject { ["version"] = AgentHost.Version, ["log"] = host.Log.FilePath },
+                ["safety"] = Safety(core),          // fork (machine-safety.md §3.2–3.3)
             };
             if (host.Live && Audio(core) is JsonObject audio) status["audio"] = audio;
             return status;

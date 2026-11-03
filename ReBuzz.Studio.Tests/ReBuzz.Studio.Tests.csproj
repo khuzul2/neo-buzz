@@ -37,4 +37,16 @@
   </PropertyGroup>
   <Import Project="..\ReBuzz.Host\AppGear.targets" />
 
+  <!-- The guard's test machine (docs/specs/machine-safety.md §5), a project of its own, in the tests'
+       Gear/Generators. Restored on its own first, so the build sees what it restored. -->
+  <ItemGroup>
+    <Compile Remove="TestMachines\**" />
+    <None Remove="TestMachines\**" />
+    <EmbeddedResource Remove="TestMachines\**" />
+  </ItemGroup>
+  <Target Name="GuardTestGear" AfterTargets="Build">
+    <MSBuild Projects="TestMachines\GuardTest.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_GuardTestRestore=true" />
+    <MSBuild Projects="TestMachines\GuardTest.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
+  </Target>
+
 </Project>

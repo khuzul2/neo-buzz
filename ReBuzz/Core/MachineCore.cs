@@ -248,14 +248,82 @@ namespace ReBuzz.Core
         }
 
         bool muted;
+        // Fork (machine-safety.md §3.2): a diverged machine reads as muted until it is cleared, and
+        // unmuting it is Reset and unmute (the guard trips again if it is still broken).
         public bool IsMuted
         {
-            get => muted;
+            get => muted || diverged;
             set
             {
-                muted = value; PropertyChanged.Raise(this, "IsMuted");
+                bool reset = !value && diverged;
+                muted = value;
+                if (reset) ClearDivergence();
+                PropertyChanged.Raise(this, "IsMuted");
+                if (reset) PropertyChanged.Raise(this, "IsDiverged");
                 graph.Buzz.SetModifiedFlag();
             }
+        }
+
+        // Fork (machine-safety.md §3.2): the guard's state. The audio thread writes the details,
+        // then the flag (a volatile write publishes them); the UI thread clears it.
+        volatile bool diverged;
+        global::ReBuzz.Audio.DivergeKind divergedKind;
+        float divergedPeak;
+        long divergedAtTicks;
+        int divergedPosition;
+        Action onDiverged;
+
+        /// <summary>The guard tripped on this machine: it is silent, its Work isn't called, until it is reset.</summary>
+        internal bool IsDiverged => diverged;
+
+        /// <summary>Why: "NaN", "infinity" or "+87.3 dBFS" (empty when not diverged).</summary>
+        internal string DivergedReason => diverged ? global::ReBuzz.Audio.MachineGuard.Reason(divergedKind, divergedPeak) : "";
+
+        /// <summary>When the guard tripped (UTC).</summary>
+        internal DateTime DivergedAt => new DateTime(divergedAtTicks, DateTimeKind.Utc);
+
+        /// <summary>The song position (ticks) when it tripped.</summary>
+        internal int DivergedPosition => divergedPosition;
+
+        /// <summary>
+        /// Audio thread (the guard): marks the machine diverged and posts the rest to the UI thread:
+        /// Buzz's Stop, which clears most machines' buffers, and the views' notice. No allocation
+        /// here but the post.
+        /// </summary>
+        internal void MarkDiverged(global::ReBuzz.Audio.DivergeKind kind, float peak)
+        {
+            if (diverged) return;
+            divergedKind = kind;
+            divergedPeak = peak;
+            divergedAtTicks = DateTime.UtcNow.Ticks;
+            divergedPosition = (graph?.Buzz as ReBuzzCore)?.SongCore?.PlayPosition ?? 0;
+            diverged = true;
+            onDiverged ??= OnDiverged;
+            dispatcher?.BeginInvoke(onDiverged);
+        }
+
+        void OnDiverged()
+        {
+            if (!diverged) return;
+            var buzz = graph?.Buzz as ReBuzzCore;
+            buzz?.MachineManager?.Stop(this);
+            PropertyChanged.Raise(this, "IsMuted");
+            PropertyChanged.Raise(this, "IsDiverged");
+            buzz?.RaiseMachineDiverged(this);
+        }
+
+        /// <summary>Reset and unmute (UI thread): stops it once more and lets it play again.</summary>
+        internal void ResetDiverged()
+        {
+            if (!diverged) return;
+            IsMuted = false;
+        }
+
+        void ClearDivergence()
+        {
+            (graph?.Buzz as ReBuzzCore)?.MachineManager?.Stop(this);
+            divergedKind = global::ReBuzz.Audio.DivergeKind.None;
+            diverged = false;
         }
 
         bool soloed;

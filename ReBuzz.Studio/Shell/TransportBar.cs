@@ -1,4 +1,5 @@
-// Fork (docs/specs/studio-mvp.md S0): play, stop, record, loop, tempo and where the song is.
+// Fork (docs/specs/studio-mvp.md S0): play, stop, record, loop, tempo and where the song is; the
+// master meter with its clip indicator and limiting lamp (machine-safety.md §3.3, MasterMeter).
 
 using System;
 using Avalonia;
@@ -20,11 +21,13 @@ namespace ReBuzz.Studio.Shell
         readonly ToggleButton loop = new ToggleButton { Content = "Loop" };
         readonly NumericUpDown bpm = new NumericUpDown { Minimum = 16, Maximum = 500, Increment = 1, FormatString = "0", Width = 120 };
         readonly TextBlock position = new TextBlock { FontFamily = new FontFamily("monospace"), FontSize = 16, VerticalAlignment = VerticalAlignment.Center, MinWidth = 90 };
+        readonly MasterMeter meter;
         bool updating;
 
         public TransportBar(StudioHost host)
         {
             this.host = host;
+            meter = new MasterMeter(() => host.Core) { Margin = new Thickness(16, 0, 0, 0) };
             Padding = new Thickness(8, 4);
             BorderBrush = new SolidColorBrush(Color.FromRgb(0x30, 0x30, 0x30));
             BorderThickness = new Thickness(0, 0, 0, 1);
@@ -52,6 +55,7 @@ namespace ReBuzz.Studio.Shell
                     bpm,
                     new TextBlock { Text = "Position", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) },
                     position,
+                    meter,
                 },
             };
         }
@@ -87,6 +91,7 @@ namespace ReBuzz.Studio.Shell
                 int ticks = core.SongCore.PlayPosition;
                 int beat = ticks / tpb;
                 position.Text = $"{beat / beatsPerBar + 1}.{beat % beatsPerBar + 1}.{ticks % tpb + 1}";
+                meter.Refresh();
             }
             finally
             {
@@ -96,5 +101,8 @@ namespace ReBuzz.Studio.Shell
 
         /// <summary>The position's text now (for tests).</summary>
         public string PositionText => position.Text;
+
+        /// <summary>The master meter, clip indicator and limiting lamp.</summary>
+        public MasterMeter Meter => meter;
     }
 }
