@@ -126,10 +126,12 @@ namespace ReBuzzTests
             Assert.That(RtfToMarkdown.Convert(again, 0xFFE0E1E2), Is.EqualTo(Expected), "the same Markdown, so it isn't imported again");
 
             // The importer's writer (tests, fixtures) writes the elements Info's serializer does, in its order.
-            var ours = XDocument.Parse(Encoding.UTF8.GetString(InfoMachineState.Write(rtf), 5, InfoMachineState.Write(rtf).Length - 5).TrimStart((char)0xFEFF));
+            var written = InfoMachineState.Write(rtf, 0xFF202122, 0xFFE0E1E2);
+            var ours = XDocument.Parse(Encoding.UTF8.GetString(written, 5, written.Length - 5).TrimStart((char)0xFEFF));
             var theirs = XDocument.Parse(Encoding.UTF8.GetString(data, 5, data.Length - 5).TrimStart((char)0xFEFF));
             Assert.That(ours.Descendants().Select(e => e.Name.LocalName), Is.EqualTo(theirs.Descendants().Select(e => e.Name.LocalName)));
-            Assert.That((string)ours.Root!.Element("Background")!.Element("ScR"), Is.EqualTo((string)theirs.Root!.Element("Background")!.Element("ScR")));
+            foreach (var part in new[] { "A", "R", "G", "B", "ScA", "ScR", "ScG", "ScB" })
+                Assert.That((string?)ours.Root!.Element("Foreground")!.Element(part), Is.EqualTo((string?)theirs.Root!.Element("Foreground")!.Element(part)), "Foreground " + part);
         }
 
         static void CopyFolder(string from, string to)

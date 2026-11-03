@@ -280,6 +280,17 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
+        public void TheWriterWritesWhatInfosSerializerDid()
+        {
+            // The fixture is XmlSerializer's output on Windows (CRLF): ours is the same text, line ends aside.
+            string theirs = File.ReadAllText(Fixture).Replace("\r\n", "\n");
+            var state = InfoMachineState.Read(WithHeader(File.ReadAllBytes(Fixture)))!;
+            var data = InfoMachineState.Write(state.Rtf, state.Background!.Value, state.Foreground!.Value);
+            string ours = Encoding.UTF8.GetString(data, 5, data.Length - 5).TrimStart((char)0xFEFF).Replace("\r\n", "\n");
+            Assert.That(ours, Is.EqualTo(theirs));
+        }
+
+        [Test]
         public void DataThatIsntInfosReadsAsNothing()
         {
             Assert.That(InfoMachineState.Read(null), Is.Null);

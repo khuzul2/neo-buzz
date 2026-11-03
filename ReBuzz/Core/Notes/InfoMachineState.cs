@@ -100,10 +100,10 @@ namespace ReBuzz.Core.Notes
                 byte a = (byte)(argb >> 24), r = (byte)(argb >> 16), g = (byte)(argb >> 8), b = (byte)argb;
                 static string Sc(byte v)
                 {
-                    // ScRGB: linear light, as System.Windows.Media.Color keeps it.
-                    double c = v / 255.0;
-                    double lin = c <= 0.04045 ? c / 12.92 : Math.Pow((c + 0.055) / 1.055, 2.4);
-                    return ((float)lin).ToString("R", CultureInfo.InvariantCulture);
+                    // ScRGB: linear light, as System.Windows.Media.Color keeps it (its arithmetic, to the last digit).
+                    float c = v / 255.0f;
+                    float lin = c <= 0 ? 0 : c <= 0.04045 ? (float)(c / 12.92) : c < 1 ? (float)Math.Pow((c + 0.055) / 1.055, 2.4) : 1;
+                    return lin.ToString("R", CultureInfo.InvariantCulture);
                 }
                 return new XElement(name,
                     new XElement("A", a), new XElement("R", r), new XElement("G", g), new XElement("B", b),
