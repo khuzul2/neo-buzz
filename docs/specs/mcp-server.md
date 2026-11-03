@@ -614,16 +614,16 @@ The tool works for agents and, from the machine menu, for people.
 | Jeskola Reverb, Stereo Reverb, Raverb; Pedal Plate | Neo Verb | built (machines spec M1) |
 | Jeskola Distortion, Wave Shaper; FSM Philthy | Neo Drive | built |
 | Pedal Comp; Jeskola Limiter (as a compressor) | Neo Comp | built |
-| Jeskola EQ-3, Joachims Enceladus, Pedal EQ | Neo EQ | next batch (§8.2) |
-| Jeskola Limiter, Oomek Masterizer | Neo Limiter | next batch |
-| Jeskola Gain, Pedal Gain | Neo Utility | next batch |
-| Jeskola Delay, Cross Delay, NiNjA dElaY; FSM PanzerDelay | Neo Delay | next batch |
+| Jeskola EQ-3, Joachims Enceladus, Pedal EQ | Neo EQ | built (A4, machines spec M3) |
+| Jeskola Limiter, Oomek Masterizer | Neo Limiter | built (A4, M3) |
+| Jeskola Gain, Pedal Gain | Neo Utility | built (A4, M3) |
+| Jeskola Delay, Cross Delay, NiNjA dElaY; FSM PanzerDelay | Neo Delay | next batch (§8.2) |
 | Jeskola Chorus, Flanger; FSM Chorus2; Pedal Chorus | Neo Ensemble (chorus/flanger/phaser) | proposed |
 | Jeskola Filter, Filter 2; Joachims Mars; FSM WahMan; Pedal Filter | Neo Filter (the Neo Poly filters as an effect, with envelope follower and LFO) | proposed |
 | Jeskola Bass 2/3, Oomek Aggressor 303, Pedal SH-101 | Neo Poly (mono/legato presets) | built (M2) |
 | FSM Infector, Pedal Juno106 | Neo Poly, Neo Wave | built (M2) |
 | Jeskola Organ | Neo Wave (organ table), or a dedicated tonewheel organ | proposed |
-| Pedal FM | Neo FM6 | in progress (M2) |
+| Pedal FM | Neo FM6 | built (M2) |
 | Rout 909, FSM KickXP, Pedal Drum Matrix | Neo Drums (synthesised kit with per-voice outputs) | proposed |
 | Jeskola Tracker, Matilde Tracker2, Pedal M1 | Neo Sampler | next batch (§8.2) |
 
@@ -638,6 +638,24 @@ The tool works for agents and, from the machine menu, for people.
 | A5+ | Tier 3 for the Pedal and ReBuzz machines; the Buzztrax build fix; Neo Delay, Ensemble, Filter, Drums, Sampler as the next machine batches |
 
 **Done when** every machine in the package has a manifest; `notes_write` plays the written pitch on every pitched generator; the health report is clean or every exception is listed; and an old song converted with `machine_replace` measures within a stated tolerance of the original, or the report says why not.
+
+As of A7 the phases above ran ahead of this work: A0–A7 are built, with the Neo successors of §12.5 marked built and their generated manifests, but nothing of tiers 1–4 for the other machines. §12.7 is the plan from here.
+
+### 12.7 Build plan
+
+PR-sized phases. Each ends with its exit check passing in CI (Linux for the portable machines, the Windows package run for the natives) and the agent eval unchanged.
+
+| Phase | Delivers | Exit check | Effort |
+|---|---|---|---|
+| **U1 Profile and describe** (tier 1, first half) | `tools/machine-profiler.py` over MCP: value tables, unit and mapping inference, pitch convention, note input, polyphony, effect kind, latency, tail, gain, health. Draft manifests in `Machines/Manifests/`, copied beside their DLLs; `docs/machine-health.md`. The server reads drafts: units in `param_set`/`param_get`, pitch offsets and track notes in `notes_write`/`notes_read`/`midi_play`, kind and health in `gear_list` | A Pedal synth plays A4 at 440 Hz through `notes_write` after profiling; `param_set` in units on a Pedal machine; the Linux job profiles the portable machines and the Windows package job all of them | L |
+| **U2 Profile in depth** (tier 1, second half) | A test-signal source for effects (sweep, impulse, level steps through a general tool), per-parameter sweeps (what moving each one changes) as suggested roles, velocity response and envelope length, denormal and extreme-value checks per parameter. `gear_list` leaves unhealthy machines out unless asked | Suggested roles for the filter, time and mix parameters of the 25 most used machines; every unhealthy machine has a reason in the report | M |
+| **U3 Curate** (tier 1 done) | Curated manifests for the top 25 (summary, plain names, roles, safe ranges, quirks); manuals (`rebuzz://machines/…`) for every machine with a manifest; `GuideTests` check curated names and values | 25 curated, the rest drafts: every machine in the package has a manifest | M |
+| **U4 A better face** (tier 2) | The manifest editor on the editor kit (groups, knobs in units, choices, ADSR and response plots), a per-machine setting; factory presets for the top machines | The editor opens for every curated machine in the studio and ReBuzz.exe; its presets load through `preset_load` | L |
+| **U5 `machine_replace`** (tier 4) | Role mapping, unit conversion, render before and after with `compare`; one undo step; the machine menu's Replace | Jeskola Reverb → Neo Verb, Pedal EQ → Neo EQ, Jeskola Distortion → Neo Drive and Pedal Gain → Neo Utility convert within a stated tolerance, or say why not | M |
+| **U6 Source fixes** (tier 3, C#) | Pedal and ReBuzz machines: manifests from code, MIDI input for the Pedal synths, denormal guards, smoothing, silence reporting; the Neo measurement suite on them | Their health report is clean; their manifests no longer drafts; old songs render as before | L |
+| **U7 Natives with sources** (tier 3) | The Buzztrax MSVC header fix, x64 builds, fixes and generated manifests | The Buzztrax machines build in the package; §12.6's "Done when" holds | L |
+
+The successors of §12.5 still to build (Neo Delay, Ensemble, Filter, Drums, Sampler) are machine batches of their own (machines spec); `machine_replace` takes each one's mapping as it lands.
 
 ## 13. Inventory notes (for implementers)
 
