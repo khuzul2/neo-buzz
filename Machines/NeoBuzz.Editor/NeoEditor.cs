@@ -1,7 +1,8 @@
 #nullable disable
 // Neo machines' editor kit (docs/specs/machines.md §4): the editor shell every Neo machine's GUI
 // derives from (header with the machine name and presets, then the machine's own body), and the
-// preset bar over ReBuzz's preset files.
+// preset bar over ReBuzz's preset files. EditorContext is in Params/EditorContext.cs (shared with
+// the studio's Avalonia kit, docs/specs/studio-mvp.md S1).
 
 using System;
 using System.Collections.Generic;
@@ -17,67 +18,6 @@ using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Editor
 {
-    /// <summary>What a machine's editor builds with: its machine, parameters and accent.</summary>
-    internal sealed class EditorContext
-    {
-        readonly List<ParamBinding> bindings = new List<ParamBinding>();
-        readonly IParameterGroup globals;
-
-        public EditorContext(IMachine machine, ParamDef[] table, NeoColor accent)
-        {
-            Machine = machine;
-            Table = table;
-            Accent = accent;
-            globals = machine?.ParameterGroups?.FirstOrDefault(g => g.Type == ParameterGroupType.Global);
-        }
-
-        public IMachine Machine { get; }
-        public ParamDef[] Table { get; }
-        public NeoColor Accent { get; }
-
-        public IParameter Parameter(int index) =>
-            globals != null && index >= 0 && index < globals.Parameters.Count ? globals.Parameters[index] : null;
-
-        public ParamBinding Bind(int index, Action<int> onValue)
-        {
-            var b = new ParamBinding(Parameter(index), Table[index], v =>
-            {
-                onValue(v);
-                Changed?.Invoke();
-            });
-            bindings.Add(b);
-            return b;
-        }
-
-        /// <summary>A parameter's raw value now.</summary>
-        public int Raw(int index)
-        {
-            try
-            {
-                return Parameter(index)?.GetValue(0) ?? Table[index].Default;
-            }
-            catch (Exception)
-            {
-                return Table[index].Default;
-            }
-        }
-
-        public double Value(int index) => Table[index].Value(Raw(index));
-
-        public void Set(int index, int raw) => Parameter(index)?.SetValue(0, Math.Clamp(raw, Table[index].Min, Table[index].Max));
-
-        public void Detach()
-        {
-            foreach (var b in bindings) b.Detach();
-            bindings.Clear();
-        }
-
-        /// <summary>Called when any bound parameter changes (graphs redraw).</summary>
-        public event Action Changed;
-
-        internal void RaiseChanged() => Changed?.Invoke();
-    }
-
     /// <summary>Base of every Neo editor: header (name, presets) over the machine's body.</summary>
     internal abstract class NeoEditor : UserControl, IMachineGUI
     {
