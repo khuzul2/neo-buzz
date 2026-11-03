@@ -29,6 +29,9 @@ namespace ReBuzz.Core
         /// </summary>
         public IUiTimer CreateTimer(TimeSpan interval, Action tick) => new WpfUiTimer(interval, tick);
 
+        /// <summary>Fork (audio hygiene): polled, as BeginInvoke makes a DispatcherOperation (ParameterValueEvents).</summary>
+        public IUiSignal CreateSignal(Action action) => new PolledUiSignal(this, action, PolledUiSignal.DefaultInterval);
+
         sealed class WpfUiTimer : IUiTimer
         {
             readonly DispatcherTimer timer;

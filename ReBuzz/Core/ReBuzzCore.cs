@@ -896,6 +896,7 @@ namespace ReBuzz.Core
 
             SessionCore = new SessionCore(this);
             global::ReBuzz.Core.Session.SessionClipEngine.Install();      // fork (1.0): audio tracks
+            UiEvents = UiEventQueue.For(dispatcher);    // fork (audio hygiene): with its signal, made here on the UI thread
 
             midiActivityTimer = dispatcher.CreateTimer(TimeSpan.FromSeconds(0.5), () =>
             {
@@ -2624,6 +2625,9 @@ namespace ReBuzz.Core
         public AudioEngine AudioEngine { get; internal set; }
         public string DefaultPatternEditor { get; internal set; }
         internal IMachine PatternEditorMachine { get; set; }
+
+        /// <summary>Fork (audio hygiene): the audio thread's events on their way to the UI thread (UiEventQueue).</summary>
+        internal UiEventQueue UiEvents { get; }
 
         internal SongTime GetSongTime()
         {

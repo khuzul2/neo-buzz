@@ -24,7 +24,7 @@ using System.Windows.Input;
 
 namespace ReBuzz.Core
 {
-    public class MachineCore : IMachine, IMachineExtension
+    public class MachineCore : IMachine, IMachineExtension, UiEventQueue.ITarget
     {
         public static long machineHostId = 1;
         public readonly Lock workLock = new();
@@ -265,10 +265,14 @@ namespace ReBuzz.Core
                 if (isActive != value)
                 {
                     isActive = value;
-                    dispatcher.BeginInvoke(() =>
-                    {
-                        PropertyChanged.Raise(this, "IsActive");
-                    });
+                    // Fork (audio hygiene): through the engine's UI event queue, once until delivered
+                    // (it was a closure posted on every change, on the audio thread: with the
+                    // recursive work algorithm, twice a buffer for a machine whose two activity
+                    // checks disagree). The listeners read the value as it is then.
+                    if (uiEvents != null && Interlocked.Exchange(ref isActiveEventPending, 1) == 0)
+                        uiEvents.Enqueue(this, 0, 0);
+                    else if (uiEvents == null)
+                        dispatcher?.BeginInvoke(() => PropertyChanged.Raise(this, "IsActive"));
                 }
             }
         }
@@ -628,11 +632,25 @@ namespace ReBuzz.Core
         /// </summary>
         internal MachineCore PlaceholderEditor { get; set; }
 
+        UiEventQueue uiEvents;
+        int isActiveEventPending;
+
+        void UiEventQueue.ITarget.Deliver(int arg, int kind)
+        {
+            Volatile.Write(ref isActiveEventPending, 0);
+            PropertyChanged.Raise(this, "IsActive");
+        }
+
         public MachineCore(SongCore machineGraph, string buzzPath, IUiDispatcher dispatcher, EngineSettings settings, bool is64Bit = false)
         {
             engineSettings = settings;
             this.buzzPath = buzzPath;
             graph = machineGraph;
+            if (dispatcher != null)
+            {
+                uiEvents = UiEventQueue.For(dispatcher);
+                uiEvents.Reserve(1);                // its IsActive event
+            }
 
             baseOctave = Global.GeneralSettings.DefaultMachineBaseOctave;
 
@@ -1427,7 +1445,13 @@ namespace ReBuzz.Core
             return isActive;
         }
 
-        internal List<Task> workTasks = new List<Task>(50);
+        // Fork (audio hygiene): the recursive work algorithm's per-machine scratch, made once (its
+        // inputs in the order they go out, the jobs it queued, and the join it waits on), instead
+        // of a Task per input and LINQ's sort on every buffer. Used under workLock.
+        internal MachineCore[] workInputs = new MachineCore[4];
+        internal long[] workInputKeys = new long[4];
+        internal ReBuzz.Audio.RenderJobs.Job[] workJobs = new ReBuzz.Audio.RenderJobs.Job[4];
+        internal readonly ReBuzz.Audio.RenderJoin workJoin = new ReBuzz.Audio.RenderJoin();
 
         internal List<int> setMachineTrackCountList = new List<int>();
         internal bool updateWaveInfo;

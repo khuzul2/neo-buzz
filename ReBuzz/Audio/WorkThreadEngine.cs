@@ -73,9 +73,12 @@ namespace ReBuzz.Audio
                                     break;
 
                                 var bwi = b2Items[idx];
+                                long bytes = System.GC.GetAllocatedBytesForCurrentThread();     // fork (audio hygiene): counted (RenderJobs)
+                                long methods = System.Runtime.JitInfo.GetCompiledMethodCount(true);
                                 try
                                 {
                                     bwi.TickAndWork(nSamples, true);
+                                    RenderJobs.CountWorker(bytes, methods);
                                 }
                                 catch (System.Exception ex)
                                 {
@@ -106,9 +109,12 @@ namespace ReBuzz.Audio
                                 var machine = wi.Machine;
                                 var buzz = Global.Buzz as ReBuzzCore;
 
+                                long bytes = System.GC.GetAllocatedBytesForCurrentThread();     // fork (audio hygiene): counted (RenderJobs)
+                                long methods = System.Runtime.JitInfo.GetCompiledMethodCount(true);
                                 try
                                 {
                                     wi.TickAndWork(nSamples, true);
+                                    RenderJobs.CountWorker(bytes, methods);
                                 }
                                 catch (System.Exception ex)
                                 {

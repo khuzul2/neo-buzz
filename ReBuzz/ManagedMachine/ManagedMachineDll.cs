@@ -164,6 +164,9 @@ namespace ReBuzz.ManagedMachine
         }
         public IBuzzMachine CreateMachine(IBuzzMachineHost h)
         {
+            // Fork (audio hygiene): its code compiled before it ticks (its class now, its assembly in
+            // the background), not by the audio thread on its first tick and note.
+            ReBuzz.Audio.AudioWarmUp.PrepareMachine(machineType);
             return Activator.CreateInstance(machineType, new object[1] { h }) as IBuzzMachine;
             //return constructor.Invoke(new object[1] { h }) as IBuzzMachine
         }

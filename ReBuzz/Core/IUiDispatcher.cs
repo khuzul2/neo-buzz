@@ -34,5 +34,13 @@ namespace ReBuzz.Core
         /// thread every <paramref name="interval"/>. The default queues ticks from a thread-pool timer.
         /// </summary>
         IUiTimer CreateTimer(TimeSpan interval, Action tick) => new ThreadPoolUiTimer(this, interval, tick);
+
+        /// <summary>
+        /// Fork (audio hygiene): a signal that runs <paramref name="action"/> on the UI thread soon
+        /// after it is requested, requests in between making one run, and requesting allocating
+        /// nothing (<see cref="IUiSignal"/>). Make it on the UI thread. The default queues the
+        /// action with BeginInvoke; a dispatcher whose posts allocate polls (<see cref="PolledUiSignal"/>).
+        /// </summary>
+        IUiSignal CreateSignal(Action action) => new PostedUiSignal(this, action);
     }
 }
