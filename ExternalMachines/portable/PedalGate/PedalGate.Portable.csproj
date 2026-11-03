@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pedal Gate, portable (docs/specs/studio-mvp.md S2): see ../PedalPortable.targets. -->
+  <PropertyGroup>
+    <PedalFolder>pedal-gate</PedalFolder>
+    <PedalAssembly>Pedal Gate.NET</PedalAssembly>
+    <PedalKind>Effects</PedalKind>
+  </PropertyGroup>
+  <Import Project="../PedalPortable.targets" />
+</Project>

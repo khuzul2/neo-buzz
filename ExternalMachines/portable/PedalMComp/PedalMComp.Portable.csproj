@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pedal MComp, portable (docs/specs/studio-mvp.md S2): see ../PedalPortable.targets. -->
+  <PropertyGroup>
+    <PedalFolder>pedal-mcomp</PedalFolder>
+    <PedalAssembly>Pedal MComp.NET</PedalAssembly>
+    <PedalKind>Effects</PedalKind>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- WPF only: the GUI, which the studio replaces with its parameter window. -->
+    <PedalGui Include="PedalMCompGui.cs" />
+  </ItemGroup>
+  <Import Project="../PedalPortable.targets" />
+</Project>

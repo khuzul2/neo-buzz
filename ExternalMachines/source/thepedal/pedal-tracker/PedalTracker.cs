@@ -2053,8 +2053,13 @@ namespace WDE.PedalTracker
     // IMenuItem extends INotifyPropertyChanged; the event is required even
     // though we don't fire it (WPF binds checked/enabled via DPs instead).
     // ─────────────────────────────────────────────────────────────────────────
+#if WINDOWS
     internal sealed class MenuEntry : System.Windows.DependencyObject, IMenuItem
+#else
+    internal sealed class MenuEntry : IMenuItem     // fork (studio-mvp.md S2): no WPF off Windows
+#endif
     {
+#if WINDOWS
         public static readonly System.Windows.DependencyProperty IsCheckedProperty =
             System.Windows.DependencyProperty.Register("IsChecked", typeof(bool),
                 typeof(MenuEntry), new System.Windows.PropertyMetadata(false));
@@ -2062,6 +2067,7 @@ namespace WDE.PedalTracker
         public static readonly System.Windows.DependencyProperty IsEnabledProperty =
             System.Windows.DependencyProperty.Register("IsEnabled", typeof(bool),
                 typeof(MenuEntry), new System.Windows.PropertyMetadata(true));
+#endif
 
         readonly Action _action;
 
@@ -2081,6 +2087,7 @@ namespace WDE.PedalTracker
         public bool   StaysOpenOnClick { get; set; }
         public IEnumerable<IMenuItem> Children => null;
 
+#if WINDOWS
         public bool IsChecked
         {
             get => (bool)GetValue(IsCheckedProperty);
@@ -2091,6 +2098,10 @@ namespace WDE.PedalTracker
             get => (bool)GetValue(IsEnabledProperty);
             set => SetValue(IsEnabledProperty, value);
         }
+#else
+        public bool IsChecked { get; set; }
+        public bool IsEnabled { get; set; } = true;
+#endif
 
         public System.Windows.Input.ICommand Command => new RelayCmd(_action);
 

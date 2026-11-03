@@ -106,6 +106,12 @@ jobs:
         dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
         python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
 
+    # The Pedal machines (docs/specs/studio-mvp.md S2), built for net10.0 without their WPF GUIs:
+    # each loads, the synths play a note, the effects pass a chord, Chord and LFO drive their targets.
+    - name: Pedal machines on Linux
+      if: always()
+      run: python3 tools/headless-pedal.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/pedal"
+
     # Live audio (mac-engine.md M5): rebuzz-headless --audio through PortAudio on the PulseAudio
     # null sink (clocked, so in real time); the live tools play, meter and stop it.
     - name: Live audio on Linux (PortAudio)

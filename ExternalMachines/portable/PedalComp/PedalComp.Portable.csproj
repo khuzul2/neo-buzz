@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pedal Comp, portable (docs/specs/studio-mvp.md S2): see ../PedalPortable.targets. -->
+  <PropertyGroup>
+    <PedalFolder>pedal-comp</PedalFolder>
+    <PedalAssembly>Pedal Comp.NET</PedalAssembly>
+    <PedalKind>Effects</PedalKind>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <Import Project="../PedalPortable.targets" />
+</Project>

@@ -560,6 +560,7 @@ namespace WDE.PedalGate
         }
     } // end PedalGateMachine
 
+#if WINDOWS   // fork (studio-mvp.md S2): the GUI is WPF; portable builds have none
     // =========================================================================
     // GUI factory — discovered by ReBuzz's assembly scan for IMachineGUIFactory
     // =========================================================================
@@ -786,5 +787,6 @@ namespace WDE.PedalGate
             cv.Children.Add(el);
         }
     }
+#endif
 
 } // namespace WDE.PedalGate
