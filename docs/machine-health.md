@@ -14,30 +14,30 @@ The output runs away: NaN or infinity, above +60 dBFS, or still growing after 20
 
 | Machine | Platform | Where | Safe ranges |
 |---|---|---|---|
-| Neo Verb | linux | High damping diverges at its minimum (1.00 kHz: +347.1 dBFS peak, growing +89 dB); safe from 1.17 kHz to 20.0 kHz (raw 52–1000) | High damping: 1.17 kHz … 20.0 kHz (raw 52–1000) |
-| Pedal Plate | linux | Feedback diverges at its maximum (95: +239.5 dBFS peak, growing +60 dB); safe from 0 to 79 (raw 0–79) | Feedback: 0 … 79 (raw 0–79) |
+| Neo Verb | linux | High damping diverges at its minimum (1.00 kHz: +347.1 dBFS peak over 30 s, growing +89 dB); safe from 1.17 kHz to 20.0 kHz (raw 52–1000) | High damping: 1.17 kHz … 20.0 kHz (raw 52–1000) |
+| Pedal Plate | linux | Feedback diverges at its maximum (95: +239.5 dBFS peak over 30 s, growing +60 dB); safe from 0 to 78 (raw 0–78) | Feedback: 0 … 78 (raw 0–78) |
 
 ## Hot
 
-Loud but steady: above 0 dBFS, under +60 dBFS, not growing, at the setting named. A warning, not unhealthy; the master's safety limiter keeps it off the speakers (machine-safety.md §3.3).
+Loud but steady: above 0 dBFS, under +60 dBFS, not growing, at the setting named. A warning, not unhealthy; the master's safety limiter keeps it off the speakers (machine-safety.md §3.3). A parameter's end where the loop never decays (feedback at ±100 %: noise piles up 2 dB or more per doubling of time, for 30 s) gets a safe range too, which keeps agents off it.
 
-| Machine | Platform | Settings |
-|---|---|---|
-| Neo Comp | linux | hot (loud but steady) with Makeup at its maximum (24.0 dB): +12.3 dBFS peak; Output at its maximum (+24.0 dB): +12.2 dBFS peak |
-| Neo Drive | linux | hot (loud but steady) with Output at its maximum (+24.0 dB): +12.4 dBFS peak |
-| Neo EQ | linux | hot (loud but steady) with B4 gain at its maximum (+24.0 dB): +0.7 dBFS peak; B5 gain at its maximum (+24.0 dB): +3.7 dBFS peak; B6 gain at its maximum (+24.0 dB): +7.2 dBFS peak; B7 gain at its maximum (+24.0 dB): +10.8 dBFS peak; Output at its maximum (+24.0 dB): +15.0 dBFS peak |
-| Neo Limiter | linux | hot with every parameter at its maximum at once (+0.0 dBFS peak), but with no parameter alone |
-| Neo Utility | linux | hot (loud but steady) with Gain at its maximum (+24.0 dB): +14.8 dBFS peak |
-| Pedal EQ | linux | hot (loud but steady) with LM Gain at its maximum (+24.0 dB): +0.3 dBFS peak; HM Gain at its maximum (+24.0 dB): +7.2 dBFS peak; HS Gain at its maximum (+24.0 dB): +10.9 dBFS peak; Output at its maximum (+24.0 dB): +15.0 dBFS peak |
-| Pedal Filter | linux | hot with every parameter at its maximum at once (+15.5 dBFS peak), but with no parameter alone |
-| Pedal Gain Multi | linux | hot (loud but steady) with Gain at its maximum (+10.0 dB): +0.8 dBFS peak; Volume at its maximum (+10.0 dB): +1.0 dBFS peak |
-| Pedal MComp | linux | hot (loud but steady) with LM Makeup at its maximum (24.0 dB): +2.5 dBFS peak; HM Makeup at its maximum (24.0 dB): +10.0 dBFS peak; H Makeup at its maximum (24.0 dB): +14.8 dBFS peak; Output Gain at its maximum (+24.0 dB): +17.5 dBFS peak |
-| Pedal Shaper | linux | hot (loud but steady) with Drive at its maximum (96): +1.0 dBFS peak; Output at its maximum (96): +14.6 dBFS peak |
-| Neo FM6 | linux | hot (loud but steady) with Volume at its maximum (+6.0 dB): +8.5 dBFS peak |
-| Neo Poly | linux | hot with every parameter at its maximum at once (+5.9 dBFS peak), but with no parameter alone |
-| Neo Wave | linux | hot with every parameter at its maximum at once (+20.9 dBFS peak), but with no parameter alone |
-| Pedal FM | linux | hot with every parameter at its maximum at once (+3.4 dBFS peak), but with no parameter alone |
-| Pedal SH101 | linux | hot (loud but steady) with Sub Lvl at its maximum (100%): +2.7 dBFS peak |
+| Machine | Platform | Settings | Safe ranges |
+|---|---|---|---|
+| Neo Comp | linux | hot (loud but steady) with Makeup at its maximum (24.0 dB): +12.3 dBFS peak; Output at its maximum (+24.0 dB): +12.2 dBFS peak |  |
+| Neo Drive | linux | hot (loud but steady) with Output at its maximum (+24.0 dB): +12.4 dBFS peak |  |
+| Neo EQ | linux | hot (loud but steady) with B4 gain at its maximum (+24.0 dB): +0.7 dBFS peak; B5 gain at its maximum (+24.0 dB): +3.7 dBFS peak; B6 gain at its maximum (+24.0 dB): +7.2 dBFS peak; B7 gain at its maximum (+24.0 dB): +10.8 dBFS peak; Output at its maximum (+24.0 dB): +15.0 dBFS peak |  |
+| Neo Limiter | linux | hot with every parameter at its maximum at once (+0.0 dBFS peak), but with no parameter alone |  |
+| Neo Utility | linux | hot (loud but steady) with Gain at its maximum (+24.0 dB): +14.8 dBFS peak |  |
+| Pedal EQ | linux | hot (loud but steady) with LM Gain at its maximum (+24.0 dB): +0.3 dBFS peak; HM Gain at its maximum (+24.0 dB): +7.2 dBFS peak; HS Gain at its maximum (+24.0 dB): +10.9 dBFS peak; Output at its maximum (+24.0 dB): +15.0 dBFS peak |  |
+| Pedal Filter | linux | hot with every parameter at its maximum at once (+15.2 dBFS peak), but with no parameter alone |  |
+| Pedal Gain Multi | linux | hot (loud but steady) with Gain at its maximum (+10.0 dB): +0.8 dBFS peak; Volume at its maximum (+10.0 dB): +1.0 dBFS peak |  |
+| Pedal MComp | linux | hot (loud but steady) with LM Makeup at its maximum (24.0 dB): +2.5 dBFS peak; HM Makeup at its maximum (24.0 dB): +10.0 dBFS peak; H Makeup at its maximum (24.0 dB): +14.8 dBFS peak; Output Gain at its maximum (+24.0 dB): +17.5 dBFS peak |  |
+| Pedal Shaper | linux | hot (loud but steady) with Drive at its maximum (96): +1.0 dBFS peak; Output at its maximum (96): +14.6 dBFS peak |  |
+| Neo FM6 | linux | hot (loud but steady) with Volume at its maximum (+6.0 dB): +8.5 dBFS peak |  |
+| Neo Poly | linux | hot with every parameter at its maximum at once (+17.9 dBFS peak over 30 s, never decays), but with no parameter alone |  |
+| Neo Wave | linux | hot with every parameter at its maximum at once (+20.9 dBFS peak over 30 s), but with no parameter alone |  |
+| Pedal FM | linux | hot with every parameter at its maximum at once (+3.4 dBFS peak), but with no parameter alone |  |
+| Pedal SH101 | linux | hot (loud but steady) with Sub Lvl at its maximum (100%): +2.7 dBFS peak |  |
 
 ## Needs a window
 
@@ -108,18 +108,18 @@ Everything else the profile noticed (most are the profiler's own limits: trigger
 | KrimZon AY-3-8910 | polysynth | tracks | -13 (-1 ct) | 3 | -21.5 | 12.6 | ok |
 | Matilde Tracker2 | monosynth | tracks | +0 | 1 | -14.5 | 13.4 | ok |
 | Modern Sequence Editor | control |  |  |  |  |  | ok |
-| Neo FM6 | polysynth | midi | +0 | 8 | -23 | 16.3 | hot |
-| Neo Poly | polysynth | midi | +0 | 8 | -20.8 | 2.8 | hot |
-| Neo Wave | polysynth | midi | +0 | 8 | -20.7 | 40.2 | hot |
+| Neo FM6 | polysynth | midi | +0 | 8 | -23 | 17.1 | hot |
+| Neo Poly | polysynth | midi | +0 | 8 | -20.8 | 16.5 | hot |
+| Neo Wave | polysynth | midi | +0 | 8 | -20.7 | 17.5 | hot |
 | Oomek Aggressor 303 | unpitched | tracks |  | 1 | -17.6 | 11.3 | ok |
 | Pedal Chord | control |  |  |  |  |  | ok |
-| Pedal FM | unpitched | tracks |  | 16 | -8.7 | 0.0 | hot |
-| Pedal Juno106 | polysynth | tracks | +0 (-11 ct) | 6 | -9.8 | 4.4 | ok |
+| Pedal FM | unpitched | tracks |  | 16 | -8.7 | 20.2 | hot |
+| Pedal Juno106 | polysynth | tracks | +0 (-11 ct) | 6 | -9.8 | 12.9 | ok |
 | Pedal LFO | control |  |  |  |  |  | ok |
-| Pedal M1 | monosynth | tracks | +0 | 1 | -24.6 | 19.5 | ok |
+| Pedal M1 | monosynth | tracks | +0 | 1 | -24.6 | 16.7 | ok |
 | Pedal Peer Control | generator (silent at its defaults) | none |  |  |  |  | warn |
-| Pedal SH101 | monosynth | tracks | +0 | 1 | -5.9 | 4.6 | hot |
-| Pedal Tracker | monosynth | tracks | +0 | 1 | -14.5 | 5.6 | ok |
+| Pedal SH101 | monosynth | tracks | +0 | 1 | -5.9 | 12.7 | hot |
+| Pedal Tracker | monosynth | tracks | +0 | 1 | -14.5 | 15.2 | ok |
 | Polac Audio In | generator (silent at its defaults) | none |  |  |  |  | warn |
 | Polac MIDI Bus II | control |  |  |  |  |  | ok |
 | Polac VSTi 1.1 | generator (silent at its defaults) | none |  |  |  |  | warn |
@@ -167,13 +167,13 @@ Everything else the profile noticed (most are the profiler's own limits: trigger
 | Joachims Saturn 1.4 | utility | -0.0 | 0 | 0.05 | 8.3 | ok |
 | ManagedMultiIOEffect | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
 | mixIO | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
-| Neo Analyzer | utility | 0.0 | 0 | 0.0 | 58.2 | ok |
-| Neo Comp | dynamics | -2.54 | 0 | 0.0 | 3.1 | hot |
-| Neo Drive | distortion | -0.62 | 62 | 0.01 | 1.1 | hot |
+| Neo Analyzer | utility | 0.0 | 0 | 0.0 | 19.6 | ok |
+| Neo Comp | dynamics | -2.54 | 0 | 0.0 | 0.0 | hot |
+| Neo Drive | distortion | -0.62 | 62 | 0.01 | 0.0 | hot |
 | Neo EQ | utility | 0.0 | 0 | 0.0 | 0.0 | hot |
 | Neo Limiter | utility | 0.0 | 99 | 0.0 | 0.0 | hot |
 | Neo Utility | utility | 0.0 | 0 | 0.0 | 0.0 | hot |
-| Neo Verb | reverb | -2.8 | 0 | 1.52 | 2.2 | diverging |
+| Neo Verb | reverb | -2.8 | 0 | 1.52 | 0.0 | diverging |
 | Oomek Exciter | filter or EQ | 7.22 | 0 | 0.0 | 0.4 | ok |
 | Oomek Masterizer | utility | -1.0 | 176 | 0.0 | 17.2 | ok |
 | Pedal Chorus | modulation, filter or EQ | -4.31 | 0 | 0.01 | 0.0 | ok |

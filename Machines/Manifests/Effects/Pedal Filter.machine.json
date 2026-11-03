@@ -10,7 +10,7 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot with every parameter at its maximum at once (+15.5 dBFS peak), but with no parameter alone"
+   "hot with every parameter at its maximum at once (+15.2 dBFS peak), but with no parameter alone"
   ],
   "hot": true
  },
@@ -55,8 +55,8 @@
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": 15.5,
-     "growth_db": 0.46,
+     "peak_dbfs": 15.22,
+     "growth_db": 0.28,
      "verdict": "hot"
     }
    },
@@ -64,7 +64,7 @@
     "every parameter at its maximum at once: hot",
     "an effect with Resonance"
    ],
-   "renders": 19
+   "renders": 21
   },
   "sweeps": {}
  },

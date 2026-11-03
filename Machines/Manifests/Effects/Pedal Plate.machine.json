@@ -10,7 +10,7 @@
  "health": {
   "status": "unhealthy",
   "problems": [
-   "Feedback diverges at its maximum (95: +239.5 dBFS peak, growing +60 dB); safe from 0 to 79 (raw 0–79)"
+   "Feedback diverges at its maximum (95: +239.5 dBFS peak over 30 s, growing +60 dB); safe from 0 to 78 (raw 0–78)"
   ],
   "diverging": true
  },
@@ -65,7 +65,7 @@
    "swept_because": [
     "an effect with Feedback"
    ],
-   "renders": 29
+   "renders": 30
   },
   "sweeps": {
    "Feedback": {
@@ -209,10 +209,10 @@
    "confidence": "values",
    "safe_range": {
     "min": 0,
-    "max": 79,
+    "max": 78,
     "min_text": "0",
-    "max_text": "79",
-    "reason": "diverges at its maximum (95: +239.5 dBFS peak, growing +60 dB)"
+    "max_text": "78",
+    "reason": "diverges at its maximum (95: +239.5 dBFS peak over 30 s, growing +60 dB)"
    }
   }
  ],

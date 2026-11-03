@@ -254,7 +254,7 @@ Phases (§9) are marked A1 … A7.
 | `notes_write` | A1, U1 | Notes into a pattern:<br>• each note is pitch, start beat, length in beats, velocity 1–127<br>• `mode: add \| replace \| replace_range`<br>• chords are notes with the same start<br>• returns a short summary and clashes (overlaps on a monophonic track, notes outside the pattern)<br>• U1: the written pitch is the pitch heard. A machine's manifest can say it takes notes in its tracks (`input: tracks`, a voice per track) and give a pitch offset; `input` and `apply_pitch_offset=false` override both |
 | `notes_read` | A1, U1 | The same shape back, optionally for a range; the same `input` and `apply_pitch_offset` |
 | `notes_transform` | A3 | Transpose (semitones or in-scale steps), quantize (grid, strength, swing), humanize, velocity curve, shift, stretch, reverse, invert, legato. Each runs on a selection by range or pitch |
-| `automation_write`, `automation_read` | A3 | A parameter's curve in a pattern: points at beats, step or linear, values in units. Written as engine-played automation columns |
+| `automation_write`, `automation_read` | A3, U2 | A parameter's curve in a pattern: points at beats, step or linear, values in units. Written as engine-played automation columns. U2: points outside the parameter's `safe_range` are refused with the reason unless `allow_unsafe: true`, as `param_set` does |
 | `arrangement_get` | A1 | The timeline: one lane per machine with its pattern placements in bars and beats, mutes, markers, loop, song end |
 | `arrangement_place` | A1 | Puts patterns at bars (one, a list, or repeated every N bars); `arrangement_clear` removes a range |
 | `arrangement_markers` | A3 | Named sections (intro, verse…), used by renders and guides |
