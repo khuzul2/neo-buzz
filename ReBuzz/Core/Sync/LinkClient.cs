@@ -42,8 +42,8 @@ namespace ReBuzz.Core.Sync
             path = helperPath;
         }
 
-        /// <summary>ReBuzzLink.exe beside ReBuzz.exe.</summary>
-        public static string DefaultPath => Path.Combine(AppContext.BaseDirectory, "ReBuzzLink.exe");
+        /// <summary>The helper beside the app: ReBuzzLink.exe beside ReBuzz.exe; ReBuzzLink beside rebuzz-headless on macOS and Linux (mac-engine.md M6).</summary>
+        public static string DefaultPath => Path.Combine(AppContext.BaseDirectory, OperatingSystem.IsWindows() ? "ReBuzzLink.exe" : "ReBuzzLink");
 
         public bool IsRunning => process != null && !exited;
         public int Peers => peers;

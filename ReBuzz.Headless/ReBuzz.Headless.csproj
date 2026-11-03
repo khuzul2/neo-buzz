@@ -32,4 +32,11 @@
     <MSBuild Projects="..\Machines\Portable\Portable.proj" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
   </Target>
 
+  <!-- The Link helper, once built with CMake (LinkHelper/CMakeLists.txt, into build/LinkHelper), beside
+       the app, where LinkClient looks for it (mac-engine.md M6). Without it, Link stays off. -->
+  <Target Name="LinkHelper" AfterTargets="Build">
+    <Copy SourceFiles="..\build\LinkHelper\ReBuzzLink" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('..\build\LinkHelper\ReBuzzLink')" />
+    <Copy SourceFiles="..\build\LinkHelper\Release\ReBuzzLink.exe" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('..\build\LinkHelper\Release\ReBuzzLink.exe')" />
+  </Target>
+
 </Project>

@@ -38,8 +38,18 @@ jobs:
         pactl set-default-sink ci_null
         pactl info | grep -i "default sink"
 
+    # The Ableton Link helper (mac-engine.md M6), built with CMake as on macOS. The seam tests run
+    # it (its clock must be Stopwatch's: CLOCK_MONOTONIC here); rebuzz-headless's build copies it.
+    - name: Link helper (CMake)
+      run: |
+        git submodule update --init --recursive --depth 1 LinkHelper/link
+        cmake -S LinkHelper -B build/LinkHelper
+        cmake --build build/LinkHelper -j 4
+
     - name: Test
       shell: pwsh
+      env:
+        REBUZZ_LINK_HELPER: ${{ github.workspace }}/build/LinkHelper/ReBuzzLink
       run: dotnet test ReBuzz.SessionTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath test.log
 
     # Agent server core (docs/specs/mcp-server.md): MCP protocol, stdio and HTTP transports, engine queue.

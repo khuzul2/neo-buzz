@@ -3,7 +3,8 @@ name: Fork Mac
 # The portable parts on Apple silicon (docs/specs/mac-engine.md M4), ahead of the Mac engine
 # itself: the Session View core, the agent server's core and the Neo machines' DSP measurements
 # run on macos-15 (arm64), and the PortAudio binding runs a stream through CoreAudio. Catches
-# arm64 numerical drift in the machines early (mac-engine.md §5).
+# arm64 numerical drift in the machines early (mac-engine.md §5). M6: the CoreMIDI binding loops
+# back through virtual ports, and the Link helper builds with CMake and runs.
 #
 # macOS minutes cost about 10× Linux on a private repo: PRs into main that touch portable code,
 # and by hand. Never on every push.
@@ -19,6 +20,8 @@ on:
       - 'ReBuzzGUI/BuzzGUI.Interfaces/**'
       - 'tools/headless-smoke.py'
       - 'tools/headless-live.py'
+      - 'tools/headless-midi.py'
+      - 'LinkHelper/**'
       - 'ReBuzz.AgentEval/**'
       - 'eval/**'
       - 'ReBuzz/Core/Session/**'
@@ -46,14 +49,29 @@ jobs:
     - name: PortAudio
       run: brew install portaudio
 
+    # The Ableton Link helper (mac-engine.md M6), built with CMake as ReBuzzLink. The seam tests
+    # run it; rebuzz-headless's build copies it beside the app, where LinkClient looks.
+    - name: Link helper (CMake)
+      run: |
+        git submodule update --init --recursive --depth 1 LinkHelper/link
+        cmake -S LinkHelper -B build/LinkHelper
+        cmake --build build/LinkHelper -j 3
+        file build/LinkHelper/ReBuzzLink
+
+    # With the CoreMIDI loopback (virtual ports; the runner has no MIDI devices) and the Link helper.
     - name: Session View core and platform seams
+      shell: bash   # -eo pipefail: a failing dotnet test fails the step, through tee
+      env:
+        REBUZZ_LINK_HELPER: ${{ github.workspace }}/build/LinkHelper/ReBuzzLink
       run: dotnet test ReBuzz.SessionTests --logger "console;verbosity=normal" 2>&1 | tee test.log
 
     - name: Agent server core
+      shell: bash   # -eo pipefail: a failing dotnet test fails the step, through tee
       if: always()
       run: dotnet test ReBuzz.AgentTests --logger "console;verbosity=normal" 2>&1 | tee agent-test.log
 
     - name: Machine DSP tests (arm64)
+      shell: bash   # -eo pipefail: a failing dotnet test fails the step, through tee
       if: always()
       env:
         MEASUREMENTS_DIR: ${{ github.workspace }}/measurements
@@ -83,6 +101,13 @@ jobs:
     - name: Live audio on macOS (CoreAudio)
       if: always()
       run: python3 tools/headless-live.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/live" --expect-workgroup
+
+    # MIDI and Link (mac-engine.md M6), as another app on the Mac sees them: a keyboard plugged in
+    # while it plays, notes into ReBuzz's virtual destination, clock out from its virtual source,
+    # and the Link helper running beside it.
+    - name: MIDI and Link on macOS (CoreMIDI)
+      if: always()
+      run: python3 tools/headless-midi.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/midi"
 
     - name: Summary
       if: always()

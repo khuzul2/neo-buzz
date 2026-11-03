@@ -2,7 +2,8 @@
 // Fork (docs/specs/mac-engine.md M6): short, precise waits for the threads that time MIDI (the
 // clock output, the agent's midi_play), on each OS's own timer:
 //  - Windows: a high-resolution waitable timer (CREATE_WAITABLE_TIMER_HIGH_RESOLUTION);
-//  - macOS: mach_wait_until on mach_absolute_time, as Apple recommends for timing threads;
+//  - macOS: mach_wait_until on mach_absolute_time, as Apple recommends for timing threads, from a
+//    thread with a real-time policy (RealtimeThread), without which macOS coalesces its timers;
 //  - Linux: clock_nanosleep on CLOCK_MONOTONIC.
 // Each falls back to Thread.Sleep (whole milliseconds) when its timer isn't there. One waiter per
 // thread: a Windows timer handle isn't shared.
@@ -18,6 +19,7 @@ namespace ReBuzz.Platform
         IntPtr timer;                  // Windows
         double machTicksPerMicro;      // macOS
         bool linux;
+        int realtimeThread;            // macOS: the managed thread given a real-time policy
 
         public PreciseWaiter()
         {
@@ -58,6 +60,15 @@ namespace ReBuzz.Platform
                 }
                 else if (machTicksPerMicro > 0)
                 {
+                    // An ordinary thread's timers are coalesced (a 0.5 ms wait took 2.5–3.7 ms on
+                    // CI): the waiting thread gets a real-time policy, once. It wakes when it
+                    // likes and needs a little CPU each time, soon.
+                    int id = Environment.CurrentManagedThreadId;
+                    if (realtimeThread != id)
+                    {
+                        realtimeThread = id;
+                        RealtimeThread.SetTimeConstraint(0, 0.0002, 0.001);
+                    }
                     mach_wait_until(mach_absolute_time() + (ulong)(micros * machTicksPerMicro));
                     return;
                 }

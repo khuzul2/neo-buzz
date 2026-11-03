@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | In progress (2026-11-03). Merged: M0 and the PortAudio binding (#43), M6's precise waiter (#44), M1 `rebuzz-headless` (#47), M2 placeholders (#48), M5 PortAudio driver and live mode with M4's Mac job, where the A6 suite passes on `macos-15` (#49), M7 render workers in the audio workgroup (#50). This PR: M3's null test: Neo renders on Linux and macOS match Windows within −129.7 dBFS (§6). Under way: M6 (MIDI, Link). Then the user's play test (§4) |
+| Status | In progress (2026-11-03). Merged: M0 and the PortAudio binding (#43), M6's precise waiter (#44), M1 `rebuzz-headless` (#47), M2 placeholders (#48), M5 PortAudio driver and live mode with M4's Mac job, where the A6 suite passes on `macos-15` (#49), M7 render workers in the audio workgroup (#50), M3's null test: Neo renders on Linux and macOS match Windows within −129.7 dBFS (#51). This PR: M6, MIDI through CoreMIDI and the Link helper on macOS (§6). Then the user's play test (§4) |
 | Scope | cross-platform.md §5.2 P2: the engine running headless on macOS (arm64), with real audio and MIDI, and the MCP server on stdio. No UI: the Avalonia studio is P3 |
 | Exit | The A6 scripted suite passes on `macos-15`; Neo renders null-test against the Windows package at ≤ −100 dBFS; a 1-hour play test at 128 samples has no dropouts (run by hand on a Mac) |
 | Related | cross-platform.md (decisions D1–D5, §3.2 the pieces), engine-split.md (P1), mcp-server.md §10 (the A6 suite) |
@@ -14,7 +14,7 @@
 P2 delivers one new product: **`rebuzz-headless`**, a `net10.0` console app that hosts `ReBuzz.Engine` and serves MCP on stdio. It runs the same `AgentHost` as `ReBuzz.exe --agent`.
 
 - It builds on Linux, Windows and macOS. Linux CI runs it with renders only, which catches most Mac problems for a tenth of the cost.
-- On macOS it plays through PortAudio (CoreAudio) and talks MIDI through DryWetMIDI, so studio-style live tools work from a terminal session too.
+- On macOS it plays through PortAudio (CoreAudio), talks MIDI through CoreMIDI and joins Ableton Link through the Link helper, so studio-style live tools work from a terminal session too.
 - `ReBuzz.exe` stays the Windows app. `--agent` keeps working there.
 
 The engine itself changes only behind seams P1 created. Each new implementation lives in the engine, under `ReBuzz/Platform/` (portable, or guarded by `OperatingSystem.IsMacOS()`), or in the headless app.
@@ -27,7 +27,7 @@ The engine itself changes only behind seams P1 created. Each new implementation 
 | `IFileNameChoice`, `IKeyboard` | dialogs, WPF keyboard | none (fail fast), no modifiers |
 | `IMachineUiHost` | WPF windows | none (P1 already allows null) |
 | `IAudioDriverFactory` | ASIO, WASAPI | PortAudio, and a null driver (renders only) |
-| `IMidiBackend` | NAudio WinMM, Windows MIDI Services | DryWetMIDI; none on Linux CI |
+| `IMidiBackend` | NAudio WinMM, Windows MIDI Services | CoreMIDI on macOS (decision 7); none on Linux |
 
 ## 2. Decisions
 
@@ -39,6 +39,12 @@ The engine itself changes only behind seams P1 created. Each new implementation 
    - The Neo machines build `net10.0` as well: the editor and its WPF canvas backend go under `#if WINDOWS`. The DSP, parameters and manifest are already toolkit-free (P0).
 5. **Native machines are placeholders.** Their DLLs are Windows PE files. They show as missing machines that keep their parameters and data, so songs open and save back unchanged (the existing missing-machine path), and the agent says which ones didn't load.
 6. **The null test compares against Windows.** The Windows package job renders a fixed set of Neo songs and uploads the WAVs. The Mac job renders the same songs and compares, sample by sample, at ≤ −100 dBFS. Floating point can differ in the last bits (FMA, vectorisation), hence a threshold rather than bit identity.
+7. **CoreMIDI through our own P/Invoke, not DryWetMIDI** (`ReBuzz/Platform/CoreMidi.cs`, about 600 lines with its parser). This plan first said DryWetMIDI. But CoreMIDI is a system framework: there is nothing to bundle, sign or notarize. DryWetMIDI is a NuGet package whose device support on macOS is a native library of its own, which P5 would have to sign. We need a dozen calls: list endpoints, input and output ports, virtual endpoints, notifications. Same reasoning as decision 3.
+   - The cost: it uses the MIDI 1.0 packet-list calls (`MIDIInputPortCreate`, `MIDISend`, `MIDIReceived`). macOS 11 deprecated them but still supports them. The UMP event-list calls that replace them take Objective-C blocks, which P/Invoke can't make easily.
+8. **The Link helper reports Stopwatch's time on each OS.** ReBuzz compares the helper's host times with its own (`HostClock`, .NET's `Stopwatch`) as they are, so they must be one clock.
+   - Windows: QueryPerformanceCounter, Link's own clock there.
+   - macOS: `mach_absolute_time`, Link's own clock. `Stopwatch` reads the same ticks as `CLOCK_UPTIME_RAW`.
+   - Linux: `CLOCK_MONOTONIC`. Link's own is `CLOCK_MONOTONIC_RAW`, which NTP doesn't slew, so it drifts from `Stopwatch`'s (0.38 s apart after 1.8 hours of uptime on one machine). The helper gives Link `CLOCK_MONOTONIC`.
 
 ## 3. Steps (PR-sized)
 
@@ -50,7 +56,7 @@ The engine itself changes only behind seams P1 created. Each new implementation 
 | M3 | **The A6 suite on Linux** against `rebuzz-headless`, plus the reference renders from the Windows package job and the null test | M1, M2, A6 | Suite green on Linux; null test ≤ −100 dBFS against Windows |
 | M4 | **macOS CI:** a `macos-15` job on PRs into main (cost: §5). It builds the engine and the headless app (osx-arm64), with libsndfile from Homebrew and r8brain's C wrapper built with CMake, then runs M3's suite and null test | M3 | The P2 exit's first two checks |
 | M5 | **PortAudio driver** behind `IAudioDriverFactory`. It covers:<br>• the default device, with buffer size and sample rate from settings;<br>• input, for audio takes;<br>• latency reported to the session (heard time).<br>Real-time rules: no allocation, and no locks taken from the callback beyond `AudioLock`, as today.<br>The binding itself (`ReBuzz/Platform/PortAudio.cs`, `NativeLibraries.cs`) went in early: Linux CI runs streams on ALSA's null device in real time, with the same LP64 ABI as macOS. The render allocates nothing | M1 | On a Mac: plays a song with `transport`, and `meters_read` reads it. In CI: the engine plays through the null device on Linux |
-| M6 | **MIDI and sync:** DryWetMIDI behind `IMidiBackend` (inputs, outputs, virtual ports, hot-plug); MIDI clock out timed with `mach_wait_until`; the Link helper built with CMake for macOS | M5 | On a Mac: a keyboard plays an armed track, a take records it; clock out drives another app; Link joins a session |
+| M6 | **MIDI and sync:** CoreMIDI behind `IMidiBackend`, through our own P/Invoke (decision 7): inputs, outputs, virtual ports, hot-plug; MIDI clock out timed with `mach_wait_until`; the Link helper built with CMake for macOS | M5 | On a Mac: a keyboard plays an armed track, a take records it; clock out drives another app; Link joins a session |
 | M7 | **Multi-core rendering on macOS:** worker threads join the device's I/O workgroup (`kAudioDevicePropertyIOThreadOSWorkgroup`, `os_workgroup_join`) and take a time-constraint policy | M5 | The 1-hour play test at 128 samples with worker threads on |
 
 M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, then M3 and M6, then M4 and M7.
@@ -58,6 +64,7 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
 ## 4. What only the user can do
 
 - **The play test** (exit check 3): an hour of a dense song at 128 samples on an Apple silicon Mac, with the audio device the user has. CI runners have no real audio device.
+- **MIDI and Link** (M6's exit check): a keyboard, a control surface, clock out into another app, and Link with a peer. §6 lists the steps.
 - **Trying it**: install the CI artifact (unsigned in P2, so it needs `xattr -d com.apple.quarantine`). Signing and notarization are P5 and need an Apple Developer ID.
 
 ## 5. Cost and risk
@@ -217,5 +224,43 @@ The null test (exit check 2) is M3's.
 - **No machine needed a fix, and nothing is excluded** (`EXCLUDED` in the script is empty).
 - **Found on the way:** a relative `--settings` folder made `render` fail (its file URI). `rebuzz-headless` now makes it absolute.
 
-**M6:** as in §3.
+**M6, MIDI and Link on macOS.**
+- **The CoreMIDI binding** (`ReBuzz/Platform/CoreMidi.cs`, decision 7).
+  - One client per process, made on a thread of its own that runs a CFRunLoop. CoreMIDI ties a process's notifications to the run loop of the thread that first calls it, even for a call that only counts devices. So the client is the first call, on that thread.
+  - Endpoints carry CoreMIDI's display names. A client sees other processes' endpoints come and go as its run loop runs.
+  - Input ports parse packets in place into short messages, in WinMM's order: running status, real-time bytes anywhere, SysEx skipped (ReBuzz's Windows inputs skip it too). Packets are 4-byte aligned on arm64.
+  - Sends build their packet list in a buffer allocated up front; only a longer SysEx gets a buffer of its own. Receiving and sending allocate no managed memory.
+  - Virtual sources and destinations keep their unique IDs from run to run, so other apps find them again.
+- **The backend** (`ReBuzz/Midi/CoreMidiBackend.cs`).
+  - Devices are indexed in a snapshot of the sources (inputs) and destinations (outputs), rescanned on each change, so counts and names agree between changes. A second device of the same name is "Name (2)".
+  - Hot-plug: each rescan reports the names that came and went, and `MidiEngine` opens those its settings list, as on Windows.
+  - In place of the MIDI 2 endpoint (`CreateMidi2Endpoint`): a virtual destination "ReBuzz", whose notes play as a keyboard's do (what the Windows virtual device was for), and a virtual source "ReBuzz", offered as an output. So clock out and MIDI out machines reach other apps without the IAC driver. Neither is offered back as a device.
+  - Control surfaces get their own input and output ports.
+  - Closing an output sends notes off and sustain off on every channel, as WinMM's reset does.
+- **`rebuzz-headless`** installs it on macOS. Linux keeps none.
+  - `--midi-in <name|all|none>` and `--midi-out <name|all|none>` (both repeat), `--clock-out <name|none>`, `--link` and `--no-link`. They are kept in the settings, as ReBuzz.exe keeps its MIDI and sync settings.
+  - `--list-devices` lists the MIDI inputs and outputs too.
+  - The engine's warnings and errors (`DCWriteLine`) go to stderr; before, they went nowhere. So do MIDI devices coming, going, opening or failing to open.
+- **The Link helper** builds with CMake on macOS and Linux as `ReBuzzLink`, which `LinkClient` looks for off Windows. Building `rebuzz-headless` copies it from `build/LinkHelper` beside the app. Its host times are `Stopwatch`'s on each OS (decision 8).
+- **Found on the way.** `JsonRegistry.ReadDictionary` gave a number written in the same run as text. `MidiEngine` casts the MIDI lists' flags to int on hot-plug, and drops text ones when it opens devices, so a device turned on in that run never opened. Fixed.
+- **Checked in CI.** Fork Mac run 41548401048 (macOS 15, arm64), and Fork CI on Linux:
+  - Seam tests, macOS: a loopback through virtual ports (a note on, a 2,000-byte SysEx that is skipped, a clock, two note offs in running status); a virtual source into an input port; nothing allocated receiving or sending; a virtual source coming and going is notified and listed. The parser runs on Linux too.
+  - The Link helper, macOS and Linux: it starts and says hello; its state lines are in `Stopwatch`'s time (a fresh line is read 48 µs after its time on macOS, 16 µs on Linux); it takes `enable`, `tempo` and `play`; beats advance at the tempo; `quit` ends it.
+  - `tools/headless-midi.py`, macOS, against `rebuzz-headless --audio --midi-in "ReBuzz Test Keys" --clock-out ReBuzz --link` on the runner's virtual sound device:
+    - a keyboard (a virtual source the test makes) plugged in while it runs opens in 0.46 s, and its chord plays Neo Poly: −17.6 dBFS RMS by `meters_read`. Note offs let go;
+    - another app's chord into the "ReBuzz" destination plays too;
+    - clock out reaches another app through the "ReBuzz" source: Start, 47.3 pulses a second at 120 BPM (48 expected), Stop. Pulses arrive unevenly there: the median gap is 20.5 ms (20.8 expected), but 5% are 0 and 5% are 45 ms or more;
+    - `--link` starts the helper beside the app, and it ends with the app.
+- **For the hands-on test on a Mac** (runners have no MIDI devices or network peers):
+  - A USB keyboard: `rebuzz-headless --list-devices`, then `rebuzz-headless --agent --audio --midi-in all`. Notes play the machine added last. With a track armed, `session_record` records a take.
+  - A control surface (Launchpad, APC, Push 2). The built-in scripts match the port names Windows gives. CoreMIDI's display names differ (for example "Launchpad Mini MK3 LPMiniMK3 MIDI Out"), so a script may not find its ports. Not tried.
+  - Clock out driving another app: `--clock-out ReBuzz`, and the app takes MIDI clock from the "ReBuzz" source (or `--clock-out "IAC Driver Bus 1"`). Whether pulses are steadier than on the runner.
+  - Link with a real peer: Live, or an app on a phone on the same network. macOS may ask to let ReBuzzLink accept incoming connections and use the local network.
+  - Unsigned binaries need `xattr -d com.apple.quarantine` (§4), the helper included.
+- **Left:**
+  - SysEx input isn't forwarded (as on Windows), and MIDI 2.0 (UMP) isn't used.
+  - **Found:** the precise waiter's seam test failed on the macOS runner, where a 0.5 ms `mach_wait_until` took 2.5–3.7 ms (median). macOS coalesces an ordinary thread's timers. It had failed since M5, unseen, because the Mac workflow's test steps piped through `tee`, which hid `dotnet test`'s exit code. The uneven clock pulses above may come from it.
+  - **The fix:** `RealtimeThread` (`ReBuzz/Platform/`) gives the waiting thread a time-constraint policy on macOS: aperiodic, 0.2 ms of CPU within 1 ms. `AudioWorkgroup` uses the same helper.
+  - The Mac test steps now run with `pipefail`, so a failing test fails the job.
+
 

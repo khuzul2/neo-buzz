@@ -17,8 +17,13 @@
 //   play 0|1 <micros>                       keeps the session's phase)
 //   quit
 //
-// Times are Link's clock in microseconds: QueryPerformanceCounter on Windows, as ReBuzz's
-// Stopwatch. It exits when ReBuzz closes its input, so it never outlives ReBuzz.
+// Times are Link's clock in microseconds, the clock .NET's Stopwatch reads on each OS, so ReBuzz
+// compares them with its own times as they are:
+//   Windows: QueryPerformanceCounter, Link's own clock there;
+//   macOS:   mach_absolute_time, Link's own clock there (Stopwatch reads it as CLOCK_UPTIME_RAW);
+//   Linux:   CLOCK_MONOTONIC. Link's own is CLOCK_MONOTONIC_RAW, which NTP doesn't slew, so it
+//            drifts from Stopwatch's; this program gives Link CLOCK_MONOTONIC instead.
+// It exits when ReBuzz closes its input, so it never outlives ReBuzz.
 
 #include <ableton/Link.hpp>
 
@@ -35,6 +40,12 @@ namespace
 {
 constexpr int Protocol = 1;
 
+#if defined(LINK_PLATFORM_LINUX)
+using HostLink = ableton::BasicLink<ableton::platforms::linux_::ClockMonotonic>;
+#else
+using HostLink = ableton::Link;
+#endif
+
 std::mutex outMutex;
 
 void say(const std::string& line)
@@ -49,7 +60,7 @@ void say(const std::string& line)
 int main()
 {
   std::ios::sync_with_stdio(false);
-  ableton::Link link(120.0);
+  HostLink link(120.0);
   std::atomic<double> quantum{4.0};
   std::atomic<bool> running{true};
 
