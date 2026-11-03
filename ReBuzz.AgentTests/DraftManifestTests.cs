@@ -136,6 +136,24 @@ namespace ReBuzz.AgentTests
             }
         }
 
+        /// <summary>
+        /// Found by the profiler on Windows: a machine that diverges (Jeskola Bass 2, Joachims
+        /// Neptune) renders infinities, and the render's report must still be JSON.
+        /// </summary>
+        [TestCase(float.PositiveInfinity)]
+        [TestCase(float.NaN)]
+        public void ReportsOfRunawayAudioAreStillJson(float bad)
+        {
+            var left = new float[44100];
+            for (int i = 0; i < left.Length; i++) left[i] = (float)System.Math.Sin(i * 0.06);
+            for (int i = 20000; i < 20100; i++) left[i] = bad;
+            var audio = new ReBuzz.Agent.Audio.StereoAudio { Left = left, Right = (float[])left.Clone(), Rate = 44100 };
+            var m = ReBuzz.Agent.Audio.AudioReport.Measure(audio, ReBuzz.Agent.Audio.AudioReport.Metrics);
+            var result = ToolResult.Ok("measured", m).ToJson();
+            Assert.DoesNotThrow(() => JsonRpc.Serialize(result));
+            if (float.IsInfinity(bad)) Assert.That(m["peaks"]!["sample_peak_dbfs"]!.ToJsonString(), Is.EqualTo("\"inf\""));
+        }
+
         [Test]
         public void ChordsGetAVoiceEach()
         {
