@@ -3053,7 +3053,7 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 55.7,
+   "cpu_ms_per_s": 58.2,
    "type": "utility",
    "level_test": {
     "defaults": {
@@ -3074,7 +3074,7 @@
      }
     }
    },
-   "seconds": 5.3,
+   "seconds": 2.8,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -3087,7 +3087,7 @@
   "Neo Comp": {
    "gear": "Neo Comp",
    "kind": "effect",
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Effects/Neo Comp.NET.dll",
     "managed": true,
@@ -3130,7 +3130,7 @@
      "dynamics"
     ]
    },
-   "cpu_ms_per_s": 2.6,
+   "cpu_ms_per_s": 3.1,
    "type": "dynamics",
    "level_test": {
     "defaults": {
@@ -3175,7 +3175,7 @@
      }
     }
    },
-   "seconds": 9.1,
+   "seconds": 7.6,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -3190,7 +3190,7 @@
   "Neo Drive": {
    "gear": "Neo Drive",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/Neo Drive.NET.dll",
     "managed": true,
@@ -3233,7 +3233,7 @@
      "distortion"
     ]
    },
-   "cpu_ms_per_s": 14.0,
+   "cpu_ms_per_s": 1.1,
    "type": "distortion",
    "level_test": {
     "defaults": {
@@ -3270,7 +3270,7 @@
      }
     }
    },
-   "seconds": 7.8,
+   "seconds": 6.5,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -3401,7 +3401,7 @@
      }
     }
    },
-   "seconds": 14.6,
+   "seconds": 10.9,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -3418,7 +3418,7 @@
   "Neo FM6": {
    "gear": "Neo FM6",
    "kind": "generator",
-   "load_seconds": 0.03,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/Neo FM6.NET.dll",
     "managed": true,
@@ -3459,7 +3459,7 @@
     "sample_peak_dbfs": -20.98,
     "true_peak_dbtp": -20.98
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 16.3,
    "type": "polysynth",
    "level_test": {
     "defaults": {
@@ -3494,7 +3494,7 @@
      }
     }
    },
-   "seconds": 121.6,
+   "seconds": 98.1,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -3635,12 +3635,12 @@
     "sample_peak_dbfs": -14.43,
     "true_peak_dbtp": -14.14
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 2.8,
    "type": "polysynth",
    "level_test": {
     "defaults": {
      "peak_dbfs": -14.39,
-     "growth_db": -0.0,
+     "growth_db": 0.0,
      "verdict": "ok"
     },
     "all_at_once": {
@@ -3660,7 +3660,7 @@
     "renders": 149
    },
    "sweeps": {},
-   "seconds": 21.5,
+   "seconds": 16.4,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -3754,7 +3754,7 @@
      }
     }
    },
-   "seconds": 3.2,
+   "seconds": 2.5,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -3812,7 +3812,7 @@
      "reverb"
     ]
    },
-   "cpu_ms_per_s": 1.8,
+   "cpu_ms_per_s": 2.2,
    "type": "reverb",
    "level_test": {
     "defaults": {
@@ -3858,7 +3858,7 @@
      "reason": "diverges at its minimum (1.00 kHz: +347.1 dBFS peak, growing +89 dB)"
     }
    },
-   "seconds": 35.4,
+   "seconds": 26.8,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [
@@ -3874,7 +3874,7 @@
   "Neo Wave": {
    "gear": "Neo Wave",
    "kind": "generator",
-   "load_seconds": 0.09,
+   "load_seconds": 1.02,
    "gear_info": {
     "file": "Generators/Neo Wave.NET.dll",
     "managed": true,
@@ -3915,7 +3915,7 @@
     "sample_peak_dbfs": -16.96,
     "true_peak_dbtp": -16.96
    },
-   "cpu_ms_per_s": 8.6,
+   "cpu_ms_per_s": 40.2,
    "type": "polysynth",
    "level_test": {
     "defaults": {
@@ -3941,7 +3941,7 @@
     "renders": 132
    },
    "sweeps": {},
-   "seconds": 25.6,
+   "seconds": 22.9,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -4229,7 +4229,7 @@
      }
     }
    },
-   "seconds": 1.5,
+   "seconds": 1.4,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -4242,7 +4242,7 @@
   "Pedal Comp": {
    "gear": "Pedal Comp",
    "kind": "effect",
-   "load_seconds": 0.01,
+   "load_seconds": 0.0,
    "gear_info": {
     "file": "Effects/Pedal Comp.NET.dll",
     "managed": true,
@@ -4281,7 +4281,7 @@
      "dynamics"
     ]
    },
-   "cpu_ms_per_s": 26.9,
+   "cpu_ms_per_s": 0.0,
    "type": "dynamics",
    "level_test": {
     "defaults": {
@@ -4307,7 +4307,7 @@
     "renders": 17
    },
    "sweeps": {},
-   "seconds": 3.5,
+   "seconds": 3.0,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -4375,7 +4375,7 @@
      },
      "max": {
       "peak_dbfs": -3.66,
-      "growth_db": -0.0,
+      "growth_db": 0.0,
       "verdict": "ok"
      }
     },
@@ -4385,7 +4385,7 @@
     "renders": 74
    },
    "sweeps": {},
-   "seconds": 13.8,
+   "seconds": 9.9,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -4398,7 +4398,7 @@
   "Pedal EQ": {
    "gear": "Pedal EQ",
    "kind": "effect",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/Pedal EQ.NET.dll",
     "managed": true,
@@ -4500,7 +4500,7 @@
      }
     }
    },
-   "seconds": 4.4,
+   "seconds": 3.8,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -4571,8 +4571,8 @@
       "verdict": "ok"
      },
      "max": {
-      "peak_dbfs": 15.51,
-      "growth_db": 0.38,
+      "peak_dbfs": 15.5,
+      "growth_db": 0.46,
       "verdict": "hot"
      }
     },
@@ -4583,7 +4583,7 @@
     "renders": 19
    },
    "sweeps": {},
-   "seconds": 3.4,
+   "seconds": 2.9,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -4663,7 +4663,7 @@
     "renders": 77
    },
    "sweeps": {},
-   "seconds": 13.2,
+   "seconds": 11.6,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -4741,7 +4741,7 @@
     "renders": 8
    },
    "sweeps": {},
-   "seconds": 2.1,
+   "seconds": 1.7,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -4836,7 +4836,7 @@
      }
     }
    },
-   "seconds": 3.5,
+   "seconds": 2.5,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -4911,7 +4911,7 @@
      }
     }
    },
-   "seconds": 1.4,
+   "seconds": 1.1,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -4964,12 +4964,12 @@
     "sample_peak_dbfs": -4.43,
     "true_peak_dbtp": -4.31
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 4.4,
    "type": "polysynth",
    "level_test": {
     "defaults": {
      "peak_dbfs": -4.43,
-     "growth_db": -0.0,
+     "growth_db": 0.0,
      "verdict": "ok"
     },
     "all_at_once": {
@@ -4984,7 +4984,7 @@
      }
     }
    },
-   "seconds": 1.2,
+   "seconds": 0.9,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -5069,7 +5069,7 @@
     "sample_peak_dbfs": -22.88,
     "true_peak_dbtp": -22.88
    },
-   "cpu_ms_per_s": 6.1,
+   "cpu_ms_per_s": 19.5,
    "type": "monosynth",
    "level_test": {
     "defaults": {
@@ -5087,7 +5087,7 @@
      }
     }
    },
-   "seconds": 2.1,
+   "seconds": 1.6,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -5205,7 +5205,7 @@
      }
     }
    },
-   "seconds": 10.7,
+   "seconds": 7.3,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -5256,7 +5256,7 @@
      }
     }
    },
-   "seconds": 0.5,
+   "seconds": 0.4,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -5271,7 +5271,7 @@
   "Pedal Plate": {
    "gear": "Pedal Plate",
    "kind": "effect",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/Pedal Plate.NET.dll",
     "managed": true,
@@ -5358,7 +5358,7 @@
      "reason": "diverges at its maximum (95: +239.5 dBFS peak, growing +60 dB)"
     }
    },
-   "seconds": 11.1,
+   "seconds": 7.8,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [
@@ -5374,7 +5374,7 @@
   "Pedal SH101": {
    "gear": "Pedal SH101",
    "kind": "generator",
-   "load_seconds": 0.01,
+   "load_seconds": 0.0,
    "gear_info": {
     "file": "Generators/Pedal SH101.NET.dll",
     "managed": true,
@@ -5411,7 +5411,7 @@
     "sample_peak_dbfs": -4.29,
     "true_peak_dbtp": -4.29
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 4.6,
    "type": "monosynth",
    "level_test": {
     "defaults": {
@@ -5446,7 +5446,7 @@
      }
     }
    },
-   "seconds": 8.4,
+   "seconds": 5.5,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -5461,7 +5461,7 @@
   "Pedal Shaper": {
    "gear": "Pedal Shaper",
    "kind": "effect",
-   "load_seconds": 0.01,
+   "load_seconds": 0.0,
    "gear_info": {
     "file": "Effects/Pedal Shaper.NET.dll",
     "managed": true,
@@ -5545,7 +5545,7 @@
      }
     }
    },
-   "seconds": 2.8,
+   "seconds": 2.5,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -5601,7 +5601,7 @@
     "sample_peak_dbfs": -12.71,
     "true_peak_dbtp": -12.71
    },
-   "cpu_ms_per_s": 7.8,
+   "cpu_ms_per_s": 5.6,
    "type": "monosynth",
    "level_test": {
     "defaults": {
@@ -5619,7 +5619,7 @@
      }
     }
    },
-   "seconds": 2.7,
+   "seconds": 1.4,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],

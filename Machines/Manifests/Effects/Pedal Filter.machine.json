@@ -55,8 +55,8 @@
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": 15.51,
-     "growth_db": 0.38,
+     "peak_dbfs": 15.5,
+     "growth_db": 0.46,
      "verdict": "hot"
     }
    },

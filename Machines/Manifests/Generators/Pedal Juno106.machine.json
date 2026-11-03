@@ -27,7 +27,7 @@
   "level_test": {
    "defaults": {
     "peak_dbfs": -4.43,
-    "growth_db": -0.0,
+    "growth_db": 0.0,
     "verdict": "ok"
    },
    "all_at_once": {

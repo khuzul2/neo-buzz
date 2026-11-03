@@ -108,18 +108,18 @@ Everything else the profile noticed (most are the profiler's own limits: trigger
 | KrimZon AY-3-8910 | polysynth | tracks | -13 (-1 ct) | 3 | -21.5 | 12.6 | ok |
 | Matilde Tracker2 | monosynth | tracks | +0 | 1 | -14.5 | 13.4 | ok |
 | Modern Sequence Editor | control |  |  |  |  |  | ok |
-| Neo FM6 | polysynth | midi | +0 | 8 | -23 | 0.0 | hot |
-| Neo Poly | polysynth | midi | +0 | 8 | -20.8 | 0.0 | hot |
-| Neo Wave | polysynth | midi | +0 | 8 | -20.7 | 8.6 | hot |
+| Neo FM6 | polysynth | midi | +0 | 8 | -23 | 16.3 | hot |
+| Neo Poly | polysynth | midi | +0 | 8 | -20.8 | 2.8 | hot |
+| Neo Wave | polysynth | midi | +0 | 8 | -20.7 | 40.2 | hot |
 | Oomek Aggressor 303 | unpitched | tracks |  | 1 | -17.6 | 11.3 | ok |
 | Pedal Chord | control |  |  |  |  |  | ok |
 | Pedal FM | unpitched | tracks |  | 16 | -8.7 | 0.0 | hot |
-| Pedal Juno106 | polysynth | tracks | +0 (-11 ct) | 6 | -9.8 | 0.0 | ok |
+| Pedal Juno106 | polysynth | tracks | +0 (-11 ct) | 6 | -9.8 | 4.4 | ok |
 | Pedal LFO | control |  |  |  |  |  | ok |
-| Pedal M1 | monosynth | tracks | +0 | 1 | -24.6 | 6.1 | ok |
+| Pedal M1 | monosynth | tracks | +0 | 1 | -24.6 | 19.5 | ok |
 | Pedal Peer Control | generator (silent at its defaults) | none |  |  |  |  | warn |
-| Pedal SH101 | monosynth | tracks | +0 | 1 | -5.9 | 0.0 | hot |
-| Pedal Tracker | monosynth | tracks | +0 | 1 | -14.5 | 7.8 | ok |
+| Pedal SH101 | monosynth | tracks | +0 | 1 | -5.9 | 4.6 | hot |
+| Pedal Tracker | monosynth | tracks | +0 | 1 | -14.5 | 5.6 | ok |
 | Polac Audio In | generator (silent at its defaults) | none |  |  |  |  | warn |
 | Polac MIDI Bus II | control |  |  |  |  |  | ok |
 | Polac VSTi 1.1 | generator (silent at its defaults) | none |  |  |  |  | warn |
@@ -167,17 +167,17 @@ Everything else the profile noticed (most are the profiler's own limits: trigger
 | Joachims Saturn 1.4 | utility | -0.0 | 0 | 0.05 | 8.3 | ok |
 | ManagedMultiIOEffect | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
 | mixIO | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
-| Neo Analyzer | utility | 0.0 | 0 | 0.0 | 55.7 | ok |
-| Neo Comp | dynamics | -2.54 | 0 | 0.0 | 2.6 | hot |
-| Neo Drive | distortion | -0.62 | 62 | 0.01 | 14.0 | hot |
+| Neo Analyzer | utility | 0.0 | 0 | 0.0 | 58.2 | ok |
+| Neo Comp | dynamics | -2.54 | 0 | 0.0 | 3.1 | hot |
+| Neo Drive | distortion | -0.62 | 62 | 0.01 | 1.1 | hot |
 | Neo EQ | utility | 0.0 | 0 | 0.0 | 0.0 | hot |
 | Neo Limiter | utility | 0.0 | 99 | 0.0 | 0.0 | hot |
 | Neo Utility | utility | 0.0 | 0 | 0.0 | 0.0 | hot |
-| Neo Verb | reverb | -2.8 | 0 | 1.52 | 1.8 | diverging |
+| Neo Verb | reverb | -2.8 | 0 | 1.52 | 2.2 | diverging |
 | Oomek Exciter | filter or EQ | 7.22 | 0 | 0.0 | 0.4 | ok |
 | Oomek Masterizer | utility | -1.0 | 176 | 0.0 | 17.2 | ok |
 | Pedal Chorus | modulation, filter or EQ | -4.31 | 0 | 0.01 | 0.0 | ok |
-| Pedal Comp | dynamics | -0.32 | 0 | 0.0 | 26.9 | ok |
+| Pedal Comp | dynamics | -0.32 | 0 | 0.0 | 0.0 | ok |
 | Pedal Drum Matrix | utility | -0.04 | 0 | 0.0 | 0.0 | ok |
 | Pedal EQ | utility | 0.0 | 0 | 0.0 | 0.0 | hot |
 | Pedal Filter | filter or EQ | -9.49 | 3 | 0.0 | 0.0 | hot |

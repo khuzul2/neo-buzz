@@ -53,7 +53,7 @@
     },
     "max": {
      "peak_dbfs": -3.66,
-     "growth_db": -0.0,
+     "growth_db": 0.0,
      "verdict": "ok"
     }
    },

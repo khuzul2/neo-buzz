@@ -225,9 +225,9 @@ Phases (§9) are marked A1 … A7.
 
 | Tool | Phase | Purpose |
 |---|---|---|
-| `gear_list` | A1, U1 | Available machines: name, generator/effect, type and a one-line description (from the manifest), manifest quality (generated, curated, profiled draft), health (unhealthy ones last, with why), preset count. Filter by kind or text |
+| `gear_list` | A1, U1, U2 | Available machines: name, generator/effect, type and a one-line description (from the manifest), manifest quality (generated, curated, profiled draft), health, preset count. Filter by kind or text. U2 (machine-safety.md §3.1): health says diverging (`diverging: true`), hot (a warning naming the setting) or `needs_window` ("works in ReBuzz on Windows with its window"); each parameter's `safe_ranges`. Order: exact units, drafts, the rest, machines that need a window, unhealthy last |
 | `machine_list` | A1 | The song's machines: gear, inputs and outputs with gain dB and pan, mute/solo/bypass, tracks, latency |
-| `machine_add` | A1 | Adds a machine from the gear list; optional name, track count, preset, and where to connect it (`"Master"`, or between two machines). Returns its name and its parameter summary |
+| `machine_add` | A1, U2 | Adds a machine from the gear list; optional name, track count, preset, and where to connect it (`"Master"`, or between two machines). Returns its name and its parameter summary. U2: a warning only for diverging gear, naming its safe ranges (not for hot machines, nor for other problems in a profile); gear that needs a window says so when it can't be built |
 | `machine_remove` | A1 | Deletes machines; reconnects the chain around effects when asked |
 | `machine_set` | A1 | Rename, mute, solo, bypass, track count |
 | `connect`, `disconnect` | A1 | Audio connections with gain dB and pan; `input: "sidechain"` for machines with a second input (Neo Comp) |
@@ -238,8 +238,8 @@ Phases (§9) are marked A1 … A7.
 
 | Tool | Phase | Purpose |
 |---|---|---|
-| `machine_describe` | A1, U1 | Everything about one machine:<br>• parameters by group, each with name, current value (text, number and unit), range, default and description<br>• track parameters<br>• the manual link (Neo)<br>• presets and commands<br>• `gear_info` (U1): its DLL under Gear, track range, Note track parameter, whether it takes MIDI (managed machines), the manifest's note input and pitch offset<br>• `value_table=true` (U1): each parameter's value texts across its range, every value up to 256 values, else `table_points` (default 1025) evenly spaced, with its raw range and default. What the profiler infers units from; agents can read an unlabelled machine with it |
-| `param_set` | A1 | Many changes in one call, global or per track. Each change is `value` (in units, §3.3), `by` (relative, in units) or `times` (a factor). Returns the values as the machine now describes them; with a draft manifest (U1) it says so, and marks values whose unit came from a description as approximate |
+| `machine_describe` | A1, U1 | Everything about one machine:<br>• parameters by group, each with name, current value (text, number and unit), range, default and description<br>• track parameters<br>• the manual link (Neo)<br>• presets and commands<br>• `gear_info` (U1): its DLL under Gear, track range, Note track parameter, whether it takes MIDI (managed machines), the manifest's note input and pitch offset<br>• `value_table=true` (U1): each parameter's value texts across its range, every value up to 256 values, else `table_points` (default 1025) evenly spaced, with its raw range and default. What the profiler infers units from; agents can read an unlabelled machine with it<br>• `safe_range` (U2, machine-safety.md §3.4): where a parameter was found to diverge, the range `param_set` keeps to (the machine's texts, raw values and why); the health with `diverging`, `hot` and `needs_window` |
+| `param_set` | A1, U2 | Many changes in one call, global or per track. Each change is `value` (in units, §3.3), `by` (relative, in units) or `times` (a factor). Returns the values as the machine now describes them; with a draft manifest (U1) it says so, and marks values whose unit came from a description as approximate. U2 (machine-safety.md §3.4): a value outside the parameter's `safe_range` refuses the whole call with the reason, unless `allow_unsafe: true`, which sets it and marks the change `unsafe` with why. People keep the full range in every UI |
 | `param_get` | A1 | Current values (a subset, or all) |
 | `preset_list`, `preset_load`, `preset_save` | A2 | ReBuzz presets (the factory `.prs.xml` files and the user's own) |
 | `snapshot_save`, `snapshot_restore`, `snapshot_diff` | A2 | Named whole-song parameter snapshots (all machines, connections, mutes) for A/B comparison of mixes and sounds |
@@ -651,7 +651,7 @@ Unhealthy machines (decided 2026-11-03) are in [machine-safety.md](machine-safet
 | Phase | Delivers | Exit check | Effort |
 |---|---|---|---|
 | **U1 Profile and describe** (tier 1, first half) | `tools/machine-profiler.py` over MCP: value tables, unit and mapping inference, pitch convention, note input, polyphony, effect kind, latency, tail, gain, health. Draft manifests in `Machines/Manifests/`, copied beside their DLLs; `docs/machine-health.md`. The server reads drafts: units in `param_set`/`param_get`, pitch offsets and track notes in `notes_write`/`notes_read`/`midi_play`, kind and health in `gear_list` | A Pedal synth plays A4 at 440 Hz through `notes_write` after profiling; `param_set` in units on a Pedal machine; the Linux job profiles the portable machines and the Windows package job all of them | L |
-| **U2 Profile in depth** (tier 1, second half) | A test-signal source for effects (sweep, impulse, level steps through a general tool), per-parameter sweeps (what moving each one changes) as suggested roles, velocity response and envelope length, denormal and extreme-value checks per parameter. `gear_list` leaves unhealthy machines out unless asked | Suggested roles for the filter, time and mix parameters of the 25 most used machines; every unhealthy machine has a reason in the report | M |
+| **U2 Profile in depth** (tier 1, second half) | A test-signal source for effects (sweep, impulse, level steps through a general tool), per-parameter sweeps (what moving each one changes) as suggested roles, velocity response and envelope length, denormal and extreme-value checks per parameter. `gear_list` leaves unhealthy machines out unless asked. **Built first** ([machine-safety.md](machine-safety.md) §3.1, §3.4): the level test with each parameter alone at each end, diverging, hot and needs-a-window instead of one "unhealthy", `safe_range` in the drafts and `param_set`'s refusal (§12.8, last part) | Suggested roles for the filter, time and mix parameters of the 25 most used machines; every unhealthy machine has a reason in the report | M |
 | **U3 Curate** (tier 1 done) | Curated manifests for the top 25 (summary, plain names, roles, safe ranges, quirks); manuals (`rebuzz://machines/…`) for every machine with a manifest; `GuideTests` check curated names and values | 25 curated, the rest drafts: every machine in the package has a manifest | M |
 | **U4 A better face** (tier 2) | The manifest editor on the editor kit (groups, knobs in units, choices, ADSR and response plots), a per-machine setting; factory presets for the top machines | The editor opens for every curated machine in the studio and ReBuzz.exe; its presets load through `preset_load` | L |
 | **U5 `machine_replace`** (tier 4) | Role mapping, unit conversion, render before and after with `compare`; one undo step; the machine menu's Replace | Jeskola Reverb → Neo Verb, Pedal EQ → Neo EQ, Jeskola Distortion → Neo Drive and Pedal Gain → Neo Utility convert within a stated tolerance, or say why not | M |
@@ -676,13 +676,13 @@ The successors of §12.5 still to build (Neo Delay, Ensemble, Filter, Drums, Sam
   - a 440 Hz sine at −6 and −26 dB: THD over the input's, level dependence, movement.
 
   These give traits, the first of which is its type: delay (two echoes, or one after a near-silent gap), reverb (a long smooth tail), distortion, modulation, dynamics (level dependence, unless the output moves on its own), filter or EQ, stereo, utility. An effect that does nothing at its defaults is typed by its parameters' units (frequencies and gains: EQ; threshold or ratio: dynamics).
-- **Health.** Load failures, crashes and hangs, NaN or a runaway level (over +24 dBFS) at the defaults and with every parameter at its minimum and at its maximum, sound from silence, silence from a note. CPU is milliseconds of render time per second of audio over a render without the machine (rough: a few ms/s of noise).
+- **Health.** Load failures, crashes and hangs, NaN or a runaway level (over +24 dBFS) at the defaults and with every parameter at its minimum and at its maximum, sound from silence, silence from a note (U2 replaced the +24 dBFS line with a level test and three categories: below). CPU is milliseconds of render time per second of audio over a render without the machine (rough: a few ms/s of noise).
 
 **Outputs.**
 
 | Output | What |
 |---|---|
-| `Machines/Manifests/<Generators\|Effects>/<Gear>.machine.json` | A draft per machine, in the manifest format plus: `status: draft`, `type`, `notes` (`input`, `pitch_offset`, `pitched`, `polyphony`), `health` (`status`, `problems`), `profile` (the measurements), `track_parameters` described in full, each parameter's `confidence`, and `kind: table` with `points` (`"-inf"` for −∞). Neo machines keep their generated manifests |
+| `Machines/Manifests/<Generators\|Effects>/<Gear>.machine.json` | A draft per machine, in the manifest format plus: `status: draft`, `type`, `notes` (`input`, `pitch_offset`, `pitched`, `polyphony`), `health` (`status`, `problems`; U2: `diverging`, `hot`, `needs_window`), `profile` (the measurements), a parameter's `safe_range` (U2), `track_parameters` described in full, each parameter's `confidence`, and `kind: table` with `points` (`"-inf"` for −∞). Neo machines keep their generated manifests |
 | `Machines/Manifests/machine-profile.json` | The summary, keyed by gear: a run merges its machines into it and keeps the other platforms' |
 | `docs/machine-health.md` | Generated from the summary: unhealthy, warnings, generators, effects |
 
@@ -693,7 +693,7 @@ The successors of §12.5 still to build (Neo Delay, Ensemble, Filter, Drums, Sam
 **The server.**
 - **Units.** Drafts map global and track parameters (`SongModel.Params`). A draft matches the machine's own texts first (`ParamInfo.TextsFirst`: "Off", "1/8"), then its mapping. `param_set` and `param_get` say `manifest: draft`. Values whose unit came from a description are `approximate`. `exact_units` stays for generated and curated manifests.
 - **Notes.** `notes_write`, `notes_read` and `notes_transform` go through `MachineNotes`. For `input: tracks` (from the manifest, or given), notes get a voice each (`TrackNotes.Allocate`), Note events go into the pattern's engine-played Note track columns, and offs at each end, a note to the pattern's end let go on its last tick. Velocity goes into a track parameter named like "velocity" if there is one. The track count rises when a chord needs it, in the same undo step. `pitch_offset` is added on the way in and taken off on the way out, so `notes_read` gives what was written. `apply_pitch_offset=false` and an explicit `input` are how the profiler measures. `midi_play` applies the offset too, and warns that live MIDI may not reach a tracks-only machine. `automation_read` leaves note columns out.
-- **`gear_list`** gives `type`, `summary`, `manifest` and `health` with `problems`: generated and curated first, then drafts, then the rest, unhealthy last. `machine_add` warns when the gear is unhealthy. `machine_describe` adds `gear_info` and `value_table`.
+- **`gear_list`** gives `type`, `summary`, `manifest` and `health` with `problems`: generated and curated first, then drafts, then the rest, unhealthy last. `machine_add` warns when the gear is unhealthy (U2: only when it diverges). `machine_describe` adds `gear_info` and `value_table`.
 - Songs: nothing a song saves changes meaning. Notes written to a tracks machine are ordinary Note column events (engine-played, as automation is), and an old song plays as it did. The Session View's piano roll edits MIDI columns, so it doesn't show them, and `notes_read` on such a machine doesn't show notes left in its MIDI column, which it never played.
 
 **Tests.**
@@ -713,7 +713,7 @@ The successors of §12.5 still to build (Neo Delay, Ensemble, Filter, Drums, Sam
   - **FSM Infector** and **kibibu Green Milk** play an octave low (offset +12);
   - **KrimZon AY-3-8910** plays 13 semitones high (offset −13).
   `notes_write` corrects all three through their drafts. Juno106 is 11 cents flat (its analog drift).
-- **Unhealthy** (listed last by `gear_list`, warned about by `machine_add`):
+- **Unhealthy** (listed last by `gear_list`, warned about by `machine_add`; U2 measured them again parameter by parameter, below):
   - **Pedal Plate** diverged at its default Decay (+26 dBFS on noise). Its modulated all-pass was fixed in P3 (studio-mvp.md S2), and it profiles clean since (a 2.5 s tail; typed "delay", a U2 check for reverb vs delay);
   - **Jeskola Flanger** runs away with every parameter at its minimum or at its maximum, **Jeskola Bass** and **Joachims Hyperion** at their maximum;
   - **Info** doesn't load headless.
@@ -729,13 +729,21 @@ The successors of §12.5 still to build (Neo Delay, Ensemble, Filter, Drums, Sam
 **Left for U2** (§12.7):
 - pitch where the analysis hears none at the defaults: Jeskola Bass 1–3, Oomek Aggressor 303 and Pedal FM sound but read as unpitched (offset 0 assumed);
 - triggers for generators without a Note parameter (Rout 909, Jeskola Noise Generator, Trilok), and choosing a wave or plugin (Jeskola Tracker, Polac VSTi);
-- per-parameter sweeps and suggested roles;
+- per-parameter sweeps and suggested roles (each parameter alone at its ends, for health, is built: below);
 - swept-sine and impulse responses (a test-signal source);
 - velocity response and envelope length;
 - denormal slowdowns;
 - whether `Work` reports silence (the engine doesn't expose it);
 - hiding unhealthy machines from `gear_list` by default. The Pedal check expects all 19 listed, so for now they are flagged and listed last.
 - `midi_play` into a tracks-only machine (it would set the Note parameter live).
+
+**U2, health first** ([machine-safety.md](machine-safety.md) §3.1, §3.4, built 2026-11-03). The "unhealthy" above became three categories, from a level test (4 s renders of the machine alone, noise into effects, A4 held on generators) at the defaults, with every parameter at each end at once, and each parameter alone at each end for machines that misbehave and effects with a feedback, resonance, gain or Q parameter:
+
+- **Diverging** (unhealthy): NaN or infinity, above +60 dBFS, or growing (the last second 6 dB over the second, and still growing over 30 s). Where one parameter's end causes it, a bisection finds the edge, and the draft's parameter gets `safe_range` (`min`, `max`, `min_text`, `max_text`, `reason`).
+- **Hot** (a warning naming the setting): above 0 dBFS, steady.
+- **Needs a window** (`status: needs_window`, its own): a managed machine whose construction fails for UI reasons. `gear_list` says it works in ReBuzz on Windows with its window.
+
+The server keeps agents inside safe ranges: `param_set` refuses values outside one with the reason unless `allow_unsafe: true`; `machine_describe`, `gear_list` and the machine manual show them; `machine_add` warns only for diverging gear. Found: Jeskola Flanger diverges at +100 % feedback (not at −100 % alone, a lossless loop: hot), Joachims Hyperion is hot per band, Jeskola Bass hot (Resonance), Info needs a window (its theme XAML is missing under the Default theme); besides, Joachims Neptune (Threshold at −100 dB), FSM WahPro2 (at its defaults, varying by instance), Pedal Plate (Feedback above 79) and Neo Verb (High damping below 1.17 kHz) diverge. Tests: `tools/test_machine_infer.py` (levels, window, sweeps, edges), `DraftManifestTests` (safe ranges, refusal, statuses) and `tools/headless-manifests.py` (the tools end to end).
 
 ## 13. Inventory notes (for implementers)
 
