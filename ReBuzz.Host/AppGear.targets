@@ -10,9 +10,11 @@
   </Target>
 
   <!-- The Modern Pattern Editor (studio-mvp.md S6), the default pattern editor, in Gear/Generators as on
-       Windows: built for net10.0 from its WPF sources (ModernPatternEditor/Portable). Restored on its
-       own first, so a clean build sees its packages. -->
+       Windows: built for net10.0 from its WPF sources. The studio (and its tests) take the build with
+       the Avalonia view (ModernPatternEditor/Avalonia), other apps the one without (ModernPatternEditor/
+       Portable). Restored on its own first, so a clean build sees its packages. -->
   <PropertyGroup>
+    <PatternEditorProject Condition="'$(PatternEditorProject)' == '' and $(MSBuildProjectName.StartsWith('ReBuzz.Studio'))">$(MSBuildThisFileDirectory)..\ModernPatternEditor\Avalonia\ModernPatternEditor.Avalonia.csproj</PatternEditorProject>
     <PatternEditorProject Condition="'$(PatternEditorProject)' == ''">$(MSBuildThisFileDirectory)..\ModernPatternEditor\Portable\ModernPatternEditor.Portable.csproj</PatternEditorProject>
   </PropertyGroup>
   <Target Name="PatternEditorGear" AfterTargets="Build" Condition="'$(SkipNeoGear)' != 'true'">

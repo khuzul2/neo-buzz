@@ -21,7 +21,7 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);MSB3277;CS1591;CS0067;CS0414;CS0169;CS0649;CS0168;CS0219</NoWarn>
     <MpeSource>$(MSBuildThisFileDirectory)..\ModernPatternEditor.NET\</MpeSource>
-    <GearDir Condition="'$(GearDir)' == ''">$(MSBuildThisFileDirectory)bin\Gear\</GearDir>
+    <GearDir Condition="'$(GearDir)' == ''">$(MSBuildProjectDirectory)\bin\Gear\</GearDir>
     <OutDir>$([MSBuild]::EnsureTrailingSlash('$(GearDir)'))Generators\</OutDir>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>

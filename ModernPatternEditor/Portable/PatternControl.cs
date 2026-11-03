@@ -82,6 +82,9 @@ namespace WDE.ModernPatternEditor
         PatternVM pattern;
         MachineVM machineVM;
 
+        /// <summary>The pattern shown (null: none).</summary>
+        public PatternVM CurrentPattern => pattern;
+
         internal PatternVM Pattern
         {
             get { return pattern; }
