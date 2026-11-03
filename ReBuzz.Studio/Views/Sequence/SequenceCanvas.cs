@@ -170,6 +170,7 @@ namespace ReBuzz.Studio.Views.Sequence
         void OnSequencesChanged(int index, ISequence s) => OnUi(() =>
         {
             WatchSequences();
+            UnwatchPatterns();      // patterns are watched again as they are drawn (a closed song's let go)
             selection.Kill();
             ClampCursor();
             Changed();
@@ -201,7 +202,6 @@ namespace ReBuzz.Studio.Views.Sequence
         void OnStateChanged() => OnUi(() =>
         {
             if (geo.TickWidth != state.Zoom) SetZoom(state.Zoom, null);
-            selection.Kill();
             Changed();
         });
 
@@ -242,11 +242,23 @@ namespace ReBuzz.Studio.Views.Sequence
         void OnEventChanged(int time) => OnUi(Changed);
         void OnSpan(int time, int span) => OnUi(Changed);
 
-        void OnMachineChanged(object sender, PropertyChangedEventArgs e) => OnUi(() =>
+        void OnMachineChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "Patterns") previews.Clear();
-            Changed();
-        });
+            // What the headers and blocks show (not IsActive, Position…, which change often).
+            switch (e.PropertyName)
+            {
+                case "Name":
+                case "IsMuted":
+                case "IsSoloed":
+                case "Patterns":
+                    OnUi(() =>
+                    {
+                        if (e.PropertyName == "Patterns") previews.Clear();
+                        Changed();
+                    });
+                    break;
+            }
+        }
 
         void Watch(IPattern p)
         {
@@ -282,11 +294,15 @@ namespace ReBuzz.Studio.Views.Sequence
             InvalidateVisual();
         });
 
-        void OnPatternPropertyChanged(object sender, PropertyChangedEventArgs e) => OnUi(() =>
+        void OnPatternPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (sender is IPattern p) previews.Remove(p);
-            Changed();
-        });
+            if (e.PropertyName != "Name" && e.PropertyName != "Length") return;
+            OnUi(() =>
+            {
+                if (sender is IPattern p) previews.Remove(p);
+                Changed();
+            });
+        }
 
         void OnColumnEventsChanged(IEnumerable<PatternEvent> events, bool set) => OnUi(() =>
         {

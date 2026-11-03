@@ -11,6 +11,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.NUnit;
 using Avalonia.Input;
+using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using BuzzGUI.Interfaces;
 using ReBuzz.Audio;
@@ -384,6 +385,17 @@ namespace ReBuzz.Studio.Tests
             rig.Screenshot("sequence-9-mute-solo");
             Song.Sequences[0].Machine.IsSoloed = false;
             Song.Sequences[1].Machine.IsMuted = false;
+
+            // The menu: Quick Create Patterns (two new patterns from the cursor), Rename Machine... (asked through the engine).
+            rig.Click(rig.At(128, 1), MouseButton.Right);
+            rig.Menu("Quick Create Patterns", "2");
+            Assert.That(Events(1), Is.EqualTo("128:00 144:01"));
+            Dialogs.TextResponder = (title, current) => current + " 2";
+            rig.Click(rig.At(128, 1), MouseButton.Right);
+            rig.Menu("Rename Machine...");
+            Assert.That(Tracks, Is.EqualTo("Lead, Bass 2"));
+            rig.Undo();
+            Assert.That(Tracks, Is.EqualTo("Lead, Bass"), "the rename undoes");
         }
 
         [AvaloniaTest]
@@ -413,6 +425,41 @@ namespace ReBuzz.Studio.Tests
             {
                 SequenceTab.PatternChosen -= handler;
             }
+        }
+
+        [AvaloniaTest]
+        public void TheShellsEditMenuCutsCopiesPastesAndUndoesHere()
+        {
+            using var rig = new Rig();
+            Rig.Machine("Lead", ("Hook", 16, new[] { 0, 4 }));
+            Song.AddSequence(Song.Machines.First(m => m.Name == "Lead"), 0);
+            Settle();
+            rig.Click(rig.At(0, 0));
+            rig.Type("0");
+            Assert.That(rig.Window.Tabs.SelectedContent, Is.InstanceOf<ReBuzz.Studio.Views.IStudioEditTarget>(), "the view takes the shell's edit commands");
+
+            // Edit ▸ Copy on the block under the cursor, Edit ▸ Paste two bars on, Edit ▸ Cut, Edit ▸ Undo.
+            void Edit(string header)
+            {
+                var item = rig.Window.GetLogicalDescendants().OfType<MenuItem>().Single(m => m.Header as string == header);
+                Assert.That(item.Command!.CanExecute(null), Is.True, $"{header} is enabled");
+                item.Command.Execute(null);
+                Settle();
+            }
+            rig.Click(rig.At(0, 0, dx: 12));
+            Edit("_Copy");
+            rig.Click(rig.At(32, 0));
+            Edit("_Paste");
+            Assert.That(Events(0), Is.EqualTo("0:Hook 32:Hook"));
+            rig.Click(rig.At(0, 0, dx: 12));
+            Edit("Cu_t");
+            Assert.That(Events(0), Is.EqualTo("32:Hook"));
+            Edit("_Undo");
+            Assert.That(Events(0), Is.EqualTo("0:Hook 32:Hook"), "the song's history undoes the cut");
+            Edit("_Undo");
+            Assert.That(Events(0), Is.EqualTo("0:Hook"), "and the paste");
+            Edit("_Redo");
+            Assert.That(Events(0), Is.EqualTo("0:Hook 32:Hook"));
         }
 
         // ------------------------------------------------------------------ markers and playback
@@ -586,6 +633,33 @@ namespace ReBuzz.Studio.Tests
                 "the Windows editors' subsections");
             rig.Screenshot("sequence-14-reopened");
             canvas.SetZoom(SequenceGeometry.DefaultTickWidth, null);
+        }
+
+        [AvaloniaTest]
+        public void AnOldBuzzSongShowsItsArrangementAndSavesItBack()
+        {
+            string repo = AppContext.BaseDirectory;
+            while (repo != null && !File.Exists(Path.Combine(repo, "ReBuzz.sln"))) repo = Path.GetDirectoryName(repo);
+            string song = repo == null ? null : Path.Combine(repo, "ExternalMachines", "source", "buzztrax-buzzmachines", "FSM", "Infector", "FSM_Infector_Demo.bmx");
+            if (song == null || !File.Exists(song)) Assert.Ignore("the demo song isn't in this checkout");
+            using var rig = new Rig();
+            Assert.That(SongFiles.Open(song).Result, Is.True);
+            Settle();
+            int rows = Song.Sequences.Count;
+            Assert.That(rows, Is.GreaterThan(0), "the demo has tracks");
+            var before = Enumerable.Range(0, rows).Select(Events).ToList();
+            Assert.That(before.Any(e => e.Length > 0), Is.True, "and events");
+            Assert.That(rig.Canvas.Rows, Is.EqualTo(rows));
+            Assert.That(rig.Canvas.TimeSignatures.Entries, Is.EqualTo(new System.Collections.Generic.Dictionary<int, int> { [0] = 16 }), "no editor data: the default bars");
+            rig.Screenshot("sequence-15-old-song");
+
+            string copy = Path.Combine(Path.GetTempPath(), "rebuzz-studio-sequence-" + Environment.ProcessId, "infector.bmxml");
+            Directory.CreateDirectory(Path.GetDirectoryName(copy)!);
+            SongFiles.Picker = save => copy;
+            Assert.That(SongFiles.SaveAs().Result, Is.True);
+            Assert.That(SongFiles.Open(copy).Result, Is.True);
+            Settle();
+            Assert.That(Enumerable.Range(0, Song.Sequences.Count).Select(Events), Is.EqualTo(before), "the arrangement round-trips");
         }
 
         // ------------------------------------------------------------------ pure logic

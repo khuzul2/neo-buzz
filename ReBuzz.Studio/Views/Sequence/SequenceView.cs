@@ -43,7 +43,7 @@ namespace ReBuzz.Studio.Views.Sequence
         internal static void RaisePatternChosen(IPattern p) => PatternChosen?.Invoke(p);
     }
 
-    internal sealed class SequenceView : UserControl
+    internal sealed class SequenceView : UserControl, IStudioEditTarget
     {
         /// <summary>The bar lengths the corner's box offers (cbSteps).</summary>
         static readonly int[] Steps = new[] { 1, 2, 4 }.Concat(Enumerable.Range(0, 22).Select(i => 8 + 4 * i)).Concat(new[] { 128, 192, 256 }).ToArray();
@@ -484,7 +484,8 @@ namespace ReBuzz.Studio.Views.Sequence
                     case Key.T: _ = AskTimeSignature(); return true;
                     case Key.I: InsertAll(); return true;
                     case Key.D: DeleteAll(); return true;
-                    // Until the shell routes Cut, Copy and Paste to the view (IStudioEditTarget).
+                    // The shell's Edit menu routes Cut, Copy and Paste here (IStudioEditTarget) but shows their
+                    // keys without binding them (MenuItem.InputGesture), so the view takes them itself for now.
                     case Key.X: Cut(); return true;
                     case Key.C: Copy(); return true;
                     case Key.V: Paste(); return true;

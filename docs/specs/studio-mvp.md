@@ -182,3 +182,52 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - cut, copy, paste, clone and templates; quick-new by typing; rotate (Alt-drag); screen-edge disconnect;
   - curved wires, multi-channel plugs and their channel menus, wireless outputs, VU meters on wires, skins;
   - the CPU monitor, HD recorder, signal analysis, latency, attributes and machine commands.
+
+**S4, the sequence editor** (`ReBuzz.Studio/Views/Sequence`, the Sequence tab). The horizontal editor (ReBuzzGUI/ModernSequenceEditorHorizontal, §3.5) ported by behaviour, in the Default theme's look.
+- **Drawing** (`SequenceCanvas`): one code-drawn control.
+  - The time ruler: tick numbers per bar, bold where the bar length changes.
+  - The track headers: the machine's name, and the M, S and D switches (mute, solo, the sequence's disable).
+  - A row per sequence, with its blocks as PatternVisual draws them: 3D box, name strip, the colour, and break, mute, thru and stop as upright labels.
+  - A block shows its pattern's contents. With an editor machine, as WPF does: its MIDI events in note lanes, else its columns in detail. Without one (§3.6), the engine's MIDI notes are a small piano roll and its parameter columns are drawn in detail.
+  - `SequenceOverlay` draws the layer above: the cursor, the selection, a drag's ghost, the loop start and end and song end markers, and the play position. Playback redraws only this layer.
+  - The pure parts are in `SequenceGeometry`: the bar list (`TimeSignatureList`, BuzzGUI.SequenceEditor's, same file format), the selection, tick ↔ pixel, block and edge hit tests, and the resize snapping.
+- **Mouse:**
+  - A click puts the cursor on a cell. On a block it also selects the block.
+  - A drag on a block moves it; Alt or Ctrl/Command copies it. A drag on a block's edge resizes it: the right edge sets the pattern's length, the left edge moves the start and keeps the end (PatternResizeHelper, snap 16).
+  - A drag on empty space selects (a rubber band of whole bars and tracks); Shift extends the selection.
+  - A double click on a block chooses its pattern for editing. On an empty cell it makes a new pattern there.
+  - A click on the ruler moves the play position. Header buttons switch; a double click on a header opens the machine.
+  - Right click opens the context menu: Add Track ▸, Delete/Move Track, Set Start, Set End, Set Time Signature..., Insert/Delete (All Tracks), Color ▸, Rename Machine..., Quick Create Patterns ▸, Cut, Copy, Paste.
+  - The wheel scrolls; Ctrl/Command + wheel or a pinch zooms around the pointer; the slider zooms (0.25–7.75 px per tick; a right click resets it).
+- **Keys** (SequenceEditor.xaml.cs's; Command for Control on a Mac):
+  - Arrows, Page Up/Down, Home and End move the cursor by bars and tracks; Shift selects.
+  - A pattern's key from the list (0–9, a–z, A–Z) places it. `,` places a break, `-` a mute, `_` a thru, Shift+`,` a stop; `.` clears.
+  - Insert and Delete insert or delete a bar (what follows moves); Delete or Backspace clear a selection; Escape drops it. Return chooses the pattern for editing.
+  - Ctrl+B and Ctrl+E set the loop start and end (pressed again, the song end). Ctrl+T sets the bar length; Ctrl+I and Ctrl+D insert and delete in all tracks. Ctrl+M and Ctrl+L mute and solo. Ctrl+Up and Ctrl+Down move the track, Ctrl+Delete deletes it, Ctrl+Return opens the menu.
+  - The corner holds the add-track button, the first bar length and Follow (playback scrolls the view a page as it leaves it).
+- **Edits** (`SequenceEditing`) are undo steps on the song's history, so the shell's Undo and Redo have them.
+  - The view is an `IStudioEditTarget`: Undo and Redo return false; Cut, Copy, Paste and Delete act on the selection or on the block under the cursor.
+  - The shell's Edit menu shows Ctrl/Command+X, C and V without binding them (`MenuItem.InputGesture` only displays a gesture), so the view takes those keys itself for now.
+  - The portable BuzzGUI.Common has SetEvent, Clear, SetMarker, CreatePattern and AddSequence. The other actions WPF uses are in its Windows build only (they take `System.Windows.Rect`), so they are ported in `SequenceEdits.cs`: InsertOrDelete, SwapSequences, DeleteSequence, SetLength, the clipboard with cut and paste, and the bar list's actions.
+- **Saved with the song** (`SequenceSongState`, one per engine): the bar list, the pattern colours and the zoom. They go in the Windows editors' own subsections (`SequenceEditor`: zoom, bar list, colours; `ModernSequenceEditorHorizontal`: zoom), so songs go both ways.
+  - It answers the engine's `PatternColours.Source`, as `SequenceEditorPatternColours` does on Windows, so the Session View shares the colours.
+  - A pattern with no colour of its own gets one by its place among its machine's patterns (PatternBoxColors = Pattern).
+- **For the pattern editor (S6):** choosing a pattern calls `SetPatternEditorPattern`, which the Pattern tab already follows, and raises `SequenceTab.PatternChosen`. The tab switch is S6's to make. As WPF's AutoSelectPattern does, the cursor's pattern also goes to the editor as the cursor moves.
+- **Tests** (`SequenceEditorTests`, in the main window's tab, each step checked against the engine's sequences):
+  - Two tracks added from the + menu, patterns placed by key, from the pattern list and by double click, moved and copied by drag, resized at both edges, deleted, copied and pasted over both tracks, cut and pasted, then undone step by step with Ctrl/Command+Z and redone.
+  - The typed events (break, mute, thru, stop, clear), Insert and Delete, Shift-selection, moving a track and its undo, and M, S and D.
+  - A double click and Return choose the pattern for editing.
+  - The shell's Edit ▸ Copy, Paste, Cut, Undo and Redo reach the view.
+  - Loop markers by keys and the menu, with undo; a ruler click; playback through the engine's ticks (a `WorkManager`, as ReBuzzTests does): the play marker follows, loops back, and Follow scrolls the view.
+  - Save as, new and open keep the events, loop, bar list, a colour and the zoom; an old Buzz song (FSM Infector demo) shows its arrangement, which a save to .bmxml and reopen keep.
+  - Pure tests of the bar list (snap, split, insert, delete, file format), the resize snapping, selection rectangles and edge hit tests.
+  - Screenshots: `sequence-1-tracks` to `sequence-15-old-song`.
+- **Differs from WPF:**
+  - A drag on a block moves it right away; WPF moves it only after the button is held for half a second, and a plain drag selects.
+  - A vertical drag doesn't swap tracks (WPF's does); Ctrl+Up/Down moves tracks.
+  - The edges resize without holding Ctrl.
+  - A click on a block selects it, and Delete clears a selection.
+  - Copy isn't an undo step. Paste goes to the cursor's track (WPF: only onto the tracks it was copied from).
+  - The ruler shows bars past the song end; faint bar lines run through the tracks. Preview lanes fit the area below the name (WPF clips the lowest).
+  - The cursor doesn't blink.
+- **Not ported:** VU meters in the headers and their target menu, MIDI export, the settings window (the WPF defaults are used), click-to-play patterns (Shift/Ctrl+click, off by default in WPF), the pattern list's hover preview window, the session-override shading.
