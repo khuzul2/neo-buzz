@@ -4,6 +4,7 @@
 // Every curve has slope 1 at 0, so the drive sets the small-signal gain.
 
 using System;
+using NeoBuzz.Dsp;
 using System.Runtime.CompilerServices;
 
 namespace NeoBuzz.Drive
@@ -23,7 +24,7 @@ namespace NeoBuzz.Drive
         {
             double a = Math.Abs(x);
             // ln cosh x = |x| + ln(1 + e^(−2|x|)) − ln 2, stable for large |x|.
-            return a + Math.Log(1 + Math.Exp(-2 * a)) - 0.6931471805599453;
+            return a + PortableMath.Log(1 + PortableMath.Exp(-2 * a)) - 0.6931471805599453;
         }
 
         static double Asinh(double x) => Math.Asinh(x);
@@ -37,13 +38,13 @@ namespace NeoBuzz.Drive
             switch (Mode)
             {
                 case DriveMode.Tape:
-                    return Math.Tanh(x);
+                    return PortableMath.Tanh(x);
                 case DriveMode.Tube:
                 {
                     // Asymmetric: the negative side saturates at NegLevel (softer, later).
-                    if (x >= 0) return Math.Tanh(x);
+                    if (x >= 0) return PortableMath.Tanh(x);
                     double a = NegLevel;
-                    return a * Math.Tanh(x / a);
+                    return a * PortableMath.Tanh(x / a);
                 }
                 case DriveMode.Transistor:
                 {
@@ -51,7 +52,7 @@ namespace NeoBuzz.Drive
                     double h = Hardness;
                     double u = x / 1.5;
                     double clip = u >= 1 ? 1 : u <= -1 ? -1 : 1.5 * u - 0.5 * u * u * u;
-                    return (1 - h) * Math.Tanh(x) + h * clip;
+                    return (1 - h) * PortableMath.Tanh(x) + h * clip;
                 }
                 case DriveMode.Diode:
                 {
@@ -64,7 +65,7 @@ namespace NeoBuzz.Drive
                 default:
                 {
                     double m = Hardness;
-                    return (1 - m) * Math.Tanh(x) + m * Math.Sin(x);
+                    return (1 - m) * PortableMath.Tanh(x) + m * PortableMath.Sin(x);
                 }
             }
         }
@@ -100,7 +101,7 @@ namespace NeoBuzz.Drive
                 default:
                 {
                     double m = Hardness;
-                    return (1 - m) * LogCosh(x) + m * (1 - Math.Cos(x));
+                    return (1 - m) * LogCosh(x) + m * (1 - PortableMath.Cos(x));
                 }
             }
         }

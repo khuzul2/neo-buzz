@@ -7,6 +7,7 @@
 // is 2^(level/256 − 14), so a modulator at full level deviates the phase by about 4π.
 
 using System;
+using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Fm6
 {
@@ -86,13 +87,13 @@ namespace NeoBuzz.Fm6
         public static double Ratio(int coarse, int fine) => CoarseRatio[coarse & 31] * (1 + 0.01 * fine);
 
         /// <summary>Fixed mode: Hz from coarse (only 0 … 3 matter: 1, 10, 100, 1000 Hz) and fine (×1 … ×9.77).</summary>
-        public static double FixedHz(int coarse, int fine) => Math.Pow(10, (coarse & 3) + fine / 100.0);
+        public static double FixedHz(int coarse, int fine) => PortableMath.Pow(10, (coarse & 3) + fine / 100.0);
 
         /// <summary>Detune (0 … 14, 7 = none) in octaves at a note's frequency (about a cent a step at A4).</summary>
         public static double DetuneOctaves(double noteHz, int detune)
         {
-            double l = Math.Log2(Math.Max(1, noteHz));
-            return 0.0209 * Math.Exp(-0.396 * l) / 7 * l * (detune - 7);
+            double l = PortableMath.Log2(Math.Max(1, noteHz));
+            return 0.0209 * PortableMath.Exp(-0.396 * l) / 7 * l * (detune - 7);
         }
 
         /// <summary>Fixed-mode detune: only upwards, 13457/2^24 octave a step.</summary>
@@ -167,7 +168,7 @@ namespace NeoBuzz.Fm6
 
         /// <summary>Samples (at 44.1 kHz) a flat envelope segment lasts at a rate (msfa's "statics", fitted).</summary>
         public static double StaticSamples44(int rate) =>
-            rate < 77 ? 1764000.0 * Math.Pow(2, -rate / 6.35) : 20.0 * (99 - rate);
+            rate < 77 ? 1764000.0 * PortableMath.Pow(2, -rate / 6.35) : 20.0 * (99 - rate);
     }
 
     /// <summary>
@@ -188,7 +189,7 @@ namespace NeoBuzz.Fm6
         public bool KeyIsDown => down;
 
         /// <summary>Amplitude of a level: 2^(level/256 − 14).</summary>
-        public static double Amplitude(double level) => Math.Pow(2, level / 256.0 - 14);
+        public static double Amplitude(double level) => PortableMath.Pow(2, level / 256.0 - 14);
 
         public void SetRate(double voiceRate) => srScale = 44100.0 / voiceRate;
 
@@ -251,7 +252,7 @@ namespace NeoBuzz.Fm6
             int qrate = Math.Min(63, ((rates[ix] * 41) >> 6) + rateScaling);
             // msfa: (4 + (qrate & 3)) << (2 + 6 + (qrate >> 2)) in 2^-24 doublings per 64 samples at
             // 44.1 kHz; here in 1/256 doublings per sample at the voice's rate.
-            inc = (4 + (qrate & 3)) * Math.Pow(2, 8 + (qrate >> 2)) / 65536.0 / 64.0 * srScale;
+            inc = (4 + (qrate & 3)) * PortableMath.Pow(2, 8 + (qrate >> 2)) / 65536.0 / 64.0 * srScale;
             staticLeft = 0;
             if (Math.Abs(target - level) < 1e-9 || (ix == 0 && newLevel == 0))
             {

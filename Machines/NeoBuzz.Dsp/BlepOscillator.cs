@@ -49,7 +49,7 @@ namespace NeoBuzz.Dsp
         float Value(double p)
         {
             float v = 0;
-            if (wSine != 0) v += wSine * -MathF.Cos((float)(DspMath.TwoPiD * p));
+            if (wSine != 0) v += wSine * -PortableMathF.Cos((float)(DspMath.TwoPiD * p));
             if (wTri != 0) v += wTri * (p < 0.5 ? (float)(-1 + 4 * p) : (float)(3 - 4 * p));
             if (wSaw != 0) v += wSaw * (float)(2 * p - 1);
             if (wSq != 0) v += wSq * (p < pw ? -1f : 1f);
@@ -61,7 +61,7 @@ namespace NeoBuzz.Dsp
         float Slope(double p)
         {
             float s = 0;
-            if (wSine != 0) s += wSine * DspMath.TwoPi * MathF.Sin((float)(DspMath.TwoPiD * p));
+            if (wSine != 0) s += wSine * DspMath.TwoPi * PortableMathF.Sin((float)(DspMath.TwoPiD * p));
             if (wTri != 0) s += wTri * (p < 0.5 ? 4f : -4f);
             if (wSaw != 0) s += wSaw * 2f;
             return s;

@@ -27,10 +27,10 @@ namespace NeoBuzz.Dsp
         public void Set(double hz, double sampleRate, double q, double gainDb = 0)
         {
             double f = Math.Clamp(hz, 1.0, sampleRate * 0.49);
-            double g = Math.Tan(Math.PI * f / sampleRate);
+            double g = PortableMath.Tan(Math.PI * f / sampleRate);
             q = Math.Max(0.025, q);
             double kk = 1.0 / q;
-            double A = Math.Pow(10.0, gainDb / 40.0);
+            double A = PortableMath.Pow(10.0, gainDb / 40.0);
             switch (Mode)
             {
                 case SvfMode.Bell:
@@ -90,7 +90,7 @@ namespace NeoBuzz.Dsp
         public static float Prewarp(float hz, float sampleRate)
         {
             float w = DspMath.Clamp(hz / sampleRate, 1e-6f, 0.497f);
-            return MathF.Tan(MathF.PI * w);
+            return PortableMathF.Tan(MathF.PI * w);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -198,7 +198,7 @@ namespace NeoBuzz.Dsp
 
         public void Set(double hz, double sampleRate)
         {
-            double w = Math.Tan(Math.PI * Math.Clamp(hz, 0.1, sampleRate * 0.49) / sampleRate);
+            double w = PortableMath.Tan(Math.PI * Math.Clamp(hz, 0.1, sampleRate * 0.49) / sampleRate);
             g = (float)(w / (1 + w));
         }
 
@@ -229,9 +229,9 @@ namespace NeoBuzz.Dsp
         public void Set(BiquadType type, double hz, double sampleRate, double q, double gainDb = 0)
         {
             double w0 = 2 * Math.PI * Math.Clamp(hz, 1.0, sampleRate * 0.49) / sampleRate;
-            double cs = Math.Cos(w0), sn = Math.Sin(w0);
+            double cs = PortableMath.Cos(w0), sn = PortableMath.Sin(w0);
             double alpha = sn / (2 * Math.Max(0.01, q));
-            double A = Math.Pow(10, gainDb / 40);
+            double A = PortableMath.Pow(10, gainDb / 40);
             double nb0, nb1, nb2, na0, na1, na2;
             switch (type)
             {
@@ -287,7 +287,7 @@ namespace NeoBuzz.Dsp
         public double Magnitude(double hz, double sampleRate)
         {
             double w = 2 * Math.PI * hz / sampleRate;
-            double cr = Math.Cos(w), ci = -Math.Sin(w), c2r = Math.Cos(2 * w), c2i = -Math.Sin(2 * w);
+            double cr = PortableMath.Cos(w), ci = -PortableMath.Sin(w), c2r = PortableMath.Cos(2 * w), c2i = -PortableMath.Sin(2 * w);
             double nr = b0 + b1 * cr + b2 * c2r, ni = b1 * ci + b2 * c2i;
             double dr = 1 + a1 * cr + a2 * c2r, di = a1 * ci + a2 * c2i;
             return Math.Sqrt((nr * nr + ni * ni) / (dr * dr + di * di));
