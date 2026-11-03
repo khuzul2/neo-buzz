@@ -168,8 +168,21 @@ namespace ReBuzzTests
             var (error, text, _) = rig.Call("machine_add", new JsonObject { ["gear"] = "Info", ["name"] = "Notes" });
             if (error)
             {
-                TestContext.Out.WriteLine("[notice] A live Info machine didn't load in the test rig: " + text);
-                Assert.Inconclusive("Info didn't load here: " + text);
+                // Why, from Info's constructor itself (with a host that answers nothing).
+                string why;
+                try
+                {
+                    var infoType = Assembly.LoadFrom(dll!).GetType("WDE.Info.InfoMachine", true)!;
+                    Activator.CreateInstance(infoType, DispatchProxy.Create<Buzz.MachineInterface.IBuzzMachineHost, NullHost>());
+                    why = "it constructs on its own";
+                }
+                catch (Exception e)
+                {
+                    var inner = e is TargetInvocationException t && t.InnerException != null ? t.InnerException : e;
+                    why = inner.GetType().Name + ": " + inner.Message + " " + string.Join(" | ", (inner.StackTrace ?? "").Split('\n').Take(3).Select(l => l.Trim()));
+                }
+                TestContext.Out.WriteLine("[notice] A live Info machine didn't load in the test rig: " + text + " Its constructor: " + why);
+                Assert.Inconclusive("Info didn't load here: " + text + " Its constructor: " + why);
             }
             var core = rig.Driver.Core;
             var machine = core.SongCore.MachinesList.Single(m => m.Name == "Notes");
@@ -197,6 +210,13 @@ namespace ReBuzzTests
             read = rig.Call("song_notes_read").Data;
             Assert.That(read["notes"]!.GetValue<string>(), Is.EqualTo(Expected));
             Assert.That(read["imported_on_open"]!.AsArray(), Is.Empty, "not again");
+        }
+
+        /// <summary>A machine host that answers nothing (Info's constructor keeps it).</summary>
+        public class NullHost : DispatchProxy
+        {
+            protected override object? Invoke(MethodInfo? method, object?[]? args) =>
+                method != null && method.ReturnType.IsValueType && method.ReturnType != typeof(void) ? Activator.CreateInstance(method.ReturnType) : null;
         }
 
         static string TempSong(string name)
