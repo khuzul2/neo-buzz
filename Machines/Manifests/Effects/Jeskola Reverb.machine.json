@@ -2,10 +2,21 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Jeskola Reverb",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "reverb",
- "summary": "Reverb (profiled draft): traits: reverb; tail 0.7 s; latency 0 samples; gain +6.2 dB at the defaults.",
+ "summary": "Classic Buzz mono reverb with dry, reverb and early-reflection levels, reverb time up to 6.4 s, pre-delay and a high cut. For quick ambience in old-school Buzz songs; Neo Verb is the better reverb.",
+ "quirks": [
+  "Mono out (the profile measured an output correlation of 1.0), and about 6 dB louder than its input at unity settings: ReBuzz feeds a mono native effect left + right summed (ReBuzz/NativeMachine/NativeMessage.cs). Profile: +6.2 dB at the defaults.",
+  "Rev Out or ER Out at their top (0 dB) peak above 0 dBFS on a hot input (profile: +3.3 and +2.3 dBFS).",
+  "Closed source: names and units come from its own descriptions and texts."
+ ],
+ "evidence": [
+  "its parameter descriptions and value texts (machine_describe, as profiled)",
+  "ReBuzz/NativeMachine/NativeMessage.cs — a mono native effect gets left + right summed",
+  "ExternalMachines/source/buzztrax-buzzmachines/Oomek/Masterizer/Masterizer_test.bmx — a song using it",
+  "profile (tools/machine-profiler.py, windows 2026-11-03) — reverb, 0.7 s tail at the defaults, +6.2 dB, correlation 1.0; hot with Rev Out or ER Out at the top"
+ ],
  "tracks": 0,
  "health": {
   "status": "warn",
@@ -90,7 +101,9 @@
    "index": 0,
    "id": "Dry Out",
    "name": "Dry Out",
-   "group": "",
+   "plain_name": "Dry level",
+   "role": "mix.dry",
+   "group": "Mix",
    "min": 0,
    "max": 4096,
    "default": 4096,
@@ -558,14 +571,15 @@
      0.0
     ]
    ],
-   "description": "Dry Out (0-1000)",
-   "confidence": "values"
+   "description": "Level of the dry signal (0 dB at the top)."
   },
   {
    "index": 1,
    "id": "Rev Out",
    "name": "Rev Out",
-   "group": "",
+   "plain_name": "Reverb level",
+   "role": "mix.wet",
+   "group": "Mix",
    "min": 0,
    "max": 4096,
    "default": 768,
@@ -1033,14 +1047,15 @@
      0.0
     ]
    ],
-   "description": "Reverb Out (0-1000)",
-   "confidence": "values"
+   "description": "Level of the reverb tail."
   },
   {
    "index": 2,
    "id": "ER Out",
    "name": "ER Out",
-   "group": "",
+   "plain_name": "Early reflections level",
+   "role": "reverb.early",
+   "group": "Mix",
    "min": 0,
    "max": 4096,
    "default": 0,
@@ -1508,14 +1523,15 @@
      0.0
     ]
    ],
-   "description": "Early Out (0-1000)",
-   "confidence": "values"
+   "description": "Level of the early reflections (off by default)."
   },
   {
    "index": 3,
    "id": "Rev Time",
    "name": "Rev Time",
-   "group": "",
+   "plain_name": "Reverb time",
+   "role": "reverb.decay",
+   "group": "Reverb",
    "min": 1,
    "max": 64,
    "default": 10,
@@ -1523,29 +1539,31 @@
    "a": 0.1,
    "b": 6.4,
    "unit": "s",
-   "description": "Reverb Time in tenths of second (1-40)",
-   "confidence": "values"
+   "description": "Tail length in tenths of a second, 0.1–6.4 s."
   },
   {
    "index": 4,
    "id": "Pre-Delay",
    "name": "Pre-Delay",
-   "group": "",
+   "plain_name": "Pre-delay",
+   "role": "reverb.predelay",
+   "group": "Reverb",
    "min": 0,
    "max": 100,
    "default": 0,
    "kind": "linear",
-   "a": -0.0,
+   "a": 0.0,
    "b": 0.1,
    "unit": "s",
-   "description": "Reverb Pre-Delay in ms (0-64)",
-   "confidence": "values"
+   "description": "Gap before the reverb, 0–100 ms."
   },
   {
    "index": 5,
    "id": "High Cutoff",
    "name": "High Cutoff",
-   "group": "",
+   "plain_name": "High cut",
+   "role": "reverb.damping",
+   "group": "Reverb",
    "min": 100,
    "max": 16384,
    "default": 5000,
@@ -1553,8 +1571,7 @@
    "a": 100.0,
    "b": 16384.0,
    "unit": "Hz",
-   "description": "High frequency cutoff in Hz (0064-4000)",
-   "confidence": "values"
+   "description": "Low-pass on the reverb, 100 Hz – 16.4 kHz."
   }
  ],
  "track_parameters": []

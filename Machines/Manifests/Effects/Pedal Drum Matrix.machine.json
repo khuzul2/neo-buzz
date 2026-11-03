@@ -2,10 +2,21 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Pedal Drum Matrix",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
- "type": "utility",
- "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain -0.0 dB at the defaults.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
+ "type": "multi-effect",
+ "summary": "Drum multi-effect rack: six serial slots, each any of 21 effects (bitcrush, drive, filters, ring mod, comb, stutter, delay, reverb, gate, tuned resonator…), with feedback, an envelope follower, a tempo-synced LFO and a scene morph. For mangling and texturing drums.",
+ "quirks": [
+  "All slots are None at the defaults: it passes sound unchanged until a slot's Type and Amount are set.",
+  "A slot's Char and Mode mean different things per effect; their value texts (machine_describe) say what they do for the loaded effect.",
+  "Stereo in, stereo out; Delay, Stutter and LFO times are in ticks, so they follow the song's tempo.",
+  "Feedback routes the rack's output back to its input; the output limiter (on by default) keeps it in bounds."
+ ],
+ "evidence": [
+  "ExternalMachines/source/thepedal/pedal-drum-matrix/README.md — slots, effects, Char and Mode per effect, feedback, LFO, resonator, morph",
+  "ExternalMachines/source/thepedal/pedal-drum-matrix/PedalDrumMatrix.cs — parameters, DescribeValue scaling (FbTime, FbTone, EnvRelease, depths), LfoTicks",
+  "profile (tools/machine-profiler.py, linux 2026-11-03) — unity gain and no latency at the defaults"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -69,7 +80,9 @@
    "index": 0,
    "id": "Slot1Type",
    "name": "Slot1Type",
-   "group": "",
+   "plain_name": "Slot 1 effect",
+   "role": "fx.type",
+   "group": "Slot 1",
    "min": 0,
    "max": 21,
    "default": 0,
@@ -98,29 +111,31 @@
     "AutoWah",
     "Exciter"
    ],
-   "description": "Slot 1 - effect type",
-   "confidence": "values"
+   "description": "Effect in slot 1 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more."
   },
   {
    "index": 1,
    "id": "Slot1Amount",
    "name": "Slot1Amount",
-   "group": "",
+   "plain_name": "Slot 1 amount",
+   "role": "fx.amount",
+   "group": "Slot 1",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Slot 1 - amount",
-   "confidence": "values"
+   "description": "Intensity / wet of the slot's effect (0: clean)."
   },
   {
    "index": 2,
    "id": "Slot2Type",
    "name": "Slot2Type",
-   "group": "",
+   "plain_name": "Slot 2 effect",
+   "role": "fx.type",
+   "group": "Slot 2",
    "min": 0,
    "max": 21,
    "default": 0,
@@ -149,29 +164,31 @@
     "AutoWah",
     "Exciter"
    ],
-   "description": "Slot 2 - effect type",
-   "confidence": "values"
+   "description": "Effect in slot 2 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more."
   },
   {
    "index": 3,
    "id": "Slot2Amount",
    "name": "Slot2Amount",
-   "group": "",
+   "plain_name": "Slot 2 amount",
+   "role": "fx.amount",
+   "group": "Slot 2",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Slot 2 - amount",
-   "confidence": "values"
+   "description": "Intensity / wet of the slot's effect (0: clean)."
   },
   {
    "index": 4,
    "id": "Slot3Type",
    "name": "Slot3Type",
-   "group": "",
+   "plain_name": "Slot 3 effect",
+   "role": "fx.type",
+   "group": "Slot 3",
    "min": 0,
    "max": 21,
    "default": 0,
@@ -200,29 +217,31 @@
     "AutoWah",
     "Exciter"
    ],
-   "description": "Slot 3 - effect type",
-   "confidence": "values"
+   "description": "Effect in slot 3 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more."
   },
   {
    "index": 5,
    "id": "Slot3Amount",
    "name": "Slot3Amount",
-   "group": "",
+   "plain_name": "Slot 3 amount",
+   "role": "fx.amount",
+   "group": "Slot 3",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Slot 3 - amount",
-   "confidence": "values"
+   "description": "Intensity / wet of the slot's effect (0: clean)."
   },
   {
    "index": 6,
    "id": "Slot4Type",
    "name": "Slot4Type",
-   "group": "",
+   "plain_name": "Slot 4 effect",
+   "role": "fx.type",
+   "group": "Slot 4",
    "min": 0,
    "max": 21,
    "default": 0,
@@ -251,29 +270,31 @@
     "AutoWah",
     "Exciter"
    ],
-   "description": "Slot 4 - effect type",
-   "confidence": "values"
+   "description": "Effect in slot 4 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more."
   },
   {
    "index": 7,
    "id": "Slot4Amount",
    "name": "Slot4Amount",
-   "group": "",
+   "plain_name": "Slot 4 amount",
+   "role": "fx.amount",
+   "group": "Slot 4",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Slot 4 - amount",
-   "confidence": "values"
+   "description": "Intensity / wet of the slot's effect (0: clean)."
   },
   {
    "index": 8,
    "id": "Slot5Type",
    "name": "Slot5Type",
-   "group": "",
+   "plain_name": "Slot 5 effect",
+   "role": "fx.type",
+   "group": "Slot 5",
    "min": 0,
    "max": 21,
    "default": 0,
@@ -302,29 +323,31 @@
     "AutoWah",
     "Exciter"
    ],
-   "description": "Slot 5 - effect type",
-   "confidence": "values"
+   "description": "Effect in slot 5 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more."
   },
   {
    "index": 9,
    "id": "Slot5Amount",
    "name": "Slot5Amount",
-   "group": "",
+   "plain_name": "Slot 5 amount",
+   "role": "fx.amount",
+   "group": "Slot 5",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Slot 5 - amount",
-   "confidence": "values"
+   "description": "Intensity / wet of the slot's effect (0: clean)."
   },
   {
    "index": 10,
    "id": "Slot6Type",
    "name": "Slot6Type",
-   "group": "",
+   "plain_name": "Slot 6 effect",
+   "role": "fx.type",
+   "group": "Slot 6",
    "min": 0,
    "max": 21,
    "default": 0,
@@ -353,218 +376,401 @@
     "AutoWah",
     "Exciter"
    ],
-   "description": "Slot 6 - effect type",
-   "confidence": "values"
+   "description": "Effect in slot 6 (slots run 1 → 6 in series): None, Bitcrush, Drive, Lowpass, RingMod, Comb, Stutter, Delay, Reverb, Gate, Resonator, Highpass, Transient, Wavefolder and more."
   },
   {
    "index": 11,
    "id": "Slot6Amount",
    "name": "Slot6Amount",
-   "group": "",
+   "plain_name": "Slot 6 amount",
+   "role": "fx.amount",
+   "group": "Slot 6",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Slot 6 - amount",
-   "confidence": "values"
+   "description": "Intensity / wet of the slot's effect (0: clean)."
+  },
+  {
+   "index": 12,
+   "id": "Slot1Char",
+   "name": "Slot1Char",
+   "plain_name": "Slot 1 character",
+   "role": "fx.character",
+   "group": "Slot 1",
+   "min": 0,
+   "max": 127,
+   "default": 64,
+   "kind": "int",
+   "a": 0,
+   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect."
+  },
+  {
+   "index": 13,
+   "id": "Slot1Mode",
+   "name": "Slot1Mode",
+   "plain_name": "Slot 1 mode",
+   "role": "fx.mode",
+   "group": "Slot 1",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "int",
+   "a": 0,
+   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it."
+  },
+  {
+   "index": 14,
+   "id": "Slot2Char",
+   "name": "Slot2Char",
+   "plain_name": "Slot 2 character",
+   "role": "fx.character",
+   "group": "Slot 2",
+   "min": 0,
+   "max": 127,
+   "default": 64,
+   "kind": "int",
+   "a": 0,
+   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect."
+  },
+  {
+   "index": 15,
+   "id": "Slot2Mode",
+   "name": "Slot2Mode",
+   "plain_name": "Slot 2 mode",
+   "role": "fx.mode",
+   "group": "Slot 2",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "int",
+   "a": 0,
+   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it."
+  },
+  {
+   "index": 16,
+   "id": "Slot3Char",
+   "name": "Slot3Char",
+   "plain_name": "Slot 3 character",
+   "role": "fx.character",
+   "group": "Slot 3",
+   "min": 0,
+   "max": 127,
+   "default": 64,
+   "kind": "int",
+   "a": 0,
+   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect."
+  },
+  {
+   "index": 17,
+   "id": "Slot3Mode",
+   "name": "Slot3Mode",
+   "plain_name": "Slot 3 mode",
+   "role": "fx.mode",
+   "group": "Slot 3",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "int",
+   "a": 0,
+   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it."
+  },
+  {
+   "index": 18,
+   "id": "Slot4Char",
+   "name": "Slot4Char",
+   "plain_name": "Slot 4 character",
+   "role": "fx.character",
+   "group": "Slot 4",
+   "min": 0,
+   "max": 127,
+   "default": 64,
+   "kind": "int",
+   "a": 0,
+   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect."
+  },
+  {
+   "index": 19,
+   "id": "Slot4Mode",
+   "name": "Slot4Mode",
+   "plain_name": "Slot 4 mode",
+   "role": "fx.mode",
+   "group": "Slot 4",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "int",
+   "a": 0,
+   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it."
+  },
+  {
+   "index": 20,
+   "id": "Slot5Char",
+   "name": "Slot5Char",
+   "plain_name": "Slot 5 character",
+   "role": "fx.character",
+   "group": "Slot 5",
+   "min": 0,
+   "max": 127,
+   "default": 64,
+   "kind": "int",
+   "a": 0,
+   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect."
+  },
+  {
+   "index": 21,
+   "id": "Slot5Mode",
+   "name": "Slot5Mode",
+   "plain_name": "Slot 5 mode",
+   "role": "fx.mode",
+   "group": "Slot 5",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "int",
+   "a": 0,
+   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it."
+  },
+  {
+   "index": 22,
+   "id": "Slot6Char",
+   "name": "Slot6Char",
+   "plain_name": "Slot 6 character",
+   "role": "fx.character",
+   "group": "Slot 6",
+   "min": 0,
+   "max": 127,
+   "default": 64,
+   "kind": "int",
+   "a": 0,
+   "description": "Effect-specific character (cutoff for a filter, time in ticks for Delay, scale degree for Resonator…): the machine's own text says what it is for the loaded effect."
+  },
+  {
+   "index": 23,
+   "id": "Slot6Mode",
+   "name": "Slot6Mode",
+   "plain_name": "Slot 6 mode",
+   "role": "fx.mode",
+   "group": "Slot 6",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "int",
+   "a": 0,
+   "description": "Effect-specific switch (Q for a filter, hard or soft clip for Drive…); the text names it."
   },
   {
    "index": 24,
    "id": "Limiter",
    "name": "Limiter",
-   "group": "",
+   "plain_name": "Output limiter",
+   "role": "fx.limiter",
+   "group": "Output",
    "min": 0,
    "max": 1,
    "default": 1,
    "kind": "switch",
-   "description": "Output limiter",
-   "confidence": "values"
+   "description": "Limiter on the rack's output (on by default)."
   },
   {
    "index": 25,
    "id": "AutoGainOn",
    "name": "AutoGainOn",
-   "group": "",
+   "plain_name": "Auto gain",
+   "role": "fx.auto_gain",
+   "group": "Output",
    "min": 0,
    "max": 1,
    "default": 0,
    "kind": "switch",
-   "description": "Auto gain (leveler)",
-   "confidence": "values"
+   "description": "Levels the output automatically."
   },
   {
    "index": 26,
    "id": "Feedback",
    "name": "Feedback",
-   "group": "",
+   "plain_name": "Rack feedback",
+   "role": "delay.feedback",
+   "group": "Feedback",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Feedback amount",
-   "confidence": "values"
+   "description": "Output back into the rack's input."
   },
   {
    "index": 27,
    "id": "FbTime",
    "name": "FbTime",
-   "group": "",
+   "plain_name": "Feedback delay",
+   "role": "delay.time",
+   "group": "Feedback",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "time",
-   "a": 0.0010014,
-   "b": 0.499453,
+   "a": 0.001,
+   "b": 0.5,
    "unit": "s",
-   "description": "Feedback time",
-   "confidence": "values"
+   "description": "Delay in the feedback path, 1–500 ms exponential."
   },
   {
    "index": 28,
    "id": "FbTone",
    "name": "FbTone",
-   "group": "",
+   "plain_name": "Feedback tone",
+   "role": "delay.tone",
+   "group": "Feedback",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "freq",
-   "a": 199.831,
-   "b": 11989.1,
+   "a": 200.0,
+   "b": 12000.0,
    "unit": "Hz",
-   "description": "Feedback tone",
-   "confidence": "values"
+   "description": "Low-pass in the feedback path, 200 Hz – 12 kHz exponential."
   },
   {
    "index": 29,
    "id": "EnvRelease",
    "name": "EnvRelease",
-   "group": "",
+   "plain_name": "Envelope follower release",
+   "role": "env.follower_release",
+   "group": "Modulation",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "time",
-   "a": 0.0199955,
-   "b": 2.00013,
+   "a": 0.02,
+   "b": 2.0,
    "unit": "s",
-   "description": "Envelope release",
-   "confidence": "values"
+   "description": "Release of the input envelope follower, 20 ms – 2 s exponential."
   },
   {
    "index": 30,
    "id": "EnvToFb",
    "name": "EnvToFb",
-   "group": "",
+   "plain_name": "Envelope to feedback",
+   "role": "fx.env_depth",
+   "group": "Feedback",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Envelope to feedback",
-   "confidence": "values"
+   "description": "How much the input's envelope raises the feedback."
   },
   {
    "index": 31,
    "id": "Slot1EnvDepth",
    "name": "Slot1EnvDepth",
-   "group": "",
+   "plain_name": "Slot 1 envelope depth",
+   "role": "fx.env_depth",
+   "group": "Slot 1",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "linear",
-   "a": -99.99564,
-   "b": 98.43314,
+   "a": -100.0,
+   "b": 98.4375,
    "unit": "%",
-   "description": "Slot 1 - env depth",
-   "confidence": "values"
+   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64)."
   },
   {
    "index": 32,
    "id": "Slot2EnvDepth",
    "name": "Slot2EnvDepth",
-   "group": "",
+   "plain_name": "Slot 2 envelope depth",
+   "role": "fx.env_depth",
+   "group": "Slot 2",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "linear",
-   "a": -99.99564,
-   "b": 98.43314,
+   "a": -100.0,
+   "b": 98.4375,
    "unit": "%",
-   "description": "Slot 2 - env depth",
-   "confidence": "values"
+   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64)."
   },
   {
    "index": 33,
    "id": "Slot3EnvDepth",
    "name": "Slot3EnvDepth",
-   "group": "",
+   "plain_name": "Slot 3 envelope depth",
+   "role": "fx.env_depth",
+   "group": "Slot 3",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "linear",
-   "a": -99.99564,
-   "b": 98.43314,
+   "a": -100.0,
+   "b": 98.4375,
    "unit": "%",
-   "description": "Slot 3 - env depth",
-   "confidence": "values"
+   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64)."
   },
   {
    "index": 34,
    "id": "Slot4EnvDepth",
    "name": "Slot4EnvDepth",
-   "group": "",
+   "plain_name": "Slot 4 envelope depth",
+   "role": "fx.env_depth",
+   "group": "Slot 4",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "linear",
-   "a": -99.99564,
-   "b": 98.43314,
+   "a": -100.0,
+   "b": 98.4375,
    "unit": "%",
-   "description": "Slot 4 - env depth",
-   "confidence": "values"
+   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64)."
   },
   {
    "index": 35,
    "id": "Slot5EnvDepth",
    "name": "Slot5EnvDepth",
-   "group": "",
+   "plain_name": "Slot 5 envelope depth",
+   "role": "fx.env_depth",
+   "group": "Slot 5",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "linear",
-   "a": -99.99564,
-   "b": 98.43314,
+   "a": -100.0,
+   "b": 98.4375,
    "unit": "%",
-   "description": "Slot 5 - env depth",
-   "confidence": "values"
+   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64)."
   },
   {
    "index": 36,
    "id": "Slot6EnvDepth",
    "name": "Slot6EnvDepth",
-   "group": "",
+   "plain_name": "Slot 6 envelope depth",
+   "role": "fx.env_depth",
+   "group": "Slot 6",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "linear",
-   "a": -99.99564,
-   "b": 98.43314,
+   "a": -100.0,
+   "b": 98.4375,
    "unit": "%",
-   "description": "Slot 6 - env depth",
-   "confidence": "values"
+   "description": "Envelope follower to the slot's character, bipolar (0% at raw 64)."
   },
   {
    "index": 37,
    "id": "LfoRate",
    "name": "LfoRate",
-   "group": "",
+   "plain_name": "LFO cycle",
+   "role": "lfo.rate",
+   "group": "Modulation",
    "min": 0,
    "max": 11,
    "default": 7,
@@ -573,61 +779,63 @@
    "points": [
     [
      0,
-     1.0
+     1
     ],
     [
      1,
-     2.0
+     2
     ],
     [
      2,
-     3.0
+     3
     ],
     [
      3,
-     4.0
+     4
     ],
     [
      4,
-     6.0
+     6
     ],
     [
      5,
-     8.0
+     8
     ],
     [
      6,
-     12.0
+     12
     ],
     [
      7,
-     16.0
+     16
     ],
     [
      8,
-     24.0
+     24
     ],
     [
      9,
-     32.0
+     32
     ],
     [
      10,
-     48.0
+     48
     ],
     [
      11,
-     64.0
+     64
     ]
    ],
-   "description": "LFO rate (ticks per cycle)",
-   "confidence": "description"
+   "own_texts": false,
+   "description": "Tempo-synced LFO cycle length in ticks: 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48 or 64."
   },
   {
    "index": 38,
    "id": "LfoWave",
    "name": "LfoWave",
-   "group": "",
+   "plain_name": "LFO wave",
+   "role": "lfo.wave",
+   "group": "Modulation",
    "min": 0,
    "max": 5,
    "default": 0,
@@ -640,104 +848,111 @@
     "Steps",
     "Random"
    ],
-   "description": "LFO wave",
-   "confidence": "values"
+   "description": "Sine, triangle, saw, square, steps (an 8-step pattern) or random."
   },
   {
    "index": 39,
    "id": "Slot1LfoDepth",
    "name": "Slot1LfoDepth",
-   "group": "",
+   "plain_name": "Slot 1 LFO depth",
+   "role": "fx.lfo_depth",
+   "group": "Slot 1",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "linear",
-   "a": -99.99564,
-   "b": 98.43314,
+   "a": -100.0,
+   "b": 98.4375,
    "unit": "%",
-   "description": "Slot 1 - LFO depth",
-   "confidence": "values"
+   "description": "LFO to the slot's character, bipolar (0% at raw 64)."
   },
   {
    "index": 40,
    "id": "Slot2LfoDepth",
    "name": "Slot2LfoDepth",
-   "group": "",
+   "plain_name": "Slot 2 LFO depth",
+   "role": "fx.lfo_depth",
+   "group": "Slot 2",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "linear",
-   "a": -99.99564,
-   "b": 98.43314,
+   "a": -100.0,
+   "b": 98.4375,
    "unit": "%",
-   "description": "Slot 2 - LFO depth",
-   "confidence": "values"
+   "description": "LFO to the slot's character, bipolar (0% at raw 64)."
   },
   {
    "index": 41,
    "id": "Slot3LfoDepth",
    "name": "Slot3LfoDepth",
-   "group": "",
+   "plain_name": "Slot 3 LFO depth",
+   "role": "fx.lfo_depth",
+   "group": "Slot 3",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "linear",
-   "a": -99.99564,
-   "b": 98.43314,
+   "a": -100.0,
+   "b": 98.4375,
    "unit": "%",
-   "description": "Slot 3 - LFO depth",
-   "confidence": "values"
+   "description": "LFO to the slot's character, bipolar (0% at raw 64)."
   },
   {
    "index": 42,
    "id": "Slot4LfoDepth",
    "name": "Slot4LfoDepth",
-   "group": "",
+   "plain_name": "Slot 4 LFO depth",
+   "role": "fx.lfo_depth",
+   "group": "Slot 4",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "linear",
-   "a": -99.99564,
-   "b": 98.43314,
+   "a": -100.0,
+   "b": 98.4375,
    "unit": "%",
-   "description": "Slot 4 - LFO depth",
-   "confidence": "values"
+   "description": "LFO to the slot's character, bipolar (0% at raw 64)."
   },
   {
    "index": 43,
    "id": "Slot5LfoDepth",
    "name": "Slot5LfoDepth",
-   "group": "",
+   "plain_name": "Slot 5 LFO depth",
+   "role": "fx.lfo_depth",
+   "group": "Slot 5",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "linear",
-   "a": -99.99564,
-   "b": 98.43314,
+   "a": -100.0,
+   "b": 98.4375,
    "unit": "%",
-   "description": "Slot 5 - LFO depth",
-   "confidence": "values"
+   "description": "LFO to the slot's character, bipolar (0% at raw 64)."
   },
   {
    "index": 44,
    "id": "Slot6LfoDepth",
    "name": "Slot6LfoDepth",
-   "group": "",
+   "plain_name": "Slot 6 LFO depth",
+   "role": "fx.lfo_depth",
+   "group": "Slot 6",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "linear",
-   "a": -99.99564,
-   "b": 98.43314,
+   "a": -100.0,
+   "b": 98.4375,
    "unit": "%",
-   "description": "Slot 6 - LFO depth",
-   "confidence": "values"
+   "description": "LFO to the slot's character, bipolar (0% at raw 64)."
   },
   {
    "index": 45,
    "id": "Key",
    "name": "Key",
-   "group": "",
+   "plain_name": "Resonator key",
+   "role": "fx.key",
+   "group": "Resonator",
    "min": 0,
    "max": 11,
    "default": 0,
@@ -756,14 +971,15 @@
     "A#",
     "B"
    ],
-   "description": "Key (resonator root)",
-   "confidence": "values"
+   "description": "Root note for Resonator slots."
   },
   {
    "index": 46,
    "id": "Scale",
    "name": "Scale",
-   "group": "",
+   "plain_name": "Resonator scale",
+   "role": "fx.scale",
+   "group": "Resonator",
    "min": 0,
    "max": 7,
    "default": 0,
@@ -778,29 +994,31 @@
     "Blues",
     "Whole Tone"
    ],
-   "description": "Scale (resonator)",
-   "confidence": "values"
+   "description": "Scale for Resonator slots: their character picks a degree of it."
   },
   {
    "index": 47,
    "id": "Morph",
    "name": "Morph",
-   "group": "",
+   "plain_name": "Scene morph",
+   "role": "fx.morph",
+   "group": "Morph",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Morph (live to target)",
-   "confidence": "values"
+   "description": "Blends the live settings toward the stored target (Store)."
   },
   {
    "index": 48,
    "id": "Store",
    "name": "Store",
-   "group": "",
+   "plain_name": "Store morph target",
+   "role": "fx.store",
+   "group": "Morph",
    "min": 0,
    "max": 1,
    "default": 0,
@@ -809,8 +1027,7 @@
     "...",
     "Store"
    ],
-   "description": "Store morph target (Off to On)",
-   "confidence": "values"
+   "description": "Off → Store captures the current settings as the morph target."
   }
  ],
  "track_parameters": []

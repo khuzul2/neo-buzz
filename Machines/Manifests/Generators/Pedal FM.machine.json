@@ -2,14 +2,30 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Pedal FM",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
- "type": "unpitched",
- "summary": "Unpitched (profiled draft): unpitched; 16+ voices; takes notes in its tracks; one note at the defaults -9 LUFS.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
+ "type": "polysynth",
+ "summary": "4-operator FM synth (DX21/TX81Z lineage), 8 algorithms, up to 16 voices with one per track: electric pianos, bells, brass, chord stabs and FM basses.",
+ "quirks": [
+  "One voice per track (16 at most; Voices caps it): notes_write spreads chords over tracks.",
+  "Velocity is the per-track Velocity column (sticky: it holds for later notes), not the note's own velocity.",
+  "Glide only slides between overlapping notes on the same track.",
+  "The profiler heard A2 for every note on its default patch: a bright FM spectrum fools the pitch tracker. Its source plays 440 · 2^((note − 69)/12) times each operator's ratio, the note conversion Pedal SH101 uses (measured at 440 Hz), so notes play as written.",
+  "Operators run in order 1 → 4; which ones are heard (carriers) depends on Algorithm: in 1 (linear chain) only Operator 4.",
+  "Every parameter at its maximum at once peaks above 0 dBFS (+3.4 dBFS); no single parameter does."
+ ],
+ "evidence": [
+  "ExternalMachines/source/thepedal/pedal-fm/README.md — design, parameters, limitations",
+  "ExternalMachines/source/thepedal/pedal-fm/PedalFMMachine.cs — parameter scaling (MapRatio, MapTime, MapOutLevel, LFO)",
+  "ExternalMachines/source/thepedal/pedal-fm/Algorithms.cs — the eight algorithms",
+  "ExternalMachines/source/thepedal/pedal-fm/Voice.cs — note to frequency",
+  "profile (tools/machine-profiler.py, linux 2026-11-03) — 16 voices, level, hot with everything at its maximum"
+ ],
  "tracks": 16,
  "notes": {
   "input": "tracks",
-  "pitched": false,
+  "pitch_offset": 0,
+  "pitched": true,
   "polyphony": 16
  },
  "health": {
@@ -55,7 +71,9 @@
    "index": 0,
    "id": "Algorithm",
    "name": "Algorithm",
-   "group": "",
+   "plain_name": "Algorithm",
+   "role": "osc.algorithm",
+   "group": "Global",
    "min": 0,
    "max": 7,
    "default": 0,
@@ -70,476 +88,1097 @@
     "7: Additive",
     "8: Pad+carrier"
    ],
-   "description": "",
-   "confidence": "values"
+   "description": "How the four operators modulate each other: 1 linear chain (bell, EP), 2 two chains, 3 branched, 4 three modulators on one carrier, 5 one chain and two carriers, 6 one modulator on a pair, 7 four sines (additive), 8 chain plus a carrier."
   },
   {
    "index": 1,
    "id": "Output",
    "name": "Output",
-   "group": "",
+   "plain_name": "Output level",
+   "role": "level",
+   "group": "Global",
    "min": 0,
    "max": 127,
    "default": 100,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "Master output level.",
-   "confidence": "values"
+   "kind": "table",
+   "unit": "dB",
+   "points": [
+    [
+     0,
+     "-inf"
+    ],
+    [
+     1,
+     -86.02
+    ],
+    [
+     2,
+     -73.98
+    ],
+    [
+     3,
+     -66.94
+    ],
+    [
+     4,
+     -61.94
+    ],
+    [
+     5,
+     -58.06
+    ],
+    [
+     6,
+     -54.89
+    ],
+    [
+     7,
+     -52.22
+    ],
+    [
+     8,
+     -49.9
+    ],
+    [
+     9,
+     -47.85
+    ],
+    [
+     10,
+     -46.02
+    ],
+    [
+     11,
+     -44.36
+    ],
+    [
+     12,
+     -42.85
+    ],
+    [
+     13,
+     -41.46
+    ],
+    [
+     14,
+     -40.18
+    ],
+    [
+     15,
+     -38.98
+    ],
+    [
+     16,
+     -37.86
+    ],
+    [
+     17,
+     -36.8
+    ],
+    [
+     18,
+     -35.81
+    ],
+    [
+     19,
+     -34.87
+    ],
+    [
+     20,
+     -33.98
+    ],
+    [
+     21,
+     -33.13
+    ],
+    [
+     22,
+     -32.32
+    ],
+    [
+     23,
+     -31.55
+    ],
+    [
+     24,
+     -30.81
+    ],
+    [
+     25,
+     -30.1
+    ],
+    [
+     26,
+     -29.42
+    ],
+    [
+     27,
+     -28.77
+    ],
+    [
+     28,
+     -28.13
+    ],
+    [
+     29,
+     -27.52
+    ],
+    [
+     30,
+     -26.94
+    ],
+    [
+     31,
+     -26.37
+    ],
+    [
+     32,
+     -25.81
+    ],
+    [
+     33,
+     -25.28
+    ],
+    [
+     34,
+     -24.76
+    ],
+    [
+     35,
+     -24.26
+    ],
+    [
+     36,
+     -23.77
+    ],
+    [
+     37,
+     -23.29
+    ],
+    [
+     38,
+     -22.83
+    ],
+    [
+     39,
+     -22.38
+    ],
+    [
+     40,
+     -21.94
+    ],
+    [
+     41,
+     -21.51
+    ],
+    [
+     42,
+     -21.09
+    ],
+    [
+     43,
+     -20.68
+    ],
+    [
+     44,
+     -20.28
+    ],
+    [
+     45,
+     -19.89
+    ],
+    [
+     46,
+     -19.51
+    ],
+    [
+     47,
+     -19.14
+    ],
+    [
+     48,
+     -18.77
+    ],
+    [
+     49,
+     -18.41
+    ],
+    [
+     50,
+     -18.06
+    ],
+    [
+     51,
+     -17.72
+    ],
+    [
+     52,
+     -17.38
+    ],
+    [
+     53,
+     -17.05
+    ],
+    [
+     54,
+     -16.72
+    ],
+    [
+     55,
+     -16.41
+    ],
+    [
+     56,
+     -16.09
+    ],
+    [
+     57,
+     -15.79
+    ],
+    [
+     58,
+     -15.48
+    ],
+    [
+     59,
+     -15.19
+    ],
+    [
+     60,
+     -14.89
+    ],
+    [
+     61,
+     -14.61
+    ],
+    [
+     62,
+     -14.32
+    ],
+    [
+     63,
+     -14.05
+    ],
+    [
+     64,
+     -13.77
+    ],
+    [
+     65,
+     -13.5
+    ],
+    [
+     66,
+     -13.24
+    ],
+    [
+     67,
+     -12.98
+    ],
+    [
+     68,
+     -12.72
+    ],
+    [
+     69,
+     -12.47
+    ],
+    [
+     70,
+     -12.22
+    ],
+    [
+     71,
+     -11.97
+    ],
+    [
+     72,
+     -11.73
+    ],
+    [
+     73,
+     -11.49
+    ],
+    [
+     74,
+     -11.25
+    ],
+    [
+     75,
+     -11.02
+    ],
+    [
+     76,
+     -10.79
+    ],
+    [
+     77,
+     -10.56
+    ],
+    [
+     78,
+     -10.34
+    ],
+    [
+     79,
+     -10.12
+    ],
+    [
+     80,
+     -9.9
+    ],
+    [
+     81,
+     -9.68
+    ],
+    [
+     82,
+     -9.47
+    ],
+    [
+     83,
+     -9.26
+    ],
+    [
+     84,
+     -9.05
+    ],
+    [
+     85,
+     -8.84
+    ],
+    [
+     86,
+     -8.64
+    ],
+    [
+     87,
+     -8.44
+    ],
+    [
+     88,
+     -8.24
+    ],
+    [
+     89,
+     -8.04
+    ],
+    [
+     90,
+     -7.85
+    ],
+    [
+     91,
+     -7.66
+    ],
+    [
+     92,
+     -7.47
+    ],
+    [
+     93,
+     -7.28
+    ],
+    [
+     94,
+     -7.1
+    ],
+    [
+     95,
+     -6.91
+    ],
+    [
+     96,
+     -6.73
+    ],
+    [
+     97,
+     -6.55
+    ],
+    [
+     98,
+     -6.37
+    ],
+    [
+     99,
+     -6.2
+    ],
+    [
+     100,
+     -6.02
+    ],
+    [
+     101,
+     -5.85
+    ],
+    [
+     102,
+     -5.68
+    ],
+    [
+     103,
+     -5.51
+    ],
+    [
+     104,
+     -5.34
+    ],
+    [
+     105,
+     -5.17
+    ],
+    [
+     106,
+     -5.01
+    ],
+    [
+     107,
+     -4.85
+    ],
+    [
+     108,
+     -4.68
+    ],
+    [
+     109,
+     -4.52
+    ],
+    [
+     110,
+     -4.36
+    ],
+    [
+     111,
+     -4.21
+    ],
+    [
+     112,
+     -4.05
+    ],
+    [
+     113,
+     -3.9
+    ],
+    [
+     114,
+     -3.74
+    ],
+    [
+     115,
+     -3.59
+    ],
+    [
+     116,
+     -3.44
+    ],
+    [
+     117,
+     -3.29
+    ],
+    [
+     118,
+     -3.15
+    ],
+    [
+     119,
+     -3.0
+    ],
+    [
+     120,
+     -2.85
+    ],
+    [
+     121,
+     -2.71
+    ],
+    [
+     122,
+     -2.57
+    ],
+    [
+     123,
+     -2.42
+    ],
+    [
+     124,
+     -2.28
+    ],
+    [
+     125,
+     -2.14
+    ],
+    [
+     126,
+     -2.01
+    ],
+    [
+     127,
+     -1.87
+    ]
+   ],
+   "own_texts": false,
+   "description": "Master level, a square-law curve: 100 is −6 dB, the top −1.9 dB."
   },
   {
    "index": 2,
    "id": "Voices",
    "name": "Voices",
-   "group": "",
+   "plain_name": "Voice limit",
+   "role": "voices",
+   "group": "Global",
    "min": 1,
    "max": 16,
    "default": 8,
    "kind": "linear",
    "a": 1.0,
    "b": 16.0,
-   "description": "Maximum simultaneous voices.",
-   "confidence": "values"
+   "description": "Voices at once; tracks beyond it share voices."
   },
   {
    "index": 3,
    "id": "Op1 Ratio",
    "name": "Op1 Ratio",
-   "group": "",
+   "plain_name": "Operator 1 frequency ratio",
+   "role": "osc.ratio",
+   "group": "Operator 1",
    "min": 0,
    "max": 127,
    "default": 7,
    "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "a": 0.125,
+   "b": 16.0,
+   "unit": "×",
+   "own_texts": false,
+   "description": "Multiple of the note's frequency, 0.125 to 16 in 0.125 steps (1.00× plays the note)."
   },
   {
    "index": 4,
    "id": "Op1 Detune",
    "name": "Op1 Detune",
-   "group": "",
+   "plain_name": "Operator 1 detune",
+   "role": "osc.detune",
+   "group": "Operator 1",
    "min": 0,
    "max": 100,
    "default": 50,
    "kind": "linear",
-   "a": 0.0,
-   "b": 100.0,
-   "description": "",
-   "confidence": "values"
+   "a": -50.0,
+   "b": 50.0,
+   "unit": "ct",
+   "own_texts": false,
+   "description": "Fine detune, ±50 cents."
   },
   {
    "index": 5,
    "id": "Op1 Level",
    "name": "Op1 Level",
-   "group": "",
+   "plain_name": "Operator 1 level",
+   "role": "osc.level",
+   "group": "Operator 1",
    "min": 0,
    "max": 127,
    "default": 100,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Linear output level: FM depth for a modulator, loudness for a carrier."
   },
   {
    "index": 6,
    "id": "Op1 Attack",
    "name": "Op1 Attack",
-   "group": "",
+   "plain_name": "Operator 1 attack",
+   "role": "env.attack",
+   "group": "Operator 1",
    "min": 0,
    "max": 127,
    "default": 4,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 4.0,
+   "exponent": 2.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Operator envelope attack, 0–4 s on a square-law curve."
   },
   {
    "index": 7,
    "id": "Op1 Decay",
    "name": "Op1 Decay",
-   "group": "",
+   "plain_name": "Operator 1 decay",
+   "role": "env.decay",
+   "group": "Operator 1",
    "min": 0,
    "max": 127,
    "default": 50,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 8.0,
+   "exponent": 2.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Operator envelope decay, 0–8 s on a square-law curve."
   },
   {
    "index": 8,
    "id": "Op1 Sustain",
    "name": "Op1 Sustain",
-   "group": "",
+   "plain_name": "Operator 1 sustain",
+   "role": "env.sustain",
+   "group": "Operator 1",
    "min": 0,
    "max": 127,
    "default": 100,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Operator envelope sustain level."
   },
   {
    "index": 9,
    "id": "Op1 Release",
    "name": "Op1 Release",
-   "group": "",
+   "plain_name": "Operator 1 release",
+   "role": "env.release",
+   "group": "Operator 1",
    "min": 0,
    "max": 127,
    "default": 40,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 8.0,
+   "exponent": 2.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Operator envelope release, 0–8 s on a square-law curve."
   },
   {
    "index": 10,
    "id": "Op2 Ratio",
    "name": "Op2 Ratio",
-   "group": "",
+   "plain_name": "Operator 2 frequency ratio",
+   "role": "osc.ratio",
+   "group": "Operator 2",
    "min": 0,
    "max": 127,
    "default": 7,
    "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "a": 0.125,
+   "b": 16.0,
+   "unit": "×",
+   "own_texts": false,
+   "description": "Multiple of the note's frequency, 0.125 to 16 in 0.125 steps (1.00× plays the note)."
   },
   {
    "index": 11,
    "id": "Op2 Detune",
    "name": "Op2 Detune",
-   "group": "",
+   "plain_name": "Operator 2 detune",
+   "role": "osc.detune",
+   "group": "Operator 2",
    "min": 0,
    "max": 100,
    "default": 50,
    "kind": "linear",
-   "a": 0.0,
-   "b": 100.0,
-   "description": "",
-   "confidence": "values"
+   "a": -50.0,
+   "b": 50.0,
+   "unit": "ct",
+   "own_texts": false,
+   "description": "Fine detune, ±50 cents."
   },
   {
    "index": 12,
    "id": "Op2 Level",
    "name": "Op2 Level",
-   "group": "",
+   "plain_name": "Operator 2 level",
+   "role": "osc.level",
+   "group": "Operator 2",
    "min": 0,
    "max": 127,
    "default": 80,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Linear output level: FM depth for a modulator, loudness for a carrier."
   },
   {
    "index": 13,
    "id": "Op2 Attack",
    "name": "Op2 Attack",
-   "group": "",
+   "plain_name": "Operator 2 attack",
+   "role": "env.attack",
+   "group": "Operator 2",
    "min": 0,
    "max": 127,
    "default": 4,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 4.0,
+   "exponent": 2.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Operator envelope attack, 0–4 s on a square-law curve."
   },
   {
    "index": 14,
    "id": "Op2 Decay",
    "name": "Op2 Decay",
-   "group": "",
+   "plain_name": "Operator 2 decay",
+   "role": "env.decay",
+   "group": "Operator 2",
    "min": 0,
    "max": 127,
    "default": 50,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 8.0,
+   "exponent": 2.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Operator envelope decay, 0–8 s on a square-law curve."
   },
   {
    "index": 15,
    "id": "Op2 Sustain",
    "name": "Op2 Sustain",
-   "group": "",
+   "plain_name": "Operator 2 sustain",
+   "role": "env.sustain",
+   "group": "Operator 2",
    "min": 0,
    "max": 127,
    "default": 100,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Operator envelope sustain level."
   },
   {
    "index": 16,
    "id": "Op2 Release",
    "name": "Op2 Release",
-   "group": "",
+   "plain_name": "Operator 2 release",
+   "role": "env.release",
+   "group": "Operator 2",
    "min": 0,
    "max": 127,
    "default": 40,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 8.0,
+   "exponent": 2.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Operator envelope release, 0–8 s on a square-law curve."
   },
   {
    "index": 17,
    "id": "Op3 Ratio",
    "name": "Op3 Ratio",
-   "group": "",
+   "plain_name": "Operator 3 frequency ratio",
+   "role": "osc.ratio",
+   "group": "Operator 3",
    "min": 0,
    "max": 127,
    "default": 15,
    "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "a": 0.125,
+   "b": 16.0,
+   "unit": "×",
+   "own_texts": false,
+   "description": "Multiple of the note's frequency, 0.125 to 16 in 0.125 steps (1.00× plays the note)."
   },
   {
    "index": 18,
    "id": "Op3 Detune",
    "name": "Op3 Detune",
-   "group": "",
+   "plain_name": "Operator 3 detune",
+   "role": "osc.detune",
+   "group": "Operator 3",
    "min": 0,
    "max": 100,
    "default": 50,
    "kind": "linear",
-   "a": 0.0,
-   "b": 100.0,
-   "description": "",
-   "confidence": "values"
+   "a": -50.0,
+   "b": 50.0,
+   "unit": "ct",
+   "own_texts": false,
+   "description": "Fine detune, ±50 cents."
   },
   {
    "index": 19,
    "id": "Op3 Level",
    "name": "Op3 Level",
-   "group": "",
+   "plain_name": "Operator 3 level",
+   "role": "osc.level",
+   "group": "Operator 3",
    "min": 0,
    "max": 127,
    "default": 70,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Linear output level: FM depth for a modulator, loudness for a carrier."
   },
   {
    "index": 20,
    "id": "Op3 Attack",
    "name": "Op3 Attack",
-   "group": "",
+   "plain_name": "Operator 3 attack",
+   "role": "env.attack",
+   "group": "Operator 3",
    "min": 0,
    "max": 127,
    "default": 4,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 4.0,
+   "exponent": 2.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Operator envelope attack, 0–4 s on a square-law curve."
   },
   {
    "index": 21,
    "id": "Op3 Decay",
    "name": "Op3 Decay",
-   "group": "",
+   "plain_name": "Operator 3 decay",
+   "role": "env.decay",
+   "group": "Operator 3",
    "min": 0,
    "max": 127,
    "default": 50,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 8.0,
+   "exponent": 2.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Operator envelope decay, 0–8 s on a square-law curve."
   },
   {
    "index": 22,
    "id": "Op3 Sustain",
    "name": "Op3 Sustain",
-   "group": "",
+   "plain_name": "Operator 3 sustain",
+   "role": "env.sustain",
+   "group": "Operator 3",
    "min": 0,
    "max": 127,
    "default": 100,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Operator envelope sustain level."
   },
   {
    "index": 23,
    "id": "Op3 Release",
    "name": "Op3 Release",
-   "group": "",
+   "plain_name": "Operator 3 release",
+   "role": "env.release",
+   "group": "Operator 3",
    "min": 0,
    "max": 127,
    "default": 40,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 8.0,
+   "exponent": 2.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Operator envelope release, 0–8 s on a square-law curve."
   },
   {
    "index": 24,
    "id": "Op4 Ratio",
    "name": "Op4 Ratio",
-   "group": "",
+   "plain_name": "Operator 4 frequency ratio",
+   "role": "osc.ratio",
+   "group": "Operator 4",
    "min": 0,
    "max": 127,
    "default": 7,
    "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "a": 0.125,
+   "b": 16.0,
+   "unit": "×",
+   "own_texts": false,
+   "description": "Multiple of the note's frequency, 0.125 to 16 in 0.125 steps (1.00× plays the note)."
   },
   {
    "index": 25,
    "id": "Op4 Detune",
    "name": "Op4 Detune",
-   "group": "",
+   "plain_name": "Operator 4 detune",
+   "role": "osc.detune",
+   "group": "Operator 4",
    "min": 0,
    "max": 100,
    "default": 50,
    "kind": "linear",
-   "a": 0.0,
-   "b": 100.0,
-   "description": "",
-   "confidence": "values"
+   "a": -50.0,
+   "b": 50.0,
+   "unit": "ct",
+   "own_texts": false,
+   "description": "Fine detune, ±50 cents."
   },
   {
    "index": 26,
    "id": "Op4 Level",
    "name": "Op4 Level",
-   "group": "",
+   "plain_name": "Operator 4 level",
+   "role": "osc.level",
+   "group": "Operator 4",
    "min": 0,
    "max": 127,
    "default": 127,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Linear output level: FM depth for a modulator, loudness for a carrier."
   },
   {
    "index": 27,
    "id": "Op4 Attack",
    "name": "Op4 Attack",
-   "group": "",
+   "plain_name": "Operator 4 attack",
+   "role": "env.attack",
+   "group": "Operator 4",
    "min": 0,
    "max": 127,
    "default": 4,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 4.0,
+   "exponent": 2.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Operator envelope attack, 0–4 s on a square-law curve."
   },
   {
    "index": 28,
    "id": "Op4 Decay",
    "name": "Op4 Decay",
-   "group": "",
+   "plain_name": "Operator 4 decay",
+   "role": "env.decay",
+   "group": "Operator 4",
    "min": 0,
    "max": 127,
    "default": 60,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 8.0,
+   "exponent": 2.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Operator envelope decay, 0–8 s on a square-law curve."
   },
   {
    "index": 29,
    "id": "Op4 Sustain",
    "name": "Op4 Sustain",
-   "group": "",
+   "plain_name": "Operator 4 sustain",
+   "role": "env.sustain",
+   "group": "Operator 4",
    "min": 0,
    "max": 127,
    "default": 110,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Operator envelope sustain level."
   },
   {
    "index": 30,
    "id": "Op4 Release",
    "name": "Op4 Release",
-   "group": "",
+   "plain_name": "Operator 4 release",
+   "role": "env.release",
+   "group": "Operator 4",
    "min": 0,
    "max": 127,
    "default": 50,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "",
-   "confidence": "values"
+   "b": 8.0,
+   "exponent": 2.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Operator envelope release, 0–8 s on a square-law curve."
   },
   {
    "index": 31,
    "id": "Op1 Feedback",
    "name": "Op1 Feedback",
-   "group": "",
+   "plain_name": "Operator 1 feedback",
+   "role": "osc.feedback",
+   "group": "Operator 1",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "Self-feedback on Op1. 0 = pure sine, high values approach a saw.",
-   "confidence": "values"
+   "description": "Operator 1 modulating itself: 0 a pure sine, high values toward a saw (square-law inside)."
   },
   {
    "index": 32,
    "id": "Compound Mod",
    "name": "Compound Mod",
-   "group": "",
+   "plain_name": "Chained modulation strength",
+   "role": "osc.level",
+   "group": "Global",
    "min": 0,
    "max": 127,
    "default": 32,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Compound modulator strength. 32 = tuneful (default), 127 = classic noisy.",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Scale on modulators that feed other modulators: 25% (the default) keeps chains tuneful, 100% is the classic noisy DX sound."
   },
   {
    "index": 33,
    "id": "Glide",
    "name": "Glide",
-   "group": "",
+   "plain_name": "Glide",
+   "role": "pitch.glide",
+   "group": "Global",
    "min": 0,
    "max": 127,
    "default": 0,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Portamento time. Voice must already be sounding for glide to engage (legato).",
-   "confidence": "values"
+   "b": 1.0,
+   "exponent": 2.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Portamento time between overlapping notes, up to 1 s (square-law)."
   },
   {
    "index": 34,
    "id": "LFO Rate",
    "name": "LFO Rate",
-   "group": "",
+   "plain_name": "LFO rate",
+   "role": "lfo.rate",
+   "group": "LFO",
    "min": 0,
    "max": 127,
    "default": 60,
@@ -547,14 +1186,16 @@
    "a": 0.05,
    "b": 30.0,
    "unit": "Hz",
-   "description": "LFO rate, log scale. ~0.05 Hz to ~30 Hz.",
-   "confidence": "description"
+   "own_texts": false,
+   "description": "Global LFO, 0.05–30 Hz exponential."
   },
   {
    "index": 35,
    "id": "LFO Shape",
    "name": "LFO Shape",
-   "group": "",
+   "plain_name": "LFO wave",
+   "role": "lfo.wave",
+   "group": "LFO",
    "min": 0,
    "max": 4,
    "default": 0,
@@ -566,92 +1207,111 @@
     "Saw",
     "Sample&Hold"
    ],
-   "description": "0=Sine, 1=Triangle, 2=Square, 3=Saw, 4=Sample&Hold.",
-   "confidence": "description"
+   "own_texts": false,
+   "description": "Sine, triangle, square, saw or sample and hold."
   },
   {
    "index": 36,
    "id": "LFO Pitch",
    "name": "LFO Pitch",
-   "group": "",
+   "plain_name": "Vibrato depth",
+   "role": "lfo.pitch",
+   "group": "LFO",
    "min": 0,
    "max": 127,
    "default": 0,
-   "kind": "linear",
+   "kind": "power",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Pitch LFO depth. Max ±1 semitone at 127.",
-   "confidence": "values"
+   "b": 1.0,
+   "exponent": 2.0,
+   "unit": "st",
+   "own_texts": false,
+   "description": "LFO to pitch, up to ±1 semitone (square-law)."
   },
   {
    "index": 37,
    "id": "LFO Mod",
    "name": "LFO Mod",
-   "group": "",
+   "plain_name": "Tremolo depth",
+   "role": "lfo.amp",
+   "group": "LFO",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Level LFO depth. Modulates carrier amplitude AND modulator depth (timbre + tremolo).",
-   "confidence": "values"
+   "b": 50.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "LFO to the voice level, up to ±50%: tremolo and timbre movement."
   },
   {
    "index": 38,
    "id": "Op1 VelSens",
    "name": "Op1 VelSens",
-   "group": "",
+   "plain_name": "Operator 1 velocity sensitivity",
+   "role": "velocity.amount",
+   "group": "Velocity",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Velocity sensitivity for Op1 level. High values brighten harder hits when Op1 is a modulator.",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "How much velocity scales this operator's level (100%: fully)."
   },
   {
    "index": 39,
    "id": "Op2 VelSens",
    "name": "Op2 VelSens",
-   "group": "",
+   "plain_name": "Operator 2 velocity sensitivity",
+   "role": "velocity.amount",
+   "group": "Velocity",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Velocity sensitivity for Op2 level.",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "How much velocity scales this operator's level (100%: fully)."
   },
   {
    "index": 40,
    "id": "Op3 VelSens",
    "name": "Op3 VelSens",
-   "group": "",
+   "plain_name": "Operator 3 velocity sensitivity",
+   "role": "velocity.amount",
+   "group": "Velocity",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Velocity sensitivity for Op3 level.",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "How much velocity scales this operator's level (100%: fully)."
   },
   {
    "index": 41,
    "id": "Op4 VelSens",
    "name": "Op4 VelSens",
-   "group": "",
+   "plain_name": "Operator 4 velocity sensitivity",
+   "role": "velocity.amount",
+   "group": "Velocity",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Velocity sensitivity for Op4 level.",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "How much velocity scales this operator's level (100%: fully)."
   }
  ],
  "track_parameters": [
@@ -659,15 +1319,16 @@
    "index": 0,
    "id": "Velocity",
    "name": "Velocity",
-   "group": "",
+   "plain_name": "Velocity",
+   "role": "velocity",
+   "group": "Track",
    "min": 0,
    "max": 127,
    "default": 127,
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "Per-track velocity 0–127. Sticky: persists for subsequent notes.",
-   "confidence": "values"
+   "description": "Note velocity 0–127, sticky: it applies to this track's later notes too (127 = full)."
   }
  ]
 }

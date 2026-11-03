@@ -2,10 +2,20 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Pedal Comp",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
  "type": "dynamics",
- "summary": "Dynamics (profiled draft): traits: dynamics; tail 0.0 s; latency 0 samples; gain -0.3 dB at the defaults.",
+ "summary": "Feed-forward compressor with soft knee, lookahead, peak or RMS detection, auto makeup and a wet/dry mix (parallel compression). For taming peaks and gluing tracks or buses.",
+ "quirks": [
+  "Its own value texts for Attack, Release, Lookahead and Makeup Gain are wrong (ReBuzz's ms and dB descriptors scale the raw value, which the machine uses directly as ms and dB): the manifest gives the real values, from its source.",
+  "Lookahead delays the output by the lookahead time.",
+  "Auto Makeup replaces Makeup Gain with the gain lost at 0 dBFS, −threshold × (1 − 1/ratio), up to +24 dB."
+ ],
+ "evidence": [
+  "ExternalMachines/source/thepedal/pedal-comp/PedalComp.cs — parameters and UpdateCoefficients (threshold, attack and release in ms, makeup in dB)",
+  "ExternalMachines/source/thepedal/pedal-comp/README.md",
+  "profile (tools/machine-profiler.py, linux 2026-11-03) — dynamics, −0.3 dB at the defaults, no latency"
+ ],
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -69,7 +79,9 @@
    "index": 0,
    "id": "Threshold",
    "name": "Threshold",
-   "group": "",
+   "plain_name": "Threshold",
+   "role": "dyn.threshold",
+   "group": "Compressor",
    "min": 0,
    "max": 60,
    "default": 18,
@@ -77,229 +89,148 @@
    "a": 0.0,
    "b": -60.0,
    "unit": "dB",
-   "description": "Compression threshold.  0 = 0 dBFS (no effect), 60 = −60 dBFS (maximum).",
-   "confidence": "description"
+   "own_texts": false,
+   "description": "Level where compression starts, 0 to −60 dBFS."
   },
   {
    "index": 1,
    "id": "Ratio",
    "name": "Ratio",
-   "group": "",
+   "plain_name": "Ratio",
+   "role": "dyn.ratio",
+   "group": "Compressor",
    "min": 1,
    "max": 30,
    "default": 4,
    "kind": "linear",
    "a": 1.0,
    "b": 30.0,
-   "description": "Compression ratio N:1.  1 = no compression, 30 = near-limiting.",
-   "confidence": "values"
+   "unit": ":1",
+   "own_texts": false,
+   "description": "Compression ratio, 1:1 (none) to 30:1 (near limiting)."
   },
   {
    "index": 2,
    "id": "Knee",
    "name": "Knee",
-   "group": "",
+   "plain_name": "Knee width",
+   "role": "dyn.knee",
+   "group": "Compressor",
    "min": 0,
    "max": 12,
    "default": 0,
-   "kind": "db",
+   "kind": "linear",
    "a": 0.0,
    "b": 12.0,
    "unit": "dB",
-   "description": "Soft-knee width in dB.  0 = hard knee, 12 = widest soft knee.",
-   "confidence": "description"
+   "own_texts": false,
+   "description": "Soft-knee width, 0 (hard) to 12 dB."
   },
   {
    "index": 3,
    "id": "Attack",
    "name": "Attack",
-   "group": "",
+   "plain_name": "Attack",
+   "role": "dyn.attack",
+   "group": "Compressor",
    "min": 1,
    "max": 200,
    "default": 10,
    "kind": "linear",
-   "a": 3e-06,
-   "b": 0.001002,
+   "a": 0.001,
+   "b": 0.2,
    "unit": "s",
-   "description": "Attack time in milliseconds.",
-   "confidence": "values"
+   "own_texts": false,
+   "description": "Attack time, 1–200 ms."
   },
   {
    "index": 4,
    "id": "Release",
    "name": "Release",
-   "group": "",
+   "plain_name": "Release",
+   "role": "dyn.release",
+   "group": "Compressor",
    "min": 10,
    "max": 2000,
    "default": 100,
    "kind": "linear",
-   "a": 2e-06,
-   "b": 0.001002,
+   "a": 0.01,
+   "b": 2.0,
    "unit": "s",
-   "description": "Release time in milliseconds.",
-   "confidence": "values"
+   "own_texts": false,
+   "description": "Release time, 10 ms – 2 s."
   },
   {
    "index": 5,
    "id": "Makeup Gain",
    "name": "Makeup Gain",
-   "group": "",
+   "plain_name": "Makeup gain",
+   "role": "dyn.makeup",
+   "group": "Output",
    "min": 0,
    "max": 24,
    "default": 0,
-   "kind": "table",
+   "kind": "linear",
+   "a": 0.0,
+   "b": 24.0,
    "unit": "dB",
-   "points": [
-    [
-     0,
-     "-inf"
-    ],
-    [
-     1,
-     -27.6
-    ],
-    [
-     2,
-     -21.6
-    ],
-    [
-     3,
-     -18.1
-    ],
-    [
-     4,
-     -15.6
-    ],
-    [
-     5,
-     -13.6
-    ],
-    [
-     6,
-     -12.0
-    ],
-    [
-     7,
-     -10.7
-    ],
-    [
-     8,
-     -9.5
-    ],
-    [
-     9,
-     -8.5
-    ],
-    [
-     10,
-     -7.6
-    ],
-    [
-     11,
-     -6.8
-    ],
-    [
-     12,
-     -6.0
-    ],
-    [
-     13,
-     -5.3
-    ],
-    [
-     14,
-     -4.7
-    ],
-    [
-     15,
-     -4.1
-    ],
-    [
-     16,
-     -3.5
-    ],
-    [
-     17,
-     -3.0
-    ],
-    [
-     18,
-     -2.5
-    ],
-    [
-     19,
-     -2.0
-    ],
-    [
-     20,
-     -1.6
-    ],
-    [
-     21,
-     -1.2
-    ],
-    [
-     22,
-     -0.8
-    ],
-    [
-     23,
-     -0.4
-    ],
-    [
-     24,
-     0.0
-    ]
-   ],
-   "description": "Output makeup gain in dB. Ignored when Auto Makeup is on.",
-   "confidence": "values"
+   "own_texts": false,
+   "description": "Gain after compression, 0 to +24 dB (ignored with Auto Makeup on)."
   },
   {
    "index": 6,
    "id": "Auto Makeup",
    "name": "Auto Makeup",
-   "group": "",
+   "plain_name": "Auto makeup",
+   "role": "dyn.auto_makeup",
+   "group": "Output",
    "min": 0,
    "max": 1,
    "default": 0,
    "kind": "switch",
-   "description": "Compute makeup gain automatically from threshold and ratio. Overrides Makeup Gain.",
-   "confidence": "values"
+   "description": "Sets the makeup gain from threshold and ratio."
   },
   {
    "index": 7,
    "id": "Wet/Dry",
    "name": "Wet/Dry",
-   "group": "",
+   "plain_name": "Mix",
+   "role": "mix.wet",
+   "group": "Output",
    "min": 0,
    "max": 100,
    "default": 100,
    "kind": "linear",
    "a": 0.0,
    "b": 100.0,
-   "description": "Mix between compressed (wet) and original (dry) signal.  100 = fully wet.",
-   "confidence": "values"
+   "unit": "%",
+   "own_texts": false,
+   "description": "Compressed signal against the original: 100% fully compressed, lower for parallel compression."
   },
   {
    "index": 8,
    "id": "Lookahead",
    "name": "Lookahead",
-   "group": "",
+   "plain_name": "Lookahead",
+   "role": "dyn.lookahead",
+   "group": "Compressor",
    "min": 0,
    "max": 20,
    "default": 0,
    "kind": "linear",
-   "a": 4e-06,
-   "b": 0.000996,
+   "a": 0.0,
+   "b": 0.02,
    "unit": "s",
-   "description": "Lookahead delay in milliseconds.  0 = off.  Adds equivalent latency.",
-   "confidence": "values"
+   "own_texts": false,
+   "description": "0–20 ms; adds as much delay."
   },
   {
    "index": 9,
    "id": "Detection",
    "name": "Detection",
-   "group": "",
+   "plain_name": "Detection",
+   "role": "dyn.detection",
+   "group": "Compressor",
    "min": 0,
    "max": 1,
    "default": 0,
@@ -308,8 +239,7 @@
     "Peak",
     "RMS"
    ],
-   "description": "Envelope detection mode. Peak = fast transient response, RMS = smoother on full mixes.",
-   "confidence": "values"
+   "description": "Peak (fast, for transients) or RMS (smoother, for full mixes)."
   }
  ],
  "track_parameters": []

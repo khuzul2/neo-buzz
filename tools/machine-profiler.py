@@ -1287,7 +1287,18 @@ def merge_into_repo(root, summary, out_dir):
         src = os.path.join(out_dir, "manifests", subfolder(e), e["gear"] + ".machine.json")
         if os.path.exists(src):
             with open(src, encoding="utf-8") as f:
-                write_json(os.path.join(folder, subfolder(e), e["gear"] + ".machine.json"), checked_draft(json.load(f)))
+                draft = checked_draft(json.load(f))
+            dst = os.path.join(folder, subfolder(e), e["gear"] + ".machine.json")
+            # U3 (mcp-server.md §12.9): a curated manifest keeps its curation and takes the new measurements.
+            existing = None
+            if os.path.exists(dst):
+                with open(dst, encoding="utf-8") as f:
+                    existing = json.load(f)
+            if existing and existing.get("status") == "curated":
+                draft, warnings = mi.recurate(existing, draft)
+                for w in warnings:
+                    print(f"  curated {e['gear']}: {w}", flush=True)
+            write_json(dst, draft)
     write_report(root, merged)
 
 

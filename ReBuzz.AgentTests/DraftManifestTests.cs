@@ -110,6 +110,52 @@ namespace ReBuzz.AgentTests
             Assert.That(V.Resolve(p, JsonValue.Create("64"), 0), Is.EqualTo(64));
         }
 
+        const string Curated = """
+        {
+          "format": "rebuzz-machine-manifest/1",
+          "gear": "Test Delay",
+          "kind": "effect",
+          "status": "curated",
+          "source": "curated by hand",
+          "type": "delay",
+          "summary": "A delay for echoes.",
+          "quirks": ["Each track is its own tap.", ""],
+          "evidence": ["ExternalMachines/source/x.cpp — its parameters"],
+          "health": { "status": "warn", "hot": true, "problems": ["hot with Feedback at its maximum"] },
+          "parameters": [
+            { "index": 0, "name": "Dry thru", "plain_name": "Dry signal through", "role": "mix.dry", "min": 0, "max": 1, "default": 1, "kind": "switch" }
+          ],
+          "track_parameters": [
+            { "index": 2, "name": " - Level", "plain_name": "Echo feedback", "role": "delay.feedback", "group": "Track", "min": 0, "max": 128, "default": 96,
+              "kind": "linear", "a": -100, "b": 100, "unit": "%", "safe_range": { "min": 1, "max": 128, "reason": "never decays at its minimum" } },
+            { "index": 3, "name": " - Level", "plain_name": "Echo level", "role": "mix.wet", "min": 0, "max": 128, "default": 48,
+              "kind": "linear", "a": 0.001, "b": 0.2, "unit": "s", "own_texts": false }
+          ]
+        }
+        """;
+
+        [Test]
+        public void CuratedManifestsCarryPlainNamesRolesQuirksAndEvidence()
+        {
+            var m = MachineManifest.Parse(Curated);
+            Assert.That(m.IsCurated, Is.True);
+            Assert.That(m.IsDraft, Is.False);
+            Assert.That(m.Quality, Is.EqualTo("curated"));
+            Assert.That(m.Quirks, Is.EqualTo(new[] { "Each track is its own tap." }), "empty lines dropped");
+            Assert.That(m.Evidence, Has.Count.EqualTo(1));
+            var dry = m.Find("Dry thru")!;
+            Assert.That((dry.PlainName, dry.Role, dry.OwnTexts, dry.Approximate), Is.EqualTo(("Dry signal through", "mix.dry", true, false)));
+            Assert.That(ManifestRoles.IsKnown(dry.Role), Is.True);
+            Assert.That(ManifestRoles.IsKnown("filter.cutof"), Is.False);
+            // Two parameters with one name (FSM Infector's " - Decay"): each machine parameter finds its own by index.
+            Assert.That(m.FindAt(true, 2, " - Level")!.PlainName, Is.EqualTo("Echo feedback"));
+            Assert.That(m.FindAt(true, 3, " - Level")!.PlainName, Is.EqualTo("Echo level"));
+            Assert.That(m.FindAt(true, 3, " - level")!.OwnTexts, Is.False, "names match case-insensitively too");
+            Assert.That(m.FindAt(false, 0, "Dry thru")!.PlainName, Is.EqualTo("Dry signal through"), "a single match needs no index");
+            Assert.That(m.FindAt(false, 0, "Nothing"), Is.Null);
+            Assert.That(m.FindAt(true, 2, " - Level")!.SafeRange!.Min, Is.EqualTo(1), "curated manifests carry safe ranges too");
+        }
+
         [Test]
         public void EveryCommittedDraftParses()
         {
@@ -124,9 +170,9 @@ namespace ReBuzz.AgentTests
                 string sub = Path.GetFileName(Path.GetDirectoryName(file))!;
                 Assert.That(Path.GetFileName(file), Is.EqualTo(m.Gear + MachineManifest.Suffix));
                 Assert.That(sub, Is.AnyOf("Generators", "Effects"), file);
-                Assert.That(m.IsDraft, Is.True, m.Gear + ": drafts only here; generated manifests live with their machines");
+                Assert.That(m.IsDraft || m.IsCurated, Is.True, m.Gear + ": drafts and curated manifests here (U3); generated manifests live with their machines");
                 Assert.That(m.Kind, Is.AnyOf("generator", "effect"));
-                Assert.That(m.Summary, Does.Contain("profiled draft"), m.Gear);
+                if (m.IsDraft) Assert.That(m.Summary, Does.Contain("profiled draft"), m.Gear);
                 Assert.That(m.Health, Is.Not.Null, m.Gear);
                 Assert.That(m.Health!.Status, Is.AnyOf("ok", "warn", "unhealthy", "needs_window"), m.Gear);
                 if (m.Health.Diverging) Assert.That(m.Health.Unhealthy, Is.True, $"{m.Gear}: diverging is unhealthy");
@@ -140,7 +186,7 @@ namespace ReBuzz.AgentTests
                         Assert.That(s.Reason, Is.Not.Empty, $"{m.Gear} {p.Name}: why");
                         Assert.That(m.Health.Status, Is.AnyOf("unhealthy", "warn"), $"{m.Gear}: a safe range comes from an end that diverges or never decays");
                     }
-                    Assert.That(p.Confidence, Is.AnyOf("values", "description"), $"{m.Gear} {p.Name}");
+                    if (m.IsDraft) Assert.That(p.Confidence, Is.AnyOf("values", "description"), $"{m.Gear} {p.Name}");
                     double v = p.Mapping.Value(p.Default, p.Min, p.Max);
                     Assert.That(double.IsNaN(v), Is.False, $"{m.Gear} {p.Name}: its default maps to a value");
                 }

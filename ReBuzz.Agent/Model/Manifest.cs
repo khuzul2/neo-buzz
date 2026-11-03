@@ -9,6 +9,10 @@
 // U2 (docs/specs/machine-safety.md §3.1, §3.4): health says diverging, hot or needs a window, and a
 // parameter can carry a safe_range, the raw range the profiler found it doesn't diverge in, which
 // param_set keeps agents inside unless they pass allow_unsafe.
+// U3 (§12.2, §12.9): a curated manifest ("status": "curated") is a draft a person has checked against
+// the machine's source, documentation and profile: a summary that says what it's for, quirks, the
+// evidence it rests on, and per parameter a plain-English name, a role (ManifestRoles) and a mapping
+// that is exact (no unit read from a description alone). It lives where the draft did and replaces it.
 
 using System;
 using System.Collections.Generic;
@@ -38,6 +42,69 @@ namespace ReBuzz.Agent.Model
         public bool Approximate => Confidence == "description";
         /// <summary>Where agents may set it (machine-safety.md §3.4); null: its whole range.</summary>
         public SafeRange SafeRange { get; init; }
+        /// <summary>Curated: what it is in plain English ("Filter cutoff" for "VCF Freq"); param_set takes it too. Empty: none.</summary>
+        public string PlainName { get; init; } = "";
+        /// <summary>Curated: what it does, from <see cref="ManifestRoles.Known"/> ("filter.cutoff", "mix.wet"); empty: none.</summary>
+        public string Role { get; init; } = "";
+        /// <summary>
+        /// False when the machine's own value texts don't say what it does (Pedal Comp's Attack reads "0 ms" for
+        /// 10 ms: a descriptor that scales the raw value): its values are read and written through the mapping only.
+        /// </summary>
+        public bool OwnTexts { get; init; } = true;
+    }
+
+    /// <summary>
+    /// The roles a curated manifest gives its parameters (mcp-server.md §12.2, §12.9): what a parameter does,
+    /// the same word on every machine, so a cutoff maps to a cutoff and a wet level to a wet level
+    /// (machine_replace, U5). Dotted: area, then what.
+    /// </summary>
+    public static class ManifestRoles
+    {
+        public static readonly IReadOnlyList<string> Known = new[]
+        {
+            // Level, mix and stereo
+            "level", "gain.input", "mix.wet", "mix.dry", "pan", "width", "bypass", "solo",
+            // Pitch
+            "pitch.octave", "pitch.coarse", "pitch.fine", "pitch.glide", "pitch.start", "pitch.end", "pitch.decay",
+            // Oscillators and FM operators
+            "osc.wave", "osc.level", "osc.mix", "osc.pulse_width", "osc.pwm", "osc.pwm_source", "osc.pwm_rate", "osc.sub", "osc.sub_wave",
+            "osc.noise", "osc.detune", "osc.mode", "osc.feedback", "osc.ratio", "osc.algorithm", "osc.wave_zone", "osc.zone_split",
+            // Filter
+            "filter.type", "filter.slope", "filter.cutoff", "filter.resonance", "filter.bandwidth", "filter.env_amount", "filter.env_polarity",
+            "filter.keytrack", "filter.velocity", "filter.drive", "filter.highpass", "filter.inertia",
+            "filter.env.attack", "filter.env.decay", "filter.env.sustain", "filter.env.release", "filter.env.shape",
+            // Amplitude envelope and voices
+            "env.attack", "env.decay", "env.sustain", "env.release", "env.mode", "env.slope", "velocity", "velocity.amount", "accent",
+            "note.length", "voices",
+            // LFO
+            "lfo.rate", "lfo.wave", "lfo.delay", "lfo.fade", "lfo.depth", "lfo.pitch", "lfo.filter", "lfo.amp", "lfo.pwm", "lfo.resonance",
+            "lfo.env_amount", "lfo.sync", "lfo.division", "lfo.phase",
+            // Delay
+            "delay.time", "delay.time_left", "delay.time_right", "delay.unit", "delay.feedback", "delay.pingpong", "delay.tap", "delay.tone",
+            // Reverb
+            "reverb.decay", "reverb.size", "reverb.predelay", "reverb.damping", "reverb.lowcut", "reverb.early", "reverb.feedback",
+            "reverb.mod_rate", "reverb.mod_depth",
+            // Modulation effects
+            "mod.rate", "mod.depth", "mod.delay", "mod.spread", "mod.tone", "mod.feedback",
+            // Dynamics
+            "dyn.threshold", "dyn.ratio", "dyn.knee", "dyn.attack", "dyn.release", "dyn.makeup", "dyn.auto_makeup", "dyn.lookahead",
+            "dyn.detection", "dyn.crossover",
+            // Distortion and colour
+            "drive", "drive.type", "drive.threshold", "drive.clamp", "drive.tone", "drive.bass", "drive.treble", "exciter.amount",
+            // EQ (band, then what)
+            "eq.low.gain", "eq.low.freq", "eq.lowmid.gain", "eq.lowmid.freq", "eq.lowmid.q", "eq.mid.gain", "eq.highmid.gain",
+            "eq.highmid.freq", "eq.highmid.q", "eq.high.gain", "eq.high.freq",
+            // Drums
+            "drum.level", "drum.tune", "drum.attack", "drum.decay", "drum.tone", "drum.snap", "drum.click", "drum.punch", "drum.buzz",
+            "drum.decay_shape", "drum.release",
+            // Groove and multi-effects
+            "groove.shuffle", "groove.shuffle_step", "fx.type", "fx.amount", "fx.character", "fx.mode", "fx.env_depth", "fx.lfo_depth", "fx.chorus", "fx.limiter",
+            "fx.auto_gain", "fx.morph", "fx.store", "fx.key", "fx.scale", "env.follower_release",
+        };
+
+        static readonly HashSet<string> Set = new(Known, StringComparer.Ordinal);
+
+        public static bool IsKnown(string role) => role != null && Set.Contains(role);
     }
 
     /// <summary>
@@ -160,12 +227,29 @@ namespace ReBuzz.Agent.Model
         public ManifestNotes Notes { get; init; }
         /// <summary>The profiler's health verdict; null when not profiled.</summary>
         public ManifestHealth Health { get; init; }
+        /// <summary>Curated: what to know before using it ("track 0 only", "needs a wave", "stereo in, mono out").</summary>
+        public IReadOnlyList<string> Quirks { get; init; } = Array.Empty<string>();
+        /// <summary>Curated: what its claims rest on (its source files, documentation, the profile, its value texts).</summary>
+        public IReadOnlyList<string> Evidence { get; init; } = Array.Empty<string>();
+        public bool IsCurated => Status == "curated";
 
         public ManifestParameter Find(string name) =>
             Parameters.FirstOrDefault(p => p.Name == name) ?? Parameters.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
 
         public ManifestParameter FindTrack(string name) =>
             TrackParameters.FirstOrDefault(p => p.Name == name) ?? TrackParameters.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+
+        /// <summary>
+        /// The entry for the machine's parameter at <paramref name="index"/> in its group, named <paramref name="name"/>:
+        /// by name, and among parameters that share a name (FSM Infector's " - Decay"), the one at that index.
+        /// </summary>
+        public ManifestParameter FindAt(bool track, int index, string name)
+        {
+            var list = track ? TrackParameters : Parameters;
+            var named = list.Where(p => p.Name == name).ToList();
+            if (named.Count == 0) named = list.Where(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
+            return named.Count <= 1 ? named.FirstOrDefault() : named.FirstOrDefault(p => p.Index == index);
+        }
 
         /// <summary>"generated", "curated" or "draft": how far to trust it.</summary>
         public string Quality => IsDraft ? "draft" : Status.Length > 0 ? Status : Source.StartsWith("generated", StringComparison.OrdinalIgnoreCase) ? "generated" : "curated";
@@ -228,6 +312,8 @@ namespace ReBuzz.Agent.Model
                 Type = (string)root["type"] ?? "",
                 Notes = notes,
                 Health = health,
+                Quirks = Strings(root["quirks"]),
+                Evidence = Strings(root["evidence"]),
                 Imports = (root["imports"] as JsonArray)?.OfType<JsonObject>().Select(i => new ManifestImport
                 {
                     Kind = (string)i["kind"] ?? "",
@@ -236,6 +322,9 @@ namespace ReBuzz.Agent.Model
                 }).Where(i => i.Kind.Length > 0).ToList() ?? new List<ManifestImport>(),
             };
         }
+
+        static IReadOnlyList<string> Strings(JsonNode node) =>
+            (node as JsonArray)?.Select(x => (string)x ?? "").Where(x => x.Length > 0).ToList() ?? (IReadOnlyList<string>)Array.Empty<string>();
 
         /// <summary>A table point's value: a number, or "-inf"/"inf" (JSON has no infinities).</summary>
         static double PointValue(JsonNode v) =>
@@ -296,6 +385,9 @@ namespace ReBuzz.Agent.Model
                 Description = (string)p["description"] ?? "",
                 Confidence = (string)p["confidence"] ?? "",
                 SafeRange = SafeRange.Parse(p["safe_range"] as JsonObject, min, max),
+                PlainName = (string)p["plain_name"] ?? "",
+                Role = (string)p["role"] ?? "",
+                OwnTexts = (bool?)p["own_texts"] ?? true,
                 Mapping = new ParamMapping
                 {
                     Kind = mappingKind,

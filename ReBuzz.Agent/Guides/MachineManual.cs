@@ -93,19 +93,55 @@ namespace ReBuzz.Agent.Guides
             if (manifest.Summary.Length > 0) sb.Append(manifest.Summary).Append("\n\n");
             var facts = new List<string>();
             if (manifest.Kind.Length > 0) facts.Add(manifest.Kind == "generator" ? "Generator (makes sound)" : manifest.Kind == "effect" ? "Effect (processes its input)" : manifest.Kind);
+            int count = manifest.Parameters.Count + manifest.TrackParameters.Count;
             facts.Add(manifest.IsDraft
-                ? $"{manifest.Parameters.Count} parameters in units from a profiled draft manifest (tools/machine-profiler.py, not curated: check by ear)"
-                : $"{manifest.Parameters.Count} parameters in exact units");
-            if (manifest.Tracks > 0) facts.Add($"{manifest.Tracks} tracks: one note each (Note and Velocity per track), played from patterns as MIDI");
+                ? $"{count} parameters in units from a profiled draft manifest (tools/machine-profiler.py, not curated: check by ear)"
+                : manifest.IsCurated
+                    ? $"{count} parameters in exact units from a curated manifest, with plain names and roles"
+                    : $"{manifest.Parameters.Count} parameters in exact units");
+            bool profiled = manifest.IsDraft || manifest.IsCurated;
+            if (manifest.Tracks > 0)
+                facts.Add(!profiled ? $"{manifest.Tracks} tracks: one note each (Note and Velocity per track), played from patterns as MIDI"
+                    : manifest.TrackParameters.Count > 0 ? $"up to {manifest.Tracks} tracks, each with its own track parameters" : $"up to {manifest.Tracks} tracks");
             facts.Add(presets.Count == 1 ? "1 preset" : $"{presets.Count} presets");
             sb.Append(string.Join(" · ", facts)).Append(".\n\n");
             sb.Append($"Read the live values with `machine_describe(machine=…)`; set them with `param_set`. Values below are what `param_set` takes.\n\n");
+
+            // U3: what to know before using it, and how it takes notes (drafts and curated manifests).
+            if (manifest.Quirks.Count > 0)
+            {
+                sb.Append("## Quirks\n\n");
+                foreach (var q in manifest.Quirks) sb.Append("- ").Append(q).Append('\n');
+                sb.Append('\n');
+            }
+            if (profiled && manifest.Notes != null) AppendNotes(sb, manifest.Notes);
 
             if (!string.IsNullOrWhiteSpace(curated))
                 sb.Append(curated.Trim()).Append("\n\n");
 
             sb.Append("## Parameters\n\n");
-            AppendParameters(sb, manifest);
+            if (manifest.Parameters.Count > 0) AppendParameters(sb, manifest);
+            else if (manifest.TrackParameters.Count == 0) sb.Append("None the tools can set.\n\n");
+            if (manifest.TrackParameters.Count > 0)
+            {
+                sb.Append("### Track parameters\n\n");
+                sb.Append("One value per track: `param_set` takes `track` (from 0), as `{\"param\": …, \"track\": 0, \"value\": …}`.\n\n");
+                AppendTable(sb, manifest.TrackParameters);
+            }
+
+            // What the profiler found (drafts and curated manifests): hot settings and other warnings.
+            if (profiled && manifest.Health is { Problems.Count: > 0 } health)
+            {
+                sb.Append("## Health\n\n");
+                sb.Append(health.Status switch
+                {
+                    "unhealthy" => "Unhealthy: ",
+                    "needs_window" => "Needs a window: ",
+                    _ => "Warnings: ",
+                }).Append("what the profiler measured (docs/machine-health.md). The master's safety limiter keeps hot output off the speakers; renders measure it as it is.\n\n");
+                foreach (var p in health.Problems) sb.Append("- ").Append(p).Append('\n');
+                sb.Append('\n');
+            }
 
             // docs/specs/machine-safety.md §3.4: where the profiler found it diverging.
             var safe = manifest.Parameters.Concat(manifest.TrackParameters).Where(p => p.SafeRange != null).ToList();
@@ -128,7 +164,37 @@ namespace ReBuzz.Agent.Guides
                 foreach (var p in presets) sb.Append("- ").Append(p).Append('\n');
                 sb.Append($"\nLoad one with `preset_load(machine=…, preset=\"{presets[0]}\")`, then adjust with `param_set`. `preset_list(machine=…)` also shows presets saved since.\n");
             }
+            if (manifest.Evidence.Count > 0)
+            {
+                sb.Append("\n## Sources\n\n");
+                sb.Append("What this manual's names, units and quirks rest on:\n\n");
+                foreach (var e in manifest.Evidence) sb.Append("- ").Append(e).Append('\n');
+            }
+            else if (manifest.IsDraft)
+                sb.Append("\nThis manual comes from a profiled draft: names are the machine's own, units fitted to its value texts. `machine_describe(machine=…, value_table=true)` shows those texts.\n");
             return sb.ToString();
+        }
+
+        /// <summary>How a profiled or curated generator takes notes and which pitch it plays.</summary>
+        static void AppendNotes(StringBuilder sb, ManifestNotes notes)
+        {
+            sb.Append("## Notes\n\n");
+            sb.Append(notes.Input switch
+            {
+                "tracks" => "- Takes notes in its Note track parameter, one voice per track: `notes_write` puts each note on a free track (adding tracks when a chord needs them). It ignores MIDI notes, so `midi_play` doesn't reach it.\n",
+                "midi" => "- Takes MIDI notes: `notes_write` writes them into the pattern's MIDI column.\n",
+                "none" => "- Doesn't play notes (no Note parameter): it sounds from its own parameters or triggers.\n",
+                _ => "",
+            });
+            if (notes.Input != "none")
+            {
+                if (!notes.Pitched) sb.Append("- No steady pitch was heard from it, so no pitch offset is applied.\n");
+                else if (notes.PitchOffset == 0) sb.Append("- Plays the written pitch: A4 is 440 Hz.\n");
+                else sb.Append($"- Plays {Math.Abs(notes.PitchOffset)} semitones {(notes.PitchOffset > 0 ? "low" : "high")}: `notes_write` adds {notes.PitchOffset:+0;-0} semitones on the way in and `notes_read` takes them off, so the written pitch plays.\n");
+                if (notes.Polyphony == 1) sb.Append("- One voice heard at once: a chord plays as one note.\n");
+                else if (notes.Polyphony > 1) sb.Append($"- {notes.Polyphony} voices heard at once.\n");
+            }
+            sb.Append('\n');
         }
 
         // ---- Parameters ------------------------------------------------------------------------
@@ -226,8 +292,20 @@ namespace ReBuzz.Agent.Guides
             sb.Append("| Parameter | Range | Default | Meaning |\n|---|---|---|---|\n");
             foreach (var p in parameters)
                 sb.Append("| ").Append(Cell(p.Name)).Append(" | ").Append(Cell(Range(p))).Append(" | ").Append(Cell(Format(p, p.Default)))
-                  .Append(" | ").Append(Cell(p.Description)).Append(" |\n");
+                  .Append(" | ").Append(Cell(Meaning(p))).Append(" |\n");
             sb.Append('\n');
+        }
+
+        /// <summary>The meaning column: a curated plain name and role first, then the description; drafts mark approximate units.</summary>
+        static string Meaning(ManifestParameter p)
+        {
+            string head = p.PlainName.Length > 0 ? "**" + p.PlainName + "**" + (p.Role.Length > 0 ? $" (`{p.Role}`)" : "")
+                        : p.Role.Length > 0 ? $"(`{p.Role}`)" : "";
+            string description = p.Description.Trim();
+            if (description == p.Name) description = "";
+            string text = head + (head.Length > 0 && description.Length > 0 ? ": " : "") + description;
+            if (p.Approximate) text += (text.Length > 0 ? " " : "") + "(units read from its description: approximate)";
+            return text;
         }
 
         static string Cell(string s) => (s ?? "").Replace("|", "\\|").Replace("\n", " ");
@@ -237,7 +315,9 @@ namespace ReBuzz.Agent.Guides
         {
             var m = p.Mapping;
             if (m.Kind is MappingKind.Enum or MappingKind.Switch)
-                return string.Join(" · ", Enumerable.Range(p.Min, p.Max - p.Min + 1).Select(r => Format(p, r)));
+                return p.Max - p.Min + 1 > 16
+                    ? $"{Format(p, p.Min)} · {Format(p, p.Min + 1)} … {Format(p, p.Max)} ({p.Max - p.Min + 1} choices)"
+                    : string.Join(" · ", Enumerable.Range(p.Min, p.Max - p.Min + 1).Select(r => Format(p, r)));
             return $"{Format(p, p.Min)} … {Format(p, p.Max)}";
         }
 
@@ -281,6 +361,7 @@ namespace ReBuzz.Agent.Guides
 
         static string WithUnit(double v, string unit)
         {
+            if (double.IsInfinity(v)) return (v < 0 ? "-inf" : "inf") + (unit.Length > 0 ? " " + unit : "");
             switch (unit)
             {
                 case "s": return Seconds(v);
@@ -288,6 +369,7 @@ namespace ReBuzz.Agent.Guides
                 case "dB": return Signed(v, "0.0") + " dB";
                 case "%": return Number(v, 1) + "%";
                 case "ct": return Signed(v, "0.#") + " ct";
+                case ":1": return Number(v, 1) + ":1";
                 case "×": return v.ToString("0.00", C) + "×";
                 case "": return Number(v, 2);
                 default: return Number(v, 2) + " " + unit;
@@ -313,8 +395,9 @@ namespace ReBuzz.Agent.Guides
         {
             if (hz >= 1000) return Number(hz / 1000, 2) + " kHz";
             if (hz >= 100) return Number(hz, 0) + " Hz";
-            if (hz >= 1) return Number(hz, 1) + " Hz";
-            return Number(hz, 2) + " Hz";
+            if (hz >= 10) return Number(hz, 1) + " Hz";
+            if (hz >= 1) return Number(hz, 2) + " Hz";
+            return Number(hz, 3) + " Hz";
         }
 
         /// <summary>One example per kind of value this machine has, in param_set's change form.</summary>
@@ -322,13 +405,15 @@ namespace ReBuzz.Agent.Guides
         {
             var examples = new List<string>();
             var seen = new HashSet<string>();
-            foreach (var p in manifest.Parameters)
+            // Global parameters first, then track parameters (with their track); none outside a safe range.
+            foreach (var (p, track) in manifest.Parameters.Select(p => (p, false)).Concat(manifest.TrackParameters.Select(p => (p, true))))
             {
-                string kind = p.Mapping.Kind is MappingKind.Linear or MappingKind.Exp or MappingKind.Power or MappingKind.Int
+                string kind = p.Mapping.Kind is MappingKind.Linear or MappingKind.Exp or MappingKind.Power or MappingKind.Int or MappingKind.Table
                     ? p.Mapping.Kind + p.Mapping.Unit : p.Mapping.Kind.ToString();
                 if (!seen.Add(kind)) continue;
                 int raw = p.Mapping.Kind is MappingKind.Enum or MappingKind.Switch ? p.Max : p.Min + (int)Math.Round((p.Max - p.Min) * 0.75);
-                examples.Add($"{{\"param\": \"{p.Name}\", \"value\": \"{Format(p, raw)}\"}}");
+                if (p.SafeRange != null) raw = Math.Clamp(raw, p.SafeRange.Min, p.SafeRange.Max);
+                examples.Add($"{{\"param\": \"{p.Name}\", " + (track ? "\"track\": 0, " : "") + $"\"value\": \"{Format(p, raw)}\"}}");
                 if (examples.Count >= 6) break;
             }
             sb.Append("Write values with their unit, exactly as the tables show them; `by` changes by an amount (\"+3 dB\", \"-200 Hz\", 1 step of a choice) and `times` scales (2, 0.5). ")
