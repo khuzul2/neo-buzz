@@ -54,6 +54,9 @@ namespace ReBuzz.Studio.Shell
         public EngineRun Run { get; private set; }
         public ReBuzzCore Core => Run?.Core;
 
+        /// <summary>The MCP server in studio mode (S8): it listens when Preferences ▸ Agent allows agents.</summary>
+        public AgentServer Agent { get; private set; }
+
         /// <summary>The engine started (on the UI thread).</summary>
         public event Action Started;
 
@@ -76,17 +79,26 @@ namespace ReBuzz.Studio.Shell
             Logged?.Invoke(message);
         }
 
-        /// <summary>Engine steps 1–6, MIDI and sync as the settings say (UI thread).</summary>
+        /// <summary>Engine steps 1–6, MIDI and sync as the settings say, and the agent server (UI thread).</summary>
         public void Start(Action<string> step)
         {
             if (Run != null) return;
             Run = EngineHost.Start(Services, Registry, OpenAudio, step, Log);
             EngineHost.StartMidiAndSync(Run.Core, Registry, SyncOptions.None, step, Log);
+            try
+            {
+                Agent = new AgentServer(this);
+            }
+            catch (Exception e)
+            {
+                Log("The agent server couldn't start: " + e.Message);
+            }
             Started?.Invoke();
         }
 
         public void Shutdown()
         {
+            Agent?.Dispose();
             Run?.Shutdown();
         }
     }

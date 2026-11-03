@@ -1,7 +1,9 @@
 // Fork (docs/specs/studio-mvp.md, P3): the studio application: one dark theme (Fluent), the main
-// window, and the engine started once the window shows.
+// window, and the engine started once the window shows; then (S7) an autosave left over is offered
+// back and autosaving starts. On a Mac the app menu has About and Preferences (S7).
 
 using System;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -28,6 +30,8 @@ namespace ReBuzz.Studio
             {
                 var window = new MainWindow(host);
                 desktop.MainWindow = window;
+                if (OperatingSystem.IsMacOS())
+                    NativeMenu.SetMenu(this, AppMenu.ToNativeMenu(window.AppMenuModel()));
                 desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
                 window.Opened += (s, e) => Dispatcher.UIThread.Post(() => StartEngine(host, window, desktop), DispatcherPriority.Background);
             }
@@ -44,7 +48,7 @@ namespace ReBuzz.Studio
                     host.Log($"{clock.Elapsed.TotalSeconds:F1} s: {step}");
                     window.ShowStep(step);
                 });
-                if (Program.Song != null) _ = SongFiles.Open(Program.Song);
+                _ = AfterStart(host);
                 if (Program.Smoke)
                 {
                     // Quit once the window has drawn with the views in it.
@@ -61,6 +65,17 @@ namespace ReBuzz.Studio
                 window.ShowStep("ReBuzz couldn't start: " + e.Message);
                 if (Program.Smoke) desktop.Shutdown(1);
             }
+        }
+
+        /// <summary>
+        /// As ReBuzz.exe after its start-up: an autosave left by a session that didn't close is
+        /// offered back, then the song from the command line opens, and autosaving starts.
+        /// </summary>
+        static async Task AfterStart(StudioHost host)
+        {
+            if (!Program.Smoke) await Autosave.OfferRecovery(host.Core);
+            if (Program.Song != null) await SongFiles.Open(Program.Song);
+            Autosave.Start(host.Core);
         }
     }
 }
