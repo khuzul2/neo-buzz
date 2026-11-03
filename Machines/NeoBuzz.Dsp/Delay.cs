@@ -67,6 +67,12 @@ namespace NeoBuzz.Dsp
             Array.Clear(data, 0, data.Length);
             pos = 0;
         }
+
+        /// <summary>Scales everything in the line (a renormalisation).</summary>
+        public void Scale(float factor)
+        {
+            for (int i = 0; i < data.Length; i++) data[i] *= factor;
+        }
     }
 
     /// <summary>Schroeder allpass with a (modulatable) fractional delay: diffusion without colour.</summary>
