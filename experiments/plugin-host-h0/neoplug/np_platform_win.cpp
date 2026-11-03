@@ -14,8 +14,9 @@
 #include "np_internal.h"
 
 // Plugin GUIs expect COM (and OLE, for drag and drop) on the UI thread, as every DAW has it:
-// VSTGUI crashes without it (H0 finding). Avalonia's UI thread has it already.
-static void ensureOle()
+// VSTGUI crashed in createView without it (H0 finding). Avalonia's UI thread has it already.
+namespace np {
+void ensureOle()
 {
     static thread_local bool done = false;
     if (!done)
@@ -24,10 +25,11 @@ static void ensureOle()
         done = true;
     }
 }
+}
 
 static const wchar_t* containerClass()
 {
-    ensureOle();
+    np::ensureOle();
     static bool done = false;
     if (!done)
     {

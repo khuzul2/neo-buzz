@@ -320,9 +320,82 @@ void openEvents(bool create, const std::wstring& base)
 }
 #endif
 
+#if defined(__APPLE__)
+// Mach port rights don't survive fork, and mach_ports_register no longer carries them on current
+// macOS. The special ports do: the parent puts a receive port in as its bootstrap port for the fork,
+// and the server asks it for the two semaphores in a Mach message.
+mach_port_t machRendezvous = MACH_PORT_NULL, machOldBootstrap = MACH_PORT_NULL;
+
+struct MachRequest { mach_msg_header_t h; };
+struct MachReply { mach_msg_header_t h; mach_msg_body_t body; mach_msg_port_descriptor_t ports[2]; };
+
+void machParentBeforeFork()
+{
+    mach_port_t self = mach_task_self();
+    mach_port_allocate(self, MACH_PORT_RIGHT_RECEIVE, &machRendezvous);
+    mach_port_insert_right(self, machRendezvous, machRendezvous, MACH_MSG_TYPE_MAKE_SEND);
+    task_get_special_port(self, TASK_BOOTSTRAP_PORT, &machOldBootstrap);
+    task_set_special_port(self, TASK_BOOTSTRAP_PORT, machRendezvous);
+}
+
+bool machParentAfterFork()
+{
+    mach_port_t self = mach_task_self();
+    task_set_special_port(self, TASK_BOOTSTRAP_PORT, machOldBootstrap);
+    struct { MachRequest req; mach_msg_trailer_t trailer; } in{};
+    kern_return_t kr = mach_msg(&in.req.h, MACH_RCV_MSG | MACH_RCV_TIMEOUT, 0, sizeof in, machRendezvous, 5000, MACH_PORT_NULL);
+    bool ok = kr == KERN_SUCCESS;
+    if (ok)
+    {
+        MachReply rep{};
+        rep.h.msgh_bits = MACH_MSGH_BITS(MACH_MSG_TYPE_MOVE_SEND_ONCE, 0) | MACH_MSGH_BITS_COMPLEX;
+        rep.h.msgh_remote_port = in.req.h.msgh_remote_port;
+        rep.h.msgh_size = sizeof rep;
+        rep.h.msgh_id = 2;
+        rep.body.msgh_descriptor_count = 2;
+        mach_port_t ports[2] = {P.msReq, P.msResp};
+        for (int i = 0; i < 2; i++)
+        {
+            rep.ports[i].name = ports[i];
+            rep.ports[i].disposition = MACH_MSG_TYPE_COPY_SEND;
+            rep.ports[i].type = MACH_MSG_PORT_DESCRIPTOR;
+        }
+        ok = mach_msg(&rep.h, MACH_SEND_MSG | MACH_SEND_TIMEOUT, sizeof rep, 0, MACH_PORT_NULL, 5000, MACH_PORT_NULL) == KERN_SUCCESS;
+    }
+    mach_port_mod_refs(self, machRendezvous, MACH_PORT_RIGHT_RECEIVE, -1);
+    mach_port_deallocate(self, machRendezvous);
+    machRendezvous = MACH_PORT_NULL;
+    if (!ok) fprintf(stderr, "mach rendezvous failed (%d)\n", kr);
+    return ok;
+}
+
+bool machChildReceive()
+{
+    mach_port_t self = mach_task_self(), boot = MACH_PORT_NULL, reply = MACH_PORT_NULL;
+    if (task_get_special_port(self, TASK_BOOTSTRAP_PORT, &boot) != KERN_SUCCESS) return false;
+    mach_port_allocate(self, MACH_PORT_RIGHT_RECEIVE, &reply);
+    MachRequest req{};
+    req.h.msgh_bits = MACH_MSGH_BITS(MACH_MSG_TYPE_COPY_SEND, MACH_MSG_TYPE_MAKE_SEND_ONCE);
+    req.h.msgh_remote_port = boot;
+    req.h.msgh_local_port = reply;
+    req.h.msgh_size = sizeof req;
+    req.h.msgh_id = 1;
+    if (mach_msg(&req.h, MACH_SEND_MSG | MACH_SEND_TIMEOUT, sizeof req, 0, MACH_PORT_NULL, 5000, MACH_PORT_NULL) != KERN_SUCCESS) return false;
+    struct { MachReply rep; mach_msg_trailer_t trailer; } in{};
+    if (mach_msg(&in.rep.h, MACH_RCV_MSG | MACH_RCV_TIMEOUT, 0, sizeof in, reply, 5000, MACH_PORT_NULL) != KERN_SUCCESS) return false;
+    if (in.rep.body.msgh_descriptor_count != 2) return false;
+    P.msReq = in.rep.ports[0].name;
+    P.msResp = in.rep.ports[1].name;
+    return P.msReq != MACH_PORT_NULL && P.msResp != MACH_PORT_NULL;
+}
+#endif
+
 bool startServer(Shared* sh)
 {
     sh->ready.store(0);
+#if defined(__APPLE__)
+    if ((Mech)sh->mech == MMachSem) machParentBeforeFork();
+#endif
 #if defined(_WIN32)
     wchar_t exe[MAX_PATH];
     GetModuleFileNameW(nullptr, exe, MAX_PATH);
@@ -339,26 +412,25 @@ bool startServer(Shared* sh)
     if (pid == 0)
     {
 #if defined(__APPLE__)
-        if ((Mech)sh->mech == MMachSem)
+        if ((Mech)sh->mech == MMachSem && !machChildReceive())
         {
-            mach_port_array_t ports = nullptr;
-            mach_msg_type_number_t count = 0;
-            if (mach_ports_lookup(mach_task_self(), &ports, &count) == KERN_SUCCESS && count >= 2 && ports[0] && ports[1])
-            {
-                P.msReq = ports[0];
-                P.msResp = ports[1];
-            }
-            else
-            {
-                sh->ready.store(2);   // no ports: the client skips this mechanism
-                _exit(1);
-            }
+            sh->ready.store(2);   // no ports: the client skips this mechanism
+            _exit(1);
         }
 #endif
         serverLoop(sh);
         _exit(0);
     }
     serverPid = pid;
+#if defined(__APPLE__)
+    if ((Mech)sh->mech == MMachSem && !machParentAfterFork())
+    {
+        kill(pid, SIGKILL);
+        int st = 0;
+        waitpid(pid, &st, 0);
+        return false;
+    }
+#endif
 #endif
     auto t0 = Clock::now();
     while (!sh->ready.load())
@@ -617,10 +689,6 @@ int main(int argc, char** argv)
     sem_unlink((base + "p").c_str());
     semaphore_create(mach_task_self(), &P.msReq, SYNC_POLICY_FIFO, 0);
     semaphore_create(mach_task_self(), &P.msResp, SYNC_POLICY_FIFO, 0);
-    // Mach port rights are not inherited across fork, except the registered ports.
-    mach_port_t reg[2] = {P.msReq, P.msResp};
-    bool machOk = mach_ports_register(mach_task_self(), reg, 2) == KERN_SUCCESS;
-    if (!machOk) fprintf(stderr, "mach_ports_register failed\n");
 #endif
 
     for (int c = 0; c < 2; c++)

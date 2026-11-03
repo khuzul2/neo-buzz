@@ -140,7 +140,7 @@ jobs:
         mkdir -p "$OUT"
         python tools/plugin-census.py --self-test
         python tools/plugin-census.py --songs ExternalMachines/source --out "$OUT/census.md" --json "$OUT/census.json" --quiet
-        cat "$OUT/census.md" >> "$GITHUB_STEP_SUMMARY"
+        cat "$OUT/census.md" | tee -a "$GITHUB_STEP_SUMMARY"
 
     # What you run on your own computer with your commercial plugins (run-h0.py --plugin ...).
     - name: Package the spike for a manual test

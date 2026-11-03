@@ -47,6 +47,8 @@ env = dict(os.environ)
 env["NEOPLUG_SPIKE_PLUGINS"] = ";".join(args.gen)
 env["NEOPLUG_SPIKE_FX_PLUGINS"] = ";".join(args.fx)
 env["NEOPLUG_SPIKE_TWEAK"] = "1"
+# Windows: rebuzz-headless has no native machine hosts (ReBuzzEngine32/64.exe) beside it.
+env["REBUZZ_NATIVE_MACHINES"] = "off"
 # ReBuzz caches its gear scan per user (MachineDLLCache.xml); a private one sees freshly built gear.
 env["XDG_CONFIG_HOME"] = os.path.join(work, "config")
 env["APPDATA"] = os.path.join(work, "appdata")

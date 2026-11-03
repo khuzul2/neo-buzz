@@ -6,6 +6,13 @@
 
 using namespace np;
 
+#if defined(_WIN32)
+namespace np { void ensureOle(); }   // np_platform_win.cpp
+#define NP_UI_THREAD() np::ensureOle()
+#else
+#define NP_UI_THREAD() ((void)0)
+#endif
+
 struct np_plugin
 {
     Plugin* impl;
@@ -58,6 +65,7 @@ NP_API int np_list(const char* path, np_class_info* out, int cap, char* err, int
 
 NP_API np_plugin* np_open(const char* path, const char* id, char* err, int errlen)
 {
+    NP_UI_THREAD();   // plugins and their editors expect COM/OLE on the main thread, as in every DAW
     std::string e;
     std::string sid = id ? id : "";
     Plugin* impl = isClap(path) ? clapOpen(path, sid, e) : vst3Open(path, sid, e);
@@ -149,10 +157,15 @@ NP_API int np_state_load(np_plugin* p, const uint8_t* buf, int size, char* err, 
 NP_API int np_latency(np_plugin* p) { return p->impl->latency(); }
 NP_API int np_tail(np_plugin* p) { return p->impl->tail(); }
 NP_API void np_idle(np_plugin* p) { p->impl->idle(); }
-NP_API int np_gui_support(np_plugin* p, const char* api) { return p->impl->guiSupport(api); }
+NP_API int np_gui_support(np_plugin* p, const char* api)
+{
+    NP_UI_THREAD();
+    return p->impl->guiSupport(api);
+}
 
 NP_API int np_gui_attach(np_plugin* p, void* parent, const char* api, int* width, int* height, char* err, int errlen)
 {
+    NP_UI_THREAD();
     std::string e;
     int w = 0, h = 0;
     if (!p->impl->guiAttach(parent, api, w, h, e))
