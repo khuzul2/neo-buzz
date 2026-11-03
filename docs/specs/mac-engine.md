@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | In progress (2026-11-03). Merged: M0 and the PortAudio binding (#43), M6's precise waiter (#44), M1 `rebuzz-headless` (#47), M2 placeholders (#48), M5 PortAudio driver and live mode with M4's Mac job, where the A6 suite passes on `macos-15` (#49), M7 render workers in the audio workgroup (#50). In PR: M3's null test (#51). This PR: M6, MIDI through CoreMIDI and the Link helper on macOS (§6). Then the user's play test (§4) |
+| Status | In progress (2026-11-03). Merged: M0 and the PortAudio binding (#43), M6's precise waiter (#44), M1 `rebuzz-headless` (#47), M2 placeholders (#48), M5 PortAudio driver and live mode with M4's Mac job, where the A6 suite passes on `macos-15` (#49), M7 render workers in the audio workgroup (#50), M3's null test: Neo renders on Linux and macOS match Windows within −129.7 dBFS (#51). This PR: M6, MIDI through CoreMIDI and the Link helper on macOS (§6). Then the user's play test (§4) |
 | Scope | cross-platform.md §5.2 P2: the engine running headless on macOS (arm64), with real audio and MIDI, and the MCP server on stdio. No UI: the Avalonia studio is P3 |
 | Exit | The A6 scripted suite passes on `macos-15`; Neo renders null-test against the Windows package at ≤ −100 dBFS; a 1-hour play test at 128 samples has no dropouts (run by hand on a Mac) |
 | Related | cross-platform.md (decisions D1–D5, §3.2 the pieces), engine-split.md (P1), mcp-server.md §10 (the A6 suite) |
@@ -71,7 +71,7 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
 
 - **macOS minutes** cost about 10× Linux. The Mac job runs on PRs into main and by hand, never on every push. M3 on Linux catches portability problems before they reach the Mac job.
 - **Real-time from .NET.** The engine allocates nothing per buffer (0.4.1 hardening), and GC pauses are what's left. Use `GCSettings.LatencyMode = SustainedLowLatency` while playing. The play test is the check.
-- **Floating-point drift** between x64 and arm64 can exceed −100 dBFS in feedback-heavy patches (FM feedback, resonant filters at self-oscillation). If a Neo song fails the null test, the fix is in the machine (deterministic denormal handling, no `MathF` intrinsics with different rounding), and the threshold doesn't change.
+- **Floating-point drift** between x64 and arm64 can exceed −100 dBFS in feedback-heavy patches (FM feedback, resonant filters at self-oscillation). If a Neo song fails the null test, the fix is in the machine (deterministic denormal handling, no `MathF` intrinsics with different rounding), and the threshold doesn't change. Measured in M3: the feedback-heavy cases stay below −139 dBFS (§6).
 
 ## 6. Progress
 
@@ -108,7 +108,7 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
   - render tick-phase reproducibility;
   - a connection's pan lost on undo.
 
-  With #40 merged, the whole scripted suite passes against `rebuzz-headless` on Linux, with the same baseline as Windows. Linux CI runs it ("Agent evaluation on Linux"), which covers M3's first check. The null test against Windows renders is still to come.
+  With #40 merged, the whole scripted suite passes against `rebuzz-headless` on Linux, with the same baseline as Windows. Linux CI runs it ("Agent evaluation on Linux"), which covers M3's first check. The null test, its second, is below.
 
 **Native machines as placeholders: they open and save back what the song says about them** (PR #48).
 - **Opening.** 35 of the 36 demo songs under `ExternalMachines/source` open headless on Linux, 11 of the first 12. Their native machines are missing machines, with their connections.
@@ -196,7 +196,35 @@ The null test (exit check 2) is M3's.
   - The live test on macOS: four synths play at once, and `studio_status` must show render threads in the workgroup.
 - **Left for the play test (§4):** the hour at 128 samples, with the default four render threads.
 
-**M6, MIDI and Link on macOS** (stacked on M5).
+**The null test against Windows (M3, M4; decision 6).** `tools/null-test.py`, in the package workflow.
+- **Cases.** 50 fixed cases cover every Neo machine. Each runs in a fresh process: it builds a short song through the MCP tools and renders it (44.1 kHz, 32-bit float).
+  - Neo Poly (9): the default patch with drift, Acid, Reese, FM Growl, Sync Scream, Evolving PWM, Noise Sweep, a self-oscillating ladder with drive, ring, sync and glide, and parallel SVFs with FM and pink noise.
+  - Neo Wave (7): Init, Vowel Choir, Window Sync Sweep, PM Bloom, Grit Motion, Reso Pluck, Mirror Bell.
+  - Neo FM6 (7): Tine Piano, Glass Bell, Random Chimes, Bright Section, Saw Lead, Metal Sweep, and a sine at feedback 7 on the Raw 1× engine.
+  - Effects (23), on an FM6 brass source: Neo Comp's four modes (lookahead, auto release); Neo Drive's five models at 2×, 4× and 8×; Neo EQ's bells, shelves, cuts at 12 to 48 dB/oct and notch; Neo Limiter pushed by 18 and 24 dB, with Neo Analyzer after it; Neo Utility's width, bass mono, mono pan, swap, polarity and DC removal; Neo Verb's four algorithms, shimmer, a 20-second decay, and freeze switched on mid-render by automation.
+  - Four 16-second cases (Poly, Wave, FM6, Verb), where a difference that grows with time would show.
+- **CI.** The package job renders the references with `ReBuzz.exe --agent` (about 100 s) and uploads them (`null-test-references`). Two jobs then build `rebuzz-headless` and compare: Linux x64, and macOS arm64 on `macos-15`, about 2 minutes each, once per package run. A case fails above −100 dBFS, on a length mismatch, or when it is missing on either side. The per-case figures go to a notice and the step summary.
+- **Results** (runs 41545747463 and 41547910703, the same figures). Every case is within −100 dBFS on both platforms. Largest absolute difference against Windows:
+
+  | Machine | Cases | Linux x64 | macOS arm64 |
+  |---|---:|---|---|
+  | Neo Poly | 10 | 2 identical; worst −129.7 dBFS (16-second pad) | worst −129.7 dBFS (16-second pad) |
+  | Neo Wave | 8 | 5 identical; worst −141.0 dBFS | 4 identical; worst −141.0 dBFS |
+  | Neo FM6 | 8 | all identical | all identical |
+  | Neo Comp | 4 | 1 identical; worst −141.0 dBFS (Glue) | 1 identical; worst −138.5 dBFS (Opto) |
+  | Neo Drive | 5 | 2 identical; worst −186.6 dBFS | 2 identical; worst −186.6 dBFS |
+  | Neo EQ | 3 | all identical | 2 identical; −343 dBFS (Telephone: a denormal) |
+  | Neo Limiter | 2 | worst −135.0 dBFS | worst −130.5 dBFS |
+  | Neo Utility | 2 | all identical | all identical |
+  | Neo Verb | 8 | all identical | all identical |
+
+  Neo Analyzer passes the audio through (the loud limiter case ends with it).
+- **Where the differences come from.** Linux and Windows run the same JIT-compiled maths on x64. That leaves the C runtime behind `Math.Pow`, `Exp`, `Tan` and the `MathF` functions (glibc, the UCRT, Apple's libm), which can round the last bit differently. On macOS, Neo Limiter's true-peak filter also sums with `Vector<float>`: 4 lanes on arm64, 8 on x64.
+- **The differences don't grow with time.** In the 16-second cases, Neo Poly's largest difference is at 1.3 s, and Neo Wave's (−141.0 dBFS, at 11.9 s) is the size of the short cases'. FM6 and Verb stay identical. The feedback-heavy cases stay below −139 dBFS: the self-oscillating ladder, FM feedback 7, shimmer, the 20-second decay and freeze.
+- **No machine needed a fix, and nothing is excluded** (`EXCLUDED` in the script is empty).
+- **Found on the way:** a relative `--settings` folder made `render` fail (its file URI). `rebuzz-headless` now makes it absolute.
+
+**M6, MIDI and Link on macOS** .
 - **The CoreMIDI binding** (`ReBuzz/Platform/CoreMidi.cs`, decision 7).
   - One client per process, made on a thread of its own that runs a CFRunLoop. CoreMIDI ties a process's notifications to the run loop of the thread that first calls it, even for a call that only counts devices. So the client is the first call, on that thread.
   - Endpoints carry CoreMIDI's display names. A client sees other processes' endpoints come and go as its run loop runs.
@@ -231,6 +259,8 @@ The null test (exit check 2) is M3's.
   - Unsigned binaries need `xattr -d com.apple.quarantine` (§4), the helper included.
 - **Left:**
   - SysEx input isn't forwarded (as on Windows), and MIDI 2.0 (UMP) isn't used.
-  - The precise waiter's seam test fails on the macOS runner: a 0.5 ms `mach_wait_until` takes 2.5–3.7 ms there (median), probably timer coalescing for an ordinary thread. It failed on M5's runs too, unseen: the Mac workflow's test steps pipe through `tee`, which hides `dotnet test`'s exit code. The uneven clock pulses above may come from it. A time-constraint policy for the clock thread, as M7 gives worker threads, should fix both.
+  - **Found:** the precise waiter's seam test failed on the macOS runner, where a 0.5 ms `mach_wait_until` took 2.5–3.7 ms (median). macOS coalesces an ordinary thread's timers. It had failed since M5, unseen, because the Mac workflow's test steps piped through `tee`, which hid `dotnet test`'s exit code. The uneven clock pulses above may come from it.
+  - **The fix:** `RealtimeThread` (`ReBuzz/Platform/`) gives the waiting thread a time-constraint policy on macOS: aperiodic, 0.2 ms of CPU within 1 ms. `AudioWorkgroup` uses the same helper.
+  - The Mac test steps now run with `pipefail`, so a failing test fails the job.
 
 
