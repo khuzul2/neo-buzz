@@ -98,6 +98,7 @@ class Http:
 
     def __init__(self, url, token):
         self.url, self.token, self.session = url, token, None
+        self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))     # 127.0.0.1: never a proxy
 
     def send(self, message, answer=True):
         headers = {"Content-Type": "application/json", "Accept": "application/json, text/event-stream",
@@ -105,7 +106,7 @@ class Http:
         if self.session:
             headers["Mcp-Session-Id"] = self.session
         request = urllib.request.Request(self.url, data=json.dumps(message).encode(), headers=headers, method="POST")
-        with urllib.request.urlopen(request, timeout=180) as response:
+        with self.opener.open(request, timeout=180) as response:
             self.session = response.headers.get("Mcp-Session-Id") or self.session
             body = response.read().decode()
         if not answer:
