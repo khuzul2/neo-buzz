@@ -72,6 +72,11 @@ namespace ReBuzz.Audio
                     foreach (var t in TypesOf(a))
                         PrepareType(t, generics);
                 PrepareGenerics(generics);
+                // A wait that blocks, once: its runtime path (a P/Invoke stub, the blocking-info
+                // bookkeeping) is compiled here, not the first time the audio thread waits for a
+                // render thread or a lock.
+                var o = new object();
+                lock (o) Monitor.Wait(o, 1);
             });
         }
 
@@ -79,29 +84,50 @@ namespace ReBuzz.Audio
         internal static bool Wait(int timeoutMs = 60000) => idle.Wait(timeoutMs);
 
         /// <summary>
-        /// A managed machine's class is about to be made: its own methods are compiled now, on this
-        /// thread (before it can tick), and the rest of its assembly, and the assemblies beside it
-        /// that it uses, in the background (once).
+        /// A managed machine is about to be made: its assembly is compiled now, on this thread
+        /// (before the machine can tick: its first buffers would compile its Work path on the audio
+        /// thread), the assemblies beside it that it uses in the background. Once per assembly; a
+        /// machine made again only has its own class looked at (compiled: a lookup a method).
         /// </summary>
         internal static void PrepareMachine(Type machineType)
         {
             if (machineType == null) return;
-            long start = Stopwatch.GetTimestamp();
-            PrepareMethods(machineType, null);          // again if already: compiled ones cost a lookup
-            Interlocked.Add(ref Ticks, Stopwatch.GetTimestamp() - start);
             var assembly = machineType.Assembly;
+            bool first;
             lock (gate)
             {
-                if (!assemblies.Add(assembly)) return;
+                first = assemblies.Add(assembly);
             }
+            long start = Stopwatch.GetTimestamp();
+            if (!first)
+            {
+                PrepareMethods(machineType, null);
+                Interlocked.Add(ref Ticks, Stopwatch.GetTimestamp() - start);
+                return;
+            }
+            var generics = new HashSet<Type>();
+            foreach (var t in TypesOf(assembly))
+                PrepareType(t, generics);
+            PrepareGenerics(generics);
+            Interlocked.Add(ref Ticks, Stopwatch.GetTimestamp() - start);
+            var neighbours = WithNeighbours(assembly);
+            neighbours.Remove(assembly);
+            if (neighbours.Count == 0) return;
             Queue(() =>
             {
-                var generics = new HashSet<Type>();
-                foreach (var a in WithNeighbours(assembly))
+                var more = new HashSet<Type>();
+                foreach (var a in neighbours)
                     foreach (var t in TypesOf(a))
-                        PrepareType(t, generics);
-                PrepareGenerics(generics);
+                        PrepareType(t, more);
+                PrepareGenerics(more);
             });
+        }
+
+        /// <summary>A type the audio thread calls that isn't in the sets above (the UI dispatcher's), in the background.</summary>
+        internal static void PrepareLater(Type type)
+        {
+            if (type == null) return;
+            Queue(() => PrepareType(type, null));
         }
 
         /// <summary>The assembly and those it references from its own folder (a machine's libraries).</summary>

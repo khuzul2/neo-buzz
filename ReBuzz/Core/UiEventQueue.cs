@@ -49,6 +49,9 @@ namespace ReBuzz.Core
         UiEventQueue(IUiDispatcher dispatcher)
         {
             signal = dispatcher.CreateSignal(Drain);
+            // The audio thread calls these (Request, CheckAccess): compiled before it does.
+            ReBuzz.Audio.AudioWarmUp.PrepareLater(signal.GetType());
+            ReBuzz.Audio.AudioWarmUp.PrepareLater(dispatcher.GetType());
         }
 
         /// <summary>Room for <paramref name="events"/> more pending events (any thread but the audio thread).</summary>
