@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | In progress. M0 and the PortAudio binding are merged (#43); M6's precise waiter is in PR (#44). M1 is built: `rebuzz-headless` runs on Linux with the portable Neo machines, stacked on the flip. M2 is partly done (§6): songs with native machines open and save back headless (#48). The null test passes: Neo renders on Linux and macOS match Windows within −129.7 dBFS (§6) |
+| Status | In progress (2026-11-03). Merged: M0 and the PortAudio binding (#43), M6's precise waiter (#44), M1 `rebuzz-headless` (#47), M2 placeholders (#48), M5 PortAudio driver and live mode with M4's Mac job, where the A6 suite passes on `macos-15` (#49), M7 render workers in the audio workgroup (#50). This PR: M3's null test: Neo renders on Linux and macOS match Windows within −129.7 dBFS (§6). Under way: M6 (MIDI, Link). Then the user's play test (§4) |
 | Scope | cross-platform.md §5.2 P2: the engine running headless on macOS (arm64), with real audio and MIDI, and the MCP server on stdio. No UI: the Avalonia studio is P3 |
 | Exit | The A6 scripted suite passes on `macos-15`; Neo renders null-test against the Windows package at ≤ −100 dBFS; a 1-hour play test at 128 samples has no dropouts (run by hand on a Mac) |
 | Related | cross-platform.md (decisions D1–D5, §3.2 the pieces), engine-split.md (P1), mcp-server.md §10 (the A6 suite) |
@@ -32,7 +32,7 @@ The engine itself changes only behind seams P1 created. Each new implementation 
 ## 2. Decisions
 
 1. **Headless first, as its own app.** The P3 studio will host the same engine, so nothing here is thrown away. A separate console app avoids pulling WPF or Avalonia into P2.
-2. **Single-threaded rendering on macOS first.** The CoreAudio I/O thread is already real-time and in the device's workgroup. `WorkThreadEngine(1)` renders on it, which needs no thread policy work. Multi-core rendering joins worker threads to the device's `os_workgroup` and gives them a time-constraint policy. That is step M7, kept separate, since dropouts from unjoined threads are the main risk (cross-platform.md §7).
+2. **Single-threaded rendering on macOS first.** The CoreAudio I/O thread is already real-time and in the device's workgroup. `WorkThreadEngine(1)` renders on it, which needs no thread policy work. Multi-core rendering joins worker threads to the device's `os_workgroup` and gives them a time-constraint policy. That is step M7, kept separate, since dropouts from unjoined threads are the main risk (cross-platform.md §7). (As built, M5 rendered with the engine's usual worker threads, Multithreading being on by default; M7 put them in the workgroup.)
 3. **PortAudio through our own P/Invoke** (about 300 lines: init, devices, open and start a stream, a callback, latency). No NuGet runtime package, so the dylib we sign is the one we build (P5).
 4. **Managed machines load without WPF.** A machine DLL built for `net10.0-windows` is IL; it fails only when a WPF type is touched.
    - The loader treats `FileNotFoundException`/`TypeLoadException` for WPF assemblies (`PresentationFramework`, `PresentationCore`, `WindowsBase`, `System.Xaml`) as "no GUI", not "broken machine".
@@ -151,6 +151,44 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
   - ReBuzzTests' song save and load tests.
 - **Left:** deleting a machine here leaves its placeholder editor behind. It is hidden and unused, and saves with the song.
 
+**M4, the Mac job** (`fork-mac.yml`, on PRs into main and by hand). It builds `rebuzz-headless` for osx-arm64 and runs:
+- the smoke test;
+- the A6 scripted suite: 6/6 checks and 5/5 tasks, against the same baseline as Windows and Linux (exit check 1);
+- the live test (M5).
+The null test (exit check 2) is M3's.
+
+**M5, audio through PortAudio.**
+- **The driver.** `PortAudioDriver` and `PortAudioDriverFactory` (`ReBuzz/Audio/Driver/`). One stereo float stream; the device's thread renders, as ASIO's does on Windows.
+  - Input is optional, for audio takes, and off by default, so macOS doesn't ask for the microphone.
+  - The device's reported latency goes to the session's launch timing.
+  - Settings in the registry's `PortAudio` section: `BufferSize` (default 256), `SampleRate` (0: the device's), `Input`.
+- **Device lists.** `IAudioDriverFactory.OutputDevices()` lets a factory list its own devices. Windows still lists the ASIO drivers, then WASAPI. PortAudio's are "PortAudio: default" and "PortAudio: <device> (<host API>)".
+- **`rebuzz-headless --audio`** `[--device <name>] [--input <name|default>] [--buffer <frames>] [--rate <hz>]`, and `--list-devices`.
+  - With the device open the agent runs in **live mode**: the A7 live tools work as in studio mode, with no window.
+  - The GC runs in `SustainedLowLatency` mode.
+- **Checked by `tools/headless-live.py`.** It plays a phrase and the arrangement, meters them, renders with the device open, and exits.
+  - Linux CI: PortAudio 19.7 on a PulseAudio null sink, 44.1 kHz. It plays in real time: 2.00 beats/s at 120 BPM.
+  - macOS CI: CoreAudio on the runner's Apple Virtual Sound Device, 48 kHz. 2.03 beats/s.
+  - ALSA's bare null device takes audio as fast as it comes, so the real-time check needs a clocked device.
+- **Found on the way.** Off Windows the per-user application data folder can be missing (`~/.config` on a fresh Mac). `GetFolderPath` then returns "", and the DLL cache landed in the current folder. Fixed. `rebuzz-headless` now keeps its cache and autosaves in its settings folder.
+- **Not covered yet:**
+  - following a change of the system's default output while playing (PortAudio opens a device, not "the default");
+  - a device that goes away;
+  - the 1-hour play test (§4).
+
+**M7, render workers in the audio workgroup** (`ReBuzz/Platform/AudioWorkgroup.cs`).
+- **Attach.** When the PortAudio stream starts, the driver asks CoreAudio for the device's I/O workgroup (`kAudioDevicePropertyIOThreadOSWorkgroup`, on the device `PaMacCore_GetStreamOutputDevice` names). It detaches it when the stream stops.
+- **Join.** Both kinds of render worker call `AudioWorkgroup.Enter()` before their work: the audio thread pool (`DedicatedThreadPool`, used by the default algorithm) and `WorkThreadEngine`.
+  - Enter reads one number. Only when the workgroup changed does it leave the old one, set a time-constraint policy for the buffer period, and `os_workgroup_join` the new one.
+  - Each joined thread holds its own reference (`os_retain`), so detaching never frees a workgroup that a thread is still in.
+  - Workers leave when they end.
+  - Off macOS it does nothing.
+- **Reported.** `studio_status` has an `audio` object in studio and live mode: device, buffer, latency, render threads, threads in the workgroup, dropouts (deadline misses).
+- **Checked.**
+  - `ReBuzz.SessionTests` on macOS: a worker joins a running stream's workgroup and leaves it, and a worker joined when the device stops leaves at its next Enter.
+  - The live test on macOS: four synths play at once, and `studio_status` must show render threads in the workgroup.
+- **Left for the play test (§4):** the hour at 128 samples, with the default four render threads.
+
 **The null test against Windows (M3, M4; decision 6).** `tools/null-test.py`, in the package workflow.
 - **Cases.** 50 fixed cases cover every Neo machine. Each runs in a fresh process: it builds a short song through the MCP tools and renders it (44.1 kHz, 32-bit float).
   - Neo Poly (9): the default patch with drift, Acid, Reese, FM Growl, Sync Scream, Evolving PWM, Noise Sweep, a self-oscillating ladder with drive, ring, sync and glide, and parallel SVFs with FM and pink noise.
@@ -179,5 +217,5 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
 - **No machine needed a fix, and nothing is excluded** (`EXCLUDED` in the script is empty).
 - **Found on the way:** a relative `--settings` folder made `render` fail (its file URI). `rebuzz-headless` now makes it absolute.
 
-**M5–M7:** as in §3.
+**M6:** as in §3.
 

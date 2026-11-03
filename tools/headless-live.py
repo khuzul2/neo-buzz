@@ -5,10 +5,12 @@
 #  - a phrase played with midi_play while the transport is stopped is heard (meters_read);
 #  - the transport plays the arrangement in real time, and is heard, and stops;
 #  - a render still works while the device plays;
+#  - studio_status reports the device, and (macOS, --expect-workgroup) render threads working in
+#    the device's audio workgroup (M7) while four synths play in parallel;
 #  - the server exits when stdin closes (closing the device).
 # Linux CI runs it on a PulseAudio null sink, macOS CI on the runner's virtual sound device.
 #
-#   python3 tools/headless-live.py <path to rebuzz-headless> [work folder] [--device <name>]
+#   python3 tools/headless-live.py <path to rebuzz-headless> [work folder] [--device <name>] [--expect-workgroup]
 
 import json
 import os
@@ -18,6 +20,9 @@ import tempfile
 import time
 
 args = [a for a in sys.argv[1:]]
+expect_workgroup = "--expect-workgroup" in args
+if expect_workgroup:
+    args.remove("--expect-workgroup")
 device = None
 if "--device" in args:
     i = args.index("--device")
@@ -86,7 +91,8 @@ ok, _, _ = call("midi_play", machine="Keys", start="now",
 check(ok, "midi_play a chord now")
 ok, _, m = call("meters_read", window_seconds=1)
 level = master(m).get("rms_dbfs")
-check(ok and not master(m).get("silent", True) and isinstance(level, (int, float)) and level > -60, f"meters_read hears the chord ({level} dBFS RMS)")
+check(ok and not master(m).get("silent", True) and isinstance(level, (int, float)) and level > -60,
+      f"meters_read hears the chord ({level} dBFS RMS over {master(m).get('seconds')} s)")
 check(call("midi_play", stop=True)[0], "midi_play stop lets go")
 
 # The arrangement, played in real time.
@@ -99,7 +105,8 @@ ok, _, t = call("transport", action="play", at="1.1")
 check(ok, "transport play")
 ok, _, m = call("meters_read", window_seconds=1)
 level = master(m).get("rms_dbfs")
-check(ok and m.get("playing") is True and not master(m).get("silent", True), f"meters_read hears the song playing ({level} dBFS RMS)")
+check(ok and m.get("playing") is True and not master(m).get("silent", True),
+      f"meters_read hears the song playing ({level} dBFS RMS over {master(m).get('seconds')} s)")
 # 120 BPM: two beats a second, if the device takes audio in real time (a clocked device does;
 # ALSA's bare null device doesn't, so this check needs a real or virtual sound device).
 ok1, _, t1 = call("transport", action="status")
@@ -111,6 +118,22 @@ rate = ((t2.get("position_beats") or 0) - (t1.get("position_beats") or 0)) / (s2
 check(ok1 and ok2 and t2.get("playing") is True and 1.4 < rate < 2.6, f"the song plays in real time ({rate:.2f} beats/s at 120 BPM)")
 ok, _, t = call("transport", action="stop")
 check(ok and t.get("playing") is False, "transport stop")
+
+# Four synths at once: the render workers take machines in parallel (the multi-threaded engine).
+for i in range(2, 5):
+    call("machine_add", gear="Neo Poly", name=f"Keys{i}")
+    call("midi_play", machine=f"Keys{i}", start="now", notes=[{"pitch": 48 + 7 * i, "start": 0, "length": 16}])
+call("midi_play", machine="Keys", start="now", notes=[{"pitch": "C3", "start": 0, "length": 16}])
+ok, _, m = call("meters_read", window_seconds=1)
+check(ok and not master(m).get("silent", True), "four synths play at once")
+ok, _, status = call("studio_status")
+audio = status.get("audio") or {}
+print(f"     audio: {json.dumps(audio)}")
+check(ok and audio.get("device") and audio.get("buffer_frames", 0) > 0 and audio.get("latency_ms", 0) > 0, "studio_status reports the audio output")
+if expect_workgroup:
+    check((audio.get("workgroup_threads") or 0) >= 1 and audio.get("render_threads", 1) > 1,
+          f"render threads work in the device's audio workgroup ({audio.get('workgroup_threads')} of {audio.get('render_threads')})")
+call("midi_play", stop=True)
 
 # Renders work with the device open (it pauses while they run).
 ok, _, r = call("render", **{"from": 0, "to": 4, "tail_seconds": 0.5})

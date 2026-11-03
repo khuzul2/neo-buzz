@@ -266,7 +266,33 @@ namespace ReBuzz.Agent
             Req("counts", Object(null, Req("machines", Integer("Machines (with Master)")), Req("patterns", Integer("Patterns")), Req("waves", Integer("Waves in the wavetable")))),
             Req("undo", Object(null, Req("can_undo", Boolean("Something to undo")), Req("can_redo", Boolean("Something to redo")), Opt("next_undo", String("What undo would revert, when it's an agent call")))),
             Req("agent", Object(null, Req("version", String("Server version")), Req("log", String("The agent log file")))),
+            Opt("audio", Object("The audio output, when one plays (studio and live mode)",
+                Req("device", String("The output device")),
+                Req("buffer_frames", Integer("Frames per buffer")),
+                Req("latency_ms", Number("From a rendered sample to the speaker")),
+                Req("render_threads", Integer("Threads rendering machines (1: the device's own thread only)")),
+                Opt("workgroup_threads", Integer("Render threads in the device's audio workgroup now (macOS)")),
+                Req("dropouts", Integer("Buffers that missed their deadline since ReBuzz started")))),
             Opt("warnings", Array(String("A message"), "Messages ReBuzz raised during the call")));
+
+        /// <summary>The audio output when one plays, else null.</summary>
+        static JsonObject Audio(ReBuzzCore core)
+        {
+            var driver = core.AudioEngine?.CurrentDriver;
+            var device = core.AudioEngine?.SelectedOutDevice;
+            if (driver == null || device == null) return null;
+            int rate = Math.Max(1, ReBuzzCore.masterInfo.SamplesPerSec);
+            var audio = new JsonObject
+            {
+                ["device"] = device.Name,
+                ["buffer_frames"] = driver.BufferSize,
+                ["latency_ms"] = Math.Round(core.OutputLatencySamples * 1000.0 / rate, 1),
+                ["render_threads"] = core.EngineSettings.Multithreading ? Math.Max(1, ReBuzz.Audio.Engine.AudioEngine.ThreadCount) : 1,
+                ["dropouts"] = ReBuzzCore.DeadlineMisses,
+            };
+            if (ReBuzz.Platform.AudioWorkgroup.Attached) audio["workgroup_threads"] = ReBuzz.Platform.AudioWorkgroup.JoinedThreads;
+            return audio;
+        }
 
         /// <summary>The studio's state (engine thread).</summary>
         internal static JsonObject Status(AgentHost host)
@@ -281,7 +307,7 @@ namespace ReBuzz.Agent
                 undo["next_undo"] = host.LastAgentUndo;
             var songObject = new JsonObject { ["unsaved_changes"] = core.Modified };
             if (!string.IsNullOrEmpty(song.SongName)) songObject["file"] = song.SongName;
-            return new JsonObject
+            var status = new JsonObject
             {
                 ["song"] = songObject,
                 ["tempo_bpm"] = core.BPM,
@@ -301,6 +327,8 @@ namespace ReBuzz.Agent
                 ["undo"] = undo,
                 ["agent"] = new JsonObject { ["version"] = AgentHost.Version, ["log"] = host.Log.FilePath },
             };
+            if (host.Live && Audio(core) is JsonObject audio) status["audio"] = audio;
+            return status;
         }
     }
 }

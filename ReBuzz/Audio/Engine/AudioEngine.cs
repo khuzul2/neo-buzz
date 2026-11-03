@@ -45,6 +45,9 @@ namespace ReBuzz.Audio.Engine
         private readonly IRegistryEx registryEx;
 
         private IAudioDriver currentDriver;
+
+        /// <summary>The open driver (the agent's studio_status reports on it), or null.</summary>
+        internal IAudioDriver CurrentDriver => currentDriver;
         private readonly AudioBufferManager bufferManager = new();
         private readonly AudioDeviceService deviceService;
         private readonly IAudioDriverFactory drivers;   // engine-split.md S8

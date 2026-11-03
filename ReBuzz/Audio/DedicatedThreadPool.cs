@@ -361,6 +361,8 @@ namespace Helios.Concurrency
                     {
                         try
                         {
+                            // macOS (mac-engine.md M7): render in the audio device's workgroup.
+                            ReBuzz.Platform.AudioWorkgroup.Enter();
                             action();
                         }
                         catch (Exception ex)
@@ -371,6 +373,7 @@ namespace Helios.Concurrency
                 }
                 finally
                 {
+                    ReBuzz.Platform.AudioWorkgroup.Leave();
                     _threadExit.TrySetResult(null);
                 }
             }
