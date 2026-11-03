@@ -356,7 +356,19 @@ namespace ReBuzz.Studio.Shell
                 ? $"{device.Name}, {core.SelectedAudioDriverSampleRate} Hz, {core.AudioEngine.CurrentDriver?.BufferSize} frames" + (cpu is double load ? $" · CPU {load:0}%" : "")
                 : "no audio output";
             string agent = host.Agent?.Status;
-            status.Text = $"{audio} · dropouts {ReBuzzCore.DeadlineMisses} · {core.SongCore.MachinesList.Count} machines" + (string.IsNullOrEmpty(agent) ? "" : " · " + agent);
+            status.Text = $"{audio} · dropouts {ReBuzzCore.DeadlineMisses} · {core.SongCore.MachinesList.Count} machines" + SafetyText(core) + (string.IsNullOrEmpty(agent) ? "" : " · " + agent);
+        }
+
+        /// <summary>
+        /// Fork (machine-safety.md §3.2): machines whose guard tripped ("Diverged: muted: Bass (NaN)"),
+        /// and the guard when it's off; empty when all is well.
+        /// </summary>
+        internal static string SafetyText(ReBuzzCore core)
+        {
+            var diverged = core.SongCore.MachinesList.Where(m => m.IsDiverged).Select(m => $"{m.Name} ({m.DivergedReason})").ToList();
+            string text = diverged.Count > 0 ? " · Diverged: muted: " + string.Join(", ", diverged) : "";
+            if (!ReBuzz.Audio.MachineGuard.Enabled) text += " · machine guard off";
+            return text;
         }
 
         /// <summary>

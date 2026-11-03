@@ -1,6 +1,8 @@
 // Fork (docs/specs/studio-mvp.md S3): the machine view's context menus, as BuzzGUI.MachineView
 // has them: on empty space, New (the installed machines by kind) and the view's commands; on a
 // machine, mute, solo or bypass, its parameters, MIDI input channel, replace, rename, delete.
+// Fork (machine-safety.md §3.2–3.3): Reset and unmute on a diverged machine; on the Master, clearing
+// the clip indicator.
 
 using System;
 using System.Collections.Generic;
@@ -74,7 +76,16 @@ namespace ReBuzz.Studio.Views.Machines
             if (type == MachineType.Master)
             {
                 menu.Items.Add(Item("Parameters...", () => MachineEdits.OpenParameters(machine)));
+                if (core.MasterOver)
+                    menu.Items.Add(Item($"Clear clip indicator ({core.MasterOverText})", core.ClearMasterOver));
                 return menu;
+            }
+
+            if ((machine as MachineCore)?.IsDiverged == true)
+            {
+                // One undo step; the guard trips again if it is still broken.
+                menu.Items.Add(Item("Reset and unmute", () => MachineEdits.Mute(core, new[] { machine }, false)));
+                menu.Items.Add(new Separator());
             }
 
             bool generator = type == MachineType.Generator;

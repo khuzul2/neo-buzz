@@ -3,10 +3,14 @@
 // section, which PortAudioDriver reads when it opens), and the render threads and work algorithm
 // (ReBuzz.exe's Preferences ▸ Engine). Each choice is saved and the device opens again with it,
 // as ReBuzz.exe's toolbar device choice (SelectedAudioDriver) and Preferences OK do.
+// Fork (machine-safety.md §3.2–3.3): Safety: the safety limiter on the output (on by default; off
+// asks first), its ceiling, the clip indicator's threshold, and the guard on every machine (off only
+// for this song, after asking; never saved off).
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -36,6 +40,12 @@ namespace ReBuzz.Studio.Shell.Preferences
         readonly IRegistryEx registry;
         readonly ComboBox output = Choices(), input = Choices(), rate = Choices(220), buffer = Choices(220);
         readonly ComboBox threads = Choices(120), algorithm = Choices(220);
+        readonly CheckBox limiter = new CheckBox { Content = "Safety limiter on the output" };
+        readonly ComboBox ceiling = Choices(160), threshold = Choices(160);
+        readonly CheckBox guard = new CheckBox { Content = "Guard every machine" };
+        List<double> ceilings = new List<double>(), thresholds = new List<double>();
+        static readonly double[] Ceilings = { 0, -0.1, -0.3, -1, -3, -6 };
+        static readonly double[] Thresholds = { -6, -3, -1, 0, 1, 2, 3, 6, 12 };
         readonly TextBlock status = new TextBlock { TextWrapping = Avalonia.Media.TextWrapping.Wrap };
         readonly TextBlock missing;
         List<string> listed = new List<string>(), outputs = new List<string>(), inputs = new List<string>();
@@ -59,6 +69,18 @@ namespace ReBuzz.Studio.Shell.Preferences
             Row("Render threads", threads, "With Multithreading on (General ▸ Engine). Recursive algorithms take a new count at the next start.");
             Row("Work algorithm", algorithm, $"The default is {Algorithms[DefaultAlgorithm]}.");
 
+            Heading("Safety");
+            Row("", limiter, "A zero-latency limiter on what goes to the speakers: nothing above its ceiling reaches them, and below it the sound " +
+                             "is untouched. Renders and exports get the true signal.");
+            Row("Limiter ceiling", ceiling);
+            Row("Clip indicator", threshold, "The master meter turns red above this, measured before the limiter, and keeps the highest over until you click it.");
+            Row("", guard, "A machine putting out NaN, infinity or more than +60 dBFS is silenced, stopped and muted (Reset and unmute on its menu). " +
+                           "Off only for this song: a new or opened song turns it on again.");
+            limiter.IsCheckedChanged += (s, e) => { if (!Filling) _ = SetLimiter(limiter.IsChecked == true); };
+            guard.IsCheckedChanged += (s, e) => { if (!Filling) _ = SetGuard(guard.IsChecked == true); };
+            OnPick(ceiling, i => { core.SafeMaster.CeilingDb = ceilings[i]; core.SafeMaster.Save(registry); Refresh(); });
+            OnPick(threshold, i => { core.SafeMaster.ClipThresholdDb = thresholds[i]; core.SafeMaster.Save(registry); Refresh(); });
+
             OnPick(output, i => Choose("AudioDriver", outputs[i], "Settings"));
             OnPick(input, i => Choose("Input", inputs[i], PortAudioDriver.Section));
             OnPick(rate, i => Choose("SampleRate", Rates[i], PortAudioDriver.Section));
@@ -75,6 +97,10 @@ namespace ReBuzz.Studio.Shell.Preferences
         public ComboBox BufferBox => buffer;
         public ComboBox ThreadsBox => threads;
         public ComboBox AlgorithmBox => algorithm;
+        public CheckBox LimiterBox => limiter;
+        public ComboBox CeilingBox => ceiling;
+        public ComboBox ThresholdBox => threshold;
+        public CheckBox GuardBox => guard;
         public string StatusText => status.Text;
 
         /// <summary>The device the settings name (the first one, as the engine falls back to, when none is saved).</summary>
@@ -120,11 +146,55 @@ namespace ReBuzz.Studio.Shell.Preferences
                 algorithm.SelectedIndex = Math.Clamp(registry.Read("WorkAlgorithm", DefaultAlgorithm, "Settings"), 0, Algorithms.Length - 1);
 
                 status.Text = DeviceStatus(core);
+
+                var safe = core.SafeMaster;
+                limiter.IsChecked = safe.LimiterOn;
+                ceilings = Ceilings.Append(safe.CeilingDb).Distinct().OrderByDescending(v => v).ToList();
+                ceiling.ItemsSource = ceilings.Select(Dbfs).ToList();
+                ceiling.SelectedIndex = ceilings.IndexOf(safe.CeilingDb);
+                ceiling.IsEnabled = safe.LimiterOn;
+                thresholds = Thresholds.Append(safe.ClipThresholdDb).Distinct().OrderBy(v => v).ToList();
+                threshold.ItemsSource = thresholds.Select(Dbfs).ToList();
+                threshold.SelectedIndex = thresholds.IndexOf(safe.ClipThresholdDb);
+                guard.IsChecked = MachineGuard.Enabled;
             }
             finally
             {
                 Filling = false;
             }
+        }
+
+        static string Dbfs(double db) => db == 0 ? "0 dBFS" : $"{db:+0.##;−0.##} dBFS";
+
+        /// <summary>The safety limiter on or off; off asks first.</summary>
+        async Task SetLimiter(bool on)
+        {
+            var safe = core.SafeMaster;
+            if (!on && safe.LimiterOn)
+            {
+                Refresh();      // stays on until confirmed
+                var answer = await Dialogs.Ask("Turn the safety limiter off? Then nothing stops a loud or broken signal from reaching your " +
+                                               "speakers or headphones at full scale and beyond.", "Safety limiter", UserButtons.YesNo);
+                if (answer != UserAnswer.Yes) return;
+            }
+            safe.LimiterOn = on;
+            safe.Save(registry);
+            Refresh();
+        }
+
+        /// <summary>The guard on every machine on or off (this song only); off asks first.</summary>
+        async Task SetGuard(bool on)
+        {
+            if (!on && MachineGuard.Enabled)
+            {
+                Refresh();
+                var answer = await Dialogs.Ask("Turn the machine guard off for this song? A machine that goes wild (NaN, infinity or more than " +
+                                               "+60 dBFS) then plays on into the rest of the song; only the safety limiter stands between it and " +
+                                               "your speakers. A new or opened song turns the guard on again.", "Machine guard", UserButtons.YesNo);
+                if (answer != UserAnswer.Yes) return;
+            }
+            MachineGuard.Enabled = on;
+            Refresh();
         }
 
         /// <summary>What plays now, for the page and the tests.</summary>

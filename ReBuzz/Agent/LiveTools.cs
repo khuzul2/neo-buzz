@@ -516,13 +516,21 @@ namespace ReBuzz.Agent
                 Description =
                     "Listens to what plays for window_seconds (default 1) and reports the master's levels, and chosen machines' (each as its first " +
                     "connection carries it): loudness now (momentary, and short-term from a 3 s window), integrated over the window, loudest moment, " +
-                    "true peak, RMS and clipped samples, measured as analyze measures renders. Returns after the window. Studio mode only; in " +
+                    "true peak, RMS and clipped samples, measured as analyze measures renders (before the safety limiter on the audio output). " +
+                    "safety tells whether the master's clip indicator latched an over and whether the safety limiter acted in the window; " +
+                    "clear_clip clears the indicator first, as a click on it does. Returns after the window. Studio mode only; in " +
                     "headless mode render and analyze. Read-only. Example: meters_read(machines=[\"Bass\", \"Kick\"], window_seconds=2).",
                 Input = Object(null,
                     Opt("machines", Array(String("A machine"), "Machines to meter too (up to 8)")),
-                    Opt("window_seconds", Number("How long to listen, 0.1–30 (default 1)", 0.1, LiveMeter.MaxSeconds))),
+                    Opt("window_seconds", Number("How long to listen, 0.1–30 (default 1)", 0.1, LiveMeter.MaxSeconds)),
+                    Opt("clear_clip", Boolean("Clear the master's latched clip indicator before listening"))),
                 Output = Object(null,
                     Req("playing", Boolean("Whether the transport ran")),
+                    Opt("safety", Object("The master's clip indicator and the safety limiter (machine-safety.md §3.3)",
+                        Opt("latched_over_dbfs", Level("The highest peak over the clip threshold since the indicator was cleared", "dBFS")),
+                        Req("clip_threshold_dbfs", Number("Overs above this latch")),
+                        Req("limiter_on", Boolean("The safety limiter is on")),
+                        Req("limiter_acted", Boolean("It turned the output down during the window")))),
                     Req("meters", Array(Object(null,
                         Req("source", String("Master or the machine")),
                         Req("seconds", Number("Audio measured")),
@@ -547,6 +555,9 @@ namespace ReBuzz.Agent
                     var master = new LiveMeter("Master", frames, 1 / 32768f);
                     var taps = new List<(LiveMeter Meter, IMachineConnection Connection, Action<float[], bool, TapTime> Handler)>();
                     Action<float[], bool, TapTime> masterHandler = (samples, stereo, _) => master.Add(samples, stereo);
+                    var safe = core.SafeMaster;
+                    if (c.Bool("clear_clip") == true) safe.ClearOver();
+                    long limitedBefore = safe.LimitedFrames;
                     bool playing = await host.Engine("meters_read", false, _ =>
                     {
                         foreach (var name in names)
@@ -593,8 +604,17 @@ namespace ReBuzz.Agent
                         lines.Add(LiveMeter.Line(meter.Source, report));
                     }
                     string text = string.Join("; ", lines) + ".";
+                    // Fork (machine-safety.md §3.3): the clip indicator and the safety limiter.
+                    bool acted = safe.LimitedFrames > limitedBefore;
+                    var safety = new JsonObject { ["clip_threshold_dbfs"] = safe.ClipThresholdDb, ["limiter_on"] = safe.LimiterOn, ["limiter_acted"] = acted };
+                    if (safe.LatchedOverDb is double over)
+                    {
+                        safety["latched_over_dbfs"] = over;
+                        text += $" The master's clip indicator latched {over:+0.0;-0.0} dBFS (meters_read(clear_clip=true) clears it).";
+                    }
+                    if (acted) text += " The safety limiter on the output turned it down: lower the mix.";
                     if (!playing) text += " The transport is stopped: these are the levels of what sounds on its own; transport(action=\"play\") first.";
-                    return ToolResult.Ok(text, new JsonObject { ["playing"] = playing, ["meters"] = meters });
+                    return ToolResult.Ok(text, new JsonObject { ["playing"] = playing, ["meters"] = meters, ["safety"] = safety });
                 },
             });
         }

@@ -238,6 +238,13 @@ namespace ReBuzz.Agent
             if (!IsMaster(m))
             {
                 o["muted"] = m.IsMuted;
+                if (m.IsDiverged)
+                {
+                    // Fork (machine-safety.md §3.2): the guard tripped; machine_set(reset=true) clears it.
+                    o["diverged"] = true;
+                    o["diverged_at"] = m.DivergedAt.ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture);
+                    o["diverged_reason"] = m.DivergedReason;
+                }
                 o["soloed"] = m.IsSoloed;
                 o["bypassed"] = m.IsBypassed;
                 o["tracks"] = m.TrackCount;
