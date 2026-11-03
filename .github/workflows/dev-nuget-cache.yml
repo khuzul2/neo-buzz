@@ -1,0 +1,58 @@
+name: Dev NuGet cache
+
+# Fork (docs/specs/studio-mvp.md §3.8): tooling, not product. The workspace where the fork is
+# developed can't reach NuGet, so this restores the projects that need packages (the studio and
+# the test projects) on Linux and keeps their .nupkg files as one asset, nuget-feed.tar, of the
+# prerelease "dev-nuget-cache". A local build then reads that folder as its only package source.
+# The asset only grows: each run adds what it restored to what was there. Product builds restore
+# from NuGet as usual.
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: [ main ]
+    paths:
+      - '.github/workflows/dev-nuget-cache.yml'
+      - 'ReBuzz.Studio/*.csproj'
+      - 'ReBuzz.Studio.Tests/*.csproj'
+      - 'NeoBuzz.Editor.Avalonia/*.csproj'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dev-nuget-cache
+  cancel-in-progress: false
+
+jobs:
+  cache:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restore
+      run: |
+        git submodule update --init --depth 1 3rdParty/serilog/serilog
+        for p in ReBuzz.Studio ReBuzz.Studio.Tests NeoBuzz.Editor.Avalonia ReBuzz.SessionTests ReBuzz.AgentTests NeoBuzz.MachineTests; do
+          if [ -d "$p" ]; then dotnet restore "$p" --packages "$RUNNER_TEMP/pkgs" -v:q; fi
+        done
+
+    - name: Publish
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        mkdir -p "$RUNNER_TEMP/feed"
+        if gh release view dev-nuget-cache >/dev/null 2>&1; then
+          gh release download dev-nuget-cache -p nuget-feed.tar -D "$RUNNER_TEMP" || true
+          [ -f "$RUNNER_TEMP/nuget-feed.tar" ] && tar -C "$RUNNER_TEMP/feed" -xf "$RUNNER_TEMP/nuget-feed.tar"
+        else
+          gh release create dev-nuget-cache --prerelease --target "$GITHUB_SHA" --title "Dev NuGet cache (tooling, not a release)" \
+            --notes "Packages for building the studio and the tests where NuGet can't be reached (docs/specs/studio-mvp.md §3.8). Not a ReBuzz release."
+        fi
+        find "$RUNNER_TEMP/pkgs" -name '*.nupkg' -exec cp {} "$RUNNER_TEMP/feed/" \;
+        echo "::notice title=Dev NuGet cache::$(ls "$RUNNER_TEMP/feed" | wc -l) packages, $(du -sh "$RUNNER_TEMP/feed" | cut -f1)"
+        tar -C "$RUNNER_TEMP/feed" -cf nuget-feed.tar .
+        gh release upload dev-nuget-cache nuget-feed.tar --clobber
