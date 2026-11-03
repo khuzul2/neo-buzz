@@ -66,7 +66,8 @@ namespace ReBuzz.Headless
                 Console.Error.WriteLine(Usage);
                 return args.Any(a => a is "-h" or "--help") ? 0 : 2;
             }
-            string settings = Option(args, "--settings") ?? JsonRegistry.SettingsFolder;
+            // Absolute: render files are reported as file URIs, which a relative path can't make.
+            string settings = Path.GetFullPath(Option(args, "--settings") ?? JsonRegistry.SettingsFolder);
             // The song: the first argument that is neither an option nor an option's value.
             string song = null;
             for (int i = 0; i < args.Length && song == null; i++)
