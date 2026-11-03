@@ -48,7 +48,7 @@ namespace ReBuzz.AgentTests
             ["machine_list"] = new string[0],
             ["machine_add"] = new[] { "gear", "name", "connect_to", "insert_after", "gain_db", "tracks" },
             ["machine_remove"] = new[] { "machines", "keep_chain" },
-            ["machine_set"] = new[] { "machine", "rename", "mute", "solo", "bypass", "tracks" },
+            ["machine_set"] = new[] { "machine", "rename", "mute", "reset", "solo", "bypass", "tracks" },
             ["connect"] = new[] { "from", "to", "gain_db", "pan", "input" },
             ["disconnect"] = new[] { "from", "to" },
             ["connection_set"] = new[] { "changes" },
@@ -97,7 +97,7 @@ namespace ReBuzz.AgentTests
             ["session_launch"] = new[] { "scene", "machine", "pattern", "stop", "immediate", "back_to_arrangement" },
             ["session_record"] = new[] { "action", "machine", "scene", "bars" },
             ["midi_play"] = new[] { "machine", "notes", "start", "stop" },
-            ["meters_read"] = new[] { "machines", "window_seconds" },
+            ["meters_read"] = new[] { "machines", "window_seconds", "clear_clip" },
             ["machine_readings"] = new[] { "machine" },
         };
 
