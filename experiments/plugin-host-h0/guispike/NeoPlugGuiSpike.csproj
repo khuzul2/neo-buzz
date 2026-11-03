@@ -16,6 +16,7 @@
     <AssemblyName>NeoPlugGuiSpike</AssemblyName>
     <RootNamespace>NeoPlugGuiSpike</RootNamespace>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.4" />

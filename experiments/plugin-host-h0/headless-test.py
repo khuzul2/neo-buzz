@@ -16,11 +16,11 @@ import argparse
 import base64
 import json
 import os
+import queue
 import re
-import shutil
 import subprocess
 import sys
-import time
+import threading
 import xml.etree.ElementTree as ET
 
 ap = argparse.ArgumentParser()
@@ -53,16 +53,29 @@ env["APPDATA"] = os.path.join(work, "appdata")
 proc = subprocess.Popen([args.exe, "--agent", "--settings", os.path.join(work, "settings")], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                         stderr=open(stderr_path, "w"), text=True, bufsize=1, env=env)
 next_id = 0
+lines = queue.Queue()
+threading.Thread(target=lambda: [lines.put(l) for l in iter(proc.stdout.readline, "")] + [lines.put("")], daemon=True).start()
 
 
-def request(method, params=None):
+def request(method, params=None, timeout=180):
     global next_id
     next_id += 1
     proc.stdin.write(json.dumps({"jsonrpc": "2.0", "id": next_id, "method": method, "params": params or {}}) + "\n")
     proc.stdin.flush()
-    line = proc.stdout.readline()
+    try:
+        line = lines.get(timeout=timeout)
+    except queue.Empty:
+        proc.kill()
+        tail = open(stderr_path, encoding="utf-8", errors="replace").read()[-4000:]
+        json.dump({"ok": False, "failures": [f"{method} timed out"], "checks": results["checks"], "stderr_tail": tail},
+                  open(os.path.join(work, "headless-result.json"), "w"), indent=1)
+        print(f"FAIL {method} timed out after {timeout} s; stderr:\n{tail}")
+        sys.exit(1)
     if not line:
-        raise SystemExit("rebuzz-headless closed stdout; stderr:\n" + open(stderr_path).read()[-4000:])
+        tail = open(stderr_path, encoding="utf-8", errors="replace").read()[-4000:]
+        json.dump({"ok": False, "failures": ["rebuzz-headless closed stdout"], "checks": results["checks"], "stderr_tail": tail},
+                  open(os.path.join(work, "headless-result.json"), "w"), indent=1)
+        raise SystemExit("rebuzz-headless closed stdout; stderr:\n" + tail)
     return json.loads(line)
 
 
@@ -80,6 +93,7 @@ def stderr_lines():
 
 init = request("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "h0", "version": "1"}})
 check(init.get("result", {}).get("serverInfo", {}).get("name") == "rebuzz", "initialize")
+print("     " + json.dumps(init)[:200], flush=True)
 proc.stdin.write(json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n")
 proc.stdin.flush()
 
@@ -150,7 +164,8 @@ identical = ok and "No measurable difference" in text
 loud_same = True
 for n in names:
     a, b = lv1.get(n, (None, None))[0], lv2.get(n, (None, None))[0]
-    same = isinstance(a, (int, float)) and isinstance(b, (int, float)) and abs(a - b) < 0.3
+    # (below the loudness gate both are -inf: equal)
+    same = a is not None and (a == b or (isinstance(a, (int, float)) and isinstance(b, (int, float)) and abs(a - b) < 0.3))
     loud_same &= same
     check(same, f"{n}: {a} LUFS before, {b} after")
 # Some plugins aren't deterministic (Surge XT's oscillators start at random phases): then the same

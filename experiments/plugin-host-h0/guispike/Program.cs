@@ -107,7 +107,12 @@ namespace NeoPlugGuiSpike
                 Error = $"the plugin can't embed in {Program.Api} (support {support})";
                 return new PlatformHandle(Container, Program.Descriptor);
             }
-            if (Native.np_gui_attach(Plugin, Container, Program.Api, out PluginWidth, out PluginHeight, err, err.Length) == 0) Attached = true;
+            if (Native.np_gui_attach(Plugin, Container, Program.Api, out PluginWidth, out PluginHeight, err, err.Length) == 0)
+            {
+                Attached = true;
+                // The container takes the plugin's size; the control follows (Avalonia then keeps the frame).
+                if (PluginWidth > 0 && PluginHeight > 0) Native.np_platform_resize(Container, PluginWidth, PluginHeight);
+            }
             else Error = "attach: " + Native.Str(err);
             return new PlatformHandle(Container, Program.Descriptor);
         }
@@ -184,8 +189,7 @@ namespace NeoPlugGuiSpike
                 {
                     view.Width = view.PluginWidth;
                     view.Height = view.PluginHeight;
-                    window.Width = view.PluginWidth + 20;
-                    window.Height = view.PluginHeight + 20;
+                    window.SizeToContent = SizeToContent.WidthAndHeight;
                 }
                 await Pump(Program.Hold, view.Plugin);
                 var embed = new JsonObject
@@ -268,6 +272,7 @@ namespace NeoPlugGuiSpike
         [DllImport(Lib)] public static extern int np_gui_attach(IntPtr p, IntPtr parent, [MarshalAs(UnmanagedType.LPUTF8Str)] string api, out int w, out int h, byte[] err, int errlen);
         [DllImport(Lib)] public static extern void np_gui_detach(IntPtr p);
         [DllImport(Lib)] public static extern IntPtr np_platform_container(IntPtr parent, int w, int h);
+        [DllImport(Lib)] public static extern void np_platform_resize(IntPtr view, int w, int h);
         [DllImport(Lib)] public static extern IntPtr np_platform_window([MarshalAs(UnmanagedType.LPUTF8Str)] string title, int w, int h);
         [DllImport(Lib)] public static extern int np_platform_describe(IntPtr view, byte[] buf, int len);
         [DllImport(Lib)] public static extern int np_platform_snapshot(IntPtr view, [MarshalAs(UnmanagedType.LPUTF8Str)] string path, int rgb, byte[] stats, int len);

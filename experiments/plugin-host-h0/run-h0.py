@@ -87,6 +87,7 @@ if args.fixtures:
     test_clap = os.path.join(args.bin, "neoplug-test.clap")
     specs += [(os.path.join(args.vst3, "again.vst3"), "AGain VST3", True),
               (os.path.join(args.vst3, "note-expression-synth.vst3"), "Note Expression Synth", True),
+              (os.path.join(args.vst3, "note-expression-synth.vst3"), "Note Expression Synth With UI", True),
               (test_clap, "neoplug.test.synth", True),
               (test_clap, "neoplug.test.gain", True)]
 if args.surge_list and os.path.exists(args.surge_list):
@@ -125,7 +126,8 @@ for path, cid, required in specs:
     open(os.path.join(folder, "stderr.txt"), "w", encoding="utf-8").write(se or "")
     entry["probe_seconds"] = round(secs, 1)
     if r is None:
-        entry["error"] = f"probe exited {code}: {(se or '')[-400:]}"
+        entry["error"] = f"probe exited {code} (0x{(code or 0) & 0xFFFFFFFF:08X}): {(se or '')[-400:]}"
+        print(f"  probe exited {code}; stdout tail: {(so or '')[-800:]}", flush=True)
         if required:
             required_failures.append(f"{name}: probe crashed or hung ({code})")
     else:
@@ -165,6 +167,10 @@ if os.path.exists(args.headless) and loadable:
     if not hr.get("ok"):
         required_failures.append("in the engine: " + "; ".join(hr.get("failures", [])[:6]))
         print("engine log tail:\n" + ((so or "") + (se or ""))[-4000:], flush=True)
+        try:
+            print("rebuzz-headless stderr tail:\n" + open(os.path.join(out, "headless", "stderr.txt"), encoding="utf-8", errors="replace").read()[-4000:], flush=True)
+        except OSError:
+            pass
     for c in hr.get("checks", []):
         print(("  ok   " if c["ok"] else "  FAIL ") + c["what"][:240], flush=True)
     print(f"engine: {'ok' if hr.get('ok') else 'FAIL'} ({secs:.1f} s)", flush=True)
@@ -197,6 +203,7 @@ if args.bench:
     cmd = [bench, "--json", os.path.join(out, f"ipc-{osname}.json")] + args.bench_args.split()
     code, so, se, secs = run(cmd, timeout=1800)
     open(os.path.join(out, "ipc-log.txt"), "w", encoding="utf-8").write((se or ""))
+    print("ipc bench log:\n" + (se or ""), flush=True)
     try:
         summary["bench"] = json.load(open(os.path.join(out, f"ipc-{osname}.json"), encoding="utf-8"))
     except Exception:

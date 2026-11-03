@@ -38,10 +38,18 @@ extern "C" {
 
 NP_API void* np_platform_container(void* parent, int width, int height)
 {
+    // No autoresizing: the host (Avalonia's NativeControlHost) sets this view's frame itself, and
+    // an autoresizing mask on top of that collapses or shifts it.
     NeoPlugContainer* v = [[NeoPlugContainer alloc] initWithFrame:NSMakeRect(0, 0, width, height)];
-    v.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+    v.autoresizingMask = NSViewNotSizable;
     if (parent) [(__bridge NSView*)parent addSubview:v];
     return (__bridge_retained void*)v;
+}
+
+NP_API void np_platform_resize(void* view, int width, int height)
+{
+    NSView* v = (__bridge NSView*)view;
+    if (v) [v setFrameSize:NSMakeSize(width, height)];
 }
 
 NP_API void* np_platform_window(const char* title, int width, int height)

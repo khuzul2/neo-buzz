@@ -103,6 +103,7 @@ NP_API void np_gui_detach(np_plugin* p);
 
 /* Platform helpers for the spike (macOS: NSView / NSWindow; Windows: HWND). */
 NP_API void* np_platform_container(void* parent, int width, int height); /* a child view to host a plugin view */
+NP_API void np_platform_resize(void* view, int width, int height);         /* sets a container's size */
 NP_API void* np_platform_window(const char* title, int width, int height); /* a floating window's content view */
 NP_API int np_platform_describe(void* view, char* buf, int len);           /* the view tree under it, for checks */
 /* Renders the view (and, on macOS, its window) into an image at path (PNG on macOS, BMP on

@@ -173,6 +173,7 @@ NP_API void np_gui_detach(np_plugin* p) { p->impl->guiDetach(); }
 // Linux: no GUI in the spike (CI has no display); the helpers report that.
 extern "C" {
 NP_API void* np_platform_container(void*, int, int) { return nullptr; }
+NP_API void np_platform_resize(void*, int, int) {}
 NP_API void* np_platform_window(const char*, int, int) { return nullptr; }
 NP_API int np_platform_describe(void*, char* buf, int len)
 {

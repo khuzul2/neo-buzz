@@ -13,8 +13,21 @@
 
 #include "np_internal.h"
 
+// Plugin GUIs expect COM (and OLE, for drag and drop) on the UI thread, as every DAW has it:
+// VSTGUI crashes without it (H0 finding). Avalonia's UI thread has it already.
+static void ensureOle()
+{
+    static thread_local bool done = false;
+    if (!done)
+    {
+        OleInitialize(nullptr);
+        done = true;
+    }
+}
+
 static const wchar_t* containerClass()
 {
+    ensureOle();
     static bool done = false;
     if (!done)
     {
@@ -36,6 +49,11 @@ NP_API void* np_platform_container(void* parent, int width, int height)
 {
     DWORD style = parent ? (WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN) : (WS_POPUP | WS_CLIPCHILDREN);
     return CreateWindowExW(0, containerClass(), L"", style, 0, 0, width, height, (HWND)parent, nullptr, GetModuleHandleW(nullptr), nullptr);
+}
+
+NP_API void np_platform_resize(void* view, int width, int height)
+{
+    if (view) SetWindowPos((HWND)view, nullptr, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
 }
 
 NP_API void* np_platform_window(const char* title, int width, int height)
