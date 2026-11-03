@@ -12,6 +12,8 @@ namespace BuzzGUI.Common.Actions
         public int Offset { get; private set; }
         public int End { get; private set; }
         public double Gain { get; private set; } = 1.0;
+        // Fork (daw-modes.md S2): the arrangement clip it belongs to (0: none).
+        public int Clip { get; private set; }
 
         public EventRef(SequenceEvent e)
         {
@@ -23,6 +25,7 @@ namespace BuzzGUI.Common.Actions
                 Offset = e.Offset;
                 End = e.End;
                 Gain = e.Gain;
+                Clip = e.Clip;
             }
 
         }
@@ -33,7 +36,7 @@ namespace BuzzGUI.Common.Actions
             {
                 var pat = seq.Machine.Patterns.FirstOrDefault(p => p.Name == PatternName);
                 if (pat == null) return;
-                seq.SetEvent(time, new SequenceEvent(Type, pat) { Offset = Offset, End = End, Gain = Gain });
+                seq.SetEvent(time, new SequenceEvent(Type, pat) { Offset = Offset, End = End, Gain = Gain, Clip = Clip });
             }
             else
             {

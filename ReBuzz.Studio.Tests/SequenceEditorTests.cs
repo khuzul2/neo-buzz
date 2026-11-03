@@ -701,7 +701,7 @@ namespace ReBuzz.Studio.Tests
         [Test]
         public void TheBarListSnapsInsertsAndDeletesAsBuzzDoes()
         {
-            var tsl = new TimeSignatureList();
+            var tsl = new ReBuzz.Core.SongMeter();
             Assert.That(tsl.Snap(37, int.MaxValue), Is.EqualTo(32));
             Assert.That(tsl.GetBarLengthAt(37), Is.EqualTo(16));
             tsl.Set(40, 8);
@@ -711,11 +711,11 @@ namespace ReBuzz.Studio.Tests
             Assert.That(tsl.Entries.Keys, Is.EqualTo(new[] { 0, 48 }));
             tsl.Delete(16, 16);
             Assert.That(tsl.Entries.Keys, Is.EqualTo(new[] { 0, 32 }));
-            var copy = new TimeSignatureList(tsl);
+            var copy = new ReBuzz.Core.SongMeter(tsl);
             var ms = new MemoryStream();
             copy.Write(new BinaryWriter(ms));
             ms.Position = 0;
-            var read = new TimeSignatureList();
+            var read = new ReBuzz.Core.SongMeter();
             read.Read(new BinaryReader(ms));
             Assert.That(read.Entries, Is.EqualTo(tsl.Entries), "the file format round-trips");
         }
@@ -731,7 +731,7 @@ namespace ReBuzz.Studio.Tests
             var sel = new SequenceSelection();
             sel.Begin(40, 2);
             sel.Update(17, 0);
-            Assert.That(sel.Rect(new TimeSignatureList()), Is.EqualTo(new SequenceRect(16, 0, 32, 3)));
+            Assert.That(sel.Rect(new ReBuzz.Core.SongMeter()), Is.EqualTo(new SequenceRect(16, 0, 32, 3)));
             var block = new Rect(100, 0, 64, 80);
             Assert.That(SequenceGeometry.PartAt(block, new Point(102, 10), true), Is.EqualTo(BlockPart.LeftEdge));
             Assert.That(SequenceGeometry.PartAt(block, new Point(160, 10), true), Is.EqualTo(BlockPart.RightEdge));

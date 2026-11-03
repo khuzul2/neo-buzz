@@ -1049,7 +1049,8 @@ namespace ReBuzz.Core.Session
                 if (cycle == 0 || (starting && cycle > 0))
                 {
                     var (offset, end) = scheduler.GetRegionAt(seq, clock);
-                    recorder.ClipStarted(seq, clip, songPosition, offset, end, (float)scheduler.GetGain(seq));
+                    // daw-modes.md S2: a wrap continues the arrangement clip; recording starting mid-clip begins one.
+                    recorder.ClipStarted(seq, clip, songPosition, offset, end, (float)scheduler.GetGain(seq), wrap: cycle == 0 && !starting);
                 }
             }
         }

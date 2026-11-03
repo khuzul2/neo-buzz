@@ -1115,7 +1115,10 @@ namespace ReBuzz.FileOps
                             IPatternColumn column = null;
                             if (pattern != null && targetParameter != null)
                             {
-                                int newIndex = Math.Max(Math.Min(j, pattern.Columns.Count - 1), 0);
+                                // Fork (daw-modes.md AR0): in the order saved. Upstream clamped to Count - 1, which put a
+                                // pattern's second column before its first (a MIDI column and an automation column
+                                // swapped places on every open, so a saved song never saved back the same).
+                                int newIndex = Math.Clamp(j, 0, pattern.Columns.Count);
                                 pattern.InsertColumn(newIndex, targetParameter, track);
                                 column = pattern.Columns[newIndex];
                             }
