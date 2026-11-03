@@ -274,7 +274,9 @@ namespace ReBuzz.Agent
                 Req("latency_ms", Number("From a rendered sample to the speaker")),
                 Req("render_threads", Integer("Threads rendering machines (1: the device's own thread only)")),
                 Opt("workgroup_threads", Integer("Render threads in the device's audio workgroup now (macOS)")),
-                Req("dropouts", Integer("Buffers that missed their deadline since ReBuzz started")))),
+                Req("dropouts", Integer("Buffers that missed their deadline since ReBuzz started")),
+                Req("worst_overrun_ms", Number("How far past its deadline the slowest of those buffers ran")),
+                Req("played_seconds", Number("Audio the device has taken since ReBuzz started: its clock, which runs in real time while it plays")))),
             Opt("safety", SafetySchema()),
             Opt("warnings", Array(String("A message"), "Messages ReBuzz raised during the call")));
 
@@ -344,6 +346,8 @@ namespace ReBuzz.Agent
                 ["latency_ms"] = Math.Round(core.OutputLatencySamples * 1000.0 / rate, 1),
                 ["render_threads"] = core.EngineSettings.Multithreading ? Math.Max(1, ReBuzz.Audio.Engine.AudioEngine.ThreadCount) : 1,
                 ["dropouts"] = ReBuzzCore.DeadlineMisses,
+                ["worst_overrun_ms"] = Math.Round(System.Threading.Interlocked.Read(ref ReBuzzCore.DeadlineWorstOverrunUs) / 1000.0, 1),
+                ["played_seconds"] = Math.Round(System.Threading.Interlocked.Read(ref ReBuzzCore.PlayedFrames) / (double)rate, 3),
             };
             if (ReBuzz.Platform.AudioWorkgroup.Attached) audio["workgroup_threads"] = ReBuzz.Platform.AudioWorkgroup.JoinedThreads;
             return audio;
