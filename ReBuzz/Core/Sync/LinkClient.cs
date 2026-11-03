@@ -91,11 +91,12 @@ namespace ReBuzz.Core.Sync
         {
             lock (sendLock)
             {
-                if (!IsRunning) return;
+                var p = process;
+                if (p == null || exited) return;
                 try
                 {
-                    process.StandardInput.WriteLine(line);
-                    process.StandardInput.Flush();
+                    p.StandardInput.WriteLine(line);
+                    p.StandardInput.Flush();
                 }
                 catch (Exception)
                 {
@@ -160,14 +161,23 @@ namespace ReBuzz.Core.Sync
         /// <summary>A start may be heard at once; it waits for Link's phase (Live's: the next bar line from a bar's start).</summary>
         public double EarliestStart(in Timeline line, double heardMicros) => heardMicros;
 
+        /// <summary>
+        /// Stops the helper. Safe to call twice and from two threads at once: the reader thread's
+        /// Exited handler can turn Link off while the app disposes it too.
+        /// </summary>
         public void Dispose()
         {
-            var p = process;
+            var p = Interlocked.Exchange(ref process, null);
             if (p == null) return;
-            Send(LinkProtocol.Quit);
+            exited = true;
             try
             {
-                lock (sendLock) p.StandardInput.Close();
+                lock (sendLock)
+                {
+                    p.StandardInput.WriteLine(LinkProtocol.Quit);
+                    p.StandardInput.Flush();
+                    p.StandardInput.Close();
+                }
             }
             catch (Exception) { }
             try
@@ -175,9 +185,11 @@ namespace ReBuzz.Core.Sync
                 if (!p.WaitForExit(1000)) p.Kill();
             }
             catch (Exception) { }
-            p.Dispose();
-            process = null;
-            exited = true;
+            try
+            {
+                p.Dispose();
+            }
+            catch (Exception) { }
         }
     }
 }

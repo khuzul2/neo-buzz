@@ -85,6 +85,8 @@ namespace ReBuzz.Common
 
         internal static void SetProcessorAffinityMask(IRegistryEx registryEx, IUserMessages userMessages, bool ideal)
         {
+            // Fork (mac-engine.md): .NET supports process affinity on Windows and Linux only; macOS throws.
+            if (!OperatingSystem.IsWindows() && !OperatingSystem.IsLinux()) return;
             var process = Process.GetCurrentProcess();
             long processorAffinityMask = registryEx.Read("ProcessorAffinity", 0xFFFFFFFF, "Settings");
             try

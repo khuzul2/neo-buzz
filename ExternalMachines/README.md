@@ -20,6 +20,7 @@ On top of this, upstream ReBuzz already ships **73 prebuilt machine DLLs** in `R
 ExternalMachines/
 ├── machines.json          manifest: origin, commit, license, kind, build entry, patches
 ├── Directory.Build.props  default ReBuzzDir = this repo's build output
+├── portable/              the Pedal machines built for net10.0, off Windows (below)
 ├── source/                vendored sources (no .git, no obj/bin)
 │   ├── thepedal/          19 ReBuzz machines + buzz1503/ ports
 │   ├── buzztrax-buzzmachines/
@@ -30,6 +31,10 @@ ExternalMachines/
     ├── Gear/{Generators,Effects}/                    hand-placed prebuilt DLLs
     └── repos/<owner>__<repo>/{Generators,Effects}/   fetched GitHub release assets
 ```
+
+## Off Windows
+
+`portable/` builds the 19 Pedal machines as plain `net10.0`, without their WPF GUIs, for the studio and rebuzz-headless on macOS and Linux (docs/specs/studio-mvp.md S2). `ReBuzz.Host/AppGear.targets` builds them into the app's Gear; by hand: `dotnet build ExternalMachines/portable/Pedal.proj -p:GearDir=<folder>`. Each machine has a small project there that names its source folder and assembly, and lists its GUI-only files. Six sources keep their WPF code under `#if WINDOWS`, so the Windows builds above compile the same text as before (see `patches`).
 
 ## Prebuilt binaries
 
@@ -44,6 +49,7 @@ Precedence in the package: upstream `RunTime/Gear` > built from source > prebuil
 1. Copy the sources into `source/<author>/<machine>/` without `.git`, `bin` or `obj`.
 2. Add an entry to `machines.json`: `origin`, full `commit` SHA, `license`, `kind`, and for buildable machines `project`, `assembly` (must end in `.NET` — ReBuzz only loads managed machines named `*NET.dll`) and `gearFolder`.
 3. For `rebuzz-managed` projects, replace hard-coded `C:\Program Files\ReBuzz` paths with `$(ReBuzzDir)` and record it under `patches`.
+   For a Pedal machine, add its project to `portable/` too (copy a neighbour's), and put WPF-only code under `#if WINDOWS`.
 4. Run `.\build.ps1 -SkipCore` to rebuild only the machines and the package.
 
 When re-syncing from upstream, re-apply the entries under `patches`.
