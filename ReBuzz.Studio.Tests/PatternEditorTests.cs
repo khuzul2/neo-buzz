@@ -1,0 +1,518 @@
+// Fork (docs/specs/studio-mvp.md S6): the Modern Pattern Editor in the studio's Pattern tab, headless:
+// keyboard entry of notes and automation, the editor's data in the engine, edit commands (transpose,
+// interpolate, copy and paste), undo, playing the pattern through the engine, and screenshots.
+
+using System;
+using System.Linq;
+using Avalonia.LogicalTree;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.NUnit;
+using Avalonia.Input;
+using Avalonia.Threading;
+using BuzzGUI.Common;
+using BuzzGUI.Interfaces;
+using ReBuzz.Audio;
+using ReBuzz.Core;
+using ReBuzz.Studio.Shell;
+using ReBuzz.Studio.Views;
+
+namespace ReBuzz.Studio.Tests
+{
+    using Control = Avalonia.Controls.Control;
+
+    public class PatternEditorTests
+    {
+        const int Row = PatternEvent.TimeBase;      // a row at 4 rows a beat
+
+        sealed class Setup
+        {
+            public MainWindow Window;
+            public MachineCore Machine;
+            public IPattern Pattern;
+            public Control EditorView;
+        }
+
+        static void Pump()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                Dispatcher.UIThread.RunJobs();
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            }
+        }
+
+        /// <summary>A Neo Poly with an empty 4-beat pattern, shown in the Pattern tab with the keyboard on its grid.</summary>
+        static Setup Open(string name)
+        {
+            var core = Studio.Host.Core;
+            core.SongCore.CreateMachine("Neo Poly", null, name, null, null, null, -1, 0.3f, 0.3f);
+            var machine = core.SongCore.MachinesList.First(m => m.Name == name);
+            machine.CreatePattern("00", 16);
+            var pattern = machine.Patterns.First(p => p.Name == "00");
+
+            var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
+            window.Show();
+            Pump();
+            PatternView.Edit(pattern);
+            Pump();
+            var page = PatternView.Page;
+            Assert.That(page, Is.Not.Null, "the Pattern tab is there");
+            Assert.That(page.Pattern, Is.EqualTo(pattern), "it shows the pattern");
+            var view = page.EditorControl;
+            Assert.That(view, Is.Not.Null, "the Modern Pattern Editor's view is in the tab");
+            dynamic dview = view;
+            ((Control)dview.TrackerGrid.Body).Focus();
+            Pump();
+            return new Setup { Window = window, Machine = machine, Pattern = pattern, EditorView = view };
+        }
+
+        static void Close(Setup s)
+        {
+            s.Window.Close();
+            Pump();
+            Studio.Host.Core.SongCore.DeleteMachines(new[] { s.Machine });
+        }
+
+        static void Key(Setup s, PhysicalKey key, RawInputModifiers modifiers = RawInputModifiers.None)
+        {
+            s.Window.KeyPressQwerty(key, modifiers);
+            s.Window.KeyReleaseQwerty(key, modifiers);
+            Pump();
+        }
+
+        static void Keys(Setup s, params PhysicalKey[] keys)
+        {
+            foreach (var k in keys) Key(s, k);
+        }
+
+        /// <summary>The editor's events for a parameter (by name) and track: (time, value).</summary>
+        static (int Time, int Value)[] Events(IPattern pattern, string parameter, int track = 0)
+        {
+            var columns = pattern.PatternEditorMachineEvents.ToList();
+            var machine = pattern.Machine;
+            int found = 0;
+            foreach (var c in columns)
+            {
+                if (c.Parameter.Name != parameter) continue;
+                if (found++ == track)
+                    return c.Events.Select(e => (e.Time, e.Value)).OrderBy(e => e.Time).ToArray();
+            }
+            return null;
+        }
+
+        static dynamic Grid(Setup s) => ((dynamic)s.EditorView).TrackerGrid;
+
+        static Control Body(Setup s) => (Control)Grid(s).Body;
+
+        /// <summary>Types C, E, G and a note off on track 0's Note column, from row 0.</summary>
+        static void TypeChord(Setup s)
+        {
+            Key(s, PhysicalKey.Tab);
+            Keys(s, PhysicalKey.Z, PhysicalKey.C, PhysicalKey.B, PhysicalKey.Digit1);
+        }
+
+        [AvaloniaTest]
+        public void NotesAndAutomationTypedOnTheKeyboardAreTheEditorsData()
+        {
+            var s = Open("PE Keys");
+            try
+            {
+                Studio.Screenshot(s.Window, "pattern-editor-empty");
+
+                // Tab: from the globals to track 0, its Note column. Z, C, B: C, E, G at the base octave.
+                TypeChord(s);
+                Studio.Screenshot(s.Window, "pattern-editor-notes");
+                var notes = Events(s.Pattern, "Note");
+                Assert.That(notes, Is.EqualTo(new[] { (0, BuzzNote.Parse("C-4")), (Row, BuzzNote.Parse("E-4")), (2 * Row, BuzzNote.Parse("G-4")), (3 * Row, BuzzNote.Off) }),
+                    "notes at the base octave (4), then 1 for a note off, a row each");
+
+                // Shift+Tab back to the globals' first column (Voice mode): row 4, the low digit, 2.
+                Key(s, PhysicalKey.Tab, RawInputModifiers.Shift);
+                Key(s, PhysicalKey.Home);
+                Keys(s, PhysicalKey.ArrowDown, PhysicalKey.ArrowDown, PhysicalKey.ArrowDown, PhysicalKey.ArrowDown, PhysicalKey.ArrowRight, PhysicalKey.Digit2);
+                Assert.That(Events(s.Pattern, "Voice mode"), Is.EqualTo(new[] { (4 * Row, 2) }), "automation of a global parameter");
+
+                // A word: Uni detune (the fourth column), its second digit: 3 → 0300. (Home keeps the
+                // digit, as in WPF: from Voice mode's second digit, six to the right.)
+                Key(s, PhysicalKey.Home);
+                Keys(s, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight);
+                Key(s, PhysicalKey.Digit3);
+                Assert.That(Events(s.Pattern, "Uni detune"), Is.EqualTo(new[] { (0, 0x300) }), "a word's second digit");
+                Studio.Screenshot(s.Window, "pattern-editor-typed");
+
+                // The editor's data (what songs save) has them too.
+                var data = s.Machine.EditorMachine != null ? Studio.Host.Core.MachineManager.GetMachineData(s.Machine.EditorMachine) : null;
+                Assert.That(data, Is.Not.Null.And.Length.GreaterThan(10));
+                Assert.That(data[0], Is.EqualTo(255), "the Modern Pattern Editor's own format, as on Windows");
+
+                // Period clears a value; Delete deletes the row (the rows below move up).
+                Key(s, PhysicalKey.Tab);
+                Key(s, PhysicalKey.PageUp);
+                Key(s, PhysicalKey.Period);
+                Assert.That(Events(s.Pattern, "Note").Select(e => e.Time), Is.EqualTo(new[] { Row, 2 * Row, 3 * Row }), "period clears C-4");
+                Key(s, PhysicalKey.ArrowUp);
+                Key(s, PhysicalKey.Delete);
+                Assert.That(Events(s.Pattern, "Note").Select(e => e.Time), Is.EqualTo(new[] { 0, Row, 2 * Row }), "delete moves the rows up");
+            }
+            finally
+            {
+                Close(s);
+            }
+        }
+
+        [AvaloniaTest]
+        public void TransposeInterpolateCopyPasteAndUndo()
+        {
+            var s = Open("PE Edits");
+            var core = Studio.Host.Core;
+            int songActions = core.SongCore.ActionStack.Actions.Count();
+            try
+            {
+                TypeChord(s);
+                // Select the chord (rows 0–2): back to row 0, Shift+Down twice. Shift+Add: up a semitone.
+                Keys(s, PhysicalKey.ArrowUp, PhysicalKey.ArrowUp, PhysicalKey.ArrowUp, PhysicalKey.ArrowUp);
+                Key(s, PhysicalKey.ArrowDown, RawInputModifiers.Shift);
+                Key(s, PhysicalKey.ArrowDown, RawInputModifiers.Shift);
+                Key(s, PhysicalKey.NumPadAdd, RawInputModifiers.Shift);
+                Assert.That(Events(s.Pattern, "Note").Select(e => BuzzNote.TryToString(e.Value)), Is.EqualTo(new[] { "C#4", "F-4", "G#4", "off" }), "transposed a semitone");
+                Key(s, PhysicalKey.NumPadAdd, RawInputModifiers.Control | RawInputModifiers.Shift);
+                Assert.That(Events(s.Pattern, "Note").Select(e => BuzzNote.TryToString(e.Value)), Is.EqualTo(new[] { "C#5", "F-5", "G#5", "off" }), "and an octave");
+
+                // Copy the selection (the Edit menu's Copy, through the page), paste at row 8 (Ctrl+V).
+                Assert.That(((IStudioEditTarget)PatternView.Page).Copy(), Is.True, "Copy goes to the editor");
+                Key(s, PhysicalKey.ArrowUp, RawInputModifiers.None);
+                Keys(s, PhysicalKey.ArrowUp, PhysicalKey.ArrowUp);
+                for (int i = 0; i < 8; i++) Key(s, PhysicalKey.ArrowDown);
+                Key(s, PhysicalKey.V, RawInputModifiers.Control);
+                Studio.Screenshot(s.Window, "pattern-editor-pasted");
+                Assert.That(Events(s.Pattern, "Note").Select(e => (e.Time, BuzzNote.TryToString(e.Value))),
+                    Is.EqualTo(new[] { (0, "C#5"), (Row, "F-5"), (2 * Row, "G#5"), (3 * Row, "off"), (8 * Row, "C#5"), (9 * Row, "F-5"), (10 * Row, "G#5") }), "pasted at row 8");
+
+                // Interpolate: Uni detune 0000 at row 0 and 0300 at row 8, select them, Ctrl+I.
+                Key(s, PhysicalKey.Tab, RawInputModifiers.Shift);
+                Key(s, PhysicalKey.Home);
+                Keys(s, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight, PhysicalKey.ArrowRight);
+                Key(s, PhysicalKey.PageUp);
+                Key(s, PhysicalKey.Digit0);
+                for (int i = 0; i < 7; i++) Key(s, PhysicalKey.ArrowDown);
+                Key(s, PhysicalKey.ArrowRight);
+                Key(s, PhysicalKey.Digit3);
+                Assert.That(Events(s.Pattern, "Uni detune"), Is.EqualTo(new[] { (0, 0), (8 * Row, 0x300) }));
+                Key(s, PhysicalKey.PageUp);
+                for (int i = 0; i < 8; i++) Key(s, PhysicalKey.ArrowDown, RawInputModifiers.Shift);
+                Key(s, PhysicalKey.I, RawInputModifiers.Control);
+                var ramp = Events(s.Pattern, "Uni detune");
+                Assert.That(ramp.Select(e => e.Time), Is.EqualTo(Enumerable.Range(0, 9).Select(i => i * Row)), "a value on every row between");
+                Assert.That(ramp.Select(e => e.Value), Is.Ordered.Ascending);
+                Assert.That(ramp[4].Value, Is.EqualTo((int)(769 * 0.5)), "linear, as the WPF editor computes it");
+                Studio.Screenshot(s.Window, "pattern-editor-interpolated");
+
+                // Undo (the editor's own stack, as on Windows) takes the interpolation back, then the second digit.
+                Key(s, PhysicalKey.Z, RawInputModifiers.Control);
+                Assert.That(Events(s.Pattern, "Uni detune"), Is.EqualTo(new[] { (0, 0), (8 * Row, 0x300) }), "undo");
+                Key(s, PhysicalKey.Z, RawInputModifiers.Control);
+                Assert.That(Events(s.Pattern, "Uni detune"), Is.EqualTo(new[] { (0, 0) }), "undo again");
+                Key(s, PhysicalKey.Y, RawInputModifiers.Control);
+                Assert.That(Events(s.Pattern, "Uni detune"), Is.EqualTo(new[] { (0, 0), (8 * Row, 0x300) }), "redo");
+                // The page's hooks for the shell's Edit menu reach the same stack.
+                var page = PatternView.Page;
+                Assert.That(page.CanUndo, Is.True);
+                page.Undo();
+                Assert.That(Events(s.Pattern, "Uni detune"), Is.EqualTo(new[] { (0, 0) }), "the page's undo");
+                page.Redo();
+                Assert.That(Events(s.Pattern, "Uni detune"), Is.EqualTo(new[] { (0, 0), (8 * Row, 0x300) }), "the page's redo");
+                Assert.That(core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(songActions), "the song's own undo stack isn't touched");
+            }
+            finally
+            {
+                Close(s);
+            }
+        }
+
+        [AvaloniaTest]
+        public void ThePatternPlaysThroughTheEngineAndTheCursorFollows()
+        {
+            var s = Open("PE Play");
+            var core = Studio.Host.Core;
+            var song = core.SongCore;
+            ISequence seq = null;
+            try
+            {
+                TypeChord(s);
+                Key(s, PhysicalKey.Tab, RawInputModifiers.Shift);
+                Key(s, PhysicalKey.Home);
+                Keys(s, PhysicalKey.ArrowDown, PhysicalKey.ArrowDown, PhysicalKey.ArrowRight, PhysicalKey.Digit1);
+                Assert.That(Events(s.Pattern, "Voice mode"), Is.EqualTo(new[] { (2 * Row, 1) }));
+                var voiceMode = s.Machine.ParameterGroups[1].Parameters.First(p => p.Name == "Voice mode");
+                Assert.That(voiceMode.GetValue(0), Is.EqualTo(0));
+
+                var master = song.Machines.First(m => m.DLL.Info.Type == MachineType.Master);
+                if (!s.Machine.Outputs.Any(c => c.Destination == master))
+                    song.ConnectMachines(s.Machine, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                song.AddSequence(s.Machine, song.Sequences.Count);
+                seq = song.Sequences.Last();
+                seq.SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, s.Pattern));
+
+                var (peak, played) = Render(core, untilTick: 8);
+                Assert.That(played, Is.GreaterThanOrEqualTo(8));
+                // The play cursor: the pattern plays at tick 8 now (row 8).
+                Grid(s).TimerUpdate();
+                Pump();
+                Studio.Screenshot(s.Window, "pattern-editor-playing");
+                var (peak2, _) = Render(core, untilTick: 16, continuing: true);
+                Assert.That(Math.Max(peak, peak2), Is.GreaterThan(0.01f), "the notes sound (Neo Poly through the Master)");
+                Assert.That(voiceMode.GetValue(0), Is.EqualTo(1), "the automation reached the machine");
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) core.Playing = false;
+                if (seq != null) song.RemoveSequence(seq);
+                Close(s);
+            }
+        }
+
+        /// <summary>
+        /// Renders the song (the agent's offline render: a WorkManager on this thread, under the
+        /// audio lock) from tick 0 until the song reaches a tick; returns the peak and the tick reached.
+        /// </summary>
+        static (float Peak, int Tick) Render(ReBuzzCore core, int untilTick, bool continuing = false)
+        {
+            var song = core.SongCore;
+            var buffer = new float[512];
+            float peak = 0;
+            lock (ReBuzzCore.AudioLock)
+            {
+                var wm = new WorkManager(core, new WorkThreadEngine(1), 0, core.EngineSettings);
+                if (!continuing)
+                {
+                    core.Playing = false;
+                    core.Looping = false;
+                    song.LoopStart = 0;
+                    song.LoopEnd = 16;
+                    song.SongEnd = 16;
+                    song.PlayPosition = 0;
+                    ReBuzzCore.masterInfo.PosInTick = 0;
+                    var sub = ReBuzzCore.subTickInfo;
+                    sub.PosInSubTick = 0;
+                    sub.CurrentSubTick = 0;
+                    sub.SubTickReminderCounter = 0;
+                    core.Playing = true;
+                    var info = ReBuzzCore.masterInfo;
+                    for (int guard = 0; !core.Playing && guard < 100000; guard++)
+                    {
+                        int pos = info.PosInTick;
+                        int n = pos == 0 ? 1 : Math.Clamp(info.SamplesPerTick - pos, 1, 256);
+                        wm.MainAudioFillBuffer(buffer, 0, n * 2);
+                    }
+                }
+                Assert.That(core.Playing, Is.True, "playing");
+                for (int blocks = 0; blocks < 20000 && core.Playing && song.PlayPosition < untilTick; blocks++)
+                {
+                    wm.MainAudioFillBuffer(buffer, 0, 512);
+                    foreach (var x in buffer) peak = Math.Max(peak, Math.Abs(x));
+                }
+            }
+            return (peak, song.PlayPosition);
+        }
+
+        [AvaloniaTest]
+        public void TheChoosersAndTheApiPickWhatTheTabEdits()
+        {
+            var s = Open("PE Choose");
+            var core = Studio.Host.Core;
+            try
+            {
+                var page = PatternView.Page;
+                // A second pattern, made by the editor's Ctrl+Return (as on Windows), is shown.
+                Key(s, PhysicalKey.Enter, RawInputModifiers.Control);
+                var second = s.Machine.Patterns.FirstOrDefault(p => p.Name == "01");
+                Assert.That(second, Is.Not.Null, "Ctrl+Return made pattern 01");
+                Assert.That(page.Pattern, Is.EqualTo(second), "and the tab shows it");
+
+                // The API other views use: another tab in front, then Edit(pattern) brings the Pattern tab back.
+                var tabs = s.Window.Tabs;
+                var patternTab = tabs.Items.OfType<TabItem>().First(t => t.Header as string == "Pattern");
+                tabs.SelectedItem = tabs.Items.OfType<TabItem>().First(t => t != patternTab);
+                Pump();
+                PatternView.Edit(s.Pattern);
+                Pump();
+                Assert.That(page.Pattern, Is.EqualTo(s.Pattern));
+                Assert.That(tabs.SelectedItem, Is.EqualTo(patternTab), "the Pattern tab is in front");
+
+                // As the Session View opens a double-clicked clip: the engine's pattern editor pattern,
+                // then ActiveView. The tab follows both.
+                tabs.SelectedItem = tabs.Items.OfType<TabItem>().First(t => t != patternTab);
+                Pump();
+                core.SetPatternEditorPattern(second);
+                core.ActiveView = BuzzView.PatternView;
+                Pump();
+                Assert.That(page.Pattern, Is.EqualTo(second), "SetPatternEditorPattern picks the pattern");
+                Assert.That(tabs.SelectedItem, Is.EqualTo(patternTab), "ActiveView = PatternView brings the tab to the front");
+                PatternView.Edit(s.Pattern);
+                Pump();
+                Assert.That(core.PatternEditorPattern, Is.EqualTo(s.Pattern), "the engine's pattern editor pattern");
+
+                // Another machine, without patterns: the tab says so and offers New pattern.
+                core.SongCore.CreateMachine("Neo Wave", null, "PE Empty", null, null, null, -1, 0.5f, 0.5f);
+                var other = core.SongCore.MachinesList.First(m => m.Name == "PE Empty");
+                PatternView.Edit(other);
+                Pump();
+                Assert.That(page.Machine, Is.EqualTo(other));
+                Assert.That(page.EditorControl, Is.Null, "no editor yet: the machine has no patterns");
+                Studio.Screenshot(s.Window, "pattern-editor-no-patterns");
+                var button = page.GetLogicalDescendants().OfType<Button>().First(b => b.Content as string == "New pattern");
+                button.Command?.Execute(null);
+                button.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Pump();
+                Assert.That(other.Patterns.Count, Is.EqualTo(1), "New pattern made one");
+                Assert.That(page.EditorControl, Is.Not.Null, "and its editor is shown");
+                Assert.That(page.Pattern, Is.EqualTo(other.Patterns[0]));
+                // The shell's Edit menu: the new editor has nothing to undo, so the song's history takes Undo.
+                IStudioEditTarget target = page;
+                Assert.That(target.Undo(), Is.False, "nothing to undo in this editor");
+                Assert.That(target.Copy(), Is.False, "nothing selected to copy");
+                core.SongCore.DeleteMachines(new[] { (MachineCore)other });
+                Pump();
+            }
+            finally
+            {
+                Close(s);
+            }
+        }
+
+        [AvaloniaTest]
+        public void TheMouseMovesTheCursorAndSelects()
+        {
+            var s = Open("PE Mouse");
+            try
+            {
+                var grid = Grid(s);
+                var body = Body(s);
+                // Track 0's Note column is the second column set's first column: row 5.
+                Point at = grid.FieldCenter(1, 0, 1, 1);
+                grid.MakeVisible(new Rect(at.X - 200, at.Y, 400, 1));      // well inside the view, clear of the scroll bar
+                Pump();
+                var p = body.TranslatePoint(at, s.Window).Value;
+                s.Window.MouseDown(p, MouseButton.Left);
+                s.Window.MouseUp(p, MouseButton.Left);
+                Pump();
+                dynamic cursor = grid.Cursor;
+                Assert.That(((int)cursor.ColumnSet, (int)cursor.Column, (int)cursor.Beat, (int)cursor.RowInBeat), Is.EqualTo((1, 0, 1, 1)), "a click puts the cursor there");
+
+                // Drag down three rows: a selection.
+                Point qAt = grid.FieldCenter(1, 1, 2, 0);
+                var q = body.TranslatePoint(qAt, s.Window).Value;
+                s.Window.MouseDown(p, MouseButton.Left);
+                s.Window.MouseMove(q);
+                s.Window.MouseUp(q, MouseButton.Left);
+                Pump();
+                var selection = ((dynamic)s.EditorView).Editor.Control.CurrentPattern.Selection;
+                Assert.That((bool)selection.Active, Is.True, "dragging selects");
+                Studio.Screenshot(s.Window, "pattern-editor-selection");
+            }
+            finally
+            {
+                Close(s);
+            }
+        }
+
+        [AvaloniaTest]
+        public void PatternPropertiesAddMidiLanesAndRowsPerBeat()
+        {
+            var s = Open("PE Props");
+            try
+            {
+                dynamic editor = ((dynamic)s.EditorView).Editor;
+                var lanes = ((System.Collections.Generic.IEnumerable<IParameter>)editor.ColumnChoices(s.Machine)).ToList();
+                var midiNote = lanes.First(p => p.Name == "MIDI Note");
+                // Two of the MIDI lanes (the editor's own, listed first), the track's columns and Volume.
+                var chosen = lanes.Where(p => p.Name.StartsWith("MIDI ") ? p.Name == "MIDI Note" || p.Name == "MIDI Velocity"
+                    : p.Group.Type == ParameterGroupType.Track || p.Name == "Volume").ToList();
+                editor.ApplyPatternProperties(8, 8, "verse", chosen);
+                Pump();
+                Assert.That(s.Pattern.Name, Is.EqualTo("verse"), "renamed");
+                Assert.That(s.Pattern.Length, Is.EqualTo(32), "8 beats");
+                // Notes typed in the MIDI Note lane, at 8 rows a beat.
+                Key(s, PhysicalKey.Tab);
+                Keys(s, PhysicalKey.Z, PhysicalKey.X);
+                var events = s.Pattern.PatternEditorMachineEvents.First(c => c.Parameter.Name == "MIDI Note").Events.Select(e => (e.Time, e.Value)).ToArray();
+                Assert.That(events, Is.EqualTo(new[] { (0, BuzzNote.Parse("C-4")), (PatternEvent.TimeBase / 2, BuzzNote.Parse("D-4")) }), "half a tick a row");
+                var columns = s.Pattern.PatternEditorMachineEvents.Select(c => c.Parameter.Name).ToList();
+                Assert.That(columns, Does.Contain("MIDI Note").And.Contain("MIDI Velocity").And.Contain("Note"), "the MIDI lanes beside the track's own columns");
+                Assert.That(columns, Does.Not.Contain("MIDI Pitch Wheel"), "only the lanes chosen");
+                Studio.Screenshot(s.Window, "pattern-editor-midi-lanes");
+            }
+            finally
+            {
+                Close(s);
+            }
+        }
+
+        [AvaloniaTest]
+        public void ASongsEditorDataSavesAndOpensUnchanged()
+        {
+            var s = Open("PE Song");
+            var core = Studio.Host.Core;
+            string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "rebuzz-studio-pe-" + System.Environment.ProcessId);
+            System.IO.Directory.CreateDirectory(dir);
+            try
+            {
+                TypeChord(s);
+                byte[] before = core.MachineManager.GetMachineData(s.Machine.EditorMachine);
+                SongFiles.Picker = save => null;
+                Dialogs.Responder = (m, c, b) => UserAnswer.No;
+                foreach (var ext in new[] { ".bmxml", ".bmx" })
+                {
+                    string path = System.IO.Path.Combine(dir, "editor data" + ext);
+                    SongFiles.Picker = save => path;
+                    Assert.That(SongFiles.SaveAs().Result, Is.True);
+                    Assert.That(SongFiles.Open(path).Result, Is.True);
+                    Pump();
+                    var machine = core.SongCore.MachinesList.First(m => m.Name == "PE Song");
+                    Assert.That(machine.EditorMachine, Is.Not.Null, ext + ": the machine has its editor again");
+                    Assert.That(core.MachineManager.GetMachineData(machine.EditorMachine), Is.EqualTo(before), ext + ": the editor's data, byte for byte");
+                    Assert.That(Events(machine.Patterns.First(), "Note").Length, Is.EqualTo(4), ext + ": the notes");
+                    s.Machine = machine;
+                    s.Pattern = machine.Patterns.First();
+                }
+                PatternView.Edit(s.Pattern);
+                Pump();
+                Studio.Screenshot(s.Window, "pattern-editor-reopened");
+            }
+            finally
+            {
+                SongFiles.Picker = null;
+                Dialogs.Responder = null;
+                Close(s);
+                SongFiles.New().Wait();
+            }
+        }
+
+        [AvaloniaTest]
+        public void TheGridDrawsQuickly()
+        {
+            var s = Open("PE Speed");
+            try
+            {
+                var window = s.Window;
+                var body = Body(s);
+                var times = new System.Collections.Generic.List<double>();
+                for (int i = 0; i < 10; i++)
+                {
+                    body.InvalidateVisual();
+                    window.CaptureRenderedFrame();
+                    times.Add(((TimeSpan)Grid(s).LastRenderTime).TotalMilliseconds);
+                }
+                times.Sort();
+                TestContext.Out.WriteLine($"Neo Poly's grid ({s.Machine.ParameterGroups[1].Parameters.Count} globals): median {times[5]:F1} ms to draw the beats in view");
+                Assert.That(times[5], Is.LessThan(100), "a frame of beats draws in well under 100 ms");
+            }
+            finally
+            {
+                Close(s);
+            }
+        }
+    }
+}

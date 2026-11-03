@@ -12,6 +12,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.NUnit;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
 using Avalonia.Threading;
 using BuzzGUI.Interfaces;
 using ReBuzz.Audio;
@@ -460,6 +461,28 @@ namespace ReBuzz.Studio.Tests
             Assert.That(Events(0), Is.EqualTo("0:Hook"), "and the paste");
             Edit("_Redo");
             Assert.That(Events(0), Is.EqualTo("0:Hook 32:Hook"));
+
+            // The window's keys reach the view when the focus is elsewhere (here the tab's header).
+            var tab = (TabItem)rig.Window.Tabs.SelectedItem!;
+            Assert.That(tab.Focus(), Is.True, "the tab header takes the focus");
+            Settle();
+            rig.Key(PhysicalKey.X, Cmd);
+            Assert.That(Events(0), Is.EqualTo("32:Hook"), "Ctrl/Command+X from the window cuts the block under the cursor");
+            rig.Undo();
+            Assert.That(Events(0), Is.EqualTo("0:Hook 32:Hook"));
+
+            // A focused text box takes the Edit menu's commands (the BPM box), not the view.
+            var bpmBox = rig.Window.Transport.GetVisualDescendants().OfType<TextBox>().First();
+            Assert.That(bpmBox.Focus(), Is.True);
+            bpmBox.SelectAll();
+            Settle();
+            Edit("_Copy");
+            var clipboard = TopLevel.GetTopLevel(rig.Window)!.Clipboard!;
+            var text = Avalonia.Input.Platform.ClipboardExtensions.TryGetTextAsync(clipboard);
+            for (var until = DateTime.UtcNow.AddSeconds(10); !text.IsCompleted && DateTime.UtcNow < until;)
+                Dispatcher.UIThread.RunJobs();
+            Assert.That(text.IsCompleted ? text.Result : null, Is.EqualTo(bpmBox.Text), "the BPM box's text is on the clipboard");
+            Assert.That(Events(0), Is.EqualTo("0:Hook 32:Hook"), "the arrangement is untouched");
         }
 
         // ------------------------------------------------------------------ markers and playback

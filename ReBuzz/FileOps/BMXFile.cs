@@ -965,13 +965,22 @@ namespace ReBuzz.FileOps
 
                     // Create patterns
                     int first = machine.PatternsList.Count;
-                    foreach (var (name, data) in contents)
+                    bool builtIn = builtInPeDictionary.ContainsKey(machine.Name) && patterns > 0;
+                    buzz.PatternsAwaitingEditor = builtIn ? machine : null;     // fork (studio-mvp.md S6)
+                    try
                     {
-                        machine.CreatePattern(name, data.Global.Length);
+                        foreach (var (name, data) in contents)
+                        {
+                            machine.CreatePattern(name, data.Global.Length);
+                        }
+                    }
+                    finally
+                    {
+                        buzz.PatternsAwaitingEditor = null;
                     }
 
                     // Does machine use built in editor?
-                    if (builtInPeDictionary.ContainsKey(machine.Name) && patterns > 0)
+                    if (builtIn)
                     {
                         // Create PXP compatible editor and input converted data
                         buzz.CreateEditor(machine, buzz.DefaultPatternEditor, BuiltInPattern.ToPXP(machine, contents));

@@ -1,7 +1,11 @@
-﻿using Accessibility;
+﻿#if WINDOWS
+using Accessibility;
+#endif
 using Buzz.MachineInterface;
 using BuzzGUI.Common;
+#if WINDOWS
 using BuzzGUI.Common.Templates;
+#endif
 using BuzzGUI.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -9,7 +13,9 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+#if WINDOWS
 using System.Windows.Controls;
+#endif
 using System.Xml.Linq;
 using WDE.ModernPatternEditor.MPEStructures;
 
@@ -56,10 +62,19 @@ namespace WDE.ModernPatternEditor
         }
 
         // Add this if Pattern Editor Machine
+#if WINDOWS
         public UserControl PatternEditorControl()
         {
             return ModernPatternEditor;
         }
+#else
+        // Fork (docs/specs/studio-mvp.md S6): off Windows the control is an object, so the machine
+        // loads without a UI toolkit: the Avalonia view in the studio's build, null in rebuzz-headless's.
+        public object PatternEditorControl()
+        {
+            return ModernPatternEditor.View;
+        }
+#endif
 
         public void SetEditorPattern(IPattern pattern)
         {

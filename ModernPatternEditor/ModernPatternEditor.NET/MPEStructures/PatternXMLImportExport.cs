@@ -1,4 +1,6 @@
-﻿using BuzzGUI.Common.Templates;
+﻿#if WINDOWS
+using BuzzGUI.Common.Templates;
+#endif
 using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
 using System;
@@ -7,7 +9,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+#if WINDOWS
 using System.Windows;
+#endif
 using System.Xml;
 using System.Xml.Serialization;
 using BuzzGUI.Common;
@@ -28,7 +32,11 @@ namespace WDE.ModernPatternEditor.MPEStructures
             }
             catch (Exception e)
             {
+#if WINDOWS
                 MessageBox.Show(e.ToString(), "Save Error", MessageBoxButton.OK);
+#else
+                Global.Buzz.DCWriteLine("[PE] Save error: " + e.Message);
+#endif
             }
 
             w.Close();
@@ -47,7 +55,11 @@ namespace WDE.ModernPatternEditor.MPEStructures
             }
             catch (Exception e)
             {
+#if WINDOWS
                 MessageBox.Show("Error loading all patterns:\n\n" + e.ToString(), "Multi Pattern Load Error", MessageBoxButton.OK);
+#else
+                Global.Buzz.DCWriteLine("[PE] Pattern load error: " + e.Message);
+#endif
             }
             r.Close();
             input.Close();
@@ -55,6 +67,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
             return t;
         }
 
+#if WINDOWS
         public static void ExportPattern(MPEPattern pattern)
         {
             Microsoft.Win32.SaveFileDialog saveFileDlg = new Microsoft.Win32.SaveFileDialog();
@@ -135,6 +148,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
                 }
             }
         }
+#endif
         
         public static XMLPattern GetExportPattern(MPEPattern pattern)
         {

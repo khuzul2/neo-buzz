@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+#if WINDOWS
 using System.Windows.Media;
+#endif
 
 namespace WDE.ModernPatternEditor.ColumnRenderer
 {

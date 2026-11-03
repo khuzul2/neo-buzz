@@ -8,7 +8,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+#if WINDOWS
 using System.Windows;
+#endif
 using WDE.ModernPatternEditor.MPEStructures;
 
 namespace WDE.ModernPatternEditor
@@ -899,6 +901,7 @@ namespace WDE.ModernPatternEditor
 
         #region Other
 
+#if WINDOWS
         internal static ResourceDictionary GetBuzzThemeSettingsWindowResources()
         {
             ResourceDictionary skin = new ResourceDictionary();
@@ -920,6 +923,7 @@ namespace WDE.ModernPatternEditor
 
             return skin;
         }
+#endif
 
         #endregion
 

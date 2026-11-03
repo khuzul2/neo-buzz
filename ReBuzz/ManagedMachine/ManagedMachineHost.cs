@@ -382,7 +382,9 @@ namespace ReBuzz.ManagedMachine
 
         /// <summary>
         /// The machine's PatternEditorControl(): a WPF UserControl as it is, a WinForms UserControl
-        /// wrapped by the UI. Any other return type fails as binding the WPF delegate type did.
+        /// wrapped by the UI, or, from a portable pattern editor (declared as returning object), what
+        /// its UI makes: an Avalonia control in the studio, null without a UI (studio-mvp.md S6). Any
+        /// other return type fails as binding the WPF delegate type did.
         /// </summary>
         private PatternEditorControlDelegate PatternEditorControlOf(MethodInfo method)
         {
@@ -391,6 +393,10 @@ namespace ReBuzz.ManagedMachine
                 return null;
             }
             if (IsOrDerivesFrom(method.ReturnType, "System.Windows.Controls.UserControl"))
+            {
+                return (PatternEditorControlDelegate)Delegate.CreateDelegate(typeof(PatternEditorControlDelegate), machine, method);
+            }
+            if (method.ReturnType == typeof(object))
             {
                 return (PatternEditorControlDelegate)Delegate.CreateDelegate(typeof(PatternEditorControlDelegate), machine, method);
             }

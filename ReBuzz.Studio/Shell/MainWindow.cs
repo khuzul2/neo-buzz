@@ -51,8 +51,11 @@ namespace ReBuzz.Studio.Shell
             WindowBounds.Restore(this, host.Registry, PlacementName);
 
             // The selected view first (IStudioEditTarget), then the song's undo history.
-            undo = new Command(() => { if (Target?.Undo() != true) Stack?.Undo(); }, () => Target != null || Stack?.CanUndo == true);
-            redo = new Command(() => { if (Target?.Redo() != true) Stack?.Redo(); }, () => Target != null || Stack?.CanRedo == true);
+            // A focused text box first (FocusedText), then the selected view, then the song's history.
+            undo = new Command(() => { if (FocusedText is { } t) t.Undo(); else if (Target?.Undo() != true) Stack?.Undo(); },
+                               () => FocusedText != null || Target != null || Stack?.CanUndo == true);
+            redo = new Command(() => { if (FocusedText is { } t) t.Redo(); else if (Target?.Redo() != true) Stack?.Redo(); },
+                               () => FocusedText != null || Target != null || Stack?.CanRedo == true);
             transport = new TransportBar(host);
 
             // The macOS menu bar has the menus there; elsewhere they are the window's own.
@@ -91,6 +94,16 @@ namespace ReBuzz.Studio.Shell
 
         /// <summary>The selected view, when it has edit commands of its own.</summary>
         IStudioEditTarget Target => (tabs.SelectedItem as TabItem)?.Content as IStudioEditTarget;
+
+        /// <summary>
+        /// The text box with the keyboard focus, if any: the Edit commands act on it first, as a Mac app's
+        /// act on the first responder (the menu bar's key equivalents may reach the menu before the box).
+        /// </summary>
+        TextBox FocusedText => FocusManager?.GetFocusedElement() as TextBox;
+
+        void Cut() { if (FocusedText is { } t) t.Cut(); else Target?.Cut(); }
+        void Copy() { if (FocusedText is { } t) t.Copy(); else Target?.Copy(); }
+        void Paste() { if (FocusedText is { } t) t.Paste(); else Target?.Paste(); }
 
         /// <summary>The views' tabs, once the engine runs.</summary>
         public TabControl Tabs => tabs;
@@ -203,9 +216,9 @@ namespace ReBuzz.Studio.Shell
             yield return new MenuEntry { Header = "_Undo", Run = () => undo.Execute(null), CanRun = () => undo.CanExecute(null), Gesture = Keys(Key.Z, cmd) };
             yield return new MenuEntry { Header = "_Redo", Run = () => redo.Execute(null), CanRun = () => redo.CanExecute(null), Gesture = mac ? Keys(Key.Z, cmd | KeyModifiers.Shift) : Keys(Key.Y, cmd) };
             yield return MenuEntry.Separator;
-            yield return Item("Cu_t", () => Target?.Cut(), Keys(Key.X, cmd));
-            yield return Item("_Copy", () => Target?.Copy(), Keys(Key.C, cmd));
-            yield return Item("_Paste", () => Target?.Paste(), Keys(Key.V, cmd));
+            yield return Item("Cu_t", Cut, Keys(Key.X, cmd));
+            yield return Item("_Copy", Copy, Keys(Key.C, cmd));
+            yield return Item("_Paste", Paste, Keys(Key.V, cmd));
             if (!mac)
             {
                 yield return MenuEntry.Separator;
@@ -256,6 +269,7 @@ namespace ReBuzz.Studio.Shell
             string s = mac ? "⇧" : "Shift+";
             return $"{c}N / {c}O / {c}S / {s}{c}S\tnew, open, save, save as\n" +
                    $"{c}Z / {(mac ? $"{s}{c}Z" : $"{c}Y")}\tundo / redo (the selected view's first)\n" +
+                   $"{c}X / {c}C / {c}V\tcut, copy, paste in the selected view\n" +
                    "F5 / F8 / F7\tplay / stop (twice: silence) / record\n" +
                    "F12\trestart audio\n" +
                    "F2 / F3 / F4\tPattern / Machines / Sequence\n" +
@@ -274,6 +288,11 @@ namespace ReBuzz.Studio.Shell
             Bind(Keys(Key.S, cmd | KeyModifiers.Shift), () => _ = SongFiles.SaveAs());
             KeyBindings.Add(new KeyBinding { Gesture = Keys(Key.Z, cmd), Command = undo });
             KeyBindings.Add(new KeyBinding { Gesture = OperatingSystem.IsMacOS() ? Keys(Key.Z, cmd | KeyModifiers.Shift) : Keys(Key.Y, cmd), Command = redo });
+            // The in-window menu only shows its gestures: these make them work. They act on a focused
+            // text box first, then on the selected view (§3.10).
+            Bind(Keys(Key.X, cmd), Cut);
+            Bind(Keys(Key.C, cmd), Copy);
+            Bind(Keys(Key.V, cmd), Paste);
             Bind(Keys(Key.F5), () => transport.Play());
             Bind(Keys(Key.F8), () => transport.Stop());
             Bind(Keys(Key.F7), () => transport.ToggleRecord());

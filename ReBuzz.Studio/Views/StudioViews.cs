@@ -45,7 +45,7 @@ namespace ReBuzz.Studio.Views
             new Machines.MachinesTab(),
             new Sequence.SequenceTab(),
             new Session.SessionStudioView(),
-            new Placeholder("Pattern", "The pattern editor comes in step S6."),
+            new PatternView(),
         };
 
         /// <summary>A tab whose view isn't built yet.</summary>
