@@ -1,0 +1,27 @@
+<Project>
+  <!--
+    Fork (docs/specs/mac-engine.md M2/M6, studio-mvp.md §2): what an app hosting the engine off
+    Windows puts beside itself. Imported by rebuzz-headless and ReBuzz.Studio.
+  -->
+
+  <!-- The Neo machines, built for net10.0, in the app's Gear folder (skip with SkipNeoGear=true). -->
+  <Target Name="NeoGear" AfterTargets="Build" Condition="'$(SkipNeoGear)' != 'true'">
+    <MSBuild Projects="$(MSBuildThisFileDirectory)..\Machines\Portable\Portable.proj" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
+  </Target>
+
+  <!-- The Link helper, once built with CMake (LinkHelper/CMakeLists.txt, into build/LinkHelper), beside
+       the app, where LinkClient looks for it (mac-engine.md M6). Without it, Link stays off. -->
+  <Target Name="LinkHelper" AfterTargets="Build">
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\build\LinkHelper\ReBuzzLink" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(MSBuildThisFileDirectory)..\build\LinkHelper\ReBuzzLink')" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\build\LinkHelper\Release\ReBuzzLink.exe" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(MSBuildThisFileDirectory)..\build\LinkHelper\Release\ReBuzzLink.exe')" />
+  </Target>
+
+  <!-- A publish (the Mac app bundle, studio-mvp.md §3.9) takes the gear and the helper too. -->
+  <Target Name="PublishGear" AfterTargets="Publish">
+    <ItemGroup>
+      <_GearFiles Include="$(OutDir)Gear/**/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_GearFiles)" DestinationFiles="@(_GearFiles->'$(PublishDir)Gear/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(OutDir)ReBuzzLink" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="Exists('$(OutDir)ReBuzzLink')" />
+  </Target>
+</Project>

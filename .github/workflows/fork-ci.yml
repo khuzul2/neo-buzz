@@ -129,6 +129,22 @@ jobs:
       if: always()
       run: python3 tools/song-roundtrip.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/roundtrip"
 
+    # The studio (docs/specs/studio-mvp.md): its views drawn headless (Avalonia.Headless with Skia)
+    # and driven by simulated input; what they drew is uploaded with the run.
+    - name: Studio (Avalonia, headless)
+      if: always()
+      shell: bash
+      env:
+        SCREENSHOTS_DIR: ${{ github.workspace }}/studio-screenshots
+      run: dotnet test ReBuzz.Studio.Tests --logger "console;verbosity=normal" 2>&1 | tee studio-test.log
+
+    - name: Studio screenshots
+      if: always() && hashFiles('studio-screenshots/*.png') != ''
+      uses: actions/upload-artifact@v4
+      with:
+        name: studio-screenshots
+        path: studio-screenshots/
+
     - name: Annotate test log
       if: failure()
       shell: pwsh
