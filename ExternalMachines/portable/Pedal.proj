@@ -1,0 +1,19 @@
+<Project>
+  <!--
+    Fork (docs/specs/studio-mvp.md S2): builds every Pedal machine for plain net10.0 into
+    $(GearDir) (Generators and Effects), for the studio and rebuzz-headless off Windows:
+      dotnet build ExternalMachines/portable/Pedal.proj -p:GearDir=<folder>
+    The Windows package builds the machines' own projects (build.ps1), as before.
+  -->
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <GearDir Condition="'$(GearDir)' == ''">$(MSBuildThisFileDirectory)bin/Gear/</GearDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <PedalPortable Include="*/*.Portable.csproj" />
+  </ItemGroup>
+  <Target Name="Build">
+    <MSBuild Projects="@(PedalPortable)" Targets="Restore;Build" Properties="GearDir=$(GearDir);Configuration=$(Configuration)" BuildInParallel="true" />
+  </Target>
+  <Target Name="Restore" />
+</Project>

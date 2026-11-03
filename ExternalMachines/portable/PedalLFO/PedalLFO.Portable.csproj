@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pedal LFO, portable (docs/specs/studio-mvp.md S2): see ../PedalPortable.targets. -->
+  <PropertyGroup>
+    <PedalFolder>pedal-lfo</PedalFolder>
+    <PedalAssembly>Pedal LFO.NET</PedalAssembly>
+    <PedalKind>Generators</PedalKind>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- WPF only: the GUI, which the studio replaces with its parameter window. -->
+    <PedalGui Include="PedalLFOGui.cs" />
+    <PedalGui Include="PedalLFOSettingsWindow.cs" />
+  </ItemGroup>
+  <Import Project="../PedalPortable.targets" />
+</Project>

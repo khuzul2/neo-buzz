@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pedal Drum Matrix, portable (docs/specs/studio-mvp.md S2): see ../PedalPortable.targets. -->
+  <PropertyGroup>
+    <PedalFolder>pedal-drum-matrix</PedalFolder>
+    <PedalAssembly>Pedal Drum Matrix.NET</PedalAssembly>
+    <PedalKind>Effects</PedalKind>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- WPF only: the GUI, which the studio replaces with its parameter window. -->
+    <PedalGui Include="ReadoutGui.cs" />
+  </ItemGroup>
+  <Import Project="../PedalPortable.targets" />
+</Project>

@@ -250,6 +250,7 @@ namespace WDE.PedalLFO
         }
 
         // ── Resolution (UI thread only) ──────────────────────────────────
+#if WINDOWS
         void ScheduleResolveOnUiThread()
         {
             var d = Application.Current?.Dispatcher;
@@ -258,6 +259,19 @@ namespace WDE.PedalLFO
             else
                 d.BeginInvoke((Action)ResolveTarget);
         }
+#else
+        // Fork (studio-mvp.md S2): no WPF dispatcher off Windows: the UI thread's context, as the
+        // machine was made on it.
+        readonly System.Threading.SynchronizationContext uiContext = System.Threading.SynchronizationContext.Current;
+
+        void ScheduleResolveOnUiThread()
+        {
+            if (uiContext == null || System.Threading.SynchronizationContext.Current == uiContext)
+                ResolveTarget();
+            else
+                uiContext.Post(_ => ResolveTarget(), null);
+        }
+#endif
 
         void ResolveTarget()
         {
