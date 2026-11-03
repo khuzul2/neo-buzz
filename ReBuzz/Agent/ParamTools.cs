@@ -1,6 +1,8 @@
 // Agent server (docs/specs/mcp-server.md §5.4): sound design. machine_describe, param_set, param_get.
-// Values in units: exact for machines with a manifest (Neo), searched through the machine's own
-// value texts for the others.
+// Values in units: exact for machines with a manifest (Neo), from a profiled draft manifest where
+// there is one (§12.2), searched through the machine's own value texts for the others.
+// machine_describe(value_table=true) lists each parameter's texts across its range: what the
+// profiler (tools/machine-profiler.py) infers units and mappings from.
 
 using System;
 using System.Collections.Generic;
@@ -25,15 +27,21 @@ namespace ReBuzz.Agent
                 Title = "Describe a machine",
                 Description =
                     "Everything about one machine's sound: each parameter with its group, current value (text, number and unit), range, default, " +
-                    "choices and meaning; track parameters per track; the gear's summary. Read it before param_set. Big machines (Neo FM6 has 172 " +
-                    "parameters): pass group to read one section. Example: machine_describe(machine=\"Bass\", group=\"Filter 1\").",
+                    "choices and meaning; track parameters per track; the gear's summary, its manifest (generated, curated or a profiled draft) and how it takes notes. " +
+                    "Read it before param_set. Big machines (Neo FM6 has 172 parameters): pass group to read one section. value_table=true adds each " +
+                    "parameter's texts across its range (every value up to 256 values, else table_points of them), for machines whose texts are all you have. " +
+                    "Example: machine_describe(machine=\"Bass\", group=\"Filter 1\").",
                 Input = Object(null,
                     Req("machine", String("The machine")),
-                    Opt("group", String("Only this parameter group"))),
+                    Opt("group", String("Only this parameter group")),
+                    Opt("value_table", Boolean("Also each parameter's value texts across its range: [raw, text] pairs")),
+                    Opt("table_points", Integer("value_table: at most this many values per parameter, evenly spaced, ends included (default 1025)", 2, 65536))),
                 Output = Object(null,
                     Req("machine", Object(null, Req("name", String("Name")))),
                     Opt("summary", String("What the gear is")),
+                    Opt("manifest", String("generated, curated or draft (profiled, not yet curated: units approximate where marked)")),
                     Req("exact_units", Boolean("Values in units land exactly")),
+                    Opt("gear_info", Object("The gear: its file, track range, how it takes notes", Req("file", String("Its DLL, under Gear")))),
                     Req("groups", Array(String("Group"), "All parameter groups")),
                     Req("parameters", Array(Object("A parameter",
                         Req("name", String("Pass this to param_set")),
@@ -42,6 +50,8 @@ namespace ReBuzz.Agent
                 Handler = async c =>
                 {
                     string group = c.String("group");
+                    bool table = c.Bool("value_table") ?? false;
+                    int points = c.Int("table_points") ?? 1025;
                     var r = await host.Engine("machine_describe", false, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
@@ -61,6 +71,10 @@ namespace ReBuzz.Agent
                         var o = new JsonObject { ["machine"] = SongModel.MachineJson(core, m) };
                         var manifest = SongModel.Manifest(m.DLL);
                         if (!string.IsNullOrEmpty(manifest?.Summary)) o["summary"] = manifest.Summary;
+                        if (manifest != null) o["manifest"] = manifest.Quality;
+                        if (manifest?.Health is { Status: not "ok" } health)
+                            o["health"] = new JsonObject { ["status"] = health.Status, ["problems"] = new JsonArray(health.Problems.Select(x => (JsonNode)x).ToArray()) };
+                        o["gear_info"] = GearInfo(m);
                         if (manifest?.Imports.Count > 0)
                             o["data_imports"] = new JsonArray(manifest.Imports.Select(i => (JsonNode)new JsonObject
                             {
@@ -68,9 +82,20 @@ namespace ReBuzz.Agent
                                 ["extensions"] = new JsonArray(i.Extensions.Select(e => (JsonNode)e).ToArray()),
                                 ["about"] = i.Description,
                             }).ToArray());
-                        o["exact_units"] = all.Any(p => p.Manifest != null);
+                        o["exact_units"] = manifest is { IsDraft: false } && all.Any(p => p.Manifest != null);
                         o["groups"] = new JsonArray(groups.Select(g => (JsonNode)g).ToArray());
-                        o["parameters"] = new JsonArray(shown.Select(p => (JsonNode)Describe(m, p)).ToArray());
+                        o["parameters"] = new JsonArray(shown.Select(p =>
+                        {
+                            var d = Describe(m, p);
+                            if (table)
+                            {
+                                d["min"] = p.Info.Min;
+                                d["max"] = p.Info.Max;
+                                d["default_raw"] = p.Info.Default;
+                                d["table"] = ValueTable(p, points);
+                            }
+                            return (JsonNode)d;
+                        }).ToArray());
                         if (all.Any(p => p.IsTrack)) o["tracks"] = m.TrackCount;
                         if (m.ParameterGroups.Count > 2 && m.ParameterGroups[2].Parameters.Any(p => p.Type == BuzzGUI.Interfaces.ParameterType.Note))
                             o["notes"] = "Plays notes: notes_write puts them in patterns, and ReBuzz sends them to it as MIDI. Neo machines and most " +
@@ -79,7 +104,8 @@ namespace ReBuzz.Agent
                     }, c.Cancellation);
                     var ps = r["parameters"]!.AsArray();
                     string line = string.Join("; ", ps.Take(40).Select(p => $"{p!["name"]} = {p["value"]}"));
-                    return ToolResult.Ok($"{r["machine"]!["name"]} ({r["machine"]!["gear"]}): {ps.Count} parameters{(group != null ? $" in {group}" : "")}. " +
+                    return ToolResult.Ok($"{r["machine"]!["name"]} ({r["machine"]!["gear"]}): {ps.Count} parameters{(group != null ? $" in {group}" : "")}" +
+                                         (r["manifest"]?.GetValue<string>() == "draft" ? " (units from a profiled draft manifest)" : "") + ". " +
                                          line + (ps.Count > 40 ? "; …" : ""), r);
                 },
             });
@@ -102,10 +128,12 @@ namespace ReBuzz.Agent
                         Opt("by", AnyOf("Change by this amount", String("With its unit: \"+3 dB\""), Number("In the parameter's unit"))),
                         Opt("times", Number("Multiply the value by this factor", 0)),
                         Opt("track", Integer("Track, for track parameters (from 0)", 0))), "Changes", 1))),
-                Output = Object(null, Req("changed", Array(Object(null,
-                    Req("param", String("Name")),
-                    Req("value", String("As the machine shows it now")),
-                    Req("was", String("Before"))), "Each change"))),
+                Output = Object(null,
+                    Req("changed", Array(Object(null,
+                        Req("param", String("Name")),
+                        Req("value", String("As the machine shows it now")),
+                        Req("was", String("Before"))), "Each change")),
+                    Opt("manifest", String("draft: units came from a profiled manifest nobody has curated yet"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
@@ -140,6 +168,7 @@ namespace ReBuzz.Agent
                             plan.Add((p, track, raw, SongModel.Describe(p.Parameter, p.Parameter.GetValue(track))));
                         }
                         foreach (var (p, track, raw, _) in plan) AgentActions.SetParameter(core, m, p.Parameter, track, raw);
+                        bool draft = SongModel.Manifest(m.DLL)?.IsDraft == true;
                         var changed = new JsonArray();
                         foreach (var (p, track, raw, was) in plan)
                         {
@@ -149,10 +178,12 @@ namespace ReBuzz.Agent
                             o["was"] = was;
                             changed.Add(o);
                         }
-                        return new JsonObject { ["machine"] = m.Name, ["changed"] = changed };
+                        var o2 = new JsonObject { ["machine"] = m.Name, ["changed"] = changed };
+                        if (draft) o2["manifest"] = "draft";
+                        return o2;
                     }, c.Cancellation);
                     return ToolResult.Ok($"{r["machine"]}: " + string.Join("; ", r["changed"]!.AsArray().Select(x =>
-                        $"{x!["param"]}{(x["track"] != null ? $" [track {x["track"]}]" : "")} = {x["value"]} (was {x["was"]})")), r);
+                        $"{x!["param"]}{(x["track"] != null ? $" [track {x["track"]}]" : "")} = {x["value"]} (was {x["was"]})")) + DraftNote(r), r);
                 },
             });
 
@@ -167,7 +198,9 @@ namespace ReBuzz.Agent
                     Req("machine", String("The machine")),
                     Opt("params", Array(String("A parameter name"), "Only these (default all)")),
                     Opt("track", Integer("Track for track parameters (default 0)", 0))),
-                Output = Object(null, Req("values", Array(Object(null, Req("param", String("Name")), Req("value", String("Shown value"))), "Values"))),
+                Output = Object(null,
+                    Req("values", Array(Object(null, Req("param", String("Name")), Req("value", String("Shown value"))), "Values")),
+                    Opt("manifest", String("draft: numbers and units come from a profiled manifest nobody has curated yet"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
                 {
@@ -188,11 +221,54 @@ namespace ReBuzz.Agent
                             foreach (var kv in SongModel.Value(p, t)) o[kv.Key] = kv.Value?.DeepClone();
                             values.Add(o);
                         }
-                        return new JsonObject { ["machine"] = m.Name, ["values"] = values };
+                        var o2 = new JsonObject { ["machine"] = m.Name, ["values"] = values };
+                        if (SongModel.Manifest(m.DLL)?.IsDraft == true) o2["manifest"] = "draft";
+                        return o2;
                     }, c.Cancellation);
-                    return ToolResult.Ok($"{r["machine"]}: " + string.Join("; ", r["values"]!.AsArray().Take(60).Select(x => $"{x!["param"]} = {x["value"]}")), r);
+                    return ToolResult.Ok($"{r["machine"]}: " + string.Join("; ", r["values"]!.AsArray().Take(60).Select(x => $"{x!["param"]} = {x["value"]}")) + DraftNote(r), r);
                 },
             });
+        }
+
+        static string DraftNote(JsonObject r) =>
+            r["manifest"]?.GetValue<string>() == "draft" ? " (units from a profiled draft manifest; values marked approximate are read from its descriptions)" : "";
+
+        /// <summary>[raw, text] across a parameter's range: every value up to 256 of them, else <paramref name="points"/> evenly spaced with both ends.</summary>
+        static JsonArray ValueTable(AgentParam p, int points)
+        {
+            int min = p.Info.Min, max = p.Info.Max, span = max - min;
+            IEnumerable<int> raws = span < 256 || span < points ? Enumerable.Range(min, span + 1)
+                : Enumerable.Range(0, points).Select(i => min + (int)Math.Round(i * (double)span / (points - 1))).Distinct();
+            return new JsonArray(raws.Select(raw => (JsonNode)new JsonArray(raw, SongModel.Describe(p.Parameter, raw))).ToArray());
+        }
+
+        /// <summary>The gear's file (under Gear), its tracks, and how it can take notes.</summary>
+        internal static JsonObject GearInfo(MachineCore m)
+        {
+            var dll = m.DLL;
+            string path = dll?.Path ?? "";
+            string file = path.Length == 0 ? "" : System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(path)) + "/" + System.IO.Path.GetFileName(path);
+            var o = new JsonObject { ["file"] = file, ["managed"] = dll?.IsManaged == true };
+            if (dll?.Info != null)
+            {
+                o["min_tracks"] = dll.Info.MinTracks;
+                o["max_tracks"] = Math.Max(dll.Info.MinTracks, dll.Info.MaxTracks);
+                // Control machines (peer controllers, LFOs) move other machines' parameters; they make no sound.
+                if ((dll.Info.Flags & BuzzGUI.Interfaces.MachineInfoFlags.CONTROL_MACHINE) != 0) o["control"] = true;
+            }
+            var note = m.ParameterGroups.Count > 2 ? m.ParameterGroups[2].Parameters.FirstOrDefault(x => x.Type == BuzzGUI.Interfaces.ParameterType.Note) : null;
+            if (note != null) o["note_parameter"] = note.Name;
+            // A managed machine takes MIDI notes when it has MidiNote; a native one can't be told without listening.
+            if (m.ManagedMachine is object machine)
+                o["takes_midi"] = machine.GetType().GetMethod("MidiNote", new[] { typeof(int), typeof(int), typeof(int) }) != null;
+            var notes = SongModel.Manifest(dll)?.Notes;
+            if (notes != null)
+            {
+                o["note_input"] = notes.Input;
+                o["pitch_offset"] = notes.Pitched ? notes.PitchOffset : 0;
+                if (notes.Polyphony > 0) o["polyphony"] = notes.Polyphony;
+            }
+            return o;
         }
 
         static JsonObject Describe(MachineCore m, AgentParam p)
@@ -222,6 +298,7 @@ namespace ReBuzz.Agent
                 if (texts.Any(t => !int.TryParse(t, out _))) o["choices"] = new JsonArray(texts.Select(x => (JsonNode)x).ToArray());
             }
             if (!string.IsNullOrWhiteSpace(p.Info.Description) && p.Info.Description != p.Name) o["description"] = p.Info.Description;
+            if (p.Manifest?.Approximate == true) o["approximate"] = true;
             return o;
         }
     }

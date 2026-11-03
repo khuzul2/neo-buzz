@@ -453,6 +453,12 @@ namespace ReBuzz.Agent
                         var problems = new List<string>();
                         var notes = NoteList.Parse(list, tpb, bpb, 1 << 20, problems);
                         if (notes.Count == 0) throw new ToolError("notes: none to play.");
+                        // The written pitch plays (§12.2): the machine's pitch offset from its manifest.
+                        var input = MachineNotes.For(m);
+                        if (input.Tracks)
+                            problems.Add($"{m.Name} takes notes only in its Note track columns (its manifest), so live MIDI may not reach it: write them with notes_write and render.");
+                        if (input.Offset != 0)
+                            notes = notes.Select(n => n with { Pitch = TrackNotes.Sent(n.Pitch, input.Offset, 127, m.Name) }).ToList();
 
                         var session = core.SessionCore;
                         long now = core.PlayRequested ? session.HeardTimeNow() : -1;

@@ -142,6 +142,40 @@ jobs:
           eval.log
         if-no-files-found: warn
 
+    # The machine profiler (docs/specs/mcp-server.md §12.2, U1) through ReBuzz.exe --agent, which hosts the
+    # native machines: every machine in its Gear (quick builds leave out the external ones). Draft manifests,
+    # docs/machine-health.md and the summary go up as the machine-profile-windows artifact, to commit with
+    # `python tools/machine-profiler.py --merge <artifact folder> --repo .`. They are also packed into the
+    # log (--pack; --unpack takes them out of a downloaded job log), for where artifacts can't be fetched.
+    # A machine that crashes or hangs is a finding (the profiler restarts ReBuzz and goes on), and the
+    # step never fails the job.
+    - name: Machine profile
+      id: profile
+      if: (success() || failure()) && steps.build.outcome == 'success'
+      timeout-minutes: 45
+      continue-on-error: true
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
+        python tools/machine-profiler.py $exe.FullName --out machine-profile *>&1 | Tee-Object -FilePath machine-profile.log
+        $code = $LASTEXITCODE
+        if (Test-Path machine-profile/machine-profile.json) { python tools/machine-profiler.py --pack machine-profile }
+        exit $code
+
+    - name: Upload machine profile
+      if: always() && hashFiles('machine-profile/machine-profile.json') != ''
+      uses: actions/upload-artifact@v4
+      with:
+        name: machine-profile-windows
+        path: |
+          machine-profile/manifests/**
+          machine-profile/*.json
+          machine-profile/*.md
+          machine-profile/work/*.stderr.txt
+          machine-profile.log
+        if-no-files-found: warn
+
     # The null test's references (docs/specs/mac-engine.md decision 6, M3/M4): every Neo machine, in
     # fixed cases, rendered by the built ReBuzz.exe --agent, one fresh process per case. The Linux and
     # macOS jobs below render the same cases with rebuzz-headless and compare, sample by sample.

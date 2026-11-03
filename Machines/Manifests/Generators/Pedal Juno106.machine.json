@@ -1,0 +1,409 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Pedal Juno106",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "type": "polysynth",
+ "summary": "Polysynth (profiled draft): pitched, plays A4 at 440 Hz as written; 6 voices; takes notes in its tracks; one note at the defaults -10 LUFS.",
+ "tracks": 6,
+ "notes": {
+  "input": "tracks",
+  "pitch_offset": 0,
+  "pitched": true,
+  "polyphony": 6
+ },
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "level": {
+   "note": "A4 at velocity 100, 1.5 beats",
+   "integrated_lufs": -9.8,
+   "sample_peak_dbfs": -4.43,
+   "true_peak_dbtp": -4.31
+  },
+  "extremes": {
+   "min": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": 4.09
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "LFO Rate",
+   "name": "LFO Rate",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 64,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "LFO Delay",
+   "name": "LFO Delay",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "DCO LFO",
+   "name": "DCO LFO",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "DCO pitch modulation depth from LFO",
+   "confidence": "values"
+  },
+  {
+   "index": 3,
+   "id": "DCO PWM",
+   "name": "DCO PWM",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "Pulse-width modulation depth",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "DCO PWM Src",
+   "name": "DCO PWM Src",
+   "group": "",
+   "min": 0,
+   "max": 2,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Manual",
+    "LFO",
+    "Env"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "DCO PW",
+   "name": "DCO PW",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 64,
+   "kind": "linear",
+   "a": 50.0,
+   "b": 95.0,
+   "unit": "%",
+   "description": "Manual pulse width 50%–95%",
+   "confidence": "description"
+  },
+  {
+   "index": 6,
+   "id": "DCO Range",
+   "name": "DCO Range",
+   "group": "",
+   "min": 0,
+   "max": 2,
+   "default": 1,
+   "kind": "enum",
+   "choices": [
+    "16'",
+    "8'",
+    "4'"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 7,
+   "id": "DCO Pulse",
+   "name": "DCO Pulse",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "description": "Pulse waveform on/off",
+   "confidence": "values"
+  },
+  {
+   "index": 8,
+   "id": "DCO Saw",
+   "name": "DCO Saw",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 1,
+   "kind": "switch",
+   "description": "Saw waveform on/off",
+   "confidence": "values"
+  },
+  {
+   "index": 9,
+   "id": "DCO Sub",
+   "name": "DCO Sub",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "Sub-oscillator level (square one octave below)",
+   "confidence": "values"
+  },
+  {
+   "index": 10,
+   "id": "DCO Noise",
+   "name": "DCO Noise",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 11,
+   "id": "HPF",
+   "name": "HPF",
+   "group": "",
+   "min": 0,
+   "max": 3,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Off",
+    "1",
+    "2",
+    "3"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 12,
+   "id": "VCF Freq",
+   "name": "VCF Freq",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 100,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "Filter cutoff frequency",
+   "confidence": "values"
+  },
+  {
+   "index": 13,
+   "id": "VCF Reso",
+   "name": "VCF Reso",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 30,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 14,
+   "id": "VCF Env Amt",
+   "name": "VCF Env Amt",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 80,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 15,
+   "id": "VCF Env Pol",
+   "name": "VCF Env Pol",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "+",
+    "-"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 16,
+   "id": "VCF LFO",
+   "name": "VCF LFO",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "Filter cutoff modulation depth from LFO",
+   "confidence": "values"
+  },
+  {
+   "index": 17,
+   "id": "VCF Key Trk",
+   "name": "VCF Key Trk",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 64,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "Keyboard tracking (127 = full octave-per-octave)",
+   "confidence": "values"
+  },
+  {
+   "index": 18,
+   "id": "VCA Mode",
+   "name": "VCA Mode",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Env",
+    "Gate"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 19,
+   "id": "VCA Level",
+   "name": "VCA Level",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 100,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 20,
+   "id": "Env A",
+   "name": "Env A",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 5,
+   "kind": "time",
+   "a": 0.001,
+   "b": 4.0,
+   "unit": "s",
+   "description": "Attack time (1 ms – 4 s exponential)",
+   "confidence": "description"
+  },
+  {
+   "index": 21,
+   "id": "Env D",
+   "name": "Env D",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 60,
+   "kind": "time",
+   "a": 0.005,
+   "b": 8.0,
+   "unit": "s",
+   "description": "Decay time (5 ms – 8 s exponential)",
+   "confidence": "description"
+  },
+  {
+   "index": 22,
+   "id": "Env S",
+   "name": "Env S",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 80,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 23,
+   "id": "Env R",
+   "name": "Env R",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 40,
+   "kind": "time",
+   "a": 0.005,
+   "b": 8.0,
+   "unit": "s",
+   "description": "Release time (5 ms – 8 s exponential)",
+   "confidence": "description"
+  },
+  {
+   "index": 24,
+   "id": "Chorus",
+   "name": "Chorus",
+   "group": "",
+   "min": 0,
+   "max": 3,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Off",
+    "I",
+    "II",
+    "III"
+   ],
+   "description": "",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

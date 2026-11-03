@@ -1,0 +1,210 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "KrimZon AY-3-8910",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "polysynth",
+ "summary": "Polysynth (profiled draft): pitched, plays 13 semitones high (corrected by its pitch offset); 3 voices; takes notes in its tracks; one note at the defaults -22 LUFS.",
+ "tracks": 3,
+ "notes": {
+  "input": "tracks",
+  "pitch_offset": -13,
+  "pitched": true,
+  "polyphony": 3
+ },
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "level": {
+   "note": "A4 at velocity 100, 1.5 beats",
+   "integrated_lufs": -21.5,
+   "sample_peak_dbfs": -9.03,
+   "true_peak_dbtp": -7.95
+  },
+  "extremes": {
+   "min": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": 3.01
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "FinalAmp",
+   "name": "FinalAmp",
+   "group": "",
+   "min": 0,
+   "max": 1024,
+   "default": 512,
+   "kind": "linear",
+   "a": 4.2e-05,
+   "b": 2.000037,
+   "description": "Final Amp",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Tune",
+   "name": "Tune",
+   "group": "",
+   "min": 256,
+   "max": 1024,
+   "default": 512,
+   "kind": "linear",
+   "a": 0.500042,
+   "b": 2.000036,
+   "description": "",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": [
+  {
+   "index": 0,
+   "id": "NumSubNotes",
+   "name": "NumSubNotes",
+   "group": "",
+   "min": 1,
+   "max": 16,
+   "default": 1,
+   "kind": "linear",
+   "a": 1.0,
+   "b": 16.0,
+   "description": "Num Subnotes",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Repeat",
+   "name": "Repeat",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 1,
+   "kind": "switch",
+   "choices": [
+    "No",
+    "Yes"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "SubLength",
+   "name": "SubLength",
+   "group": "",
+   "min": 1,
+   "max": 255,
+   "default": 32,
+   "kind": "linear",
+   "a": 1.0,
+   "b": 255.0,
+   "description": "Subnote Length",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Glide",
+   "name": "Glide",
+   "group": "",
+   "min": 0,
+   "max": 254,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 254.0,
+   "description": "Glide Length",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Vibrato",
+   "name": "Vibrato",
+   "group": "",
+   "min": 0,
+   "max": 254,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 254.0,
+   "description": "Vibrato Amount",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "EnvMode",
+   "name": "EnvMode",
+   "group": "",
+   "min": 0,
+   "max": 7,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "0: \\____",
+    "1: /|___",
+    "2: \\|\"\"\"",
+    "3: /\"\"\"\"",
+    "4: \\|\\|\\|",
+    "5: /|/|/|",
+    "6: /\\/\\/\\",
+    "7: \\/\\/\\/"
+   ],
+   "description": "Envelope Mode",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "EnvTime",
+   "name": "EnvTime",
+   "group": "",
+   "min": 1,
+   "max": 65534,
+   "default": 512,
+   "kind": "linear",
+   "a": 1.0,
+   "b": 65534.0,
+   "description": "Envelope Time",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Tone",
+   "name": "Tone",
+   "group": "",
+   "min": 0,
+   "max": 3,
+   "default": 1,
+   "kind": "enum",
+   "choices": [
+    "None",
+    "Tone",
+    "Noise",
+    "Tone+Noise"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Volume",
+   "name": "Volume",
+   "group": "",
+   "min": 0,
+   "max": 15,
+   "default": 15,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 15.0,
+   "description": "",
+   "confidence": "values"
+  }
+ ]
+}

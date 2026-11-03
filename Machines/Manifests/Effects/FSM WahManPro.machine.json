@@ -1,0 +1,177 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "FSM WahManPro",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "distortion",
+ "summary": "Distortion (profiled draft): traits: distortion, filter or EQ; tail 0.01 s; latency 0 samples; gain +12.6 dB at the defaults.",
+ "tracks": 1,
+ "health": {
+  "status": "warn",
+  "problems": [
+   "Set phase: its own default (raw 255) is outside its range (0…127)"
+  ]
+ },
+ "profile": {
+  "effect": {
+   "gain_db": 12.64,
+   "latency_samples": 0,
+   "latency_ms": 0.0,
+   "tail_seconds": 0.01,
+   "echoes": 0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 20.4,
+   "tilt_db": 0.2,
+   "sine": {
+    "loud": {
+     "gain_db": 6.83,
+     "thd_percent": 6.04,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.13
+    },
+    "quiet": {
+     "gain_db": 6.83,
+     "thd_percent": 6.04,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.12
+    }
+   },
+   "traits": [
+    "distortion",
+    "filter or EQ"
+   ]
+  },
+  "extremes": {}
+ },
+ "parameters": [],
+ "track_parameters": [
+  {
+   "index": 0,
+   "id": "Cutoff",
+   "name": "Cutoff",
+   "group": "",
+   "min": 0,
+   "max": 240,
+   "default": 120,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 240.0,
+   "description": "Cutoff frequency",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Resonance",
+   "name": "Resonance",
+   "group": "",
+   "min": 0,
+   "max": 240,
+   "default": 120,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 240.0,
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Filter",
+   "name": "Filter",
+   "group": "",
+   "min": 0,
+   "max": 4,
+   "default": 1,
+   "kind": "enum",
+   "choices": [
+    "2pole LP",
+    "2pole Peak I",
+    "2pole Peak II",
+    "4pole LP",
+    "4pole Peak"
+   ],
+   "description": "Filter type",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "LFO rate",
+   "name": "LFO rate",
+   "group": "",
+   "min": 0,
+   "max": 240,
+   "default": 30,
+   "kind": "freq",
+   "a": 0.0499863,
+   "b": 26.9978,
+   "unit": "Hz",
+   "description": "LFO rate [Hz]",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "LFO mod",
+   "name": "LFO mod",
+   "group": "",
+   "min": 0,
+   "max": 240,
+   "default": 60,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 240.0,
+   "description": "LFO Modulation depth",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "LFO Shape",
+   "name": "LFO Shape",
+   "group": "",
+   "min": 0,
+   "max": 8,
+   "default": 1,
+   "kind": "enum",
+   "choices": [
+    "sine",
+    "saw up",
+    "saw down",
+    "square",
+    "triangle",
+    "weird 1",
+    "weird 2",
+    "weird 3",
+    "weird 4"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Inertia",
+   "name": "Inertia",
+   "group": "",
+   "min": 0,
+   "max": 60,
+   "default": 10,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 60.0,
+   "description": "Cutoff frequency inertia",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Set phase",
+   "name": "Set phase",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 127,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "Set LFO phase",
+   "confidence": "values"
+  }
+ ]
+}

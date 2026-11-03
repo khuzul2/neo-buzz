@@ -1,0 +1,142 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Pedal Chorus",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "type": "modulation",
+ "summary": "Modulation (profiled draft): traits: modulation, filter or EQ; tail 0.01 s; latency 0 samples; gain -4.3 dB at the defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": -4.31,
+   "latency_samples": 0,
+   "latency_ms": 0.0,
+   "tail_seconds": 0.01,
+   "echoes": 0,
+   "output_correlation": 0.928,
+   "spectrum_spread_db": 16.8,
+   "tilt_db": 2.3,
+   "sine": {
+    "loud": {
+     "gain_db": -4.69,
+     "thd_percent": 1.87,
+     "thd_in_percent": 1.96,
+     "movement_db": 1.85
+    },
+    "quiet": {
+     "gain_db": -4.89,
+     "thd_percent": 1.88,
+     "thd_in_percent": 1.96,
+     "movement_db": 1.92
+    }
+   },
+   "traits": [
+    "modulation",
+    "filter or EQ"
+   ]
+  },
+  "extremes": {
+   "min": {
+    "silent": false,
+    "sample_peak_dbfs": -32.72
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": -31.49
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Rate",
+   "name": "Rate",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 25,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Chorus LFO rate — 0=slow (0.1 Hz), 100=fast (5 Hz)",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Depth",
+   "name": "Depth",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 35,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Modulation depth — 0=none, 100=±8 ms",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "Delay",
+   "name": "Delay",
+   "group": "",
+   "min": 5,
+   "max": 25,
+   "default": 12,
+   "kind": "linear",
+   "a": 0.005,
+   "b": 0.025,
+   "unit": "s",
+   "description": "Base delay per voice in ms (5–25)",
+   "confidence": "description"
+  },
+  {
+   "index": 3,
+   "id": "Spread",
+   "name": "Spread",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 80,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Stereo width — 0=mono, 100=wide",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "Tone",
+   "name": "Tone",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 20,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Wet-path HF roll-off — 0=bright, 100=dark",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "Mix",
+   "name": "Mix",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 45,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Wet/dry mix — 0=dry, 100=wet",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

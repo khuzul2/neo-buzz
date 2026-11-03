@@ -25,8 +25,9 @@ namespace ReBuzz.Agent
                 Name = "gear_list",
                 Title = "List gear",
                 Description =
-                    "The machines you can add: name, generator or effect, author, a summary when known, and whether it has exact units " +
-                    "(a manifest: its parameters take \"800 Hz\", \"-6 dB\" exactly). Machines with exact units come first. Filter by kind or text. " +
+                    "The machines you can add: name, generator or effect, author, what it is (type, summary) when known, its manifest (generated, " +
+                    "curated, or a profiled draft: its parameters take \"800 Hz\", \"-6 dB\"; exact_units when not a draft) and its health. Machines with " +
+                    "exact units come first, then drafts; unhealthy ones (crashes, NaN, silence) last, flagged with why. Filter by kind or text. " +
                     "Example: gear_list(kind=\"generator\", search=\"poly\").",
                 Input = Object(null,
                     Opt("kind", String("Only generators (make sound) or effects (process sound)", "generator", "effect")),
@@ -37,10 +38,13 @@ namespace ReBuzz.Agent
                         Req("name", String("Pass this to machine_add")),
                         Req("kind", String("generator or effect")),
                         Opt("author", String("Author")),
+                        Opt("type", String("What it is: synth, drums, filter, reverb… (from its manifest)")),
                         Opt("summary", String("What it is and when to use it")),
-                        Req("exact_units", Boolean("Has a manifest: values in units land exactly")),
+                        Req("exact_units", Boolean("Has a generated or curated manifest: values in units land exactly")),
+                        Opt("manifest", String("generated, curated or draft (profiled, not yet curated)")),
                         Opt("presets", Integer("Factory presets")),
-                        Opt("health", String("missing or crashed when not usable"))), "Matching gear")),
+                        Opt("health", String("missing or crashed (not usable), unhealthy or warn (from its profile)")),
+                        Opt("problems", Array(String("A problem"), "Why it is unhealthy"))), "Matching gear")),
                     Req("total", Integer("How many matched before the limit"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
@@ -49,7 +53,7 @@ namespace ReBuzz.Agent
                     int limit = c.Int("limit") ?? 60;
                     var r = await host.Engine("gear_list", false, _ =>
                     {
-                        var rows = new List<(bool Exact, string Name, JsonObject Row)>();
+                        var rows = new List<(int Rank, string Name, JsonObject Row)>();
                         foreach (var dll in core.MachineDLLs.Values)
                         {
                             var info = dll.Info;
@@ -58,20 +62,29 @@ namespace ReBuzz.Agent
                             string k = info.Type == MachineType.Generator ? "generator" : "effect";
                             if (kind != null && k != kind) continue;
                             var manifest = SongModel.Manifest(dll);
-                            string summary = manifest?.Summary ?? "";
+                            string summary = manifest?.Summary ?? "", type = manifest?.Type ?? "";
                             if (!string.IsNullOrEmpty(search) &&
                                 !(dll.Name.Contains(search, StringComparison.OrdinalIgnoreCase) || (info.Author ?? "").Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                                  summary.Contains(search, StringComparison.OrdinalIgnoreCase)))
+                                  summary.Contains(search, StringComparison.OrdinalIgnoreCase) || type.Contains(search, StringComparison.OrdinalIgnoreCase)))
                                 continue;
                             var row = new JsonObject { ["name"] = dll.Name, ["kind"] = k };
                             if (!string.IsNullOrEmpty(info.Author)) row["author"] = info.Author;
+                            if (type.Length > 0) row["type"] = type;
                             if (summary.Length > 0) row["summary"] = summary;
-                            row["exact_units"] = manifest != null;
+                            bool exact = manifest is { IsDraft: false };
+                            row["exact_units"] = exact;
+                            if (manifest != null) row["manifest"] = manifest.Quality;
                             if (dll.Presets?.Count > 0) row["presets"] = dll.Presets.Count;
+                            bool unhealthy = dll.IsMissing || dll.IsCrashed || manifest?.Health?.Unhealthy == true;
                             if (dll.IsMissing || dll.IsCrashed) row["health"] = dll.IsMissing ? "missing" : "crashed";
-                            rows.Add((manifest != null, dll.Name, row));
+                            else if (manifest?.Health is { Status: not "ok" } health)
+                            {
+                                row["health"] = health.Status;
+                                row["problems"] = new JsonArray(health.Problems.Select(x => (JsonNode)x).ToArray());
+                            }
+                            rows.Add((unhealthy ? 3 : exact ? 0 : manifest != null ? 1 : 2, dll.Name, row));
                         }
-                        var sorted = rows.OrderByDescending(x => x.Exact).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
+                        var sorted = rows.OrderBy(x => x.Rank).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
                         return new JsonObject
                         {
                             ["gear"] = new JsonArray(sorted.Take(limit).Select(x => (JsonNode)x.Row).ToArray()),
@@ -185,19 +198,25 @@ namespace ReBuzz.Agent
                         }
                         var ps = SongModel.Params(made);
                         var groups = ps.Where(p => p.Group == 1).Select(p => p.Info.Group).Where(g => g.Length > 0).Distinct().ToList();
-                        return new JsonObject
+                        var manifest = SongModel.Manifest(dll);
+                        var added = new JsonObject
                         {
                             ["machine"] = SongModel.MachineJson(core, made),
                             ["parameters"] = ps.Count(p => p.Group == 1),
                             ["groups"] = new JsonArray(groups.Select(g => (JsonNode)g).ToArray()),
-                            ["exact_units"] = ps.Any(p => p.Manifest != null),
+                            ["exact_units"] = manifest is { IsDraft: false } && ps.Any(p => p.Manifest != null),
                         };
+                        if (manifest != null) added["manifest"] = manifest.Quality;
+                        if (manifest?.Health is { Unhealthy: true } health)
+                            added["warning"] = $"{dll.Name}'s profile found problems: {string.Join("; ", health.Problems)}. Render and check it, or choose another machine.";
+                        return added;
                     }, c.Cancellation);
                     var m = r["machine"]!;
                     var outs2 = m["outputs"]!.AsArray().Select(o => o!["to"]!.GetValue<string>()).ToList();
                     string groupsText = r["groups"]!.AsArray().Count > 0 ? " Groups: " + string.Join(", ", r["groups"]!.AsArray().Select(g => g!.GetValue<string>())) + "." : "";
+                    string units = r["exact_units"]!.GetValue<bool>() ? " with exact units" : r["manifest"]?.GetValue<string>() == "draft" ? " with units from a profiled draft manifest" : "";
                     return ToolResult.Ok($"Added {m["name"]} ({m["gear"]}, {m["kind"]})" + (outs2.Count > 0 ? " → " + string.Join(", ", outs2) : ", not connected") +
-                                         $". {r["parameters"]} parameters{(r["exact_units"]!.GetValue<bool>() ? " with exact units" : "")}.{groupsText}", r);
+                                         $". {r["parameters"]} parameters{units}.{groupsText}" + (r["warning"] != null ? " Warning: " + r["warning"] : ""), r);
                 },
             });
 

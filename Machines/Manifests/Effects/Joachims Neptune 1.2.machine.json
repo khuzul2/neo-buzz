@@ -1,0 +1,674 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Joachims Neptune 1.2",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "delay",
+ "summary": "Delay (profiled draft): traits: delay, filter or EQ; tail 0.18 s; latency 8191 samples; gain -1.8 dB at the defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": -1.79,
+   "latency_samples": 8191,
+   "latency_ms": 185.74,
+   "tail_seconds": 0.18,
+   "echoes": 1,
+   "first_echo_seconds": 0.185,
+   "gap_before_echo_db": -60.0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 8.2,
+   "tilt_db": -0.3,
+   "sine": {
+    "loud": {
+     "gain_db": -0.56,
+     "thd_percent": 1.95,
+     "thd_in_percent": 1.96,
+     "movement_db": 124.21
+    },
+    "quiet": {
+     "gain_db": -0.55,
+     "thd_percent": 2.06,
+     "thd_in_percent": 1.96,
+     "movement_db": 124.56
+    }
+   },
+   "traits": [
+    "delay",
+    "filter or EQ"
+   ]
+  },
+  "extremes": {
+   "min": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   },
+   "max": {
+    "silent": true,
+    "sample_peak_dbfs": -98.11
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Threshold",
+   "name": "Threshold",
+   "group": "",
+   "min": 1,
+   "max": 128,
+   "default": 71,
+   "kind": "table",
+   "unit": "dB",
+   "points": [
+    [
+     1,
+     -100.0
+    ],
+    [
+     2,
+     -97.7
+    ],
+    [
+     3,
+     -89.3
+    ],
+    [
+     4,
+     -80.8
+    ],
+    [
+     5,
+     -73.9
+    ],
+    [
+     6,
+     -68.3
+    ],
+    [
+     7,
+     -63.6
+    ],
+    [
+     8,
+     -59.7
+    ],
+    [
+     9,
+     -56.2
+    ],
+    [
+     10,
+     -53.2
+    ],
+    [
+     11,
+     -50.5
+    ],
+    [
+     12,
+     -48.0
+    ],
+    [
+     13,
+     -45.7
+    ],
+    [
+     14,
+     -43.7
+    ],
+    [
+     15,
+     -41.7
+    ],
+    [
+     16,
+     -40.0
+    ],
+    [
+     17,
+     -38.3
+    ],
+    [
+     18,
+     -36.7
+    ],
+    [
+     19,
+     -35.2
+    ],
+    [
+     20,
+     -33.8
+    ],
+    [
+     21,
+     -32.5
+    ],
+    [
+     22,
+     -31.2
+    ],
+    [
+     23,
+     -30.0
+    ],
+    [
+     24,
+     -28.9
+    ],
+    [
+     25,
+     -27.8
+    ],
+    [
+     26,
+     -26.7
+    ],
+    [
+     27,
+     -25.7
+    ],
+    [
+     28,
+     -24.7
+    ],
+    [
+     29,
+     -23.8
+    ],
+    [
+     30,
+     -22.8
+    ],
+    [
+     31,
+     -22.0
+    ],
+    [
+     32,
+     -21.1
+    ],
+    [
+     33,
+     -20.3
+    ],
+    [
+     34,
+     -19.5
+    ],
+    [
+     35,
+     -18.7
+    ],
+    [
+     36,
+     -18.0
+    ],
+    [
+     37,
+     -17.2
+    ],
+    [
+     38,
+     -16.5
+    ],
+    [
+     39,
+     -15.8
+    ],
+    [
+     40,
+     -15.1
+    ],
+    [
+     41,
+     -14.5
+    ],
+    [
+     42,
+     -13.9
+    ],
+    [
+     43,
+     -13.2
+    ],
+    [
+     44,
+     -12.6
+    ],
+    [
+     45,
+     -12.0
+    ],
+    [
+     46,
+     -11.4
+    ],
+    [
+     47,
+     -10.9
+    ],
+    [
+     48,
+     -10.3
+    ],
+    [
+     49,
+     -9.8
+    ],
+    [
+     50,
+     -9.2
+    ],
+    [
+     51,
+     -8.7
+    ],
+    [
+     52,
+     -8.2
+    ],
+    [
+     53,
+     -7.7
+    ],
+    [
+     54,
+     -7.2
+    ],
+    [
+     55,
+     -6.7
+    ],
+    [
+     56,
+     -6.2
+    ],
+    [
+     57,
+     -5.8
+    ],
+    [
+     58,
+     -5.3
+    ],
+    [
+     59,
+     -4.8
+    ],
+    [
+     60,
+     -4.4
+    ],
+    [
+     61,
+     -4.0
+    ],
+    [
+     62,
+     -3.5
+    ],
+    [
+     63,
+     -3.1
+    ],
+    [
+     64,
+     -2.7
+    ],
+    [
+     65,
+     -2.3
+    ],
+    [
+     66,
+     -1.9
+    ],
+    [
+     67,
+     -1.5
+    ],
+    [
+     68,
+     -1.1
+    ],
+    [
+     69,
+     -0.7
+    ],
+    [
+     70,
+     -0.3
+    ],
+    [
+     71,
+     0.0
+    ],
+    [
+     72,
+     0.4
+    ],
+    [
+     73,
+     0.8
+    ],
+    [
+     74,
+     1.1
+    ],
+    [
+     75,
+     1.5
+    ],
+    [
+     76,
+     1.8
+    ],
+    [
+     77,
+     2.2
+    ],
+    [
+     78,
+     2.5
+    ],
+    [
+     79,
+     2.9
+    ],
+    [
+     80,
+     3.2
+    ],
+    [
+     81,
+     3.5
+    ],
+    [
+     82,
+     3.8
+    ],
+    [
+     83,
+     4.1
+    ],
+    [
+     84,
+     4.5
+    ],
+    [
+     85,
+     4.8
+    ],
+    [
+     86,
+     5.1
+    ],
+    [
+     87,
+     5.4
+    ],
+    [
+     88,
+     5.7
+    ],
+    [
+     89,
+     6.0
+    ],
+    [
+     90,
+     6.3
+    ],
+    [
+     91,
+     6.6
+    ],
+    [
+     92,
+     6.9
+    ],
+    [
+     93,
+     7.1
+    ],
+    [
+     94,
+     7.4
+    ],
+    [
+     95,
+     7.7
+    ],
+    [
+     96,
+     8.0
+    ],
+    [
+     97,
+     8.2
+    ],
+    [
+     98,
+     8.5
+    ],
+    [
+     99,
+     8.8
+    ],
+    [
+     100,
+     9.0
+    ],
+    [
+     101,
+     9.3
+    ],
+    [
+     102,
+     9.6
+    ],
+    [
+     103,
+     9.8
+    ],
+    [
+     104,
+     10.1
+    ],
+    [
+     105,
+     10.3
+    ],
+    [
+     106,
+     10.6
+    ],
+    [
+     107,
+     10.8
+    ],
+    [
+     108,
+     11.1
+    ],
+    [
+     109,
+     11.3
+    ],
+    [
+     110,
+     11.5
+    ],
+    [
+     111,
+     11.8
+    ],
+    [
+     112,
+     12.0
+    ],
+    [
+     113,
+     12.2
+    ],
+    [
+     114,
+     12.5
+    ],
+    [
+     115,
+     12.7
+    ],
+    [
+     116,
+     12.9
+    ],
+    [
+     117,
+     13.2
+    ],
+    [
+     118,
+     13.4
+    ],
+    [
+     119,
+     13.6
+    ],
+    [
+     120,
+     13.8
+    ],
+    [
+     121,
+     14.0
+    ],
+    [
+     122,
+     14.3
+    ],
+    [
+     123,
+     14.5
+    ],
+    [
+     124,
+     14.7
+    ],
+    [
+     125,
+     14.9
+    ],
+    [
+     126,
+     15.1
+    ],
+    [
+     127,
+     15.3
+    ],
+    [
+     128,
+     15.5
+    ]
+   ],
+   "description": "Volume threshold",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "PitchShift",
+   "name": "PitchShift",
+   "group": "",
+   "min": 1,
+   "max": 255,
+   "default": 128,
+   "kind": "linear",
+   "a": -127.0,
+   "b": 127.0,
+   "description": "Bad and messed up pitch shifter",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "Spec.Boost",
+   "name": "Spec.Boost",
+   "group": "",
+   "min": 0,
+   "max": 254,
+   "default": 127,
+   "kind": "linear",
+   "a": -100.002353,
+   "b": 100.002353,
+   "unit": "%",
+   "description": "Spectral boost - frequency band boost",
+   "confidence": "values"
+  },
+  {
+   "index": 3,
+   "id": "Spec.Dist",
+   "name": "Spec.Dist",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.00353,
+   "b": 100.002671,
+   "unit": "%",
+   "description": "Spectral distortion - frequency band clipping",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "Spec.Clean",
+   "name": "Spec.Clean",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.00353,
+   "b": 100.002671,
+   "unit": "%",
+   "description": "Spectral cleaner - mutes weak frequency bands",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "Scramble",
+   "name": "Scramble",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.00353,
+   "b": 100.002671,
+   "unit": "%",
+   "description": "Randomizes the phase information",
+   "confidence": "values"
+  },
+  {
+   "index": 6,
+   "id": "FFT size",
+   "name": "FFT size",
+   "group": "",
+   "min": 0,
+   "max": 8,
+   "default": 6,
+   "kind": "exp",
+   "a": 128.0,
+   "b": 32768.0,
+   "description": "Precision and size of FFT",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

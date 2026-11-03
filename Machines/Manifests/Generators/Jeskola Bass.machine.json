@@ -1,0 +1,114 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Jeskola Bass",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "unpitched",
+ "summary": "Unpitched (profiled draft): unpitched; 4 voices; takes notes in its tracks; one note at the defaults -9 LUFS.",
+ "tracks": 4,
+ "notes": {
+  "input": "tracks",
+  "pitched": false,
+  "polyphony": 4
+ },
+ "health": {
+  "status": "unhealthy",
+  "problems": [
+   "NaN or runaway output with every parameter at its maximum"
+  ]
+ },
+ "profile": {
+  "level": {
+   "note": "A4 at velocity 100, 1.5 beats",
+   "integrated_lufs": -9,
+   "sample_peak_dbfs": 0,
+   "true_peak_dbtp": 1.97
+  },
+  "extremes": {
+   "min": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": 25.23
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Cutoff",
+   "name": "Cutoff",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 128,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 128.0,
+   "description": "Cutoff frequency (0-80)",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Resonance",
+   "name": "Resonance",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 128.0,
+   "description": "Resonance (0-80)",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": [
+  {
+   "index": 0,
+   "id": "Waveform",
+   "name": "Waveform",
+   "group": "",
+   "min": 1,
+   "max": 3,
+   "default": 1,
+   "kind": "linear",
+   "a": 1.0,
+   "b": 3.0,
+   "description": "Waveform (1=sawtooth, 2=pulse, 3=triangle)",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Volume",
+   "name": "Volume",
+   "group": "",
+   "min": 0,
+   "max": 254,
+   "default": 128,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 254.0,
+   "description": "Volume (0=0%, 80=100%, FE=~198%)",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Slide lenght",
+   "name": "Slide lenght",
+   "group": "",
+   "min": 1,
+   "max": 255,
+   "default": 1,
+   "kind": "linear",
+   "a": 1.0,
+   "b": 255.0,
+   "unit": "ticks",
+   "description": "Length of slide in ticks",
+   "confidence": "description"
+  }
+ ]
+}

@@ -93,7 +93,9 @@ namespace ReBuzz.Agent.Guides
             if (manifest.Summary.Length > 0) sb.Append(manifest.Summary).Append("\n\n");
             var facts = new List<string>();
             if (manifest.Kind.Length > 0) facts.Add(manifest.Kind == "generator" ? "Generator (makes sound)" : manifest.Kind == "effect" ? "Effect (processes its input)" : manifest.Kind);
-            facts.Add($"{manifest.Parameters.Count} parameters in exact units");
+            facts.Add(manifest.IsDraft
+                ? $"{manifest.Parameters.Count} parameters in units from a profiled draft manifest (tools/machine-profiler.py, not curated: check by ear)"
+                : $"{manifest.Parameters.Count} parameters in exact units");
             if (manifest.Tracks > 0) facts.Add($"{manifest.Tracks} tracks: one note each (Note and Velocity per track), played from patterns as MIDI");
             facts.Add(presets.Count == 1 ? "1 preset" : $"{presets.Count} presets");
             sb.Append(string.Join(" · ", facts)).Append(".\n\n");

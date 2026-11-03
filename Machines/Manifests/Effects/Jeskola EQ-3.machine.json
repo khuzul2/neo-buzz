@@ -1,0 +1,145 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Jeskola EQ-3",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "EQ",
+ "summary": "Eq (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +6.0 dB at the defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": 6.02,
+   "latency_samples": 0,
+   "latency_ms": 0.0,
+   "tail_seconds": 0.0,
+   "echoes": 0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 0.1,
+   "tilt_db": 0.0,
+   "sine": {
+    "loud": {
+     "gain_db": 6.02,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.13
+    },
+    "quiet": {
+     "gain_db": 6.02,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.14
+    }
+   },
+   "traits": [
+    "utility"
+   ]
+  },
+  "extremes": {
+   "min": {
+    "silent": false,
+    "sample_peak_dbfs": -27.23
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": -2.71
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Low Gain",
+   "name": "Low Gain",
+   "group": "",
+   "min": 0,
+   "max": 8192,
+   "default": 4096,
+   "kind": "db",
+   "a": -24.002729,
+   "b": 24.002729,
+   "unit": "dB",
+   "description": "Low Gain (0=-24dB, 1000=0dB, 2000=24dB)",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Mid Gain",
+   "name": "Mid Gain",
+   "group": "",
+   "min": 0,
+   "max": 8192,
+   "default": 4096,
+   "kind": "db",
+   "a": -24.002729,
+   "b": 24.002729,
+   "unit": "dB",
+   "description": "Mid Gain (0=-24dB, 1000=0dB, 2000=24dB)",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "High Gain",
+   "name": "High Gain",
+   "group": "",
+   "min": 0,
+   "max": 8192,
+   "default": 4096,
+   "kind": "db",
+   "a": -24.002729,
+   "b": 24.002729,
+   "unit": "dB",
+   "description": "High Gain (0=-24dB, 1000=0dB, 2000=24dB)",
+   "confidence": "values"
+  },
+  {
+   "index": 3,
+   "id": "Low Cutoff",
+   "name": "Low Cutoff",
+   "group": "",
+   "min": 10,
+   "max": 16000,
+   "default": 400,
+   "kind": "linear",
+   "a": 10.0,
+   "b": 16000.0,
+   "unit": "Hz",
+   "description": "Low Cutoff Frequency (Hz)",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "High Cutoff",
+   "name": "High Cutoff",
+   "group": "",
+   "min": 10,
+   "max": 16000,
+   "default": 5000,
+   "kind": "linear",
+   "a": 10.0,
+   "b": 16000.0,
+   "unit": "Hz",
+   "description": "High Cutoff Frequency (Hz)",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "Dry Thru",
+   "name": "Dry Thru",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 1,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}
