@@ -57,7 +57,8 @@ namespace WDE.PedalPlate
                        Description = "Low cut (0 = off, 100 = ~800 Hz high-pass)")]
         public int LowCut { get; set; }
 
-        /// <summary>Feeds wet signal back into the input. Thickens tail; self-oscillates when pushed high.</summary>
+        /// <summary>Feeds wet signal back into the input. Thickens and lengthens the tail; capped just below
+        /// where the loop would self-oscillate (see Work).</summary>
         [ParameterDecl(MinValue = 0, MaxValue = 95, DefValue = 0,
                        Description = "Feedback (0 = none, 95 = near-infinite)")]
         public int Feedback { get; set; }
@@ -106,9 +107,10 @@ namespace WDE.PedalPlate
         //   • When the countdown hits zero → tail has decayed → return false.
         //
         // MAX_TAIL_SEC is a generous upper bound: Decay is capped at 0.94 and
-        // Feedback at 0.95, so the energy in the tank always converges in
-        // finite time — 8 seconds comfortably outlasts any tail this plugin
-        // can produce, even at maximum decay + feedback.
+        // Feedback below the outer loop's edge (see Work), so the energy in the
+        // tank always converges in finite time — 8 seconds outlasts the usual
+        // tails (the longest, at full Decay with Feedback at its cap, ring on
+        // beyond it and are cut when the input has been silent for 8 s).
 
         const float SILENCE_THRESHOLD = 1e-5f;   // ~−100 dBFS
         const float MAX_TAIL_SEC      = 8f;       // seconds to wait after input goes silent
@@ -256,6 +258,17 @@ namespace WDE.PedalPlate
             float damp = Damping  / 100f * 0.88f;
             float dmp1 = 1f - damp;
             float fb   = Feedback / 100f;
+
+            // Fork (neo-buzz, docs/specs/machine-safety.md §3.1): the feedback loop runs through the
+            // tank, whose gain from its input to the feedback tap is at most
+            // 0.35·(1 + 3·dec)/(1 − dec²) at any frequency (each half's delays and all-passes have
+            // gain 1, the damping low-pass at most 1, and the four taps add up in the worst phase).
+            // Above 1/that the loop could grow: from Feedback ≈ 50 at the default Decay (the profiler
+            // found 80 and up), from 9 at full Decay. So the feedback stays under 98 % of it, and the
+            // whole loop's gain under 0.98 at every frequency, for every setting. Below the cap
+            // nothing changes, bit for bit (every Feedback up to 79 at a Decay up to 55).
+            float fbMax = 0.98f * (1f - dec * dec) / (0.35f * (1f + 3f * dec));
+            if (fb > fbMax) fb = fbMax;
 
             int preDelaySamples = Math.Clamp(
                 (int)(PreDelayMs * _sr / 1000f), 0, _preBuf.Length - 1);
