@@ -797,7 +797,9 @@ namespace WDE.ModernPatternEditor
 
                 // Notify patterns changed so seq editor can update the pattern block UI.
                 // This limits the amount of messages.
-                if (songTime.PosInTick == 0)
+                // Fork (neo-buzz audio hygiene): Keys made a list and its collection on every call
+                // (this runs on the audio thread on every buffer); only when something changed now.
+                if (songTime.PosInTick == 0 && !changedPatternsSinceLastTick.IsEmpty)
                 {
                     foreach (var pattern in changedPatternsSinceLastTick.Keys)
                     {

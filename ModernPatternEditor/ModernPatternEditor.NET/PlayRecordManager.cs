@@ -22,6 +22,14 @@ namespace WDE.ModernPatternEditor
         List<PlayingTrackInfo> PlayingNotesList = new List<PlayingTrackInfo>();
         List<CollectedEventState> midiEventsToTriggerLater = new List<CollectedEventState>();
 
+        // Fork (neo-buzz audio hygiene, docs/specs/daw-modes.md §8.1): what Play needs, made once and
+        // reused (it runs on the audio thread, under the editor's syncLock, on every tick and subtick).
+        // It made a list, a sequence collection, a dictionary and a closure per column per call.
+        readonly List<CollectedEventState> collectEvents = new List<CollectedEventState>();
+        readonly List<IMachine> controlChangeMachines = new List<IMachine>();
+        readonly Stack<PlayingTrackInfo> freeTrackInfos = new Stack<PlayingTrackInfo>();
+        readonly List<PatternEvent> midiColumnEvents = new List<PatternEvent>();
+
         struct PlayInfo
         {
             public int PreviousPosition;
@@ -74,7 +82,8 @@ namespace WDE.ModernPatternEditor
             MidiCC
         }
 
-        internal class CollectedEventState
+        // Fork (audio hygiene): a struct, so collecting events allocates nothing (it was a class).
+        internal struct CollectedEventState
         {
             internal IParameter parameter;
             internal int time;
@@ -103,15 +112,22 @@ namespace WDE.ModernPatternEditor
 
         internal void Play(SongTime songTime)
         {
-            ReadOnlyCollection<ISequence> seqs = GetPlayingSequences(Editor.TargetMachine);
-
-            List<CollectedEventState> collectEvents = new List<CollectedEventState>();
+            // Fork (audio hygiene): the song's sequences by index (its collection is kept while the
+            // sequences stay the same), those of the target machine that play a pattern, as
+            // GetPlayingSequences chose them; into lists made once.
+            var target = Editor.TargetMachine;
+            var seqs = Global.Buzz.Song.Sequences;
+            var collectEvents = this.collectEvents;
+            collectEvents.Clear();
 
             IPattern pat = null;
 
-            foreach (ISequence seq in seqs)
+            for (int s = 0; s < seqs.Count; s++)
             {
-                int playPosition = GetPositionInPattern(out pat, seq, Editor.TargetMachine);
+                ISequence seq = seqs[s];
+                if (seq.Machine != target || seq.PlayingPattern == null)
+                    continue;
+                int playPosition = GetPositionInPattern(out pat, seq, target);
 
                 if (playPosition != -1 && pat != null)
                 {
@@ -169,6 +185,7 @@ namespace WDE.ModernPatternEditor
             if (collectEvents.Count > 0)
             {  
                 FireCollectedEvents(collectEvents);
+                collectEvents.Clear();
             }
         }
 
@@ -213,10 +230,14 @@ namespace WDE.ModernPatternEditor
 
         private void FireCollectedEvents(List<CollectedEventState> collectEvents)
         {
-            Dictionary<IMachine, int> machines = new Dictionary<IMachine, int>();
+            // Fork (audio hygiene): the machines in order of their first event (as the dictionary's
+            // keys came), in a list made once.
+            var machines = controlChangeMachines;
+            machines.Clear();
             foreach (var e in collectEvents)
             {
-                machines[e.parameter.Group.Machine] = 0;
+                if (!machines.Contains(e.parameter.Group.Machine))
+                    machines.Add(e.parameter.Group.Machine);
 
                 var machine = e.parameter.Group.Machine;
                 int group = e.parameter.Group.Machine.ParameterGroups.IndexOf(e.parameter.Group) | 16; // Don't record
@@ -231,9 +252,10 @@ namespace WDE.ModernPatternEditor
                 Editor.cb.ControlChange(machine, group, track, param, value);
             }
 
-            foreach (var m in machines.Keys)
+            foreach (var m in machines)
                 if (m.DLL.Info.Version >= 42 || PatternEditor.Settings.ForceControlChange)
                     m.SendControlChanges();
+            machines.Clear();
         }
 
         private void FireCollectedMidiEvents(List<CollectedEventState> collectEvents, int playPosition)
@@ -312,7 +334,8 @@ namespace WDE.ModernPatternEditor
                     }
                     if (midiNoteData.noteOff)
                     {
-                        PlayingTrackInfo pti = PlayingNotesList.FirstOrDefault(x => x.track == mpeColumn.ParamTrack && x.parameter == mpeColumn.Parameter);
+                        // Fork (audio hygiene): a loop; the lambda's closure was made for every column on every call.
+                        PlayingTrackInfo pti = FindPlayingNote(mpeColumn.ParamTrack, mpeColumn.Parameter);
                         if (pti != null) // Need to know playing note so that we can stop it.
                         {
                             int noteOffTime = midiNoteData.midiNoteTimeQ + midiNoteData.midiDelay.value;
@@ -672,11 +695,25 @@ namespace WDE.ModernPatternEditor
             }
         }
 
+        /// <summary>The first playing note on <paramref name="track"/> of <paramref name="parameter"/>, or null.</summary>
+        PlayingTrackInfo FindPlayingNote(int track, IParameter parameter)
+        {
+            for (int i = 0; i < PlayingNotesList.Count; i++)
+            {
+                var x = PlayingNotesList[i];
+                if (x.track == track && x.parameter == parameter)
+                    return x;
+            }
+            return null;
+        }
+
         public void UpdatePlayingNotePattern(IParameter parameter, int track, int buzzNote, int volume)
         {
             // Stop notes on target track
             // ToDo: if midinote, always do SendMidiNote
-            PlayingTrackInfo pti = PlayingNotesList.FirstOrDefault(x => x.track == track && x.parameter == parameter);
+            // Fork (audio hygiene): loops instead of FirstOrDefault and RemoveAll (their closures
+            // were made on every call, on the audio thread), and the notes' records reused.
+            PlayingTrackInfo pti = FindPlayingNote(track, parameter);
             if (pti != null &&
                 parameter is MPEInternalParameter &&
                 ((MPEInternalParameter)parameter).InternalType == InternalParameter.MidiNote)
@@ -684,11 +721,21 @@ namespace WDE.ModernPatternEditor
                 parameter.Group.Machine.SendMIDINote(pti.channel, BuzzNote.ToMIDINote(pti.note), 0);
             }
 
-            PlayingNotesList.RemoveAll(x => x.track == track && x.parameter == parameter);
+            for (int i = 0; i < PlayingNotesList.Count; i++)
+            {
+                var x = PlayingNotesList[i];
+                if (x.track == track && x.parameter == parameter)
+                {
+                    PlayingNotesList.RemoveAt(i--);
+                    freeTrackInfos.Push(x);
+                }
+            }
 
             if (buzzNote != BuzzNote.Off)
             {
-                PlayingTrackInfo ptinew = new PlayingTrackInfo();
+                PlayingTrackInfo ptinew = freeTrackInfos.Count > 0 ? freeTrackInfos.Pop() : new PlayingTrackInfo();
+                ptinew.pattern = null;
+                ptinew.channel = 0;
                 ptinew.parameter = parameter;
                 ptinew.note = buzzNote;
                 ptinew.track = track;
@@ -750,27 +797,29 @@ namespace WDE.ModernPatternEditor
             machinePatternColumnData.midiNote.value = -1;
             machinePatternColumnData.midiVelocity.value = MPEInternalParameter.DefaultMidiVolume;
 
+            // Fork (audio hygiene): each column's events into a list made once (GetEvents made an array).
+            var events = midiColumnEvents;
             if (machinePatternColumnData.midiNote.column != null)
             {
                 var columnNote = machinePatternColumnData.midiNote.column;
-                var noteEvents = columnNote.GetEvents(start, end);
+                var noteEvents = columnNote.GetEventsInto(start, end, events);
                 machinePatternColumnData.midiNoteTimeQ = columnNote.GetTimeQuantized(end);
-                if (noteEvents.Count() > 0)
+                if (noteEvents.Count > 0)
                 {
-                    int val = noteEvents.First().Value;
+                    int val = noteEvents[0].Value;
                     if (val == BuzzNote.Off)
                         machinePatternColumnData.noteOff = true;
                     else
-                        machinePatternColumnData.midiNote.value = BuzzNote.ToMIDINote(noteEvents.First().Value);
+                        machinePatternColumnData.midiNote.value = BuzzNote.ToMIDINote(noteEvents[0].Value);
                 }
             }
             if (machinePatternColumnData.midiVelocity.column != null)
             {
                 var columnVol = machinePatternColumnData.midiVelocity.column;
-                var volEvents = columnVol.GetEvents(start, end);
-                if (volEvents.Count() > 0)
+                var volEvents = columnVol.GetEventsInto(start, end, events);
+                if (volEvents.Count > 0)
                 {
-                    int vol = volEvents.First().Value;
+                    int vol = volEvents[0].Value;
                     machinePatternColumnData.midiVelocity.value = vol;
                     machinePatternColumnData.midiVelocity.column.Parameter.SetValue(track, vol);
                 }
@@ -782,34 +831,34 @@ namespace WDE.ModernPatternEditor
             if (machinePatternColumnData.midiDelay.column != null)
             {
                 var columnDelay = machinePatternColumnData.midiDelay.column;
-                var delayEvents = columnDelay.GetEvents(start, end);
+                var delayEvents = columnDelay.GetEventsInto(start, end, events);
 
-                if (delayEvents.Count() > 0)
+                if (delayEvents.Count > 0)
                 {
                     int delayTimeQ = columnDelay.GetTimeQuantized(end);
                     int rowLenght = columnDelay.RowLenghtAt(delayTimeQ);
-                    machinePatternColumnData.midiDelay.value = (int)(rowLenght * (delayEvents.First().Value - columnDelay.Parameter.MinValue) / ((double)columnDelay.Parameter.MaxValue - columnDelay.Parameter.MinValue));
+                    machinePatternColumnData.midiDelay.value = (int)(rowLenght * (delayEvents[0].Value - columnDelay.Parameter.MinValue) / ((double)columnDelay.Parameter.MaxValue - columnDelay.Parameter.MinValue));
                 }
             }
             if (machinePatternColumnData.midiCut.column != null)
             {
                 var columnCut = machinePatternColumnData.midiCut.column;
-                var cutEvents = columnCut.GetEvents(start, end);
+                var cutEvents = columnCut.GetEventsInto(start, end, events);
 
-                if (cutEvents.Count() > 0)
+                if (cutEvents.Count > 0)
                 {
                     int cutTimeQ = columnCut.GetTimeQuantized(end);
                     int rowLenght = columnCut.RowLenghtAt(cutTimeQ);
-                    machinePatternColumnData.midiCut.value = (int)(rowLenght * (cutEvents.First().Value - columnCut.Parameter.MinValue) / ((double)columnCut.Parameter.MaxValue - columnCut.Parameter.MinValue));
+                    machinePatternColumnData.midiCut.value = (int)(rowLenght * (cutEvents[0].Value - columnCut.Parameter.MinValue) / ((double)columnCut.Parameter.MaxValue - columnCut.Parameter.MinValue));
                 }
             }
             if (machinePatternColumnData.midiChannel.column != null)
             {
                 var columnChannel = machinePatternColumnData.midiChannel.column;
-                var chanEvents = columnChannel.GetEvents(start, end);
-                if (chanEvents.Count() > 0)
+                var chanEvents = columnChannel.GetEventsInto(start, end, events);
+                if (chanEvents.Count > 0)
                 {
-                    machinePatternColumnData.midiChannel.value = chanEvents.First().Value;
+                    machinePatternColumnData.midiChannel.value = chanEvents[0].Value;
                 }
             }
             else
