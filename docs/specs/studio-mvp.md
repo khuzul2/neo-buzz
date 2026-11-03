@@ -112,3 +112,50 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - The window is saved as PNGs, which CI uploads (`studio-screenshots`).
 - **Dev NuGet cache** (§3.8): `dev-nuget-cache.yml` keeps the restored packages as one release asset (`dev-nuget-cache`, a prerelease, not a ReBuzz release). Locally: `dotnet restore <project> --configfile <a nuget.config whose only source is that unpacked folder>`. The test projects also run locally that way.
 - **The Mac app:** `tools/mac-bundle.sh` builds `ReBuzz.app`. It is self-contained osx-arm64, with PortAudio, libsndfile (and its libraries) and the Link helper inside, and ad-hoc signed. The Mac job runs the headless view tests on arm64, then builds the app and starts it for real (`--smoke`, with the runner's audio device), and uploads it (`ReBuzz-macos-arm64`).
+
+**S6, the Modern Pattern Editor** (§3.6).
+- **One source, three builds.** The WPF project (`ModernPatternEditor.NET`) still builds for Windows; fork CI's Windows job now builds it. Its machine side is shared, unchanged, with two `net10.0` projects:
+  - `ModernPatternEditor/Portable`: the editor without a view, for `rebuzz-headless`;
+  - `ModernPatternEditor/Avalonia`: the same with the Avalonia view, for the studio.
+  - Both build `Modern Pattern Editor.NET.dll` into the app's `Gear/Generators` (`AppGear.targets`). The engine finds the default pattern editor there as on Windows, and songs name it as they do.
+  - How: `PatternEditor.Core.cs` holds the machine side of `PatternEditor`, moved verbatim out of `PatternEditor.xaml.cs` (a partial class). WPF-only lines in the shared files are under `#if WINDOWS`. `Portable/PatternControl.cs` is the toolkit-free controller: keys, cursor, selection and the edit commands, ported from the WPF control. `PortableShims.cs` and `EditorDispatcher.cs` stand in for the few WPF types the shared code uses.
+  - The studio can't use the editor's types: managed machines load in contexts of their own. So the view is part of the editor's Avalonia build, and the Pattern tab shows the control the editor machine gives the engine (`PatternEditorControl`), as ReBuzz's WPF window does.
+- **Engine seams:**
+  - `ManagedMachineHost`: an editor's `PatternEditorControl` may return `object`. The portable editor returns its view, or null without one.
+  - `ReBuzzCore.PatternsAwaitingEditor`, set by the BMX and BMXML loaders. While an old song's patterns are made, `SetPatternEditorPattern` no longer creates an editor for a machine whose built-in contents are converted next. Otherwise such a machine got two editors, and each save of the song differed. The code is the same on Windows.
+- **The view** (`ModernPatternEditor/Avalonia`), a port of `PatternControl` and the code-drawn `BeatVisual`:
+  - column set headers (machine and track; column names turned up; a click mutes, selects a column or the set), row numbers, the beats, the cursor row, the selection, the cursor and the play position;
+  - only the beats and column sets in view are drawn, with the cursor, selection and play position on a layer of their own;
+  - the toolbar (play solo, create, clone and delete pattern, beats, tracks, wave, base octave, keyboard mapping, steps down and right, MIDI edit, zoom, help) and the status bar, as in WPF;
+  - keys as on Windows: notes by key position (the PC scan codes `PEKeys.xml` names), values, note off, clear, insert and delete rows, Tab between tracks, Shift to select, Ctrl+1–0 subdivisions. Command acts as Control on macOS, and the main keyboard's + and − as the keypad's;
+  - the edit commands of the WPF editor: cut, copy, paste, undo, redo on the editor's own stack, transpose (Shift and Ctrl+Shift with + and −), interpolate (linear, exponential), randomize, rotate, write state, select all and unselect. They are also in the grid's context menu;
+  - pattern properties (Ctrl+Backspace): name, beats, rows per beat, and which columns and MIDI lanes the pattern has.
+  - Avalonia matches key bindings from the focused element up, before KeyDown. So the grid binds its Ctrl and Command shortcuts itself, or the window's Ctrl+Z would undo the song.
+- **The Pattern tab** (`Views/PatternView.cs`):
+  - It shows the editor for a chosen machine and pattern, with a machine chooser, a pattern chooser and New pattern. It follows the engine when the pattern editor's pattern or the selected machine changes.
+  - The editor's Return (WPF: to the sequence editor) selects the Sequence tab.
+  - **For other views:** `PatternView.Edit(IPattern)` and `Edit(IMachine)` show a pattern or a machine's patterns and bring the tab to the front, `PatternView.Show()` brings it to the front alone, and `PatternShown` says what it shows.
+  - **For the shell's Edit menu:** the page's `Undo`, `Redo`, `Cut`, `Copy`, `Paste`, `CanUndo` and `CanRedo` reach the editor's stack and clipboard (its `IEditContext`).
+- **Tests** (`PatternEditorTests`, headless):
+  - notes, a note off, and global and word values typed with the keyboard are the engine's pattern events and the editor's data (format 255);
+  - period clears, Delete moves rows up;
+  - transpose by a semitone and an octave, copy and paste, linear interpolation with the WPF editor's values;
+  - undo and redo through Ctrl+Z/Y and through the page, without touching the song's undo;
+  - a click places the cursor, a drag selects;
+  - pattern properties: renamed, 8 beats, 8 rows a beat, two MIDI lanes typed into;
+  - the pattern plays through the engine (offline render): the notes sound at the Master, the automation reaches the machine, and the play cursor follows;
+  - the choosers and the API pick what the tab edits; a machine without patterns gets New pattern;
+  - a song's editor data saves and opens byte for byte, as BMXML and as BMX;
+  - a frame of the beats in view draws in 10–55 ms headless (Neo Poly, 91 global columns).
+  - Screenshots: `pattern-editor-empty`, `-notes`, `-typed`, `-pasted`, `-interpolated`, `-playing`, `-selection`, `-midi-lanes`, `-no-patterns`, `-reopened`.
+- **Songs** (`tools/song-roundtrip.py`, Linux CI):
+  - old songs' built-in contents now arrive in the editor's data, as on Windows;
+  - a Windows-style song, with editor data written in the editor's own format (columns, MIDI lanes, 4 and 8 rows a beat), saves byte for byte as BMX and BMXML.
+  - The A6 suite against `rebuzz-headless`, with the editor present, shows no regressions (run locally).
+- **Not ported, or different from WPF:**
+  - the parameter knobs in the column headers, the blinking cursor, the background image (a solid colour);
+  - the chords window, XML pattern import and export, the settings window and the About box;
+  - Paste is enabled whenever the clipboard holds data;
+  - deleting a pattern, undone, gives it back empty;
+  - pattern properties are a smaller dialog.
+- **Not checked yet:** on a Mac (fonts fall back from Consolas to Menlo; Retina, scrolling, keys), and a real song from Windows with editor data (the tests use synthetic data built in the editor's format).
