@@ -47,9 +47,9 @@ namespace ReBuzz.Core
     /// dispatcher operations): a request from another thread (the audio thread) only sets a flag,
     /// which a timer on the UI thread looks at. A request on the UI thread itself (an offline render
     /// there, as tests make) is posted, so the action runs as soon as the UI thread's queue does.
-    /// The timer runs from the start (made on the UI thread).
+    /// The timer runs from the start (made on the UI thread) until disposed.
     /// </summary>
-    public sealed class PolledUiSignal : IUiSignal
+    public sealed class PolledUiSignal : IUiSignal, IDisposable
     {
         readonly IUiDispatcher dispatcher;
         readonly IUiTimer timer;
@@ -86,5 +86,8 @@ namespace ReBuzz.Core
             if (dispatcher.CheckAccess() && Interlocked.Exchange(ref posted, 1) == 0)
                 dispatcher.BeginInvoke(runPosted, UiPriority.Normal);
         }
+
+        /// <summary>Stops the timer (UI thread); a request after it runs only if made on the UI thread.</summary>
+        public void Dispose() => timer.Stop();
     }
 }

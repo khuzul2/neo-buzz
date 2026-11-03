@@ -303,21 +303,27 @@ namespace ReBuzz.Studio.Tests
             return (m, pattern, window);
         }
 
+        // One window and pattern for every work algorithm: a studio window closed in a test leaves
+        // some of its views listening to the engine, slowing the tests after it a little each.
         [AvaloniaTest]
-        public void AModernPatternEditorPatternPlayingNotesAndAutomationAllocatesNothing([Values(0, 1, 2)] int algorithm)
+        public void AModernPatternEditorPatternPlayingNotesAndAutomationAllocatesNothing()
         {
             NewSong();
             var (m, pattern, window) = MpePattern("Hygiene MPE");
             try
             {
                 var detune = m.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Uni detune");
-                using var audio = new AudioThread(algorithm);
-                lock (ReBuzzCore.AudioLock) Core.Playing = true;
-                var heard = new HashSet<int>(1024);
-                var cost = Steady(audio, perBuffer: () => heard.Add(detune.GetValue(0)));
-                AssertNoAllocation(cost, $"a pattern editor pattern playing (algorithm {algorithm})");
-                Assert.That(heard.Count, Is.GreaterThan(8), "the automation reached the machine");
-                Assert.That(m.IsActive, Is.True, "the notes sound");
+                foreach (int algorithm in new[] { 0, 1, 2 })
+                {
+                    using var audio = new AudioThread(algorithm);
+                    lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                    var heard = new HashSet<int>(1024);
+                    var cost = Steady(audio, perBuffer: () => heard.Add(detune.GetValue(0)));
+                    AssertNoAllocation(cost, $"a pattern editor pattern playing (algorithm {algorithm})");
+                    Assert.That(heard.Count, Is.GreaterThan(8), $"the automation reached the machine (algorithm {algorithm})");
+                    Assert.That(m.IsActive, Is.True, $"the notes sound (algorithm {algorithm})");
+                    lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                }
             }
             finally
             {
@@ -392,17 +398,24 @@ namespace ReBuzz.Studio.Tests
         {
             int ran = 0;
             var signal = new AvaloniaUiDispatcher().CreateSignal(() => ran++);
-            var thread = new Thread(() => { signal.Request(); signal.Request(); });
-            thread.Start();
-            thread.Join();
-            Assert.That(ran, Is.EqualTo(0), "the audio thread only sets a flag");
-            var until = DateTime.UtcNow.AddSeconds(5);
-            while (ran == 0 && DateTime.UtcNow < until)
+            try
             {
-                Thread.Sleep(5);
-                Dispatcher.UIThread.RunJobs();
+                var thread = new Thread(() => { signal.Request(); signal.Request(); });
+                thread.Start();
+                thread.Join();
+                Assert.That(ran, Is.EqualTo(0), "the audio thread only sets a flag");
+                var until = DateTime.UtcNow.AddSeconds(5);
+                while (ran == 0 && DateTime.UtcNow < until)
+                {
+                    Thread.Sleep(5);
+                    Dispatcher.UIThread.RunJobs();
+                }
+                Assert.That(ran, Is.EqualTo(1), "the timer ran it once for both requests");
             }
-            Assert.That(ran, Is.EqualTo(1), "the timer ran it once for both requests");
+            finally
+            {
+                (signal as IDisposable)?.Dispose();         // its timer: not left running for the tests after
+            }
         }
 
         // ------------------------------------------------------------------ the first play
