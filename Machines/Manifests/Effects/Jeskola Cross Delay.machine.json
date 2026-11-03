@@ -8,8 +8,11 @@
  "summary": "Delay (profiled draft): traits: delay; tail 3.0 s; latency 0 samples; gain +6.1 dB at the defaults.",
  "tracks": 8,
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "warn",
+  "problems": [
+   "hot (loud but steady) with Feedback at its minimum (-100.0%): +4.1 dBFS peak; Feedback at its maximum (100.0%): +7.1 dBFS peak; Wet out at its maximum (100.0%): +2.3 dBFS peak"
+  ],
+  "hot": true
  },
  "profile": {
   "effect": {
@@ -41,14 +44,54 @@
     "delay"
    ]
   },
-  "extremes": {
-   "min": {
-    "silent": false,
-    "sample_peak_dbfs": -35.22
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -1.0,
+    "growth_db": 0.59,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": -23.94
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": -10.57,
+     "growth_db": 0.22,
+     "verdict": "ok"
+    },
+    "max": {
+     "peak_dbfs": -1.2,
+     "growth_db": 0.27,
+     "verdict": "ok"
+    }
+   },
+   "swept_because": [
+    "an effect with Feedback"
+   ],
+   "renders": 13
+  },
+  "sweeps": {
+   "Feedback": {
+    "min": {
+     "peak_dbfs": 4.13,
+     "growth_db": 1.24,
+     "verdict": "hot",
+     "raw": 0,
+     "text": "-100.0%"
+    },
+    "max": {
+     "peak_dbfs": 7.09,
+     "growth_db": 1.01,
+     "verdict": "hot",
+     "raw": 128,
+     "text": "100.0%"
+    }
+   },
+   "Wet out": {
+    "max": {
+     "peak_dbfs": 2.3,
+     "growth_db": 0.33,
+     "verdict": "hot",
+     "raw": 128,
+     "text": "100.0%"
+    }
    }
   }
  },

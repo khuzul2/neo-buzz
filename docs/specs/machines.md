@@ -134,6 +134,8 @@ Log-domain gain computer with soft knee; modes: **Clean** (feed-forward VCA, pea
 
 Pre-delay → input diffusion (allpasses) → early reflections → 16-line feedback delay network with a Householder mix, modulated delays, and per-line low/high shelving set from the decay times so that T60 is exact per band → width, tone EQ → mix. Freeze sets the feedback to unity and mutes the input; shimmer pitch-shifts the feedback +12 semitones.
 
+Decay is the T60 at 1 kHz: each line's gain divides out its shelves' gain there. That is exact while 1 kHz is in the flat mid band. The lower High damping, the more the high shelf already cuts at 1 kHz, and dividing that out lifts the slowest band: it rings longer than set (2.2× in Ambient — Long Dark Hall, damping 2.5 kHz), and below about 1.4 kHz at the defaults (2.9 kHz with Low decay ×4) it grew without bound (the profiler: +347 dBFS). So each line's peak loop gain over frequency is computed exactly from its shelves (a ratio of quadratics in tan²(ω/2)) and compared with the slowest band's set decay. Where that band would ring more than 3× longer than set, or never die, the gain comes down until it rings as set, blending in continuously from that edge: then the band below the damping corner keeps the set Decay (the lows the set Low decay, when that is longer), and no band rings more than 3× its setting. With Freeze off every setting decays: every line's loop gain stays below 1 at every frequency, and the orthonormal mix keeps the network's below it. What changed: only settings that rang more than 3× too long or diverged, which need High damping below about 1.85 kHz at the defaults (up to 3.7 kHz with Low decay ×4 and the longest Decay; never with Low decay ×0.25). The defaults and every factory preset are untouched, bit for bit.
+
 Modes: Hall, Room, Chamber, Plate. Parameters: Mode, Pre-delay, Size, Decay, Low decay ×, High damping, Diffusion, Mod depth, Mod rate, Early, Late, Width, Low cut, High cut, Freeze, Shimmer, Mix.
 
 | Criterion | Target | Measured |
@@ -143,6 +145,11 @@ Modes: Hall, Room, Chamber, Plate. Parameters: Mode, Pre-delay, Size, Decay, Low
 | Stereo | late-tail interchannel correlation \|ρ\| ≤ 0.3 at width 100 % | 0.009 |
 | Freeze | tail energy stays within ±1 dB over 10 s | −0.27 dB |
 | Stability | every parameter at its extreme for 60 s: bounded, no NaN | passes |
+| Loop gain | every line below 1 at every frequency, over Mode × Size × Decay × Low decay × High damping (20 412 settings, ends included) | at most 0.99991; no band longer than 3.000× its set decay |
+| Extremes | each parameter alone at each end, and the lowest damping with the longest decays (sizes, modes, full modulation): bounded over 30 s of noise and decaying after it | passes (Shimmer above its edge excepted, below) |
+| High damping 1 kHz | Decay 2 s, Low decay ×1: no octave longer than the set Decay; the band below the corner at it | 125 Hz 2.19 s, 250 Hz 2.01 s, 500 Hz 1.65 s, 1 kHz 1.17 s (diverged before) |
+
+**Shimmer** has its own loop (the tail an octave up, back into the network), and it runs away above a setting that falls with the decay: about 93 % at the default Decay (2.5 s), 36 % at 8 s, 26 % at 30 s, lower still in Chamber or with Low decay ×4. The pitch shifter's two crossfaded taps add up for low frequencies (up to √2), so the lows, which ring longest, recirculate without moving up. A high-pass in the shimmer path alone doesn't fix it (with one at 40 Hz it still runs away at 30 s above 34 %). The factory preset Ambient — Shimmer (45 % at 9 s) sits at 94 % of its edge (48 %) and decays slowly (−1 dB/s), so a fix (a shimmer gain that falls with the decay) changes it: an open decision, not made here.
 | Mix 0 % | output equals the input | passes |
 
 ### Neo Poly (virtual analog)

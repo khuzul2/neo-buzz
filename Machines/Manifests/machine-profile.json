@@ -22,23 +22,30 @@
     "input": "none"
    },
    "type": "generator (silent at its defaults)",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": null,
+     "verdict": "silent"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 0.2,
+   "seconds": 0.4,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "no sound from a MIDI note at its defaults (it has no Note track parameter)"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -85,23 +92,32 @@
     "sample_peak_dbfs": -13.84,
     "true_peak_dbtp": -13.75
    },
-   "cpu_ms_per_s": 14.0,
+   "cpu_ms_per_s": 16.8,
    "type": "monosynth",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -50.99
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -13.84,
+     "growth_db": -57.32,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 0.33
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -55.29,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -17.61,
+      "growth_db": -6.78,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 1.8,
+   "seconds": 2.3,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -110,7 +126,7 @@
    "gear": "BTDSys PeerChord",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.05,
+   "load_seconds": 0.06,
    "gear_info": {
     "file": "Generators/BTDSys PeerChord.x64.dll",
     "managed": false,
@@ -124,11 +140,12 @@
    "inferred": 20,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.4,
+   "seconds": 0.3,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -140,7 +157,7 @@
    "gear": "Connection Mixer Console",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.02,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Generators/Connection Mixer Console.NET.dll",
     "managed": true,
@@ -159,6 +176,7 @@
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -184,11 +202,12 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.0,
+   "seconds": 0.1,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -199,7 +218,7 @@
   "EasyRec": {
    "gear": "EasyRec",
    "kind": "effect",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Generators/EasyRec.NET.dll",
     "managed": true,
@@ -240,21 +259,31 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -9.2,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 0.6,
+   "seconds": 0.9,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -277,11 +306,12 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.0,
+   "seconds": 0.1,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -331,14 +361,22 @@
      "filter or EQ"
     ]
    },
-   "cpu_ms_per_s": 19.4,
+   "cpu_ms_per_s": 9.3,
    "type": "modulation",
-   "extremes": {},
-   "seconds": 1.2,
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -10.89,
+     "growth_db": -0.61,
+     "verdict": "ok"
+    },
+    "all_at_once": {}
+   },
+   "seconds": 1.6,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -346,7 +384,7 @@
   "FSM Infector": {
    "gear": "FSM Infector",
    "kind": "generator",
-   "load_seconds": 0.44,
+   "load_seconds": 0.45,
    "gear_info": {
     "file": "Generators/FSM Infector.x64.dll",
     "managed": false,
@@ -386,23 +424,30 @@
     "sample_peak_dbfs": -5.74,
     "true_peak_dbtp": -5.73
    },
-   "cpu_ms_per_s": 17.4,
+   "cpu_ms_per_s": 17.0,
    "type": "polysynth",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -2.24
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -2.2,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -89.85,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 3.3,
+   "seconds": 4.8,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -449,14 +494,21 @@
     "sample_peak_dbfs": -0.89,
     "true_peak_dbtp": -0.7
    },
-   "cpu_ms_per_s": 14.5,
+   "cpu_ms_per_s": 10.6,
    "type": "monosynth",
-   "extremes": {},
-   "seconds": 0.9,
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -0.89,
+     "verdict": "ok"
+    },
+    "all_at_once": {}
+   },
+   "seconds": 1.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -504,26 +556,72 @@
      "delay"
     ]
    },
-   "cpu_ms_per_s": 0.3,
+   "cpu_ms_per_s": 0.0,
    "type": "delay",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -30.1
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -3.23,
+     "growth_db": 0.86,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -26.6
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -7.06,
+      "growth_db": 0.66,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -2.12,
+      "growth_db": -0.19,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "an effect with Resonance, FB Amp, FB PingPong, FB Spread"
+    ],
+    "renders": 25
+   },
+   "sweeps": {
+    "Wet L Pan": {
+     "min": {
+      "peak_dbfs": 0.32,
+      "growth_db": 0.2,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "100% L"
+     }
+    },
+    "Wet R Pan": {
+     "max": {
+      "peak_dbfs": 1.0,
+      "growth_db": 0.07,
+      "verdict": "hot",
+      "raw": 240,
+      "text": "100% R"
+     }
+    },
+    "FB Amp": {
+     "max": {
+      "peak_dbfs": 10.48,
+      "growth_db": 0.52,
+      "over_seconds": 30,
+      "verdict": "hot",
+      "raw": 239,
+      "text": "-0.1 dB"
+     }
     }
    },
-   "seconds": 1.6,
+   "seconds": 13.4,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Wet L Pan at its minimum (100% L): +0.3 dBFS peak; Wet R Pan at its maximum (100% R): +1.0 dBFS peak; FB Amp at its maximum (-0.1 dB): +10.5 dBFS peak over 30 s"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "FSM PhatMan": {
    "gear": "FSM PhatMan",
@@ -568,24 +666,60 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "filter or EQ",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.69
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -1.81,
+     "growth_db": -1.7,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -26.75
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -5.66,
+      "growth_db": -1.74,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -1.75,
+      "growth_db": 1.38,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "an effect with Feedback"
+    ],
+    "renders": 18
+   },
+   "sweeps": {
+    "Feedback": {
+     "min": {
+      "peak_dbfs": 6.13,
+      "growth_db": -0.91,
+      "over_seconds": 30,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "-100.0 %"
+     },
+     "max": {
+      "peak_dbfs": 8.37,
+      "growth_db": -3.45,
+      "over_seconds": 30,
+      "verdict": "hot",
+      "raw": 128,
+      "text": "100.0 %"
+     }
     }
    },
-   "seconds": 1.1,
+   "seconds": 7.6,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Feedback at its minimum (-100.0 %): +6.1 dBFS peak over 30 s; Feedback at its maximum (100.0 %): +8.4 dBFS peak over 30 s"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "FSM Philthy": {
    "gear": "FSM Philthy",
@@ -630,12 +764,25 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "filter or EQ",
-   "extremes": {},
-   "seconds": 1.1,
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -13.9,
+     "growth_db": -0.82,
+     "verdict": "ok"
+    },
+    "all_at_once": {},
+    "swept_because": [
+     "an effect with Resonance"
+    ],
+    "renders": 21
+   },
+   "sweeps": {},
+   "seconds": 9.0,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -684,15 +831,107 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "distortion",
-   "extremes": {},
-   "seconds": 0.8,
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": 3.46,
+     "growth_db": 0.09,
+     "verdict": "hot"
+    },
+    "all_at_once": {},
+    "swept_because": [
+     "an effect with Resonance"
+    ],
+    "renders": 12
+   },
+   "sweeps": {
+    "Cutoff": {
+     "max": {
+      "peak_dbfs": 9.39,
+      "growth_db": -2.35,
+      "verdict": "hot",
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "Resonance": {
+     "max": {
+      "peak_dbfs": 7.03,
+      "growth_db": -3.01,
+      "verdict": "hot",
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "LFO rate": {
+     "min": {
+      "peak_dbfs": 2.9,
+      "growth_db": -0.33,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0.050 Hz"
+     },
+     "max": {
+      "peak_dbfs": 5.66,
+      "growth_db": -1.11,
+      "verdict": "hot",
+      "raw": 240,
+      "text": "26.995 Hz"
+     }
+    },
+    "Modulation": {
+     "min": {
+      "peak_dbfs": 2.91,
+      "growth_db": -1.3,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "peak_dbfs": 9.6,
+      "growth_db": -1.63,
+      "verdict": "hot",
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "Set phase": {
+     "max": {
+      "peak_dbfs": 4.59,
+      "growth_db": -1.75,
+      "verdict": "hot",
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "Inertia": {
+     "min": {
+      "peak_dbfs": 4.5,
+      "growth_db": 0.1,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "peak_dbfs": 2.0,
+      "growth_db": -0.94,
+      "verdict": "hot",
+      "raw": 240,
+      "text": "240"
+     }
+    }
+   },
+   "seconds": 3.4,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot at its defaults (+3.5 dBFS peak)",
+    "hot (loud but steady) with Cutoff at its maximum (240): +9.4 dBFS peak; Resonance at its maximum (240): +7.0 dBFS peak; LFO rate at its minimum (0.050 Hz): +2.9 dBFS peak; LFO rate at its maximum (26.995 Hz): +5.7 dBFS peak; Modulation at its minimum (0): +2.9 dBFS peak; Modulation at its maximum (240): +9.6 dBFS peak; Set phase at its maximum (127): +4.6 dBFS peak; Inertia at its minimum (0): +4.5 dBFS peak; and 1 more"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "FSM WahManPro": {
    "gear": "FSM WahManPro",
@@ -738,15 +977,148 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "distortion",
-   "extremes": {},
-   "seconds": 0.8,
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": 4.27,
+     "growth_db": 1.56,
+     "verdict": "hot"
+    },
+    "all_at_once": {},
+    "swept_because": [
+     "an effect with Resonance"
+    ],
+    "renders": 18
+   },
+   "sweeps": {
+    "Cutoff": {
+     "min": {
+      "peak_dbfs": 1.33,
+      "growth_db": 0.25,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "peak_dbfs": 11.17,
+      "growth_db": 0.66,
+      "verdict": "hot",
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "Resonance": {
+     "max": {
+      "peak_dbfs": 13.73,
+      "growth_db": 0.14,
+      "over_seconds": 30,
+      "verdict": "hot",
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "Filter": {
+     "min": {
+      "peak_dbfs": 1.03,
+      "growth_db": 1.74,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "2pole LP"
+     },
+     "max": {
+      "peak_dbfs": 7.47,
+      "growth_db": 0.93,
+      "verdict": "hot",
+      "raw": 4,
+      "text": "4pole Peak"
+     }
+    },
+    "LFO rate": {
+     "min": {
+      "peak_dbfs": 2.81,
+      "growth_db": 0.67,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0.050 Hz"
+     },
+     "max": {
+      "peak_dbfs": 7.28,
+      "growth_db": 1.37,
+      "verdict": "hot",
+      "raw": 240,
+      "text": "26.995 Hz"
+     }
+    },
+    "LFO mod": {
+     "min": {
+      "peak_dbfs": 7.27,
+      "growth_db": 1.27,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "peak_dbfs": 11.52,
+      "growth_db": 0.59,
+      "over_seconds": 30,
+      "verdict": "hot",
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "LFO Shape": {
+     "min": {
+      "peak_dbfs": 7.66,
+      "growth_db": -0.03,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "sine"
+     },
+     "max": {
+      "peak_dbfs": 9.23,
+      "growth_db": 0.56,
+      "verdict": "hot",
+      "raw": 8,
+      "text": "weird 4"
+     }
+    },
+    "Inertia": {
+     "min": {
+      "peak_dbfs": 4.31,
+      "growth_db": 1.5,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "peak_dbfs": 7.3,
+      "growth_db": 0.41,
+      "verdict": "hot",
+      "raw": 60,
+      "text": "60"
+     }
+    },
+    "Set phase": {
+     "min": {
+      "peak_dbfs": 4.69,
+      "growth_db": -0.08,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0"
+     }
+    }
+   },
+   "seconds": 5.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot at its defaults (+4.3 dBFS peak)",
+    "hot (loud but steady) with Cutoff at its minimum (0): +1.3 dBFS peak; Cutoff at its maximum (240): +11.2 dBFS peak; Resonance at its maximum (240): +13.7 dBFS peak over 30 s; Filter at its minimum (2pole LP): +1.0 dBFS peak; Filter at its maximum (4pole Peak): +7.5 dBFS peak; LFO rate at its minimum (0.050 Hz): +2.8 dBFS peak; LFO rate at its maximum (26.995 Hz): +7.3 dBFS peak; LFO mod at its minimum (0): +7.3 dBFS peak; and 6 more"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "FSM WahPro2": {
    "gear": "FSM WahPro2",
@@ -792,21 +1164,64 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "modulation",
-   "extremes": {},
-   "seconds": 0.8,
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -2.94,
+     "growth_db": -0.75,
+     "verdict": "ok"
+    },
+    "all_at_once": {},
+    "swept_because": [
+     "an effect with Resonance"
+    ],
+    "renders": 17
+   },
+   "sweeps": {
+    "Cutoff": {
+     "max": {
+      "peak_dbfs": 3.14,
+      "growth_db": -1.85,
+      "verdict": "hot",
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "Filter": {
+     "min": {
+      "peak_dbfs": 4.22,
+      "growth_db": -0.11,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "2pole LP"
+     }
+    },
+    "LFO mod": {
+     "max": {
+      "peak_dbfs": 0.74,
+      "growth_db": -5.31,
+      "verdict": "hot",
+      "raw": 240,
+      "text": "240"
+     }
+    }
+   },
+   "seconds": 5.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Cutoff at its maximum (240): +3.1 dBFS peak; Filter at its minimum (2pole LP): +4.2 dBFS peak; LFO mod at its maximum (240): +0.7 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "GuitarChordBox": {
    "gear": "GuitarChordBox",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/GuitarChordBox.NET.dll",
     "managed": true,
@@ -821,11 +1236,12 @@
    "inferred": 12,
    "from_description": 6,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -836,16 +1252,33 @@
   "Info": {
    "gear": "Info",
    "kind": "generator",
-   "type": "unknown",
+   "no_output": true,
+   "load_seconds": 0.06,
+   "gear_info": {
+    "file": "Generators/Info.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "control": true,
+    "takes_midi": false
+   },
+   "parameters": 1,
+   "track_parameters": 0,
+   "inferred": 1,
+   "from_description": 0,
+   "type": "control",
+   "seconds": 0.3,
    "platform": "windows",
    "date": "2026-11-03",
-   "problems": [
-    "doesn't load: machine_add: machine_add failed inside ReBuzz: TargetInvocationException: Exception has been thrown by the target of an invocation.. The song may be partly changed; studio_status shows what undo would revert."
-   ],
+   "problems": [],
    "warnings": [],
-   "notes_profiler": [],
+   "hot": [],
+   "notes_profiler": [
+    "has no audio output",
+    "a control machine (moves other machines' parameters): no audio test"
+   ],
    "generated": false,
-   "health": "unhealthy"
+   "health": "ok"
   },
   "Intoxicat ACloud15": {
    "gear": "Intoxicat ACloud15",
@@ -867,23 +1300,30 @@
     "input": "none"
    },
    "type": "generator (silent at its defaults)",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": null,
+     "verdict": "silent"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 7.2,
+   "seconds": 10.3,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "no sound from a MIDI note at its defaults (it has no Note track parameter)"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -923,28 +1363,51 @@
     "sample_peak_dbfs": 0,
     "true_peak_dbtp": 1.97
    },
-   "cpu_ms_per_s": 12.8,
+   "cpu_ms_per_s": 15.1,
    "type": "unpitched",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": 0.0,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 25.23
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": 12.31,
+      "growth_db": 0.0,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 9
+   },
+   "sweeps": {
+    "Resonance": {
+     "max": {
+      "peak_dbfs": 16.19,
+      "growth_db": 0.0,
+      "verdict": "hot",
+      "raw": 128,
+      "text": "128"
+     }
     }
    },
-   "seconds": 0.8,
+   "seconds": 3.2,
    "platform": "windows",
    "date": "2026-11-03",
-   "problems": [
-    "NaN or runaway output with every parameter at its maximum"
-   ],
+   "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Resonance at its maximum (128): +16.2 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "unhealthy"
+   "health": "warn"
   },
   "Jeskola Bass 2": {
    "gear": "Jeskola Bass 2",
@@ -971,9 +1434,9 @@
     "polyphony": 1,
     "polyphony_levels": {
      "1": -10,
-     "2": null,
-     "4": null,
-     "8": null
+     "2": -10.2,
+     "4": -10.1,
+     "8": -11
     }
    },
    "level": {
@@ -982,14 +1445,21 @@
     "sample_peak_dbfs": -0.27,
     "true_peak_dbtp": -0.03
    },
-   "cpu_ms_per_s": 11.5,
+   "cpu_ms_per_s": 9.6,
    "type": "unpitched",
-   "extremes": {},
-   "seconds": 0.7,
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -0.27,
+     "verdict": "ok"
+    },
+    "all_at_once": {}
+   },
+   "seconds": 0.9,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -1019,9 +1489,9 @@
     "polyphony": 1,
     "polyphony_levels": {
      "1": -10.8,
-     "2": null,
-     "4": null,
-     "8": null
+     "2": -10.9,
+     "4": -10.9,
+     "8": -11.3
     }
    },
    "level": {
@@ -1030,14 +1500,21 @@
     "sample_peak_dbfs": -2.51,
     "true_peak_dbtp": -2.51
    },
-   "cpu_ms_per_s": 11.4,
+   "cpu_ms_per_s": 11.1,
    "type": "unpitched",
-   "extremes": {},
-   "seconds": 0.7,
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -2.51,
+     "verdict": "ok"
+    },
+    "all_at_once": {}
+   },
+   "seconds": 0.9,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -1045,7 +1522,7 @@
   "Jeskola Chorus": {
    "gear": "Jeskola Chorus",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Jeskola Chorus.dll",
     "managed": false,
@@ -1086,29 +1563,133 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "modulation",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -17.7
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": 1.75,
+     "growth_db": 1.07,
+     "verdict": "hot"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -10.7
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "guard": "+60.1 dBFS",
+      "verdict": "diverging"
+     },
+     "max": {
+      "peak_dbfs": 14.86,
+      "growth_db": 1.56,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its minimum/maximum at once: diverging; hot",
+     "an effect with feedback"
+    ],
+    "renders": 13
+   },
+   "sweeps": {
+    "freq": {
+     "min": {
+      "peak_dbfs": 1.52,
+      "growth_db": 0.35,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0.00Hz"
+     },
+     "max": {
+      "peak_dbfs": 1.41,
+      "growth_db": -0.26,
+      "verdict": "hot",
+      "raw": 4096,
+      "text": "40.96Hz"
+     }
+    },
+    "depth": {
+     "min": {
+      "peak_dbfs": 1.0,
+      "growth_db": -0.37,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0.0%"
+     },
+     "max": {
+      "peak_dbfs": 1.28,
+      "growth_db": -0.05,
+      "verdict": "hot",
+      "raw": 127,
+      "text": "100.0%"
+     }
+    },
+    "feedback": {
+     "min": {
+      "peak_dbfs": 16.25,
+      "growth_db": 1.85,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "-100.0%"
+     },
+     "max": {
+      "peak_dbfs": 18.95,
+      "growth_db": -0.26,
+      "verdict": "hot",
+      "raw": 128,
+      "text": "100.0%"
+     }
+    },
+    "min. delay": {
+     "min": {
+      "peak_dbfs": 1.36,
+      "growth_db": 0.0,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0.0ms"
+     },
+     "max": {
+      "peak_dbfs": 1.12,
+      "growth_db": -0.08,
+      "verdict": "hot",
+      "raw": 50,
+      "text": "50.0ms"
+     }
+    },
+    "dry out": {
+     "min": {
+      "peak_dbfs": 1.27,
+      "growth_db": 0.18,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "-100.0%"
+     }
+    },
+    "wet out": {
+     "min": {
+      "peak_dbfs": 1.29,
+      "growth_db": 0.5,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "-100.0%"
+     }
     }
    },
-   "seconds": 1.6,
+   "seconds": 5.3,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
-   "warnings": [],
+   "warnings": [
+    "every parameter at its minimum at once diverges (+60.1 dBFS: the engine's guard caught it), but no parameter alone does at its minimum"
+   ],
+   "hot": [
+    "hot at its defaults (+1.8 dBFS peak)",
+    "hot (loud but steady) with freq at its minimum (0.00Hz): +1.5 dBFS peak; freq at its maximum (40.96Hz): +1.4 dBFS peak; depth at its minimum (0.0%): +1.0 dBFS peak; depth at its maximum (100.0%): +1.3 dBFS peak; feedback at its minimum (-100.0%): +16.2 dBFS peak; feedback at its maximum (100.0%): +18.9 dBFS peak; min. delay at its minimum (0.0ms): +1.4 dBFS peak; min. delay at its maximum (50.0ms): +1.1 dBFS peak; and 2 more"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Jeskola Cross Delay": {
    "gear": "Jeskola Cross Delay",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Jeskola Cross Delay.dll",
     "managed": false,
@@ -1150,24 +1731,67 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "delay",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -35.22
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -1.0,
+     "growth_db": 0.59,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -23.94
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -10.57,
+      "growth_db": 0.22,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -1.2,
+      "growth_db": 0.27,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "an effect with Feedback"
+    ],
+    "renders": 13
+   },
+   "sweeps": {
+    "Feedback": {
+     "min": {
+      "peak_dbfs": 4.13,
+      "growth_db": 1.24,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "-100.0%"
+     },
+     "max": {
+      "peak_dbfs": 7.09,
+      "growth_db": 1.01,
+      "verdict": "hot",
+      "raw": 128,
+      "text": "100.0%"
+     }
+    },
+    "Wet out": {
+     "max": {
+      "peak_dbfs": 2.3,
+      "growth_db": 0.33,
+      "verdict": "hot",
+      "raw": 128,
+      "text": "100.0%"
+     }
     }
    },
-   "seconds": 1.3,
+   "seconds": 6.5,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Feedback at its minimum (-100.0%): +4.1 dBFS peak; Feedback at its maximum (100.0%): +7.1 dBFS peak; Wet out at its maximum (100.0%): +2.3 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Jeskola Delay": {
    "gear": "Jeskola Delay",
@@ -1214,29 +1838,85 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "delay",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -31.7
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -0.04,
+     "growth_db": 0.69,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -23.94
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -8.63,
+      "growth_db": 0.29,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -1.04,
+      "growth_db": 0.06,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "an effect with Feedback"
+    ],
+    "renders": 19
+   },
+   "sweeps": {
+    "Feedback": {
+     "min": {
+      "peak_dbfs": 30.39,
+      "growth_db": 1.27,
+      "over_seconds": 30,
+      "never_decays": true,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "-100.0%"
+     },
+     "max": {
+      "peak_dbfs": 31.32,
+      "growth_db": 0.94,
+      "verdict": "hot",
+      "raw": 128,
+      "text": "100.0%"
+     }
+    },
+    "Wet out": {
+     "max": {
+      "peak_dbfs": 3.42,
+      "growth_db": -0.13,
+      "verdict": "hot",
+      "raw": 128,
+      "text": "100.0%"
+     }
     }
    },
-   "seconds": 1.2,
+   "safe_ranges": {
+    "track Feedback": {
+     "min": 1,
+     "max": 128,
+     "min_text": "-98.4%",
+     "max_text": "100.0%",
+     "reason": "never decays at its minimum (-100.0%: +30.4 dBFS peak over 30 s, never decays)"
+    }
+   },
+   "seconds": 7.1,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
-   "notes_profiler": [],
+   "hot": [
+    "hot (loud but steady) with Feedback at its minimum (-100.0%): +30.4 dBFS peak over 30 s, never decays; Feedback at its maximum (100.0%): +31.3 dBFS peak; Wet out at its maximum (100.0%): +3.4 dBFS peak"
+   ],
+   "notes_profiler": [
+    "safe range: Feedback never decays at its minimum (-100.0%: +30.4 dBFS peak over 30 s, never decays); safe from -98.4% to 100.0% (raw 1–128)"
+   ],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Jeskola Distortion": {
    "gear": "Jeskola Distortion",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Jeskola Distortion.dll",
     "managed": false,
@@ -1277,29 +1957,41 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "distortion",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -26.7
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": 6.02,
+     "growth_db": 0.0,
+     "verdict": "hot"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -26.7
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -3.13,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -3.18,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 3.5,
+   "seconds": 5.1,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot at its defaults (+6.0 dBFS peak)"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Jeskola EQ-3": {
    "gear": "Jeskola EQ-3",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Jeskola EQ-3.dll",
     "managed": false,
@@ -1339,26 +2031,72 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "EQ",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -27.23
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -3.2,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -2.71
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -3.68,
+      "growth_db": 0.36,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 31.04,
+      "growth_db": 0.04,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot",
+     "an effect with Low Gain, Mid Gain, High Gain"
+    ],
+    "renders": 14
+   },
+   "sweeps": {
+    "Low Gain": {
+     "max": {
+      "peak_dbfs": 8.78,
+      "growth_db": -1.13,
+      "verdict": "hot",
+      "raw": 8192,
+      "text": "24.0dB"
+     }
+    },
+    "Mid Gain": {
+     "max": {
+      "peak_dbfs": 18.81,
+      "growth_db": 0.22,
+      "verdict": "hot",
+      "raw": 8192,
+      "text": "24.0dB"
+     }
+    },
+    "High Gain": {
+     "max": {
+      "peak_dbfs": 18.77,
+      "growth_db": 0.02,
+      "verdict": "hot",
+      "raw": 8192,
+      "text": "24.0dB"
+     }
     }
    },
-   "seconds": 4.3,
+   "seconds": 11.6,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Low Gain at its maximum (24.0dB): +8.8 dBFS peak; Mid Gain at its maximum (24.0dB): +18.8 dBFS peak; High Gain at its maximum (24.0dB): +18.8 dBFS peak"
+   ],
    "notes_profiler": [
     "flat at its defaults; an EQ by its parameters (frequencies and gains)"
    ],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Jeskola Filter": {
    "gear": "Jeskola Filter",
@@ -1403,29 +2141,58 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -3.2,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -36.64
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": 53.8,
+      "growth_db": 3.63,
+      "over_seconds": 30,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot",
+     "an effect with Resonance"
+    ],
+    "renders": 9
+   },
+   "sweeps": {
+    "Resonance": {
+     "max": {
+      "peak_dbfs": 53.83,
+      "growth_db": -5.16,
+      "over_seconds": 30,
+      "verdict": "hot",
+      "raw": 128,
+      "text": "128"
+     }
     }
    },
-   "seconds": 1.0,
+   "seconds": 4.9,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Resonance at its maximum (128): +53.8 dBFS peak over 30 s"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Jeskola Filter 2": {
    "gear": "Jeskola Filter 2",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Jeskola Filter 2.dll",
     "managed": false,
@@ -1465,29 +2232,60 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -50.47
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -3.2,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -36.64
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -20.74,
+      "growth_db": 0.78,
+      "over_seconds": 30,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 51.59,
+      "growth_db": 1.35,
+      "over_seconds": 30,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot",
+     "an effect with Resonance"
+    ],
+    "renders": 9
+   },
+   "sweeps": {
+    "Resonance": {
+     "max": {
+      "peak_dbfs": 52.01,
+      "growth_db": 1.79,
+      "over_seconds": 30,
+      "verdict": "hot",
+      "raw": 128,
+      "text": "128"
+     }
     }
    },
-   "seconds": 0.9,
+   "seconds": 5.9,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Resonance at its maximum (128): +52.0 dBFS peak over 30 s"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Jeskola Flanger": {
    "gear": "Jeskola Flanger",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Jeskola Flanger.dll",
     "managed": false,
@@ -1528,26 +2326,135 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "modulation",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": 156.87
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": 1.18,
+     "growth_db": 0.2,
+     "verdict": "hot"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 149.15
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "guard": "+61.3 dBFS",
+      "verdict": "diverging"
+     },
+     "max": {
+      "peak_dbfs": 21.73,
+      "growth_db": 0.6,
+      "over_seconds": 30,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its minimum/maximum at once: diverging; hot",
+     "an effect with feedback"
+    ],
+    "renders": 21
+   },
+   "sweeps": {
+    "freq": {
+     "min": {
+      "peak_dbfs": 1.08,
+      "growth_db": -0.42,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0.00Hz"
+     },
+     "max": {
+      "peak_dbfs": 1.7,
+      "growth_db": -0.87,
+      "verdict": "hot",
+      "raw": 4096,
+      "text": "40.96Hz"
+     }
+    },
+    "depth": {
+     "min": {
+      "peak_dbfs": 1.48,
+      "growth_db": 0.4,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0.0%"
+     },
+     "max": {
+      "peak_dbfs": 1.37,
+      "growth_db": 0.14,
+      "verdict": "hot",
+      "raw": 127,
+      "text": "100.0%"
+     }
+    },
+    "feedback": {
+     "min": {
+      "peak_dbfs": 23.8,
+      "growth_db": 1.2,
+      "over_seconds": 30,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "-100.0%"
+     },
+     "max": {
+      "peak_dbfs": 57.04,
+      "growth_db": 1.11,
+      "guard": "+60.7 dBFS",
+      "verdict": "diverging",
+      "raw": 128,
+      "text": "100.0%"
+     }
+    },
+    "min. delay": {
+     "max": {
+      "peak_dbfs": 1.34,
+      "growth_db": 0.11,
+      "verdict": "hot",
+      "raw": 50,
+      "text": "5.0ms"
+     }
+    },
+    "dry out": {
+     "min": {
+      "peak_dbfs": 1.56,
+      "growth_db": -0.42,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "-100.0%"
+     }
+    },
+    "wet out": {
+     "max": {
+      "peak_dbfs": 1.56,
+      "growth_db": 0.15,
+      "verdict": "hot",
+      "raw": 128,
+      "text": "100.0%"
+     }
     }
    },
-   "seconds": 1.8,
+   "safe_ranges": {
+    "feedback": {
+     "min": 0,
+     "max": 127,
+     "min_text": "-100.0%",
+     "max_text": "98.4%",
+     "reason": "diverges at its maximum (100.0%: +60.7 dBFS: the engine's guard caught it)"
+    }
+   },
+   "seconds": 10.0,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [
-    "NaN or runaway output with every parameter at its minimum",
-    "NaN or runaway output with every parameter at its maximum"
+    "feedback diverges at its maximum (100.0%: +60.7 dBFS: the engine's guard caught it); safe from -100.0% to 98.4% (raw 0–127)"
    ],
-   "warnings": [],
+   "warnings": [
+    "every parameter at its minimum at once diverges (+61.3 dBFS: the engine's guard caught it), but no parameter alone does at its minimum"
+   ],
+   "hot": [
+    "hot at its defaults (+1.2 dBFS peak)",
+    "hot (loud but steady) with freq at its minimum (0.00Hz): +1.1 dBFS peak; freq at its maximum (40.96Hz): +1.7 dBFS peak; depth at its minimum (0.0%): +1.5 dBFS peak; depth at its maximum (100.0%): +1.4 dBFS peak; feedback at its minimum (-100.0%): +23.8 dBFS peak over 30 s; min. delay at its maximum (5.0ms): +1.3 dBFS peak; dry out at its minimum (-100.0%): +1.6 dBFS peak; wet out at its maximum (100.0%): +1.6 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
+   "diverging": true,
    "health": "unhealthy"
   },
   "Jeskola Gain": {
@@ -1594,24 +2501,50 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": -9.2,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "an effect with Gain"
+    ],
+    "renders": 7
+   },
+   "sweeps": {
+    "Gain": {
+     "max": {
+      "peak_dbfs": 2.81,
+      "growth_db": 0.08,
+      "verdict": "hot",
+      "raw": 127,
+      "text": "12.0 dB"
+     }
     }
    },
-   "seconds": 0.6,
+   "seconds": 1.5,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Gain at its maximum (12.0 dB): +2.8 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Jeskola Live": {
    "gear": "Jeskola Live",
@@ -1636,6 +2569,7 @@
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -1647,7 +2581,7 @@
    "gear": "Jeskola Loop Recorder",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Generators/Jeskola Loop Recorder.NET.dll",
     "managed": true,
@@ -1666,6 +2600,7 @@
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -1716,31 +2651,147 @@
      "delay"
     ]
    },
-   "cpu_ms_per_s": 15.3,
+   "cpu_ms_per_s": 7.7,
    "type": "delay",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -30.2
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": 3.6,
+     "growth_db": 1.09,
+     "verdict": "hot"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -24.91
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": 1.07,
+      "growth_db": 1.05,
+      "verdict": "hot"
+     },
+     "max": {
+      "peak_dbfs": 3.64,
+      "growth_db": 1.27,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its minimum/maximum at once: hot; hot",
+     "an effect with Feedback"
+    ],
+    "renders": 20
+   },
+   "sweeps": {
+    "Dry thru": {
+     "min": {
+      "peak_dbfs": 1.78,
+      "growth_db": 0.4,
+      "over_seconds": 30,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "0"
+     }
+    },
+    "Length": {
+     "min": {
+      "peak_dbfs": 3.28,
+      "growth_db": -0.16,
+      "verdict": "hot",
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "peak_dbfs": 5.18,
+      "growth_db": -1.22,
+      "over_seconds": 30,
+      "verdict": "hot",
+      "raw": 32768,
+      "text": "32768"
+     }
+    },
+    "Length unit": {
+     "max": {
+      "peak_dbfs": 3.1,
+      "growth_db": -0.08,
+      "verdict": "hot",
+      "raw": 3,
+      "text": "tick/256"
+     }
+    },
+    "Feedback": {
+     "min": {
+      "peak_dbfs": 38.74,
+      "growth_db": 1.75,
+      "over_seconds": 30,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "-100.0%"
+     },
+     "max": {
+      "peak_dbfs": 39.18,
+      "growth_db": 0.45,
+      "verdict": "hot",
+      "raw": 128,
+      "text": "100.0%"
+     }
+    },
+    "f. type": {
+     "max": {
+      "peak_dbfs": 3.96,
+      "growth_db": 0.77,
+      "verdict": "hot",
+      "raw": 3,
+      "text": "bandreject"
+     }
+    },
+    "f. cutoff": {
+     "min": {
+      "peak_dbfs": 3.07,
+      "growth_db": 0.82,
+      "verdict": "hot",
+      "raw": 10,
+      "text": "10Hz"
+     }
+    },
+    "f. bandwidth": {
+     "min": {
+      "peak_dbfs": 3.33,
+      "growth_db": 0.01,
+      "verdict": "hot",
+      "raw": 1,
+      "text": "1cps"
+     },
+     "max": {
+      "peak_dbfs": 4.07,
+      "growth_db": 0.04,
+      "verdict": "hot",
+      "raw": 10000,
+      "text": "10000cps"
+     }
+    },
+    "Wet out": {
+     "max": {
+      "peak_dbfs": 4.98,
+      "growth_db": 0.81,
+      "verdict": "hot",
+      "raw": 128,
+      "text": "100.0%"
+     }
     }
    },
-   "seconds": 1.7,
+   "seconds": 11.1,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot at its defaults (+3.6 dBFS peak)",
+    "hot (loud but steady) with Dry thru at its minimum (0): +1.8 dBFS peak over 30 s; Length at its minimum (1): +3.3 dBFS peak; Length at its maximum (32768): +5.2 dBFS peak over 30 s; Length unit at its maximum (tick/256): +3.1 dBFS peak; Feedback at its minimum (-100.0%): +38.7 dBFS peak over 30 s; Feedback at its maximum (100.0%): +39.2 dBFS peak; f. type at its maximum (bandreject): +4.0 dBFS peak; f. cutoff at its minimum (10Hz): +3.1 dBFS peak; and 3 more"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Jeskola Noise Generator": {
    "gear": "Jeskola Noise Generator",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/Jeskola Noise Generator.dll",
     "managed": false,
@@ -1757,14 +2808,21 @@
     "input": "none"
    },
    "type": "generator (silent at its defaults)",
-   "extremes": {},
-   "seconds": 0.5,
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    },
+    "all_at_once": {}
+   },
+   "seconds": 0.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "no sound from a MIDI note at its defaults (it has no Note track parameter)"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -1792,6 +2850,7 @@
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -1841,31 +2900,43 @@
     "sample_peak_dbfs": -0.33,
     "true_peak_dbtp": -0.3
    },
-   "cpu_ms_per_s": 12.3,
+   "cpu_ms_per_s": 12.1,
    "type": "monosynth",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": 0.01,
+     "growth_db": -0.22,
+     "verdict": "hot"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -61.89
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": -0.37,
+      "growth_db": -0.21,
+      "over_seconds": 30,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 1.1,
+   "seconds": 2.6,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot at its defaults (+0.0 dBFS peak)"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Jeskola Raverb": {
    "gear": "Jeskola Raverb",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Jeskola Raverb.dll",
     "managed": false,
@@ -1904,23 +2975,33 @@
      "reverb"
     ]
    },
-   "cpu_ms_per_s": 20.7,
+   "cpu_ms_per_s": 13.9,
    "type": "reverb",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -2.54,
+     "growth_db": -0.18,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -26.7
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -3.18,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 1.6,
+   "seconds": 2.3,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -1948,6 +3029,7 @@
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -1958,7 +3040,7 @@
   "Jeskola Reverb": {
    "gear": "Jeskola Reverb",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Jeskola Reverb.dll",
     "managed": false,
@@ -1998,29 +3080,64 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "reverb",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -2.26,
+     "growth_db": -0.63,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -17.27
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": 12.28,
+      "growth_db": -0.43,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 12
+   },
+   "sweeps": {
+    "Rev Out": {
+     "max": {
+      "peak_dbfs": 3.27,
+      "growth_db": -0.15,
+      "verdict": "hot",
+      "raw": 4096,
+      "text": "0.0dB"
+     }
+    },
+    "ER Out": {
+     "max": {
+      "peak_dbfs": 2.34,
+      "growth_db": 0.95,
+      "verdict": "hot",
+      "raw": 4096,
+      "text": "0.0dB"
+     }
     }
    },
-   "seconds": 3.6,
+   "seconds": 9.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Rev Out at its maximum (0.0dB): +3.3 dBFS peak; ER Out at its maximum (0.0dB): +2.3 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Jeskola Stereo Reverb": {
    "gear": "Jeskola Stereo Reverb",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Jeskola Stereo Reverb.dll",
     "managed": false,
@@ -2060,29 +3177,64 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "reverb",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -2.38,
+     "growth_db": -0.23,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -17.91
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": 10.93,
+      "growth_db": -0.05,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 12
+   },
+   "sweeps": {
+    "Rev Out": {
+     "max": {
+      "peak_dbfs": 2.56,
+      "growth_db": -1.12,
+      "verdict": "hot",
+      "raw": 4096,
+      "text": "0.0dB"
+     }
+    },
+    "ER Out": {
+     "max": {
+      "peak_dbfs": 0.86,
+      "growth_db": 0.07,
+      "verdict": "hot",
+      "raw": 4096,
+      "text": "0.0dB"
+     }
     }
    },
-   "seconds": 3.7,
+   "seconds": 9.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Rev Out at its maximum (0.0dB): +2.6 dBFS peak; ER Out at its maximum (0.0dB): +0.9 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Jeskola Tracker": {
    "gear": "Jeskola Tracker",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/Jeskola Tracker.dll",
     "managed": false,
@@ -2100,23 +3252,30 @@
     "input": "none"
    },
    "type": "generator (silent at its defaults)",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": null,
+     "verdict": "silent"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 0.8,
+   "seconds": 1.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "no sound from a note at its defaults, as MIDI or in its tracks, even with a wave in slot 1"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -2124,7 +3283,7 @@
   "Jeskola Trilok": {
    "gear": "Jeskola Trilok",
    "kind": "generator",
-   "load_seconds": 0.03,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/Jeskola Trilok.dll",
     "managed": false,
@@ -2141,23 +3300,30 @@
     "input": "none"
    },
    "type": "generator (silent at its defaults)",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": null,
+     "verdict": "silent"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 0.5,
+   "seconds": 0.9,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "no sound from a MIDI note at its defaults (it has no Note track parameter)"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -2165,7 +3331,7 @@
   "Jeskola Wave Shaper": {
    "gear": "Jeskola Wave Shaper",
    "kind": "effect",
-   "load_seconds": 0.03,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Effects/Jeskola Wave Shaper.dll",
     "managed": false,
@@ -2205,16 +3371,29 @@
      "distortion"
     ]
    },
-   "cpu_ms_per_s": 13.1,
+   "cpu_ms_per_s": 7.3,
    "type": "reverb",
-   "extremes": {},
-   "seconds": 1.5,
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": 0.0,
+     "growth_db": 0.0,
+     "verdict": "ok"
+    },
+    "all_at_once": {},
+    "swept_because": [
+     "an effect with gain"
+    ],
+    "renders": 4
+   },
+   "sweeps": {},
+   "seconds": 3.8,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "sound from silence (-51.93 dBFS peak): noise, hum or DC"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -2222,7 +3401,7 @@
   "Joachims Chopper 2": {
    "gear": "Joachims Chopper 2",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Joachims Chopper 2.dll",
     "managed": false,
@@ -2260,23 +3439,33 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 1.9,
+   "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -5.36,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -9.2,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 1.9,
+   "seconds": 3.1,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -2284,7 +3473,7 @@
   "Joachims Enceladus Tube EQ v1": {
    "gear": "Joachims Enceladus Tube EQ v1",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Joachims Enceladus Tube EQ v1.dll",
     "managed": false,
@@ -2322,33 +3511,60 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 3.6,
+   "cpu_ms_per_s": 0.0,
    "type": "EQ",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.69
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 1.13
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.14,
+      "growth_db": 0.35,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 10.21,
+      "growth_db": -0.06,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 33
+   },
+   "sweeps": {
+    "3. Boost": {
+     "max": {
+      "peak_dbfs": 4.74,
+      "growth_db": -0.24,
+      "verdict": "hot",
+      "raw": 64,
+      "text": "+16.0 dB"
+     }
     }
    },
-   "seconds": 1.5,
+   "seconds": 10.4,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with 3. Boost at its maximum (+16.0 dB): +4.7 dBFS peak"
+   ],
    "notes_profiler": [
     "flat at its defaults; an EQ by its parameters (frequencies and gains)"
    ],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Joachims Hyperion": {
    "gear": "Joachims Hyperion",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Joachims Hyperion.dll",
     "managed": false,
@@ -2388,26 +3604,162 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 220.9
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "guard": "+225.6 dBFS",
+      "verdict": "diverging"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: diverging",
+     "an effect with Input gain."
+    ],
+    "renders": 69
+   },
+   "sweeps": {
+    "20000 Hz": {
+     "max": {
+      "peak_dbfs": 3.8,
+      "growth_db": -0.2,
+      "verdict": "hot",
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "15800 Hz": {
+     "max": {
+      "peak_dbfs": 5.7,
+      "growth_db": -0.05,
+      "verdict": "hot",
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "12400 Hz": {
+     "max": {
+      "peak_dbfs": 6.58,
+      "growth_db": 0.77,
+      "verdict": "hot",
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 9800 Hz": {
+     "max": {
+      "peak_dbfs": 5.8,
+      "growth_db": 0.0,
+      "verdict": "hot",
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 7700 Hz": {
+     "max": {
+      "peak_dbfs": 5.59,
+      "growth_db": -0.39,
+      "verdict": "hot",
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 6100 Hz": {
+     "max": {
+      "peak_dbfs": 4.62,
+      "growth_db": -0.48,
+      "verdict": "hot",
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 4800 Hz": {
+     "max": {
+      "peak_dbfs": 4.32,
+      "growth_db": -0.08,
+      "verdict": "hot",
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 3800 Hz": {
+     "max": {
+      "peak_dbfs": 3.27,
+      "growth_db": 0.44,
+      "verdict": "hot",
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 2970 Hz": {
+     "max": {
+      "peak_dbfs": 3.54,
+      "growth_db": -0.19,
+      "verdict": "hot",
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 2340 Hz": {
+     "max": {
+      "peak_dbfs": 2.51,
+      "growth_db": 0.5,
+      "verdict": "hot",
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 1850 Hz": {
+     "max": {
+      "peak_dbfs": 1.95,
+      "growth_db": -0.6,
+      "verdict": "hot",
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 1460 Hz": {
+     "max": {
+      "peak_dbfs": 0.56,
+      "growth_db": 0.2,
+      "verdict": "hot",
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 1150 Hz": {
+     "max": {
+      "peak_dbfs": 0.09,
+      "growth_db": -0.47,
+      "verdict": "hot",
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
     }
    },
-   "seconds": 2.8,
+   "seconds": 20.0,
    "platform": "windows",
    "date": "2026-11-03",
-   "problems": [
-    "NaN or runaway output with every parameter at its maximum"
+   "problems": [],
+   "warnings": [
+    "every parameter at its maximum at once diverges (+225.6 dBFS: the engine's guard caught it), but no parameter alone does at its maximum"
    ],
-   "warnings": [],
+   "hot": [
+    "hot (loud but steady) with 20000 Hz at its maximum (+18.0 dB): +3.8 dBFS peak; 15800 Hz at its maximum (+18.0 dB): +5.7 dBFS peak; 12400 Hz at its maximum (+18.0 dB): +6.6 dBFS peak;  9800 Hz at its maximum (+18.0 dB): +5.8 dBFS peak;  7700 Hz at its maximum (+18.0 dB): +5.6 dBFS peak;  6100 Hz at its maximum (+18.0 dB): +4.6 dBFS peak;  4800 Hz at its maximum (+18.0 dB): +4.3 dBFS peak;  3800 Hz at its maximum (+18.0 dB): +3.3 dBFS peak; and 5 more"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "unhealthy"
+   "health": "warn"
   },
   "Joachims Jupiter 3": {
    "gear": "Joachims Jupiter 3",
@@ -2426,25 +3778,34 @@
    "effect": {
     "silent": true
    },
-   "cpu_ms_per_s": 26.1,
+   "cpu_ms_per_s": 20.6,
    "type": "effect (silent at defaults)",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -0.18,
+     "growth_db": -9.45,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -38.94
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": -52.17,
+      "growth_db": -18.21,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 1.7,
+   "seconds": 3.0,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "silent with noise through it at the defaults (a gate closed, a wet mix at 0, or it needs setting up)"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -2492,31 +3853,68 @@
      "filter or EQ"
     ]
    },
-   "cpu_ms_per_s": 6.8,
+   "cpu_ms_per_s": 0.0,
    "type": "distortion",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -4.47,
+     "growth_db": 0.19,
+     "over_seconds": 30,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -7.96
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.14,
+      "growth_db": -0.13,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -7.96,
+      "growth_db": 0.0,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "an effect with PreGain"
+    ],
+    "renders": 12
+   },
+   "sweeps": {
+    "PreGain": {
+     "max": {
+      "peak_dbfs": 2.46,
+      "growth_db": -1.65,
+      "verdict": "hot",
+      "raw": 128,
+      "text": "+15.5 dB"
+     }
+    },
+    "Amount": {
+     "max": {
+      "peak_dbfs": 0.75,
+      "growth_db": 1.88,
+      "verdict": "hot",
+      "raw": 127,
+      "text": "127"
+     }
     }
    },
-   "seconds": 1.3,
+   "seconds": 5.8,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with PreGain at its maximum (+15.5 dB): +2.5 dBFS peak; Amount at its maximum (127): +0.8 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Joachims Neptune 1.2": {
    "gear": "Joachims Neptune 1.2",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Joachims Neptune 1.2.dll",
     "managed": false,
@@ -2557,31 +3955,87 @@
      "filter or EQ"
     ]
    },
-   "cpu_ms_per_s": 8.2,
+   "cpu_ms_per_s": 2.3,
    "type": "delay",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": -98.11
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "guard": "NaN",
+      "verdict": "diverging"
+     },
+     "max": {
+      "peak_dbfs": -54.44,
+      "growth_db": -1.97,
+      "over_seconds": 30,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "every parameter at its minimum at once: diverging"
+    ],
+    "renders": 22
+   },
+   "sweeps": {
+    "Threshold": {
+     "min": {
+      "peak_dbfs": null,
+      "guard": "infinity",
+      "verdict": "diverging",
+      "raw": 1,
+      "text": "-100.0 dB"
+     }
+    },
+    "Spec.Boost": {
+     "min": {
+      "peak_dbfs": 9.56,
+      "growth_db": 0.46,
+      "verdict": "hot",
+      "raw": 0,
+      "text": "-100.0%"
+     },
+     "max": {
+      "peak_dbfs": 10.0,
+      "growth_db": 0.51,
+      "verdict": "hot",
+      "raw": 254,
+      "text": "+100.0%"
+     }
     }
    },
-   "seconds": 1.7,
+   "safe_ranges": {
+    "Threshold": {
+     "min": 2,
+     "max": 128,
+     "min_text": "-97.7 dB",
+     "max_text": "+15.5 dB",
+     "reason": "diverges at its minimum (-100.0 dB: infinity: the engine's guard caught it)"
+    }
+   },
+   "seconds": 10.7,
    "platform": "windows",
    "date": "2026-11-03",
-   "problems": [],
+   "problems": [
+    "Threshold diverges at its minimum (-100.0 dB: infinity: the engine's guard caught it); safe from -97.7 dB to +15.5 dB (raw 2–128)"
+   ],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Spec.Boost at its minimum (-100.0%): +9.6 dBFS peak; Spec.Boost at its maximum (+100.0%): +10.0 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "diverging": true,
+   "health": "unhealthy"
   },
   "Joachims Saturn 1.4": {
    "gear": "Joachims Saturn 1.4",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Joachims Saturn 1.4.dll",
     "managed": false,
@@ -2619,26 +4073,71 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 8.3,
+   "cpu_ms_per_s": 1.1,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -74.15
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.05,
+     "growth_db": -0.27,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 14.97
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -41.46,
+      "growth_db": 1.28,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 15.07,
+      "growth_db": 0.02,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 26
+   },
+   "sweeps": {
+    "Temp. Input": {
+     "max": {
+      "peak_dbfs": 18.89,
+      "growth_db": 0.15,
+      "verdict": "hot",
+      "raw": 254,
+      "text": "+127"
+     }
+    },
+    "Noise amount": {
+     "max": {
+      "peak_dbfs": 1.61,
+      "growth_db": 1.73,
+      "verdict": "hot",
+      "raw": 127,
+      "text": "-0.0 dB"
+     }
+    },
+    "Temp. Output": {
+     "max": {
+      "peak_dbfs": 18.75,
+      "growth_db": -0.27,
+      "verdict": "hot",
+      "raw": 254,
+      "text": "+127"
+     }
     }
    },
-   "seconds": 2.2,
+   "seconds": 11.9,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Temp. Input at its maximum (+127): +18.9 dBFS peak; Noise amount at its maximum (-0.0 dB): +1.6 dBFS peak; Temp. Output at its maximum (+127): +18.8 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "JumpLoop": {
    "gear": "JumpLoop",
@@ -2658,11 +4157,12 @@
    "inferred": 5,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -2714,21 +4214,32 @@
    },
    "cpu_ms_per_s": 15.0,
    "type": "monosynth",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -37.11
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -1.85,
+     "growth_db": 1.78,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -48.42
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -7.21,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -14.07,
+      "growth_db": 2.86,
+      "over_seconds": 30,
+      "never_decays": true,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 2.5,
+   "seconds": 4.8,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -2736,7 +4247,7 @@
   "KrimZon AY-3-8910": {
    "gear": "KrimZon AY-3-8910",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/KrimZon AY-3-8910.dll",
     "managed": false,
@@ -2774,23 +4285,30 @@
     "sample_peak_dbfs": -9.03,
     "true_peak_dbtp": -7.95
    },
-   "cpu_ms_per_s": 12.6,
+   "cpu_ms_per_s": 12.1,
    "type": "polysynth",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.03,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 3.01
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": -3.01,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 1.2,
+   "seconds": 2.0,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -2839,21 +4357,36 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
-    }
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -9.2,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "an effect with Delay Feedback"
+    ],
+    "renders": 9
    },
-   "seconds": 0.7,
+   "sweeps": {},
+   "seconds": 1.9,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -2901,23 +4434,30 @@
     "sample_peak_dbfs": -12.71,
     "true_peak_dbtp": -12.7
    },
-   "cpu_ms_per_s": 13.4,
+   "cpu_ms_per_s": 12.0,
    "type": "monosynth",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -12.71,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -12.71,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 1.4,
+   "seconds": 2.3,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "plays the wavetable: silent until slot 1 has a wave (profiled with a sine rooted on A4)"
    ],
@@ -2927,7 +4467,7 @@
   "mixIO": {
    "gear": "mixIO",
    "kind": "effect",
-   "load_seconds": 0.04,
+   "load_seconds": 0.05,
    "gear_info": {
     "file": "Effects/mixIO.dll",
     "managed": false,
@@ -2967,15 +4507,40 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {},
-   "seconds": 1.4,
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
+    },
+    "all_at_once": {},
+    "swept_because": [
+     "an effect with Gain, Inertia Gain"
+    ],
+    "renders": 17
+   },
+   "sweeps": {
+    "Gain": {
+     "max": {
+      "peak_dbfs": 2.8,
+      "growth_db": 0.21,
+      "verdict": "hot",
+      "raw": 65534,
+      "text": "+12.00 dB"
+     }
+    }
+   },
+   "seconds": 10.5,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Gain at its maximum (+12.00 dB): +2.8 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Modern Sequence Editor": {
    "gear": "Modern Sequence Editor",
@@ -2995,11 +4560,12 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -3053,23 +4619,33 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 17.4,
+   "cpu_ms_per_s": 18.2,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -9.2,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 1.6,
+   "seconds": 3.0,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": true,
    "health": "ok"
@@ -3120,26 +4696,62 @@
      "dynamics"
     ]
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 4.7,
    "type": "dynamics",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -33.29
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -10.45,
+     "growth_db": -0.14,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 14.61
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -33.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 21.88,
+      "growth_db": 0.22,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 25
+   },
+   "sweeps": {
+    "Makeup": {
+     "max": {
+      "peak_dbfs": 12.29,
+      "growth_db": 0.27,
+      "verdict": "hot",
+      "raw": 1000,
+      "text": "24.0 dB"
+     }
+    },
+    "Output": {
+     "max": {
+      "peak_dbfs": 12.2,
+      "growth_db": -0.14,
+      "verdict": "hot",
+      "raw": 1000,
+      "text": "+24.0 dB"
+     }
     }
    },
-   "seconds": 1.4,
+   "seconds": 8.6,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Makeup at its maximum (24.0 dB): +12.3 dBFS peak; Output at its maximum (+24.0 dB): +12.2 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": true,
-   "health": "ok"
+   "health": "warn"
   },
   "Neo Drive": {
    "gear": "Neo Drive",
@@ -3187,26 +4799,54 @@
      "distortion"
     ]
    },
-   "cpu_ms_per_s": 11.6,
+   "cpu_ms_per_s": 0.0,
    "type": "distortion",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.03
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -11.65,
+     "growth_db": -0.13,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 3.69
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 16.57,
+      "growth_db": -0.43,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot",
+     "an effect with Auto gain"
+    ],
+    "renders": 20
+   },
+   "sweeps": {
+    "Output": {
+     "max": {
+      "peak_dbfs": 12.37,
+      "growth_db": -0.32,
+      "verdict": "hot",
+      "raw": 1000,
+      "text": "+24.0 dB"
+     }
     }
    },
-   "seconds": 1.6,
+   "seconds": 7.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Output at its maximum (+24.0 dB): +12.4 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": true,
-   "health": "ok"
+   "health": "warn"
   },
   "Neo EQ": {
    "gear": "Neo EQ",
@@ -3256,26 +4896,90 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "EQ",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -56.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -8.71
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -33.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 14.89,
+      "growth_db": -0.04,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot",
+     "an effect with B1 gain, B1 Q, B2 gain, B2 Q"
+    ],
+    "renders": 82
+   },
+   "sweeps": {
+    "B4 gain": {
+     "max": {
+      "peak_dbfs": 0.67,
+      "growth_db": 0.81,
+      "verdict": "hot",
+      "raw": 480,
+      "text": "+24.0 dB"
+     }
+    },
+    "B5 gain": {
+     "max": {
+      "peak_dbfs": 3.71,
+      "growth_db": -0.72,
+      "verdict": "hot",
+      "raw": 480,
+      "text": "+24.0 dB"
+     }
+    },
+    "B6 gain": {
+     "max": {
+      "peak_dbfs": 7.18,
+      "growth_db": 0.38,
+      "verdict": "hot",
+      "raw": 480,
+      "text": "+24.0 dB"
+     }
+    },
+    "B7 gain": {
+     "max": {
+      "peak_dbfs": 10.82,
+      "growth_db": -0.36,
+      "verdict": "hot",
+      "raw": 480,
+      "text": "+24.0 dB"
+     }
+    },
+    "Output": {
+     "max": {
+      "peak_dbfs": 15.02,
+      "growth_db": 0.19,
+      "verdict": "hot",
+      "raw": 480,
+      "text": "+24.0 dB"
+     }
     }
    },
-   "seconds": 1.6,
+   "seconds": 11.4,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with B4 gain at its maximum (+24.0 dB): +0.7 dBFS peak; B5 gain at its maximum (+24.0 dB): +3.7 dBFS peak; B6 gain at its maximum (+24.0 dB): +7.2 dBFS peak; B7 gain at its maximum (+24.0 dB): +10.8 dBFS peak; Output at its maximum (+24.0 dB): +15.0 dBFS peak"
+   ],
    "notes_profiler": [
     "flat at its defaults; an EQ by its parameters (frequencies and gains)"
    ],
    "generated": true,
-   "health": "ok"
+   "health": "warn"
   },
   "Neo FM6": {
    "gear": "Neo FM6",
@@ -3321,26 +5025,52 @@
     "sample_peak_dbfs": -20.98,
     "true_peak_dbtp": -20.98
    },
-   "cpu_ms_per_s": 20.9,
+   "cpu_ms_per_s": 16.0,
    "type": "polysynth",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -21.01,
+     "growth_db": 0.0,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 6.95
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": 6.88,
+      "growth_db": 1.82,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 208
+   },
+   "sweeps": {
+    "Volume": {
+     "max": {
+      "peak_dbfs": 8.52,
+      "growth_db": -0.38,
+      "verdict": "hot",
+      "raw": 1000,
+      "text": "+6.0 dB"
+     }
     }
    },
-   "seconds": 2.3,
+   "seconds": 121.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Volume at its maximum (+6.0 dB): +8.5 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": true,
-   "health": "ok"
+   "health": "warn"
   },
   "Neo Limiter": {
    "gear": "Neo Limiter",
@@ -3390,24 +5120,42 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -33.19
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -8.72
-    }
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -21.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 0.0,
+      "growth_db": 0.0,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot",
+     "an effect with Input gain"
+    ],
+    "renders": 13
    },
-   "seconds": 0.9,
+   "sweeps": {},
+   "seconds": 2.8,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot with every parameter at its maximum at once (+0.0 dBFS peak), but with no parameter alone"
+   ],
    "notes_profiler": [],
    "generated": true,
-   "health": "ok"
+   "health": "warn"
   },
   "Neo Poly": {
    "gear": "Neo Poly",
@@ -3453,26 +5201,44 @@
     "sample_peak_dbfs": -14.43,
     "true_peak_dbtp": -14.14
    },
-   "cpu_ms_per_s": 0.8,
+   "cpu_ms_per_s": 2.0,
    "type": "polysynth",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -14.39,
+     "growth_db": 0.0,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -7.38
-    }
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": 17.89,
+      "growth_db": 0.29,
+      "over_seconds": 30,
+      "never_decays": true,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 151
    },
-   "seconds": 2.5,
+   "sweeps": {},
+   "seconds": 22.1,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot with every parameter at its maximum at once (+17.9 dBFS peak over 30 s, never decays), but with no parameter alone"
+   ],
    "notes_profiler": [],
    "generated": true,
-   "health": "ok"
+   "health": "warn"
   },
   "Neo Utility": {
    "gear": "Neo Utility",
@@ -3522,29 +5288,56 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -33.29
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -8.72
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": 14.84,
+      "growth_db": 0.1,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot",
+     "an effect with Gain"
+    ],
+    "renders": 17
+   },
+   "sweeps": {
+    "Gain": {
+     "max": {
+      "peak_dbfs": 14.76,
+      "growth_db": 0.08,
+      "verdict": "hot",
+      "raw": 841,
+      "text": "+24.0 dB"
+     }
     }
    },
-   "seconds": 0.7,
+   "seconds": 2.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Gain at its maximum (+24.0 dB): +14.8 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": true,
-   "health": "ok"
+   "health": "warn"
   },
   "Neo Verb": {
    "gear": "Neo Verb",
    "kind": "effect",
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Effects/Neo Verb.NET.dll",
     "managed": true,
@@ -3587,31 +5380,48 @@
      "reverb"
     ]
    },
-   "cpu_ms_per_s": 22.8,
+   "cpu_ms_per_s": 19.5,
    "type": "reverb",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -10.47,
+     "growth_db": 0.34,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -23.27
-    }
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 2.61,
+      "growth_db": 1.3,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 34
    },
-   "seconds": 1.9,
-   "platform": "windows",
+   "sweeps": {},
+   "seconds": 24.9,
+   "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot with every parameter at its maximum at once (+2.6 dBFS peak), but with no parameter alone"
+   ],
    "notes_profiler": [],
    "generated": true,
-   "health": "ok"
+   "health": "warn"
   },
   "Neo Wave": {
    "gear": "Neo Wave",
    "kind": "generator",
-   "load_seconds": 0.26,
+   "load_seconds": 0.23,
    "gear_info": {
     "file": "Generators/Neo Wave.NET.dll",
     "managed": true,
@@ -3652,26 +5462,43 @@
     "sample_peak_dbfs": -16.96,
     "true_peak_dbtp": -16.96
    },
-   "cpu_ms_per_s": 18.8,
+   "cpu_ms_per_s": 18.1,
    "type": "polysynth",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -16.96,
+     "growth_db": 0.0,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -5.03
-    }
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": 20.89,
+      "growth_db": 0.69,
+      "over_seconds": 30,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 133
    },
-   "seconds": 2.9,
+   "sweeps": {},
+   "seconds": 21.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot with every parameter at its maximum at once (+20.9 dBFS peak over 30 s), but with no parameter alone"
+   ],
    "notes_profiler": [],
    "generated": true,
-   "health": "ok"
+   "health": "warn"
   },
   "Oomek Aggressor 303": {
    "gear": "Oomek Aggressor 303",
@@ -3706,26 +5533,50 @@
     "sample_peak_dbfs": -1.6,
     "true_peak_dbtp": -1.57
    },
-   "cpu_ms_per_s": 11.3,
+   "cpu_ms_per_s": 11.1,
    "type": "unpitched",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -88.31
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -1.6,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 4.07
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -136.36,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": 5.06,
+      "growth_db": -2.9,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 18
+   },
+   "sweeps": {
+    "Volume": {
+     "max": {
+      "peak_dbfs": 4.29,
+      "verdict": "hot",
+      "raw": 200,
+      "text": "200%"
+     }
     }
    },
-   "seconds": 0.8,
+   "seconds": 3.9,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Volume at its maximum (200%): +4.3 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Oomek Exciter": {
    "gear": "Oomek Exciter",
@@ -3768,23 +5619,33 @@
      "filter or EQ"
     ]
    },
-   "cpu_ms_per_s": 0.4,
+   "cpu_ms_per_s": 0.0,
    "type": "filter or EQ",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -3.5,
+     "growth_db": -0.09,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -9.18,
+      "growth_db": 0.22,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 1.3,
+   "seconds": 2.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -3830,23 +5691,38 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 17.2,
+   "cpu_ms_per_s": 10.3,
    "type": "EQ",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -10.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -3.62
-    }
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -0.9,
+      "growth_db": 0.01,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "an effect with Input gain"
+    ],
+    "renders": 23
    },
-   "seconds": 1.8,
+   "sweeps": {},
+   "seconds": 9.3,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "flat at its defaults; an EQ by its parameters (frequencies and gains)"
    ],
@@ -3877,6 +5753,7 @@
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -3929,21 +5806,31 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "modulation",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -11.48,
+     "growth_db": 0.8,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -31.49
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -16.42,
+      "growth_db": 0.59,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 0.9,
+   "seconds": 1.5,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -3951,7 +5838,7 @@
   "Pedal Comp": {
    "gear": "Pedal Comp",
    "kind": "effect",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/Pedal Comp.NET.dll",
     "managed": true,
@@ -3990,23 +5877,38 @@
      "dynamics"
     ]
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 22.4,
    "type": "dynamics",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.51,
+     "growth_db": -0.02,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -12.04
-    }
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -23.42,
+      "growth_db": 0.17,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "an effect with Makeup Gain"
+    ],
+    "renders": 17
    },
-   "seconds": 1.0,
+   "sweeps": {},
+   "seconds": 3.3,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -4014,7 +5916,7 @@
   "Pedal Drum Matrix": {
    "gear": "Pedal Drum Matrix",
    "kind": "effect",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/Pedal Drum Matrix.NET.dll",
     "managed": true,
@@ -4055,21 +5957,36 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.37,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 0
-    }
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -3.66,
+      "growth_db": 0.0,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "an effect with AutoGainOn, Feedback"
+    ],
+    "renders": 74
    },
-   "seconds": 1.1,
+   "sweeps": {},
+   "seconds": 9.7,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -4077,7 +5994,7 @@
   "Pedal EQ": {
    "gear": "Pedal EQ",
    "kind": "effect",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/Pedal EQ.NET.dll",
     "managed": true,
@@ -4118,26 +6035,80 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "EQ",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": -91.78
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -58.95,
+      "growth_db": 0.03,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -9.2,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "an effect with LS Gain, LM Gain, LM Q, HM Gain"
+    ],
+    "renders": 30
+   },
+   "sweeps": {
+    "LM Gain": {
+     "max": {
+      "peak_dbfs": 0.3,
+      "growth_db": 1.72,
+      "verdict": "hot",
+      "raw": 96,
+      "text": "+24.0 dB"
+     }
+    },
+    "HM Gain": {
+     "max": {
+      "peak_dbfs": 7.23,
+      "growth_db": 0.47,
+      "verdict": "hot",
+      "raw": 96,
+      "text": "+24.0 dB"
+     }
+    },
+    "HS Gain": {
+     "max": {
+      "peak_dbfs": 10.9,
+      "growth_db": -0.64,
+      "verdict": "hot",
+      "raw": 96,
+      "text": "+24.0 dB"
+     }
+    },
+    "Output": {
+     "max": {
+      "peak_dbfs": 14.96,
+      "growth_db": -0.47,
+      "verdict": "hot",
+      "raw": 96,
+      "text": "+24.0 dB"
+     }
     }
    },
-   "seconds": 1.0,
+   "seconds": 3.7,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with LM Gain at its maximum (+24.0 dB): +0.3 dBFS peak; HM Gain at its maximum (+24.0 dB): +7.2 dBFS peak; HS Gain at its maximum (+24.0 dB): +10.9 dBFS peak; Output at its maximum (+24.0 dB): +15.0 dBFS peak"
+   ],
    "notes_profiler": [
     "flat at its defaults; an EQ by its parameters (frequencies and gains)"
    ],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Pedal Filter": {
    "gear": "Pedal Filter",
@@ -4183,24 +6154,42 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "filter or EQ",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -15.56,
+     "growth_db": -0.42,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -7.03
-    }
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 16.04,
+      "growth_db": 0.42,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot",
+     "an effect with Resonance"
+    ],
+    "renders": 21
    },
-   "seconds": 0.9,
+   "sweeps": {},
+   "seconds": 3.8,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot with every parameter at its maximum at once (+16.0 dBFS peak), but with no parameter alone"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Pedal FM": {
    "gear": "Pedal FM",
@@ -4247,24 +6236,40 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "unpitched",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -8.1,
+     "growth_db": -0.49,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 6.5
-    }
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": 3.44,
+      "growth_db": -0.03,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 77
    },
-   "seconds": 0.7,
+   "sweeps": {},
+   "seconds": 10.1,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot with every parameter at its maximum at once (+3.4 dBFS peak), but with no parameter alone"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Pedal Gain": {
    "gear": "Pedal Gain",
@@ -4308,23 +6313,36 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 6.2,
+   "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
-    }
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
+    },
+    "swept_because": [
+     "an effect with Gain"
+    ],
+    "renders": 8
    },
-   "seconds": 1.1,
+   "sweeps": {},
+   "seconds": 1.7,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -4373,24 +6391,58 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -25.25
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
+    },
+    "swept_because": [
+     "an effect with Gain"
+    ],
+    "renders": 15
+   },
+   "sweeps": {
+    "Gain": {
+     "max": {
+      "peak_dbfs": 0.76,
+      "growth_db": 0.08,
+      "verdict": "hot",
+      "raw": 181,
+      "text": "+10.0 dB"
+     }
+    },
+    "Volume": {
+     "max": {
+      "peak_dbfs": 1.03,
+      "growth_db": -0.42,
+      "verdict": "hot",
+      "raw": 181,
+      "text": "+10.0 dB"
+     }
     }
    },
-   "seconds": 1.0,
+   "seconds": 2.6,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Gain at its maximum (+10.0 dB): +0.8 dBFS peak; Volume at its maximum (+10.0 dB): +1.0 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Pedal Gate": {
    "gear": "Pedal Gate",
@@ -4436,21 +6488,31 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "dynamics",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -9.2,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 0.8,
+   "seconds": 1.3,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -4498,23 +6560,32 @@
     "sample_peak_dbfs": -4.43,
     "true_peak_dbtp": -4.31
    },
-   "cpu_ms_per_s": 4.9,
+   "cpu_ms_per_s": 0.0,
    "type": "polysynth",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -4.43,
+     "growth_db": 0.0,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": 4.09
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": -3.53,
+      "growth_db": -0.93,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 0.7,
+   "seconds": 1.1,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -4523,7 +6594,7 @@
    "gear": "Pedal LFO",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.01,
+   "load_seconds": 0.0,
    "gear_info": {
     "file": "Generators/Pedal LFO.NET.dll",
     "managed": true,
@@ -4542,6 +6613,7 @@
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -4593,23 +6665,30 @@
     "sample_peak_dbfs": -22.88,
     "true_peak_dbtp": -22.88
    },
-   "cpu_ms_per_s": 16.5,
+   "cpu_ms_per_s": 16.4,
    "type": "monosynth",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -22.88,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 1.0,
+   "seconds": 2.3,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "plays the wavetable: silent until slot 1 has a wave (profiled with a sine rooted on A4)"
    ],
@@ -4619,7 +6698,7 @@
   "Pedal MComp": {
    "gear": "Pedal MComp",
    "kind": "effect",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/Pedal MComp.NET.dll",
     "managed": true,
@@ -4660,26 +6739,81 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "dynamics",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -6.94,
+     "growth_db": 0.04,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -37.56
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 9.82,
+      "growth_db": -0.11,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot",
+     "an effect with Output Gain"
+    ],
+    "renders": 59
+   },
+   "sweeps": {
+    "LM Makeup": {
+     "max": {
+      "peak_dbfs": 2.52,
+      "growth_db": -0.61,
+      "verdict": "hot",
+      "raw": 24,
+      "text": "24.0 dB"
+     }
+    },
+    "HM Makeup": {
+     "max": {
+      "peak_dbfs": 10.04,
+      "growth_db": 0.74,
+      "verdict": "hot",
+      "raw": 24,
+      "text": "24.0 dB"
+     }
+    },
+    "H Makeup": {
+     "max": {
+      "peak_dbfs": 14.85,
+      "growth_db": -0.35,
+      "verdict": "hot",
+      "raw": 24,
+      "text": "24.0 dB"
+     }
+    },
+    "Output Gain": {
+     "max": {
+      "peak_dbfs": 17.48,
+      "growth_db": -0.44,
+      "verdict": "hot",
+      "raw": 48,
+      "text": "+24.0 dB"
+     }
     }
    },
-   "seconds": 1.0,
+   "seconds": 7.6,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with LM Makeup at its maximum (24.0 dB): +2.5 dBFS peak; HM Makeup at its maximum (24.0 dB): +10.0 dBFS peak; H Makeup at its maximum (24.0 dB): +14.8 dBFS peak; Output Gain at its maximum (+24.0 dB): +17.5 dBFS peak"
+   ],
    "notes_profiler": [
     "unchanged at its defaults; dynamics by its parameters (threshold, ratio)"
    ],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Pedal Peer Control": {
    "gear": "Pedal Peer Control",
@@ -4702,23 +6836,30 @@
     "input": "none"
    },
    "type": "generator (silent at its defaults)",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": null,
+     "verdict": "silent"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 0.2,
+   "seconds": 0.8,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "no sound from a MIDI note at its defaults (it has no Note track parameter)"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -4767,23 +6908,38 @@
      "delay"
     ]
    },
-   "cpu_ms_per_s": 0.5,
+   "cpu_ms_per_s": 0.0,
    "type": "delay",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -12.03,
+     "growth_db": 0.84,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -41.44
-    }
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -14.85,
+      "growth_db": 0.61,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "an effect with Feedback"
+    ],
+    "renders": 19
    },
-   "seconds": 2.0,
+   "sweeps": {},
+   "seconds": 5.6,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -4828,31 +6984,57 @@
     "sample_peak_dbfs": -4.29,
     "true_peak_dbtp": -4.29
    },
-   "cpu_ms_per_s": 1.4,
+   "cpu_ms_per_s": 10.7,
    "type": "monosynth",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -4.29,
+     "growth_db": -0.01,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -10.35
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": 10.86,
+      "growth_db": 1.09,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 38
+   },
+   "sweeps": {
+    "Sub Lvl": {
+     "max": {
+      "peak_dbfs": 2.74,
+      "growth_db": -0.01,
+      "verdict": "hot",
+      "raw": 127,
+      "text": "100%"
+     }
     }
    },
-   "seconds": 0.6,
+   "seconds": 13.2,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Sub Lvl at its maximum (100%): +2.7 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Pedal Shaper": {
    "gear": "Pedal Shaper",
    "kind": "effect",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/Pedal Shaper.NET.dll",
     "managed": true,
@@ -4891,26 +7073,62 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 8.4,
+   "cpu_ms_per_s": 14.2,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.41,
+     "growth_db": -0.27,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -9.78
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 4.64,
+      "growth_db": -0.06,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 15
+   },
+   "sweeps": {
+    "Drive": {
+     "max": {
+      "peak_dbfs": 0.97,
+      "growth_db": -0.04,
+      "verdict": "hot",
+      "raw": 96,
+      "text": "96"
+     }
+    },
+    "Output": {
+     "max": {
+      "peak_dbfs": 14.64,
+      "growth_db": 0.35,
+      "verdict": "hot",
+      "raw": 96,
+      "text": "96"
+     }
     }
    },
-   "seconds": 1.1,
+   "seconds": 4.3,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Drive at its maximum (96): +1.0 dBFS peak; Output at its maximum (96): +14.6 dBFS peak"
+   ],
    "notes_profiler": [],
    "generated": false,
-   "health": "ok"
+   "health": "warn"
   },
   "Pedal Tracker": {
    "gear": "Pedal Tracker",
@@ -4956,23 +7174,30 @@
     "sample_peak_dbfs": -12.71,
     "true_peak_dbtp": -12.71
    },
-   "cpu_ms_per_s": 2.0,
+   "cpu_ms_per_s": 5.5,
    "type": "monosynth",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -12.71,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -11.87
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 1.0,
+   "seconds": 2.4,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "plays the wavetable: silent until slot 1 has a wave (profiled with a sine rooted on A4)"
    ],
@@ -4982,7 +7207,7 @@
   "Polac Audio In": {
    "gear": "Polac Audio In",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/Polac Audio In.x64.dll",
     "managed": false,
@@ -4999,23 +7224,30 @@
     "input": "none"
    },
    "type": "generator (silent at its defaults)",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": null,
+     "verdict": "silent"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 1.0,
+   "seconds": 1.8,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "no sound from a MIDI note at its defaults (it has no Note track parameter)"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -5037,11 +7269,12 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.2,
+   "seconds": 0.3,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -5053,7 +7286,7 @@
    "gear": "Polac MIDI Bus II",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.05,
+   "load_seconds": 0.04,
    "gear_info": {
     "file": "Generators/Polac MIDI Bus II.x64.dll",
     "managed": false,
@@ -5066,11 +7299,12 @@
    "inferred": 0,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -5095,11 +7329,12 @@
    "inferred": 0,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -5148,23 +7383,33 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 1.7,
+   "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -9.2,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 1.3,
+   "seconds": 2.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -5210,23 +7455,33 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 6.3,
+   "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -9.2,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 1.8,
+   "seconds": 2.9,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -5234,7 +7489,7 @@
   "Polac VST 1.1": {
    "gear": "Polac VST 1.1",
    "kind": "effect",
-   "load_seconds": 0.03,
+   "load_seconds": 0.04,
    "gear_info": {
     "file": "Effects/Polac VST 1.1.x64.dll",
     "managed": false,
@@ -5273,23 +7528,33 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 13.3,
+   "cpu_ms_per_s": 6.4,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -9.2,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 3.1,
+   "seconds": 4.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -5315,23 +7580,30 @@
     "input": "none"
    },
    "type": "generator (silent at its defaults)",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": null,
+     "verdict": "silent"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 2.6,
+   "seconds": 3.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "no sound from a note at its defaults, as MIDI or in its tracks, even with a wave in slot 1"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -5354,11 +7626,12 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -5369,7 +7642,7 @@
   "ReBuzz Audio In": {
    "gear": "ReBuzz Audio In",
    "kind": "generator",
-   "load_seconds": 0.01,
+   "load_seconds": 0.0,
    "gear_info": {
     "file": "Generators/ReBuzz Audio In.NET.dll",
     "managed": true,
@@ -5387,23 +7660,30 @@
     "input": "none"
    },
    "type": "generator (silent at its defaults)",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": null,
+     "verdict": "silent"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 0.2,
+   "seconds": 0.6,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "no sound from a MIDI note at its defaults (it has no Note track parameter)"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -5411,7 +7691,7 @@
   "ReBuzz Audio Out": {
    "gear": "ReBuzz Audio Out",
    "kind": "effect",
-   "load_seconds": 0.01,
+   "load_seconds": 0.0,
    "gear_info": {
     "file": "Effects/ReBuzz Audio Out.NET.dll",
     "managed": true,
@@ -5452,21 +7732,31 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "utility",
-   "extremes": {
-    "min": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
     },
-    "max": {
-     "silent": false,
-     "sample_peak_dbfs": -32.72
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -9.2,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
     }
    },
-   "seconds": 0.7,
+   "seconds": 1.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "ok"
@@ -5489,11 +7779,12 @@
    "inferred": 9,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -5523,14 +7814,21 @@
     "input": "none"
    },
    "type": "generator (silent at its defaults)",
-   "extremes": {},
-   "seconds": 0.5,
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    },
+    "all_at_once": {}
+   },
+   "seconds": 0.8,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "no sound from a note at its defaults, as MIDI or in its tracks, even with a wave in slot 1"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -5538,7 +7836,7 @@
   "Rout 909": {
    "gear": "Rout 909",
    "kind": "generator",
-   "load_seconds": 0.03,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/Rout 909.dll",
     "managed": false,
@@ -5555,23 +7853,30 @@
     "input": "none"
    },
    "type": "generator (silent at its defaults)",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": null,
+     "verdict": "silent"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 1.1,
+   "seconds": 2.0,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "no sound from a MIDI note at its defaults (it has no Note track parameter)"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -5579,7 +7884,7 @@
   "Session Clip Player": {
    "gear": "Session Clip Player",
    "kind": "effect",
-   "load_seconds": 0.01,
+   "load_seconds": 0.0,
    "gear_info": {
     "file": "Effects/Session Clip Player.NET.dll",
     "managed": true,
@@ -5596,23 +7901,30 @@
    },
    "cpu_ms_per_s": 0.0,
    "type": "effect (silent at defaults)",
-   "extremes": {
-    "min": {
-     "silent": true,
-     "sample_peak_dbfs": null
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": null,
+     "verdict": "silent"
     },
-    "max": {
-     "silent": true,
-     "sample_peak_dbfs": null
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
     }
    },
-   "seconds": 0.5,
+   "seconds": 1.1,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [
     "silent with noise through it at the defaults (a gate closed, a wet mix at 0, or it needs setting up)"
    ],
+   "hot": [],
    "notes_profiler": [],
    "generated": false,
    "health": "warn"
@@ -5635,11 +7947,12 @@
    "inferred": 12,
    "from_description": 3,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -5651,7 +7964,7 @@
    "gear": "TrackScript",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.01,
+   "load_seconds": 0.0,
    "gear_info": {
     "file": "Generators/TrackScript.NET.dll",
     "managed": true,
@@ -5665,11 +7978,12 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"
@@ -5695,11 +8009,12 @@
    "inferred": 1,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.1,
+   "seconds": 0.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
    "warnings": [],
+   "hot": [],
    "notes_profiler": [
     "has no audio output",
     "a control machine (moves other machines' parameters): no audio test"

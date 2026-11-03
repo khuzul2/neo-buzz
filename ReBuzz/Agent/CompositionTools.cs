@@ -141,7 +141,8 @@ namespace ReBuzz.Agent
                 Description =
                     "Draws a parameter's movement inside a pattern: points (beat in the pattern, value in the parameter's units) joined as steps or " +
                     "linear ramps; ReBuzz plays it whenever the pattern plays. Replaces the parameter's automation between the first and last " +
-                    "point (clear=true removes all of it). One undo step. Example: automation_write(machine=\"Pad\", pattern=\"Build\", " +
+                    "point (clear=true removes all of it). Values outside a parameter's safe_range (machine_describe) are refused, with the reason, " +
+                    "unless allow_unsafe=true. One undo step. Example: automation_write(machine=\"Pad\", pattern=\"Build\", " +
                     "param=\"F1 cutoff\", points=[{\"at\": 0, \"value\": \"300 Hz\"}, {\"at\": 16, \"value\": \"4 kHz\"}]).",
                 Input = Object(null,
                     Req("machine", String("The machine")),
@@ -152,7 +153,8 @@ namespace ReBuzz.Agent
                         Req("at", Position("Beat in the pattern")),
                         Req("value", AnyOf("Value in units", String("\"800 Hz\", \"-6 dB\", a choice, raw:N"), Number("In the parameter's unit")))), "Points in time order")),
                     Opt("shape", String("linear (default) ramps between points; step jumps at each", "linear", "step")),
-                    Opt("clear", Boolean("Remove all of this parameter's automation in the pattern first"))),
+                    Opt("clear", Boolean("Remove all of this parameter's automation in the pattern first")),
+                    Opt("allow_unsafe", Boolean("Write values outside the parameter's safe range anyway (default false: refused with the reason)"))),
                 Output = Object(null, Req("events", Integer("Automation events in the pattern for it now"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
@@ -161,8 +163,10 @@ namespace ReBuzz.Agent
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         var p = SongModel.Pattern(m, c.RequiredString("pattern"));
-                        var param = SongModel.Param(m, SongModel.Params(m), c.RequiredString("param"));
+                        var param = SongModel.Param(m, SongModel.Params(m), c.RequiredString("param"), track: c.Int("track") != null);
                         int track = c.Int("track") ?? 0;
+                        bool allowUnsafe = c.Bool("allow_unsafe") ?? false;
+                        string unsafeWhy = null;
                         if (!param.IsTrack && track != 0) throw new ToolError($"{param.Name} is a global parameter; leave track out.");
                         if (param.IsTrack && track >= m.TrackCount) throw new ToolError($"{m.Name} has {m.TrackCount} track(s).");
                         var key = new ColumnKey(param.Group, param.Parameter.IndexInGroup, track);
@@ -178,6 +182,10 @@ namespace ReBuzz.Agent
                             int raw;
                             try { raw = ValueResolver.Resolve(param.Info, o["value"], current); }
                             catch (ToolError e) { throw new ToolError($"points[{i}].value: {e.Message}"); }
+                            // docs/specs/machine-safety.md §3.4: as param_set. A ramp between two safe points stays inside the range.
+                            string refusal = SafeRange.Refusal(param.Info, raw);
+                            if (refusal != null && !allowUnsafe) throw new ToolError($"points[{i}].value: {refusal}");
+                            if (refusal != null) unsafeWhy ??= $"outside its safe range, {param.Info.SafeRange.Text(param.Info.Describe)}: {param.Info.SafeRange.Reason}";
                             points.Add((Math.Min(time, length - 1), raw));
                         }
                         points = points.OrderBy(x => x.Time).ToList();
@@ -207,6 +215,7 @@ namespace ReBuzz.Agent
                         var now = Events(p, key);
                         var problems = new JsonArray();
                         if (SongModel.Placements(core, p).Count == 0) problems.Add($"\"{p.Name}\" isn't placed in the arrangement, so the automation doesn't play yet.");
+                        if (unsafeWhy != null) problems.Add($"Unsafe (allow_unsafe): {param.Name} goes {unsafeWhy}.");
                         return new JsonObject
                         {
                             ["machine"] = m.Name, ["pattern"] = p.Name, ["param"] = param.Name, ["events"] = now.Count,

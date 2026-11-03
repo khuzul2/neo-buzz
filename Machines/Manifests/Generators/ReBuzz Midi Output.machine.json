@@ -17,7 +17,13 @@
   ]
  },
  "profile": {
-  "extremes": {}
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": null,
+    "verdict": "silent"
+   },
+   "all_at_once": {}
+  }
  },
  "parameters": [],
  "track_parameters": [

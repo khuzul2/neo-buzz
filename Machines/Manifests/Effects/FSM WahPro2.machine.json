@@ -8,8 +8,11 @@
  "summary": "Modulation (profiled draft): traits: modulation, filter or EQ; tail 0.01 s; latency 1 samples; gain +3.3 dB at the defaults.",
  "tracks": 1,
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "warn",
+  "problems": [
+   "hot (loud but steady) with Cutoff at its maximum (240): +3.1 dBFS peak; Filter at its minimum (2pole LP): +4.2 dBFS peak; LFO mod at its maximum (240): +0.7 dBFS peak"
+  ],
+  "hot": true
  },
  "profile": {
   "effect": {
@@ -40,7 +43,47 @@
     "filter or EQ"
    ]
   },
-  "extremes": {}
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -2.94,
+    "growth_db": -0.75,
+    "verdict": "ok"
+   },
+   "all_at_once": {},
+   "swept_because": [
+    "an effect with Resonance"
+   ],
+   "renders": 17
+  },
+  "sweeps": {
+   "Cutoff": {
+    "max": {
+     "peak_dbfs": 3.14,
+     "growth_db": -1.85,
+     "verdict": "hot",
+     "raw": 240,
+     "text": "240"
+    }
+   },
+   "Filter": {
+    "min": {
+     "peak_dbfs": 4.22,
+     "growth_db": -0.11,
+     "verdict": "hot",
+     "raw": 0,
+     "text": "2pole LP"
+    }
+   },
+   "LFO mod": {
+    "max": {
+     "peak_dbfs": 0.74,
+     "growth_db": -5.31,
+     "verdict": "hot",
+     "raw": 240,
+     "text": "240"
+    }
+   }
+  }
  },
  "parameters": [],
  "track_parameters": [
