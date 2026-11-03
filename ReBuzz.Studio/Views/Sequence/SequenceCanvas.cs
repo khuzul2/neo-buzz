@@ -67,7 +67,7 @@ namespace ReBuzz.Studio.Views.Sequence
         public int CursorTime => cursorTime;
         public int CursorRow => cursorRow;
         public bool IsActive => active;
-        public TimeSignatureList TimeSignatures => state.TimeSignatures;
+        public SongMeter TimeSignatures => state.TimeSignatures;
 
         /// <summary>Follow the play position while playing (scroll a page when it leaves the view).</summary>
         public bool Follow { get; set; } = true;

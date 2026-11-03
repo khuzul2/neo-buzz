@@ -1,5 +1,6 @@
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
+using ReBuzz.Core.Notes;
 using ReBuzz.Core.Session;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,8 @@ namespace ReBuzz.AppViews.Session
     /// recorded notes, drawn and edited Live's way. Double-click adds or deletes a note; drag
     /// moves, drag a note's end resizes it, Alt+drag changes velocity, drag on empty space
     /// selects. Arrows move the selection (Shift: an octave), Q quantizes, Del deletes, Ctrl+A
-    /// selects all. Every edit is one undo step of the session (Ctrl+Z here too).
+    /// selects all. Every edit is one undo step of the session (Ctrl+Z here too). The notes come
+    /// through a note source (daw-modes.md S4, ReBuzz/Core/Notes): the session's here.
     /// </summary>
     internal sealed class PianoRoll : FrameworkElement
     {
@@ -27,7 +29,6 @@ namespace ReBuzz.AppViews.Session
 
         enum Drag { None, Move, Resize, Velocity, Box, Key }
 
-        readonly SessionLayout layout;
         readonly ISession session;
         readonly ReBuzzCore buzz;
         List<ClipNote> notes = new List<ClipNote>();
@@ -43,31 +44,38 @@ namespace ReBuzz.AppViews.Session
         int lastVelocity = 100;
         int lastDuration;
 
+        /// <summary>A session clip's piano roll: its notes on the session's undo history.</summary>
         public PianoRoll(ReBuzzCore buzz, SessionLayout layout, ISequence track, IPattern clip)
+            : this(buzz, new SessionClipNotes(layout, clip), track)
+        {
+        }
+
+        /// <summary>A piano roll on any note source; the play position shows while <paramref name="track"/> plays the pattern in the session.</summary>
+        public PianoRoll(ReBuzzCore buzz, INoteSource source, ISequence track)
         {
             this.buzz = buzz;
-            this.layout = layout;
+            Source = source;
             session = buzz.Session;
             Track = track;
-            original = clip;
             Focusable = true;
             FocusVisualStyle = null;
             ClipToBounds = true;
             Reload();
         }
 
-        readonly IPattern original;
-
         public ISequence Track { get; }
 
+        /// <summary>Where the notes come from and go to (daw-modes.md S4).</summary>
+        internal INoteSource Source { get; }
+
         /// <summary>The clip, as it stands now: the session's undo may have made it again (0.7.1 hardening).</summary>
-        public IPattern Clip => layout.Current(original);
+        public IPattern Clip => Source.Pattern;
 
         /// <summary>Whether the clip is in the song (not deleted, or brought back by an undo).</summary>
-        public bool IsLive => Clip is PatternCore p && !p.IsDeleted && layout.IsInSong(p.Machine);
+        public bool IsLive => Source.IsLive;
 
-        /// <summary>Whether the clip records now (edits wait until it stops).</summary>
-        public bool IsRecording => layout.IsRecordingClip(Clip);
+        /// <summary>Whether the clip can't be edited now though it is in the song: it records (edits wait until it stops).</summary>
+        public bool IsRecording => Source.IsLive && Source.WhyNotEditable != null;
 
         /// <summary>Snap grid in pattern time (1/240 tick); 1 for none.</summary>
         public int Grid { get; set; } = ClipNotes.TimeBase;
@@ -83,7 +91,7 @@ namespace ReBuzz.AppViews.Session
         /// <summary>Raised after the notes or the selection changed (the window shows a summary).</summary>
         public event Action Changed;
 
-        int Length => SessionLayout.ClipLengthOf(Clip);
+        int Length => Source.Length;
 
         int BeatTime => Math.Max(1, buzz.TPB) * ClipNotes.TimeBase;
 
@@ -118,7 +126,7 @@ namespace ReBuzz.AppViews.Session
         public void Reload()
         {
             var keep = selected.Where(i => i < notes.Count).Select(i => notes[i]).ToList();
-            notes = IsLive ? layout.NotesOf(Clip) : new List<ClipNote>();
+            notes = Source.Notes();
             selected.Clear();
             foreach (var n in keep)
             {
@@ -132,13 +140,12 @@ namespace ReBuzz.AppViews.Session
 
         void Commit(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added)
         {
-            if (!IsLive || IsRecording)
+            if (Source.Edit(removed, added) != null)
             {
                 Reload();                                    // nothing changes: show the notes as they are
                 return;
             }
-            layout.EditNotes(Clip, removed, added);
-            notes = layout.NotesOf(Clip);
+            notes = Source.Notes();
             selected.Clear();
             foreach (var n in added)
             {
@@ -320,7 +327,7 @@ namespace ReBuzz.AppViews.Session
             if (p.X < KeysWidth)
             {
                 keyNote = downNote;
-                layout.PreviewNote(Clip, keyNote, lastVelocity, true);
+                Source.Preview(keyNote, lastVelocity, true);
                 drag = Drag.Key;
                 CaptureMouse();
                 InvalidateVisual();
@@ -339,8 +346,8 @@ namespace ReBuzz.AppViews.Session
                 else if (downTime < Length)
                 {
                     AddNote(downTime, downNote);
-                    layout.PreviewNote(Clip, downNote, lastVelocity, true);
-                    layout.PreviewNote(Clip, downNote, 0, false);
+                    Source.Preview(downNote, lastVelocity, true);
+                    Source.Preview(downNote, 0, false);
                 }
                 e.Handled = true;
                 return;
@@ -367,7 +374,7 @@ namespace ReBuzz.AppViews.Session
                 if (drag == Drag.Move)
                 {
                     keyNote = notes[hit].Note;
-                    layout.PreviewNote(Clip, keyNote, lastVelocity, true);
+                    Source.Preview(keyNote, lastVelocity, true);
                 }
             }
             else
@@ -409,9 +416,9 @@ namespace ReBuzz.AppViews.Session
                         int heard = dragTo.Count > 0 ? dragTo[0].Note : -1;
                         if (heard != keyNote && heard >= 0)
                         {
-                            layout.PreviewNote(Clip, keyNote, 0, false);
+                            Source.Preview(keyNote, 0, false);
                             keyNote = heard;
-                            layout.PreviewNote(Clip, keyNote, lastVelocity, true);
+                            Source.Preview(keyNote, lastVelocity, true);
                         }
                         break;
                     }
@@ -458,7 +465,7 @@ namespace ReBuzz.AppViews.Session
             drag = Drag.None;
             dragging = false;
             if (keyNote >= 0 && (mode == Drag.Key || mode == Drag.Move))
-                layout.PreviewNote(Clip, keyNote, 0, false);
+                Source.Preview(keyNote, 0, false);
             keyNote = -1;
             var from = dragFrom;
             var to = dragTo;
@@ -517,11 +524,11 @@ namespace ReBuzz.AppViews.Session
                     Quantize();
                     break;
                 case Key.Z when mods == ModifierKeys.Control:
-                    layout.Undo();
+                    Source.Undo();
                     Reload();
                     break;
                 case Key.Y when mods == ModifierKeys.Control:
-                    layout.Redo();
+                    Source.Redo();
                     Reload();
                     break;
                 case Key.Escape:
@@ -672,7 +679,7 @@ namespace ReBuzz.AppViews.Session
         (int, long) Signature()
         {
             if (!roll.IsLive) return (-1, roll.IsRecording ? 1 : 0);
-            var notes = layout.NotesOf(roll.Clip);
+            var notes = roll.Source.Notes();
             long sum = roll.IsRecording ? 1 : 0;
             foreach (var n in notes) sum = sum * 31 + n.Time * 7 + n.Duration * 3 + n.Note * 131 + n.Velocity;
             return (notes.Count, sum);
@@ -689,8 +696,7 @@ namespace ReBuzz.AppViews.Session
         {
             int count = roll.Notes.Count;
             int sel = roll.Selection.Count;
-            summary.Text = !roll.IsLive ? "The clip was deleted: undo in the Session View brings it back."
-                : roll.IsRecording ? "Recording: edits wait until it stops."
+            summary.Text = roll.Source.WhyNotEditable is string why ? why
                 : count == 0 ? "No notes yet: double-click to draw one."
                 : sel == 0 ? $"{count} note{(count == 1 ? "" : "s")}"
                 : $"{sel} of {count} selected" + (sel == 1 ? $" · {ClipNotes.Name(roll.Notes[roll.Selection.First()].Note)}, velocity {roll.Notes[roll.Selection.First()].Velocity}" : "");

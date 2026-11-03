@@ -218,11 +218,30 @@ namespace ReBuzz.Agent.Mcp
                 }
                 catch (Exception e)
                 {
-                    result = ToolResult.Fail($"{tool.Name} failed inside ReBuzz: {e.GetType().Name}: {e.Message}. The song may be partly changed; studio_status shows what undo would revert.");
+                    result = ToolResult.Fail($"{tool.Name} failed inside ReBuzz: {Describe(e)}. The song may be partly changed; studio_status shows what undo would revert.");
                 }
             }
             ToolCalled?.Invoke(new ToolCallRecord(tool.Name, args, result.IsError, result.Summary, sw.Elapsed));
             return result.ToJson();
+        }
+
+        /// <summary>
+        /// An exception as the agent reads it, through wrappers (a machine's constructor called by
+        /// reflection throws TargetInvocationException) to the cause and where it came from, so a
+        /// machine that needs a window says so (docs/specs/machine-safety.md §3.1: WPF types).
+        /// </summary>
+        internal static string Describe(Exception e)
+        {
+            string text = $"{e.GetType().Name}: {e.Message}";
+            var inner = e;
+            for (int depth = 0; depth < 6 && (inner is System.Reflection.TargetInvocationException || inner is AggregateException || inner is TypeInitializationException) && inner.InnerException != null; depth++)
+            {
+                inner = inner.InnerException!;
+                text += $" → {inner.GetType().FullName}: {inner.Message}";
+            }
+            if (inner != e && inner.TargetSite?.DeclaringType is Type where)
+                text += $" (in {where.FullName}.{inner.TargetSite.Name})";
+            return text;
         }
 
         JsonNode ListPrompts() => new JsonObject

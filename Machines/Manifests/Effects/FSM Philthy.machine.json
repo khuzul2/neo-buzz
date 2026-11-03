@@ -39,7 +39,19 @@
     "filter or EQ"
    ]
   },
-  "extremes": {}
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -13.9,
+    "growth_db": -0.82,
+    "verdict": "ok"
+   },
+   "all_at_once": {},
+   "swept_because": [
+    "an effect with Resonance"
+   ],
+   "renders": 21
+  },
+  "sweeps": {}
  },
  "parameters": [],
  "track_parameters": [

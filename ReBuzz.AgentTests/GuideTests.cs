@@ -56,7 +56,7 @@ namespace ReBuzz.AgentTests
             ["disconnect"] = new[] { "from", "to" },
             ["connection_set"] = new[] { "changes" },
             ["machine_describe"] = new[] { "machine", "group", "value_table", "table_points" },
-            ["param_set"] = new[] { "machine", "changes" },
+            ["param_set"] = new[] { "machine", "changes", "allow_unsafe" },
             ["param_get"] = new[] { "machine", "params", "track" },
             ["pattern_list"] = new[] { "machine" },
             ["pattern_create"] = new[] { "machine", "name", "length_beats" },
@@ -85,7 +85,7 @@ namespace ReBuzz.AgentTests
             ["wave_import"] = new[] { "path", "slot", "name", "root_note", "replace" },
             // A3 (origin/agent/a3-tools: ReBuzz/Agent/CompositionTools.cs)
             ["arrangement_markers"] = new[] { "set", "remove" },
-            ["automation_write"] = new[] { "machine", "pattern", "param", "track", "points", "shape", "clear" },
+            ["automation_write"] = new[] { "machine", "pattern", "param", "track", "points", "shape", "clear", "allow_unsafe" },
             ["automation_read"] = new[] { "machine", "pattern", "param" },
             ["machine_data_import"] = new[] { "machine", "kind", "path", "item" },
             ["wave_from_render"] = new[] { "source", "from_seconds", "to_seconds", "slot", "name", "root_note" },

@@ -40,14 +40,23 @@
     "reverb"
    ]
   },
-  "extremes": {
-   "min": {
-    "silent": false,
-    "sample_peak_dbfs": -32.72
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -2.54,
+    "growth_db": -0.18,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": -26.7
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": -9.15,
+     "growth_db": 0.23,
+     "verdict": "ok"
+    },
+    "max": {
+     "peak_dbfs": -3.18,
+     "growth_db": 0.21,
+     "verdict": "ok"
+    }
    }
   }
  },

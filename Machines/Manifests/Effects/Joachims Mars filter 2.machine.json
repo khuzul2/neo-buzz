@@ -8,8 +8,11 @@
  "summary": "Distortion (profiled draft): traits: distortion, dynamics, filter or EQ; tail 0.01 s; latency 0 samples; gain +1.5 dB at the defaults.",
  "tracks": 0,
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "warn",
+  "problems": [
+   "hot (loud but steady) with PreGain at its maximum (+15.5 dB): +2.5 dBFS peak; Amount at its maximum (127): +0.8 dBFS peak"
+  ],
+  "hot": true
  },
  "profile": {
   "effect": {
@@ -41,14 +44,48 @@
     "filter or EQ"
    ]
   },
-  "extremes": {
-   "min": {
-    "silent": false,
-    "sample_peak_dbfs": -32.72
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -4.47,
+    "growth_db": 0.19,
+    "over_seconds": 30,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": -7.96
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": -9.14,
+     "growth_db": -0.13,
+     "verdict": "ok"
+    },
+    "max": {
+     "peak_dbfs": -7.96,
+     "growth_db": 0.0,
+     "verdict": "ok"
+    }
+   },
+   "swept_because": [
+    "an effect with PreGain"
+   ],
+   "renders": 12
+  },
+  "sweeps": {
+   "PreGain": {
+    "max": {
+     "peak_dbfs": 2.46,
+     "growth_db": -1.65,
+     "verdict": "hot",
+     "raw": 128,
+     "text": "+15.5 dB"
+    }
+   },
+   "Amount": {
+    "max": {
+     "peak_dbfs": 0.75,
+     "growth_db": 1.88,
+     "verdict": "hot",
+     "raw": 127,
+     "text": "127"
+    }
    }
   }
  },

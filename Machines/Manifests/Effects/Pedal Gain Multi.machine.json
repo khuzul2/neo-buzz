@@ -8,8 +8,11 @@
  "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
  "tracks": 24,
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "warn",
+  "problems": [
+   "hot (loud but steady) with Gain at its maximum (+10.0 dB): +0.8 dBFS peak; Volume at its maximum (+10.0 dB): +1.0 dBFS peak"
+  ],
+  "hot": true
  },
  "profile": {
   "effect": {
@@ -39,14 +42,45 @@
     "utility"
    ]
   },
-  "extremes": {
-   "min": {
-    "silent": true,
-    "sample_peak_dbfs": null
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -9.22,
+    "growth_db": -0.15,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": -25.25
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    },
+    "max": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    }
+   },
+   "swept_because": [
+    "an effect with Gain"
+   ],
+   "renders": 15
+  },
+  "sweeps": {
+   "Gain": {
+    "max": {
+     "peak_dbfs": 0.76,
+     "growth_db": 0.08,
+     "verdict": "hot",
+     "raw": 181,
+     "text": "+10.0 dB"
+    }
+   },
+   "Volume": {
+    "max": {
+     "peak_dbfs": 1.03,
+     "growth_db": -0.42,
+     "verdict": "hot",
+     "raw": 181,
+     "text": "+10.0 dB"
+    }
    }
   }
  },

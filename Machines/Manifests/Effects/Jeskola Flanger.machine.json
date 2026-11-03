@@ -10,9 +10,13 @@
  "health": {
   "status": "unhealthy",
   "problems": [
-   "NaN or runaway output with every parameter at its minimum",
-   "NaN or runaway output with every parameter at its maximum"
-  ]
+   "feedback diverges at its maximum (100.0%: +60.7 dBFS: the engine's guard caught it); safe from -100.0% to 98.4% (raw 0–127)",
+   "hot at its defaults (+1.2 dBFS peak)",
+   "hot (loud but steady) with freq at its minimum (0.00Hz): +1.1 dBFS peak; freq at its maximum (40.96Hz): +1.7 dBFS peak; depth at its minimum (0.0%): +1.5 dBFS peak; depth at its maximum (100.0%): +1.4 dBFS peak; feedback at its minimum (-100.0%): +23.8 dBFS peak over 30 s; min. delay at its maximum (5.0ms): +1.3 dBFS peak; dry out at its minimum (-100.0%): +1.6 dBFS peak; wet out at its maximum (100.0%): +1.6 dBFS peak",
+   "every parameter at its minimum at once diverges (+61.3 dBFS: the engine's guard caught it), but no parameter alone does at its minimum"
+  ],
+  "diverging": true,
+  "hot": true
  },
  "profile": {
   "effect": {
@@ -43,14 +47,108 @@
     "filter or EQ"
    ]
   },
-  "extremes": {
-   "min": {
-    "silent": false,
-    "sample_peak_dbfs": 156.87
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": 1.18,
+    "growth_db": 0.2,
+    "verdict": "hot"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": 149.15
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": null,
+     "guard": "+61.3 dBFS",
+     "verdict": "diverging"
+    },
+    "max": {
+     "peak_dbfs": 21.73,
+     "growth_db": 0.6,
+     "over_seconds": 30,
+     "verdict": "hot"
+    }
+   },
+   "swept_because": [
+    "every parameter at its minimum/maximum at once: diverging; hot",
+    "an effect with feedback"
+   ],
+   "renders": 21
+  },
+  "sweeps": {
+   "freq": {
+    "min": {
+     "peak_dbfs": 1.08,
+     "growth_db": -0.42,
+     "verdict": "hot",
+     "raw": 0,
+     "text": "0.00Hz"
+    },
+    "max": {
+     "peak_dbfs": 1.7,
+     "growth_db": -0.87,
+     "verdict": "hot",
+     "raw": 4096,
+     "text": "40.96Hz"
+    }
+   },
+   "depth": {
+    "min": {
+     "peak_dbfs": 1.48,
+     "growth_db": 0.4,
+     "verdict": "hot",
+     "raw": 0,
+     "text": "0.0%"
+    },
+    "max": {
+     "peak_dbfs": 1.37,
+     "growth_db": 0.14,
+     "verdict": "hot",
+     "raw": 127,
+     "text": "100.0%"
+    }
+   },
+   "feedback": {
+    "min": {
+     "peak_dbfs": 23.8,
+     "growth_db": 1.2,
+     "over_seconds": 30,
+     "verdict": "hot",
+     "raw": 0,
+     "text": "-100.0%"
+    },
+    "max": {
+     "peak_dbfs": 57.04,
+     "growth_db": 1.11,
+     "guard": "+60.7 dBFS",
+     "verdict": "diverging",
+     "raw": 128,
+     "text": "100.0%"
+    }
+   },
+   "min. delay": {
+    "max": {
+     "peak_dbfs": 1.34,
+     "growth_db": 0.11,
+     "verdict": "hot",
+     "raw": 50,
+     "text": "5.0ms"
+    }
+   },
+   "dry out": {
+    "min": {
+     "peak_dbfs": 1.56,
+     "growth_db": -0.42,
+     "verdict": "hot",
+     "raw": 0,
+     "text": "-100.0%"
+    }
+   },
+   "wet out": {
+    "max": {
+     "peak_dbfs": 1.56,
+     "growth_db": 0.15,
+     "verdict": "hot",
+     "raw": 128,
+     "text": "100.0%"
+    }
    }
   }
  },
@@ -98,7 +196,14 @@
    "b": 100.008301,
    "unit": "%",
    "description": "Feedback (0=-100%, 40=0%, 80=100%)",
-   "confidence": "values"
+   "confidence": "values",
+   "safe_range": {
+    "min": 0,
+    "max": 127,
+    "min_text": "-100.0%",
+    "max_text": "98.4%",
+    "reason": "diverges at its maximum (100.0%: +60.7 dBFS: the engine's guard caught it)"
+   }
   },
   {
    "index": 3,

@@ -7,7 +7,7 @@ namespace BuzzGUI.Interfaces
 
     public class SequenceEvent
     {
-        public SequenceEvent(SequenceEvent e) { Type = e.Type; Pattern = e.Pattern; Span = e.Span; Offset = e.Offset; End = e.End; Gain = e.Gain; }
+        public SequenceEvent(SequenceEvent e) { Type = e.Type; Pattern = e.Pattern; Span = e.Span; Offset = e.Offset; End = e.End; Gain = e.Gain; Clip = e.Clip; }
         public SequenceEvent(SequenceEventType type) { Type = type; }
         public SequenceEvent(SequenceEventType type, IPattern pattern) { Type = type; Pattern = pattern; }
         public SequenceEvent(SequenceEventType type, IPattern pattern, int span) { Type = type; Pattern = pattern; Span = span; }
@@ -32,6 +32,14 @@ namespace BuzzGUI.Interfaces
 
         /// <summary>Whether the event plays its whole pattern at full volume (no fork data).</summary>
         public bool IsPlain => Offset == 0 && End == 0 && Gain == 1.0;
+
+        // Fork (docs/specs/daw-modes.md S2): the arrangement clip the event belongs to. A clip is
+        // a run of PlayPattern events of one pattern on one sequence with the same id: the first
+        // plays from the clip's start, the next ones its loop, the last is cut at its end. Song
+        // files keep it in the fork subsection; upstream ReBuzz plays each event, cut at the next.
+
+        /// <summary>The clip's id (unique in the song), or 0: the event is a clip of its own.</summary>
+        public int Clip { get; set; }
 
         /// <summary>Where the pattern starts playing, within the pattern as it is now.</summary>
         public int PlayedOffset => Pattern == null ? 0 : Math.Clamp(Offset, 0, Math.Max(0, PlayedEnd - 1));

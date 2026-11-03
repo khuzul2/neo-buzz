@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-03: D1 A1 (§3.1), D2 B, D3 A, D4 B, D5 A, all as recommended. AR0 can start; AR1–AR2 after P3's exit, beside plugin-host H1 |
+| Status | Decided 2026-11-03: D1 A1 (§3.1), D2 B, D3 A, D4 B, D5 A, all as recommended. **AR0 built** (2026-11-03, §8.1): the song meter, clip ids, automation ramps and note sources. AR1–AR2 next, after P3's exit, beside plugin-host H1 |
 | Date | 2026-11-03 |
 | Scope | One song and one machine graph, seen and edited in three modes that stay in sync: **tracker** (patterns with columns), **arrangement** (a horizontal timeline with clips, a piano roll and automation lanes) and **session** (clip launching). The model, the views, compatibility, engine seams and a phased plan |
 | Code baseline | fork `90b0850` (main, 2026-11-03). Branches `platform/p3-s4-sequence-editor` and `platform/p3-s6-pattern-editor` (not merged) read the same day |
@@ -364,13 +364,57 @@ The seams are portable, since `ReBuzz.Engine` links `ReBuzz/Core`. After S6, MPE
 
 Sizes as in session-view.md: S < 500 LOC, M 500–2,000, L 2,000–5,000.
 
+### 8.1 As built (AR0)
+
+**S1 Song meter** (`ReBuzz/Core/SongMeter.cs`).
+- The engine owns the bar list: `ReBuzzCore.SongMeter`, the rules and file format of `TimeSignatureList`. As `PatternColours` gives the engine the editor's colours, this gives it the bars; but here the editors use the engine's list, not the other way round.
+- `SongMeterStore` reads the bars from the `SequenceEditor` subsection when a song opens, and resets them for a new song.
+- It also writes that subsection when the song is saved. A sequence editor that writes its own (WPF's, the studio's) subscribed later, so its copy replaces this one. Where there is none (rebuzz-headless), the song keeps its bars, the editor's zoom and the pattern colours. Headless saves now have this subsection, as upstream's do.
+- The studio's sequence editor edits `SongMeter` itself. Its port of `TimeSignatureList` moved into the engine.
+- The WPF editors keep their list (`ViewSettings.TimeSignatureList`; the modern editors use the classic one's). `ReBuzz/AppViews/SequenceEditorMeter.cs` mirrors it both ways and follows the list when the editor replaces it (a song opened, a new song).
+- The Session View: until the song saves a layout of its own, its bar is the meter's first bar, in beats (12 ticks at TPB 4: 3 beats). A bar that isn't whole beats, and Buzz's untouched default (16 ticks), keep 4 beats, as before at any TPB. A saved layout keeps the bar it was given.
+- MCP reads it (`arrangement_get`'s `meter`). Bar.beat positions still use the session's beats per bar.
+
+**S2 Clip ids** (`SequenceEvent.Clip`, `ReBuzz/Core/ArrangementClips.cs`).
+- `Clip` is an int on `SequenceEvent`, 0 for none, kept by the copy constructor, the four `EventRef`s (BuzzGUI.Common's and the three WPF editors'), `SequenceEventRef` (machine delete and undo) and machine replace.
+- `ArrangementClips` (`ReBuzzCore.Clips`) gives new ids and keeps each clip's loop: `ClipLoop(Start, End, On)`, in ticks into the pattern, End 0 for its end. The clip's start is its first event's `Offset`. Ids are never reused while a song is open, so an undo that brings events back never finds their id taken.
+- **Reading clips** (`ArrangementClips.Of`): consecutive PlayPattern events of one pattern with the same id, each playing on to where the next starts, are one clip. Any other event (a Break at the end, say) or a gap ends it. An event without an id is a clip of its own.
+- The "ArrangementEvents" subsection is version 2: a `clip` attribute on events, and a `Clip` element (id, loop start, loop end, on) per clip in the song. Version 1 readers skip both.
+- The recorder writes a launch and its loop wraps as one clip, with the session clip's loop; a relaunch, or recording that starts mid-clip, begins a new one. *Insert into arrangement* writes each track's clip with its loop.
+- Copy and paste in the sequence editors keep the id, so a pasted clip shares it (and its loop). AR1's copy gestures will give copies their own.
+
+**S3 Automation ramps** (`PatternColumnCore`, `WorkManager.PlayPatternColumnEvents`).
+- In an engine-played automation column, an event whose `Duration` is above 0 ramps in a straight line to the next event in the column. The Duration's value doesn't matter; writers can set the gap to the next event.
+- The value is worked out at the start of each tick, and of each subtick when subtick timing is on: where machines take parameter values. It is rounded to the nearest whole value, and set only where it changed, so a machine isn't told the same value again. On an event's own position the event plays, as before; after the column's last event the value holds.
+- Columns without a Duration above 0 (`HasRamps`, kept as events change) skip all of this, so every song before ramps plays exactly as before.
+- Ramps allocate nothing of their own. *Found:* any parameter change on the audio thread allocates, for steps as for ramps: it reaches the machine through `MachineCore.parametersChanged`, a `ConcurrentDictionary` whose entries (after each tick's `Clear`) and enumerators are new objects. Measured on Windows CI with four machines automating a parameter: about 3.6 KB per 256-frame buffer, steps and ramps alike. The 0.4.1 test plays no automation, so it stays at 0 bytes. Making changed parameters allocation-free is engine-hardening work beside the machine guard (machine-safety.md).
+- Upstream keeps the durations (TAP2 writes them) and plays the events as steps.
+
+**S4 Note sources** (`ReBuzz/Core/Notes/`).
+- `INoteSource`: `Pattern` (as it stands now), `IsLive`, `Notes()`, `Length`, `WhyNotEditable` (null, or why not in words), `Edit(removed, added)` (null when made, else why not), `Preview`, `Undo`, `Redo`, and `Changed`. `Changed` is raised after the source's own edits, undos and redos; hosts poll for changes made elsewhere, as the piano roll windows already do.
+- `SessionClipNotes`: SessionLayout's calls, on the session's own undo.
+- `MidiColumnNotes`: the engine MIDI column, each edit one `ColumnEventsAction` on the song's history (it finds the pattern by name, so undo works after a machine is made again).
+- `TrackerColumnNotes` (D3 A): the pattern's engine-played Note columns, a voice per track, as the agent writes them for machines that take notes in their tracks (`TrackNotes`). A note that would need more tracks than the machine has is refused, with the reason. A moved note keeps its track; a new one takes the lowest free track. Velocity goes to a track parameter named "vel…". *Deviation:* the Modern Pattern Editor's own Note columns aren't reachable before S7, so this source covers the engine's Note columns now; S7 adds the editor's through `ExportTrackerNotes`/`ImportTrackerNotes`.
+- `EditorPreviewNotes`: the pattern editor's `PatternEditorMachineMIDIEvents`, read only.
+- Both `PianoRoll`s (WPF and the studio) take a source; their old constructor passes `SessionClipNotes`, so the Session View behaves as before.
+
+**MCP:** `arrangement_get` gives each place's clip id, the part of the pattern it plays (`part_beats`) and its volume (`gain`); each lane's `clips` (id, pattern, start, end, start in the pattern, places, loop); and the song's `meter` (mcp-server.md §5.5).
+
+**Found on the way:**
+- BMX songs loaded a pattern's engine columns out of order: the TAP2 loader put the second column first (upstream's out-of-range fix clamped to Count − 1). A pattern with a MIDI column and an automation column, as session takes with automation have, swapped them on every open, so a song never saved back the same. Fixed in `BMXFile.LoadTAP2`.
+- `tools/song-roundtrip.py --compare` flagged parameter names that BMX can't hold ("Vel → amp" is "Vel ? amp" in Latin-1). It now compares names as BMX writes them.
+
+**Exit check:**
+- `ReBuzz.Studio.Tests/DawModesSeamTests.cs` (Linux CI): the meter, clip ids through edits, undo and both formats, the recorder and scene insert, ramp values against steps, each note source, both rolls on a source. And the song: clips, loops, a ramp and a meter. It round-trips in .bmx (A and B the same bytes) and .bmxml (the same but for the stamps), and `song-roundtrip.py --compare` passes for both. Its core sections are byte-equal to those of the same song without clip ids and meter; only the subsections differ.
+- `ReBuzzTests/DawModesSeamTests.cs` (Windows, release build): computing and setting ramps allocates 0 bytes (playing automation whole is measured, ramps beside steps, and reported); ramps move on subticks; the WPF editors' bars mirror the engine's; without a sequence editor the engine keeps the bars in both formats; the WPF roll on a source. The piano rolls' own tests (`PianoRollTests`, the studio's `SessionViewTests`) pass unchanged.
+
 ## 9. Phases
 
 Effort in person-weeks (pw), with coding agents doing most of the typing, as in the other specs. Each phase also updates the MCP tools for what it adds, within its pw.
 
 | Phase | When | Delivers | Exit check | pw | Risk |
 |---|---|---|---|---|---|
-| **AR0 Seams** | now, beside P3 | S1–S4; MCP reads clips and the meter | ReBuzzTests and studio tests green. A song with clips, loops, ramps and a meter round-trips in .bmx and .bmxml, core sections byte-equal. 0 bytes per buffer. Both piano rolls behave as before | 1.5–2 | low |
+| **AR0 Seams** (built, §8.1) | now, beside P3 | S1–S4; MCP reads clips and the meter | ReBuzzTests and studio tests green. A song with clips, loops, ramps and a meter round-trips in .bmx and .bmxml, core sections byte-equal. 0 bytes per buffer. Both piano rolls behave as before | 1.5–2 | low |
 | **AR1 Arrangement view** | after P3's exit (S9) | The Sequence tab's Arrangement mode: tracks with lanes; clips (draw, move, copy, split, join, trim, loop, make unique, shared badge); the meter grid; Master with tempo and markers; overridden lanes greyed; S5 | Build an 8-bar song with looped and trimmed clips by mouse (headless). It renders the same as the equivalent plain events, and the same as upstream's playback apart from trims | 2–3 | medium |
 | **AR2 Piano roll everywhere** | after AR1; the Pattern tab toggle after S6 | `PianoRoll` in the arrangement panel and the Pattern tab; velocity and CC lanes; scale and fold; step input; context ghosts | A bass line drawn in the arrangement plays in its session clip. The Pattern tab's toggle edits the same notes. Undo is on the song's history | 1.5–2 | low–medium |
 | **AR3 The tracker sees the notes** | after S6 merges | S7: MPE's computed note lanes and the Note-column note source (D3 A) | A take recorded in the session shows in the tracker at once. Editing a row changes only that note. In a random round trip of 1,000 notes through tracker edits, untouched notes stay exact. Old songs' MPE data stays byte-equal | 3–4 | high |

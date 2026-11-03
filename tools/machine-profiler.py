@@ -11,6 +11,13 @@
 #    defaults, whether gain depends on level, harmonics added, stereo and movement;
 #  - health: load failures, crashes and hangs, NaN or runaway output, sound from silence, output
 #    at parameter extremes, CPU per instance.
+#  - U2 (docs/specs/machine-safety.md §3.1): a level test of 4 s renders, the machine fed noise or
+#    holding a note: at its defaults, with every parameter at its minimum and at its maximum at once,
+#    and, for machines that misbehave that way (and effects with a feedback, resonance, gain or Q
+#    parameter), each parameter alone at each end. Each render is diverging (NaN or infinity, above
+#    +60 dBFS, or still growing), hot (above 0 dBFS, steady) or fine; where a parameter's end
+#    diverges, a bisection finds the edge and the draft gets that parameter's safe_range. A managed
+#    machine that can't be built without its UI (WPF) needs a window: its own status.
 # It writes a draft manifest per machine (Neo machines keep their generated ones: for them it checks
 # the inference against the manifest), a JSON summary and machine-health.md. With --repo it merges
 # them into the repository: drafts into Machines/Manifests/<Generators|Effects>/, the summary into
@@ -49,6 +56,11 @@ import machine_infer as mi  # noqa: E402
 
 TEMPO = 120                 # beats per minute: a beat is 0.5 s
 A4 = 69
+LEVEL_BEATS = 8             # the level test's render: 4 s
+CONFIRM_BEATS = 60          # and 30 s, when the level grew over 4 s (an attack settles; a runaway doesn't)
+WARM_BEATS = 1              # a 0.5 s render after a change, before the test: smoothed parameters arrive
+HELD_BEATS = 64             # the level test's note, held through the longest render
+SOURCE_LEVEL = "-6 dB"      # the level test's noise into effects: peaks near -9 dBFS, a mix's level
 FORMAT = "rebuzz-machine-manifest/1"
 
 
@@ -235,8 +247,8 @@ def finite_peak(measure):
 
 
 def blown(measure):
-    """NaN, infinity or a runaway level (a diverging machine reaches hundreds of dB). The server
-    writes a NaN peak as null and an infinite one as "inf". Since the engine's guard
+    """NaN, infinity or a level above +60 dBFS (a diverging machine reaches hundreds of dB). The
+    server writes a NaN peak as null and an infinite one as "inf". Since the engine's guard
     (docs/specs/machine-safety.md §3.2) no NaN or level above +60 dBFS reaches a render: the render
     lists the machine under "diverged" instead (render() below marks the measure)."""
     m = measure or {}
@@ -247,7 +259,42 @@ def blown(measure):
         return True
     if p is None:
         return not m.get("silent", True)
-    return isinstance(p, (int, float)) and p > 24
+    return isinstance(p, (int, float)) and p > mi.DIVERGE_DBFS
+
+
+def peaks_per_second(path):
+    """A render's peak in each whole second (both channels, linear), and whether it holds NaN or infinity."""
+    rate, left, right = read_wav(path)
+    peaks, nonfinite = [], False
+    for a in range(0, max(1, len(left) - rate // 2), rate):
+        p = 0.0
+        for ch in (left, right):
+            seg = ch[a:a + rate]
+            if not seg:
+                continue
+            try:
+                s = math.fsum(seg)
+            except (OverflowError, ValueError):
+                s = math.inf
+            if s != s or math.isinf(s):
+                nonfinite = True
+                continue
+            p = max(p, max(seg), -min(seg))
+        peaks.append(p)
+    return peaks, nonfinite
+
+
+def peak_text(measure):
+    """A render's sample peak as words: "+157 dBFS", "infinite", "NaN"."""
+    m = measure or {}
+    if m.get("diverged"):
+        return f"{m['diverged'][0] or 'diverged'}: the engine's guard caught it"
+    p = (m.get("peaks") or {}).get("sample_peak_dbfs")
+    if p == "inf":
+        return "infinite peak"
+    if p is None:
+        return "silent" if m.get("silent", True) else "NaN"
+    return f"{p:+.0f} dBFS peak"
 
 
 def loudness(measure):
@@ -262,8 +309,15 @@ class Profile:
         self.gear, self.kind = gear, kind
         self.data = {"gear": gear, "kind": kind}
         self.problems, self.warnings, self.notes = [], [], []
+        self.hot = []               # loud but steady settings (machine-safety.md §3.1): warnings
+        self.diverging = False      # some problem is a runaway level, not a crash or a load failure
+        self.window = None          # why it needs a window (its own status)
 
     def problem(self, text):
+        self.problems.append(text)
+
+    def diverges(self, text):
+        self.diverging = True
         self.problems.append(text)
 
     def warn(self, text):
@@ -277,9 +331,11 @@ def params_by_kind(describe):
     return globals_, tracks
 
 
-def manifest_entry(p, inferred):
+def manifest_entry(p, inferred, safe_range=None):
     e = {"index": p.get("index", 0), "id": p["name"], "name": p["name"], "group": "",
          "min": p["min"], "max": p["max"], "default": p["default_raw"]}
+    if not inferred.get("kind"):
+        inferred = {"kind": "int", "a": 0, "confidence": "values"}   # texts that say nothing: raw numbers, kept for its safe range
     for k in ("kind", "a", "b", "exponent", "flag", "unit", "choices", "points"):
         if k in inferred and inferred[k] is not None and inferred[k] != "":
             e[k] = inferred[k]
@@ -287,6 +343,9 @@ def manifest_entry(p, inferred):
         e.pop("choices")
     e["description"] = p.get("description", "")
     e["confidence"] = inferred.get("confidence", "values")
+    if safe_range:
+        # machine-safety.md §3.4: param_set keeps agents inside it unless they pass allow_unsafe.
+        e["safe_range"] = safe_range
     return e
 
 
@@ -385,13 +444,13 @@ def profile_generator(c, prof, info, baseline):
     if not idle["measure"].get("silent", True):
         prof.warn(f"sounds with no notes ({finite_peak(idle['measure'])} dBFS peak): a drone, noise or a free-running sequencer")
     if blown(idle["measure"]):
-        prof.problem("NaN or runaway output with no notes")
+        prof.diverges(f"diverges with no notes ({peak_text(idle['measure'])})")
     def try_modes():
         for m in modes:
             set_notes(c, "M", [note(A4)], m)
             r = render(c, 0, 4, 1.0)
             if blown(r["measure"]):
-                prof.problem(f"NaN or runaway output playing A4 ({finite_peak(r['measure'])} dBFS)")
+                prof.diverges(f"diverges playing A4 ({peak_text(r['measure'])})")
                 return m, r
             if not r["measure"].get("silent", True) and (idle["measure"].get("silent", True) or (loudness(r["measure"]) or -99) > (loudness(idle["measure"]) or -99) + 3):
                 return m, r
@@ -419,8 +478,6 @@ def profile_generator(c, prof, info, baseline):
     m = first["measure"]
     prof.data["level"] = {"note": "A4 at velocity 100, 1.5 beats", "integrated_lufs": loudness(m), "sample_peak_dbfs": finite_peak(m),
                           "true_peak_dbtp": (m.get("peaks") or {}).get("true_peak_dbtp")}
-    if (finite_peak(m) or -99) > 0:
-        prof.warn(f"clips at the defaults: peak {finite_peak(m)} dBFS on one note")
     prof.data["cpu_ms_per_s"] = cpu(c, baseline["empty"])
     # Pitch: A4 sent, then A3 and A5 to see that it follows the keyboard.
     # Short, decaying notes (a 303's) are voiced for a fifth of the window: enough for a median.
@@ -515,14 +572,14 @@ def profile_effect(c, prof, info, baseline):
     # Silence in: silence out?
     idle = render(c, 0, 2, 0.5, probes=["M"])
     if blown(idle["measure"]):
-        prof.problem("NaN or runaway output with silence in")
+        prof.diverges(f"diverges with silence in ({peak_text(idle['measure'])})")
     elif not idle["measure"].get("silent", True):
         prof.warn(f"sound from silence ({finite_peak(idle['measure'])} dBFS peak): noise, hum or DC")
     # A noise burst of 1 beat (0.5 s), 3 s to ring out.
     set_notes(c, "Src", [note(A4, 0, 1, 127)], "midi", length=4)
     r = render(c, 0, 1, 3.0, probes=["Src", "M"], name="noise")
     if blown(r["measure"]):
-        prof.problem(f"NaN or runaway output on noise ({finite_peak(r['measure'])} dBFS)")
+        prof.diverges(f"diverges on noise at its defaults ({peak_text(r['measure'])})")
         prof.data["type"] = "effect (blows up)"
         return
     src_file, out_file = probe_file(r, "Src"), probe_file(r, "M")
@@ -553,7 +610,7 @@ def profile_effect(c, prof, info, baseline):
     set_notes(c, "Src", [note(A4, 0, 0.04, 127)], "midi", length=4)
     rc = render(c, 0, 1, 3.0, probes=["M"], name="click")
     if blown(rc["measure"]):
-        prof.problem(f"NaN or runaway output on a click ({finite_peak(rc['measure'])} dBFS)")
+        prof.diverges(f"diverges on a click at its defaults ({peak_text(rc['measure'])})")
     else:
         _, cl, cr = read_wav(probe_file(rc, "M"))
         env = envelope([(a + b) / 2 for a, b in zip(cl, cr)], rate, 5)
@@ -609,7 +666,7 @@ def profile_effect(c, prof, info, baseline):
         c.call("param_set", machine="Src", changes=[{"param": "Volume", "value": vol}])
         rs = render(c, 0, 1, 0.2, probes=["Src", "M"], name="sine-" + label)
         if blown(rs["measure"]):
-            prof.problem(f"NaN or runaway output on a {label} sine")
+            prof.diverges(f"diverges on a {label} sine at its defaults ({peak_text(rs['measure'])})")
             break
         _, il, _ = read_wav(probe_file(rs, "Src"))
         _, ol, orr = read_wav(probe_file(rs, "M"))
@@ -676,27 +733,229 @@ def type_from_parameters(prof, globals_):
         prof.notes.append("unchanged at its defaults; a filter by its parameters")
 
 
-def extremes(c, prof, globals_, has_notes, mode):
-    """Every parameter at its minimum, then its maximum: does it blow up or go silent?"""
+class Bench:
+    """
+    The level test's song (machine-safety.md §3.1): the machine alone, fed noise at a mix's level
+    (effects) or holding A4 (generators, as it takes notes), through 4 s renders. A render that
+    diverges leaves the machine's state running away (delay lines, filter memories), so the song is
+    built again after one.
+    """
+
+    def __init__(self, c, prof, kind, mode):
+        self.c, self.prof, self.kind, self.mode = c, prof, kind, mode
+        self.texts = {}      # (param, raw) → the machine's text, from param_set's answers
+        self.renders = 0
+        self.build()
+
+    def build(self):
+        c = self.c
+        c.call("song_new", discard_unsaved=True, tempo_bpm=TEMPO)
+        c.call("machine_add", gear=self.prof.gear, name="M", connect_to="Master")
+        if self.kind == "effect":
+            c.call("machine_add", gear="Neo Poly", name="Src", connect_to="M")
+            c.call("param_set", machine="Src", changes=[{"param": p, "value": v} for p, v in SOURCE_NOISE] + [{"param": "Volume", "value": SOURCE_LEVEL}])
+            set_notes(c, "Src", [note(A4, 0, HELD_BEATS, 127)], "midi", length=HELD_BEATS)
+        else:
+            if self.prof.data.get("needs_wave"):
+                add_test_wave(self.c)
+            if self.mode not in (None, "none"):
+                set_notes(c, "M", [note(A4, 0, HELD_BEATS, 100)], self.mode, length=HELD_BEATS)
+
+    def level(self, changes=(), reset=True):
+        """(verdict, facts) with these changes (the other parameters at their defaults), then put back.
+        "crash" when the server died or hung on it: restarted, and the song built again."""
+        try:
+            return self._level(changes, reset)
+        except ServerGone as e:
+            self.c.restart()
+            self.build()
+            return "crash", {"error": str(e)[:200]}
+
+    def _level(self, changes, reset):
+        c = self.c
+        if changes:
+            try:
+                r = c.call("param_set", machine="M", changes=list(changes), allow_unsafe=True)
+            except ToolFailed as e:
+                return "error", {"error": str(e)[:200]}
+            for ch, got in zip(changes, r.get("changed", [])):
+                self.texts[(ch["param"], ch.get("track"), ch["value"])] = got.get("value", "")
+        # The engine's guard (machine-safety.md §3.2) silences a machine whose block holds NaN, infinity or
+        # a peak above +60 dBFS, and render() resets it: the render lists it under "diverged" instead.
+        guard = []
+        if changes:
+            # Machines that smooth parameter changes only while sound flows (Neo Utility's gain) get there first.
+            guard += render(c, 0, WARM_BEATS, 0.0)["measure"].get("diverged") or []
+        out = render(c, 0, LEVEL_BEATS, 0.0)
+        self.renders += 1
+        guard += out["measure"].get("diverged") or []
+        peaks, nonfinite = peaks_per_second(out["file"])
+        verdict, facts = mi.level_verdict(peaks, nonfinite or (out["measure"].get("peaks") or {}).get("sample_peak_dbfs") == "inf")
+        if not guard and (verdict == "growing" or mi.piling_up(verdict, facts)):
+            # Over 30 s: a runaway keeps growing; a lossless loop (feedback at ±100 %) piles noise up for good.
+            longer = render(c, 0, CONFIRM_BEATS, 0.0)
+            self.renders += 1
+            peaks, nonfinite = peaks_per_second(longer["file"])
+            verdict, facts = mi.growth_verdict(peaks, nonfinite)
+            facts["over_seconds"] = round(CONFIRM_BEATS * 60 / TEMPO)
+            guard += longer["measure"].get("diverged") or []
+            if verdict != "diverging" and not guard and mi.never_decays(peaks):
+                facts["never_decays"] = True
+        forget_renders(c)
+        if guard:
+            verdict, facts = "diverging", dict(facts, guard=str(guard[0] or "diverged"))
+        if verdict == "diverging":
+            self.build()
+        elif changes and reset:
+            c.call("param_set", machine="M", changes=[{k: v for k, v in ch.items() if k != "value"} | {"value": "default"} for ch in changes],
+                   allow_unsafe=True)
+        return verdict, facts
+
+    def text(self, change):
+        return self.texts.get((change["param"], change.get("track"), change["value"]), change["value"])
+
+
+def describe_level(verdict, facts):
+    """ "+157 dBFS, growing", "+8.2 dBFS peak", "NaN" for a level test's result."""
+    p = facts.get("peak_dbfs")
+    if facts.get("nonfinite"):
+        return "NaN or infinity"
+    if facts.get("guard"):
+        return f"{facts['guard']}: the engine's guard caught it"
+    peak = "infinite" if p == "inf" else "silent" if p is None else f"{p:+.1f} dBFS peak"
+    if facts.get("over_seconds") and p is not None and p != "inf":
+        peak += f" over {facts['over_seconds']} s"
+    if verdict == "diverging" and isinstance(facts.get("growth_db"), (int, float)) and facts["growth_db"] > mi.GROWTH_DB:
+        return f"{peak}, growing {facts['growth_db']:+.0f} dB"
+    if facts.get("never_decays"):
+        return f"{peak}, never decays"
+    return peak
+
+
+def level_tests(c, prof, kind, globals_, tracks):
+    """
+    machine-safety.md §3.1: the machine's level at its defaults, with every global parameter at
+    its minimum and at its maximum at once, then each parameter alone at each end (for machines
+    that misbehave all at once, and effects with a feedback, resonance, gain or Q parameter),
+    bisecting to the edge where an end diverges: that parameter's safe_range.
+    """
+    bench = Bench(c, prof, kind, (prof.data.get("notes") or {}).get("input"))
     out = {}
+    prof.data["level_test"] = out
+    verdict, facts = bench.level()
+    out["defaults"] = dict(facts, verdict=verdict)
+    if verdict == "diverging":
+        prof.diverges(f"diverges at its defaults ({describe_level(verdict, facts)})")
+        return
+    if verdict in ("crash", "error"):
+        prof.problem(f"the level test at its defaults failed: {facts.get('error')}")
+        return
+    if verdict == "hot":
+        prof.hot.append(f"hot at its defaults ({describe_level(verdict, facts)})")
+    elif facts.get("never_decays"):
+        prof.warn(f"never decays at its defaults ({describe_level(verdict, facts)}): a lossless loop")
+    together = {}
     for end in ("min", "max"):
-        changes = [{"param": f"#{p['index']}", "value": end} for p in globals_ if "index" in p]
+        changes = [{"param": f"#{p['index']}", "value": f"raw:{p[end]}"} for p in globals_ if "index" in p]
         if not changes:
             break
-        try:
-            c.call("param_set", machine="M", changes=changes)
-        except ToolFailed as e:
-            prof.notes.append(f"parameters at {end}: {e}")
+        v, f = bench.level(changes)
+        together[end] = dict(f, verdict=v)
+    out["all_at_once"] = together
+    misbehaved = [e for e, r in together.items() if r["verdict"] in ("diverging", "hot", "crash")]
+    named = mi.sweep_worthy([p["name"] for p in globals_ + tracks]) if kind == "effect" else []
+    if not misbehaved and not named:
+        return
+    out["swept_because"] = (["every parameter at its " + "/".join(f"{e}imum" for e in misbehaved) + " at once: " +
+                             "; ".join(f"{together[e]['verdict']}" for e in misbehaved)] if misbehaved else []) + \
+                           ([f"an effect with {', '.join(named[:4])}"] if named else [])
+    sweeps, ranges, alone_diverges, alone_hot = {}, {}, False, False
+    diverges_at = set()          # the ends ("min", "max") at which some parameter alone diverges
+    hot, endless = [], []
+    for p in globals_ + tracks:
+        per_track = bool(p.get("per_track"))
+        lo, hi = p["min"], p["max"]
+        default = min(max(p["default_raw"], lo), hi)
+        ref = {"param": p["name"], "track": 0} if per_track else {"param": f"#{p['index']}"}
+        ends, bad, lossless = {}, {}, {}
+        for end, raw in (("min", lo), ("max", hi)):
+            if raw == default:
+                continue
+            change = dict(ref, value=f"raw:{raw}")
+            v, f = bench.level([change])
+            text = bench.text(change)
+            if v in ("diverging", "hot", "error", "crash") or f.get("never_decays"):
+                ends[end] = dict(f, verdict=v, raw=raw, text=text)
+            if v in ("diverging", "crash"):
+                bad[end] = raw
+            elif f.get("never_decays"):
+                # A lossless loop: kept from agents by the safe range, but hot (a warning), not unhealthy.
+                lossless[end] = raw
+                (hot if v == "hot" else endless).append(f"{p['name']} at its {end}imum ({text}): {describe_level(v, f)}")
+            elif v == "hot":
+                hot.append(f"{p['name']} at its {end}imum ({text}): {describe_level(v, f)}")
+        if ends:
+            sweeps[p["name"]] = ends
+        if not bad and not lossless:
             continue
-        r = render(c, 0, 2, 0.5)
-        out[end] = {"silent": r["measure"].get("silent"), "sample_peak_dbfs": finite_peak(r["measure"])}
-        if blown(r["measure"]):
-            prof.problem(f"NaN or runaway output with every parameter at its {end}imum")
-    try:
-        c.call("param_set", machine="M", changes=[{"param": f"#{p['index']}", "value": "default"} for p in globals_ if "index" in p])
-    except ToolFailed:
-        pass
-    prof.data["extremes"] = out
+        if bad:
+            alone_diverges = True
+            diverges_at.update(bad)
+
+        def unsafe(x, ref=ref):
+            v, f = bench.level([dict(ref, value=f"raw:{x}")])
+            return v in ("diverging", "crash") or bool(f.get("never_decays"))
+        # The edge: the last raw value from the default towards each unsafe end that is safe.
+        edges = {}
+        for end, raw in list(bad.items()) + list(lossless.items()):
+            edges[end] = mi.edge(default, raw, unsafe)
+        safe_lo, safe_hi = edges.get("min", lo), edges.get("max", hi)
+        texts = {}
+        for raw in (safe_lo, safe_hi):
+            change = dict(ref, value=f"raw:{raw}")
+            texts[raw] = bench.texts.get((change["param"], change.get("track"), change["value"])) or text_at(p, raw)
+        how = {end: ("crashes or hangs the server" if ends[end]["verdict"] == "crash" else "diverges") for end in bad}
+        how.update({end: "never decays" for end in lossless})
+        where = " and ".join(f"{how[end]} at its {end}imum ({ends[end]['text']}" +
+                             (f": {describe_level(ends[end]['verdict'], ends[end])})" if how[end] != "crashes or hangs the server" else ")")
+                             for end in ("min", "max") if end in how)
+        reason = where
+        ranges[(per_track, p["name"])] = {"min": safe_lo, "max": safe_hi, "min_text": texts[safe_lo], "max_text": texts[safe_hi], "reason": reason}
+        text = f"{p['name']} {reason}; safe from {texts[safe_lo]} to {texts[safe_hi]} (raw {safe_lo}–{safe_hi})"
+        if "diverges" in how.values():
+            prof.diverges(text)
+        elif bad:
+            prof.problem(text)
+        else:
+            prof.notes.append(f"safe range: {text}")
+    alone_hot = bool(hot)
+    hot.sort(key=lambda s: "never decays" not in s)   # the ones with a safe range first
+    if hot:
+        shown = hot[:8] + ([f"and {len(hot) - 8} more"] if len(hot) > 8 else [])
+        prof.hot.append("hot (loud but steady) with " + "; ".join(shown))
+    if endless:
+        prof.warn("never decays (a lossless loop, kept out of its safe range) with " + "; ".join(endless))
+    for end in misbehaved:
+        r = together[end]
+        # Every parameter at one end at once diverging, where no parameter alone diverges at that end: a
+        # combination no safe range can describe (Jeskola Flanger's −100 % feedback with no delay).
+        if r["verdict"] == "crash" and end not in diverges_at:
+            prof.warn(f"every parameter at its {end}imum at once crashed or hung the server, but no parameter alone does at its {end}imum")
+        elif r["verdict"] == "diverging" and end not in diverges_at:
+            prof.warn(f"every parameter at its {end}imum at once diverges ({describe_level('diverging', r)}), but no parameter alone does at its {end}imum")
+        elif r["verdict"] == "hot" and not alone_hot and not alone_diverges:
+            prof.hot.append(f"hot with every parameter at its {end}imum at once ({describe_level('hot', r)}), but with no parameter alone")
+    prof.data["sweeps"] = sweeps
+    prof.data["safe_ranges"] = ranges
+    out["renders"] = bench.renders
+
+
+def text_at(p, raw):
+    """A parameter's text at a raw value from its value table (the nearest listed raw)."""
+    table = p.get("table") or []
+    if not table:
+        return str(raw)
+    return min(table, key=lambda rt: abs(rt[0] - raw))[1]
 
 
 def profile_machine(c, gear, kind, baseline, generated):
@@ -714,8 +973,16 @@ def profile_machine(c, gear, kind, baseline, generated):
             prof.notes.append("has no audio output")
             prof.data["no_output"] = True
     except ToolFailed as e:
-        prof.problem(f"doesn't load: {e}")
-        prof.data["type"] = "unknown"
+        why = mi.needs_window(gear, str(e))
+        if why:
+            # machine-safety.md §3.1: not an audio fault; it works in ReBuzz on Windows with its window.
+            prof.window = why
+            prof.notes.append(f"needs a window: {why} ({str(e)[:300]})")
+            prof.data["needs_window"] = why
+            prof.data["type"] = "needs a window"
+        else:
+            prof.problem(f"doesn't load: {e}")
+            prof.data["type"] = "unknown"
         return prof
     prof.data["load_seconds"] = round(time.time() - t, 2)
     d = c.call("machine_describe", machine="M", value_table=True, table_points=1025)
@@ -742,10 +1009,23 @@ def profile_machine(c, gear, kind, baseline, generated):
     else:
         profile_effect(c, prof, info, baseline)
         type_from_parameters(prof, globals_)
-    if prof.data["type"] != "control":
-        extremes(c, prof, globals_, kind == "generator", (prof.data.get("notes") or {}).get("input"))
-    prof.data["entries"] = {"global": [manifest_entry(p, inferred[(False, p["name"])]) for p in globals_ if inferred[(False, p["name"])].get("kind")],
-                            "track": [manifest_entry(p, inferred[(True, p["name"])]) for p in tracks if inferred[(True, p["name"])].get("kind")]}
+    if prof.data["type"] != "control" and not prof.diverging:
+        level_tests(c, prof, kind, globals_, tracks)
+    elif prof.diverging and prof.data["type"] != "control":
+        # Diverging at its defaults: again in a second fresh instance, or does it vary (uninitialised state)?
+        try:
+            again, facts = Bench(c, prof, kind, (prof.data.get("notes") or {}).get("input")).level()
+        except ToolFailed as e:
+            again, facts = "error", {"error": str(e)[:200]}
+        prof.data["second_instance"] = dict(facts, verdict=again)
+        prof.problems[-1] += (" (a second fresh instance too: " + describe_level(again, facts) + ")" if again == "diverging"
+                              else f" (not a second fresh instance, {again} in the level test: it varies from instance to instance)")
+    ranges = prof.data.pop("safe_ranges", {})
+    prof.data["entries"] = {group: [manifest_entry(p, inferred[(per_track, p["name"])], ranges.get((per_track, p["name"])))
+                                    for p in ps if inferred[(per_track, p["name"])].get("kind") or (per_track, p["name"]) in ranges]
+                            for group, ps, per_track in (("global", globals_, False), ("track", tracks, True))}
+    if ranges:
+        prof.data["safe_ranges"] = {("track " if pt else "") + n: r for (pt, n), r in ranges.items()}
     prof.data["seconds"] = round(time.time() - started, 1)
     return prof
 
@@ -753,8 +1033,21 @@ def profile_machine(c, gear, kind, baseline, generated):
 # ---- outputs ---------------------------------------------------------------------------------------
 
 def health_of(entry):
-    problems, warnings = entry.get("problems", []), entry.get("warnings", [])
-    return "unhealthy" if problems else "warn" if warnings else "ok"
+    """needs_window, unhealthy (diverging, crashes, load failures), warn (hot, other warnings) or ok."""
+    return mi.health_status(entry.get("problems", []), entry.get("warnings", []) + entry.get("hot", []), bool(entry.get("needs_window")))
+
+
+def category(entry):
+    """The report's category (machine-safety.md §3.1): diverging, hot, needs a window, unhealthy (other), warn or ok."""
+    if entry.get("needs_window"):
+        return "needs a window"
+    if entry.get("diverging"):
+        return "diverging"
+    if entry.get("problems"):
+        return "unhealthy"
+    if entry.get("hot"):
+        return "hot"
+    return "warn" if entry.get("warnings") else "ok"
 
 
 def summary_line(e):
@@ -791,6 +1084,8 @@ def summary_line(e):
         return f"{t.capitalize()} (profiled draft): " + "; ".join(bits) + "."
     if t == "control":
         return "Control machine (profiled draft): moves other machines' parameters; makes no sound."
+    if e.get("needs_window"):
+        return f"Needs a window (profiled draft): {e['needs_window']}. Works in ReBuzz on Windows with its window; it can't be built headless."
     return f"{t.capitalize() or 'Machine'} (profiled draft)."
 
 
@@ -809,9 +1104,15 @@ def draft_manifest(e):
     if e["kind"] == "generator" and e.get("notes"):
         n = e["notes"]
         m["notes"] = {k: n[k] for k in ("input", "pitch_offset", "pitched", "polyphony") if k in n}
-    m["health"] = {"status": health_of(e), "problems": e.get("problems", []) + e.get("warnings", [])}
+    m["health"] = {"status": health_of(e), "problems": e.get("problems", []) + e.get("hot", []) + e.get("warnings", [])}
+    if e.get("diverging"):
+        m["health"]["diverging"] = True
+    if e.get("hot"):
+        m["health"]["hot"] = True
+    if e.get("needs_window"):
+        m["health"]["needs_window"] = e["needs_window"]
     # Timings (CPU, load time) vary run to run: they stay in the summary and the report, not the draft.
-    m["profile"] = {k: e[k] for k in ("level", "effect", "extremes") if k in e}
+    m["profile"] = {k: e[k] for k in ("level", "effect", "level_test", "sweeps") if k in e}
     m["parameters"] = (e.get("entries") or {}).get("global", [])
     m["track_parameters"] = (e.get("entries") or {}).get("track", [])
     return checked_draft(m)
@@ -852,10 +1153,10 @@ def health_report(summary):
     by_platform = {}
     for e in rows:
         by_platform[e.get("platform", "?")] = by_platform.get(e.get("platform", "?"), 0) + 1
-    unhealthy = [e for e in rows if health_of(e) == "unhealthy"]
-    warn = [e for e in rows if health_of(e) == "warn"]
+    groups = {k: [e for e in rows if category(e) == k] for k in ("diverging", "hot", "needs a window", "unhealthy", "warn", "ok")}
     crashes = [e for e in rows if any("crash" in p or "hung" in p for p in e.get("problems", []))]
-    nan = [e for e in rows if any("NaN" in p for p in e.get("problems", []))]
+    swept = [e for e in rows if (e.get("level_test") or {}).get("swept_because")]
+    ranges = sum(len(e.get("safe_ranges") or {}) for e in rows)
     gens = [e for e in rows if e.get("kind") == "generator" and e.get("notes")]
     offsets = {}
     for e in gens:
@@ -865,29 +1166,63 @@ def health_report(summary):
     lines = [
         "# Machine health",
         "",
-        "Generated by `tools/machine-profiler.py` (docs/specs/mcp-server.md §12.2) from `Machines/Manifests/machine-profile.json`. Do not edit by hand: run the profiler, then `--report`.",
+        "Generated by `tools/machine-profiler.py` (docs/specs/mcp-server.md §12.2, docs/specs/machine-safety.md §3.1) from "
+        "`Machines/Manifests/machine-profile.json`. Do not edit by hand: run the profiler, then `--report`.",
         "",
         f"{len(rows)} machines profiled ({', '.join(f'{n} on {p}' for p, n in sorted(by_platform.items()))}). "
-        f"{len(unhealthy)} unhealthy, {len(warn)} with warnings, {len(rows) - len(unhealthy) - len(warn)} clean. "
-        f"Crashes or hangs: {len(crashes)}. NaN or runaway output: {len(nan)}.",
+        f"{len(groups['diverging'])} diverging, {len(groups['hot'])} hot, {len(groups['needs a window'])} needing a window, "
+        f"{len(groups['unhealthy'])} with other problems, {len(groups['warn'])} with other warnings, {len(groups['ok'])} clean. "
+        f"Crashes or hangs: {len(crashes)}. Swept parameter by parameter: {len(swept)} machines; {ranges} safe ranges.",
+        "",
+        "How it's measured: a level test renders 4 s of the machine alone, fed noise at a mix's level (effects, peaks near −9 dBFS) or "
+        "holding A4 (generators): at its defaults, with every parameter at its minimum and at its maximum at once, and, for machines "
+        "that misbehave that way and effects with a feedback, resonance, gain or Q parameter, each parameter alone at each end. A level "
+        "that grew over 4 s is rendered for 30 s: an attack settles, a runaway keeps growing (its last 10 s more than 6 dB over the 10 s before).",
         "",
         "Pitch conventions of the generators (the offset `notes_write` applies so the written pitch plays): " +
         (", ".join(f"{k}: {v}" for k, v in sorted(offsets.items())) or "none profiled") + ".",
         "",
-        "## Unhealthy",
+        "## Diverging",
         "",
-        "Machines that don't load, crash or hang the server, or put out NaN or a runaway level. `gear_list` lists them last, with these reasons, and `machine_add` warns.",
+        "The output runs away: NaN or infinity, above +60 dBFS, or still growing after 20 s. Unhealthy: `gear_list` lists them last, "
+        "`machine_add` warns, and where a single parameter's end is the cause, its draft has a `safe_range` that `param_set` keeps agents inside "
+        "(unless they pass `allow_unsafe`).",
         "",
     ]
-    if unhealthy:
-        lines += ["| Machine | Platform | Problems |", "|---|---|---|"]
-        lines += [f"| {e['gear']} | {e.get('platform', '')} | {'; '.join(e['problems'])} |" for e in unhealthy]
+    if groups["diverging"]:
+        lines += ["| Machine | Platform | Where | Safe ranges |", "|---|---|---|---|"]
+        for e in groups["diverging"]:
+            sr = "; ".join(f"{n}: {r.get('min_text', r['min'])} … {r.get('max_text', r['max'])} (raw {r['min']}–{r['max']})" for n, r in (e.get("safe_ranges") or {}).items())
+            lines.append(f"| {e['gear']} | {e.get('platform', '')} | {'; '.join(e['problems'])} | {sr or 'none: it diverges at its defaults'} |")
     else:
         lines.append("None.")
-    lines += ["", "## Warnings", ""]
-    if warn:
+    lines += ["", "## Hot", "",
+              "Loud but steady: above 0 dBFS, under +60 dBFS, not growing, at the setting named. A warning, not unhealthy; the master's "
+              "safety limiter keeps it off the speakers (machine-safety.md §3.3). A parameter's end where the loop never decays (feedback "
+              "at ±100 %: noise piles up 2 dB or more per doubling of time, for 30 s) gets a safe range too, which keeps agents off it.", ""]
+    if groups["hot"]:
+        lines += ["| Machine | Platform | Settings | Safe ranges |", "|---|---|---|---|"]
+        for e in groups["hot"]:
+            sr = "; ".join(f"{n}: {r.get('min_text', r['min'])} … {r.get('max_text', r['max'])} (raw {r['min']}–{r['max']})" for n, r in (e.get("safe_ranges") or {}).items())
+            lines.append(f"| {e['gear']} | {e.get('platform', '')} | {'; '.join(e.get('hot', []))} | {sr} |")
+    else:
+        lines.append("None.")
+    lines += ["", "## Needs a window", "",
+              "Managed machines whose construction fails without a UI: not an audio fault. `gear_list` says they work in ReBuzz on Windows with their window.", ""]
+    if groups["needs a window"]:
+        lines += ["| Machine | Platform | Why |", "|---|---|---|"]
+        lines += [f"| {e['gear']} | {e.get('platform', '')} | {e['needs_window']} |" for e in groups["needs a window"]]
+    else:
+        lines.append("None.")
+    if groups["unhealthy"]:
+        lines += ["", "## Other problems", "", "Machines that don't load, or crash or hang the server: unhealthy, listed last by `gear_list`.", "",
+                  "| Machine | Platform | Problems |", "|---|---|---|"]
+        lines += [f"| {e['gear']} | {e.get('platform', '')} | {'; '.join(e['problems'])} |" for e in groups["unhealthy"]]
+    lines += ["", "## Warnings", "", "Everything else the profile noticed (most are the profiler's own limits: triggers, audio inputs, a host without its plugin).", ""]
+    warned = [e for e in rows if e.get("warnings") and category(e) not in ("needs a window",)]
+    if warned:
         lines += ["| Machine | Platform | Warnings |", "|---|---|---|"]
-        lines += [f"| {e['gear']} | {e.get('platform', '')} | {'; '.join(e['warnings'])} |" for e in warn]
+        lines += [f"| {e['gear']} | {e.get('platform', '')} | {'; '.join(e['warnings'])} |" for e in warned]
     else:
         lines.append("None.")
     lines += ["", "## Generators", "", "| Machine | Type | Notes in | Pitch offset | Voices | Level (LUFS, one note) | CPU ms/s | Health |", "|---|---|---|---|---|---|---|---|"]
@@ -898,18 +1233,18 @@ def health_report(summary):
         off = "" if not n.get("pitched") else f"{n.get('pitch_offset', 0):+d}" + (f" ({n.get('cents'):+.0f} ct)" if abs(n.get("cents") or 0) >= 1 else "")
         lvl = (e.get("level") or {}).get("integrated_lufs")
         lines.append(f"| {e['gear']} | {e.get('type', '')} | {n.get('input', '')} | {off} | {n.get('polyphony', '')} | "
-                     f"{'' if lvl is None else lvl} | {e.get('cpu_ms_per_s', '')} | {health_of(e)} |")
+                     f"{'' if lvl is None else lvl} | {e.get('cpu_ms_per_s', '')} | {category(e)} |")
     lines += ["", "## Effects", "", "| Machine | Type (traits) | Gain dB | Latency (samples) | Tail s | CPU ms/s | Health |", "|---|---|---|---|---|---|---|"]
     for e in rows:
         if e.get("kind") != "effect":
             continue
         fx = e.get("effect") or {}
         lines.append(f"| {e['gear']} | {', '.join(fx.get('traits', [])) or e.get('type', '')} | {fx.get('gain_db', '')} | {fx.get('latency_samples', '')} | "
-                     f"{fx.get('tail_seconds', '')} | {e.get('cpu_ms_per_s', '')} | {health_of(e)} |")
-    lines += ["", "## Not measured yet (U2)", "",
-              "Per-parameter sweeps (what moving each parameter changes, for roles), velocity response and envelope length, denormal "
-              "slowdowns, swept-sine and impulse responses (the source here is a Neo Poly's noise and sine), and whether `Work` reports "
-              "silence (the engine doesn't expose it): §12.7.", ""]
+                     f"{fx.get('tail_seconds', '')} | {e.get('cpu_ms_per_s', '')} | {category(e)} |")
+    lines += ["", "## Not measured yet", "",
+              "What moving each parameter changes (for roles), velocity response and envelope length, denormal slowdowns, swept-sine and "
+              "impulse responses (the source here is a Neo Poly's noise and sine), and whether `Work` reports silence (the engine doesn't "
+              "expose it): mcp-server.md §12.7, U2.", ""]
     return "\n".join(lines)
 
 
@@ -1080,25 +1415,34 @@ def main():
             prof.warn("not fully profiled (a profiler error)")
             prof.data.setdefault("type", "unknown")
         e = prof.data
-        e.update({"platform": plat, "date": today, "problems": prof.problems, "warnings": prof.warnings, "notes_profiler": prof.notes,
-                  "generated": name in generated, "health": health_of({"problems": prof.problems, "warnings": prof.warnings})})
+        e.update({"platform": plat, "date": today, "problems": prof.problems, "warnings": prof.warnings, "hot": prof.hot, "notes_profiler": prof.notes,
+                  "generated": name in generated})
+        if prof.diverging:
+            e["diverging"] = True
+        if prof.window:
+            e["needs_window"] = prof.window
+        e["health"] = health_of(e)
         e.setdefault("type", "unknown")
-        if name not in generated and ("entries" in e or prof.problems):
+        if name not in generated and ("entries" in e or prof.problems or prof.window):
             write_json(os.path.join(out, "manifests", subfolder(e), name + ".machine.json"), draft_manifest(e))
         e.pop("entries", None)   # in the draft; the summary keeps the measurements
         summary["machines"][name] = e
         forget_renders(c)
-        flag = {"ok": "ok  ", "warn": "warn", "unhealthy": "BAD "}[e["health"]]
+        flag = {"diverging": "DIV ", "unhealthy": "BAD ", "hot": "hot ", "needs a window": "win ", "warn": "warn", "ok": "ok  "}[category(e)]
+        said = prof.problems + prof.hot + prof.warnings + ([f"needs a window: {prof.window}"] if prof.window else [])
         print(f"[{i + 1}/{len(chosen)}] {flag} {name:<32} {e.get('type', ''):<22} {time.time() - t:5.1f} s"
-              + (f"  {'; '.join(prof.problems + prof.warnings)[:160]}" if prof.problems or prof.warnings else ""), flush=True)
+              + (f"  {'; '.join(said)[:220]}" if said else ""), flush=True)
     c.close()
     write_json(os.path.join(out, "machine-profile.json"), summary)
     with open(os.path.join(out, "machine-health.md"), "w", encoding="utf-8", newline="\n") as f:
         f.write(health_report(summary))
     if args.repo:
         merge_into_repo(os.path.abspath(args.repo), summary, out)
-    bad = [m for m, e in summary["machines"].items() if e["health"] == "unhealthy"]
-    head = f"{len(summary['machines'])} machines profiled on {plat} in {time.time() - started:.0f} s: {len(bad)} unhealthy" + (f" ({', '.join(bad)})" if bad else "")
+    cats = {}
+    for m, e in summary["machines"].items():
+        cats.setdefault(category(e), []).append(m)
+    head = f"{len(summary['machines'])} machines profiled on {plat} in {time.time() - started:.0f} s: " + "; ".join(
+        f"{k}: {len(v)}" + (f" ({', '.join(v)})" if k in ("diverging", "unhealthy", "hot", "needs a window") else "") for k, v in sorted(cats.items()))
     print(head, flush=True)
     if os.environ.get("GITHUB_ACTIONS"):
         print(f"::notice title=Machine profile ({plat})::{head[:3500]}", flush=True)

@@ -8,8 +8,11 @@
  "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 1 samples; gain +6.0 dB at the defaults.",
  "tracks": 0,
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "warn",
+  "problems": [
+   "hot (loud but steady) with Resonance at its maximum (128): +52.0 dBFS peak over 30 s"
+  ],
+  "hot": true
  },
  "profile": {
   "effect": {
@@ -39,14 +42,42 @@
     "utility"
    ]
   },
-  "extremes": {
-   "min": {
-    "silent": false,
-    "sample_peak_dbfs": -50.47
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -3.2,
+    "growth_db": -0.15,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": -36.64
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": -20.74,
+     "growth_db": 0.78,
+     "over_seconds": 30,
+     "verdict": "ok"
+    },
+    "max": {
+     "peak_dbfs": 51.59,
+     "growth_db": 1.35,
+     "over_seconds": 30,
+     "verdict": "hot"
+    }
+   },
+   "swept_because": [
+    "every parameter at its maximum at once: hot",
+    "an effect with Resonance"
+   ],
+   "renders": 9
+  },
+  "sweeps": {
+   "Resonance": {
+    "max": {
+     "peak_dbfs": 52.01,
+     "growth_db": 1.79,
+     "over_seconds": 30,
+     "verdict": "hot",
+     "raw": 128,
+     "text": "128"
+    }
    }
   }
  },

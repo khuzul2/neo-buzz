@@ -13,10 +13,11 @@
   "polyphony": 4
  },
  "health": {
-  "status": "unhealthy",
+  "status": "warn",
   "problems": [
-   "NaN or runaway output with every parameter at its maximum"
-  ]
+   "hot (loud but steady) with Resonance at its maximum (128): +16.2 dBFS peak"
+  ],
+  "hot": true
  },
  "profile": {
   "level": {
@@ -25,14 +26,36 @@
    "sample_peak_dbfs": 0,
    "true_peak_dbtp": 1.97
   },
-  "extremes": {
-   "min": {
-    "silent": true,
-    "sample_peak_dbfs": null
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": 0.0,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": 25.23
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    },
+    "max": {
+     "peak_dbfs": 12.31,
+     "growth_db": 0.0,
+     "verdict": "hot"
+    }
+   },
+   "swept_because": [
+    "every parameter at its maximum at once: hot"
+   ],
+   "renders": 9
+  },
+  "sweeps": {
+   "Resonance": {
+    "max": {
+     "peak_dbfs": 16.19,
+     "growth_db": 0.0,
+     "verdict": "hot",
+     "raw": 128,
+     "text": "128"
+    }
    }
   }
  },

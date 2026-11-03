@@ -17,14 +17,20 @@
   "effect": {
    "silent": true
   },
-  "extremes": {
-   "min": {
-    "silent": true,
-    "sample_peak_dbfs": null
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": null,
+    "verdict": "silent"
    },
-   "max": {
-    "silent": true,
-    "sample_peak_dbfs": null
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    },
+    "max": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    }
    }
   }
  },
