@@ -644,8 +644,17 @@ namespace ReBuzz.MachineManagement
                     (engineSettings.SubTickTiming && ReBuzzCore.subTickInfo.PosInSubTick == 0 && Machine.DLL.Info.Version >= MachineManager.BUZZ_MACHINE_INTERFACE_VERSION_42)))
             {                
                 Machine.oversampleFactorOnTick = Machine.OversampleFactor;
+
+                // Fork (engine hardening): the parameter changes this tick sends, taken from
+                // preallocated bits (ParameterChanges; upstream's ConcurrentDictionary allocated
+                // entries and enumerators for every change, on the audio thread). A managed
+                // machine's are taken before its host sends them; a native machine's after
+                // AudioTick read every pval, as upstream's pass over the dictionary came after.
+                var changes = Machine.ParameterChanges;
+                bool changed;
                 if (Machine.Ready && manageMachineHost != null)
                 {
+                    changed = changes.Take(Machine.ParameterGroupsList);
                     // Do we need to "tick" for managed machines if SetValue is called immediately?
                     manageMachineHost.Tick(Machine);
                 }
@@ -654,31 +663,27 @@ namespace ReBuzz.MachineManagement
                     var audiom = nativeMachineHost.AudioMessage;
                     audiom.AudioBeginFrame(Machine);               // Send song info: playposition etc.
                     audiom.AudioTick(Machine);
+                    changed = changes.Take(Machine.ParameterGroupsList);
+                }
+                else
+                {
+                    changed = changes.Take(Machine.ParameterGroupsList);
                 }
 
                 // Skip the whole param-processing block when nothing changed this tick.
-                // In steady state parametersChanged is empty almost every tick, so this avoids
-                // the lock-taking ConcurrentDictionary.Clear() and the enumerator alloc. TickSent
-                // stays unconditional. Empty invoke/clear/Clear were no-ops, so this is bit-exact.
-                if (!Machine.parametersChanged.IsEmpty)
+                // In steady state nothing has changed almost every tick. TickSent stays
+                // unconditional. Empty invoke/clear were no-ops, so this is bit-exact.
+                if (changed)
                 {
-                    foreach (var paramTrack in Machine.parametersChanged)
-                    {
-                        var (par, track) = paramTrack.Key;
-
+                    foreach (var (par, track) in changes)
                         par.InvokeEvents(buzz, track);
-                    }
 
                     // Clear pvals only for parameters that changed this tick (was: a full sweep
                     // over every parameter). SetValue writes pvalues[track] and records the
-                    // parameter in parametersChanged together under machine.workLock, and
-                    // RefreshMachineParams (the only other pval writer) records into
-                    // parametersChanged too — so the changed set covers every dirty pval.
-                    // ClearPVal fills all tracks of the parameter; must run before Clear().
-                    foreach (var paramTrack in Machine.parametersChanged)
-                        paramTrack.Key.Parameter.ClearPVal();
-
-                    Machine.parametersChanged.Clear();
+                    // change together under machine.workLock, and RefreshMachineParams (the
+                    // only other pval writer) records it too — so the changes cover every dirty
+                    // pval. Release clears all tracks of each parameter changed.
+                    changes.Release();
                 }
 
                 TickSent = true;                

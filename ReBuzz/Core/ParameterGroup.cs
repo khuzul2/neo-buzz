@@ -22,7 +22,11 @@ namespace ReBuzz.Core
             this.Type = type;
         }
 
-        public ReadOnlyCollection<IParameter> Parameters { get => parameters.Cast<IParameter>().ToReadOnlyCollection(); }
+        // Fork (engine hardening): the copy is kept while the list holds the same parameters (it
+        // was made on every call). Pattern editors set values through it, on the audio thread
+        // (machine.ParameterGroups[group].Parameters[index].SetValue, for each value they play).
+        ReadOnlyCollection<IParameter> parametersView;
+        public ReadOnlyCollection<IParameter> Parameters { get => ViewOf(ref parametersView, parameters); }
         public List<ParameterCore> ParametersList { get => parameters; set => parameters = value; }
 
         int trackCount;
@@ -41,6 +45,27 @@ namespace ReBuzz.Core
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Fork (engine hardening): a read-only copy of <paramref name="list"/>, made again only
+        /// when the list no longer holds the same items in the same order (so a copy handed out
+        /// never changes, as before).
+        /// </summary>
+        internal static ReadOnlyCollection<TView> ViewOf<TView, TItem>(ref ReadOnlyCollection<TView> view, List<TItem> list)
+            where TView : class
+            where TItem : class, TView
+        {
+            var v = view;
+            if (v != null && v.Count == list.Count)
+            {
+                int i = 0;
+                while (i < list.Count && ReferenceEquals(v[i], list[i])) i++;
+                if (i == list.Count) return v;
+            }
+            v = list.Cast<TView>().ToReadOnlyCollection();
+            view = v;
+            return v;
         }
 
         internal void AddParameter(ParameterCore parameter)

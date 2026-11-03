@@ -68,16 +68,17 @@ namespace ReBuzzTests.Automation.Assertions
             ManagedMachineHost managedMachineHost, 
             IAdditionalInitialStateAssertions additionalInitialStateAssertions)
         {
-            // Fork: parametersChanged is keyed by (parameter, track) (docs/specs/machines.md 3.1).
+            // Fork: changes are recorded by (parameter, track) (docs/specs/machines.md 3.1), in
+            // MachineCore.ParameterChanges (engine hardening).
             static KeyValuePair<ParameterCore, int> Changed(MachineCore m, string name)
             {
-                var key = m.parametersChanged.Keys.Single(k => k.Parameter.Name == name);
+                var key = m.ParameterChanges.Pending(m.ParameterGroupsList).Single(k => k.Parameter.Name == name);
                 return new KeyValuePair<ParameterCore, int>(key.Parameter, key.Track);
             }
 
             machineCore.workLock.IsHeldByCurrentThread.Should().BeFalse();
             machineCore.Graph.Should().Be(reBuzzCore.SongCore);
-            machineCore.parametersChanged.Should().HaveCount(5);
+            machineCore.ParameterChanges.Pending(machineCore.ParameterGroupsList).Should().HaveCount(5);
             KeyValuePair<ParameterCore, int> ampParam =
                 Changed(machineCore, "Amp");
             KeyValuePair<ParameterCore, int> panParam =
