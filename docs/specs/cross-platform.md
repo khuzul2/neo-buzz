@@ -336,6 +336,7 @@ Today VST runs through Polac's closed Windows machines, so a Mac build has no pl
 - **Hosting:** built on R1's portable native host, so plugins run out of process like native machines. Plugin editors open as separate windows, because macOS can't embed an NSView from another process.
 - **Cost:** 6–10 pw. Not needed for the first Mac release.
 - **Analysis (2026-11-03):** [`plugin-host.md`](plugin-host.md): a new host versus Polac, what each format covers (including VST2's licence route), isolation and effort. It recommends a CLAP + VST3 host beside Polac, 10–14 pw with a sandbox.
+- **H0 spike (2026-11-03):** [`plugin-host.md`](plugin-host.md) §8. VST3 and CLAP plugins (Surge XT among them) play and keep their state in songs inside the engine on all three OSes. A sandbox costs 8–20 µs per block. Plugin views embed in Avalonia's `NativeControlHost` on macOS and Windows. `tools/plugin-census.py` counts installed plugins and Polac use in songs.
 
 ## 5. Plan
 
