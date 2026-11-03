@@ -41,6 +41,15 @@ namespace ReBuzz.Studio.Tests
 
         static ReBuzzCore Core => Studio.Host.Core;
 
+        // Looping isn't part of the song (a new song keeps it): the tests after these start as they would have.
+        bool looping;
+
+        [SetUp]
+        public void KeepLooping() => looping = Core.Looping;
+
+        [TearDown]
+        public void RestoreLooping() => Core.Looping = looping;
+
         /// <summary>The device's default (Audio preferences): Recursive Tasks.</summary>
         const int DeviceAlgorithm = 1;
 
