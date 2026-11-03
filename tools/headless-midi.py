@@ -247,6 +247,10 @@ if rebuzz_out is not None:
     check(call("transport", action="play", at="1.1")[0], "transport play")
     time.sleep(2.0)
     playing = list(received)
+    # What the engine did meanwhile: where the song is, and the audio output's state.
+    _, _, t = call("transport", action="status")
+    _, _, st = call("studio_status")
+    print(f"     after 2 s: position {t.get('position_beats')} beats, playing {t.get('playing')}; audio {json.dumps(st.get('audio'))}")
     check(call("transport", action="stop")[0], "transport stop")
     time.sleep(0.8)
     starts = [t for b, t in playing if b in (0xFA, 0xFB)]
