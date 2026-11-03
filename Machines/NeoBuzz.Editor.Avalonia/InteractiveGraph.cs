@@ -50,10 +50,10 @@ namespace NeoBuzz.Editor
         protected override void OnMouseLeftButtonUp(MouseButtonEventArgs e)
         {
             if (input.Up()) InvalidateVisual();
-            if (IsMouseCaptured) ReleaseMouseCapture();
             EndDrag();
         }
 
+        // The drag ended without a release (the window lost the pointer).
         protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
         {
             base.OnPointerCaptureLost(e);
@@ -66,6 +66,7 @@ namespace NeoBuzz.Editor
         {
             if (!dragging) return;
             dragging = false;
+            if (IsMouseCaptured) ReleaseMouseCapture();
             gesture.End();
         }
 

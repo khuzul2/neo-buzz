@@ -384,6 +384,46 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void DraggingABandInNeoEqsGraphIsOneUndoStep()
+        {
+            var m = Add("Neo EQ", "Drag EQ");
+            try
+            {
+                var window = OpenEditor(m);
+                var graph = Controls(window, "InteractiveGraph").Single();
+                var area = BoundsIn(graph, window);
+                // Band 3's handle (selected, 250 Hz, 0 dB): its colour's pixels, below the graph's caption.
+                var f = Frame(window);
+                double sx = 0, sy = 0;
+                int n = 0;
+                for (int y = (int)area.Top + 24; y < (int)area.Bottom - 16; y++)
+                    for (int x = (int)area.Left + 30; x < (int)area.Right; x++)
+                        if (Count(f, new Rect(x, y, 1, 1), 0xF5D547, 24) == 1) { sx += x; sy += y; n++; }
+                Assert.That(n, Is.GreaterThan(30), "band 3's handle is drawn");
+                var handle = new Point(sx / n, sy / n);
+                var freq = Global(m, "B3 freq");
+                var gain = Global(m, "B3 gain");
+                int freq0 = freq.GetValue(0), gain0 = gain.GetValue(0), steps = Core.SongCore.ActionStack.Actions.Count();
+
+                window.MouseDown(handle, MouseButton.Left);
+                for (int d = 8; d <= 40; d += 8) window.MouseMove(handle + new Point(d, -d));
+                window.MouseUp(handle + new Point(40, -40), MouseButton.Left);
+                Assert.That(gain.GetValue(0), Is.GreaterThan(gain0), "dragging up raises the band's gain");
+                Assert.That(freq.GetValue(0), Is.GreaterThan(freq0), "and right its frequency");
+                Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(steps + 1), "the drag is one undo step");
+                Run(0.05);
+                Studio.Screenshot(window, "neo-eq-editor-dragged");
+
+                Core.SongCore.Undo();
+                Assert.That((freq.GetValue(0), gain.GetValue(0)), Is.EqualTo((freq0, gain0)), "undo puts the band back");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
         public void AnEditorsOwnInputTakesThePointerAsOnWpf()
         {
             // Neo FM6's algorithm diagram overrides the WPF-shaped mouse callbacks: click for the next
