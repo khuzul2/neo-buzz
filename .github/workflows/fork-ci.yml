@@ -142,9 +142,13 @@ jobs:
       run: python3 tools/headless-manifests.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/manifests"
 
     # Live audio (mac-engine.md M5): rebuzz-headless --audio through PortAudio on the PulseAudio
-    # null sink (clocked, so in real time); the live tools play, meter and stop it.
+    # null sink (clocked, so in real time); the live tools play, meter and stop it. The null sink
+    # through ALSA's PulseAudio plugin takes nothing for about 2 s after an underrun, and at its
+    # 8.7 ms default one late buffer is one: PULSE_LATENCY_MSEC gives it 100 ms to absorb them.
     - name: Live audio on Linux (PortAudio)
       if: always()
+      env:
+        PULSE_LATENCY_MSEC: 100
       run: python3 tools/headless-live.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/live"
 
     # The A6 scripted suite (docs/specs/mcp-server.md §10) against rebuzz-headless on Linux
@@ -175,8 +179,11 @@ jobs:
 
     # P3's exit (studio-mvp.md S9): the studio app itself, on Xvfb's display with the PulseAudio null
     # sink, agents allowed on a free port for this run; the A7 live scenarios against it over HTTP.
+    # PULSE_LATENCY_MSEC as for rebuzz-headless above.
     - name: The studio's MCP server, live (Xvfb)
       if: always()
+      env:
+        PULSE_LATENCY_MSEC: 100
       run: |
         dotnet build ReBuzz.Studio/ReBuzz.Studio.csproj -c Release -nologo -v:q
         xvfb-run -a python3 tools/headless-live.py --studio ReBuzz.Studio/bin/Release/net10.0/ReBuzz.Studio "$RUNNER_TEMP/studio-live"
