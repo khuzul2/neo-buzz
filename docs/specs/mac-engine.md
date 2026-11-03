@@ -181,6 +181,8 @@ The null test (exit check 2) is M3's.
   - The GC runs in `SustainedLowLatency` mode.
 - **Checked by `tools/headless-live.py`.** It plays a phrase and the arrangement, meters them, renders with the device open, and exits.
   - Linux CI: PortAudio 19.7 on a PulseAudio null sink, 44.1 kHz. It plays in real time: 2.00 beats/s at 120 BPM.
+    - That device (PortAudio's ALSA host, ALSA's `default` through the PulseAudio plugin, the null sink) asks for nothing for about 2 s after the stream starts and after every underrun, then recovers (ALSA logs "underrun occurred"). A bare PortAudio stream opened as ReBuzz opens it, with no ReBuzz, does the same: 1.5–1.9 s before its first steady callbacks, and 1.9 s more after one 30 ms callback. At the device's low latency (8.7 ms) one late buffer is an underrun, and buffers that do something for the first time are late: the first play JITs about 40 methods on the audio thread, a 13 ms callback. So the song could stand still for 2 s or more right after `transport play`, on any commit: it fails the same way on the commit before the arrangement seams and the machine guard.
+    - CI sets `PULSE_LATENCY_MSEC=100` for the live steps, so the null sink keeps 100 ms and absorbs a late buffer. The real-time check reads the device's clock and ReBuzz's worst overrun (`studio_status`): a second in which the device took under 0.7 s of audio while ReBuzz was never 100 ms late and the song moved with the audio is measured again (up to 5 times); ReBuzz 100 ms late, or the song not moving with the audio, fails at once.
   - macOS CI: CoreAudio on the runner's Apple Virtual Sound Device, 48 kHz. 2.03 beats/s.
   - ALSA's bare null device takes audio as fast as it comes, so the real-time check needs a clocked device.
 - **Found on the way.** Off Windows the per-user application data folder can be missing (`~/.config` on a fresh Mac). `GetFolderPath` then returns "", and the DLL cache landed in the current folder. Fixed. `rebuzz-headless` now keeps its cache and autosaves in its settings folder.
@@ -196,7 +198,7 @@ The null test (exit check 2) is M3's.
   - Each joined thread holds its own reference (`os_retain`), so detaching never frees a workgroup that a thread is still in.
   - Workers leave when they end.
   - Off macOS it does nothing.
-- **Reported.** `studio_status` has an `audio` object in studio and live mode: device, buffer, latency, render threads, threads in the workgroup, dropouts (deadline misses).
+- **Reported.** `studio_status` has an `audio` object in studio and live mode: device, buffer, latency, render threads, threads in the workgroup, dropouts (deadline misses), the worst overrun, and the seconds of audio the device has taken (its clock).
 - **Checked.**
   - `ReBuzz.SessionTests` on macOS: a worker joins a running stream's workgroup and leaves it, and a worker joined when the device stops leaves at its next Enter.
   - The live test on macOS: four synths play at once, and `studio_status` must show render threads in the workgroup.

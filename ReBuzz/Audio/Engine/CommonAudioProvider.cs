@@ -197,6 +197,10 @@ namespace ReBuzz.Audio.Engine
             int count = buffer.Length;
             int offset = 0;
 
+            // Fork: the device's clock (studio_status: played_seconds), whatever it gets.
+            if (OutputChannels > 0)
+                Interlocked.Add(ref ReBuzzCore.PlayedFrames, count / OutputChannels);
+
             // Override audio driver and call workManager.ThreadRead outside of Read
             if (buzz.OverrideAudioDriver || stopped)
             {

@@ -2242,6 +2242,11 @@ namespace ReBuzz.Core
         public long DeadlineMissCount => DeadlineMisses;
         public long DeadlineWorstOverrunMicros => DeadlineWorstOverrunUs;
 
+        // Fork: frames the audio device has taken since it opened (every callback, silent ones
+        // too): the device's own clock. studio_status reports it, so a client can tell a device
+        // that stopped asking for audio from an engine that stopped answering (worst overrun).
+        internal static long PlayedFrames;
+
         public void ResetAudioDropoutCounters()
         {
             System.Threading.Interlocked.Exchange(ref DriverResets, 0);
