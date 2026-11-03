@@ -94,6 +94,10 @@ namespace ReBuzz.Core
             clipGain = Source is MachineCore source ? source.ClipGain * source.CrossfadeGain : 1f;   // fork (0.5): no fade-in either
         }
 
+        // Fork (engine hardening): Destination.Inputs.IndexOf(this) without building Inputs (automation
+        // of an input's amp or pan sets it on the audio thread).
+        int InputIndex() => Destination is MachineCore destination ? destination.VisibleInputIndexOf(this) : Destination.Inputs.IndexOf(this);
+
         int amp = 0x4000;
         public int Amp
         {
@@ -110,7 +114,7 @@ namespace ReBuzz.Core
 
                     if (Destination != null)
                     {
-                        int index = Destination.Inputs.IndexOf(this);
+                        int index = InputIndex();
                         if (index != -1)
                         {
                             var paramAmp = Destination.ParameterGroups[0].Parameters[0];
@@ -133,7 +137,7 @@ namespace ReBuzz.Core
 
                     if (Destination != null)
                     {
-                        int index = Destination.Inputs.IndexOf(this);
+                        int index = InputIndex();
                         if (index != -1)
                         {
                             var paramPan = Destination.ParameterGroups[0].Parameters[1];
