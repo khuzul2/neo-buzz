@@ -31,4 +31,7 @@
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 
+  <!-- The engine the tests start finds its gear beside them, as the app does. -->
+  <Import Project="..\ReBuzz.Host\AppGear.targets" />
+
 </Project>

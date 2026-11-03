@@ -93,4 +93,21 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 
 ## 7. Progress
 
-Nothing built yet.
+**S0, foundations** (this PR).
+- **`ReBuzz.Host`** holds the engine's start-up off WPF, moved out of `rebuzz-headless`. The behaviour is unchanged: the smoke, live, MIDI and round-trip tests are the same. `rebuzz-headless` and the studio both use it, and `AppGear.targets` puts the Neo machines and the Link helper beside either app (and into a publish).
+- **`ReBuzz.Studio`** (Avalonia 12.1.4, Fluent dark):
+  - Seams: `IUiDispatcher` on Avalonia's dispatcher, with DispatcherTimer timers. The engine's messages appear as dialogs; its synchronous questions run in a nested dispatcher frame. File choice goes through the storage provider. Modifier keys come from the windows' input.
+  - **The main window:**
+    - a menu (File, Edit, Transport) with Command on macOS and Control elsewhere;
+    - a transport bar: play, stop, record, loop, BPM, position;
+    - one tab per view (`StudioViews`, placeholders until S3–S6);
+    - a status line: audio device, rate, buffer, dropouts.
+  - **Song files:** new, open, save and save as. The studio asks about unsaved changes itself (async) before the engine acts, so the engine never has to.
+  - Arguments: `ReBuzz.Studio [song] [--settings <folder>] [--no-audio] [--smoke]`.
+- **`ReBuzz.Studio.Tests`** (Avalonia.Headless.NUnit with Skia):
+  - the engine starts with the Neo machines installed and the window shows its views;
+  - F5 plays and stop stops;
+  - save as, new, then open gives the song back.
+  - The window is saved as PNGs, which CI uploads (`studio-screenshots`).
+- **Dev NuGet cache** (§3.8): `dev-nuget-cache.yml` keeps the restored packages as one release asset (`dev-nuget-cache`, a prerelease, not a ReBuzz release). Locally: `dotnet restore <project> --configfile <a nuget.config whose only source is that unpacked folder>`. The test projects also run locally that way.
+- **The Mac app:** `tools/mac-bundle.sh` builds `ReBuzz.app`. It is self-contained osx-arm64, with PortAudio, libsndfile (and its libraries) and the Link helper inside, and ad-hoc signed. The Mac job runs the headless view tests on arm64, then builds the app and starts it for real (`--smoke`, with the runner's audio device), and uploads it (`ReBuzz-macos-arm64`).

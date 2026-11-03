@@ -21,14 +21,8 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using BuzzGUI.Common;
-using BuzzGUI.Interfaces;
 using ReBuzz.Agent;
-using ReBuzz.AppViews;
-using ReBuzz.Audio;
-using ReBuzz.Core;
-using ReBuzz.FileOps;
-using ReBuzz.MachineManagement;
-using ReBuzz.Midi;
+using ReBuzz.Host;
 using ReBuzz.Platform;
 
 namespace ReBuzz.Headless
@@ -51,37 +45,13 @@ namespace ReBuzz.Headless
         /// <summary>The options that take a value (the song is the argument that is neither).</summary>
         static readonly string[] Valued = { "--settings", "--device", "--input", "--buffer", "--rate", "--midi-in", "--midi-out", "--clock-out" };
 
-        sealed class NoFileChoice : IFileNameChoice
-        {
-            public ChosenValue<string> SelectFileName() => ChosenValue<string>.Nothing;
-        }
-
-        sealed class NoKeyboard : IKeyboard
-        {
-            public bool HasModifierKeyPressed(Enum modifierKey) => false;
-        }
-
-        sealed class Observer : IInitializationObserver
-        {
-            public void NotifyMachineManagerCreated(MachineManager machineManager) { }
-        }
-
-        /// <summary>The engine's warnings and errors (DCWriteLine), on stderr.</summary>
-        sealed class StderrLog : Serilog.Core.ILogEventSink
-        {
-            public void Emit(Serilog.Events.LogEvent e) => Console.Error.WriteLine($"[ReBuzz] {e.Level.ToString().ToLowerInvariant()}: {e.RenderMessage()}");
-        }
+        static void Log(string message) => Console.Error.WriteLine("[ReBuzz] " + message);
 
         static int Main(string[] args)
         {
-            // Native libraries (libsndfile for wave import, PortAudio) from where each OS keeps them.
-            NativeLibraries.Register();
-            NativeLibraries.Register(typeof(Global).Assembly);  // BuzzGUI.Common: libsndfile
-            // MIDI devices: CoreMIDI on macOS (M6); none elsewhere off Windows.
-            if (CoreMidi.Available)
-                ReBuzzCore.DefaultMidiBackend = core => new CoreMidiBackend(core.SendMIDIInput, m => Console.Error.WriteLine("[ReBuzz] " + m));
+            EngineHost.PrepareProcess(Log);
 
-            if (Flag(args, "--list-devices")) return ListDevices();
+            if (Flag(args, "--list-devices")) return EngineHost.ListDevices(Console.Out, Console.Error);
             if (!Flag(args, "--agent"))
             {
                 Console.Error.WriteLine(Usage);
@@ -101,29 +71,15 @@ namespace ReBuzz.Headless
                                        Flag(args, "--link") ? true : Flag(args, "--no-link") ? false : null);
 
             // Before anything touches Global: its settings load from the JSON registry, not the Windows one.
-            Directory.CreateDirectory(settings);
-            var registry = new JsonRegistry(Path.Combine(settings, "registry.json"), @"Software\ReBuzz");
-            RegistryEx.Store = registry;
-            // Everything per-user in the settings folder: the machine DLL cache and autosaves too.
-            MachineDLLScanner.CacheFolder = settings;
-            SongAutosave.Folder = Path.Combine(settings, "Autosave");
-            if (audio != null)
-            {
-                // The engine reads these when it opens the device (PortAudioDriver).
-                ReBuzzCore.DefaultAudioDriverFactory = new PortAudioDriverFactory();
-                registry.Write("AudioDriver", audio.Device ?? PortAudioDriverFactory.DefaultName, "Settings");
-                registry.Write("Input", audio.Input ?? "", PortAudioDriver.Section);
-                if (audio.Buffer is int buffer) registry.Write("BufferSize", buffer, PortAudioDriver.Section);
-                registry.Write("SampleRate", audio.Rate ?? 0, PortAudioDriver.Section);
-            }
+            var registry = EngineHost.UseSettings(settings);
+            if (audio != null) EngineHost.UseAudio(registry, audio);
 
             var stdout = Console.OpenStandardOutput();
             var stdin = Console.OpenStandardInput();
             Console.SetOut(Console.Error);                  // stdout carries the protocol only
-            NonModal.CaptureAlways(m => Console.Error.WriteLine("[ReBuzz] " + m.Replace('\n', ' ')));
-            Serilog.Log.Logger = new Serilog.LoggerConfiguration().MinimumLevel.Warning().WriteTo.Sink(new StderrLog()).CreateLogger();
+            NonModal.CaptureAlways(m => Log(m.Replace('\n', ' ')));
             var clock = System.Diagnostics.Stopwatch.StartNew();
-            void Step(string what) => Console.Error.WriteLine($"[ReBuzz] {clock.Elapsed.TotalSeconds:F1} s: {what}");
+            void Step(string what) => Log($"{clock.Elapsed.TotalSeconds:F1} s: {what}");
 
             using var dispatcher = new LoopDispatcher();
             int exit = 0;
@@ -135,7 +91,7 @@ namespace ReBuzz.Headless
                 }
                 catch (Exception e)
                 {
-                    Console.Error.WriteLine($"[ReBuzz] start-up failed: {e}");
+                    Log($"start-up failed: {e}");
                     exit = 1;
                     dispatcher.Stop();
                 }
@@ -143,11 +99,6 @@ namespace ReBuzz.Headless
             dispatcher.Run();
             return exit;
         }
-
-        sealed record AudioOptions(string Device, string Input, int? Buffer, int? Rate);
-
-        /// <summary>MIDI devices to open, clock outputs, and Link on or off (null: as the settings say).</summary>
-        sealed record SyncOptions(string[] MidiIn, string[] MidiOut, string[] ClockOut, bool? Link);
 
         static bool Flag(string[] args, string name) => args.Any(a => string.Equals(a, name, StringComparison.OrdinalIgnoreCase));
 
@@ -168,197 +119,28 @@ namespace ReBuzz.Headless
             return values.ToArray();
         }
 
-        /// <summary>--list-devices: PortAudio's devices, as --device and --input name them, and the MIDI devices (macOS).</summary>
-        static int ListDevices()
-        {
-            int exit = 0;
-            if (!PortAudio.Available)
-            {
-                Console.Error.WriteLine("PortAudio isn't installed (macOS: brew install portaudio; Linux: the libportaudio2 package).");
-                exit = 1;
-            }
-            else
-            {
-                PortAudio.Acquire();
-                try
-                {
-                    Console.WriteLine($"{PortAudio.VersionText}");
-                    int defaultOut = PortAudio.DefaultOutput, defaultIn = PortAudio.DefaultInput;
-                    foreach (var d in PortAudio.Devices())
-                    {
-                        string marks = (d.Index == defaultOut ? " [default output]" : "") + (d.Index == defaultIn ? " [default input]" : "");
-                        Console.WriteLine($"{PortAudioDriverFactory.Label(d)}: {d.Outputs} out, {d.Inputs} in, {d.DefaultSampleRate:0} Hz{marks}");
-                    }
-                }
-                finally
-                {
-                    PortAudio.Release();
-                }
-            }
-            if (CoreMidi.Available)
-            {
-                var midi = new CoreMidiBackend(_ => { }, m => Console.Error.WriteLine(m));
-                Console.WriteLine("MIDI inputs (--midi-in):");
-                for (int i = 0; i < midi.InputCount; i++) Console.WriteLine("  " + midi.InputName(i));
-                Console.WriteLine("MIDI outputs (--midi-out, --clock-out):");
-                for (int i = 0; i < midi.OutputCount; i++) Console.WriteLine("  " + midi.OutputName(i));
-                Console.WriteLine($"  {CoreMidiBackend.VirtualName} (virtual: other apps receive from it while ReBuzz runs; they send to its \"{CoreMidiBackend.VirtualName}\" destination)");
-            }
-            return exit;
-        }
-
-        /// <summary>
-        /// --midi-in, --midi-out, --clock-out and --link: what ReBuzz.exe's MIDI and sync settings
-        /// turn on, kept in the settings as those are. The MIDI devices are listed by name, so they
-        /// open again when they are plugged in.
-        /// </summary>
-        static void StartMidiAndSync(ReBuzzCore core, IRegistryEx registry, SyncOptions sync, Action<string> step)
-        {
-            var midi = core.MidiInOutEngine;
-            var devices = midi.Backend;
-            static bool IsNone(string name) => string.Equals(name, "none", StringComparison.OrdinalIgnoreCase);
-            static Dictionary<string, int> Turn(IEnumerable<string> names, int on) => names.Distinct().ToDictionary(n => n, n => on);
-            IEnumerable<string> Expand(IEnumerable<string> names, int count, Func<int, string> name) =>
-                names.Where(n => !IsNone(n)).SelectMany(n => string.Equals(n, "all", StringComparison.OrdinalIgnoreCase) ? Enumerable.Range(0, count).Select(name) : new[] { n });
-
-            // Inputs: "none" turns every input in the settings off; names (or "all") turn them on.
-            if (sync.MidiIn.Any(IsNone))
-            {
-                midi.SetMidiInputDevices(Turn(registry.ReadDictionary("MIDI In List").Keys, 0));
-                midi.DisposeMidiIn();
-            }
-            var inputs = Expand(sync.MidiIn, devices.InputCount, devices.InputName).ToList();
-            if (inputs.Count > 0)
-            {
-                midi.SetMidiInputDevices(Turn(inputs, 1));
-                midi.OpenMidiInDevices();
-            }
-
-            // Outputs, and the clock's outputs (clock out sends to open outputs).
-            if (sync.MidiOut.Any(IsNone))
-            {
-                midi.SetMidiOutputDevices(Turn(registry.ReadDictionary("MIDI Out List").Keys, 0));
-                midi.DisposeMidiOuts();
-            }
-            var outputs = Expand(sync.MidiOut.Concat(sync.ClockOut), devices.OutputCount, devices.OutputName).ToList();
-            if (outputs.Count > 0)
-            {
-                midi.SetMidiOutputDevices(Turn(outputs, 1));
-                midi.OpenMidiOutDevices();
-            }
-
-            var session = core.SessionSync;
-            if (session != null)
-            {
-                if (sync.ClockOut.Any(IsNone))
-                    foreach (var name in session.ClockOutNames.ToList()) session.SetClockOut(name, false);
-                foreach (var name in sync.ClockOut.Where(n => !IsNone(n)))
-                    session.SetClockOut(name, true);
-                if (sync.Link is bool link)
-                {
-                    session.SetLink(link);
-                    if (session.Problem != null) Console.Error.WriteLine("[ReBuzz] Link: " + session.Problem);
-                }
-            }
-
-            if (devices is not NoMidiBackend)
-            {
-                var ins = midi.GetMidiInputDevices().Where(i => i < devices.InputCount).Select(devices.InputName);
-                var outs = midi.GetMidiOuts().Select(o => o.Item2);
-                static string List(IEnumerable<string> names) => names.Any() ? string.Join(", ", names) : "none";
-                step($"MIDI in: {List(ins)}; out: {List(outs)}; clock out: {List(session?.ClockOutNames ?? new List<string>())}");
-            }
-            if (session?.LinkEnabled == true) step("Link on (the ReBuzzLink helper)");
-        }
-
-        /// <summary>
-        /// What BuzzGUIStartup.PreInit does for ReBuzz.exe, minus its settings window: unobserved
-        /// task exceptions are logged, and machines' dependencies resolve from the gear folders
-        /// (with this OS's path separators).
-        /// </summary>
-        static void PreInit(string buzzPath)
-        {
-            TaskScheduler.UnobservedTaskException += (sender, e) =>
-            {
-                Console.Error.WriteLine("[ReBuzz] unobserved task exception: " + e.Exception.Message);
-                e.SetObserved();
-            };
-            AppDomain.CurrentDomain.AssemblyResolve += (sender, e) =>
-            {
-                if (e.Name.Contains(".XmlSerializers")) return null;
-                string name = new System.Reflection.AssemblyName(e.Name).Name;
-                foreach (var folder in new[] { Path.Combine("Gear", "Generators"), Path.Combine("Gear", "Effects") })
-                {
-                    string path = Path.Combine(buzzPath, folder, name + ".dll");
-                    if (File.Exists(path)) return System.Reflection.Assembly.LoadFile(path);
-                }
-                return null;
-            };
-        }
-
         static void Start(LoopDispatcher dispatcher, JsonRegistry registry, string settings, string song, AudioOptions audio, SyncOptions sync, Stream stdin, Stream stdout, Action<string> step)
         {
-            step($"starting headless on {Environment.OSVersion.Platform} ({System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier}); settings in {settings}");
-            var engineSettings = Global.EngineSettings;
-            var keyboard = new NoKeyboard();
-            string buzzPath = Global.BuzzPath;
-
-            PreInit(buzzPath);
-            var core = new ReBuzzCore(
-                Global.GeneralSettings,
-                engineSettings,
-                buzzPath,
-                Global.RegistryRoot,
-                new MachineDLLScanner(dispatcher, engineSettings),
-                dispatcher,
-                registry,
-                new NoFileChoice(),
-                new NoFileChoice(),
-                new ConsoleUserMessages(),
-                keyboard);
-            var init = new ReBuzzCoreInitialization(core, buzzPath, dispatcher, registry, keyboard, engineSettings);
-            step("engine step 1");
-            init.StartReBuzzEngineStep1((s, e) => { });
-            step("engine step 2");
-            init.StartReBuzzEngineStep2(IntPtr.Zero);       // no window: native machines have no parent for their GUIs
-            step("engine step 3 (gear scan)");
-            init.StartReBuzzEngineStep3(engineSettings, new Observer());
-            var machineDb = new MachineDatabase(core, buzzPath, dispatcher, engineSettings);
-            step("engine step 4 (machine database)");
-            init.StartReBuzzEngineStep4(machineDb, s => { }, () => { }, () => { }, s => { }, c => { }, b => { }, t => { });
-            step("engine step 5");
-            init.StartReBuzzEngineStep5(f => { });
-            step(audio != null ? "engine step 6 (audio device)" : "engine step 6");
-            init.StartReBuzzEngineStep6(openAudioDevice: audio != null);
-            core.SongCore.SongEnd = 16;
-            core.SongCore.LoopEnd = 16;
-            core.Modified = false;
+            step($"settings in {settings}");
+            var run = EngineHost.Start(new HostServices { Dispatcher = dispatcher }, registry, openAudio: audio != null, step, Log);
+            var core = run.Core;
             string mode = "headless";
             if (audio != null)
             {
-                if (core.AudioEngine.SelectedOutDevice != null)
-                {
-                    mode = "live";
-                    // Shorter GC pauses while the device's thread renders (mac-engine.md §5).
-                    System.Runtime.GCSettings.LatencyMode = System.Runtime.GCLatencyMode.SustainedLowLatency;
-                    step($"playing through {core.AudioEngine.SelectedOutDevice.Name} at {core.SelectedAudioDriverSampleRate} Hz");
-                }
-                else
-                {
-                    Console.Error.WriteLine("[ReBuzz] The audio output didn't open (see above); serving headless: renders work, live tools don't.");
-                }
+                if (run.AudioOpen) mode = "live";
+                else Log("serving headless: renders work, live tools don't.");
             }
-            StartMidiAndSync(core, registry, sync, step);
+            EngineHost.StartMidiAndSync(core, registry, sync, step, Log);
 
             if (song != null)
             {
                 if (File.Exists(song)) core.OpenSongForAgent(Path.GetFullPath(song));
-                else Console.Error.WriteLine($"[ReBuzz] No song at {song}; starting with an empty song.");
+                else Log($"No song at {song}; starting with an empty song.");
             }
 
             string logs = Path.Combine(settings, "agent-logs");
             var host = new AgentHost(core, dispatcher, mode, logs);
-            Console.Error.WriteLine($"[ReBuzz] Headless agent server ready (MCP on stdio). Log: {host.Log.FilePath}");
+            Log($"Headless agent server ready (MCP on stdio). Log: {host.Log.FilePath}");
 
             Task.Run(async () =>
             {
@@ -368,11 +150,11 @@ namespace ReBuzz.Headless
                 }
                 catch (Exception e)
                 {
-                    Console.Error.WriteLine("[ReBuzz] stdio ended: " + e.Message);
+                    Log("stdio ended: " + e.Message);
                 }
                 dispatcher.BeginInvoke(() =>
                 {
-                    try { init.ShutDownReBuzzEngine(); } catch (Exception) { }
+                    run.Shutdown();
                     host.Dispose();
                     dispatcher.Stop();
                 });

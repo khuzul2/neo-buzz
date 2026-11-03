@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Fork (docs/specs/studio-mvp.md §2): the engine's start-up for apps without WPF, shared by
+    rebuzz-headless and the Avalonia studio (ReBuzz.Studio): settings in a JSON file, native
+    libraries, audio through PortAudio, MIDI (CoreMIDI on macOS), Link, engine steps 1–6.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>ReBuzz.Host</AssemblyName>
+    <RootNamespace>ReBuzz.Host</RootNamespace>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Platforms>AnyCPU;x64</Platforms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReBuzz.Engine\ReBuzz.Engine.csproj" />
+    <!-- The engine references the portable machine API without copying it; the apps ship it. -->
+    <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" />
+    <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="rebuzz-headless" />
+    <InternalsVisibleTo Include="ReBuzz.Studio" />
+    <InternalsVisibleTo Include="ReBuzz.Studio.Tests" />
+  </ItemGroup>
+
+</Project>
