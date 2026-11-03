@@ -162,7 +162,9 @@ void kernelWait(Mech m, bool req, std::atomic<uint32_t>& seq, uint32_t seen)
 #if defined(__APPLE__)
     case MUlock: P.waitOnAddress((void*)&seq, seen, 4, OS_SYNC_SHARED_WAIT); break;
     case MPosixSem: while (sem_wait(req ? P.psReq : P.psResp) != 0) {} break;
-    case MMachSem: semaphore_wait(req ? P.msReq : P.msResp); break;
+    case MMachSem:
+        if (semaphore_wait(req ? P.msReq : P.msResp) != KERN_SUCCESS) { fprintf(stderr, "semaphore_wait failed\n"); _exit(3); }
+        break;
 #endif
 #if defined(_WIN32)
     case MWinEvent: WaitForSingleObject(req ? P.evReq : P.evResp, INFINITE); break;
@@ -341,10 +343,15 @@ bool startServer(Shared* sh)
         {
             mach_port_array_t ports = nullptr;
             mach_msg_type_number_t count = 0;
-            if (mach_ports_lookup(mach_task_self(), &ports, &count) == KERN_SUCCESS && count >= 2)
+            if (mach_ports_lookup(mach_task_self(), &ports, &count) == KERN_SUCCESS && count >= 2 && ports[0] && ports[1])
             {
                 P.msReq = ports[0];
                 P.msResp = ports[1];
+            }
+            else
+            {
+                sh->ready.store(2);   // no ports: the client skips this mechanism
+                _exit(1);
             }
         }
 #endif
@@ -358,6 +365,14 @@ bool startServer(Shared* sh)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         if (Clock::now() - t0 > std::chrono::seconds(10)) return false;
+    }
+    if (sh->ready.load() != 1)
+    {
+#if !defined(_WIN32)
+        int st = 0;
+        waitpid(serverPid, &st, 0);
+#endif
+        return false;
     }
     return true;
 }

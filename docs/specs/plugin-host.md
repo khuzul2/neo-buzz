@@ -44,7 +44,7 @@ V5 B changes D5, which was decided as A on 2026-11-01: plugins would then arrive
 - **Machines:** `Polac VSTi 1.1` (generator) and `Polac VST 1.1` (effect), plus `Polac Out II` (extra outputs), `MIDI In`, `MIDI Bus II`, Audio In/Out. Version 1.1.10b47 (28 February 2026), by Frank Potulski. Freeware: redistribution allowed, sale forbidden.
 - **Files:** `RunTime/Gear/{Generators,Effects}/Polac VST(i) 1.1.x64.dll`; docs in `RunTime/Gear/Generators/pvstdocs/`; helpers in `RunTime/Gear/vst/` (`vst3shell`, `vsti3shell`, DMO, LADSPA and MIDI adapters) and `RunTime/bin64/` (`vst.x64.exe` bridge, `scan.x64.exe` scanner; `bin64/bin32/vst.exe` for 32-bit plugins).
 - **How it runs:** a native machine, so ReBuzz loads it in `ReBuzzEngine64.exe` (or `32`), by default one process per machine. A plugin crash takes down that process only; ReBuzz marks the machine crashed and the song plays on.
-- **Plugin list:** through the native "loader instrument" messages (`UIGetInstrumentList`, `UISetInstrument`); songs store the chosen plugin as the machine's `InstrumentName`.
+- **Plugin list:** through the native "loader instrument" messages (`UIGetInstrumentList`, `UISetInstrument`). The instrument name is only used when a machine is created: songs don't store it (the `.bmx` and `.bmxml` readers create machines with no instrument). Polac keeps the chosen plugin in its own machine data, a closed format (§8.5).
 - **ReBuzz knows it by name:** MIDI pitch bend and aftertouch are converted for it (`polacConversion` in `ReBuzzCore.cs`, `MachineManager.SendMidiInput`, `SessionCore.Recording.cs`), and loading can skip its init (`MachineManager.CallInit`).
 - **Upstream ships it as its VST strategy.** The README promises "32 and 64 bit VST2/3 support"; that is Polac.
 - **One more VST host is in the tree:** the signal-analysis window (`BuzzGUI.MachineView/SignalAnalysis`) loads VST2 plugins through VST.NET (`3rdParty/Jacobi`, LGPL-2.1, C++/CLI). It is Windows-only and VST2-only, so it is no base for a new host.
@@ -205,7 +205,7 @@ Value text comes from the plugin (VST3 `getParamStringByValue`, CLAP `value_to_t
 
 **For a long-time Buzz user the gap is larger**, because the freeware back catalogue is VST2 and often 32-bit. **Measure it before deciding V1/V2/V6:**
 
-- extend the song census (cross-platform.md §8 item 8) to count Polac machines by plugin (their `InstrumentName`);
+- extend the song census (cross-platform.md §8 item 8) to count Polac machines by plugin (guessed from Polac's machine data: songs don't store an instrument name);
 - add a folder census of installed plugins by format and bitness.
 
 That is about 0.5 pw.

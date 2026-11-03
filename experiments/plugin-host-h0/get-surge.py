@@ -68,7 +68,8 @@ else:
             dest = os.path.join(work, "plugins")
             zipfile.ZipFile(download(z)).extractall(dest)
             found = sorted(glob.glob(os.path.join(dest, "**", "Surge XT*.vst3"), recursive=True) + glob.glob(os.path.join(dest, "**", "Surge XT*.clap"), recursive=True))
-            found = [f for f in found if not os.path.dirname(f).lower().endswith(".vst3")]
+            # Only the bundles themselves, not the binaries inside them.
+            found = [f for f in found if ".vst3" + os.sep not in os.path.normpath(os.path.dirname(f)).lower() + os.sep]
 print("Surge XT plugins:", found, flush=True)
 with open(listfile, "w", encoding="utf-8") as f:
     for p in found:

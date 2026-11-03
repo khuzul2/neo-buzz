@@ -103,10 +103,12 @@ jobs:
     - name: rebuzz-headless with the Neo Plug Spike machines
       run: |
         git submodule update --init --depth 1 3rdParty/serilog/serilog
-        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
+        # On Windows the projects' restore hack needs SolutionDir and ReBuzzCleanBuild, as fork-ci's core-build.
+        win=(); [ "$RUNNER_OS" = Windows ] && win=("-p:SolutionDir=$W/" -p:ReBuzzCleanBuild=true)
+        dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q "${win[@]}"
         G="$W/ReBuzz.Headless/bin/Release/net10.0/Gear/"
         for p in gen/NeoPlugSpike fx/NeoPlugSpikeFX; do
-          dotnet build experiments/plugin-host-h0/machine/$p.csproj -c Release -nologo -v:q "-p:GearDir=$G" "-p:NeoPlugLib=$LIB"
+          dotnet build experiments/plugin-host-h0/machine/$p.csproj -c Release -nologo -v:q "-p:GearDir=$G" "-p:NeoPlugLib=$LIB" "${win[@]}"
         done
         ls ReBuzz.Headless/bin/Release/net10.0/Gear/Generators ReBuzz.Headless/bin/Release/net10.0/Gear/Effects
 
@@ -125,13 +127,17 @@ jobs:
       if: always() && runner.os == 'Linux'
       run: sudo "$B/bin/neoplug-ipc-bench" --json "$OUT/ipc-linux-rt.json" > /dev/null
 
-    - name: Screen (macOS)
+    # Thumbnails of the GUI snapshots in the log (base64 PNG), for reading the run without its artifacts.
+    - name: GUI snapshots in the log (macOS)
       if: always() && runner.os == 'macOS'
-      run: screencapture -x "$OUT/screen-end.png" || true
+      run: |
+        screencapture -x "$OUT/screen-end.png" || true
+        python experiments/plugin-host-h0/dump-images.py "$OUT"
 
     - name: Plugin census (self-test, then this runner's folders)
       if: always()
       run: |
+        mkdir -p "$OUT"
         python tools/plugin-census.py --self-test
         python tools/plugin-census.py --songs ExternalMachines/source --out "$OUT/census.md" --json "$OUT/census.json" --quiet
         cat "$OUT/census.md" >> "$GITHUB_STEP_SUMMARY"

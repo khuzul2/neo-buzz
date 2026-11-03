@@ -167,11 +167,10 @@ public:
             int n = controller->getParameterCount();
             paramsIn.setMaxParameters(std::max(64, std::min(n, 4096)));
             paramsOut.setMaxParameters(std::max(64, std::min(n, 4096)));
-            int nIn = component->getBusCount(kAudio, kInput);
-            int nOut = component->getBusCount(kAudio, kOutput);
-            info.is_instrument = (nIn == 0 && component->getBusCount(kEvent, kInput) > 0) ? 1 : info.is_instrument;
-            if (nIn > 0) info.is_instrument = 0;
-            (void)nOut;
+            // An instrument by its category; or a plugin with notes in and no audio in. (Instruments
+            // may have audio inputs too: Surge XT has one.)
+            if (!info.is_instrument && component->getBusCount(kAudio, kInput) == 0 && component->getBusCount(kEvent, kInput) > 0)
+                info.is_instrument = 1;
             return true;
         }
         err = id.empty() ? "no audio class in the module" : "class not found: " + id;

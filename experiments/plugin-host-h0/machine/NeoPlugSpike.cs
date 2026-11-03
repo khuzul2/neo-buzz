@@ -43,10 +43,10 @@ namespace NeoBuzz.PlugSpike
 
 #if FX
     [MachineDecl(Name = "Neo Plug Spike FX", ShortName = "PlugFX", Author = "neo-buzz (H0 spike)", MaxTracks = 0, InputCount = 1, OutputCount = 1)]
-    public class NeoPlugSpikeMachine : IBuzzMachine
+    public class NeoPlugSpikeMachine : IBuzzMachine, IDisposable
 #else
     [MachineDecl(Name = "Neo Plug Spike", ShortName = "Plug", Author = "neo-buzz (H0 spike)", MaxTracks = 8, InputCount = 0, OutputCount = 1)]
-    public class NeoPlugSpikeMachine : IBuzzMachine
+    public class NeoPlugSpikeMachine : IBuzzMachine, IDisposable
 #endif
     {
         const int MaxBlock = 1024;
@@ -139,6 +139,12 @@ namespace NeoBuzz.PlugSpike
             return true;
         }
 
+        /// <summary>ReBuzz disposes a managed machine when it is deleted or its song closes.</summary>
+        public void Dispose()
+        {
+            lock (gate) Close();
+        }
+
         void Close()
         {
             if (plugin == IntPtr.Zero) return;
@@ -179,7 +185,7 @@ namespace NeoBuzz.PlugSpike
             else if (Math.Abs(target - pi.def) < span * 0.05) target = pi.min + span * 0.7;
             Native.np_param_set(plugin, id, target);
             state.TweakId = id;
-            Log($"tweaked \"{Native.Str(pi.name)}\" to {ParamText(id, target)}");
+            Log($"tweaked \"{Native.Str(pi.name)}\" to {ParamText(id, target)} ({target:R})");
         }
 
         string ParamText(uint id, double v)
@@ -370,7 +376,8 @@ namespace NeoBuzz.PlugSpike
                         int rc = Native.np_state_load(plugin, keep.Blob, keep.Blob.Length, err, err.Length);
                         Native.np_activate(plugin, rate > 0 ? rate : Rate, 256, 0, err, err.Length);
                         Native.np_idle(plugin);
-                        string restored = keep.TweakId != uint.MaxValue ? $"; \"{ParamName(keep.TweakId)}\" is {ParamText(keep.TweakId, Native.np_param_get(plugin, keep.TweakId))}" : "";
+                        double now = keep.TweakId != uint.MaxValue ? Native.np_param_get(plugin, keep.TweakId) : 0;
+                        string restored = keep.TweakId != uint.MaxValue ? $"; \"{ParamName(keep.TweakId)}\" is {ParamText(keep.TweakId, now)} ({now:R})" : "";
                         Log(rc == 0 ? $"restored \"{state.Name}\" from {keep.Blob.Length} bytes{restored}" : $"state load failed: {Native.Str(err)}");
                     }
                 }

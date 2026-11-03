@@ -134,6 +134,12 @@ for path, cid, required in specs:
             required_failures.append(f"{name}: " + ", ".join(r.get("failures") or ["probe failed"]))
     results.append(entry)
     print(f"{name}: {'ok' if r and r.get('ok') else 'FAIL'} ({secs:.1f} s)", flush=True)
+    if not (r and r.get("ok")):
+        brief = {k: v for k, v in (r or {}).items() if k != "params"}
+        print("  probe: " + json.dumps(brief)[:3000], flush=True)
+        print("  stderr: " + (se or "")[-1500:].replace("\n", "\n          "), flush=True)
+    elif r.get("gui"):
+        print("  gui: " + json.dumps({k: v for k, v in r["gui"].items()})[:2500], flush=True)
 summary["plugins"] = results
 
 # --- In ReBuzz's engine -------------------------------------------------------------------------------
@@ -158,6 +164,9 @@ if os.path.exists(args.headless) and loadable:
     summary["headless"] = hr
     if not hr.get("ok"):
         required_failures.append("in the engine: " + "; ".join(hr.get("failures", [])[:6]))
+        print("engine log tail:\n" + ((so or "") + (se or ""))[-4000:], flush=True)
+    for c in hr.get("checks", []):
+        print(("  ok   " if c["ok"] else "  FAIL ") + c["what"][:240], flush=True)
     print(f"engine: {'ok' if hr.get('ok') else 'FAIL'} ({secs:.1f} s)", flush=True)
 elif not os.path.exists(args.headless):
     summary["headless"] = {"skipped": f"no rebuzz-headless at {args.headless}"}
@@ -178,6 +187,8 @@ if not args.no_gui and osname in ("macos", "windows") and os.path.exists(args.gu
         except Exception:
             summary["gui"] = {"error": f"gui spike exited {code}", "log_tail": (se or "")[-2000:]}
         print(f"gui: exit {code} ({secs:.1f} s)", flush=True)
+        print("gui results: " + json.dumps(summary["gui"])[:12000], flush=True)
+        print("gui stderr: " + (se or "")[-3000:], flush=True)
 
 # --- The sandbox's round trip -------------------------------------------------------------------------
 
