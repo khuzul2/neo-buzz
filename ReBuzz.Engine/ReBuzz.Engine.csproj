@@ -35,6 +35,10 @@
     <InternalsVisibleTo Include="ReBuzz" />
     <InternalsVisibleTo Include="ReBuzzTests" />
     <InternalsVisibleTo Include="rebuzz-headless" />
+    <!-- The studio (docs/specs/studio-mvp.md): its host, app and headless tests. -->
+    <InternalsVisibleTo Include="ReBuzz.Host" />
+    <InternalsVisibleTo Include="ReBuzz.Studio" />
+    <InternalsVisibleTo Include="ReBuzz.Studio.Tests" />
   </ItemGroup>
 
   <!-- Build number and date (S10), read by Core/BuildInfo.cs. ReBuzz.exe's About box reads the

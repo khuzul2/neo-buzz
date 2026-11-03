@@ -16,6 +16,10 @@ on:
       - 'ReBuzz/**'
       - 'ReBuzz.Engine/**'
       - 'ReBuzz.Headless/**'
+      - 'ReBuzz.Host/**'
+      - 'ReBuzz.Studio/**'
+      - 'ReBuzz.Studio.Tests/**'
+      - 'tools/mac-bundle.sh'
       - 'ReBuzzGUI/BuzzGUI.Common/**'
       - 'ReBuzzGUI/BuzzGUI.Interfaces/**'
       - 'tools/headless-smoke.py'
@@ -109,10 +113,39 @@ jobs:
       if: always()
       run: python3 tools/headless-midi.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/midi"
 
+    # The studio (docs/specs/studio-mvp.md): its headless view tests on arm64, then ReBuzz.app
+    # (self-contained, ad-hoc signed) built and started for real: it opens its window, starts the
+    # engine with the runner's audio device, and quits (--smoke). The app is uploaded with the run.
+    - name: Studio (Avalonia, headless) on arm64
+      if: always()
+      shell: bash
+      env:
+        SCREENSHOTS_DIR: ${{ github.workspace }}/studio-screenshots
+      run: dotnet test ReBuzz.Studio.Tests --logger "console;verbosity=normal" 2>&1 | tee studio-test.log
+
+    - name: ReBuzz.app (osx-arm64)
+      if: always()
+      shell: bash
+      run: |
+        brew install dylibbundler libsndfile >/dev/null || true
+        tools/mac-bundle.sh "$RUNNER_TEMP/app"
+        python3 -c "import subprocess, sys; sys.exit(subprocess.run(sys.argv[1:], timeout=180).returncode)" \
+          "$RUNNER_TEMP/app/ReBuzz.app/Contents/MacOS/ReBuzz.Studio" --smoke --settings "$RUNNER_TEMP/studio-settings" 2>&1 | tee studio-smoke.log
+        grep -q "smoke: ok" studio-smoke.log
+        (cd "$RUNNER_TEMP/app" && ditto -c -k --keepParent ReBuzz.app ReBuzz-macos-arm64.zip)
+
+    - name: Upload ReBuzz.app
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ReBuzz-macos-arm64
+        path: ${{ runner.temp }}/app/ReBuzz-macos-arm64.zip
+        if-no-files-found: ignore
+
     - name: Summary
       if: always()
       run: |
-        for f in test.log agent-test.log machine-test.log; do
+        for f in test.log agent-test.log machine-test.log studio-test.log; do
           [ -f "$f" ] || continue
           total=$(grep -E "^\s*Total tests:" "$f" | tail -1 | sed 's/[^0-9]//g')
           passed=$(grep -E "^\s*Passed:" "$f" | tail -1 | sed 's/[^0-9]//g')
