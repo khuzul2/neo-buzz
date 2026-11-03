@@ -76,6 +76,46 @@ namespace ReBuzz.Studio.Shell
 
         public static Task Info(string message, string caption) => Ask(message, caption, UserButtons.Ok);
 
+        /// <summary>Tests answer text questions here: (title, current) → the text, or null for cancel.</summary>
+        public static Func<string, string, string> TextResponder { get; set; }
+
+        /// <summary>A line of text (a machine's new name…); null when cancelled.</summary>
+        public static async Task<string> AskText(string title, string current)
+        {
+            if (TextResponder != null) return TextResponder(title, current);
+            var owner = Owner;
+            var box = new TextBox { Text = current ?? "", MinWidth = 260 };
+            string result = null;
+            var window = new Window
+            {
+                Title = title,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                CanResize = false,
+                WindowStartupLocation = owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen,
+                ShowInTaskbar = false,
+            };
+            var ok = new Button { Content = "OK", MinWidth = 72, IsDefault = true };
+            var cancel = new Button { Content = "Cancel", MinWidth = 72, IsCancel = true };
+            ok.Click += (s, e) => { result = box.Text; window.Close(); };
+            cancel.Click += (s, e) => window.Close();
+            window.Content = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Spacing = 12,
+                Children = { box, new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { ok, cancel } } },
+            };
+            window.Opened += (s, e) => { box.Focus(); box.SelectAll(); };
+            if (owner != null) await window.ShowDialog(owner);
+            else
+            {
+                var closed = new TaskCompletionSource();
+                window.Closed += (s, e) => closed.TrySetResult();
+                window.Show();
+                await closed.Task;
+            }
+            return result;
+        }
+
         /// <summary>Runs a dialog to its end on the UI thread, for callers that can't await.</summary>
         public static T Modal<T>(Func<Task<T>> dialog)
         {

@@ -103,6 +103,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
     - one tab per view (`StudioViews`, placeholders until S3–S6);
     - a status line: audio device, rate, buffer, dropouts.
   - **Song files:** new, open, save and save as. The studio asks about unsaved changes itself (async) before the engine acts, so the engine never has to.
+  - **Machine windows** (`StudioMachineUiHost`, the engine's `IMachineUiHost`): one parameter window and one GUI window per machine, kept as long as the machine and saved with the song. Their content comes from `ParameterWindowContent` (S2) and `GuiContent` (S1). A machine with no GUI here opens its parameter window. Renaming asks through `Dialogs.AskText`.
   - Arguments: `ReBuzz.Studio [song] [--settings <folder>] [--no-audio] [--smoke]`.
 - **`ReBuzz.Studio.Tests`** (Avalonia.Headless.NUnit with Skia):
   - the engine starts with the Neo machines installed and the window shows its views;
