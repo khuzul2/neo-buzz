@@ -853,6 +853,7 @@ def level_tests(c, prof, kind, globals_, tracks):
                              "; ".join(f"{together[e]['verdict']}" for e in misbehaved)] if misbehaved else []) + \
                            ([f"an effect with {', '.join(named[:4])}"] if named else [])
     sweeps, ranges, alone_diverges, alone_hot = {}, {}, False, False
+    diverges_at = set()          # the ends ("min", "max") at which some parameter alone diverges
     hot = []
     for p in globals_ + tracks:
         per_track = bool(p.get("per_track"))
@@ -877,6 +878,7 @@ def level_tests(c, prof, kind, globals_, tracks):
         if not bad:
             continue
         alone_diverges = True
+        diverges_at.update(bad)
         # The edge: the last raw value from the default towards each diverging end that doesn't diverge.
         edges = {}
         for end, raw in bad.items():
@@ -902,10 +904,12 @@ def level_tests(c, prof, kind, globals_, tracks):
         prof.hot.append("hot (loud but steady) with " + "; ".join(shown))
     for end in misbehaved:
         r = together[end]
-        if r["verdict"] == "crash" and not alone_diverges:
-            prof.warn(f"every parameter at its {end}imum at once crashed or hung the server, but no parameter alone did")
-        elif r["verdict"] == "diverging" and not alone_diverges:
-            prof.warn(f"every parameter at its {end}imum at once diverges ({describe_level('diverging', r)}), but no parameter alone does")
+        # Every parameter at one end at once diverging, where no parameter alone diverges at that end: a
+        # combination no safe range can describe (Jeskola Flanger's −100 % feedback with no delay).
+        if r["verdict"] == "crash" and end not in diverges_at:
+            prof.warn(f"every parameter at its {end}imum at once crashed or hung the server, but no parameter alone does at its {end}imum")
+        elif r["verdict"] == "diverging" and end not in diverges_at:
+            prof.warn(f"every parameter at its {end}imum at once diverges ({describe_level('diverging', r)}), but no parameter alone does at its {end}imum")
         elif r["verdict"] == "hot" and not alone_hot and not alone_diverges:
             prof.hot.append(f"hot with every parameter at its {end}imum at once ({describe_level('hot', r)}), but with no parameter alone")
     prof.data["sweeps"] = sweeps
@@ -974,6 +978,15 @@ def profile_machine(c, gear, kind, baseline, generated):
         type_from_parameters(prof, globals_)
     if prof.data["type"] != "control" and not prof.diverging:
         level_tests(c, prof, kind, globals_, tracks)
+    elif prof.diverging and prof.data["type"] != "control":
+        # Diverging at its defaults: again in a second fresh instance, or does it vary (uninitialised state)?
+        try:
+            again, facts = Bench(c, prof, kind, (prof.data.get("notes") or {}).get("input")).level()
+        except ToolFailed as e:
+            again, facts = "error", {"error": str(e)[:200]}
+        prof.data["second_instance"] = dict(facts, verdict=again)
+        prof.problems[-1] += (" (a second fresh instance too: " + describe_level(again, facts) + ")" if again == "diverging"
+                              else f" (not a second fresh instance, {again} in the level test: it varies from instance to instance)")
     ranges = prof.data.pop("safe_ranges", {})
     prof.data["entries"] = {group: [manifest_entry(p, inferred[(per_track, p["name"])], ranges.get((per_track, p["name"])))
                                     for p in ps if inferred[(per_track, p["name"])].get("kind") or (per_track, p["name"]) in ranges]
