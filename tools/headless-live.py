@@ -4,7 +4,8 @@
 # the real app) in studio mode over Streamable HTTP with its token. It checks that:
 #  - the device opens and the server says "live" (rebuzz-headless) or "studio";
 #  - a phrase played with midi_play while the transport is stopped is heard (meters_read);
-#  - the transport plays the arrangement in real time, and is heard, and stops;
+#  - the transport plays the arrangement in real time (the device's own stalls told from ReBuzz's),
+#    and is heard, and stops;
 #  - a Session View clip launches on its own (session_launch), plays and is heard, and stops;
 #  - a take records what midi_play plays into an armed track (session_record), on the bar;
 #  - the safe master (machine-safety.md §3.3): a hot master is limited on the device, the clip
@@ -207,13 +208,37 @@ check(ok and m.get("playing") is True and not master(m).get("silent", True),
       f"meters_read hears the song playing ({level} dBFS RMS over {master(m).get('seconds')} s)")
 # 120 BPM: two beats a second, if the device takes audio in real time (a clocked device does;
 # ALSA's bare null device doesn't, so this check needs a real or virtual sound device).
-ok1, _, t1 = call("transport", action="status")
-s1 = time.time()
-time.sleep(1.0)
-ok2, _, t2 = call("transport", action="status")
-s2 = time.time()
-rate = ((t2.get("position_beats") or 0) - (t1.get("position_beats") or 0)) / (s2 - s1)
-check(ok1 and ok2 and t2.get("playing") is True and 1.4 < rate < 2.6, f"the song plays in real time ({rate:.2f} beats/s at 120 BPM)")
+# studio_status tells the device's side from ReBuzz's: played_seconds is the device's clock (the
+# audio it took), worst_overrun_ms how late ReBuzz's slowest buffer was. Linux CI's device takes
+# nothing for about 2 s after it starts and after any underrun (docs/specs/mac-engine.md M5): a
+# second in which it took under 0.7 s of audio, while ReBuzz was never 100 ms late and the song
+# moved with the audio taken, is the device's stall, and is measured again, up to 5 times. ReBuzz
+# 100 ms late, or the song not moving with the audio the device took, fails at once.
+def audio_clock():
+    r = request("tools/call", {"name": "studio_status", "arguments": {}})
+    audio = ((r.get("result") or {}).get("structuredContent") or {}).get("audio") or {}
+    return audio.get("played_seconds"), audio.get("worst_overrun_ms") or 0
+
+
+for attempt in range(5):
+    ok1, _, t1 = call("transport", action="status")
+    s1, (d1, w1) = time.time(), audio_clock()
+    time.sleep(1.0)
+    ok2, _, t2 = call("transport", action="status")
+    s2, (d2, w2) = time.time(), audio_clock()
+    rate = ((t2.get("position_beats") or 0) - (t1.get("position_beats") or 0)) / (s2 - s1)
+    taken = (d2 - d1) / (s2 - s1) if d1 is not None and d2 is not None else None
+    late = w2 >= 100 and w2 > w1
+    with_audio = taken is not None and abs(rate - 2 * taken) < 0.5
+    what = (f"{rate:.2f} beats/s at 120 BPM; the device took {taken:.2f} s of audio a second, ReBuzz's worst overrun {w2} ms"
+            if taken is not None else f"{rate:.2f} beats/s at 120 BPM")
+    if ok1 and ok2 and t2.get("playing") is True and 1.4 < rate < 2.6 and (taken is None or with_audio):
+        break
+    if not (ok1 and ok2 and t2.get("playing") is True) or taken is None or taken >= 0.7 or late or not with_audio or attempt == 4:
+        break
+    print(f"     the device stalled ({what}); measuring again", flush=True)
+check(ok1 and ok2 and t2.get("playing") is True and 1.4 < rate < 2.6 and (taken is None or with_audio),
+      f"the song plays in real time ({what})")
 ok, _, t = call("transport", action="stop")
 check(ok and t.get("playing") is False, "transport stop")
 
@@ -282,7 +307,8 @@ check(ok and not master(m).get("silent", True), "four synths play at once")
 ok, _, status = call("studio_status")
 audio = status.get("audio") or {}
 print(f"     audio: {json.dumps(audio)}")
-check(ok and audio.get("device") and audio.get("buffer_frames", 0) > 0 and audio.get("latency_ms", 0) > 0, "studio_status reports the audio output")
+check(ok and audio.get("device") and audio.get("buffer_frames", 0) > 0 and audio.get("latency_ms", 0) > 0 and (audio.get("played_seconds") or 0) > 0,
+      "studio_status reports the audio output")
 if expect_workgroup:
     check((audio.get("workgroup_threads") or 0) >= 1 and audio.get("render_threads", 1) > 1,
           f"render threads work in the device's audio workgroup ({audio.get('workgroup_threads')} of {audio.get('render_threads')})")
