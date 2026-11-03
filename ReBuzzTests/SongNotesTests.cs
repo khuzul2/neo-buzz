@@ -122,7 +122,7 @@ namespace ReBuzzTests
             // Saved again by Info (ReBuzz on Windows saves it each time): the same notes.
             boxType.GetMethod("SetRTF")!.Invoke(box, new object[] { rtf });
             string again = (string)boxType.GetMethod("GetRTF")!.Invoke(box, null)!;
-            TestContext.Out.WriteLine(again == rtf ? "Info's RTF is the same when saved again" : "Info's RTF changes when saved again");
+            TestContext.Out.WriteLine(again == rtf ? "[notice] Info's RTF is the same when its box saves it again" : "[notice] Info's RTF changes when its box saves it again");
             Assert.That(RtfToMarkdown.Convert(again, 0xFFE0E1E2), Is.EqualTo(Expected), "the same Markdown, so it isn't imported again");
 
             // The importer's writer (tests, fixtures) writes the elements Info's serializer does, in its order.
@@ -130,6 +130,71 @@ namespace ReBuzzTests
             var theirs = XDocument.Parse(Encoding.UTF8.GetString(data, 5, data.Length - 5).TrimStart((char)0xFEFF));
             Assert.That(ours.Descendants().Select(e => e.Name.LocalName), Is.EqualTo(theirs.Descendants().Select(e => e.Name.LocalName)));
             Assert.That((string)ours.Root!.Element("Background")!.Element("ScR"), Is.EqualTo((string)theirs.Root!.Element("Background")!.Element("ScR")));
+        }
+
+        static void CopyFolder(string from, string to)
+        {
+            foreach (var file in Directory.GetFiles(from, "*", SearchOption.AllDirectories))
+            {
+                string target = Path.Combine(to, Path.GetRelativePath(from, file));
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.Copy(file, target, overwrite: true);
+            }
+        }
+
+        /// <summary>
+        /// A live Info machine (it loads on Windows since its theme fix, machine-safety.md §3.1): its text typed
+        /// into its box, the song saved and opened again, the notes have it, from the machine's own state.
+        /// </summary>
+        [Test]
+        public void ALiveInfoMachinesTextIsImported()
+        {
+            string? dll = InfoDll();
+            if (dll == null) Assert.Inconclusive("RunTime/Gear/Generators/Info.NET.dll isn't in this checkout");
+            var gear = new NeoMachineTests.NeoInfo("Info", "Info", generator: true);
+            // Where the agent rig takes gear from (beside ReBuzz.exe); and the theme Info builds itself from, under
+            // ReBuzz's folder (BuzzGUI.Common's, here).
+            if (!File.Exists(gear.BuiltPath))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(gear.BuiltPath)!);
+                File.Copy(dll!, gear.BuiltPath, overwrite: true);
+            }
+            string runTime = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(dll!)!)!)!;
+            CopyFolder(Path.Combine(runTime, "Themes", "Default", "Gear", "Info"), Path.Combine(BuzzGUI.Common.Global.BuzzPath, "Themes", "Default", "Gear", "Info"));
+
+            using var rig = new AgentServerTests.Rig(gear);
+            var (error, text, _) = rig.Call("machine_add", new JsonObject { ["gear"] = "Info", ["name"] = "Notes" });
+            if (error)
+            {
+                TestContext.Out.WriteLine("[notice] A live Info machine didn't load in the test rig: " + text);
+                Assert.Inconclusive("Info didn't load here: " + text);
+            }
+            var core = rig.Driver.Core;
+            var machine = core.SongCore.MachinesList.Single(m => m.Name == "Notes");
+            Assert.That(machine.DLL.IsMissing, Is.False);
+            // Its text, as its window's box would have it.
+            var infoMachine = core.MachineManager.ManagedMachines[machine].ManagedMachine;
+            var box = infoMachine.GetType().GetField("rTFBox", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(infoMachine)!;
+            box.GetType().GetMethod("SetRTF")!.Invoke(box, new object[] { DocumentRtf() });
+            Assert.That(InfoMachineState.Read(machine.Data)?.ToMarkdown(), Is.EqualTo(Expected), "the machine's data, as ReBuzz saves it");
+
+            string path = TempSong("info.bmx");
+            Assert.That(rig.Call("song_save", new JsonObject { ["path"] = path }).Error, Is.False);
+            Assert.That(rig.Call("song_new", new JsonObject { ["discard_unsaved"] = true }).Error, Is.False);
+            (error, text, _) = rig.Call("song_open", new JsonObject { ["path"] = path, ["discard_unsaved"] = true });
+            Assert.That(error, Is.False, text);
+            var read = rig.Call("song_notes_read").Data;
+            TestContext.Out.WriteLine("[notice] A live Info machine's text, opened again: " + (read["notes"]!.GetValue<string>() == Expected ? "imported" : "not imported: " + read.ToJsonString()));
+            Assert.That(read["notes"]!.GetValue<string>(), Is.EqualTo(Expected), "imported from the machine's state");
+            Assert.That(read["imported_on_open"]!.AsArray().Single()!["machine"]!.GetValue<string>(), Is.EqualTo("Notes"));
+            Assert.That(core.SongCore.MachinesList.Single(m => m.Name == "Notes").DLL.IsMissing, Is.False, "the machine stays, loaded");
+
+            // Saved with the notes, opened again: in once.
+            Assert.That(rig.Call("song_save", new JsonObject { ["path"] = path, ["overwrite"] = true }).Error, Is.False);
+            Assert.That(rig.Call("song_open", new JsonObject { ["path"] = path, ["discard_unsaved"] = true }).Error, Is.False);
+            read = rig.Call("song_notes_read").Data;
+            Assert.That(read["notes"]!.GetValue<string>(), Is.EqualTo(Expected));
+            Assert.That(read["imported_on_open"]!.AsArray(), Is.Empty, "not again");
         }
 
         static string TempSong(string name)
