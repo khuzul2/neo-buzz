@@ -1,0 +1,444 @@
+// Fork (audio hygiene, docs/specs/daw-modes.md §8.1): nothing on the audio thread that can cause a
+// dropout in normal use. The engine renders here as the device's thread does (a WorkManager with the
+// device's work algorithm and render threads, on a thread of its own), and these tests count what
+// that thread and the render threads allocate per buffer, and what they compile:
+//  - an empty song, and a Modern Pattern Editor pattern playing notes (its Note column and its MIDI
+//    note lanes) and automation, with its editor open: 0 bytes a buffer, with each work algorithm;
+//  - automation of a parameter with listeners (a parameter window's rows, the master volume's):
+//    0 bytes on the audio thread, and the listeners still see the final values;
+//  - after the warm-up (AudioWarmUp), the transport's first play and stop compile nothing.
+// The tests build in Debug, where the JIT doesn't optimize: no allocation here is one that only an
+// optimizing compiler (tier 1) would remove.
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.NUnit;
+using Avalonia.Input;
+using Avalonia.Threading;
+using BuzzGUI.Common;
+using BuzzGUI.Interfaces;
+using ReBuzz.Audio;
+using ReBuzz.Core;
+using ReBuzz.Core.Session;
+using ReBuzz.Studio.Parameters;
+using ReBuzz.Studio.Platform;
+using ReBuzz.Studio.Shell;
+using ReBuzz.Studio.Views;
+
+namespace ReBuzz.Studio.Tests
+{
+    using Control = Avalonia.Controls.Control;
+
+    public class AudioHygieneTests
+    {
+        const int TB = PatternEvent.TimeBase;
+        const int Frames = 256;
+
+        static ReBuzzCore Core => Studio.Host.Core;
+
+        /// <summary>The device's default (Audio preferences): Recursive Tasks.</summary>
+        const int DeviceAlgorithm = 1;
+
+        /// <summary>What a stretch of buffers cost the audio thread and the render threads.</summary>
+        sealed class Cost
+        {
+            public long Bytes;
+            public long Methods;
+            public readonly List<string> Log = new List<string>();
+        }
+
+        /// <summary>
+        /// The engine rendering as the device's thread does: a WorkManager with the given work
+        /// algorithm, the render threads it uses, Multithreading as set, on a thread of its own that
+        /// lives as long as this (a device's thread does: its first reads pay its one-time costs).
+        /// </summary>
+        sealed class AudioThread : IDisposable
+        {
+            readonly WorkManager work;
+            readonly WorkThreadEngine engine;
+            readonly int algorithm;
+            readonly float[] buffer = new float[Frames * 2];
+            readonly Thread thread;
+            readonly SemaphoreSlim go = new SemaphoreSlim(0), done = new SemaphoreSlim(0);
+            Action job;
+            Exception failed;
+            bool quit;
+
+            public AudioThread(int algorithm)
+            {
+                this.algorithm = algorithm;
+                engine = new WorkThreadEngine(4);
+                if (algorithm == 2) engine.Start();
+                work = new WorkManager(Core, engine, algorithm, Core.EngineSettings);
+                thread = new Thread(Loop) { Name = "test audio thread", IsBackground = true };
+                thread.Start();
+            }
+
+            void Loop()
+            {
+                while (true)
+                {
+                    go.Wait();
+                    if (quit) return;
+                    try { job(); }
+                    catch (Exception e) { failed = e; }
+                    done.Release();
+                }
+            }
+
+            void On(Action action)
+            {
+                job = action;
+                failed = null;
+                go.Release();
+                done.Wait();
+                if (failed != null) throw failed;
+            }
+
+            /// <summary>Reads <paramref name="buffers"/> buffers (each after <paramref name="perBuffer"/>, on that thread).</summary>
+            public Cost Read(int buffers, Action perBuffer = null)
+            {
+                var cost = new Cost();
+                On(() =>
+                {
+                    long workerMethods = Interlocked.Read(ref RenderJobs.WorkerMethods);
+                    long methods = System.Runtime.JitInfo.GetCompiledMethodCount(currentThread: true);
+                    for (int i = 0; i < buffers; i++)
+                    {
+                        int position = Core.SongCore.PlayPosition, inTick = ReBuzzCore.masterInfo.PosInTick;
+                        perBuffer?.Invoke();
+                        long before = GC.GetAllocatedBytesForCurrentThread();
+                        long workers = Interlocked.Read(ref RenderJobs.WorkerBytes);
+                        work.MainAudioFillBuffer(buffer, 0, Frames * 2);
+                        long bytes = GC.GetAllocatedBytesForCurrentThread() - before + Interlocked.Read(ref RenderJobs.WorkerBytes) - workers;
+                        cost.Bytes += bytes;
+                        if (bytes != 0 && cost.Log.Count < 20)
+                            cost.Log.Add($"buffer {i}: {bytes} bytes (tick {position}, {inTick} samples into it)");
+                    }
+                    cost.Methods = System.Runtime.JitInfo.GetCompiledMethodCount(currentThread: true) - methods
+                                 + Interlocked.Read(ref RenderJobs.WorkerMethods) - workerMethods;
+                });
+                return cost;
+            }
+
+            public void Dispose()
+            {
+                quit = true;
+                go.Release();
+                thread.Join();
+                work.Stop();
+                if (algorithm == 2) engine.Stop();
+            }
+        }
+
+        /// <summary>Reads past one-time costs (the first loop of the song, first notes), then measures.</summary>
+        static Cost Steady(AudioThread audio, int buffers = 400, Action perBuffer = null)
+        {
+            audio.Read(800, perBuffer);
+            return audio.Read(buffers, perBuffer);
+        }
+
+        /// <summary>Methods compiled while it listens, by OS thread (diagnostics for a failed check).</summary>
+        sealed class JitListener : System.Diagnostics.Tracing.EventListener
+        {
+            public readonly System.Collections.Concurrent.ConcurrentQueue<string> Methods = new();
+            public volatile bool On;
+
+            protected override void OnEventSourceCreated(System.Diagnostics.Tracing.EventSource source)
+            {
+                if (source.Name == "Microsoft-Windows-DotNETRuntime")
+                    EnableEvents(source, System.Diagnostics.Tracing.EventLevel.Verbose, (System.Diagnostics.Tracing.EventKeywords)0x10);
+            }
+
+            protected override void OnEventWritten(System.Diagnostics.Tracing.EventWrittenEventArgs e)
+            {
+                if (!On || e.EventName == null || !e.EventName.StartsWith("MethodLoadVerbose")) return;
+                string Get(string name) => e.PayloadNames.IndexOf(name) is int i && i >= 0 ? e.Payload[i]?.ToString() : "?";
+                int flags = int.TryParse(Get("MethodFlags"), out int f) ? f : -1;
+                Methods.Enqueue($"thread {e.OSThreadId}: {Get("MethodNamespace")}::{Get("MethodName")} (flags {flags:x}, tier {(flags >> 7) & 7}, rejit {Get("ReJITID")}, id {Get("MethodID")})");
+            }
+        }
+
+        static void AssertNoAllocation(Cost cost, string what)
+        {
+            TestContext.Out.WriteLine($"[notice] {what}: {cost.Bytes} bytes");
+            Assert.That(cost.Bytes, Is.EqualTo(0), what + " allocates on the audio thread or the render threads (a GC pause is a dropout):\n" + string.Join("\n", cost.Log));
+        }
+
+        static void NewSong()
+        {
+            lock (ReBuzzCore.AudioLock) Core.Playing = false;
+            Core.ExecuteCommand(BuzzCommand.Stop);
+            Core.Modified = false;
+            Core.ExecuteCommand(BuzzCommand.NewFile);
+            Pump();
+        }
+
+        static void Pump()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                Dispatcher.UIThread.RunJobs();
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            }
+        }
+
+        static void Key(Window w, PhysicalKey key, RawInputModifiers m = RawInputModifiers.None)
+        {
+            w.KeyPressQwerty(key, m);
+            w.KeyReleaseQwerty(key, m);
+            Pump();
+        }
+
+        static MachineCore AddPoly(string name)
+        {
+            var song = Core.SongCore;
+            song.CreateMachine("Neo Poly", null, name, null, null, null, -1, 0.3f, 0.3f);
+            var m = song.MachinesList.Last(x => x.Name == name);
+            song.ConnectMachines(m, song.MachinesList[0], new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            return m;
+        }
+
+        static void Arrange(MachineCore m, IPattern p)
+        {
+            var song = Core.SongCore;
+            song.AddSequence(m, song.Sequences.Count);
+            song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, p));
+            Core.Looping = true;
+            song.LoopStart = 0;
+            song.LoopEnd = p.Length;
+            song.SongEnd = p.Length;
+        }
+
+        static bool Multithreading
+        {
+            get => Core.EngineSettings.Multithreading;
+            set => Core.EngineSettings.Multithreading = value;
+        }
+
+        // ------------------------------------------------------------------ an empty song
+
+        [AvaloniaTest]
+        public void AnEmptySongAllocatesNothingPerBuffer([Values(0, 1, 2)] int algorithm, [Values] bool multithreading)
+        {
+            NewSong();
+            bool was = Multithreading;
+            Multithreading = multithreading;
+            try
+            {
+                using var audio = new AudioThread(algorithm);
+                AssertNoAllocation(Steady(audio), "an empty song, stopped");
+                lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                AssertNoAllocation(Steady(audio), "an empty song, playing");
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                Multithreading = was;
+                NewSong();
+            }
+        }
+
+        // ------------------------------------------------------------------ the Modern Pattern Editor
+
+        /// <summary>
+        /// A Neo Poly's pattern in the Modern Pattern Editor, open in the Pattern tab: a note on every
+        /// row of track 0's Note column, Uni detune interpolated over every row, and notes on the
+        /// MIDI note lanes (as the Session View moves a clip's notes there).
+        /// </summary>
+        static (MachineCore Machine, IPattern Pattern, MainWindow Window) MpePattern(string name)
+        {
+            var m = AddPoly(name);
+            m.CreatePattern("00", 16);
+            var pattern = m.Patterns.First(p => p.Name == "00");
+            var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
+            window.Show();
+            Pump();
+            PatternView.Edit(pattern);
+            Pump();
+            dynamic view = PatternView.Page.EditorControl;
+            ((Control)view.TrackerGrid.Body).Focus();
+            Pump();
+
+            Key(window, PhysicalKey.Tab);                       // track 0's Note column
+            var keys = new[] { PhysicalKey.Z, PhysicalKey.C, PhysicalKey.B, PhysicalKey.N };
+            for (int i = 0; i < 16; i++) Key(window, keys[i % 4]);
+            Key(window, PhysicalKey.Tab, RawInputModifiers.Shift);
+            Key(window, PhysicalKey.Home);
+            for (int i = 0; i < 6; i++) Key(window, PhysicalKey.ArrowRight);    // Uni detune, its high digit
+            Key(window, PhysicalKey.PageUp);
+            Key(window, PhysicalKey.Digit0);
+            for (int i = 0; i < 14; i++) Key(window, PhysicalKey.ArrowDown);
+            Key(window, PhysicalKey.ArrowRight);
+            Key(window, PhysicalKey.Digit3);
+            Key(window, PhysicalKey.PageUp);
+            for (int i = 0; i < 15; i++) Key(window, PhysicalKey.ArrowDown, RawInputModifiers.Shift);
+            Key(window, PhysicalKey.I, RawInputModifiers.Control);
+
+            // (None ends on the last tick: the editor never sends a lane note's end there, and keeps
+            // it queued for good, one more on every loop: upstream's, left as it is.)
+            var lanes = TrackerNotes.Pack(Enumerable.Range(0, 7).Select(i => new TrackerNote(i * 2 * TB, TB, 48 + i, 100)));
+            Assert.That(Core.SessionLayout.ImportToEditor(pattern, lanes), Is.True, "notes on the MIDI note lanes");
+            Pump();
+
+            var columns = pattern.PatternEditorMachineEvents.ToList();
+            Assert.That(columns.Single(c => c.Parameter.Name == "Note").Events.Count(), Is.EqualTo(16), "a note on every row");
+            Assert.That(columns.Single(c => c.Parameter.Name == "Uni detune").Events.Count(), Is.EqualTo(16), "automation on every row");
+            Assert.That(columns.Where(c => c.Parameter.Name == "MIDI Note").Sum(c => c.Events.Count()), Is.GreaterThanOrEqualTo(7), "notes on the MIDI lanes");
+            Arrange(m, pattern);
+            return (m, pattern, window);
+        }
+
+        [AvaloniaTest]
+        public void AModernPatternEditorPatternPlayingNotesAndAutomationAllocatesNothing([Values(0, 1, 2)] int algorithm)
+        {
+            NewSong();
+            var (m, pattern, window) = MpePattern("Hygiene MPE");
+            try
+            {
+                var detune = m.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Uni detune");
+                using var audio = new AudioThread(algorithm);
+                lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                var heard = new HashSet<int>(1024);
+                var cost = Steady(audio, perBuffer: () => heard.Add(detune.GetValue(0)));
+                AssertNoAllocation(cost, $"a pattern editor pattern playing (algorithm {algorithm})");
+                Assert.That(heard.Count, Is.GreaterThan(8), "the automation reached the machine");
+                Assert.That(m.IsActive, Is.True, "the notes sound");
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                window.Close();
+                Pump();
+                NewSong();
+            }
+        }
+
+        // ------------------------------------------------------------------ listeners
+
+        [AvaloniaTest]
+        public void AutomationWithListenersAllocatesNothingAndTheListenersSeeTheFinalValues()
+        {
+            NewSong();
+            var m = AddPoly("Hygiene Listened");
+            m.CreatePattern("00", 16);
+            var pattern = (PatternCore)m.Patterns.First();
+            var cutoff = m.ParameterGroupsList[1].ParametersList.First(p => p.Name == "F1 cutoff");
+            var column = SessionLayout.ColumnFor(pattern, new ColumnKey(1, cutoff.IndexInGroup, 0), create: true);
+            column.SetEvents(Enumerable.Range(0, 16).Select(t => new PatternEvent(t * TB, cutoff.MinValue + (t * 37) % (cutoff.MaxValue - cutoff.MinValue), 0)).ToList(), true);
+            Arrange(m, pattern);
+
+            // The parameter window: a row per parameter, each listening to its parameter.
+            Core.UiHost.OpenParameterWindow(m, null);
+            var window = StudioMachineUiHost.ParameterWindowOf(m);
+            Assert.That(window, Is.Not.Null);
+            Pump();
+            var row = ((ParameterWindowView)window!.Content!).Rows.Single(r => r.ParameterName == "F1 cutoff");
+            var told = new List<int>();
+            Action<IParameter, int> listener = (p, t) => told.Add(p.GetValue(t));
+            cutoff.SubscribeEvents(0, listener, null);
+
+            // The master volume (the engine's own listener sets ReBuzzCore.MasterVolume from it), as a
+            // pattern editor or a mapped controller sets it: a new value before every buffer.
+            var volume = Core.SongCore.MachinesList[0].ParameterGroupsList[1].ParametersList[0];
+            int n = 0;
+            Action setVolume = () => volume.SetValue(1 << 16, 0x1000 + (n++ % 64) * 16);
+            try
+            {
+                using var audio = new AudioThread(DeviceAlgorithm);
+                lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                audio.Read(800, setVolume);
+                Core.UiEvents.Drain();
+                told.Clear();
+                var cost = audio.Read(400, setVolume);
+                AssertNoAllocation(cost, "automation with listeners (a parameter window's row, the master volume's, one of the test's)");
+
+                // Delivered on the UI thread (here at once; in the studio its timer does it).
+                Core.UiEvents.Drain();
+                Pump();
+                Assert.That(told, Is.Not.Empty, "the listener was told");
+                Assert.That(told.Last(), Is.EqualTo(cutoff.GetValue(0)), "and saw the final value");
+                Assert.That(row.ValueText, Is.EqualTo(cutoff.DescribeValue(cutoff.GetValue(0))), "the window's row shows it");
+                Assert.That(Core.MasterVolume, Is.EqualTo((volume.MaxValue - volume.GetValue(0)) / (double)volume.MaxValue), "the master volume follows its parameter");
+            }
+            finally
+            {
+                cutoff.UnsubscribeEvents(0, listener, null);
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                window.Close();
+                Core.UiHost.ReleaseMachine(m);
+                Pump();
+                volume.SetValue(0, 0);
+                NewSong();
+            }
+        }
+
+        [AvaloniaTest]
+        public void TheStudiosSignalDeliversEventsRaisedOnTheAudioThreadOnItsTimer()
+        {
+            int ran = 0;
+            var signal = new AvaloniaUiDispatcher().CreateSignal(() => ran++);
+            var thread = new Thread(() => { signal.Request(); signal.Request(); });
+            thread.Start();
+            thread.Join();
+            Assert.That(ran, Is.EqualTo(0), "the audio thread only sets a flag");
+            var until = DateTime.UtcNow.AddSeconds(5);
+            while (ran == 0 && DateTime.UtcNow < until)
+            {
+                Thread.Sleep(5);
+                Dispatcher.UIThread.RunJobs();
+            }
+            Assert.That(ran, Is.EqualTo(1), "the timer ran it once for both requests");
+        }
+
+        // ------------------------------------------------------------------ the first play
+
+        [AvaloniaTest]
+        public void AfterTheWarmUpTheFirstPlayAndStopCompileNothing([Values] bool multithreading)
+        {
+            _ = Studio.Host;                                    // the engine starts its warm-up
+            Assert.That(AudioWarmUp.Wait(), Is.True, "the warm-up finishes");
+            Assert.That(AudioWarmUp.Methods, Is.GreaterThan(1000), "it compiled the audio path");
+            NewSong();
+            bool was = Multithreading;
+            Multithreading = multithreading;
+            try
+            {
+                var m = AddPoly("Hygiene First");
+                m.CreatePattern("00", 16);
+                var p = (PatternCore)m.Patterns.First();
+                Core.SessionLayout.EditNotes(p, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 60 + i % 5, 100)).ToArray());
+                Arrange(m, p);
+                Assert.That(AudioWarmUp.Wait(), Is.True, "the machine's assembly compiled");
+
+                using var audio = new AudioThread(DeviceAlgorithm);
+                audio.Read(100);                                // the device running, stopped
+                int warmBefore = AudioWarmUp.Methods;
+                using var jit = new JitListener();
+                Thread.Sleep(100);
+                jit.On = true;
+                lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                var play = audio.Read(200);
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                var stop = audio.Read(50);
+                Thread.Sleep(300);
+                jit.On = false;
+                TestContext.Out.WriteLine($"[notice] first play compiled {play.Methods} methods, its stop {stop.Methods} (warm-up: {AudioWarmUp.Methods} in {AudioWarmUp.Ticks * 1000.0 / System.Diagnostics.Stopwatch.Frequency:F0} ms; {AudioWarmUp.Methods - warmBefore} during the play)");
+                string compiled = "\n" + string.Join("\n", jit.Methods.Take(60));
+                Assert.That(play.Methods, Is.EqualTo(0), "the first play compiles nothing on the audio or render threads; compiled in the process meanwhile:" + compiled);
+                Assert.That(stop.Methods, Is.EqualTo(0), "nor does its stop:" + compiled);
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                Multithreading = was;
+                NewSong();
+            }
+        }
+    }
+}
