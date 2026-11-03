@@ -12,6 +12,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 
 namespace ReBuzz.Studio.Shell.Preferences
 {
@@ -58,6 +59,28 @@ namespace ReBuzz.Studio.Shell.Preferences
 
         /// <summary>The window closes.</summary>
         public virtual void Closed() { }
+
+        DispatcherTimer poll;
+
+        /// <summary>Refreshes the page on a timer while it shows (devices plugged in, Link's peers).</summary>
+        protected void PollWhileShown(TimeSpan interval)
+        {
+            poll = new DispatcherTimer { Interval = interval };
+            poll.Tick += (s, e) => Refresh();
+        }
+
+        // A tab that isn't selected, or a closed window, leaves the visual tree: its timer stops.
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+            poll?.Start();
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            poll?.Stop();
+            base.OnDetachedFromVisualTree(e);
+        }
 
         /// <summary>True while the page sets its controls from the settings.</summary>
         protected bool Filling { get; set; }

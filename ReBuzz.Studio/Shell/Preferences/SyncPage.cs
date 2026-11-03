@@ -22,7 +22,6 @@ namespace ReBuzz.Studio.Shell.Preferences
         readonly TextBlock linkState = new TextBlock { Foreground = Dim, FontSize = 12 };
         readonly TextBlock problem = new TextBlock { Foreground = Problem, FontSize = 12, TextWrapping = Avalonia.Media.TextWrapping.Wrap };
         readonly TextBlock status = new TextBlock();
-        readonly DispatcherTimer peers = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         readonly List<(string Name, CheckBox Box)> outRows = new List<(string, CheckBox)>();
 
         public SyncPage(SessionSync sync)
@@ -54,7 +53,7 @@ namespace ReBuzz.Studio.Shell.Preferences
             OnCheck(startStop, sync.SetLinkStartStop);
             OnCheck(clockIn, sync.SetFollowMidiClock);
             sync.Changed += OnChanged;
-            peers.Tick += (s, e) => Refresh();
+            PollWhileShown(TimeSpan.FromSeconds(1));
         }
 
         public override string Title => "Sync";
@@ -71,12 +70,10 @@ namespace ReBuzz.Studio.Shell.Preferences
         {
             problem.Text = "";
             Refresh();
-            peers.Start();
         }
 
         public override void Closed()
         {
-            peers.Stop();
             sync.Changed -= OnChanged;
         }
 

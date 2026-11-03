@@ -283,6 +283,7 @@ namespace ReBuzz.Studio.Tests
             // Pan, and a change in the Machine View shows on the strip.
             rig.Drag(Strip(lead).PanBar, 20, 0);
             Assert.That(toMaster.Pan, Is.GreaterThan(0x4000));
+            view.RefreshState();            // the strip's text follows on the view's 50 ms timer
             Assert.That(Strip(lead).PanBar.ValueText, Does.EndWith("R"));
             toMaster.Amp = 0x2000;
             view.RefreshState();

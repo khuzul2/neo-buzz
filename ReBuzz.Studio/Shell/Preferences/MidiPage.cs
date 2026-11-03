@@ -28,7 +28,6 @@ namespace ReBuzz.Studio.Shell.Preferences
         readonly IRegistryEx registry;
         readonly StackPanel inputPanel = new StackPanel { Spacing = 2 };
         readonly StackPanel outputPanel = new StackPanel { Spacing = 2 };
-        readonly DispatcherTimer plugging = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         readonly List<DeviceRow> inputRows = new List<DeviceRow>(), outputRows = new List<DeviceRow>();
         string shown;
 
@@ -51,7 +50,7 @@ namespace ReBuzz.Studio.Shell.Preferences
             Heading("Options");
             AddSettings(Global.MIDISettings);
 
-            plugging.Tick += (s, e) => Refresh();
+            PollWhileShown(TimeSpan.FromSeconds(1));
         }
 
         public override string Title => "MIDI";
@@ -63,10 +62,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         {
             shown = null;
             Refresh();
-            plugging.Start();
         }
-
-        public override void Closed() => plugging.Stop();
 
         /// <summary>Rebuilds the lists when devices came, went, opened or closed.</summary>
         public override void Refresh()
