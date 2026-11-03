@@ -41,7 +41,9 @@ namespace ReBuzz.Studio.Tests
 
         static (Window Window, ParameterWindowView View) Open(MachineCore machine)
         {
-            Core.UiHost.OpenGui(machine, null);     // no GUI here: its parameter window opens
+            // The parameter window itself: a Neo machine's GUI is its editor (S1); a Pedal machine,
+            // with no GUI here, would open this window from OpenGui too.
+            Core.UiHost.OpenParameterWindow(machine, null);
             var window = StudioMachineUiHost.ParameterWindowOf(machine);
             Assert.That(window, Is.Not.Null);
             Assert.That(window!.Content, Is.InstanceOf<ParameterWindowView>());
