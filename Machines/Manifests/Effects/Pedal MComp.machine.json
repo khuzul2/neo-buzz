@@ -5,7 +5,7 @@
  "status": "draft",
  "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
  "type": "dynamics",
- "summary": "Dynamics (profiled draft): traits: utility; tail 0.0 s; latency 2 samples; gain -0.2 dB at the defaults.",
+ "summary": "Dynamics (profiled draft): traits: utility; tail 0.01 s; latency 2 samples; gain -0.2 dB at the defaults.",
  "tracks": 0,
  "health": {
   "status": "ok",
@@ -16,7 +16,7 @@
    "gain_db": -0.22,
    "latency_samples": 2,
    "latency_ms": 0.05,
-   "tail_seconds": 0.0,
+   "tail_seconds": 0.01,
    "echoes": 0,
    "output_correlation": 1.0,
    "spectrum_spread_db": 1.3,
@@ -39,8 +39,6 @@
     "utility"
    ]
   },
-  "cpu_ms_per_s": 0.0,
-  "load_seconds": 0.0,
   "extremes": {
    "min": {
     "silent": false,
@@ -48,7 +46,7 @@
    },
    "max": {
     "silent": false,
-    "sample_peak_dbfs": -37.72
+    "sample_peak_dbfs": -37.56
    }
   }
  },

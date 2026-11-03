@@ -21,10 +21,16 @@
 #                                     [--skip PATTERN,...] [--repo ROOT] [--timeout SECONDS]
 #   python3 tools/machine-profiler.py --merge DIR --repo ROOT   (an earlier run's --out, e.g. a CI artifact, into ROOT)
 #   python3 tools/machine-profiler.py --report ROOT              (rewrite docs/machine-health.md from the summary)
+#   python3 tools/machine-profiler.py --pack DIR                 (print an --out folder into the log, for CI)
+#   python3 tools/machine-profiler.py --unpack LOG --out DIR     (and take it back out of a downloaded job log)
 
 import argparse
 import array
+import base64
 import datetime
+import io
+import re
+import tarfile
 import fnmatch
 import json
 import math
@@ -61,6 +67,7 @@ class Client:
 
     def start(self):
         self.starts += 1
+        self.renders = []
         os.makedirs(self.work, exist_ok=True)
         args = [self.exe, "--agent"]
         if os.path.basename(self.exe).lower() != "rebuzz.exe":
@@ -288,7 +295,19 @@ def render(c, frm, to, tail, probes=None, name=None):
     t = time.time()
     r = c.call("render", timeout=max(c.timeout, 120), **args)
     r["_wall"] = time.time() - t
+    # The WAVs are read here and then deleted (forget_renders): a run makes thousands.
+    c.renders += [r.get("file")] + [p.get("file") for p in r.get("probes", [])]
     return r
+
+
+def forget_renders(c):
+    for f in c.renders:
+        try:
+            if f:
+                os.remove(f)
+        except OSError:
+            pass
+    c.renders = []
 
 
 def seconds_per_second(c):
@@ -370,6 +389,10 @@ def profile_generator(c, prof, info, baseline):
         return None, None
 
     mode, first = try_modes()
+    if first is not None and blown(first["measure"]):
+        prof.data["notes"] = {"input": mode}
+        prof.data["type"] = "generator (blows up)"
+        return
     if mode is None and note_param:
         # Samplers and trackers play the wavetable: give it a sine on A4 in slot 1 and try again.
         if add_test_wave(c):
@@ -516,24 +539,37 @@ def profile_effect(c, prof, info, baseline):
     if t_in is not None and t_out is not None:
         fx["latency_samples"] = max(0, t_out - t_in)
         fx["latency_ms"] = round(max(0, t_out - t_in) / rate * 1000, 2)
-    # Tail: from the end of the input until the output stays 60 dB under its level in the burst.
-    end_in = int(0.5 * rate) + int(0.01 * rate)
-    env = envelope([(a + b) / 2 for a, b in zip(outl[end_in:], outr[end_in:])], rate)
-    floor = out_rms * 0.001
-    last_loud = max((i for i, v in enumerate(env) if v > floor), default=-1)
-    fx["tail_seconds"] = round((last_loud + 1) * 0.01, 2)
-    if last_loud >= len(env) - 2:
-        fx["tail_seconds_note"] = "rings longer than the 3 s rendered"
-    # Echoes: the tail's envelope rising again by 6 dB or more.
-    rises, low = 0, None
-    for v in env[:last_loud + 1]:
-        if v <= 0:
-            continue
-        low = v if low is None else min(low, v)
-        if low > 0 and v > low * 2:
-            rises += 1
-            low = v
-    fx["echoes"] = rises
+    # Tail and echoes from a click: 20 ms of noise, then 3 s to ring out.
+    set_notes(c, "Src", [note(A4, 0, 0.04, 127)], "midi", length=4)
+    rc = render(c, 0, 1, 3.0, probes=["M"], name="click")
+    if blown(rc["measure"]):
+        prof.problem(f"NaN or runaway output on a click ({finite_peak(rc['measure'])} dBFS)")
+    else:
+        _, cl, cr = read_wav(probe_file(rc, "M"))
+        env = envelope([(a + b) / 2 for a, b in zip(cl, cr)], rate, 5)
+        peak = max(env) if env else 0
+        if peak > 0:
+            start = int(0.025 / 0.005)    # after the click
+            floor = peak * 0.001           # -60 dB
+            last_loud = max((i for i, v in enumerate(env) if v > floor), default=start)
+            fx["tail_seconds"] = round(max(0, last_loud + 1 - start) * 0.005, 2)
+            if last_loud >= len(env) - 2:
+                fx["tail_seconds_note"] = "rings longer than the 3 s rendered"
+            # Echoes: from 60 ms on (pre-delay and early reflections come sooner), the tail rising
+            # again by 10 dB or more from a dip. A dense reverb tail doesn't; a delay does, after a gap.
+            echoes, low, first, gap = 0, None, None, None
+            for i in range(int(0.06 / 0.005), last_loud + 1):
+                v = max(env[i], floor)
+                low = v if low is None else min(low, v)
+                if v > low * 3.16:
+                    echoes += 1
+                    if first is None:
+                        first, gap = round(i * 0.005, 3), low
+                    low = v
+            fx["echoes"] = echoes
+            if first:
+                fx["first_echo_seconds"] = first
+                fx["gap_before_echo_db"] = round(db(gap / peak), 1)
     # Stereo: correlation of the output's channels (the input is mono).
     fx["output_correlation"] = round(correlation(outl[burst[0]:burst[1]], outr[burst[0]:burst[1]]), 3)
     # Spectrum: third octaves out against in, the level difference taken off.
@@ -557,6 +593,7 @@ def profile_effect(c, prof, info, baseline):
             fx["tilt_db"] = round(sum(highs) / len(highs) - sum(lows) / len(lows), 1)
     # Sines at two levels 20 dB apart: level dependence and harmonics.
     c.call("param_set", machine="Src", changes=[{"param": p, "value": v} for p, v in SOURCE_SINE])
+    set_notes(c, "Src", [note(A4, 0, 1, 127)], "midi", length=4)
     sine = {}
     for label, vol in (("loud", "-6 dB"), ("quiet", "-26 dB")):
         c.call("param_set", machine="Src", changes=[{"param": "Volume", "value": vol}])
@@ -586,16 +623,21 @@ def profile_effect(c, prof, info, baseline):
 def classify_effect(prof, fx):
     traits = []
     loud, quiet = fx.get("sine", {}).get("loud", {}), fx.get("sine", {}).get("quiet", {})
-    if (fx.get("tail_seconds") or 0) > 0.25:
-        traits.append("delay" if fx.get("echoes", 0) >= 2 else "reverb")
+    # A delay: repeated echoes, or one after a near-silent gap; a reverb: a long smooth tail.
+    delay = fx.get("echoes", 0) >= 2 or (fx.get("echoes", 0) == 1 and (fx.get("gap_before_echo_db") or 0) < -40)
+    if delay:
+        traits.append("delay")
+    elif (fx.get("tail_seconds") or 0) > 0.15:
+        traits.append("reverb")
     thd, thd_in = loud.get("thd_percent") or 0, loud.get("thd_in_percent") or 0
     if thd > thd_in + 1.5 and thd > 1.5 * thd_in:
         traits.append("distortion")
-    if loud.get("gain_db") is not None and quiet.get("gain_db") is not None and abs(loud["gain_db"] - quiet["gain_db"]) > 2:
-        traits.append("dynamics")
     movement = max(loud.get("movement_db") or 0, quiet.get("movement_db") or 0)
     if "delay" not in traits and "reverb" not in traits and (movement > 1.5 or (movement > 1.0 and (fx.get("spectrum_spread_db") or 0) > 6)):
         traits.append("modulation")
+    # Level dependence, unless the output moves on its own (a chorus's gain at one instant isn't its gain).
+    if movement < 1.0 and loud.get("gain_db") is not None and quiet.get("gain_db") is not None and abs(loud["gain_db"] - quiet["gain_db"]) > 2:
+        traits.append("dynamics")
     if (fx.get("spectrum_spread_db") or 0) > 6:
         traits.append("filter or EQ")
     if fx.get("output_correlation", 1) < 0.9 and not traits:
@@ -758,7 +800,8 @@ def draft_manifest(e):
         n = e["notes"]
         m["notes"] = {k: n[k] for k in ("input", "pitch_offset", "pitched", "polyphony") if k in n}
     m["health"] = {"status": health_of(e), "problems": e.get("problems", []) + e.get("warnings", [])}
-    m["profile"] = {k: e[k] for k in ("level", "effect", "cpu_ms_per_s", "load_seconds", "extremes") if k in e}
+    # Timings (CPU, load time) vary run to run: they stay in the summary and the report, not the draft.
+    m["profile"] = {k: e[k] for k in ("level", "effect", "extremes") if k in e}
     m["parameters"] = (e.get("entries") or {}).get("global", [])
     m["track_parameters"] = (e.get("entries") or {}).get("track", [])
     return m
@@ -892,6 +935,48 @@ def write_report(root, merged):
         f.write(health_report(merged))
 
 
+PACK = "MACHINE-PROFILE-PACK"
+
+
+def pack(folder):
+    """The drafts, summary and report of an --out folder, gzipped, as base64 lines in the log: a CI
+    job's log can be read where its artifacts can't (--unpack takes them back out)."""
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w:gz") as tar:
+        for base, _, files in os.walk(folder):
+            for f in files:
+                path = os.path.join(base, f)
+                rel = os.path.relpath(path, folder).replace(os.sep, "/")
+                if rel.startswith("manifests/") or rel in ("machine-profile.json", "machine-health.md"):
+                    tar.add(path, arcname=rel)
+    data = base64.b64encode(buf.getvalue()).decode("ascii")
+    print(f"{PACK}-BEGIN {len(data)}")
+    for i in range(0, len(data), 3000):
+        print(f"{PACK} {data[i:i + 3000]}")
+    print(f"{PACK}-END")
+
+
+def unpack(log, folder):
+    chunks = []
+    with open(log, encoding="utf-8", errors="replace") as f:
+        for line in f:
+            m = re.search(PACK + r" ([A-Za-z0-9+/=]+)\s*$", line)
+            if m:
+                chunks.append(m.group(1))
+    if not chunks:
+        raise SystemExit(f"no {PACK} lines in {log}")
+    os.makedirs(folder, exist_ok=True)
+    with tarfile.open(fileobj=io.BytesIO(base64.b64decode("".join(chunks))), mode="r:gz") as tar:
+        for member in tar.getmembers():
+            if member.name.startswith("/") or ".." in member.name.split("/") or not member.isfile():
+                continue
+            try:
+                tar.extract(member, folder, filter="data")
+            except TypeError:   # Python before 3.12
+                tar.extract(member, folder)
+    print(f"unpacked {len(chunks)} lines into {folder}")
+
+
 def main():
     ap = argparse.ArgumentParser(description="Profile every machine an MCP server offers (docs/specs/mcp-server.md §12.2).")
     ap.add_argument("exe", nargs="?", help="rebuzz-headless or ReBuzz.exe")
@@ -901,6 +986,8 @@ def main():
     ap.add_argument("--repo", default=None, help="merge the results into this repository checkout")
     ap.add_argument("--report", default=None, help="only rewrite ROOT/docs/machine-health.md from ROOT's summary")
     ap.add_argument("--merge", default=None, help="merge an earlier run's --out folder (a CI artifact) into --repo")
+    ap.add_argument("--pack", default=None, help="print an --out folder into the log (base64 lines)")
+    ap.add_argument("--unpack", default=None, help="a job log with packed lines: unpack them into --out")
     ap.add_argument("--timeout", type=float, default=90, help="seconds a call may take before the machine counts as hung")
     args = ap.parse_args()
     root_default = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -908,6 +995,14 @@ def main():
         with open(os.path.join(args.report, "Machines", "Manifests", "machine-profile.json"), encoding="utf-8") as f:
             write_report(args.report, json.load(f))
         print("wrote docs/machine-health.md")
+        return 0
+    if args.pack:
+        pack(args.pack)
+        return 0
+    if args.unpack:
+        if not args.out:
+            ap.error("--unpack needs --out")
+        unpack(args.unpack, args.out)
         return 0
     if args.merge:
         if not args.repo:
@@ -966,6 +1061,7 @@ def main():
             write_json(os.path.join(out, "manifests", subfolder(e), name + ".machine.json"), draft_manifest(e))
         e.pop("entries", None)   # in the draft; the summary keeps the measurements
         summary["machines"][name] = e
+        forget_renders(c)
         flag = {"ok": "ok  ", "warn": "warn", "unhealthy": "BAD "}[e["health"]]
         print(f"[{i + 1}/{len(chosen)}] {flag} {name:<32} {e.get('type', ''):<22} {time.time() - t:5.1f} s"
               + (f"  {'; '.join(prof.problems + prof.warnings)[:160]}" if prof.problems or prof.warnings else ""), flush=True)

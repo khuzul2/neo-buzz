@@ -145,8 +145,10 @@ jobs:
     # The machine profiler (docs/specs/mcp-server.md §12.2, U1) through ReBuzz.exe --agent, which hosts the
     # native machines: every machine in its Gear (quick builds leave out the external ones). Draft manifests,
     # docs/machine-health.md and the summary go up as the machine-profile-windows artifact, to commit with
-    # `python tools/machine-profiler.py --merge <artifact folder> --repo .`. A machine that crashes or hangs
-    # is a finding (the profiler restarts ReBuzz and goes on), and the step never fails the job.
+    # `python tools/machine-profiler.py --merge <artifact folder> --repo .`. They are also packed into the
+    # log (--pack; --unpack takes them out of a downloaded job log), for where artifacts can't be fetched.
+    # A machine that crashes or hangs is a finding (the profiler restarts ReBuzz and goes on), and the
+    # step never fails the job.
     - name: Machine profile
       id: profile
       if: (success() || failure()) && steps.build.outcome == 'success'
@@ -157,7 +159,9 @@ jobs:
         $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
         if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
         python tools/machine-profiler.py $exe.FullName --out machine-profile *>&1 | Tee-Object -FilePath machine-profile.log
-        exit $LASTEXITCODE
+        $code = $LASTEXITCODE
+        if (Test-Path machine-profile/machine-profile.json) { python tools/machine-profiler.py --pack machine-profile }
+        exit $code
 
     - name: Upload machine profile
       if: always() && hashFiles('machine-profile/machine-profile.json') != ''

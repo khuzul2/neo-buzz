@@ -39,8 +39,6 @@
     "utility"
    ]
   },
-  "cpu_ms_per_s": 5.7,
-  "load_seconds": 0.0,
   "extremes": {
    "min": {
     "silent": false,
@@ -48,7 +46,7 @@
    },
    "max": {
     "silent": false,
-    "sample_peak_dbfs": -10.04
+    "sample_peak_dbfs": -9.78
    }
   }
  },

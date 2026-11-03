@@ -23,16 +23,16 @@
    "tilt_db": 2.3,
    "sine": {
     "loud": {
-     "gain_db": -4.91,
-     "thd_percent": 1.9,
+     "gain_db": -4.69,
+     "thd_percent": 1.87,
      "thd_in_percent": 1.96,
-     "movement_db": 1.93
+     "movement_db": 1.85
     },
     "quiet": {
-     "gain_db": -4.72,
+     "gain_db": -4.89,
      "thd_percent": 1.88,
      "thd_in_percent": 1.96,
-     "movement_db": 1.71
+     "movement_db": 1.92
     }
    },
    "traits": [
@@ -40,8 +40,6 @@
     "filter or EQ"
    ]
   },
-  "cpu_ms_per_s": 0.0,
-  "load_seconds": 0.0,
   "extremes": {
    "min": {
     "silent": false,
@@ -49,7 +47,7 @@
    },
    "max": {
     "silent": false,
-    "sample_peak_dbfs": -31.53
+    "sample_peak_dbfs": -31.49
    }
   }
  },

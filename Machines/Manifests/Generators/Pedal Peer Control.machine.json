@@ -17,7 +17,6 @@
   ]
  },
  "profile": {
-  "load_seconds": 0.0,
   "extremes": {
    "min": {
     "silent": true,

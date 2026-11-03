@@ -39,8 +39,6 @@
     "dynamics"
    ]
   },
-  "cpu_ms_per_s": 0.0,
-  "load_seconds": 0.0,
   "extremes": {
    "min": {
     "silent": false,
@@ -48,7 +46,7 @@
    },
    "max": {
     "silent": false,
-    "sample_peak_dbfs": -11.89
+    "sample_peak_dbfs": -12.04
    }
   }
  },

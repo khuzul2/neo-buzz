@@ -47,7 +47,7 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 48.1,
+   "cpu_ms_per_s": 59.2,
    "type": "utility",
    "extremes": {
     "min": {
@@ -59,7 +59,7 @@
      "sample_peak_dbfs": -32.72
     }
    },
-   "seconds": 1.8,
+   "seconds": 2.3,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -99,34 +99,34 @@
     "sine": {
      "loud": {
       "gain_db": -3.4,
-      "thd_percent": 1.96,
+      "thd_percent": 1.97,
       "thd_in_percent": 1.96,
-      "movement_db": 0.14
+      "movement_db": 0.13
      },
      "quiet": {
       "gain_db": -0.44,
-      "thd_percent": 1.96,
+      "thd_percent": 1.95,
       "thd_in_percent": 1.96,
-      "movement_db": 0.8
+      "movement_db": 0.92
      }
     },
     "traits": [
      "dynamics"
     ]
    },
-   "cpu_ms_per_s": 19.4,
+   "cpu_ms_per_s": 15.1,
    "type": "dynamics",
    "extremes": {
     "min": {
      "silent": false,
-     "sample_peak_dbfs": -33.05
+     "sample_peak_dbfs": -33.29
     },
     "max": {
      "silent": false,
      "sample_peak_dbfs": 14.61
     }
    },
-   "seconds": 1.6,
+   "seconds": 2.0,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -168,7 +168,7 @@
       "gain_db": 0.59,
       "thd_percent": 4.94,
       "thd_in_percent": 1.96,
-      "movement_db": 0.13
+      "movement_db": 0.12
      },
      "quiet": {
       "gain_db": 1.43,
@@ -181,19 +181,19 @@
      "distortion"
     ]
    },
-   "cpu_ms_per_s": 23.4,
+   "cpu_ms_per_s": 14.5,
    "type": "distortion",
    "extremes": {
     "min": {
      "silent": false,
-     "sample_peak_dbfs": -31.19
+     "sample_peak_dbfs": -32.03
     },
     "max": {
      "silent": false,
-     "sample_peak_dbfs": 6.2
+     "sample_peak_dbfs": 3.69
     }
    },
-   "seconds": 2.1,
+   "seconds": 2.5,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -205,7 +205,7 @@
   "Neo EQ": {
    "gear": "Neo EQ",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/Neo EQ.NET.dll",
     "managed": true,
@@ -248,7 +248,7 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 33.3,
+   "cpu_ms_per_s": 25.0,
    "type": "EQ",
    "extremes": {
     "min": {
@@ -257,10 +257,10 @@
     },
     "max": {
      "silent": false,
-     "sample_peak_dbfs": -8.7
+     "sample_peak_dbfs": -8.71
     }
    },
-   "seconds": 2.6,
+   "seconds": 2.4,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -274,7 +274,7 @@
   "Neo FM6": {
    "gear": "Neo FM6",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/Neo FM6.NET.dll",
     "managed": true,
@@ -315,7 +315,7 @@
     "sample_peak_dbfs": -20.98,
     "true_peak_dbtp": -20.98
    },
-   "cpu_ms_per_s": 25.4,
+   "cpu_ms_per_s": 24.4,
    "type": "polysynth",
    "extremes": {
     "min": {
@@ -327,7 +327,7 @@
      "sample_peak_dbfs": 6.95
     }
    },
-   "seconds": 1.6,
+   "seconds": 1.5,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -369,7 +369,7 @@
       "gain_db": 0.0,
       "thd_percent": 1.96,
       "thd_in_percent": 1.96,
-      "movement_db": 0.13
+      "movement_db": 0.14
      },
      "quiet": {
       "gain_db": 0.0,
@@ -382,19 +382,19 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 15.7,
+   "cpu_ms_per_s": 16.4,
    "type": "utility",
    "extremes": {
     "min": {
      "silent": false,
-     "sample_peak_dbfs": -32.98
+     "sample_peak_dbfs": -33.19
     },
     "max": {
      "silent": false,
      "sample_peak_dbfs": -8.72
     }
    },
-   "seconds": 1.1,
+   "seconds": 1.4,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -447,7 +447,7 @@
     "sample_peak_dbfs": -14.43,
     "true_peak_dbtp": -14.14
    },
-   "cpu_ms_per_s": 2.4,
+   "cpu_ms_per_s": 1.0,
    "type": "polysynth",
    "extremes": {
     "min": {
@@ -459,7 +459,7 @@
      "sample_peak_dbfs": -7.38
     }
    },
-   "seconds": 2.3,
+   "seconds": 2.0,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -514,19 +514,19 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 2.1,
    "type": "utility",
    "extremes": {
     "min": {
      "silent": false,
-     "sample_peak_dbfs": -33
+     "sample_peak_dbfs": -33.29
     },
     "max": {
      "silent": false,
-     "sample_peak_dbfs": -8.65
+     "sample_peak_dbfs": -8.72
     }
    },
-   "seconds": 0.9,
+   "seconds": 1.2,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -558,30 +558,30 @@
     "gain_db": -2.8,
     "latency_samples": 0,
     "latency_ms": 0.0,
-    "tail_seconds": 1.99,
+    "tail_seconds": 1.52,
     "echoes": 0,
     "output_correlation": 0.94,
     "spectrum_spread_db": 2.2,
     "tilt_db": -0.4,
     "sine": {
      "loud": {
-      "gain_db": -1.44,
-      "thd_percent": 1.52,
+      "gain_db": -1.36,
+      "thd_percent": 2.28,
       "thd_in_percent": 1.96,
-      "movement_db": 2.24
+      "movement_db": 2.87
      },
      "quiet": {
-      "gain_db": -0.02,
-      "thd_percent": 1.44,
+      "gain_db": -1.0,
+      "thd_percent": 1.68,
       "thd_in_percent": 1.96,
-      "movement_db": 1.68
+      "movement_db": 1.37
      }
     },
     "traits": [
      "reverb"
     ]
    },
-   "cpu_ms_per_s": 6.1,
+   "cpu_ms_per_s": 0.3,
    "type": "reverb",
    "extremes": {
     "min": {
@@ -590,10 +590,10 @@
     },
     "max": {
      "silent": false,
-     "sample_peak_dbfs": -22.98
+     "sample_peak_dbfs": -23.27
     }
    },
-   "seconds": 1.3,
+   "seconds": 1.4,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -605,7 +605,7 @@
   "Neo Wave": {
    "gear": "Neo Wave",
    "kind": "generator",
-   "load_seconds": 0.96,
+   "load_seconds": 0.46,
    "gear_info": {
     "file": "Generators/Neo Wave.NET.dll",
     "managed": true,
@@ -646,7 +646,7 @@
     "sample_peak_dbfs": -16.96,
     "true_peak_dbtp": -16.96
    },
-   "cpu_ms_per_s": 13.7,
+   "cpu_ms_per_s": 13.0,
    "type": "polysynth",
    "extremes": {
     "min": {
@@ -686,7 +686,7 @@
    "inferred": 12,
    "from_description": 1,
    "type": "control",
-   "seconds": 0.0,
+   "seconds": 0.1,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -724,16 +724,16 @@
     "tilt_db": 2.3,
     "sine": {
      "loud": {
-      "gain_db": -4.91,
-      "thd_percent": 1.9,
+      "gain_db": -4.69,
+      "thd_percent": 1.87,
       "thd_in_percent": 1.96,
-      "movement_db": 1.93
+      "movement_db": 1.85
      },
      "quiet": {
-      "gain_db": -4.72,
+      "gain_db": -4.89,
       "thd_percent": 1.88,
       "thd_in_percent": 1.96,
-      "movement_db": 1.71
+      "movement_db": 1.92
      }
     },
     "traits": [
@@ -750,10 +750,10 @@
     },
     "max": {
      "silent": false,
-     "sample_peak_dbfs": -31.53
+     "sample_peak_dbfs": -31.49
     }
    },
-   "seconds": 0.7,
+   "seconds": 0.9,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -813,10 +813,10 @@
     },
     "max": {
      "silent": false,
-     "sample_peak_dbfs": -11.89
+     "sample_peak_dbfs": -12.04
     }
    },
-   "seconds": 0.8,
+   "seconds": 1.0,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -935,14 +935,14 @@
    "extremes": {
     "min": {
      "silent": true,
-     "sample_peak_dbfs": -90.33
+     "sample_peak_dbfs": -91.78
     },
     "max": {
      "silent": false,
      "sample_peak_dbfs": -32.72
     }
    },
-   "seconds": 0.7,
+   "seconds": 1.0,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -982,7 +982,7 @@
       "gain_db": -0.12,
       "thd_percent": 1.66,
       "thd_in_percent": 1.96,
-      "movement_db": 0.14
+      "movement_db": 0.13
      },
      "quiet": {
       "gain_db": -0.12,
@@ -1004,10 +1004,10 @@
     },
     "max": {
      "silent": false,
-     "sample_peak_dbfs": -6.73
+     "sample_peak_dbfs": -7.03
     }
    },
-   "seconds": 0.8,
+   "seconds": 0.9,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -1019,7 +1019,7 @@
   "Pedal FM": {
    "gear": "Pedal FM",
    "kind": "generator",
-   "load_seconds": 0.01,
+   "load_seconds": 0.0,
    "gear_info": {
     "file": "Generators/Pedal FM.NET.dll",
     "managed": true,
@@ -1059,7 +1059,7 @@
     "sample_peak_dbfs": -8.1,
     "true_peak_dbtp": -3.14
    },
-   "cpu_ms_per_s": 0.8,
+   "cpu_ms_per_s": 0.0,
    "type": "unpitched",
    "extremes": {
     "min": {
@@ -1122,7 +1122,7 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 6.2,
    "type": "utility",
    "extremes": {
     "min": {
@@ -1134,7 +1134,7 @@
      "sample_peak_dbfs": null
     }
    },
-   "seconds": 0.7,
+   "seconds": 1.1,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -1146,7 +1146,7 @@
   "Pedal Gain Multi": {
    "gear": "Pedal Gain Multi",
    "kind": "effect",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/Pedal Gain Multi.NET.dll",
     "managed": true,
@@ -1194,10 +1194,10 @@
     },
     "max": {
      "silent": false,
-     "sample_peak_dbfs": -25.24
+     "sample_peak_dbfs": -25.25
     }
    },
-   "seconds": 0.7,
+   "seconds": 1.0,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -1260,7 +1260,7 @@
      "sample_peak_dbfs": -32.72
     }
    },
-   "seconds": 0.7,
+   "seconds": 0.8,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -1272,7 +1272,7 @@
   "Pedal Juno106": {
    "gear": "Pedal Juno106",
    "kind": "generator",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Generators/Pedal Juno106.NET.dll",
     "managed": true,
@@ -1312,7 +1312,7 @@
     "sample_peak_dbfs": -4.43,
     "true_peak_dbtp": -4.31
    },
-   "cpu_ms_per_s": 7.5,
+   "cpu_ms_per_s": 4.9,
    "type": "polysynth",
    "extremes": {
     "min": {
@@ -1321,10 +1321,10 @@
     },
     "max": {
      "silent": false,
-     "sample_peak_dbfs": 4.23
+     "sample_peak_dbfs": 4.09
     }
    },
-   "seconds": 0.6,
+   "seconds": 0.7,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -1337,7 +1337,7 @@
    "gear": "Pedal LFO",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Generators/Pedal LFO.NET.dll",
     "managed": true,
@@ -1351,7 +1351,7 @@
    "inferred": 8,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.0,
+   "seconds": 0.1,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -1407,7 +1407,7 @@
     "sample_peak_dbfs": -22.88,
     "true_peak_dbtp": -22.88
    },
-   "cpu_ms_per_s": 10.6,
+   "cpu_ms_per_s": 16.5,
    "type": "monosynth",
    "extremes": {
     "min": {
@@ -1419,7 +1419,7 @@
      "sample_peak_dbfs": null
     }
    },
-   "seconds": 1.1,
+   "seconds": 1.0,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -1449,7 +1449,7 @@
     "gain_db": -0.22,
     "latency_samples": 2,
     "latency_ms": 0.05,
-    "tail_seconds": 0.0,
+    "tail_seconds": 0.01,
     "echoes": 0,
     "output_correlation": 1.0,
     "spectrum_spread_db": 1.3,
@@ -1481,10 +1481,10 @@
     },
     "max": {
      "silent": false,
-     "sample_peak_dbfs": -37.72
+     "sample_peak_dbfs": -37.56
     }
    },
-   "seconds": 0.9,
+   "seconds": 1.0,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -1563,7 +1563,7 @@
      "sample_peak_dbfs": -9.83
     }
    },
-   "seconds": 0.5,
+   "seconds": 0.4,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [
@@ -1614,7 +1614,7 @@
     "sample_peak_dbfs": -4.29,
     "true_peak_dbtp": -4.29
    },
-   "cpu_ms_per_s": 4.0,
+   "cpu_ms_per_s": 1.4,
    "type": "monosynth",
    "extremes": {
     "min": {
@@ -1626,7 +1626,7 @@
      "sample_peak_dbfs": -10.35
     }
    },
-   "seconds": 0.8,
+   "seconds": 0.6,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -1677,7 +1677,7 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 5.7,
+   "cpu_ms_per_s": 8.4,
    "type": "utility",
    "extremes": {
     "min": {
@@ -1686,10 +1686,10 @@
     },
     "max": {
      "silent": false,
-     "sample_peak_dbfs": -10.04
+     "sample_peak_dbfs": -9.78
     }
    },
-   "seconds": 0.9,
+   "seconds": 1.1,
    "platform": "linux",
    "date": "2026-11-03",
    "problems": [],
@@ -1742,7 +1742,7 @@
     "sample_peak_dbfs": -12.71,
     "true_peak_dbtp": -12.71
    },
-   "cpu_ms_per_s": 5.1,
+   "cpu_ms_per_s": 2.0,
    "type": "monosynth",
    "extremes": {
     "min": {

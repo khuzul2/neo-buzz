@@ -26,7 +26,7 @@
      "gain_db": -0.12,
      "thd_percent": 1.66,
      "thd_in_percent": 1.96,
-     "movement_db": 0.14
+     "movement_db": 0.13
     },
     "quiet": {
      "gain_db": -0.12,
@@ -39,8 +39,6 @@
     "filter or EQ"
    ]
   },
-  "cpu_ms_per_s": 0.0,
-  "load_seconds": 0.0,
   "extremes": {
    "min": {
     "silent": false,
@@ -48,7 +46,7 @@
    },
    "max": {
     "silent": false,
-    "sample_peak_dbfs": -6.73
+    "sample_peak_dbfs": -7.03
    }
   }
  },

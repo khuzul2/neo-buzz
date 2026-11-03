@@ -24,40 +24,40 @@ Machines that don't load, crash or hang the server, or put out NaN or a runaway 
 
 | Machine | Type | Notes in | Pitch offset | Voices | Level (LUFS, one note) | CPU ms/s | Health |
 |---|---|---|---|---|---|---|---|
-| Neo FM6 | polysynth | midi | +0 | 8 | -23 | 25.4 | ok |
-| Neo Poly | polysynth | midi | +0 | 8 | -20.8 | 2.4 | ok |
-| Neo Wave | polysynth | midi | +0 | 8 | -20.7 | 13.7 | ok |
+| Neo FM6 | polysynth | midi | +0 | 8 | -23 | 24.4 | ok |
+| Neo Poly | polysynth | midi | +0 | 8 | -20.8 | 1.0 | ok |
+| Neo Wave | polysynth | midi | +0 | 8 | -20.7 | 13.0 | ok |
 | Pedal Chord | control |  |  |  |  |  | ok |
-| Pedal FM | unpitched | tracks |  | 16 | -8.7 | 0.8 | ok |
-| Pedal Juno106 | polysynth | tracks | +0 (-11 ct) | 6 | -9.8 | 7.5 | ok |
+| Pedal FM | unpitched | tracks |  | 16 | -8.7 | 0.0 | ok |
+| Pedal Juno106 | polysynth | tracks | +0 (-11 ct) | 6 | -9.8 | 4.9 | ok |
 | Pedal LFO | control |  |  |  |  |  | ok |
-| Pedal M1 | monosynth | tracks | +0 | 1 | -24.6 | 10.6 | ok |
+| Pedal M1 | monosynth | tracks | +0 | 1 | -24.6 | 16.5 | ok |
 | Pedal Peer Control | generator (silent at its defaults) | none |  |  |  |  | warn |
-| Pedal SH101 | monosynth | tracks | +0 | 1 | -5.9 | 4.0 | ok |
-| Pedal Tracker | monosynth | tracks | +0 | 1 | -14.5 | 5.1 | ok |
+| Pedal SH101 | monosynth | tracks | +0 | 1 | -5.9 | 1.4 | ok |
+| Pedal Tracker | monosynth | tracks | +0 | 1 | -14.5 | 2.0 | ok |
 
 ## Effects
 
 | Machine | Type (traits) | Gain dB | Latency (samples) | Tail s | CPU ms/s | Health |
 |---|---|---|---|---|---|---|
-| Neo Analyzer | utility | 0.0 | 0 | 0.0 | 48.1 | ok |
-| Neo Comp | dynamics | -2.54 | 0 | 0.0 | 19.4 | ok |
-| Neo Drive | distortion | -0.62 | 62 | 0.01 | 23.4 | ok |
-| Neo EQ | utility | 0.0 | 0 | 0.0 | 33.3 | ok |
-| Neo Limiter | utility | 0.0 | 99 | 0.0 | 15.7 | ok |
-| Neo Utility | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
-| Neo Verb | reverb | -2.8 | 0 | 1.99 | 6.1 | ok |
+| Neo Analyzer | utility | 0.0 | 0 | 0.0 | 59.2 | ok |
+| Neo Comp | dynamics | -2.54 | 0 | 0.0 | 15.1 | ok |
+| Neo Drive | distortion | -0.62 | 62 | 0.01 | 14.5 | ok |
+| Neo EQ | utility | 0.0 | 0 | 0.0 | 25.0 | ok |
+| Neo Limiter | utility | 0.0 | 99 | 0.0 | 16.4 | ok |
+| Neo Utility | utility | 0.0 | 0 | 0.0 | 2.1 | ok |
+| Neo Verb | reverb | -2.8 | 0 | 1.52 | 0.3 | ok |
 | Pedal Chorus | modulation, filter or EQ | -4.31 | 0 | 0.01 | 0.0 | ok |
 | Pedal Comp | dynamics | -0.32 | 0 | 0.0 | 0.0 | ok |
 | Pedal Drum Matrix | utility | -0.04 | 0 | 0.0 | 0.0 | ok |
 | Pedal EQ | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
 | Pedal Filter | filter or EQ | -9.49 | 3 | 0.0 | 0.0 | ok |
-| Pedal Gain | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
+| Pedal Gain | utility | 0.0 | 0 | 0.0 | 6.2 | ok |
 | Pedal Gain Multi | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
 | Pedal Gate | dynamics | 0.0 | 37 | 0.0 | 0.0 | ok |
-| Pedal MComp | utility | -0.22 | 2 | 0.0 | 0.0 | ok |
+| Pedal MComp | utility | -0.22 | 2 | 0.01 | 0.0 | ok |
 | Pedal Plate | effect (blows up) |  |  |  |  | unhealthy |
-| Pedal Shaper | utility | -0.09 | 0 | 0.01 | 5.7 | ok |
+| Pedal Shaper | utility | -0.09 | 0 | 0.01 | 8.4 | ok |
 
 ## Not measured yet (U2)
 

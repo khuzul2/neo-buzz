@@ -11,9 +11,7 @@
   "status": "ok",
   "problems": []
  },
- "profile": {
-  "load_seconds": 0.01
- },
+ "profile": {},
  "parameters": [],
  "track_parameters": [
   {

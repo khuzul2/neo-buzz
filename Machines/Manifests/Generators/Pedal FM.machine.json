@@ -23,8 +23,6 @@
    "sample_peak_dbfs": -8.1,
    "true_peak_dbtp": -3.14
   },
-  "cpu_ms_per_s": 0.8,
-  "load_seconds": 0.01,
   "extremes": {
    "min": {
     "silent": true,
