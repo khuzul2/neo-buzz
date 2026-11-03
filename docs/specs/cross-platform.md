@@ -335,6 +335,7 @@ Today VST runs through Polac's closed Windows machines, so a Mac build has no pl
 - **Formats:** CLAP (MIT) and VST3 (MIT since VST 3.8, October 2025) are both licence-compatible with the fork. AU through AudioToolbox if needed.
 - **Hosting:** built on R1's portable native host, so plugins run out of process like native machines. Plugin editors open as separate windows, because macOS can't embed an NSView from another process.
 - **Cost:** 6–10 pw. Not needed for the first Mac release.
+- **Analysis (2026-11-03):** [`plugin-host.md`](plugin-host.md): a new host versus Polac, what each format covers (including VST2's licence route), isolation and effort. It recommends a CLAP + VST3 host beside Polac, 10–14 pw with a sandbox.
 
 ## 5. Plan
 
