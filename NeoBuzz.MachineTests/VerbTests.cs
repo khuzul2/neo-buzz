@@ -259,13 +259,10 @@ namespace NeoBuzz.MachineTests
         {
             // Each parameter alone at each end (the others at their defaults, Mix 100 %), then the
             // worst combinations: the lowest damping with the longest decays, the sizes and modes,
-            // full modulation. Not Shimmer above its default (0): its loop (the tail an octave up,
-            // back into the network) runs away above a setting that falls with the decay (about
-            // 93 % at the default Decay, 26 % at 30 s): an open finding, docs/specs/machines.md (Neo Verb).
+            // full modulation (the shimmer across Decay, Mode and Size: ShimmerStaysBounded).
             foreach (var d in Params.Table)
                 foreach (int raw in new[] { d.Min, d.Max })
-                    if (d.Index != P.Shimmer || raw == d.Min)
-                        yield return new TestCaseData(d.Name + "=" + raw, new[] { (d.Index, raw) }).SetName($"Extremes({d.Name} {(raw == d.Min ? "min" : "max")})");
+                    yield return new TestCaseData(d.Name + "=" + raw, new[] { (d.Index, raw) }).SetName($"Extremes({d.Name} {(raw == d.Min ? "min" : "max")})");
             var worst = new[] { (P.Damping, 0), (P.Decay, 1000), (P.LowDecay, 1000) };
             var mod = new[] { (P.ModDepth, 1000), (P.ModRate, 1000) };
             (string, (int, int)[])[] combos =
@@ -277,8 +274,8 @@ namespace NeoBuzz.MachineTests
                 ("damping min, decay max, low decay max, size min, Room, full modulation", worst.Concat(mod).Append((P.Size, 0)).Append((P.Mode, 1)).ToArray()),
                 ("damping min, decay max, low decay max, size max, Plate, full modulation", worst.Concat(mod).Append((P.Size, 1000)).Append((P.Mode, 3)).ToArray()),
                 ("damping min, decay max, low decay max, Chamber", worst.Append((P.Mode, 2)).ToArray()),
-                ("damping max, decay max, low decay max, full modulation", new[] { (P.Damping, 1000), (P.Decay, 1000), (P.LowDecay, 1000) }.Concat(mod).ToArray()),
-                ("every parameter at its maximum, Freeze and Shimmer off", Params.Table.Select(d => (d.Index, d.Index == P.Freeze || d.Index == P.Shimmer ? 0 : d.Max)).ToArray()),
+                ("damping max, decay max, low decay max, full modulation, shimmer max", new[] { (P.Damping, 1000), (P.Decay, 1000), (P.LowDecay, 1000), (P.Shimmer, 1000) }.Concat(mod).ToArray()),
+                ("every parameter at its maximum, Freeze off", Params.Table.Select(d => (d.Index, d.Index == P.Freeze ? 0 : d.Max)).ToArray()),
                 ("every parameter at its minimum, Mix 100 %", Params.Table.Select(d => (d.Index, d.Index == P.Mix ? d.Max : d.Min)).ToArray()),
             };
             foreach (var (name, changes) in combos) yield return new TestCaseData(name, changes).SetName($"Extremes({name})");
@@ -289,7 +286,9 @@ namespace NeoBuzz.MachineTests
         {
             // 30 s of pink noise, then 10 s of silence: finite, below +24 dBFS, not growing over the
             // last 10 s of noise (a build-up levels off), and decaying once the input stops, at least
-            // as fast as the guaranteed bound allows (MaxOvershoot times the slowest set decay).
+            // as fast as the guaranteed bound allows (MaxOvershoot times the slowest set decay). With
+            // shimmer: decaying at least 0.3 dB/s where the shimmer guard holds it (it aims at 0.5),
+            // and not growing where it doesn't (that loop decays by itself, however slowly).
             var (e, v) = Make(pv => { foreach (var (i, raw) in changes) pv.Set(i, raw); });
             int rate = Measure.Rate, noise = 30 * rate, tail = 10 * rate;
             var x = new float[noise + tail];
@@ -301,13 +300,140 @@ namespace NeoBuzz.MachineTests
             double first = Level(noise + rate, 1), last = Level(noise + 8 * rate, 1);
             double slowest = v.Value(P.Decay) * Math.Max(1, v.Value(P.LowDecay));
             bool frozen = v.On(P.Freeze);
-            double needDrop = frozen ? 0 : 0.5 * 60 * 7 / (VerbEngine.MaxOvershoot * slowest);
-            Measure.Report($"Neo Verb {what}: peak {Measure.Db(peak):+0.0;−0.0} dBFS, last 10 s of noise {grow:+0.00;−0.00} dB, tail {last - first:+0.0;−0.0} dB over 7 s (at least −{needDrop:F1})");
+            bool shimmering = v.Value(P.Shimmer) > 0, held = e.ShimmerGuard.Limiting;
+            double needDrop = frozen ? 0 : shimmering ? (held ? 0.3 * 7 : 0) : 0.5 * 60 * 7 / (VerbEngine.MaxOvershoot * slowest);
+            Measure.Report($"Neo Verb {what}: peak {Measure.Db(peak):+0.0;−0.0} dBFS, last 10 s of noise {grow:+0.00;−0.00} dB, tail {last - first:+0.0;−0.0} dB over 7 s (at least −{needDrop:F1}){(held ? $", shimmer held at {e.ShimmerGuard.Scale:F2}×" : "")}");
             Assert.That(double.IsFinite(peak), Is.True, "finite");
             Assert.That(Measure.Db(peak), Is.LessThan(24), "below +24 dBFS");
             Assert.That(grow, Is.LessThan(1.5), "levels off under noise");
             if (frozen) Assert.That(last - first, Is.LessThan(1.0), "freeze holds without growing");
             else if (first > -120) Assert.That(last - first, Is.LessThan(-needDrop), "decays after the input stops");
+        }
+
+        static IEnumerable<TestCaseData> ShimmerSettings()
+        {
+            for (int mode = 0; mode < 4; mode++)
+            {
+                foreach (int size in new[] { 0, 1000 })
+                    foreach (int sh in new[] { 300, 1000 })
+                        yield return new TestCaseData(new[] { (P.Shimmer, sh), (P.Decay, 1000), (P.Mode, mode), (P.Size, size) })
+                            .SetName($"ShimmerStaysBounded({sh / 10} %, decay max, {(VerbMode)mode}, size {size})");
+                yield return new TestCaseData(new[] { (P.Shimmer, 1000), (P.Mode, mode), (P.Size, 0) })
+                    .SetName($"ShimmerStaysBounded(100 %, the default decay, {(VerbMode)mode}, size 0)");
+            }
+            yield return new TestCaseData(new[] { (P.Shimmer, 1000), (P.Decay, 0) }).SetName("ShimmerStaysBounded(100 %, decay min)");
+            yield return new TestCaseData(new[] { (P.Shimmer, 1000), (P.Damping, 0), (P.Decay, 1000), (P.Mode, 2) })
+                .SetName("ShimmerStaysBounded(100 %, damping min, decay max, Chamber)");
+        }
+
+        [TestCaseSource(nameof(ShimmerSettings))]
+        public void ShimmerStaysBounded((int Index, int Raw)[] changes)
+        {
+            // 30 s of pink noise at −20 dBFS RMS, then 40 s of silence. Finite, and 6 dB under the
+            // engine's guard (+60 dBFS). Where the shimmer guard holds the loop, its tail decays over
+            // the last 10 s at least half as fast as it aims (0.5 dB/s, or half the network's own
+            // slowest decay where that is slower). Where it doesn't, the loop decays by itself and
+            // renders as it did before the guard: its tail doesn't grow at the end.
+            // Near the edge a long decay with a small room amplifies a lot (up to +50 dBFS here):
+            // that is the setting, held just inside its edge, not a runaway.
+            var (e, v) = Make(pv => { foreach (var (i, raw) in changes) pv.Set(i, raw); });
+            int rate = Measure.Rate, noise = 30 * rate;
+            var x = new float[70 * rate];
+            Array.Copy(Measure.PinkNoise(noise, 0.1), x, noise);
+            var (l, r) = Run(e, x, x);
+            double peak = Math.Max(Measure.Peak(l, 0, l.Length), Measure.Peak(r, 0, r.Length));
+            double Level(int from, int seconds) => Measure.Db(Math.Max(Measure.Rms(l, from * rate, seconds * rate), Measure.Rms(r, from * rate, seconds * rate)));
+            var g = e.ShimmerGuard;
+            double late = (Level(65, 5) - Level(55, 5)) / 10;
+            Measure.Report($"Neo Verb shimmer ({string.Join(", ", changes.Select(c => $"{Params.Table[c.Index].Name} {c.Raw}"))}): peak {Measure.Db(peak):+0.0;−0.0} dBFS, tail {Level(31, 1):F1} dB at 1 s, {Level(69, 1):F1} dB at 39 s, last 10 s {late:+0.00;−0.00} dB/s{(g.Limiting ? $", shimmer held at {g.Scale:F2}×" : ", guard asleep")}");
+            Assert.That(double.IsFinite(peak), Is.True, "finite");
+            Assert.That(Measure.Db(peak), Is.LessThan(54), "6 dB under the engine's guard");
+            if (Level(55, 5) > -150)
+            {
+                if (g.Limiting) Assert.That(late, Is.LessThan(0.5 * g.Target), $"held: decays (aiming at {g.Target:F2} dB/s)");
+                else Assert.That(late, Is.LessThan(0.05), "decays by itself");
+            }
+        }
+
+        [TestCase(0, 504, 500, 400)]     // Hall, the default Decay, 40 % shimmer
+        [TestCase(1, 300, 500, 1000)]    // Room, a short Decay, full shimmer
+        [TestCase(0, 0, 0, 1000)]        // the shortest Decay, full shimmer
+        [TestCase(3, 504, 0, 600)]       // Plate, small, 60 %
+        public void ShimmerGuardLeavesADecayingLoopAlone(int mode, int decay, int size, int shimmer)
+        {
+            // A shimmer loop that decays by itself never wakes the guard: the shimmer's gain stays
+            // exactly as set, so the render is the one from before the guard (bit for bit).
+            var (e, _) = Make(v => { v.Set(P.Mode, mode); v.Set(P.Decay, decay); v.Set(P.Size, size); v.Set(P.Shimmer, shimmer); });
+            var x = new float[60 * Measure.Rate];
+            Array.Copy(Measure.PinkNoise(5 * Measure.Rate, 0.1), x, 5 * Measure.Rate);
+            var bl = new float[VerbEngine.MaxBlock];
+            var br = new float[VerbEngine.MaxBlock];
+            for (int pos = 0; pos < x.Length; pos += VerbEngine.MaxBlock)
+            {
+                Array.Copy(x, pos, bl, 0, VerbEngine.MaxBlock);
+                Array.Copy(x, pos, br, 0, VerbEngine.MaxBlock);
+                e.Process(bl, br, VerbEngine.MaxBlock);
+                Assert.That(e.ShimmerGuard.Limiting, Is.False, $"the guard woke at {pos / (double)Measure.Rate:F1} s");
+            }
+            Measure.Report($"Neo Verb shimmer {shimmer / 10} % ({(VerbMode)mode}, decay {decay}, size {size}): the guard stays asleep for 60 s (the shadow decays at {e.ShimmerGuard.Growth:F1} dB/s)");
+        }
+
+        [Test]
+        public void AmbientShimmerIsHeldJustInsideItsEdge()
+        {
+            // The factory preset Ambient — Shimmer (45 % at 9 s) grows by itself once its slowest
+            // shimmer mode comes through (about +1.9 dB/s, from −58 dB 15 s after a 2 s burst to +20 dB
+            // at 55 s). The guard finds it about 10 s in and holds the shimmer down until it decays at
+            // about 0.5 dB/s; the render is the old one until then.
+            int[] preset = { 0, 240, 1000, 760, 566, 733, 700, 500, 540, 0, 450, 739, 870, 667, 389, 804, 400 };
+            var (e, _) = Make(v => { for (int i = 0; i < preset.Length; i++) v.Set(i, preset[i]); v.Set(P.Mix, 1000); });
+            var x = new float[60 * Measure.Rate];
+            Array.Copy(Measure.PinkNoise(2 * Measure.Rate, 0.1), x, 2 * Measure.Rate);
+            var (l, r) = Run(e, x, x);
+            double Level(int s) => Measure.Db(Math.Max(Measure.Rms(l, s * Measure.Rate, Measure.Rate), Measure.Rms(r, s * Measure.Rate, Measure.Rate)));
+            var g = e.ShimmerGuard;
+            Measure.Report($"Neo Verb Ambient — Shimmer: held at {g.Scale:F3}× ({45 * g.Scale:F1} % shimmer), {Level(30):F1} dB at 30 s, {Level(59):F1} dB at 59 s");
+            Assert.That(g.Limiting, Is.True);
+            Assert.That(Level(59) - Level(30), Is.InRange(-29 * 1.0, -29 * 0.3));
+        }
+
+        static IEnumerable<TestCaseData> FrozenExtremes()
+        {
+            // What shapes the frozen loop (the rest only colours what goes in or comes out, and the
+            // decay settings are bypassed while frozen), each at each end, then the worst combinations.
+            foreach (int p in new[] { P.Mode, P.Size, P.ModDepth, P.ModRate, P.Shimmer })
+            {
+                var d = Params.Table[p];
+                foreach (int raw in new[] { d.Min, d.Max })
+                    yield return new TestCaseData(new[] { (d.Index, raw) }).SetName($"FreezeHolds({d.Name} {(raw == d.Min ? "min" : "max")})");
+            }
+            yield return new TestCaseData(new[] { (P.Decay, 1000) }).SetName("FreezeHolds(Decay max)");
+            var mod = new[] { (P.ModDepth, 1000), (P.ModRate, 1000) };
+            yield return new TestCaseData(Params.Table.Where(d => d.Index != P.Freeze).Select(d => (d.Index, d.Max)).ToArray()).SetName("FreezeHolds(every parameter at its maximum)");
+            yield return new TestCaseData(new[] { (P.Shimmer, 1000), (P.Decay, 1000), (P.LowDecay, 1000) }.Concat(mod).ToArray()).SetName("FreezeHolds(shimmer, decay, low decay and modulation at their maximum)");
+            yield return new TestCaseData(new[] { (P.Shimmer, 1000), (P.Size, 0), (P.Mode, 1) }.Concat(mod).ToArray()).SetName("FreezeHolds(shimmer max, Room, size min, full modulation)");
+            yield return new TestCaseData(new[] { (P.Shimmer, 1000), (P.Size, 1000), (P.Mode, 3) }.Concat(mod).ToArray()).SetName("FreezeHolds(shimmer max, Plate, size max, full modulation)");
+            yield return new TestCaseData(new[] { (P.Shimmer, 1000), (P.Mode, 2), (P.Damping, 0), (P.Decay, 1000), (P.LowDecay, 1000) }).SetName("FreezeHolds(shimmer max, Chamber, damping min, decays max)");
+        }
+
+        [TestCaseSource(nameof(FrozenExtremes))]
+        public void FreezeHolds((int Index, int Raw)[] changes)
+        {
+            // 3 s of noise into the tail, then Freeze for 60 s (the input still playing): the frozen
+            // tail holds, it never grows (shimmer fades out when Freeze goes on), at any setting.
+            var (e, v) = Make(pv => { foreach (var (i, raw) in changes) pv.Set(i, raw); });
+            int rate = Measure.Rate;
+            var fill = Measure.PinkNoise(3 * rate, 0.1);
+            Run(e, fill, fill);
+            v.Set(P.Freeze, 1);
+            var x = Measure.PinkNoise(61 * rate, 0.1, 77);
+            var (l, r) = Run(e, x, x);
+            double Level(int s) => Measure.Db(Math.Max(Measure.Rms(l, s * rate, rate), Measure.Rms(r, s * rate, rate)));
+            double peak = Math.Max(Measure.Peak(l, 0, l.Length), Measure.Peak(r, 0, r.Length));
+            Measure.Report($"Neo Verb frozen ({string.Join(", ", changes.Select(c => $"{Params.Table[c.Index].Name} {c.Raw}"))}): {Level(1):F2} dB at 1 s, {Level(59):F2} dB at 59 s, peak {Measure.Db(peak):+0.0;−0.0} dBFS");
+            Assert.That(double.IsFinite(peak), Is.True, "finite");
+            Assert.That(Measure.Db(peak), Is.LessThan(24), "below +24 dBFS");
+            Assert.That(Level(59) - Level(1), Is.LessThan(0.5), "holds without growing");
         }
 
         [Test]
