@@ -646,6 +646,8 @@ As of A7 the phases above ran ahead of this work: A0–A7 are built, with the Ne
 
 PR-sized phases. Each ends with its exit check passing in CI (Linux for the portable machines, the Windows package run for the natives) and the agent eval unchanged.
 
+Unhealthy machines (decided 2026-11-03) are in [machine-safety.md](machine-safety.md): the profiler's finer health categories and `safe_range` (part of U2), a guard on every machine and a safe master in the engine, safe ranges for agents, Song Notes for Info, and Neo Ensemble, Neo EQ's graphic mode and a Jeskola Bass mapping as successors.
+
 | Phase | Delivers | Exit check | Effort |
 |---|---|---|---|
 | **U1 Profile and describe** (tier 1, first half) | `tools/machine-profiler.py` over MCP: value tables, unit and mapping inference, pitch convention, note input, polyphony, effect kind, latency, tail, gain, health. Draft manifests in `Machines/Manifests/`, copied beside their DLLs; `docs/machine-health.md`. The server reads drafts: units in `param_set`/`param_get`, pitch offsets and track notes in `notes_write`/`notes_read`/`midi_play`, kind and health in `gear_list` | A Pedal synth plays A4 at 440 Hz through `notes_write` after profiling; `param_set` in units on a Pedal machine; the Linux job profiles the portable machines and the Windows package job all of them | L |
