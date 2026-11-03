@@ -51,7 +51,7 @@
 | D2 | Legacy native machines on Mac | **A** not on Mac: recompile the open-source ones, use successors, clone the few the census picks · **B** Wine/CrossOver bridge · **C** not on Mac and no rebuilds (songs show placeholders) | **A** |
 | D3 | Timing relative to MCP | **A** before MCP · **B** after MCP: engine split inside A0, Mac headless after A2, UI after A5 · **C** full port in parallel from A0 | **B** |
 | D4 | Upstream merges once Windows is on Avalonia | **A** merge everything (only realistic with XPF) · **B** merge engine and machines, re-port the UI features you want · **C** stop tracking upstream | **B** |
-| D5 | Plugin hosting on Mac | **A** none in the first Mac release · **B** CLAP + VST3 host machine after P4 · **C** B plus AU | **A** |
+| D5 | Plugin hosting on Mac | **A** none in the first Mac release · **B** CLAP + VST3 host machine after P4 · **C** B plus AU | **A**; refined 2026-11-03 ([`plugin-host.md`](plugin-host.md)): a CLAP + VST3 host beside Polac, spike and census now, built after P3 |
 
 ## 2. Inventory: what ties us to Windows
 

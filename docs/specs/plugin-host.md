@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Analysis for decision (2026-11-03). Nothing built. Refines cross-platform.md D5 and P6 |
+| Status | Decided 2026-11-03: V1 B, V2 A, V3 B, V4 A, V6 A; timing: the H0 spike and the plugin census now, H1–H3 after P3. Refines cross-platform.md D5 and P6 |
 | Date | 2026-11-03 |
 | Scope | Whether to build our own VST/VSTi host machine, and how, instead of or beside Polac VST/VSTi 1.1: formats, isolation, performance, mapping to Buzz, GUIs on WPF and Avalonia, songs, agents, licences, effort |
 | Code baseline | fork `f2ab63b` (main, 2026-11-03) on upstream `wasteddesign/ReBuzz` @ `0a48d88` (2026-10-30) |
@@ -22,7 +22,9 @@
 - **Effort:** 10–14 pw for CLAP + VST3 with the sandbox and GUIs on WPF and Avalonia. P6's 6–10 pw covers only the in-process part. AU, a 32-bit server build and a VST2 helper are add-ons (§5.2).
 - **Before building:** a 1 pw spike, plus a census of the plugins your songs and plugin folders actually use. The census settles the VST2, 32-bit and Polac-song questions with data instead of guesses.
 
-### Decisions for you
+### Decisions (taken 2026-11-03)
+
+V1–V4 and V6 were decided as recommended. V5 was decided as a fourth option: the H0 spike and the plugin census now, then H1–H3 after P3 (the Mac studio MVP). So plugins come after the first Mac studio, not in it, and not as late as P4.
 
 | # | Decision | Options | Recommended |
 |---|---|---|---|
@@ -281,10 +283,10 @@ neoplug-vst2 (optional, GPL-3)  the server with a VST2 backend on FST
 
 | Phase | When (V5 B) | Delivers | Exit | pw |
 |---|---|---|---|---|
-| **H0 Spike** | now | CLAP and VST3 in a throwaway managed machine on Windows; a toy shared-memory server; an NSView plugin view in an Avalonia `NativeControlHost` on macOS | Surge XT (CLAP and VST3), the SDK's AGain and Note Expression Synth examples, and two of your commercial plugins (one with iLok) load, play, save and reload in a song; the round trip is measured | 1 |
-| **H1 Host, in-process** | after P2's play test | The core changes (§3.1); `Neo Plug` and `Neo Plug FX`; the library with CLAP and VST3; slots, notes, MIDI in/out, buses, sidechain, latency, tail, state; the scanner and blocklist; the Gear menu; the plugin GUI in a WPF window; per-instance manifests; offline render; Linux CI | Every CI plugin passes; a song with three plugins round-trips on Windows and in `rebuzz-headless` on macOS; `machine_describe` shows a plugin's parameters with units | 5–7 |
+| **H0 Spike** | now (decided) | CLAP and VST3 in a throwaway managed machine on Windows; a toy shared-memory server; an NSView plugin view in an Avalonia `NativeControlHost` on macOS | Surge XT (CLAP and VST3), the SDK's AGain and Note Expression Synth examples, and two of your commercial plugins (one with iLok) load, play, save and reload in a song; the round trip is measured | 1 |
+| **H1 Host, in-process** | after P3 (decided) | The core changes (§3.1); `Neo Plug` and `Neo Plug FX`; the library with CLAP and VST3; slots, notes, MIDI in/out, buses, sidechain, latency, tail, state; the scanner and blocklist; the Gear menu; the plugin GUI in a WPF window; per-instance manifests; offline render; Linux CI | Every CI plugin passes; a song with three plugins round-trips on Windows and in `rebuzz-headless` on macOS; `machine_describe` shows a plugin's parameters with units | 5–7 |
 | **H2 Sandbox** | after H1 | `neoplug-server`; placements per plugin, per instance and shared; crash detection and reload from the last state; embedded GUIs on Windows, floating on macOS; the workgroup on macOS | Killing a server mid-song leaves the song playing and the plugin reloadable; five sandboxed plugins at 128 frames for an hour, no dropouts | 3–5 |
-| **H3 Studio GUIs** | with P3 S1 | `GuiContent` for plugins: a `NativeControlHost` on Windows and macOS; HiDPI | A plugin GUI opens, resizes and scales in the studio on both OSes | 1 |
+| **H3 Studio GUIs** | after H2 (the studio's GUI hook from P3 S1) | `GuiContent` for plugins: a `NativeControlHost` on Windows and macOS; HiDPI | A plugin GUI opens, resizes and scales in the studio on both OSes | 1 |
 | **H4 Add-ons** | by the census | §5.2 | each its own | 0–8 |
 
 **Total H0–H3: 10–14 pw.** cross-platform.md P6 (6–10 pw) matches H0 + H1 + H3; the sandbox is the difference. The plugin census (§4, about 0.5 pw) can run any time and isn't in the total.
