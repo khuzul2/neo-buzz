@@ -38,7 +38,10 @@
     <ProjectReference Include="..\ReBuzz.Host\ReBuzz.Host.csproj" />
   </ItemGroup>
 
-  <!-- The Neo machines in Gear (until S1 gives them their editors here), and the Link helper. -->
+  <!-- The Neo machines in Gear, with their editors on Avalonia (studio-mvp.md S1), and the Link helper. -->
+  <PropertyGroup>
+    <NeoGearFlavour>Studio</NeoGearFlavour>
+  </PropertyGroup>
   <Import Project="..\ReBuzz.Host\AppGear.targets" />
 
 </Project>

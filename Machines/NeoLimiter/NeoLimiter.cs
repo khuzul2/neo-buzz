@@ -75,7 +75,7 @@ namespace NeoBuzz.Limiter
         };
     }
 
-#if WINDOWS   // fork (mac-engine.md M2): the editor is WPF; portable builds have none
+#if WINDOWS || AVALONIA   // fork: the editor on WPF, or Avalonia in the studio (studio-mvp.md S1); none headless
     [MachineGUIFactoryDecl(PreferWindowedGUI = true, IsGUIResizable = false, UseThemeStyles = false)]
     public class MachineGUIFactory : IMachineGUIFactory
     {

@@ -4,17 +4,23 @@
     Windows puts beside itself. Imported by rebuzz-headless and ReBuzz.Studio.
   -->
 
-  <!-- The Neo machines, built for net10.0, in the app's Gear folder (skip with SkipNeoGear=true). -->
+  <!-- The Neo machines, built for net10.0, in the app's Gear folder (skip with SkipNeoGear=true):
+       without their editors (Machines/Portable), or with NeoGearFlavour=Studio with them, on
+       Avalonia (Machines/Studio, studio-mvp.md S1). -->
+  <PropertyGroup>
+    <NeoGearProject Condition="'$(NeoGearFlavour)' == 'Studio'">$(MSBuildThisFileDirectory)..\Machines\Studio\Studio.proj</NeoGearProject>
+    <NeoGearProject Condition="'$(NeoGearProject)' == ''">$(MSBuildThisFileDirectory)..\Machines\Portable\Portable.proj</NeoGearProject>
+  </PropertyGroup>
   <Target Name="NeoGear" AfterTargets="Build" Condition="'$(SkipNeoGear)' != 'true'">
-    <MSBuild Projects="$(MSBuildThisFileDirectory)..\Machines\Portable\Portable.proj" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
+    <MSBuild Projects="$(NeoGearProject)" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
   </Target>
 
   <!-- The Modern Pattern Editor (studio-mvp.md S6), the default pattern editor, in Gear/Generators as on
-       Windows: built for net10.0 from its WPF sources. The studio (and its tests) take the build with
-       the Avalonia view (ModernPatternEditor/Avalonia), other apps the one without (ModernPatternEditor/
-       Portable). Restored on its own first, so a clean build sees its packages. -->
+       Windows: built for net10.0 from its WPF sources. Apps with NeoGearFlavour=Studio (the studio and
+       its tests) take the build with the Avalonia view (ModernPatternEditor/Avalonia), others the one
+       without (ModernPatternEditor/Portable). Restored on its own first, so a clean build sees its packages. -->
   <PropertyGroup>
-    <PatternEditorProject Condition="'$(PatternEditorProject)' == '' and $(MSBuildProjectName.StartsWith('ReBuzz.Studio'))">$(MSBuildThisFileDirectory)..\ModernPatternEditor\Avalonia\ModernPatternEditor.Avalonia.csproj</PatternEditorProject>
+    <PatternEditorProject Condition="'$(PatternEditorProject)' == '' and '$(NeoGearFlavour)' == 'Studio'">$(MSBuildThisFileDirectory)..\ModernPatternEditor\Avalonia\ModernPatternEditor.Avalonia.csproj</PatternEditorProject>
     <PatternEditorProject Condition="'$(PatternEditorProject)' == ''">$(MSBuildThisFileDirectory)..\ModernPatternEditor\Portable\ModernPatternEditor.Portable.csproj</PatternEditorProject>
   </PropertyGroup>
   <Target Name="PatternEditorGear" AfterTargets="Build" Condition="'$(SkipNeoGear)' != 'true'">

@@ -1,0 +1,20 @@
+<Project>
+  <!--
+    Fork (docs/specs/studio-mvp.md S1): builds every Neo machine's studio flavour (with its editor
+    on Avalonia, NeoStudio.targets) into $(GearDir) (Generators and Effects), for the studio:
+      dotnet build Machines/Studio/Studio.proj -p:GearDir=<folder>
+    Restore runs on its own first, so the build sees what it restored (Avalonia).
+  -->
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <GearDir Condition="'$(GearDir)' == ''">$(MSBuildThisFileDirectory)bin/Gear/</GearDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <NeoStudio Include="*/*.Studio.csproj" />
+  </ItemGroup>
+  <Target Name="Build">
+    <MSBuild Projects="@(NeoStudio)" Targets="Restore" Properties="GearDir=$(GearDir);Configuration=$(Configuration);MSBuildRestoreSessionId=$([System.Guid]::NewGuid())" />
+    <MSBuild Projects="@(NeoStudio)" Targets="Build" Properties="GearDir=$(GearDir);Configuration=$(Configuration)" />
+  </Target>
+  <Target Name="Restore" />
+</Project>
