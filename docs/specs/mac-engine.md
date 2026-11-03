@@ -174,8 +174,8 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
   | Neo Verb | 8 | all identical | all identical |
 
   Neo Analyzer passes the audio through (the loud limiter case ends with it).
-- **Where the differences come from.** Linux and Windows run the same JIT code on the same x64 CPUs. What differs is the C runtime behind `Math.Pow`, `Exp`, `Tan` and the `MathF` functions: glibc, the UCRT, or Apple's libm, which can round the last bit differently. macOS adds Neo Limiter's true-peak filter, summed with `Vector<float>`: 4 lanes on arm64, 8 on x64.
-- **The differences don't grow.** The 16-second cases are no worse than the short ones. The feedback-heavy cases stay below −139 dBFS: the self-oscillating ladder, FM feedback 7, shimmer, the 20-second decay and freeze.
+- **Where the differences come from.** Linux and Windows run the same JIT-compiled maths on x64. That leaves the C runtime behind `Math.Pow`, `Exp`, `Tan` and the `MathF` functions (glibc, the UCRT, Apple's libm), which can round the last bit differently. On macOS, Neo Limiter's true-peak filter also sums with `Vector<float>`: 4 lanes on arm64, 8 on x64.
+- **The differences don't grow with time.** In the 16-second cases, Neo Poly's largest difference is at 1.3 s, and Neo Wave's (−141.0 dBFS, at 11.9 s) is the size of the short cases'. FM6 and Verb stay identical. The feedback-heavy cases stay below −139 dBFS: the self-oscillating ladder, FM feedback 7, shimmer, the 20-second decay and freeze.
 - **No machine needed a fix, and nothing is excluded** (`EXCLUDED` in the script is empty).
 - **Found on the way:** a relative `--settings` folder made `render` fail (its file URI). `rebuzz-headless` now makes it absolute.
 
