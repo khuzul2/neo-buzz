@@ -340,6 +340,18 @@ namespace ReBuzz.Studio.Tests
                 Pump();
                 Assert.That(page.Pattern, Is.EqualTo(s.Pattern));
                 Assert.That(tabs.SelectedItem, Is.EqualTo(patternTab), "the Pattern tab is in front");
+
+                // As the Session View opens a double-clicked clip: the engine's pattern editor pattern,
+                // then ActiveView. The tab follows both.
+                tabs.SelectedItem = tabs.Items.OfType<TabItem>().First(t => t != patternTab);
+                Pump();
+                core.SetPatternEditorPattern(second);
+                core.ActiveView = BuzzView.PatternView;
+                Pump();
+                Assert.That(page.Pattern, Is.EqualTo(second), "SetPatternEditorPattern picks the pattern");
+                Assert.That(tabs.SelectedItem, Is.EqualTo(patternTab), "ActiveView = PatternView brings the tab to the front");
+                PatternView.Edit(s.Pattern);
+                Pump();
                 Assert.That(core.PatternEditorPattern, Is.EqualTo(s.Pattern), "the engine's pattern editor pattern");
 
                 // Another machine, without patterns: the tab says so and offers New pattern.

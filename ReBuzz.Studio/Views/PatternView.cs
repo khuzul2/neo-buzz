@@ -109,6 +109,7 @@ namespace ReBuzz.Studio.Views
             core.SetPatternEditorPatternChanged += OnPatternChanged;
             core.SelectedMachineChanged += OnMachineChanged;
             core.SequenceEditorActivated += OnSequenceEditorActivated;
+            core.PropertyChanged += OnCorePropertyChanged;
             core.Song.MachineAdded += OnMachinesChanged;
             core.Song.MachineRemoved += OnMachinesChanged;
             RefreshMachines();
@@ -127,6 +128,7 @@ namespace ReBuzz.Studio.Views
             core.SetPatternEditorPatternChanged -= OnPatternChanged;
             core.SelectedMachineChanged -= OnMachineChanged;
             core.SequenceEditorActivated -= OnSequenceEditorActivated;
+            core.PropertyChanged -= OnCorePropertyChanged;
             core.Song.MachineAdded -= OnMachinesChanged;
             core.Song.MachineRemoved -= OnMachinesChanged;
             Follow(null);
@@ -174,8 +176,21 @@ namespace ReBuzz.Studio.Views
 
         public bool CanUndo => EditContext?.ActionStack.CanUndo == true;
         public bool CanRedo => EditContext?.ActionStack.CanRedo == true;
-        public void Undo() { if (CanUndo) EditContext.ActionStack.Undo(); }
-        public void Redo() { if (CanRedo) EditContext.ActionStack.Redo(); }
+
+        /// <summary>Undoes the editor's last edit; false when it has none (the song's undo can have it).</summary>
+        public bool Undo()
+        {
+            if (!CanUndo) return false;
+            EditContext.ActionStack.Undo();
+            return true;
+        }
+
+        public bool Redo()
+        {
+            if (!CanRedo) return false;
+            EditContext.ActionStack.Redo();
+            return true;
+        }
         public bool Cut() => Run(EditContext?.CutCommand);
         public bool Copy() => Run(EditContext?.CopyCommand);
         public bool Paste() => Run(EditContext?.PasteCommand);
@@ -227,6 +242,17 @@ namespace ReBuzz.Studio.Views
         {
             if (m != null && m != machine)
                 Dispatcher.UIThread.Post(() => Show(m, m.Patterns.Contains(pattern) ? pattern : null));
+        }
+
+        // Another view asks for the pattern editor (ReBuzz: ActiveView = PatternView, after
+        // SetPatternEditorPattern, as the Session View does for a double-clicked clip): to the front.
+        void OnCorePropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ReBuzzCore.ActiveView) && core.ActiveView == BuzzView.PatternView)
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (attached) Activate();
+                });
         }
 
         void OnSequenceEditorActivated()

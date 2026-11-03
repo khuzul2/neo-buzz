@@ -132,10 +132,10 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - pattern properties (Ctrl+Backspace): name, beats, rows per beat, and which columns and MIDI lanes the pattern has.
   - Avalonia matches key bindings from the focused element up, before KeyDown. So the grid binds its Ctrl and Command shortcuts itself, or the window's Ctrl+Z would undo the song.
 - **The Pattern tab** (`Views/PatternView.cs`):
-  - It shows the editor for a chosen machine and pattern, with a machine chooser, a pattern chooser and New pattern. It follows the engine when the pattern editor's pattern or the selected machine changes.
+  - It shows the editor for a chosen machine and pattern, with a machine chooser, a pattern chooser and New pattern. It follows the engine when the pattern editor's pattern (`SetPatternEditorPattern`) or the selected machine changes, and comes to the front when another view sets `ActiveView` to `PatternView` (the Session View's double-clicked clip).
   - The editor's Return (WPF: to the sequence editor) selects the Sequence tab.
   - **For other views:** `PatternView.Edit(IPattern)` and `Edit(IMachine)` show a pattern or a machine's patterns and bring the tab to the front, `PatternView.Show()` brings it to the front alone, and `PatternShown` says what it shows.
-  - **For the shell's Edit menu:** the page's `Undo`, `Redo`, `Cut`, `Copy`, `Paste`, `CanUndo` and `CanRedo` reach the editor's stack and clipboard (its `IEditContext`).
+  - **For the shell's Edit menu:** the page's `Undo`, `Redo`, `Cut`, `Copy` and `Paste` reach the editor's own undo stack and clipboard (its `IEditContext`). They return false when the editor has nothing to do, so the song's undo can take the command (`IStudioEditTarget`).
 - **Tests** (`PatternEditorTests`, headless):
   - notes, a note off, and global and word values typed with the keyboard are the engine's pattern events and the editor's data (format 255);
   - period clears, Delete moves rows up;
@@ -144,7 +144,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - a click places the cursor, a drag selects;
   - pattern properties: renamed, 8 beats, 8 rows a beat, two MIDI lanes typed into;
   - the pattern plays through the engine (offline render): the notes sound at the Master, the automation reaches the machine, and the play cursor follows;
-  - the choosers and the API pick what the tab edits; a machine without patterns gets New pattern;
+  - the choosers, the API, and `SetPatternEditorPattern` with `ActiveView` pick what the tab edits; a machine without patterns gets New pattern;
   - a song's editor data saves and opens byte for byte, as BMXML and as BMX;
   - a frame of the beats in view draws in 10–55 ms headless (Neo Poly, 91 global columns).
   - Screenshots: `pattern-editor-empty`, `-notes`, `-typed`, `-pasted`, `-interpolated`, `-playing`, `-selection`, `-midi-lanes`, `-no-patterns`, `-reopened`.
