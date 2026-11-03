@@ -49,6 +49,7 @@ namespace ReBuzz.AppViews
             buzz.SessionCore.UseSettings(registryEx);
             buzz.ArrangementEvents = new Core.ArrangementEventStore(buzz);
             buzz.MarkerStore = new Core.SongMarkerStore(buzz);
+            buzz.SongNotes = new Core.Notes.SongNotesStore(buzz);   // fork (machine-safety.md §3.5)
 
             buzz.MachineViewHWND = machineViewHwnd;
             buzz.MainWindowHandle = buzz.MachineViewHWND;

@@ -94,6 +94,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 9. **An old song of yours.** ⌘O a `.bmx` made on Windows: native machines show "missing", Neo and Pedal machines play. ⇧⌘S a copy, reopen it: the same machines, patterns and arrangement.
 10. **An agent.** ⇧⌘A: tick Allow agents, Copy the line. Paste it in a terminal (`claude mcp add --transport http rebuzz …`). In Claude Code: "What's in my ReBuzz song?" The status line shows `Agent: studio_status…`, and the answer names your machines.
 11. **Look and feel.** Fonts and Retina sharpness, trackpad scroll and pinch in the machine view, the menu bar (what it shows with a machine window in front), ⌘ shortcuts.
+12. **Song Notes.** F10 (fn+F10 on a Mac keyboard): type a few lines, select a word and ⌘B, the • button on two lines, ⌘K for a link. ⌘Z undoes them one by one. ⌘S, reopen: the notes are there.
 
 ## 6. Risks
 
@@ -392,3 +393,12 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - A machine's pattern editor without patterns (Master's, made when Master is selected) isn't in a BMX file, which links editors through patterns; BMXML keeps it. Nothing is lost.
   - **Fixed in the studio:** after a song opened, F2 showed the Pattern tab naming a pattern above an empty page, until another pattern was picked. The loader sets several patterns and machines in a row, and the last editor it hands over can be another machine's, or none. Now the page follows the engine's pattern when its update runs, and asks the engine for that pattern's editor when another one, or none, is showing (`PatternPage.ShowPatternsEditor`; only the newest page asks, so two windows' pages can't take it from each other forever).
 - **Not done:** the hand test (§5). No real Windows song with pattern editor data was available (the Windows-style one is built from the editor's format code).
+
+**Song Notes** (machine-safety.md §3.5, as built in §3.7; `ReBuzz.Studio/Views/Notes`, the "Song Notes" tab, after Pattern). Instead of porting the Info machine (WDE's WPF rich-text notes machine), the song's notes have a tab of their own.
+- **The tab:** a toolbar (B, I, U, S; H, bulleted and numbered lists; Link), the editor on the left and the notes as they read on the right, with a splitter between. F10 shows it, as Buzz's Info view; it is in View too.
+  - The notes are Markdown (`ReBuzz/Core/Notes/NotesMarkdown.cs`): the toolbar and ⌘/Ctrl+B, I, U and K put the marks around the selection (or the word at the caret) and take them off again; H cycles a line through three heading sizes and back; the list buttons turn the selected lines into items and back; Link makes `[selection](https://)` with the address selected to type over.
+  - The page draws paragraphs, headings, nested lists, quotes, rules, colours (lightened to read on the dark page) and links, which open on a click (in the browser). Its text can be selected and copied (Edit ▸ Copy).
+  - Opening a song that brought notes in (an Info machine's text, the song's info text) shows a band naming them, with Dismiss.
+- **Undo:** the editor is a `SongHistoryTextBox`: its edits are steps on the song's history, not its own. The shell's Undo and Redo (keys and Edit menu) go to the song for it, as for the views (§3.10); Cut, Copy and Paste stay the box's. A run of typing is one step (until a pause of 1.5 s, a new line, or another step); a format is one. An agent's edit, or an undo, updates the editor and the page.
+- **Saved with the song** (the `SongNotes` subsection, both formats) by the engine's `SongNotesStore`, so `rebuzz-headless` and WPF ReBuzz keep the notes too.
+- **Tests** (`SongNotesTests`): typing and formats (`song-notes`), undo and redo, save and open in both formats (`song-notes-reopened-bmx`, `-bmxml`), the import of a Windows-made Info song (`song-notes-imported`) saved back unchanged in its core sections, the song's info text, links, and the agent's tools (`song-notes-agent`).

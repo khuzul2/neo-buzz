@@ -789,12 +789,14 @@ namespace ReBuzz.ManagedMachine
                 }
             }
 
-            foreach (var paramTrack in machine.parametersChanged)
+            // Fork (engine hardening): the changes the machine's tick took (ParameterChanges), in
+            // order, with no enumerator to allocate; and the list itself for the global count
+            // (machine.ParameterGroups[1].Parameters built two new collections per track value).
+            foreach (var (par, track) in machine.ParameterChanges)
             {
-                var (par, track) = paramTrack.Key;
                 if (par.Group.Type != ParameterGroupType.Input)
                 {
-                    int index = par.Group.Type == ParameterGroupType.Global ? par.IndexInGroup : par.IndexInGroup + machine.ParameterGroups[1].Parameters.Count;
+                    int index = par.Group.Type == ParameterGroupType.Global ? par.IndexInGroup : par.IndexInGroup + machine.ParameterGroupsList[1].ParametersList.Count;
                     var val = par.GetPValue(track);
 
                     // Properties need to stay within min/max

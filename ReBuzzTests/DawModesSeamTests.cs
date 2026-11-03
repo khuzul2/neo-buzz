@@ -118,16 +118,22 @@ namespace ReBuzzTests
 
         /// <summary>
         /// Ramps add no allocation of their own: where they are computed and set (the engine's
-        /// column events, on a tick) allocates nothing. Playing them whole is measured and
-        /// reported beside steps that change as often: a changed parameter reaches its machine
-        /// through MachineCore.parametersChanged, a ConcurrentDictionary, whose entries and
-        /// enumerators allocate for steps as for ramps (the 0.4.1 test plays no automation).
+        /// column events, on a tick) allocates nothing. Playing them whole is reported here; it
+        /// allocated for steps as for ramps while a changed parameter reached its machine through
+        /// a ConcurrentDictionary (MachineCore.parametersChanged). Engine hardening made that
+        /// preallocated (MachineCore.ParameterChanges): EngineHardeningTests'
+        /// ParameterChangesAllocateNothing asserts 0 bytes playing steps, ramps, values set as
+        /// pattern editors set them and a mapped MIDI controller.
         /// </summary>
         [Test]
         public void RampsAddNoAllocationOfTheirOwn()
         {
             using var rig = new HumRig(4);
             var reader = PlayAutomation(rig, ramps: true);
+            // Engine hardening: past one-time costs first, as the 0.4.1 test reads. The first audio a
+            // process plays runs tier-0 code, which boxes (Enum.HasFlag in the work loop): the 1.1 MB
+            // in 400 buffers this measured before was mostly that, not ramps or parameter changes.
+            EngineHardeningTests.WarmUp(reader, "ramps");
             var wm = reader.WorkManager;
             long stage;
             lock (ReBuzzCore.AudioLock)
@@ -143,16 +149,6 @@ namespace ReBuzzTests
             rig.Core.Playing = false;
             TestContext.Out.WriteLine($"[notice] ramps: the column events stage {stage} bytes in 100 calls; playing {playing} bytes in 400 buffers of 256 frames");
             Assert.That(stage, Is.EqualTo(0), "computing and setting ramps allocates nothing");
-        }
-
-        [Test]
-        public void StepsOnEveryTickAllocateAsRampsDo()
-        {
-            using var rig = new HumRig(4);
-            var reader = PlayAutomation(rig, ramps: false);
-            long playing = AllocatedReading(reader, 400);
-            rig.Core.Playing = false;
-            TestContext.Out.WriteLine($"[notice] steps on every tick: {playing} bytes in 400 buffers of 256 frames (parameter changes, not ramps)");
         }
 
         [Test]

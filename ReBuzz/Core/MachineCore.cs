@@ -35,10 +35,11 @@ namespace ReBuzz.Core
         MachineDLL machineDLL;
         public IMachineDLL DLL { get => machineDLL; }
 
-        // Fork (docs/specs/machines.md 3.1): keyed by parameter and track. Keyed by parameter
-        // alone, a parameter changed on several tracks in one tick (a chord) reached managed
-        // machines and value listeners for the last track only.
-        internal ConcurrentDictionary<(ParameterCore Parameter, int Track), byte> parametersChanged = new ConcurrentDictionary<(ParameterCore Parameter, int Track), byte>();
+        // Fork (docs/specs/machines.md 3.1): by parameter and track. By parameter alone, a
+        // parameter changed on several tracks in one tick (a chord) reached managed machines and
+        // value listeners for the last track only. Fork (engine hardening): preallocated bits, no
+        // longer a ConcurrentDictionary that allocated on the audio thread for every change.
+        internal ParameterChanges ParameterChanges { get; } = new ParameterChanges();
         internal ConcurrentBag<int> wavesEventsPending = new ConcurrentBag<int>();
 
         internal MachineDLL MachineDLL { get => machineDLL; set => machineDLL = value; }
@@ -90,6 +91,28 @@ namespace ReBuzz.Core
 
         internal static bool IsVisibleOutput(IMachineConnection output)
             => output.Destination.InputChannelCount > 0 && !(output.Destination as MachineCore).Hidden;
+
+        /// <summary>Fork (engine hardening): Inputs[index] without building Inputs; null past its end.</summary>
+        internal IMachineConnection VisibleInputAt(int index)
+        {
+            foreach (var input in inputs)
+                if (IsVisibleInput(input) && index-- == 0)
+                    return input;
+            return null;
+        }
+
+        /// <summary>Fork (engine hardening): Inputs.IndexOf(connection) without building Inputs.</summary>
+        internal int VisibleInputIndexOf(IMachineConnection connection)
+        {
+            int index = 0;
+            foreach (var input in inputs)
+            {
+                if (!IsVisibleInput(input)) continue;
+                if (Equals(input, connection)) return index;
+                index++;
+            }
+            return -1;
+        }
 
         readonly Dictionary<int, string> inputChannelNames = new Dictionary<int, string>();
         readonly Dictionary<int, string> outputChannelNames = new Dictionary<int, string>();
@@ -198,7 +221,10 @@ namespace ReBuzz.Core
         public int MIDIInputChannel { get => midiInputChannel; set { midiInputChannel = value; PropertyChanged.Raise(this, "MIDIInputChannel"); graph.Buzz.SetModifiedFlag(); } }
 
         List<ParameterGroup> parameterGroups;
-        public ReadOnlyCollection<IParameterGroup> ParameterGroups { get => parameterGroups.Cast<IParameterGroup>().ToReadOnlyCollection(); }
+        // Fork (engine hardening): the copy is kept while the list holds the same groups (it was
+        // made on every call). Pattern editors set values through it, on the audio thread.
+        ReadOnlyCollection<IParameterGroup> parameterGroupsView;
+        public ReadOnlyCollection<IParameterGroup> ParameterGroups { get => ParameterGroup.ViewOf(ref parameterGroupsView, parameterGroups); }
         internal List<ParameterGroup> ParameterGroupsList { get => parameterGroups; set => parameterGroups = value; }
 
         List<AttributeCore> attributes = new List<AttributeCore>();

@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-03: H1 a global safeguard for every machine, plus a safety limiter on the master output with a clip indicator; H2 A; H3 A; H4 A. **§3.2 and §3.3 built** (§3.6); §3.1 and §3.4 built 2026-11-03 (U2 health) |
+| Status | Decided 2026-11-03: H1 a global safeguard for every machine, plus a safety limiter on the master output with a clip indicator; H2 A; H3 A; H4 A. **§3.2 and §3.3 built** (§3.6); §3.1 and §3.4 built 2026-11-03 (U2 health); **§3.5 built** (§3.7) |
 | Scope | What the profiler's "unhealthy" means; how ReBuzz keeps any machine from blowing up the song or the speakers; how agents stay in safe ranges; which machines get Neo successors |
 | Related | mcp-server.md §12 (machine upgrades U1–U7, `docs/machine-health.md`), machines.md (Neo machines), studio-mvp.md (the studio), daw-modes.md (AR0 runs beside this), plugin-host.md (plugins get the same guard) |
 
@@ -139,6 +139,36 @@ The final output to the audio device gets a **safety limiter**:
 - **Import:** opening a song with Info machines shows their text in Song Notes (read from the placeholder's kept data), marked as imported, with the machine left as it is so the song saves back unchanged.
 - MCP: `song_notes_read` and `song_notes_write` (or fields on `studio_status` and `song_set`), so an agent can leave notes.
 - Windows' WPF UI keeps the Info machine; the panel comes with P4.
+
+### 3.7 As built (§3.5): Song Notes
+
+**Info's saved format** (WDE's "Info View", `RunTime/Gear/Generators/Info.NET.dll`, gear name `Info`, a net8.0-windows managed generator: `WDE.Info.InfoMachine` with a WPF `RTFBoxInfo`). Read from its metadata and IL, then checked on Windows CI with the DLL itself (§5):
+
+- Info's `MachineState` property is a `WDE.Info.InfoMachine+State` with `Text` (string), `Background` and `Foreground` (`System.Windows.Media.Color`, kept as ARGB). Its getter fills `Text` from the box: `TextRange.Save(DataFormats.Rtf)`, so the notes are **RTF as WPF's RichTextBox writes it**.
+- ReBuzz saves any managed machine with a `MachineState` as its machine data (`MachineManager.GetMachineData`): **byte 2** (the version), **int32 size**, then **the State as `XmlSerializer` writes it** (UTF-8 with a BOM, CRLF, indented): `<State xmlns:xsi=… xmlns:xsd=…><Text>{\rtf1 …}</Text><Background><A/><R/><G/><B/><ScA/><ScR/><ScG/><ScB/></Background><Foreground>…</Foreground></State>`. Opening, `SetMachineData` skips the 5 bytes and deserializes the rest.
+- WPF's RTF: a font and colour table (colour 0 is black), `\listtable`; each paragraph a group ending in `\par`, with `\fsN` and `\cfN`; `\b`, `\i`, `\ul` groups; lists as `{\pntext \'B7\tab}` or `{\pntext 1.\tab}` with `\li720` per level; links as `{\field{\*\fldinst { HYPERLINK "url" }}{\fldrslt …}}`; `\line`, `\tab`; non-ANSI characters as `\'hh` (code page 1252) or `\uN?`. Fixture: `ReBuzz.Studio.Tests/Fixtures/InfoMachineState.xml`, what Info's own box and its State type gave on Windows CI.
+- Info needs WPF: its `RTFBoxInfo` is a WPF control, and it builds itself from `Themes/<theme>/Gear/Info/RTFBoxInfo.xaml` (in `RunTime/Themes/Default` too since U2 health, §3.1). So it runs in ReBuzz on Windows; off Windows it is a placeholder that keeps its data.
+
+**The notes** (`ReBuzz/Core/Notes/`):
+
+- `SongNotesStore` (the engine, every platform; `ReBuzzCore.SongNotes`): the notes are **Markdown** (`NotesMarkdown`): paragraphs (a line break is a line break; an empty line starts a paragraph), `#`–`###` headings, `-` and `1.` lists nested by two spaces, `>` quotes, `---` rules; `**bold**`, `*italic*`, `~~strike~~`, `` `code` ``, `[links](…)` and bare `https://` links, and three HTML tags notes need: `<u>`, `<span style="color:#rrggbb">`, `<br>`. Markdown because agents read and write it as they are, it diffs in `.bmxml`, and it reads as text anywhere.
+- **Saved** in a `SongNotes` subsection, in `.bmx` (the `IUGB` section) and `.bmxml` alike: `<SongNotes version="1" format="markdown"><Text>…</Text><Imported kind="info-machine" machine="Info" hash="…"/></SongNotes>`. A song without notes (and nothing imported) has none, so it saves as upstream does. Upstream ReBuzz reads the subsections it knows and skips the rest; it doesn't write this one back.
+- **Edits** (`Write`, and `Type` for typing) are steps on the song's undo history and mark the song modified. A run of typing is one step until a pause of 1.5 s, a new line, or another step.
+- **Import** when a song opens (`OpenSong`, after the machines are loaded): each Info machine's text (`InfoMachineState.Read` of `machine.Data`: off Windows the placeholder's kept bytes, on Windows the machine's own state, the same format), through `RtfToMarkdown`: paragraphs and line breaks, bold, italic, underline, strike-through, colour (not the colour most of the text has, nor the machine's foreground, nor a link's), font size (a paragraph ≥ 1.15×, 1.3×, 1.6× the body's size is `###`, `##`, `#`), lists (`\pntext`, `\listtext`, `\ls`/`\ilvl` or `\li`), hyperlink fields; code pages and `\uN`. Fonts, styles, tables, pictures and spacing are left out. **The song's own info text** (Buzz's `BLAH` section, ReBuzz's Info view on Windows) comes in too, as plain text.
+  - Each comes in below the notes (under a `###` heading with its source when there is more than one text) and is **marked as imported**: the tab shows which until dismissed, and agents see `imported_on_open`. Importing isn't an edit: the song isn't modified.
+  - **The machine and the info text stay as they are**: the song saves back byte for byte the same in every section but the subsections (tested in `.bmx`; `tools/song-roundtrip.py --compare` in both formats).
+  - The subsection remembers what came in (a hash of each text as Markdown), so it comes in once. A text changed since (Info edited in ReBuzz on Windows, which keeps the machine) comes in again, below. Markdown, not RTF, is hashed: Info's box may write the same notes a little differently each time it saves.
+- **The studio**: the Song Notes tab (studio-mvp.md §7). **Agents**: `song_notes_read`, `song_notes_write` (mcp-server.md §5.2). **WPF on Windows** keeps the Info machine and has no panel (P4); its engine keeps and imports the notes all the same, so they survive a save there and agents can read them.
+
+**Tests:**
+- `ReBuzz.Studio.Tests/SongNotesTests.cs` (Linux, macOS): notes typed with the keyboard, formatted with the toolbar and the keys, as they read (`song-notes.png`); undo and redo of typing runs, formats and agent edits on the song's history; save and open in both formats; no subsection without notes; a Windows-made `.bmx` with an Info machine (the fixture's data on a placeholder, `song-notes-imported.png`) opens with its text imported and marked, saves back with every core section byte-equal, opens again without importing twice, and passes `song-roundtrip.py --compare` as `.bmx` and `.bmxml`; a text changed since comes in below; the song's info text comes in as plain text; links open; the agent's tools.
+- `ReBuzz.SessionTests/NotesFormatTests.cs` (Linux, seconds): the Markdown subset, escaping, the RTF reader (code pages, `\uN` and `\ucN`, destinations, sizes, colours, Word's and WPF's lists, links, broken RTF), Info's state from the fixture, and bounded time on 200 000 characters of openers that never close.
+- `ReBuzzTests/SongNotesTests.cs` (Windows): the real `Info.NET.dll`: its box's RTF and its `State`, serialized as ReBuzz does, read by the importer (saved again by the box, the RTF is the same). A live Info machine (added through the agent, unconnected: it has no audio output) with text in its box: the song saved as `.bmx` and opened again has the text in the notes, imported from the machine's own state, once. The agent's notes save and open in both formats.
+- `InfoMachineState.Write` (tests and fixtures) writes what Info's serializer does, to the scRGB digits (`NotesFormatTests`, against the fixture).
+
+**Decided here, for the user:**
+- **The notes are Markdown, not a WYSIWYG document.** Avalonia's free controls have no rich-text editor (the Pro one is excluded, studio-mvp.md §1), so the tab is an editor with a toolbar and the format keys beside the notes as they read. A WYSIWYG editor would be a control of our own (caret, selection, IME, undo), a later step if wanted.
+- **The song's info text (`BLAH`) is imported, never written.** Writing the notes back into it would show them in Buzz and in WPF's Info view, but would change a core section; it stays an option.
 
 ## 4. Next machine batch: successors (H2, H4)
 
