@@ -566,7 +566,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>Renders whole ticks, as the audio thread would (a WorkManager, as ReBuzzTests and the Session View's tests do).</summary>
-        sealed class Player : IDisposable
+        internal sealed class Player : IDisposable
         {
             readonly WorkManager work = new WorkManager(Core, new WorkThreadEngine(1), 0, BuzzGUI.Common.Global.EngineSettings);
             readonly float[] buffer = new float[512];

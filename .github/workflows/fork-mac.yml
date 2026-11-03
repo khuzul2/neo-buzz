@@ -27,6 +27,7 @@ on:
       - 'ExternalMachines/portable/**'
       - 'ExternalMachines/source/thepedal/**'
       - 'tools/headless-live.py'
+      - 'tools/song-roundtrip.py'
       - 'tools/headless-midi.py'
       - 'LinkHelper/**'
       - 'ReBuzz.AgentEval/**'
@@ -149,6 +150,14 @@ jobs:
         name: ReBuzz-macos-arm64
         path: ${{ runner.temp }}/app/ReBuzz-macos-arm64.zip
         if-no-files-found: ignore
+
+    # P3's exit (docs/specs/studio-mvp.md S9): ReBuzz.app itself, with the runner's audio device and
+    # agents allowed on a free port for this run (--agent-port, --agent-token: nothing saved), and
+    # the A7 live scenarios against it over Streamable HTTP, as Claude Code connects: transport,
+    # session launch and record, midi_play, meters_read, a render. Then the system asks it to quit.
+    - name: The studio's MCP server, live (ReBuzz.app)
+      if: always()
+      run: python3 tools/headless-live.py --studio "$RUNNER_TEMP/app/ReBuzz.app/Contents/MacOS/ReBuzz.Studio" "$RUNNER_TEMP/studio-live" --expect-workgroup
 
     - name: Summary
       if: always()

@@ -4,6 +4,7 @@
 // line (Command/Ctrl+Shift+A opens it); the status line shows the agent's current call. The tools
 // run on the UI thread (the engine's dispatcher) in "studio" mode, so the live tools play through
 // the studio's audio device, and the views follow the engine's events as they do for the user.
+// S9: a start-up option allows agents for one run without touching the saved settings (CI, scripts).
 
 using System;
 using System.IO;
@@ -59,6 +60,19 @@ namespace ReBuzz.Studio.Shell
 
         public AgentSettings Settings { get; } = new AgentSettings();
 
+        /// <summary>
+        /// The start-up option (ReBuzz.Studio --agent-port &lt;port&gt; [--agent-token &lt;token&gt;]), set
+        /// before the engine starts: agents are allowed on that port, with that token (else the saved
+        /// one), for this run only, whatever Preferences ▸ Agent says. Nothing is saved. A change made
+        /// on the page ends it: the saved settings rule from then on.
+        /// </summary>
+        public static (int Port, string Token)? StartupOption { get; set; }
+
+        (int Port, string Token)? option = StartupOption;
+
+        /// <summary>Agents may connect: the saved setting, or the start-up option.</summary>
+        public bool Allowed => Settings.AllowAgents || option != null;
+
         /// <summary>The listening state or the call running changed (UI thread).</summary>
         public event Action Changed;
 
@@ -67,7 +81,7 @@ namespace ReBuzz.Studio.Shell
         /// <summary>For the status line: the call running, else where it listens (or why it can't); "" when off.</summary>
         public string Status => current != null ? $"Agent: {current}…" : listening;
 
-        public int PortNumber => int.TryParse(Settings.Port, out int p) && p > 0 && p < 65536 ? p : DefaultPort;
+        public int PortNumber => option?.Port ?? (int.TryParse(Settings.Port, out int p) && p > 0 && p < 65536 ? p : DefaultPort);
 
         public string Url => transport?.Url ?? $"http://127.0.0.1:{PortNumber}/mcp";
 
@@ -76,6 +90,7 @@ namespace ReBuzz.Studio.Shell
         {
             get
             {
+                if (option?.Token is string given) return given;
                 string t = store.Get("agent", "token");
                 if (string.IsNullOrEmpty(t))
                 {
@@ -97,7 +112,7 @@ namespace ReBuzz.Studio.Shell
             Host.StopHttp();
             transport = null;
             listening = "";
-            if (Settings.AllowAgents)
+            if (Allowed)
             {
                 try
                 {
@@ -116,16 +131,20 @@ namespace ReBuzz.Studio.Shell
         /// <summary>A new token: clients with the old one are refused from now on.</summary>
         public void NewToken()
         {
-            store.Set("agent", "token", HttpTransport.NewToken());
+            if (option is { Token: not null } o) option = (o.Port, HttpTransport.NewToken());     // in memory, as the option's was
+            else store.Set("agent", "token", HttpTransport.NewToken());
             Apply();
         }
 
         /// <summary>Allow agents on or off, and the port, saved as the settings page saves them.</summary>
         public void Set(bool allow, string port = null)
         {
+            bool applied = option == null;
+            option = null;
             if (port != null) Settings.Set(nameof(AgentSettings.Port), port.Trim());
             Settings.Set(nameof(AgentSettings.AllowAgents), allow);
             Settings.Save();
+            if (!applied) Apply();      // the settings may not have changed, but the option is gone
         }
 
         public void Dispose() => Host.Dispose();

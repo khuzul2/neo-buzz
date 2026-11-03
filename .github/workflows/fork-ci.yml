@@ -32,7 +32,7 @@ jobs:
     - name: PortAudio
       run: |
         sudo apt-get update -q
-        sudo apt-get install -y -q --no-install-recommends libportaudio2 libsndfile1 pulseaudio pulseaudio-utils
+        sudo apt-get install -y -q --no-install-recommends libportaudio2 libsndfile1 pulseaudio pulseaudio-utils xvfb xauth libice6 libsm6
         pulseaudio -D --exit-idle-time=-1 --system=false
         pactl load-module module-null-sink sink_name=ci_null
         pactl set-default-sink ci_null
@@ -143,6 +143,14 @@ jobs:
       env:
         SCREENSHOTS_DIR: ${{ github.workspace }}/studio-screenshots
       run: dotnet test ReBuzz.Studio.Tests --logger "console;verbosity=normal" 2>&1 | tee studio-test.log
+
+    # P3's exit (studio-mvp.md S9): the studio app itself, on Xvfb's display with the PulseAudio null
+    # sink, agents allowed on a free port for this run; the A7 live scenarios against it over HTTP.
+    - name: The studio's MCP server, live (Xvfb)
+      if: always()
+      run: |
+        dotnet build ReBuzz.Studio/ReBuzz.Studio.csproj -c Release -nologo -v:q
+        xvfb-run -a python3 tools/headless-live.py --studio ReBuzz.Studio/bin/Release/net10.0/ReBuzz.Studio "$RUNNER_TEMP/studio-live"
 
     - name: Studio screenshots
       if: always() && hashFiles('studio-screenshots/*.png') != ''

@@ -23,6 +23,11 @@
 #
 #   python3 tools/song-roundtrip.py <path to rebuzz-headless> [work folder] [song ...]
 #   python3 tools/song-roundtrip.py --dump <song.bmx|song.bmxml>     (the parsed song, as JSON)
+#   python3 tools/song-roundtrip.py --compare <original.bmx> <A> <B>
+#   python3 tools/song-roundtrip.py --windows-style <a song saved as BMXML> <out.bmxml>
+#   python3 tools/song-roundtrip.py --check-windows-style <out.bmxml> <A.bmxml> <B.bmxml> <A.bmx> <B.bmx>
+#       (the checks above on saves another program made: the studio's exit test, studio-mvp.md S9.
+#       A is the song saved, B is A opened and saved again; they print JSON and exit 1 on a problem)
 #
 # With no songs given it takes the first 12 demos under ExternalMachines/source. Linux CI runs it.
 
@@ -643,54 +648,70 @@ def model_name(s):
 
 def check_windows_style(h, src, work):
     """The Windows-style song round-trips in both formats, keeps its editors' data byte for byte, and the column."""
-    problems = []
     song = os.path.join(work, "windows-style.bmxml")
     data, column = windows_style_song(src, song)
     if not data:
         return ["no machine with a pattern editor and patterns to give data"], 0, 0
-    want = parse_bmxml(song)
-
     xml, err = roundtrip(h, song, work, ".bmxml")
     if xml is None:
         return [f"bmxml: {err}"], 0, 0
-    if strip_stamps(open(xml[0], encoding="utf-8-sig").read()) != strip_stamps(open(xml[1], encoding="utf-8-sig").read()):
-        problems.append("bmxml: A and B differ beyond the stamps")
-    got = parse_bmxml(xml[0])
-    wm, gm = {m["name"]: m for m in want["machines"]}, {m["name"]: m for m in got["machines"]}
-    for name, m in wm.items():
-        if gm.get(name) != m:
-            diff = [k for k in m if gm.get(name, {}).get(k) != m[k]] if name in gm else ["machine lost"]
-            problems.append(f"bmxml A: {name!r} ({m['dll']}): {', '.join(diff)} changed")
-    for editor, blob in data.items():
-        if gm.get(editor, {}).get("data") != blob:
-            problems.append(f"bmxml A: {editor!r}'s data isn't the same bytes")
-    if visible_connections(want) != visible_connections(got):
-        problems.append("bmxml A: connections changed")
-
     bmx, err = roundtrip(h, song, work, ".bmx")
+    problems = check_windows_style_saves(song, data, column, xml, bmx)
     if bmx is None:
         return problems + [f"bmx: {err}"], os.path.getsize(xml[0]), 0
-    if open(bmx[0], "rb").read() != open(bmx[1], "rb").read():
-        problems.append("bmx: A and B differ")
-    b = parse_bmx(bmx[0])
-    bm = {m["name"]: m for m in b["machines"]}
-    for name, m in wm.items():
-        s = bm.get(name)
-        if s is None:
-            problems.append(f"bmx A: {name!r} lost")
-            continue
-        if s["data"] != m["data"]:
-            problems.append(f"bmx A: {name!r} data changed")
-        if m["editor"] and s["editors"] != [m["editor"]] * len(m["patterns"]):
-            problems.append(f"bmx A: {name!r} editor {m['editor']!r} became {s['editors']}")
-        for p in m["patterns"]:
-            have = (s.get("columns") or {}).get(p["name"], [])
-            cols = p["columns"]
-            if cols != have:
-                problems.append(f"bmx A: {name!r} pattern {p['name']!r} columns {short(cols)} became {short(have)}")
+    return problems, os.path.getsize(xml[0]), os.path.getsize(bmx[0])
+
+
+def windows_style_data(song):
+    """A Windows-style song's editors' data and the machine given the column, read back from the song (as windows_style_song made them)."""
+    model = parse_bmxml(song)
+    machines = {m["name"]: m for m in model["machines"]}
+    data = {m["editor"]: machines[m["editor"]]["data"] for m in model["machines"] if m["editor"] and m["patterns"] and m["editor"] in machines}
+    column = next((m["name"] for m in model["machines"] for p in m["patterns"] for c in p["columns"] if ["roundtrip", "kept"] in c["metadata"]), None)
+    return data, column
+
+
+def check_windows_style_saves(song, data, column, xml, bmx):
+    """The checks on the Windows-style song's saves: xml and bmx are (A, B) pairs, or None."""
+    problems = []
+    want = parse_bmxml(song)
+    wm = {m["name"]: m for m in want["machines"]}
+    if xml is not None:
+        if strip_stamps(open(xml[0], encoding="utf-8-sig").read()) != strip_stamps(open(xml[1], encoding="utf-8-sig").read()):
+            problems.append("bmxml: A and B differ beyond the stamps")
+        got = parse_bmxml(xml[0])
+        gm = {m["name"]: m for m in got["machines"]}
+        for name, m in wm.items():
+            if gm.get(name) != m:
+                diff = [k for k in m if gm.get(name, {}).get(k) != m[k]] if name in gm else ["machine lost"]
+                problems.append(f"bmxml A: {name!r} ({m['dll']}): {', '.join(diff)} changed")
+        for editor, blob in data.items():
+            if gm.get(editor, {}).get("data") != blob:
+                problems.append(f"bmxml A: {editor!r}'s data isn't the same bytes")
+        if visible_connections(want) != visible_connections(got):
+            problems.append("bmxml A: connections changed")
+    if bmx is not None:
+        if open(bmx[0], "rb").read() != open(bmx[1], "rb").read():
+            problems.append("bmx: A and B differ")
+        b = parse_bmx(bmx[0])
+        bm = {m["name"]: m for m in b["machines"]}
+        for name, m in wm.items():
+            s = bm.get(name)
+            if s is None:
+                problems.append(f"bmx A: {name!r} lost")
+                continue
+            if s["data"] != m["data"]:
+                problems.append(f"bmx A: {name!r} data changed")
+            if m["editor"] and s["editors"] != [m["editor"]] * len(m["patterns"]):
+                problems.append(f"bmx A: {name!r} editor {m['editor']!r} became {s['editors']}")
+            for p in m["patterns"]:
+                have = (s.get("columns") or {}).get(p["name"], [])
+                cols = p["columns"]
+                if cols != have:
+                    problems.append(f"bmx A: {name!r} pattern {p['name']!r} columns {short(cols)} became {short(have)}")
     if column is None:
         problems.append("no placeholder with patterns and global parameters to give a column")
-    return problems, os.path.getsize(xml[0]), os.path.getsize(bmx[0])
+    return problems
 
 
 def roundtrip(h, song, work, ext):
@@ -705,7 +726,42 @@ def roundtrip(h, song, work, ext):
     return (a, b), None
 
 
+def compare(original, a, b):
+    """The checks main() makes on its own saves, for saves made elsewhere: A and B the same, nothing lost from the original."""
+    problems = []
+    try:
+        orig = parse_bmx(original)
+    except Unparseable as e:
+        return {"problems": [], "unparseable": str(e)}
+    if a.lower().endswith(".bmxml"):
+        same = strip_stamps(open(a, encoding="utf-8-sig").read()) == strip_stamps(open(b, encoding="utf-8-sig").read())
+        if not same:
+            problems.append(f"bmxml: A ({os.path.getsize(a):,} bytes) and B ({os.path.getsize(b):,} bytes) differ beyond the stamps")
+        compare_bmxml(orig, parse_bmxml(a), problems, "bmxml A")
+    else:
+        same = open(a, "rb").read() == open(b, "rb").read()
+        if not same:
+            problems.append(f"bmx: A ({os.path.getsize(a):,} bytes) and B ({os.path.getsize(b):,} bytes) differ")
+        compare_bmx(orig, parse_bmx(a), problems, "bmx A")
+    return {"problems": problems, "identical": same, "placeholders": sum(1 for m in orig["machines"] if m["type"] != 0),
+            "para": bool(orig["para"])}
+
+
 def main():
+    if len(sys.argv) == 5 and sys.argv[1] == "--compare":
+        result = compare(*sys.argv[2:5])
+        print(json.dumps(result))
+        return 1 if result["problems"] else 0
+    if len(sys.argv) == 4 and sys.argv[1] == "--windows-style":
+        data, column = windows_style_song(sys.argv[2], sys.argv[3])
+        print(json.dumps({"editors": sorted(data), "column": column}))
+        return 0 if data and column else 1
+    if len(sys.argv) == 7 and sys.argv[1] == "--check-windows-style":
+        song = sys.argv[2]
+        data, column = windows_style_data(song)
+        problems = check_windows_style_saves(song, data, column, sys.argv[3:5], sys.argv[5:7])
+        print(json.dumps({"problems": problems, "editors": sorted(data), "column": column}))
+        return 1 if problems or not data else 0
     if len(sys.argv) == 3 and sys.argv[1] == "--dump":
         p = sys.argv[2]
         print(json.dumps(parse_bmxml(p) if p.lower().endswith(".bmxml") else parse_bmx(p), indent=1))
