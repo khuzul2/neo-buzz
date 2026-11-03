@@ -138,7 +138,7 @@ namespace ReBuzz.AgentTests
                     {
                         Assert.That(s.Min >= p.Min && s.Max <= p.Max && s.Contains(p.Default), Is.True, $"{m.Gear} {p.Name}: its safe range is inside its range and holds its default");
                         Assert.That(s.Reason, Is.Not.Empty, $"{m.Gear} {p.Name}: why");
-                        Assert.That(m.Health.Unhealthy, Is.True, $"{m.Gear}: a safe range comes from an unsafe end");
+                        Assert.That(m.Health.Status, Is.AnyOf("unhealthy", "warn"), $"{m.Gear}: a safe range comes from an end that diverges or never decays");
                     }
                     Assert.That(p.Confidence, Is.AnyOf("values", "description"), $"{m.Gear} {p.Name}");
                     double v = p.Mapping.Value(p.Default, p.Min, p.Max);

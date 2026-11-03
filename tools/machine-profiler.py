@@ -776,12 +776,15 @@ class Bench:
         self.renders += 1
         peaks, nonfinite = peaks_per_second(out["file"])
         verdict, facts = mi.level_verdict(peaks, nonfinite or (out["measure"].get("peaks") or {}).get("sample_peak_dbfs") == "inf")
-        if verdict == "growing":
+        if verdict == "growing" or mi.piling_up(verdict, facts):
+            # Over 30 s: a runaway keeps growing; a lossless loop (feedback at ±100 %) piles noise up for good.
             longer = render(c, 0, CONFIRM_BEATS, 0.0)
             self.renders += 1
             peaks, nonfinite = peaks_per_second(longer["file"])
             verdict, facts = mi.growth_verdict(peaks, nonfinite)
             facts["over_seconds"] = round(CONFIRM_BEATS * 60 / TEMPO)
+            if verdict != "diverging" and mi.never_decays(peaks):
+                facts["never_decays"] = True
         forget_renders(c)
         if verdict != "diverging" and self.guard_tripped():
             verdict, facts = "diverging", dict(facts, guard=True)
@@ -812,8 +815,12 @@ def describe_level(verdict, facts):
     if facts.get("guard"):
         return "the engine's guard tripped"
     peak = "infinite" if p == "inf" else "silent" if p is None else f"{p:+.1f} dBFS peak"
+    if facts.get("over_seconds") and p is not None and p != "inf":
+        peak += f" over {facts['over_seconds']} s"
     if verdict == "diverging" and isinstance(facts.get("growth_db"), (int, float)) and facts["growth_db"] > mi.GROWTH_DB:
         return f"{peak}, growing {facts['growth_db']:+.0f} dB"
+    if facts.get("never_decays"):
+        return f"{peak}, never decays"
     return peak
 
 
@@ -837,6 +844,8 @@ def level_tests(c, prof, kind, globals_, tracks):
         return
     if verdict == "hot":
         prof.hot.append(f"hot at its defaults ({describe_level(verdict, facts)})")
+    elif facts.get("never_decays"):
+        prof.warn(f"never decays at its defaults ({describe_level(verdict, facts)}): a lossless loop")
     together = {}
     for end in ("min", "max"):
         changes = [{"param": f"#{p['index']}", "value": f"raw:{p[end]}"} for p in globals_ if "index" in p]
@@ -854,54 +863,70 @@ def level_tests(c, prof, kind, globals_, tracks):
                            ([f"an effect with {', '.join(named[:4])}"] if named else [])
     sweeps, ranges, alone_diverges, alone_hot = {}, {}, False, False
     diverges_at = set()          # the ends ("min", "max") at which some parameter alone diverges
-    hot = []
+    hot, endless = [], []
     for p in globals_ + tracks:
         per_track = bool(p.get("per_track"))
         lo, hi = p["min"], p["max"]
         default = min(max(p["default_raw"], lo), hi)
         ref = {"param": p["name"], "track": 0} if per_track else {"param": f"#{p['index']}"}
-        ends, bad = {}, {}
+        ends, bad, lossless = {}, {}, {}
         for end, raw in (("min", lo), ("max", hi)):
             if raw == default:
                 continue
             change = dict(ref, value=f"raw:{raw}")
             v, f = bench.level([change])
             text = bench.text(change)
-            if v in ("diverging", "hot", "error", "crash"):
+            if v in ("diverging", "hot", "error", "crash") or f.get("never_decays"):
                 ends[end] = dict(f, verdict=v, raw=raw, text=text)
             if v in ("diverging", "crash"):
                 bad[end] = raw
+            elif f.get("never_decays"):
+                # A lossless loop: kept from agents by the safe range, but hot (a warning), not unhealthy.
+                lossless[end] = raw
+                (hot if v == "hot" else endless).append(f"{p['name']} at its {end}imum ({text}): {describe_level(v, f)}")
             elif v == "hot":
                 hot.append(f"{p['name']} at its {end}imum ({text}): {describe_level(v, f)}")
         if ends:
             sweeps[p["name"]] = ends
-        if not bad:
+        if not bad and not lossless:
             continue
-        alone_diverges = True
-        diverges_at.update(bad)
-        # The edge: the last raw value from the default towards each diverging end that doesn't diverge.
+        if bad:
+            alone_diverges = True
+            diverges_at.update(bad)
+
+        def unsafe(x, ref=ref):
+            v, f = bench.level([dict(ref, value=f"raw:{x}")])
+            return v in ("diverging", "crash") or bool(f.get("never_decays"))
+        # The edge: the last raw value from the default towards each unsafe end that is safe.
         edges = {}
-        for end, raw in bad.items():
-            edges[end] = mi.edge(default, raw, lambda x: bench.level([dict(ref, value=f"raw:{x}")])[0] in ("diverging", "crash"))
+        for end, raw in list(bad.items()) + list(lossless.items()):
+            edges[end] = mi.edge(default, raw, unsafe)
         safe_lo, safe_hi = edges.get("min", lo), edges.get("max", hi)
         texts = {}
         for raw in (safe_lo, safe_hi):
             change = dict(ref, value=f"raw:{raw}")
             texts[raw] = bench.texts.get((change["param"], change.get("track"), change["value"])) or text_at(p, raw)
         how = {end: ("crashes or hangs the server" if ends[end]["verdict"] == "crash" else "diverges") for end in bad}
+        how.update({end: "never decays" for end in lossless})
         where = " and ".join(f"{how[end]} at its {end}imum ({ends[end]['text']}" +
-                             (f": {describe_level('diverging', ends[end])})" if how[end] == "diverges" else ")") for end in ("min", "max") if end in bad)
+                             (f": {describe_level(ends[end]['verdict'], ends[end])})" if how[end] != "crashes or hangs the server" else ")")
+                             for end in ("min", "max") if end in how)
         reason = where
         ranges[(per_track, p["name"])] = {"min": safe_lo, "max": safe_hi, "min_text": texts[safe_lo], "max_text": texts[safe_hi], "reason": reason}
         text = f"{p['name']} {reason}; safe from {texts[safe_lo]} to {texts[safe_hi]} (raw {safe_lo}–{safe_hi})"
         if "diverges" in how.values():
             prof.diverges(text)
-        else:
+        elif bad:
             prof.problem(text)
+        else:
+            prof.notes.append(f"safe range: {text}")
     alone_hot = bool(hot)
+    hot.sort(key=lambda s: "never decays" not in s)   # the ones with a safe range first
     if hot:
         shown = hot[:8] + ([f"and {len(hot) - 8} more"] if len(hot) > 8 else [])
         prof.hot.append("hot (loud but steady) with " + "; ".join(shown))
+    if endless:
+        prof.warn("never decays (a lossless loop, kept out of its safe range) with " + "; ".join(endless))
     for end in misbehaved:
         r = together[end]
         # Every parameter at one end at once diverging, where no parameter alone diverges at that end: a
@@ -1165,10 +1190,13 @@ def health_report(summary):
         lines.append("None.")
     lines += ["", "## Hot", "",
               "Loud but steady: above 0 dBFS, under +60 dBFS, not growing, at the setting named. A warning, not unhealthy; the master's "
-              "safety limiter keeps it off the speakers (machine-safety.md §3.3).", ""]
+              "safety limiter keeps it off the speakers (machine-safety.md §3.3). A parameter's end where the loop never decays (feedback "
+              "at ±100 %: noise piles up 2 dB or more per doubling of time, for 30 s) gets a safe range too, which keeps agents off it.", ""]
     if groups["hot"]:
-        lines += ["| Machine | Platform | Settings |", "|---|---|---|"]
-        lines += [f"| {e['gear']} | {e.get('platform', '')} | {'; '.join(e.get('hot', []))} |" for e in groups["hot"]]
+        lines += ["| Machine | Platform | Settings | Safe ranges |", "|---|---|---|---|"]
+        for e in groups["hot"]:
+            sr = "; ".join(f"{n}: {r.get('min_text', r['min'])} … {r.get('max_text', r['max'])} (raw {r['min']}–{r['max']})" for n, r in (e.get("safe_ranges") or {}).items())
+            lines.append(f"| {e['gear']} | {e.get('platform', '')} | {'; '.join(e.get('hot', []))} | {sr} |")
     else:
         lines.append("None.")
     lines += ["", "## Needs a window", "",

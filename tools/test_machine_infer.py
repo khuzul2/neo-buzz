@@ -197,6 +197,18 @@ class LevelTests(unittest.TestCase):
         self.assertEqual(mi.growth_verdict(hot_attack)[0], "hot")
         self.assertEqual(mi.growth_verdict([db(-9)] * 29 + [db(80)])[0], "diverging", "above +60 dBFS at the end")
 
+    def test_a_lossless_loop_never_decays(self):
+        # Feedback at ±100 %: noise piles up, its power growing with time (3 dB per doubling), for good.
+        lossless = [db(-9) * ((s + 1) / 2) ** 0.5 for s in range(30)]
+        self.assertTrue(mi.piling_up(*mi.level_verdict(lossless[:4])), "over 4 s it rose 2 dB or more")
+        self.assertEqual(mi.growth_verdict(lossless)[0], "hot", "not diverging: hot")
+        self.assertTrue(mi.never_decays(lossless))
+        # Feedback at 98 %: it piles up at first, then settles.
+        settling = [db(-9) * (1 - math.exp(-(s + 1) / 3)) ** 0.5 * 4 for s in range(30)]
+        self.assertFalse(mi.never_decays(settling))
+        self.assertFalse(mi.never_decays([db(-9)] * 30), "steady")
+        self.assertFalse(mi.never_decays(lossless[:12]), "needs the 30 s render")
+
     def test_levels_stay_json(self):
         _, facts = mi.level_verdict([0.0] * 4)
         self.assertIsNone(facts["peak_dbfs"], "silence: null, not -Infinity")

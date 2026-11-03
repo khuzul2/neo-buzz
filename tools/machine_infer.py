@@ -451,6 +451,30 @@ def growth_verdict(peaks, nonfinite=False):
     return _steady(peak), facts
 
 
+PILE_UP_DB = 2.0            # dB per doubling of time: a loop that never decays piles its input up
+
+
+def piling_up(verdict, facts):
+    """A steady verdict whose level still rose over the 4 s render by 2 dB or more (second to last second, a
+    doubling of time): look again over 30 s, for a loop that never decays."""
+    g = facts.get("growth_db")
+    return verdict in ("hot", "ok") and isinstance(g, (int, float)) and g >= PILE_UP_DB
+
+
+def never_decays(peaks):
+    """
+    Over a 30 s render's per-second peaks: a lossless loop (feedback at ±100 %) never decays, so noise
+    fed into it piles up, about 3 dB per doubling of time, for good. True when the peak rises by 2 dB
+    or more from 4–8 s to 8–16 s and again to 16–30 s; a loop that decays settles instead.
+    """
+    if len(peaks) < 24:
+        return False
+    a, b, c = max(peaks[4:8]), max(peaks[8:16]), max(peaks[16:])
+    if a <= 1e-5 or b <= 0 or c <= 0:
+        return False
+    return dbfs(b) - dbfs(a) >= PILE_UP_DB and dbfs(c) - dbfs(b) >= PILE_UP_DB
+
+
 def _steady(peak):
     db_ = dbfs(peak)
     if db_ > DIVERGE_DBFS:
