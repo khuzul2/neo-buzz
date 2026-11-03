@@ -180,9 +180,25 @@ namespace ReBuzz.Studio.Views.Session
             RefreshState();
         }
 
+        // The shell's Edit menu and shortcuts (IStudioEditTarget): Undo and Redo are the grid's own history, as on Windows.
+        public bool Undo()
+        {
+            if (!layout.UndoStack.CanUndo) return false;
+            layout.Undo();
+            return true;
+        }
+
+        public bool Redo()
+        {
+            if (!layout.UndoStack.CanRedo) return false;
+            layout.Redo();
+            return true;
+        }
+
         internal void SlotDoubleClicked(SlotCell cell, KeyModifiers mods)
         {
-            if (cell.Pattern != null && mods.HasFlag(KeyModifiers.Control))
+            // Until the pattern editor is in the studio (S6), a clip's notes open in the piano roll.
+            if (cell.Pattern != null && (mods.HasFlag(KeyModifiers.Control) || !StudioViews.Has("Pattern")))
                 EditNotes(cell.Sequence, cell.Pattern);
             else if (cell.Pattern != null)
                 EditPattern(cell.Pattern);

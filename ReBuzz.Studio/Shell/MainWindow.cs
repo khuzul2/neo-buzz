@@ -37,8 +37,9 @@ namespace ReBuzz.Studio.Shell
             MinWidth = 640;
             MinHeight = 400;
 
-            undo = new Command(() => Stack?.Undo(), () => Stack?.CanUndo == true);
-            redo = new Command(() => Stack?.Redo(), () => Stack?.CanRedo == true);
+            // The selected view first (IStudioEditTarget), then the song's undo history.
+            undo = new Command(() => { if (Target?.Undo() != true) Stack?.Undo(); }, () => Target != null || Stack?.CanUndo == true);
+            redo = new Command(() => { if (Target?.Redo() != true) Stack?.Redo(); }, () => Target != null || Stack?.CanRedo == true);
             transport = new TransportBar(host);
 
             var menu = BuildMenu();
@@ -64,6 +65,9 @@ namespace ReBuzz.Studio.Shell
         }
 
         BuzzGUI.Common.ManagedActionStack Stack => host.Core?.SongCore?.ActionStack;
+
+        /// <summary>The selected view, when it has edit commands of its own.</summary>
+        IStudioEditTarget Target => (tabs.SelectedItem as TabItem)?.Content as IStudioEditTarget;
 
         /// <summary>The views' tabs, once the engine runs.</summary>
         public TabControl Tabs => tabs;
@@ -129,6 +133,10 @@ namespace ReBuzz.Studio.Shell
                         {
                             new MenuItem { Header = "_Undo", Command = undo, InputGesture = new KeyGesture(Key.Z, cmd) },
                             new MenuItem { Header = "_Redo", Command = redo, InputGesture = OperatingSystem.IsMacOS() ? new KeyGesture(Key.Z, cmd | KeyModifiers.Shift) : new KeyGesture(Key.Y, cmd) },
+                            new Separator(),
+                            Item("Cu_t", () => Target?.Cut(), new KeyGesture(Key.X, cmd)),
+                            Item("_Copy", () => Target?.Copy(), new KeyGesture(Key.C, cmd)),
+                            Item("_Paste", () => Target?.Paste(), new KeyGesture(Key.V, cmd)),
                         },
                     },
                     new MenuItem

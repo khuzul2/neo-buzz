@@ -34,7 +34,7 @@ namespace ReBuzz.Studio.Views.Session
         public Control Create(StudioHost host) => new SessionView(host.Core);
     }
 
-    internal sealed partial class SessionView : UserControl
+    internal sealed partial class SessionView : UserControl, IStudioEditTarget
     {
         const double ColumnWidth = 116;
         const double SceneColumnWidth = 140;
