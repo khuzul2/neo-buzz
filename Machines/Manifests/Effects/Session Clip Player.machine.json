@@ -1,0 +1,67 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Session Clip Player",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "effect (silent at defaults)",
+ "summary": "Effect (silent at defaults) (profiled draft): silent at its defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "warn",
+  "problems": [
+   "silent with noise through it at the defaults (a gate closed, a wet mix at 0, or it needs setting up)"
+  ]
+ },
+ "profile": {
+  "effect": {
+   "silent": true
+  },
+  "extremes": {
+   "min": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   },
+   "max": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Monitor",
+   "name": "Monitor",
+   "group": "",
+   "min": 0,
+   "max": 2,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "auto",
+    "in",
+    "off"
+   ],
+   "description": "Hear the input: auto (while armed), in (always) or off",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Input",
+   "name": "Input",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "in",
+    "master"
+   ],
+   "description": "What a take records: the input, or the master output (resampling)",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

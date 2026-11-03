@@ -1,0 +1,573 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Polac VSTi 1.1",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "generator (silent at its defaults)",
+ "summary": "Generator (silent at its defaults) (profiled draft): no sound from a note at its defaults.",
+ "tracks": 128,
+ "notes": {
+  "input": "none"
+ },
+ "health": {
+  "status": "warn",
+  "problems": [
+   "no sound from a note at its defaults, as MIDI or in its tracks, even with a wave in slot 1",
+   "Global Command Value: its own default (raw 65535) is outside its range (0…65534)"
+  ]
+ },
+ "profile": {
+  "extremes": {
+   "min": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   },
+   "max": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Wet Out",
+   "name": "Wet Out",
+   "group": "",
+   "min": 0,
+   "max": 400,
+   "default": 100,
+   "kind": "table",
+   "unit": "dB",
+   "points": [
+    [
+     0,
+     "-inf"
+    ],
+    [
+     4,
+     -28.0
+    ],
+    [
+     8,
+     -21.9
+    ],
+    [
+     12,
+     -18.4
+    ],
+    [
+     16,
+     -15.9
+    ],
+    [
+     20,
+     -14.0
+    ],
+    [
+     24,
+     -12.4
+    ],
+    [
+     28,
+     -11.1
+    ],
+    [
+     32,
+     -9.9
+    ],
+    [
+     36,
+     -8.9
+    ],
+    [
+     40,
+     -8.0
+    ],
+    [
+     44,
+     -7.1
+    ],
+    [
+     48,
+     -6.4
+    ],
+    [
+     52,
+     -5.7
+    ],
+    [
+     56,
+     -5.0
+    ],
+    [
+     60,
+     -4.4
+    ],
+    [
+     64,
+     -3.9
+    ],
+    [
+     68,
+     -3.3
+    ],
+    [
+     72,
+     -2.9
+    ],
+    [
+     76,
+     -2.4
+    ],
+    [
+     80,
+     -1.9
+    ],
+    [
+     84,
+     -1.5
+    ],
+    [
+     88,
+     -1.1
+    ],
+    [
+     92,
+     -0.7
+    ],
+    [
+     96,
+     -0.4
+    ],
+    [
+     100,
+     0.0
+    ],
+    [
+     104,
+     0.3
+    ],
+    [
+     108,
+     0.7
+    ],
+    [
+     112,
+     1.0
+    ],
+    [
+     116,
+     1.3
+    ],
+    [
+     120,
+     1.6
+    ],
+    [
+     124,
+     1.9
+    ],
+    [
+     128,
+     2.1
+    ],
+    [
+     132,
+     2.4
+    ],
+    [
+     136,
+     2.7
+    ],
+    [
+     140,
+     2.9
+    ],
+    [
+     144,
+     3.2
+    ],
+    [
+     148,
+     3.4
+    ],
+    [
+     152,
+     3.6
+    ],
+    [
+     156,
+     3.9
+    ],
+    [
+     160,
+     4.1
+    ],
+    [
+     164,
+     4.3
+    ],
+    [
+     168,
+     4.5
+    ],
+    [
+     172,
+     4.7
+    ],
+    [
+     176,
+     4.9
+    ],
+    [
+     180,
+     5.1
+    ],
+    [
+     184,
+     5.3
+    ],
+    [
+     188,
+     5.5
+    ],
+    [
+     192,
+     5.7
+    ],
+    [
+     196,
+     5.8
+    ],
+    [
+     200,
+     6.0
+    ],
+    [
+     204,
+     6.2
+    ],
+    [
+     208,
+     6.4
+    ],
+    [
+     212,
+     6.5
+    ],
+    [
+     216,
+     6.7
+    ],
+    [
+     220,
+     6.8
+    ],
+    [
+     224,
+     7.0
+    ],
+    [
+     228,
+     7.2
+    ],
+    [
+     232,
+     7.3
+    ],
+    [
+     236,
+     7.5
+    ],
+    [
+     240,
+     7.6
+    ],
+    [
+     244,
+     7.7
+    ],
+    [
+     248,
+     7.9
+    ],
+    [
+     252,
+     8.0
+    ],
+    [
+     256,
+     8.2
+    ],
+    [
+     260,
+     8.3
+    ],
+    [
+     264,
+     8.4
+    ],
+    [
+     268,
+     8.6
+    ],
+    [
+     272,
+     8.7
+    ],
+    [
+     276,
+     8.8
+    ],
+    [
+     280,
+     8.9
+    ],
+    [
+     284,
+     9.1
+    ],
+    [
+     288,
+     9.2
+    ],
+    [
+     292,
+     9.3
+    ],
+    [
+     296,
+     9.4
+    ],
+    [
+     300,
+     9.5
+    ],
+    [
+     304,
+     9.7
+    ],
+    [
+     308,
+     9.8
+    ],
+    [
+     312,
+     9.9
+    ],
+    [
+     316,
+     10.0
+    ],
+    [
+     320,
+     10.1
+    ],
+    [
+     324,
+     10.2
+    ],
+    [
+     328,
+     10.3
+    ],
+    [
+     332,
+     10.4
+    ],
+    [
+     336,
+     10.5
+    ],
+    [
+     340,
+     10.6
+    ],
+    [
+     344,
+     10.7
+    ],
+    [
+     348,
+     10.8
+    ],
+    [
+     352,
+     10.9
+    ],
+    [
+     356,
+     11.0
+    ],
+    [
+     360,
+     11.1
+    ],
+    [
+     364,
+     11.2
+    ],
+    [
+     368,
+     11.3
+    ],
+    [
+     372,
+     11.4
+    ],
+    [
+     376,
+     11.5
+    ],
+    [
+     380,
+     11.6
+    ],
+    [
+     384,
+     11.7
+    ],
+    [
+     388,
+     11.8
+    ],
+    [
+     392,
+     11.9
+    ],
+    [
+     396,
+     12.0
+    ],
+    [
+     400,
+     12.0
+    ]
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Panning",
+   "name": "Panning",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 64,
+   "kind": "linear",
+   "a": -64.0,
+   "b": 64.0,
+   "unit": "%",
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "Global Command",
+   "name": "Global Command",
+   "group": "",
+   "min": 0,
+   "max": 17,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Transpose",
+    "Tempo Sync",
+    "Trigger Seq",
+    "Bypass",
+    "Morph: Prg A",
+    "Morph: Prg B",
+    "Global Inertia",
+    "Vel Commands",
+    "Dly Commands",
+    "9",
+    "Mute All Tracks",
+    "11",
+    "12",
+    "Autom. Slope",
+    "Sysex",
+    "RPB",
+    "Time Sig",
+    "Autom. Delay"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 3,
+   "id": "Global Command Value",
+   "name": "Global Command Value",
+   "group": "",
+   "min": 0,
+   "max": 65534,
+   "default": 65534,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 65534.0,
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "Program",
+   "name": "Program",
+   "group": "",
+   "min": 0,
+   "max": 65534,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 65534.0,
+   "description": "",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": [
+  {
+   "index": 0,
+   "id": "Param",
+   "name": "Param",
+   "group": "",
+   "min": 0,
+   "max": 12543,
+   "default": 12543,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 12543.0,
+   "description": "Track Parameter",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Param Val",
+   "name": "Param Val",
+   "group": "",
+   "min": 0,
+   "max": 32767,
+   "default": 0,
+   "kind": "linear",
+   "a": 4.8e-05,
+   "b": 99.999929,
+   "unit": "%",
+   "description": "Track Parameter Value",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "MIDI Cha",
+   "name": "MIDI Cha",
+   "group": "",
+   "min": 1,
+   "max": 16,
+   "default": 1,
+   "kind": "linear",
+   "a": 1.0,
+   "b": 16.0,
+   "description": "MIDI Channel",
+   "confidence": "values"
+  }
+ ]
+}

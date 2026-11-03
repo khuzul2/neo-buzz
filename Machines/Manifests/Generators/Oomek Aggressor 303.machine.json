@@ -1,0 +1,156 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Oomek Aggressor 303",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "unpitched",
+ "summary": "Unpitched (profiled draft): unpitched; monophonic; takes notes in its tracks; one note at the defaults -18 LUFS.",
+ "tracks": 1,
+ "notes": {
+  "input": "tracks",
+  "pitched": false,
+  "polyphony": 1
+ },
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "level": {
+   "note": "A4 at velocity 100, 1.5 beats",
+   "integrated_lufs": -17.6,
+   "sample_peak_dbfs": -1.6,
+   "true_peak_dbtp": -1.57
+  },
+  "extremes": {
+   "min": {
+    "silent": false,
+    "sample_peak_dbfs": -88.31
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": 4.07
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Osc Type",
+   "name": "Osc Type",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Saw",
+    "Square"
+   ],
+   "description": "Oscillator type (0 = Saw, 1 = Square)",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Cutoff",
+   "name": "Cutoff",
+   "group": "",
+   "min": 0,
+   "max": 240,
+   "default": 120,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 240.0,
+   "description": "Filter cutoff",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "Res",
+   "name": "Res",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 64,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 128.0,
+   "description": "Filter resonance",
+   "confidence": "values"
+  },
+  {
+   "index": 3,
+   "id": "Env.Mod",
+   "name": "Env.Mod",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 64,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 128.0,
+   "description": "Envelope modulation",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "Decay",
+   "name": "Decay",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 64,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 128.0,
+   "description": "Envelope decay time",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "Accent Level",
+   "name": "Accent Level",
+   "group": "",
+   "min": 0,
+   "max": 128,
+   "default": 64,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 128.0,
+   "description": "Accent level",
+   "confidence": "values"
+  },
+  {
+   "index": 6,
+   "id": "Finetune",
+   "name": "Finetune",
+   "group": "",
+   "min": 0,
+   "max": 200,
+   "default": 100,
+   "kind": "linear",
+   "a": -100.0,
+   "b": 100.0,
+   "unit": "ct",
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 7,
+   "id": "Volume",
+   "name": "Volume",
+   "group": "",
+   "min": 0,
+   "max": 200,
+   "default": 100,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 200.0,
+   "unit": "%",
+   "description": "",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

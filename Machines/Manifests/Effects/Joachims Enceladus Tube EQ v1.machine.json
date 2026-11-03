@@ -1,0 +1,299 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Joachims Enceladus Tube EQ v1",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "EQ",
+ "summary": "Eq (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": 0.0,
+   "latency_samples": 0,
+   "latency_ms": 0.0,
+   "tail_seconds": 0.0,
+   "echoes": 0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 0.0,
+   "tilt_db": 0.0,
+   "sine": {
+    "loud": {
+     "gain_db": 0.0,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.13
+    },
+    "quiet": {
+     "gain_db": 0.0,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.14
+    }
+   },
+   "traits": [
+    "utility"
+   ]
+  },
+  "extremes": {
+   "min": {
+    "silent": false,
+    "sample_peak_dbfs": -32.69
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": 1.13
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "1. Boost",
+   "name": "1. Boost",
+   "group": "",
+   "min": 0,
+   "max": 64,
+   "default": 32,
+   "kind": "db",
+   "a": -16.0,
+   "b": 16.0,
+   "unit": "dB",
+   "description": "Band 1 boost (dB)",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "    Drive",
+   "name": "    Drive",
+   "group": "",
+   "min": 0,
+   "max": 64,
+   "default": 16,
+   "kind": "linear",
+   "a": 0.007832,
+   "b": 100.004476,
+   "unit": "%",
+   "description": "Band 1 tube overdrive",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "    Freq",
+   "name": "    Freq",
+   "group": "",
+   "min": 1,
+   "max": 255,
+   "default": 42,
+   "kind": "freq",
+   "a": 19.5578,
+   "b": 19985.6,
+   "unit": "Hz",
+   "description": "Band 1 frequency (hz)",
+   "confidence": "values"
+  },
+  {
+   "index": 3,
+   "id": "    Bandwidth",
+   "name": "    Bandwidth",
+   "group": "",
+   "min": 1,
+   "max": 255,
+   "default": 158,
+   "kind": "power",
+   "a": 0.1,
+   "b": 5.0,
+   "exponent": 1.984,
+   "unit": "oct",
+   "description": "Band 1 width (oct)",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "    Mode _______________________",
+   "name": "    Mode _______________________",
+   "group": "",
+   "min": 1,
+   "max": 6,
+   "default": 3,
+   "kind": "enum",
+   "choices": [
+    "Transistors",
+    "Transistors, warm",
+    "Tubes I",
+    "Tubes I, warm",
+    "Tubes II",
+    "Tubes II, warm"
+   ],
+   "description": "Band 1 mode",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "2. Boost",
+   "name": "2. Boost",
+   "group": "",
+   "min": 0,
+   "max": 64,
+   "default": 32,
+   "kind": "db",
+   "a": -16.0,
+   "b": 16.0,
+   "unit": "dB",
+   "description": "Band 2 boost (dB)",
+   "confidence": "values"
+  },
+  {
+   "index": 6,
+   "id": "    Drive",
+   "name": "    Drive",
+   "group": "",
+   "min": 0,
+   "max": 64,
+   "default": 16,
+   "kind": "linear",
+   "a": 0.007832,
+   "b": 100.004476,
+   "unit": "%",
+   "description": "Band 2 tube overdrive",
+   "confidence": "values"
+  },
+  {
+   "index": 7,
+   "id": "    Freq",
+   "name": "    Freq",
+   "group": "",
+   "min": 1,
+   "max": 255,
+   "default": 128,
+   "kind": "freq",
+   "a": 19.5578,
+   "b": 19985.6,
+   "unit": "Hz",
+   "description": "Band 2 frequency (hz)",
+   "confidence": "values"
+  },
+  {
+   "index": 8,
+   "id": "    Bandwidth",
+   "name": "    Bandwidth",
+   "group": "",
+   "min": 1,
+   "max": 255,
+   "default": 158,
+   "kind": "power",
+   "a": 0.1,
+   "b": 5.0,
+   "exponent": 1.984,
+   "unit": "oct",
+   "description": "Band 2 width (oct)",
+   "confidence": "values"
+  },
+  {
+   "index": 9,
+   "id": "    Mode _______________________",
+   "name": "    Mode _______________________",
+   "group": "",
+   "min": 1,
+   "max": 6,
+   "default": 3,
+   "kind": "enum",
+   "choices": [
+    "Transistors",
+    "Transistors, warm",
+    "Tubes I",
+    "Tubes I, warm",
+    "Tubes II",
+    "Tubes II, warm"
+   ],
+   "description": "Band 2 mode",
+   "confidence": "values"
+  },
+  {
+   "index": 10,
+   "id": "3. Boost",
+   "name": "3. Boost",
+   "group": "",
+   "min": 0,
+   "max": 64,
+   "default": 32,
+   "kind": "db",
+   "a": -16.0,
+   "b": 16.0,
+   "unit": "dB",
+   "description": "Band 3 boost (dB)",
+   "confidence": "values"
+  },
+  {
+   "index": 11,
+   "id": "    Drive",
+   "name": "    Drive",
+   "group": "",
+   "min": 0,
+   "max": 64,
+   "default": 16,
+   "kind": "linear",
+   "a": 0.007832,
+   "b": 100.004476,
+   "unit": "%",
+   "description": "Band 3 tube overdrive",
+   "confidence": "values"
+  },
+  {
+   "index": 12,
+   "id": "    Freq",
+   "name": "    Freq",
+   "group": "",
+   "min": 1,
+   "max": 255,
+   "default": 213,
+   "kind": "freq",
+   "a": 19.5578,
+   "b": 19985.6,
+   "unit": "Hz",
+   "description": "Band 3 frequency (hz)",
+   "confidence": "values"
+  },
+  {
+   "index": 13,
+   "id": "    Bandwidth",
+   "name": "    Bandwidth",
+   "group": "",
+   "min": 1,
+   "max": 255,
+   "default": 158,
+   "kind": "power",
+   "a": 0.1,
+   "b": 5.0,
+   "exponent": 1.984,
+   "unit": "oct",
+   "description": "Band 3 width (oct)",
+   "confidence": "values"
+  },
+  {
+   "index": 14,
+   "id": "    Mode _______________________",
+   "name": "    Mode _______________________",
+   "group": "",
+   "min": 1,
+   "max": 6,
+   "default": 3,
+   "kind": "enum",
+   "choices": [
+    "Transistors",
+    "Transistors, warm",
+    "Tubes I",
+    "Tubes I, warm",
+    "Tubes II",
+    "Tubes II, warm"
+   ],
+   "description": "Band 3 mode",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

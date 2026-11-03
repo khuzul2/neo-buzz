@@ -355,7 +355,7 @@ def note(pitch, start=0, length=1.5, velocity=100):
 
 def heard_pitch(c, render_id, until):
     """(median MIDI pitch heard, voiced fraction) over the first note."""
-    a = c.call("analyze", source=render_id, metrics=["pitch"], from_seconds=0.05, to_seconds=until)
+    a = c.call("analyze", source=render_id, metrics=["pitch"], from_seconds=0.02, to_seconds=until)
     p = a.get("pitch") or {}
     hz = p.get("median_hz")
     voiced = (p.get("voiced_percent") or 0) / 100
@@ -414,15 +414,16 @@ def profile_generator(c, prof, info, baseline):
         prof.warn(f"clips at the defaults: peak {finite_peak(m)} dBFS on one note")
     prof.data["cpu_ms_per_s"] = cpu(c, baseline["empty"])
     # Pitch: A4 sent, then A3 and A5 to see that it follows the keyboard.
-    heard, voiced = heard_pitch(c, first["id"], 0.75)
+    # Short, decaying notes (a 303's) are voiced for a fifth of the window: enough for a median.
+    heard, voiced = heard_pitch(c, first["id"], 0.6)
     found = []
-    if heard is not None and voiced >= 0.4:
+    if heard is not None and voiced >= 0.2:
         found.append((A4, heard))
         for sent in (A4 - 12, A4 + 12):
             set_notes(c, "M", [note(sent)], mode)
             r = render(c, 0, 4, 0.5)
-            h, v = heard_pitch(c, r["id"], 0.75)
-            if h is not None and v >= 0.4:
+            h, v = heard_pitch(c, r["id"], 0.6)
+            if h is not None and v >= 0.2:
                 found.append((sent, h))
     offsets = [h - s for s, h in found]
     if len(found) >= 2 and max(offsets) - min(offsets) < 0.6:
@@ -804,6 +805,22 @@ def draft_manifest(e):
     m["profile"] = {k: e[k] for k in ("level", "effect", "extremes") if k in e}
     m["parameters"] = (e.get("entries") or {}).get("global", [])
     m["track_parameters"] = (e.get("entries") or {}).get("track", [])
+    return checked_draft(m)
+
+
+def checked_draft(m):
+    """A machine whose own default is outside its range (a native's DefValue): the draft takes the nearest
+    end, and its health says so. Applied when a draft is written and when one is merged."""
+    for p in m.get("parameters", []) + m.get("track_parameters", []):
+        lo, hi, d = p.get("min", 0), p.get("max", 0), p.get("default", 0)
+        if not lo <= d <= hi:
+            p["default"] = min(max(d, lo), hi)
+            note = f"{p['name']}: its own default (raw {d}) is outside its range ({lo}…{hi})"
+            health = m.setdefault("health", {"status": "ok", "problems": []})
+            if note not in health["problems"]:
+                health["problems"].append(note)
+            if health.get("status") == "ok":
+                health["status"] = "warn"
     return m
 
 
@@ -926,7 +943,7 @@ def merge_into_repo(root, summary, out_dir):
         src = os.path.join(out_dir, "manifests", subfolder(e), e["gear"] + ".machine.json")
         if os.path.exists(src):
             with open(src, encoding="utf-8") as f:
-                write_json(os.path.join(folder, subfolder(e), e["gear"] + ".machine.json"), json.load(f))
+                write_json(os.path.join(folder, subfolder(e), e["gear"] + ".machine.json"), checked_draft(json.load(f)))
     write_report(root, merged)
 
 

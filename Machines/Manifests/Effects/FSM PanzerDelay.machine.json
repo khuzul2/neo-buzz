@@ -1,0 +1,211 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "FSM PanzerDelay",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "delay",
+ "summary": "Delay (profiled draft): traits: delay; tail 2.62 s; latency 0 samples; gain +0.8 dB at the defaults.",
+ "tracks": 4,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": 0.77,
+   "latency_samples": 0,
+   "latency_ms": 0.0,
+   "tail_seconds": 2.62,
+   "echoes": 6,
+   "first_echo_seconds": 0.375,
+   "gap_before_echo_db": -60.0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 0.2,
+   "tilt_db": 0.0,
+   "sine": {
+    "loud": {
+     "gain_db": 2.41,
+     "thd_percent": 1.86,
+     "thd_in_percent": 1.96,
+     "movement_db": 6.15
+    },
+    "quiet": {
+     "gain_db": 2.42,
+     "thd_percent": 1.92,
+     "thd_in_percent": 1.96,
+     "movement_db": 6.11
+    }
+   },
+   "traits": [
+    "delay"
+   ]
+  },
+  "extremes": {
+   "min": {
+    "silent": false,
+    "sample_peak_dbfs": -30.1
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": -26.6
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Dry amp",
+   "name": "Dry amp",
+   "group": "",
+   "min": 0,
+   "max": 240,
+   "default": 240,
+   "kind": "db",
+   "a": -24.0,
+   "b": 0.0,
+   "flag": true,
+   "unit": "dB",
+   "description": "Dry amp [dB]",
+   "confidence": "values"
+  },
+  {
+   "index": 3,
+   "id": "Delay unit",
+   "name": "Delay unit",
+   "group": "",
+   "min": 0,
+   "max": 3,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Ticks",
+    "Ticks/256",
+    "Samples",
+    "milisecs"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "Filter type",
+   "name": "Filter type",
+   "group": "",
+   "min": 0,
+   "max": 3,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "None",
+    "LP",
+    "HP",
+    "BP"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "Cutoff",
+   "name": "Cutoff",
+   "group": "",
+   "min": 0,
+   "max": 240,
+   "default": 120,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 240.0,
+   "description": "Cutoff frequency",
+   "confidence": "values"
+  },
+  {
+   "index": 6,
+   "id": "Resonance",
+   "name": "Resonance",
+   "group": "",
+   "min": 0,
+   "max": 240,
+   "default": 120,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 240.0,
+   "description": "",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": [
+  {
+   "index": 0,
+   "id": "L Delay Len",
+   "name": "L Delay Len",
+   "group": "",
+   "min": 1,
+   "max": 20000,
+   "default": 3,
+   "kind": "linear",
+   "a": 1.0,
+   "b": 20000.0,
+   "description": "Length of the left delay line",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "R Delay Len",
+   "name": "R Delay Len",
+   "group": "",
+   "min": 1,
+   "max": 20000,
+   "default": 3,
+   "kind": "linear",
+   "a": 1.0,
+   "b": 20000.0,
+   "description": "Length of the right delay line",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Tap Amp",
+   "name": "Tap Amp",
+   "group": "",
+   "min": 0,
+   "max": 240,
+   "default": 240,
+   "kind": "db",
+   "a": -24.0,
+   "b": 0.0,
+   "flag": true,
+   "unit": "dB",
+   "description": "Tap Amp Position",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "FB Amp",
+   "name": "FB Amp",
+   "group": "",
+   "min": 0,
+   "max": 239,
+   "default": 150,
+   "kind": "db",
+   "a": -24.0,
+   "b": -0.1,
+   "flag": true,
+   "unit": "dB",
+   "description": "FB Amplitude",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "FB PingPong",
+   "name": "FB PingPong",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "description": "Reverse channels in feedback",
+   "confidence": "values"
+  }
+ ]
+}

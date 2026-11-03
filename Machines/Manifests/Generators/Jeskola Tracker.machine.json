@@ -1,0 +1,48 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Jeskola Tracker",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "generator (silent at its defaults)",
+ "summary": "Generator (silent at its defaults) (profiled draft): no sound from a note at its defaults.",
+ "tracks": 16,
+ "notes": {
+  "input": "none"
+ },
+ "health": {
+  "status": "warn",
+  "problems": [
+   "no sound from a note at its defaults, as MIDI or in its tracks, even with a wave in slot 1"
+  ]
+ },
+ "profile": {
+  "extremes": {
+   "min": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   },
+   "max": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Subdiv",
+   "name": "Subdiv",
+   "group": "",
+   "min": 1,
+   "max": 15,
+   "default": 6,
+   "kind": "linear",
+   "a": 1.0,
+   "b": 15.0,
+   "description": "Tick subdivide (01-0F)",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}
