@@ -21,6 +21,11 @@ The profiler (U1, `tools/machine-profiler.py`) calls a machine unhealthy when it
 
 The 14 warnings are mostly the profiler's own limits: drum machines played by triggers, audio inputs, a VST host with no plugin, a tracker without waves.
 
+Found per parameter since (§3.1), both **fixed** in the machine:
+
+- **Neo Verb** diverged with High damping below about 1.4 kHz (+347 dBFS; up to 2.9 kHz with Low decay ×4). **Fixed:** each line's loop gain is now held below 1 at every frequency, from its shelves' exact peak (machines.md, Neo Verb); its Shimmer loop is a separate, open finding there.
+- **Pedal Plate** diverged with Feedback above about 50 at the default Decay (the 4 s render saw 79; about 10 at full Decay). **Fixed:** Feedback is capped below its tank's worst-case gain, 0.98 · (1 − d²) / (0.35 · (1 + 3d)) with d the tank's decay; it needs no `safe_range`.
+
 ## 2. Decisions
 
 | # | Decision | Decided |
