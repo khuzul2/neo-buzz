@@ -52,10 +52,12 @@ namespace ReBuzz.Studio.Shell
 
             // The selected view first (IStudioEditTarget), then the song's undo history.
             // A focused text box first (FocusedText), then the selected view, then the song's history.
-            undo = new Command(() => { if (FocusedText is { } t) t.Undo(); else if (Target?.Undo() != true) Stack?.Undo(); },
-                               () => FocusedText != null || Target != null || Stack?.CanUndo == true);
-            redo = new Command(() => { if (FocusedText is { } t) t.Redo(); else if (Target?.Redo() != true) Stack?.Redo(); },
-                               () => FocusedText != null || Target != null || Stack?.CanRedo == true);
+            // Song Notes' editor keeps its edits on the song's history (machine-safety.md §3.5), so its
+            // Undo and Redo are the song's.
+            undo = new Command(() => { if (FocusedOwnUndo is { } t) t.Undo(); else if (Target?.Undo() != true) Stack?.Undo(); },
+                               () => FocusedOwnUndo != null || Target != null || Stack?.CanUndo == true);
+            redo = new Command(() => { if (FocusedOwnUndo is { } t) t.Redo(); else if (Target?.Redo() != true) Stack?.Redo(); },
+                               () => FocusedOwnUndo != null || Target != null || Stack?.CanRedo == true);
             transport = new TransportBar(host);
 
             // The macOS menu bar has the menus there; elsewhere they are the window's own.
@@ -84,6 +86,7 @@ namespace ReBuzz.Studio.Shell
             // Ctrl+Tab before focus navigation takes it (as ReBuzz.exe's PreviewKeyDown).
             AddHandler(KeyDownEvent, OnViewKey, RoutingStrategies.Bubble);
             AddHandler(KeyDownEvent, OnSessionKey, RoutingStrategies.Tunnel);
+            AddHandler(KeyDownEvent, OnNotesKey, RoutingStrategies.Tunnel);
 
             refresh.Tick += (s, e) => Refresh();
             if (host.Core != null) OnStarted();
@@ -100,6 +103,9 @@ namespace ReBuzz.Studio.Shell
         /// act on the first responder (the menu bar's key equivalents may reach the menu before the box).
         /// </summary>
         TextBox FocusedText => FocusManager?.GetFocusedElement() as TextBox;
+
+        /// <summary>The focused text box when it has an undo history of its own (not Song Notes' editor).</summary>
+        TextBox FocusedOwnUndo => FocusedText is { } t && t is not Views.Notes.SongHistoryTextBox ? t : null;
 
         void Cut() { if (FocusedText is { } t) t.Cut(); else Target?.Cut(); }
         void Copy() { if (FocusedText is { } t) t.Copy(); else Target?.Copy(); }
@@ -226,7 +232,7 @@ namespace ReBuzz.Studio.Shell
             }
         }
 
-        /// <summary>The views' tabs, with ReBuzz.exe's keys (F2 Pattern, F3 Machines, F4 Sequence, Ctrl+Tab Session).</summary>
+        /// <summary>The views' tabs, with ReBuzz.exe's keys (F2 Pattern, F3 Machines, F4 Sequence, Ctrl+Tab Session, F10 Song Notes).</summary>
         IEnumerable<MenuEntry> ViewItems(KeyModifiers cmd)
         {
             foreach (var view in StudioViews.All)
@@ -250,6 +256,7 @@ namespace ReBuzz.Studio.Shell
             "Machines" => new KeyGesture(Key.F3),
             "Sequence" => new KeyGesture(Key.F4),
             "Session" => new KeyGesture(Key.Tab, KeyModifiers.Control),
+            Views.Notes.SongNotesTab.TabTitle => new KeyGesture(Key.F10),     // Buzz's Info view
             _ => null,
         };
 
@@ -274,6 +281,7 @@ namespace ReBuzz.Studio.Shell
                    "F12\trestart audio\n" +
                    "F2 / F3 / F4\tPattern / Machines / Sequence\n" +
                    "Ctrl+Tab\tSession View (again: back to Sequence)\n" +
+                   "F10\tSong Notes\n" +
                    $"{c},\tPreferences\n" +
                    $"{s}{c}A\tagent connection (Preferences ▸ Agent)";
         }
@@ -316,6 +324,17 @@ namespace ReBuzz.Studio.Shell
         {
             if (tabs.ItemCount == 0 || e.KeyModifiers != KeyModifiers.Control || e.Key != Key.Tab) return;
             ShowView(SelectedTitle == "Session" ? "Sequence" : "Session");
+            e.Handled = true;
+        }
+
+        /// <summary>
+        /// F10: Song Notes, as Buzz's Info view (machine-safety.md §3.5). Before the window's menu,
+        /// which takes F10 to open itself elsewhere.
+        /// </summary>
+        void OnNotesKey(object sender, KeyEventArgs e)
+        {
+            if (tabs.ItemCount == 0 || e.KeyModifiers != KeyModifiers.None || e.Key != Key.F10) return;
+            ShowView(Views.Notes.SongNotesTab.TabTitle);
             e.Handled = true;
         }
 

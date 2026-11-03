@@ -219,6 +219,8 @@ Phases (§9) are marked A1 … A7.
 | `song_new` | A1 | Empty song with a master; tempo and beats per bar optional. Destructive when there are unsaved changes |
 | `song_open`, `song_save` | A1 | `.bmx`/`.bmxml`; save as when given a path |
 | `song_set` | A1 | Tempo, ticks per beat, beats per bar, loop range, song end |
+| `song_notes_read` | H3 | The song's notes, the studio's Song Notes tab ([machine-safety.md](machine-safety.md) §3.7): Markdown (**bold**, *italic*, `<u>`, headings, lists, links; a line break is a line break), or `format: "text"` for plain text. `imported` lists where text in them came from (Info machines, the song's info text), `imported_on_open` what opening this song brought in |
+| `song_notes_write` | H3 | Writes them in Markdown: `mode: replace` (default) or `append` (below the notes, after an empty line). One undo step; saved with the song (the `SongNotes` subsection). At most 200 000 characters. The workflow guide says to append under a heading of the agent's own and to leave the person's notes alone |
 | `transport` | A7 | Play, stop, seek, loop: studio mode only (live listening for the user). Headless mode answers with a pointer to `render` |
 
 ### 5.3 Machines and routing

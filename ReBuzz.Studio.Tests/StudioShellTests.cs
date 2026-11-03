@@ -222,7 +222,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(fileMenu.Items[3], Is.InstanceOf<NativeMenuItemSeparator>());
                 Assert.That(fileMenu.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Open Recent").Menu, Is.Not.Null);
                 var viewMenu = bar.Items.OfType<NativeMenuItem>().Single(i => i.Header == "View").Menu;
-                Assert.That(viewMenu.Items.OfType<NativeMenuItem>().Select(i => i.Header), Is.EqualTo(new[] { "Machines", "Sequence", "Session", "Pattern" }));
+                Assert.That(viewMenu.Items.OfType<NativeMenuItem>().Select(i => i.Header), Is.EqualTo(new[] { "Machines", "Sequence", "Session", "Pattern", "Song Notes" }));
                 Assert.That(viewMenu.Items.OfType<NativeMenuItem>().All(i => i.Gesture == null), "view keys stay with the window (F2 renames in the Session View)");
                 var appMenu = AppMenu.ToNativeMenu(window.AppMenuModel());
                 var preferences = appMenu.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Preferences…");

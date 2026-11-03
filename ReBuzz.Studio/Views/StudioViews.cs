@@ -46,6 +46,7 @@ namespace ReBuzz.Studio.Views
             new Sequence.SequenceTab(),
             new Session.SessionStudioView(),
             new PatternView(),
+            new Notes.SongNotesTab(),       // fork (machine-safety.md §3.5)
         };
 
         /// <summary>A tab whose view isn't built yet.</summary>

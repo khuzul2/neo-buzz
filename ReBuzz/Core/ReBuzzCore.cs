@@ -140,6 +140,9 @@ namespace ReBuzz.Core
         internal SongMeter SongMeter { get; } = new SongMeter();
         internal SongMeterStore SongMeterStore { get; set; }
 
+        // Fork (machine-safety.md §3.5): the song's notes (Song Notes), saved in song files.
+        internal Notes.SongNotesStore SongNotes { get; set; }
+
         /// <summary>
         /// Fork (0.6): tempo nudge, a tempo factor while a nudge button is held (1: none). The
         /// engine divides each tick's length by it; the song's BPM doesn't change.
@@ -2464,6 +2467,7 @@ namespace ReBuzz.Core
             MarkerStore?.Clear();               // fork (mcp-server.md A3)
             Clips.Reset();                      // fork (daw-modes.md S2)
             SongMeter.Reset();                  // fork (daw-modes.md S1)
+            SongNotes?.Clear();                 // fork (machine-safety.md §3.5)
             InfoText = "";
 
             // Create status window
