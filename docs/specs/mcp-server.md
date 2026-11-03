@@ -61,6 +61,7 @@ ReBuzz process
   - The `Origin` header is validated and only localhost is served.
   - The user sees every change as it happens; an "Agent" badge shows when a call is running.
   - Every agent edit is one undo step labelled `Agent: <what>`.
+  - The Avalonia studio (macOS; studio-mvp.md S8) serves the same: Preferences ▸ Agent (Command+Shift+A) with the port, the token and the `claude mcp add` line; "studio" mode, so the live tools play through its audio device.
 - **Headless.** `ReBuzz.exe --agent [song.bmxml]` serves MCP on stdio.
   - No window and no audio device; playback tools render instead.
   - For autonomous sessions and for CI evaluations (§10).

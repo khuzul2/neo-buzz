@@ -407,9 +407,19 @@ namespace ReBuzz.FileOps
                     }
 
                     int first = machine.PatternsList.Count;
-                    foreach (var p in machineData.Patterns)
+                    // Fork (studio-mvp.md S6): built-in contents go to an editor LoadBuiltInPatterns makes.
+                    bool builtIn = machine.EditorMachine == null && machine.PlaceholderEditor == null && machineData.Patterns.Any(p => p.BuiltInPattern != null);
+                    buzz.PatternsAwaitingEditor = builtIn ? machine : null;
+                    try
                     {
-                        machine.CreatePattern(p.Name, p.Length);
+                        foreach (var p in machineData.Patterns)
+                        {
+                            machine.CreatePattern(p.Name, p.Length);
+                        }
+                    }
+                    finally
+                    {
+                        buzz.PatternsAwaitingEditor = null;
                     }
 
                     LoadBuiltInPatterns(machineData, machine, first);   // fork (mac-engine.md M2)

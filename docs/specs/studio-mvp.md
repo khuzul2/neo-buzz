@@ -48,7 +48,7 @@
 6. **The pattern editor is the Modern Pattern Editor, ported.**
    - Its machine side (the pattern data, PXP, playback) builds `net10.0`.
    - Its view moves to Avalonia.
-   - Until then, the Session View's piano roll edits notes in the engine's own columns. Off Windows, patterns have no editor machine (mac-engine.md M2).
+   - Done in S6: the editor machine builds for every platform (a portable build for `rebuzz-headless`, an Avalonia one for the studio), so songs keep their editor data off Windows too. The Session View's piano roll still edits notes in the engine's own columns.
 7. **Testing.**
    - Every view renders headless on Linux CI (Avalonia.Headless + Skia) to a PNG uploaded with the run, and takes simulated input in tests.
    - The Mac job builds the app bundle, and starts it headless, once per PR into main.
@@ -57,7 +57,7 @@
    - CI publishes a self-contained osx-arm64 `ReBuzz.app` (zip) with PortAudio, libsndfile and the Link helper inside, unsigned.
    - It needs no .NET install.
    - Settings live in `~/Library/Application Support/ReBuzz`, as for `rebuzz-headless`.
-10. **Edit commands go to the selected view first.** Avalonia's window key bindings see Ctrl/Command shortcuts before the views do. So the shell's Edit menu and its shortcuts (Undo, Redo, Cut, Copy, Paste) go to the selected tab's view when it implements `IStudioEditTarget`. A view returns false to pass the command on to the song's undo history. Views don't bind these keys themselves.
+10. **Edit commands go to the selected view first.** Avalonia's window key bindings see Ctrl/Command shortcuts before the views do. So the shell's Edit menu and its shortcuts (Undo, Redo, Cut, Copy, Paste) go to a focused text box first, as a Mac app's go to the first responder, then to the selected tab's view when it implements `IStudioEditTarget`. A view returns false to pass the command on to the song's undo history. Views don't bind these keys themselves.
 
 ## 4. Steps (PR-sized)
 
@@ -132,16 +132,45 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - Neo FM6's algorithm view takes clicks through the WPF-shaped callbacks: right click goes back, and both are undoable. A closed editor opens again.
 - **Differs from WPF:** text is greyscale-antialiased in a fallback font. Paths' corners all follow the stroke's join, as Avalonia has no per-corner smooth join. A message box returns at once. Saving a preset asks for its name in an Avalonia dialog; it isn't tested headless.
 
-**S5, the Session View and its mixer** (`ReBuzz.Studio/Views/Session/`, the "Session" tab).
-- **A port of the WPF view** (ReBuzz/AppViews/Session), file for file, built in code as it is: cells are Avalonia borders and text in a grid, the fader, pan, sends, meters and piano roll draw themselves (`Render`). Engine calls and undo are the WPF view's: `SessionLayout` for edits (the session's own undo history), `ISession`/`SessionCore` for launches, `SessionMixer` for the mixer (connections, so the song's undo has sends and cue). The WPF view is unchanged.
-  - *Grid:* tracks, scenes, group columns (fold, launch, stop), return columns; clip colours and states (queued blinking, playing green with progress, stopping, ● recording), selection, MIDI learn and controller rings outlined; scene tempo, beats per bar and follow marks; empty slots stop their track, or record a take when armed.
-  - *Top bar:* Stop all, Rec (arrangement), Overdub (Session Record), Capture, metronome, Back to arrangement, ↶ Launch, Follow, launch quantization, beats per bar, tempo with nudge (held) and Tap, the session clock, dropouts, ↶ ↷, + Scene, + Track, Clip, Mixer, ⚙ (clip length, record length, count-in, metronome, scenes stop other clips, select on launch, launch timing, returns, cue output, MIDI learn, keyboard shortcuts).
-  - *Clip panel:* mode, quantization, legato, velocity, start and loop markers, the clip's follow action, Reset, and the scene row's tempo, beats per bar and follow action; status (playing, position, follow, recording). A **Notes…** button opens the piano roll.
-  - *Piano roll* (`PianoRoll`, `PianoRollWindow`): the clip's engine MIDI column, edited as on Windows (draw, move, resize, velocity, box select, keys, quantize, grid, zoom), each edit one session undo step. Until S6 this is where the studio writes notes.
-  - *Mixer:* volume, pan, sends to returns, cue, crossfader sides and the crossfader (with its curve), mute and solo, post-fader peak meters (on a 25 ms timer while shown), group strips and the master strip.
-  - *Keys* as WPF has them, with Command for Control on macOS. The view's Control shortcuts are key bindings of its own: Avalonia matches key bindings from the focused element up *before* KeyDown, so otherwise the main window's Ctrl+Z (the song's undo) would take the session's. Menus are context menus; dialogs (rename, scene tempo, insert into arrangement) answer tests through `Dialogs.TextResponder` and `ArrangementInsertDialog.Responder`.
-- **Not ported:** audio clips (1.0: dropping files, the Audio section, warp markers; the studio has no Session Clip Player yet), the MIDI note grid dialog and the Sync and Controllers menus (S7's preferences). Double-click on a clip opens the Pattern tab, as on Windows; until S6 it is a placeholder, and Command/Ctrl+double-click (or Notes…) opens the piano roll.
-- **Tests** (`SessionViewTests`, 11, on the shared engine through `SessionRig`: Neo Poly tracks, the view in a window, mouse and keys simulated, the engine's ticks rendered by a `WorkManager` as ReBuzzTests does, the heard clock frozen as its `FreezeClock`), following the WPF view's tests: a scene launch queued then playing, a clip's ▶, track stop and Stop all; a clip made by double-click and notes drawn, dragged, moved and undone in the piano roll, then played; a track armed and a take recorded with the transport running, played back, undone and redone; faders, pan, sends to a return (and their undo in the song), mute, crossfader side, master, meters; groups (launch, fold, keys skipping folded tracks) and cue; undo of grid, clip panel and drag edits with the keys in the main window (not the song's undo); the WPF keyboard test; the clip panel's clip and scene properties; follow actions, quantization, beats per bar, launch undo, nudge; slot and scene menus (colour, assign, rename, tempo, insert into arrangement, duplicate). Screenshots: `session-tab`, `session-grid`, `session-grid-playing`, `session-clip-panel`, `session-piano-roll`, `session-piano-roll-playing`, `session-recording`, `session-mixer`, `session-groups`, `session-undo`, `session-performance`, `session-menus`.
+**S2, the generic parameter window and the portable Pedal machines.**
+- **The parameter window** (`ReBuzz.Studio/Parameters`) is BuzzGUI.ParameterWindow ported. `StudioMachineUiHost.ParameterWindowContent` makes it, so every machine without its own GUI here shows it (all but S1's Neo editors), from its GUI or its parameters.
+  - **Rows:** every state parameter of every group and track, named as on Windows ("a-"/"p-" for an input's amp and pan, "2-Volume" for track 2), the description as tooltip, the slider and the value as the machine describes it.
+  - **The slider** is code-drawn, with the WPF control's geometry: drag the thumb; click either side to page by a sixth of the range (repeating while held); the wheel and the arrow keys step by one; a digit opens the value editor.
+  - **Presets:** the box applies one (`<default>` too). Presets… adds, updates, deletes and imports them, in the machine's `.prs.xml` beside it in Gear, as on Windows.
+  - **Edit mode:** preset B, the randomize and morph functions with their amount, locks, and which parameters show (`ParameterWindowProperties.xml`, now in the settings folder).
+  - **The right-click menu**, as on Windows:
+    - MIDI: Bind… (learns the controller moved), the controllers named in the MIDI settings, Unbind All;
+    - the attributes;
+    - Copy Preset (ASCII, XML) and Paste Preset;
+    - Unlock All, Invert Locks;
+    - Add Track, Delete Last Track;
+    - the keyboard playing the machine (MIDI notes), a check item where Windows has "Settings…".
+  - **New here:** a track choice, every track (as Windows lists them) or one.
+  - **Undo:** every change is a step on the song's undo stack: a slider gesture (wheel and arrow steps merge), a preset, a paste, an edit function, a track count. On Windows, slider moves don't undo, and presets and edit functions undo on the window's own stack.
+  - **Not ported:** the "Editor" tab (WPF XAML templates in `ParameterEditors/`, with RangeSlider and RibbonSlider), and a machine's WPF GUI embedded above the rows.
+- **The Pedal machines** (`ExternalMachines/portable`, as `Machines/Portable` for Neo): the 19 build plain `net10.0` from their own sources, without their WPF GUIs. `AppGear.targets` puts them in the studio's and rebuzz-headless's Gear, with their preset files.
+  - Six sources gained `#if WINDOWS` around WPF code: Comp's and Gate's GUIs; Chord's dialogs and timer; LFO's dispatcher; Tracker's and Peer Control's menu entries; Peer Control's settings window and NAudio MIDI out. Off Windows, Peer Control sends through the engine's MIDI outputs. `machines.json` lists the patches.
+  - The Windows builds compile the same text as before (the SDK defines `WINDOWS` for `net10.0-windows` only).
+  - About boxes go to the debug console (`PortableMessageBox.cs`).
+- **What the checks found:**
+  - Every Pedal machine loads, plays and shows its parameters on Linux.
+  - **The synths take notes only in their Note column**, not as MIDI: M1, Juno106, SH101, FM, Tracker. So until the pattern editor (S6), neither the Session View's piano roll nor the agent's `notes_write` plays them. The check writes Note columns into the song file.
+  - **Chord, LFO and Peer Control** set their targets in WPF dialogs. Off Windows they work with targets saved in a song (made on Windows), and their menu commands say so.
+  - **Pedal Plate's reverb diverged at its default Decay** (75), on any platform: its modulated all-pass read 1–17 samples behind its write position instead of its length behind. That made it a comb with a gain of up to 5.7 inside the tank's loop. **Fixed** (the user's call; it changes the Windows build's sound too): the all-pass reads its full length behind, modulated by up to 16 samples, and feeds back the same tap. The check runs it at the default Decay, and at full Decay and modulation with a 3 s tail.
+- **Tests** (`ParameterWindowTests`):
+  - a Neo machine's window, and each Pedal machine's (screenshots `parameters-*.png`);
+  - a slider drag changes the value, the undo button restores it, and redo brings it back; three wheel steps undo as one;
+  - a digit opens the value editor, and the arrow keys step;
+  - track parameters on Pedal Gain Multi: the track choice, one track's change, and Add Track with its undo;
+  - a preset loads from the box, and undo restores the values; Presets… saves and deletes one;
+  - the menu binds a MIDI controller; copy and paste of the values;
+  - edit mode: hiding a parameter, locks, randomize and its undo;
+  - the slider's geometry against the WPF control's arithmetic.
+- **`tools/headless-pedal.py`** (Linux CI, and the Mac job) drives rebuzz-headless over MCP:
+  - each synth plays a note (Tracker plays a wave cut from a render);
+  - each effect passes a Neo Poly chord;
+  - Chord plays a chord on its target, and LFO moves its target's parameter;
+  - the whole song renders with Peer Control in it.
 
 **S3, the machine view** (`ReBuzz.Studio/Views/Machines`, the Machines tab). BuzzGUI.MachineView ported by behaviour.
 - **Drawing** (`MachineCanvas`): one code-drawn control, in the default theme's look and colour keys (`MV Background`, `MV Generator`/`Effect`/`Master` and their `Mute` shades, the LED colours, `MV Line`, `MV Arrow`, `MV Machine Text`/`Border`).
@@ -183,42 +212,143 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - curved wires, multi-channel plugs and their channel menus, wireless outputs, VU meters on wires, skins;
   - the CPU monitor, HD recorder, signal analysis, latency, attributes and machine commands.
 
-**S2, the generic parameter window and the portable Pedal machines.**
-- **The parameter window** (`ReBuzz.Studio/Parameters`) is BuzzGUI.ParameterWindow ported. `StudioMachineUiHost.ParameterWindowContent` makes it, so every machine without its own GUI here shows it (all but S1's Neo editors), from its GUI or its parameters.
-  - **Rows:** every state parameter of every group and track, named as on Windows ("a-"/"p-" for an input's amp and pan, "2-Volume" for track 2), the description as tooltip, the slider and the value as the machine describes it.
-  - **The slider** is code-drawn, with the WPF control's geometry: drag the thumb; click either side to page by a sixth of the range (repeating while held); the wheel and the arrow keys step by one; a digit opens the value editor.
-  - **Presets:** the box applies one (`<default>` too). Presets… adds, updates, deletes and imports them, in the machine's `.prs.xml` beside it in Gear, as on Windows.
-  - **Edit mode:** preset B, the randomize and morph functions with their amount, locks, and which parameters show (`ParameterWindowProperties.xml`, now in the settings folder).
-  - **The right-click menu**, as on Windows:
-    - MIDI: Bind… (learns the controller moved), the controllers named in the MIDI settings, Unbind All;
-    - the attributes;
-    - Copy Preset (ASCII, XML) and Paste Preset;
-    - Unlock All, Invert Locks;
-    - Add Track, Delete Last Track;
-    - the keyboard playing the machine (MIDI notes), a check item where Windows has "Settings…".
-  - **New here:** a track choice, every track (as Windows lists them) or one.
-  - **Undo:** every change is a step on the song's undo stack: a slider gesture (wheel and arrow steps merge), a preset, a paste, an edit function, a track count. On Windows, slider moves don't undo, and presets and edit functions undo on the window's own stack.
-  - **Not ported:** the "Editor" tab (WPF XAML templates in `ParameterEditors/`, with RangeSlider and RibbonSlider), and a machine's WPF GUI embedded above the rows.
-- **The Pedal machines** (`ExternalMachines/portable`, as `Machines/Portable` for Neo): the 19 build plain `net10.0` from their own sources, without their WPF GUIs. `AppGear.targets` puts them in the studio's and rebuzz-headless's Gear, with their preset files.
-  - Six sources gained `#if WINDOWS` around WPF code: Comp's and Gate's GUIs; Chord's dialogs and timer; LFO's dispatcher; Tracker's and Peer Control's menu entries; Peer Control's settings window and NAudio MIDI out. Off Windows, Peer Control sends through the engine's MIDI outputs. `machines.json` lists the patches.
-  - The Windows builds compile the same text as before (the SDK defines `WINDOWS` for `net10.0-windows` only).
-  - About boxes go to the debug console (`PortableMessageBox.cs`).
-- **What the checks found:**
-  - Every Pedal machine loads, plays and shows its parameters on Linux.
-  - **The synths take notes only in their Note column**, not as MIDI: M1, Juno106, SH101, FM, Tracker. So until the pattern editor (S6), neither the Session View's piano roll nor the agent's `notes_write` plays them. The check writes Note columns into the song file.
-  - **Chord, LFO and Peer Control** set their targets in WPF dialogs. Off Windows they work with targets saved in a song (made on Windows), and their menu commands say so.
-  - **Pedal Plate's reverb diverges at its default Decay** (75), on any platform: its modulated all-pass reads 1–17 samples behind its write position instead of its length behind. That makes it a comb with a gain of up to 5.7 inside the tank's loop. The check runs it at Decay 0. Not fixed here: it would change the Windows build's sound.
-- **Tests** (`ParameterWindowTests`):
-  - a Neo machine's window, and each Pedal machine's (screenshots `parameters-*.png`);
-  - a slider drag changes the value, the undo button restores it, and redo brings it back; three wheel steps undo as one;
-  - a digit opens the value editor, and the arrow keys step;
-  - track parameters on Pedal Gain Multi: the track choice, one track's change, and Add Track with its undo;
-  - a preset loads from the box, and undo restores the values; Presets… saves and deletes one;
-  - the menu binds a MIDI controller; copy and paste of the values;
-  - edit mode: hiding a parameter, locks, randomize and its undo;
-  - the slider's geometry against the WPF control's arithmetic.
-- **`tools/headless-pedal.py`** (Linux CI, and the Mac job) drives rebuzz-headless over MCP:
-  - each synth plays a note (Tracker plays a wave cut from a render);
-  - each effect passes a Neo Poly chord;
-  - Chord plays a chord on its target, and LFO moves its target's parameter;
-  - the whole song renders with Peer Control in it.
+**S4, the sequence editor** (`ReBuzz.Studio/Views/Sequence`, the Sequence tab). The horizontal editor (ReBuzzGUI/ModernSequenceEditorHorizontal, §3.5) ported by behaviour, in the Default theme's look.
+- **Drawing** (`SequenceCanvas`): one code-drawn control.
+  - The time ruler: tick numbers per bar, bold where the bar length changes.
+  - The track headers: the machine's name, and the M, S and D switches (mute, solo, the sequence's disable).
+  - A row per sequence, with its blocks as PatternVisual draws them: 3D box, name strip, the colour, and break, mute, thru and stop as upright labels.
+  - A block shows its pattern's contents. With an editor machine, as WPF does: its MIDI events in note lanes, else its columns in detail. Without one (§3.6), the engine's MIDI notes are a small piano roll and its parameter columns are drawn in detail.
+  - `SequenceOverlay` draws the layer above: the cursor, the selection, a drag's ghost, the loop start and end and song end markers, and the play position. Playback redraws only this layer.
+  - The pure parts are in `SequenceGeometry`: the bar list (`TimeSignatureList`, BuzzGUI.SequenceEditor's, same file format), the selection, tick ↔ pixel, block and edge hit tests, and the resize snapping.
+- **Mouse:**
+  - A click puts the cursor on a cell. On a block it also selects the block.
+  - A drag on a block moves it; Alt or Ctrl/Command copies it. A drag on a block's edge resizes it: the right edge sets the pattern's length, the left edge moves the start and keeps the end (PatternResizeHelper, snap 16).
+  - A drag on empty space selects (a rubber band of whole bars and tracks); Shift extends the selection.
+  - A double click on a block chooses its pattern for editing. On an empty cell it makes a new pattern there.
+  - A click on the ruler moves the play position. Header buttons switch; a double click on a header opens the machine.
+  - Right click opens the context menu: Add Track ▸, Delete/Move Track, Set Start, Set End, Set Time Signature..., Insert/Delete (All Tracks), Color ▸, Rename Machine..., Quick Create Patterns ▸, Cut, Copy, Paste.
+  - The wheel scrolls; Ctrl/Command + wheel or a pinch zooms around the pointer; the slider zooms (0.25–7.75 px per tick; a right click resets it).
+- **Keys** (SequenceEditor.xaml.cs's; Command for Control on a Mac):
+  - Arrows, Page Up/Down, Home and End move the cursor by bars and tracks; Shift selects.
+  - A pattern's key from the list (0–9, a–z, A–Z) places it. `,` places a break, `-` a mute, `_` a thru, Shift+`,` a stop; `.` clears.
+  - Insert and Delete insert or delete a bar (what follows moves); Delete or Backspace clear a selection; Escape drops it. Return chooses the pattern for editing.
+  - Ctrl+B and Ctrl+E set the loop start and end (pressed again, the song end). Ctrl+T sets the bar length; Ctrl+I and Ctrl+D insert and delete in all tracks. Ctrl+M and Ctrl+L mute and solo. Ctrl+Up and Ctrl+Down move the track, Ctrl+Delete deletes it, Ctrl+Return opens the menu.
+  - The corner holds the add-track button, the first bar length and Follow (playback scrolls the view a page as it leaves it).
+- **Edits** (`SequenceEditing`) are undo steps on the song's history, so the shell's Undo and Redo have them.
+  - The view is an `IStudioEditTarget`: Undo and Redo return false; Cut, Copy, Paste and Delete act on the selection or on the block under the cursor.
+  - The shell binds Ctrl/Command+X, C and V too (in the integration with S7), so they reach the view wherever the focus is in the window. The view's own handling of those keys stays for when it has the focus.
+  - The portable BuzzGUI.Common has SetEvent, Clear, SetMarker, CreatePattern and AddSequence. The other actions WPF uses are in its Windows build only (they take `System.Windows.Rect`), so they are ported in `SequenceEdits.cs`: InsertOrDelete, SwapSequences, DeleteSequence, SetLength, the clipboard with cut and paste, and the bar list's actions.
+- **Saved with the song** (`SequenceSongState`, one per engine): the bar list, the pattern colours and the zoom. They go in the Windows editors' own subsections (`SequenceEditor`: zoom, bar list, colours; `ModernSequenceEditorHorizontal`: zoom), so songs go both ways.
+  - It answers the engine's `PatternColours.Source`, as `SequenceEditorPatternColours` does on Windows, so the Session View shares the colours.
+  - A pattern with no colour of its own gets one by its place among its machine's patterns (PatternBoxColors = Pattern).
+- **For the pattern editor (S6):** choosing a pattern calls `SetPatternEditorPattern`, which the Pattern tab already follows, and raises `SequenceTab.PatternChosen`. The tab switch is S6's to make. As WPF's AutoSelectPattern does, the cursor's pattern also goes to the editor as the cursor moves.
+- **Tests** (`SequenceEditorTests`, in the main window's tab, each step checked against the engine's sequences):
+  - Two tracks added from the + menu, patterns placed by key, from the pattern list and by double click, moved and copied by drag, resized at both edges, deleted, copied and pasted over both tracks, cut and pasted, then undone step by step with Ctrl/Command+Z and redone.
+  - The typed events (break, mute, thru, stop, clear), Insert and Delete, Shift-selection, moving a track and its undo, and M, S and D.
+  - A double click and Return choose the pattern for editing.
+  - The shell's Edit ▸ Copy, Paste, Cut, Undo and Redo reach the view.
+  - Loop markers by keys and the menu, with undo; a ruler click; playback through the engine's ticks (a `WorkManager`, as ReBuzzTests does): the play marker follows, loops back, and Follow scrolls the view.
+  - Save as, new and open keep the events, loop, bar list, a colour and the zoom; an old Buzz song (FSM Infector demo) shows its arrangement, which a save to .bmxml and reopen keep.
+  - Pure tests of the bar list (snap, split, insert, delete, file format), the resize snapping, selection rectangles and edge hit tests.
+  - Screenshots: `sequence-1-tracks` to `sequence-15-old-song`.
+- **Differs from WPF:**
+  - A drag on a block moves it right away; WPF moves it only after the button is held for half a second, and a plain drag selects.
+  - A vertical drag doesn't swap tracks (WPF's does); Ctrl+Up/Down moves tracks.
+  - The edges resize without holding Ctrl.
+  - A click on a block selects it, and Delete clears a selection.
+  - Copy isn't an undo step. Paste goes to the cursor's track (WPF: only onto the tracks it was copied from).
+  - The ruler shows bars past the song end; faint bar lines run through the tracks. Preview lanes fit the area below the name (WPF clips the lowest).
+  - The cursor doesn't blink.
+- **Not ported:** VU meters in the headers and their target menu, MIDI export, the settings window (the WPF defaults are used), click-to-play patterns (Shift/Ctrl+click, off by default in WPF), the pattern list's hover preview window, the session-override shading.
+
+**S5, the Session View and its mixer** (`ReBuzz.Studio/Views/Session/`, the "Session" tab).
+- **A port of the WPF view** (ReBuzz/AppViews/Session), file for file, built in code as it is: cells are Avalonia borders and text in a grid, the fader, pan, sends, meters and piano roll draw themselves (`Render`). Engine calls and undo are the WPF view's: `SessionLayout` for edits (the session's own undo history), `ISession`/`SessionCore` for launches, `SessionMixer` for the mixer (connections, so the song's undo has sends and cue). The WPF view is unchanged.
+  - *Grid:* tracks, scenes, group columns (fold, launch, stop), return columns; clip colours and states (queued blinking, playing green with progress, stopping, ● recording), selection, MIDI learn and controller rings outlined; scene tempo, beats per bar and follow marks; empty slots stop their track, or record a take when armed.
+  - *Top bar:* Stop all, Rec (arrangement), Overdub (Session Record), Capture, metronome, Back to arrangement, ↶ Launch, Follow, launch quantization, beats per bar, tempo with nudge (held) and Tap, the session clock, dropouts, ↶ ↷, + Scene, + Track, Clip, Mixer, ⚙ (clip length, record length, count-in, metronome, scenes stop other clips, select on launch, launch timing, returns, cue output, MIDI learn, keyboard shortcuts).
+  - *Clip panel:* mode, quantization, legato, velocity, start and loop markers, the clip's follow action, Reset, and the scene row's tempo, beats per bar and follow action; status (playing, position, follow, recording). A **Notes…** button opens the piano roll.
+  - *Piano roll* (`PianoRoll`, `PianoRollWindow`): the clip's engine MIDI column, edited as on Windows (draw, move, resize, velocity, box select, keys, quantize, grid, zoom), each edit one session undo step. Until S6 this is where the studio writes notes.
+  - *Mixer:* volume, pan, sends to returns, cue, crossfader sides and the crossfader (with its curve), mute and solo, post-fader peak meters (on a 25 ms timer while shown), group strips and the master strip.
+  - *Keys* as WPF has them, with Command for Control on macOS. The view's Control shortcuts are key bindings of its own: Avalonia matches key bindings from the focused element up *before* KeyDown, so otherwise the main window's Ctrl+Z (the song's undo) would take the session's. Menus are context menus; dialogs (rename, scene tempo, insert into arrangement) answer tests through `Dialogs.TextResponder` and `ArrangementInsertDialog.Responder`.
+- **Not ported:** audio clips (1.0: dropping files, the Audio section, warp markers; the studio has no Session Clip Player yet), the MIDI note grid dialog. (S7 added the Sync and Controllers menus.) Double-click on a clip opens the Pattern tab, as on Windows; until S6 it is a placeholder, and Command/Ctrl+double-click (or Notes…) opens the piano roll.
+- **Tests** (`SessionViewTests`, 11, on the shared engine through `SessionRig`: Neo Poly tracks, the view in a window, mouse and keys simulated, the engine's ticks rendered by a `WorkManager` as ReBuzzTests does, the heard clock frozen as its `FreezeClock`), following the WPF view's tests: a scene launch queued then playing, a clip's ▶, track stop and Stop all; a clip made by double-click and notes drawn, dragged, moved and undone in the piano roll, then played; a track armed and a take recorded with the transport running, played back, undone and redone; faders, pan, sends to a return (and their undo in the song), mute, crossfader side, master, meters; groups (launch, fold, keys skipping folded tracks) and cue; undo of grid, clip panel and drag edits with the keys in the main window (not the song's undo); the WPF keyboard test; the clip panel's clip and scene properties; follow actions, quantization, beats per bar, launch undo, nudge; slot and scene menus (colour, assign, rename, tempo, insert into arrangement, duplicate). Screenshots: `session-tab`, `session-grid`, `session-grid-playing`, `session-clip-panel`, `session-piano-roll`, `session-piano-roll-playing`, `session-recording`, `session-mixer`, `session-groups`, `session-undo`, `session-performance`, `session-menus`.
+
+**S6, the Modern Pattern Editor** (§3.6).
+- **One source, three builds.** The WPF project (`ModernPatternEditor.NET`) still builds for Windows; fork CI's Windows job now builds it. Its machine side is shared, unchanged, with two `net10.0` projects:
+  - `ModernPatternEditor/Portable`: the editor without a view, for `rebuzz-headless`;
+  - `ModernPatternEditor/Avalonia`: the same with the Avalonia view, for the studio.
+  - Both build `Modern Pattern Editor.NET.dll` into the app's `Gear/Generators` (`AppGear.targets`). The engine finds the default pattern editor there as on Windows, and songs name it as they do.
+  - How: `PatternEditor.Core.cs` holds the machine side of `PatternEditor`, moved verbatim out of `PatternEditor.xaml.cs` (a partial class). WPF-only lines in the shared files are under `#if WINDOWS`. `Portable/PatternControl.cs` is the toolkit-free controller: keys, cursor, selection and the edit commands, ported from the WPF control. `PortableShims.cs` and `EditorDispatcher.cs` stand in for the few WPF types the shared code uses.
+  - The studio can't use the editor's types: managed machines load in contexts of their own. So the view is part of the editor's Avalonia build, and the Pattern tab shows the control the editor machine gives the engine (`PatternEditorControl`), as ReBuzz's WPF window does.
+- **Engine seams:**
+  - `ManagedMachineHost`: an editor's `PatternEditorControl` may return `object`. The portable editor returns its view, or null without one.
+  - `ReBuzzCore.PatternsAwaitingEditor`, set by the BMX and BMXML loaders. While an old song's patterns are made, `SetPatternEditorPattern` no longer creates an editor for a machine whose built-in contents are converted next. Otherwise such a machine got two editors, and each save of the song differed. The code is the same on Windows.
+- **The view** (`ModernPatternEditor/Avalonia`), a port of `PatternControl` and the code-drawn `BeatVisual`:
+  - column set headers (machine and track; column names turned up; a click mutes, selects a column or the set), row numbers, the beats, the cursor row, the selection, the cursor and the play position;
+  - only the beats and column sets in view are drawn, with the cursor, selection and play position on a layer of their own;
+  - the toolbar (play solo, create, clone and delete pattern, beats, tracks, wave, base octave, keyboard mapping, steps down and right, MIDI edit, zoom, help) and the status bar, as in WPF;
+  - keys as on Windows: notes by key position (the PC scan codes `PEKeys.xml` names), values, note off, clear, insert and delete rows, Tab between tracks, Shift to select, Ctrl+1–0 subdivisions. Command acts as Control on macOS, and the main keyboard's + and − as the keypad's;
+  - the edit commands of the WPF editor: cut, copy, paste, undo, redo on the editor's own stack, transpose (Shift and Ctrl+Shift with + and −), interpolate (linear, exponential), randomize, rotate, write state, select all and unselect. They are also in the grid's context menu;
+  - pattern properties (Ctrl+Backspace): name, beats, rows per beat, and which columns and MIDI lanes the pattern has.
+  - Undo and Redo come from the shell (§3.10): the window's Ctrl/Command+Z and Y reach the page first. The editor's other shortcuts, Ctrl+X, C, V, A, U and the rest, reach the grid as keys.
+- **The Pattern tab** (`Views/PatternView.cs`):
+  - It shows the editor for a chosen machine and pattern, with a machine chooser, a pattern chooser and New pattern. It follows the engine when the pattern editor's pattern (`SetPatternEditorPattern`) or the selected machine changes, and comes to the front when another view sets `ActiveView` to `PatternView` (the Session View's double-clicked clip).
+  - The editor's Return (WPF: to the sequence editor) selects the Sequence tab.
+  - **For other views:** `PatternView.Edit(IPattern)` and `Edit(IMachine)` show a pattern or a machine's patterns and bring the tab to the front, `PatternView.Show()` brings it to the front alone, and `PatternShown` says what it shows.
+  - **For the shell's Edit menu:** the page is an `IStudioEditTarget`. Its `Undo`, `Redo`, `Cut`, `Copy` and `Paste` reach the editor's own undo stack and clipboard (its `IEditContext`). Undo and Redo return false when the editor has nothing to undo or redo, so the song's undo history takes them.
+- **Tests** (`PatternEditorTests`, headless):
+  - notes, a note off, and global and word values typed with the keyboard are the engine's pattern events and the editor's data (format 255);
+  - period clears, Delete moves rows up;
+  - transpose by a semitone and an octave, copy and paste, linear interpolation with the WPF editor's values;
+  - undo and redo with Ctrl+Z and Y (the shell's, through the page) on the editor's own stack, without touching the song's; with nothing to undo in the editor, the page passes Undo on; the Edit menu's Copy reaches the editor;
+  - a click places the cursor, a drag selects;
+  - pattern properties: renamed, 8 beats, 8 rows a beat, two MIDI lanes typed into;
+  - the pattern plays through the engine (offline render): the notes sound at the Master, the automation reaches the machine, and the play cursor follows;
+  - the choosers, the API, and `SetPatternEditorPattern` with `ActiveView` pick what the tab edits; a machine without patterns gets New pattern;
+  - a song's editor data saves and opens byte for byte, as BMXML and as BMX;
+  - a frame of the beats in view draws in 10–55 ms headless (Neo Poly, 91 global columns).
+  - Screenshots: `pattern-editor-empty`, `-notes`, `-typed`, `-pasted`, `-interpolated`, `-playing`, `-selection`, `-midi-lanes`, `-no-patterns`, `-reopened`.
+- **Songs** (`tools/song-roundtrip.py`, Linux CI):
+  - old songs' built-in contents now arrive in the editor's data, as on Windows;
+  - a Windows-style song, with editor data written in the editor's own format (columns, MIDI lanes, 4 and 8 rows a beat), saves byte for byte as BMX and BMXML.
+  - The A6 suite against `rebuzz-headless`, with the editor present, shows no regressions (run locally).
+- **Not ported, or different from WPF:**
+  - the parameter knobs in the column headers, the blinking cursor, the background image (a solid colour);
+  - the chords window, XML pattern import and export, the settings window and the About box;
+  - Paste is enabled whenever the clipboard holds data;
+  - deleting a pattern, undone, gives it back empty;
+  - pattern properties are a smaller dialog.
+- **Not checked yet:** on a Mac (fonts fall back from Consolas to Menlo; Retina, scrolling, keys), and a real song from Windows with editor data (the tests use synthetic data built in the editor's format).
+
+**S7, Preferences and the rest of the shell** (`ReBuzz.Studio/Shell`, `Shell/Preferences`).
+- **Preferences** (Command+, on a Mac, Edit ▸ Preferences… elsewhere): ReBuzz.exe's Preferences and Settings windows in one, a page each. Choices apply and are saved as they are made (no OK or Cancel, as macOS settings windows do).
+  - *Audio:* the output device from the PortAudio factory ("PortAudio: …"; a saved device that's gone shows as not connected), the input, sample rate and buffer (the registry's PortAudio section, which `PortAudioDriver` reads). Each choice reopens the device: a new device through `SelectedAudioDriver`, as WPF's toolbar; the same one closed and opened again. Render threads and the work algorithm as WPF's Preferences ▸ Engine has them, with the engine's defaults (4 and Recursive Tasks; WPF's window shows 2 and Threads when nothing is saved). "Restart audio" (and F12, WPF's Reset Audio) reopens it.
+  - *MIDI:* the backend's inputs and outputs (CoreMIDI on macOS; none on Linux) and the remembered ones that aren't connected, checked to open them, with their state (open, not connected, didn't open). A change saves the device by name and opens the inputs (or outputs) again as WPF's OK does. The page follows plugging (polled each second while shown; the engine's watcher opens remembered devices). Below them, `MIDISettings`.
+  - *Sync:* Ableton Link (with its peers and tempo), start/stop with peers, follow MIDI clock in, and MIDI clock out per open output (and the chosen ones not open). `SessionSync` keeps them.
+  - *Agent:* S8.
+  - *General:* `EngineSettings` and `GeneralSettings` from their `[BuzzSetting]`s, as WPF's Settings window lists them: a check box for on/off, a choice of the options (the default in bold), text otherwise; names in sentence case, the description under each. The ones only ReBuzz.exe reads aren't shown (WPF rendering and DPI, the sequence editor type, the piano keyboard, update checks, the Windows fill thread).
+- **The Session View's Sync and Controllers menus** (⚙), as WPF's, which S5 left out.
+- **Menus** (`AppMenu`): one model, shown as the macOS menu bar (`NativeMenu`) on a Mac and as the window's menu elsewhere.
+  - The app menu: About ReBuzz, Preferences… ⌘,; Avalonia adds Services, Hide, Show All and Quit ⌘Q (Quit asks about unsaved changes through the window's closing).
+  - File (New, Open…, Open Recent ▸, Save, Save As…; Exit elsewhere), Edit (Undo, Redo, Cut, Copy, Paste; Preferences elsewhere), Transport (Play F5, Stop F8, Record F7, Restart audio F12), View (the tabs: Pattern F2, Machines F3, Sequence F4, Session Ctrl+Tab and back), Window (Minimize, Zoom, Agent connection… ⇧⌘A), Help (Keyboard shortcuts…; About elsewhere).
+  - Submenus are built as they open (recent files). The View keys are the window's, after the views (F2 renames in the Session View), not menu key equivalents; Minimize has no ⌘M, which the machine view uses for mute.
+- **Recent files:** File ▸ Open Recent lists the engine's "Recent File List" (song, then its folder), greyed when the file is gone, with Clear Menu.
+- **Autosave:** at start-up a leftover autosave is offered (Yes opens it unsaved under its song's name, No deletes, Cancel keeps it), then unsaved changes autosave once a minute when due, as WPF's `StartAutosave` (`SongAutosave`). Not in `--smoke`.
+- **The window's size, place and maximized state** are kept in the settings ("Studio" section) and put back on a screen that is still there.
+- **Status line:** the engine's load ("CPU 12%") once a second while a device plays, from `TakePerformanceDataSnapshot` as WPF's CPU monitor reckons its total; the agent's state.
+- **About** (`AboutWindow`): the build and the credits rolling on black, as WPF's (without the particles).
+- **Tests** (`PreferencesTests`, `StudioShellTests`):
+  - Audio: each choice writes its registry value and reopens the device (a stand-in device list and reopen); the page shows them again when reopened; a saved device that's gone. Where PortAudio is (Linux CI's null sink, the Mac job), Restart audio opens the device for real, and the status line shows it and the load.
+  - MIDI: a stand-in backend: a device checked opens and is saved by name, unchecked closes; a remembered device plugged in opens and the page follows; a new page shows the saved states. `MIDISettings` round-trip.
+  - Sync: MIDI clock in on and off (and kept), a clock out that isn't open, Link on (or the reason why not) and off.
+  - General: a check box and a choice change the engine's settings and are saved (a new instance loads them); Windows-only settings aren't shown.
+  - Recent files after save as and open, picked from the menu, cleared; an autosave left over offered, restored (song name, machines, tempo, unsaved), kept on Cancel, deleted on No; the Mac menu bar's model and its `NativeMenu` (app menu, ⌘ gestures, no Quit or Preferences in File and Edit), Preferences from it; Command+, , Shift+Command+A, F2–F4, Ctrl+Tab; the window's size, place and maximized state; About; the Session View's Sync and Controllers menus.
+  - Screenshots: `prefs-audio`, `prefs-audio-chosen`, `prefs-audio-open` (CI), `prefs-midi`, `prefs-midi-devices`, `prefs-sync`, `prefs-sync-on`, `prefs-general`, `studio-file-menu`, `studio-autosave-recovered`, `studio-about`, `session-sync-menu`.
+- **Not done:** theme colours and editable keyboard shortcuts (§4's row; the shortcuts are listed in Help), WPF's Wavetable directories, MIDI controller and DAW bindings pages, processor affinity, the CPU monitor window; menus of their own for Preferences, About and the machine windows (on a Mac, what the menu bar shows while one of them is in front is to be checked by hand); opening songs from the Finder.
+
+**S8, the MCP server in studio mode** (`Shell/AgentServer.cs`, `Preferences/AgentPage.cs`).
+- As ReBuzz.exe's `StudioAgent`: `AgentHost` in "studio" mode on the studio's dispatcher, so the A7 live tools (transport, session launch and record, `midi_play`, meters) play through the studio's audio device. It starts with the engine and listens on 127.0.0.1 (Streamable HTTP, bearer token) when allowed.
+- **Preferences ▸ Agent** (Shift+Command+A, Window ▸ Agent connection…): allow agents, the port (7481), the state (listening, or the port in use), the `claude mcp add --transport http rebuzz … --header "Authorization: Bearer …"` line with Copy and New token, and the log folder. The settings are WPF's `AgentSettings` (`BuzzGUI\AgentSettings`); the token is in the settings folder's `settings.json`, the logs in its `agent-logs`.
+- The status line shows where it listens, or the call running ("Agent: machine_add…").
+- The engine's messages during an agent call become the call's error, not a dialog (`StudioMessages`, as WPF's `UserMessagesViaMessageBox`).
+- **The views follow the agent's edits** through the engine's events, as they follow the user's: the machine view (song and machine events), the Session View (`SessionLayout.Changed` and its 50 ms poll), the transport, title and status (the window's 100 ms timer), the Neo editors (their parameters, as undo shows).
+- **Test** (`AgentServerTests`): the page sets a free port and allows agents; the line has the URL and token; Copy puts it on the clipboard. A client calls `initialize`, `studio_status` (mode "studio") and `machine_add` over HTTP while the test pumps the UI thread; the machine view then hits the new machine at its box, wired to Master (`agent-machine-added`, `prefs-agent`). A wrong token and, after New token, the old one are refused; undo takes the machine back; turned off, nothing listens.

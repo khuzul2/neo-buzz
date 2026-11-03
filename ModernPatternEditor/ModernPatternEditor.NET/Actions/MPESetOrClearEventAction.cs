@@ -1,5 +1,7 @@
 ﻿using BuzzGUI.Common.Actions;
+#if WINDOWS
 using BuzzGUI.Common.Templates;
+#endif
 using BuzzGUI.Interfaces;
 using System.Collections.Generic;
 using System.Linq;

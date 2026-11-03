@@ -90,6 +90,7 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
   - Same assembly names as on Windows, so songs and the scanner take them as they are.
 - **Native machines** are skipped off Windows (`NativeMachineHost.Supported`). The scanner and the machine index start no host processes.
 - **No pattern editor machine.** The Modern Pattern Editor is WPF, so off Windows machines get no editor. Patterns keep the engine-played note and automation columns, which play without one.
+  - *Since studio-mvp.md S6:* the Modern Pattern Editor builds for `net10.0` and is in the apps' `Gear` (`rebuzz-headless`: without a view). Machines off Windows get it as their pattern editor, as on Windows.
 - **Fixes on the way, which help Windows too:**
   - the DLL cache stayed open when a rescan rewrote it;
   - a failed scan left the cache file open;
@@ -157,6 +158,11 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
   - a real Windows song with Modern Pattern Editor data, opened here;
   - ReBuzzTests' song save and load tests.
 - **Left:** deleting a machine here leaves its placeholder editor behind. It is hidden and unused, and saves with the song.
+- **What S6 changes here** (studio-mvp.md S6). The default pattern editor is installed off Windows now, so songs load as on Windows:
+  - old songs' built-in contents convert into the Modern Pattern Editor on open;
+  - a pattern editor that isn't installed is replaced by the default, so `MachineCore.PlaceholderEditor` and the built-in contents kept on patterns (`BuiltInPattern`) apply only where the default isn't installed;
+  - `ReBuzzCore.PatternsAwaitingEditor`: while the loaders make an old song's patterns, a machine whose built-in contents are converted next doesn't get an editor of its own first. It got two before, and each save differed;
+  - `tools/song-roundtrip.py` checks that the built-in contents arrive in the editor's data. The Windows-style song now carries editor data in the editor's own format, and saves byte for byte in both formats.
 
 **M4, the Mac job** (`fork-mac.yml`, on PRs into main and by hand). It builds `rebuzz-headless` for osx-arm64 and runs:
 - the smoke test;

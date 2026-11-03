@@ -294,7 +294,8 @@
       "gearFolder": "Effects",
       "assembly": "Pedal Plate.NET",
       "patches": [
-        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
+        "Bug fix (studio-mvp.md S2): the tank's modulated all-pass reads its full length behind the write position, and feeds back the same tap; it read 1-17 samples behind, which diverged at the default Decay"
       ]
     },
     {

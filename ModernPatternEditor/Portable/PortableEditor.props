@@ -1,0 +1,50 @@
+<Project>
+  <!--
+    Fork (docs/specs/studio-mvp.md S6, decision 3.6): the Modern Pattern Editor built for plain
+    net10.0, from the WPF editor's own sources. Shared by its two portable builds:
+      - ModernPatternEditor.Portable.csproj: no view (rebuzz-headless);
+      - ../Avalonia/ModernPatternEditor.Avalonia.csproj: with its Avalonia view (the studio).
+    Same assembly name as the Windows build ("Modern Pattern Editor.NET.dll"), in Gear/Generators,
+    so the engine's scanner finds the default pattern editor as on Windows and songs keep their data.
+    The WPF-only files of ModernPatternEditor.NET stay out; the rest compiles with its WPF parts
+    under #if WINDOWS, plus this folder's portable part (the editor without its WPF control, a
+    toolkit-free PatternControl, and the few BuzzGUI.Common pieces the portable API lacks).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <!-- The shared sources use nullable annotations (the WPF build enables the checks). -->
+    <Nullable>annotations</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>Modern Pattern Editor.NET</AssemblyName>
+    <RootNamespace>WDE.ModernPatternEditor</RootNamespace>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);MSB3277;CS1591;CS0067;CS0414;CS0169;CS0649;CS0168;CS0219</NoWarn>
+    <MpeSource>$(MSBuildThisFileDirectory)..\ModernPatternEditor.NET\</MpeSource>
+    <GearDir Condition="'$(GearDir)' == ''">$(MSBuildProjectDirectory)\bin\Gear\</GearDir>
+    <OutDir>$([MSBuild]::EnsureTrailingSlash('$(GearDir)'))Generators\</OutDir>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(MpeSource)**\*.cs" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)"
+             Exclude="$(MpeSource)obj\**;$(MpeSource)bin\**;
+                      $(MpeSource)PatternEditor.xaml.cs;$(MpeSource)PatternControl.xaml.cs;
+                      $(MpeSource)PatternPropertiesWindow.xaml.cs;$(MpeSource)Help.xaml.cs;
+                      $(MpeSource)Chords\**;
+                      $(MpeSource)ColumnRenderer\ColumnSetElement.cs;$(MpeSource)ColumnRenderer\BeatVisual.cs;
+                      $(MpeSource)ColumnRenderer\BeatVisualCache.cs;$(MpeSource)ColumnRenderer\BeatVisualCacheKey.cs;
+                      $(MpeSource)ColumnRenderer\BeatVisualAllocator.cs;$(MpeSource)ColumnRenderer\Font.cs;
+                      $(MpeSource)CursorElement.cs;$(MpeSource)SelectionLayer.cs;
+                      $(MpeSource)NoteEvent.cs;$(MpeSource)INativePattern.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)*.cs" Link="Portable\%(Filename)%(Extension)" />
+    <!-- ReBuzz's keyboard mappings, read when no PEKeys.xml is beside the app. -->
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)..\..\RunTime\PEKeys.xml" LogicalName="PEKeys.xml" Link="PEKeys.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The engine's portable machine API; the host provides it at run time (not copied). -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" Private="false" GlobalPropertiesToRemove="GearDir" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" Private="false" GlobalPropertiesToRemove="GearDir" />
+  </ItemGroup>
+</Project>
