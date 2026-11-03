@@ -5,10 +5,12 @@
 // draws on the kit's canvas (INeoCanvas) and its input is toolkit-free (Core/ResponseGraph.cs).
 
 using System;
+#if !AVALONIA   // the studio's flavour takes these names from its kit (NeoBuzz.Editor.Avalonia/WpfNames.cs)
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+#endif
 using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
 

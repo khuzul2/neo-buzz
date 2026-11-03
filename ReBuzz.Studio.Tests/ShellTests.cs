@@ -94,12 +94,12 @@ namespace ReBuzz.Studio.Tests
             var core = Studio.Host.Core;
             core.SongCore.CreateMachine("Neo Poly", null, "Window Poly", null, null, null, -1, 0.2f, 0.2f);
             var machine = core.SongCore.MachinesList.First(m => m.Name == "Window Poly");
-            // Until S1 gives Neo Poly its editor here, its GUI opens as its parameter window.
+            // Neo Poly's GUI is its editor (S1, NeoEditorTests); its parameter window is its own.
             core.UiHost.OpenGui(machine, null);
-            var window = ReBuzz.Studio.Platform.StudioMachineUiHost.ParameterWindowOf(machine);
+            var window = ReBuzz.Studio.Platform.StudioMachineUiHost.GuiWindowOf(machine);
             Assert.That(window, Is.Not.Null);
             Assert.That(window!.IsVisible, Is.True);
-            Assert.That(core.UiHost.GetWindowState(machine).ParameterWindowVisible, Is.True, "songs save it as open");
+            Assert.That(core.UiHost.GetWindowState(machine).GuiWindowVisible, Is.True, "songs save it as open");
             core.UiHost.ReleaseMachine(machine);
             Assert.That(window.IsVisible, Is.False);
             core.SongCore.DeleteMachines(new[] { machine });

@@ -2,8 +2,10 @@
 // Neo Poly's editor (docs/specs/machines.md §4): oscillators and mixer on top, filters and voice
 // in the middle, envelopes and LFOs, then the modulation matrix.
 
+#if !AVALONIA   // the studio's flavour takes these names from its kit (NeoBuzz.Editor.Avalonia/WpfNames.cs)
 using System.Windows;
 using System.Windows.Controls;
+#endif
 using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
 
