@@ -40,14 +40,23 @@
     "filter or EQ"
    ]
   },
-  "extremes": {
-   "min": {
-    "silent": false,
-    "sample_peak_dbfs": -32.72
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -11.48,
+    "growth_db": 0.8,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": -31.49
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": -9.15,
+     "growth_db": 0.23,
+     "verdict": "ok"
+    },
+    "max": {
+     "peak_dbfs": -16.42,
+     "growth_db": 0.59,
+     "verdict": "ok"
+    }
    }
   }
  },

@@ -171,6 +171,7 @@ namespace ReBuzz.Agent
                             Mapping = entry?.Mapping,
                             TextsFirst = entry != null && manifest.IsDraft,
                             Describe = raw => Describe(param, raw),
+                            SafeRange = entry?.SafeRange,
                         },
                     });
                 }
@@ -186,7 +187,9 @@ namespace ReBuzz.Agent
             return string.IsNullOrWhiteSpace(text) ? raw.ToString(CultureInfo.InvariantCulture) : text.Trim();
         }
 
-        public static AgentParam Param(MachineCore m, List<AgentParam> all, string name)
+        /// <param name="track">Whether the caller named a track (param_set's track): a global and a track parameter
+        /// with the same name (Pedal M1's Volume) then resolve to the track one.</param>
+        public static AgentParam Param(MachineCore m, List<AgentParam> all, string name, bool track = false)
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ToolError("param: give a parameter's name (machine_describe lists them).");
             if (name.StartsWith("#") && int.TryParse(name.Substring(1), out int index))
@@ -198,6 +201,7 @@ namespace ReBuzz.Agent
             var found = all.Where(p => p.Name == name).ToList();
             if (found.Count == 0) found = all.Where(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
             if (found.Count == 1) return found[0];
+            if (found.Count > 1 && track && found.Count(p => p.IsTrack) == 1) return found.First(p => p.IsTrack);
             if (found.Count > 1)
                 throw new ToolError($"{m.Name} has {found.Count} parameters named \"{name}\": " +
                                     string.Join(", ", found.Select(p => p.IsTrack ? "a track parameter" : $"#{p.Parameter.IndexInGroup}")) + ". Address one by its #index.");

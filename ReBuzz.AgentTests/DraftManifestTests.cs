@@ -1,6 +1,8 @@
 // Fork (docs/specs/mcp-server.md §12.2, U1): profiled draft manifests as the server reads them
 // (status, note input and pitch offset, health, track parameters, table mappings with infinities)
 // and notes for machines that take them in their tracks (voices, Note events, read back).
+// U2 (docs/specs/machine-safety.md §3.1, §3.4): health categories (diverging, hot, needs a window)
+// and safe ranges, which param_set keeps agents inside unless they pass allow_unsafe.
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
@@ -126,9 +128,18 @@ namespace ReBuzz.AgentTests
                 Assert.That(m.Kind, Is.AnyOf("generator", "effect"));
                 Assert.That(m.Summary, Does.Contain("profiled draft"), m.Gear);
                 Assert.That(m.Health, Is.Not.Null, m.Gear);
+                Assert.That(m.Health!.Status, Is.AnyOf("ok", "warn", "unhealthy", "needs_window"), m.Gear);
+                if (m.Health.Diverging) Assert.That(m.Health.Unhealthy, Is.True, $"{m.Gear}: diverging is unhealthy");
+                if (m.Health.NeedsWindow) Assert.That(m.Health.Window, Is.Not.Empty, $"{m.Gear}: why it needs a window");
                 foreach (var p in m.Parameters.Concat(m.TrackParameters))
                 {
                     Assert.That(p.Default, Is.InRange(p.Min, p.Max), $"{m.Gear} {p.Name}");
+                    if (p.SafeRange is SafeRange s)
+                    {
+                        Assert.That(s.Min >= p.Min && s.Max <= p.Max && s.Contains(p.Default), Is.True, $"{m.Gear} {p.Name}: its safe range is inside its range and holds its default");
+                        Assert.That(s.Reason, Is.Not.Empty, $"{m.Gear} {p.Name}: why");
+                        Assert.That(m.Health.Unhealthy, Is.True, $"{m.Gear}: a safe range comes from an unsafe end");
+                    }
                     Assert.That(p.Confidence, Is.AnyOf("values", "description"), $"{m.Gear} {p.Name}");
                     double v = p.Mapping.Value(p.Default, p.Min, p.Max);
                     Assert.That(double.IsNaN(v), Is.False, $"{m.Gear} {p.Name}: its default maps to a value");
@@ -152,6 +163,86 @@ namespace ReBuzz.AgentTests
             var result = ToolResult.Ok("measured", m).ToJson();
             Assert.DoesNotThrow(() => JsonRpc.Serialize(result));
             if (float.IsInfinity(bad)) Assert.That(m["peaks"]!["sample_peak_dbfs"]!.ToJsonString(), Is.EqualTo("\"inf\""));
+        }
+
+        const string Flanger = """
+        {
+          "format": "rebuzz-machine-manifest/1",
+          "gear": "Test Flanger",
+          "kind": "effect",
+          "status": "draft",
+          "summary": "Modulation (profiled draft).",
+          "health": { "status": "unhealthy", "diverging": true, "hot": true,
+                      "problems": ["feedback diverges at its minimum (-100%) and its maximum (100%)", "hot (loud but steady) with wet out at its maximum (100%): +3.1 dBFS peak"] },
+          "parameters": [
+            { "index": 2, "name": "feedback", "min": 0, "max": 128, "default": 64, "kind": "linear", "a": -100, "b": 100, "unit": "%", "confidence": "values",
+              "safe_range": { "min": 1, "max": 127, "min_text": "-98.4%", "max_text": "98.4%",
+                              "reason": "diverges at its minimum (-100%: +157.0 dBFS peak) and diverges at its maximum (100%: +149.0 dBFS peak)" } },
+            { "index": 5, "name": "wet out", "min": 0, "max": 128, "default": 0, "kind": "linear", "a": -100, "b": 100, "unit": "%", "confidence": "values" }
+          ]
+        }
+        """;
+
+        static ParamInfo Ranged(ManifestParameter p) => new()
+        {
+            Name = p.Name, Min = p.Min, Max = p.Max, Default = p.Default, Mapping = p.Mapping, TextsFirst = true, SafeRange = p.SafeRange,
+            Describe = raw => $"{System.Math.Round(-100 + raw * 200 / 128.0, 1)}%",
+        };
+
+        [Test]
+        public void SafeRangesParseWithTheirTextsAndReason()
+        {
+            var m = MachineManifest.Parse(Flanger);
+            var fb = m.Find("feedback")!.SafeRange!;
+            Assert.That((fb.Min, fb.Max), Is.EqualTo((1, 127)));
+            Assert.That(fb.Text(), Is.EqualTo("-98.4% … 98.4%"), "gear_list has no machine to ask: the profiled texts");
+            Assert.That(fb.Text(raw => raw == 1 ? "-98.5%" : "98.5%"), Is.EqualTo("-98.5% … 98.5%"), "the machine's own texts when it can say them");
+            Assert.That(fb.Reason, Does.StartWith("diverges at its minimum"));
+            Assert.That(m.Find("wet out")!.SafeRange, Is.Null, "no edge found: its whole range");
+            Assert.That(m.Health.Unhealthy && m.Health.Diverging && m.Health.Hot, Is.True);
+            Assert.Throws<System.FormatException>(() => MachineManifest.Parse(Flanger.Replace("\"min\": 1, \"max\": 127", "\"min\": 127, \"max\": 1")));
+        }
+
+        [Test]
+        public void ParamSetRefusesValuesOutsideASafeRangeWithTheReason()
+        {
+            var fb = Ranged(MachineManifest.Parse(Flanger).Find("feedback")!);
+            int top = V.Resolve(fb, JsonValue.Create("max"), fb.Default);
+            Assert.That(top, Is.EqualTo(128));
+            string? why = SafeRange.Refusal(fb, top);
+            Assert.That(why, Does.Contain("outside its safe range, -98.4% … 98.4% (raw 1–127)").And.Contain("diverges at its maximum").And.Contain("allow_unsafe=true"));
+            Assert.That(SafeRange.Refusal(fb, V.Resolve(fb, JsonValue.Create("-100%"), fb.Default)), Is.Not.Null, "the other end too");
+            Assert.That(SafeRange.Refusal(fb, V.Resolve(fb, JsonValue.Create("90%"), fb.Default)), Is.Null, "inside: set as asked");
+            Assert.That(SafeRange.Refusal(fb, 127), Is.Null, "the edge itself is safe");
+            var wet = Ranged(MachineManifest.Parse(Flanger).Find("wet out")!);
+            Assert.That(SafeRange.Refusal(wet, 128), Is.Null, "no safe range: every value");
+        }
+
+        [Test]
+        public void HealthCategories()
+        {
+            var window = MachineManifest.Parse("""
+                {"format": "rebuzz-machine-manifest/1", "gear": "Info", "kind": "generator", "status": "draft", "summary": "Needs a window (profiled draft).",
+                 "health": {"status": "needs_window", "problems": [], "needs_window": "WDE's song notes (Info.NET.dll): a WPF rich-text box that is the machine"}}
+                """).Health;
+            Assert.That(window.NeedsWindow, Is.True);
+            Assert.That(window.Unhealthy, Is.False, "its own status, not unhealthy");
+            Assert.That(window.Diverging, Is.False);
+            Assert.That(window.Window, Does.Contain("WPF"));
+            var hot = MachineManifest.Parse(Draft.Replace("\"status\": \"unhealthy\", \"problems\": [\"NaN or runaway output on noise\"]",
+                                                          "\"status\": \"warn\", \"hot\": true, \"problems\": [\"hot at its defaults (+2.1 dBFS peak)\"]")).Health;
+            Assert.That((hot.Hot, hot.Unhealthy, hot.Diverging, hot.NeedsWindow), Is.EqualTo((true, false, false, false)), "hot is a warning");
+            var old = MachineManifest.Parse(Draft).Health;
+            Assert.That((old.Unhealthy, old.Diverging), Is.EqualTo((true, false)), "unhealthy without saying it diverges: no machine_add warning");
+        }
+
+        [Test]
+        public void FailuresSayWhatThrewInsideAReflectionCall()
+        {
+            var inner = new System.InvalidOperationException("The calling thread must be STA, because many UI components require this.");
+            var e = new System.Reflection.TargetInvocationException(inner);
+            string text = McpServer.Describe(e);
+            Assert.That(text, Does.StartWith("TargetInvocationException: ").And.Contain("→ System.InvalidOperationException: The calling thread must be STA"));
         }
 
         [Test]

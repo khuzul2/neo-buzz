@@ -8,8 +8,13 @@
 #  - a pitch offset in a manifest moves what the machine gets, not what the agent reads (a copy of
 #    the app with an edited draft);
 #  - param_set takes units on Pedal machines (Hz, dB, ms, ratios, choices) and says the units are a draft's;
-#  - an unhealthy draft (in the copy: Pedal Plate's profile has been clean since its fix) is flagged
-#    and listed last by gear_list, and machine_add warns about it.
+#  - U2 (docs/specs/machine-safety.md §3.1, §3.4): Pedal Plate, profiled diverging at its maximum
+#    Feedback, is flagged and listed last with a safe range; machine_add warns about it, and not about
+#    a hot machine; param_set refuses Feedback outside its safe range with the reason unless
+#    allow_unsafe; machine_describe and gear_list show the range. In the copy, with edited drafts: a
+#    machine that needs a window says it works in ReBuzz on Windows with its window, and is listed
+#    after the drafts but before the unhealthy ones; an unhealthy machine that doesn't diverge (a
+#    crash) gets no machine_add warning; a safe range on a track parameter holds per track.
 #
 #   python3 tools/headless-manifests.py <path to rebuzz-headless> [work folder]
 
@@ -92,7 +97,13 @@ check(juno.get("exact_units") is False, "gear_list: a draft's units aren't calle
 missing = [n for n, x in rows.items() if not x.get("manifest")]
 check(not missing, f"every Pedal machine has a manifest beside it (missing: {missing}): Machines/Manifests is up to date")
 plate = rows.get("Pedal Plate", {})
-check(plate and "health" not in plate, f"gear_list: Pedal Plate's profile is clean since its reverb was fixed (studio-mvp.md S2) ({plate.get('health')}: {plate.get('problems')})")
+names = [x["name"] for x in g.get("gear", [])]
+ranges = {r["param"]: r for r in plate.get("safe_ranges", [])}
+check(plate.get("health") == "unhealthy" and plate.get("diverging") is True and "Feedback" in ranges and names[-1] == "Pedal Plate",
+      f"gear_list: Pedal Plate diverges at its maximum Feedback (its Decay is fine since its fix, studio-mvp.md S2): flagged, listed last, "
+      f"with a safe range ({ranges.get('Feedback')})")
+hot = [n for n, x in rows.items() if x.get("health") == "warn" and any("hot" in p for p in x.get("problems", []))]
+check("Pedal EQ" in hot and rows["Pedal EQ"].get("diverging") is None, f"gear_list: hot machines are a warning, not diverging ({hot})")
 
 # A Pedal synth plays the written pitch through notes_write: its draft says it takes notes in its tracks.
 s.call("song_new", discard_unsaved=True, tempo_bpm=120)
@@ -130,8 +141,25 @@ env = (g2.get("values") or [{}])[0]
 check(ok and env.get("unit") == "s" and abs((env.get("number") or 0) - 0.25) < 0.03 and env.get("approximate") is True and g2.get("manifest") == "draft",
       f"param_set in ms on Pedal Juno106 from its description's range, marked approximate ({env})")
 
+ok, _, a = s.call("machine_add", gear="Pedal EQ", name="EQ2", connect_to="none")
+check(ok and "warning" not in a, "machine_add doesn't warn about a hot machine (Pedal EQ)")
+
+# Safe ranges: Pedal Plate's Feedback diverges at its maximum.
 ok, text, a = s.call("machine_add", gear="Pedal Plate", name="Plate", connect_to="none")
-check(ok and "warning" not in a, "machine_add adds Pedal Plate without a warning")
+check(ok and "diverges" in a.get("warning", "") and "Feedback" in a.get("warning", ""), f"machine_add warns that Pedal Plate diverges, naming the safe range ({a.get('warning', '')[:160]})")
+_, _, d = s.call("machine_describe", machine="Plate")
+fb = next((p for p in d.get("parameters", []) if p["name"] == "Feedback"), {})
+safe = fb.get("safe_range") or {}
+check(safe.get("max_raw") is not None and safe.get("max_raw") < 95 and "diverges" in safe.get("reason", ""), f"machine_describe shows Feedback's safe range ({safe})")
+ok, text, _ = s.call("param_set", machine="Plate", changes=[{"param": "Feedback", "value": "max"}])
+check(not ok and "outside its safe range" in text and "diverges" in text and "allow_unsafe" in text, "param_set refuses Feedback at its maximum, with the reason")
+_, _, now = s.call("param_get", machine="Plate", params=["Feedback"])
+check((now.get("values") or [{}])[0].get("raw") == fb.get("raw"), "the refused change left Feedback as it was (and the call's other changes too)")
+ok, _, p = s.call("param_set", machine="Plate", changes=[{"param": "Feedback", "value": f"raw:{safe.get('max_raw')}"}])
+check(ok and "unsafe" not in ((p.get("changed") or [{}])[0]), "param_set sets Feedback at the top of its safe range")
+ok, text, p = s.call("param_set", machine="Plate", changes=[{"param": "Feedback", "value": "max"}], allow_unsafe=True)
+got = (p.get("changed") or [{}])[0]
+check(ok and got.get("raw") == 95 and "diverges" in got.get("unsafe", "") and "unsafe" in text, f"allow_unsafe sets it anyway, and says so ({got.get('unsafe')})")
 check(s.close() == 0, "exits when stdin closes")
 
 # A copy of the app with edited drafts: SH101 plays an octave low (+12 on the way in), and Pedal
@@ -146,25 +174,52 @@ with open(draft, encoding="utf-8") as f:
 m["notes"]["pitch_offset"] = 12
 with open(draft, "w", encoding="utf-8") as f:
     json.dump(m, f)
-draft = os.path.join(copy, "Gear", "Effects", "Pedal Plate.machine.json")
-with open(draft, encoding="utf-8") as f:
-    m = json.load(f)
-m["health"] = {"status": "unhealthy", "problems": ["NaN or runaway output on noise (26.42 dBFS)"]}
-with open(draft, "w", encoding="utf-8") as f:
-    json.dump(m, f)
+
+
+def edit_draft(sub, gear, change):
+    path = os.path.join(copy, "Gear", sub, gear + ".machine.json")
+    with open(path, encoding="utf-8") as f:
+        m = json.load(f)
+    change(m)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(m, f)
+
+
+# Pedal Chorus needs a window (as Info does on Windows); Pedal Filter crashed (unhealthy, not diverging);
+# Pedal M1's Volume track parameter has a safe range.
+edit_draft("Effects", "Pedal Chorus", lambda m: m.update(health={"status": "needs_window", "problems": [], "needs_window": "a WPF window that is the machine (a test)"}))
+edit_draft("Effects", "Pedal Filter", lambda m: m.update(health={"status": "unhealthy", "problems": ["crashed or hung the server (a test)"]}))
+
+
+def volume_range(m):
+    for p in m["track_parameters"]:
+        if p["name"] == "Volume":
+            p["safe_range"] = {"min": p["min"], "max": (p["min"] + p["max"]) // 2, "reason": "is too loud above half (a test)"}
+
+
+edit_draft("Generators", "Pedal M1", volume_range)
 s = Server(os.path.join(copy, os.path.basename(exe)), "offset")
 ok, _, g = s.call("gear_list", search="Pedal", limit=100)
 rows = {x["name"]: x for x in g.get("gear", [])}
-plate = rows.get("Pedal Plate", {})
 names = [x["name"] for x in g.get("gear", [])]
-check(plate.get("health") == "unhealthy" and plate.get("problems") and names[-1] == "Pedal Plate",
-      f"gear_list: an unhealthy draft is flagged with why, and listed last ({plate.get('problems')})")
-ok, text, a = s.call("machine_add", gear="Pedal Plate", name="Plate", connect_to="none")
-check(ok and "warning" in a and "NaN" in a["warning"], "machine_add warns about an unhealthy profile")
+chorus = rows.get("Pedal Chorus", {})
+check(chorus.get("health") == "needs_window" and "works in rebuzz on windows with its window" in chorus.get("needs_window", "").lower(),
+      f"gear_list: a machine that needs a window says it works in ReBuzz on Windows with its window ({chorus.get('needs_window')})")
+unhealthy = [n for n in names if rows[n].get("health") == "unhealthy"]
+check(unhealthy and names.index("Pedal Chorus") == len(names) - len(unhealthy) - 1,
+      f"gear_list: it comes after the drafts and before the unhealthy ones ({names[-4:]})")
+check(len(names) == 19, f"every Pedal machine is still listed ({len(names)})")
+ok, _, a = s.call("machine_add", gear="Pedal Filter", name="F", connect_to="none")
+check(ok and "warning" not in a, "machine_add warns only for diverging machines (not for a crash flagged in its profile)")
 s.call("machine_add", gear="Pedal SH101", name="Bass")
 ok, w, r = play_a4(s, "Bass")
 hz, name = heard(s, r.get("id", "r1"))
 check(ok and w.get("pitch_offset") == 12 and name == "A5", f"with a +12 pitch offset, A4 written reaches the machine as A5 ({hz} Hz, {name})")
+s.call("machine_add", gear="Pedal M1", name="Lead", connect_to="none")
+ok, text, _ = s.call("param_set", machine="Lead", changes=[{"param": "Volume", "track": 0, "value": "max"}])
+check(not ok and "outside its safe range" in text and "too loud" in text, "a safe range on a track parameter holds too")
+ok, _, _ = s.call("param_set", machine="Lead", changes=[{"param": "Volume", "track": 0, "value": "raw:60"}])
+check(ok, "inside it, a track parameter is set as asked")
 _, _, back = s.call("notes_read", machine="Bass", pattern="A")
 _, _, sent = s.call("notes_read", machine="Bass", pattern="A", apply_pitch_offset=False)
 check([n["pitch"] for n in back.get("notes", [])] == [69] and [n["pitch"] for n in sent.get("notes", [])] == [81],

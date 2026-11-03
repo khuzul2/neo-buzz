@@ -13,8 +13,11 @@
   "polyphony": 16
  },
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "warn",
+  "problems": [
+   "hot with every parameter at its maximum at once (+3.4 dBFS peak), but with no parameter alone"
+  ],
+  "hot": true
  },
  "profile": {
   "level": {
@@ -23,16 +26,29 @@
    "sample_peak_dbfs": -8.1,
    "true_peak_dbtp": -3.14
   },
-  "extremes": {
-   "min": {
-    "silent": true,
-    "sample_peak_dbfs": null
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -8.1,
+    "growth_db": -0.49,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": 6.5
-   }
-  }
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    },
+    "max": {
+     "peak_dbfs": 3.44,
+     "growth_db": -0.03,
+     "verdict": "hot"
+    }
+   },
+   "swept_because": [
+    "every parameter at its maximum at once: hot"
+   ],
+   "renders": 77
+  },
+  "sweeps": {}
  },
  "parameters": [
   {

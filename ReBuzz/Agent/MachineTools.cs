@@ -1,5 +1,7 @@
 // Agent server (docs/specs/mcp-server.md §5.3): gear, machines and routing.
 // gear_list, machine_list, machine_add, machine_remove, machine_set, connect, disconnect, connection_set.
+// U2 (docs/specs/machine-safety.md §3.1, §3.4): gear_list shows the profile's categories (diverging,
+// hot, needs a window) and safe ranges; machine_add warns only for diverging machines.
 
 using System;
 using System.Collections.Generic;
@@ -26,8 +28,9 @@ namespace ReBuzz.Agent
                 Title = "List gear",
                 Description =
                     "The machines you can add: name, generator or effect, author, what it is (type, summary) when known, its manifest (generated, " +
-                    "curated, or a profiled draft: its parameters take \"800 Hz\", \"-6 dB\"; exact_units when not a draft) and its health. Machines with " +
-                    "exact units come first, then drafts; unhealthy ones (crashes, NaN, silence) last, flagged with why. Filter by kind or text. " +
+                    "curated, or a profiled draft: its parameters take \"800 Hz\", \"-6 dB\"; exact_units when not a draft), its health and its parameters' " +
+                    "safe ranges (param_set keeps to them). Machines with exact units come first, then drafts; machines that need a window, then unhealthy ones " +
+                    "(diverging: NaN or a runaway level; crashes) last, flagged with why. Hot ones (loud but steady at some setting) are a warning. Filter by kind or text. " +
                     "Example: gear_list(kind=\"generator\", search=\"poly\").",
                 Input = Object(null,
                     Opt("kind", String("Only generators (make sound) or effects (process sound)", "generator", "effect")),
@@ -43,8 +46,11 @@ namespace ReBuzz.Agent
                         Req("exact_units", Boolean("Has a generated or curated manifest: values in units land exactly")),
                         Opt("manifest", String("generated, curated or draft (profiled, not yet curated)")),
                         Opt("presets", Integer("Factory presets")),
-                        Opt("health", String("missing or crashed (not usable), unhealthy or warn (from its profile)")),
-                        Opt("problems", Array(String("A problem"), "Why it is unhealthy"))), "Matching gear")),
+                        Opt("health", String("missing or crashed (not usable); unhealthy, warn or needs_window (from its profile)")),
+                        Opt("diverging", Boolean("Its output runs away at some setting (NaN or a runaway level)")),
+                        Opt("needs_window", String("It works in ReBuzz on Windows with its window, not headless")),
+                        Opt("safe_ranges", Array(Object("A parameter's safe range", Req("param", String("Its name")), Req("range", String("The safe values"))), "Where param_set keeps agents")),
+                        Opt("problems", Array(String("A problem"), "Why it is unhealthy, hot or warned about"))), "Matching gear")),
                     Req("total", Integer("How many matched before the limit"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
@@ -76,13 +82,26 @@ namespace ReBuzz.Agent
                             if (manifest != null) row["manifest"] = manifest.Quality;
                             if (dll.Presets?.Count > 0) row["presets"] = dll.Presets.Count;
                             bool unhealthy = dll.IsMissing || dll.IsCrashed || manifest?.Health?.Unhealthy == true;
+                            bool window = !unhealthy && manifest?.Health?.NeedsWindow == true;
                             if (dll.IsMissing || dll.IsCrashed) row["health"] = dll.IsMissing ? "missing" : "crashed";
                             else if (manifest?.Health is { Status: not "ok" } health)
                             {
                                 row["health"] = health.Status;
-                                row["problems"] = new JsonArray(health.Problems.Select(x => (JsonNode)x).ToArray());
+                                if (health.Diverging) row["diverging"] = true;
+                                if (health.NeedsWindow) row["needs_window"] = ParamTools.WindowNote(health);
+                                if (health.Problems.Count > 0) row["problems"] = new JsonArray(health.Problems.Select(x => (JsonNode)x).ToArray());
                             }
-                            rows.Add((unhealthy ? 3 : exact ? 0 : manifest != null ? 1 : 2, dll.Name, row));
+                            var safe = manifest?.Parameters.Concat(manifest.TrackParameters).Where(p => p.SafeRange != null).ToList();
+                            if (safe?.Count > 0)
+                                row["safe_ranges"] = new JsonArray(safe.Select(p => (JsonNode)new JsonObject
+                                {
+                                    ["param"] = p.Name,
+                                    ["range"] = p.SafeRange.Text(),
+                                    ["min_raw"] = p.SafeRange.Min,
+                                    ["max_raw"] = p.SafeRange.Max,
+                                    ["reason"] = p.SafeRange.Reason,
+                                }).ToArray());
+                            rows.Add((unhealthy ? 4 : window ? 3 : exact ? 0 : manifest != null ? 1 : 2, dll.Name, row));
                         }
                         var sorted = rows.OrderBy(x => x.Rank).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
                         return new JsonObject
@@ -175,9 +194,19 @@ namespace ReBuzz.Agent
 
                         var before = SongModel.Machines(core).ToHashSet();
                         var (x, y) = SongModel.NewPosition(core, generator);
-                        core.SongCore.CreateMachine(dll.Name, null, name, null, null, null, tracks ?? -1, x, y);
+                        var profiled = SongModel.Manifest(dll)?.Health;
+                        try
+                        {
+                            core.SongCore.CreateMachine(dll.Name, null, name, null, null, null, tracks ?? -1, x, y);
+                        }
+                        catch (Exception e) when (profiled?.NeedsWindow == true && e is not ToolError)
+                        {
+                            // machine-safety.md §3.1: not an audio fault.
+                            throw new ToolError($"{dll.Name} needs a window: {ParamTools.WindowNote(profiled)} ({e.GetType().Name}: {e.Message}) " +
+                                                "studio_status shows what undo would revert.");
+                        }
                         var made = SongModel.Machines(core).FirstOrDefault(m => !before.Contains(m))
-                                   ?? throw new ToolError($"ReBuzz didn't create {dll.Name}.");
+                                   ?? throw new ToolError($"ReBuzz didn't create {dll.Name}." + (profiled?.NeedsWindow == true ? " " + ParamTools.WindowNote(profiled) : ""));
                         int amp = Levels.DbToAmp(gainDb ?? 0);
                         if (after != null)
                         {
@@ -207,8 +236,14 @@ namespace ReBuzz.Agent
                             ["exact_units"] = manifest is { IsDraft: false } && ps.Any(p => p.Manifest != null),
                         };
                         if (manifest != null) added["manifest"] = manifest.Quality;
-                        if (manifest?.Health is { Unhealthy: true } health)
-                            added["warning"] = $"{dll.Name}'s profile found problems: {string.Join("; ", health.Problems)}. Render and check it, or choose another machine.";
+                        // machine-safety.md §3.4: a warning for machines that diverge; hot ones (loud but steady) don't get one.
+                        if (manifest?.Health is { Diverging: true } health)
+                        {
+                            var ranges = manifest.Parameters.Concat(manifest.TrackParameters).Where(p => p.SafeRange != null).Select(p => $"{p.Name} {p.SafeRange.Text()}").ToList();
+                            added["warning"] = $"{dll.Name} diverges (NaN or a runaway level) at some settings: {string.Join("; ", health.Problems.Take(4))}. " +
+                                               (ranges.Count > 0 ? $"param_set keeps you inside its safe ranges ({string.Join(", ", ranges)}). " : "") +
+                                               "Render and check it, or choose another machine.";
+                        }
                         return added;
                     }, c.Cancellation);
                     var m = r["machine"]!;

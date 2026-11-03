@@ -1,5 +1,7 @@
 # Fork (docs/specs/mcp-server.md §12.2, U1): unit tests for tools/machine_infer.py, fed value
-# tables whose meaning is known. Run: python3 -m unittest discover -s tools -p "test_machine_infer.py"
+# tables whose meaning is known; U2 (docs/specs/machine-safety.md §3.1): the health categories
+# (diverging, hot, needs a window), which effects get swept and the safe range's edge.
+# Run: python3 -m unittest discover -s tools -p "test_machine_infer.py"
 
 import math
 import os
@@ -155,6 +157,94 @@ class AgreementTests(unittest.TestCase):
         exact = {"min": 0, "max": 1000, "kind": "freq", "a": 20, "b": 20000}
         self.assertTrue(mi.agrees(e, exact, rows))
         self.assertFalse(mi.agrees({"kind": "linear", "a": 20, "b": 20000}, exact, rows))
+
+
+def db(x):
+    return 10 ** (x / 20)
+
+
+class LevelTests(unittest.TestCase):
+    """A level test's per-second peaks (linear) over its 4 s render, then over 30 s when it grew."""
+
+    def test_steady_under_full_scale_is_fine(self):
+        self.assertEqual(mi.level_verdict([db(-9)] * 4)[0], "ok")
+        self.assertEqual(mi.level_verdict([0.0] * 4)[0], "silent")
+
+    def test_loud_but_steady_is_hot(self):
+        v, facts = mi.level_verdict([db(12)] * 4)
+        self.assertEqual(v, "hot")
+        self.assertAlmostEqual(facts["peak_dbfs"], 12.0, places=1)
+        self.assertEqual(mi.level_verdict([db(59)] * 4)[0], "hot", "under +60 dBFS and steady")
+
+    def test_nan_infinity_or_above_plus_60_diverges(self):
+        v, facts = mi.level_verdict([db(-9)] * 4, nonfinite=True)
+        self.assertEqual((v, facts["peak_dbfs"]), ("diverging", "inf"))
+        self.assertEqual(mi.level_verdict([db(-9), db(70), db(70), db(70)])[0], "diverging", "above +60 dBFS, even steady")
+
+    def test_a_level_that_keeps_growing_needs_a_longer_look(self):
+        # The last second more than 6 dB over the second, still rising: a runaway or a long attack.
+        self.assertEqual(mi.level_verdict([db(-30), db(-20), db(-10), db(0)])[0], "growing")
+        self.assertEqual(mi.level_verdict([db(-30), db(-20), db(-17), db(-15)])[0], "ok", "5 dB: not growing")
+        self.assertEqual(mi.level_verdict([db(-40), db(-9), db(-9), db(-9)])[0], "ok", "an onset in the first second isn't growth")
+        self.assertEqual(mi.level_verdict([db(-20), db(-20), db(0), db(-6)])[0], "ok", "no longer rising at the end")
+
+    def test_over_30_s_a_runaway_keeps_growing_and_an_attack_settles(self):
+        runaway = [db(-30 + 1.5 * s) for s in range(30)]          # 1.5 dB a second, Jeskola Flanger's loop slowed down
+        self.assertEqual(mi.growth_verdict(runaway)[0], "diverging")
+        attack = [min(1.0, (s + 1) / 8) * db(-6) for s in range(30)]  # an 8 s linear attack to -6 dBFS
+        self.assertEqual(mi.growth_verdict(attack)[0], "ok")
+        hot_attack = [min(1.0, (s + 1) / 8) * db(6) for s in range(30)]
+        self.assertEqual(mi.growth_verdict(hot_attack)[0], "hot")
+        self.assertEqual(mi.growth_verdict([db(-9)] * 29 + [db(80)])[0], "diverging", "above +60 dBFS at the end")
+
+    def test_levels_stay_json(self):
+        _, facts = mi.level_verdict([0.0] * 4)
+        self.assertIsNone(facts["peak_dbfs"], "silence: null, not -Infinity")
+
+
+class HealthTests(unittest.TestCase):
+    def test_a_known_window_machine(self):
+        self.assertIn("WPF", mi.needs_window("Info", "TargetInvocationException: Exception has been thrown by the target of an invocation."))
+
+    def test_wpf_in_the_exception_needs_a_window(self):
+        why = mi.needs_window("Some Notes", "machine_add failed inside ReBuzz: TargetInvocationException: … → "
+                                            "System.InvalidOperationException: The calling thread must be STA, because many UI components require this.")
+        self.assertIsNotNone(why)
+        self.assertIsNotNone(mi.needs_window("X", "→ System.Windows.Markup.XamlParseException: 'Initialization of System.Windows.Controls.RichTextBox' threw"))
+
+    def test_other_load_failures_are_problems(self):
+        self.assertIsNone(mi.needs_window("Broken", "machine_add failed inside ReBuzz: DllNotFoundException: libfoo.so"))
+
+    def test_status(self):
+        self.assertEqual(mi.health_status(["feedback diverges at its maximum"], []), "unhealthy")
+        self.assertEqual(mi.health_status([], ["hot at its defaults (+2.1 dBFS peak)"]), "warn")
+        self.assertEqual(mi.health_status(["doesn't load"], [], window=True), "needs_window", "its own status, not unhealthy")
+        self.assertEqual(mi.health_status([], []), "ok")
+
+    def test_effects_swept_by_parameter_names(self):
+        names = ["freq", "depth", "feedback", "min. delay", "Resonance", "LM Q", "Output Gain", "FB PingPong", "Mix", "Quality", "Regen"]
+        self.assertEqual(mi.sweep_worthy(names), ["feedback", "Resonance", "LM Q", "Output Gain", "FB PingPong", "Regen"])
+
+
+class EdgeTests(unittest.TestCase):
+    def test_bisects_to_the_last_safe_value(self):
+        tried = []
+
+        def diverges(raw):
+            tried.append(raw)
+            return raw >= 120
+        self.assertEqual(mi.edge(64, 128, diverges), 119)
+        self.assertLessEqual(len(tried), 7, "about log2(64) tests")
+
+    def test_towards_the_minimum(self):
+        self.assertEqual(mi.edge(64, 0, lambda raw: raw <= 3), 4)
+
+    def test_only_the_end_diverges(self):
+        self.assertEqual(mi.edge(64, 128, lambda raw: raw >= 128), 127)
+        self.assertEqual(mi.edge(64, 0, lambda raw: raw <= 0), 1)
+
+    def test_next_to_the_default(self):
+        self.assertEqual(mi.edge(64, 65, lambda raw: True), 64)
 
 
 if __name__ == "__main__":

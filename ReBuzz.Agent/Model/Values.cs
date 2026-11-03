@@ -144,6 +144,8 @@ namespace ReBuzz.Agent.Model
         public bool TextsFirst { get; init; }
         /// <summary>The machine's own text for a raw value (null when it has none).</summary>
         public required Func<int, string> Describe { get; init; }
+        /// <summary>Where agents may set it (machine-safety.md §3.4), from its manifest; null: its whole range.</summary>
+        public SafeRange SafeRange { get; init; }
     }
 
     /// <summary>A number with a unit, normalised for comparison ("0.8 kHz" = 800 Hz, "250 ms" = 0.25 s).</summary>

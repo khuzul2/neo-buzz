@@ -53,7 +53,7 @@ namespace ReBuzz.AgentTests
             ["disconnect"] = new[] { "from", "to" },
             ["connection_set"] = new[] { "changes" },
             ["machine_describe"] = new[] { "machine", "group", "value_table", "table_points" },
-            ["param_set"] = new[] { "machine", "changes" },
+            ["param_set"] = new[] { "machine", "changes", "allow_unsafe" },
             ["param_get"] = new[] { "machine", "params", "track" },
             ["pattern_list"] = new[] { "machine" },
             ["pattern_create"] = new[] { "machine", "name", "length_beats" },

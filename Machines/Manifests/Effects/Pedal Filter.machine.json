@@ -8,8 +8,11 @@
  "summary": "Filter or eq (profiled draft): traits: filter or EQ; tail 0.0 s; latency 3 samples; gain -9.5 dB at the defaults.",
  "tracks": 0,
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "warn",
+  "problems": [
+   "hot with every parameter at its maximum at once (+15.5 dBFS peak), but with no parameter alone"
+  ],
+  "hot": true
  },
  "profile": {
   "effect": {
@@ -39,16 +42,31 @@
     "filter or EQ"
    ]
   },
-  "extremes": {
-   "min": {
-    "silent": false,
-    "sample_peak_dbfs": -32.72
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -15.56,
+    "growth_db": -0.42,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": -7.03
-   }
-  }
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": -9.15,
+     "growth_db": 0.23,
+     "verdict": "ok"
+    },
+    "max": {
+     "peak_dbfs": 15.51,
+     "growth_db": 0.38,
+     "verdict": "hot"
+    }
+   },
+   "swept_because": [
+    "every parameter at its maximum at once: hot",
+    "an effect with Resonance"
+   ],
+   "renders": 19
+  },
+  "sweeps": {}
  },
  "parameters": [
   {
