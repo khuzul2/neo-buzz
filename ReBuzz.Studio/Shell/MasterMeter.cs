@@ -74,7 +74,7 @@ namespace ReBuzz.Studio.Shell
             OverText = over;
             Limiting = limiting;
             bool on = over.Length > 0;
-            clip.Content = on ? over : "0 dB";
+            clip.Content = on ? over : "clip";
             clip.Background = on ? ClipBrush : Off;
             clip.Foreground = on ? Brushes.White : OffText;
             limit.Background = limiting ? LimitBrush : Off;

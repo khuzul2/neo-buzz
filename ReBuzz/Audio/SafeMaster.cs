@@ -36,7 +36,7 @@ namespace ReBuzz.Audio
         float latched;              // highest pre-limiter peak over the threshold since cleared; 0: none
         float peakL, peakR;         // pre-limiter peaks since TakePeaks
         float lowestGain = 1f;      // the limiter's lowest gain since TakeGain
-        long limitedFrames;         // frames the limiter turned down, since ReBuzz started
+        long limitedFrames;         // frames over the ceiling the limiter caught, since ReBuzz started (not its release)
         long scrubbed;              // NaN and infinite samples replaced, since ReBuzz started
         long limitedAtClear;
 
@@ -140,10 +140,10 @@ namespace ReBuzz.Audio
                 r *= rc;                                            // release towards unity
                 if (peak * (1f - r) > ceil) r = 1f - ceil / peak;   // instant attack
                 if (r < 1e-6f) r = 0;                               // back at unity exactly: untouched again
+                if (peak > ceil) limited++;
                 if (r > 0)
                 {
                     float g = 1f - r;
-                    limited++;
                     if (g < low) low = g;
                     for (int c = 0; c < channels; c++)
                         buffer[i + c] = Math.Clamp(buffer[i + c] * g, -ceil, ceil);    // the hard ceiling
@@ -164,10 +164,10 @@ namespace ReBuzz.Audio
             }
         }
 
-        /// <summary>Whether the limiter turned anything down since the clip indicator was last cleared.</summary>
+        /// <summary>Whether the limiter caught a peak over its ceiling since the clip indicator was last cleared.</summary>
         public bool LimitedSinceClear => Interlocked.Read(ref limitedFrames) > Interlocked.Read(ref limitedAtClear);
 
-        /// <summary>Frames the limiter turned down since ReBuzz started (a reader compares two reads).</summary>
+        /// <summary>Frames over the ceiling the limiter caught since ReBuzz started (a reader compares two reads).</summary>
         public long LimitedFrames => Interlocked.Read(ref limitedFrames);
 
         /// <summary>NaN and infinite samples it replaced with 0 since ReBuzz started.</summary>

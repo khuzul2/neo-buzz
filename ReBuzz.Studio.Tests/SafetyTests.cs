@@ -315,7 +315,9 @@ namespace ReBuzz.Studio.Tests
             // Quiet again, the gain comes back (about 50 ms), then the audio is untouched once more.
             var after = Enumerable.Range(0, 48000 * 2).Select(i => 0.5f * MathF.Sin(i / 2 * 0.06f)).ToArray();
             var plain = after.ToArray();
+            long caught = safe.LimitedFrames;
             safe.Process(after, 2, 48000);
+            Assert.That(safe.LimitedFrames, Is.EqualTo(caught), "a release isn't an over: the limiter 'acted' only on the peaks");
             Assert.That(after.Take(200), Is.Not.EqualTo(plain.Take(200)), "still releasing just after the peak");
             Assert.That(after.Skip(2 * 36000), Is.EqualTo(plain.Skip(2 * 36000)), "released (50 ms time constant): untouched again by 0.75 s");
 

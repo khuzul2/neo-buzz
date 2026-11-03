@@ -290,7 +290,7 @@ namespace ReBuzz.Agent
             Req("limiter", Object("The safety limiter on the audio device's output (renders get the true signal)",
                 Req("on", Boolean("On (the default)")),
                 Req("ceiling_dbfs", Number("Its ceiling")),
-                Req("acted", Boolean("It turned the output down since the clip indicator was cleared")))),
+                Req("acted", Boolean("It caught peaks over its ceiling since the clip indicator was cleared")))),
             Req("clip", Object("The master's clip indicator (before the limiter)",
                 Req("threshold_dbfs", Number("Overs above this latch")),
                 Opt("latched_over_dbfs", Number("The highest peak over the threshold since it was cleared; absent: none")))));

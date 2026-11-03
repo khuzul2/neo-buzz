@@ -530,7 +530,7 @@ namespace ReBuzz.Agent
                         Opt("latched_over_dbfs", Level("The highest peak over the clip threshold since the indicator was cleared", "dBFS")),
                         Req("clip_threshold_dbfs", Number("Overs above this latch")),
                         Req("limiter_on", Boolean("The safety limiter is on")),
-                        Req("limiter_acted", Boolean("It turned the output down during the window")))),
+                        Req("limiter_acted", Boolean("It caught peaks over its ceiling during the window")))),
                     Req("meters", Array(Object(null,
                         Req("source", String("Master or the machine")),
                         Req("seconds", Number("Audio measured")),
@@ -612,7 +612,7 @@ namespace ReBuzz.Agent
                         safety["latched_over_dbfs"] = over;
                         text += $" The master's clip indicator latched {over:+0.0;-0.0} dBFS (meters_read(clear_clip=true) clears it).";
                     }
-                    if (acted) text += " The safety limiter on the output turned it down: lower the mix.";
+                    if (acted) text += " The safety limiter on the output caught peaks over its ceiling: lower the mix.";
                     if (!playing) text += " The transport is stopped: these are the levels of what sounds on its own; transport(action=\"play\") first.";
                     return ToolResult.Ok(text, new JsonObject { ["playing"] = playing, ["meters"] = meters, ["safety"] = safety });
                 },
