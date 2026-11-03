@@ -231,6 +231,23 @@ namespace NeoBuzz.MachineTests
                 Assert.That(hash, Is.EqualTo(Pinned[name]), $"{name}: 0x{hash:X16} (pinned 0x{Pinned[name]:X16}); this platform computes different bits");
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static float Half(float x) => x * 0.5f;
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static double Half(double x) => x * 0.5;
+
+        [Test]
+        public void SubnormalsAreKept()
+        {
+            // IEEE subnormals on every platform (no flush-to-zero or denormals-are-zero mode), so tiny
+            // values round the same everywhere; the machines flush feedback state themselves (DspMath.Flush).
+            Assert.That(Half(1.17549435e-38f), Is.EqualTo(5.877472e-39f), "a subnormal float result");
+            Assert.That(Half(5.877472e-39f), Is.EqualTo(2.938736e-39f), "a subnormal float input");
+            Assert.That(Half(2.2250738585072014e-308), Is.EqualTo(1.1125369292536007e-308), "a subnormal double result");
+            Assert.That(Half(1.1125369292536007e-308), Is.EqualTo(5.562684646268003e-309), "a subnormal double input");
+        }
+
         // ── the rule for audio paths (docs/specs/machines.md §4) ─────────────────────
 
         static string MachinesDir([CallerFilePath] string here = "") =>

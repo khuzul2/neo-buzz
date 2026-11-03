@@ -148,7 +148,7 @@ Neo machines resolve through their exact mappings. Legacy machines resolve by se
 
 **A2–A3 as built.**
 - **Probes** subscribe to the first output connection's tap (it runs on the engine thread, in order), scale by that connection's gain and pad or trim to the master's length. Each gets its own id (`r3:Bass`).
-- **Renders wait for machines that are still preparing.** A managed machine can expose `public bool Busy`, and renders wait up to 5 s while any reports it. Neo Wave reports it while it builds a table in the background.
+- **Renders wait for machines that are still preparing.** A managed machine can expose `public bool Busy`, and renders wait up to 30 s while any reports it (with a warning if one still does). The wait runs no audio, so how long it takes changes nothing in the render: `Busy` must be current without a block being processed. Neo Wave reports it while a table its parameters choose is still being built in the background.
 - **Presets** are read from the gear's `.prs.xml`/`.prs` beside its DLL, without ReBuzz's dialogs. Loading one is an undo step that captures the whole machine state, data included.
 - **Snapshots** live for the session in the host. A restore is one undo step made of parameter, flag and connection actions.
 - **Song markers** are a new `SongMarkerStore` in the engine, saved in a "SongMarkers" subsection that upstream ignores.

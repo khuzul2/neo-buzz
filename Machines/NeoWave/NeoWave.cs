@@ -73,7 +73,7 @@ namespace NeoBuzz.Wave
         /// Agent server (mcp-server.md A3): true while a chosen table is still being built in the
         /// background. Offline renders wait for it, so they don't start silent.
         /// </summary>
-        public bool Busy => Engine.TablesPending;
+        public bool Busy => Engine.TablesBuilding;
 
         /// <summary>
         /// Agent server (mcp-server.md A3, machine_data_import): "wavetable" loads a WAV as the user
