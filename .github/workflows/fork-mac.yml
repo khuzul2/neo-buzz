@@ -109,14 +109,6 @@ jobs:
       if: always()
       run: python3 tools/headless-midi.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/midi"
 
-    # Diagnostic (temporary): the same test with the MIDI timing threads left without a real-time policy.
-    - name: MIDI and Link on macOS, ordinary-priority waits (diagnostic)
-      if: always()
-      continue-on-error: true
-      env:
-        REBUZZ_REALTIME_WAITS: '0'
-      run: python3 tools/headless-midi.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/midi-plain"
-
     - name: Summary
       if: always()
       run: |

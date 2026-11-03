@@ -67,8 +67,7 @@ namespace ReBuzz.Platform
                     if (realtimeThread != id)
                     {
                         realtimeThread = id;
-                        if (Environment.GetEnvironmentVariable("REBUZZ_REALTIME_WAITS") != "0")
-                            RealtimeThread.SetTimeConstraint(0, 0.0002, 0.001);
+                        RealtimeThread.SetTimeConstraint(0, 0.0002, 0.001);
                     }
                     mach_wait_until(mach_absolute_time() + (ulong)(micros * machTicksPerMicro));
                     return;

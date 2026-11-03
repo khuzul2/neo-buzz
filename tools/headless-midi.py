@@ -243,7 +243,8 @@ if rebuzz_out is not None:
     cm.MIDIInputPortCreate(client, cfstr("from ReBuzz"), reader, None, ctypes.byref(in_port))
     cm.MIDIPortConnectSource(in_port, rebuzz_out, None)
     time.sleep(0.3)
-    check(call("song_set", tempo_bpm=120, song_end_beats=64)[0], "song_set 120 BPM")
+    # The loop end too: the song stops there when not looping (it starts at 4 beats, 2 s here).
+    check(call("song_set", tempo_bpm=120, song_end_beats=64, loop_end_beats=64)[0], "song_set 120 BPM")
     check(call("transport", action="play", at="1.1")[0], "transport play")
     time.sleep(2.0)
     playing = list(received)
