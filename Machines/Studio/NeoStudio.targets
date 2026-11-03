@@ -1,0 +1,28 @@
+<Project>
+  <!--
+    Fork (docs/specs/studio-mvp.md S1): a Neo machine's studio flavour: the portable build
+    (../Portable/NeoPortable.targets: net10.0, "<Name>.NET.dll", manifest and presets beside it)
+    with its editor, on the kit's Avalonia backend (NeoBuzz.Editor.Avalonia). The editor's source
+    is the one WPF builds; AVALONIA picks the kit (NeoBuzz.Editor.Avalonia/WpfNames.cs). Its GUI
+    factory hands the studio an Avalonia control. The studio provides Avalonia at run time; the
+    editor-less portable flavour stays for rebuzz-headless. Each machine has a tiny project here
+    that sets NeoFolder, NeoName and NeoKind and imports this file; Studio.proj builds them all.
+  -->
+  <Import Project="../Portable/NeoPortable.targets" />
+
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);AVALONIA</DefineConstants>
+    <EnableAvaloniaXamlCompilation>false</EnableAvaloniaXamlCompilation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(M)$(NeoFolder)\*Editor.cs" />
+    <Compile Include="$(M)NeoBuzz.Editor\Params\**\*.cs" Link="Shared\EditorParams\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoBuzz.Editor.Avalonia\**\*.cs" Link="Shared\EditorAvalonia\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The studio's own Avalonia (studio-mvp.md §1: MIT); not copied beside the machine. -->
+    <PackageReference Include="Avalonia" Version="12.1.4" PrivateAssets="all" />
+  </ItemGroup>
+</Project>
