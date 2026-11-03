@@ -5380,7 +5380,7 @@
      "reverb"
     ]
    },
-   "cpu_ms_per_s": 2.4,
+   "cpu_ms_per_s": 19.5,
    "type": "reverb",
    "level_test": {
     "defaults": {
@@ -5403,41 +5403,20 @@
     "swept_because": [
      "every parameter at its maximum at once: hot"
     ],
-    "renders": 47
+    "renders": 34
    },
-   "sweeps": {
-    "High damping": {
-     "min": {
-      "peak_dbfs": null,
-      "over_seconds": 30,
-      "guard": "+60.6 dBFS",
-      "verdict": "diverging",
-      "raw": 0,
-      "text": "1.00 kHz"
-     }
-    }
-   },
-   "safe_ranges": {
-    "High damping": {
-     "min": 52,
-     "max": 1000,
-     "min_text": "1.17 kHz",
-     "max_text": "20.0 kHz",
-     "reason": "diverges at its minimum (1.00 kHz: +60.6 dBFS: the engine's guard caught it)"
-    }
-   },
-   "seconds": 29.6,
-   "platform": "windows",
+   "sweeps": {},
+   "seconds": 24.9,
+   "platform": "linux",
    "date": "2026-11-03",
-   "problems": [
-    "High damping diverges at its minimum (1.00 kHz: +60.6 dBFS: the engine's guard caught it); safe from 1.17 kHz to 20.0 kHz (raw 52–1000)"
-   ],
+   "problems": [],
    "warnings": [],
-   "hot": [],
+   "hot": [
+    "hot with every parameter at its maximum at once (+2.6 dBFS peak), but with no parameter alone"
+   ],
    "notes_profiler": [],
    "generated": true,
-   "diverging": true,
-   "health": "unhealthy"
+   "health": "warn"
   },
   "Neo Wave": {
    "gear": "Neo Wave",
@@ -6929,7 +6908,7 @@
      "delay"
     ]
    },
-   "cpu_ms_per_s": 64.5,
+   "cpu_ms_per_s": 0.0,
    "type": "delay",
    "level_test": {
     "defaults": {
@@ -6944,49 +6923,26 @@
       "verdict": "ok"
      },
      "max": {
-      "peak_dbfs": -14.56,
-      "growth_db": 0.94,
+      "peak_dbfs": -14.85,
+      "growth_db": 0.61,
       "verdict": "ok"
      }
     },
     "swept_because": [
      "an effect with Feedback"
     ],
-    "renders": 30
+    "renders": 19
    },
-   "sweeps": {
-    "Feedback": {
-     "max": {
-      "peak_dbfs": 59.88,
-      "over_seconds": 30,
-      "guard": "+60.0 dBFS",
-      "verdict": "diverging",
-      "raw": 95,
-      "text": "95"
-     }
-    }
-   },
-   "safe_ranges": {
-    "Feedback": {
-     "min": 0,
-     "max": 78,
-     "min_text": "0",
-     "max_text": "78",
-     "reason": "diverges at its maximum (95: +60.0 dBFS: the engine's guard caught it)"
-    }
-   },
-   "seconds": 18.8,
+   "sweeps": {},
+   "seconds": 5.6,
    "platform": "linux",
    "date": "2026-11-03",
-   "problems": [
-    "Feedback diverges at its maximum (95: +60.0 dBFS: the engine's guard caught it); safe from 0 to 78 (raw 0–78)"
-   ],
+   "problems": [],
    "warnings": [],
    "hot": [],
    "notes_profiler": [],
    "generated": false,
-   "diverging": true,
-   "health": "unhealthy"
+   "health": "ok"
   },
   "Pedal SH101": {
    "gear": "Pedal SH101",

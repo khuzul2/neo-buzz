@@ -2,7 +2,8 @@
 // Neo Verb (docs/specs/machines.md §5): pre-delay → input diffusion (allpasses) → 16-line feedback
 // delay network (Hadamard mix, modulated delays, per-line low/high shelves set from the decay
 // times so T60 is exact in the mid band) plus early reflections → width → tone → mix. Freeze
-// holds the tail at unity gain; shimmer feeds the tail back an octave up.
+// holds the tail at unity gain; shimmer feeds the tail back an octave up. Every line's loop gain
+// stays below 1 at every frequency, whatever the settings (see Bounded).
 
 using System;
 using NeoBuzz.Dsp;
@@ -20,6 +21,7 @@ namespace NeoBuzz.Verb
         const double LowCrossover = 250;
         const double HighDecayRatio = 0.25;
         const double MaxModDepth = 0.0012;   // seconds either side
+        internal const double MaxOvershoot = 3;  // a band may ring this many times longer than set (see Bounded)
         const float OutputScale = 0.42f;
 
         // Delay ranges (ms at size 1) and diffusion per mode.
@@ -182,9 +184,9 @@ namespace NeoBuzz.Verb
                 }
                 else
                 {
-                    lineGain[i] = (float)(gMid / at1k);
                     shelfLowA[i] = (float)aLow;
                     shelfHighA[i] = (float)aHigh;
+                    lineGain[i] = Bounded((float)(gMid / at1k), shelfLowA[i], shelfHighA[i], Math.Max(gLow, gMid));
                 }
             }
 
@@ -267,6 +269,58 @@ namespace NeoBuzz.Verb
             values.Clean();
         }
 
+        // Fork (neo-buzz, docs/specs/machine-safety.md §1): dividing out the shelves' gain at 1 kHz
+        // is exact only while 1 kHz is in the flat mid band. With the damping corner low (below about
+        // 1.4 kHz at the defaults, up to 2.9 kHz with Low decay ×4) the high shelf already cuts at
+        // 1 kHz, and dividing that out lifted the slowest band (the lows, or the mid band below the
+        // corner) over unity: the tail grew without bound (+347 dBFS). Now each line's peak loop gain
+        // over frequency, computed exactly from its shelves, is checked against the slowest band's
+        // set gain. Where that band would ring more than MaxOvershoot times longer than set, or never
+        // die, the gain is lowered so it rings as set (the mid band at the set Decay, or the lows at
+        // the set Low decay), blended in continuously from that edge. Anything that rings less than
+        // that is untouched, bit for bit (the defaults and every factory preset). So no line's gain
+        // reaches gSlowest^(1/MaxOvershoot) < 1 at any frequency, and with the orthonormal mix the
+        // network decays, for every setting (Freeze holds it at unity by design).
+        float Bounded(float gain, float aLow, float aHigh, double gSlowest)
+        {
+            double peak = ShelfPeak(aLow, aHigh, lowG, highG);
+            // The loss per pass relative to the design: 1 as set, 1/3 three times longer, ≤ 0 growing.
+            double loss = PortableMath.Log(gain * peak) / PortableMath.Log(gSlowest);
+            const double edge = 1 / MaxOvershoot;
+            if (loss >= edge) return gain;
+            double target = loss <= 0 ? 1 : edge + (1 - edge) * (1 - loss / edge);
+            return (float)(PortableMath.Pow(gSlowest, target) / peak);
+        }
+
+        /// <summary>
+        /// The peak over frequency of |low shelf · high shelf| as the loop runs them. A TPT one-pole
+        /// with coefficient G is exact at every frequency with its prewarped corner c = G/(1 − G):
+        /// with x = tan²(ω/2), |H|² = N(x)/D(x), a ratio of quadratics, so the peak is at DC, at
+        /// Nyquist, or where N′D − ND′ = 0 (a quadratic).
+        /// </summary>
+        static double ShelfPeak(double aLow, double aHigh, double lowG, double highG)
+        {
+            double cl = lowG / (1 - lowG), ch = highG / (1 - highG);
+            double p = 1 / (cl * cl), q = 1 / (ch * ch);
+            // N = (aLow² + p·x)(1 + aHigh²·q·x), D = (1 + p·x)(1 + q·x).
+            double n0 = aLow * aLow, n1 = p + n0 * aHigh * aHigh * q, n2 = p * q * aHigh * aHigh;
+            double d1 = p + q, d2 = p * q;
+            double best = Math.Max(n0, aHigh * aHigh);
+            double a = n2 * d1 - n1 * d2, b = 2 * (n2 - n0 * d2), c = n1 - n0 * d1;
+            double disc = Math.Max(0, b * b - 4 * a * c);
+            double h = -0.5 * (b + (b < 0 ? -Math.Sqrt(disc) : Math.Sqrt(disc)));
+            if (a != 0) Consider(h / a);
+            if (h != 0) Consider(c / h);
+            return Math.Sqrt(best);
+
+            void Consider(double x)
+            {
+                if (!(x > 0) || double.IsInfinity(x)) return;
+                double f = (n0 + x * (n1 + x * n2)) / (1 + x * (d1 + x * d2));
+                if (f > best) best = f;
+            }
+        }
+
         static float Level(double db) => double.IsNegativeInfinity(db) ? 0f : (float)DspMath.DbToGain(db);
 
         float TptG(double hz)
@@ -293,6 +347,10 @@ namespace NeoBuzz.Verb
             double sr = a + (1 - a) * re, si = (1 - a) * im;
             return Math.Sqrt(sr * sr + si * si);
         }
+
+        /// <summary>For the tests: line <paramref name="i"/>'s length (samples), gain and shelves, as the loop runs them.</summary>
+        internal (double Length, float Gain, float LowA, float HighA, float LowG, float HighG) Line(int i) =>
+            (lengths[i], lineGain[i], shelfLowA[i], shelfHighA[i], lowG, highG);
 
         /// <summary>The decay time (T60, s) of the tail at a frequency, as set (for the editor).</summary>
         public static double DecayAt(ParamValues values, double hz)
