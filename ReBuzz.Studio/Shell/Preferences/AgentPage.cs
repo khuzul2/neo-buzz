@@ -80,8 +80,8 @@ namespace ReBuzz.Studio.Shell.Preferences
 
         void CommitPort()
         {
-            if (Filling || port.Text?.Trim() == agent.Settings.Port) return;
-            agent.Set(agent.Settings.AllowAgents, port.Text);
+            if (Filling || port.Text?.Trim() == agent.PortNumber.ToString()) return;
+            agent.Set(agent.Allowed, port.Text);
             Refresh();
         }
 
@@ -92,10 +92,10 @@ namespace ReBuzz.Studio.Shell.Preferences
             Filling = true;
             try
             {
-                allow.IsChecked = agent.Settings.AllowAgents;
-                if (!port.IsFocused) port.Text = agent.Settings.Port;
-                state.Text = agent.Listening ? $"Listening on {agent.Url}" : agent.Settings.AllowAgents ? agent.Status.Replace("Agent: ", "") : "Off: agents can't connect.";
-                if (agent.Settings.AllowAgents && !agent.Listening) state.Foreground = Problem;
+                allow.IsChecked = agent.Allowed;
+                if (!port.IsFocused) port.Text = agent.PortNumber.ToString();
+                state.Text = agent.Listening ? $"Listening on {agent.Url}" : agent.Allowed ? agent.Status.Replace("Agent: ", "") : "Off: agents can't connect.";
+                if (agent.Allowed && !agent.Listening) state.Foreground = Problem;
                 else state.ClearValue(TextBlock.ForegroundProperty);
                 command.Text = agent.ConnectCommand;
                 command.Opacity = agent.Listening ? 1 : 0.5;

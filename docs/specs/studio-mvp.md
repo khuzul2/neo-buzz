@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Planned 2026-11-03. P2 done (mac-engine.md) except the user's hands-on Mac test |
+| Status | S0–S9 built 2026-11-03 (§7). The exit test passes headless on Linux and arm64, and the A7 live scenarios pass against the studio app on Linux (Xvfb) and against ReBuzz.app on macOS CI. Left: the user's hand test on a Mac (§5), and P2's hands-on test (mac-engine.md) |
 | Scope | cross-platform.md §5.2 P3: ReBuzz's studio UI on Avalonia, Mac first. Windows keeps the WPF app until P4 |
 | Exit | On a Mac: compose a song from scratch with Neo and Pedal machines; old songs open (native machines as placeholders) and save back without loss; the MCP server works in studio mode |
 | Related | cross-platform.md (D1–D5, §3.1 O2), mac-engine.md (the engine on macOS), machines.md §4 (the Neo editor kit), session-view.md (the Session View) |
@@ -79,8 +79,21 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 ## 5. What only the user can do
 
 - **Try it on a Mac:** download the CI's `ReBuzz.app`, clear the quarantine flag, open it. The feel matters here: scrolling, fonts, Retina, keyboard shortcuts. So does the menu bar.
-- **The exit test by hand:** a song from scratch, and an old song of yours.
+- **The exit test by hand:** a song from scratch, and an old song of yours. The checklist below.
 - **Signing** (optional, P5): a Developer ID, if the app should open without the quarantine step on other Macs.
+
+**The hand test** (about ten minutes, on an Apple-silicon Mac):
+1. **Get it.** GitHub → Actions → *Fork Mac* → the latest green run → Artifacts → `ReBuzz-macos-arm64`. It is a zip holding `ReBuzz-macos-arm64.zip`: unzip both (Safari unzips the first).
+2. **Unblock it.** In Terminal: `xattr -dr com.apple.quarantine ~/Downloads/ReBuzz.app` (where it landed). Then double-click it.
+3. **Build a chain.** Machines tab: right-click → New ▸ Generators ▸ Neo Poly, New ▸ Effects ▸ Neo Verb. Shift-drag Poly → Verb, Verb → Master. Right-click the Poly → Master arrow → disconnect.
+4. **Turn a knob.** Double-click Poly: its editor. Drag F1 cutoff. ⌘Z undoes it.
+5. **Type a pattern.** F2. Click the grid, Tab to the Note column, type `z c b q`.
+6. **Arrange.** F4. Bar 1 of Poly's track has the pattern already; click bar 2, type `0`. Click bar 1, ⌘B; bar 2, ⌘E: the loop is those two bars.
+7. **Play.** Loop on (the transport bar), F5: you hear it, looping. F8 stops.
+8. **Save, reopen.** ⇧⌘S (save as `.bmxml`), ⌘N, ⌘O it again, F5: the same.
+9. **An old song of yours.** ⌘O a `.bmx` made on Windows: native machines show "missing", Neo and Pedal machines play. ⇧⌘S a copy, reopen it: the same machines, patterns and arrangement.
+10. **An agent.** ⇧⌘A: tick Allow agents, Copy the line. Paste it in a terminal (`claude mcp add --transport http rebuzz …`). In Claude Code: "What's in my ReBuzz song?" The status line shows `Agent: studio_status…`, and the answer names your machines.
+11. **Look and feel.** Fonts and Retina sharpness, trackpad scroll and pinch in the machine view, the menu bar (what it shows with a machine window in front), ⌘ shortcuts.
 
 ## 6. Risks
 
@@ -352,3 +365,30 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 - The engine's messages during an agent call become the call's error, not a dialog (`StudioMessages`, as WPF's `UserMessagesViaMessageBox`).
 - **The views follow the agent's edits** through the engine's events, as they follow the user's: the machine view (song and machine events), the Session View (`SessionLayout.Changed` and its 50 ms poll), the transport, title and status (the window's 100 ms timer), the Neo editors (their parameters, as undo shows).
 - **Test** (`AgentServerTests`): the page sets a free port and allows agents; the line has the URL and token; Copy puts it on the clipboard. A client calls `initialize`, `studio_status` (mode "studio") and `machine_add` over HTTP while the test pumps the UI thread; the machine view then hits the new machine at its box, wired to Master (`agent-machine-added`, `prefs-agent`). A wrong token and, after New token, the old one are refused; undo takes the machine back; turned off, nothing listens.
+
+**S9, the exit test** (`ReBuzz.Studio.Tests/ExitTests.cs`; `tools/headless-live.py`, `tools/song-roundtrip.py`; the start-up option in `Program.cs` and `Shell/AgentServer.cs`).
+- **A song from scratch, by the UI alone** (headless, on Linux and arm64), with simulated mouse and keys, each step checked against the engine:
+  - *Machine view:* from a new song, the gear menu adds Neo Poly, Pedal SH101, Pedal Chorus and Neo Verb. Master is dragged right. Shift-drags wire the synths → Chorus → Verb → Master, and the amp control takes the synths' direct wires to Master away. It sets SH101's wire to −12.2 dB and pans Verb's.
+  - *Machine windows:* a double click opens Neo Poly's editor, where a drag turns F1 cutoff (that parameter alone, one undo step), and SH101's parameter window, where a slider drag lowers its Cutoff.
+  - *Pattern tab* (F2): the drop-downs, clicked, pick each synth and pattern; New pattern makes Poly's 01; notes are typed after a click on the grid and Tab (SH101's in its Note column, the only way it plays).
+  - *Sequence tab* (F4): pattern keys place them; ⌘/Ctrl+B and E set the loop (16–32) and, pressed again, the song end (32). The BPM box takes 132; Loop goes on.
+  - *Play:* F5, the engine's ticks rendered offline (a WorkManager, as S6's test), 48 ticks: the position goes back at the loop's end. The Master is heard (peak −14 dBFS), every sample finite, under +12 dBFS. F8 stops.
+  - *Session View* (Ctrl+Tab): a slot's menu assigns SH101's 00, its ▶ launches it, it plays; Stop all, Back to arrangement.
+  - *Saved and reopened:* ⇧⌘/Ctrl+Shift+S as BMXML and BMX, ⌘/Ctrl+N, ⌘/Ctrl+O each. The same machines (gear, place, tracks, data, every state parameter), wires (amp, pan), patterns (the editor's events and the engine's columns), pattern editors' data, sequences, markers, tempo and session slots. The same play renders bit-identical samples.
+  - Screenshots: `exit-1-empty` to `exit-11-reopened-bmx`.
+- **Old songs** (the same test class): the 37 Buzz songs in the repository (the machines' demos and bmxplay's), made on Windows, open through File ▸ Open.
+  - 35 open. Every native machine is a placeholder ("missing"); the machine view, the sequence editor, the Pattern tab (F2: the pattern it names in the Modern Pattern Editor, the old patterns converted) and the Session View show them.
+  - Each is saved as BMX and BMXML, reopened and saved again. `song-roundtrip.py --compare`, the tool's own checks on saves made elsewhere, finds the two saves the same and nothing lost.
+  - Two (FSM Kick's, Makk M4's) have no PARA section and don't open, as on Windows without those machines.
+  - None of them has pattern editor data (they predate it). `--windows-style` writes Modern Pattern Editor data, in the editor's format, into the richest one; it opens in the studio and saves byte for byte both ways (`--check-windows-style`).
+  - Screenshots: `exit-old-machines`, `-sequence`, `-pattern`, `-session`, `-windows-style`.
+- **The MCP server on the real app.**
+  - `ReBuzz.Studio --agent-port <port> [--agent-token <token>]` allows agents for one run, on that port with that token (else the saved one), whatever Preferences ▸ Agent says, and saves nothing. The page shows it; a change there ends it. Tested headless too.
+  - `tools/headless-live.py` gained Streamable HTTP. `--studio <app>` starts the app with audio, a settings folder of its own and a fresh token, waits for its server, runs the scenarios and asks it to quit (SIGTERM: it has unsaved changes). `--url <url> --token <token>` drives one already running.
+  - New scenarios, for rebuzz-headless too: a Session View clip launched, heard and stopped; a two-bar take recording what midi_play plays into it on the bar. With the old ones (midi_play, meters_read, the transport in real time, four synths, a render with the device open), that is A7's live set.
+  - CI: Linux runs it on Xvfb with the null sink; the Mac job runs it against `ReBuzz.app` after the smoke start, with `--expect-workgroup`.
+- **Found:**
+  - **BMXML songs replay their stateless values when they open** (the engine, Windows too). `BMXMLFile.CopyParameters` gives each machine the last saved value of every parameter, notes included; BMX's loader (`BMXFile.CopyParameters`) gives state parameters only, as Buzz does. So a song saved after playing opens with its last note sounding until a note-off comes. The fix is one condition there (state, not a note, not the input group), but it changes Windows' engine, so it is left to the user. The test sets those values to "no value" before saving.
+  - A machine's pattern editor without patterns (Master's, made when Master is selected) isn't in a BMX file, which links editors through patterns; BMXML keeps it. Nothing is lost.
+  - **Fixed in the studio:** after a song opened, F2 showed the Pattern tab naming a pattern above an empty page, until another pattern was picked. The loader sets several patterns and machines in a row, and the last editor it hands over can be another machine's, or none. Now the page follows the engine's pattern when its update runs, and asks the engine for that pattern's editor when another one, or none, is showing (`PatternPage.ShowPatternsEditor`; only the newest page asks, so two windows' pages can't take it from each other forever).
+- **Not done:** the hand test (§5). No real Windows song with pattern editor data was available (the Windows-style one is built from the editor's format code).

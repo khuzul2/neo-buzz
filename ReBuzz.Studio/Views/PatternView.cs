@@ -239,7 +239,14 @@ namespace ReBuzz.Studio.Views
         void OnPatternChanged(IPattern p)
         {
             if (p == null) return;
-            Dispatcher.UIThread.Post(() => Show(p.Machine, p));
+            // The engine's pattern when this runs (S9): a song's loader sets several in a row, and the
+            // page shows the last, not each in turn.
+            Dispatcher.UIThread.Post(() =>
+            {
+                var now = core.PatternEditorPattern;
+                if (now?.Machine == null || !now.Machine.Patterns.Contains(now)) now = p;
+                Show(now.Machine, now);
+            });
         }
 
         void OnMachineChanged(IMachine m)
@@ -302,8 +309,36 @@ namespace ReBuzz.Studio.Views
             }
             if (pattern == null && m != null && m.Patterns.Count == 0)
                 editorHost.Content = null;
+            ShowPatternsEditor();
             UpdateEmpty();
             PatternView.RaisePatternShown(pattern);
+        }
+
+        bool requesting;
+
+        /// <summary>
+        /// The pattern the choosers name is the one whose editor shows (S9). The engine can hand the page
+        /// another machine's editor, or none, after the pattern was chosen: a song's loader does, setting
+        /// several patterns and machines as it opens. Then the tab named a pattern above an empty page
+        /// until another pattern was picked. Only for the
+        /// engine's pattern editor pattern, which the page follows (OnPatternChanged), and only by the
+        /// newest page (two windows' pages would take the control from each other forever): it settles.
+        /// </summary>
+        void ShowPatternsEditor()
+        {
+            if (requesting || PatternView.Page != this || pattern == null || pattern != core.PatternEditorPattern
+                || pattern.Machine is not MachineCore owner || owner.EditorMachine == null) return;
+            var control = core.MachineManager.GetPatternEditorControl(owner.EditorMachine);
+            if (control == null || editorHost.Content == control) return;
+            requesting = true;
+            try
+            {
+                core.SetPatternEditorPattern(pattern);      // links the editor and hands its control over (OnEditorControl)
+            }
+            finally
+            {
+                requesting = false;
+            }
         }
 
         void Follow(IMachine m)
