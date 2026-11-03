@@ -5,7 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+#if WINDOWS
 using System.Windows;
+#endif
 using WDE.ModernPatternEditor.Actions;
 using WDE.ModernPatternEditor.MPEStructures;
 using static WDE.ModernPatternEditor.PatternEditorUtils;
@@ -437,7 +439,7 @@ namespace WDE.ModernPatternEditor
                     if (parameterColumn.PatternColumn.Parameter == parameter && parameterColumn.PatternColumn.Track == track)
                     {
                         // Touching so UI elements so dispatcher...
-                        Application.Current.Dispatcher.BeginInvoke((Action)(() =>
+                        Editor.Dispatcher.BeginInvoke((Action)(() =>
                         {
                             var digit = parameterColumn.GetDigitAtTime(playPosition);
                             foreach (var a in parameterColumn.EditValue(digit, value))
@@ -546,7 +548,7 @@ namespace WDE.ModernPatternEditor
             if (machinePatternColumnData.midiNote.column != null)
             {
                 IParameter noteParameter = machinePatternColumnData.midiNote.column.Parameter;
-                Application.Current.Dispatcher.Invoke(() =>
+                Editor.Dispatcher.Invoke(() =>
                 {
                     using (new ActionGroup(Editor.EditContext.ActionStack))
                     {
@@ -631,7 +633,7 @@ namespace WDE.ModernPatternEditor
                             if (cutEvents.Count() == 0)
                             {
                                 int cutTime = columnCut.GetRelativeTimeInRowToParamValue(playPosition);
-                                Application.Current.Dispatcher.Invoke(() =>
+                                Editor.Dispatcher.Invoke(() =>
                                 {
                                     Editor.DoAction(new MPESetOrClearEventsAction(pattern, columnCut, new PatternEvent[] { new PatternEvent() { Time = cutTimeQ, Value = cutTime } }, true));
                                 });
@@ -641,7 +643,7 @@ namespace WDE.ModernPatternEditor
                 }
                 else
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Editor.Dispatcher.Invoke(() =>
                     {
                         using (new ActionGroup(Editor.EditContext.ActionStack))
                         {

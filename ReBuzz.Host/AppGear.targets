@@ -9,6 +9,17 @@
     <MSBuild Projects="$(MSBuildThisFileDirectory)..\Machines\Portable\Portable.proj" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
   </Target>
 
+  <!-- The Modern Pattern Editor (studio-mvp.md S6), the default pattern editor, in Gear/Generators as on
+       Windows: built for net10.0 from its WPF sources (ModernPatternEditor/Portable). Restored on its
+       own first, so a clean build sees its packages. -->
+  <PropertyGroup>
+    <PatternEditorProject Condition="'$(PatternEditorProject)' == ''">$(MSBuildThisFileDirectory)..\ModernPatternEditor\Portable\ModernPatternEditor.Portable.csproj</PatternEditorProject>
+  </PropertyGroup>
+  <Target Name="PatternEditorGear" AfterTargets="Build" Condition="'$(SkipNeoGear)' != 'true'">
+    <MSBuild Projects="$(PatternEditorProject)" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_PatternEditorRestore=true" />
+    <MSBuild Projects="$(PatternEditorProject)" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
+  </Target>
+
   <!-- The Link helper, once built with CMake (LinkHelper/CMakeLists.txt, into build/LinkHelper), beside
        the app, where LinkClient looks for it (mac-engine.md M6). Without it, Link stays off. -->
   <Target Name="LinkHelper" AfterTargets="Build">

@@ -1836,6 +1836,14 @@ namespace ReBuzz.Core
             }
         }
 
+        /// <summary>
+        /// Fork (docs/specs/studio-mvp.md S6): a machine whose patterns a song loader is making, and
+        /// whose built-in contents go to an editor it makes next (BuiltInPattern.ToPXP). Making a
+        /// pattern doesn't give it an editor of its own meanwhile, which would stay in the song unused
+        /// (a machine that is ready while it loads got one: a managed machine, or a placeholder).
+        /// </summary>
+        internal MachineCore PatternsAwaitingEditor;
+
         public void SetPatternEditorPattern(IPattern p)
         {
             PatternEditorPattern = p;
@@ -1847,7 +1855,7 @@ namespace ReBuzz.Core
                     return;
 
                 var em = mc.EditorMachine;
-                if (em == null)
+                if (em == null && mc != PatternsAwaitingEditor)
                 {
                     // Create editor
                     CreateEditor(mc, null, null);
