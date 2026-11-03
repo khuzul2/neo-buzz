@@ -79,6 +79,7 @@ namespace ReBuzz.Audio
 
             workOneList = WorkOneList;
             workOneGroups = WorkOneGroups;
+            workOneRecursive = WorkOneRecursive;
 
             var master = buzzCore.SongCore.MachinesList.FirstOrDefault(m => m.DLL.Info.Type == MachineType.Master);
             var masterGlobalParameters = master.ParameterGroupsList[1].ParametersList;
@@ -781,6 +782,11 @@ namespace ReBuzz.Audio
                 return workSamplesCount;
             var master = buzzCore.SongCore.MachinesList[0];
 
+            // Fork (audio hygiene): a job for every dispatch this buffer can make (each machine
+            // once, each input once), made once and reused (RenderJobs).
+            if (multiThreadingEnabled)
+                renderJobs.BeginBuffer(RenderCapacity());
+
             if (!multiThreadingEnabled)
             {
                 if (engineSettings.UseCachedWorkOrder)
@@ -870,14 +876,8 @@ namespace ReBuzz.Audio
                 else
                 {
                     dispatchSamples = workSamplesCount;
-                    workTasks.Clear();
-
                     int n = FillAndSortDesc();
-                    for (int s = 0; s < n; s++)
-                        workTasks.Add(AudioEngine.TaskFactoryAudio.StartNew(workOneGroups, sortScratch[s]));
-
-                    // Wait all tasks to complete
-                    Task.WaitAll(workTasks);
+                    RunAll(workOneGroups, sortScratch, n);
                 }
             }
         }
@@ -885,6 +885,7 @@ namespace ReBuzz.Audio
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         internal void HandleWorkAlgorithmRecursive(MachineCore master, int numRead)
         {
+            recursiveSamples = numRead;
             workSet.Clear();
 
             // 1. Get machines that can be processed
@@ -897,8 +898,45 @@ namespace ReBuzz.Audio
             HandleWorkRecursive(master, numRead);
         }
 
-        readonly List<Task> workTasks = new List<Task>(100);
         private readonly EngineSettings engineSettings;
+
+        // Fork (audio hygiene): dispatch without allocating (RenderJobs): the jobs, the join the
+        // lists and groups wait on, and the jobs a list or group queued (audio thread only).
+        readonly RenderJobs renderJobs = new RenderJobs();
+        readonly RenderJoin listJoin = new RenderJoin();
+        RenderJobs.Job[] listJobs = new RenderJobs.Job[64];
+        private readonly Action<object> workOneRecursive;
+        private int recursiveSamples;
+
+        /// <summary>Dispatches this buffer can make: each machine once (lists, groups) and each input once (recursive).</summary>
+        int RenderCapacity()
+        {
+            var machines = buzzCore.SongCore.MachinesList;
+            int n = machines.Count + 1;
+            for (int i = 0; i < machines.Count; i++)
+                n += machines[i].AllInputs.Count;
+            return n;
+        }
+
+        /// <summary>
+        /// Runs <paramref name="body"/> for <paramref name="items"/>[0..<paramref name="n"/>) on the
+        /// render threads and waits for them all, helping with those not yet started (Task.WaitAll's
+        /// inlining). Audio thread.
+        /// </summary>
+        void RunAll(Action<object> body, MachineCore[] items, int n)
+        {
+            if (listJobs.Length < n)
+                listJobs = new RenderJobs.Job[Math.Max(n, listJobs.Length * 2)];
+            listJoin.Begin(n);
+            for (int i = 0; i < n; i++)
+                listJobs[i] = renderJobs.Queue(body, items[i], listJoin);
+            for (int i = n - 1; i >= 0; i--)
+            {
+                listJobs[i]?.TryRun();
+                listJobs[i] = null;
+            }
+            listJoin.Wait();
+        }
 
         // Interim §5: reused scratch + cached non-capturing dispatch delegates
         // (kills per-chunk OrderByDescending alloc and per-task display-class capture).
@@ -958,17 +996,20 @@ namespace ReBuzz.Audio
         void HandleWorkList(int numRead)
         {
             dispatchSamples = numRead;
-            workTasks.Clear();
+            int n = 0;
+            if (sortScratch.Length < workSet.Count)
+                sortScratch = new MachineCore[Math.Max(workSet.Count, sortScratch.Length * 2)];
             foreach (var machine in workSet)
             {
-                workTasks.Add(AudioEngine.TaskFactoryAudio.StartNew(workOneList, machine));
+                sortScratch[n++] = machine;
                 machine.workDone = true;
             }
-
-            // Wait all tasks to complete
-            Task.WaitAll(workTasks);
+            RunAll(workOneList, sortScratch, n);
             workSet.Clear();
         }
+
+        // Recursive body: an input's branch, on a render thread or the waiting one.
+        private void WorkOneRecursive(object state) => HandleWorkRecursive((MachineCore)state, recursiveSamples);
 
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         internal void HandleWorkRecursive(MachineCore machine, int numRead)
@@ -979,34 +1020,58 @@ namespace ReBuzz.Audio
                 if (machine.workDone)
                     return;
 
-                machine.workTasks.Clear();
-
-                // Process most time consuming branches first
-                //
-                // Note: We use OrderByDescending to handle most computing heavy branches first.
-                // OrderByDescending should perform ok bececause there is only few inputs per machine.
-                foreach (var input in machine.AllInputs.OrderByDescending(c => (c.Source as MachineCore).performanceBranchCount))
+                // Process most time consuming branches first (a stable sort, as OrderByDescending
+                // was). Fork (audio hygiene): into the machine's own scratch, each input's branch
+                // a job made once (RenderJobs), not a Task, a closure and LINQ's sorter per input.
+                var inputs = machine.AllInputs;
+                int count = inputs.Count;
+                if (machine.workInputs.Length < count)
                 {
-                    var sourceMachine = input.Source as MachineCore;
-
-                    // Was work called for this sourceMachine already?
-                    if (!sourceMachine.workDone)
+                    int size = Math.Max(count, machine.workInputs.Length * 2);
+                    machine.workInputs = new MachineCore[size];
+                    machine.workInputKeys = new long[size];
+                    machine.workJobs = new RenderJobs.Job[size];
+                }
+                var order = machine.workInputs;
+                var keys = machine.workInputKeys;
+                for (int i = 0; i < count; i++)
+                {
+                    var source = inputs[i].Source as MachineCore;
+                    long key = source.performanceBranchCount;
+                    int b = i - 1;
+                    while (b >= 0 && keys[b] < key)
                     {
-                        // Handle inputs
-                        var t = AudioEngine.TaskFactoryAudio.StartNew(() =>
-                        //var t = Task.Run(() =>
-                        {
-                            HandleWorkRecursive(sourceMachine, numRead);
-                        });
-                        machine.workTasks.Add(t);
+                        order[b + 1] = order[b];
+                        keys[b + 1] = keys[b];
+                        b--;
                     }
+                    order[b + 1] = source;
+                    keys[b + 1] = key;
                 }
 
-                // Wait all input tasks to complete
-                if (machine.workTasks.Count > 0)
+                // Was work called for the input's machine already?
+                int pending = 0;
+                for (int i = 0; i < count; i++)
+                    if (!order[i].workDone)
+                        order[pending++] = order[i];
+
+                if (pending > 0)
                 {
-                    Task.WaitAll(machine.workTasks);
+                    // Handle inputs, then wait for them all (helping with those not yet started).
+                    var join = machine.workJoin;
+                    var jobs = machine.workJobs;
+                    join.Begin(pending);
+                    for (int i = 0; i < pending; i++)
+                        jobs[i] = renderJobs.Queue(workOneRecursive, order[i], join);
+                    for (int i = pending - 1; i >= 0; i--)
+                    {
+                        jobs[i]?.TryRun();
+                        jobs[i] = null;
+                    }
+                    join.Wait();
                 }
+                for (int i = 0; i < count; i++)
+                    order[i] = null;
 
                 // All inputs handled (if any)
 
@@ -1300,7 +1365,7 @@ namespace ReBuzz.Audio
             }
 
             // Groups uses no workEngine (it is null for algorithm 0); prefix and
-            // waves dispatch via AudioEngine.TaskFactoryAudio + Task.WaitAll,
+            // waves dispatch on the render threads (RenderJobs) and wait for them all,
             // matching the legacy path. workOneGroups guards/sets workDone.
             DispatchPrefixCached(order.EditorPrefix, workSamplesCount);
             DispatchPrefixCached(order.ControlPrefix, workSamplesCount);
@@ -1318,10 +1383,7 @@ namespace ReBuzz.Audio
                 else if (n > 1)
                 {
                     dispatchSamples = workSamplesCount;
-                    workTasks.Clear();
-                    for (int s = 0; s < n; s++)
-                        workTasks.Add(AudioEngine.TaskFactoryAudio.StartNew(workOneGroups, sortScratch[s]));
-                    Task.WaitAll(workTasks);
+                    RunAll(workOneGroups, sortScratch, n);
                 }
             }
         }
@@ -1413,7 +1475,8 @@ namespace ReBuzz.Audio
             {
                 var machine = mac;
                 // Was work called for this editor machine already?
-                if (machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.CONTROL_MACHINE) && machine.Hidden && !machine.workDone && machine.Ready)
+                // Fork (audio hygiene): a bit test; HasFlag boxes in unoptimized (tier-0, Debug) code.
+                if ((machine.DLL.Info.Flags & MachineInfoFlags.CONTROL_MACHINE) != 0 && machine.Hidden && !machine.workDone && machine.Ready)
                 {
                     workSet.Add(machine);
                 }
@@ -1430,7 +1493,7 @@ namespace ReBuzz.Audio
             foreach (var machine in (buzzCore.Song as SongCore).MachinesList)
             {
                 // Was work called for this control machine already?
-                if (!machine.Hidden && machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.CONTROL_MACHINE) && !machine.workDone && machine.Ready)
+                if (!machine.Hidden && (machine.DLL.Info.Flags & MachineInfoFlags.CONTROL_MACHINE) != 0 && !machine.workDone && machine.Ready)
                 {
                     workSet.Add(machine);
                 }

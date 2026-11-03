@@ -232,10 +232,17 @@ namespace WDE.ModernPatternEditor.MPEStructures
             ImportedPatterns.Add(xPattern);
         }
 
-        public struct ParameterTrack
+        // Fork (neo-buzz audio hygiene): equality of its own. The default (ValueType's, by
+        // reflection) boxed the fields on every lookup: IsColumnMuted asks for every column on
+        // every tick, on the audio thread. The same fields, compared as before.
+        public struct ParameterTrack : IEquatable<ParameterTrack>
         {
             public IParameter parameter;
             public int track;
+
+            public bool Equals(ParameterTrack other) => Equals(parameter, other.parameter) && track == other.track;
+            public override bool Equals(object obj) => obj is ParameterTrack other && Equals(other);
+            public override int GetHashCode() => HashCode.Combine(parameter, track);
         }
 
         public Dictionary<ParameterTrack, bool> ParamterMuted { get; set; }
@@ -253,12 +260,8 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         internal bool IsColumnMuted(IParameter parameter, int paramTrack)
         {
-            bool ret = false;
             ParameterTrack pt = new ParameterTrack() { parameter = parameter, track = paramTrack };
-            if (ParamterMuted.ContainsKey(pt))
-                ret = ParamterMuted[pt];
-
-            return ret;
+            return ParamterMuted.TryGetValue(pt, out bool ret) && ret;
         }
     }
 }

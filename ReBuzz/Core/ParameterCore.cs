@@ -9,7 +9,7 @@ using System.Threading;
 
 namespace ReBuzz.Core
 {
-    internal class ParameterCore : IParameter
+    internal class ParameterCore : IParameter, UiEventQueue.ITarget
     {
         public enum InternalParameter
         {
@@ -187,6 +187,12 @@ namespace ReBuzz.Core
         // pval, and those its tick in progress took (ParameterChanges).
         internal readonly long[] changedTracks = new long[ParameterChanges.Words];
         internal readonly long[] takenTracks = new long[ParameterChanges.Words];
+        // Fork (audio hygiene): the tracks whose value and description events are on their way to
+        // the listeners (UiEventQueue), a bit a track.
+        readonly long[] valueEventPending = new long[ParameterChanges.Words];
+        readonly long[] descriptionEventPending = new long[ParameterChanges.Words];
+        UiEventQueue uiEvents;
+        const int ValueEvent = 0, DescriptionEvent = 1;
         readonly Dictionary<int, string> displayNames = new Dictionary<int, string>();
 
         // Is ConcurrentDictionary needed. Adds locks and latency?
@@ -195,51 +201,26 @@ namespace ReBuzz.Core
 
         public ParameterCore(IUiDispatcher dispatcher)
         {
-            // Its handlers add up, as the DispatcherTimer's Tick handlers did (engine-split.md S2).
-            dtDescribeEvent = dispatcher.CreateTimer(TimeSpan.FromMilliseconds(1000 / 30.0), () => DescribeTick?.Invoke());
             this.dispatcher = dispatcher;
 
             Description = "";
         }
-        internal class EventManager(IUiDispatcher dispatcher)
+        internal class EventManager
         {
             public event Action<IParameter, int> Event;
-            public void CallEvent(IBuzz buzz, IParameter parameter, int track)
-            {
-                if (Event != null)
-                {
-                    dispatcher.BeginInvoke(() =>
-                    {
-                        try
-                        {
-                            if (Event != null)
-                                Event(parameter, track);
-                        }
-                        catch (Exception e)
-                        {
-                            buzz.DCWriteLine(e.Message);
-                        }
-                    }, UiPriority.Normal);
-                }
-            }
 
-            public void CallEventDesc(IParameter parameter, int track)
+            public bool HasListeners => Event != null;
+
+            /// <summary>The listeners, on the UI thread (the UiEventQueue's drain).</summary>
+            public void Call(IParameter parameter, int track)
             {
-                if (Event != null)
+                try
                 {
-                    try
-                    {
-                        if (Event != null)
-                            Event(parameter, track);
-                    }
-                    catch (Exception e)
-                    {
-                        Global.Buzz.DCWriteLine(e.Message);
-                    }
-                    finally
-                    {
-                        describeValueEventPending = false;
-                    }
+                    Event?.Invoke(parameter, track);
+                }
+                catch (Exception e)
+                {
+                    Global.Buzz?.DCWriteLine(e.Message);
                 }
             }
 
@@ -249,45 +230,40 @@ namespace ReBuzz.Core
             }
         }
 
-        static bool describeValueEventPending = false;
-        readonly IUiTimer dtDescribeEvent;
-        event Action DescribeTick;   // an event, so adding a handler is thread-safe as Tick's was
         private readonly IUiDispatcher dispatcher;
 
+        /// <summary>
+        /// The machine's tick sent a value of this parameter on <paramref name="track"/>: its value
+        /// and description listeners are told on the UI thread. Fork (audio hygiene): queued
+        /// (UiEventQueue), not a closure posted for each value (and, for a description listener,
+        /// added to a timer's handlers for good, with one pending across all parameters and the
+        /// others dropped); allocates nothing.
+        /// </summary>
         internal void InvokeEvents(IBuzz buzz, int track)
         {
-            if (valueChangedEvent.TryGetValue(track, out EventManager em))
-            {
-                em.CallEvent(buzz, this, track);
-            }
-
-            // Aviod invoking valueDescrtiptionChangedEvent to minimize calls to native machines
-            if (!describeValueEventPending)
-            {
-                if (valueDescrtiptionChangedEvent.TryGetValue(track, out EventManager emd))
-                {
-                    describeValueEventPending = true;
-                    DescribeLater(emd, track);
-                }
-            }
-            else
-            {
-                // Reset timer
-                dtDescribeEvent.Start();
-            }
+            if (uiEvents == null)
+                return;                                 // nobody ever subscribed
+            if (valueChangedEvent.TryGetValue(track, out EventManager em) && em.HasListeners)
+                Raise(valueEventPending, track, ValueEvent);
+            if (valueDescrtiptionChangedEvent.TryGetValue(track, out EventManager emd) && emd.HasListeners)
+                Raise(descriptionEventPending, track, DescriptionEvent);
         }
 
-        // Fork (engine hardening): the closure in a method of its own. In InvokeEvents it captured
-        // the track, a parameter, so it was made on every call (40 bytes for each value a machine
-        // was sent, on the audio thread), not only when a description listener needed it.
-        void DescribeLater(EventManager emd, int track)
+        void Raise(long[] pending, int track, int kind)
         {
-            DescribeTick += () =>
-            {
-                emd.CallEventDesc(this, track);
-                dtDescribeEvent.Stop();
-            };
-            dtDescribeEvent.Start();
+            long bit = 1L << (track & 63);
+            if ((Interlocked.Or(ref pending[track >> 6], bit) & bit) == 0)
+                uiEvents.Enqueue(this, track, kind);    // else on its way already: the listeners read the value then
+        }
+
+        /// <summary>UI thread (the queue's drain): clears the event's flag, then calls its listeners.</summary>
+        void UiEventQueue.ITarget.Deliver(int track, int kind)
+        {
+            var pending = kind == ValueEvent ? valueEventPending : descriptionEventPending;
+            Interlocked.And(ref pending[track >> 6], ~(1L << (track & 63)));
+            var map = kind == ValueEvent ? valueChangedEvent : valueDescrtiptionChangedEvent;
+            if (map.TryGetValue(track, out EventManager em))
+                em.Call(this, track);
         }
 
         internal void DirectSetValue(int track, int value)
@@ -362,18 +338,20 @@ namespace ReBuzz.Core
 
         public void SubscribeEvents(int track, Action<IParameter, int> valueChanged, Action<IParameter, int> valueDescriptionChanged)
         {
+            // Fork (audio hygiene): the engine's queue of UI events, with room for this one's.
+            var events = uiEvents ??= UiEventQueue.For(dispatcher);
             if (valueChanged != null)
             {
-                if (!valueChangedEvent.ContainsKey(track))
-                    valueChangedEvent.TryAdd(track, new EventManager(dispatcher));
+                if (!valueChangedEvent.ContainsKey(track) && valueChangedEvent.TryAdd(track, new EventManager()))
+                    events.Reserve(1);
 
                 var em = valueChangedEvent[track];
                 em.Event += valueChanged;
             }
             if (valueDescriptionChanged != null)
             {
-                if (!valueDescrtiptionChangedEvent.ContainsKey(track))
-                    valueDescrtiptionChangedEvent.TryAdd(track, new EventManager(dispatcher));
+                if (!valueDescrtiptionChangedEvent.ContainsKey(track) && valueDescrtiptionChangedEvent.TryAdd(track, new EventManager()))
+                    events.Reserve(1);
 
                 var em = valueDescrtiptionChangedEvent[track];
                 em.Event += valueChanged;

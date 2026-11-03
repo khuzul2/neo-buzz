@@ -23,6 +23,10 @@ namespace ReBuzz.Studio.Platform
 
         public IUiTimer CreateTimer(TimeSpan interval, Action tick) => new Timer(interval, tick);
 
+        // Fork (audio hygiene): every Post makes a DispatcherOperation, so the engine's audio thread
+        // doesn't post: it sets a flag that a timer looks at (parameter value events, ParameterValueEvents).
+        public IUiSignal CreateSignal(Action action) => new PolledUiSignal(this, action, PolledUiSignal.DefaultInterval);
+
         static DispatcherPriority Priority(UiPriority priority) => priority switch
         {
             UiPriority.SystemIdle => DispatcherPriority.SystemIdle,
