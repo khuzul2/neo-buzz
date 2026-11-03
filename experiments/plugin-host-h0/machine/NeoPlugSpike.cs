@@ -51,6 +51,20 @@ namespace NeoBuzz.PlugSpike
     {
         const int MaxBlock = 1024;
         static int instances;
+
+        // ReBuzz doesn't release machines when the process exits; plugins still loaded then (JUCE's
+        // threads, say) crashed rebuzz-headless's exit on Windows. So the spike closes them itself.
+        static readonly HashSet<NeoPlugSpikeMachine> live = new HashSet<NeoPlugSpikeMachine>();
+
+        static NeoPlugSpikeMachine()
+        {
+            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+            {
+                NeoPlugSpikeMachine[] all;
+                lock (live) all = new List<NeoPlugSpikeMachine>(live).ToArray();
+                foreach (var m in all) m.Dispose();
+            };
+        }
         readonly IBuzzMachineHost host;
         readonly object gate = new object();       // held by the main thread while it swaps the plugin
         IntPtr plugin;
@@ -70,6 +84,7 @@ namespace NeoBuzz.PlugSpike
         public NeoPlugSpikeMachine(IBuzzMachineHost host)
         {
             this.host = host;
+            lock (live) live.Add(this);
             Array.Fill(trackKey, -1);
             Array.Fill(pendingNote, -1);
             Array.Fill(pendingVelocity, -1);
@@ -143,6 +158,7 @@ namespace NeoBuzz.PlugSpike
         public void Dispose()
         {
             lock (gate) Close();
+            lock (live) live.Remove(this);
         }
 
         void Close()
