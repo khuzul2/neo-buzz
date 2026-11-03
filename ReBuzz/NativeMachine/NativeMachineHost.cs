@@ -17,9 +17,9 @@ namespace ReBuzz.NativeMachine
         /// <summary>
         /// Fork (docs/specs/mac-engine.md M2): native machines are Windows DLLs run in Windows host
         /// processes, over named shared memory. Elsewhere there is none: they load as placeholders.
-        /// </summary>
         /// Fork (plugin-host.md §8.3): REBUZZ_NATIVE_MACHINES=off runs a Windows engine without them, as
         /// elsewhere (rebuzz-headless, which has no ReBuzzEngine32/64.exe beside it).
+        /// </summary>
         internal static bool Supported => OperatingSystem.IsWindows() && Environment.GetEnvironmentVariable("REBUZZ_NATIVE_MACHINES") != "off";
 
         private readonly string sharedId;
