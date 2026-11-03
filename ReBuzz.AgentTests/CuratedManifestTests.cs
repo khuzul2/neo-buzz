@@ -96,15 +96,17 @@ namespace ReBuzz.AgentTests
                     if (path.Success && !File.Exists(Path.Combine(root, path.Groups[1].Value)) && !Directory.Exists(Path.Combine(root, path.Groups[1].Value)))
                         problems.Add($"{g}: evidence {path.Groups[1].Value} isn't in the repository");
                 }
+                // Plain names name one parameter, global or track: param_set resolves them.
+                var every = m.Parameters.Concat(m.TrackParameters).ToList();
+                var plain = every.GroupBy(p => p.PlainName, StringComparer.OrdinalIgnoreCase).Where(x => x.Count() > 1).Select(x => x.Key).ToList();
+                if (plain.Count > 0) problems.Add($"{g}: plain names used twice: {string.Join(", ", plain)}");
                 foreach (var (list, where) in new[] { (m.Parameters, "parameter"), (m.TrackParameters, "track parameter") })
                 {
-                    var plain = list.GroupBy(p => p.PlainName, StringComparer.OrdinalIgnoreCase).Where(x => x.Count() > 1).Select(x => x.Key).ToList();
-                    if (plain.Count > 0) problems.Add($"{g}: plain names used twice: {string.Join(", ", plain)}");
                     foreach (var p in list)
                     {
                         string at = $"{g} {where} \"{p.Name}\"";
                         if (p.PlainName.Length == 0) problems.Add($"{at}: no plain name");
-                        else if (list.Any(q => q != p && string.Equals(q.Name, p.PlainName, StringComparison.OrdinalIgnoreCase)))
+                        else if (every.Any(q => q != p && string.Equals(q.Name.Trim(), p.PlainName, StringComparison.OrdinalIgnoreCase)))
                             problems.Add($"{at}: its plain name \"{p.PlainName}\" is another parameter's name");
                         if (p.Role.Length > 0 && !ManifestRoles.IsKnown(p.Role)) problems.Add($"{at}: unknown role {p.Role}");
                         if (p.Description.Length == 0) problems.Add($"{at}: no description");

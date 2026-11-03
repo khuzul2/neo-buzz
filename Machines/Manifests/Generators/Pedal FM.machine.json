@@ -1128,7 +1128,7 @@
    "name": "Op1 Feedback",
    "plain_name": "Operator 1 feedback",
    "role": "osc.feedback",
-   "group": "Operator 1",
+   "group": "Global",
    "min": 0,
    "max": 127,
    "default": 0,

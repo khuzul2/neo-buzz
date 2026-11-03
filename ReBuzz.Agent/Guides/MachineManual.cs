@@ -102,6 +102,7 @@ namespace ReBuzz.Agent.Guides
             bool profiled = manifest.IsDraft || manifest.IsCurated;
             if (manifest.Tracks > 0)
                 facts.Add(!profiled ? $"{manifest.Tracks} tracks: one note each (Note and Velocity per track), played from patterns as MIDI"
+                    : manifest.Tracks == 1 ? "1 track"
                     : manifest.TrackParameters.Count > 0 ? $"up to {manifest.Tracks} tracks, each with its own track parameters" : $"up to {manifest.Tracks} tracks");
             facts.Add(presets.Count == 1 ? "1 preset" : $"{presets.Count} presets");
             sb.Append(string.Join(" · ", facts)).Append(".\n\n");
@@ -207,12 +208,14 @@ namespace ReBuzz.Agent.Guides
 
         static void AppendParameters(StringBuilder sb, MachineManifest manifest)
         {
+            // A group's parameters together, in the order the groups first appear (a curated machine's parameters keep the
+            // machine's order, so a group can come back later: Pedal Drum Matrix's slots).
             var groups = new List<Group>();
             foreach (var p in manifest.Parameters)
             {
                 string name = p.Group.Length > 0 ? p.Group : "Parameters";
-                var g = groups.LastOrDefault();
-                if (g == null || g.Name != name) groups.Add(g = new Group { Name = name, Parameters = new List<ManifestParameter>() });
+                var g = groups.FirstOrDefault(x => x.Name == name);
+                if (g == null) groups.Add(g = new Group { Name = name, Parameters = new List<ManifestParameter>() });
                 g.Parameters.Add(p);
             }
             for (int i = 0; i < groups.Count; i++)

@@ -792,7 +792,7 @@ For example, Pedal Juno106's `VCF Freq`: the draft had raw 0–127 with no unit 
 - ReBuzz feeds a mono native effect left + right summed (`NativeMessage.cs`), which is why every mono native effect measured about +6 dB at unity (Jeskola Delay +6.2, EQ-3 +6.0, Filter +6.0): a quirk on each.
 - Pedal Comp's texts for Attack, Release, Lookahead and Makeup Gain are wrong (ReBuzz's ms and dB descriptors scale the raw value, which the machine uses as ms and dB): its draft read Attack as 3 µs – 1 ms and Makeup as −inf … 0 dB.
 - Jeskola Distortion's default clamp is 200 % of full scale, which is why it is hot at its defaults (+6 dBFS).
-- FSM Infector's repeated names gave its amp envelope the filter envelope's mapping (fixed by `FindAt`); Infector, PanzerDelay, the Exciter and the Masterizer assume 44.1 kHz in places (quirks).
+- FSM Infector's repeated names (" - Decay" for the filter and the amp, " - PWM Rate" for both oscillators) matched their manifest entries by name alone, so each took the first; the drafts' mappings happened to agree, the curated names and roles don't, so entries now match by index too (`FindAt`). Infector, PanzerDelay, the Exciter and the Masterizer assume 44.1 kHz in places (quirks).
 - Pedal EQ's frequencies and Q move in steps (its source's tables; its README's Q table is out of date): exact tables.
 
 **Left.**
