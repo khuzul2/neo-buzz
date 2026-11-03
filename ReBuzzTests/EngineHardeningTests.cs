@@ -374,7 +374,7 @@ namespace ReBuzzTests
         }
 
         /// <summary>Reads past one-time costs (JIT, first launches, tiered compilation), each buffer after <paramref name="perBuffer"/>.</summary>
-        static void WarmUp(Driver.AudioReader reader, string what, Action? perBuffer = null)
+        internal static void WarmUp(Driver.AudioReader reader, string what, Action? perBuffer = null)
         {
             for (int i = 0; i < 200; i++)
             {

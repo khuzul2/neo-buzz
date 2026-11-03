@@ -130,6 +130,10 @@ namespace ReBuzzTests
         {
             using var rig = new HumRig(4);
             var reader = PlayAutomation(rig, ramps: true);
+            // Engine hardening: past one-time costs first, as the 0.4.1 test reads. The first audio a
+            // process plays runs tier-0 code, which boxes (Enum.HasFlag in the work loop): the 1.1 MB
+            // in 400 buffers this measured before was mostly that, not ramps or parameter changes.
+            EngineHardeningTests.WarmUp(reader, "ramps");
             var wm = reader.WorkManager;
             long stage;
             lock (ReBuzzCore.AudioLock)
