@@ -537,7 +537,13 @@ namespace ReBuzz.Studio.Views.Session
                             DefaultValue = 0,
                         };
                         ToolTip.SetTip(send, $"Send to {target.Name} (return {ReturnLetter(r)})\ndrag or wheel · Shift for fine · double-click: off");
-                        send.Changed += v => SessionMixer.SetSend(Machine, target, SessionMixer.AmpOf(v));
+                        send.Changed += v =>
+                        {
+                            SessionMixer.SetSend(Machine, target, SessionMixer.AmpOf(v));
+                            // The text follows the drag, as the fader's does (not the next refresh).
+                            int s = SessionMixer.GetSend(Machine, target);
+                            send.ValueText = s <= 0 ? "off" : SessionMixer.FormatAmp(s);
+                        };
                         sends.Add(send);
                         stack.Children.Add(send);
                     }
@@ -558,7 +564,13 @@ namespace ReBuzz.Studio.Views.Session
                         DefaultValue = 0.5,
                     };
                     ToolTip.SetTip(pan, "Pan: the pan of the machine's output connection(s)\ndrag or wheel · Shift for fine · double-click: centre");
-                    pan.Changed += v => SessionMixer.SetPan(Doc, Machine, SessionMixer.PanValue(v * 2 - 1));
+                    pan.Changed += v =>
+                    {
+                        SessionMixer.SetPan(Doc, Machine, SessionMixer.PanValue(v * 2 - 1));
+                        // The text follows the drag, as the fader's does (not the next refresh).
+                        int p = SessionMixer.GetPan(Doc, Machine);
+                        pan.ValueText = p >= 0 ? SessionMixer.FormatPan(p) : "";
+                    };
                     stack.Children.Add(pan);
                 }
                 else

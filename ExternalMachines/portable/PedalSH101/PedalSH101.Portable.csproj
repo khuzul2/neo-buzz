@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Pedal SH101, portable (docs/specs/studio-mvp.md S2): see ../PedalPortable.targets. -->
+  <PropertyGroup>
+    <PedalFolder>pedal-sh101</PedalFolder>
+    <PedalAssembly>Pedal SH101.NET</PedalAssembly>
+    <PedalKind>Generators</PedalKind>
+  </PropertyGroup>
+  <Import Project="../PedalPortable.targets" />
+</Project>

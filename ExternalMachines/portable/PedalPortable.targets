@@ -1,0 +1,48 @@
+<Project>
+  <!--
+    Fork (docs/specs/studio-mvp.md S2): a Pedal machine (source/thepedal) built for plain net10.0,
+    without its WPF GUI: off Windows it gets the studio's generic parameter window. Same assembly
+    name as the Windows build ("<Name>.NET.dll"), so the engine's scanner takes it as a managed
+    machine, with its preset files beside it as build.ps1 puts them. The sources are the Windows
+    builds' own: their WPF parts are under #if WINDOWS (the SDK defines WINDOWS for
+    net10.0-windows only), and GUI-only files are left out here (PedalGui items). Each machine has
+    a tiny project that sets PedalFolder, PedalAssembly and PedalKind (Generators or Effects) and
+    imports this file; Pedal.proj builds them all into $(GearDir) (default: bin/Gear here).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable Condition="'$(Nullable)' == ''">disable</Nullable>
+    <ImplicitUsings Condition="'$(ImplicitUsings)' == ''">disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>$(PedalAssembly)</AssemblyName>
+    <Optimize>true</Optimize>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <NoWarn>$(NoWarn);MSB3277;CS0067;CS0108;CS0162;CS0168;CS0169;CS0219;CS0414;CS0649;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8625;CS8632;CA1416</NoWarn>
+    <PedalSource>$(MSBuildThisFileDirectory)..\source\thepedal\$(PedalFolder)\</PedalSource>
+    <GearDir Condition="'$(GearDir)' == ''">$(MSBuildThisFileDirectory)bin\Gear\</GearDir>
+    <OutDir>$([MSBuild]::EnsureTrailingSlash('$(GearDir)'))$(PedalKind)\</OutDir>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(PedalSource)**\*.cs" Exclude="$(PedalSource)obj\**;$(PedalSource)bin\**;$(PedalSource)tools\**" />
+    <_PedalGuiFile Include="@(PedalGui->'$(PedalSource)%(Identity)')" />
+    <Compile Remove="@(_PedalGuiFile)" />
+    <!-- WPF's MessageBox, for the machines' About boxes (to the debug console here). -->
+    <Compile Include="$(MSBuildThisFileDirectory)PortableMessageBox.cs" Link="Portable\PortableMessageBox.cs" />
+    <!-- The preset files the Windows package puts beside the machine (build.ps1: *.prs, *.prs.xml). -->
+    <None Include="$(PedalSource)*.prs.xml;$(PedalSource)*.prs" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The engine's portable machine API; the host provides it at run time (not copied). -->
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" Private="false" GlobalPropertiesToRemove="GearDir" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" Private="false" GlobalPropertiesToRemove="GearDir" />
+  </ItemGroup>
+</Project>
