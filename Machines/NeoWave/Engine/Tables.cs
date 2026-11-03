@@ -27,6 +27,19 @@ namespace NeoBuzz.Wave
             return null;
         }
 
+        /// <summary>
+        /// Whether every built-in table is built (asking for those nobody has asked for). Any thread.
+        /// What an offline render waits for: then whatever table the parameters choose, once the
+        /// engine applies them, is there from the first block.
+        /// </summary>
+        public static bool AllBuilt()
+        {
+            bool all = true;
+            for (int i = 0; i < Names.Length; i++)
+                if (Get(i) == null) all = false;
+            return all;
+        }
+
         /// <summary>Builds now (tests, editors); returns the table.</summary>
         public static Wavetable GetNow(int index)
         {

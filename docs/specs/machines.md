@@ -41,6 +41,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 - **Every sound parameter is a Buzz parameter**: automatable in patterns, MIDI-learnable, stored in songs and presets by ReBuzz. Bulk data (imported wavetables) lives in the machine state.
 - **Pitch**: a Buzz note's `octave × 12 + semitone` is its MIDI note, A-5 (MIDI 69) is 440 Hz. Same as the Pedal synths and ReBuzz's MIDI input.
 - **Measured, not guessed**: each machine ships with tests that measure what the table below promises (aliasing, response, decay times, CPU).
+- **Bit-identical everywhere**: a Neo machine renders the same bits on Windows x64, Linux x64 and macOS arm64 (mac-engine.md decision 6). Its audio code follows the portable maths rule (§4).
 
 ## 3. Architecture
 
@@ -76,6 +77,7 @@ tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 | Block | What |
 |---|---|
 | Math | fast tanh/exp2, dB, note → Hz, denormal-safe helpers, xorshift noise (white, pink) |
+| Portable maths | `PortableMath` (double, as `Math`) and `PortableMathF` (float, through the double ones, as `MathF`): exp, expm1, log, log1p, log2, log10, pow, 2^x, 10^x, sin, cos, tan, tanh, asinh, atan, atan2, built only from IEEE basic operations, so the same bits on every CPU and OS. Within 1 ulp (Atan2 1.2, Asinh 1.3, Tanh 1.8); exp and 2^x table-driven, the rest after fdlibm |
 | Smoothing | one-pole and linear-ramp parameter smoothers (the ramp lands exactly on its target, for gains that must end bit-exact) |
 | Oscillators | band-limited step/ramp tables (BLEP/BLAMP): saw, pulse with PWM, triangle, hard sync, through-zero FM |
 | Wavetables | frames with per-octave band-limited mipmaps built by FFT; morphing reads |
@@ -85,6 +87,12 @@ tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 | Voices | allocator: poly with stealing (released first, then oldest; stolen voices fade), mono/legato with note stack, glide, unison |
 | Delay | fractional delay lines (cubic/allpass), modulated allpass diffusers |
 | Analysis | peak/RMS meters for the editors; (A4) a lock-free triple buffer that hands whole snapshots from the audio thread to readers (`TripleBuffer`) |
+
+**The portable maths rule** (every machine, every audio path: the shared library, the Buzz glue, each `Engine` folder, and coefficients computed from parameters while playing):
+- **No libm.** `Math.Sin`, `Exp`, `Pow`, `Tanh` … and every `MathF` transcendental function call the platform's C runtime, and the UCRT, glibc and Apple's libm round the last bit differently. Use `PortableMath` and `PortableMathF`. Exact operations stay: `Sqrt`, `Abs`, `Floor`, `Ceiling`, `Round`, `Min`, `Max`, `Clamp`, conversions.
+- **No width-dependent sums.** `Vector<T>` is 8 floats on x64 (AVX) and 4 on arm64, and `Vector.Sum` and `Dot` leave the order to the implementation. No `FusedMultiplyAdd` either (one rounding instead of two, and the C runtime's `fma` on a CPU without the instruction). Element-wise vector maths is fine; a sum runs in one fixed order: scalar, or explicit lanes added in a fixed order. Neo Limiter's true-peak filter has eight lanes, one `Vector256` on x64 or two `Vector128` halves elsewhere: the same additions, so the same bits.
+- **Denormals** are IEEE on all three (no flush-to-zero mode), and feedback state is flushed with `DspMath.Flush` (below 1e-18 in float, 1e-30 in double), the same way everywhere.
+- **Checked** by `PortableMathTests` (it scans those sources for libm calls and width-dependent sums, and pins a checksum of the maths, the same on every platform) and by the null test (mac-engine.md §6), which fails on any differing sample. Analysis and editors (Neo Analyzer's measurements, `NeoBuzz.Analysis`, the editor kit) don't touch the audio and may use `Math`.
 
 **Editor kit (`NeoBuzz.Editor`)**: dark theme with one accent per machine; rotary knob (drag, Shift for fine, wheel, double-click for default, value shown while dragging); segmented switch; section frame; level and gain-reduction meters; graph surface for curves, envelopes, waves and algorithms; (M3) a frequency-response graph with draggable band handles (toolkit-free axes, hit-testing and drags in `Core/ResponseGraph.cs`, the pointer routed by `InteractiveGraph`); (A4) analysis graphs: a spectrum with third-octave bars, held peaks and a viewing tilt, loudness bars and readouts coloured against a target, a goniometer and a correlation bar (`Core/AnalysisGraphs.cs`); preset bar (ReBuzz presets: browse, previous/next, save). Controls bind to `IParameter` and follow automation.
 

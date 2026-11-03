@@ -81,13 +81,13 @@ namespace NeoBuzz.Wave
         public bool TablesPending => Volatile.Read(ref tablesPending);
 
         /// <summary>
-        /// Whether a table the parameters choose now (A, B, and Basic for the sub) is still being built,
-        /// asking for it if nobody has. Any thread, and current without a block being processed: an
-        /// offline render waits for it without running the machines, so how long the build takes
-        /// changes nothing in the render (mac-engine.md §6, the null test).
+        /// Whether a built-in table is still being built. Any thread, and current without a block
+        /// being processed: an offline render waits for it without running the machines, so how long
+        /// the build takes changes nothing in the render (mac-engine.md §6, the null test). All of
+        /// them, not just the ones chosen now: the engine applies parameter changes (a preset's
+        /// table) at its next tick, after the wait.
         /// </summary>
-        public bool TablesBuilding =>
-            Pick(values.Choice(P.ATable)) == null || Pick(values.Choice(P.BTable)) == null || Tables.Get(0) == null;
+        public bool TablesBuilding => !Tables.AllBuilt();
 
         /// <summary>The table "User" plays (loaded by the machine from a file or its saved state); null when none.</summary>
         public Wavetable UserTable => requestedUser;
