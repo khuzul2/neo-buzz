@@ -132,6 +132,14 @@ namespace ReBuzz.Core
         // Fork (mcp-server.md A3): named sections of the song, saved in song files.
         internal SongMarkerStore MarkerStore { get; set; }
 
+        // Fork (daw-modes.md S2): the arrangement's clip ids and loops (saved by ArrangementEvents).
+        internal ArrangementClips Clips { get; } = new ArrangementClips();
+
+        // Fork (daw-modes.md S1): the song's bar list, which every view and the agent read, and
+        // what reads and writes it in song files (created with the SongCore).
+        internal SongMeter SongMeter { get; } = new SongMeter();
+        internal SongMeterStore SongMeterStore { get; set; }
+
         /// <summary>
         /// Fork (0.6): tempo nudge, a tempo factor while a nudge button is held (1: none). The
         /// engine divides each tick's length by it; the song's BPM doesn't change.
@@ -2397,6 +2405,8 @@ namespace ReBuzz.Core
             Playing = false;
             SessionLayout?.Reset();             // fork (0.6.1): no launches from the old song's map while it closes
             MarkerStore?.Clear();               // fork (mcp-server.md A3)
+            Clips.Reset();                      // fork (daw-modes.md S2)
+            SongMeter.Reset();                  // fork (daw-modes.md S1)
             InfoText = "";
 
             // Create status window

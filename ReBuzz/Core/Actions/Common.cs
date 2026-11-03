@@ -132,6 +132,8 @@ namespace ReBuzz.Core.Actions
         public int Offset { get; private set; }
         public int End { get; private set; }
         public double Gain { get; private set; } = 1.0;
+        // Fork (daw-modes.md S2): the arrangement clip it belongs to (0: none).
+        public int Clip { get; private set; }
 
         public SequenceEventRef(SequenceEventType type, string pattern, int span)
         {
@@ -145,11 +147,12 @@ namespace ReBuzz.Core.Actions
             Offset = e.Offset;
             End = e.End;
             Gain = e.Gain;
+            Clip = e.Clip;
         }
 
         /// <summary>The event for a pattern (found by name by the caller).</summary>
         public SequenceEvent ToEvent(IPattern pattern) =>
-            new SequenceEvent(Type, pattern, Span) { Offset = Offset, End = End, Gain = Gain };
+            new SequenceEvent(Type, pattern, Span) { Offset = Offset, End = End, Gain = Gain, Clip = Clip };
     }
 
     public class ConnectionInfoRef

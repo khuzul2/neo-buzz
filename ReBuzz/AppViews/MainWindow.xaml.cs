@@ -286,6 +286,7 @@ namespace ReBuzz
                 // All set up
                 BuzzGUIStartup.Startup();
                 seqenceEditor.Song = song;
+                SequenceEditorMeter.Attach(Buzz, seqenceEditor);       // fork (daw-modes.md S1): its bars mirror the engine's
 
                 CreateSequenceView(song);
 
@@ -1311,6 +1312,7 @@ namespace ReBuzz
 
             // All set up
             seqenceEditor.Song = song;
+            SequenceEditorMeter.Attach(Buzz, seqenceEditor);           // fork (daw-modes.md S1)
             CreateSequenceView(song);
 
             UpdateTitle();

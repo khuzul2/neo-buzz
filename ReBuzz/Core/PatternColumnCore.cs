@@ -41,6 +41,14 @@ namespace ReBuzz.Core
         /// <summary>Fork (0.7): a parameter column the engine plays (session automation).</summary>
         internal bool EnginePlays => Type == PatternColumnType.Parameter && metadata.ContainsKey(SessionAutomationKey);
 
+        /// <summary>
+        /// Fork (docs/specs/daw-modes.md S3): whether an event has a Duration above 0, which in a
+        /// column the engine plays means a ramp: the value goes in a straight line from that event
+        /// to the next one. Columns without any play as steps, as before.
+        /// </summary>
+        internal bool HasRamps => hasRamps;
+        volatile bool hasRamps;
+
         public event Action<IEnumerable<PatternEvent>, bool> EventsChanged;
         public event Action<int> BeatSubdivisionChanged;
         public event PropertyChangedEventHandler PropertyChanged;
@@ -123,8 +131,59 @@ namespace ReBuzz.Core
                     else
                         this.patternEvents.Remove(pe);
                 }
+                // Fork (daw-modes.md S3).
+                bool ramps = false;
+                for (int i = 0; i < this.patternEvents.Count && !ramps; i++)
+                    ramps = this.patternEvents[i].Duration > 0;
+                hasRamps = ramps;
             }
             EventsChanged?.Invoke(batch, set);
+        }
+
+        /// <summary>
+        /// Fork (daw-modes.md S3): where a ramp is at <paramref name="time"/> (pattern time): when
+        /// the last event before it has a Duration above 0 and another event follows, the value on
+        /// the straight line between the two, rounded to the nearest whole value. False otherwise:
+        /// no ramp there (steps), or an event exactly at <paramref name="time"/>, which plays itself.
+        /// Audio thread: allocates nothing.
+        /// </summary>
+        internal bool TryRampValue(int time, out int value)
+        {
+            value = 0;
+            if (!hasRamps)
+                return false;
+            lock (patternEventsLock)
+            {
+                bool before = false, after = false;
+                int t0 = 0, v0 = 0, d0 = 0, t1 = 0, v1 = 0;
+                for (int i = 0; i < patternEvents.Count; i++)
+                {
+                    var pe = patternEvents[i];
+                    if (pe.Time <= time)
+                    {
+                        // The last at that time (in list order) is the one that set the value.
+                        if (!before || pe.Time >= t0)
+                        {
+                            t0 = pe.Time;
+                            v0 = pe.Value;
+                            d0 = pe.Duration;
+                            before = true;
+                        }
+                    }
+                    else if (!after || pe.Time < t1)
+                    {
+                        t1 = pe.Time;
+                        v1 = pe.Value;
+                        after = true;
+                    }
+                }
+                if (!before || !after || d0 <= 0 || t0 == time)
+                    return false;
+                long span = (long)t1 - t0;
+                long rise = (long)(v1 - v0) * (time - t0);
+                value = v0 + (int)(rise >= 0 ? (rise + span / 2) / span : -((-rise + span / 2) / span));
+                return true;
+            }
         }
     }
 }

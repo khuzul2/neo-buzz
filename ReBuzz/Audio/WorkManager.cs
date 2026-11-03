@@ -698,6 +698,11 @@ namespace ReBuzz.Audio
                 int from = pattern.PlayPosition;
                 int to = from + BlockLength(masterInfo, sampleCount);
 
+                // Fork (docs/specs/daw-modes.md S3): ramps in engine automation columns move on each
+                // tick and subtick, where machines take parameter values. Columns without ramps
+                // (every song before them) skip this, so they play exactly as before.
+                bool rampPoint = masterInfo.PosInTick == 0 || (engineSettings.SubTickTiming && ReBuzzCore.subTickInfo.PosInSubTick == 0);
+
                 // Fork (0.4.1): the list itself; pattern.Columns wraps it in a new read-only
                 // collection on every call (per pattern per block, on the audio thread).
                 IList<IPatternColumn> columns = pattern is PatternCore core ? core.ColumnsList : pattern.Columns;
@@ -714,6 +719,8 @@ namespace ReBuzz.Audio
                     {
                         if (column is not PatternColumnCore automation || !automation.EnginePlays || column.Parameter == null)
                             continue;
+                        if (rampPoint && automation.HasRamps && automation.TryRampValue(from, out int ramped))
+                            column.Parameter.SetValue(column.Track | (1 << 16), ramped);
                         column.GetEventsInto(from, to, playColumnEvents);
                         for (int e = 0; e < playColumnEvents.Count; e++)
                             column.Parameter.SetValue(column.Track | (1 << 16), playColumnEvents[e].Value);
