@@ -48,8 +48,10 @@ namespace ReBuzz.Agent.Model
             double.IsNegativeInfinity(db) ? "-inf dB" : db.ToString("+0.0;-0.0;0.0", CultureInfo.InvariantCulture) + " dB";
 
         /// <summary>A dB value for JSON: a number, or the text "-inf" (JSON has no infinities).</summary>
+        /// <summary>A level for JSON: "-inf" and "inf" as text (a diverging machine renders infinities), NaN as null.</summary>
         public static JsonNode Json(double db) =>
-            double.IsNegativeInfinity(db) ? JsonValue.Create("-inf") : JsonValue.Create(Math.Round(db, 2));
+            double.IsNegativeInfinity(db) ? JsonValue.Create("-inf") : double.IsPositiveInfinity(db) ? JsonValue.Create("inf")
+            : double.IsNaN(db) ? null : JsonValue.Create(Math.Round(db, 2));
 
         /// <summary>"left 40%", "center", "right 100%".</summary>
         public static string PanText(double pan) =>

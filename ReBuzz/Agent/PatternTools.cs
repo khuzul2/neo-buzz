@@ -4,7 +4,9 @@
 //
 // Notes live in each pattern's engine MIDI column (docs/specs/session-view.md 0.7): ReBuzz plays
 // it to the machine itself, songs save it, the Session View's piano roll edits it, and its slot
-// menu moves the notes to the Pattern View's note lanes and back.
+// menu moves the notes to the Pattern View's note lanes and back. Machines whose profiled manifest
+// says they take notes in tracks get them in their Note track columns instead, and every pitch
+// goes through the manifest's pitch offset (§12.2, MachineNotes).
 
 using System;
 using System.Collections.Generic;
@@ -195,6 +197,7 @@ namespace ReBuzz.Agent
                     "Writes notes into a pattern. Each note: pitch (MIDI number or name, 60 = \"C4\"), start (beats from the pattern start, or " +
                     "\"bar.beat\" in it), length in beats, velocity 1–127 (default 100). Chords are notes with the same start. mode: add (default) " +
                     "keeps what's there, replace clears the pattern first, replace_range clears only from range_start to range_end. One undo step. " +
+                    "The pitch written is the pitch heard: a machine whose manifest records a pitch offset or note input in tracks gets them converted. " +
                     "Returns a summary and problems (overlapping same pitches). Example: notes_write(machine=\"Bass\", pattern=\"Verse\", " +
                     "notes=[{\"pitch\": \"A1\", \"start\": 0, \"length\": 0.5, \"velocity\": 110}, {\"pitch\": \"A1\", \"start\": 1.5, \"length\": 0.5}]).",
                 Input = Object(null,
@@ -209,8 +212,12 @@ namespace ReBuzz.Agent
                         Opt("midi_channel", Integer("MIDI channel 1–16, as notes_read gives it (written notes use channel 1)", 1, 16))), "The notes")),
                     Opt("mode", String("add (default), replace or replace_range", "add", "replace", "replace_range")),
                     Opt("range_start", Position("replace_range: from here (in the pattern)")),
-                    Opt("range_end", Position("replace_range: to here (exclusive)"))),
+                    Opt("range_end", Position("replace_range: to here (exclusive)")),
+                    Opt("input", String(MachineNotes.InputHelp, "midi", "tracks")),
+                    Opt("apply_pitch_offset", Boolean(MachineNotes.OffsetHelp))),
                 Output = Object(null,
+                    Opt("input", String("midi or tracks: how the machine gets them")),
+                    Opt("pitch_offset", Integer("Semitones added on the way to the machine (its manifest's)")),
                     Req("written", Integer("Notes written")),
                     Req("removed", Integer("Notes cleared first")),
                     Req("total", Integer("Notes in the pattern now")),
@@ -226,8 +233,9 @@ namespace ReBuzz.Agent
                         var p = SongModel.Pattern(m, c.RequiredString("pattern"));
                         int tpb = SongModel.Tpb(core), bpb = SongModel.BeatsPerBar(core);
                         var problems = new List<string>();
+                        var input = MachineNotes.For(m, c.String("input"), c.Bool("apply_pitch_offset") ?? true);
                         var added = NoteList.Parse(c.List("notes")!, tpb, bpb, p.Length, problems);
-                        var existing = SongModel.Notes(p);
+                        var existing = MachineNotes.Read(p, input);
                         List<NoteEvent> removed;
                         if (mode == "replace") removed = existing;
                         else if (mode == "replace_range")
@@ -248,14 +256,16 @@ namespace ReBuzz.Agent
                         var unique = added.Distinct().Where(n => !existing.Except(removed).Contains(n)).ToList();
                         if (unique.Count < added.Count) problems.Add($"{added.Count - unique.Count} note(s) were already there and weren't doubled.");
                         problems.AddRange(NoteList.Clashes(existing.Except(removed).Concat(unique).OrderBy(n => n.Time).ToList(), tpb));
-                        if (removed.Count > 0 || unique.Count > 0) AgentActions.ReplaceNotes(core, p, removed, unique);
-                        var now = SongModel.Notes(p);
+                        if (removed.Count > 0 || unique.Count > 0) MachineNotes.Replace(core, p, input, removed, unique, problems);
+                        var now = MachineNotes.Read(p, input);
                         if (now.Count > 0 && SongModel.Placements(core, p).Count == 0)
                             problems.Add($"\"{p.Name}\" isn't placed in the arrangement yet, so the song doesn't play it: arrangement_place(machine=\"{m.Name}\", pattern=\"{p.Name}\", at=…).");
                         return new JsonObject
                         {
                             ["machine"] = m.Name,
                             ["pattern"] = p.Name,
+                            ["input"] = input.Mode,
+                            ["pitch_offset"] = input.Offset,
                             ["written"] = unique.Count,
                             ["removed"] = removed.Count,
                             ["total"] = now.Count,
@@ -265,7 +275,7 @@ namespace ReBuzz.Agent
                         };
                     }, c.Cancellation);
                     var probs = r["problems"]!.AsArray();
-                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": wrote {r["written"]}, cleared {r["removed"]}; now {r["summary"]}." +
+                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": wrote {r["written"]}, cleared {r["removed"]}; now {r["summary"]}." + InputText(r) +
                                          (probs.Count > 0 ? " Problems: " + string.Join(" ", probs.Select(x => x!.GetValue<string>())) : ""), r);
                 },
             });
@@ -281,8 +291,12 @@ namespace ReBuzz.Agent
                     Req("machine", String("The machine")),
                     Req("pattern", String("The pattern")),
                     Opt("range_start", Position("From here (in the pattern)")),
-                    Opt("range_end", Position("To here (exclusive)"))),
+                    Opt("range_end", Position("To here (exclusive)")),
+                    Opt("input", String(MachineNotes.InputHelp, "midi", "tracks")),
+                    Opt("apply_pitch_offset", Boolean("Take the machine's pitch offset off, as notes_write puts it on (default true)"))),
                 Output = Object(null,
+                    Opt("input", String("midi or tracks: where they were read")),
+                    Opt("pitch_offset", Integer("Semitones taken off (the machine's manifest's)")),
                     Req("notes", Array(Object(null, Req("pitch", Integer("MIDI")), Req("start", Number("Beats")), Req("length", Number("Beats")), Req("velocity", Integer("1–127"))), "Notes")),
                     Req("length_beats", Number("The pattern's length"))),
                 Annotations = ToolAnnotations.Read,
@@ -293,7 +307,8 @@ namespace ReBuzz.Agent
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         var p = SongModel.Pattern(m, c.RequiredString("pattern"));
                         int tpb = SongModel.Tpb(core), bpb = SongModel.BeatsPerBar(core);
-                        var notes = SongModel.Notes(p);
+                        var input = MachineNotes.For(m, c.String("input"), c.Bool("apply_pitch_offset") ?? true);
+                        var notes = MachineNotes.Read(p, input);
                         if (c.Arguments["range_start"] != null)
                         {
                             int from = NoteList.Time(SongTime.ParseBeats(c.Arguments["range_start"], bpb, "range_start", "the pattern start"), tpb);
@@ -309,11 +324,13 @@ namespace ReBuzz.Agent
                             ["machine"] = m.Name,
                             ["pattern"] = p.Name,
                             ["length_beats"] = SongModel.Beats(core, p.Length),
+                            ["input"] = input.Mode,
+                            ["pitch_offset"] = input.Offset,
                             ["summary"] = NoteList.Summary(notes, tpb),
                             ["notes"] = new JsonArray(notes.Select(n => (JsonNode)NoteList.ToJson(n, tpb)).ToArray()),
                         };
                     }, c.Cancellation);
-                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\" ({r["length_beats"]} beats): {r["summary"]}.", r);
+                    return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\" ({r["length_beats"]} beats): {r["summary"]}." + InputText(r), r);
                 },
             });
 
@@ -495,6 +512,16 @@ namespace ReBuzz.Agent
                     return ToolResult.Ok($"Removed {r["removed"]} place(s).", r);
                 },
             });
+        }
+
+        /// <summary>" In its tracks; pitch offset -12 (from its manifest)." when either isn't the plain MIDI path.</summary>
+        static string InputText(JsonObject r)
+        {
+            bool tracks = r["input"]?.GetValue<string>() == "tracks";
+            int offset = r["pitch_offset"]?.GetValue<int>() ?? 0;
+            if (!tracks && offset == 0) return "";
+            return (tracks ? " Notes go into its Note track columns (it takes no MIDI)" : " Sent as MIDI") +
+                   (offset != 0 ? $", {offset:+0;-0} semitones from the written pitch (its manifest's pitch offset), so the written pitch plays." : ".");
         }
 
         static JsonObject PatternJson(ReBuzzCore core, IPattern p) => new()

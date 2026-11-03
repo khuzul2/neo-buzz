@@ -1,0 +1,213 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "SpectrumBlock",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "control",
+ "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {},
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Channel",
+   "name": "Channel",
+   "group": "",
+   "min": 0,
+   "max": 2,
+   "default": 2,
+   "kind": "enum",
+   "choices": [
+    "Left",
+    "Right",
+    "Mix"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Window",
+   "name": "Window",
+   "group": "",
+   "min": 0,
+   "max": 8,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "None",
+    "Hanning",
+    "Hamming",
+    "Blackman",
+    "BlackmanExact",
+    "BlackmanHarris",
+    "FlatTop",
+    "Bartlett",
+    "Cosine"
+   ],
+   "description": "Apply windowing to the audio prior to FFT analysis.",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "Low (Hz)",
+   "name": "Low (Hz)",
+   "group": "",
+   "min": 0,
+   "max": 22050,
+   "default": 300,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 22050.0,
+   "unit": "Hz",
+   "description": "Spectrum frequency low range ceiling Hz.",
+   "confidence": "description"
+  },
+  {
+   "index": 3,
+   "id": "High (Hz)",
+   "name": "High (Hz)",
+   "group": "",
+   "min": 0,
+   "max": 22050,
+   "default": 2400,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 22050.0,
+   "unit": "Hz",
+   "description": "Spectrum frequency high range floor Hz.",
+   "confidence": "description"
+  },
+  {
+   "index": 4,
+   "id": "LowVisible",
+   "name": "LowVisible",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 1,
+   "kind": "switch",
+   "choices": [
+    "No",
+    "Yes"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "MidVisible",
+   "name": "MidVisible",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 1,
+   "kind": "switch",
+   "choices": [
+    "No",
+    "Yes"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 6,
+   "id": "HighVisible",
+   "name": "HighVisible",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 1,
+   "kind": "switch",
+   "choices": [
+    "No",
+    "Yes"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 7,
+   "id": "VolumeVisible",
+   "name": "VolumeVisible",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 1,
+   "kind": "switch",
+   "choices": [
+    "No",
+    "Yes"
+   ],
+   "description": "",
+   "confidence": "values"
+  },
+  {
+   "index": 8,
+   "id": "BalanceVisible",
+   "name": "BalanceVisible",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 1,
+   "kind": "switch",
+   "choices": [
+    "No",
+    "Yes"
+   ],
+   "description": "Show Stereo Balance",
+   "confidence": "values"
+  },
+  {
+   "index": 9,
+   "id": "CorrCoeVisible",
+   "name": "CorrCoeVisible",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 1,
+   "kind": "switch",
+   "choices": [
+    "No",
+    "Yes"
+   ],
+   "description": "Show Correlation Coefficient",
+   "confidence": "values"
+  },
+  {
+   "index": 10,
+   "id": "VolSmooth (ms)",
+   "name": "VolSmooth (ms)",
+   "group": "",
+   "min": 1,
+   "max": 100,
+   "default": 10,
+   "kind": "linear",
+   "a": 0.001,
+   "b": 0.1,
+   "unit": "s",
+   "description": "Volume graph buffer length (ms)",
+   "confidence": "description"
+  },
+  {
+   "index": 11,
+   "id": "Scale",
+   "name": "Scale",
+   "group": "",
+   "min": 1,
+   "max": 100,
+   "default": 10,
+   "kind": "linear",
+   "a": 1.0,
+   "b": 100.0,
+   "description": "",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

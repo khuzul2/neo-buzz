@@ -112,6 +112,33 @@ jobs:
       if: always()
       run: python3 tools/headless-pedal.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/pedal"
 
+    # The machine profiler (docs/specs/mcp-server.md §12.2, U1): its unit and mapping inference on known
+    # value tables, then every machine rebuzz-headless has (Neo and Pedal) profiled; the drafts, the
+    # health report and the summary are uploaded. Then the committed drafts at work: a Pedal synth plays
+    # A4 at 440 Hz through notes_write, param_set takes units on Pedal machines, unhealthy ones are flagged.
+    - name: Machine profiler inference tests
+      if: always()
+      run: python3 -m unittest discover -s tools -p "test_machine_infer.py" -v
+
+    - name: Machine profile on Linux
+      if: always()
+      run: python3 tools/machine-profiler.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless --out "$RUNNER_TEMP/machine-profile"
+
+    - name: Upload machine profile
+      if: always() && hashFiles('**/machine-profile.json') != ''
+      uses: actions/upload-artifact@v4
+      with:
+        name: machine-profile-linux
+        path: |
+          ${{ runner.temp }}/machine-profile/manifests/**
+          ${{ runner.temp }}/machine-profile/*.json
+          ${{ runner.temp }}/machine-profile/*.md
+        if-no-files-found: warn
+
+    - name: Draft manifests at work on Linux
+      if: always()
+      run: python3 tools/headless-manifests.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/manifests"
+
     # Live audio (mac-engine.md M5): rebuzz-headless --audio through PortAudio on the PulseAudio
     # null sink (clocked, so in real time); the live tools play, meter and stop it.
     - name: Live audio on Linux (PortAudio)

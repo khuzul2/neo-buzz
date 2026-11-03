@@ -1,0 +1,17 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Polac MIDI In",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "control",
+ "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {},
+ "parameters": [],
+ "track_parameters": []
+}

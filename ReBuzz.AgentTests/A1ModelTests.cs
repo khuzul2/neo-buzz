@@ -34,7 +34,10 @@ namespace ReBuzz.AgentTests
         [Test]
         public void EveryNeoManifestParsesWithExactMappings()
         {
-            var files = Directory.GetFiles(Path.Combine(RepoRoot(), "Machines"), "*" + MachineManifest.Suffix, SearchOption.AllDirectories);
+            // Not the profiled drafts of other machines (Machines/Manifests, DraftManifestTests).
+            string drafts = Path.Combine(RepoRoot(), "Machines", "Manifests") + Path.DirectorySeparatorChar;
+            var files = Directory.GetFiles(Path.Combine(RepoRoot(), "Machines"), "*" + MachineManifest.Suffix, SearchOption.AllDirectories)
+                .Where(f => !f.StartsWith(drafts, StringComparison.Ordinal)).ToArray();
             // One per Neo machine: every machine folder with a Params.def (the core six, the mix and master batch, …).
             int machines = Directory.GetDirectories(Path.Combine(RepoRoot(), "Machines"), "Neo*").Count(d => File.Exists(Path.Combine(d, "Params.def")));
             Assert.That(machines, Is.AtLeast(10));

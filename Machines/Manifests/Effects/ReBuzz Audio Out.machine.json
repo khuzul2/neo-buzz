@@ -1,0 +1,70 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "ReBuzz Audio Out",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "utility",
+ "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": 0.0,
+   "latency_samples": 0,
+   "latency_ms": 0.0,
+   "tail_seconds": 0.0,
+   "echoes": 0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 0.0,
+   "tilt_db": 0.0,
+   "sine": {
+    "loud": {
+     "gain_db": 0.0,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.13
+    },
+    "quiet": {
+     "gain_db": 0.0,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.14
+    }
+   },
+   "traits": [
+    "utility"
+   ]
+  },
+  "extremes": {
+   "min": {
+    "silent": false,
+    "sample_peak_dbfs": -32.72
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": -32.72
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Dummy",
+   "name": "Dummy",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

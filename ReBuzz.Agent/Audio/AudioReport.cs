@@ -130,7 +130,8 @@ namespace ReBuzz.Agent.Audio
 
         // ---- JSON numbers ------------------------------------------------------------------
 
-        static JsonNode Lufs(double x) => double.IsNegativeInfinity(x) || double.IsNaN(x) ? JsonValue.Create("-inf") : JsonValue.Create(Math.Round(x, 1));
+        static JsonNode Lufs(double x) => double.IsNegativeInfinity(x) || double.IsNaN(x) ? JsonValue.Create("-inf")
+            : double.IsPositiveInfinity(x) ? JsonValue.Create("inf") : JsonValue.Create(Math.Round(x, 1));
 
         /// <summary>A level in dB rounded to <paramref name="digits"/>: "-inf" and "inf" as text (JSON has no infinities), NaN as null.</summary>
         internal static JsonNode Db(double x, int digits = 1) =>

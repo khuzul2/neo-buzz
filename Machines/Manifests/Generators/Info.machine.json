@@ -1,0 +1,19 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Info",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "unknown",
+ "summary": "Unknown (profiled draft).",
+ "tracks": 0,
+ "health": {
+  "status": "unhealthy",
+  "problems": [
+   "doesn't load: machine_add: machine_add failed inside ReBuzz: TargetInvocationException: Exception has been thrown by the target of an invocation.. The song may be partly changed; studio_status shows what undo would revert."
+  ]
+ },
+ "profile": {},
+ "parameters": [],
+ "track_parameters": []
+}

@@ -1,0 +1,192 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Pedal Gate",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "type": "dynamics",
+ "summary": "Dynamics (profiled draft): traits: dynamics; tail 0.0 s; latency 37 samples; gain +0.0 dB at the defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": 0.0,
+   "latency_samples": 37,
+   "latency_ms": 0.84,
+   "tail_seconds": 0.0,
+   "echoes": 0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 0.0,
+   "tilt_db": 0.0,
+   "sine": {
+    "loud": {
+     "gain_db": 0.0,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.13
+    },
+    "quiet": {
+     "gain_db": -90.0,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.14
+    }
+   },
+   "traits": [
+    "dynamics"
+   ]
+  },
+  "extremes": {
+   "min": {
+    "silent": false,
+    "sample_peak_dbfs": -32.72
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": -32.72
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Threshold",
+   "name": "Threshold",
+   "group": "",
+   "min": 0,
+   "max": 120,
+   "default": 60,
+   "kind": "db",
+   "a": -60.0,
+   "b": 0.0,
+   "unit": "dB",
+   "description": "Gate open threshold in dBFS (−60.0 to 0.0, 0.5 dB steps)",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Hysteresis",
+   "name": "Hysteresis",
+   "group": "",
+   "min": 0,
+   "max": 20,
+   "default": 6,
+   "kind": "db",
+   "a": 0.0,
+   "b": 20.0,
+   "unit": "dB",
+   "description": "Gap between open and close thresholds (dB). Higher = less chatter.",
+   "confidence": "description"
+  },
+  {
+   "index": 2,
+   "id": "Attack ms",
+   "name": "Attack ms",
+   "group": "",
+   "min": 0,
+   "max": 500,
+   "default": 5,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 0.5,
+   "unit": "s",
+   "description": "Time for gate to open fully (0 = instant, max 500 ms)",
+   "confidence": "description"
+  },
+  {
+   "index": 3,
+   "id": "Hold ms",
+   "name": "Hold ms",
+   "group": "",
+   "min": 0,
+   "max": 2000,
+   "default": 100,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 2.0,
+   "unit": "s",
+   "description": "How long the gate stays open after signal drops below close threshold",
+   "confidence": "description"
+  },
+  {
+   "index": 4,
+   "id": "Release ms",
+   "name": "Release ms",
+   "group": "",
+   "min": 1,
+   "max": 2000,
+   "default": 200,
+   "kind": "linear",
+   "a": 0.001,
+   "b": 2.0,
+   "unit": "s",
+   "description": "Time for gate to close fully (1–2000 ms)",
+   "confidence": "description"
+  },
+  {
+   "index": 5,
+   "id": "Range dB",
+   "name": "Range dB",
+   "group": "",
+   "min": 0,
+   "max": 90,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 90.0,
+   "description": "Closed-gate floor (0 = mute / −90 dBFS … 90 = no attenuation)",
+   "confidence": "values"
+  },
+  {
+   "index": 6,
+   "id": "Detection",
+   "name": "Detection",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Peak",
+    "RMS"
+   ],
+   "description": "Peak: fast transient response. RMS: smoother for sustained sources.",
+   "confidence": "values"
+  },
+  {
+   "index": 7,
+   "id": "Lookahead ms",
+   "name": "Lookahead ms",
+   "group": "",
+   "min": 0,
+   "max": 25,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 0.025,
+   "unit": "s",
+   "description": "Pre-delay so gate opens before the transient arrives (0–25 ms)",
+   "confidence": "description"
+  },
+  {
+   "index": 8,
+   "id": "Bypass",
+   "name": "Bypass",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "choices": [
+    "no",
+    "yes"
+   ],
+   "description": "Pass audio through unmodified",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

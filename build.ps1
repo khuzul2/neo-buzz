@@ -415,6 +415,20 @@ if (-not $SkipBinaries) {
     }
 }
 
+# ---------------------------------------------------------------- 5b. draft manifests (fork)
+
+# Machines\Manifests\<Generators|Effects>: the profiled draft manifests of machines that don't
+# generate their own (docs/specs/mcp-server.md §12.2, tools/machine-profiler.py), beside their DLLs,
+# where the agent server looks for "<Gear>.machine.json". A machine's own manifest (the Neo
+# machines') is never replaced. Ignored by everything but the agent server.
+foreach ($sub in 'Generators', 'Effects') {
+    $dir = [IO.Path]::Combine($Root, 'Machines', 'Manifests', $sub)
+    if (Test-Path -LiteralPath $dir) {
+        $n = Copy-IntoGear -Files @(Get-ChildItem -LiteralPath $dir -File -Filter '*.machine.json') -GearFolder $sub -Origin 'manifests'
+        Write-Host "Added $n draft manifest(s) to Gear\$sub"
+    }
+}
+
 # ---------------------------------------------------------------- 6. package
 
 Write-Step 'Packaging'

@@ -1,0 +1,32 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Yitten Mongoose",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "type": "control",
+ "summary": "Control machine (profiled draft): moves other machines' parameters; makes no sound.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {},
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Bar",
+   "name": "Bar",
+   "group": "",
+   "min": 1,
+   "max": 128,
+   "default": 16,
+   "kind": "linear",
+   "a": 1.0,
+   "b": 128.0,
+   "description": "",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

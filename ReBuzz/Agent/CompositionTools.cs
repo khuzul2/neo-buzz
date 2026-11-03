@@ -69,11 +69,12 @@ namespace ReBuzz.Agent
                     var m = SongModel.Machine(core, c.RequiredString("machine"));
                     var p = SongModel.Pattern(m, c.RequiredString("pattern"));
                     int tpb = SongModel.Tpb(core);
-                    var before = SongModel.Notes(p);
+                    var input = MachineNotes.For(m);
+                    var before = MachineNotes.Read(p, input);
                     var outcome = NotesTransform.Run(c.Arguments, before, tpb, p.Length, SongModel.BeatsPerBar(core));
                     var removed = before.Except(outcome.Notes).ToList();
                     var added = outcome.Notes.Except(before).ToList();
-                    if (removed.Count > 0 || added.Count > 0) AgentActions.ReplaceNotes(core, p, removed, added);
+                    if (removed.Count > 0 || added.Count > 0) MachineNotes.Replace(core, p, input, removed, added, outcome.Problems);
                     outcome.Problems.AddRange(NoteList.Clashes(outcome.Notes.OrderBy(n => n.Time).ToList(), tpb));
                     return (Machine: m.Name, Pattern: p.Name, Outcome: outcome, Tpb: tpb);
                 }, c.Cancellation);
@@ -239,7 +240,8 @@ namespace ReBuzz.Agent
                         string only = c.String("param");
                         int tpb = SongModel.Tpb(core);
                         var list = new JsonArray();
-                        foreach (var col in p.Columns.Where(x => x.Type == PatternColumnType.Parameter && x.Parameter != null && x.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey)))
+                        // Track note columns (machines that take notes in tracks) are notes, read with notes_read.
+                        foreach (var col in p.Columns.Where(x => x.Type == PatternColumnType.Parameter && x.Parameter != null && x.Metadata.ContainsKey(PatternColumnCore.SessionAutomationKey) && !MachineNotes.IsNoteColumn(x)))
                         {
                             if (only != null && !string.Equals(col.Parameter.Name, only, StringComparison.OrdinalIgnoreCase)) continue;
                             var events = col.GetEvents(int.MinValue, int.MaxValue).OrderBy(e => e.Time).ToList();
