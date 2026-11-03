@@ -4,9 +4,15 @@
     Windows puts beside itself. Imported by rebuzz-headless and ReBuzz.Studio.
   -->
 
-  <!-- The Neo machines, built for net10.0, in the app's Gear folder (skip with SkipNeoGear=true). -->
+  <!-- The Neo machines, built for net10.0, in the app's Gear folder (skip with SkipNeoGear=true):
+       without their editors (Machines/Portable), or with NeoGearFlavour=Studio with them, on
+       Avalonia (Machines/Studio, studio-mvp.md S1). -->
+  <PropertyGroup>
+    <NeoGearProject Condition="'$(NeoGearFlavour)' == 'Studio'">$(MSBuildThisFileDirectory)..\Machines\Studio\Studio.proj</NeoGearProject>
+    <NeoGearProject Condition="'$(NeoGearProject)' == ''">$(MSBuildThisFileDirectory)..\Machines\Portable\Portable.proj</NeoGearProject>
+  </PropertyGroup>
   <Target Name="NeoGear" AfterTargets="Build" Condition="'$(SkipNeoGear)' != 'true'">
-    <MSBuild Projects="$(MSBuildThisFileDirectory)..\Machines\Portable\Portable.proj" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
+    <MSBuild Projects="$(NeoGearProject)" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
   </Target>
 
   <!-- The Pedal machines (ExternalMachines/source/thepedal), built for net10.0 without their WPF
