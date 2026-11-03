@@ -43,7 +43,7 @@ namespace ReBuzz.Studio.Views
         public static IReadOnlyList<IStudioView> All { get; } = new IStudioView[]
         {
             new Machines.MachinesTab(),
-            new Placeholder("Sequence", "The sequence editor comes in step S4."),
+            new Sequence.SequenceTab(),
             new Session.SessionStudioView(),
             new Placeholder("Pattern", "The pattern editor comes in step S6."),
         };
