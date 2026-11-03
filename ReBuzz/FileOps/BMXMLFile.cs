@@ -750,10 +750,18 @@ namespace ReBuzz.FileOps
 
         private void CopyParameters(BMXMLParameterGroup pgFrom, MachineCore machineNew, int group, int track)
         {
+            // Fork: state parameters only, as BMX's loader does (BMXFile.CopyParameters) and Buzz: not
+            // notes, other stateless parameters or the input group. A song keeps the last values of its
+            // stateless parameters when it's saved after playing, and they were played again when it
+            // opened (a note sounding from the start).
+            if (group == 0)
+                return;
             var pgTo = machineNew.ParameterGroupsList[group];
             for (int i = 0; i < pgTo.ParametersList.Count; i++)
             {
                 var pTo = pgTo.ParametersList[i];
+                if (!pTo.Flags.HasFlag(ParameterFlags.State) || pTo.Type == ParameterType.Note)
+                    continue;
                 var pFrom = i < pgFrom.Parameters.Count() ? pgFrom.Parameters[i] : null;
                 if (pFrom != null)
                 {
