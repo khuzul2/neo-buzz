@@ -286,9 +286,8 @@ namespace NeoBuzz.MachineTests
         {
             // 30 s of pink noise, then 10 s of silence: finite, below +24 dBFS, not growing over the
             // last 10 s of noise (a build-up levels off), and decaying once the input stops, at least
-            // as fast as the guaranteed bound allows (MaxOvershoot times the slowest set decay). With
-            // shimmer: decaying at least 0.3 dB/s where the shimmer guard holds it (it aims at 0.5),
-            // and not growing where it doesn't (that loop decays by itself, however slowly).
+            // as fast as the guaranteed bound allows (MaxOvershoot times the slowest set decay), with
+            // shimmer too: the shimmer guard keeps the loop inside the same bound.
             var (e, v) = Make(pv => { foreach (var (i, raw) in changes) pv.Set(i, raw); });
             int rate = Measure.Rate, noise = 30 * rate, tail = 10 * rate;
             var x = new float[noise + tail];
@@ -300,8 +299,8 @@ namespace NeoBuzz.MachineTests
             double first = Level(noise + rate, 1), last = Level(noise + 8 * rate, 1);
             double slowest = v.Value(P.Decay) * Math.Max(1, v.Value(P.LowDecay));
             bool frozen = v.On(P.Freeze);
-            bool shimmering = v.Value(P.Shimmer) > 0, held = e.ShimmerGuard.Limiting;
-            double needDrop = frozen ? 0 : shimmering ? (held ? 0.3 * 7 : 0) : 0.5 * 60 * 7 / (VerbEngine.MaxOvershoot * slowest);
+            bool held = e.ShimmerGuard.Limiting;
+            double needDrop = frozen ? 0 : 0.5 * 60 * 7 / (VerbEngine.MaxOvershoot * slowest);
             Measure.Report($"Neo Verb {what}: peak {Measure.Db(peak):+0.0;−0.0} dBFS, last 10 s of noise {grow:+0.00;−0.00} dB, tail {last - first:+0.0;−0.0} dB over 7 s (at least −{needDrop:F1}){(held ? $", shimmer held at {e.ShimmerGuard.Scale:F2}×" : "")}");
             Assert.That(double.IsFinite(peak), Is.True, "finite");
             Assert.That(Measure.Db(peak), Is.LessThan(24), "below +24 dBFS");
@@ -330,12 +329,11 @@ namespace NeoBuzz.MachineTests
         public void ShimmerStaysBounded((int Index, int Raw)[] changes)
         {
             // 30 s of pink noise at −20 dBFS RMS, then 40 s of silence. Finite, and 6 dB under the
-            // engine's guard (+60 dBFS). Where the shimmer guard holds the loop, its tail decays over
-            // the last 10 s at least half as fast as it aims (0.5 dB/s, or half the network's own
-            // slowest decay where that is slower). Where it doesn't, the loop decays by itself and
-            // renders as it did before the guard: its tail doesn't grow at the end.
-            // Near the edge a long decay with a small room amplifies a lot (up to +50 dBFS here):
-            // that is the setting, held just inside its edge, not a runaway.
+            // engine's guard (+60 dBFS). Held by the shimmer guard or not, the tail over the last 10 s
+            // decays faster than the edge: it rings less than MaxOvershoot (3) times longer than the
+            // slowest set decay, the bound the network keeps without shimmer.
+            // Near the edge a long decay with a small room amplifies a lot (up to +41 dBFS here):
+            // that is the setting, held inside its edge, not a runaway.
             var (e, v) = Make(pv => { foreach (var (i, raw) in changes) pv.Set(i, raw); });
             int rate = Measure.Rate, noise = 30 * rate;
             var x = new float[70 * rate];
@@ -350,19 +348,51 @@ namespace NeoBuzz.MachineTests
             Assert.That(Measure.Db(peak), Is.LessThan(54), "6 dB under the engine's guard");
             if (Level(55, 5) > -150)
             {
-                if (g.Limiting) Assert.That(late, Is.LessThan(0.5 * g.Target), $"held: decays (aiming at {g.Target:F2} dB/s)");
-                else Assert.That(late, Is.LessThan(0.05), "decays by itself");
+                Assert.That(late, Is.LessThan(g.Edge), $"{(g.Limiting ? "held" : "asleep")}: rings at most {VerbEngine.MaxOvershoot}× longer than set (the edge {g.Edge:F2} dB/s, aiming at {g.Target:F2})");
             }
+        }
+
+        static IEnumerable<TestCaseData> ClosestToTheEdge()
+        {
+            // The settings that came closest to the edge in a sweep of 237 (machines.md, Neo Verb).
+            foreach (var (mode, size, decay, sh) in new[] { (3, 0, 1000, 1000), (3, 0, 1000, 600), (1, 0, 1000, 1000), (2, 0, 1000, 1000), (3, 500, 760, 1000), (1, 500, 760, 1000), (0, 0, 760, 1000) })
+                yield return new TestCaseData(mode, size, decay, sh).SetName($"ShimmerRingsInsideItsEdge({(VerbMode)mode}, size {size}, decay {decay}, {sh / 10} %)");
+        }
+
+        [TestCaseSource(nameof(ClosestToTheEdge))]
+        public void ShimmerRingsInsideItsEdge(int mode, int size, int decay, int shimmer)
+        {
+            // 10 s of pink noise, then 90 s of tail: a straight line through its levels (1 s each) from
+            // 10 s after the noise to its last second above −140 dB falls faster than the edge, so the
+            // tail rings less than MaxOvershoot times longer than the slowest set decay.
+            var (e, v) = Make(pv => { pv.Set(P.Mode, mode); pv.Set(P.Size, size); pv.Set(P.Decay, decay); pv.Set(P.Shimmer, shimmer); pv.Set(P.Mix, 1000); });
+            int rate = Measure.Rate;
+            var x = new float[100 * rate];
+            Array.Copy(Measure.PinkNoise(10 * rate, 0.1), x, 10 * rate);
+            var (l, r) = Run(e, x, x);
+            double Level(int s) => Measure.Db(Math.Max(Measure.Rms(l, s * rate, rate), Measure.Rms(r, s * rate, rate)));
+            int end = 20;
+            for (int s = 20; s < 100; s++) if (Level(s) > -140) end = s;
+            Assert.That(end - 20, Is.GreaterThanOrEqualTo(10), "a tail to measure");
+            double sx = 0, sy = 0, sxx = 0, sxy = 0;
+            int m = 0;
+            for (int s = 20; s <= end; s++) { double y = Level(s); sx += s; sy += y; sxx += s * (double)s; sxy += s * y; m++; }
+            double slope = (m * sxy - sx * sy) / (m * sxx - sx * sx);
+            double slowest = v.Value(P.Decay) * Math.Max(1, v.Value(P.LowDecay));
+            var g = e.ShimmerGuard;
+            Measure.Report($"Neo Verb shimmer {shimmer / 10} % ({(VerbMode)mode}, size {size}, {slowest:F1} s): tail {slope:F2} dB/s from 20 to {end} s, ringing {-60 / slope / slowest:F2}× longer than set{(g.Limiting ? $", shimmer held at {g.Scale:F2}×" : ", guard asleep")}");
+            Assert.That(slope, Is.LessThan(g.Edge), $"rings at most {VerbEngine.MaxOvershoot}× longer than set");
         }
 
         [TestCase(0, 504, 500, 400)]     // Hall, the default Decay, 40 % shimmer
         [TestCase(1, 300, 500, 1000)]    // Room, a short Decay, full shimmer
         [TestCase(0, 0, 0, 1000)]        // the shortest Decay, full shimmer
         [TestCase(3, 504, 0, 600)]       // Plate, small, 60 %
-        public void ShimmerGuardLeavesADecayingLoopAlone(int mode, int decay, int size, int shimmer)
+        public void ShimmerGuardLeavesALoopInsideItsEdgeAlone(int mode, int decay, int size, int shimmer)
         {
-            // A shimmer loop that decays by itself never wakes the guard: the shimmer's gain stays
-            // exactly as set, so the render is the one from before the guard (bit for bit).
+            // A shimmer loop that rings inside its edge (less than 3× longer than set) never wakes the
+            // guard: the shimmer's gain stays exactly as set, so the render is the one without the
+            // guard (bit for bit).
             var (e, _) = Make(v => { v.Set(P.Mode, mode); v.Set(P.Decay, decay); v.Set(P.Size, size); v.Set(P.Shimmer, shimmer); });
             var x = new float[60 * Measure.Rate];
             Array.Copy(Measure.PinkNoise(5 * Measure.Rate, 0.1), x, 5 * Measure.Rate);
@@ -381,10 +411,11 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void AmbientShimmerIsHeldJustInsideItsEdge()
         {
-            // The factory preset Ambient — Shimmer (45 % at 9 s) grows by itself once its slowest
-            // shimmer mode comes through (about +1.9 dB/s, from −58 dB 15 s after a 2 s burst to +20 dB
-            // at 55 s). The guard finds it about 10 s in and holds the shimmer down until it decays at
-            // about 0.5 dB/s; the render is the old one until then.
+            // The factory preset Ambient — Shimmer (45 % at 9 s, Low decay ×1.2) grows by itself once
+            // its slowest shimmer mode comes through (unguarded, about +1.9 dB/s, from −58 dB 15 s after
+            // a 2 s burst to +20 dB at 55 s). The guard finds the loop ringing past its edge (3× the
+            // 10.8 s it is set to) and holds the shimmer down until the tail decays as if it rang 2.4×
+            // longer than set: between the two, and not much faster (only held down, not cut).
             int[] preset = { 0, 240, 1000, 760, 566, 733, 700, 500, 540, 0, 450, 739, 870, 667, 389, 804, 400 };
             var (e, _) = Make(v => { for (int i = 0; i < preset.Length; i++) v.Set(i, preset[i]); v.Set(P.Mix, 1000); });
             var x = new float[60 * Measure.Rate];
@@ -392,9 +423,10 @@ namespace NeoBuzz.MachineTests
             var (l, r) = Run(e, x, x);
             double Level(int s) => Measure.Db(Math.Max(Measure.Rms(l, s * Measure.Rate, Measure.Rate), Measure.Rms(r, s * Measure.Rate, Measure.Rate)));
             var g = e.ShimmerGuard;
-            Measure.Report($"Neo Verb Ambient — Shimmer: held at {g.Scale:F3}× ({45 * g.Scale:F1} % shimmer), {Level(30):F1} dB at 30 s, {Level(59):F1} dB at 59 s");
+            double slope = (Level(40) - Level(20)) / 20;
+            Measure.Report($"Neo Verb Ambient — Shimmer: held at {g.Scale:F3}× ({45 * g.Scale:F1} % shimmer), {Level(20):F1} dB at 20 s, {Level(40):F1} dB at 40 s: {slope:F2} dB/s (edge {g.Edge:F2}, aiming at {g.Target:F2})");
             Assert.That(g.Limiting, Is.True);
-            Assert.That(Level(59) - Level(30), Is.InRange(-29 * 1.0, -29 * 0.3));
+            Assert.That(slope, Is.InRange(2 * g.Target, g.Edge));
         }
 
         static IEnumerable<TestCaseData> FrozenExtremes()
