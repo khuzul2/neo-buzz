@@ -126,7 +126,10 @@ namespace ReBuzz.Studio.Tests
         {
             Assume.That(PortAudio.Available, "PortAudio isn't installed here");
             var core = Host.Core;
+            // What opening a device changes in the shared engine, put back after: the rate, and the
+            // output latency launches and takes are timed by (the Session View's tests expect none).
             int rate = core.SelectedAudioDriverSampleRate;
+            int latency = core.OutputLatencySamples;
             var window = new MainWindow(Host) { Width = 1280, Height = 800 };
             window.Show();
             try
@@ -158,6 +161,7 @@ namespace ReBuzz.Studio.Tests
                 core.AudioEngine.FinalStop();
                 core.AudioEngine.ReleaseAudioDriver();
                 core.SelectedAudioDriverSampleRate = rate;
+                core.OutputLatencySamples = latency;
                 Host.Registry.DeleteCurrentUserValue("AudioDriver", "Settings");
                 window.Close();
                 Settle();
