@@ -94,6 +94,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 9. **An old song of yours.** ⌘O a `.bmx` made on Windows: native machines show "missing", Neo and Pedal machines play. ⇧⌘S a copy, reopen it: the same machines, patterns and arrangement.
 10. **An agent.** ⇧⌘A: tick Allow agents, Copy the line. Paste it in a terminal (`claude mcp add --transport http rebuzz …`). In Claude Code: "What's in my ReBuzz song?" The status line shows `Agent: studio_status…`, and the answer names your machines.
 11. **Look and feel.** Fonts and Retina sharpness, trackpad scroll and pinch in the machine view, the menu bar (what it shows with a machine window in front), ⌘ shortcuts.
+12. **Song Notes.** F10 (fn+F10 on a Mac keyboard): type a few lines, select a word and ⌘B, the • button on two lines, ⌘K for a link. ⌘Z undoes them one by one. ⌘S, reopen: the notes are there.
 
 ## 6. Risks
 
