@@ -6,10 +6,12 @@
 // OperatorDiagram.
 
 using System;
+#if !AVALONIA   // the studio's flavour takes these names from its kit (NeoBuzz.Editor.Avalonia/WpfNames.cs)
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+#endif
 using NeoBuzz.Dsp;
 using NeoBuzz.Editor;
 
@@ -235,18 +237,19 @@ namespace NeoBuzz.Fm6
             load.Click += () =>
             {
                 if (machine == null) return;
-                var dialog = new Microsoft.Win32.OpenFileDialog { Title = "Load a DX7 bank or voice", Filter = "DX7 SysEx (*.syx)|*.syx|All files (*.*)|*.*" };
-                if (dialog.ShowDialog() != true) return;
-                try
+                EditorFiles.Open(load, "Load a DX7 bank or voice", "DX7 SysEx (*.syx)|*.syx|All files (*.*)|*.*", file =>
                 {
-                    machine.LoadBank(dialog.FileName);
-                    Show();
-                    if (machine.Bank.Count == 1) Apply(ctx, machine.Bank[0]);
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show($"Couldn't load {System.IO.Path.GetFileName(dialog.FileName)}: {e.Message}", "Neo FM6", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
+                    try
+                    {
+                        machine.LoadBank(file);
+                        Show();
+                        if (machine.Bank.Count == 1) Apply(ctx, machine.Bank[0]);
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show($"Couldn't load {System.IO.Path.GetFileName(file)}: {e.Message}", "Neo FM6", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                });
             };
 
             voices.Click += () =>
@@ -262,23 +265,28 @@ namespace NeoBuzz.Fm6
                 }
                 menu.PlacementTarget = voices;
                 menu.Placement = PlacementMode.Bottom;
+#if AVALONIA
+                menu.Open(voices);
+#else
                 menu.IsOpen = true;
+#endif
             };
 
             var export = new ActionButton("Export voice…", AccentColor, 132);
             export.Click += () =>
             {
                 if (machine == null) return;
-                var dialog = new Microsoft.Win32.SaveFileDialog { Title = "Export as a DX7 voice", Filter = "DX7 SysEx (*.syx)|*.syx", FileName = "Neo FM6 voice.syx" };
-                if (dialog.ShowDialog() != true) return;
-                try
+                EditorFiles.Save(export, "Export as a DX7 voice", "DX7 SysEx (*.syx)|*.syx", "Neo FM6 voice.syx", file =>
                 {
-                    machine.ExportVoice(dialog.FileName, System.IO.Path.GetFileNameWithoutExtension(dialog.FileName).ToUpperInvariant());
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show($"Couldn't write {dialog.FileName}: {e.Message}", "Neo FM6", MessageBoxButton.OK, MessageBoxImage.Warning);
-                }
+                    try
+                    {
+                        machine.ExportVoice(file, System.IO.Path.GetFileNameWithoutExtension(file).ToUpperInvariant());
+                    }
+                    catch (Exception e)
+                    {
+                        MessageBox.Show($"Couldn't write {file}: {e.Message}", "Neo FM6", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                });
             };
 
             var hint = new TextBlock

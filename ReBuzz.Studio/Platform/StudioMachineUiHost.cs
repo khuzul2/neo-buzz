@@ -1,8 +1,9 @@
 // Fork (docs/specs/studio-mvp.md §3.4): the engine's machine windows (IMachineUiHost) as Avalonia
 // windows: a machine's parameter window and its own GUI, one each, kept as long as the machine,
 // with their placement saved in songs. What goes inside comes from the steps that build it:
-// ParameterWindowContent (S2, the generic parameter window) and GuiContent (S1, the Neo editors).
-// Until they are in, a window says what will be there.
+// ParameterWindowContent (S2, the generic parameter window) and GuiContent (S1: a machine's own
+// GUI when it is an Avalonia control, as the Neo machines' editors are, MachineGuis.cs). Until
+// they are in, a window says what will be there.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -35,7 +36,7 @@ namespace ReBuzz.Studio.Platform
         /// A machine's own GUI as an Avalonia control (S1: the Neo editors), or null when it has none
         /// here (WPF GUIs don't load off Windows): its parameter window opens instead.
         /// </summary>
-        public static Func<IMachine, Control> GuiContent { get; set; }
+        public static Func<IMachine, Control> GuiContent { get; set; } = MachineGuis.Create;
 
         /// <summary>The window a machine's GUI or parameters are in, if open (for tests).</summary>
         public static Window GuiWindowOf(IMachine machine) => windows.TryGetValue(machine, out var w) ? w.Gui : null;
@@ -54,14 +55,19 @@ namespace ReBuzz.Studio.Platform
 
         public void OpenGui(IMachine machine, WindowPlacement? at)
         {
-            var content = GuiContent?.Invoke(machine);
-            if (content == null)
-            {
-                OpenParameterWindow(machine, at);
-                return;
-            }
             var w = windows.GetValue(machine, _ => new Windows());
-            w.Gui ??= Make(machine, machine.Name, content, () => w.Gui = null);
+            if (w.Gui == null)
+            {
+                // Made once per window: an editor holds on to its machine's parameters while shown.
+                var content = GuiContent?.Invoke(machine);
+                if (content == null)
+                {
+                    OpenParameterWindow(machine, at);
+                    return;
+                }
+                w.Gui = Make(machine, machine.Name, content, () => w.Gui = null);
+                w.Gui.CanResize = MachineGuis.Resizable(machine);
+            }
             Show(w.Gui, at);
         }
 
