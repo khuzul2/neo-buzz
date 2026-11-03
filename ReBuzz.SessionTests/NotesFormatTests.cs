@@ -228,7 +228,7 @@ namespace ReBuzz.SessionTests
         {
             get
             {
-                string dir = AppContext.BaseDirectory;
+                string? dir = AppContext.BaseDirectory;
                 while (dir != null && !File.Exists(Path.Combine(dir, "ReBuzz.sln"))) dir = Path.GetDirectoryName(dir);
                 Assume.That(dir, Is.Not.Null, "the repository");
                 return Path.Combine(dir!, "ReBuzz.Studio.Tests", "Fixtures", "InfoMachineState.xml");

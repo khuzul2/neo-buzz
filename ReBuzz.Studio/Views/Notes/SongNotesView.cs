@@ -90,7 +90,7 @@ namespace ReBuzz.Studio.Views.Notes
                 NewLine = "\n",              // the notes' line ends on every platform
                 TextWrapping = TextWrapping.Wrap,
                 IsUndoEnabled = false,      // the song's history has the steps
-                Watermark = "The song's notes. **bold**, *italic*, # heading, - list, 1. numbered, [link](https://…)",
+                PlaceholderText = "The song's notes. **bold**, *italic*, # heading, - list, 1. numbered, [link](https://…)",
                 FontSize = 14,
                 Padding = new Thickness(10, 8),
                 BorderThickness = new Thickness(0),
