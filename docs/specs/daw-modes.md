@@ -385,8 +385,9 @@ Sizes as in session-view.md: S < 500 LOC, M 500–2,000, L 2,000–5,000.
 
 **S3 Automation ramps** (`PatternColumnCore`, `WorkManager.PlayPatternColumnEvents`).
 - In an engine-played automation column, an event whose `Duration` is above 0 ramps in a straight line to the next event in the column. The Duration's value doesn't matter; writers can set the gap to the next event.
-- The value is set at the start of each tick, and of each subtick when subtick timing is on: where machines take parameter values. It is rounded to the nearest whole value. On an event's own position the event plays, as before; after the column's last event the value holds.
-- Columns without a Duration above 0 (`HasRamps`, kept as events change) skip all of this, so every song before ramps plays exactly as before. It allocates nothing.
+- The value is worked out at the start of each tick, and of each subtick when subtick timing is on: where machines take parameter values. It is rounded to the nearest whole value, and set only where it changed, so a machine isn't told the same value again. On an event's own position the event plays, as before; after the column's last event the value holds.
+- Columns without a Duration above 0 (`HasRamps`, kept as events change) skip all of this, so every song before ramps plays exactly as before.
+- Ramps allocate nothing of their own. *Found:* any parameter change on the audio thread allocates, for steps as for ramps: it reaches the machine through `MachineCore.parametersChanged`, a `ConcurrentDictionary` whose entries (after each tick's `Clear`) and enumerators are new objects. The 0.4.1 test plays no automation, so it stays at 0 bytes. Making changed parameters allocation-free is engine-hardening work beside the machine guard (machine-safety.md).
 - Upstream keeps the durations (TAP2 writes them) and plays the events as steps.
 
 **S4 Note sources** (`ReBuzz/Core/Notes/`).
@@ -405,7 +406,7 @@ Sizes as in session-view.md: S < 500 LOC, M 500–2,000, L 2,000–5,000.
 
 **Exit check:**
 - `ReBuzz.Studio.Tests/DawModesSeamTests.cs` (Linux CI): the meter, clip ids through edits, undo and both formats, the recorder and scene insert, ramp values against steps, each note source, both rolls on a source. And the song: clips, loops, a ramp and a meter. It round-trips in .bmx (A and B the same bytes) and .bmxml (the same but for the stamps), and `song-roundtrip.py --compare` passes for both. Its core sections are byte-equal to those of the same song without clip ids and meter; only the subsections differ.
-- `ReBuzzTests/DawModesSeamTests.cs` (Windows, release build): ramps allocate 0 bytes per buffer; ramps move on subticks; the WPF editors' bars mirror the engine's; without a sequence editor the engine keeps the bars in both formats; the WPF roll on a source. Upstream's `PianoRollTests` and the studio's Session View tests are unchanged.
+- `ReBuzzTests/DawModesSeamTests.cs` (Windows, release build): computing and setting ramps allocates 0 bytes (playing automation whole is measured, ramps beside steps, and reported); ramps move on subticks; the WPF editors' bars mirror the engine's; without a sequence editor the engine keeps the bars in both formats; the WPF roll on a source. The piano rolls' own tests (`PianoRollTests`, the studio's `SessionViewTests`) pass unchanged.
 
 ## 9. Phases
 

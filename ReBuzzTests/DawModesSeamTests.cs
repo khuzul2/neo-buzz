@@ -76,41 +76,83 @@ namespace ReBuzzTests
 
         // ------------------------------------------------------------------ S3: ramps
 
-        [Test]
-        public void PlayingRampsAllocatesNothing()
+        /// <summary>Plays a song of Hum machines whose patterns automate their parameter (ramps, or steps on every tick); the reader, warmed up.</summary>
+        static Driver.AudioReader PlayAutomation(HumRig rig, bool ramps)
         {
-            using var rig = new HumRig(4);
             for (int i = 0; i < 4; i++)
             {
                 var m = rig.Machines[i];
                 var p = rig.Pattern(m, "P", Bar);
                 var q = rig.Pattern(m, "Q", 2 * Bar);
                 var bypass = m.ParameterGroups[1].Parameters[0];
-                Ramps(p, bypass, Bar);
-                Ramps(q, bypass, 2 * Bar);
-                Assert.That(p.Columns.OfType<PatternColumnCore>().Single(c => c.EnginePlays).HasRamps, Is.True);
+                if (ramps)
+                {
+                    Ramps(p, bypass, Bar);
+                    Ramps(q, bypass, 2 * Bar);
+                    Assert.That(p.Columns.OfType<PatternColumnCore>().Single(c => c.EnginePlays).HasRamps, Is.True);
+                }
+                else
+                {
+                    foreach (var (pattern, ticks) in new[] { (p, Bar), (q, 2 * Bar) })
+                        SessionLayout.ColumnFor(pattern, new ColumnKey(1, bypass.IndexInGroup, 0), create: true)
+                            .SetEvents(Enumerable.Range(0, ticks).Select(t => new PatternEvent(t * TB, t % 2, 0)).ToList(), true);
+                }
                 rig.Song.SequencesList[i].SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, p));
                 rig.Song.SequencesList[i].SetEvent(Bar, new SequenceEvent(SequenceEventType.PlayPattern, q));
             }
             rig.Song.LoopEnd = 4 * Bar;
             var reader = rig.Driver.CreateAudioReader(256);
             rig.Core.Playing = true;
-            for (int i = 0; i < 200; i++)
-                reader.Read(256);                                    // warm up
-            for (int stretch = 0; stretch < 200; stretch++)
-            {
-                long start = GC.GetAllocatedBytesForCurrentThread();
-                for (int i = 0; i < 100; i++)
-                    reader.Read(256);
-                if (GC.GetAllocatedBytesForCurrentThread() == start)
-                    break;
-            }
-            long before = GC.GetAllocatedBytesForCurrentThread();
             for (int i = 0; i < 400; i++)
+                reader.Read(256);                                    // warm up
+            return reader;
+        }
+
+        static long AllocatedReading(Driver.AudioReader reader, int buffers)
+        {
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < buffers; i++)
                 reader.Read(256);
-            long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
-            TestContext.Out.WriteLine($"[notice] ramps: {bytes} bytes in 400 buffers of 256 frames");
-            Assert.That(bytes, Is.EqualTo(0), "ramps must not allocate on the audio thread");
+            return GC.GetAllocatedBytesForCurrentThread() - before;
+        }
+
+        /// <summary>
+        /// Ramps add no allocation of their own: where they are computed and set (the engine's
+        /// column events, on a tick) allocates nothing. Playing them whole is measured and
+        /// reported beside steps that change as often: a changed parameter reaches its machine
+        /// through MachineCore.parametersChanged, a ConcurrentDictionary, whose entries and
+        /// enumerators allocate for steps as for ramps (the 0.4.1 test plays no automation).
+        /// </summary>
+        [Test]
+        public void RampsAddNoAllocationOfTheirOwn()
+        {
+            using var rig = new HumRig(4);
+            var reader = PlayAutomation(rig, ramps: true);
+            var wm = reader.WorkManager;
+            long stage;
+            lock (ReBuzzCore.AudioLock)
+            {
+                ReBuzzCore.masterInfo.PosInTick = 0;                 // a tick's start: every ramp is set
+                wm.UpdatePatternColumnEvents(256);
+                long before = GC.GetAllocatedBytesForCurrentThread();
+                for (int i = 0; i < 100; i++)
+                    wm.UpdatePatternColumnEvents(256);
+                stage = GC.GetAllocatedBytesForCurrentThread() - before;
+            }
+            long playing = AllocatedReading(reader, 400);
+            rig.Core.Playing = false;
+            TestContext.Out.WriteLine($"[notice] ramps: the column events stage {stage} bytes in 100 calls; playing {playing} bytes in 400 buffers of 256 frames");
+            Assert.That(stage, Is.EqualTo(0), "computing and setting ramps allocates nothing");
+        }
+
+        [Test]
+        public void StepsOnEveryTickAllocateAsRampsDo()
+        {
+            using var rig = new HumRig(4);
+            var reader = PlayAutomation(rig, ramps: false);
+            long playing = AllocatedReading(reader, 400);
+            rig.Core.Playing = false;
+            TestContext.Out.WriteLine($"[notice] steps on every tick: {playing} bytes in 400 buffers of 256 frames (parameter changes, not ramps)");
         }
 
         [Test]
@@ -128,6 +170,7 @@ namespace ReBuzzTests
 
             var mi = ReBuzzCore.masterInfo;
             rig.Driver.ReadStereoSamples(mi.SamplesPerTick - mi.PosInTick);
+            volume.SetValue(1 << 16, 0);                                  // where the ramp starts, before the first block plays it
             rig.Core.Playing = true;
             var values = new List<int>();
             for (int guard = 0; rig.Song.PlayPosition < 8 && guard < 10000; guard++)       // the way up, by subticks

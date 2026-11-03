@@ -44,7 +44,8 @@ namespace ReBuzz.Core
         /// <summary>
         /// Fork (docs/specs/daw-modes.md S3): whether an event has a Duration above 0, which in a
         /// column the engine plays means a ramp: the value goes in a straight line from that event
-        /// to the next one. Columns without any play as steps, as before.
+        /// to the next one (WorkManager sets it on each tick and subtick where it changed).
+        /// Columns without any play as steps, as before.
         /// </summary>
         internal bool HasRamps => hasRamps;
         volatile bool hasRamps;

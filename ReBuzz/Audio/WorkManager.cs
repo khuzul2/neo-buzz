@@ -719,7 +719,8 @@ namespace ReBuzz.Audio
                     {
                         if (column is not PatternColumnCore automation || !automation.EnginePlays || column.Parameter == null)
                             continue;
-                        if (rampPoint && automation.HasRamps && automation.TryRampValue(from, out int ramped))
+                        // A ramp sets its value where it changed: a machine isn't told the same value again.
+                        if (rampPoint && automation.HasRamps && automation.TryRampValue(from, out int ramped) && column.Parameter.GetValue(column.Track) != ramped)
                             column.Parameter.SetValue(column.Track | (1 << 16), ramped);
                         column.GetEventsInto(from, to, playColumnEvents);
                         for (int e = 0; e < playColumnEvents.Count; e++)
