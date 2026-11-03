@@ -475,9 +475,9 @@
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 0.49609375,
+   "b": 0.5,
    "unit": "ticks",
-   "description": "Delays every other step, 0 to about 0.5 tick (0.25 tick at raw 128)."
+   "description": "Delays every other step, 0 to 0.5 tick (about 0.25 tick at raw 128), as its texts read."
   },
   {
    "index": 28,

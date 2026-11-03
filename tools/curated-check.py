@@ -4,8 +4,8 @@
 # its value texts (machine_describe value_table) and check each curated parameter:
 #  - its range is the machine's (a curated manifest of another version is stale);
 #  - where the manifest keeps the machine's own texts (own_texts, the default) and maps to a unit, every
-#    text that reads as a number in that unit agrees with the mapping to the text's precision (or 1 %),
-#    the profiler's own test of a fit (tools/machine_infer.py);
+#    text that reads as a number in that unit agrees with the mapping to a step of the text's last digit
+#    (some machines truncate) or 1 %;
 #  - choices kept from the machine are its texts.
 # A curated mapping that overrides the machine's texts (own_texts false: texts that are bare numbers,
 # or wrong) rests on its source instead and is not compared. Machines that don't load are reported.
@@ -73,7 +73,8 @@ def disagreements(entry, table):
             if p[0] != got:
                 bad.append((raw, text, got))
             continue
-        if abs(got - p[0]) > max(1.2 * mi._resolution(p), 0.01 * abs(p[0]), 1e-9):
+        # A whole step of the text's last digit (some machines truncate: FSM Infector's "%d%%" of raw·100/240), or 1 %.
+        if abs(got - p[0]) > max(2.4 * mi._resolution(p), 0.01 * abs(p[0]), 1e-9):
             bad.append((raw, text, round(got, 6)))
     return bad
 
@@ -92,6 +93,9 @@ def main():
                 c.call("machine_add", gear=gear, name="M", connect_to="Master")
             except profiler.ToolFailed:
                 c.call("machine_add", gear=gear, name="M", connect_to="none")
+            # Some natives' texts need the engine's sample rate, which they only have once the engine has run
+            # (Oomek Exciter's corners read "1 Hz" before): a beat's render first.
+            c.call("render", **{"from": 0, "to": 1, "tail_seconds": 0})
             d = c.call("machine_describe", machine="M", value_table=True, table_points=257)
         except (profiler.ToolFailed, profiler.ServerGone) as e:
             skipped.append(f"{gear}: {str(e)[:160]}")
