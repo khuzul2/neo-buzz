@@ -714,6 +714,8 @@ namespace ReBuzz.Studio.Views.Session
                     "the engine has already rendered past it (the clip starts in step, skipping what already played).\n" +
                     "Off: launches wait for the next line after what the engine has rendered.", tag: "Time launches to what you hear"));
             }
+            AddSyncMenu(menu);
+            AddControllersMenu(menu);
             menu.Items.Add(new Separator());
             AddMixerMenuItems(menu, doc);
 
@@ -744,6 +746,89 @@ namespace ReBuzz.Studio.Views.Session
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Keyboard shortcuts…", () => _ = Dialogs.Info(KeyboardHelp, "Session View shortcuts")));
             OpenMenu(menu, anchor);
+        }
+
+        /// <summary>Control surfaces (0.8, ported in S7): the controllers the MIDI ports offer, on or off.</summary>
+        void AddControllersMenu(ContextMenu menu)
+        {
+            var controllers = buzz.SessionControllers;
+            if (controllers == null) return;
+            var item = new MenuItem { Header = "Controllers", Tag = "Controllers" };
+            var available = controllers.Available();
+            foreach (var candidate in available)
+            {
+                var script = candidate.Script;
+                bool on = controllers.Wanted.Contains(script.Name);
+                bool connected = controllers.IsConnected(script.Name);
+                item.Items.Add(Check($"{script.Name} ({candidate.InputName})" + (on && !connected ? " (not answering)" : ""), on, () =>
+                {
+                    if (on) controllers.TurnOff(script);
+                    else
+                    {
+                        string problem = controllers.TurnOn(script);
+                        if (problem != null) _ = Dialogs.Info(problem, script.Name);
+                    }
+                    RefreshState();
+                },
+                "On: its pads launch the slots in its session ring (the red box), its lights follow the session.\n" +
+                "Its MIDI ports are then its own: leave them off in Preferences ▸ MIDI.", tag: script.Name));
+            }
+            foreach (var name in controllers.Wanted.Where(n => available.All(a => a.Script.Name != n)).ToList())
+            {
+                var script = controllers.Scripts.FirstOrDefault(s => s.Name == name);
+                if (script == null) continue;
+                item.Items.Add(Check($"{name} (not connected)", true, () => controllers.TurnOff(script), tag: name));
+            }
+            if (item.Items.Count == 0)
+            {
+                var none = new MenuItem { Header = "No controller found", Tag = "No controller found", IsEnabled = false };
+                ToolTip.SetTip(none, "Known: " + string.Join(", ", controllers.Scripts.Select(s => s.Name)) +
+                                     ".\nMore can be added as scripts (.dll) in the Controllers folder next to ReBuzz.");
+                item.Items.Add(none);
+            }
+            foreach (var problem in controllers.ScriptProblems)
+                item.Items.Add(new MenuItem { Header = "Script not loaded: " + problem, IsEnabled = false });
+            menu.Items.Add(item);
+        }
+
+        /// <summary>Sync (0.8, ported in S7): Ableton Link, MIDI clock in and out. Preferences ▸ Sync has them too.</summary>
+        void AddSyncMenu(ContextMenu menu)
+        {
+            var sync = buzz.SessionSync;
+            if (sync == null) return;
+            var item = new MenuItem { Header = sync.Status.Length > 0 ? $"Sync ({sync.Status})" : "Sync", Tag = "Sync" };
+            void Report(string title)
+            {
+                if (sync.Problem != null) _ = Dialogs.Info(sync.Problem, title);
+                RefreshState();
+            }
+            item.Items.Add(Check(!sync.LinkEnabled ? "Ableton Link" : sync.LinkPeers > 0 ? $"Ableton Link ({sync.LinkPeers} peer{(sync.LinkPeers == 1 ? "" : "s")})" : "Ableton Link (no peers yet)",
+                sync.LinkEnabled, () => { sync.SetLink(!sync.LinkEnabled); Report("Ableton Link"); },
+                "On: tempo and bar phase follow Live and other Link apps on the network; alone, they follow the session.\n" +
+                "A start waits for Link's next bar line, so it lands in step. Runs Link in a helper program (ReBuzzLink).", tag: "Ableton Link"));
+            var startStop = Check("Start and stop with Link peers", sync.LinkStartStop, () => sync.SetLinkStartStop(!sync.LinkStartStop),
+                "On: play and stop are shared with peers that have start/stop sync on (Live: Link › Start Stop Sync).");
+            startStop.IsEnabled = sync.LinkEnabled;
+            item.Items.Add(startStop);
+            item.Items.Add(new Separator());
+            item.Items.Add(Check("Follow MIDI clock in", sync.FollowMidiClock, () => { sync.SetFollowMidiClock(!sync.FollowMidiClock); Report("MIDI clock in"); },
+                "On: tempo and beat follow the MIDI clock coming in (any open MIDI input), and so do Start, Continue and Stop.\n" +
+                "Turns Link off."));
+            var outs = new MenuItem { Header = "Send MIDI clock to", Tag = "Send MIDI clock to" };
+            var open = sync.Outputs;
+            foreach (var (_, name) in open)
+            {
+                string device = name;
+                bool on = sync.ClockOutNames.Contains(device);
+                outs.Items.Add(Check(device, on, () => sync.SetClockOut(device, !on)));
+            }
+            foreach (var missing in sync.ClockOutNames.Where(n => open.All(o => o.Name != n)).ToList())
+                outs.Items.Add(Check($"{missing} (not open)", true, () => sync.SetClockOut(missing, false), tag: missing));
+            if (outs.Items.Count == 0)
+                outs.Items.Add(new MenuItem { Header = "No MIDI outputs open (Preferences ▸ MIDI)", IsEnabled = false });
+            item.Items.Add(outs);
+            menu.Items.Add(new Separator());
+            menu.Items.Add(item);
         }
 
         MenuItem ColorMenu(string header, int current, Action<int> set)

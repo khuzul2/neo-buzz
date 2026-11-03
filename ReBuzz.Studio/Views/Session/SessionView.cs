@@ -254,7 +254,7 @@ namespace ReBuzz.Studio.Views.Session
             right.Children.Add(clipButton);
             mixerButton = new FlatButton("Mixer", ToggleMixer, $"Show or hide the mixer under the grid ({ModName}+Alt+M)\nReturn tracks and the cue output: ⚙");
             right.Children.Add(mixerButton);
-            settingsButton = new FlatButton("⚙", () => ShowSettingsMenu(settingsButton), "New clip length, recording, mixer returns and cue output, MIDI mapping, keyboard shortcuts") { Margin = new Thickness(0) };
+            settingsButton = new FlatButton("⚙", () => ShowSettingsMenu(settingsButton), "New clip length, recording, sync, controllers, mixer returns and cue output, MIDI mapping, keyboard shortcuts") { Margin = new Thickness(0) };
             right.Children.Add(settingsButton);
             Grid.SetColumn(right, 1);
             bar.Children.Add(right);

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Fork (docs/specs/studio-mvp.md S6): the Modern Pattern Editor with its view on Avalonia, for the
+    studio's Gear: the portable editor (../Portable/PortableEditor.props) plus this folder's view, a
+    port of the WPF editor's code-drawn tracker grid. The studio provides Avalonia at run time (the
+    machine loads in its own context and takes Avalonia from the app's), so it isn't copied.
+  -->
+  <PropertyGroup>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <Import Project="..\Portable\PortableEditor.props" />
+  <ItemGroup>
+    <Compile Include="*.cs" />
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+  </ItemGroup>
+</Project>

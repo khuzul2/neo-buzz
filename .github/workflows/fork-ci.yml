@@ -203,6 +203,12 @@ jobs:
       shell: pwsh
       run: dotnet build ReBuzz/ReBuzz.csproj -c Release "-p:SolutionDir=$($PWD.Path)\" -p:ReBuzzCleanBuild=true -nologo *>&1 | Tee-Object -FilePath build.log
 
+    # The Modern Pattern Editor (WPF): its machine side is shared with its portable builds
+    # (docs/specs/studio-mvp.md S6), so the Windows editor builds here too.
+    - name: Build the Modern Pattern Editor (WPF)
+      shell: pwsh
+      run: dotnet build ModernPatternEditor/ModernPatternEditor.NET/ModernPatternEditor.NET.csproj -c Release "-p:SolutionDir=$($PWD.Path)\" -p:ReBuzzCleanBuild=true -nologo *>&1 | Tee-Object -FilePath mpe-build.log
+
     # Machine API (docs/specs/engine-split.md §4.3): the portable builds of BuzzGUI.Interfaces and
     # BuzzGUI.Common must stay a subset of the Windows builds that machine DLLs bind to.
     - name: Surface check
@@ -214,4 +220,6 @@ jobs:
     - name: Annotate build log
       if: failure()
       shell: pwsh
-      run: ./tools/ci-annotate-log.ps1 build.log
+      run: |
+        ./tools/ci-annotate-log.ps1 build.log
+        if (Test-Path mpe-build.log) { ./tools/ci-annotate-log.ps1 mpe-build.log }
