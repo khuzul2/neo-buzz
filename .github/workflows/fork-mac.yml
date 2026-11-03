@@ -93,10 +93,11 @@ jobs:
         dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll run --exe ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless --out "$RUNNER_TEMP/eval" --baseline eval/baseline.json
 
     # Live audio through CoreAudio (mac-engine.md M5): rebuzz-headless --audio on the runner's
-    # virtual sound device, in real time; the live tools play and meter it.
+    # virtual sound device, in real time; the live tools play and meter it. With four synths at
+    # once, the render workers must be in the device's audio workgroup (M7).
     - name: Live audio on macOS (CoreAudio)
       if: always()
-      run: python3 tools/headless-live.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/live"
+      run: python3 tools/headless-live.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/live" --expect-workgroup
 
     # MIDI and Link (mac-engine.md M6), as another app on the Mac sees them: a keyboard plugged in
     # while it plays, notes into ReBuzz's virtual destination, clock out from its virtual source,
