@@ -39,6 +39,8 @@ namespace ReBuzz.AppViews
             var song = new SongCore(dispatcher, engineSettings);
             song.BuzzCore = buzz;
             buzz.SongCore = song;
+            // Fork (daw-modes.md S1): first, so sequence editors' subsections, saved later, replace its own.
+            buzz.SongMeterStore = new Core.SongMeterStore(buzz);
             buzz.SessionLayout = new Core.Session.SessionLayout(buzz, song, dispatcher);
             buzz.SessionMidi = new Core.Session.SessionMidi(buzz, buzz.SessionLayout, registryEx);
             buzz.SessionSync = new Core.Session.SessionSync(buzz, registryEx);

@@ -94,12 +94,20 @@ namespace ReBuzz.Studio.Views.Machines
         {
             base.OnAttachedToVisualTree(e);
             Watch(core.SongCore);
+            core.PropertyChanged += OnCoreChanged;
         }
 
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
+            core.PropertyChanged -= OnCoreChanged;
             Watch(null);
             base.OnDetachedFromVisualTree(e);
+        }
+
+        /// <summary>Fork (machine-safety.md §3.3): the Master shows the clip indicator too.</summary>
+        void OnCoreChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "MasterOverText") Redraw();
         }
 
         void Watch(SongCore s)
@@ -166,7 +174,9 @@ namespace ReBuzz.Studio.Views.Machines
                 case "IsBypassed":
                 case "MIDIInputChannel":
                 case "OversampleFactor":
+                case "IsDiverged":          // fork (machine-safety.md §3.2)
                     Redraw();
+                    if (sender == hover) UpdateTip();
                     break;
             }
         }
@@ -429,12 +439,21 @@ namespace ReBuzz.Studio.Views.Machines
             if (mode != null)
                 ctx.DrawText(new FormattedText(mode, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, PlainFace, 8, text), new Point(box.X + 13, box.Y + 2));
 
-            // Missing or crashed (ErrorText): dark red at the bottom.
-            string error = m.DLL.IsMissing ? "missing" : m.DLL.IsCrashed ? "crashed" : null;
+            // Missing or crashed (ErrorText): dark red at the bottom. Fork (machine-safety.md §3.2): diverged, in white on red.
+            bool diverged = IsDiverged(m);
+            string error = m.DLL.IsMissing ? "missing" : m.DLL.IsCrashed ? "crashed" : diverged ? "diverged" : null;
             if (error != null)
             {
-                var ft = new FormattedText(error, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, NameFace, 15, Brushes.DarkRed);
+                var ft = new FormattedText(error, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, NameFace, diverged ? 11 : 15, diverged ? Brushes.White : Brushes.DarkRed);
                 ctx.DrawText(ft, new Point(box.X + (box.Width - ft.Width) / 2, box.Bottom - ft.Height));
+            }
+
+            // Fork (machine-safety.md §3.3): the Master's clip indicator, as the transport's: red with the latched over.
+            if (type == MachineType.Master && core.MasterOver)
+            {
+                ctx.DrawRectangle(null, new Pen(Shell.MasterMeter.ClipBrush, 3), box.Deflate(1.5));
+                var ft = new FormattedText(core.MasterOverText, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, NameFace, 10, Shell.MasterMeter.ClipBrush);
+                ctx.DrawText(ft, new Point(box.X + (box.Width - ft.Width) / 2, box.Bottom - ft.Height - 2));
             }
 
             // The name, bold Arial 13, shrunk to fit (a Viewbox, DownOnly, 4 px margins).
@@ -464,9 +483,16 @@ namespace ReBuzz.Studio.Views.Machines
                 ctx.FillRectangle(Glass, box);
         }
 
-        /// <summary>IMachine.GetThemeColor (BuzzGUI.Common): by type, darker when muted.</summary>
+        /// <summary>Fork (machine-safety.md §3.2): the machine's guard tripped.</summary>
+        static bool IsDiverged(IMachine m) => (m as MachineCore)?.IsDiverged == true;
+
+        /// <summary>A diverged machine's red.</summary>
+        public static readonly Color DivergedColour = Color.FromRgb(0xc0, 0x30, 0x30);
+
+        /// <summary>IMachine.GetThemeColor (BuzzGUI.Common): by type, darker when muted; red when diverged (fork).</summary>
         static Color BackgroundOf(IMachine m, Palette colours)
         {
+            if (IsDiverged(m)) return DivergedColour;
             if (m.IsControlMachine) return colours.Colour("MV Control");
             return m.DLL.Info.Type switch
             {
@@ -661,11 +687,24 @@ namespace ReBuzz.Studio.Views.Machines
                     {
                         hover = m;
                         hoverDelete = overDelete;
+                        UpdateTip();
                         InvalidateVisual();
                     }
                     break;
             }
         }
+
+        /// <summary>The tip over the machine under the pointer: why a diverged machine is muted (machine-safety.md §3.2).</summary>
+        void UpdateTip()
+        {
+            ToolTip.SetTip(this, HoverTip);
+        }
+
+        /// <summary>The tip the canvas shows now (tests).</summary>
+        public string HoverTip => hover is MachineCore mc && mc.IsDiverged
+            ? $"Diverged: muted. Its output went to {mc.DivergedReason} at beat {mc.DivergedPosition / (double)Math.Max(1, core.TPB):0.##}; " +
+              "the guard silenced and stopped it. Reset and unmute is on its menu."
+            : null;
 
         protected override void OnPointerExited(PointerEventArgs e)
         {

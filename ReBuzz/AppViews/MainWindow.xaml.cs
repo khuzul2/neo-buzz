@@ -286,6 +286,7 @@ namespace ReBuzz
                 // All set up
                 BuzzGUIStartup.Startup();
                 seqenceEditor.Song = song;
+                SequenceEditorMeter.Attach(Buzz, seqenceEditor);       // fork (daw-modes.md S1): its bars mirror the engine's
 
                 CreateSequenceView(song);
 
@@ -297,6 +298,9 @@ namespace ReBuzz
                 // Fork (docs/specs/mcp-server.md §3.1): agents in studio mode (Settings → Agent; Ctrl+Shift+A).
                 studioAgent = new Agent.StudioAgent(Buzz, windowsGuiDispatcher, text => SetStatusBarText(text, 1));
                 InputBindings.Add(new KeyBinding(new Agent.ActionCommand(() => studioAgent.ShowConnection()), Key.A, ModifierKeys.Control | ModifierKeys.Shift));
+
+                // Fork (docs/specs/machine-safety.md §3.2): a machine whose guard tripped shows muted; say why.
+                Buzz.MachineDiverged += m => SetStatusBarText($"{m.Name} diverged ({m.DivergedReason}): the guard silenced, stopped and muted it. Unmute it to reset it.", 0);
 
                 UpdateTitle();
 
@@ -1311,6 +1315,7 @@ namespace ReBuzz
 
             // All set up
             seqenceEditor.Song = song;
+            SequenceEditorMeter.Attach(Buzz, seqenceEditor);           // fork (daw-modes.md S1)
             CreateSequenceView(song);
 
             UpdateTitle();

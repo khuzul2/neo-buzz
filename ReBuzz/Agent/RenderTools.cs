@@ -59,7 +59,9 @@ namespace ReBuzz.Agent
                     Req("seconds", Number("Length, with the tail")),
                     Req("from_beats", Number("Start")),
                     Req("to_beats", Number("End")),
-                    Req("measure", Object("Loudness and peaks", Req("silent", Boolean("Nothing above -90 dBFS"))))),
+                    Req("measure", Object("Loudness and peaks", Req("silent", Boolean("Nothing above -90 dBFS")))),
+                    Opt("diverged", Array(Object("A machine whose guard tripped in the render: silenced from there on and left muted (machine_set(reset=true))",
+                        Req("machine", String("The machine")), Req("reason", String("NaN, infinity or its peak above +60 dBFS"))), "Machines that diverged"))),
                 Annotations = new ToolAnnotations(ReadOnly: true),
                 Handler = async c =>
                 {
@@ -96,6 +98,7 @@ namespace ReBuzz.Agent
                         string id = "r" + n.ToString(CultureInfo.InvariantCulture);
                         string folder = Path.Combine(Path.GetDirectoryName(host.Log.FilePath) ?? Path.GetTempPath(), "renders");
                         string file = Path.Combine(folder, $"{Path.GetFileNameWithoutExtension(host.Log.FilePath)}-{id}{SafeLabel(label)}.wav");
+                        var divergedBefore = SongModel.Machines(core).Where(m => m.IsDiverged).ToHashSet();
                         var (audio, probed) = Render(host, from, to, tail, solo, mute, probes, c, warnings);
                         double fromBeats = SongModel.Beats(core, from), toBeats = SongModel.Beats(core, to);
                         Write(file, audio);
@@ -111,7 +114,10 @@ namespace ReBuzz.Agent
                             probeList.Add(new JsonObject { ["id"] = pid, ["machine"] = machine, ["file"] = pfile, ["measure"] = AudioReport.Measure(pa, Summary) });
                         }
                         var info = host.Renders[id];
-                        return new JsonObject
+                        // Fork (machine-safety.md §3.2): machines whose guard tripped in this render.
+                        var diverged = new JsonArray(SongModel.Machines(core).Where(m => m.IsDiverged && !divergedBefore.Contains(m))
+                            .Select(m => (JsonNode)new JsonObject { ["machine"] = m.Name, ["reason"] = m.DivergedReason }).ToArray());
+                        var result = new JsonObject
                         {
                             ["id"] = id,
                             ["file"] = file,
@@ -123,6 +129,8 @@ namespace ReBuzz.Agent
                             ["probes"] = probeList,
                             ["warnings"] = new JsonArray(warnings.Select(w => (JsonNode)w).ToArray()),
                         };
+                        if (diverged.Count > 0) result["diverged"] = diverged;
+                        return result;
                     }, c.Cancellation);
                     var m = r["measure"]!.AsObject();
                     var warn = r["warnings"]!.AsArray().Select(w => w!.GetValue<string>()).ToList();
@@ -340,7 +348,11 @@ namespace ReBuzz.Agent
                 {
                     foreach (var t in taps) t.Stop();
                     core.Playing = false;
-                    foreach (var m in machines) if (m.IsMuted != mutedBefore[m]) m.IsMuted = mutedBefore[m];
+                    // Fork (machine-safety.md §3.2): a machine whose guard tripped stays muted (unmuting resets it).
+                    foreach (var m in machines.Where(m => m.IsDiverged && !mutedBefore[m]))
+                        warnings.Add($"{m.Name} diverged ({m.DivergedReason}) at beat {Math.Round(m.DivergedPosition / (double)Math.Max(1, core.TPB), 2)}: " +
+                                     $"the guard silenced and muted it. machine_set(machine=\"{m.Name}\", reset=true) brings it back.");
+                    foreach (var m in machines) if (m.IsMuted != mutedBefore[m] && !m.IsDiverged) m.IsMuted = mutedBefore[m];
                     foreach (var m in soloedBefore) m.IsSoloed = true;
                     core.SessionCore.MetronomeOn = metronome;
                     core.Looping = wasLooping;

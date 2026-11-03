@@ -5,6 +5,8 @@
 // "ModernSequenceEditorHorizontal"; the studio reads and writes both in the same formats, so
 // songs go back and forth. It answers the engine's pattern colours (PatternColours.Source, as
 // ReBuzz/AppViews/SequenceEditorPatternColours.cs does on Windows), which the Session View shares.
+// The bar list is the engine's song meter (daw-modes.md S1), which reads it when a song opens;
+// this writes it in the subsection, as before.
 
 using System;
 using System.Collections.Generic;
@@ -45,7 +47,8 @@ namespace ReBuzz.Studio.Views.Sequence
             return current;
         }
 
-        public TimeSignatureList TimeSignatures { get; } = new TimeSignatureList();
+        /// <summary>The bar list: the engine's song meter (daw-modes.md S1), which the session and the agent read too.</summary>
+        public SongMeter TimeSignatures => core.SongMeter;
 
         public SequenceClipboard Clipboard { get; } = new SequenceClipboard();
 
@@ -109,7 +112,7 @@ namespace ReBuzz.Studio.Views.Sequence
             colours.Clear();
             Clipboard.Clear();
             classicZoom = 2;
-            TimeSignatures.Reset();
+            // The bars are the engine's: it resets them for a new song and reads them when one opens.
         }
 
         void OnCommand(BuzzCommand cmd)
@@ -149,7 +152,7 @@ namespace ReBuzz.Studio.Views.Sequence
             int version = br.ReadInt32();
             if (version > ClassicVersion) return;
             classicZoom = br.ReadDouble();
-            TimeSignatures.Read(br);
+            new SongMeter().Read(br);                      // the engine has read the bars (SongMeterStore): skip them
             if (version < 2) return;
             int count = br.ReadInt32();
             for (int i = 0; i < count; i++)

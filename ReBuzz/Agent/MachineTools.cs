@@ -275,12 +275,15 @@ namespace ReBuzz.Agent
                 Description =
                     "Changes a machine's name, mute, solo, bypass (effects pass the sound through untouched) or track count. One undo step. " +
                     "Mute and solo change the song (ReBuzz's solo: soloing an effect silences the generators). To hear parts alone without " +
-                    "changing the song, use render(solo=[…]). " +
+                    "changing the song, use render(solo=[…]). reset=true is Reset and unmute for a machine whose guard tripped (machine_list " +
+                    "and machine_describe show diverged: NaN, infinity or above +60 dBFS): it is stopped and plays again, and the guard trips " +
+                    "again if it is still broken. " +
                     "Example: machine_set(machine=\"Pad\", rename=\"Strings\", mute=false).",
                 Input = Object(null,
                     Req("machine", String("The machine")),
                     Opt("rename", String("New unique name")),
                     Opt("mute", Boolean("Silence it")),
+                    Opt("reset", Boolean("Reset and unmute a diverged machine (its guard tripped)")),
                     Opt("solo", Boolean("Hear only soloed machines")),
                     Opt("bypass", Boolean("Effects: pass the input through")),
                     Opt("tracks", Integer("Number of tracks", 1, 256))),
@@ -294,6 +297,8 @@ namespace ReBuzz.Agent
                         string rename = c.String("rename")?.Trim();
                         if (SongModel.IsMaster(m) && (rename != null || c.Bool("mute") != null || c.Bool("solo") != null || c.Bool("bypass") != null || c.Int("tracks") != null))
                             throw new ToolError("Master can't be renamed, muted, soloed, bypassed or given tracks.");
+                        // Fork (machine-safety.md §3.2): Reset and unmute is unmuting it.
+                        if (c.Bool("reset") == true && m.IsDiverged) AgentActions.SetFlag(core, m, AgentActions.Flag.Mute, false);
                         if (c.Int("tracks") is int t)
                         {
                             int lo = m.DLL.Info.MinTracks, hi = Math.Max(lo, m.DLL.Info.MaxTracks);

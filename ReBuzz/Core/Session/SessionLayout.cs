@@ -78,7 +78,14 @@ namespace ReBuzz.Core.Session
 
             // Follow times are in bars, beats and ticks: the engine's copy follows the time signature (0.6).
             buzz.Session.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(ISession.BeatsPerBar)) RebuildLaunchMap(); };
-            buzz.PropertyChanged += (s, e) => { if (e.PropertyName == "TPB") RebuildLaunchMap(); };
+            buzz.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName != "TPB") return;
+                RebuildLaunchMap();
+                FollowMeter();
+            };
+            // daw-modes.md S1: until the song saves a layout of its own, the session's bar is the song's first bar.
+            buzz.SongMeter.Changed += FollowMeter;
             InitAudio();                                                    // 1.0
         }
 
@@ -130,9 +137,21 @@ namespace ReBuzz.Core.Session
             UndoStack = NewUndoStack();
             ResetTakes();                                                   // 0.7
             ResetAudio();                                                   // 1.0
-            Session.BeatsPerBar = 4;
+            Session.BeatsPerBar = buzz.SongMeter.SessionBeatsPerBar(buzz.TPB);   // daw-modes.md S1 (4 for Buzz's default bars)
             Session.LaunchQuantization = LaunchQuantization.Bar;
             RaiseChanged();
+        }
+
+        /// <summary>
+        /// daw-modes.md S1: the session's bar (where its clock starts) is the song meter's first
+        /// bar while the song has no layout of its own, or only the one filled in from the song;
+        /// a saved layout keeps the bar it was given.
+        /// </summary>
+        void FollowMeter()
+        {
+            if (document != null && !document.AutoFilled) return;
+            int beats = buzz.SongMeter.SessionBeatsPerBar(buzz.TPB);
+            if (Session.BeatsPerBar != beats) Session.BeatsPerBar = beats;
         }
 
         // ------------------------------------------------------------------ lookups

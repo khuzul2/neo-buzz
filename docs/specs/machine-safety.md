@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-03: H1 a global safeguard for every machine, plus a safety limiter on the master output with a clip indicator; H2 A; H3 A; H4 A |
+| Status | Decided 2026-11-03: H1 a global safeguard for every machine, plus a safety limiter on the master output with a clip indicator; H2 A; H3 A; H4 A. **§3.2 and §3.3 built** (§3.6) |
 | Scope | What the profiler's "unhealthy" means; how ReBuzz keeps any machine from blowing up the song or the speakers; how agents stay in safe ranges; which machines get Neo successors |
 | Related | mcp-server.md §12 (machine upgrades U1–U7, `docs/machine-health.md`), machines.md (Neo machines), studio-mvp.md (the studio), daw-modes.md (AR0 runs beside this), plugin-host.md (plugins get the same guard) |
 
@@ -66,6 +66,31 @@ The final output to the audio device gets a **safety limiter**:
 - **Preferences** (Audio): the clip threshold (+X dB, default 0 dBFS), the limiter's ceiling (default 0 dBFS) and the limiter on or off (on by default; turning it off asks for confirmation).
 - **Agents:** `meters_read` and `studio_status` report the latched over and whether the limiter acted; `render` reports overs as now.
 - WPF on Windows gets the limiter (it's in the engine) and a minimal clip lamp next to its master volume; the full meter is the studio's.
+
+### 3.6 As built (§3.2, §3.3)
+
+**The guard** (`ReBuzz/Audio/MachineGuard.cs`, called from `MachineWorkInstance` after each `Work`, before `UpdateOutputs`):
+
+- One vectorised compare per block (`|x| ≤ +60 dBFS`; NaN fails it too). A block that passes is not written to. A trip clears the block (every output channel of a multi-I/O machine), and only then is the reason worked out: NaN, infinity, or the block's peak ("+66.4 dBFS").
+- It checks native, managed and Neo machines, and the pass-through of bypassed machines and placeholders. The Master has no `Work`; the safe master covers it.
+- A diverged machine isn't worked and sends silence. Its `IsMuted` reads true until it is cleared, so every view shows it muted, and a song saved meanwhile saves it muted.
+- Buzz's `Stop` and the views' notice run on the UI thread, as the transport's Stop does, not inside the audio pass. The trip posts that one job; nothing allocates per block.
+- **Clearing it is unmuting it**: the studio's *Reset and unmute*, WPF's mute toggle, Ctrl+U, `machine_set(reset=true)` or `machine_set(mute=false)`. It is one undo step, and `Stop` runs again first. If the machine is still broken, the guard trips again.
+- The studio draws it red with "diverged" and gives the reason in its tip, the status line ("Diverged: muted: Bass (NaN)") and its menu. WPF shows it muted, with a status-bar message.
+- Agents: `machine_list` and `machine_describe` give `diverged`, `diverged_at` and `diverged_reason`; `studio_status` lists them under `safety.diverged`. There is no `machine_set_state` tool, so `machine_set` took the `reset` option. A render that trips a machine leaves it muted and says so: `diverged` (machine and reason) and a warning. The profiler reads that as "NaN or runaway output" and resets the machine (`tools/machine-profiler.py`), since a render no longer shows NaN or more than +60 dBFS.
+- The off switch is in the studio's Preferences ▸ Audio, after a confirmation. A new or opened song turns the guard on again. WPF has no switch: the guard is always on there.
+
+**The safe master** (`ReBuzz/Audio/SafeMaster.cs`, called at the end of `CommonAudioProvider.Read`):
+
+- Every audio driver (PortAudio, WASAPI, ASIO) reads through `CommonAudioProvider.Read`. Renders (`render`, WPF's offline export through `ReadOverride`, the null test, the bit-identical tests) call `WorkManager.MainAudioFillBuffer` directly, so they never pass the limiter.
+- One pass scrubs NaN and infinity and measures the peak. The limiter pass runs only while a frame is over the ceiling or the gain is still coming back. All device channels share one gain. The release is exponential with a 50 ms time constant. Once the reduction is under 10⁻⁶ (about 0.65 s after 6 dB), the gain is exactly 1 and the samples pass untouched.
+- The clip indicator latches the highest peak before the limiter that went over the threshold. Without an audio device (headless, tests) nothing reaches it; renders report their overs as before.
+- Preferences (registry, Settings: `SafeMasterLimiter`, `SafeMasterCeiling` and `ClipThreshold` in tenths of a dB): the studio's Preferences ▸ Audio ▸ Safety has the limiter (turning it off asks first), the ceiling (0 to −6 dBFS) and the clip threshold (−6 to +12 dBFS). WPF reads the same settings.
+- Studio: a master meter in the transport bar shows two peak bars before the limiter, the clip indicator ("+12.0 dB", click to clear) and a LIM lamp. The Master machine gets a red frame and the over, and "Clear clip indicator" on its menu. WPF: a clip lamp and a LIM lamp next to the master volume in both toolbar themes; a click clears the clip lamp.
+- Agents: `studio_status.safety` gives the guard, the diverged machines, the limiter (on, ceiling, and `acted`: it caught a peak over the ceiling since the indicator was cleared; its release doesn't count) and the clip indicator (threshold, latched over). `meters_read` returns `safety` (latched over, whether the limiter acted during the window) and takes `clear_clip`.
+- Upstream's opt-in "burst protection" (DC block, slew limit, soft clip; Preferences ▸ Engine) is separate and stays off by default.
+
+**Tests** (§5): `ReBuzz.Studio.Tests/SafetyTests.cs` on Linux and macOS, with a test machine built into the tests' gear (`TestMachines/GuardTest.cs`): a feedback loop at gain 1.01 and NaN after N blocks trip the guard while a steady sine plays on; the views, the status line, the menu, Reset and unmute, its undo and the agent tools follow it. Passing audio is bit-identical with the guard on and off, and the guard's check and the safe master allocate nothing. A +12 dBFS sine read through `CommonAudioProvider.Read` peaks at the ceiling, latches +12.0 dB (transport, Master, `studio_status`) and still renders at +12 dBFS. With a −3 dB ceiling the output stays under it; with the limiter off it doesn't. The preferences ask before switching off. `tools/headless-live.py` limits a hot master on a real device (Linux null sink, the macOS runner). The null test, the bit-identical renders and the 0.4.1 allocation test (`ReBuzzTests`, Windows) run unchanged with the guard in the path.
 
 ### 3.4 Layer 3: safe ranges for agents
 

@@ -17,6 +17,7 @@ using BuzzGUI.Common.Actions.SongActions;
 using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
 using BuzzGUI.SequenceEditor.Actions;
+using ReBuzz.Core;
 
 namespace ReBuzz.Studio.Views.Sequence
 {
@@ -240,15 +241,15 @@ namespace ReBuzz.Studio.Views.Sequence
     /// <summary>Sets the bar length from a time on (the horizontal editor's SetTimeSignatureAction).</summary>
     internal sealed class SetTimeSignatureAction : IAction
     {
-        readonly TimeSignatureList tsl;
-        readonly TimeSignatureList old;
+        readonly SongMeter tsl;
+        readonly SongMeter old;
         readonly int time;
         readonly int step;
 
-        public SetTimeSignatureAction(TimeSignatureList tsl, int time, int step)
+        public SetTimeSignatureAction(SongMeter tsl, int time, int step)
         {
             this.tsl = tsl;
-            old = new TimeSignatureList(tsl);
+            old = new SongMeter(tsl);
             this.time = time;
             this.step = step;
         }
@@ -261,16 +262,16 @@ namespace ReBuzz.Studio.Views.Sequence
     /// <summary>Inserts or deletes time in the bar list (TSLInsertOrDeleteAction).</summary>
     internal sealed class TimeSignatureInsertOrDeleteAction : IAction
     {
-        readonly TimeSignatureList tsl;
-        readonly TimeSignatureList old;
+        readonly SongMeter tsl;
+        readonly SongMeter old;
         readonly int time;
         readonly int span;
         readonly bool insert;
 
-        public TimeSignatureInsertOrDeleteAction(TimeSignatureList tsl, int time, int span, bool insert)
+        public TimeSignatureInsertOrDeleteAction(SongMeter tsl, int time, int span, bool insert)
         {
             this.tsl = tsl;
-            old = new TimeSignatureList(tsl);
+            old = new SongMeter(tsl);
             this.time = time;
             this.span = span;
             this.insert = insert;
@@ -294,10 +295,10 @@ namespace ReBuzz.Studio.Views.Sequence
     {
         readonly ISong song;
         readonly IActionStack stack;
-        readonly TimeSignatureList tsl;
+        readonly SongMeter tsl;
         readonly SequenceClipboard clipboard;
 
-        public SequenceEditing(ISong song, IActionStack stack, TimeSignatureList tsl, SequenceClipboard clipboard)
+        public SequenceEditing(ISong song, IActionStack stack, SongMeter tsl, SequenceClipboard clipboard)
         {
             this.song = song;
             this.stack = stack;

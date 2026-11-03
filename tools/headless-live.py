@@ -7,6 +7,8 @@
 #  - the transport plays the arrangement in real time, and is heard, and stops;
 #  - a Session View clip launches on its own (session_launch), plays and is heard, and stops;
 #  - a take records what midi_play plays into an armed track (session_record), on the bar;
+#  - the safe master (machine-safety.md §3.3): a hot master is limited on the device, the clip
+#    indicator latches the over and the agent hears of both (meters_read, studio_status);
 #  - a render still works while the device plays;
 #  - studio_status reports the device, and (macOS, --expect-workgroup) render threads working in
 #    the device's audio workgroup (M7) while four synths play in parallel;
@@ -285,6 +287,23 @@ if expect_workgroup:
     check((audio.get("workgroup_threads") or 0) >= 1 and audio.get("render_threads", 1) > 1,
           f"render threads work in the device's audio workgroup ({audio.get('workgroup_threads')} of {audio.get('render_threads')})")
 call("midi_play", stop=True)
+
+# The safe master (machine-safety.md §3.3): Keys pushed 24 dB over its usual level goes over 0 dBFS;
+# the device gets it limited, and the clip indicator latches the over (before the limiter).
+check(call("machine_add", gear="Neo Utility", name="Boost", insert_after="Keys")[0], "machine_add Neo Utility after Keys")
+check(call("param_set", machine="Boost", changes=[{"param": "Gain", "value": "+24 dB"}])[0], "Boost +24 dB")
+call("midi_play", machine="Keys", start="now", notes=[{"pitch": p, "start": 0, "length": 16} for p in ("C4", "E4", "G4")])
+ok, _, m = call("meters_read", window_seconds=1, clear_clip=True)
+safety = m.get("safety") or {}
+print(f"     safety: {json.dumps(safety)}")
+check(ok and safety.get("limiter_on") is True and safety.get("limiter_acted") is True and (safety.get("latched_over_dbfs") or 0) > 0,
+      f"the safety limiter acts on a hot master; the clip indicator latched {safety.get('latched_over_dbfs')} dBFS")
+ok, _, status = call("studio_status")
+clip = ((status.get("safety") or {}).get("clip") or {})
+check(ok and clip.get("latched_over_dbfs") is not None and (status.get("safety") or {}).get("diverged") == [],
+      f"studio_status reports the latched over ({clip.get('latched_over_dbfs')} dBFS) and no diverged machines")
+call("midi_play", stop=True)
+check(call("machine_remove", machines=["Boost"])[0], "machine_remove Boost")
 
 # Renders work with the device open (it pauses while they run).
 ok, _, r = call("render", **{"from": 0, "to": 4, "tail_seconds": 0.5})

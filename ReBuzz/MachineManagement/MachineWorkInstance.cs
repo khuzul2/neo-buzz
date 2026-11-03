@@ -56,10 +56,21 @@ namespace ReBuzz.MachineManagement
             // Some machines expect Tick() before Work()
             if (TickSent)
             {
+                // Fork (machine-safety.md §3.2): a diverged machine is silent, and isn't worked, until it is reset.
+                if (Machine.IsDiverged)
+                {
+                    Machine.UpdateOutputs(silentBuffer, nSamples);
+                    foreach (var output in Machine.AllOutputs)
+                    {
+                        if (output.Destination.InputChannelCount == 0 || (output.Destination as MachineCore).Hidden) continue;
+                        (output as MachineConnectionCore).DoTap(silentBuffer, nSamples, true, buzz);
+                    }
+                }
                 // Don't call Work() if bypassed
-                if (Machine.IsBypassed || Machine.IsSeqThru || Machine.MachineDLL.IsMissing)
+                else if (Machine.IsBypassed || Machine.IsSeqThru || Machine.MachineDLL.IsMissing)
                 {
                     Sample[] samples = Machine.GetStereoSamples(nSamples);
+                    MachineGuard.Check(Machine, samples, nSamples);     // fork (machine-safety.md §3.2): placeholders too
                     Machine.UpdateOutputs(samples, nSamples, false);
 
                     foreach (var output in Machine.AllOutputs)
@@ -190,6 +201,9 @@ namespace ReBuzz.MachineManagement
 
                 //isActive = audiom.AudioMultiWork(Machine, nSamples, multiSamplesIn, multiSamplesOut, true, true);
                 isActive = ProcessMultiWork(Machine, nSamples, multiSamplesIn, multiSamplesOut);
+
+                // Fork (machine-safety.md §3.2): the guard, before the output reaches any input.
+                if (!MachineGuard.Check(Machine, multiSamplesOut, nSamples)) isActive = false;
                 
                 // For muted machines, call Work() but send empty buffer
                 if (Machine.IsMuted || Machine.IsSeqMute || (buzz.SongCore.SoloMode && !Machine.IsSoloed && Machine.DLL.Info.Type == MachineType.Generator))
@@ -232,6 +246,9 @@ namespace ReBuzz.MachineManagement
                 // Mono
 
                 isActive = ProcessWork(Machine, samples, nSamples, wm, type);
+
+                // Fork (machine-safety.md §3.2): the guard, before the output reaches any input.
+                if (!MachineGuard.Check(Machine, samples, nSamples)) isActive = false;
 
                 // For muted machines, call Work() but send empty buffer
                 if (Machine.IsMuted || Machine.IsSeqMute || (buzz.SongCore.SoloMode && !Machine.IsSoloed && Machine.DLL.Info.Type == MachineType.Generator))
@@ -303,6 +320,8 @@ namespace ReBuzz.MachineManagement
                 }
 
                 isActive = machineHost.MultiWork(multiSamplesOut, multiSamplesIn, nSamples, WorkModes.WM_WRITE);
+                // Fork (machine-safety.md §3.2): the guard, before the output reaches any input.
+                if (!MachineGuard.Check(Machine, multiSamplesOut, nSamples)) isActive = false;
                 Machine.UpdateOutputs(multiSamplesOut, nSamples);
 
                 // For muted machines, call Work() but send empty buffer
@@ -346,6 +365,9 @@ namespace ReBuzz.MachineManagement
                 {
                     isActive = machineHost.Work(samples, nSamples, WorkModes.WM_READWRITE);
                 }
+
+                // Fork (machine-safety.md §3.2): the guard, before the output reaches any input.
+                if (!MachineGuard.Check(Machine, samples, nSamples)) isActive = false;
 
                 // For muted machines, call Work() but send empty buffer
                 if (Machine.IsMuted || Machine.IsSeqMute || (buzz.SongCore.SoloMode && !Machine.IsSoloed && Machine.DLL.Info.Type == MachineType.Generator))
