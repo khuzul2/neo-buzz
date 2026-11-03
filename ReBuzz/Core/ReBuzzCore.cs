@@ -132,6 +132,9 @@ namespace ReBuzz.Core
         // Fork (mcp-server.md A3): named sections of the song, saved in song files.
         internal SongMarkerStore MarkerStore { get; set; }
 
+        // Fork (machine-safety.md §3.5): the song's notes (Song Notes), saved in song files.
+        internal Notes.SongNotesStore SongNotes { get; set; }
+
         /// <summary>
         /// Fork (0.6): tempo nudge, a tempo factor while a nudge button is held (1: none). The
         /// engine divides each tick's length by it; the song's BPM doesn't change.
@@ -2449,6 +2452,7 @@ namespace ReBuzz.Core
             Playing = false;
             SessionLayout?.Reset();             // fork (0.6.1): no launches from the old song's map while it closes
             MarkerStore?.Clear();               // fork (mcp-server.md A3)
+            SongNotes?.Clear();                 // fork (machine-safety.md §3.5)
             InfoText = "";
 
             // Create status window

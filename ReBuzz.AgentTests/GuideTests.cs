@@ -44,6 +44,9 @@ namespace ReBuzz.AgentTests
             ["song_open"] = new[] { "path", "discard_unsaved" },
             ["song_save"] = new[] { "path", "overwrite" },
             ["song_set"] = new[] { "tempo_bpm", "ticks_per_beat", "song_end_beats", "loop_start_beats", "loop_end_beats", "looping" },
+            // machine-safety.md §3.5 (ReBuzz/Agent/NotesTools.cs): Song Notes
+            ["song_notes_read"] = new[] { "format" },
+            ["song_notes_write"] = new[] { "text", "mode" },
             ["gear_list"] = new[] { "kind", "search", "limit" },
             ["machine_list"] = new string[0],
             ["machine_add"] = new[] { "gear", "name", "connect_to", "insert_after", "gain_db", "tracks" },
