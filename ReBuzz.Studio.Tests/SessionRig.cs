@@ -26,6 +26,7 @@ namespace ReBuzz.Studio.Tests
         readonly WorkManager work;
         readonly float[] buffer = new float[512];
         readonly double masterVolume;
+        readonly bool looping;
         float x = -0.4f;
 
         public ReBuzzCore Core { get; }
@@ -44,6 +45,7 @@ namespace ReBuzz.Studio.Tests
             SessionCore.Timestamp = () => 1_000_000;
             NewSong();
             masterVolume = Core.MasterVolume;
+            looping = Core.Looping;
             foreach (var name in tracks)
                 Add("Neo Poly", name);
             Core.Looping = true;
@@ -235,6 +237,7 @@ namespace ReBuzz.Studio.Tests
             foreach (var w in PianoRollWindow.OpenWindows) w.Close();
             Layout.SetSessionRecord(false);
             Core.MasterVolume = masterVolume;
+            Core.Looping = looping;                 // the tests after this one start as they would have
             NewSong();
             Dispatcher.UIThread.RunJobs();
         }
