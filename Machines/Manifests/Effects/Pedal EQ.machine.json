@@ -1,0 +1,417 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Pedal EQ",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "type": "EQ",
+ "summary": "Eq (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": 0.0,
+   "latency_samples": 0,
+   "latency_ms": 0.0,
+   "tail_seconds": 0.0,
+   "echoes": 0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 0.0,
+   "tilt_db": 0.0,
+   "sine": {
+    "loud": {
+     "gain_db": 0.0,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.13
+    },
+    "quiet": {
+     "gain_db": 0.0,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.14
+    }
+   },
+   "traits": [
+    "utility"
+   ]
+  },
+  "cpu_ms_per_s": 0.0,
+  "load_seconds": 0.0,
+  "extremes": {
+   "min": {
+    "silent": true,
+    "sample_peak_dbfs": -90.33
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": -32.72
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Bypass",
+   "name": "Bypass",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "description": "Bypass all EQ processing (A/B comparison)",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "LS Solo",
+   "name": "LS Solo",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "description": "Solo the Low Shelf band",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "LM Solo",
+   "name": "LM Solo",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "description": "Solo the Low-Mid band",
+   "confidence": "values"
+  },
+  {
+   "index": 3,
+   "id": "HM Solo",
+   "name": "HM Solo",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "description": "Solo the High-Mid band",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "HS Solo",
+   "name": "HS Solo",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "description": "Solo the High Shelf band",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "LS Freq",
+   "name": "LS Freq",
+   "group": "",
+   "min": 0,
+   "max": 14,
+   "default": 6,
+   "kind": "freq",
+   "a": 20.0093,
+   "b": 500.831,
+   "unit": "Hz",
+   "description": "Low shelf corner frequency",
+   "confidence": "values"
+  },
+  {
+   "index": 6,
+   "id": "LS Gain",
+   "name": "LS Gain",
+   "group": "",
+   "min": 0,
+   "max": 96,
+   "default": 48,
+   "kind": "db",
+   "a": -24.0,
+   "b": 24.0,
+   "unit": "dB",
+   "description": "Low shelf gain (0.5 dB steps, 48 = 0.0 dB flat)",
+   "confidence": "values"
+  },
+  {
+   "index": 7,
+   "id": "LM Freq",
+   "name": "LM Freq",
+   "group": "",
+   "min": 0,
+   "max": 17,
+   "default": 6,
+   "kind": "freq",
+   "a": 100.015,
+   "b": 5012.56,
+   "unit": "Hz",
+   "description": "Low-mid bell centre frequency",
+   "confidence": "values"
+  },
+  {
+   "index": 8,
+   "id": "LM Gain",
+   "name": "LM Gain",
+   "group": "",
+   "min": 0,
+   "max": 96,
+   "default": 48,
+   "kind": "db",
+   "a": -24.0,
+   "b": 24.0,
+   "unit": "dB",
+   "description": "Low-mid peak gain (0.5 dB steps, 48 = 0.0 dB flat)",
+   "confidence": "values"
+  },
+  {
+   "index": 9,
+   "id": "LM Q",
+   "name": "LM Q",
+   "group": "",
+   "min": 0,
+   "max": 16,
+   "default": 6,
+   "kind": "table",
+   "points": [
+    [
+     0,
+     0.3
+    ],
+    [
+     1,
+     0.4
+    ],
+    [
+     2,
+     0.5
+    ],
+    [
+     3,
+     0.6
+    ],
+    [
+     4,
+     0.7
+    ],
+    [
+     5,
+     0.8
+    ],
+    [
+     6,
+     1.0
+    ],
+    [
+     7,
+     1.2
+    ],
+    [
+     8,
+     1.4
+    ],
+    [
+     9,
+     1.7
+    ],
+    [
+     10,
+     2.0
+    ],
+    [
+     11,
+     2.5
+    ],
+    [
+     12,
+     3.0
+    ],
+    [
+     13,
+     4.0
+    ],
+    [
+     14,
+     5.0
+    ],
+    [
+     15,
+     7.0
+    ],
+    [
+     16,
+     10.0
+    ]
+   ],
+   "description": "Low-mid bandwidth — lower Q = broader, higher Q = narrower",
+   "confidence": "values"
+  },
+  {
+   "index": 10,
+   "id": "HM Freq",
+   "name": "HM Freq",
+   "group": "",
+   "min": 0,
+   "max": 15,
+   "default": 8,
+   "kind": "freq",
+   "a": 501.055,
+   "b": 15872.3,
+   "unit": "Hz",
+   "description": "High-mid bell centre frequency",
+   "confidence": "values"
+  },
+  {
+   "index": 11,
+   "id": "HM Gain",
+   "name": "HM Gain",
+   "group": "",
+   "min": 0,
+   "max": 96,
+   "default": 48,
+   "kind": "db",
+   "a": -24.0,
+   "b": 24.0,
+   "unit": "dB",
+   "description": "High-mid peak gain (0.5 dB steps, 48 = 0.0 dB flat)",
+   "confidence": "values"
+  },
+  {
+   "index": 12,
+   "id": "HM Q",
+   "name": "HM Q",
+   "group": "",
+   "min": 0,
+   "max": 16,
+   "default": 6,
+   "kind": "table",
+   "points": [
+    [
+     0,
+     0.3
+    ],
+    [
+     1,
+     0.4
+    ],
+    [
+     2,
+     0.5
+    ],
+    [
+     3,
+     0.6
+    ],
+    [
+     4,
+     0.7
+    ],
+    [
+     5,
+     0.8
+    ],
+    [
+     6,
+     1.0
+    ],
+    [
+     7,
+     1.2
+    ],
+    [
+     8,
+     1.4
+    ],
+    [
+     9,
+     1.7
+    ],
+    [
+     10,
+     2.0
+    ],
+    [
+     11,
+     2.5
+    ],
+    [
+     12,
+     3.0
+    ],
+    [
+     13,
+     4.0
+    ],
+    [
+     14,
+     5.0
+    ],
+    [
+     15,
+     7.0
+    ],
+    [
+     16,
+     10.0
+    ]
+   ],
+   "description": "High-mid bandwidth — lower Q = broader, higher Q = narrower",
+   "confidence": "values"
+  },
+  {
+   "index": 13,
+   "id": "HS Freq",
+   "name": "HS Freq",
+   "group": "",
+   "min": 0,
+   "max": 13,
+   "default": 9,
+   "kind": "freq",
+   "a": 999.106,
+   "b": 19995.7,
+   "unit": "Hz",
+   "description": "High shelf corner frequency",
+   "confidence": "values"
+  },
+  {
+   "index": 14,
+   "id": "HS Gain",
+   "name": "HS Gain",
+   "group": "",
+   "min": 0,
+   "max": 96,
+   "default": 48,
+   "kind": "db",
+   "a": -24.0,
+   "b": 24.0,
+   "unit": "dB",
+   "description": "High shelf gain (0.5 dB steps, 48 = 0.0 dB flat)",
+   "confidence": "values"
+  },
+  {
+   "index": 15,
+   "id": "Output",
+   "name": "Output",
+   "group": "",
+   "min": 0,
+   "max": 96,
+   "default": 48,
+   "kind": "db",
+   "a": -24.0,
+   "b": 24.0,
+   "unit": "dB",
+   "description": "Post-EQ output trim — ramped per sample to prevent clicks",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

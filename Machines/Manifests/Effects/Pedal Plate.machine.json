@@ -1,0 +1,159 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Pedal Plate",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "type": "effect (blows up)",
+ "summary": "Effect (blows up) (profiled draft).",
+ "tracks": 0,
+ "health": {
+  "status": "unhealthy",
+  "problems": [
+   "NaN or runaway output on noise (26.42 dBFS)"
+  ]
+ },
+ "profile": {
+  "load_seconds": 0.0,
+  "extremes": {
+   "min": {
+    "silent": false,
+    "sample_peak_dbfs": -9.79
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": -9.83
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Mix",
+   "name": "Mix",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 50,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Wet/dry mix (0 = dry, 100 = wet)",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "PreDelayMs",
+   "name": "PreDelayMs",
+   "group": "",
+   "min": 0,
+   "max": 500,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 0.5,
+   "unit": "s",
+   "description": "Pre-delay (ms)",
+   "confidence": "description"
+  },
+  {
+   "index": 2,
+   "id": "Decay",
+   "name": "Decay",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 75,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Decay (0 = short, 100 = long)",
+   "confidence": "values"
+  },
+  {
+   "index": 3,
+   "id": "Damping",
+   "name": "Damping",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 50,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Damping (0 = bright, 100 = dark)",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "Size",
+   "name": "Size",
+   "group": "",
+   "min": 10,
+   "max": 200,
+   "default": 100,
+   "kind": "linear",
+   "a": 10.0,
+   "b": 200.0,
+   "description": "Size (10 = tiny, 100 = normal, 200 = huge)",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "ModRate",
+   "name": "ModRate",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 20,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Modulation rate (0 = static, 100 = fast)",
+   "confidence": "values"
+  },
+  {
+   "index": 6,
+   "id": "ModDepth",
+   "name": "ModDepth",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 30,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Modulation depth (0 = none, 100 = deep)",
+   "confidence": "values"
+  },
+  {
+   "index": 7,
+   "id": "LowCut",
+   "name": "LowCut",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 10,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Low cut (0 = off, 100 = ~800 Hz high-pass)",
+   "confidence": "values"
+  },
+  {
+   "index": 8,
+   "id": "Feedback",
+   "name": "Feedback",
+   "group": "",
+   "min": 0,
+   "max": 95,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 95.0,
+   "description": "Feedback (0 = none, 95 = near-infinite)",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

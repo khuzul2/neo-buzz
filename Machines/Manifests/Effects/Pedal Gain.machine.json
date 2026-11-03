@@ -1,0 +1,104 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Pedal Gain",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "type": "utility",
+ "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": 0.0,
+   "latency_samples": 0,
+   "latency_ms": 0.0,
+   "tail_seconds": 0.0,
+   "echoes": 0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 0.0,
+   "tilt_db": 0.0,
+   "sine": {
+    "loud": {
+     "gain_db": 0.0,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.13
+    },
+    "quiet": {
+     "gain_db": 0.0,
+     "thd_percent": 1.96,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.14
+    }
+   },
+   "traits": [
+    "utility"
+   ]
+  },
+  "cpu_ms_per_s": 0.0,
+  "load_seconds": 0.0,
+  "extremes": {
+   "min": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   },
+   "max": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Gain",
+   "name": "Gain",
+   "group": "",
+   "min": 0,
+   "max": 200,
+   "default": 100,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 200.0,
+   "unit": "%",
+   "description": "Output level in percent (100 = unity / 0 dB, 200 = +6 dB)",
+   "confidence": "description"
+  },
+  {
+   "index": 1,
+   "id": "Mute",
+   "name": "Mute",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "choices": [
+    "off",
+    "on"
+   ],
+   "description": "Silence the output",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "Inertia",
+   "name": "Inertia",
+   "group": "",
+   "min": 0,
+   "max": 500,
+   "default": 20,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 0.5,
+   "unit": "s",
+   "description": "Fade time in ms when Mute is toggled (0 = instant)",
+   "confidence": "description"
+  }
+ ],
+ "track_parameters": []
+}

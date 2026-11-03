@@ -1,0 +1,175 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Pedal Shaper",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "type": "utility",
+ "summary": "Utility (profiled draft): traits: utility; tail 0.01 s; latency 0 samples; gain -0.1 dB at the defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": -0.09,
+   "latency_samples": 0,
+   "latency_ms": 0.0,
+   "tail_seconds": 0.01,
+   "echoes": 0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 1.0,
+   "tilt_db": 0.3,
+   "sine": {
+    "loud": {
+     "gain_db": -0.11,
+     "thd_percent": 2.4,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.13
+    },
+    "quiet": {
+     "gain_db": 0.0,
+     "thd_percent": 1.97,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.14
+    }
+   },
+   "traits": [
+    "utility"
+   ]
+  },
+  "cpu_ms_per_s": 5.7,
+  "load_seconds": 0.0,
+  "extremes": {
+   "min": {
+    "silent": false,
+    "sample_peak_dbfs": -32.72
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": -10.04
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Drive",
+   "name": "Drive",
+   "group": "",
+   "min": 0,
+   "max": 96,
+   "default": 48,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 96.0,
+   "description": "Input drive into shaper (48 = 0 dB, range ±24 dB)",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Shape",
+   "name": "Shape",
+   "group": "",
+   "min": 0,
+   "max": 4,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Soft",
+    "Hard",
+    "Tube",
+    "Fold",
+    "Crush"
+   ],
+   "description": "Waveshaping curve",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "Tone",
+   "name": "Tone",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 64,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "Pre-shaper tilt EQ (64 = flat)",
+   "confidence": "values"
+  },
+  {
+   "index": 3,
+   "id": "Bias",
+   "name": "Bias",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 64,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "Pre-shaper DC bias (64 = none, ±64 = ±1.0)",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "Mix",
+   "name": "Mix",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 127,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "Dry/wet mix (0 = full dry, 127 = full wet)",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "Output",
+   "name": "Output",
+   "group": "",
+   "min": 0,
+   "max": 96,
+   "default": 48,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 96.0,
+   "description": "Output makeup gain (48 = 0 dB, range ±24 dB)",
+   "confidence": "values"
+  },
+  {
+   "index": 6,
+   "id": "Hysteresis",
+   "name": "Hysteresis",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "Tape-like asymmetric release smear (0 = off)",
+   "confidence": "values"
+  },
+  {
+   "index": 7,
+   "id": "Dust",
+   "name": "Dust",
+   "group": "",
+   "min": 0,
+   "max": 127,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 127.0,
+   "description": "Signal-correlated noise grain (0 = off, tracks |x|)",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

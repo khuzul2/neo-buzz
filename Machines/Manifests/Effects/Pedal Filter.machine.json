@@ -1,0 +1,252 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Pedal Filter",
+ "kind": "effect",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "type": "filter or EQ",
+ "summary": "Filter or eq (profiled draft): traits: filter or EQ; tail 0.0 s; latency 3 samples; gain -9.5 dB at the defaults.",
+ "tracks": 0,
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "effect": {
+   "gain_db": -9.49,
+   "latency_samples": 3,
+   "latency_ms": 0.07,
+   "tail_seconds": 0.0,
+   "echoes": 0,
+   "output_correlation": 1.0,
+   "spectrum_spread_db": 45.7,
+   "tilt_db": -32.2,
+   "sine": {
+    "loud": {
+     "gain_db": -0.12,
+     "thd_percent": 1.66,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.14
+    },
+    "quiet": {
+     "gain_db": -0.12,
+     "thd_percent": 1.66,
+     "thd_in_percent": 1.96,
+     "movement_db": 0.14
+    }
+   },
+   "traits": [
+    "filter or EQ"
+   ]
+  },
+  "cpu_ms_per_s": 0.0,
+  "load_seconds": 0.0,
+  "extremes": {
+   "min": {
+    "silent": false,
+    "sample_peak_dbfs": -32.72
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": -6.73
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Mode",
+   "name": "Mode",
+   "group": "",
+   "min": 0,
+   "max": 4,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Low Pass",
+    "High Pass",
+    "Band Pass",
+    "Band Reject",
+    "Comb"
+   ],
+   "description": "Filter mode.  Comb: Cutoff = fundamental freq, Slope = FIR/IIR.",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Slope",
+   "name": "Slope",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "12 dB / FIR",
+    "24 dB / IIR"
+   ],
+   "description": "SVF: 12 dB/oct (2-pole) or 24 dB/oct (4-pole).  Comb: FIR = flanging, IIR = resonator/string.",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "Cutoff",
+   "name": "Cutoff",
+   "group": "",
+   "min": 20,
+   "max": 18000,
+   "default": 2000,
+   "kind": "linear",
+   "a": 20.0,
+   "b": 18000.0,
+   "unit": "Hz",
+   "description": "Filter cutoff Hz.  Comb: comb fundamental frequency.",
+   "confidence": "description"
+  },
+  {
+   "index": 3,
+   "id": "Resonance",
+   "name": "Resonance",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 20,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Filter Q.  Comb: feedback amount (0 = none, 100 = near-infinite ring).",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "Drive",
+   "name": "Drive",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Pre-filter tanh() saturation with 2x oversampling.  0 = clean.",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "LFO Wave",
+   "name": "LFO Wave",
+   "group": "",
+   "min": 0,
+   "max": 5,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "Sine",
+    "Triangle",
+    "Square",
+    "Saw Up",
+    "Saw Down",
+    "S & H"
+   ],
+   "description": "LFO waveform.  S&H: random step, L/R update independently.",
+   "confidence": "values"
+  },
+  {
+   "index": 6,
+   "id": "LFO Rate",
+   "name": "LFO Rate",
+   "group": "",
+   "min": 0,
+   "max": 200,
+   "default": 20,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 200.0,
+   "description": "LFO speed (free mode): 0 = stopped, 100 ≈ 10 Hz, 200 ≈ 20 Hz.",
+   "confidence": "values"
+  },
+  {
+   "index": 7,
+   "id": "Tempo Sync",
+   "name": "Tempo Sync",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "switch",
+   "description": "Lock LFO to host tempo (uses LFO Div).",
+   "confidence": "values"
+  },
+  {
+   "index": 8,
+   "id": "LFO Div",
+   "name": "LFO Div",
+   "group": "",
+   "min": 0,
+   "max": 13,
+   "default": 4,
+   "kind": "enum",
+   "choices": [
+    "4 Bars",
+    "2 Bars",
+    "1 Bar",
+    "1/2",
+    "1/4",
+    "1/8",
+    "1/16",
+    "1/32",
+    "1/2 Dot",
+    "1/4 Dot",
+    "1/8 Dot",
+    "1/4 Trip",
+    "1/8 Trip",
+    "1/16 Trip"
+   ],
+   "description": "Note division when Tempo Sync = On.",
+   "confidence": "values"
+  },
+  {
+   "index": 9,
+   "id": "LFO Depth",
+   "name": "LFO Depth",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Sweep width: 0 = none, 100 = ±4 octaves.",
+   "confidence": "values"
+  },
+  {
+   "index": 10,
+   "id": "Phase Offset",
+   "name": "Phase Offset",
+   "group": "",
+   "min": 0,
+   "max": 180,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 180.0,
+   "description": "L/R LFO phase difference.  90 = quadrature, 180 = opposed.  Comb: drives stereo chorus/flanger.",
+   "confidence": "values"
+  },
+  {
+   "index": 11,
+   "id": "Mix",
+   "name": "Mix",
+   "group": "",
+   "min": 0,
+   "max": 100,
+   "default": 100,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 100.0,
+   "description": "Wet/dry blend: 0 = dry, 100 = fully filtered.",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": []
+}

@@ -1,0 +1,2609 @@
+{
+ "format": "rebuzz-machine-manifest/1",
+ "gear": "Pedal Tracker",
+ "kind": "generator",
+ "status": "draft",
+ "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "type": "monosynth",
+ "summary": "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; monophonic; takes notes in its tracks; one note at the defaults -14 LUFS.",
+ "tracks": 16,
+ "notes": {
+  "input": "tracks",
+  "pitch_offset": 0,
+  "pitched": true,
+  "polyphony": 1
+ },
+ "health": {
+  "status": "ok",
+  "problems": []
+ },
+ "profile": {
+  "level": {
+   "note": "A4 at velocity 100, 1.5 beats",
+   "integrated_lufs": -14.5,
+   "sample_peak_dbfs": -12.71,
+   "true_peak_dbtp": -12.71
+  },
+  "cpu_ms_per_s": 5.1,
+  "load_seconds": 0.02,
+  "extremes": {
+   "min": {
+    "silent": true,
+    "sample_peak_dbfs": null
+   },
+   "max": {
+    "silent": false,
+    "sample_peak_dbfs": -11.87
+   }
+  }
+ },
+ "parameters": [
+  {
+   "index": 0,
+   "id": "Master",
+   "name": "Master",
+   "group": "",
+   "min": 0,
+   "max": 65534,
+   "default": 32768,
+   "kind": "table",
+   "unit": "dB",
+   "points": [
+    [
+     0,
+     "-inf"
+    ],
+    [
+     576,
+     -35.1
+    ],
+    [
+     1152,
+     -29.1
+    ],
+    [
+     1728,
+     -25.6
+    ],
+    [
+     2304,
+     -23.1
+    ],
+    [
+     2880,
+     -21.1
+    ],
+    [
+     3456,
+     -19.5
+    ],
+    [
+     4032,
+     -18.2
+    ],
+    [
+     4608,
+     -17.0
+    ],
+    [
+     5184,
+     -16.0
+    ],
+    [
+     5760,
+     -15.1
+    ],
+    [
+     6336,
+     -14.3
+    ],
+    [
+     6912,
+     -13.5
+    ],
+    [
+     7488,
+     -12.8
+    ],
+    [
+     8064,
+     -12.2
+    ],
+    [
+     8640,
+     -11.6
+    ],
+    [
+     9216,
+     -11.0
+    ],
+    [
+     9792,
+     -10.5
+    ],
+    [
+     10368,
+     -10.0
+    ],
+    [
+     10944,
+     -9.5
+    ],
+    [
+     11520,
+     -9.1
+    ],
+    [
+     12096,
+     -8.7
+    ],
+    [
+     12672,
+     -8.3
+    ],
+    [
+     13248,
+     -7.9
+    ],
+    [
+     13824,
+     -7.5
+    ],
+    [
+     14400,
+     -7.1
+    ],
+    [
+     14976,
+     -6.8
+    ],
+    [
+     15552,
+     -6.5
+    ],
+    [
+     16128,
+     -6.2
+    ],
+    [
+     16703,
+     -5.9
+    ],
+    [
+     17279,
+     -5.6
+    ],
+    [
+     17855,
+     -5.3
+    ],
+    [
+     18431,
+     -5.0
+    ],
+    [
+     19007,
+     -4.7
+    ],
+    [
+     19583,
+     -4.5
+    ],
+    [
+     20159,
+     -4.2
+    ],
+    [
+     20735,
+     -4.0
+    ],
+    [
+     21311,
+     -3.7
+    ],
+    [
+     21887,
+     -3.5
+    ],
+    [
+     22463,
+     -3.3
+    ],
+    [
+     23039,
+     -3.1
+    ],
+    [
+     23615,
+     -2.8
+    ],
+    [
+     24191,
+     -2.6
+    ],
+    [
+     24767,
+     -2.4
+    ],
+    [
+     25343,
+     -2.2
+    ],
+    [
+     25919,
+     -2.0
+    ],
+    [
+     26495,
+     -1.8
+    ],
+    [
+     27071,
+     -1.7
+    ],
+    [
+     27647,
+     -1.5
+    ],
+    [
+     28223,
+     -1.3
+    ],
+    [
+     28799,
+     -1.1
+    ],
+    [
+     29375,
+     -0.9
+    ],
+    [
+     29951,
+     -0.8
+    ],
+    [
+     30527,
+     -0.6
+    ],
+    [
+     31103,
+     -0.5
+    ],
+    [
+     31679,
+     -0.3
+    ],
+    [
+     32255,
+     -0.1
+    ],
+    [
+     32831,
+     0.0
+    ],
+    [
+     33407,
+     0.2
+    ],
+    [
+     33983,
+     0.3
+    ],
+    [
+     34559,
+     0.5
+    ],
+    [
+     35135,
+     0.6
+    ],
+    [
+     35711,
+     0.7
+    ],
+    [
+     36287,
+     0.9
+    ],
+    [
+     36863,
+     1.0
+    ],
+    [
+     37439,
+     1.2
+    ],
+    [
+     38015,
+     1.3
+    ],
+    [
+     38591,
+     1.4
+    ],
+    [
+     39167,
+     1.5
+    ],
+    [
+     39743,
+     1.7
+    ],
+    [
+     40319,
+     1.8
+    ],
+    [
+     40895,
+     1.9
+    ],
+    [
+     41471,
+     2.0
+    ],
+    [
+     42047,
+     2.2
+    ],
+    [
+     42623,
+     2.3
+    ],
+    [
+     43199,
+     2.4
+    ],
+    [
+     43775,
+     2.5
+    ],
+    [
+     44351,
+     2.6
+    ],
+    [
+     44927,
+     2.7
+    ],
+    [
+     45503,
+     2.9
+    ],
+    [
+     46079,
+     3.0
+    ],
+    [
+     46655,
+     3.1
+    ],
+    [
+     47231,
+     3.2
+    ],
+    [
+     47807,
+     3.3
+    ],
+    [
+     48383,
+     3.4
+    ],
+    [
+     48959,
+     3.5
+    ],
+    [
+     49534,
+     3.6
+    ],
+    [
+     50110,
+     3.7
+    ],
+    [
+     50686,
+     3.8
+    ],
+    [
+     51262,
+     3.9
+    ],
+    [
+     51838,
+     4.0
+    ],
+    [
+     52414,
+     4.1
+    ],
+    [
+     52990,
+     4.2
+    ],
+    [
+     53566,
+     4.3
+    ],
+    [
+     54142,
+     4.4
+    ],
+    [
+     54718,
+     4.5
+    ],
+    [
+     55294,
+     4.5
+    ],
+    [
+     55870,
+     4.6
+    ],
+    [
+     56446,
+     4.7
+    ],
+    [
+     57022,
+     4.8
+    ],
+    [
+     57598,
+     4.9
+    ],
+    [
+     58174,
+     5.0
+    ],
+    [
+     58750,
+     5.1
+    ],
+    [
+     59326,
+     5.2
+    ],
+    [
+     59902,
+     5.2
+    ],
+    [
+     60478,
+     5.3
+    ],
+    [
+     61054,
+     5.4
+    ],
+    [
+     61630,
+     5.5
+    ],
+    [
+     62206,
+     5.6
+    ],
+    [
+     62782,
+     5.6
+    ],
+    [
+     63358,
+     5.7
+    ],
+    [
+     63934,
+     5.8
+    ],
+    [
+     64510,
+     5.9
+    ],
+    [
+     65086,
+     6.0
+    ],
+    [
+     65534,
+     6.0
+    ]
+   ],
+   "description": "Master output volume (0x8000 = unity)",
+   "confidence": "values"
+  },
+  {
+   "index": 1,
+   "id": "Mute",
+   "name": "Mute",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Master mute (smooth-fades by MuteInertia)",
+   "confidence": "values"
+  },
+  {
+   "index": 2,
+   "id": "Mute Inertia",
+   "name": "Mute Inertia",
+   "group": "",
+   "min": 0,
+   "max": 500,
+   "default": 50,
+   "kind": "linear",
+   "a": -2e-06,
+   "b": 0.001002,
+   "unit": "s",
+   "description": "Mute fade time in ms (0 = instant)",
+   "confidence": "values"
+  },
+  {
+   "index": 3,
+   "id": "Mute Track 1",
+   "name": "Mute Track 1",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 1 (fades by Mute Inertia)",
+   "confidence": "values"
+  },
+  {
+   "index": 4,
+   "id": "Mute Track 2",
+   "name": "Mute Track 2",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 2",
+   "confidence": "values"
+  },
+  {
+   "index": 5,
+   "id": "Mute Track 3",
+   "name": "Mute Track 3",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 3",
+   "confidence": "values"
+  },
+  {
+   "index": 6,
+   "id": "Mute Track 4",
+   "name": "Mute Track 4",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 4",
+   "confidence": "values"
+  },
+  {
+   "index": 7,
+   "id": "Mute Track 5",
+   "name": "Mute Track 5",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 5",
+   "confidence": "values"
+  },
+  {
+   "index": 8,
+   "id": "Mute Track 6",
+   "name": "Mute Track 6",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 6",
+   "confidence": "values"
+  },
+  {
+   "index": 9,
+   "id": "Mute Track 7",
+   "name": "Mute Track 7",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 7",
+   "confidence": "values"
+  },
+  {
+   "index": 10,
+   "id": "Mute Track 8",
+   "name": "Mute Track 8",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 8",
+   "confidence": "values"
+  },
+  {
+   "index": 11,
+   "id": "Mute Track 9",
+   "name": "Mute Track 9",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 9",
+   "confidence": "values"
+  },
+  {
+   "index": 12,
+   "id": "Mute Track 10",
+   "name": "Mute Track 10",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 10",
+   "confidence": "values"
+  },
+  {
+   "index": 13,
+   "id": "Mute Track 11",
+   "name": "Mute Track 11",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 11",
+   "confidence": "values"
+  },
+  {
+   "index": 14,
+   "id": "Mute Track 12",
+   "name": "Mute Track 12",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 12",
+   "confidence": "values"
+  },
+  {
+   "index": 15,
+   "id": "Mute Track 13",
+   "name": "Mute Track 13",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 13",
+   "confidence": "values"
+  },
+  {
+   "index": 16,
+   "id": "Mute Track 14",
+   "name": "Mute Track 14",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 14",
+   "confidence": "values"
+  },
+  {
+   "index": 17,
+   "id": "Mute Track 15",
+   "name": "Mute Track 15",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 15",
+   "confidence": "values"
+  },
+  {
+   "index": 18,
+   "id": "Mute Track 16",
+   "name": "Mute Track 16",
+   "group": "",
+   "min": 0,
+   "max": 1,
+   "default": 0,
+   "kind": "linear",
+   "a": 0.0,
+   "b": 1.0,
+   "description": "Mute track 16",
+   "confidence": "values"
+  },
+  {
+   "index": 19,
+   "id": "Interpolation",
+   "name": "Interpolation",
+   "group": "",
+   "min": 0,
+   "max": 5,
+   "default": 2,
+   "kind": "enum",
+   "choices": [
+    "None",
+    "Linear",
+    "Cubic",
+    "B-Spline",
+    "Sinc 16",
+    "Sinc 32"
+   ],
+   "description": "Sample interpolation algorithm",
+   "confidence": "values"
+  }
+ ],
+ "track_parameters": [
+  {
+   "index": 0,
+   "id": "Wave",
+   "name": "Wave",
+   "group": "",
+   "min": 1,
+   "max": 200,
+   "default": 1,
+   "kind": "enum",
+   "choices": [
+    "01",
+    "02",
+    "03",
+    "04",
+    "05",
+    "06",
+    "07",
+    "08",
+    "09",
+    "0A",
+    "0B",
+    "0C",
+    "0D",
+    "0E",
+    "0F",
+    "10",
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "19",
+    "1A",
+    "1B",
+    "1C",
+    "1D",
+    "1E",
+    "1F",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "29",
+    "2A",
+    "2B",
+    "2C",
+    "2D",
+    "2E",
+    "2F",
+    "30",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "3A",
+    "3B",
+    "3C",
+    "3D",
+    "3E",
+    "3F",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44",
+    "45",
+    "46",
+    "47",
+    "48",
+    "49",
+    "4A",
+    "4B",
+    "4C",
+    "4D",
+    "4E",
+    "4F",
+    "50",
+    "51",
+    "52",
+    "53",
+    "54",
+    "55",
+    "56",
+    "57",
+    "58",
+    "59",
+    "5A",
+    "5B",
+    "5C",
+    "5D",
+    "5E",
+    "5F",
+    "60",
+    "61",
+    "62",
+    "63",
+    "64",
+    "65",
+    "66",
+    "67",
+    "68",
+    "69",
+    "6A",
+    "6B",
+    "6C",
+    "6D",
+    "6E",
+    "6F",
+    "70",
+    "71",
+    "72",
+    "73",
+    "74",
+    "75",
+    "76",
+    "77",
+    "78",
+    "79",
+    "7A",
+    "7B",
+    "7C",
+    "7D",
+    "7E",
+    "7F",
+    "80",
+    "81",
+    "82",
+    "83",
+    "84",
+    "85",
+    "86",
+    "87",
+    "88",
+    "89",
+    "8A",
+    "8B",
+    "8C",
+    "8D",
+    "8E",
+    "8F",
+    "90",
+    "91",
+    "92",
+    "93",
+    "94",
+    "95",
+    "96",
+    "97",
+    "98",
+    "99",
+    "9A",
+    "9B",
+    "9C",
+    "9D",
+    "9E",
+    "9F",
+    "A0",
+    "A1",
+    "A2",
+    "A3",
+    "A4",
+    "A5",
+    "A6",
+    "A7",
+    "A8",
+    "A9",
+    "AA",
+    "AB",
+    "AC",
+    "AD",
+    "AE",
+    "AF",
+    "B0",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "B6",
+    "B7",
+    "B8",
+    "B9",
+    "BA",
+    "BB",
+    "BC",
+    "BD",
+    "BE",
+    "BF",
+    "C0",
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C6",
+    "C7",
+    "C8"
+   ],
+   "description": "Wavetable slot to play",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Volume",
+   "name": "Volume",
+   "group": "",
+   "min": 0,
+   "max": 254,
+   "default": 128,
+   "kind": "table",
+   "unit": "dB",
+   "points": [
+    [
+     0,
+     "-inf"
+    ],
+    [
+     2,
+     -72.2
+    ],
+    [
+     4,
+     -60.2
+    ],
+    [
+     6,
+     -53.2
+    ],
+    [
+     8,
+     -48.2
+    ],
+    [
+     10,
+     -44.3
+    ],
+    [
+     12,
+     -41.1
+    ],
+    [
+     14,
+     -38.4
+    ],
+    [
+     16,
+     -36.1
+    ],
+    [
+     18,
+     -34.1
+    ],
+    [
+     20,
+     -32.2
+    ],
+    [
+     22,
+     -30.6
+    ],
+    [
+     24,
+     -29.1
+    ],
+    [
+     26,
+     -27.7
+    ],
+    [
+     28,
+     -26.4
+    ],
+    [
+     30,
+     -25.2
+    ],
+    [
+     32,
+     -24.1
+    ],
+    [
+     34,
+     -23.0
+    ],
+    [
+     36,
+     -22.0
+    ],
+    [
+     38,
+     -21.1
+    ],
+    [
+     40,
+     -20.2
+    ],
+    [
+     42,
+     -19.4
+    ],
+    [
+     44,
+     -18.6
+    ],
+    [
+     46,
+     -17.8
+    ],
+    [
+     48,
+     -17.0
+    ],
+    [
+     50,
+     -16.3
+    ],
+    [
+     52,
+     -15.6
+    ],
+    [
+     54,
+     -15.0
+    ],
+    [
+     56,
+     -14.4
+    ],
+    [
+     58,
+     -13.8
+    ],
+    [
+     60,
+     -13.2
+    ],
+    [
+     62,
+     -12.6
+    ],
+    [
+     64,
+     -12.0
+    ],
+    [
+     66,
+     -11.5
+    ],
+    [
+     68,
+     -11.0
+    ],
+    [
+     70,
+     -10.5
+    ],
+    [
+     72,
+     -10.0
+    ],
+    [
+     74,
+     -9.5
+    ],
+    [
+     76,
+     -9.1
+    ],
+    [
+     78,
+     -8.6
+    ],
+    [
+     80,
+     -8.2
+    ],
+    [
+     82,
+     -7.7
+    ],
+    [
+     84,
+     -7.3
+    ],
+    [
+     86,
+     -6.9
+    ],
+    [
+     88,
+     -6.5
+    ],
+    [
+     90,
+     -6.1
+    ],
+    [
+     92,
+     -5.7
+    ],
+    [
+     94,
+     -5.4
+    ],
+    [
+     96,
+     -5.0
+    ],
+    [
+     98,
+     -4.6
+    ],
+    [
+     100,
+     -4.3
+    ],
+    [
+     102,
+     -3.9
+    ],
+    [
+     104,
+     -3.6
+    ],
+    [
+     106,
+     -3.3
+    ],
+    [
+     108,
+     -3.0
+    ],
+    [
+     110,
+     -2.6
+    ],
+    [
+     112,
+     -2.3
+    ],
+    [
+     114,
+     -2.0
+    ],
+    [
+     116,
+     -1.7
+    ],
+    [
+     118,
+     -1.4
+    ],
+    [
+     120,
+     -1.1
+    ],
+    [
+     122,
+     -0.8
+    ],
+    [
+     124,
+     -0.6
+    ],
+    [
+     126,
+     -0.3
+    ],
+    [
+     129,
+     0.1
+    ],
+    [
+     131,
+     0.4
+    ],
+    [
+     133,
+     0.7
+    ],
+    [
+     135,
+     0.9
+    ],
+    [
+     137,
+     1.2
+    ],
+    [
+     139,
+     1.4
+    ],
+    [
+     141,
+     1.7
+    ],
+    [
+     143,
+     1.9
+    ],
+    [
+     145,
+     2.2
+    ],
+    [
+     147,
+     2.4
+    ],
+    [
+     149,
+     2.6
+    ],
+    [
+     151,
+     2.9
+    ],
+    [
+     153,
+     3.1
+    ],
+    [
+     155,
+     3.3
+    ],
+    [
+     157,
+     3.5
+    ],
+    [
+     159,
+     3.8
+    ],
+    [
+     161,
+     4.0
+    ],
+    [
+     163,
+     4.2
+    ],
+    [
+     165,
+     4.4
+    ],
+    [
+     167,
+     4.6
+    ],
+    [
+     169,
+     4.8
+    ],
+    [
+     171,
+     5.0
+    ],
+    [
+     173,
+     5.2
+    ],
+    [
+     175,
+     5.4
+    ],
+    [
+     177,
+     5.6
+    ],
+    [
+     179,
+     5.8
+    ],
+    [
+     181,
+     6.0
+    ],
+    [
+     183,
+     6.2
+    ],
+    [
+     185,
+     6.4
+    ],
+    [
+     187,
+     6.6
+    ],
+    [
+     189,
+     6.8
+    ],
+    [
+     191,
+     7.0
+    ],
+    [
+     193,
+     7.1
+    ],
+    [
+     195,
+     7.3
+    ],
+    [
+     197,
+     7.5
+    ],
+    [
+     199,
+     7.7
+    ],
+    [
+     201,
+     7.8
+    ],
+    [
+     203,
+     8.0
+    ],
+    [
+     205,
+     8.2
+    ],
+    [
+     207,
+     8.4
+    ],
+    [
+     209,
+     8.5
+    ],
+    [
+     211,
+     8.7
+    ],
+    [
+     213,
+     8.8
+    ],
+    [
+     215,
+     9.0
+    ],
+    [
+     217,
+     9.2
+    ],
+    [
+     219,
+     9.3
+    ],
+    [
+     221,
+     9.5
+    ],
+    [
+     223,
+     9.6
+    ],
+    [
+     225,
+     9.8
+    ],
+    [
+     227,
+     10.0
+    ],
+    [
+     229,
+     10.1
+    ],
+    [
+     231,
+     10.3
+    ],
+    [
+     233,
+     10.4
+    ],
+    [
+     235,
+     10.6
+    ],
+    [
+     237,
+     10.7
+    ],
+    [
+     239,
+     10.8
+    ],
+    [
+     241,
+     11.0
+    ],
+    [
+     243,
+     11.1
+    ],
+    [
+     245,
+     11.3
+    ],
+    [
+     247,
+     11.4
+    ],
+    [
+     249,
+     11.6
+    ],
+    [
+     251,
+     11.7
+    ],
+    [
+     253,
+     11.8
+    ],
+    [
+     254,
+     11.9
+    ]
+   ],
+   "description": "Track volume (0x80 = unity)",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Cmd",
+   "name": "Cmd",
+   "group": "",
+   "min": 0,
+   "max": 254,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "00  (none)",
+    "01  Slide pitch up",
+    "02  Slide pitch down",
+    "03  Tone portamento",
+    "04  Vibrato",
+    "05  (unassigned)",
+    "06  (unassigned)",
+    "07  (unassigned)",
+    "08  (unassigned)",
+    "09  Sample offset",
+    "0A  Volume slide",
+    "0B  (unassigned)",
+    "0C  Set volume",
+    "0D  (unassigned)",
+    "0E  Extended (1x/2x fine pitch, Ax/Bx fine vol, 9x retrig, Cx cut, Dx delay)",
+    "0F  (unassigned)",
+    "10  (unassigned)",
+    "11  (unassigned)",
+    "12  (unassigned)",
+    "13  (unassigned)",
+    "14  (unassigned)",
+    "15  (unassigned)",
+    "16  (unassigned)",
+    "17  (unassigned)",
+    "18  (unassigned)",
+    "19  (unassigned)",
+    "1A  (unassigned)",
+    "1B  (unassigned)",
+    "1C  (unassigned)",
+    "1D  (unassigned)",
+    "1E  (unassigned)",
+    "1F  (unassigned)",
+    "20  (unassigned)",
+    "21  (unassigned)",
+    "22  (unassigned)",
+    "23  (unassigned)",
+    "24  (unassigned)",
+    "25  (unassigned)",
+    "26  (unassigned)",
+    "27  (unassigned)",
+    "28  (unassigned)",
+    "29  (unassigned)",
+    "2A  (unassigned)",
+    "2B  (unassigned)",
+    "2C  (unassigned)",
+    "2D  (unassigned)",
+    "2E  (unassigned)",
+    "2F  (unassigned)",
+    "30  (unassigned)",
+    "31  (unassigned)",
+    "32  (unassigned)",
+    "33  (unassigned)",
+    "34  (unassigned)",
+    "35  (unassigned)",
+    "36  (unassigned)",
+    "37  (unassigned)",
+    "38  (unassigned)",
+    "39  (unassigned)",
+    "3A  (unassigned)",
+    "3B  (unassigned)",
+    "3C  (unassigned)",
+    "3D  (unassigned)",
+    "3E  (unassigned)",
+    "3F  (unassigned)",
+    "40  (unassigned)",
+    "41  (unassigned)",
+    "42  (unassigned)",
+    "43  (unassigned)",
+    "44  (unassigned)",
+    "45  (unassigned)",
+    "46  (unassigned)",
+    "47  (unassigned)",
+    "48  (unassigned)",
+    "49  (unassigned)",
+    "4A  (unassigned)",
+    "4B  (unassigned)",
+    "4C  (unassigned)",
+    "4D  (unassigned)",
+    "4E  (unassigned)",
+    "4F  (unassigned)",
+    "50  (unassigned)",
+    "51  (unassigned)",
+    "52  (unassigned)",
+    "53  (unassigned)",
+    "54  (unassigned)",
+    "55  (unassigned)",
+    "56  (unassigned)",
+    "57  (unassigned)",
+    "58  (unassigned)",
+    "59  (unassigned)",
+    "5A  (unassigned)",
+    "5B  (unassigned)",
+    "5C  (unassigned)",
+    "5D  (unassigned)",
+    "5E  (unassigned)",
+    "5F  (unassigned)",
+    "60  (unassigned)",
+    "61  (unassigned)",
+    "62  (unassigned)",
+    "63  (unassigned)",
+    "64  (unassigned)",
+    "65  (unassigned)",
+    "66  (unassigned)",
+    "67  (unassigned)",
+    "68  (unassigned)",
+    "69  (unassigned)",
+    "6A  (unassigned)",
+    "6B  (unassigned)",
+    "6C  (unassigned)",
+    "6D  (unassigned)",
+    "6E  (unassigned)",
+    "6F  (unassigned)",
+    "70  (unassigned)",
+    "71  (unassigned)",
+    "72  (unassigned)",
+    "73  (unassigned)",
+    "74  (unassigned)",
+    "75  (unassigned)",
+    "76  (unassigned)",
+    "77  (unassigned)",
+    "78  (unassigned)",
+    "79  (unassigned)",
+    "7A  (unassigned)",
+    "7B  (unassigned)",
+    "7C  (unassigned)",
+    "7D  (unassigned)",
+    "7E  (unassigned)",
+    "7F  (unassigned)",
+    "80  (unassigned)",
+    "81  (unassigned)",
+    "82  (unassigned)",
+    "83  (unassigned)",
+    "84  (unassigned)",
+    "85  (unassigned)",
+    "86  (unassigned)",
+    "87  (unassigned)",
+    "88  (unassigned)",
+    "89  (unassigned)",
+    "8A  (unassigned)",
+    "8B  (unassigned)",
+    "8C  (unassigned)",
+    "8D  (unassigned)",
+    "8E  (unassigned)",
+    "8F  (unassigned)",
+    "90  (unassigned)",
+    "91  (unassigned)",
+    "92  (unassigned)",
+    "93  (unassigned)",
+    "94  (unassigned)",
+    "95  (unassigned)",
+    "96  (unassigned)",
+    "97  (unassigned)",
+    "98  (unassigned)",
+    "99  (unassigned)",
+    "9A  (unassigned)",
+    "9B  (unassigned)",
+    "9C  (unassigned)",
+    "9D  (unassigned)",
+    "9E  (unassigned)",
+    "9F  (unassigned)",
+    "A0  (unassigned)",
+    "A1  (unassigned)",
+    "A2  (unassigned)",
+    "A3  (unassigned)",
+    "A4  (unassigned)",
+    "A5  (unassigned)",
+    "A6  (unassigned)",
+    "A7  (unassigned)",
+    "A8  (unassigned)",
+    "A9  (unassigned)",
+    "AA  (unassigned)",
+    "AB  (unassigned)",
+    "AC  (unassigned)",
+    "AD  (unassigned)",
+    "AE  (unassigned)",
+    "AF  (unassigned)",
+    "B0  (unassigned)",
+    "B1  (unassigned)",
+    "B2  (unassigned)",
+    "B3  (unassigned)",
+    "B4  (unassigned)",
+    "B5  (unassigned)",
+    "B6  (unassigned)",
+    "B7  (unassigned)",
+    "B8  (unassigned)",
+    "B9  (unassigned)",
+    "BA  (unassigned)",
+    "BB  (unassigned)",
+    "BC  (unassigned)",
+    "BD  (unassigned)",
+    "BE  (unassigned)",
+    "BF  (unassigned)",
+    "C0  (unassigned)",
+    "C1  (unassigned)",
+    "C2  (unassigned)",
+    "C3  (unassigned)",
+    "C4  (unassigned)",
+    "C5  (unassigned)",
+    "C6  (unassigned)",
+    "C7  (unassigned)",
+    "C8  (unassigned)",
+    "C9  (unassigned)",
+    "CA  (unassigned)",
+    "CB  (unassigned)",
+    "CC  (unassigned)",
+    "CD  (unassigned)",
+    "CE  (unassigned)",
+    "CF  (unassigned)",
+    "D0  (unassigned)",
+    "D1  (unassigned)",
+    "D2  (unassigned)",
+    "D3  (unassigned)",
+    "D4  (unassigned)",
+    "D5  (unassigned)",
+    "D6  (unassigned)",
+    "D7  (unassigned)",
+    "D8  (unassigned)",
+    "D9  (unassigned)",
+    "DA  (unassigned)",
+    "DB  (unassigned)",
+    "DC  (unassigned)",
+    "DD  (unassigned)",
+    "DE  (unassigned)",
+    "DF  (unassigned)",
+    "E0  (unassigned)",
+    "E1  (unassigned)",
+    "E2  (unassigned)",
+    "E3  (unassigned)",
+    "E4  (unassigned)",
+    "E5  (unassigned)",
+    "E6  (unassigned)",
+    "E7  (unassigned)",
+    "E8  (unassigned)",
+    "E9  (unassigned)",
+    "EA  (unassigned)",
+    "EB  (unassigned)",
+    "EC  (unassigned)",
+    "ED  (unassigned)",
+    "EE  (unassigned)",
+    "EF  (unassigned)",
+    "F0  (unassigned)",
+    "F1  (unassigned)",
+    "F2  (unassigned)",
+    "F3  (unassigned)",
+    "F4  (unassigned)",
+    "F5  (unassigned)",
+    "F6  (unassigned)",
+    "F7  (unassigned)",
+    "F8  (unassigned)",
+    "F9  (unassigned)",
+    "FA  (unassigned)",
+    "FB  (unassigned)",
+    "FC  (unassigned)",
+    "FD  (unassigned)",
+    "FE  (unassigned)"
+   ],
+   "description": "Effect command, first column (Matilde-style)",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Arg",
+   "name": "Arg",
+   "group": "",
+   "min": 0,
+   "max": 254,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "00  (hi 0 / lo 0)",
+    "01  (hi 0 / lo 1)",
+    "02  (hi 0 / lo 2)",
+    "03  (hi 0 / lo 3)",
+    "04  (hi 0 / lo 4)",
+    "05  (hi 0 / lo 5)",
+    "06  (hi 0 / lo 6)",
+    "07  (hi 0 / lo 7)",
+    "08  (hi 0 / lo 8)",
+    "09  (hi 0 / lo 9)",
+    "0A  (hi 0 / lo A)",
+    "0B  (hi 0 / lo B)",
+    "0C  (hi 0 / lo C)",
+    "0D  (hi 0 / lo D)",
+    "0E  (hi 0 / lo E)",
+    "0F  (hi 0 / lo F)",
+    "10  (hi 1 / lo 0)",
+    "11  (hi 1 / lo 1)",
+    "12  (hi 1 / lo 2)",
+    "13  (hi 1 / lo 3)",
+    "14  (hi 1 / lo 4)",
+    "15  (hi 1 / lo 5)",
+    "16  (hi 1 / lo 6)",
+    "17  (hi 1 / lo 7)",
+    "18  (hi 1 / lo 8)",
+    "19  (hi 1 / lo 9)",
+    "1A  (hi 1 / lo A)",
+    "1B  (hi 1 / lo B)",
+    "1C  (hi 1 / lo C)",
+    "1D  (hi 1 / lo D)",
+    "1E  (hi 1 / lo E)",
+    "1F  (hi 1 / lo F)",
+    "20  (hi 2 / lo 0)",
+    "21  (hi 2 / lo 1)",
+    "22  (hi 2 / lo 2)",
+    "23  (hi 2 / lo 3)",
+    "24  (hi 2 / lo 4)",
+    "25  (hi 2 / lo 5)",
+    "26  (hi 2 / lo 6)",
+    "27  (hi 2 / lo 7)",
+    "28  (hi 2 / lo 8)",
+    "29  (hi 2 / lo 9)",
+    "2A  (hi 2 / lo A)",
+    "2B  (hi 2 / lo B)",
+    "2C  (hi 2 / lo C)",
+    "2D  (hi 2 / lo D)",
+    "2E  (hi 2 / lo E)",
+    "2F  (hi 2 / lo F)",
+    "30  (hi 3 / lo 0)",
+    "31  (hi 3 / lo 1)",
+    "32  (hi 3 / lo 2)",
+    "33  (hi 3 / lo 3)",
+    "34  (hi 3 / lo 4)",
+    "35  (hi 3 / lo 5)",
+    "36  (hi 3 / lo 6)",
+    "37  (hi 3 / lo 7)",
+    "38  (hi 3 / lo 8)",
+    "39  (hi 3 / lo 9)",
+    "3A  (hi 3 / lo A)",
+    "3B  (hi 3 / lo B)",
+    "3C  (hi 3 / lo C)",
+    "3D  (hi 3 / lo D)",
+    "3E  (hi 3 / lo E)",
+    "3F  (hi 3 / lo F)",
+    "40  (hi 4 / lo 0)",
+    "41  (hi 4 / lo 1)",
+    "42  (hi 4 / lo 2)",
+    "43  (hi 4 / lo 3)",
+    "44  (hi 4 / lo 4)",
+    "45  (hi 4 / lo 5)",
+    "46  (hi 4 / lo 6)",
+    "47  (hi 4 / lo 7)",
+    "48  (hi 4 / lo 8)",
+    "49  (hi 4 / lo 9)",
+    "4A  (hi 4 / lo A)",
+    "4B  (hi 4 / lo B)",
+    "4C  (hi 4 / lo C)",
+    "4D  (hi 4 / lo D)",
+    "4E  (hi 4 / lo E)",
+    "4F  (hi 4 / lo F)",
+    "50  (hi 5 / lo 0)",
+    "51  (hi 5 / lo 1)",
+    "52  (hi 5 / lo 2)",
+    "53  (hi 5 / lo 3)",
+    "54  (hi 5 / lo 4)",
+    "55  (hi 5 / lo 5)",
+    "56  (hi 5 / lo 6)",
+    "57  (hi 5 / lo 7)",
+    "58  (hi 5 / lo 8)",
+    "59  (hi 5 / lo 9)",
+    "5A  (hi 5 / lo A)",
+    "5B  (hi 5 / lo B)",
+    "5C  (hi 5 / lo C)",
+    "5D  (hi 5 / lo D)",
+    "5E  (hi 5 / lo E)",
+    "5F  (hi 5 / lo F)",
+    "60  (hi 6 / lo 0)",
+    "61  (hi 6 / lo 1)",
+    "62  (hi 6 / lo 2)",
+    "63  (hi 6 / lo 3)",
+    "64  (hi 6 / lo 4)",
+    "65  (hi 6 / lo 5)",
+    "66  (hi 6 / lo 6)",
+    "67  (hi 6 / lo 7)",
+    "68  (hi 6 / lo 8)",
+    "69  (hi 6 / lo 9)",
+    "6A  (hi 6 / lo A)",
+    "6B  (hi 6 / lo B)",
+    "6C  (hi 6 / lo C)",
+    "6D  (hi 6 / lo D)",
+    "6E  (hi 6 / lo E)",
+    "6F  (hi 6 / lo F)",
+    "70  (hi 7 / lo 0)",
+    "71  (hi 7 / lo 1)",
+    "72  (hi 7 / lo 2)",
+    "73  (hi 7 / lo 3)",
+    "74  (hi 7 / lo 4)",
+    "75  (hi 7 / lo 5)",
+    "76  (hi 7 / lo 6)",
+    "77  (hi 7 / lo 7)",
+    "78  (hi 7 / lo 8)",
+    "79  (hi 7 / lo 9)",
+    "7A  (hi 7 / lo A)",
+    "7B  (hi 7 / lo B)",
+    "7C  (hi 7 / lo C)",
+    "7D  (hi 7 / lo D)",
+    "7E  (hi 7 / lo E)",
+    "7F  (hi 7 / lo F)",
+    "80  (hi 8 / lo 0)",
+    "81  (hi 8 / lo 1)",
+    "82  (hi 8 / lo 2)",
+    "83  (hi 8 / lo 3)",
+    "84  (hi 8 / lo 4)",
+    "85  (hi 8 / lo 5)",
+    "86  (hi 8 / lo 6)",
+    "87  (hi 8 / lo 7)",
+    "88  (hi 8 / lo 8)",
+    "89  (hi 8 / lo 9)",
+    "8A  (hi 8 / lo A)",
+    "8B  (hi 8 / lo B)",
+    "8C  (hi 8 / lo C)",
+    "8D  (hi 8 / lo D)",
+    "8E  (hi 8 / lo E)",
+    "8F  (hi 8 / lo F)",
+    "90  (hi 9 / lo 0)",
+    "91  (hi 9 / lo 1)",
+    "92  (hi 9 / lo 2)",
+    "93  (hi 9 / lo 3)",
+    "94  (hi 9 / lo 4)",
+    "95  (hi 9 / lo 5)",
+    "96  (hi 9 / lo 6)",
+    "97  (hi 9 / lo 7)",
+    "98  (hi 9 / lo 8)",
+    "99  (hi 9 / lo 9)",
+    "9A  (hi 9 / lo A)",
+    "9B  (hi 9 / lo B)",
+    "9C  (hi 9 / lo C)",
+    "9D  (hi 9 / lo D)",
+    "9E  (hi 9 / lo E)",
+    "9F  (hi 9 / lo F)",
+    "A0  (hi A / lo 0)",
+    "A1  (hi A / lo 1)",
+    "A2  (hi A / lo 2)",
+    "A3  (hi A / lo 3)",
+    "A4  (hi A / lo 4)",
+    "A5  (hi A / lo 5)",
+    "A6  (hi A / lo 6)",
+    "A7  (hi A / lo 7)",
+    "A8  (hi A / lo 8)",
+    "A9  (hi A / lo 9)",
+    "AA  (hi A / lo A)",
+    "AB  (hi A / lo B)",
+    "AC  (hi A / lo C)",
+    "AD  (hi A / lo D)",
+    "AE  (hi A / lo E)",
+    "AF  (hi A / lo F)",
+    "B0  (hi B / lo 0)",
+    "B1  (hi B / lo 1)",
+    "B2  (hi B / lo 2)",
+    "B3  (hi B / lo 3)",
+    "B4  (hi B / lo 4)",
+    "B5  (hi B / lo 5)",
+    "B6  (hi B / lo 6)",
+    "B7  (hi B / lo 7)",
+    "B8  (hi B / lo 8)",
+    "B9  (hi B / lo 9)",
+    "BA  (hi B / lo A)",
+    "BB  (hi B / lo B)",
+    "BC  (hi B / lo C)",
+    "BD  (hi B / lo D)",
+    "BE  (hi B / lo E)",
+    "BF  (hi B / lo F)",
+    "C0  (hi C / lo 0)",
+    "C1  (hi C / lo 1)",
+    "C2  (hi C / lo 2)",
+    "C3  (hi C / lo 3)",
+    "C4  (hi C / lo 4)",
+    "C5  (hi C / lo 5)",
+    "C6  (hi C / lo 6)",
+    "C7  (hi C / lo 7)",
+    "C8  (hi C / lo 8)",
+    "C9  (hi C / lo 9)",
+    "CA  (hi C / lo A)",
+    "CB  (hi C / lo B)",
+    "CC  (hi C / lo C)",
+    "CD  (hi C / lo D)",
+    "CE  (hi C / lo E)",
+    "CF  (hi C / lo F)",
+    "D0  (hi D / lo 0)",
+    "D1  (hi D / lo 1)",
+    "D2  (hi D / lo 2)",
+    "D3  (hi D / lo 3)",
+    "D4  (hi D / lo 4)",
+    "D5  (hi D / lo 5)",
+    "D6  (hi D / lo 6)",
+    "D7  (hi D / lo 7)",
+    "D8  (hi D / lo 8)",
+    "D9  (hi D / lo 9)",
+    "DA  (hi D / lo A)",
+    "DB  (hi D / lo B)",
+    "DC  (hi D / lo C)",
+    "DD  (hi D / lo D)",
+    "DE  (hi D / lo E)",
+    "DF  (hi D / lo F)",
+    "E0  (hi E / lo 0)",
+    "E1  (hi E / lo 1)",
+    "E2  (hi E / lo 2)",
+    "E3  (hi E / lo 3)",
+    "E4  (hi E / lo 4)",
+    "E5  (hi E / lo 5)",
+    "E6  (hi E / lo 6)",
+    "E7  (hi E / lo 7)",
+    "E8  (hi E / lo 8)",
+    "E9  (hi E / lo 9)",
+    "EA  (hi E / lo A)",
+    "EB  (hi E / lo B)",
+    "EC  (hi E / lo C)",
+    "ED  (hi E / lo D)",
+    "EE  (hi E / lo E)",
+    "EF  (hi E / lo F)",
+    "F0  (hi F / lo 0)",
+    "F1  (hi F / lo 1)",
+    "F2  (hi F / lo 2)",
+    "F3  (hi F / lo 3)",
+    "F4  (hi F / lo 4)",
+    "F5  (hi F / lo 5)",
+    "F6  (hi F / lo 6)",
+    "F7  (hi F / lo 7)",
+    "F8  (hi F / lo 8)",
+    "F9  (hi F / lo 9)",
+    "FA  (hi F / lo A)",
+    "FB  (hi F / lo B)",
+    "FC  (hi F / lo C)",
+    "FD  (hi F / lo D)",
+    "FE  (hi F / lo E)"
+   ],
+   "description": "Argument for first effect command",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Cmd2",
+   "name": "Cmd2",
+   "group": "",
+   "min": 0,
+   "max": 254,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "00  (none)",
+    "01  Slide pitch up",
+    "02  Slide pitch down",
+    "03  Tone portamento",
+    "04  Vibrato",
+    "05  (unassigned)",
+    "06  (unassigned)",
+    "07  (unassigned)",
+    "08  (unassigned)",
+    "09  Sample offset",
+    "0A  Volume slide",
+    "0B  (unassigned)",
+    "0C  Set volume",
+    "0D  (unassigned)",
+    "0E  Extended (1x/2x fine pitch, Ax/Bx fine vol, 9x retrig, Cx cut, Dx delay)",
+    "0F  (unassigned)",
+    "10  (unassigned)",
+    "11  (unassigned)",
+    "12  (unassigned)",
+    "13  (unassigned)",
+    "14  (unassigned)",
+    "15  (unassigned)",
+    "16  (unassigned)",
+    "17  (unassigned)",
+    "18  (unassigned)",
+    "19  (unassigned)",
+    "1A  (unassigned)",
+    "1B  (unassigned)",
+    "1C  (unassigned)",
+    "1D  (unassigned)",
+    "1E  (unassigned)",
+    "1F  (unassigned)",
+    "20  (unassigned)",
+    "21  (unassigned)",
+    "22  (unassigned)",
+    "23  (unassigned)",
+    "24  (unassigned)",
+    "25  (unassigned)",
+    "26  (unassigned)",
+    "27  (unassigned)",
+    "28  (unassigned)",
+    "29  (unassigned)",
+    "2A  (unassigned)",
+    "2B  (unassigned)",
+    "2C  (unassigned)",
+    "2D  (unassigned)",
+    "2E  (unassigned)",
+    "2F  (unassigned)",
+    "30  (unassigned)",
+    "31  (unassigned)",
+    "32  (unassigned)",
+    "33  (unassigned)",
+    "34  (unassigned)",
+    "35  (unassigned)",
+    "36  (unassigned)",
+    "37  (unassigned)",
+    "38  (unassigned)",
+    "39  (unassigned)",
+    "3A  (unassigned)",
+    "3B  (unassigned)",
+    "3C  (unassigned)",
+    "3D  (unassigned)",
+    "3E  (unassigned)",
+    "3F  (unassigned)",
+    "40  (unassigned)",
+    "41  (unassigned)",
+    "42  (unassigned)",
+    "43  (unassigned)",
+    "44  (unassigned)",
+    "45  (unassigned)",
+    "46  (unassigned)",
+    "47  (unassigned)",
+    "48  (unassigned)",
+    "49  (unassigned)",
+    "4A  (unassigned)",
+    "4B  (unassigned)",
+    "4C  (unassigned)",
+    "4D  (unassigned)",
+    "4E  (unassigned)",
+    "4F  (unassigned)",
+    "50  (unassigned)",
+    "51  (unassigned)",
+    "52  (unassigned)",
+    "53  (unassigned)",
+    "54  (unassigned)",
+    "55  (unassigned)",
+    "56  (unassigned)",
+    "57  (unassigned)",
+    "58  (unassigned)",
+    "59  (unassigned)",
+    "5A  (unassigned)",
+    "5B  (unassigned)",
+    "5C  (unassigned)",
+    "5D  (unassigned)",
+    "5E  (unassigned)",
+    "5F  (unassigned)",
+    "60  (unassigned)",
+    "61  (unassigned)",
+    "62  (unassigned)",
+    "63  (unassigned)",
+    "64  (unassigned)",
+    "65  (unassigned)",
+    "66  (unassigned)",
+    "67  (unassigned)",
+    "68  (unassigned)",
+    "69  (unassigned)",
+    "6A  (unassigned)",
+    "6B  (unassigned)",
+    "6C  (unassigned)",
+    "6D  (unassigned)",
+    "6E  (unassigned)",
+    "6F  (unassigned)",
+    "70  (unassigned)",
+    "71  (unassigned)",
+    "72  (unassigned)",
+    "73  (unassigned)",
+    "74  (unassigned)",
+    "75  (unassigned)",
+    "76  (unassigned)",
+    "77  (unassigned)",
+    "78  (unassigned)",
+    "79  (unassigned)",
+    "7A  (unassigned)",
+    "7B  (unassigned)",
+    "7C  (unassigned)",
+    "7D  (unassigned)",
+    "7E  (unassigned)",
+    "7F  (unassigned)",
+    "80  (unassigned)",
+    "81  (unassigned)",
+    "82  (unassigned)",
+    "83  (unassigned)",
+    "84  (unassigned)",
+    "85  (unassigned)",
+    "86  (unassigned)",
+    "87  (unassigned)",
+    "88  (unassigned)",
+    "89  (unassigned)",
+    "8A  (unassigned)",
+    "8B  (unassigned)",
+    "8C  (unassigned)",
+    "8D  (unassigned)",
+    "8E  (unassigned)",
+    "8F  (unassigned)",
+    "90  (unassigned)",
+    "91  (unassigned)",
+    "92  (unassigned)",
+    "93  (unassigned)",
+    "94  (unassigned)",
+    "95  (unassigned)",
+    "96  (unassigned)",
+    "97  (unassigned)",
+    "98  (unassigned)",
+    "99  (unassigned)",
+    "9A  (unassigned)",
+    "9B  (unassigned)",
+    "9C  (unassigned)",
+    "9D  (unassigned)",
+    "9E  (unassigned)",
+    "9F  (unassigned)",
+    "A0  (unassigned)",
+    "A1  (unassigned)",
+    "A2  (unassigned)",
+    "A3  (unassigned)",
+    "A4  (unassigned)",
+    "A5  (unassigned)",
+    "A6  (unassigned)",
+    "A7  (unassigned)",
+    "A8  (unassigned)",
+    "A9  (unassigned)",
+    "AA  (unassigned)",
+    "AB  (unassigned)",
+    "AC  (unassigned)",
+    "AD  (unassigned)",
+    "AE  (unassigned)",
+    "AF  (unassigned)",
+    "B0  (unassigned)",
+    "B1  (unassigned)",
+    "B2  (unassigned)",
+    "B3  (unassigned)",
+    "B4  (unassigned)",
+    "B5  (unassigned)",
+    "B6  (unassigned)",
+    "B7  (unassigned)",
+    "B8  (unassigned)",
+    "B9  (unassigned)",
+    "BA  (unassigned)",
+    "BB  (unassigned)",
+    "BC  (unassigned)",
+    "BD  (unassigned)",
+    "BE  (unassigned)",
+    "BF  (unassigned)",
+    "C0  (unassigned)",
+    "C1  (unassigned)",
+    "C2  (unassigned)",
+    "C3  (unassigned)",
+    "C4  (unassigned)",
+    "C5  (unassigned)",
+    "C6  (unassigned)",
+    "C7  (unassigned)",
+    "C8  (unassigned)",
+    "C9  (unassigned)",
+    "CA  (unassigned)",
+    "CB  (unassigned)",
+    "CC  (unassigned)",
+    "CD  (unassigned)",
+    "CE  (unassigned)",
+    "CF  (unassigned)",
+    "D0  (unassigned)",
+    "D1  (unassigned)",
+    "D2  (unassigned)",
+    "D3  (unassigned)",
+    "D4  (unassigned)",
+    "D5  (unassigned)",
+    "D6  (unassigned)",
+    "D7  (unassigned)",
+    "D8  (unassigned)",
+    "D9  (unassigned)",
+    "DA  (unassigned)",
+    "DB  (unassigned)",
+    "DC  (unassigned)",
+    "DD  (unassigned)",
+    "DE  (unassigned)",
+    "DF  (unassigned)",
+    "E0  (unassigned)",
+    "E1  (unassigned)",
+    "E2  (unassigned)",
+    "E3  (unassigned)",
+    "E4  (unassigned)",
+    "E5  (unassigned)",
+    "E6  (unassigned)",
+    "E7  (unassigned)",
+    "E8  (unassigned)",
+    "E9  (unassigned)",
+    "EA  (unassigned)",
+    "EB  (unassigned)",
+    "EC  (unassigned)",
+    "ED  (unassigned)",
+    "EE  (unassigned)",
+    "EF  (unassigned)",
+    "F0  (unassigned)",
+    "F1  (unassigned)",
+    "F2  (unassigned)",
+    "F3  (unassigned)",
+    "F4  (unassigned)",
+    "F5  (unassigned)",
+    "F6  (unassigned)",
+    "F7  (unassigned)",
+    "F8  (unassigned)",
+    "F9  (unassigned)",
+    "FA  (unassigned)",
+    "FB  (unassigned)",
+    "FC  (unassigned)",
+    "FD  (unassigned)",
+    "FE  (unassigned)"
+   ],
+   "description": "Effect command, second column (runs alongside the first)",
+   "confidence": "values"
+  },
+  {
+   "index": 0,
+   "id": "Arg2",
+   "name": "Arg2",
+   "group": "",
+   "min": 0,
+   "max": 254,
+   "default": 0,
+   "kind": "enum",
+   "choices": [
+    "00  (hi 0 / lo 0)",
+    "01  (hi 0 / lo 1)",
+    "02  (hi 0 / lo 2)",
+    "03  (hi 0 / lo 3)",
+    "04  (hi 0 / lo 4)",
+    "05  (hi 0 / lo 5)",
+    "06  (hi 0 / lo 6)",
+    "07  (hi 0 / lo 7)",
+    "08  (hi 0 / lo 8)",
+    "09  (hi 0 / lo 9)",
+    "0A  (hi 0 / lo A)",
+    "0B  (hi 0 / lo B)",
+    "0C  (hi 0 / lo C)",
+    "0D  (hi 0 / lo D)",
+    "0E  (hi 0 / lo E)",
+    "0F  (hi 0 / lo F)",
+    "10  (hi 1 / lo 0)",
+    "11  (hi 1 / lo 1)",
+    "12  (hi 1 / lo 2)",
+    "13  (hi 1 / lo 3)",
+    "14  (hi 1 / lo 4)",
+    "15  (hi 1 / lo 5)",
+    "16  (hi 1 / lo 6)",
+    "17  (hi 1 / lo 7)",
+    "18  (hi 1 / lo 8)",
+    "19  (hi 1 / lo 9)",
+    "1A  (hi 1 / lo A)",
+    "1B  (hi 1 / lo B)",
+    "1C  (hi 1 / lo C)",
+    "1D  (hi 1 / lo D)",
+    "1E  (hi 1 / lo E)",
+    "1F  (hi 1 / lo F)",
+    "20  (hi 2 / lo 0)",
+    "21  (hi 2 / lo 1)",
+    "22  (hi 2 / lo 2)",
+    "23  (hi 2 / lo 3)",
+    "24  (hi 2 / lo 4)",
+    "25  (hi 2 / lo 5)",
+    "26  (hi 2 / lo 6)",
+    "27  (hi 2 / lo 7)",
+    "28  (hi 2 / lo 8)",
+    "29  (hi 2 / lo 9)",
+    "2A  (hi 2 / lo A)",
+    "2B  (hi 2 / lo B)",
+    "2C  (hi 2 / lo C)",
+    "2D  (hi 2 / lo D)",
+    "2E  (hi 2 / lo E)",
+    "2F  (hi 2 / lo F)",
+    "30  (hi 3 / lo 0)",
+    "31  (hi 3 / lo 1)",
+    "32  (hi 3 / lo 2)",
+    "33  (hi 3 / lo 3)",
+    "34  (hi 3 / lo 4)",
+    "35  (hi 3 / lo 5)",
+    "36  (hi 3 / lo 6)",
+    "37  (hi 3 / lo 7)",
+    "38  (hi 3 / lo 8)",
+    "39  (hi 3 / lo 9)",
+    "3A  (hi 3 / lo A)",
+    "3B  (hi 3 / lo B)",
+    "3C  (hi 3 / lo C)",
+    "3D  (hi 3 / lo D)",
+    "3E  (hi 3 / lo E)",
+    "3F  (hi 3 / lo F)",
+    "40  (hi 4 / lo 0)",
+    "41  (hi 4 / lo 1)",
+    "42  (hi 4 / lo 2)",
+    "43  (hi 4 / lo 3)",
+    "44  (hi 4 / lo 4)",
+    "45  (hi 4 / lo 5)",
+    "46  (hi 4 / lo 6)",
+    "47  (hi 4 / lo 7)",
+    "48  (hi 4 / lo 8)",
+    "49  (hi 4 / lo 9)",
+    "4A  (hi 4 / lo A)",
+    "4B  (hi 4 / lo B)",
+    "4C  (hi 4 / lo C)",
+    "4D  (hi 4 / lo D)",
+    "4E  (hi 4 / lo E)",
+    "4F  (hi 4 / lo F)",
+    "50  (hi 5 / lo 0)",
+    "51  (hi 5 / lo 1)",
+    "52  (hi 5 / lo 2)",
+    "53  (hi 5 / lo 3)",
+    "54  (hi 5 / lo 4)",
+    "55  (hi 5 / lo 5)",
+    "56  (hi 5 / lo 6)",
+    "57  (hi 5 / lo 7)",
+    "58  (hi 5 / lo 8)",
+    "59  (hi 5 / lo 9)",
+    "5A  (hi 5 / lo A)",
+    "5B  (hi 5 / lo B)",
+    "5C  (hi 5 / lo C)",
+    "5D  (hi 5 / lo D)",
+    "5E  (hi 5 / lo E)",
+    "5F  (hi 5 / lo F)",
+    "60  (hi 6 / lo 0)",
+    "61  (hi 6 / lo 1)",
+    "62  (hi 6 / lo 2)",
+    "63  (hi 6 / lo 3)",
+    "64  (hi 6 / lo 4)",
+    "65  (hi 6 / lo 5)",
+    "66  (hi 6 / lo 6)",
+    "67  (hi 6 / lo 7)",
+    "68  (hi 6 / lo 8)",
+    "69  (hi 6 / lo 9)",
+    "6A  (hi 6 / lo A)",
+    "6B  (hi 6 / lo B)",
+    "6C  (hi 6 / lo C)",
+    "6D  (hi 6 / lo D)",
+    "6E  (hi 6 / lo E)",
+    "6F  (hi 6 / lo F)",
+    "70  (hi 7 / lo 0)",
+    "71  (hi 7 / lo 1)",
+    "72  (hi 7 / lo 2)",
+    "73  (hi 7 / lo 3)",
+    "74  (hi 7 / lo 4)",
+    "75  (hi 7 / lo 5)",
+    "76  (hi 7 / lo 6)",
+    "77  (hi 7 / lo 7)",
+    "78  (hi 7 / lo 8)",
+    "79  (hi 7 / lo 9)",
+    "7A  (hi 7 / lo A)",
+    "7B  (hi 7 / lo B)",
+    "7C  (hi 7 / lo C)",
+    "7D  (hi 7 / lo D)",
+    "7E  (hi 7 / lo E)",
+    "7F  (hi 7 / lo F)",
+    "80  (hi 8 / lo 0)",
+    "81  (hi 8 / lo 1)",
+    "82  (hi 8 / lo 2)",
+    "83  (hi 8 / lo 3)",
+    "84  (hi 8 / lo 4)",
+    "85  (hi 8 / lo 5)",
+    "86  (hi 8 / lo 6)",
+    "87  (hi 8 / lo 7)",
+    "88  (hi 8 / lo 8)",
+    "89  (hi 8 / lo 9)",
+    "8A  (hi 8 / lo A)",
+    "8B  (hi 8 / lo B)",
+    "8C  (hi 8 / lo C)",
+    "8D  (hi 8 / lo D)",
+    "8E  (hi 8 / lo E)",
+    "8F  (hi 8 / lo F)",
+    "90  (hi 9 / lo 0)",
+    "91  (hi 9 / lo 1)",
+    "92  (hi 9 / lo 2)",
+    "93  (hi 9 / lo 3)",
+    "94  (hi 9 / lo 4)",
+    "95  (hi 9 / lo 5)",
+    "96  (hi 9 / lo 6)",
+    "97  (hi 9 / lo 7)",
+    "98  (hi 9 / lo 8)",
+    "99  (hi 9 / lo 9)",
+    "9A  (hi 9 / lo A)",
+    "9B  (hi 9 / lo B)",
+    "9C  (hi 9 / lo C)",
+    "9D  (hi 9 / lo D)",
+    "9E  (hi 9 / lo E)",
+    "9F  (hi 9 / lo F)",
+    "A0  (hi A / lo 0)",
+    "A1  (hi A / lo 1)",
+    "A2  (hi A / lo 2)",
+    "A3  (hi A / lo 3)",
+    "A4  (hi A / lo 4)",
+    "A5  (hi A / lo 5)",
+    "A6  (hi A / lo 6)",
+    "A7  (hi A / lo 7)",
+    "A8  (hi A / lo 8)",
+    "A9  (hi A / lo 9)",
+    "AA  (hi A / lo A)",
+    "AB  (hi A / lo B)",
+    "AC  (hi A / lo C)",
+    "AD  (hi A / lo D)",
+    "AE  (hi A / lo E)",
+    "AF  (hi A / lo F)",
+    "B0  (hi B / lo 0)",
+    "B1  (hi B / lo 1)",
+    "B2  (hi B / lo 2)",
+    "B3  (hi B / lo 3)",
+    "B4  (hi B / lo 4)",
+    "B5  (hi B / lo 5)",
+    "B6  (hi B / lo 6)",
+    "B7  (hi B / lo 7)",
+    "B8  (hi B / lo 8)",
+    "B9  (hi B / lo 9)",
+    "BA  (hi B / lo A)",
+    "BB  (hi B / lo B)",
+    "BC  (hi B / lo C)",
+    "BD  (hi B / lo D)",
+    "BE  (hi B / lo E)",
+    "BF  (hi B / lo F)",
+    "C0  (hi C / lo 0)",
+    "C1  (hi C / lo 1)",
+    "C2  (hi C / lo 2)",
+    "C3  (hi C / lo 3)",
+    "C4  (hi C / lo 4)",
+    "C5  (hi C / lo 5)",
+    "C6  (hi C / lo 6)",
+    "C7  (hi C / lo 7)",
+    "C8  (hi C / lo 8)",
+    "C9  (hi C / lo 9)",
+    "CA  (hi C / lo A)",
+    "CB  (hi C / lo B)",
+    "CC  (hi C / lo C)",
+    "CD  (hi C / lo D)",
+    "CE  (hi C / lo E)",
+    "CF  (hi C / lo F)",
+    "D0  (hi D / lo 0)",
+    "D1  (hi D / lo 1)",
+    "D2  (hi D / lo 2)",
+    "D3  (hi D / lo 3)",
+    "D4  (hi D / lo 4)",
+    "D5  (hi D / lo 5)",
+    "D6  (hi D / lo 6)",
+    "D7  (hi D / lo 7)",
+    "D8  (hi D / lo 8)",
+    "D9  (hi D / lo 9)",
+    "DA  (hi D / lo A)",
+    "DB  (hi D / lo B)",
+    "DC  (hi D / lo C)",
+    "DD  (hi D / lo D)",
+    "DE  (hi D / lo E)",
+    "DF  (hi D / lo F)",
+    "E0  (hi E / lo 0)",
+    "E1  (hi E / lo 1)",
+    "E2  (hi E / lo 2)",
+    "E3  (hi E / lo 3)",
+    "E4  (hi E / lo 4)",
+    "E5  (hi E / lo 5)",
+    "E6  (hi E / lo 6)",
+    "E7  (hi E / lo 7)",
+    "E8  (hi E / lo 8)",
+    "E9  (hi E / lo 9)",
+    "EA  (hi E / lo A)",
+    "EB  (hi E / lo B)",
+    "EC  (hi E / lo C)",
+    "ED  (hi E / lo D)",
+    "EE  (hi E / lo E)",
+    "EF  (hi E / lo F)",
+    "F0  (hi F / lo 0)",
+    "F1  (hi F / lo 1)",
+    "F2  (hi F / lo 2)",
+    "F3  (hi F / lo 3)",
+    "F4  (hi F / lo 4)",
+    "F5  (hi F / lo 5)",
+    "F6  (hi F / lo 6)",
+    "F7  (hi F / lo 7)",
+    "F8  (hi F / lo 8)",
+    "F9  (hi F / lo 9)",
+    "FA  (hi F / lo A)",
+    "FB  (hi F / lo B)",
+    "FC  (hi F / lo C)",
+    "FD  (hi F / lo D)",
+    "FE  (hi F / lo E)"
+   ],
+   "description": "Argument for second effect command",
+   "confidence": "values"
+  }
+ ]
+}
