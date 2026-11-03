@@ -235,7 +235,7 @@ namespace ReBuzz.AgentTests
                 var p = all[gear].Find(name) ?? all[gear].FindTrack(name);
                 Assert.That(p?.Role, Is.EqualTo(role), $"{gear} {name}");
             }
-            // Machine texts that are wrong are overridden (Pedal Comp's Attack reads "0 ms" for 10 ms), and the manual says the real value.
+            // Machine texts that are wrong are overridden (Pedal Comp's Attack reads "0.1 ms" for 10 ms), and the manual says the real value.
             var attack = all["Pedal Comp"].Find("Attack")!;
             Assert.That(attack.OwnTexts, Is.False);
             Assert.That(MachineManual.Format(attack, 10), Is.EqualTo("10 ms"));

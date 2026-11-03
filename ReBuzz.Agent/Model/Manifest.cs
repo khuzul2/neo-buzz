@@ -47,7 +47,7 @@ namespace ReBuzz.Agent.Model
         /// <summary>Curated: what it does, from <see cref="ManifestRoles.Known"/> ("filter.cutoff", "mix.wet"); empty: none.</summary>
         public string Role { get; init; } = "";
         /// <summary>
-        /// False when the machine's own value texts don't say what it does (Pedal Comp's Attack reads "0 ms" for
+        /// False when the machine's own value texts don't say what it does (Pedal Comp's Attack reads "0.1 ms" for
         /// 10 ms: a descriptor that scales the raw value): its values are read and written through the mapping only.
         /// </summary>
         public bool OwnTexts { get; init; } = true;

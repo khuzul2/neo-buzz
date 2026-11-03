@@ -772,7 +772,7 @@ For example, Pedal Juno106's `VCF Freq`: the draft had raw 0–127 with no unit 
 
 **The server.** `MachineManifest` reads the curated fields (`Quirks`, `Evidence`, `IsCurated`; per parameter `PlainName`, `Role`, `OwnTexts`); `Quality` says "curated", and `exact_units` holds as for generated manifests.
 - A machine's parameter finds its entry by name and, where names repeat (FSM Infector's " - Decay" for filter and amp), by index (`FindAt`): before, both took the first entry's mapping.
-- Curated entries take the machine's own texts first, as drafts do ("off", "1/8"), except where `own_texts` is false: then `machine_describe`, `param_get`, `param_set` and `automation_write` read and write through the mapping (Pedal Comp's Attack shows "10 ms", not the "0 ms" its own descriptor prints).
+- Curated entries take the machine's own texts first, as drafts do ("off", "1/8"), except where `own_texts` is false: then `machine_describe`, `param_get`, `param_set` and `automation_write` read and write through the mapping (Pedal Comp's Attack at raw 10 shows "10 ms", not the "0.1 ms" its own descriptor prints: raw ÷ 200).
 - `param_set` and `automation_write` take a plain name for a parameter ("Filter cutoff"), when no parameter has that name.
 - `machine_describe` adds each parameter's `plain_name` and `role` and the gear's `quirks`; `gear_list` adds `quirks` and lists curated gear with the exact ones. Units: `ticks` is a unit `param_set` reads.
 
