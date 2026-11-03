@@ -165,7 +165,7 @@ namespace ReBuzzTests
             CopyFolder(Path.Combine(runTime, "Themes", "Default", "Gear", "Info"), Path.Combine(BuzzGUI.Common.Global.BuzzPath, "Themes", "Default", "Gear", "Info"));
 
             using var rig = new AgentServerTests.Rig(gear);
-            var (error, text, _) = rig.Call("machine_add", new JsonObject { ["gear"] = "Info", ["name"] = "Notes" });
+            var (error, text, _) = rig.Call("machine_add", new JsonObject { ["gear"] = "Info", ["name"] = "Notes", ["connect_to"] = "none" });   // no audio output
             if (error)
             {
                 // Why, from Info's constructor itself (with a host that answers nothing).
