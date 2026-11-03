@@ -32,7 +32,6 @@ namespace ReBuzz.Studio.Platform
             UiPriority.Input => DispatcherPriority.Input,
             UiPriority.Loaded => DispatcherPriority.Loaded,
             UiPriority.Render => DispatcherPriority.Render,
-            UiPriority.DataBind => DispatcherPriority.DataBind,
             UiPriority.Send => DispatcherPriority.Send,
             _ => DispatcherPriority.Normal,
         };
