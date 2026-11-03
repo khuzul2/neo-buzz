@@ -1,6 +1,7 @@
 // Fork (docs/specs/mcp-server.md §12.2, U1): profiled draft manifests as the server reads them
 // (status, note input and pitch offset, health, track parameters, table mappings with infinities)
 // and notes for machines that take them in their tracks (voices, Note events, read back).
+using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
 using ReBuzz.Agent.Mcp;
@@ -105,6 +106,34 @@ namespace ReBuzz.AgentTests
             };
             Assert.That(V.Resolve(p, JsonValue.Create("Off"), 64), Is.EqualTo(0));
             Assert.That(V.Resolve(p, JsonValue.Create("64"), 0), Is.EqualTo(64));
+        }
+
+        [Test]
+        public void EveryCommittedDraftParses()
+        {
+            string root = TestContext.CurrentContext.TestDirectory;
+            while (root != null && !Directory.Exists(Path.Combine(root, "Machines", "Manifests"))) root = Path.GetDirectoryName(root)!;
+            Assert.That(root, Is.Not.Null, "Machines/Manifests in the repository");
+            var files = Directory.GetFiles(Path.Combine(root!, "Machines", "Manifests"), "*" + MachineManifest.Suffix, SearchOption.AllDirectories);
+            Assert.That(files, Is.Not.Empty);
+            foreach (var file in files)
+            {
+                var m = MachineManifest.Load(file)!;
+                string sub = Path.GetFileName(Path.GetDirectoryName(file))!;
+                Assert.That(Path.GetFileName(file), Is.EqualTo(m.Gear + MachineManifest.Suffix));
+                Assert.That(sub, Is.AnyOf("Generators", "Effects"), file);
+                Assert.That(m.IsDraft, Is.True, m.Gear + ": drafts only here; generated manifests live with their machines");
+                Assert.That(m.Kind, Is.AnyOf("generator", "effect"));
+                Assert.That(m.Summary, Does.Contain("profiled draft"), m.Gear);
+                Assert.That(m.Health, Is.Not.Null, m.Gear);
+                foreach (var p in m.Parameters.Concat(m.TrackParameters))
+                {
+                    Assert.That(p.Default, Is.InRange(p.Min, p.Max), $"{m.Gear} {p.Name}");
+                    Assert.That(p.Confidence, Is.AnyOf("values", "description"), $"{m.Gear} {p.Name}");
+                    double v = p.Mapping.Value(p.Default, p.Min, p.Max);
+                    Assert.That(double.IsNaN(v), Is.False, $"{m.Gear} {p.Name}: its default maps to a value");
+                }
+            }
         }
 
         [Test]
