@@ -267,13 +267,7 @@ namespace ReBuzz.Core
                 if (valueDescrtiptionChangedEvent.TryGetValue(track, out EventManager emd))
                 {
                     describeValueEventPending = true;
-
-                    DescribeTick += () =>
-                    {
-                        emd.CallEventDesc(this, track);
-                        dtDescribeEvent.Stop();
-                    };
-                    dtDescribeEvent.Start();
+                    DescribeLater(emd, track);
                 }
             }
             else
@@ -281,6 +275,19 @@ namespace ReBuzz.Core
                 // Reset timer
                 dtDescribeEvent.Start();
             }
+        }
+
+        // Fork (engine hardening): the closure in a method of its own. In InvokeEvents it captured
+        // the track, a parameter, so it was made on every call (40 bytes for each value a machine
+        // was sent, on the audio thread), not only when a description listener needed it.
+        void DescribeLater(EventManager emd, int track)
+        {
+            DescribeTick += () =>
+            {
+                emd.CallEventDesc(this, track);
+                dtDescribeEvent.Stop();
+            };
+            dtDescribeEvent.Start();
         }
 
         internal void DirectSetValue(int track, int value)
