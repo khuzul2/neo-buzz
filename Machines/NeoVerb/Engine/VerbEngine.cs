@@ -3,7 +3,8 @@
 // delay network (Hadamard mix, modulated delays, per-line low/high shelves set from the decay
 // times so T60 is exact in the mid band) plus early reflections → width → tone → mix. Freeze
 // holds the tail at unity gain; shimmer feeds the tail back an octave up. Every line's loop gain
-// stays below 1 at every frequency, whatever the settings (see Bounded).
+// stays below 1 at every frequency, whatever the settings (see Bounded), and the shimmer loop is
+// held just inside its edge where it would grow (see the shimmer guard).
 
 using System;
 using NeoBuzz.Dsp;
@@ -66,6 +67,35 @@ namespace NeoBuzz.Verb
         double shimmerPhase;
         float shimmerLp;
         int shimmerWindow;
+        float tapD1, tapD2, tapG1, tapG2;                // this sample's shifter taps (ShimmerRead)
+
+        // Shimmer guard (fork, docs/specs/machines.md Neo Verb): a shadow of the network and the
+        // shimmer loop with no input, the same lines, shelves, gains, modulation and shifter taps, so
+        // it follows exactly the tail's own dynamics. Seeded with noise and renormalised, it measures
+        // whether the loop decays. Only when it grows by itself (its level, averaged over 2 s, rises
+        // TriggerDb above its lowest; or, for a fast runaway, 15 dB at once, or 6 dB at more than
+        // 12 dB/s) is the shimmer's gain lowered: at once by the growth it measured, then
+        // continuously, until the loop decays at TargetDbPerSecond (or at half the network's own
+        // slowest decay, where that is slower), just inside the edge. A setting whose loop never
+        // grows by itself never triggers it, so it renders exactly as before. Freeze fades the
+        // shimmer out, which stops the guard; plain Freeze never runs it.
+        const double TriggerDb = 6, FastTriggerDb = 15, RunawayDbPerSecond = 12;
+        const double TargetDbPerSecond = -0.5;
+        const double GuardGain = 0.05;                   // ln(scale) per (dB/s · s)
+        const double FirstStep = 1 / 30.0;               // ln(scale) per dB/s, when it triggers
+        const double SettleSeconds = 0.15;
+        const int SeedSamples = 2048;
+        readonly FracDelay[] shadowLines = new FracDelay[N];
+        readonly float[] shadowLow = new float[N], shadowHigh = new float[N], shadowV = new float[N], shadowU = new float[N];
+        readonly float[] readPos = new float[N];
+        FracDelay shadowShimmerLine;
+        float shadowShimmerLp;
+        bool shadowOn, limiting;
+        int seedLeft;
+        Rng seedRng;
+        double shadowEnergy, shadowOffsetDb, shadowLevel, shadowPrev, shadowMin, shadowSlow, shadowSlowMin, shadowGrowth, settle, lnScale, release;
+        float shimmerScale = 1f;
+        double networkSlowest;                           // dB/s, the slowest line's decay without shimmer (≤ 0)
 
         Smoother preDelay, early, late, width, mix, inputGain, shimmer;
         bool freeze;
@@ -108,6 +138,9 @@ namespace NeoBuzz.Verb
             }
             shimmerWindow = (int)(0.05 * sr);
             shimmerLine = new FracDelay(shimmerWindow * 2 + 8);
+            for (int i = 0; i < N; i++) shadowLines[i] = new FracDelay(maxLine);
+            shadowShimmerLine = new FracDelay(shimmerWindow * 2 + 8);
+            shadowOn = false;
             preDelay.Setup(0.05, sr);
             early.Setup(0.02, sr);
             late.Setup(0.02, sr);
@@ -131,6 +164,7 @@ namespace NeoBuzz.Verb
             shimmerLine.Reset();
             Array.Clear(lowState, 0, N);
             Array.Clear(highState, 0, N);
+            StopGuard();
             inLowCutL.Reset(); inLowCutR.Reset(); outHighCutL.Reset(); outHighCutR.Reset(); outLowCutL.Reset(); outLowCutR.Reset();
         }
 
@@ -167,6 +201,7 @@ namespace NeoBuzz.Verb
             lowG = TptG(LowCrossover);
             highG = TptG(damp);
             freeze = values.On(P.Freeze);
+            networkSlowest = double.NegativeInfinity;
             for (int i = 0; i < N; i++)
             {
                 double d = lengths[i];
@@ -181,12 +216,15 @@ namespace NeoBuzz.Verb
                     lineGain[i] = 1f;
                     shelfLowA[i] = 1f;
                     shelfHighA[i] = 1f;
+                    networkSlowest = 0;
                 }
                 else
                 {
                     shelfLowA[i] = (float)aLow;
                     shelfHighA[i] = (float)aHigh;
-                    lineGain[i] = Bounded((float)(gMid / at1k), shelfLowA[i], shelfHighA[i], Math.Max(gLow, gMid));
+                    lineGain[i] = Bounded((float)(gMid / at1k), shelfLowA[i], shelfHighA[i], Math.Max(gLow, gMid), out double peak);
+                    // The slowest this line lets anything decay, dB/s (the network decays no slower).
+                    networkSlowest = Math.Max(networkSlowest, 20 * PortableMath.Log10(lineGain[i] * peak) * sampleRate / d);
                 }
             }
 
@@ -281,9 +319,9 @@ namespace NeoBuzz.Verb
         // that is untouched, bit for bit (the defaults and every factory preset). So no line's gain
         // reaches gSlowest^(1/MaxOvershoot) < 1 at any frequency, and with the orthonormal mix the
         // network decays, for every setting (Freeze holds it at unity by design).
-        float Bounded(float gain, float aLow, float aHigh, double gSlowest)
+        float Bounded(float gain, float aLow, float aHigh, double gSlowest, out double peak)
         {
-            double peak = ShelfPeak(aLow, aHigh, lowG, highG);
+            peak = ShelfPeak(aLow, aHigh, lowG, highG);
             // The loss per pass relative to the design: 1 as set, 1/3 three times longer, ≤ 0 growing.
             double loss = PortableMath.Log(gain * peak) / PortableMath.Log(gSlowest);
             const double edge = 1 / MaxOvershoot;
@@ -395,12 +433,17 @@ namespace NeoBuzz.Verb
 
                 // Shimmer: the tail's mono sum, an octave up, back into the input.
                 float sh = shimmer.Next();
-                if (sh > 1e-4f)
+                bool shimmering = sh > 1e-4f;
+                float shUse = sh;
+                if (shimmering)
                 {
+                    if (!shadowOn) StartGuard();
+                    if (limiting) shUse = sh * shimmerScale;
                     float up = ShimmerRead();
-                    dl += up * sh * 0.55f;
-                    dr += up * sh * 0.55f;
+                    dl += up * shUse * 0.55f;
+                    dr += up * shUse * 0.55f;
                 }
+                else if (shadowOn) StopGuard();
 
                 // Read the lines (modulated), damp them.
                 float outL = 0, outR = 0;
@@ -411,7 +454,9 @@ namespace NeoBuzz.Verb
                     modSin[j] = c * modStepSin[j] + s * modStepCos[j];
                     modCos[j] = nc;
                     curLengths[j] += (lengths[j] - curLengths[j]) * 0.0005;
-                    float x = lines[j].ReadCubic((float)(curLengths[j] + modDepth[j] * s));
+                    float rp = (float)(curLengths[j] + modDepth[j] * s);
+                    readPos[j] = rp;
+                    float x = lines[j].ReadCubic(rp);
                     // Low shelf (A·LP + HP) then high shelf (LP + A·HP), TPT one-poles.
                     float vv = (x - lowState[j]) * lowG;
                     float lp = vv + lowState[j];
@@ -446,7 +491,11 @@ namespace NeoBuzz.Verb
 
                 outL *= OutputScale;
                 outR *= OutputScale;
-                if (sh > 1e-4f) ShimmerWrite(0.5f * (outL + outR));
+                if (shimmering)
+                {
+                    ShimmerWrite(0.5f * (outL + outR));
+                    ShadowStep(shUse);
+                }
 
                 float el = early.Next(), lt = late.Next();
                 float wetL = el * erL * 0.5f + lt * outL;
@@ -468,6 +517,7 @@ namespace NeoBuzz.Verb
                 lowState[j] = DspMath.Flush(lowState[j]);
                 highState[j] = DspMath.Flush(highState[j]);
             }
+            if (shadowOn) GuardBlock(n);
             inLowCutL.Flush(); inLowCutR.Flush(); outHighCutL.Flush(); outHighCutR.Flush(); outLowCutL.Flush(); outLowCutR.Flush();
             OutMeter.Feed(left, right, n);
         }
@@ -489,7 +539,157 @@ namespace NeoBuzz.Verb
             float d1 = (float)((1 - p1) * shimmerWindow) + 2;
             float d2 = (float)((1 - p2) * shimmerWindow) + 2;
             float g1 = (float)PortableMath.Sin(Math.PI * p1), g2 = (float)PortableMath.Sin(Math.PI * p2);
+            tapD1 = d1; tapD2 = d2; tapG1 = g1; tapG2 = g2;
             return shimmerLine.ReadLinear(d1) * g1 + shimmerLine.ReadLinear(d2) * g2;
         }
+
+        // The shimmer guard's shadow: one sample of the network and the shimmer loop without input,
+        // with this sample's read positions, shelves, gains and shifter taps (seeded with noise at the start).
+        void ShadowStep(float shUse)
+        {
+            float up = shadowShimmerLine.ReadLinear(tapD1) * tapG1 + shadowShimmerLine.ReadLinear(tapD2) * tapG2;
+            float inj = up * shUse * 0.55f;
+            float outL = 0, outR = 0;
+            double e = 0;
+            for (int j = 0; j < N; j++)
+            {
+                float x = shadowLines[j].ReadCubic(readPos[j]);
+                float vv = (x - shadowLow[j]) * lowG;
+                float lp = vv + shadowLow[j];
+                shadowLow[j] = lp + vv;
+                x = shelfLowA[j] * lp + (x - lp);
+                vv = (x - shadowHigh[j]) * highG;
+                lp = vv + shadowHigh[j];
+                shadowHigh[j] = lp + vv;
+                x = lp + shelfHighA[j] * (x - lp);
+                x *= lineGain[j];
+                shadowV[j] = x;
+                shadowU[j] = x;
+                outL += SignL[j] * x;
+                outR += SignR[j] * x;
+                e += (double)x * x;
+            }
+            shadowEnergy += e;
+            for (int h = 1; h < N; h <<= 1)
+                for (int a = 0; a < N; a += 2 * h)
+                    for (int b = a; b < a + h; b++)
+                    {
+                        float p = shadowU[b], q = shadowU[b + h];
+                        shadowU[b] = p + q;
+                        shadowU[b + h] = p - q;
+                    }
+            bool seed = seedLeft > 0;
+            if (seed) seedLeft--;
+            for (int j = 0; j < N; j++)
+            {
+                float w = shadowU[j] * 0.25f + inj * ((j & 2) == 0 ? 0.5f : -0.5f);
+                if (seed) w += 0.1f * seedRng.NextBipolar();
+                shadowLines[j].Write(DspMath.Flush(w));
+            }
+            shadowShimmerLp += (0.5f * (outL + outR) * OutputScale - shadowShimmerLp) * 0.35f;
+            shadowShimmerLine.Write(shadowShimmerLp);
+        }
+
+        void StartGuard()
+        {
+            foreach (var l in shadowLines) l.Reset();
+            shadowShimmerLine.Reset();
+            Array.Clear(shadowLow, 0, N);
+            Array.Clear(shadowHigh, 0, N);
+            shadowShimmerLp = 0;
+            seedRng = new Rng(0x5EED5u);
+            seedLeft = SeedSamples;
+            shadowEnergy = 0;
+            shadowOffsetDb = 0;
+            settle = SettleSeconds;
+            shadowGrowth = 0;
+            lnScale = 0;
+            release = 0;
+            limiting = false;
+            shimmerScale = 1f;
+            shadowOn = true;
+        }
+
+        void StopGuard()
+        {
+            shadowOn = false;
+            limiting = false;
+            shimmerScale = 1f;
+        }
+
+        // Once a block: the shadow's level (renormalised to stay near 1), whether it grows, and the
+        // shimmer's gain while it does.
+        void GuardBlock(int n)
+        {
+            double meanSquare = shadowEnergy / (n * (double)N);
+            shadowEnergy = 0;
+            double dt = n / (double)sampleRate;
+            if (!(meanSquare > 1e-30))
+            {
+                // Nothing out of the lines yet (the seed is still on its way), or died out: seed again.
+                if (seedLeft == 0) { if (settle > 0) settle -= dt; else StartGuard(); }
+                return;
+            }
+            double level = shadowOffsetDb + 10 * PortableMath.Log10(meanSquare);
+            if (meanSquare > 1e4 || meanSquare < 1e-4)
+            {
+                float f = (float)(1 / Math.Sqrt(meanSquare));
+                foreach (var l in shadowLines) l.Scale(f);
+                shadowShimmerLine.Scale(f);
+                for (int j = 0; j < N; j++)
+                {
+                    shadowLow[j] *= f;
+                    shadowHigh[j] *= f;
+                }
+                shadowShimmerLp *= f;
+                shadowOffsetDb += 10 * PortableMath.Log10(meanSquare);
+            }
+            if (seedLeft > 0 || settle > 0)
+            {
+                if (seedLeft == 0) settle -= dt;
+                shadowLevel = shadowSlow = level;
+                shadowPrev = shadowMin = shadowSlowMin = level;
+                return;
+            }
+            shadowLevel += (level - shadowLevel) * (1 - PortableMath.Exp(-dt / 0.1));
+            shadowSlow += (level - shadowSlow) * (1 - PortableMath.Exp(-dt / 2.0));
+            shadowGrowth += ((shadowLevel - shadowPrev) / dt - shadowGrowth) * (1 - PortableMath.Exp(-dt / 0.5));
+            shadowPrev = shadowLevel;
+            if (shadowLevel < shadowMin) shadowMin = shadowLevel;
+            if (shadowSlow < shadowSlowMin) shadowSlowMin = shadowSlow;
+            // Aim at 0.5 dB/s, or at half the network's own slowest decay where that is slower: the
+            // shimmer can't make the loop decay faster than the network without it.
+            double target = GuardTarget;
+            if (!limiting)
+            {
+                double rise = shadowLevel - shadowMin;
+                if (shadowSlow - shadowSlowMin <= TriggerDb && rise <= FastTriggerDb && !(rise > TriggerDb && shadowGrowth > RunawayDbPerSecond)) return;
+                limiting = true;
+                lnScale = -Math.Max(0, shadowGrowth - target) * FirstStep;
+                release = 0;
+            }
+            lnScale -= GuardGain * (shadowGrowth - target) * dt;
+            if (lnScale >= 0)
+            {
+                lnScale = 0;
+                release = shadowGrowth < target ? release + dt : 0;
+                if (release > 2)
+                {
+                    // Decays at the full setting again: hand the shimmer back, untouched.
+                    limiting = false;
+                    shimmerScale = 1f;
+                    shadowMin = shadowLevel;
+                    shadowSlowMin = shadowSlow;
+                    return;
+                }
+            }
+            shimmerScale = (float)PortableMath.Exp(lnScale);
+        }
+
+        double GuardTarget => Math.Max(TargetDbPerSecond, 0.5 * networkSlowest);
+
+        /// <summary>For the tests: whether the shimmer guard holds the shimmer down, by how much, how fast the
+        /// shadow grows (dB/s) and the decay it aims at.</summary>
+        internal (bool Limiting, float Scale, double Growth, double Target) ShimmerGuard => (limiting, shimmerScale, shadowGrowth, GuardTarget);
     }
 }

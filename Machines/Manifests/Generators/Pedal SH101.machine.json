@@ -2,10 +2,21 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Pedal SH101",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "status": "curated",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
  "type": "monosynth",
- "summary": "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; monophonic; takes notes in its tracks; one note at the defaults -6 LUFS.",
+ "summary": "SH-101-style monosynth: pulse, saw, sub and noise into a resonant 4-pole ladder low-pass, ADSR, LFO and glide. For acid and sub basses, leads, plucks and sweeps.",
+ "quirks": [
+  "Monophonic, one track: notes_write writes one note at a time (a chord plays its last note).",
+  "Glide only slides between overlapping notes; a note after silence starts at its own pitch (PedalSH101.cs TriggerNote).",
+  "The pulse wave is on by default (Pulse Lvl 79%) and the saw off.",
+  "Sub Lvl at its maximum peaks above 0 dBFS (+2.7 dBFS in the profile): lower Volume when the sub is up."
+ ],
+ "evidence": [
+  "ExternalMachines/source/thepedal/pedal-sh101/README.md — architecture and parameter table",
+  "ExternalMachines/source/thepedal/pedal-sh101/PedalSH101.cs — DescribeValue texts and the scaling in Work",
+  "profile (tools/machine-profiler.py, linux 2026-11-03) — A4 at 440 Hz, monophonic, level, hot with Sub Lvl at its maximum"
+ ],
  "tracks": 1,
  "notes": {
   "input": "tracks",
@@ -66,7 +77,9 @@
    "index": 0,
    "id": "Range",
    "name": "Range",
-   "group": "",
+   "plain_name": "Octave range",
+   "role": "pitch.octave",
+   "group": "Oscillator",
    "min": 0,
    "max": 2,
    "default": 1,
@@ -76,29 +89,31 @@
     "8'",
     "4'"
    ],
-   "description": "VCO octave",
-   "confidence": "values"
+   "description": "16' an octave down, 8' as written, 4' an octave up."
   },
   {
    "index": 1,
    "id": "VCO Mod",
    "name": "VCO Mod",
-   "group": "",
+   "plain_name": "Vibrato depth",
+   "role": "lfo.pitch",
+   "group": "Oscillator",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": -0.000225,
-   "b": 12.000225,
+   "a": 0.0,
+   "b": 12.0,
    "unit": "st",
-   "description": "LFO → VCO pitch (vibrato)",
-   "confidence": "values"
+   "description": "LFO to pitch, up to ±12 semitones."
   },
   {
    "index": 2,
    "id": "PWM Source",
    "name": "PWM Source",
-   "group": "",
+   "plain_name": "PWM source",
+   "role": "osc.pwm_source",
+   "group": "Oscillator",
    "min": 0,
    "max": 2,
    "default": 0,
@@ -108,89 +123,95 @@
     "LFO",
     "Env"
    ],
-   "description": "Pulse-width modulation source",
-   "confidence": "values"
+   "description": "Manual (PWM sets the width), the LFO or the envelope."
   },
   {
    "index": 3,
    "id": "PWM",
    "name": "PWM",
-   "group": "",
+   "plain_name": "Pulse width / PWM depth",
+   "role": "osc.pulse_width",
+   "group": "Oscillator",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Manual: 0=square..127=narrow. LFO/Env: mod depth.",
-   "confidence": "values"
+   "description": "Manual: 0% square to 100% narrow (10% duty). LFO or Env: how far they move the width."
   },
   {
    "index": 4,
    "id": "Pulse Lvl",
    "name": "Pulse Lvl",
-   "group": "",
+   "plain_name": "Pulse level",
+   "role": "osc.level",
+   "group": "Mixer",
    "min": 0,
    "max": 127,
    "default": 100,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "",
-   "confidence": "values"
+   "description": "Pulse wave in the mixer."
   },
   {
    "index": 5,
    "id": "Saw Lvl",
    "name": "Saw Lvl",
-   "group": "",
+   "plain_name": "Saw level",
+   "role": "osc.level",
+   "group": "Mixer",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "",
-   "confidence": "values"
+   "description": "Sawtooth in the mixer."
   },
   {
    "index": 6,
    "id": "Sub Lvl",
    "name": "Sub Lvl",
-   "group": "",
+   "plain_name": "Sub-oscillator level",
+   "role": "osc.sub",
+   "group": "Mixer",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "",
-   "confidence": "values"
+   "description": "Sub-oscillator in the mixer."
   },
   {
    "index": 7,
    "id": "Noise Lvl",
    "name": "Noise Lvl",
-   "group": "",
+   "plain_name": "Noise level",
+   "role": "osc.noise",
+   "group": "Mixer",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "",
-   "confidence": "values"
+   "description": "White noise in the mixer."
   },
   {
    "index": 8,
    "id": "Sub Type",
    "name": "Sub Type",
-   "group": "",
+   "plain_name": "Sub-oscillator wave",
+   "role": "osc.sub_wave",
+   "group": "Mixer",
    "min": 0,
    "max": 2,
    "default": 0,
@@ -200,74 +221,79 @@
     "Sq -2oct",
     "Pulse -2oct"
    ],
-   "description": "Sub-oscillator waveform",
-   "confidence": "values"
+   "description": "Square one octave down, square two octaves down, or a narrow pulse two octaves down."
   },
   {
    "index": 9,
    "id": "Cutoff",
    "name": "Cutoff",
-   "group": "",
+   "plain_name": "Filter cutoff",
+   "role": "filter.cutoff",
+   "group": "Filter",
    "min": 0,
    "max": 127,
    "default": 90,
    "kind": "freq",
-   "a": 19.9969,
-   "b": 19997.5,
+   "a": 20.0,
+   "b": 20000.0,
    "unit": "Hz",
-   "description": "Filter cutoff (~20 Hz to ~20 kHz, log)",
-   "confidence": "values"
+   "description": "Ladder low-pass cutoff, 20 Hz – 20 kHz exponential."
   },
   {
    "index": 10,
    "id": "Resonance",
    "name": "Resonance",
-   "group": "",
+   "plain_name": "Filter resonance",
+   "role": "filter.resonance",
+   "group": "Filter",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Filter resonance (self-oscillates near max)",
-   "confidence": "values"
+   "description": "Self-oscillates near the top."
   },
   {
    "index": 11,
    "id": "Env Amt",
    "name": "Env Amt",
-   "group": "",
+   "plain_name": "Filter envelope amount",
+   "role": "filter.env_amount",
+   "group": "Filter",
    "min": 0,
    "max": 128,
    "default": 64,
    "kind": "linear",
-   "a": -5.000415,
-   "b": 5.000415,
+   "a": -5.0,
+   "b": 5.0,
    "unit": "oct",
-   "description": "Filter envelope depth (64 = 0; <64 inverted)",
-   "confidence": "values"
+   "description": "Envelope to cutoff, −5 to +5 octaves (negative closes it)."
   },
   {
    "index": 12,
    "id": "VCF Mod",
    "name": "VCF Mod",
-   "group": "",
+   "plain_name": "Filter LFO depth",
+   "role": "lfo.filter",
+   "group": "Filter",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "LFO → VCF cutoff depth",
-   "confidence": "values"
+   "description": "LFO to cutoff, up to 4 octaves at 100%."
   },
   {
    "index": 13,
    "id": "Kbd Follow",
    "name": "Kbd Follow",
-   "group": "",
+   "plain_name": "Filter key tracking",
+   "role": "filter.keytrack",
+   "group": "Filter",
    "min": 0,
    "max": 2,
    "default": 0,
@@ -277,14 +303,15 @@
     "1/2",
     "Full"
    ],
-   "description": "Cutoff tracks pitch",
-   "confidence": "values"
+   "description": "Cutoff follows the note: Off, half (an octave per two) or full, around C4."
   },
   {
    "index": 14,
    "id": "VCA Mode",
    "name": "VCA Mode",
-   "group": "",
+   "plain_name": "Amp mode",
+   "role": "env.mode",
+   "group": "Amp",
    "min": 0,
    "max": 1,
    "default": 1,
@@ -293,89 +320,95 @@
     "Gate",
     "Env"
    ],
-   "description": "VCA control source",
-   "confidence": "values"
+   "description": "Gate: full level while held; Env: the envelope shapes the level."
   },
   {
    "index": 15,
    "id": "Attack",
    "name": "Attack",
-   "group": "",
+   "plain_name": "Attack",
+   "role": "env.attack",
+   "group": "Envelope",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "time",
-   "a": 0.00199707,
-   "b": 7.99953,
+   "a": 0.002,
+   "b": 8.0,
    "unit": "s",
-   "description": "Envelope attack time (~2 ms .. 8 s)",
-   "confidence": "values"
+   "description": "Envelope attack, 2 ms – 8 s exponential."
   },
   {
    "index": 16,
    "id": "Decay",
    "name": "Decay",
-   "group": "",
+   "plain_name": "Decay",
+   "role": "env.decay",
+   "group": "Envelope",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "time",
-   "a": 0.00199662,
-   "b": 15.0084,
+   "a": 0.002,
+   "b": 15.0,
    "unit": "s",
-   "description": "Envelope decay time (~2 ms .. 15 s)",
-   "confidence": "values"
+   "description": "Envelope decay, 2 ms – 15 s exponential."
   },
   {
    "index": 17,
    "id": "Sustain",
    "name": "Sustain",
-   "group": "",
+   "plain_name": "Sustain",
+   "role": "env.sustain",
+   "group": "Envelope",
    "min": 0,
    "max": 127,
    "default": 100,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Envelope sustain level",
-   "confidence": "values"
+   "description": "Level held while the note is down."
   },
   {
    "index": 18,
    "id": "Release",
    "name": "Release",
-   "group": "",
+   "plain_name": "Release",
+   "role": "env.release",
+   "group": "Envelope",
    "min": 0,
    "max": 127,
    "default": 50,
    "kind": "time",
-   "a": 0.00199662,
-   "b": 15.0084,
+   "a": 0.002,
+   "b": 15.0,
    "unit": "s",
-   "description": "Envelope release time (~2 ms .. 15 s)",
-   "confidence": "values"
+   "description": "Envelope release, 2 ms – 15 s exponential."
   },
   {
    "index": 19,
    "id": "LFO Rate",
    "name": "LFO Rate",
-   "group": "",
+   "plain_name": "LFO rate",
+   "role": "lfo.rate",
+   "group": "LFO",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "freq",
-   "a": 0.0999947,
-   "b": 29.9959,
+   "a": 0.1,
+   "b": 30.0,
    "unit": "Hz",
-   "description": "LFO rate (~0.1 Hz .. ~30 Hz, log)",
-   "confidence": "values"
+   "description": "0.1–30 Hz exponential."
   },
   {
    "index": 20,
    "id": "LFO Wave",
    "name": "LFO Wave",
-   "group": "",
+   "plain_name": "LFO wave",
+   "role": "lfo.wave",
+   "group": "LFO",
    "min": 0,
    "max": 3,
    "default": 0,
@@ -386,168 +419,583 @@
     "S&H",
     "Noise"
    ],
-   "description": "LFO waveform",
-   "confidence": "values"
+   "description": "Triangle, square, sample and hold, or noise."
   },
   {
    "index": 21,
    "id": "LFO Delay",
    "name": "LFO Delay",
-   "group": "",
+   "plain_name": "LFO onset delay",
+   "role": "lfo.delay",
+   "group": "LFO",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
-   "a": -6e-06,
-   "b": 1.999812,
+   "a": 0.0,
+   "b": 2.0,
    "unit": "s",
-   "description": "LFO onset delay after note-on (0 .. 2 s)",
-   "confidence": "values"
+   "description": "Time after a note before the LFO starts, 0–2 s."
   },
   {
    "index": 22,
    "id": "Glide",
    "name": "Glide",
-   "group": "",
+   "plain_name": "Glide",
+   "role": "pitch.glide",
+   "group": "Pitch",
    "min": 0,
    "max": 127,
    "default": 0,
-   "kind": "time",
-   "a": 0.000940897,
-   "b": 1.99877,
+   "kind": "table",
    "unit": "s",
-   "description": "Portamento time (0 = off / instant)",
-   "confidence": "values"
+   "points": [
+    [
+     0,
+     0.0
+    ],
+    [
+     1,
+     0.001
+    ],
+    [
+     2,
+     0.001062
+    ],
+    [
+     3,
+     0.001128
+    ],
+    [
+     4,
+     0.001198
+    ],
+    [
+     5,
+     0.001273
+    ],
+    [
+     6,
+     0.001352
+    ],
+    [
+     7,
+     0.001436
+    ],
+    [
+     8,
+     0.001525
+    ],
+    [
+     9,
+     0.00162
+    ],
+    [
+     10,
+     0.001721
+    ],
+    [
+     11,
+     0.001828
+    ],
+    [
+     12,
+     0.001942
+    ],
+    [
+     13,
+     0.002062
+    ],
+    [
+     14,
+     0.002191
+    ],
+    [
+     15,
+     0.002327
+    ],
+    [
+     16,
+     0.002472
+    ],
+    [
+     17,
+     0.002625
+    ],
+    [
+     18,
+     0.002789
+    ],
+    [
+     19,
+     0.002962
+    ],
+    [
+     20,
+     0.003146
+    ],
+    [
+     21,
+     0.003342
+    ],
+    [
+     22,
+     0.00355
+    ],
+    [
+     23,
+     0.00377
+    ],
+    [
+     24,
+     0.004005
+    ],
+    [
+     25,
+     0.004254
+    ],
+    [
+     26,
+     0.004518
+    ],
+    [
+     27,
+     0.004799
+    ],
+    [
+     28,
+     0.005098
+    ],
+    [
+     29,
+     0.005415
+    ],
+    [
+     30,
+     0.005751
+    ],
+    [
+     31,
+     0.006109
+    ],
+    [
+     32,
+     0.006489
+    ],
+    [
+     33,
+     0.006892
+    ],
+    [
+     34,
+     0.007321
+    ],
+    [
+     35,
+     0.007776
+    ],
+    [
+     36,
+     0.008259
+    ],
+    [
+     37,
+     0.008773
+    ],
+    [
+     38,
+     0.009319
+    ],
+    [
+     39,
+     0.009898
+    ],
+    [
+     40,
+     0.010514
+    ],
+    [
+     41,
+     0.011167
+    ],
+    [
+     42,
+     0.011862
+    ],
+    [
+     43,
+     0.012599
+    ],
+    [
+     44,
+     0.013383
+    ],
+    [
+     45,
+     0.014215
+    ],
+    [
+     46,
+     0.015099
+    ],
+    [
+     47,
+     0.016038
+    ],
+    [
+     48,
+     0.017035
+    ],
+    [
+     49,
+     0.018094
+    ],
+    [
+     50,
+     0.019219
+    ],
+    [
+     51,
+     0.020414
+    ],
+    [
+     52,
+     0.021684
+    ],
+    [
+     53,
+     0.023032
+    ],
+    [
+     54,
+     0.024464
+    ],
+    [
+     55,
+     0.025985
+    ],
+    [
+     56,
+     0.027601
+    ],
+    [
+     57,
+     0.029317
+    ],
+    [
+     58,
+     0.03114
+    ],
+    [
+     59,
+     0.033077
+    ],
+    [
+     60,
+     0.035133
+    ],
+    [
+     61,
+     0.037318
+    ],
+    [
+     62,
+     0.039639
+    ],
+    [
+     63,
+     0.042103
+    ],
+    [
+     64,
+     0.044721
+    ],
+    [
+     65,
+     0.047502
+    ],
+    [
+     66,
+     0.050456
+    ],
+    [
+     67,
+     0.053593
+    ],
+    [
+     68,
+     0.056926
+    ],
+    [
+     69,
+     0.060466
+    ],
+    [
+     70,
+     0.064225
+    ],
+    [
+     71,
+     0.068219
+    ],
+    [
+     72,
+     0.072461
+    ],
+    [
+     73,
+     0.076967
+    ],
+    [
+     74,
+     0.081753
+    ],
+    [
+     75,
+     0.086836
+    ],
+    [
+     76,
+     0.092236
+    ],
+    [
+     77,
+     0.097971
+    ],
+    [
+     78,
+     0.104063
+    ],
+    [
+     79,
+     0.110534
+    ],
+    [
+     80,
+     0.117407
+    ],
+    [
+     81,
+     0.124707
+    ],
+    [
+     82,
+     0.132462
+    ],
+    [
+     83,
+     0.140698
+    ],
+    [
+     84,
+     0.149447
+    ],
+    [
+     85,
+     0.15874
+    ],
+    [
+     86,
+     0.168611
+    ],
+    [
+     87,
+     0.179095
+    ],
+    [
+     88,
+     0.190232
+    ],
+    [
+     89,
+     0.20206
+    ],
+    [
+     90,
+     0.214625
+    ],
+    [
+     91,
+     0.22797
+    ],
+    [
+     92,
+     0.242146
+    ],
+    [
+     93,
+     0.257203
+    ],
+    [
+     94,
+     0.273196
+    ],
+    [
+     95,
+     0.290184
+    ],
+    [
+     96,
+     0.308228
+    ],
+    [
+     97,
+     0.327394
+    ],
+    [
+     98,
+     0.347752
+    ],
+    [
+     99,
+     0.369375
+    ],
+    [
+     100,
+     0.392343
+    ],
+    [
+     101,
+     0.41674
+    ],
+    [
+     102,
+     0.442653
+    ],
+    [
+     103,
+     0.470178
+    ],
+    [
+     104,
+     0.499414
+    ],
+    [
+     105,
+     0.530469
+    ],
+    [
+     106,
+     0.563454
+    ],
+    [
+     107,
+     0.59849
+    ],
+    [
+     108,
+     0.635705
+    ],
+    [
+     109,
+     0.675234
+    ],
+    [
+     110,
+     0.717221
+    ],
+    [
+     111,
+     0.761819
+    ],
+    [
+     112,
+     0.809189
+    ],
+    [
+     113,
+     0.859506
+    ],
+    [
+     114,
+     0.912951
+    ],
+    [
+     115,
+     0.96972
+    ],
+    [
+     116,
+     1.030018
+    ],
+    [
+     117,
+     1.094066
+    ],
+    [
+     118,
+     1.162096
+    ],
+    [
+     119,
+     1.234357
+    ],
+    [
+     120,
+     1.311111
+    ],
+    [
+     121,
+     1.392638
+    ],
+    [
+     122,
+     1.479234
+    ],
+    [
+     123,
+     1.571214
+    ],
+    [
+     124,
+     1.668914
+    ],
+    [
+     125,
+     1.77269
+    ],
+    [
+     126,
+     1.882918
+    ],
+    [
+     127,
+     2.0
+    ]
+   ],
+   "description": "Portamento between overlapping notes: off at 0, then 1 ms – 2 s exponential."
   },
   {
    "index": 23,
    "id": "Tune",
    "name": "Tune",
-   "group": "",
+   "plain_name": "Fine tune",
+   "role": "pitch.fine",
+   "group": "Pitch",
    "min": 0,
    "max": 100,
    "default": 50,
-   "kind": "enum",
-   "choices": [
-    "-50 ¢",
-    "-49 ¢",
-    "-48 ¢",
-    "-47 ¢",
-    "-46 ¢",
-    "-45 ¢",
-    "-44 ¢",
-    "-43 ¢",
-    "-42 ¢",
-    "-41 ¢",
-    "-40 ¢",
-    "-39 ¢",
-    "-38 ¢",
-    "-37 ¢",
-    "-36 ¢",
-    "-35 ¢",
-    "-34 ¢",
-    "-33 ¢",
-    "-32 ¢",
-    "-31 ¢",
-    "-30 ¢",
-    "-29 ¢",
-    "-28 ¢",
-    "-27 ¢",
-    "-26 ¢",
-    "-25 ¢",
-    "-24 ¢",
-    "-23 ¢",
-    "-22 ¢",
-    "-21 ¢",
-    "-20 ¢",
-    "-19 ¢",
-    "-18 ¢",
-    "-17 ¢",
-    "-16 ¢",
-    "-15 ¢",
-    "-14 ¢",
-    "-13 ¢",
-    "-12 ¢",
-    "-11 ¢",
-    "-10 ¢",
-    "-9 ¢",
-    "-8 ¢",
-    "-7 ¢",
-    "-6 ¢",
-    "-5 ¢",
-    "-4 ¢",
-    "-3 ¢",
-    "-2 ¢",
-    "-1 ¢",
-    "+0 ¢",
-    "+1 ¢",
-    "+2 ¢",
-    "+3 ¢",
-    "+4 ¢",
-    "+5 ¢",
-    "+6 ¢",
-    "+7 ¢",
-    "+8 ¢",
-    "+9 ¢",
-    "+10 ¢",
-    "+11 ¢",
-    "+12 ¢",
-    "+13 ¢",
-    "+14 ¢",
-    "+15 ¢",
-    "+16 ¢",
-    "+17 ¢",
-    "+18 ¢",
-    "+19 ¢",
-    "+20 ¢",
-    "+21 ¢",
-    "+22 ¢",
-    "+23 ¢",
-    "+24 ¢",
-    "+25 ¢",
-    "+26 ¢",
-    "+27 ¢",
-    "+28 ¢",
-    "+29 ¢",
-    "+30 ¢",
-    "+31 ¢",
-    "+32 ¢",
-    "+33 ¢",
-    "+34 ¢",
-    "+35 ¢",
-    "+36 ¢",
-    "+37 ¢",
-    "+38 ¢",
-    "+39 ¢",
-    "+40 ¢",
-    "+41 ¢",
-    "+42 ¢",
-    "+43 ¢",
-    "+44 ¢",
-    "+45 ¢",
-    "+46 ¢",
-    "+47 ¢",
-    "+48 ¢",
-    "+49 ¢",
-    "+50 ¢"
-   ],
-   "description": "Master fine tune (50 = 0¢, 0 = -50¢, 100 = +50¢)",
-   "confidence": "values"
+   "kind": "linear",
+   "a": -50.0,
+   "b": 50.0,
+   "unit": "ct",
+   "description": "Master fine tune, ±50 cents."
   },
   {
    "index": 24,
    "id": "Volume",
    "name": "Volume",
-   "group": "",
+   "plain_name": "Output level",
+   "role": "level",
+   "group": "Amp",
    "min": 0,
    "max": 127,
    "default": 96,
    "kind": "linear",
-   "a": 0.019622,
-   "b": 99.980378,
+   "a": 0.0,
+   "b": 100.0,
    "unit": "%",
-   "description": "Output level",
-   "confidence": "values"
+   "description": "Output gain."
   }
  ],
  "track_parameters": []

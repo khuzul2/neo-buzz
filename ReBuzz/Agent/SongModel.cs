@@ -151,9 +151,11 @@ namespace ReBuzz.Agent
                     if (p.Type == ParameterType.Internal || p.Type == ParameterType.Note) continue;
                     // Track parameters that don't hold a value (a note's velocity) are played, not set.
                     if (g == 2 && (p.Flags & ParameterFlags.State) == 0) continue;
-                    var entry = g == 1 ? manifest?.Find(p.Name) : manifest?.FindTrack(p.Name);
+                    var entry = manifest?.FindAt(g == 2, p.IndexInGroup, p.Name);
                     if (entry != null && (entry.Min != p.MinValue || entry.Max != p.MaxValue)) entry = null;   // a stale manifest: trust the machine
                     var param = p;
+                    // A curated manifest (U3) whose entry says the machine's own texts are wrong reads and writes through its mapping.
+                    var own = entry is { OwnTexts: false } ? entry : null;
                     list.Add(new AgentParam
                     {
                         Parameter = p,
@@ -169,8 +171,9 @@ namespace ReBuzz.Agent
                             Max = p.MaxValue,
                             Default = p.DefValue,
                             Mapping = entry?.Mapping,
-                            TextsFirst = entry != null && manifest.IsDraft,
-                            Describe = raw => Describe(param, raw),
+                            // Drafts and curated manifests take the machine's own texts first ("Off", "1/8"); generated ones are exact.
+                            TextsFirst = entry != null && own == null && (manifest.IsDraft || manifest.IsCurated),
+                            Describe = own != null ? raw => ReBuzz.Agent.Guides.MachineManual.Format(own, raw) : raw => Describe(param, raw),
                             SafeRange = entry?.SafeRange,
                         },
                     });
@@ -200,6 +203,8 @@ namespace ReBuzz.Agent
             }
             var found = all.Where(p => p.Name == name).ToList();
             if (found.Count == 0) found = all.Where(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
+            // A curated manifest's plain name ("Filter cutoff" for "VCF Freq", U3) names the parameter too.
+            if (found.Count == 0) found = all.Where(p => p.Manifest is { PlainName.Length: > 0 } e && string.Equals(e.PlainName, name, StringComparison.OrdinalIgnoreCase)).ToList();
             if (found.Count == 1) return found[0];
             if (found.Count > 1 && track && found.Count(p => p.IsTrack) == 1) return found.First(p => p.IsTrack);
             if (found.Count > 1)
@@ -214,7 +219,7 @@ namespace ReBuzz.Agent
         public static JsonObject Value(AgentParam p, int track)
         {
             int raw = p.Parameter.GetValue(track);
-            var o = new JsonObject { ["value"] = Describe(p.Parameter, raw) };
+            var o = new JsonObject { ["value"] = p.Info.Describe(raw) };
             double x = ValueResolver.Physical(p.Info, raw, out string dim);
             if (!double.IsNaN(x) && !double.IsInfinity(x) && p.Info.Mapping is not { Kind: MappingKind.Enum or MappingKind.Switch })
             {

@@ -50,7 +50,8 @@ namespace ReBuzz.Agent
                         Opt("diverging", Boolean("Its output runs away at some setting (NaN or a runaway level)")),
                         Opt("needs_window", String("It works in ReBuzz on Windows with its window, not headless")),
                         Opt("safe_ranges", Array(Object("A parameter's safe range", Req("param", String("Its name")), Req("range", String("The safe values"))), "Where param_set keeps agents")),
-                        Opt("problems", Array(String("A problem"), "Why it is unhealthy, hot or warned about"))), "Matching gear")),
+                        Opt("problems", Array(String("A problem"), "Why it is unhealthy, hot or warned about")),
+                        Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it"))), "Matching gear")),
                     Req("total", Integer("How many matched before the limit"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
@@ -101,6 +102,7 @@ namespace ReBuzz.Agent
                                     ["max_raw"] = p.SafeRange.Max,
                                     ["reason"] = p.SafeRange.Reason,
                                 }).ToArray());
+                            if (manifest?.Quirks.Count > 0) row["quirks"] = new JsonArray(manifest.Quirks.Select(x => (JsonNode)x).ToArray());
                             rows.Add((unhealthy ? 4 : window ? 3 : exact ? 0 : manifest != null ? 1 : 2, dll.Name, row));
                         }
                         var sorted = rows.OrderBy(x => x.Rank).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();

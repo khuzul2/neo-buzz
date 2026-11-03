@@ -141,6 +141,12 @@ jobs:
       if: always()
       run: python3 tools/headless-manifests.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/manifests"
 
+    # U3 (docs/specs/mcp-server.md §12.9): each curated Pedal manifest against the machine itself (its
+    # ranges, and its own value texts wherever the manifest keeps them). The natives: the package job.
+    - name: Curated manifests against the machines on Linux
+      if: always()
+      run: python3 tools/curated-check.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/curated"
+
     # Live audio (mac-engine.md M5): rebuzz-headless --audio through PortAudio on the PulseAudio
     # null sink (clocked, so in real time); the live tools play, meter and stop it. The null sink
     # through ALSA's PulseAudio plugin takes nothing for about 2 s after an underrun, and at its

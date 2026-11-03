@@ -165,6 +165,7 @@ namespace ReBuzz.Agent.Model
                 case "ct": case "cents": case "cent": return "ct";
                 case "oct": case "octave": case "octaves": return "oct";
                 case "bpm": return "bpm";
+                case "tick": case "ticks": return "ticks";
                 case "x": case "×": return "x";
                 case ":1": return "ratio";
                 case "": return null;

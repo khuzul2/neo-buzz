@@ -53,7 +53,7 @@ namespace ReBuzz.Agent
             var tools = new ToolRegistry();
             StudioTools.Register(tools, this);
             NotesTools.Register(tools, this);       // fork (machine-safety.md §3.5): Song Notes
-            GuideLibrary.Register(tools, gear => Manual(core, gear));
+            GuideLibrary.Register(tools, gear => Manual(core, gear), () => Described(core).Select(x => x.Dll.Name).ToList());
             MachineTools.Register(tools, this);
             ParamTools.Register(tools, this);
             PatternTools.Register(tools, this);

@@ -5,6 +5,7 @@
 # can still come from the parameter's name or description ("in ms", "(1 ms – 4 s exponential)"),
 # marked "confidence": "description". Pure, standard library only; tools/test_machine_infer.py.
 
+import json
 import math
 import re
 
@@ -538,3 +539,62 @@ def health_status(problems, warnings, window=False):
     if window:
         return "needs_window"
     return "unhealthy" if problems else "warn" if warnings else "ok"
+
+
+# ---- curated manifests (mcp-server.md §12.9, U3) ----------------------------------------------------
+
+def recurate(curated, draft):
+    """A curated manifest brought up to date with a new profile, and what changed that a person should look at.
+
+    The curation stays: summary, quirks, evidence, how it takes notes (a curated pitch convention may rest on
+    its source where the profile heard none), plain names, roles, descriptions, groups and exact mappings.
+    The measurements come from the new draft: `profile` and `health`; a different note input, pitch offset or
+    polyphony in the new profile is reported. Safe ranges (machine-safety.md
+    §3.4) follow the profile, never widened by it: a new one is added, a tighter one wins, and one the profile no
+    longer finds is kept and reported. Parameters the profile names differently or ranges differently are
+    reported, not changed."""
+    m = json.loads(json.dumps(curated))
+    warnings = []
+    for key in ("profile", "health"):
+        if key in draft:
+            m[key] = json.loads(json.dumps(draft[key]))
+        else:
+            m.pop(key, None)
+    if "notes" not in m and "notes" in draft:
+        m["notes"] = json.loads(json.dumps(draft["notes"]))
+    for k in ("input", "pitch_offset", "pitched", "polyphony"):
+        old_n, new_n = (m.get("notes") or {}).get(k), (draft.get("notes") or {}).get(k)
+        if new_n is not None and old_n != new_n:
+            warnings.append(f"notes: the profile now hears {k} {new_n}, curated {old_n}")
+    for group in ("parameters", "track_parameters"):
+        fresh = draft.get(group) or []
+        by_name = {}
+        for p in fresh:
+            by_name.setdefault(p["name"], []).append(p)
+        seen = set()
+        for p in m.get(group) or []:
+            twins = by_name.get(p["name"], [])
+            match = twins[0] if len(twins) == 1 else next((q for q in twins if q.get("index") == p.get("index")), None)
+            where = f"{'track ' if group == 'track_parameters' else ''}{p['name']}"
+            if match is None:
+                warnings.append(f"{where}: not in the new profile (renamed or removed?)")
+                continue
+            seen.add(id(match))
+            if (match.get("min"), match.get("max")) != (p.get("min"), p.get("max")):
+                warnings.append(f"{where}: its range is now {match.get('min')}…{match.get('max')}, curated {p.get('min')}…{p.get('max')}")
+            new, old = match.get("safe_range"), p.get("safe_range")
+            if new and not old:
+                p["safe_range"] = new
+                warnings.append(f"{where}: a new safe range from the profile, {new.get('min')}…{new.get('max')} ({new.get('reason', '')})")
+            elif new and old and (new["min"] > old["min"] or new["max"] < old["max"]):
+                lo, hi = max(new["min"], old["min"]), min(new["max"], old["max"])
+                p["safe_range"] = dict(old, min=lo, max=hi, reason=new.get("reason", old.get("reason", "")),
+                                       min_text=new.get("min_text", "") if lo == new["min"] else old.get("min_text", ""),
+                                       max_text=new.get("max_text", "") if hi == new["max"] else old.get("max_text", ""))
+                warnings.append(f"{where}: the profile's safe range is tighter, now {lo}…{hi}")
+            elif old and not new:
+                warnings.append(f"{where}: the profile no longer finds its safe range {old.get('min')}…{old.get('max')}: check and remove it by hand")
+        for p in fresh:
+            if id(p) not in seen and p["name"] not in {q["name"] for q in m.get(group) or []}:
+                warnings.append(f"{'track ' if group == 'track_parameters' else ''}{p['name']}: new in the profile, not curated")
+    return m, warnings

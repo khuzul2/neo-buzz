@@ -68,9 +68,14 @@ namespace ReBuzz.Agent.Guides
         /// Registers the guide tool. <paramref name="manual"/> builds a gear's full manual
         /// (MachineManual.Build with its manifest and presets) from a gear name, or returns null for
         /// gear it doesn't know; without it, guide(machine=…) serves the curated page alone.
+        /// <paramref name="manualGear"/> lists the gear with a manual (every installed gear with a manifest:
+        /// generated, curated or a profiled draft, U3); without it, the gear with a curated page.
         /// </summary>
-        public static void Register(ToolRegistry tools, Func<string, string> manual = null)
+        public static void Register(ToolRegistry tools, Func<string, string> manual = null, Func<IEnumerable<string>> manualGear = null)
         {
+            IReadOnlyList<string> Manuals() =>
+                (manualGear?.Invoke() ?? Enumerable.Empty<string>()).Concat(MachineManual.CuratedGear)
+                    .Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(g => g, StringComparer.OrdinalIgnoreCase).ToList();
             tools.Add(new ToolDef
             {
                 Name = "guide",
@@ -88,31 +93,38 @@ namespace ReBuzz.Agent.Guides
                     Opt("machine", String("The gear whose manual was returned")),
                     Opt("markdown", String("Its text")),
                     Req("topics", Array(Object(null, Req("topic", String("Its name")), Req("title", String("Its title")), Req("about", String("What it covers"))), "Every guide")),
-                    Opt("manuals", Array(String("A gear name"), "Gear with a curated manual page"))),
+                    Opt("manuals", Array(String("A gear name"), "Gear with a manual: every installed machine with a manifest (generated, curated or a profiled draft)"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = c =>
                 {
                     var list = new JsonArray(Topics.Select(t => (JsonNode)new JsonObject { ["topic"] = t.Topic, ["title"] = t.Title, ["about"] = t.Description }).ToArray());
-                    var manuals = new JsonArray(MachineManual.CuratedGear.Select(g => (JsonNode)g).ToArray());
+                    var gear = Manuals();
+                    var manuals = new JsonArray(gear.Select(g => (JsonNode)g).ToArray());
                     string topic = c.String("topic");
                     string machine = c.String("machine");
                     if (topic != null && machine != null) throw new ToolError("Give topic or machine, not both.");
                     if (machine != null)
                     {
                         string text = manual?.Invoke(machine) ?? CuratedOnly(machine)
-                            ?? throw new ToolError($"No manual for \"{machine}\". Manuals: {string.Join(", ", MachineManual.CuratedGear)}; " +
+                            ?? throw new ToolError($"No manual for \"{machine}\"." + Near(machine, gear) + $" Manuals: {string.Join(", ", gear)}; " +
                                                    "machine_describe(machine=…) lists any machine's parameters.");
                         return Task.FromResult(ToolResult.Ok(text, new JsonObject { ["machine"] = machine, ["markdown"] = text, ["topics"] = list, ["manuals"] = manuals }));
                     }
                     if (topic == null)
                         return Task.FromResult(ToolResult.Ok(
                             "Guides: " + string.Join("; ", Topics.Select(t => $"{t.Topic} ({t.Description})")) +
-                            $" Machine manuals: guide(machine=…) for {string.Join(", ", MachineManual.CuratedGear)}.",
+                            $" Machine manuals: guide(machine=…) for {string.Join(", ", gear)}.",
                             new JsonObject { ["topics"] = list, ["manuals"] = manuals }));
                     string guide = Get(topic) ?? throw new ToolError($"No guide \"{topic}\". Topics: {string.Join(", ", TopicNames)}.");
                     return Task.FromResult(ToolResult.Ok(guide, new JsonObject { ["topic"] = topic, ["markdown"] = guide, ["topics"] = list, ["manuals"] = manuals }));
                 },
             });
+        }
+
+        static string Near(string name, IReadOnlyList<string> gear)
+        {
+            var near = Text.Closest(name, gear);
+            return near.Count > 0 ? $" Did you mean \"{near[0]}\"?" : "";
         }
 
         /// <summary>The curated page alone, titled, when no manifest is at hand.</summary>

@@ -18,6 +18,10 @@
 #    window says it works in ReBuzz on Windows with its window, and is listed after the drafts but
 #    before the unhealthy ones; an unhealthy machine that doesn't diverge (a crash) gets no machine_add
 #    warning; a safe range on a track parameter holds per track.
+#  - U3 (mcp-server.md §12.9): curated manifests (Pedal Juno106, SH101, EQ, Comp…) say they are curated,
+#    with exact units, quirks, plain names and roles; param_set takes a plain name; a machine whose own
+#    texts are wrong (Pedal Comp's Attack) reads and writes the real values; guide(machine=…) and the
+#    rebuzz://machines/<slug>/manual resources cover drafts and curated machines alike.
 #
 #   python3 tools/headless-manifests.py <path to rebuzz-headless> [work folder]
 
@@ -93,10 +97,16 @@ s = Server(exe, "main")
 # What the drafts say.
 ok, _, g = s.call("gear_list", search="Pedal", limit=100)
 rows = {x["name"]: x for x in g.get("gear", [])}
+shaper = rows.get("Pedal Shaper", {})
+check(shaper.get("manifest") == "draft" and shaper.get("type") and "profiled draft" in shaper.get("summary", ""),
+      f"gear_list: Pedal Shaper has a draft manifest saying what it is ({shaper.get('type')}: {shaper.get('summary', '')[:80]})")
+check(shaper.get("exact_units") is False, "gear_list: a draft's units aren't called exact")
 juno = rows.get("Pedal Juno106", {})
-check(juno.get("manifest") == "draft" and juno.get("type") and "profiled draft" in juno.get("summary", ""),
-      f"gear_list: Pedal Juno106 has a draft manifest saying what it is ({juno.get('type')}: {juno.get('summary', '')[:80]})")
-check(juno.get("exact_units") is False, "gear_list: a draft's units aren't called exact")
+check(juno.get("manifest") == "curated" and juno.get("exact_units") is True and "polysynth" in juno.get("summary", "") and juno.get("quirks"),
+      f"gear_list: Pedal Juno106 is curated, exact, says what it's for and its quirks ({juno.get('summary', '')[:80]})")
+curated = sorted(n for n, x in rows.items() if x.get("manifest") == "curated")
+check(curated == ["Pedal Chorus", "Pedal Comp", "Pedal Drum Matrix", "Pedal EQ", "Pedal FM", "Pedal Filter", "Pedal Juno106", "Pedal M1", "Pedal Plate", "Pedal SH101"],
+      f"gear_list: the curated Pedal machines ({curated})")
 missing = [n for n, x in rows.items() if not x.get("manifest")]
 check(not missing, f"every Pedal machine has a manifest beside it (missing: {missing}): Machines/Manifests is up to date")
 
@@ -131,8 +141,11 @@ s.call("song_new", discard_unsaved=True, tempo_bpm=120)
 s.call("machine_add", gear="Pedal SH101", name="Bass")
 _, _, d = s.call("machine_describe", machine="Bass")
 info = d.get("gear_info", {})
-check(d.get("manifest") == "draft" and info.get("note_input") == "tracks" and info.get("takes_midi") is False,
-      f"machine_describe: SH101's draft says notes go in its tracks ({info})")
+check(d.get("manifest") == "curated" and info.get("note_input") == "tracks" and info.get("takes_midi") is False,
+      f"machine_describe: SH101's curated manifest says notes go in its tracks ({info})")
+cut = next((p for p in d.get("parameters", []) if p["name"] == "Cutoff"), {})
+check(cut.get("plain_name") == "Filter cutoff" and cut.get("role") == "filter.cutoff" and d.get("quirks"),
+      f"machine_describe: plain names, roles and quirks ({cut.get('plain_name')}, {cut.get('role')}, {len(d.get('quirks') or [])} quirks)")
 ok, w, r = play_a4(s, "Bass")
 check(ok and w.get("input") == "tracks", f"notes_write A4 to Pedal SH101 goes into its Note track column (input {w.get('input')})")
 hz, name = heard(s, r.get("id", "r1"))
@@ -149,8 +162,8 @@ s.call("machine_add", gear="Pedal EQ", name="EQ")
 ok, _, p = s.call("param_set", machine="EQ", changes=[{"param": "LM Freq", "value": "800 Hz"}, {"param": "LM Gain", "value": "-3 dB"},
                                                        {"param": "Output", "by": "+2 dB"}, {"param": "LS Solo", "value": "On"}])
 vals = {x["param"]: x["value"] for x in p.get("changed", [])}
-check(ok and vals == {"LM Freq": "800 Hz", "LM Gain": "-3.0 dB", "Output": "+2.0 dB", "LS Solo": "On"} and p.get("manifest") == "draft",
-      f"param_set in Hz, dB, by dB and a choice on Pedal EQ ({vals})")
+check(ok and vals == {"LM Freq": "800 Hz", "LM Gain": "-3.0 dB", "Output": "+2.0 dB", "LS Solo": "On"} and "manifest" not in p,
+      f"param_set in Hz, dB, by dB and a choice on Pedal EQ, curated ({vals})")
 s.call("machine_add", gear="Pedal MComp", name="MB", connect_to="none")
 ok, _, p = s.call("param_set", machine="MB", changes=[{"param": "L Ratio", "value": "4:1"}])
 got = (p.get("changed") or [{}])[0]
@@ -159,8 +172,29 @@ s.call("machine_add", gear="Pedal Juno106", name="Keys", connect_to="none")
 ok, _, p = s.call("param_set", machine="Keys", changes=[{"param": "Env A", "value": "250 ms"}, {"param": "DCO Saw", "value": "Off"}])
 _, _, g2 = s.call("param_get", machine="Keys", params=["Env A"])
 env = (g2.get("values") or [{}])[0]
-check(ok and env.get("unit") == "s" and abs((env.get("number") or 0) - 0.25) < 0.03 and env.get("approximate") is True and g2.get("manifest") == "draft",
-      f"param_set in ms on Pedal Juno106 from its description's range, marked approximate ({env})")
+check(ok and env.get("unit") == "s" and abs((env.get("number") or 0) - 0.25) < 0.03 and "approximate" not in env and "manifest" not in g2
+      and env.get("value", "").endswith(" ms"),
+      f"param_set in ms on Pedal Juno106, exact from its source, the value in ms ({env})")
+ok, _, p = s.call("param_set", machine="Keys", changes=[{"param": "Filter cutoff", "value": "1 kHz"}])
+got = (p.get("changed") or [{}])[0]
+check(ok and got.get("param") == "VCF Freq" and abs((got.get("number") or 0) - 1000) < 60,
+      f"param_set takes a curated plain name (Filter cutoff = VCF Freq: {got})")
+s.call("machine_add", gear="Pedal Comp", name="Comp", connect_to="none")
+ok, _, p = s.call("param_set", machine="Comp", changes=[{"param": "Attack", "value": "10 ms"}, {"param": "Makeup Gain", "value": "+6 dB"}])
+vals = {x["param"]: (x["value"], x.get("raw")) for x in p.get("changed", [])}
+check(ok and vals == {"Attack": ("10 ms", 10), "Makeup Gain": ("+6.0 dB", 6)},
+      f"Pedal Comp's own texts are wrong; its curated manifest reads and writes the real values ({vals})")
+ok, _, gd = s.call("guide", machine="Pedal Juno106")
+md = gd.get("markdown", "")
+check(ok and "## Quirks" in md and "**Filter cutoff** (`filter.cutoff`)" in md and "| VCF Freq |" in md and "## Sources" in md,
+      "guide(machine=\"Pedal Juno106\"): the curated manual")
+ok, _, gd = s.call("guide", machine="Pedal Shaper")
+check(ok and gd.get("markdown", "").startswith("# Pedal Shaper manual") and "profiled draft" in gd.get("markdown", "") and "Pedal Shaper" in gd.get("manuals", []),
+      "guide(machine=\"Pedal Shaper\"): a draft's manual, and the list names it")
+res = s.request("resources/list")
+uris = {r["uri"] for r in (res.get("result") or {}).get("resources", [])}
+check({"rebuzz://machines/pedal-shaper/manual", "rebuzz://machines/pedal-juno106/manual"} <= uris,
+      f"resources/list has a manual for drafts and curated machines ({len([u for u in uris if u.startswith('rebuzz://machines/')])} manuals)")
 
 some_hot = (hot or ["Pedal EQ"])[0]
 ok, _, a = s.call("machine_add", gear=some_hot, name="Hot", connect_to="none")

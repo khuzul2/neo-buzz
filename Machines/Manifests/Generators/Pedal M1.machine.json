@@ -2,10 +2,22 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Pedal M1",
  "kind": "generator",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
- "type": "monosynth",
- "summary": "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; monophonic; takes notes in its tracks; one note at the defaults -25 LUFS.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
+ "type": "sampler",
+ "summary": "M1-style two-oscillator sample synth: each oscillator plays waves from the song's wavetable (up to four key zones), into a 2-pole low-pass, ADSRs and two LFOs. For pianos, strings, brass and other multisampled sounds.",
+ "quirks": [
+  "Needs a wave: it plays the song's wavetable (OSC1 Wave defaults to slot 1) and is silent until that slot holds one (wave_import).",
+  "A wave edited or replaced after it first played is cached: reload the machine to hear the change (README).",
+  "Velocity is the track Volume column (127 = full); Amp Vel and Filter Vel at 0 ignore it.",
+  "Chords written by notes_write played as one voice in the profile, though its README says each track is a voice (U1: the multi-track note workaround, tier 3).",
+  "It runs about 6 dB below other synths (README: internal headroom); raise Volume."
+ ],
+ "evidence": [
+  "ExternalMachines/source/thepedal/pedal-M1/README.md — voice architecture, multisample zones, velocity, limitations",
+  "ExternalMachines/source/thepedal/pedal-M1/PedalM1.cs — parameter scaling (TimeMs, CutoffHz, LfoSpeedHz, modulation depths in Work)",
+  "profile (tools/machine-profiler.py, linux 2026-11-03) — A4 at 440 Hz with a sine in wave slot 1, one voice heard for a chord, level"
+ ],
  "tracks": 8,
  "notes": {
   "input": "tracks",
@@ -46,21 +58,24 @@
    "index": 0,
    "id": "OSC1 Wave",
    "name": "OSC1 Wave",
-   "group": "",
+   "plain_name": "Oscillator 1 wave slot",
+   "role": "osc.wave",
+   "group": "Oscillator 1",
    "min": 1,
    "max": 200,
    "default": 1,
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "OSC1 wavetable index (0 = off)",
-   "confidence": "values"
+   "description": "Wavetable slot oscillator 1 plays (zone 1, below the splits)."
   },
   {
    "index": 1,
    "id": "OSC1 Octave",
    "name": "OSC1 Octave",
-   "group": "",
+   "plain_name": "Oscillator 1 octave",
+   "role": "pitch.octave",
+   "group": "Oscillator 1",
    "min": 0,
    "max": 4,
    "default": 2,
@@ -68,28 +83,33 @@
    "a": -2.0,
    "b": 2.0,
    "unit": "oct",
-   "description": "OSC1 octave shift",
-   "confidence": "description"
+   "own_texts": false,
+   "description": "Octave shift, −2 to +2, for all its zones."
   },
   {
    "index": 2,
    "id": "OSC1 Transpose",
    "name": "OSC1 Transpose",
-   "group": "",
+   "plain_name": "Oscillator 1 transpose",
+   "role": "pitch.coarse",
+   "group": "Oscillator 1",
    "min": 0,
    "max": 24,
    "default": 12,
    "kind": "linear",
-   "a": 0.0,
-   "b": 24.0,
-   "description": "OSC1 semitone transpose; 12 is unity",
-   "confidence": "values"
+   "a": -12.0,
+   "b": 12.0,
+   "unit": "st",
+   "own_texts": false,
+   "description": "Semitone shift, −12 to +12."
   },
   {
    "index": 3,
    "id": "OSC1 Detune",
    "name": "OSC1 Detune",
-   "group": "",
+   "plain_name": "Oscillator 1 detune",
+   "role": "pitch.fine",
+   "group": "Oscillator 1",
    "min": 0,
    "max": 100,
    "default": 50,
@@ -97,42 +117,48 @@
    "a": -50.0,
    "b": 50.0,
    "unit": "ct",
-   "description": "OSC1 fine detune; 50 is unity, range -50..+50 cents",
-   "confidence": "description"
+   "own_texts": false,
+   "description": "Fine detune, ±50 cents."
   },
   {
    "index": 4,
    "id": "OSC1 Level",
    "name": "OSC1 Level",
-   "group": "",
+   "plain_name": "Oscillator 1 level",
+   "role": "osc.level",
+   "group": "Oscillator 1",
    "min": 0,
    "max": 127,
    "default": 100,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "OSC1 mix level",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Its level in the mix."
   },
   {
    "index": 5,
    "id": "OSC2 Wave",
    "name": "OSC2 Wave",
-   "group": "",
+   "plain_name": "Oscillator 2 wave slot",
+   "role": "osc.wave",
+   "group": "Oscillator 2",
    "min": 1,
    "max": 200,
    "default": 1,
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "OSC2 wavetable index (0 = off)",
-   "confidence": "values"
+   "description": "Wavetable slot oscillator 2 plays (zone 1, below the splits)."
   },
   {
    "index": 6,
    "id": "OSC2 Octave",
    "name": "OSC2 Octave",
-   "group": "",
+   "plain_name": "Oscillator 2 octave",
+   "role": "pitch.octave",
+   "group": "Oscillator 2",
    "min": 0,
    "max": 4,
    "default": 2,
@@ -140,28 +166,33 @@
    "a": -2.0,
    "b": 2.0,
    "unit": "oct",
-   "description": "OSC2 octave shift",
-   "confidence": "description"
+   "own_texts": false,
+   "description": "Octave shift, −2 to +2, for all its zones."
   },
   {
    "index": 7,
    "id": "OSC2 Transpose",
    "name": "OSC2 Transpose",
-   "group": "",
+   "plain_name": "Oscillator 2 transpose",
+   "role": "pitch.coarse",
+   "group": "Oscillator 2",
    "min": 0,
    "max": 24,
    "default": 12,
    "kind": "linear",
-   "a": 0.0,
-   "b": 24.0,
-   "description": "OSC2 semitone transpose; 12 is unity",
-   "confidence": "values"
+   "a": -12.0,
+   "b": 12.0,
+   "unit": "st",
+   "own_texts": false,
+   "description": "Semitone shift, −12 to +12."
   },
   {
    "index": 8,
    "id": "OSC2 Detune",
    "name": "OSC2 Detune",
-   "group": "",
+   "plain_name": "Oscillator 2 detune",
+   "role": "pitch.fine",
+   "group": "Oscillator 2",
    "min": 0,
    "max": 100,
    "default": 53,
@@ -169,28 +200,33 @@
    "a": -50.0,
    "b": 50.0,
    "unit": "ct",
-   "description": "OSC2 fine detune; 50 is unity, range -50..+50 cents",
-   "confidence": "description"
+   "own_texts": false,
+   "description": "Fine detune, ±50 cents."
   },
   {
    "index": 9,
    "id": "OSC2 Level",
    "name": "OSC2 Level",
-   "group": "",
+   "plain_name": "Oscillator 2 level",
+   "role": "osc.level",
+   "group": "Oscillator 2",
    "min": 0,
    "max": 127,
    "default": 100,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "OSC2 mix level",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Its level in the mix."
   },
   {
    "index": 10,
    "id": "OSC Mode",
    "name": "OSC Mode",
-   "group": "",
+   "plain_name": "Oscillator mode",
+   "role": "osc.mode",
+   "group": "Mixer",
    "min": 0,
    "max": 2,
    "default": 0,
@@ -200,224 +236,782 @@
     "OSC2 only",
     "Both"
    ],
-   "description": "Oscillator routing mode",
-   "confidence": "values"
+   "description": "Which oscillators sound: 1 only, 2 only, or both."
   },
   {
    "index": 11,
    "id": "Portamento",
    "name": "Portamento",
-   "group": "",
+   "plain_name": "Portamento",
+   "role": "pitch.glide",
+   "group": "Pitch",
    "min": 0,
    "max": 127,
    "default": 0,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "Portamento time; 0 is off",
-   "confidence": "values"
+   "kind": "table",
+   "unit": "s",
+   "points": [
+    [
+     0,
+     0.0
+    ],
+    [
+     1,
+     0.001073
+    ],
+    [
+     2,
+     0.001152
+    ],
+    [
+     3,
+     0.001237
+    ],
+    [
+     4,
+     0.001327
+    ],
+    [
+     5,
+     0.001425
+    ],
+    [
+     6,
+     0.001529
+    ],
+    [
+     7,
+     0.001641
+    ],
+    [
+     8,
+     0.001761
+    ],
+    [
+     9,
+     0.001891
+    ],
+    [
+     10,
+     0.002029
+    ],
+    [
+     11,
+     0.002178
+    ],
+    [
+     12,
+     0.002338
+    ],
+    [
+     13,
+     0.002509
+    ],
+    [
+     14,
+     0.002693
+    ],
+    [
+     15,
+     0.002891
+    ],
+    [
+     16,
+     0.003103
+    ],
+    [
+     17,
+     0.00333
+    ],
+    [
+     18,
+     0.003574
+    ],
+    [
+     19,
+     0.003836
+    ],
+    [
+     20,
+     0.004118
+    ],
+    [
+     21,
+     0.00442
+    ],
+    [
+     22,
+     0.004744
+    ],
+    [
+     23,
+     0.005092
+    ],
+    [
+     24,
+     0.005465
+    ],
+    [
+     25,
+     0.005866
+    ],
+    [
+     26,
+     0.006296
+    ],
+    [
+     27,
+     0.006758
+    ],
+    [
+     28,
+     0.007253
+    ],
+    [
+     29,
+     0.007785
+    ],
+    [
+     30,
+     0.008356
+    ],
+    [
+     31,
+     0.008969
+    ],
+    [
+     32,
+     0.009626
+    ],
+    [
+     33,
+     0.010332
+    ],
+    [
+     34,
+     0.01109
+    ],
+    [
+     35,
+     0.011903
+    ],
+    [
+     36,
+     0.012776
+    ],
+    [
+     37,
+     0.013713
+    ],
+    [
+     38,
+     0.014718
+    ],
+    [
+     39,
+     0.015797
+    ],
+    [
+     40,
+     0.016956
+    ],
+    [
+     41,
+     0.018199
+    ],
+    [
+     42,
+     0.019534
+    ],
+    [
+     43,
+     0.020966
+    ],
+    [
+     44,
+     0.022504
+    ],
+    [
+     45,
+     0.024154
+    ],
+    [
+     46,
+     0.025925
+    ],
+    [
+     47,
+     0.027826
+    ],
+    [
+     48,
+     0.029866
+    ],
+    [
+     49,
+     0.032057
+    ],
+    [
+     50,
+     0.034407
+    ],
+    [
+     51,
+     0.03693
+    ],
+    [
+     52,
+     0.039638
+    ],
+    [
+     53,
+     0.042545
+    ],
+    [
+     54,
+     0.045665
+    ],
+    [
+     55,
+     0.049013
+    ],
+    [
+     56,
+     0.052607
+    ],
+    [
+     57,
+     0.056465
+    ],
+    [
+     58,
+     0.060606
+    ],
+    [
+     59,
+     0.06505
+    ],
+    [
+     60,
+     0.06982
+    ],
+    [
+     61,
+     0.07494
+    ],
+    [
+     62,
+     0.080435
+    ],
+    [
+     63,
+     0.086333
+    ],
+    [
+     64,
+     0.092664
+    ],
+    [
+     65,
+     0.099459
+    ],
+    [
+     66,
+     0.106752
+    ],
+    [
+     67,
+     0.11458
+    ],
+    [
+     68,
+     0.122983
+    ],
+    [
+     69,
+     0.132001
+    ],
+    [
+     70,
+     0.14168
+    ],
+    [
+     71,
+     0.15207
+    ],
+    [
+     72,
+     0.163221
+    ],
+    [
+     73,
+     0.17519
+    ],
+    [
+     74,
+     0.188036
+    ],
+    [
+     75,
+     0.201825
+    ],
+    [
+     76,
+     0.216624
+    ],
+    [
+     77,
+     0.232509
+    ],
+    [
+     78,
+     0.249559
+    ],
+    [
+     79,
+     0.267859
+    ],
+    [
+     80,
+     0.287501
+    ],
+    [
+     81,
+     0.308583
+    ],
+    [
+     82,
+     0.331211
+    ],
+    [
+     83,
+     0.355499
+    ],
+    [
+     84,
+     0.381567
+    ],
+    [
+     85,
+     0.409548
+    ],
+    [
+     86,
+     0.439579
+    ],
+    [
+     87,
+     0.471813
+    ],
+    [
+     88,
+     0.506411
+    ],
+    [
+     89,
+     0.543546
+    ],
+    [
+     90,
+     0.583404
+    ],
+    [
+     91,
+     0.626184
+    ],
+    [
+     92,
+     0.672102
+    ],
+    [
+     93,
+     0.721387
+    ],
+    [
+     94,
+     0.774286
+    ],
+    [
+     95,
+     0.831064
+    ],
+    [
+     96,
+     0.892005
+    ],
+    [
+     97,
+     0.957415
+    ],
+    [
+     98,
+     1.027622
+    ],
+    [
+     99,
+     1.102976
+    ],
+    [
+     100,
+     1.183857
+    ],
+    [
+     101,
+     1.270668
+    ],
+    [
+     102,
+     1.363846
+    ],
+    [
+     103,
+     1.463855
+    ],
+    [
+     104,
+     1.571199
+    ],
+    [
+     105,
+     1.686414
+    ],
+    [
+     106,
+     1.810077
+    ],
+    [
+     107,
+     1.942809
+    ],
+    [
+     108,
+     2.085274
+    ],
+    [
+     109,
+     2.238186
+    ],
+    [
+     110,
+     2.40231
+    ],
+    [
+     111,
+     2.57847
+    ],
+    [
+     112,
+     2.767548
+    ],
+    [
+     113,
+     2.97049
+    ],
+    [
+     114,
+     3.188314
+    ],
+    [
+     115,
+     3.422111
+    ],
+    [
+     116,
+     3.673052
+    ],
+    [
+     117,
+     3.942394
+    ],
+    [
+     118,
+     4.231487
+    ],
+    [
+     119,
+     4.54178
+    ],
+    [
+     120,
+     4.874825
+    ],
+    [
+     121,
+     5.232293
+    ],
+    [
+     122,
+     5.615973
+    ],
+    [
+     123,
+     6.027789
+    ],
+    [
+     124,
+     6.469802
+    ],
+    [
+     125,
+     6.944229
+    ],
+    [
+     126,
+     7.453444
+    ],
+    [
+     127,
+     8.0
+    ]
+   ],
+   "own_texts": false,
+   "description": "Glide time between notes: off at 0, else 1 ms – 8 s exponential."
   },
   {
    "index": 12,
    "id": "Cutoff",
    "name": "Cutoff",
-   "group": "",
+   "plain_name": "Filter cutoff",
+   "role": "filter.cutoff",
+   "group": "Filter",
    "min": 0,
    "max": 127,
    "default": 127,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "Filter cutoff; 0 closed, 127 fully open",
-   "confidence": "values"
+   "kind": "freq",
+   "a": 20.0,
+   "b": 18000.0,
+   "unit": "Hz",
+   "own_texts": false,
+   "description": "2-pole low-pass cutoff, 20 Hz – 18 kHz exponential."
   },
   {
    "index": 13,
    "id": "Resonance",
    "name": "Resonance",
-   "group": "",
+   "plain_name": "Filter resonance",
+   "role": "filter.resonance",
+   "group": "Filter",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Filter resonance; gentle range, never self-oscillates",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Gentle; never self-oscillates."
   },
   {
    "index": 14,
    "id": "Key Track",
    "name": "Key Track",
-   "group": "",
+   "plain_name": "Filter key tracking",
+   "role": "filter.keytrack",
+   "group": "Filter",
    "min": 0,
    "max": 127,
    "default": 64,
    "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "Filter cutoff key tracking; 64 is none, 127 full, 0 inverse",
-   "confidence": "values"
+   "a": -100.0,
+   "b": 98.4375,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Cutoff follows the note around C4: 0% none (raw 64), +98% about an octave per octave, −100% inverse."
   },
   {
    "index": 15,
    "id": "Filter EG Int",
    "name": "Filter EG Int",
-   "group": "",
+   "plain_name": "Filter envelope amount",
+   "role": "filter.env_amount",
+   "group": "Filter",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Filter envelope intensity",
-   "confidence": "values"
+   "b": 6.0,
+   "unit": "oct",
+   "own_texts": false,
+   "description": "Filter envelope to cutoff, up to 6 octaves."
   },
   {
    "index": 16,
    "id": "Filter Vel",
    "name": "Filter Vel",
-   "group": "",
+   "plain_name": "Filter velocity",
+   "role": "filter.velocity",
+   "group": "Filter",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Velocity to filter cutoff",
-   "confidence": "values"
+   "b": 1.0,
+   "unit": "oct",
+   "own_texts": false,
+   "description": "Velocity to cutoff, up to ±1 octave around velocity 64."
   },
   {
    "index": 17,
    "id": "Filter Attack",
    "name": "Filter Attack",
-   "group": "",
+   "plain_name": "Filter envelope attack",
+   "role": "filter.env.attack",
+   "group": "Filter envelope",
    "min": 0,
    "max": 127,
    "default": 0,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "Filter envelope attack time",
-   "confidence": "values"
+   "kind": "time",
+   "a": 0.001,
+   "b": 8.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "1 ms – 8 s exponential."
   },
   {
    "index": 18,
    "id": "Filter Decay",
    "name": "Filter Decay",
-   "group": "",
+   "plain_name": "Filter envelope decay",
+   "role": "filter.env.decay",
+   "group": "Filter envelope",
    "min": 0,
    "max": 127,
    "default": 64,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "Filter envelope decay time",
-   "confidence": "values"
+   "kind": "time",
+   "a": 0.001,
+   "b": 8.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "1 ms – 8 s exponential."
   },
   {
    "index": 19,
    "id": "Filter Sustain",
    "name": "Filter Sustain",
-   "group": "",
+   "plain_name": "Filter envelope sustain",
+   "role": "filter.env.sustain",
+   "group": "Filter envelope",
    "min": 0,
    "max": 127,
    "default": 100,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Filter envelope sustain level",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Sustain level."
   },
   {
    "index": 20,
    "id": "Filter Release",
    "name": "Filter Release",
-   "group": "",
+   "plain_name": "Filter envelope release",
+   "role": "filter.env.release",
+   "group": "Filter envelope",
    "min": 0,
    "max": 127,
    "default": 40,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "Filter envelope release time",
-   "confidence": "values"
+   "kind": "time",
+   "a": 0.001,
+   "b": 8.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "1 ms – 8 s exponential."
   },
   {
    "index": 21,
    "id": "Amp Attack",
    "name": "Amp Attack",
-   "group": "",
+   "plain_name": "Attack",
+   "role": "env.attack",
+   "group": "Amp",
    "min": 0,
    "max": 127,
    "default": 10,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "Amp envelope attack time",
-   "confidence": "values"
+   "kind": "time",
+   "a": 0.001,
+   "b": 8.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Amp envelope, 1 ms – 8 s exponential."
   },
   {
    "index": 22,
    "id": "Amp Decay",
    "name": "Amp Decay",
-   "group": "",
+   "plain_name": "Decay",
+   "role": "env.decay",
+   "group": "Amp",
    "min": 0,
    "max": 127,
    "default": 80,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "Amp envelope decay time",
-   "confidence": "values"
+   "kind": "time",
+   "a": 0.001,
+   "b": 8.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Amp envelope, 1 ms – 8 s exponential."
   },
   {
    "index": 23,
    "id": "Amp Sustain",
    "name": "Amp Sustain",
-   "group": "",
+   "plain_name": "Sustain",
+   "role": "env.sustain",
+   "group": "Amp",
    "min": 0,
    "max": 127,
    "default": 127,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Amp envelope sustain level",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Amp envelope sustain level."
   },
   {
    "index": 24,
    "id": "Amp Release",
    "name": "Amp Release",
-   "group": "",
+   "plain_name": "Release",
+   "role": "env.release",
+   "group": "Amp",
    "min": 0,
    "max": 127,
    "default": 40,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "Amp envelope release time",
-   "confidence": "values"
+   "kind": "time",
+   "a": 0.001,
+   "b": 8.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Amp envelope, 1 ms – 8 s exponential."
   },
   {
    "index": 25,
    "id": "Amp Vel",
    "name": "Amp Vel",
-   "group": "",
+   "plain_name": "Amp velocity",
+   "role": "velocity.amount",
+   "group": "Amp",
    "min": 0,
    "max": 127,
    "default": 80,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Velocity to amp level; 0 ignores velocity",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "How much velocity (the track Volume) sets the level; 0% ignores it."
   },
   {
    "index": 26,
    "id": "LFO1 Wave",
    "name": "LFO1 Wave",
-   "group": "",
+   "plain_name": "LFO 1 wave",
+   "role": "lfo.wave",
+   "group": "LFO 1",
    "min": 0,
    "max": 4,
    "default": 0,
@@ -429,56 +1023,66 @@
     "S+H",
     "Smooth"
    ],
-   "description": "LFO1 waveform",
-   "confidence": "values"
+   "description": "Triangle, sawtooth, square, sample and hold, or smooth random; restarts with each note."
   },
   {
    "index": 27,
    "id": "LFO1 Speed",
    "name": "LFO1 Speed",
-   "group": "",
+   "plain_name": "LFO 1 rate",
+   "role": "lfo.rate",
+   "group": "LFO 1",
    "min": 0,
    "max": 127,
    "default": 64,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "LFO1 speed; 0 slow, 127 fast",
-   "confidence": "values"
+   "kind": "freq",
+   "a": 0.05,
+   "b": 30.0,
+   "unit": "Hz",
+   "own_texts": false,
+   "description": "0.05–30 Hz exponential."
   },
   {
    "index": 28,
    "id": "LFO1 Delay",
    "name": "LFO1 Delay",
-   "group": "",
+   "plain_name": "LFO 1 delay",
+   "role": "lfo.delay",
+   "group": "LFO 1",
    "min": 0,
    "max": 127,
    "default": 0,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "LFO1 delay time after note-on",
-   "confidence": "values"
+   "kind": "time",
+   "a": 0.001,
+   "b": 8.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Time after a note before it starts, 1 ms – 8 s exponential."
   },
   {
    "index": 29,
    "id": "LFO1 Fade",
    "name": "LFO1 Fade",
-   "group": "",
+   "plain_name": "LFO 1 fade-in",
+   "role": "lfo.fade",
+   "group": "LFO 1",
    "min": 0,
    "max": 127,
    "default": 0,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "LFO1 fade-in time",
-   "confidence": "values"
+   "kind": "time",
+   "a": 0.001,
+   "b": 8.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Fade-in time once started, 1 ms – 8 s exponential."
   },
   {
    "index": 30,
    "id": "LFO1 to Pitch",
    "name": "LFO1 to Pitch",
-   "group": "",
+   "plain_name": "LFO 1 vibrato depth",
+   "role": "lfo.pitch",
+   "group": "LFO 1",
    "min": 0,
    "max": 127,
    "default": 0,
@@ -486,42 +1090,50 @@
    "a": 0.0,
    "b": 1.0,
    "unit": "st",
-   "description": "LFO1 pitch modulation depth (0 to ~1 semitone)",
-   "confidence": "description"
+   "own_texts": false,
+   "description": "To pitch, up to ±1 semitone."
   },
   {
    "index": 31,
    "id": "LFO1 to VDF",
    "name": "LFO1 to VDF",
-   "group": "",
+   "plain_name": "LFO 1 filter depth",
+   "role": "lfo.filter",
+   "group": "LFO 1",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "LFO1 filter modulation depth",
-   "confidence": "values"
+   "b": 4.0,
+   "unit": "oct",
+   "own_texts": false,
+   "description": "To filter cutoff, up to ±4 octaves."
   },
   {
    "index": 32,
    "id": "LFO1 to VDA",
    "name": "LFO1 to VDA",
-   "group": "",
+   "plain_name": "LFO 1 tremolo depth",
+   "role": "lfo.amp",
+   "group": "LFO 1",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "LFO1 amp modulation depth (tremolo)",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "To the amplifier (tremolo)."
   },
   {
    "index": 33,
    "id": "LFO2 Wave",
    "name": "LFO2 Wave",
-   "group": "",
+   "plain_name": "LFO 2 wave",
+   "role": "lfo.wave",
+   "group": "LFO 2",
    "min": 0,
    "max": 4,
    "default": 2,
@@ -533,274 +1145,306 @@
     "S+H",
     "Smooth"
    ],
-   "description": "LFO2 waveform",
-   "confidence": "values"
+   "description": "Triangle, sawtooth, square, sample and hold, or smooth random; restarts with each note."
   },
   {
    "index": 34,
    "id": "LFO2 Speed",
    "name": "LFO2 Speed",
-   "group": "",
+   "plain_name": "LFO 2 rate",
+   "role": "lfo.rate",
+   "group": "LFO 2",
    "min": 0,
    "max": 127,
    "default": 32,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "LFO2 speed",
-   "confidence": "values"
+   "kind": "freq",
+   "a": 0.05,
+   "b": 30.0,
+   "unit": "Hz",
+   "own_texts": false,
+   "description": "0.05–30 Hz exponential."
   },
   {
    "index": 35,
    "id": "LFO2 Delay",
    "name": "LFO2 Delay",
-   "group": "",
+   "plain_name": "LFO 2 delay",
+   "role": "lfo.delay",
+   "group": "LFO 2",
    "min": 0,
    "max": 127,
    "default": 0,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "LFO2 delay time after note-on",
-   "confidence": "values"
+   "kind": "time",
+   "a": 0.001,
+   "b": 8.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Time after a note before it starts, 1 ms – 8 s exponential."
   },
   {
    "index": 36,
    "id": "LFO2 Fade",
    "name": "LFO2 Fade",
-   "group": "",
+   "plain_name": "LFO 2 fade-in",
+   "role": "lfo.fade",
+   "group": "LFO 2",
    "min": 0,
    "max": 127,
    "default": 0,
-   "kind": "linear",
-   "a": 0.0,
-   "b": 127.0,
-   "description": "LFO2 fade-in time",
-   "confidence": "values"
+   "kind": "time",
+   "a": 0.001,
+   "b": 8.0,
+   "unit": "s",
+   "own_texts": false,
+   "description": "Fade-in time once started, 1 ms – 8 s exponential."
   },
   {
    "index": 37,
    "id": "LFO2 to Pitch",
    "name": "LFO2 to Pitch",
-   "group": "",
+   "plain_name": "LFO 2 vibrato depth",
+   "role": "lfo.pitch",
+   "group": "LFO 2",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "LFO2 pitch modulation depth",
-   "confidence": "values"
+   "b": 1.0,
+   "unit": "st",
+   "own_texts": false,
+   "description": "To pitch, up to ±1 semitone."
   },
   {
    "index": 38,
    "id": "LFO2 to VDF",
    "name": "LFO2 to VDF",
-   "group": "",
+   "plain_name": "LFO 2 filter depth",
+   "role": "lfo.filter",
+   "group": "LFO 2",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "LFO2 filter modulation depth",
-   "confidence": "values"
+   "b": 4.0,
+   "unit": "oct",
+   "own_texts": false,
+   "description": "To filter cutoff, up to ±4 octaves."
   },
   {
    "index": 39,
    "id": "LFO2 to VDA",
    "name": "LFO2 to VDA",
-   "group": "",
+   "plain_name": "LFO 2 tremolo depth",
+   "role": "lfo.amp",
+   "group": "LFO 2",
    "min": 0,
    "max": 127,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "LFO2 amp modulation depth",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "To the amplifier (tremolo)."
   },
   {
    "index": 40,
    "id": "Volume",
    "name": "Volume",
-   "group": "",
+   "plain_name": "Output level",
+   "role": "level",
+   "group": "Amp",
    "min": 0,
    "max": 127,
    "default": 100,
    "kind": "linear",
    "a": 0.0,
-   "b": 127.0,
-   "description": "Master output volume",
-   "confidence": "values"
+   "b": 100.0,
+   "unit": "%",
+   "own_texts": false,
+   "description": "Master output."
   },
   {
    "index": 41,
    "id": "OSC1 Wave 2",
    "name": "OSC1 Wave 2",
-   "group": "",
+   "plain_name": "Oscillator 1 zone 2 wave slot",
+   "role": "osc.wave_zone",
+   "group": "Oscillator 1",
    "min": 1,
    "max": 200,
    "default": 1,
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "OSC1 zone 2 wave; 0 = off",
-   "confidence": "values"
+   "description": "Wavetable slot for zone 2, from Split 2 up (higher zones win)."
   },
   {
    "index": 42,
    "id": "OSC1 Split 2",
    "name": "OSC1 Split 2",
-   "group": "",
+   "plain_name": "Oscillator 1 zone 2 split note",
+   "role": "osc.zone_split",
+   "group": "Oscillator 1",
    "min": 0,
    "max": 127,
    "default": 60,
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "MIDI note where OSC1 zone 2 takes over (default C4 = 60)",
-   "confidence": "values"
+   "description": "MIDI note (60 = C4) where zone 2 takes over, when its wave is set."
   },
   {
    "index": 43,
    "id": "OSC1 Wave 3",
    "name": "OSC1 Wave 3",
-   "group": "",
+   "plain_name": "Oscillator 1 zone 3 wave slot",
+   "role": "osc.wave_zone",
+   "group": "Oscillator 1",
    "min": 1,
    "max": 200,
    "default": 1,
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "OSC1 zone 3 wave; 0 = off",
-   "confidence": "values"
+   "description": "Wavetable slot for zone 3, from Split 3 up (higher zones win)."
   },
   {
    "index": 44,
    "id": "OSC1 Split 3",
    "name": "OSC1 Split 3",
-   "group": "",
+   "plain_name": "Oscillator 1 zone 3 split note",
+   "role": "osc.zone_split",
+   "group": "Oscillator 1",
    "min": 0,
    "max": 127,
    "default": 72,
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "MIDI note where OSC1 zone 3 takes over (default C5 = 72)",
-   "confidence": "values"
+   "description": "MIDI note (60 = C4) where zone 3 takes over, when its wave is set."
   },
   {
    "index": 45,
    "id": "OSC1 Wave 4",
    "name": "OSC1 Wave 4",
-   "group": "",
+   "plain_name": "Oscillator 1 zone 4 wave slot",
+   "role": "osc.wave_zone",
+   "group": "Oscillator 1",
    "min": 1,
    "max": 200,
    "default": 1,
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "OSC1 zone 4 wave; 0 = off",
-   "confidence": "values"
+   "description": "Wavetable slot for zone 4, from Split 4 up (higher zones win)."
   },
   {
    "index": 46,
    "id": "OSC1 Split 4",
    "name": "OSC1 Split 4",
-   "group": "",
+   "plain_name": "Oscillator 1 zone 4 split note",
+   "role": "osc.zone_split",
+   "group": "Oscillator 1",
    "min": 0,
    "max": 127,
    "default": 84,
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "MIDI note where OSC1 zone 4 takes over (default C6 = 84)",
-   "confidence": "values"
+   "description": "MIDI note (60 = C4) where zone 4 takes over, when its wave is set."
   },
   {
    "index": 47,
    "id": "OSC2 Wave 2",
    "name": "OSC2 Wave 2",
-   "group": "",
+   "plain_name": "Oscillator 2 zone 2 wave slot",
+   "role": "osc.wave_zone",
+   "group": "Oscillator 2",
    "min": 1,
    "max": 200,
    "default": 1,
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "OSC2 zone 2 wave; 0 = off",
-   "confidence": "values"
+   "description": "Wavetable slot for zone 2, from Split 2 up (higher zones win)."
   },
   {
    "index": 48,
    "id": "OSC2 Split 2",
    "name": "OSC2 Split 2",
-   "group": "",
+   "plain_name": "Oscillator 2 zone 2 split note",
+   "role": "osc.zone_split",
+   "group": "Oscillator 2",
    "min": 0,
    "max": 127,
    "default": 60,
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "MIDI note where OSC2 zone 2 takes over (default C4 = 60)",
-   "confidence": "values"
+   "description": "MIDI note (60 = C4) where zone 2 takes over, when its wave is set."
   },
   {
    "index": 49,
    "id": "OSC2 Wave 3",
    "name": "OSC2 Wave 3",
-   "group": "",
+   "plain_name": "Oscillator 2 zone 3 wave slot",
+   "role": "osc.wave_zone",
+   "group": "Oscillator 2",
    "min": 1,
    "max": 200,
    "default": 1,
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "OSC2 zone 3 wave; 0 = off",
-   "confidence": "values"
+   "description": "Wavetable slot for zone 3, from Split 3 up (higher zones win)."
   },
   {
    "index": 50,
    "id": "OSC2 Split 3",
    "name": "OSC2 Split 3",
-   "group": "",
+   "plain_name": "Oscillator 2 zone 3 split note",
+   "role": "osc.zone_split",
+   "group": "Oscillator 2",
    "min": 0,
    "max": 127,
    "default": 72,
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "MIDI note where OSC2 zone 3 takes over (default C5 = 72)",
-   "confidence": "values"
+   "description": "MIDI note (60 = C4) where zone 3 takes over, when its wave is set."
   },
   {
    "index": 51,
    "id": "OSC2 Wave 4",
    "name": "OSC2 Wave 4",
-   "group": "",
+   "plain_name": "Oscillator 2 zone 4 wave slot",
+   "role": "osc.wave_zone",
+   "group": "Oscillator 2",
    "min": 1,
    "max": 200,
    "default": 1,
    "kind": "linear",
    "a": 1.0,
    "b": 200.0,
-   "description": "OSC2 zone 4 wave; 0 = off",
-   "confidence": "values"
+   "description": "Wavetable slot for zone 4, from Split 4 up (higher zones win)."
   },
   {
    "index": 52,
    "id": "OSC2 Split 4",
    "name": "OSC2 Split 4",
-   "group": "",
+   "plain_name": "Oscillator 2 zone 4 split note",
+   "role": "osc.zone_split",
+   "group": "Oscillator 2",
    "min": 0,
    "max": 127,
    "default": 84,
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "MIDI note where OSC2 zone 4 takes over (default C6 = 84)",
-   "confidence": "values"
+   "description": "MIDI note (60 = C4) where zone 4 takes over, when its wave is set."
   }
  ],
  "track_parameters": [
@@ -808,15 +1452,16 @@
    "index": 0,
    "id": "Volume",
    "name": "Volume",
-   "group": "",
+   "plain_name": "Velocity",
+   "role": "velocity",
+   "group": "Track",
    "min": 0,
    "max": 127,
    "default": 127,
    "kind": "linear",
    "a": 0.0,
    "b": 127.0,
-   "description": "Note velocity; 0..127, 127 is full",
-   "confidence": "values"
+   "description": "Note velocity 0–127 (127 full), per track."
   }
  ]
 }

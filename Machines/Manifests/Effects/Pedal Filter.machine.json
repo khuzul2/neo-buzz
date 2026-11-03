@@ -2,10 +2,20 @@
  "format": "rebuzz-machine-manifest/1",
  "gear": "Pedal Filter",
  "kind": "effect",
- "status": "draft",
- "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
- "type": "filter or EQ",
- "summary": "Filter or eq (profiled draft): traits: filter or EQ; tail 0.0 s; latency 3 samples; gain -9.5 dB at the defaults.",
+ "status": "curated",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
+ "type": "filter",
+ "summary": "Stereo multimode filter (low-, high-, band-pass, notch, comb) with 12 or 24 dB/oct slopes, pre-filter drive, an LFO (free or tempo-synced) and stereo phase offset. For sweeps, wah and auto-filter, and comb resonance.",
+ "quirks": [
+  "At the defaults it is a 2 kHz low-pass: it cuts the highs (−9.5 dB on noise in the profile).",
+  "In Comb mode Cutoff is the comb's fundamental and Resonance its feedback; Slope then picks FIR (flanging) or IIR (resonator).",
+  "Every parameter at its maximum at once is hot (+16 dBFS); no single parameter is."
+ ],
+ "evidence": [
+  "ExternalMachines/source/thepedal/pedal-filter/README.md — parameters and LFO divisions",
+  "ExternalMachines/source/thepedal/pedal-filter/PedalFilter.cs — scaling in Work (cutoff in Hz, drive gain, LFO rate and depth)",
+  "profile (tools/machine-profiler.py, linux 2026-11-03) — filter, 3 samples latency, −9.5 dB at the defaults"
+ ],
  "tracks": 0,
  "health": {
   "status": "warn",
@@ -73,7 +83,9 @@
    "index": 0,
    "id": "Mode",
    "name": "Mode",
-   "group": "",
+   "plain_name": "Filter type",
+   "role": "filter.type",
+   "group": "Filter",
    "min": 0,
    "max": 4,
    "default": 0,
@@ -85,14 +97,15 @@
     "Band Reject",
     "Comb"
    ],
-   "description": "Filter mode.  Comb: Cutoff = fundamental freq, Slope = FIR/IIR.",
-   "confidence": "values"
+   "description": "Low pass, high pass, band pass, band reject (notch) or comb."
   },
   {
    "index": 1,
    "id": "Slope",
    "name": "Slope",
-   "group": "",
+   "plain_name": "Slope",
+   "role": "filter.slope",
+   "group": "Filter",
    "min": 0,
    "max": 1,
    "default": 0,
@@ -101,14 +114,15 @@
     "12 dB / FIR",
     "24 dB / IIR"
    ],
-   "description": "SVF: 12 dB/oct (2-pole) or 24 dB/oct (4-pole).  Comb: FIR = flanging, IIR = resonator/string.",
-   "confidence": "values"
+   "description": "12 dB/oct (2-pole) or 24 dB/oct (4-pole); for Comb, FIR or IIR."
   },
   {
    "index": 2,
    "id": "Cutoff",
    "name": "Cutoff",
-   "group": "",
+   "plain_name": "Cutoff",
+   "role": "filter.cutoff",
+   "group": "Filter",
    "min": 20,
    "max": 18000,
    "default": 2000,
@@ -116,42 +130,50 @@
    "a": 20.0,
    "b": 18000.0,
    "unit": "Hz",
-   "description": "Filter cutoff Hz.  Comb: comb fundamental frequency.",
-   "confidence": "description"
+   "own_texts": false,
+   "description": "Cutoff (or comb fundamental), 20 Hz – 18 kHz."
   },
   {
    "index": 3,
    "id": "Resonance",
    "name": "Resonance",
-   "group": "",
+   "plain_name": "Resonance",
+   "role": "filter.resonance",
+   "group": "Filter",
    "min": 0,
    "max": 100,
    "default": 20,
    "kind": "linear",
    "a": 0.0,
    "b": 100.0,
-   "description": "Filter Q.  Comb: feedback amount (0 = none, 100 = near-infinite ring).",
-   "confidence": "values"
+   "unit": "%",
+   "own_texts": false,
+   "description": "0% wide to 100% near self-oscillation; comb feedback in Comb mode."
   },
   {
    "index": 4,
    "id": "Drive",
    "name": "Drive",
-   "group": "",
+   "plain_name": "Drive",
+   "role": "filter.drive",
+   "group": "Filter",
    "min": 0,
    "max": 100,
    "default": 0,
    "kind": "linear",
-   "a": 0.0,
-   "b": 100.0,
-   "description": "Pre-filter tanh() saturation with 2x oversampling.  0 = clean.",
-   "confidence": "values"
+   "a": 1.0,
+   "b": 10.0,
+   "unit": "×",
+   "own_texts": false,
+   "description": "Gain into a tanh saturator before the filter, 1× (clean) to 10×."
   },
   {
    "index": 5,
    "id": "LFO Wave",
    "name": "LFO Wave",
-   "group": "",
+   "plain_name": "LFO wave",
+   "role": "lfo.wave",
+   "group": "LFO",
    "min": 0,
    "max": 5,
    "default": 0,
@@ -164,40 +186,45 @@
     "Saw Down",
     "S & H"
    ],
-   "description": "LFO waveform.  S&H: random step, L/R update independently.",
-   "confidence": "values"
+   "description": "Sine, triangle, square, saw up, saw down or sample and hold."
   },
   {
    "index": 6,
    "id": "LFO Rate",
    "name": "LFO Rate",
-   "group": "",
+   "plain_name": "LFO rate",
+   "role": "lfo.rate",
+   "group": "LFO",
    "min": 0,
    "max": 200,
    "default": 20,
    "kind": "linear",
    "a": 0.0,
-   "b": 200.0,
-   "description": "LFO speed (free mode): 0 = stopped, 100 ≈ 10 Hz, 200 ≈ 20 Hz.",
-   "confidence": "values"
+   "b": 20.0,
+   "unit": "Hz",
+   "own_texts": false,
+   "description": "Free-running rate, 0–20 Hz (0 stops it)."
   },
   {
    "index": 7,
    "id": "Tempo Sync",
    "name": "Tempo Sync",
-   "group": "",
+   "plain_name": "Tempo sync",
+   "role": "lfo.sync",
+   "group": "LFO",
    "min": 0,
    "max": 1,
    "default": 0,
    "kind": "switch",
-   "description": "Lock LFO to host tempo (uses LFO Div).",
-   "confidence": "values"
+   "description": "Locks the LFO to the song tempo, at LFO Div."
   },
   {
    "index": 8,
    "id": "LFO Div",
    "name": "LFO Div",
-   "group": "",
+   "plain_name": "LFO division",
+   "role": "lfo.division",
+   "group": "LFO",
    "min": 0,
    "max": 13,
    "default": 4,
@@ -218,50 +245,56 @@
     "1/8 Trip",
     "1/16 Trip"
    ],
-   "description": "Note division when Tempo Sync = On.",
-   "confidence": "values"
+   "description": "LFO cycle with Tempo Sync on: 4 bars down to 1/16 triplets."
   },
   {
    "index": 9,
    "id": "LFO Depth",
    "name": "LFO Depth",
-   "group": "",
+   "plain_name": "LFO depth",
+   "role": "lfo.filter",
+   "group": "LFO",
    "min": 0,
    "max": 100,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
-   "b": 100.0,
-   "description": "Sweep width: 0 = none, 100 = ±4 octaves.",
-   "confidence": "values"
+   "b": 4.0,
+   "unit": "oct",
+   "own_texts": false,
+   "description": "Sweep around the cutoff, up to ±4 octaves."
   },
   {
    "index": 10,
    "id": "Phase Offset",
    "name": "Phase Offset",
-   "group": "",
+   "plain_name": "Stereo phase offset",
+   "role": "lfo.phase",
+   "group": "LFO",
    "min": 0,
    "max": 180,
    "default": 0,
    "kind": "linear",
    "a": 0.0,
    "b": 180.0,
-   "description": "L/R LFO phase difference.  90 = quadrature, 180 = opposed.  Comb: drives stereo chorus/flanger.",
-   "confidence": "values"
+   "description": "LFO phase difference between left and right in degrees: 0 mono, 90 quadrature, 180 opposed."
   },
   {
    "index": 11,
    "id": "Mix",
    "name": "Mix",
-   "group": "",
+   "plain_name": "Mix",
+   "role": "mix.wet",
+   "group": "Output",
    "min": 0,
    "max": 100,
    "default": 100,
    "kind": "linear",
    "a": 0.0,
    "b": 100.0,
-   "description": "Wet/dry blend: 0 = dry, 100 = fully filtered.",
-   "confidence": "values"
+   "unit": "%",
+   "own_texts": false,
+   "description": "Filtered against dry: 100% fully filtered."
   }
  ],
  "track_parameters": []
