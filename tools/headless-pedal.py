@@ -5,7 +5,9 @@
 #  - each synth (M1, Juno106, SH101, FM, Tracker) sounds when its pattern plays a note;
 #  - each effect passes a Neo Poly chord and sounds;
 #  - Pedal Chord plays a chord on its target, and Pedal LFO moves its target's parameter;
-#  - Pedal Peer Control loads and the whole song renders with it.
+#  - Pedal Peer Control loads and the whole song renders with it;
+#  - Pedal Plate stays bounded and its tail decays at full Decay and modulation, and with Feedback
+#    at 80 and at its maximum (95), where its outer loop diverged (machine-safety.md §1).
 # The synths take notes in their Note track parameter only (no MIDI), which the agent's tools
 # don't write (notes_write sends MIDI), so the script adds the note columns to the saved song and
 # reopens it; the targets of Chord and LFO (set by their WPF dialogs on Windows) go into their
@@ -13,10 +15,12 @@
 #
 #   python3 tools/headless-pedal.py <path to rebuzz-headless> [work folder]
 
+import array
 import base64
 import json
 import math
 import os
+import struct
 import subprocess
 import sys
 import tempfile
@@ -76,6 +80,29 @@ def audible(measure):
 
 def peak_of(measure):
     return (measure or {}).get("peaks", {}).get("sample_peak_dbfs")
+
+
+def wav_levels(path, windows):
+    """RMS (dBFS) of a render's 32-bit float WAV over each (from, to) window in seconds, both channels."""
+    with open(path, "rb") as f:
+        data = f.read()
+    pos, channels, rate, samples = 12, 2, 48000, array.array("f")
+    while pos + 8 <= len(data):
+        cid, size = data[pos:pos + 4], struct.unpack_from("<I", data, pos + 4)[0]
+        body = data[pos + 8:pos + 8 + size]
+        if cid == b"fmt ":
+            _, channels, rate = struct.unpack_from("<HHI", body)
+        elif cid == b"data":
+            samples.frombytes(body[:len(body) - len(body) % 4])
+            if sys.byteorder != "little":
+                samples.byteswap()
+        pos += 8 + size + (size & 1)
+    out = []
+    for a, b in windows:
+        x = samples[int(a * rate) * channels:int(b * rate) * channels]
+        s = sum(v * v for v in x) / max(1, len(x))
+        out.append(10 * math.log10(s) if s > 0 and math.isfinite(s) else (-math.inf if s == 0 else math.inf))
+    return out
 
 
 def short(gear):
@@ -200,6 +227,29 @@ check(call("param_set", machine="E-Plate", changes=[{"param": "Decay", "value": 
 ok, _, r = call("render", **{"from": 0, "to": 4, "tail_seconds": 3, "probes": ["E-Plate"]})
 probe = next((p for p in r.get("probes", []) if p.get("machine") == "E-Plate"), {})
 check(ok and audible(probe.get("measure")), f"Pedal Plate stays bounded at full Decay ({peak_of(probe.get('measure'))} dBFS peak)")
+
+
+def plate_decays(what, changes):
+    """Pedal Plate with these changes: bounded, and its tail decays (the chord ends at 1.5 s; 6 s of tail)."""
+    ok, text, _ = call("param_set", machine="E-Plate", changes=changes)
+    if not ok:   # a draft manifest's safe_range keeps agents inside it (machine-safety.md §3.4)
+        ok, text, _ = call("param_set", machine="E-Plate", changes=changes, allow_unsafe=True)
+    check(ok, f"Pedal Plate {what}: param_set")
+    ok, _, r = call("render", **{"from": 0, "to": 4, "tail_seconds": 6, "probes": ["E-Plate"]})
+    probe = next((p for p in r.get("probes", []) if p.get("machine") == "E-Plate"), {})
+    early, late = wav_levels(probe["file"], [(3, 4), (7, 8)]) if probe.get("file") else (math.nan, math.nan)
+    check(ok and audible(probe.get("measure")) and late < early - 3,
+          f"Pedal Plate {what}: bounded ({peak_of(probe.get('measure'))} dBFS peak) and decaying ({early:.1f} dB at 3 s, {late:.1f} dB at 7 s)")
+
+
+# Its outer Feedback loop diverged above about 50 at the default Decay (the profiler saw 80) and
+# above about 10 at full Decay: the feedback is now capped below the loop's edge.
+plate_decays("Feedback 80 at the default Decay", [{"param": "Decay", "value": "default"}, {"param": "Feedback", "value": "raw:80"}])
+plate_decays("Feedback 95 (its maximum) at the default Decay", [{"param": "Feedback", "value": "raw:95"}])
+plate_decays("Feedback 95 at full Decay and modulation", [{"param": "Decay", "value": "raw:100"}])
+check(not call("param_set", machine="E-Plate", changes=[{"param": "Feedback", "value": "raw:100"}])[0],
+      "Pedal Plate's Feedback stops at 95 (raw:100 is refused)")
+call("param_set", machine="E-Plate", changes=[{"param": "Feedback", "value": "default"}, {"param": "Decay", "value": "default"}])
 
 ok, _, r = call("render", **{"from": 0, "to": 4, "tail_seconds": 0.5, "probes": ["ChordJuno"]})
 probe = next((p for p in r.get("probes", []) if p.get("machine") == "ChordJuno"), {})
