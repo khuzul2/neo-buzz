@@ -23,6 +23,9 @@ namespace ReBuzz.Studio.Tests
     {
         static ReBuzzCore Core => Studio.Host.Core;
 
+        /// <summary>Command on macOS (the Mac CI job runs these too), Control elsewhere.</summary>
+        static RawInputModifiers Cmd => System.OperatingSystem.IsMacOS() ? RawInputModifiers.Meta : RawInputModifiers.Control;
+
         /// <summary>The main window on a new, empty song, with the machine view showing.</summary>
         static (MainWindow Window, MachineView View) OpenEmpty()
         {
@@ -122,9 +125,10 @@ namespace ReBuzz.Studio.Tests
             _ => RawInputModifiers.None,
         };
 
+        /// <summary>Ctrl+Z (Command+Z on a Mac).</summary>
         static void Undo(MainWindow window)
         {
-            window.KeyPressQwerty(PhysicalKey.Z, RawInputModifiers.Control);
+            window.KeyPressQwerty(PhysicalKey.Z, Cmd);
             Settle();
         }
 
@@ -425,7 +429,7 @@ namespace ReBuzz.Studio.Tests
 
                 // Ctrl + wheel zooms around the pointer: the machine under it stays under it.
                 var at = view.PointOf(poly, window);
-                window.MouseWheel(at, new Vector(0, 1), RawInputModifiers.Control);
+                window.MouseWheel(at, new Vector(0, 1), Cmd);
                 Settle();
                 Assert.That(canvas.ZoomLevel, Is.EqualTo(1));
                 Assert.That(view.ZoomSlider.Value, Is.EqualTo(1), "the slider follows");
@@ -434,7 +438,7 @@ namespace ReBuzz.Studio.Tests
                 {
                     // Scroll offsets are whole pixels (as WPF's sv_ScrollChanged makes them): each step may move it by one.
                     var before = view.PointOf(poly, window);
-                    window.MouseWheel(before, new Vector(0, 1), RawInputModifiers.Control);
+                    window.MouseWheel(before, new Vector(0, 1), Cmd);
                     Settle();
                     Near(view.PointOf(poly, window), before, $"the machine under the pointer at level {canvas.ZoomLevel}");
                 }
@@ -508,20 +512,20 @@ namespace ReBuzz.Studio.Tests
                 Undo(window);
                 Assert.That((poly.Position, verb.Position, master.Position), Is.EqualTo((polyAt, verbAt, masterAt)));
 
-                // Ctrl+A, Ctrl+D; a click on empty space clears.
-                window.KeyPressQwerty(PhysicalKey.A, RawInputModifiers.Control);
+                // Ctrl+A, Ctrl+D (Command on a Mac); a click on empty space clears.
+                window.KeyPressQwerty(PhysicalKey.A, Cmd);
                 Assert.That(view.Canvas.Selection.Count, Is.EqualTo(3));
-                window.KeyPressQwerty(PhysicalKey.D, RawInputModifiers.Control);
+                window.KeyPressQwerty(PhysicalKey.D, Cmd);
                 Assert.That(view.Canvas.Selection, Is.Empty);
                 // (Off the centre: a press where the last one was, this soon, would be a double click.)
                 Click(window, view.PointOf(poly, window) + Aside);
-                Click(window, view.PointOf(verb, window) + Aside, mods: RawInputModifiers.Control);
-                Assert.That(view.Canvas.Selection, Is.EquivalentTo(new[] { poly, verb }), "Ctrl-click adds");
+                Click(window, view.PointOf(verb, window) + Aside, mods: Cmd);
+                Assert.That(view.Canvas.Selection, Is.EquivalentTo(new[] { poly, verb }), "Ctrl-click (Command-click) adds");
                 Click(window, corner);
                 Assert.That(view.Canvas.Selection, Is.Empty);
 
                 // Delete from the menu deletes the selection; one undo brings both back.
-                window.KeyPressQwerty(PhysicalKey.A, RawInputModifiers.Control);
+                window.KeyPressQwerty(PhysicalKey.A, Cmd);
                 Menu(window, view, view.PointOf(poly, window), null, "Delete");
                 Assert.That(Graph(), Is.EqualTo("Master"), "Master stays");
                 Undo(window);

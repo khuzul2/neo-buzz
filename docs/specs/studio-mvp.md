@@ -127,7 +127,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - Right click on empty space: New ▸ Generators / Effects / Control (the installed machines by kind, as the machine list filters them), Unmute all, Snap Machines, Select All, Deselect.
   - Right click on a machine: Mute, Solo or Bypass, Oversample, Parameters..., MIDI Input Channel, Replace, Rename... (`AskName`), Delete. Master has Parameters... only.
   - Keys: Delete (Backspace on a Mac), and Ctrl/Command + A, D, U, M.
-  - Zoom: Ctrl/Command + wheel around the pointer, or the top bar's slider (-8..8, ×2^(level/8)). A middle double click resets.
+  - Zoom: Ctrl/Command + wheel or a trackpad pinch, around the pointer; or the top bar's slider (-8..8, ×2^(level/8)). A middle double click resets.
   - Scroll: the wheel or a trackpad, the scroll bars, a middle drag, or Shift-drag on empty space.
 - **Edits** (`MachineEdits`) go through the engine's undo stack, with the SongCore calls the WPF view makes:
   - create (CreateInstrument: a pattern, a sequence track, and a generator wired to Master while the song has no effects);
@@ -143,7 +143,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - Screenshots: `machines-1-empty` to `machines-16-rubber-band`.
   - The tests hold off the menus' hover delay, which runs on the wall clock.
 - **Differs from WPF:**
-  - Ctrl/Command + wheel zooms and the plain wheel scrolls (WPF's CtrlMouseWheel setting), for trackpads.
+  - Ctrl/Command + wheel zooms and the plain wheel scrolls (WPF's CtrlMouseWheel setting), for trackpads; a pinch zooms too (not testable headless).
   - Mute, solo, bypass and amp/pan undo.
   - A machine added from the menu is selected.
 - **Not ported:**

@@ -36,7 +36,7 @@ namespace ReBuzz.Studio.Views.Machines
         CanvasMap map = new CanvasMap(2, 2);
         int zoomLevel;
         Vector offset;          // scroll offset, in zoomed pixels
-        double wheelZoom;       // wheel notches not yet turned into a level
+        double wheelZoom;       // wheel notches (or pinch) not yet turned into a level
 
         enum Drag { None, Move, Connect, Select, Pan }
         Drag drag;
@@ -57,6 +57,7 @@ namespace ReBuzz.Studio.Views.Machines
             this.core = core;
             Focusable = true;
             ClipToBounds = true;
+            PointerTouchPadGestureMagnify += OnPinch;
         }
 
         /// <summary>Raised when zoom or scroll change (the view's scroll bars and slider follow).</summary>
@@ -239,6 +240,17 @@ namespace ReBuzz.Studio.Views.Machines
                 if (e.KeyModifiers.HasFlag(KeyModifiers.Shift) && d.X == 0) d = new Vector(d.Y, 0);
                 ScrollTo(offset - d * 50);
             }
+            e.Handled = true;
+        }
+
+        /// <summary>A trackpad pinch zooms around the pointer too (a Mac's; there is no WPF counterpart).</summary>
+        void OnPinch(object sender, PointerDeltaEventArgs e)
+        {
+            wheelZoom += Math.Log2(Math.Max(0.1, 1 + e.Delta.X)) * ZoomLevels;
+            int level = zoomLevel;
+            while (wheelZoom >= 1) { wheelZoom -= 1; level++; }
+            while (wheelZoom <= -1) { wheelZoom += 1; level--; }
+            if (level != zoomLevel) SetZoom(level, e.GetPosition(this));
             e.Handled = true;
         }
 
