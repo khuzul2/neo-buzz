@@ -1,5 +1,7 @@
 ﻿using BuzzGUI.Common.InterfaceExtensions;
+#if WINDOWS
 using BuzzGUI.Common.Templates;
+#endif
 using BuzzGUI.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -127,7 +129,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
             column.GroupType = param.Group.Type;
             column.ParamTrack = track;
 
-            column.SetBeatCount((int)Editor.lengthBox.Value);
+            column.SetBeatCount(Editor.ShownBeatCount);
             column.SetRPB(rpb);
             column.UpdateLength();
 
@@ -205,7 +207,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
                     column.ParamTrack = track;
                     //column.ParamIndex = index;
 
-                    column.SetBeatCount((int)Editor.lengthBox.Value);
+                    column.SetBeatCount(Editor.ShownBeatCount);
                     column.SetRPB(rpb);
                     column.UpdateLength();
 
@@ -234,7 +236,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
                 column.GroupType = par.Group.Type;
                 column.ParamTrack = trackNumber;
 
-                column.SetBeatCount((int)Editor.lengthBox.Value);
+                column.SetBeatCount(Editor.ShownBeatCount);
                 column.SetRPB(rpb);
                 column.UpdateLength();
 

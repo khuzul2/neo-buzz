@@ -180,27 +180,29 @@ namespace WDE.PedalPlate
             return d + g * v;
         }
 
-        // Modulated all-pass: write at pos with standard Schroeder formula,
-        // but read the output tap at a fractionally offset position driven by
-        // the LFO. This is exactly Dattorro's §4 modulation scheme.
+        // Modulated all-pass (Dattorro §4): a Schroeder all-pass whose delay the
+        // LFO moves, len - 1 - modOffset samples (modOffset 0..16; Alloc leaves
+        // 32 spare). The feedback and the output use the same modulated tap, so
+        // it stays an all-pass.
+        // Fork (neo-buzz): it read 1-17 samples behind the write position, and
+        // fed back the unmodulated tap: a comb with a gain up to 5.7 inside the
+        // tank's loop, which diverged at the default Decay.
         static float ModAP(float[] buf, ref int pos, float x, float g, float modOffset)
         {
             int len = buf.Length;
 
-            float d0 = buf[pos];
-            float v  = x - g * d0;
+            // The sample written k samples ago is at pos - k; buf[pos] is the oldest (k = len).
+            float delay = len - 1f - modOffset;
+            int   whole = (int)delay;
+            float frac  = delay - whole;
+            int   r0    = pos - whole;  if (r0 < 0) r0 += len;
+            int   r1    = r0 - 1;       if (r1 < 0) r1 += len;   // one sample older
+            float d = buf[r0] * (1f - frac) + buf[r1] * frac;
+
+            float v = x - g * d;
             buf[pos] = v;
-
-            // Modulated read (linear interpolation behind the write pointer)
-            float rPos = pos - 1f - modOffset;
-            int   r0   = (int)rPos;
-            float frac = rPos - r0;
-            r0 = ((r0 % len) + len) % len;
-            int r1 = (r0 - 1 + len) % len;
-            float dm = buf[r0] * (1f - frac) + buf[r1] * frac;
-
             pos = pos + 1 < len ? pos + 1 : 0;
-            return dm + g * v;
+            return d + g * v;
         }
 
         // Simple delay line

@@ -13,8 +13,21 @@
 # A song the engine can't open is reported and skipped: "super old" BMX files have no PARA section,
 # so their parameters can't be read without the machine's DLL (as on Windows without the machine).
 #
+# The Modern Pattern Editor is rebuzz-headless's default pattern editor (studio-mvp.md S6), as on
+# Windows: an old song's built-in pattern contents go to it, converted to PXP, and the first save
+# keeps them as its data. So the check reads that data (the editor's own format) and compares it
+# with the contents the original's PATT gives. Without the editor they stay in PATT and in BMXML's
+# BuiltInPattern elements, as before (mac-engine.md M2), and that is checked instead.
+# The Windows-style song (below) has editor data built here from the editor's format code
+# (PatternEditorUtils.CreateModernPatternEditorData): it must open and save byte for byte.
+#
 #   python3 tools/song-roundtrip.py <path to rebuzz-headless> [work folder] [song ...]
 #   python3 tools/song-roundtrip.py --dump <song.bmx|song.bmxml>     (the parsed song, as JSON)
+#   python3 tools/song-roundtrip.py --compare <original.bmx> <A> <B>
+#   python3 tools/song-roundtrip.py --windows-style <a song saved as BMXML> <out.bmxml>
+#   python3 tools/song-roundtrip.py --check-windows-style <out.bmxml> <A.bmxml> <B.bmxml> <A.bmx> <B.bmx>
+#       (the checks above on saves another program made: the studio's exit test, studio-mvp.md S9.
+#       A is the song saved, B is A opened and saved again; they print JSON and exit 1 on a problem)
 #
 # With no songs given it takes the first 12 demos under ExternalMachines/source. Linux CI runs it.
 
@@ -254,6 +267,105 @@ def pack_rows(rows, defs):
 
 # ---------------------------------------------------------------- comparisons
 
+def visible_connections(song):
+    """The song's wires between machines the user sees (pattern editors are wired to the Master)."""
+    return sorted(tuple(c) for c in song["connections"] if not hidden(c[0]) and not hidden(c[1]))
+
+
+# ---------------------------------------------------------------- the Modern Pattern Editor's data
+
+TIME_BASE = 240         # PatternEvent.TimeBase: pattern time per tick
+NOTE_OFF = 255
+
+
+def parse_mpe(hexdata):
+    """
+    The Modern Pattern Editor's data (PatternEditorUtils: 255, version 1, size, then each pattern's
+    name, beats, rows per beat and columns: machine, parameter index, track, graphical, events as
+    (time, value), rows of each beat). None for anything else (PXP, empty).
+    """
+    if not hexdata:
+        return None
+    r = Reader(bytes.fromhex(hexdata))
+    if r.u8() != 255 or r.u8() != 1:
+        return None
+    size = r.i32()
+    if size != len(r.d):
+        raise Unparseable(f"editor data says {size} bytes, has {len(r.d)}")
+    patterns = []
+    for _ in range(r.i32()):
+        p = {"name": r.str(), "beats": r.i32(), "rpb": r.i32(), "columns": []}
+        for _ in range(r.i32()):
+            c = {"machine": r.str(), "index": r.i32(), "track": r.i32(), "graphical": r.u8()}
+            c["events"] = [(r.i32(), r.i32()) for _ in range(r.i32())]
+            c["beat_rows"] = [r.i32() for _ in range(p["beats"])]
+            p["columns"].append(c)
+        patterns.append(p)
+    if r.pos != len(r.d):
+        raise Unparseable(f"{len(r.d) - r.pos} bytes after the editor's patterns")
+    return patterns
+
+
+def build_mpe(patterns):
+    """The same data, as PatternEditorUtils.CreateModernPatternEditorData writes it."""
+    out = bytearray()
+    out += struct.pack("<i", len(patterns))
+    for p in patterns:
+        out += p["name"].encode("ascii") + b"\0" + struct.pack("<iii", p["beats"], p["rpb"], len(p["columns"]))
+        for c in p["columns"]:
+            out += c["machine"].encode("ascii") + b"\0" + struct.pack("<iiBi", c["index"], c["track"], c["graphical"], len(c["events"]))
+            for time, value in c["events"]:
+                out += struct.pack("<ii", time, value)
+            for rows in c["beat_rows"]:
+                out += struct.pack("<i", rows)
+    return bytes([255, 1]) + struct.pack("<i", len(out) + 6) + bytes(out)
+
+
+def mpe_value(value, pdef):
+    """A value as the editor keeps it: a note it can't read becomes the MIDI note's (MPEPatternColumn.SetEvents)."""
+    if pdef[0] != 0 or value == NOTE_OFF:
+        return value
+    octave, note = value >> 4, value & 15
+    if note < 1 or note > 12 or octave < 0 or octave > 9:
+        value = max(0, min(value, 119))
+        return ((value // 12) << 4) + value % 12 + 1
+    return value
+
+
+def builtin_as_mpe(machine, pattern, tracks):
+    """
+    The events a built-in pattern's rows give the editor: BuiltInPattern.ToPXP makes a column per
+    parameter and an event per row with a value (4 rows a beat), and the editor reads them at 240
+    pattern time a row. Columns of tracks the machine no longer has are dropped (MPEPattern.UpdateData).
+    """
+    want = {}
+    globals_ = len(machine["gdefs"])
+    for j, d in enumerate(machine["gdefs"]):
+        want[(j, 0)] = [(i * TIME_BASE, mpe_value(row[j], d)) for i, row in enumerate(pattern["global_rows"]) if row[j] != d[4]]
+    for l, rows in enumerate(pattern["track_rows"][:tracks]):
+        for j, d in enumerate(machine["tdefs"]):
+            want[(globals_ + j, l)] = [(i * TIME_BASE, mpe_value(row[j], d)) for i, row in enumerate(rows) if row[j] != d[4]]
+    return want
+
+
+def check_in_editor(o, op, editor_data, tracks, problems, tag):
+    """A built-in pattern's contents, now in the editor's data."""
+    try:
+        pats = parse_mpe(editor_data)
+    except (Unparseable, struct.error, ValueError) as e:
+        problems.append(f"{tag}: the editor's data can't be read: {e}")
+        return
+    p = next((x for x in pats or [] if x["name"] == op["name"]), None)
+    if p is None:
+        problems.append(f"{tag}: pattern {op['name']!r} isn't in its editor's data")
+        return
+    have = {(c["index"], c["track"]): c["events"] for c in p["columns"] if c["machine"] == o["name"]}
+    for key, events in builtin_as_mpe(o, op, tracks).items():
+        if have.get(key, []) != events:
+            problems.append(f"{tag}: pattern {op['name']!r} column {key} {short(events)} became {short(have.get(key))}")
+            return
+
+
 def compare_bmx(orig, saved, problems, where):
     """What the original says about each machine, the saved BMX must say too."""
     by_name = {m["name"]: m for m in saved["machines"]}
@@ -278,16 +390,23 @@ def compare_bmx(orig, saved, problems, where):
             builtin = o["editors"] is None or (i < len(o["editors"]) and o["editors"][i] == 65535)
             if not builtin:
                 continue
-            # The built-in editor's contents stay in PATT, and XTAP still gives them to it.
-            if s["editors"] is not None and not (i < len(s["editors"]) and s["editors"][i] == 65535):
-                problems.append(f"{tag}: pattern {op['name']!r} is no longer the built-in editor's (XTAP {s['editors']})")
+            editor = s["editors"][i] if s["editors"] is not None and i < len(s["editors"]) else 65535
+            if editor != 65535:
+                # The default pattern editor took them (converted, as on Windows): they're its data now.
+                ed = by_name.get(editor)
+                if ed is None or ed["dll"] != "Modern Pattern Editor":
+                    problems.append(f"{tag}: pattern {op['name']!r} went to {editor!r}, not to a Modern Pattern Editor")
+                else:
+                    check_in_editor(o, op, ed["data"], s["tracks"], problems, tag)
+                continue
+            # No editor here: the built-in editor's contents stay in PATT, and XTAP still gives them to it.
             for key in ("inputs", "global_rows", "track_rows"):
                 if op[key] != sp[key]:
                     problems.append(f"{tag}: pattern {op['name']!r} {key} changed")
         for pname, cols in (o.get("columns") or {}).items():
             if cols != (s.get("columns") or {}).get(pname):
                 problems.append(f"{tag}: pattern {pname!r} columns changed")
-    if sorted(map(tuple, orig["connections"])) != sorted(map(tuple, saved["connections"])):
+    if visible_connections(orig) != visible_connections(saved):
         problems.append(f"{where}: connections changed")
     if orig["sequences"] and orig["sequences"] != saved["sequences"]:
         problems.append(f"{where}: sequences changed")
@@ -333,6 +452,14 @@ def compare_bmxml(orig, saved, problems, where):
             builtin = o["editors"] is None or (i < len(o["editors"]) and o["editors"][i] == 65535)
             if not builtin:
                 continue
+            if s["editor"]:
+                # The default pattern editor took them (as on Windows): they're its data now.
+                ed = by_name.get(s["editor"])
+                if ed is None or ed["dll"] != "Modern Pattern Editor":
+                    problems.append(f"{tag}: pattern {op['name']!r} went to {s['editor']!r}, not to a Modern Pattern Editor")
+                else:
+                    check_in_editor(o, op, ed["data"], t["tracks"], problems, tag)
+                continue
             b = sp["builtin"]
             empty = all(v == d[4] for row in op["global_rows"] for v, d in zip(row, o["gdefs"])) and \
                 all(v == d[4] for tr in op["track_rows"] for row in tr for v, d in zip(row, o["tdefs"])) and \
@@ -347,7 +474,7 @@ def compare_bmxml(orig, saved, problems, where):
             inputs = [[src, struct.pack(f"<{len(ap)}H", *ap).hex()] for src, ap in op["inputs"]]
             if b["inputs"] != inputs:
                 problems.append(f"{tag}: pattern {op['name']!r} input columns changed")
-    if sorted(map(tuple, orig["connections"])) != sorted(map(tuple, saved["connections"])):
+    if visible_connections(orig) != visible_connections(saved):
         problems.append(f"{where}: connections changed")
 
 
@@ -410,16 +537,69 @@ class Headless:
             return None
 
 
+MIDI_NOTE, MIDI_VELOCITY = -128, -129     # the editor's own MIDI note lanes (PatternEditorUtils.InternalParameter)
+
+
+def synthetic_events(index, track, pdef, beats, rpb):
+    """Events for a column: every few rows, values in the parameter's range (notes and offs for notes)."""
+    kind, lo, hi = pdef[0], pdef[2], pdef[3]
+    if lo > hi:                       # a placeholder's switches come without a range
+        lo, hi = 0, 1
+    step = 960 // rpb                 # a beat is 4 ticks of 240
+    events = []
+    for row in range(beats * rpb):
+        if (row + 3 * index + track) % 5:
+            continue
+        if kind == "Note":
+            value = NOTE_OFF if row % 7 == 6 else 0x31 + (row + index) % 12 + 16 * (row // 12 % 3)
+        else:
+            value = lo + (row * 37 + index * 11 + track) % (hi - lo + 1)
+        events.append((row * step, value))
+    return events
+
+
+def synthetic_mpe(machine, rpbs):
+    """
+    The editor data ReBuzz on Windows saves for a machine's patterns, built from the editor's format
+    code: a column per global parameter, then per track the MIDI note lanes and the track's
+    parameters, in the order the editor keeps them (MPEPattern.UpdateData), each with some events.
+    """
+    groups = machine["groups"]
+    globals_ = groups[1]["params"] if len(groups) > 1 else []
+    tparams = groups[2]["params"] if len(groups) > 2 else []
+    tracks = groups[2]["tracks"] if len(groups) > 2 else 0
+    patterns = []
+    for i, p in enumerate(machine["patterns"]):
+        beats, rpb = (p["rows"] + 3) // 4, rpbs[i % len(rpbs)]
+        cols = []
+
+        def col(index, track, pdef):
+            cols.append({"machine": machine["name"], "index": index, "track": track, "graphical": 0,
+                         "events": synthetic_events(index, track, pdef, beats, rpb), "beat_rows": [rpb] * beats})
+
+        for j, prm in enumerate(globals_):
+            col(j, 0, prm["def"])
+        for track in range(tracks):
+            if track == 0:
+                col(MIDI_NOTE, 0, ["Note", "MIDI Note", 1, 156, 0])
+                col(MIDI_VELOCITY, 0, ["Byte", "MIDI Velocity", 1, 127, 0])
+            for j, prm in enumerate(tparams):
+                col(len(globals_) + j, track, prm["def"])
+        patterns.append({"name": p["name"], "beats": beats, "rpb": rpb, "columns": cols})
+    return build_mpe(patterns)
+
+
 def windows_style_song(src, out):
     """
-    A BMXML song as ReBuzz on Windows saves one, made from a song saved here: every machine with
-    patterns, and the Master, has a hidden Modern Pattern Editor machine that holds them, and the
-    first placeholder's first pattern has an automation column. Off Windows the editors are missing
-    too, with no default to replace them, so they must stay as placeholders that keep their data.
+    A BMXML song as ReBuzz on Windows saves one, made from a song saved here, where every machine
+    with patterns has its Modern Pattern Editor: each editor's data is replaced by data built here
+    from the editor's format code (synthetic_mpe: notes, values, the MIDI note lanes, 4 and 8 rows
+    a beat), and the first placeholder's first pattern gets an automation column (the engine's own).
+    Returns the editors' data by editor name, and the machine given the column.
     """
     tree = ET.parse(src)
     root = tree.getroot()
-    machines, conns = root.find("Machines"), root.find("MachineConnections")
+    model = {m["name"]: m for m in parse_bmxml(src)["machines"]}
 
     def sub(parent, tag, text=None):
         e = ET.SubElement(parent, tag)
@@ -427,116 +607,111 @@ def windows_style_song(src, out):
             e.text = str(text)
         return e
 
-    editors, column = 0, None
-    for me in list(machines):
-        pats = me.find("Patterns")
-        if me.findtext("Type") != "Master" and (pats is None or len(pats) == 0):
+    def name_of(me):
+        return model_name(me.findtext("Name"))
+
+    elements = {name_of(me): me for me in root.find("Machines")}
+    data, column = {}, None
+    for name, m in model.items():
+        if not m["editor"] or not m["patterns"] or m["editor"] not in elements:
             continue
-        editors += 1
-        ename = f"_x0001_pe{editors}"
-        for p in list(pats if pats is not None else []):
-            b = p.find("BuiltInPattern")
-            if b is not None:
-                p.remove(b)
-        link = ET.Element("EditorMachine")
-        link.text = ename
-        before = me.find("Data") if me.find("Data") is not None else me.find("Library")
-        me.insert(list(me).index(before) + 1, link)     # the class's order: Library, Data, EditorMachine
+        blob = synthetic_mpe(m, [4, 8])
+        elements[m["editor"]].find("Data").text = base64.b64encode(blob).decode()
+        data[m["editor"]] = blob.hex()
 
-        ed = sub(machines, "Machine")
-        sub(ed, "Library", "Modern Pattern Editor")
-        sub(ed, "Data", base64.b64encode(bytes((editors * 7 + i) % 256 for i in range(64))).decode())
-        sub(ed, "Name", ename)
-        sub(ed, "Patterns")
-        groups = sub(ed, "ParameterGroups")
-        inputs = copy.deepcopy(me.find("ParameterGroups/ParameterGroup"))    # Amp and Pan, here with no inputs
-        for v in inputs.findall("Parameters/Parameter/Values"):
-            for x in list(v):
-                v.remove(x)
-        inputs.find("TrackCount").text = "0"
-        groups.append(inputs)
-        for t in ("Global", "Track"):
-            g = sub(groups, "ParameterGroup")
-            sub(g, "Type", t)
-            sub(g, "Parameters")
-            sub(g, "TrackCount", 0)
-        sub(ed, "Attributes")
-        for tag, text in (("Type", "Generator"), ("X", 0), ("Y", 0), ("IsMuted", "false"), ("MIDIInputChannel", -1), ("OverrideLatency", -1),
-                          ("OversampleFactor", 1), ("IsWireless", "false"), ("BaseOctave", 4), ("ParameterWindowVisible", "false"),
-                          ("GUIWindowVisible", "false"), ("IsBypassed", "false")):
-            sub(ed, tag, text)
-        c = sub(conns, "MachineConnection")
-        for tag, text in (("Source", ename), ("Destination", "Master"), ("Amp", 16384), ("Pan", 16384), ("SourceChannel", 0), ("DestinationChannel", 0)):
-            sub(c, tag, text)
-        sub(sub(c, "SourceChannels"), "int", 0)
-        sub(sub(c, "DestinationChannels"), "int", 0)
-
+        me = elements[name]
         globals_ = me.findall("ParameterGroups/ParameterGroup")[1].findall("Parameters/Parameter")
-        if column is None and me.findtext("Type") != "Master" and pats is not None and len(pats) and globals_:
+        if column is None and m["type"] != "Master" and globals_:
             p0 = globals_[0]
-            cols = pats[0].find("Columns")
+            cols = me.find("Patterns")[0].find("Columns")
             col = sub(cols, "PatternColumn")
             for tag, text in (("Machine", me.findtext("Name")), ("Group", 1), ("IndexInGroup", 0), ("Track", 0)):
                 sub(col, tag, text)
             events = sub(col, "Events")
-            for t, v in ((0, p0.findtext("MinValue")), (240, p0.findtext("MaxValue"))):
+            for time, value in ((0, p0.findtext("MinValue")), (240, p0.findtext("MaxValue"))):
                 ev = sub(events, "ColumnEvent")
-                sub(ev, "Time", t)
-                sub(ev, "Value", v)
+                sub(ev, "Time", time)
+                sub(ev, "Value", value)
                 sub(ev, "Duration", 0)
             md = sub(sub(col, "Metadata"), "Metadata")
             sub(md, "Key", "roundtrip")
             sub(md, "Value", "kept")
-            column = me.findtext("Name")
+            column = name
     tree.write(out, encoding="utf-8", xml_declaration=True)
-    return editors, column
+    return data, column
+
+
+def model_name(s):
+    import re
+    return re.sub(r"_x([0-9A-Fa-f]{4})_", lambda mm: chr(int(mm.group(1), 16)), s or "")
 
 
 def check_windows_style(h, src, work):
-    """The Windows-style song round-trips in both formats, and keeps its editors and the column."""
-    problems = []
+    """The Windows-style song round-trips in both formats, keeps its editors' data byte for byte, and the column."""
     song = os.path.join(work, "windows-style.bmxml")
-    editors, column = windows_style_song(src, song)
-    want = parse_bmxml(song)
-
+    data, column = windows_style_song(src, song)
+    if not data:
+        return ["no machine with a pattern editor and patterns to give data"], 0, 0
     xml, err = roundtrip(h, song, work, ".bmxml")
     if xml is None:
         return [f"bmxml: {err}"], 0, 0
-    if strip_stamps(open(xml[0], encoding="utf-8-sig").read()) != strip_stamps(open(xml[1], encoding="utf-8-sig").read()):
-        problems.append("bmxml: A and B differ beyond the stamps")
-    got = parse_bmxml(xml[0])
-    wm, gm = {m["name"]: m for m in want["machines"]}, {m["name"]: m for m in got["machines"]}
-    for name, m in wm.items():
-        if gm.get(name) != m:
-            diff = [k for k in m if gm.get(name, {}).get(k) != m[k]] if name in gm else ["machine lost"]
-            problems.append(f"bmxml A: {name!r} ({m['dll']}): {', '.join(diff)} changed")
-    if sorted(map(tuple, want["connections"])) != sorted(map(tuple, got["connections"])):
-        problems.append("bmxml A: connections changed")
-
     bmx, err = roundtrip(h, song, work, ".bmx")
+    problems = check_windows_style_saves(song, data, column, xml, bmx)
     if bmx is None:
         return problems + [f"bmx: {err}"], os.path.getsize(xml[0]), 0
-    if open(bmx[0], "rb").read() != open(bmx[1], "rb").read():
-        problems.append("bmx: A and B differ")
-    b = parse_bmx(bmx[0])
-    bm = {m["name"]: m for m in b["machines"]}
-    for name, m in wm.items():
-        s = bm.get(name)
-        if s is None:
-            problems.append(f"bmx A: {name!r} lost")
-            continue
-        if s["data"] != m["data"]:
-            problems.append(f"bmx A: {name!r} data changed")
-        if m["editor"] and s["editors"] != [m["editor"]] * len(m["patterns"]):
-            problems.append(f"bmx A: {name!r} editor {m['editor']!r} became {s['editors']}")
-        for p in m["patterns"]:
-            have = (s.get("columns") or {}).get(p["name"], [])
-            cols = p["columns"]
-            if cols != have:
-                problems.append(f"bmx A: {name!r} pattern {p['name']!r} columns {short(cols)} became {short(have)}")
+    return problems, os.path.getsize(xml[0]), os.path.getsize(bmx[0])
+
+
+def windows_style_data(song):
+    """A Windows-style song's editors' data and the machine given the column, read back from the song (as windows_style_song made them)."""
+    model = parse_bmxml(song)
+    machines = {m["name"]: m for m in model["machines"]}
+    data = {m["editor"]: machines[m["editor"]]["data"] for m in model["machines"] if m["editor"] and m["patterns"] and m["editor"] in machines}
+    column = next((m["name"] for m in model["machines"] for p in m["patterns"] for c in p["columns"] if ["roundtrip", "kept"] in c["metadata"]), None)
+    return data, column
+
+
+def check_windows_style_saves(song, data, column, xml, bmx):
+    """The checks on the Windows-style song's saves: xml and bmx are (A, B) pairs, or None."""
+    problems = []
+    want = parse_bmxml(song)
+    wm = {m["name"]: m for m in want["machines"]}
+    if xml is not None:
+        if strip_stamps(open(xml[0], encoding="utf-8-sig").read()) != strip_stamps(open(xml[1], encoding="utf-8-sig").read()):
+            problems.append("bmxml: A and B differ beyond the stamps")
+        got = parse_bmxml(xml[0])
+        gm = {m["name"]: m for m in got["machines"]}
+        for name, m in wm.items():
+            if gm.get(name) != m:
+                diff = [k for k in m if gm.get(name, {}).get(k) != m[k]] if name in gm else ["machine lost"]
+                problems.append(f"bmxml A: {name!r} ({m['dll']}): {', '.join(diff)} changed")
+        for editor, blob in data.items():
+            if gm.get(editor, {}).get("data") != blob:
+                problems.append(f"bmxml A: {editor!r}'s data isn't the same bytes")
+        if visible_connections(want) != visible_connections(got):
+            problems.append("bmxml A: connections changed")
+    if bmx is not None:
+        if open(bmx[0], "rb").read() != open(bmx[1], "rb").read():
+            problems.append("bmx: A and B differ")
+        b = parse_bmx(bmx[0])
+        bm = {m["name"]: m for m in b["machines"]}
+        for name, m in wm.items():
+            s = bm.get(name)
+            if s is None:
+                problems.append(f"bmx A: {name!r} lost")
+                continue
+            if s["data"] != m["data"]:
+                problems.append(f"bmx A: {name!r} data changed")
+            if m["editor"] and s["editors"] != [m["editor"]] * len(m["patterns"]):
+                problems.append(f"bmx A: {name!r} editor {m['editor']!r} became {s['editors']}")
+            for p in m["patterns"]:
+                have = (s.get("columns") or {}).get(p["name"], [])
+                cols = p["columns"]
+                if cols != have:
+                    problems.append(f"bmx A: {name!r} pattern {p['name']!r} columns {short(cols)} became {short(have)}")
     if column is None:
         problems.append("no placeholder with patterns and global parameters to give a column")
-    return problems, os.path.getsize(xml[0]), os.path.getsize(bmx[0])
+    return problems
 
 
 def roundtrip(h, song, work, ext):
@@ -551,7 +726,42 @@ def roundtrip(h, song, work, ext):
     return (a, b), None
 
 
+def compare(original, a, b):
+    """The checks main() makes on its own saves, for saves made elsewhere: A and B the same, nothing lost from the original."""
+    problems = []
+    try:
+        orig = parse_bmx(original)
+    except Unparseable as e:
+        return {"problems": [], "unparseable": str(e)}
+    if a.lower().endswith(".bmxml"):
+        same = strip_stamps(open(a, encoding="utf-8-sig").read()) == strip_stamps(open(b, encoding="utf-8-sig").read())
+        if not same:
+            problems.append(f"bmxml: A ({os.path.getsize(a):,} bytes) and B ({os.path.getsize(b):,} bytes) differ beyond the stamps")
+        compare_bmxml(orig, parse_bmxml(a), problems, "bmxml A")
+    else:
+        same = open(a, "rb").read() == open(b, "rb").read()
+        if not same:
+            problems.append(f"bmx: A ({os.path.getsize(a):,} bytes) and B ({os.path.getsize(b):,} bytes) differ")
+        compare_bmx(orig, parse_bmx(a), problems, "bmx A")
+    return {"problems": problems, "identical": same, "placeholders": sum(1 for m in orig["machines"] if m["type"] != 0),
+            "para": bool(orig["para"])}
+
+
 def main():
+    if len(sys.argv) == 5 and sys.argv[1] == "--compare":
+        result = compare(*sys.argv[2:5])
+        print(json.dumps(result))
+        return 1 if result["problems"] else 0
+    if len(sys.argv) == 4 and sys.argv[1] == "--windows-style":
+        data, column = windows_style_song(sys.argv[2], sys.argv[3])
+        print(json.dumps({"editors": sorted(data), "column": column}))
+        return 0 if data and column else 1
+    if len(sys.argv) == 7 and sys.argv[1] == "--check-windows-style":
+        song = sys.argv[2]
+        data, column = windows_style_data(song)
+        problems = check_windows_style_saves(song, data, column, sys.argv[3:5], sys.argv[5:7])
+        print(json.dumps({"problems": problems, "editors": sorted(data), "column": column}))
+        return 1 if problems or not data else 0
     if len(sys.argv) == 3 and sys.argv[1] == "--dump":
         p = sys.argv[2]
         print(json.dumps(parse_bmxml(p) if p.lower().endswith(".bmxml") else parse_bmx(p), indent=1))
@@ -620,8 +830,8 @@ def main():
 
     if richest[1]:
         problems, xa, ba = check_windows_style(h, richest[1], work)
-        print(f"{'ok  ' if not problems else 'FAIL'} windows-style.bmxml (from {os.path.basename(richest[1])}, with pattern editor machines): "
-              f"bmxml {xa:,}, bmx {ba:,}; editors kept as placeholders, both formats stable", flush=True)
+        print(f"{'ok  ' if not problems else 'FAIL'} windows-style.bmxml (from {os.path.basename(richest[1])}, with Modern Pattern Editor data): "
+              f"bmxml {xa:,}, bmx {ba:,}; the editors' data unchanged, both formats stable", flush=True)
         for p in problems[:12]:
             print("     " + p)
         failures += [f"windows-style.bmxml: {p}" for p in problems]

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- H0 spike: the generator build of NeoPlugSpike.cs (see NeoPlugSpike.Machine.targets). -->
+  <PropertyGroup>
+    <NeoName>Neo Plug Spike</NeoName>
+    <NeoKind>Generators</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoPlugSpike.Machine.targets" />
+</Project>

@@ -79,7 +79,8 @@
       "gearFolder": "Generators",
       "assembly": "Pedal Tracker.NET",
       "patches": [
-        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
+        "Portable build (studio-mvp.md S2): MenuEntry derives from DependencyObject only under #if WINDOWS (plain properties otherwise)"
       ]
     },
     {
@@ -95,7 +96,8 @@
       "gearFolder": "Generators",
       "assembly": "Pedal Chord.NET",
       "patches": [
-        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
+        "Portable build (studio-mvp.md S2): the WPF dialogs (TargetSettingsWindow, ChordReferenceWindow) under #if WINDOWS; off Windows the menu commands say so, and the target resolves through a delay and the UI thread's SynchronizationContext instead of a DispatcherTimer"
       ]
     },
     {
@@ -111,7 +113,8 @@
       "gearFolder": "Generators",
       "assembly": "Pedal LFO.NET",
       "patches": [
-        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
+        "Portable build (studio-mvp.md S2): off Windows the target resolves on the UI thread's SynchronizationContext instead of Application.Current.Dispatcher"
       ]
     },
     {
@@ -127,7 +130,8 @@
       "gearFolder": "Generators",
       "assembly": "Pedal Peer Control.NET",
       "patches": [
-        "Directory.Build.props imports ExternalMachines/Directory.Build.props so ReBuzzDir defaults to this repo's build output"
+        "Directory.Build.props imports ExternalMachines/Directory.Build.props so ReBuzzDir defaults to this repo's build output",
+        "Portable build (studio-mvp.md S2): the WPF settings window, NAudio's MidiOut and the DependencyObject MenuEntry under #if WINDOWS; off Windows the feedback CCs go out through IBuzz.SendMIDIOutput"
       ]
     },
     {
@@ -159,7 +163,8 @@
       "gearFolder": "Effects",
       "assembly": "Pedal Comp.NET",
       "patches": [
-        "Replaced 3 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+        "Replaced 3 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
+        "Portable build (studio-mvp.md S2): the WPF GUI (MachineGUIFactory, PedalCompGui) and its usings under #if WINDOWS"
       ]
     },
     {
@@ -272,7 +277,8 @@
       "gearFolder": "Effects",
       "assembly": "Pedal Gate.NET",
       "patches": [
-        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
+        "Portable build (studio-mvp.md S2): the WPF GUI (PedalGateGuiFactory, PedalGateGui) under #if WINDOWS"
       ]
     },
     {
@@ -288,7 +294,8 @@
       "gearFolder": "Effects",
       "assembly": "Pedal Plate.NET",
       "patches": [
-        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
+        "Bug fix (studio-mvp.md S2): the tank's modulated all-pass reads its full length behind the write position, and feeds back the same tap; it read 1-17 samples behind, which diverged at the default Decay"
       ]
     },
     {

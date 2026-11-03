@@ -24,10 +24,10 @@ namespace ReBuzz.Studio.Tests
         static ReBuzzCore Core => Studio.Host.Core;
 
         /// <summary>Command on macOS (the Mac CI job runs these too), Control elsewhere.</summary>
-        static RawInputModifiers Cmd => System.OperatingSystem.IsMacOS() ? RawInputModifiers.Meta : RawInputModifiers.Control;
+        internal static RawInputModifiers Cmd => System.OperatingSystem.IsMacOS() ? RawInputModifiers.Meta : RawInputModifiers.Control;
 
         /// <summary>The main window on a new, empty song, with the machine view showing.</summary>
-        static (MainWindow Window, MachineView View) OpenEmpty()
+        internal static (MainWindow Window, MachineView View) OpenEmpty()
         {
             Dialogs.Responder = (m, c, b) => UserAnswer.No;     // never keep unsaved changes here
             SongFiles.New().Wait();
@@ -40,7 +40,7 @@ namespace ReBuzz.Studio.Tests
             return (window, view);
         }
 
-        static void Close(MainWindow window)
+        internal static void Close(MainWindow window)
         {
             window.Close();         // the song has changes: the responder drops them, so no dialog stays behind
             Settle();
@@ -62,7 +62,7 @@ namespace ReBuzz.Studio.Tests
         [TearDown]
         public void RestoreMenuHoverDelays() => Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay = menuDelay;
 
-        static void Settle()
+        internal static void Settle()
         {
             Dispatcher.UIThread.RunJobs();
             AvaloniaHeadlessPlatform.ForceRenderTimerTick();
@@ -70,20 +70,20 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>The song's machines and wires, as text: "Master; A→B 100% C; …".</summary>
-        static string Graph()
+        internal static string Graph()
         {
             var machines = Core.SongCore.Machines.Select(m => m.Name).OrderBy(n => n);
             var wires = Core.SongCore.Machines.SelectMany(m => m.Inputs).Select(c => $"{c.Source.Name}→{c.Destination.Name}").OrderBy(n => n);
             return string.Join("; ", machines.Concat(wires));
         }
 
-        static IMachine Machine(string name) => Core.SongCore.Machines.FirstOrDefault(m => m.Name == name);
+        internal static IMachine Machine(string name) => Core.SongCore.Machines.FirstOrDefault(m => m.Name == name);
 
-        static IMachine MachineOf(string gear) => Core.SongCore.Machines.FirstOrDefault(m => m.DLL.Name == gear);
+        internal static IMachine MachineOf(string gear) => Core.SongCore.Machines.FirstOrDefault(m => m.DLL.Name == gear);
 
-        static IMachineConnection Wire(string from, string to) => Machine(from)?.Outputs.FirstOrDefault(c => c.Destination.Name == to);
+        internal static IMachineConnection Wire(string from, string to) => Machine(from)?.Outputs.FirstOrDefault(c => c.Destination.Name == to);
 
-        static void Click(TopLevel top, Point p, MouseButton button = MouseButton.Left, RawInputModifiers mods = RawInputModifiers.None)
+        internal static void Click(TopLevel top, Point p, MouseButton button = MouseButton.Left, RawInputModifiers mods = RawInputModifiers.None)
         {
             top.MouseMove(p, mods);
             top.MouseDown(p, button, mods);
@@ -92,7 +92,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>Two clicks with nothing between them, well inside the double-click time.</summary>
-        static void DoubleClick(TopLevel top, Point p, MouseButton button = MouseButton.Left)
+        internal static void DoubleClick(TopLevel top, Point p, MouseButton button = MouseButton.Left)
         {
             top.MouseMove(p);
             top.MouseDown(p, button);
@@ -102,7 +102,7 @@ namespace ReBuzz.Studio.Tests
             Settle();
         }
 
-        static void Drag(TopLevel top, Point from, Point to, MouseButton button = MouseButton.Left, RawInputModifiers mods = RawInputModifiers.None, string screenshotOnTheWay = null)
+        internal static void Drag(TopLevel top, Point from, Point to, MouseButton button = MouseButton.Left, RawInputModifiers mods = RawInputModifiers.None, string screenshotOnTheWay = null)
         {
             top.MouseMove(from, mods);
             top.MouseDown(from, button, mods);
@@ -133,7 +133,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>A right click on the canvas, then a path through the menu it opened, clicked with the mouse.</summary>
-        static void Menu(MainWindow window, MachineView view, Point at, string screenshot, params string[] path)
+        internal static void Menu(MainWindow window, MachineView view, Point at, string screenshot, params string[] path)
         {
             Click(window, at, MouseButton.Right);
             var menu = view.Canvas.OpenMenu;
@@ -156,7 +156,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(menu.IsOpen, Is.False, "the menu closes once an item is chosen");
         }
 
-        static void ClickItem(MenuItem item)
+        internal static void ClickItem(MenuItem item)
         {
             var top = TopLevel.GetTopLevel(item)!;
             top.UpdateLayout();
@@ -289,7 +289,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>A part of the open amp control, in the window's pixels.</summary>
-        static Point AmpPart(MachineView view, TopLevel window, string part)
+        internal static Point AmpPart(MachineView view, TopLevel window, string part)
         {
             var amp = view.Amp;
             var local = part switch

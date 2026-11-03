@@ -134,7 +134,7 @@ Native code outside the machines:
 |---|---|---|---|
 | Neo | 6 (Wave and FM6 in progress), more planned | Neo Drive … Neo FM6 | DSP is portable today; editors need the editor-kit backend (§8) |
 | ReBuzz built-ins (source in repo) | 11 | Audio In/Out, Session Clip Player, AudioBlock, EnvelopeBlock, ConnectionMixer, Modern Pianoroll | Ported with the UI |
-| Pedal (source in repo) | 19 | Juno106, SH-101, Drum Matrix, MComp | DSP is portable. WPF GUIs get the manifest editor (mcp-server §12.3) or a port |
+| Pedal (source in repo) | 19 | Juno106, SH-101, Drum Matrix, MComp | All 19 build `net10.0` without their WPF GUIs (studio-mvp.md S2) and load and play; they show the generic parameter window. The synths take notes in their Note column only, not MIDI. Chord, LFO and Peer Control are targeted in WPF dialogs, so off Windows only from songs |
 | Prebuilt managed | 19 | Jeskola Live, Loop Recorder, Arpeggiator, Info, TrackScript, Yitten Mongoose | All 19 reference PresentationFramework; 7 target .NET Framework 4.0. Their DSP may load; their GUIs won't, except under XPF |
 | Native, public source | 17 | FSM Infector, KickXP, PhatMan, PanzerDelay, Chorus2, WahMan/WahManPro/WahPro2; Jeskola Delay, Cross Delay, Distortion, NiNjA dElaY, Trilok, Noise; Oomek Aggressor 303, Exciter, Masterizer | Recompile (R1, §4.2) |
 | Native, closed | 29 | Jeskola Bass/2/3, Tracker, Organ, Reverb, Stereo Reverb, Raverb, EQ-3, Filter/2, Chorus, Flanger, Wave Shaper; Joachims ×7; Rout 909; FSM Philthy; BTDSys PeerChord; Bigyo, Intoxicat, KrimZon, kibibu, mixIO | Successor, clone or nothing (§4.2) |
@@ -336,6 +336,7 @@ Today VST runs through Polac's closed Windows machines, so a Mac build has no pl
 - **Hosting:** built on R1's portable native host, so plugins run out of process like native machines. Plugin editors open as separate windows, because macOS can't embed an NSView from another process.
 - **Cost:** 6–10 pw. Not needed for the first Mac release.
 - **Analysis (2026-11-03):** [`plugin-host.md`](plugin-host.md): a new host versus Polac, what each format covers (including VST2's licence route), isolation and effort. It recommends a CLAP + VST3 host beside Polac, 10–14 pw with a sandbox.
+- **H0 spike (2026-11-03):** [`plugin-host.md`](plugin-host.md) §8. VST3 and CLAP plugins (Surge XT among them) play and keep their state in songs inside the engine on all three OSes. A sandbox costs 8–20 µs per block. Plugin views embed in Avalonia's `NativeControlHost` on macOS and Windows. `tools/plugin-census.py` counts installed plugins and Polac use in songs.
 
 ## 5. Plan
 

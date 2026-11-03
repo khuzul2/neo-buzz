@@ -1,7 +1,9 @@
 ﻿using BuzzGUI.Common;
 using System;
 using System.Collections.Generic;
+#if WINDOWS
 using System.Windows.Media;
+#endif
 
 namespace WDE.ModernPatternEditor
 {

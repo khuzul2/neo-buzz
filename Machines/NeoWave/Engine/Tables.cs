@@ -27,6 +27,19 @@ namespace NeoBuzz.Wave
             return null;
         }
 
+        /// <summary>
+        /// Whether every built-in table is built (asking for those nobody has asked for). Any thread.
+        /// What an offline render waits for: then whatever table the parameters choose, once the
+        /// engine applies them, is there from the first block.
+        /// </summary>
+        public static bool AllBuilt()
+        {
+            bool all = true;
+            for (int i = 0; i < Names.Length; i++)
+                if (Get(i) == null) all = false;
+            return all;
+        }
+
         /// <summary>Builds now (tests, editors); returns the table.</summary>
         public static Wavetable GetNow(int index)
         {
@@ -52,7 +65,7 @@ namespace NeoBuzz.Wave
             }
         }
 
-        static (double Amp, double Phase) Polar(double a, double b) => (Math.Sqrt(a * a + b * b), Math.Atan2(b, a));
+        static (double Amp, double Phase) Polar(double a, double b) => (Math.Sqrt(a * a + b * b), PortableMath.Atan2(b, a));
 
         static Wavetable Make(int index)
         {
@@ -73,8 +86,8 @@ namespace NeoBuzz.Wave
                     return Wavetable.FromHarmonics(name, Frames, (f, h) =>
                     {
                         double w = 0.5 - 0.47 * T(f);
-                        double a = 2 * (1 - Math.Cos(2 * Math.PI * h * w)) / (Math.PI * h);
-                        double b = 2 * Math.Sin(2 * Math.PI * h * w) / (Math.PI * h);
+                        double a = 2 * (1 - PortableMath.Cos(2 * Math.PI * h * w)) / (Math.PI * h);
+                        double b = 2 * PortableMath.Sin(2 * Math.PI * h * w) / (Math.PI * h);
                         return Polar(a, b);
                     });
                 case 2:   // more and more saw harmonics
@@ -102,7 +115,7 @@ namespace NeoBuzz.Wave
                         {
                             double fc = vowels[k][i] + (vowels[k + 1][i] - vowels[k][i]) * u;
                             double bw = 60 + 40 * i;
-                            g += (i == 0 ? 1 : 0.6 / i) / (1 + Math.Pow((hz - fc) / bw, 2));
+                            g += (i == 0 ? 1 : 0.6 / i) / (1 + PortableMath.Pow((hz - fc) / bw, 2));
                         }
                         return (g / Math.Sqrt(h), 0);
                     }, 160);
@@ -116,7 +129,7 @@ namespace NeoBuzz.Wave
                     });
                 case 5:   // FM 1:1, index 0 → 6
                     return Wavetable.FromFunction(name, Frames, (f, t) =>
-                        Math.Sin(2 * Math.PI * t + 6 * T(f) * Math.Sin(2 * Math.PI * t)));
+                        PortableMath.Sin(2 * Math.PI * t + 6 * T(f) * PortableMath.Sin(2 * Math.PI * t)));
                 case 6:   // organ registrations (8', 4', 2⅔', 2', 1⅗', 1⅓', 1')
                 {
                     int[] harmonic = { 1, 2, 3, 4, 5, 6, 8 };
@@ -138,7 +151,7 @@ namespace NeoBuzz.Wave
                 case 7:   // saw through a resonant low-pass sweeping up
                     return Wavetable.FromHarmonics(name, Frames, (f, h) =>
                     {
-                        double c = Math.Pow(2, 8 * T(f));   // cutoff in harmonics, 1 → 256
+                        double c = PortableMath.Pow(2, 8 * T(f));   // cutoff in harmonics, 1 → 256
                         double r = h / c;
                         double mag = 1 / Math.Sqrt((1 - r * r) * (1 - r * r) + (r / 5) * (r / 5));
                         return (mag / h, 0);
@@ -146,7 +159,7 @@ namespace NeoBuzz.Wave
                 case 8:   // stepped saw: 4 steps → 256
                     return Wavetable.FromFunction(name, Frames, (f, t) =>
                     {
-                        double steps = Math.Round(Math.Pow(2, 2 + 6 * T(f)));
+                        double steps = Math.Round(PortableMath.Pow(2, 2 + 6 * T(f)));
                         double v = 2 * t - 1;
                         return Math.Round(v * steps / 2) / (steps / 2);
                     });
@@ -158,7 +171,7 @@ namespace NeoBuzz.Wave
                     {
                         spectra[s] = new (double, double)[257];
                         for (int h = 1; h <= 256; h++)
-                            spectra[s][h] = ((0.3 + rng.NextUnipolar()) / Math.Pow(h, 0.9), 2 * Math.PI * rng.NextUnipolar());
+                            spectra[s][h] = ((0.3 + rng.NextUnipolar()) / PortableMath.Pow(h, 0.9), 2 * Math.PI * rng.NextUnipolar());
                     }
                     return Wavetable.FromHarmonics(name, Frames, (f, h) =>
                     {
@@ -168,9 +181,9 @@ namespace NeoBuzz.Wave
                         double u = s - k;
                         var (a0, p0) = spectra[k][h];
                         var (a1, p1) = spectra[k + 1][h];
-                        double re = a0 * Math.Cos(p0) * (1 - u) + a1 * Math.Cos(p1) * u;
-                        double im = a0 * Math.Sin(p0) * (1 - u) + a1 * Math.Sin(p1) * u;
-                        return (Math.Sqrt(re * re + im * im), Math.Atan2(im, re));
+                        double re = a0 * PortableMath.Cos(p0) * (1 - u) + a1 * PortableMath.Cos(p1) * u;
+                        double im = a0 * PortableMath.Sin(p0) * (1 - u) + a1 * PortableMath.Sin(p1) * u;
+                        return (Math.Sqrt(re * re + im * im), PortableMath.Atan2(im, re));
                     }, 256);
                 }
             }

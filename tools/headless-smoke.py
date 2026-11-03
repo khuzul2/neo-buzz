@@ -71,7 +71,7 @@ check(ok and "Neo Poly" in text and "Neo Verb" in text, "the portable Neo machin
 ok, _, _ = call("song_set", tempo_bpm=120, song_end_beats=8)
 check(ok, "song_set")
 check(call("machine_add", gear="Neo Poly", name="Keys")[0], "machine_add Neo Poly")
-check(call("pattern_create", machine="Keys", name="A", length_beats=8)[0], "pattern_create (no pattern editor machine here)")
+check(call("pattern_create", machine="Keys", name="A", length_beats=8)[0], "pattern_create (with the Modern Pattern Editor, as on Windows)")
 check(call("notes_write", machine="Keys", pattern="A",
            notes=[{"pitch": "C4", "start": 0, "length": 2}, {"pitch": "E4", "start": 2, "length": 2}, {"pitch": "G4", "start": 4, "length": 4}])[0], "notes_write")
 check(call("arrangement_place", machine="Keys", pattern="A", at=[0])[0], "arrangement_place")

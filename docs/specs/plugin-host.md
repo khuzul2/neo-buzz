@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-03: V1 B, V2 A, V3 B, V4 A, V6 A; timing: the H0 spike and the plugin census now, H1–H3 after P3. Refines cross-platform.md D5 and P6 |
+| Status | Decided 2026-11-03: V1 B, V2 A, V3 B, V4 A, V6 A; timing: the H0 spike and the plugin census now, H1–H3 after P3. Refines cross-platform.md D5 and P6. **H0 spike done (§8): its exit waits for your two commercial plugins (§8.7); the census tool is ready to run (§8.5)** |
 | Date | 2026-11-03 |
 | Scope | Whether to build our own VST/VSTi host machine, and how, instead of or beside Polac VST/VSTi 1.1: formats, isolation, performance, mapping to Buzz, GUIs on WPF and Avalonia, songs, agents, licences, effort |
 | Code baseline | fork `f2ab63b` (main, 2026-11-03) on upstream `wasteddesign/ReBuzz` @ `0a48d88` (2026-10-30) |
@@ -21,6 +21,7 @@
   - Then add the sandbox: crash isolation like Polac's, and the base for 32-bit and VST2 helpers if they're ever wanted.
 - **Effort:** 10–14 pw for CLAP + VST3 with the sandbox and GUIs on WPF and Avalonia. P6's 6–10 pw covers only the in-process part. AU, a 32-bit server build and a VST2 helper are add-ons (§5.2).
 - **Before building:** a 1 pw spike, plus a census of the plugins your songs and plugin folders actually use. The census settles the VST2, 32-bit and Polac-song questions with data instead of guesses.
+- **H0 (§8):** VST3 and CLAP, including Surge XT, load, play, and keep their state in a song, inside ReBuzz's engine on Linux, macOS and Windows. A sandbox costs 8–20 µs per block (hybrid wait) on Linux and Windows CI VMs. Plugin views embed in Avalonia's `NativeControlHost` on macOS and Windows, and floating windows work. The effort stays 10–14 pw.
 
 ### Decisions (taken 2026-11-03)
 
@@ -44,7 +45,7 @@ V5 B changes D5, which was decided as A on 2026-11-01: plugins would then arrive
 - **Machines:** `Polac VSTi 1.1` (generator) and `Polac VST 1.1` (effect), plus `Polac Out II` (extra outputs), `MIDI In`, `MIDI Bus II`, Audio In/Out. Version 1.1.10b47 (28 February 2026), by Frank Potulski. Freeware: redistribution allowed, sale forbidden.
 - **Files:** `RunTime/Gear/{Generators,Effects}/Polac VST(i) 1.1.x64.dll`; docs in `RunTime/Gear/Generators/pvstdocs/`; helpers in `RunTime/Gear/vst/` (`vst3shell`, `vsti3shell`, DMO, LADSPA and MIDI adapters) and `RunTime/bin64/` (`vst.x64.exe` bridge, `scan.x64.exe` scanner; `bin64/bin32/vst.exe` for 32-bit plugins).
 - **How it runs:** a native machine, so ReBuzz loads it in `ReBuzzEngine64.exe` (or `32`), by default one process per machine. A plugin crash takes down that process only; ReBuzz marks the machine crashed and the song plays on.
-- **Plugin list:** through the native "loader instrument" messages (`UIGetInstrumentList`, `UISetInstrument`); songs store the chosen plugin as the machine's `InstrumentName`.
+- **Plugin list:** through the native "loader instrument" messages (`UIGetInstrumentList`, `UISetInstrument`). The instrument name is only used when a machine is created: songs don't store it (the `.bmx` and `.bmxml` readers create machines with no instrument). Polac keeps the chosen plugin in its own machine data, a closed format (§8.5).
 - **ReBuzz knows it by name:** MIDI pitch bend and aftertouch are converted for it (`polacConversion` in `ReBuzzCore.cs`, `MachineManager.SendMidiInput`, `SessionCore.Recording.cs`), and loading can skip its init (`MachineManager.CallInit`).
 - **Upstream ships it as its VST strategy.** The README promises "32 and 64 bit VST2/3 support"; that is Polac.
 - **One more VST host is in the tree:** the signal-analysis window (`BuzzGUI.MachineView/SignalAnalysis`) loads VST2 plugins through VST.NET (`3rdParty/Jacobi`, LGPL-2.1, C++/CLI). It is Windows-only and VST2-only, so it is no base for a new host.
@@ -92,7 +93,7 @@ A host machine has to map everything a plugin has onto what a Buzz machine has. 
 | Agents | Manifests are per DLL (`ReBuzz.Agent/Model/Manifest.cs`, `SongModel.Manifest(IMachineDLL)`) | **Core change:** a per-machine manifest, built at runtime from the plugin (§3.6) |
 | Headless and CI | Managed machines load in `rebuzz-headless` on Linux and macOS today; native machines don't | A managed host is testable on Linux CI with the SDKs' example plugins. A native Buzz machine isn't |
 
-**Core changes needed** (small, fork-only, about 1 pw, inside H1): managed loader instruments; runtime parameter names and visibility for managed machines (`ParameterCore.Name` is already settable inside the engine, and `IParameterMetadata.IsVisible` exists); per-machine manifests for the agent; optionally timestamped MIDI with poly aftertouch and SysEx.
+**Core changes needed** (small, fork-only, about 1 pw, inside H1): managed loader instruments; runtime parameter names and visibility for managed machines (`ParameterCore.Name` is already settable inside the engine, and `IParameterMetadata.IsVisible` exists); per-machine manifests for the agent; optionally timestamped MIDI with poly aftertouch and SysEx. H0 added two (§8.3): song load must not override plugin state through re-sent parameter values (skip stateless parameters on load, or slots mirror the plugin), and a main-thread tick for managed machines.
 
 ### 3.2 Parameters: the fixed-count problem
 
@@ -130,6 +131,13 @@ Value text comes from the plugin (VST3 `getParamStringByValue`, CLAP `value_to_t
 - ReBuzz's native host already pays this, and more: a named-event round trip per message, with `AudioTick` and `AudioWork` as separate messages.
 - A new protocol batches parameters, MIDI and audio into one shared-memory message per block. The server waits by spinning briefly, then on an event.
 - Engineering estimate, to be measured in the spike: a few µs per round trip spinning, around 10–20 µs on kernel events. Five sandboxed plugins in series on a 128-frame buffer at 48 kHz (2.67 ms) would then use about 2–4 % of the deadline.
+- **Measured in H0 (§8.4), on CI VMs:**
+  - spinning: under 1 µs;
+  - kernel events alone: 14–32 µs p50;
+  - the hybrid (the server sleeps, the engine's thread spins briefly for the reply): 8–20 µs p50 and 10–40 µs p99 on Linux and Windows;
+  - macOS: 14–18 µs p50 and 41–68 µs p99 with Mach semaphores.
+
+  Five plugins in series then use 2–8 % of the deadline (Linux and Windows) or 8–13 % (macOS VM). A server must never spin between blocks: the OS penalizes real-time threads that do.
 - yabridge works the same way (sockets for control, shared memory for audio, priorities kept in sync) and reports performance comparable to native in most cases.
 
 **Multi-threading.** ReBuzz's worker threads (`WorkThreadEngine`) run independent machines in parallel.
@@ -205,7 +213,7 @@ Value text comes from the plugin (VST3 `getParamStringByValue`, CLAP `value_to_t
 
 **For a long-time Buzz user the gap is larger**, because the freeware back catalogue is VST2 and often 32-bit. **Measure it before deciding V1/V2/V6:**
 
-- extend the song census (cross-platform.md §8 item 8) to count Polac machines by plugin (their `InstrumentName`);
+- extend the song census (cross-platform.md §8 item 8) to count Polac machines by plugin (guessed from Polac's machine data: songs don't store an instrument name);
 - add a folder census of installed plugins by format and bitness.
 
 That is about 0.5 pw.
@@ -283,7 +291,7 @@ neoplug-vst2 (optional, GPL-3)  the server with a VST2 backend on FST
 
 | Phase | When (V5 B) | Delivers | Exit | pw |
 |---|---|---|---|---|
-| **H0 Spike** | now (decided) | CLAP and VST3 in a throwaway managed machine on Windows; a toy shared-memory server; an NSView plugin view in an Avalonia `NativeControlHost` on macOS | Surge XT (CLAP and VST3), the SDK's AGain and Note Expression Synth examples, and two of your commercial plugins (one with iLok) load, play, save and reload in a song; the round trip is measured | 1 |
+| **H0 Spike** | done 2026-11-03 (§8), but for your plugins (§8.7) | CLAP and VST3 in a throwaway managed machine on Windows; a toy shared-memory server; an NSView plugin view in an Avalonia `NativeControlHost` on macOS | Surge XT (CLAP and VST3), the SDK's AGain and Note Expression Synth examples, and two of your commercial plugins (one with iLok) load, play, save and reload in a song; the round trip is measured | 1 |
 | **H1 Host, in-process** | after P3 (decided) | The core changes (§3.1); `Neo Plug` and `Neo Plug FX`; the library with CLAP and VST3; slots, notes, MIDI in/out, buses, sidechain, latency, tail, state; the scanner and blocklist; the Gear menu; the plugin GUI in a WPF window; per-instance manifests; offline render; Linux CI | Every CI plugin passes; a song with three plugins round-trips on Windows and in `rebuzz-headless` on macOS; `machine_describe` shows a plugin's parameters with units | 5–7 |
 | **H2 Sandbox** | after H1 | `neoplug-server`; placements per plugin, per instance and shared; crash detection and reload from the last state; embedded GUIs on Windows, floating on macOS; the workgroup on macOS | Killing a server mid-song leaves the song playing and the plugin reloadable; five sandboxed plugins at 128 frames for an hour, no dropouts | 3–5 |
 | **H3 Studio GUIs** | after H2 (the studio's GUI hook from P3 S1) | `GuiContent` for plugins: a `NativeControlHost` on Windows and macOS; HiDPI | A plugin GUI opens, resizes and scales in the studio on both OSes | 1 |
@@ -298,14 +306,209 @@ neoplug-vst2 (optional, GPL-3)  the server with a VST2 backend on FST
 | VST3 hosting edge cases: bus arrangements, separate component and controller, `IConnectionPoint`, `restartComponent` flags, CC mapping | high | some plugins misbehave | Build on the SDK's hosting helpers; CI plugins; quirk flags; CLAP first to prove the design |
 | A plugin crash ends ReBuzz before H2 | medium | lost unsaved work | Autosave (0.4.1); keep Polac as the Windows default until H2; ship H2 before calling the host the default |
 | Sandboxed plugin GUIs float on macOS | certain | less integrated | In-process is the default on macOS; sandbox on demand |
-| Real-time in a sandbox on macOS | medium | dropouts | The workgroup Mach port; the H2 hour test |
-| iLok or other protection fails in the scanner or sandbox | medium | a plugin won't load | Test your own plugins in H0; let scanner dialogs show; in-process as a fallback |
+| Real-time in a sandbox on macOS | medium | dropouts | The workgroup Mach port; the H2 hour test. H0 (§8.4): on the macOS VM the round trip's p99 is 3–4× Linux's, so H2's hour test runs on real Macs, server threads sleep on Mach semaphores and never spin |
+| Song load overrides a plugin's restored state | certain without a fix (H0 §8.3) | plugins sound wrong after reopening | Slots mirror the plugin's values, or the engine skips stateless parameters on load (H1) |
+| Studio has no app manifest on Windows | certain (H0 §8.6) | Avalonia's `NativeControlHost` throws | Add `app.manifest` with the supported-OS list in H3 |
+| Plugins that aren't deterministic (Surge XT) | certain | sample-exact tests fail | Compare loudness per machine, as `headless-test.py` does |
+| iLok or other protection fails in the scanner or sandbox | medium | a plugin won't load | Test your own plugins in H0 (§8.7: the probe is a separate process, like a sandbox); let scanner dialogs show; in-process as a fallback |
 | VST2 helper (if chosen): Steinberg's stance | low to medium | takedown request | A separate GPL program; no logos; easy to drop from the package |
 | Plugin updates change parameters | medium | slots point at missing IDs | Stable IDs in the slot map; missing IDs flagged in the machine and to agents |
 | Users expect Polac's tracker features | medium | "it does less than Polac" | Keep Polac; later build arps and chords as generic Buzz MIDI machines, not inside the host |
 | Ongoing triage of new plugins | certain | upkeep | Quirk flags and the blocklist; about 0.5–1 pw a year |
 
-## 8. Sources
+## 8. H0 results (2026-11-03)
+
+The spike is in `experiments/plugin-host-h0/` (branch `experiments/plugin-host-h0`), its CI in `.github/workflows/plugin-host-spike.yml`, the census in `tools/plugin-census.py`. The product's code changed in one line: an opt-out so that `rebuzz-headless` starts on Windows (§8.3). CI: five runs, 41599180097 to 41605409479. The results below come from 41604298108 (Linux, macOS 15 arm64, Windows) and 41605409479 (Linux and Windows, all green); the IPC table also uses 41602913328.
+
+**Verdict: H0's technical questions are answered; its exit waits only for your two commercial plugins (§8.7).**
+
+- **Load, play, state:** every fixture works on all three OSes and in both formats, in the probe and inside ReBuzz's engine. That is AGain, Note Expression Synth (both classes), our CLAP synth and gain, and Surge XT (synth and effects) as VST3 and as CLAP.
+- **The sandbox:** the doc's estimate holds for spinning and for the recommended hybrid wait. Kernel events alone cost more than guessed (§8.4).
+- **macOS GUIs:** a plugin's NSView embeds in Avalonia 12's `NativeControlHost`, VST3 and CLAP alike. A floating window from a separate process also works (§8.6).
+
+### 8.1 What was built
+
+| Piece | What it is |
+|---|---|
+| `neoplug` (C++, about 2,000 lines, 1,600 of them hosting) | A C ABI (`neoplug.h`) over VST3 hosting and CLAP 1.2.10 (its headers only). VST3 uses the SDK 3.8.1's hosting helpers: `Module`, `PlugProvider`, `HostProcessData`, `EventList`, `ParameterChanges`. Covers: list classes, load, activate, parameters (info, value, text↔value, set), process with notes and parameter events, state in a small envelope, latency, tail, GUI attach, and platform helpers for the GUI checks. One CMake project for Linux, macOS arm64 and Windows x64 |
+| `neoplug-probe` | The C ABI's test. It loads a plugin and plays a chord (instruments) or a sine (effects) on an audio thread of its own. It moves the first automatable parameter, saves the state, restores it into two fresh instances and renders both. Last, it opens the GUI in a floating window and checks the pixels |
+| `neoplug-test.clap` | Our CLAP module (MIT): a synth, and a gain with 64 samples of latency. Both have state and a native GUI panel |
+| Neo Plug Spike, Spike FX | A throwaway managed machine (`machine/NeoPlugSpike.cs`, generator and effect builds) with the plugin in-process through P/Invoke. It has 8 tracks of Note and Velocity, MIDI and one slot, and keeps the plugin's identity and state in `MachineState`. A missing plugin loads as "missing" and its state saves back unchanged |
+| `headless-test.py` | The machine in `rebuzz-headless`, driven over MCP. It renders with a probe per machine, saves, reopens and compares. It also checks the restored parameter, the saved state and a missing plugin |
+| `neoplug-ipc-bench` | The sandbox's toy server: a forked (POSIX) or spawned (Windows) process with shared memory and every wake mechanism (§8.4) |
+| `NeoPlugGuiSpike` | A headed Avalonia 12.1.4 app. It puts each plugin's view in a `NativeControlHost`, then in a floating window, and records view trees and pixels |
+| `run-h0.py` | Runs all of the above on one machine and writes `summary.md` and `summary.json`. It is CI's driver and your manual test (§8.7) |
+
+Fixtures: AGain and Note Expression Synth (both classes) are built from the SDK in CI. `neoplug-test.clap` is ours. Surge XT 1.3.4 comes as VST3 and CLAP, synth and effects; it is GPL-3.0, so it is downloaded and installed on the runner only, never built in or shipped.
+
+### 8.2 Loading, playing, state
+
+Results by OS (run 41604298108, and run 41605409479 for Windows): "ok" means the plugin loads, plays, restores its moved parameter in fresh instances, and re-saves the same state.
+
+| Plugin | Format | Linux x64 | macOS arm64 | Windows x64 | Open, ms | 256-frame block, µs (mean) | State |
+|---|---|---|---|---|---:|---:|---:|
+| AGain | VST3 | ok | ok | ok | 3–22 | 0.3–1.1 | 285 B |
+| Note Expression Synth (and With UI) | VST3 | ok | ok | ok | 3–20 | 10–20 | 131–133 B |
+| NeoPlug Test Synth | CLAP | ok | ok | ok | 0–3 | 5–10 | 48 B |
+| NeoPlug Test Gain | CLAP | ok | ok | ok | 0–3 | 2–5 | 32 B |
+| Surge XT Effects | VST3, CLAP | ok | ok | ok | 23–77 | 6–13 | 1.1 KB |
+| Surge XT | VST3, CLAP | ok | ok | ok | 100–290 | 24–48 | 50 KB |
+
+- **The restored parameter matched every time.** The state re-saves byte for byte.
+- **Two fresh instances from one state render bit-identically on Linux.** Surge XT's synth is the exception everywhere: its oscillators start at random phases, so the loudness is the same and the samples differ. Note Expression Synth differs by −47 to −49 dBFS on macOS and Windows. Tests must compare loudness, not samples.
+- **Processing is cheap, opening isn't always.** Surge XT takes 100–290 ms to open, Windows being slowest, and costs 24–48 µs per 256-frame block. That is 0.5–1 % of the block's 5.3 ms, plus spikes on first notes (up to 1.2 ms).
+- **The plugin's state is what makes a song portable, and it can be large.** Surge XT's is 50 KB. In a `.bmxml` it is base64 inside `MachineState`'s XML, which is itself inside the base64 `Data` element: about 1.8× the raw size. Fine for the spike; H1 should store it more directly.
+- **Surge XT's VST3 build has an audio input bus, and it's still an instrument.** The first version of the spike classed any plugin with an input as an effect and fed it no notes. Category first, buses second.
+
+### 8.3 Inside ReBuzz's engine
+
+In `rebuzz-headless` the song has five Neo Plug Spike generators, each followed by a Spike FX effect: NES, NES With UI, our CLAP synth, and Surge XT VST3 and CLAP, with AGain, our gain and Surge XT Effects (VST3 and CLAP) as effects. **All 65 checks pass on Linux and macOS:**
+
+- every machine is audible in the render;
+- the song saves, reopens and renders the same per machine (compare's verdict is kept, since Surge isn't deterministic);
+- every moved parameter comes back after reopening;
+- every machine's saved state is byte-identical after reopen and save;
+- a machine whose plugin is gone loads as missing and saves its state back unchanged.
+
+**On Windows all 65 pass too** (run 41605409479), after the fixes in items 4–6 below.
+
+What the engine side taught. Each item is H1 work, not a blocker:
+
+1. **ReBuzz re-sends every global parameter's saved value on song load, stateless ones too.** The spike's slot got its minimum on load and silenced every plugin. H1's slots must mirror the plugin's current value, so that re-sending is harmless. The alternative is a small core change: skip stateless parameters on load (add it to §3.1's list).
+2. **A managed machine has no main-thread tick.** CLAP's `request_callback` and the VST3 controller's parameter echo need one; the spike services them only when the song saves. H1: a timer through `IUiDispatcher`.
+3. **`MasterInfo` is valid only in `Work` and parameter setters.** But CLAP's `activate` and VST3's `setupProcessing` belong to the main thread, so a sample-rate change must hop to it and back. The spike activates once, at creation.
+4. **ReBuzz disposes `IDisposable` managed machines when they are deleted or their song closes,** but not when the process exits. Plugins still loaded at exit crashed `rebuzz-headless`'s exit on Windows (0xC000000D), so the spike closes them on `ProcessExit`. H1: close every plugin on shutdown, on the main thread.
+5. **Plugin editors need COM and OLE on the main thread on Windows,** as every DAW has. Without them VSTGUI's `createView` crashed. Avalonia's UI thread has them; the probe and `rebuzz-headless` didn't.
+6. **`rebuzz-headless` didn't start on Windows:** it tried to launch the native machine hosts (`bin32/ReBuzzEngine32.exe`), which aren't beside it. `REBUZZ_NATIVE_MACHINES=off` (`NativeMachineHost.Supported`, default unchanged) treats native machines as placeholders, as on macOS and Linux.
+7. **CLAP's `stop_processing` belongs to the audio thread.** The spike calls it from the main thread before deactivating. H1's protocol needs a "stop" that the audio side answers.
+8. **Songs don't store Polac's instrument name** (§2.1 corrected): the plugin is inside Polac's own data.
+
+### 8.4 The sandbox's cost
+
+Per block, the client copies stereo audio and 256 bytes of events into shared memory and wakes the server. The server applies a gain and wakes the client back. The time measured runs from the copy in to the copy out.
+
+- **Paced runs** send one block per period, as an audio callback does, so the server is idle between blocks. This is the realistic case for kernel wake-ups; back-to-back runs flatter them.
+- **Mechanisms:** spin (both sides busy-wait), kernel (both sides sleep on the OS primitive) and hybrid (the server sleeps; the engine's thread spins up to 200 µs for the reply, then sleeps).
+- **Priority:** threads get the audio priority each OS offers: SCHED_FIFO on Linux (as root), MMCSS "Pro Audio" on Windows, the time-constraint policy on macOS.
+- **The runners are VMs** (Azure x64 with 4 vCPUs; Apple M1 VM with 3 vCPUs), and their hardware changes between runs. Wake-ups on real machines are faster, so read these as upper bounds.
+
+Paced round trip at 128 frames, 48 kHz, in µs, as p50 / p99, for two runs (64 and 256 frames are within the same ranges):
+
+| OS (priority) | Spin | Kernel | Hybrid |
+|---|---|---|---|
+| Linux, SCHED_FIFO (futex) | 0.1 / 0.2 · 0.5 / 0.8 | 16.3 / 20.8 · 22.5 / 33.0 | 8.5 / 10.2 · 13.2 / 20.5 |
+| Linux, normal priority (futex) | 0.3 / 0.7 · 0.5 / 1.1 | 16.2 / 161 · 23.1 / 50.3 | 9.5 / 11.9 · 12.9 / 16.0 |
+| Windows, MMCSS (events) | 0.4 / 9.1 · 1.6 / 11.1 | 13.9 / 20.9 · 31.9 / 54.1 | 8.0 / 16.2 · 19.6 / 40.4 |
+| macOS, time-constraint (Mach semaphores) | 1.1 / 12,541 · 1.0 / 7,292 | – · 18.1 / 67.8 | – |
+| macOS (POSIX semaphores) | | 22.0 / 83.7 · 20.4 / 107 | |
+| macOS (`os_sync_wait_on_address`) | | 28.7 / 116 · 23.2 / 136 | 29.2 / 417 · 31.8 / 219 |
+
+In-process, the same copies cost 0.1–0.3 µs.
+
+- **The estimate in §3.4 holds for spinning, which is far under a µs, and for the hybrid: 8–20 µs p50 on Linux and Windows.** Kernel events alone cost 14–32 µs p50 there, above the 10–20 µs guessed.
+- **A server must never spin between blocks.** It burns a core per sandbox, and the OS punishes real-time threads that never sleep. On Linux the RT throttle (950 ms per second) stalled the spinner for up to 12 ms. On macOS a spinning time-constraint thread is demoted: p99 of 3–37 ms, worst stalls of 0.6–2.6 s.
+- **On macOS the hybrid is worse than sleeping.** The engine's spinning thread competes for the VM's three cores. Mach semaphores are the best primitive there: 14–18 µs p50, 41–68 µs p99. Mach port rights don't survive `fork`, and `mach_ports_register` no longer carries them on current macOS, so the server gets them in a Mach message through its inherited bootstrap port. H2 will need the same handover (or `posix_spawn` with a special port).
+- **The design, then:**
+  - the server sleeps on an address-based or counting kernel primitive: futex on Linux, a Windows event, a Mach semaphore on macOS;
+  - on Linux and Windows the engine's thread spins briefly for the reply, then sleeps;
+  - on macOS it sleeps at once, and the server's threads join the device's audio workgroup (§3.4).
+- **Budget:** five sandboxed plugins in series at 128 frames (2,667 µs) cost 5 × p99:
+  - Linux and Windows, hybrid: 50–200 µs, 2–8 % of the deadline (§3.4 guessed 2–4 %);
+  - macOS VM, Mach semaphores: 200–340 µs, 8–13 %.
+
+  Parallel chains overlap. H2's hour test must run on real Macs before sandboxing is offered there; it isn't the macOS default anyway, because in-process keeps GUIs embedded.
+
+### 8.5 The plugin census
+
+`tools/plugin-census.py` is plain Python 3.8+. It runs on Windows and macOS (and reads Linux folders too) and never loads a plugin.
+
+- **Installed plugins**, from the standard folders:
+  - VST2 on Windows: the VstPlugins and VST2 folders under both Program Files; the registry's `VSTPluginsPath` in HKLM and HKCU, in both registry views; **Polac's own `Plugin_Path` settings** under `SOFTWARE\Polac\VST Loader`; and `Gear\Vst` in Buzz installs;
+  - VST2 on macOS: `/Library/Audio/Plug-Ins/VST` and the same folder under `~/Library`;
+  - VST3, CLAP (with `CLAP_PATH`), and AU on macOS.
+
+  `--folder vst2=DIR` adds other folders.
+- **Per plugin:**
+  - format;
+  - bitness and architectures from the PE or Mach-O header (fat binaries list theirs; Intel-only Mac plugins are called out);
+  - name and vendor from `moduleinfo.json` (JSON5), `Info.plist`, the AU's `AudioComponents`, or the PE version resource;
+  - VST3 shell modules list their classes;
+  - DLLs in VST2 folders without a `VSTPluginMain` or `main` export are not counted.
+- **Songs** (`--songs DIR`, recursive): `.bmxml`, and `.bmx` (the MACH section read with PARA's parameter layouts; songs without PARA are searched for Polac's library strings).
+  - For each Polac VST/VSTi machine, the plugin is guessed from Polac's data. In order: a DLL path in it (ASCII or UTF-16), an installed plugin's name in it, its first meaningful string, or the machine's name.
+  - The JSON keeps the strings found, as hints.
+- **The report:**
+  - counts by format and bitness;
+  - the VST2 plugins that also come as VST3 or CLAP, and the VST2-only ones (with how many of those are 32-bit);
+  - AU-only plugins;
+  - Polac use: songs, machines, plugins by song count, and whether each plugin is installed as VST3 or CLAP, only as VST2, or not at all.
+- **Tests:**
+  - `--self-test` builds synthetic Windows and macOS folders and songs and checks the results: PE files with exports and version resources, fat Mach-O bundles, AU components, `.bmxml`, and `.bmx` with and without PARA. It runs in CI on all three OSes.
+  - On the runners, the census found Surge XT as VST3, CLAP and AU (macOS) and as VST3 and CLAP (Windows and Linux), and it read the 37 Buzz demo songs in `ExternalMachines/source`.
+
+Run it on your computer (on Windows `py` instead of `python3`). Add `--songs` once per folder, and `--folder vst2=<dir>` for VST folders elsewhere:
+
+```
+python3 tools/plugin-census.py --songs "<your songs folder>" --out census.md --json census.json
+```
+
+Send `census.md`. It decides V6 (Polac songs on macOS: placeholders or a converter) and §5.2's add-ons (VST2 helper, 32-bit server, AU) with numbers.
+
+### 8.6 macOS GUIs: embedded in Avalonia, and floating
+
+**An Avalonia 12 `NativeControlHost` embeds a plugin's NSView: VST3 `IPlugView` and CLAP `gui` alike.**
+
+- **How:** `CreateNativeControlCore` returns `new PlatformHandle(view, "NSView")` for a container NSView, and the plugin attaches its view to that container (`IPlugView::attached(container, "NSView")`, CLAP `set_parent`).
+- **Checked on the macOS 15 runner** for AGain (VSTGUI), Note Expression Synth With UI (VSTGUI), our CLAP panel, and Surge XT VST3 and CLAP (JUCE):
+  - the plugin's view sits in the Avalonia window's tree (`AvnWindow > AutoFitContentView > AvnView > NSView > container > VSTGUI_NSView or JUCEView`);
+  - the window server's capture of that window shows the plugin drawn: 1,630 colours for AGain, 5,190 for Surge XT, against about 100 for an empty window.
+- **Two things the studio must do:**
+  - the container must have no autoresizing mask, and take the plugin's size before Avalonia lays it out. A mask on top of Avalonia's own frame management collapsed small views to 0×0 and shifted large ones (the first runs);
+  - on Windows, the app needs an `app.manifest` with the supported-OS list, or Avalonia's Win32 `NativeControlHost` throws on its first native control. `ReBuzz.Studio` has none: H3 must add one.
+- **Windows too:** the same app embeds the same plugins as HWNDs (Surge XT: 2,309 colours inside the Avalonia window).
+- **Floating works everywhere:** a window owned by the library (an `NSWindow` or a top-level HWND) with the plugin's view inside. The probe runs in its own process, as a sandbox server would, and opened every editor that way on both OSes. So H2's "floating on macOS when sandboxed" is confirmed, and embedding across processes on macOS stays impossible with public API, as §3.4 says.
+
+### 8.7 Your manual test: two commercial plugins, one with iLok
+
+This is what only you can do, and it closes H0's exit. The CI run's `neoplug-h0-<OS>` artifact has everything. .NET 10 must be installed; it is, if you build neo-buzz.
+
+1. Download the artifact for your OS from the run's page (Actions → "Plugin host spike (H0)"): `neoplug-h0-Windows-X64` from run 41605409479, `neoplug-h0-macOS-ARM64` from run 41604298108 (or both from any later run). Unzip it, then unzip the `neoplug-h0.zip` inside.
+2. Clear the download flag:
+   - macOS: `xattr -dr com.apple.quarantine neoplug-h0`;
+   - Windows, in PowerShell: `Get-ChildItem -Recurse neoplug-h0 | Unblock-File`.
+3. Run it with the VST3 or CLAP build of each plugin (the spike hosts no VST2):
+
+   ```
+   python3 neoplug-h0/run-h0.py --plugin "/Library/Audio/Plug-Ins/VST3/<Plugin>.vst3" --plugin "/Library/Audio/Plug-Ins/CLAP/<Other>.clap" --out h0-mine
+   py neoplug-h0\run-h0.py --plugin "C:\Program Files\Common Files\VST3\<Plugin>.vst3" --plugin "C:\Program Files\Common Files\CLAP\<Other>.clap" --out h0-mine
+   ```
+
+   - Add `|<class name>` after a path to pick one class of a shell module.
+   - Each step waits up to 5 minutes (`--timeout` raises it). If the iLok plugin asks for authorization the first time, answer it.
+4. Per plugin, it runs:
+   - the probe: load, play, state round trip, and the GUI in a floating window. The probe is a separate process from any host, which is the sandbox's situation for iLok;
+   - Neo Plug Spike in `rebuzz-headless`: a song that plays, saves, reopens and compares;
+   - the GUI embedded in an Avalonia window, and floating.
+
+   Plugin windows open and close by themselves.
+5. Send `h0-mine/summary.md` and `summary.json`. H0 closes when the probe says "yes" to loads, plays and state restored for both plugins, and the engine reports all checks passed.
+
+### 8.8 What changes for H1–H3
+
+- **H1 (5–7 pw, unchanged).** The library's shape holds: one C ABI, two backends of about 500–650 lines each, with the SDK's hosting helpers doing the VST3 heavy lifting. The managed glue (notes, effects, state, missing plugins) worked without core changes. Add to H1:
+  - the items in §8.3: slots that mirror plugin values (or skip stateless parameters on load), a main-thread pump, rate changes on the main thread, closing plugins at shutdown, and COM on Windows;
+  - a state format more compact than base64 inside XML inside base64;
+  - tests that compare loudness for non-deterministic plugins.
+- **H2 (3–5 pw, unchanged).** The protocol:
+  - the hybrid wait on Linux and Windows, kernel-only on macOS, and never an indefinite spin;
+  - the Mach-semaphore handover through a special port;
+  - the hour test on a real Mac, since the macOS VM's p99 is 3–4× Linux's.
+- **H3 (1 pw, unchanged).**
+  - The embedding works on both OSes.
+  - Add `ReBuzz.Studio`'s `app.manifest` (Windows), size the container from the plugin before layout, and handle resize requests (VST3 `IPlugFrame::resizeView`, CLAP `request_resize`).
+- **Total stays 10–14 pw.** The spike retired the GUI-embedding and IPC unknowns. What remains unknown is commercial plugins under copy protection (your test) and real-time sandboxing on real Macs (H2).
+
+## 9. Sources
 
 Repository evidence, measured on the worktree (fork `f2ab63b`) on 2026-11-03:
 

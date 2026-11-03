@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The Modern Pattern Editor without a view, for rebuzz-headless (docs/specs/studio-mvp.md S6): see PortableEditor.props. -->
+  <PropertyGroup>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+  <Import Project="PortableEditor.props" />
+</Project>

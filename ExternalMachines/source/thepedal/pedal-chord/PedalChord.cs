@@ -7,9 +7,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
+#if WINDOWS   // fork (studio-mvp.md S2): the dialogs are WPF; portable builds have none
 using System.Windows.Controls;
+#endif
 using System.Windows.Input;
+#if WINDOWS
 using System.Windows.Media;
+#endif
 using System.Xml.Serialization;
 using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
@@ -219,6 +223,26 @@ _vp = _np != null ? FindVelocityParam(_tgt, _np) : null;
         void ScheduleResolve(int attempt = 0)
         {
             int delayMs = attempt == 0 ? 0 : Math.Min(500, 100 * attempt);
+#if !WINDOWS
+            // Fork (studio-mvp.md S2): no WPF timer off Windows: a delay, then the UI thread's
+            // context (the machine was made on it).
+            var ui = uiContext;
+            System.Threading.Tasks.Task.Delay(delayMs).ContinueWith(_ =>
+            {
+                void Tick()
+                {
+                    ResolveCache();
+                    if (_tgt == null && !string.IsNullOrEmpty(_state.TargetMachine)
+                        && attempt < 10)
+                        ScheduleResolve(attempt + 1);
+                }
+                if (ui != null) ui.Post(__ => Tick(), null);
+                else Tick();
+            });
+        }
+
+        readonly System.Threading.SynchronizationContext uiContext = System.Threading.SynchronizationContext.Current;
+#else
             var timer = new System.Windows.Threading.DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(delayMs)
@@ -235,6 +259,7 @@ _vp = _np != null ? FindVelocityParam(_tgt, _np) : null;
             };
             timer.Start();
         }
+#endif
 
         // ── Parameters ────────────────────────────────────────────────────────
 
@@ -681,6 +706,7 @@ _vp = _np != null ? FindVelocityParam(_tgt, _np) : null;
             }
         }
 
+#if WINDOWS
         void OpenSettings()
         {
             // Snapshot machine names on the calling thread (safe — still on UI thread
@@ -737,6 +763,20 @@ _vp = _np != null ? FindVelocityParam(_tgt, _np) : null;
         void ShowChordRef() =>
             Application.Current?.Dispatcher?.BeginInvoke(
                 (Action)(() => new ChordReferenceWindow().Show()));
+#else
+        // Fork (studio-mvp.md S2): the target settings and the chord reference are WPF windows:
+        // not off Windows. A target saved in a song still works.
+        void OpenSettings() => MessageBox.Show(
+            "The target settings need the Windows version of ReBuzz. A target saved in a song still works.",
+            "Pedal Chord");
+
+        void ShowAbout() => MessageBox.Show(
+            "Pedal Chord v1.5\n\nChord and arpeggio trigger for ReBuzz.\n\n" +
+            "Use multiple instances to control multiple generators simultaneously.",
+            "About Pedal Chord");
+
+        void ShowChordRef() => MessageBox.Show("The chord reference needs the Windows version of ReBuzz.", "Pedal Chord");
+#endif
 
         void ShowDiagnostics()
         {
@@ -754,13 +794,16 @@ _vp = _np != null ? FindVelocityParam(_tgt, _np) : null;
                 foreach (string line in msg.Split('\n'))
                     if (line.Trim().Length > 0)
                         Buzz?.DCWriteLine("[PedalChord] " + line.Trim());
+#if WINDOWS
                 Application.Current?.Dispatcher?.BeginInvoke((Action)(() =>
                 { try { Buzz?.ExecuteCommand(BuzzCommand.DebugConsole); } catch { } }));
+#endif
             }
             catch { }
         }
     }
 
+#if WINDOWS   // fork (studio-mvp.md S2): WPF dialogs; portable builds have none
     // =========================================================================
     // Target settings dialog — single target
     // =========================================================================
@@ -861,6 +904,7 @@ _vp = _np != null ? FindVelocityParam(_tgt, _np) : null;
             _work.BaseTrack     = Math.Max(0, Math.Min(63, _baseTrk.SelectedIndex));
         }
     }
+#endif
 
     // =========================================================================
     // Menu helpers
@@ -897,6 +941,7 @@ _vp = _np != null ? FindVelocityParam(_tgt, _np) : null;
         public void Execute(object p)    => _exec();
     }
 
+#if WINDOWS
     // =========================================================================
     // Chord Reference window
     // =========================================================================
@@ -1016,4 +1061,5 @@ _vp = _np != null ? FindVelocityParam(_tgt, _np) : null;
             };
         }
     }
+#endif
 }

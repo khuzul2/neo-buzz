@@ -13,7 +13,9 @@ using System.Windows;
 using System.Windows.Input;
 using Buzz.MachineInterface;   // IBuzzMachine, IBuzzMachineHost, MachineDecl, ParameterDecl, Sample, WorkModes
 using BuzzGUI.Interfaces;      // IMenuItem, IMachine, IParameter, IParameterGroup, IBuzz, etc.
+#if WINDOWS
 using NAudio.Midi;             // MidiOut — in NAudio.WinMM.dll from ReBuzz 1841+
+#endif
 
 namespace Pedal.PeerControl
 {
@@ -725,6 +727,7 @@ namespace Pedal.PeerControl
             }
         }
 
+#if WINDOWS
         SettingsWindow _settingsWindow;
 
         void OpenSettings()
@@ -762,6 +765,13 @@ namespace Pedal.PeerControl
             thread.Start();
         }
 
+#else
+        // Fork (studio-mvp.md S2): the assignment settings are a WPF window; not off Windows.
+        void OpenSettings() => MessageBox.Show(
+            "The assignment settings need the Windows version of ReBuzz. Assignments saved in a song still work.",
+            "Pedal Peer Control");
+#endif
+
         void ShowAbout()
         {
             MessageBox.Show(
@@ -795,9 +805,14 @@ namespace Pedal.PeerControl
     // IsChecked etc. work without TypeDescriptor/interface read-only issues.
     // =========================================================================
 
+#if WINDOWS
     sealed class MenuEntry : System.Windows.DependencyObject, IMenuItem,
                              System.ComponentModel.INotifyPropertyChanged
+#else
+    sealed class MenuEntry : IMenuItem, System.ComponentModel.INotifyPropertyChanged     // fork (studio-mvp.md S2): no WPF off Windows
+#endif
     {
+#if WINDOWS
         // --- DependencyProperties (WPF can always bind TwoWay to these) ---
 
         public static readonly System.Windows.DependencyProperty IsCheckedProperty =
@@ -809,6 +824,7 @@ namespace Pedal.PeerControl
             System.Windows.DependencyProperty.Register(
                 "IsEnabled", typeof(bool), typeof(MenuEntry),
                 new System.Windows.PropertyMetadata(true));
+#endif
 
         // --- Constructor ---
 
@@ -827,6 +843,7 @@ namespace Pedal.PeerControl
         public string GestureText  => null;
         public object CommandParameter => null;
 
+#if WINDOWS
         public bool IsChecked
         {
             get => (bool)GetValue(IsCheckedProperty);
@@ -837,6 +854,10 @@ namespace Pedal.PeerControl
             get => (bool)GetValue(IsEnabledProperty);
             set => SetValue(IsEnabledProperty, value);
         }
+#else
+        public bool IsChecked { get; set; }
+        public bool IsEnabled { get; set; } = true;
+#endif
 
         public bool IsCheckable      { get; set; } = false;
         public bool IsDefault        { get; set; } = false;
@@ -869,6 +890,7 @@ namespace Pedal.PeerControl
     // MidiOut moved from NAudio.Midi to NAudio.WinMM in NAudio 3.x.
     // =========================================================================
 
+#if WINDOWS
     static class MidiOutputHelper
     {
         static readonly object _lock = new object();
@@ -921,4 +943,31 @@ namespace Pedal.PeerControl
             }
         }
     }
+#else
+    // Fork (studio-mvp.md S2): no NAudio off Windows; the CCs go to the MIDI outputs ReBuzz has
+    // open (its MIDI settings), through the engine.
+    static class MidiOutputHelper
+    {
+        public static void Send(int controller, int channel, int ccVal)
+        {
+            if (controller < 0 || controller > 127 || channel == 0) return;
+            ccVal = Math.Max(0, Math.Min(127, ccVal));
+            var buzz = BuzzGUI.Common.Global.Buzz;
+            if (buzz == null) return;
+            for (int dev = 0; dev < 32; dev++)
+            {
+                if (channel == 17)
+                    for (int ch = 1; ch <= 16; ch++)
+                        buzz.SendMIDIOutput(dev, MakeCC(controller, ccVal, ch));
+                else
+                    buzz.SendMIDIOutput(dev, MakeCC(controller, ccVal, channel));
+            }
+        }
+
+        static int MakeCC(int ctrl, int val, int ch) =>
+            (0xB0 | ((ch - 1) & 0x0F)) | (ctrl << 8) | (val << 16);
+
+        public static void DisposeAll() { }
+    }
+#endif
 }

@@ -1,6 +1,8 @@
 ﻿using BuzzGUI.Common;
 using BuzzGUI.Common.InterfaceExtensions;
+#if WINDOWS
 using BuzzGUI.Common.Templates;
+#endif
 using BuzzGUI.Interfaces;
 using System;
 using System.Collections.Generic;
