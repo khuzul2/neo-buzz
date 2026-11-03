@@ -10,7 +10,7 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot with every parameter at its maximum at once (+15.2 dBFS peak), but with no parameter alone"
+   "hot with every parameter at its maximum at once (+16.0 dBFS peak), but with no parameter alone"
   ],
   "hot": true
  },
@@ -55,8 +55,8 @@
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": 15.22,
-     "growth_db": 0.28,
+     "peak_dbfs": 16.04,
+     "growth_db": 0.42,
      "verdict": "hot"
     }
    },

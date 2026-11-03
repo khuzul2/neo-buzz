@@ -23,7 +23,13 @@
    "sample_peak_dbfs": -0.27,
    "true_peak_dbtp": -0.03
   },
-  "extremes": {}
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -0.27,
+    "verdict": "ok"
+   },
+   "all_at_once": {}
+  }
  },
  "parameters": [],
  "track_parameters": [

@@ -8,8 +8,11 @@
  "summary": "Distortion (profiled draft): traits: distortion, dynamics; tail 0.0 s; latency 2 samples; gain +19.6 dB at the defaults.",
  "tracks": 0,
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "warn",
+  "problems": [
+   "hot at its defaults (+6.0 dBFS peak)"
+  ],
+  "hot": true
  },
  "profile": {
   "effect": {
@@ -40,14 +43,23 @@
     "dynamics"
    ]
   },
-  "extremes": {
-   "min": {
-    "silent": false,
-    "sample_peak_dbfs": -26.7
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": 6.02,
+    "growth_db": 0.0,
+    "verdict": "hot"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": -26.7
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": -3.13,
+     "growth_db": 0.23,
+     "verdict": "ok"
+    },
+    "max": {
+     "peak_dbfs": -3.18,
+     "growth_db": 0.21,
+     "verdict": "ok"
+    }
    }
   }
  },

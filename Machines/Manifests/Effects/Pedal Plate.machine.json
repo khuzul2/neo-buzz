@@ -10,7 +10,7 @@
  "health": {
   "status": "unhealthy",
   "problems": [
-   "Feedback diverges at its maximum (95: +239.5 dBFS peak over 30 s, growing +60 dB); safe from 0 to 78 (raw 0–78)"
+   "Feedback diverges at its maximum (95: +60.0 dBFS: the engine's guard caught it); safe from 0 to 78 (raw 0–78)"
   ],
   "diverging": true
  },
@@ -70,9 +70,9 @@
   "sweeps": {
    "Feedback": {
     "max": {
-     "peak_dbfs": 239.49,
-     "growth_db": 60.15,
+     "peak_dbfs": 59.88,
      "over_seconds": 30,
+     "guard": "+60.0 dBFS",
      "verdict": "diverging",
      "raw": 95,
      "text": "95"
@@ -212,7 +212,7 @@
     "max": 78,
     "min_text": "0",
     "max_text": "78",
-    "reason": "diverges at its maximum (95: +239.5 dBFS peak over 30 s, growing +60 dB)"
+    "reason": "diverges at its maximum (95: +60.0 dBFS: the engine's guard caught it)"
    }
   }
  ],

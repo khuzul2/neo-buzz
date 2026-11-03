@@ -496,8 +496,7 @@ def _round_db(x):
 WINDOW_MARKERS = re.compile(r"System\.Windows|PresentationFramework|PresentationCore|WindowsBase|Xaml|\bSTA\b|"
                             r"Dispatcher|RichTextBox|FlowDocument|HwndSource|UI components", re.I)
 WINDOW_MACHINES = {
-    "Info": "WDE's song notes (Info.NET.dll): a WPF rich-text box that is the machine, built from its theme's Gear/Info/RTFBoxInfo.xaml "
-            "(only the Mire (extended) theme has one)",
+    "Info": "WDE's song notes (Info.NET.dll): a WPF rich-text box that is the machine",
 }
 
 

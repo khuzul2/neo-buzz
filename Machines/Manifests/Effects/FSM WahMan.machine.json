@@ -8,8 +8,12 @@
  "summary": "Distortion (profiled draft): traits: distortion, filter or EQ; tail 0.01 s; latency 6 samples; gain +10.2 dB at the defaults.",
  "tracks": 1,
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "warn",
+  "problems": [
+   "hot at its defaults (+3.5 dBFS peak)",
+   "hot (loud but steady) with Cutoff at its maximum (240): +9.4 dBFS peak; Resonance at its maximum (240): +7.0 dBFS peak; LFO rate at its minimum (0.050 Hz): +2.9 dBFS peak; LFO rate at its maximum (26.995 Hz): +5.7 dBFS peak; Modulation at its minimum (0): +2.9 dBFS peak; Modulation at its maximum (240): +9.6 dBFS peak; Set phase at its maximum (127): +4.6 dBFS peak; Inertia at its minimum (0): +4.5 dBFS peak; and 1 more"
+  ],
+  "hot": true
  },
  "profile": {
   "effect": {
@@ -40,7 +44,95 @@
     "filter or EQ"
    ]
   },
-  "extremes": {}
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": 3.46,
+    "growth_db": 0.09,
+    "verdict": "hot"
+   },
+   "all_at_once": {},
+   "swept_because": [
+    "an effect with Resonance"
+   ],
+   "renders": 12
+  },
+  "sweeps": {
+   "Cutoff": {
+    "max": {
+     "peak_dbfs": 9.39,
+     "growth_db": -2.35,
+     "verdict": "hot",
+     "raw": 240,
+     "text": "240"
+    }
+   },
+   "Resonance": {
+    "max": {
+     "peak_dbfs": 7.03,
+     "growth_db": -3.01,
+     "verdict": "hot",
+     "raw": 240,
+     "text": "240"
+    }
+   },
+   "LFO rate": {
+    "min": {
+     "peak_dbfs": 2.9,
+     "growth_db": -0.33,
+     "verdict": "hot",
+     "raw": 0,
+     "text": "0.050 Hz"
+    },
+    "max": {
+     "peak_dbfs": 5.66,
+     "growth_db": -1.11,
+     "verdict": "hot",
+     "raw": 240,
+     "text": "26.995 Hz"
+    }
+   },
+   "Modulation": {
+    "min": {
+     "peak_dbfs": 2.91,
+     "growth_db": -1.3,
+     "verdict": "hot",
+     "raw": 0,
+     "text": "0"
+    },
+    "max": {
+     "peak_dbfs": 9.6,
+     "growth_db": -1.63,
+     "verdict": "hot",
+     "raw": 240,
+     "text": "240"
+    }
+   },
+   "Set phase": {
+    "max": {
+     "peak_dbfs": 4.59,
+     "growth_db": -1.75,
+     "verdict": "hot",
+     "raw": 127,
+     "text": "127"
+    }
+   },
+   "Inertia": {
+    "min": {
+     "peak_dbfs": 4.5,
+     "growth_db": 0.1,
+     "verdict": "hot",
+     "raw": 0,
+     "text": "0"
+    },
+    "max": {
+     "peak_dbfs": 2.0,
+     "growth_db": -0.94,
+     "verdict": "hot",
+     "raw": 240,
+     "text": "240"
+    }
+   }
+  }
  },
  "parameters": [],
  "track_parameters": [
