@@ -183,6 +183,10 @@ namespace ReBuzz.Core
         ConcurrentDictionary<int, int> values = new ConcurrentDictionary<int, int>();
         // readonly ConcurrentDictionary<int, int> pvalues = new ConcurrentDictionary<int, int>();
         int[] pvalues = new int[256]; 
+        // Fork (engine hardening): the tracks changed since the machine's last tick, a bit a
+        // pval, and those its tick in progress took (ParameterChanges).
+        internal readonly long[] changedTracks = new long[ParameterChanges.Words];
+        internal readonly long[] takenTracks = new long[ParameterChanges.Words];
         readonly Dictionary<int, string> displayNames = new Dictionary<int, string>();
 
         // Is ConcurrentDictionary needed. Adds locks and latency?
@@ -318,12 +322,13 @@ namespace ReBuzz.Core
                     value = Math.Max(MinValue, Math.Min(MaxValue, value));
 
                 // Update inputs. Should this be moved to tick?
-                if (Group.Type == ParameterGroupType.Input && machine.ParameterGroups.Count != 0)
+                // Fork (engine hardening): the lists themselves and the visible input by index; the
+                // ParameterGroups, Parameters and Inputs facades built new collections each call.
+                if (Group.Type == ParameterGroupType.Input && machine.ParameterGroupsList.Count != 0)
                 {
-                    if (IndexInGroup < machine.ParameterGroups[0].Parameters.Count
-                        && track < machine.Inputs.Count)
+                    var input = IndexInGroup < machine.ParameterGroupsList[0].ParametersList.Count ? machine.VisibleInputAt(track) : null;
+                    if (input != null)
                     {
-                        var input = machine.Inputs[track];
                         if (IndexInGroup == 0)
                         {
                             input.Amp = value;
@@ -343,7 +348,8 @@ namespace ReBuzz.Core
 
 
                 // Save changes to be sent to managed machines and as events to listeners.
-                machine.parametersChanged[(this, track)] = 0;
+                // Fork (engine hardening): preallocated bits, not a dictionary entry (ParameterChanges).
+                machine.ParameterChanges.Mark(this, track);
             }
         }
 

@@ -1,4 +1,5 @@
 using ReBuzzTests.Automation.TestMachines;
+using System;
 
 namespace ReBuzzTests.Automation.TestMachinesControllers
 {
@@ -10,5 +11,9 @@ namespace ReBuzzTests.Automation.TestMachinesControllers
         public static HumController NewInstance(string instanceName = MachineName) => new(instanceName);
 
         public static IDynamicTestMachineInfo Info => HumInfo.Instance;
+
+        /// <summary>Has the machine call <paramref name="listener"/> (parameter index, track or -1, value) for each value its host sets.</summary>
+        public ITestMachineInstanceCommand Listen(Action<int, int, int> listener)
+            => new TestManagedMachineInstanceCommand(this, "Listen", listener);
     }
 }

@@ -36,12 +36,14 @@ namespace ReBuzzTests
             public SongCore Song => Core.SongCore;
             public ISession Session => Core.Session;
             public List<MachineCore> Machines { get; } = new List<MachineCore>();
+            public List<DynamicMachineController> Controllers { get; }
 
             public Rig(int count, bool hum = false, bool sequences = true)
             {
                 var controllers = Enumerable.Range(0, count)
                     .Select(i => hum ? (DynamicMachineController)HumController.NewInstance("Hum" + i) : ToneController.NewInstance("Tone" + i))
                     .ToList();
+                Controllers = controllers;
                 Driver.Gear.AddDynamicGenerator(hum ? HumController.Info : ToneController.Info);
                 Driver.Start();
                 foreach (var c in controllers)
@@ -325,13 +327,15 @@ namespace ReBuzzTests
 
         // ------------------------------------------------------------------ 4. allocation and time per buffer
 
-        static long AllocatedWhileReading(Rig rig, Driver.AudioReader reader, int buffers, int frames, List<string> log)
+        /// <summary>Bytes allocated reading <paramref name="buffers"/> buffers (each after <paramref name="perBuffer"/>, if any: counted too).</summary>
+        static long AllocatedWhileReading(Rig rig, Driver.AudioReader reader, int buffers, int frames, List<string> log, Action? perBuffer = null)
         {
             long total = 0;
             for (int i = 0; i < buffers; i++)
             {
                 int posBefore = ReBuzzCore.masterInfo.PosInTick;
                 long before = GC.GetAllocatedBytesForCurrentThread();
+                perBuffer?.Invoke();
                 reader.Read(frames);
                 long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
                 total += bytes;
@@ -358,22 +362,7 @@ namespace ReBuzzTests
             rig.Song.LoopEnd = 4 * Bar;
             var reader = rig.Driver.CreateAudioReader(256);
             rig.Core.Playing = true;
-            for (int i = 0; i < 200; i++)
-                reader.Read(256);                                    // warm up: JIT, first launches, tiered compilation
-            // Fork (0.6.2): steady state comes after one-time costs: read on until a stretch of 100
-            // buffers allocates nothing (or give up and measure anyway). 0.6.3: the 40-80 bytes per
-            // buffer this test met now and then were LINQ's First() boxing the work set's
-            // enumerator, unless profile-guided optimisation removed the box; fixed in WorkManager.
-            for (int stretch = 0; stretch < 200; stretch++)
-            {
-                long start = GC.GetAllocatedBytesForCurrentThread();
-                for (int i = 0; i < 100; i++)
-                    reader.Read(256);
-                if (GC.GetAllocatedBytesForCurrentThread() == start)
-                    break;
-                if (stretch == 0)
-                    TestContext.Out.WriteLine("[notice] steady playback: still allocating after the warm-up; reading on until it stops");
-            }
+            WarmUp(reader, "steady playback");
 
             var log = new List<string>();
             long bytes = AllocatedWhileReading(rig, reader, 400, 256, log);   // ~2.3 s: several ticks and a loop wrap
@@ -384,17 +373,224 @@ namespace ReBuzzTests
                 "steady playback must not allocate on the audio thread (GC pauses are dropouts):\n" + string.Join("\n", log) + types);
         }
 
+        /// <summary>Reads past one-time costs (JIT, first launches, tiered compilation), each buffer after <paramref name="perBuffer"/>.</summary>
+        static void WarmUp(Driver.AudioReader reader, string what, Action? perBuffer = null)
+        {
+            for (int i = 0; i < 200; i++)
+            {
+                perBuffer?.Invoke();
+                reader.Read(256);                                    // warm up: JIT, first launches, tiered compilation
+            }
+            // Fork (0.6.2): steady state comes after one-time costs: read on until a stretch of 100
+            // buffers allocates nothing (or give up and measure anyway). 0.6.3: the 40-80 bytes per
+            // buffer this test met now and then were LINQ's First() boxing the work set's
+            // enumerator, unless profile-guided optimisation removed the box; fixed in WorkManager.
+            for (int stretch = 0; stretch < 200; stretch++)
+            {
+                long start = GC.GetAllocatedBytesForCurrentThread();
+                for (int i = 0; i < 100; i++)
+                {
+                    perBuffer?.Invoke();
+                    reader.Read(256);
+                }
+                if (GC.GetAllocatedBytesForCurrentThread() == start)
+                    break;
+                if (stretch == 0)
+                    TestContext.Out.WriteLine($"[notice] {what}: still allocating after the warm-up; reading on until it stops");
+            }
+        }
+
+        /// <summary>What playing parameter changes is made of (ParameterChangesAllocateNothing).</summary>
+        public enum ParameterChangeSource { AutomationSteps, AutomationRamps, PatternEditor, MidiController }
+
+        /// <summary>
+        /// Engine hardening (docs/specs/daw-modes.md §8.1): parameter changes reach their machines
+        /// without allocating. Four machines (as steady playback above: two from the arrangement,
+        /// two from the session) change a global parameter and a track parameter on four tracks:
+        /// from engine automation columns, with steps on every tick or with ramps (events with a
+        /// Duration, set on every tick and subtick); set as pattern editors set them, through the
+        /// public interface (the Modern Pattern Editor's ControlChange:
+        /// machine.ParameterGroups[group].Parameters[index].SetValue, for each value it plays);
+        /// or from a MIDI controller mapped to the global. Upstream recorded each change in a
+        /// ConcurrentDictionary: about 3.6 KB a buffer here, steps and ramps alike.
+        /// </summary>
+        [Test]
+        public void ParameterChangesAllocateNothing([Values] ParameterChangeSource source)
+        {
+            using var rig = new Rig(4, hum: true);
+            var heard = new int[1];
+            for (int i = 0; i < 4; i++)
+            {
+                var m = rig.Machines[i];
+                m.TrackCount = 4;
+                rig.Driver.MachineGraph.ExecuteMachineCommand(((HumController)rig.Controllers[i]).Listen((parameter, track, value) => heard[0]++));
+                var p = rig.Pattern(m, "P", Bar);
+                var q = rig.Pattern(m, "Q", 2 * Bar);
+                if (source is ParameterChangeSource.AutomationSteps or ParameterChangeSource.AutomationRamps)
+                {
+                    Automate(p, Bar, ramps: source == ParameterChangeSource.AutomationRamps);
+                    Automate(q, 2 * Bar, ramps: source == ParameterChangeSource.AutomationRamps);
+                }
+                rig.Track(i).SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, p));
+                rig.Track(i).SetEvent(Bar, new SequenceEvent(SequenceEventType.PlayPattern, q));
+                if (i >= 2)
+                    rig.Session.Launch(rig.Track(i), q);            // half from the arrangement, half from the session
+            }
+            rig.Song.LoopEnd = 4 * Bar;
+            var perBuffer = source switch
+            {
+                ParameterChangeSource.PatternEditor => AsAPatternEditorPlays(rig.Machines),
+                ParameterChangeSource.MidiController => FromAMappedMidiController(rig),
+                _ => null,
+            };
+            var reader = rig.Driver.CreateAudioReader(256);
+            rig.Core.Playing = true;
+            WarmUp(reader, source.ToString(), perBuffer);
+
+            var log = new List<string>();
+            int heardBefore = heard[0];
+            long bytes = AllocatedWhileReading(rig, reader, 400, 256, log, perBuffer);
+            int values = heard[0] - heardBefore;
+            int ticks = 400 * 256 / rig.SamplesPerTick;
+
+            TestContext.Out.WriteLine($"[notice] {source}: {bytes} bytes in 400 buffers of 256 frames; the machines were set {values} values in {ticks} ticks");
+            Assert.That(values, Is.GreaterThanOrEqualTo(4 * ticks), "each machine was set values on every tick");
+            string types = bytes > 0 ? AllocatedTypes(reader, perBuffer) : "";
+            Assert.That(bytes, Is.EqualTo(0),
+                "parameter changes must not allocate on the audio thread (GC pauses are dropouts):\n" + string.Join("\n", log) + types);
+        }
+
+        /// <summary>Engine automation columns of a Hum's Level (a global, 0-127) and of its Gate on four tracks: steps on every tick, or ramps of 4 ticks.</summary>
+        static void Automate(PatternCore pattern, int ticks, bool ramps)
+        {
+            const int TB = PatternEvent.TimeBase;
+            var keys = new[] { new ColumnKey(1, 1, 0) }.Concat(Enumerable.Range(0, 4).Select(t => new ColumnKey(2, 0, t)));
+            foreach (var key in keys)
+            {
+                var events = ramps
+                    ? Enumerable.Range(0, ticks / 4).Select(r => new PatternEvent(4 * r * TB, (r + key.Track) % 2 == 0 ? 0 : 127, 4 * TB))
+                    : Enumerable.Range(0, ticks).Select(t => new PatternEvent(t * TB, (t + key.Track) % 2 == 0 ? 0 : 100 + key.Track, 0));
+                var column = SessionLayout.ColumnFor(pattern, key, create: true);
+                column.SetEvents(events.ToList(), true);
+                Assert.That(((PatternColumnCore)column).HasRamps, Is.EqualTo(ramps));
+            }
+        }
+
+        /// <summary>
+        /// Sets values before every buffer as the Modern Pattern Editor plays them, through the
+        /// public interface (its ControlChange: machine.ParameterGroups[group].Parameters[index]
+        /// .SetValue(track | 1 &lt;&lt; 16, value)): the Hums' Level and their Gate on four tracks.
+        /// </summary>
+        static Action AsAPatternEditorPlays(List<MachineCore> machines)
+        {
+            int n = 0;
+            return () =>
+            {
+                n++;
+                foreach (IMachine m in machines)
+                {
+                    m.ParameterGroups[1].Parameters[1].SetValue(1 << 16, n % 128);
+                    for (int t = 0; t < 4; t++)
+                        m.ParameterGroups[2].Parameters[0].SetValue(t | 1 << 16, (n + t) % 128);
+                }
+            };
+        }
+
+        /// <summary>
+        /// Maps a controller (CC 20 + i, channel 1) to each Hum's Level, and moves them all before
+        /// every buffer, as the UI thread passes a controller's messages on (MidiControllerAssignments).
+        /// </summary>
+        static Action FromAMappedMidiController(Rig rig)
+        {
+            for (int i = 0; i < rig.Machines.Count; i++)
+                rig.Machines[i].ParameterGroupsList[1].ParametersList[1].BindToMIDIController(0, 0, 20 + i);
+            var assignments = rig.Core.MidiControllerAssignments;
+            int n = 0;
+            return () =>
+            {
+                n++;
+                for (int i = 0; i < 4; i++)
+                    assignments.SendMidi(0xB0 | (20 + i) << 8 | (n % 2 == 0 ? 10 : 120) << 16);
+            };
+        }
+
+        /// <summary>
+        /// Engine hardening: what reaches a managed machine on a tick is what upstream's dictionary
+        /// sent: one call for each parameter and track changed since the last tick, with the last
+        /// value set; nothing again until the next change; the pvals cleared after the tick; value
+        /// listeners told of each. Now in Buzz's order of a tick's values (globals by index, then
+        /// the tracks, each by index); the dictionary's was by hash. And an input's amp reaches its
+        /// connection, and a connection's amp its input (both set without building Inputs now).
+        /// </summary>
+        [Test]
+        public void ATicksParameterChangesReachTheMachineOnceEachInOrder()
+        {
+            using var rig = new Rig(1, hum: true);
+            var hum = rig.Machines[0];
+            hum.TrackCount = 4;
+            var heard = new List<(int Parameter, int Track, int Value)>();
+            rig.Driver.MachineGraph.ExecuteMachineCommand(((HumController)rig.Controllers[0]).Listen((parameter, track, value) => heard.Add((parameter, track, value))));
+            var bypass = hum.ParameterGroupsList[1].ParametersList[0];
+            var level = hum.ParameterGroupsList[1].ParametersList[1];
+            var gate = hum.ParameterGroupsList[2].ParametersList[0];
+            var told = new List<(string, int)>();
+            level.SubscribeEvents(0, (p, t) => told.Add((p.Name, t)), null);
+            gate.SubscribeEvents(2, (p, t) => told.Add((p.Name, t)), null);
+            rig.Align();
+            rig.Ticks(1);
+            heard.Clear();
+            told.Clear();
+
+            gate.SetValue(3, 30);
+            level.SetValue(0, 10);
+            gate.SetValue(1, 11);
+            bypass.SetValue(0, 1);
+            level.SetValue(0, 20);                               // twice: the last value is sent
+            gate.SetValue(2, 22);
+            Assert.That(heard, Is.Empty, "values wait for the machine's tick");
+            Assert.That(level.GetPValue(0), Is.EqualTo(20));
+            rig.Ticks(1);
+            Assert.That(heard, Is.EqualTo(new[] { (0, -1, 1), (1, -1, 20), (2, 1, 11), (2, 2, 22), (2, 3, 30) }),
+                "one call each, the last value, globals then tracks");
+            Assert.That(told, Is.EqualTo(new[] { ("Level", 0), ("Gate", 2) }), "listeners told of each change");
+            Assert.That(level.GetPValue(0), Is.EqualTo(level.NoValue), "pvals cleared after the tick");
+            Assert.That(Enumerable.Range(0, 4).Select(gate.GetPValue), Is.All.EqualTo(gate.NoValue));
+            Assert.That(level.GetValue(0), Is.EqualTo(20));
+            Assert.That(hum.ParameterChanges.Pending(hum.ParameterGroupsList), Is.Empty);
+
+            heard.Clear();
+            rig.Ticks(2);
+            Assert.That(heard, Is.Empty, "a change is sent once");
+            gate.SetValue(0, 5);
+            gate.SetValue(1 << 16 | 3, 6);                       // not recorded (as engine automation sets it): sent all the same
+            rig.Ticks(1);
+            Assert.That(heard, Is.EqualTo(new[] { (2, 0, 5), (2, 3, 6) }));
+
+            var master = rig.Song.MachinesList[0];
+            var connection = hum.AllOutputs.Single(c => c.Destination == master);
+            var amp = master.ParameterGroupsList[0].ParametersList[0];
+            int input = master.Inputs.IndexOf(connection);
+            Assert.That(input, Is.GreaterThanOrEqualTo(0));
+            amp.SetValue(input, 0x2000);
+            Assert.That(connection.Amp, Is.EqualTo(0x2000), "an input's amp reaches its connection");
+            connection.Amp = 0x3000;
+            Assert.That(amp.GetValue(input), Is.EqualTo(0x3000), "a connection's amp reaches its input");
+        }
+
         /// <summary>
         /// When steady playback allocates (it did now and then on CI), what: the runtime samples
         /// an allocation about every 100 KB (GCAllocationTick, with the type's name), so keep
         /// reading until there are a few samples.
         /// </summary>
-        static string AllocatedTypes(Driver.AudioReader reader)
+        static string AllocatedTypes(Driver.AudioReader reader, Action? perBuffer = null)
         {
             using var listener = new AllocationListener();
             long before = GC.GetAllocatedBytesForCurrentThread();
             for (int i = 0; i < 20000 && listener.Count < 5; i++)
+            {
+                perBuffer?.Invoke();
                 reader.Read(256);
+            }
             long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
             return $"\nthen {bytes} bytes in up to 20000 buffers; sampled types: {listener.Describe()}";
         }
