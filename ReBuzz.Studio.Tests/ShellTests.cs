@@ -27,7 +27,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(host.Core, Is.Not.Null);
             Assert.That(host.Core.MachineDLLs.Keys, Does.Contain("Neo Poly").And.Contain("Neo Verb"), "the portable Neo machines are installed");
             var window = Open();
-            Assert.That(window.Tabs.Items.Cast<TabItem>().Select(t => (string)t.Header), Is.EqualTo(new[] { "Machines", "Sequence", "Session", "Pattern" }));
+            Assert.That(window.Tabs.Items.Cast<TabItem>().Select(t => (string)t.Header), Is.EqualTo(new[] { "Machines", "Sequence", "Session", "Pattern", "Song Notes" }));
             Assert.That(window.StatusText, Does.Contain("no audio output"));
             Studio.Screenshot(window, "studio-main");
             window.Close();

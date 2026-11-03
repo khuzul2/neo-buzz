@@ -533,7 +533,7 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ 2. old songs open and save back
 
-        static string Repo
+        internal static string Repo
         {
             get
             {
@@ -569,7 +569,7 @@ namespace ReBuzz.Studio.Tests
         /// tools/song-roundtrip.py's checks on the studio's saves: A (the original saved) and B (A opened
         /// and saved again) the same, and nothing the original says about a machine lost in A.
         /// </summary>
-        static (int Exit, string Output) RoundTripCheck(params string[] args)
+        internal static (int Exit, string Output) RoundTripCheck(params string[] args)
         {
             var start = new ProcessStartInfo("python3") { RedirectStandardOutput = true, RedirectStandardError = true };
             start.ArgumentList.Add("-I");

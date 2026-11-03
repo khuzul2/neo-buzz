@@ -52,6 +52,7 @@ namespace ReBuzz.Agent
             Log = new AgentLog(logFolder, mode);
             var tools = new ToolRegistry();
             StudioTools.Register(tools, this);
+            NotesTools.Register(tools, this);       // fork (machine-safety.md §3.5): Song Notes
             GuideLibrary.Register(tools, gear => Manual(core, gear));
             MachineTools.Register(tools, this);
             ParamTools.Register(tools, this);

@@ -5,6 +5,7 @@ Build, listen, measure, adjust. Never claim a result you haven't rendered and me
 ## Start of every session
 1. `studio_status`: tempo, length, what's in the song, unsaved changes, whether you're headless or in the user's studio.
 2. `machine_list` if the song isn't empty, so you know what exists before you add anything.
+   `song_notes_read` gives the person's notes about the song (ideas, lyrics, to-dos); `song_notes_write(text=…, mode="append")` leaves yours below theirs.
 3. In studio mode the user watches and can undo you. Say what you're about to do in a sentence.
 
 ## Build
