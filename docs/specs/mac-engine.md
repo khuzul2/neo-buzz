@@ -158,8 +158,8 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
   - Neo FM6 (7): Tine Piano, Glass Bell, Random Chimes, Bright Section, Saw Lead, Metal Sweep, and a sine at feedback 7 on the Raw 1× engine.
   - Effects (23), on an FM6 brass source: Neo Comp's four modes (lookahead, auto release); Neo Drive's five models at 2×, 4× and 8×; Neo EQ's bells, shelves, cuts at 12 to 48 dB/oct and notch; Neo Limiter pushed by 18 and 24 dB, with Neo Analyzer after it; Neo Utility's width, bass mono, mono pan, swap, polarity and DC removal; Neo Verb's four algorithms, shimmer, a 20-second decay, and freeze switched on mid-render by automation.
   - Four 16-second cases (Poly, Wave, FM6, Verb), where a difference that grows with time would show.
-- **CI.** The package job renders the references with `ReBuzz.exe --agent` (92 s) and uploads them (`null-test-references`). Two jobs then build `rebuzz-headless` and compare: Linux x64, and macOS arm64 on `macos-15`, about 2 minutes each, once per package run. A case fails above −100 dBFS, on a length mismatch, or when it is missing on either side. The per-case figures go to a notice and the step summary.
-- **Results** (run 41545747463). Every case is within −100 dBFS on both platforms. Largest absolute difference against Windows:
+- **CI.** The package job renders the references with `ReBuzz.exe --agent` (about 100 s) and uploads them (`null-test-references`). Two jobs then build `rebuzz-headless` and compare: Linux x64, and macOS arm64 on `macos-15`, about 2 minutes each, once per package run. A case fails above −100 dBFS, on a length mismatch, or when it is missing on either side. The per-case figures go to a notice and the step summary.
+- **Results** (runs 41545747463 and 41547910703, the same figures). Every case is within −100 dBFS on both platforms. Largest absolute difference against Windows:
 
   | Machine | Cases | Linux x64 | macOS arm64 |
   |---|---:|---|---|
@@ -171,7 +171,7 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
   | Neo EQ | 3 | all identical | 2 identical; −343 dBFS (Telephone: a denormal) |
   | Neo Limiter | 2 | worst −135.0 dBFS | worst −130.5 dBFS |
   | Neo Utility | 2 | all identical | all identical |
-  | Neo Verb | 7 | all identical | all identical |
+  | Neo Verb | 8 | all identical | all identical |
 
   Neo Analyzer passes the audio through (the loud limiter case ends with it).
 - **Where the differences come from.** Linux and Windows run the same JIT code on the same x64 CPUs. What differs is the C runtime behind `Math.Pow`, `Exp`, `Tan` and the `MathF` functions: glibc, the UCRT, or Apple's libm, which can round the last bit differently. macOS adds Neo Limiter's true-peak filter, summed with `Vector<float>`: 4 lanes on arm64, 8 on x64.
