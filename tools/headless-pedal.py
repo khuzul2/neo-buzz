@@ -7,7 +7,7 @@
 #  - Pedal Chord plays a chord on its target, and Pedal LFO moves its target's parameter;
 #  - Pedal Peer Control loads and the whole song renders with it;
 #  - Pedal Plate stays bounded and its tail decays at full Decay and modulation, and with Feedback
-#    at 80 and at its maximum (95), where its outer loop diverged (machine-safety.md §3.1).
+#    at 80 and at its maximum (95), where its outer loop diverged (machine-safety.md §1).
 # The synths take notes in their Note track parameter only (no MIDI), which the agent's tools
 # don't write (notes_write sends MIDI), so the script adds the note columns to the saved song and
 # reopens it; the targets of Chord and LFO (set by their WPF dialogs on Windows) go into their

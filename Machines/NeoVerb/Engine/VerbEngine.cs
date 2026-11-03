@@ -269,7 +269,7 @@ namespace NeoBuzz.Verb
             values.Clean();
         }
 
-        // Fork (neo-buzz, docs/specs/machine-safety.md §3.1): dividing out the shelves' gain at 1 kHz
+        // Fork (neo-buzz, docs/specs/machine-safety.md §1): dividing out the shelves' gain at 1 kHz
         // is exact only while 1 kHz is in the flat mid band. With the damping corner low (below about
         // 1.4 kHz at the defaults, up to 2.9 kHz with Low decay ×4) the high shelf already cuts at
         // 1 kHz, and dividing that out lifted the slowest band (the lows, or the mid band below the

@@ -259,14 +259,16 @@ namespace WDE.PedalPlate
             float dmp1 = 1f - damp;
             float fb   = Feedback / 100f;
 
-            // Fork (neo-buzz, docs/specs/machine-safety.md §3.1): the feedback loop runs through the
+            // Fork (neo-buzz, docs/specs/machine-safety.md §1): the feedback loop runs through the
             // tank, whose gain from its input to the feedback tap is at most
             // 0.35·(1 + 3·dec)/(1 − dec²) at any frequency (each half's delays and all-passes have
             // gain 1, the damping low-pass at most 1, and the four taps add up in the worst phase).
-            // Above 1/that the loop could grow: from Feedback ≈ 50 at the default Decay (the profiler
-            // found 80 and up), from 9 at full Decay. So the feedback stays under 98 % of it, and the
-            // whole loop's gain under 0.98 at every frequency, for every setting. Below the cap
-            // nothing changes, bit for bit (every Feedback up to 79 at a Decay up to 55).
+            // Above 1/that the loop can grow, and does: at the default Decay from Feedback ≈ 50 with
+            // Damping 0, 55 at the default Damping, 65 with the default modulation too (slowly: the
+            // profiler's 4 s render saw only 79 and up); at full Decay from about 10. So the feedback
+            // stays under 98 % of 1/that, and the whole loop's gain under 0.98 at every frequency, for
+            // every setting. Below the cap nothing changes, bit for bit (every Feedback up to 79 at a
+            // Decay up to 55; up to 45 at the default, 75).
             float fbMax = 0.98f * (1f - dec * dec) / (0.35f * (1f + 3f * dec));
             if (fb > fbMax) fb = fbMax;
 

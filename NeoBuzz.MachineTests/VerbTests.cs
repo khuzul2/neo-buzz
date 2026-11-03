@@ -200,7 +200,7 @@ namespace NeoBuzz.MachineTests
             }
         }
 
-        // Stability (docs/specs/machine-safety.md §3.1). The profiler found High damping near 1 kHz
+        // Stability (docs/specs/machine-safety.md §1). The profiler found High damping near 1 kHz
         // diverging (+347 dBFS): the 1 kHz normalisation lifted the band below the corner over unity.
 
         /// <summary>Line <paramref name="i"/>'s loop gain at ω (rad/sample), from the coefficients the loop runs.</summary>
@@ -261,7 +261,7 @@ namespace NeoBuzz.MachineTests
             // worst combinations: the lowest damping with the longest decays, the sizes and modes,
             // full modulation. Not Shimmer above its default (0): its loop (the tail an octave up,
             // back into the network) runs away above a setting that falls with the decay (about
-            // 93 % at the default Decay, 26 % at 30 s); see docs/specs/machine-safety.md §3.1.
+            // 93 % at the default Decay, 26 % at 30 s): an open finding, docs/specs/machines.md (Neo Verb).
             foreach (var d in Params.Table)
                 foreach (int raw in new[] { d.Min, d.Max })
                     if (d.Index != P.Shimmer || raw == d.Min)
