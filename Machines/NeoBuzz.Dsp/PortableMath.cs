@@ -3,20 +3,26 @@
 // on Windows x64, Linux x64 and macOS arm64 (docs/specs/mac-engine.md decision 6).
 //
 // Math.Sin, Exp, Pow, Tanh … and the MathF functions call the platform's C runtime (the UCRT, glibc,
-// Apple's libm), and those round the last bit differently. These are fdlibm's algorithms, built only
-// from IEEE basic operations (+ − × ÷, comparisons, conversions, moving bits), which give the same bits
-// everywhere. No FusedMultiplyAdd and no intrinsics: .NET never contracts a·b + c into an FMA, so every
-// line rounds the same on x64 and arm64. Audio paths use these, never Math's or MathF's transcendental
-// functions (Sqrt, Abs, Floor, Round, Min and Max are exact and stay).
+// Apple's libm), and those round the last bit differently. These are built only from IEEE basic
+// operations (+ − × ÷, sqrt, comparisons, exact roundings and conversions, moving bits), which give
+// the same bits everywhere. No FusedMultiplyAdd and no intrinsics: .NET never contracts a·b + c into
+// an FMA, so every line rounds the same on x64 and arm64. Audio paths use these, never Math's or
+// MathF's transcendental functions (Sqrt, Abs, Floor, Round, Min and Max are exact and stay);
+// NeoBuzz.MachineTests' PortableMathTests checks the sources for it.
 //
-// Accuracy, measured against 200-bit references: Exp, Expm1, Log, Log2, Log10, Exp2, Pow, Sin, Cos,
-// Tan and Atan under 1 ulp; Atan2 1.2 ulp, Tanh 1.8 ulp. Sin, Cos and Tan are that accurate for |x|
-// up to 2^19·π/2 (about 8e5); beyond, still deterministic but less accurate (no audio path goes
-// there). PortableMathF gives the float versions through the double ones. DspTests pins a checksum
-// of many results, the same on every platform.
+// Exp and 2^x (so Exp2, Exp10 and Pow) are table-driven (Tang's method: no division); the rest are
+// fdlibm's. Accuracy, measured against 200-bit references: Exp, Exp2, Exp10, Pow, Log2 and Log10
+// within 0.51 ulp (0.63 for subnormal results); Log, Log1p, Expm1, Sin, Cos, Tan, Atan under 0.8 ulp;
+// Atan2 1.2, Asinh 1.3, Tanh 1.8. Sin, Cos and Tan are that accurate for |x| up to 2^19·π/2 (about
+// 8e5); beyond, the argument is first reduced modulo the double nearest 2π (exact, so still the same
+// bits everywhere, but less accurate; no audio path goes there). PortableMathF gives the float
+// versions through the double ones. Speed, per call on x64: Exp, Exp2, Exp10 and Pow(2 or 10, y) as
+// fast as glibc's or faster; Log, Sin, Cos, Tan, Tanh, Atan within 10–40 %; Log2, Log10 and a
+// general Pow 2–4 times glibc's (one division in series); the float versions about twice glibc's
+// float functions.
 //
-// Ported from fdlibm 5.3 (e_exp.c, e_log.c, e_pow.c, k_sin.c, k_cos.c, k_tan.c, e_rem_pio2.c,
-// s_expm1.c, s_tanh.c, s_atan.c, e_atan2.c), whose notice follows:
+// Ported from fdlibm 5.3 (e_log.c, e_pow.c, k_sin.c, k_cos.c, k_tan.c, e_rem_pio2.c, s_expm1.c,
+// s_log1p.c, s_asinh.c, s_tanh.c, s_atan.c, e_atan2.c), whose notice follows:
 //
 //   Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
 //   Developed at SunSoft, a Sun Microsystems, Inc. business.
@@ -332,6 +338,115 @@ namespace NeoBuzz.Dsp
             }
             if (k == 0) return f - s * (f - r);
             return dk * Ln2Hi - ((s * (f - r) - dk * Ln2Lo) - f);
+        }
+
+        /// <summary>ln(1 + x), accurate near 0.</summary>
+        public static double Log1p(double x)
+        {
+            int hx = Hi(x);
+            int ax = hx & 0x7fffffff;
+            double f = 0, c = 0, u;
+            int hu = 0;
+            int k = 1;
+            if (hx < 0x3FDA827A)
+            {
+                // x < 0.41422.
+                if (ax >= 0x3ff00000)
+                {
+                    // x ≤ −1.
+                    if (x == -1.0) return double.NegativeInfinity;
+                    return double.NaN;
+                }
+                if (ax < 0x3e200000)
+                {
+                    // |x| < 2^-29.
+                    if (ax < 0x3c900000) return x;
+                    return x - x * x * 0.5;
+                }
+                if (hx > 0 || hx <= unchecked((int)0xbfd2bec3))
+                {
+                    // −0.2929 < x < 0.41422.
+                    k = 0;
+                    f = x;
+                    hu = 1;
+                }
+            }
+            if (hx >= 0x7ff00000) return x + x;
+            if (k != 0)
+            {
+                if (hx < 0x43400000)
+                {
+                    u = 1.0 + x;
+                    hu = Hi(u);
+                    k = (hu >> 20) - 1023;
+                    c = k > 0 ? 1.0 - (u - x) : x - (u - 1.0);   // the rounding of 1 + x
+                    c /= u;
+                }
+                else
+                {
+                    u = x;
+                    hu = Hi(u);
+                    k = (hu >> 20) - 1023;
+                    c = 0;
+                }
+                hu &= 0x000fffff;
+                if (hu < 0x6a09e)
+                {
+                    u = SetHi(u, hu | 0x3ff00000);   // u
+                }
+                else
+                {
+                    k += 1;
+                    u = SetHi(u, hu | 0x3fe00000);   // u/2
+                    hu = (0x00100000 - hu) >> 2;
+                }
+                f = u - 1.0;
+            }
+            double hfsq = 0.5 * f * f;
+            double rr;
+            if (hu == 0)
+            {
+                // |f| < 2^-20.
+                if (f == 0.0)
+                {
+                    if (k == 0) return 0.0;
+                    c += k * Ln2Lo;
+                    return k * Ln2Hi + c;
+                }
+                rr = hfsq * (1.0 - 0.66666666666666666 * f);
+                if (k == 0) return f - rr;
+                return k * Ln2Hi - ((rr - (k * Ln2Lo + c)) - f);
+            }
+            double s = f / (2.0 + f);
+            double z = s * s;
+            rr = z * (Lg1 + z * (Lg2 + z * (Lg3 + z * (Lg4 + z * (Lg5 + z * (Lg6 + z * Lg7))))));
+            if (k == 0) return f - (hfsq - s * (hfsq + rr));
+            return k * Ln2Hi - ((hfsq - (s * (hfsq + rr) + (k * Ln2Lo + c))) - f);
+        }
+
+        /// <summary>asinh(x) = ln(x + sqrt(x² + 1)).</summary>
+        public static double Asinh(double x)
+        {
+            int hx = Hi(x);
+            int ix = hx & 0x7fffffff;
+            if (ix >= 0x7ff00000) return x + x;   // ±∞, NaN
+            if (ix < 0x3e300000) return x;        // |x| < 2^-28
+            double w, t;
+            if (ix > 0x41b00000)
+            {
+                w = Log(Math.Abs(x)) + 6.93147180559945286227e-01;   // |x| > 2^28: ln 2|x|
+            }
+            else if (ix > 0x40000000)
+            {
+                t = Math.Abs(x);                                      // 2 < |x| ≤ 2^28
+                w = Log(2.0 * t + 1.0 / (Math.Sqrt(x * x + 1.0) + t));
+            }
+            else
+            {
+                t = x * x;                                            // |x| ≤ 2
+                w = Log1p(Math.Abs(x) + t / (1.0 + Math.Sqrt(1.0 + t)));
+            }
+            return hx > 0 ? w : -w;
         }
 
         // ---- log2 in extra precision, 2^x, pow (e_pow.c) -----------------------------------------

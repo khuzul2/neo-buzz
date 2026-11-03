@@ -27,10 +27,10 @@ namespace NeoBuzz.Drive
             return a + PortableMath.Log(1 + PortableMath.Exp(-2 * a)) - 0.6931471805599453;
         }
 
-        static double Asinh(double x) => Math.Asinh(x);
+        static double Asinh(double x) => PortableMath.Asinh(x);
 
         /// <summary>∫ asinh = x·asinh(x) − √(x² + 1) + 1.</summary>
-        static double AsinhIntegral(double x) => x * Math.Asinh(x) - Math.Sqrt(x * x + 1) + 1;
+        static double AsinhIntegral(double x) => x * PortableMath.Asinh(x) - Math.Sqrt(x * x + 1) + 1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public double F(double x)
