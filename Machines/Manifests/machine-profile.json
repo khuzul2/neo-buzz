@@ -4,13 +4,15 @@
   "AudioBlock": {
    "gear": "AudioBlock",
    "kind": "generator",
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/AudioBlock.NET.dll",
     "managed": true,
     "min_tracks": 0,
     "max_tracks": 0,
-    "takes_midi": false
+    "takes_midi": false,
+    "note_input": "none",
+    "pitch_offset": 0
    },
    "parameters": 1,
    "track_parameters": 0,
@@ -50,7 +52,10 @@
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 16,
-    "note_parameter": "Note"
+    "note_parameter": "Note",
+    "note_input": "tracks",
+    "pitch_offset": 0,
+    "polyphony": 1
    },
    "parameters": 12,
    "track_parameters": 0,
@@ -60,10 +65,11 @@
     "input": "tracks",
     "pitched": true,
     "pitch_offset": 0,
-    "cents": 9.8,
+    "cents": 8.4,
     "heard": {
      "A4": 69.12,
-     "A3": 57.07
+     "A3": 57.06,
+     "A5": 81.07
     },
     "polyphony": 1,
     "polyphony_levels": {
@@ -79,7 +85,7 @@
     "sample_peak_dbfs": -13.84,
     "true_peak_dbtp": -13.75
    },
-   "cpu_ms_per_s": 17.3,
+   "cpu_ms_per_s": 14.0,
    "type": "monosynth",
    "extremes": {
     "min": {
@@ -91,7 +97,7 @@
      "sample_peak_dbfs": 0.33
     }
    },
-   "seconds": 2.1,
+   "seconds": 1.8,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -104,7 +110,7 @@
    "gear": "BTDSys PeerChord",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.06,
+   "load_seconds": 0.05,
    "gear_info": {
     "file": "Generators/BTDSys PeerChord.x64.dll",
     "managed": false,
@@ -134,7 +140,7 @@
    "gear": "Connection Mixer Console",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/Connection Mixer Console.NET.dll",
     "managed": true,
@@ -325,10 +331,10 @@
      "filter or EQ"
     ]
    },
-   "cpu_ms_per_s": 19.9,
+   "cpu_ms_per_s": 19.4,
    "type": "modulation",
    "extremes": {},
-   "seconds": 1.3,
+   "seconds": 1.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -340,13 +346,16 @@
   "FSM Infector": {
    "gear": "FSM Infector",
    "kind": "generator",
-   "load_seconds": 0.45,
+   "load_seconds": 0.44,
    "gear_info": {
     "file": "Generators/FSM Infector.x64.dll",
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 12,
-    "note_parameter": "Note"
+    "note_parameter": "Note",
+    "note_input": "tracks",
+    "pitch_offset": 12,
+    "polyphony": 12
    },
    "parameters": 38,
    "track_parameters": 2,
@@ -356,10 +365,10 @@
     "input": "tracks",
     "pitched": true,
     "pitch_offset": 12,
-    "cents": -3.8,
+    "cents": -3.6,
     "heard": {
-     "A4": 56.95,
-     "A3": 44.95,
+     "A4": 56.96,
+     "A3": 44.94,
      "A5": 68.99
     },
     "polyphony_note": "one voice per track, up to its 12 tracks",
@@ -377,7 +386,7 @@
     "sample_peak_dbfs": -5.74,
     "true_peak_dbtp": -5.73
    },
-   "cpu_ms_per_s": 18.5,
+   "cpu_ms_per_s": 17.4,
    "type": "polysynth",
    "extremes": {
     "min": {
@@ -389,7 +398,7 @@
      "sample_peak_dbfs": null
     }
    },
-   "seconds": 3.5,
+   "seconds": 3.3,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -407,7 +416,10 @@
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 8,
-    "note_parameter": "Pitch limit"
+    "note_parameter": "Pitch limit",
+    "note_input": "tracks",
+    "pitch_offset": 0,
+    "polyphony": 1
    },
    "parameters": 0,
    "track_parameters": 12,
@@ -417,9 +429,10 @@
     "input": "tracks",
     "pitched": true,
     "pitch_offset": 0,
-    "cents": 0.3,
+    "cents": 0.5,
     "heard": {
      "A4": 69.0,
+     "A3": 57.01,
      "A5": 81.0
     },
     "polyphony": 1,
@@ -436,10 +449,10 @@
     "sample_peak_dbfs": -0.89,
     "true_peak_dbtp": -0.7
    },
-   "cpu_ms_per_s": 12.5,
+   "cpu_ms_per_s": 14.5,
    "type": "monosynth",
    "extremes": {},
-   "seconds": 1.0,
+   "seconds": 0.9,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -491,7 +504,7 @@
      "delay"
     ]
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 0.3,
    "type": "delay",
    "extremes": {
     "min": {
@@ -565,7 +578,7 @@
      "sample_peak_dbfs": -26.75
     }
    },
-   "seconds": 1.2,
+   "seconds": 1.1,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -842,7 +855,9 @@
     "file": "Generators/Intoxicat ACloud15.dll",
     "managed": false,
     "min_tracks": 0,
-    "max_tracks": 0
+    "max_tracks": 0,
+    "note_input": "none",
+    "pitch_offset": 0
    },
    "parameters": 25,
    "track_parameters": 0,
@@ -862,7 +877,7 @@
      "sample_peak_dbfs": null
     }
    },
-   "seconds": 8.0,
+   "seconds": 7.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -876,13 +891,16 @@
   "Jeskola Bass": {
    "gear": "Jeskola Bass",
    "kind": "generator",
-   "load_seconds": 0.03,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/Jeskola Bass.dll",
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 4,
-    "note_parameter": "Note"
+    "note_parameter": "Note",
+    "note_input": "tracks",
+    "pitch_offset": 0,
+    "polyphony": 4
    },
    "parameters": 2,
    "track_parameters": 3,
@@ -905,7 +923,7 @@
     "sample_peak_dbfs": 0,
     "true_peak_dbtp": 1.97
    },
-   "cpu_ms_per_s": 10.5,
+   "cpu_ms_per_s": 12.8,
    "type": "unpitched",
    "extremes": {
     "min": {
@@ -937,7 +955,10 @@
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 8,
-    "note_parameter": "Note"
+    "note_parameter": "Note",
+    "note_input": "tracks",
+    "pitch_offset": 0,
+    "polyphony": 1
    },
    "parameters": 0,
    "track_parameters": 5,
@@ -961,7 +982,7 @@
     "sample_peak_dbfs": -0.27,
     "true_peak_dbtp": -0.03
    },
-   "cpu_ms_per_s": 10.1,
+   "cpu_ms_per_s": 11.5,
    "type": "unpitched",
    "extremes": {},
    "seconds": 0.7,
@@ -982,7 +1003,10 @@
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 8,
-    "note_parameter": "Note"
+    "note_parameter": "Note",
+    "note_input": "tracks",
+    "pitch_offset": 0,
+    "polyphony": 1
    },
    "parameters": 0,
    "track_parameters": 5,
@@ -1006,7 +1030,7 @@
     "sample_peak_dbfs": -2.51,
     "true_peak_dbtp": -2.51
    },
-   "cpu_ms_per_s": 10.5,
+   "cpu_ms_per_s": 11.4,
    "type": "unpitched",
    "extremes": {},
    "seconds": 0.7,
@@ -1072,7 +1096,7 @@
      "sample_peak_dbfs": -10.7
     }
    },
-   "seconds": 1.7,
+   "seconds": 1.6,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -1212,7 +1236,7 @@
   "Jeskola Distortion": {
    "gear": "Jeskola Distortion",
    "kind": "effect",
-   "load_seconds": 0.03,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Effects/Jeskola Distortion.dll",
     "managed": false,
@@ -1263,7 +1287,7 @@
      "sample_peak_dbfs": -26.7
     }
    },
-   "seconds": 3.9,
+   "seconds": 3.5,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -1325,7 +1349,7 @@
      "sample_peak_dbfs": -2.71
     }
    },
-   "seconds": 4.7,
+   "seconds": 4.3,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -1339,7 +1363,7 @@
   "Jeskola Filter": {
    "gear": "Jeskola Filter",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Jeskola Filter.dll",
     "managed": false,
@@ -1514,7 +1538,7 @@
      "sample_peak_dbfs": 149.15
     }
    },
-   "seconds": 1.7,
+   "seconds": 1.8,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [
@@ -1593,7 +1617,7 @@
    "gear": "Jeskola Live",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Generators/Jeskola Live.NET.dll",
     "managed": true,
@@ -1692,7 +1716,7 @@
      "delay"
     ]
    },
-   "cpu_ms_per_s": 15.8,
+   "cpu_ms_per_s": 15.3,
    "type": "delay",
    "extremes": {
     "min": {
@@ -1721,7 +1745,9 @@
     "file": "Generators/Jeskola Noise Generator.dll",
     "managed": false,
     "min_tracks": 1,
-    "max_tracks": 8
+    "max_tracks": 8,
+    "note_input": "none",
+    "pitch_offset": 0
    },
    "parameters": 0,
    "track_parameters": 5,
@@ -1747,7 +1773,7 @@
    "gear": "Jeskola Note Matrix",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Generators/Jeskola Note Matrix.NET.dll",
     "managed": true,
@@ -1782,7 +1808,10 @@
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 8,
-    "note_parameter": "Note"
+    "note_parameter": "Note",
+    "note_input": "tracks",
+    "pitch_offset": 0,
+    "polyphony": 1
    },
    "parameters": 10,
    "track_parameters": 0,
@@ -1812,7 +1841,7 @@
     "sample_peak_dbfs": -0.33,
     "true_peak_dbtp": -0.3
    },
-   "cpu_ms_per_s": 12.0,
+   "cpu_ms_per_s": 12.3,
    "type": "monosynth",
    "extremes": {
     "min": {
@@ -1824,7 +1853,7 @@
      "sample_peak_dbfs": -61.89
     }
    },
-   "seconds": 1.2,
+   "seconds": 1.1,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -1875,7 +1904,7 @@
      "reverb"
     ]
    },
-   "cpu_ms_per_s": 18.8,
+   "cpu_ms_per_s": 20.7,
    "type": "reverb",
    "extremes": {
     "min": {
@@ -1979,7 +2008,7 @@
      "sample_peak_dbfs": -17.27
     }
    },
-   "seconds": 3.9,
+   "seconds": 3.6,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -1991,7 +2020,7 @@
   "Jeskola Stereo Reverb": {
    "gear": "Jeskola Stereo Reverb",
    "kind": "effect",
-   "load_seconds": 0.03,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Effects/Jeskola Stereo Reverb.dll",
     "managed": false,
@@ -2041,7 +2070,7 @@
      "sample_peak_dbfs": -17.91
     }
    },
-   "seconds": 3.9,
+   "seconds": 3.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -2053,13 +2082,15 @@
   "Jeskola Tracker": {
    "gear": "Jeskola Tracker",
    "kind": "generator",
-   "load_seconds": 0.03,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/Jeskola Tracker.dll",
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 16,
-    "note_parameter": "Note"
+    "note_parameter": "Note",
+    "note_input": "none",
+    "pitch_offset": 0
    },
    "parameters": 1,
    "track_parameters": 0,
@@ -2093,12 +2124,14 @@
   "Jeskola Trilok": {
    "gear": "Jeskola Trilok",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/Jeskola Trilok.dll",
     "managed": false,
     "min_tracks": 0,
-    "max_tracks": 0
+    "max_tracks": 0,
+    "note_input": "none",
+    "pitch_offset": 0
    },
    "parameters": 4,
    "track_parameters": 0,
@@ -2118,7 +2151,7 @@
      "sample_peak_dbfs": null
     }
    },
-   "seconds": 0.4,
+   "seconds": 0.5,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -2132,7 +2165,7 @@
   "Jeskola Wave Shaper": {
    "gear": "Jeskola Wave Shaper",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Jeskola Wave Shaper.dll",
     "managed": false,
@@ -2172,7 +2205,7 @@
      "distortion"
     ]
    },
-   "cpu_ms_per_s": 12.8,
+   "cpu_ms_per_s": 13.1,
    "type": "reverb",
    "extremes": {},
    "seconds": 1.5,
@@ -2227,7 +2260,7 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 3.5,
+   "cpu_ms_per_s": 1.9,
    "type": "utility",
    "extremes": {
     "min": {
@@ -2289,7 +2322,7 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 4.6,
+   "cpu_ms_per_s": 3.6,
    "type": "EQ",
    "extremes": {
     "min": {
@@ -2301,7 +2334,7 @@
      "sample_peak_dbfs": 1.13
     }
    },
-   "seconds": 1.6,
+   "seconds": 1.5,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -2365,7 +2398,7 @@
      "sample_peak_dbfs": 220.9
     }
    },
-   "seconds": 2.9,
+   "seconds": 2.8,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [
@@ -2393,7 +2426,7 @@
    "effect": {
     "silent": true
    },
-   "cpu_ms_per_s": 28.3,
+   "cpu_ms_per_s": 26.1,
    "type": "effect (silent at defaults)",
    "extremes": {
     "min": {
@@ -2405,7 +2438,7 @@
      "sample_peak_dbfs": -38.94
     }
    },
-   "seconds": 1.8,
+   "seconds": 1.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -2419,7 +2452,7 @@
   "Joachims Mars filter 2": {
    "gear": "Joachims Mars filter 2",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Joachims Mars filter 2.dll",
     "managed": false,
@@ -2459,7 +2492,7 @@
      "filter or EQ"
     ]
    },
-   "cpu_ms_per_s": 8.2,
+   "cpu_ms_per_s": 6.8,
    "type": "distortion",
    "extremes": {
     "min": {
@@ -2471,7 +2504,7 @@
      "sample_peak_dbfs": -7.96
     }
    },
-   "seconds": 1.4,
+   "seconds": 1.3,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -2483,7 +2516,7 @@
   "Joachims Neptune 1.2": {
    "gear": "Joachims Neptune 1.2",
    "kind": "effect",
-   "load_seconds": 0.03,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Effects/Joachims Neptune 1.2.dll",
     "managed": false,
@@ -2524,7 +2557,7 @@
      "filter or EQ"
     ]
    },
-   "cpu_ms_per_s": 8.7,
+   "cpu_ms_per_s": 8.2,
    "type": "delay",
    "extremes": {
     "min": {
@@ -2536,7 +2569,7 @@
      "sample_peak_dbfs": -98.11
     }
    },
-   "seconds": 1.8,
+   "seconds": 1.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -2548,7 +2581,7 @@
   "Joachims Saturn 1.4": {
    "gear": "Joachims Saturn 1.4",
    "kind": "effect",
-   "load_seconds": 0.03,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Effects/Joachims Saturn 1.4.dll",
     "managed": false,
@@ -2586,7 +2619,7 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 9.5,
+   "cpu_ms_per_s": 8.3,
    "type": "utility",
    "extremes": {
     "min": {
@@ -2598,7 +2631,7 @@
      "sample_peak_dbfs": 14.97
     }
    },
-   "seconds": 2.6,
+   "seconds": 2.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -2646,7 +2679,10 @@
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 16,
-    "note_parameter": "Note"
+    "note_parameter": "Note",
+    "note_input": "tracks",
+    "pitch_offset": 12,
+    "polyphony": 1
    },
    "parameters": 38,
    "track_parameters": 0,
@@ -2656,11 +2692,11 @@
     "input": "tracks",
     "pitched": true,
     "pitch_offset": 12,
-    "cents": 4.4,
+    "cents": 4.3,
     "heard": {
      "A4": 57.04,
      "A3": 45.04,
-     "A5": 69.06
+     "A5": 69.05
     },
     "polyphony": 1,
     "polyphony_levels": {
@@ -2676,7 +2712,7 @@
     "sample_peak_dbfs": -1.85,
     "true_peak_dbtp": -1.84
    },
-   "cpu_ms_per_s": 15.1,
+   "cpu_ms_per_s": 15.0,
    "type": "monosynth",
    "extremes": {
     "min": {
@@ -2688,7 +2724,7 @@
      "sample_peak_dbfs": -48.42
     }
    },
-   "seconds": 2.7,
+   "seconds": 2.5,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -2706,7 +2742,10 @@
     "managed": false,
     "min_tracks": 3,
     "max_tracks": 3,
-    "note_parameter": "Note0"
+    "note_parameter": "Note0",
+    "note_input": "tracks",
+    "pitch_offset": -13,
+    "polyphony": 3
    },
    "parameters": 2,
    "track_parameters": 9,
@@ -2735,7 +2774,7 @@
     "sample_peak_dbfs": -9.03,
     "true_peak_dbtp": -7.95
    },
-   "cpu_ms_per_s": 12.1,
+   "cpu_ms_per_s": 12.6,
    "type": "polysynth",
    "extremes": {
     "min": {
@@ -2747,7 +2786,7 @@
      "sample_peak_dbfs": 3.01
     }
    },
-   "seconds": 1.3,
+   "seconds": 1.2,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -2810,7 +2849,7 @@
      "sample_peak_dbfs": -32.72
     }
    },
-   "seconds": 0.6,
+   "seconds": 0.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -2828,7 +2867,10 @@
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 16,
-    "note_parameter": "Note"
+    "note_parameter": "Note",
+    "note_input": "tracks",
+    "pitch_offset": 0,
+    "polyphony": 1
    },
    "parameters": 4,
    "track_parameters": 2,
@@ -2859,7 +2901,7 @@
     "sample_peak_dbfs": -12.71,
     "true_peak_dbtp": -12.7
    },
-   "cpu_ms_per_s": 12.5,
+   "cpu_ms_per_s": 13.4,
    "type": "monosynth",
    "extremes": {
     "min": {
@@ -2871,7 +2913,7 @@
      "sample_peak_dbfs": null
     }
    },
-   "seconds": 1.6,
+   "seconds": 1.4,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -2926,7 +2968,7 @@
    "cpu_ms_per_s": 0.0,
    "type": "utility",
    "extremes": {},
-   "seconds": 1.3,
+   "seconds": 1.4,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -3011,7 +3053,7 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 8.9,
+   "cpu_ms_per_s": 17.4,
    "type": "utility",
    "extremes": {
     "min": {
@@ -3023,7 +3065,7 @@
      "sample_peak_dbfs": -32.72
     }
    },
-   "seconds": 1.5,
+   "seconds": 1.6,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -3090,7 +3132,7 @@
      "sample_peak_dbfs": 14.61
     }
    },
-   "seconds": 1.1,
+   "seconds": 1.4,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -3145,7 +3187,7 @@
      "distortion"
     ]
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 11.6,
    "type": "distortion",
    "extremes": {
     "min": {
@@ -3157,7 +3199,7 @@
      "sample_peak_dbfs": 3.69
     }
    },
-   "seconds": 1.4,
+   "seconds": 1.6,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -3224,7 +3266,7 @@
      "sample_peak_dbfs": -8.71
     }
    },
-   "seconds": 1.7,
+   "seconds": 1.6,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -3279,7 +3321,7 @@
     "sample_peak_dbfs": -20.98,
     "true_peak_dbtp": -20.98
    },
-   "cpu_ms_per_s": 17.0,
+   "cpu_ms_per_s": 20.9,
    "type": "polysynth",
    "extremes": {
     "min": {
@@ -3291,7 +3333,7 @@
      "sample_peak_dbfs": 6.95
     }
    },
-   "seconds": 2.4,
+   "seconds": 2.3,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -3391,11 +3433,11 @@
     "input": "midi",
     "pitched": true,
     "pitch_offset": 0,
-    "cents": 0.0,
+    "cents": -0.2,
     "heard": {
-     "A4": 69.0,
+     "A4": 68.99,
      "A3": 57.01,
-     "A5": 81.0
+     "A5": 80.99
     },
     "polyphony": 8,
     "polyphony_levels": {
@@ -3411,7 +3453,7 @@
     "sample_peak_dbfs": -14.43,
     "true_peak_dbtp": -14.14
    },
-   "cpu_ms_per_s": 2.7,
+   "cpu_ms_per_s": 0.8,
    "type": "polysynth",
    "extremes": {
     "min": {
@@ -3423,7 +3465,7 @@
      "sample_peak_dbfs": -7.38
     }
    },
-   "seconds": 2.7,
+   "seconds": 2.5,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -3502,7 +3544,7 @@
   "Neo Verb": {
    "gear": "Neo Verb",
    "kind": "effect",
-   "load_seconds": 0.02,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/Neo Verb.NET.dll",
     "managed": true,
@@ -3545,7 +3587,7 @@
      "reverb"
     ]
    },
-   "cpu_ms_per_s": 21.3,
+   "cpu_ms_per_s": 22.8,
    "type": "reverb",
    "extremes": {
     "min": {
@@ -3569,7 +3611,7 @@
   "Neo Wave": {
    "gear": "Neo Wave",
    "kind": "generator",
-   "load_seconds": 0.27,
+   "load_seconds": 0.26,
    "gear_info": {
     "file": "Generators/Neo Wave.NET.dll",
     "managed": true,
@@ -3610,7 +3652,7 @@
     "sample_peak_dbfs": -16.96,
     "true_peak_dbtp": -16.96
    },
-   "cpu_ms_per_s": 17.6,
+   "cpu_ms_per_s": 18.8,
    "type": "polysynth",
    "extremes": {
     "min": {
@@ -3622,7 +3664,7 @@
      "sample_peak_dbfs": -5.03
     }
    },
-   "seconds": 3.0,
+   "seconds": 2.9,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -3640,7 +3682,10 @@
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 1,
-    "note_parameter": "Note"
+    "note_parameter": "Note",
+    "note_input": "tracks",
+    "pitch_offset": 0,
+    "polyphony": 1
    },
    "parameters": 8,
    "track_parameters": 0,
@@ -3661,7 +3706,7 @@
     "sample_peak_dbfs": -1.6,
     "true_peak_dbtp": -1.57
    },
-   "cpu_ms_per_s": 10.9,
+   "cpu_ms_per_s": 11.3,
    "type": "unpitched",
    "extremes": {
     "min": {
@@ -3673,7 +3718,7 @@
      "sample_peak_dbfs": 4.07
     }
    },
-   "seconds": 0.9,
+   "seconds": 0.8,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -3723,7 +3768,7 @@
      "filter or EQ"
     ]
    },
-   "cpu_ms_per_s": 1.0,
+   "cpu_ms_per_s": 0.4,
    "type": "filter or EQ",
    "extremes": {
     "min": {
@@ -3735,7 +3780,7 @@
      "sample_peak_dbfs": -32.72
     }
    },
-   "seconds": 1.4,
+   "seconds": 1.3,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -3747,7 +3792,7 @@
   "Oomek Masterizer": {
    "gear": "Oomek Masterizer",
    "kind": "effect",
-   "load_seconds": 0.03,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Effects/Oomek Masterizer.x64.dll",
     "managed": false,
@@ -3797,7 +3842,7 @@
      "sample_peak_dbfs": -3.62
     }
    },
-   "seconds": 2.0,
+   "seconds": 1.8,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -4914,7 +4959,9 @@
     "file": "Generators/Polac Audio In.x64.dll",
     "managed": false,
     "min_tracks": 0,
-    "max_tracks": 0
+    "max_tracks": 0,
+    "note_input": "none",
+    "pitch_offset": 0
    },
    "parameters": 1,
    "track_parameters": 0,
@@ -4978,7 +5025,7 @@
    "gear": "Polac MIDI Bus II",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.04,
+   "load_seconds": 0.05,
    "gear_info": {
     "file": "Generators/Polac MIDI Bus II.x64.dll",
     "managed": false,
@@ -5020,7 +5067,7 @@
    "inferred": 0,
    "from_description": 0,
    "type": "control",
-   "seconds": 0.2,
+   "seconds": 0.1,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -5073,7 +5120,7 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 1.5,
+   "cpu_ms_per_s": 1.7,
    "type": "utility",
    "extremes": {
     "min": {
@@ -5135,7 +5182,7 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 0.9,
+   "cpu_ms_per_s": 6.3,
    "type": "utility",
    "extremes": {
     "min": {
@@ -5147,7 +5194,7 @@
      "sample_peak_dbfs": -32.72
     }
    },
-   "seconds": 1.7,
+   "seconds": 1.8,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -5159,7 +5206,7 @@
   "Polac VST 1.1": {
    "gear": "Polac VST 1.1",
    "kind": "effect",
-   "load_seconds": 0.04,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Effects/Polac VST 1.1.x64.dll",
     "managed": false,
@@ -5198,7 +5245,7 @@
      "utility"
     ]
    },
-   "cpu_ms_per_s": 12.4,
+   "cpu_ms_per_s": 13.3,
    "type": "utility",
    "extremes": {
     "min": {
@@ -5210,7 +5257,7 @@
      "sample_peak_dbfs": -32.72
     }
    },
-   "seconds": 3.3,
+   "seconds": 3.1,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -5228,7 +5275,9 @@
     "managed": false,
     "min_tracks": 8,
     "max_tracks": 128,
-    "note_parameter": "Note"
+    "note_parameter": "Note",
+    "note_input": "none",
+    "pitch_offset": 0
    },
    "parameters": 5,
    "track_parameters": 3,
@@ -5248,7 +5297,7 @@
      "sample_peak_dbfs": null
     }
    },
-   "seconds": 2.7,
+   "seconds": 2.6,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -5292,13 +5341,15 @@
   "ReBuzz Audio In": {
    "gear": "ReBuzz Audio In",
    "kind": "generator",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Generators/ReBuzz Audio In.NET.dll",
     "managed": true,
     "min_tracks": 0,
     "max_tracks": 0,
-    "takes_midi": false
+    "takes_midi": false,
+    "note_input": "none",
+    "pitch_offset": 0
    },
    "parameters": 1,
    "track_parameters": 0,
@@ -5332,7 +5383,7 @@
   "ReBuzz Audio Out": {
    "gear": "ReBuzz Audio Out",
    "kind": "effect",
-   "load_seconds": 0.0,
+   "load_seconds": 0.01,
    "gear_info": {
     "file": "Effects/ReBuzz Audio Out.NET.dll",
     "managed": true,
@@ -5383,7 +5434,7 @@
      "sample_peak_dbfs": -32.72
     }
    },
-   "seconds": 0.6,
+   "seconds": 0.7,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],
@@ -5432,7 +5483,9 @@
     "min_tracks": 1,
     "max_tracks": 32,
     "note_parameter": "Note",
-    "takes_midi": false
+    "takes_midi": false,
+    "note_input": "none",
+    "pitch_offset": 0
    },
    "parameters": 0,
    "track_parameters": 4,
@@ -5462,7 +5515,9 @@
     "file": "Generators/Rout 909.dll",
     "managed": false,
     "min_tracks": 1,
-    "max_tracks": 1
+    "max_tracks": 1,
+    "note_input": "none",
+    "pitch_offset": 0
    },
    "parameters": 29,
    "track_parameters": 0,
@@ -5482,7 +5537,7 @@
      "sample_peak_dbfs": null
     }
    },
-   "seconds": 1.3,
+   "seconds": 1.1,
    "platform": "windows",
    "date": "2026-11-03",
    "problems": [],

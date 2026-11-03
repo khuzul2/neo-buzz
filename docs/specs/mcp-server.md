@@ -667,7 +667,12 @@ The successors of §12.5 still to build (Neo Delay, Ensemble, Filter, Drums, Sam
   - choices and switches.
   Where the texts are bare numbers, a unit can come from the name or description (`in ms`, `Attack ms`, `(1 ms – 4 s exponential)`, `0 = 0 dBFS, 60 = −60 dBFS`, `0=Sine, 1=Triangle…`), marked `confidence: description`. Descriptions whose anchors contradict the texts (`0 = slow (0.1 Hz)` over texts 0…100) give no unit. On the Neo machines, whose manifests are exact, the inference reproduces 460 of 461 parameters (the other is a two-value choice read as numbers).
 - **Generators.** An A4 sent as MIDI, then into the Note track parameter (or the other way round when the machine has no `MidiNote`); if both are silent, again with a sine rooted on A4 in wave slot 1 (samplers, trackers). The `pitch` metric on A3, A4 and A5 gives the pitch convention: an offset when all three agree within 0.6 semitones, else unpitched. Chords of 1, 2, 4 and 8 notes (a tritone, fourth or seventh apart) give the polyphony: each voice must add 1.5 dB. Then level, true peak and CPU.
-- **Effects.** A Neo Poly feeds it white noise (0.5 s, then 3 s to ring out) and then a 440 Hz sine at −6 and −26 dB, with probes on both sides. From those, its gain, latency (first sample), tail (until 60 dB down), echoes, output correlation, spectrum change (third octaves, level-matched), THD over the input's, level dependence and movement. They give traits, the first of which is its type: reverb, delay, distortion, dynamics, modulation, filter or EQ, stereo, utility. An effect that does nothing at its defaults is typed by its parameters' units (frequencies and gains: EQ; threshold or ratio: dynamics).
+- **Effects.** A Neo Poly feeds it, with probes on both sides:
+  - white noise for 0.5 s: gain, latency (first sample), output correlation, spectrum change (third octaves, level-matched);
+  - a 20 ms noise click with 3 s to ring out: the tail (until 60 dB down) and echoes (from 60 ms on, a 10 dB rise from a dip);
+  - a 440 Hz sine at −6 and −26 dB: THD over the input's, level dependence, movement.
+
+  These give traits, the first of which is its type: delay (two echoes, or one after a near-silent gap), reverb (a long smooth tail), distortion, modulation, dynamics (level dependence, unless the output moves on its own), filter or EQ, stereo, utility. An effect that does nothing at its defaults is typed by its parameters' units (frequencies and gains: EQ; threshold or ratio: dynamics).
 - **Health.** Load failures, crashes and hangs, NaN or a runaway level (over +24 dBFS) at the defaults and with every parameter at its minimum and at its maximum, sound from silence, silence from a note. CPU is milliseconds of render time per second of audio over a render without the machine (rough: a few ms/s of noise).
 
 **Outputs.**
@@ -678,7 +683,7 @@ The successors of §12.5 still to build (Neo Delay, Ensemble, Filter, Drums, Sam
 | `Machines/Manifests/machine-profile.json` | The summary, keyed by gear: a run merges its machines into it and keeps the other platforms' |
 | `docs/machine-health.md` | Generated from the summary: unhealthy, warnings, generators, effects |
 
-`--repo .` writes all three. A Windows run's artifact merges in with `--merge <artifact folder> --repo .`, and `--report .` rewrites the report.
+`--repo .` writes all three. A Windows run's artifact merges in with `--merge <artifact folder> --repo .`, and `--report .` rewrites the report. The package job also prints its results into its log (`--pack`, gzipped base64 lines), and `--unpack <job log> --out <folder>` takes them back out where artifacts can't be fetched. Drafts keep the measurements, not the timings (CPU, load time vary run to run); the summary and the report have those. Render files are deleted once read.
 
 **Into Gear.** `ReBuzz.Host/AppGear.targets` (rebuzz-headless, the studio) and `build.ps1` step 5b (ReBuzz.exe's bin and the package, through `Copy-IntoGear`) copy the drafts beside the DLLs. There `MachineManifest.PathFor` finds them as it finds the Neo ones. Drafts of machines a host doesn't have are copied too, and ignored.
 
@@ -686,7 +691,7 @@ The successors of §12.5 still to build (Neo Delay, Ensemble, Filter, Drums, Sam
 - **Units.** Drafts map global and track parameters (`SongModel.Params`). A draft matches the machine's own texts first (`ParamInfo.TextsFirst`: "Off", "1/8"), then its mapping. `param_set` and `param_get` say `manifest: draft`. Values whose unit came from a description are `approximate`. `exact_units` stays for generated and curated manifests.
 - **Notes.** `notes_write`, `notes_read` and `notes_transform` go through `MachineNotes`. For `input: tracks` (from the manifest, or given), notes get a voice each (`TrackNotes.Allocate`), Note events go into the pattern's engine-played Note track columns, and offs at each end, a note to the pattern's end let go on its last tick. Velocity goes into a track parameter named like "velocity" if there is one. The track count rises when a chord needs it, in the same undo step. `pitch_offset` is added on the way in and taken off on the way out, so `notes_read` gives what was written. `apply_pitch_offset=false` and an explicit `input` are how the profiler measures. `midi_play` applies the offset too, and warns that live MIDI may not reach a tracks-only machine. `automation_read` leaves note columns out.
 - **`gear_list`** gives `type`, `summary`, `manifest` and `health` with `problems`: generated and curated first, then drafts, then the rest, unhealthy last. `machine_add` warns when the gear is unhealthy. `machine_describe` adds `gear_info` and `value_table`.
-- Songs: nothing a song saves changes meaning. Notes written to a tracks machine are ordinary Note column events; an old song plays as it did.
+- Songs: nothing a song saves changes meaning. Notes written to a tracks machine are ordinary Note column events (engine-played, as automation is), and an old song plays as it did. The Session View's piano roll edits MIDI columns, so it doesn't show them, and `notes_read` on such a machine doesn't show notes left in its MIDI column, which it never played.
 
 **Tests.**
 - `tools/test_machine_infer.py`: 24 inference cases from known tables.
@@ -699,16 +704,28 @@ The successors of §12.5 still to build (Neo Delay, Ensemble, Filter, Drums, Sam
   - the unhealthy flags and warning; every Pedal machine has a manifest.
 - Fork CI also runs the profiler on every portable machine (artifact `machine-profile-linux`), and the package job on everything in ReBuzz.exe's Gear (artifact `machine-profile-windows`, never failing the job).
 
-**Found on Linux (29 machines: 10 Neo, 19 Pedal).**
-- One unhealthy: **Pedal Plate** diverges at its default Decay (+26 dBFS on noise; studio-mvp.md S2 has the cause). It is listed last and warned about.
-- All seven pitched generators play A4 at 440 Hz as written (offset 0; Juno106 11 cents flat, its analog drift). **Pedal FM**'s pitch isn't followed by the analysis at its defaults, so it is drafted as unpitched.
-- Every Pedal synth takes notes only in its Note track parameter, none as MIDI: before U1, `notes_write` left them silent.
-- Chords through tracks are heard on Juno106 and FM. **Pedal M1** and **Pedal Tracker** play one voice of a chord: tier 3's multi-track note workaround.
-- Pedal M1 and Tracker are silent until wave slot 1 has a wave.
-- Pedal Peer Control makes no sound (a controller without the control flag).
-- 349 of the Pedal machines' 361 parameters got a mapping, 25 of them from descriptions. The other 12 have texts that say nothing (Drum Matrix's twelve "-" parameters).
+**Found.** 108 machines: 29 on Linux (10 Neo, 19 Pedal) and 89 in the Windows package's Gear (quick build: the 73 upstream machines, ReBuzz's own and the Neo ones). `docs/machine-health.md` has them all.
+- **Notes.** Apart from the three Neo synths, no generator in the package plays a MIDI note: every Pedal synth and every native one takes notes only in its Note track parameter. Before U1, `notes_write` left all of them silent.
+- **Pitch conventions.** Most pitched generators play A4 at 440 Hz as written (offset 0). Three don't:
+  - **FSM Infector** and **kibibu Green Milk** play an octave low (offset +12);
+  - **KrimZon AY-3-8910** plays 13 semitones high (offset −13).
+  `notes_write` corrects all three through their drafts. Juno106 is 11 cents flat (its analog drift).
+- **Unhealthy** (listed last by `gear_list`, warned about by `machine_add`):
+  - **Pedal Plate** diverges at its default Decay (+26 dBFS on noise; studio-mvp.md S2 has the cause);
+  - **Jeskola Flanger** runs away with every parameter at its minimum or at its maximum, **Jeskola Bass** and **Joachims Hyperion** at their maximum;
+  - **Info** doesn't load headless.
+- **The server bug it found.** Jeskola Bass 2 and 3 and Joachims Neptune made `render` fail ("infinity cannot be written as JSON"). Fixed: levels and loudness write `"inf"`, and every tool result replaces non-finite numbers.
+- **Chords** through tracks are heard on Juno106, FM, Infector and the AY-3-8910. **Pedal M1** and **Pedal Tracker** play one voice of a chord: tier 3's multi-track note workaround.
+- **Silent at the defaults**:
+  - Pedal M1, Tracker and Matilde Tracker2 until wave slot 1 has a wave; Jeskola Tracker and Polac VSTi even then (a wave or plugin to choose);
+  - Rout 909, Jeskola Noise Generator, Trilok and Intoxicat ACloud15, which have no Note parameter (triggers: U2);
+  - the audio inputs, MIDI output and controllers, as expected.
+- **Effects** type as expected: delays (Jeskola Delay, Cross Delay, NiNjA dElaY, FSM PanzerDelay, Joachims Neptune), reverbs (Jeskola Reverb, Stereo Reverb, Raverb, Neo Verb), choruses and flangers as modulation, Neo Drive and Jeskola Distortion as distortion. Latencies: Neo Limiter 99 samples (lookahead), Neo Drive 62 (oversampling), Pedal Gate 37.
+- **Parameters.** 349 of the Pedal machines' 361 parameters got a mapping, 25 of them from descriptions; 580 of the Windows machines' 629. The rest have texts that say nothing (Drum Matrix's twelve "-" parameters).
 
 **Left for U2** (§12.7):
+- pitch where the analysis hears none at the defaults: Jeskola Bass 1–3, Oomek Aggressor 303 and Pedal FM sound but read as unpitched (offset 0 assumed);
+- triggers for generators without a Note parameter (Rout 909, Jeskola Noise Generator, Trilok), and choosing a wave or plugin (Jeskola Tracker, Polac VSTi);
 - per-parameter sweeps and suggested roles;
 - swept-sine and impulse responses (a test-signal source);
 - velocity response and envelope length;

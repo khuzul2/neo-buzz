@@ -662,7 +662,7 @@
    "kind": "linear",
    "a": 0.0,
    "b": 239.0,
-   "description": "OSC2 Pulse Width Modulation Range",
+   "description": "OSC1 Pulse Width Modulation Range",
    "confidence": "values"
   },
   {
@@ -1161,7 +1161,7 @@
      100.0
     ]
    ],
-   "description": "OSC2 Pulse Width Modulation Offset",
+   "description": "OSC1 Pulse Width Modulation Offset",
    "confidence": "values"
   },
   {
@@ -4290,7 +4290,7 @@
      100.0
     ]
    ],
-   "description": "LFO2->Cutoff",
+   "description": "LFO1->Cutoff",
    "confidence": "values"
   },
   {
@@ -4820,7 +4820,7 @@
     "S'n'H 1",
     "S'n'H 2"
    ],
-   "description": "LFO2 Shape",
+   "description": "LFO1 Shape",
    "confidence": "values"
   },
   {
@@ -4850,7 +4850,7 @@
    "a": 0.080036,
    "b": 11.9977,
    "unit": "s",
-   "description": "Amplitude Decay",
+   "description": "Filter Decay",
    "confidence": "values"
   },
   {
@@ -4865,7 +4865,7 @@
    "a": -0.456774,
    "b": 99.543911,
    "unit": "%",
-   "description": "Amplitude Sustain",
+   "description": "Filter Sustain",
    "confidence": "values"
   },
   {
@@ -4880,7 +4880,7 @@
    "a": 0.080036,
    "b": 11.9977,
    "unit": "s",
-   "description": "Amplitude Rel",
+   "description": "Filter Release",
    "confidence": "values"
   },
   {

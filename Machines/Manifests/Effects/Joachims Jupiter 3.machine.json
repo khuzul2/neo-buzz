@@ -3854,7 +3854,7 @@
      15.5
     ]
    ],
-   "description": "Compressor: Output volume gain Mid",
+   "description": "Compressor: Output volume gain Low",
    "confidence": "values"
   },
   {
@@ -4381,7 +4381,7 @@
      100.0
     ]
    ],
-   "description": "Mid: A simple tube valve simulator",
+   "description": "Low: A simple tube valve simulator",
    "confidence": "values"
   },
   {
@@ -5465,7 +5465,7 @@
      15.5
     ]
    ],
-   "description": "Compressor: Output volume gain High",
+   "description": "Compressor: Output volume gain Low",
    "confidence": "values"
   },
   {
@@ -5992,7 +5992,7 @@
      100.0
     ]
    ],
-   "description": "High: A simple tube valve simulator",
+   "description": "Low: A simple tube valve simulator",
    "confidence": "values"
   },
   {

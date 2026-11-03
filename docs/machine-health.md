@@ -42,36 +42,36 @@ Machines that don't load, crash or hang the server, or put out NaN or a runaway 
 | Machine | Type | Notes in | Pitch offset | Voices | Level (LUFS, one note) | CPU ms/s | Health |
 |---|---|---|---|---|---|---|---|
 | AudioBlock | generator (silent at its defaults) | none |  |  |  |  | warn |
-| Bigyo Wood One | monosynth | tracks | +0 (+10 ct) | 1 | -28.1 | 17.3 | ok |
+| Bigyo Wood One | monosynth | tracks | +0 (+8 ct) | 1 | -28.1 | 14.0 | ok |
 | BTDSys PeerChord | control |  |  |  |  |  | ok |
 | Connection Mixer Console | control |  |  |  |  |  | ok |
 | DAWControl | control |  |  |  |  |  | ok |
 | EnvelopeBlock | control |  |  |  |  |  | ok |
-| FSM Infector | polysynth | tracks | +12 (-4 ct) | 12 | -26 | 18.5 | ok |
-| FSM KickXP | monosynth | tracks | +0 | 1 | -13.8 | 12.5 | ok |
+| FSM Infector | polysynth | tracks | +12 (-4 ct) | 12 | -26 | 17.4 | ok |
+| FSM KickXP | monosynth | tracks | +0 | 1 | -13.8 | 14.5 | ok |
 | GuitarChordBox | control |  |  |  |  |  | ok |
 | Info | unknown |  |  |  |  |  | unhealthy |
 | Intoxicat ACloud15 | generator (silent at its defaults) | none |  |  |  |  | warn |
-| Jeskola Bass | unpitched | tracks |  | 4 | -9 | 10.5 | unhealthy |
-| Jeskola Bass 2 | unpitched | tracks |  | 1 | -9.7 | 10.1 | ok |
-| Jeskola Bass 3 | unpitched | tracks |  | 1 | -10.9 | 10.5 | ok |
+| Jeskola Bass | unpitched | tracks |  | 4 | -9 | 12.8 | unhealthy |
+| Jeskola Bass 2 | unpitched | tracks |  | 1 | -9.7 | 11.5 | ok |
+| Jeskola Bass 3 | unpitched | tracks |  | 1 | -10.9 | 11.4 | ok |
 | Jeskola Live | control |  |  |  |  |  | ok |
 | Jeskola Loop Recorder | control |  |  |  |  |  | ok |
 | Jeskola Noise Generator | generator (silent at its defaults) | none |  |  |  |  | warn |
 | Jeskola Note Matrix | control |  |  |  |  |  | ok |
-| Jeskola Organ | monosynth | tracks | +0 (+2 ct) | 1 | -6.7 | 12.0 | ok |
+| Jeskola Organ | monosynth | tracks | +0 (+2 ct) | 1 | -6.7 | 12.3 | ok |
 | Jeskola Relativion | control |  |  |  |  |  | ok |
 | Jeskola Tracker | generator (silent at its defaults) | none |  |  |  |  | warn |
 | Jeskola Trilok | generator (silent at its defaults) | none |  |  |  |  | warn |
 | JumpLoop | control |  |  |  |  |  | ok |
-| kibibu Green Milk | monosynth | tracks | +12 (+4 ct) | 1 | -9 | 15.1 | ok |
-| KrimZon AY-3-8910 | polysynth | tracks | -13 (-1 ct) | 3 | -21.5 | 12.1 | ok |
-| Matilde Tracker2 | monosynth | tracks | +0 | 1 | -14.5 | 12.5 | ok |
+| kibibu Green Milk | monosynth | tracks | +12 (+4 ct) | 1 | -9 | 15.0 | ok |
+| KrimZon AY-3-8910 | polysynth | tracks | -13 (-1 ct) | 3 | -21.5 | 12.6 | ok |
+| Matilde Tracker2 | monosynth | tracks | +0 | 1 | -14.5 | 13.4 | ok |
 | Modern Sequence Editor | control |  |  |  |  |  | ok |
-| Neo FM6 | polysynth | midi | +0 | 8 | -23 | 17.0 | ok |
-| Neo Poly | polysynth | midi | +0 | 8 | -20.8 | 2.7 | ok |
-| Neo Wave | polysynth | midi | +0 | 8 | -20.7 | 17.6 | ok |
-| Oomek Aggressor 303 | unpitched | tracks |  | 1 | -17.6 | 10.9 | ok |
+| Neo FM6 | polysynth | midi | +0 | 8 | -23 | 20.9 | ok |
+| Neo Poly | polysynth | midi | +0 | 8 | -20.8 | 0.8 | ok |
+| Neo Wave | polysynth | midi | +0 | 8 | -20.7 | 18.8 | ok |
+| Oomek Aggressor 303 | unpitched | tracks |  | 1 | -17.6 | 11.3 | ok |
 | Pedal Chord | control |  |  |  |  |  | ok |
 | Pedal FM | unpitched | tracks |  | 16 | -8.7 | 0.0 | ok |
 | Pedal Juno106 | polysynth | tracks | +0 (-11 ct) | 6 | -9.8 | 4.9 | ok |
@@ -97,8 +97,8 @@ Machines that don't load, crash or hang the server, or put out NaN or a runaway 
 | Machine | Type (traits) | Gain dB | Latency (samples) | Tail s | CPU ms/s | Health |
 |---|---|---|---|---|---|---|
 | EasyRec | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
-| FSM Chorus2 | modulation, filter or EQ | -5.47 | 0 | 0.01 | 19.9 | ok |
-| FSM PanzerDelay | delay | 0.77 | 0 | 2.62 | 0.0 | ok |
+| FSM Chorus2 | modulation, filter or EQ | -5.47 | 0 | 0.01 | 19.4 | ok |
+| FSM PanzerDelay | delay | 0.77 | 0 | 2.62 | 0.3 | ok |
 | FSM PhatMan | filter or EQ | 2.44 | 0 | 0.0 | 0.0 | ok |
 | FSM Philthy | filter or EQ | -7.39 | 10 | 0.0 | 0.0 | ok |
 | FSM WahMan | distortion, filter or EQ | 10.15 | 6 | 0.01 | 0.0 | ok |
@@ -113,28 +113,28 @@ Machines that don't load, crash or hang the server, or put out NaN or a runaway 
 | Jeskola Filter 2 | utility | 6.02 | 1 | 0.0 | 0.0 | ok |
 | Jeskola Flanger | modulation, filter or EQ | 8.81 | 0 | 0.0 | 0.0 | unhealthy |
 | Jeskola Gain | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
-| Jeskola NiNjA dElaY | delay | 6.49 | 0 | 3.38 | 15.8 | ok |
-| Jeskola Raverb | reverb | 6.07 | 0 | 3.48 | 18.8 | ok |
+| Jeskola NiNjA dElaY | delay | 6.49 | 0 | 3.38 | 15.3 | ok |
+| Jeskola Raverb | reverb | 6.07 | 0 | 3.48 | 20.7 | ok |
 | Jeskola Reverb | reverb | 6.19 | 0 | 0.7 | 0.0 | ok |
 | Jeskola Stereo Reverb | reverb | 6.11 | 0 | 0.6 | 0.0 | ok |
-| Jeskola Wave Shaper | reverb, distortion | 13.29 | 0 | 3.48 | 12.8 | warn |
-| Joachims Chopper 2 | utility | -0.83 | 0 | 0.0 | 3.5 | ok |
-| Joachims Enceladus Tube EQ v1 | utility | 0.0 | 0 | 0.0 | 4.6 | ok |
+| Jeskola Wave Shaper | reverb, distortion | 13.29 | 0 | 3.48 | 13.1 | warn |
+| Joachims Chopper 2 | utility | -0.83 | 0 | 0.0 | 1.9 | ok |
+| Joachims Enceladus Tube EQ v1 | utility | 0.0 | 0 | 0.0 | 3.6 | ok |
 | Joachims Hyperion | utility | 0.0 | 0 | 0.0 | 0.0 | unhealthy |
-| Joachims Jupiter 3 | effect (silent at defaults) |  |  |  | 28.3 | warn |
-| Joachims Mars filter 2 | distortion, dynamics, filter or EQ | 1.48 | 0 | 0.01 | 8.2 | ok |
-| Joachims Neptune 1.2 | delay, filter or EQ | -1.79 | 8191 | 0.18 | 8.7 | ok |
-| Joachims Saturn 1.4 | utility | -0.0 | 0 | 0.05 | 9.5 | ok |
+| Joachims Jupiter 3 | effect (silent at defaults) |  |  |  | 26.1 | warn |
+| Joachims Mars filter 2 | distortion, dynamics, filter or EQ | 1.48 | 0 | 0.01 | 6.8 | ok |
+| Joachims Neptune 1.2 | delay, filter or EQ | -1.79 | 8191 | 0.18 | 8.2 | ok |
+| Joachims Saturn 1.4 | utility | -0.0 | 0 | 0.05 | 8.3 | ok |
 | ManagedMultiIOEffect | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
 | mixIO | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
-| Neo Analyzer | utility | 0.0 | 0 | 0.0 | 8.9 | ok |
+| Neo Analyzer | utility | 0.0 | 0 | 0.0 | 17.4 | ok |
 | Neo Comp | dynamics | -2.54 | 0 | 0.0 | 0.0 | ok |
-| Neo Drive | distortion | -0.62 | 62 | 0.01 | 0.0 | ok |
+| Neo Drive | distortion | -0.62 | 62 | 0.01 | 11.6 | ok |
 | Neo EQ | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
 | Neo Limiter | utility | 0.0 | 99 | 0.0 | 0.0 | ok |
 | Neo Utility | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
-| Neo Verb | reverb | -2.8 | 0 | 1.52 | 21.3 | ok |
-| Oomek Exciter | filter or EQ | 7.22 | 0 | 0.0 | 1.0 | ok |
+| Neo Verb | reverb | -2.8 | 0 | 1.52 | 22.8 | ok |
+| Oomek Exciter | filter or EQ | 7.22 | 0 | 0.0 | 0.4 | ok |
 | Oomek Masterizer | utility | -1.0 | 176 | 0.0 | 17.2 | ok |
 | Pedal Chorus | modulation, filter or EQ | -4.31 | 0 | 0.01 | 0.0 | ok |
 | Pedal Comp | dynamics | -0.32 | 0 | 0.0 | 0.0 | ok |
@@ -149,9 +149,9 @@ Machines that don't load, crash or hang the server, or put out NaN or a runaway 
 | Pedal Shaper | utility | -0.09 | 0 | 0.01 | 8.4 | ok |
 | Polac Audio Out | control |  |  |  |  | ok |
 | Polac MIDI In | control |  |  |  |  | ok |
-| Polac Out | utility | 0.0 | 0 | 0.0 | 1.5 | ok |
-| Polac Out II | utility | 0.0 | 0 | 0.0 | 0.9 | ok |
-| Polac VST 1.1 | utility | 0.0 | 0 | 0.0 | 12.4 | ok |
+| Polac Out | utility | 0.0 | 0 | 0.0 | 1.7 | ok |
+| Polac Out II | utility | 0.0 | 0 | 0.0 | 6.3 | ok |
+| Polac VST 1.1 | utility | 0.0 | 0 | 0.0 | 13.3 | ok |
 | ReBuzz Audio Out | utility | 0.0 | 0 | 0.0 | 0.0 | ok |
 | Session Clip Player | effect (silent at defaults) |  |  |  | 0.0 | warn |
 
