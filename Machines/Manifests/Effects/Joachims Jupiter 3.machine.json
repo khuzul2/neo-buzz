@@ -17,14 +17,22 @@
   "effect": {
    "silent": true
   },
-  "extremes": {
-   "min": {
-    "silent": true,
-    "sample_peak_dbfs": null
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -0.18,
+    "growth_db": -9.45,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": -38.94
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    },
+    "max": {
+     "peak_dbfs": -52.17,
+     "growth_db": -18.21,
+     "verdict": "ok"
+    }
    }
   }
  },

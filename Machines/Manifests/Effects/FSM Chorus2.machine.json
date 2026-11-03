@@ -40,7 +40,14 @@
     "filter or EQ"
    ]
   },
-  "extremes": {}
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -10.89,
+    "growth_db": -0.61,
+    "verdict": "ok"
+   },
+   "all_at_once": {}
+  }
  },
  "parameters": [],
  "track_parameters": [

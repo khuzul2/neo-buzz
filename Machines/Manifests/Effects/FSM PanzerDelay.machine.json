@@ -8,8 +8,11 @@
  "summary": "Delay (profiled draft): traits: delay; tail 2.62 s; latency 0 samples; gain +0.8 dB at the defaults.",
  "tracks": 4,
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "warn",
+  "problems": [
+   "hot (loud but steady) with Wet L Pan at its minimum (100% L): +0.3 dBFS peak; Wet R Pan at its maximum (100% R): +1.0 dBFS peak; FB Amp at its maximum (-0.1 dB): +10.5 dBFS peak over 30 s"
+  ],
+  "hot": true
  },
  "profile": {
   "effect": {
@@ -41,14 +44,57 @@
     "delay"
    ]
   },
-  "extremes": {
-   "min": {
-    "silent": false,
-    "sample_peak_dbfs": -30.1
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -3.23,
+    "growth_db": 0.86,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": -26.6
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": -7.06,
+     "growth_db": 0.66,
+     "verdict": "ok"
+    },
+    "max": {
+     "peak_dbfs": -2.12,
+     "growth_db": -0.19,
+     "verdict": "ok"
+    }
+   },
+   "swept_because": [
+    "an effect with Resonance, FB Amp, FB PingPong, FB Spread"
+   ],
+   "renders": 25
+  },
+  "sweeps": {
+   "Wet L Pan": {
+    "min": {
+     "peak_dbfs": 0.32,
+     "growth_db": 0.2,
+     "verdict": "hot",
+     "raw": 0,
+     "text": "100% L"
+    }
+   },
+   "Wet R Pan": {
+    "max": {
+     "peak_dbfs": 1.0,
+     "growth_db": 0.07,
+     "verdict": "hot",
+     "raw": 240,
+     "text": "100% R"
+    }
+   },
+   "FB Amp": {
+    "max": {
+     "peak_dbfs": 10.48,
+     "growth_db": 0.52,
+     "over_seconds": 30,
+     "verdict": "hot",
+     "raw": 239,
+     "text": "-0.1 dB"
+    }
    }
   }
  },

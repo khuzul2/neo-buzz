@@ -107,6 +107,17 @@ namespace ReBuzz.Agent.Guides
             sb.Append("## Parameters\n\n");
             AppendParameters(sb, manifest);
 
+            // docs/specs/machine-safety.md §3.4: where the profiler found it diverging.
+            var safe = manifest.Parameters.Concat(manifest.TrackParameters).Where(p => p.SafeRange != null).ToList();
+            if (safe.Count > 0)
+            {
+                sb.Append("## Safe ranges\n\n");
+                sb.Append("`param_set` keeps to these and refuses values outside them, with the reason, unless you pass `allow_unsafe=true` (then render and check the level).\n\n");
+                foreach (var p in safe)
+                    sb.Append($"- {p.Name}: {p.SafeRange.Text()}" + (p.SafeRange.Reason.Length > 0 ? $"; outside it {p.SafeRange.Reason}" : "") + ".\n");
+                sb.Append('\n');
+            }
+
             sb.Append("## Writing values\n\n");
             AppendValueForms(sb, manifest);
 

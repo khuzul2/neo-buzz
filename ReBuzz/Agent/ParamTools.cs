@@ -2,7 +2,9 @@
 // Values in units: exact for machines with a manifest (Neo), from a profiled draft manifest where
 // there is one (§12.2), searched through the machine's own value texts for the others.
 // machine_describe(value_table=true) lists each parameter's texts across its range: what the
-// profiler (tools/machine-profiler.py) infers units and mappings from.
+// profiler (tools/machine-profiler.py) infers units and mappings from. U2 (docs/specs/machine-safety.md
+// §3.4): a parameter's safe range (from its manifest) keeps param_set inside it unless the agent
+// passes allow_unsafe; machine_describe shows the ranges.
 
 using System;
 using System.Collections.Generic;
@@ -27,7 +29,7 @@ namespace ReBuzz.Agent
                 Title = "Describe a machine",
                 Description =
                     "Everything about one machine's sound: each parameter with its group, current value (text, number and unit), range, default, " +
-                    "choices and meaning; track parameters per track; the gear's summary, its manifest (generated, curated or a profiled draft) and how it takes notes. " +
+                    "choices, meaning and safe_range (where the machine was found to diverge: param_set keeps to it); track parameters per track; the gear's summary, its manifest (generated, curated or a profiled draft) and how it takes notes. " +
                     "Read it before param_set. Big machines (Neo FM6 has 172 parameters): pass group to read one section. value_table=true adds each " +
                     "parameter's texts across its range (every value up to 256 values, else table_points of them), for machines whose texts are all you have. " +
                     "Example: machine_describe(machine=\"Bass\", group=\"Filter 1\").",
@@ -73,7 +75,13 @@ namespace ReBuzz.Agent
                         if (!string.IsNullOrEmpty(manifest?.Summary)) o["summary"] = manifest.Summary;
                         if (manifest != null) o["manifest"] = manifest.Quality;
                         if (manifest?.Health is { Status: not "ok" } health)
-                            o["health"] = new JsonObject { ["status"] = health.Status, ["problems"] = new JsonArray(health.Problems.Select(x => (JsonNode)x).ToArray()) };
+                        {
+                            var h = new JsonObject { ["status"] = health.Status, ["problems"] = new JsonArray(health.Problems.Select(x => (JsonNode)x).ToArray()) };
+                            if (health.Diverging) h["diverging"] = true;
+                            if (health.Hot) h["hot"] = true;
+                            if (health.NeedsWindow) h["needs_window"] = WindowNote(health);
+                            o["health"] = h;
+                        }
                         o["gear_info"] = GearInfo(m);
                         if (manifest?.Imports.Count > 0)
                             o["data_imports"] = new JsonArray(manifest.Imports.Select(i => (JsonNode)new JsonObject
@@ -118,7 +126,8 @@ namespace ReBuzz.Agent
                     "Changes parameters, many in one call and one undo step. Each change names a param and gives exactly one of: value " +
                     "(in its unit: \"800 Hz\", \"-6 dB\", \"35%\", \"250 ms\", \"4:1\", a choice such as \"Saw\", min/max/default, or raw:N), " +
                     "by (an amount: \"+3 dB\", \"-200 Hz\", 2 steps of a choice) or times (a factor: 2, 0.5). Track parameters take track (from 0). " +
-                    "Returns each value as the machine now shows it. " +
+                    "A parameter with a safe_range (machine_describe shows it: where the machine was found to diverge) refuses values outside it, " +
+                    "with the reason, unless you pass allow_unsafe=true. Returns each value as the machine now shows it. " +
                     "Example: param_set(machine=\"Bass\", changes=[{\"param\": \"F1 cutoff\", \"value\": \"800 Hz\"}, {\"param\": \"F1 reso\", \"by\": \"+10%\"}]).",
                 Input = Object(null,
                     Req("machine", String("The machine")),
@@ -127,27 +136,30 @@ namespace ReBuzz.Agent
                         Opt("value", AnyOf("The new value", String("With its unit, a choice, min/max/default or raw:N"), Number("A number in the parameter's unit"))),
                         Opt("by", AnyOf("Change by this amount", String("With its unit: \"+3 dB\""), Number("In the parameter's unit"))),
                         Opt("times", Number("Multiply the value by this factor", 0)),
-                        Opt("track", Integer("Track, for track parameters (from 0)", 0))), "Changes", 1))),
+                        Opt("track", Integer("Track, for track parameters (from 0)", 0))), "Changes", 1)),
+                    Opt("allow_unsafe", Boolean("Set values outside a parameter's safe range anyway (default false: refused with the reason). Render and check after"))),
                 Output = Object(null,
                     Req("changed", Array(Object(null,
                         Req("param", String("Name")),
                         Req("value", String("As the machine shows it now")),
-                        Req("was", String("Before"))), "Each change")),
+                        Req("was", String("Before")),
+                        Opt("unsafe", String("Why the value is outside its safe range (set with allow_unsafe)"))), "Each change")),
                     Opt("manifest", String("draft: units came from a profiled manifest nobody has curated yet"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
                     var changes = c.List("changes")!;
+                    bool allowUnsafe = c.Bool("allow_unsafe") ?? false;
                     var r = await host.Engine("param_set", true, _ =>
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         var all = SongModel.Params(m);
-                        var plan = new List<(AgentParam P, int Track, int Raw, string Was)>();
+                        var plan = new List<(AgentParam P, int Track, int Raw, string Was, string Unsafe)>();
                         for (int i = 0; i < changes.Count; i++)
                         {
                             var ch = changes[i]!.AsObject();
                             string at = $"changes[{i}]";
-                            var p = SongModel.Param(m, all, ch["param"]?.GetValue<string>());
+                            var p = SongModel.Param(m, all, ch["param"]?.GetValue<string>(), track: ch["track"] != null);
                             int track = 0;
                             if (ch["track"] != null)
                             {
@@ -165,17 +177,22 @@ namespace ReBuzz.Agent
                             int raw;
                             try { raw = ValueResolver.Resolve(p.Info, ch[forms[0]], current, mode); }
                             catch (ToolError e) { throw new ToolError($"{at}: {e.Message}"); }
-                            plan.Add((p, track, raw, SongModel.Describe(p.Parameter, p.Parameter.GetValue(track))));
+                            // machine-safety.md §3.4: outside the safe range only when the agent says so.
+                            string refusal = SafeRange.Refusal(p.Info, raw);
+                            if (refusal != null && !allowUnsafe) throw new ToolError($"{at}: {refusal}");
+                            plan.Add((p, track, raw, SongModel.Describe(p.Parameter, p.Parameter.GetValue(track)),
+                                      refusal != null ? $"outside its safe range, {p.Info.SafeRange.Text(p.Info.Describe)}: {p.Info.SafeRange.Reason}" : null));
                         }
-                        foreach (var (p, track, raw, _) in plan) AgentActions.SetParameter(core, m, p.Parameter, track, raw);
+                        foreach (var (p, track, raw, _, _) in plan) AgentActions.SetParameter(core, m, p.Parameter, track, raw);
                         bool draft = SongModel.Manifest(m.DLL)?.IsDraft == true;
                         var changed = new JsonArray();
-                        foreach (var (p, track, raw, was) in plan)
+                        foreach (var (p, track, raw, was, unsafeWhy) in plan)
                         {
                             var o = new JsonObject { ["param"] = p.Name };
                             if (p.IsTrack) o["track"] = track;
                             foreach (var kv in SongModel.Value(p, track)) o[kv.Key] = kv.Value?.DeepClone();
                             o["was"] = was;
+                            if (unsafeWhy != null) o["unsafe"] = unsafeWhy;
                             changed.Add(o);
                         }
                         var o2 = new JsonObject { ["machine"] = m.Name, ["changed"] = changed };
@@ -183,7 +200,8 @@ namespace ReBuzz.Agent
                         return o2;
                     }, c.Cancellation);
                     return ToolResult.Ok($"{r["machine"]}: " + string.Join("; ", r["changed"]!.AsArray().Select(x =>
-                        $"{x!["param"]}{(x["track"] != null ? $" [track {x["track"]}]" : "")} = {x["value"]} (was {x["was"]})")) + DraftNote(r), r);
+                        $"{x!["param"]}{(x["track"] != null ? $" [track {x["track"]}]" : "")} = {x["value"]} (was {x["was"]})" +
+                        (x["unsafe"] != null ? $" — unsafe: {x["unsafe"]}" : ""))) + DraftNote(r), r);
                 },
             });
 
@@ -228,6 +246,18 @@ namespace ReBuzz.Agent
                     return ToolResult.Ok($"{r["machine"]}: " + string.Join("; ", r["values"]!.AsArray().Take(60).Select(x => $"{x!["param"]} = {x["value"]}")) + DraftNote(r), r);
                 },
             });
+        }
+
+        /// <summary>What gear_list and machine_describe say about a machine that needs a window (machine-safety.md §3.1).</summary>
+        internal static string WindowNote(ManifestHealth health) =>
+            "Works in ReBuzz on Windows with its window" + (health.Window.Length > 0 ? $" ({health.Window})" : "") + "; it can't be built headless.";
+
+        /// <summary>A parameter's safe range as tools show it: the machine's texts, raw values and why.</summary>
+        internal static JsonObject SafeRangeJson(SafeRange s, Func<int, string> describe)
+        {
+            var o = new JsonObject { ["range"] = s.Text(describe), ["min_raw"] = s.Min, ["max_raw"] = s.Max };
+            if (s.Reason.Length > 0) o["reason"] = s.Reason;
+            return o;
         }
 
         static string DraftNote(JsonObject r) =>
@@ -299,6 +329,7 @@ namespace ReBuzz.Agent
             }
             if (!string.IsNullOrWhiteSpace(p.Info.Description) && p.Info.Description != p.Name) o["description"] = p.Info.Description;
             if (p.Manifest?.Approximate == true) o["approximate"] = true;
+            if (p.Info.SafeRange != null) o["safe_range"] = SafeRangeJson(p.Info.SafeRange, p.Info.Describe);
             return o;
         }
     }

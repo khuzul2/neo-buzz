@@ -8,8 +8,13 @@
  "summary": "Delay (profiled draft): traits: delay, filter or EQ; tail 0.18 s; latency 8191 samples; gain -1.8 dB at the defaults.",
  "tracks": 0,
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "unhealthy",
+  "problems": [
+   "Threshold diverges at its minimum (-100.0 dB: infinity: the engine's guard caught it); safe from -97.7 dB to +15.5 dB (raw 2–128)",
+   "hot (loud but steady) with Spec.Boost at its minimum (-100.0%): +9.6 dBFS peak; Spec.Boost at its maximum (+100.0%): +10.0 dBFS peak"
+  ],
+  "diverging": true,
+  "hot": true
  },
  "profile": {
   "effect": {
@@ -42,14 +47,55 @@
     "filter or EQ"
    ]
   },
-  "extremes": {
-   "min": {
-    "silent": true,
-    "sample_peak_dbfs": null
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -9.22,
+    "growth_db": -0.15,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": true,
-    "sample_peak_dbfs": -98.11
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": null,
+     "guard": "NaN",
+     "verdict": "diverging"
+    },
+    "max": {
+     "peak_dbfs": -54.44,
+     "growth_db": -1.97,
+     "over_seconds": 30,
+     "verdict": "ok"
+    }
+   },
+   "swept_because": [
+    "every parameter at its minimum at once: diverging"
+   ],
+   "renders": 22
+  },
+  "sweeps": {
+   "Threshold": {
+    "min": {
+     "peak_dbfs": null,
+     "guard": "infinity",
+     "verdict": "diverging",
+     "raw": 1,
+     "text": "-100.0 dB"
+    }
+   },
+   "Spec.Boost": {
+    "min": {
+     "peak_dbfs": 9.56,
+     "growth_db": 0.46,
+     "verdict": "hot",
+     "raw": 0,
+     "text": "-100.0%"
+    },
+    "max": {
+     "peak_dbfs": 10.0,
+     "growth_db": 0.51,
+     "verdict": "hot",
+     "raw": 254,
+     "text": "+100.0%"
+    }
    }
   }
  },
@@ -579,7 +625,14 @@
     ]
    ],
    "description": "Volume threshold",
-   "confidence": "values"
+   "confidence": "values",
+   "safe_range": {
+    "min": 2,
+    "max": 128,
+    "min_text": "-97.7 dB",
+    "max_text": "+15.5 dB",
+    "reason": "diverges at its minimum (-100.0 dB: infinity: the engine's guard caught it)"
+   }
   },
   {
    "index": 1,

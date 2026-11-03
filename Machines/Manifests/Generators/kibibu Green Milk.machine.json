@@ -24,14 +24,24 @@
    "sample_peak_dbfs": -1.85,
    "true_peak_dbtp": -1.84
   },
-  "extremes": {
-   "min": {
-    "silent": false,
-    "sample_peak_dbfs": -37.11
+  "level_test": {
+   "defaults": {
+    "peak_dbfs": -1.85,
+    "growth_db": 1.78,
+    "verdict": "ok"
    },
-   "max": {
-    "silent": false,
-    "sample_peak_dbfs": -48.42
+   "all_at_once": {
+    "min": {
+     "peak_dbfs": -7.21,
+     "verdict": "ok"
+    },
+    "max": {
+     "peak_dbfs": -14.07,
+     "growth_db": 2.86,
+     "over_seconds": 30,
+     "never_decays": true,
+     "verdict": "ok"
+    }
    }
   }
  },
