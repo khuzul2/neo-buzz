@@ -368,6 +368,42 @@ namespace ReBuzzTests
             Assert.That(last.Take(3).ToArray(), Is.EqualTo(chord));
         }
 
+        [TestCase(".bmx")]
+        [TestCase(".bmxml")]
+        [Apartment(System.Threading.ApartmentState.STA)]      // the .bmxml loader creates UI objects
+        public void AnOpenedSongHasItsStateParametersAndPlaysNoNotes(string extension)
+        {
+            // Fork (studio-mvp.md S9): the files keep stateless parameters' values (notes too). BMX's
+            // loader restores state parameters only, as Buzz does; BMXML's restored every value, so a
+            // song saved after playing opened with its last notes sounding.
+            using var driver = new Driver();
+            driver.Gear.AddDynamicGenerator(ProbeInfo);
+            driver.Start();
+            var probe = new DynamicMachineController("Neo Chord Probe", "Probe");
+            driver.MachineGraph.InsertMachineInstanceConnectedToMasterFor(probe);
+            var machine = driver.MachineFor(probe);
+            machine.TrackCount = 2;
+            machine.ParameterGroups[1].Parameters.Single(p => p.Name == "Dummy").SetValue(0, 1);
+            var note = machine.ParameterGroups[2].Parameters.Single(p => p.Name == "Note");
+            note.SetValue(0, (4 << 4) + 1);
+            note.SetValue(1, (4 << 4) + 5);
+            var reader = driver.CreateAudioReader(256);
+
+            string path = Path.Combine(TestContext.CurrentContext.WorkDirectory, "stateless-" + Guid.NewGuid().ToString("N") + extension);
+            driver.Core.SaveSongCopy(path);
+            driver.Core.Modified = false;
+            driver.Core.OpenSongFile(path);
+            driver.AssertNoErrorsReportedToUser();
+            for (int i = 0; i < 40; i++) reader.Read(256);   // a few ticks
+
+            var opened = driver.Core.SongCore.MachinesList.Single(m => m.DLL.Name == "Neo Chord Probe");
+            Assert.That(opened, Is.Not.SameAs(machine), "the song was opened");
+            Assert.That(opened.ParameterGroups[1].Parameters.Single(p => p.Name == "Dummy").GetValue(0), Is.EqualTo(1), "a state parameter is the song's");
+            var instance = opened.ManagedMachine;
+            var calls = (int[])instance.GetType().GetField("Calls")!.GetValue(instance)!;
+            Assert.That(calls.Take(2).ToArray(), Is.EqualTo(new[] { 0, 0 }), "no note was played when the song opened");
+        }
+
         [Test]
         public void NeoDriveSaturatesAndShowsItsEditor()
         {

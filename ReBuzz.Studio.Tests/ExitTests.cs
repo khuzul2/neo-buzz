@@ -477,18 +477,19 @@ namespace ReBuzz.Studio.Tests
                 Key(window, PhysicalKey.F8);
                 SessionCore.Timestamp = Stopwatch.GetTimestamp;
 
-                // Known engine issue (docs/specs/studio-mvp.md S9): a BMXML song gives each machine the last
-                // values of its stateless parameters when it opens, notes too (BMXMLFile.CopyParameters;
-                // BMX's loader skips them, as Buzz does). So the last note the session played would sound
-                // from the moment the song opens, and the render after reopening would start with it. They
-                // aren't the song's content: put back to "no value" here, as Buzz saves them.
+                // The playing left stateless parameters (notes too) at their last values, and the song
+                // files keep them. Opening a song mustn't play them again: BMX's loader skips them, as
+                // Buzz does, and BMXML's does too since S9 (BMXMLFile.CopyParameters). The renders after
+                // reopening, bit-identical to the one made before the session played, show it.
+                int left = 0;
                 foreach (var m in Core.SongCore.MachinesList.Where(m => !m.Hidden))
                     foreach (var (p, track) in m.AllParametersAndTracks().Where(x => x.Item1.Group.Type != ParameterGroupType.Input && !x.Item1.Flags.HasFlag(ParameterFlags.State)).Select(x => (x.Item1, x.Item2)))
                         if (p.GetValue(track) != p.NoValue)
                         {
                             TestContext.Out.WriteLine($"{m.Name}: {p.Name}[{track}] was left at {p.GetValue(track)} by the playing");
-                            p.SetValue(track, p.NoValue);
+                            left++;
                         }
+                Assert.That(left, Is.GreaterThan(0), "the playing left a stateless value for the files to keep (what this checks)");
 
                 // ---- Save as BMXML and BMX (Shift+Ctrl/Command+S), a new song (Ctrl/Command+N), each opened again (Ctrl/Command+O).
                 var made = Snapshot();
