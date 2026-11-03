@@ -1,8 +1,8 @@
-# DAW modes: tracker, arrangement and session over one song — Proposal
+# DAW modes: tracker, arrangement and session over one song — Proposal (decided)
 
 | | |
 |---|---|
-| Status | Proposal 2026-11-03. **D2–D5 decided as recommended (2026-11-03); D1 open** (§1.1) |
+| Status | Decided 2026-11-03: D1 A1 (§3.1), D2 B, D3 A, D4 B, D5 A, all as recommended. AR0 can start; AR1–AR2 after P3's exit, beside plugin-host H1 |
 | Date | 2026-11-03 |
 | Scope | One song and one machine graph, seen and edited in three modes that stay in sync: **tracker** (patterns with columns), **arrangement** (a horizontal timeline with clips, a piano roll and automation lanes) and **session** (clip launching). The model, the views, compatibility, engine seams and a phased plan |
 | Code baseline | fork `90b0850` (main, 2026-11-03). Branches `platform/p3-s4-sequence-editor` and `platform/p3-s6-pattern-editor` (not merged) read the same day |
@@ -23,7 +23,7 @@
   - *Automation has no song-level home.* Patterns hold automation, but a 16-bar sweep over a looped 1-bar clip has nowhere to live.
   - *Two bar grids.* The sequence editors have their bar list (`TimeSignatureList`); the session has its own beats per bar.
 - **Recommendation:**
-  1. Clips are placed patterns, shared as session clips are, with *Make unique* (D1 A).
+  1. Clips are placed patterns, shared as session clips are, with *Make unique*. A copy-drag (Ctrl/Cmd) makes an independent copy, an Alt/Option-drag a linked one (D1 A1).
   2. **One note store:** the engine MIDI column. The tracker shows it as note lanes computed when drawn, so a note drawn in the piano roll or recorded in the session shows in the tracker without a move (D2 B).
   3. A classic Buzz machine's own Note columns stay tracker data. The piano roll edits them with tracker rules (D3 A).
   4. Song-level automation as **automation clips**: automation-only patterns on an extra sequence of the machine, an old Buzz trick, drawn as curves with ramps (D4 B).
@@ -32,11 +32,11 @@
 - **Seams:** six small ones in the engine, and one large one in MPE (§8). Only automation ramps touch the audio path.
 - **Effort:** 12–18 pw in seven phases (§9). AR0 (the seams) can start now; the views follow S4 and S6.
 
-### 1.1 Decisions for you
+### 1.1 Decisions
 
 | # | Decision | Options | Recommended | Decided |
 |---|---|---|---|---|
-| D1 | What a clip is | **A** a placed pattern, shared (Buzz, FL Studio, Renoise aliases, today's session), with Make unique · **B** arrangement-owned note clips (Live, Bitwig) · **C** each placement gets its own pattern, made automatically | **A** | open |
+| D1 | What a clip is | **A** a placed pattern, shared (Buzz, FL Studio, Renoise aliases, today's session), with Make unique · **B** arrangement-owned note clips (Live, Bitwig) · **C** each placement gets its own pattern, made automatically | **A** | **A1** |
 | D2 | Where piano-roll notes live, and how the tracker sees them | **A** two stores, moved by hand (today) · **B** the MIDI column is the store, and the tracker shows it as computed note lanes · **C** the tracker's note lanes are the store, and the piano roll writes them on each edit | **B** | **B** |
 | D3 | Notes for machines that don't take MIDI (classic Buzz generators) | **A** the piano roll edits their Note columns with tracker rules (voices ≤ tracks) · **B** the engine plays MIDI-column notes onto their Note and velocity parameters (one store for every machine) · **C** no piano roll for them | **A**; B only if the song census shows heavy use | **A** |
 | D4 | Song-level automation | **A** per pattern only (Renoise) · **B** automation clips on an automation lane of the machine (FL Studio; Buzz's second sequence) · **C** a new song-level curve store (Live, Bitwig) | **B** | **B** |
@@ -120,6 +120,12 @@
 | C Each placement its own pattern, made automatically | Live's independence on Buzz data | Patterns multiply in the tracker and session; breaks the Buzz habit of one pattern used many times |
 
 **Recommended: A.** B's best part is already in A: a pattern's engine MIDI column *is* a note list with lengths (§3.2).
+
+**Decided: A1** (2026-11-03). A, with the copy gesture most DAWs use:
+- A copy-drag (Ctrl on Windows and Linux, Cmd on macOS) makes an **independent copy**: a new pattern (*Make unique* at the drop), named after the original ("Bass 2").
+- An Alt/Option-drag makes a **linked copy**: another placement of the same pattern, as Buzz and FL Studio do.
+- The repeats of a looped clip are always the same pattern. Paste follows the copy-drag (independent); *Paste linked* is beside it.
+- Both are the same data: the default can become a preference later (A2 was the linked default).
 
 **The clip, precisely:**
 - A clip is one or more consecutive PlayPattern events of one pattern on one sequence, joined by a **clip id**, a new fork field (§8 S2):
@@ -221,7 +227,7 @@ Today automation lives in two places:
 ### 4.2 Clips
 
 - **Draw:** a double-click on a lane makes a pattern and its clip. The default length is the session's clip length setting.
-- **Move, copy, delete:** move by drag, copy with Alt or Ctrl. *Split* at the cursor makes two events with offsets set. *Join* merges contiguous events of one pattern.
+- **Move, copy, delete:** move by drag. Ctrl/Cmd-drag copies independently (a new pattern), Alt/Option-drag copies linked (the same pattern; D1 A1). *Split* at the cursor makes two events with offsets set. *Join* merges contiguous events of one pattern.
 - **Edges:**
   - The left edge trims the start (`Offset`).
   - The right edge adds repeats when the clip loops, and trims the end (`End`) when it doesn't.
@@ -384,7 +390,7 @@ Order (D5 A):
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | MPE's computed note lanes are the hardest piece: a 12k-LOC editor, three builds, its own undo | high | AR3 slips | AR3 stands alone; the 0.7.1 moves remain meanwhile. Plan-then-write as in 0.7.2 (`PlanClipNotes`, `WriteClipNotes`) |
-| Shared patterns surprise Live users | medium | an edit in one place changes another | Shared badge with a use count; *Make unique* on every clip menu; D1 |
+| Shared patterns surprise Live users | low (D1 A1) | an edit in one place changes another | Copies are independent unless Alt/Option-dragged; shared badge with a use count; *Make unique* on every clip menu |
 | One play position per pattern | certain | a shared pattern can't play on two lanes at once | Overlaps warned; *Make unique* |
 | Upstream plays trims whole | certain | songs differ in upstream | Documented since 0.5.1; nothing to do within upstream |
 | A tracker column and a lane write one parameter | medium | an unexpected value | Overlaps marked; precedence checked in AR4 (§3.4) |
