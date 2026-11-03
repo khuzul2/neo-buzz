@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Proposal 2026-11-03, for decision (§1.1) |
+| Status | Proposal 2026-11-03. **D2–D5 decided as recommended (2026-11-03); D1 open** (§1.1) |
 | Date | 2026-11-03 |
 | Scope | One song and one machine graph, seen and edited in three modes that stay in sync: **tracker** (patterns with columns), **arrangement** (a horizontal timeline with clips, a piano roll and automation lanes) and **session** (clip launching). The model, the views, compatibility, engine seams and a phased plan |
 | Code baseline | fork `90b0850` (main, 2026-11-03). Branches `platform/p3-s4-sequence-editor` and `platform/p3-s6-pattern-editor` (not merged) read the same day |
@@ -34,13 +34,13 @@
 
 ### 1.1 Decisions for you
 
-| # | Decision | Options | Recommended |
-|---|---|---|---|
-| D1 | What a clip is | **A** a placed pattern, shared (Buzz, FL Studio, Renoise aliases, today's session), with Make unique · **B** arrangement-owned note clips (Live, Bitwig) · **C** each placement gets its own pattern, made automatically | **A** |
-| D2 | Where piano-roll notes live, and how the tracker sees them | **A** two stores, moved by hand (today) · **B** the MIDI column is the store, and the tracker shows it as computed note lanes · **C** the tracker's note lanes are the store, and the piano roll writes them on each edit | **B** |
-| D3 | Notes for machines that don't take MIDI (classic Buzz generators) | **A** the piano roll edits their Note columns with tracker rules (voices ≤ tracks) · **B** the engine plays MIDI-column notes onto their Note and velocity parameters (one store for every machine) · **C** no piano roll for them | **A**; B only if the song census shows heavy use |
-| D4 | Song-level automation | **A** per pattern only (Renoise) · **B** automation clips on an automation lane of the machine (FL Studio; Buzz's second sequence) · **C** a new song-level curve store (Live, Bitwig) | **B** |
-| D5 | When, and on which UI | **A** AR0 now; views in the studio only: AR1–AR2 after P3's exit, beside plugin-host H1; AR3–AR5 before P4 · **B** everything after P4 · **C** also build the views on WPF | **A** |
+| # | Decision | Options | Recommended | Decided |
+|---|---|---|---|---|
+| D1 | What a clip is | **A** a placed pattern, shared (Buzz, FL Studio, Renoise aliases, today's session), with Make unique · **B** arrangement-owned note clips (Live, Bitwig) · **C** each placement gets its own pattern, made automatically | **A** | open |
+| D2 | Where piano-roll notes live, and how the tracker sees them | **A** two stores, moved by hand (today) · **B** the MIDI column is the store, and the tracker shows it as computed note lanes · **C** the tracker's note lanes are the store, and the piano roll writes them on each edit | **B** | **B** |
+| D3 | Notes for machines that don't take MIDI (classic Buzz generators) | **A** the piano roll edits their Note columns with tracker rules (voices ≤ tracks) · **B** the engine plays MIDI-column notes onto their Note and velocity parameters (one store for every machine) · **C** no piano roll for them | **A**; B only if the song census shows heavy use | **A** |
+| D4 | Song-level automation | **A** per pattern only (Renoise) · **B** automation clips on an automation lane of the machine (FL Studio; Buzz's second sequence) · **C** a new song-level curve store (Live, Bitwig) | **B** | **B** |
+| D5 | When, and on which UI | **A** AR0 now; views in the studio only: AR1–AR2 after P3's exit, beside plugin-host H1; AR3–AR5 before P4 · **B** everything after P4 · **C** also build the views on WPF | **A** | **A** |
 
 ## 2. What exists
 
