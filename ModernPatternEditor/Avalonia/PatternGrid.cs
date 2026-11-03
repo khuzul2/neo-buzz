@@ -346,39 +346,6 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             ClipToBounds = true;
             Background = Brushes.Transparent;
             ContextMenu = PatternMenus.Create(grid.Controller);
-            BindShortcuts();
-        }
-
-        /// <summary>
-        /// The editor's Control (and on macOS Command) shortcuts as the grid's own key bindings, as the
-        /// WPF editor's InputBindings are. Avalonia matches key bindings from the focused element up
-        /// before it raises KeyDown, so the main window's (Ctrl+Z: the song's undo) would take them
-        /// otherwise. The keys go to the editor whether it has something to undo or not, as in WPF.
-        /// </summary>
-        void BindShortcuts()
-        {
-            var commands = new List<KeyModifiers> { KeyModifiers.Control };
-            if (OperatingSystem.IsMacOS()) commands.Add(KeyModifiers.Meta);
-            var shortcuts = new (Key Key, KeyModifiers With)[]
-            {
-                (Key.Z, KeyModifiers.None), (Key.Z, KeyModifiers.Shift), (Key.Y, KeyModifiers.None),
-                (Key.X, KeyModifiers.None), (Key.C, KeyModifiers.None), (Key.V, KeyModifiers.None),
-                (Key.A, KeyModifiers.None), (Key.U, KeyModifiers.None),
-            };
-            foreach (var command in commands)
-                foreach (var (key, with) in shortcuts)
-                {
-                    var mods = command | with;
-                    KeyBindings.Add(new KeyBinding
-                    {
-                        Gesture = new KeyGesture(key, mods),
-                        Command = new BuzzGUI.Common.SimpleCommand
-                        {
-                            CanExecuteDelegate = _ => grid.Layout != null,
-                            ExecuteDelegate = _ => grid.Controller.KeyDown(EditorKeys.Key(key), EditorKeys.Modifiers(mods), 0),
-                        },
-                    });
-                }
         }
 
         public IBrush Background { get; set; }

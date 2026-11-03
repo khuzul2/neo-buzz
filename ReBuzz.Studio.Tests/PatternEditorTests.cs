@@ -180,8 +180,8 @@ namespace ReBuzz.Studio.Tests
                 Key(s, PhysicalKey.NumPadAdd, RawInputModifiers.Control | RawInputModifiers.Shift);
                 Assert.That(Events(s.Pattern, "Note").Select(e => BuzzNote.TryToString(e.Value)), Is.EqualTo(new[] { "C#5", "F-5", "G#5", "off" }), "and an octave");
 
-                // Copy the selection, paste at row 8.
-                Key(s, PhysicalKey.C, RawInputModifiers.Control);
+                // Copy the selection (the Edit menu's Copy, through the page), paste at row 8 (Ctrl+V).
+                Assert.That(((IStudioEditTarget)PatternView.Page).Copy(), Is.True, "Copy goes to the editor");
                 Key(s, PhysicalKey.ArrowUp, RawInputModifiers.None);
                 Keys(s, PhysicalKey.ArrowUp, PhysicalKey.ArrowUp);
                 for (int i = 0; i < 8; i++) Key(s, PhysicalKey.ArrowDown);
@@ -369,6 +369,10 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(other.Patterns.Count, Is.EqualTo(1), "New pattern made one");
                 Assert.That(page.EditorControl, Is.Not.Null, "and its editor is shown");
                 Assert.That(page.Pattern, Is.EqualTo(other.Patterns[0]));
+                // The shell's Edit menu: the new editor has nothing to undo, so the song's history takes Undo.
+                IStudioEditTarget target = page;
+                Assert.That(target.Undo(), Is.False, "nothing to undo in this editor");
+                Assert.That(target.Copy(), Is.False, "nothing selected to copy");
                 core.SongCore.DeleteMachines(new[] { (MachineCore)other });
                 Pump();
             }

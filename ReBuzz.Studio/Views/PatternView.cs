@@ -45,8 +45,11 @@ namespace ReBuzz.Studio.Views
         internal static void RaisePatternShown(IPattern p) => PatternShown?.Invoke(p);
     }
 
-    /// <summary>The Pattern tab's content: the choosers, and the editor's control below them.</summary>
-    internal sealed class PatternPage : DockPanel
+    /// <summary>
+    /// The Pattern tab's content: the choosers, and the editor's control below them. The shell's Edit
+    /// menu and its Undo and Redo keys reach the editor's own undo stack and clipboard through it.
+    /// </summary>
+    internal sealed class PatternPage : DockPanel, IStudioEditTarget
     {
         readonly ReBuzzCore core;
         readonly ComboBox machineBox = new ComboBox { Width = 180, Margin = new Thickness(4, 4, 12, 4) };
@@ -168,8 +171,9 @@ namespace ReBuzz.Studio.Views
             Activate();
         }
 
-        // The editor's undo stack and clipboard (its IEditContext, from the editor machine's view), for
-        // the shell's Edit menu. The view comes from the editor's own assembly, so it is found by name.
+        // IStudioEditTarget: the editor's undo stack and clipboard (its IEditContext, from the editor
+        // machine's view; the view comes from the editor's own assembly, so it is found by name). With
+        // nothing to undo in the editor, the song's undo history takes the command.
 
         /// <summary>The shown editor's undo stack and clipboard commands, or null.</summary>
         public IEditContext EditContext => EditorControl?.GetType().GetProperty("EditContext")?.GetValue(EditorControl) as IEditContext;

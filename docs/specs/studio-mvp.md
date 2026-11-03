@@ -57,6 +57,7 @@
    - CI publishes a self-contained osx-arm64 `ReBuzz.app` (zip) with PortAudio, libsndfile and the Link helper inside, unsigned.
    - It needs no .NET install.
    - Settings live in `~/Library/Application Support/ReBuzz`, as for `rebuzz-headless`.
+10. **Edit commands go to the selected view first.** Avalonia's window key bindings see Ctrl/Command shortcuts before the views do. So the shell's Edit menu and its shortcuts (Undo, Redo, Cut, Copy, Paste) go to the selected tab's view when it implements `IStudioEditTarget`. A view returns false to pass the command on to the song's undo history. Views don't bind these keys themselves.
 
 ## 4. Steps (PR-sized)
 
@@ -93,7 +94,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 
 ## 7. Progress
 
-**S0, foundations** (this PR).
+**S0, foundations** (#53).
 - **`ReBuzz.Host`** holds the engine's start-up off WPF, moved out of `rebuzz-headless`. The behaviour is unchanged: the smoke, live, MIDI and round-trip tests are the same. `rebuzz-headless` and the studio both use it, and `AppGear.targets` puts the Neo machines and the Link helper beside either app (and into a publish).
 - **`ReBuzz.Studio`** (Avalonia 12.1.4, Fluent dark):
   - Seams: `IUiDispatcher` on Avalonia's dispatcher, with DispatcherTimer timers. The engine's messages appear as dialogs; its synchronous questions run in a nested dispatcher frame. File choice goes through the storage provider. Modifier keys come from the windows' input.
@@ -113,7 +114,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 - **Dev NuGet cache** (§3.8): `dev-nuget-cache.yml` keeps the restored packages as one release asset (`dev-nuget-cache`, a prerelease, not a ReBuzz release). Locally: `dotnet restore <project> --configfile <a nuget.config whose only source is that unpacked folder>`. The test projects also run locally that way.
 - **The Mac app:** `tools/mac-bundle.sh` builds `ReBuzz.app`. It is self-contained osx-arm64, with PortAudio, libsndfile (and its libraries) and the Link helper inside, and ad-hoc signed. The Mac job runs the headless view tests on arm64, then builds the app and starts it for real (`--smoke`, with the runner's audio device), and uploads it (`ReBuzz-macos-arm64`).
 
-**S1, the Neo editors** (this PR).
+**S1, the Neo editors** (#55).
 - **`NeoBuzz.Editor.Avalonia`** (`Machines/NeoBuzz.Editor.Avalonia/`, linked as source like the WPF kit):
   - `AvaloniaCanvas`: `INeoCanvas` on Avalonia's `DrawingContext`, with immutable brushes and pens cached, and paths' geometry kept between frames. The font is Segoe UI, else one of its widths (Helvetica Neue, Arial, Liberation Sans), so labels fit layouts made with it.
   - The kit's controls with the WPF kit's API: the editor shell with its header and preset bar, knobs, choices, drop-downs, meters, graph views (envelopes, interactive graphs), sections, `Layout` and `Build`. They port line for line on `NeoElement`, a base with WPF's shape (`OnRender`, `OnMouseLeftButtonDown`…).
@@ -130,6 +131,57 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - live parts, with Neo Poly → Neo EQ → Neo Analyzer playing a chord through the engine offline. Neo Poly's and Neo EQ's meters show it, as do Neo EQ's spectrum under its response curve and Neo Analyzer's spectrum and loudness. The analyzer's graphs animate (`neo-*-editor-live`);
   - Neo FM6's algorithm view takes clicks through the WPF-shaped callbacks: right click goes back, and both are undoable. A closed editor opens again.
 - **Differs from WPF:** text is greyscale-antialiased in a fallback font. Paths' corners all follow the stroke's join, as Avalonia has no per-corner smooth join. A message box returns at once. Saving a preset asks for its name in an Avalonia dialog; it isn't tested headless.
+
+**S5, the Session View and its mixer** (`ReBuzz.Studio/Views/Session/`, the "Session" tab).
+- **A port of the WPF view** (ReBuzz/AppViews/Session), file for file, built in code as it is: cells are Avalonia borders and text in a grid, the fader, pan, sends, meters and piano roll draw themselves (`Render`). Engine calls and undo are the WPF view's: `SessionLayout` for edits (the session's own undo history), `ISession`/`SessionCore` for launches, `SessionMixer` for the mixer (connections, so the song's undo has sends and cue). The WPF view is unchanged.
+  - *Grid:* tracks, scenes, group columns (fold, launch, stop), return columns; clip colours and states (queued blinking, playing green with progress, stopping, ● recording), selection, MIDI learn and controller rings outlined; scene tempo, beats per bar and follow marks; empty slots stop their track, or record a take when armed.
+  - *Top bar:* Stop all, Rec (arrangement), Overdub (Session Record), Capture, metronome, Back to arrangement, ↶ Launch, Follow, launch quantization, beats per bar, tempo with nudge (held) and Tap, the session clock, dropouts, ↶ ↷, + Scene, + Track, Clip, Mixer, ⚙ (clip length, record length, count-in, metronome, scenes stop other clips, select on launch, launch timing, returns, cue output, MIDI learn, keyboard shortcuts).
+  - *Clip panel:* mode, quantization, legato, velocity, start and loop markers, the clip's follow action, Reset, and the scene row's tempo, beats per bar and follow action; status (playing, position, follow, recording). A **Notes…** button opens the piano roll.
+  - *Piano roll* (`PianoRoll`, `PianoRollWindow`): the clip's engine MIDI column, edited as on Windows (draw, move, resize, velocity, box select, keys, quantize, grid, zoom), each edit one session undo step. Until S6 this is where the studio writes notes.
+  - *Mixer:* volume, pan, sends to returns, cue, crossfader sides and the crossfader (with its curve), mute and solo, post-fader peak meters (on a 25 ms timer while shown), group strips and the master strip.
+  - *Keys* as WPF has them, with Command for Control on macOS. The view's Control shortcuts are key bindings of its own: Avalonia matches key bindings from the focused element up *before* KeyDown, so otherwise the main window's Ctrl+Z (the song's undo) would take the session's. Menus are context menus; dialogs (rename, scene tempo, insert into arrangement) answer tests through `Dialogs.TextResponder` and `ArrangementInsertDialog.Responder`.
+- **Not ported:** audio clips (1.0: dropping files, the Audio section, warp markers; the studio has no Session Clip Player yet), the MIDI note grid dialog and the Sync and Controllers menus (S7's preferences). Double-click on a clip opens the Pattern tab, as on Windows; until S6 it is a placeholder, and Command/Ctrl+double-click (or Notes…) opens the piano roll.
+- **Tests** (`SessionViewTests`, 11, on the shared engine through `SessionRig`: Neo Poly tracks, the view in a window, mouse and keys simulated, the engine's ticks rendered by a `WorkManager` as ReBuzzTests does, the heard clock frozen as its `FreezeClock`), following the WPF view's tests: a scene launch queued then playing, a clip's ▶, track stop and Stop all; a clip made by double-click and notes drawn, dragged, moved and undone in the piano roll, then played; a track armed and a take recorded with the transport running, played back, undone and redone; faders, pan, sends to a return (and their undo in the song), mute, crossfader side, master, meters; groups (launch, fold, keys skipping folded tracks) and cue; undo of grid, clip panel and drag edits with the keys in the main window (not the song's undo); the WPF keyboard test; the clip panel's clip and scene properties; follow actions, quantization, beats per bar, launch undo, nudge; slot and scene menus (colour, assign, rename, tempo, insert into arrangement, duplicate). Screenshots: `session-tab`, `session-grid`, `session-grid-playing`, `session-clip-panel`, `session-piano-roll`, `session-piano-roll-playing`, `session-recording`, `session-mixer`, `session-groups`, `session-undo`, `session-performance`, `session-menus`.
+
+**S3, the machine view** (`ReBuzz.Studio/Views/Machines`, the Machines tab). BuzzGUI.MachineView ported by behaviour.
+- **Drawing** (`MachineCanvas`): one code-drawn control, in the default theme's look and colour keys (`MV Background`, `MV Generator`/`Effect`/`Master` and their `Mute` shades, the LED colours, `MV Line`, `MV Arrow`, `MV Machine Text`/`Border`).
+  - Machines are 100×50 boxes at their song positions. As in MachineCanvas, the canvas is twice the view, so positions -1..1 fill the view.
+  - A box has its mute LED (lit while it sounds), the delete button on hover, the mode text (.NET, MIDI channel, 2x), "missing" or "crashed", the name as (muted), <bypassed> or [not soloed], and the selection's glass.
+  - Wires are straight, clipped at the boxes (the Clipper port), with the arrow at the middle pointing downstream.
+  - The geometry and hit tests are pure (`MachineGeometry`, `CanvasMap`).
+- **Mouse and keys, as in Buzz:**
+  - A click selects, and a generator gets MIDI focus. Drag a rubber band on empty space; Ctrl (Command on a Mac) adds to the selection. Dragging moves the selection. An effect with no wires, dropped on a wire's middle, goes into it.
+  - Shift-drag (or middle-drag) from source to destination connects. A middle click on an arrow disconnects.
+  - The arrow opens the amp control, with the amp knob turning on a left press, pan for stereo inputs, insert (an effect into the wire) and disconnect. Leaving it commits.
+  - The LED mutes. A double click opens the machine's GUI (`UiHost.OpenGui`).
+  - Right click on empty space: New ▸ Generators / Effects / Control (the installed machines by kind, as the machine list filters them), Unmute all, Snap Machines, Select All, Deselect.
+  - Right click on a machine: Mute, Solo or Bypass, Oversample, Parameters..., MIDI Input Channel, Replace, Rename... (`AskName`), Delete. Master has Parameters... only.
+  - Keys: Delete (Backspace on a Mac), and Ctrl/Command + A, D, U, M, as the view's own key bindings. Their commands are `MachineCanvas` methods, ready for the shell's Edit routing.
+  - Zoom: Ctrl/Command + wheel or a trackpad pinch, around the pointer; or the top bar's slider (-8..8, ×2^(level/8)). A middle double click resets.
+  - Scroll: the wheel or a trackpad, the scroll bars, a middle drag, or Shift-drag on empty space.
+- **Edits** (`MachineEdits`) go through the engine's undo stack, with the SongCore calls the WPF view makes:
+  - create (CreateInstrument: a pattern, a sequence track, and a generator wired to Master while the song has no effects);
+  - move, connect, disconnect, insert, replace, rename;
+  - delete, which wires a lone machine's sources on to its destinations.
+  - Mute, solo, bypass and a wire's amp and pan aren't undoable in ReBuzz. Here they use the engine's own undo steps for them (`AgentActions`, the MCP server's), so they undo in the studio.
+- **Tests** (`MachineViewTests`, headless, with mouse and keys only):
+  - From an empty song: add Neo Poly and Neo Verb from the gear menu, Shift-drag Poly → Verb → Master, take the direct wire away with the amp control, move Verb, set its wire's amp and pan with the knobs, mute (LED), solo and rename (menus), delete (Delete key). Each step is checked against the engine's graph, then undone with Ctrl+Z, step by step, back to Master alone.
+  - Double click opens the GUI; Parameters... and Bypass from the menu.
+  - A saved song reopens with each box at its stored position, and a click there selects it. An old Windows song (FSM Infector demo, .bmx) opens with its native machines as placeholders.
+  - Zoom keeps the point under the pointer; wheel, middle-drag and Shift-drag scroll; the slider zooms; a middle double click resets.
+  - An effect dropped on a wire goes into it, in one undo step. Rubber band, group move, Ctrl+A/D, Ctrl-click, and delete from the menu.
+  - Screenshots: `machines-1-empty` to `machines-16-rubber-band`.
+  - The tests hold off the menus' hover delay, which runs on the wall clock.
+- **Differs from WPF:**
+  - Ctrl/Command + wheel zooms and the plain wheel scrolls (WPF's CtrlMouseWheel setting), for trackpads; a pinch zooms too (not testable headless).
+  - Mute, solo, bypass and amp/pan undo.
+  - A machine added from the menu is selected.
+- **Not ported:**
+  - the sidebar (machine list, parameters, MDB, templates, MIDI bindings);
+  - machine groups (grouped machines are drawn at their own positions);
+  - cut, copy, paste, clone and templates; quick-new by typing; rotate (Alt-drag); screen-edge disconnect;
+  - curved wires, multi-channel plugs and their channel menus, wireless outputs, VU meters on wires, skins;
+  - the CPU monitor, HD recorder, signal analysis, latency, attributes and machine commands.
 
 **S6, the Modern Pattern Editor** (§3.6).
 - **One source, three builds.** The WPF project (`ModernPatternEditor.NET`) still builds for Windows; fork CI's Windows job now builds it. Its machine side is shared, unchanged, with two `net10.0` projects:
@@ -148,17 +200,17 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - keys as on Windows: notes by key position (the PC scan codes `PEKeys.xml` names), values, note off, clear, insert and delete rows, Tab between tracks, Shift to select, Ctrl+1–0 subdivisions. Command acts as Control on macOS, and the main keyboard's + and − as the keypad's;
   - the edit commands of the WPF editor: cut, copy, paste, undo, redo on the editor's own stack, transpose (Shift and Ctrl+Shift with + and −), interpolate (linear, exponential), randomize, rotate, write state, select all and unselect. They are also in the grid's context menu;
   - pattern properties (Ctrl+Backspace): name, beats, rows per beat, and which columns and MIDI lanes the pattern has.
-  - Avalonia matches key bindings from the focused element up, before KeyDown. So the grid binds its Ctrl and Command shortcuts itself, or the window's Ctrl+Z would undo the song.
+  - Undo and Redo come from the shell (§3.10): the window's Ctrl/Command+Z and Y reach the page first. The editor's other shortcuts, Ctrl+X, C, V, A, U and the rest, reach the grid as keys.
 - **The Pattern tab** (`Views/PatternView.cs`):
   - It shows the editor for a chosen machine and pattern, with a machine chooser, a pattern chooser and New pattern. It follows the engine when the pattern editor's pattern (`SetPatternEditorPattern`) or the selected machine changes, and comes to the front when another view sets `ActiveView` to `PatternView` (the Session View's double-clicked clip).
   - The editor's Return (WPF: to the sequence editor) selects the Sequence tab.
   - **For other views:** `PatternView.Edit(IPattern)` and `Edit(IMachine)` show a pattern or a machine's patterns and bring the tab to the front, `PatternView.Show()` brings it to the front alone, and `PatternShown` says what it shows.
-  - **For the shell's Edit menu:** the page's `Undo`, `Redo`, `Cut`, `Copy` and `Paste` reach the editor's own undo stack and clipboard (its `IEditContext`). They return false when the editor has nothing to do, so the song's undo can take the command (`IStudioEditTarget`).
+  - **For the shell's Edit menu:** the page is an `IStudioEditTarget`. Its `Undo`, `Redo`, `Cut`, `Copy` and `Paste` reach the editor's own undo stack and clipboard (its `IEditContext`). Undo and Redo return false when the editor has nothing to undo or redo, so the song's undo history takes them.
 - **Tests** (`PatternEditorTests`, headless):
   - notes, a note off, and global and word values typed with the keyboard are the engine's pattern events and the editor's data (format 255);
   - period clears, Delete moves rows up;
   - transpose by a semitone and an octave, copy and paste, linear interpolation with the WPF editor's values;
-  - undo and redo through Ctrl+Z/Y and through the page, without touching the song's undo;
+  - undo and redo with Ctrl+Z and Y (the shell's, through the page) on the editor's own stack, without touching the song's; with nothing to undo in the editor, the page passes Undo on; the Edit menu's Copy reaches the editor;
   - a click places the cursor, a drag selects;
   - pattern properties: renamed, 8 beats, 8 rows a beat, two MIDI lanes typed into;
   - the pattern plays through the engine (offline render): the notes sound at the Master, the automation reaches the machine, and the play cursor follows;
