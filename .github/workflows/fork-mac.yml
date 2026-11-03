@@ -60,15 +60,18 @@ jobs:
 
     # With the CoreMIDI loopback (virtual ports; the runner has no MIDI devices) and the Link helper.
     - name: Session View core and platform seams
+      shell: bash   # -eo pipefail: a failing dotnet test fails the step, through tee
       env:
         REBUZZ_LINK_HELPER: ${{ github.workspace }}/build/LinkHelper/ReBuzzLink
       run: dotnet test ReBuzz.SessionTests --logger "console;verbosity=normal" 2>&1 | tee test.log
 
     - name: Agent server core
+      shell: bash   # -eo pipefail: a failing dotnet test fails the step, through tee
       if: always()
       run: dotnet test ReBuzz.AgentTests --logger "console;verbosity=normal" 2>&1 | tee agent-test.log
 
     - name: Machine DSP tests (arm64)
+      shell: bash   # -eo pipefail: a failing dotnet test fails the step, through tee
       if: always()
       env:
         MEASUREMENTS_DIR: ${{ github.workspace }}/measurements

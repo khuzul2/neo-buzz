@@ -25,7 +25,7 @@ namespace ReBuzz.Platform
         sealed class Group
         {
             public IntPtr Handle;
-            public uint Period, Computation, Constraint;    // mach ticks
+            public double Period;           // seconds: the device's buffer
         }
 
         static readonly object gate = new object();
@@ -82,10 +82,7 @@ namespace ReBuzz.Platform
                     lastError = $"the device has no I/O workgroup (OSStatus {status})";
                     return false;
                 }
-                mach_timebase_info(out var timebase);
-                double ticksPerSecond = 1e9 * timebase.Denom / Math.Max(1u, timebase.Numer);
-                uint period = (uint)Math.Clamp(bufferSeconds * ticksPerSecond, 1000, uint.MaxValue / 2);
-                var group = new Group { Handle = handle, Period = period, Computation = period / 2, Constraint = period };
+                var group = new Group { Handle = handle, Period = Math.Max(bufferSeconds, 0.0001) };
                 lock (gate)
                 {
                     if (current != null) os_release(current.Handle);    // our reference; joined threads hold theirs
@@ -132,7 +129,9 @@ namespace ReBuzz.Platform
             if (group == null) return;
             try
             {
-                SetTimeConstraint(group);
+                // Joining needs a real-time thread: the device's period, half of it to work.
+                if (!RealtimeThread.SetTimeConstraint(group.Period, group.Period / 2, group.Period))
+                    lastError = RealtimeThread.LastError;
                 if (token == IntPtr.Zero)
                 {
                     token = Marshal.AllocHGlobal(64);
@@ -183,21 +182,6 @@ namespace ReBuzz.Platform
             }
         }
 
-        /// <summary>A real-time policy for the device's period: CoreAudio's own I/O thread has one too.</summary>
-        static void SetTimeConstraint(Group group)
-        {
-            var policy = new TimeConstraintPolicy
-            {
-                Period = group.Period,
-                Computation = group.Computation,
-                Constraint = group.Constraint,
-                Preemptible = 1,
-            };
-            uint thread = pthread_mach_thread_np(pthread_self());
-            int kr = thread_policy_set(thread, 2 /* THREAD_TIME_CONSTRAINT_POLICY */, &policy, 4 /* its size in integers */);
-            if (kr != 0) lastError = $"thread_policy_set: {kr}";
-        }
-
         static uint FourCC(string s) => (uint)(s[0] << 24 | s[1] << 16 | s[2] << 8 | s[3]);
 
         [StructLayout(LayoutKind.Sequential)]
@@ -206,22 +190,6 @@ namespace ReBuzz.Platform
             public uint Selector;
             public uint Scope;
             public uint Element;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        struct Timebase
-        {
-            public uint Numer;
-            public uint Denom;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        struct TimeConstraintPolicy
-        {
-            public uint Period;
-            public uint Computation;
-            public uint Constraint;
-            public int Preemptible;
         }
 
         const string CoreAudio = "/System/Library/Frameworks/CoreAudio.framework/CoreAudio";
@@ -245,16 +213,5 @@ namespace ReBuzz.Platform
         [DllImport(LibSystem)]
         static extern void os_release(IntPtr obj);
 
-        [DllImport(LibSystem)]
-        static extern int mach_timebase_info(out Timebase info);
-
-        [DllImport(LibSystem)]
-        static extern IntPtr pthread_self();
-
-        [DllImport(LibSystem)]
-        static extern uint pthread_mach_thread_np(IntPtr thread);
-
-        [DllImport(LibSystem)]
-        static extern int thread_policy_set(uint thread, uint flavor, TimeConstraintPolicy* policy, uint count);
     }
 }
