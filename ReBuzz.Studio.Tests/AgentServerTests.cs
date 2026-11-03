@@ -98,11 +98,9 @@ namespace ReBuzz.Studio.Tests
 
                 // Copy puts the line on the clipboard.
                 var clipboard = prefs.Clipboard;
-                if (clipboard != null)
-                {
-                    page.CopyButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-                    Assert.That(Pump(Avalonia.Input.Platform.ClipboardExtensions.TryGetTextAsync(clipboard)), Is.EqualTo(page.CommandBox.Text));
-                }
+                Assert.That(clipboard, Is.Not.Null);
+                page.CopyButton.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Assert.That(Pump(Avalonia.Input.Platform.ClipboardExtensions.TryGetTextAsync(clipboard)), Is.EqualTo(page.CommandBox.Text));
 
                 HttpRequestMessage Post(string body, string session = null, string bearer = null)
                 {
