@@ -22,7 +22,7 @@ cp "$brew_lib/libsndfile.1.dylib" "$macos/libsndfile.dylib"
 chmod u+w "$macos"/*.dylib
 for lib in libportaudio.dylib libsndfile.dylib; do
   install_name_tool -id "@loader_path/$lib" "$macos/$lib"
-  dylibbundler -of -b -x "$macos/$lib" -d "$macos/libs" -p "@loader_path/libs/" >/dev/null
+  dylibbundler -of -cd -b -x "$macos/$lib" -d "$macos/libs" -p "@loader_path/libs/" >/dev/null
 done
 
 version="$(tr -cd '0-9' < "$root/ReBuzz/BuildNumber.txt" 2>/dev/null || echo 0)"

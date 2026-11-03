@@ -51,7 +51,7 @@
 | D2 | Legacy native machines on Mac | **A** not on Mac: recompile the open-source ones, use successors, clone the few the census picks · **B** Wine/CrossOver bridge · **C** not on Mac and no rebuilds (songs show placeholders) | **A** |
 | D3 | Timing relative to MCP | **A** before MCP · **B** after MCP: engine split inside A0, Mac headless after A2, UI after A5 · **C** full port in parallel from A0 | **B** |
 | D4 | Upstream merges once Windows is on Avalonia | **A** merge everything (only realistic with XPF) · **B** merge engine and machines, re-port the UI features you want · **C** stop tracking upstream | **B** |
-| D5 | Plugin hosting on Mac | **A** none in the first Mac release · **B** CLAP + VST3 host machine after P4 · **C** B plus AU | **A** |
+| D5 | Plugin hosting on Mac | **A** none in the first Mac release · **B** CLAP + VST3 host machine after P4 · **C** B plus AU | **A**; refined 2026-11-03 ([`plugin-host.md`](plugin-host.md)): a CLAP + VST3 host beside Polac, spike and census now, built after P3 |
 
 ## 2. Inventory: what ties us to Windows
 
@@ -335,6 +335,7 @@ Today VST runs through Polac's closed Windows machines, so a Mac build has no pl
 - **Formats:** CLAP (MIT) and VST3 (MIT since VST 3.8, October 2025) are both licence-compatible with the fork. AU through AudioToolbox if needed.
 - **Hosting:** built on R1's portable native host, so plugins run out of process like native machines. Plugin editors open as separate windows, because macOS can't embed an NSView from another process.
 - **Cost:** 6–10 pw. Not needed for the first Mac release.
+- **Analysis (2026-11-03):** [`plugin-host.md`](plugin-host.md): a new host versus Polac, what each format covers (including VST2's licence route), isolation and effort. It recommends a CLAP + VST3 host beside Polac, 10–14 pw with a sandbox.
 
 ## 5. Plan
 
