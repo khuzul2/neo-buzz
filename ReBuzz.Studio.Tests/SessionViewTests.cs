@@ -655,7 +655,16 @@ namespace ReBuzz.Studio.Tests
             rig.Menu("Duplicate scene");
             Assert.That(layout.SceneCount, Is.EqualTo(scenes + 1));
             Assert.That(layout.PatternAt(0, 1), Is.SameAs(beat), "the copy is below");
+            // MIDI learn from a slot's menu: the status line says what it waits for, Esc cancels.
+            rig.Click(view.SlotAt(0, 1), MouseButton.Right, fx: 0.6);
+            rig.Menu("MIDI learn…");
+            view.RefreshState();
+            Assert.That(view.StatusLine, Does.StartWith("MIDI learn: press a pad, key or knob for track 1, scene 2"));
             rig.Screenshot("session-menus");
+            rig.Key(PhysicalKey.Escape);
+            Assert.That(rig.Core.SessionMidi.IsLearning, Is.False);
+            view.RefreshState();
+            Assert.That(view.StatusLine, Is.Empty);
         }
     }
 }

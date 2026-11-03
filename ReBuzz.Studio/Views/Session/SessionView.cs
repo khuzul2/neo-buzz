@@ -368,6 +368,8 @@ namespace ReBuzz.Studio.Views.Session
             session.PropertyChanged += OnSessionChanged;
             Rebuild();
             timer.Start();
+            // Shown (its tab selected): the view takes the keys, unless something in it has them.
+            Dispatcher.UIThread.Post(() => { if (attached && !IsKeyboardFocusWithin) Focus(); });
         }
 
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
@@ -842,5 +844,6 @@ namespace ReBuzz.Studio.Views.Session
         internal string ClockText => clockText.Text;
         internal string TempoText => tempoText.Text;
         internal ScrollViewer GridScroll => scroll;
+        internal string StatusLine => statusBar.IsVisible ? statusText.Text : "";
     }
 }
