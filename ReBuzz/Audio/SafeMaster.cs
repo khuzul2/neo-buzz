@@ -91,6 +91,9 @@ namespace ReBuzz.Audio
         /// and measures; the limiter's pass runs only while something is over the ceiling or the
         /// gain is still coming back.
         /// </summary>
+        // Fork (audio hygiene): compiled optimized at once (by the warm-up), not first unoptimized
+        // and then again, optimized, by the audio thread in the middle of its loop (OSR).
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveOptimization)]
         public void Process(Span<float> buffer, int channels, int sampleRate)
         {
             if (channels < 1) return;

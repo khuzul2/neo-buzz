@@ -68,15 +68,27 @@ namespace ReBuzz.Audio
                 foreach (var t in TypesOf(engine))
                     if (InNamespaces(t.Namespace ?? ""))
                         PrepareType(t, generics);
+                PrepareType(typeof(ReBuzz.FileOps.Gear), generics);     // the tick asks it about subticks
                 foreach (var a in new[] { typeof(BuzzGUI.Interfaces.IMachine).Assembly, typeof(BuzzGUI.Common.Global).Assembly })
                     foreach (var t in TypesOf(a))
                         PrepareType(t, generics);
                 PrepareGenerics(generics);
-                // A wait that blocks, once: its runtime path (a P/Invoke stub, the blocking-info
-                // bookkeeping) is compiled here, not the first time the audio thread waits for a
-                // render thread or a lock.
+                // A wait that blocks, and a lock and a monitor taken while another thread holds
+                // them, once each: their runtime paths (a P/Invoke stub, the blocking-info
+                // bookkeeping) are compiled here, not the first time the audio thread waits for a
+                // render thread or a lock the UI thread holds.
                 var o = new object();
                 lock (o) Monitor.Wait(o, 1);
+                var l = new Lock();
+                using (var held = new ManualResetEventSlim())
+                {
+                    var holder = new Thread(() => { lock (l) lock (o) { held.Set(); Thread.Sleep(20); } }) { IsBackground = true };
+                    holder.Start();
+                    held.Wait();
+                    lock (l) { }
+                    lock (o) { }
+                    holder.Join();
+                }
             });
         }
 

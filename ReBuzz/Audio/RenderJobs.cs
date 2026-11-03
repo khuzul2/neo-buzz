@@ -138,6 +138,8 @@ namespace ReBuzz.Audio
             return true;
         }
 
+        // Optimized at once: its loop isn't recompiled (OSR) on a render thread while it plays.
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveOptimization)]
         static void Work()
         {
             try
