@@ -21,7 +21,7 @@ namespace ReBuzz.Studio.Views
     {
         public static IReadOnlyList<IStudioView> All { get; } = new IStudioView[]
         {
-            new Placeholder("Machines", "The machine view comes in step S3."),
+            new Machines.MachinesTab(),
             new Placeholder("Sequence", "The sequence editor comes in step S4."),
             new Placeholder("Session", "The Session View and mixer come in step S5."),
             new Placeholder("Pattern", "The pattern editor comes in step S6."),

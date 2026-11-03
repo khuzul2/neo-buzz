@@ -112,3 +112,43 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - The window is saved as PNGs, which CI uploads (`studio-screenshots`).
 - **Dev NuGet cache** (§3.8): `dev-nuget-cache.yml` keeps the restored packages as one release asset (`dev-nuget-cache`, a prerelease, not a ReBuzz release). Locally: `dotnet restore <project> --configfile <a nuget.config whose only source is that unpacked folder>`. The test projects also run locally that way.
 - **The Mac app:** `tools/mac-bundle.sh` builds `ReBuzz.app`. It is self-contained osx-arm64, with PortAudio, libsndfile (and its libraries) and the Link helper inside, and ad-hoc signed. The Mac job runs the headless view tests on arm64, then builds the app and starts it for real (`--smoke`, with the runner's audio device), and uploads it (`ReBuzz-macos-arm64`).
+
+**S3, the machine view** (`ReBuzz.Studio/Views/Machines`, the Machines tab). BuzzGUI.MachineView ported by behaviour.
+- **Drawing** (`MachineCanvas`): one code-drawn control, in the default theme's look and colour keys (`MV Background`, `MV Generator`/`Effect`/`Master` and their `Mute` shades, the LED colours, `MV Line`, `MV Arrow`, `MV Machine Text`/`Border`).
+  - Machines are 100×50 boxes at their song positions. As in MachineCanvas, the canvas is twice the view, so positions -1..1 fill the view.
+  - A box has its mute LED (lit while it sounds), the delete button on hover, the mode text (.NET, MIDI channel, 2x), "missing" or "crashed", the name as (muted), <bypassed> or [not soloed], and the selection's glass.
+  - Wires are straight, clipped at the boxes (the Clipper port), with the arrow at the middle pointing downstream.
+  - The geometry and hit tests are pure (`MachineGeometry`, `CanvasMap`).
+- **Mouse and keys, as in Buzz:**
+  - A click selects, and a generator gets MIDI focus. Drag a rubber band on empty space; Ctrl (Command on a Mac) adds to the selection. Dragging moves the selection. An effect with no wires, dropped on a wire's middle, goes into it.
+  - Shift-drag (or middle-drag) from source to destination connects. A middle click on an arrow disconnects.
+  - The arrow opens the amp control, with the amp knob turning on a left press, pan for stereo inputs, insert (an effect into the wire) and disconnect. Leaving it commits.
+  - The LED mutes. A double click opens the machine's GUI (`UiHost.OpenGui`).
+  - Right click on empty space: New ▸ Generators / Effects / Control (the installed machines by kind, as the machine list filters them), Unmute all, Snap Machines, Select All, Deselect.
+  - Right click on a machine: Mute, Solo or Bypass, Oversample, Parameters..., MIDI Input Channel, Replace, Rename... (`AskName`), Delete. Master has Parameters... only.
+  - Keys: Delete (Backspace on a Mac), and Ctrl/Command + A, D, U, M.
+  - Zoom: Ctrl/Command + wheel around the pointer, or the top bar's slider (-8..8, ×2^(level/8)). A middle double click resets.
+  - Scroll: the wheel or a trackpad, the scroll bars, a middle drag, or Shift-drag on empty space.
+- **Edits** (`MachineEdits`) go through the engine's undo stack, with the SongCore calls the WPF view makes:
+  - create (CreateInstrument: a pattern, a sequence track, and a generator wired to Master while the song has no effects);
+  - move, connect, disconnect, insert, replace, rename;
+  - delete, which wires a lone machine's sources on to its destinations.
+  - Mute, solo, bypass and a wire's amp and pan aren't undoable in ReBuzz. Here they use the engine's own undo steps for them (`AgentActions`, the MCP server's), so they undo in the studio.
+- **Tests** (`MachineViewTests`, headless, with mouse and keys only):
+  - From an empty song: add Neo Poly and Neo Verb from the gear menu, Shift-drag Poly → Verb → Master, take the direct wire away with the amp control, move Verb, set its wire's amp and pan with the knobs, mute (LED), solo and rename (menus), delete (Delete key). Each step is checked against the engine's graph, then undone with Ctrl+Z, step by step, back to Master alone.
+  - Double click opens the GUI; Parameters... and Bypass from the menu.
+  - A saved song reopens with each box at its stored position, and a click there selects it. An old Windows song (FSM Infector demo, .bmx) opens with its native machines as placeholders.
+  - Zoom keeps the point under the pointer; wheel, middle-drag and Shift-drag scroll; the slider zooms; a middle double click resets.
+  - An effect dropped on a wire goes into it, in one undo step. Rubber band, group move, Ctrl+A/D, Ctrl-click, and delete from the menu.
+  - Screenshots: `machines-1-empty` to `machines-16-rubber-band`.
+  - The tests hold off the menus' hover delay, which runs on the wall clock.
+- **Differs from WPF:**
+  - Ctrl/Command + wheel zooms and the plain wheel scrolls (WPF's CtrlMouseWheel setting), for trackpads.
+  - Mute, solo, bypass and amp/pan undo.
+  - A machine added from the menu is selected.
+- **Not ported:**
+  - the sidebar (machine list, parameters, MDB, templates, MIDI bindings);
+  - machine groups (grouped machines are drawn at their own positions);
+  - cut, copy, paste, clone and templates; quick-new by typing; rotate (Alt-drag); screen-edge disconnect;
+  - curved wires, multi-channel plugs and their channel menus, wireless outputs, VU meters on wires, skins;
+  - the CPU monitor, HD recorder, signal analysis, latency, attributes and machine commands.
