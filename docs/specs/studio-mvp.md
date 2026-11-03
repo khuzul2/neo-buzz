@@ -207,7 +207,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - Every Pedal machine loads, plays and shows its parameters on Linux.
   - **The synths take notes only in their Note column**, not as MIDI: M1, Juno106, SH101, FM, Tracker. So until the pattern editor (S6), neither the Session View's piano roll nor the agent's `notes_write` plays them. The check writes Note columns into the song file.
   - **Chord, LFO and Peer Control** set their targets in WPF dialogs. Off Windows they work with targets saved in a song (made on Windows), and their menu commands say so.
-  - **Pedal Plate's reverb diverges at its default Decay** (75), on any platform: its modulated all-pass reads 1–17 samples behind its write position instead of its length behind. That makes it a comb with a gain of up to 5.7 inside the tank's loop. The check runs it at Decay 0. Not fixed here: it would change the Windows build's sound.
+  - **Pedal Plate's reverb diverged at its default Decay** (75), on any platform: its modulated all-pass read 1–17 samples behind its write position instead of its length behind. That made it a comb with a gain of up to 5.7 inside the tank's loop. **Fixed** (the user's call; it changes the Windows build's sound too): the all-pass reads its full length behind, modulated by up to 16 samples, and feeds back the same tap. The check runs it at the default Decay, and at full Decay and modulation with a 3 s tail.
 - **Tests** (`ParameterWindowTests`):
   - a Neo machine's window, and each Pedal machine's (screenshots `parameters-*.png`);
   - a slider drag changes the value, the undo button restores it, and redo brings it back; three wheel steps undo as one;

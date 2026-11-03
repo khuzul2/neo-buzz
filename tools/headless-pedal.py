@@ -186,17 +186,20 @@ for gear in SYNTHS:
     ok, _, r = call("render", **{"from": 0, "to": 4, "tail_seconds": 0.5, "solo": [name]})
     check(ok and audible(r.get("measure")), f"{gear} plays a note ({peak_of(r.get('measure'))} dBFS peak)")
 
-# Pedal Plate's tank diverges at its default Decay (75), on any platform: its modulated all-pass
-# reads 1-17 samples behind its write position, not its length behind, which makes it a comb
-# with a gain of up to 5.7 inside the tank's loop. Checked here at Decay 0; see studio-mvp.md S2.
-check(call("param_set", machine="E-Plate", changes=[{"param": "Decay", "value": "raw:0"}])[0], "Pedal Plate at Decay 0")
-
 # Each effect's own output, probed in one render (solo would keep the source's other outputs too).
 effects = ["E-" + short(g) for g in EFFECTS]
 ok, _, r = call("render", **{"from": 0, "to": 4, "tail_seconds": 0.5, "probes": effects})
 probes = {p.get("machine"): p.get("measure") for p in r.get("probes", [])}
 for gear, name in zip(EFFECTS, effects):
     check(ok and audible(probes.get(name)), f"{gear} sounds with the chord through it ({peak_of(probes.get(name))} dBFS peak)")
+
+# Pedal Plate's tank diverged at its default Decay until its modulated all-pass was fixed (studio-mvp.md S2):
+# the check above runs it at the default; here at full Decay and modulation, with a long tail.
+check(call("param_set", machine="E-Plate", changes=[{"param": "Decay", "value": "raw:100"}, {"param": "ModDepth", "value": "raw:100"},
+                                                  {"param": "ModRate", "value": "raw:100"}])[0], "Pedal Plate at full Decay and modulation")
+ok, _, r = call("render", **{"from": 0, "to": 4, "tail_seconds": 3, "probes": ["E-Plate"]})
+probe = next((p for p in r.get("probes", []) if p.get("machine") == "E-Plate"), {})
+check(ok and audible(probe.get("measure")), f"Pedal Plate stays bounded at full Decay ({peak_of(probe.get('measure'))} dBFS peak)")
 
 ok, _, r = call("render", **{"from": 0, "to": 4, "tail_seconds": 0.5, "probes": ["ChordJuno"]})
 probe = next((p for p in r.get("probes", []) if p.get("machine") == "ChordJuno"), {})
