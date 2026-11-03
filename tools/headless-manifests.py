@@ -8,7 +8,8 @@
 #  - a pitch offset in a manifest moves what the machine gets, not what the agent reads (a copy of
 #    the app with an edited draft);
 #  - param_set takes units on Pedal machines (Hz, dB, ms, ratios, choices) and says the units are a draft's;
-#  - machine_add warns about an unhealthy machine.
+#  - an unhealthy draft (in the copy: Pedal Plate's profile has been clean since its fix) is flagged
+#    and listed last by gear_list, and machine_add warns about it.
 #
 #   python3 tools/headless-manifests.py <path to rebuzz-headless> [work folder]
 
@@ -91,9 +92,7 @@ check(juno.get("exact_units") is False, "gear_list: a draft's units aren't calle
 missing = [n for n, x in rows.items() if not x.get("manifest")]
 check(not missing, f"every Pedal machine has a manifest beside it (missing: {missing}): Machines/Manifests is up to date")
 plate = rows.get("Pedal Plate", {})
-names = [x["name"] for x in g.get("gear", [])]
-check(plate.get("health") == "unhealthy" and plate.get("problems") and names[-1] == "Pedal Plate",
-      f"gear_list: Pedal Plate is flagged unhealthy with why, and listed last ({plate.get('problems')})")
+check(plate and "health" not in plate, f"gear_list: Pedal Plate's profile is clean since its reverb was fixed (studio-mvp.md S2) ({plate.get('health')}: {plate.get('problems')})")
 
 # A Pedal synth plays the written pitch through notes_write: its draft says it takes notes in its tracks.
 s.call("song_new", discard_unsaved=True, tempo_bpm=120)
@@ -131,12 +130,12 @@ env = (g2.get("values") or [{}])[0]
 check(ok and env.get("unit") == "s" and abs((env.get("number") or 0) - 0.25) < 0.03 and env.get("approximate") is True and g2.get("manifest") == "draft",
       f"param_set in ms on Pedal Juno106 from its description's range, marked approximate ({env})")
 
-# An unhealthy machine is added with a warning.
 ok, text, a = s.call("machine_add", gear="Pedal Plate", name="Plate", connect_to="none")
-check(ok and "warning" in a and "NaN" in a["warning"], "machine_add warns about Pedal Plate's profile")
+check(ok and "warning" not in a, "machine_add adds Pedal Plate without a warning")
 check(s.close() == 0, "exits when stdin closes")
 
-# A pitch offset: a copy of the app whose SH101 draft says it plays an octave low (+12 on the way in).
+# A copy of the app with edited drafts: SH101 plays an octave low (+12 on the way in), and Pedal
+# Plate's profile found it blowing up, as it did before its fix.
 app = os.path.dirname(exe)
 copy = os.path.join(work, "app-copy")
 shutil.rmtree(copy, ignore_errors=True)
@@ -147,7 +146,21 @@ with open(draft, encoding="utf-8") as f:
 m["notes"]["pitch_offset"] = 12
 with open(draft, "w", encoding="utf-8") as f:
     json.dump(m, f)
+draft = os.path.join(copy, "Gear", "Effects", "Pedal Plate.machine.json")
+with open(draft, encoding="utf-8") as f:
+    m = json.load(f)
+m["health"] = {"status": "unhealthy", "problems": ["NaN or runaway output on noise (26.42 dBFS)"]}
+with open(draft, "w", encoding="utf-8") as f:
+    json.dump(m, f)
 s = Server(os.path.join(copy, os.path.basename(exe)), "offset")
+ok, _, g = s.call("gear_list", search="Pedal", limit=100)
+rows = {x["name"]: x for x in g.get("gear", [])}
+plate = rows.get("Pedal Plate", {})
+names = [x["name"] for x in g.get("gear", [])]
+check(plate.get("health") == "unhealthy" and plate.get("problems") and names[-1] == "Pedal Plate",
+      f"gear_list: an unhealthy draft is flagged with why, and listed last ({plate.get('problems')})")
+ok, text, a = s.call("machine_add", gear="Pedal Plate", name="Plate", connect_to="none")
+check(ok and "warning" in a and "NaN" in a["warning"], "machine_add warns about an unhealthy profile")
 s.call("machine_add", gear="Pedal SH101", name="Bass")
 ok, w, r = play_a4(s, "Bass")
 hz, name = heard(s, r.get("id", "r1"))

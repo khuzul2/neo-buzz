@@ -712,7 +712,7 @@ The successors of §12.5 still to build (Neo Delay, Ensemble, Filter, Drums, Sam
   - **KrimZon AY-3-8910** plays 13 semitones high (offset −13).
   `notes_write` corrects all three through their drafts. Juno106 is 11 cents flat (its analog drift).
 - **Unhealthy** (listed last by `gear_list`, warned about by `machine_add`):
-  - **Pedal Plate** diverges at its default Decay (+26 dBFS on noise; studio-mvp.md S2 has the cause);
+  - **Pedal Plate** diverged at its default Decay (+26 dBFS on noise). Its modulated all-pass was fixed in P3 (studio-mvp.md S2), and it profiles clean since (a 2.5 s tail; typed "delay", a U2 check for reverb vs delay);
   - **Jeskola Flanger** runs away with every parameter at its minimum or at its maximum, **Jeskola Bass** and **Joachims Hyperion** at their maximum;
   - **Info** doesn't load headless.
 - **The server bug it found.** Jeskola Bass 2 and 3 and Joachims Neptune made `render` fail ("infinity cannot be written as JSON"). Fixed: levels and loudness write `"inf"`, and every tool result replaces non-finite numbers.

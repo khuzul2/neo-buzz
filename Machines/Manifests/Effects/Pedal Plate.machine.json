@@ -4,24 +4,51 @@
  "kind": "effect",
  "status": "draft",
  "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
- "type": "effect (blows up)",
- "summary": "Effect (blows up) (profiled draft).",
+ "type": "delay",
+ "summary": "Delay (profiled draft): traits: delay; tail 2.47 s; latency 0 samples; gain -5.7 dB at the defaults.",
  "tracks": 0,
  "health": {
-  "status": "unhealthy",
-  "problems": [
-   "NaN or runaway output on noise (26.42 dBFS)"
-  ]
+  "status": "ok",
+  "problems": []
  },
  "profile": {
+  "effect": {
+   "gain_db": -5.68,
+   "latency_samples": 0,
+   "latency_ms": 0.0,
+   "tail_seconds": 2.47,
+   "echoes": 2,
+   "first_echo_seconds": 0.14,
+   "gap_before_echo_db": -60.0,
+   "output_correlation": 0.906,
+   "spectrum_spread_db": 1.9,
+   "tilt_db": 0.0,
+   "sine": {
+    "loud": {
+     "gain_db": -4.47,
+     "thd_percent": 2.06,
+     "thd_in_percent": 1.96,
+     "movement_db": 3.42
+    },
+    "quiet": {
+     "gain_db": -4.46,
+     "thd_percent": 1.93,
+     "thd_in_percent": 1.96,
+     "movement_db": 3.42
+    }
+   },
+   "traits": [
+    "delay"
+   ]
+  },
   "extremes": {
    "min": {
     "silent": false,
-    "sample_peak_dbfs": -9.79
+    "sample_peak_dbfs": -32.72
    },
    "max": {
     "silent": false,
-    "sample_peak_dbfs": -9.83
+    "sample_peak_dbfs": -41.44
    }
   }
  },
