@@ -164,6 +164,7 @@ namespace ReBuzz.Agent.Model
                 case "st": case "semi": case "semitones": case "semitone": return "st";
                 case "ct": case "cents": case "cent": return "ct";
                 case "oct": case "octave": case "octaves": return "oct";
+                case "°": case "deg": case "degrees": return "°";   // phases (Neo Ensemble's Spread)
                 case "bpm": return "bpm";
                 case "tick": case "ticks": return "ticks";
                 case "x": case "×": return "x";

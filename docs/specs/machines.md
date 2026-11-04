@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| Status | v1.2 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02 |
-| Date | 2026-11-02 |
-| Scope | New high-quality machines for sound design, mixing and mastering, written in C# with custom editors: first batch "core six", second batch "mix and master" |
+| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4): Neo Ensemble built, 2026-11-04 |
+| Date | 2026-11-04 |
+| Scope | New high-quality machines for sound design, mixing and mastering, written in C# with custom editors: first batch "core six", second batch "mix and master", third the successors of closed machines that misbehave |
 
 ---
 
@@ -34,6 +34,12 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Limiter | effect | True-peak lookahead limiter: a ceiling in dBTP as BS.1770 measures it, auto or set release, stereo link |
 | Neo Analyzer | effect | Spectrum (FFT with peak hold, third-octave bars), loudness (momentary, short-term, integrated LUFS, range, true peak) and stereo (correlation, width, goniometer) with the analysis library's numbers; readings for agents; audio untouched |
 
+**Third batch (successors: machine-safety.md §4)**
+
+| Machine | Kind | One line |
+|---|---|---|
+| Neo Ensemble | effect | Chorus (1–4 voices), flanger and phaser (2–12 stages) on one LFO, in Hz or synced to the tempo; feedback to ±99 % through a saturating loop that can't run away, however fast it sweeps. Succeeds Jeskola Flanger and Chorus, FSM Chorus2, Pedal Chorus |
+
 ## 2. Decisions
 
 - **C#**, managed machines (`IBuzzMachine`), like the Pedal set: no native build, no 32-bit bridge.
@@ -50,7 +56,7 @@ Machines/
   NeoBuzz.Dsp/        Pure DSP (no Buzz or WPF references), internal types, linked as source
   NeoBuzz.Machine/    Buzz glue shared by the machines (parameters, notes, MIDI), linked as source
   NeoBuzz.Editor/     WPF editor kit (knobs, switches, meters, graphs, preset bar), linked as source
-  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/ NeoEq/ NeoUtility/ NeoLimiter/ NeoAnalyzer/
+  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/ NeoEq/ NeoUtility/ NeoLimiter/ NeoAnalyzer/ NeoEnsemble/
     Engine/           the machine's DSP: pure, tested on Linux
     Params.def        the parameter table (source of truth)
     Presets.txt       factory presets in units
@@ -296,6 +302,52 @@ Levels follow the library: plain RMS dB, so a full-scale sine reads −3 dB. A s
 | Threads | no allocation while processing (parameter changes and a reset included); no torn snapshot with a writer and two readers (200,000 publishes) | 0 bytes; no torn snapshot |
 | CPU | stereo at 48 kHz: under 2 % of real time on the CI runner (TieredCompilation off, as the other tests) | 0.46 % (220× real time) |
 
+### Neo Ensemble (chorus, flanger, phaser; machine-safety.md §4)
+
+The first successor: it replaces Jeskola Flanger (which diverges at feedback +100 %, machine-safety.md §3.1) and Jeskola Chorus, FSM Chorus2 and Pedal Chorus. Three modes on one LFO, each channel its own loop, the right channel's LFO `Spread` on from the left's:
+
+- **Chorus**: 1–4 voices read a delay line at delays swept exponentially an octave either side of `Delay` at 100 % `Depth`, their LFOs evenly round the cycle (with several voices the right channel's fall between the left's: `Spread` is a share of the gap). The wet signal is their average through `Tone`, times √voices, so the moving part keeps its power.
+- **Flanger**: one voice, swept two octaves either side of `Delay`; with feedback a comb of resonant peaks (the "jet").
+- **Phaser**: 2–12 first-order allpasses at one frequency swept three octaves either side of `Centre`; the wet signal is their output, and the feedback comes back one sample later.
+
+`Mix` crossfades dry and wet linearly: 50 % gives the deepest comb or notches, 100 % vibrato. `Output` is the gain after it. Zero latency; at `Mix` 0 % and `Output` 0 dB the input passes bit for bit.
+
+**Why the feedback can't run away.** A loop gain below 1 at every frequency is proof enough for a fixed loop (Neo Verb's), but these loops are swept, and a swept loop can pump: the first build, with the phaser's allpasses as TPT one-poles (2·LP − x), never decayed at +99 % with a 20 Hz LFO sweeping three octaves around 50 Hz, though its frozen loop gain was 0.99. So each loop is built so that it can't grow however it is swept:
+
+- Chorus, Flanger: the line takes v = HP(x) + S(fb · L(R(v))). R averages the voices' reads with linear interpolation, each a convex combination of two past samples; L is the `Tone` one-pole y = x + a(y₁ − x), 0 ≤ a < 1, a convex combination too; S is the saturator, |S(u)| ≤ |u|. So with no input each sample is at most |fb| ≤ 0.99 times the largest in the last delay's worth: the loop shrinks by at least 0.99 per pass, whatever the sweep does. The wet signal reads the same line with a Catmull-Rom cubic for clean highs, outside the loop. A high-pass inside the loop would break the convexity (its taps sum to 2 in magnitude), so the 10 Hz high-pass that keeps positive feedback from booming below the audible range filters what enters the line.
+- Phaser: u = x + S(fb · HP(L(w))) one sample late, w = A^N(u). Each stage is a normalised lattice, [y, s′] = [[k, c], [c, −k]]·[x, s] with c = √(1 − k²), an orthogonal matrix: swept at any speed it neither adds nor loses energy. L and the 10 Hz loop high-pass have gain at most 1 at every frequency, and |S(u)| ≤ |u|: the loop's energy gain is at most |fb| ≤ 0.99 (the small-gain theorem), so the tail always decays.
+- Frozen, the loop's gain at every frequency is the product of factors each at most 1 (the linear read's at every fraction, `Tone`'s at every setting, the high-pass's, an allpass stage's, the saturator's slope) times |fb|. The tests check each factor and the product over 864 settings.
+- The saturator S is the identity up to full scale, then 1 + r/(1 + r) above it (r the excess): its slope is 1 at the knee and falls after it, and what goes round never passes +6 dBFS whatever comes in. Below full scale the loops are exactly linear, so the response and the notches are as designed.
+
+Parameters: Mode (Chorus, Flanger, Phaser), Rate (0.02–20 Hz), Sync (Free, 1/32 … 16 bars: one LFO cycle per division of the song's tempo), Shape (Sine, Triangle; a change crossfades over 50 ms), Depth (0–100 %), Spread (0–180°), Delay (0.2–30 ms, the geometric centre of the sweep; Chorus, Flanger), Voices (1–4; Chorus), Centre (50 Hz – 10 kHz; Phaser), Stages (2–12; Phaser), Feedback (−99 … +99 % in 0.1 % steps), Tone (500 Hz – 20 kHz, −3 dB at the setting exactly; on the wet signal and in the loop for Chorus and Flanger, in the loop for Phaser; open at its top), Mix (0–100 %), Output (−12 … +12 dB in 0.1 dB steps). The LFO and the delays (or the stages' coefficient) move in straight lines over 8-sample segments that run across blocks, so the output doesn't depend on how the host splits it; Delay, Centre, Depth and Spread glide over 50 ms, Tone over 20 ms, Mix, Output and Feedback ramp per sample. Mode, Voices (in Chorus) and Stages (in Phaser) fade the wet signal and the feedback out over 5 ms, switch and fade back in; the line is always written, so a mode comes back in on the input as it is. Presets (14): Chorus — Classic, Wide Stereo, Subtle Doubling, Poly Synth I; Ensemble — Strings, Thick (3 Voices); Flanger — Slow Jet, Tape Style (Negative), Metallic; Phaser — 4-Stage Classic, 8-Stage Deep, Slow Sweep (4 Bars); Rotary — Leslie-like Fast; Vibrato — Pitch Wobble.
+
+The editor shows the effect, the LFO and its sync, a picture of the sweep and the sound and output controls with meters. The picture: for the flanger and the phaser, the response now (each channel at its own LFO phase) inside the band the sweep covers, 20 Hz – 20 kHz; for the chorus, each voice's delay over one LFO cycle with where the LFO is; under both, each voice's LFO position. One function (`EnsembleDesign`) gives the delays and coefficients the engine runs and the response the editor draws and the tests measure against.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Phaser notches | Depth 0, no feedback, Mix 50 %: each notch at fs/π · atan(tan(πfc/fs) · tan((2k + 1)π/2N)) within 0.2 %, at least 40 dB deep; 2, 4, 6, 8 and 12 stages | within 0.0000 %; at least 112 dB deep |
+| Flanger comb | Depth 0, Mix 50 %, no feedback: notches at (k + ½)/τ within 0.5 % (or 4 Hz), up to 10 kHz, at 0.37, 1 and 2.5 ms; feedback ±70 %: the peaks at k/τ (+) or (k + ½)/τ (−) within 0.5 % | worst 0.40 % (the lowest notch about 3 Hz higher: the input high-pass); peaks within 0.02 % (+70 %) and 0.30 % (−70 %) |
+| Response = design | the engine's impulse response (DTFT, 160 frequencies, 20 Hz – 16 kHz) against `EnsembleDesign`: chorus voices, flanger and phaser with feedback both ways, Tone low | within 0.0003 dB |
+| Chorus depth | one voice, wet only, a 1 kHz sine: the largest pitch deviation up and down, in cents, within 3 % (or 0.3 cent) of f · (1 − τ′(t)) from the setting | 0.5 Hz, 20 %: +5.34 / −5.36 (expected +5.33 / −5.35); 0.5 Hz, 60 %: +17.12 / −17.29 (+17.11 / −17.28); 2 Hz, 30 %: +32.19 / −32.80 (the same); triangle, 1 Hz, 50 %: +23.57 / −23.89 (+23.58 / −23.90) |
+| Voices, spread | four voices' delays a quarter cycle apart; Spread 0°: both channels identical; 180°: the right channel's delay mirrors the left's about Delay; the wet's correlation for pink noise falls as Spread opens | within 1e-5 (octaves); correlation 1.000, 0.189 and 0.159 at 0°, 90° and 180° (two voices: 0.390, 0.342) |
+| Tempo sync | 1/4 at 120 BPM is 2 Hz, at 90 BPM 1.5 Hz; 2 bars at 120 BPM 0.25 Hz; 1/8T at 150 BPM 7.5 Hz | the LFO's phase within 1e-6 cycle |
+| Loop gain | below 1 at every frequency (258), at 12 points of the LFO's cycle, both channels, over Mode × Delay or Centre × Depth × Voices or Stages × Feedback × Tone (864 settings, ends included), and never above \|Feedback\|; each factor at most 1 | at most 0.990000; above \|Feedback\| by 1e-8 at most (0.99 in float) |
+| Extremes | each parameter alone at each end (Feedback at +99 % unless it is the parameter), then in each mode ±99 % with full depth at the fastest and slowest LFO and the shortest and longest delay (lowest and highest Centre), every voice and stage, and every parameter at each end at once: 30 s of pink noise above 30 Hz at −20 dBFS RMS, then 10 s of silence: finite, under +18 dBFS before Output's gain (the guard trips at +60), the gain within 1.5 dB from the second 10 s to the third (LFOs of 5 s or less) and the tail decaying at least half as fast as the bound | passes; peaks up to +10.1 dBFS (Chorus, +99 %, 0.1–0.4 ms, four voices: the saturator holds it; every parameter at its maximum +6.2 dBFS before Output's +12 dB); the gain moves 1.3 dB at most; the slowest tail −13.4 dB in 7 s (Flanger, +99 %, 7.5–120 ms swept at 20 Hz; the bound asks 2.5) |
+| Mix 0 % | output = input bit for bit in every mode at full feedback, depth and rate (negative zeros, subnormals) | bit for bit; latency 0 |
+| Blocks | blocks of 256 and of 117 samples give the same output | identical |
+| Silence after noise | Feedback 90 %, 2 s of noise then 20 s of silence: no subnormal number in the lines, filters or stages; silence costs no more than noise | none; 0.75–0.96× |
+| Smoothing | every parameter jumping between its ends every 1024 samples, on a 220 Hz sine, in each mode: the largest step between samples within 1.5× the steady signal's at either end | at most 1.13× (Rate, the pitch it bends) |
+| Presets | each on pink noise at −18 dBFS RMS: within ±6 dB of the input, peaks under +3 dBFS | −3.9 … +0.2 dB; peaks −9.6 … −5.3 dBFS |
+| Audio thread | a Neo Poly pattern playing through it in the studio (a flanger with feedback, its LFO synced, its depth moved every buffer), each work algorithm | 0 bytes per buffer |
+| CPU | stereo at 48 kHz: ≥ 50× real time on the CI runner | four chorus voices 161×, flanger 342×, twelve phaser stages 227× |
+
+As built:
+
+- **Not built: through-zero flanging.** It needs the dry signal delayed by the sweep's longest delay, so the wet can pass it: latency, against zero latency and a dry signal untouched at Mix 0 %. "Flanger — Tape Style (Negative)" sweeps the delay close to zero (0.2 ms) with negative feedback instead.
+- The phaser's stages were TPT allpasses at first; the extremes test found the pumping above, and they became lattices (the same response). The delay loop read with the cubic at first (its taps sum to up to 1.25 in magnitude, so the convexity argument didn't hold); the loop now reads with straight lines and the wet with the cubic. The loop's high-pass moved to the line's input, where it doesn't break the bound.
+- The Linux profile (`docs/machine-health.md`): hot only with Output at +12 dB (+1.6 dBFS) and with every parameter at its maximum at once (+18.5 dBFS, Output +12 dB included); no parameter at either end diverges or fails to decay, so no safe range.
+- Parameter roles for `machine_replace` (U5) and how the closed machines map onto it: machine-safety.md §4.
+
 ## 6. Phases
 
 | Phase | Content |
@@ -304,13 +356,14 @@ Levels follow the library: plain RMS dB, so a full-scale sine reads −3 dB. A s
 | M1 | Neo Drive, Neo Comp, Neo Verb |
 | M2 | Neo Poly, Neo Wave, Neo FM6 |
 | M3 (MCP A4) | Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer |
+| Successors (machine-safety.md §4) | Neo Ensemble; then Neo EQ's graphic mode |
 
 Each phase: pure tests (Linux CI), integration tests in ReBuzzTests (the machine loads, makes sound, its parameters and editor work, editor screenshots), then the package build.
 
-M0–M3 are done. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
+M0–M3 are done, and of the successors Neo Ensemble. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
 
 ## 7. Not in this batch
 
-Additive and physical-modelling synths, convolution, tape delay, ensemble/phaser, multiband: candidates for the next batch.
+Additive and physical-modelling synths, convolution, tape delay, multiband: candidates for the next batch (ensemble and phaser: Neo Ensemble, built).
 
 The MCP server spec (docs/specs/mcp-server.md §8) sets the priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak), Neo Utility and Neo Analyzer are built (M3); next Neo Delay, Neo Multiband, Neo Scope and Neo Sampler. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.

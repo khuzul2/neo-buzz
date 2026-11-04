@@ -99,6 +99,10 @@ namespace ReBuzz.AgentTests
             Assert.That(R(semi, "+7 st"), Is.EqualTo(19));
             Assert.That(R(semi, -5), Is.EqualTo(7));
             Assert.That(R(semi, "raw:3"), Is.EqualTo(3));
+            var spread = Neo("Spread", MappingKind.Linear, 0, 180, 0, 180, unit: "°");
+            Assert.That(R(spread, "90°"), Is.EqualTo(90));
+            Assert.That(R(spread, "120 deg"), Is.EqualTo(120));
+            Assert.That(R(spread, 45), Is.EqualTo(45));
             Assert.That(R(semi, "max"), Is.EqualTo(24));
             Assert.Throws<ToolError>(() => R(semi, "raw:30"));
         }

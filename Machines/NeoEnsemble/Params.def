@@ -1,0 +1,24 @@
+# Neo Ensemble parameters (docs/specs/machines.md §5). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoEnsemble
+namespace NeoBuzz.Ensemble
+class NeoEnsembleMachine
+summary Chorus, flanger and phaser in one: one to four modulated delays (Chorus), a short swept delay with feedback (Flanger) or 2–12 swept allpass stages (Phaser), with an LFO in Hz or synced to the tempo, stereo spread, a tone control in the wet path and feedback of −99 … +99 % through a saturating loop that can't run away. Zero latency; at Mix 0 % it passes the input bit for bit. Use it to thicken, widen and move a sound: chorus on pads, keys and guitars, a flanger's jet on drums and leads, a phaser's sweep on keys and pads.
+
+group Mode
+Mode      "Mode"      0 2    0    enum Chorus Flanger Phaser          | Chorus: 1–4 voices of a modulated delay; Flanger: one short swept delay with feedback (a comb); Phaser: allpass stages swept in frequency
+group LFO
+Rate      "Rate"      0 1000 492  freq 0.02 20                        | LFO speed, when Sync is Free
+Sync      "Sync"      0 13   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars 8_bars 16_bars | Tempo sync: one LFO cycle per division of the song's tempo (overrides Rate)
+Shape     "Shape"     0 1    0    enum Sine Triangle                  | LFO waveform
+Depth     "Depth"     0 1000 300  pct                                 | Sweep: at 100 % the delay moves an octave either side of Delay (Chorus), two octaves (Flanger); the phaser's frequency three octaves either side of Centre
+Spread    "Spread"    0 180  90   lin 0 180 ° 0                       | The right channel's LFO phase against the left's: 0° moves both alike, 180° opposite (with several chorus voices, a share of the gap between them: at 180° the right's voices fall halfway between the left's)
+group Sound
+Delay     "Delay"     0 1000 710  time 0.0002 0.03                    | Chorus and Flanger: the delay at the centre of the sweep (geometric), 0.2–30 ms
+Voices    "Voices"    1 4    2    int 0                               | Chorus: delayed voices, their LFOs spread evenly over the cycle
+Centre    "Centre"    0 1000 469  freq 50 10000                       | Phaser: the stages' frequency at the centre of the sweep (geometric)
+Stages    "Stages"    2 12   4    int 0                               | Phaser: first-order allpass stages (an even count gives Stages ÷ 2 notches)
+Feedback  "Feedback"  0 1980 990  lin -99 99 % 1                      | The wet signal back into the delay or the stages; negative inverts it. Bounded to ±99 % and saturating above full scale, so it can't run away
+Tone      "Tone"      0 1000 862  freq 500 20000                      | One-pole high cut, −3 dB at this frequency, on the wet signal and in the feedback loop (Chorus, Flanger) or in the loop (Phaser); at its top (20 kHz) it is open
+group Output
+Mix       "Mix"       0 1000 500  pct                                 | Dry against wet: 50 % the deepest comb or notches, 100 % only the wet (vibrato)
+Output    "Output"    0 240  120  db -12 12                           | Output gain, −12 … +12 dB in 0.1 dB steps

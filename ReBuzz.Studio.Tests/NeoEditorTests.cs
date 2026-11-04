@@ -41,6 +41,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 627, 296),
             ("Neo Verb", "NeoVerbEditor", "neo-verb-editor", 880, 332),
             ("Neo Analyzer", "NeoAnalyzerEditor", "neo-analyzer-editor", 1118, 398),
+            ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 978, 338),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;
@@ -380,6 +381,52 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 Remove(analyzer, eq, poly);
+            }
+        }
+
+        [AvaloniaTest]
+        public void NeoEnsemblesSweepFollowsItsModeAndItsLfo()
+        {
+            // Neo Poly → Neo Ensemble → Master, a chord held. In each mode the sweep's picture moves with the
+            // LFO (the chorus voices' delays, the flanger's comb, the phaser's notches), and the output meter
+            // shows the chord.
+            var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var poly = Add("Neo Poly", "Sweep Poly", -0.6f, 0);
+            var ensemble = Add("Neo Ensemble", "Sweep Ensemble", 0, 0);
+            try
+            {
+                Core.SongCore.ConnectMachines(poly, ensemble, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                Core.SongCore.ConnectMachines(ensemble, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                var window = OpenEditor(ensemble);
+                poly.TrackCount = Math.Max(poly.TrackCount, 3);
+                var note = poly.ParameterGroups[2].Parameters.First(p => p.Name == "Note");
+                int[] chord = { (3 << 4) + 1, (3 << 4) + 5, (3 << 4) + 8 };   // C-3, E-3, G-3
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, chord[t]);
+                Global(ensemble, "Rate").SetValue(0, 700);       // 2 Hz: the picture moves between frames
+                var sweepView = Controls(window, "GraphView").First(g => Math.Abs(g.Bounds.Width - 300) < 1);
+                var sweep = BoundsIn(sweepView, window);
+                var meter = BoundsIn(Find(window, "Meter", "Output"), window);
+                Assert.Multiple(() =>
+                {
+                    foreach (var (mode, shot) in new[] { (0, "neo-ensemble-editor-chorus"), (1, "neo-ensemble-editor-flanger"), (2, "neo-ensemble-editor-phaser") })
+                    {
+                        Global(ensemble, "Mode").SetValue(0, mode);
+                        if (mode == 1) Global(ensemble, "Feedback").SetValue(0, 1700);
+                        Run(0.3);
+                        var a = Frame(window);
+                        Run(0.12);
+                        var b = Frame(window, shot);
+                        Assert.That(Changed(a, b, sweep), Is.GreaterThan(400), $"mode {mode}: the sweep's picture moves with the LFO");
+                        Assert.That(Count(b, meter, 0xFF7EDB) + Count(b, meter, 0xFF4D4D), Is.GreaterThan(40), $"mode {mode}: the output meter shows the chord");
+                    }
+                    Assert.That((bool)Get(sweepView, "Animating"), Is.True, "the sweep redraws on its own while shown");
+                });
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, BuzzGUI.Common.BuzzNote.Off);
+                Run(0.1);
+            }
+            finally
+            {
+                Remove(ensemble, poly);
             }
         }
 
