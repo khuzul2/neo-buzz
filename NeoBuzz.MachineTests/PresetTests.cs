@@ -33,6 +33,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Delay"] = (NeoBuzz.Delay.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Delay.DelayEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // mcp-server.md §8.2: the multiband compressor for mastering and buses.
             ["Neo Multiband"] = (NeoBuzz.Multiband.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Multiband.MultibandEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
+            // mcp-server.md §8.2: the sampler; its kits play kick, snare and hat, its instruments the chord.
+            ["Neo Sampler"] = (NeoBuzz.Sampler.Params.Table, (v, x) => RenderSampler(v, x.Length)),
         };
 
         // The mix and master batch: one engine per preset render, keyed by its parameter values.
@@ -48,7 +50,36 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler" };
+
+        /// <summary>
+        /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that
+        /// play song waves are templates for them); a kit plays kick, snare and closed hat (C2, D2, F#2),
+        /// an instrument the chord.
+        /// </summary>
+        static float[] RenderSampler(ParamValues v, int length)
+        {
+            NeoBuzz.Sampler.BuiltIns.BuildNow();
+            var bank = new NeoBuzz.Sampler.SampleBank();
+            for (int k = 1; k <= 16; k++) bank.Set(k, NeoBuzz.Sampler.BuiltIns.Get(k));
+            var e = new NeoBuzz.Sampler.SamplerEngine(v, bank);
+            bool kit = v.Choice(NeoBuzz.Sampler.P.Mode) == 1;
+            int[] notes = kit ? new[] { 36, 38, 42 } : new[] { 48, 52, 55, 59 };
+            e.SetSampleRate(Measure.Rate);
+            var y = new float[length];
+            var l = new float[256];
+            var r = new float[256];
+            for (int k = 0; k < notes.Length; k++) e.NoteOn(k, notes[k], 0.8f);
+            for (int pos = 0; pos < length; pos += 256)
+            {
+                if (pos <= length * 2 / 3 && pos + 256 > length * 2 / 3)
+                    for (int k = 0; k < notes.Length; k++) e.NoteOff(k);
+                int n = Math.Min(256, length - pos);
+                e.Process(l, r, n);
+                for (int i = 0; i < n; i++) y[pos + i] = Math.Max(Math.Abs(l[i]), Math.Abs(r[i])) * Math.Sign(l[i] + r[i] + 1e-12f);
+            }
+            return y;
+        }
 
         static NeoBuzz.Wave.WaveEngine WaveEngine(ParamValues v)
         {

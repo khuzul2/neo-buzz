@@ -79,7 +79,18 @@ namespace ReBuzz.Agent.Model
         /// converts (a measured shape the new filters only approximate). A type the map leaves out has no counterpart (a note).
         /// </summary>
         Filter,
+        /// <summary>
+        /// A keyboard split's waves (Pedal M1's oscillators: zone 1 plays below the splits, and each higher zone whose wave is
+        /// set takes over from its split up, a higher one overriding a lower) → the new machine's zones: each one's wave (0, off,
+        /// where it is unset, shadowed by a higher zone or switched off by <c>enable</c>), lowest and highest key (a split plus
+        /// <c>split_offset</c>, the two machines' note numbers apart). <c>enable</c>: a choice that switches the whole split on
+        /// for the names (or raw values) in <c>enable_when</c>.
+        /// </summary>
+        KeyZones,
     }
+
+    /// <summary>A zone a <see cref="SuccessorRuleKind.KeyZones"/> rule sets: its wave, lowest key and highest key parameters.</summary>
+    public sealed record SuccessorZone(string Wave, string Low, string High);
 
     /// <summary>
     /// What an old filter type becomes (<see cref="SuccessorRuleKind.Filter"/>): "high_cut", "low_cut", "band" or "none", a factor on the
@@ -101,6 +112,16 @@ namespace ReBuzz.Agent.Model
         public double Scale { get; init; } = 1;
         /// <summary>Unit: another old parameter the value is multiplied by (Pedal Plate's decay time scales with its Size).</summary>
         public string Times { get; init; }
+        /// <summary>Unit: old parameters (weighted) whose sum, in octaves, moves the value: times 2^Σ (a cutoff the old key tracking centred elsewhere).</summary>
+        public IReadOnlyList<(string Param, double Weight)> OctaveTerms { get; init; }
+        /// <summary>KeyZones: the old zones' wave parameters (zone 1 first), the splits of zones 2 on, the new zones and the note numbers' offset.</summary>
+        public IReadOnlyList<string> Waves { get; init; }
+        public IReadOnlyList<string> Splits { get; init; }
+        public IReadOnlyList<SuccessorZone> Zones { get; init; }
+        public double SplitOffset { get; init; }
+        /// <summary>KeyZones: a choice that switches the split on, and the choices (names or raw values) that do.</summary>
+        public string Enable { get; init; }
+        public IReadOnlyList<string> EnableWhen { get; init; }
         public double Offset { get; init; }
         /// <summary>Clamp of the result, in the new parameter's base unit (Hz, s, dB, fractions for %).</summary>
         public double? Min { get; init; }
@@ -183,7 +204,8 @@ namespace ReBuzz.Agent.Model
             SuccessorRuleKind.DryWet => MixFrom != null ? new[] { MixFrom } : new[] { Dry, Wet?.FirstOrDefault()?.From }.Where(x => x != null),
             SuccessorRuleKind.Db when ZeroWhen != null => new[] { From, ZeroWhen },
             SuccessorRuleKind.Graphic => Bands.Select(b => b.Param).Append(Bandwidth).Concat(new[] { Gain, Highpass }.Where(x => x != null)),
-            SuccessorRuleKind.Unit when Times != null => new[] { From, Times },
+            SuccessorRuleKind.Unit => new[] { From, Times }.Where(x => x != null).Concat(OctaveTerms?.Select(t => t.Param) ?? Enumerable.Empty<string>()),
+            SuccessorRuleKind.KeyZones => Waves.Concat(Splits).Concat(new[] { Enable }.Where(x => x != null)),
             SuccessorRuleKind.DelayTime => new[] { Length, LengthRight, Unit }.Where(x => x != null),
             SuccessorRuleKind.Filter => new[] { Type, Cutoff },
             _ => new[] { From },
@@ -199,6 +221,7 @@ namespace ReBuzz.Agent.Model
             SuccessorRuleKind.Bypass => Array.Empty<string>(),
             SuccessorRuleKind.DelayTime => new[] { Sync, Feel, Time, OffsetParam }.Where(x => x != null),
             SuccessorRuleKind.Filter => new[] { LowCut, HighCut },
+            SuccessorRuleKind.KeyZones => Zones.SelectMany(z => new[] { z.Wave, z.Low, z.High }),
             _ => new[] { To },
         };
     }
@@ -381,6 +404,7 @@ namespace ReBuzz.Agent.Model
                 "delay_time" => SuccessorRuleKind.DelayTime,
                 "from_db" => SuccessorRuleKind.FromDb,
                 "filter" => SuccessorRuleKind.Filter,
+                "key_zones" => SuccessorRuleKind.KeyZones,
                 _ => throw new FormatException($"{pair}: unknown rule kind \"{kind}\"."),
             };
             var rule = new SuccessorRule
@@ -390,6 +414,13 @@ namespace ReBuzz.Agent.Model
                 To = (string)r["to"],
                 Scale = (double?)r["scale"] ?? 1,
                 Times = (string)r["times"],
+                OctaveTerms = Terms(r["octaves_from"]),
+                Waves = Strings(r["waves"]),
+                Splits = Strings(r["splits"]),
+                Zones = (r["zones"] as JsonArray)?.OfType<JsonObject>().Select(z => new SuccessorZone((string)z["wave"], (string)z["low"], (string)z["high"])).ToList(),
+                SplitOffset = (double?)r["split_offset"] ?? 0,
+                Enable = (string)r["enable"],
+                EnableWhen = Strings(r["enable_when"]),
                 Offset = (double?)r["offset"] ?? 0,
                 Min = (double?)r["min"],
                 Max = (double?)r["max"],
@@ -473,6 +504,10 @@ namespace ReBuzz.Agent.Model
                 SuccessorRuleKind.Filter when rule.Type == null || rule.Cutoff == null || rule.LowCut == null || rule.HighCut == null ||
                                               rule.LowOff == null || rule.HighOpen == null || rule.Types == null
                     => "type, cutoff, low_cut, high_cut, low_off, high_open and types",
+                SuccessorRuleKind.KeyZones when rule.Waves.Count == 0 || rule.Splits.Count != rule.Waves.Count - 1 || rule.Zones == null ||
+                                                rule.Zones.Count != rule.Waves.Count || rule.Zones.Any(z => z.Wave == null || z.Low == null || z.High == null) ||
+                                                (rule.Enable != null && rule.EnableWhen.Count == 0)
+                    => "waves, a split for each wave after the first, a zone (wave, low, high) for each wave; with enable: enable_when",
                 SuccessorRuleKind.Unit or SuccessorRuleKind.Db or SuccessorRuleKind.InverseDb or SuccessorRuleKind.FromDb when rule.From == null || rule.To == null => "from and to",
                 _ => null,
             };

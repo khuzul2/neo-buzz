@@ -666,6 +666,113 @@ namespace ReBuzzTests
             Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
         }
 
+        /// <summary>
+        /// The measurements behind Neo Sampler's successor pairs (mcp-server.md §12.10): Pedal M1, Matilde Tracker2 and Jeskola
+        /// Tracker each playing a line (A3 at the wave's root, A4, E3, A2) from a band-limited saw (16-bit) in the song's wavetable, against
+        /// Neo Sampler at its defaults: each note's pitch, the line's loudness and brightness; then machine_replace's comparison of
+        /// Pedal M1 → Neo Sampler at its defaults, with a key zone and both oscillators, its envelopes and filter, and resonance.
+        /// </summary>
+        [Test, Explicit("measurements for Neo Sampler's successor pairs; run by name (test_filter) when a mapping is recalibrated")]
+        public void SamplerCalibration()
+        {
+            using var client = StartAgent(out string bin);
+            var report = new List<string>();
+            void Report(string line)
+            {
+                report.Add(line);
+                TestContext.Out.WriteLine(line);   // as it comes: a failure later keeps what was measured
+            }
+            WarmUp(client, "Jeskola Delay");
+            string Wave(string name, double hz, int harmonics, int step)
+            {
+                string path = Path.Combine(Path.GetTempPath(), $"neo-sampler-calibration-{name}-{Guid.NewGuid():N}.wav");
+                var x = new float[96000];
+                for (int i = 0; i < x.Length; i++)
+                {
+                    double v = 0;
+                    for (int k = 1; k < harmonics; k += step) v += Math.Sin(2 * Math.PI * k * hz * i / 48000) / k;
+                    x[i] = (float)(0.3 * v);
+                }
+                // 16-bit PCM, the format every tracker reads.
+                using var w = new BinaryWriter(File.Create(path));
+                w.Write("RIFF"u8.ToArray()); w.Write(36 + x.Length * 2); w.Write("WAVE"u8.ToArray());
+                w.Write("fmt "u8.ToArray()); w.Write(16); w.Write((short)1); w.Write((short)1); w.Write(48000); w.Write(48000 * 2); w.Write((short)2); w.Write((short)16);
+                w.Write("data"u8.ToArray()); w.Write(x.Length * 2);
+                foreach (var s in x) w.Write((short)Math.Round(s * 32767));
+                return path;
+            }
+            string saw = Wave("saw", 220, 91, 1), square = Wave("square", 440, 45, 2);
+            int[] line = { 57, 69, 52, 45 };
+            bool Song(string gear, JsonArray changes)
+            {
+                Quiet(client, "song_new", Args(("discard_unsaved", true)));
+                Quiet(client, "wave_import", Args(("path", saw), ("slot", 1), ("name", "Saw A3"), ("root_note", "A3")));
+                Quiet(client, "wave_import", Args(("path", square), ("slot", 2), ("name", "Square A4"), ("root_note", "A4")));
+                Quiet(client, "machine_add", Args(("gear", gear), ("name", "M")));
+                if (changes != null) Quiet(client, "param_set", Args(("machine", "M"), ("changes", changes)));
+                Quiet(client, "pattern_create", Args(("machine", "M"), ("name", "00"), ("length_beats", 8)));
+                var notes = new JsonArray(line.Select((p, i) => (JsonNode)new JsonObject { ["pitch"] = p, ["start"] = 2 * i, ["length"] = 1, ["velocity"] = 127 }).ToArray());
+                var r = client.Request("tools/call", new JsonObject { ["name"] = "notes_write", ["arguments"] = Args(("machine", "M"), ("pattern", "00"), ("notes", notes)) });
+                if (r["result"]?["isError"]?.GetValue<bool>() != false)
+                {
+                    Report($"[notice] Sampler calibration, {gear}: notes_write refused: {r["result"]?["content"]?[0]?["text"] ?? r["error"]?.ToJsonString()}");
+                    return false;
+                }
+                Quiet(client, "arrangement_place", Args(("machine", "M"), ("pattern", "00"), ("at", 0)));
+                return true;
+            }
+            // A tool call that reports, rather than asserts, what goes wrong (a tracker that plays nothing).
+            JsonObject Try(string name, JsonObject args)
+            {
+                var r = client.Request("tools/call", new JsonObject { ["name"] = name, ["arguments"] = args });
+                if (r["result"]?["isError"]?.GetValue<bool>() == false) return r["result"]!["structuredContent"]?.AsObject() ?? new JsonObject();
+                Report($"[notice] Sampler calibration: {name} failed: {r["result"]?["content"]?[0]?["text"] ?? r["error"]?.ToJsonString()}");
+                return null;
+            }
+            void Line(string gear, JsonArray changes = null, string label = null)
+            {
+                if (gear != "Neo Sampler" && !Has(bin, "Generators", gear) && !Has(bin, "Generators", gear + ".NET")) { Report($"[notice] {gear} not in this build's Gear"); return; }
+                if (!Song(gear, changes)) return;
+                var render = Try("render", Args(("tail_seconds", 0.3)));
+                if (render?["id"] is not JsonValue idValue) return;
+                string id = idValue.GetValue<string>();
+                var pitches = new List<string>();
+                for (int i = 0; i < line.Length; i++)
+                {
+                    var p = Try("analyze", Args(("source", id), ("metrics", new JsonArray("pitch", "loudness")), ("from_seconds", i + 0.05), ("to_seconds", i + 0.45)));
+                    var n = p?["pitch"]?["notes"]?.AsArray().FirstOrDefault();
+                    pitches.Add($"{n?["hz"]?.ToJsonString() ?? "-"} Hz {p?["loudness"]?["integrated_lufs"]?.ToJsonString() ?? "-"} LUFS");
+                }
+                var a = Try("analyze", Args(("source", id), ("metrics", new JsonArray("loudness", "spectrum", "peaks"))));
+                if (a == null) return;
+                Report($"[notice] Sampler calibration, {label ?? gear}: {a["loudness"]?["integrated_lufs"]} LUFS, peak {a["peaks"]?["sample_peak_dbfs"]} dBFS, centroid {a["spectrum"]?["centroid_hz"]} Hz; " +
+                       $"notes (A3, A4, E3, A2): {string.Join(", ", pitches)}");
+            }
+            void Compare(string label, JsonArray changes)
+            {
+                if (!Has(bin, "Generators", "Pedal M1") && !Has(bin, "Generators", "Pedal M1.NET")) return;
+                if (!Song("Pedal M1", changes)) return;
+                var r = Quiet(client, "machine_replace", Args(("machine", "M")));
+                var c = r["comparison"];
+                var m = c?["machine"] ?? c?["song"];
+                Report($"[notice] Sampler calibration, Pedal M1 → Neo Sampler {label}: {c?["within_tolerance"]?.ToJsonString() ?? "-"}, {m?["loudness_db"]?["difference"]?.ToJsonString() ?? "-"} dB, " +
+                       $"worst {m?["worst_band"]?["difference_db"]?.ToJsonString() ?? "-"} dB at {m?["worst_band"]?["hz"]?.ToJsonString() ?? "-"} Hz; notes {r["patterns"]?[0]?["notes"]?.ToJsonString() ?? "-"}");
+            }
+
+            Line("Neo Sampler");
+            Line("Neo Sampler", Changes(("Volume", "-10.2 dB"), ("Filter", "LP 12"), ("Cutoff", "18 kHz")), "Neo Sampler as Pedal M1's defaults convert");
+            Line("Pedal M1");
+            Compare("at its defaults", null);
+            Compare("with a key zone (the square from F#3) and both oscillators", Raw(("OSC1 Wave 2", 2), ("OSC1 Split 2", 66), ("OSC Mode", 2), ("OSC2 Wave", 1), ("OSC2 Octave", 3), ("OSC2 Level", 64)));
+            Compare("with its envelopes and filter", Raw(("Amp Attack", 60), ("Amp Sustain", 64), ("Amp Release", 70), ("Cutoff", 90), ("Filter EG Int", 40), ("Filter Decay", 60)));
+            Compare("resonance 25 % at 1 kHz", Raw(("Cutoff", 73), ("Resonance", 32)));
+            // The trackers last: what they do with notes from the tools is what's measured (Jeskola Tracker's profile heard nothing).
+            Line("Matilde Tracker2");
+            Line("Jeskola Tracker");
+            foreach (var f in new[] { saw, square }) try { File.Delete(f); } catch (IOException) { }
+            Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
+        }
+
         static string Short(JsonObject analyzeResponse)
         {
             string text = analyzeResponse["result"]?["content"]?[0]?["text"]?.GetValue<string>() ?? "";

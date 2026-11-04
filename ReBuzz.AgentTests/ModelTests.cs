@@ -65,6 +65,34 @@ namespace ReBuzz.AgentTests
             V.Resolve(p, value is string s ? JsonValue.Create(s) : JsonValue.Create(Convert.ToDouble(value)), current, mode);
 
         [Test]
+        public void NotesTakePitchNamesAndWavesTheMachinesNames()
+        {
+            // Neo Sampler (machines.md §5): keys and roots are MIDI notes, a zone's wave a slot (its own texts).
+            var mapping = new ParamMapping { Kind = MappingKind.Int, Unit = "note" };
+            var root = new ParamInfo { Name = "Z1 root", Min = 0, Max = 128, Default = 128, Mapping = mapping, Describe = r => r == 128 ? "Wave" : Pitch.Name(r) };
+            Assert.That(R(root, "C2"), Is.EqualTo(36));
+            Assert.That(R(root, "F#3"), Is.EqualTo(54));
+            Assert.That(R(root, "Bb2"), Is.EqualTo(46));
+            Assert.That(R(root, 60), Is.EqualTo(60));
+            Assert.That(R(root, "60"), Is.EqualTo(60));
+            Assert.That(R(root, "64 note"), Is.EqualTo(64));
+            Assert.That(R(root, "Wave"), Is.EqualTo(128));
+            Assert.That(R(root, "+2", 60, V.Mode.By), Is.EqualTo(62));
+            Assert.Throws<ToolError>(() => R(root, "H2"));
+            var waveMapping = new ParamMapping { Kind = MappingKind.Int, Unit = "wave" };
+            var wave = new ParamInfo { Name = "Z1 wave", Min = 0, Max = 254, Default = 1, Mapping = waveMapping, Describe = r => r == 0 ? "Off" : r == 3 ? "Kick" : r == 201 ? "Built-in Kick" : $"Slot {r}" };
+            Assert.That(R(wave, "Kick"), Is.EqualTo(3));
+            Assert.That(R(wave, "built-in kick"), Is.EqualTo(201));
+            Assert.That(R(wave, "Off"), Is.EqualTo(0));
+            Assert.That(R(wave, 7), Is.EqualTo(7));
+            Assert.That(R(wave, "7 wave"), Is.EqualTo(7));
+            // Other whole numbers are untouched.
+            var steps = Neo("Steps", MappingKind.Int, 0, 16);
+            Assert.That(R(steps, "8"), Is.EqualTo(8));
+            Assert.Throws<ToolError>(() => R(steps, "C2"));
+        }
+
+        [Test]
         public void NeoParametersTakeExactUnits()
         {
             var cutoff = Neo("F1 cutoff", MappingKind.Freq, 0, 1000, 20, 20000);

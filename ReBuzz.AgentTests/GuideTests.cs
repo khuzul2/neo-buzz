@@ -18,7 +18,7 @@ namespace ReBuzz.AgentTests
     public class GuideTests
     {
         static readonly string[] Topics = { "workflow", "concepts", "composition", "sound-design", "mixing", "mastering", "troubleshooting" };
-        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Comp", "Neo Delay", "Neo Drive", "Neo EQ", "Neo Ensemble", "Neo FM6", "Neo Limiter", "Neo Multiband", "Neo Poly", "Neo Utility", "Neo Verb", "Neo Wave" };
+        static readonly string[] NeoGear = { "Neo Analyzer", "Neo Comp", "Neo Delay", "Neo Drive", "Neo EQ", "Neo Ensemble", "Neo FM6", "Neo Limiter", "Neo Multiband", "Neo Poly", "Neo Sampler", "Neo Utility", "Neo Verb", "Neo Wave" };
 
         /// <summary>Neo gear being built in parallel (phase A4): parameter names aren't final, so guides give them moves in units and say to read the names with machine_describe.</summary>
         static readonly string[] PendingGear = System.Array.Empty<string>();
@@ -83,7 +83,7 @@ namespace ReBuzz.AgentTests
             ["snapshot_restore"] = new[] { "name" },
             ["snapshot_diff"] = new[] { "a", "b" },
             ["wave_list"] = new string[0],
-            ["wave_import"] = new[] { "path", "slot", "name", "root_note", "replace" },
+            ["wave_import"] = new[] { "path", "slot", "name", "root_note", "replace", "layer" },
             // A3 (origin/agent/a3-tools: ReBuzz/Agent/CompositionTools.cs)
             ["arrangement_markers"] = new[] { "set", "remove" },
             ["automation_write"] = new[] { "machine", "pattern", "param", "track", "points", "shape", "clear", "allow_unsafe" },

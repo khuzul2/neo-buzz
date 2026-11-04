@@ -1,0 +1,309 @@
+# Neo Sampler factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoSampler
+# Waves: 1–200 are the song's wavetable slots, 201 on the built-in samples (Engine/BuiltIns.cs):
+# 201 Kick, 202 Kick 808, 203 Snare, 204 Clap, 205 Rim, 206 Closed hat, 207 Open hat, 208 Low tom,
+# 209 Mid tom, 210 High tom, 211 Crash, 212 Ride, 213 Cowbell, 214 Shaker, 215 Clave, 216 Sine,
+# 217 Saw, 218 Square, 219 E-piano soft, 220 E-piano hard, 221 Strings, 222 Bass, 223 Bell,
+# 224 Pluck, 225 Vox, 226 Noise.
+# Kits follow General MIDI from C2: zone n plays key 35 + n (1 kick, 2 rim, 3 snare, 4 clap,
+# 5 snare 2, 6 and 8 floor toms, 7 closed hat, 9 pedal hat, 10, 12, 13 and 15 toms, 11 open hat,
+# 14 crash, 16 ride); the hats share choke group 1.
+machine "Neo Sampler"
+
+preset "Kit — Electro (GM Layout)"
+Mode = Kit
+Volume = -7
+Vel → amp = 50
+Z1 wave = 201
+Z2 wave = 205
+Z3 wave = 203
+Z4 wave = 204
+Z5 wave = 203
+Z5 tune = 3
+Z6 wave = 208
+Z6 tune = -2
+Z7 wave = 206
+Z7 choke = 1
+Z7 pan = 20
+Z8 wave = 208
+Z9 wave = 206
+Z9 choke = 1
+Z9 tune = -2
+Z9 end = 45
+Z9 pan = 20
+Z10 wave = 209
+Z11 wave = 207
+Z11 choke = 1
+Z11 pan = 20
+Z12 wave = 209
+Z12 tune = 2
+Z13 wave = 210
+Z14 wave = 211
+Z14 pan = -25
+Z14 level = -3
+Z15 wave = 210
+Z15 tune = 3
+Z16 wave = 212
+Z16 pan = 25
+Z16 level = -3
+
+preset "Kit — 808 Style (Long Kick, Cowbell)"
+Mode = Kit
+Volume = -7
+Vel → amp = 40
+Z1 wave = 202
+Z2 wave = 205
+Z3 wave = 203
+Z3 tune = -2
+Z4 wave = 204
+Z5 wave = 215
+Z6 wave = 208
+Z6 tune = -3
+Z7 wave = 206
+Z7 choke = 1
+Z7 tune = -3
+Z9 wave = 213
+Z10 wave = 209
+Z10 tune = -3
+Z11 wave = 207
+Z11 choke = 1
+Z11 tune = -3
+Z13 wave = 210
+Z13 tune = -3
+Z14 wave = 211
+Z14 level = -4
+Z16 wave = 214
+
+preset "Kit — Tight and Dry (Short Decays)"
+Mode = Kit
+Volume = -5
+Vel → amp = 60
+Amp decay = 0.25
+Amp sustain = 0
+Amp release = 0.05
+Z1 wave = 201
+Z2 wave = 205
+Z3 wave = 203
+Z4 wave = 204
+Z6 wave = 208
+Z7 wave = 206
+Z7 choke = 1
+Z8 wave = 208
+Z8 tune = 3
+Z9 wave = 206
+Z9 choke = 1
+Z9 end = 40
+Z10 wave = 209
+Z11 wave = 207
+Z11 choke = 1
+Z12 wave = 209
+Z12 tune = 3
+Z13 wave = 210
+Z14 wave = 211
+Z15 wave = 210
+Z15 tune = 3
+Z16 wave = 212
+
+preset "Kit — Lo-Fi (Pitched Down, Low-Pass 3.5 kHz)"
+Mode = Kit
+Volume = -3
+Vel → amp = 30
+Filter = LP 12
+Cutoff = 3500
+Resonance = 20
+Z1 wave = 201
+Z1 tune = -3
+Z2 wave = 205
+Z2 tune = -3
+Z3 wave = 203
+Z3 tune = -4
+Z4 wave = 204
+Z4 tune = -3
+Z6 wave = 208
+Z6 tune = -4
+Z7 wave = 206
+Z7 tune = -4
+Z7 choke = 1
+Z9 wave = 214
+Z9 tune = -4
+Z10 wave = 209
+Z10 tune = -4
+Z11 wave = 207
+Z11 tune = -4
+Z11 choke = 1
+Z13 wave = 210
+Z13 tune = -4
+Z14 wave = 211
+Z14 tune = -5
+Z14 level = -4
+Z16 wave = 212
+Z16 tune = -4
+
+preset "Kit — Percussion (Cowbell, Shaker, Clave)"
+Mode = Kit
+Volume = -7
+Vel → amp = 50
+Z1 wave = 201
+Z1 level = -4
+Z2 wave = 205
+Z3 wave = 215
+Z4 wave = 204
+Z5 wave = 215
+Z5 tune = 5
+Z6 wave = 208
+Z6 tune = 5
+Z7 wave = 214
+Z7 pan = -30
+Z8 wave = 209
+Z8 tune = 5
+Z9 wave = 214
+Z9 tune = 3
+Z9 pan = 30
+Z10 wave = 210
+Z10 tune = 5
+Z11 wave = 213
+Z12 wave = 213
+Z12 tune = -5
+Z13 wave = 205
+Z13 tune = 7
+Z14 wave = 215
+Z14 tune = -7
+Z15 wave = 210
+Z15 tune = 9
+Z16 wave = 212
+Z16 level = -6
+
+preset "Kit — Song Waves 1–16 (Hats in Choke 1)"
+Volume = -7
+Mode = Kit
+Vel → amp = 50
+Z1 wave = 1
+Z2 wave = 2
+Z3 wave = 3
+Z4 wave = 4
+Z5 wave = 5
+Z6 wave = 6
+Z7 wave = 7
+Z7 choke = 1
+Z8 wave = 8
+Z9 wave = 9
+Z9 choke = 1
+Z10 wave = 10
+Z11 wave = 11
+Z11 choke = 1
+Z12 wave = 12
+Z13 wave = 13
+Z14 wave = 14
+Z15 wave = 15
+Z16 wave = 16
+
+preset "Instrument — Song Waves 1–4 (Velocity Layers)"
+Volume = -4
+Vel → amp = 40
+Vel crossfade = 16
+Amp release = 0.3
+Z1 wave = 1
+Z1 vel high = 31
+Z2 wave = 2
+Z2 vel low = 32
+Z2 vel high = 63
+Z3 wave = 3
+Z3 vel low = 64
+Z3 vel high = 95
+Z4 wave = 4
+Z4 vel low = 96
+
+preset "Instrument — Song Wave 1, One-Shot Across the Keys"
+Volume = -12
+Vel → amp = 60
+Z1 wave = 1
+Z1 trigger = One-shot
+Z1 root = 60
+
+preset "Keys — Electric Piano (Two Velocity Layers)"
+Vel → amp = 60
+Vel crossfade = 24
+Amp release = 0.45
+Volume = -10
+Z1 wave = 219
+Z1 vel high = 90
+Z1 level = 3
+Z2 wave = 220
+Z2 vel low = 91
+
+preset "Pad — Strings (Looped, Slow Attack)"
+Vel → amp = 30
+Volume = -8
+Amp attack = 0.35
+Amp release = 1.2
+Filter = LP 12
+Cutoff = 7000
+Z1 wave = 221
+
+preset "Pad — Vox Aah (Looped)"
+Vel → amp = 30
+Volume = -7
+Amp attack = 0.2
+Amp release = 0.9
+Z1 wave = 225
+
+preset "Bass — Sub Pluck"
+Vel → amp = 50
+Volume = -2
+Polyphony = 4
+Amp decay = 1.2
+Amp sustain = 0
+Amp release = 0.08
+Filter = LP 24
+Cutoff = 900
+Resonance = 15
+Filter env = 30
+Flt decay = 0.25
+Z1 wave = 222
+
+preset "Bell — Glass (Long Release)"
+Vel → amp = 50
+Volume = -9
+Amp release = 1.5
+Z1 wave = 223
+Z1 trigger = One-shot
+
+preset "Pluck — Nylon"
+Vel → amp = 60
+Volume = -9
+Amp release = 0.25
+Z1 wave = 224
+
+preset "Lead — Saw (Filter Envelope)"
+Vel → amp = 40
+Volume = -8
+Polyphony = 6
+Amp release = 0.2
+Filter = LP 24
+Cutoff = 700
+Resonance = 35
+Filter env = 55
+Flt decay = 0.4
+Flt sustain = 30
+Filter vel = 30
+Z1 wave = 217
+
+preset "FX — Reversed Strings Swell (One-Shot)"
+Vel → amp = 20
+Volume = -8
+Z1 wave = 221
+Z1 reverse = On
+Z1 trigger = One-shot
+
+preset "Texture — Noise Wash (Band-Pass Sweep)"
+Vel → amp = 20
+Volume = 1
+Amp attack = 0.5
+Amp release = 1.0
+Filter = BP
+Cutoff = 400
+Resonance = 60
+Filter env = 45
+Flt attack = 2.0
+Flt decay = 3.0
+Flt sustain = 40
+Z1 wave = 226

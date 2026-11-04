@@ -63,6 +63,7 @@ namespace ReBuzz.AgentTests
                          "Jeskola Flanger → Neo Ensemble", "Jeskola Chorus → Neo Ensemble", "FSM Chorus2 → Neo Ensemble", "Pedal Chorus → Neo Ensemble",
                          "Joachims Hyperion → Neo EQ",
                          "Jeskola Delay → Neo Delay", "Jeskola Cross Delay → Neo Delay", "Jeskola NiNjA dElaY → Neo Delay", "FSM PanzerDelay → Neo Delay",
+                         "Pedal M1 → Neo Sampler",
                      })
                 Assert.That(pairs, Does.Contain(expected));
             foreach (var map in SuccessorLibrary.All)
@@ -403,6 +404,57 @@ namespace ReBuzz.AgentTests
             Assert.That(result[3].Time, Is.EqualTo(8 * T + 1), "the slide's note overlaps, so a legato voice glides");
             Assert.That(glides.Count, Is.EqualTo(1));
             Assert.That(c.New("Glide")!.Value(glides[0].Item2), Is.EqualTo(0.25).Within(0.01), "2 ticks at 0.125 s");
+        }
+
+        [Test]
+        public void PedalM1sKeyZonesBecomeZonesAndItsTimeConstantsNeoSamplersTimes()
+        {
+            var c = Converter("Pedal M1", "Neo Sampler");
+            // Its defaults: ReBuzz holds a wave parameter at 1 or more, so OSC1's zones 2–4 play wave 1 from their splits (Pedal M1's
+            // MIDI 60, 72, 84: Buzz C-4, C-5, C-6, Neo Sampler's keys 48, 60, 72); OSC2 is off (OSC1 only).
+            var d = c.ConvertState(Raws(c));
+            Assert.That(new[] { 1, 2, 3, 4 }.Select(z => (Final(d, $"Z{z} wave"), Final(d, $"Z{z} key low"), Final(d, $"Z{z} key high"))),
+                Is.EqualTo(new[] { (1, 0, 47), (1, 48, 59), (1, 60, 71), (1, 72, 127) }));
+            Assert.That(new[] { 5, 6, 7, 8 }.Select(z => Final(d, $"Z{z} wave")), Is.All.EqualTo(0));
+            Assert.That(Value(c, d, "Z1 level"), Is.EqualTo(20 * Math.Log10(100 / 127.0)).Within(0.06), "OSC1 Level 100 of 127");
+            Assert.That(Value(c, d, "Volume"), Is.EqualTo(20 * Math.Log10(0.5 * 100 / 127.0)).Within(0.06), "Volume 100, halved");
+            double Tau(int raw) => 0.001 * Math.Pow(8000, raw / 127.0);   // TimeMs
+            Assert.That(Value(c, d, "Amp attack"), Is.EqualTo(Tau(10) * 3.045).Within(Tau(10) * 3.045 * 0.03), "a time constant to full");
+            Assert.That(Value(c, d, "Amp release"), Is.EqualTo(Tau(40) * 6.908).Within(Tau(40) * 6.908 * 0.03), "a time constant to −60 dB");
+            Assert.That(Value(c, d, "Cutoff"), Is.EqualTo(18000).Within(18000 * 0.01));
+            Assert.That(c.New("Filter")!.Format(Final(d, "Filter")), Is.EqualTo("LP 12"));
+
+            // A zone covered by a higher one is off; a wave below the splits plays only up to the next zone that's set.
+            var split = c.ConvertState(Raws(c, new() { ["OSC1 Wave"] = 3, ["OSC1 Wave 2"] = 5, ["OSC1 Split 2"] = 72, ["OSC1 Wave 3"] = 6, ["OSC1 Split 3"] = 72,
+                                                       ["OSC1 Wave 4"] = 7, ["OSC1 Split 4"] = 96, ["OSC Mode"] = 2, ["OSC2 Wave"] = 9, ["OSC2 Octave"] = 3, ["OSC2 Transpose"] = 17 }));
+            Assert.That(new[] { 1, 2, 3, 4 }.Select(z => (Final(split, $"Z{z} wave"), Final(split, $"Z{z} key low"), Final(split, $"Z{z} key high"))),
+                Is.EqualTo(new[] { (3, 0, 59), (0, 0, 127), (6, 60, 83), (7, 84, 127) }));
+            Assert.That(Final(split, "Z5 wave"), Is.EqualTo(9), "OSC Mode Both: OSC2 plays too");
+            Assert.That(Value(c, split, "Z5 tune"), Is.EqualTo(17), "an octave and 5 semitones, on each of OSC2's zones");
+            var osc2 = c.ConvertState(Raws(c, new() { ["OSC Mode"] = 1, ["OSC2 Wave"] = 9 }));
+            Assert.That(Final(osc2, "Z1 wave"), Is.EqualTo(0), "OSC2 only: OSC1's zones are off");
+            Assert.That(Final(osc2, "Z5 wave"), Is.EqualTo(9));
+
+            // Key tracking centred an octave lower, and velocity round 64: the cutoff moves by both in octaves.
+            var keyed = c.ConvertState(Raws(c, new() { ["Cutoff"] = 73, ["Key Track"] = 127, ["Filter Vel"] = 127 }));
+            double hz = 20 * Math.Pow(900, 73 / 127.0);
+            Assert.That(Value(c, keyed, "Cutoff"), Is.EqualTo(hz * Math.Pow(2, 63 / 64.0 + 1)).Within(hz * 0.04));
+            Assert.That(Value(c, keyed, "Key track"), Is.EqualTo(63 / 64.0).Within(0.01));
+            Assert.That(Value(c, keyed, "Filter vel"), Is.EqualTo(2 / 3.0).Within(0.01));
+
+            // Its notes' velocity is the track Volume (it also has a global one), 127 where a track has none.
+            Assert.That(c.OldColumn("Volume")!.Track, Is.True);
+            Assert.That(c.Old("Volume")!.Track, Is.False);
+            const int T = NoteList.TimeBase;
+            var columns = new Dictionary<(SuccessorParam, int), IReadOnlyList<ColumnEvent>>
+            {
+                [(c.OldColumn("Note")!, 0)] = new[] { new ColumnEvent(0, 0x41), new ColumnEvent(4 * T, 0x45) },
+                [(c.OldColumn("Note")!, 1)] = new[] { new ColumnEvent(0, 0x48) },
+                [(c.OldColumn("Volume")!, 0)] = new[] { new ColumnEvent(4 * T, 64) },
+            };
+            var result = c.ConvertNotes(columns, 8 * T, 0, 0.1, (p, t) => p.Default, new List<(int, int)>(), new List<string>());
+            Assert.That(result.Select(n => (n.Time / T, n.Pitch, n.Velocity)),
+                Is.EqualTo(new[] { (0, TrackNotes.FromBuzz(0x41), 127), (0, TrackNotes.FromBuzz(0x48), 127), (4, TrackNotes.FromBuzz(0x45), 64) }));
         }
 
         [Test]

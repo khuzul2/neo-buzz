@@ -1,6 +1,7 @@
 // Agent server (docs/specs/mcp-server.md §5.6, A2): the wavetable. wave_list, wave_import.
 // Slots are numbered from 1, as ReBuzz shows them. Roots are MIDI pitches (60 = C4), read and
-// written through Buzz notes as the rest of the tools do.
+// written through Buzz notes as the rest of the tools do. Fork (Neo Sampler, machines.md §5):
+// wave_import's layer adds a file to a filled slot as another layer (a multisample or round robin).
 
 using System;
 using System.IO;
@@ -56,14 +57,16 @@ namespace ReBuzz.Agent
                 Title = "Import a sample",
                 Description =
                     "Loads an audio file (WAV, AIFF, FLAC, OGG) into a wavetable slot: the first empty one, or slot. Won't replace a filled slot " +
-                    "unless replace is true. root_note sets the pitch it plays at unchanged. One undo step. " +
-                    "Example: wave_import(path=\"C:/Samples/kick.wav\", name=\"Kick\").",
+                    "unless replace is true; layer=true adds it to the filled slot as another layer instead (its own root: Neo Sampler splits " +
+                    "a zone's keys by the layers' roots and alternates layers of one root). root_note sets the pitch it plays at unchanged " +
+                    "(without it, C3). One undo step. Example: wave_import(path=\"C:/Samples/kick.wav\", name=\"Kick\").",
                 Input = Object(null,
                     Req("path", String("Full path of the file")),
                     Opt("slot", Integer("Slot, from 1 (default: the first empty)", 1)),
                     Opt("name", String("Its name (default: the file name)")),
                     Opt("root_note", AnyOf("Root pitch", Integer("MIDI number", 0, 127), String("Name: \"C4\""))),
-                    Opt("replace", Boolean("Replace a filled slot"))),
+                    Opt("replace", Boolean("Replace a filled slot")),
+                    Opt("layer", Boolean("Add the file to the filled slot as another layer"))),
                 Output = Object(null, Req("wave", Object(null, Req("slot", Integer("Slot")), Req("name", String("Name"))))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
@@ -80,35 +83,58 @@ namespace ReBuzz.Agent
                         if (index < 0 || index >= table.Waves.Count) throw new ToolError($"slot: the wavetable has slots 1–{table.Waves.Count}.");
                         var old = table.Waves[index];
                         string backup = null, oldName = old?.Name;
-                        if (old != null)
+                        bool layer = c.Bool("layer") == true && old != null && old.Layers.Count > 0;
+                        if (c.Bool("layer") == true && c.Bool("replace") == true) throw new ToolError("Pass layer or replace, not both.");
+                        if (old != null && !layer)
                         {
                             if (c.Bool("replace") != true)
-                                throw new ToolError($"Slot {index + 1} holds \"{old.Name}\". Pass replace=true, or leave slot out for the first empty one (slot {FreeSlot(core) + 1}).");
+                                throw new ToolError($"Slot {index + 1} holds \"{old.Name}\". Pass replace=true, layer=true to add another layer, or leave slot out for the first empty one (slot {FreeSlot(core) + 1}).");
                             if (old.Layers.Count != 1) throw new ToolError($"Slot {index + 1} has {old.Layers.Count} layers; replacing it couldn't be undone. Use another slot.");
                             backup = Path.Combine(Path.GetTempPath(), "ReBuzzAgent", $"wave-{Guid.NewGuid():N}.wav");
                             Save(old.Layers[0], backup);
                         }
-                        string name = c.String("name")?.Trim() is { Length: > 0 } n ? n : Path.GetFileNameWithoutExtension(path);
+                        string name = layer ? oldName : c.String("name")?.Trim() is { Length: > 0 } n ? n : Path.GetFileNameWithoutExtension(path);
                         var layerBefore = old?.Layers[0];
                         int oldRoot = layerBefore?.RootNote ?? 0, oldLoopStart = layerBefore?.LoopStart ?? 0, oldLoopEnd = layerBefore?.LoopEnd ?? 0;
+                        int layersBefore = old?.Layers.Count ?? 0;
                         void Load()
                         {
-                            table.LoadWave(index, path, name, false);
-                            if (root is int midi && table.Waves[index]?.Layers.Count > 0) table.Waves[index].Layers[0].RootNote = Pitch.ToBuzz(midi);
+                            table.LoadWave(index, path, name, layer);
+                            var layers = table.Waves[index]?.Layers;
+                            if (root is int midi && layers?.Count > 0) layers[layer ? layers.Count - 1 : 0].RootNote = Pitch.ToBuzz(midi);
                         }
                         void Restore()
                         {
+                            if (layer)
+                            {
+                                // The added layer goes (the slot's others stay as they are).
+                                lock (ReBuzzCore.AudioLock)
+                                {
+                                    var w = core.SongCore.WavetableCore.WavesList[index];
+                                    while (w != null && w.LayersList.Count > layersBefore)
+                                    {
+                                        var added = w.LayersList[^1];
+                                        w.LayersList.RemoveAt(w.LayersList.Count - 1);
+                                        added.Release();
+                                    }
+                                    w?.Invalidate();
+                                }
+                                return;
+                            }
                             if (backup == null) { table.LoadWave(index, null, null, false); return; }
                             table.LoadWave(index, backup, oldName, false);
-                            var layer = table.Waves[index]?.Layers.FirstOrDefault();
-                            if (layer != null) { layer.RootNote = oldRoot; layer.LoopStart = oldLoopStart; layer.LoopEnd = oldLoopEnd; }
+                            var restored = table.Waves[index]?.Layers.FirstOrDefault();
+                            if (restored != null) { restored.RootNote = oldRoot; restored.LoopStart = oldLoopStart; restored.LoopEnd = oldLoopEnd; }
                         }
                         try { AgentActions.Do(core, new DelegateAction(Load, Restore)); }
                         catch (Exception e) { throw new ToolError($"Couldn't load {Path.GetFileName(path)}: {e.Message}"); }
                         var wave = table.Waves[index] ?? throw new ToolError($"ReBuzz didn't load {Path.GetFileName(path)}." + (messages.Count > 0 ? " " + string.Join(" | ", messages) : ""));
-                        return new JsonObject { ["wave"] = WaveJson(wave, index), ["replaced"] = oldName };
+                        if (layer && wave.Layers.Count <= layersBefore) throw new ToolError($"ReBuzz didn't add {Path.GetFileName(path)} as a layer." + (messages.Count > 0 ? " " + string.Join(" | ", messages) : ""));
+                        return new JsonObject { ["wave"] = WaveJson(wave, index), ["replaced"] = layer ? null : oldName, ["layered"] = layer };
                     }, c.Cancellation);
                     var w = r["wave"]!;
+                    if ((bool?)r["layered"] == true)
+                        return ToolResult.Ok($"Added a layer to slot {w["slot"]} (\"{w["name"]}\"): it has {w["layers"]} layers now.", r);
                     return ToolResult.Ok($"Loaded \"{w["name"]}\" into slot {w["slot"]}: {w["seconds"]} s, {w["channels"]} channel(s), root {w["root"]!["name"]}." +
                                          (r["replaced"] != null ? $" It replaced \"{r["replaced"]}\"." : ""), r);
                 },
@@ -137,7 +163,11 @@ namespace ReBuzz.Agent
                 if (layer.LoopEnd > layer.LoopStart && (w.Flags & WaveFlags.Loop) != 0)
                     o["loop_seconds"] = new JsonArray(Math.Round(layer.LoopStart / (double)rate, 3), Math.Round(layer.LoopEnd / (double)rate, 3));
             }
-            if (w.Layers.Count > 1) o["layers"] = w.Layers.Count;
+            if (w.Layers.Count > 1)
+            {
+                o["layers"] = w.Layers.Count;
+                o["layer_roots"] = new JsonArray(w.Layers.Select(l => (JsonNode)Pitch.Name(Pitch.FromBuzz(l.RootNote) is int m && m >= 0 ? m : 48)).ToArray());
+            }
             return o;
         }
 

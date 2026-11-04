@@ -95,6 +95,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Delay = new("Neo Delay", "Delay", false);
         // The multiband compressor for mastering and buses (docs/specs/mcp-server.md §8.2): linear-phase crossovers with latency.
         internal static readonly NeoInfo Multiband = new("Neo Multiband", "Multiband", false);
+        // The sampler (docs/specs/mcp-server.md §8.2): plays the song's waves.
+        internal static readonly NeoInfo Sampler = new("Neo Sampler", "Sampler", true);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -690,6 +692,119 @@ namespace ReBuzzTests
 
         static readonly SourceInfo MixInfo = new("Neo Test Mix", MixSource, true);
 
+        /// <summary>A mono 32-bit float WAV (for the wavetable).</summary>
+        static void WriteWav(string path, float[] samples, int rate)
+        {
+            using var w = new BinaryWriter(File.Create(path));
+            w.Write("RIFF"u8.ToArray()); w.Write(36 + samples.Length * 4); w.Write("WAVE"u8.ToArray());
+            w.Write("fmt "u8.ToArray()); w.Write(16); w.Write((short)3); w.Write((short)1); w.Write(rate); w.Write(rate * 4); w.Write((short)4); w.Write((short)32);
+            w.Write("data"u8.ToArray()); w.Write(samples.Length * 4);
+            foreach (var x in samples) w.Write(x);
+        }
+
+        /// <summary>Frequency by rising zero crossings over the window.</summary>
+        static double Frequency(float[] x, int rate, int from = 0)
+        {
+            double first = -1, last = -1;
+            int count = 0;
+            for (int i = Math.Max(1, from); i < x.Length; i++)
+                if (x[i - 1] < 0 && x[i] >= 0)
+                {
+                    double t = i - 1 + x[i - 1] / (x[i - 1] - x[i]);
+                    if (first < 0) first = t;
+                    last = t;
+                    count++;
+                }
+            return count < 2 ? 0 : (count - 1) * (double)rate / (last - first);
+        }
+
+        [TestCase(".bmx")]
+        [TestCase(".bmxml")]
+        [Apartment(ApartmentState.STA)]
+        public void NeoSamplerPlaysTheSongsWavesKeepsThemThroughASaveAndShowsItsEditor(string extension)
+        {
+            // A sine at 441 Hz, 48 kHz, into the song's wavetable (slot 1, root A4 = Buzz A-5); zone 1 plays it up to B5,
+            // zone 2 the built-in kick from C6 (Buzz C-7). A-5 plays the wave at its own pitch, whatever the song's rate.
+            using var rig = new Rig(Sampler);
+            var wavePath = Path.Combine(TestContext.CurrentContext.WorkDirectory, "neo-sampler-sine-" + Guid.NewGuid().ToString("N") + ".wav");
+            var sine = new float[48000];
+            for (int i = 0; i < sine.Length; i++) sine[i] = (float)(0.5 * Math.Sin(2 * Math.PI * 441 * i / 48000));
+            WriteWav(wavePath, sine, 48000);
+            var table = rig.Core.SongCore.Wavetable;
+            table.LoadWave(0, wavePath, "Sine 441", false);
+            table.Waves[0].Layers[0].RootNote = BuzzNote(5, 9);
+            Assert.That(rig.Param("Z1 wave").DescribeValue(1), Is.EqualTo("Sine 441"), "a zone's wave reads as the slot's name");
+            Assert.That(rig.Param("Z1 wave").DescribeValue(201), Is.EqualTo("Built-in Kick"));
+            Assert.That(rig.Param("Z1 key high").DescribeValue(83), Is.EqualTo("B5"));
+            Assert.That(rig.Param("Z1 root").DescribeValue(128), Is.EqualTo("Wave"));
+            rig.Param("Z1 key high").SetValue(0, 83);
+            rig.Param("Z2 wave").SetValue(0, 201);
+            rig.Param("Z2 key low").SetValue(0, 84);
+            rig.Param("Vel → amp").SetValue(0, 0);
+            var machine = rig.Effect.ManagedMachine;
+            var busy = machine.GetType().GetProperty("Busy")!;
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            while (busy.GetValue(machine) is true && clock.ElapsedMilliseconds < 10000) Thread.Sleep(20);
+            Assert.That(busy.GetValue(machine), Is.False, "the wave read in, the built-ins made");
+
+            rig.Notes(BuzzNote(5, 9));
+            var a = rig.PlayUntilSound(0.6);
+            double f = Frequency(a, rig.Rate, rig.Rate / 10), level = Db(Rms(a, rig.Rate / 10));
+            TestContext.Out.WriteLine($"the wave at its root: {f:F3} Hz, {level:F2} dB RMS (a 0.5 sine: {Db(0.5 / Math.Sqrt(2)):F2})");
+            Assert.That(f, Is.EqualTo(441).Within(0.05), "at its own pitch");
+            Assert.That(level, Is.GreaterThan(-30), "it sounds");
+            rig.Notes(BuzzNote(7, 0));   // Buzz C-7 = C6 (MIDI 84)
+            rig.Play(0.05);
+            var kick = rig.Play(0.3);
+            Assert.That(Rms(kick), Is.GreaterThan(1e-3), "zone 2's built-in kick");
+            rig.Notes(255);
+            rig.Play(1);
+
+            // Saved and opened again: the zones and the wave come back with the song.
+            string songPath = Path.Combine(TestContext.CurrentContext.WorkDirectory, "neo-sampler-" + Guid.NewGuid().ToString("N") + extension);
+            rig.Core.SaveSongCopy(songPath);
+            rig.Core.Modified = false;
+            rig.Core.OpenSongFile(songPath);
+            rig.Driver.AssertNoErrorsReportedToUser();
+            var opened = rig.Core.SongCore.MachinesList.Single(m => m.DLL.Name == "Neo Sampler");
+            Assert.That(opened, Is.Not.SameAs(rig.Effect), "the song was opened");
+            var globals = opened.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters;
+            Assert.That(globals.Single(p => p.Name == "Z1 key high").GetValue(0), Is.EqualTo(83));
+            Assert.That(globals.Single(p => p.Name == "Z2 wave").GetValue(0), Is.EqualTo(201));
+            Assert.That(globals.Single(p => p.Name == "Z2 key low").GetValue(0), Is.EqualTo(84));
+            var wave = rig.Core.SongCore.Wavetable.Waves[0];
+            Assert.That(wave?.Name, Is.EqualTo("Sine 441"), "the wave is the song's");
+            Assert.That(wave!.Layers[0].RootNote, Is.EqualTo(BuzzNote(5, 9)));
+            // The opened machine reads the song's wave in as the first one did (a render waits on Busy the same way).
+            var openedMachine = opened.ManagedMachine;
+            clock.Restart();
+            while (busy.GetValue(openedMachine) is true && clock.ElapsedMilliseconds < 10000) Thread.Sleep(20);
+            Assert.That(busy.GetValue(openedMachine), Is.False, "the opened song's wave read in");
+            if (opened.TrackCount < 1) opened.TrackCount = 1;
+            var note = opened.ParameterGroups[2].Parameters.Single(p => p.Name == "Note");
+            note.SetValue(0, BuzzNote(5, 9));
+            float[] b = null;
+            for (int i = 0; i < 100; i++)
+            {
+                b = rig.Play(0.6);
+                if (Rms(b) > 1e-3) break;
+                Thread.Sleep(20);
+            }
+            double f2 = Frequency(b!, rig.Rate, rig.Rate / 10), level2 = Db(Rms(b!, rig.Rate / 10));
+            TestContext.Out.WriteLine($"opened again ({extension}): {f2:F3} Hz, {level2:F2} dB RMS");
+            Assert.That(f2, Is.EqualTo(441).Within(0.05), "the opened song plays its wave at its pitch");
+            Assert.That(level2, Is.EqualTo(level).Within(0.1), "and level");
+            note.SetValue(0, 255);
+            rig.Play(1);
+
+            if (extension == ".bmx")
+            {
+                var size = ShootEditor(opened, "neo-sampler-editor");
+                // A [notice] (tools/ci-test-summary.ps1): the WPF editor's size, which the studio's must match (NeoEditorTests).
+                TestContext.Out.WriteLine($"[notice] Neo Sampler in ReBuzz: the wave at its root {f:F3} Hz, {level:F2} dB; after {extension} {f2:F3} Hz, {level2:F2} dB; editor {size.Width:0} x {size.Height:0}");
+            }
+        }
+
         [Test]
         public void NeoAnalyzerPassesAudioThroughReadsWhatItMeasuresAndShowsItsEditor()
         {
@@ -1027,7 +1142,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

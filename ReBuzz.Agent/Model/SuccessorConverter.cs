@@ -218,6 +218,9 @@ namespace ReBuzz.Agent.Model
 
         public SuccessorParam New(string name) => name == null ? null : news.FirstOrDefault(p => p.Name == name) ?? news.FirstOrDefault(p => Same(p.Name, name));
 
+        /// <summary>A notes column: the track parameter of that name where the machine also has a global one (Pedal M1's Volume).</summary>
+        public SuccessorParam OldColumn(string name) => name == null ? null : olds.FirstOrDefault(p => p.Track && Same(p.Name, name)) ?? Old(name);
+
         public IReadOnlyList<SuccessorParam> OldParams => olds;
         public IReadOnlyList<SuccessorParam> NewParams => news;
 
@@ -229,7 +232,7 @@ namespace ReBuzz.Agent.Model
                 var set = new HashSet<SuccessorParam>(Map.Rules.SelectMany(r => r.Inputs).Select(Old).Where(p => p != null));
                 if (Map.Notes is { } n)
                     foreach (var name in new[] { n.Note, n.Slide, n.SlideLength, n.Length, n.Volume })
-                        if (Old(name) is { } p) set.Add(p);
+                        if (OldColumn(name) is { } p) set.Add(p);
                 return set;
             }
         }
@@ -347,16 +350,16 @@ namespace ReBuzz.Agent.Model
             var spec = Map.Notes;
             var result = new List<NoteEvent>();
             if (spec == null) return result;
-            var noteParam = Old(spec.Note);
+            var noteParam = OldColumn(spec.Note);
             if (noteParam == null) return result;
             IReadOnlyList<ColumnEvent> Column(string name, int track) =>
-                Old(name) is { } p && columns.TryGetValue((p, track), out var list) ? list : Array.Empty<ColumnEvent>();
+                OldColumn(name) is { } p && columns.TryGetValue((p, track), out var list) ? list : Array.Empty<ColumnEvent>();
             int? At(string name, int track, int time)
             {
                 foreach (var e in Column(name, track)) if (e.Time == time) return e.Raw;
                 return null;
             }
-            var volumeParam = Old(spec.Volume);
+            var volumeParam = OldColumn(spec.Volume);
             var glideParam = New(spec.Glide);
             int outOfRange = 0;
             var tracks = columns.Keys.Where(k => k.Param == noteParam).Select(k => k.Track).Distinct().OrderBy(t => t).ToList();
@@ -394,7 +397,7 @@ namespace ReBuzz.Agent.Model
                         int start = Math.Min(e.Time + 1, end - 1);
                         result.Add(new NoteEvent(start, Math.Max(1, end - start), target, velocity));
                         double ticks = spec.SlideLength != null && At(spec.SlideLength, track, e.Time) is int sl && sl > 0 ? sl
-                                     : spec.SlideLength != null && Old(spec.SlideLength) is { } slp ? slp.Value(baseRaw(slp, track))
+                                     : spec.SlideLength != null && OldColumn(spec.SlideLength) is { } slp ? slp.Value(baseRaw(slp, track))
                                      : (end - e.Time) / (double)NoteList.TimeBase;
                         if (glideParam != null) glides.Add((e.Time, glideParam.Raw(Math.Max(0, ticks) * secondsPerTick)));
                     }
@@ -426,7 +429,13 @@ namespace ReBuzz.Agent.Model
             switch (rule.Kind)
             {
                 case SuccessorRuleKind.Unit:
-                    Put(rule.To, get(rule.From) * rule.Scale * (rule.Times != null ? get(rule.Times) : 1) + rule.Offset);
+                {
+                    double octaves = rule.OctaveTerms?.Sum(t => t.Weight * get(t.Param)) ?? 0;
+                    Put(rule.To, get(rule.From) * rule.Scale * (rule.Times != null ? get(rule.Times) : 1) * Math.Pow(2, octaves) + rule.Offset);
+                    break;
+                }
+                case SuccessorRuleKind.KeyZones:
+                    KeyZones(rule, get, Put);
                     break;
                 case SuccessorRuleKind.Db:
                 {
@@ -518,6 +527,41 @@ namespace ReBuzz.Agent.Model
                     break;
             }
             return outs;
+        }
+
+        /// <summary>
+        /// A keyboard split onto zones (<see cref="SuccessorRuleKind.KeyZones"/>): zone 1 from the bottom, each higher zone whose wave
+        /// is set from its split; a zone ends below the next set zone above it, and one a higher zone covers entirely is off.
+        /// </summary>
+        void KeyZones(SuccessorRule rule, Func<string, double> get, Action<string, double> put)
+        {
+            bool on = true;
+            if (rule.Enable != null && Old(rule.Enable) is { } enable)
+            {
+                double v = get(rule.Enable);
+                string name = enable.Choices != null && (int)v >= 0 && (int)v < enable.Choices.Count ? enable.Choices[(int)v] : null;
+                string number = ((int)Math.Round(v)).ToString(C);
+                on = rule.EnableWhen.Any(w => Same(w, name) || w == number);
+            }
+            int n = rule.Waves.Count;
+            var wave = new int[n];
+            var low = new int[n];
+            for (int k = 0; k < n; k++)
+            {
+                double w = get(rule.Waves[k]);
+                wave[k] = on && double.IsFinite(w) ? Math.Max(0, (int)Math.Round(w)) : 0;
+                low[k] = k == 0 ? 0 : (int)Math.Round(get(rule.Splits[k - 1]) + rule.SplitOffset);
+            }
+            for (int k = 0; k < n; k++)
+            {
+                int lo = Math.Clamp(low[k], 0, 127), hi = 127;
+                for (int j = k + 1; j < n; j++)
+                    if (wave[j] > 0) hi = Math.Min(hi, low[j] - 1);
+                bool plays = (k == 0 || wave[k] > 0) && hi >= lo;
+                put(rule.Zones[k].Wave, plays ? wave[k] : 0);
+                put(rule.Zones[k].Low, plays ? lo : 0);
+                put(rule.Zones[k].High, plays ? Math.Clamp(hi, 0, 127) : 127);
+            }
         }
 
         /// <summary>A constant-Q bell's level in dB at <paramref name="w"/> times its centre: H(s) = (s² + (A/Q)s + 1) / (s² + s/(AQ) + 1), A = 10^(g/40).</summary>

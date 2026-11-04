@@ -5,7 +5,8 @@
 #  - a dry run reports the mapping and the expected differences and changes nothing;
 #  - Pedal EQ → Neo EQ and Pedal Gain → Neo Utility (U5's exit check, the portable half), Pedal Comp →
 #    Neo Comp and Pedal Chorus → Neo Ensemble convert within their stated tolerance, on noise played through
-#    them, each read against its input;
+#    them, each read against its input; Pedal M1 → Neo Sampler (its key zones, both oscillators, envelopes
+#    and filter) playing a line from the song's waves, its notes moved;
 #  - the successor takes the old machine's place: its name, connections (gain and pan), parameters in
 #    units (param_get), its patterns' automation (ramps kept), the arrangement and the Session View's track;
 #  - one undo brings the original back exactly (machines, parameters, automation, arrangement, session),
@@ -16,7 +17,9 @@
 #   python3 tools/headless-replace.py <path to rebuzz-headless> [work folder]
 
 import json
+import math
 import os
+import struct
 import subprocess
 import sys
 import tempfile
@@ -102,7 +105,7 @@ def verdict(r):
 # --- successors are named ---------------------------------------------------------------------------
 _, _, gear = s.call("gear_list", search="Pedal", limit=100)
 rows = {g["name"]: g for g in gear.get("gear", [])}
-for name, successor in [("Pedal EQ", "Neo EQ"), ("Pedal Gain", "Neo Utility"), ("Pedal Comp", "Neo Comp"), ("Pedal Chorus", "Neo Ensemble")]:
+for name, successor in [("Pedal EQ", "Neo EQ"), ("Pedal Gain", "Neo Utility"), ("Pedal Comp", "Neo Comp"), ("Pedal Chorus", "Neo Ensemble"), ("Pedal M1", "Neo Sampler")]:
     check(successor in (rows.get(name, {}).get("successor") or ""), f"gear_list: {name}'s successor is {successor}")
 check("successor" not in rows.get("Pedal Filter", {}), "gear_list: Pedal Filter has no successor mapping")
 
@@ -185,6 +188,37 @@ for effect, settings, label in [
     good, text, r = s.call("machine_replace", machine="FX")
     within, loud, worst = verdict(r)
     check(good and within is True, f"{label} within tolerance (loudness {loud} dB, worst band {worst})")
+
+# --- Pedal M1 → Neo Sampler: the song's waves, its key zones and oscillators, a line of notes ------------
+def wave(name, hz, harmonics, step=1):
+    """Two seconds of a band-limited saw (step 1) or square (step 2) at 48 kHz, 32-bit float."""
+    path = os.path.join(work, name)
+    data = struct.pack("<96000f", *[0.3 * sum(math.sin(2 * math.pi * k * hz * i / 48000) / k for k in range(1, harmonics, step)) for i in range(96000)])
+    with open(path, "wb") as f:
+        f.write(b"RIFF" + struct.pack("<I", 36 + len(data)) + b"WAVEfmt " + struct.pack("<IHHIIHH", 16, 3, 1, 48000, 192000, 4, 32) + b"data" + struct.pack("<I", len(data)) + data)
+    return path
+
+
+saw, square = wave("saw-a3.wav", 220, 91), wave("square-a4.wav", 440, 45, 2)
+for settings, label in [
+    ([], "Pedal M1 → Neo Sampler"),
+    ([{"param": "OSC1 Wave 2", "value": "raw:2"}, {"param": "OSC1 Split 2", "value": "raw:66"}, {"param": "OSC Mode", "value": "Both"}, {"param": "OSC2 Wave", "value": "raw:1"},
+      {"param": "OSC2 Octave", "value": "raw:3"}, {"param": "OSC2 Level", "value": "raw:64"}], "Pedal M1 with a key zone and both oscillators → Neo Sampler"),
+    ([{"param": "Amp Attack", "value": "raw:60"}, {"param": "Amp Sustain", "value": "raw:64"}, {"param": "Amp Release", "value": "raw:70"},
+      {"param": "Cutoff", "value": "raw:90"}, {"param": "Filter EG Int", "value": "raw:40"}, {"param": "Filter Decay", "value": "raw:60"}], "Pedal M1 with its envelopes and filter → Neo Sampler"),
+]:
+    s.ok("song_new", discard_unsaved=True)
+    s.ok("wave_import", path=saw, slot=1, name="Saw A3", root_note="A3")
+    s.ok("wave_import", path=square, slot=2, name="Square A4", root_note="A4")
+    s.ok("machine_add", gear="Pedal M1", name="Keys")
+    if settings:
+        s.ok("param_set", machine="Keys", changes=settings)
+    s.ok("pattern_create", machine="Keys", name="00", length_beats=8)
+    s.ok("notes_write", machine="Keys", pattern="00", notes=[{"pitch": p, "start": 2 * i, "length": 1} for i, p in enumerate([57, 69, 52, 45])])
+    s.ok("arrangement_place", machine="Keys", pattern="00", at=[0])
+    good, text, r = s.call("machine_replace", machine="Keys")
+    within, loud, worst = verdict(r)
+    check(good and within is True and (r.get("patterns") or [{}])[0].get("notes") == 4, f"{label} within tolerance, its 4 notes moved (loudness {loud} dB, worst band {worst})")
 
 # --- keep_old, a given name --------------------------------------------------------------------------
 song("Pedal Gain", [{"param": "Gain", "value": "50%"}])
