@@ -11,6 +11,8 @@ Eight bands of minimum-phase EQ with zero latency, measured against the drawn de
 
 Near the top of the spectrum, wide high bells and shelves above about 10 kHz bend away from an analog EQ's curve, by up to about 3 dB near 16 kHz at 44.1 and 48 kHz. If that matters, `analyze` the result.
 
+`Mode` switches it to a 31-band graphic EQ (below). In `Parametric` mode, the default, the graphic sliders do nothing; in `Graphic` mode the eight bands rest.
+
 ## Signal flow
 
 Bands 1 to 8 in series. Each band has these parameters:
@@ -48,11 +50,36 @@ Bands 2–7 start on at 0 dB, so they change nothing until given a gain. Bands 1
 
 - **Check after each move:** render and `compare` against the render before. A cut that also loses the part's character is too wide.
 
+## Graphic mode
+
+`Mode` = Graphic: 31 sliders at the ISO third-octave centres, `G 20 Hz`, `G 25 Hz`, `G 31.5 Hz` … `G 1 kHz`, `G 1.25 kHz` … `G 16 kHz`, `G 20 kHz`, each −18 to +18 dB in 0.1 dB steps. `Output` still applies.
+
+- **The response passes through the sliders.** The bands overlap, so their real gains are solved for: at every centre the response is within 0.2 dB of its slider, even with neighbours 36 dB apart. All sliders at +X is exactly +X.
+- **A slider is about a third of an octave wide**: one slider at +6 dB leaves its neighbours' centres at 0 dB. For a wider move, set the neighbours too, in steps.
+- **Below 20 Hz and above 20 kHz** the response settles at the sliders' median (the median is applied as a plain gain), not at 0 dB.
+- Constant-Q, minimum phase, zero latency; the 16 and 20 kHz bands keep their shape at 44.1 and 48 kHz.
+- Use it for a curve given band by band (matching a target spectrum, a loudness contour, a telephone or radio band) or to follow `analyze`'s third-octave bands one for one. For a single precise move (a resonance, a notch, a shelf with a set Q), the parametric bands are better.
+
+| Parameter | Value | Why |
+|---|---|---|
+| Mode | Graphic | |
+| G 63 Hz | +2 dB | warmth |
+| G 80 Hz | +2 dB | |
+| G 315 Hz | -2 dB | boxiness |
+| G 400 Hz | -2.5 dB | |
+| G 500 Hz | -1.5 dB | |
+| G 4 kHz | +1.5 dB | presence |
+| G 12.5 kHz | +2 dB | air |
+| G 16 kHz | +2.5 dB | |
+
+`param_set` takes them as any other: `{"param": "G 2.5 kHz", "value": "-3 dB"}`.
+
 ## Gotchas
 
 - `B<n> gain` does nothing on cuts and notches. `B<n> slope` matters only on cuts.
 - A Q far from 0.71 on a cut gives it a resonant bump at the cutoff.
 - Boosts raise the level: watch the gain into what follows (Neo Comp's threshold, the master's headroom).
+- The `G …` sliders only act in Graphic mode, the `B…` bands only in Parametric mode. Loading a preset sets the mode too.
 
 ## Preset map
 
@@ -72,3 +99,10 @@ Bands 2–7 start on at 0 dB, so they change nothing until given a gain. Bands 1
 | "Fix — Rumble Filter" | a 40 Hz high-pass |
 | "Fix — Hum Notch 50 Hz" | notches at 50, 100 and 150 Hz |
 | "Fix — Hum Notch 60 Hz" | notches at 60, 120 and 180 Hz |
+| "Graphic — Flat" | graphic mode, every slider at 0 dB |
+| "Graphic — Loudness (Smile)" | +6 dB lows and +4 dB highs, tapering to 0 by 200 Hz and 4 kHz |
+| "Graphic — Telephone" | 315 Hz to 2.5 kHz, a little lift at 2 kHz, −18 dB outside: an effect |
+| "Graphic — Air" | rising from +0.5 dB at 5 kHz to +5 dB at 20 kHz |
+| "Graphic — Low Cut" | −18 dB at 20 and 25 Hz, back to 0 by 100 Hz |
+| "Graphic — Mid Scoop" | down to −5 dB at 630 Hz |
+| "Graphic — Vocal Presence" | a little low-mid cut, +3 dB at 3.15 kHz |
