@@ -265,7 +265,7 @@ The editor keeps its size: a Mode switch sits beside the band controls. In graph
 | Audio thread | 2000 blocks with a slider moving every block (the solver running) and the mode switching; in the studio, a graphic Neo EQ with a slider moved every buffer, each work algorithm | 0 bytes; 0 bytes |
 | Flat passes | every slider at 0 dB: the input bit for bit (negative zero and subnormals included), also after a slider has moved away and back | bit for bit; latency 0 |
 | Parametric unchanged | the parametric mode's renders (the defaults, the three test curves, the 14 factory presets' stored values, a bell automated every block, type and on/off switches; 44.1 and 48 kHz) against origin/main's before graphic mode | 40 of 40 bit-identical |
-| CPU | 31 bands busy, stereo at 48 kHz: ≥ 50× real time; a slider move's solve | 119× real time; 0.15 ms (2.8 % of a 256-sample block) |
+| CPU | 31 bands busy, stereo at 48 kHz: ≥ 30× real time (3.3 % of a core: 31 sections, where the parametric figure is for 14); a slider move's solve | 119× and 99× (two Linux runs), 59× and 67× on the macOS arm64 runner; a solve 0.15–0.23 ms (at most 4.3 % of a 256-sample block) |
 
 As built:
 

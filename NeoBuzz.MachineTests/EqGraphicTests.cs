@@ -664,7 +664,8 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void CpuIsSmall()
         {
-            // Stereo at 48 kHz, every band busy (a random setting), and the solve a slider move costs.
+            // Stereo at 48 kHz, every band busy (a random setting): ≥ 30× real time, 3.3 % of a core (31 sections; the
+            // parametric test's 50× is for 14). And the solve a slider move costs.
             const int rate = Measure.Rate;
             var (e, v) = Make(p => Sliders(p, Random(new Random(11))));
             var l = Measure.PinkNoise(10 * rate, 0.2, 31);
@@ -682,7 +683,7 @@ namespace NeoBuzz.MachineTests
             for (int i = 0; i < 200; i++) solver.Solve(settings[i % settings.Length]);
             double solveMs = sw.Elapsed.TotalMilliseconds / 200;
             Measure.Report($"Neo EQ graphic CPU: {speed:F0}× real time (31 bands, stereo); a slider move's solve {solveMs:F3} ms ({solveMs / (256000.0 / rate) * 100:F1} % of a 256-sample block)");
-            Assert.That(speed, Is.GreaterThan(50));
+            Assert.That(speed, Is.GreaterThan(30));
             Assert.That(solveMs, Is.LessThan(2));
         }
     }
