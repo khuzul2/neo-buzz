@@ -92,46 +92,6 @@ Decay = 1.2 s
 Sustain = 50%
 Release = 0.4 s
 
-preset "Sweep — Q5"
-comment "A square and a saw an octave down over a sine sub: a firm bass"
-Oscillator 1 wave = PWM Sqr
-Oscillator 2 wave = Saw
-Oscillator 2 transpose = -12 st
-Oscillator balance = 40%
-Sub-oscillator wave = Sine
-Sub-oscillator level = 30%
-Filter cutoff = 30%
-Filter resonance = 10%
-Filter envelope amount = 40%
-Filter envelope attack = 5 ms
-Filter envelope decay = 0.3 s
-Filter envelope sustain = 20%
-Attack = 5 ms
-Decay = 0.5 s
-Sustain = 100%
-Release = 0.1 s
-Filter type = 4L Phlatt
-
-preset "Sweep — Q6"
-comment "A square and a saw an octave down over a sine sub: a firm bass"
-Oscillator 1 wave = PWM Sqr
-Oscillator 2 wave = Saw
-Oscillator 2 transpose = -12 st
-Oscillator balance = 40%
-Sub-oscillator wave = Sine
-Sub-oscillator level = 30%
-Filter cutoff = 20%
-Filter resonance = 0%
-Filter envelope amount = 30%
-Filter envelope attack = 5 ms
-Filter envelope decay = 0.3 s
-Filter envelope sustain = 20%
-Attack = 5 ms
-Decay = 0.5 s
-Sustain = 100%
-Release = 0.1 s
-Filter type = 4L Phlatt
-
 preset "Sweep — Q7"
 comment "A square and a saw an octave down over a sine sub: a firm bass"
 Oscillator 1 wave = PWM Sqr
@@ -152,37 +112,17 @@ Sustain = 100%
 Release = 0.1 s
 Filter type = 2L Phlatt
 
-preset "Sweep — Q8"
+preset "Sweep — Q11"
 comment "A square and a saw an octave down over a sine sub: a firm bass"
 Oscillator 1 wave = PWM Sqr
-Oscillator 2 wave = Saw
-Oscillator 2 transpose = -12 st
-Oscillator balance = 40%
-Sub-oscillator wave = Sine
-Sub-oscillator level = 0%
-Filter cutoff = 15%
-Filter resonance = 0%
-Filter envelope amount = 30%
-Filter envelope attack = 5 ms
-Filter envelope decay = 0.3 s
-Filter envelope sustain = 20%
-Attack = 5 ms
-Decay = 0.5 s
-Sustain = 100%
-Release = 0.1 s
-Filter type = 4L Phlatt
-
-preset "Sweep — Q9"
-comment "A square and a saw an octave down over a sine sub: a firm bass"
-Oscillator 1 wave = Saw
 Oscillator 2 wave = Saw
 Oscillator 2 transpose = -12 st
 Oscillator balance = 40%
 Sub-oscillator wave = Sine
 Sub-oscillator level = 30%
 Filter cutoff = 25%
-Filter resonance = 10%
-Filter envelope amount = 40%
+Filter resonance = 0%
+Filter envelope amount = 10%
 Filter envelope attack = 5 ms
 Filter envelope decay = 0.3 s
 Filter envelope sustain = 20%
@@ -190,9 +130,9 @@ Attack = 5 ms
 Decay = 0.5 s
 Sustain = 100%
 Release = 0.1 s
-Filter type = 4L Phlatt
+Filter type = 2L Phlatt
 
-preset "Sweep — Q10"
+preset "Sweep — Q12"
 comment "A square and a saw an octave down over a sine sub: a firm bass"
 Oscillator 1 wave = PWM Sqr
 Oscillator 2 wave = Saw
@@ -200,7 +140,7 @@ Oscillator 2 transpose = -12 st
 Oscillator balance = 40%
 Sub-oscillator wave = Sine
 Sub-oscillator level = 30%
-Filter cutoff = 75%
+Filter cutoff = 20%
 Filter resonance = 0%
 Filter envelope amount = 20%
 Filter envelope attack = 5 ms
@@ -210,38 +150,47 @@ Attack = 5 ms
 Decay = 0.5 s
 Sustain = 100%
 Release = 0.1 s
+Filter type = 2L Phlatt
 
-preset "Sweep — P4"
-comment "Two pulse waves moving slowly, a gentle filter: soft electric keys"
+preset "Sweep — Q13"
+comment "A square and a saw an octave down over a sine sub: a firm bass"
 Oscillator 1 wave = PWM Sqr
-Oscillator 2 wave = PWM Sqr
-Oscillator 2 detune = 6 ct
-Sub-oscillator level = 0%
-Filter cutoff = 30%
-Filter envelope amount = 20%
-Filter envelope decay = 0.8 s
-Filter envelope sustain = 30%
-Attack = 10 ms
-Decay = 1.2 s
-Sustain = 50%
-Release = 0.4 s
-Filter type = 4L Phlatt
-
-preset "Sweep — P5"
-comment "Two pulse waves moving slowly, a gentle filter: soft electric keys"
-Oscillator 1 wave = PWM Sqr
-Oscillator 2 wave = PWM Sqr
-Oscillator 2 detune = 6 ct
-Sub-oscillator level = 0%
+Oscillator 2 wave = Saw
+Oscillator 2 transpose = -12 st
+Oscillator balance = 40%
+Sub-oscillator wave = Sine
+Sub-oscillator level = 30%
 Filter cutoff = 20%
-Filter envelope amount = 20%
-Filter envelope decay = 0.8 s
-Filter envelope sustain = 30%
-Attack = 10 ms
-Decay = 1.2 s
-Sustain = 50%
-Release = 0.4 s
+Filter resonance = 0%
+Filter envelope amount = 10%
+Filter envelope attack = 5 ms
+Filter envelope decay = 0.3 s
+Filter envelope sustain = 20%
+Attack = 5 ms
+Decay = 0.5 s
+Sustain = 100%
+Release = 0.1 s
 Filter type = 4L Phlatt
+
+preset "Sweep — Q14"
+comment "A square and a saw an octave down over a sine sub: a firm bass"
+Oscillator 1 wave = PWM Sqr
+Oscillator 2 wave = Saw
+Oscillator 2 transpose = -12 st
+Oscillator balance = 40%
+Sub-oscillator wave = Sine
+Sub-oscillator level = 30%
+Filter cutoff = 30%
+Filter resonance = 0%
+Filter envelope amount = 0%
+Filter envelope attack = 5 ms
+Filter envelope decay = 0.3 s
+Filter envelope sustain = 20%
+Attack = 5 ms
+Decay = 0.5 s
+Sustain = 100%
+Release = 0.1 s
+Filter type = 2L Phlatt
 
 preset "Sweep — P6"
 comment "Two pulse waves moving slowly, a gentle filter: soft electric keys"
@@ -259,14 +208,46 @@ Sustain = 50%
 Release = 0.4 s
 Filter type = 2L Phlatt
 
-preset "Sweep — P7"
+preset "Sweep — P10"
 comment "Two pulse waves moving slowly, a gentle filter: soft electric keys"
 Oscillator 1 wave = PWM Sqr
 Oscillator 2 wave = PWM Sqr
 Oscillator 2 detune = 6 ct
 Sub-oscillator level = 0%
 Filter cutoff = 25%
+Filter envelope amount = 10%
+Filter envelope decay = 0.8 s
+Filter envelope sustain = 30%
+Attack = 10 ms
+Decay = 1.2 s
+Sustain = 50%
+Release = 0.4 s
+Filter type = 2L Phlatt
+
+preset "Sweep — P11"
+comment "Two pulse waves moving slowly, a gentle filter: soft electric keys"
+Oscillator 1 wave = PWM Sqr
+Oscillator 2 wave = PWM Sqr
+Oscillator 2 detune = 6 ct
+Sub-oscillator level = 0%
+Filter cutoff = 20%
 Filter envelope amount = 20%
+Filter envelope decay = 0.8 s
+Filter envelope sustain = 30%
+Attack = 10 ms
+Decay = 1.2 s
+Sustain = 50%
+Release = 0.4 s
+Filter type = 2L Phlatt
+
+preset "Sweep — P12"
+comment "Two pulse waves moving slowly, a gentle filter: soft electric keys"
+Oscillator 1 wave = PWM Sqr
+Oscillator 2 wave = PWM Sqr
+Oscillator 2 detune = 6 ct
+Sub-oscillator level = 0%
+Filter cutoff = 20%
+Filter envelope amount = 10%
 Filter envelope decay = 0.8 s
 Filter envelope sustain = 30%
 Attack = 10 ms
@@ -276,33 +257,70 @@ Release = 0.4 s
 Filter type = 4L Phlatt
 Oscillator balance = 50%
 
-preset "Sweep — P8"
+preset "Sweep — P13"
 comment "Two pulse waves moving slowly, a gentle filter: soft electric keys"
 Oscillator 1 wave = PWM Sqr
 Oscillator 2 wave = PWM Sqr
 Oscillator 2 detune = 6 ct
 Sub-oscillator level = 0%
-Filter cutoff = 70%
-Filter envelope amount = 20%
+Filter cutoff = 30%
+Filter envelope amount = 0%
 Filter envelope decay = 0.8 s
 Filter envelope sustain = 30%
 Attack = 10 ms
 Decay = 1.2 s
 Sustain = 50%
 Release = 0.4 s
+Filter type = 2L Phlatt
 
-preset "Sweep — P9"
-comment "Two pulse waves moving slowly, a gentle filter: soft electric keys"
-Oscillator 1 wave = PWM Sqr
-Oscillator 2 wave = PWM Sqr
-Oscillator 2 detune = 6 ct
+preset "Sweep — B3"
+comment "Two saws a few cents apart, an open filter with a quick envelope: a bright lead"
+Oscillator 1 wave = Saw
+Oscillator 2 wave = Saw
+Oscillator 2 detune = 8 ct
+Oscillator balance = 50%
 Sub-oscillator level = 0%
-Filter cutoff = 15%
+Filter cutoff = 65%
+Filter resonance = 15%
+Filter envelope amount = 40%
+Filter envelope decay = 0.4 s
+Filter envelope sustain = 40%
+Attack = 5 ms
+Decay = 0.3 s
+Sustain = 80%
+Release = 0.2 s
+
+preset "Sweep — B4"
+comment "Two saws a few cents apart, an open filter with a quick envelope: a bright lead"
+Oscillator 1 wave = Saw
+Oscillator 2 wave = Saw
+Oscillator 2 detune = 8 ct
+Oscillator balance = 50%
+Sub-oscillator level = 0%
+Filter cutoff = 55%
+Filter resonance = 15%
+Filter envelope amount = 40%
+Filter envelope decay = 0.4 s
+Filter envelope sustain = 40%
+Attack = 5 ms
+Decay = 0.3 s
+Sustain = 80%
+Release = 0.2 s
+Filter type = 2L Phlatt
+
+preset "Sweep — B5"
+comment "Two saws a few cents apart, an open filter with a quick envelope: a bright lead"
+Oscillator 1 wave = Saw
+Oscillator 2 wave = Saw
+Oscillator 2 detune = 8 ct
+Oscillator balance = 50%
+Sub-oscillator level = 0%
+Filter cutoff = 60%
+Filter resonance = 10%
 Filter envelope amount = 30%
-Filter envelope decay = 0.8 s
-Filter envelope sustain = 30%
-Attack = 10 ms
-Decay = 1.2 s
-Sustain = 50%
-Release = 0.4 s
-Filter type = 4L Phlatt
+Filter envelope decay = 0.4 s
+Filter envelope sustain = 40%
+Attack = 5 ms
+Decay = 0.3 s
+Sustain = 80%
+Release = 0.2 s
