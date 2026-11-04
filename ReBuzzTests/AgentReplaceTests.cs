@@ -233,6 +233,26 @@ namespace ReBuzzTests
                 EffectSong(client, "Joachims Hyperion", Indexed((15, 213), (33, 0)), noise: true);
                 Replace(client, "Joachims Hyperion, 900 Hz +12 dB at Bandwidth 0.2 (raw 0, the narrowest)");
             }
+            // Neo Delay's pairs (mcp-server.md §12.10), on noise: each classic delay at its defaults and at another setting.
+            if (File.Exists(Path.Combine(bin, "Gear", "Effects", "Neo Delay.NET.dll")))
+            {
+                foreach (var (delay, label, changes) in new (string Gear, string Label, JsonArray Changes)[]
+                {
+                    ("Jeskola Delay", "Jeskola Delay defaults (3 ticks, 50 %, wet 37.5 %)", null),
+                    ("Jeskola Delay", "Jeskola Delay 120 ms, −60 %, wet only", Join(Raw(("Dry thru", 0)), OnTrack(Raw(("Length", 120), ("Length unit", 1), ("Feedback", 26), ("Wet out", 128))))),
+                    ("Jeskola Cross Delay", "Jeskola Cross Delay defaults", null),
+                    ("Jeskola Cross Delay", "Jeskola Cross Delay 2 and 3 ticks, 60 %", OnTrack(Raw(("L. Length", 2), ("R. Length", 3), ("Feedback", 102)))),
+                    ("Jeskola NiNjA dElaY", "NiNjA dElaY defaults (high-pass 550 Hz, 75 %)", null),
+                    ("Jeskola NiNjA dElaY", "NiNjA dElaY low-pass 2 kHz, 60 %", OnTrack(Raw(("f. type", 0), ("f. cutoff", 2000), ("Feedback", 102)))),
+                    ("FSM PanzerDelay", "PanzerDelay defaults", null),
+                    ("FSM PanzerDelay", "PanzerDelay ping-pong, 2 and 3 ticks, FB −3 dB", OnTrack(Raw(("FB PingPong", 1), ("L Delay Len", 2), ("R Delay Len", 3), ("FB Amp", 210)))),
+                })
+                {
+                    if (!Has(bin, "Effects", delay)) continue;
+                    EffectSong(client, delay, changes, noise: true);
+                    results.Add((label, Within(Replace(client, label))));
+                }
+            }
             Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
             Assert.That(results.Where(x => x.Within != true).Select(x => $"{x.Label}: {x.Within?.ToString() ?? "not compared"}"), Is.Empty,
                 "the exit-check pairs convert within their stated tolerance");
@@ -364,6 +384,9 @@ namespace ReBuzzTests
         static JsonArray Indexed(params (int Index, int Raw)[] changes) =>
             new(changes.Select(c => (JsonNode)new JsonObject { ["param"] = $"#{c.Index}", ["value"] = $"raw:{c.Raw}" }).ToArray());
 
+        /// <summary>Several change lists as one (global and track changes together).</summary>
+        static JsonArray Join(params JsonArray[] parts) => new(parts.SelectMany(p => p).Select(n => n!.DeepClone()).ToArray());
+
         static JsonArray OnTrack(JsonArray changes)
         {
             foreach (var c in changes) c!["track"] = 0;
@@ -493,6 +516,153 @@ namespace ReBuzzTests
             Measure("Highpass raw 127", (Hp, 127));
             Measure("Input gain raw 60", (Gain, 60));
             foreach (string line in report) TestContext.Out.WriteLine(line);
+            Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
+        }
+
+        /// <summary>
+        /// A new song: a 20 ms burst of Neo Poly's white noise at the start (16 beats long) into <paramref name="gear"/> ("FX") →
+        /// Master, the connection panned by <paramref name="pan"/>; rendered with probes on both.
+        /// </summary>
+        static (float[] Source, float[] L, float[] R, int Rate) Burst(Client client, string gear, JsonArray changes, double pan = 0, bool track = false)
+        {
+            Quiet(client, "song_new", Args(("discard_unsaved", true)));
+            Quiet(client, "machine_add", Args(("gear", "Neo Poly"), ("name", "Synth")));
+            Quiet(client, "param_set", Args(("machine", "Synth"), ("changes", Changes(("Noise", "100%"), ("O1 level", "0%"), ("F1 cutoff", "20 kHz"), ("F1 env", "0%"),
+                ("Amp attack", "0.5 ms"), ("Amp sustain", "100%"), ("Amp release", "0.5 ms"), ("Drift", "0%"), ("Volume", "-6 dB")))));
+            Quiet(client, "machine_add", Args(("gear", gear), ("name", "FX"), ("insert_after", "Synth")));
+            if (changes != null) Quiet(client, "param_set", Args(("machine", "FX"), ("changes", track ? OnTrack(changes) : changes)));
+            if (pan != 0) Quiet(client, "connection_set", Args(("changes", new JsonArray(new JsonObject { ["from"] = "Synth", ["to"] = "FX", ["pan"] = pan }))));
+            Quiet(client, "pattern_create", Args(("machine", "Synth"), ("name", "00"), ("length_beats", 16)));
+            Quiet(client, "notes_write", Args(("machine", "Synth"), ("pattern", "00"), ("notes", new JsonArray(new JsonObject { ["pitch"] = 60, ["start"] = 0, ["length"] = 0.04 }))));
+            Quiet(client, "arrangement_place", Args(("machine", "Synth"), ("pattern", "00"), ("at", 0)));
+            var render = Quiet(client, "render", Args(("tail_seconds", 0), ("probes", new JsonArray("FX", "Synth"))));
+            var probes = render["probes"]!.AsArray();
+            string ProbeFile(string m) => probes.First(p => p!["machine"]!.GetValue<string>() == m)!["file"]!.GetValue<string>();
+            var fx = ReBuzz.Agent.Audio.Wav.Read(ProbeFile("FX"));
+            var src = ReBuzz.Agent.Audio.Wav.Read(ProbeFile("Synth"));
+            var mono = src.Left.Zip(src.Right ?? src.Left, (l, r) => (l + r) / 2).ToArray();
+            return (mono, fx.Left, fx.Right ?? fx.Left, fx.Rate);
+        }
+
+        /// <summary>
+        /// The echoes of a burst: the output's cross-correlation with the source over the lags (each lag's gain, the burst being
+        /// white), its peaks above −40 dB in time order: "375.0 ms −8.5 dB" (a minus sign before the dB for an inverted echo).
+        /// </summary>
+        static string Taps(float[] source, float[] output, int rate, double maxSeconds = 6, int count = 8)
+        {
+            int first = Array.FindIndex(source, v => Math.Abs(v) > 1e-4f), last = Array.FindLastIndex(source, v => Math.Abs(v) > 1e-4f);
+            if (first < 0) return "no burst";
+            double energy = 0;
+            for (int i = first; i <= last; i++) energy += source[i] * (double)source[i];
+            int maxLag = Math.Min((int)(maxSeconds * rate), output.Length - last - 1);
+            var xc = new double[maxLag + 1];
+            for (int lag = 0; lag <= maxLag; lag++)
+            {
+                double sum = 0;
+                for (int i = first; i <= last; i++) sum += source[i] * (double)output[i + lag];
+                xc[lag] = sum / energy;
+            }
+            var peaks = new List<(int Lag, double Gain)>();
+            for (int lag = 1; lag < maxLag; lag++)
+            {
+                double a = Math.Abs(xc[lag]);
+                if (a > 0.01 && a >= Math.Abs(xc[lag - 1]) && a > Math.Abs(xc[lag + 1])) peaks.Add((lag, xc[lag]));
+            }
+            if (Math.Abs(xc[0]) > 0.01) peaks.Insert(0, (0, xc[0]));
+            // The strongest few, in time order (a filtered echo's ripples are weaker than its peak).
+            var top = peaks.OrderByDescending(p => Math.Abs(p.Gain)).Take(count).OrderBy(p => p.Lag);
+            return string.Join(", ", top.Select(p => $"{p.Lag * 1000.0 / rate:0.0} ms {(p.Gain < 0 ? "inv " : "")}{20 * Math.Log10(Math.Abs(p.Gain)):0.0} dB"));
+        }
+
+        /// <summary>
+        /// The measurements behind Neo Delay's mappings (mcp-server.md §12.10): each classic delay's echoes (when, on which side,
+        /// how loud, from a burst of noise, centred and panned), its filter's response on noise (FineTransfer, the echo alone, a
+        /// short line), and machine_replace's comparison of each pair on noise and chords at its defaults and a few settings.
+        /// </summary>
+        [Test, Explicit("measurements for the delay mappings; run by name (test_filter) when a mapping is recalibrated")]
+        public void DelayCalibration()
+        {
+            using var client = StartAgent(out string bin);
+            var report = new List<string>();
+            void Report(string line)
+            {
+                report.Add(line);
+                TestContext.Out.WriteLine(line);   // as it comes: a failure later keeps what was measured
+            }
+            WarmUp(client, "Jeskola Delay");
+            var hz = FineTransfer.Frequencies(40, 16000, 3);
+            void Echoes(string label, string gear, JsonArray changes, double pan = 0, bool track = false)
+            {
+                if (!Has(bin, "Effects", gear) && !Has(bin, "Effects", gear + ".NET")) { Report($"[notice] {gear} not in this build's Gear"); return; }
+                var (src, l, r, rate) = Burst(client, gear, changes, pan, track);
+                Report($"[notice] {label}{(pan != 0 ? $" (pan {pan:+0.0;-0.0})" : "")}: L {Taps(src, l, rate)} | R {Taps(src, r, rate)}");
+            }
+            void Response(string label, string gear, JsonArray changes, bool track = false)
+            {
+                if (!Has(bin, "Effects", gear) && !Has(bin, "Effects", gear + ".NET")) return;
+                HeldNoise(client, gear, track ? OnTrack(changes) : changes);
+                var render = Quiet(client, "render", Args(("tail_seconds", 0), ("probes", new JsonArray("FX", "Synth"))));
+                var probes = render["probes"]!.AsArray();
+                string ProbeFile(string m) => probes.First(p => p!["machine"]!.GetValue<string>() == m)!["file"]!.GetValue<string>();
+                var fx = ReBuzz.Agent.Audio.Wav.Read(ProbeFile("FX"));
+                var src = ReBuzz.Agent.Audio.Wav.Read(ProbeFile("Synth"));
+                var mono = src.Left.Zip(src.Right ?? src.Left, (a, b) => (a + b) / 2).ToArray();
+                Report($"[notice] {label}: {FineTransfer.Text(hz, FineTransfer.Db(mono, fx.Left, fx.Rate, hz))}");
+            }
+            void Compare(string label, string gear, JsonArray changes, bool track = false)
+            {
+                if (!Has(bin, "Effects", gear)) return;
+                foreach (bool noise in new[] { true, false })
+                {
+                    EffectSong(client, gear, (track ? OnTrack(changes) : changes)?.DeepClone().AsArray(), noise);
+                    var r = Quiet(client, "machine_replace", Args(("machine", "FX")));
+                    var c = r["comparison"];
+                    var m = c?["machine"] ?? c?["song"];
+                    Report($"[notice] {label}, {(noise ? "noise" : "chords")}: {c?["within_tolerance"]?.ToJsonString() ?? "-"}, {m?["loudness_db"]?["difference"]?.ToJsonString() ?? "-"} dB, " +
+                               $"worst {m?["worst_band"]?["difference_db"]?.ToJsonString() ?? "-"} dB at {m?["worst_band"]?["hz"]?.ToJsonString() ?? "-"} Hz; notes {r["notes"]?.ToJsonString() ?? "-"}");
+                }
+            }
+
+            // Neo Delay itself: the method's check (3 ticks at 120 BPM = 375 ms; feedback 50 %, wet only).
+            Echoes("Neo Delay 1/8 dotted, 50 %, wet only (the method)", "Neo Delay", Changes(("Mix", "100%"), ("Low cut", "20 Hz"), ("High cut", "20 kHz"), ("Feedback", "50%")));
+            Echoes("Neo Delay cross, 1/4 and 1/4 dotted, 50 %, wet only", "Neo Delay", Changes(("Mode", "Cross"), ("Sync", "1/4"), ("Feel", "Straight"), ("Offset", "50%"), ("Mix", "100%"), ("Low cut", "20 Hz"), ("High cut", "20 kHz"), ("Feedback", "50%")), pan: -1);
+
+            // Jeskola Delay: its defaults; one echo, dry off, at 10 ms and at 1000 samples; feedback −50 %.
+            Echoes("Jeskola Delay defaults", "Jeskola Delay", null);
+            Echoes("Jeskola Delay dry off, wet 100 %, fb 0, 10 ms", "Jeskola Delay", Join(Raw(("Dry thru", 0)), OnTrack(Raw(("Length", 10), ("Length unit", 1), ("Feedback", 64), ("Wet out", 128)))));
+            Echoes("Jeskola Delay dry off, wet 100 %, fb −50 %, 2 ticks", "Jeskola Delay", Join(Raw(("Dry thru", 0)), OnTrack(Raw(("Length", 2), ("Feedback", 32), ("Wet out", 128)))));
+            // Jeskola Cross Delay: its defaults; 2 and 3 ticks, fb 50 %, wet only, centred and panned left.
+            Echoes("Jeskola Cross Delay defaults", "Jeskola Cross Delay", null);
+            var cross = Join(Raw(("Dry thru", 0)), OnTrack(Raw(("L. Length", 2), ("R. Length", 3), ("Feedback", 96), ("Wet out", 128))));
+            Echoes("Jeskola Cross Delay 2 and 3 ticks, fb 50 %, wet only", "Jeskola Cross Delay", cross);
+            // NiNjA dElaY: its defaults (high-pass 550 Hz in the loop); its filter on one echo, 64 samples, each type at 1 kHz.
+            Echoes("NiNjA dElaY defaults", "Jeskola NiNjA dElaY", null);
+            Echoes("NiNjA dElaY lowpass 20 kHz, fb 50 %, wet only", "Jeskola NiNjA dElaY", Join(Raw(("Dry thru", 0)), OnTrack(Raw(("f. type", 0), ("f. cutoff", 20000), ("Feedback", 96), ("Wet out", 128)))));
+            foreach (var (type, name) in new[] { (0, "lowpass"), (1, "highpass"), (2, "bandpass"), (3, "bandreject") })
+                Response($"NiNjA dElaY {name} 1 kHz, one echo of 64 samples", "Jeskola NiNjA dElaY",
+                    Join(Raw(("Dry thru", 0)), OnTrack(Raw(("Length", 64), ("Length unit", 2), ("Feedback", 64), ("Wet out", 128), ("f. type", type), ("f. cutoff", 1000)))));
+            Response("Neo Delay low cut 1 kHz, one echo of 64 samples (the method)", "Neo Delay", Changes(("Sync", "Free"), ("Time", "1.45 ms"), ("Feedback", "0%"), ("Mix", "100%"), ("Low cut", "1 kHz"), ("High cut", "20 kHz")));
+            Response("Neo Delay high cut 1 kHz, one echo of 64 samples", "Neo Delay", Changes(("Sync", "Free"), ("Time", "1.45 ms"), ("Feedback", "0%"), ("Mix", "100%"), ("Low cut", "20 Hz"), ("High cut", "1 kHz")));
+            // FSM PanzerDelay: its defaults, centred and panned; ping-pong; its filter (LP, HP, BP at 1.88 kHz) on one echo.
+            Echoes("PanzerDelay defaults", "FSM PanzerDelay", null);
+            Echoes("PanzerDelay defaults", "FSM PanzerDelay", null, pan: -1);
+            Echoes("PanzerDelay ping-pong, dry off, 2 and 3 ticks", "FSM PanzerDelay", Join(Raw(("Dry amp", 0)), OnTrack(Raw(("FB PingPong", 1), ("L Delay Len", 2), ("R Delay Len", 3)))), pan: -1);
+            foreach (var (type, name) in new[] { (1, "LP"), (2, "HP"), (3, "BP") })
+                Response($"PanzerDelay {name} 1876 Hz (raw 120), Q 0.5, one echo of 100 samples", "FSM PanzerDelay",
+                    Join(Raw(("Dry amp", 0), ("Delay unit", 2), ("Filter type", type)), OnTrack(Raw(("L Delay Len", 100), ("R Delay Len", 100), ("FB Amp", 0), ("Wet L Pan", 0), ("Wet R Pan", 240)))));
+
+            // machine_replace's comparisons.
+            Compare("JD defaults", "Jeskola Delay", null);
+            Compare("JD 5 ticks, fb +80 %, wet 75 %", "Jeskola Delay", Raw(("Length", 5), ("Feedback", 115), ("Wet out", 96)), track: true);
+            Compare("JD 120 ms, fb −60 %, dry off", "Jeskola Delay", Join(Raw(("Dry thru", 0)), OnTrack(Raw(("Length", 120), ("Length unit", 1), ("Feedback", 26), ("Wet out", 128)))));
+            Compare("JCD defaults", "Jeskola Cross Delay", null);
+            Compare("JCD 2 and 3 ticks, fb 60 %", "Jeskola Cross Delay", Raw(("L. Length", 2), ("R. Length", 3), ("Feedback", 102)), track: true);
+            Compare("NiNjA defaults", "Jeskola NiNjA dElaY", null);
+            Compare("NiNjA lowpass 2 kHz, fb 60 %", "Jeskola NiNjA dElaY", Raw(("f. type", 0), ("f. cutoff", 2000), ("Feedback", 102)), track: true);
+            Compare("NiNjA highpass 200 Hz, 4 ticks", "Jeskola NiNjA dElaY", Raw(("f. cutoff", 200), ("Length", 4)), track: true);
+            Compare("Panzer defaults", "FSM PanzerDelay", null);
+            Compare("Panzer ping-pong, 2 and 3 ticks, FB −3 dB", "FSM PanzerDelay", Raw(("FB PingPong", 1), ("L Delay Len", 2), ("R Delay Len", 3), ("FB Amp", 210)), track: true);
+            Compare("Panzer LP 1876 Hz", "FSM PanzerDelay", Raw(("Filter type", 1)));
             Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
         }
 

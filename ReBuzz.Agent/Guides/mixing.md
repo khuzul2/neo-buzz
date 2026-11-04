@@ -196,7 +196,7 @@ One or two send reverbs for the whole mix: a short one (Room or Plate, 0.6–1.8
 
 - Decay against tempo: the tail should have fallen by the next downbeat or chord change. Drums 1–2 beats (0.5–1 s at 124 BPM), pads and leads 1–2 bars (1.9–3.9 s at 124).
 - Depth: farther is quieter, darker, wetter and with less pre-delay; closer is drier, brighter, with more pre-delay.
-- Delays: there is no Neo Delay yet; `gear_list(search="delay")` lists the installed ones. Times: 1/8 = 0.5 beat, dotted 1/8 = 0.75, 1/4 = 1 (ms = 60000 ÷ BPM × beats); feedback 20–40 %; filter the repeats to 300 Hz – 5 kHz.
+- Delays: Neo Delay on a send at `Mix` 100 %, timed by `Sync` and `Feel` (it follows the tempo: 1/8 = 0.5 beat, dotted 1/8 = 0.75, 1/4 = 1; ms = 60000 ÷ BPM × beats); `Feedback` 20–40 %; the repeats filtered to 300 Hz – 5 kHz with `Low cut` and `High cut`; `Duck` 6–12 dB so the echoes fill the gaps, not the phrase. "Send — Ping-Pong Eighths" and "Mix — Vocal Echo (Ducked)" are starting points.
 
 ## Stereo
 

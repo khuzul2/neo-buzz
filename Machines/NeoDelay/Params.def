@@ -1,0 +1,28 @@
+# Neo Delay parameters (docs/specs/machines.md §5). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoDelay
+namespace NeoBuzz.Delay
+class NeoDelayMachine
+summary Tempo-synced stereo delay: stereo, ping-pong or cross-feedback lines, the time free in ms or synced to the song (straight, dotted, triplet), feedback to ±99 % through a high-pass, a low-pass and a tape-style saturator in the loop, a little modulation, ducking by the input, width, mix and output. Time changes glide (small ones bend the pitch, large ones crossfade); the line can't run away at any setting. Zero latency; at Mix 0 % it passes the input bit for bit. Use it for echoes and space in a mix (a send at 100 % wet, or an insert), dub and tape echoes, ping-pong throws, slapback and doubling.
+
+group Time
+Mode      "Mode"           0 2     0     enum Stereo Ping-pong Cross     | Stereo: each channel echoes on its own side; Ping-pong: the input (mono) enters the left line and the echoes bounce left, right, left; Cross: each side's echo feeds the other side's line, so a left sound's echoes bounce and a centred one stays centred
+Sync      "Sync"           0 8     4     enum Free 1/64 1/32 1/16 1/8 1/4 1/2 1_bar 2_bars | The delay as a note value of the song's tempo (Feel makes it dotted or triplet); Free: Time in ms
+Feel      "Feel"           0 2     1     enum Straight Dotted Triplet    | With Sync: the note value straight, dotted (× 1.5) or triplet (× 2/3)
+Time      "Time"           0 10000 6959  time 0.001 5                   | The delay when Sync is Free, 1 ms – 5 s
+Offset    "Offset"         0 1500  500   lin -50 100 % 1                | The right line's time against the left's: −50 % half as long, +100 % twice as long (0: the same)
+group Feedback
+Feedback  "Feedback"       0 1980  1340  lin -99 99 % 1                 | Echoes fed back into the line; negative inverts each repeat. Bounded to ±99 %, and the line saturates softly, so it can't run away
+LowCut    "Low cut"        0 1000  291   freq 20 5000                   | High-pass in the loop, 12 dB/oct (Butterworth), −3 dB here: each repeat thinner. At its bottom (20 Hz) it is off
+HighCut   "High cut"       0 1000  801   freq 200 20000                 | Low-pass in the loop, 12 dB/oct (two real poles), −3 dB here: each repeat darker. At its top (20 kHz) it is open
+Drive     "Drive"          0 240   0     lin 0 24 dB 1                  | Tape-style saturation of what enters the line: above −Drive dBFS the echoes bend softly towards 6 dB over it (0 dB: clean up to full scale)
+group Motion
+ModDepth  "Mod depth"      0 1000  0     lin 0 5 ms 2                   | Tape wow: the delay moves this much either way (the right line a quarter cycle on), at most half the delay
+ModRate   "Mod rate"       0 1000  500   freq 0.05 5                    | Speed of the wow
+group Ducking
+Duck      "Duck"           0 400   0     lin 0 40 dB 1                  | How far the echoes are turned down while the input plays above Duck threshold (0: off)
+DuckThresh "Duck threshold" 0 600  300   lin -60 0 dB 1                 | Input level (peak) where ducking reaches its full depth; it fades in over the 12 dB below
+DuckRelease "Duck release" 0 1000  548   time 0.02 2                    | How fast the echoes come back once the input falls (time constant)
+group Output
+Width     "Width"          0 200   100   lin 0 200 % 0                  | The echoes' side signal × width: 0 % mono echoes, 100 % as they are, 200 % twice as wide
+Mix       "Mix"            0 1000  300   pct                            | Dry against wet (a crossfade): 100 % for a send
+Output    "Output"         0 240   120   db -12 12                      | Output gain, −12 … +12 dB in 0.1 dB steps

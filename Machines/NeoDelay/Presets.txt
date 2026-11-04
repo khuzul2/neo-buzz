@@ -1,0 +1,169 @@
+# Neo Delay factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoDelay
+machine "Neo Delay"
+
+preset "Mix — Dotted Eighth Throw"
+Mode = Stereo
+Sync = 1/8
+Feel = Dotted
+Feedback = 30
+Low cut = 200
+High cut = 6000
+Mix = 25
+
+preset "Mix — Quarter Note Echo"
+Mode = Stereo
+Sync = 1/4
+Feel = Straight
+Feedback = 25
+Low cut = 150
+High cut = 7000
+Mix = 22
+
+preset "Mix — Slapback"
+Mode = Stereo
+Sync = Free
+Time = 0.11
+Feedback = 8
+Low cut = 120
+High cut = 5000
+Drive = 3
+Mix = 30
+
+preset "Mix — Vocal Echo (Ducked)"
+Mode = Stereo
+Sync = 1/4
+Feel = Straight
+Feedback = 35
+Low cut = 250
+High cut = 5000
+Duck = 12
+Duck threshold = -24
+Duck release = 0.3
+Mix = 30
+
+preset "Mix — Doubler (Wide)"
+Mode = Stereo
+Sync = Free
+Time = 0.018
+Offset = 60
+Feedback = 0
+Low cut = 100
+High cut = 12000
+Width = 200
+Mix = 35
+
+preset "Mix — Mono Echo (Narrow)"
+Mode = Stereo
+Sync = 1/8
+Feel = Straight
+Feedback = 30
+Low cut = 300
+High cut = 4500
+Width = 0
+Mix = 20
+
+preset "Send — Ping-Pong Eighths"
+Mode = Ping-pong
+Sync = 1/8
+Feel = Straight
+Feedback = 40
+Low cut = 200
+High cut = 6500
+Mix = 100
+
+preset "Send — Long Ambient Wash"
+Mode = Cross
+Sync = 1/4
+Feel = Dotted
+Offset = 33.3
+Feedback = 60
+Low cut = 250
+High cut = 4500
+Mod depth = 1
+Mod rate = 0.3
+Mix = 100
+
+preset "Ping-Pong — Wide Dotted Quarter"
+Mode = Ping-pong
+Sync = 1/4
+Feel = Dotted
+Feedback = 45
+Low cut = 150
+High cut = 8000
+Mix = 30
+
+preset "Cross — Triplet Bounce"
+Mode = Cross
+Sync = 1/8
+Feel = Triplet
+Offset = 50
+Feedback = 50
+Low cut = 180
+High cut = 7000
+Mix = 30
+
+preset "Dub — Tape Echo (Saturated)"
+Mode = Stereo
+Sync = 1/8
+Feel = Dotted
+Feedback = 72
+Low cut = 300
+High cut = 2500
+Drive = 12
+Mod depth = 0.8
+Mod rate = 0.6
+Mix = 35
+
+preset "Dub — Runaway Feedback (Ducked)"
+Mode = Ping-pong
+Sync = 1/4
+Feel = Dotted
+Feedback = 95
+Low cut = 400
+High cut = 3000
+Drive = 9
+Duck = 18
+Duck threshold = -30
+Duck release = 0.4
+Mix = 40
+
+preset "Tape — Analog Wobble (Dark)"
+Mode = Stereo
+Sync = 1/4
+Feel = Straight
+Feedback = 45
+Low cut = 100
+High cut = 2000
+Drive = 6
+Mod depth = 1.5
+Mod rate = 0.8
+Mix = 30
+
+preset "Rhythm — Sixteenth Stutter"
+Mode = Stereo
+Sync = 1/16
+Feel = Straight
+Feedback = 60
+Low cut = 300
+High cut = 9000
+Mix = 35
+
+preset "Texture — Comb Resonator"
+Mode = Stereo
+Sync = Free
+Time = 0.005
+Feedback = 85
+Low cut = 20
+High cut = 12000
+Mix = 50
+Output = -3
+
+preset "Texture — Lo-Fi Telephone Echo"
+Mode = Stereo
+Sync = 1/8
+Feel = Straight
+Feedback = 50
+Low cut = 800
+High cut = 2500
+Drive = 15
+Mix = 35

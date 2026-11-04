@@ -1,0 +1,102 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Jeskola NiNjA dElaY",
+  "to": "Neo Delay",
+  "summary": "Neo Delay in Stereo mode: the first track's Length becomes Sync and Feel (or a free Time), Feedback carries over to ±99 %, the filter in the loop becomes Neo Delay's low cut (highpass) or high cut (lowpass), Dry thru and Wet out a crossfade and an output gain.",
+  "input_gain_db": 0,
+  "output_gain_db": 6.02,
+  "set": {
+    "Mode": "Stereo",
+    "Offset": "0%",
+    "Drive": "0 dB",
+    "Mod depth": "0 ms",
+    "Duck": "0 dB",
+    "Width": "100%"
+  },
+  "rules": [
+    {
+      "kind": "delay_time",
+      "length": "Length",
+      "unit": "Length unit",
+      "units": {
+        "tick": "tick",
+        "ms": "ms",
+        "sample": "sample",
+        "tick/256": "tick/256"
+      },
+      "sync": "Sync",
+      "feel": "Feel",
+      "time": "Time",
+      "divisions": {
+        "Free": 0,
+        "1/64": 0.0625,
+        "1/32": 0.125,
+        "1/16": 0.25,
+        "1/8": 0.5,
+        "1/4": 1,
+        "1/2": 2,
+        "1 bar": 4,
+        "2 bars": 8
+      },
+      "feels": {
+        "Straight": 1,
+        "Dotted": 1.5,
+        "Triplet": 0.6666666666666666
+      },
+      "why": "Lengths count in Length unit: ticks (the default) are Buzz's whole samples per tick, so the echo follows the tempo; a length in ticks that is a note value (1 tick = 1/16 at 4 ticks a beat, 3 ticks = 1/8 dotted, 6 = 1/4 dotted …) becomes Neo Delay's Sync and Feel, which follow the tempo too; any other length, and lengths in ms or samples, a free Time at the song's tempo and rate."
+    },
+    {
+      "kind": "unit",
+      "from": "Feedback",
+      "to": "Feedback",
+      "min": -0.99,
+      "max": 0.99,
+      "why": "Both in % of each echo fed back (its source: buf = in + fb · filter(buf)); Neo Delay's stops at ±99 %."
+    },
+    {
+      "kind": "filter",
+      "type": "f. type",
+      "cutoff": "f. cutoff",
+      "low_cut": "Low cut",
+      "high_cut": "High cut",
+      "low_off": "20 Hz",
+      "high_open": "20 kHz",
+      "types": {
+        "highpass": "low_cut",
+        "lowpass": "high_cut",
+        "bandreject": {
+          "becomes": "none",
+          "note": "its notch is about 100 Hz wide (measured at 1 kHz, 4.4 dB deep on a third octave); Neo Delay has none, so the echoes keep that band."
+        }
+      },
+      "why": "Its filter sits in the loop, on every echo (its source's DoWork), as Neo Delay's do; measured on one echo at 1 kHz, each type a second-order Butterworth (dsplib's DSP_BW_Init*): its high-pass is Neo Delay's low cut exactly; its low-pass is Butterworth where Neo Delay's high cut has two real poles (a softer knee: −8.5 dB an octave up against −12.4); its band-pass is about 100 Hz wide, narrower than Neo Delay's cuts can make, so it has no counterpart (the filters open, with a note); its band-reject's notch is left out."
+    },
+    {
+      "kind": "dry_wet",
+      "dry": "Dry thru",
+      "wet": "Wet out",
+      "mix": "Mix",
+      "output": "Output",
+      "why": "Dry thru (on or off) and the echoes at Wet out (raw/128) add; Neo Delay crossfades them and sets the output's level."
+    }
+  ],
+  "unmapped": [],
+  "remarks": [
+    "NiNjA dElaY is mono: ReBuzz gives it left + right summed (+6 dB for a centred sound, taken on the output connections so the line keeps the input's level); Neo Delay in Stereo mode keeps the input's image.",
+    "Each of its tracks is a tap of its own with its own filter (up to 8); Neo Delay has one: the first track's settings move.",
+    "Its Max Delay attribute (1 s by default) caps its lengths; the mapping doesn't read attributes."
+  ],
+  "tolerance": {
+    "loudness_db": 1.0,
+    "band_db": 2.0,
+    "from_hz": 63,
+    "to_hz": 12000,
+    "measured": "Windows, Neo Poly noise and chords into it, each side against its input: at its defaults (3 ticks, Feedback 75 %, high-pass 550 Hz) −0.1 dB, third octaves within 0.5 dB (chords −0.1 dB, within 1.3 dB); low-pass 2 kHz, Feedback 60 %: −0.3 dB, within 0.6 dB (chords −0.2 dB, within 1.0 dB); high-pass 200 Hz, 4 ticks: +0.0 dB, within 0.8 dB (chords −0.0 dB, within 1.3 dB). Its filter, read from one echo at 1 kHz: low-pass and high-pass −3 dB at 1 kHz, 12 dB an octave (Butterworth); band-pass about 100 Hz wide; band-reject a notch 4.4 dB deep on a third octave",
+    "why_not": "Its band-pass and band-reject have no counterpart: the filters open, with a note, so those echoes keep what NiNjA dElaY cuts (not compared). Its low-pass is a Butterworth, Neo Delay's high cut two real poles at the same −3 dB point: a softer knee, more cut just below the corner (−0.9 dB at half of it against −0.3) and less above (−8.5 dB an octave up against −12.4), which every repeat compounds (within 0.6 dB on noise at 2 kHz, 60 %). Its other tracks' taps and Max Delay aren't carried; a panned input plays in the middle through NiNjA dElaY (mono) and where it is through Neo Delay."
+  },
+  "evidence": [
+    "ExternalMachines/source/buzztrax-buzzmachines/Jeskola/Ninja/Ninja.cpp: the filter in the loop (o = filter(buf); buf = in + fb · o; out += wet · o), Butterworth (dsplib), lengths as Jeskola Delay's",
+    "Machines/Manifests/Effects/Jeskola NiNjA dElaY.machine.json (profiled draft: its binary has no f. bandwidth, which its source has)",
+    "ReBuzzTests/AgentReplaceTests.cs DelayCalibration (Windows): the echoes' times and levels, and the filter's response, read from its input and output"
+  ]
+}

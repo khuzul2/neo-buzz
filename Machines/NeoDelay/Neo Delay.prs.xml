@@ -1,0 +1,403 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Mix — Dotted Eighth Throw">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="4" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="6959" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1290" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="417" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="739" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="250" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mix — Quarter Note Echo">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="5" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="6959" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1240" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="365" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="772" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="220" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mix — Slapback">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="5519" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1070" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="325" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="699" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="30" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="300" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mix — Vocal Echo (Ducked)">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="5" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="6959" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1340" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="457" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="699" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="120" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="360" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="588" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="300" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mix — Doubler (Wide)">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="3394" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="1100" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="990" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="291" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="889" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="200" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="350" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mix — Mono Echo (Narrow)">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="4" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="6959" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1290" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="490" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="676" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="200" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Send — Ping-Pong Eighths">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="4" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="6959" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1390" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="417" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="756" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Send — Long Ambient Wash">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="5" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="6959" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="833" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1590" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="457" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="676" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="200" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="389" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Ping-Pong — Wide Dotted Quarter">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="5" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="6959" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1440" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="365" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="801" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="300" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Cross — Triplet Bounce">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="4" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="6959" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="1000" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1490" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="398" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="772" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="300" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Dub — Tape Echo (Saturated)">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="4" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="6959" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1710" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="490" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="548" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="120" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="160" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="540" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="350" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Dub — Runaway Feedback (Ducked)">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="5" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="6959" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1940" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="543" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="588" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="90" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="180" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="651" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="400" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Tape — Analog Wobble (Dark)">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="5" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="6959" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1440" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="291" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="500" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="60" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="300" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="602" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="300" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Rhythm — Sixteenth Stutter">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="3" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="6959" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1590" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="490" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="827" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="350" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Texture — Comb Resonator">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="1890" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1840" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="889" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="90" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Texture — Lo-Fi Telephone Echo">
+    <Preset Machine="Neo Delay">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Sync" Group="1" Index="1" Track="0" Value="4" />
+        <Parameter Name="Feel" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Time" Group="1" Index="3" Track="0" Value="6959" />
+        <Parameter Name="Offset" Group="1" Index="4" Track="0" Value="500" />
+        <Parameter Name="Feedback" Group="1" Index="5" Track="0" Value="1490" />
+        <Parameter Name="Low cut" Group="1" Index="6" Track="0" Value="668" />
+        <Parameter Name="High cut" Group="1" Index="7" Track="0" Value="548" />
+        <Parameter Name="Drive" Group="1" Index="8" Track="0" Value="150" />
+        <Parameter Name="Mod depth" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Mod rate" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Duck" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Duck threshold" Group="1" Index="12" Track="0" Value="300" />
+        <Parameter Name="Duck release" Group="1" Index="13" Track="0" Value="548" />
+        <Parameter Name="Width" Group="1" Index="14" Track="0" Value="100" />
+        <Parameter Name="Mix" Group="1" Index="15" Track="0" Value="350" />
+        <Parameter Name="Output" Group="1" Index="16" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>
