@@ -26,7 +26,7 @@ namespace ReBuzz.Agent.Guides
             ("composition", "Composition", "Forms and section lengths by genre, harmony and voice leading, melody, drum grids with swing and humanizing, arrangement energy, and templates (tempo, key, structure) for house, techno, DnB, synthwave, hip-hop, ambient, pop and lo-fi."),
             ("sound-design", "Sound design", "Reading a sound (envelope, spectrum, movement, space) and recipes with exact values for Neo Poly, Neo Wave and Neo FM6: pads, basses, leads, plucks, keys, bells, drums, textures, wavetable sweeps; Neo Drive, Comp, Verb, Ensemble (chorus, flanger, phaser) and Delay (tempo, dub and tape echoes) as sound tools."),
             ("mixing", "Mixing", "Gain staging targets, balance by reference, frequency slots per instrument, EQ and compression starting points by source, sidechain, sends and pre-delay against tempo, mono lows, and the checks with render probes and analyze."),
-            ("mastering", "Mastering", "Loudness and true-peak targets (streaming, club, broadcast), the chain (corrective EQ, glue compression, saturation, limiter), measuring after every change, and what not to do."),
+            ("mastering", "Mastering", "Loudness and true-peak targets (streaming, club, broadcast), the chain (corrective EQ, glue compression, multiband control of one band, saturation, limiter), measuring after every change, and what not to do."),
             ("troubleshooting", "Troubleshooting", "Silence, clipping, phase, latency, CPU, missing machines, machines that ignore notes, hanging notes, and a render that differs from the last one."),
         };
 

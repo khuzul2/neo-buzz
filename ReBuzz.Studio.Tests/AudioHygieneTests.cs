@@ -5,12 +5,14 @@
 //  - an empty song, and a Modern Pattern Editor pattern playing notes (its Note column and its MIDI
 //    note lanes) and automation, with its editor open, through a Neo Ensemble (feedback, a synced
 //    LFO, its depth moved every buffer), a Neo EQ in graphic mode (a slider moved every buffer,
-//    so its solver runs) and a Neo Delay (ping-pong, feedback, wow, drive and ducking, its time moved
-//    every buffer, so it glides and crossfades): 0 bytes a buffer, with each work algorithm;
+//    so its solver runs), a Neo Delay (ping-pong, feedback, wow, drive and ducking, its time moved
+//    every buffer, so it glides and crossfades) and a Neo Multiband (linear phase, a crossover moved
+//    every buffer, so its FIRs are designed again and crossfade): 0 bytes a buffer, with each work
+//    algorithm;
 //  - automation of a parameter with listeners (a parameter window's rows, the master volume's):
 //    0 bytes on the audio thread, and the listeners still see the final values;
 //  - after the warm-up (AudioWarmUp), the transport's first play and stop compile nothing (a Neo Poly
-//    through a Neo Ensemble and a Neo Delay, all just created).
+//    through a Neo Ensemble, a Neo Delay and a Neo Multiband, all just created).
 // The tests build in Debug, where the JIT doesn't optimize: no allocation here is one that only an
 // optimizing compiler (tier 1) would remove.
 
@@ -280,6 +282,25 @@ namespace ReBuzz.Studio.Tests
             return fx;
         }
 
+        /// <summary>
+        /// Neo Multiband after a machine (mcp-server.md §8.2): linear phase, every band compressing, so moving a crossover every
+        /// buffer designs its FIRs again on the audio thread and crossfades to them.
+        /// </summary>
+        static MachineCore InsertMultiband(MachineCore source, string name)
+        {
+            var song = Core.SongCore;
+            var master = song.MachinesList[0];
+            song.CreateMachine("Neo Multiband", null, name, null, null, null, -1, 0.85f, -0.3f);
+            var fx = song.MachinesList.Last(x => x.Name == name);
+            song.DisconnectMachines(source.Outputs.First(c => c.Destination == master));
+            song.ConnectMachines(source, fx, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            song.ConnectMachines(fx, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            var globals = fx.ParameterGroupsList[1].ParametersList;
+            for (int b = 1; b <= 4; b++) globals.First(p => p.Name == $"B{b} threshold").SetValue(0, 200);
+            globals.First(p => p.Name == "Stereo").SetValue(0, 1);
+            return fx;
+        }
+
         static void Arrange(MachineCore m, IPattern p)
         {
             var song = Core.SongCore;
@@ -380,12 +401,14 @@ namespace ReBuzz.Studio.Tests
             var ensemble = InsertEnsemble(m, "Hygiene Ensemble");
             var eq = InsertGraphicEq(ensemble, "Hygiene EQ");
             var delay = InsertDelay(eq, "Hygiene Delay");
+            var multiband = InsertMultiband(delay, "Hygiene Multiband");
             try
             {
                 var detune = m.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Uni detune");
                 var depth = ensemble.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Depth");
                 var slider = eq.ParameterGroupsList[1].ParametersList.First(p => p.Name == "G 1 kHz");
                 var time = delay.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Time");
+                var crossover = multiband.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Crossover 2");
                 int n = 0;
                 foreach (int algorithm in new[] { 0, 1, 2 })
                 {
@@ -397,14 +420,16 @@ namespace ReBuzz.Studio.Tests
                         heard.Add(detune.GetValue(0));
                         depth.SetValue(1 << 16, 200 + (n % 8) * 100);   // as automation sets it, not recorded
                         slider.SetValue(1 << 16, 120 + (n % 12) * 10);
-                        time.SetValue(1 << 16, (n++ % 5) * 600 + 3000);   // 5 ms … 110 ms: glides, and crossfades between the ends
+                        time.SetValue(1 << 16, (n % 5) * 600 + 3000);     // 5 ms … 110 ms: glides, and crossfades between the ends
+                        crossover.SetValue(1 << 16, 5000 + (n++ % 9) * 100);   // 630 Hz … 1.6 kHz: the FIRs designed again
                     });
-                    AssertNoAllocation(cost, $"a pattern editor pattern playing through Neo Ensemble, a graphic Neo EQ and Neo Delay (algorithm {algorithm})");
+                    AssertNoAllocation(cost, $"a pattern editor pattern playing through Neo Ensemble, a graphic Neo EQ, Neo Delay and Neo Multiband (algorithm {algorithm})");
                     Assert.That(heard.Count, Is.GreaterThan(8), $"the automation reached the machine (algorithm {algorithm})");
                     Assert.That(m.IsActive, Is.True, $"the notes sound (algorithm {algorithm})");
                     Assert.That(ensemble.IsActive, Is.True, $"and pass through Neo Ensemble (algorithm {algorithm})");
                     Assert.That(eq.IsActive, Is.True, $"and the graphic Neo EQ (algorithm {algorithm})");
                     Assert.That(delay.IsActive, Is.True, $"and Neo Delay (algorithm {algorithm})");
+                    Assert.That(multiband.IsActive, Is.True, $"and Neo Multiband (algorithm {algorithm})");
                     lock (ReBuzzCore.AudioLock) Core.Playing = false;
                 }
             }
@@ -517,7 +542,8 @@ namespace ReBuzz.Studio.Tests
             {
                 var m = AddPoly("Hygiene First");
                 var first = InsertEnsemble(m, "Hygiene First Ensemble");   // Neo effects after it, created just now too
-                InsertDelay(first, "Hygiene First Delay");
+                var firstDelay = InsertDelay(first, "Hygiene First Delay");
+                InsertMultiband(firstDelay, "Hygiene First Multiband");
                 m.CreatePattern("00", 16);
                 var p = (PatternCore)m.Patterns.First();
                 Core.SessionLayout.EditNotes(p, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 60 + i % 5, 100)).ToArray());

@@ -75,6 +75,8 @@ All moves together within ±3 dB. More means the mix needs fixing.
 
 Gentler: "Mastering — Transparent" (Clean, 1.5:1, 1 ms lookahead, SC low cut 80 Hz). After it: PLR 0.5–2 dB lower, loudness matched, tilt unchanged.
 
+Only one band misbehaves (a boomy kick, harsh 2–6 kHz, sibilance)? Neo Multiband instead of, or after, the glue: `machine_add(gear="Neo Multiband", name="M Bands", insert_after="M Glue")`, its other bands at 1:1 so only that band works, 2–4 dB of reduction on its peaks (its readings: `machine_readings(machine="M Bands")`). Its linear phase adds about 96 ms of latency and no phase shift; "Mastering — Tight Low End" and "Mastering — De-Harsh 2–6 kHz" are starting points (its manual: `guide(machine="Neo Multiband")`).
+
 ### 3. Saturation (Neo Drive)
 
 | Parameter | Value | Why |
