@@ -1,0 +1,55 @@
+# Neo Scope factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoScope
+# The audio is never touched; presets set what the scope shows and how.
+machine "Neo Scope"
+
+# A beat at a time, both channels: kicks, transients and how a sidechain ducks within the beat.
+preset "Synced — One Beat"
+Display = L & R
+Sync = 1/4
+Trail = Short
+
+# A bar of the mid signal: the groove's shape, a loop standing still.
+preset "Synced — One Bar (Mid)"
+Display = Mid
+Sync = 1 bar
+Trail = Medium
+
+# Four bars: the envelope of a phrase, its build and its drops.
+preset "Synced — Four Bars (Overview)"
+Display = L & R
+Sync = 4 bars
+Trail = Off
+
+# A synth's waveform standing still: a few cycles from a rising zero crossing of the mid signal.
+preset "Free — Waveform (Triggered)"
+Display = Mid
+Sync = Free
+Time/div = 0.002
+Trigger = Rising
+Level = 0
+Trail = Short
+
+# Bass and kick cycles: 10 ms a division, a little holdoff so one cycle starts each sweep.
+preset "Free — Low End (Triggered, Holdoff)"
+Display = Mid
+Sync = Free
+Time/div = 0.01
+Trigger = Rising
+Level = 0
+Holdoff = 5
+Trail = Medium
+
+# The stereo difference: the side signal over a bar and the polar vectorscope.
+preset "Stereo — Side and Polar"
+Display = Side
+Sync = 1 bar
+Vector = Polar
+Trail = Medium
+
+# Real levels: the gain fixed at 0 dB, so full scale fills the screen and a quiet signal looks quiet.
+preset "Levels — Fixed Gain (0 dB)"
+Display = L & R
+Sync = 1/4
+Auto scale = Off
+Gain = 0
+Trail = Off

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Scope, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoScope</NeoFolder>
+    <NeoName>Neo Scope</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoStudio.targets" />
+  <ItemGroup>
+    <Compile Include="$(M)NeoBuzz.Analysis\Fft.cs;$(M)NeoBuzz.Analysis\Spectrum.cs;$(M)NeoBuzz.Analysis\Stereo.cs" Link="Shared\Analysis\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

@@ -45,6 +45,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Delay", "NeoDelayEditor", "neo-delay-editor", 994, 343),
             ("Neo Multiband", "NeoMultibandEditor", "neo-multiband-editor", 1042, 578),
             ("Neo Sampler", "NeoSamplerEditor", "neo-sampler-editor", 1144, 778),
+            ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 457),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;
@@ -779,6 +780,298 @@ namespace ReBuzz.Studio.Tests
             {
                 Remove(m);
                 Core.SongCore.Wavetable.LoadWave(0, null, null, false);
+            }
+        }
+    
+
+        // ------------------------------------------------------------------ Neo Scope
+
+        static object Field(object o, string name) =>
+            o.GetType().GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.GetValue(o)!;
+
+        /// <summary>A Neo Scope's newest snapshot (its engine's, through reflection: the types are the machine's own).</summary>
+        static object ScopeSnapshot(MachineCore scope)
+        {
+            var engine = Get(scope.ManagedMachine, "Engine");
+            var snapshot = Activator.CreateInstance(engine.GetType().Assembly.GetType("NeoBuzz.Scope.ScopeSnapshot")!)!;
+            engine.GetType().GetMethod("Read")!.Invoke(engine, new[] { snapshot });
+            return snapshot;
+        }
+
+        /// <summary>
+        /// What a frame of an editor costs to draw (ms): its content rendered into a bitmap with every graph invalidated,
+        /// the audio run a frame's worth between (outside the timing), the best average of three runs of 20 frames.
+        /// </summary>
+        static double EditorFrameMs(Window window)
+        {
+            var content = (Control)window.Content!;
+            var size = new PixelSize((int)Math.Ceiling(content.Bounds.Width), (int)Math.Ceiling(content.Bounds.Height));
+            using var bitmap = new RenderTargetBitmap(size);
+            bitmap.Render(content);
+            var graphs = content.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "GraphView").ToList();
+            double best = double.MaxValue;
+            for (int run = 0; run < 3; run++)
+            {
+                var timer = new System.Diagnostics.Stopwatch();
+                for (int k = 0; k < 20; k++)
+                {
+                    Run(1.0 / 30);
+                    Thread.Sleep(11);                                   // the editors read a new snapshot at most every 10 ms
+                    timer.Start();
+                    foreach (var g in graphs) g.InvalidateVisual();
+                    bitmap.Render(content);
+                    timer.Stop();
+                }
+                best = Math.Min(best, timer.Elapsed.TotalMilliseconds / 20);
+            }
+            return best;
+        }
+
+        /// <summary>
+        /// What each of Neo Scope's graphs costs to draw, one setting at a time (noise, then a sine): the numbers behind
+        /// its painter's choices (machines.md, Neo Scope). Run by name.
+        /// </summary>
+        [AvaloniaTest, Explicit("measurements for Neo Scope's painters; run by name")]
+        public void NeoScopeEditorCostProbe()
+        {
+            var song = Core.SongCore;
+            var master = song.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var sampler = Add("Neo Sampler", "Probe Sampler", -0.6f, 0);
+            var scope = Add("Neo Scope", "Probe Scope", 0, 0);
+            try
+            {
+                song.ConnectMachines(sampler, scope, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                song.ConnectMachines(scope, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                Global(sampler, "Z1 wave").SetValue(0, 226);   // noise
+                var busy = sampler.ManagedMachine.GetType().GetProperty("Busy")!;
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                while (busy.GetValue(sampler.ManagedMachine) is true && clock.ElapsedMilliseconds < 20000) Thread.Sleep(20);
+                var note = sampler.ParameterGroups[2].Parameters.First(p => p.Name == "Note");
+                note.SetValue(0, (5 << 4) + 1);
+                var window = OpenEditor(scope);
+                Run(1.0);
+                var content = (Control)window.Content!;
+                var graphs = content.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "GraphView").ToList();
+                double Time(Control c)
+                {
+                    var size = new PixelSize((int)Math.Ceiling(c.Bounds.Width), (int)Math.Ceiling(c.Bounds.Height));
+                    using var bitmap = new RenderTargetBitmap(size);
+                    bitmap.Render(c);
+                    var t = new System.Diagnostics.Stopwatch();
+                    for (int k = 0; k < 20; k++) { Run(1.0 / 30); Thread.Sleep(11); t.Start(); c.InvalidateVisual(); bitmap.Render(c); t.Stop(); }
+                    return t.Elapsed.TotalMilliseconds / 20;
+                }
+                foreach (var (name, value, label) in new[] { ("Trail", 0, "trail off"), ("Trail", 3, "trail long"), ("Display", 0, "L only"), ("Display", 4, "L&R"), ("Sync", 0, "free 2ms"), ("Sync", 5, "1 bar"), ("Vector", 1, "polar"), ("Vector", 0, "lissajous"),
+                    ("Z1 wave", 216, "sine"), ("Sync", 0, "sine free"), ("Sync", 3, "sine 1/4") })
+                {
+                    (name == "Z1 wave" ? Global(sampler, name) : Global(scope, name)).SetValue(0, value);
+                    Run(0.3);
+                    TestContext.Out.WriteLine($"[notice] {label}: " + string.Join(", ", graphs.Select(g => $"{g.Bounds.Width:0}x{g.Bounds.Height:0} {Time(g):F2} ms")));
+                }
+                TestContext.Out.WriteLine($"[notice] the whole editor: {EditorFrameMs(window):F1} ms");
+            }
+            finally
+            {
+                Remove(scope, sampler);
+            }
+        }
+
+        [AvaloniaTest]
+        public void NeoScopeStandsALoopStillLocksOnASineAndItsControlsWork()
+        {
+            // Neo Sampler's built-in kick on the first beat of a one-bar loop → Neo Scope (synced to a bar) → Master. Each pass of
+            // the loop draws the same sweep, from the bar's first sample. Then a held sine and the free time base with the trigger:
+            // it locks at the level, rising. The controls are one undo step each; Freeze holds the picture; Polar redraws the
+            // vectorscope. The scope passes its input bit for bit, and its editor's frames are timed.
+            var song = Core.SongCore;
+            var master = song.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var sampler = Add("Neo Sampler", "Scope Kick", -0.6f, 0);
+            var scope = Add("Neo Scope", "Scope", 0, 0);
+            bool looping = Core.Looping;
+            int loopStart = song.LoopStart, loopEnd = song.LoopEnd, songEnd = song.SongEnd;
+            try
+            {
+                song.ConnectMachines(sampler, scope, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                song.ConnectMachines(scope, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                Global(sampler, "Mode").SetValue(0, 1);                       // Kit: zone 1 on C2
+                Global(sampler, "Z1 wave").SetValue(0, 201);                  // the built-in kick
+                var busy = sampler.ManagedMachine.GetType().GetProperty("Busy")!;
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                while (busy.GetValue(sampler.ManagedMachine) is true && clock.ElapsedMilliseconds < 20000) Thread.Sleep(20);
+                sampler.CreatePattern("00", 16);
+                var pattern = sampler.Patterns.First(p => p.Name == "00");
+                Core.SessionLayout.EditNotes(pattern, null, new[] { new ReBuzz.Core.Session.ClipNote(0, PatternEvent.TimeBase * 2, 36, 120) });
+                song.AddSequence(sampler, song.Sequences.Count);
+                song.Sequences.Last().SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, pattern));
+                Core.Looping = true;
+                song.LoopStart = 0;
+                song.LoopEnd = 16;
+                song.SongEnd = 16;
+                Global(scope, "Sync").SetValue(0, 5);                         // 1 bar
+                var window = OpenEditor(scope);
+                var editor = window.Content!;
+                Run(0.1);
+                var quiet = Frame(window);
+
+                // ---- Synced: three passes of the loop.
+                var sweeps = new List<(long Number, double Start, bool Synced, int Filled, int Columns, float[] Max, float[] Min)>();
+                lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                double bar = 16.0 * ReBuzzCore.masterInfo.SamplesPerTick / ReBuzzCore.masterInfo.SamplesPerSec;
+                for (int k = 0; k < (int)(3.6 * bar / 0.05); k++)
+                {
+                    Run(0.05);
+                    var snap = ScopeSnapshot(scope);
+                    if (!(bool)Field(snap, "HasFrame")) continue;
+                    var f = Field(snap, "Frame");
+                    long number = (long)Field(f, "Number");
+                    if (sweeps.Count > 0 && sweeps[^1].Number == number) continue;
+                    int columns = (int)Field(f, "Columns");
+                    sweeps.Add((number, (double)Field(f, "StartBeat"), (bool)Field(f, "Synced"), (int)Field(f, "Filled"), columns,
+                        ((float[])Field(f, "AMax")).Take(columns).ToArray(), ((float[])Field(f, "AMin")).Take(columns).ToArray()));
+                }
+                var synced = Frame(window, "neo-scope-editor-synced");
+                Assert.That(sweeps.Count(x => x.Synced), Is.GreaterThanOrEqualTo(3), "a sweep a pass: " + string.Join(", ", sweeps.Select(x => $"#{x.Number} at {x.Start}")));
+                var passes = sweeps.Where(x => x.Synced).ToList();
+                Assert.Multiple(() =>
+                {
+                    foreach (var x in passes)
+                    {
+                        Assert.That(x.Start, Is.EqualTo(0), "each pass's sweep starts on the bar");
+                        Assert.That(x.Filled, Is.EqualTo(x.Columns), "and fills the screen");
+                        Assert.That(Math.Max(x.Max[0], -x.Min[0]), Is.GreaterThan(0.05f), "the kick starts in the first column");
+                    }
+                    for (int i = 2; i < passes.Count; i++)
+                    {
+                        Assert.That(passes[i].Max, Is.EqualTo(passes[1].Max), $"pass {i + 1} draws pass 2's sweep");
+                        Assert.That(passes[i].Min, Is.EqualTo(passes[1].Min));
+                    }
+                    Assert.That((string)Field(Get(editor, "View"), "Right"), Does.StartWith("bar 1.1"), "the editor names the bar");
+                    var scopeView = Controls(window, "GraphView").First(g => g.Bounds.Width >= 670);
+                    Assert.That(Changed(quiet, synced, BoundsIn(scopeView, window)), Is.GreaterThan(1500), "the scope draws the kick");
+                });
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                Core.ExecuteCommand(BuzzCommand.Stop);
+                Run(0.2);
+
+                // ---- Free, triggered: a held sine (the built-in one, looped) at C4, rising through 25 %.
+                Global(sampler, "Mode").SetValue(0, 0);
+                Global(sampler, "Z1 wave").SetValue(0, 216);
+                Global(sampler, "Z1 key low").SetValue(0, 0);
+                Global(sampler, "Z1 key high").SetValue(0, 127);
+                var note = sampler.ParameterGroups[2].Parameters.First(p => p.Name == "Note");
+                note.SetValue(0, (5 << 4) + 1);
+                var sync = Global(scope, "Sync");
+                var trigger = Global(scope, "Trigger");
+                var level = Global(scope, "Level");
+                sync.SetValue(0, 0);
+                Global(scope, "Time/div").SetValue(0, 303);                    // 1 ms a division
+                level.SetValue(0, 1250);                                       // +25 %
+                Run(0.5);
+                var readings = (IReadOnlyDictionary<string, double>)Get(scope.ManagedMachine, "Readings");
+                var snapshot = ScopeSnapshot(scope);
+                var frame = Field(snapshot, "Frame");
+                float first = ((float[])Field(frame, "AMin"))[0], second = ((float[])Field(frame, "AMin"))[1];
+                var triggered = Frame(window, "neo-scope-editor-triggered");
+                Assert.Multiple(() =>
+                {
+                    Assert.That(readings["trigger_locked"], Is.EqualTo(1), "locked: " + string.Join(", ", readings.Select(kv => $"{kv.Key} {kv.Value:F2}")));
+                    Assert.That((bool)Field(frame, "Triggered"), Is.True);
+                    Assert.That(first, Is.InRange(0.25f, 0.30f), "the sweep starts where the sine crosses +25 %");
+                    Assert.That(second, Is.GreaterThan(first), "going up");
+                    Assert.That(readings["peak_dbfs"], Is.InRange(-12.0, 0.0), "the sine's peak");
+                    Assert.That(readings["correlation"], Is.EqualTo(1).Within(1e-6), "a mono sine");
+                    Assert.That((string)Field(Get(editor, "View"), "Status"), Is.EqualTo("Trig'd"));
+                });
+
+                // ---- The controls: a click on Display's Side, one undo step; Level's knob dragged up; Freeze; Polar.
+                var stack = song.ActionStack;
+                var display = Find(window, "ParamChoice", "Display");
+                var displayParam = Global(scope, "Display");
+                int steps = stack.Actions.Count();
+                var cell = (Rect)display.GetType().GetMethod("CellBounds")!.Invoke(display, new object[] { 3 })!;
+                Click(window, At(display, window, cell.Center.X, cell.Center.Y));
+                Assert.That(displayParam.GetValue(0), Is.EqualTo(3), "a click picks Side");
+                Assert.That(stack.Actions.Count(), Is.EqualTo(steps + 1), "one undo step");
+                song.Undo();
+                Assert.That(displayParam.GetValue(0), Is.EqualTo(4), "undo: L & R again");
+                int level0 = level.GetValue(0);
+                var knob = Find(window, "ParamKnob", "Level");
+                var c = Centre(knob, window);
+                MachineViewTests.Drag(window, c, c - new Point(0, 30));
+                Assert.That(level.GetValue(0), Is.GreaterThan(level0), "dragging Level up raises it");
+                song.Undo();
+                Assert.That(level.GetValue(0), Is.EqualTo(level0));
+
+                var freeze = Find(window, "ParamChoice", "Freeze");
+                var on = (Rect)freeze.GetType().GetMethod("CellBounds")!.Invoke(freeze, new object[] { 1 })!;
+                Click(window, At(freeze, window, on.Center.X, on.Center.Y));
+                Assert.That(Global(scope, "Freeze").GetValue(0), Is.EqualTo(1), "Freeze on");
+                Run(0.1);
+                var held = Frame(window);
+                note.SetValue(0, (6 << 4) + 8);                                // another note: the frozen picture stays
+                Run(0.3);
+                var stillHeld = Frame(window, "neo-scope-editor-frozen");
+                var scopeArea = BoundsIn(Controls(window, "GraphView").First(g => g.Bounds.Width >= 670), window);
+                Assert.That(Changed(held, stillHeld, scopeArea), Is.LessThan(200), "frozen, the scope holds (the status aside)");
+                Assert.That((string)Field(Get(editor, "View"), "Status"), Is.EqualTo("Frozen"));
+                Global(scope, "Freeze").SetValue(0, 0);
+
+                var vectorArea = BoundsIn(Controls(window, "GraphView").First(g => Math.Abs(g.Bounds.Width - 240) < 1 && g.Bounds.Height > 200), window);
+                Global(sampler, "Z1 pan").SetValue(0, 30);                      // −70 %: the goniometer leans left
+                Run(0.3);
+                var lissajous = Frame(window);
+                var vector = Find(window, "ParamChoice", "Vector");
+                var polarCell = (Rect)vector.GetType().GetMethod("CellBounds")!.Invoke(vector, new object[] { 1 })!;
+                Click(window, At(vector, window, polarCell.Center.X, polarCell.Center.Y));
+                Assert.That(Global(scope, "Vector").GetValue(0), Is.EqualTo(1), "Polar");
+                Run(0.1);
+                var polar = Frame(window, "neo-scope-editor-polar");
+                Assert.That(Changed(lissajous, polar, vectorArea), Is.GreaterThan(300), "the vectorscope redraws as polar");
+
+                // ---- The editor's cost: the whole editor drawn into a bitmap, every graph redrawn, with the audio running
+                // (the trail on, so the last sweeps are drawn too), against Neo Analyzer's editor on the same sound.
+                Global(scope, "Trail").SetValue(0, 3);
+                Global(scope, "Sync").SetValue(0, 3);
+                var analyzer = Add("Neo Analyzer", "Scope Analyzer", 0.4f, 0);
+                try
+                {
+                    song.ConnectMachines(sampler, analyzer, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                    var analyzerWindow = OpenEditor(analyzer);
+                    Run(0.5);
+                    double scopeMs = EditorFrameMs(window), analyzerMs = EditorFrameMs(analyzerWindow);
+                    TestContext.Out.WriteLine($"[notice] Neo Scope's editor in the studio (headless, Skia in software, {window.ClientSize.Width:0} x {window.ClientSize.Height:0}): " +
+                                              $"{scopeMs:F1} ms a frame, every graph redrawn; Neo Analyzer's {analyzerMs:F1} ms ({analyzerWindow.ClientSize.Width:0} x {analyzerWindow.ClientSize.Height:0})");
+                    Assert.That(scopeMs, Is.LessThan(Math.Max(3 * analyzerMs, 20)), "a frame costs about what Neo Analyzer's does");
+                }
+                finally
+                {
+                    Remove(analyzer);
+                }
+
+                // ---- Bit for bit: the machine's Work, loud random samples in.
+                var instance = scope.ManagedMachine;
+                var work = instance.GetType().GetMethod("Work", new[] { typeof(Buzz.MachineInterface.Sample[]), typeof(Buzz.MachineInterface.Sample[]), typeof(int), typeof(Buzz.MachineInterface.WorkModes) })!;
+                var rng = new Random(7);
+                var input = Enumerable.Range(0, 1024).Select(i => new Buzz.MachineInterface.Sample(
+                    i == 3 ? float.MaxValue : i == 4 ? -0f : (float)(rng.NextDouble() * 2 - 1) * 32000f, (float)(rng.NextDouble() * 2 - 1) * 40000f)).ToArray();
+                var output = new Buzz.MachineInterface.Sample[1024];
+                lock (ReBuzzCore.AudioLock) work.Invoke(instance, new object[] { output, input, 1024, Buzz.MachineInterface.WorkModes.WM_READWRITE });
+                Assert.That(output.Zip(input).All(p => BitConverter.SingleToInt32Bits(p.First.L) == BitConverter.SingleToInt32Bits(p.Second.L)
+                    && BitConverter.SingleToInt32Bits(p.First.R) == BitConverter.SingleToInt32Bits(p.Second.R)), Is.True, "the output is the input, bit for bit");
+
+                note.SetValue(0, BuzzGUI.Common.BuzzNote.Off);
+                Run(0.1);
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                Core.Looping = looping;
+                song.LoopStart = 0;
+                song.LoopEnd = loopEnd;
+                song.LoopStart = loopStart;
+                song.SongEnd = songEnd;
+                foreach (var seq in song.Sequences.Where(q => q.Machine == sampler).ToList()) song.RemoveSequence(seq);
+                Remove(scope, sampler);
             }
         }
     }

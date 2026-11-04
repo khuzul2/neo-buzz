@@ -40,6 +40,10 @@ TEMPO = 120   # 1 beat = 0.5 s
 # Cases excluded on purpose, with the reason: {"case": "why"}. Empty: every case must match.
 EXCLUDED = {}
 
+# Pairs of cases that must render the same bits on every platform, as well as each matching Windows':
+# a machine that passes its audio through (Neo Scope) leaves the chain it is in as it was.
+SAME = [("scope-synced-after-delay", "delay-dotted-throw")]
+
 
 # ---- the cases ------------------------------------------------------------------------------------
 
@@ -239,6 +243,11 @@ CASES = [
     gen("sampler-strings-far", "Neo Sampler", "Pad — Strings (Looped, Slow Attack)", [("Filter", "BP"), ("Cutoff", "2 kHz"), ("Resonance", "50%")],
         [n("C1", 0, 3.5, 100), n("C7", 0, 3.5, 100), n("G8", 1, 2.5, 100), n("A2", 2, 1.5, 60)], tail=1.5),
     gen("sampler-saw-lead", "Neo Sampler", "Lead — Saw (Filter Envelope)", [], LEAD),
+    # Neo Scope: the audio passes through untouched while it looks: synced to the song's beats after Neo Delay, and free
+    # with the trigger and holdoff, its display, time base and freeze automated (sweeps restarting mid-render).
+    fx("scope-synced-after-delay", "Neo Delay", "Mix — Dotted Eighth Throw", tail=1.5, extra=[("Neo Scope", "Synced — One Beat", [])]),
+    fx("scope-free-triggered", "Neo Scope", "Free — Low End (Triggered, Holdoff)", [("Holdoff", "20 ms")],
+       auto=[("Display", [(0, "Mid"), (1, "L & R"), (2, "Side")]), ("Sync", [(1.5, "1/8"), (2.5, "Free")]), ("Freeze", [(3, "on")])]),
     # Long: what drifts with time (oscillator and LFO phases, modulated delays) shows here. 16 s each.
     gen("long-poly", "Neo Poly", "Pad — Evolving PWM", [], LONG, beats=32),
     gen("long-wave", "Neo Wave", "Pad — Organ Drift", [], LONG, beats=32),
@@ -390,7 +399,16 @@ def render_all(exe, out_dir, work, only):
         except Exception as e:
             failed.append(case["name"])
             print(f"FAIL {case['name']}: {e}", flush=True)
-    done = sum(1 for c in CASES if not only or c["name"] in only) - len(failed)
+    for a, b in SAME:
+        pa, pb = os.path.join(out_dir, a + ".wav"), os.path.join(out_dir, b + ".wav")
+        if a in failed or b in failed or not (os.path.exists(pa) and os.path.exists(pb)):
+            continue
+        with open(pa, "rb") as fa, open(pb, "rb") as fb:
+            same = fa.read() == fb.read()
+        print(f"{'same' if same else 'FAIL'} {a} and {b}: {'the same bits' if same else 'they differ'}", flush=True)
+        if not same:
+            failed.append(a)
+    done = sum(1 for c in CASES if not only or c["name"] in only) - len(set(failed))
     print(f"{done} rendered in {time.time() - started:.0f} s on {platform_label()}", flush=True)
     if os.environ.get("GITHUB_ACTIONS"):
         print(f"::notice title=Null test renders ({platform_label()})::{done} cases rendered in {time.time() - started:.0f} s"
