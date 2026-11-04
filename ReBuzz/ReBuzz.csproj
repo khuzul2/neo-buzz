@@ -230,4 +230,13 @@
     <Compile Remove="@(EngineSource)" />
   </ItemGroup>
 
+  <!-- Fork (docs/specs/mcp-server.md §12.11, U4): the manifest editor, on the Neo editor kit's WPF backend, as
+       the Neo machines build it (linked as source: its types stay internal to ReBuzz.exe): the kit, its
+       parameter tables (NeoBuzz.Dsp), the editor's toolkit-free face and its one source for both front ends. -->
+  <ItemGroup>
+    <Compile Include="..\Machines\NeoBuzz.Dsp\**\*.cs" Link="ManifestEditor\Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Machines\NeoBuzz.Editor\**\*.cs" Link="ManifestEditor\Editor\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Machines\NeoBuzz.ManifestEditor\**\*.cs" Link="ManifestEditor\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>

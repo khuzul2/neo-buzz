@@ -1,0 +1,132 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+# Pedal FM ships a bank of its own (PedalFM_Presets.prs.xml in its source), under a name ReBuzz doesn't look for;
+# these are new, levelled for chords, in the machine's operator order 1 → 4.
+machine "Pedal FM"
+
+preset "Keys — Electric Piano"
+comment "A tine piano: a bright 14:1 modulator that fades fast over a sustaining carrier"
+Algorithm = 1: Linear
+Output level = -18 dB
+Operator 1 level = 30%
+Operator 1 decay = 0.3 s
+Operator 1 sustain = 0%
+Operator 2 level = 45%
+Operator 2 decay = 0.5 s
+Operator 2 sustain = 25%
+Operator 3 frequency ratio = 14
+Operator 3 level = 65%
+Operator 3 decay = 0.25 s
+Operator 3 sustain = 8%
+Operator 3 velocity sensitivity = 60%
+Operator 4 level = 90%
+Operator 4 attack = 0 ms
+Operator 4 decay = 2 s
+Operator 4 sustain = 40%
+Operator 4 release = 0.6 s
+
+preset "Bell — Crystal"
+comment "Three inharmonic modulators on one carrier, no sustain: a long glassy bell"
+Algorithm = 4: 3-on-1
+Output level = -18 dB
+Operator 1 frequency ratio = 2.875
+Operator 1 level = 65%
+Operator 1 decay = 1.2 s
+Operator 1 sustain = 0%
+Operator 2 frequency ratio = 4.875
+Operator 2 level = 55%
+Operator 2 decay = 1.6 s
+Operator 2 sustain = 0%
+Operator 3 frequency ratio = 7.625
+Operator 3 level = 40%
+Operator 3 decay = 2 s
+Operator 3 sustain = 0%
+Operator 4 level = 85%
+Operator 4 decay = 4 s
+Operator 4 sustain = 0%
+Operator 4 release = 3 s
+
+preset "Brass — Dual Chain"
+comment "Two modulator-carrier pairs with a slow swell: synth brass"
+Algorithm = 2: Dual chain
+Output level = -20 dB
+Operator 1 level = 55%
+Operator 1 attack = 60 ms
+Operator 1 decay = 0.4 s
+Operator 1 sustain = 50%
+Operator 2 level = 70%
+Operator 2 attack = 40 ms
+Operator 2 sustain = 80%
+Operator 2 release = 0.2 s
+Operator 3 frequency ratio = 2
+Operator 3 level = 40%
+Operator 3 attack = 80 ms
+Operator 3 sustain = 40%
+Operator 4 level = 70%
+Operator 4 attack = 40 ms
+Operator 4 sustain = 80%
+Operator 4 release = 0.2 s
+
+preset "Bass — FM Pluck"
+comment "A short, punchy bass: the modulator snaps shut after the attack"
+Algorithm = 1: Linear
+Output level = -17 dB
+Operator 1 level = 0%
+Operator 2 level = 0%
+Operator 3 level = 60%
+Operator 3 decay = 0.15 s
+Operator 3 sustain = 0%
+Operator 4 level = 95%
+Operator 4 decay = 0.6 s
+Operator 4 sustain = 30%
+Operator 4 release = 0.1 s
+Operator 1 feedback = 0
+
+preset "Organ — Additive Drawbars"
+comment "Four sines at 0.5, 1, 2 and 3 times the note: a drawbar organ"
+Algorithm = 7: Additive
+Output level = -17 dB
+Operator 1 frequency ratio = 0.5
+Operator 1 level = 55%
+Operator 1 sustain = 100%
+Operator 1 release = 80 ms
+Operator 2 frequency ratio = 1
+Operator 2 level = 75%
+Operator 2 sustain = 100%
+Operator 2 release = 80 ms
+Operator 3 frequency ratio = 2
+Operator 3 level = 50%
+Operator 3 sustain = 100%
+Operator 3 release = 80 ms
+Operator 4 frequency ratio = 3
+Operator 4 level = 35%
+Operator 4 sustain = 100%
+Operator 4 release = 80 ms
+
+preset "Pad — Glass"
+comment "Slow attack and release, a bright modulated layer over a soft carrier, gentle vibrato"
+Algorithm = 8: Pad+carrier
+Output level = -14 dB
+Operator 1 frequency ratio = 2
+Operator 1 level = 35%
+Operator 1 attack = 0.8 s
+Operator 1 sustain = 70%
+Operator 1 release = 1.5 s
+Operator 2 frequency ratio = 3
+Operator 2 level = 30%
+Operator 2 attack = 0.9 s
+Operator 2 sustain = 70%
+Operator 2 release = 1.5 s
+Operator 3 level = 60%
+Operator 3 attack = 0.7 s
+Operator 3 sustain = 90%
+Operator 3 release = 1.8 s
+Operator 4 frequency ratio = 2
+Operator 4 level = 45%
+Operator 4 attack = 1 s
+Operator 4 sustain = 90%
+Operator 4 release = 1.8 s
+LFO rate = 5 Hz
+Vibrato depth = 0.1 st

@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Room — Small">
+    <Preset Machine="Jeskola Reverb">
+      <Parameters>
+        <Parameter Name="Dry Out" Group="1" Index="0" Track="0" Value="4096" />
+        <Parameter Name="Rev Out" Group="1" Index="1" Track="0" Value="516" />
+        <Parameter Name="ER Out" Group="1" Index="2" Track="0" Value="410" />
+        <Parameter Name="Rev Time" Group="1" Index="3" Track="0" Value="6" />
+        <Parameter Name="Pre-Delay" Group="1" Index="4" Track="0" Value="5" />
+        <Parameter Name="High Cutoff" Group="1" Index="5" Track="0" Value="6000" />
+      </Parameters>
+      <Attributes />
+      <Comment>A short room with early reflections: depth without a long tail</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Hall — Large">
+    <Preset Machine="Jeskola Reverb">
+      <Parameters>
+        <Parameter Name="Dry Out" Group="1" Index="0" Track="0" Value="4096" />
+        <Parameter Name="Rev Out" Group="1" Index="1" Track="0" Value="817" />
+        <Parameter Name="ER Out" Group="1" Index="2" Track="0" Value="258" />
+        <Parameter Name="Rev Time" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Pre-Delay" Group="1" Index="4" Track="0" Value="30" />
+        <Parameter Name="High Cutoff" Group="1" Index="5" Track="0" Value="5000" />
+      </Parameters>
+      <Attributes />
+      <Comment>A long, darker hall tail behind the dry signal</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Plate — Bright">
+    <Preset Machine="Jeskola Reverb">
+      <Parameters>
+        <Parameter Name="Dry Out" Group="1" Index="0" Track="0" Value="4096" />
+        <Parameter Name="Rev Out" Group="1" Index="1" Track="0" Value="728" />
+        <Parameter Name="ER Out" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Rev Time" Group="1" Index="3" Track="0" Value="18" />
+        <Parameter Name="Pre-Delay" Group="1" Index="4" Track="0" Value="15" />
+        <Parameter Name="High Cutoff" Group="1" Index="5" Track="0" Value="12000" />
+      </Parameters>
+      <Attributes />
+      <Comment>A medium, bright tail with a little pre-delay</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Send — Reverb Only">
+    <Preset Machine="Jeskola Reverb">
+      <Parameters>
+        <Parameter Name="Dry Out" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Rev Out" Group="1" Index="1" Track="0" Value="1631" />
+        <Parameter Name="ER Out" Group="1" Index="2" Track="0" Value="817" />
+        <Parameter Name="Rev Time" Group="1" Index="3" Track="0" Value="25" />
+        <Parameter Name="Pre-Delay" Group="1" Index="4" Track="0" Value="20" />
+        <Parameter Name="High Cutoff" Group="1" Index="5" Track="0" Value="7000" />
+      </Parameters>
+      <Attributes />
+      <Comment>Reverb without the dry signal, for a send</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Ambience — Early Only">
+    <Preset Machine="Jeskola Reverb">
+      <Parameters>
+        <Parameter Name="Dry Out" Group="1" Index="0" Track="0" Value="4096" />
+        <Parameter Name="Rev Out" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="ER Out" Group="1" Index="2" Track="0" Value="1029" />
+        <Parameter Name="Rev Time" Group="1" Index="3" Track="0" Value="4" />
+        <Parameter Name="Pre-Delay" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="High Cutoff" Group="1" Index="5" Track="0" Value="5000" />
+      </Parameters>
+      <Attributes />
+      <Comment>Early reflections only, no tail: a sense of space</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

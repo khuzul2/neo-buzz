@@ -316,10 +316,17 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(undoSteps + 1), "one undo step");
                 Studio.Screenshot(editor, "exit-3-neo-poly-editor");
 
-                // A slider in Pedal SH101's parameter window (it has no GUI of its own here: a double click opens this).
+                // A slider in Pedal SH101's parameter window. It has no GUI of its own here, so a double click opens its
+                // manifest editor (mcp-server.md §12.11, U4: curated); the plain list is on its menu, Parameters...
                 DoubleClick(window, view.PointOf(bass, window) + new Vector(12, 8));
+                var face = StudioMachineUiHost.EditorWindowOf(bass);
+                Assert.That(face?.IsVisible, Is.True, "a double click opens SH101's manifest editor");
+                Assert.That(face!.Content?.GetType().Name, Is.EqualTo("ManifestEditor"));
+                face.Close();
+                Settle();
+                Menu(window, view, view.PointOf(bass, window) + new Vector(12, 8), null, "Parameters...");
                 var parameters = StudioMachineUiHost.ParameterWindowOf(bass);
-                Assert.That(parameters?.IsVisible, Is.True, "a double click opens SH101's parameter window");
+                Assert.That(parameters?.IsVisible, Is.True, "Parameters... opens SH101's parameter window");
                 SessionRig.Quiet(parameters!);
                 Dispatcher.UIThread.RunJobs();
                 parameters.UpdateLayout();

@@ -1,0 +1,48 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+# Dry and reverb levels are set apart (dB); mono, and about 6 dB louder than its input (a quirk).
+machine "Jeskola Reverb"
+
+preset "Room — Small"
+comment "A short room with early reflections: depth without a long tail"
+Dry level = 0 dB
+Reverb level = -18 dB
+Early reflections level = -20 dB
+Reverb time = 0.6 s
+Pre-delay = 5 ms
+High cut = 6000 Hz
+
+preset "Hall — Large"
+comment "A long, darker hall tail behind the dry signal"
+Dry level = 0 dB
+Reverb level = -14 dB
+Early reflections level = -24 dB
+Reverb time = 3 s
+Pre-delay = 30 ms
+High cut = 5000 Hz
+
+preset "Plate — Bright"
+comment "A medium, bright tail with a little pre-delay"
+Dry level = 0 dB
+Reverb level = -15 dB
+Reverb time = 1.8 s
+Pre-delay = 15 ms
+High cut = 12000 Hz
+
+preset "Send — Reverb Only"
+comment "Reverb without the dry signal, for a send"
+Dry level = -inf dB
+Reverb level = -8 dB
+Early reflections level = -14 dB
+Reverb time = 2.5 s
+Pre-delay = 20 ms
+High cut = 7000 Hz
+
+preset "Ambience — Early Only"
+comment "Early reflections only, no tail: a sense of space"
+Dry level = 0 dB
+Reverb level = -inf dB
+Early reflections level = -12 dB
+Reverb time = 0.4 s

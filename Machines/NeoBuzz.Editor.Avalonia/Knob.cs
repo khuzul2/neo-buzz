@@ -48,6 +48,19 @@ namespace NeoBuzz.Editor
         public double Default { get => model.Default; set => model.Default = value; }
         /// <summary>Steps for wheel and arrow keys: the parameter's range.</summary>
         public int Steps { get => model.Steps; set => model.Steps = value; }
+        /// <summary>The safe range marked on the knob, positions 0 … 1 (U4, machine-safety.md §3.4); null: none.</summary>
+        public (double From, double To)? Safe
+        {
+            get => model.Safe;
+            set
+            {
+                model.Safe = value;
+                InvalidateVisual();
+            }
+        }
+
+        /// <summary>Raised on a right click (the manifest editor takes a typed value then).</summary>
+        public event Action RightClicked;
 
         /// <summary>0 … 1.</summary>
         public double Value
@@ -123,6 +136,13 @@ namespace NeoBuzz.Editor
             if (!model.EndDrag()) return;   // the drag ended without a release (the window lost the pointer)
             gesture.End();
             InvalidateVisual();
+        }
+
+        protected override void OnMouseRightButtonDown(MouseButtonEventArgs e)
+        {
+            if (RightClicked == null) return;
+            RightClicked();
+            e.Handled = true;
         }
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)

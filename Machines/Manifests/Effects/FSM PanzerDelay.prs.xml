@@ -1,0 +1,118 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Echo — Dark Eighths">
+    <Preset Machine="FSM PanzerDelay">
+      <Parameters>
+        <Parameter Name="Dry amp" Group="1" Index="0" Track="0" Value="240" />
+        <Parameter Name="Dry L Pan" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Dry R Pan" Group="1" Index="2" Track="0" Value="240" />
+        <Parameter Name="Delay unit" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Filter type" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Cutoff" Group="1" Index="5" Track="0" Value="125" />
+        <Parameter Name="Resonance" Group="1" Index="6" Track="0" Value="70" />
+        <Parameter Name="L Delay Len" Group="2" Index="0" Track="0" Value="2" />
+        <Parameter Name="R Delay Len" Group="2" Index="1" Track="0" Value="2" />
+        <Parameter Name="Tap Amp" Group="2" Index="2" Track="0" Value="150" />
+        <Parameter Name="Wet L Pan" Group="2" Index="3" Track="0" Value="240" />
+        <Parameter Name="Wet R Pan" Group="2" Index="4" Track="0" Value="0" />
+        <Parameter Name="FB Amp" Group="2" Index="5" Track="0" Value="160" />
+        <Parameter Name="FB PingPong" Group="2" Index="6" Track="0" Value="0" />
+        <Parameter Name="FB Spread" Group="2" Index="7" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment>Eighth-note echoes through a low pass: they darken as they repeat</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Ping-Pong — Dotted">
+    <Preset Machine="FSM PanzerDelay">
+      <Parameters>
+        <Parameter Name="Dry amp" Group="1" Index="0" Track="0" Value="240" />
+        <Parameter Name="Dry L Pan" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Dry R Pan" Group="1" Index="2" Track="0" Value="240" />
+        <Parameter Name="Delay unit" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Filter type" Group="1" Index="4" Track="0" Value="2" />
+        <Parameter Name="Cutoff" Group="1" Index="5" Track="0" Value="26" />
+        <Parameter Name="Resonance" Group="1" Index="6" Track="0" Value="70" />
+        <Parameter Name="L Delay Len" Group="2" Index="0" Track="0" Value="3" />
+        <Parameter Name="R Delay Len" Group="2" Index="1" Track="0" Value="3" />
+        <Parameter Name="Tap Amp" Group="2" Index="2" Track="0" Value="160" />
+        <Parameter Name="Wet L Pan" Group="2" Index="3" Track="0" Value="240" />
+        <Parameter Name="Wet R Pan" Group="2" Index="4" Track="0" Value="0" />
+        <Parameter Name="FB Amp" Group="2" Index="5" Track="0" Value="170" />
+        <Parameter Name="FB PingPong" Group="2" Index="6" Track="0" Value="1" />
+        <Parameter Name="FB Spread" Group="2" Index="7" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment>Dotted-eighth echoes bouncing between the sides, thinned by a high pass</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Tape — Warm Long">
+    <Preset Machine="FSM PanzerDelay">
+      <Parameters>
+        <Parameter Name="Dry amp" Group="1" Index="0" Track="0" Value="240" />
+        <Parameter Name="Dry L Pan" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Dry R Pan" Group="1" Index="2" Track="0" Value="240" />
+        <Parameter Name="Delay unit" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Filter type" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Cutoff" Group="1" Index="5" Track="0" Value="101" />
+        <Parameter Name="Resonance" Group="1" Index="6" Track="0" Value="45" />
+        <Parameter Name="L Delay Len" Group="2" Index="0" Track="0" Value="6" />
+        <Parameter Name="R Delay Len" Group="2" Index="1" Track="0" Value="6" />
+        <Parameter Name="Tap Amp" Group="2" Index="2" Track="0" Value="140" />
+        <Parameter Name="Wet L Pan" Group="2" Index="3" Track="0" Value="240" />
+        <Parameter Name="Wet R Pan" Group="2" Index="4" Track="0" Value="0" />
+        <Parameter Name="FB Amp" Group="2" Index="5" Track="0" Value="190" />
+        <Parameter Name="FB PingPong" Group="2" Index="6" Track="0" Value="0" />
+        <Parameter Name="FB Spread" Group="2" Index="7" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment>Long, warm repeats: a low-passed dotted-quarter echo</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Slapback — Wide">
+    <Preset Machine="FSM PanzerDelay">
+      <Parameters>
+        <Parameter Name="Dry amp" Group="1" Index="0" Track="0" Value="240" />
+        <Parameter Name="Dry L Pan" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Dry R Pan" Group="1" Index="2" Track="0" Value="240" />
+        <Parameter Name="Delay unit" Group="1" Index="3" Track="0" Value="3" />
+        <Parameter Name="Filter type" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="5" Track="0" Value="120" />
+        <Parameter Name="Resonance" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="L Delay Len" Group="2" Index="0" Track="0" Value="80" />
+        <Parameter Name="R Delay Len" Group="2" Index="1" Track="0" Value="110" />
+        <Parameter Name="Tap Amp" Group="2" Index="2" Track="0" Value="160" />
+        <Parameter Name="Wet L Pan" Group="2" Index="3" Track="0" Value="240" />
+        <Parameter Name="Wet R Pan" Group="2" Index="4" Track="0" Value="0" />
+        <Parameter Name="FB Amp" Group="2" Index="5" Track="0" Value="1" />
+        <Parameter Name="FB PingPong" Group="2" Index="6" Track="0" Value="0" />
+        <Parameter Name="FB Spread" Group="2" Index="7" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment>Two short echoes, 80 and 110 ms, barely repeating: a wide slap</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Send — Echo Only">
+    <Preset Machine="FSM PanzerDelay">
+      <Parameters>
+        <Parameter Name="Dry amp" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Dry L Pan" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Dry R Pan" Group="1" Index="2" Track="0" Value="240" />
+        <Parameter Name="Delay unit" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Filter type" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="5" Track="0" Value="120" />
+        <Parameter Name="Resonance" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="L Delay Len" Group="2" Index="0" Track="0" Value="3" />
+        <Parameter Name="R Delay Len" Group="2" Index="1" Track="0" Value="4" />
+        <Parameter Name="Tap Amp" Group="2" Index="2" Track="0" Value="200" />
+        <Parameter Name="Wet L Pan" Group="2" Index="3" Track="0" Value="240" />
+        <Parameter Name="Wet R Pan" Group="2" Index="4" Track="0" Value="0" />
+        <Parameter Name="FB Amp" Group="2" Index="5" Track="0" Value="160" />
+        <Parameter Name="FB PingPong" Group="2" Index="6" Track="0" Value="0" />
+        <Parameter Name="FB Spread" Group="2" Index="7" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment>The dry signal down as far as it goes, echoes up: for a send</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

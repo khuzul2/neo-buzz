@@ -1,0 +1,34 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+# It ships one preset of its own ("Crunch example"); the package adds these to its file.
+machine "Joachims Mars filter 2"
+
+preset "Crunch — Red Crust"
+comment "A mid-gain crunch with the top softened"
+Distortion character = Red crust
+Input gain = 0 dB
+Amount = 50
+Treble attenuator = -20
+Bass attenuator = 0
+
+preset "Fuzz — God of Iron"
+comment "A heavier, saturated character"
+Distortion character = God of iron
+Input gain = -9 dB
+Amount = 70
+
+preset "Warm — Rusty"
+comment "A gentle, darker drive"
+Distortion character = Rusty
+Input gain = -2 dB
+Amount = 40
+Treble attenuator = -40
+
+preset "Heavy — Cannon"
+comment "Heavy distortion with the bass kept out of it"
+Distortion character = Cannon
+Input gain = -20 dB
+Amount = 80
+Bass attenuator = -60
