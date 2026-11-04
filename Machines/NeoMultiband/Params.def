@@ -7,7 +7,7 @@ summary Multiband compressor and upward expander for mastering and buses: 3 or 4
 group Crossovers
 Bands     "Bands"        0 1     1     enum 3_bands 4_bands          | Three bands (Crossover 1 and 2) or four (all three crossovers)
 Xo1       "Crossover 1"  0 10000 2594  freq 20 20000                 | Between bands 1 and 2 (Linkwitz–Riley, 24 dB/oct, −6 dB here)
-Xo2       "Crossover 2"  0 10000 5663  freq 20 20000                 | Between bands 2 and 3 (never below Crossover 1)
+Xo2       "Crossover 2"  0 10000 5664  freq 20 20000                 | Between bands 2 and 3 (never below Crossover 1)
 Xo3       "Crossover 3"  0 10000 8257  freq 20 20000                 | Between bands 3 and 4 with four bands (never below Crossover 2)
 Phase     "Phase"        0 1     0     enum Linear Minimum           | Linear: the bands sum back to the input exactly, no phase shift, about 96 ms of latency (reported to ReBuzz). Minimum: zero latency, the same band shapes, the crossovers' phase shift (as an analog crossover's)
 group Detector
@@ -56,3 +56,19 @@ B4Bypass "B4 bypass" 0 1 0 switch | Band 4: pass the band untouched (no dynamics
 group Output
 Mix       "Mix"          0 1000  1000  pct                           | Dry against the processed bands (the dry is latency-aligned, so parallel compression never combs)
 Output    "Output"       0 480   240   db -24 24                     | Output gain, −24 … +24 dB in 0.1 dB steps
+
+# What the bands do (NeoMultibandMachine.Readings, machine_readings). Band 4's only with four bands.
+reading b1_gr_db dB | Band 1's gain change now, as its meter shows it: positive cuts, negative boosts (upward expansion)
+reading b1_gr_peak_db dB | Band 1's largest gain change over the last 3 s (positive cuts, negative boosts)
+reading b1_level_db dBFS | Band 1's peak level over the last 3 s, as its detector reads it (set the threshold against it)
+reading b2_gr_db dB | Band 2's gain change now, as its meter shows it: positive cuts, negative boosts (upward expansion)
+reading b2_gr_peak_db dB | Band 2's largest gain change over the last 3 s (positive cuts, negative boosts)
+reading b2_level_db dBFS | Band 2's peak level over the last 3 s, as its detector reads it (set the threshold against it)
+reading b3_gr_db dB | Band 3's gain change now, as its meter shows it: positive cuts, negative boosts (upward expansion)
+reading b3_gr_peak_db dB | Band 3's largest gain change over the last 3 s (positive cuts, negative boosts)
+reading b3_level_db dBFS | Band 3's peak level over the last 3 s, as its detector reads it (set the threshold against it)
+reading b4_gr_db dB | Band 4's gain change now, as its meter shows it: positive cuts, negative boosts (upward expansion)
+reading b4_gr_peak_db dB | Band 4's largest gain change over the last 3 s (positive cuts, negative boosts)
+reading b4_level_db dBFS | Band 4's peak level over the last 3 s, as its detector reads it (set the threshold against it)
+reading bands | 3 or 4
+reading latency_samples samples | The latency ReBuzz compensates: 4607 at 44.1 and 48 kHz in linear phase, 0 in minimum phase

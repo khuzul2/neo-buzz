@@ -43,7 +43,7 @@
    "group": "Crossovers",
    "min": 0,
    "max": 10000,
-   "default": 5663,
+   "default": 5664,
    "kind": "freq",
    "a": 20.0,
    "b": 20000.0,
@@ -647,6 +647,78 @@
    "b": 24.0,
    "unit": "dB",
    "description": "Output gain, −24 … +24 dB in 0.1 dB steps"
+  }
+ ],
+ "readings": [
+  {
+   "key": "b1_gr_db",
+   "unit": "dB",
+   "description": "Band 1's gain change now, as its meter shows it: positive cuts, negative boosts (upward expansion)"
+  },
+  {
+   "key": "b1_gr_peak_db",
+   "unit": "dB",
+   "description": "Band 1's largest gain change over the last 3 s (positive cuts, negative boosts)"
+  },
+  {
+   "key": "b1_level_db",
+   "unit": "dBFS",
+   "description": "Band 1's peak level over the last 3 s, as its detector reads it (set the threshold against it)"
+  },
+  {
+   "key": "b2_gr_db",
+   "unit": "dB",
+   "description": "Band 2's gain change now, as its meter shows it: positive cuts, negative boosts (upward expansion)"
+  },
+  {
+   "key": "b2_gr_peak_db",
+   "unit": "dB",
+   "description": "Band 2's largest gain change over the last 3 s (positive cuts, negative boosts)"
+  },
+  {
+   "key": "b2_level_db",
+   "unit": "dBFS",
+   "description": "Band 2's peak level over the last 3 s, as its detector reads it (set the threshold against it)"
+  },
+  {
+   "key": "b3_gr_db",
+   "unit": "dB",
+   "description": "Band 3's gain change now, as its meter shows it: positive cuts, negative boosts (upward expansion)"
+  },
+  {
+   "key": "b3_gr_peak_db",
+   "unit": "dB",
+   "description": "Band 3's largest gain change over the last 3 s (positive cuts, negative boosts)"
+  },
+  {
+   "key": "b3_level_db",
+   "unit": "dBFS",
+   "description": "Band 3's peak level over the last 3 s, as its detector reads it (set the threshold against it)"
+  },
+  {
+   "key": "b4_gr_db",
+   "unit": "dB",
+   "description": "Band 4's gain change now, as its meter shows it: positive cuts, negative boosts (upward expansion)"
+  },
+  {
+   "key": "b4_gr_peak_db",
+   "unit": "dB",
+   "description": "Band 4's largest gain change over the last 3 s (positive cuts, negative boosts)"
+  },
+  {
+   "key": "b4_level_db",
+   "unit": "dBFS",
+   "description": "Band 4's peak level over the last 3 s, as its detector reads it (set the threshold against it)"
+  },
+  {
+   "key": "bands",
+   "unit": "",
+   "description": "3 or 4"
+  },
+  {
+   "key": "latency_samples",
+   "unit": "samples",
+   "description": "The latency ReBuzz compensates: 4607 at 44.1 and 48 kHz in linear phase, 0 in minimum phase"
   }
  ]
 }

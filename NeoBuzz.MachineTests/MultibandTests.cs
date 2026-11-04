@@ -12,6 +12,9 @@ namespace NeoBuzz.MachineTests
     {
         const int Rate = Measure.Rate;
 
+        static string MachinesDir([System.Runtime.CompilerServices.CallerFilePath] string here = "") =>
+            Path.GetFullPath(Path.Combine(Path.GetDirectoryName(here)!, "..", "Machines"));
+
         static void Set(ParamValues v, int p, double value) => v.Set(p, Params.Table[p].Raw(value));
 
         static int B(int band, BP what) => MultibandEngine.Param(band, what);
@@ -583,6 +586,83 @@ namespace NeoBuzz.MachineTests
             Assert.That(r["latency_samples"], Is.EqualTo(4607));
         }
 
+        [Test]
+        public void ReadingsHaveTheManifestsKeys()
+        {
+            // Four bands: every key the manifest declares (Params.def's readings); three bands: band 4's left out.
+            string manifest = Path.Combine(MachinesDir(), "NeoMultiband", "Neo Multiband.machine.json");
+            var doc = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(manifest))!.AsObject();
+            var keys = doc["readings"]!.AsArray().Select(r => r!["key"]!.GetValue<string>()).ToList();
+            var (e, v) = Make(null);
+            Run(e, Noise(Rate / 2, 0.2, 3), Noise(Rate / 2, 0.2, 4));
+            Assert.That(e.Readings().Keys, Is.EquivalentTo(keys));
+            v.Set(P.Bands, 0);
+            Run(e, Noise(Rate / 2, 0.2, 3), Noise(Rate / 2, 0.2, 4));
+            Assert.That(e.Readings().Keys, Is.EquivalentTo(keys.Where(k => !k.StartsWith("b4_"))));
+            Assert.That(e.Readings()["bands"], Is.EqualTo(3));
+        }
+
+        // ------------------------------------------------------------------ the editor's handles (toolkit-free)
+
+        sealed class FakeCrossovers : NeoBuzz.Editor.ICrossovers
+        {
+            public double[] Hz = { 120, 1000, 6000 };
+            public int Bands { get; set; } = 4;
+            public readonly List<int> Solos = new();
+            public readonly List<(int Band, int Tenths)> Steps = new();
+            double NeoBuzz.Editor.ICrossovers.Hz(int i) => Hz[i];
+            public void Move(int i, double hz) => Hz[i] = hz;
+            public void ToggleSolo(int band) => Solos.Add(band);
+            public void StepThreshold(int band, int tenths) => Steps.Add((band, tenths));
+        }
+
+        [Test]
+        public void TheCrossoverHandlesDragSelectSoloAndStep()
+        {
+            // The graph 600 × 262: dragging crossover 2's line moves it (Shift: a tenth as far), never within a sixth of an
+            // octave of its neighbours; a press between crossovers selects that band, a double-click solos it, the wheel steps
+            // its threshold. Three bands: two handles.
+            var graph = new NeoBuzz.Editor.ResponseGraph(-30, 12, 6);
+            graph.Layout(new NeoBuzz.Editor.NeoRect(0, 0, 600, 262));
+            var xo = new FakeCrossovers();
+            var input = new NeoBuzz.Editor.CrossoverHandleInput(graph, xo);
+            double x2 = graph.X(1000), y = graph.Plot.Top + 100;
+            Assert.That(input.CrossoverAt(x2 + 3, y), Is.EqualTo(1));
+            Assert.That(input.Down(x2 + 3, y, 1, false), Is.True);
+            Assert.That(input.Capturing, Is.True);
+            input.Move(graph.X(2000) + 3, y, false);
+            Assert.That(xo.Hz[1], Is.EqualTo(2000).Within(2000 * 0.01), "dragged to 2 kHz");
+            input.Move(graph.X(50000), y, false);
+            Assert.That(xo.Hz[1], Is.EqualTo(6000 / NeoBuzz.Editor.CrossoverHandleInput.MinRatio).Within(1e-6), "a sixth of an octave under crossover 3");
+            input.Move(graph.X(10), y, false);
+            Assert.That(xo.Hz[1], Is.EqualTo(120 * NeoBuzz.Editor.CrossoverHandleInput.MinRatio).Within(1e-6), "a sixth of an octave over crossover 1");
+            input.Up();
+            Assert.That(input.Capturing, Is.False);
+            // Fine.
+            xo.Hz[1] = 1000;
+            input.Down(graph.X(1000), y, 1, true);
+            input.Move(graph.X(1000) + 100, y, true);
+            input.Up();
+            Assert.That(xo.Hz[1], Is.EqualTo(graph.Hz(graph.X(1000) + 10)).Within(0.01), "Shift: a tenth as far");
+            // Bands: select, solo, wheel.
+            input.Down(graph.X(3000), y, 1, false);
+            input.Up();
+            Assert.That(input.Selected, Is.EqualTo(2));
+            input.Down(graph.X(60), y, 2, false);
+            Assert.That(input.Selected, Is.EqualTo(0));
+            Assert.That(xo.Solos, Is.EqualTo(new[] { 0 }));
+            input.Wheel(graph.X(10000), y, 120, false);
+            input.Wheel(graph.X(10000), y, -240, true);
+            Assert.That(xo.Steps, Is.EqualTo(new[] { (3, 10), (3, -2) }));
+            // Three bands: crossover 3 is no handle.
+            xo.Bands = 3;
+            Assert.That(input.Count, Is.EqualTo(2));
+            Assert.That(input.CrossoverAt(graph.X(6000), y), Is.EqualTo(-1));
+            Assert.That(input.BandAt(graph.X(10000)), Is.EqualTo(2));
+            var canvas = new NeoBuzz.Editor.RecordingCanvas();
+            input.Draw(canvas, NeoBuzz.Editor.NeoColor.FromRgb(0xF2, 0xB1, 0x3C));
+        }
+
         // ------------------------------------------------------------------ moves and switches
 
         [TestCase(0)]
@@ -786,7 +866,7 @@ namespace NeoBuzz.MachineTests
                 var (l, r) = Run(e, x, x);
                 double rms = Math.Max(Measure.Rms(l, Rate, 2 * Rate), Measure.Rms(r, Rate, 2 * Rate));
                 double peak = Math.Max(Measure.Peak(l, 0, l.Length), Measure.Peak(r, 0, r.Length));
-                Measure.Report($"Neo Multiband / {name}: {Db(rms / inRms):+0.0;−0.0} dB, peak {Db(peak):+0.0;−0.0} dBFS");
+                Measure.Report($"Neo Multiband / {name}: {Db(rms / inRms):+0.0;−0.0;0.0} dB, peak {Db(peak):+0.0;−0.0} dBFS");
                 Assert.That(double.IsFinite(peak), Is.True, name);
                 Assert.That(Db(rms / inRms), Is.InRange(-6.0, 6.0), name);
                 Assert.That(Db(peak), Is.LessThan(3), name);

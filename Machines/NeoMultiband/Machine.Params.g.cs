@@ -13,7 +13,7 @@ namespace NeoBuzz.Multiband
         [ParameterDecl(Name = "Crossover 1", Description = "Between bands 1 and 2 (Linkwitz–Riley, 24 dB/oct, −6 dB here)", MinValue = 0, MaxValue = 10000, DefValue = 2594)]
         public int Xo1 { get => Values[P.Xo1]; set => Values.Set(P.Xo1, value); }
 
-        [ParameterDecl(Name = "Crossover 2", Description = "Between bands 2 and 3 (never below Crossover 1)", MinValue = 0, MaxValue = 10000, DefValue = 5663)]
+        [ParameterDecl(Name = "Crossover 2", Description = "Between bands 2 and 3 (never below Crossover 1)", MinValue = 0, MaxValue = 10000, DefValue = 5664)]
         public int Xo2 { get => Values[P.Xo2]; set => Values.Set(P.Xo2, value); }
 
         [ParameterDecl(Name = "Crossover 3", Description = "Between bands 3 and 4 with four bands (never below Crossover 2)", MinValue = 0, MaxValue = 10000, DefValue = 8257)]

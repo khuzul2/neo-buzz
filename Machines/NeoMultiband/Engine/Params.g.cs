@@ -65,7 +65,7 @@ namespace NeoBuzz.Multiband
         {
             new ParamDef(P.Bands, "Bands", "Bands", 0, 1, 1, MapKind.Enum, names: new[] { "3 bands", "4 bands" }, group: "Crossovers", description: "Three bands (Crossover 1 and 2) or four (all three crossovers)"),
             new ParamDef(P.Xo1, "Xo1", "Crossover 1", 0, 10000, 2594, MapKind.Freq, a: 20, b: 20000, group: "Crossovers", description: "Between bands 1 and 2 (Linkwitz–Riley, 24 dB/oct, −6 dB here)"),
-            new ParamDef(P.Xo2, "Xo2", "Crossover 2", 0, 10000, 5663, MapKind.Freq, a: 20, b: 20000, group: "Crossovers", description: "Between bands 2 and 3 (never below Crossover 1)"),
+            new ParamDef(P.Xo2, "Xo2", "Crossover 2", 0, 10000, 5664, MapKind.Freq, a: 20, b: 20000, group: "Crossovers", description: "Between bands 2 and 3 (never below Crossover 1)"),
             new ParamDef(P.Xo3, "Xo3", "Crossover 3", 0, 10000, 8257, MapKind.Freq, a: 20, b: 20000, group: "Crossovers", description: "Between bands 3 and 4 with four bands (never below Crossover 2)"),
             new ParamDef(P.Phase, "Phase", "Phase", 0, 1, 0, MapKind.Enum, names: new[] { "Linear", "Minimum" }, group: "Crossovers", description: "Linear: the bands sum back to the input exactly, no phase shift, about 96 ms of latency (reported to ReBuzz). Minimum: zero latency, the same band shapes, the crossovers' phase shift (as an analog crossover's)"),
             new ParamDef(P.Stereo, "Stereo", "Stereo", 0, 1, 0, MapKind.Enum, names: new[] { "L/R", "M/S" }, group: "Detector", description: "What each band's detector and gain work on: left and right, or mid and side"),

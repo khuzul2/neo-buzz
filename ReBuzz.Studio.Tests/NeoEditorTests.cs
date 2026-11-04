@@ -43,6 +43,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Analyzer", "NeoAnalyzerEditor", "neo-analyzer-editor", 1118, 398),
             ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 978, 338),
             ("Neo Delay", "NeoDelayEditor", "neo-delay-editor", 994, 343),
+            ("Neo Multiband", "NeoMultibandEditor", "neo-multiband-editor", 1042, 576),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;
@@ -480,6 +481,91 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 Remove(delay, poly);
+            }
+        }
+
+        [AvaloniaTest]
+        public void NeoMultibandsCrossoversDragAndItsMetersShowEachBandsGainChange()
+        {
+            // Neo Poly → Neo Multiband → Master, a chord held, every band compressing hard. Dragging crossover 2's grip moves its
+            // frequency as one undo step; each band's meter shows its cut in the band's colour; a click on band 3 in the graph
+            // shows its controls; upward expansion on band 1 grows its meter up instead.
+            var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var poly = Add("Neo Poly", "Bands Poly", -0.6f, 0);
+            var m = Add("Neo Multiband", "Bands", 0, 0);
+            try
+            {
+                Core.SongCore.ConnectMachines(poly, m, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                Core.SongCore.ConnectMachines(m, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                for (int b = 1; b <= 4; b++)
+                {
+                    Global(m, $"B{b} threshold").SetValue(0, 0);    // −60 dB
+                    Global(m, $"B{b} ratio").SetValue(0, 800);      // 8:1
+                    Global(m, $"B{b} attack").SetValue(0, 300);     // fast
+                }
+                Global(m, "Phase").SetValue(0, 1);                  // minimum phase: the meters move at once
+                var window = OpenEditor(m);
+                poly.TrackCount = Math.Max(poly.TrackCount, 3);
+                var note = poly.ParameterGroups[2].Parameters.First(p => p.Name == "Note");
+                int[] chord = { (2 << 4) + 1, (4 << 4) + 5, (5 << 4) + 8 };   // C-2, E-4, G-5: something in every band
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, chord[t]);
+                Run(0.6);
+                var graph = Controls(window, "InteractiveGraph").Single();
+                var area = BoundsIn(graph, window);
+                var meters = Controls(window, "GraphView").Where(g => Math.Abs(g.Bounds.Width - 30) < 1).OrderBy(g => BoundsIn(g, window).X).ToList();
+                Assert.That(meters, Has.Count.EqualTo(4), "a meter per band");
+                uint[] colours = { 0xFF6B6B, 0x8FD14F, 0x4FB3FF, 0xC38CFF };
+                var f = Frame(window, "neo-multiband-editor-compressing");
+                Assert.Multiple(() =>
+                {
+                    for (int b = 0; b < 4; b++)
+                        Assert.That(Count(f, BoundsIn(meters[b], window), colours[b], 30), Is.GreaterThan(30), $"band {b + 1}'s meter shows its cut");
+                });
+
+                // Crossover 2's grip: at its frequency (1 kHz), the top of the plot (ResponseGraph's layout: 30 px left, 8 px top).
+                var xo2 = Global(m, "Crossover 2");
+                double hz0 = 20 * Math.Pow(1000, xo2.GetValue(0) / 10000.0);
+                double plotW = area.Width - 38;
+                double gx = area.X + 30 + Math.Log(hz0 / 20) / Math.Log(1000) * plotW, gy = area.Y + 8 + 6.5;
+                int raw0 = xo2.GetValue(0), steps = Core.SongCore.ActionStack.Actions.Count();
+                var grip = new Point(gx, gy + 40);
+                MachineViewTests.Drag(window, grip, grip + new Point(60, 0));
+                Assert.That(xo2.GetValue(0), Is.GreaterThan(raw0), "dragging right raises crossover 2");
+                Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(steps + 1), "the drag is one undo step");
+                Run(0.2);
+                Frame(window, "neo-multiband-editor-dragged");
+                Core.SongCore.Undo();
+                Assert.That(xo2.GetValue(0), Is.EqualTo(raw0), "undo puts it back");
+
+                // A click in band 3 (between 1 and 6 kHz) shows its controls.
+                double x3 = area.X + 30 + Math.Log(2500 / 20.0) / Math.Log(1000) * plotW;
+                MachineViewTests.Click(window, new Point(x3, area.Y + area.Height / 2));
+                Run(0.05);
+                Frame(window, "neo-multiband-editor-band3");
+                var threshold = Controls(window, "ParamKnob").Where(k => k.IsEffectivelyVisible && AutomationProperties.GetName(k) == "Threshold").ToList();
+                Assert.That(threshold, Has.Count.EqualTo(1), "one band's controls are shown");
+                // It is band 3's: dragging it up raises B3 threshold.
+                var b3 = Global(m, "B3 threshold");
+                int t0 = b3.GetValue(0);
+                var c = Centre(threshold[0], window);
+                MachineViewTests.Drag(window, c, c - new Point(0, 40));
+                Assert.That(b3.GetValue(0), Is.GreaterThan(t0), "the knob shown is band 3's threshold");
+
+                // Upward expansion on band 1: its meter grows up from 0 dB.
+                Global(m, "B1 ratio").SetValue(0, 0);                    // 0.5:1
+                Global(m, "B1 threshold").SetValue(0, 300);             // −30 dB
+                Global(m, "B1 range").SetValue(0, 120);                 // 12 dB
+                Run(0.6);
+                var up = Frame(window, "neo-multiband-editor-expanding");
+                var box = BoundsIn(meters[0], window);
+                var upper = new Rect(box.X, box.Y, box.Width, box.Height * 0.3);
+                Assert.That(Count(up, upper, 0xFF6B6B, 120), Is.GreaterThan(20), "band 1's meter grows up while it expands");
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, BuzzGUI.Common.BuzzNote.Off);
+                Run(0.1);
+            }
+            finally
+            {
+                Remove(m, poly);
             }
         }
 
