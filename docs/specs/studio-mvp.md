@@ -17,7 +17,7 @@
    - the Plus tooling (DevTools, Parcel, Hot Reload, the Visual Studio extension).
 
    Pricing as of 2026-11: <https://avaloniaui.net/pricing>.
-2. **No paid signing in P3.** The Mac app is built unsigned by CI. It runs after `xattr -d com.apple.quarantine`. A Developer ID ($99 a year) is needed only for notarized distribution (P5), and it's optional.
+2. **No paid signing in P3.** The Mac app is built unsigned (ad-hoc signed, not notarized) by CI, as a disk image. The first time it opens, macOS asks for Privacy & Security → Open Anyway (or `xattr -dr com.apple.quarantine`). A Developer ID ($99 a year) is needed only for notarized distribution (P5), and it's optional.
 3. **The engine doesn't change for the UI**, except through seams (P1) that the WPF app also uses.
 4. **Windows stays on WPF** until P4. Nothing here may break `ReBuzz.exe`, its tests or its package.
 
@@ -78,13 +78,13 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 
 ## 5. What only the user can do
 
-- **Try it on a Mac:** download the CI's `ReBuzz.app`, clear the quarantine flag, open it. The feel matters here: scrolling, fonts, Retina, keyboard shortcuts. So does the menu bar.
+- **Try it on a Mac:** download the disk image from the release *ReBuzz for Mac (latest main)*, drag ReBuzz to Applications, open it (Open Anyway the first time). The feel matters here: scrolling, fonts, Retina, keyboard shortcuts. So does the menu bar.
 - **The exit test by hand:** a song from scratch, and an old song of yours. The checklist below.
-- **Signing** (optional, P5): a Developer ID, if the app should open without the quarantine step on other Macs.
+- **Signing** (optional, P5): a Developer ID, if the app should open without the Open Anyway step.
 
 **The hand test** (about ten minutes, on an Apple-silicon Mac):
-1. **Get it.** GitHub → Actions → *Fork Mac* → the latest green run → Artifacts → `ReBuzz-macos-arm64`. It is a zip holding `ReBuzz-macos-arm64.zip`: unzip both (Safari unzips the first).
-2. **Unblock it.** In Terminal: `xattr -dr com.apple.quarantine ~/Downloads/ReBuzz.app` (where it landed). Then double-click it.
+1. **Get it.** GitHub → the repo's Releases → *ReBuzz for Mac (latest main)* → `ReBuzz-macos-arm64.dmg`. Open it and drag ReBuzz onto Applications. (A branch's build: Actions → *Fork Mac* → its run → Artifacts → `ReBuzz-macos-arm64-dmg`, a zip holding the disk image.)
+2. **Open it.** Double-click ReBuzz in Applications. macOS says it can't verify it: close the message (not Move to Trash), then System Settings → Privacy & Security → Open Anyway, and confirm. Once per version. (Or in Terminal: `xattr -dr com.apple.quarantine /Applications/ReBuzz.app`.)
 3. **Build a chain.** Machines tab: right-click → New ▸ Generators ▸ Neo Poly, New ▸ Effects ▸ Neo Verb. Shift-drag Poly → Verb, Verb → Master. Right-click the Poly → Master arrow → disconnect.
 4. **Turn a knob.** Double-click Poly: its editor. Drag F1 cutoff. ⌘Z undoes it.
 5. **Type a pattern.** F2. Click the grid, Tab to the Note column, type `z c b q`.
@@ -126,7 +126,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - save as, new, then open gives the song back.
   - The window is saved as PNGs, which CI uploads (`studio-screenshots`).
 - **Dev NuGet cache** (§3.8): `dev-nuget-cache.yml` keeps the restored packages as one release asset (`dev-nuget-cache`, a prerelease, not a ReBuzz release). Locally: `dotnet restore <project> --configfile <a nuget.config whose only source is that unpacked folder>`. The test projects also run locally that way.
-- **The Mac app:** `tools/mac-bundle.sh` builds `ReBuzz.app`. It is self-contained osx-arm64, with PortAudio, libsndfile (and its libraries) and the Link helper inside, and ad-hoc signed. The Mac job runs the headless view tests on arm64, then builds the app and starts it for real (`--smoke`, with the runner's audio device), and uploads it (`ReBuzz-macos-arm64`).
+- **The Mac app:** `tools/mac-bundle.sh` builds `ReBuzz.app`. It is self-contained osx-arm64, with PortAudio, libsndfile (and its libraries) and the Link helper inside, and ad-hoc signed, with ReBuzz's icon. `tools/mac-dmg.sh` packs it into `ReBuzz-macos-arm64.dmg` with dmgbuild (MIT): a window with the app, an arrow to Applications and how to open an app that isn't notarized (`tools/mac-dmg/`: the settings, and the background with the script that draws it), plus `Read me first.txt`. The Mac job runs the headless view tests on arm64, builds the app and the disk image, checks the image (it verifies, mounts with those items, and the app copied out keeps its signature), then starts the installed copy for real (`--smoke`, with the runner's audio device) and runs the live MCP scenarios against it, and uploads the image (`ReBuzz-macos-arm64-dmg`). `mac-release.yml` publishes it as the prerelease *ReBuzz for Mac (latest main)* (tag `mac-latest`) when the change reaches main: it reuses the image Fork Mac built for the same tree, so it spends no macOS minutes.
 
 **S1, the Neo editors** (#55).
 - **`NeoBuzz.Editor.Avalonia`** (`Machines/NeoBuzz.Editor.Avalonia/`, linked as source like the WPF kit):
