@@ -1,0 +1,86 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Jeskola Delay",
+  "to": "Neo Delay",
+  "summary": "Neo Delay in Stereo mode with its filters open: the first track's Length (in its unit) becomes Sync and Feel, or a free Time; Feedback carries over to ±99 %; Dry thru and Wet out become a crossfade and an output gain.",
+  "input_gain_db": 0,
+  "output_gain_db": 6.02,
+  "set": {
+    "Mode": "Stereo",
+    "Offset": "0%",
+    "Low cut": "20 Hz",
+    "High cut": "20 kHz",
+    "Drive": "0 dB",
+    "Mod depth": "0 ms",
+    "Duck": "0 dB",
+    "Width": "100%"
+  },
+  "rules": [
+    {
+      "kind": "delay_time",
+      "length": "Length",
+      "unit": "Length unit",
+      "units": {
+        "tick": "tick",
+        "ms": "ms",
+        "sample": "sample",
+        "tick/256": "tick/256"
+      },
+      "sync": "Sync",
+      "feel": "Feel",
+      "time": "Time",
+      "divisions": {
+        "Free": 0,
+        "1/64": 0.0625,
+        "1/32": 0.125,
+        "1/16": 0.25,
+        "1/8": 0.5,
+        "1/4": 1,
+        "1/2": 2,
+        "1 bar": 4,
+        "2 bars": 8
+      },
+      "feels": {
+        "Straight": 1,
+        "Dotted": 1.5,
+        "Triplet": 0.6666666666666666
+      },
+      "why": "Lengths count in Length unit: ticks (the default) are Buzz's whole samples per tick, so the echo follows the tempo; a length in ticks that is a note value (1 tick = 1/16 at 4 ticks a beat, 3 ticks = 1/8 dotted, 6 = 1/4 dotted …) becomes Neo Delay's Sync and Feel, which follow the tempo too; any other length, and lengths in ms or samples, a free Time at the song's tempo and rate."
+    },
+    {
+      "kind": "unit",
+      "from": "Feedback",
+      "to": "Feedback",
+      "min": -0.99,
+      "max": 0.99,
+      "why": "Both in % of each echo fed back (Jeskola Delay's source: buf = in + fb · buf, (raw − 64)/64); Neo Delay's stops at ±99 %, where Jeskola's ±100 % never decays."
+    },
+    {
+      "kind": "dry_wet",
+      "dry": "Dry thru",
+      "wet": "Wet out",
+      "mix": "Mix",
+      "output": "Output",
+      "why": "Jeskola Delay adds the dry signal (on or off) and its echoes at Wet out (raw/128); Neo Delay crossfades them and sets the output's level: mix = wet ÷ (dry + wet), output = dry + wet."
+    }
+  ],
+  "unmapped": [],
+  "remarks": [
+    "Jeskola Delay is mono: ReBuzz gives it left + right summed (+6 dB for a centred sound) and it plays the same on both sides; Neo Delay in Stereo mode keeps the input's image, so a centred sound is the same and a panned one stays where it is. The +6 dB goes on the output connections, not the inputs: the line keeps the input's own level, under its saturator's knee (0 dBFS at Drive 0 dB), as Jeskola Delay's float line never saturates.",
+    "Each of Jeskola Delay's tracks is a tap of its own (up to 8); Neo Delay has one line a side: the first track's settings move, the others' are left out (their pattern columns write the same parameters, with a note).",
+    "Jeskola Delay's Max Delay attribute (1 s by default) caps its lengths; the mapping doesn't read attributes, so a longer length plays longer on Neo Delay (up to 5 s free, 10 s synced)."
+  ],
+  "tolerance": {
+    "loudness_db": 0.5,
+    "band_db": 1.0,
+    "from_hz": 63,
+    "to_hz": 12000,
+    "measured": "Windows, Neo Poly noise and chords into it, each side against its input: at its defaults (3 ticks, Feedback 50 %, Wet out 37.5 %, dry on) −0.0 dB, third octaves within 0.3 dB (chords −0.0 dB, within 0.5 dB); 120 ms, Feedback −60 %, wet only: −0.0 dB, within 0.4 dB. Its echoes, read from single bursts, are its source's: at 126 BPM a centred burst echoes on both sides every 357.1 ms (3 ticks, 15 750 samples) at −2.5, −8.5, −14.5 dB (Wet out × 2 for the summed input, then Feedback each pass), and at −50 % every other echo inverted; Neo Delay's land on the same samples",
+    "why_not": "Where the echoes build up, single third octaves move: 5 ticks (a free 595 ms), Feedback +80 %, Wet out 75 %: −0.1 dB on noise but 1.3 dB at 100 Hz, and on chords +0.2 dB but 2.2 dB at 400 Hz. Two probable causes, not separated: a free length lands on Time's step (0.085 %; 5 ticks, 26 250 samples, become 26 244), so each repeat lands 6 samples further from Jeskola's and the comb's teeth move against the chord's harmonics; and a long build-up reaches Neo Delay's saturator (its knee at 0 dBFS with Drive 0 dB), which Jeskola Delay's float line never has. Wet only at 120 ms, −60 % on chords: −0.4 dB, 1.1 dB at 630 Hz (the time exact, so probably the saturator on the chords' peaks). A panned input plays in the middle through Jeskola Delay (it is mono, dry and echoes) and where it is through Neo Delay; the comparison, with a centred sound, doesn't see that."
+  },
+  "evidence": [
+    "ExternalMachines/source/buzztrax-buzzmachines/Jeskola/Delay/Delay.cpp: the line (buf = in + fb · buf, out += wet · buf), lengths in ticks (SamplesPerTick × length), ms, samples and 1/256 ticks, Feedback (raw − 64)/64, Wet out raw/128",
+    "Machines/Manifests/Effects/Jeskola Delay.machine.json (curated)",
+    "ReBuzzTests/AgentReplaceTests.cs DelayCalibration (Windows): the echoes' times and levels read from its input and output"
+  ]
+}

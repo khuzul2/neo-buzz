@@ -13,6 +13,7 @@ How to describe a sound in numbers, then recipes with exact values for the Neo s
    | Electric pianos, bells, mallets, FM basses, organs, metallic tones | Neo FM6 | "Keys — Tine Piano", "Bell — Glass Bell", "Init — Sine" |
    | Saturation, compression and space as part of the sound | Neo Drive, Neo Comp, Neo Verb | the effect recipes below |
    | Movement and width: chorus, ensemble, flanger, phaser, vibrato | Neo Ensemble | the recipes below or a "Chorus —", "Flanger —", "Phaser —" preset |
+   | Echoes: tempo delays, ping-pong, dub and tape echo, slapback, combs | Neo Delay | the recipes below or a "Mix —", "Dub —", "Texture —" preset |
 
 2. `machine_add(gear="Neo Poly", name="Pad")`, then `preset_list(machine="Pad", search="pad")` and `preset_load(machine="Pad", preset="Pad — Warm Strings")`, or apply a recipe with `param_set`.
 3. An audition pattern in the sound's register: `pattern_create(machine="Pad", name="Audition", length_beats=8)`, `notes_write(machine="Pad", pattern="Audition", notes=[{"pitch": "A3", "start": 0, "length": 4}, {"pitch": "C4", "start": 0, "length": 4}, {"pitch": "E4", "start": 0, "length": 4}, {"pitch": "G4", "start": 4, "length": 0.5}])`. Place it with `arrangement_place`: at 0 in an empty song, otherwise after the song's end. Placing it there moves the song end, so note the length from `studio_status` first; when done, `arrangement_clear(machine="Pad", from=…, to=…)` and `song_set(song_end_beats=…)` put the song back.
@@ -713,6 +714,38 @@ Jet sweep on drums or a riser, once per two bars:
 - Phaser on keys and pads: "Phaser — 4-Stage Classic" (two notches, gentle) or "Phaser — 8-Stage Deep" (four, with feedback).
 - Organ and electric piano movement: "Rotary — Leslie-like Fast" (6.7 Hz, the channels opposite); slow it to 0.8 Hz for the slow rotor.
 - Doubling a lead or vocal without obvious movement: "Chorus — Subtle Doubling".
+
+### Neo Delay
+
+Stereo, ping-pong or cross echoes, timed in ms or as a note value of the song's tempo. The low cut, the high cut and the tape saturator sit in the loop, so each repeat passes them again: that is what makes a dub echo darken and thin as it fades. `Feedback` reaches ±99 % and the line can't run away.
+
+Dub echo that builds and darkens (insert):
+
+| Parameter | Value | Why |
+|---|---|---|
+| Mode | Ping-pong | |
+| Sync | 1/8 | |
+| Feel | Dotted | |
+| Feedback | 80.0% | the tail builds up |
+| Low cut | 400 Hz | |
+| High cut | 2.00 kHz | each repeat a little darker |
+| Drive | 15.0 dB | the repeats saturate and stay level |
+| Mod depth | 1.00 ms | tape wow |
+| Mix | 40% | |
+
+Metallic comb on a drum loop or noise (a pitched resonance at 1 ÷ Time):
+
+| Parameter | Value | Why |
+|---|---|---|
+| Sync | Free | |
+| Time | 4.55 ms | about 220 Hz (A3) |
+| Feedback | 90.0% | a sharp, ringing comb; negative: an octave lower and hollower |
+| Low cut | 20.0 Hz | off |
+| Mix | 50% | |
+
+- Tape stop and pitch bends: automate `Time` slowly (`automation_write` with a ramp): small steps glide and bend the pitch, as tape does; a jump to another `Sync` crossfades.
+- Rhythmic stutter: "Rhythm — Sixteenth Stutter"; for triplet bounce "Cross — Triplet Bounce".
+- Haas widening without a repeat: "Mix — Doubler (Wide)" (18 ms left, 29 ms right, no feedback).
 
 ## Checklist
 

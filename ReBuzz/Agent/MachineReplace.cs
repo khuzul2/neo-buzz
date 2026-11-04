@@ -120,7 +120,11 @@ namespace ReBuzz.Agent
                         Mapping = entry?.Mapping, Entry = entry,
                     });
                 }
-            var converter = new SuccessorConverter(map, olds, SuccessorParam.FromManifest(manifest));
+            var converter = new SuccessorConverter(map, olds, SuccessorParam.FromManifest(manifest))
+            {
+                // Delay lengths in ticks or samples (U5, Neo Delay's pairs): the song's tempo and rate now.
+                Timing = new SuccessorTiming(Math.Max(1, core.BPM), Math.Max(1, core.TPB), Math.Max(1, ReBuzzCore.masterInfo.SamplesPerSec)),
+            };
             if (converter.Errors.Count > 0)
                 throw new ToolError($"The {map.Label} mapping doesn't fit {old.Name}: {string.Join(" ", converter.Errors)}");
             var plan = new Plan

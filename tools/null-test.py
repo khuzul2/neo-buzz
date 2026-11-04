@@ -163,6 +163,16 @@ CASES = [
     fx("ensemble-phaser-12", "Neo Ensemble", "Phaser — 8-Stage Deep", [("Stages", 12), ("Feedback", "99%"), ("Rate", "3 Hz")]),
     fx("ensemble-synced-switch", "Neo Ensemble", "Phaser — Slow Sweep (4 Bars)", [("Sync", "1/4")],
        auto=[("Mode", [(0, "Phaser"), (2, "Flanger")])]),
+    # Neo Delay: synced stereo, ping-pong and cross lines with both loop filters, the saturator driven at
+    # 95 % feedback, the wow and ducking, a comb at −99 %, and the time automated (a glide, then a
+    # crossfade, then a note value).
+    fx("delay-dotted-throw", "Neo Delay", "Mix — Dotted Eighth Throw", tail=1.5),
+    fx("delay-pingpong-send", "Neo Delay", "Send — Ping-Pong Eighths", tail=1.5),
+    fx("delay-dub-driven", "Neo Delay", "Dub — Tape Echo (Saturated)", [("Feedback", "95%"), ("Drive", "18 dB")], tail=2.0),
+    fx("delay-cross-wow-duck", "Neo Delay", "Send — Long Ambient Wash", [("Mod depth", "5 ms"), ("Mod rate", "5 Hz"), ("Duck", "18 dB"), ("Duck threshold", "-30 dB")], tail=2.0),
+    fx("delay-comb-negative", "Neo Delay", "Texture — Comb Resonator", [("Feedback", "-99%")]),
+    fx("delay-time-moves", "Neo Delay", "Mix — Quarter Note Echo", [("Sync", "Free"), ("Time", "100 ms"), ("Feedback", "60%")], tail=1.5,
+       auto=[("Time", [(0, "100 ms"), (1, "130 ms"), (2, "450 ms")]), ("Sync", [(3, "1/8")])]),
     # Long: what drifts with time (oscillator and LFO phases, modulated delays) shows here. 16 s each.
     gen("long-poly", "Neo Poly", "Pad — Evolving PWM", [], LONG, beats=32),
     gen("long-wave", "Neo Wave", "Pad — Organ Drift", [], LONG, beats=32),
@@ -171,6 +181,8 @@ CASES = [
        source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 2) for p in ("C4", "E4", "G4")])),
     fx("long-ensemble", "Neo Ensemble", "Flanger — Slow Jet", [("Rate", "0.3 Hz")], tail=1.0, beats=32,
        source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 2) for p in ("C4", "E4", "G4")])),
+    fx("long-delay", "Neo Delay", "Tape — Analog Wobble (Dark)", [("Feedback", "85%")], tail=2.0, beats=32,
+       source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 4) for p in ("C4", "E4", "G4")])),
 ]
 
 

@@ -61,7 +61,31 @@ namespace ReBuzz.Agent.Model
         /// beyond their range) go to <c>output</c>.
         /// </summary>
         Graphic,
+        /// <summary>
+        /// A delay's length in its own unit (ticks, 1/256 ticks, samples or ms: <c>unit</c>, a choice whose names <c>units</c>
+        /// maps to those, or a fixed <c>unit_kind</c>) → a tempo-synced note value where the length in ticks is one
+        /// (<c>divisions</c> and <c>feels</c>: the new machine's Sync and Feel choices in beats and factors), so it follows
+        /// the tempo as the old one did, else a free time in seconds at the song's tempo and rate; <c>time</c> takes the
+        /// seconds either way. An optional right length becomes <c>offset</c>, the right line against the left (a fraction).
+        /// </summary>
+        DelayTime,
+        /// <summary>A level in dB (−∞ silence) → the same as an amplitude or fraction, times scale (a feedback in dB → a feedback in %).</summary>
+        FromDb,
+        /// <summary>
+        /// A filter type and cutoff → a low cut and a high cut: per old type (by name, <c>types</c>) the cutoff (times <c>scale</c>)
+        /// becomes the new high cut ("high_cut"), low cut ("low_cut"), both an octave apart round it ("band"), or neither ("none");
+        /// the other is set to <c>low_off</c> or <c>high_open</c>. A type's entry may instead be an object: what it becomes, with
+        /// its own factors on the cutoff (<c>scale</c>; for a band <c>low</c> and <c>high</c>) and a <c>note</c> said when it
+        /// converts (a measured shape the new filters only approximate). A type the map leaves out has no counterpart (a note).
+        /// </summary>
+        Filter,
     }
+
+    /// <summary>
+    /// What an old filter type becomes (<see cref="SuccessorRuleKind.Filter"/>): "high_cut", "low_cut", "band" or "none", a factor on the
+    /// cutoff, a band's factors for its low and high cut, and a note said when it converts.
+    /// </summary>
+    public sealed record SuccessorFilterType(string Becomes, double Scale, double Low, double High, string Note);
 
     /// <summary>A band of a <see cref="SuccessorRuleKind.Graphic"/> rule: its gain parameter and its centre.</summary>
     public sealed record SuccessorBand(string Param, double Hz);
@@ -116,6 +140,8 @@ namespace ReBuzz.Agent.Model
         /// <summary>DryWet: a 0–100 % wet/dry mix instead of separate levels (dry = 1 − mix, wet = mix), and the wet's scale s.</summary>
         public string MixFrom { get; init; }
         public double WetScale { get; init; } = 1;
+        /// <summary>DryWet: the dry and wet levels are in dB (−∞ is silence), not amplitudes.</summary>
+        public bool LevelsDb { get; init; }
         /// <summary>Graphic: the old bands, the new sliders, the old bands' width in octaves (a parameter), the old gain (optional).</summary>
         public IReadOnlyList<SuccessorBand> Bands { get; init; }
         public IReadOnlyList<SuccessorBand> Sliders { get; init; }
@@ -125,6 +151,26 @@ namespace ReBuzz.Agent.Model
         public double? Rate { get; init; }
         public double AlphaMax { get; init; } = double.PositiveInfinity;
         public string Gain { get; init; }
+        /// <summary>DelayTime: the old length, right length and unit parameters, the unit names' kinds, the new Sync, Feel, Time and Offset, and the note values.</summary>
+        public string Length { get; init; }
+        public string LengthRight { get; init; }
+        public string Unit { get; init; }
+        public string UnitKind { get; init; }
+        public IReadOnlyDictionary<string, string> Units { get; init; }
+        public string Sync { get; init; }
+        public string Feel { get; init; }
+        public string Time { get; init; }
+        public string OffsetParam { get; init; }
+        public IReadOnlyDictionary<string, double> Divisions { get; init; }
+        public IReadOnlyDictionary<string, double> Feels { get; init; }
+        /// <summary>Filter: the old type and cutoff, the new low and high cut, their off and open values, and what each old type becomes.</summary>
+        public string Type { get; init; }
+        public string Cutoff { get; init; }
+        public string LowCut { get; init; }
+        public string HighCut { get; init; }
+        public string LowOff { get; init; }
+        public string HighOpen { get; init; }
+        public IReadOnlyDictionary<string, SuccessorFilterType> Types { get; init; }
         /// <summary>Why (a line in the report): "assumed: closed source", "measured on …".</summary>
         public string Why { get; init; } = "";
 
@@ -138,6 +184,8 @@ namespace ReBuzz.Agent.Model
             SuccessorRuleKind.Db when ZeroWhen != null => new[] { From, ZeroWhen },
             SuccessorRuleKind.Graphic => Bands.Select(b => b.Param).Append(Bandwidth).Concat(new[] { Gain, Highpass }.Where(x => x != null)),
             SuccessorRuleKind.Unit when Times != null => new[] { From, Times },
+            SuccessorRuleKind.DelayTime => new[] { Length, LengthRight, Unit }.Where(x => x != null),
+            SuccessorRuleKind.Filter => new[] { Type, Cutoff },
             _ => new[] { From },
         };
 
@@ -149,6 +197,8 @@ namespace ReBuzz.Agent.Model
             SuccessorRuleKind.DryWet => new[] { Mix, Output },
             SuccessorRuleKind.Graphic => Sliders.Select(b => b.Param).Append(Output),
             SuccessorRuleKind.Bypass => Array.Empty<string>(),
+            SuccessorRuleKind.DelayTime => new[] { Sync, Feel, Time, OffsetParam }.Where(x => x != null),
+            SuccessorRuleKind.Filter => new[] { LowCut, HighCut },
             _ => new[] { To },
         };
     }
@@ -328,6 +378,9 @@ namespace ReBuzz.Agent.Model
                 "sweep" => SuccessorRuleKind.Sweep,
                 "dry_wet" => SuccessorRuleKind.DryWet,
                 "graphic" => SuccessorRuleKind.Graphic,
+                "delay_time" => SuccessorRuleKind.DelayTime,
+                "from_db" => SuccessorRuleKind.FromDb,
+                "filter" => SuccessorRuleKind.Filter,
                 _ => throw new FormatException($"{pair}: unknown rule kind \"{kind}\"."),
             };
             var rule = new SuccessorRule
@@ -364,6 +417,7 @@ namespace ReBuzz.Agent.Model
                 Octaves = (double?)r["octaves"] ?? 1,
                 MixFrom = (string)r["mix_from"],
                 WetScale = (double?)r["wet_scale"] ?? 1,
+                LevelsDb = (bool?)r["levels_db"] ?? false,
                 Bands = Bands(r["bands"]),
                 Sliders = Bands(r["sliders"]),
                 Bandwidth = (string)r["bandwidth"],
@@ -371,6 +425,26 @@ namespace ReBuzz.Agent.Model
                 Rate = (double?)r["rate"],
                 AlphaMax = (double?)r["alpha_max"] ?? double.PositiveInfinity,
                 Gain = (string)r["gain"],
+                Length = (string)r["length"],
+                LengthRight = (string)r["length_right"],
+                Unit = (string)r["unit"],
+                UnitKind = (string)r["unit_kind"],
+                Units = (r["units"] as JsonObject)?.ToDictionary(kv => kv.Key, kv => Text(kv.Value), StringComparer.OrdinalIgnoreCase),
+                Sync = (string)r["sync"],
+                Feel = (string)r["feel"],
+                Time = (string)r["time"],
+                OffsetParam = (string)r["offset_param"],
+                Divisions = (r["divisions"] as JsonObject)?.ToDictionary(kv => kv.Key, kv => (double)kv.Value!, StringComparer.OrdinalIgnoreCase),
+                Feels = (r["feels"] as JsonObject)?.ToDictionary(kv => kv.Key, kv => (double)kv.Value!, StringComparer.OrdinalIgnoreCase),
+                Type = (string)r["type"],
+                Cutoff = (string)r["cutoff"],
+                LowCut = (string)r["low_cut"],
+                HighCut = (string)r["high_cut"],
+                LowOff = (string)r["low_off"],
+                HighOpen = (string)r["high_open"],
+                Types = (r["types"] as JsonObject)?.ToDictionary(kv => kv.Key, kv => kv.Value is JsonObject t
+                    ? new SuccessorFilterType((string)t["becomes"] ?? "none", (double?)t["scale"] ?? 1, (double?)t["low"] ?? Math.Sqrt(0.5), (double?)t["high"] ?? Math.Sqrt(2), (string)t["note"])
+                    : new SuccessorFilterType(Text(kv.Value), 1, Math.Sqrt(0.5), Math.Sqrt(2), null), StringComparer.OrdinalIgnoreCase),
                 Mix = (string)r["mix"],
                 Threshold = (string)r["threshold"],
                 Clamp = (string)r["clamp"],
@@ -392,7 +466,14 @@ namespace ReBuzz.Agent.Model
                 SuccessorRuleKind.Graphic when rule.Bands == null || rule.Bands.Count == 0 || rule.Sliders == null || rule.Sliders.Count == 0 ||
                                                rule.Bandwidth == null || rule.Output == null || rule.Bands.Concat(rule.Sliders).Any(b => b.Param == null || !(b.Hz > 0))
                     => "bands and sliders (param, hz), bandwidth and output",
-                SuccessorRuleKind.Unit or SuccessorRuleKind.Db or SuccessorRuleKind.InverseDb when rule.From == null || rule.To == null => "from and to",
+                SuccessorRuleKind.DelayTime when rule.Length == null || (rule.Unit == null) == (rule.UnitKind == null) || rule.Time == null ||
+                                                 (rule.Sync != null && (rule.Feel == null || rule.Divisions == null || rule.Feels == null)) ||
+                                                 (rule.LengthRight != null && rule.OffsetParam == null)
+                    => "length, unit or unit_kind, time; with sync: feel, divisions and feels; with length_right: offset_param",
+                SuccessorRuleKind.Filter when rule.Type == null || rule.Cutoff == null || rule.LowCut == null || rule.HighCut == null ||
+                                              rule.LowOff == null || rule.HighOpen == null || rule.Types == null
+                    => "type, cutoff, low_cut, high_cut, low_off, high_open and types",
+                SuccessorRuleKind.Unit or SuccessorRuleKind.Db or SuccessorRuleKind.InverseDb or SuccessorRuleKind.FromDb when rule.From == null || rule.To == null => "from and to",
                 _ => null,
             };
             if (missing != null) throw new FormatException($"{pair}: a {kind} rule needs {missing}.");

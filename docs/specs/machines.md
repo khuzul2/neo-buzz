@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4): Neo Ensemble and Neo EQ's graphic mode built, 2026-11-04 |
+| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04 |
 | Date | 2026-11-04 |
 | Scope | New high-quality machines for sound design, mixing and mastering, written in C# with custom editors: first batch "core six", second batch "mix and master", third the successors of closed machines that misbehave |
 
@@ -40,6 +40,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 |---|---|---|
 | Neo Ensemble | effect | Chorus (1–4 voices), flanger and phaser (2–12 stages) on one LFO, in Hz or synced to the tempo; feedback to ±99 % through a saturating loop that can't run away, however fast it sweeps. Succeeds Jeskola Flanger and Chorus, FSM Chorus2, Pedal Chorus |
 | Neo EQ, graphic mode | effect | 31 constant-Q bands at the ISO third-octave centres, ±18 dB; the bands' overlap compensated, so the response passes through the sliders, and every slider at +X is exactly +X. Succeeds Joachims Hyperion |
+| Neo Delay | effect | Stereo, ping-pong and cross delay, its time in ms or a note value of the tempo (straight, dotted, triplet) that glides or crossfades when it changes; a low cut, a high cut and tape saturation in the loop, a little wow, ducking by the input, width; feedback to ±99 % that can't run away. Succeeds Jeskola Delay, Jeskola Cross Delay, Jeskola NiNjA dElaY and FSM PanzerDelay (mcp-server.md §8.2, §12.5) |
 
 ## 2. Decisions
 
@@ -57,7 +58,7 @@ Machines/
   NeoBuzz.Dsp/        Pure DSP (no Buzz or WPF references), internal types, linked as source
   NeoBuzz.Machine/    Buzz glue shared by the machines (parameters, notes, MIDI), linked as source
   NeoBuzz.Editor/     WPF editor kit (knobs, switches, meters, graphs, preset bar), linked as source
-  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/ NeoEq/ NeoUtility/ NeoLimiter/ NeoAnalyzer/ NeoEnsemble/
+  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/ NeoEq/ NeoUtility/ NeoLimiter/ NeoAnalyzer/ NeoEnsemble/ NeoDelay/
     Engine/           the machine's DSP: pure, tested on Linux
     Params.def        the parameter table (source of truth)
     Presets.txt       factory presets in units
@@ -388,6 +389,64 @@ As built:
 - The Linux profile (`docs/machine-health.md`): hot only with Output at +12 dB (+1.6 dBFS) and with every parameter at its maximum at once (+18.5 dBFS, Output +12 dB included); no parameter at either end diverges or fails to decay, so no safe range.
 - Parameter roles for `machine_replace` (U5) and how the closed machines map onto it: machine-safety.md §4.
 
+### Neo Delay (stereo, ping-pong and cross delay; mcp-server.md §8.2, §12.5)
+
+The delay an agent mixes with (mcp-server.md §8.2: "tempo-synced stereo/ping-pong delay with filters, saturation and ducking"), and the successor of Jeskola Delay, Jeskola Cross Delay, Jeskola NiNjA dElaY and FSM PanzerDelay (mcp-server.md §12.5, §12.10). Two lines, a left and a right, each read at its delay; what comes out of a line is its echo, and goes back in through Feedback:
+
+- **Stereo**: each side's input and echo into its own line (a centred sound stays centred; Offset makes the right side later).
+- **Ping-pong**: the input, summed to mono, into the left line; each line's echo into the other: the echoes bounce left, right, left.
+- **Cross**: each side's input into its own line, each line's echo into the other: a sound to one side bounces, a centred one stays centred unless the lines differ.
+
+Per line and sample: read at the delay (linear interpolation) → `High cut` (two one-poles y = x + a(y₁ − x), −3 dB at the setting, 12 dB/oct; open at its top) → `Low cut` (a Butterworth high-pass, a TPT state-variable section, −3 dB at the setting, 12 dB/oct; off at its bottom; switched in and out over 10 ms) → the echo. What enters a line, the input plus Feedback times the echo its routing gives it, passes the tape saturator S. The echoes are the wet signal: `Width` (the side signal times it), then ducking, then `Mix` against the dry signal (a straight crossfade), then `Output`. One read serves the wet signal and the loop, so the k-th echo of a sound has passed the filters k times. Zero latency; at `Mix` 0 % and `Output` 0 dB the input passes bit for bit.
+
+**Time.** `Sync` Free uses `Time` (1 ms – 5 s); otherwise the note value (1/64 … 2 bars) of the song's tempo, `Feel` straight, dotted (× 1.5) or triplet (× 2/3). `Offset` sets the right line against the left (−50 … +100 %). A line settles on its time rounded to a whole sample, so a settled line reads exactly (no interpolation's dulling, however long the feedback). A change of time — automation, a tempo change, another note value — never clicks:
+- up to 50 ms it **glides**: the delay moves towards its target with a 200 ms time constant, its speed changing smoothly (a 30 ms one-pole) and never by more than 20 % (about 4 semitones down when the delay grows, 3 up when it shrinks), as a tape machine's would; a tempo change from 120 to 126 BPM bends a dotted eighth by at most 7 % for a moment;
+- above 50 ms it **crossfades** over 40 ms from the old delay to the new, both read, without a bend (a note value change, a jump of the `Time` knob).
+The user's choice was open; both serve: the glide is the sound of a tape delay being played, the crossfade keeps a mix clean when the note value changes.
+
+**Why it can't run away.** The saturator is S(u) = u up to the knee t = 10^(−Drive/20), then t·(1 + r/(1 + r)) above it (r the excess in units of t): its slope is 1 at the knee and falls after it, |S(u)| ≤ |u|, it never passes 2t, and NaN becomes 0 (infinity the ceiling). So:
+- **Bounded, always**: nothing a line holds ever passes 2t (+6 dBFS at Drive 0 dB), whatever comes in and however the time, the wow or any parameter moves, and an echo is at most that times the filters' gain.
+- **Decaying, with the low cut off**: the read is a convex combination of two line samples (or, crossfading, of four), the high cut's one-poles convex combinations of their input and their past, and |S(u)| ≤ |u|: with no input, each sample written is at most |Feedback| ≤ 0.99 times the loudest the loop holds (the lines and the one-poles), so the tail shrinks by 0.99 a pass or more, however the delay glides, crossfades or wobbles (Neo Ensemble's argument).
+- **Decaying, with the low cut on**: a high-pass's taps sum to up to 2 in magnitude (2.40 measured for 200 Hz: a step comes out of it at up to twice its height), so that argument doesn't hold for it. Its gain at every frequency is at most 1, though, as is each other factor's (the read at a fixed delay, the one-poles), and |S(u)| ≤ |u|: with the time still, the loop's energy shrinks by Feedback² or more a pass (the small-gain theorem). While the time moves, the tests measure the decay (below); bounded it is regardless.
+- The high cut is two real poles rather than a Butterworth for the same reason: a Butterworth low-pass overshoots (its taps sum to more than 1), which would break the argument; two real poles are convex. Its knee is softer (an octave above a 1 kHz cutoff −8.5 dB against a Butterworth's −12.4 dB, two octaves above −17.5 against −24.5) and it reaches 12 dB/oct further up.
+
+**Ducking.** The input's envelope (the louder channel's peak, a 0.5 ms attack and `Duck release` as its time constant) turns the echoes down by up to `Duck` dB: fully at `Duck threshold` and above, fading in over the 12 dB below it, the gain smoothed over 3 ms so it never clicks. So echoes stay out of the way while the phrase plays and bloom in its gaps.
+
+**Wow.** `Mod depth` (0 – 5 ms, never more than half the delay) and `Mod rate` (0.05 – 5 Hz) move the read either way along a sine, the right line a quarter cycle on.
+
+Parameters: Mode (Stereo, Ping-pong, Cross), Sync (Free, 1/64, 1/32, 1/16, 1/8, 1/4, 1/2, 1 bar, 2 bars), Feel (Straight, Dotted, Triplet), Time (1 ms – 5 s), Offset (−50 … +100 %, 0.1 % steps), Feedback (−99 … +99 %, 0.1 % steps), Low cut (20 Hz – 5 kHz; off at its bottom), High cut (200 Hz – 20 kHz; open at its top), Drive (0 – 24 dB, 0.1 dB steps), Mod depth (0 – 5 ms), Mod rate (0.05 – 5 Hz), Duck (0 – 40 dB), Duck threshold (−60 … 0 dB), Duck release (20 ms – 2 s), Width (0 – 200 %), Mix (0 – 100 %), Output (−12 … +12 dB, 0.1 dB steps). The defaults are a mix delay: Stereo, 1/8 dotted, Feedback 35 %, Low cut 100 Hz, High cut 8 kHz, Mix 30 %. Feedback, Mix, Output and Width ramp per sample (20 ms); the filters' coefficients, Drive's knee and the wow move in straight lines over 16-sample segments that run across blocks, so the output doesn't depend on how the host splits it. Presets (16): Mix — Dotted Eighth Throw, Quarter Note Echo, Slapback, Vocal Echo (Ducked), Doubler (Wide), Mono Echo (Narrow); Send — Ping-Pong Eighths, Long Ambient Wash; Ping-Pong — Wide Dotted Quarter; Cross — Triplet Bounce; Dub — Tape Echo (Saturated), Runaway Feedback (Ducked); Tape — Analog Wobble (Dark); Rhythm — Sixteenth Stutter; Texture — Comb Resonator, Lo-Fi Telephone Echo.
+
+The editor shows the time (mode, note value, feel, time, offset), a picture of the echoes (those of a centred sound over about four delays: left above the line, right below, as tall as their level, on the song's beats; under it one pass through the loop's filters and the fourth), the loop (feedback, drive, the cuts, the wow), ducking with a gain-reduction meter, and the output with meters. One function (`DelayDesign`) gives the delays, coefficients and saturator the engine runs, and the echoes and the response the editor draws and the tests measure against.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Time | an impulse's echoes exactly round(T · fs) samples apart, free at 1 ms, 13.7 ms, 375 ms, 1.23 s and 5 s; each Feedback times the last (±1e-6) | exact (48, 658, 18 003, 59 220 and 240 000 samples at 48 kHz); levels exact |
+| Tempo sync | every note value straight, dotted and triplet at 90, 120, 128, 140 and 174 BPM: 60 / BPM × beats, rounded to a sample | within 0.5 sample (the rounding); 1/8 dotted at 128 BPM 16 875 samples |
+| Routing | impulses into the left or both sides, the lines 100 and 150 ms, Feedback 50 %: each mode's echoes at the times, on the sides and at the levels the routing gives (the editor's picture the same) | exact in every mode (Stereo centred: 100 L, 150 R, 200 L, 300 L+R …; Ping-pong: 100 L, 250 R, 350 L …; Cross from the left: 100 L, 250 R, 350 L …) |
+| Response = design | the first and third echoes' response (DTFT, 160 frequencies, 20 Hz – 20 kHz) against `DelayDesign.Pass` and Pass³ × Feedback²: four filter settings | within 0.0002 dB |
+| Filters | −3 dB at the low cut's and the high cut's settings (±0.01 dB); 12 dB/oct | −3.010 dB both; low cut 12.03 dB/oct, high cut 11.2 dB/oct 3–4 octaves out |
+| Time changes | a 440 Hz sine, wet only, the time stepped by ±30 ms (glides) and +400 / −150 ms (crossfades): no step larger than the sine's own (×1.25); a glide bends at most 20 % and audibly, a crossfade not at all | largest step 1.12×; glides −220 and +195 cents; crossfades within 7 cents |
+| Loop factors | the high cut's gain ≤ 1 and taps convex at every corner; the low cut's gain ≤ 1 at every frequency and corner; the saturator's slope ≤ 1, \|S(u)\| ≤ \|u\|, never past twice the knee, NaN to 0, at every Drive | 1.000000000000 and 1.000000000000; slope 1.0000, ratio 1.000000, ceiling 2.0000 × the knee (the low cut's taps sum to 2.40: not convex) |
+| Extremes | each parameter alone at each end (Feedback +99 % unless it is the parameter), each mode at ±99 % with the low cut off and at 5 kHz, at 1 ms and 250 ms, the deepest, fastest wow and the longest Offset, every parameter at each end at once: 20 s of pink noise at −20 dBFS RMS, then 10 s of silence: finite, the lines never past the ceiling at any time, decaying at least half as fast as \|Feedback\| per time round the loop | passes; the lines at most +3.4 dBFS (bound +6.0; Drive 24 dB: −18.5 dBFS, bound −18.0), output peaks up to +4.3 dBFS before Output's gain |
+| Fast automation | a move every 64 samples (the time between its ends and in between, Sync and Feel, Offset, ±99 % flipping) with the wow at 5 ms, 5 Hz, each mode, low cut off and at 5 kHz, 20 s of noise, then 10 s of silence: bounded, decaying | the lines at most −0.7 dBFS; every tail decays (3.3 to 448 dB in 8 s) |
+| Ducking | Duck 24 dB at −30 dB, a −12 dBFS sine: the echoes 24 dB down while it plays (±0.1 dB); back within 1 dB 2.5–4.5 × Duck release after it stops; Duck 0: nothing changes | −24.00 dB; 340 ms at 100 ms (expected about 349); bit for bit |
+| Width | 0 %: both sides equal; 200 %: the side doubled, the mid untouched (±1e-6) | exact |
+| Mix 0 % | output = input bit for bit in every mode, full feedback, the time moving (negative zeros, subnormals) | bit for bit; latency 0 |
+| Blocks | blocks of 256, 128 and 117 samples give the same output (the time gliding and crossfading meanwhile) | identical |
+| Silence after noise, NaN | Feedback 90 %, 2 s of noise then 20 s of silence: no subnormal number in the lines or the filters, silence costs no more than noise, idle once the lines are silent; NaN and ±∞ in the input: no state goes NaN, the output finite wherever the input is | none; 0.36–0.83×; idle; clean |
+| Smoothing | every parameter jumping between its ends every 2048 samples on a 220 Hz sine (Mix 50 %, Feedback 50 %, 80 ms): the largest step within 1.5× the steady signal's at either end | at most 1.31× (Mod depth, the pitch it bends) |
+| Presets | each on pink noise at −18 dBFS RMS: within ±6 dB of the input, peaks under +3 dBFS | −4.4 … +1.1 dB; peaks −10.0 … −6.4 dBFS |
+| Audio thread | 2000 blocks with the time, Sync, Mode and the tempo moving: no allocation; in the studio, a Neo Delay after a pattern playing (ping-pong, feedback, wow, drive and ducking, its time moved every buffer), each work algorithm | 0 bytes; 0 bytes per buffer |
+| CPU | stereo at 48 kHz, everything on (both filters, the wow, drive, ducking): ≥ 50× real time on the CI runner | 198× (Stereo), 211× (Ping-pong), 203× (Cross) |
+
+As built:
+
+- **The low cut is in the loop**, as dub delays and NiNjA dElaY have it (each repeat thinner), at the price of the ℓ∞ argument while it is on (above). Neo Ensemble keeps its high-pass at its line's input for that reason; here the repeats thinning is the point, the bound holds regardless, and the decay is proven for a still time and measured while it moves.
+- **One read serves the wet signal and the loop** (linear interpolation): a settled line reads whole samples, so it is exact; while the time glides or wobbles the read dulls the highest octave a little (the interpolation's), as a tape delay's does.
+- **Ping-pong sums the input to mono** (the classic): a sound panned hard left enters at half level. Cross keeps the input's image.
+- The Linux profile (`docs/machine-health.md`): hot only with Output at +12 dB (+1.3 dBFS); no parameter at either end diverges or fails to decay, so no safe range.
+- The classic delays move onto it with `machine_replace` (U5): their pair files, calibrated on Windows, are in mcp-server.md §12.10, and the roles and how each closed machine's parameters land in machine-safety.md §4. Measured there: Jeskola Cross Delay's binary is a ping-pong (its input into the left line only), PanzerDelay's default wet pans mirror its echoes, and its filter cuts at about twice its Cutoff.
+
 ## 6. Phases
 
 | Phase | Content |
@@ -396,14 +455,14 @@ As built:
 | M1 | Neo Drive, Neo Comp, Neo Verb |
 | M2 | Neo Poly, Neo Wave, Neo FM6 |
 | M3 (MCP A4) | Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer |
-| Successors (machine-safety.md §4) | Neo Ensemble; Neo EQ's graphic mode |
+| Successors (machine-safety.md §4, mcp-server.md §12.5) | Neo Ensemble; Neo EQ's graphic mode; Neo Delay |
 
 Each phase: pure tests (Linux CI), integration tests in ReBuzzTests (the machine loads, makes sound, its parameters and editor work, editor screenshots), then the package build.
 
-M0–M3 are done, and of the successors Neo Ensemble and Neo EQ's graphic mode. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
+M0–M3 are done, and of the successors Neo Ensemble, Neo EQ's graphic mode and Neo Delay. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
 
 ## 7. Not in this batch
 
-Additive and physical-modelling synths, convolution, tape delay, multiband: candidates for the next batch (ensemble and phaser: Neo Ensemble, built).
+Additive and physical-modelling synths, convolution, multiband: candidates for the next batch (ensemble and phaser: Neo Ensemble, built; tape delay: Neo Delay's glide, saturation and wow, built; a multi-head tape echo with its heads' spacing is not).
 
-The MCP server spec (docs/specs/mcp-server.md §8) sets the priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak), Neo Utility and Neo Analyzer are built (M3); next Neo Delay, Neo Multiband, Neo Scope and Neo Sampler. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.
+The MCP server spec (docs/specs/mcp-server.md §8) sets the priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak), Neo Utility and Neo Analyzer are built (M3), and Neo Delay; next Neo Multiband, Neo Scope and Neo Sampler. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.

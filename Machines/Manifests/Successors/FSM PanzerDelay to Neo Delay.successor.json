@@ -1,0 +1,149 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "FSM PanzerDelay",
+  "to": "Neo Delay",
+  "summary": "Neo Delay in Stereo mode (Cross with FB PingPong): the first track's L Delay Len becomes Sync and Feel (or a free Time) and R Delay Len the right line's Offset; FB Amp (dB) becomes Feedback, Dry amp and Tap Amp (dB) a crossfade and an output gain, the echo filter Neo Delay's low or high cut.",
+  "input_gain_db": 0,
+  "set": {
+    "Drive": "0 dB",
+    "Mod depth": "0 ms",
+    "Duck": "0 dB",
+    "Width": "100%"
+  },
+  "rules": [
+    {
+      "kind": "choice",
+      "from": "FB PingPong",
+      "to": "Mode",
+      "map": {
+        "0": "Stereo",
+        "1": "Cross",
+        "Off": "Stereo",
+        "On": "Cross"
+      },
+      "why": "FB PingPong swaps the lines in the feedback (its source: each line takes the other's echo), Neo Delay's Cross; off, each line keeps its own, Stereo."
+    },
+    {
+      "kind": "delay_time",
+      "length": "L Delay Len",
+      "length_right": "R Delay Len",
+      "unit": "Delay unit",
+      "units": {
+        "Ticks": "tick",
+        "Ticks/256": "tick/256",
+        "Samples": "sample",
+        "milisecs": "ms"
+      },
+      "sync": "Sync",
+      "feel": "Feel",
+      "time": "Time",
+      "offset_param": "Offset",
+      "divisions": {
+        "Free": 0,
+        "1/64": 0.0625,
+        "1/32": 0.125,
+        "1/16": 0.25,
+        "1/8": 0.5,
+        "1/4": 1,
+        "1/2": 2,
+        "1 bar": 4,
+        "2 bars": 8
+      },
+      "feels": {
+        "Straight": 1,
+        "Dotted": 1.5,
+        "Triplet": 0.6666666666666666
+      },
+      "why": "Lengths count in Delay unit (global): ticks (the default) are Buzz's whole samples per tick, so the echo follows the tempo, and a length that is a note value becomes Neo Delay's Sync and Feel; otherwise a free Time. R Delay Len becomes the right line's Offset (R ÷ L − 1, −50 … +100 %)."
+    },
+    {
+      "kind": "from_db",
+      "from": "FB Amp",
+      "to": "Feedback",
+      "scale": 0.9999,
+      "max": 0.99,
+      "why": "FB Amp is the echo fed back in dB (−24 … −0.1 dB; raw 0 none); its source scales it by 0.9999 (FeedbackLimiter) and counts 6 dB to a doubling (2^(dB/6), within 0.03 dB of true dB at −9 dB)."
+    },
+    {
+      "kind": "dry_wet",
+      "dry": "Dry amp",
+      "wet": "Tap Amp",
+      "levels_db": true,
+      "mix": "Mix",
+      "output": "Output",
+      "why": "Dry amp and Tap Amp are the dry and the echoes' levels in dB (raw 0: off), adding; Neo Delay crossfades them and sets the output's level: mix = wet ÷ (dry + wet), output = dry + wet."
+    },
+    {
+      "kind": "filter",
+      "type": "Filter type",
+      "cutoff": "Cutoff",
+      "low_cut": "Low cut",
+      "high_cut": "High cut",
+      "low_off": "20 Hz",
+      "high_open": "20 kHz",
+      "types": {
+        "None": "none",
+        "LP": {
+          "becomes": "high_cut",
+          "scale": 1.3
+        },
+        "HP": {
+          "becomes": "low_cut",
+          "scale": 2.24,
+          "note": "its high-pass (measured at Cutoff 1876 Hz) rises 1.5 dB towards 16 kHz, which Neo Delay's low cut doesn't."
+        },
+        "BP": {
+          "becomes": "band",
+          "scale": 1,
+          "low": 0.84,
+          "high": 4.26
+        }
+      },
+      "why": "Its filter works on what is written into the line (input and feedback), so every echo passes it, as Neo Delay's do. Measured at its defaults (Cutoff 1876 Hz, Resonance 0.5) on one echo: its RBJ filter, designed for 44.1 kHz, runs over the left and right samples in turn through one state, so for a centred sound it works at twice the rate and cuts at twice its Cutoff; with Q 0.5 the low-pass is two real poles, Neo Delay's high cut, −3 dB at 1.30 × Cutoff; the high-pass −3 dB at 2.24 × Cutoff; the band-pass −3 dB at 0.84 and 4.26 × Cutoff."
+    }
+  ],
+  "unmapped": [
+    {
+      "param": "Dry L Pan",
+      "why": "Where the dry left channel goes; at its default (100 % left), with Dry R Pan at 100 % right, the dry signal passes as it is, as Neo Delay's does."
+    },
+    {
+      "param": "Dry R Pan",
+      "why": "Where the dry right channel goes; at its default (100 % right) the dry passes as it is."
+    },
+    {
+      "param": "Wet L Pan",
+      "why": "Where the left line's echoes go; its default sends them to the right (and Wet R Pan the right line's to the left), mirroring the echoes; Neo Delay keeps each line's echoes on its own side: the same for a centred sound, mirrored for a panned one."
+    },
+    {
+      "param": "Wet R Pan",
+      "why": "Where the right line's echoes go (its default: the left); see Wet L Pan."
+    },
+    {
+      "param": "FB Spread",
+      "why": "A partial crossing or anti-crossing of the feedback (its default, No change, is none); Neo Delay crosses fully (Cross) or not at all (Stereo)."
+    },
+    {
+      "param": "Resonance",
+      "why": "The echo filter's Q (0.01 … 1); Neo Delay's cuts have a fixed shape, that of its default (0.5) for the low-pass; the factors on Cutoff were measured there."
+    }
+  ],
+  "remarks": [
+    "PanzerDelay is stereo; its taps (up to 4 tracks) each have their own lines; Neo Delay has one pair: the first track's settings move.",
+    "Measured: by default each line's echoes come out on the other side (Wet L Pan right, Wet R Pan left) and FB PingPong crosses the feedback; Neo Delay keeps each line's echoes on its own side, so a centred sound is the same and a panned one's echoes are mirrored.",
+    "PanzerDelay's lines stop at about 1.48 s (65 335 samples at 44.1 kHz) and start at 50 samples."
+  ],
+  "tolerance": {
+    "loudness_db": 1.0,
+    "band_db": 2.0,
+    "from_hz": 63,
+    "to_hz": 12000,
+    "measured": "Windows, Neo Poly noise and chords into it, each side against its input: at its defaults (3 ticks a line, FB Amp −9 dB, Tap Amp and Dry amp 0 dB, no filter) −0.2 dB, third octaves within 0.7 dB (chords −0.1 dB, within 0.7 dB); FB PingPong, 2 and 3 ticks, FB Amp −3 dB: −0.2 dB, within 0.7 dB (chords 0.0 dB, within 1.2 dB); the low-pass at Cutoff 1876 Hz: +0.0 dB, within 0.5 dB (chords −0.1 dB, within 0.7 dB). Read from single bursts at 126 BPM: a centred burst echoes at 357.1 ms at 0 dB, then 9.0 dB down each 357.1 ms; a burst on the left echoes on the right only (its wet pans mirror the lines); with FB PingPong at 2 and 3 ticks right at 238.1 ms, left at 595.2 ms, right at 833.3 ms",
+    "why_not": "A panned sound's echoes come out on the other side through PanzerDelay (its default wet pans) and on their own side through Neo Delay's Stereo and Cross (with FB PingPong: right, left, right against Neo Delay's left, right, left); the comparison, with a centred sound and each side's level averaged over the render, doesn't see it. Not carried: the dry and wet pans, FB Spread, a Resonance other than 0.5 (listed as unmapped), its other tracks' taps and its lines' 1.48 s cap (a longer length plays longer on Neo Delay). Its high-pass's 1.5 dB rise towards 16 kHz is left out, and its band-pass, approximated by both cuts (−3 dB at 0.84 and 4.26 × Cutoff), wasn't compared."
+  },
+  "evidence": [
+    "ExternalMachines/source/buzztrax-buzzmachines/FSM/PanzerDelay/PanzerDelay.cpp: levels 2^((raw/10 − 24)/6), the feedback limiter, ping-pong and spread in the feedback, the filter on the line",
+    "Machines/Manifests/Effects/FSM PanzerDelay.machine.json (curated)",
+    "ReBuzzTests/AgentReplaceTests.cs DelayCalibration (Windows): the echoes' times, sides and levels read from its input and output"
+  ]
+}

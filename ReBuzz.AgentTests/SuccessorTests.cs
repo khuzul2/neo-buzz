@@ -62,6 +62,7 @@ namespace ReBuzz.AgentTests
                          "Jeskola Bass → Neo Poly", "Jeskola Bass 2 → Neo Poly", "Jeskola Bass 3 → Neo Poly",
                          "Jeskola Flanger → Neo Ensemble", "Jeskola Chorus → Neo Ensemble", "FSM Chorus2 → Neo Ensemble", "Pedal Chorus → Neo Ensemble",
                          "Joachims Hyperion → Neo EQ",
+                         "Jeskola Delay → Neo Delay", "Jeskola Cross Delay → Neo Delay", "Jeskola NiNjA dElaY → Neo Delay", "FSM PanzerDelay → Neo Delay",
                      })
                 Assert.That(pairs, Does.Contain(expected));
             foreach (var map in SuccessorLibrary.All)
@@ -182,6 +183,107 @@ namespace ReBuzz.AgentTests
             double want = 20 * Math.Log10(1.5 / (2305 / 65534.0 * 31.999));
             Assert.That(Value(c, hot, "Drive"), Is.EqualTo(Math.Max(0, want)).Within(0.05));
             Assert.That(hot.InputGainDb, Is.EqualTo(6.02 + Math.Min(0, want)).Within(0.05));
+        }
+
+        [Test]
+        public void ADelaysLengthInTicksBecomesANoteValueAndOtherUnitsAFreeTime()
+        {
+            // Jeskola Delay at its defaults: 3 ticks at 4 ticks a beat is 1/8 dotted (it follows the tempo, as Neo Delay's Sync
+            // does); feedback 50 %, dry on and wet 37.5 %: Mix 0.375 ÷ 1.375, Output +2.77 dB; its mono sum's +6 dB on the outputs.
+            var c = Converter("Jeskola Delay", "Neo Delay");
+            var s = c.ConvertState(Raws(c));
+            string Text(SuccessorState st, string p) => c.New(p)!.Format(Final(st, p));
+            Assert.That(Text(s, "Sync"), Is.EqualTo("1/8"));
+            Assert.That(Text(s, "Feel"), Is.EqualTo("Dotted"));
+            Assert.That(Text(s, "Mode"), Is.EqualTo("Stereo"));
+            Assert.That(Value(c, s, "Time"), Is.EqualTo(3 * 5512 / 44100.0).Within(0.002), "Time takes the seconds too (120 BPM, 44.1 kHz)");
+            Assert.That(Value(c, s, "Feedback"), Is.EqualTo(0.5).Within(0.001));
+            Assert.That(Value(c, s, "Mix"), Is.EqualTo(0.375 / 1.375).Within(0.002));
+            Assert.That(Value(c, s, "Output"), Is.EqualTo(20 * Math.Log10(1.375)).Within(0.05));
+            Assert.That(Final(s, "Low cut"), Is.EqualTo(c.New("Low cut")!.Min), "the low cut off");
+            Assert.That(Final(s, "High cut"), Is.EqualTo(c.New("High cut")!.Max), "the high cut open");
+            Assert.That(s.InputGainDb, Is.Zero, "the line keeps the input's level");
+            Assert.That(s.OutputGainDb, Is.EqualTo(6.02).Within(0.01));
+            // Note values: 1 tick a sixteenth, 2 an eighth, 4 a quarter, 6 a dotted quarter, 16 a bar; at 3 ticks a beat, 1 tick an eighth triplet.
+            foreach (var (ticks, tpb, sync, feel) in new[] { (1, 4, "1/16", "Straight"), (2, 4, "1/8", "Straight"), (4, 4, "1/4", "Straight"), (6, 4, "1/4", "Dotted"),
+                                                             (16, 4, "1 bar", "Straight"), (1, 3, "1/8", "Triplet"), (2, 6, "1/8", "Triplet"), (12, 4, "1/2", "Dotted") })
+            {
+                c.Timing = new SuccessorTiming(120, tpb, 44100);
+                var t = c.ConvertState(Raws(c, new() { ["Length"] = ticks }));
+                Assert.That((Text(t, "Sync"), Text(t, "Feel")), Is.EqualTo((sync, feel)), $"{ticks} ticks at {tpb} a beat");
+            }
+            // 5 ticks is no note value: free, at the tempo's 5 × (whole) samples per tick, with a note.
+            c.Timing = new SuccessorTiming(128, 4, 48000);
+            var five = c.ConvertState(Raws(c, new() { ["Length"] = 5 }));
+            Assert.That(Text(five, "Sync"), Is.EqualTo("Free"));
+            Assert.That(Value(c, five, "Time"), Is.EqualTo(5 * 5625 / 48000.0).Within(0.002));
+            Assert.That(five.Notes, Has.Some.Contains("no note value"));
+            // Milliseconds and samples: free.
+            var ms = c.ConvertState(Raws(c, new() { ["Length"] = 250, ["Length unit"] = 1 }));
+            Assert.That(Text(ms, "Sync"), Is.EqualTo("Free"));
+            Assert.That(Value(c, ms, "Time"), Is.EqualTo(0.25).Within(0.001));
+            var samples = c.ConvertState(Raws(c, new() { ["Length"] = 12000, ["Length unit"] = 2 }));
+            Assert.That(Value(c, samples, "Time"), Is.EqualTo(0.25).Within(0.001));
+            // Feedback at −100 % never decays on Jeskola Delay; Neo Delay's stops at −99 %.
+            var neg = c.ConvertState(Raws(c, new() { ["Feedback"] = 0 }));
+            Assert.That(Value(c, neg, "Feedback"), Is.EqualTo(-0.99).Within(0.0005));
+        }
+
+        [Test]
+        public void ACrossDelaysRightLengthBecomesTheOffsetAndPanzerDelaysLevelsInDecibelsACrossfade()
+        {
+            var c = Converter("Jeskola Cross Delay", "Neo Delay");
+            var s = c.ConvertState(Raws(c, new() { ["L. Length"] = 4, ["R. Length"] = 6 }));
+            Assert.That(c.New("Mode")!.Format(Final(s, "Mode")), Is.EqualTo("Ping-pong"), "measured: its input enters the left line only");
+            Assert.That(c.New("Sync")!.Format(Final(s, "Sync")), Is.EqualTo("1/4"));
+            Assert.That(Value(c, s, "Offset"), Is.EqualTo(0.5).Within(0.001), "6 ticks against 4: +50 %");
+            Assert.That(s.Notes, Is.Empty);
+            var far = c.ConvertState(Raws(c, new() { ["L. Length"] = 2, ["R. Length"] = 8 }));
+            Assert.That(Value(c, far, "Offset"), Is.EqualTo(1).Within(0.001), "four times as long: Offset stops at +100 %");
+            Assert.That(far.Values.Single(v => v.Param.Name == "Offset").Note, Does.Contain("out of its reach"));
+
+            var p = Converter("FSM PanzerDelay", "Neo Delay");
+            var d = p.ConvertState(Raws(p));
+            // Dry amp and Tap Amp at 0 dB add: Mix 50 %, Output +6 dB; FB Amp −9 dB (2^(−1.5) in its source) × 0.9999.
+            Assert.That(Value(p, d, "Mix"), Is.EqualTo(0.5).Within(0.001));
+            Assert.That(Value(p, d, "Output"), Is.EqualTo(6.02).Within(0.06));
+            Assert.That(Value(p, d, "Feedback"), Is.EqualTo(Math.Pow(10, -9 / 20.0) * 0.9999).Within(0.002));
+            Assert.That(p.New("Mode")!.Format(Final(d, "Mode")), Is.EqualTo("Stereo"));
+            Assert.That(d.InputGainDb, Is.Zero, "PanzerDelay is stereo");
+            var pp = p.ConvertState(Raws(p, new() { ["FB PingPong"] = 1, ["Tap Amp"] = 180, ["Dry amp"] = 0 }));
+            Assert.That(p.New("Mode")!.Format(Final(pp, "Mode")), Is.EqualTo("Cross"));
+            Assert.That(Value(p, pp, "Mix"), Is.EqualTo(1).Within(0.001), "no dry: all wet");
+            Assert.That(Value(p, pp, "Output"), Is.EqualTo(-6).Within(0.06));
+        }
+
+        [Test]
+        public void NinjaDelaysFilterBecomesTheLowCutOrTheHighCut()
+        {
+            var c = Converter("Jeskola NiNjA dElaY", "Neo Delay");
+            string Text(SuccessorState st, string p) => c.New(p)!.Format(Final(st, p));
+            // Its default: a high-pass at 550 Hz in the loop.
+            var s = c.ConvertState(Raws(c));
+            Assert.That(Value(c, s, "Low cut"), Is.EqualTo(550).Within(550 * 0.004));
+            Assert.That(Final(s, "High cut"), Is.EqualTo(c.New("High cut")!.Max), "the high cut open");
+            Assert.That(Value(c, s, "Feedback"), Is.EqualTo(0.75).Within(0.002));
+            var lp = c.ConvertState(Raws(c, new() { ["f. type"] = 0, ["f. cutoff"] = 2500 }));
+            Assert.That(Value(c, lp, "High cut"), Is.EqualTo(2500).Within(2500 * 0.004));
+            Assert.That(Final(lp, "Low cut"), Is.EqualTo(c.New("Low cut")!.Min), "the low cut off");
+            // Its band-pass is about 100 Hz wide (measured): no counterpart, the filters open, with a note; its notch is left out, with a note.
+            var bp = c.ConvertState(Raws(c, new() { ["f. type"] = 2, ["f. cutoff"] = 1000 }));
+            Assert.That(Final(bp, "Low cut"), Is.EqualTo(c.New("Low cut")!.Min));
+            Assert.That(bp.Notes, Has.Some.Contains("no counterpart"));
+            var br = c.ConvertState(Raws(c, new() { ["f. type"] = 3 }));
+            Assert.That(Final(br, "High cut"), Is.EqualTo(c.New("High cut")!.Max));
+            Assert.That(br.Notes, Has.Some.Contains("notch"));
+            // PanzerDelay's filter runs at twice its rate: its low-pass is Neo Delay's high cut at 1.30 × Cutoff, its band-pass 0.84 … 4.26 × Cutoff.
+            var p = Converter("FSM PanzerDelay", "Neo Delay");
+            var lp2 = p.ConvertState(Raws(p, new() { ["Filter type"] = 1 }));
+            double cutoff = p.Old("Cutoff")!.Value(p.Old("Cutoff")!.Default);
+            Assert.That(p.New("High cut")!.Value(Final(lp2, "High cut")), Is.EqualTo(1.30 * cutoff).Within(0.01 * cutoff));
+            var bp2 = p.ConvertState(Raws(p, new() { ["Filter type"] = 3 }));
+            Assert.That(p.New("Low cut")!.Value(Final(bp2, "Low cut")), Is.EqualTo(0.84 * cutoff).Within(0.01 * cutoff));
+            Assert.That(p.New("High cut")!.Value(Final(bp2, "High cut")), Is.EqualTo(4.26 * cutoff).Within(0.03 * cutoff));
         }
 
         [Test]
