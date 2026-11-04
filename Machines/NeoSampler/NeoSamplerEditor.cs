@@ -81,7 +81,7 @@ namespace NeoBuzz.Sampler
                 ToolTip = "The zones over the keys (across) and velocities (up); in Kit mode zone n sits on key Kit base + n − 1. " +
                           "Click a zone to select it; drag the selected zone's edges to move its keys or velocities.",
             };
-            var waveView = new InteractiveGraph(430, 210, (g, r) => wave.Draw(g, r, AccentColor), wave, animate: true)
+            var waveView = new InteractiveGraph(514, 210, (g, r) => wave.Draw(g, r, AccentColor), wave, animate: true)
             {
                 ToolTip = "The selected zone's wave: drag S and E (start, end) and, with a Forward or Ping-pong loop, L and L (loop start, end); " +
                           "the crossfade is shaded. Lines show where its voices are.",

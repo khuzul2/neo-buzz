@@ -69,8 +69,44 @@ GRAPHIC = ["20 Hz", "25 Hz", "31.5 Hz", "40 Hz", "50 Hz", "63 Hz", "80 Hz", "100
            "2.5 kHz", "3.15 kHz", "4 kHz", "5 kHz", "6.3 kHz", "8 kHz", "10 kHz", "12.5 kHz", "16 kHz", "20 kHz"]
 
 
-def gen(name, gear, preset, params, notes, beats=4, tail=1.0):
-    return {"name": name, "gen": (gear, preset, params, notes), "fx": [], "beats": beats, "tail": tail}
+# Neo Sampler's song waves: written here with IEEE basic operations only (no libm), so every platform
+# imports the same samples (32-bit float WAV, 48 kHz): a triangle at 220 Hz (A3), one at 330 Hz
+# (E4), and a decaying noise hit (xorshift).
+
+def wave_triangle(hz, seconds=1.0, rate=48000, amp=0.5):
+    period = rate / hz
+    out = []
+    for i in range(int(seconds * rate)):
+        ph = (i % period) / period
+        out.append(amp * (4 * ph - 1 if ph < 0.5 else 3 - 4 * ph))
+    return out
+
+
+def wave_hit(seconds=0.4, rate=48000, seed=0x1234567):
+    out, s, n = [], seed, int(seconds * rate)
+    for i in range(n):
+        s ^= (s << 13) & 0xFFFFFFFF
+        s ^= s >> 17
+        s ^= (s << 5) & 0xFFFFFFFF
+        u = (s & 0xFFFFFF) / 8388608.0 - 1.0
+        d = 1.0 - i / n
+        out.append(0.7 * u * d * d * d)
+    return out
+
+
+WAVES = {"tri-a3": lambda: wave_triangle(220.0), "tri-e4": lambda: wave_triangle(330.0), "hit": wave_hit}
+
+
+def write_wave(path, samples, rate=48000):
+    data = struct.pack("<%df" % len(samples), *samples)
+    with open(path, "wb") as f:
+        f.write(b"RIFF" + struct.pack("<I", 36 + len(data)) + b"WAVEfmt " + struct.pack("<IHHIIHH", 16, 3, 1, rate, rate * 4, 4, 32)
+                + b"data" + struct.pack("<I", len(data)) + data)
+
+
+def gen(name, gear, preset, params, notes, beats=4, tail=1.0, waves=()):
+    """A generator; waves: [(slot, WAVES key, root, layer)] imported into the song's wavetable first (Neo Sampler)."""
+    return {"name": name, "gen": (gear, preset, params, notes), "fx": [], "beats": beats, "tail": tail, "waves": list(waves)}
 
 
 def fx(name, gear, preset, params=(), tail=1.0, extra=(), source=SOURCE, beats=4, auto=()):
@@ -182,6 +218,27 @@ CASES = [
     fx("multiband-minimum", "Neo Multiband", "Mastering — Zero-Latency Glue (Minimum Phase)", [("B4 ratio", "0.6:1"), ("B4 range", "6 dB")]),
     fx("multiband-moves", "Neo Multiband", "Bus — Drum Bus Punch (3 Bands)",
        auto=[("Crossover 1", [(0, "120 Hz"), (1, "300 Hz"), (2, "80 Hz")]), ("Bands", [(2, "4 bands")]), ("Phase", [(3, "Minimum")])]),
+    # Neo Sampler: the built-in kit (choke groups, pans, tunings), the song's waves imported (a zone loop with its
+    # crossfade, layers by root and round robin, reversed and ping-pong), velocity layers crossfading, the 32-tap
+    # reader pitched far up (octave levels) and down, the ladder and the SVF with their envelope.
+    gen("sampler-kit-electro", "Neo Sampler", "Kit — Electro (GM Layout)", [],
+        [n(p, i * 0.25, 0.2, 60 + (i * 13) % 67) for i, p in enumerate(["C2", "F#2", "D2", "F#2", "C2", "A#2", "D2", "F#2",
+                                                                          "C2", "F#2", "D#2", "A#2", "C2", "C#3", "A2", "D#3"])]),
+    gen("sampler-kit-808-short", "Neo Sampler", "Kit — 808 Style (Long Kick, Cowbell)", [("Amp decay", "300 ms"), ("Amp sustain", "0%")],
+        [n(p, i * 0.5, 0.25, 110) for i, p in enumerate(["C2", "D2", "G#2", "F#2", "C2", "A#2", "C#3", "D#3"])]),
+    gen("sampler-song-waves", "Neo Sampler", None,
+        [("Z1 key high", "B3"), ("Z1 loop", "Forward"), ("Z1 loop start", "20%"), ("Z1 loop end", "63.3%"), ("Z1 crossfade", "30 ms"),
+         ("Z2 wave", 2), ("Z2 key low", "C4"), ("Z2 loop", "Ping-pong"), ("Z2 loop start", "35%"), ("Z2 loop end", "80%"),
+         ("Z3 wave", 3), ("Z3 key low", "C6"), ("Z3 reverse", "on"), ("Z3 trigger", "One-shot"), ("Z3 choke", 1),
+         ("Filter", "LP 24"), ("Cutoff", "1.5 kHz"), ("Resonance", "40%"), ("Filter env", "40%"), ("Flt decay", "400 ms"),
+         ("Amp release", "300 ms")],
+        CHORDS + [n("C6", 3.5, 0.25, 90), n("C#6", 3.75, 0.25, 70)], tail=1.0,
+        waves=[(1, "tri-a3", "A3", False), (2, "tri-e4", "E4", False), (2, "tri-a3", "A5", True), (3, "hit", "C4", False), (3, "hit", "C4", True)]),
+    gen("sampler-epiano-velocity", "Neo Sampler", "Keys — Electric Piano (Two Velocity Layers)", [("Vel crossfade", 40), ("Bend range", 3)],
+        [n(p["pitch"], p["start"], p["length"], v) for p, v in zip(KEYS, (30, 60, 90, 120, 85, 95, 100, 127))]),
+    gen("sampler-strings-far", "Neo Sampler", "Pad — Strings (Looped, Slow Attack)", [("Filter", "BP"), ("Cutoff", "2 kHz"), ("Resonance", "50%")],
+        [n("C1", 0, 3.5, 100), n("C7", 0, 3.5, 100), n("G8", 1, 2.5, 100), n("A2", 2, 1.5, 60)], tail=1.5),
+    gen("sampler-saw-lead", "Neo Sampler", "Lead — Saw (Filter Envelope)", [], LEAD),
     # Long: what drifts with time (oscillator and LFO phases, modulated delays) shows here. 16 s each.
     gen("long-poly", "Neo Poly", "Pad — Evolving PWM", [], LONG, beats=32),
     gen("long-wave", "Neo Wave", "Pad — Organ Drift", [], LONG, beats=32),
@@ -192,6 +249,7 @@ CASES = [
        source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 2) for p in ("C4", "E4", "G4")])),
     fx("long-delay", "Neo Delay", "Tape — Analog Wobble (Dark)", [("Feedback", "85%")], tail=2.0, beats=32,
        source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 4) for p in ("C4", "E4", "G4")])),
+    gen("long-sampler", "Neo Sampler", "Pad — Vox Aah (Looped)", [("Z2 wave", 221), ("Z2 tune", 12)], LONG, beats=32),
 ]
 
 
@@ -281,6 +339,10 @@ def render_case(exe, case, out_dir, work):
     try:
         c.initialize()
         c.call("song_set", tempo_bpm=TEMPO, song_end_beats=case["beats"])
+        for slot, key, root, layer in case.get("waves", []):
+            path = os.path.abspath(os.path.join(work, case["name"], key + ".wav"))
+            write_wave(path, WAVES[key]())
+            c.call("wave_import", path=path, slot=slot, name=key, root_note=root, **({"layer": True} if layer else {}))
         gear, preset, params, notes = case["gen"]
         c.call("machine_add", gear=gear, name="Src")
         if preset:
