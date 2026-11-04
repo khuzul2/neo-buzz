@@ -431,7 +431,7 @@ namespace NeoBuzz.MachineTests
             // The low cut's taps (its impulse response) sum to more than 1 in magnitude: measured, for the record.
             {
                 var (e, _) = Make(pv => { Plain(pv); pv.Set(P.Sync, 0); Set(pv, P.Time, 0.05); Set(pv, P.LowCut, 200); pv.Set(P.Feedback, 990); });
-                var (h, _) = Run(e, Impulse(5 * Rate / 100, 1e-3f), Impulse(5 * Rate / 100, 1e-3f));
+                var (h, _) = Run(e, Impulse(Rate / 4, 1e-3f), Impulse(Rate / 4, 1e-3f));
                 int d = (int)Math.Round(0.05 * Rate);
                 for (int k = d; k < h.Length; k++) lcTaps += Math.Abs(h[k]) / 1e-3;
             }
@@ -723,25 +723,25 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void ParameterJumpsAreSmooth()
         {
-            // A 220 Hz sine at −12 dBFS, Mix 50 %, feedback 50 %, 80 ms; each parameter jumps between its ends every 2048
-            // samples. The largest step between samples stays within 1.5× the largest step the steady settings at either end
-            // make on their own: no clicks.
+            // A 220 Hz sine at −12 dBFS, Mix 50 %, feedback 50 %, 80 ms; once the echoes have built up (1 s), each parameter
+            // jumps between its ends every 2048 samples. The largest step between samples stays within 1.5× the largest step
+            // the steady settings at either end make on their own: no clicks.
             var problems = new List<string>();
             var lines = new List<string>();
             foreach (var d in Params.Table)
             {
                 Action<ParamValues> baseSetup = v => { v.Set(P.Mix, 500); Set(v, P.Feedback, 50); v.Set(P.Sync, 0); Set(v, P.Time, 0.08); };
-                var x = Measure.Sine(220, 2 * Rate, 0.25);
+                var x = Measure.Sine(220, 3 * Rate, 0.25);
                 double Steady(int raw)
                 {
                     var (e, _) = Make(v => { baseSetup(v); v.Set(d.Index, raw); });
                     var (l, r) = Run(e, x, x);
-                    return Math.Max(MaxStep(l, Rate / 2), MaxStep(r, Rate / 2));
+                    return Math.Max(MaxStep(l, Rate), MaxStep(r, Rate));
                 }
                 double reference = Math.Max(Steady(d.Min), Steady(d.Max));
                 var (je, jv) = Make(baseSetup);
-                var (jl, jr) = Run(je, x, x, before: pos => { if (pos >= 8192 && pos % 2048 == 0) jv.Set(d.Index, (pos / 2048) % 2 == 0 ? d.Min : d.Max); });
-                double jump = Math.Max(MaxStep(jl, 8192), MaxStep(jr, 8192));
+                var (jl, jr) = Run(je, x, x, before: pos => { if (pos >= Rate && pos % 2048 == 0) jv.Set(d.Index, (pos / 2048) % 2 == 0 ? d.Min : d.Max); });
+                double jump = Math.Max(MaxStep(jl, Rate), MaxStep(jr, Rate));
                 double ratio = jump / reference;
                 lines.Add($"{d.Name} {ratio:F2}");
                 if (ratio > 1.5) problems.Add($"{d.Name} jumps make steps {ratio:F2}× the steady signal's ({jump:F4} against {reference:F4})");
