@@ -2,7 +2,9 @@
 // Neo Comp (docs/specs/machines.md §5): a log-domain compressor. Detector (peak, or RMS for Glue)
 // on the sidechain (input, or input 2) through a low cut → stereo link → gain computer with soft
 // knee → attack/release smoothing in dB (feed-forward; FET solves its feedback loop implicitly
-// per sample) → gain on the audio, delayed by the lookahead → colour → mix → output.
+// per sample) → gain on the audio, delayed by the lookahead → colour → mix → output. The gain
+// computer and the detector's levels, link and smoothing are the shared ones (NeoBuzz.Dsp
+// Dynamics.cs), which Neo Multiband uses too.
 
 using System;
 using NeoBuzz.Dsp;
@@ -10,73 +12,6 @@ using NeoBuzz.Dsp;
 namespace NeoBuzz.Comp
 {
     internal enum CompMode { Clean, Glue, Fet, Opto }
-
-    /// <summary>The static curve: threshold, ratio and soft knee, feed-forward or feedback.</summary>
-    internal struct GainComputer
-    {
-        public double Threshold, Knee, SlopeFf, SlopeFb;
-        public bool Feedback;
-
-        public static GainComputer From(ParamValues v)
-        {
-            double ratio = v.Value(P.Ratio);
-            return new GainComputer
-            {
-                Threshold = v.Value(P.Threshold),
-                Knee = v.Value(P.Knee),
-                SlopeFf = double.IsPositiveInfinity(ratio) ? 1 : 1 - 1 / ratio,
-                SlopeFb = double.IsPositiveInfinity(ratio) ? 100 : Math.Min(100, ratio - 1),
-                Feedback = (CompMode)v.Choice(P.Mode) == CompMode.Fet,
-            };
-        }
-
-        /// <summary>Feed-forward: reduction (dB ≥ 0) for a detector level.</summary>
-        public double Ff(double x)
-        {
-            double over = x - Threshold;
-            if (Knee > 1e-6)
-            {
-                if (2 * over < -Knee) return 0;
-                if (2 * over <= Knee) return SlopeFf * (over + Knee / 2) * (over + Knee / 2) / (2 * Knee);
-            }
-            else if (over <= 0) return 0;
-            return SlopeFf * over;
-        }
-
-        /// <summary>Feedback: reduction for an output level, and its derivative.</summary>
-        public double Fb(double y, out double dc)
-        {
-            double over = y - Threshold;
-            if (Knee > 1e-6)
-            {
-                if (2 * over < -Knee) { dc = 0; return 0; }
-                if (2 * over <= Knee)
-                {
-                    double t = over + Knee / 2;
-                    dc = SlopeFb * t / Knee;
-                    return SlopeFb * t * t / (2 * Knee);
-                }
-            }
-            else if (over <= 0) { dc = 0; return 0; }
-            dc = SlopeFb;
-            return SlopeFb * over;
-        }
-
-        /// <summary>The reduction a steady signal at <paramref name="levelDb"/> gets.</summary>
-        public double Static(double levelDb)
-        {
-            if (!Feedback) return Ff(levelDb);
-            double g = 0;
-            for (int i = 0; i < 40; i++)
-            {
-                double c = Fb(levelDb - g, out double dc);
-                double step = (g - c) / (1 + dc);
-                g -= step;
-                if (Math.Abs(step) < 1e-10) break;
-            }
-            return Math.Max(0, g);
-        }
-    }
 
     internal sealed class CompEngine
     {
@@ -156,13 +91,17 @@ namespace NeoBuzz.Comp
             grMeter = 0;
         }
 
-        static double Coef(double seconds, double sr) => seconds <= 0 ? 0 : PortableMath.Exp(-1.0 / (seconds * sr));
+        static double Coef(double seconds, double sr) => Detector.Coef(seconds, sr);
+
+        /// <summary>The static curve from the parameters: threshold, ratio and soft knee, feedback in FET.</summary>
+        static GainComputer From(ParamValues v) =>
+            GainComputer.Make(v.Value(P.Threshold), v.Value(P.Ratio), v.Value(P.Knee), (CompMode)v.Choice(P.Mode) == CompMode.Fet);
 
         void Update(bool force)
         {
             if (!force && !values.AnyDirty) return;
             mode = (CompMode)values.Choice(P.Mode);
-            gc = GainComputer.From(values);
+            gc = From(values);
             double attack = values.Value(P.Attack);
             double release = values.Value(P.Release);
             releaseSeconds = release;
@@ -270,23 +209,17 @@ namespace NeoBuzz.Comp
                 k1 = c1.ScLowCut.Process(k1);
                 if (mode == CompMode.Glue)
                 {
-                    c0.Ms = k0 * k0 + (c0.Ms - k0 * k0) * rmsA;
-                    c1.Ms = k1 * k1 + (c1.Ms - k1 * k1) * rmsA;
-                    // RMS reads a sine 3 dB under its peak; +3 dB keeps the threshold on the same scale.
-                    level[0] = 0.5 * DspMath.DbPerNeper * PortableMath.Log(c0.Ms + 1e-30) + 3.0103;
-                    level[1] = 0.5 * DspMath.DbPerNeper * PortableMath.Log(c1.Ms + 1e-30) + 3.0103;
+                    c0.Ms = Detector.MeanSquare(c0.Ms, k0, rmsA);
+                    c1.Ms = Detector.MeanSquare(c1.Ms, k1, rmsA);
+                    level[0] = Detector.RmsDb(c0.Ms);
+                    level[1] = Detector.RmsDb(c1.Ms);
                 }
                 else
                 {
-                    level[0] = DspMath.DbPerNeper * PortableMath.Log(Math.Abs(k0) + 1e-15);
-                    level[1] = DspMath.DbPerNeper * PortableMath.Log(Math.Abs(k1) + 1e-15);
+                    level[0] = Detector.PeakDb(k0);
+                    level[1] = Detector.PeakDb(k1);
                 }
-                if (lk > 0)
-                {
-                    double m = Math.Max(level[0], level[1]);
-                    level[0] += lk * (m - level[0]);
-                    level[1] += lk * (m - level[1]);
-                }
+                if (lk > 0) Detector.Link(ref level[0], ref level[1], lk);
 
                 c0.Audio.Write(x0);
                 c1.Audio.Write(x1);
@@ -330,7 +263,7 @@ namespace NeoBuzz.Comp
                         }
                         else
                         {
-                            g = target > s.G ? target + (s.G - target) * attackA : target + (s.G - target) * releaseA;
+                            g = Detector.Smooth(s.G, target, attackA, releaseA);
                         }
                         s.G = g;
                     }
@@ -358,6 +291,6 @@ namespace NeoBuzz.Comp
         }
 
         /// <summary>The static curve for the editor: output level for an input level (dB), before makeup.</summary>
-        public static double Curve(ParamValues v, double inDb) => inDb - GainComputer.From(v).Static(inDb);
+        public static double Curve(ParamValues v, double inDb) => inDb - From(v).Static(inDb);
     }
 }

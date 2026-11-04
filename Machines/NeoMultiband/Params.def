@@ -1,0 +1,58 @@
+# Neo Multiband parameters (docs/specs/machines.md §5). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoMultiband
+namespace NeoBuzz.Multiband
+class NeoMultibandMachine
+summary Multiband compressor and upward expander for mastering and buses: 3 or 4 bands split by linear-phase crossovers (the bands sum back to the input exactly; about 96 ms of latency, reported to ReBuzz) or zero-latency minimum-phase ones (Linkwitz–Riley, the same band shapes), each band with threshold, ratio (above 1:1 compresses, below 1:1 expands upward), attack, release, knee, range, makeup, solo and bypass; the detector linked in stereo or in mid/side; mix and output. With every band at 1:1 and 0 dB it passes the input, delayed by the latency, bit for bit. Use it to control the lows, tame harshness, de-ess, glue a bus or lift the air of a master.
+
+group Crossovers
+Bands     "Bands"        0 1     1     enum 3_bands 4_bands          | Three bands (Crossover 1 and 2) or four (all three crossovers)
+Xo1       "Crossover 1"  0 10000 2594  freq 20 20000                 | Between bands 1 and 2 (Linkwitz–Riley, 24 dB/oct, −6 dB here)
+Xo2       "Crossover 2"  0 10000 5663  freq 20 20000                 | Between bands 2 and 3 (never below Crossover 1)
+Xo3       "Crossover 3"  0 10000 8257  freq 20 20000                 | Between bands 3 and 4 with four bands (never below Crossover 2)
+Phase     "Phase"        0 1     0     enum Linear Minimum           | Linear: the bands sum back to the input exactly, no phase shift, about 96 ms of latency (reported to ReBuzz). Minimum: zero latency, the same band shapes, the crossovers' phase shift (as an analog crossover's)
+group Detector
+Stereo    "Stereo"       0 1     0     enum L/R M/S                  | What each band's detector and gain work on: left and right, or mid and side
+Link      "Link"         0 1000  1000  pct                           | 100 %: both channels (or mid and side) get the same gain, from the louder; 0 %: each its own
+group Band 1
+B1Threshold "B1 threshold" 0 600 400 lin -60 0 dB 1 | Band 1: level where the gain starts to change (the band's peak)
+B1Ratio "B1 ratio" 0 1200 400 ratio 0.5 32 inf | Band 1: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing
+B1Attack "B1 attack" 0 1000 722 time 0.00005 0.2 | Band 1: time to 63 % of a gain change
+B1Release "B1 release" 0 1000 612 time 0.005 3 | Band 1: time back to 37 % of a gain change
+B1Knee "B1 knee" 0 240 60 lin 0 24 dB 1 | Band 1: width of the soft knee around the threshold
+B1Range "B1 range" 0 240 240 lin 0 24 dB 1 | Band 1: the most the gain changes, either way
+B1Makeup "B1 makeup" 0 480 240 lin -24 24 dB 1 | Band 1: gain after the dynamics (negative cuts the band)
+B1Solo "B1 solo" 0 1 0 switch | Band 1: hear only the soloed bands (processed, Mix ignored)
+B1Bypass "B1 bypass" 0 1 0 switch | Band 1: pass the band untouched (no dynamics, no makeup)
+group Band 2
+B2Threshold "B2 threshold" 0 600 400 lin -60 0 dB 1 | Band 2: level where the gain starts to change (the band's peak)
+B2Ratio "B2 ratio" 0 1200 400 ratio 0.5 32 inf | Band 2: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing
+B2Attack "B2 attack" 0 1000 639 time 0.00005 0.2 | Band 2: time to 63 % of a gain change
+B2Release "B2 release" 0 1000 532 time 0.005 3 | Band 2: time back to 37 % of a gain change
+B2Knee "B2 knee" 0 240 60 lin 0 24 dB 1 | Band 2: width of the soft knee around the threshold
+B2Range "B2 range" 0 240 240 lin 0 24 dB 1 | Band 2: the most the gain changes, either way
+B2Makeup "B2 makeup" 0 480 240 lin -24 24 dB 1 | Band 2: gain after the dynamics (negative cuts the band)
+B2Solo "B2 solo" 0 1 0 switch | Band 2: hear only the soloed bands (processed, Mix ignored)
+B2Bypass "B2 bypass" 0 1 0 switch | Band 2: pass the band untouched (no dynamics, no makeup)
+group Band 3
+B3Threshold "B3 threshold" 0 600 400 lin -60 0 dB 1 | Band 3: level where the gain starts to change (the band's peak)
+B3Ratio "B3 ratio" 0 1200 400 ratio 0.5 32 inf | Band 3: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing
+B3Attack "B3 attack" 0 1000 555 time 0.00005 0.2 | Band 3: time to 63 % of a gain change
+B3Release "B3 release" 0 1000 468 time 0.005 3 | Band 3: time back to 37 % of a gain change
+B3Knee "B3 knee" 0 240 60 lin 0 24 dB 1 | Band 3: width of the soft knee around the threshold
+B3Range "B3 range" 0 240 240 lin 0 24 dB 1 | Band 3: the most the gain changes, either way
+B3Makeup "B3 makeup" 0 480 240 lin -24 24 dB 1 | Band 3: gain after the dynamics (negative cuts the band)
+B3Solo "B3 solo" 0 1 0 switch | Band 3: hear only the soloed bands (processed, Mix ignored)
+B3Bypass "B3 bypass" 0 1 0 switch | Band 3: pass the band untouched (no dynamics, no makeup)
+group Band 4
+B4Threshold "B4 threshold" 0 600 400 lin -60 0 dB 1 | Band 4: level where the gain starts to change (the band's peak)
+B4Ratio "B4 ratio" 0 1200 400 ratio 0.5 32 inf | Band 4: above 1:1 compresses above the threshold (∞: limits); below 1:1 expands upward (0.5:1 doubles the level over the threshold); 1:1 does nothing
+B4Attack "B4 attack" 0 1000 494 time 0.00005 0.2 | Band 4: time to 63 % of a gain change
+B4Release "B4 release" 0 1000 433 time 0.005 3 | Band 4: time back to 37 % of a gain change
+B4Knee "B4 knee" 0 240 60 lin 0 24 dB 1 | Band 4: width of the soft knee around the threshold
+B4Range "B4 range" 0 240 240 lin 0 24 dB 1 | Band 4: the most the gain changes, either way
+B4Makeup "B4 makeup" 0 480 240 lin -24 24 dB 1 | Band 4: gain after the dynamics (negative cuts the band)
+B4Solo "B4 solo" 0 1 0 switch | Band 4: hear only the soloed bands (processed, Mix ignored)
+B4Bypass "B4 bypass" 0 1 0 switch | Band 4: pass the band untouched (no dynamics, no makeup)
+group Output
+Mix       "Mix"          0 1000  1000  pct                           | Dry against the processed bands (the dry is latency-aligned, so parallel compression never combs)
+Output    "Output"       0 480   240   db -24 24                     | Output gain, −24 … +24 dB in 0.1 dB steps
