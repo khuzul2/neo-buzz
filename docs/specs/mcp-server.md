@@ -656,7 +656,7 @@ Unhealthy machines (decided 2026-11-03) are in [machine-safety.md](machine-safet
 | Phase | Delivers | Exit check | Effort |
 |---|---|---|---|
 | **U1 Profile and describe** (tier 1, first half) | `tools/machine-profiler.py` over MCP: value tables, unit and mapping inference, pitch convention, note input, polyphony, effect kind, latency, tail, gain, health. Draft manifests in `Machines/Manifests/`, copied beside their DLLs; `docs/machine-health.md`. The server reads drafts: units in `param_set`/`param_get`, pitch offsets and track notes in `notes_write`/`notes_read`/`midi_play`, kind and health in `gear_list` | A Pedal synth plays A4 at 440 Hz through `notes_write` after profiling; `param_set` in units on a Pedal machine; the Linux job profiles the portable machines and the Windows package job all of them | L |
-| **U2 Profile in depth** (tier 1, second half) | A test-signal source for effects (sweep, impulse, level steps through a general tool), per-parameter sweeps (what moving each one changes) as suggested roles, velocity response and envelope length, denormal and extreme-value checks per parameter. `gear_list` leaves unhealthy machines out unless asked. **Built first** ([machine-safety.md](machine-safety.md) §3.1, §3.4): the level test with each parameter alone at each end, diverging, hot and needs-a-window instead of one "unhealthy", `safe_range` in the drafts and `param_set`'s refusal (§12.8, last part) | Suggested roles for the filter, time and mix parameters of the 25 most used machines; every unhealthy machine has a reason in the report | M |
+| **U2 Profile in depth** (tier 1, second half) | A test-signal source for effects (sweep, impulse, level steps through a general tool), per-parameter sweeps (what moving each one changes) as suggested roles, velocity response and envelope length, denormal and extreme-value checks per parameter. `gear_list` leaves unhealthy machines out unless asked. **Built first** ([machine-safety.md](machine-safety.md) §3.1, §3.4): the level test with each parameter alone at each end, diverging, hot and needs-a-window instead of one "unhealthy", `safe_range` in the drafts and `param_set`'s refusal (§12.8, last part). **Built in depth** (§12.12): the test signal through the profiler (a click, a stepped sine sweep and level steps, played by Neo Poly and read on both sides), suggested roles from each parameter alone, velocity and envelopes, a harmonic sieve for pitch, triggers through `automation_write`, slowdowns after silence from `render`'s per-machine work time, safe ranges for ends that ring, and `gear_list` leaving unhealthy machines out unless asked | Suggested roles for the filter, time and mix parameters of the 25 most used machines; every unhealthy machine has a reason in the report | M |
 | **U3 Curate** (tier 1 done) | Curated manifests for the top 25 (summary, plain names, roles, safe ranges, quirks); manuals (`rebuzz://machines/…`) for every machine with a manifest; `GuideTests` check curated names and values. **Built** (§12.9) | 25 curated, the rest drafts: every machine in the package has a manifest | M |
 | **U4 A better face** (tier 2) | The manifest editor on the editor kit (groups, knobs in units, choices, ADSR and response plots), a per-machine setting; factory presets for the top machines. **Built** (§12.11) | The editor opens for every curated machine in the studio and ReBuzz.exe; its presets load through `preset_load` | L |
 | **U5 `machine_replace`** (tier 4) | Role mapping, unit conversion, render before and after with `compare`; one undo step; the machine menu's Replace. **Built** (§12.10) | Jeskola Reverb → Neo Verb, Pedal EQ → Neo EQ, Jeskola Distortion → Neo Drive and Pedal Gain → Neo Utility convert within a stated tolerance, or say why not | M |
@@ -731,16 +731,16 @@ The successors of §12.5 still to build (Neo Filter, Drums, Sampler; Neo Ensembl
 - **Effects** type as expected: delays (Jeskola Delay, Cross Delay, NiNjA dElaY, FSM PanzerDelay, Joachims Neptune), reverbs (Jeskola Reverb, Stereo Reverb, Raverb, Neo Verb), choruses and flangers as modulation, Neo Drive and Jeskola Distortion as distortion. Latencies: Neo Limiter 99 samples (lookahead), Neo Drive 62 (oversampling), Pedal Gate 37.
 - **Parameters.** 349 of the Pedal machines' 361 parameters got a mapping, 25 of them from descriptions; 580 of the Windows machines' 629. The rest have texts that say nothing (Drum Matrix's twelve "-" parameters).
 
-**Left for U2** (§12.7):
-- pitch where the analysis hears none at the defaults: Jeskola Bass 1–3, Oomek Aggressor 303 and Pedal FM sound but read as unpitched (offset 0 assumed);
-- triggers for generators without a Note parameter (Rout 909, Jeskola Noise Generator, Trilok), and choosing a wave or plugin (Jeskola Tracker, Polac VSTi);
-- per-parameter sweeps and suggested roles (each parameter alone at its ends, for health, is built: below);
-- swept-sine and impulse responses (a test-signal source);
-- velocity response and envelope length;
-- denormal slowdowns;
-- whether `Work` reports silence (the engine doesn't expose it);
-- hiding unhealthy machines from `gear_list` by default. The Pedal check expects all 19 listed, so for now they are flagged and listed last.
-- `midi_play` into a tracks-only machine (it would set the Note parameter live).
+**Left for U2** (§12.7), and where each went (§12.12, U2 in depth):
+- pitch where the analysis hears none at the defaults (Jeskola Bass 1–3, Oomek Aggressor 303, Pedal FM): a harmonic sieve on A2, A3 and A4, **built**;
+- triggers for generators without a Note parameter (Rout 909, Jeskola Noise Generator, Trilok): **built**, through `automation_write` on played track parameters; choosing a wave or plugin (Jeskola Tracker, Polac VSTi): **left**, a person's choice;
+- per-parameter sweeps and suggested roles: **built**;
+- swept-sine and impulse responses (a test-signal source): **built**, the profiler's own (a stepped sweep, a click, level steps from Neo Poly, read on both sides);
+- velocity response and envelope length: **built**;
+- denormal slowdowns: **built** (`render`'s `cpu`);
+- whether `Work` reports silence: **left**, the engine doesn't keep what `Work` returns, and keeping it is an engine change;
+- hiding unhealthy machines from `gear_list` by default: **built** (`include_unhealthy`); the Pedal check now expects the two it makes unhealthy left out and named;
+- `midi_play` into a tracks-only machine (it would set the Note parameter live): **left**, a live-input feature rather than a profile.
 
 **U2, health first** ([machine-safety.md](machine-safety.md) §3.1, §3.4, built 2026-11-03). The "unhealthy" above became three categories, from a level test (4 s renders of the machine alone, noise into effects, A4 held on generators) at the defaults, with every parameter at each end at once, and each parameter alone at each end for machines that misbehave and effects with a feedback, resonance, gain or Q parameter:
 

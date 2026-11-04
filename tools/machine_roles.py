@@ -647,7 +647,7 @@ def pitch_sieve(binhz, mags, expected_midi, span=24, harmonics_n=8):
     The equal-tempered note (within ±span semitones of expected_midi) whose harmonic series explains the
     spectrum best, with cents and the share of the spectrum's energy (50 Hz – 10 kHz) its harmonics hold.
     Of candidates within 10 % of the best score, the highest wins (a series an octave down scores alike).
-    None when no series holds 40 % of the energy (an inharmonic or noisy sound: unpitched).
+    Unpitched when no series holds 60 % of the energy (an inharmonic or noisy sound).
     """
     def peak_at(f):
         i = int(round(f / binhz))
@@ -691,7 +691,7 @@ def pitch_sieve(binhz, mags, expected_midi, span=24, harmonics_n=8):
         held += sum(m * m for m in mags[max(lo_bin, i - w):min(hi_bin, i + w + 1)])
     share = held / total
     cents = 1200 * math.log2(fpk / f0) if fpk > 0 else 0.0
-    if share < 0.4 or abs(cents) > 50:
+    if share < 0.6 or abs(cents) > 50:
         return {"midi": expected_midi + k, "cents": round(cents, 1), "share": round(share, 3), "pitched": False}
     return {"midi": expected_midi + k, "cents": round(cents, 1), "share": round(share, 3), "pitched": True}
 
@@ -953,7 +953,7 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
     bl_, bh_ = _num(cl.get("tail_low_db")), _num(ch.get("tail_low_db"))
     if machine_type == "reverb" and bl_ is not None and bh_ is not None and abs(bh_ - bl_) >= 6:
         return "reverb.lowcut", f"the tail's share under 250 Hz {bl_:+.0f} → {bh_:+.0f} dB"
-    if not spectral_first:
+    if not spectral_first and machine_type != "dynamics":
         got = spectral()
         if got:
             return got
@@ -986,7 +986,32 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
                                      f"{('%+.0f dB' % hi_k) if hi_k is not None else 'none'} in (the default: {('%+.0f dB' % _num(sd.get('knee_in_db'))) if _num(sd.get('knee_in_db')) is not None else 'none'})")
         depths = [_num(x.get("compression_db")) or 0 for _, x in sets]
         if max(depths) - min(depths) >= 4:
-            return "dyn.ratio", f"the loudest steps lose {_num(sl.get('compression_db')) or 0:.0f} → {_num(sh.get('compression_db')) or 0:.0f} dB against the quietest, from the same knee"
+            # a ratio scales the gain reduction above the knee alike at every level; a wet/dry blend can't take more
+            # than the dry part leaves (6 dB at half), so half way its reduction flattens at the loudest steps
+            full = sl if (_num(sl.get("compression_db")) or 0) >= (_num(sh.get("compression_db")) or 0) else sh
+            half = mid.get("steps") if mid else None
+            at_end = sd and any(abs((_num(sd.get("compression_db")) or 0) - (_num(x.get("compression_db")) or 0)) < 0.3 for x in (sl, sh))
+            if half is None and sd and not at_end:
+                half = sd
+            if half is None:
+                return NEED_MID, "a ratio or a blend: measure half way"
+            gf = [g for _, g in full.get("curve") or []]
+            gm = [g for _, g in half.get("curve") or []]
+            word = (f"the loudest steps lose {_num(sl.get('compression_db')) or 0:.0f} → {_num(sh.get('compression_db')) or 0:.0f} dB "
+                    f"against the quietest, from the same knee")
+            if len(gf) == len(gm) and len(gf) >= 3:
+                rf = [gf[0] - g for g in gf[-2:]]
+                rm = [gm[0] - g for g in gm[-2:]]
+                if min(rf) >= 3 and rm[0] > 0.5:
+                    r_lower, r_top = rm[0] / rf[0], rm[1] / rf[1]
+                    if r_top < r_lower - 0.1:
+                        return "mix.wet", (f"at one end nothing is compressed; half way the loudest steps lose {rm[1]:.1f} dB against "
+                                           f"{rf[1]:.1f} at full, the next {rm[0]:.1f} against {rf[0]:.1f}: a blend with the dry signal")
+            return "dyn.ratio", word
+    if machine_type == "dynamics":
+        got = spectral()
+        if got:
+            return got
     # distortion
     hl, hh = _num(lo.get("thd")), _num(hi.get("thd"))
     if hl is not None and hh is not None and max(hl, hh) >= 3 and (_ratio(hl + 0.1, hh + 0.1) or 0) >= 3:

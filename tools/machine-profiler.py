@@ -1603,7 +1603,7 @@ def sieve_pitch(c, prof, mode):
         result.update({"pitched": True, "pitch_offset": -k, "cents": round(sum(v["cents"] for v in pitched) / len(pitched), 1)})
     else:
         result["pitched"] = False
-        result["why"] = ("its harmonics hold less than 40 % of the sound (inharmonic or noisy)" if not pitched
+        result["why"] = ("its harmonics hold less than 60 % of the sound (inharmonic or noisy)" if not pitched
                          else "the notes don't agree on one offset" if len(offs) > 1 else "pitched on some notes only")
     return result
 
@@ -1744,6 +1744,17 @@ def profile_machine(c, gear, kind, baseline, generated):
                                   f"it plays ({dn['slowdown']}× for 4 s or more)")
         except ToolFailed as e:
             prof.notes.append(f"the depth passes stopped: {e}")
+    # The summary and the draft keep each parameter's role, its evidence and the ends measured; the features at each
+    # end (a few dozen numbers a parameter) go to <out>/roles-detail/ for a person checking a suggestion.
+    if prof.data.get("roles") and DEPTH.get("detail_dir"):
+        try:
+            write_json(os.path.join(DEPTH["detail_dir"], gear + ".json"), prof.data["roles"])
+        except OSError:
+            pass
+    for r in ((prof.data.get("roles") or {}).get("params") or {}).values():
+        for end in ("min", "max"):
+            if isinstance(r.get(end), dict):
+                r[end] = {k: r[end][k] for k in ("raw", "text", "diverged", "error") if k in r[end]}
     suggested = {}
     for key, r in ((prof.data.get("roles") or {}).get("params") or {}).items():
         if r.get("suggested_role"):
@@ -1884,7 +1895,13 @@ def write_json(path, data):
         f.write("\n")
 
 
-def health_report(summary):
+def fmt_s(t):
+    return "" if not isinstance(t, (int, float)) else f"{t * 1000:.0f} ms" if t < 1 else f"{t:.2f} s"
+
+
+def health_report(summary, curated=None):
+    """The report. curated: {gear: {"name" or "track name": role}} from the curated manifests, for the roles' table."""
+    curated = curated or {}
     machines = summary["machines"]
     rows = sorted(machines.values(), key=lambda e: (e.get("kind", ""), e["gear"].lower()))
     by_platform = {}
@@ -1909,12 +1926,22 @@ def health_report(summary):
         f"{len(rows)} machines profiled ({', '.join(f'{n} on {p}' for p, n in sorted(by_platform.items()))}). "
         f"{len(groups['diverging'])} diverging, {len(groups['hot'])} hot, {len(groups['needs a window'])} needing a window, "
         f"{len(groups['unhealthy'])} with other problems, {len(groups['warn'])} with other warnings, {len(groups['ok'])} clean. "
-        f"Crashes or hangs: {len(crashes)}. Swept parameter by parameter: {len(swept)} machines; {ranges} safe ranges.",
+        f"Crashes or hangs: {len(crashes)}. Swept parameter by parameter: {len(swept)} machines; {ranges} safe ranges. "
+        f"Slow down after their input goes silent: {sum(1 for e in rows if (e.get('denormal') or {}).get('slowdown'))}. "
+        f"Suggested roles: {sum(1 for e in rows for r in ((e.get('roles') or {}).get('params') or {}).values() if r.get('suggested_role'))} "
+        f"parameters on {sum(1 for e in rows if any(r.get('suggested_role') for r in ((e.get('roles') or {}).get('params') or {}).values()))} machines.",
         "",
         "How it's measured: a level test renders 4 s of the machine alone, fed noise at a mix's level (effects, peaks near −9 dBFS) or "
         "holding A4 (generators): at its defaults, with every parameter at its minimum and at its maximum at once, and, for machines "
         "that misbehave that way and effects with a feedback, resonance, gain or Q parameter, each parameter alone at each end. A level "
-        "that grew over 4 s is rendered for 30 s: an attack settles, a runaway keeps growing (its last 10 s more than 6 dB over the 10 s before).",
+        "that grew over 4 s is rendered for 30 s: an attack settles, a runaway keeps growing (its last 10 s more than 6 dB over the 10 s before). "
+        "A loop's or a resonance's hot end that rings more than 24 dB over its level at the default gets a safe range by bisection too.",
+        "",
+        "In depth (mcp-server.md §12.12): a test signal for effects, played by Neo Poly and read on both sides: a click with time to ring out "
+        "(latency, decay, echoes), a stepped sine sweep (the response) and, for dynamics, level steps of a three-sine chord (the curve, attack "
+        "and release); each parameter alone at its ends through it, or a held note on generators, names a suggested role. Generators: velocity "
+        "response, envelope length, a harmonic sieve where YIN hears no pitch, triggers for machines without notes. Every machine: its own work "
+        "time per second of audio over the 20 s after its input stops, against while it plays.",
         "",
         "Pitch conventions of the generators (the offset `notes_write` applies so the written pitch plays): " +
         (", ".join(f"{k}: {v}" for k, v in sorted(offsets.items())) or "none profiled") + ".",
@@ -1962,26 +1989,87 @@ def health_report(summary):
         lines += [f"| {e['gear']} | {e.get('platform', '')} | {'; '.join(e['warnings'])} |" for e in warned]
     else:
         lines.append("None.")
-    lines += ["", "## Generators", "", "| Machine | Type | Notes in | Pitch offset | Voices | Level (LUFS, one note) | CPU ms/s | Health |", "|---|---|---|---|---|---|---|---|"]
+    slow = [e for e in rows if (e.get("denormal") or {}).get("slowdown")]
+    lines += ["", "## Slow after silence", "",
+              "Machines whose own work time per second of audio, for 4 s or more of the 20 s after their input stops, is more than twice what "
+              "it is while the input plays (and 1 ms/s more): denormal numbers in a decaying state, most likely. A warning: the engine's "
+              "time, not the sound.", ""]
+    if slow:
+        lines += ["| Machine | Platform | Playing ms/s | After silence ms/s (worst) | For | × |", "|---|---|---|---|---|---|"]
+        for e in slow:
+            d = e["denormal"]
+            lines.append(f"| {e['gear']} | {e.get('platform', '')} | {d.get('playing_ms_per_s')} | {d.get('silent_worst_ms_per_s')} | "
+                         f"{d.get('slow_seconds', '')} s | {d.get('slowdown')} |")
+    else:
+        lines.append("None.")
+    # Suggested roles: the filter, time and mix ones against the curated roles, then every draft's.
+    lines += ["", "## Suggested roles", "",
+              "What moving each parameter alone changes, as a role (`suggested_role` in the drafts, `machine_describe` shows it). Curated "
+              "manifests keep their own roles: for their filter, time and mix parameters, the profile's suggestion is listed beside the "
+              "curated role, and a disagreement is a note here, never a change to the manifest.", ""]
+    agree = total = 0
+    rows_c = []
+    for e in rows:
+        cur = curated.get(e["gear"])
+        params = (e.get("roles") or {}).get("params") or {}
+        if not cur:
+            continue
+        for name, role in cur.items():
+            cat = mr.category(role)
+            if not cat:
+                continue
+            r = params.get(name) or {}
+            sug = r.get("suggested_role")
+            ok_ = mr.agrees(role, sug)
+            agree += ok_
+            total += 1
+            rows_c.append(f"| {e['gear']} | {name} | {cat} | `{role}` | {('`' + sug + '`') if sug else '—'} | {'yes' if ok_ else 'no'} | "
+                          f"{(r.get('evidence') or 'not swept on this platform').replace('|', '/')} |")
+    if rows_c:
+        lines += [f"Curated filter, time and mix parameters: {agree} of {total} suggestions agree.", "",
+                  "| Machine | Parameter | Kind | Curated | Suggested | Agrees | Evidence |", "|---|---|---|---|---|---|---|"] + rows_c
+    drafts = [e for e in rows if not curated.get(e["gear"]) and not e.get("generated") and any(r.get("suggested_role") for r in ((e.get("roles") or {}).get("params") or {}).values())]
+    if drafts:
+        lines += ["", "Drafts:", "", "| Machine | Suggested roles |", "|---|---|"]
+        for e in drafts:
+            ps = (e.get("roles") or {}).get("params") or {}
+            lines.append(f"| {e['gear']} | " + "; ".join(f"{n}: `{r['suggested_role']}`" for n, r in ps.items() if r.get("suggested_role")) + " |")
+    lines += ["", "## Generators", "", "| Machine | Type | Notes in | Pitch offset | Voices | Level (LUFS, one note) | Velocity (dB per doubling) | "
+              "Attack / release / length | CPU ms/s | After silence ms/s | Health |", "|---|---|---|---|---|---|---|---|---|---|---|"]
     for e in rows:
         if e.get("kind") != "generator":
             continue
         n = e.get("notes") or {}
         off = "" if not n.get("pitched") else f"{n.get('pitch_offset', 0):+d}" + (f" ({n.get('cents'):+.0f} ct)" if abs(n.get("cents") or 0) >= 1 else "")
         lvl = (e.get("level") or {}).get("integrated_lufs")
-        lines.append(f"| {e['gear']} | {e.get('type', '')} | {n.get('input', '')} | {off} | {n.get('polyphony', '')} | "
-                     f"{'' if lvl is None else lvl} | {e.get('cpu_ms_per_s', '')} | {category(e)} |")
-    lines += ["", "## Effects", "", "| Machine | Type (traits) | Gain dB | Latency (samples) | Tail s | CPU ms/s | Health |", "|---|---|---|---|---|---|---|"]
+        vel = (e.get("velocity") or {}).get("db_per_doubling")
+        env = e.get("envelope") or {}
+        envs = " / ".join(fmt_s(env.get(k)) or "—" for k in ("attack_s", "release_s", "length_s")) if env else ""
+        if env.get("release_past_window"):
+            envs = envs.replace(fmt_s(env.get("release_s")), "> " + fmt_s(env.get("release_s")), 1)
+        inn = n.get("input", "") + (f" (trigger: {e['trigger']['param']})" if e.get("trigger") else "")
+        if n.get("pitch_method"):
+            off += " (sieve)"
+        lines.append(f"| {e['gear']} | {e.get('type', '')} | {inn} | {off} | {n.get('polyphony', '')} | "
+                     f"{'' if lvl is None else lvl} | {'' if vel is None else vel} | {envs} | {e.get('cpu_ms_per_s', '')} | "
+                     f"{(e.get('denormal') or {}).get('silent_ms_per_s', '')} | {category(e)} |")
+    lines += ["", "## Effects", "", "| Machine | Type (traits) | Gain dB | Latency (samples) | Tail s | T60 (click) | First echo | Response −3 dB band | "
+              "CPU ms/s | After silence ms/s | Health |", "|---|---|---|---|---|---|---|---|---|---|---|"]
     for e in rows:
         if e.get("kind") != "effect":
             continue
         fx = e.get("effect") or {}
+        imp, rs = fx.get("impulse") or {}, fx.get("response_summary") or {}
+        echo = (imp.get("echoes") or [[None]])[0][0]
+        band = f"{rs['low_corner_hz']:.0f} Hz – {rs['high_corner_hz'] / 1000:.1f} kHz" if rs.get("low_corner_hz") and rs.get("high_corner_hz") else ""
         lines.append(f"| {e['gear']} | {', '.join(fx.get('traits', [])) or e.get('type', '')} | {fx.get('gain_db', '')} | {fx.get('latency_samples', '')} | "
-                     f"{fx.get('tail_seconds', '')} | {e.get('cpu_ms_per_s', '')} | {category(e)} |")
+                     f"{fx.get('tail_seconds', '')} | {fmt_s(imp.get('t60_s'))} | {fmt_s(echo)} | {band} | {e.get('cpu_ms_per_s', '')} | "
+                     f"{(e.get('denormal') or {}).get('silent_ms_per_s', '')} | {category(e)} |")
     lines += ["", "## Not measured yet", "",
-              "What moving each parameter changes (for roles), velocity response and envelope length, denormal slowdowns, swept-sine and "
-              "impulse responses (the source here is a Neo Poly's noise and sine), and whether `Work` reports silence (the engine doesn't "
-              "expose it): mcp-server.md §12.7, U2.", ""]
+              "Whether `Work` reports silence (the engine doesn't expose what a machine's Work returns); a wave or a plugin to choose for "
+              "Jeskola Tracker and Polac VSTi (a person's choice, not a measurement); LFO rates (a modulation's rate shows only over seconds of "
+              "steady tone); what a parameter does only with another one set (a slot's effect, an envelope routed elsewhere) beyond the "
+              "contexts the sweep tries: mcp-server.md §12.12.", ""]
     return "\n".join(lines)
 
 
@@ -2039,9 +2127,35 @@ def merge_into_repo(root, summary, out_dir):
     write_report(root, merged)
 
 
+def curated_roles(root):
+    """{gear: {"name" (or "track name"): role}} from the curated manifests in ROOT/Machines/Manifests."""
+    out = {}
+    for sub in ("Effects", "Generators"):
+        folder = os.path.join(root, "Machines", "Manifests", sub)
+        if not os.path.isdir(folder):
+            continue
+        for f in sorted(os.listdir(folder)):
+            if not f.endswith(".machine.json"):
+                continue
+            try:
+                with open(os.path.join(folder, f), encoding="utf-8-sig") as h:
+                    m = json.load(h)
+            except (OSError, ValueError):
+                continue
+            if m.get("status") != "curated":
+                continue
+            roles = {}
+            for group, prefix in (("parameters", ""), ("track_parameters", "track ")):
+                for p in m.get(group) or []:
+                    if p.get("role"):
+                        roles.setdefault(prefix + p["name"], p["role"])
+            out[m["gear"]] = roles
+    return out
+
+
 def write_report(root, merged):
     with open(os.path.join(root, "docs", "machine-health.md"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(health_report(merged))
+        f.write(health_report(merged, curated_roles(root)))
 
 
 PACK = "MACHINE-PROFILE-PACK"
@@ -2104,7 +2218,8 @@ def main():
     ap.add_argument("--no-denormal", action="store_true", help="leave out the denormal test (20 s of silence per machine)")
     args = ap.parse_args()
     DEPTH.update({"on": not args.health_only, "roles": not args.no_roles, "roles_generated": args.roles_generated,
-                  "denormal": not args.no_denormal, "triggers": not args.health_only})
+                  "denormal": not args.no_denormal, "triggers": not args.health_only,
+                  "detail_dir": os.path.join(os.path.abspath(args.out or "."), "roles-detail") if args.out else None})
     root_default = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if args.report:
         with open(os.path.join(args.report, "Machines", "Manifests", "machine-profile.json"), encoding="utf-8") as f:
@@ -2189,7 +2304,7 @@ def main():
     c.close()
     write_json(os.path.join(out, "machine-profile.json"), summary)
     with open(os.path.join(out, "machine-health.md"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(health_report(summary))
+        f.write(health_report(summary, curated_roles(args.repo or root_default)))
     if args.repo:
         merge_into_repo(os.path.abspath(args.repo), summary, out)
     cats = {}
