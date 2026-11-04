@@ -564,13 +564,18 @@ namespace ReBuzzTests
         {
             using var client = StartAgent(out string bin);
             var report = new List<string>();
+            void Report(string line)
+            {
+                report.Add(line);
+                TestContext.Out.WriteLine(line);   // as it comes: a failure later keeps what was measured
+            }
             WarmUp(client, "Jeskola Delay");
             var hz = FineTransfer.Frequencies(40, 16000, 3);
             void Echoes(string label, string gear, JsonArray changes, double pan = 0, bool track = false)
             {
-                if (!Has(bin, "Effects", gear)) { report.Add($"[notice] {gear} not in this build's Gear"); return; }
+                if (!Has(bin, "Effects", gear)) { Report($"[notice] {gear} not in this build's Gear"); return; }
                 var (src, l, r, rate) = Burst(client, gear, changes, pan, track);
-                report.Add($"[notice] {label}{(pan != 0 ? $" (pan {pan:+0.0;-0.0})" : "")}: L {Taps(src, l, rate)} | R {Taps(src, r, rate)}");
+                Report($"[notice] {label}{(pan != 0 ? $" (pan {pan:+0.0;-0.0})" : "")}: L {Taps(src, l, rate)} | R {Taps(src, r, rate)}");
             }
             void Response(string label, string gear, JsonArray changes, bool track = false)
             {
@@ -582,7 +587,7 @@ namespace ReBuzzTests
                 var fx = ReBuzz.Agent.Audio.Wav.Read(ProbeFile("FX"));
                 var src = ReBuzz.Agent.Audio.Wav.Read(ProbeFile("Synth"));
                 var mono = src.Left.Zip(src.Right ?? src.Left, (a, b) => (a + b) / 2).ToArray();
-                report.Add($"[notice] {label}: {FineTransfer.Text(hz, FineTransfer.Db(mono, fx.Left, fx.Rate, hz))}");
+                Report($"[notice] {label}: {FineTransfer.Text(hz, FineTransfer.Db(mono, fx.Left, fx.Rate, hz))}");
             }
             void Compare(string label, string gear, JsonArray changes, bool track = false)
             {
@@ -593,7 +598,7 @@ namespace ReBuzzTests
                     var r = Quiet(client, "machine_replace", Args(("machine", "FX")));
                     var c = r["comparison"];
                     var m = c?["machine"] ?? c?["song"];
-                    report.Add($"[notice] {label}, {(noise ? "noise" : "chords")}: {c?["within_tolerance"]?.ToJsonString() ?? "-"}, {m?["loudness_db"]?["difference"]?.ToJsonString() ?? "-"} dB, " +
+                    Report($"[notice] {label}, {(noise ? "noise" : "chords")}: {c?["within_tolerance"]?.ToJsonString() ?? "-"}, {m?["loudness_db"]?["difference"]?.ToJsonString() ?? "-"} dB, " +
                                $"worst {m?["worst_band"]?["difference_db"]?.ToJsonString() ?? "-"} dB at {m?["worst_band"]?["hz"]?.ToJsonString() ?? "-"} Hz; notes {r["notes"]?.ToJsonString() ?? "-"}");
                 }
             }
@@ -610,7 +615,6 @@ namespace ReBuzzTests
             Echoes("Jeskola Cross Delay defaults", "Jeskola Cross Delay", null);
             var cross = Join(Raw(("Dry thru", 0)), OnTrack(Raw(("L. Length", 2), ("R. Length", 3), ("Feedback", 96), ("Wet out", 128))));
             Echoes("Jeskola Cross Delay 2 and 3 ticks, fb 50 %, wet only", "Jeskola Cross Delay", cross);
-            Echoes("Jeskola Cross Delay 2 and 3 ticks, fb 50 %, wet only", "Jeskola Cross Delay", cross.DeepClone().AsArray(), pan: -1);
             // NiNjA dElaY: its defaults (high-pass 550 Hz in the loop); its filter on one echo, 64 samples, each type at 1 kHz.
             Echoes("NiNjA dElaY defaults", "Jeskola NiNjA dElaY", null);
             Echoes("NiNjA dElaY lowpass 20 kHz, fb 50 %, wet only", "Jeskola NiNjA dElaY", Join(Raw(("Dry thru", 0)), OnTrack(Raw(("f. type", 0), ("f. cutoff", 20000), ("Feedback", 96), ("Wet out", 128)))));
@@ -639,7 +643,6 @@ namespace ReBuzzTests
             Compare("Panzer defaults", "FSM PanzerDelay", null);
             Compare("Panzer ping-pong, 2 and 3 ticks, FB −3 dB", "FSM PanzerDelay", Raw(("FB PingPong", 1), ("L Delay Len", 2), ("R Delay Len", 3), ("FB Amp", 210)), track: true);
             Compare("Panzer LP 1876 Hz", "FSM PanzerDelay", Raw(("Filter type", 1)));
-            foreach (string line in report) TestContext.Out.WriteLine(line);
             Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
         }
 
