@@ -3,8 +3,9 @@
 # drives it, with the portable machines (the Pedal set and the Neo successors). It checks that:
 #  - gear_list and machine_describe name a machine's successor;
 #  - a dry run reports the mapping and the expected differences and changes nothing;
-#  - Pedal EQ → Neo EQ and Pedal Gain → Neo Utility (U5's exit check, the portable half) and Pedal Comp →
-#    Neo Comp convert within their stated tolerance, on noise played through them, each read against its input;
+#  - Pedal EQ → Neo EQ and Pedal Gain → Neo Utility (U5's exit check, the portable half), Pedal Comp →
+#    Neo Comp and Pedal Chorus → Neo Ensemble convert within their stated tolerance, on noise played through
+#    them, each read against its input;
 #  - the successor takes the old machine's place: its name, connections (gain and pan), parameters in
 #    units (param_get), its patterns' automation (ramps kept), the arrangement and the Session View's track;
 #  - one undo brings the original back exactly (machines, parameters, automation, arrangement, session),
@@ -101,9 +102,9 @@ def verdict(r):
 # --- successors are named ---------------------------------------------------------------------------
 _, _, gear = s.call("gear_list", search="Pedal", limit=100)
 rows = {g["name"]: g for g in gear.get("gear", [])}
-for name, successor in [("Pedal EQ", "Neo EQ"), ("Pedal Gain", "Neo Utility"), ("Pedal Comp", "Neo Comp")]:
+for name, successor in [("Pedal EQ", "Neo EQ"), ("Pedal Gain", "Neo Utility"), ("Pedal Comp", "Neo Comp"), ("Pedal Chorus", "Neo Ensemble")]:
     check(successor in (rows.get(name, {}).get("successor") or ""), f"gear_list: {name}'s successor is {successor}")
-check("successor" not in rows.get("Pedal Chorus", {}), "gear_list: Pedal Chorus has no successor mapping yet")
+check("successor" not in rows.get("Pedal Filter", {}), "gear_list: Pedal Filter has no successor mapping")
 
 # --- Pedal EQ → Neo EQ: settings, automation with a ramp, arrangement, session, undo, redo ---------------
 song("Pedal EQ", [{"param": "LM Gain", "value": "+6 dB"}, {"param": "HS Gain", "value": "-4 dB"}, {"param": "LS Freq", "value": "100 Hz"},
@@ -175,6 +176,10 @@ for effect, settings, label in [
     ("Pedal Gain", [{"param": "Gain", "value": "150%"}], "Pedal Gain 150% → Neo Utility"),
     ("Pedal Comp", [{"param": "Threshold", "value": "-24 dB"}, {"param": "Ratio", "value": "4"}, {"param": "Attack", "value": "5 ms"}, {"param": "Release", "value": "100 ms"}], "Pedal Comp → Neo Comp"),
     ("Pedal Comp", [{"param": "Threshold", "value": "-30 dB"}, {"param": "Ratio", "value": "8"}, {"param": "Attack", "value": "1 ms"}, {"param": "Release", "value": "300 ms"}, {"param": "Knee", "value": "6 dB"}], "Pedal Comp, harder → Neo Comp"),
+    ("Pedal Chorus", [], "Pedal Chorus → Neo Ensemble"),
+    ("Pedal Chorus", [{"param": "Depth", "value": "6 ms"}, {"param": "Delay", "value": "20 ms"}, {"param": "Spread", "value": "100%"}, {"param": "Mix", "value": "60%"}, {"param": "Rate", "value": "1 Hz"}],
+     "Pedal Chorus, deep and wide → Neo Ensemble"),
+    ("Pedal Chorus", [{"param": "Spread", "value": "0%"}, {"param": "Tone", "value": "6 kHz"}, {"param": "Mix", "value": "100%"}], "Pedal Chorus, mono, dark, wet only → Neo Ensemble"),
 ]:
     song(effect, settings)
     good, text, r = s.call("machine_replace", machine="FX")
@@ -222,7 +227,7 @@ else:
     check(False, "Elak_SVF.bmx opens")
 
 # --- refusals ----------------------------------------------------------------------------------------
-song("Pedal Chorus", None)
+song("Pedal Filter", None)
 good, text, _ = s.call("machine_replace", machine="FX")
 check(not good and "no successor mapping" in text, "a machine without a mapping is refused, with the gear that has one")
 song("Pedal EQ", None)

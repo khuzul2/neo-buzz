@@ -121,8 +121,8 @@
     "band_db": null,
     "from_hz": 50,
     "to_hz": 12000,
-    "measured": "",
-    "why_not": "Not measured per band: the filters and oscillators are different models and the closed machines' cutoff and envelope scales are unmeasured, so the timbre differs; loudness is matched (the output gain) and checked."
+    "measured": "Windows, a bass line (8 notes) before and after: sine −0.3 dB, its default saw +1.6 dB; notes in tune",
+    "why_not": "Not measured per band: the filters and oscillators are different models and the closed machines' cutoff and envelope scales are unmeasured, so the timbre differs; loudness is matched (the output gain) and checked. In the repo's songs, where the filter settings matter, the level misses: Elak_SVF.bmx's Jeskola Bass −11.2 dB (third octaves to −26 dB at its low cutoff, where the assumed cutoff curve is darker than Jeskola's), CyanPhase_DTMF-1_Demo.bmx's Bass 3 −6.7 dB."
   },
   "evidence": [
     "Machines/Manifests/Generators/Jeskola Bass 3.machine.json (curated)",

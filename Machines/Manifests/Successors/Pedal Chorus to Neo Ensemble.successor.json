@@ -48,8 +48,14 @@
       "kind": "range",
       "from": "Spread",
       "to": "Spread",
-      "from_range": [0, 1],
-      "to_range": [0, 180],
+      "from_range": [
+        0,
+        1
+      ],
+      "to_range": [
+        0,
+        180
+      ],
       "why": "Pedal Chorus pans its four voices from the centre (0 %) to hard left and right (100 %); Neo Ensemble moves the right channel's LFOs against the left's, the channels differing most at 180°. Both are mono at 0."
     },
     {
@@ -71,14 +77,16 @@
   "unmapped": [],
   "remarks": [
     "Pedal Chorus sweeps its delay straight in time, Neo Ensemble in octaves: at the same ends Neo Ensemble lingers a little longer on the short delays.",
-    "Pedal Chorus pans voices made from the input's mono sum; Neo Ensemble keeps the channels apart and offsets their LFOs, so a stereo input stays stereo in its wet sound."
+    "Pedal Chorus pans voices made from the input's mono sum; Neo Ensemble keeps the channels apart and offsets their LFOs, so a stereo input stays stereo in its wet sound.",
+    "At wet-heavy mixes with Spread up, one low third octave dips differently (up to 7 dB at Mix 80–100 %, 125 Hz at the defaults): Pedal Chorus's channels hear its panned voices at different levels, Neo Ensemble's hear theirs alike."
   ],
   "tolerance": {
     "loudness_db": 1,
-    "band_db": 2,
+    "band_db": 2.5,
     "from_hz": 63,
     "to_hz": 12000,
-    "measured": ""
+    "measured": "Linux, Neo Poly noise and chords into it, each side against its input: at its defaults within 0.1 dB, third octaves within 0.8 dB; deep and wide (6 ms on 20 ms, Spread 100 %, Mix 60 %, 1 Hz) within 0.1 dB, bands within 2.2 dB; with Tone at 6 kHz, Spread 0 % or wet only at Spread 0 % within 1 dB",
+    "why_not": "Wet-heavy mixes (above about 60 %) with Spread up dip up to 7 dB more in one low third octave (125 Hz at the defaults, where the voices' delays are a half period apart): Pedal Chorus pans each voice so a channel hears some louder than others, where Neo Ensemble's channels hear all their voices alike, and the voices cancel differently there. At Spread 0 % they match."
   },
   "evidence": [
     "ExternalMachines/source/thepedal/pedal-chorus/PedalChorus.cs (Work: delay = base + sin·depth, voiceGain 2/4, equal-power pans at ±Spread and ±Spread/3, one-pole tone 1 − e^(−2πf/sr))",

@@ -82,7 +82,7 @@
     "band_db": 5,
     "from_hz": 50,
     "to_hz": 12000,
-    "measured": "",
+    "measured": "Windows, Neo Poly noise into it, each side against its input: low +6 dB, high −6 dB: −0.9 dB, third octaves within 3 dB (630 Hz)",
     "why_not": "Jeskola EQ-3's band corners move with its gains (a band-split EQ); Neo EQ's shelves don't: one fit serves boosts and cuts, within 5 dB at ±12 dB. Settings more than 24 dB apart between bands (Masterizer_test.bmx's mid +17.6 dB against high −24 dB) can't be reached by a shelf."
   },
   "evidence": [

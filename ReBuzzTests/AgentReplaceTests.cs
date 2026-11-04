@@ -48,7 +48,8 @@ namespace ReBuzzTests
             Quiet(client, "render", Args(("tail_seconds", 0.5)));
         }
 
-        static bool Has(string bin, string kind, string gear) => File.Exists(Path.Combine(bin, "Gear", kind, gear + ".dll"));
+        static bool Has(string bin, string kind, string gear) =>
+            File.Exists(Path.Combine(bin, "Gear", kind, gear + ".dll")) || File.Exists(Path.Combine(bin, "Gear", kind, gear + ".x64.dll"));
 
         /// <summary>A tool call that doesn't echo its text into the test's output (long arrangements would crowd out the [notice] lines).</summary>
         static JsonObject Quiet(Client client, string name, JsonObject args = null)
@@ -184,6 +185,29 @@ namespace ReBuzzTests
                 EffectSong(client, "Jeskola Gain", Changes(("Gain", "-6 dB")), noise: true);
                 Replace(client, "Gain −6 dB");
             }
+            // Neo Ensemble's pairs (machine-safety.md §4), on noise. Jeskola Flanger's default wet out (−100 %) has no counterpart:
+            // the result says so rather than faking it.
+            if (File.Exists(Path.Combine(bin, "Gear", "Effects", "Neo Ensemble.NET.dll")))
+            {
+                if (Has(bin, "Effects", "Jeskola Flanger"))
+                {
+                    EffectSong(client, "Jeskola Flanger", Raw(("wet out", 128), ("min. delay", 10), ("depth", 64), ("freq", 50)), noise: true);
+                    results.Add(("Jeskola Flanger, wet +100 %", Within(Replace(client, "Jeskola Flanger, wet +100 %, 1–6 ms"))));
+                    EffectSong(client, "Jeskola Flanger", null, noise: true);
+                    var inverted = Replace(client, "Jeskola Flanger defaults (wet −100 %)");
+                    Assert.That(inverted["notes"]?.ToJsonString() ?? "", Does.Contain("polarity"), "an inverted wet is reported, not faked");
+                }
+                if (Has(bin, "Effects", "Jeskola Chorus"))
+                {
+                    EffectSong(client, "Jeskola Chorus", null, noise: true);
+                    results.Add(("Jeskola Chorus defaults", Within(Replace(client, "Jeskola Chorus defaults"))));
+                }
+                if (Has(bin, "Effects", "FSM Chorus2"))
+                {
+                    EffectSong(client, "FSM Chorus2", null, noise: true);
+                    results.Add(("FSM Chorus2 defaults", Within(Replace(client, "FSM Chorus2 defaults"))));
+                }
+            }
             // In a full build (the Pedal machines are external): the two portable exit-check pairs here too.
             if (File.Exists(Path.Combine(bin, "Gear", "Effects", "Pedal EQ.NET.dll")))
             {
@@ -226,13 +250,13 @@ namespace ReBuzzTests
                     client.Tool("arrangement_place", Args(("machine", "Bass"), ("pattern", "00"), ("at", 0)));
                     var before = client.Tool("render", Args(("tail_seconds", 0.5)));
                     var pitch = client.Request("tools/call", new JsonObject { ["name"] = "analyze", ["arguments"] = Args(("source", before["id"]!.GetValue<string>()), ("metrics", new JsonArray("pitch", "loudness"))) });
-                    report.Add($"[notice] {gear} {(sine ? "sine" : "default")} before: {Short(pitch)}");
+                    report.Add($"{gear} {(sine ? "sine" : "default")} before: {Short(pitch)}");
                     var r = Replace(client, $"{gear} {(sine ? "sine" : "default")}", "Bass");
                     Assert.That(r["patterns"]![0]!["notes"]!.GetValue<int>(), Is.EqualTo(line.Length), $"{gear}: every note moves");
                     var after = client.Tool("render", Args(("tail_seconds", 0.5)));
                     pitch = client.Request("tools/call", new JsonObject { ["name"] = "analyze", ["arguments"] = Args(("source", after["id"]!.GetValue<string>()), ("metrics", new JsonArray("pitch", "loudness"))) });
-                    report.Add($"[notice] {gear} {(sine ? "sine" : "default")} after: {Short(pitch)}");
-                    report.Add($"[notice] {gear} {(sine ? "sine" : "default")}: within {Within(r)?.ToString() ?? "-"}, loudness {(r["comparison"]?["machine"] ?? r["comparison"]?["song"])?["loudness_db"]?["difference"]?.ToJsonString()} dB");
+                    report.Add($"{gear} {(sine ? "sine" : "default")} after: {Short(pitch)}");
+                    report.Add($"{gear} {(sine ? "sine" : "default")}: within {Within(r)?.ToString() ?? "-"}, loudness {(r["comparison"]?["machine"] ?? r["comparison"]?["song"])?["loudness_db"]?["difference"]?.ToJsonString()} dB");
                 }
             }
 
@@ -253,7 +277,7 @@ namespace ReBuzzTests
                 if (!list.Any(m => m!["name"]!.GetValue<string>() == machine)) { TestContext.Out.WriteLine($"[notice] {song}: no machine {machine}"); continue; }
                 var arrangementBefore = Quiet(client, "arrangement_get");
                 var r = Replace(client, Path.GetFileName(song), machine);
-                report.Add($"[notice] {Path.GetFileName(song)}: within {Within(r)?.ToString() ?? "-"}, patterns {r["patterns"]?.ToJsonString()}, sequences {r["sequences"]}");
+                report.Add($"{Path.GetFileName(song)}: within {Within(r)?.ToString() ?? "-"}, patterns {r["patterns"]?.ToJsonString()}, sequences {r["sequences"]}");
                 var arrangementAfter = Quiet(client, "arrangement_get");
                 Assert.That(Placements(arrangementAfter, machine), Is.EqualTo(Placements(arrangementBefore, machine)), $"{song}: the arrangement keeps its patterns");
                 client.Tool("undo");
@@ -347,32 +371,20 @@ namespace ReBuzzTests
                 var left = DelaySweep.Measure(mono, fx.Left, fx.Rate, minLag, maxLag);
                 double lr = DelaySweep.Correlation(fx.Left, fx.Right ?? fx.Left);
                 double level = DelaySweep.GainDb(mono, fx.Left, fx.Rate / 2);
-                report.Add($"[notice] sweep {label}: {left}; L/R {lr:0.00}; level {level:+0.0;-0.0} dB");
+                report.Add($"[notice] {label}: {left}; L/R {lr:0.00}; level {level:+0.0;-0.0} dB");
             }
             int Lag(double ms) => (int)(ms * 44.1);
 
-            Sweep("Neo Ensemble flanger 2 ms ±1 oct (1–4 ms)", "Neo Ensemble", Changes(("Mode", "Flanger"), ("Rate", "0.25 Hz"), ("Voices", "1"), ("Feedback", "0%"), ("Tone", "20 kHz"), ("Spread", "0°"), ("Mix", "100%"), ("Delay", "2 ms"), ("Depth", "50%")), 1, Lag(10));
-            if (Has(bin, "Effects", "Jeskola Flanger"))
-            {
-                (string, int)[] wet = { ("freq", 25), ("feedback", 64), ("dry out", 64), ("wet out", 128) };
-                foreach (var (md, depth) in new[] { (0, 127), (0, 64), (25, 32), (50, 127), (50, 0) })
-                    Sweep($"Jeskola Flanger md {md} depth {depth}", "Jeskola Flanger", Raw(wet.Concat(new[] { ("min. delay", md), ("depth", depth) }).ToArray()), 1, Lag(30));
-                Sweep("Jeskola Flanger dry only", "Jeskola Flanger", Raw(("freq", 25), ("feedback", 64), ("dry out", 128), ("wet out", 64), ("min. delay", 50), ("depth", 0)), 0, Lag(2));
-                Sweep("Jeskola Flanger dry 50 %", "Jeskola Flanger", Raw(("freq", 25), ("feedback", 64), ("dry out", 96), ("wet out", 64), ("min. delay", 50), ("depth", 0)), 0, Lag(2));
-                Sweep("Jeskola Flanger freq 100, md 25 depth 64", "Jeskola Flanger", Raw(("freq", 100), ("feedback", 64), ("dry out", 64), ("wet out", 128), ("min. delay", 25), ("depth", 64)), 1, Lag(30));
-            }
-            if (Has(bin, "Effects", "Jeskola Chorus"))
-            {
-                (string, int)[] wet = { ("freq", 25), ("feedback", 64), ("dry out", 64), ("wet out", 128) };
-                foreach (var (md, depth) in new[] { (25, 64), (0, 127), (10, 127), (50, 127), (25, 0) })
-                    Sweep($"Jeskola Chorus md {md} depth {depth}", "Jeskola Chorus", Raw(wet.Concat(new[] { ("min. delay", md), ("depth", depth) }).ToArray()), 1, Lag(100));
-                Sweep("Jeskola Chorus dry only", "Jeskola Chorus", Raw(("freq", 25), ("feedback", 64), ("dry out", 128), ("wet out", 64), ("min. delay", 25), ("depth", 0)), 0, Lag(2));
-            }
+            // Measured in package run 41762016880 (their numbers are in the mappings' rules): Neo Ensemble's own sweep as the
+            // method's check, Jeskola Flanger and Chorus at min. delay 0, 2.5 and 5 ms (0, 10, 25 and 50 ms) and depth 0, 32, 64
+            // and 127, their dry-only and dry-50 % levels and freq 0.25 and 1 Hz. Here: FSM Chorus2's against its source.
             if (Has(bin, "Effects", "FSM Chorus2"))
             {
                 Sweep("FSM Chorus2 80/90, 1 tap (8.51–10.39 ms)", "FSM Chorus2", OnTrack(Raw(("Min Delay", 80), ("Mod Depth", 90), ("Mod Rate", 9), ("Fatness", 1), ("Stereo", 0))), Lag(1), Lag(40));
                 Sweep("FSM Chorus2 40/240, 1 tap (4.28–9.28 ms)", "FSM Chorus2", OnTrack(Raw(("Min Delay", 40), ("Mod Depth", 240), ("Mod Rate", 9), ("Fatness", 1), ("Stereo", 0))), Lag(1), Lag(40));
             }
+            if (Has(bin, "Effects", "Jeskola Flanger"))
+                Sweep("Jeskola Flanger md 50 depth 0, lags to 100 ms", "Jeskola Flanger", Raw(("freq", 25), ("feedback", 64), ("dry out", 64), ("wet out", 128), ("min. delay", 50), ("depth", 0)), 1, Lag(100));
 
             // machine_replace's comparisons: noise and chords through each pair.
             void Compare(string label, string gear, JsonArray changes)
@@ -383,25 +395,29 @@ namespace ReBuzzTests
                     var r = Quiet(client, "machine_replace", Args(("machine", "FX")));
                     var c = r["comparison"];
                     var m = c?["machine"] ?? c?["song"];
-                    report.Add($"[notice] compare {label}, {(noise ? "noise" : "chords")}: within {c?["within_tolerance"]?.ToJsonString() ?? "-"}, loudness {m?["loudness_db"]?["difference"]?.ToJsonString() ?? "-"} dB, " +
-                               $"bands {m?["bands_db"]?.ToJsonString() ?? "-"}");
+                    report.Add($"[notice] {label}, {(noise ? "noise" : "chords")}: {c?["within_tolerance"]?.ToJsonString() ?? "-"}, {m?["loudness_db"]?["difference"]?.ToJsonString() ?? "-"} dB, " +
+                               $"worst {m?["worst_band"]?["difference_db"]?.ToJsonString() ?? "-"} dB at {m?["worst_band"]?["hz"]?.ToJsonString() ?? "-"} Hz");
                 }
             }
             if (Has(bin, "Effects", "Jeskola Flanger"))
             {
-                Compare("Jeskola Flanger defaults", "Jeskola Flanger", null);
-                Compare("Jeskola Flanger wet +100 %, md 10, depth 64, 0.5 Hz", "Jeskola Flanger", Raw(("wet out", 128), ("min. delay", 10), ("depth", 64), ("freq", 50)));
+                Compare("JF defaults", "Jeskola Flanger", null);
+                Compare("JF wet +100, md 1 ms, d 64", "Jeskola Flanger", Raw(("wet out", 128), ("min. delay", 10), ("depth", 64), ("freq", 50)));
+                Compare("JF wet +100, md 2.5 ms, d 127, fb +50", "Jeskola Flanger", Raw(("wet out", 128), ("min. delay", 25), ("depth", 127), ("freq", 50), ("feedback", 96)));
+                Compare("JF wet +50, md 0, d 32", "Jeskola Flanger", Raw(("wet out", 96), ("min. delay", 0), ("depth", 32), ("freq", 50)));
             }
             if (Has(bin, "Effects", "Jeskola Chorus"))
             {
-                Compare("Jeskola Chorus defaults", "Jeskola Chorus", null);
-                Compare("Jeskola Chorus wet 50 %, md 10, depth 127", "Jeskola Chorus", Raw(("wet out", 96), ("min. delay", 10), ("depth", 127)));
+                Compare("JC defaults", "Jeskola Chorus", null);
+                Compare("JC wet 50, md 10, d 127", "Jeskola Chorus", Raw(("wet out", 96), ("min. delay", 10), ("depth", 127)));
+                Compare("JC md 5, d 64, 2 Hz", "Jeskola Chorus", Raw(("min. delay", 5), ("depth", 64), ("freq", 400)));
             }
             if (Has(bin, "Effects", "FSM Chorus2"))
             {
-                Compare("FSM Chorus2 defaults", "FSM Chorus2", null);
-                Compare("FSM Chorus2 Fatness 1", "FSM Chorus2", OnTrack(Raw(("Fatness", 1))));
-                Compare("FSM Chorus2 Fatness 6, Stereo 240", "FSM Chorus2", OnTrack(Raw(("Fatness", 6), ("Stereo", 240))));
+                Compare("FSM defaults", "FSM Chorus2", null);
+                Compare("FSM Fatness 1", "FSM Chorus2", OnTrack(Raw(("Fatness", 1))));
+                Compare("FSM Fatness 6, Stereo 240", "FSM Chorus2", OnTrack(Raw(("Fatness", 6), ("Stereo", 240))));
+                Compare("FSM Min 40, Depth 240, Rate 120", "FSM Chorus2", OnTrack(Raw(("Min Delay", 40), ("Mod Depth", 240), ("Mod Rate", 120))));
             }
             foreach (string line in report) TestContext.Out.WriteLine(line);
             Assert.That(client.CloseAndWait(60), Is.True, client.Errors);

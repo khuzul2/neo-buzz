@@ -8,7 +8,7 @@
     "Mode": "Chorus",
     "Voices": "1",
     "Sync": "Free",
-    "Shape": "Sine",
+    "Shape": "Triangle",
     "Spread": "0°",
     "Tone": "20 kHz"
   },
@@ -17,7 +17,8 @@
       "kind": "unit",
       "from": "freq",
       "to": "Rate",
-      "why": "Both in Hz (Jeskola: hundredths of a Hz)."
+      "why": "Both in Hz; measured: the sweep's period is twice what freq says (freq 0.25 Hz: 8.0 s; 1 Hz: 2.0 s), so the LFO runs at half its text.",
+      "scale": 0.5
     },
     {
       "kind": "sweep",
@@ -34,13 +35,13 @@
         },
         {
           "param": "depth",
-          "weight": 0.01
+          "weight": 0.009922
         }
       ],
       "delay": "Delay",
       "depth": "Depth",
       "octaves": 1,
-      "why": "MEASURE"
+      "why": "measured (Windows, ChorusAndFlangerCalibration: the delay read from input and output over a render): the delay sweeps in a triangle from min. delay up by depth × 9.92 ms (depth 127 → 9.9 ms, 64 → 5.0 ms, 32 → 2.5 ms, at any min. delay). Neo Ensemble sweeps in octaves round its Delay: the same ends, its centre where their ratio is halved (1 octaves either side at 100 %)."
     },
     {
       "kind": "unit",
@@ -48,7 +49,7 @@
       "to": "Feedback",
       "min": -0.99,
       "max": 0.99,
-      "why": "Both in %; Neo Ensemble's stops at ±99 %."
+      "why": "Both in %; Neo Ensemble's stops at ±99 %. Not measured: the two loops may weigh their feedback differently."
     },
     {
       "kind": "dry_wet",
@@ -56,11 +57,16 @@
       "wet": "wet out",
       "mix": "Mix",
       "output": "Output",
-      "why": "Jeskola Chorus adds its dry and wet at their own levels; Neo Ensemble crossfades them and sets the output's level: mix = wet ÷ (dry + wet), output = dry + wet."
+      "why": "Jeskola's dry and wet add at their own levels, both straight in amplitude (measured: dry 100 % ×1, 50 % ×½; wet 100 % as loud as dry 100 %); Neo Ensemble crossfades them and sets the output's level: mix = wet ÷ (dry + wet), output = dry + wet."
     }
   ],
   "unmapped": [],
-  "remarks": [],
+  "remarks": [
+    "Jeskola Chorus is mono (it hears left + right, +6 dB, and plays the same on both sides): Neo Ensemble's Spread is 0°, so its two sides sweep alike.",
+    "Jeskola sweeps its delay in a straight-line triangle, Neo Ensemble in octaves (its Triangle): at the same ends Neo Ensemble spends longer on the short delays.",
+    "At depth 0 Jeskola's delay doesn't hold still (measured: with min. delay 5 ms it wandered over 10–23 ms); Neo Ensemble's holds at min. delay.",
+    "Neo Ensemble's Delay stops at 30 ms: a min. delay from about 25 ms up (with depth) is beyond it and is clamped, with a note."
+  ],
   "tolerance": {
     "loudness_db": 1.5,
     "band_db": 3,
@@ -69,7 +75,9 @@
     "measured": ""
   },
   "evidence": [
-    "Machines/Manifests/Effects/Jeskola Chorus.machine.json (profiled draft: units from its texts; mono)",
+    "Machines/Manifests/Effects/Jeskola Chorus.machine.json (profiled draft: units from its texts)",
+    "ReBuzzTests/AgentReplaceTests.cs ChorusAndFlangerCalibration (Windows, package run 41762016880): the sweep's ends, period and shape, the levels, mono",
+    "ReBuzzTests/DelaySweep.cs (the delay read over short windows by cross-correlation; checked on Neo Ensemble: 1.001–4.010 ms for 1–4 ms)",
     "docs/specs/machine-safety.md §4 (roles)"
   ]
 }

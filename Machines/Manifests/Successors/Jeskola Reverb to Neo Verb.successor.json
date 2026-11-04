@@ -58,7 +58,8 @@
     "band_db": 6,
     "from_hz": 63,
     "to_hz": 10000,
-    "measured": ""
+    "measured": "Windows, Neo Poly chords or noise into it, each side against its input: at its defaults (dry 0 dB, reverb −14.5 dB, 1 s) −1.4 dB, third octaves within 2.2 dB (63 Hz – 10 kHz); as a send (wet only, 2.5 s) on noise −1.3 dB, within 4.2 dB",
+    "why_not": "Wet only on chords the two reverbs' resonances meet a chord's harmonics at different frequencies (−2.5 dB; up to 20 dB in one third octave, 160 Hz); the early reflections alone are a different pattern (−0.9 dB; −8 dB at 160 Hz). With the dry sound in, as at the defaults, the difference stays within the tolerance."
   },
   "evidence": [
     "Machines/Manifests/Effects/Jeskola Reverb.machine.json (curated: levels 20·log10(raw/4096) dB, Rev Time 0.1–6.4 s, Pre-Delay 0–100 ms, High Cutoff 100–16384 Hz)",
