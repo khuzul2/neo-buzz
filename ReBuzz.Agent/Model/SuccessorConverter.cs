@@ -482,7 +482,7 @@ namespace ReBuzz.Agent.Model
                     break;
                 }
                 case SuccessorRuleKind.Bypass:
-                    if (!events) state.Bypass = get(rule.From) >= 0.5;
+                    if (!events) state.Bypass = (get(rule.From) >= 0.5) != rule.Invert;
                     break;
                 case SuccessorRuleKind.Sweep:
                     Sweep(rule, get, Put, notes);
@@ -491,7 +491,7 @@ namespace ReBuzz.Agent.Model
                     DryWet(rule, get, Put, notes);
                     break;
                 case SuccessorRuleKind.Graphic:
-                    Graphic(rule, get, Put, notes);
+                    Graphic(rule, get, state, events, Put, notes);
                     break;
             }
             return outs;
@@ -506,19 +506,44 @@ namespace ReBuzz.Agent.Model
         }
 
         /// <summary>
-        /// The old graphic EQ's curve (its bands as constant-Q bells <c>bandwidth</c> octaves wide between their half-gain points,
-        /// summed in dB) read at each new slider's centre. Where the curve leaves the sliders' range, it moves as a whole (the
-        /// least that brings it inside, or its middle to the range's when it spans more) and the output takes the move, with
-        /// the old gain; what still can't be reached is clamped, with a note.
+        /// The Audio EQ Cookbook's peaking filter at <paramref name="rate"/> (bandwidth <paramref name="octaves"/>, warped by
+        /// ω0/sin ω0 as the cookbook does; alpha at most <paramref name="alphaMax"/>), its level in dB at <paramref name="hz"/>.
         /// </summary>
-        void Graphic(SuccessorRule rule, Func<string, double> get, Action<string, double> put, List<string> notes)
+        public static double CookbookBellDb(double hz, double f0, double gainDb, double octaves, double rate, double alphaMax = double.PositiveInfinity)
+        {
+            if (gainDb == 0) return 0;
+            double w0 = 2 * Math.PI * f0 / rate, s = Math.Sin(w0), c = Math.Cos(w0), a = Math.Pow(10, gainDb / 40);
+            double alpha = Math.Min(s * Math.Sinh(Math.Log(2) / 2 * octaves * w0 / s), alphaMax);
+            double w = 2 * Math.PI * hz / rate, c1 = Math.Cos(w), s1 = Math.Sin(w), c2 = Math.Cos(2 * w), s2 = Math.Sin(2 * w);
+            double Mag2(double b0, double b1, double b2)
+            {
+                double re = b0 + b1 * c1 + b2 * c2, im = b1 * s1 + b2 * s2;
+                return re * re + im * im;
+            }
+            return 10 * Math.Log10(Mag2(1 + alpha * a, -2 * c, 1 - alpha * a) / Mag2(1 + alpha / a, -2 * c, 1 - alpha / a));
+        }
+
+        /// <summary>A second-order Butterworth high-pass's level in dB at <paramref name="w"/> times its corner.</summary>
+        public static double ButterworthHighpassDb(double w) => -10 * Math.Log10(1 + 1 / (w * w * w * w));
+
+        /// <summary>
+        /// The old graphic EQ's curve (its bands as bells <c>bandwidth</c> octaves wide between their half-gain points, summed
+        /// in dB: constant-Q, or the cookbook's at <c>rate</c>) read at each new slider's centre. Where the bands' curve leaves
+        /// the sliders' range, it moves as a whole (the least that brings it inside, or its middle to the range's when it spans
+        /// more) and the output takes the move, with the old gain; a high-pass adds its cut after, unmoved. What still can't be
+        /// reached is clamped, with a note. For the settings, an output gain beyond the output's reach goes on the output
+        /// connections (pattern events can't move those: the output clamps).
+        /// </summary>
+        void Graphic(SuccessorRule rule, Func<string, double> get, SuccessorState state, bool events, Action<string, double> put, List<string> notes)
         {
             double width = get(rule.Bandwidth);
             if (double.IsNaN(width) || !(width > 0)) return;
             double q = 1 / (Math.Pow(2, width / 2) - Math.Pow(2, -width / 2));
             var gains = rule.Bands.Select(b => get(b.Param)).ToArray();
             if (gains.Any(double.IsNaN)) return;
-            var curve = rule.Sliders.Select(t => rule.Bands.Select((b, j) => BellDb(t.Hz / b.Hz, gains[j], q)).Sum()).ToArray();
+            double Bell(double hz, SuccessorBand b, double g) =>
+                rule.Rate is double rate ? CookbookBellDb(hz, b.Hz, g, width, rate, rule.AlphaMax) : BellDb(hz / b.Hz, g, q);
+            var curve = rule.Sliders.Select(t => rule.Bands.Select((b, j) => Bell(t.Hz, b, gains[j])).Sum()).ToArray();
             var first = New(rule.Sliders[0].Param);
             double reachLo = first == null ? double.NegativeInfinity : Math.Min(first.Value(first.Min), first.Value(first.Max));
             double reachHi = first == null ? double.PositiveInfinity : Math.Max(first.Value(first.Min), first.Value(first.Max));
@@ -526,13 +551,33 @@ namespace ReBuzz.Agent.Model
             if (hi - lo > reachHi - reachLo)
             {
                 shift = (hi + lo) / 2 - (reachHi + reachLo) / 2;
-                string note = $"{Map.From}'s curve spans {hi - lo:0.0} dB, more than {Map.To}'s sliders reach ({reachHi - reachLo:0} dB): its middle is kept, its ends clamped.";
+                string note = $"{Map.From}'s curve spans {(hi - lo).ToString("0.0", C)} dB, more than {Map.To}'s sliders reach ({(reachHi - reachLo).ToString("0", C)} dB): its middle is kept, its ends clamped.";
                 if (!notes.Contains(note)) notes.Add(note);
             }
             else if (hi > reachHi) shift = hi - reachHi;
             else if (lo < reachLo) shift = lo - reachLo;
-            for (int k = 0; k < curve.Length; k++) put(rule.Sliders[k].Param, Math.Clamp(curve[k] - shift, reachLo, reachHi));
-            put(rule.Output, (rule.Gain != null ? get(rule.Gain) : 0) + shift);
+            double corner = rule.Highpass != null ? get(rule.Highpass) : 0;
+            bool cut = false;
+            for (int k = 0; k < curve.Length; k++)
+            {
+                double v = curve[k] - shift + (corner > 0 ? ButterworthHighpassDb(rule.Sliders[k].Hz / corner) : 0);
+                if (v < reachLo - 0.05 && corner > 0 && curve[k] - shift >= reachLo - 0.05) cut = true;
+                put(rule.Sliders[k].Param, Math.Clamp(v, reachLo, reachHi));
+            }
+            if (cut)
+            {
+                string note = $"{rule.Highpass} (a corner at {corner.ToString("0", C)} Hz) cuts deeper than {Map.To}'s sliders reach: the lowest stop at {reachLo.ToString("0", C)} dB.";
+                if (!notes.Contains(note)) notes.Add(note);
+            }
+            double output = (rule.Gain != null ? get(rule.Gain) : 0) + shift;
+            if (!events && double.IsFinite(output) && New(rule.Output) is { } o)
+            {
+                double outLo = Math.Min(o.Value(o.Min), o.Value(o.Max)), outHi = Math.Max(o.Value(o.Min), o.Value(o.Max));
+                double inside = Math.Clamp(output, outLo, outHi);
+                state.OutputGainDb += output - inside;
+                output = inside;
+            }
+            put(rule.Output, output);
         }
 
         static string Ms(double s) => (s * 1000).ToString(s < 0.001 ? "0.##" : "0.#", C) + " ms";

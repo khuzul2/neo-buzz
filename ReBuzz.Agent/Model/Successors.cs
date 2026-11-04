@@ -38,7 +38,7 @@ namespace ReBuzz.Agent.Model
         LevelsToMix,
         /// <summary>A threshold-and-clamp clipper → drive into a hard clip and an output level (Jeskola Distortion → Neo Drive).</summary>
         Clip,
-        /// <summary>An old bypass switch → the new machine's bypass (its state only).</summary>
+        /// <summary>An old bypass switch → the new machine's bypass (its state only); <c>invert</c>: an enable switch (off bypasses).</summary>
         Bypass,
         /// <summary>
         /// A modulated delay's shortest and longest delay (weighted sums of old times) → the new one's delay at the sweep's
@@ -55,8 +55,10 @@ namespace ReBuzz.Agent.Model
         /// A graphic EQ whose bands overlap and add (Joachims Hyperion's: bells summed in dB, their width a parameter) onto
         /// one whose response passes through its sliders at other centres (Neo EQ's graphic mode): the old curve read at
         /// each new centre is that slider's value. The old bands are constant-Q bells, <c>bandwidth</c> octaves between their
-        /// half-gain points; a gain parameter and whatever the sliders can't reach (the curve's middle, beyond their range)
-        /// go to <c>output</c>.
+        /// half-gain points (with <c>rate</c>: the Audio EQ Cookbook's digital peaking filters at that rate, their bandwidth
+        /// warped as it does, <c>alpha_max</c> capping their alpha); an optional <c>highpass</c> (its corner in Hz, 0 off)
+        /// is a second-order Butterworth high-pass. A gain parameter and whatever the sliders can't reach (the bands' curve
+        /// beyond their range) go to <c>output</c>.
         /// </summary>
         Graphic,
     }
@@ -89,6 +91,8 @@ namespace ReBuzz.Agent.Model
         public double[] FromRange { get; init; }
         public double[] ToRange { get; init; }
         public bool Log { get; init; }
+        /// <summary>Bypass: the old switch enables (on is not bypassed).</summary>
+        public bool Invert { get; init; }
         /// <summary>Sum: (old parameter, weight).</summary>
         public IReadOnlyList<(string Param, double Weight)> Terms { get; init; }
         /// <summary>LevelsToMix: the dry level, the wet levels and the crossfade.</summary>
@@ -116,6 +120,10 @@ namespace ReBuzz.Agent.Model
         public IReadOnlyList<SuccessorBand> Bands { get; init; }
         public IReadOnlyList<SuccessorBand> Sliders { get; init; }
         public string Bandwidth { get; init; }
+        /// <summary>Graphic: a high-pass corner in Hz (a parameter; 0 is off), the old filters' sample rate (null: analog bells) and their alpha's cap.</summary>
+        public string Highpass { get; init; }
+        public double? Rate { get; init; }
+        public double AlphaMax { get; init; } = double.PositiveInfinity;
         public string Gain { get; init; }
         /// <summary>Why (a line in the report): "assumed: closed source", "measured on …".</summary>
         public string Why { get; init; } = "";
@@ -128,7 +136,7 @@ namespace ReBuzz.Agent.Model
             SuccessorRuleKind.Sweep => Low.Concat(High).Select(t => t.Param).Distinct(StringComparer.OrdinalIgnoreCase),
             SuccessorRuleKind.DryWet => MixFrom != null ? new[] { MixFrom } : new[] { Dry, Wet?.FirstOrDefault()?.From }.Where(x => x != null),
             SuccessorRuleKind.Db when ZeroWhen != null => new[] { From, ZeroWhen },
-            SuccessorRuleKind.Graphic => Bands.Select(b => b.Param).Append(Bandwidth).Concat(Gain != null ? new[] { Gain } : Array.Empty<string>()),
+            SuccessorRuleKind.Graphic => Bands.Select(b => b.Param).Append(Bandwidth).Concat(new[] { Gain, Highpass }.Where(x => x != null)),
             SuccessorRuleKind.Unit when Times != null => new[] { From, Times },
             _ => new[] { From },
         };
@@ -338,6 +346,7 @@ namespace ReBuzz.Agent.Model
                 FromRange = Pair(r["from_range"], $"{pair}: from_range"),
                 ToRange = Pair(r["to_range"], $"{pair}: to_range"),
                 Log = (string)r["curve"] == "log",
+                Invert = (bool?)r["invert"] ?? false,
                 Terms = Terms(r["terms"]),
                 Dry = (string)r["dry"],
                 Wet = r["wet"] switch
@@ -358,6 +367,9 @@ namespace ReBuzz.Agent.Model
                 Bands = Bands(r["bands"]),
                 Sliders = Bands(r["sliders"]),
                 Bandwidth = (string)r["bandwidth"],
+                Highpass = (string)r["highpass"],
+                Rate = (double?)r["rate"],
+                AlphaMax = (double?)r["alpha_max"] ?? double.PositiveInfinity,
                 Gain = (string)r["gain"],
                 Mix = (string)r["mix"],
                 Threshold = (string)r["threshold"],

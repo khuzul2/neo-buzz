@@ -1,9 +1,9 @@
 // Fork (docs/specs/mcp-server.md §12.5, U5): successor mappings and the conversion machine_replace
 // computes. Every mapping parses and names parameters the two machines have (by their manifests);
 // values move through units (percent to dB, tables to Hz, separate dry and wet levels to a
-// crossfade, a threshold and clamp to drive and output); pattern columns convert event by event,
-// ramps kept; tracker notes become notes, slides glides; the tolerance check reads loudness and
-// third octaves.
+// crossfade, a threshold and clamp to drive and output, a graphic EQ's summed bands to the curve
+// at other centres); pattern columns convert event by event, ramps kept; tracker notes become
+// notes, slides glides; the tolerance check reads loudness and third octaves.
 using System.Text.Json.Nodes;
 using ReBuzz.Agent.Audio;
 using ReBuzz.Agent.Model;
@@ -61,6 +61,7 @@ namespace ReBuzz.AgentTests
                          "Jeskola Reverb → Neo Verb", "Pedal EQ → Neo EQ", "Jeskola Distortion → Neo Drive", "Pedal Gain → Neo Utility",
                          "Jeskola Bass → Neo Poly", "Jeskola Bass 2 → Neo Poly", "Jeskola Bass 3 → Neo Poly",
                          "Jeskola Flanger → Neo Ensemble", "Jeskola Chorus → Neo Ensemble", "FSM Chorus2 → Neo Ensemble", "Pedal Chorus → Neo Ensemble",
+                         "Joachims Hyperion → Neo EQ",
                      })
                 Assert.That(pairs, Does.Contain(expected));
             foreach (var map in SuccessorLibrary.All)
@@ -319,6 +320,92 @@ namespace ReBuzz.AgentTests
             var result = c.ConvertNotes(columns, 8 * T, 0, 0.1, (p, t) => p.Default, new List<(int, int)>(), new List<string>());
             Assert.That(result.Select(n => n.Velocity), Is.EqualTo(new[] { 127, 64 }));
             Assert.That(result[1].Duration, Is.EqualTo(T), "Note lenght 1: one tick");
+        }
+
+        [Test]
+        public void HyperionsCurveIsReadAtTheIsoCentresAndWhatTheSlidersCantReachGoesToTheOutput()
+        {
+            var c = Converter("Joachims Hyperion", "Neo EQ");
+            var rule = c.Map.Rules.Single(r => r.Kind == SuccessorRuleKind.Graphic);
+            Assert.That(rule.Bands, Has.Count.EqualTo(30));
+            Assert.That(rule.Sliders, Has.Count.EqualTo(31));
+            var sliders = c.NewParams.Where(p => p.Name.StartsWith("G ")).Select(p => p.Name).ToList();
+            Assert.That(rule.Sliders.Select(s => s.Param), Is.EquivalentTo(sliders), "every graphic slider is set");
+
+            // The defaults: graphic mode, flat, the output at 0 dB, not bypassed.
+            var flat = c.ConvertState(Raws(c));
+            Assert.That(c.New("Mode")!.Format(Final(flat, "Mode")), Is.EqualTo("Graphic"));
+            foreach (var name in sliders) Assert.That(Value(c, flat, name), Is.Zero, name);
+            Assert.That(Value(c, flat, "Output"), Is.Zero.Within(0.05));
+            Assert.That(flat.Bypass, Is.False);
+            Assert.That(flat.OutputGainDb, Is.Zero);
+
+            // One band at +12 dB: each slider is the band's level at its centre (the cookbook's peaking filter at 44.1 kHz, as
+            // wide as Bandwidth's measured table says: 2.0 octaves at the default, twice what Hyperion displays).
+            Assert.That(rule.Rate, Is.EqualTo(44100));
+            var b900 = rule.Bands.Single(b => b.Param.Trim() == "900 Hz");
+            Assert.That(b900.Hz, Is.EqualTo(20 * Math.Pow(1000, 16 / 29.0)).Within(0.01));
+            double width = c.Old("Bandwidth")!.Value(8);
+            Assert.That(width, Is.EqualTo(2.0).Within(0.01));
+            double Bell(SuccessorBand b, double hz, double gainDb) => SuccessorConverter.CookbookBellDb(hz, b.Hz, gainDb, width, 44100, rule.AlphaMax);
+            double g = c.Old(b900.Param)!.Value(213);
+            Assert.That(g, Is.EqualTo(12.05).Within(0.01));
+            var one = c.ConvertState(Raws(c, new() { [b900.Param] = 213 }));
+            foreach (var s in rule.Sliders)
+                Assert.That(Value(c, one, s.Param), Is.EqualTo(Bell(b900, s.Hz, g)).Within(0.051), s.Param);
+            Assert.That(Value(c, one, "G 1 kHz"), Is.GreaterThan(Value(c, one, "G 800 Hz")), "903.9 Hz is nearer 1 kHz");
+            Assert.That(Value(c, one, "Output"), Is.Zero.Within(0.05));
+            Assert.That(one.Notes, Is.Empty);
+
+            // Input gain is the output's; below −24 dB the output connections take the rest.
+            var quiet = c.ConvertState(Raws(c, new() { ["Input gain."] = 60 }));
+            double inputDb = c.Old("Input gain.")!.Value(60);
+            Assert.That(Value(c, quiet, "Output") + quiet.OutputGainDb, Is.EqualTo(inputDb).Within(0.05));
+            var silent = c.ConvertState(Raws(c, new() { ["Input gain."] = 10 }));
+            Assert.That(Value(c, silent, "Output"), Is.EqualTo(-24).Within(0.05));
+            Assert.That(silent.OutputGainDb, Is.EqualTo(c.Old("Input gain.")!.Value(10) + 24).Within(0.05));
+
+            // Every band at +18 dB at the widest: the curve is far above the sliders' reach. It moves down as a whole (the
+            // output takes the move, beyond +24 dB the connections), its middle kept and its ends clamped, with a note.
+            var all = rule.Bands.ToDictionary(b => b.Param, _ => 255);
+            all["Bandwidth"] = 15;
+            var loud = c.ConvertState(Raws(c, all));
+            var values = sliders.Select(n => Value(c, loud, n)).ToList();
+            Assert.That(values.Max(), Is.LessThanOrEqualTo(18));
+            Assert.That(values.Min(), Is.GreaterThanOrEqualTo(-18));
+            Assert.That(Value(c, loud, "Output"), Is.EqualTo(24).Within(0.05));
+            Assert.That(loud.OutputGainDb, Is.GreaterThan(0));
+            // Every band +3 dB at the default width: the bands add up to +21.5 dB at 3 kHz, above the sliders' +18 dB; the curve
+            // fits once moved down, and keeps its shape.
+            var three = rule.Bands.ToDictionary(b => b.Param, _ => 149);
+            var lifted = c.ConvertState(Raws(c, three));
+            double shift = Value(c, lifted, "Output");
+            Assert.That(shift, Is.EqualTo(3.5).Within(0.3), "the bands add up");
+            foreach (var s in rule.Sliders)
+            {
+                double curve = rule.Bands.Sum(b => Bell(b, s.Hz, c.Old(b.Param)!.Value(149)));
+                Assert.That(Value(c, lifted, s.Param) + shift, Is.EqualTo(curve).Within(0.1), s.Param);
+            }
+            Assert.That(lifted.Notes, Is.Empty);
+
+            // Highpass: a Butterworth high-pass at 1.28 times the corner displayed, into the lowest sliders after the curve is
+            // placed (Output stays); raw 0 is off. Deeper than the sliders reach, they stop at −18 dB, with a note.
+            Assert.That(c.Old("Highpass")!.Value(0), Is.Zero);
+            var cut = c.ConvertState(Raws(c, new() { ["Highpass"] = 64 }));
+            double corner = c.Old("Highpass")!.Value(64);
+            Assert.That(corner, Is.EqualTo(28.8).Within(0.3));
+            foreach (var s in rule.Sliders)
+                Assert.That(Value(c, cut, s.Param), Is.EqualTo(SuccessorConverter.ButterworthHighpassDb(s.Hz / corner)).Within(0.051), s.Param);
+            Assert.That(Value(c, cut, "G 20 Hz"), Is.EqualTo(-7.2).Within(0.3), "measured −7.24 dB at 20 Hz");
+            Assert.That(Value(c, cut, "Output"), Is.Zero.Within(0.05));
+            Assert.That(cut.Notes, Is.Empty);
+            var deep = c.ConvertState(Raws(c, new() { ["Highpass"] = 127 }));
+            Assert.That(Value(c, deep, "G 20 Hz"), Is.EqualTo(-18).Within(0.05));
+            Assert.That(Value(c, deep, "G 100 Hz"), Is.EqualTo(SuccessorConverter.ButterworthHighpassDb(100 / c.Old("Highpass")!.Value(127))).Within(0.051));
+            Assert.That(deep.Notes, Has.Some.Contains("Highpass"));
+
+            // Enable off bypasses Neo EQ.
+            Assert.That(c.ConvertState(Raws(c, new() { ["Enable"] = 0 })).Bypass, Is.True);
         }
 
         [Test]

@@ -216,6 +216,23 @@ namespace ReBuzzTests
                 EffectSong(client, "Pedal Gain", Changes(("Gain", "50%")), noise: true);
                 results.Add(("Pedal Gain", Within(Replace(client, "Pedal Gain"))));
             }
+            // Joachims Hyperion onto Neo EQ's graphic mode (machine-safety.md §4), on noise: its curve read at the ISO centres.
+            // By index: #1 Input gain, #2 … #31 the bands from 20 kHz down to 20 Hz, #32 Highpass, #33 Bandwidth; raw 128 is 0 dB.
+            if (Has(bin, "Effects", "Joachims Hyperion"))
+            {
+                var smile = new[] { (31, 149), (30, 149), (29, 149), (28, 149), (27, 149), (18, 114), (17, 114), (16, 114), (15, 114), (6, 149), (5, 149), (4, 149) };
+                EffectSong(client, "Joachims Hyperion", Indexed(smile), noise: true);
+                results.Add(("Joachims Hyperion, a smile", Within(Replace(client, "Joachims Hyperion, a smile (20–52 Hz and 7.7–12.4 kHz +3 dB, 440–900 Hz −2 dB)"))));
+                EffectSong(client, "Joachims Hyperion", Indexed(smile.Append((32, 64)).ToArray()), noise: true);
+                results.Add(("Joachims Hyperion, a smile and Highpass", Within(Replace(client, "Joachims Hyperion, the smile and Highpass 22 Hz (raw 64)"))));
+                EffectSong(client, "Joachims Hyperion", Indexed(Enumerable.Range(2, 30).Select(i => (i, 149)).Append((1, 60)).ToArray()), noise: true);
+                results.Add(("Joachims Hyperion, every band +3 dB", Within(Replace(client, "Joachims Hyperion, every band +3 dB (+21.5 dB summed), Input gain −12 dB"))));
+                EffectSong(client, "Joachims Hyperion", Indexed(Enumerable.Range(2, 30).Select(i => (i, i % 2 == 0 ? 170 : 86)).Append((33, 2)).ToArray()), noise: true);
+                results.Add(("Joachims Hyperion, a zigzag", Within(Replace(client, "Joachims Hyperion, zigzag ±6 dB at Bandwidth 0.3 (raw 2)"))));
+                // Narrower than graphic mode can follow (0.37 octave between half-gain points): reported, not asserted.
+                EffectSong(client, "Joachims Hyperion", Indexed((15, 213), (33, 0)), noise: true);
+                Replace(client, "Joachims Hyperion, 900 Hz +12 dB at Bandwidth 0.2 (raw 0, the narrowest)");
+            }
             Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
             Assert.That(results.Where(x => x.Within != true).Select(x => $"{x.Label}: {x.Within?.ToString() ?? "not compared"}"), Is.Empty,
                 "the exit-check pairs convert within their stated tolerance");
@@ -343,6 +360,10 @@ namespace ReBuzzTests
         static JsonArray Raw(params (string Param, int Raw)[] changes) =>
             new(changes.Select(c => (JsonNode)new JsonObject { ["param"] = c.Param, ["value"] = $"raw:{c.Raw}" }).ToArray());
 
+        /// <summary>Raw values by parameter index ("#15"), for machines whose names are padded (Joachims Hyperion's "  900 Hz").</summary>
+        static JsonArray Indexed(params (int Index, int Raw)[] changes) =>
+            new(changes.Select(c => (JsonNode)new JsonObject { ["param"] = $"#{c.Index}", ["value"] = $"raw:{c.Raw}" }).ToArray());
+
         static JsonArray OnTrack(JsonArray changes)
         {
             foreach (var c in changes) c!["track"] = 0;
@@ -439,7 +460,7 @@ namespace ReBuzzTests
             var hz = FineTransfer.Frequencies();
             void Measure(string label, params (int Index, int Raw)[] changes)
             {
-                HeldNoise(client, "Joachims Hyperion", changes.Length == 0 ? null : new JsonArray(changes.Select(c => (JsonNode)new JsonObject { ["param"] = $"#{c.Index}", ["value"] = $"raw:{c.Raw}" }).ToArray()));
+                HeldNoise(client, "Joachims Hyperion", changes.Length == 0 ? null : Indexed(changes));
                 Quiet(client, "param_set", Args(("machine", "Synth"), ("changes", Changes(("Volume", "-12 dB")))));
                 var render = Quiet(client, "render", Args(("tail_seconds", 0), ("probes", new JsonArray("FX", "Synth"))));
                 var probes = render["probes"]!.AsArray();
