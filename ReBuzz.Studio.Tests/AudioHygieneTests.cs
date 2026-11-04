@@ -3,7 +3,8 @@
 // device's work algorithm and render threads, on a thread of its own), and these tests count what
 // that thread and the render threads allocate per buffer, and what they compile:
 //  - an empty song, and a Modern Pattern Editor pattern playing notes (its Note column and its MIDI
-//    note lanes) and automation, with its editor open: 0 bytes a buffer, with each work algorithm;
+//    note lanes) and automation, with its editor open, through a Neo Ensemble (feedback, a synced
+//    LFO, its depth moved every buffer): 0 bytes a buffer, with each work algorithm;
 //  - automation of a parameter with listeners (a parameter window's rows, the master volume's):
 //    0 bytes on the audio thread, and the listeners still see the final values;
 //  - after the warm-up (AudioWarmUp), the transport's first play and stop compile nothing.
@@ -213,6 +214,26 @@ namespace ReBuzz.Studio.Tests
             return m;
         }
 
+        /// <summary>
+        /// Neo Ensemble between a machine and the master: a flanger with feedback, its LFO synced to the
+        /// tempo, so its audio path (the loop, the LFO, the parameter smoothing) is measured too.
+        /// </summary>
+        static MachineCore InsertEnsemble(MachineCore source, string name)
+        {
+            var song = Core.SongCore;
+            var master = song.MachinesList[0];
+            song.CreateMachine("Neo Ensemble", null, name, null, null, null, -1, 0.5f, 0.3f);
+            var fx = song.MachinesList.Last(x => x.Name == name);
+            song.DisconnectMachines(source.Outputs.First(c => c.Destination == master));
+            song.ConnectMachines(source, fx, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            song.ConnectMachines(fx, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            var globals = fx.ParameterGroupsList[1].ParametersList;
+            globals.First(p => p.Name == "Mode").SetValue(0, 1);
+            globals.First(p => p.Name == "Feedback").SetValue(0, 1700);
+            globals.First(p => p.Name == "Sync").SetValue(0, 7);
+            return fx;
+        }
+
         static void Arrange(MachineCore m, IPattern p)
         {
             var song = Core.SongCore;
@@ -310,18 +331,26 @@ namespace ReBuzz.Studio.Tests
         {
             NewSong();
             var (m, pattern, window) = MpePattern("Hygiene MPE");
+            var ensemble = InsertEnsemble(m, "Hygiene Ensemble");
             try
             {
                 var detune = m.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Uni detune");
+                var depth = ensemble.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Depth");
+                int n = 0;
                 foreach (int algorithm in new[] { 0, 1, 2 })
                 {
                     using var audio = new AudioThread(algorithm);
                     lock (ReBuzzCore.AudioLock) Core.Playing = true;
                     var heard = new HashSet<int>(1024);
-                    var cost = Steady(audio, perBuffer: () => heard.Add(detune.GetValue(0)));
-                    AssertNoAllocation(cost, $"a pattern editor pattern playing (algorithm {algorithm})");
+                    var cost = Steady(audio, perBuffer: () =>
+                    {
+                        heard.Add(detune.GetValue(0));
+                        depth.SetValue(1 << 16, 200 + (n++ % 8) * 100);   // as automation sets it, not recorded
+                    });
+                    AssertNoAllocation(cost, $"a pattern editor pattern playing through Neo Ensemble (algorithm {algorithm})");
                     Assert.That(heard.Count, Is.GreaterThan(8), $"the automation reached the machine (algorithm {algorithm})");
                     Assert.That(m.IsActive, Is.True, $"the notes sound (algorithm {algorithm})");
+                    Assert.That(ensemble.IsActive, Is.True, $"and pass through Neo Ensemble (algorithm {algorithm})");
                     lock (ReBuzzCore.AudioLock) Core.Playing = false;
                 }
             }

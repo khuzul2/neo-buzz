@@ -4848,6 +4848,102 @@
    "generated": true,
    "health": "warn"
   },
+  "Neo Ensemble": {
+   "gear": "Neo Ensemble",
+   "kind": "effect",
+   "load_seconds": 0.07,
+   "gear_info": {
+    "file": "Effects/Neo Ensemble.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "takes_midi": false
+   },
+   "parameters": 14,
+   "track_parameters": 0,
+   "inferred": 14,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 14,
+    "of": 14
+   },
+   "effect": {
+    "gain_db": -3.94,
+    "latency_samples": 0,
+    "latency_ms": 0.0,
+    "tail_seconds": 0.05,
+    "echoes": 0,
+    "output_correlation": 0.63,
+    "spectrum_spread_db": 12.5,
+    "tilt_db": 1.6,
+    "sine": {
+     "loud": {
+      "gain_db": -3.99,
+      "thd_percent": 2.14,
+      "thd_in_percent": 1.96,
+      "movement_db": 3.43
+     },
+     "quiet": {
+      "gain_db": -2.37,
+      "thd_percent": 1.97,
+      "thd_in_percent": 1.96,
+      "movement_db": 0.96
+     }
+    },
+    "traits": [
+     "modulation",
+     "filter or EQ"
+    ]
+   },
+   "cpu_ms_per_s": 8.9,
+   "type": "modulation",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -10.24,
+     "growth_db": -0.33,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -21.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 18.5,
+      "growth_db": -0.58,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot",
+     "an effect with Feedback"
+    ],
+    "renders": 28
+   },
+   "sweeps": {
+    "Output": {
+     "max": {
+      "peak_dbfs": 1.59,
+      "growth_db": 0.38,
+      "verdict": "hot",
+      "raw": 240,
+      "text": "+12.0 dB"
+     }
+    }
+   },
+   "seconds": 8.0,
+   "platform": "linux",
+   "date": "2026-11-04",
+   "problems": [],
+   "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Output at its maximum (+12.0 dB): +1.6 dBFS peak"
+   ],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "warn"
+  },
   "Neo EQ": {
    "gear": "Neo EQ",
    "kind": "effect",
