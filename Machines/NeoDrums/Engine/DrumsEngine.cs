@@ -111,10 +111,11 @@ namespace NeoBuzz.Drums
         };
 
         /// <summary>
-        /// Each voice's own scale: a hit at velocity 127, its level at 0 dB, peaks about where a TR-909's sits against its
-        /// kick (machines.md, Neo Drums: Levels).
+        /// Each voice's own scale: a hit at velocity 127, its level at 0 dB and the voice at its defaults, peaks about 7.5 dB
+        /// under the Rout 909's sample of it (kick −8 dBFS, snare −10, closed hat −9), so a kick, snare and hat together, or an
+        /// accented hit, keep their headroom (machines.md, Neo Drums: Levels).
         /// </summary>
-        internal static readonly float[] Scale = { 0.231f, 0.414f, 0.876f, 0.163f, 0.644f, 0.456f, 0.408f, 0.408f, 0.381f, 0.507f, 0.397f, 0.715f };
+        internal static readonly float[] Scale = { 0.154f, 0.277f, 0.585f, 0.109f, 0.430f, 0.305f, 0.273f, 0.273f, 0.255f, 0.339f, 0.265f, 0.478f };
 
         readonly ParamValues values;
         readonly DrumHit[] hits = new DrumHit[VoiceCount * HitsPerVoice];

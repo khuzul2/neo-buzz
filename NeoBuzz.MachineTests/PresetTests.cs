@@ -37,6 +37,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Sampler"] = (NeoBuzz.Sampler.Params.Table, (v, x) => RenderSampler(v, x.Length)),
             // mcp-server.md §8.1: the oscilloscope passes its input through; its presets only change what it shows.
             ["Neo Scope"] = (NeoBuzz.Scope.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Scope.ScopeEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n, default))),
+            // mcp-server.md §8.2: the drum kit; each kit plays kick, snare and closed hat together.
+            ["Neo Drums"] = (NeoBuzz.Drums.Params.Table, (v, x) => RenderDrums(v, x.Length)),
         };
 
         // The mix and master batch: one engine per preset render, keyed by its parameter values.
@@ -52,7 +54,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that
@@ -76,6 +78,25 @@ namespace NeoBuzz.MachineTests
             {
                 if (pos <= length * 2 / 3 && pos + 256 > length * 2 / 3)
                     for (int k = 0; k < notes.Length; k++) e.NoteOff(k);
+                int n = Math.Min(256, length - pos);
+                e.Process(l, r, n);
+                for (int i = 0; i < n; i++) y[pos + i] = Math.Max(Math.Abs(l[i]), Math.Abs(r[i])) * Math.Sign(l[i] + r[i] + 1e-12f);
+            }
+            return y;
+        }
+
+        /// <summary>Neo Drums: kick, snare and closed hat (C2, D2, F#2) at velocity 0.8, together.</summary>
+        static float[] RenderDrums(ParamValues v, int length)
+        {
+            var e = new NeoBuzz.Drums.DrumsEngine(v);
+            e.SetSampleRate(Measure.Rate);
+            var y = new float[length];
+            var l = new float[256];
+            var r = new float[256];
+            int[] notes = { 36, 38, 42 };
+            for (int k = 0; k < notes.Length; k++) e.NoteOn(k, notes[k], 0.8f);
+            for (int pos = 0; pos < length; pos += 256)
+            {
                 int n = Math.Min(256, length - pos);
                 e.Process(l, r, n);
                 for (int i = 0; i < n; i++) y[pos + i] = Math.Max(Math.Abs(l[i]), Math.Abs(r[i])) * Math.Sign(l[i] + r[i] + 1e-12f);

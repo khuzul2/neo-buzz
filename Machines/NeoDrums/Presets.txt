@@ -1,0 +1,149 @@
+# Neo Drums factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoDrums
+# Times in seconds, pitches in Hz (the hats' and cymbals' tune in semitones), levels in dB, pans in %.
+# Every kit plays the same keys (General MIDI from C2) and hit columns; the hats' choke is built in.
+machine "Neo Drums"
+
+preset "909 — Classic"
+# The defaults: voiced against the Rout 909's samples at its defaults.
+Volume = 0
+
+preset "909 — Techno"
+Volume = -2
+Accent gain = 8
+Kick tune = 50
+Kick sweep = 26
+Kick sweep time = 0.02
+Kick decay = 0.8
+Kick click = 70
+Kick punch = 70
+Kick drive = 9
+Snare tune = 190
+Snare snap = 65
+Snare decay = 0.25
+Clap spread = 0.013
+Clap decay = 0.8
+Closed hat tone = 9000
+Closed hat decay = 0.05
+Open hat tone = 9000
+Open hat decay = 0.35
+Open hat level = -3
+Ride tone = 6500
+Ride decay = 2.4
+
+preset "808 — Classic"
+# A TR-808's manner: the long, nearly pure kick, the two-tone snare (238 and 476 Hz), the 540 and 800 Hz cowbell.
+Kick tune = 49
+Kick sweep = 7
+Kick sweep time = 0.035
+Kick decay = 1.2
+Kick click = 15
+Kick punch = 0
+Kick drive = 0
+Snare tune = 238
+Snare tone = 5000
+Snare snap = 40
+Snare decay = 0.22
+Clap tune = 1100
+Clap spread = 0.009
+Clap decay = 0.5
+Rim tune = 1700
+Rim decay = 0.04
+Closed hat tone = 8000
+Closed hat decay = 0.05
+Open hat tone = 8000
+Open hat decay = 0.45
+Low tom tune = 90
+Low tom decay = 0.55
+Low tom tone = 10
+Mid tom tune = 130
+Mid tom decay = 0.45
+Mid tom tone = 10
+High tom tune = 190
+High tom decay = 0.35
+High tom tone = 10
+Cowbell tune = 540
+Cowbell decay = 0.3
+Crash tone = 8000
+Crash decay = 1.6
+
+preset "808 — Electro Boom"
+Volume = -3
+Vel → level = 50
+Kick tune = 42
+Kick sweep = 12
+Kick sweep time = 0.05
+Kick decay = 2.5
+Kick click = 25
+Kick punch = 20
+Kick drive = 6
+Snare tune = 220
+Snare tone = 6000
+Snare snap = 70
+Snare decay = 0.3
+Clap tune = 1200
+Clap decay = 0.9
+Closed hat tone = 8500
+Closed hat decay = 0.04
+Open hat tone = 8500
+Open hat decay = 0.6
+Low tom tune = 80
+Mid tom tune = 120
+High tom tune = 170
+Cowbell tune = 540
+Cowbell level = -3
+
+preset "Lo-Fi — Dusty"
+# Duller and drier, the kick pushed into its drive.
+Volume = -2
+Vel → tone = 30
+Kick tune = 56
+Kick sweep = 18
+Kick decay = 0.45
+Kick click = 20
+Kick drive = 12
+Snare tune = 200
+Snare tone = 3000
+Snare snap = 55
+Snare decay = 0.2
+Clap tune = 800
+Clap decay = 0.35
+Rim tune = 1200
+Closed hat tone = 4500
+Closed hat decay = 0.06
+Open hat tone = 4500
+Open hat decay = 0.4
+Low tom tone = 15
+Mid tom tone = 15
+High tom tone = 15
+Crash tone = 2500
+Crash decay = 1.0
+Ride tone = 3500
+Ride decay = 1.2
+
+preset "Minimal — Tight"
+# Short everything: a clicky kick, a rim and hats that barely ring.
+Kick tune = 60
+Kick sweep = 18
+Kick sweep time = 0.012
+Kick decay = 0.3
+Kick click = 80
+Kick punch = 60
+Snare tune = 200
+Snare snap = 60
+Snare decay = 0.15
+Clap spread = 0.008
+Clap decay = 0.3
+Rim tune = 1300
+Rim decay = 0.06
+Closed hat tune = 2
+Closed hat tone = 10000
+Closed hat decay = 0.03
+Open hat tune = 2
+Open hat tone = 10000
+Open hat decay = 0.2
+Low tom decay = 0.4
+Mid tom decay = 0.35
+High tom decay = 0.3
+Cowbell decay = 0.15
+Crash decay = 0.8
+Ride decay = 1.0
