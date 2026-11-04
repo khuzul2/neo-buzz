@@ -108,9 +108,12 @@ def write_wave(path, samples, rate=48000):
                 + b"data" + struct.pack("<I", len(data)) + data)
 
 
-def gen(name, gear, preset, params, notes, beats=4, tail=1.0, waves=()):
-    """A generator; waves: [(slot, WAVES key, root, layer)] imported into the song's wavetable first (Neo Sampler)."""
-    return {"name": name, "gen": (gear, preset, params, notes), "fx": [], "beats": beats, "tail": tail, "waves": list(waves)}
+def gen(name, gear, preset, params, notes, beats=4, tail=1.0, waves=(), auto=()):
+    """A generator; waves: [(slot, WAVES key, root, layer)] imported into the song's wavetable first (Neo Sampler);
+    auto: its parameters in its pattern, [(param, track or None, [(beat, value), ...])], in steps (a played parameter,
+    a drum's hit column, one event per point)."""
+    return {"name": name, "gen": (gear, preset, params, notes), "fx": [], "beats": beats, "tail": tail, "waves": list(waves),
+            "gen_auto": list(auto)}
 
 
 def fx(name, gear, preset, params=(), tail=1.0, extra=(), source=SOURCE, beats=4, auto=()):
@@ -248,6 +251,25 @@ CASES = [
     fx("scope-synced-after-delay", "Neo Delay", "Mix — Dotted Eighth Throw", tail=1.5, extra=[("Neo Scope", "Synced — One Beat", [])]),
     fx("scope-free-triggered", "Neo Scope", "Free — Low End (Triggered, Holdoff)", [("Holdoff", "20 ms")],
        auto=[("Display", [(0, "Mid"), (1, "L & R"), (2, "Side")]), ("Sync", [(1.5, "1/8"), (2.5, "Free")]), ("Freeze", [(3, "on")])]),
+    # Neo Drums: every voice from its General MIDI key at varied velocities (the closed hat choking the open one, the
+    # crash and ride ringing out), the hit columns and Accent written as played parameters, rolls retriggering each
+    # voice, and the voices' settings automated (a hit takes its tune, decay and tone as it starts; levels glide).
+    gen("drums-909-groove", "Neo Drums", "909 — Classic", [],
+        [n(p, i * 0.25, 0.2, 50 + (i * 23) % 78) for i, p in enumerate(["C2", "F#2", "D2", "F#2", "C2", "A#2", "D#2", "F#2",
+                                                                          "C2", "C#2", "D2", "A#2", "G2", "B2", "D3", "G#3"])]
+        + [n("C#3", 0, 0.5, 110), n("D#3", 2, 0.5, 90), n("F#2", 1.375, 0.1, 70)], tail=2.0),
+    gen("drums-808-columns", "Neo Drums", "808 — Classic", [("Volume", "-6 dB"), ("Kick drive", "12 dB"), ("Kick pan", -30), ("Closed hat pan", 40)],
+        [n("C2", 3, 0.25, 127)],
+        auto=[("BD", 0, [(0, 127), (1, 100), (2, 127), (2.75, 60)]), ("SD", 0, [(1, 110), (3, 120)]),
+              ("CH", 1, [(b * 0.5, 60 + (b * 29) % 67) for b in range(8)]), ("OH", 1, [(1.75, 90)]),
+              ("CB", 2, [(0.75, 100), (2.25, 80)]), ("LT", 2, [(3.25, 120)]), ("MT", 2, [(3.5, 110)]), ("HT", 2, [(3.75, 100)]),
+              ("CP", 3, [(1, 90), (3, 127)]), ("RS", 3, [(0.5, 100)]), ("Accent", 3, [(1, 1), (3, 1)])]),
+    gen("drums-techno-rolls", "Neo Drums", "909 — Techno", [("Accent gain", "12 dB")],
+        [n("C2", i * 0.125, 0.1, 40 + i * 5) for i in range(16)] + [n("D2", 2 + i * 0.0625, 0.05, 60 + i * 4) for i in range(16)]
+        + [n("F#2", i * 0.25, 0.1, 100) for i in range(16)] + [n("A#2", 0.5, 0.25, 110), n("C#3", 3, 0.5, 127)],
+        auto=[("Kick tune", None, [(0, "45 Hz"), (1, "60 Hz"), (1.5, "38 Hz")]), ("Kick decay", None, [(0, "0.3 s"), (1, "1.5 s")]),
+              ("Snare level", None, [(2, "-12 dB"), (2.5, "0 dB"), (3, "-6 dB")]), ("Closed hat tone", None, [(0, "4 kHz"), (2, "14 kHz")])],
+        tail=1.5),
     # Long: what drifts with time (oscillator and LFO phases, modulated delays) shows here. 16 s each.
     gen("long-poly", "Neo Poly", "Pad — Evolving PWM", [], LONG, beats=32),
     gen("long-wave", "Neo Wave", "Pad — Organ Drift", [], LONG, beats=32),
@@ -357,8 +379,15 @@ def render_case(exe, case, out_dir, work):
         if preset:
             c.call("preset_load", machine="Src", preset=preset)
         set_params(c, "Src", params)
+        tracks = [t for _, t, _ in case.get("gen_auto", []) if t is not None]
+        if tracks:
+            c.call("machine_set", machine="Src", tracks=max(tracks) + 1)
         c.call("pattern_create", machine="Src", name="A", length_beats=case["beats"])
-        c.call("notes_write", machine="Src", pattern="A", notes=notes)
+        if notes:
+            c.call("notes_write", machine="Src", pattern="A", notes=notes)
+        for param, track, points in case.get("gen_auto", []):
+            c.call("automation_write", machine="Src", pattern="A", param=param, shape="step",
+                   points=[{"at": at, "value": v} for at, v in points], **({"track": track} if track is not None else {}))
         c.call("arrangement_place", machine="Src", pattern="A", at=[0])
         last = "Src"
         for i, (fgear, fpreset, fparams) in enumerate(case["fx"]):
