@@ -346,6 +346,26 @@ namespace ReBuzz.Agent.Model
         /// a slide becomes a second note that glides from it (the glide time set where it starts).
         /// <paramref name="columns"/>: the old note, slide, length and volume columns by (parameter, track).
         /// </summary>
+        /// <summary>
+        /// The note the old machine's note column holds most often across <paramref name="patterns"/> (its raw value), and how
+        /// many different notes it holds; null when it holds none. For <see cref="SuccessorNotes.RulesReadNote"/>.
+        /// </summary>
+        public int? MostCommonNote(IEnumerable<IReadOnlyDictionary<(SuccessorParam Param, int Track), IReadOnlyList<ColumnEvent>>> patterns, out int distinct)
+        {
+            distinct = 0;
+            var column = OldColumn(Map.Notes?.Note);
+            if (column == null) return null;
+            var counts = new Dictionary<int, int>();
+            foreach (var columns in patterns)
+                foreach (var (key, events) in columns)
+                    if (key.Param == column)
+                        foreach (var e in events)
+                            if (TrackNotes.FromBuzz(e.Raw) >= 0) counts[e.Raw] = counts.GetValueOrDefault(e.Raw) + 1;
+            distinct = counts.Count;
+            if (counts.Count == 0) return null;
+            return counts.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key).First().Key;
+        }
+
         public List<NoteEvent> ConvertNotes(IReadOnlyDictionary<(SuccessorParam Param, int Track), IReadOnlyList<ColumnEvent>> columns, int patternTime,
             int pitchShift, double secondsPerTick, Func<SuccessorParam, int, int> baseRaw, List<(int Time, int Raw)> glides, List<string> notes)
         {
@@ -370,7 +390,7 @@ namespace ReBuzz.Agent.Model
                 var events = Column(spec.Note, track).OrderBy(e => e.Time).ToList();
                 // The volume a note gets: the column's last value at or before it (a state parameter holds), else the machine's.
                 var volumes = volumeParam == null ? new List<ColumnEvent>() : Column(spec.Volume, track).OrderBy(v => v.Time).ToList();
-                double volume = volumeParam == null || !spec.VolumeHolds ? double.NaN : volumeParam.Value(baseRaw(volumeParam, track));
+                double volume = volumeParam == null || !spec.VolumeHolds ? double.NaN : spec.VolumeStart ?? volumeParam.Value(baseRaw(volumeParam, track));
                 int nextVolume = 0;
                 for (int i = 0; i < events.Count; i++)
                 {

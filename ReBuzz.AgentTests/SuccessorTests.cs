@@ -28,7 +28,7 @@ namespace ReBuzz.AgentTests
         {
             var list = SuccessorParam.FromManifest(All()[map.From]);
             IEnumerable<string> extra = map.Describe.Keys;
-            if (map.Notes is { } n) extra = extra.Concat(new[] { n.Note, n.Slide, n.SlideLength, n.Length, n.Volume }.Where(x => x != null)!);
+            if (map.Notes is { } n) extra = extra.Concat(new[] { n.Note, n.Slide, n.SlideLength, n.Length, n.Volume }.Where(x => x != null)!).Concat(n.Triggers.Select(t => t.Column));
             foreach (var name in extra.Distinct())
                 if (!list.Any(p => p.Name == name))
                     list.Add(new SuccessorParam { Name = name, Track = true, Min = 0, Max = 255, Default = 0 });
@@ -64,6 +64,7 @@ namespace ReBuzz.AgentTests
                          "Joachims Hyperion → Neo EQ",
                          "Jeskola Delay → Neo Delay", "Jeskola Cross Delay → Neo Delay", "Jeskola NiNjA dElaY → Neo Delay", "FSM PanzerDelay → Neo Delay",
                          "Pedal M1 → Neo Sampler",
+                         "Rout 909 → Neo Drums", "FSM KickXP → Neo Drums",
                      })
                 Assert.That(pairs, Does.Contain(expected));
             foreach (var map in SuccessorLibrary.All)
@@ -455,6 +456,89 @@ namespace ReBuzz.AgentTests
             var result = c.ConvertNotes(columns, 8 * T, 0, 0.1, (p, t) => p.Default, new List<(int, int)>(), new List<string>());
             Assert.That(result.Select(n => (n.Time / T, n.Pitch, n.Velocity)),
                 Is.EqualTo(new[] { (0, TrackNotes.FromBuzz(0x41), 127), (0, TrackNotes.FromBuzz(0x48), 127), (4, TrackNotes.FromBuzz(0x45), 64) }));
+        }
+
+        [Test]
+        public void Rout909sTriggersBecomeHitsOnTheGeneralMidiKeysAndItsScalesTheVoicesUnits()
+        {
+            var c = Converter("Rout 909", "Neo Drums");
+            // Its defaults (every scale at 32, levels at 100 %): the voices as Neo Drums' defaults were voiced against them.
+            var d = c.ConvertState(Raws(c));
+            Assert.That(Value(c, d, "Volume"), Is.EqualTo(7.5).Within(0.05), "the headroom Neo Drums keeps, made up");
+            foreach (var level in new[] { "Kick level", "Snare level", "Low tom level", "Rim level", "Clap level", "Closed hat level", "Crash level", "Ride level" })
+                Assert.That(Value(c, d, level), Is.EqualTo(0).Within(0.06), level);
+            Assert.That(Value(c, d, "Kick sweep time"), Is.EqualTo(0.025).Within(0.0005));
+            Assert.That(Value(c, d, "Snare tune"), Is.EqualTo(179.3).Within(1));
+            Assert.That(Value(c, d, "Low tom tune"), Is.EqualTo(59.6).Within(0.5));
+            Assert.That(Value(c, d, "Open hat decay"), Is.EqualTo(0.2).Within(0.005));
+            Assert.That(Value(c, d, "Crash decay"), Is.EqualTo(1.5).Within(0.02));
+            Assert.That(Value(c, d, "Crash tune"), Is.EqualTo(0).Within(0.1));
+
+            // The scales' ends, through the measured points; a level halved is −6 dB, at 0 the voice is silent.
+            var ends = c.ConvertState(Raws(c, new() { ["SD Tune"] = 63, ["CH Decay"] = 63, ["RC Tune"] = 0, ["BD Level"] = 64, ["CP Level"] = 0, ["SD Snap"] = 0 }));
+            Assert.That(Value(c, ends, "Snare tune"), Is.EqualTo(241.3).Within(1.5));
+            Assert.That(Value(c, ends, "Closed hat decay"), Is.EqualTo(0.025).Within(0.001));
+            Assert.That(Value(c, ends, "Ride tune"), Is.EqualTo(-5).Within(0.1));
+            Assert.That(Value(c, ends, "Ride decay"), Is.EqualTo(2.53).Within(0.03));
+            Assert.That(Value(c, ends, "Kick level"), Is.EqualTo(20 * Math.Log10(64 / 128.0)).Within(0.06));
+            Assert.That(Value(c, ends, "Clap level"), Is.EqualTo(double.NegativeInfinity));
+            Assert.That(Value(c, ends, "Snare snap"), Is.EqualTo(0.1).Within(0.005));
+
+            // Trigger columns become notes on the voices' keys, at velocity 127; a 0 hits nothing.
+            const int T = NoteList.TimeBase;
+            var columns = new Dictionary<(SuccessorParam, int), IReadOnlyList<ColumnEvent>>
+            {
+                [(c.OldColumn("BD Trigger")!, 0)] = new[] { new ColumnEvent(0, 1), new ColumnEvent(2 * T, 1) },
+                [(c.OldColumn("SD Trigger")!, 0)] = new[] { new ColumnEvent(T, 1), new ColumnEvent(3 * T, 0) },
+                [(c.OldColumn("CH Trigger")!, 1)] = new[] { new ColumnEvent(0, 1) },
+                [(c.OldColumn("OH Trigger")!, 1)] = new[] { new ColumnEvent(T / 2, 1) },
+                [(c.OldColumn("RC Trigger")!, 0)] = new[] { new ColumnEvent(3 * T, 1) },
+            };
+            var notes = new List<string>();
+            var result = c.ConvertNotes(columns, 4 * T, 0, 0.1, (p, t) => p.Default, new List<(int, int)>(), notes);
+            Assert.That(result.Select(n => (n.Time, n.Pitch, n.Velocity)),
+                Is.EqualTo(new[] { (0, 36, 127), (0, 42, 127), (T / 2, 46, 127), (T, 38, 127), (2 * T, 36, 127), (3 * T, 51, 127) }));
+            Assert.That(notes, Is.Empty);
+        }
+
+        [Test]
+        public void KickXPsNotesTuneTheKickAndItsTriggersAreKicksAtTheirVolume()
+        {
+            var c = Converter("FSM KickXP", "Neo Drums");
+            Assert.That(c.Map.Notes!.RulesReadNote, Is.True);
+            const int T = NoteList.TimeBase;
+            int a1 = (2 << 4) + 9 + 1, e1 = (2 << 4) + 4 + 1;   // Buzz A-2 and E-2: A1 (55 Hz) and E1
+            var columns = new Dictionary<(SuccessorParam, int), IReadOnlyList<ColumnEvent>>
+            {
+                [(c.OldColumn("Pitch limit")!, 0)] = new[] { new ColumnEvent(0, a1), new ColumnEvent(2 * T, a1), new ColumnEvent(3 * T, e1) },
+                [(c.OldColumn("Trigger")!, 0)] = new[] { new ColumnEvent(T, 64), new ColumnEvent(2 * T, 128), new ColumnEvent(3 * T + T / 2, 0) },
+            };
+            // The song's most common note tunes the kick: the rules read it as the note column's value.
+            Assert.That(c.MostCommonNote(new[] { columns }, out int distinct), Is.EqualTo(a1));
+            Assert.That(distinct, Is.EqualTo(2));
+            var noteColumn = c.OldColumn("Pitch limit")!;
+            var d = c.ConvertState(p => p == noteColumn ? a1 : p.Default);
+            Assert.That(Value(c, d, "Kick tune"), Is.EqualTo(55).Within(0.3));
+            double start = c.Old("Start")!.Value(145);
+            Assert.That(start, Is.EqualTo(33 * Math.Pow(128, 145 / 240.0)).Within(start * 0.01), "Start in Hz, as its source computes it");
+            double sweep = 0.555 * 12 * (Math.Log2(start / 55) + 2.73 * 0.47) + 1.62;
+            Assert.That(Value(c, d, "Kick sweep"), Is.EqualTo(sweep).Within(0.6), "the fitted interval from Start down to the note, Punch adding");
+            Assert.That(Value(c, d, "Kick sweep time"), Is.EqualTo(0.0235).Within(0.001), "T DecRate 30");
+            double release = 1 / (Math.Pow(20, 105 / 240.0 - 1) * 25), hold = c.Old("A DecTime")!.Value(32);
+            Assert.That(Value(c, d, "Kick decay"), Is.EqualTo(2.7 * (hold + release)).Within(2.7 * (hold + release) * 0.03));
+            Assert.That(Value(c, d, "Kick punch"), Is.EqualTo(0));
+            Assert.That(d.Notes, Is.Empty);
+            var deep = c.ConvertState(p => p == noteColumn ? (1 << 4) + 9 + 1 : p.Default);   // A0
+            Assert.That(Value(c, deep, "Kick tune"), Is.EqualTo(30), "A0 (27.5 Hz) is under the kick's lowest tune");
+            Assert.That(deep.Values.Where(v => v.Note != null).Select(v => v.Note), Has.Some.Contains("Kick tune"), "and says so");
+
+            // Every note and every Trigger value is a kick on C2; a Trigger value is the volume (128 = 100 %), which holds for the
+            // notes after it, as velocity in proportion (Vel → level 50 %); a row with a note and a Trigger value is one kick.
+            var notes = new List<string>();
+            var result = c.ConvertNotes(columns, 4 * T, 0, 0.1, (p, t) => p.Default, new List<(int, int)>(), notes);
+            Assert.That(result.Select(n => (n.Time, n.Pitch, n.Velocity)),
+                Is.EqualTo(new[] { (0, 36, 127), (T, 36, 64), (2 * T, 36, 127), (3 * T, 36, 127) }));
+            Assert.That(c.New("Vel → level")!.Format(Final(d, "Vel → level")), Is.EqualTo("50%"));
         }
 
         [Test]

@@ -1,0 +1,745 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "FSM KickXP",
+  "to": "Neo Drums",
+  "summary": "FSM KickXP's kick plays as Neo Drums' kick: its notes (which tune it: the pitch falls to the note) and Trigger hits become kicks on C2, the note's pitch the kick's tune, its sweep from Start fitted as the kick's sweep, its decay, click and buzz as the kick's decay, click and drive.",
+  "output_gain_db": 0,
+  "set": {
+    "Volume": "+7 dB",
+    "Vel → level": "50%",
+    "Vel → tone": "0%",
+    "Kick punch": "0%"
+  },
+  "describe": {
+    "Pitch limit": {
+      "kind": "table",
+      "unit": "Hz",
+      "points": [
+        [
+          0,
+          55.0
+        ],
+        [
+          1,
+          8.176
+        ],
+        [
+          2,
+          8.662
+        ],
+        [
+          3,
+          9.177
+        ],
+        [
+          4,
+          9.723
+        ],
+        [
+          5,
+          10.3
+        ],
+        [
+          6,
+          10.91
+        ],
+        [
+          7,
+          11.56
+        ],
+        [
+          8,
+          12.25
+        ],
+        [
+          9,
+          12.98
+        ],
+        [
+          10,
+          13.75
+        ],
+        [
+          11,
+          14.57
+        ],
+        [
+          12,
+          15.43
+        ],
+        [
+          17,
+          16.35
+        ],
+        [
+          18,
+          17.32
+        ],
+        [
+          19,
+          18.35
+        ],
+        [
+          20,
+          19.45
+        ],
+        [
+          21,
+          20.6
+        ],
+        [
+          22,
+          21.83
+        ],
+        [
+          23,
+          23.12
+        ],
+        [
+          24,
+          24.5
+        ],
+        [
+          25,
+          25.96
+        ],
+        [
+          26,
+          27.5
+        ],
+        [
+          27,
+          29.14
+        ],
+        [
+          28,
+          30.87
+        ],
+        [
+          33,
+          32.7
+        ],
+        [
+          34,
+          34.65
+        ],
+        [
+          35,
+          36.71
+        ],
+        [
+          36,
+          38.89
+        ],
+        [
+          37,
+          41.2
+        ],
+        [
+          38,
+          43.65
+        ],
+        [
+          39,
+          46.25
+        ],
+        [
+          40,
+          49.0
+        ],
+        [
+          41,
+          51.91
+        ],
+        [
+          42,
+          55.0
+        ],
+        [
+          43,
+          58.27
+        ],
+        [
+          44,
+          61.74
+        ],
+        [
+          49,
+          65.41
+        ],
+        [
+          50,
+          69.3
+        ],
+        [
+          51,
+          73.42
+        ],
+        [
+          52,
+          77.78
+        ],
+        [
+          53,
+          82.41
+        ],
+        [
+          54,
+          87.31
+        ],
+        [
+          55,
+          92.5
+        ],
+        [
+          56,
+          98.0
+        ],
+        [
+          57,
+          103.8
+        ],
+        [
+          58,
+          110.0
+        ],
+        [
+          59,
+          116.5
+        ],
+        [
+          60,
+          123.5
+        ],
+        [
+          65,
+          130.8
+        ],
+        [
+          66,
+          138.6
+        ],
+        [
+          67,
+          146.8
+        ],
+        [
+          68,
+          155.6
+        ],
+        [
+          69,
+          164.8
+        ],
+        [
+          70,
+          174.6
+        ],
+        [
+          71,
+          185.0
+        ],
+        [
+          72,
+          196.0
+        ],
+        [
+          73,
+          207.7
+        ],
+        [
+          74,
+          220.0
+        ],
+        [
+          75,
+          233.1
+        ],
+        [
+          76,
+          246.9
+        ],
+        [
+          81,
+          261.6
+        ],
+        [
+          82,
+          277.2
+        ],
+        [
+          83,
+          293.7
+        ],
+        [
+          84,
+          311.1
+        ],
+        [
+          85,
+          329.6
+        ],
+        [
+          86,
+          349.2
+        ],
+        [
+          87,
+          370.0
+        ],
+        [
+          88,
+          392.0
+        ],
+        [
+          89,
+          415.3
+        ],
+        [
+          90,
+          440.0
+        ],
+        [
+          91,
+          466.2
+        ],
+        [
+          92,
+          493.9
+        ],
+        [
+          97,
+          523.3
+        ],
+        [
+          98,
+          554.4
+        ],
+        [
+          99,
+          587.3
+        ],
+        [
+          100,
+          622.3
+        ],
+        [
+          101,
+          659.3
+        ],
+        [
+          102,
+          698.5
+        ],
+        [
+          103,
+          740.0
+        ],
+        [
+          104,
+          784.0
+        ],
+        [
+          105,
+          830.6
+        ],
+        [
+          106,
+          880.0
+        ],
+        [
+          107,
+          932.3
+        ],
+        [
+          108,
+          987.8
+        ],
+        [
+          113,
+          1047.0
+        ],
+        [
+          114,
+          1109.0
+        ],
+        [
+          115,
+          1175.0
+        ],
+        [
+          116,
+          1245.0
+        ],
+        [
+          117,
+          1319.0
+        ],
+        [
+          118,
+          1397.0
+        ],
+        [
+          119,
+          1480.0
+        ],
+        [
+          120,
+          1568.0
+        ],
+        [
+          121,
+          1661.0
+        ],
+        [
+          122,
+          1760.0
+        ],
+        [
+          123,
+          1865.0
+        ],
+        [
+          124,
+          1976.0
+        ],
+        [
+          129,
+          2093.0
+        ],
+        [
+          130,
+          2217.0
+        ],
+        [
+          131,
+          2349.0
+        ],
+        [
+          132,
+          2489.0
+        ],
+        [
+          133,
+          2637.0
+        ],
+        [
+          134,
+          2794.0
+        ],
+        [
+          135,
+          2960.0
+        ],
+        [
+          136,
+          3136.0
+        ],
+        [
+          137,
+          3322.0
+        ],
+        [
+          138,
+          3520.0
+        ],
+        [
+          139,
+          3729.0
+        ],
+        [
+          140,
+          3951.0
+        ],
+        [
+          145,
+          4186.0
+        ],
+        [
+          146,
+          4435.0
+        ],
+        [
+          147,
+          4699.0
+        ],
+        [
+          148,
+          4978.0
+        ],
+        [
+          149,
+          5274.0
+        ],
+        [
+          150,
+          5588.0
+        ],
+        [
+          151,
+          5920.0
+        ],
+        [
+          152,
+          6272.0
+        ],
+        [
+          153,
+          6645.0
+        ],
+        [
+          154,
+          7040.0
+        ],
+        [
+          155,
+          7459.0
+        ],
+        [
+          156,
+          7902.0
+        ]
+      ]
+    },
+    "Trigger": {
+      "kind": "table",
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          240,
+          1.875
+        ]
+      ]
+    },
+    "T DecRate": {
+      "kind": "table",
+      "unit": "s",
+      "points": [
+        [
+          1,
+          0.2
+        ],
+        [
+          5,
+          0.09009
+        ],
+        [
+          10,
+          0.05357
+        ],
+        [
+          15,
+          0.03952
+        ],
+        [
+          20,
+          0.03185
+        ],
+        [
+          30,
+          0.0235
+        ],
+        [
+          45,
+          0.01734
+        ],
+        [
+          60,
+          0.01397
+        ],
+        [
+          90,
+          0.01031
+        ],
+        [
+          120,
+          0.008309
+        ],
+        [
+          180,
+          0.00613
+        ],
+        [
+          240,
+          0.00494
+        ]
+      ]
+    },
+    "A RelSlope": {
+      "kind": "table",
+      "unit": "s",
+      "points": [
+        [
+          1,
+          0.7901
+        ],
+        [
+          30,
+          0.5501
+        ],
+        [
+          60,
+          0.3783
+        ],
+        [
+          90,
+          0.2601
+        ],
+        [
+          105,
+          0.2157
+        ],
+        [
+          120,
+          0.1789
+        ],
+        [
+          150,
+          0.123
+        ],
+        [
+          180,
+          0.08459
+        ],
+        [
+          210,
+          0.05817
+        ],
+        [
+          240,
+          0.04
+        ]
+      ]
+    }
+  },
+  "rules": [
+    {
+      "kind": "unit",
+      "from": "Pitch limit",
+      "to": "Kick tune",
+      "why": "KickXP's source: the pitch falls past End to the note (Pitch limit) and stays there; with no note, A1"
+    },
+    {
+      "kind": "interval",
+      "from": "Start",
+      "over": "Pitch limit",
+      "to": "Kick sweep",
+      "octaves_from": [
+        {
+          "param": "Punch",
+          "weight": 2.73
+        }
+      ],
+      "scale": 0.555,
+      "offset": 1.62,
+      "why": "fitted: KickXP's pitch (its source's curve: Start towards End, raised by Punch at first, floored at the note) against Neo Drums' exponential fall, over Start 100–220, notes A0–A2 and Punch 0–100 % (within 1.6 semitones, RMS)"
+    },
+    {
+      "kind": "unit",
+      "from": "T DecRate",
+      "to": "Kick sweep time",
+      "why": "fitted at A1 and the default shape: the fall's time constant, 23.5 ms at 30, as (30 / rate)^0.75"
+    },
+    {
+      "kind": "sum",
+      "to": "Kick decay",
+      "terms": [
+        {
+          "param": "A DecTime",
+          "weight": 2.7
+        },
+        {
+          "param": "A RelSlope",
+          "weight": 2.7
+        }
+      ],
+      "why": "KickXP's level falls in straight lines (A DecTime, then the release to zero in 1 / A RelSlope's rate); Neo Drums' falls exponentially: its time to −60 dB 2.7 times as long falls 20 dB where KickXP's reaches zero"
+    },
+    {
+      "kind": "unit",
+      "from": "Click",
+      "to": "Kick click",
+      "why": "the click layer's level"
+    },
+    {
+      "kind": "range",
+      "from": "Buzz",
+      "to": "Kick drive",
+      "from_range": [
+        0,
+        1
+      ],
+      "to_range": [
+        0,
+        12
+      ],
+      "why": "assumed: the buzz layer folds the sine's positive half; Neo Drums' drive saturates the body (0–100 % on 0–12 dB)"
+    }
+  ],
+  "notes": {
+    "note": "Pitch limit",
+    "fixed_pitch": 36,
+    "rules_read_note": true,
+    "volume": "Trigger",
+    "volume_at_full": 1,
+    "volume_holds": true,
+    "volume_start": 1,
+    "velocity": 127,
+    "triggers": [
+      {
+        "column": "Trigger",
+        "pitch": 36,
+        "value_at_full": 1,
+        "min_value": 0.004
+      }
+    ],
+    "why": "A note hits the kick and sets the floor its pitch falls to; a Trigger value hits it too and sets its volume (128 = 100 %, kept for later notes). Every hit becomes a kick on C2, its volume the velocity (Vel → level 50 %: velocity in proportion to the level); the song's most common note tunes the kick."
+  },
+  "unmapped": [
+    {
+      "param": "End",
+      "why": "the pitch heads for End but falls past it to the note (Pitch limit), which tunes the kick; End shapes the fall, fitted at its default"
+    },
+    {
+      "param": "T DecShape",
+      "why": "the curve of the pitch fall: Neo Drums' is exponential; fitted at the default shape"
+    },
+    {
+      "param": "B DecRate",
+      "why": "the buzz layer's fade: Neo Drums' drive shapes the whole hit"
+    },
+    {
+      "param": "C+P DecRate",
+      "why": "the click's and punch's fade: Neo Drums' click lasts 15 ms, its sweep carries the punch"
+    },
+    {
+      "param": "A DecSlope",
+      "why": "the level's slope before the release: at its default it takes a sixth of the level; larger values shorten the kick, which the decay doesn't follow"
+    },
+    {
+      "param": "NoteDelay",
+      "why": "delays and retriggers within the row: Neo Drums' hits land on the row"
+    }
+  ],
+  "tolerance": {
+    "loudness_db": 3,
+    "band_db": null,
+    "from_hz": 30,
+    "to_hz": 12000,
+    "measured": "",
+    "why_not": "Two different kick models: KickXP's pitch falls on a power curve with a buzz layer, Neo Drums' exponentially through a saturator. The pitch it ends on, the fall's time and the level are matched, not the spectrum band for band."
+  },
+  "remarks": [
+    "Each KickXP track is a kick with its own settings; Neo Drums has one kick: the conversion takes track 1's settings.",
+    "The sweep time is fitted at A1: KickXP's fall is quicker above it and slower below (at T DecRate 30, a time constant of 9 ms at A2 and 65 ms at A0).",
+    "A Trigger value above 128 (louder than 100 %) plays at velocity 127."
+  ],
+  "evidence": [
+    "ExternalMachines/source/buzztrax-buzzmachines/FSM/KickXP/KickXP.cpp: TickTrack, Trigger and the work loop (pitch, envelopes, layers)",
+    "Machines/Manifests/Generators/FSM KickXP.machine.json (curated)",
+    "ReBuzzTests/DrumsCalibration.cs (KickXP): its kick at A0–A3 and each parameter at its ends"
+  ]
+}

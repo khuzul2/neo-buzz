@@ -261,12 +261,19 @@ namespace ReBuzz.Agent.Model
         public int Velocity { get; init; } = 100;
         /// <summary>Whether a volume holds until the next (a state parameter) or is the row's only (a non-state one).</summary>
         public bool VolumeHolds { get; init; } = true;
+        /// <summary>The volume a track has before its column sets one (FSM KickXP's 100 %: its Trigger column holds no value), or null: the machine's current value.</summary>
+        public double? VolumeStart { get; init; }
         /// <summary>The new machine's glide time parameter, set where a slide starts.</summary>
         public string Glide { get; init; }
         /// <summary>Semitones the old machine plays above what's written (its manifest's pitch offset when this is null).</summary>
         public int? PitchOffset { get; init; }
         /// <summary>Every note becomes this pitch, as heard (a drum machine's key for a one-voice machine: FSM KickXP's notes, the kick).</summary>
         public int? FixedPitch { get; init; }
+        /// <summary>
+        /// Rules that read the note column read the song's most common note (MostCommonNote): a drum machine whose notes tune
+        /// it (FSM KickXP's Pitch limit, the floor its pitch falls to) gives that note to the successor's tune.
+        /// </summary>
+        public bool RulesReadNote { get; init; }
         /// <summary>Columns of hits that become notes (drum machines' triggers), each on its own pitch.</summary>
         public IReadOnlyList<SuccessorTrigger> Triggers { get; init; } = Array.Empty<SuccessorTrigger>();
         public string Why { get; init; } = "";
@@ -342,9 +349,11 @@ namespace ReBuzz.Agent.Model
                     VolumeAtFull = (double?)n["volume_at_full"] ?? 1,
                     Velocity = (int?)n["velocity"] ?? 100,
                     VolumeHolds = (bool?)n["volume_holds"] ?? true,
+                    VolumeStart = (double?)n["volume_start"],
                     Glide = (string)n["glide"],
                     PitchOffset = (int?)n["pitch_offset"],
                     FixedPitch = (int?)n["fixed_pitch"],
+                    RulesReadNote = (bool?)n["rules_read_note"] ?? false,
                     Triggers = (n["triggers"] as JsonArray)?.OfType<JsonObject>().Select(t => new SuccessorTrigger(
                         (string)t["column"] ?? throw new FormatException($"{from} → {to}: a trigger names its column."),
                         (int?)t["pitch"] ?? throw new FormatException($"{from} → {to}: a trigger names its pitch."),
