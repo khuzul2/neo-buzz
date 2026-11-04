@@ -42,8 +42,8 @@ namespace NeoBuzz.Multiband
         public const int DesignStride = 16;
 
         // The work of one step: grid points, transform units (TransformPart: about a butterfly each; one partition's
-        // transform at 44.1 and 48 kHz), tap pairs, taps scanned. A design is 88 steps at 44.1 and 48 kHz (done within the
-        // 3 partitions after it starts, which hold 93), 181 at 88.2 and 96 kHz (within 3) and 401 at 192 kHz (within 4).
+        // transform at 44.1 and 48 kHz), tap pairs, taps scanned. A design is 89 steps at 44.1 and 48 kHz (done within the
+        // 3 partitions after it starts, which hold 93), 182 at 88.2 and 96 kHz (within 3) and 402 at 192 kHz (within 4).
         const int GridStep = 512, FftStep = 10240, TapStep = 2048, SkipStep = 8192;
 
         public readonly int P, K, N, D, M;
@@ -88,9 +88,6 @@ namespace NeoBuzz.Multiband
 
         /// <summary>Design steps taken since construction, the initial design's included (the tests count them).</summary>
         internal long Steps { get; private set; }
-
-        /// <summary>A design is under way (its steps still to come, or done and waiting for the next partition).</summary>
-        public bool Designing => designing;
 
         /// <summary>
         /// Tests: each design whole, in the partition that starts it, crossfading at once (as before the steps): the reference
