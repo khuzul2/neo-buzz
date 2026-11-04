@@ -141,10 +141,7 @@ namespace ReBuzz.Studio.Tests
         {
             var top = TopLevel.GetTopLevel(control)!;
             var p = PointIn(control, fx, fy);
-            top.MouseDown(p, MouseButton.Left, mods);
-            top.MouseUp(p, MouseButton.Left, mods);
-            top.MouseDown(p, MouseButton.Left, mods);
-            top.MouseUp(p, MouseButton.Left, mods);
+            MachineViewTests.DoubleClick(top, p, MouseButton.Left, mods);
             Settle();
         }
 

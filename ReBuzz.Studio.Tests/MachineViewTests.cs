@@ -10,6 +10,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.NUnit;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
@@ -91,15 +92,36 @@ namespace ReBuzz.Studio.Tests
             Settle();
         }
 
-        /// <summary>Two clicks with nothing between them, well inside the double-click time.</summary>
-        internal static void DoubleClick(TopLevel top, Point p, MouseButton button = MouseButton.Left)
+        /// <summary>
+        /// A double click that a slow machine can't split. Avalonia counts a press as a double click's second
+        /// only within 500 ms of the first, timed by the clock (DefaultPlatformSettings), and on a loaded CI
+        /// runner the first press's handlers took longer: the test then saw two single clicks. So the button is
+        /// pressed again until a press counts as a double click (an even ClickCount, as Avalonia's DoubleTapped
+        /// takes it: 2, or 4 right after another double click there), at most four presses; on a quick machine
+        /// that is the second, as before. Every test's double click comes here.
+        /// </summary>
+        internal static void DoubleClick(TopLevel top, Point p, MouseButton button = MouseButton.Left, RawInputModifiers mods = RawInputModifiers.None)
         {
-            top.MouseMove(p);
-            top.MouseDown(p, button);
-            top.MouseUp(p, button);
-            top.MouseDown(p, button);
-            top.MouseUp(p, button);
+            int clicks = 0;
+            EventHandler<PointerPressedEventArgs> pressed = (_, e) => clicks = e.ClickCount;
+            top.AddHandler(InputElement.PointerPressedEvent, pressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+            try
+            {
+                top.MouseMove(p, mods);
+                for (int presses = 0; presses < 4 && !Double(clicks); presses++)
+                {
+                    top.MouseDown(p, button, mods);
+                    top.MouseUp(p, button, mods);
+                }
+            }
+            finally
+            {
+                top.RemoveHandler(InputElement.PointerPressedEvent, pressed);
+            }
+            Assert.That(Double(clicks), Is.True, $"a press counted as a double click's second (click count {clicks})");
             Settle();
+
+            static bool Double(int clicks) => clicks >= 2 && clicks % 2 == 0;
         }
 
         internal static void Drag(TopLevel top, Point from, Point to, MouseButton button = MouseButton.Left, RawInputModifiers mods = RawInputModifiers.None, string screenshotOnTheWay = null)

@@ -122,11 +122,7 @@ namespace ReBuzz.Studio.Tests
 
             public void DoubleClick(Point p)
             {
-                Window.MouseMove(p);
-                Window.MouseDown(p, MouseButton.Left);
-                Window.MouseUp(p, MouseButton.Left);
-                Window.MouseDown(p, MouseButton.Left);
-                Window.MouseUp(p, MouseButton.Left);
+                MachineViewTests.DoubleClick(Window, p);
                 Settle();
             }
 
