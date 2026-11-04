@@ -35,19 +35,6 @@ namespace ReBuzz.Studio.Tests
         /// <summary>Control, or Command on a Mac.</summary>
         static RawInputModifiers Cmd => OperatingSystem.IsMacOS() ? RawInputModifiers.Meta : RawInputModifiers.Control;
 
-        static TimeSpan menuDelay;
-
-        // Submenus open on hover after a wall-clock delay; the tests click, so it is put off (as the machine view's tests do).
-        [SetUp]
-        public void PutOffMenuHoverDelays()
-        {
-            menuDelay = Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay;
-            Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay = TimeSpan.FromHours(1);
-        }
-
-        [TearDown]
-        public void RestoreMenuHoverDelays() => Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay = menuDelay;
-
         // ------------------------------------------------------------------ the rig
 
         sealed class Rig : IDisposable

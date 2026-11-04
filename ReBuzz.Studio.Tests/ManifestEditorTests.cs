@@ -37,18 +37,6 @@ namespace ReBuzz.Studio.Tests
 
         static ReBuzzCore Core => Studio.Host.Core;
 
-        static System.TimeSpan menuDelay;
-
-        [SetUp]
-        public void PutOffMenuHoverDelays()
-        {
-            menuDelay = Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay;
-            Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay = System.TimeSpan.FromHours(1);
-        }
-
-        [TearDown]
-        public void RestoreMenuHoverDelays() => Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay = menuDelay;
-
         static MachineCore Add(string gear, string name, float x = 0.3f, float y = 0.3f)
         {
             Core.SongCore.CreateMachine(gear, null, name, null, null, null, -1, x, y);
@@ -289,9 +277,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(ap.Parameter.GetValue(0), Is.EqualTo(before), "undo restores it");
                 Assert.That(knob.ValueText, Is.EqualTo(ap.Info.Describe(before)), "and the knob follows");
 
-                // A drag is one undo step too (a click elsewhere first, so the press isn't a double click's second).
-                Click(window, new Point(4, window.ClientSize.Height - 4));
-                System.Threading.Thread.Sleep(600);
+                // A drag is one undo step too (its press a first click, HeadlessInput.cs).
                 var c = Centre(knob, window);
                 window.MouseDown(c, MouseButton.Left);
                 for (int dy = 8; dy <= 40; dy += 8) window.MouseMove(c - new Point(0, dy), RawInputModifiers.LeftMouseButton);

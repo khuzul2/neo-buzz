@@ -158,9 +158,11 @@ namespace ReBuzz.Studio.Views.Notes
             Editor.LostFocus += (s, e) => store.EndTyping();
             AddHandler(KeyDownEvent, OnFormatKey, RoutingStrategies.Tunnel);
 
+            // It follows the notes while it is shown, and syncs when shown again: a view whose tab is never
+            // shown is never told it is gone, so it doesn't listen until then.
             AttachedToVisualTree += (s, e) => Attach();
             DetachedFromVisualTree += (s, e) => Detach();
-            Attach();
+            Sync();
         }
 
         /// <summary>The Markdown editor.</summary>

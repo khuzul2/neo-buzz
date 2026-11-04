@@ -48,7 +48,6 @@ namespace ReBuzz.Studio.Tests
         [SetUp]
         public void Fresh()
         {
-            new MachineViewTests().PutOffMenuHoverDelays();
             clock = new DateTime(2026, 11, 3, 12, 0, 0, DateTimeKind.Utc);
             SongNotesStore.Now = () => clock;
         }
@@ -56,7 +55,6 @@ namespace ReBuzz.Studio.Tests
         [TearDown]
         public void PutBack()
         {
-            new MachineViewTests().RestoreMenuHoverDelays();
             SongNotesStore.Now = () => DateTime.UtcNow;
             SongFiles.Picker = null;
             SongNotesView.OpenLink = null;

@@ -69,11 +69,10 @@ namespace WDE.ModernPatternEditor
             SelectedStepsRight = 0;
             Commands();
 
-            Global.Buzz.Song.MachineAdded += (obj) =>
-            {
-                if (Song == null)
-                    Song = Global.Buzz.Song;
-            };
+            // The engine's song outlives its editors, so Release lets go of it: else a released editor took
+            // the song again on the next machine added, and every editor made in a run stayed, listening.
+            buzzSong = Global.Buzz.Song;
+            buzzSong.MachineAdded += OnSongMachineAdded;
 
             patternControl = new PatternControl(this);
             playRecordManager = new PlayRecordManager(this);
@@ -115,8 +114,18 @@ namespace WDE.ModernPatternEditor
             };
         }
 
+        /// <summary>The engine's song, whose first machine gives the editor its Song.</summary>
+        readonly ISong buzzSong;
+
+        void OnSongMachineAdded(IMachine obj)
+        {
+            if (Song == null)
+                Song = Global.Buzz.Song;
+        }
+
         public void Release()
         {
+            buzzSong.MachineAdded -= OnSongMachineAdded;
             EditContext = null;
 
             MPEPatternsDB.Release();

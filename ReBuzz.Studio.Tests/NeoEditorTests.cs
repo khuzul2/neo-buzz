@@ -246,20 +246,14 @@ namespace ReBuzz.Studio.Tests
                 Run(0.05);   // the engine tells the editor (on its next tick)
                 Assert.That((double)Get(knob, "Value"), Is.EqualTo(shown));
 
-                // A double-click puts it back to its default, also undoable. (Two clicks make one
-                // only within the double-click time, in real time: a loaded CI machine may miss it.)
+                // A double-click puts it back to its default, also undoable.
                 int clickCount = 0;
                 knob.AddHandler(InputElement.PointerPressedEvent, (s, a) => clickCount = a.ClickCount, RoutingStrategies.Tunnel);
-                Click(window, new Point(2, 2));   // elsewhere first: the drag's press doesn't count as a first click
-                Click(window, c);
-                Click(window, c);
-                if (clickCount == 2)
-                {
-                    Assert.That(threshold.GetValue(0), Is.EqualTo(700), "a double-click resets the knob to its default");
-                    Core.SongCore.Undo();
-                    Assert.That(threshold.GetValue(0), Is.EqualTo(after));
-                }
-                else Assert.Warn("The two clicks came too far apart for a double-click; the reset wasn't tried.");
+                MachineViewTests.DoubleClick(window, c);
+                Assert.That(clickCount, Is.EqualTo(2), "the knob had the double click");
+                Assert.That(threshold.GetValue(0), Is.EqualTo(700), "a double-click resets the knob to its default");
+                Core.SongCore.Undo();
+                Assert.That(threshold.GetValue(0), Is.EqualTo(after));
 
                 // A choice button: one click, one step.
                 var mode = Find(window, "ParamChoice", "Mode");
