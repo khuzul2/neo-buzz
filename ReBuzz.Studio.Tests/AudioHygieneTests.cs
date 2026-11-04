@@ -7,7 +7,8 @@
 //    LFO, its depth moved every buffer): 0 bytes a buffer, with each work algorithm;
 //  - automation of a parameter with listeners (a parameter window's rows, the master volume's):
 //    0 bytes on the audio thread, and the listeners still see the final values;
-//  - after the warm-up (AudioWarmUp), the transport's first play and stop compile nothing.
+//  - after the warm-up (AudioWarmUp), the transport's first play and stop compile nothing (a Neo Poly
+//    through a Neo Ensemble, both just created).
 // The tests build in Debug, where the JIT doesn't optimize: no allocation here is one that only an
 // optimizing compiler (tier 1) would remove.
 
@@ -461,6 +462,7 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 var m = AddPoly("Hygiene First");
+                InsertEnsemble(m, "Hygiene First Ensemble");   // a Neo effect after it, created just now too
                 m.CreatePattern("00", 16);
                 var p = (PatternCore)m.Patterns.First();
                 Core.SessionLayout.EditNotes(p, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 60 + i % 5, 100)).ToArray());

@@ -465,20 +465,30 @@ namespace NeoBuzz.MachineTests
         [TestCaseSource(nameof(Extremes))]
         public void ExtremesStayBoundedAndDecay(string what, (int Index, int Raw)[] changes)
         {
-            // 30 s of pink noise at −20 dBFS RMS, then 10 s of silence: finite, far under the engine's
+            // 30 s of pink noise (above 30 Hz) at −20 dBFS RMS, then 10 s of silence: finite, far under the engine's
             // guard (+60 dBFS), levelling off under the noise (the last 10 s no louder than the 10 s
             // before), and decaying once the input stops at least half as fast as the loop gain bound
             // guarantees (|Feedback| per time round the loop).
             var (e, v) = Make(pv => { pv.Set(P.Mix, 1000); foreach (var (i, raw) in changes) pv.Set(i, raw); });
             int noise = 30 * Rate, tail = 10 * Rate;
             var x = new float[noise + tail];
-            Array.Copy(Noise(noise, 0.1, 5), x, noise);
+            // Pink noise above 30 Hz: its level over 10 s steady (pink noise's own lowest octaves wander by a dB or more).
+            var pink = Noise(noise, 0.1, 5);
+            var hp1 = new Biquad();
+            var hp2 = new Biquad();
+            hp1.Set(BiquadType.HighPass, 30, Rate, 0.7071);
+            hp2.Set(BiquadType.HighPass, 30, Rate, 0.7071);
+            for (int i = 0; i < noise; i++) x[i] = hp2.Process(hp1.Process(pink[i]));
+            float scale = (float)(0.1 / Measure.Rms(x, 0, noise));
+            for (int i = 0; i < noise; i++) x[i] *= scale;
             var y = (float[])x.Clone();
             for (int i = 0; i < noise; i++) y[i] = x[(i + 7777) % noise];   // a different right channel
             var (l, r) = Run(e, x, y);
             double peak = Math.Max(Measure.Peak(l, 0, l.Length), Measure.Peak(r, 0, r.Length));
             double Level(int from, int seconds) => Db(Math.Max(Measure.Rms(l, from, seconds * Rate), Measure.Rms(r, from, seconds * Rate)));
-            double grow = Level(20 * Rate, 10) - Level(10 * Rate, 10);
+            // Growth of the gain (output against input over each 10 s), so the noise's own slow drift doesn't count.
+            double In(int from, int seconds) => Db(Math.Max(Measure.Rms(x, from, seconds * Rate), Measure.Rms(y, from, seconds * Rate)));
+            double grow = (Level(20 * Rate, 10) - In(20 * Rate, 10)) - (Level(10 * Rate, 10) - In(10 * Rate, 10));
             double first = Level(noise + Rate, 1), last = Level(noise + 8 * Rate, 1);
             double fb = Math.Abs(v.Value(P.Feedback) / 100);
             double loop = LoopSeconds(v);
