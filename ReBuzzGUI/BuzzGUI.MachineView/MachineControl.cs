@@ -474,6 +474,13 @@ namespace BuzzGUI.MachineView
                     new MenuItemVM() { Text = "Signal Analysis...", Command = ShowDialogCommand, CommandParameter = MachineDialog.SignalAnalysis },
                     new MenuItemVM() { IsSeparator = true },
                 };
+                // Fork (neo-buzz, mcp-server.md §12.11, U4): the machine's manifest editor, and whether a double click opens it.
+                if (MachineEditors.Available?.Invoke(machine) == true)
+                {
+                    bool opens = MachineEditors.OnDoubleClick?.Invoke(machine) == true;
+                    l.Insert(6, new MenuItemVM() { Text = "Editor...", Command = new SimpleCommand { ExecuteDelegate = x => MachineEditors.Open?.Invoke(machine) } });
+                    l.Insert(7, new MenuItemVM() { Text = "Double-click Opens Editor", IsCheckable = true, IsChecked = opens, Command = new SimpleCommand { ExecuteDelegate = x => MachineEditors.SetOnDoubleClick?.Invoke(machine, !opens) } });
+                }
                 // Fork (neo-buzz, mcp-server.md §12.5, U5): a classic machine's Neo successors, the song moved over as machine_replace does it.
                 foreach (var successor in MachineSuccessors.For?.Invoke(machine) ?? Array.Empty<string>())
                 {

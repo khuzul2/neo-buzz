@@ -1,0 +1,60 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+machine "Pedal Plate"
+
+preset "Plate — Vocal Bright"
+comment "A bright plate with a little pre-delay, for vocals and leads"
+Mix = 30%
+Pre-delay = 20 ms
+Decay = 60%
+Damping = 30%
+Size = 100%
+Low cut = 150 Hz
+
+preset "Plate — Snare Short"
+comment "A short, tight plate for snares and percussion"
+Mix = 25%
+Pre-delay = 5 ms
+Decay = 35%
+Damping = 50%
+Size = 70%
+Low cut = 200 Hz
+
+preset "Room — Small Dark"
+comment "A small, damped space: depth without a tail"
+Mix = 20%
+Decay = 30%
+Damping = 75%
+Size = 40%
+Low cut = 100 Hz
+
+preset "Hall — Big Wash"
+comment "A long, wide tail with gentle movement"
+Mix = 40%
+Pre-delay = 40 ms
+Decay = 85%
+Damping = 45%
+Size = 180%
+Modulation depth = 50%
+Low cut = 120 Hz
+
+preset "Send — Plate 100% Wet"
+comment "Wet only, for a send: the dry signal stays on its own track"
+Mix = 100%
+Pre-delay = 15 ms
+Decay = 70%
+Damping = 40%
+Size = 120%
+Low cut = 180 Hz
+
+preset "Ambient — Long Shimmer"
+comment "A very long, bright, moving tail for pads and ambience"
+Mix = 50%
+Decay = 92%
+Damping = 25%
+Size = 200%
+Modulation rate = 0.5 Hz
+Modulation depth = 70%
+Low cut = 250 Hz

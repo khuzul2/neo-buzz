@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Fuzz — Hard Clip">
+    <Preset Machine="Jeskola Distortion">
+      <Parameters>
+        <Parameter Name="+threshold" Group="1" Index="0" Track="0" Value="205" />
+        <Parameter Name="+clamp" Group="1" Index="1" Track="0" Value="410" />
+        <Parameter Name="-threshold" Group="1" Index="2" Track="0" Value="205" />
+        <Parameter Name="-clamp" Group="1" Index="3" Track="0" Value="410" />
+        <Parameter Name="Amount" Group="1" Index="4" Track="0" Value="127" />
+      </Parameters>
+      <Attributes />
+      <Comment>Low thresholds clipped hard and symmetric: a buzzy fuzz</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drive — Asymmetric">
+    <Preset Machine="Jeskola Distortion">
+      <Parameters>
+        <Parameter Name="+threshold" Group="1" Index="0" Track="0" Value="410" />
+        <Parameter Name="+clamp" Group="1" Index="1" Track="0" Value="512" />
+        <Parameter Name="-threshold" Group="1" Index="2" Track="0" Value="819" />
+        <Parameter Name="-clamp" Group="1" Index="3" Track="0" Value="819" />
+        <Parameter Name="Amount" Group="1" Index="4" Track="0" Value="127" />
+      </Parameters>
+      <Attributes />
+      <Comment>The positive side clips sooner than the negative: even harmonics, a warmer drive</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Crunch — Light">
+    <Preset Machine="Jeskola Distortion">
+      <Parameters>
+        <Parameter Name="+threshold" Group="1" Index="0" Track="0" Value="819" />
+        <Parameter Name="+clamp" Group="1" Index="1" Track="0" Value="819" />
+        <Parameter Name="-threshold" Group="1" Index="2" Track="0" Value="819" />
+        <Parameter Name="-clamp" Group="1" Index="3" Track="0" Value="819" />
+        <Parameter Name="Amount" Group="1" Index="4" Track="0" Value="76" />
+      </Parameters>
+      <Attributes />
+      <Comment>Only the peaks clip, mixed under the clean signal</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Square — Gated Fuzz">
+    <Preset Machine="Jeskola Distortion">
+      <Parameters>
+        <Parameter Name="+threshold" Group="1" Index="0" Track="0" Value="41" />
+        <Parameter Name="+clamp" Group="1" Index="1" Track="0" Value="246" />
+        <Parameter Name="-threshold" Group="1" Index="2" Track="0" Value="41" />
+        <Parameter Name="-clamp" Group="1" Index="3" Track="0" Value="246" />
+        <Parameter Name="Amount" Group="1" Index="4" Track="0" Value="127" />
+      </Parameters>
+      <Attributes />
+      <Comment>A tiny threshold: everything becomes a square wave at a low level</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

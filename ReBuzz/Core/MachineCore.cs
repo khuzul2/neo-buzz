@@ -793,7 +793,7 @@ namespace ReBuzz.Core
                     if (!handled)
                     {
                         // Open parameter windows
-                        OpenParameterWindow();
+                        OpenEditorOrParameterWindow();
                     }
                 }
                 else
@@ -804,7 +804,7 @@ namespace ReBuzz.Core
                     }
                     else
                     {
-                        OpenParameterWindow();
+                        OpenEditorOrParameterWindow();
                     }
                 }
             }
@@ -816,9 +816,21 @@ namespace ReBuzz.Core
                 }
                 else
                 {
-                    OpenParameterWindow();
+                    OpenEditorOrParameterWindow();
                 }
             }
+        }
+
+        /// <summary>
+        /// Fork (docs/specs/mcp-server.md §12.11, U4): what a double click opens on a machine without a GUI of its own:
+        /// its manifest editor where the per-gear setting says so (on by default for curated manifests), else the
+        /// parameter window, as before. The parameter window stays on the machine's menu.
+        /// </summary>
+        void OpenEditorOrParameterWindow()
+        {
+            var host = UiHostOf(graph);
+            if (host != null && ReBuzz.Agent.ManifestEditorSettings.OpensEditor(DLL) && host.OpenEditor(this)) return;
+            OpenParameterWindow();
         }
 
         // Fork (engine-split.md S3): the windows themselves belong to the UI host (WpfMachineUiHost

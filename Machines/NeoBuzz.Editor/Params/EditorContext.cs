@@ -2,6 +2,8 @@
 // machine's global parameters (EditorContext) and a control's tie to one of them (ParamBinding).
 // Moved here from the WPF kit's NeoEditor.cs and Controls.cs, to be shared with the studio's
 // Avalonia kit (NeoBuzz.Editor.Avalonia); the editor kit is docs/specs/machines.md §4.
+// Fork (docs/specs/mcp-server.md §12.11, U4): a context can also bind the parameters of any group and
+// track (ParamSlot), for the manifest editor; the Neo editors bind their global parameters by index, as before.
 
 using System;
 using System.Collections.Generic;
@@ -11,19 +13,30 @@ using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Editor
 {
+    /// <summary>
+    /// A parameter a control binds to, on a track. The Neo editors' table entry <c>i</c> is global parameter
+    /// <c>i</c> on track 0; the manifest editor (U4) lists its own: global and track parameters, every track.
+    /// </summary>
+    internal readonly record struct ParamSlot(IParameter Parameter, int Track);
+
     /// <summary>What a machine's editor builds with: its machine, parameters and accent.</summary>
     internal sealed class EditorContext
     {
         readonly List<ParamBinding> bindings = new List<ParamBinding>();
         readonly IParameterGroup globals;
 
-        public EditorContext(IMachine machine, ParamDef[] table, NeoColor accent)
+        /// <param name="slots">Where each table entry is (null: global parameter i, track 0).</param>
+        public EditorContext(IMachine machine, ParamDef[] table, NeoColor accent, IReadOnlyList<ParamSlot> slots = null)
         {
             Machine = machine;
             Table = table;
             Accent = accent;
+            Slots = slots;
             globals = machine?.ParameterGroups?.FirstOrDefault(g => g.Type == ParameterGroupType.Global);
         }
+
+        /// <summary>Where each table entry is; null for the Neo editors (global parameters by index).</summary>
+        public IReadOnlyList<ParamSlot> Slots { get; }
 
         public IMachine Machine { get; }
         public ParamDef[] Table { get; }
@@ -32,8 +45,14 @@ namespace NeoBuzz.Editor
         /// <summary>Undo steps for the editor's edits (the studio's kit sets it); null makes none, as on WPF.</summary>
         public ParamEdits Edits { get; set; }
 
-        public IParameter Parameter(int index) =>
-            globals != null && index >= 0 && index < globals.Parameters.Count ? globals.Parameters[index] : null;
+        public IParameter Parameter(int index)
+        {
+            if (Slots != null) return index >= 0 && index < Slots.Count ? Slots[index].Parameter : null;
+            return globals != null && index >= 0 && index < globals.Parameters.Count ? globals.Parameters[index] : null;
+        }
+
+        /// <summary>The track a table entry's parameter is read and written on.</summary>
+        public int TrackOf(int index) => Slots != null && index >= 0 && index < Slots.Count ? Slots[index].Track : 0;
 
         public ParamBinding Bind(int index, Action<int> onValue)
         {
@@ -41,7 +60,7 @@ namespace NeoBuzz.Editor
             {
                 onValue(v);
                 Changed?.Invoke();
-            }, this, index);
+            }, this, index, TrackOf(index));
             bindings.Add(b);
             return b;
         }
@@ -51,7 +70,7 @@ namespace NeoBuzz.Editor
         {
             try
             {
-                return Parameter(index)?.GetValue(0) ?? Table[index].Default;
+                return Parameter(index)?.GetValue(TrackOf(index)) ?? Table[index].Default;
             }
             catch (Exception)
             {
@@ -66,7 +85,7 @@ namespace NeoBuzz.Editor
             var p = Parameter(index);
             if (p == null) return;
             Edits?.Touch(index);
-            p.SetValue(0, Math.Clamp(raw, Table[index].Min, Table[index].Max));
+            p.SetValue(TrackOf(index), Math.Clamp(raw, Table[index].Min, Table[index].Max));
         }
 
         public void Detach()
@@ -92,19 +111,22 @@ namespace NeoBuzz.Editor
         readonly EditorContext owner;
         readonly int index;
 
-        public ParamBinding(IParameter parameter, ParamDef def, Action<int> onValue, EditorContext owner = null, int index = -1)
+        public ParamBinding(IParameter parameter, ParamDef def, Action<int> onValue, EditorContext owner = null, int index = -1, int track = 0)
         {
             Parameter = parameter;
             Def = def;
+            Track = track;
             this.onValue = onValue;
             this.owner = owner;
             this.index = index;
-            handler = (p, track) => onValue(Value);
-            Parameter?.SubscribeEvents(0, handler, null);
+            handler = (p, t) => onValue(Value);
+            Parameter?.SubscribeEvents(track, handler, null);
         }
 
         public IParameter Parameter { get; }
         public ParamDef Def { get; }
+        /// <summary>The track it reads and writes (0 for global parameters).</summary>
+        public int Track { get; }
 
         public int Value
         {
@@ -112,7 +134,7 @@ namespace NeoBuzz.Editor
             {
                 try
                 {
-                    return Parameter != null ? Parameter.GetValue(0) : Def.Default;
+                    return Parameter != null ? Parameter.GetValue(Track) : Def.Default;
                 }
                 catch (Exception)
                 {
@@ -126,11 +148,11 @@ namespace NeoBuzz.Editor
             raw = Math.Clamp(raw, Def.Min, Def.Max);
             if (Parameter == null || raw == Value) return;
             if (index >= 0) owner?.Edits?.Touch(index);
-            Parameter.SetValue(0, raw);
+            Parameter.SetValue(Track, raw);
             onValue(raw);
         }
 
-        public void Detach() => Parameter?.UnsubscribeEvents(0, handler, null);
+        public void Detach() => Parameter?.UnsubscribeEvents(Track, handler, null);
 
         public int RawFromNormalized(double t) => ParamMapping.RawFromNormalized(Def, t);
 

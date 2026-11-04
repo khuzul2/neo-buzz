@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Glue — Gentle Bus">
+    <Preset Machine="Pedal Comp">
+      <Parameters>
+        <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="18" />
+        <Parameter Name="Ratio" Group="1" Index="1" Track="0" Value="2" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="6" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="200" />
+        <Parameter Name="Makeup Gain" Group="1" Index="5" Track="0" Value="3" />
+        <Parameter Name="Auto Makeup" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Wet/Dry" Group="1" Index="7" Track="0" Value="100" />
+        <Parameter Name="Lookahead" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Detection" Group="1" Index="9" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>Low ratio, soft knee, slow attack: holds a mix or bus together</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vocal — Even Level">
+    <Preset Machine="Pedal Comp">
+      <Parameters>
+        <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="24" />
+        <Parameter Name="Ratio" Group="1" Index="1" Track="0" Value="4" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="6" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="5" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="120" />
+        <Parameter Name="Makeup Gain" Group="1" Index="5" Track="0" Value="6" />
+        <Parameter Name="Auto Makeup" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Wet/Dry" Group="1" Index="7" Track="0" Value="100" />
+        <Parameter Name="Lookahead" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Detection" Group="1" Index="9" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>Smooth RMS levelling for vocals and leads</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drums — Punch">
+    <Preset Machine="Pedal Comp">
+      <Parameters>
+        <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="20" />
+        <Parameter Name="Ratio" Group="1" Index="1" Track="0" Value="4" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="3" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="25" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="80" />
+        <Parameter Name="Makeup Gain" Group="1" Index="5" Track="0" Value="5" />
+        <Parameter Name="Auto Makeup" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Wet/Dry" Group="1" Index="7" Track="0" Value="100" />
+        <Parameter Name="Lookahead" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Detection" Group="1" Index="9" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A slow attack lets the transient through, then holds the body</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Tight">
+    <Preset Machine="Pedal Comp">
+      <Parameters>
+        <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="22" />
+        <Parameter Name="Ratio" Group="1" Index="1" Track="0" Value="6" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="3" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="10" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Makeup Gain" Group="1" Index="5" Track="0" Value="6" />
+        <Parameter Name="Auto Makeup" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Wet/Dry" Group="1" Index="7" Track="0" Value="100" />
+        <Parameter Name="Lookahead" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Detection" Group="1" Index="9" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>Firm control for bass lines: steady level, fast release</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Parallel — New York">
+    <Preset Machine="Pedal Comp">
+      <Parameters>
+        <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="36" />
+        <Parameter Name="Ratio" Group="1" Index="1" Track="0" Value="10" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="2" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="60" />
+        <Parameter Name="Makeup Gain" Group="1" Index="5" Track="0" Value="12" />
+        <Parameter Name="Auto Makeup" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Wet/Dry" Group="1" Index="7" Track="0" Value="40" />
+        <Parameter Name="Lookahead" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Detection" Group="1" Index="9" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Heavy compression blended under the dry signal</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Limit — Peak Catcher">
+    <Preset Machine="Pedal Comp">
+      <Parameters>
+        <Parameter Name="Threshold" Group="1" Index="0" Track="0" Value="6" />
+        <Parameter Name="Ratio" Group="1" Index="1" Track="0" Value="20" />
+        <Parameter Name="Knee" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Attack" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Release" Group="1" Index="4" Track="0" Value="60" />
+        <Parameter Name="Makeup Gain" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Auto Makeup" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Wet/Dry" Group="1" Index="7" Track="0" Value="100" />
+        <Parameter Name="Lookahead" Group="1" Index="8" Track="0" Value="5" />
+        <Parameter Name="Detection" Group="1" Index="9" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Fast, high ratio with lookahead: catches peaks, leaves the rest</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

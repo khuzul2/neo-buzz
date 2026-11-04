@@ -1,0 +1,30 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+# Each track is its own voice with its own filter (these set the first track's); closed source: bare 0–100 % scales.
+# Only its sawtooth: it has no level of its own and plays near full scale, and its sine, triangle, pulse and 303 saw,
+# or any resonance, peak above -1 dBFS on a bass line at velocity 100 whatever the filter (measured on Windows, U4).
+machine "Jeskola Bass 3"
+
+preset "Bass — Round Saw"
+comment "A sawtooth with the filter nearly closed and no envelope: a round, soft bass"
+Oscillator wave = sawtooth
+Filter cutoff = 15%
+Filter resonance = 0%
+Filter envelope amount = 0%
+
+preset "Bass — Saw Pluck"
+comment "A saw through a closing filter: a plucked bass"
+Oscillator wave = sawtooth
+Filter cutoff = 20%
+Filter resonance = 0%
+Filter envelope amount = 30%
+Filter envelope decay = 30%
+
+preset "Bass — Open Saw"
+comment "A sawtooth with the filter a little open and no envelope: a brighter, buzzier bass"
+Oscillator wave = sawtooth
+Filter cutoff = 30%
+Filter resonance = 0%
+Filter envelope amount = 0%

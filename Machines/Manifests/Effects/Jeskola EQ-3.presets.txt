@@ -1,0 +1,43 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+# Its bands are split at the two crossovers; mono, and about 6 dB louder than its input (a quirk).
+machine "Jeskola EQ-3"
+
+preset "Tone — Warm"
+comment "A little more low end, a little less top"
+Low gain = +3 dB
+Mid gain = 0 dB
+High gain = -3 dB
+Low/mid crossover = 250 Hz
+Mid/high crossover = 5000 Hz
+
+preset "Tone — Bright"
+comment "Lows trimmed, highs lifted"
+Low gain = -2 dB
+High gain = +4 dB
+Low/mid crossover = 300 Hz
+Mid/high crossover = 4000 Hz
+
+preset "Mid — Scoop"
+comment "The mids down, the ends up a little: the classic smile"
+Low gain = +2 dB
+Mid gain = -6 dB
+High gain = +2 dB
+Low/mid crossover = 400 Hz
+Mid/high crossover = 3000 Hz
+
+preset "Mid — Telephone"
+comment "Only the mids: lows and highs removed"
+Low gain = -24 dB
+Mid gain = 0 dB
+High gain = -24 dB
+Low/mid crossover = 500 Hz
+Mid/high crossover = 3000 Hz
+
+preset "Low — Cut Below 150 Hz"
+comment "Everything under 150 Hz removed, the rest untouched"
+Low gain = -24 dB
+Low/mid crossover = 150 Hz
+Mid/high crossover = 16000 Hz

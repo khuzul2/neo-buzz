@@ -1,0 +1,46 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+# Mono: ReBuzz feeds it left + right summed (a quirk), so with the dry signal on it is about 6 dB louder than its input.
+machine "Jeskola Delay"
+
+preset "Echo — Dotted Eighth"
+comment "Three ticks: a dotted-eighth echo that follows the tempo, a few repeats"
+Dry signal through = On
+Delay length = 3
+Delay time unit = tick
+Feedback = 35%
+Echo level = 35%
+
+preset "Echo — Quarter Note"
+comment "A quarter-note echo, slightly longer tail"
+Dry signal through = On
+Delay length = 4
+Delay time unit = tick
+Feedback = 45%
+Echo level = 30%
+
+preset "Slapback — Short"
+comment "One short echo at 90 ms, no repeats: rockabilly slap"
+Dry signal through = On
+Delay length = 90
+Delay time unit = ms
+Feedback = 0%
+Echo level = 40%
+
+preset "Dub — Long Feedback"
+comment "A dotted-quarter echo that repeats for a long time"
+Dry signal through = On
+Delay length = 6
+Delay time unit = tick
+Feedback = 70%
+Echo level = 35%
+
+preset "Send — Echo Only"
+comment "Echoes without the dry signal, for a send"
+Dry signal through = Off
+Delay length = 3
+Delay time unit = tick
+Feedback = 40%
+Echo level = 70%

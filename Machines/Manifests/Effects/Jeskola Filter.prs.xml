@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Low Pass — Dark">
+    <Preset Machine="Jeskola Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="1" Track="0" Value="60" />
+        <Parameter Name="Resonance" Group="1" Index="2" Track="0" Value="20" />
+        <Parameter Name="Bandwidth" Group="1" Index="3" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A low pass well down: dark and soft</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Low Pass — Resonant">
+    <Preset Machine="Jeskola Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="1" Track="0" Value="80" />
+        <Parameter Name="Resonance" Group="1" Index="2" Track="0" Value="50" />
+        <Parameter Name="Bandwidth" Group="1" Index="3" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A resonant low pass: a peak at the cutoff</Comment>
+    </Preset>
+  </Item>
+  <Item Key="High Pass — Thin">
+    <Preset Machine="Jeskola Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Cutoff" Group="1" Index="1" Track="0" Value="30" />
+        <Parameter Name="Resonance" Group="1" Index="2" Track="0" Value="10" />
+        <Parameter Name="Bandwidth" Group="1" Index="3" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A high pass low down: the bottom thinned out</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Band Pass — Narrow">
+    <Preset Machine="Jeskola Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Cutoff" Group="1" Index="1" Track="0" Value="70" />
+        <Parameter Name="Resonance" Group="1" Index="2" Track="0" Value="40" />
+        <Parameter Name="Bandwidth" Group="1" Index="3" Track="0" Value="40" />
+      </Parameters>
+      <Attributes />
+      <Comment>A band pass in the mids: nasal, focused</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

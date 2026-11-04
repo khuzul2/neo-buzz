@@ -1,0 +1,59 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+machine "Pedal Chorus"
+
+preset "Chorus — Subtle Width"
+comment "A slow, shallow chorus that widens without wobbling"
+Rate = 0.4 Hz
+Depth = 2 ms
+Base delay = 12 ms
+Stereo spread = 90%
+Tone = 12 kHz
+Mix = 30%
+
+preset "Chorus — Lush Ensemble"
+comment "Deeper and wider: pads and strings"
+Rate = 0.8 Hz
+Depth = 5 ms
+Base delay = 15 ms
+Stereo spread = 100%
+Tone = 8 kHz
+Mix = 50%
+
+preset "Chorus — Slow Shimmer"
+comment "A very slow, deep sweep with bright repeats"
+Rate = 0.15 Hz
+Depth = 6 ms
+Base delay = 20 ms
+Stereo spread = 100%
+Tone = 16 kHz
+Mix = 45%
+
+preset "Chorus — Dark Mono"
+comment "A darker, mono chorus that stays in the centre"
+Rate = 1 Hz
+Depth = 3 ms
+Base delay = 10 ms
+Stereo spread = 0%
+Tone = 3 kHz
+Mix = 40%
+
+preset "Doubler — Short Thick"
+comment "A barely moving short delay: a double-tracked part"
+Rate = 0.25 Hz
+Depth = 1 ms
+Base delay = 22 ms
+Stereo spread = 70%
+Tone = 10 kHz
+Mix = 40%
+
+preset "Vibrato — Wet Wobble"
+comment "Pitch vibrato only: all wet, no dry signal"
+Rate = 4.5 Hz
+Depth = 3 ms
+Base delay = 6 ms
+Stereo spread = 0%
+Tone = 22 kHz
+Mix = 100%

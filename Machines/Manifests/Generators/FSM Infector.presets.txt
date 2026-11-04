@@ -1,0 +1,97 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+# Several of its parameters share a name (" - Decay" for the filter and the amp), so these use the plain names, and the
+# preset file lists every parameter in order (ReBuzz applies such presets by position).
+machine "FSM Infector"
+
+preset "Pad — Supersaw Strings"
+comment "Two detuned supersaws under a slow filter swell: a big string pad"
+Oscillator 1 wave = SuperSaw
+Oscillator 2 wave = SuperSaw
+Oscillator 2 detune = 12 ct
+Oscillator balance = 50%
+Sub-oscillator level = 0%
+Filter type = 4L Phlatt
+Filter cutoff = 30%
+Filter resonance = 0%
+Filter envelope amount = 20%
+Filter envelope attack = 0.5 s
+Filter envelope decay = 2 s
+Filter envelope sustain = 60%
+Filter envelope release = 1.5 s
+Attack = 0.4 s
+Decay = 1 s
+Sustain = 90%
+Release = 1.2 s
+
+preset "Lead — Saw Bright"
+comment "Two saws a few cents apart through a two-pole filter with a quick envelope: a bright lead"
+Oscillator 1 wave = Saw
+Oscillator 2 wave = Saw
+Oscillator 2 detune = 8 ct
+Oscillator balance = 50%
+Sub-oscillator level = 0%
+Filter type = 2L Phlatt
+Filter cutoff = 55%
+Filter resonance = 15%
+Filter envelope amount = 40%
+Filter envelope decay = 0.4 s
+Filter envelope sustain = 40%
+Attack = 5 ms
+Decay = 0.3 s
+Sustain = 80%
+Release = 0.2 s
+
+preset "Bass — Square Sub"
+comment "A square and a saw an octave down over a sine sub, under a low two-pole filter: a firm bass"
+Oscillator 1 wave = PWM Sqr
+Oscillator 2 wave = Saw
+Oscillator 2 transpose = -12 st
+Oscillator balance = 40%
+Sub-oscillator wave = Sine
+Sub-oscillator level = 30%
+Filter type = 2L Phlatt
+Filter cutoff = 20%
+Filter resonance = 0%
+Filter envelope amount = 20%
+Filter envelope attack = 5 ms
+Filter envelope decay = 0.3 s
+Filter envelope sustain = 20%
+Attack = 5 ms
+Decay = 0.5 s
+Sustain = 100%
+Release = 0.1 s
+
+preset "Pluck — Glassy"
+comment "A sine and a triangle an octave up, short envelopes: a glassy pluck"
+Oscillator 1 wave = Sine
+Oscillator 2 wave = Triangle
+Oscillator 2 transpose = +12 st
+Sub-oscillator level = 0%
+Filter cutoff = 60%
+Filter envelope amount = 70%
+Filter envelope decay = 0.25 s
+Filter envelope sustain = 0%
+Attack = 5 ms
+Decay = 0.5 s
+Sustain = 0%
+Release = 0.3 s
+
+preset "Keys — Soft PWM"
+comment "Two pulse waves moving slowly, evenly mixed under a low filter: soft electric keys"
+Oscillator 1 wave = PWM Sqr
+Oscillator 2 wave = PWM Sqr
+Oscillator 2 detune = 6 ct
+Oscillator balance = 50%
+Sub-oscillator level = 0%
+Filter type = 4L Phlatt
+Filter cutoff = 20%
+Filter envelope amount = 10%
+Filter envelope decay = 0.8 s
+Filter envelope sustain = 30%
+Attack = 10 ms
+Decay = 1.2 s
+Sustain = 50%
+Release = 0.4 s

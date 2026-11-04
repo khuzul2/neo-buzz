@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Chorus — Subtle Width">
+    <Preset Machine="Pedal Chorus">
+      <Parameters>
+        <Parameter Name="Rate" Group="1" Index="0" Track="0" Value="6" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="25" />
+        <Parameter Name="Delay" Group="1" Index="2" Track="0" Value="12" />
+        <Parameter Name="Spread" Group="1" Index="3" Track="0" Value="90" />
+        <Parameter Name="Tone" Group="1" Index="4" Track="0" Value="50" />
+        <Parameter Name="Mix" Group="1" Index="5" Track="0" Value="30" />
+      </Parameters>
+      <Attributes />
+      <Comment>A slow, shallow chorus that widens without wobbling</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Chorus — Lush Ensemble">
+    <Preset Machine="Pedal Chorus">
+      <Parameters>
+        <Parameter Name="Rate" Group="1" Index="0" Track="0" Value="14" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="62" />
+        <Parameter Name="Delay" Group="1" Index="2" Track="0" Value="15" />
+        <Parameter Name="Spread" Group="1" Index="3" Track="0" Value="100" />
+        <Parameter Name="Tone" Group="1" Index="4" Track="0" Value="70" />
+        <Parameter Name="Mix" Group="1" Index="5" Track="0" Value="50" />
+      </Parameters>
+      <Attributes />
+      <Comment>Deeper and wider: pads and strings</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Chorus — Slow Shimmer">
+    <Preset Machine="Pedal Chorus">
+      <Parameters>
+        <Parameter Name="Rate" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="75" />
+        <Parameter Name="Delay" Group="1" Index="2" Track="0" Value="20" />
+        <Parameter Name="Spread" Group="1" Index="3" Track="0" Value="100" />
+        <Parameter Name="Tone" Group="1" Index="4" Track="0" Value="30" />
+        <Parameter Name="Mix" Group="1" Index="5" Track="0" Value="45" />
+      </Parameters>
+      <Attributes />
+      <Comment>A very slow, deep sweep with bright repeats</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Chorus — Dark Mono">
+    <Preset Machine="Pedal Chorus">
+      <Parameters>
+        <Parameter Name="Rate" Group="1" Index="0" Track="0" Value="18" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="38" />
+        <Parameter Name="Delay" Group="1" Index="2" Track="0" Value="10" />
+        <Parameter Name="Spread" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="4" Track="0" Value="95" />
+        <Parameter Name="Mix" Group="1" Index="5" Track="0" Value="40" />
+      </Parameters>
+      <Attributes />
+      <Comment>A darker, mono chorus that stays in the centre</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Doubler — Short Thick">
+    <Preset Machine="Pedal Chorus">
+      <Parameters>
+        <Parameter Name="Rate" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="12" />
+        <Parameter Name="Delay" Group="1" Index="2" Track="0" Value="22" />
+        <Parameter Name="Spread" Group="1" Index="3" Track="0" Value="70" />
+        <Parameter Name="Tone" Group="1" Index="4" Track="0" Value="60" />
+        <Parameter Name="Mix" Group="1" Index="5" Track="0" Value="40" />
+      </Parameters>
+      <Attributes />
+      <Comment>A barely moving short delay: a double-tracked part</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vibrato — Wet Wobble">
+    <Preset Machine="Pedal Chorus">
+      <Parameters>
+        <Parameter Name="Rate" Group="1" Index="0" Track="0" Value="90" />
+        <Parameter Name="Depth" Group="1" Index="1" Track="0" Value="38" />
+        <Parameter Name="Delay" Group="1" Index="2" Track="0" Value="6" />
+        <Parameter Name="Spread" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Tone" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="5" Track="0" Value="100" />
+      </Parameters>
+      <Attributes />
+      <Comment>Pitch vibrato only: all wet, no dry signal</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>
