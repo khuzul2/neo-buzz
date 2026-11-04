@@ -411,6 +411,7 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                Core.Modified = false;      // else closing asks to save, and the window stays open for the rest of the run
                 window.Close();
                 Pump();
                 NewSong();
