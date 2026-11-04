@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-03: H1 a global safeguard for every machine, plus a safety limiter on the master output with a clip indicator; H2 A; H3 A; H4 A. **§3.2 and §3.3 built** (§3.6); §3.1 and §3.4 built 2026-11-03 (U2 health); **§3.5 built** (§3.7); §4's first successor, **Neo Ensemble, built** 2026-11-04 |
+| Status | Decided 2026-11-03: H1 a global safeguard for every machine, plus a safety limiter on the master output with a clip indicator; H2 A; H3 A; H4 A. **§3.2 and §3.3 built** (§3.6); §3.1 and §3.4 built 2026-11-03 (U2 health); **§3.5 built** (§3.7); §4's first successor, **Neo Ensemble, built** 2026-11-04, and the second, **Neo EQ's graphic mode, built** 2026-11-04 |
 | Scope | What the profiler's "unhealthy" means; how ReBuzz keeps any machine from blowing up the song or the speakers; how agents stay in safe ranges; which machines get Neo successors |
 | Related | mcp-server.md §12 (machine upgrades U1–U7, `docs/machine-health.md`), machines.md (Neo machines), studio-mvp.md (the studio), daw-modes.md (AR0 runs beside this), plugin-host.md (plugins get the same guard) |
 
@@ -15,7 +15,7 @@ The profiler (U1, `tools/machine-profiler.py`) calls a machine unhealthy when it
 | Machine | Source | Found | Likely cause | Verdict |
 |---|---|---|---|---|
 | Jeskola Flanger | closed | +157 dBFS at all-min, +149 at all-max | Feedback runs −100 %…+100 %: at either end the loop never decays | **A real fault**, at the ends of one parameter |
-| Joachims Hyperion | closed | +221 dBFS at all-max | A 30-band graphic EQ: every band at full boost, at the widest bandwidth, adds up | **Mostly the test.** A band near 20 kHz may also be unstable |
+| Joachims Hyperion | closed | +221 dBFS at all-max | A 30-band graphic EQ: every band at full boost, at the widest bandwidth, adds up | **Mostly the test.** A band near 20 kHz may also be unstable. Found hot per band, not diverging (§3.1). **Successor built:** Neo EQ's graphic mode (§4) |
 | Jeskola Bass | closed | +25 dBFS at all-max (Volume ≈198 %, resonance max); +2 dBTP at the defaults | Loud, bounded, 1 dB over the line | **Hot, not diverging** |
 | Info (WDE, `Info.NET.dll`) | binary only | doesn't load headless | A WPF rich-text song-notes machine: it needs a window | **Not an audio fault** |
 
@@ -175,7 +175,7 @@ The final output to the audio device gets a **safety limiter**:
 | Closed machine | Successor | What |
 |---|---|---|
 | Jeskola Flanger (and Chorus, FSM Chorus2, Pedal Chorus) | **Neo Ensemble** (chorus, flanger, phaser) | A new Neo machine, first in the batch. Feedback bounded (±99 %) with a saturating loop, so it can't run away. **Built** 2026-11-04 (below; machines.md, Neo Ensemble) |
-| Joachims Hyperion | **Neo EQ, graphic mode** | 31 bands at the ISO centres, constant-Q, in Neo EQ (H2 A), and a Hyperion mapping for `machine_replace` |
+| Joachims Hyperion | **Neo EQ, graphic mode** | 31 bands at the ISO centres, constant-Q, in Neo EQ (H2 A), and a Hyperion mapping for `machine_replace`. **Built** 2026-11-04 (below; machines.md, Neo EQ). The mapping is below; its pair file waits for U5 |
 | Jeskola Bass (1) | **Neo Poly**, mono/slide preset | No new machine; a mapping (cutoff, resonance, waveform, volume, slide), as for Bass 2/3 |
 
 **Neo Ensemble, as built.** Chorus (1–4 voices), flanger and phaser (2–12 stages) on one LFO, in Hz or synced to the tempo, zero latency, the dry signal bit for bit at Mix 0 %. Feedback runs −99 … +99 % and can't run away at any setting, however fast the LFO sweeps: the delay loop's reads and its tone filter are convex combinations of past samples (each pass at most 0.99 of the largest), the phaser's stages lossless lattices (the loop's energy gain at most 0.99), and a saturator caps what goes round at +6 dBFS. Its tests: the loop gain below 1 at every frequency over 864 settings (ends included, at most 0.99), and every parameter at each end and the worst combinations at ±99 % under 30 s of noise: bounded (+10.1 dBFS at most, before Output's gain), levelling off and decaying after. Its Linux profile is clean but for Output at +12 dB (hot), so it needs no safe range (machines.md, Neo Ensemble).
@@ -200,6 +200,30 @@ It succeeds four machines. Its parameters' roles (from `ManifestRoles`), for `ma
 | Output | dB | `level` | dry out + wet out | dry out + wet out | — | — |
 
 The conversions (a closed machine's minimum delay and depth to a centre delay and an octave span, a wet level to a mix and an output gain, ± ms of depth to octaves) belong to U5, which renders before and after and compares; a negative dry or wet out (a polarity) has no counterpart, nor has FSM Chorus2's per-track setting.
+
+**Neo EQ's graphic mode, as built.** `Mode` Graphic and 31 sliders, `G 20 Hz` … `G 20 kHz` at the ISO centres, ±18 dB in 0.1 dB steps, added after Output so songs and presets keep their values; in Parametric mode, the default, Neo EQ renders as before, bit for bit (40 renders pinned). The bands are constant-Q bells (2/3 octave between their half-gain points at every gain), matched to the analog prototype up to Nyquist, so the 16 and 20 kHz bands keep their shape at 44.1 and 48 kHz (within 1.03 dB of it; the bilinear bell misses by 8.6 and 14.8 dB). Unlike Hyperion's, the bands' overlap is compensated: their gains are solved for when a slider moves (the sliders' median as a plain gain, a weighted least-squares fit by Gauss–Newton), so the response passes through the sliders, within 0.19 dB at every centre over 1000 random settings across ±18 dB, and every slider at +X is exactly +X. Every slider at +18 dB is +18 dB, where Hyperion reached +221 dBFS; with Output at +24 dB as well, +42 dB (+32.8 dBFS in the Linux profile, from noise peaking near −9 dBFS). TPT sections in double whose gains glide in 16-sample segments across blocks: sliders jumping every 32 samples for 20 s stay within 11.2 dB of the input's peak, blocks of 256 and 117 give the same output, and nothing allocates. Its Linux profile is hot as before (B4–B7 gain and Output at their maximum), with no safe range (machines.md, Neo EQ).
+
+Its parameters' roles (from `ManifestRoles`), for `machine_replace`, and where Hyperion's parameters land (Hyperion's from its profiled draft, `Machines/Manifests/Effects/Joachims Hyperion.machine.json`):
+
+| Neo EQ (graphic) | Unit | Role | Joachims Hyperion | How |
+|---|---|---|---|---|
+| Mode | Parametric, Graphic | `fx.mode` | — | set to Graphic |
+| G 20 Hz … G 20 kHz | dB, ±18 in 0.1 dB steps | — (no role in the vocabulary names a graphic band; the pair file maps them by name) | its 30 band sliders, `20 Hz` … `20000 Hz` (±18.0 dB in 254 steps of 0.142 dB; raw 128 is 0 dB) | Hyperion's curve read at the 31 ISO centres (below) |
+| Output | dB, ±24 | `level` | `Input gain.` (a table, −118.7 … +7.6 dB; raw 95 is 0 dB) | dB to dB: in a linear EQ a gain before it is a gain after it; below −24 dB it stays at −24 dB, with a note |
+| (the machine's bypass) | | | `Enable` (OFF, ON) | OFF bypasses Neo EQ (as Pedal EQ's Bypass, U5's `bypass` rule) |
+| — | | | `Bandwidth` (0.2 … 2.3 octaves in 16 steps, 1.0 at its default) | no control of its own: folded into the sliders' values (below) |
+| — | | | `Highpass` (5 … 100 Hz in a table from raw 1; raw 0, the default, presumably off) | no counterpart in graphic mode: below |
+
+**The bands.** Hyperion's 30 centres are not ISO's: they step by 1000^(1/29) (0.344 octave) from 20 Hz to 20 kHz: 20, 25, 32, 41, 52, 66, 84, 106, 134, 171, 217, 275, 350, 440, 560, 710, 900, 1150, 1460, 1850, 2340, 2970, 3800, 4800, 6100, 7700, 9800, 12400, 15800 and 20000 Hz. Each lies within 0.17 octave of an ISO centre (20 → 20, 32 → 31.5, 560 → 500, 710 → 800, 900 → 1 kHz, 15800 → 16 kHz …); 630 Hz has none of its own.
+
+And Hyperion doesn't compensate the overlap: its response is its bands' bells summed in dB, wider than its sliders. At its default Bandwidth (1 octave), modelled as constant-Q bells of that width, one band at +6 dB lifts the points a third of an octave away by about 4 dB and two thirds away by 2 dB, and every band at +18 dB sums to about +75 dB. (The same model at 2.3 octaves gives +146 dB where Hyperion measured about +226 dB, +225.6 dBFS from noise peaking near −9 dBFS with `Input gain.` at +7.6 dB: its bands are wider than the model, see below.) So the faithful conversion, the one the pair file should make:
+
+1. Compute Hyperion's curve: `Input gain.` plus each band as a bell of `Bandwidth` octaves at its centre, summed in dB.
+2. Read it at the 31 ISO centres: those are the G sliders. Graphic mode's response passes through them, so between the centres it follows Hyperion's curve wherever that is smoother than a third of an octave, which at 0.33 octave and wider it is.
+3. Where the curve leaves ±18 dB: move its median (as far as Output's ±24 dB reaches) into Output, clamp the rest, and say how far it was clamped.
+4. Render before and after (U5) and compare third-octave bands; within about 1 dB where nothing was clamped.
+
+This needs a rule kind U5 doesn't have yet ("graphic": bands with centres and a bandwidth parameter, onto sliders at other centres). The simple alternative, U5's `unit` rule band by band (each Hyperion slider onto the nearest ISO one, G 630 Hz halfway between its neighbours in dB), matches only when Hyperion's Bandwidth is about a third of an octave or less; at its default the converted song is thinner and quieter than the original (narrower moves, none of Hyperion's summing). Hyperion is closed, so the shape of its bands, and the level its Bandwidth is measured at, are assumptions until U5 measures them: one band at +18 dB at each of the 16 Bandwidth steps, rendered on Windows and fitted, before the pair's tolerance is set. Its `Highpass` (5–100 Hz, order unknown) has no counterpart in graphic mode: as a DC remover (5–20 Hz) it can go; set higher, its curve goes into the low sliders like the bands' (below 20 Hz graphic mode settles at the sliders' median instead of cutting), with a note.
 
 `machine_replace` (U5) moves a song over: parameters by role and unit, patterns' columns mapped, a render before and after compared. The original stays installed so old songs play. On the Mac every closed native is a silent placeholder, so a successor and `machine_replace` are how those songs play there.
 

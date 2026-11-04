@@ -622,6 +622,7 @@ The tool works for agents and, from the machine menu, for people.
 | Jeskola Gain, Pedal Gain | Neo Utility | built (A4, M3) |
 | Jeskola Delay, Cross Delay, NiNjA dElaY; FSM PanzerDelay | Neo Delay | next batch (§8.2) |
 | Jeskola Chorus, Flanger; FSM Chorus2; Pedal Chorus | Neo Ensemble (chorus/flanger/phaser) | built (machine-safety.md §4; roles for the mapping there) |
+| Joachims Hyperion | Neo EQ, graphic mode (31 constant-Q bands at the ISO centres, the overlap compensated) | built (machine-safety.md §4; the mapping there, its pair file a follow-up to U5) |
 | Jeskola Filter, Filter 2; Joachims Mars; FSM WahMan; Pedal Filter | Neo Filter (the Neo Poly filters as an effect, with envelope follower and LFO) | proposed |
 | Jeskola Bass 2/3, Oomek Aggressor 303, Pedal SH-101 | Neo Poly (mono/legato presets) | built (M2) |
 | FSM Infector, Pedal Juno106 | Neo Poly, Neo Wave | built (M2) |

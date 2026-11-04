@@ -127,7 +127,7 @@ namespace NeoBuzz.MachineTests
             foreach (var c in EqTests.Curves) yield return (c.Name, c.Setup, null);
             foreach (var (_, machine, name, values) in PresetTests.AllPresets())
             {
-                if (machine != "Neo EQ") continue;
+                if (machine != "Neo EQ" || values.GetValueOrDefault(P.Mode) == 1) continue;   // the graphic presets came with graphic mode
                 var vals = values;
                 // The 49 parameters songs and presets stored before graphic mode.
                 yield return ("preset " + name, v => { foreach (var kv in vals) if (kv.Key >= 0 && kv.Key < 49) v.Set(kv.Key, kv.Value); }, null);
@@ -278,6 +278,27 @@ namespace NeoBuzz.MachineTests
             Assert.That(worst, Is.LessThan(1.0));
             Assert.That(flat, Is.LessThan(0.5));
             Assert.That(maxGain, Is.LessThanOrEqualTo(GraphicDesign.MaxFilterDb));
+        }
+
+        [Test]
+        public void TheGraphicPresetsFollowTheirSliders()
+        {
+            // Each graphic factory preset: the response at every centre within 1 dB of its slider (48 kHz).
+            var solver = new GraphicSolver(Measure.Rate);
+            var lines = new List<string>();
+            foreach (var (_, machine, name, values) in PresetTests.AllPresets())
+            {
+                if (machine != "Neo EQ" || values.GetValueOrDefault(P.Mode) != 1) continue;
+                var v = new ParamValues(Params.Table);
+                foreach (var kv in values) if (kv.Key >= 0) v.Set(kv.Key, kv.Value);
+                var sliders = Read(v);
+                solver.Solve(sliders);
+                double worst = Enumerable.Range(0, N).Max(k => Math.Abs(solver.ResponseDb(GraphicDesign.Centres[k]) - sliders[k]));
+                lines.Add($"{name} {worst:F3} dB");
+                Assert.That(worst, Is.LessThan(1), name);
+            }
+            Measure.Report($"Neo EQ graphic presets, the response at the centres against the sliders: {string.Join("; ", lines)}");
+            Assert.That(lines, Has.Count.EqualTo(7));
         }
 
         [TestCase(44100)]
