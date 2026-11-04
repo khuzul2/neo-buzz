@@ -86,8 +86,8 @@ namespace NeoBuzz.Editor
         /// <summary>The gain that puts <paramref name="peak"/> at 90 % of the half-height, within −12 … +48 dB.</summary>
         public static double FitScale(double peak) => Math.Clamp(0.9 / Math.Max(peak, 1e-9), 0.25, 251.19);
 
-        /// <summary>A band's points are this many pixels apart: its cost is its edges', and two pixels look the same.</summary>
-        public const double BandStep = 2;
+        /// <summary>A band's points are this many pixels apart: its cost is its edges', and three pixels look the same.</summary>
+        public const double BandStep = 3;
 
         public static void Draw(INeoCanvas c, NeoRect r, ScopeView v)
         {
