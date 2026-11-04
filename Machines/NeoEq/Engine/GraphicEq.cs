@@ -467,10 +467,28 @@ namespace NeoBuzz.Eq
             int active = Solver.Active;
             for (int k = 0; k < active; k++)
             {
-                // A band settled at exactly 0 dB passes the signal untouched (its sections keep running, so it moves off cleanly).
-                bool identity = now[k] == 0 && want[k] == 0 && rampLeft[k] == 0;
                 ref var sl = ref l[k];
                 ref var sr = ref r[k];
+                if (now[k] == want[k] && rampLeft[k] == 0)
+                {
+                    // Settled: its coefficients stay as they are for the whole block. At exactly 0 dB it passes the
+                    // signal untouched, its sections still running so that it moves off cleanly.
+                    if (now[k] == 0)
+                        for (int i = 0; i < n; i++)
+                        {
+                            sl.Process(left[i]);
+                            sr.Process(right[i]);
+                        }
+                    else
+                        for (int i = 0; i < n; i++)
+                        {
+                            left[i] = sl.Process(left[i]);
+                            right[i] = sr.Process(right[i]);
+                        }
+                    sl.Flush();
+                    sr.Flush();
+                    continue;
+                }
                 int o = k * 5;
                 int pos = segPos;
                 for (int i = 0; i < n; i++)
@@ -494,12 +512,8 @@ namespace NeoBuzz.Eq
                         sl.Set(cur[o], cur[o + 1], cur[o + 2], cur[o + 3], cur[o + 4]);
                         sr.Set(cur[o], cur[o + 1], cur[o + 2], cur[o + 3], cur[o + 4]);
                     }
-                    double yl = sl.Process(left[i]), yr = sr.Process(right[i]);
-                    if (!identity)
-                    {
-                        left[i] = yl;
-                        right[i] = yr;
-                    }
+                    left[i] = sl.Process(left[i]);
+                    right[i] = sr.Process(right[i]);
                     if (++pos == Segment) pos = 0;
                 }
                 sl.Flush();
