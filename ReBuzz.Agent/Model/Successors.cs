@@ -51,7 +51,18 @@ namespace ReBuzz.Agent.Model
         /// the old one's. An inverted dry or wet keeps its level, not its polarity (with a note).
         /// </summary>
         DryWet,
+        /// <summary>
+        /// A graphic EQ whose bands overlap and add (Joachims Hyperion's: bells summed in dB, their width a parameter) onto
+        /// one whose response passes through its sliders at other centres (Neo EQ's graphic mode): the old curve read at
+        /// each new centre is that slider's value. The old bands are constant-Q bells, <c>bandwidth</c> octaves between their
+        /// half-gain points; a gain parameter and whatever the sliders can't reach (the curve's middle, beyond their range)
+        /// go to <c>output</c>.
+        /// </summary>
+        Graphic,
     }
+
+    /// <summary>A band of a <see cref="SuccessorRuleKind.Graphic"/> rule: its gain parameter and its centre.</summary>
+    public sealed record SuccessorBand(string Param, double Hz);
 
     /// <summary>One wet level of a <see cref="SuccessorRuleKind.LevelsToMix"/> rule, with the level difference between the two machines' wet sounds.</summary>
     public sealed record SuccessorWet(string From, string To, double GainDb);
@@ -101,6 +112,11 @@ namespace ReBuzz.Agent.Model
         /// <summary>DryWet: a 0–100 % wet/dry mix instead of separate levels (dry = 1 − mix, wet = mix), and the wet's scale s.</summary>
         public string MixFrom { get; init; }
         public double WetScale { get; init; } = 1;
+        /// <summary>Graphic: the old bands, the new sliders, the old bands' width in octaves (a parameter), the old gain (optional).</summary>
+        public IReadOnlyList<SuccessorBand> Bands { get; init; }
+        public IReadOnlyList<SuccessorBand> Sliders { get; init; }
+        public string Bandwidth { get; init; }
+        public string Gain { get; init; }
         /// <summary>Why (a line in the report): "assumed: closed source", "measured on …".</summary>
         public string Why { get; init; } = "";
 
@@ -112,6 +128,7 @@ namespace ReBuzz.Agent.Model
             SuccessorRuleKind.Sweep => Low.Concat(High).Select(t => t.Param).Distinct(StringComparer.OrdinalIgnoreCase),
             SuccessorRuleKind.DryWet => MixFrom != null ? new[] { MixFrom } : new[] { Dry, Wet?.FirstOrDefault()?.From }.Where(x => x != null),
             SuccessorRuleKind.Db when ZeroWhen != null => new[] { From, ZeroWhen },
+            SuccessorRuleKind.Graphic => Bands.Select(b => b.Param).Append(Bandwidth).Concat(Gain != null ? new[] { Gain } : Array.Empty<string>()),
             SuccessorRuleKind.Unit when Times != null => new[] { From, Times },
             _ => new[] { From },
         };
@@ -122,6 +139,7 @@ namespace ReBuzz.Agent.Model
             SuccessorRuleKind.Clip => new[] { Drive, Output },
             SuccessorRuleKind.Sweep => new[] { Delay, Depth },
             SuccessorRuleKind.DryWet => new[] { Mix, Output },
+            SuccessorRuleKind.Graphic => Sliders.Select(b => b.Param).Append(Output),
             SuccessorRuleKind.Bypass => Array.Empty<string>(),
             _ => new[] { To },
         };
@@ -279,6 +297,9 @@ namespace ReBuzz.Agent.Model
             return new[] { (double)a[0]!, (double)a[1]! };
         }
 
+        static List<SuccessorBand> Bands(JsonNode node) =>
+            (node as JsonArray)?.OfType<JsonObject>().Select(x => new SuccessorBand((string)x["param"], (double?)x["hz"] ?? 0)).ToList();
+
         static List<(string Param, double Weight)> Terms(JsonNode node) =>
             (node as JsonArray)?.OfType<JsonObject>().Select(x => ((string)x["param"], (double?)x["weight"] ?? 1)).ToList();
 
@@ -298,6 +319,7 @@ namespace ReBuzz.Agent.Model
                 "bypass" => SuccessorRuleKind.Bypass,
                 "sweep" => SuccessorRuleKind.Sweep,
                 "dry_wet" => SuccessorRuleKind.DryWet,
+                "graphic" => SuccessorRuleKind.Graphic,
                 _ => throw new FormatException($"{pair}: unknown rule kind \"{kind}\"."),
             };
             var rule = new SuccessorRule
@@ -333,6 +355,10 @@ namespace ReBuzz.Agent.Model
                 Octaves = (double?)r["octaves"] ?? 1,
                 MixFrom = (string)r["mix_from"],
                 WetScale = (double?)r["wet_scale"] ?? 1,
+                Bands = Bands(r["bands"]),
+                Sliders = Bands(r["sliders"]),
+                Bandwidth = (string)r["bandwidth"],
+                Gain = (string)r["gain"],
                 Mix = (string)r["mix"],
                 Threshold = (string)r["threshold"],
                 Clamp = (string)r["clamp"],
@@ -351,6 +377,9 @@ namespace ReBuzz.Agent.Model
                 SuccessorRuleKind.Range when rule.FromRange == null || rule.ToRange == null || rule.From == null || rule.To == null => "from, to, from_range and to_range",
                 SuccessorRuleKind.Choice when rule.Map == null || rule.From == null || rule.To == null => "from, to and map",
                 SuccessorRuleKind.Bypass when rule.From == null => "from",
+                SuccessorRuleKind.Graphic when rule.Bands == null || rule.Bands.Count == 0 || rule.Sliders == null || rule.Sliders.Count == 0 ||
+                                               rule.Bandwidth == null || rule.Output == null || rule.Bands.Concat(rule.Sliders).Any(b => b.Param == null || !(b.Hz > 0))
+                    => "bands and sliders (param, hz), bandwidth and output",
                 SuccessorRuleKind.Unit or SuccessorRuleKind.Db or SuccessorRuleKind.InverseDb when rule.From == null || rule.To == null => "from and to",
                 _ => null,
             };

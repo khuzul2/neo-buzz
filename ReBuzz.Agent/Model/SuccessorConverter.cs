@@ -490,8 +490,49 @@ namespace ReBuzz.Agent.Model
                 case SuccessorRuleKind.DryWet:
                     DryWet(rule, get, Put, notes);
                     break;
+                case SuccessorRuleKind.Graphic:
+                    Graphic(rule, get, Put, notes);
+                    break;
             }
             return outs;
+        }
+
+        /// <summary>A constant-Q bell's level in dB at <paramref name="w"/> times its centre: H(s) = (s² + (A/Q)s + 1) / (s² + s/(AQ) + 1), A = 10^(g/40).</summary>
+        public static double BellDb(double w, double gainDb, double q)
+        {
+            if (gainDb == 0) return 0;
+            double a = Math.Pow(10, gainDb / 40), u = (1 - w * w) * (1 - w * w);
+            return 10 * Math.Log10((u + a * a * w * w / (q * q)) / (u + w * w / (a * a * q * q)));
+        }
+
+        /// <summary>
+        /// The old graphic EQ's curve (its bands as constant-Q bells <c>bandwidth</c> octaves wide between their half-gain points,
+        /// summed in dB) read at each new slider's centre. Where the curve leaves the sliders' range, it moves as a whole (the
+        /// least that brings it inside, or its middle to the range's when it spans more) and the output takes the move, with
+        /// the old gain; what still can't be reached is clamped, with a note.
+        /// </summary>
+        void Graphic(SuccessorRule rule, Func<string, double> get, Action<string, double> put, List<string> notes)
+        {
+            double width = get(rule.Bandwidth);
+            if (double.IsNaN(width) || !(width > 0)) return;
+            double q = 1 / (Math.Pow(2, width / 2) - Math.Pow(2, -width / 2));
+            var gains = rule.Bands.Select(b => get(b.Param)).ToArray();
+            if (gains.Any(double.IsNaN)) return;
+            var curve = rule.Sliders.Select(t => rule.Bands.Select((b, j) => BellDb(t.Hz / b.Hz, gains[j], q)).Sum()).ToArray();
+            var first = New(rule.Sliders[0].Param);
+            double reachLo = first == null ? double.NegativeInfinity : Math.Min(first.Value(first.Min), first.Value(first.Max));
+            double reachHi = first == null ? double.PositiveInfinity : Math.Max(first.Value(first.Min), first.Value(first.Max));
+            double lo = curve.Min(), hi = curve.Max(), shift = 0;
+            if (hi - lo > reachHi - reachLo)
+            {
+                shift = (hi + lo) / 2 - (reachHi + reachLo) / 2;
+                string note = $"{Map.From}'s curve spans {hi - lo:0.0} dB, more than {Map.To}'s sliders reach ({reachHi - reachLo:0} dB): its middle is kept, its ends clamped.";
+                if (!notes.Contains(note)) notes.Add(note);
+            }
+            else if (hi > reachHi) shift = hi - reachHi;
+            else if (lo < reachLo) shift = lo - reachLo;
+            for (int k = 0; k < curve.Length; k++) put(rule.Sliders[k].Param, Math.Clamp(curve[k] - shift, reachLo, reachHi));
+            put(rule.Output, (rule.Gain != null ? get(rule.Gain) : 0) + shift);
         }
 
         static string Ms(double s) => (s * 1000).ToString(s < 0.001 ? "0.##" : "0.#", C) + " ms";
