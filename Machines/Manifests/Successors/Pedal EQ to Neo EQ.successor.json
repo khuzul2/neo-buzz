@@ -1,0 +1,116 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Pedal EQ",
+  "to": "Neo EQ",
+  "summary": "The four bands land on Neo EQ's bands 2, 3, 4 and 7 (low shelf, two bells, high shelf), frequency, gain and Q as they are; bands 1, 5, 6 and 8 off.",
+  "set": {
+    "B1 on": "Off",
+    "B2 on": "On",
+    "B2 type": "Low shelf",
+    "B2 Q": "0.7071",
+    "B3 on": "On",
+    "B3 type": "Bell",
+    "B4 on": "On",
+    "B4 type": "Bell",
+    "B5 on": "Off",
+    "B6 on": "Off",
+    "B7 on": "On",
+    "B7 type": "High shelf",
+    "B7 Q": "0.7071",
+    "B8 on": "Off"
+  },
+  "rules": [
+    {
+      "kind": "unit",
+      "from": "LS Freq",
+      "to": "B2 freq"
+    },
+    {
+      "kind": "unit",
+      "from": "LS Gain",
+      "to": "B2 gain"
+    },
+    {
+      "kind": "unit",
+      "from": "LM Freq",
+      "to": "B3 freq"
+    },
+    {
+      "kind": "unit",
+      "from": "LM Gain",
+      "to": "B3 gain"
+    },
+    {
+      "kind": "unit",
+      "from": "LM Q",
+      "to": "B3 Q"
+    },
+    {
+      "kind": "unit",
+      "from": "HM Freq",
+      "to": "B4 freq"
+    },
+    {
+      "kind": "unit",
+      "from": "HM Gain",
+      "to": "B4 gain"
+    },
+    {
+      "kind": "unit",
+      "from": "HM Q",
+      "to": "B4 Q"
+    },
+    {
+      "kind": "unit",
+      "from": "HS Freq",
+      "to": "B7 freq"
+    },
+    {
+      "kind": "unit",
+      "from": "HS Gain",
+      "to": "B7 gain"
+    },
+    {
+      "kind": "unit",
+      "from": "Output",
+      "to": "Output"
+    },
+    {
+      "kind": "bypass",
+      "from": "Bypass",
+      "why": "Neo EQ has no bypass parameter: the machine's bypass takes it."
+    }
+  ],
+  "unmapped": [
+    {
+      "param": "LS Solo",
+      "why": "a listening aid (the band alone, in parallel); Neo EQ has none."
+    },
+    {
+      "param": "LM Solo",
+      "why": "a listening aid (the band alone, in parallel); Neo EQ has none."
+    },
+    {
+      "param": "HM Solo",
+      "why": "a listening aid (the band alone, in parallel); Neo EQ has none."
+    },
+    {
+      "param": "HS Solo",
+      "why": "a listening aid (the band alone, in parallel); Neo EQ has none."
+    }
+  ],
+  "remarks": [
+    "Both are the RBJ cookbook's biquads in series: Pedal EQ's shelves have slope 1 (Q 0.7071 in Neo EQ's terms) and its bells take Q as Neo EQ's do, so the curves are the same; Neo EQ's frequencies and gains are finer (Pedal EQ moves in fixed steps)."
+  ],
+  "tolerance": {
+    "loudness_db": 0.2,
+    "band_db": 0.5,
+    "from_hz": 20,
+    "to_hz": 20000,
+    "measured": "rebuzz-headless (Linux), Neo Poly noise and saw notes through it (LM +6 dB, HS −4 dB, HM −9 dB at Q 3, LS +3 dB at 100 Hz, Output −1.5 dB), each side read against its input: loudness 0.0 dB, every third octave within 0.2 dB (tools/headless-replace.py)"
+  },
+  "evidence": [
+    "ExternalMachines/source/thepedal/pedal-eq/PedalEQMachine.cs: RBJ low shelf and high shelf with alpha = sin(w0)/√2, peaking with alpha = sin(w0)/(2Q), in series, then the output trim",
+    "Machines/NeoEq/Engine/EqEngine.cs: the same responses as SVF sections (bell k = 1/(Q·A), shelves k = 1/Q)"
+  ]
+}

@@ -55,6 +55,7 @@ namespace ReBuzz.Agent
             NotesTools.Register(tools, this);       // fork (machine-safety.md §3.5): Song Notes
             GuideLibrary.Register(tools, gear => Manual(core, gear), () => Described(core).Select(x => x.Dll.Name).ToList());
             MachineTools.Register(tools, this);
+            ReplaceTools.Register(tools, this);     // U5 (mcp-server.md §12.5): machine_replace
             ParamTools.Register(tools, this);
             PatternTools.Register(tools, this);
             RenderTools.Register(tools, this);

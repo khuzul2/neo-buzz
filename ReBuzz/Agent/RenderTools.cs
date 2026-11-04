@@ -221,9 +221,17 @@ namespace ReBuzz.Agent
         /// loop is set to the range with looping off, so the engine stops at its end.
         /// </summary>
         static (StereoAudio Master, List<(string Machine, StereoAudio Audio)> Probes) Render(AgentHost host, int from, int to, double tailSeconds,
-            HashSet<MachineCore> solo, HashSet<MachineCore> mute, IReadOnlyList<MachineCore> probes, ToolContext c, List<string> warnings)
+            HashSet<MachineCore> solo, HashSet<MachineCore> mute, IReadOnlyList<MachineCore> probes, ToolContext c, List<string> warnings) =>
+            Render(host.Core, host.Dispatcher, from, to, tailSeconds, solo, mute, probes, c.Cancellation, (done, total, what) => c.Progress(done, total, what), warnings);
+
+        /// <summary>
+        /// The render itself, for the agent's tools and for machine_replace's comparison from the machine menu (U5), which
+        /// has no agent host: <paramref name="progress"/> gets (seconds done, seconds in all, what).
+        /// </summary>
+        internal static (StereoAudio Master, List<(string Machine, StereoAudio Audio)> Probes) Render(ReBuzzCore core, IUiDispatcher dispatcher, int from, int to, double tailSeconds,
+            HashSet<MachineCore> solo, HashSet<MachineCore> mute, IReadOnlyList<MachineCore> probes, System.Threading.CancellationToken cancellation,
+            Action<double, double, string> progress, List<string> warnings, IReadOnlyList<(string Label, IMachineConnection Connection, double Amp)> connections = null)
         {
-            var core = host.Core;
             var song = core.SongCore;
             var info = ReBuzzCore.masterInfo;
             int rate = info.SamplesPerSec;
@@ -254,6 +262,9 @@ namespace ReBuzz.Agent
                 if (conn == null) { warnings.Add($"{m.Name} feeds nothing, so there's nothing to probe."); continue; }
                 taps.Add(new Probe(m.Name, conn));
             }
+            // U5: chosen connections, at a gain given in Buzz amp units (machine_replace taps a machine's inputs).
+            foreach (var (label, conn, amp) in connections ?? System.Array.Empty<(string Label, IMachineConnection Connection, double Amp)>())
+                taps.Add(new Probe(label, conn, (float)(amp / Levels.UnityAmp / 32768.0)));
 
             lock (ReBuzzCore.AudioLock)
             {
@@ -321,7 +332,7 @@ namespace ReBuzz.Agent
                     // Until the engine stops at the range's end (or the position wraps, if something keeps it going).
                     while (core.Playing && left.Count < cap)
                     {
-                        c.Cancellation.ThrowIfCancellationRequested();
+                        cancellation.ThrowIfCancellationRequested();
                         wm.MainAudioFillBuffer(buffer, 0, 512);
                         Take(256);
                         int now = song.PlayPosition;
@@ -329,7 +340,7 @@ namespace ReBuzz.Agent
                         last = now;
                         if (left.Count >= nextReport)
                         {
-                            c.Progress(left.Count / (double)rate, (expected + tailFrames) / (double)rate, "seconds rendered");
+                            progress?.Invoke(left.Count / (double)rate, (expected + tailFrames) / (double)rate, "seconds rendered");
                             nextReport += 5L * rate;
                         }
                     }
@@ -366,7 +377,7 @@ namespace ReBuzz.Agent
                     if (!wasModified)
                     {
                         core.Modified = false;
-                        host.Dispatcher.BeginInvoke(() => core.Modified = false);   // after deferred updates
+                        dispatcher?.BeginInvoke(() => core.Modified = false);   // after deferred updates
                     }
                 }
             }
@@ -383,11 +394,11 @@ namespace ReBuzz.Agent
             readonly float gain;
             bool on;
 
-            public Probe(string machine, IMachineConnection connection)
+            public Probe(string machine, IMachineConnection connection, float? scale = null)
             {
                 Machine = machine;
                 this.connection = connection;
-                gain = connection.Amp / (float)Levels.UnityAmp / 32768f;
+                gain = scale ?? connection.Amp / (float)Levels.UnityAmp / 32768f;
                 handler = (samples, stereo, _) =>
                 {
                     if (!on) return;

@@ -1,0 +1,89 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Pedal Comp",
+  "to": "Neo Comp",
+  "summary": "Threshold, ratio, knee, attack, release, makeup, auto makeup, mix and lookahead carry over in their units onto Neo Comp's Clean character.",
+  "set": {
+    "Mode": "Clean",
+    "Character": "0%",
+    "Sidechain": "Internal",
+    "Auto release": "On",
+    "SC low cut": "10 Hz",
+    "Stereo link": "100%",
+    "Output": "0 dB"
+  },
+  "rules": [
+    {
+      "kind": "unit",
+      "from": "Threshold",
+      "to": "Threshold"
+    },
+    {
+      "kind": "unit",
+      "from": "Ratio",
+      "to": "Ratio"
+    },
+    {
+      "kind": "unit",
+      "from": "Knee",
+      "to": "Knee"
+    },
+    {
+      "kind": "unit",
+      "from": "Attack",
+      "to": "Attack"
+    },
+    {
+      "kind": "unit",
+      "from": "Release",
+      "to": "Release"
+    },
+    {
+      "kind": "unit",
+      "from": "Makeup Gain",
+      "to": "Makeup"
+    },
+    {
+      "kind": "choice",
+      "from": "Auto Makeup",
+      "to": "Auto makeup",
+      "map": {
+        "Off": "Off",
+        "On": "On"
+      }
+    },
+    {
+      "kind": "unit",
+      "from": "Wet/Dry",
+      "to": "Mix"
+    },
+    {
+      "kind": "unit",
+      "from": "Lookahead",
+      "to": "Lookahead",
+      "why": "Neo Comp looks ahead up to 5 ms; longer lookaheads are cut to 5 ms."
+    }
+  ],
+  "unmapped": [
+    {
+      "param": "Detection",
+      "why": "Neo Comp's characters each have their own detector (Clean is peak); Pedal Comp's RMS detection has no exact counterpart, so an RMS setting reacts faster after the move."
+    }
+  ],
+  "remarks": [
+    "Both are feed-forward compressors with a soft knee, but their detectors and gain smoothing differ: steady material matches closely, transients less so.",
+    "Pedal Comp's release speeds up as the level falls fast (program-dependent); Neo Comp's Auto release is the nearer match, so the mapping turns it on."
+  ],
+  "tolerance": {
+    "loudness_db": 1,
+    "band_db": 2,
+    "from_hz": 40,
+    "to_hz": 16000,
+    "measured": "rebuzz-headless (Linux), Neo Poly noise notes at four velocities through it, each side read against its input: −0.7 dB (−24 dB, 4:1, 5 ms, 100 ms), +0.2 … +0.4 dB (−30 dB, 8:1, 1 ms, 300 ms, 6 dB knee), −0.6 dB at its defaults; third octaves within 0.7 dB. With Neo Comp's Auto release off it came out 1.3 dB quieter (Pedal Comp's release is program-dependent)"
+  },
+  "evidence": [
+    "ExternalMachines/source/thepedal/pedal-comp (its source: units of every parameter)",
+    "Machines/Manifests/Effects/Pedal Comp.machine.json (curated)",
+    "Machines/NeoComp/Params.def"
+  ]
+}

@@ -46,6 +46,7 @@ namespace ReBuzz.Agent
                     Req("exact_units", Boolean("Values in units land exactly")),
                     Opt("gear_info", Object("The gear: its file, track range, how it takes notes", Req("file", String("Its DLL, under Gear")))),
                     Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it (track 0 only, needs a wave…)")),
+                    Opt("successors", Array(Object("A Neo successor", Req("gear", String("Its gear")), Req("how", String("The call that moves the song onto it"))), "machine_replace moves the machine onto these")),
                     Req("groups", Array(String("Group"), "All parameter groups")),
                     Req("parameters", Array(Object("A parameter",
                         Req("name", String("Pass this to param_set")),
@@ -88,6 +89,8 @@ namespace ReBuzz.Agent
                         }
                         o["gear_info"] = GearInfo(m);
                         if (manifest?.Quirks.Count > 0) o["quirks"] = new JsonArray(manifest.Quirks.Select(x => (JsonNode)x).ToArray());
+                        // U5 (mcp-server.md §12.5): its Neo successors, which machine_replace moves the song onto.
+                        if (MachineReplace.SuccessorsJson(core, m.DLL) is JsonArray successors) o["successors"] = successors;
                         if (manifest?.Imports.Count > 0)
                             o["data_imports"] = new JsonArray(manifest.Imports.Select(i => (JsonNode)new JsonObject
                             {
@@ -117,8 +120,10 @@ namespace ReBuzz.Agent
                     }, c.Cancellation);
                     var ps = r["parameters"]!.AsArray();
                     string line = string.Join("; ", ps.Take(40).Select(p => $"{p!["name"]} = {p["value"]}"));
+                    string successor = r["successors"] is JsonArray su && su.Count > 0
+                        ? $" Successor: {string.Join(", ", su.Select(x => x!["gear"]!.GetValue<string>()))} (machine_replace)." : "";
                     return ToolResult.Ok($"{r["machine"]!["name"]} ({r["machine"]!["gear"]}): {ps.Count} parameters{(group != null ? $" in {group}" : "")}" +
-                                         (r["manifest"]?.GetValue<string>() == "draft" ? " (units from a profiled draft manifest)" : "") + ". " +
+                                         (r["manifest"]?.GetValue<string>() == "draft" ? " (units from a profiled draft manifest)" : "") + "." + successor + " " +
                                          line + (ps.Count > 40 ? "; …" : ""), r);
                 },
             });

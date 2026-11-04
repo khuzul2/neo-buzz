@@ -1,0 +1,132 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Jeskola Bass 3",
+  "to": "Neo Poly",
+  "summary": "Jeskola Bass 3's line plays on Neo Poly as a mono legato bass: notes as notes (in its pitch convention), slides as glides, volume as velocity; cutoff, resonance and waveform carry over.",
+  "output_gain_db": 0,
+  "set": {
+    "Voice mode": "Legato",
+    "Glide mode": "Legato",
+    "Unison": "1",
+    "Drift": "0%",
+    "Vel → amp": "100%",
+    "Volume": "+6 dB",
+    "O1 level": "100%",
+    "O2 level": "0%",
+    "O3 level": "0%",
+    "Noise": "0%",
+    "Ring 1×2": "0%",
+    "F1 type": "Ladder 24",
+    "F1 drive": "0 dB",
+    "F1 key track": "0%",
+    "F1 velocity": "0%",
+    "F2 type": "Off",
+    "Flt attack": "0.5 ms",
+    "Flt sustain": "0%",
+    "Flt release": "10 ms",
+    "Amp attack": "0.5 ms",
+    "Amp decay": "20 s",
+    "Amp sustain": "100%",
+    "Amp release": "5 ms"
+  },
+  "describe": {
+    "Volume": {
+      "kind": "linear",
+      "a": 0.78125,
+      "b": 198.4375,
+      "unit": "%"
+    },
+    "Note lenght": {
+      "kind": "linear",
+      "a": 1,
+      "b": 255,
+      "unit": "ticks"
+    }
+  },
+  "rules": [
+    {
+      "kind": "range",
+      "from": "Cutoff",
+      "to": "F1 cutoff",
+      "from_range": [
+        0,
+        1
+      ],
+      "to_range": [
+        80,
+        16000
+      ],
+      "curve": "log",
+      "why": "assumed: 0–100 % laid on 80 Hz – 16 kHz"
+    },
+    {
+      "kind": "unit",
+      "from": "Resonance",
+      "to": "F1 reso"
+    },
+    {
+      "kind": "unit",
+      "from": "Envmod",
+      "to": "F1 env",
+      "scale": 0.5,
+      "why": "assumed: 100 % moves the cutoff 3 octaves (F1 env +50 %)"
+    },
+    {
+      "kind": "range",
+      "from": "Decay",
+      "to": "Flt decay",
+      "from_range": [
+        0,
+        1
+      ],
+      "to_range": [
+        0.03,
+        3
+      ],
+      "curve": "log",
+      "why": "assumed: 0–100 % laid on 30 ms – 3 s"
+    },
+    {
+      "kind": "choice",
+      "from": "Waveform",
+      "to": "O1 shape",
+      "map": {
+        "sine": "0",
+        "sawtooth": "2",
+        "pulse": "3",
+        "triangle": "1",
+        "303 saw": "2"
+      },
+      "why": "noise has no oscillator shape on Neo Poly (its Noise level is a separate source): left as it was"
+    }
+  ],
+  "notes": {
+    "note": "Note",
+    "slide": "Slide note",
+    "length": "Note lenght",
+    "volume": "Volume",
+    "volume_at_full": 1.984375,
+    "volume_holds": false,
+    "velocity": 64,
+    "glide": "Glide",
+    "why": "Each row's note lasts to the track's next note (or Note lenght ticks); Slide note glides to it over the note; Volume (0x80 = 100 %) is the velocity, 0x80 → 64, with Vel → amp at 100 % and Volume +6 dB making up for it."
+  },
+  "remarks": [
+    "No new machine (machine-safety.md §4, H4): Neo Poly in Legato with glide plays the bass line; its ladder filter and envelopes take the cutoff, resonance and envelope settings.",
+    "The cutoff and envelope scales are assumed (closed source: the texts are bare 0–100 % or 0–128): a cutoff of 0 % is laid on 80 Hz and 100 % on 16 kHz, logarithmically; the timbres differ, the notes, their lengths, slides and loudness carry over.",
+    "Each Jeskola Bass 3 track is its own voice with its own filter; Neo Poly in Legato is one voice with one filter: a song playing several tracks at once needs Voice mode Poly after the move."
+  ],
+  "tolerance": {
+    "loudness_db": 3,
+    "band_db": null,
+    "from_hz": 50,
+    "to_hz": 12000,
+    "measured": "Windows, a bass line (8 notes) before and after: sine −0.3 dB, its default saw +1.6 dB; notes in tune",
+    "why_not": "Not measured per band: the filters and oscillators are different models and the closed machines' cutoff and envelope scales are unmeasured, so the timbre differs; loudness is matched (the output gain) and checked. In the repo's songs, where the filter settings matter, the level misses: CyanPhase_DTMF-1_Demo.bmx's Bass 3 −6.7 dB (third octaves to +11 dB at 315 Hz). Bass 3's cutoff, envelope and decay are assumed: measured, its brightness at cutoff 0–100 % with its default envelope runs from a centroid of 224 to 841 Hz on a held A2, far darker than the assumed curve, but with the envelope in play one static curve can't be fitted from that alone."
+  },
+  "evidence": [
+    "Machines/Manifests/Generators/Jeskola Bass 3.machine.json (curated)",
+    "ExternalMachines/source/buzztrax-buzzmachines/CyanPhase/DTMF/CyanPhase_DTMF-1_Demo.bmx and Jeskola/Ninja/Jeskola_NiNjA_dElaY.bmx: its parameter table (Volume 1–254, Note lenght 1–255, Slide note)",
+    "Machines/NeoPoly/Engine/PolyEngine.cs: velocity gain 1 − Vel→amp·(1 − velocity)"
+  ]
+}

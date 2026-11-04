@@ -1,0 +1,188 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Pedal Plate",
+  "to": "Neo Verb",
+  "summary": "Neo Verb in Plate mode: Pedal Plate's Decay (a loop gain in percent) becomes a decay time in seconds as measured, scaled by Size; damping, pre-delay, low cut, modulation and mix carry over.",
+  "set": {
+    "Mode": "Plate",
+    "Early": "-inf",
+    "Low decay": "1",
+    "High cut": "22 kHz",
+    "Width": "100%",
+    "Shimmer": "0%",
+    "Freeze": "Off",
+    "Late": "-11 dB"
+  },
+  "describe": {
+    "Decay": {
+      "kind": "table",
+      "unit": "s",
+      "points": [
+        [
+          0,
+          0.56
+        ],
+        [
+          10,
+          0.79
+        ],
+        [
+          25,
+          1.16
+        ],
+        [
+          40,
+          1.55
+        ],
+        [
+          50,
+          1.86
+        ],
+        [
+          60,
+          2.49
+        ],
+        [
+          75,
+          3.94
+        ],
+        [
+          85,
+          6.06
+        ],
+        [
+          90,
+          8.2
+        ],
+        [
+          95,
+          11.7
+        ],
+        [
+          100,
+          16.4
+        ]
+      ]
+    },
+    "Damping": {
+      "kind": "table",
+      "unit": "Hz",
+      "points": [
+        [
+          0,
+          20000
+        ],
+        [
+          10,
+          17058
+        ],
+        [
+          20,
+          12193
+        ],
+        [
+          30,
+          9348
+        ],
+        [
+          40,
+          7328
+        ],
+        [
+          50,
+          5762
+        ],
+        [
+          60,
+          4483
+        ],
+        [
+          70,
+          3401
+        ],
+        [
+          80,
+          2463
+        ],
+        [
+          90,
+          1637
+        ],
+        [
+          100,
+          897
+        ]
+      ]
+    }
+  },
+  "rules": [
+    {
+      "kind": "unit",
+      "from": "Decay",
+      "to": "Decay",
+      "times": "Size",
+      "why": "measured: Pedal Plate's T30 on a noise burst at Size 100 % (rebuzz-headless), 0.56 s at 0 % to 16 s at 100 %; the tank's delays scale with Size, and so does the time"
+    },
+    {
+      "kind": "unit",
+      "from": "Size",
+      "to": "Size",
+      "scale": 0.5,
+      "why": "both default to the middle (Pedal 100 % of 10–200 %, Neo 50 %)"
+    },
+    {
+      "kind": "unit",
+      "from": "Damping",
+      "to": "High damping",
+      "why": "the tank's one-pole low-pass, coefficient Damping × 0.88, has its corner at −ln(d)·44100/2π (its source); Neo Verb's High damping is where the highs start dying faster, so the corner goes twice as high (measured: the same brightness of the tail), from 1 kHz to 20 kHz",
+      "scale": 2,
+      "max": 20000
+    },
+    {
+      "kind": "unit",
+      "from": "PreDelayMs",
+      "to": "Pre-delay"
+    },
+    {
+      "kind": "unit",
+      "from": "LowCut",
+      "to": "Low cut"
+    },
+    {
+      "kind": "unit",
+      "from": "ModRate",
+      "to": "Mod rate"
+    },
+    {
+      "kind": "unit",
+      "from": "ModDepth",
+      "to": "Mod depth",
+      "why": "both 0–100 %; the depths' scales differ (Pedal Plate swings its tank's taps by up to 16 samples)"
+    },
+    {
+      "kind": "unit",
+      "from": "Mix",
+      "to": "Mix"
+    }
+  ],
+  "unmapped": [
+    {
+      "param": "Feedback",
+      "why": "an outer loop from the output back to the input; Neo Verb has none (its Decay sets the tail)."
+    }
+  ],
+  "remarks": [
+    "Both are plates (Pedal Plate is Dattorro's; Neo Verb's Plate mode a dense feedback delay network): the decay time, level and brightness carry over, the echo pattern of the first few tens of milliseconds doesn't."
+  ],
+  "tolerance": {
+    "loudness_db": 1.5,
+    "band_db": 6,
+    "from_hz": 50,
+    "to_hz": 12000,
+    "measured": "rebuzz-headless (Linux), Neo Poly noise and saw notes through it, each side read against its input: loudness within ±1.5 dB (−0.8 … +1.5); third octaves within ±2.6 dB with the dry sound in (Mix 30 %, 50 %), within ±6 dB wet only (Mix 100 %: the lowest band, and a saw's harmonics, where the two plates' resonances fall differently)"
+  },
+  "evidence": [
+    "ExternalMachines/source/thepedal/pedal-plate/PedalPlate.cs: decay = Decay/100 × 0.94, damping = Damping/100 × 0.88 (one-pole), low cut 20–800 Hz exponential, Mix wet against dry",
+    "Decay times measured with tools/headless-replace.py's renders: Schroeder T30 of a 20 ms noise burst, Pedal Plate at Damping 0, Size 100 %, modulation off; Neo Verb Plate's Decay measured the same way lands within 2 %"
+  ]
+}
