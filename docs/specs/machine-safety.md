@@ -185,9 +185,9 @@ It succeeds four machines. Its parameters' roles (from `ManifestRoles`), for `ma
 | Neo Ensemble | Unit | Role | Jeskola Flanger | Jeskola Chorus | FSM Chorus2 (track) | Pedal Chorus |
 |---|---|---|---|---|---|---|
 | Mode | Chorus, Flanger, Phaser | `fx.mode` | Flanger | Chorus | Chorus | Chorus |
-| Rate | Hz | `mod.rate` | freq (Hz) | freq (Hz) | Mod Rate (Hz) | Rate (`mod.rate`, Hz) |
+| Rate | Hz | `mod.rate` | freq ÷ 2 (measured: the LFO runs at half its text) | freq ÷ 2 (measured) | Mod Rate (Hz) | Rate (`mod.rate`, Hz) |
 | Sync | Free, 1/32 … 16 bars | `lfo.sync` | Free | Free | Free | Free |
-| Shape | Sine, Triangle | `lfo.wave` | — | — | — | — |
+| Shape | Sine, Triangle | `lfo.wave` | Triangle (measured) | Triangle (measured) | Sine | Sine |
 | Depth | % (100 %: 1, 2 or 3 octaves either side) | `mod.depth` | from depth and min. delay | from depth and min. delay | from Mod Depth (ms) and Min Delay | from Depth (`mod.depth`, ± ms) and Delay |
 | Spread | ° | `mod.spread` | 0° | 0° | Stereo (°) | from Spread (`mod.spread`, %) |
 | Delay | s (the sweep's geometric centre) | `mod.delay` | from min. delay (0–5 ms) and depth | from min. delay (0–50 ms; to 30 ms) | from Min Delay and Mod Depth | Delay (`mod.delay`) |
@@ -199,9 +199,9 @@ It succeeds four machines. Its parameters' roles (from `ManifestRoles`), for `ma
 | Mix | % | `mix.wet` | wet out ÷ (dry out + wet out) | wet out ÷ (dry out + wet out) | — | Mix (`mix.wet`) |
 | Output | dB | `level` | dry out + wet out | dry out + wet out | — | — |
 
-The conversions (a closed machine's minimum delay and depth to a centre delay and an octave span, a wet level to a mix and an output gain, ± ms of depth to octaves) belong to U5, which renders before and after and compares; a negative dry or wet out (a polarity) has no counterpart, nor has FSM Chorus2's per-track setting.
+**Built (U5).** The four mappings are in `Machines/Manifests/Successors/` (`sweep` and `dry_wet` rules, [mcp-server.md](mcp-server.md) §12.10). Each sweep's ends land on Neo Ensemble's Delay (their geometric centre) and Depth (half their ratio in octaves, over what 100 % spans), the levels on Mix and Output. FSM Chorus2's and Pedal Chorus's sweeps come from their source; Jeskola Flanger's and Chorus's were measured (the delay read from input and output over a render, `ReBuzzTests/DelaySweep.cs`): a triangle from min. delay up by depth × 9.92 ms, its period twice what freq says, mono, dry and wet straight in amplitude. A negative dry or wet out (Jeskola Flanger's default wet out is −100 %) has no counterpart: the level is kept, not the polarity, and the result says so; a sweep from no delay keeps its top at full depth (16 : 1 in Flanger mode); Neo Ensemble's Delay stops at 30 ms (Jeskola Chorus's min. delay goes to 50 ms).
 
-`machine_replace` (U5, built: [mcp-server.md](mcp-server.md) §12.10) moves a song over: parameters by unit through a mapping file per pair, patterns' columns and notes mapped, the arrangement and the Session View following, a render before and after compared against the pair's stated tolerance, one undo step; in the machine menu as "Replace with <successor>..." in the studio and ReBuzz.exe. The original stays installed so old songs play. On the Mac every closed native is a silent placeholder, so a successor and `machine_replace` are how those songs play there: its comparison then says the old machine was silent (there is nothing to measure against), and the conversion itself is the same. Neo Ensemble and Neo EQ's graphic mode add their mappings (Jeskola Flanger and Chorus, Pedal Chorus; Joachims Hyperion) as files beside these when they land.
+`machine_replace` (U5, built: [mcp-server.md](mcp-server.md) §12.10) moves a song over: parameters by unit through a mapping file per pair, patterns' columns and notes mapped, the arrangement and the Session View following, a render before and after compared against the pair's stated tolerance, one undo step; in the machine menu as "Replace with <successor>..." in the studio and ReBuzz.exe. The original stays installed so old songs play. On the Mac every closed native is a silent placeholder, so a successor and `machine_replace` are how those songs play there: its comparison then says the old machine was silent (there is nothing to measure against), and the conversion itself is the same. Neo Ensemble's four mappings are in (above); Neo EQ's graphic mode adds Joachims Hyperion's as a file beside them when it lands.
 
 ## 5. Tests
 

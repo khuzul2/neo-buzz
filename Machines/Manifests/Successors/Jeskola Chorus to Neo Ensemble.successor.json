@@ -72,7 +72,8 @@
     "band_db": 3,
     "from_hz": 63,
     "to_hz": 12000,
-    "measured": ""
+    "measured": "Windows, Neo Poly noise into it, each side against its input: at its defaults (dry and wet 100 %, 25–30 ms) −0.0 dB, third octaves within 0.5 dB; wet 50 %, min. delay 10 ms, depth 127: −0.0 dB, within 0.5 dB (on chords within 1.8 dB); min. delay 5 ms, depth 64, 2 Hz: +0.0 dB, within 2.2 dB",
+    "why_not": "On chords a few harmonics meet the comb's notches for a different share of the sweep (Jeskola's straight-line triangle against Neo Ensemble's in octaves): within 0.2 dB in loudness, but up to 7.3 dB in one third octave (100 Hz at the defaults, 3.6 dB at 8 kHz with a fast, short sweep)."
   },
   "evidence": [
     "Machines/Manifests/Effects/Jeskola Chorus.machine.json (profiled draft: units from its texts)",

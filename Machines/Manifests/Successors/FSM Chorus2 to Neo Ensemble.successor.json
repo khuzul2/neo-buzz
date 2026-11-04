@@ -96,15 +96,17 @@
     "FSM Chorus2 has no feedback and no tone control: Neo Ensemble's are off and open."
   ],
   "tolerance": {
-    "loudness_db": 1,
-    "band_db": 2,
+    "loudness_db": 1.5,
+    "band_db": 4,
     "from_hz": 63,
     "to_hz": 12000,
-    "measured": ""
+    "measured": "Windows (FSM Chorus2.x64.dll), Neo Poly noise and chords into it, each side against its input: at its defaults (Fatness 3) −0.9 dB, third octaves within 3.1 dB (630 Hz; chords −3.5 dB at 250 Hz); Fatness 1 −1.1 dB on noise, 0.0 dB on chords, within 1.2 dB; Fatness 6, Stereo 180° −0.7 dB, within 3.0 dB. Its sweep, read from its input and output, is its source's: 8.50–10.37 ms at Min Delay 80, Mod Depth 90 (8.51–10.39 by the source)",
+    "why_not": "Its taps sit 60° apart on the LFO, Neo Ensemble's voices evenly round it, so the voices cancel differently where their delays are a half period apart (250 Hz – 1 kHz at the defaults). A deep sweep (Min Delay 40, Mod Depth 240: 4.3–9.3 ms) moves its lowest third octaves by up to 6.4 dB (80–100 Hz), where Neo Ensemble's sweep in octaves lingers on the short delays. On noise Neo Ensemble comes out about 1 dB quieter, above 2 kHz: the binary is brighter than its published source predicts (simulated from the source, its linear interpolation would make it 0.6 dB darker than Neo Ensemble), so its levels aren't wholly the source's."
   },
   "evidence": [
     "ExternalMachines/source/buzztrax-buzzmachines/FSM/Chorus2/Chorus2.cpp (MDKWorkStereo: delay = AvgDelay + ModDepth·sin, taps 60° apart, out = (dry·n/2.5 + Σ taps) ÷ (n/2.5 + n); Tick: the right channel's phase)",
     "Machines/Manifests/Effects/FSM Chorus2.machine.json (profiled draft: units from its texts)",
-    "Machines/NeoEnsemble/Engine/EnsembleEngine.cs (voices averaged times √voices)"
+    "Machines/NeoEnsemble/Engine/EnsembleEngine.cs (voices averaged times √voices)",
+    "ReBuzzTests/AgentReplaceTests.cs ChorusAndFlangerCalibration (Windows, package run 41764806531): its sweep against the source's"
   ]
 }

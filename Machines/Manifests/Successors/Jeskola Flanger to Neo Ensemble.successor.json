@@ -73,7 +73,8 @@
     "band_db": 3,
     "from_hz": 63,
     "to_hz": 12000,
-    "measured": ""
+    "measured": "Windows, Neo Poly noise into it, each side against its input: wet out +100 %, min. delay 1 ms, depth 64: −0.0 dB, third octaves within 1.6 dB; min. delay 2.5 ms, depth 127, feedback +50 %: −0.1 dB, within 1.4 dB; wet out +50 %, min. delay 0, depth 32: −0.0 dB, within 1.5 dB",
+    "why_not": "At its defaults (wet out −100 %) the polarity can't follow: −0.1 dB, but 3.7 dB at 63 Hz on noise (the result says so). On chords a few harmonics meet the comb's notches for a different share of the sweep (Jeskola's straight-line triangle against Neo Ensemble's in octaves): within 0.3 dB in loudness, but up to 10.5 dB in one third octave (125–200 Hz)."
   },
   "evidence": [
     "Machines/Manifests/Effects/Jeskola Flanger.machine.json (profiled draft: units from its texts)",
