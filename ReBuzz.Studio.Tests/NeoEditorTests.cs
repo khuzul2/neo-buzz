@@ -44,7 +44,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 978, 338),
             ("Neo Delay", "NeoDelayEditor", "neo-delay-editor", 994, 343),
             ("Neo Multiband", "NeoMultibandEditor", "neo-multiband-editor", 1042, 578),
-            ("Neo Sampler", "NeoSamplerEditor", "neo-sampler-editor", 1144, 775),
+            ("Neo Sampler", "NeoSamplerEditor", "neo-sampler-editor", 1144, 778),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;
