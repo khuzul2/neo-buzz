@@ -119,10 +119,9 @@ namespace ReBuzzTests
             var r = client.Tool("machine_replace", args);
             var c = r["comparison"];
             var m = c?["machine"] ?? c?["song"];
-            string bands = m?["bands_db"] is JsonObject b ? string.Join(" ", b.Select(kv => $"{kv.Key}:{kv.Value}")) : "";
-            TestContext.Out.WriteLine($"[notice] {label}: {r["from"]} → {r["to"]}: within {c?["within_tolerance"]?.ToJsonString() ?? "-"}, " +
-                                      $"loudness {m?["loudness_db"]?["difference"]?.ToJsonString() ?? "-"} dB ({m?["loudness_db"]?["by"]}), worst band {m?["worst_band"]?.ToJsonString() ?? "-"}; " +
-                                      $"song {c?["song"]?["loudness_db"]?["difference"]?.ToJsonString() ?? "-"} dB; bands {bands}; notes {r["notes"]?.ToJsonString()}");
+            TestContext.Out.WriteLine($"[notice] {label}: within {c?["within_tolerance"]?.ToJsonString() ?? "-"}, " +
+                                      $"loudness {m?["loudness_db"]?["difference"]?.ToJsonString() ?? "-"} dB, worst band {m?["worst_band"]?["difference_db"]?.ToJsonString() ?? "-"} dB " +
+                                      $"at {m?["worst_band"]?["hz"]?.ToJsonString() ?? "-"} Hz");
             return r;
         }
 
@@ -271,30 +270,35 @@ namespace ReBuzzTests
         [Test, Explicit("measurements for the mappings; run by name (test_filter) when a mapping is recalibrated")]
         public void NativeSuccessorCalibration()
         {
+            // The responses on noise behind the reverb and EQ-3 mappings were measured with Transfer (the history of this file);
+            // here: the Jeskola Basses' cutoff against Neo Poly's, as the spectral centroid of a held A2.
             using var client = StartAgent(out string bin);
-            if (!Has(bin, "Effects", "Jeskola Reverb") || !Has(bin, "Effects", "Jeskola EQ-3"))
-                Assert.Inconclusive("the native effects are not in this build's Gear");
+            if (!Has(bin, "Generators", "Jeskola Bass") || !Has(bin, "Generators", "Jeskola Bass 3"))
+                Assert.Inconclusive("the Jeskola Basses are not in this build's Gear");
             var report = new List<string>();
             WarmUp(client, "Jeskola Reverb");
-            void Measure(string effect, string label, JsonArray settings)
+            string Centroid(string gear, string param, string value, bool track)
             {
-                EffectSong(client, effect, settings, noise: true);
-                report.Add($"[notice] calibration {effect} {label}: {Transfer(client)}");
+                Quiet(client, "song_new", Args(("discard_unsaved", true)));
+                Quiet(client, "machine_add", Args(("gear", gear), ("name", "B")));
+                var change = new JsonObject { ["param"] = param, ["value"] = value };
+                if (track) change["track"] = 0;
+                Quiet(client, "param_set", Args(("machine", "B"), ("changes", new JsonArray(change))));
+                if (gear == "Neo Poly")
+                    Quiet(client, "param_set", Args(("machine", "B"), ("changes", Changes(("O2 level", "0%"), ("F1 env", "0%"), ("F1 key track", "0%"), ("F1 velocity", "0%"), ("Amp sustain", "100%")))));
+                Quiet(client, "pattern_create", Args(("machine", "B"), ("name", "00"), ("length_beats", 4)));
+                Quiet(client, "notes_write", Args(("machine", "B"), ("pattern", "00"), ("notes", new JsonArray(new JsonObject { ["pitch"] = 45, ["start"] = 0, ["length"] = 3.5 }))));
+                Quiet(client, "arrangement_place", Args(("machine", "B"), ("pattern", "00"), ("at", 0)));
+                var render = Quiet(client, "render", Args(("tail_seconds", 0.2)));
+                var a = Quiet(client, "analyze", Args(("source", render["id"]!.GetValue<string>()), ("metrics", new JsonArray("spectrum", "loudness"))));
+                return $"{a["spectrum"]?["centroid_hz"]}/{a["loudness"]?["integrated_lufs"]}";
             }
-            Measure("Jeskola Reverb", "wet 2.5 s, 5 kHz", Changes(("Dry Out", "raw:0"), ("Rev Out", "raw:4096"), ("Rev Time", "raw:25")));
-            Measure("Jeskola Reverb", "wet 2.5 s, 16 kHz", Changes(("Dry Out", "raw:0"), ("Rev Out", "raw:4096"), ("Rev Time", "raw:25"), ("High Cutoff", "raw:16384")));
-            Measure("Jeskola Reverb", "early only", Changes(("Dry Out", "raw:0"), ("Rev Out", "raw:0"), ("ER Out", "raw:4096")));
-            foreach (string mode in new[] { "Hall", "Room", "Chamber", "Plate" })
-                Measure("Neo Verb", $"{mode} wet 2.5 s, 5 kHz", Changes(("Mode", mode), ("Mix", "100%"), ("Early", "-inf"), ("Late", "0 dB"), ("Decay", "2.5 s"),
-                    ("High damping", "5 kHz"), ("Low cut", "10 Hz"), ("High cut", "22 kHz"), ("Low decay", "1")));
-            Measure("Neo Verb", "Hall early only", Changes(("Mode", "Hall"), ("Mix", "100%"), ("Early", "0 dB"), ("Late", "-inf"), ("Low cut", "10 Hz"), ("High cut", "22 kHz")));
-            Measure("Jeskola EQ-3", "flat", null);
-            foreach (string band in new[] { "Low Gain", "Mid Gain", "High Gain" })
-            {
-                Measure("Jeskola EQ-3", $"{band} +12", Changes((band, "+12 dB")));
-                Measure("Jeskola EQ-3", $"{band} -12", Changes((band, "-12 dB")));
-            }
-            Measure("Jeskola Distortion", "threshold 100 %, clamp 100 %", Changes(("+threshold", "raw:2048"), ("+clamp", "raw:2048"), ("-threshold", "raw:2048"), ("-clamp", "raw:2048")));
+            var bass1 = new[] { "0", "10", "32", "64", "96", "128" }.Select(c => $"{c}:{Centroid("Jeskola Bass", "Cutoff", "raw:" + c, false)}");
+            report.Add("[notice] calibration Jeskola Bass cutoff raw → centroid Hz/LUFS: " + string.Join(" ", bass1));
+            var bass3 = new[] { "0", "32", "64", "96", "128" }.Select(c => $"{c}:{Centroid("Jeskola Bass 3", "Cutoff", "raw:" + c, true)}");
+            report.Add("[notice] calibration Jeskola Bass 3 cutoff raw → centroid Hz/LUFS: " + string.Join(" ", bass3));
+            var poly = new[] { "100 Hz", "200 Hz", "400 Hz", "800 Hz", "1600 Hz", "3200 Hz", "8000 Hz", "16000 Hz" }.Select(c => $"{c.Replace(" Hz", "")}:{Centroid("Neo Poly", "F1 cutoff", c, false)}");
+            report.Add("[notice] calibration Neo Poly saw F1 cutoff → centroid Hz/LUFS: " + string.Join(" ", poly));
             foreach (string line in report) TestContext.Out.WriteLine(line);
             Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
         }
