@@ -91,8 +91,8 @@
     "band_db": 2.0,
     "from_hz": 63,
     "to_hz": 12000,
-    "measured": "to be measured",
-    "why_not": ""
+    "measured": "Windows, Neo Poly noise and chords into it, each side against its input: at its defaults (3 ticks, Feedback 75 %, high-pass 550 Hz) −0.1 dB, third octaves within 0.5 dB (chords −0.1 dB, within 1.3 dB); low-pass 2 kHz, Feedback 60 %: −0.3 dB, within 0.6 dB (chords −0.2 dB, within 1.0 dB); high-pass 200 Hz, 4 ticks: +0.0 dB, within 0.8 dB (chords −0.0 dB, within 1.3 dB). Its filter, read from one echo at 1 kHz: low-pass and high-pass −3 dB at 1 kHz, 12 dB an octave (Butterworth); band-pass about 100 Hz wide; band-reject a notch 4.4 dB deep on a third octave",
+    "why_not": "Its band-pass and band-reject have no counterpart: the filters open, with a note, so those echoes keep what NiNjA dElaY cuts (not compared). Its low-pass is a Butterworth, Neo Delay's high cut two real poles at the same −3 dB point: a softer knee, more cut just below the corner (−0.9 dB at half of it against −0.3) and less above (−8.5 dB an octave up against −12.4), which every repeat compounds (within 0.6 dB on noise at 2 kHz, 60 %). Its other tracks' taps and Max Delay aren't carried; a panned input plays in the middle through NiNjA dElaY (mono) and where it is through Neo Delay."
   },
   "evidence": [
     "ExternalMachines/source/buzztrax-buzzmachines/Jeskola/Ninja/Ninja.cpp: the filter in the loop (o = filter(buf); buf = in + fb · o; out += wet · o), Butterworth (dsplib), lengths as Jeskola Delay's",

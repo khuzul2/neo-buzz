@@ -138,8 +138,8 @@
     "band_db": 2.0,
     "from_hz": 63,
     "to_hz": 12000,
-    "measured": "to be measured",
-    "why_not": ""
+    "measured": "Windows, Neo Poly noise and chords into it, each side against its input: at its defaults (3 ticks a line, FB Amp −9 dB, Tap Amp and Dry amp 0 dB, no filter) −0.2 dB, third octaves within 0.7 dB (chords −0.1 dB, within 0.7 dB); FB PingPong, 2 and 3 ticks, FB Amp −3 dB: −0.2 dB, within 0.7 dB (chords 0.0 dB, within 1.2 dB); the low-pass at Cutoff 1876 Hz: +0.0 dB, within 0.5 dB (chords −0.1 dB, within 0.7 dB). Read from single bursts at 126 BPM: a centred burst echoes at 357.1 ms at 0 dB, then 9.0 dB down each 357.1 ms; a burst on the left echoes on the right only (its wet pans mirror the lines); with FB PingPong at 2 and 3 ticks right at 238.1 ms, left at 595.2 ms, right at 833.3 ms",
+    "why_not": "A panned sound's echoes come out on the other side through PanzerDelay (its default wet pans) and on their own side through Neo Delay's Stereo and Cross (with FB PingPong: right, left, right against Neo Delay's left, right, left); the comparison, with a centred sound and each side's level averaged over the render, doesn't see it. Not carried: the dry and wet pans, FB Spread, a Resonance other than 0.5 (listed as unmapped), its other tracks' taps and its lines' 1.48 s cap (a longer length plays longer on Neo Delay). Its high-pass's 1.5 dB rise towards 16 kHz is left out, and its band-pass, approximated by both cuts (−3 dB at 0.84 and 4.26 × Cutoff), wasn't compared."
   },
   "evidence": [
     "ExternalMachines/source/buzztrax-buzzmachines/FSM/PanzerDelay/PanzerDelay.cpp: levels 2^((raw/10 − 24)/6), the feedback limiter, ping-pong and spread in the feedback, the filter on the line",

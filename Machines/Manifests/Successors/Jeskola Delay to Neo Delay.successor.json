@@ -75,8 +75,8 @@
     "band_db": 1.0,
     "from_hz": 63,
     "to_hz": 12000,
-    "measured": "to be measured",
-    "why_not": ""
+    "measured": "Windows, Neo Poly noise and chords into it, each side against its input: at its defaults (3 ticks, Feedback 50 %, Wet out 37.5 %, dry on) −0.0 dB, third octaves within 0.3 dB (chords −0.0 dB, within 0.5 dB); 120 ms, Feedback −60 %, wet only: −0.0 dB, within 0.4 dB. Its echoes, read from single bursts, are its source's: at 126 BPM a centred burst echoes on both sides every 357.1 ms (3 ticks, 15 750 samples) at −2.5, −8.5, −14.5 dB (Wet out × 2 for the summed input, then Feedback each pass), and at −50 % every other echo inverted; Neo Delay's land on the same samples",
+    "why_not": "Where the echoes build up, single third octaves move: 5 ticks (a free 595 ms), Feedback +80 %, Wet out 75 %: −0.1 dB on noise but 1.3 dB at 100 Hz, and on chords +0.2 dB but 2.2 dB at 400 Hz. Two probable causes, not separated: a free length lands on Time's step (0.085 %; 5 ticks, 26 250 samples, become 26 244), so each repeat lands 6 samples further from Jeskola's and the comb's teeth move against the chord's harmonics; and a long build-up reaches Neo Delay's saturator (its knee at 0 dBFS with Drive 0 dB), which Jeskola Delay's float line never has. Wet only at 120 ms, −60 % on chords: −0.4 dB, 1.1 dB at 630 Hz (the time exact, so probably the saturator on the chords' peaks). A panned input plays in the middle through Jeskola Delay (it is mono, dry and echoes) and where it is through Neo Delay; the comparison, with a centred sound, doesn't see that."
   },
   "evidence": [
     "ExternalMachines/source/buzztrax-buzzmachines/Jeskola/Delay/Delay.cpp: the line (buf = in + fb · buf, out += wet · buf), lengths in ticks (SamplesPerTick × length), ms, samples and 1/256 ticks, Feedback (raw − 64)/64, Wet out raw/128",

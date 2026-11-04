@@ -445,7 +445,7 @@ As built:
 - **One read serves the wet signal and the loop** (linear interpolation): a settled line reads whole samples, so it is exact; while the time glides or wobbles the read dulls the highest octave a little (the interpolation's), as a tape delay's does.
 - **Ping-pong sums the input to mono** (the classic): a sound panned hard left enters at half level. Cross keeps the input's image.
 - The Linux profile (`docs/machine-health.md`): hot only with Output at +12 dB (+1.3 dBFS); no parameter at either end diverges or fails to decay, so no safe range.
-- The classic delays move onto it with `machine_replace` (U5): their pair files, calibrated on Windows, and how each closed machine's parameters land are in mcp-server.md §12.10.
+- The classic delays move onto it with `machine_replace` (U5): their pair files, calibrated on Windows, are in mcp-server.md §12.10, and the roles and how each closed machine's parameters land in machine-safety.md §4. Measured there: Jeskola Cross Delay's binary is a ping-pong (its input into the left line only), PanzerDelay's default wet pans mirror its echoes, and its filter cuts at about twice its Cutoff.
 
 ## 6. Phases
 

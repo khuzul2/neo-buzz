@@ -76,8 +76,8 @@
     "band_db": 1.0,
     "from_hz": 63,
     "to_hz": 12000,
-    "measured": "to be measured",
-    "why_not": ""
+    "measured": "Windows, Neo Poly noise and chords into it, each side against its input: at its defaults (3 and 3 ticks, Feedback 50 %, Wet out 37.5 %, dry on) +0.0 dB, third octaves within 0.1 dB (chords +0.1 dB, within 0.2 dB); L. Length 2, R. Length 3 ticks, Feedback 60 %: +0.0 dB, within 0.2 dB (chords the same). Read from single bursts at 126 BPM: a centred burst echoes left at 357.1 ms (−2.5 dB), right at 714.3 ms (−8.5 dB), left at 1071.4 ms (−14.5 dB); at 2 and 3 ticks left at 238.1 ms, right at 595.2 ms (2 + 3 ticks), left at 833.3 ms (2 + 3 + 2), each Feedback times the last: Neo Delay's Ping-pong pattern",
+    "why_not": "Nothing missed at the settings measured. Not carried: its other tracks, an R. Length more than twice or under half L. Length (Offset's reach, −50 … +100 %: clamped, with a note) and its Max Delay attribute. As for Jeskola Delay, a free length lands on Time's step (0.085 %) and a long build-up reaches Neo Delay's saturator. The comparison averages each side's level over the render, so it can't see which side an echo falls on: DelayCalibration's bursts checked that."
   },
   "evidence": [
     "ExternalMachines/source/buzztrax-buzzmachines/Jeskola/CrossDelay/CrossDelay.cpp (rewritten, the original source isn't available): its parameters and units; its routing differs from the binary's",
