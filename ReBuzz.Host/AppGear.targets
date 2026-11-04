@@ -45,6 +45,18 @@
     <Copy SourceFiles="@(_DraftManifest)" DestinationFiles="@(_DraftManifest->'$(OutDir)Gear/%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 
+  <!-- Fork (docs/specs/mcp-server.md §12.11, U4): the curated machines' factory presets (Machines/Manifests/<Generators|Effects>/
+       <Gear>.prs.xml, compiled from <Gear>.presets.txt) beside their DLLs, where preset_load and the preset bars look for
+       "<Gear>.prs.xml". None of the machines here ships one of its own (build.ps1 adds ours to one that does). -->
+  <Target Name="FactoryPresets" AfterTargets="Build">
+    <ItemGroup>
+      <_FactoryGenerators Include="$(MSBuildThisFileDirectory)..\Machines\Manifests\Generators\*.prs.xml" />
+      <_FactoryEffects Include="$(MSBuildThisFileDirectory)..\Machines\Manifests\Effects\*.prs.xml" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_FactoryGenerators)" DestinationFolder="$(OutDir)Gear/Generators" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(_FactoryEffects)" DestinationFolder="$(OutDir)Gear/Effects" SkipUnchangedFiles="true" />
+  </Target>
+
   <!-- The Link helper, once built with CMake (LinkHelper/CMakeLists.txt, into build/LinkHelper), beside
        the app, where LinkClient looks for it (mac-engine.md M6). Without it, Link stays off. -->
   <Target Name="LinkHelper" AfterTargets="Build">

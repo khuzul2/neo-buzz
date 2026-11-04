@@ -38,6 +38,20 @@
     <ProjectReference Include="..\ReBuzz.Host\ReBuzz.Host.csproj" />
   </ItemGroup>
 
+  <!-- Fork (docs/specs/mcp-server.md §12.11, U4): the manifest editor, on the Neo editor kit's Avalonia backend
+       (as the Neo machines' studio flavour builds it, Machines/Studio/NeoStudio.targets): the kit, its parameter
+       tables (NeoBuzz.Dsp), the editor's toolkit-free face and its one source for both front ends. -->
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);AVALONIA</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Machines\NeoBuzz.Dsp\**\*.cs" Link="ManifestEditor\Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Machines\NeoBuzz.Editor\Core\**\*.cs" Link="ManifestEditor\EditorCore\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Machines\NeoBuzz.Editor\Params\**\*.cs" Link="ManifestEditor\EditorParams\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Machines\NeoBuzz.Editor.Avalonia\**\*.cs" Link="ManifestEditor\EditorAvalonia\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Machines\NeoBuzz.ManifestEditor\**\*.cs" Link="ManifestEditor\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <!-- The Neo machines in Gear, with their editors on Avalonia (studio-mvp.md S1), and the Link helper. -->
   <PropertyGroup>
     <NeoGearFlavour>Studio</NeoGearFlavour>

@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Kick — Deep 808">
+    <Preset Machine="FSM KickXP">
+      <Parameters>
+        <Parameter Name="Start" Group="2" Index="2" Track="0" Value="75" />
+        <Parameter Name="End" Group="2" Index="3" Track="0" Value="27" />
+        <Parameter Name="Buzz" Group="2" Index="4" Track="0" Value="0" />
+        <Parameter Name="Click" Group="2" Index="5" Track="0" Value="10" />
+        <Parameter Name="Punch" Group="2" Index="6" Track="0" Value="30" />
+        <Parameter Name="T DecRate" Group="2" Index="7" Track="0" Value="20" />
+        <Parameter Name="T DecShape" Group="2" Index="8" Track="0" Value="27" />
+        <Parameter Name="B DecRate" Group="2" Index="9" Track="0" Value="55" />
+        <Parameter Name="C+P DecRate" Group="2" Index="10" Track="0" Value="55" />
+        <Parameter Name="A DecSlope" Group="2" Index="11" Track="0" Value="1" />
+        <Parameter Name="A DecTime" Group="2" Index="12" Track="0" Value="144" />
+        <Parameter Name="A RelSlope" Group="2" Index="13" Track="0" Value="105" />
+      </Parameters>
+      <Attributes />
+      <Comment>A long, low boom with a soft attack</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Kick — Punchy Techno">
+    <Preset Machine="FSM KickXP">
+      <Parameters>
+        <Parameter Name="Start" Group="2" Index="2" Track="0" Value="100" />
+        <Parameter Name="End" Group="2" Index="3" Track="0" Value="44" />
+        <Parameter Name="Buzz" Group="2" Index="4" Track="0" Value="20" />
+        <Parameter Name="Click" Group="2" Index="5" Track="0" Value="40" />
+        <Parameter Name="Punch" Group="2" Index="6" Track="0" Value="60" />
+        <Parameter Name="T DecRate" Group="2" Index="7" Track="0" Value="30" />
+        <Parameter Name="T DecShape" Group="2" Index="8" Track="0" Value="27" />
+        <Parameter Name="B DecRate" Group="2" Index="9" Track="0" Value="55" />
+        <Parameter Name="C+P DecRate" Group="2" Index="10" Track="0" Value="55" />
+        <Parameter Name="A DecSlope" Group="2" Index="11" Track="0" Value="1" />
+        <Parameter Name="A DecTime" Group="2" Index="12" Track="0" Value="60" />
+        <Parameter Name="A RelSlope" Group="2" Index="13" Track="0" Value="105" />
+      </Parameters>
+      <Attributes />
+      <Comment>A short, tight kick with punch and a little click</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Kick — Hard Clicky">
+    <Preset Machine="FSM KickXP">
+      <Parameters>
+        <Parameter Name="Start" Group="2" Index="2" Track="0" Value="123" />
+        <Parameter Name="End" Group="2" Index="3" Track="0" Value="52" />
+        <Parameter Name="Buzz" Group="2" Index="4" Track="0" Value="40" />
+        <Parameter Name="Click" Group="2" Index="5" Track="0" Value="50" />
+        <Parameter Name="Punch" Group="2" Index="6" Track="0" Value="70" />
+        <Parameter Name="T DecRate" Group="2" Index="7" Track="0" Value="30" />
+        <Parameter Name="T DecShape" Group="2" Index="8" Track="0" Value="27" />
+        <Parameter Name="B DecRate" Group="2" Index="9" Track="0" Value="55" />
+        <Parameter Name="C+P DecRate" Group="2" Index="10" Track="0" Value="55" />
+        <Parameter Name="A DecSlope" Group="2" Index="11" Track="0" Value="1" />
+        <Parameter Name="A DecTime" Group="2" Index="12" Track="0" Value="43" />
+        <Parameter Name="A RelSlope" Group="2" Index="13" Track="0" Value="105" />
+      </Parameters>
+      <Attributes />
+      <Comment>A high start and a strong click: cuts through a dense mix</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Tom — Low">
+    <Preset Machine="FSM KickXP">
+      <Parameters>
+        <Parameter Name="Start" Group="2" Index="2" Track="0" Value="89" />
+        <Parameter Name="End" Group="2" Index="3" Track="0" Value="96" />
+        <Parameter Name="Buzz" Group="2" Index="4" Track="0" Value="0" />
+        <Parameter Name="Click" Group="2" Index="5" Track="0" Value="10" />
+        <Parameter Name="Punch" Group="2" Index="6" Track="0" Value="20" />
+        <Parameter Name="T DecRate" Group="2" Index="7" Track="0" Value="30" />
+        <Parameter Name="T DecShape" Group="2" Index="8" Track="0" Value="27" />
+        <Parameter Name="B DecRate" Group="2" Index="9" Track="0" Value="55" />
+        <Parameter Name="C+P DecRate" Group="2" Index="10" Track="0" Value="55" />
+        <Parameter Name="A DecSlope" Group="2" Index="11" Track="0" Value="1" />
+        <Parameter Name="A DecTime" Group="2" Index="12" Track="0" Value="96" />
+        <Parameter Name="A RelSlope" Group="2" Index="13" Track="0" Value="105" />
+      </Parameters>
+      <Attributes />
+      <Comment>A small sweep and a medium decay: a low tom</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

@@ -429,6 +429,36 @@ foreach ($sub in 'Generators', 'Effects') {
     }
 }
 
+# Fork (docs/specs/mcp-server.md §12.11, U4): the curated machines' factory presets (Machines\Manifests\<sub>\<Gear>.prs.xml,
+# compiled from <Gear>.presets.txt) beside their DLLs, where preset_load, the preset bars and the parameter window read
+# "<Gear>.prs.xml". A machine that ships one of its own (Joachims Mars filter 2) keeps its presets and gets ours added.
+foreach ($sub in 'Generators', 'Effects') {
+    $dir = [IO.Path]::Combine($Root, 'Machines', 'Manifests', $sub)
+    if (-not (Test-Path -LiteralPath $dir)) { continue }
+    foreach ($f in @(Get-ChildItem -LiteralPath $dir -File -Filter '*.prs.xml')) {
+        $target = [IO.Path]::Combine($OutDir, 'Gear', $sub, $f.Name)
+        if (Test-Path -LiteralPath $target) {
+            $have = New-Object System.Xml.XmlDocument
+            $have.Load($target)
+            $ours = New-Object System.Xml.XmlDocument
+            $ours.Load($f.FullName)
+            $keys = @{}
+            foreach ($i in $have.DocumentElement.SelectNodes('Item')) { $keys[$i.GetAttribute('Key')] = $true }
+            $added = 0
+            foreach ($i in $ours.DocumentElement.SelectNodes('Item')) {
+                if ($keys.ContainsKey($i.GetAttribute('Key'))) { continue }
+                [void]$have.DocumentElement.AppendChild($have.ImportNode($i, $true))
+                $added++
+            }
+            $have.Save($target)
+            Write-Host "Added $added factory preset(s) to Gear\$sub\$($f.Name)"
+        } else {
+            $n = Copy-IntoGear -Files @($f) -GearFolder $sub -Origin 'factory-presets'
+            Write-Host "Added $($f.Name) to Gear\$sub"
+        }
+    }
+}
+
 # ---------------------------------------------------------------- 6. package
 
 Write-Step 'Packaging'

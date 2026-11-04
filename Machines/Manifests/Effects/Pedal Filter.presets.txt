@@ -1,0 +1,62 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+machine "Pedal Filter"
+
+preset "Low Pass — Warm 24 dB"
+comment "A steady 24 dB/oct low pass: rounder, darker"
+Filter type = Low Pass
+Slope = 24 dB / IIR
+Cutoff = 1200 Hz
+Resonance = 20%
+
+preset "Low Pass — Slow Sweep"
+comment "A resonant low pass swept by the LFO over two bars"
+Filter type = Low Pass
+Slope = 12 dB / FIR
+Cutoff = 800 Hz
+Resonance = 55%
+LFO wave = Triangle
+Tempo sync = On
+LFO division = 2 Bars
+LFO depth = 2 oct
+
+preset "High Pass — Thin Out"
+comment "A gentle high pass: thins a part to make room for the bass"
+Filter type = High Pass
+Slope = 12 dB / FIR
+Cutoff = 400 Hz
+Resonance = 10%
+
+preset "Band Pass — Radio"
+comment "A resonant band pass with a little drive: lo-fi radio"
+Filter type = Band Pass
+Slope = 12 dB / FIR
+Cutoff = 900 Hz
+Resonance = 50%
+Drive = 2
+
+preset "Auto-Wah — Sixteenths"
+comment "A band pass swept in sixteenths: funky auto-wah"
+Filter type = Band Pass
+Slope = 12 dB / FIR
+Cutoff = 700 Hz
+Resonance = 60%
+LFO wave = Sine
+Tempo sync = On
+LFO division = 1/16
+LFO depth = 1.5 oct
+Mix = 80%
+
+preset "Comb — Metallic Flange"
+comment "A comb swept slowly, left and right apart: metallic flanging"
+Filter type = Comb
+Slope = 12 dB / FIR
+Cutoff = 300 Hz
+Resonance = 60%
+LFO wave = Triangle
+LFO rate = 0.3 Hz
+LFO depth = 1 oct
+Stereo phase offset = 90
+Mix = 60%

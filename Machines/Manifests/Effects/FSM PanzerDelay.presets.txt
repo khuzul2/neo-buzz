@@ -1,0 +1,56 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+machine "FSM PanzerDelay"
+
+preset "Echo — Dark Eighths"
+comment "Eighth-note echoes through a low pass: they darken as they repeat"
+Delay time unit = Ticks
+Echo filter type = LP
+Echo filter cutoff = 2 kHz
+Echo filter Q = 0.3
+Left delay length = 2
+Right delay length = 2
+Echo level = -9 dB
+Feedback = -8 dB
+
+preset "Ping-Pong — Dotted"
+comment "Dotted-eighth echoes bouncing between the sides, thinned by a high pass"
+Delay time unit = Ticks
+Echo filter type = HP
+Echo filter cutoff = 600 Hz
+Echo filter Q = 0.3
+Left delay length = 3
+Right delay length = 3
+Ping-pong = On
+Echo level = -8 dB
+Feedback = -7 dB
+
+preset "Tape — Warm Long"
+comment "Long, warm repeats: a low-passed dotted-quarter echo"
+Delay time unit = Ticks
+Echo filter type = LP
+Echo filter cutoff = 1.5 kHz
+Echo filter Q = 0.2
+Left delay length = 6
+Right delay length = 6
+Echo level = -10 dB
+Feedback = -5 dB
+
+preset "Slapback — Wide"
+comment "Two short echoes, 80 and 110 ms, barely repeating: a wide slap"
+Delay time unit = milisecs
+Left delay length = 80
+Right delay length = 110
+Echo level = -8 dB
+Feedback = -24 dB
+
+preset "Send — Echo Only"
+comment "The dry signal down as far as it goes, echoes up: for a send"
+Dry level = -24 dB
+Delay time unit = Ticks
+Left delay length = 3
+Right delay length = 4
+Echo level = -4 dB
+Feedback = -8 dB

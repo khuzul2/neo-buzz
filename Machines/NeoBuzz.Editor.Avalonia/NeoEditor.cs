@@ -58,6 +58,9 @@ namespace NeoBuzz.Editor
         protected abstract NeoColor Accent { get; }
         internal abstract ParamDef[] Table { get; }
 
+        /// <summary>Where each table entry is (U4's manifest editor: any group and track); null: global parameter i.</summary>
+        internal virtual IReadOnlyList<ParamSlot> Slots => null;
+
         /// <summary>Builds the editor's body.</summary>
         internal abstract Control BuildBody(EditorContext ctx);
 
@@ -81,9 +84,9 @@ namespace NeoBuzz.Editor
 
         void Build()
         {
-            ctx = new EditorContext(machine, Table, Accent)
+            ctx = new EditorContext(machine, Table, Accent, Slots)
             {
-                Edits = new ParamEdits(machine, Table, a => Dispatcher.UIThread.Post(a, DispatcherPriority.Background)),
+                Edits = new ParamEdits(machine, Table, a => Dispatcher.UIThread.Post(a, DispatcherPriority.Background), Slots),
             };
             AutomationProperties.SetName(this, Title);
             var root = new DockPanel { Background = Theme.Background, LastChildFill = true };

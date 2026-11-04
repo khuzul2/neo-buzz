@@ -19,6 +19,12 @@ namespace ReBuzz.Core
         /// <summary>Opens (or shows again) the machine's windowed GUI, at <paramref name="at"/> if given.</summary>
         void OpenGui(IMachine machine, WindowPlacement? at);
 
+        /// <summary>
+        /// Fork (docs/specs/mcp-server.md §12.11, U4): opens (or shows again) the machine's manifest editor, made from
+        /// the manifest beside its DLL; false when this host has none or the machine has no manifest.
+        /// </summary>
+        bool OpenEditor(IMachine machine) => false;
+
         void CloseWindows(IMachine machine);
 
         /// <summary>Which of the machine's windows are open, and where (saved in BMX and BMXML songs).</summary>

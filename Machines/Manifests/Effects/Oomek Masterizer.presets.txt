@@ -1,0 +1,41 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+machine "Oomek Masterizer"
+
+preset "Master — Gentle Glue"
+comment "Light three-band compression with a soft knee"
+Input gain = 0 dB
+Low band threshold = -6 dB
+Mid band threshold = -6 dB
+High band threshold = -6 dB
+Low band release = 0.3 s
+Mid band release = 0.3 s
+High band release = 0.3 s
+Knee = 16
+
+preset "Master — Dense"
+comment "More compression in every band, faster release"
+Input gain = +3 dB
+Low band threshold = -10 dB
+Mid band threshold = -10 dB
+High band threshold = -10 dB
+Low band release = 0.2 s
+Mid band release = 0.2 s
+High band release = 0.2 s
+Knee = 8
+
+preset "Bass — Tame Lows"
+comment "Only the low band held down: a steadier bottom end"
+Low band threshold = -12 dB
+Mid band threshold = 0 dB
+High band threshold = 0 dB
+Low band release = 0.4 s
+
+preset "Bright — De-harsh"
+comment "Only the high band held down, above 4 kHz"
+Low band threshold = 0 dB
+Mid band threshold = 0 dB
+High band threshold = -12 dB
+Mid/high crossover = 4000 Hz

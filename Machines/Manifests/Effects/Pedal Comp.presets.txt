@@ -1,0 +1,66 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+machine "Pedal Comp"
+
+preset "Glue — Gentle Bus"
+comment "Low ratio, soft knee, slow attack: holds a mix or bus together"
+Threshold = -18 dB
+Ratio = 2
+Knee width = 6 dB
+Attack = 30 ms
+Release = 200 ms
+Makeup gain = 3 dB
+Detection = RMS
+
+preset "Vocal — Even Level"
+comment "Smooth RMS levelling for vocals and leads"
+Threshold = -24 dB
+Ratio = 4
+Knee width = 6 dB
+Attack = 5 ms
+Release = 120 ms
+Makeup gain = 6 dB
+Detection = RMS
+
+preset "Drums — Punch"
+comment "A slow attack lets the transient through, then holds the body"
+Threshold = -20 dB
+Ratio = 4
+Knee width = 3 dB
+Attack = 25 ms
+Release = 80 ms
+Makeup gain = 5 dB
+Detection = Peak
+
+preset "Bass — Tight"
+comment "Firm control for bass lines: steady level, fast release"
+Threshold = -22 dB
+Ratio = 6
+Knee width = 3 dB
+Attack = 10 ms
+Release = 100 ms
+Makeup gain = 6 dB
+Detection = RMS
+
+preset "Parallel — New York"
+comment "Heavy compression blended under the dry signal"
+Threshold = -36 dB
+Ratio = 10
+Knee width = 0 dB
+Attack = 2 ms
+Release = 60 ms
+Makeup gain = 12 dB
+Mix = 40%
+Detection = Peak
+
+preset "Limit — Peak Catcher"
+comment "Fast, high ratio with lookahead: catches peaks, leaves the rest"
+Threshold = -6 dB
+Ratio = 20
+Knee width = 0 dB
+Attack = 1 ms
+Release = 60 ms
+Lookahead = 5 ms
+Detection = Peak

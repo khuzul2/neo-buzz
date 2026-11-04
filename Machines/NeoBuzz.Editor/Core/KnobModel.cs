@@ -2,6 +2,8 @@
 // Neo editor kit, toolkit-free core (docs/specs/cross-platform.md §8.3): the rotary knob's state,
 // input and drawing. A toolkit control (Knob.cs for WPF) turns its pointer events into the plain
 // calls below and redraws when they return true.
+// Fork (docs/specs/mcp-server.md §12.11, U4): a parameter's safe range (machine-safety.md §3.4) marked on
+// the knob: the ends outside it in red, outside the track. People keep the whole range; agents keep to it.
 
 using System;
 
@@ -33,6 +35,17 @@ namespace NeoBuzz.Editor
         public double Default { get; set; }
         /// <summary>Steps for the wheel: the parameter's range.</summary>
         public int Steps { get; set; } = 100;
+        /// <summary>
+        /// Where agents may set it (machine-safety.md §3.4), as positions 0 … 1; null: the whole range. What lies
+        /// outside is marked; the knob still turns through it.
+        /// </summary>
+        public (double From, double To)? Safe { get; set; }
+
+        /// <summary>The colour of the marks outside the safe range.</summary>
+        public static readonly NeoColor Unsafe = NeoColor.FromRgb(0xE5, 0x48, 0x48);
+
+        /// <summary>True when the value is outside the safe range.</summary>
+        public bool OutsideSafe => Safe is (double lo, double hi) && (Value < lo - 1e-9 || Value > hi + 1e-9);
 
         /// <summary>0 … 1.</summary>
         public double Value { get; private set; }
@@ -104,6 +117,22 @@ namespace NeoBuzz.Editor
             double from = Bipolar ? 0 : -Sweep;
             if (Math.Abs(a - from) > 0.5)
                 c.Arc(centre, r - 2, from, a, new NeoStroke(accent, 4));
+            if (Safe is (double lo, double hi))
+            {
+                // The unsafe ends, just outside the track, with a tick where each begins.
+                var mark = new NeoStroke(Unsafe, 2.5);
+                double aLo = -Sweep + 2 * Sweep * Math.Clamp(lo, 0, 1), aHi = -Sweep + 2 * Sweep * Math.Clamp(hi, 0, 1);
+                if (aLo > -Sweep + 0.25)
+                {
+                    c.Arc(centre, r + 1.5, -Sweep, aLo, mark);
+                    c.Line(NeoGeometry.Polar(centre, r - 5, aLo), NeoGeometry.Polar(centre, r + 3, aLo), new NeoStroke(Unsafe, 1.5));
+                }
+                if (aHi < Sweep - 0.25)
+                {
+                    c.Arc(centre, r + 1.5, aHi, Sweep, mark);
+                    c.Line(NeoGeometry.Polar(centre, r - 5, aHi), NeoGeometry.Polar(centre, r + 3, aHi), new NeoStroke(Unsafe, 1.5));
+                }
+            }
 
             // Body and pointer.
             double body = r - 8;
@@ -116,7 +145,7 @@ namespace NeoBuzz.Editor
             // Label, then the value while hovered or dragged.
             double y = 6 + Diameter;
             c.Text(Label, w / 2, y, 11, lit ? Palette.DimText : Palette.Text, align: NeoAlign.Center);
-            c.Text(ValueText, w / 2, y + 14, 11, lit ? accent : Palette.DimText, align: NeoAlign.Center);
+            c.Text(ValueText, w / 2, y + 14, 11, OutsideSafe ? Unsafe : lit ? accent : Palette.DimText, align: NeoAlign.Center);
         }
     }
 }

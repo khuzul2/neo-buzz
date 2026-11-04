@@ -1,0 +1,54 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+machine "Pedal EQ"
+
+preset "Tone — Warm Lows"
+comment "A little low shelf, a little less top: warmer"
+Low shelf frequency = 160 Hz
+Low shelf gain = +3 dB
+High shelf frequency = 8 kHz
+High shelf gain = -2 dB
+Output gain = -1 dB
+
+preset "Tone — Bright Air"
+comment "A high shelf for air and a touch of presence"
+High shelf frequency = 10 kHz
+High shelf gain = +4 dB
+High-mid frequency = 3.15 kHz
+High-mid gain = +1.5 dB
+High-mid Q = 0.7
+Output gain = -2 dB
+
+preset "Cut — Mud Removal"
+comment "A broad dip in the low mids where mixes get muddy"
+Low-mid frequency = 315 Hz
+Low-mid gain = -4 dB
+Low-mid Q = 1.2
+
+preset "Cut — Low Rumble"
+comment "A deep low shelf cut: rumble and boom out"
+Low shelf frequency = 63 Hz
+Low shelf gain = -12 dB
+
+preset "Vocal — Presence"
+comment "Less boxiness, more presence and clarity"
+Low-mid frequency = 250 Hz
+Low-mid gain = -2 dB
+Low-mid Q = 1
+High-mid frequency = 5 kHz
+High-mid gain = +3 dB
+High-mid Q = 1
+Output gain = -1 dB
+
+preset "Telephone — Narrow Band"
+comment "Lows and highs shelved away, a mid bump: a small speaker"
+Low shelf frequency = 400 Hz
+Low shelf gain = -18 dB
+High shelf frequency = 3.15 kHz
+High shelf gain = -18 dB
+High-mid frequency = 1.6 kHz
+High-mid gain = +6 dB
+High-mid Q = 1.5
+Output gain = +4 dB

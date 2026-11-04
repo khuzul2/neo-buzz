@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Tone — Warm">
+    <Preset Machine="Jeskola EQ-3">
+      <Parameters>
+        <Parameter Name="Low Gain" Group="1" Index="0" Track="0" Value="4608" />
+        <Parameter Name="Mid Gain" Group="1" Index="1" Track="0" Value="4096" />
+        <Parameter Name="High Gain" Group="1" Index="2" Track="0" Value="3584" />
+        <Parameter Name="Low Cutoff" Group="1" Index="3" Track="0" Value="250" />
+        <Parameter Name="High Cutoff" Group="1" Index="4" Track="0" Value="5000" />
+        <Parameter Name="Dry Thru" Group="1" Index="5" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>A little more low end, a little less top</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Tone — Bright">
+    <Preset Machine="Jeskola EQ-3">
+      <Parameters>
+        <Parameter Name="Low Gain" Group="1" Index="0" Track="0" Value="3755" />
+        <Parameter Name="Mid Gain" Group="1" Index="1" Track="0" Value="4096" />
+        <Parameter Name="High Gain" Group="1" Index="2" Track="0" Value="4779" />
+        <Parameter Name="Low Cutoff" Group="1" Index="3" Track="0" Value="300" />
+        <Parameter Name="High Cutoff" Group="1" Index="4" Track="0" Value="4000" />
+        <Parameter Name="Dry Thru" Group="1" Index="5" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>Lows trimmed, highs lifted</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mid — Scoop">
+    <Preset Machine="Jeskola EQ-3">
+      <Parameters>
+        <Parameter Name="Low Gain" Group="1" Index="0" Track="0" Value="4437" />
+        <Parameter Name="Mid Gain" Group="1" Index="1" Track="0" Value="3072" />
+        <Parameter Name="High Gain" Group="1" Index="2" Track="0" Value="4437" />
+        <Parameter Name="Low Cutoff" Group="1" Index="3" Track="0" Value="400" />
+        <Parameter Name="High Cutoff" Group="1" Index="4" Track="0" Value="3000" />
+        <Parameter Name="Dry Thru" Group="1" Index="5" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>The mids down, the ends up a little: the classic smile</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mid — Telephone">
+    <Preset Machine="Jeskola EQ-3">
+      <Parameters>
+        <Parameter Name="Low Gain" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Mid Gain" Group="1" Index="1" Track="0" Value="4096" />
+        <Parameter Name="High Gain" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Low Cutoff" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="High Cutoff" Group="1" Index="4" Track="0" Value="3000" />
+        <Parameter Name="Dry Thru" Group="1" Index="5" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>Only the mids: lows and highs removed</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Low — Cut Below 150 Hz">
+    <Preset Machine="Jeskola EQ-3">
+      <Parameters>
+        <Parameter Name="Low Gain" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Mid Gain" Group="1" Index="1" Track="0" Value="4096" />
+        <Parameter Name="High Gain" Group="1" Index="2" Track="0" Value="4096" />
+        <Parameter Name="Low Cutoff" Group="1" Index="3" Track="0" Value="150" />
+        <Parameter Name="High Cutoff" Group="1" Index="4" Track="0" Value="16000" />
+        <Parameter Name="Dry Thru" Group="1" Index="5" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>Everything under 150 Hz removed, the rest untouched</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

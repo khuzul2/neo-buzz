@@ -1,0 +1,39 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+# Levels are in percent of full scale (100% is 0 dBFS); its default +clamp of 200% is hot (a quirk), so every preset
+# clamps well under 100%. Mono: ReBuzz feeds it left + right summed.
+machine "Jeskola Distortion"
+
+preset "Fuzz — Hard Clip"
+comment "Low thresholds clipped hard and symmetric: a buzzy fuzz"
+Positive threshold = 10%
+Positive clamp level = 20%
+Negative threshold = 10%
+Negative clamp level = 20%
+Amount = 100%
+
+preset "Drive — Asymmetric"
+comment "The positive side clips sooner than the negative: even harmonics, a warmer drive"
+Positive threshold = 20%
+Positive clamp level = 25%
+Negative threshold = 40%
+Negative clamp level = 40%
+Amount = 100%
+
+preset "Crunch — Light"
+comment "Only the peaks clip, mixed under the clean signal"
+Positive threshold = 40%
+Positive clamp level = 40%
+Negative threshold = 40%
+Negative clamp level = 40%
+Amount = 60%
+
+preset "Square — Gated Fuzz"
+comment "A tiny threshold: everything becomes a square wave at a low level"
+Positive threshold = 2%
+Positive clamp level = 12%
+Negative threshold = 2%
+Negative clamp level = 12%
+Amount = 100%
