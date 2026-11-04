@@ -52,7 +52,318 @@
    "traits": [
     "distortion",
     "dynamics"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     19.44
+    ],
+    [
+     23.1,
+     19.5
+    ],
+    [
+     26.0,
+     19.48
+    ],
+    [
+     29.1,
+     19.45
+    ],
+    [
+     32.7,
+     19.47
+    ],
+    [
+     36.7,
+     19.5
+    ],
+    [
+     41.2,
+     19.45
+    ],
+    [
+     46.2,
+     19.47
+    ],
+    [
+     51.9,
+     19.52
+    ],
+    [
+     58.3,
+     19.49
+    ],
+    [
+     65.4,
+     19.47
+    ],
+    [
+     73.4,
+     19.45
+    ],
+    [
+     82.4,
+     19.45
+    ],
+    [
+     92.5,
+     19.46
+    ],
+    [
+     103.8,
+     19.45
+    ],
+    [
+     116.5,
+     19.55
+    ],
+    [
+     130.8,
+     19.46
+    ],
+    [
+     146.8,
+     19.46
+    ],
+    [
+     164.8,
+     19.39
+    ],
+    [
+     185.0,
+     19.47
+    ],
+    [
+     207.7,
+     19.47
+    ],
+    [
+     233.1,
+     19.44
+    ],
+    [
+     261.6,
+     19.47
+    ],
+    [
+     293.7,
+     19.44
+    ],
+    [
+     329.6,
+     19.51
+    ],
+    [
+     370.0,
+     19.39
+    ],
+    [
+     415.3,
+     19.46
+    ],
+    [
+     466.2,
+     19.4
+    ],
+    [
+     523.3,
+     19.47
+    ],
+    [
+     587.3,
+     19.45
+    ],
+    [
+     659.3,
+     19.53
+    ],
+    [
+     740.0,
+     19.41
+    ],
+    [
+     830.6,
+     19.43
+    ],
+    [
+     932.3,
+     19.54
+    ],
+    [
+     1046.5,
+     19.53
+    ],
+    [
+     1174.7,
+     19.39
+    ],
+    [
+     1318.5,
+     19.34
+    ],
+    [
+     1480.0,
+     19.48
+    ],
+    [
+     1661.2,
+     19.51
+    ],
+    [
+     1864.7,
+     19.4
+    ],
+    [
+     2093.0,
+     19.52
+    ],
+    [
+     2349.3,
+     19.45
+    ],
+    [
+     2637.0,
+     19.44
+    ],
+    [
+     2960.0,
+     19.49
+    ],
+    [
+     3322.4,
+     19.49
+    ],
+    [
+     3729.3,
+     19.48
+    ],
+    [
+     4186.0,
+     19.45
+    ],
+    [
+     4698.6,
+     19.43
+    ],
+    [
+     5274.0,
+     19.5
+    ],
+    [
+     5919.9,
+     19.45
+    ],
+    [
+     6644.9,
+     19.4
+    ],
+    [
+     7458.6,
+     19.45
+    ],
+    [
+     8372.0,
+     19.41
+    ],
+    [
+     9397.3,
+     19.38
+    ],
+    [
+     10548.1,
+     19.45
+    ],
+    [
+     11839.8,
+     19.57
+    ],
+    [
+     13289.8,
+     19.57
+    ],
+    [
+     14917.2,
+     19.75
+    ],
+    [
+     16744.0,
+     20.25
+    ],
+    [
+     18794.5,
+     6.02
+    ]
+   ],
+   "response_summary": {
+    "level_db": 19.46,
+    "spread_db": 0.41,
+    "centroid_oct": -0.744,
+    "max_db": 20.25,
+    "max_hz": 16744.0,
+    "prominence_db": 0.0,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 16744.0,
+    "width_oct": 9.67,
+    "tilt_db": -1.03,
+    "wobble_db": 0.03
+   },
+   "impulse": {
+    "latency_samples": 6,
+    "direct_db": 17.74,
+    "early_db": 15.12,
+    "late_db": -120.0,
+    "t60_s": null,
+    "t60_span_db": 0.0,
+    "ring_s": 0.005,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      6.01
+     ],
+     [
+      -34.85,
+      6.02
+     ],
+     [
+      -28.82,
+      6.01
+     ],
+     [
+      -22.79,
+      18.73
+     ],
+     [
+      -16.77,
+      18.79
+     ],
+     [
+      -10.75,
+      15.23
+     ],
+     [
+      -4.8,
+      10.12
+     ]
+    ],
+    "compression_db": -6.66,
+    "top_slope": 0.276,
+    "knee_in_db": null,
+    "attack_s": 0.0,
+    "release_s": 0.0,
+    "attack_tau_s": null,
+    "release_tau_s": null
+   },
+   "thd_percent": 17.01
   },
   "level_test": {
    "defaults": {
@@ -72,6 +383,95 @@
      "verdict": "ok"
     }
    }
+  },
+  "roles": {
+   "default": {
+    "level_db": 19.43,
+    "spread_db": 0.31,
+    "centroid_oct": -0.628,
+    "max_hz": 16744.0,
+    "prominence_db": 0.0,
+    "low_corner_hz": 23.1,
+    "high_corner_hz": 16744.0,
+    "width_oct": 9.5,
+    "wobble_db": 0.04,
+    "latency_samples": 6,
+    "direct_db": 17.74,
+    "early_db": 15.12,
+    "late_db": -120.0,
+    "ring_s": 0.005,
+    "late_onset_s": 0.003,
+    "compression_db": -6.66,
+    "thd": 17.54,
+    "peak_dbfs": 6.02
+   },
+   "type_from_click": "distortion",
+   "params": {
+    "+threshold": {
+     "suggested_role": "dyn.ratio",
+     "evidence": "the loudest steps lose 28 → -5 dB against the quietest, from the same knee",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 65534,
+      "text": "3199.9%"
+     }
+    },
+    "+clamp": {
+     "suggested_role": "dyn.ratio",
+     "evidence": "the loudest steps lose -4 → -28 dB against the quietest, from the same knee",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 65534,
+      "text": "3199.9%"
+     }
+    },
+    "-threshold": {
+     "suggested_role": "dyn.ratio",
+     "evidence": "the loudest steps lose 28 → -5 dB against the quietest, from the same knee",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 65534,
+      "text": "3199.9%"
+     }
+    },
+    "-clamp": {
+     "suggested_role": "dyn.ratio",
+     "evidence": "the loudest steps lose -4 → -28 dB against the quietest, from the same knee",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 65534,
+      "text": "3199.9%"
+     }
+    },
+    "Amount": {
+     "suggested_role": "drive",
+     "evidence": "harmonics 1.8 → 17.5 % on a sine",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    }
+   },
+   "renders": 20
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [

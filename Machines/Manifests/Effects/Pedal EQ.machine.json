@@ -50,7 +50,318 @@
    },
    "traits": [
     "utility"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     0.0
+    ],
+    [
+     23.1,
+     0.0
+    ],
+    [
+     26.0,
+     0.0
+    ],
+    [
+     29.1,
+     0.0
+    ],
+    [
+     32.7,
+     0.0
+    ],
+    [
+     36.7,
+     0.0
+    ],
+    [
+     41.2,
+     0.0
+    ],
+    [
+     46.2,
+     0.0
+    ],
+    [
+     51.9,
+     0.0
+    ],
+    [
+     58.3,
+     0.0
+    ],
+    [
+     65.4,
+     0.0
+    ],
+    [
+     73.4,
+     0.0
+    ],
+    [
+     82.4,
+     0.0
+    ],
+    [
+     92.5,
+     0.0
+    ],
+    [
+     103.8,
+     0.0
+    ],
+    [
+     116.5,
+     0.0
+    ],
+    [
+     130.8,
+     0.0
+    ],
+    [
+     146.8,
+     0.0
+    ],
+    [
+     164.8,
+     0.0
+    ],
+    [
+     185.0,
+     0.0
+    ],
+    [
+     207.7,
+     0.0
+    ],
+    [
+     233.1,
+     0.0
+    ],
+    [
+     261.6,
+     0.0
+    ],
+    [
+     293.7,
+     0.0
+    ],
+    [
+     329.6,
+     0.0
+    ],
+    [
+     370.0,
+     0.0
+    ],
+    [
+     415.3,
+     0.0
+    ],
+    [
+     466.2,
+     0.0
+    ],
+    [
+     523.3,
+     0.0
+    ],
+    [
+     587.3,
+     0.0
+    ],
+    [
+     659.3,
+     0.0
+    ],
+    [
+     740.0,
+     0.0
+    ],
+    [
+     830.6,
+     0.0
+    ],
+    [
+     932.3,
+     0.0
+    ],
+    [
+     1046.5,
+     0.0
+    ],
+    [
+     1174.7,
+     0.0
+    ],
+    [
+     1318.5,
+     0.0
+    ],
+    [
+     1480.0,
+     0.0
+    ],
+    [
+     1661.2,
+     0.0
+    ],
+    [
+     1864.7,
+     0.0
+    ],
+    [
+     2093.0,
+     0.0
+    ],
+    [
+     2349.3,
+     0.0
+    ],
+    [
+     2637.0,
+     0.0
+    ],
+    [
+     2960.0,
+     0.0
+    ],
+    [
+     3322.4,
+     0.0
+    ],
+    [
+     3729.3,
+     0.0
+    ],
+    [
+     4186.0,
+     0.0
+    ],
+    [
+     4698.6,
+     0.0
+    ],
+    [
+     5274.0,
+     0.0
+    ],
+    [
+     5919.9,
+     0.0
+    ],
+    [
+     6644.9,
+     0.0
+    ],
+    [
+     7458.6,
+     0.0
+    ],
+    [
+     8372.0,
+     0.0
+    ],
+    [
+     9397.3,
+     0.0
+    ],
+    [
+     10548.1,
+     0.0
+    ],
+    [
+     11839.8,
+     0.0
+    ],
+    [
+     13289.8,
+     0.0
+    ],
+    [
+     14917.2,
+     0.0
+    ],
+    [
+     16744.0,
+     0.0
+    ],
+    [
+     18794.5,
+     0.0
+    ]
+   ],
+   "response_summary": {
+    "level_db": 0.0,
+    "spread_db": 0.0,
+    "centroid_oct": -0.684,
+    "max_db": 0.0,
+    "max_hz": 20.6,
+    "prominence_db": 0.0,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 18794.5,
+    "width_oct": 9.83,
+    "tilt_db": 0.0,
+    "wobble_db": 0.0
+   },
+   "impulse": {
+    "latency_samples": 0,
+    "direct_db": -1.92,
+    "early_db": -4.47,
+    "late_db": -120.0,
+    "t60_s": null,
+    "t60_span_db": 0.0,
+    "ring_s": 0.005,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      0.0
+     ],
+     [
+      -34.85,
+      0.0
+     ],
+     [
+      -28.82,
+      0.0
+     ],
+     [
+      -22.79,
+      0.0
+     ],
+     [
+      -16.77,
+      0.0
+     ],
+     [
+      -10.75,
+      0.0
+     ],
+     [
+      -4.8,
+      0.0
+     ]
+    ],
+    "compression_db": 0.0,
+    "top_slope": 1.0,
+    "knee_in_db": null,
+    "attack_s": 0.0,
+    "release_s": 0.0,
+    "attack_tau_s": null,
+    "release_tau_s": null
+   },
+   "thd_percent": 2.38
   },
   "level_test": {
    "defaults": {
@@ -112,6 +423,228 @@
      "text": "+24.0 dB"
     }
    }
+  },
+  "roles": {
+   "default": {
+    "level_db": 0.0,
+    "spread_db": 0.0,
+    "centroid_oct": -0.684,
+    "max_hz": 20.6,
+    "prominence_db": 0.0,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 18794.5,
+    "width_oct": 9.83,
+    "wobble_db": 0.0,
+    "latency_samples": 0,
+    "direct_db": -1.92,
+    "early_db": -4.47,
+    "late_db": -14.66,
+    "ring_s": 0.005,
+    "late_onset_s": 0.003,
+    "tail_zcr_hz": 2314.4,
+    "tail_low_db": -36.3,
+    "thd": 2.22,
+    "peak_dbfs": -10.42
+   },
+   "type_from_click": "EQ",
+   "params": {
+    "Bypass": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "LS Solo": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "LM Solo": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "HM Solo": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "HS Solo": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "LS Freq": {
+     "suggested_role": "eq.low.freq",
+     "evidence": "the raised band moves 20.6 Hz → 51.9 Hz (its upper corner 23.1 Hz → 233 Hz) (with LS Gain at its maximum)",
+     "min": {
+      "raw": 0,
+      "text": "20 Hz"
+     },
+     "max": {
+      "raw": 14,
+      "text": "500 Hz"
+     }
+    },
+    "LS Gain": {
+     "suggested_role": "eq.low.gain",
+     "evidence": "the band at 20.6 Hz +0 → +24 dB",
+     "min": {
+      "raw": 0,
+      "text": "-24.0 dB"
+     },
+     "max": {
+      "raw": 96,
+      "text": "+24.0 dB"
+     }
+    },
+    "LM Freq": {
+     "suggested_role": "eq.lowmid.freq",
+     "evidence": "the raised band moves 104 Hz → 5.27 kHz (its lower corner 92.5 Hz → 4.7 kHz) (with LM Gain at its maximum)",
+     "min": {
+      "raw": 0,
+      "text": "100 Hz"
+     },
+     "max": {
+      "raw": 17,
+      "text": "5.0 kHz"
+     }
+    },
+    "LM Gain": {
+     "suggested_role": "eq.lowmid.gain",
+     "evidence": "the band at 415 Hz -0 → +24 dB",
+     "min": {
+      "raw": 0,
+      "text": "-24.0 dB"
+     },
+     "max": {
+      "raw": 96,
+      "text": "+24.0 dB"
+     }
+    },
+    "LM Q": {
+     "suggested_role": "eq.lowmid.q",
+     "evidence": "the band's width at 415 Hz 1.17 → 0.0 octaves (with LM Gain at its maximum)",
+     "min": {
+      "raw": 0,
+      "text": "0.3"
+     },
+     "max": {
+      "raw": 16,
+      "text": "10.0"
+     }
+    },
+    "HM Freq": {
+     "suggested_role": "eq.highmid.freq",
+     "evidence": "the raised band moves 523 Hz → 16.7 kHz (its lower corner 466 Hz → 14.9 kHz) (with HM Gain at its maximum)",
+     "min": {
+      "raw": 0,
+      "text": "500 Hz"
+     },
+     "max": {
+      "raw": 15,
+      "text": "16 kHz"
+     }
+    },
+    "HM Gain": {
+     "suggested_role": "eq.highmid.gain",
+     "evidence": "the band at 3.32 kHz +0 → +23 dB",
+     "min": {
+      "raw": 0,
+      "text": "-24.0 dB"
+     },
+     "max": {
+      "raw": 96,
+      "text": "+24.0 dB"
+     }
+    },
+    "HM Q": {
+     "suggested_role": "eq.highmid.q",
+     "evidence": "the band's width at 3.32 kHz 0.83 → 0.17 octaves (with HM Gain at its maximum)",
+     "min": {
+      "raw": 0,
+      "text": "0.3"
+     },
+     "max": {
+      "raw": 16,
+      "text": "10.0"
+     }
+    },
+    "HS Freq": {
+     "suggested_role": "eq.high.freq",
+     "evidence": "the raised band moves 9.4 kHz → 18.8 kHz (its lower corner 2.09 kHz → 18.8 kHz) (with HS Gain at its maximum)",
+     "min": {
+      "raw": 0,
+      "text": "1.0 kHz"
+     },
+     "max": {
+      "raw": 13,
+      "text": "20 kHz"
+     }
+    },
+    "HS Gain": {
+     "suggested_role": "eq.high.gain",
+     "evidence": "the band at 18.8 kHz +0 → +24 dB",
+     "min": {
+      "raw": 0,
+      "text": "-24.0 dB"
+     },
+     "max": {
+      "raw": 96,
+      "text": "+24.0 dB"
+     }
+    },
+    "Output": {
+     "suggested_role": "level",
+     "evidence": "the level -24.0 → +24.0 dB, the response's shape unchanged",
+     "min": {
+      "raw": 0,
+      "text": "-24.0 dB"
+     },
+     "max": {
+      "raw": 96,
+      "text": "+24.0 dB"
+     }
+    }
+   },
+   "renders": 68
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [

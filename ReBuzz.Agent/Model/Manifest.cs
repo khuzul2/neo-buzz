@@ -102,6 +102,8 @@ namespace ReBuzz.Agent.Model
             // EQ (band, then what)
             "eq.low.gain", "eq.low.freq", "eq.lowmid.gain", "eq.lowmid.freq", "eq.lowmid.q", "eq.mid.gain", "eq.highmid.gain",
             "eq.highmid.freq", "eq.highmid.q", "eq.high.gain", "eq.high.freq",
+            // (U2 in depth: every band takes freq and q, as the profiler's suggestions name them)
+            "eq.low.q", "eq.mid.freq", "eq.mid.q", "eq.high.q",
             // Drums
             "drum.level", "drum.tune", "drum.attack", "drum.decay", "drum.tone", "drum.snap", "drum.click", "drum.punch", "drum.buzz",
             "drum.decay_shape", "drum.release",

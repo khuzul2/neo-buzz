@@ -3,7 +3,7 @@
  "gear": "KrimZon AY-3-8910",
  "kind": "generator",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "polysynth",
  "summary": "Polysynth (profiled draft): pitched, plays 13 semitones high (corrected by its pitch offset); 3 voices; takes notes in its tracks; one note at the defaults -22 LUFS.",
  "tracks": 3,
@@ -39,6 +39,182 @@
      "verdict": "ok"
     }
    }
+  },
+  "envelope": {
+   "peak_db": -11.93,
+   "attack_s": 0.0,
+   "final_db": -80.0,
+   "half_s": 0.39,
+   "length_s": 0.41,
+   "bright_mid_hz": 2964.1,
+   "bright_early_hz": 2970.1,
+   "bright_late_hz": null,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": 0.02,
+   "db_per_doubling": 0.0,
+   "curve": "none (velocity doesn't change its level)",
+   "levels_db": {
+    "16": -11.94,
+    "32": -11.92,
+    "64": -11.97,
+    "127": -11.92
+   }
+  },
+  "roles": {
+   "default": {
+    "pitch": 58.95,
+    "centroid_hz": 5321,
+    "peakiness_db": 31.2,
+    "tprom_db": 6.8,
+    "tprom_hz": 1250,
+    "env_attack_s": 0.01,
+    "env_half_s": 0.395,
+    "env_final_db": -80.0,
+    "env_length_s": 0.41,
+    "env_peak_db": -11.28,
+    "env_bright_early_hz": 1046.6,
+    "env_bright_mid_hz": 1069.1
+   },
+   "params": {
+    "FinalAmp": {
+     "suggested_role": "level",
+     "evidence": "silent at its minimum, sounding at the other end",
+     "min": {
+      "raw": 0,
+      "text": "0.00"
+     },
+     "max": {
+      "raw": 1024,
+      "text": "2.00"
+     }
+    },
+    "Tune": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 60 ms → 10 ms (the default 25 ms) to the same held level (with Glide a third of the way up)",
+     "min": {
+      "raw": 256,
+      "text": "0.50"
+     },
+     "max": {
+      "raw": 1024,
+      "text": "2.00"
+     }
+    },
+    "track NumSubNotes": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way to its held level in 395 ms → 10 ms",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 16,
+      "text": "16"
+     }
+    },
+    "track Repeat": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "No"
+     },
+     "max": {
+      "raw": 1,
+      "text": "Yes"
+     }
+    },
+    "track SubLength": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 30 ms → 20 ms (the default 55 ms) to the same held level (with Glide a third of the way up)",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 255,
+      "text": "255"
+     }
+    },
+    "track Glide": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 5.32 kHz → 3.03 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "254"
+     }
+    },
+    "track Vibrato": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "254"
+     }
+    },
+    "track EnvMode": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0: \\____"
+     },
+     "max": {
+      "raw": 7,
+      "text": "7: \\/\\/\\/"
+     }
+    },
+    "track EnvTime": {
+     "suggested_role": "level",
+     "evidence": "the level +6 dB, the sound otherwise alike",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 65534,
+      "text": "65534"
+     }
+    },
+    "track Tone": {
+     "suggested_role": null,
+     "evidence": "silent at its minimum",
+     "min": {
+      "raw": 0,
+      "text": "None"
+     },
+     "max": {
+      "raw": 3,
+      "text": "Tone+Noise"
+     }
+    },
+    "track Volume": {
+     "suggested_role": "level",
+     "evidence": "silent at its minimum, sounding at the other end",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 15,
+      "text": "15"
+     }
+    }
+   },
+   "renders": 27
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [
@@ -54,7 +230,9 @@
    "a": 4.2e-05,
    "b": 2.000037,
    "description": "Final Amp",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "level",
+   "role_evidence": "silent at its minimum, sounding at the other end"
   },
   {
    "index": 1,
@@ -68,7 +246,9 @@
    "a": 0.500042,
    "b": 2.000036,
    "description": "",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.decay",
+   "role_evidence": "the level falls half way in 60 ms → 10 ms (the default 25 ms) to the same held level (with Glide a third of the way up)"
   }
  ],
  "track_parameters": [
@@ -84,7 +264,9 @@
    "a": 1.0,
    "b": 16.0,
    "description": "Num Subnotes",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.decay",
+   "role_evidence": "the level falls half way to its held level in 395 ms → 10 ms"
   },
   {
    "index": 0,
@@ -114,7 +296,9 @@
    "a": 1.0,
    "b": 255.0,
    "description": "Subnote Length",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.decay",
+   "role_evidence": "the level falls half way in 30 ms → 20 ms (the default 55 ms) to the same held level (with Glide a third of the way up)"
   },
   {
    "index": 0,
@@ -128,7 +312,9 @@
    "a": 0.0,
    "b": 254.0,
    "description": "Glide Length",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the brightness (centroid) 5.32 kHz → 3.03 kHz"
   },
   {
    "index": 0,
@@ -178,7 +364,9 @@
    "a": 1.0,
    "b": 65534.0,
    "description": "Envelope Time",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "level",
+   "role_evidence": "the level +6 dB, the sound otherwise alike"
   },
   {
    "index": 0,
@@ -210,7 +398,9 @@
    "a": 0.0,
    "b": 15.0,
    "description": "",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "level",
+   "role_evidence": "silent at its minimum, sounding at the other end"
   }
  ]
 }

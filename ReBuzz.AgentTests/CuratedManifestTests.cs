@@ -118,7 +118,9 @@ namespace ReBuzz.AgentTests
                     }
                 }
                 // Safe ranges the profile measured stay (machine-safety.md §3.4): the curation keeps them, or tightens them.
-                if (g == "Jeskola Delay" && m.FindTrack("Feedback")?.SafeRange is not { Min: 1, Max: 128 }) problems.Add($"{g}: U2's Feedback range (1…128) is gone");
+                // U2 in depth (mcp-server.md §12.12) tightened Jeskola Delay's at +100 % (it rings) and gave Jeskola Filter's Resonance one.
+                if (g == "Jeskola Delay" && m.FindTrack("Feedback")?.SafeRange is not { Min: 1, Max: 127 }) problems.Add($"{g}: U2's Feedback range (1…127) is gone");
+                if (g == "Jeskola Filter" && m.Find("Resonance")?.SafeRange is not { Min: 0, Max: 118 }) problems.Add($"{g}: U2's Resonance range (0…118) is gone");
             }
             Assert.That(problems, Is.Empty, string.Join("\n", problems));
         }

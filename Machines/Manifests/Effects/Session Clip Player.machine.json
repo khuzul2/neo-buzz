@@ -3,7 +3,7 @@
  "gear": "Session Clip Player",
  "kind": "effect",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "effect (silent at defaults)",
  "summary": "Effect (silent at defaults) (profiled draft): silent at its defaults.",
  "tracks": 0,
@@ -32,6 +32,9 @@
      "verdict": "silent"
     }
    }
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [

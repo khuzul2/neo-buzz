@@ -47,7 +47,318 @@
    },
    "traits": [
     "utility"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     -1.0
+    ],
+    [
+     23.1,
+     -1.0
+    ],
+    [
+     26.0,
+     -1.0
+    ],
+    [
+     29.1,
+     -1.0
+    ],
+    [
+     32.7,
+     -1.0
+    ],
+    [
+     36.7,
+     -1.0
+    ],
+    [
+     41.2,
+     -1.0
+    ],
+    [
+     46.2,
+     -1.0
+    ],
+    [
+     51.9,
+     -1.0
+    ],
+    [
+     58.3,
+     -1.0
+    ],
+    [
+     65.4,
+     -1.0
+    ],
+    [
+     73.4,
+     -1.0
+    ],
+    [
+     82.4,
+     -1.0
+    ],
+    [
+     92.5,
+     -1.0
+    ],
+    [
+     103.8,
+     -1.0
+    ],
+    [
+     116.5,
+     -1.0
+    ],
+    [
+     130.8,
+     -1.0
+    ],
+    [
+     146.8,
+     -1.0
+    ],
+    [
+     164.8,
+     -1.0
+    ],
+    [
+     185.0,
+     -1.0
+    ],
+    [
+     207.7,
+     -1.0
+    ],
+    [
+     233.1,
+     -1.0
+    ],
+    [
+     261.6,
+     -1.0
+    ],
+    [
+     293.7,
+     -1.0
+    ],
+    [
+     329.6,
+     -1.0
+    ],
+    [
+     370.0,
+     -1.0
+    ],
+    [
+     415.3,
+     -1.0
+    ],
+    [
+     466.2,
+     -1.0
+    ],
+    [
+     523.3,
+     -1.0
+    ],
+    [
+     587.3,
+     -1.0
+    ],
+    [
+     659.3,
+     -1.0
+    ],
+    [
+     740.0,
+     -1.0
+    ],
+    [
+     830.6,
+     -1.0
+    ],
+    [
+     932.3,
+     -1.0
+    ],
+    [
+     1046.5,
+     -1.0
+    ],
+    [
+     1174.7,
+     -1.0
+    ],
+    [
+     1318.5,
+     -1.0
+    ],
+    [
+     1480.0,
+     -1.0
+    ],
+    [
+     1661.2,
+     -1.0
+    ],
+    [
+     1864.7,
+     -1.0
+    ],
+    [
+     2093.0,
+     -1.0
+    ],
+    [
+     2349.3,
+     -1.0
+    ],
+    [
+     2637.0,
+     -1.0
+    ],
+    [
+     2960.0,
+     -1.0
+    ],
+    [
+     3322.4,
+     -1.0
+    ],
+    [
+     3729.3,
+     -1.0
+    ],
+    [
+     4186.0,
+     -1.0
+    ],
+    [
+     4698.6,
+     -1.0
+    ],
+    [
+     5274.0,
+     -1.0
+    ],
+    [
+     5919.9,
+     -1.0
+    ],
+    [
+     6644.9,
+     -1.0
+    ],
+    [
+     7458.6,
+     -1.0
+    ],
+    [
+     8372.0,
+     -1.0
+    ],
+    [
+     9397.3,
+     -1.0
+    ],
+    [
+     10548.1,
+     -1.0
+    ],
+    [
+     11839.8,
+     -1.0
+    ],
+    [
+     13289.8,
+     -1.0
+    ],
+    [
+     14917.2,
+     -1.0
+    ],
+    [
+     16744.0,
+     -1.0
+    ],
+    [
+     18794.5,
+     -1.0
+    ]
+   ],
+   "response_summary": {
+    "level_db": -1.0,
+    "spread_db": 0.0,
+    "centroid_oct": -0.684,
+    "max_db": -1.0,
+    "max_hz": 20.6,
+    "prominence_db": 0.0,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 18794.5,
+    "width_oct": 9.83,
+    "tilt_db": 0.0,
+    "wobble_db": 0.0
+   },
+   "impulse": {
+    "latency_samples": 176,
+    "direct_db": -2.92,
+    "early_db": -5.47,
+    "late_db": -353.26,
+    "t60_s": null,
+    "t60_span_db": 0.0,
+    "ring_s": 0.005,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      -1.0
+     ],
+     [
+      -34.85,
+      -1.0
+     ],
+     [
+      -28.82,
+      -1.0
+     ],
+     [
+      -22.79,
+      -1.0
+     ],
+     [
+      -16.77,
+      -1.0
+     ],
+     [
+      -10.75,
+      -1.0
+     ],
+     [
+      -4.8,
+      -3.58
+     ]
+    ],
+    "compression_db": 1.29,
+    "top_slope": 0.784,
+    "knee_in_db": -4.8,
+    "attack_s": 0.0,
+    "release_s": 0.03,
+    "attack_tau_s": null,
+    "release_tau_s": 0.035
+   },
+   "thd_percent": 2.38
   },
   "level_test": {
    "defaults": {
@@ -72,7 +383,158 @@
    ],
    "renders": 23
   },
-  "sweeps": {}
+  "sweeps": {},
+  "roles": {
+   "default": {
+    "level_db": -1.0,
+    "spread_db": 0.0,
+    "centroid_oct": -0.685,
+    "max_hz": 23.1,
+    "prominence_db": 0.0,
+    "low_corner_hz": 23.1,
+    "high_corner_hz": 16744.0,
+    "width_oct": 9.5,
+    "wobble_db": 0.0,
+    "latency_samples": 176,
+    "direct_db": -2.92,
+    "early_db": -5.47,
+    "late_db": -356.33,
+    "ring_s": 0.005,
+    "late_onset_s": 0.003,
+    "compression_db": 1.29,
+    "knee_in_db": -4.8,
+    "release_tau_s": 0.04,
+    "thd": 1.77,
+    "peak_dbfs": -0.94
+   },
+   "type_from_click": "EQ",
+   "params": {
+    "Input gain": {
+     "suggested_role": "mix.wet",
+     "evidence": "at its minimum the effect passes the signal unchanged; at the other end compression (23.63 dB); half way less of the same",
+     "min": {
+      "raw": 0,
+      "text": "-inf dB"
+     },
+     "max": {
+      "raw": 240,
+      "text": "24.1 dB"
+     }
+    },
+    "Treshold Lo": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's upper corner moves 16.7 kHz → 131 Hz",
+     "min": {
+      "raw": 0,
+      "text": "-inf dB"
+     },
+     "max": {
+      "raw": 240,
+      "text": "6.0 dB"
+     }
+    },
+    "Treshold Mid": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's upper corner moves 92.5 Hz → 2.96 kHz",
+     "min": {
+      "raw": 0,
+      "text": "-inf dB"
+     },
+     "max": {
+      "raw": 240,
+      "text": "6.0 dB"
+     }
+    },
+    "Treshold Hi": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's lower corner moves 23.1 Hz → 1.48 kHz",
+     "min": {
+      "raw": 0,
+      "text": "-inf dB"
+     },
+     "max": {
+      "raw": 240,
+      "text": "6.0 dB"
+     }
+    },
+    "Decay Lo": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 10,
+      "text": "40 ms"
+     },
+     "max": {
+      "raw": 240,
+      "text": "960 ms"
+     }
+    },
+    "Decay Mid": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 10,
+      "text": "40 ms"
+     },
+     "max": {
+      "raw": 240,
+      "text": "960 ms"
+     }
+    },
+    "Decay Hi": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 10,
+      "text": "40 ms"
+     },
+     "max": {
+      "raw": 240,
+      "text": "960 ms"
+     }
+    },
+    "Lo | Mid Split": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 2,
+      "text": "16 Hz"
+     },
+     "max": {
+      "raw": 112,
+      "text": "820 Hz"
+     }
+    },
+    "Mid | Hi Split": {
+     "suggested_role": "dyn.release",
+     "evidence": "the gain recovers 63 % of the way in 35 ms → 15 ms after the jump down",
+     "min": {
+      "raw": 0,
+      "text": "1024 Hz"
+     },
+     "max": {
+      "raw": 240,
+      "text": "8042 Hz"
+     }
+    },
+    "Knee": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "s o f t -- 00 -- h a r d"
+     },
+     "max": {
+      "raw": 32,
+      "text": "32 -- h a r d"
+     }
+    }
+   },
+   "renders": 46
+  },
+  "denormal": {
+   "slowdown": null
+  }
  },
  "parameters": [
   {

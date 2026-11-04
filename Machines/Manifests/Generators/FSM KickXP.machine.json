@@ -39,6 +39,192 @@
     "verdict": "ok"
    },
    "all_at_once": {}
+  },
+  "envelope": {
+   "peak_db": -7.83,
+   "attack_s": 0.0,
+   "final_db": -80.0,
+   "half_s": 0.3,
+   "length_s": 0.31,
+   "bright_mid_hz": 443.6,
+   "bright_early_hz": 518.8,
+   "bright_late_hz": null,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": 0.0,
+   "db_per_doubling": 0.0,
+   "curve": "none (velocity doesn't change its level)",
+   "levels_db": {
+    "16": -8.14,
+    "32": -8.14,
+    "64": -8.14,
+    "127": -8.14
+   }
+  },
+  "roles": {
+   "default": {
+    "pitch": 33.04,
+    "centroid_hz": 83,
+    "peakiness_db": 38.55,
+    "env_attack_s": 0.0,
+    "env_half_s": 0.31,
+    "env_final_db": -80.0,
+    "env_length_s": 0.31,
+    "env_peak_db": -7.59,
+    "env_bright_early_hz": 142.3,
+    "env_bright_mid_hz": 54.5
+   },
+   "params": {
+    "track Start": {
+     "suggested_role": "pitch.coarse",
+     "evidence": "the pitch moves -3.3 semitones",
+     "min": {
+      "raw": 1,
+      "text": "33.7 Hz"
+     },
+     "max": {
+      "raw": 240,
+      "text": "4.22 kHz"
+     }
+    },
+    "track End": {
+     "suggested_role": "pitch.coarse",
+     "evidence": "the pitch moves +38.5 semitones",
+     "min": {
+      "raw": 1,
+      "text": "33.4 Hz"
+     },
+     "max": {
+      "raw": 240,
+      "text": "528 Hz"
+     }
+    },
+    "track Buzz": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 100,
+      "text": "100%"
+     }
+    },
+    "track Click": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 100,
+      "text": "100%"
+     }
+    },
+    "track Punch": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 100,
+      "text": "100%"
+     }
+    },
+    "track T DecRate": {
+     "suggested_role": "pitch.coarse",
+     "evidence": "the pitch moves -18.6 semitones",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track T DecShape": {
+     "suggested_role": "pitch.fine",
+     "evidence": "the pitch moves -88 cents",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track B DecRate": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 158 Hz → 61 Hz",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track C+P DecRate": {
+     "suggested_role": "pitch.coarse",
+     "evidence": "the pitch moves -1.7 semitones",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track A DecSlope": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 83 Hz → 1.68 kHz",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track A DecTime": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way to its held level in 220 ms → 785 ms",
+     "min": {
+      "raw": 1,
+      "text": "0.00 s"
+     },
+     "max": {
+      "raw": 240,
+      "text": "1.00 s"
+     }
+    },
+    "track A RelSlope": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 785 ms → 165 ms (the default 310 ms) to the same held level",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    }
+   },
+   "renders": 37
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [],

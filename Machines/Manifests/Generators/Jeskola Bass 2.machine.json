@@ -3,13 +3,14 @@
  "gear": "Jeskola Bass 2",
  "kind": "generator",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
- "type": "unpitched",
- "summary": "Unpitched (profiled draft): unpitched; monophonic; takes notes in its tracks; one note at the defaults -10 LUFS.",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "type": "monosynth",
+ "summary": "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; monophonic; takes notes in its tracks; one note at the defaults -10 LUFS.",
  "tracks": 8,
  "notes": {
   "input": "tracks",
-  "pitched": false,
+  "pitch_offset": 0,
+  "pitched": true,
   "polyphony": 1
  },
  "health": {
@@ -29,6 +30,108 @@
     "verdict": "ok"
    },
    "all_at_once": {}
+  },
+  "envelope": {
+   "peak_db": -5.9,
+   "attack_s": 0.01,
+   "final_db": -80.0,
+   "half_s": 0.04,
+   "length_s": 0.11,
+   "bright_mid_hz": null,
+   "bright_early_hz": 1559.0,
+   "bright_late_hz": null,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": 0.0,
+   "db_per_doubling": -0.0,
+   "curve": "none (velocity doesn't change its level)",
+   "levels_db": {
+    "16": -6.03,
+    "32": -6.03,
+    "64": -6.04,
+    "127": -6.03
+   }
+  },
+  "roles": {
+   "default": {
+    "centroid_hz": 2130,
+    "peakiness_db": 10.15,
+    "tprom_db": -2.7,
+    "tprom_hz": 1250,
+    "env_attack_s": 0.005,
+    "env_half_s": 0.045,
+    "env_final_db": -80.0,
+    "env_length_s": 0.105,
+    "env_peak_db": -2.74,
+    "env_bright_early_hz": 562.8
+   },
+   "params": {
+    "track Cutoff": {
+     "suggested_role": "level",
+     "evidence": "the level +53 dB, the sound otherwise alike",
+     "min": {
+      "raw": 0,
+      "text": "0.0%"
+     },
+     "max": {
+      "raw": 128,
+      "text": "100.0%"
+     }
+    },
+    "track Resonance": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 8 kHz stands -3 → +17 dB over the spectrum an octave either side",
+     "min": {
+      "raw": 0,
+      "text": "0.0%"
+     },
+     "max": {
+      "raw": 128,
+      "text": "100.0%"
+     }
+    },
+    "track Envmod": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way to its held level in 45 ms → 15 ms",
+     "min": {
+      "raw": 0,
+      "text": "0.0%"
+     },
+     "max": {
+      "raw": 128,
+      "text": "100.0%"
+     }
+    },
+    "track Decay": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 85 ms → 65 ms (the default 45 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "0.0%"
+     },
+     "max": {
+      "raw": 128,
+      "text": "100.0%"
+     }
+    },
+    "track Waveform": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "sine"
+     },
+     "max": {
+      "raw": 4,
+      "text": "noise"
+     }
+    }
+   },
+   "renders": 8
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [],
@@ -46,7 +149,9 @@
    "b": 100.002671,
    "unit": "%",
    "description": "Cutoff frequency (0-80)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "level",
+   "role_evidence": "the level +53 dB, the sound otherwise alike"
   },
   {
    "index": 0,
@@ -61,7 +166,9 @@
    "b": 100.002671,
    "unit": "%",
    "description": "Resonance (0-80)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 8 kHz stands -3 → +17 dB over the spectrum an octave either side"
   },
   {
    "index": 0,
@@ -76,7 +183,9 @@
    "b": 100.002671,
    "unit": "%",
    "description": "Cutoff envelope modulation (0-80)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.decay",
+   "role_evidence": "the level falls half way to its held level in 45 ms → 15 ms"
   },
   {
    "index": 0,
@@ -91,7 +200,9 @@
    "b": 100.002671,
    "unit": "%",
    "description": "Cutoff envelope decay (0-80)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.decay",
+   "role_evidence": "the level falls half way in 85 ms → 65 ms (the default 45 ms) to the same held level"
   },
   {
    "index": 0,

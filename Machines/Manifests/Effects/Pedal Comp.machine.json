@@ -47,7 +47,318 @@
    },
    "traits": [
     "dynamics"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     -2.51
+    ],
+    [
+     23.1,
+     -2.48
+    ],
+    [
+     26.0,
+     -2.51
+    ],
+    [
+     29.1,
+     -2.49
+    ],
+    [
+     32.7,
+     -2.49
+    ],
+    [
+     36.7,
+     -2.51
+    ],
+    [
+     41.2,
+     -2.5
+    ],
+    [
+     46.2,
+     -2.48
+    ],
+    [
+     51.9,
+     -2.48
+    ],
+    [
+     58.3,
+     -2.48
+    ],
+    [
+     65.4,
+     -2.49
+    ],
+    [
+     73.4,
+     -2.5
+    ],
+    [
+     82.4,
+     -2.48
+    ],
+    [
+     92.5,
+     -2.45
+    ],
+    [
+     103.8,
+     -2.51
+    ],
+    [
+     116.5,
+     -2.46
+    ],
+    [
+     130.8,
+     -2.49
+    ],
+    [
+     146.8,
+     -2.45
+    ],
+    [
+     164.8,
+     -2.47
+    ],
+    [
+     185.0,
+     -2.47
+    ],
+    [
+     207.7,
+     -2.46
+    ],
+    [
+     233.1,
+     -2.46
+    ],
+    [
+     261.6,
+     -2.46
+    ],
+    [
+     293.7,
+     -2.46
+    ],
+    [
+     329.6,
+     -2.47
+    ],
+    [
+     370.0,
+     -2.46
+    ],
+    [
+     415.3,
+     -2.46
+    ],
+    [
+     466.2,
+     -2.46
+    ],
+    [
+     523.3,
+     -2.45
+    ],
+    [
+     587.3,
+     -2.47
+    ],
+    [
+     659.3,
+     -2.46
+    ],
+    [
+     740.0,
+     -2.46
+    ],
+    [
+     830.6,
+     -2.48
+    ],
+    [
+     932.3,
+     -2.48
+    ],
+    [
+     1046.5,
+     -2.48
+    ],
+    [
+     1174.7,
+     -2.48
+    ],
+    [
+     1318.5,
+     -2.48
+    ],
+    [
+     1480.0,
+     -2.48
+    ],
+    [
+     1661.2,
+     -2.48
+    ],
+    [
+     1864.7,
+     -2.48
+    ],
+    [
+     2093.0,
+     -2.48
+    ],
+    [
+     2349.3,
+     -2.48
+    ],
+    [
+     2637.0,
+     -2.47
+    ],
+    [
+     2960.0,
+     -2.47
+    ],
+    [
+     3322.4,
+     -2.47
+    ],
+    [
+     3729.3,
+     -2.46
+    ],
+    [
+     4186.0,
+     -2.46
+    ],
+    [
+     4698.6,
+     -2.45
+    ],
+    [
+     5274.0,
+     -2.44
+    ],
+    [
+     5919.9,
+     -2.43
+    ],
+    [
+     6644.9,
+     -2.43
+    ],
+    [
+     7458.6,
+     -2.41
+    ],
+    [
+     8372.0,
+     -2.38
+    ],
+    [
+     9397.3,
+     -2.34
+    ],
+    [
+     10548.1,
+     -2.28
+    ],
+    [
+     11839.8,
+     -2.18
+    ],
+    [
+     13289.8,
+     -2.02
+    ],
+    [
+     14917.2,
+     -1.71
+    ],
+    [
+     16744.0,
+     -1.02
+    ],
+    [
+     18794.5,
+     0.0
+    ]
+   ],
+   "response_summary": {
+    "level_db": -2.47,
+    "spread_db": 0.8,
+    "centroid_oct": -0.553,
+    "max_db": 0.0,
+    "max_hz": 18794.5,
+    "prominence_db": 0.0,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 18794.5,
+    "width_oct": 9.83,
+    "tilt_db": 0.51,
+    "wobble_db": 0.01
+   },
+   "impulse": {
+    "latency_samples": 0,
+    "direct_db": -1.92,
+    "early_db": -4.47,
+    "late_db": -120.0,
+    "t60_s": null,
+    "t60_span_db": 0.0,
+    "ring_s": 0.005,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      0.0
+     ],
+     [
+      -34.85,
+      0.0
+     ],
+     [
+      -28.82,
+      0.0
+     ],
+     [
+      -22.79,
+      0.0
+     ],
+     [
+      -16.77,
+      -1.67
+     ],
+     [
+      -10.75,
+      -6.18
+     ],
+     [
+      -4.8,
+      -10.65
+     ]
+    ],
+    "compression_db": 8.41,
+    "top_slope": 0.25,
+    "knee_in_db": -16.77,
+    "attack_s": 0.03,
+    "release_s": 0.04,
+    "attack_tau_s": 0.015,
+    "release_tau_s": 0.025
+   },
+   "thd_percent": 2.39
   },
   "level_test": {
    "defaults": {
@@ -72,7 +383,159 @@
    ],
    "renders": 17
   },
-  "sweeps": {}
+  "sweeps": {},
+  "roles": {
+   "default": {
+    "level_db": -2.46,
+    "spread_db": 0.31,
+    "centroid_oct": -0.579,
+    "max_hz": 16744.0,
+    "prominence_db": 0.0,
+    "low_corner_hz": 23.1,
+    "high_corner_hz": 16744.0,
+    "width_oct": 9.5,
+    "wobble_db": 0.02,
+    "latency_samples": 0,
+    "direct_db": -1.92,
+    "early_db": -4.47,
+    "late_db": -120.0,
+    "ring_s": 0.005,
+    "late_onset_s": 0.003,
+    "compression_db": 8.41,
+    "knee_in_db": -16.79,
+    "attack_tau_s": 0.015,
+    "release_tau_s": 0.03,
+    "thd": 1.77,
+    "peak_dbfs": -0.18
+   },
+   "type_from_click": "dynamics",
+   "params": {
+    "Threshold": {
+     "suggested_role": "dyn.threshold",
+     "evidence": "compression starts at none → -35 dB in (the default: -17 dB)",
+     "min": {
+      "raw": 0,
+      "text": "0.0 dB"
+     },
+     "max": {
+      "raw": 60,
+      "text": "-60.0 dB"
+     }
+    },
+    "Ratio": {
+     "suggested_role": "dyn.ratio",
+     "evidence": "the loudest steps lose 0 → 11 dB against the quietest, from the same knee",
+     "min": {
+      "raw": 1,
+      "text": "1:1"
+     },
+     "max": {
+      "raw": 30,
+      "text": "30:1"
+     }
+    },
+    "Knee": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 12,
+      "text": "+12.0 dB"
+     }
+    },
+    "Attack": {
+     "suggested_role": "dyn.attack",
+     "evidence": "the gain moves 63 % of the way in 5 ms → 135 ms after a 30 dB jump up",
+     "min": {
+      "raw": 1,
+      "text": "1 ms"
+     },
+     "max": {
+      "raw": 200,
+      "text": "200 ms"
+     }
+    },
+    "Release": {
+     "suggested_role": "dyn.release",
+     "evidence": "the gain recovers 63 % of the way in 10 ms → 405 ms after the jump down",
+     "min": {
+      "raw": 10,
+      "text": "10 ms"
+     },
+     "max": {
+      "raw": 2000,
+      "text": "2 s"
+     }
+    },
+    "Makeup Gain": {
+     "suggested_role": "dyn.threshold",
+     "evidence": "compression starts at -17 dB → -23 dB in (the default: -17 dB)",
+     "min": {
+      "raw": 0,
+      "text": "-inf. dB"
+     },
+     "max": {
+      "raw": 24,
+      "text": "+24.0 dB"
+     }
+    },
+    "Auto Makeup": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "Wet/Dry": {
+     "suggested_role": "mix.wet",
+     "evidence": "at one end nothing is compressed; half way the loudest steps lose 3.8 dB against 10.7 at full, as an even blend with the dry signal would (3.8 dB), and it is named like a mix",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 100,
+      "text": "100"
+     }
+    },
+    "Lookahead": {
+     "suggested_role": "dyn.lookahead",
+     "evidence": "the latency 0 → 882 samples",
+     "min": {
+      "raw": 0,
+      "text": "0.0 ms"
+     },
+     "max": {
+      "raw": 20,
+      "text": "20 ms"
+     }
+    },
+    "Detection": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Peak"
+     },
+     "max": {
+      "raw": 1,
+      "text": "RMS"
+     }
+    }
+   },
+   "renders": 31
+  },
+  "denormal": {
+   "slowdown": null
+  }
  },
  "parameters": [
   {

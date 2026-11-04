@@ -3,9 +3,9 @@
  "gear": "Pedal Tracker",
  "kind": "generator",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on linux, 2026-11-04; not curated",
  "type": "monosynth",
- "summary": "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; monophonic; takes notes in its tracks; one note at the defaults -14 LUFS.",
+ "summary": "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; monophonic; takes notes in its tracks; one note at the defaults -15 LUFS.",
  "tracks": 16,
  "notes": {
   "input": "tracks",
@@ -20,13 +20,13 @@
  "profile": {
   "level": {
    "note": "A4 at velocity 100, 1.5 beats",
-   "integrated_lufs": -14.5,
-   "sample_peak_dbfs": -12.71,
-   "true_peak_dbtp": -12.71
+   "integrated_lufs": -15.3,
+   "sample_peak_dbfs": -10.78,
+   "true_peak_dbtp": -10.78
   },
   "level_test": {
    "defaults": {
-    "peak_dbfs": -12.71,
+    "peak_dbfs": -10.78,
     "verdict": "ok"
    },
    "all_at_once": {
@@ -39,6 +39,368 @@
      "verdict": "silent"
     }
    }
+  },
+  "envelope": {
+   "peak_db": -16.8,
+   "attack_s": 0.0,
+   "final_db": -0.49,
+   "length_s": null,
+   "release_s": 0.01,
+   "release_past_window": false,
+   "bright_mid_hz": 1861.7,
+   "bright_early_hz": 1861.7,
+   "bright_late_hz": 1861.7,
+   "level_wobble_db": 0.114,
+   "bright_wobble": 0.011,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": 0.0,
+   "db_per_doubling": 0.0,
+   "curve": "none (velocity doesn't change its level)",
+   "levels_db": {
+    "16": -17.0,
+    "32": -17.0,
+    "64": -17.0,
+    "127": -17.0
+   }
+  },
+  "roles": {
+   "default": {
+    "pitch": 33.0,
+    "centroid_hz": 581,
+    "peakiness_db": 60.0,
+    "tprom_db": -2.6,
+    "tprom_hz": 500,
+    "env_attack_s": 0.015,
+    "env_half_s": 0.005,
+    "env_final_db": -3.72,
+    "env_release_s": 0.005,
+    "env_peak_db": -13.95,
+    "env_bright_early_hz": 243.7,
+    "env_bright_mid_hz": 237.2,
+    "env_bright_late_hz": 243.8,
+    "env_level_wobble_db": 0.826,
+    "env_bright_wobble": 0.097
+   },
+   "params": {
+    "Master": {
+     "suggested_role": "level",
+     "evidence": "silent at its minimum, sounding at the other end",
+     "min": {
+      "raw": 0,
+      "text": "0000  (silent)"
+     },
+     "max": {
+      "raw": 65534,
+      "text": "FFFE  (+6.0 dB)"
+     }
+    },
+    "Mute": {
+     "suggested_role": null,
+     "evidence": "silent at its maximum",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Inertia": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.0 ms"
+     },
+     "max": {
+      "raw": 500,
+      "text": "1.0 ms"
+     }
+    },
+    "Mute Track 1": {
+     "suggested_role": null,
+     "evidence": "silent at its maximum",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 2": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 3": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 4": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 5": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 6": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 7": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 8": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 9": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 10": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 11": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 12": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 13": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 14": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 15": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Mute Track 16": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "Interpolation": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "None"
+     },
+     "max": {
+      "raw": 5,
+      "text": "Sinc 32"
+     }
+    },
+    "track Wave": {
+     "suggested_role": null,
+     "evidence": "silent at its maximum",
+     "min": {
+      "raw": 1,
+      "text": "01"
+     },
+     "max": {
+      "raw": 200,
+      "text": "C8"
+     }
+    },
+    "track Volume": {
+     "suggested_role": "level",
+     "evidence": "silent at its minimum, sounding at the other end",
+     "min": {
+      "raw": 0,
+      "text": "00  (silent)"
+     },
+     "max": {
+      "raw": 254,
+      "text": "FE  (+11.9 dB)"
+     }
+    },
+    "track Cmd": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "00  (none)"
+     },
+     "max": {
+      "raw": 254,
+      "text": "FE  (unassigned)"
+     }
+    },
+    "track Arg": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "00  (hi 0 / lo 0)"
+     },
+     "max": {
+      "raw": 254,
+      "text": "FE  (hi F / lo E)"
+     }
+    },
+    "track Cmd2": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "00  (none)"
+     },
+     "max": {
+      "raw": 254,
+      "text": "FE  (unassigned)"
+     }
+    },
+    "track Arg2": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "00  (hi 0 / lo 0)"
+     },
+     "max": {
+      "raw": 254,
+      "text": "FE  (hi F / lo E)"
+     }
+    }
+   },
+   "renders": 31
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [
@@ -515,7 +877,9 @@
     ]
    ],
    "description": "Master output volume (0x8000 = unity)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "level",
+   "role_evidence": "silent at its minimum, sounding at the other end"
   },
   {
    "index": 1,
@@ -1531,7 +1895,9 @@
     ]
    ],
    "description": "Track volume (0x80 = unity)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "level",
+   "role_evidence": "silent at its minimum, sounding at the other end"
   },
   {
    "index": 0,
