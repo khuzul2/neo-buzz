@@ -146,13 +146,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(p, Is.Not.Null);
                 act(p!.Value);
             }
-            void DoubleClickNote(int time, int note) => At(time, note, p =>
-            {
-                piano.MouseDown(p, MouseButton.Left);
-                piano.MouseUp(p, MouseButton.Left);
-                piano.MouseDown(p, MouseButton.Left);
-                piano.MouseUp(p, MouseButton.Left);
-            });
+            void DoubleClickNote(int time, int note) => At(time, note, p => MachineViewTests.DoubleClick(piano, p));
 
             DoubleClickNote(0, 60);                                     // double-click draws a note, a grid step long
             DoubleClickNote(4 * TB, 64);

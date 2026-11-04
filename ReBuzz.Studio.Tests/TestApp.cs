@@ -17,6 +17,8 @@ namespace ReBuzz.Studio.Tests
         public static AppBuilder BuildAvaloniaApp() =>
             AppBuilder.Configure<ReBuzz.Studio.App>()
                 .UseSkia()
-                .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
+                .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
+                // Double clicks and menu hovers by the tests, not by the clock (HeadlessInput.cs).
+                .AfterPlatformServicesSetup(_ => HeadlessInput.Install());
     }
 }

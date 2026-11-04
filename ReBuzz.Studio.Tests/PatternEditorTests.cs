@@ -70,6 +70,7 @@ namespace ReBuzz.Studio.Tests
 
         static void Close(Setup s)
         {
+            Studio.Host.Core.Modified = false;      // else closing asks to save, and the window stays open
             s.Window.Close();
             Pump();
             Studio.Host.Core.SongCore.DeleteMachines(new[] { s.Machine });
