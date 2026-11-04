@@ -274,7 +274,7 @@ As built:
 - **Outside 20 Hz – 20 kHz** the response settles at the sliders' median (the plain gain), not at 0 dB: the Telephone preset (median −18 dB) cuts DC and the top octave too.
 - **Bands near ±54 dB ring.** Their poles' Q is about 2.15 · 10^(54/40) ≈ 48; the curve stays within the sliders, but such a setting (sliders alternating 36 dB apart) rings for seconds at the lowest bands.
 - The Linux profile (`docs/machine-health.md`): hot as before, with B4–B7 gain and Output at their maximum; no parameter alone diverges or fails to decay, so no safe range.
-- Hyperion's parameters on graphic mode, for `machine_replace` (U5): machine-safety.md §4.
+- Joachims Hyperion moves onto graphic mode with `machine_replace` (U5): its pair file reads Hyperion's measured curve at the ISO centres (machine-safety.md §4, mcp-server.md §12.10).
 
 ### Neo Utility (gain, pan, width)
 

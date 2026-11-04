@@ -427,8 +427,8 @@
     "band_db": 2,
     "from_hz": 31.5,
     "to_hz": 16000,
-    "measured": "TBD",
-    "why_not": "TBD"
+    "measured": "Windows (the native Joachims Hyperion, package run 41785493029), Neo Poly noise in chords into it, each side against its input: a smile at its default Bandwidth (20–52 Hz and 7.7–12.4 kHz +3 dB, 440–900 Hz −2 dB) −0.03 dB, third octaves within 0.2 dB (40 Hz); the same with Highpass 22 Hz −0.03 dB, within 0.1 dB; every band +3 dB (+21.5 dB summed: the sliders move down 3.5 dB and Output takes it) with Input gain −12 dB −0.01 dB, within 0.1 dB; a zigzag ±6 dB at Bandwidth 0.3 (step 2) −0.02 dB, within 0.3 dB; one band +12 dB at the narrowest Bandwidth (0.2, step 0) −0.09 dB, within 1.6 dB (1 kHz; 1.7 dB modelled)",
+    "why_not": "A boost narrower than the sliders' spacing: one band boosted past about +13 dB at Bandwidth 0.2 (step 0, 0.37 octave between half-gain points) or +17 dB at 0.3 (step 1, 0.50 octave) peaks where graphic mode's 2/3-octave bells can't follow (+18 dB at step 0: 3.2 dB in its third octave, modelled); cuts that narrow cost 0.1 dB. A curve spanning more than the sliders' 36 dB (every band at +6 dB from Bandwidth step 10 up) keeps its middle and loses its ends, with a note. A Highpass set above about 70 Hz cuts the lowest third octaves deeper than −18 dB, where the sliders stop. Hyperion at another sample rate than 44.1 kHz: its high bands move with the rate (the cookbook's warping), graphic mode's don't."
   },
   "evidence": [
     "ReBuzzTests/AgentReplaceTests.cs HyperionCalibration (Windows, package run 41783615135): its transfer on noise at 6 points an octave (ReBuzzTests/FineTransfer.cs) at its defaults, one band at every Bandwidth step and at −12, +6, +12, +18 dB, two neighbours, the 6.1 and 20 kHz and 20 Hz bands, every band at ±6 dB at four widths, two zigzags, Highpass raw 64 and 127, Input gain raw 60",
