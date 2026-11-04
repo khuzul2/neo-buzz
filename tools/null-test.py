@@ -173,6 +173,15 @@ CASES = [
     fx("delay-comb-negative", "Neo Delay", "Texture — Comb Resonator", [("Feedback", "-99%")]),
     fx("delay-time-moves", "Neo Delay", "Mix — Quarter Note Echo", [("Sync", "Free"), ("Time", "100 ms"), ("Feedback", "60%")], tail=1.5,
        auto=[("Time", [(0, "100 ms"), (1, "130 ms"), (2, "450 ms")]), ("Sync", [(3, "1/8")])]),
+    # Neo Multiband: the linear-phase crossovers (the partitioned FFT convolution, its FIR design), each band's dynamics
+    # (compression, upward expansion, knee, range), mid/side unlinked, three bands, minimum phase, and the crossovers
+    # automated (redesigns crossfading), the band count and the phase switched.
+    fx("multiband-gentle-glue", "Neo Multiband", "Mastering — Gentle Glue (4 Bands)"),
+    fx("multiband-squash-ms", "Neo Multiband", "Creative — Heavy Squash (Parallel 50 %)", [("Stereo", "M/S"), ("Link", "0%")]),
+    fx("multiband-expand-3", "Neo Multiband", "Mastering — Transient Restore (Upward Expansion)"),
+    fx("multiband-minimum", "Neo Multiband", "Mastering — Zero-Latency Glue (Minimum Phase)", [("B4 ratio", "0.6:1"), ("B4 range", "6 dB")]),
+    fx("multiband-moves", "Neo Multiband", "Bus — Drum Bus Punch (3 Bands)",
+       auto=[("Crossover 1", [(0, "120 Hz"), (1, "300 Hz"), (2, "80 Hz")]), ("Bands", [(2, "4 bands")]), ("Phase", [(3, "Minimum")])]),
     # Long: what drifts with time (oscillator and LFO phases, modulated delays) shows here. 16 s each.
     gen("long-poly", "Neo Poly", "Pad — Evolving PWM", [], LONG, beats=32),
     gen("long-wave", "Neo Wave", "Pad — Organ Drift", [], LONG, beats=32),

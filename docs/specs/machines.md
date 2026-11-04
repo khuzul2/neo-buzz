@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04 |
+| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04; and Neo Multiband (mcp-server.md §8.2), 2026-11-04 |
 | Date | 2026-11-04 |
 | Scope | New high-quality machines for sound design, mixing and mastering, written in C# with custom editors: first batch "core six", second batch "mix and master", third the successors of closed machines that misbehave |
 
@@ -42,6 +42,12 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo EQ, graphic mode | effect | 31 constant-Q bands at the ISO third-octave centres, ±18 dB; the bands' overlap compensated, so the response passes through the sliders, and every slider at +X is exactly +X. Succeeds Joachims Hyperion |
 | Neo Delay | effect | Stereo, ping-pong and cross delay, its time in ms or a note value of the tempo (straight, dotted, triplet) that glides or crossfades when it changes; a low cut, a high cut and tape saturation in the loop, a little wow, ducking by the input, width; feedback to ±99 % that can't run away. Succeeds Jeskola Delay, Jeskola Cross Delay, Jeskola NiNjA dElaY and FSM PanzerDelay (mcp-server.md §8.2, §12.5) |
 
+**The rest of the agent's mix and master machines (mcp-server.md §8.2)**
+
+| Machine | Kind | One line |
+|---|---|---|
+| Neo Multiband | effect | 3 or 4 bands of compression or upward expansion, split by linear-phase crossovers that sum back to the input exactly (96 ms of latency, reported to ReBuzz) or zero-latency minimum-phase Linkwitz–Riley ones with the same band shapes; Neo Comp's detector and gain computer in each band, stereo or mid/side; its gain change per band in the editor and `machine_readings`. A new machine (no classic one to succeed) |
+
 ## 2. Decisions
 
 - **C#**, managed machines (`IBuzzMachine`), like the Pedal set: no native build, no 32-bit bridge.
@@ -58,7 +64,7 @@ Machines/
   NeoBuzz.Dsp/        Pure DSP (no Buzz or WPF references), internal types, linked as source
   NeoBuzz.Machine/    Buzz glue shared by the machines (parameters, notes, MIDI), linked as source
   NeoBuzz.Editor/     WPF editor kit (knobs, switches, meters, graphs, preset bar), linked as source
-  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/ NeoEq/ NeoUtility/ NeoLimiter/ NeoAnalyzer/ NeoEnsemble/ NeoDelay/
+  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/ NeoEq/ NeoUtility/ NeoLimiter/ NeoAnalyzer/ NeoEnsemble/ NeoDelay/ NeoMultiband/
     Engine/           the machine's DSP: pure, tested on Linux
     Params.def        the parameter table (source of truth)
     Presets.txt       factory presets in units
@@ -95,6 +101,7 @@ tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 | Voices | allocator: poly with stealing (released first, then oldest; stolen voices fade), mono/legato with note stack, glide, unison |
 | Delay | fractional delay lines (cubic/allpass), modulated allpass diffusers |
 | Analysis | peak/RMS meters for the editors; (A4) a lock-free triple buffer that hands whole snapshots from the audio thread to readers (`TripleBuffer`) |
+| Dynamics | (Neo Multiband) Neo Comp's log-domain gain computer (threshold, ratio, soft knee; feed-forward or feedback; a ratio below 1 gives upward expansion) and its detector (peak or RMS level in dB, stereo link, attack and release in dB), moved here from Neo Comp operation for operation (`Dynamics.cs`; Neo Comp renders bit for bit as before, CompTests pins 76 renders) |
 
 **The portable maths rule** (every machine, every audio path: the shared library, the Buzz glue, each `Engine` folder, and coefficients computed from parameters while playing):
 - **No libm.** `Math.Sin`, `Exp`, `Pow`, `Tanh` … and every `MathF` transcendental function call the platform's C runtime, and the UCRT, glibc and Apple's libm round the last bit differently. Use `PortableMath` and `PortableMathF`. Exact operations stay: `Sqrt`, `Abs`, `Floor`, `Ceiling`, `Round`, `Min`, `Max`, `Clamp`, conversions.
@@ -102,7 +109,7 @@ tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 - **Denormals** are IEEE on all three (no flush-to-zero mode), and feedback state is flushed with `DspMath.Flush` (below 1e-18 in float, 1e-30 in double), the same way everywhere.
 - **Checked** by `PortableMathTests` (it scans those sources for libm calls and width-dependent sums, and pins a checksum of the maths, the same on every platform) and by the null test (mac-engine.md §6), which fails on any differing sample. Analysis and editors (Neo Analyzer's measurements, `NeoBuzz.Analysis`, the editor kit) don't touch the audio and may use `Math`.
 
-**Editor kit (`NeoBuzz.Editor`)**: dark theme with one accent per machine; rotary knob (drag, Shift for fine, wheel, double-click for default, value shown while dragging); segmented switch; section frame; level and gain-reduction meters; graph surface for curves, envelopes, waves and algorithms; (M3) a frequency-response graph with draggable band handles (toolkit-free axes, hit-testing and drags in `Core/ResponseGraph.cs`, the pointer routed by `InteractiveGraph`); (A4) analysis graphs: a spectrum with third-octave bars, held peaks and a viewing tilt, loudness bars and readouts coloured against a target, a goniometer and a correlation bar (`Core/AnalysisGraphs.cs`); preset bar (ReBuzz presets: browse, previous/next, save). Controls bind to `IParameter` and follow automation.
+**Editor kit (`NeoBuzz.Editor`)**: dark theme with one accent per machine; rotary knob (drag, Shift for fine, wheel, double-click for default, value shown while dragging); segmented switch; section frame; level and gain-reduction meters; graph surface for curves, envelopes, waves and algorithms; (M3) a frequency-response graph with draggable band handles (toolkit-free axes, hit-testing and drags in `Core/ResponseGraph.cs`, the pointer routed by `InteractiveGraph`); (A4) analysis graphs: a spectrum with third-octave bars, held peaks and a viewing tilt, loudness bars and readouts coloured against a target, a goniometer and a correlation bar (`Core/AnalysisGraphs.cs`); (Neo Multiband) crossover handles on the response graph (`Core/CrossoverHandles.cs`); preset bar (ReBuzz presets: browse, previous/next, save). Controls bind to `IParameter` and follow automation.
 
 The kit has two backends, and each machine's editor is one source file for both. WPF (`NeoBuzz.Editor/*.cs`, `WpfCanvas`) builds the Windows machines. Avalonia (`NeoBuzz.Editor.Avalonia/`: `AvaloniaCanvas` on Avalonia's `DrawingContext`, and the same controls with the same API) builds their studio flavour (`Machines/Studio`, studio-mvp.md S1). `EditorContext` and `ParamBinding` are shared (`Params/`). In the studio, a gesture's edits (a drag, a click, a preset) are one step on the song's undo history (`ParamEdits`).
 
@@ -447,6 +454,67 @@ As built:
 - The Linux profile (`docs/machine-health.md`): hot only with Output at +12 dB (+1.3 dBFS); no parameter at either end diverges or fails to decay, so no safe range.
 - The classic delays move onto it with `machine_replace` (U5): their pair files, calibrated on Windows, are in mcp-server.md §12.10, and the roles and how each closed machine's parameters land in machine-safety.md §4. Measured there: Jeskola Cross Delay's binary is a ping-pong (its input into the left line only), PanzerDelay's default wet pans mirror its echoes, and its filter cuts at about twice its Cutoff.
 
+### Neo Multiband (multiband compressor and upward expander; mcp-server.md §8.2)
+
+The machine for mastering and bus control (mcp-server.md §8.2: "3–4 band compressor/expander with linear-phase crossovers"). The input is split into 3 or 4 bands, each gets its own dynamics, and they are summed back:
+
+- **Crossovers.** Each is a digital Linkwitz–Riley split (24 dB/oct, −6 dB at its frequency): the low share L = 1/(1 + w⁴), the high share H = w⁴/(1 + w⁴), w = tan(πf/fs)/tan(πfc/fs), so L + H = 1 at every frequency. The bands are a cascade: band 1 = L1, band 2 = H1·L2, band 3 = H1·H2·L3 (with three bands H1·H2), band 4 = H1·H2·H3. One function (`MultibandDesign`) gives the bands the engine runs, the curves the editor draws and the reference the tests measure against.
+- **Linear phase** (the default): bands 1–3 are FIRs of 2D + 1 taps, D = 4095 at 44.1 and 48 kHz (twice that up to 100 kHz, four times above), so they keep their length in time. Each is designed from its zero-phase magnitude sampled on a grid twice the FIR's length, made exactly symmetric and cut at ±D. There is no window: the impulse responses decay exponentially, and plain truncation of the frequency-sampled response is the most accurate cut (modelled for a 100 Hz crossover: within 0.0001 dB, where Hann, Blackman or Kaiser windows miss by 0.04–0.07 dB). The last band is the delayed input minus the others, so the bands sum to the input delayed by the latency exactly, to float rounding, whatever the FIRs' truncation. The FIRs run as a uniformly partitioned convolution (overlap-save): 16 partitions of 512 samples and a complex FFT of 1024 points that carries the left channel as its real part and the right as its imaginary. Each FIR is real, so one transform serves both channels. Outer partitions under 1e-9 of the FIR's largest tap are skipped. The latency is D + P = 4607 samples (96.0 ms at 48 kHz, 104.5 ms at 44.1 kHz), reported to ReBuzz; it depends only on the sample rate, never on a setting.
+- **Minimum phase**: zero latency. Each crossover is a Butterworth section (Q 0.71) whose low and high outputs each pass a second one (LP², HP²), and the lower bands pass the higher crossovers' allpasses: band 1 those at crossovers 2 and 3, band 2 the one at crossover 3. Every band then has the same phase, the three allpasses', so the bands sum to an allpass: flat. The magnitudes are the linear phase's. TPT state-variable sections in double precision (`SvfSection`'s update).
+- **The bands share one phase in both modes**, so any band gains G give the magnitude Σ G·|band| in either. The modes differ only by the latency (linear) or by one allpass common to all bands (minimum).
+- **Dynamics per band**: Neo Comp's detector and gain computer, now in the shared library (§4: NeoBuzz.Dsp `Dynamics.cs`; Neo Comp renders bit for bit as before). The band's peak level in dB; `Stereo` L/R or M/S (mid = (L + R)/2, side = (L − R)/2); `Link` moves each level that share of the way to the louder, and at 100 % one detector and one gain serve both. Then the static curve with its soft knee, clamped to ±`Range`, then attack and release in dB: a one-pole with the attack coefficient while the gain change grows (for compression while it cuts more, for expansion while it boosts more). A ratio below 1:1 gives the gain computer a negative slope: **upward expansion above the threshold** (0.5:1 doubles how far a peak rises over it). Then `Makeup`, `Bypass` (the band untouched: no dynamics, no makeup) and `Solo` (only the soloed bands are heard, and `Mix` is ignored meanwhile).
+- **The output** is the dry signal plus each band's change, (gain − 1) · band, times `Mix`, then `Output`. In linear phase the dry is the input delayed by the latency (what the bands sum to), in minimum phase the bands' sum (the input through the allpasses), so a parallel blend never combs. A band whose gain is exactly 1 adds nothing: with every band at 1:1 and 0 dB, and at `Mix` 0 %, the output is the dry signal bit for bit (in linear phase, the input delayed).
+- **Three bands** are the four-band split with bands 3 and 4 merged (H1·H2·(L3 + H3) = H1·H2): band 4 takes band 3's gain, and band 3's detector hears both. A change of `Bands` crossfades that over 10 ms. Linear phase runs band 3's FIR again from the next partition; the delay line holds the history, so it is exact at once.
+- **Moves.** Thresholds, ratios, knees and ranges act on the gain computer at once, and the gain follows at its attack and release. Attack and release glide (20 ms in log time, 16-sample segments), so a jump from 200 ms to 0.05 ms never lets a lagging gain snap. Makeup, `Mix` and `Output` ramp over 20 ms, solo and bypass crossfade over 10 ms. Minimum phase's crossovers glide (20 ms in log frequency, coefficients every 16 samples). Linear phase's are designed again at a partition boundary when they have moved, at most every fourth partition (43 ms at 48 kHz), and the bands crossfade from the old FIRs to the new over that partition (both run), so the bands still sum to the dry signal throughout. A design takes about 1 ms on the test runner, so a crossover moved continuously costs about twice the CPU.
+- **Phase changes while playing** fade the output out over 10 ms, switch, and fade back in once the new path carries sound (into linear phase after its latency, so about 106 ms of silence). The latency changes at the switch, and ReBuzz realigns its other paths (§3.1). Set `Phase` before playing.
+- **Robustness.** NaN and ±∞ in the input count as silence. Parameters latch at block starts; linear phase applies them at its partition boundaries, which fall on fixed samples, and every ramp, glide and segment runs across blocks, so the output doesn't depend on how the host splits it. No allocation after `SetSampleRate`. The machine stops working once everything in flight has left (16 partitions of silence in linear phase, the sections at rest in minimum phase) and the gains have come back.
+
+The user's choices that were open, and why:
+- **Upward expansion, not downward**, for the ratios below 1:1: for mastering and bus work it restores transients a mix lost and lifts a band only when it sounds (the air), where downward expansion is a gate's cleanup. `Range` (0–24 dB, either way) keeps it safe.
+- **Linkwitz–Riley shapes in both modes** (24 dB/oct), so switching `Phase` changes the phase, not the bands. Steeper linear-phase slopes were possible but ring longer before a transient.
+- **A zero-latency minimum-phase mode**: it fits the same cascade with allpass compensation and serves live playing and buses where 96 ms would be in the way.
+- **One fixed latency per sample rate** for linear phase, never moving with a setting, so ReBuzz's compensation never jumps while playing. Only `Phase` changes it, with the fade above.
+- **Mid/side** as the detector link's other mode (`Stereo`), with `Link` between linked and independent, rather than per-band mid/side.
+
+Parameters: Bands (3, 4); Crossover 1, 2, 3 (20 Hz – 20 kHz in 0.07 % steps; none below the one before; at most 0.45 fs); Phase (Linear, Minimum); Stereo (L/R, M/S); Link (0–100 %); per band (B1 … B4) threshold (−60 … 0 dB, 0.1 dB steps), ratio (0.5:1 … 32:1 and ∞ in 1200 steps, an octave of ratio every 200, so 1:1, 2:1, 4:1, 8:1 and 16:1 are exact), attack (0.05 ms – 200 ms), release (5 ms – 3 s), knee (0–24 dB), range (0–24 dB), makeup (±24 dB, 0.1 dB steps), solo and bypass; then Mix (0–100 %) and Output (±24 dB, 0.1 dB steps). The defaults: four bands at 120 Hz, 1 kHz and 6 kHz, linear phase, linked L/R; every band 2:1 at −20 dB with a 6 dB knee (attack 20, 10, 5 and 3 ms and release 250, 150, 100 and 80 ms, band 1 up), range 24 dB. Presets (17): Mastering — Gentle Glue (4 Bands), Tight Low End, De-Harsh 2–6 kHz, Air Lift (Upward Expansion), Transient Restore (Upward Expansion), Loud and Dense, Mid/Side Control (Unlinked), Zero-Latency Glue (Minimum Phase); Bus — Drum Bus Punch (3 Bands), Mix Bus Glue (3 Bands), Bass Leveler; Vocal — De-Esser Above 5 kHz, Smooth Mids 300 Hz–3 kHz; Fix — De-Mud 200–500 Hz, Boom Control Below 90 Hz; Creative — Heavy Squash (Parallel 50 %); Utility — Linear-Phase Split (Transparent).
+
+The editor shows the bands over the input spectrum (4096-point FFT, 1/6 octave, tilted +3 dB/oct): each band's shape at its makeup and its gain change now, the response through them, and a grip per crossover. Drag a grip to move it (Shift: fine; never within a sixth of an octave of its neighbours); a click on a band shows its controls, a double-click solos it, the wheel moves its threshold (the input is toolkit-free: NeoBuzz.Editor `Core/CrossoverHandles.cs`, tested on Linux). Beside the graph, a gain-change meter per band (a cut grows down from 0 dB to −24, upward expansion up to +12) and the output with meters; below, the selected band's controls, the crossovers and phase, and the detector.
+
+**Readings** (`machine_readings`, mcp-server.md §3.5; the manifest's `readings`): per band `bN_gr_db` (its gain change now, as its meter shows it: positive cuts, negative boosts), `bN_gr_peak_db` (the largest over the last 3 s) and `bN_level_db` (its peak level over the last 3 s, as its detector reads it: what a threshold compares against); `bands` and `latency_samples`. Band 4's only with four bands. Published every 100 ms through a triple buffer (§4).
+
+Its parameters' roles (from `ManifestRoles`), for `machine_replace` and the manifest editor: Crossover 1–3 `dyn.crossover`, Phase `fx.mode`, Stereo `dyn.detection`, B*n* threshold `dyn.threshold`, ratio `dyn.ratio`, attack `dyn.attack`, release `dyn.release`, knee `dyn.knee`, makeup `dyn.makeup`, solo `solo`, bypass `bypass`, Mix `mix.wet`, Output `level`; Bands, Link and the ranges have none in the vocabulary.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Unity | every band at 1:1 and 0 dB: the input delayed by the latency, bit for bit (negative zeros and subnormals included), with 3 and 4 bands, L/R and M/S, linked and not, in blocks of 117 | bit for bit |
+| Mix 0 % | every band ∞:1 from −60 dB with +12 dB makeup: the dry signal bit for bit (linear phase: the delayed input) | bit for bit in both modes |
+| Latency | linear phase: D + P, reported to ReBuzz, set by the sample rate alone; minimum phase: 0 | 4607 samples at 44.1 and 48 kHz (104.5 and 96.0 ms), 9215 at 88.2 and 96 kHz, 18 431 at 192 kHz; 0 |
+| The bands sum flat | each band soloed, an impulse in: their sum is the delayed impulse (linear) or the three allpasses (minimum); five crossover sets (the defaults; the lowest, 20/40/80 Hz; the highest, 5/10/20 kHz; close, 1/1.1/1.2 kHz; three bands at 200 Hz/2.5 kHz) at 44.1 and 48 kHz | linear: within 1.3·10⁻⁷ of the delayed impulse, flat within 0.000001 dB; minimum: flat within 0.000001 dB, the allpasses' phase within 0.00001° |
+| Bands = design | each band's response (DTFT, 160 frequencies, 20 Hz – 20 kHz, where the band is above −40 dB) against `MultibandDesign`, the same sets | linear: within 0.0002 dB for crossovers from 30 Hz up; with a 20 Hz crossover 0.019 dB (44.1 kHz) and 0.113 dB (48 kHz), the FIRs' truncation; minimum: within 0.00005 dB |
+| Band gains | +6, −6, +3 and −12 dB on the four bands at 1:1: the response is Σ gain · \|band\| | within 0.00005 dB in both modes |
+| Crossovers moving | the linear split redesigning every fourth partition with new crossovers every partition: the bands' sum against the delayed input | 16 redesigns in 64 partitions, within 8.2·10⁻⁸ |
+| Static curve | a steady level (DC, all in band 1), −60 … 0 dBFS in 3 dB steps: the change is the shared gain computer's, clamped to ±Range: 4:1 with a hard and a 12 dB knee, ∞:1 with a 9 dB range, 0.5:1 and 0.7:1 expanding; both modes | within 0.0003 dB |
+| Attack, release | band 1 spanning the audio band, a 7.5 dB change: 63 % of it within ±10 % of the setting | attack 0.979, 10.000 and 99.60 ms for 1, 10 and 100 ms (minimum phase 1.021 and 10.021 ms); release 50.2, 301.0 and 2004 ms for 50, 300 and 2000 ms; upward expansion (0.5:1, 10 dB over): +10.000 dB, attack 10.02 ms for 10 ms |
+| Stereo | linked: both channels get the louder's gain; unlinked: each its own; mid/side unlinked: mid and side each their own | 7.500 / 7.500 dB; 7.500 / 0.000 dB; mid 7.500 dB, side 0.000 dB |
+| Solo, bypass | every band compressing hard and bypassed: the dry signal bit for bit; band 2 soloed at Mix 0 %: band 2 alone, as designed | bit for bit; within 0.01 dB |
+| Moves | crossover 1 jumping across a 220 Hz sine every 1024 samples with band 1 compressing: the largest step within 1.5× the steady signal's at either setting; Phase switched about every 0.5 s and Bands every 0.25 s: within 1.2×; every parameter jumping between its ends every 2048 samples: within 1.5× | 0.94× (linear, 39 redesigns) and 0.90× (minimum); 1.11×; at most 1.35× (Crossover 1) |
+| Blocks | blocks of 256, 128 and 117 samples give the same output, with the crossovers, the band count, a solo and the phase moving | identical |
+| Silence, NaN | 2 s of noise then 20 s of silence: no subnormal state or output, silence costs no more than noise, idle after the tail; NaN and ±∞ in: no state becomes non-finite, the output always finite | none; 0.65× (linear) and 0.60× (minimum); idle; clean |
+| Readings | DC at −10 dBFS, band 1 at −20 dB and 4:1 | b1_gr_db 7.50, b1_gr_peak_db 7.50, b1_level_db −10.00; the other bands 0 dB; latency_samples 4607; every key the manifest declares |
+| Presets | each on pink noise at −18 dBFS RMS: within ±6 dB of the input, peaks under +3 dBFS | −3.7 … +2.2 dB; peaks −8.9 … −2.6 dBFS |
+| Audio thread | 2000 blocks with the crossovers moving and Bands, Phase, Stereo and solos switching: no allocation; in the studio, a Neo Multiband with a crossover moved every buffer (its FIRs designed again), each work algorithm | 0 bytes; 0 bytes per buffer, and nothing compiled on the first play |
+| In ReBuzz | the latency reported and compensated: at unity, beside a parallel path inverted by Neo Utility, nothing is left; minimum phase reports 0 and ReBuzz sees it (ReBuzzTests, Windows) | 4607 samples; the two paths cancel exactly (−240 dB, the meter's floor); 0, then 4607 again; the unity sine within 0.0000 dB of bypassed; the WPF editor 1042 × 578 |
+| CPU | stereo at 48 kHz on noise, every band compressing: linear and minimum phase ≥ 20× real time, mid/side unlinked ≥ 12×, a crossover moving every block (linear) ≥ 10× | linear 110×, minimum 113× (three bands 112×), mid/side unlinked 88×, a crossover moving 50× on the Linux runner; on the macOS arm64 runner 55×, 81× (69×), 56×, 25× |
+
+As built:
+
+- **Not built: lookahead.** Each band's detector sees the band as its gain is applied; a lookahead would add latency (in linear phase on top of 96 ms). An attack of 0.05 ms catches a peak within a few samples, and a true-peak limiter follows a multiband in a master (mastering guide).
+- **Not built**: an RMS detector (Neo Comp's Glue), an external sidechain, a shorter linear-phase mode (less latency, accurate only from a higher crossover), steeper linear-phase slopes, per-band mid/side.
+- **Pre-ringing.** Linear phase's FIRs are symmetric, so where the bands get different gains a transient rings a little before itself: the zero-phase Linkwitz–Riley response decays as e^(−0.71·2πfc·\|t\|), −40 dB 10 ms before the transient for a 100 Hz crossover, 2 ms for 500 Hz. At unity nothing rings: the bands sum to a clean delay. Minimum phase rings after the transient instead, as an analog crossover does.
+- **ReBuzz compensates the latency only with its machine delay compensation on** (an engine setting, off by default: Preferences ▸ Engine in ReBuzz.exe, Preferences ▸ General in the studio). Off, a parallel path around linear phase combs; the guide says so and points to minimum phase.
+- No `machine_replace` pair: there is no classic multiband in the package (mcp-server.md §12.5).
+- The Linux profile (`docs/machine-health.md`): hot only with B2–B4 makeup (+4.8 to +12.0 dBFS) or Output (+13.8 dBFS) at their maximum, and with every parameter at its maximum at once (+17.3 dBFS); nothing diverges, so no safe range. The profiler reads its latency as an echo ("delay, dynamics").
+
 ## 6. Phases
 
 | Phase | Content |
@@ -456,13 +524,14 @@ As built:
 | M2 | Neo Poly, Neo Wave, Neo FM6 |
 | M3 (MCP A4) | Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer |
 | Successors (machine-safety.md §4, mcp-server.md §12.5) | Neo Ensemble; Neo EQ's graphic mode; Neo Delay |
+| Mix and master, the rest (mcp-server.md §8.2) | Neo Multiband |
 
 Each phase: pure tests (Linux CI), integration tests in ReBuzzTests (the machine loads, makes sound, its parameters and editor work, editor screenshots), then the package build.
 
-M0–M3 are done, and of the successors Neo Ensemble, Neo EQ's graphic mode and Neo Delay. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
+M0–M3 are done, and of the successors Neo Ensemble, Neo EQ's graphic mode and Neo Delay; and Neo Multiband. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
 
 ## 7. Not in this batch
 
-Additive and physical-modelling synths, convolution, multiband: candidates for the next batch (ensemble and phaser: Neo Ensemble, built; tape delay: Neo Delay's glide, saturation and wow, built; a multi-head tape echo with its heads' spacing is not).
+Additive and physical-modelling synths, convolution: candidates for the next batch (ensemble and phaser: Neo Ensemble, built; tape delay: Neo Delay's glide, saturation and wow, built; a multi-head tape echo with its heads' spacing is not; multiband: Neo Multiband, built, and its partitioned FFT convolution is the start of convolution).
 
-The MCP server spec (docs/specs/mcp-server.md §8) sets the priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak), Neo Utility and Neo Analyzer are built (M3), and Neo Delay; next Neo Multiband, Neo Scope and Neo Sampler. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.
+The MCP server spec (docs/specs/mcp-server.md §8) sets the priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak), Neo Utility and Neo Analyzer are built (M3), and Neo Delay and Neo Multiband; next Neo Scope and Neo Sampler. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.

@@ -93,6 +93,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Ensemble = new("Neo Ensemble", "Ensemble", false);
         // The successor of the classic delays (docs/specs/mcp-server.md §12.5): stereo, ping-pong and cross.
         internal static readonly NeoInfo Delay = new("Neo Delay", "Delay", false);
+        // The multiband compressor for mastering and buses (docs/specs/mcp-server.md §8.2): linear-phase crossovers with latency.
+        internal static readonly NeoInfo Multiband = new("Neo Multiband", "Multiband", false);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -236,14 +238,22 @@ namespace ReBuzzTests
             readonly Driver.AudioReader reader;
             public MachineCore Sine { get; }
             public MachineCore Effect { get; }
+            /// <summary>With a parallel effect: sine → it → master, beside the Neo effect.</summary>
+            public MachineCore Parallel { get; }
 
-            /// <summary>Effects: sine → the Neo effect → master. Generators: the Neo synth → master.</summary>
-            public Rig(NeoInfo machine)
+            /// <summary>
+            /// Effects: sine → the Neo effect → master (and, given <paramref name="parallel"/>, sine → that effect → master beside it).
+            /// Generators: the Neo synth → master.
+            /// </summary>
+            public Rig(NeoInfo machine, NeoInfo parallel = null)
             {
                 if (!File.Exists(machine.BuiltPath))
                     Assert.Inconclusive($"{machine.Name} not built ({machine.BuiltPath}); build the solution first");
+                if (parallel != null && !File.Exists(parallel.BuiltPath))
+                    Assert.Inconclusive($"{parallel.Name} not built ({parallel.BuiltPath}); build the solution first");
                 if (!machine.Generator) Driver.Gear.AddDynamicGenerator(SineInfo);
                 Driver.Gear.AddBuiltMachine(machine, AbsoluteFilePath.Value(machine.BuiltPath), machine.Generator);
+                if (parallel != null) Driver.Gear.AddBuiltMachine(parallel, AbsoluteFilePath.Value(parallel.BuiltPath), false);
                 Driver.Start();
                 var fx = new DynamicMachineController(machine.Name, machine.Name);
                 Driver.MachineGraph.InsertMachineInstanceConnectedToMasterFor(fx);
@@ -253,6 +263,13 @@ namespace ReBuzzTests
                     Driver.MachineGraph.InsertMachineInstanceFor(sine);
                     Driver.MachineGraph.Connect(sine, fx);
                     Sine = Driver.MachineFor(sine);
+                    if (parallel != null)
+                    {
+                        var side = new DynamicMachineController(parallel.Name, parallel.Name + " beside");
+                        Driver.MachineGraph.InsertMachineInstanceConnectedToMasterFor(side);
+                        Driver.MachineGraph.Connect(sine, side);
+                        Parallel = Driver.MachineFor(side);
+                    }
                 }
                 Effect = Driver.MachineFor(fx);
                 reader = Driver.CreateAudioReader(256);
@@ -605,6 +622,72 @@ namespace ReBuzzTests
                                       $"full feedback peak {Db(peak):+0.0;-0.0} dBFS, editor {size.Width:0} x {size.Height:0}");
         }
 
+        [Test]
+        public void NeoMultibandReportsItsLatencyReBuzzCompensatesItAndShowsItsEditor()
+        {
+            // sine → Neo Multiband → master, and beside it sine → Neo Utility (both channels inverted) → master. Linear phase reports
+            // 4607 samples (at 44.1 and 48 kHz); with every band at 1:1 the multiband passes the sine, delayed by exactly that, so
+            // when ReBuzz delays the other path to match (machine delay compensation) the two cancel. Minimum phase reports 0, and
+            // ReBuzz sees the change. Compressing, band 2 (where the 220 Hz sine is) turns it down.
+            using var rig = new Rig(Multiband, Utility);
+            rig.Play(0.05);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(4607), "linear phase: the FIRs' centre and one partition");
+            Assert.That(rig.Param("Phase").DescribeValue(0), Is.EqualTo("Linear"));
+            Assert.That(rig.Param("B2 ratio").DescribeValue(200), Is.EqualTo("1.0:1"));
+            Assert.That(rig.Param("Crossover 2").DescribeValue(rig.Param("Crossover 2").DefValue), Is.EqualTo("1000 Hz"));
+            for (int b = 1; b <= 4; b++) rig.Param($"B{b} ratio").SetValue(0, 200);   // 1:1
+            var utility = rig.Parallel.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters;
+
+            // The multiband alone (the inverted path muted by its gain): the sine as it went in.
+            utility.Single(p => p.Name == "Gain").SetValue(0, 0);                         // −∞
+            rig.Play(0.5);
+            double alone = Rms(rig.Play(0.5));
+            rig.Effect.IsBypassed = true;
+            rig.Play(0.3);
+            double bypassed = Rms(rig.Play(0.5));
+            rig.Effect.IsBypassed = false;
+            rig.Play(0.3);
+            // Both paths, the other one inverted: compensated, nothing is left.
+            utility.Single(p => p.Name == "Gain").SetValue(0, utility.Single(p => p.Name == "Gain").DefValue);
+            utility.Single(p => p.Name == "Invert L").SetValue(0, 1);
+            utility.Single(p => p.Name == "Invert R").SetValue(0, 1);
+            rig.Play(0.5);
+            double residual = Rms(rig.Play(0.5));
+            TestContext.Out.WriteLine($"unity {Db(alone / bypassed):F4} dB against bypassed; against the inverted parallel path {Db(residual / alone):F1} dB");
+            Assert.That(Db(alone / bypassed), Is.EqualTo(0).Within(0.001), "every band at 1:1 passes the input");
+            Assert.That(Db(residual / alone), Is.LessThan(-90), "ReBuzz delayed the parallel path by the latency: they cancel");
+
+            // Minimum phase: no latency, and ReBuzz sees it.
+            rig.Param("Phase").SetValue(0, 1);
+            rig.Play(0.3);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0), "minimum phase: the new latency reached ReBuzz");
+            rig.Param("Phase").SetValue(0, 0);
+            rig.Play(0.3);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(4607), "and back");
+
+            // Compressing band 2 hard: the sine comes down.
+            utility.Single(p => p.Name == "Gain").SetValue(0, 0);
+            rig.Param("B2 threshold").SetValue(0, 0);                                   // −60 dB
+            rig.Param("B2 ratio").SetValue(0, rig.Param("B2 ratio").MaxValue);          // ∞
+            rig.Play(0.5);
+            double squashed = Rms(rig.Play(0.5));
+            TestContext.Out.WriteLine($"band 2 at ∞:1 from −60 dB: {Db(squashed / alone):F1} dB");
+            Assert.That(Db(squashed / alone), Is.LessThan(-15), "band 2 compresses the sine");
+            Assert.That(rig.Effect.IsMuted, Is.False, "the guard never tripped");
+
+            // The editor, compressing on every band.
+            for (int b = 1; b <= 4; b++)
+            {
+                rig.Param($"B{b} ratio").SetValue(0, 600);                               // 4:1
+                rig.Param($"B{b} threshold").SetValue(0, 250);                           // −35 dB
+            }
+            rig.Play(0.5);
+            var size = ShootEditor(rig.Effect, "neo-multiband-editor");
+            // A [notice] (tools/ci-test-summary.ps1): the WPF editor's size, which the studio's must match (NeoEditorTests).
+            TestContext.Out.WriteLine($"[notice] Neo Multiband in ReBuzz: latency {4607} samples compensated (residual {Db(residual / alone):F1} dB against the inverted parallel path), " +
+                                      $"unity {Db(alone / bypassed):+0.0000;-0.0000;0.0000} dB, editor {size.Width:0} x {size.Height:0}");
+        }
+
         static readonly SourceInfo MixInfo = new("Neo Test Mix", MixSource, true);
 
         [Test]
@@ -944,7 +1027,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

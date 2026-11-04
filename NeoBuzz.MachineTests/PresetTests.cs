@@ -31,6 +31,8 @@ namespace NeoBuzz.MachineTests
             // The next batch (docs/specs/machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo Delay.
             ["Neo Ensemble"] = (NeoBuzz.Ensemble.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Ensemble.EnsembleEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             ["Neo Delay"] = (NeoBuzz.Delay.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Delay.DelayEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
+            // mcp-server.md §8.2: the multiband compressor for mastering and buses.
+            ["Neo Multiband"] = (NeoBuzz.Multiband.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Multiband.MultibandEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
         };
 
         // The mix and master batch: one engine per preset render, keyed by its parameter values.
