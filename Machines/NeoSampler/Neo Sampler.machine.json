@@ -48,7 +48,6 @@
    "default": 32,
    "kind": "int",
    "a": 0.0,
-   "unit": "voices",
    "description": "Voices that sound at once (each zone a note plays takes one); past it a new voice takes the quietest released one, else the oldest, fading it out in 3 ms"
   },
   {
@@ -86,7 +85,6 @@
    "default": 0,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zones whose velocity ranges meet crossfade (equal power) over this many velocity steps around the boundary instead of switching; 0 switches"
   },
   {
@@ -341,7 +339,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 1: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -354,7 +351,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 1: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -606,7 +602,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 2: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -619,7 +614,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 2: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -871,7 +865,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 3: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -884,7 +877,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 3: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -1136,7 +1128,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 4: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -1149,7 +1140,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 4: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -1401,7 +1391,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 5: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -1414,7 +1403,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 5: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -1666,7 +1654,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 6: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -1679,7 +1666,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 6: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -1931,7 +1917,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 7: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -1944,7 +1929,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 7: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -2196,7 +2180,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 8: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -2209,7 +2192,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 8: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -2461,7 +2443,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 9: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -2474,7 +2455,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 9: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -2726,7 +2706,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 10: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -2739,7 +2718,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 10: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -2991,7 +2969,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 11: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -3004,7 +2981,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 11: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -3256,7 +3232,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 12: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -3269,7 +3244,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 12: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -3521,7 +3495,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 13: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -3534,7 +3507,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 13: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -3786,7 +3758,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 14: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -3799,7 +3770,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 14: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -4051,7 +4021,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 15: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -4064,7 +4033,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 15: the highest velocity it plays (Instrument mode)"
   },
   {
@@ -4316,7 +4284,6 @@
    "default": 1,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 16: the lowest velocity it plays (Instrument mode)"
   },
   {
@@ -4329,7 +4296,6 @@
    "default": 127,
    "kind": "int",
    "a": 0.0,
-   "unit": "vel",
    "description": "Zone 16: the highest velocity it plays (Instrument mode)"
   },
   {

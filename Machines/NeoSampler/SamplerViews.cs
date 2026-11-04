@@ -238,7 +238,7 @@ namespace NeoBuzz.Sampler
 
         public void Draw(INeoCanvas g, NeoRect r, NeoColor accent)
         {
-            bounds = new NeoRect(r.X, r.Y + 16, r.Width, r.Height - 30);
+            bounds = new NeoRect(r.X + 8, r.Y + 16, r.Width - 16, r.Height - 30);
             int z = zone();
             var zs = view.Zone(z);
             var color = ZoneColors.Of(z);

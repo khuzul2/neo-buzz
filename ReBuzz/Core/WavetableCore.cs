@@ -97,7 +97,10 @@ namespace ReBuzz.Core
             if (add)
             {
                 bool ok = w.Flags.HasFlag(WaveFlags.Stereo) && stereo || !stereo && !w.Flags.HasFlag(WaveFlags.Stereo);
-                ok &= !w.Flags.HasFlag(WaveFlags.Not16Bit) && format == WaveFormat.Int16;
+                // Fork (Neo Sampler, docs/specs/machines.md §5): a layer joins a slot of its own kind, 16-bit or
+                // not (LoadWave has converted the slot to float or stereo to match it first); only 16-bit
+                // layers could be added before, so a float, 24- or 32-bit file never became a second layer.
+                ok &= w.Flags.HasFlag(WaveFlags.Not16Bit) == (format != WaveFormat.Int16);
                 ok |= w.Layers.Count == 0;
                 if (ok)
                 {

@@ -8,10 +8,10 @@ summary Sampler that plays the song's waves (wavetable slots, from wave_import) 
 group Play
 Mode        "Mode"          0 1    0    enum Instrument Kit             | Instrument: each zone plays the notes in its key and velocity ranges, tuned from its root; Kit: zone n plays key Kit base + n − 1 at its own pitch, one-shot (key and velocity ranges, root, loop and trigger aside)
 KitBase     "Kit base"      0 112  36   int 0 note                      | The key zone 1 plays in Kit mode (36 = C2, General MIDI's kick: zone 3 is D2 the snare, 7 F#2 the closed hat, 11 A#2 the open hat); the others follow a semitone apart
-Polyphony   "Polyphony"     1 32   32   int 0 voices                    | Voices that sound at once (each zone a note plays takes one); past it a new voice takes the quietest released one, else the oldest, fading it out in 3 ms
+Polyphony   "Polyphony"     1 32   32   int 0                           | Voices that sound at once (each zone a note plays takes one); past it a new voice takes the quietest released one, else the oldest, fading it out in 3 ms
 BendRange   "Bend range"    0 24   2    int 0 st                        | Pitch bend range
 VelAmp      "Vel → amp"     0 1000 700  pct                             | How much velocity sets the level: the gain is velocity^(2 × this) (100 %: velocity 64 is −12 dB; 0 %: every note at full level)
-VelXfade    "Vel crossfade" 0 64   0    int 0 vel                       | Zones whose velocity ranges meet crossfade (equal power) over this many velocity steps around the boundary instead of switching; 0 switches
+VelXfade    "Vel crossfade" 0 64   0    int 0                           | Zones whose velocity ranges meet crossfade (equal power) over this many velocity steps around the boundary instead of switching; 0 switches
 Volume      "Volume"        0 720  600  db -60 12 inf                   | Output level
 
 group Amp env
@@ -38,8 +38,8 @@ group Zone 1
 Z1Wave    "Z1 wave"      0 254 1    int 0 wave            | Zone 1's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z1KeyLo   "Z1 key low"   0 127 0    int 0 note             | Zone 1: the lowest key it plays (Instrument mode)
 Z1KeyHi   "Z1 key high"  0 127 127  int 0 note             | Zone 1: the highest key it plays (Instrument mode)
-Z1VelLo   "Z1 vel low"   1 127 1    int 0 vel              | Zone 1: the lowest velocity it plays (Instrument mode)
-Z1VelHi   "Z1 vel high"  1 127 127  int 0 vel              | Zone 1: the highest velocity it plays (Instrument mode)
+Z1VelLo   "Z1 vel low"   1 127 1    int 0                  | Zone 1: the lowest velocity it plays (Instrument mode)
+Z1VelHi   "Z1 vel high"  1 127 127  int 0                  | Zone 1: the highest velocity it plays (Instrument mode)
 Z1Root    "Z1 root"      0 128 128  int 0 note             | Zone 1: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z1Tune    "Z1 tune"      0 96  48   int -48 st signed      | Zone 1: transposition
 Z1Fine    "Z1 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 1: fine tune, in 0.1 cent steps
@@ -59,8 +59,8 @@ group Zone 2
 Z2Wave    "Z2 wave"      0 254 0    int 0 wave            | Zone 2's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z2KeyLo   "Z2 key low"   0 127 0    int 0 note             | Zone 2: the lowest key it plays (Instrument mode)
 Z2KeyHi   "Z2 key high"  0 127 127  int 0 note             | Zone 2: the highest key it plays (Instrument mode)
-Z2VelLo   "Z2 vel low"   1 127 1    int 0 vel              | Zone 2: the lowest velocity it plays (Instrument mode)
-Z2VelHi   "Z2 vel high"  1 127 127  int 0 vel              | Zone 2: the highest velocity it plays (Instrument mode)
+Z2VelLo   "Z2 vel low"   1 127 1    int 0                  | Zone 2: the lowest velocity it plays (Instrument mode)
+Z2VelHi   "Z2 vel high"  1 127 127  int 0                  | Zone 2: the highest velocity it plays (Instrument mode)
 Z2Root    "Z2 root"      0 128 128  int 0 note             | Zone 2: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z2Tune    "Z2 tune"      0 96  48   int -48 st signed      | Zone 2: transposition
 Z2Fine    "Z2 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 2: fine tune, in 0.1 cent steps
@@ -80,8 +80,8 @@ group Zone 3
 Z3Wave    "Z3 wave"      0 254 0    int 0 wave            | Zone 3's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z3KeyLo   "Z3 key low"   0 127 0    int 0 note             | Zone 3: the lowest key it plays (Instrument mode)
 Z3KeyHi   "Z3 key high"  0 127 127  int 0 note             | Zone 3: the highest key it plays (Instrument mode)
-Z3VelLo   "Z3 vel low"   1 127 1    int 0 vel              | Zone 3: the lowest velocity it plays (Instrument mode)
-Z3VelHi   "Z3 vel high"  1 127 127  int 0 vel              | Zone 3: the highest velocity it plays (Instrument mode)
+Z3VelLo   "Z3 vel low"   1 127 1    int 0                  | Zone 3: the lowest velocity it plays (Instrument mode)
+Z3VelHi   "Z3 vel high"  1 127 127  int 0                  | Zone 3: the highest velocity it plays (Instrument mode)
 Z3Root    "Z3 root"      0 128 128  int 0 note             | Zone 3: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z3Tune    "Z3 tune"      0 96  48   int -48 st signed      | Zone 3: transposition
 Z3Fine    "Z3 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 3: fine tune, in 0.1 cent steps
@@ -101,8 +101,8 @@ group Zone 4
 Z4Wave    "Z4 wave"      0 254 0    int 0 wave            | Zone 4's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z4KeyLo   "Z4 key low"   0 127 0    int 0 note             | Zone 4: the lowest key it plays (Instrument mode)
 Z4KeyHi   "Z4 key high"  0 127 127  int 0 note             | Zone 4: the highest key it plays (Instrument mode)
-Z4VelLo   "Z4 vel low"   1 127 1    int 0 vel              | Zone 4: the lowest velocity it plays (Instrument mode)
-Z4VelHi   "Z4 vel high"  1 127 127  int 0 vel              | Zone 4: the highest velocity it plays (Instrument mode)
+Z4VelLo   "Z4 vel low"   1 127 1    int 0                  | Zone 4: the lowest velocity it plays (Instrument mode)
+Z4VelHi   "Z4 vel high"  1 127 127  int 0                  | Zone 4: the highest velocity it plays (Instrument mode)
 Z4Root    "Z4 root"      0 128 128  int 0 note             | Zone 4: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z4Tune    "Z4 tune"      0 96  48   int -48 st signed      | Zone 4: transposition
 Z4Fine    "Z4 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 4: fine tune, in 0.1 cent steps
@@ -122,8 +122,8 @@ group Zone 5
 Z5Wave    "Z5 wave"      0 254 0    int 0 wave            | Zone 5's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z5KeyLo   "Z5 key low"   0 127 0    int 0 note             | Zone 5: the lowest key it plays (Instrument mode)
 Z5KeyHi   "Z5 key high"  0 127 127  int 0 note             | Zone 5: the highest key it plays (Instrument mode)
-Z5VelLo   "Z5 vel low"   1 127 1    int 0 vel              | Zone 5: the lowest velocity it plays (Instrument mode)
-Z5VelHi   "Z5 vel high"  1 127 127  int 0 vel              | Zone 5: the highest velocity it plays (Instrument mode)
+Z5VelLo   "Z5 vel low"   1 127 1    int 0                  | Zone 5: the lowest velocity it plays (Instrument mode)
+Z5VelHi   "Z5 vel high"  1 127 127  int 0                  | Zone 5: the highest velocity it plays (Instrument mode)
 Z5Root    "Z5 root"      0 128 128  int 0 note             | Zone 5: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z5Tune    "Z5 tune"      0 96  48   int -48 st signed      | Zone 5: transposition
 Z5Fine    "Z5 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 5: fine tune, in 0.1 cent steps
@@ -143,8 +143,8 @@ group Zone 6
 Z6Wave    "Z6 wave"      0 254 0    int 0 wave            | Zone 6's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z6KeyLo   "Z6 key low"   0 127 0    int 0 note             | Zone 6: the lowest key it plays (Instrument mode)
 Z6KeyHi   "Z6 key high"  0 127 127  int 0 note             | Zone 6: the highest key it plays (Instrument mode)
-Z6VelLo   "Z6 vel low"   1 127 1    int 0 vel              | Zone 6: the lowest velocity it plays (Instrument mode)
-Z6VelHi   "Z6 vel high"  1 127 127  int 0 vel              | Zone 6: the highest velocity it plays (Instrument mode)
+Z6VelLo   "Z6 vel low"   1 127 1    int 0                  | Zone 6: the lowest velocity it plays (Instrument mode)
+Z6VelHi   "Z6 vel high"  1 127 127  int 0                  | Zone 6: the highest velocity it plays (Instrument mode)
 Z6Root    "Z6 root"      0 128 128  int 0 note             | Zone 6: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z6Tune    "Z6 tune"      0 96  48   int -48 st signed      | Zone 6: transposition
 Z6Fine    "Z6 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 6: fine tune, in 0.1 cent steps
@@ -164,8 +164,8 @@ group Zone 7
 Z7Wave    "Z7 wave"      0 254 0    int 0 wave            | Zone 7's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z7KeyLo   "Z7 key low"   0 127 0    int 0 note             | Zone 7: the lowest key it plays (Instrument mode)
 Z7KeyHi   "Z7 key high"  0 127 127  int 0 note             | Zone 7: the highest key it plays (Instrument mode)
-Z7VelLo   "Z7 vel low"   1 127 1    int 0 vel              | Zone 7: the lowest velocity it plays (Instrument mode)
-Z7VelHi   "Z7 vel high"  1 127 127  int 0 vel              | Zone 7: the highest velocity it plays (Instrument mode)
+Z7VelLo   "Z7 vel low"   1 127 1    int 0                  | Zone 7: the lowest velocity it plays (Instrument mode)
+Z7VelHi   "Z7 vel high"  1 127 127  int 0                  | Zone 7: the highest velocity it plays (Instrument mode)
 Z7Root    "Z7 root"      0 128 128  int 0 note             | Zone 7: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z7Tune    "Z7 tune"      0 96  48   int -48 st signed      | Zone 7: transposition
 Z7Fine    "Z7 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 7: fine tune, in 0.1 cent steps
@@ -185,8 +185,8 @@ group Zone 8
 Z8Wave    "Z8 wave"      0 254 0    int 0 wave            | Zone 8's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z8KeyLo   "Z8 key low"   0 127 0    int 0 note             | Zone 8: the lowest key it plays (Instrument mode)
 Z8KeyHi   "Z8 key high"  0 127 127  int 0 note             | Zone 8: the highest key it plays (Instrument mode)
-Z8VelLo   "Z8 vel low"   1 127 1    int 0 vel              | Zone 8: the lowest velocity it plays (Instrument mode)
-Z8VelHi   "Z8 vel high"  1 127 127  int 0 vel              | Zone 8: the highest velocity it plays (Instrument mode)
+Z8VelLo   "Z8 vel low"   1 127 1    int 0                  | Zone 8: the lowest velocity it plays (Instrument mode)
+Z8VelHi   "Z8 vel high"  1 127 127  int 0                  | Zone 8: the highest velocity it plays (Instrument mode)
 Z8Root    "Z8 root"      0 128 128  int 0 note             | Zone 8: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z8Tune    "Z8 tune"      0 96  48   int -48 st signed      | Zone 8: transposition
 Z8Fine    "Z8 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 8: fine tune, in 0.1 cent steps
@@ -206,8 +206,8 @@ group Zone 9
 Z9Wave    "Z9 wave"      0 254 0    int 0 wave            | Zone 9's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z9KeyLo   "Z9 key low"   0 127 0    int 0 note             | Zone 9: the lowest key it plays (Instrument mode)
 Z9KeyHi   "Z9 key high"  0 127 127  int 0 note             | Zone 9: the highest key it plays (Instrument mode)
-Z9VelLo   "Z9 vel low"   1 127 1    int 0 vel              | Zone 9: the lowest velocity it plays (Instrument mode)
-Z9VelHi   "Z9 vel high"  1 127 127  int 0 vel              | Zone 9: the highest velocity it plays (Instrument mode)
+Z9VelLo   "Z9 vel low"   1 127 1    int 0                  | Zone 9: the lowest velocity it plays (Instrument mode)
+Z9VelHi   "Z9 vel high"  1 127 127  int 0                  | Zone 9: the highest velocity it plays (Instrument mode)
 Z9Root    "Z9 root"      0 128 128  int 0 note             | Zone 9: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z9Tune    "Z9 tune"      0 96  48   int -48 st signed      | Zone 9: transposition
 Z9Fine    "Z9 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 9: fine tune, in 0.1 cent steps
@@ -227,8 +227,8 @@ group Zone 10
 Z10Wave    "Z10 wave"      0 254 0    int 0 wave            | Zone 10's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z10KeyLo   "Z10 key low"   0 127 0    int 0 note             | Zone 10: the lowest key it plays (Instrument mode)
 Z10KeyHi   "Z10 key high"  0 127 127  int 0 note             | Zone 10: the highest key it plays (Instrument mode)
-Z10VelLo   "Z10 vel low"   1 127 1    int 0 vel              | Zone 10: the lowest velocity it plays (Instrument mode)
-Z10VelHi   "Z10 vel high"  1 127 127  int 0 vel              | Zone 10: the highest velocity it plays (Instrument mode)
+Z10VelLo   "Z10 vel low"   1 127 1    int 0                  | Zone 10: the lowest velocity it plays (Instrument mode)
+Z10VelHi   "Z10 vel high"  1 127 127  int 0                  | Zone 10: the highest velocity it plays (Instrument mode)
 Z10Root    "Z10 root"      0 128 128  int 0 note             | Zone 10: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z10Tune    "Z10 tune"      0 96  48   int -48 st signed      | Zone 10: transposition
 Z10Fine    "Z10 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 10: fine tune, in 0.1 cent steps
@@ -248,8 +248,8 @@ group Zone 11
 Z11Wave    "Z11 wave"      0 254 0    int 0 wave            | Zone 11's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z11KeyLo   "Z11 key low"   0 127 0    int 0 note             | Zone 11: the lowest key it plays (Instrument mode)
 Z11KeyHi   "Z11 key high"  0 127 127  int 0 note             | Zone 11: the highest key it plays (Instrument mode)
-Z11VelLo   "Z11 vel low"   1 127 1    int 0 vel              | Zone 11: the lowest velocity it plays (Instrument mode)
-Z11VelHi   "Z11 vel high"  1 127 127  int 0 vel              | Zone 11: the highest velocity it plays (Instrument mode)
+Z11VelLo   "Z11 vel low"   1 127 1    int 0                  | Zone 11: the lowest velocity it plays (Instrument mode)
+Z11VelHi   "Z11 vel high"  1 127 127  int 0                  | Zone 11: the highest velocity it plays (Instrument mode)
 Z11Root    "Z11 root"      0 128 128  int 0 note             | Zone 11: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z11Tune    "Z11 tune"      0 96  48   int -48 st signed      | Zone 11: transposition
 Z11Fine    "Z11 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 11: fine tune, in 0.1 cent steps
@@ -269,8 +269,8 @@ group Zone 12
 Z12Wave    "Z12 wave"      0 254 0    int 0 wave            | Zone 12's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z12KeyLo   "Z12 key low"   0 127 0    int 0 note             | Zone 12: the lowest key it plays (Instrument mode)
 Z12KeyHi   "Z12 key high"  0 127 127  int 0 note             | Zone 12: the highest key it plays (Instrument mode)
-Z12VelLo   "Z12 vel low"   1 127 1    int 0 vel              | Zone 12: the lowest velocity it plays (Instrument mode)
-Z12VelHi   "Z12 vel high"  1 127 127  int 0 vel              | Zone 12: the highest velocity it plays (Instrument mode)
+Z12VelLo   "Z12 vel low"   1 127 1    int 0                  | Zone 12: the lowest velocity it plays (Instrument mode)
+Z12VelHi   "Z12 vel high"  1 127 127  int 0                  | Zone 12: the highest velocity it plays (Instrument mode)
 Z12Root    "Z12 root"      0 128 128  int 0 note             | Zone 12: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z12Tune    "Z12 tune"      0 96  48   int -48 st signed      | Zone 12: transposition
 Z12Fine    "Z12 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 12: fine tune, in 0.1 cent steps
@@ -290,8 +290,8 @@ group Zone 13
 Z13Wave    "Z13 wave"      0 254 0    int 0 wave            | Zone 13's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z13KeyLo   "Z13 key low"   0 127 0    int 0 note             | Zone 13: the lowest key it plays (Instrument mode)
 Z13KeyHi   "Z13 key high"  0 127 127  int 0 note             | Zone 13: the highest key it plays (Instrument mode)
-Z13VelLo   "Z13 vel low"   1 127 1    int 0 vel              | Zone 13: the lowest velocity it plays (Instrument mode)
-Z13VelHi   "Z13 vel high"  1 127 127  int 0 vel              | Zone 13: the highest velocity it plays (Instrument mode)
+Z13VelLo   "Z13 vel low"   1 127 1    int 0                  | Zone 13: the lowest velocity it plays (Instrument mode)
+Z13VelHi   "Z13 vel high"  1 127 127  int 0                  | Zone 13: the highest velocity it plays (Instrument mode)
 Z13Root    "Z13 root"      0 128 128  int 0 note             | Zone 13: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z13Tune    "Z13 tune"      0 96  48   int -48 st signed      | Zone 13: transposition
 Z13Fine    "Z13 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 13: fine tune, in 0.1 cent steps
@@ -311,8 +311,8 @@ group Zone 14
 Z14Wave    "Z14 wave"      0 254 0    int 0 wave            | Zone 14's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z14KeyLo   "Z14 key low"   0 127 0    int 0 note             | Zone 14: the lowest key it plays (Instrument mode)
 Z14KeyHi   "Z14 key high"  0 127 127  int 0 note             | Zone 14: the highest key it plays (Instrument mode)
-Z14VelLo   "Z14 vel low"   1 127 1    int 0 vel              | Zone 14: the lowest velocity it plays (Instrument mode)
-Z14VelHi   "Z14 vel high"  1 127 127  int 0 vel              | Zone 14: the highest velocity it plays (Instrument mode)
+Z14VelLo   "Z14 vel low"   1 127 1    int 0                  | Zone 14: the lowest velocity it plays (Instrument mode)
+Z14VelHi   "Z14 vel high"  1 127 127  int 0                  | Zone 14: the highest velocity it plays (Instrument mode)
 Z14Root    "Z14 root"      0 128 128  int 0 note             | Zone 14: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z14Tune    "Z14 tune"      0 96  48   int -48 st signed      | Zone 14: transposition
 Z14Fine    "Z14 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 14: fine tune, in 0.1 cent steps
@@ -332,8 +332,8 @@ group Zone 15
 Z15Wave    "Z15 wave"      0 254 0    int 0 wave            | Zone 15's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z15KeyLo   "Z15 key low"   0 127 0    int 0 note             | Zone 15: the lowest key it plays (Instrument mode)
 Z15KeyHi   "Z15 key high"  0 127 127  int 0 note             | Zone 15: the highest key it plays (Instrument mode)
-Z15VelLo   "Z15 vel low"   1 127 1    int 0 vel              | Zone 15: the lowest velocity it plays (Instrument mode)
-Z15VelHi   "Z15 vel high"  1 127 127  int 0 vel              | Zone 15: the highest velocity it plays (Instrument mode)
+Z15VelLo   "Z15 vel low"   1 127 1    int 0                  | Zone 15: the lowest velocity it plays (Instrument mode)
+Z15VelHi   "Z15 vel high"  1 127 127  int 0                  | Zone 15: the highest velocity it plays (Instrument mode)
 Z15Root    "Z15 root"      0 128 128  int 0 note             | Zone 15: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z15Tune    "Z15 tune"      0 96  48   int -48 st signed      | Zone 15: transposition
 Z15Fine    "Z15 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 15: fine tune, in 0.1 cent steps
@@ -353,8 +353,8 @@ group Zone 16
 Z16Wave    "Z16 wave"      0 254 0    int 0 wave            | Zone 16's wave: 0 off, 1–200 a slot of the song's wavetable (wave_import), 201 on a built-in sample (the manual lists them)
 Z16KeyLo   "Z16 key low"   0 127 0    int 0 note             | Zone 16: the lowest key it plays (Instrument mode)
 Z16KeyHi   "Z16 key high"  0 127 127  int 0 note             | Zone 16: the highest key it plays (Instrument mode)
-Z16VelLo   "Z16 vel low"   1 127 1    int 0 vel              | Zone 16: the lowest velocity it plays (Instrument mode)
-Z16VelHi   "Z16 vel high"  1 127 127  int 0 vel              | Zone 16: the highest velocity it plays (Instrument mode)
+Z16VelLo   "Z16 vel low"   1 127 1    int 0                  | Zone 16: the lowest velocity it plays (Instrument mode)
+Z16VelHi   "Z16 vel high"  1 127 127  int 0                  | Zone 16: the highest velocity it plays (Instrument mode)
 Z16Root    "Z16 root"      0 128 128  int 0 note             | Zone 16: the key that plays the wave unchanged; 128, Wave, takes each layer's own root from the wavetable (Instrument mode)
 Z16Tune    "Z16 tune"      0 96  48   int -48 st signed      | Zone 16: transposition
 Z16Fine    "Z16 fine"      0 2000 1000 lin -100 100 ct 1    | Zone 16: fine tune, in 0.1 cent steps
