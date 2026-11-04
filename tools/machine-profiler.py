@@ -1045,6 +1045,8 @@ class TestBench:
         self.with_steps = steps or layout == "full"
         self.renders = 0
         self.texts = {}
+        self.latency = None
+        self.held = []          # a context's changes, set again when the song is built again
         self.click_at = 0.05
         self.ring = {"full": 3.0, "eq": 0.4}.get(layout, 1.5)
         t = self.click_at + self.ring
@@ -1072,10 +1074,14 @@ class TestBench:
         set_notes(c, "Ck", [note(A4, beats(self.click_at), beats(CLICK_SECONDS), 127)], "midi", length=length)
         if self.with_steps:
             set_notes(c, "St", [note(n, beats(s), beats(d), v) for v, s, d in self.steps for n in STEP_CHORD], "midi", length=length)
+        if getattr(self, "held", None):
+            c.call("param_set", machine="M", changes=list(self.held), allow_unsafe=True)
 
-    def measure(self, changes=(), reset=True):
+    def measure(self, changes=(), reset=True, retry=True):
         """The features with these changes (the others at their defaults), then put back: response, click,
-        steps, thd, peak; {"diverged": reason} when the guard tripped (the song is built again)."""
+        steps, thd, peak; {"diverged": reason} when the guard tripped (the song is built again). A loop that
+        still rings from the last render when the click comes (feedback near ±100 % never quite dies down in
+        the render's pre-roll) spoils it: the song is built again and it is measured once more."""
         c = self.c
         if changes:
             r = c.call("param_set", machine="M", changes=list(changes), allow_unsafe=True)
@@ -1097,6 +1103,11 @@ class TestBench:
                 out = self.features(r)
         finally:
             forget_renders(c)
+        if out.get("polluted") and retry and not out.get("diverged"):
+            self.build()
+            again = self.measure(changes, reset, retry=False)
+            again["rebuilt"] = True
+            return again
         if out.get("diverged"):
             self.build()
         elif changes and reset:
@@ -1113,8 +1124,15 @@ class TestBench:
         _, ck, _ = read_wav(files["Ck"])
         peak = max(max(out_l), -min(out_l), max(out_r), -min(out_r)) if len(out_l) else 0.0
         f = {"peak_dbfs": round(db(peak), 2) if peak > 0 else None}
-        click = mr.click_features(rate, ck, out_l, out_r, self.click_at, CLICK_SECONDS, self.ring)
+        a = int(self.click_at * rate)
+        before = max((abs(v) for v in out_l[max(0, a - int(0.04 * rate)):a]), default=0.0)
+        click = mr.click_features(rate, ck, out_l, out_r, self.click_at, CLICK_SECONDS, self.ring, expected_latency=self.latency)
         lat = (click or {}).get("latency_samples") or 0
+        if self.latency is None and click and not click.get("silent"):
+            self.latency = lat          # the defaults' latency: where the dry sound comes, for settings without one
+        after = max((abs(v) for v in out_l[a:a + int(0.3 * rate)]), default=0.0)
+        if after > 0 and before > after * 0.01:
+            f["polluted"] = True        # the last render still rings 40 dB or less under the click
         if click is not None:
             f["click"] = click
         wob = []
@@ -1168,7 +1186,7 @@ def compact(f):
         if f.get(k) is not None:
             out[k] = f[k]
     env = f.get("env") or {}
-    for k in ("attack_s", "half_s", "final_db", "release_s", "length_s", "peak_db", "bright_early_hz", "bright_late_hz", "level_wobble_db", "bright_wobble"):
+    for k in ("attack_s", "half_s", "final_db", "release_s", "length_s", "peak_db", "bright_early_hz", "bright_mid_hz", "bright_late_hz", "level_wobble_db", "bright_wobble"):
         if env.get(k) is not None:
             out["env_" + k] = env[k]
     return out
@@ -1190,6 +1208,16 @@ def effect_type(click, prior):
     if prior in ("delay", "reverb") and isinstance(t60, (int, float)) and t60 >= 0.3 and len(times) < 3 and (click.get("late_db") or -120) > -40:
         return "reverb"
     return prior
+
+
+def role_key(p, globals_):
+    """A parameter's key in profile.roles: its name ("track Volume" for a track parameter), with its index where a
+    global name repeats (FSM Infector's " - Decay #12")."""
+    if p.get("per_track"):
+        return "track " + p["name"]
+    if sum(1 for q in globals_ if q["name"] == p["name"]) > 1:
+        return f"{p['name']} #{p.get('index')}"
+    return p["name"]
 
 
 def eq_bands(names):
@@ -1239,6 +1267,7 @@ def effect_role_sweeps(c, prof, globals_, tracks, inferred, ranges):
         """(role, why, ends, texts) for one parameter, in a context (changes held while it is measured)."""
         if context:
             c.call("param_set", machine="M", changes=context, allow_unsafe=True)
+            bench.held = list(context)
         try:
             cbase = bench.measure(reset=False) if context else base
             ends, texts = {}, {}
@@ -1259,6 +1288,7 @@ def effect_role_sweeps(c, prof, globals_, tracks, inferred, ranges):
             return role, why, ends, texts
         finally:
             if context:
+                bench.held = []
                 c.call("param_set", machine="M", changes=[dict(x, value="default") for x in context], allow_unsafe=True)
 
     roles, plan, later = {}, [], []
@@ -1289,7 +1319,7 @@ def effect_role_sweeps(c, prof, globals_, tracks, inferred, ranges):
             note_ = " (with every other band raised)"
         if role:
             why += note_
-        key = p["name"] if not p.get("per_track") else "track " + p["name"]
+        key = role_key(p, globals_)
         roles[key] = {"suggested_role": role, "evidence": why,
                       "min": dict(compact(ends.get("min")), raw=lo, text=texts.get("min")),
                       "max": dict(compact(ends.get("max")), raw=hi, text=texts.get("max")),
@@ -1299,7 +1329,7 @@ def effect_role_sweeps(c, prof, globals_, tracks, inferred, ranges):
     # A second look, for what does nothing at the defaults because the effect is off there (no wet, no feedback).
     enablers = []
     for p, lo, hi, default, ref, info in plan:
-        key = p["name"] if not p.get("per_track") else "track " + p["name"]
+        key = role_key(p, globals_)
         r = roles.get(key) or {}
         if r.get("suggested_role") in ("mix.wet", "delay.feedback", "reverb.decay"):
             ends = r["_ends"]
@@ -1325,7 +1355,7 @@ def effect_role_sweeps(c, prof, globals_, tracks, inferred, ranges):
     # response holds still, for what the first pass couldn't place.
     steady = []
     for p, lo, hi, default, ref, info in plan:
-        key = p["name"] if not p.get("per_track") else "track " + p["name"]
+        key = role_key(p, globals_)
         r = roles.get(key) or {}
         if r.get("suggested_role") in ("mod.depth", "lfo.depth") and r.get("_ends"):
             wl = ((r["_ends"]["min"].get("response") or {}).get("wobble_db") or 0)
@@ -1339,6 +1369,20 @@ def effect_role_sweeps(c, prof, globals_, tracks, inferred, ranges):
             if role and role != "mod.depth":
                 roles[key] = {"suggested_role": role, "evidence": why + " (with the modulation held still: " +
                               ", ".join(f"{e['param']} {e['value']}" for e in steady) + ")",
+                              "min": dict(compact(ends.get("min")), raw=lo, text=texts.get("min")),
+                              "max": dict(compact(ends.get("max")), raw=hi, text=texts.get("max"))}
+    # And with a filter's cutoff half way (a resonance or a band's width does nothing while the filter is wide open).
+    cut = next(((p, lo, hi, ref) for p, lo, hi, default, ref, info in plan
+                if (roles.get(role_key(p, globals_)) or {}).get("suggested_role") == "filter.cutoff"), None)
+    if cut:
+        cp, clo, chi, cref = cut
+        half = [dict(cref, value=f"raw:{(clo + chi) // 2}")]
+        for p, lo, hi, default, ref, info, key in [x for x in later if not mr.is_choice(x[5]) and x[0] is not cp][:8]:
+            if roles.get(key, {}).get("suggested_role"):
+                continue
+            role, why, ends, texts = sweep(p, lo, hi, default, ref, info, half, None)
+            if role:
+                roles[key] = {"suggested_role": role, "evidence": why + f" (with {cp['name']} half way)",
                               "min": dict(compact(ends.get("min")), raw=lo, text=texts.get("min")),
                               "max": dict(compact(ends.get("max")), raw=hi, text=texts.get("max"))}
     for r in roles.values():
@@ -1436,8 +1480,8 @@ def find_trigger(c, prof, globals_):
     d = c.call("machine_describe", machine="M")
     cands = [{"param": p["name"], "track": 0, "value": p.get("max_raw", 1)} for p in d.get("played_parameters") or []]
     cands += [{"param": p["name"], "track": None, "value": p["max"]} for p in globals_ if re.search(r"trig", p["name"], re.I)]
-    tried = []
-    for cand in cands[:6]:
+    tried, sounding = [], []
+    for cand in cands[:16]:
         try:
             play(c, "M", None, cand, [note(A4, 0, 1)], length=8)
             r = render(c, 0, 4, 0.5)
@@ -1448,8 +1492,12 @@ def find_trigger(c, prof, globals_):
             continue
         tried.append(f"{cand['param']} {'sounds' if loud else 'silent'}")
         if loud:
-            cand["tried"] = tried
-            return cand
+            sounding.append(cand)
+    if sounding:
+        first = dict(sounding[0], tried=tried)
+        # every trigger that sounds (a drum machine's drums): each parameter is swept with its own drum's
+        first["all"] = [{k: x[k] for k in ("param", "track", "value")} for x in sounding]
+        return first
     if tried:
         prof.notes.append("no trigger made it sound: " + "; ".join(tried))
     return None
@@ -1501,21 +1549,44 @@ def generator_depth(c, prof, globals_, tracks, inferred, ranges, roles=True):
     drum = prof.data.get("type") in ("unpitched",) or bool(trigger)
     gtype = "drums" if drum else prof.data.get("type", "")
     out, plan, ends_of = {}, [], {}
+    # A drum machine's drums each have their trigger: a parameter is swept with the drum its name starts with ("BD Decay":
+    # "BD Trigger"), the others with the first that sounds.
+    triggers = prof.data.pop("_triggers", None) or []
+    benches, current = {}, [nb]
+
+    def bench_for(p):
+        word = (p["name"].split() or [""])[0].lower()
+        t = next((x for x in triggers if (x["param"].split() or [""])[0].lower() == word), None)
+        if t is None or t["param"] == (trigger or {}).get("param"):
+            b, bb = nb, base
+        else:
+            if t["param"] not in benches:
+                b = NoteBench(c, prof, mode, t, pitch=pitch - 36)
+                benches[t["param"]] = (b, b.measure())
+                current[0] = b
+            b, bb = benches[t["param"]]
+        if current[0] is not b:
+            b.build()
+            current[0] = b
+        return b, bb
 
     def sweep(p, lo, hi, default, ref, info, context=None):
+        b, bbase = bench_for(p)
         if context:
             c.call("param_set", machine="M", changes=context, allow_unsafe=True)
         try:
-            cbase = nb.measure(reset=False) if context else base
+            cbase = b.measure(reset=False) if context else bbase
             ends, texts = {}, {}
             for end, raw in (("min", lo), ("max", hi)):
                 if raw == default:
                     ends[end], texts[end] = cbase, text_at(p, raw)
                     continue
                 ch = dict(ref, value=f"raw:{raw}")
-                ends[end] = nb.measure([ch])
-                texts[end] = nb.text(ch)
+                ends[end] = b.measure([ch])
+                texts[end] = b.text(ch)
             role, why = mr.suggest_generator_role(info, ends, cbase, gtype)
+            if b is not nb and role:
+                why += f" (hit by {b.trigger['param']})"
             return role, why, ends, texts
         finally:
             if context:
@@ -1531,7 +1602,7 @@ def generator_depth(c, prof, globals_, tracks, inferred, ranges, roles=True):
         info = {"name": p["name"], "kind": entry.get("kind"), "choices": entry.get("choices"), "min": lo, "max": hi, "unit": entry.get("unit"),
                 "texts": [t for _, t in (p.get("table") or [])][:12] if (hi - lo) <= 12 else None}
         role, why, ends, texts = sweep(p, lo, hi, default, ref, info)
-        key = p["name"] if not per_track else "track " + p["name"]
+        key = role_key(p, globals_)
         plan.append((p, lo, hi, default, ref, info, key))
         ends_of[key] = ends
         out[key] = {"suggested_role": role, "evidence": why,
@@ -1700,6 +1771,9 @@ def profile_machine(c, gear, kind, baseline, generated):
             trig = find_trigger(c, prof, globals_)
             if trig:
                 prof.data["trigger"] = {k: trig[k] for k in ("param", "track", "value")}
+                if len(trig.get("all", [])) > 1:
+                    prof.data["trigger"]["others"] = [x["param"] for x in trig["all"][1:]]
+                    prof.data["_triggers"] = trig["all"]
                 prof.warnings = [w for w in prof.warnings if "no sound from a MIDI note" not in w]
                 prof.notes.append(f"plays from a trigger, not notes: {trig['param']}" + (" (track 0)" if trig.get("track") is not None else "") +
                                   f" written as an event (automation_write, raw {trig['value']}); tried: {'; '.join(trig.get('tried', []))}")
@@ -1755,15 +1829,18 @@ def profile_machine(c, gear, kind, baseline, generated):
         for end in ("min", "max"):
             if isinstance(r.get(end), dict):
                 r[end] = {k: r[end][k] for k in ("raw", "text", "diverged", "error") if k in r[end]}
+    prof.data.pop("_triggers", None)
     suggested = {}
+    keys = {role_key(p, globals_): p for p in globals_ + tracks}
     for key, r in ((prof.data.get("roles") or {}).get("params") or {}).items():
-        if r.get("suggested_role"):
-            suggested[(key.startswith("track "), key[6:] if key.startswith("track ") else key)] = (r["suggested_role"], r.get("evidence", ""))
+        p = keys.get(key)
+        if r.get("suggested_role") and p is not None:
+            suggested[id(p)] = (r["suggested_role"], r.get("evidence", ""))
     ranges = prof.data.pop("safe_ranges", {})
     prof.data["entries"] = {group: [manifest_entry(p, inferred[(per_track, p["name"])], ranges.get((per_track, p["name"])),
-                                                   suggested.get((per_track, p["name"])))
+                                                   suggested.get(id(p)))
                                     for p in ps if inferred[(per_track, p["name"])].get("kind") or (per_track, p["name"]) in ranges
-                                    or (per_track, p["name"]) in suggested]
+                                    or id(p) in suggested]
                             for group, ps, per_track in (("global", globals_, False), ("track", tracks, True))}
     if ranges:
         prof.data["safe_ranges"] = {("track " if pt else "") + n: r for (pt, n), r in ranges.items()}
@@ -2146,9 +2223,11 @@ def curated_roles(root):
                 continue
             roles = {}
             for group, prefix in (("parameters", ""), ("track_parameters", "track ")):
-                for p in m.get(group) or []:
+                ps = m.get(group) or []
+                for p in ps:
                     if p.get("role"):
-                        roles.setdefault(prefix + p["name"], p["role"])
+                        repeated = not prefix and sum(1 for q in ps if q["name"] == p["name"]) > 1
+                        roles[prefix + p["name"] + (f" #{p.get('index')}" if repeated else "")] = p["role"]
             out[m["gear"]] = roles
     return out
 
@@ -2162,15 +2241,15 @@ PACK = "MACHINE-PROFILE-PACK"
 
 
 def pack(folder):
-    """The drafts, summary and report of an --out folder, gzipped, as base64 lines in the log: a CI
-    job's log can be read where its artifacts can't (--unpack takes them back out)."""
+    """The drafts, summary and report of an --out folder (and the role sweeps' details), gzipped, as base64 lines in
+    the log: a CI job's log can be read where its artifacts can't (--unpack takes them back out)."""
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tar:
         for base, _, files in os.walk(folder):
             for f in files:
                 path = os.path.join(base, f)
                 rel = os.path.relpath(path, folder).replace(os.sep, "/")
-                if rel.startswith("manifests/") or rel in ("machine-profile.json", "machine-health.md"):
+                if rel.startswith("manifests/") or rel.startswith("roles-detail/") or rel in ("machine-profile.json", "machine-health.md"):
                     tar.add(path, arcname=rel)
     data = base64.b64encode(buf.getvalue()).decode("ascii")
     print(f"{PACK}-BEGIN {len(data)}")

@@ -311,12 +311,14 @@ def echoes(env, ms=1.0, start_ms=8.0, floor_db=-60.0, rise_db=10.0, smooth=5):
     return out
 
 
-def click_features(rate, inp, out_l, out_r, click_at, click_len, window, ms=1.0):
+def click_features(rate, inp, out_l, out_r, click_at, click_len, window, ms=1.0, expected_latency=None):
     """
     What a click (a ~1 ms burst at `click_at` s in `inp`, the machine's input) says through the machine
     (out_l, out_r), over `window` s: latency (samples), direct, early (to 80 ms) and late (after 30 ms past the
-    burst) energy in dB over the burst's, the T60 of its decay, the time it rings until 60 dB down, echoes (per
-    channel), and how bright the tail is (zero crossings per second, after 50 ms).
+    burst) energy in dB over the burst's, the T60 of the late part's decay, the time it rings until 60 dB down,
+    echoes (per channel), and how bright the tail is (its RMS frequency, after 50 ms). Where the output's first
+    sound is a later one (no dry sound: an echo, a reflection), the onset is the latency the machine has with its
+    dry sound (expected_latency, from its defaults), or the input's.
     """
     a = int(click_at * rate)
     i0 = onset(inp, a - int(0.01 * rate), a + int(0.05 * rate))
@@ -328,10 +330,15 @@ def click_features(rate, inp, out_l, out_r, click_at, click_len, window, ms=1.0)
     mono = [(x + y) / 2 for x, y in zip(out_l[i0:i0 + int(window * rate)], out_r[i0:i0 + int(window * rate)])] if out_r is not out_l \
         else list(out_l[i0:i0 + int(window * rate)])
     o0 = onset(mono, 0, int(0.25 * rate), 0.1)
+    whole = max((abs(v) for v in mono), default=0.0)
+    if whole <= 1e-6:
+        return {"latency_samples": None, "silent": True}
+    if expected_latency is not None and (o0 is None or o0 > expected_latency + int(0.002 * rate)):
+        # what comes first is later than the dry sound would be: there is none at this setting
+        o0 = expected_latency
+    elif o0 is None:
+        o0 = 0
     feats = {"latency_samples": o0}
-    if o0 is None:
-        feats.update({"silent": True})
-        return feats
     burst = int((click_len + 0.002) * rate)
     direct = energy(mono, o0 - int(0.0005 * rate), o0 + burst)
     early = energy(mono, o0 + burst, o0 + int(0.08 * rate))
@@ -340,7 +347,8 @@ def click_features(rate, inp, out_l, out_r, click_at, click_len, window, ms=1.0)
     feats["early_db"] = round(_pdb(early / e_in), 2) if early > 0 else -120.0
     feats["late_db"] = round(_pdb(late / e_in), 2) if late > 0 else -120.0
     env = env_db(mono, rate, o0, len(mono), ms)
-    t60, span = decay_rate(env, ms)
+    # the decay of what comes after the direct sound, so a louder dry sound doesn't steepen it
+    t60, span = decay_rate(env[int((burst / rate) * 1000 / ms) + 5:], ms)
     feats["t60_s"] = t60
     feats["t60_span_db"] = span
     peak = max(env) if env else -200
@@ -382,6 +390,12 @@ def click_features(rate, inp, out_l, out_r, click_at, click_len, window, ms=1.0)
             y2 += k * (y1 - y2)
             low += y2 * y2
         feats["tail_low_db"] = round(_pdb(low / total), 2) if low > 0 else -120.0
+    f_tail = feats.get("tail_zcr_hz")
+    if f_tail:
+        # a low ring (a resonance at 20 Hz) swells and dips every half period: not echoes
+        for name in ("echoes", "echoes_left", "echoes_right"):
+            if feats.get(name):
+                feats[name] = [e for e in feats[name] if e[0] >= 2.0 / f_tail]
     l_e, r_e = energy(out_l, i0, i0 + int(window * rate)), energy(out_r, i0, i0 + int(window * rate))
     feats["balance_db"] = round(_pdb(l_e / r_e), 2) if l_e > 0 and r_e > 0 else None
     return feats
@@ -512,6 +526,9 @@ def note_envelope(rate, left, right, note_on, note_off, ms=5.0):
         feats["half_s"] = round((half - ipk) * ms / 1000, 3) if half is not None else None
     end = next((i for i in range(ipk, len(held)) if held[i] < peak - 40), None)
     feats["length_s"] = round((end - start) * ms / 1000, 3) if end is not None else None
+    if end is None and peak - final >= 20:
+        # falling but not yet 40 dB down when the note ends: as long as the note, at least
+        feats["length_s"], feats["length_past_window"] = round((len(held) - start) * ms / 1000, 3), True
     if final > peak - 40:
         after = env[off:]
         rel = next((i for i, e in enumerate(after) if e < final - 40), None)
@@ -533,6 +550,9 @@ def note_envelope(rate, left, right, note_on, note_off, ms=5.0):
     l0, l1 = int((note_off - 0.3) * rate), int(note_off * rate)
     be = bright(e0, e1) if loud(e0, e1) else None
     bl = bright(l0, l1) if loud(l0, l1) else None
+    m0, m1 = s0 + int(0.15 * rate), s0 + int(0.25 * rate)
+    bm = bright(m0, m1) if loud(m0, m1) else None
+    feats["bright_mid_hz"] = round(bm, 1) if bm else None
     feats["bright_early_hz"] = round(be, 1) if be else None
     feats["bright_late_hz"] = round(bl, 1) if bl else None
     # how much the held part moves (an LFO on the amp or the filter): level and brightness over 50 ms windows
@@ -757,12 +777,23 @@ def _dshape(ra, rb):
     return max((abs(a - b) for (_, a), (_, b) in zip(ra.get("shape") or [], rb.get("shape") or [])), default=0)
 
 
-def _choice_role(p, texts, lo, hi, rl, rh, cl, ch, sl, sh, machine_type, t_lo, t_hi):
+def is_choice(p):
+    """A choice: a list or a switch by its mapping, a few raw steps, or a short range whose texts are words."""
+    span = p.get("max", 0) - p.get("min", 0)
+    if p.get("kind") in ("enum", "switch") or (span <= 4 and p.get("kind") in (None, "int")):
+        return True
+    words = [str(t) for t in (p.get("choices") or p.get("texts") or [])]
+    return span <= 12 and bool(words) and all(any(ch.isalpha() for ch in w) and not any(ch.isdigit() for ch in w) for w in words)
+
+
+def _choice_role(p, texts, lo, hi, rl, rh, cl, ch, sl, sh, machine_type, t_lo, t_hi, cd=None):
     """A choice's role: bypass (off/on texts, one setting does nothing), units of a delay, a filter's type or slope,
     a compressor's detection; None otherwise (a choice says what it is in its texts)."""
     if t_lo != t_hi and any(w in texts.split() or w in texts for w in ONOFF_TEXTS):
         return "bypass", f"one setting passes the signal unchanged (its {'min' if t_lo else 'max'}imum)"
     el, eh = _first(cl), _first(ch)
+    if (el is None) != (eh is None) and cd and _first(cd) is not None:
+        el, eh = (el, _first(cd)) if el is not None else (_first(cd), eh)
     if el and eh and abs(eh - el) >= 0.005 and any(t in texts for t in TIME_TEXTS):
         return "delay.unit", f"a choice of units that moves the first echo {_fmt_s(el)} → {_fmt_s(eh)}"
     if sl and sh and ("rms" in texts or "peak" in texts) and abs((sh.get("compression_db") or 0) - (sl.get("compression_db") or 0)) >= 1:
@@ -798,12 +829,24 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
     rl, rh = lo.get("response"), hi.get("response")
     cl, ch, cd = lo.get("click") or {}, hi.get("click") or {}, (default or {}).get("click") or {}
     sl, sh = lo.get("steps") or {}, hi.get("steps") or {}
-    span = p.get("max", 0) - p.get("min", 0)
-    choice = p.get("kind") in ("enum", "switch") or (span <= 4 and p.get("kind") in (None, "int"))
+    choice = is_choice(p)
     texts = " ".join(str(t).lower() for t in (p.get("choices") or p.get("texts") or []))
     t_lo, t_hi = _transparent(lo, mono_gain), _transparent(hi, mono_gain)
     if choice:
-        return _choice_role(p, texts, lo, hi, rl, rh, cl, ch, sl, sh, machine_type, t_lo, t_hi)
+        return _choice_role(p, texts, lo, hi, rl, rh, cl, ch, sl, sh, machine_type, t_lo, t_hi, cd)
+    # one end silent (a low-pass closed, a level at nothing): half way tells a corner from a level
+    lev_l, lev_h = (rl or {}).get("level_db"), (rh or {}).get("level_db")
+    if isinstance(lev_l, (int, float)) and isinstance(lev_h, (int, float)) and min(lev_l, lev_h) <= -80 < max(lev_l, lev_h) and not eq_band:
+        if mid is None:
+            return NEED_MID, "one end silent: measure half way"
+        rm = mid.get("response") or {}
+        if rm and rm.get("level_db") is not None and rm["level_db"] > -80 and (rm.get("spread_db") or 0) >= 6:
+            if rm["high_corner_hz"] < 12000 and rm["low_corner_hz"] < 200:
+                return "filter.cutoff", f"silent at one end; half way a low-pass with its corner at {_fmt_hz(rm['high_corner_hz'])}"
+            if rm["low_corner_hz"] > 60:
+                return ("filter.cutoff" if machine_type in ("filter", "filter or EQ") else "filter.highpass"), \
+                    f"silent at one end; half way a high-pass with its corner at {_fmt_hz(rm['low_corner_hz'])}"
+        return "level", f"silent at one end, the level {lev_l:+.0f} → {lev_h:+.0f} dB"
     is_delay = machine_type in ("delay", "multi-effect") or (machine_type not in ("reverb", "modulation") and
                                                               (len(cl.get("echoes") or []) >= 2 or len(ch.get("echoes") or []) >= 2))
     spectral_first = bool(eq_band) or machine_type in ("filter", "filter or EQ", "EQ")
@@ -812,7 +855,9 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
     if t_lo != t_hi and not eq_band:
         other = hi if t_lo else lo
         ro, co, so = other.get("response") or {}, other.get("click") or {}, other.get("steps") or {}
-        timed = bool(co.get("echoes")) or (co.get("late_db") if co.get("late_db") is not None else -120) >= -35
+        timed = bool(co.get("echoes")) or ((co.get("late_db") if co.get("late_db") is not None else -120) >= -35 and (_num(co.get("t60_s")) or 0) >= 0.15)
+        if machine_type in ("filter", "filter or EQ", "EQ") and (_num(co.get("t60_s")) or 0) < 0.3:
+            timed = False  # a filter's ringing, not a tail
         shaped = (ro.get("spread_db") or 0) >= 3 or (ro.get("wobble_db") or 0) >= 1.0
         squeezed = (so.get("compression_db") or 0) >= 3 and machine_type != "dynamics"
         dry_end = "min" if t_lo else "max"
@@ -832,7 +877,7 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
                     blend, _ = False, why.append(f"half way the tail is {_fmt_s(tm)} against {_fmt_s(to_)}")
                 if machine_type != "reverb" and co.get("echoes") and cm.get("echoes") and abs(len(cm["echoes"]) - len(co["echoes"])) >= 2:
                     blend = False
-            if shaped and not timed and rm and ro:
+            if shaped and not timed and machine_type != "modulation" and rm and ro:
                 moved = max(abs(math.log2(rm["high_corner_hz"] / ro["high_corner_hz"])), abs(math.log2(rm["low_corner_hz"] / ro["low_corner_hz"])))
                 if moved >= 1.0:
                     blend = False
@@ -846,7 +891,7 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
     # modulation: the response moves while it is measured, at one end only
     wl, wh = _num((rl or {}).get("wobble_db")), _num((rh or {}).get("wobble_db"))
     tails = max(cl.get("late_db") if cl.get("late_db") is not None else -120, ch.get("late_db") if ch.get("late_db") is not None else -120)
-    if not eq_band and machine_type not in ("reverb", "delay", "multi-effect") and tails < -40 and \
+    if not eq_band and machine_type not in ("reverb", "delay", "multi-effect", "dynamics") and tails < -40 and \
             wl is not None and wh is not None and max(wl, wh) >= 1.0 and min(wl, wh) < 0.4:
         return ("mod.depth" if machine_type == "modulation" else "lfo.depth"), f"the gain moves {wl:.1f} → {wh:.1f} dB within each tone"
 
@@ -894,6 +939,10 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
         if eq_band:
             return None, "no measurable change with its band raised"
 
+    if machine_type == "reverb":
+        el_, eh_ = _num(cl.get("early_db")), _num(ch.get("early_db"))
+        if el_ is not None and eh_ is not None and abs(eh_ - el_) >= 8 and abs((lh or 0) - (ll or 0)) < 4 and abs((dh or 0) - (dl or 0)) < 4:
+            return "reverb.early", f"the early reflections {el_:+.0f} → {eh_:+.0f} dB, the direct and late sound alike"
     # time: the first echo (or the start of the late sound) moves: between the ends, or an end and the default.
     el, eh = _first(cl), _first(ch)
     if el is None or eh is None:
@@ -1042,7 +1091,7 @@ def suggest_generator_role(p, ends, default, machine_type):
     if lo.get("diverged") or hi.get("diverged") or lo.get("error") or hi.get("error"):
         return None, "diverged or failed at an end"
     span = p.get("max", 0) - p.get("min", 0)
-    choice = p.get("kind") in ("enum", "switch") or (span <= 4 and p.get("kind") in (None, "int"))
+    choice = is_choice(p)
     texts = " ".join(str(t).lower() for t in (p.get("choices") or p.get("texts") or []))
     drum = machine_type == "drums"
     d = default or {}
@@ -1100,7 +1149,16 @@ def suggest_generator_role(p, ends, default, machine_type):
             return ("pitch.coarse" if abs(dp) >= 1.5 else "pitch.fine"), (f"the pitch moves {dp:+.1f} semitones" if abs(dp) >= 1.5
                                                                          else f"the pitch moves {dp * 100:+.0f} cents")
     lb1, lb2 = t(el, "bright_late_hz"), t(eh, "bright_late_hz")
-    timbre_alike = lb1 is None or lb2 is None or (lb1 > 0 and lb2 > 0 and (_ratio(lb1, lb2) or 9) < 1.5)
+    timbre_alike = (lb1 is None or lb2 is None or (lb1 > 0 and lb2 > 0 and (_ratio(lb1, lb2) or 9) < 1.5)) and \
+        (not cl or not ch or (_ratio(cl, ch) or 9) < 1.6)
+    # the brightness over the note: the start (10–60 ms), 150–250 ms in, and held
+    ea, eb_ = t(el, "bright_early_hz"), t(eh, "bright_early_hz")
+    ma, mb = t(el, "bright_mid_hz"), t(eh, "bright_mid_hz")
+    if None not in (ea, eb_, ma, mb) and min(ea, eb_, ma, mb) > 0 and abs(dpeak) < 10:
+        d_early, d_mid = math.log2(eb_ / ea), math.log2(mb / ma)
+        if abs(d_early) < 0.4 and abs(d_mid) >= 0.6:
+            return ("drum.decay" if drum else "filter.env.decay"), (f"the brightness 150–250 ms in {_fmt_hz(ma)} → {_fmt_hz(mb)} "
+                                                                   f"(RMS frequency), the start alike ({_fmt_hz(ea)} → {_fmt_hz(eb_)})")
     a, b = t(el, "attack_s"), t(eh, "attack_s")
     if max(a or 0, b or 0) >= 0.1 and a is not None and b is not None and abs(b - a) >= 0.02 and (_ratio(a + 0.005, b + 0.005) or 0) >= 3:
         return ("drum.attack" if drum else "env.attack"), f"the attack {_fmt_s(a)} → {_fmt_s(b)}"
