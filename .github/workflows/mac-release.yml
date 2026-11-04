@@ -1,0 +1,100 @@
+name: Mac release (latest)
+
+# Fork (docs/specs/studio-mvp.md §3.9): keeps one download link for the Mac app,
+#   Releases → "ReBuzz for Mac (latest main)" → ReBuzz-macos-arm64.dmg,
+# current with main. It builds nothing: when a change reaches main, it takes the disk image that
+# Fork Mac already built, installed and tested for the same tree (a merge's second parent, the
+# PR's head, when that branch had main merged in, as every fork PR does before it merges), and
+# replaces the release's asset with it. So it costs a minute of Linux, no macOS minutes. A change
+# whose tree no green Fork Mac run built leaves the release as it was, with a notice.
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'A green Fork Mac run whose disk image to publish (empty: the one built for main now)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: mac-release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      R: ${{ github.repository }}
+      SHA: ${{ github.sha }}
+      RUN: ${{ inputs.run_id }}
+    steps:
+    - name: Find the disk image built for this tree
+      id: find
+      run: |
+        set -euo pipefail
+        run=""; built=""
+        if [ -n "${RUN:-}" ]; then
+          run="$RUN"
+          built="$(gh api "repos/$R/actions/runs/$RUN" --jq .head_sha)"
+        else
+          tree="$(gh api "repos/$R/commits/$SHA" --jq .commit.tree.sha)"
+          for c in "$SHA" $(gh api "repos/$R/commits/$SHA" --jq '.parents[1:][].sha'); do
+            if [ "$(gh api "repos/$R/commits/$c" --jq .commit.tree.sha)" != "$tree" ]; then
+              echo "$c: not the same tree as $SHA"
+              continue
+            fi
+            id="$(gh api "repos/$R/actions/workflows/fork-mac.yml/runs?head_sha=$c&status=success&per_page=1" --jq '.workflow_runs[0].id // empty')"
+            if [ -n "$id" ]; then run="$id"; built="$c"; break; fi
+            echo "$c: no green Fork Mac run"
+          done
+        fi
+        if [ -z "$run" ]; then
+          echo "::notice title=Mac release::No green Fork Mac run built this tree; the release keeps its disk image."
+        else
+          echo "Fork Mac run $run, built from $built"
+        fi
+        echo "run=$run" >> "$GITHUB_OUTPUT"
+        echo "built=$built" >> "$GITHUB_OUTPUT"
+
+    - uses: actions/checkout@v4
+      if: steps.find.outputs.run != ''
+      with:
+        ref: ${{ steps.find.outputs.built }}
+
+    - name: Publish
+      if: steps.find.outputs.run != ''
+      env:
+        BUILT_RUN: ${{ steps.find.outputs.run }}
+        BUILT: ${{ steps.find.outputs.built }}
+      run: |
+        set -euo pipefail
+        if ! gh run download "$BUILT_RUN" -R "$R" -n ReBuzz-macos-arm64-dmg -D "$RUNNER_TEMP/dmg"; then
+          echo "::warning title=Mac release::Fork Mac run $BUILT_RUN has no disk image (ReBuzz-macos-arm64-dmg); the release keeps its own."
+          exit 0
+        fi
+        dmg="$RUNNER_TEMP/dmg/ReBuzz-macos-arm64.dmg"
+        test -s "$dmg"
+        target="$SHA"
+        [ -n "${RUN:-}" ] && target="$BUILT"
+        build="$(tr -cd '0-9' < ReBuzz/BuildNumber.txt 2>/dev/null || echo 0)"
+        cat > "$RUNNER_TEMP/notes.md" <<NOTES
+        ReBuzz for Mac (Apple silicon, macOS 12 or later), built from \`${target:0:7}\` (build $build) on $(date -u +%Y-%m-%d) by [Fork Mac run $BUILT_RUN](https://github.com/$R/actions/runs/$BUILT_RUN). Every change that reaches main replaces it.
+
+        **Install:** download **ReBuzz-macos-arm64.dmg**, open it, and drag ReBuzz onto Applications.
+
+        **The first time you open it:** macOS says it can't verify ReBuzz, because the app isn't notarized by Apple. Close the message (not Move to Trash), then go to System Settings → Privacy & Security and click **Open Anyway**. Once per version. Or, in Terminal: \`xattr -dr com.apple.quarantine /Applications/ReBuzz.app\`.
+        NOTES
+        if gh release view mac-latest -R "$R" >/dev/null 2>&1; then
+          gh api -X PATCH "repos/$R/git/refs/tags/mac-latest" -f sha="$target" -F force=true >/dev/null
+          gh release edit mac-latest -R "$R" --prerelease --title "ReBuzz for Mac (latest main)" --notes-file "$RUNNER_TEMP/notes.md"
+        else
+          gh release create mac-latest -R "$R" --prerelease --target "$target" --title "ReBuzz for Mac (latest main)" --notes-file "$RUNNER_TEMP/notes.md"
+        fi
+        gh release upload mac-latest -R "$R" "$dmg" --clobber
+        echo "::notice title=Mac release::ReBuzz-macos-arm64.dmg ($(du -h "$dmg" | cut -f1)) from Fork Mac run $BUILT_RUN, at ${target:0:7}"
