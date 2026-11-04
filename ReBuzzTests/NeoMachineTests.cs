@@ -755,6 +755,47 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void NeoEqGraphicModeFollowsItsSlidersAndShowsItsEditor()
+        {
+            // machine-safety.md §4 (H2): Mode Graphic, 31 sliders at the ISO centres whose response passes through them.
+            using var rig = new Rig(Eq);
+            Assert.That(rig.Param("Mode").DescribeValue(0), Is.EqualTo("Parametric"));
+            Assert.That(rig.Param("Mode").DescribeValue(1), Is.EqualTo("Graphic"));
+            Assert.That(rig.Param("G 31.5 Hz").DescribeValue(rig.Param("G 31.5 Hz").DefValue), Is.EqualTo("0.0 dB"));
+            Assert.That(rig.Param("G 20 kHz").DescribeValue(rig.Param("G 20 kHz").MaxValue), Is.EqualTo("+18.0 dB"));
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0));
+            IParameter[] sliders = rig.Effect.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters.Where(p => p.Name.StartsWith("G ")).ToArray();
+            Assert.That(sliders, Has.Length.EqualTo(31));
+
+            rig.Param("B3 on").SetValue(0, 0);   // nothing parametric near the sine (220 Hz)
+            rig.Play(0.2);
+            double flat = Rms(rig.Play(0.3));
+            rig.Param("Mode").SetValue(0, 1);
+            rig.Play(0.2);
+            double graphicFlat = Rms(rig.Play(0.3));
+            foreach (var p in sliders) p.SetValue(0, 240);   // every slider +6 dB
+            rig.Play(0.3);
+            double all6 = Rms(rig.Play(0.3));
+            foreach (var p in sliders) p.SetValue(0, 180);
+            rig.Param("G 200 Hz").SetValue(0, 300);          // +12 dB either side of the sine
+            rig.Param("G 250 Hz").SetValue(0, 300);
+            rig.Play(0.3);
+            double between = Rms(rig.Play(0.3));
+            TestContext.Out.WriteLine($"flat {Db(flat):F3} dB; graphic flat {Db(graphicFlat / flat):F4} dB; all +6 dB: {Db(all6 / flat):F4} dB; 200 and 250 Hz at +12 dB: {Db(between / flat):F3} dB at 220 Hz");
+            Assert.That(Db(graphicFlat / flat), Is.EqualTo(0).Within(0.0001), "graphic mode at 0 dB passes the input");
+            Assert.That(Db(all6 / flat), Is.EqualTo(6).Within(0.01), "every slider at +6 dB is +6 dB");
+            Assert.That(Db(between / flat), Is.EqualTo(12).Within(1), "between two sliders at +12 dB");
+            Assert.That(rig.Effect.IsMuted, Is.False, "the guard never tripped");
+
+            // The editor in graphic mode, with a loudness smile.
+            int[] smile = { 240, 240, 235, 230, 225, 220, 210, 200, 190, 185, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 185, 190, 195, 200, 210, 215, 220 };
+            for (int k = 0; k < sliders.Length; k++) sliders[k].SetValue(0, smile[k]);
+            rig.Play(0.5);
+            var size = ShootEditor(rig.Effect, "neo-eq-editor-graphic");
+            TestContext.Out.WriteLine($"editor {size.Width:0} x {size.Height:0}");
+        }
+
+        [Test]
         public void NeoUtilityStagesGainAndPansAndShowsItsEditor()
         {
             using var rig = new Rig(Utility);

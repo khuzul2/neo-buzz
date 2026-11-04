@@ -1,5 +1,6 @@
 #nullable disable
-// Neo EQ (docs/specs/machines.md §5): the eight-band parametric equaliser machine. DSP in Engine/,
+// Neo EQ (docs/specs/machines.md §5): the eight-band parametric equaliser machine, with a 31-band graphic
+// mode (machine-safety.md §4). DSP in Engine/,
 // parameters generated from Params.def, editor in NeoEqEditor.cs.
 
 using System;
@@ -67,7 +68,9 @@ namespace NeoBuzz.Eq
                     ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo EQ — eight-band parametric equaliser: bell, shelves, cuts at 12/24/48 dB/oct and notch, " +
                         "minimum phase, zero latency. Drag a band's handle for frequency and gain, the wheel for Q, " +
-                        "double-click to switch it.\n\nPart of neo-buzz (docs/specs/machines.md).", "Neo EQ"),
+                        "double-click to switch it.\n\nMode Graphic: a 31-band graphic equaliser at the ISO third-octave " +
+                        "centres, constant-Q, whose response passes through its sliders (±18 dB). Drag a slider, or draw " +
+                        "across them.\n\nPart of neo-buzz (docs/specs/machines.md).", "Neo EQ"),
                 },
             },
         };
