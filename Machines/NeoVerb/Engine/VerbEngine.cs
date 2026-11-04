@@ -72,16 +72,25 @@ namespace NeoBuzz.Verb
         // Shimmer guard (fork, docs/specs/machines.md Neo Verb): a shadow of the network and the
         // shimmer loop with no input, the same lines, shelves, gains, modulation and shifter taps, so
         // it follows exactly the tail's own dynamics. Seeded with noise and renormalised, it measures
-        // whether the loop decays. Only when it grows by itself (its level, averaged over 2 s, rises
-        // TriggerDb above its lowest; or, for a fast runaway, 15 dB at once, or 6 dB at more than
-        // 12 dB/s) is the shimmer's gain lowered: at once by the growth it measured, then
-        // continuously, until the loop decays at TargetDbPerSecond (or at half the network's own
-        // slowest decay, where that is slower), just inside the edge. A setting whose loop never
-        // grows by itself never triggers it, so it renders exactly as before. Freeze fades the
-        // shimmer out, which stops the guard; plain Freeze never runs it.
+        // how fast the loop decays. The rule is the one Bounded applies to the network: nothing rings
+        // more than MaxOvershoot times longer than the slowest set decay (Decay, or Low decay where
+        // that is longer). Only when the loop breaks it, decaying slower than that edge for
+        // TriggerSeconds (on its rate averaged over 2 s, which starts from the network's own), or
+        // growing by itself (its level, averaged over 2 s, rises TriggerDb above
+        // its lowest; or, for a fast runaway, 15 dB at once, or 6 dB at more than 12 dB/s), is the
+        // shimmer's gain lowered: at once by the excess it measured, then continuously (in
+        // proportion to the excess relative to the target, so long and short decays settle alike),
+        // until the loop decays as if it rang HoldOvershoot times longer than set, inside the edge (where
+        // the network alone rings longer than that, close to the bound already, the shimmer is held
+        // down as far as MinLnScale). A setting whose loop rings inside the edge never triggers it,
+        // so it renders exactly as before. Freeze fades the shimmer out, which stops the guard;
+        // plain Freeze never runs it.
         const double TriggerDb = 6, FastTriggerDb = 15, RunawayDbPerSecond = 12;
-        const double TargetDbPerSecond = -0.5;
-        const double GuardGain = 0.05;                   // ln(scale) per (dB/s · s)
+        const double HoldOvershoot = 0.8 * MaxOvershoot;
+        const double TriggerSeconds = 1.5;
+        const double MinLnScale = -6.9;                  // −60 dB of shimmer at most
+        const double GuardGain = 0.07;                   // ln(scale) per s, per (excess / |target|)
+        const double MinTargetDbPerSecond = 0.1;         // the excess is relative to at least this
         const double FirstStep = 1 / 30.0;               // ln(scale) per dB/s, when it triggers
         const double SettleSeconds = 0.15;
         const int SeedSamples = 2048;
@@ -93,9 +102,10 @@ namespace NeoBuzz.Verb
         bool shadowOn, limiting;
         int seedLeft;
         Rng seedRng;
-        double shadowEnergy, shadowOffsetDb, shadowLevel, shadowPrev, shadowMin, shadowSlow, shadowSlowMin, shadowGrowth, settle, lnScale, release;
+        double shadowEnergy, shadowOffsetDb, shadowLevel, shadowPrev, shadowMin, shadowSlow, shadowSlowMin, shadowGrowth, shadowGrowthSlow, settle, lnScale, release, overEdge;
         float shimmerScale = 1f;
         double networkSlowest;                           // dB/s, the slowest line's decay without shimmer (≤ 0)
+        double edgeRate, holdRate;                       // dB/s: decaying MaxOvershoot, HoldOvershoot times slower than set (0 frozen)
 
         Smoother preDelay, early, late, width, mix, inputGain, shimmer;
         bool freeze;
@@ -201,6 +211,9 @@ namespace NeoBuzz.Verb
             lowG = TptG(LowCrossover);
             highG = TptG(damp);
             freeze = values.On(P.Freeze);
+            double slowestT60 = Math.Max(t60, t60Low);
+            edgeRate = freeze ? 0 : -60 / (MaxOvershoot * slowestT60);
+            holdRate = freeze ? 0 : -60 / (HoldOvershoot * slowestT60);
             networkSlowest = double.NegativeInfinity;
             for (int i = 0; i < N; i++)
             {
@@ -602,9 +615,12 @@ namespace NeoBuzz.Verb
             shadowEnergy = 0;
             shadowOffsetDb = 0;
             settle = SettleSeconds;
-            shadowGrowth = 0;
+            // The loop decays no faster than the network alone: start from there, so the rate's
+            // averages come at the loop's from below and never cross the edge on the way.
+            shadowGrowth = shadowGrowthSlow = networkSlowest;
             lnScale = 0;
             release = 0;
+            overEdge = 0;
             limiting = false;
             shimmerScale = 1f;
             shadowOn = true;
@@ -655,20 +671,24 @@ namespace NeoBuzz.Verb
             shadowSlow += (level - shadowSlow) * (1 - PortableMath.Exp(-dt / 2.0));
             shadowGrowth += ((shadowLevel - shadowPrev) / dt - shadowGrowth) * (1 - PortableMath.Exp(-dt / 0.5));
             shadowPrev = shadowLevel;
+            shadowGrowthSlow += (shadowGrowth - shadowGrowthSlow) * (1 - PortableMath.Exp(-dt / 2.0));
             if (shadowLevel < shadowMin) shadowMin = shadowLevel;
             if (shadowSlow < shadowSlowMin) shadowSlowMin = shadowSlow;
-            // Aim at 0.5 dB/s, or at half the network's own slowest decay where that is slower: the
-            // shimmer can't make the loop decay faster than the network without it.
+            // Aim just inside the edge: ringing HoldOvershoot times longer than set.
             double target = GuardTarget;
             if (!limiting)
             {
                 double rise = shadowLevel - shadowMin;
-                if (shadowSlow - shadowSlowMin <= TriggerDb && rise <= FastTriggerDb && !(rise > TriggerDb && shadowGrowth > RunawayDbPerSecond)) return;
+                overEdge = shadowGrowthSlow > edgeRate ? overEdge + dt : 0;
+                if (overEdge < TriggerSeconds && shadowSlow - shadowSlowMin <= TriggerDb && rise <= FastTriggerDb && !(rise > TriggerDb && shadowGrowth > RunawayDbPerSecond)) return;
                 limiting = true;
                 lnScale = -Math.Max(0, shadowGrowth - target) * FirstStep;
                 release = 0;
             }
-            lnScale -= GuardGain * (shadowGrowth - target) * dt;
+            lnScale -= GuardGain * (shadowGrowth - target) / Math.Max(-target, MinTargetDbPerSecond) * dt;
+            // The shimmer can't make the loop decay faster than the network without it: where that
+            // is slower than the target, it is held down this far, and the network's bound holds.
+            if (lnScale < MinLnScale) lnScale = MinLnScale;
             if (lnScale >= 0)
             {
                 lnScale = 0;
@@ -680,16 +700,17 @@ namespace NeoBuzz.Verb
                     shimmerScale = 1f;
                     shadowMin = shadowLevel;
                     shadowSlowMin = shadowSlow;
+                    overEdge = 0;
                     return;
                 }
             }
             shimmerScale = (float)PortableMath.Exp(lnScale);
         }
 
-        double GuardTarget => Math.Max(TargetDbPerSecond, 0.5 * networkSlowest);
+        double GuardTarget => holdRate;
 
         /// <summary>For the tests: whether the shimmer guard holds the shimmer down, by how much, how fast the
-        /// shadow grows (dB/s) and the decay it aims at.</summary>
-        internal (bool Limiting, float Scale, double Growth, double Target) ShimmerGuard => (limiting, shimmerScale, shadowGrowth, GuardTarget);
+        /// shadow grows (dB/s), the decay it aims at and the edge it keeps the loop inside (dB/s).</summary>
+        internal (bool Limiting, float Scale, double Growth, double Target, double Edge) ShimmerGuard => (limiting, shimmerScale, shadowGrowth, GuardTarget, edgeRate);
     }
 }
