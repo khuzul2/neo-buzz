@@ -3,7 +3,8 @@
   "from": "Jeskola Delay",
   "to": "Neo Delay",
   "summary": "Neo Delay in Stereo mode with its filters open: the first track's Length (in its unit) becomes Sync and Feel, or a free Time; Feedback carries over to ±99 %; Dry thru and Wet out become a crossfade and an output gain.",
-  "input_gain_db": 6.02,
+  "input_gain_db": 0,
+  "output_gain_db": 6.02,
   "set": {
     "Mode": "Stereo",
     "Offset": "0%",
@@ -65,7 +66,7 @@
   ],
   "unmapped": [],
   "remarks": [
-    "Jeskola Delay is mono: ReBuzz gives it left + right summed (the input connections take +6 dB to match) and it plays the same on both sides; Neo Delay in Stereo mode keeps the input's image, so a centred sound is the same and a panned one stays where it is.",
+    "Jeskola Delay is mono: ReBuzz gives it left + right summed (+6 dB for a centred sound) and it plays the same on both sides; Neo Delay in Stereo mode keeps the input's image, so a centred sound is the same and a panned one stays where it is. The +6 dB goes on the output connections, not the inputs: the line keeps the input's own level, under its saturator's knee (0 dBFS at Drive 0 dB), as Jeskola Delay's float line never saturates.",
     "Each of Jeskola Delay's tracks is a tap of its own (up to 8); Neo Delay has one line a side: the first track's settings move, the others' are left out (their pattern columns write the same parameters, with a note).",
     "Jeskola Delay's Max Delay attribute (1 s by default) caps its lengths; the mapping doesn't read attributes, so a longer length plays longer on Neo Delay (up to 5 s free, 10 s synced)."
   ],

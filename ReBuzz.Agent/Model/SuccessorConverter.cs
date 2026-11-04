@@ -619,25 +619,26 @@ namespace ReBuzz.Agent.Model
                 try { outs.Add((p, ValueResolver.Resolve(p.Info, JsonValue.Create(text), p.Default), null)); }
                 catch (Exception e) { notes.Add($"{Map.Label}: {p.Name} = \"{text}\" failed ({e.Message})."); }
             }
-            if (!rule.Types.TryGetValue(name, out string becomes))
+            if (!rule.Types.TryGetValue(name, out var type2))
             {
                 string note = $"{rule.Type} \"{name}\" has no counterpart on {Map.To}; its low cut and high cut are left open.";
                 if (!notes.Contains(note)) notes.Add(note);
-                becomes = "none";
+                type2 = new SuccessorFilterType("none", 1, 1, 1, null);
             }
-            switch (becomes)
+            if (type2.Note != null && !notes.Contains($"{rule.Type} \"{name}\": {type2.Note}")) notes.Add($"{rule.Type} \"{name}\": {type2.Note}");
+            switch (type2.Becomes)
             {
                 case "high_cut":
                     Set(rule.LowCut, rule.LowOff);
-                    put(rule.HighCut, hz);
+                    put(rule.HighCut, hz * type2.Scale);
                     break;
                 case "low_cut":
-                    put(rule.LowCut, hz);
+                    put(rule.LowCut, hz * type2.Scale);
                     Set(rule.HighCut, rule.HighOpen);
                     break;
                 case "band":
-                    put(rule.LowCut, hz / Math.Sqrt(2));
-                    put(rule.HighCut, hz * Math.Sqrt(2));
+                    put(rule.LowCut, hz * type2.Scale * type2.Low);
+                    put(rule.HighCut, hz * type2.Scale * type2.High);
                     break;
                 default:
                     Set(rule.LowCut, rule.LowOff);

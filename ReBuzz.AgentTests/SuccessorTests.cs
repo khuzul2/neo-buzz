@@ -189,7 +189,7 @@ namespace ReBuzz.AgentTests
         public void ADelaysLengthInTicksBecomesANoteValueAndOtherUnitsAFreeTime()
         {
             // Jeskola Delay at its defaults: 3 ticks at 4 ticks a beat is 1/8 dotted (it follows the tempo, as Neo Delay's Sync
-            // does); feedback 50 %, dry on and wet 37.5 %: Mix 0.375 ÷ 1.375, Output +2.77 dB; the input +6 dB (mono summed).
+            // does); feedback 50 %, dry on and wet 37.5 %: Mix 0.375 ÷ 1.375, Output +2.77 dB; its mono sum's +6 dB on the outputs.
             var c = Converter("Jeskola Delay", "Neo Delay");
             var s = c.ConvertState(Raws(c));
             string Text(SuccessorState st, string p) => c.New(p)!.Format(Final(st, p));
@@ -202,7 +202,8 @@ namespace ReBuzz.AgentTests
             Assert.That(Value(c, s, "Output"), Is.EqualTo(20 * Math.Log10(1.375)).Within(0.05));
             Assert.That(Final(s, "Low cut"), Is.EqualTo(c.New("Low cut")!.Min), "the low cut off");
             Assert.That(Final(s, "High cut"), Is.EqualTo(c.New("High cut")!.Max), "the high cut open");
-            Assert.That(s.InputGainDb, Is.EqualTo(6.02).Within(0.01));
+            Assert.That(s.InputGainDb, Is.Zero, "the line keeps the input's level");
+            Assert.That(s.OutputGainDb, Is.EqualTo(6.02).Within(0.01));
             // Note values: 1 tick a sixteenth, 2 an eighth, 4 a quarter, 6 a dotted quarter, 16 a bar; at 3 ticks a beat, 1 tick an eighth triplet.
             foreach (var (ticks, tpb, sync, feel) in new[] { (1, 4, "1/16", "Straight"), (2, 4, "1/8", "Straight"), (4, 4, "1/4", "Straight"), (6, 4, "1/4", "Dotted"),
                                                              (16, 4, "1 bar", "Straight"), (1, 3, "1/8", "Triplet"), (2, 6, "1/8", "Triplet"), (12, 4, "1/2", "Dotted") })
@@ -233,7 +234,7 @@ namespace ReBuzz.AgentTests
         {
             var c = Converter("Jeskola Cross Delay", "Neo Delay");
             var s = c.ConvertState(Raws(c, new() { ["L. Length"] = 4, ["R. Length"] = 6 }));
-            Assert.That(c.New("Mode")!.Format(Final(s, "Mode")), Is.EqualTo("Cross"));
+            Assert.That(c.New("Mode")!.Format(Final(s, "Mode")), Is.EqualTo("Ping-pong"), "measured: its input enters the left line only");
             Assert.That(c.New("Sync")!.Format(Final(s, "Sync")), Is.EqualTo("1/4"));
             Assert.That(Value(c, s, "Offset"), Is.EqualTo(0.5).Within(0.001), "6 ticks against 4: +50 %");
             Assert.That(s.Notes, Is.Empty);
@@ -268,11 +269,21 @@ namespace ReBuzz.AgentTests
             var lp = c.ConvertState(Raws(c, new() { ["f. type"] = 0, ["f. cutoff"] = 2500 }));
             Assert.That(Value(c, lp, "High cut"), Is.EqualTo(2500).Within(2500 * 0.004));
             Assert.That(Final(lp, "Low cut"), Is.EqualTo(c.New("Low cut")!.Min), "the low cut off");
+            // Its band-pass is about 100 Hz wide (measured): no counterpart, the filters open, with a note; its notch is left out, with a note.
             var bp = c.ConvertState(Raws(c, new() { ["f. type"] = 2, ["f. cutoff"] = 1000 }));
-            Assert.That(Value(c, bp, "Low cut"), Is.EqualTo(1000 / Math.Sqrt(2)).Within(6));
-            Assert.That(Value(c, bp, "High cut"), Is.EqualTo(1000 * Math.Sqrt(2)).Within(10));
+            Assert.That(Final(bp, "Low cut"), Is.EqualTo(c.New("Low cut")!.Min));
+            Assert.That(bp.Notes, Has.Some.Contains("no counterpart"));
             var br = c.ConvertState(Raws(c, new() { ["f. type"] = 3 }));
-            Assert.That(br.Notes, Has.Some.Contains("no counterpart"));
+            Assert.That(Final(br, "High cut"), Is.EqualTo(c.New("High cut")!.Max));
+            Assert.That(br.Notes, Has.Some.Contains("notch"));
+            // PanzerDelay's filter runs at twice its rate: its low-pass is Neo Delay's high cut at 1.30 × Cutoff, its band-pass 0.84 … 4.26 × Cutoff.
+            var p = Converter("FSM PanzerDelay", "Neo Delay");
+            var lp2 = p.ConvertState(Raws(p, new() { ["Filter type"] = 1 }));
+            double cutoff = p.Old("Cutoff")!.Value(p.Old("Cutoff")!.Default);
+            Assert.That(p.New("High cut")!.Value(Final(lp2, "High cut")), Is.EqualTo(1.30 * cutoff).Within(0.01 * cutoff));
+            var bp2 = p.ConvertState(Raws(p, new() { ["Filter type"] = 3 }));
+            Assert.That(p.New("Low cut")!.Value(Final(bp2, "Low cut")), Is.EqualTo(0.84 * cutoff).Within(0.01 * cutoff));
+            Assert.That(p.New("High cut")!.Value(Final(bp2, "High cut")), Is.EqualTo(4.26 * cutoff).Within(0.03 * cutoff));
         }
 
         [Test]

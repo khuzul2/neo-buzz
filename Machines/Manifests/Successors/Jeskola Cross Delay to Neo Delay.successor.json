@@ -2,10 +2,11 @@
   "format": "rebuzz-successor/1",
   "from": "Jeskola Cross Delay",
   "to": "Neo Delay",
-  "summary": "Neo Delay in Cross mode with its filters open: the first track's L. Length becomes Sync and Feel (or a free Time) and R. Length the right line's Offset; Feedback carries over to ±99 %; Dry thru and Wet out become a crossfade and an output gain.",
-  "input_gain_db": 6.02,
+  "summary": "Neo Delay in Ping-pong mode with its filters open (measured: its input enters the left line only and each line's echo feeds the other): the first track's L. Length becomes Sync and Feel (or a free Time) and R. Length the right line's Offset; Feedback carries over to ±99 %; Dry thru and Wet out become a crossfade and an output gain.",
+  "input_gain_db": 0,
+  "output_gain_db": 6.02,
   "set": {
-    "Mode": "Cross",
+    "Mode": "Ping-pong",
     "Low cut": "20 Hz",
     "High cut": "20 kHz",
     "Drive": "0 dB",
@@ -53,7 +54,7 @@
       "to": "Feedback",
       "min": -0.99,
       "max": 0.99,
-      "why": "Both in %; each line's echo feeds the other line (its source's DoWork: left ← in + fb · right, right ← in + fb · left), as Neo Delay's Cross mode does; Neo Delay's stops at ±99 %."
+      "why": "Both in %; each line's echo feeds the other line, as Neo Delay's Ping-pong does (measured: 2 and 3 ticks give echoes left at 2, right at 5, left at 7 ticks, each Feedback times the last); Neo Delay's stops at ±99 %."
     },
     {
       "kind": "dry_wet",
@@ -66,7 +67,7 @@
   ],
   "unmapped": [],
   "remarks": [
-    "Jeskola Cross Delay hears left + right summed (the input connections take +6 dB) and feeds that one signal into both lines; Neo Delay's Cross mode feeds each side's input into its own line, so a centred sound is the same and a panned one bounces from where it is.",
+    "Jeskola Cross Delay hears left + right summed (+6 dB for a centred sound, taken on the output connections so the line keeps the input's level) and, measured, feeds it into its left line only: the first echo is on the left, the next on the right, and so on: Neo Delay's Ping-pong, which sums the input to mono into its left line too. The rewritten source in the repository feeds both lines instead (a centred sound would echo on both sides at once); the binary in the package doesn't.",
     "Each of its tracks is a pair of lines of its own (up to 8); Neo Delay has one pair: the first track's settings move, the others' are left out.",
     "Its Max Delay attribute (1 s by default) caps its lengths; the mapping doesn't read attributes."
   ],
@@ -79,7 +80,7 @@
     "why_not": ""
   },
   "evidence": [
-    "ExternalMachines/source/buzztrax-buzzmachines/Jeskola/CrossDelay/CrossDelay.cpp (rewritten, the original source isn't available): mono in, two lines whose feedback crosses",
+    "ExternalMachines/source/buzztrax-buzzmachines/Jeskola/CrossDelay/CrossDelay.cpp (rewritten, the original source isn't available): its parameters and units; its routing differs from the binary's",
     "Machines/Manifests/Effects/Jeskola Cross Delay.machine.json (curated)",
     "ReBuzzTests/AgentReplaceTests.cs DelayCalibration (Windows): the echoes' times, sides and levels read from its input and output"
   ]

@@ -3,7 +3,8 @@
   "from": "Jeskola NiNjA dElaY",
   "to": "Neo Delay",
   "summary": "Neo Delay in Stereo mode: the first track's Length becomes Sync and Feel (or a free Time), Feedback carries over to ±99 %, the filter in the loop becomes Neo Delay's low cut (highpass) or high cut (lowpass), Dry thru and Wet out a crossfade and an output gain.",
-  "input_gain_db": 6.02,
+  "input_gain_db": 0,
+  "output_gain_db": 6.02,
   "set": {
     "Mode": "Stereo",
     "Offset": "0%",
@@ -63,9 +64,12 @@
       "types": {
         "highpass": "low_cut",
         "lowpass": "high_cut",
-        "bandpass": "band"
+        "bandreject": {
+          "becomes": "none",
+          "note": "its notch is about 100 Hz wide (measured at 1 kHz, 4.4 dB deep on a third octave); Neo Delay has none, so the echoes keep that band."
+        }
       },
-      "why": "Its filter sits in the loop, on every echo (its source's DoWork), as Neo Delay's do: a second-order Butterworth (dsplib's DSP_BW_Init*), the same as Neo Delay's low cut; its low-pass is Butterworth too, where Neo Delay's high cut has two real poles (a softer knee). A band-pass becomes both, an octave apart round the cutoff; a band-reject has no counterpart."
+      "why": "Its filter sits in the loop, on every echo (its source's DoWork), as Neo Delay's do; measured on one echo at 1 kHz, each type a second-order Butterworth (dsplib's DSP_BW_Init*): its high-pass is Neo Delay's low cut exactly; its low-pass is Butterworth where Neo Delay's high cut has two real poles (a softer knee: −8.5 dB an octave up against −12.4); its band-pass is about 100 Hz wide, narrower than Neo Delay's cuts can make, so it has no counterpart (the filters open, with a note); its band-reject's notch is left out."
     },
     {
       "kind": "dry_wet",
@@ -78,7 +82,7 @@
   ],
   "unmapped": [],
   "remarks": [
-    "NiNjA dElaY is mono: ReBuzz gives it left + right summed (the input connections take +6 dB); Neo Delay in Stereo mode keeps the input's image.",
+    "NiNjA dElaY is mono: ReBuzz gives it left + right summed (+6 dB for a centred sound, taken on the output connections so the line keeps the input's level); Neo Delay in Stereo mode keeps the input's image.",
     "Each of its tracks is a tap of its own with its own filter (up to 8); Neo Delay has one: the first track's settings move.",
     "Its Max Delay attribute (1 s by default) caps its lengths; the mapping doesn't read attributes."
   ],

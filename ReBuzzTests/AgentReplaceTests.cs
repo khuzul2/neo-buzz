@@ -233,6 +233,26 @@ namespace ReBuzzTests
                 EffectSong(client, "Joachims Hyperion", Indexed((15, 213), (33, 0)), noise: true);
                 Replace(client, "Joachims Hyperion, 900 Hz +12 dB at Bandwidth 0.2 (raw 0, the narrowest)");
             }
+            // Neo Delay's pairs (mcp-server.md §12.10), on noise: each classic delay at its defaults and at another setting.
+            if (File.Exists(Path.Combine(bin, "Gear", "Effects", "Neo Delay.NET.dll")))
+            {
+                foreach (var (delay, label, changes) in new (string Gear, string Label, JsonArray Changes)[]
+                {
+                    ("Jeskola Delay", "Jeskola Delay defaults (3 ticks, 50 %, wet 37.5 %)", null),
+                    ("Jeskola Delay", "Jeskola Delay 120 ms, −60 %, wet only", Join(Raw(("Dry thru", 0)), OnTrack(Raw(("Length", 120), ("Length unit", 1), ("Feedback", 26), ("Wet out", 128))))),
+                    ("Jeskola Cross Delay", "Jeskola Cross Delay defaults", null),
+                    ("Jeskola Cross Delay", "Jeskola Cross Delay 2 and 3 ticks, 60 %", OnTrack(Raw(("L. Length", 2), ("R. Length", 3), ("Feedback", 102)))),
+                    ("Jeskola NiNjA dElaY", "NiNjA dElaY defaults (high-pass 550 Hz, 75 %)", null),
+                    ("Jeskola NiNjA dElaY", "NiNjA dElaY low-pass 2 kHz, 60 %", OnTrack(Raw(("f. type", 0), ("f. cutoff", 2000), ("Feedback", 102)))),
+                    ("FSM PanzerDelay", "PanzerDelay defaults", null),
+                    ("FSM PanzerDelay", "PanzerDelay ping-pong, 2 and 3 ticks, FB −3 dB", OnTrack(Raw(("FB PingPong", 1), ("L Delay Len", 2), ("R Delay Len", 3), ("FB Amp", 210)))),
+                })
+                {
+                    if (!Has(bin, "Effects", delay)) continue;
+                    EffectSong(client, delay, changes, noise: true);
+                    results.Add((label, Within(Replace(client, label))));
+                }
+            }
             Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
             Assert.That(results.Where(x => x.Within != true).Select(x => $"{x.Label}: {x.Within?.ToString() ?? "not compared"}"), Is.Empty,
                 "the exit-check pairs convert within their stated tolerance");
@@ -573,13 +593,13 @@ namespace ReBuzzTests
             var hz = FineTransfer.Frequencies(40, 16000, 3);
             void Echoes(string label, string gear, JsonArray changes, double pan = 0, bool track = false)
             {
-                if (!Has(bin, "Effects", gear)) { Report($"[notice] {gear} not in this build's Gear"); return; }
+                if (!Has(bin, "Effects", gear) && !Has(bin, "Effects", gear + ".NET")) { Report($"[notice] {gear} not in this build's Gear"); return; }
                 var (src, l, r, rate) = Burst(client, gear, changes, pan, track);
                 Report($"[notice] {label}{(pan != 0 ? $" (pan {pan:+0.0;-0.0})" : "")}: L {Taps(src, l, rate)} | R {Taps(src, r, rate)}");
             }
             void Response(string label, string gear, JsonArray changes, bool track = false)
             {
-                if (!Has(bin, "Effects", gear)) return;
+                if (!Has(bin, "Effects", gear) && !Has(bin, "Effects", gear + ".NET")) return;
                 HeldNoise(client, gear, track ? OnTrack(changes) : changes);
                 var render = Quiet(client, "render", Args(("tail_seconds", 0), ("probes", new JsonArray("FX", "Synth"))));
                 var probes = render["probes"]!.AsArray();

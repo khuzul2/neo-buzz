@@ -74,10 +74,18 @@ namespace ReBuzz.Agent.Model
         /// <summary>
         /// A filter type and cutoff → a low cut and a high cut: per old type (by name, <c>types</c>) the cutoff (times <c>scale</c>)
         /// becomes the new high cut ("high_cut"), low cut ("low_cut"), both an octave apart round it ("band"), or neither ("none");
-        /// the other is set to <c>low_off</c> or <c>high_open</c>. A type the map leaves out has no counterpart (a note).
+        /// the other is set to <c>low_off</c> or <c>high_open</c>. A type's entry may instead be an object: what it becomes, with
+        /// its own factors on the cutoff (<c>scale</c>; for a band <c>low</c> and <c>high</c>) and a <c>note</c> said when it
+        /// converts (a measured shape the new filters only approximate). A type the map leaves out has no counterpart (a note).
         /// </summary>
         Filter,
     }
+
+    /// <summary>
+    /// What an old filter type becomes (<see cref="SuccessorRuleKind.Filter"/>): "high_cut", "low_cut", "band" or "none", a factor on the
+    /// cutoff, a band's factors for its low and high cut, and a note said when it converts.
+    /// </summary>
+    public sealed record SuccessorFilterType(string Becomes, double Scale, double Low, double High, string Note);
 
     /// <summary>A band of a <see cref="SuccessorRuleKind.Graphic"/> rule: its gain parameter and its centre.</summary>
     public sealed record SuccessorBand(string Param, double Hz);
@@ -162,7 +170,7 @@ namespace ReBuzz.Agent.Model
         public string HighCut { get; init; }
         public string LowOff { get; init; }
         public string HighOpen { get; init; }
-        public IReadOnlyDictionary<string, string> Types { get; init; }
+        public IReadOnlyDictionary<string, SuccessorFilterType> Types { get; init; }
         /// <summary>Why (a line in the report): "assumed: closed source", "measured on …".</summary>
         public string Why { get; init; } = "";
 
@@ -434,7 +442,9 @@ namespace ReBuzz.Agent.Model
                 HighCut = (string)r["high_cut"],
                 LowOff = (string)r["low_off"],
                 HighOpen = (string)r["high_open"],
-                Types = (r["types"] as JsonObject)?.ToDictionary(kv => kv.Key, kv => Text(kv.Value), StringComparer.OrdinalIgnoreCase),
+                Types = (r["types"] as JsonObject)?.ToDictionary(kv => kv.Key, kv => kv.Value is JsonObject t
+                    ? new SuccessorFilterType((string)t["becomes"] ?? "none", (double?)t["scale"] ?? 1, (double?)t["low"] ?? Math.Sqrt(0.5), (double?)t["high"] ?? Math.Sqrt(2), (string)t["note"])
+                    : new SuccessorFilterType(Text(kv.Value), 1, Math.Sqrt(0.5), Math.Sqrt(2), null), StringComparer.OrdinalIgnoreCase),
                 Mix = (string)r["mix"],
                 Threshold = (string)r["threshold"],
                 Clamp = (string)r["clamp"],
