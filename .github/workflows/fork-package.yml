@@ -33,13 +33,13 @@ jobs:
 
     steps:
     - name: Checkout (with submodules)
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         submodules: recursive
         fetch-depth: 0
 
     - name: Setup .NET 10 SDK
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
 
@@ -71,7 +71,7 @@ jobs:
 
     - name: Upload package
       if: inputs.quick != true
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: rebuzz-fork-package
         path: dist/*.zip
@@ -79,7 +79,7 @@ jobs:
 
     - name: Attach to release
       if: github.ref_type == 'tag'
-      uses: softprops/action-gh-release@v2
+      uses: softprops/action-gh-release@v3
       with:
         files: dist/*.zip
 
@@ -130,7 +130,7 @@ jobs:
 
     - name: Upload evaluation results
       if: always() && hashFiles('eval-out/eval-results.json') != ''
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: eval-results
         path: |
@@ -191,7 +191,7 @@ jobs:
 
     - name: Upload machine profile
       if: always() && hashFiles('machine-profile/machine-profile.json') != ''
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: machine-profile-windows
         path: |
@@ -217,7 +217,7 @@ jobs:
 
     - name: Upload null test references
       if: always() && hashFiles('null-ref/*.wav') != ''
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: null-test-references
         path: null-ref/*.wav
@@ -311,9 +311,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
-    - uses: actions/setup-dotnet@v4
+    - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
 
@@ -323,7 +323,7 @@ jobs:
         dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
 
     - name: Download the Windows references
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: null-test-references
         path: null-ref
@@ -339,7 +339,7 @@ jobs:
 
     - name: Upload renders that differ
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: null-test-linux
         path: ${{ runner.temp }}/null-test/renders/*.wav
@@ -353,9 +353,9 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 20
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
-    - uses: actions/setup-dotnet@v4
+    - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
 
@@ -365,7 +365,7 @@ jobs:
         dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
 
     - name: Download the Windows references
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: null-test-references
         path: null-ref
@@ -378,7 +378,7 @@ jobs:
 
     - name: Upload renders that differ
       if: failure()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: null-test-macos
         path: ${{ runner.temp }}/null-test/renders/*.wav

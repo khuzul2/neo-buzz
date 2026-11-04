@@ -65,7 +65,7 @@ M0 can go in now. M1 waits for the flip. M2 and M5 can then run in parallel, the
 
 - **The play test** (exit check 3): an hour of a dense song at 128 samples on an Apple silicon Mac, with the audio device the user has. CI runners have no real audio device.
 - **MIDI and Link** (M6's exit check): a keyboard, a control surface, clock out into another app, and Link with a peer. §6 lists the steps.
-- **Trying it**: install the CI artifact (unsigned in P2, so it needs `xattr -d com.apple.quarantine`). Signing and notarization are P5 and need an Apple Developer ID.
+- **Trying it**: install the CI artifact (unsigned in P2, so it needs `xattr -d com.apple.quarantine`). No paid signing or notarization follows (decided 2026-11-04, studio-mvp.md decision 2): the app ships ad-hoc signed in its disk image, opened once per version with Open Anyway.
 
 ## 5. Cost and risk
 

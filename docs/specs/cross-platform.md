@@ -35,7 +35,7 @@
 |---|---|
 | Guardrails, engine split, Mac headless engine with MCP on Mac (P0–P2) | 10–16 |
 | + Studio UI MVP on Mac (P3) | +10–15 |
-| + Parity, Windows on Avalonia, signed Mac release (P4–P5) | +12–19 |
+| + Parity, Windows on Avalonia, ad-hoc signed Mac release (P4–P5) | +12–19 |
 | **Total** | **32–50** |
 | Optional: rebuild the open-source classics natively (R1) | 5–8 |
 | Optional: compat clones of closed classics (R2) | 1–3 each |
@@ -239,8 +239,8 @@ It would arrive roughly where O2 lands, with a better plugin ecosystem. Rust has
 
 **Mac distribution**
 
-- **Signing:** a Developer ID from the Apple Developer Program, notarization with `notarytool`, hardened runtime.
-- **Entitlements:** .NET needs `allow-jit`, `allow-unsigned-executable-memory`, `allow-dyld-environment-variables` and `disable-library-validation`. The last one also lets native machine dylibs and plugins load.
+- **Signing:** ad-hoc, decided (2026-11-04, studio-mvp.md decision 2: no paid signing). `tools/mac-bundle.sh` signs the app and the libraries inside it ad-hoc, as arm64 requires, with no Developer ID and no notarization, so macOS asks once per version for Privacy & Security → Open Anyway. If ever reconsidered: a Developer ID from the Apple Developer Program, notarization with `notarytool`, hardened runtime.
+- **Entitlements** (if ever reconsidered: the hardened runtime needs them): .NET needs `allow-jit`, `allow-unsigned-executable-memory`, `allow-dyld-environment-variables` and `disable-library-validation`. The last one also lets native machine dylibs and plugins load.
 - **Downloaded machines:** managed machine DLLs are IL, so library validation doesn't apply to them. Native dylibs that users download are quarantined by Gatekeeper: install them through the app, which clears the quarantine flag.
 - **arm64 only.** macOS 27 requires Apple silicon, and Intel Macs stop at macOS 26.
 - **Sign every bundled dylib:** PortAudio, libsndfile, SoundTouch, r8brain, rnnoise, LinkHelper, the portable native host.
@@ -361,7 +361,7 @@ Windows keeps the WPF UI through P3. New UI built during that time goes on the p
 | **P2 Mac engine** | after A1/A2 | PortAudio driver, DryWetMIDI backend, JSON settings, real-time threads with the audio workgroup, MIDI clock, Link helper, osx-arm64 native libraries. Managed machines load even when WPF types are missing; native machines appear as placeholders. Headless `--agent` on macOS | The A1 scripted suite passes on `macos-15`; Neo renders null-test against Windows at ≤ −100 dBFS; a 1-hour play test at 128 samples has no dropouts | 5–8 |
 | **P3 Studio MVP** (Avalonia, Mac first) | after A5 | Shell, machine view, one sequence editor, Modern Pattern Editor, generic parameter window, Session View with mixer, Neo editors (Avalonia canvas backend), preferences, one dark theme; MCP studio mode | Compose a song from scratch on a Mac with Neo and Pedal machines; old songs open (natives as placeholders) and save back without loss | 10–15 |
 | **P4 Parity and Windows switch** | after P3 | AudioBlock, EnvelopeBlock, ConnectionMixer, Pianoroll; wave editing, file browser, HD recorder, signal analysis; the manifest editor for machines without a GUI; the Windows build moves to Avalonia, with native editors through `NativeControlHost`; the WPF UI is retired | Parity checklist signed off; ReBuzzTests and the MCP suite green on both OSes | 10–16 (themes included) |
-| **P5 Release** | with P3/P4 | Mac app bundle, Developer ID signing, notarization, DMG; a cross-platform build script; the Mac CI job | A notarized build installs and runs on a clean Mac | 2–3 |
+| **P5 Release** | with P3/P4 | Mac app bundle, ad-hoc signed, as a DMG (no paid signing, decided 2026-11-04: already built by the Mac CI job and published as the *ReBuzz for Mac (latest main)* prerelease, `mac-latest`); a cross-platform build script; the Mac CI job. Developer ID signing and notarization only if ever reconsidered (§3.2, Mac distribution) | The DMG installs and runs on a clean Mac after Open Anyway | 2–3 |
 | **R1 Classics, native** | any time after P2 | The portable native host plus the 17 open-source classics | Each one loads and renders, and old songs that use it play on a Mac; tested like the Neo machines | 5–8 |
 | **R2 Clones** | after the A2 profiler and the census | The top 3–5 closed machines | Each matches its original within the §4.3 tolerances; old songs open with the clone in its place | 1–3 each |
 | **P6 Plugins** (optional) | after P4 | CLAP + VST3 host machine | A CLAP and a VST3 plugin each load, play and save their state | 6–10 |

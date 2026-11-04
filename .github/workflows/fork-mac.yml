@@ -47,9 +47,9 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 30
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
-    - uses: actions/setup-dotnet@v4
+    - uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '10.0.x'
 
@@ -149,7 +149,7 @@ jobs:
 
     - name: Upload the disk image
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: ReBuzz-macos-arm64-dmg
         path: ${{ runner.temp }}/app/ReBuzz-macos-arm64.dmg

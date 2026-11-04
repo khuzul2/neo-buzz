@@ -17,7 +17,7 @@
    - the Plus tooling (DevTools, Parcel, Hot Reload, the Visual Studio extension).
 
    Pricing as of 2026-11: <https://avaloniaui.net/pricing>.
-2. **No paid signing in P3.** The Mac app is built unsigned (ad-hoc signed, not notarized) by CI, as a disk image. The first time it opens, macOS asks for Privacy & Security → Open Anyway (or `xattr -dr com.apple.quarantine`). A Developer ID ($99 a year) is needed only for notarized distribution (P5), and it's optional.
+2. **No paid signing, decided (2026-11-04).** The Mac app stays free: no Apple Developer ID ($99 a year) and no notarization, now or at release. CI builds it ad-hoc signed, not notarized, as a disk image. The first time it opens, macOS asks for Privacy & Security → Open Anyway (or `xattr -dr com.apple.quarantine`), once per version. That disk image and that step are how the Mac app is distributed.
 3. **The engine doesn't change for the UI**, except through seams (P1) that the WPF app also uses.
 4. **Windows stays on WPF** until P4. Nothing here may break `ReBuzz.exe`, its tests or its package.
 
@@ -80,7 +80,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 
 - **Try it on a Mac:** download the disk image from the release *ReBuzz for Mac (latest main)*, drag ReBuzz to Applications, open it (Open Anyway the first time). The feel matters here: scrolling, fonts, Retina, keyboard shortcuts. So does the menu bar.
 - **The exit test by hand:** a song from scratch, and an old song of yours. The checklist below.
-- **Signing** (optional, P5): a Developer ID, if the app should open without the Open Anyway step.
+- **Signing:** decided against (decision 2): no Developer ID, no notarization. The ad-hoc signed disk image plus the one-time Open Anyway step is the distribution.
 
 **The hand test** (about ten minutes, on an Apple-silicon Mac):
 1. **Get it.** GitHub → the repo's Releases → *ReBuzz for Mac (latest main)* → `ReBuzz-macos-arm64.dmg`. Open it and drag ReBuzz onto Applications. (A branch's build: Actions → *Fork Mac* → its run → Artifacts → `ReBuzz-macos-arm64-dmg`, a zip holding the disk image.)
