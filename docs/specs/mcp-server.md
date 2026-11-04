@@ -363,7 +363,7 @@ Today an agent could compress and saturate with Neo Comp and Neo Drive, but it h
 | **Neo Limiter** | True-peak lookahead limiter: ceiling in dBTP, release (auto), gain into it. Optional target-LUFS mode that sets the gain from a measurement | Mastering to a loudness target without clipping | High |
 | **Neo Utility** | Gain dB, pan, width, mono below a frequency, phase invert, channel swap, DC removal | Gain staging and stereo fixes as one-parameter moves | High |
 | **Neo Delay** | Tempo-synced stereo/ping-pong delay with filters, saturation and ducking | Space and depth in mixes; sound design | Medium. **Built** 2026-11-04 (machines.md, Neo Delay): stereo, ping-pong and cross; a note value straight, dotted or triplet, or ms; low cut, high cut and tape saturation in the loop, wow, ducking, width; feedback to ±99 %, bounded at every setting |
-| **Neo Multiband** | 3–4 band compressor/expander with linear-phase crossovers | Mastering and bus control | Medium |
+| **Neo Multiband** | 3–4 band compressor/expander with linear-phase crossovers | Mastering and bus control | Medium. **Built** 2026-11-04 (machines.md, Neo Multiband): 3 or 4 bands on linear-phase crossovers that sum back to the input exactly (4607 samples of latency at 44.1 and 48 kHz, reported to ReBuzz) or zero-latency minimum-phase Linkwitz–Riley ones with the same band shapes; per band Neo Comp's detector and gain computer (above 1:1 compression, below it upward expansion), range, makeup, solo, bypass; stereo or mid/side; each band's gain change in `machine_readings` |
 | **Neo Sampler** | Plays waves: multi-sample zones, velocity layers, ADSR, filter, choke groups; drum-kit mode | Drums and sampled sounds with clear units, driven by `wave_import` | Medium |
 
 ### 8.3 Machine manifests
@@ -622,6 +622,7 @@ The tool works for agents and, from the machine menu, for people. Built in U5 (�
 | Jeskola Limiter, Oomek Masterizer | Neo Limiter | built (A4, M3) |
 | Jeskola Gain, Pedal Gain | Neo Utility | built (A4, M3) |
 | Jeskola Delay, Cross Delay, NiNjA dElaY; FSM PanzerDelay | Neo Delay | built (§8.2; machines.md, Neo Delay), with the four `machine_replace` pairs (§12.10) |
+| — (no multiband in the package) | Neo Multiband (3–4 band compressor and upward expander) | built (§8.2; machines.md, Neo Multiband): a new machine, so no `machine_replace` pair |
 | Jeskola Chorus, Flanger; FSM Chorus2; Pedal Chorus | Neo Ensemble (chorus/flanger/phaser) | built (machine-safety.md §4; roles for the mapping there) |
 | Joachims Hyperion | Neo EQ, graphic mode (31 constant-Q bands at the ISO centres, the overlap compensated) | built, with its `machine_replace` pair (machine-safety.md §4, §12.10) |
 | Jeskola Filter, Filter 2; Joachims Mars; FSM WahMan; Pedal Filter | Neo Filter (the Neo Poly filters as an effect, with envelope follower and LFO) | proposed |
