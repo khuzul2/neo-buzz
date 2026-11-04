@@ -44,6 +44,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 978, 338),
             ("Neo Delay", "NeoDelayEditor", "neo-delay-editor", 994, 343),
             ("Neo Multiband", "NeoMultibandEditor", "neo-multiband-editor", 1042, 578),
+            ("Neo Sampler", "NeoSamplerEditor", "neo-sampler-editor", 1144, 778),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;
@@ -713,6 +714,71 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
+        public void NeoSamplersWaveAndZonesShowTheSongsWaveAndItsMarkersAndTabsWork()
+        {
+            // A sine in the song's wavetable (slot 1, ReBuzz's default root C-4), played by the default zone on C-4. The wave
+            // view draws it in zone 1's colour with its voice; dragging S moves Z1 start as one undo step; zone 2's tab shows
+            // its controls, and its wave picker steps from Off to the song's wave.
+            var path = Path.Combine(Path.GetTempPath(), "neo-sampler-editor-" + Guid.NewGuid().ToString("N") + ".wav");
+            using (var w = new BinaryWriter(File.Create(path)))
+            {
+                int n = 48000;
+                w.Write("RIFF"u8.ToArray()); w.Write(36 + n * 4); w.Write("WAVE"u8.ToArray());
+                w.Write("fmt "u8.ToArray()); w.Write(16); w.Write((short)3); w.Write((short)1); w.Write(48000); w.Write(48000 * 4); w.Write((short)4); w.Write((short)32);
+                w.Write("data"u8.ToArray()); w.Write(n * 4);
+                for (int i = 0; i < n; i++) w.Write((float)(0.5 * Math.Sin(2 * Math.PI * 441 * i / 48000) * (1 - i / (double)n)));
+            }
+            Core.SongCore.Wavetable.LoadWave(0, path, "Editor sine", false);
+            var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var m = Add("Neo Sampler", "Editor Sampler", 0, 0);
+            try
+            {
+                Core.SongCore.ConnectMachines(m, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                var window = OpenEditor(m);
+                WaitReady(m, window);
+                if (m.TrackCount < 1) m.TrackCount = 1;
+                var note = m.ParameterGroups[2].Parameters.First(p => p.Name == "Note");
+                note.SetValue(0, (4 << 4) + 1);
+                Run(0.3);
+                var waveView = Controls(window, "InteractiveGraph").Single(g => Math.Abs(g.Bounds.Width - 514) < 1);
+                var area = BoundsIn(waveView, window);
+                var f = Frame(window, "neo-sampler-editor-playing");
+                Assert.That(Count(f, area, 0xFF6B6B, 60), Is.GreaterThan(300), "the wave drawn in zone 1's colour");
+
+                // S (start) sits at the left of the wave; drag it right.
+                var start = Global(m, "Z1 start");
+                int s0 = start.GetValue(0), steps = Core.SongCore.ActionStack.Actions.Count();
+                var from = new Point(area.X + 8, area.Y + 16 + (area.Height - 30) / 2);
+                MachineViewTests.Drag(window, from, from + new Point(100, 0));
+                Assert.That(start.GetValue(0), Is.GreaterThan(s0), "dragging S right moves the zone's start");
+                Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(steps + 1), "as one undo step");
+                Run(0.1);
+                Frame(window, "neo-sampler-editor-start");
+                Core.SongCore.Undo();
+                Assert.That(start.GetValue(0), Is.EqualTo(s0), "undo puts it back");
+
+                // Zone 2's tab, then its picker's right arrow: Off → the song's wave (slot 1).
+                var tabs = Controls(window, "ZoneTabs").Single();
+                MachineViewTests.Click(window, At(tabs, window, 30 * 1 + 15, 18 + 11));
+                Run(0.05);
+                var picker = Controls(window, "WavePicker").Single(c => c.IsEffectivelyVisible);
+                var z2 = Global(m, "Z2 wave");
+                Assert.That(z2.GetValue(0), Is.EqualTo(0));
+                MachineViewTests.Click(window, At(picker, window, picker.Bounds.Width - 8, 29));
+                Assert.That(z2.GetValue(0), Is.EqualTo(1), "zone 2's picker stepped to the song's wave");
+                Run(0.05);
+                Frame(window, "neo-sampler-editor-zone2");
+                note.SetValue(0, BuzzGUI.Common.BuzzNote.Off);
+                Run(0.1);
+            }
+            finally
+            {
+                Remove(m);
+                Core.SongCore.Wavetable.LoadWave(0, null, null, false);
             }
         }
     }

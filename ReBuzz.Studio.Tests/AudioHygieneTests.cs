@@ -12,7 +12,10 @@
 //  - automation of a parameter with listeners (a parameter window's rows, the master volume's):
 //    0 bytes on the audio thread, and the listeners still see the final values;
 //  - after the warm-up (AudioWarmUp), the transport's first play and stop compile nothing (a Neo Poly
-//    through a Neo Ensemble, a Neo Delay and a Neo Multiband, all just created).
+//    through a Neo Ensemble, a Neo Delay and a Neo Multiband, all just created);
+//  - a Neo Sampler playing the song's wave and a built-in one (looped, choked, filtered, its tune moved
+//    every buffer), while the wave is loaded again into its slot and copied in on the audio thread:
+//    0 bytes a buffer, with each work algorithm.
 // The tests build in Debug, where the JIT doesn't optimize: no allocation here is one that only an
 // optimizing compiler (tier 1) would remove.
 
@@ -571,6 +574,76 @@ namespace ReBuzz.Studio.Tests
             {
                 lock (ReBuzzCore.AudioLock) Core.Playing = false;
                 Multithreading = was;
+                NewSong();
+            }
+        }
+
+        // ------------------------------------------------------------------ Neo Sampler
+
+        static string SineWav(double hz, string name)
+        {
+            var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), name + "-" + Guid.NewGuid().ToString("N") + ".wav");
+            int n = 48000;
+            using var w = new System.IO.BinaryWriter(System.IO.File.Create(path));
+            w.Write("RIFF"u8.ToArray()); w.Write(36 + n * 4); w.Write("WAVE"u8.ToArray());
+            w.Write("fmt "u8.ToArray()); w.Write(16); w.Write((short)3); w.Write((short)1); w.Write(48000); w.Write(48000 * 4); w.Write((short)4); w.Write((short)32);
+            w.Write("data"u8.ToArray()); w.Write(n * 4);
+            for (int i = 0; i < n; i++) w.Write((float)(0.4 * Math.Sin(2 * Math.PI * hz * i / 48000)));
+            return path;
+        }
+
+        [AvaloniaTest]
+        public void ANeoSamplerPlayingTheSongsWavesAllocatesNothing()
+        {
+            NewSong();
+            var song = Core.SongCore;
+            string a = SineWav(220, "hygiene-a"), b = SineWav(330, "hygiene-b");
+            song.Wavetable.LoadWave(0, a, "Hygiene wave", false);
+            song.CreateMachine("Neo Sampler", null, "Hygiene Sampler", null, null, null, -1, 0.3f, 0.3f);
+            var m = song.MachinesList.Last(x => x.Name == "Hygiene Sampler");
+            song.ConnectMachines(m, song.MachinesList[0], new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            var globals = m.ParameterGroupsList[1].ParametersList;
+            void Set(string name, int raw) => globals.First(p => p.Name == name).SetValue(0, raw);
+            Set("Z1 key high", 59);
+            Set("Z1 loop", 2);                                   // Forward, crossfaded
+            Set("Z1 loop start", 20000);
+            Set("Z1 choke", 1);
+            Set("Z2 wave", 221);                                 // the built-in strings, their own loop
+            Set("Z2 key low", 60);
+            Set("Z2 choke", 1);
+            Set("Filter", 1);
+            Set("Resonance", 400);
+            m.CreatePattern("00", 16);
+            var pattern = (PatternCore)m.Patterns.First();
+            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, i % 2 == 0 ? 52 + i % 5 : 64 + i % 3, 100)).ToArray());
+            Arrange(m, pattern);
+            var tune = globals.First(p => p.Name == "Z1 tune");
+            var busy = m.ManagedMachine.GetType().GetProperty("Busy")!;
+            try
+            {
+                // Busy reads the song's waves in on this, the song's thread; the built-ins are made in the background.
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                while (busy.GetValue(m.ManagedMachine) is true && clock.ElapsedMilliseconds < 20000) Thread.Sleep(20);
+                Assert.That(busy.GetValue(m.ManagedMachine), Is.False, "the waves read in and the built-ins made");
+                int n = 0;
+                foreach (int algorithm in new[] { 0, 1, 2 })
+                {
+                    using var audio = new AudioThread(algorithm);
+                    lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                    var cost = Steady(audio, perBuffer: () =>
+                    {
+                        tune.SetValue(1 << 16, 44 + n % 9);
+                        // Now and then the slot gets another wave: the machine copies it in on the audio thread.
+                        if (++n % 300 == 150) song.Wavetable.LoadWave(0, n % 600 == 150 ? b : a, "Hygiene wave", false);
+                    });
+                    AssertNoAllocation(cost, $"a Neo Sampler playing the song's wave and a built-in one (algorithm {algorithm})");
+                    Assert.That(m.IsActive, Is.True, $"the notes sound (algorithm {algorithm})");
+                    lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                }
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
                 NewSong();
             }
         }

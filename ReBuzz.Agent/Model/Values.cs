@@ -169,6 +169,9 @@ namespace ReBuzz.Agent.Model
                 case "tick": case "ticks": return "ticks";
                 case "x": case "×": return "x";
                 case ":1": return "ratio";
+                // Neo Sampler (machines.md §5): keys and roots in MIDI notes, zones' waves by slot.
+                case "note": case "notes": return "note";
+                case "wave": return "wave";
                 case "": return null;
                 default: return null;
             }
@@ -240,6 +243,15 @@ namespace ReBuzz.Agent.Model
                 if (lower == "min") return p.Min;
                 if (lower == "max") return p.Max;
                 if (lower == "default") return p.Default;
+                // Fork (Neo Sampler, mcp-server.md §3.3): a parameter in MIDI notes takes a pitch's name ("C2",
+                // "F#3"), and one in notes or wave slots the machine's own texts ("Wave" for a zone's root that
+                // follows the wave, "Built-in Kick", a slot's name), besides numbers.
+                if (p.Mapping is { Kind: MappingKind.Int, Unit: "note" or "wave" } im)
+                {
+                    if (MatchDescription(p, text) is int own) return own;
+                    if (im.Unit == "note" && Pitch.TryParse(text, out int midi, out _) && !Quantity.TryParse(text, out _, out _))
+                        return im.Raw(midi, p.Min, p.Max);
+                }
             }
 
             if (mode == Mode.Times)

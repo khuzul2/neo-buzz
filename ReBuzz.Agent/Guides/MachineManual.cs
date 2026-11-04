@@ -355,6 +355,8 @@ namespace ReBuzz.Agent.Guides
                     return Hz(v);
                 case MappingKind.Int:
                 {
+                    // Keys and roots (Neo Sampler) by name, as param_set takes them.
+                    if (m.Unit == "note" && v >= 0 && v <= 127) return Pitch.Name((int)v);
                     bool signed = m.A < 0;
                     string number = signed ? Signed(v, "0") : v.ToString("0", C);
                     return m.Unit.Length > 0 ? number + " " + m.Unit : number;

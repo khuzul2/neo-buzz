@@ -5557,6 +5557,81 @@
    "generated": true,
    "health": "warn"
   },
+  "Neo Sampler": {
+   "gear": "Neo Sampler",
+   "kind": "generator",
+   "load_seconds": 0.19,
+   "gear_info": {
+    "file": "Generators/Neo Sampler.NET.dll",
+    "managed": true,
+    "min_tracks": 1,
+    "max_tracks": 16,
+    "note_parameter": "Note",
+    "takes_midi": true
+   },
+   "parameters": 325,
+   "track_parameters": 0,
+   "inferred": 325,
+   "from_description": 1,
+   "inference_check": {
+    "agree": 324,
+    "of": 325
+   },
+   "needs_wave": true,
+   "notes": {
+    "input": "midi",
+    "pitched": true,
+    "pitch_offset": 0,
+    "cents": 0.0,
+    "heard": {
+     "A4": 69.0,
+     "A3": 57.0,
+     "A5": 81.0
+    },
+    "polyphony": 8,
+    "polyphony_levels": {
+     "1": -17.4,
+     "2": -14.4,
+     "4": -11.5,
+     "8": -8.9
+    }
+   },
+   "level": {
+    "note": "A4 at velocity 100, 1.5 beats",
+    "integrated_lufs": -17.3,
+    "sample_peak_dbfs": -15.62,
+    "true_peak_dbtp": -15.62
+   },
+   "cpu_ms_per_s": 5.1,
+   "type": "polysynth",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -15.62,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
+    }
+   },
+   "seconds": 7.9,
+   "platform": "linux",
+   "date": "2026-11-04",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [
+    "plays the wavetable: silent until slot 1 has a wave (profiled with a sine rooted on A4)"
+   ],
+   "generated": true,
+   "health": "ok"
+  },
   "Neo Utility": {
    "gear": "Neo Utility",
    "kind": "effect",

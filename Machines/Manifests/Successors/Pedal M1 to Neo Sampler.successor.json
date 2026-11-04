@@ -1,0 +1,525 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Pedal M1",
+  "to": "Neo Sampler",
+  "summary": "Pedal M1's two oscillators and their key zones play as Neo Sampler's zones 1–4 and 5–8, the same waves from the song's wavetable at the same pitch; its low-pass, envelopes and levels carry over.",
+  "output_gain_db": 0,
+  "set": {
+    "Mode": "Instrument",
+    "Filter": "LP 12",
+    "Vel crossfade": "0",
+    "Bend range": "2"
+  },
+  "rules": [
+    {
+      "kind": "key_zones",
+      "waves": [
+        "OSC1 Wave",
+        "OSC1 Wave 2",
+        "OSC1 Wave 3",
+        "OSC1 Wave 4"
+      ],
+      "splits": [
+        "OSC1 Split 2",
+        "OSC1 Split 3",
+        "OSC1 Split 4"
+      ],
+      "split_offset": -12,
+      "enable": "OSC Mode",
+      "enable_when": [
+        "OSC1 only",
+        "Both"
+      ],
+      "zones": [
+        {
+          "wave": "Z1 wave",
+          "low": "Z1 key low",
+          "high": "Z1 key high"
+        },
+        {
+          "wave": "Z2 wave",
+          "low": "Z2 key low",
+          "high": "Z2 key high"
+        },
+        {
+          "wave": "Z3 wave",
+          "low": "Z3 key low",
+          "high": "Z3 key high"
+        },
+        {
+          "wave": "Z4 wave",
+          "low": "Z4 key low",
+          "high": "Z4 key high"
+        }
+      ],
+      "why": "OSC1's wave and its key zones (README, Multisamples: a higher zone whose wave is set takes over from its split) onto zones 1–4; its splits are MIDI numbers where Buzz C-4 is 60, Neo Sampler's keys where it is 48 (−12); OSC Mode switches it off"
+    },
+    {
+      "kind": "key_zones",
+      "waves": [
+        "OSC2 Wave",
+        "OSC2 Wave 2",
+        "OSC2 Wave 3",
+        "OSC2 Wave 4"
+      ],
+      "splits": [
+        "OSC2 Split 2",
+        "OSC2 Split 3",
+        "OSC2 Split 4"
+      ],
+      "split_offset": -12,
+      "enable": "OSC Mode",
+      "enable_when": [
+        "OSC2 only",
+        "Both"
+      ],
+      "zones": [
+        {
+          "wave": "Z5 wave",
+          "low": "Z5 key low",
+          "high": "Z5 key high"
+        },
+        {
+          "wave": "Z6 wave",
+          "low": "Z6 key low",
+          "high": "Z6 key high"
+        },
+        {
+          "wave": "Z7 wave",
+          "low": "Z7 key low",
+          "high": "Z7 key high"
+        },
+        {
+          "wave": "Z8 wave",
+          "low": "Z8 key low",
+          "high": "Z8 key high"
+        }
+      ],
+      "why": "OSC2's wave and its key zones (README, Multisamples: a higher zone whose wave is set takes over from its split) onto zones 5–8; its splits are MIDI numbers where Buzz C-4 is 60, Neo Sampler's keys where it is 48 (−12); OSC Mode switches it off"
+    },
+    {
+      "kind": "sum",
+      "terms": [
+        {
+          "param": "OSC1 Octave",
+          "weight": 12
+        },
+        {
+          "param": "OSC1 Transpose",
+          "weight": 1
+        }
+      ],
+      "to": "Z1 tune",
+      "why": "octaves and semitones of the whole oscillator, every zone alike"
+    },
+    {
+      "kind": "unit",
+      "from": "OSC1 Detune",
+      "to": "Z1 fine"
+    },
+    {
+      "kind": "db",
+      "from": "OSC1 Level",
+      "to": "Z1 level",
+      "why": "the oscillator's mix level (Level / 127) in dB"
+    },
+    {
+      "kind": "sum",
+      "terms": [
+        {
+          "param": "OSC1 Octave",
+          "weight": 12
+        },
+        {
+          "param": "OSC1 Transpose",
+          "weight": 1
+        }
+      ],
+      "to": "Z2 tune",
+      "why": "octaves and semitones of the whole oscillator, every zone alike"
+    },
+    {
+      "kind": "unit",
+      "from": "OSC1 Detune",
+      "to": "Z2 fine"
+    },
+    {
+      "kind": "db",
+      "from": "OSC1 Level",
+      "to": "Z2 level",
+      "why": "the oscillator's mix level (Level / 127) in dB"
+    },
+    {
+      "kind": "sum",
+      "terms": [
+        {
+          "param": "OSC1 Octave",
+          "weight": 12
+        },
+        {
+          "param": "OSC1 Transpose",
+          "weight": 1
+        }
+      ],
+      "to": "Z3 tune",
+      "why": "octaves and semitones of the whole oscillator, every zone alike"
+    },
+    {
+      "kind": "unit",
+      "from": "OSC1 Detune",
+      "to": "Z3 fine"
+    },
+    {
+      "kind": "db",
+      "from": "OSC1 Level",
+      "to": "Z3 level",
+      "why": "the oscillator's mix level (Level / 127) in dB"
+    },
+    {
+      "kind": "sum",
+      "terms": [
+        {
+          "param": "OSC1 Octave",
+          "weight": 12
+        },
+        {
+          "param": "OSC1 Transpose",
+          "weight": 1
+        }
+      ],
+      "to": "Z4 tune",
+      "why": "octaves and semitones of the whole oscillator, every zone alike"
+    },
+    {
+      "kind": "unit",
+      "from": "OSC1 Detune",
+      "to": "Z4 fine"
+    },
+    {
+      "kind": "db",
+      "from": "OSC1 Level",
+      "to": "Z4 level",
+      "why": "the oscillator's mix level (Level / 127) in dB"
+    },
+    {
+      "kind": "sum",
+      "terms": [
+        {
+          "param": "OSC2 Octave",
+          "weight": 12
+        },
+        {
+          "param": "OSC2 Transpose",
+          "weight": 1
+        }
+      ],
+      "to": "Z5 tune",
+      "why": "octaves and semitones of the whole oscillator, every zone alike"
+    },
+    {
+      "kind": "unit",
+      "from": "OSC2 Detune",
+      "to": "Z5 fine"
+    },
+    {
+      "kind": "db",
+      "from": "OSC2 Level",
+      "to": "Z5 level",
+      "why": "the oscillator's mix level (Level / 127) in dB"
+    },
+    {
+      "kind": "sum",
+      "terms": [
+        {
+          "param": "OSC2 Octave",
+          "weight": 12
+        },
+        {
+          "param": "OSC2 Transpose",
+          "weight": 1
+        }
+      ],
+      "to": "Z6 tune",
+      "why": "octaves and semitones of the whole oscillator, every zone alike"
+    },
+    {
+      "kind": "unit",
+      "from": "OSC2 Detune",
+      "to": "Z6 fine"
+    },
+    {
+      "kind": "db",
+      "from": "OSC2 Level",
+      "to": "Z6 level",
+      "why": "the oscillator's mix level (Level / 127) in dB"
+    },
+    {
+      "kind": "sum",
+      "terms": [
+        {
+          "param": "OSC2 Octave",
+          "weight": 12
+        },
+        {
+          "param": "OSC2 Transpose",
+          "weight": 1
+        }
+      ],
+      "to": "Z7 tune",
+      "why": "octaves and semitones of the whole oscillator, every zone alike"
+    },
+    {
+      "kind": "unit",
+      "from": "OSC2 Detune",
+      "to": "Z7 fine"
+    },
+    {
+      "kind": "db",
+      "from": "OSC2 Level",
+      "to": "Z7 level",
+      "why": "the oscillator's mix level (Level / 127) in dB"
+    },
+    {
+      "kind": "sum",
+      "terms": [
+        {
+          "param": "OSC2 Octave",
+          "weight": 12
+        },
+        {
+          "param": "OSC2 Transpose",
+          "weight": 1
+        }
+      ],
+      "to": "Z8 tune",
+      "why": "octaves and semitones of the whole oscillator, every zone alike"
+    },
+    {
+      "kind": "unit",
+      "from": "OSC2 Detune",
+      "to": "Z8 fine"
+    },
+    {
+      "kind": "db",
+      "from": "OSC2 Level",
+      "to": "Z8 level",
+      "why": "the oscillator's mix level (Level / 127) in dB"
+    },
+    {
+      "kind": "unit",
+      "from": "Cutoff",
+      "to": "Cutoff",
+      "octaves_from": [
+        {
+          "param": "Key Track",
+          "weight": 1
+        },
+        {
+          "param": "Filter Vel",
+          "weight": 1
+        }
+      ],
+      "why": "Pedal M1's key tracking centres on Buzz C-4 (its MIDI 60, C3 in the tools' names), Neo Sampler's an octave up, on C4: the cutoff moves by the key tracking's octaves; its velocity moves the cutoff ±Filter Vel octaves round velocity 64, Neo Sampler's down from velocity 127: the cutoff moves up by Filter Vel"
+    },
+    {
+      "kind": "unit",
+      "from": "Resonance",
+      "to": "Resonance",
+      "scale": 0.7,
+      "max": 0.55,
+      "why": "measured on noise at 1 kHz: the peaks Pedal M1's SVF (Q 0.5 to 4) makes at 25, 50 and 100 % (+9, +13, +18 dB) Neo Sampler's LP 12 ladder makes at about 20, 40 and 55 %; above the cutoff the ladder passes more"
+    },
+    {
+      "kind": "unit",
+      "from": "Key Track",
+      "to": "Key track",
+      "why": "an octave per octave at 100 %; Neo Sampler has no negative key tracking"
+    },
+    {
+      "kind": "range",
+      "from": "Filter EG Int",
+      "to": "Filter env",
+      "from_range": [
+        0,
+        6
+      ],
+      "to_range": [
+        0,
+        1
+      ],
+      "why": "octaves at the envelope's peak: Neo Sampler's Filter env is ±6 octaves"
+    },
+    {
+      "kind": "range",
+      "from": "Filter Vel",
+      "to": "Filter vel",
+      "from_range": [
+        0,
+        1
+      ],
+      "to_range": [
+        0,
+        0.6667
+      ],
+      "why": "Pedal M1 moves the cutoff 2·Filter Vel octaves from the softest to the loudest note, Neo Sampler 3·Filter vel"
+    },
+    {
+      "kind": "unit",
+      "from": "Filter Attack",
+      "to": "Flt attack",
+      "scale": 3.045,
+      "why": "Pedal M1's times are time constants; its attack reaches full after 3.05 of them"
+    },
+    {
+      "kind": "unit",
+      "from": "Filter Decay",
+      "to": "Flt decay",
+      "scale": 6.908,
+      "why": "a time constant to the time to −60 dB (6.91 of them): the same exponential"
+    },
+    {
+      "kind": "unit",
+      "from": "Filter Sustain",
+      "to": "Flt sustain"
+    },
+    {
+      "kind": "unit",
+      "from": "Filter Release",
+      "to": "Flt release",
+      "scale": 6.908,
+      "why": "a time constant to the time to −60 dB"
+    },
+    {
+      "kind": "unit",
+      "from": "Amp Attack",
+      "to": "Amp attack",
+      "scale": 3.045,
+      "why": "Pedal M1's times are time constants; its attack reaches full after 3.05 of them"
+    },
+    {
+      "kind": "unit",
+      "from": "Amp Decay",
+      "to": "Amp decay",
+      "scale": 6.908,
+      "why": "a time constant to the time to −60 dB (6.91 of them): the same exponential"
+    },
+    {
+      "kind": "unit",
+      "from": "Amp Sustain",
+      "to": "Amp sustain"
+    },
+    {
+      "kind": "unit",
+      "from": "Amp Release",
+      "to": "Amp release",
+      "scale": 6.908,
+      "why": "a time constant to the time to −60 dB"
+    },
+    {
+      "kind": "unit",
+      "from": "Amp Vel",
+      "to": "Vel → amp",
+      "scale": 0.43,
+      "why": "Pedal M1's gain is 1 − a + a·velocity, Neo Sampler's velocity^(2·Vel → amp): equal at velocity 64 and 127 for the default (80: a = 63 %), within 1 dB from velocity 32 up"
+    },
+    {
+      "kind": "db",
+      "from": "Volume",
+      "to": "Volume",
+      "scale": 0.5,
+      "why": "Pedal M1 halves its mix (README: about 6 dB of headroom)"
+    }
+  ],
+  "unmapped": [
+    {
+      "param": "Portamento",
+      "why": "Neo Sampler has no glide: notes start at their own pitch"
+    },
+    {
+      "param": "LFO1 Wave",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    },
+    {
+      "param": "LFO1 Speed",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    },
+    {
+      "param": "LFO1 Delay",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    },
+    {
+      "param": "LFO1 Fade",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    },
+    {
+      "param": "LFO1 to Pitch",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    },
+    {
+      "param": "LFO1 to VDF",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    },
+    {
+      "param": "LFO1 to VDA",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    },
+    {
+      "param": "LFO2 Wave",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    },
+    {
+      "param": "LFO2 Speed",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    },
+    {
+      "param": "LFO2 Delay",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    },
+    {
+      "param": "LFO2 Fade",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    },
+    {
+      "param": "LFO2 to Pitch",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    },
+    {
+      "param": "LFO2 to VDF",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    },
+    {
+      "param": "LFO2 to VDA",
+      "why": "Neo Sampler has no LFO: a vibrato, filter sweep or tremolo from it doesn't carry over"
+    }
+  ],
+  "notes": {
+    "note": "Note",
+    "volume": "Volume",
+    "volume_at_full": 127,
+    "volume_holds": true,
+    "velocity": 127,
+    "why": "Each track's notes become notes; the track's Volume (0–127, holding until the next) is the velocity, 127 where a track has none (Pedal M1's default)."
+  },
+  "remarks": [
+    "Neo Sampler plays every track's note: Pedal M1, as profiled, played one voice of a chord (its multi-track note workaround), so chords sound fuller after the move.",
+    "Pedal M1 mixes a stereo wave to mono; Neo Sampler keeps it stereo (uncorrelated channels read about 3 dB louder).",
+    "Pedal M1 reads a wave's first layer and caches it; Neo Sampler picks a layer by its root and follows the wavetable as it changes.",
+    "ReBuzz holds a wave parameter at 1 or more, so Pedal M1's zones 2–4 always play (wave 1 at its defaults, from Buzz C-4, C-5 and C-6 up): the conversion keeps them as zones 2–4, the same wave, so it sounds the same.",
+    "Its LFOs and portamento have no counterpart (listed as unmapped); Pedal M1's resonance is a 2-pole SVF's (Q 0.5 to 4), Neo Sampler's LP 12 a ladder's 2-pole output, the same at 0 % and near it in peak height above (it passes more above the cutoff)."
+  ],
+  "tolerance": {
+    "loudness_db": 1,
+    "band_db": 2,
+    "from_hz": 100,
+    "to_hz": 12000,
+    "measured": "Linux (tools/headless-replace.py, and by hand), a line of four notes (A3 at the wave's root, A4, E3, A2) from a saw (A3) and a square (A4) in the song's wavetable: at its defaults −0.2 dB, bands within 0.2 dB; a key zone (the square from F#3) and both oscillators (OSC2 an octave up at half level) −0.1 dB, within 0.1 dB; its envelopes and filter (attack, sustain, release, cutoff 2.5 kHz with its envelope) −0.5 dB, within 0.7 dB; key tracking 100 % at 1 kHz −0.2 dB, within 0.2 dB; the track Volume at 64 −0.1 dB, within 0.2 dB. Per note the third octaves agree within 0.3 dB to 6 kHz",
+    "why_not": "Not within: resonance (25 %: −1.9 dB, 3.2 dB at the cutoff; 50 %: −2.4 dB, 4.5 dB at 3.15 kHz): Neo Sampler's LP 12 is a ladder's 2-pole output, whose resonance takes away bass and passes more above the cutoff than Pedal M1's SVF. Its LFOs and portamento have no counterpart. A wave pitched an octave down is brighter on Neo Sampler (+2.4 dB at 10 kHz: Pedal M1's cubic interpolation dulls it), and one pitched up loses Pedal M1's aliases (above 12 kHz here)."
+  },
+  "evidence": [
+    "ExternalMachines/source/thepedal/pedal-M1/PedalM1.cs: TimeMs, CutoffHz, the per-voice gain (1 − a + a·velocity), key tracking round its MIDI 60, the filter's velocity round 0.5, the 0.5 mix",
+    "ExternalMachines/source/thepedal/pedal-M1/Envelope.cs (one-pole stages, the attack aimed at 1.05), Filter.cs (TPT SVF low-pass, Q 0.5 + 3.5·resonance), Wavetable.cs (root and loop from the wave's first layer)",
+    "ExternalMachines/source/thepedal/pedal-M1/README.md: the multisample zones",
+    "Machines/NeoBuzz.Dsp/Modulation.cs (Adsr: attack aimed at 1.5 reaching 1 in the attack time, decay and release to −60 dB) and Machines/NeoSampler/Engine/SamplerVoice.cs",
+    "Machines/Manifests/Generators/Pedal M1.machine.json (curated)"
+  ]
+}
