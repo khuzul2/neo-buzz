@@ -18,6 +18,9 @@ namespace ReBuzz.AppViews
     /// the windowed machine GUI and the rename prompt, moved here unchanged from MachineCore and
     /// MachineGroupCore. A machine's windows live as long as the machine (a weak table, as when they
     /// were MachineCore fields).
+    /// Fork (docs/specs/mcp-server.md §12.11, U4): a machine's manifest editor (Machines/NeoBuzz.ManifestEditor) in a
+    /// window of its own, what a double click opens on a machine without a GUI when the per-gear setting says so,
+    /// and the machine menu's "Editor...". Not saved in songs.
     /// </summary>
     internal sealed class WpfMachineUiHost : IMachineUiHost
     {
@@ -25,6 +28,7 @@ namespace ReBuzz.AppViews
         {
             public ParameterWindow Parameters;
             public MachineGUIHostWindow Gui;
+            public Window Editor;
         }
 
         static readonly ConditionalWeakTable<MachineCore, MachineWindows> windows = new();
@@ -37,6 +41,47 @@ namespace ReBuzz.AppViews
 
         /// <summary>The machine's windowed GUI, null until opened.</summary>
         internal static MachineGUIHostWindow GuiWindowOf(IMachine machine) => Find(machine)?.Gui;
+
+        /// <summary>The machine's manifest editor window, null until opened.</summary>
+        internal static Window EditorWindowOf(IMachine machine) => Find(machine)?.Editor;
+
+        public bool OpenEditor(IMachine machine)
+        {
+            if (machine is not MachineCore mc) return false;
+            var w = windows.GetValue(mc, _ => new MachineWindows());
+            if (w.Editor == null)
+            {
+                var editor = Agent.MachineFaces.Editor(mc, () => OpenParameterWindow(mc, null));
+                if (editor == null) return false;
+                var window = new Window
+                {
+                    Title = mc.Name + " \u2014 editor",
+                    Content = editor,
+                    SizeToContent = SizeToContent.WidthAndHeight,
+                    ResizeMode = ResizeMode.CanMinimize,
+                    ShowInTaskbar = false,
+                    Background = editor.Background,
+                };
+                // Kept for the machine's life, as its other windows: closing hides it.
+                window.Closing += (s, e) =>
+                {
+                    window.Hide();
+                    e.Cancel = true;
+                };
+                try
+                {
+                    if (mc.Graph?.Buzz?.MachineViewHWND is IntPtr owner && owner != IntPtr.Zero)
+                        new WindowInteropHelper(window).Owner = owner;
+                }
+                catch (Exception)
+                {
+                }
+                w.Editor = window;
+            }
+            w.Editor.Show();
+            w.Editor.Activate();
+            return true;
+        }
 
         public void AttachMachineView(IntPtr machineViewHwnd)
         {
@@ -227,6 +272,9 @@ namespace ReBuzz.AppViews
             {
                 w.Gui.Close();
             }
+
+            // Its Closing only hides it.
+            w?.Editor?.Hide();
         }
 
         public MachineWindowState GetWindowState(IMachine machine)
@@ -244,6 +292,12 @@ namespace ReBuzz.AppViews
 
         public void ReleaseMachine(IMachine machine)
         {
+            // The manifest editor lets go of the machine's parameters.
+            if (Find(machine)?.Editor is Window editorWindow)
+            {
+                editorWindow.Hide();
+                if (editorWindow.Content is NeoBuzz.Editor.ManifestEditor editor) editor.Machine = null;
+            }
             var pw = Find(machine)?.Parameters;
             if (pw != null)
             {

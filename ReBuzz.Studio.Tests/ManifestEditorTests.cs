@@ -1,0 +1,325 @@
+// Fork (docs/specs/mcp-server.md §12.3, §12.11, U4): the manifest editor in the studio, headless. Every
+// curated portable machine (the ten Pedal ones) opens it on a double click instead of the parameter
+// list (a screenshot each); its knobs show the agent server's values and take typed ones as param_set
+// reads them, one undo step; envelopes get their picture, Pedal EQ and Pedal Filter a computed response,
+// the others markers; a draft opens its parameter list until the per-gear setting says otherwise, and
+// the machine menu has "Editor..." and that setting; the plain list stays a click away.
+
+using System.Linq;
+using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Controls;
+using Avalonia.Headless;
+using Avalonia.Headless.NUnit;
+using Avalonia.Input;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
+using BuzzGUI.Interfaces;
+using NeoBuzz.Editor;
+using ReBuzz.Agent;
+using ReBuzz.Agent.Model;
+using ReBuzz.Core;
+using ReBuzz.Studio.Platform;
+using static ReBuzz.Studio.Tests.MachineViewTests;
+
+namespace ReBuzz.Studio.Tests
+{
+    using Control = Avalonia.Controls.Control;
+
+    public class ManifestEditorTests
+    {
+        /// <summary>The curated manifests (mcp-server.md §12.9) of machines the studio has: the ten Pedal ones.</summary>
+        public static readonly string[] CuratedPortable =
+        {
+            "Pedal Chorus", "Pedal Comp", "Pedal Drum Matrix", "Pedal EQ", "Pedal Filter", "Pedal Plate",
+            "Pedal FM", "Pedal Juno106", "Pedal M1", "Pedal SH101",
+        };
+
+        static ReBuzzCore Core => Studio.Host.Core;
+
+        static System.TimeSpan menuDelay;
+
+        [SetUp]
+        public void PutOffMenuHoverDelays()
+        {
+            menuDelay = Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay;
+            Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay = System.TimeSpan.FromHours(1);
+        }
+
+        [TearDown]
+        public void RestoreMenuHoverDelays() => Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay = menuDelay;
+
+        static MachineCore Add(string gear, string name, float x = 0.3f, float y = 0.3f)
+        {
+            Core.SongCore.CreateMachine(gear, null, name, null, null, null, -1, x, y);
+            var m = Core.SongCore.MachinesList.FirstOrDefault(m => m.Name == name);
+            Assert.That(m, Is.Not.Null, $"{gear} loads");
+            return m!;
+        }
+
+        static void Remove(params MachineCore[] machines)
+        {
+            foreach (var m in machines) Core.UiHost.ReleaseMachine(m);
+            Core.SongCore.DeleteMachines(machines);
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        /// <summary>The machine opened as a double click opens it (StudioMachineUiHost.OpenGui), drawn once.</summary>
+        static (Window Window, ManifestEditor Editor) Open(MachineCore m)
+        {
+            Core.UiHost.OpenGui(m, null);
+            var window = StudioMachineUiHost.EditorWindowOf(m);
+            Assert.That(window, Is.Not.Null, $"{m.DLL.Name}: its manifest editor opened");
+            Assert.That(window!.Content, Is.InstanceOf<ManifestEditor>());
+            Dispatcher.UIThread.RunJobs();
+            window.UpdateLayout();
+            window.CaptureRenderedFrame();
+            return (window, (ManifestEditor)window.Content!);
+        }
+
+        static ReBuzz.Audio.WorkManager work;
+
+        /// <summary>Runs the engine for a moment (no audio device here), then the UI's queue: parameter events reach the controls.</summary>
+        static void Run(double seconds = 0.05)
+        {
+            work ??= new ReBuzz.Audio.WorkManager(Core, new ReBuzz.Audio.WorkThreadEngine(1), 0, Core.EngineSettings);
+            var buffer = new float[512];
+            int blocks = (int)System.Math.Ceiling(seconds * ReBuzzCore.masterInfo.SamplesPerSec / 256.0);
+            lock (ReBuzzCore.AudioLock)
+            {
+                for (int i = 0; i < blocks; i++) work.MainAudioFillBuffer(buffer, 0, 512);
+            }
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        static string Shot(string gear) => "manifest-editor-" + gear.Replace("Pedal ", "pedal-").Replace(" ", "-").ToLowerInvariant();
+
+        static IEnumerable<Control> All(Window window, string type) =>
+            window.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == type);
+
+        static Point Centre(Control c, Visual top) => c.TranslatePoint(new Point(c.Bounds.Width / 2, c.Bounds.Height / 2), top)!.Value;
+
+        [AvaloniaTest]
+        public void EveryCuratedPortableMachineOpensItsEditorWithTheServersValues()
+        {
+            Assert.Multiple(() =>
+            {
+                foreach (var gear in CuratedPortable)
+                {
+                    var m = Add(gear, "Face " + gear);
+                    try
+                    {
+                        Assert.That(ManifestEditorSettings.OpensEditor(m.DLL), Is.True, $"{gear}: curated, so on by default");
+                        var (window, editor) = Open(m);
+                        Assert.That(StudioMachineUiHost.ParameterWindowOf(m), Is.Null, $"{gear}: the editor instead of the parameter list");
+                        Studio.Screenshot(window, Shot(gear));
+                        var face = editor.Face;
+                        Assert.That(face.Quality, Is.EqualTo("curated"));
+                        Assert.That(All(window, "TextBlock").Select(t => ((TextBlock)t).Text ?? ""), Has.None.StartsWith("Editor error"), $"{gear}: the body built");
+                        Assert.That(All(window, "Section").Count(), Is.EqualTo(face.Sections.Count + (face.Response != null ? 1 : 0)), $"{gear}: a section per group");
+                        Assert.That(All(window, "PresetBar").Count(), Is.EqualTo(1), $"{gear}: the preset bar");
+                        // Every parameter the server shows has its control, its value as the server says it.
+                        var server = SongModel.Params(m).Where(p => (p.Parameter.Flags & ParameterFlags.State) != 0).ToList();
+                        Assert.That(face.Params.Select(p => p.Name), Is.EqualTo(server.Select(p => p.Name)), $"{gear}: the server's parameters, in order");
+                        foreach (var (ap, p) in server.Zip(face.Params))
+                        {
+                            Assert.That(editor.Controls.ContainsKey(p), Is.True, $"{gear}: {p.Label} has a control");
+                            int raw = ap.Parameter.GetValue(0);
+                            string text = ap.Info.Describe(raw);
+                            if (editor.Controls[p] is Knob knob) Assert.That(knob.ValueText, Is.EqualTo(text), $"{gear}: {p.Label} reads as param_get does");
+                            if (ap.Manifest is { PlainName.Length: > 0 } e) Assert.That(p.Label, Is.EqualTo(e.PlainName), $"{gear}: the curated plain name");
+                        }
+                        window.Close();
+                    }
+                    finally
+                    {
+                        Remove(m);
+                    }
+                }
+            });
+        }
+
+        [AvaloniaTest]
+        public void ADoubleClickInTheMachineViewOpensTheEditorAndTheMenuKeepsTheList()
+        {
+            var (window, view) = OpenEmpty();
+            try
+            {
+                var bass = (MachineCore)Add("Pedal SH101", "Bass", -0.5f, 0);
+                Settle();
+                DoubleClick(window, view.PointOf(bass, window));
+                var editorWindow = StudioMachineUiHost.EditorWindowOf(bass);
+                Assert.That(editorWindow?.IsVisible, Is.True, "a double click opens SH101's manifest editor");
+                Assert.That(StudioMachineUiHost.ParameterWindowOf(bass), Is.Null, "not its parameter list");
+                // The plain list: on the machine's menu, and the editor's button.
+                Menu(window, view, view.PointOf(bass, window), "manifest-editor-menu", "Parameters...");
+                Assert.That(StudioMachineUiHost.ParameterWindowOf(bass)?.IsVisible, Is.True, "Parameters... opens the plain list");
+                StudioMachineUiHost.ParameterWindowOf(bass)!.Close();
+                Settle();
+                var editor = (ManifestEditor)editorWindow!.Content!;
+                editorWindow.UpdateLayout();
+                var list = All(editorWindow, "ActionButton").Single(b => AutomationProperties.GetName(b) == "Parameter list");
+                Click(editorWindow, Centre(list, editorWindow));
+                Assert.That(StudioMachineUiHost.ParameterWindowOf(bass)?.IsVisible, Is.True, "the editor's Parameter list button opens it too");
+                StudioMachineUiHost.ParameterWindowOf(bass)!.Close();
+                editorWindow.Close();
+                Settle();
+                // "Editor..." from the menu.
+                Menu(window, view, view.PointOf(bass, window), null, "Editor...");
+                Assert.That(StudioMachineUiHost.EditorWindowOf(bass)?.IsVisible, Is.True, "Editor... opens it");
+                StudioMachineUiHost.EditorWindowOf(bass)!.Close();
+                Settle();
+            }
+            finally
+            {
+                Close(window);
+            }
+        }
+
+        [AvaloniaTest]
+        public void ADraftOpensItsListUntilTheSettingIsTurnedOn()
+        {
+            var (window, view) = OpenEmpty();
+            var gain = (MachineCore)Add("Pedal Gain", "Trim", 0, 0);
+            try
+            {
+                Settle();
+                Assert.That(SongModel.Manifest(gain.DLL)!.IsDraft, Is.True, "Pedal Gain's manifest is a draft");
+                Assert.That(ManifestEditorSettings.OpensEditor(gain.DLL), Is.False, "off by default for drafts");
+                DoubleClick(window, view.PointOf(gain, window));
+                Assert.That(StudioMachineUiHost.ParameterWindowOf(gain)?.IsVisible, Is.True, "a double click opens the parameter list");
+                Assert.That(StudioMachineUiHost.EditorWindowOf(gain), Is.Null);
+                StudioMachineUiHost.ParameterWindowOf(gain)!.Close();
+                Settle();
+
+                // The setting, from the machine's menu: a check item.
+                Click(window, view.PointOf(gain, window), MouseButton.Right);
+                var item = view.Canvas.OpenMenu!.Items.OfType<MenuItem>().Single(x => x.Header as string == "Double-click Opens Editor");
+                Assert.That(item.IsChecked, Is.False);
+                ClickItem(item);
+                Assert.That(ManifestEditorSettings.OpensEditor(gain.DLL), Is.True, "the menu turned it on, for the gear");
+                DoubleClick(window, view.PointOf(gain, window));
+                var editorWindow = StudioMachineUiHost.EditorWindowOf(gain);
+                Assert.That(editorWindow?.IsVisible, Is.True, "now a double click opens the editor");
+                var editor = (ManifestEditor)editorWindow!.Content!;
+                Assert.That(editor.Face.Quality, Is.EqualTo("draft"));
+                Studio.Screenshot(editorWindow, "manifest-editor-draft-pedal-gain");
+                editorWindow.Close();
+                Settle();
+            }
+            finally
+            {
+                ManifestEditorSettings.Set(gain.DLL, false);
+                Close(window);
+            }
+        }
+
+        [AvaloniaTest]
+        public void AKnobTakesATypedValueAsParamSetReadsItInOneUndoStep()
+        {
+            var m = Add("Pedal Juno106", "Typed Juno");
+            try
+            {
+                var (window, editor) = Open(m);
+                var cutoff = editor.Face.Params.Single(p => p.Role == "filter.cutoff");
+                var knob = (Knob)editor.Controls[cutoff];
+                var ap = SongModel.Params(m).Single(p => p.Name == cutoff.Name);
+                int before = ap.Parameter.GetValue(0);
+                int steps = Core.SongCore.ActionStack.Actions.Count();
+
+                // A right click on the knob puts it in the value box, focused; type, then Enter.
+                Click(window, Centre(knob, window), MouseButton.Right);
+                Assert.That(editor.Selected, Is.SameAs(cutoff));
+                Assert.That(editor.Entry.Text, Is.EqualTo(ap.Info.Describe(before)));
+                editor.Entry.SelectAll();
+                window.KeyTextInput("800 Hz");
+                window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+                window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+                Dispatcher.UIThread.RunJobs();
+                int expected = ValueResolver.Resolve(ap.Info, System.Text.Json.Nodes.JsonValue.Create("800 Hz"), before);
+                Assert.That(ap.Parameter.GetValue(0), Is.EqualTo(expected), "the raw value param_set gives 800 Hz");
+                Assert.That(knob.ValueText, Is.EqualTo(ap.Info.Describe(expected)).And.Contain("Hz"));
+                Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(steps + 1), "one undo step");
+                Studio.Screenshot(window, "manifest-editor-typed-value");
+
+                // What param_set refuses, the box refuses, with its reason; nothing changes.
+                Assert.That(editor.Apply("loud"), Is.False);
+                Assert.That(editor.Message, Does.Contain("Filter cutoff").Or.Contain("VCF Freq"));
+                Assert.That(ap.Parameter.GetValue(0), Is.EqualTo(expected));
+
+                Core.SongCore.ActionStack.Undo();
+                Run();
+                Assert.That(ap.Parameter.GetValue(0), Is.EqualTo(before), "undo restores it");
+                Assert.That(knob.ValueText, Is.EqualTo(ap.Info.Describe(before)), "and the knob follows");
+
+                // A drag is one undo step too (a click elsewhere first, so the press isn't a double click's second).
+                Click(window, new Point(4, window.ClientSize.Height - 4));
+                System.Threading.Thread.Sleep(600);
+                var c = Centre(knob, window);
+                window.MouseDown(c, MouseButton.Left);
+                for (int dy = 8; dy <= 40; dy += 8) window.MouseMove(c - new Point(0, dy), RawInputModifiers.LeftMouseButton);
+                window.MouseUp(c - new Point(0, 40), MouseButton.Left);
+                Dispatcher.UIThread.RunJobs();
+                Assert.That(ap.Parameter.GetValue(0), Is.GreaterThan(before), "dragged up, brighter");
+                Assert.That(editor.Selected, Is.SameAs(cutoff), "the value box follows the knob turned");
+                Core.SongCore.ActionStack.Undo();
+                Run();
+                Assert.That(ap.Parameter.GetValue(0), Is.EqualTo(before), "one undo step takes the whole drag back");
+                window.Close();
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
+        public void EnvelopesGetPicturesAndOnlyKnownDesignsGetACurve()
+        {
+            var juno = Add("Pedal Juno106", "Env Juno");
+            var eq = Add("Pedal EQ", "Plot EQ", 0.5f, 0.2f);
+            var filter = Add("Pedal Filter", "Plot Filter", 0.5f, 0.5f);
+            var sh = Add("Pedal SH101", "Plot SH", 0.1f, 0.6f);
+            var chorus = Add("Pedal Chorus", "Plot Chorus", 0.6f, 0.7f);
+            try
+            {
+                var (w1, junoEditor) = Open(juno);
+                Assert.That(junoEditor.Face.Sections.SelectMany(s => s.Envelopes).Select(e => e.Title), Is.EqualTo(new[] { "Envelope" }));
+                Assert.That(All(w1, "GraphView").Count(g => AutomationProperties.GetName(g) == "Envelope"), Is.EqualTo(1), "Juno106's ADSR picture");
+                Assert.That(junoEditor.Face.Response, Is.Null, "Juno106's filter: no plot");
+                w1.Close();
+
+                var (w2, eqEditor) = Open(eq);
+                Assert.That(eqEditor.Face.Response?.Computed, Is.True, "Pedal EQ: computed from its design");
+                // A +12 dB low-mid band: the curve passes through +12 dB at its frequency.
+                var lmGain = eqEditor.Face.Params.Single(p => p.Role == "eq.lowmid.gain");
+                var lmFreq = eqEditor.Face.Params.Single(p => p.Role == "eq.lowmid.freq");
+                Assert.That(eqEditor.Apply(null), Is.False, "nothing selected");
+                eqEditor.Select(lmGain, focus: false);
+                Assert.That(eqEditor.Apply("+12 dB"), Is.True);
+                double hz = lmFreq.Value(SongModel.Params(eq).Single(p => p.Name == lmFreq.Name).Parameter.GetValue(0));
+                Assert.That(eqEditor.Face.Response!.DbAt!(hz), Is.EqualTo(12).Within(0.3));
+                w2.UpdateLayout();
+                Studio.Screenshot(w2, "manifest-editor-pedal-eq-boost");
+                w2.Close();
+
+                var (w3, filterEditor) = Open(filter);
+                Assert.That(filterEditor.Face.Response?.Computed, Is.True, "Pedal Filter: computed from its design");
+                Assert.That(filterEditor.Face.Response!.DbAt!(20), Is.EqualTo(0).Within(1), "its default low pass passes the lows");
+                w3.Close();
+
+                var (w4, shEditor) = Open(sh);
+                Assert.That(shEditor.Face.Response, Is.Null, "a synth: its filter moves with every note, so no plot (markers are for effects)");
+                w4.Close();
+
+                var (w5, chorusEditor) = Open(chorus);
+                Assert.That(chorusEditor.Face.Response, Is.Null, "a chorus: no filter or EQ frequencies, no plot");
+                w5.Close();
+            }
+            finally
+            {
+                Remove(juno, eq, filter, sh, chorus);
+            }
+        }
+    }
+}

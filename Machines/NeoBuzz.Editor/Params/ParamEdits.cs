@@ -1,6 +1,8 @@
 // Fork (docs/specs/studio-mvp.md S1): undo steps for a Neo editor's edits, on the song's undo
 // history (the machine graph's action stack), as the Machine View's edits are. Toolkit-free; the
 // studio's kit (NeoBuzz.Editor.Avalonia) gives each editor one. WPF's editors have none, as before.
+// Fork (docs/specs/mcp-server.md §12.11, U4): with slots (EditorContext), the manifest editor's track
+// parameters too, each on its track.
 
 using System;
 using System.Collections.Generic;
@@ -20,15 +22,18 @@ namespace NeoBuzz.Editor
     {
         readonly IMachine machine;
         readonly ParamDef[] table;
+        readonly IReadOnlyList<ParamSlot> slots;
         readonly Action<Action> later;
         readonly Dictionary<int, int> before = new Dictionary<int, int>();
         int depth;
 
         /// <param name="later">Runs an action once the current input has been handled (the toolkit's dispatcher).</param>
-        public ParamEdits(IMachine machine, ParamDef[] table, Action<Action> later)
+        /// <param name="slots">Where each table entry is (EditorContext.Slots); null: global parameter i.</param>
+        public ParamEdits(IMachine machine, ParamDef[] table, Action<Action> later, IReadOnlyList<ParamSlot> slots = null)
         {
             this.machine = machine;
             this.table = table;
+            this.slots = slots;
             this.later = later;
         }
 
@@ -52,7 +57,7 @@ namespace NeoBuzz.Editor
                 depth++;
                 later(End);
             }
-            if (!before.ContainsKey(index)) before[index] = Raw(machine, index, table[index].Default);
+            if (!before.ContainsKey(index)) before[index] = Raw(index, table[index].Default);
         }
 
         /// <summary>Notes every parameter (before a preset loads).</summary>
@@ -64,23 +69,30 @@ namespace NeoBuzz.Editor
         void Commit()
         {
             var changes = before
-                .Select(kv => new ParamChange(kv.Key, kv.Value, Raw(machine, kv.Key, kv.Value)))
+                .Select(kv => new ParamChange(Where(kv.Key), kv.Value, Raw(kv.Key, kv.Value)))
                 .Where(c => c.Old != c.New)
-                .OrderBy(c => c.Index)
+                .OrderBy(c => c.At.Group).ThenBy(c => c.At.Track).ThenBy(c => c.At.Index)
                 .ToArray();
             before.Clear();
             if (changes.Length == 0 || machine?.Graph == null) return;
             machine.Graph.Do(new ParamEditAction(machine, changes));
         }
 
-        static IParameterGroup Globals(IMachine m) => m?.ParameterGroups?.FirstOrDefault(g => g.Type == ParameterGroupType.Global);
+        static IParameterGroup Group(IMachine m, ParameterGroupType type) => m?.ParameterGroups?.FirstOrDefault(g => g.Type == type);
 
-        static int Raw(IMachine m, int index, int fallback)
+        /// <summary>A table entry's parameter by group, index in its group and track (the Neo editors': global i, track 0).</summary>
+        ParamAt Where(int index)
+        {
+            if (slots == null || index < 0 || index >= slots.Count) return new ParamAt(ParameterGroupType.Global, index, 0);
+            var s = slots[index];
+            return new ParamAt(s.Parameter?.Group?.Type ?? ParameterGroupType.Global, s.Parameter?.IndexInGroup ?? index, s.Track);
+        }
+
+        int Raw(int index, int fallback)
         {
             try
             {
-                var ps = Globals(m)?.Parameters;
-                return ps != null && index < ps.Count ? ps[index].GetValue(0) : fallback;
+                return Find(machine, Where(index))?.GetValue(Where(index).Track) ?? fallback;
             }
             catch (Exception)
             {
@@ -88,7 +100,15 @@ namespace NeoBuzz.Editor
             }
         }
 
-        readonly record struct ParamChange(int Index, int Old, int New);
+        static IParameter Find(IMachine m, ParamAt at)
+        {
+            var ps = Group(m, at.Group)?.Parameters;
+            return ps != null && at.Index >= 0 && at.Index < ps.Count ? ps[at.Index] : null;
+        }
+
+        readonly record struct ParamAt(ParameterGroupType Group, int Index, int Track);
+
+        readonly record struct ParamChange(ParamAt At, int Old, int New);
 
         /// <summary>
         /// One step: the parameters' values before and after. It finds its machine when it runs: the
@@ -117,12 +137,12 @@ namespace NeoBuzz.Editor
             {
                 var machines = graph?.Machines;
                 var m = machines == null || machines.Contains(machine) ? machine : machines.FirstOrDefault(x => x.Name == name);
-                var ps = Globals(m)?.Parameters;
-                if (ps == null) return;
+                if (m == null) return;
                 foreach (var c in changes)
                 {
                     // Not recorded into patterns or session automation while the song records.
-                    if (c.Index < ps.Count) ps[c.Index].SetValue(1 << 16, after ? c.New : c.Old);
+                    var p = Find(m, c.At);
+                    if (p != null && (c.At.Group != ParameterGroupType.Track || c.At.Track < m.TrackCount)) p.SetValue(c.At.Track | 1 << 16, after ? c.New : c.Old);
                 }
             }
         }

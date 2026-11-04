@@ -4,6 +4,8 @@
 // Fork (mcp-server.md §12.5, U5): "Replace with <successor>..." on a machine with a Neo successor.
 // Fork (machine-safety.md §3.2–3.3): Reset and unmute on a diverged machine; on the Master, clearing
 // the clip indicator.
+// Fork (mcp-server.md §12.11, U4): "Editor..." opens a machine's manifest editor, and "Double-click Opens
+// Editor" is its per-gear setting (on by default for curated manifests); "Parameters..." stays the plain list.
 
 using System;
 using System.Collections.Generic;
@@ -99,6 +101,12 @@ namespace ReBuzz.Studio.Views.Machines
                 (generator && !machine.IsControlMachine) || machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.MULTI_IO)));
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Parameters...", () => MachineEdits.OpenParameters(machine)));
+            if (ReBuzz.Agent.ManifestEditorSettings.Available(machine.DLL))
+            {
+                menu.Items.Add(Item("Editor...", () => core.UiHost?.OpenEditor(machine)));
+                bool opens = ReBuzz.Agent.ManifestEditorSettings.OpensEditor(machine.DLL);
+                menu.Items.Add(Check("Double-click Opens Editor", opens, () => ReBuzz.Agent.ManifestEditorSettings.Set(machine.DLL, !opens)));
+            }
             menu.Items.Add(Sub("MIDI Input Channel", MidiChannels(machine)));
             menu.Items.Add(new Separator());
             // U5 (mcp-server.md §12.5): a classic machine's Neo successors, the song moved over as machine_replace does it.

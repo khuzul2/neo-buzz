@@ -4,6 +4,10 @@
 // ParameterWindowContent (S2, the generic parameter window) and GuiContent (S1: a machine's own
 // GUI when it is an Avalonia control, as the Neo machines' editors are, MachineGuis.cs). Until
 // they are in, a window says what will be there.
+// Fork (docs/specs/mcp-server.md §12.11, U4): a machine's manifest editor (Machines/NeoBuzz.ManifestEditor),
+// in a window of its own: what a double click opens on a machine with no GUI here when the per-gear
+// setting says so (on by default for curated manifests), and the machine menu's "Editor...". It isn't
+// saved in songs (the parameter window and GUI are, as before).
 
 using System;
 using System.Runtime.CompilerServices;
@@ -25,6 +29,7 @@ namespace ReBuzz.Studio.Platform
         {
             public Window Parameters;
             public Window Gui;
+            public Window Editor;
         }
 
         static readonly ConditionalWeakTable<IMachine, Windows> windows = new();
@@ -42,6 +47,9 @@ namespace ReBuzz.Studio.Platform
         public static Window GuiWindowOf(IMachine machine) => windows.TryGetValue(machine, out var w) ? w.Gui : null;
 
         public static Window ParameterWindowOf(IMachine machine) => windows.TryGetValue(machine, out var w) ? w.Parameters : null;
+
+        /// <summary>The window a machine's manifest editor is in, if open (for tests).</summary>
+        public static Window EditorWindowOf(IMachine machine) => windows.TryGetValue(machine, out var w) ? w.Editor : null;
 
         public void AttachMachineView(IntPtr machineViewHwnd) { }
 
@@ -62,6 +70,8 @@ namespace ReBuzz.Studio.Platform
                 var content = GuiContent?.Invoke(machine);
                 if (content == null)
                 {
+                    // U4: its manifest editor where the setting says so, else its parameter window.
+                    if (ReBuzz.Agent.ManifestEditorSettings.OpensEditor(machine.DLL) && OpenEditor(machine)) return;
                     OpenParameterWindow(machine, at);
                     return;
                 }
@@ -71,11 +81,26 @@ namespace ReBuzz.Studio.Platform
             Show(w.Gui, at);
         }
 
+        public bool OpenEditor(IMachine machine)
+        {
+            var w = windows.GetValue(machine, _ => new Windows());
+            if (w.Editor == null)
+            {
+                var editor = ReBuzz.Agent.MachineFaces.Editor(machine, () => OpenParameterWindow(machine, null));
+                if (editor == null) return false;
+                w.Editor = Make(machine, $"{machine.Name} — editor", editor, () => w.Editor = null);
+                w.Editor.CanResize = false;
+            }
+            Show(w.Editor, null);
+            return true;
+        }
+
         public void CloseWindows(IMachine machine)
         {
             if (!windows.TryGetValue(machine, out var w)) return;
             w.Parameters?.Close();
             w.Gui?.Close();
+            w.Editor?.Close();
         }
 
         public MachineWindowState GetWindowState(IMachine machine)

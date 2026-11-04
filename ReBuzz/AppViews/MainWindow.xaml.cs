@@ -307,6 +307,12 @@ namespace ReBuzz
                         SetStatusBarText(done, 0);
                 };
 
+                // Fork (docs/specs/mcp-server.md §12.11, U4): the machine menu's "Editor..." and "Double-click Opens Editor".
+                BuzzGUI.Common.MachineEditors.Available = m => Agent.MachineFaces.Available(m);
+                BuzzGUI.Common.MachineEditors.Open = m => Buzz.UiHost?.OpenEditor(m);
+                BuzzGUI.Common.MachineEditors.OnDoubleClick = m => Agent.ManifestEditorSettings.OpensEditor(m?.DLL);
+                BuzzGUI.Common.MachineEditors.SetOnDoubleClick = (m, on) => Agent.ManifestEditorSettings.Set(m?.DLL, on);
+
                 // Fork (docs/specs/machine-safety.md §3.2): a machine whose guard tripped shows muted; say why.
                 Buzz.MachineDiverged += m => SetStatusBarText($"{m.Name} diverged ({m.DivergedReason}): the guard silenced, stopped and muted it. Unmute it to reset it.", 0);
 
