@@ -542,6 +542,15 @@ class RoleTests(unittest.TestCase):
         ringing = feats(level=2.3, spread=13.5, prom=8.2, hi=8372, lo=5920, late=-22, t60=0.3)
         self.assertEqual(self.role(feats(), ringing, mtype="utility", name="Resonance"), "filter.resonance")
 
+    def test_a_distortions_harmonics_first_and_a_filter_type_with_bare_numbers(self):
+        def st(comp):
+            return {"compression_db": comp, "knee_in_db": -18, "attack_tau_s": 0.001, "release_tau_s": 0.001, "curve": [(-36, 0), (-30, 0), (-24, -comp)]}
+        clean, clipped = dict(feats(steps=st(0.5)), thd=1.0), dict(feats(steps=st(9)), thd=35.0)
+        self.assertEqual(self.role(clean, clipped, mtype="distortion", name="+threshold"), "drive", "clipping squeezes the steps too")
+        flat, bp = feats(), feats(level=-4, spread=47, lo=11840, hi=16744)
+        bp["response"]["shape"] = [(1000.0, -40.0)]
+        self.assertEqual(self.role(flat, bp, mtype="utility", name="Type", max=2, texts=["0", "1", "2"]), "filter.type")
+
     def test_key_tracking_follows_the_note_a_cutoff_doesnt(self):
         ends = lambda a, b: {"min": {"centroid_hz": a}, "max": {"centroid_hz": b}}
         self.assertEqual(mr.keytrack_role(ends(4000.0, 900.0), ends(3000.0, 3500.0), 36)[0], "filter.keytrack")

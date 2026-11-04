@@ -819,6 +819,10 @@ def _choice_role(p, texts, lo, hi, rl, rh, cl, ch, sl, sh, machine_type, t_lo, t
         if dshape >= 6 and any(t in texts for t in FILTER_TEXTS):
             return "filter.type", (f"its choices change the response's shape (up to {dshape:.0f} dB), corners "
                                    f"{_fmt_hz(rl['low_corner_hz'])}–{_fmt_hz(rl['high_corner_hz'])} → {_fmt_hz(rh['low_corner_hz'])}–{_fmt_hz(rh['high_corner_hz'])}")
+        if dshape >= 6 and max(abs(dlow), abs(dhigh)) >= 1.0 and texts.strip() and not any(ch.isalpha() for ch in texts):
+            # texts that are bare numbers: settings that move the corners and the shape are a filter's types
+            return "filter.type", (f"its settings change the response's shape (up to {dshape:.0f} dB) and corners, "
+                                   f"{_fmt_hz(rl['low_corner_hz'])}–{_fmt_hz(rl['high_corner_hz'])} → {_fmt_hz(rh['low_corner_hz'])}–{_fmt_hz(rh['high_corner_hz'])}")
         if dshape >= 6 and max(abs(dlow), abs(dhigh)) < 1.0 and machine_type in ("filter", "filter or EQ"):
             return "filter.slope", f"the corners stay, the slope beyond them changes (up to {dshape:.0f} dB)"
     return None, "a choice: its texts say what it is; no role measured"
@@ -951,6 +955,18 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
             return "filter.bandwidth", f"the band's width {rl['width_oct']} → {rh['width_oct']} octaves"
         return None
 
+    def drive():
+        hl, hh = _num(lo.get("thd")), _num(hi.get("thd"))
+        through = all(((r or {}).get("level_db") if (r or {}).get("level_db") is not None else -120) > -20 for r in (rl, rh))
+        if through and hl is not None and hh is not None and max(hl, hh) >= 3 and (_ratio(hl + 0.1, hh + 0.1) or 0) >= 3:
+            return ("filter.drive" if machine_type in ("filter", "filter or EQ") else "drive"), f"harmonics {hl:.1f} → {hh:.1f} % on a sine"
+        return None
+
+    if machine_type == "distortion" and not eq_band:
+        # a distortion's clipping squeezes the level steps and bends the response too: its harmonics say what it is
+        got = drive()
+        if got:
+            return got
     if spectral_first:
         got = spectral()
         if got:
@@ -1005,15 +1021,18 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
     if machine_type in ("delay", "multi-effect") and zl and zh and (_ratio(zl, zh) or 0) >= 1.6:
         return "delay.tone", f"the echoes' brightness {_fmt_hz(zl)} → {_fmt_hz(zh)} (RMS frequency)"
     # the echoes' fade, per second (a T60 read over the window caps where they hardly fade at all)
+    firsts = [_first(x) for x in (cl, ch, cd) if _num(x.get("echo_fade_db_s")) is not None]
+    same_time = bool(firsts) and None not in firsts and max(firsts) - min(firsts) <= 0.1 * min(firsts) + 0.005
     fades = [x for x in (_num(cl.get("echo_fade_db_s")), _num(ch.get("echo_fade_db_s")), _num(cd.get("echo_fade_db_s"))) if x is not None]
-    if is_delay and len(fades) >= 2 and max(fades) >= 6 and max(fades) >= 2.0 * max(min(fades), 1.0):
+    if is_delay and same_time and len(fades) >= 2 and max(fades) >= 6 and max(fades) >= 2.0 * max(min(fades), 1.0):
         return "delay.feedback", f"the echoes fade {min(fades):.0f} → {max(fades):.0f} dB per second, the echo time unchanged"
     # the tail: decay or feedback (against the default too: feedback runs -100 … +100 %).
     spans = [x for x in (_tail(cl), _tail(ch), _tail(cd)) if x is not None]
     if len(spans) >= 2 and max(spans) >= 0.1 and max(spans) >= 2.0 * max(min(spans), 0.02):
         word = f"the tail {_fmt_s(min(spans))} → {_fmt_s(max(spans))} (T60)"
-        if is_delay:
-            return "delay.feedback", word + ", the echo time unchanged"
+        fl, fh = _first(cl), _first(ch)
+        if is_delay and (fl is None or fh is None or abs(fh - fl) <= 0.1 * min(fl, fh) + 0.005):
+            return "delay.feedback", word + (", the echo time unchanged" if fl is not None and fh is not None else "")
         if machine_type == "reverb":
             return "reverb.decay", word
         if machine_type == "modulation":
@@ -1099,10 +1118,9 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
         if got:
             return got
     # distortion
-    hl, hh = _num(lo.get("thd")), _num(hi.get("thd"))
-    through = all(((r or {}).get("level_db") if (r or {}).get("level_db") is not None else -120) > -20 for r in (rl, rh))
-    if through and hl is not None and hh is not None and max(hl, hh) >= 3 and (_ratio(hl + 0.1, hh + 0.1) or 0) >= 3:
-        return ("filter.drive" if machine_type in ("filter", "filter or EQ") else "drive"), f"harmonics {hl:.1f} → {hh:.1f} % on a sine"
+    got = drive()
+    if got:
+        return got
     # stereo
     bl, bh = _num(cl.get("balance_db")), _num(ch.get("balance_db"))
     if bl is not None and bh is not None and abs(bh - bl) >= 6:
