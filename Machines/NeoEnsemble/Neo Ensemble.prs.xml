@@ -1,0 +1,311 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Chorus — Classic">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="492" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="300" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="90" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="710" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="469" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="4" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="990" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="862" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Chorus — Wide Stereo">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="451" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="350" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="180" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="760" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="469" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="4" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="990" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="838" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Chorus — Subtle Doubling">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="392" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="80" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="90" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="938" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="469" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="4" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="990" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="903" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="350" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Chorus — Poly Synth I">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="466" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="800" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="180" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="565" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="469" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="4" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="990" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="784" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Ensemble — Strings">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="515" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="400" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="120" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="760" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="4" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="469" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="4" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="990" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="752" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="600" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="100" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Ensemble — Thick (3 Voices)">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="580" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="220" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="120" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="817" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="3" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="469" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="4" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="990" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="812" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="550" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="105" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Flanger — Slow Jet">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="201" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="850" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="20" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="415" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="469" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="4" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="1690" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="940" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Flanger — Tape Style (Negative)">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="259" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="950" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="277" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="469" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="4" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="540" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Flanger — Metallic">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="366" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="300" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="45" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="540" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="469" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="4" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="1910" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="90" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Phaser — 4-Stage Classic">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="466" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="550" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="30" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="710" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="498" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="4" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="1240" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="862" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Phaser — 8-Stage Deep">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="392" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="650" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="90" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="710" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="523" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="8" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="1540" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="862" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Phaser — Slow Sweep (4 Bars)">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="492" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="11" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="850" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="60" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="710" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="2" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="546" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="6" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="1390" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="862" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Rotary — Leslie-like Fast">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="842" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="300" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="180" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="402" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="469" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="4" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="990" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="784" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="700" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vibrato — Pitch Wobble">
+    <Preset Machine="Neo Ensemble">
+      <Parameters>
+        <Parameter Name="Mode" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Rate" Group="1" Index="1" Track="0" Value="813" />
+        <Parameter Name="Sync" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Shape" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Depth" Group="1" Index="4" Track="0" Value="250" />
+        <Parameter Name="Spread" Group="1" Index="5" Track="0" Value="0" />
+        <Parameter Name="Delay" Group="1" Index="6" Track="0" Value="540" />
+        <Parameter Name="Voices" Group="1" Index="7" Track="0" Value="1" />
+        <Parameter Name="Centre" Group="1" Index="8" Track="0" Value="469" />
+        <Parameter Name="Stages" Group="1" Index="9" Track="0" Value="4" />
+        <Parameter Name="Feedback" Group="1" Index="10" Track="0" Value="990" />
+        <Parameter Name="Tone" Group="1" Index="11" Track="0" Value="1000" />
+        <Parameter Name="Mix" Group="1" Index="12" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="13" Track="0" Value="120" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

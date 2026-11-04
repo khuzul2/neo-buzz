@@ -28,6 +28,8 @@ namespace NeoBuzz.MachineTests
             ["Neo EQ"] = (NeoBuzz.Eq.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Eq.EqEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             ["Neo Utility"] = (NeoBuzz.Utility.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Utility.UtilityEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             ["Neo Limiter"] = (NeoBuzz.Limiter.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Limiter.LimiterEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
+            // The next batch (docs/specs/machine-safety.md §4): Neo Ensemble.
+            ["Neo Ensemble"] = (NeoBuzz.Ensemble.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Ensemble.EnsembleEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
         };
 
         // The mix and master batch: one engine per preset render, keyed by its parameter values.

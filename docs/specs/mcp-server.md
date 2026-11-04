@@ -621,7 +621,7 @@ The tool works for agents and, from the machine menu, for people.
 | Jeskola Limiter, Oomek Masterizer | Neo Limiter | built (A4, M3) |
 | Jeskola Gain, Pedal Gain | Neo Utility | built (A4, M3) |
 | Jeskola Delay, Cross Delay, NiNjA dElaY; FSM PanzerDelay | Neo Delay | next batch (§8.2) |
-| Jeskola Chorus, Flanger; FSM Chorus2; Pedal Chorus | Neo Ensemble (chorus/flanger/phaser) | proposed |
+| Jeskola Chorus, Flanger; FSM Chorus2; Pedal Chorus | Neo Ensemble (chorus/flanger/phaser) | built (machine-safety.md §4; roles for the mapping there) |
 | Jeskola Filter, Filter 2; Joachims Mars; FSM WahMan; Pedal Filter | Neo Filter (the Neo Poly filters as an effect, with envelope follower and LFO) | proposed |
 | Jeskola Bass 2/3, Oomek Aggressor 303, Pedal SH-101 | Neo Poly (mono/legato presets) | built (M2) |
 | FSM Infector, Pedal Juno106 | Neo Poly, Neo Wave | built (M2) |
@@ -660,7 +660,7 @@ Unhealthy machines (decided 2026-11-03) are in [machine-safety.md](machine-safet
 | **U6 Source fixes** (tier 3, C#) | Pedal and ReBuzz machines: manifests from code, MIDI input for the Pedal synths, denormal guards, smoothing, silence reporting; the Neo measurement suite on them | Their health report is clean; their manifests no longer drafts; old songs render as before | L |
 | **U7 Natives with sources** (tier 3) | The Buzztrax MSVC header fix, x64 builds, fixes and generated manifests | The Buzztrax machines build in the package; §12.6's "Done when" holds | L |
 
-The successors of §12.5 still to build (Neo Delay, Ensemble, Filter, Drums, Sampler) are machine batches of their own (machines spec); `machine_replace` takes each one's mapping as it lands.
+The successors of §12.5 still to build (Neo Delay, Filter, Drums, Sampler; Neo Ensemble is built) are machine batches of their own (machines spec); `machine_replace` takes each one's mapping as it lands.
 
 ### 12.8 U1 as built
 

@@ -12,6 +12,7 @@ How to describe a sound in numbers, then recipes with exact values for the Neo s
    | Evolving pads, wavetable sweeps, digital leads, growl basses | Neo Wave | a recipe below or a Neo Wave preset |
    | Electric pianos, bells, mallets, FM basses, organs, metallic tones | Neo FM6 | "Keys — Tine Piano", "Bell — Glass Bell", "Init — Sine" |
    | Saturation, compression and space as part of the sound | Neo Drive, Neo Comp, Neo Verb | the effect recipes below |
+   | Movement and width: chorus, ensemble, flanger, phaser, vibrato | Neo Ensemble | the recipes below or a "Chorus —", "Flanger —", "Phaser —" preset |
 
 2. `machine_add(gear="Neo Poly", name="Pad")`, then `preset_list(machine="Pad", search="pad")` and `preset_load(machine="Pad", preset="Pad — Warm Strings")`, or apply a recipe with `param_set`.
 3. An audition pattern in the sound's register: `pattern_create(machine="Pad", name="Audition", length_beats=8)`, `notes_write(machine="Pad", pattern="Audition", notes=[{"pitch": "A3", "start": 0, "length": 4}, {"pitch": "C4", "start": 0, "length": 4}, {"pitch": "E4", "start": 0, "length": 4}, {"pitch": "G4", "start": 4, "length": 0.5}])`. Place it with `arrangement_place`: at 0 in an empty song, otherwise after the song's end. Placing it there moves the song end, so note the length from `studio_status` first; when done, `arrangement_clear(machine="Pad", from=…, to=…)` and `song_set(song_end_beats=…)` put the song back.
@@ -680,6 +681,38 @@ Dark wash (100 % wet on a send):
 - Shimmer: "Ambient — Shimmer" (Shimmer 45 % feeds the tail an octave up; 15–25 % is subtler).
 - Endless drone: freeze the tail with step automation of `Freeze` (On after a chord, Off later); "Ambient — Infinite Pad" is the starting point.
 - Snare and 80s drums: "Plate — Snare" (Plate, 1.2 s, no pre-delay).
+
+### Neo Ensemble
+
+Chorus (1–4 voices), flanger and phaser (2–12 stages) on one LFO, in Hz or synced to the tempo. `Mix` 50 % is the classic sound (the deepest comb or notches), 100 % vibrato. `Feedback` reaches ±99 % and can't run away. The pitch wobble grows with `Rate` × `Depth`: keep both low on anything that must stay in tune.
+
+String machine and pad ensemble (insert):
+
+| Parameter | Value | Why |
+|---|---|---|
+| Mode | Chorus | |
+| Voices | 4 | |
+| Rate | 0.7 Hz | |
+| Depth | 40% | |
+| Delay | 9.0 ms | |
+| Spread | 120° | the right channel's voices fall between the left's |
+| Tone | 8.0 kHz | darker, as a bucket-brigade chorus |
+| Mix | 60% | |
+
+Jet sweep on drums or a riser, once per two bars:
+
+| Parameter | Value | Why |
+|---|---|---|
+| Mode | Flanger | |
+| Sync | 2 bars | |
+| Depth | 85% | |
+| Delay | 1.6 ms | |
+| Feedback | 75.0% | the ringing peaks of the jet |
+| Mix | 50% | |
+
+- Phaser on keys and pads: "Phaser — 4-Stage Classic" (two notches, gentle) or "Phaser — 8-Stage Deep" (four, with feedback).
+- Organ and electric piano movement: "Rotary — Leslie-like Fast" (6.7 Hz, the channels opposite); slow it to 0.8 Hz for the slow rotor.
+- Doubling a lead or vocal without obvious movement: "Chorus — Subtle Doubling".
 
 ## Checklist
 

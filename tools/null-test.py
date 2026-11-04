@@ -136,11 +136,23 @@ CASES = [
     fx("verb-shimmer", "Neo Verb", "Ambient — Shimmer", tail=2.5),
     fx("verb-infinite", "Neo Verb", "Ambient — Infinite Pad", tail=2.5),
     fx("verb-freeze", "Neo Verb", "Hall — Cathedral", [("Mix", "60%")], tail=1.5, auto=[("Freeze", [(0, "off"), (1.5, "on")])]),
+    # Neo Ensemble: four chorus voices, a triangle LFO, the flanger at ±99 % feedback (its saturator
+    # working) and swept fast, the phaser's twelve stages at 99 %, tempo sync, and a mode switch
+    # mid-render by automation (the fade, the line kept).
+    fx("ensemble-strings", "Neo Ensemble", "Ensemble — Strings"),
+    fx("ensemble-poly-synth", "Neo Ensemble", "Chorus — Poly Synth I"),
+    fx("ensemble-flanger-full", "Neo Ensemble", "Flanger — Metallic", [("Feedback", "99%"), ("Depth", "100%"), ("Rate", "8 Hz")]),
+    fx("ensemble-flanger-negative", "Neo Ensemble", "Flanger — Tape Style (Negative)", [("Feedback", "-99%"), ("Tone", "2 kHz")]),
+    fx("ensemble-phaser-12", "Neo Ensemble", "Phaser — 8-Stage Deep", [("Stages", 12), ("Feedback", "99%"), ("Rate", "3 Hz")]),
+    fx("ensemble-synced-switch", "Neo Ensemble", "Phaser — Slow Sweep (4 Bars)", [("Sync", "1/4")],
+       auto=[("Mode", [(0, "Phaser"), (2, "Flanger")])]),
     # Long: what drifts with time (oscillator and LFO phases, modulated delays) shows here. 16 s each.
     gen("long-poly", "Neo Poly", "Pad — Evolving PWM", [], LONG, beats=32),
     gen("long-wave", "Neo Wave", "Pad — Organ Drift", [], LONG, beats=32),
     gen("long-fm6", "Neo FM6", "Pad — FM Strings", [], LONG, beats=32),
     fx("long-verb", "Neo Verb", "Ambient — Long Dark Hall", tail=3.0, beats=32,
+       source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 2) for p in ("C4", "E4", "G4")])),
+    fx("long-ensemble", "Neo Ensemble", "Flanger — Slow Jet", [("Rate", "0.3 Hz")], tail=1.0, beats=32,
        source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 2) for p in ("C4", "E4", "G4")])),
 ]
 

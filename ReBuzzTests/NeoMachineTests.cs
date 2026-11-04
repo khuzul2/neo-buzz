@@ -89,6 +89,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Eq = new("Neo EQ", "EQ", false);
         internal static readonly NeoInfo Utility = new("Neo Utility", "Utility", false);
         internal static readonly NeoInfo Limiter = new("Neo Limiter", "Limiter", false);
+        // The next batch's first successor (docs/specs/machine-safety.md §4): chorus, flanger, phaser.
+        internal static readonly NeoInfo Ensemble = new("Neo Ensemble", "Ensemble", false);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -471,6 +473,59 @@ namespace ReBuzzTests
             ShootEditor(rig.Effect, "neo-verb-editor");
         }
 
+        [Test]
+        public void NeoEnsembleFlangesBoundedPassesTheDryAtMixZeroAndShowsItsEditor()
+        {
+            using var rig = new Rig(Ensemble);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0));
+            Assert.That(rig.Param("Feedback").DescribeValue(rig.Param("Feedback").MaxValue), Is.EqualTo("99.0%"));
+            Assert.That(rig.Param("Feedback").DescribeValue(rig.Param("Feedback").MinValue), Is.EqualTo("−99.0%"));
+            Assert.That(rig.Param("Mode").DescribeValue(1), Is.EqualTo("Flanger"));
+            Assert.That(rig.Param("Sync").DescribeValue(7), Is.EqualTo("1/4"));
+
+            // Mix 0 %: the sine reaches the master as it does without the machine (bypassed).
+            rig.Param("Mix").SetValue(0, 0);
+            rig.Play(0.3);
+            var dry = rig.Play(0.3);
+            rig.Effect.IsBypassed = true;
+            rig.Play(0.1);
+            var bypassed = rig.Play(0.3);
+            rig.Effect.IsBypassed = false;
+            rig.Play(0.1);
+            TestContext.Out.WriteLine($"Mix 0 %: {Db(Rms(dry)):F3} dB, bypassed {Db(Rms(bypassed)):F3} dB");
+            Assert.That(Db(Rms(dry) / Rms(bypassed)), Is.EqualTo(0).Within(0.001), "Mix 0 % passes the input");
+
+            // A flanger at full feedback, full depth and the fastest LFO: bounded, and it dies away once the input stops.
+            rig.Param("Mode").SetValue(0, 1);
+            rig.Param("Delay").SetValue(0, 400);                               // 1.5 ms
+            rig.Param("Mix").SetValue(0, 1000);
+            rig.Param("Feedback").SetValue(0, rig.Param("Feedback").MaxValue);
+            rig.Param("Depth").SetValue(0, 1000);
+            rig.Param("Rate").SetValue(0, 1000);
+            var loud = rig.Play(4);
+            double peak = loud.Max(v => (double)Math.Abs(v));
+            TestContext.Out.WriteLine($"full feedback: {Db(Rms(loud)):F1} dB RMS, peak {Db(peak):F1} dBFS");
+            Assert.That(float.IsFinite((float)peak), Is.True);
+            Assert.That(Db(peak), Is.LessThan(18), "far under the guard's +60 dBFS");
+            Assert.That(Rms(loud), Is.GreaterThan(1e-3));
+            Assert.That(rig.Effect.IsMuted, Is.False, "the guard never tripped");
+            rig.Sine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters[0].SetValue(0, 0);
+            rig.Play(2);
+            var tail = rig.Play(0.5);
+            Assert.That(Rms(tail), Is.LessThan(Rms(loud) / 1000), "and dies away");
+
+            // The editor, as a phaser with feedback.
+            rig.Sine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters[0].SetValue(0, 50);
+            rig.Param("Mode").SetValue(0, 2);
+            rig.Param("Mix").SetValue(0, 500);
+            rig.Param("Feedback").SetValue(0, 1500);
+            rig.Param("Depth").SetValue(0, 600);
+            rig.Param("Rate").SetValue(0, 400);
+            rig.Play(0.5);
+            var size = ShootEditor(rig.Effect, "neo-ensemble-editor");
+            TestContext.Out.WriteLine($"editor {size.Width:0} x {size.Height:0}");
+        }
+
         static readonly SourceInfo MixInfo = new("Neo Test Mix", MixSource, true);
 
         [Test]
@@ -769,7 +824,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");
