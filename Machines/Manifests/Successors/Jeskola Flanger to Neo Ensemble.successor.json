@@ -1,0 +1,85 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Jeskola Flanger",
+  "to": "Neo Ensemble",
+  "summary": "Neo Ensemble's flanger: freq the LFO in Hz, min. delay and depth (the sweep's ends) its delay at the sweep's geometric centre and its octaves, feedback to ±99 %, dry out and wet out a crossfade and an output gain. An inverted dry or wet (Jeskola's default wet out is −100 %) has no counterpart.",
+  "input_gain_db": 6.02,
+  "set": {
+    "Mode": "Flanger",
+    "Voices": "1",
+    "Sync": "Free",
+    "Shape": "Triangle",
+    "Spread": "0°",
+    "Tone": "20 kHz"
+  },
+  "rules": [
+    {
+      "kind": "unit",
+      "from": "freq",
+      "to": "Rate",
+      "why": "Both in Hz; measured: the sweep's period is twice what freq says (freq 0.25 Hz: 8.0 s; 1 Hz: 2.0 s), so the LFO runs at half its text.",
+      "scale": 0.5
+    },
+    {
+      "kind": "sweep",
+      "low": [
+        {
+          "param": "min. delay",
+          "weight": 1
+        }
+      ],
+      "high": [
+        {
+          "param": "min. delay",
+          "weight": 1
+        },
+        {
+          "param": "depth",
+          "weight": 0.009922
+        }
+      ],
+      "delay": "Delay",
+      "depth": "Depth",
+      "octaves": 2,
+      "why": "measured (Windows, ChorusAndFlangerCalibration: the delay read from input and output over a render): the delay sweeps in a triangle from min. delay up by depth × 9.92 ms (depth 127 → 9.9 ms, 64 → 5.0 ms, 32 → 2.5 ms, at any min. delay). Neo Ensemble sweeps in octaves round its Delay: the same ends, its centre where their ratio is halved (2 octaves either side at 100 %)."
+    },
+    {
+      "kind": "unit",
+      "from": "feedback",
+      "to": "Feedback",
+      "min": -0.99,
+      "max": 0.99,
+      "why": "Both in %; Neo Ensemble's stops at ±99 % (Jeskola's runs away at +100 %: machine-safety.md §3.4). Not measured: the two loops may weigh their feedback differently."
+    },
+    {
+      "kind": "dry_wet",
+      "dry": "dry out",
+      "wet": "wet out",
+      "mix": "Mix",
+      "output": "Output",
+      "why": "Jeskola's dry and wet add at their own levels, both straight in amplitude (measured: dry 100 % ×1, 50 % ×½; wet 100 % as loud as dry 100 %); Neo Ensemble crossfades them and sets the output's level: mix = wet ÷ (dry + wet), output = dry + wet."
+    }
+  ],
+  "unmapped": [],
+  "remarks": [
+    "Jeskola Flanger is mono (it hears left + right, +6 dB, and plays the same on both sides): Neo Ensemble's Spread is 0°, so its two sides sweep alike.",
+    "Jeskola sweeps its delay in a straight-line triangle, Neo Ensemble in octaves (its Triangle): at the same ends Neo Ensemble spends longer on the short delays.",
+    "At depth 0 Jeskola's delay doesn't hold still (measured: with min. delay 5 ms it wandered over 10–23 ms); Neo Ensemble's holds at min. delay.",
+    "Jeskola Flanger's default wet out is −100 %: its comb has its notches where a positive wet has its peaks (a cut at the lowest frequencies). Neo Ensemble has no polarity for its wet sound, so a song at those settings changes sound; the result says so.",
+    "A sweep from no delay (min. delay 0, the default) reaches higher in frequency than Neo Ensemble's, whose full depth in Flanger mode spans 16 : 1: the top is kept, the bottom stops at a sixteenth of it."
+  ],
+  "tolerance": {
+    "loudness_db": 1.5,
+    "band_db": 3,
+    "from_hz": 63,
+    "to_hz": 12000,
+    "measured": "Windows, Neo Poly noise into it, each side against its input: wet out +100 %, min. delay 1 ms, depth 64: −0.0 dB, third octaves within 1.6 dB; min. delay 2.5 ms, depth 127, feedback +50 %: −0.1 dB, within 1.4 dB; wet out +50 %, min. delay 0, depth 32: −0.0 dB, within 1.5 dB",
+    "why_not": "At its defaults (wet out −100 %) the polarity can't follow: −0.1 dB, but 3.7 dB at 63 Hz on noise (the result says so). On chords a few harmonics meet the comb's notches for a different share of the sweep (Jeskola's straight-line triangle against Neo Ensemble's in octaves): within 0.3 dB in loudness, but up to 10.5 dB in one third octave (125–200 Hz)."
+  },
+  "evidence": [
+    "Machines/Manifests/Effects/Jeskola Flanger.machine.json (profiled draft: units from its texts)",
+    "ReBuzzTests/AgentReplaceTests.cs ChorusAndFlangerCalibration (Windows, package run 41762016880): the sweep's ends, period and shape, the levels, mono",
+    "ReBuzzTests/DelaySweep.cs (the delay read over short windows by cross-correlation; checked on Neo Ensemble: 1.001–4.010 ms for 1–4 ms)",
+    "docs/specs/machine-safety.md §4 (roles)"
+  ]
+}

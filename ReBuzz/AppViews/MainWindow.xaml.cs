@@ -299,6 +299,14 @@ namespace ReBuzz
                 studioAgent = new Agent.StudioAgent(Buzz, windowsGuiDispatcher, text => SetStatusBarText(text, 1));
                 InputBindings.Add(new KeyBinding(new Agent.ActionCommand(() => studioAgent.ShowConnection()), Key.A, ModifierKeys.Control | ModifierKeys.Shift));
 
+                // Fork (docs/specs/mcp-server.md §12.5, U5): the machine menu's "Replace with <successor>...", as machine_replace does it.
+                BuzzGUI.Common.MachineSuccessors.For = m => Agent.MachineReplace.Successors(Buzz, m?.DLL).Select(x => x.To).ToList();
+                BuzzGUI.Common.MachineSuccessors.Replace = (m, gear) =>
+                {
+                    if (m is ReBuzz.Core.MachineCore classic && Agent.MachineReplace.FromMenu(Buzz, classic, gear) is string done)
+                        SetStatusBarText(done, 0);
+                };
+
                 // Fork (docs/specs/machine-safety.md §3.2): a machine whose guard tripped shows muted; say why.
                 Buzz.MachineDiverged += m => SetStatusBarText($"{m.Name} diverged ({m.DivergedReason}): the guard silenced, stopped and muted it. Unmute it to reset it.", 0);
 

@@ -30,6 +30,8 @@
     <EmbeddedResource Include="Guides\*.md" LogicalName="ReBuzz.Agent.Guides.%(Filename)%(Extension)" />
     <!-- Curated machine pages (Guides/machines/<Gear>.md), merged into rebuzz://machines/<gear>/manual. -->
     <EmbeddedResource Include="Guides\machines\*.md" LogicalName="ReBuzz.Agent.Guides.machines.%(Filename)%(Extension)" />
+    <!-- Successor mappings (mcp-server.md §12.5, U5): how machine_replace moves a classic machine onto its Neo successor. -->
+    <EmbeddedResource Include="..\Machines\Manifests\Successors\*.successor.json" LogicalName="ReBuzz.Agent.Successors.%(Filename)%(Extension)" Link="Successors\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

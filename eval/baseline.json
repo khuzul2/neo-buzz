@@ -9,7 +9,8 @@
     "param_units": true,
     "render_bit_identical": true,
     "analyze_reference": true,
-    "undo_exact": true
+    "undo_exact": true,
+    "machine_replace": true
   },
   "tasks": {
     "beat": {

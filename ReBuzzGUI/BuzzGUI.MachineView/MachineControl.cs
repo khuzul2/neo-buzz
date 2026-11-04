@@ -473,6 +473,15 @@ namespace BuzzGUI.MachineView
                     new MenuItemVM() { IsSeparator = true },
                     new MenuItemVM() { Text = "Signal Analysis...", Command = ShowDialogCommand, CommandParameter = MachineDialog.SignalAnalysis },
                     new MenuItemVM() { IsSeparator = true },
+                };
+                // Fork (neo-buzz, mcp-server.md §12.5, U5): a classic machine's Neo successors, the song moved over as machine_replace does it.
+                foreach (var successor in MachineSuccessors.For?.Invoke(machine) ?? Array.Empty<string>())
+                {
+                    string gear = successor;
+                    l.Add(new MenuItemVM() { Text = $"Replace with {gear}...", Command = new SimpleCommand { ExecuteDelegate = x => MachineSuccessors.Replace?.Invoke(machine, gear) } });
+                }
+                l.AddRange(new List<IMenuItem>()
+                {
                     new MenuItemVM() { Text = "Replace", Children = view.ReplaceMachineIndex },
                     new MenuItemVM() { Text = "Rename...", Command = ShowDialogCommand, CommandParameter = MachineDialog.Rename },
                     new MenuItemVM() { Text = "Clone", Command = CloneCommand, CommandParameter = false },
@@ -486,7 +495,7 @@ namespace BuzzGUI.MachineView
                     groupsMenu,
                     new MenuItemVM() { IsSeparator = true },
                     new MenuItemVM() { Text = "Search Online", Command = SearchOnlineCommand },
-                };
+                });
 
                 var cmds = machine.Commands;
                 if (cmds != null && cmds.Count() > 0)
