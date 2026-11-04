@@ -97,10 +97,9 @@ namespace NeoBuzz.Multiband
         bool fadingOut;
 
         long quiet;
-        int stepLength, stepFill, ringAt, ringCount, segmentLeft;
+        int stepLength, stepFill, ringAt, segmentLeft;
         double timeGlide;
         readonly TripleBuffer<Snapshot> snapshots = new TripleBuffer<Snapshot>(() => new Snapshot(), (a, b) => a.CopyTo(b));
-        readonly Snapshot reading = new Snapshot();
         readonly float[] scope = new float[ScopeLength];
         volatile int scopePos;
 
@@ -199,7 +198,7 @@ namespace NeoBuzz.Multiband
                 b.StepMax = b.StepMin = 0;
                 b.StepLevel = double.NegativeInfinity;
             }
-            stepFill = ringAt = ringCount = segmentLeft = 0;
+            stepFill = ringAt = segmentLeft = 0;
             fade = 1;
             fadeLeft = fadeHold = 0;
             fadingOut = false;
@@ -565,7 +564,6 @@ namespace NeoBuzz.Multiband
                 snap.LevelDb[b] = level;
             }
             ringAt = (ringAt + 1) % Steps;
-            ringCount = Math.Min(Steps, ringCount + 1);
             snap.Count = bandCount;
             snap.Latency = Latency;
             snap.Any = true;
@@ -592,6 +590,7 @@ namespace NeoBuzz.Multiband
         /// </summary>
         public IReadOnlyDictionary<string, double> Readings()
         {
+            var reading = new Snapshot();
             snapshots.Read(reading);
             var d = new Dictionary<string, double>();
             int count = reading.Any ? reading.Count : bandCount;

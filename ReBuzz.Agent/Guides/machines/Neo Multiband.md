@@ -7,7 +7,7 @@ A multiband compressor and upward expander: the input split into 3 or 4 bands, e
 | Linear (the default) | the bands sum back to the input exactly, with no phase shift; about 96 ms of latency (4607 samples at 44.1 and 48 kHz), which ReBuzz compensates | mastering, and any bus where phase matters (parallel paths, mid/side) |
 | Minimum | zero latency, the same band shapes (Linkwitz–Riley, 24 dB/oct, −6 dB at a crossover), the crossovers' phase shift | live playing, buses where the latency would be in the way |
 
-Each band's ratio works above its threshold: above 1:1 it compresses (∞:1 limits), below 1:1 it expands upward (0.5:1 doubles how far a peak rises over the threshold), 1:1 does nothing. `Range` caps the change either way. Measured: a band's static curve is Neo Comp's gain computer to 0.0003 dB; attack and release times within 2 % of their settings.
+Each band's ratio works above its threshold: above 1:1 it compresses (∞:1 limits), below 1:1 it expands upward (0.5:1 doubles how far a peak rises over the threshold), 1:1 does nothing. `Range` caps the change either way. Measured: a band's static curve is Neo Comp's gain computer to 0.0003 dB; attack and release times within 2.5 % of their settings; with every band at 1:1 the input comes out bit for bit, 4607 samples later at 44.1 and 48 kHz.
 
 ## Signal flow
 
