@@ -471,6 +471,83 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void NeoEqsGraphicModeShowsItsSlidersAndTheirCurve()
+        {
+            // machine-safety.md §4 (H2): Mode Graphic shows the 31 sliders on the graph with the response through them,
+            // and the selected slider's knob below; the editor keeps its size. Drawing across the sliders sets them, as
+            // one undo step; with a chord playing, the output spectrum shows under the curve.
+            var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var poly = Add("Neo Poly", "Graphic Poly", -0.6f, 0);
+            var m = Add("Neo EQ", "Graphic EQ", 0, 0);
+            try
+            {
+                Core.SongCore.ConnectMachines(poly, m, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                Core.SongCore.ConnectMachines(m, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                var window = OpenEditor(m);
+                var size = window.ClientSize;
+                var graph = Controls(window, "InteractiveGraph").Single();
+                var area = BoundsIn(graph, window);
+                var parametric = Frame(window);
+                var stack = Core.SongCore.ActionStack;
+                int steps = stack.Actions.Count();
+
+                // The mode: a click on "Graphic".
+                var mode = Find(window, "ParamChoice", "Mode");
+                var cell = (Rect)mode.GetType().GetMethod("CellBounds")!.Invoke(mode, new object[] { 1 })!;
+                Click(window, At(mode, window, cell.Center.X, cell.Center.Y));
+                Assert.That(Global(m, "Mode").GetValue(0), Is.EqualTo(1), "a click picks Graphic");
+                Assert.That(stack.Actions.Count(), Is.EqualTo(steps + 1), "one undo step");
+                Run(0.05);
+                var graphic = Frame(window, "neo-eq-editor-graphic");
+                Assert.That(Changed(parametric, graphic, area), Is.GreaterThan(2000), "the graph shows the sliders");
+                Assert.That(window.ClientSize.Width, Is.EqualTo(size.Width).Within(0.5), "the editor keeps its width");
+                Assert.That(window.ClientSize.Height, Is.EqualTo(size.Height).Within(0.5), "and its height");
+                var knob = Controls(window, "ParamKnob").Single(k => AutomationProperties.GetName(k) == "1 kHz");
+                Assert.That(knob.IsEffectivelyVisible && knob.Opacity > 0 && knob.IsHitTestVisible, Is.True, "the selected slider's knob shows");
+
+                // Draw: press beside the 1 kHz cap at +12 dB and drag right to the 2 kHz track at the same height.
+                // The plot inside the graph: 30 px in, 8 down, 642 × 272 for 20 Hz – 20 kHz and ±24 dB.
+                double X(double hz) => 30 + Math.Log(hz / 20) / Math.Log(1000) * (graph.Bounds.Width - 38);
+                double Y(double db) => 8 + (graph.Bounds.Height - 26) * (24 - db) / 48;
+                double y12 = Y(12);
+                window.MouseDown(At(graph, window, X(1000), y12), MouseButton.Left);
+                for (double hz = 1000; hz <= 2000; hz *= Math.Pow(2, 1 / 12.0)) window.MouseMove(At(graph, window, X(hz), y12));
+                window.MouseMove(At(graph, window, X(1995.3), y12));
+                window.MouseUp(At(graph, window, X(1995.3), y12), MouseButton.Left);
+                foreach (var name in new[] { "G 1 kHz", "G 1.25 kHz", "G 1.6 kHz", "G 2 kHz" })
+                    Assert.That(Global(m, name).GetValue(0), Is.EqualTo(300).Within(3), $"{name}: drawn at +12 dB");
+                foreach (var name in new[] { "G 800 Hz", "G 2.5 kHz" })
+                    Assert.That(Global(m, name).GetValue(0), Is.EqualTo(180), $"{name}: untouched");
+                Assert.That(stack.Actions.Count(), Is.EqualTo(steps + 2), "the drawing is one undo step");
+                Run(0.05);
+                var drawn = Frame(window, "neo-eq-editor-graphic-drawn");
+                Assert.That(Changed(graphic, drawn, area), Is.GreaterThan(300), "the curve and the caps moved");
+
+                // A chord: the output spectrum shows under the curve.
+                poly.TrackCount = Math.Max(poly.TrackCount, 3);
+                var note = poly.ParameterGroups[2].Parameters.First(p => p.Name == "Note");
+                int[] chord = { (3 << 4) + 1, (3 << 4) + 5, (3 << 4) + 8 };
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, chord[t]);
+                Run(1.0);
+                var loud = Frame(window, "neo-eq-editor-graphic-live");
+                Assert.That(Changed(drawn, loud, area), Is.GreaterThan(1500), "the spectrum shows the chord");
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, BuzzGUI.Common.BuzzNote.Off);
+                Run(0.1);
+
+                Core.SongCore.Undo();
+                Assert.That(Global(m, "G 1.25 kHz").GetValue(0), Is.EqualTo(180), "undo takes the drawing back");
+                Core.SongCore.Undo();
+                Assert.That(Global(m, "Mode").GetValue(0), Is.EqualTo(0), "and the mode");
+                Run(0.05);
+                Assert.That(window.ClientSize.Height, Is.EqualTo(size.Height).Within(0.5));
+            }
+            finally
+            {
+                Remove(m, poly);
+            }
+        }
+
+        [AvaloniaTest]
         public void AnEditorsOwnInputTakesThePointerAsOnWpf()
         {
             // Neo FM6's algorithm diagram overrides the WPF-shaped mouse callbacks: click for the next

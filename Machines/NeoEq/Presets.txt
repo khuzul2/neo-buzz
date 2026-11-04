@@ -134,3 +134,102 @@ B3 Q = 10
 B4 type = Notch
 B4 freq = 180
 B4 Q = 10
+
+# Graphic mode (machine-safety.md §4): the 31 sliders; the response passes through them. Sliders a
+# preset doesn't name stay at 0 dB.
+preset "Graphic — Flat"
+Mode = Graphic
+
+preset "Graphic — Loudness (Smile)"
+Mode = Graphic
+G 20 Hz = 6
+G 25 Hz = 6
+G 31.5 Hz = 5.5
+G 40 Hz = 5
+G 50 Hz = 4.5
+G 63 Hz = 4
+G 80 Hz = 3
+G 100 Hz = 2
+G 125 Hz = 1
+G 160 Hz = 0.5
+G 5 kHz = 0.5
+G 6.3 kHz = 1
+G 8 kHz = 1.5
+G 10 kHz = 2
+G 12.5 kHz = 3
+G 16 kHz = 3.5
+G 20 kHz = 4
+
+preset "Graphic — Telephone"
+Mode = Graphic
+G 20 Hz = -18
+G 25 Hz = -18
+G 31.5 Hz = -18
+G 40 Hz = -18
+G 50 Hz = -18
+G 63 Hz = -18
+G 80 Hz = -18
+G 100 Hz = -18
+G 125 Hz = -18
+G 160 Hz = -18
+G 200 Hz = -12
+G 250 Hz = -6
+G 315 Hz = -2
+G 1.6 kHz = 2
+G 2 kHz = 3
+G 2.5 kHz = 2
+G 3.15 kHz = -4
+G 4 kHz = -12
+G 5 kHz = -18
+G 6.3 kHz = -18
+G 8 kHz = -18
+G 10 kHz = -18
+G 12.5 kHz = -18
+G 16 kHz = -18
+G 20 kHz = -18
+
+preset "Graphic — Air"
+Mode = Graphic
+G 5 kHz = 0.5
+G 6.3 kHz = 1
+G 8 kHz = 1.5
+G 10 kHz = 2.5
+G 12.5 kHz = 3.5
+G 16 kHz = 4.5
+G 20 kHz = 5
+
+preset "Graphic — Low Cut"
+Mode = Graphic
+G 20 Hz = -18
+G 25 Hz = -18
+G 31.5 Hz = -15
+G 40 Hz = -10
+G 50 Hz = -5
+G 63 Hz = -2
+G 80 Hz = -0.5
+
+preset "Graphic — Mid Scoop"
+Mode = Graphic
+G 250 Hz = -1
+G 315 Hz = -2
+G 400 Hz = -3.5
+G 500 Hz = -4.5
+G 630 Hz = -5
+G 800 Hz = -4.5
+G 1 kHz = -3.5
+G 1.25 kHz = -2
+G 1.6 kHz = -1
+
+preset "Graphic — Vocal Presence"
+Mode = Graphic
+G 100 Hz = -2
+G 125 Hz = -1.5
+G 200 Hz = -1
+G 250 Hz = -1.5
+G 315 Hz = -1
+G 2 kHz = 1
+G 2.5 kHz = 2
+G 3.15 kHz = 3
+G 4 kHz = 2.5
+G 5 kHz = 1.5
+G 6.3 kHz = 0.5

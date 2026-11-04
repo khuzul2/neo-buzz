@@ -127,5 +127,98 @@ namespace NeoBuzz.MachineTests
             Assert.That(curve.PointCount, Is.EqualTo(241));
             Assert.That(curve.Point(0).Y, Is.EqualTo(g.Y(6)));
         }
+
+        // ------------------------------------------------------------------ graphic EQ sliders (Neo EQ's graphic mode)
+
+        sealed class FakeSliders : IGraphicSliders
+        {
+            public readonly double[] Values = new double[31];
+            public int Count => 31;
+            public double Hz(int i) => 1000 * Math.Pow(10, (i - 17) / 10.0);
+            public string Label(int i) => $"{Hz(i):0} Hz";
+            public double Db(int i) => Values[i];
+            public void Set(int i, double db) => Values[i] = Math.Round(db * 10) / 10;
+            public double MinDb => -18;
+            public double MaxDb => 18;
+        }
+
+        static (ResponseGraph Graph, FakeSliders Sliders, GraphicSliderInput Input) MakeSliders()
+        {
+            var graph = new ResponseGraph(-24, 24, 6);
+            graph.Layout(new NeoRect(0, 0, 680, 298));
+            var sliders = new FakeSliders();
+            return (graph, sliders, new GraphicSliderInput(graph, sliders, 17));
+        }
+
+        [Test]
+        public void GraphicSlidersStandAtTheirCentres()
+        {
+            var (g, s, input) = MakeSliders();
+            for (int i = 0; i < 31; i++)
+            {
+                Assert.That(input.BandAt(input.X(i)), Is.EqualTo(i));
+                Assert.That(input.BandAt(input.X(i) + 9), Is.EqualTo(i), "within half the spacing (about 10.7 px)");
+            }
+            Assert.That(input.X(17), Is.EqualTo(g.X(1000)).Within(1e-9));
+            Assert.That(input.BandAt(g.Plot.Left - 30), Is.EqualTo(-1), "left of the 20 Hz track");
+            s.Values[5] = 6;
+            Assert.That(input.Cap(5).Y, Is.EqualTo(g.Y(6)).Within(1e-9));
+            s.Values[5] = 30;
+            Assert.That(input.Cap(5).Y, Is.EqualTo(g.Y(18)).Within(1e-9), "a cap stays on its track");
+        }
+
+        [Test]
+        public void DrawingAcrossTheSlidersSetsEachItCrosses()
+        {
+            // Press beside the 1 kHz cap at +12 dB, drag to the 2 kHz track rising to +15 dB: 1 kHz to 2 kHz follow the pointer's path.
+            var (g, s, input) = MakeSliders();
+            Assert.That(input.Down(input.X(17), g.Y(12), 1, false), Is.True);
+            Assert.That(s.Values[17], Is.EqualTo(12), "the press sets the band under it");
+            Assert.That(input.Capturing, Is.True);
+            input.Move(input.X(20), g.Y(15), false);
+            input.Up();
+            Assert.That(s.Values[17], Is.EqualTo(12));
+            Assert.That(s.Values[18], Is.EqualTo(13));
+            Assert.That(s.Values[19], Is.EqualTo(14));
+            Assert.That(s.Values[20], Is.EqualTo(15));
+            Assert.That(s.Values[16], Is.EqualTo(0), "untouched either side");
+            Assert.That(s.Values[21], Is.EqualTo(0));
+            Assert.That(input.Selected, Is.EqualTo(20), "the band under the pointer is selected");
+            Assert.That(input.Capturing, Is.False);
+            // Below the range: −18.
+            input.Down(input.X(3), g.Y(-23), 1, false);
+            input.Up();
+            Assert.That(s.Values[3], Is.EqualTo(-18));
+        }
+
+        [Test]
+        public void ACapFollowsThePointerAndTheWheelAndDoubleClickStepIt()
+        {
+            var (g, s, input) = MakeSliders();
+            s.Values[10] = 3;
+            var cap = input.Cap(10);
+            // Taken by its cap: it moves with the pointer, relative to where it was taken (no jump).
+            input.Down(cap.X + 2, cap.Y + 2, 1, false);
+            Assert.That(s.Values[10], Is.EqualTo(3), "taking a cap doesn't move it");
+            double perPixel = 48 / g.Plot.Height;
+            input.Move(cap.X + 2, cap.Y + 2 - 5 / perPixel, false);
+            input.Up();
+            Assert.That(s.Values[10], Is.EqualTo(8).Within(0.051));
+            // Shift: a tenth as far.
+            cap = input.Cap(10);
+            input.Down(cap.X, cap.Y, 1, true);
+            input.Move(cap.X, cap.Y + 10 / perPixel, true);
+            input.Up();
+            Assert.That(s.Values[10], Is.EqualTo(7).Within(0.051));
+            // The wheel: 0.5 dB a notch, 0.1 with Shift; a double-click: 0 dB.
+            input.Wheel(input.X(10), cap.Y, 240, false);
+            Assert.That(s.Values[10], Is.EqualTo(8).Within(0.051));
+            input.Wheel(input.X(10), cap.Y, -120, true);
+            Assert.That(s.Values[10], Is.EqualTo(7.9).Within(0.051));
+            input.Down(input.X(10), g.Y(-10), 2, false);
+            Assert.That(s.Values[10], Is.EqualTo(0));
+            Assert.That(input.Capturing, Is.False);
+            Assert.That(input.Caption(10), Does.EndWith("0.0 dB"));
+        }
     }
 }

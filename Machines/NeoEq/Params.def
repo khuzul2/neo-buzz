@@ -2,7 +2,7 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoEq
 namespace NeoBuzz.Eq
 class NeoEqMachine
-summary Eight-band parametric EQ, minimum phase and zero latency: bell, low and high shelf, low and high cut at 12/24/48 dB/oct, notch; frequency in Hz, gain in 0.1 dB steps, Q. Bands 2–7 start on at 0 dB (transparent until a gain is set); the cuts, bands 1 and 8, start off. Use it for precise, labelled moves such as "B3: Bell, 320 Hz, −3 dB, Q 1.4".
+summary Eight-band parametric EQ, minimum phase and zero latency: bell, low and high shelf, low and high cut at 12/24/48 dB/oct, notch; frequency in Hz, gain in 0.1 dB steps, Q. Bands 2–7 start on at 0 dB (transparent until a gain is set); the cuts, bands 1 and 8, start off. Use it for precise, labelled moves such as "B3: Bell, 320 Hz, −3 dB, Q 1.4". Mode Graphic makes it a 31-band graphic EQ at the ISO third-octave centres (G 20 Hz … G 20 kHz, ±18 dB in 0.1 dB steps) whose response passes through its sliders: for a curve given band by band, such as "G 125 Hz −3 dB, G 4 kHz +2 dB".
 
 group Band 1
 B1On     "B1 on"     0 1     0     switch                                         | Band 1 in or out (an off band passes the signal untouched)
@@ -62,3 +62,37 @@ B8Q      "B8 Q"      0 2000  686   exp 0.1 30 2                                 
 B8Slope  "B8 slope"  0 2     0     enum 12_dB/oct 24_dB/oct 48_dB/oct            | Band 8 slope (low and high cut)
 group Output
 Output   "Output"     0 480   240   db -24 24                                      | Output gain in 0.1 dB steps
+group Mode
+Mode     "Mode"      0 1     0     enum Parametric Graphic                       | Parametric: the eight bands above. Graphic: 31 constant-Q bands at the ISO third-octave centres, 20 Hz – 20 kHz, set by the G sliders; the response passes through every slider (the bands' overlap compensated), and the parametric bands rest
+group Graphic
+G20      "G 20 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 20 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G25      "G 25 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 25 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G31_5    "G 31.5 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 31.5 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G40      "G 40 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 40 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G50      "G 50 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 50 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G63      "G 63 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 63 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G80      "G 80 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 80 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G100     "G 100 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 100 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G125     "G 125 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 125 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G160     "G 160 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 160 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G200     "G 200 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 200 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G250     "G 250 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 250 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G315     "G 315 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 315 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G400     "G 400 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 400 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G500     "G 500 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 500 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G630     "G 630 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 630 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G800     "G 800 Hz" 0 360 180 db -18 18 | Graphic mode: the response at 800 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G1k      "G 1 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 1 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G1_25k   "G 1.25 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 1.25 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G1_6k    "G 1.6 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 1.6 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G2k      "G 2 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 2 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G2_5k    "G 2.5 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 2.5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G3_15k   "G 3.15 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 3.15 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G4k      "G 4 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 4 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G5k      "G 5 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G6_3k    "G 6.3 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 6.3 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G8k      "G 8 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 8 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G10k     "G 10 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 10 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G12_5k   "G 12.5 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 12.5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G16k     "G 16 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 16 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+G20k     "G 20 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 20 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps

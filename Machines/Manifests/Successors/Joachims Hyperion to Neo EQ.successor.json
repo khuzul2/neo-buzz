@@ -1,0 +1,438 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Joachims Hyperion",
+  "to": "Neo EQ",
+  "summary": "Neo EQ in Graphic mode: Hyperion's 30 bands (bells that overlap and add, as wide as its Bandwidth) summed into its curve, and the curve read at the 31 ISO centres onto the G sliders, which graphic mode's response passes through. Input gain, and whatever the sliders can't reach, go to Output; Highpass into the lowest sliders; Enable to the bypass.",
+  "set": {
+    "Mode": "Graphic"
+  },
+  "describe": {
+    "Bandwidth": {
+      "kind": "table",
+      "unit": "oct",
+      "points": [
+        [
+          0,
+          0.37
+        ],
+        [
+          1,
+          0.503
+        ],
+        [
+          2,
+          0.657
+        ],
+        [
+          3,
+          0.83
+        ],
+        [
+          4,
+          1.025
+        ],
+        [
+          5,
+          1.239
+        ],
+        [
+          6,
+          1.474
+        ],
+        [
+          7,
+          1.73
+        ],
+        [
+          8,
+          2.005
+        ],
+        [
+          9,
+          2.302
+        ],
+        [
+          10,
+          2.619
+        ],
+        [
+          11,
+          2.956
+        ],
+        [
+          12,
+          3.314
+        ],
+        [
+          13,
+          3.692
+        ],
+        [
+          14,
+          4.089
+        ],
+        [
+          15,
+          4.508
+        ]
+      ]
+    },
+    "Highpass": {
+      "kind": "table",
+      "unit": "Hz",
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          6.4
+        ],
+        [
+          10,
+          7.9
+        ],
+        [
+          19,
+          9.8
+        ],
+        [
+          28,
+          12.2
+        ],
+        [
+          37,
+          15.1
+        ],
+        [
+          46,
+          18.7
+        ],
+        [
+          55,
+          23.1
+        ],
+        [
+          64,
+          28.6
+        ],
+        [
+          73,
+          35.5
+        ],
+        [
+          82,
+          43.9
+        ],
+        [
+          91,
+          54.4
+        ],
+        [
+          100,
+          67.4
+        ],
+        [
+          109,
+          83.4
+        ],
+        [
+          118,
+          103.3
+        ],
+        [
+          127,
+          128.0
+        ]
+      ]
+    }
+  },
+  "rules": [
+    {
+      "kind": "graphic",
+      "bands": [
+        {
+          "param": "   20 Hz",
+          "hz": 20.0
+        },
+        {
+          "param": "   25 Hz",
+          "hz": 25.38
+        },
+        {
+          "param": "   32 Hz",
+          "hz": 32.21
+        },
+        {
+          "param": "   41 Hz",
+          "hz": 40.87
+        },
+        {
+          "param": "   52 Hz",
+          "hz": 51.86
+        },
+        {
+          "param": "   66 Hz",
+          "hz": 65.81
+        },
+        {
+          "param": "   84 Hz",
+          "hz": 83.51
+        },
+        {
+          "param": "  106 Hz",
+          "hz": 105.97
+        },
+        {
+          "param": "  134 Hz",
+          "hz": 134.47
+        },
+        {
+          "param": "  171 Hz",
+          "hz": 170.63
+        },
+        {
+          "param": "  217 Hz",
+          "hz": 216.53
+        },
+        {
+          "param": "  275 Hz",
+          "hz": 274.76
+        },
+        {
+          "param": "  350 Hz",
+          "hz": 348.67
+        },
+        {
+          "param": "  440 Hz",
+          "hz": 442.44
+        },
+        {
+          "param": "  560 Hz",
+          "hz": 561.44
+        },
+        {
+          "param": "  710 Hz",
+          "hz": 712.45
+        },
+        {
+          "param": "  900 Hz",
+          "hz": 904.07
+        },
+        {
+          "param": " 1150 Hz",
+          "hz": 1147.23
+        },
+        {
+          "param": " 1460 Hz",
+          "hz": 1455.79
+        },
+        {
+          "param": " 1850 Hz",
+          "hz": 1847.34
+        },
+        {
+          "param": " 2340 Hz",
+          "hz": 2344.2
+        },
+        {
+          "param": " 2970 Hz",
+          "hz": 2974.7
+        },
+        {
+          "param": " 3800 Hz",
+          "hz": 3774.78
+        },
+        {
+          "param": " 4800 Hz",
+          "hz": 4790.05
+        },
+        {
+          "param": " 6100 Hz",
+          "hz": 6078.39
+        },
+        {
+          "param": " 7700 Hz",
+          "hz": 7713.24
+        },
+        {
+          "param": " 9800 Hz",
+          "hz": 9787.8
+        },
+        {
+          "param": "12400 Hz",
+          "hz": 12420.34
+        },
+        {
+          "param": "15800 Hz",
+          "hz": 15760.93
+        },
+        {
+          "param": "20000 Hz",
+          "hz": 20000.0
+        }
+      ],
+      "sliders": [
+        {
+          "param": "G 20 Hz",
+          "hz": 19.95
+        },
+        {
+          "param": "G 25 Hz",
+          "hz": 25.12
+        },
+        {
+          "param": "G 31.5 Hz",
+          "hz": 31.62
+        },
+        {
+          "param": "G 40 Hz",
+          "hz": 39.81
+        },
+        {
+          "param": "G 50 Hz",
+          "hz": 50.12
+        },
+        {
+          "param": "G 63 Hz",
+          "hz": 63.1
+        },
+        {
+          "param": "G 80 Hz",
+          "hz": 79.43
+        },
+        {
+          "param": "G 100 Hz",
+          "hz": 100.0
+        },
+        {
+          "param": "G 125 Hz",
+          "hz": 125.89
+        },
+        {
+          "param": "G 160 Hz",
+          "hz": 158.49
+        },
+        {
+          "param": "G 200 Hz",
+          "hz": 199.53
+        },
+        {
+          "param": "G 250 Hz",
+          "hz": 251.19
+        },
+        {
+          "param": "G 315 Hz",
+          "hz": 316.23
+        },
+        {
+          "param": "G 400 Hz",
+          "hz": 398.11
+        },
+        {
+          "param": "G 500 Hz",
+          "hz": 501.19
+        },
+        {
+          "param": "G 630 Hz",
+          "hz": 630.96
+        },
+        {
+          "param": "G 800 Hz",
+          "hz": 794.33
+        },
+        {
+          "param": "G 1 kHz",
+          "hz": 1000.0
+        },
+        {
+          "param": "G 1.25 kHz",
+          "hz": 1258.93
+        },
+        {
+          "param": "G 1.6 kHz",
+          "hz": 1584.89
+        },
+        {
+          "param": "G 2 kHz",
+          "hz": 1995.26
+        },
+        {
+          "param": "G 2.5 kHz",
+          "hz": 2511.89
+        },
+        {
+          "param": "G 3.15 kHz",
+          "hz": 3162.28
+        },
+        {
+          "param": "G 4 kHz",
+          "hz": 3981.07
+        },
+        {
+          "param": "G 5 kHz",
+          "hz": 5011.87
+        },
+        {
+          "param": "G 6.3 kHz",
+          "hz": 6309.57
+        },
+        {
+          "param": "G 8 kHz",
+          "hz": 7943.28
+        },
+        {
+          "param": "G 10 kHz",
+          "hz": 10000.0
+        },
+        {
+          "param": "G 12.5 kHz",
+          "hz": 12589.25
+        },
+        {
+          "param": "G 16 kHz",
+          "hz": 15848.93
+        },
+        {
+          "param": "G 20 kHz",
+          "hz": 19952.62
+        }
+      ],
+      "bandwidth": "Bandwidth",
+      "highpass": "Highpass",
+      "rate": 44100,
+      "alpha_max": 1.5,
+      "gain": "Input gain.",
+      "output": "Output",
+      "why": "Measured on Windows on noise (ReBuzzTests HyperionCalibration, package run 41783615135): each band is the Audio EQ Cookbook's peaking filter at 44.1 kHz, centred on 20 · 1000^(i/29) Hz (its name is rounded), its gain (raw − 128) × 0.1417 dB, its bandwidth warped by ω0/sin ω0 and its alpha at most 1.5 (only the 20 kHz band reaches it); the bands add in dB. That model is within 0.3 dB of every measurement from 40 Hz up (one band at each Bandwidth step, gains ±12 and +18 dB, two neighbours, every band at once at three widths, two zigzags, the top and bottom bands); below 40 Hz within 1.1 dB, where the measurement's 2.7 Hz resolution blurs narrow bands. The curve is read at the exact ISO centres, 1000 · 10^(k/10) Hz."
+    },
+    {
+      "kind": "bypass",
+      "from": "Enable",
+      "invert": true,
+      "why": "Enable OFF bypasses Hyperion; Neo EQ has no bypass parameter: the machine's bypass takes it."
+    }
+  ],
+  "unmapped": [],
+  "remarks": [
+    "Hyperion's 30 centres step by 0.344 octave, the ISO ones by a third: each Hyperion band lies within 0.17 octave of an ISO centre, and 630 Hz has none of its own. Reading the summed curve at the ISO centres, rather than each slider onto its nearest, costs nothing where the curve is smooth: at the default Bandwidth (2.0 octaves between half-gain points) the model puts every third octave within 0.1 dB; one band at +12 dB at Bandwidth step 2 (0.66 octave) within 0.7 dB and at the narrowest (0.37 octave, step 0) within 1.8 dB, a peak narrower than the sliders' spacing that graphic mode's 2/3-octave bells can't make (its sliders read 7.3 dB at 1 kHz where Hyperion peaks at 12 dB at 904 Hz). Nearest centre instead would miss by 6 to 10 dB for one band and by up to 37 dB for every band at once (Hyperion's overlap).",
+    "Hyperion's bands don't compensate their overlap: at the default Bandwidth every band at +6 dB is +43 dB at 3.2 kHz (measured). Where the curve leaves the sliders' ±18 dB it moves as a whole and Output takes the move (beyond ±24 dB, the output connections); a curve spanning more than 36 dB keeps its middle and its ends are clamped, with a note.",
+    "Bandwidth is the octaves between a band's half-gain points at low frequencies, twice the number Hyperion displays (1.0 at its default is 2.0 octaves). Highpass is a second-order Butterworth high-pass (Q 0.705 measured) whose corner is 1.28 times the number displayed (28.8 Hz at 22 Hz, 127 Hz at 100 Hz); raw 0, the default, is off. It goes into the sliders after the bands' curve has been placed, so it never moves Output; below its corner graphic mode's cut stops at −18 dB, and below 20 Hz graphic mode settles at the sliders' median instead of cutting.",
+    "Hyperion's response is its biquads' at 44.1 kHz; at other rates its high bands move (the cookbook's warping) while graphic mode's don't: the mapping reads Hyperion at 44.1 kHz.",
+    "Hyperion is stereo and passes its input at 0 dB at its defaults (measured: right equals left, flat within 0.01 dB)."
+  ],
+  "tolerance": {
+    "loudness_db": 1,
+    "band_db": 2,
+    "from_hz": 31.5,
+    "to_hz": 16000,
+    "measured": "Windows (the native Joachims Hyperion, package run 41785493029), Neo Poly noise in chords into it, each side against its input: a smile at its default Bandwidth (20–52 Hz and 7.7–12.4 kHz +3 dB, 440–900 Hz −2 dB) −0.03 dB, third octaves within 0.2 dB (40 Hz); the same with Highpass 22 Hz −0.03 dB, within 0.1 dB; every band +3 dB (+21.5 dB summed: the sliders move down 3.5 dB and Output takes it) with Input gain −12 dB −0.01 dB, within 0.1 dB; a zigzag ±6 dB at Bandwidth 0.3 (step 2) −0.02 dB, within 0.3 dB; one band +12 dB at the narrowest Bandwidth (0.2, step 0) −0.09 dB, within 1.6 dB (1 kHz; 1.7 dB modelled)",
+    "why_not": "A boost narrower than the sliders' spacing: one band boosted past about +13 dB at Bandwidth 0.2 (step 0, 0.37 octave between half-gain points) or +17 dB at 0.3 (step 1, 0.50 octave) peaks where graphic mode's 2/3-octave bells can't follow (+18 dB at step 0: 3.2 dB in its third octave, modelled); cuts that narrow cost 0.1 dB. A curve spanning more than the sliders' 36 dB (every band at +6 dB from Bandwidth step 10 up) keeps its middle and loses its ends, with a note. A Highpass set above about 70 Hz cuts the lowest third octaves deeper than −18 dB, where the sliders stop. Hyperion at another sample rate than 44.1 kHz: its high bands move with the rate (the cookbook's warping), graphic mode's don't."
+  },
+  "evidence": [
+    "ReBuzzTests/AgentReplaceTests.cs HyperionCalibration (Windows, package run 41783615135): its transfer on noise at 6 points an octave (ReBuzzTests/FineTransfer.cs) at its defaults, one band at every Bandwidth step and at −12, +6, +12, +18 dB, two neighbours, the 6.1 and 20 kHz and 20 Hz bands, every band at ±6 dB at four widths, two zigzags, Highpass raw 64 and 127, Input gain raw 60",
+    "Machines/Manifests/Effects/Joachims Hyperion.machine.json (profiled draft: the bands ±18 dB, Input gain and Highpass tables from its texts)",
+    "Machines/NeoEq/Engine/GraphicEq.cs (graphic mode: the response passes through the sliders, within 0.19 dB at every centre)"
+  ]
+}

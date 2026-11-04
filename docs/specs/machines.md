@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4): Neo Ensemble built, 2026-11-04 |
+| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4): Neo Ensemble and Neo EQ's graphic mode built, 2026-11-04 |
 | Date | 2026-11-04 |
 | Scope | New high-quality machines for sound design, mixing and mastering, written in C# with custom editors: first batch "core six", second batch "mix and master", third the successors of closed machines that misbehave |
 
@@ -39,6 +39,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Machine | Kind | One line |
 |---|---|---|
 | Neo Ensemble | effect | Chorus (1–4 voices), flanger and phaser (2–12 stages) on one LFO, in Hz or synced to the tempo; feedback to ±99 % through a saturating loop that can't run away, however fast it sweeps. Succeeds Jeskola Flanger and Chorus, FSM Chorus2, Pedal Chorus |
+| Neo EQ, graphic mode | effect | 31 constant-Q bands at the ISO third-octave centres, ±18 dB; the bands' overlap compensated, so the response passes through the sliders, and every slider at +X is exactly +X. Succeeds Joachims Hyperion |
 
 ## 2. Decisions
 
@@ -234,7 +235,46 @@ The editor draws the response over 20 Hz – 20 kHz with a numbered handle per b
 | Flat | every band at 0 dB or off: output equals the input (±1e-6) | defaults: identical; all bands off: bit for bit |
 | CPU | 8 bands with 48 dB/oct cuts at both ends, stereo: ≥ 50× real time on the CI runner (was 100×: shared runners vary, and 50× is 2 % of a core) | 144× |
 
-Later: analog-matched (decramped) designs, so a bell or shelf above a few kHz keeps its analog shape up to Nyquist. The bilinear transform squeezes it: against the analog prototype, RBJ sections stay within 0.2 dB up to 16 kHz for bands below about 1 kHz, but a wide bell at 8 kHz differs by about 3 dB near 16 kHz. (Prototypes of a 5-point magnitude match and of Orfanidis' prescribed-Nyquist bell were 3–10× closer for bells but not robust near Nyquist, so they wait.) Also later: linear-phase mode, dynamic bands, mid/side bands.
+Later: analog-matched (decramped) designs for the parametric bands, so a bell or shelf above a few kHz keeps its analog shape up to Nyquist (the graphic mode's bells, below, already do). The bilinear transform squeezes it: against the analog prototype, RBJ sections stay within 0.2 dB up to 16 kHz for bands below about 1 kHz, but a wide bell at 8 kHz differs by about 3 dB near 16 kHz. (Prototypes of a 5-point magnitude match and of Orfanidis' prescribed-Nyquist bell were 3–10× closer for bells but not robust near Nyquist, so they wait.) Also later: linear-phase mode, dynamic bands, mid/side bands.
+
+#### Graphic mode (machine-safety.md §4: H2, the successor of Joachims Hyperion)
+
+`Mode` (Parametric, the default, or Graphic) and 31 sliders, `G 20 Hz` … `G 20 kHz`, follow Output in the parameter table, so songs and presets keep their values. The sliders sit at the ISO 266 third-octave centres (1000 · 10^(k/10) Hz, k = −17 … 13, named by their nominal values) and run from −18 to +18 dB in 0.1 dB steps (Hyperion's range). In graphic mode the eight bands rest; Output applies in both modes; a mode change crossfades the two over 5 ms. In Parametric mode the engine runs as it did before graphic mode was added, bit for bit.
+
+- **Constant-Q bells.** Each band is the analog bell H(s) = (s² + (A/Q) s + 1) / (s² + s/(AQ) + 1), A = 10^(g/40), Q = 1/(2^(1/3) − 2^(−1/3)) ≈ 2.15: half its gain in dB at 2^(±1/3) times its centre, 2/3 octave apart, whatever the gain, and a cut the mirror of a boost.
+- **No cramping near Nyquist.** The digital bell matches that prototype at DC, at its centre, at its lower half-gain point and at Nyquist (Orfanidis' prescribed-Nyquist-gain design, solved for the lower edge instead of a bandwidth, written so nothing cancels as the gain goes to 0, where it is exactly 1); a cut is the boost's inverse. The bilinear bell the parametric bands use is 0 dB at Nyquist and misses the prototype by up to 14.8 dB at 20 kHz.
+- **The response follows the sliders.** The bands overlap, so their gains are solved for. The sliders' median is applied as a plain gain and the bands make up the rest, fitted by weighted least squares at the 31 centres (weight 1) and at two points between each pair (weight 0.15; targets on straight lines in dB between the sliders): a first estimate from the bands' interaction at 12 dB, precomputed per sample rate (after Liski and Välimäki's accurate cascade graphic equalizer), then three Gauss–Newton steps on the exact response. It runs only when a slider moves, at the start of the block, never per sample. Zigzag sliders (±18 dB alternating) need bands near ±54 dB; they are clamped at ±60 dB.
+- **Running.** TPT state-variable sections in double precision, one per band for both channels, each written as its state-space update on the SVF's own states (`StereoBell`: `SvfSection`'s coefficients, one multiply and one add per step on the chain through the state). The bands' gains glide (a 20 ms one-pole in dB) in 16-sample segments that run across blocks, the five coefficients moving in straight lines within each, so fast automation stays smooth and stable and the output doesn't depend on how the host splits it. A band settled at exactly 0 dB passes the signal untouched (its sections keep running, so it moves off cleanly), so every slider at 0 dB passes the input bit for bit; tails below 1e-30 are 0. Bands at or above 0.46 fs are left out (none at 44.1 kHz and above). No allocation after the machine is made.
+- One function (`GraphicDesign` and `GraphicSolver`, `Engine/GraphicEq.cs`) designs what the engine runs, the curve the editor draws and the reference the tests measure against.
+
+The editor keeps its size: a Mode switch sits beside the band controls. In graphic mode the graph shows the 31 sliders on their tracks with the response through them over the output spectrum: drag a slider's cap (Shift: fine), or press beside it and drag across the sliders to draw a curve; the wheel moves the slider under the pointer by 0.5 dB (Shift: 0.1 dB), a double-click puts it at 0 dB. Below, the selected slider's knob and Flat. The sliders' input is toolkit-free (NeoBuzz.Editor `Core/GraphicSliders.cs`). Presets (7): Graphic — Flat, Loudness (Smile), Telephone, Air, Low Cut, Mid Scoop, Vocal Presence.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Response = sliders | at every centre within ±1 dB of its slider: 1000 random settings across ±18 dB (neighbours up to 36 dB apart), a loudness smile and both zigzags, at 44.1 and 48 kHz | within 0.188 dB (mean 0.025 dB); the worst the zigzag at 20 Hz |
+| Flat | every slider at +X (±0.1 … ±18 dB): flat +X within ±0.5 dB at 600 frequencies, 20 Hz – 20 kHz | exact (0.0000 dB): the median is the gain, the bands rest at 0 dB |
+| Response = design | the engine's impulse response (DTFT, 160 frequencies, 20 Hz – 20 kHz) against the solver's curve: a random setting, the smile, the zigzag, every slider at +12 dB with Output −6 dB | within 0.00001 dB |
+| Constant-Q | each bell alone at ±1 … ±40 dB: its half-gain points 2/3 octave apart at every gain | the lower point exact (0.0000 cent); the width varies with the gain by at most 0.003 octave for the 23 bands whose upper point lies below 0.1 fs, 0.033 octave up to 0.4 fs, where Nyquist warps the upper point |
+| Near Nyquist | the 12.5, 16 and 20 kHz bells at ±6 … ±18 dB against the analog prototype, 20 Hz – Nyquist: within 8 % of the gain | 44.1 kHz: within 0.84, 1.03 and 1.03 dB (the bilinear bell: 5.3, 8.6, 14.8 dB); 48 kHz: 0.75, 0.98, 0.91 dB (4.4, 7.2, 12.1 dB); at most 7.0 % of the gain |
+| Extremes | every slider at +18 dB, at −18 dB, and at +18 dB with Output +24 dB: exactly +18, −18 and +42 dB, bounded (Hyperion: +221 dBFS, §1) | +18.0000, −18.0000 and +42.0000 dB on pink noise, every sample within 2·10⁻⁸ of the input times the gain; the zigzag's curve peaks at 18.2 dB anywhere up to Nyquist; the Linux profile's every parameter at its maximum: +32.8 dBFS from noise peaking near −9 dBFS (Hyperion: +225.6 dBFS before the guard) |
+| Fast automation | every slider jumping every block (32 and 256 samples) between the zigzags, both ends and random settings, the mode switched now and then, 20 s of pink noise: finite, under +24 dB over the input's peak | +11.2 dB (blocks of 32), +14.4 dB (256) |
+| Slider moves | the sliders from 100 to 500 Hz moving through ±12 dB every block, on a 220 Hz sine: energy above 2 kHz ≤ −90 dB relative to the sine | −93.3 dB |
+| Mode switches | a 100 Hz sine, +12 dB in graphic mode and −12 dB in parametric, switched back and forth: no step larger than the boosted sine's own (×1.2) | 0.0130 against 0.0130 |
+| Blocks | blocks of 256 and of 117 samples give the same output, with the sliders and the mode moving | identical |
+| Silence after noise | the zigzag, 2 s of noise then 20 s of silence: no subnormal number out; silence costs no more than noise | none; 0.94× |
+| Audio thread | 2000 blocks with a slider moving every block (the solver running) and the mode switching; in the studio, a graphic Neo EQ with a slider moved every buffer, each work algorithm | 0 bytes; 0 bytes |
+| Flat passes | every slider at 0 dB: the input bit for bit (negative zero and subnormals included), also after a slider has moved away and back | bit for bit; latency 0 |
+| Parametric unchanged | the parametric mode's renders (the defaults, the three test curves, the 14 factory presets' stored values, a bell automated every block, type and on/off switches; 44.1 and 48 kHz) against origin/main's before graphic mode | 40 of 40 bit-identical |
+| CPU | 31 bands busy, stereo at 48 kHz: ≥ 30× real time (3.3 % of a core: 31 sections, where the parametric figure is for 14); a slider move's solve | 119× and 99× (two Linux runs), 59× and 67× on the macOS arm64 runner; a solve 0.15–0.23 ms (at most 4.3 % of a 256-sample block) |
+
+As built:
+
+- **No bandwidth or Q control.** With the overlap compensated, the response at the centres is the sliders whatever the bands' width; the width only sets how the curve runs between centres and how hard the bands work against each other. 2/3 octave is the compromise measured: 1/2-octave bells ripple 0.8 dB between centres on a plateau 18 dB from the median (2/3 octave: 0.44 dB), wider ones need larger gains and fit the zigzags worse. Hyperion's Bandwidth folds into the sliders' values instead (machine-safety.md §4).
+- **A slider is a third of an octave wide.** One slider at +X leaves its neighbours' centres at 0 dB, as an accurate graphic EQ's must: its curve is 0.36 octave wide at half its gain at +3 dB, 0.28 at +18 dB, and dips about 0.8 dB below 0 either side at +12 dB. Between centres the curve is free: two neighbours at +12 dB with the rest at 0 bulge to +13.2 dB between them (the Windows test measures 13.16 dB at 220 Hz, the design's figure to 0.000001 dB); four in a row stay within 0.75 dB of +12.
+- **Outside 20 Hz – 20 kHz** the response settles at the sliders' median (the plain gain), not at 0 dB: the Telephone preset (median −18 dB) cuts DC and the top octave too.
+- **Bands near ±54 dB ring.** Their poles' Q is about 2.15 · 10^(54/40) ≈ 48; the curve stays within the sliders, but such a setting (sliders alternating 36 dB apart) rings for seconds at the lowest bands.
+- The Linux profile (`docs/machine-health.md`): hot as before, with B4–B7 gain and Output at their maximum; no parameter alone diverges or fails to decay, so no safe range.
+- Joachims Hyperion moves onto graphic mode with `machine_replace` (U5): its pair file reads Hyperion's measured curve at the ISO centres (machine-safety.md §4, mcp-server.md §12.10).
 
 ### Neo Utility (gain, pan, width)
 
@@ -356,11 +396,11 @@ As built:
 | M1 | Neo Drive, Neo Comp, Neo Verb |
 | M2 | Neo Poly, Neo Wave, Neo FM6 |
 | M3 (MCP A4) | Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer |
-| Successors (machine-safety.md §4) | Neo Ensemble; then Neo EQ's graphic mode |
+| Successors (machine-safety.md §4) | Neo Ensemble; Neo EQ's graphic mode |
 
 Each phase: pure tests (Linux CI), integration tests in ReBuzzTests (the machine loads, makes sound, its parameters and editor work, editor screenshots), then the package build.
 
-M0–M3 are done, and of the successors Neo Ensemble. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
+M0–M3 are done, and of the successors Neo Ensemble and Neo EQ's graphic mode. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
 
 ## 7. Not in this batch
 

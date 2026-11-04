@@ -57,7 +57,39 @@ namespace NeoBuzz.Eq
         public const int B8Q = 46;
         public const int B8Slope = 47;
         public const int Output = 48;
-        public const int Count = 49;
+        public const int Mode = 49;
+        public const int G20 = 50;
+        public const int G25 = 51;
+        public const int G31_5 = 52;
+        public const int G40 = 53;
+        public const int G50 = 54;
+        public const int G63 = 55;
+        public const int G80 = 56;
+        public const int G100 = 57;
+        public const int G125 = 58;
+        public const int G160 = 59;
+        public const int G200 = 60;
+        public const int G250 = 61;
+        public const int G315 = 62;
+        public const int G400 = 63;
+        public const int G500 = 64;
+        public const int G630 = 65;
+        public const int G800 = 66;
+        public const int G1k = 67;
+        public const int G1_25k = 68;
+        public const int G1_6k = 69;
+        public const int G2k = 70;
+        public const int G2_5k = 71;
+        public const int G3_15k = 72;
+        public const int G4k = 73;
+        public const int G5k = 74;
+        public const int G6_3k = 75;
+        public const int G8k = 76;
+        public const int G10k = 77;
+        public const int G12_5k = 78;
+        public const int G16k = 79;
+        public const int G20k = 80;
+        public const int Count = 81;
     }
 
     internal static class Params
@@ -116,6 +148,38 @@ namespace NeoBuzz.Eq
             new ParamDef(P.B8Q, "B8Q", "B8 Q", 0, 2000, 686, MapKind.Exp, a: 0.1, b: 30, digits: 2, group: "Band 8", description: "Band 8 Q: bell and notch width, shelf and cut resonance (0.71 is flat)"),
             new ParamDef(P.B8Slope, "B8Slope", "B8 slope", 0, 2, 0, MapKind.Enum, names: new[] { "12 dB/oct", "24 dB/oct", "48 dB/oct" }, group: "Band 8", description: "Band 8 slope (low and high cut)"),
             new ParamDef(P.Output, "Output", "Output", 0, 480, 240, MapKind.Db, a: -24, b: 24, group: "Output", description: "Output gain in 0.1 dB steps"),
+            new ParamDef(P.Mode, "Mode", "Mode", 0, 1, 0, MapKind.Enum, names: new[] { "Parametric", "Graphic" }, group: "Mode", description: "Parametric: the eight bands above. Graphic: 31 constant-Q bands at the ISO third-octave centres, 20 Hz – 20 kHz, set by the G sliders; the response passes through every slider (the bands' overlap compensated), and the parametric bands rest"),
+            new ParamDef(P.G20, "G20", "G 20 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 20 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G25, "G25", "G 25 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 25 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G31_5, "G31_5", "G 31.5 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 31.5 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G40, "G40", "G 40 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 40 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G50, "G50", "G 50 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 50 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G63, "G63", "G 63 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 63 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G80, "G80", "G 80 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 80 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G100, "G100", "G 100 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 100 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G125, "G125", "G 125 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 125 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G160, "G160", "G 160 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 160 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G200, "G200", "G 200 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 200 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G250, "G250", "G 250 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 250 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G315, "G315", "G 315 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 315 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G400, "G400", "G 400 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 400 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G500, "G500", "G 500 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 500 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G630, "G630", "G 630 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 630 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G800, "G800", "G 800 Hz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 800 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G1k, "G1k", "G 1 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 1 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G1_25k, "G1_25k", "G 1.25 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 1.25 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G1_6k, "G1_6k", "G 1.6 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 1.6 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G2k, "G2k", "G 2 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 2 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G2_5k, "G2_5k", "G 2.5 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 2.5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G3_15k, "G3_15k", "G 3.15 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 3.15 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G4k, "G4k", "G 4 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 4 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G5k, "G5k", "G 5 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G6_3k, "G6_3k", "G 6.3 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 6.3 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G8k, "G8k", "G 8 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 8 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G10k, "G10k", "G 10 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 10 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G12_5k, "G12_5k", "G 12.5 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 12.5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G16k, "G16k", "G 16 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 16 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
+            new ParamDef(P.G20k, "G20k", "G 20 kHz", 0, 360, 180, MapKind.Db, a: -18, b: 18, group: "Graphic", description: "Graphic mode: the response at 20 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps"),
         };
     }
 }

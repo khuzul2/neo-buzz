@@ -5,6 +5,9 @@
 // them for the steeper cuts. Frequency, gain and Q glide (the sections recomputed every sample
 // while they move); type, slope and on/off changes crossfade the band out and in. The design
 // (EqDesign) is the one function the engine runs, the editor draws and the tests measure against.
+// Mode Graphic (machine-safety.md §4, H2) rests the eight bands and runs the 31-band graphic EQ
+// instead (GraphicEq.cs), the two crossfading over 5 ms when the mode changes; in Parametric mode,
+// the default, the engine runs exactly as before graphic mode was added.
 // Pure: tested by NeoBuzz.MachineTests.
 
 using System;
@@ -138,6 +141,11 @@ namespace NeoBuzz.Eq
         readonly Band[] bands = new Band[EqDesign.Bands];
         readonly float[] scope = new float[ScopeLength];
         volatile int scopePos;
+        // Graphic mode: the bank, its fade in and out, whether its sliders changed while it rested.
+        readonly GraphicBank graphic = new GraphicBank();
+        LinearRamp graphicMix;
+        bool graphicWanted, graphicStale = true;
+        readonly double[] gl = new double[MaxBlock], gr = new double[MaxBlock];
 
         sealed class Band
         {
@@ -184,6 +192,9 @@ namespace NeoBuzz.Eq
             glideA = 1 - PortableMath.Exp(-1 / (GlideSeconds * sr));
             output.Setup(GlideSeconds, sr);
             foreach (var b in bands) b.Mix.Setup(FadeSeconds, sr);
+            graphicMix.Setup(FadeSeconds, sr);
+            graphic.SetSampleRate(sr);
+            graphicStale = true;
             InMeter.SetSampleRate(sr);
             OutMeter.SetSampleRate(sr);
             Update(true);
@@ -192,11 +203,26 @@ namespace NeoBuzz.Eq
         public void Reset()
         {
             foreach (var b in bands) b.Reset();
+            graphic.Cold = true;
         }
+
+        /// <summary>The graphic mode's bands and solver (the editor and tests read them).</summary>
+        internal GraphicBank Graphic => graphic;
 
         void Update(bool force)
         {
             if (!force && !values.AnyDirty) return;
+            graphicWanted = values.Choice(P.Mode) == 1;
+            for (int k = 0; k < GraphicDesign.Bands && !graphicStale; k++) graphicStale = values.IsDirty(GraphicDesign.Slider(k));
+            if (graphicWanted && graphicStale)
+            {
+                // Off the per-sample path: only when a slider moved (or the mode came on since).
+                graphic.SetSliders(values);
+                graphicStale = false;
+            }
+            if (force) graphicMix.Reset(graphicWanted ? 1 : 0);
+            else graphicMix.SetTarget(graphicWanted ? 1 : 0);
+            if (force) graphic.Cold = true;
             float og = (float)DspMath.DbToGain(values.Value(P.Output));
             if (force) output.Reset(og);
             else output.SetTarget(og);
@@ -204,7 +230,7 @@ namespace NeoBuzz.Eq
             {
                 var b = bands[i];
                 var s = EqDesign.Settings(values, i);
-                b.WantOn = values.On(EqDesign.On(i));
+                b.WantOn = values.On(EqDesign.On(i)) && !graphicWanted;
                 b.WantType = s.Type;
                 b.WantSlope = s.Slope;
                 b.TLf = PortableMath.Log2(s.Hz);
@@ -279,6 +305,7 @@ namespace NeoBuzz.Eq
                 }
                 ProcessBand(b, left, right, n);
             }
+            if (graphicMix.Value != 0 || graphicMix.Target != 0) ProcessGraphic(left, right, n);
             if (!output.At(1))
             {
                 for (int i = 0; i < n; i++)
@@ -337,6 +364,41 @@ namespace NeoBuzz.Eq
                 sr[k].Flush();
             }
         }
+
+        void ProcessGraphic(float[] left, float[] right, int n)
+        {
+            if (graphic.Cold) graphic.Restart();
+            // Every band at exactly 0 dB and no offset: the sections run (to move off cleanly), the audio passes bit for bit.
+            bool untouched = graphicMix.At(1) && graphic.Identity;
+            for (int i = 0; i < n; i++)
+            {
+                gl[i] = left[i];
+                gr[i] = right[i];
+            }
+            graphic.Process(gl, gr, n);
+            if (untouched) return;
+            if (graphicMix.At(1))
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    left[i] = (float)Clean(gl[i]);
+                    right[i] = (float)Clean(gr[i]);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    double w = graphicMix.Next();
+                    left[i] = (float)Clean(left[i] + w * (gl[i] - left[i]));
+                    right[i] = (float)Clean(right[i] + w * (gr[i] - right[i]));
+                }
+                if (graphicMix.At(0)) graphic.Cold = true;
+            }
+        }
+
+        /// <summary>A value below 1e-30 as 0, so a dying tail leaves no subnormal floats.</summary>
+        static double Clean(double x) => x > -1e-30 && x < 1e-30 ? 0 : x;
 
         /// <summary>The last <see cref="ScopeLength"/> output samples (mono), oldest first, for the editor's spectrum.</summary>
         public void Scope(float[] into)

@@ -63,6 +63,12 @@ SOURCE = ("Neo FM6", "Brass — Bright Section", [("Unison", 3), ("Uni spread", 
 LONG = [n(p, 0, 15, 90) for p in ("A2", "E3", "C4", "G4")] + [n(p, 15, 13, 100) for p in ("F2", "C3", "A3", "E4")] + [n("C5", 2, 24, 50)]
 
 
+# Neo EQ's graphic sliders, by their names' frequencies ("G 31.5 Hz" … "G 20 kHz").
+GRAPHIC = ["20 Hz", "25 Hz", "31.5 Hz", "40 Hz", "50 Hz", "63 Hz", "80 Hz", "100 Hz", "125 Hz", "160 Hz", "200 Hz",
+           "250 Hz", "315 Hz", "400 Hz", "500 Hz", "630 Hz", "800 Hz", "1 kHz", "1.25 kHz", "1.6 kHz", "2 kHz",
+           "2.5 kHz", "3.15 kHz", "4 kHz", "5 kHz", "6.3 kHz", "8 kHz", "10 kHz", "12.5 kHz", "16 kHz", "20 kHz"]
+
+
 def gen(name, gear, preset, params, notes, beats=4, tail=1.0):
     return {"name": name, "gen": (gear, preset, params, notes), "fx": [], "beats": beats, "tail": tail}
 
@@ -120,6 +126,17 @@ CASES = [
     fx("eq-vocal-clarity", "Neo EQ", "Mixing — Vocal Clarity"),
     fx("eq-telephone", "Neo EQ", "Mixing — Telephone"),
     fx("eq-hum-notch", "Neo EQ", "Fix — Hum Notch 50 Hz", [("B1 on", "on"), ("B1 slope", "48 dB/oct"), ("B8 on", "on")]),
+    # Neo EQ's graphic mode (machine-safety.md §4): the solver's result (the sliders' median as a gain, the
+    # telephone's at −18 dB), the zigzag at ±18 dB (bands near 54 dB), and sliders and the mode automated
+    # (the gains gliding in segments, the crossfade between the modes).
+    fx("eq-graphic-loudness", "Neo EQ", "Graphic — Loudness (Smile)"),
+    fx("eq-graphic-telephone", "Neo EQ", "Graphic — Telephone", [("Output", "+12 dB")]),
+    fx("eq-graphic-zigzag", "Neo EQ", "Graphic — Flat",
+       [(f"G {f}", "+18 dB" if i % 2 == 0 else "-18 dB") for i, f in enumerate(GRAPHIC)] + [("Output", "-18 dB")]),
+    fx("eq-graphic-automated", "Neo EQ", "Graphic — Air",
+       auto=[("G 250 Hz", [(0, "-12 dB"), (1, "+12 dB"), (1.5, "-18 dB"), (2, "+6 dB")]),
+             ("G 2 kHz", [(0, "+9 dB"), (0.75, "-9 dB"), (2.25, "+18 dB")]),
+             ("Mode", [(0, "Graphic"), (2.5, "Parametric"), (3.25, "Graphic")])]),
     # Neo Limiter: pushed hard, auto and set release; Neo Analyzer after it (audio passes through).
     fx("limiter-loud", "Neo Limiter", "Mastering — Loud", [("Input gain", "+18 dB")], extra=[("Neo Analyzer", "Mix", [])]),
     fx("limiter-smash", "Neo Limiter", "Creative — Smash", [("Input gain", "+24 dB"), ("Auto release", "off")]),

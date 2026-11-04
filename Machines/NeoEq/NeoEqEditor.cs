@@ -1,8 +1,11 @@
 #nullable disable
 // Neo EQ's editor (docs/specs/machines.md §4): the response the engine runs (EqDesign, the same
-// function) over the output spectrum, with a draggable handle per band; below it the selected
-// band's controls; the output gain and meters at the side. WPF lays the editor out; the graph
-// draws on the kit's canvas (INeoCanvas) and its input is toolkit-free (Core/ResponseGraph.cs).
+// function) over the output spectrum, with a draggable handle per band; below it the mode and the
+// selected band's controls; the output gain and meters at the side. In graphic mode the graph shows
+// the 31 sliders on their tracks and the response the solver gives them (GraphicSolver, as the
+// engine runs it), and below it the selected slider's knob. WPF lays the editor out; the graph
+// draws on the kit's canvas (INeoCanvas) and its input is toolkit-free (Core/ResponseGraph.cs,
+// Core/GraphicSliders.cs).
 
 using System;
 #if !AVALONIA   // the studio's flavour takes these names from its kit (NeoBuzz.Editor.Avalonia/WpfNames.cs)
@@ -37,11 +40,15 @@ namespace NeoBuzz.Eq
             var graph = new ResponseGraph(-24, 24, 6);
             var handles = new BandHandleInput(graph, new Bands(ctx));
             handles.Select(2);
+            var sliders = new GraphicSliderInput(graph, new GraphicBands(ctx), 17);
+            var curve = new GraphicCurve();
+            bool Graphic() => ctx.Raw(P.Mode) == 1;
             var spectrum = new SpectrumView();
-            var view = new InteractiveGraph(680, 298, (g, r) => Draw(g, r, ctx, graph, handles, machine, spectrum), handles, animate: true)
+            var view = new InteractiveGraph(680, 298, (g, r) =>
             {
-                ToolTip = "Drag a handle: frequency and gain (Shift: fine). Wheel: Q. Double-click: band on/off.",
-            };
+                if (Graphic()) DrawGraphic(g, r, ctx, graph, sliders, machine, spectrum, curve);
+                else Draw(g, r, ctx, graph, handles, machine, spectrum);
+            }, new ModeInput(Graphic, handles, sliders), animate: true);
             ctx.Changed += view.InvalidateVisual;
 
             // One row of controls per band; only the selected band's is shown.
@@ -71,6 +78,51 @@ namespace NeoBuzz.Eq
 
             var band = Layout.Row(tabs, Layout.Gap(14), rows);
 
+            // Graphic mode: the selected slider's knob (one per slider, the selected one shown) and Flat.
+            var knobs = new Grid();
+            var knobOf = new UIElement[GraphicDesign.Bands];
+            for (int k = 0; k < GraphicDesign.Bands; k++)
+            {
+                var knob = new ParamKnob(ctx, GraphicDesign.Slider(k), GraphicDesign.Labels[k], 50);
+                knob.Visibility = k == sliders.Selected ? Visibility.Visible : Visibility.Collapsed;
+                knobOf[k] = knob;
+                knobs.Children.Add(knob);
+            }
+            var flat = new ActionButton("Flat", AccentColor, 70) { ToolTip = "Every slider to 0 dB" };
+            flat.Click += () =>
+            {
+                for (int k = 0; k < GraphicDesign.Bands; k++) ctx.Set(GraphicDesign.Slider(k), Params.Table[GraphicDesign.Slider(k)].Default);
+                ctx.RaiseChanged();
+            };
+            var graphicRow = Layout.Row(knobs, Layout.Gap(14), Layout.Column(Layout.Gap(1, 30), flat));
+            sliders.SelectedChanged += sel =>
+            {
+                for (int k = 0; k < knobOf.Length; k++) knobOf[k].Visibility = k == sel ? Visibility.Visible : Visibility.Collapsed;
+                view.InvalidateVisual();
+            };
+
+            // The mode, and whichever mode's controls apply. Both stay in the layout (the other one transparent and
+            // out of reach of the pointer), so the editor keeps its size when the mode changes.
+            var mode = new ParamChoice(ctx, P.Mode, "Mode", 0, vertical: true);
+            var swap = new Grid();
+            swap.Children.Add(band);
+            swap.Children.Add(graphicRow);
+            int shown = -1;
+            void ShowMode()
+            {
+                int now = Graphic() ? 1 : 0;
+                if (now == shown) return;
+                shown = now;
+                Show(band, now == 0);
+                Show(graphicRow, now == 1);
+                view.ToolTip = now == 1
+                    ? "Drag a slider's cap (Shift: fine), or press beside it and drag across the sliders to draw. Wheel: 0.5 dB (Shift: 0.1). Double-click: 0 dB."
+                    : "Drag a handle: frequency and gain (Shift: fine). Wheel: Q. Double-click: band on/off.";
+                view.InvalidateVisual();
+            }
+            ShowMode();
+            ctx.Changed += ShowMode;
+
             var output = Layout.Column(
                 new ParamKnob(ctx, P.Output, diameter: 56),
                 Layout.Gap(1, 8),
@@ -83,7 +135,108 @@ namespace NeoBuzz.Eq
                 Layout.Row(
                     new Section("Response", AccentColor, view),
                     new Section("Output", AccentColor, output)),
-                new Section("Band", AccentColor, band));
+                new Section("Band", AccentColor, Layout.Row(mode, Layout.Gap(14), swap)));
+        }
+
+        static void Show(UIElement e, bool shown)
+        {
+            e.Opacity = shown ? 1 : 0;
+            e.IsHitTestVisible = shown;
+        }
+
+        /// <summary>The pointer to the band handles (parametric) or the sliders (graphic); a drag stays with the one it began on.</summary>
+        sealed class ModeInput : IGraphInput
+        {
+            readonly Func<bool> graphic;
+            readonly IGraphInput parametric, sliders;
+            IGraphInput captured;
+
+            public ModeInput(Func<bool> graphic, IGraphInput parametric, IGraphInput sliders)
+            {
+                this.graphic = graphic;
+                this.parametric = parametric;
+                this.sliders = sliders;
+            }
+
+            IGraphInput Now => captured ?? (graphic() ? sliders : parametric);
+
+            public bool Capturing => Now.Capturing;
+
+            public bool Down(double x, double y, int clicks, bool fine)
+            {
+                captured = null;
+                var input = Now;
+                bool handled = input.Down(x, y, clicks, fine);
+                if (input.Capturing) captured = input;
+                return handled;
+            }
+
+            public bool Move(double x, double y, bool fine) => Now.Move(x, y, fine);
+
+            public bool Up()
+            {
+                var input = Now;
+                captured = null;
+                return input.Up();
+            }
+
+            public bool Wheel(double x, double y, int delta, bool fine) => Now.Wheel(x, y, delta, fine);
+
+            public bool Leave() => parametric.Leave() | sliders.Leave();
+        }
+
+        /// <summary>The graphic mode's sliders, read and set through the editor context (0.1 dB steps).</summary>
+        sealed class GraphicBands : IGraphicSliders
+        {
+            readonly EditorContext ctx;
+
+            public GraphicBands(EditorContext ctx) { this.ctx = ctx; }
+
+            public int Count => GraphicDesign.Bands;
+            public double Hz(int i) => GraphicDesign.Centres[i];
+            public string Label(int i) => GraphicDesign.Labels[i];
+            public double Db(int i) => ctx.Value(GraphicDesign.Slider(i));
+            public double MinDb => GraphicDesign.MinDb;
+            public double MaxDb => GraphicDesign.MaxDb;
+
+            public void Set(int i, double db)
+            {
+                int p = GraphicDesign.Slider(i);
+                int raw = Params.Table[p].Raw(Math.Round(db * 10) / 10);
+                if (raw == ctx.Raw(p)) return;
+                ctx.Set(p, raw);
+                ctx.RaiseChanged();
+            }
+        }
+
+        /// <summary>The solver the editor draws with: solved again when a slider or the sample rate changes.</summary>
+        sealed class GraphicCurve
+        {
+            readonly GraphicSolver solver = new GraphicSolver();
+            readonly int[] raw = new int[GraphicDesign.Bands];
+            readonly double[] db = new double[GraphicDesign.Bands];
+            bool solved;
+
+            public GraphicSolver For(EditorContext ctx, double rate)
+            {
+                bool changed = !solved;
+                if (rate != solver.SampleRate)
+                {
+                    solver.SetSampleRate(rate);
+                    changed = true;
+                }
+                for (int k = 0; k < GraphicDesign.Bands; k++)
+                {
+                    int r = ctx.Raw(GraphicDesign.Slider(k));
+                    if (r == raw[k] && solved) continue;
+                    raw[k] = r;
+                    db[k] = Params.Table[GraphicDesign.Slider(k)].Value(r);
+                    changed = true;
+                }
+                if (changed) solver.Solve(db);
+                solved = true;
+                return solver;
+            }
         }
 
         /// <summary>The bands as handles: their parameters, read and set through the editor context.</summary>
@@ -223,6 +376,27 @@ namespace NeoBuzz.Eq
                     Db[p] = Math.Max(db, Db[p] - 1.5);
                 }
             }
+        }
+
+        /// <summary>Graphic mode: the output spectrum, the sliders' tracks, the response through them (with the output gain) and their caps.</summary>
+        static void DrawGraphic(INeoCanvas g, NeoRect r, EditorContext ctx, ResponseGraph graph, GraphicSliderInput sliders, NeoEqMachine machine, SpectrumView spectrum, GraphicCurve curve)
+        {
+            graph.Layout(r);
+            if (machine != null)
+            {
+                spectrum.Update(machine.Engine);
+                g.Path(graph.Spectrum(spectrum.Hz, spectrum.Db, 0, 96), Palette.Track.WithAlpha(0x90), NeoStroke.None);
+            }
+            graph.DrawGrid(g);
+            sliders.DrawTracks(g);
+            var solver = curve.For(ctx, machine?.Engine.SampleRate ?? 48000);
+            double output = ctx.Value(P.Output);
+            g.Path(graph.Curve(hz => solver.ResponseDb(hz) + output), NeoFill.None, new NeoStroke(AccentColor, 2.2));
+            sliders.DrawCaps(g, AccentColor);
+            int i = sliders.Hover >= 0 ? sliders.Hover : sliders.Selected;
+            string text = "Graphic · " + sliders.Caption(i);
+            if (output != 0) text += " · " + Params.Table[P.Output].Name + " " + Params.Table[P.Output].Describe(ctx.Raw(P.Output));
+            g.Text(text, graph.Plot.Left + 6, graph.Plot.Top + 2, 10.5, AccentColor);
         }
 
         static void Draw(INeoCanvas g, NeoRect r, EditorContext ctx, ResponseGraph graph, BandHandleInput handles, NeoEqMachine machine, SpectrumView spectrum)
