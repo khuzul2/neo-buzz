@@ -153,5 +153,101 @@ namespace NeoBuzz.Eq
 
         [ParameterDecl(Name = "Output", Description = "Output gain in 0.1 dB steps", MinValue = 0, MaxValue = 480, DefValue = 240)]
         public int Output { get => Values[P.Output]; set => Values.Set(P.Output, value); }
+
+        [ParameterDecl(Name = "Mode", Description = "Parametric: the eight bands above. Graphic: 31 constant-Q bands at the ISO third-octave centres, 20 Hz – 20 kHz, set by the G sliders; the response passes through every slider (the bands' overlap compensated), and the parametric bands rest", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int Mode { get => Values[P.Mode]; set => Values.Set(P.Mode, value); }
+
+        [ParameterDecl(Name = "G 20 Hz", Description = "Graphic mode: the response at 20 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G20 { get => Values[P.G20]; set => Values.Set(P.G20, value); }
+
+        [ParameterDecl(Name = "G 25 Hz", Description = "Graphic mode: the response at 25 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G25 { get => Values[P.G25]; set => Values.Set(P.G25, value); }
+
+        [ParameterDecl(Name = "G 31.5 Hz", Description = "Graphic mode: the response at 31.5 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G31_5 { get => Values[P.G31_5]; set => Values.Set(P.G31_5, value); }
+
+        [ParameterDecl(Name = "G 40 Hz", Description = "Graphic mode: the response at 40 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G40 { get => Values[P.G40]; set => Values.Set(P.G40, value); }
+
+        [ParameterDecl(Name = "G 50 Hz", Description = "Graphic mode: the response at 50 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G50 { get => Values[P.G50]; set => Values.Set(P.G50, value); }
+
+        [ParameterDecl(Name = "G 63 Hz", Description = "Graphic mode: the response at 63 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G63 { get => Values[P.G63]; set => Values.Set(P.G63, value); }
+
+        [ParameterDecl(Name = "G 80 Hz", Description = "Graphic mode: the response at 80 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G80 { get => Values[P.G80]; set => Values.Set(P.G80, value); }
+
+        [ParameterDecl(Name = "G 100 Hz", Description = "Graphic mode: the response at 100 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G100 { get => Values[P.G100]; set => Values.Set(P.G100, value); }
+
+        [ParameterDecl(Name = "G 125 Hz", Description = "Graphic mode: the response at 125 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G125 { get => Values[P.G125]; set => Values.Set(P.G125, value); }
+
+        [ParameterDecl(Name = "G 160 Hz", Description = "Graphic mode: the response at 160 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G160 { get => Values[P.G160]; set => Values.Set(P.G160, value); }
+
+        [ParameterDecl(Name = "G 200 Hz", Description = "Graphic mode: the response at 200 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G200 { get => Values[P.G200]; set => Values.Set(P.G200, value); }
+
+        [ParameterDecl(Name = "G 250 Hz", Description = "Graphic mode: the response at 250 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G250 { get => Values[P.G250]; set => Values.Set(P.G250, value); }
+
+        [ParameterDecl(Name = "G 315 Hz", Description = "Graphic mode: the response at 315 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G315 { get => Values[P.G315]; set => Values.Set(P.G315, value); }
+
+        [ParameterDecl(Name = "G 400 Hz", Description = "Graphic mode: the response at 400 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G400 { get => Values[P.G400]; set => Values.Set(P.G400, value); }
+
+        [ParameterDecl(Name = "G 500 Hz", Description = "Graphic mode: the response at 500 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G500 { get => Values[P.G500]; set => Values.Set(P.G500, value); }
+
+        [ParameterDecl(Name = "G 630 Hz", Description = "Graphic mode: the response at 630 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G630 { get => Values[P.G630]; set => Values.Set(P.G630, value); }
+
+        [ParameterDecl(Name = "G 800 Hz", Description = "Graphic mode: the response at 800 Hz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G800 { get => Values[P.G800]; set => Values.Set(P.G800, value); }
+
+        [ParameterDecl(Name = "G 1 kHz", Description = "Graphic mode: the response at 1 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G1k { get => Values[P.G1k]; set => Values.Set(P.G1k, value); }
+
+        [ParameterDecl(Name = "G 1.25 kHz", Description = "Graphic mode: the response at 1.25 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G1_25k { get => Values[P.G1_25k]; set => Values.Set(P.G1_25k, value); }
+
+        [ParameterDecl(Name = "G 1.6 kHz", Description = "Graphic mode: the response at 1.6 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G1_6k { get => Values[P.G1_6k]; set => Values.Set(P.G1_6k, value); }
+
+        [ParameterDecl(Name = "G 2 kHz", Description = "Graphic mode: the response at 2 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G2k { get => Values[P.G2k]; set => Values.Set(P.G2k, value); }
+
+        [ParameterDecl(Name = "G 2.5 kHz", Description = "Graphic mode: the response at 2.5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G2_5k { get => Values[P.G2_5k]; set => Values.Set(P.G2_5k, value); }
+
+        [ParameterDecl(Name = "G 3.15 kHz", Description = "Graphic mode: the response at 3.15 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G3_15k { get => Values[P.G3_15k]; set => Values.Set(P.G3_15k, value); }
+
+        [ParameterDecl(Name = "G 4 kHz", Description = "Graphic mode: the response at 4 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G4k { get => Values[P.G4k]; set => Values.Set(P.G4k, value); }
+
+        [ParameterDecl(Name = "G 5 kHz", Description = "Graphic mode: the response at 5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G5k { get => Values[P.G5k]; set => Values.Set(P.G5k, value); }
+
+        [ParameterDecl(Name = "G 6.3 kHz", Description = "Graphic mode: the response at 6.3 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G6_3k { get => Values[P.G6_3k]; set => Values.Set(P.G6_3k, value); }
+
+        [ParameterDecl(Name = "G 8 kHz", Description = "Graphic mode: the response at 8 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G8k { get => Values[P.G8k]; set => Values.Set(P.G8k, value); }
+
+        [ParameterDecl(Name = "G 10 kHz", Description = "Graphic mode: the response at 10 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G10k { get => Values[P.G10k]; set => Values.Set(P.G10k, value); }
+
+        [ParameterDecl(Name = "G 12.5 kHz", Description = "Graphic mode: the response at 12.5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G12_5k { get => Values[P.G12_5k]; set => Values.Set(P.G12_5k, value); }
+
+        [ParameterDecl(Name = "G 16 kHz", Description = "Graphic mode: the response at 16 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G16k { get => Values[P.G16k]; set => Values.Set(P.G16k, value); }
+
+        [ParameterDecl(Name = "G 20 kHz", Description = "Graphic mode: the response at 20 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps", MinValue = 0, MaxValue = 360, DefValue = 180)]
+        public int G20k { get => Values[P.G20k]; set => Values.Set(P.G20k, value); }
     }
 }
