@@ -72,6 +72,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(core.BPM, Is.EqualTo(137));
                 Assert.That(core.SongCore.SongName, Is.EqualTo(path));
                 Studio.Screenshot(window, "studio-song-open");
+                window.RefreshNow();        // the title follows the song on the window's 100 ms timer: not timed here
                 Assert.That(window.Title, Does.StartWith("round trip.bmxml"));
             }
             finally
