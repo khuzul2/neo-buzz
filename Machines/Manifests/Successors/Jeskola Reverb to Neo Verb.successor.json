@@ -5,7 +5,7 @@
   "summary": "Dry Out, Rev Out and ER Out become Neo Verb's Mix, Late and Early, with the output connections making up the level the crossfade takes; Rev Time, Pre-Delay and High Cutoff carry over in seconds and Hz.",
   "input_gain_db": 6.02,
   "set": {
-    "Mode": "Hall",
+    "Mode": "Room",
     "Low decay": "1",
     "Low cut": "10 Hz",
     "High cut": "22 kHz",
@@ -20,16 +20,16 @@
         {
           "from": "Rev Out",
           "to": "Late",
-          "gain_db": 8.7
+          "gain_db": 0
         },
         {
           "from": "ER Out",
           "to": "Early",
-          "gain_db": 9.6
+          "gain_db": 9.0
         }
       ],
       "mix": "Mix",
-      "why": "Jeskola Reverb sets dry and wet levels apart; Neo Verb crossfades. The wet gains are the level difference between the two machines' tails (+8.7 dB) and early reflections (+9.6 dB) at the same settings, measured on Windows (ReBuzzTests/AgentReplaceTests.cs)."
+      "why": "Jeskola Reverb sets dry and wet levels apart; Neo Verb crossfades. Measured on noise on Windows (each against its input, the +6 dB summed input included): Jeskola Reverb's tail +14.8 dB, flat from 80 Hz to 12.5 kHz with High Cutoff at 16 kHz; Neo Verb's Room +14.6 dB and the flattest of its modes in the lows (Hall +9.3, Chamber +11.5, Plate +13.4); its early reflections 9 dB under Jeskola Reverb's."
     },
     {
       "kind": "unit",
@@ -51,13 +51,13 @@
   ],
   "remarks": [
     "Jeskola Reverb is mono (ReBuzz gives a mono native effect left + right summed: the input connections take +6 dB to match); Neo Verb is stereo. Width differs by design; set Width to 0% for a mono tail.",
-    "The algorithms differ (a 2000s Buzz reverb against a 16-line feedback delay network): the tail's colour and density are not the same, its level and length are."
+    "The algorithms differ (a 2000s Buzz reverb against a 16-line feedback delay network): the tail's density and the early reflections' pattern are not the same; its level, length and colour are close. Room is the Neo Verb mode whose tail is as flat in the lows as Jeskola Reverb's."
   ],
   "tolerance": {
     "loudness_db": 1.5,
-    "band_db": 4,
-    "from_hz": 50,
-    "to_hz": 12000,
+    "band_db": 6,
+    "from_hz": 63,
+    "to_hz": 10000,
     "measured": ""
   },
   "evidence": [

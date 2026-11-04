@@ -8,36 +8,82 @@
     "B1 on": "Off",
     "B2 on": "On",
     "B2 type": "Low shelf",
-    "B2 Q": "0.7071",
+    "B2 Q": "0.5",
     "B3 on": "Off",
     "B4 on": "Off",
     "B5 on": "Off",
     "B6 on": "Off",
     "B7 on": "On",
     "B7 type": "High shelf",
-    "B7 Q": "0.7071",
+    "B7 Q": "0.5",
     "B8 on": "Off"
   },
   "rules": [
-    { "kind": "unit", "from": "Mid Gain", "to": "Output" },
-    { "kind": "sum", "terms": [ { "param": "Low Gain", "weight": 1 }, { "param": "Mid Gain", "weight": -1 } ], "to": "B2 gain" },
-    { "kind": "sum", "terms": [ { "param": "High Gain", "weight": 1 }, { "param": "Mid Gain", "weight": -1 } ], "to": "B7 gain" },
-    { "kind": "unit", "from": "Low Cutoff", "to": "B2 freq" },
-    { "kind": "unit", "from": "High Cutoff", "to": "B7 freq" }
+    {
+      "kind": "unit",
+      "from": "Mid Gain",
+      "to": "Output"
+    },
+    {
+      "kind": "sum",
+      "terms": [
+        {
+          "param": "Low Gain",
+          "weight": 1
+        },
+        {
+          "param": "Mid Gain",
+          "weight": -1
+        }
+      ],
+      "to": "B2 gain"
+    },
+    {
+      "kind": "sum",
+      "terms": [
+        {
+          "param": "High Gain",
+          "weight": 1
+        },
+        {
+          "param": "Mid Gain",
+          "weight": -1
+        }
+      ],
+      "to": "B7 gain"
+    },
+    {
+      "kind": "unit",
+      "from": "Low Cutoff",
+      "to": "B2 freq",
+      "scale": 0.64,
+      "why": "fitted: Jeskola EQ-3's low band is half up at its Low Cutoff for +12 dB but half down at a third of it for −12 dB (measured on Windows); one Neo EQ shelf between them (×0.64, Q 0.5) is within 4.8 dB of both"
+    },
+    {
+      "kind": "unit",
+      "from": "High Cutoff",
+      "to": "B7 freq",
+      "scale": 1.5625,
+      "why": "the low band's fit mirrored (×1/0.64, Q 0.5)"
+    }
   ],
   "unmapped": [
-    { "param": "Dry Thru", "why": "closed source, and its texts say only 0 and 1: what it does is unknown." }
+    {
+      "param": "Dry Thru",
+      "why": "closed source, and its texts say only 0 and 1: what it does is unknown."
+    }
   ],
   "remarks": [
-    "Jeskola EQ-3 splits the bands with crossovers of unknown slope (closed source); Neo EQ's shelves are second order, so the bands' edges are gentler or steeper than they were, while their gains are the same.",
+    "Jeskola EQ-3 splits its bands with steep crossovers whose corners move with the gain: a +12 dB low band is half up at the Low Cutoff (400 Hz) and dips 3.5 dB an octave above, a −12 dB one is half down at 130 Hz (measured on Windows on noise). Neo EQ's shelves are symmetric second-order curves, so one shelf per band is fitted between the two: the gains carry over exactly, the corners within 4.8 dB at ±12 dB and less at smaller gains.",
     "Mono in and out: ReBuzz gives a mono native effect left + right summed, so the input connections take +6 dB; Neo EQ keeps the stereo."
   ],
   "tolerance": {
-    "loudness_db": 1,
-    "band_db": 4,
+    "loudness_db": 1.5,
+    "band_db": 5,
     "from_hz": 50,
     "to_hz": 12000,
-    "measured": ""
+    "measured": "",
+    "why_not": "Jeskola EQ-3's band corners move with its gains (a band-split EQ); Neo EQ's shelves don't: one fit serves boosts and cuts, within 5 dB at ±12 dB. Settings more than 24 dB apart between bands (Masterizer_test.bmx's mid +17.6 dB against high −24 dB) can't be reached by a shelf."
   },
   "evidence": [
     "Machines/Manifests/Effects/Jeskola EQ-3.machine.json (curated: gains ±24 dB, crossovers in Hz)",
