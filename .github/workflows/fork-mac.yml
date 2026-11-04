@@ -20,6 +20,8 @@ on:
       - 'ReBuzz.Studio/**'
       - 'ReBuzz.Studio.Tests/**'
       - 'tools/mac-bundle.sh'
+      - 'tools/mac-dmg.sh'
+      - 'tools/mac-dmg/**'
       - 'ReBuzzGUI/BuzzGUI.Common/**'
       - 'ReBuzzGUI/BuzzGUI.Interfaces/**'
       - 'tools/headless-smoke.py'
@@ -123,8 +125,10 @@ jobs:
       run: python3 tools/headless-midi.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/midi"
 
     # The studio (docs/specs/studio-mvp.md): its headless view tests on arm64, then ReBuzz.app
-    # (self-contained, ad-hoc signed) built and started for real: it opens its window, starts the
-    # engine with the runner's audio device, and quits (--smoke). The app is uploaded with the run.
+    # (self-contained, ad-hoc signed) built, packed into the disk image people install from
+    # (tools/mac-dmg.sh), and installed out of it; the installed copy is started for real: it opens
+    # its window, starts the engine with the runner's audio device, and quits (--smoke). The disk
+    # image is uploaded with the run; mac-release.yml publishes it when the change reaches main.
     - name: Studio (Avalonia, headless) on arm64
       if: always()
       shell: bash
@@ -138,17 +142,18 @@ jobs:
       run: |
         brew install dylibbundler libsndfile >/dev/null || true
         tools/mac-bundle.sh "$RUNNER_TEMP/app"
+        tools/mac-dmg.sh "$RUNNER_TEMP/app/ReBuzz.app" "$RUNNER_TEMP/app/ReBuzz-macos-arm64.dmg" "$RUNNER_TEMP/installed"
         python3 -c "import subprocess, sys; sys.exit(subprocess.run(sys.argv[1:], timeout=180).returncode)" \
-          "$RUNNER_TEMP/app/ReBuzz.app/Contents/MacOS/ReBuzz.Studio" --smoke --settings "$RUNNER_TEMP/studio-settings" 2>&1 | tee studio-smoke.log
+          "$RUNNER_TEMP/installed/ReBuzz.app/Contents/MacOS/ReBuzz.Studio" --smoke --settings "$RUNNER_TEMP/studio-settings" 2>&1 | tee studio-smoke.log
         grep -q "smoke: ok" studio-smoke.log
-        (cd "$RUNNER_TEMP/app" && ditto -c -k --keepParent ReBuzz.app ReBuzz-macos-arm64.zip)
 
-    - name: Upload ReBuzz.app
+    - name: Upload the disk image
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: ReBuzz-macos-arm64
-        path: ${{ runner.temp }}/app/ReBuzz-macos-arm64.zip
+        name: ReBuzz-macos-arm64-dmg
+        path: ${{ runner.temp }}/app/ReBuzz-macos-arm64.dmg
+        compression-level: 0
         if-no-files-found: ignore
 
     # P3's exit (docs/specs/studio-mvp.md S9): ReBuzz.app itself, with the runner's audio device and
@@ -157,7 +162,7 @@ jobs:
     # session launch and record, midi_play, meters_read, a render. Then the system asks it to quit.
     - name: The studio's MCP server, live (ReBuzz.app)
       if: always()
-      run: python3 tools/headless-live.py --studio "$RUNNER_TEMP/app/ReBuzz.app/Contents/MacOS/ReBuzz.Studio" "$RUNNER_TEMP/studio-live" --expect-workgroup
+      run: python3 tools/headless-live.py --studio "$RUNNER_TEMP/installed/ReBuzz.app/Contents/MacOS/ReBuzz.Studio" "$RUNNER_TEMP/studio-live" --expect-workgroup
 
     - name: Summary
       if: always()
