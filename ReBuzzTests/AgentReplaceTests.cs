@@ -439,7 +439,7 @@ namespace ReBuzzTests
             var hz = FineTransfer.Frequencies();
             void Measure(string label, params (int Index, int Raw)[] changes)
             {
-                HeldNoise(client, "Joachims Hyperion", new JsonArray(changes.Select(c => (JsonNode)new JsonObject { ["param"] = $"#{c.Index}", ["value"] = $"raw:{c.Raw}" }).ToArray()));
+                HeldNoise(client, "Joachims Hyperion", changes.Length == 0 ? null : new JsonArray(changes.Select(c => (JsonNode)new JsonObject { ["param"] = $"#{c.Index}", ["value"] = $"raw:{c.Raw}" }).ToArray()));
                 Quiet(client, "param_set", Args(("machine", "Synth"), ("changes", Changes(("Volume", "-12 dB")))));
                 var render = Quiet(client, "render", Args(("tail_seconds", 0), ("probes", new JsonArray("FX", "Synth"))));
                 var probes = render["probes"]!.AsArray();
@@ -454,7 +454,8 @@ namespace ReBuzzTests
             const int Bw = 33, Hp = 32, Gain = 1, B900 = 15, B1150 = 14, B6100 = 7, B20k = 2, B20 = 31;
             const int Plus12 = 213, Minus12 = 43, Plus6 = 170, Plus18 = 255;
             Measure("defaults");
-            foreach (int bw in new[] { 0, 2, 4, 8, 12, 15 }) Measure($"900 Hz +12 dB, Bandwidth raw {bw}", (B900, Plus12), (Bw, bw));
+            for (int bw = 0; bw <= 15; bw++) Measure($"900 Hz +12 dB, Bandwidth raw {bw}", (B900, Plus12), (Bw, bw));
+            Measure("1150 Hz +12 dB, Bandwidth raw 8", (B1150, Plus12), (Bw, 8));
             Measure("900 Hz -12 dB, Bandwidth raw 8", (B900, Minus12), (Bw, 8));
             Measure("900 Hz +6 dB, Bandwidth raw 8", (B900, Plus6), (Bw, 8));
             Measure("900 Hz +18 dB, Bandwidth raw 8", (B900, Plus18), (Bw, 8));
@@ -462,8 +463,10 @@ namespace ReBuzzTests
             Measure("6100 Hz +12 dB, Bandwidth raw 8", (B6100, Plus12), (Bw, 8));
             Measure("20 kHz +12 dB, Bandwidth raw 8", (B20k, Plus12), (Bw, 8));
             Measure("20 Hz +12 dB, Bandwidth raw 8", (B20, Plus12), (Bw, 8));
-            foreach (int bw in new[] { 0, 8 })
+            foreach (int bw in new[] { 0, 8, 15 })
                 Measure($"every band +6 dB, Bandwidth raw {bw}", Enumerable.Range(2, 30).Select(i => (i, Plus6)).Append((Bw, bw)).ToArray());
+            foreach (int bw in new[] { 2, 8 })
+                Measure($"zigzag ±6 dB, Bandwidth raw {bw}", Enumerable.Range(2, 30).Select(i => (i, i % 2 == 0 ? Plus6 : 86)).Append((Bw, bw)).ToArray());
             Measure("every band -6 dB, Bandwidth raw 4", Enumerable.Range(2, 30).Select(i => (i, 86)).Append((Bw, 4)).ToArray());
             Measure("Highpass raw 64", (Hp, 64));
             Measure("Highpass raw 127", (Hp, 127));
