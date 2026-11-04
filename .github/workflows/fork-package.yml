@@ -177,6 +177,18 @@ jobs:
         python tools/curated-check.py $exe.FullName curated-check
         exit $LASTEXITCODE
 
+    # U4 (docs/specs/mcp-server.md §12.11): the curated natives' factory presets on the machines: each loads through
+    # preset_load, sounds, at a consistent level, peaks below -1 dBFS, no NaN. Fails on a preset that doesn't.
+    - name: Factory presets on the machines
+      if: (success() || failure()) && steps.build.outcome == 'success'
+      timeout-minutes: 20
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
+        python tools/preset-check.py $exe.FullName preset-check
+        exit $LASTEXITCODE
+
     - name: Upload machine profile
       if: always() && hashFiles('machine-profile/machine-profile.json') != ''
       uses: actions/upload-artifact@v4

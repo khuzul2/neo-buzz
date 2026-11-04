@@ -68,14 +68,9 @@ namespace ReBuzz.AppViews
                     window.Hide();
                     e.Cancel = true;
                 };
-                try
-                {
-                    if (mc.Graph?.Buzz?.MachineViewHWND is IntPtr owner && owner != IntPtr.Zero)
-                        new WindowInteropHelper(window).Owner = owner;
-                }
-                catch (Exception)
-                {
-                }
+                // Owned by the main window, as the parameter window is (none when ReBuzz runs headless).
+                if (mc.Graph?.Buzz?.MachineViewHWND is IntPtr hwnd && hwnd != IntPtr.Zero && HwndSource.FromHwnd(hwnd)?.RootVisual is Window owner)
+                    window.Owner = owner;
                 w.Editor = window;
             }
             w.Editor.Show();

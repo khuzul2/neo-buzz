@@ -1,0 +1,34 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+# It adds harmonics to the dry signal, so it is louder than its input as Amount rises (a quirk).
+machine "Oomek Exciter"
+
+preset "Air — Subtle Sparkle"
+comment "A touch of high harmonics for air"
+Drive = 0.5
+Pre high-pass = 3000 Hz
+Post high-pass = 5000 Hz
+Amount = -12 dB
+
+preset "Presence — Vocal"
+comment "Upper-mid harmonics that bring a part forward"
+Drive = 0.5
+Pre high-pass = 1500 Hz
+Post high-pass = 2500 Hz
+Amount = -10 dB
+
+preset "Bright — Strong"
+comment "Stronger, brighter excitation"
+Drive = 1
+Pre high-pass = 2000 Hz
+Post high-pass = 3000 Hz
+Amount = -6 dB
+
+preset "Bass — Harmonics"
+comment "Harmonics of the bass, so it reads on small speakers"
+Drive = 0.8
+Pre high-pass = 60 Hz
+Post high-pass = 200 Hz
+Amount = -10 dB

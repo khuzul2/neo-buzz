@@ -1,0 +1,147 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Tone — Warm Lows">
+    <Preset Machine="Pedal EQ">
+      <Parameters>
+        <Parameter Name="Bypass" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="LS Solo" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="LM Solo" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="HM Solo" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="HS Solo" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="LS Freq" Group="1" Index="5" Track="0" Value="9" />
+        <Parameter Name="LS Gain" Group="1" Index="6" Track="0" Value="54" />
+        <Parameter Name="LM Freq" Group="1" Index="7" Track="0" Value="6" />
+        <Parameter Name="LM Gain" Group="1" Index="8" Track="0" Value="48" />
+        <Parameter Name="LM Q" Group="1" Index="9" Track="0" Value="6" />
+        <Parameter Name="HM Freq" Group="1" Index="10" Track="0" Value="8" />
+        <Parameter Name="HM Gain" Group="1" Index="11" Track="0" Value="48" />
+        <Parameter Name="HM Q" Group="1" Index="12" Track="0" Value="6" />
+        <Parameter Name="HS Freq" Group="1" Index="13" Track="0" Value="9" />
+        <Parameter Name="HS Gain" Group="1" Index="14" Track="0" Value="44" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="46" />
+      </Parameters>
+      <Attributes />
+      <Comment>A little low shelf, a little less top: warmer</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Tone — Bright Air">
+    <Preset Machine="Pedal EQ">
+      <Parameters>
+        <Parameter Name="Bypass" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="LS Solo" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="LM Solo" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="HM Solo" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="HS Solo" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="LS Freq" Group="1" Index="5" Track="0" Value="6" />
+        <Parameter Name="LS Gain" Group="1" Index="6" Track="0" Value="48" />
+        <Parameter Name="LM Freq" Group="1" Index="7" Track="0" Value="6" />
+        <Parameter Name="LM Gain" Group="1" Index="8" Track="0" Value="48" />
+        <Parameter Name="LM Q" Group="1" Index="9" Track="0" Value="6" />
+        <Parameter Name="HM Freq" Group="1" Index="10" Track="0" Value="8" />
+        <Parameter Name="HM Gain" Group="1" Index="11" Track="0" Value="51" />
+        <Parameter Name="HM Q" Group="1" Index="12" Track="0" Value="4" />
+        <Parameter Name="HS Freq" Group="1" Index="13" Track="0" Value="10" />
+        <Parameter Name="HS Gain" Group="1" Index="14" Track="0" Value="56" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="44" />
+      </Parameters>
+      <Attributes />
+      <Comment>A high shelf for air and a touch of presence</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Cut — Mud Removal">
+    <Preset Machine="Pedal EQ">
+      <Parameters>
+        <Parameter Name="Bypass" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="LS Solo" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="LM Solo" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="HM Solo" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="HS Solo" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="LS Freq" Group="1" Index="5" Track="0" Value="6" />
+        <Parameter Name="LS Gain" Group="1" Index="6" Track="0" Value="48" />
+        <Parameter Name="LM Freq" Group="1" Index="7" Track="0" Value="5" />
+        <Parameter Name="LM Gain" Group="1" Index="8" Track="0" Value="40" />
+        <Parameter Name="LM Q" Group="1" Index="9" Track="0" Value="7" />
+        <Parameter Name="HM Freq" Group="1" Index="10" Track="0" Value="8" />
+        <Parameter Name="HM Gain" Group="1" Index="11" Track="0" Value="48" />
+        <Parameter Name="HM Q" Group="1" Index="12" Track="0" Value="6" />
+        <Parameter Name="HS Freq" Group="1" Index="13" Track="0" Value="9" />
+        <Parameter Name="HS Gain" Group="1" Index="14" Track="0" Value="48" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="48" />
+      </Parameters>
+      <Attributes />
+      <Comment>A broad dip in the low mids where mixes get muddy</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Cut — Low Rumble">
+    <Preset Machine="Pedal EQ">
+      <Parameters>
+        <Parameter Name="Bypass" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="LS Solo" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="LM Solo" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="HM Solo" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="HS Solo" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="LS Freq" Group="1" Index="5" Track="0" Value="5" />
+        <Parameter Name="LS Gain" Group="1" Index="6" Track="0" Value="24" />
+        <Parameter Name="LM Freq" Group="1" Index="7" Track="0" Value="6" />
+        <Parameter Name="LM Gain" Group="1" Index="8" Track="0" Value="48" />
+        <Parameter Name="LM Q" Group="1" Index="9" Track="0" Value="6" />
+        <Parameter Name="HM Freq" Group="1" Index="10" Track="0" Value="8" />
+        <Parameter Name="HM Gain" Group="1" Index="11" Track="0" Value="48" />
+        <Parameter Name="HM Q" Group="1" Index="12" Track="0" Value="6" />
+        <Parameter Name="HS Freq" Group="1" Index="13" Track="0" Value="9" />
+        <Parameter Name="HS Gain" Group="1" Index="14" Track="0" Value="48" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="48" />
+      </Parameters>
+      <Attributes />
+      <Comment>A deep low shelf cut: rumble and boom out</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Vocal — Presence">
+    <Preset Machine="Pedal EQ">
+      <Parameters>
+        <Parameter Name="Bypass" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="LS Solo" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="LM Solo" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="HM Solo" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="HS Solo" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="LS Freq" Group="1" Index="5" Track="0" Value="6" />
+        <Parameter Name="LS Gain" Group="1" Index="6" Track="0" Value="48" />
+        <Parameter Name="LM Freq" Group="1" Index="7" Track="0" Value="4" />
+        <Parameter Name="LM Gain" Group="1" Index="8" Track="0" Value="44" />
+        <Parameter Name="LM Q" Group="1" Index="9" Track="0" Value="6" />
+        <Parameter Name="HM Freq" Group="1" Index="10" Track="0" Value="10" />
+        <Parameter Name="HM Gain" Group="1" Index="11" Track="0" Value="54" />
+        <Parameter Name="HM Q" Group="1" Index="12" Track="0" Value="6" />
+        <Parameter Name="HS Freq" Group="1" Index="13" Track="0" Value="9" />
+        <Parameter Name="HS Gain" Group="1" Index="14" Track="0" Value="48" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="46" />
+      </Parameters>
+      <Attributes />
+      <Comment>Less boxiness, more presence and clarity</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Telephone — Narrow Band">
+    <Preset Machine="Pedal EQ">
+      <Parameters>
+        <Parameter Name="Bypass" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="LS Solo" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="LM Solo" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="HM Solo" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="HS Solo" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="LS Freq" Group="1" Index="5" Track="0" Value="13" />
+        <Parameter Name="LS Gain" Group="1" Index="6" Track="0" Value="12" />
+        <Parameter Name="LM Freq" Group="1" Index="7" Track="0" Value="6" />
+        <Parameter Name="LM Gain" Group="1" Index="8" Track="0" Value="48" />
+        <Parameter Name="LM Q" Group="1" Index="9" Track="0" Value="6" />
+        <Parameter Name="HM Freq" Group="1" Index="10" Track="0" Value="5" />
+        <Parameter Name="HM Gain" Group="1" Index="11" Track="0" Value="60" />
+        <Parameter Name="HM Q" Group="1" Index="12" Track="0" Value="8" />
+        <Parameter Name="HS Freq" Group="1" Index="13" Track="0" Value="5" />
+        <Parameter Name="HS Gain" Group="1" Index="14" Track="0" Value="12" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="56" />
+      </Parameters>
+      <Attributes />
+      <Comment>Lows and highs shelved away, a mid bump: a small speaker</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

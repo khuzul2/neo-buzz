@@ -153,12 +153,17 @@ namespace ReBuzz.AgentTests
             return found.Count > 0 ? found : all.Where(p => p.PlainName.Length > 0 && p.PlainName == name).ToList();
         }
 
-        /// <summary>The factory presets by gear (Machines/*/Presets.txt).</summary>
+        /// <summary>
+        /// The factory presets by gear: the Neo machines' (Machines/*/Presets.txt) and, U4 (mcp-server.md §12.11), the curated
+        /// machines' (Machines/Manifests/*/&lt;Gear&gt;.presets.txt).
+        /// </summary>
         static Dictionary<string, List<string>> Presets()
         {
             if (presets != null) return presets;
             presets = new Dictionary<string, List<string>>();
-            foreach (var file in Directory.GetFiles(Path.Combine(RepoRoot(), "Machines"), "Presets.txt", SearchOption.AllDirectories))
+            var files = Directory.GetFiles(Path.Combine(RepoRoot(), "Machines"), "Presets.txt", SearchOption.AllDirectories)
+                .Concat(Directory.GetFiles(Path.Combine(RepoRoot(), "Machines", "Manifests"), "*" + FactoryPresets.SourceSuffix, SearchOption.AllDirectories));
+            foreach (var file in files)
             {
                 string? gear = null;
                 foreach (var line in File.ReadAllLines(file))
@@ -185,8 +190,8 @@ namespace ReBuzz.AgentTests
             foreach (var t in Topics) yield return ($"guide {t}", GuideLibrary.Get(t)!, null);
             foreach (var g in MachineManual.CuratedGear) yield return ($"curated page {g}", MachineManual.Curated(g)!, g);
             foreach (var m in Manifests().Values) yield return ($"manual {m.Gear}", MachineManual.Build(m, Presets().GetValueOrDefault(m.Gear)), m.Gear);
-            // U3: the curated manifests' manuals (their pages, if any, come with them).
-            foreach (var m in CuratedManifestTests.Curated().Values) yield return ($"manual {m.Gear}", MachineManual.Build(m, null), m.Gear);
+            // U3: the curated manifests' manuals (their pages, if any, come with them); U4: with their factory presets.
+            foreach (var m in CuratedManifestTests.Curated().Values) yield return ($"manual {m.Gear}", MachineManual.Build(m, Presets().GetValueOrDefault(m.Gear)), m.Gear);
             foreach (var (name, args) in PromptCases()) yield return ($"prompt {name}({string.Join(", ", args.Select(a => a.Key + "=" + a.Value))})", Render(name, args), null);
         }
 

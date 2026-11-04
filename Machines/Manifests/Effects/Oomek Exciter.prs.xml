@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Air — Subtle Sparkle">
+    <Preset Machine="Oomek Exciter">
+      <Parameters>
+        <Parameter Name="Drive" Group="1" Index="0" Track="0" Value="60" />
+        <Parameter Name="Pre Cut" Group="1" Index="1" Track="0" Value="103" />
+        <Parameter Name="Post Cut" Group="1" Index="2" Track="0" Value="171" />
+        <Parameter Name="Amount" Group="1" Index="3" Track="0" Value="30" />
+      </Parameters>
+      <Attributes />
+      <Comment>A touch of high harmonics for air</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Presence — Vocal">
+    <Preset Machine="Oomek Exciter">
+      <Parameters>
+        <Parameter Name="Drive" Group="1" Index="0" Track="0" Value="60" />
+        <Parameter Name="Pre Cut" Group="1" Index="1" Track="0" Value="51" />
+        <Parameter Name="Post Cut" Group="1" Index="2" Track="0" Value="85" />
+        <Parameter Name="Amount" Group="1" Index="3" Track="0" Value="38" />
+      </Parameters>
+      <Attributes />
+      <Comment>Upper-mid harmonics that bring a part forward</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bright — Strong">
+    <Preset Machine="Oomek Exciter">
+      <Parameters>
+        <Parameter Name="Drive" Group="1" Index="0" Track="0" Value="120" />
+        <Parameter Name="Pre Cut" Group="1" Index="1" Track="0" Value="68" />
+        <Parameter Name="Post Cut" Group="1" Index="2" Track="0" Value="103" />
+        <Parameter Name="Amount" Group="1" Index="3" Track="0" Value="60" />
+      </Parameters>
+      <Attributes />
+      <Comment>Stronger, brighter excitation</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Harmonics">
+    <Preset Machine="Oomek Exciter">
+      <Parameters>
+        <Parameter Name="Drive" Group="1" Index="0" Track="0" Value="96" />
+        <Parameter Name="Pre Cut" Group="1" Index="1" Track="0" Value="2" />
+        <Parameter Name="Post Cut" Group="1" Index="2" Track="0" Value="7" />
+        <Parameter Name="Amount" Group="1" Index="3" Track="0" Value="38" />
+      </Parameters>
+      <Attributes />
+      <Comment>Harmonics of the bass, so it reads on small speakers</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

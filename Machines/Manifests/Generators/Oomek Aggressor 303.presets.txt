@@ -1,0 +1,39 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+# Cutoff, resonance and decay are its own bare scales (its source has no units for them).
+machine "Oomek Aggressor 303"
+
+preset "Acid — Classic Squelch"
+comment "A resonant saw with a strong envelope: the classic acid line"
+Oscillator wave = Saw
+Filter cutoff = 60
+Filter resonance = 100
+Filter envelope amount = 70%
+Envelope decay = 60
+
+preset "Acid — Square Rubber"
+comment "The square wave, a shorter envelope: a rubbery line"
+Oscillator wave = Square
+Filter cutoff = 50
+Filter resonance = 80
+Filter envelope amount = 60%
+Envelope decay = 40
+
+preset "Bass — Deep Round"
+comment "Filter low, little resonance, a long decay: a round bass"
+Oscillator wave = Saw
+Filter cutoff = 30
+Filter resonance = 30
+Filter envelope amount = 30%
+Envelope decay = 80
+
+preset "Acid — Screamer"
+comment "Filter high and very resonant, a short decay, turned down: a screaming lead line"
+Oscillator wave = Saw
+Filter cutoff = 100
+Filter resonance = 110
+Filter envelope amount = 90%
+Envelope decay = 30
+Volume = 70%

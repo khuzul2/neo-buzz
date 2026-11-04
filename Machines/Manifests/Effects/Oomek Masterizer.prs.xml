@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Master — Gentle Glue">
+    <Preset Machine="Oomek Masterizer">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="60" />
+        <Parameter Name="Treshold Lo" Group="1" Index="1" Track="0" Value="60" />
+        <Parameter Name="Treshold Mid" Group="1" Index="2" Track="0" Value="60" />
+        <Parameter Name="Treshold Hi" Group="1" Index="3" Track="0" Value="60" />
+        <Parameter Name="Decay Lo" Group="1" Index="4" Track="0" Value="75" />
+        <Parameter Name="Decay Mid" Group="1" Index="5" Track="0" Value="75" />
+        <Parameter Name="Decay Hi" Group="1" Index="6" Track="0" Value="75" />
+        <Parameter Name="Lo | Mid Split" Group="1" Index="7" Track="0" Value="17" />
+        <Parameter Name="Mid | Hi Split" Group="1" Index="8" Track="0" Value="18" />
+        <Parameter Name="Knee" Group="1" Index="9" Track="0" Value="16" />
+      </Parameters>
+      <Attributes />
+      <Comment>Light three-band compression with a soft knee</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Master — Dense">
+    <Preset Machine="Oomek Masterizer">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="71" />
+        <Parameter Name="Treshold Lo" Group="1" Index="1" Track="0" Value="38" />
+        <Parameter Name="Treshold Mid" Group="1" Index="2" Track="0" Value="38" />
+        <Parameter Name="Treshold Hi" Group="1" Index="3" Track="0" Value="38" />
+        <Parameter Name="Decay Lo" Group="1" Index="4" Track="0" Value="50" />
+        <Parameter Name="Decay Mid" Group="1" Index="5" Track="0" Value="50" />
+        <Parameter Name="Decay Hi" Group="1" Index="6" Track="0" Value="50" />
+        <Parameter Name="Lo | Mid Split" Group="1" Index="7" Track="0" Value="17" />
+        <Parameter Name="Mid | Hi Split" Group="1" Index="8" Track="0" Value="18" />
+        <Parameter Name="Knee" Group="1" Index="9" Track="0" Value="8" />
+      </Parameters>
+      <Attributes />
+      <Comment>More compression in every band, faster release</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bass — Tame Lows">
+    <Preset Machine="Oomek Masterizer">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="60" />
+        <Parameter Name="Treshold Lo" Group="1" Index="1" Track="0" Value="30" />
+        <Parameter Name="Treshold Mid" Group="1" Index="2" Track="0" Value="120" />
+        <Parameter Name="Treshold Hi" Group="1" Index="3" Track="0" Value="120" />
+        <Parameter Name="Decay Lo" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="Decay Mid" Group="1" Index="5" Track="0" Value="50" />
+        <Parameter Name="Decay Hi" Group="1" Index="6" Track="0" Value="50" />
+        <Parameter Name="Lo | Mid Split" Group="1" Index="7" Track="0" Value="17" />
+        <Parameter Name="Mid | Hi Split" Group="1" Index="8" Track="0" Value="18" />
+        <Parameter Name="Knee" Group="1" Index="9" Track="0" Value="16" />
+      </Parameters>
+      <Attributes />
+      <Comment>Only the low band held down: a steadier bottom end</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bright — De-harsh">
+    <Preset Machine="Oomek Masterizer">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="60" />
+        <Parameter Name="Treshold Lo" Group="1" Index="1" Track="0" Value="120" />
+        <Parameter Name="Treshold Mid" Group="1" Index="2" Track="0" Value="120" />
+        <Parameter Name="Treshold Hi" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Decay Lo" Group="1" Index="4" Track="0" Value="50" />
+        <Parameter Name="Decay Mid" Group="1" Index="5" Track="0" Value="50" />
+        <Parameter Name="Decay Hi" Group="1" Index="6" Track="0" Value="50" />
+        <Parameter Name="Lo | Mid Split" Group="1" Index="7" Track="0" Value="17" />
+        <Parameter Name="Mid | Hi Split" Group="1" Index="8" Track="0" Value="102" />
+        <Parameter Name="Knee" Group="1" Index="9" Track="0" Value="16" />
+      </Parameters>
+      <Attributes />
+      <Comment>Only the high band held down, above 4 kHz</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

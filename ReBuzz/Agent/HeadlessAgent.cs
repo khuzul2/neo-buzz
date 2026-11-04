@@ -88,6 +88,19 @@ namespace ReBuzz.Agent
             core.SongCore.LoopEnd = 16;
             core.Modified = false;
 
+            // Fork (docs/specs/mcp-server.md §12.11, U4): --editor-shots <folder> draws and checks the manifest editors
+            // (ReBuzzTests on the package run), then exits.
+            if (EditorShots.Folder(args) is string shots)
+            {
+                Step("editor shots");
+                try { EditorShots.Run(core, Path.GetFullPath(shots), Step); }
+                catch (Exception e) { Console.Error.WriteLine("[ReBuzz] editor shots: " + e); }
+                try { init.ShutDownReBuzzEngine(); } catch (Exception) { }
+                hidden.Dispose();
+                app.Shutdown();
+                return;
+            }
+
             string song = args.SkipWhile(a => !string.Equals(a, Switch, StringComparison.OrdinalIgnoreCase)).Skip(1).FirstOrDefault(a => !a.StartsWith("-"));
             if (song != null)
             {

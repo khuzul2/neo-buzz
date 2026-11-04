@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Plate — Vocal Bright">
+    <Preset Machine="Pedal Plate">
+      <Parameters>
+        <Parameter Name="Mix" Group="1" Index="0" Track="0" Value="30" />
+        <Parameter Name="PreDelayMs" Group="1" Index="1" Track="0" Value="20" />
+        <Parameter Name="Decay" Group="1" Index="2" Track="0" Value="60" />
+        <Parameter Name="Damping" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Size" Group="1" Index="4" Track="0" Value="100" />
+        <Parameter Name="ModRate" Group="1" Index="5" Track="0" Value="20" />
+        <Parameter Name="ModDepth" Group="1" Index="6" Track="0" Value="30" />
+        <Parameter Name="LowCut" Group="1" Index="7" Track="0" Value="55" />
+        <Parameter Name="Feedback" Group="1" Index="8" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A bright plate with a little pre-delay, for vocals and leads</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Plate — Snare Short">
+    <Preset Machine="Pedal Plate">
+      <Parameters>
+        <Parameter Name="Mix" Group="1" Index="0" Track="0" Value="25" />
+        <Parameter Name="PreDelayMs" Group="1" Index="1" Track="0" Value="5" />
+        <Parameter Name="Decay" Group="1" Index="2" Track="0" Value="35" />
+        <Parameter Name="Damping" Group="1" Index="3" Track="0" Value="50" />
+        <Parameter Name="Size" Group="1" Index="4" Track="0" Value="70" />
+        <Parameter Name="ModRate" Group="1" Index="5" Track="0" Value="20" />
+        <Parameter Name="ModDepth" Group="1" Index="6" Track="0" Value="30" />
+        <Parameter Name="LowCut" Group="1" Index="7" Track="0" Value="62" />
+        <Parameter Name="Feedback" Group="1" Index="8" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A short, tight plate for snares and percussion</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Room — Small Dark">
+    <Preset Machine="Pedal Plate">
+      <Parameters>
+        <Parameter Name="Mix" Group="1" Index="0" Track="0" Value="20" />
+        <Parameter Name="PreDelayMs" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Decay" Group="1" Index="2" Track="0" Value="30" />
+        <Parameter Name="Damping" Group="1" Index="3" Track="0" Value="75" />
+        <Parameter Name="Size" Group="1" Index="4" Track="0" Value="40" />
+        <Parameter Name="ModRate" Group="1" Index="5" Track="0" Value="20" />
+        <Parameter Name="ModDepth" Group="1" Index="6" Track="0" Value="30" />
+        <Parameter Name="LowCut" Group="1" Index="7" Track="0" Value="44" />
+        <Parameter Name="Feedback" Group="1" Index="8" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A small, damped space: depth without a tail</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Hall — Big Wash">
+    <Preset Machine="Pedal Plate">
+      <Parameters>
+        <Parameter Name="Mix" Group="1" Index="0" Track="0" Value="40" />
+        <Parameter Name="PreDelayMs" Group="1" Index="1" Track="0" Value="40" />
+        <Parameter Name="Decay" Group="1" Index="2" Track="0" Value="85" />
+        <Parameter Name="Damping" Group="1" Index="3" Track="0" Value="45" />
+        <Parameter Name="Size" Group="1" Index="4" Track="0" Value="180" />
+        <Parameter Name="ModRate" Group="1" Index="5" Track="0" Value="20" />
+        <Parameter Name="ModDepth" Group="1" Index="6" Track="0" Value="50" />
+        <Parameter Name="LowCut" Group="1" Index="7" Track="0" Value="49" />
+        <Parameter Name="Feedback" Group="1" Index="8" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A long, wide tail with gentle movement</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Send — Plate 100% Wet">
+    <Preset Machine="Pedal Plate">
+      <Parameters>
+        <Parameter Name="Mix" Group="1" Index="0" Track="0" Value="100" />
+        <Parameter Name="PreDelayMs" Group="1" Index="1" Track="0" Value="15" />
+        <Parameter Name="Decay" Group="1" Index="2" Track="0" Value="70" />
+        <Parameter Name="Damping" Group="1" Index="3" Track="0" Value="40" />
+        <Parameter Name="Size" Group="1" Index="4" Track="0" Value="120" />
+        <Parameter Name="ModRate" Group="1" Index="5" Track="0" Value="20" />
+        <Parameter Name="ModDepth" Group="1" Index="6" Track="0" Value="30" />
+        <Parameter Name="LowCut" Group="1" Index="7" Track="0" Value="60" />
+        <Parameter Name="Feedback" Group="1" Index="8" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>Wet only, for a send: the dry signal stays on its own track</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Ambient — Long Shimmer">
+    <Preset Machine="Pedal Plate">
+      <Parameters>
+        <Parameter Name="Mix" Group="1" Index="0" Track="0" Value="50" />
+        <Parameter Name="PreDelayMs" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Decay" Group="1" Index="2" Track="0" Value="92" />
+        <Parameter Name="Damping" Group="1" Index="3" Track="0" Value="25" />
+        <Parameter Name="Size" Group="1" Index="4" Track="0" Value="200" />
+        <Parameter Name="ModRate" Group="1" Index="5" Track="0" Value="10" />
+        <Parameter Name="ModDepth" Group="1" Index="6" Track="0" Value="70" />
+        <Parameter Name="LowCut" Group="1" Index="7" Track="0" Value="68" />
+        <Parameter Name="Feedback" Group="1" Index="8" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A very long, bright, moving tail for pads and ambience</Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

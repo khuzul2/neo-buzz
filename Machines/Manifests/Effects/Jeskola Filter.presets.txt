@@ -1,0 +1,32 @@
+# Factory presets (docs/specs/mcp-server.md §12.11, U4), in the curated manifest's units: values as param_set
+# takes them; unset parameters keep their defaults. The .prs.xml beside this file is compiled from it:
+#   REBUZZ_WRITE_PRESETS=1 dotnet test ReBuzz.AgentTests --filter FactoryPreset
+# tools/preset-check.py checks each one on the machine (it sounds, at a consistent level, peaks below -1 dBFS).
+# Cutoff, Resonance and Bandwidth are bare 0–128 scales (closed source); Resonance near its top self-oscillates very
+# loudly (a quirk), so these stay well under it. Mono: ReBuzz feeds it left + right summed.
+machine "Jeskola Filter"
+
+preset "Low Pass — Dark"
+comment "A low pass well down: dark and soft"
+Filter type = lowpass
+Cutoff = 60
+Resonance = 20
+
+preset "Low Pass — Resonant"
+comment "A resonant low pass: a peak at the cutoff"
+Filter type = lowpass
+Cutoff = 80
+Resonance = 50
+
+preset "High Pass — Thin"
+comment "A high pass low down: the bottom thinned out"
+Filter type = highpass
+Cutoff = 30
+Resonance = 10
+
+preset "Band Pass — Narrow"
+comment "A band pass in the mids: nasal, focused"
+Filter type = bandpass
+Cutoff = 70
+Resonance = 40
+Bandwidth = 40
