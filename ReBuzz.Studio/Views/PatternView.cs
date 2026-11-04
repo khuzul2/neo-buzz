@@ -86,22 +86,15 @@ namespace ReBuzz.Studio.Views
             newPattern.Click += (s, e) => NewPattern();
 
             // A tab that isn't shown leaves the visual tree: undo goes back to the song (the editor set
-            // the engine's EditContext when its grid took the keyboard). The page lets go when its window closes.
+            // the engine's EditContext when its grid took the keyboard). The page follows the engine while it
+            // is in its window's logical tree, its tab shown or not, and lets go when the window closes (a
+            // closed window leaves its logical tree).
             DetachedFromVisualTree += (s, e) => core.EditContext = null;
-            AttachedToVisualTree += (s, e) =>
-            {
-                if (TopLevel.GetTopLevel(this) is Window w && w != window)
-                {
-                    window = w;
-                    w.Closed += (_, _) => Detach();
-                }
-                Attach();
-            };
-            Attach();
+            AttachedToLogicalTree += (s, e) => Attach();
+            DetachedFromLogicalTree += (s, e) => Detach();
         }
 
         bool attached;
-        Window window;
 
         void Attach()
         {
