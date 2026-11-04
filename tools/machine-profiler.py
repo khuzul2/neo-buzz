@@ -1046,6 +1046,8 @@ class TestBench:
         self.renders = 0
         self.texts = {}
         self.latency = None
+        self.dry_latency = True   # a setting with no dry sound starts where the defaults' did (not a dynamics' lookahead)
+        self.fresh = False        # a fresh instance per setting: a loop keeps what the last render left in it
         self.held = []          # a context's changes, set again when the song is built again
         self.click_at = 0.05
         self.ring = {"full": 3.0, "eq": 0.4}.get(layout, 1.5)
@@ -1067,6 +1069,7 @@ class TestBench:
         c.call("song_new", discard_unsaved=True, tempo_bpm=TEMPO)
         c.call("machine_add", gear=self.prof.gear, name="M", connect_to="Master")
         length = int(math.ceil(self.end_beats)) + 1
+        self.length = length
         for name, settings in (("Sw", SWEEP_SRC), ("Ck", CLICK_SRC)) + ((("St", STEP_SRC),) if self.with_steps else ()):
             c.call("machine_add", gear="Neo Poly", name=name, connect_to="M")
             c.call("param_set", machine=name, changes=[{"param": p, "value": v} for p, v in settings])
@@ -1084,10 +1087,13 @@ class TestBench:
         the render's pre-roll) spoils it: the song is built again and it is measured once more."""
         c = self.c
         if changes:
+            if self.fresh:
+                self.build()
             r = c.call("param_set", machine="M", changes=list(changes), allow_unsafe=True)
             for ch, got in zip(changes, r.get("changed", [])):
                 self.texts[(ch["param"], ch.get("track"), ch["value"])] = got.get("value", "")
-            render(c, 0, WARM_BEATS, 0.0)
+            # past the patterns: smoothed parameters arrive with nothing played into a loop before the click
+            render(c, self.length, self.length + WARM_BEATS, 0.0)
         probes = ["Sw", "Ck", "M"] + (["St"] if self.with_steps else [])
         try:
             r = render(c, 0, self.end_beats, 0.2, probes=probes)
@@ -1126,7 +1132,8 @@ class TestBench:
         f = {"peak_dbfs": round(db(peak), 2) if peak > 0 else None}
         a = int(self.click_at * rate)
         before = max((abs(v) for v in out_l[max(0, a - int(0.04 * rate)):a]), default=0.0)
-        click = mr.click_features(rate, ck, out_l, out_r, self.click_at, CLICK_SECONDS, self.ring, expected_latency=self.latency)
+        click = mr.click_features(rate, ck, out_l, out_r, self.click_at, CLICK_SECONDS, self.ring,
+                                  expected_latency=self.latency if self.dry_latency else None)
         lat = (click or {}).get("latency_samples") or 0
         if self.latency is None and click and not click.get("silent"):
             self.latency = lat          # the defaults' latency: where the dry sound comes, for settings without one
@@ -1245,7 +1252,11 @@ def effect_role_sweeps(c, prof, globals_, tracks, inferred, ranges):
     is_eq = len(gains) >= 2 and fx_type in ("EQ", "utility", "filter or EQ", "filter")
     # an EQ's bands are read on whole tones (a narrow band falls between half-octave tones)
     bench = TestBench(c, prof, "eq" if is_eq else "quick", steps=dyn)
+    bench.dry_latency = fx_type != "dynamics"
     base = bench.measure()
+    bc = base.get("click") or {}
+    bench.fresh = fx_type in ("delay", "reverb", "modulation", "multi-effect") or bool(bc.get("echoes")) or \
+        (bc.get("late_db") if bc.get("late_db") is not None else -120) > -60 or bool(re.search(r"feed\s*back|\bfb\b|regen", " ".join(p["name"] for p in globals_ + tracks), re.I))
     if base.get("diverged") or base.get("error") or not base.get("response"):
         prof.notes.append(f"per-parameter sweeps skipped: the test signal at the defaults {base.get('diverged') or base.get('error') or 'gave no response'}")
         return
@@ -1608,6 +1619,19 @@ def generator_depth(c, prof, globals_, tracks, inferred, ranges, roles=True):
         out[key] = {"suggested_role": role, "evidence": why,
                     "min": dict(compact(ends.get("min")), raw=lo, text=texts.get("min")),
                     "max": dict(compact(ends.get("max")), raw=hi, text=texts.get("max"))}
+    # Key tracking reads as a cutoff on one note: what brightens the low note is tried on a note three octaves up too.
+    cutlike = [x for x in plan if out[x[6]]["suggested_role"] == "filter.cutoff" and not (x[5].get("kind") in ("enum", "switch") or x[2] - x[1] <= 4)]
+    if cutlike and not drum:
+        hb = NoteBench(c, prof, mode, trigger, pitch=pitch)
+        current[0] = hb
+        hbase = hb.measure()
+        if not (hbase.get("silent") or hbase.get("diverged") or hbase.get("error")):
+            for p, lo, hi, default, ref, info, key in cutlike[:6]:
+                hends = {end: (hbase if raw == default else hb.measure([dict(ref, value=f"raw:{raw}")])) for end, raw in (("min", lo), ("max", hi))}
+                kt = mr.keytrack_role(ends_of[key], hends, 36, mr.midi_hz(A4 - 36), mr.midi_hz(A4))   # as they sound
+                if kt:
+                    out[key]["suggested_role"], out[key]["evidence"] = kt
+        nb.renders += hb.renders
     # A second look at times that change nothing: with a choice that shapes the level by the envelope (a VCA's mode)
     # switched to its other setting, the amp follows the envelope instead of the gate.
     def shaped(f):
@@ -1669,12 +1693,13 @@ def sieve_pitch(c, prof, mode):
     offs = {v["midi"] - v["sent"] for v in pitched}
     result = {"method": "harmonic sieve (A2, A3, A4)",
               "heard": {k: {"midi": v["midi"], "cents": v["cents"], "share": v["share"]} for k, v in heard.items()}}
-    if len(pitched) >= 2 and len(offs) == 1 and len(pitched) == len(heard):
+    share = sum(v["share"] for v in pitched) / len(pitched) if pitched else 0.0
+    if len(pitched) >= 2 and len(offs) == 1 and len(pitched) == len(heard) and share >= 0.6:
         k = offs.pop()
         result.update({"pitched": True, "pitch_offset": -k, "cents": round(sum(v["cents"] for v in pitched) / len(pitched), 1)})
     else:
         result["pitched"] = False
-        result["why"] = ("its harmonics hold less than 60 % of the sound (inharmonic or noisy)" if not pitched
+        result["why"] = ("its harmonics hold less than 60 % of the sound (inharmonic or noisy)" if not pitched or share < 0.6
                          else "the notes don't agree on one offset" if len(offs) > 1 else "pitched on some notes only")
     return result
 
@@ -1697,24 +1722,34 @@ def denormal_test(c, prof, kind):
         if prof.data.get("needs_wave"):
             add_test_wave(c)
         play(c, "M", mode, trigger, [note(A4, 0, beats(2.0), 100)], length=8)
-    r = c.call("render", **{"from": 0, "to": beats(2.0), "tail_seconds": 20.0, "cpu": True, "cpu_window_seconds": 2.0}, timeout=max(c.timeout, 180))
-    c.renders += [r.get("file")]
-    forget_renders(c)
-    row = next((x for x in r.get("cpu") or [] if x.get("machine") == "M"), None)
-    if not row or not row.get("windows_ms_per_second"):
+    def windows():
+        r = c.call("render", **{"from": 0, "to": beats(2.0), "tail_seconds": 20.0, "cpu": True, "cpu_window_seconds": 2.0}, timeout=max(c.timeout, 180))
+        c.renders += [r.get("file")]
+        forget_renders(c)
+        row = next((x for x in r.get("cpu") or [] if x.get("machine") == "M"), None)
+        return (row or {}).get("windows_ms_per_second", [])[:11]   # 2 s windows; the last, partial one is left out
+
+    def judge(w):
+        playing, after = w[0], w[1:]
+        out = {"playing_ms_per_s": playing, "silent_ms_per_s": sorted(after)[len(after) // 2], "silent_worst_ms_per_s": max(after), "windows_ms_per_s": w}
+        # slower for 4 s or more on end (two windows in a row), not one window's spike (a collection, a page fault)
+        slow = 2 * max(playing, 0.05)
+        runs = [min(a, b) for a, b in zip(after, after[1:]) if a > slow and b > slow and min(a, b) - playing >= 1.0]
+        if runs:
+            out["slowdown"] = round(max(runs) / max(playing, 0.05), 1)
+            out["slow_seconds"] = 2 * sum(1 for x in after if x > slow)
+        return out
+
+    w = windows()
+    if len(w) < 2:
         return None
-    w = row["windows_ms_per_second"][:11]      # 2 s windows; the last, partial one is left out
-    playing = w[0]
-    after = w[1:]
-    if not after:
-        return None
-    out = {"playing_ms_per_s": playing, "silent_ms_per_s": sorted(after)[len(after) // 2], "silent_worst_ms_per_s": max(after), "windows_ms_per_s": w}
-    # slower for 4 s or more on end (two windows in a row), not one window's spike (a collection, a page fault)
-    slow = 2 * max(playing, 0.05)
-    runs = [min(a, b) for a, b in zip(after, after[1:]) if a > slow and b > slow and min(a, b) - playing >= 1.0]
-    if runs:
-        out["slowdown"] = round(max(runs) / max(playing, 0.05), 1)
-        out["slow_seconds"] = 2 * sum(1 for x in after if x > slow)
+    out = judge(w)
+    if out.get("slowdown"):
+        # a busy computer only adds time: a slowdown must show again, window by window, in a second render
+        w2 = windows()
+        if len(w2) == len(w):
+            out = judge([round(min(a, b), 3) for a, b in zip(w, w2)])
+            out["renders"] = 2
     return out
 
 

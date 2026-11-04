@@ -24,6 +24,8 @@ import re
 # ---- the stepped sine sweep -------------------------------------------------------------------------
 
 OCTAVE_UP = 12               # Neo Poly's O1 octave +1: the note sent is 12 below the one that sounds
+LOOP_NAMES = re.compile(r"feed\s*back|f\.?back|\bfb\b|resonan|\breso?\b|\bq\b|regen|emphas", re.I)
+MIX_NAMES = re.compile(r"wet|dry|\bmix\b|blend|parallel", re.I)
 
 
 def midi_hz(n):
@@ -396,6 +398,14 @@ def click_features(rate, inp, out_l, out_r, click_at, click_len, window, ms=1.0,
         for name in ("echoes", "echoes_left", "echoes_right"):
             if feats.get(name):
                 feats[name] = [e for e in feats[name] if e[0] >= 2.0 / f_tail]
+    ech = [e for e in feats.get("echoes") or []][:8]
+    if len(ech) >= 3:
+        # the echoes' levels against their times, least squares: dB per second they fade (0 or less: they don't)
+        n_ = len(ech)
+        mt, ml = sum(t for t, _ in ech) / n_, sum(d for _, d in ech) / n_
+        var = sum((t - mt) ** 2 for t, _ in ech)
+        if var > 0:
+            feats["echo_fade_db_s"] = round(max(0.0, -sum((t - mt) * (d - ml) for t, d in ech) / var), 1)
     l_e, r_e = energy(out_l, i0, i0 + int(window * rate)), energy(out_r, i0, i0 + int(window * rate))
     feats["balance_db"] = round(_pdb(l_e / r_e), 2) if l_e > 0 and r_e > 0 else None
     return feats
@@ -521,7 +531,8 @@ def note_envelope(rate, left, right, note_on, note_off, ms=5.0):
     final = 10 * math.log10(sum(10 ** (e / 10) for e in tail) / len(tail)) if tail else -200
     feats = {"peak_db": round(peak, 2), "attack_s": round(max(0, att - start) * ms / 1000, 3), "final_db": round(max(final - peak, -80.0), 2)}
     if peak - final >= 3:
-        target = peak - (peak - final) / 2
+        # half way to the final level, which counts as 80 dB down where the note dies away (silence is -200 here)
+        target = peak - min(peak - final, 80.0) / 2
         half = next((i for i in range(ipk, len(held)) if held[i] <= target), None)
         feats["half_s"] = round((half - ipk) * ms / 1000, 3) if half is not None else None
     end = next((i for i in range(ipk, len(held)) if held[i] < peak - 40), None)
@@ -667,7 +678,7 @@ def pitch_sieve(binhz, mags, expected_midi, span=24, harmonics_n=8):
     The equal-tempered note (within ±span semitones of expected_midi) whose harmonic series explains the
     spectrum best, with cents and the share of the spectrum's energy (50 Hz – 10 kHz) its harmonics hold.
     Of candidates within 10 % of the best score, the highest wins (a series an octave down scores alike).
-    Unpitched when no series holds 60 % of the energy (an inharmonic or noisy sound).
+    Unpitched when no series holds 45 % of the energy (an inharmonic or noisy sound; the caller asks 60 % over its notes).
     """
     def peak_at(f):
         i = int(round(f / binhz))
@@ -711,7 +722,7 @@ def pitch_sieve(binhz, mags, expected_midi, span=24, harmonics_n=8):
         held += sum(m * m for m in mags[max(lo_bin, i - w):min(hi_bin, i + w + 1)])
     share = held / total
     cents = 1200 * math.log2(fpk / f0) if fpk > 0 else 0.0
-    if share < 0.6 or abs(cents) > 50:
+    if share < 0.45 or abs(cents) > 50:
         return {"midi": expected_midi + k, "cents": round(cents, 1), "share": round(share, 3), "pitched": False}
     return {"midi": expected_midi + k, "cents": round(cents, 1), "share": round(share, 3), "pitched": True}
 
@@ -780,7 +791,7 @@ def _dshape(ra, rb):
 def is_choice(p):
     """A choice: a list or a switch by its mapping, a few raw steps, or a short range whose texts are words."""
     span = p.get("max", 0) - p.get("min", 0)
-    if p.get("kind") in ("enum", "switch") or (span <= 4 and p.get("kind") in (None, "int")):
+    if p.get("kind") in ("enum", "switch") or (span <= 4 and (p.get("kind") in (None, "int") or not p.get("unit"))):
         return True
     words = [str(t) for t in (p.get("choices") or p.get("texts") or [])]
     return span <= 12 and bool(words) and all(any(ch.isalpha() for ch in w) and not any(ch.isdigit() for ch in w) for w in words)
@@ -851,8 +862,10 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
                                                               (len(cl.get("echoes") or []) >= 2 or len(ch.get("echoes") or []) >= 2))
     spectral_first = bool(eq_band) or machine_type in ("filter", "filter or EQ", "EQ")
 
-    # mix: one end does nothing (wet at 0), the other end does something.
-    if t_lo != t_hi and not eq_band:
+    # mix: one end does nothing (wet at 0), the other end does something. A feedback, resonance or Q, or a
+    # parameter in Hz or seconds, moves something else out of the way at one end: never a mix.
+    not_mix = bool(LOOP_NAMES.search(p.get("name") or "")) or (p.get("unit") or "") in ("Hz", "kHz", "ms", "s")
+    if t_lo != t_hi and not eq_band and not not_mix:
         other = hi if t_lo else lo
         ro, co, so = other.get("response") or {}, other.get("click") or {}, other.get("steps") or {}
         timed = bool(co.get("echoes")) or ((co.get("late_db") if co.get("late_db") is not None else -120) >= -35 and (_num(co.get("t60_s")) or 0) >= 0.15)
@@ -875,7 +888,8 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
                 tm, to_ = _tail(cm), _tail(co)
                 if tm is not None and to_ is not None and to_ > 0.05 and not (0.6 <= (tm or 0.001) / to_ <= 1.6):
                     blend, _ = False, why.append(f"half way the tail is {_fmt_s(tm)} against {_fmt_s(to_)}")
-                if machine_type != "reverb" and co.get("echoes") and cm.get("echoes") and abs(len(cm["echoes"]) - len(co["echoes"])) >= 2:
+                fo, fm = _first(co), _first(cm)
+                if machine_type != "reverb" and fo is not None and (fm is None or abs(fm - fo) > 0.1 * fo + 0.005):
                     blend = False
             if shaped and not timed and machine_type != "modulation" and rm and ro:
                 moved = max(abs(math.log2(rm["high_corner_hz"] / ro["high_corner_hz"])), abs(math.log2(rm["low_corner_hz"] / ro["low_corner_hz"])))
@@ -891,8 +905,9 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
     # modulation: the response moves while it is measured, at one end only
     wl, wh = _num((rl or {}).get("wobble_db")), _num((rh or {}).get("wobble_db"))
     tails = max(cl.get("late_db") if cl.get("late_db") is not None else -120, ch.get("late_db") if ch.get("late_db") is not None else -120)
+    loud_l, loud_h = ((rl or {}).get("level_db") or -120) > -20, ((rh or {}).get("level_db") or -120) > -20
     if not eq_band and machine_type not in ("reverb", "delay", "multi-effect", "dynamics") and tails < -40 and \
-            wl is not None and wh is not None and max(wl, wh) >= 1.0 and min(wl, wh) < 0.4:
+            wl is not None and wh is not None and max(wl, wh) >= 1.0 and min(wl, wh) < 0.4 and (loud_l if wl > wh else loud_h):
         return ("mod.depth" if machine_type == "modulation" else "lfo.depth"), f"the gain moves {wl:.1f} → {wh:.1f} dB within each tone"
 
     def spectral():
@@ -950,6 +965,15 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
         if ed is not None and (el is not None or eh is not None):
             el, eh = (el, ed) if el is not None else (ed, eh)
     if el is not None and eh is not None and abs(eh - el) >= 0.005 and (_ratio(el, eh) or 0) >= 1.3:
+        # an echo added in front of those that stay (early reflections coming in) isn't the first echo moving
+        early_end = cl if el < eh else ch
+        if any(abs(t - max(el, eh)) <= 0.005 for t, _ in (early_end.get("echoes") or [])):
+            if machine_type == "reverb":
+                ea, eb = _num(cl.get("early_db")), _num(ch.get("early_db"))
+                return "reverb.early", (f"reflections from {_fmt_s(min(el, eh))} come in ahead of the reverb's own at {_fmt_s(max(el, eh))}"
+                                        + (f", the early sound {ea:+.0f} → {eb:+.0f} dB" if ea is not None and eb is not None else ""))
+            el = eh = None
+    if el is not None and eh is not None and abs(eh - el) >= 0.005 and (_ratio(el, eh) or 0) >= 1.3:
         if machine_type == "modulation":
             return "mod.delay", f"the delayed copy moves {_fmt_s(el)} → {_fmt_s(eh)}"
         if machine_type == "reverb":
@@ -978,6 +1002,10 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
     zl, zh = _num(cl.get("tail_zcr_hz")), _num(ch.get("tail_zcr_hz"))
     if machine_type in ("delay", "multi-effect") and zl and zh and (_ratio(zl, zh) or 0) >= 1.6:
         return "delay.tone", f"the echoes' brightness {_fmt_hz(zl)} → {_fmt_hz(zh)} (RMS frequency)"
+    # the echoes' fade, per second (a T60 read over the window caps where they hardly fade at all)
+    fades = [x for x in (_num(cl.get("echo_fade_db_s")), _num(ch.get("echo_fade_db_s")), _num(cd.get("echo_fade_db_s"))) if x is not None]
+    if is_delay and len(fades) >= 2 and max(fades) >= 6 and max(fades) >= 2.0 * max(min(fades), 1.0):
+        return "delay.feedback", f"the echoes fade {min(fades):.0f} → {max(fades):.0f} dB per second, the echo time unchanged"
     # the tail: decay or feedback (against the default too: feedback runs -100 … +100 %).
     spans = [x for x in (_tail(cl), _tail(ch), _tail(cd)) if x is not None]
     if len(spans) >= 2 and max(spans) >= 0.1 and max(spans) >= 2.0 * max(min(spans), 0.02):
@@ -1056,6 +1084,13 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
                     if r_top < r_lower - 0.1:
                         return "mix.wet", (f"at one end nothing is compressed; half way the loudest steps lose {rm[1]:.1f} dB against "
                                            f"{rf[1]:.1f} at full, the next {rm[0]:.1f} against {rf[0]:.1f}: a blend with the dry signal")
+                    # an even blend of the dry and the compressed signal loses -20·log10((1 + g) / 2): where half way
+                    # matches that and the name says mix, the measurement can't tell it from a ratio and the name can
+                    even = [-20 * math.log10(0.5 + 0.5 * 10 ** (-x / 20)) for x in rf]
+                    if all(abs(a - b) <= 1.5 for a, b in zip(rm, even)) and MIX_NAMES.search(p.get("name") or ""):
+                        return "mix.wet", (f"at one end nothing is compressed; half way the loudest steps lose {rm[1]:.1f} dB against "
+                                           f"{rf[1]:.1f} at full, as an even blend with the dry signal would ({even[1]:.1f} dB), and it "
+                                           f"is named like a mix")
             return "dyn.ratio", word
     if machine_type == "dynamics":
         got = spectral()
@@ -1075,6 +1110,29 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
         if abs(dl_) >= 3 and _dshape(rl, rh) < 2:
             return "level", f"the level {rl['level_db']:+.1f} → {rh['level_db']:+.1f} dB, the response's shape unchanged"
     return None, "no measurable change between its ends with the others at their defaults"
+
+
+def keytrack_role(low, high, semitones, low_hz=None, high_hz=None):
+    """
+    Key tracking reads as a cutoff on one note. On a note `semitones` higher a cutoff brightens it as much or less
+    (its harmonics run out of room), key tracking more: it follows the note, darkening a low note under its pivot
+    and brightening a high one (or brightening both, the high one twice as much). low, high: {"min": features,
+    "max": features} on each note; low_hz, high_hz the notes' fundamentals (a centroid under one is a near-silent
+    end, not a brightness). (role, why) or None.
+    """
+    def change(e, f0):
+        a, b = _num(((e or {}).get("min") or {}).get("centroid_hz")), _num(((e or {}).get("max") or {}).get("centroid_hz"))
+        if not a or not b or (f0 and min(a, b) < 0.7 * f0):
+            return None
+        return math.log2(b / a), a, b
+    cl_, ch_ = change(low, low_hz), change(high, high_hz)
+    if not cl_ or not ch_:
+        return None
+    dl, dh = cl_[0], ch_[0]
+    if dh - dl >= 1.0 and dh >= -0.25 and (dl <= 0 or dh >= 2 * dl):
+        return "filter.keytrack", (f"it follows the note: the brightness (centroid) {_fmt_hz(cl_[1])} → {_fmt_hz(cl_[2])} on the low note, "
+                                   f"{_fmt_hz(ch_[1])} → {_fmt_hz(ch_[2])} {semitones} semitones up")
+    return None
 
 
 def suggest_generator_role(p, ends, default, machine_type):

@@ -532,6 +532,36 @@ class RoleTests(unittest.TestCase):
         self.assertEqual(role(g(), g(env={"length_s": 0.8}), "drums"), None)
         self.assertEqual(role(g(env={"length_s": 0.1}), g(env={"length_s": 0.8}), "drums"), "drum.decay")
 
+    def test_feedback_by_how_fast_the_echoes_fade_and_a_resonance_is_never_a_mix(self):
+        held = feats(late=-5, echoes=[(0.375, -8), (0.75, -9), (1.125, -10)], echo_fade_db_s=2.7)
+        default = feats(late=-8, echoes=[(0.375, -9), (0.75, -16), (1.125, -23)], echo_fade_db_s=18.7)
+        self.assertEqual(self.role(held, held, default=default, mtype="delay"), "delay.feedback", "±98 % fade alike: against the default")
+        er_off = feats(late=-8, t60=0.95, echoes=[(0.04, -26)], early_db=1.7)
+        er_on = feats(late=2.5, t60=0.77, echoes=[(0.02, -7), (0.04, -8.6), (0.07, -9.9)], early_db=5.8)
+        self.assertEqual(self.role(er_off, er_on, mtype="reverb", name="ER Out"), "reverb.early", "reflections added, the reverb's own stay")
+        ringing = feats(level=2.3, spread=13.5, prom=8.2, hi=8372, lo=5920, late=-22, t60=0.3)
+        self.assertEqual(self.role(feats(), ringing, mtype="utility", name="Resonance"), "filter.resonance")
+
+    def test_key_tracking_follows_the_note_a_cutoff_doesnt(self):
+        ends = lambda a, b: {"min": {"centroid_hz": a}, "max": {"centroid_hz": b}}
+        self.assertEqual(mr.keytrack_role(ends(4000.0, 900.0), ends(3000.0, 3500.0), 36)[0], "filter.keytrack")
+        self.assertIsNone(mr.keytrack_role(ends(64.0, 10400.0), ends(440.0, 10000.0), 36), "a cutoff brightens the high note less")
+        self.assertIsNone(mr.keytrack_role(ends(56.0, 2320.0), ends(39.0, 3360.0), 36, 55.0, 440.0), "a near-silent end on the high note")
+        self.assertIsNone(mr.keytrack_role(ends(5670.0, 856.0), ends(9860.0, 6260.0), 36), "darker on both notes: an envelope, not tracking")
+
+    def test_a_blend_named_like_one_and_a_closed_filters_ring(self):
+        def st(curve):
+            return {"compression_db": curve[0] - curve[-1], "knee_in_db": -18 if curve[-1] < 0 else None, "attack_tau_s": 0.01, "release_tau_s": 0.05,
+                    "curve": [(-36 + 6 * i, g) for i, g in enumerate(curve)]}
+        dry, full = st([0, 0, 0, 0]), st([0, -2, -6, -8.4])
+        even = st([0, -0.9, -2.5, -3.2])     # -20·log10((1 + g) / 2) of the full curve
+        args = (feats(steps=dry), feats(steps=full))
+        self.assertEqual(self.role(*args, default=feats(steps=full), mtype="dynamics", mid=feats(steps=even), name="Wet/Dry"), "mix.wet")
+        self.assertEqual(self.role(*args, default=feats(steps=full), mtype="dynamics", mid=feats(steps=even), name="Ratio"), "dyn.ratio")
+        # a low-pass closed at 20 Hz rings for 85 ms: not a tail, so not a mix's wet end
+        closed = feats(level=-31, spread=97, hi=23.1, centroid=-5, late=-40, t60=0.085, echoes=[(0.04, -5.4)], wobble=3.1)
+        self.assertEqual(self.role(closed, feats(), mid=feats(spread=20, hi=9000, centroid=-1)), "filter.cutoff")
+
     def test_categories_and_agreement(self):
         self.assertEqual(mr.category("filter.cutoff"), "filter")
         self.assertEqual(mr.category("eq.low.freq"), "filter")
