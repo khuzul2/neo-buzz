@@ -64,12 +64,12 @@ namespace NeoBuzz.Drums
             var pads = new DrumPads(view);
             var hit = new HitPicture();
 
-            var padView = new InteractiveGraph(480, 150, (g, r) => pads.Draw(g, r, AccentColor), pads, animate: true)
+            var padView = new InteractiveGraph(480, 200, (g, r) => pads.Draw(g, r, AccentColor), pads, animate: true)
             {
                 ToolTip = "The voices: each lights as it plays; click one to play it (harder towards its top) and show it on the right. " +
                           "Each names its hit column (BD, SD, …) and its key (General MIDI from C2).",
             };
-            var hitView = new GraphView(400, 150, (g, r) => hit.Draw(g, r, view, pads.Selected, AccentColor))
+            var hitView = new GraphView(400, 200, (g, r) => hit.Draw(g, r, view, pads.Selected, AccentColor))
             {
                 ToolTip = "The selected voice's hit at velocity 100, as its settings make it now: its waveform over its decay (scaled to fill), its peak and how long it sounds",
             };

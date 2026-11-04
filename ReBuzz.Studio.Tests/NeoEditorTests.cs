@@ -46,6 +46,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Multiband", "NeoMultibandEditor", "neo-multiband-editor", 1042, 578),
             ("Neo Sampler", "NeoSamplerEditor", "neo-sampler-editor", 1144, 778),
             ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 458),
+            ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1232, 735),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;
@@ -783,6 +784,72 @@ namespace ReBuzz.Studio.Tests
             }
         }
     
+
+        // ------------------------------------------------------------------ Neo Drums
+
+        [AvaloniaTest]
+        public void NeoDrumsPadsPlayTheirVoicesAndTheHitPictureFollowsTheKnobs()
+        {
+            // Neo Drums → Master. A click on a pad plays its voice, harder towards the pad's top, lights the pad and shows the
+            // voice's hit; a voice's knob redraws the hit (one undo step), and a double click puts it back to its default.
+            var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var m = Add("Neo Drums", "Editor Drums", 0, 0);
+            try
+            {
+                Core.SongCore.ConnectMachines(m, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                var window = OpenEditor(m);
+                var pads = Controls(window, "InteractiveGraph").Single(g => Math.Abs(g.Bounds.Width - 480) < 1);
+                var hit = Controls(window, "GraphView").Single(g => Math.Abs(g.Bounds.Width - 400) < 1);
+                Rect padArea = BoundsIn(pads, window), hitArea = BoundsIn(hit, window);
+                var machine = m.ManagedMachine;
+                var engine = machine.GetType().GetProperty("Engine", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(machine)!;
+                var peaks = (float[])engine.GetType().GetField("VoicePeak")!.GetValue(engine)!;
+
+                // The pads: six columns, two rows, 6 px apart and from the edge (DrumsViews.cs); the snare is column 1, row 0.
+                double w = (480 - 12 - 5 * 6) / 6.0, h = (200 - 12 - 6) / 2.0;
+                Point Pad(int voice, double fromTop) => At(pads, window, 6 + voice % 6 * (w + 6) + w / 2, 6 + voice / 6 * (h + 6) + fromTop);
+                var idle = Frame(window);
+                Click(window, Pad(1, 3));
+                Run(0.05);
+                float hard = peaks[1];
+                Assert.That(hard, Is.GreaterThan(0.05f), "a click on the snare's pad plays the snare");
+                Assert.That(peaks.Where((p, v) => v != 1), Is.All.EqualTo(0f), "and nothing else");
+                var playing = Frame(window, "neo-drums-editor-snare");
+                Assert.That(Changed(idle, playing, padArea), Is.GreaterThan(400), "its pad lights");
+                Assert.That(Changed(idle, playing, hitArea), Is.GreaterThan(400), "the hit picture shows the snare's hit");
+
+                Run(1.5);
+                Click(window, Pad(1, h - 3));
+                Run(0.05);
+                Assert.That(peaks[1], Is.LessThan(hard * 0.4f), "lower on the pad plays softer (velocity 40 against 127)");
+                Run(1.5);
+
+                // The snare's Decay knob: dragged up, the decay lengthens as one undo step and the hit picture redraws.
+                var section = Controls(window, "Section").Single(c => AutomationProperties.GetName(c) == "Snare");
+                var knob = section.GetVisualDescendants().OfType<Control>().Single(c => c.GetType().Name == "ParamKnob" && AutomationProperties.GetName(c) == "Decay");
+                var decay = Global(m, "Snare decay");
+                int before = decay.GetValue(0), steps = Core.SongCore.ActionStack.Actions.Count();
+                var shown = Frame(window);
+                var c = Centre(knob, window);
+                MachineViewTests.Drag(window, c, c - new Point(0, 80));
+                Assert.That(decay.GetValue(0), Is.GreaterThan(before), "dragging up lengthens the snare's decay");
+                Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(steps + 1), "as one undo step");
+                Run(0.05);
+                var longer = Frame(window, "neo-drums-editor-decay");
+                Assert.That(Changed(shown, longer, hitArea), Is.GreaterThan(400), "the hit picture follows the knob");
+
+                MachineViewTests.DoubleClick(window, c);
+                Assert.That(decay.GetValue(0), Is.EqualTo(decay.DefValue), "a double click puts the decay back to its default");
+                Core.SongCore.Undo();
+                Assert.That(decay.GetValue(0), Is.GreaterThan(before), "undo: the dragged decay again");
+                Core.SongCore.Undo();
+                Assert.That(decay.GetValue(0), Is.EqualTo(before), "and the decay before");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
 
         // ------------------------------------------------------------------ Neo Scope
 

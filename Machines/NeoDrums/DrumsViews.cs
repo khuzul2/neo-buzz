@@ -26,7 +26,7 @@ namespace NeoBuzz.Drums
         public const int Columns = 6, Rows = 2;
         const double Gap = 6;
         readonly IDrumsView view;
-        NeoRect bounds = new NeoRect(0, 0, 480, 150);
+        NeoRect bounds = new NeoRect(0, 0, 480, 200);
         int hover = -1;
 
         public DrumPads(IDrumsView view)
