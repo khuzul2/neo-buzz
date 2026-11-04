@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04; and Neo Multiband (mcp-server.md §8.2), 2026-11-04 |
+| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04; and Neo Multiband (mcp-server.md §8.2), 2026-11-04; and Neo Sampler (mcp-server.md §8.2, §12.5), 2026-11-04 |
 | Date | 2026-11-04 |
 | Scope | New high-quality machines for sound design, mixing and mastering, written in C# with custom editors: first batch "core six", second batch "mix and master", third the successors of closed machines that misbehave |
 
@@ -47,6 +47,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Machine | Kind | One line |
 |---|---|---|
 | Neo Multiband | effect | 3 or 4 bands of compression or upward expansion, split by linear-phase crossovers that sum back to the input exactly (96 ms of latency, reported to ReBuzz) or zero-latency minimum-phase Linkwitz–Riley ones with the same band shapes; Neo Comp's detector and gain computer in each band, stereo or mid/side; its gain change per band in the editor and `machine_readings`. A new machine (no classic one to succeed) |
+| Neo Sampler | generator | Sampler and drum machine: the song's waves (saved with the song) and 26 built-in samples in 16 zones by key and velocity, with layers by root and round robin, loops with crossfades, one-shot or gate, reverse, choke groups, amp and filter envelopes; a Kit mode on the General MIDI drum keys; a 32-tap windowed sinc with octave-down copies, aliases under −90 dB at any pitch. Succeeds Pedal M1 (mcp-server.md §12.5) |
 
 ## 2. Decisions
 
@@ -64,7 +65,7 @@ Machines/
   NeoBuzz.Dsp/        Pure DSP (no Buzz or WPF references), internal types, linked as source
   NeoBuzz.Machine/    Buzz glue shared by the machines (parameters, notes, MIDI), linked as source
   NeoBuzz.Editor/     WPF editor kit (knobs, switches, meters, graphs, preset bar), linked as source
-  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/ NeoEq/ NeoUtility/ NeoLimiter/ NeoAnalyzer/ NeoEnsemble/ NeoDelay/ NeoMultiband/
+  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/ NeoEq/ NeoUtility/ NeoLimiter/ NeoAnalyzer/ NeoEnsemble/ NeoDelay/ NeoMultiband/ NeoSampler/
     Engine/           the machine's DSP: pure, tested on Linux
     Params.def        the parameter table (source of truth)
     Presets.txt       factory presets in units
@@ -515,6 +516,67 @@ As built:
 - No `machine_replace` pair: there is no classic multiband in the package (mcp-server.md §12.5).
 - The Linux profile (`docs/machine-health.md`): hot only with B2–B4 makeup (+4.8 to +12.0 dBFS) or Output (+13.8 dBFS) at their maximum, and with every parameter at its maximum at once (+17.3 dBFS); nothing diverges, so no safe range. The profiler reads its latency as an echo ("delay, dynamics").
 
+### Neo Sampler (sampler and drum machine; mcp-server.md §8.2, §12.5)
+
+The machine that plays samples: the song's waves (the wavetable slots `wave_import` fills, which ReBuzz saves with the song, so a song carries its samples) and 26 built-in samples made by code (a drum kit, looped single cycles and a few instruments), so it sounds with no file at all. Sixteen zones map waves onto keys and velocities; in Kit mode it is a drum machine. It is the successor of Pedal M1 (a `machine_replace` pair, mcp-server.md §12.10); of Jeskola Tracker and Matilde Tracker2 it is the replacement, not a pair (below).
+
+- **Zones.** Each of the 16 zones has a wave (0 off, 1–200 a slot of the song's wavetable, 201–226 a built-in), a key range and a velocity range, a root (a key, or Wave: each layer's own root from the wavetable), tune (±48 st), fine (±100 ct in 0.1 ct steps), level and pan (a stereo wave: balance), start and end (in % of the wave, to 1/65534), a loop (Wave, Off, Forward, Ping-pong) with its start, end and crossfade, a trigger (Gate, One-shot), reverse and a choke group (1–8). In Instrument mode a note plays every zone whose key and velocity ranges hold it, each on a voice of its own: zones on the same keys layer, zones on adjacent velocity ranges are velocity layers.
+- **Layers within a zone.** A slot's wavetable layers (`wave_import(…, layer=true)`) split the zone's keys by their roots: a note plays the layer whose root is the highest at or below it (the lowest below them all). Layers that share a root alternate, round robin, per zone (several snare hits in one slot). Velocity layers are zones; `Vel crossfade` blends neighbours at equal power over that many velocity steps either side of their boundary, instead of switching.
+- **Kit mode.** Zone n plays key `Kit base` + n − 1 (C2 = 36 by default, General MIDI's kick, so zone 3 is the snare on D2 and zones 7, 9 and 11 the hats), at the wave's own pitch (its tune and fine still apply), one-shot, with its level, pan and choke group; the zones' ranges, roots, loops and triggers are ignored. With a choke group, a hit cuts every voice of its group already sounding (the closed hat the open one, and its own last hit), but not the other zones its own note plays.
+- **Interpolation.** A 32-tap Kaiser-windowed sinc (β 9) in 256 phases, linear between phases, read with Vector128 dot products whose lanes sum in a fixed order (§4). Its cutoff follows the step: 0.45 of the wave's rate up to a step of 1, narrowing to 0.425 at a step of 2, over 17 kernels, each normalised to unity at DC. Above a step of 2 the voice reads an octave-down copy (up to five, made once per wave by a 79-tap halfband, β 10), so the step stays at 2 or under. A wave at its root and the song's rate plays its samples exactly.
+- **Loops.** A wave's own loop (Wave) plays from a copy of the wave whose loop is unrolled past its end, and the read jumps back a whole period where the copy equals the loop: the kernel never straddles the seam, so there is none at any pitch, forward or ping-pong. A zone loop (Forward, Ping-pong) at the zone's points: forward crossfades at equal power over `Zn crossfade` from the samples before the loop start (after the loop end, reversed), clamped to what the wave has; ping-pong turns at its ends.
+- **No clicks.** The amp envelope's shortest attack is 0.5 ms; a region's end fades over 2 ms before it; a choke fades over 5 ms; a stolen voice fades over 3 ms and then starts its new note; a released one-shot goes on to its end.
+- **Shaping.** Amp ADSR (the shared one: decay and release to −60 dB), a filter (Off; LP 24 and LP 12, the ladder's 4- and 2-pole outputs; BP and HP, state-variable) with its own ADSR (±6 octaves), key tracking round C4 and velocity (up to 3 octaves down at the softest); the level follows velocity^(2 × `Vel → amp`); pitch bend ±`Bend range`. Control values every 16 samples on a grid that runs across blocks.
+- **Polyphony.** 1–32 voices (`Polyphony`); past it a new voice takes the quietest released one, else the oldest.
+- **The song's waves** (`WaveSource.cs`). A timer (every 200 ms) looks at the slots the zones name and makes room off the audio thread; the copy happens under ReBuzz's audio lock, in `Work` (16384 frames a block, allocation-free) or on the song's thread when a render asks `Busy`, which is true until the built-ins exist and every zone's wave is read in, so a render hears a wave imported just before. It reads each zone's wave from ReBuzz's parameter, which a value reaches at once (the engine's at the next tick). Samples are read as floats, non-finite ones as 0. An empty slot plays silence; a slot replaced while a note plays leaves that note on the old wave, the next on the new.
+- **Robustness.** NaN and ±∞ in a wave play as 0; every parameter at its ends stays finite; silence after resonance leaves no subnormals and the machine goes idle; the output doesn't depend on block sizes; `Work` allocates nothing.
+
+The choices that were open, and why:
+- **Round robin for a zone's layers, velocity crossfade between zones.** Layers are what `wave_import` adds to a slot, so the same-root case is several takes of one hit (round robin); velocity layers are separate samples, set as zones with velocity ranges, and a crossfade between them is one parameter (`Vel crossfade`).
+- **Windowed sinc with octave-down copies**, not a cubic: a cubic aliases when pitched up and dulls when pitched down (Pedal M1's, measured against Neo Sampler: mcp-server.md §12.10); the sinc holds its images under −95 dB, and the copies keep its cost flat at any pitch.
+- **Kit mode from C2 in General MIDI order**, one-shot, so a kit plays from a drum pattern written with GM notes at once, and a kit of the song's waves is one preset (Song Waves 1–16).
+- **Built-in samples made by code** (deterministic, the same bits everywhere): presets and the agent's first drafts sound without files; a preset can't carry a wave.
+- **Zone start, end and loop points in % of the wave** (16-bit steps), so a zone keeps its points when its wave is replaced by a longer or shorter one.
+- **A loop crossfade from before the loop start**, the common sampler's, so the loop's own end is never altered.
+- **A missing wave is silence**, not the built-in or an error: a song opened without its samples plays the rest.
+
+Parameters: Mode (Instrument, Kit), Kit base (C-1 … E8, default C2), Polyphony (1–32), Bend range (0–24 st), Vel → amp (0–100 %, default 70 %), Vel crossfade (0–64), Volume (−60 … +12 dB); Amp attack, decay, sustain, release; Filter (Off, LP 24, LP 12, BP, HP), Cutoff, Resonance, Filter env (±100 %: ±6 octaves), Key track, Filter vel; Flt attack, decay, sustain, release; then per zone (Z1 … Z16) wave, key low, key high, vel low, vel high, root, tune, fine, level, pan, start, end, loop, loop start, loop end, crossfade, trigger, reverse, choke. Zone 1 plays slot 1 across the keys by default; the others are off. Presets (17): Kit — Electro (GM Layout), 808 Style (Long Kick, Cowbell), Tight and Dry (Short Decays), Lo-Fi (Pitched Down, Low-Pass 3.5 kHz), Percussion (Cowbell, Shaker, Clave), Song Waves 1–16 (Hats in Choke 1); Instrument — Song Waves 1–4 (Velocity Layers), Song Wave 1, One-Shot Across the Keys; Keys — Electric Piano (Two Velocity Layers); Pad — Strings (Looped, Slow Attack), Vox Aah (Looped); Bass — Sub Pluck; Bell — Glass (Long Release); Pluck — Nylon; Lead — Saw (Filter Envelope); FX — Reversed Strings Swell (One-Shot); Texture — Noise Wash (Band-Pass Sweep). The built-in samples: 201–215 the kit (kick, 808 kick, snare, clap, rim, closed and open hat, low, mid and high tom, crash, ride, cowbell, shaker, clave), 216–218 sine, saw and square (looped, every harmonic to 21.6 kHz), 219–220 E-piano soft and hard (layers at C2, C4, C6), 221 strings (stereo, layers at C3 and C5, looped), 222–224 bass, bell, pluck (Karplus–Strong), 225 vox (formants, looped), 226 noise (looped).
+
+The editor: the zone map (the keyboard across, velocity up; each zone a box in its colour, in Kit mode a key; click selects, the edges of the selected one drag; the keys light as they play), the wave view (the selected zone's wave, its start, end and loop points as draggable markers, the crossfade shaded, the voices' playheads), the zone tabs (1–16, each with a dot in its colour, filled when its zone has a wave) over the selected zone's controls (a wave picker that steps through Off, the song's filled slots and the built-ins, and Load… to import a file into the zone's slot or the first free one), and Play, Amp, Filter, Filter env and Output sections. Drags are one undo step each. Toolkit-free views (`SamplerViews.cs`), tested in the studio.
+
+The agent's tools (mcp-server.md §5.6, §3.3): `wave_import(…, layer=true)` adds a file to a filled slot as another layer, with its own `root_note`, and undo takes it out; `wave_list` gives each slot's `layer_roots`; parameters with the unit note take note names ("C2", "F#3") and print them, and a zone's wave takes its text ("Built-in Kick", a slot's name). A kit or an instrument is built with `wave_import`, `machine_add`, `preset_load` and `param_set` (the agent guide's two workflows).
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Unity | a wave at its root and the song's rate: the wave itself, after the 0.5 ms attack | within 6·10⁻⁸ |
+| Pitch | A0 … C8 every 3 semitones, the built-in sine, 44.1 and 48 kHz: within 0.05 cent | worst −0.0002 cent (48 kHz), +0.0002 cent (44.1 kHz) |
+| Aliasing | the band-limited saw (harmonics to 21.6 kHz) from −12 to +48 st: aliases under −90 dB | at most −92.6 dB (+31 st; the measurement's floor is about −92 dB) |
+| Kernel | passband flat within 0.05 dB to 0.375 of the wave's rate; images (0.55–3 × the rate) under −90 dB | within 0.021 dB; at most −95.2 dB |
+| The wave's own loop | the built-in sine's loop (110 cycles) from A2 to A6: no seam, everything but the sine under −90 dB | at most −92.2 dB |
+| A zone loop | a forward loop off the sine's cycles: the largest step with a 10 ms crossfade within 1.05 × the sine's own (31.2 × without); ping-pong, forward and ping-pong reversed: within 1.05 × | 1.000 ×; 1.000 ×, 1.000 ×, 1.000 × |
+| Envelopes | attack, and release to −60 dB, within 5 % of the setting | attack 98.9 ms for 100 ms, release 301.2 ms for 300 ms |
+| Note start and end | a note starting mid-wave: the largest step within 1.25 × the sine's own from its peak, 1.02 × from a zero crossing; a region's end: faded before it | 1.107 ×, 1.000 ×; the last sound one sample before the end |
+| Choke, steal | the largest step within 1.05 × the sine's own (a steal: the new note's own); a choked voice silent within 5 ms | choke 0.894 ×, silent after 4.98 ms; steal 1.498 × (the new note's own start 1.50 ×) |
+| Velocity layers | two zones crossfading over 32 steps: their power within 0.05 dB of one layer's across it; outside it, and with no crossfade, one layer alone (the other under −80 dB) | within 0.000 dB from velocity 50 to 80 |
+| Layers and round robin | a slot with layers at two roots picks by the note; two layers of one root alternate | as set (tests) |
+| Kit mode | zone n on key Kit base + n − 1, at the wave's pitch, one-shot, panned, choked | as set (tests) |
+| Missing wave | an empty slot plays silence; a slot replaced mid-note keeps that note | silence; the note keeps playing |
+| NaN, extremes | every parameter at random ends, NaN and ±∞ in a wave, six notes a round: finite | finite (peak +16.5 dBFS at the extremes) |
+| Silence | after a resonant note: no subnormals, idle | none; idle, and `Work` says so |
+| Blocks | blocks of 256, 117 and 16 samples, with notes, chokes and releases: the same output | identical |
+| Audio thread | 2000 blocks of notes, steals, chokes, tune and bend moving: no allocation; in the studio, the song's wave reloaded into its slot every 300 buffers while it plays, each work algorithm | 0 bytes; 0 bytes per buffer |
+| CPU | 32 voices at 48 kHz, every pitch 1–4 octaves round the roots: over 3 × real time | stereo strings through the LP 24 ladder 9.7 ×, mono E-piano unfiltered 20.6 × (Linux runner) |
+| Presets | each sounds, at the synths' level (loudest 50 ms of a chord or the kit's hits between −30 and −6 dB RMS, peak under −1 dBFS) | all 17 |
+| In ReBuzz | a 441 Hz sine imported at root A-5 plays at A-5 within 0.05 Hz, the built-in kick on C-2; a save as .bmx and .bmxml and reopening keeps the zones and the wave; the WPF editor (ReBuzzTests, Windows) | WINDOWS |
+
+As built:
+
+- **Not built**: sample editing (normalise, trim, slice), time-stretch, a per-zone filter or envelope, LFOs, glide, a zone's own output, streaming from disk (waves are copied whole: a wave costs about twice its float size with its octave-down copies, three times while it loops).
+- **The built-ins are made at 48 kHz** (in the background, once per process); at 44.1 kHz they are resampled like any wave.
+- **No pair for the trackers.** Jeskola Tracker and Matilde Tracker2 choose a wave per note in a column and play effects per row (volume and pitch slides, retrigger, sample offset); Neo Sampler's zones are a fixed map from keys to waves, so the conversion can't keep their songs' notes on their waves. The tools can't play Jeskola Tracker (its profile heard nothing, its draft manifest has no track parameters). `SamplerCalibration` (ReBuzzTests, explicit) measures both against Neo Sampler (mcp-server.md §12.10).
+- **Pedal M1 → Neo Sampler** is a pair (mcp-server.md §12.10): its two oscillators' waves and key zones become zones 1–4 and 5–8, within ±1 dB and ±2 dB per third octave but for resonance.
+- The Linux profile (`docs/machine-health.md`): ok; −17.3 LUFS for a note at its defaults (slot 1's test wave).
+
 ## 6. Phases
 
 | Phase | Content |
@@ -524,14 +586,14 @@ As built:
 | M2 | Neo Poly, Neo Wave, Neo FM6 |
 | M3 (MCP A4) | Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer |
 | Successors (machine-safety.md §4, mcp-server.md §12.5) | Neo Ensemble; Neo EQ's graphic mode; Neo Delay |
-| Mix and master, the rest (mcp-server.md §8.2) | Neo Multiband |
+| Mix and master, the rest (mcp-server.md §8.2) | Neo Multiband; Neo Sampler (with the Pedal M1 successor pair, §12.5) |
 
 Each phase: pure tests (Linux CI), integration tests in ReBuzzTests (the machine loads, makes sound, its parameters and editor work, editor screenshots), then the package build.
 
-M0–M3 are done, and of the successors Neo Ensemble, Neo EQ's graphic mode and Neo Delay; and Neo Multiband. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
+M0–M3 are done, and of the successors Neo Ensemble, Neo EQ's graphic mode and Neo Delay; and Neo Multiband and Neo Sampler. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
 
 ## 7. Not in this batch
 
-Additive and physical-modelling synths, convolution: candidates for the next batch (ensemble and phaser: Neo Ensemble, built; tape delay: Neo Delay's glide, saturation and wow, built; a multi-head tape echo with its heads' spacing is not; multiband: Neo Multiband, built, and its partitioned FFT convolution is the start of convolution).
+Additive and physical-modelling synths, convolution: candidates for the next batch (ensemble and phaser: Neo Ensemble, built; tape delay: Neo Delay's glide, saturation and wow, built; a multi-head tape echo with its heads' spacing is not; multiband: Neo Multiband, built, and its partitioned FFT convolution is the start of convolution; a sampler: Neo Sampler, built, without sample editing, slicing or time-stretch).
 
-The MCP server spec (docs/specs/mcp-server.md §8) sets the priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak), Neo Utility and Neo Analyzer are built (M3), and Neo Delay and Neo Multiband; next Neo Scope and Neo Sampler. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.
+The MCP server spec (docs/specs/mcp-server.md §8) sets the priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak), Neo Utility and Neo Analyzer are built (M3), and Neo Delay, Neo Multiband and Neo Sampler; next Neo Scope. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.
