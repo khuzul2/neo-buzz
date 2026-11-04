@@ -53,11 +53,362 @@
      "verdict": "silent"
     },
     "max": {
-     "peak_dbfs": -3.53,
-     "growth_db": -0.93,
+     "peak_dbfs": -3.68,
+     "growth_db": -1.31,
      "verdict": "ok"
     }
    }
+  },
+  "envelope": {
+   "peak_db": -11.42,
+   "attack_s": 0.005,
+   "final_db": -3.92,
+   "half_s": 0.135,
+   "length_s": null,
+   "release_s": 0.215,
+   "release_past_window": false,
+   "bright_mid_hz": 12353.3,
+   "bright_early_hz": 12354.8,
+   "bright_late_hz": 12360.2,
+   "level_wobble_db": 0.0,
+   "bright_wobble": 0.002,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": 0.0,
+   "db_per_doubling": 0.0,
+   "curve": "none (velocity doesn't change its level)",
+   "levels_db": {
+    "16": -11.6,
+    "32": -11.6,
+    "64": -11.6,
+    "127": -11.6
+   }
+  },
+  "roles": {
+   "default": {
+    "pitch": 32.9,
+    "centroid_hz": 2616,
+    "peakiness_db": 60.0,
+    "tprom_db": -2.0,
+    "tprom_hz": 1250,
+    "env_attack_s": 0.005,
+    "env_half_s": 0.06,
+    "env_final_db": -7.41,
+    "env_release_s": 0.18,
+    "env_peak_db": -11.29,
+    "env_bright_early_hz": 12163.4,
+    "env_bright_mid_hz": 544.0,
+    "env_bright_late_hz": 466.1,
+    "env_level_wobble_db": 0.867,
+    "env_bright_wobble": 0.179
+   },
+   "params": {
+    "LFO Rate": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 10 ms → 10 ms (the default 5 ms) to the same held level (with VCF Freq a third of the way up)",
+     "min": {
+      "raw": 0,
+      "text": "0.1 Hz"
+     },
+     "max": {
+      "raw": 127,
+      "text": "30 Hz"
+     }
+    },
+    "LFO Delay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "5 s"
+     }
+    },
+    "DCO LFO": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "1 st"
+     }
+    },
+    "DCO PWM": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "DCO PWM Src": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Manual"
+     },
+     "max": {
+      "raw": 2,
+      "text": "Env"
+     }
+    },
+    "DCO PW": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "50%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "95%"
+     }
+    },
+    "DCO Range": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "16'"
+     },
+     "max": {
+      "raw": 2,
+      "text": "4'"
+     }
+    },
+    "DCO Pulse": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "DCO Saw": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "DCO Sub": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "DCO Noise": {
+     "suggested_role": "filter.env.decay",
+     "evidence": "the brightness 150–250 ms in 544 Hz → 4.81 kHz (RMS frequency), the start alike (12.2 kHz → 11.3 kHz)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "HPF": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 3,
+      "text": "3"
+     }
+    },
+    "VCF Freq": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 64 Hz → 10.4 kHz",
+     "min": {
+      "raw": 0,
+      "text": "30 Hz"
+     },
+     "max": {
+      "raw": 127,
+      "text": "16 kHz"
+     }
+    },
+    "VCF Reso": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 10 kHz stands -2 → +27 dB over the spectrum an octave either side",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "VCF Env Amt": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 449 Hz → 10.7 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0 oct"
+     },
+     "max": {
+      "raw": 127,
+      "text": "6 oct"
+     }
+    },
+    "VCF Env Pol": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "+"
+     },
+     "max": {
+      "raw": 1,
+      "text": "-"
+     }
+    },
+    "VCF LFO": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 2.62 kHz → 10.9 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "4 oct"
+     }
+    },
+    "VCF Key Trk": {
+     "suggested_role": "filter.keytrack",
+     "evidence": "it follows the note: the brightness (centroid) 10.7 kHz → 985 Hz on the low note, 10.6 kHz → 10.7 kHz 36 semitones up",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "VCA Mode": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Env"
+     },
+     "max": {
+      "raw": 1,
+      "text": "Gate"
+     }
+    },
+    "VCA Level": {
+     "suggested_role": "level",
+     "evidence": "silent at its minimum, sounding at the other end",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Env A": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 5 ms → 900 ms",
+     "min": {
+      "raw": 0,
+      "text": "1 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "4 s"
+     }
+    },
+    "Env D": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 1.63 kHz → 10.4 kHz",
+     "min": {
+      "raw": 0,
+      "text": "5 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Env S": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 926 Hz → 10.4 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Env R": {
+     "suggested_role": "env.release",
+     "evidence": "the release 25 ms → 255 ms",
+     "min": {
+      "raw": 0,
+      "text": "5 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Chorus": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 3,
+      "text": "III"
+     }
+    }
+   },
+   "renders": 66
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [

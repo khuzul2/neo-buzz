@@ -3,13 +3,15 @@
  "gear": "Pedal Gate",
  "kind": "effect",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on linux, 2026-11-04; not curated",
  "type": "dynamics",
  "summary": "Dynamics (profiled draft): traits: dynamics; tail 0.0 s; latency 37 samples; gain +0.0 dB at the defaults.",
  "tracks": 0,
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "warn",
+  "problems": [
+   "slows down after its input goes silent (denormal numbers, likely): up to 2.397 ms of work per second of audio, for about 20 s of the 20 s after, against 0.743 while it plays (3.2× for 4 s or more)"
+  ]
  },
  "profile": {
   "effect": {
@@ -37,7 +39,318 @@
    },
    "traits": [
     "dynamics"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     -0.02
+    ],
+    [
+     23.1,
+     0.08
+    ],
+    [
+     26.0,
+     -0.08
+    ],
+    [
+     29.1,
+     0.01
+    ],
+    [
+     32.7,
+     0.09
+    ],
+    [
+     36.7,
+     -0.12
+    ],
+    [
+     41.2,
+     -0.1
+    ],
+    [
+     46.2,
+     0.12
+    ],
+    [
+     51.9,
+     0.17
+    ],
+    [
+     58.3,
+     0.08
+    ],
+    [
+     65.4,
+     0.18
+    ],
+    [
+     73.4,
+     -0.06
+    ],
+    [
+     82.4,
+     -0.06
+    ],
+    [
+     92.5,
+     0.23
+    ],
+    [
+     103.8,
+     -0.15
+    ],
+    [
+     116.5,
+     0.23
+    ],
+    [
+     130.8,
+     -0.37
+    ],
+    [
+     146.8,
+     -0.32
+    ],
+    [
+     164.8,
+     -0.32
+    ],
+    [
+     185.0,
+     -0.1
+    ],
+    [
+     207.7,
+     0.01
+    ],
+    [
+     233.1,
+     0.11
+    ],
+    [
+     261.6,
+     0.11
+    ],
+    [
+     293.7,
+     0.05
+    ],
+    [
+     329.6,
+     0.02
+    ],
+    [
+     370.0,
+     -0.7
+    ],
+    [
+     415.3,
+     -0.26
+    ],
+    [
+     466.2,
+     -0.06
+    ],
+    [
+     523.3,
+     0.05
+    ],
+    [
+     587.3,
+     0.01
+    ],
+    [
+     659.3,
+     -0.08
+    ],
+    [
+     740.0,
+     -0.42
+    ],
+    [
+     830.6,
+     0.0
+    ],
+    [
+     932.3,
+     0.05
+    ],
+    [
+     1046.5,
+     0.04
+    ],
+    [
+     1174.7,
+     -0.44
+    ],
+    [
+     1318.5,
+     -0.49
+    ],
+    [
+     1480.0,
+     -0.09
+    ],
+    [
+     1661.2,
+     0.01
+    ],
+    [
+     1864.7,
+     -0.68
+    ],
+    [
+     2093.0,
+     -0.1
+    ],
+    [
+     2349.3,
+     -0.04
+    ],
+    [
+     2637.0,
+     -0.02
+    ],
+    [
+     2960.0,
+     0.0
+    ],
+    [
+     3322.4,
+     -0.38
+    ],
+    [
+     3729.3,
+     0.0
+    ],
+    [
+     4186.0,
+     -0.45
+    ],
+    [
+     4698.6,
+     -0.47
+    ],
+    [
+     5274.0,
+     -0.02
+    ],
+    [
+     5919.9,
+     0.0
+    ],
+    [
+     6644.9,
+     -0.06
+    ],
+    [
+     7458.6,
+     0.01
+    ],
+    [
+     8372.0,
+     0.0
+    ],
+    [
+     9397.3,
+     -0.53
+    ],
+    [
+     10548.1,
+     -0.45
+    ],
+    [
+     11839.8,
+     -0.14
+    ],
+    [
+     13289.8,
+     -0.45
+    ],
+    [
+     14917.2,
+     -0.47
+    ],
+    [
+     16744.0,
+     -0.3
+    ],
+    [
+     18794.5,
+     0.01
+    ]
+   ],
+   "response_summary": {
+    "level_db": -0.11,
+    "spread_db": 0.93,
+    "centroid_oct": -0.743,
+    "max_db": 0.23,
+    "max_hz": 92.5,
+    "prominence_db": 0.11,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 18794.5,
+    "width_oct": 9.83,
+    "tilt_db": -0.19,
+    "wobble_db": 0.14
+   },
+   "impulse": {
+    "latency_samples": 52,
+    "direct_db": -9.26,
+    "early_db": -12.48,
+    "late_db": -120.0,
+    "t60_s": null,
+    "t60_span_db": 0.0,
+    "ring_s": 0.004,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      -13.34
+     ],
+     [
+      -34.85,
+      -89.98
+     ],
+     [
+      -28.82,
+      0.0
+     ],
+     [
+      -22.79,
+      -0.02
+     ],
+     [
+      -16.77,
+      -0.01
+     ],
+     [
+      -10.75,
+      -0.0
+     ],
+     [
+      -4.8,
+      0.0
+     ]
+    ],
+    "compression_db": -51.66,
+    "top_slope": 1.001,
+    "knee_in_db": -34.85,
+    "attack_s": 0.5,
+    "release_s": 0.0,
+    "attack_tau_s": null,
+    "release_tau_s": null
+   },
+   "thd_percent": 2.05
   },
   "level_test": {
    "defaults": {
@@ -57,6 +370,144 @@
      "verdict": "ok"
     }
    }
+  },
+  "roles": {
+   "default": {
+    "level_db": -0.31,
+    "spread_db": 1.26,
+    "centroid_oct": -0.682,
+    "max_hz": 32.7,
+    "prominence_db": 0.0,
+    "low_corner_hz": 23.1,
+    "high_corner_hz": 16744.0,
+    "width_oct": 9.5,
+    "wobble_db": 0.38,
+    "latency_samples": 52,
+    "direct_db": -9.26,
+    "early_db": -12.48,
+    "late_db": -120.0,
+    "ring_s": 0.004,
+    "late_onset_s": 0.003,
+    "compression_db": -51.33,
+    "knee_in_db": -34.85,
+    "thd": 2.15,
+    "peak_dbfs": 2.85
+   },
+   "type_from_click": "dynamics",
+   "params": {
+    "Threshold": {
+     "suggested_role": "level",
+     "evidence": "silent at one end, the level -0 → -90 dB",
+     "min": {
+      "raw": 0,
+      "text": "−60.0 dBFS"
+     },
+     "max": {
+      "raw": 120,
+      "text": "0.0 dBFS"
+     }
+    },
+    "Hysteresis": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 20,
+      "text": "20"
+     }
+    },
+    "Attack ms": {
+     "suggested_role": "filter.bandwidth",
+     "evidence": "the band's width 9.5 → 9.0 octaves",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 500,
+      "text": "500"
+     }
+    },
+    "Hold ms": {
+     "suggested_role": "dyn.ratio",
+     "evidence": "the loudest steps lose -76 → 0 dB against the quietest, from the same knee",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 2000,
+      "text": "2000"
+     }
+    },
+    "Release ms": {
+     "suggested_role": "dyn.ratio",
+     "evidence": "the loudest steps lose -90 → -2 dB against the quietest, from the same knee",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 2000,
+      "text": "2000"
+     }
+    },
+    "Range dB": {
+     "suggested_role": "dyn.lookahead",
+     "evidence": "the latency 52 → 0 samples",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 90,
+      "text": "90"
+     }
+    },
+    "Detection": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Peak"
+     },
+     "max": {
+      "raw": 1,
+      "text": "RMS"
+     }
+    },
+    "Lookahead ms": {
+     "suggested_role": "dyn.lookahead",
+     "evidence": "the latency 52 → 1102 samples",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 25,
+      "text": "25"
+     }
+    },
+    "Bypass": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "no"
+     },
+     "max": {
+      "raw": 1,
+      "text": "yes"
+     }
+    }
+   },
+   "renders": 29
+  },
+  "denormal": {
+   "slowdown": 3.2
   }
  },
  "parameters": [
@@ -73,7 +524,9 @@
    "b": 0.0,
    "unit": "dB",
    "description": "Gate open threshold in dBFS (−60.0 to 0.0, 0.5 dB steps)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "level",
+   "role_evidence": "silent at one end, the level -0 → -90 dB"
   },
   {
    "index": 1,
@@ -103,7 +556,9 @@
    "b": 0.5,
    "unit": "s",
    "description": "Time for gate to open fully (0 = instant, max 500 ms)",
-   "confidence": "description"
+   "confidence": "description",
+   "suggested_role": "filter.bandwidth",
+   "role_evidence": "the band's width 9.5 → 9.0 octaves"
   },
   {
    "index": 3,
@@ -118,7 +573,9 @@
    "b": 2.0,
    "unit": "s",
    "description": "How long the gate stays open after signal drops below close threshold",
-   "confidence": "description"
+   "confidence": "description",
+   "suggested_role": "dyn.ratio",
+   "role_evidence": "the loudest steps lose -76 → 0 dB against the quietest, from the same knee"
   },
   {
    "index": 4,
@@ -133,7 +590,9 @@
    "b": 2.0,
    "unit": "s",
    "description": "Time for gate to close fully (1–2000 ms)",
-   "confidence": "description"
+   "confidence": "description",
+   "suggested_role": "dyn.ratio",
+   "role_evidence": "the loudest steps lose -90 → -2 dB against the quietest, from the same knee"
   },
   {
    "index": 5,
@@ -147,7 +606,9 @@
    "a": 0.0,
    "b": 90.0,
    "description": "Closed-gate floor (0 = mute / −90 dBFS … 90 = no attenuation)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "dyn.lookahead",
+   "role_evidence": "the latency 52 → 0 samples"
   },
   {
    "index": 6,
@@ -178,7 +639,9 @@
    "b": 0.025,
    "unit": "s",
    "description": "Pre-delay so gate opens before the transient arrives (0–25 ms)",
-   "confidence": "description"
+   "confidence": "description",
+   "suggested_role": "dyn.lookahead",
+   "role_evidence": "the latency 52 → 1102 samples"
   },
   {
    "index": 8,

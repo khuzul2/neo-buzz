@@ -3,7 +3,7 @@
  "gear": "FSM Chorus2",
  "kind": "effect",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "modulation",
  "summary": "Modulation (profiled draft): traits: modulation, filter or EQ; tail 0.01 s; latency 0 samples; gain -5.5 dB at the defaults.",
  "tracks": 1,
@@ -38,7 +38,318 @@
    "traits": [
     "modulation",
     "filter or EQ"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     -1.5
+    ],
+    [
+     23.1,
+     -1.94
+    ],
+    [
+     26.0,
+     -1.69
+    ],
+    [
+     29.1,
+     -3.47
+    ],
+    [
+     32.7,
+     -3.37
+    ],
+    [
+     36.7,
+     -4.11
+    ],
+    [
+     41.2,
+     -5.94
+    ],
+    [
+     46.2,
+     -7.01
+    ],
+    [
+     51.9,
+     -7.61
+    ],
+    [
+     58.3,
+     -7.61
+    ],
+    [
+     65.4,
+     -6.35
+    ],
+    [
+     73.4,
+     -4.93
+    ],
+    [
+     82.4,
+     -2.45
+    ],
+    [
+     92.5,
+     -0.5
+    ],
+    [
+     103.8,
+     -0.22
+    ],
+    [
+     116.5,
+     -1.36
+    ],
+    [
+     130.8,
+     -3.99
+    ],
+    [
+     146.8,
+     -7.99
+    ],
+    [
+     164.8,
+     -7.96
+    ],
+    [
+     185.0,
+     -5.43
+    ],
+    [
+     207.7,
+     -1.88
+    ],
+    [
+     233.1,
+     -0.73
+    ],
+    [
+     261.6,
+     -4.11
+    ],
+    [
+     293.7,
+     -8.81
+    ],
+    [
+     329.6,
+     -4.32
+    ],
+    [
+     370.0,
+     -12.46
+    ],
+    [
+     415.3,
+     -9.75
+    ],
+    [
+     466.2,
+     -9.12
+    ],
+    [
+     523.3,
+     -7.74
+    ],
+    [
+     587.3,
+     -3.6
+    ],
+    [
+     659.3,
+     -8.22
+    ],
+    [
+     740.0,
+     -12.91
+    ],
+    [
+     830.6,
+     -11.28
+    ],
+    [
+     932.3,
+     -9.51
+    ],
+    [
+     1046.5,
+     -4.86
+    ],
+    [
+     1174.7,
+     -3.8
+    ],
+    [
+     1318.5,
+     -6.12
+    ],
+    [
+     1480.0,
+     -7.31
+    ],
+    [
+     1661.2,
+     -7.96
+    ],
+    [
+     1864.7,
+     -3.76
+    ],
+    [
+     2093.0,
+     -5.25
+    ],
+    [
+     2349.3,
+     -4.23
+    ],
+    [
+     2637.0,
+     -10.6
+    ],
+    [
+     2960.0,
+     -11.18
+    ],
+    [
+     3322.4,
+     -9.66
+    ],
+    [
+     3729.3,
+     -6.44
+    ],
+    [
+     4186.0,
+     -10.06
+    ],
+    [
+     4698.6,
+     -17.04
+    ],
+    [
+     5274.0,
+     -9.91
+    ],
+    [
+     5919.9,
+     -10.42
+    ],
+    [
+     6644.9,
+     -11.6
+    ],
+    [
+     7458.6,
+     -11.58
+    ],
+    [
+     8372.0,
+     -11.88
+    ],
+    [
+     9397.3,
+     -8.77
+    ],
+    [
+     10548.1,
+     -10.3
+    ],
+    [
+     11839.8,
+     -11.6
+    ],
+    [
+     13289.8,
+     -11.99
+    ],
+    [
+     14917.2,
+     -11.0
+    ],
+    [
+     16744.0,
+     -10.18
+    ],
+    [
+     18794.5,
+     -9.29
+    ]
+   ],
+   "response_summary": {
+    "level_db": -5.54,
+    "spread_db": 16.82,
+    "centroid_oct": -2.164,
+    "max_db": -0.22,
+    "max_hz": 103.8,
+    "prominence_db": 1.66,
+    "low_corner_hz": 82.4,
+    "high_corner_hz": 116.5,
+    "width_oct": 0.5,
+    "tilt_db": -6.5,
+    "wobble_db": 2.32
+   },
+   "impulse": {
+    "latency_samples": 0,
+    "direct_db": -12.8,
+    "early_db": -9.44,
+    "late_db": -120.0,
+    "t60_s": null,
+    "t60_span_db": 0.0,
+    "ring_s": 0.015,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": 0.01,
+    "late_onset_s": 0.003,
+    "balance_db": 0.32
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      -3.79
+     ],
+     [
+      -34.85,
+      -3.81
+     ],
+     [
+      -28.82,
+      -3.79
+     ],
+     [
+      -22.79,
+      -3.79
+     ],
+     [
+      -16.77,
+      -3.79
+     ],
+     [
+      -10.75,
+      -3.83
+     ],
+     [
+      -4.8,
+      -3.79
+     ]
+    ],
+    "compression_db": 0.01,
+    "top_slope": 1.0,
+    "knee_in_db": null,
+    "attack_s": 0.5,
+    "release_s": 0.585,
+    "attack_tau_s": 0.005,
+    "release_tau_s": 0.01
+   },
+   "thd_percent": 2.84
   },
   "level_test": {
    "defaults": {
@@ -47,6 +358,95 @@
     "verdict": "ok"
    },
    "all_at_once": {}
+  },
+  "roles": {
+   "default": {
+    "level_db": -6.01,
+    "spread_db": 14.6,
+    "centroid_oct": -2.432,
+    "max_hz": 92.5,
+    "prominence_db": 3.51,
+    "low_corner_hz": 92.5,
+    "high_corner_hz": 92.5,
+    "width_oct": 0.0,
+    "wobble_db": 3.1,
+    "latency_samples": 0,
+    "direct_db": -12.8,
+    "early_db": -9.44,
+    "late_db": -120.0,
+    "ring_s": 0.015,
+    "late_onset_s": 0.003,
+    "copy_s": 0.01,
+    "thd": 2.7,
+    "peak_dbfs": -11.96
+   },
+   "type_from_click": "modulation",
+   "params": {
+    "track Min Delay": {
+     "suggested_role": "mod.delay",
+     "evidence": "the delayed copy moves 10 ms → 27 ms",
+     "min": {
+      "raw": 0,
+      "text": "0.05 ms"
+     },
+     "max": {
+      "raw": 240,
+      "text": "25.05 ms"
+     }
+    },
+    "track Mod Depth": {
+     "suggested_role": "mod.depth",
+     "evidence": "the gain moves 0.0 → 2.3 dB within each tone",
+     "min": {
+      "raw": 0,
+      "text": "0.00 ms"
+     },
+     "max": {
+      "raw": 240,
+      "text": "2.50 ms"
+     }
+    },
+    "track Mod Rate": {
+     "suggested_role": "mod.depth",
+     "evidence": "the gain moves 0.1 → 5.3 dB within each tone",
+     "min": {
+      "raw": 0,
+      "text": "0.00 Hz"
+     },
+     "max": {
+      "raw": 240,
+      "text": "6.60 Hz"
+     }
+    },
+    "track Fatness": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 6,
+      "text": "6"
+     }
+    },
+    "track Stereo": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.00 deg"
+     },
+     "max": {
+      "raw": 240,
+      "text": "180.00 deg"
+     }
+    }
+   },
+   "renders": 34
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [],
@@ -64,7 +464,9 @@
    "b": 0.025045,
    "unit": "s",
    "description": "Minimum Delay",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mod.delay",
+   "role_evidence": "the delayed copy moves 10 ms → 27 ms"
   },
   {
    "index": 0,
@@ -79,7 +481,9 @@
    "b": 0.0025,
    "unit": "s",
    "description": "Modulation Depth",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mod.depth",
+   "role_evidence": "the gain moves 0.0 → 2.3 dB within each tone"
   },
   {
    "index": 0,
@@ -94,7 +498,9 @@
    "b": 6.599411,
    "unit": "Hz",
    "description": "Modulation Rate",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mod.depth",
+   "role_evidence": "the gain moves 0.1 → 5.3 dB within each tone"
   },
   {
    "index": 0,

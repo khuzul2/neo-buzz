@@ -3,13 +3,14 @@
  "gear": "Jeskola Bass",
  "kind": "generator",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
- "type": "unpitched",
- "summary": "Unpitched (profiled draft): unpitched; 4 voices; takes notes in its tracks; one note at the defaults -9 LUFS.",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "type": "polysynth",
+ "summary": "Polysynth (profiled draft): pitched, plays A4 at 440 Hz as written; 4 voices; takes notes in its tracks; one note at the defaults -9 LUFS.",
  "tracks": 4,
  "notes": {
   "input": "tracks",
-  "pitched": false,
+  "pitch_offset": 0,
+  "pitched": true,
   "polyphony": 4
  },
  "health": {
@@ -57,6 +58,108 @@
      "text": "128"
     }
    }
+  },
+  "envelope": {
+   "peak_db": -4.26,
+   "attack_s": 0.01,
+   "final_db": -80.0,
+   "half_s": 0.04,
+   "length_s": 0.09,
+   "bright_mid_hz": null,
+   "bright_early_hz": 2416.5,
+   "bright_late_hz": null,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": 0.0,
+   "db_per_doubling": 0.0,
+   "curve": "none (velocity doesn't change its level)",
+   "levels_db": {
+    "16": -4.41,
+    "32": -4.41,
+    "64": -4.41,
+    "127": -4.41
+   }
+  },
+  "roles": {
+   "default": {
+    "centroid_hz": 3397,
+    "peakiness_db": 8.9,
+    "tprom_db": -2.4,
+    "tprom_hz": 10000,
+    "env_attack_s": 0.015,
+    "env_half_s": 0.075,
+    "env_final_db": -80.0,
+    "env_length_s": 0.09,
+    "env_peak_db": -1.35,
+    "env_bright_early_hz": 862.9
+   },
+   "params": {
+    "Cutoff": {
+     "suggested_role": "level",
+     "evidence": "silent at its minimum, sounding at the other end",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 128,
+      "text": "128"
+     }
+    },
+    "Resonance": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 8 kHz stands -2 → +60 dB over the spectrum an octave either side",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 128,
+      "text": "128"
+     }
+    },
+    "track Waveform": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 3,
+      "text": "3"
+     }
+    },
+    "track Volume": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "254"
+     }
+    },
+    "track Slide lenght": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 255,
+      "text": "255"
+     }
+    }
+   },
+   "renders": 7
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [
@@ -72,7 +175,9 @@
    "a": 0.0,
    "b": 128.0,
    "description": "Cutoff frequency (0-80)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "level",
+   "role_evidence": "silent at its minimum, sounding at the other end"
   },
   {
    "index": 1,
@@ -86,7 +191,9 @@
    "a": 0.0,
    "b": 128.0,
    "description": "Resonance (0-80)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 8 kHz stands -2 → +60 dB over the spectrum an octave either side"
   }
  ],
  "track_parameters": [

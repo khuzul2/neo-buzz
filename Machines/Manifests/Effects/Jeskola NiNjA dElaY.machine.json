@@ -3,7 +3,7 @@
  "gear": "Jeskola NiNjA dElaY",
  "kind": "effect",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "delay",
  "summary": "Delay (profiled draft): traits: delay; tail 3.38 s; latency 0 samples; gain +6.5 dB at the defaults.",
  "tracks": 8,
@@ -11,7 +11,7 @@
   "status": "warn",
   "problems": [
    "hot at its defaults (+3.6 dBFS peak)",
-   "hot (loud but steady) with Dry thru at its minimum (0): +1.8 dBFS peak over 30 s; Length at its minimum (1): +3.3 dBFS peak; Length at its maximum (32768): +5.2 dBFS peak over 30 s; Length unit at its maximum (tick/256): +3.1 dBFS peak; Feedback at its minimum (-100.0%): +38.7 dBFS peak over 30 s; Feedback at its maximum (100.0%): +39.2 dBFS peak; f. type at its maximum (bandreject): +4.0 dBFS peak; f. cutoff at its minimum (10Hz): +3.1 dBFS peak; and 3 more"
+   "hot (loud but steady) with Dry thru at its minimum (0): +1.8 dBFS peak over 30 s; Length at its minimum (1): +3.3 dBFS peak; Length at its maximum (32768): +5.2 dBFS peak over 30 s; Length unit at its maximum (tick/256): +3.1 dBFS peak; Feedback at its minimum (-100.0%): +38.7 dBFS peak over 30 s; Feedback at its maximum (100.0%): +39.2 dBFS peak; f. type at its maximum (bandreject): +3.4 dBFS peak; f. cutoff at its minimum (10Hz): +3.6 dBFS peak; and 3 more"
   ],
   "hot": true
  },
@@ -43,7 +43,408 @@
    },
    "traits": [
     "delay"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     6.02
+    ],
+    [
+     23.1,
+     6.03
+    ],
+    [
+     26.0,
+     6.01
+    ],
+    [
+     29.1,
+     6.02
+    ],
+    [
+     32.7,
+     6.02
+    ],
+    [
+     36.7,
+     6.02
+    ],
+    [
+     41.2,
+     6.03
+    ],
+    [
+     46.2,
+     6.0
+    ],
+    [
+     51.9,
+     6.03
+    ],
+    [
+     58.3,
+     6.02
+    ],
+    [
+     65.4,
+     6.02
+    ],
+    [
+     73.4,
+     6.01
+    ],
+    [
+     82.4,
+     6.02
+    ],
+    [
+     92.5,
+     5.99
+    ],
+    [
+     103.8,
+     6.03
+    ],
+    [
+     116.5,
+     6.01
+    ],
+    [
+     130.8,
+     6.02
+    ],
+    [
+     146.8,
+     6.03
+    ],
+    [
+     164.8,
+     6.03
+    ],
+    [
+     185.0,
+     6.01
+    ],
+    [
+     207.7,
+     5.98
+    ],
+    [
+     233.1,
+     5.99
+    ],
+    [
+     261.6,
+     6.0
+    ],
+    [
+     293.7,
+     5.95
+    ],
+    [
+     329.6,
+     6.01
+    ],
+    [
+     370.0,
+     6.05
+    ],
+    [
+     415.3,
+     6.01
+    ],
+    [
+     466.2,
+     5.98
+    ],
+    [
+     523.3,
+     5.97
+    ],
+    [
+     587.3,
+     6.0
+    ],
+    [
+     659.3,
+     6.09
+    ],
+    [
+     740.0,
+     6.12
+    ],
+    [
+     830.6,
+     5.98
+    ],
+    [
+     932.3,
+     5.91
+    ],
+    [
+     1046.5,
+     6.03
+    ],
+    [
+     1174.7,
+     5.9
+    ],
+    [
+     1318.5,
+     6.02
+    ],
+    [
+     1480.0,
+     6.0
+    ],
+    [
+     1661.2,
+     5.98
+    ],
+    [
+     1864.7,
+     5.97
+    ],
+    [
+     2093.0,
+     5.96
+    ],
+    [
+     2349.3,
+     6.0
+    ],
+    [
+     2637.0,
+     6.0
+    ],
+    [
+     2960.0,
+     5.95
+    ],
+    [
+     3322.4,
+     5.98
+    ],
+    [
+     3729.3,
+     6.01
+    ],
+    [
+     4186.0,
+     6.0
+    ],
+    [
+     4698.6,
+     6.0
+    ],
+    [
+     5274.0,
+     6.0
+    ],
+    [
+     5919.9,
+     6.01
+    ],
+    [
+     6644.9,
+     6.02
+    ],
+    [
+     7458.6,
+     6.01
+    ],
+    [
+     8372.0,
+     6.02
+    ],
+    [
+     9397.3,
+     6.0
+    ],
+    [
+     10548.1,
+     6.03
+    ],
+    [
+     11839.8,
+     6.03
+    ],
+    [
+     13289.8,
+     6.02
+    ],
+    [
+     14917.2,
+     6.02
+    ],
+    [
+     16744.0,
+     6.03
+    ],
+    [
+     18794.5,
+     6.02
+    ]
+   ],
+   "response_summary": {
+    "level_db": 6.0,
+    "spread_db": 0.22,
+    "centroid_oct": -0.687,
+    "max_db": 6.12,
+    "max_hz": 740.0,
+    "prominence_db": 0.07,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 18794.5,
+    "width_oct": 9.83,
+    "tilt_db": 0.01,
+    "wobble_db": 0.05
+   },
+   "impulse": {
+    "latency_samples": 0,
+    "direct_db": 4.1,
+    "early_db": 1.55,
+    "late_db": 6.89,
+    "t60_s": 7.117,
+    "t60_span_db": 20.0,
+    "ring_s": 2.638,
+    "rings_past_window": false,
+    "echoes": [
+     [
+      0.375,
+      -3.1
+     ],
+     [
+      0.75,
+      -6.6
+     ],
+     [
+      1.125,
+      -10.5
+     ],
+     [
+      1.505,
+      -12.2
+     ],
+     [
+      1.88,
+      -13.2
+     ],
+     [
+      2.255,
+      -15.2
+     ],
+     [
+      2.63,
+      -18.1
+     ]
+    ],
+    "echoes_left": [
+     [
+      0.375,
+      -3.1
+     ],
+     [
+      0.75,
+      -6.6
+     ],
+     [
+      1.125,
+      -10.5
+     ],
+     [
+      1.505,
+      -12.2
+     ],
+     [
+      1.88,
+      -13.2
+     ],
+     [
+      2.255,
+      -15.2
+     ],
+     [
+      2.63,
+      -18.1
+     ]
+    ],
+    "echoes_right": [
+     [
+      0.375,
+      -3.1
+     ],
+     [
+      0.75,
+      -6.6
+     ],
+     [
+      1.125,
+      -10.5
+     ],
+     [
+      1.505,
+      -12.2
+     ],
+     [
+      1.88,
+      -13.2
+     ],
+     [
+      2.255,
+      -15.2
+     ],
+     [
+      2.63,
+      -18.1
+     ]
+    ],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "tail_zcr_hz": 8557.6,
+    "tail_low_db": -34.44,
+    "echo_fade_db_s": 6.2,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      30.47
+     ],
+     [
+      -34.85,
+      22.66
+     ],
+     [
+      -28.82,
+      14.95
+     ],
+     [
+      -22.79,
+      8.15
+     ],
+     [
+      -16.77,
+      6.56
+     ],
+     [
+      -10.75,
+      6.94
+     ],
+     [
+      -4.8,
+      6.78
+     ]
+    ],
+    "compression_db": 19.7,
+    "top_slope": 1.018,
+    "knee_in_db": -34.85,
+    "attack_s": 0.375,
+    "release_s": 0.625,
+    "attack_tau_s": 0.375,
+    "release_tau_s": null
+   },
+   "thd_percent": 2.7
   },
   "level_test": {
    "defaults": {
@@ -67,7 +468,7 @@
     "every parameter at its minimum/maximum at once: hot; hot",
     "an effect with Feedback"
    ],
-   "renders": 20
+   "renders": 31
   },
   "sweeps": {
    "Dry thru": {
@@ -113,20 +514,90 @@
      "over_seconds": 30,
      "verdict": "hot",
      "raw": 0,
-     "text": "-100.0%"
+     "text": "-100.0%",
+     "edge_probes": [
+      [
+       1,
+       "-98.4%",
+       12.66,
+       "hot"
+      ],
+      [
+       2,
+       "-96.9%",
+       10.71,
+       "hot"
+      ],
+      [
+       4,
+       "-93.8%",
+       8.17,
+       "hot"
+      ],
+      [
+       7,
+       "-89.1%",
+       6.17,
+       "hot"
+      ],
+      [
+       14,
+       "-78.1%",
+       3.79,
+       "hot"
+      ],
+      [
+       28,
+       "-56.3%",
+       2.02,
+       "hot"
+      ],
+      [
+       56,
+       "-12.5%",
+       0.91,
+       "hot"
+      ]
+     ]
     },
     "max": {
      "peak_dbfs": 39.18,
      "growth_db": 0.45,
      "verdict": "hot",
      "raw": 128,
-     "text": "100.0%"
+     "text": "100.0%",
+     "edge_probes": [
+      [
+       120,
+       "87.5%",
+       5.04,
+       "hot"
+      ],
+      [
+       124,
+       "93.8%",
+       7.88,
+       "hot"
+      ],
+      [
+       126,
+       "96.9%",
+       9.61,
+       "hot"
+      ],
+      [
+       127,
+       "98.4%",
+       12.6,
+       "hot"
+      ]
+     ]
     }
    },
    "f. type": {
     "max": {
-     "peak_dbfs": 3.96,
-     "growth_db": 0.77,
+     "peak_dbfs": 3.39,
+     "growth_db": 0.0,
      "verdict": "hot",
      "raw": 3,
      "text": "bandreject"
@@ -134,8 +605,8 @@
    },
    "f. cutoff": {
     "min": {
-     "peak_dbfs": 3.07,
-     "growth_db": 0.82,
+     "peak_dbfs": 3.58,
+     "growth_db": 0.97,
      "verdict": "hot",
      "raw": 10,
      "text": "10Hz"
@@ -143,15 +614,15 @@
    },
    "f. bandwidth": {
     "min": {
-     "peak_dbfs": 3.33,
-     "growth_db": 0.01,
+     "peak_dbfs": 3.42,
+     "growth_db": -0.34,
      "verdict": "hot",
      "raw": 1,
      "text": "1cps"
     },
     "max": {
-     "peak_dbfs": 4.07,
-     "growth_db": 0.04,
+     "peak_dbfs": 3.16,
+     "growth_db": 0.2,
      "verdict": "hot",
      "raw": 10000,
      "text": "10000cps"
@@ -159,13 +630,154 @@
    },
    "Wet out": {
     "max": {
-     "peak_dbfs": 4.98,
-     "growth_db": 0.81,
+     "peak_dbfs": 6.09,
+     "growth_db": 0.48,
      "verdict": "hot",
      "raw": 128,
      "text": "100.0%"
     }
    }
+  },
+  "roles": {
+   "default": {
+    "level_db": 6.02,
+    "spread_db": 0.08,
+    "centroid_oct": -0.686,
+    "max_hz": 1046.5,
+    "prominence_db": 0.01,
+    "low_corner_hz": 23.1,
+    "high_corner_hz": 16744.0,
+    "width_oct": 9.5,
+    "wobble_db": 0.0,
+    "latency_samples": 0,
+    "direct_db": 4.1,
+    "early_db": 1.55,
+    "late_db": 6.13,
+    "t60_s": 109.846,
+    "ring_s": 1.135,
+    "late_onset_s": 0.003,
+    "tail_zcr_hz": 8557.6,
+    "tail_low_db": -34.44,
+    "echoes": [
+     [
+      0.375,
+      -3.1
+     ],
+     [
+      0.75,
+      -6.6
+     ],
+     [
+      1.125,
+      -10.5
+     ]
+    ],
+    "thd": 1.73,
+    "peak_dbfs": -1.5
+   },
+   "type_from_click": "delay",
+   "params": {
+    "Dry thru": {
+     "suggested_role": "mix.dry",
+     "evidence": "the direct sound -120 → +4 dB while the tail stays (+6 → +6 dB)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "track Length": {
+     "suggested_role": "delay.time",
+     "evidence": "the first echo moves 125 ms → 1 s",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 32768,
+      "text": "32768"
+     }
+    },
+    "track Length unit": {
+     "suggested_role": "delay.unit",
+     "evidence": "a choice of units: the first echo at 375 ms at one setting, within the click at the other",
+     "min": {
+      "raw": 0,
+      "text": "tick"
+     },
+     "max": {
+      "raw": 3,
+      "text": "tick/256"
+     }
+    },
+    "track Feedback": {
+     "suggested_role": "delay.feedback",
+     "evidence": "the echoes fade 4 → 10 dB per second, the echo time unchanged",
+     "min": {
+      "raw": 1,
+      "text": "-98.4%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "98.4%"
+     }
+    },
+    "track f. type": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "lowpass"
+     },
+     "max": {
+      "raw": 3,
+      "text": "bandreject"
+     }
+    },
+    "track f. cutoff": {
+     "suggested_role": "delay.feedback",
+     "evidence": "the echoes fade 10 → 23 dB per second, the echo time unchanged",
+     "min": {
+      "raw": 10,
+      "text": "10Hz"
+     },
+     "max": {
+      "raw": 20000,
+      "text": "20000Hz"
+     }
+    },
+    "track f. bandwidth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 1,
+      "text": "1cps"
+     },
+     "max": {
+      "raw": 10000,
+      "text": "10000cps"
+     }
+    },
+    "track Wet out": {
+     "suggested_role": "mix.wet",
+     "evidence": "at its minimum the effect passes the signal unchanged; at the other end echoes from 375 ms; half way less of the same",
+     "min": {
+      "raw": 0,
+      "text": "0.0%"
+     },
+     "max": {
+      "raw": 128,
+      "text": "100.0%"
+     }
+    }
+   },
+   "renders": 29
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [
@@ -181,7 +793,9 @@
    "a": 0.0,
    "b": 1.0,
    "description": "Dry thru (1 = yes, 0 = no)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mix.dry",
+   "role_evidence": "the direct sound -120 → +4 dB while the tail stays (+6 → +6 dB)"
   }
  ],
  "track_parameters": [
@@ -197,7 +811,9 @@
    "a": 1.0,
    "b": 32768.0,
    "description": "Length in length units",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "delay.time",
+   "role_evidence": "the first echo moves 125 ms → 1 s"
   },
   {
    "index": 0,
@@ -215,7 +831,9 @@
     "tick/256"
    ],
    "description": "Length unit (0 = tick (default), 1 = ms, 2 = sample, 3 = 256th of tick)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "delay.unit",
+   "role_evidence": "a choice of units: the first echo at 375 ms at one setting, within the click at the other"
   },
   {
    "index": 0,
@@ -230,7 +848,16 @@
    "b": 100.008301,
    "unit": "%",
    "description": "Feedback (00 = -100%, 40=0%, 80 = 100%)",
-   "confidence": "values"
+   "confidence": "values",
+   "safe_range": {
+    "min": 1,
+    "max": 127,
+    "min_text": "-98.4%",
+    "max_text": "98.4%",
+    "reason": "rings at its minimum (-100.0%: +38.7 dBFS peak over 30 s, 35 dB over its level at the default; the edge is where it passes 24 dB over it) and rings at its maximum (100.0%: +39.2 dBFS peak, 36 dB over its level at the default; the edge is where it passes 24 dB over it)"
+   },
+   "suggested_role": "delay.feedback",
+   "role_evidence": "the echoes fade 4 → 10 dB per second, the echo time unchanged"
   },
   {
    "index": 0,
@@ -263,7 +890,9 @@
    "b": 20000.0,
    "unit": "Hz",
    "description": "Filter Cutoff frequency in Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "delay.feedback",
+   "role_evidence": "the echoes fade 10 → 23 dB per second, the echo time unchanged"
   },
   {
    "index": 0,
@@ -278,7 +907,9 @@
    "b": 100.002671,
    "unit": "%",
    "description": "Wet out (00 = 0%, FE = ~200%)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mix.wet",
+   "role_evidence": "at its minimum the effect passes the signal unchanged; at the other end echoes from 375 ms; half way less of the same"
   }
  ]
 }

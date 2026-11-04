@@ -30,7 +30,8 @@ namespace ReBuzz.Agent
                 Description =
                     "Everything about one machine's sound: each parameter with its group, current value (text, number and unit), range, default, " +
                     "choices, meaning and safe_range (where the machine was found to diverge: param_set keeps to it); track parameters per track; the gear's summary, its manifest (generated, curated or a profiled draft) and how it takes notes. " +
-                    "Curated manifests add each parameter's plain name and role, and the gear's quirks. " +
+                    "Curated manifests add each parameter's plain name and role, and the gear's quirks; drafts a suggested_role measured by the profiler. " +
+                    "played_parameters are track parameters that hold no value (a drum's trigger): automation_write writes them as events. " +
                     "Read it before param_set. Big machines (Neo FM6 has 172 parameters): pass group to read one section. value_table=true adds each " +
                     "parameter's texts across its range (every value up to 256 values, else table_points of them), for machines whose texts are all you have. " +
                     "Example: machine_describe(machine=\"Bass\", group=\"Filter 1\").",
@@ -52,7 +53,11 @@ namespace ReBuzz.Agent
                         Req("name", String("Pass this to param_set")),
                         Opt("plain_name", String("Curated: what it is in plain English; param_set takes it too")),
                         Opt("role", String("Curated: what it does (filter.cutoff, env.release, mix.wet, drive…)")),
-                        Req("value", String("Current value as the machine shows it"))), "Parameters"))),
+                        Opt("suggested_role", String("Draft: the role its profile suggests, from what moving it alone changes (no curated role)")),
+                        Opt("role_evidence", String("Draft: what the profile measured behind suggested_role")),
+                        Req("value", String("Current value as the machine shows it"))), "Parameters")),
+                    Opt("played_parameters", Array(Object("A track parameter that holds no value (a trigger): automation_write writes it as events, each heard once",
+                        Req("name", String("Pass this to automation_write (with track)")), Req("range", String("Its values"))), "Played track parameters"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
                 {
@@ -113,6 +118,25 @@ namespace ReBuzz.Agent
                             return (JsonNode)d;
                         }).ToArray());
                         if (all.Any(p => p.IsTrack)) o["tracks"] = m.TrackCount;
+                        // U2 in depth (mcp-server.md §12.12): track parameters that hold no value (a drum's trigger, a note's
+                        // volume) are played: automation_write writes them as events, each heard once.
+                        var played = SongModel.Params(m, played: true).Where(p => p.Played).ToList();
+                        if (played.Count > 0 && group == null)
+                        {
+                            o["played_parameters"] = new JsonArray(played.Select(p =>
+                            {
+                                var q = new JsonObject
+                                {
+                                    ["name"] = p.Name,
+                                    ["range"] = $"{p.Info.Describe(p.Info.Min)} … {p.Info.Describe(p.Info.Max)}",
+                                    ["min_raw"] = p.Info.Min,
+                                    ["max_raw"] = p.Info.Max,
+                                };
+                                if (!string.IsNullOrWhiteSpace(p.Info.Description) && p.Info.Description != p.Name) q["description"] = p.Info.Description;
+                                return (JsonNode)q;
+                            }).ToArray());
+                            o["tracks"] = m.TrackCount;
+                        }
                         if (m.ParameterGroups.Count > 2 && m.ParameterGroups[2].Parameters.Any(p => p.Type == BuzzGUI.Interfaces.ParameterType.Note))
                             o["notes"] = "Plays notes: notes_write puts them in patterns, and ReBuzz sends them to it as MIDI. Neo machines and most " +
                                          "managed machines play MIDI; some older native machines ignore it (render and check).";
@@ -317,6 +341,12 @@ namespace ReBuzz.Agent
             // A curated manifest (U3): what it is in plain English (param_set takes it too) and its role.
             if (p.Manifest is { PlainName.Length: > 0 } named) o["plain_name"] = named.PlainName;
             if (p.Manifest is { Role.Length: > 0 } roled) o["role"] = roled.Role;
+            // U2 in depth (mcp-server.md §12.12): a draft's role as the profiler measured it, where nobody has curated one.
+            else if (p.Manifest is { SuggestedRole.Length: > 0 } suggested)
+            {
+                o["suggested_role"] = suggested.SuggestedRole;
+                if (suggested.RoleEvidence.Length > 0) o["role_evidence"] = suggested.RoleEvidence;
+            }
             if (!p.IsTrack) o["index"] = p.Parameter.IndexInGroup;
             if (p.Info.Group.Length > 0) o["group"] = p.Info.Group;
             if (p.IsTrack)

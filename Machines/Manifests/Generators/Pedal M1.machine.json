@@ -32,13 +32,13 @@
  "profile": {
   "level": {
    "note": "A4 at velocity 100, 1.5 beats",
-   "integrated_lufs": -24.6,
-   "sample_peak_dbfs": -22.88,
-   "true_peak_dbtp": -22.88
+   "integrated_lufs": -25.5,
+   "sample_peak_dbfs": -21.21,
+   "true_peak_dbtp": -21.04
   },
   "level_test": {
    "defaults": {
-    "peak_dbfs": -22.88,
+    "peak_dbfs": -21.21,
     "verdict": "ok"
    },
    "all_at_once": {
@@ -51,6 +51,704 @@
      "verdict": "silent"
     }
    }
+  },
+  "envelope": {
+   "peak_db": -27.0,
+   "attack_s": 0.005,
+   "final_db": -0.48,
+   "length_s": null,
+   "release_s": 0.005,
+   "release_past_window": false,
+   "bright_mid_hz": 1738.8,
+   "bright_early_hz": 1738.8,
+   "bright_late_hz": 1738.8,
+   "level_wobble_db": 0.114,
+   "bright_wobble": 0.012,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": 0.03,
+   "db_per_doubling": 0.01,
+   "curve": "none (velocity doesn't change its level)",
+   "levels_db": {
+    "16": -27.19,
+    "32": -27.16,
+    "64": -27.16,
+    "127": -27.16
+   }
+  },
+  "roles": {
+   "default": {
+    "pitch": 33.0,
+    "centroid_hz": 578,
+    "peakiness_db": 60.0,
+    "tprom_db": -2.6,
+    "tprom_hz": 500,
+    "env_attack_s": 0.015,
+    "env_half_s": 0.005,
+    "env_final_db": -3.72,
+    "env_release_s": 0.08,
+    "env_peak_db": -24.12,
+    "env_bright_early_hz": 243.5,
+    "env_bright_mid_hz": 237.0,
+    "env_bright_late_hz": 243.6,
+    "env_level_wobble_db": 0.825,
+    "env_bright_wobble": 0.097
+   },
+   "params": {
+    "OSC1 Wave": {
+     "suggested_role": "level",
+     "evidence": "silent at its maximum, sounding at the other end",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 200,
+      "text": "200"
+     }
+    },
+    "OSC1 Octave": {
+     "suggested_role": "lfo.filter",
+     "evidence": "the held note's brightness moves 851% → 3% of its mean",
+     "min": {
+      "raw": 0,
+      "text": "-2 oct"
+     },
+     "max": {
+      "raw": 4,
+      "text": "2 oct"
+     }
+    },
+    "OSC1 Transpose": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 292 Hz → 1.12 kHz",
+     "min": {
+      "raw": 0,
+      "text": "-12 st"
+     },
+     "max": {
+      "raw": 24,
+      "text": "12 st"
+     }
+    },
+    "OSC1 Detune": {
+     "suggested_role": "pitch.fine",
+     "evidence": "the pitch moves +108 cents",
+     "min": {
+      "raw": 0,
+      "text": "-50 ct"
+     },
+     "max": {
+      "raw": 100,
+      "text": "+50 ct"
+     }
+    },
+    "OSC1 Level": {
+     "suggested_role": "level",
+     "evidence": "silent at its minimum, sounding at the other end",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "OSC2 Wave": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 200,
+      "text": "200"
+     }
+    },
+    "OSC2 Octave": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-2 oct"
+     },
+     "max": {
+      "raw": 4,
+      "text": "2 oct"
+     }
+    },
+    "OSC2 Transpose": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-12 st"
+     },
+     "max": {
+      "raw": 24,
+      "text": "12 st"
+     }
+    },
+    "OSC2 Detune": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-50 ct"
+     },
+     "max": {
+      "raw": 100,
+      "text": "+50 ct"
+     }
+    },
+    "OSC2 Level": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "OSC Mode": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "OSC1 only"
+     },
+     "max": {
+      "raw": 2,
+      "text": "Both"
+     }
+    },
+    "Portamento": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Cutoff": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 75 Hz → 578 Hz",
+     "min": {
+      "raw": 0,
+      "text": "20 Hz"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "Resonance": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Key Track": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "98.4%"
+     }
+    },
+    "Filter EG Int": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "6 oct"
+     }
+    },
+    "Filter Vel": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "1 oct"
+     }
+    },
+    "Filter Attack": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Filter Decay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "1 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Filter Sustain": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Filter Release": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "1 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Amp Attack": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 15 ms → 860 ms",
+     "min": {
+      "raw": 0,
+      "text": "1 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Amp Decay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "1 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Amp Sustain": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way to its held level in 135 ms → 5 ms",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "Amp Release": {
+     "suggested_role": "env.release",
+     "evidence": "the release 10 ms → 255 ms",
+     "min": {
+      "raw": 0,
+      "text": "1 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Amp Vel": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "LFO1 Wave": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Triangle"
+     },
+     "max": {
+      "raw": 4,
+      "text": "Smooth"
+     }
+    },
+    "LFO1 Speed": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.05 Hz"
+     },
+     "max": {
+      "raw": 127,
+      "text": "30 Hz"
+     }
+    },
+    "LFO1 Delay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "LFO1 Fade": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "LFO1 to Pitch": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "1 st"
+     }
+    },
+    "LFO1 to VDF": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "4 oct"
+     }
+    },
+    "LFO1 to VDA": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 15 ms → 360 ms",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "LFO2 Wave": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Triangle"
+     },
+     "max": {
+      "raw": 4,
+      "text": "Smooth"
+     }
+    },
+    "LFO2 Speed": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.05 Hz"
+     },
+     "max": {
+      "raw": 127,
+      "text": "30 Hz"
+     }
+    },
+    "LFO2 Delay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "LFO2 Fade": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "LFO2 to Pitch": {
+     "suggested_role": "pitch.fine",
+     "evidence": "the pitch moves +100 cents",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "1 st"
+     }
+    },
+    "LFO2 to VDF": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "4 oct"
+     }
+    },
+    "LFO2 to VDA": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Volume": {
+     "suggested_role": "level",
+     "evidence": "silent at its minimum, sounding at the other end",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "OSC1 Wave 2": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 200,
+      "text": "200"
+     }
+    },
+    "OSC1 Split 2": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "OSC1 Wave 3": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 200,
+      "text": "200"
+     }
+    },
+    "OSC1 Split 3": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "OSC1 Wave 4": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 200,
+      "text": "200"
+     }
+    },
+    "OSC1 Split 4": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "OSC2 Wave 2": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 200,
+      "text": "200"
+     }
+    },
+    "OSC2 Split 2": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "OSC2 Wave 3": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 200,
+      "text": "200"
+     }
+    },
+    "OSC2 Split 3": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "OSC2 Wave 4": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 200,
+      "text": "200"
+     }
+    },
+    "OSC2 Split 4": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "track Volume": {
+     "suggested_role": "level",
+     "evidence": "the level +9 dB, the sound otherwise alike",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    }
+   },
+   "renders": 115
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [

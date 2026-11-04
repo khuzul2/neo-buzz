@@ -156,7 +156,7 @@ def main():
     if theirs:
         files.update({g: v for g, v in curated_without_presets().items() if g not in files})
     c = profiler.Client(exe, work, 120)
-    installed = {g["name"] for g in c.call("gear_list", limit=1000).get("gear", [])}
+    installed = {g["name"] for g in c.call("gear_list", limit=1000, include_unhealthy=True).get("gear", [])}
     failures, rows, checked = [], [], 0
     for gear, (path, kind, manifest) in sorted(files.items()):
         if gear not in installed:

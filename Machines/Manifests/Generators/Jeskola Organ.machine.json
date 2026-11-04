@@ -3,7 +3,7 @@
  "gear": "Jeskola Organ",
  "kind": "generator",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "monosynth",
  "summary": "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; monophonic; takes notes in its tracks; one note at the defaults -7 LUFS.",
  "tracks": 8,
@@ -45,6 +45,174 @@
      "verdict": "ok"
     }
    }
+  },
+  "envelope": {
+   "peak_db": -9.15,
+   "attack_s": 0.015,
+   "final_db": -0.67,
+   "length_s": null,
+   "release_s": 0.255,
+   "release_past_window": false,
+   "bright_mid_hz": 1745.0,
+   "bright_early_hz": 1746.1,
+   "bright_late_hz": 1743.9,
+   "level_wobble_db": 0.074,
+   "bright_wobble": 0.008,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": 0.0,
+   "db_per_doubling": 0.0,
+   "curve": "none (velocity doesn't change its level)",
+   "levels_db": {
+    "16": -9.63,
+    "32": -9.63,
+    "64": -9.63,
+    "127": -9.63
+   }
+  },
+  "roles": {
+   "default": {
+    "pitch": 33.03,
+    "centroid_hz": 202,
+    "peakiness_db": 60.0,
+    "env_attack_s": 0.005,
+    "env_half_s": 0.005,
+    "env_final_db": -3.47,
+    "env_release_s": 0.255,
+    "env_peak_db": -6.5,
+    "env_bright_early_hz": 213.3,
+    "env_bright_mid_hz": 219.3,
+    "env_bright_late_hz": 216.5,
+    "env_level_wobble_db": 0.471,
+    "env_bright_wobble": 0.067
+   },
+   "params": {
+    "Attack": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 15 ms → 875 ms",
+     "min": {
+      "raw": 0,
+      "text": "1.00ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "9.31s"
+     }
+    },
+    "Release": {
+     "suggested_role": "env.release",
+     "evidence": "the release 10 ms → 255 ms",
+     "min": {
+      "raw": 0,
+      "text": "1.00ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "9.31s"
+     }
+    },
+    "Vib.Int.": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "not impl. yet"
+     },
+     "max": {
+      "raw": 127,
+      "text": "not impl. yet"
+     }
+    },
+    "Vib.Spd.": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "not impl. yet"
+     },
+     "max": {
+      "raw": 127,
+      "text": "not impl. yet"
+     }
+    },
+    "16\"": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100.0"
+     }
+    },
+    "8\"": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100.0"
+     }
+    },
+    "5 1/3\"": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100.0"
+     }
+    },
+    "4\"": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100.0"
+     }
+    },
+    "2 2/3\"": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100.0"
+     }
+    },
+    "2\"": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100.0"
+     }
+    }
+   },
+   "renders": 18
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [
@@ -61,7 +229,9 @@
    "b": 9.30175,
    "unit": "s",
    "description": "Attack time",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.attack",
+   "role_evidence": "the attack 15 ms → 875 ms"
   },
   {
    "index": 1,
@@ -76,7 +246,9 @@
    "b": 9.30175,
    "unit": "s",
    "description": "Release time",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.release",
+   "role_evidence": "the release 10 ms → 255 ms"
   },
   {
    "index": 4,

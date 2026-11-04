@@ -5,6 +5,11 @@
 // A render holds the audio lock for its whole length: in studio mode the user's output pauses
 // while it runs. It changes nothing in the song: play position, loop, markers, mutes and the
 // unsaved-changes flag are put back.
+//
+// U2 in depth (docs/specs/mcp-server.md §12.12): cpu=true adds each machine's own work time per second
+// of audio, read from the engine's per-machine counters (what ReBuzz's CPU monitor shows), over the
+// render and, with cpu_window_seconds, window by window: a machine whose time climbs after its input
+// goes silent is working on denormals.
 
 using System;
 using System.Collections.Generic;
@@ -23,6 +28,54 @@ using static ReBuzz.Agent.Mcp.Schema;
 namespace ReBuzz.Agent
 {
     internal sealed record RenderInfo(string Id, string File, double FromBeats, double ToBeats, double Seconds);
+
+    /// <summary>
+    /// Each machine's work time during a render (U2 in depth): the engine's per-machine counter
+    /// (<see cref="MachineCore.PerformanceDataCurrent"/>, Stopwatch ticks spent in its Work) read when the
+    /// captured audio starts, at each window's end and when the render ends. Pre-roll and the wait for
+    /// machines still preparing are left out.
+    /// </summary>
+    internal sealed class CpuMeter
+    {
+        public CpuMeter(double windowSeconds) => WindowSeconds = windowSeconds;
+
+        /// <summary>0: the whole render only.</summary>
+        public double WindowSeconds { get; }
+        public int Rate { get; set; }
+        public List<MachineCore> Machines { get; } = new();
+        /// <summary>Frames captured at each mark; the first is 0.</summary>
+        public List<long> Frames { get; } = new();
+        /// <summary>Per mark, each machine's counter (same order as <see cref="Machines"/>).</summary>
+        public List<long[]> Counts { get; } = new();
+
+        public void Mark(long frames)
+        {
+            Frames.Add(frames);
+            Counts.Add(Machines.Select(m => m.PerformanceDataCurrent.PerformanceCount).ToArray());
+        }
+
+        static double MsPerSecond(long ticks, long frames, int rate) =>
+            frames <= 0 || rate <= 0 ? 0 : Math.Round(ticks * 1000.0 / System.Diagnostics.Stopwatch.Frequency / (frames / (double)rate), 3);
+
+        public JsonArray Json()
+        {
+            var list = new JsonArray();
+            if (Frames.Count < 2) return list;
+            for (int i = 0; i < Machines.Count; i++)
+            {
+                var o = new JsonObject
+                {
+                    ["machine"] = Machines[i].Name,
+                    ["ms_per_second"] = MsPerSecond(Counts[^1][i] - Counts[0][i], Frames[^1] - Frames[0], Rate),
+                };
+                if (WindowSeconds > 0 && Frames.Count > 2)
+                    o["windows_ms_per_second"] = new JsonArray(Enumerable.Range(1, Frames.Count - 1)
+                        .Select(k => (JsonNode)MsPerSecond(Counts[k][i] - Counts[k - 1][i], Frames[k] - Frames[k - 1], Rate)).ToArray());
+                list.Add(o);
+            }
+            return list;
+        }
+    }
 
     internal static class RenderTools
     {
@@ -52,7 +105,9 @@ namespace ReBuzz.Agent
                     Opt("solo", Array(String("A machine"), "Hear only these (and what feeds soloed effects)")),
                     Opt("mute", Array(String("A machine"), "Silence these")),
                     Opt("probes", Array(String("A machine"), "Also capture these machines' outputs")),
-                    Opt("name", String("A label for the file name"))),
+                    Opt("name", String("A label for the file name")),
+                    Opt("cpu", Boolean("Also each machine's own work time per second of audio (ms/s), from the engine's counters")),
+                    Opt("cpu_window_seconds", Number("With cpu: also window by window, this long each (a machine slowing down after its input stops: denormals)", 0.05, 60))),
                 Output = Object(null,
                     Req("id", String("Pass to analyze(source=…)")),
                     Req("file", String("The WAV file (32-bit float, stereo)")),
@@ -61,7 +116,9 @@ namespace ReBuzz.Agent
                     Req("to_beats", Number("End")),
                     Req("measure", Object("Loudness and peaks", Req("silent", Boolean("Nothing above -90 dBFS")))),
                     Opt("diverged", Array(Object("A machine whose guard tripped in the render: silenced from there on and left muted (machine_set(reset=true))",
-                        Req("machine", String("The machine")), Req("reason", String("NaN, infinity or its peak above +60 dBFS"))), "Machines that diverged"))),
+                        Req("machine", String("The machine")), Req("reason", String("NaN, infinity or its peak above +60 dBFS"))), "Machines that diverged")),
+                    Opt("cpu", Array(Object("A machine's work time (cpu=true)",
+                        Req("machine", String("The machine")), Req("ms_per_second", Number("Milliseconds of its Work per second of audio rendered"))), "Per machine"))),
                 Annotations = new ToolAnnotations(ReadOnly: true),
                 Handler = async c =>
                 {
@@ -70,6 +127,9 @@ namespace ReBuzz.Agent
                     var muteNames = c.List("mute")?.Select(x => x?.GetValue<string>()).ToList();
                     var probeNames = c.List("probes")?.Select(x => x?.GetValue<string>()).ToList();
                     string label = c.String("name");
+                    double? cpuWindow = c.Number("cpu_window_seconds");
+                    if (cpuWindow != null && c.Bool("cpu") != true) throw new ToolError("cpu_window_seconds goes with cpu=true.");
+                    var meter = c.Bool("cpu") == true ? new CpuMeter(cpuWindow ?? 0) : null;
                     var r = await host.Engine("render", false, _ =>
                     {
                         var song = core.SongCore;
@@ -99,7 +159,7 @@ namespace ReBuzz.Agent
                         string folder = Path.Combine(Path.GetDirectoryName(host.Log.FilePath) ?? Path.GetTempPath(), "renders");
                         string file = Path.Combine(folder, $"{Path.GetFileNameWithoutExtension(host.Log.FilePath)}-{id}{SafeLabel(label)}.wav");
                         var divergedBefore = SongModel.Machines(core).Where(m => m.IsDiverged).ToHashSet();
-                        var (audio, probed) = Render(host, from, to, tail, solo, mute, probes, c, warnings);
+                        var (audio, probed) = Render(host, from, to, tail, solo, mute, probes, c, warnings, meter);
                         double fromBeats = SongModel.Beats(core, from), toBeats = SongModel.Beats(core, to);
                         Write(file, audio);
                         host.Renders[id] = new RenderInfo(id, file, fromBeats, toBeats, audio.Seconds);
@@ -130,14 +190,17 @@ namespace ReBuzz.Agent
                             ["warnings"] = new JsonArray(warnings.Select(w => (JsonNode)w).ToArray()),
                         };
                         if (diverged.Count > 0) result["diverged"] = diverged;
+                        if (meter != null) result["cpu"] = meter.Json();
                         return result;
                     }, c.Cancellation);
                     var m = r["measure"]!.AsObject();
                     var warn = r["warnings"]!.AsArray().Select(w => w!.GetValue<string>()).ToList();
                     var probeLines = r["probes"]!.AsArray().Select(pr => $"{pr!["id"]}: {AudioReport.Line(pr["measure"]!.AsObject())}").ToList();
+                    string cpuLine = r["cpu"] is JsonArray cpu && cpu.Count > 0
+                        ? " CPU: " + string.Join("; ", cpu.Select(x => $"{x!["machine"]} {x["ms_per_second"]} ms/s")) + "." : "";
                     return ToolResult.Ok($"Rendered {r["id"]}: beats {r["from_beats"]}–{r["to_beats"]}, {r["seconds"]} s → {r["file"]}. " +
                                          $"{AudioReport.Line(m)}. " + string.Join(" ", m["reads"]!.AsArray().Select(x => x!.GetValue<string>())) +
-                                         (probeLines.Count > 0 ? " Probes: " + string.Join("; ", probeLines) + "." : "") +
+                                         (probeLines.Count > 0 ? " Probes: " + string.Join("; ", probeLines) + "." : "") + cpuLine +
                                          (warn.Count > 0 ? " " + string.Join(" ", warn) : ""), r)
                         .WithLink(new Uri(r["file"]!.GetValue<string>()).AbsoluteUri, Path.GetFileName(r["file"]!.GetValue<string>()), "audio/wav", "The render");
                 },
@@ -221,8 +284,8 @@ namespace ReBuzz.Agent
         /// loop is set to the range with looping off, so the engine stops at its end.
         /// </summary>
         static (StereoAudio Master, List<(string Machine, StereoAudio Audio)> Probes) Render(AgentHost host, int from, int to, double tailSeconds,
-            HashSet<MachineCore> solo, HashSet<MachineCore> mute, IReadOnlyList<MachineCore> probes, ToolContext c, List<string> warnings) =>
-            Render(host.Core, host.Dispatcher, from, to, tailSeconds, solo, mute, probes, c.Cancellation, (done, total, what) => c.Progress(done, total, what), warnings);
+            HashSet<MachineCore> solo, HashSet<MachineCore> mute, IReadOnlyList<MachineCore> probes, ToolContext c, List<string> warnings, CpuMeter cpu = null) =>
+            Render(host.Core, host.Dispatcher, from, to, tailSeconds, solo, mute, probes, c.Cancellation, (done, total, what) => c.Progress(done, total, what), warnings, cpu: cpu);
 
         /// <summary>
         /// The render itself, for the agent's tools and for machine_replace's comparison from the machine menu (U5), which
@@ -230,7 +293,8 @@ namespace ReBuzz.Agent
         /// </summary>
         internal static (StereoAudio Master, List<(string Machine, StereoAudio Audio)> Probes) Render(ReBuzzCore core, IUiDispatcher dispatcher, int from, int to, double tailSeconds,
             HashSet<MachineCore> solo, HashSet<MachineCore> mute, IReadOnlyList<MachineCore> probes, System.Threading.CancellationToken cancellation,
-            Action<double, double, string> progress, List<string> warnings, IReadOnlyList<(string Label, IMachineConnection Connection, double Amp)> connections = null)
+            Action<double, double, string> progress, List<string> warnings, IReadOnlyList<(string Label, IMachineConnection Connection, double Amp)> connections = null,
+            CpuMeter cpu = null)
         {
             var song = core.SongCore;
             var info = ReBuzzCore.masterInfo;
@@ -318,6 +382,15 @@ namespace ReBuzz.Agent
                     if (!core.Playing) throw new ToolError("Playback didn't start (is ReBuzz following an external clock?).");
 
                     foreach (var t in taps) t.Start();
+                    // U2 in depth: each machine's work time from here (cpu=true).
+                    long nextMark = long.MaxValue;
+                    if (cpu != null)
+                    {
+                        cpu.Rate = rate;
+                        cpu.Machines.AddRange(machines);
+                        cpu.Mark(0);
+                        if (cpu.WindowSeconds > 0) nextMark = Math.Max(1, (long)Math.Round(cpu.WindowSeconds * rate));
+                    }
                     void Take(int n)
                     {
                         for (int i = 0; i < n; i++)
@@ -326,6 +399,11 @@ namespace ReBuzz.Agent
                             right.Add(buffer[2 * i + 1]);
                         }
                         foreach (var t in taps) t.Align(left.Count);
+                        if (cpu != null && left.Count >= nextMark)
+                        {
+                            cpu.Mark(left.Count);
+                            nextMark += Math.Max(1, (long)Math.Round(cpu.WindowSeconds * rate));
+                        }
                     }
                     long nextReport = 5L * rate;
                     int last = song.PlayPosition;
@@ -352,6 +430,7 @@ namespace ReBuzz.Agent
                         Take((int)Math.Clamp(tailEnd - left.Count, 0, 256));
                     }
                     while (left.Count < tailEnd);
+                    if (cpu != null && cpu.Frames[^1] < left.Count) cpu.Mark(left.Count);
                     if (Math.Abs(left.Count - tailFrames - expected) > rate / 20)
                         warnings.Add($"The range played {Math.Round((left.Count - tailFrames) / (double)rate, 2)} s (tempo changes in the song).");
                 }

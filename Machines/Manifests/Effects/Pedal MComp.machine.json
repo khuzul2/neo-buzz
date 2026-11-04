@@ -3,7 +3,7 @@
  "gear": "Pedal MComp",
  "kind": "effect",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on linux, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on linux, 2026-11-04; not curated",
  "type": "dynamics",
  "summary": "Dynamics (profiled draft): traits: utility; tail 0.01 s; latency 2 samples; gain -0.2 dB at the defaults.",
  "tracks": 0,
@@ -40,7 +40,318 @@
    },
    "traits": [
     "utility"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     -0.99
+    ],
+    [
+     23.1,
+     -1.65
+    ],
+    [
+     26.0,
+     -1.29
+    ],
+    [
+     29.1,
+     -1.8
+    ],
+    [
+     32.7,
+     -1.39
+    ],
+    [
+     36.7,
+     -1.4
+    ],
+    [
+     41.2,
+     -1.65
+    ],
+    [
+     46.2,
+     -1.11
+    ],
+    [
+     51.9,
+     -1.26
+    ],
+    [
+     58.3,
+     -1.54
+    ],
+    [
+     65.4,
+     -0.76
+    ],
+    [
+     73.4,
+     -1.27
+    ],
+    [
+     82.4,
+     -0.94
+    ],
+    [
+     92.5,
+     -0.52
+    ],
+    [
+     103.8,
+     -0.32
+    ],
+    [
+     116.5,
+     -0.3
+    ],
+    [
+     130.8,
+     -0.05
+    ],
+    [
+     146.8,
+     -0.38
+    ],
+    [
+     164.8,
+     0.7
+    ],
+    [
+     185.0,
+     -0.8
+    ],
+    [
+     207.7,
+     -1.19
+    ],
+    [
+     233.1,
+     -1.43
+    ],
+    [
+     261.6,
+     -1.58
+    ],
+    [
+     293.7,
+     -1.68
+    ],
+    [
+     329.6,
+     -1.77
+    ],
+    [
+     370.0,
+     -1.01
+    ],
+    [
+     415.3,
+     -1.8
+    ],
+    [
+     466.2,
+     -1.84
+    ],
+    [
+     523.3,
+     -1.53
+    ],
+    [
+     587.3,
+     -1.08
+    ],
+    [
+     659.3,
+     -1.19
+    ],
+    [
+     740.0,
+     -1.15
+    ],
+    [
+     830.6,
+     -1.28
+    ],
+    [
+     932.3,
+     -1.46
+    ],
+    [
+     1046.5,
+     -1.62
+    ],
+    [
+     1174.7,
+     -1.75
+    ],
+    [
+     1318.5,
+     -1.56
+    ],
+    [
+     1480.0,
+     -1.75
+    ],
+    [
+     1661.2,
+     -1.72
+    ],
+    [
+     1864.7,
+     -1.53
+    ],
+    [
+     2093.0,
+     -1.49
+    ],
+    [
+     2349.3,
+     -1.33
+    ],
+    [
+     2637.0,
+     -1.09
+    ],
+    [
+     2960.0,
+     -0.74
+    ],
+    [
+     3322.4,
+     -0.38
+    ],
+    [
+     3729.3,
+     -0.11
+    ],
+    [
+     4186.0,
+     -0.07
+    ],
+    [
+     4698.6,
+     -0.29
+    ],
+    [
+     5274.0,
+     -0.69
+    ],
+    [
+     5919.9,
+     -1.01
+    ],
+    [
+     6644.9,
+     -1.25
+    ],
+    [
+     7458.6,
+     -1.41
+    ],
+    [
+     8372.0,
+     -1.51
+    ],
+    [
+     9397.3,
+     -1.55
+    ],
+    [
+     10548.1,
+     -1.56
+    ],
+    [
+     11839.8,
+     -1.54
+    ],
+    [
+     13289.8,
+     -1.47
+    ],
+    [
+     14917.2,
+     -1.31
+    ],
+    [
+     16744.0,
+     -0.93
+    ],
+    [
+     18794.5,
+     -0.05
+    ]
+   ],
+   "response_summary": {
+    "level_db": -1.02,
+    "spread_db": 2.54,
+    "centroid_oct": -0.674,
+    "max_db": 0.7,
+    "max_hz": 164.8,
+    "prominence_db": 1.64,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 18794.5,
+    "width_oct": 9.83,
+    "tilt_db": -0.16,
+    "wobble_db": 0.03
+   },
+   "impulse": {
+    "latency_samples": 1,
+    "direct_db": -2.08,
+    "early_db": -4.29,
+    "late_db": -143.82,
+    "t60_s": null,
+    "t60_span_db": 0.0,
+    "ring_s": 0.016,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": 0.007,
+    "late_onset_s": 0.003,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      -0.24
+     ],
+     [
+      -34.85,
+      -0.25
+     ],
+     [
+      -28.82,
+      -0.24
+     ],
+     [
+      -22.79,
+      -0.25
+     ],
+     [
+      -16.77,
+      -0.26
+     ],
+     [
+      -10.75,
+      -1.04
+     ],
+     [
+      -4.8,
+      -3.77
+     ]
+    ],
+    "compression_db": 2.16,
+    "top_slope": 0.707,
+    "knee_in_db": -4.8,
+    "attack_s": 0.045,
+    "release_s": 0.01,
+    "attack_tau_s": 0.025,
+    "release_tau_s": 0.005
+   },
+   "thd_percent": 2.39
   },
   "level_test": {
    "defaults": {
@@ -103,6 +414,458 @@
      "text": "+24.0 dB"
     }
    }
+  },
+  "roles": {
+   "default": {
+    "level_db": -1.02,
+    "spread_db": 2.1,
+    "centroid_oct": -0.727,
+    "max_hz": 130.8,
+    "prominence_db": 1.41,
+    "low_corner_hz": 23.1,
+    "high_corner_hz": 16744.0,
+    "width_oct": 9.5,
+    "wobble_db": 0.08,
+    "latency_samples": 1,
+    "direct_db": -2.08,
+    "early_db": -4.29,
+    "late_db": -143.82,
+    "ring_s": 0.016,
+    "late_onset_s": 0.003,
+    "copy_s": 0.007,
+    "compression_db": 2.16,
+    "knee_in_db": -4.8,
+    "release_tau_s": 0.005,
+    "thd": 2.42,
+    "peak_dbfs": 1.75
+   },
+   "type_from_click": "dynamics",
+   "params": {
+    "Listen": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "All"
+     },
+     "max": {
+      "raw": 4,
+      "text": "H"
+     }
+    },
+    "Xover L-LM": {
+     "suggested_role": "filter.highpass",
+     "evidence": "the response's lower corner moves 23.1 Hz → 1.48 kHz",
+     "min": {
+      "raw": 0,
+      "text": "40 Hz"
+     },
+     "max": {
+      "raw": 127,
+      "text": "600 Hz"
+     }
+    },
+    "Xover LM-HM": {
+     "suggested_role": "dyn.attack",
+     "evidence": "the gain moves 63 % of the way in 10 ms → 35 ms after a 30 dB jump up",
+     "min": {
+      "raw": 0,
+      "text": "200 Hz"
+     },
+     "max": {
+      "raw": 127,
+      "text": "3.00 kHz"
+     }
+    },
+    "Xover HM-H": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's upper corner moves 370 Hz → 16.7 kHz",
+     "min": {
+      "raw": 0,
+      "text": "800 Hz"
+     },
+     "max": {
+      "raw": 127,
+      "text": "12.00 kHz"
+     }
+    },
+    "Knee": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.0 dB"
+     },
+     "max": {
+      "raw": 24,
+      "text": "24.0 dB"
+     }
+    },
+    "Detection": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Peak"
+     },
+     "max": {
+      "raw": 1,
+      "text": "RMS"
+     }
+    },
+    "L Threshold": {
+     "suggested_role": "filter.highpass",
+     "evidence": "the response's lower corner moves 23.1 Hz → 185 Hz",
+     "min": {
+      "raw": 0,
+      "text": "0.0 dB"
+     },
+     "max": {
+      "raw": 60,
+      "text": "-60.0 dB"
+     }
+    },
+    "L Ratio": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "1.00:1"
+     },
+     "max": {
+      "raw": 127,
+      "text": "Limit"
+     }
+    },
+    "L Attack": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.100 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "200 ms"
+     }
+    },
+    "L Release": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "1.00 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "2000 ms"
+     }
+    },
+    "L Makeup": {
+     "suggested_role": "dyn.makeup",
+     "evidence": "the quiet steps +13.8 dB, all alike",
+     "min": {
+      "raw": 0,
+      "text": "0.0 dB"
+     },
+     "max": {
+      "raw": 24,
+      "text": "24.0 dB"
+     }
+    },
+    "L Bypass": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "LM Threshold": {
+     "suggested_role": "filter.highpass",
+     "evidence": "the response's lower corner moves 23.1 Hz → 1.05 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0.0 dB"
+     },
+     "max": {
+      "raw": 60,
+      "text": "-60.0 dB"
+     }
+    },
+    "LM Ratio": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's upper corner moves 16.7 kHz → 262 Hz (with Xover HM-H half way)",
+     "min": {
+      "raw": 0,
+      "text": "1.00:1"
+     },
+     "max": {
+      "raw": 127,
+      "text": "Limit"
+     }
+    },
+    "LM Attack": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.100 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "200 ms"
+     }
+    },
+    "LM Release": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's upper corner moves 16.7 kHz → 370 Hz (with Xover HM-H half way)",
+     "min": {
+      "raw": 0,
+      "text": "1.00 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "2000 ms"
+     }
+    },
+    "LM Makeup": {
+     "suggested_role": "dyn.makeup",
+     "evidence": "the quiet steps +15.0 dB, all alike",
+     "min": {
+      "raw": 0,
+      "text": "0.0 dB"
+     },
+     "max": {
+      "raw": 24,
+      "text": "24.0 dB"
+     }
+    },
+    "LM Bypass": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "HM Threshold": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's upper corner moves 16.7 kHz → 370 Hz",
+     "min": {
+      "raw": 0,
+      "text": "0.0 dB"
+     },
+     "max": {
+      "raw": 60,
+      "text": "-60.0 dB"
+     }
+    },
+    "HM Ratio": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "1.00:1"
+     },
+     "max": {
+      "raw": 127,
+      "text": "Limit"
+     }
+    },
+    "HM Attack": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.100 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "200 ms"
+     }
+    },
+    "HM Release": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "1.00 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "2000 ms"
+     }
+    },
+    "HM Makeup": {
+     "suggested_role": "dyn.makeup",
+     "evidence": "the quiet steps +17.6 dB, all alike",
+     "min": {
+      "raw": 0,
+      "text": "0.0 dB"
+     },
+     "max": {
+      "raw": 24,
+      "text": "24.0 dB"
+     }
+    },
+    "HM Bypass": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "H Threshold": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's upper corner moves 16.7 kHz → 2.09 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0.0 dB"
+     },
+     "max": {
+      "raw": 60,
+      "text": "-60.0 dB"
+     }
+    },
+    "H Ratio": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "1.00:1"
+     },
+     "max": {
+      "raw": 127,
+      "text": "Limit"
+     }
+    },
+    "H Attack": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.100 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "200 ms"
+     }
+    },
+    "H Release": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "1.00 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "2000 ms"
+     }
+    },
+    "H Makeup": {
+     "suggested_role": "dyn.makeup",
+     "evidence": "the quiet steps +19.0 dB, all alike",
+     "min": {
+      "raw": 0,
+      "text": "0.0 dB"
+     },
+     "max": {
+      "raw": 24,
+      "text": "24.0 dB"
+     }
+    },
+    "H Bypass": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "Output Gain": {
+     "suggested_role": "dyn.makeup",
+     "evidence": "the quiet steps +48.0 dB, all alike",
+     "min": {
+      "raw": 0,
+      "text": "-24.0 dB"
+     },
+     "max": {
+      "raw": 48,
+      "text": "+24.0 dB"
+     }
+    },
+    "Dry-Wet": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0 %"
+     },
+     "max": {
+      "raw": 100,
+      "text": "100 %"
+     }
+    },
+    "Lookahead": {
+     "suggested_role": "dyn.lookahead",
+     "evidence": "the latency 1 → 444 samples",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 127,
+      "text": "10.0 ms"
+     }
+    },
+    "Phase Linear": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "Spectrum View": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    }
+   },
+   "renders": 161
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [
@@ -138,7 +901,9 @@
    "b": 599.918,
    "unit": "Hz",
    "description": "Crossover frequency between Low and Lo-Mid bands (40-600 Hz, log)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.highpass",
+   "role_evidence": "the response's lower corner moves 23.1 Hz → 1.48 kHz"
   },
   {
    "index": 2,
@@ -153,7 +918,9 @@
    "b": 2999.44,
    "unit": "Hz",
    "description": "Crossover frequency between Lo-Mid and Hi-Mid bands (200-3000 Hz, log)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "dyn.attack",
+   "role_evidence": "the gain moves 63 % of the way in 10 ms → 35 ms after a 30 dB jump up"
   },
   {
    "index": 3,
@@ -168,7 +935,9 @@
    "b": 12001.3,
    "unit": "Hz",
    "description": "Crossover frequency between Hi-Mid and High bands (800-12000 Hz, log)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's upper corner moves 370 Hz → 16.7 kHz"
   },
   {
    "index": 4,
@@ -214,7 +983,9 @@
    "b": -60.0,
    "unit": "dB",
    "description": "L band threshold in dB below 0 dBFS",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.highpass",
+   "role_evidence": "the response's lower corner moves 23.1 Hz → 185 Hz"
   },
   {
    "index": 7,
@@ -275,7 +1046,9 @@
    "b": 24.0,
    "unit": "dB",
    "description": "L band makeup gain in dB",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "dyn.makeup",
+   "role_evidence": "the quiet steps +13.8 dB, all alike"
   },
   {
    "index": 11,
@@ -302,7 +1075,9 @@
    "b": -60.0,
    "unit": "dB",
    "description": "LM band threshold in dB below 0 dBFS",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.highpass",
+   "role_evidence": "the response's lower corner moves 23.1 Hz → 1.05 kHz"
   },
   {
    "index": 13,
@@ -318,7 +1093,9 @@
    "flag": true,
    "unit": ":1",
    "description": "LM band ratio, log-mapped 1:1 to 40:1; top value is Limit",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's upper corner moves 16.7 kHz → 262 Hz (with Xover HM-H half way)"
   },
   {
    "index": 14,
@@ -348,7 +1125,9 @@
    "b": 2.00018,
    "unit": "s",
    "description": "LM band release time, log-mapped 1 ms to 2000 ms",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's upper corner moves 16.7 kHz → 370 Hz (with Xover HM-H half way)"
   },
   {
    "index": 16,
@@ -363,7 +1142,9 @@
    "b": 24.0,
    "unit": "dB",
    "description": "LM band makeup gain in dB",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "dyn.makeup",
+   "role_evidence": "the quiet steps +15.0 dB, all alike"
   },
   {
    "index": 17,
@@ -390,7 +1171,9 @@
    "b": -60.0,
    "unit": "dB",
    "description": "HM band threshold in dB below 0 dBFS",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's upper corner moves 16.7 kHz → 370 Hz"
   },
   {
    "index": 19,
@@ -451,7 +1234,9 @@
    "b": 24.0,
    "unit": "dB",
    "description": "HM band makeup gain in dB",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "dyn.makeup",
+   "role_evidence": "the quiet steps +17.6 dB, all alike"
   },
   {
    "index": 23,
@@ -478,7 +1263,9 @@
    "b": -60.0,
    "unit": "dB",
    "description": "H band threshold in dB below 0 dBFS",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's upper corner moves 16.7 kHz → 2.09 kHz"
   },
   {
    "index": 25,
@@ -539,7 +1326,9 @@
    "b": 24.0,
    "unit": "dB",
    "description": "H band makeup gain in dB",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "dyn.makeup",
+   "role_evidence": "the quiet steps +19.0 dB, all alike"
   },
   {
    "index": 29,
@@ -566,7 +1355,9 @@
    "b": 24.0,
    "unit": "dB",
    "description": "Global output gain after summation, in dB; index 24 is unity",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "dyn.makeup",
+   "role_evidence": "the quiet steps +48.0 dB, all alike"
   },
   {
    "index": 31,
@@ -596,7 +1387,9 @@
    "b": 0.0100015,
    "unit": "s",
    "description": "Pre-delays audio so the compressor reacts before transients reach the output. Adds equivalent processing latency — comb-filtering occurs if a parallel dry path is in use. Off = zero-latency.",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "dyn.lookahead",
+   "role_evidence": "the latency 1 → 444 samples"
   },
   {
    "index": 33,

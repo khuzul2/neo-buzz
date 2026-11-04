@@ -18,8 +18,10 @@
  ],
  "tracks": 0,
  "health": {
-  "status": "ok",
-  "problems": []
+  "status": "warn",
+  "problems": [
+   "slows down after its input goes silent (denormal numbers, likely): up to 20.996 ms of work per second of audio, for about 8 s of the 20 s after, against 1.61 while it plays (12.7× for 4 s or more)"
+  ]
  },
  "profile": {
   "effect": {
@@ -48,8 +50,336 @@
     }
    },
    "traits": [
-    "delay"
-   ]
+    "reverb"
+   ],
+   "response": [
+    [
+     20.6,
+     -5.83
+    ],
+    [
+     23.1,
+     -5.47
+    ],
+    [
+     26.0,
+     -5.16
+    ],
+    [
+     29.1,
+     -5.27
+    ],
+    [
+     32.7,
+     -6.23
+    ],
+    [
+     36.7,
+     -5.78
+    ],
+    [
+     41.2,
+     -5.56
+    ],
+    [
+     46.2,
+     -5.95
+    ],
+    [
+     51.9,
+     -5.17
+    ],
+    [
+     58.3,
+     -5.6
+    ],
+    [
+     65.4,
+     -5.32
+    ],
+    [
+     73.4,
+     -5.96
+    ],
+    [
+     82.4,
+     -5.9
+    ],
+    [
+     92.5,
+     -5.29
+    ],
+    [
+     103.8,
+     -5.65
+    ],
+    [
+     116.5,
+     -6.31
+    ],
+    [
+     130.8,
+     -5.96
+    ],
+    [
+     146.8,
+     -6.33
+    ],
+    [
+     164.8,
+     -5.89
+    ],
+    [
+     185.0,
+     -6.17
+    ],
+    [
+     207.7,
+     -6.47
+    ],
+    [
+     233.1,
+     -6.2
+    ],
+    [
+     261.6,
+     -6.19
+    ],
+    [
+     293.7,
+     -6.21
+    ],
+    [
+     329.6,
+     -6.27
+    ],
+    [
+     370.0,
+     -6.08
+    ],
+    [
+     415.3,
+     -6.01
+    ],
+    [
+     466.2,
+     -6.16
+    ],
+    [
+     523.3,
+     -6.12
+    ],
+    [
+     587.3,
+     -5.89
+    ],
+    [
+     659.3,
+     -6.2
+    ],
+    [
+     740.0,
+     -6.03
+    ],
+    [
+     830.6,
+     -6.03
+    ],
+    [
+     932.3,
+     -5.97
+    ],
+    [
+     1046.5,
+     -6.02
+    ],
+    [
+     1174.7,
+     -5.96
+    ],
+    [
+     1318.5,
+     -5.92
+    ],
+    [
+     1480.0,
+     -6.08
+    ],
+    [
+     1661.2,
+     -6.03
+    ],
+    [
+     1864.7,
+     -6.06
+    ],
+    [
+     2093.0,
+     -6.02
+    ],
+    [
+     2349.3,
+     -6.06
+    ],
+    [
+     2637.0,
+     -6.02
+    ],
+    [
+     2960.0,
+     -6.04
+    ],
+    [
+     3322.4,
+     -6.03
+    ],
+    [
+     3729.3,
+     -6.04
+    ],
+    [
+     4186.0,
+     -6.03
+    ],
+    [
+     4698.6,
+     -6.04
+    ],
+    [
+     5274.0,
+     -6.02
+    ],
+    [
+     5919.9,
+     -6.01
+    ],
+    [
+     6644.9,
+     -6.03
+    ],
+    [
+     7458.6,
+     -6.02
+    ],
+    [
+     8372.0,
+     -6.0
+    ],
+    [
+     9397.3,
+     -6.02
+    ],
+    [
+     10548.1,
+     -6.02
+    ],
+    [
+     11839.8,
+     -6.02
+    ],
+    [
+     13289.8,
+     -6.02
+    ],
+    [
+     14917.2,
+     -6.02
+    ],
+    [
+     16744.0,
+     -6.02
+    ],
+    [
+     18794.5,
+     -6.02
+    ]
+   ],
+   "response_summary": {
+    "level_db": -6.02,
+    "spread_db": 1.3,
+    "centroid_oct": -0.769,
+    "max_db": -5.16,
+    "max_hz": 26.0,
+    "prominence_db": 0.0,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 18794.5,
+    "width_oct": 9.83,
+    "tilt_db": -0.19,
+    "wobble_db": 0.08
+   },
+   "impulse": {
+    "latency_samples": 0,
+    "direct_db": -7.94,
+    "early_db": -10.49,
+    "late_db": -16.02,
+    "t60_s": 3.132,
+    "t60_span_db": 20.0,
+    "ring_s": 2.127,
+    "rings_past_window": false,
+    "echoes": [
+     [
+      0.165,
+      -27.0
+     ]
+    ],
+    "echoes_left": [
+     [
+      0.15,
+      -25.5
+     ]
+    ],
+    "echoes_right": [
+     [
+      0.155,
+      -22.8
+     ]
+    ],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "tail_zcr_hz": 7060.0,
+    "tail_low_db": -17.54,
+    "balance_db": 0.01
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      6.8
+     ],
+     [
+      -34.85,
+      -3.47
+     ],
+     [
+      -28.82,
+      -6.43
+     ],
+     [
+      -22.79,
+      -5.65
+     ],
+     [
+      -16.77,
+      -4.63
+     ],
+     [
+      -10.75,
+      -5.45
+     ],
+     [
+      -4.8,
+      -6.27
+     ]
+    ],
+    "compression_db": 7.52,
+    "top_slope": 0.863,
+    "knee_in_db": -34.85,
+    "attack_s": 0.33,
+    "release_s": 0.7,
+    "attack_tau_s": null,
+    "release_tau_s": 0.365
+   },
+   "thd_percent": 2.73
   },
   "level_test": {
    "defaults": {
@@ -74,7 +404,152 @@
    ],
    "renders": 19
   },
-  "sweeps": {}
+  "sweeps": {},
+  "roles": {
+   "default": {
+    "level_db": -6.05,
+    "spread_db": 0.83,
+    "centroid_oct": -0.654,
+    "max_hz": 46.2,
+    "prominence_db": 0.51,
+    "low_corner_hz": 23.1,
+    "high_corner_hz": 16744.0,
+    "width_oct": 9.5,
+    "wobble_db": 0.06,
+    "latency_samples": 0,
+    "direct_db": -7.94,
+    "early_db": -10.49,
+    "late_db": -16.03,
+    "t60_s": 2.751,
+    "ring_s": 1.503,
+    "late_onset_s": 0.003,
+    "tail_zcr_hz": 7060.0,
+    "tail_low_db": -17.54,
+    "echoes": [
+     [
+      0.165,
+      -27.0
+     ]
+    ],
+    "thd": 1.87,
+    "peak_dbfs": -10.52
+   },
+   "type_from_click": "reverb",
+   "params": {
+    "Mix": {
+     "suggested_role": "mix.wet",
+     "evidence": "at its minimum the effect passes the signal unchanged; at the other end echoes from 155 ms; half way less of the same",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 100,
+      "text": "100%"
+     }
+    },
+    "PreDelayMs": {
+     "suggested_role": "reverb.predelay",
+     "evidence": "the reverb starts 165 ms → 665 ms after the sound, its tail alike",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 500,
+      "text": "500 ms"
+     }
+    },
+    "Decay": {
+     "suggested_role": "reverb.decay",
+     "evidence": "the tail 453 ms → 3.44 s (T60)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 100,
+      "text": "100%"
+     }
+    },
+    "Damping": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 100,
+      "text": "100%"
+     }
+    },
+    "Size": {
+     "suggested_role": "reverb.size",
+     "evidence": "the reverb starts 25 ms → 285 ms after the sound and its tail 335 ms → 3.22 s",
+     "min": {
+      "raw": 10,
+      "text": "10%"
+     },
+     "max": {
+      "raw": 200,
+      "text": "200%"
+     }
+    },
+    "ModRate": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0 Hz"
+     },
+     "max": {
+      "raw": 100,
+      "text": "5 Hz"
+     }
+    },
+    "ModDepth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 100,
+      "text": "100%"
+     }
+    },
+    "LowCut": {
+     "suggested_role": "reverb.lowcut",
+     "evidence": "the tail's share under 250 Hz -17 → -30 dB",
+     "min": {
+      "raw": 0,
+      "text": "20 Hz"
+     },
+     "max": {
+      "raw": 100,
+      "text": "800 Hz"
+     }
+    },
+    "Feedback": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 95,
+      "text": "95%"
+     }
+    }
+   },
+   "renders": 39
+  },
+  "denormal": {
+   "slowdown": 12.7
+  }
  },
  "parameters": [
   {

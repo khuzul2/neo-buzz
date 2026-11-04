@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Decided 2026-11-03: H1 a global safeguard for every machine, plus a safety limiter on the master output with a clip indicator; H2 A; H3 A; H4 A. **§3.2 and §3.3 built** (§3.6); §3.1 and §3.4 built 2026-11-03 (U2 health); **§3.5 built** (§3.7); §4's first successor, **Neo Ensemble, built** 2026-11-04, and the second, **Neo EQ's graphic mode, built** 2026-11-04, with Joachims Hyperion's `machine_replace` pair; **Neo Delay built** 2026-11-04 (mcp-server.md §12.5), for Jeskola Delay (its −100 % never decays, §3.1) and the other classic delays |
+| Status | Decided 2026-11-03: H1 a global safeguard for every machine, plus a safety limiter on the master output with a clip indicator; H2 A; H3 A; H4 A. **§3.2 and §3.3 built** (§3.6); §3.1 and §3.4 built 2026-11-03 (U2 health), with ends that ring 2026-11-04 (U2 in depth, mcp-server.md §12.12); **§3.5 built** (§3.7); §4's first successor, **Neo Ensemble, built** 2026-11-04, and the second, **Neo EQ's graphic mode, built** 2026-11-04, with Joachims Hyperion's `machine_replace` pair; **Neo Delay built** 2026-11-04 (mcp-server.md §12.5), for Jeskola Delay (its −100 % never decays, §3.1) and the other classic delays |
 | Scope | What the profiler's "unhealthy" means; how ReBuzz keeps any machine from blowing up the song or the speakers; how agents stay in safe ranges; which machines get Neo successors |
 | Related | mcp-server.md §12 (machine upgrades U1–U7, `docs/machine-health.md`), machines.md (Neo machines), studio-mvp.md (the studio), daw-modes.md (AR0 runs beside this), plugin-host.md (plugins get the same guard) |
 
@@ -71,6 +71,17 @@ Found besides:
 - **Neo Verb** diverged with High damping below 1.17 kHz (slowly up to 1.4 kHz, 2.9 kHz with Low decay ×4). Its lines are scaled so the decay is exact at 1 kHz, dividing out the high shelf's gain there; with the shelf's corner near 1 kHz that lifts the band below it over unity. **Fixed:** each line's loop gain is held below 1 at every frequency, from its shelves' exact peak (machines.md, Neo Verb); re-profiled clean. Its Shimmer loop ran away too, above an edge that falls with the decay (Ambient — Shimmer included, after a few seconds): **fixed** by a shimmer guard, a shadow of the loop that holds the shimmer down wherever the loop would ring more than 3× longer than the set decay, the rule the damping fix keeps for the network, and only there (machines.md; the user's decision S1, over a fixed fade of 0.5 dB/s).
 - **Hot**, a warning naming the settings: most gains, makeups and outputs at their maximum (Neo EQ, Comp, Drive, Utility, Pedal EQ, MComp, Shaper, Jeskola EQ-3, Gain…), Jeskola Filter and Filter 2 with Resonance at its maximum (+44 dBFS), the delays and choruses with feedback at ±100 %, and a few at their defaults (Jeskola Distortion +6 dBFS, FSM WahManPro +7, WahMan, NiNjA dElaY, Chorus, Flanger, Organ).
 
+**Ends that ring** (U2 in depth, 2026-11-04, mcp-server.md §12.12). A hot end is loud either because it is the parameter's job (a gain, an output, a makeup at its maximum on a loud test signal: the person asked for it) or because the machine rings there (a resonance or feedback at its end, piling the test signal up in its loop). The bisection now runs for the second kind where a range is honest: a parameter that isn't a level control by its name (gain, volume, level, output, makeup, boost, amount, drive, input, dry, wet, mix, send; a name that says feedback, resonance, Q or regeneration is never a level control) whose end peaks more than **24 dB** over the machine's level with it at its default. The edge is the last value within 24 dB of that level; each value tried is in the draft (`profile.sweeps.<param>.<end>.edge_probes`: raw, text, peak, verdict). The machine stays hot (a warning). Found (Windows package run):
+
+| Machine | Parameter | At its end | `safe_range` |
+|---|---|---|---|
+| Jeskola Filter | Resonance | 128: +53.8 dBFS over 30 s, 57 dB over its level at the default | 0 … 118 |
+| Jeskola Filter 2 | Resonance | 128: +52.0 dBFS over 30 s, 55 dB over | 0 … 118 |
+| Jeskola Delay | Feedback | +100 %: +31.3 dBFS, 31 dB over (−100 % never decays, as before) | −98.4 % … 98.4 % |
+| Jeskola NiNjA dElaY | Feedback | −100 %: +38.7 dBFS, 35 dB over; +100 %: +39.2 dBFS, 36 dB over | −98.4 % … 98.4 % |
+
+Factory presets stay inside them (resonance up to 50 of 128, feedback up to 70 %). The other hot ends are levels by name, or ring less than 24 dB over their default (Jeskola Cross Delay, Chorus, FSM PhatMan at ±100 %: hot, no range).
+
 ### 3.2 Layer 2: a guard on every machine (engine, Windows and macOS)
 
 After each machine's `Work`, before its output reaches any input, the engine checks the block it produced:
@@ -131,7 +142,7 @@ The final output to the audio device gets a **safety limiter**:
 - `param_set` and `automation_write` (decided after the first run: every agent tool that writes parameter values) refuse a value outside the range: the whole call fails, nothing changes, and the error names the value, the range in the machine's texts and raw values, and the reason ("Feedback = 95 (raw 95) is outside its safe range, 0 … 78 (raw 0–78): it diverges at its maximum (95: …). Choose a value inside it, or pass allow_unsafe=true…"). With `allow_unsafe: true` the value is set and the change marked `unsafe` with why (`automation_write`: a problem line). A ramp between two safe points stays inside. Presets, snapshots and machine data imports are left as they are.
 - `machine_describe` gives each ranged parameter a `safe_range` (`range`, `min_raw`, `max_raw`, `reason`), and the health its `diverging`, `hot` and `needs_window`. `gear_list` adds `safe_ranges`, `diverging` and `needs_window` ("Works in ReBuzz on Windows with its window…"), and lists machines that need a window after the drafts and before the unhealthy ones. The machine manual (`guide(machine=…)`) has a "Safe ranges" section, and the troubleshooting guide says what the categories mean.
 - `machine_add` warns only for diverging gear, naming its safe ranges. Gear that needs a window says so when it can't be built.
-- Safe ranges now: Jeskola Flanger (feedback, +100 %), Joachims Neptune 1.2 (Threshold, −100 dB), Jeskola Delay (Feedback at −100 %, never decays). Not Pedal Plate or Neo Verb: their loops are fixed in their source. Above all of them the guard (§3.2) stops what gets through.
+- Safe ranges now: Jeskola Flanger (feedback, +100 %), Joachims Neptune 1.2 (Threshold, −100 dB), Jeskola Delay (Feedback at −100 %, never decays, and at +100 %, rings), and since U2 in depth the ends that ring (§3.1): Jeskola Filter and Filter 2 (Resonance above 118) and NiNjA dElaY (Feedback at ±100 %). Not Pedal Plate or Neo Verb: their loops are fixed in their source. Above all of them the guard (§3.2) stops what gets through.
 
 ### 3.5 Song Notes (H3)
 

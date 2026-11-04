@@ -3,7 +3,7 @@
  "gear": "FSM WahMan",
  "kind": "effect",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "distortion",
  "summary": "Distortion (profiled draft): traits: distortion, filter or EQ; tail 0.01 s; latency 6 samples; gain +10.2 dB at the defaults.",
  "tracks": 1,
@@ -42,7 +42,320 @@
    "traits": [
     "distortion",
     "filter or EQ"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     6.02
+    ],
+    [
+     23.1,
+     6.03
+    ],
+    [
+     26.0,
+     6.01
+    ],
+    [
+     29.1,
+     6.03
+    ],
+    [
+     32.7,
+     6.03
+    ],
+    [
+     36.7,
+     6.01
+    ],
+    [
+     41.2,
+     6.02
+    ],
+    [
+     46.2,
+     6.04
+    ],
+    [
+     51.9,
+     6.05
+    ],
+    [
+     58.3,
+     6.05
+    ],
+    [
+     65.4,
+     6.06
+    ],
+    [
+     73.4,
+     6.05
+    ],
+    [
+     82.4,
+     6.07
+    ],
+    [
+     92.5,
+     6.08
+    ],
+    [
+     103.8,
+     6.09
+    ],
+    [
+     116.5,
+     6.15
+    ],
+    [
+     130.8,
+     6.08
+    ],
+    [
+     146.8,
+     6.11
+    ],
+    [
+     164.8,
+     6.08
+    ],
+    [
+     185.0,
+     6.23
+    ],
+    [
+     207.7,
+     6.32
+    ],
+    [
+     233.1,
+     6.37
+    ],
+    [
+     261.6,
+     6.5
+    ],
+    [
+     293.7,
+     6.62
+    ],
+    [
+     329.6,
+     6.87
+    ],
+    [
+     370.0,
+     7.03
+    ],
+    [
+     415.3,
+     7.36
+    ],
+    [
+     466.2,
+     7.71
+    ],
+    [
+     523.3,
+     8.28
+    ],
+    [
+     587.3,
+     9.12
+    ],
+    [
+     659.3,
+     10.31
+    ],
+    [
+     740.0,
+     11.84
+    ],
+    [
+     830.6,
+     14.52
+    ],
+    [
+     932.3,
+     19.68
+    ],
+    [
+     1046.5,
+     27.36
+    ],
+    [
+     1174.7,
+     15.94
+    ],
+    [
+     1318.5,
+     9.84
+    ],
+    [
+     1480.0,
+     4.99
+    ],
+    [
+     1661.2,
+     1.44
+    ],
+    [
+     1864.7,
+     -1.66
+    ],
+    [
+     2093.0,
+     -4.51
+    ],
+    [
+     2349.3,
+     -7.2
+    ],
+    [
+     2637.0,
+     -9.69
+    ],
+    [
+     2960.0,
+     -12.08
+    ],
+    [
+     3322.4,
+     -14.43
+    ],
+    [
+     3729.3,
+     -16.73
+    ],
+    [
+     4186.0,
+     -19.03
+    ],
+    [
+     4698.6,
+     -21.37
+    ],
+    [
+     5274.0,
+     -23.58
+    ],
+    [
+     5919.9,
+     -25.89
+    ],
+    [
+     6644.9,
+     -28.24
+    ],
+    [
+     7458.6,
+     -30.67
+    ],
+    [
+     8372.0,
+     -33.21
+    ],
+    [
+     9397.3,
+     -35.97
+    ],
+    [
+     10548.1,
+     -38.76
+    ],
+    [
+     11839.8,
+     -41.96
+    ],
+    [
+     13289.8,
+     -45.74
+    ],
+    [
+     14917.2,
+     -50.15
+    ],
+    [
+     16744.0,
+     -55.9
+    ],
+    [
+     18794.5,
+     -64.89
+    ]
+   ],
+   "response_summary": {
+    "level_db": 13.02,
+    "spread_db": 77.51,
+    "centroid_oct": -0.428,
+    "max_db": 27.36,
+    "max_hz": 1046.5,
+    "prominence_db": 19.08,
+    "low_corner_hz": 1046.5,
+    "high_corner_hz": 1046.5,
+    "width_oct": 0.0,
+    "tilt_db": -45.71,
+    "wobble_db": 0.12
+   },
+   "impulse": {
+    "latency_samples": 7,
+    "direct_db": 4.34,
+    "early_db": 2.09,
+    "late_db": -57.99,
+    "t60_s": 0.017,
+    "t60_span_db": 20.0,
+    "ring_s": 0.02,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "tail_zcr_hz": 1679.7,
+    "tail_low_db": -30.97,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      20.11
+     ],
+     [
+      -34.85,
+      16.18
+     ],
+     [
+      -28.82,
+      12.86
+     ],
+     [
+      -22.79,
+      10.44
+     ],
+     [
+      -16.77,
+      8.76
+     ],
+     [
+      -10.75,
+      7.61
+     ],
+     [
+      -4.8,
+      6.81
+     ]
+    ],
+    "compression_db": 10.93,
+    "top_slope": 0.837,
+    "knee_in_db": -34.85,
+    "attack_s": 0.0,
+    "release_s": 0.005,
+    "attack_tau_s": null,
+    "release_tau_s": 0.005
+   },
+   "thd_percent": 0.52
   },
   "level_test": {
    "defaults": {
@@ -132,6 +445,109 @@
      "text": "240"
     }
    }
+  },
+  "roles": {
+   "default": {
+    "level_db": 10.97,
+    "spread_db": 48.13,
+    "centroid_oct": 0.072,
+    "max_hz": 2093.0,
+    "prominence_db": 12.71,
+    "low_corner_hz": 2093.0,
+    "high_corner_hz": 2093.0,
+    "width_oct": 0.0,
+    "wobble_db": 0.06,
+    "latency_samples": 7,
+    "direct_db": 4.34,
+    "early_db": 2.09,
+    "late_db": -57.99,
+    "t60_s": 0.017,
+    "ring_s": 0.02,
+    "late_onset_s": 0.003,
+    "tail_zcr_hz": 1679.7,
+    "tail_low_db": -30.97,
+    "thd": 1.56,
+    "peak_dbfs": 9.89
+   },
+   "type_from_click": "distortion",
+   "params": {
+    "track Cutoff": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 370 Hz: its prominence +18 → +0 dB over the response",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track Resonance": {
+     "suggested_role": "mix.wet",
+     "evidence": "the late sound -120 → -29 dB, the direct sound unchanged",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track LFO rate": {
+     "suggested_role": "lfo.depth",
+     "evidence": "the gain moves 0.0 → 4.8 dB within each tone",
+     "min": {
+      "raw": 0,
+      "text": "0.050 Hz"
+     },
+     "max": {
+      "raw": 240,
+      "text": "26.995 Hz"
+     }
+    },
+    "track Modulation": {
+     "suggested_role": "drive",
+     "evidence": "harmonics 0.6 → 78.6 % on a sine",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track Set phase": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 2.09 kHz: its prominence +13 → +19 dB over the response",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "track Inertia": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's upper corner moves 2.09 kHz → 262 Hz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    }
+   },
+   "renders": 24
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [],
@@ -148,7 +564,9 @@
    "a": 0.0,
    "b": 240.0,
    "description": "Cutoff frequency",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 370 Hz: its prominence +18 → +0 dB over the response"
   },
   {
    "index": 0,
@@ -162,7 +580,9 @@
    "a": 0.0,
    "b": 240.0,
    "description": "",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mix.wet",
+   "role_evidence": "the late sound -120 → -29 dB, the direct sound unchanged"
   },
   {
    "index": 0,
@@ -177,7 +597,9 @@
    "b": 26.9978,
    "unit": "Hz",
    "description": "LFO rate [Hz]",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "lfo.depth",
+   "role_evidence": "the gain moves 0.0 → 4.8 dB within each tone"
   },
   {
    "index": 0,
@@ -191,7 +613,9 @@
    "a": 0.0,
    "b": 240.0,
    "description": "Modulation depth",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "drive",
+   "role_evidence": "harmonics 0.6 → 78.6 % on a sine"
   },
   {
    "index": 0,
@@ -205,7 +629,9 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Set LFO phase",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 2.09 kHz: its prominence +13 → +19 dB over the response"
   },
   {
    "index": 0,
@@ -219,7 +645,9 @@
    "a": 0.0,
    "b": 240.0,
    "description": "Cutoff frequency inertia",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's upper corner moves 2.09 kHz → 262 Hz"
   }
  ]
 }

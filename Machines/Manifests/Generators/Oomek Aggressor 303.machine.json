@@ -68,6 +68,144 @@
      "text": "200%"
     }
    }
+  },
+  "envelope": {
+   "peak_db": -12.51,
+   "attack_s": 0.0,
+   "final_db": -80.0,
+   "half_s": 0.07,
+   "length_s": 0.075,
+   "bright_mid_hz": null,
+   "bright_early_hz": 1577.4,
+   "bright_late_hz": null,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": -0.07,
+   "db_per_doubling": -0.01,
+   "curve": "none (velocity doesn't change its level)",
+   "levels_db": {
+    "16": -12.95,
+    "32": -12.92,
+    "64": -12.82,
+    "127": -13.02
+   }
+  },
+  "roles": {
+   "default": {
+    "centroid_hz": 1041,
+    "peakiness_db": 11.35,
+    "tprom_db": 5.2,
+    "tprom_hz": 2500,
+    "env_attack_s": 0.015,
+    "env_half_s": 0.11,
+    "env_final_db": -80.0,
+    "env_length_s": 0.125,
+    "env_peak_db": -10.52,
+    "env_bright_early_hz": 761.9
+   },
+   "params": {
+    "Osc Type": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Saw"
+     },
+     "max": {
+      "raw": 1,
+      "text": "Square"
+     }
+    },
+    "Cutoff": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 433 Hz → 2.72 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "Res": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 2.5 kHz stands -4 → +17 dB over the spectrum an octave either side",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 128,
+      "text": "128"
+     }
+    },
+    "Env.Mod": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 426 Hz → 1.69 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 128,
+      "text": "100%"
+     }
+    },
+    "Decay": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 395 Hz → 1.58 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 128,
+      "text": "128"
+     }
+    },
+    "Accent Level": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 50 ms → 95 ms (the default 110 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 128,
+      "text": "200%"
+     }
+    },
+    "Finetune": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 70 ms → 115 ms (the default 110 ms) to the same held level (with Cutoff a third of the way up)",
+     "min": {
+      "raw": 0,
+      "text": "-100 ct"
+     },
+     "max": {
+      "raw": 200,
+      "text": "100 ct"
+     }
+    },
+    "Volume": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 3.14 kHz → 1.1 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 200,
+      "text": "200%"
+     }
+    }
+   },
+   "renders": 28
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [

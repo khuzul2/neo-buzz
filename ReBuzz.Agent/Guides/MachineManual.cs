@@ -299,11 +299,13 @@ namespace ReBuzz.Agent.Guides
             sb.Append('\n');
         }
 
-        /// <summary>The meaning column: a curated plain name and role first, then the description; drafts mark approximate units.</summary>
+        /// <summary>The meaning column: a curated plain name and role first, then the description; drafts mark approximate units
+        /// and give the role their profile suggests (U2 in depth, mcp-server.md §12.12).</summary>
         static string Meaning(ManifestParameter p)
         {
             string head = p.PlainName.Length > 0 ? "**" + p.PlainName + "**" + (p.Role.Length > 0 ? $" (`{p.Role}`)" : "")
-                        : p.Role.Length > 0 ? $"(`{p.Role}`)" : "";
+                        : p.Role.Length > 0 ? $"(`{p.Role}`)"
+                        : p.SuggestedRole.Length > 0 ? $"(`{p.SuggestedRole}`, suggested by the profile)" : "";
             string description = p.Description.Trim();
             if (description == p.Name) description = "";
             string text = head + (head.Length > 0 && description.Length > 0 ? ": " : "") + description;

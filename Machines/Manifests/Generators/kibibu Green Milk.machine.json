@@ -3,7 +3,7 @@
  "gear": "kibibu Green Milk",
  "kind": "generator",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "monosynth",
  "summary": "Monosynth (profiled draft): pitched, plays 12 semitones low (corrected by its pitch offset); monophonic; takes notes in its tracks; one note at the defaults -9 LUFS.",
  "tracks": 16,
@@ -43,6 +43,512 @@
      "verdict": "ok"
     }
    }
+  },
+  "envelope": {
+   "peak_db": -6.33,
+   "attack_s": 0.71,
+   "final_db": -6.23,
+   "half_s": 0.005,
+   "length_s": null,
+   "release_s": 0.125,
+   "release_past_window": false,
+   "bright_mid_hz": 342.6,
+   "bright_early_hz": 583.2,
+   "bright_late_hz": 337.9,
+   "level_wobble_db": 2.986,
+   "bright_wobble": 0.25,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": 9.17,
+   "db_per_doubling": 2.59,
+   "curve": "gentle (less than linear)",
+   "levels_db": {
+    "16": -18.59,
+    "32": -14.29,
+    "64": -15.91,
+    "127": -9.42
+   }
+  },
+  "roles": {
+   "default": {
+    "centroid_hz": 612,
+    "peakiness_db": 12.0,
+    "tprom_db": -4.4,
+    "tprom_hz": 315,
+    "env_attack_s": 0.46,
+    "env_half_s": 0.005,
+    "env_final_db": -7.25,
+    "env_release_s": 0.12,
+    "env_peak_db": -8.56,
+    "env_bright_early_hz": 222.4,
+    "env_bright_mid_hz": 180.2,
+    "env_bright_late_hz": 169.0,
+    "env_level_wobble_db": 1.152,
+    "env_bright_wobble": 0.159
+   },
+   "params": {
+    "Wave1": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Sin"
+     },
+     "max": {
+      "raw": 5,
+      "text": "Tri³"
+     }
+    },
+    "Wave2": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Sin"
+     },
+     "max": {
+      "raw": 5,
+      "text": "Tri³"
+     }
+    },
+    "Wave3": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Sin"
+     },
+     "max": {
+      "raw": 5,
+      "text": "Tri³"
+     }
+    },
+    "Unison Depth": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 5 ms → 5 ms (the default 10 ms) to the same held level (with Filt A a third of the way up)",
+     "min": {
+      "raw": 0,
+      "text": "0.00%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "100.00%"
+     }
+    },
+    "Unison Min S": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 5 ms → 145 ms",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "4096 Ticks"
+     }
+    },
+    "Unison Max S": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 65 ms → 385 ms",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "4096 Ticks"
+     }
+    },
+    "Unison Wave": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Sine"
+     },
+     "max": {
+      "raw": 8,
+      "text": "Plateau"
+     }
+    },
+    "Oscillators": {
+     "suggested_role": "level",
+     "evidence": "the level +16 dB, the sound otherwise alike",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 16,
+      "text": "16"
+     }
+    },
+    "Chord Shape": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Straight"
+     },
+     "max": {
+      "raw": 29,
+      "text": "Splat"
+     }
+    },
+    "Glide": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 460 ms → 30 ms",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "4096 Ticks"
+     }
+    },
+    "Amp A": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 10 ms → 875 ms",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "4096 Ticks"
+     }
+    },
+    "Amp D": {
+     "suggested_role": "filter.env_amount",
+     "evidence": "the start's brightness 179 Hz → 124 Hz (RMS frequency), the held part's 150 Hz → 126 Hz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "4096 Ticks"
+     }
+    },
+    "Amp S": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way to its held level in 80 ms → 5 ms",
+     "min": {
+      "raw": 0,
+      "text": "0.00%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "100.00%"
+     }
+    },
+    "Amp R": {
+     "suggested_role": "env.release",
+     "evidence": "the release 10 ms → 255 ms",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "4096 Ticks"
+     }
+    },
+    "Filt Cut": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 630 Hz stands -17 → +2 dB over the spectrum an octave either side",
+     "min": {
+      "raw": 0,
+      "text": "0.00%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "100.00%"
+     }
+    },
+    "Filt Res": {
+     "suggested_role": "lfo.filter",
+     "evidence": "the held note's brightness moves 0% → 170% of its mean (with Filt A a third of the way up)",
+     "min": {
+      "raw": 0,
+      "text": "0.00%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "96.95%"
+     }
+    },
+    "Filt Env": {
+     "suggested_role": "filter.env_amount",
+     "evidence": "the start's brightness 51.2 Hz → 441 Hz (RMS frequency), the held part's 139 Hz → 278 Hz",
+     "min": {
+      "raw": 0,
+      "text": "-100.00%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "100.00%"
+     }
+    },
+    "Filt Mode": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "LP"
+     },
+     "max": {
+      "raw": 38,
+      "text": "None"
+     }
+    },
+    "Filt A": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 513 Hz → 206 Hz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "4096 Ticks"
+     }
+    },
+    "Filt D": {
+     "suggested_role": "filter.env.decay",
+     "evidence": "the brightness 150–250 ms in 87.2 Hz → 194 Hz (RMS frequency), the start alike (124 Hz → 159 Hz)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "4096 Ticks"
+     }
+    },
+    "Filt S": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 254 Hz → 1.08 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0.00%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "100.00%"
+     }
+    },
+    "Filt R": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "4096 Ticks"
+     }
+    },
+    "Length Scale": {
+     "suggested_role": "env.release",
+     "evidence": "the release 5 ms → 255 ms",
+     "min": {
+      "raw": 0,
+      "text": "0.00%"
+     },
+     "max": {
+      "raw": 224,
+      "text": "700.00%"
+     }
+    },
+    "PreF Dist": {
+     "suggested_role": "filter.env.decay",
+     "evidence": "the brightness 150–250 ms in 150 Hz → 84.9 Hz (RMS frequency), the start alike (184 Hz → 139 Hz)",
+     "min": {
+      "raw": 0,
+      "text": "0.00%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "100.00%"
+     }
+    },
+    "PostF Dist": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 553 Hz → 1.27 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0.00%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "100.00%"
+     }
+    },
+    "TLFO1 Speed": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 125 ms → 35 ms",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "4096 Ticks"
+     }
+    },
+    "TLFO1 Delay": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 45 ms → 315 ms (with Filt A a third of the way up)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "4096 Ticks"
+     }
+    },
+    "TLFO1 Shape": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Sine"
+     },
+     "max": {
+      "raw": 97,
+      "text": "arp 88"
+     }
+    },
+    "TLFO1->Cut": {
+     "suggested_role": "lfo.filter",
+     "evidence": "the held note's brightness moves 0% → 50% of its mean",
+     "min": {
+      "raw": 0,
+      "text": "-100.00%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "100.00%"
+     }
+    },
+    "TLFO1->Res": {
+     "suggested_role": "lfo.filter",
+     "evidence": "the held note's brightness moves 0% → 33% of its mean (with Filt A a third of the way up)",
+     "min": {
+      "raw": 0,
+      "text": "-100.00%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "100.00%"
+     }
+    },
+    "TLFO1->Pitch": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-12.8 Semis"
+     },
+     "max": {
+      "raw": 254,
+      "text": "12.6 Semis"
+     }
+    },
+    "TLFO2 Speed": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 5 ms → 120 ms",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "4096 Ticks"
+     }
+    },
+    "TLFO2 Delay": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 10 ms → 5 ms (the default 5 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "4096 Ticks"
+     }
+    },
+    "TLFO2 Shape": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Sine"
+     },
+     "max": {
+      "raw": 97,
+      "text": "arp 88"
+     }
+    },
+    "TLFO2->Cut": {
+     "suggested_role": "filter.env_amount",
+     "evidence": "the start's brightness 41 Hz → 223 Hz (RMS frequency), the held part's 154 Hz → 222 Hz",
+     "min": {
+      "raw": 0,
+      "text": "-100.00%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "100.00%"
+     }
+    },
+    "TLFO2->Res": {
+     "suggested_role": "filter.env.decay",
+     "evidence": "the brightness 150–250 ms in 240 Hz → 146 Hz (RMS frequency), the start alike (161 Hz → 126 Hz)",
+     "min": {
+      "raw": 0,
+      "text": "-100.00%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "100.00%"
+     }
+    },
+    "TLFO2->Pitch": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 120 ms → 765 ms",
+     "min": {
+      "raw": 0,
+      "text": "-12.8 Semis"
+     },
+     "max": {
+      "raw": 254,
+      "text": "12.6 Semis"
+     }
+    },
+    "Retrig Mode": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "No Retrig"
+     },
+     "max": {
+      "raw": 3,
+      "text": "Both"
+     }
+    }
+   },
+   "renders": 105
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [
@@ -120,7 +626,9 @@
    "exponent": 3.0,
    "unit": "%",
    "description": "",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.decay",
+   "role_evidence": "the level falls half way in 5 ms → 5 ms (the default 10 ms) to the same held level (with Filt A a third of the way up)"
   },
   {
    "index": 4,
@@ -395,7 +903,9 @@
     ]
    ],
    "description": "",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.attack",
+   "role_evidence": "the attack 5 ms → 145 ms"
   },
   {
    "index": 5,
@@ -670,7 +1180,9 @@
     ]
    ],
    "description": "",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.attack",
+   "role_evidence": "the attack 65 ms → 385 ms"
   },
   {
    "index": 6,
@@ -707,7 +1219,9 @@
    "a": 1.0,
    "b": 16.0,
    "description": "",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "level",
+   "role_evidence": "the level +16 dB, the sound otherwise alike"
   },
   {
    "index": 8,
@@ -1026,7 +1540,9 @@
     ]
    ],
    "description": "",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.attack",
+   "role_evidence": "the attack 460 ms → 30 ms"
   },
   {
    "index": 10,
@@ -1301,7 +1817,9 @@
     ]
    ],
    "description": "Amp Attack",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.attack",
+   "role_evidence": "the attack 10 ms → 875 ms"
   },
   {
    "index": 11,
@@ -1576,7 +2094,9 @@
     ]
    ],
    "description": "Amp Decay",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.env_amount",
+   "role_evidence": "the start's brightness 179 Hz → 124 Hz (RMS frequency), the held part's 150 Hz → 126 Hz"
   },
   {
    "index": 12,
@@ -1591,7 +2111,9 @@
    "b": 100.000059,
    "unit": "%",
    "description": "Amp Sustain Level",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.decay",
+   "role_evidence": "the level falls half way to its held level in 80 ms → 5 ms"
   },
   {
    "index": 13,
@@ -1866,7 +2388,9 @@
     ]
    ],
    "description": "Amp Release",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.release",
+   "role_evidence": "the release 10 ms → 255 ms"
   },
   {
    "index": 14,
@@ -1881,7 +2405,9 @@
    "b": 100.000059,
    "unit": "%",
    "description": "Filter Cutoff",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 630 Hz stands -17 → +2 dB over the spectrum an octave either side"
   },
   {
    "index": 15,
@@ -1896,7 +2422,9 @@
    "b": 96.946228,
    "unit": "%",
    "description": "Filter Res",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "lfo.filter",
+   "role_evidence": "the held note's brightness moves 0% → 170% of its mean (with Filt A a third of the way up)"
   },
   {
    "index": 16,
@@ -1911,7 +2439,9 @@
    "b": 100.000048,
    "unit": "%",
    "description": "Filter Env",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.env_amount",
+   "role_evidence": "the start's brightness 51.2 Hz → 441 Hz (RMS frequency), the held part's 139 Hz → 278 Hz"
   },
   {
    "index": 17,
@@ -2239,7 +2769,9 @@
     ]
    ],
    "description": "Filter Attack",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the brightness (centroid) 513 Hz → 206 Hz"
   },
   {
    "index": 19,
@@ -2514,7 +3046,9 @@
     ]
    ],
    "description": "Filter Decay",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.env.decay",
+   "role_evidence": "the brightness 150–250 ms in 87.2 Hz → 194 Hz (RMS frequency), the start alike (124 Hz → 159 Hz)"
   },
   {
    "index": 20,
@@ -2529,7 +3063,9 @@
    "b": 100.000059,
    "unit": "%",
    "description": "Filter Sustain Level",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the brightness (centroid) 254 Hz → 1.08 kHz"
   },
   {
    "index": 21,
@@ -2819,7 +3355,9 @@
    "b": 700.002489,
    "unit": "%",
    "description": "",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.release",
+   "role_evidence": "the release 5 ms → 255 ms"
   },
   {
    "index": 23,
@@ -2835,7 +3373,9 @@
    "exponent": 3.0,
    "unit": "%",
    "description": "Pre-filter Dist",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.env.decay",
+   "role_evidence": "the brightness 150–250 ms in 150 Hz → 84.9 Hz (RMS frequency), the start alike (184 Hz → 139 Hz)"
   },
   {
    "index": 24,
@@ -2851,7 +3391,9 @@
    "exponent": 3.0,
    "unit": "%",
    "description": "Post-filter Dist",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the brightness (centroid) 553 Hz → 1.27 kHz"
   },
   {
    "index": 25,
@@ -3126,7 +3668,9 @@
     ]
    ],
    "description": "LFO 1 Speed",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.attack",
+   "role_evidence": "the attack 125 ms → 35 ms"
   },
   {
    "index": 26,
@@ -3401,7 +3945,9 @@
     ]
    ],
    "description": "LFO 1 Delay",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.attack",
+   "role_evidence": "the attack 45 ms → 315 ms (with Filt A a third of the way up)"
   },
   {
    "index": 27,
@@ -3528,7 +4074,9 @@
    "b": 100.000048,
    "unit": "%",
    "description": "LFO 1 to Cutoff",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "lfo.filter",
+   "role_evidence": "the held note's brightness moves 0% → 50% of its mean"
   },
   {
    "index": 29,
@@ -3543,7 +4091,9 @@
    "b": 100.000048,
    "unit": "%",
    "description": "LFO 1 to Res",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "lfo.filter",
+   "role_evidence": "the held note's brightness moves 0% → 33% of its mean (with Filt A a third of the way up)"
   },
   {
    "index": 30,
@@ -3833,7 +4383,9 @@
     ]
    ],
    "description": "LFO 2 Speed",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.attack",
+   "role_evidence": "the attack 5 ms → 120 ms"
   },
   {
    "index": 32,
@@ -4108,7 +4660,9 @@
     ]
    ],
    "description": "LFO 2 Delay",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.decay",
+   "role_evidence": "the level falls half way in 10 ms → 5 ms (the default 5 ms) to the same held level"
   },
   {
    "index": 33,
@@ -4235,7 +4789,9 @@
    "b": 100.000048,
    "unit": "%",
    "description": "LFO 2 to Cutoff",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.env_amount",
+   "role_evidence": "the start's brightness 41 Hz → 223 Hz (RMS frequency), the held part's 154 Hz → 222 Hz"
   },
   {
    "index": 35,
@@ -4250,7 +4806,9 @@
    "b": 100.000048,
    "unit": "%",
    "description": "LFO 2 to Res",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.env.decay",
+   "role_evidence": "the brightness 150–250 ms in 240 Hz → 146 Hz (RMS frequency), the start alike (161 Hz → 126 Hz)"
   },
   {
    "index": 36,
@@ -4265,7 +4823,9 @@
    "b": 12.6,
    "unit": "st",
    "description": "LFO 2 to Pitch",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "env.attack",
+   "role_evidence": "the attack 120 ms → 765 ms"
   },
   {
    "index": 37,

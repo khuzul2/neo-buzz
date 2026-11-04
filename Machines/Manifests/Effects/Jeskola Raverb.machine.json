@@ -3,7 +3,7 @@
  "gear": "Jeskola Raverb",
  "kind": "effect",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "reverb",
  "summary": "Reverb (profiled draft): traits: reverb; tail 3.48 s; latency 0 samples; gain +6.1 dB at the defaults.",
  "tracks": 0,
@@ -38,7 +38,360 @@
    },
    "traits": [
     "reverb"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     6.85
+    ],
+    [
+     23.1,
+     6.07
+    ],
+    [
+     26.0,
+     5.66
+    ],
+    [
+     29.1,
+     5.04
+    ],
+    [
+     32.7,
+     6.37
+    ],
+    [
+     36.7,
+     6.61
+    ],
+    [
+     41.2,
+     6.23
+    ],
+    [
+     46.2,
+     5.59
+    ],
+    [
+     51.9,
+     5.28
+    ],
+    [
+     58.3,
+     5.54
+    ],
+    [
+     65.4,
+     7.44
+    ],
+    [
+     73.4,
+     4.51
+    ],
+    [
+     82.4,
+     6.41
+    ],
+    [
+     92.5,
+     6.27
+    ],
+    [
+     103.8,
+     6.14
+    ],
+    [
+     116.5,
+     5.33
+    ],
+    [
+     130.8,
+     6.06
+    ],
+    [
+     146.8,
+     5.98
+    ],
+    [
+     164.8,
+     5.17
+    ],
+    [
+     185.0,
+     6.34
+    ],
+    [
+     207.7,
+     5.88
+    ],
+    [
+     233.1,
+     6.2
+    ],
+    [
+     261.6,
+     6.29
+    ],
+    [
+     293.7,
+     5.7
+    ],
+    [
+     329.6,
+     5.79
+    ],
+    [
+     370.0,
+     6.07
+    ],
+    [
+     415.3,
+     5.89
+    ],
+    [
+     466.2,
+     6.28
+    ],
+    [
+     523.3,
+     6.0
+    ],
+    [
+     587.3,
+     5.82
+    ],
+    [
+     659.3,
+     6.11
+    ],
+    [
+     740.0,
+     5.96
+    ],
+    [
+     830.6,
+     6.01
+    ],
+    [
+     932.3,
+     5.98
+    ],
+    [
+     1046.5,
+     6.02
+    ],
+    [
+     1174.7,
+     6.03
+    ],
+    [
+     1318.5,
+     5.94
+    ],
+    [
+     1480.0,
+     6.04
+    ],
+    [
+     1661.2,
+     6.01
+    ],
+    [
+     1864.7,
+     6.06
+    ],
+    [
+     2093.0,
+     6.07
+    ],
+    [
+     2349.3,
+     6.02
+    ],
+    [
+     2637.0,
+     6.03
+    ],
+    [
+     2960.0,
+     6.04
+    ],
+    [
+     3322.4,
+     5.99
+    ],
+    [
+     3729.3,
+     6.03
+    ],
+    [
+     4186.0,
+     6.03
+    ],
+    [
+     4698.6,
+     6.01
+    ],
+    [
+     5274.0,
+     6.02
+    ],
+    [
+     5919.9,
+     6.01
+    ],
+    [
+     6644.9,
+     6.03
+    ],
+    [
+     7458.6,
+     6.04
+    ],
+    [
+     8372.0,
+     6.01
+    ],
+    [
+     9397.3,
+     6.02
+    ],
+    [
+     10548.1,
+     6.02
+    ],
+    [
+     11839.8,
+     6.03
+    ],
+    [
+     13289.8,
+     6.02
+    ],
+    [
+     14917.2,
+     6.02
+    ],
+    [
+     16744.0,
+     6.02
+    ],
+    [
+     18794.5,
+     6.02
+    ]
+   ],
+   "response_summary": {
+    "level_db": 6.02,
+    "spread_db": 2.93,
+    "centroid_oct": -0.684,
+    "max_db": 7.44,
+    "max_hz": 65.4,
+    "prominence_db": 1.07,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 18794.5,
+    "width_oct": 9.83,
+    "tilt_db": 0.06,
+    "wobble_db": 0.06
+   },
+   "impulse": {
+    "latency_samples": 0,
+    "direct_db": 4.1,
+    "early_db": 1.57,
+    "late_db": -12.37,
+    "t60_s": 8.487,
+    "t60_span_db": 20.0,
+    "ring_s": 3.004,
+    "rings_past_window": true,
+    "echoes": [
+     [
+      0.055,
+      -32.5
+     ],
+     [
+      0.09,
+      -35.4
+     ],
+     [
+      2.545,
+      -46.7
+     ],
+     [
+      2.595,
+      -48.6
+     ]
+    ],
+    "echoes_left": [
+     [
+      0.055,
+      -26.5
+     ],
+     [
+      0.11,
+      -32.4
+     ]
+    ],
+    "echoes_right": [
+     [
+      0.05,
+      -27.2
+     ],
+     [
+      0.09,
+      -29.4
+     ],
+     [
+      0.145,
+      -32.9
+     ]
+    ],
+    "copy_s": 0.057,
+    "late_onset_s": 0.003,
+    "tail_zcr_hz": 4976.0,
+    "tail_low_db": -10.9,
+    "echo_fade_db_s": 5.5,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      23.69
+     ],
+     [
+      -34.85,
+      17.08
+     ],
+     [
+      -28.82,
+      11.45
+     ],
+     [
+      -22.79,
+      8.36
+     ],
+     [
+      -16.77,
+      7.26
+     ],
+     [
+      -10.75,
+      6.53
+     ],
+     [
+      -4.8,
+      6.68
+     ]
+    ],
+    "compression_db": 13.78,
+    "top_slope": 0.952,
+    "knee_in_db": -34.85,
+    "attack_s": 0.365,
+    "release_s": 0.7,
+    "attack_tau_s": null,
+    "release_tau_s": null
+   },
+   "thd_percent": 2.23
   },
   "level_test": {
    "defaults": {
@@ -58,6 +411,96 @@
      "verdict": "ok"
     }
    }
+  },
+  "roles": {
+   "default": {
+    "level_db": 6.05,
+    "spread_db": 0.5,
+    "centroid_oct": -0.717,
+    "max_hz": 65.4,
+    "prominence_db": 0.24,
+    "low_corner_hz": 23.1,
+    "high_corner_hz": 16744.0,
+    "width_oct": 9.5,
+    "wobble_db": 0.03,
+    "latency_samples": 0,
+    "direct_db": 4.1,
+    "early_db": 1.57,
+    "late_db": -13.23,
+    "t60_s": 4.028,
+    "ring_s": 1.503,
+    "late_onset_s": 0.003,
+    "copy_s": 0.057,
+    "tail_zcr_hz": 4976.0,
+    "tail_low_db": -10.9,
+    "echoes": [
+     [
+      0.055,
+      -32.5
+     ],
+     [
+      0.09,
+      -35.4
+     ]
+    ],
+    "thd": 1.79,
+    "peak_dbfs": -1.42
+   },
+   "type_from_click": "reverb",
+   "params": {
+    "Rev Time": {
+     "suggested_role": "reverb.decay",
+     "evidence": "the tail 381 ms → 4.03 s (T60)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "HF Damp": {
+     "suggested_role": "mix.wet",
+     "evidence": "at its maximum the effect passes the signal unchanged; at the other end echoes from 55 ms; half way less of the same",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "Rev Out": {
+     "suggested_role": "mix.wet",
+     "evidence": "at its minimum the effect passes the signal unchanged; at the other end echoes from 55 ms; half way less of the same",
+     "min": {
+      "raw": 0,
+      "text": "-inf.dB"
+     },
+     "max": {
+      "raw": 127,
+      "text": "0.0dB"
+     }
+    },
+    "Dry Out": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-inf.dB"
+     },
+     "max": {
+      "raw": 127,
+      "text": "0.0dB"
+     }
+    }
+   },
+   "renders": 16
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [
@@ -73,7 +516,9 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Reverberation time",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "reverb.decay",
+   "role_evidence": "the tail 381 ms → 4.03 s (T60)"
   },
   {
    "index": 1,
@@ -87,7 +532,9 @@
    "a": 0.0,
    "b": 127.0,
    "description": "High frequency damping",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mix.wet",
+   "role_evidence": "at its maximum the effect passes the signal unchanged; at the other end echoes from 55 ms; half way less of the same"
   },
   {
    "index": 2,
@@ -103,7 +550,9 @@
    "flag": true,
    "unit": "dB",
    "description": "Reverb output level",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mix.wet",
+   "role_evidence": "at its minimum the effect passes the signal unchanged; at the other end echoes from 55 ms; half way less of the same"
   },
   {
    "index": 3,

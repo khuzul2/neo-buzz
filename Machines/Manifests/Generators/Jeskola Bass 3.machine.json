@@ -8,19 +8,21 @@
  "summary": "Classic Buzz bass synth (TB-303 flavoured): one oscillator (sine, saw, pulse, triangle, noise or a 303 saw) into a resonant filter with an envelope, per track. For basses and acid lines in Buzz songs.",
  "quirks": [
   "Each track is its own monophonic voice with its own filter settings (8 at most).",
-  "The profiler heard no steady pitch on its default patch, so its pitch convention is unmeasured: notes are written as they are (no offset). Render and check with analyze(metrics=[\"pitch\"]).",
+  "It plays notes as written (no offset): its default patch dies in about 100 ms, too fast for analyze's pitch metric, but the profiler's harmonic sieve hears A2, A3 and A4 within 3 cents (U2 in depth, mcp-server.md §12.12).",
   "Volume, Note length and Slide note are pattern columns, not set with param_set (in the repo's songs they are non-state track parameters).",
   "Closed source: names and units come from its own descriptions and texts."
  ],
  "evidence": [
   "its parameter descriptions and value texts (machine_describe, as profiled)",
   "ExternalMachines/source/buzztrax-buzzmachines/CyanPhase/DTMF/CyanPhase_DTMF-1_Demo.bmx — a repo song using it; its saved parameter table lists the track columns",
-  "profile (tools/machine-profiler.py, windows 2026-11-03) — −11 LUFS for a note, monophonic per track, no pitch heard"
+  "profile (tools/machine-profiler.py, windows 2026-11-03) — −11 LUFS for a note, monophonic per track, no pitch heard",
+  "profile in depth (tools/machine-profiler.py, windows 2026-11-04) — the harmonic sieve hears A2, A3 and A4 as written (offset 0)"
  ],
  "tracks": 8,
  "notes": {
   "input": "tracks",
-  "pitched": false,
+  "pitch_offset": 0,
+  "pitched": true,
   "polyphony": 1
  },
  "health": {
@@ -40,6 +42,108 @@
     "verdict": "ok"
    },
    "all_at_once": {}
+  },
+  "envelope": {
+   "peak_db": -6.85,
+   "attack_s": 0.01,
+   "final_db": -80.0,
+   "half_s": 0.065,
+   "length_s": 0.11,
+   "bright_mid_hz": null,
+   "bright_early_hz": 792.8,
+   "bright_late_hz": null,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": -0.02,
+   "db_per_doubling": -0.01,
+   "curve": "none (velocity doesn't change its level)",
+   "levels_db": {
+    "16": -6.86,
+    "32": -6.87,
+    "64": -6.87,
+    "127": -6.88
+   }
+  },
+  "roles": {
+   "default": {
+    "centroid_hz": 716,
+    "peakiness_db": 10.1,
+    "tprom_db": -3.2,
+    "tprom_hz": 500,
+    "env_attack_s": 0.005,
+    "env_half_s": 0.045,
+    "env_final_db": -80.0,
+    "env_length_s": 0.105,
+    "env_peak_db": -2.91,
+    "env_bright_early_hz": 270.2
+   },
+   "params": {
+    "track Cutoff": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 173 Hz → 716 Hz",
+     "min": {
+      "raw": 0,
+      "text": "0.0%"
+     },
+     "max": {
+      "raw": 128,
+      "text": "100.0%"
+     }
+    },
+    "track Resonance": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 4 kHz stands -3 → +18 dB over the spectrum an octave either side",
+     "min": {
+      "raw": 0,
+      "text": "0.0%"
+     },
+     "max": {
+      "raw": 128,
+      "text": "100.0%"
+     }
+    },
+    "track Envmod": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way to its held level in 45 ms → 15 ms",
+     "min": {
+      "raw": 0,
+      "text": "0.0%"
+     },
+     "max": {
+      "raw": 128,
+      "text": "100.0%"
+     }
+    },
+    "track Decay": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 85 ms → 65 ms (the default 45 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "0.0%"
+     },
+     "max": {
+      "raw": 128,
+      "text": "100.0%"
+     }
+    },
+    "track Waveform": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "sine"
+     },
+     "max": {
+      "raw": 5,
+      "text": "303 saw"
+     }
+    }
+   },
+   "renders": 10
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [],
