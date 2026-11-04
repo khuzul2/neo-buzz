@@ -499,12 +499,12 @@ Its parameters' roles (from `ManifestRoles`), for `machine_replace` and the mani
 | Solo, bypass | every band compressing hard and bypassed: the dry signal bit for bit; band 2 soloed at Mix 0 %: band 2 alone, as designed | bit for bit; within 0.01 dB |
 | Moves | crossover 1 jumping across a 220 Hz sine every 1024 samples with band 1 compressing: the largest step within 1.5× the steady signal's at either setting; Phase switched about every 0.5 s and Bands every 0.25 s: within 1.2×; every parameter jumping between its ends every 2048 samples: within 1.5× | 0.94× (linear, 39 redesigns) and 0.90× (minimum); 1.11×; at most 1.35× (Crossover 1) |
 | Blocks | blocks of 256, 128 and 117 samples give the same output, with the crossovers, the band count, a solo and the phase moving | identical |
-| Silence, NaN | 2 s of noise then 20 s of silence: no subnormal state or output, silence costs no more than noise, idle after the tail; NaN and ±∞ in: no state becomes non-finite, the output always finite | none; 0.73× (linear) and 0.62× (minimum); idle; clean |
+| Silence, NaN | 2 s of noise then 20 s of silence: no subnormal state or output, silence costs no more than noise, idle after the tail; NaN and ±∞ in: no state becomes non-finite, the output always finite | none; 0.65× (linear) and 0.60× (minimum); idle; clean |
 | Readings | DC at −10 dBFS, band 1 at −20 dB and 4:1 | b1_gr_db 7.50, b1_gr_peak_db 7.50, b1_level_db −10.00; the other bands 0 dB; latency_samples 4607; every key the manifest declares |
 | Presets | each on pink noise at −18 dBFS RMS: within ±6 dB of the input, peaks under +3 dBFS | −3.7 … +2.2 dB; peaks −8.9 … −2.6 dBFS |
 | Audio thread | 2000 blocks with the crossovers moving and Bands, Phase, Stereo and solos switching: no allocation; in the studio, a Neo Multiband with a crossover moved every buffer (its FIRs designed again), each work algorithm | 0 bytes; 0 bytes per buffer, and nothing compiled on the first play |
 | In ReBuzz | the latency reported and compensated: at unity, beside a parallel path inverted by Neo Utility, nothing is left; minimum phase reports 0 and ReBuzz sees it (ReBuzzTests, Windows) | 4607 samples; the two paths cancel exactly (−240 dB, the meter's floor); 0, then 4607 again; the unity sine within 0.0000 dB of bypassed; the WPF editor 1042 × 578 |
-| CPU | stereo at 48 kHz on noise, every band compressing: linear and minimum phase ≥ 20× real time, mid/side unlinked ≥ 12×, a crossover moving every block (linear) ≥ 10× | MEASURED_CPU |
+| CPU | stereo at 48 kHz on noise, every band compressing: linear and minimum phase ≥ 20× real time, mid/side unlinked ≥ 12×, a crossover moving every block (linear) ≥ 10× | linear 110×, minimum 113× (three bands 112×), mid/side unlinked 88×, a crossover moving 50× on the Linux runner; on the macOS arm64 runner 55×, 81× (69×), 56×, 25× |
 
 As built:
 
