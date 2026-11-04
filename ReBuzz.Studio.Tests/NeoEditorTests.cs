@@ -42,6 +42,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Verb", "NeoVerbEditor", "neo-verb-editor", 880, 332),
             ("Neo Analyzer", "NeoAnalyzerEditor", "neo-analyzer-editor", 1118, 398),
             ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 978, 338),
+            ("Neo Delay", "NeoDelayEditor", "neo-delay-editor", 994, 343),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;
@@ -427,6 +428,58 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 Remove(ensemble, poly);
+            }
+        }
+
+        [AvaloniaTest]
+        public void NeoDelaysEchoesFollowItsModeAndTimeAndItsMetersTheSound()
+        {
+            // Neo Poly → Neo Delay → Master, a chord held. The echoes' picture changes with the mode and the time (Stereo, then
+            // Ping-pong, then Cross a dotted quarter with the right line longer), the output meter shows the chord, and with
+            // Duck on the ducking meter shows the echoes turned down while the chord plays.
+            var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var poly = Add("Neo Poly", "Echo Poly", -0.6f, 0);
+            var delay = Add("Neo Delay", "Echo Delay", 0, 0);
+            try
+            {
+                Core.SongCore.ConnectMachines(poly, delay, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                Core.SongCore.ConnectMachines(delay, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                var window = OpenEditor(delay);
+                poly.TrackCount = Math.Max(poly.TrackCount, 3);
+                var note = poly.ParameterGroups[2].Parameters.First(p => p.Name == "Note");
+                int[] chord = { (3 << 4) + 1, (3 << 4) + 5, (3 << 4) + 8 };   // C-3, E-3, G-3
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, chord[t]);
+                var echoView = Controls(window, "GraphView").First(g => Math.Abs(g.Bounds.Width - 330) < 1);
+                var echoes = BoundsIn(echoView, window);
+                var meter = BoundsIn(Find(window, "Meter", "Output"), window);
+                var ducking = BoundsIn(Find(window, "Meter", "Ducking"), window);
+                Assert.Multiple(() =>
+                {
+                    var before = Frame(window);
+                    foreach (var (mode, sync, offset, shot) in new[] { (0, 4, 500, "neo-delay-editor-stereo"), (1, 4, 500, "neo-delay-editor-pingpong"), (2, 5, 800, "neo-delay-editor-cross") })
+                    {
+                        Global(delay, "Mode").SetValue(0, mode);
+                        Global(delay, "Sync").SetValue(0, sync);
+                        Global(delay, "Offset").SetValue(0, offset);
+                        Global(delay, "Feedback").SetValue(0, 1600);
+                        Run(0.3);
+                        var after = Frame(window, shot);
+                        Assert.That(Changed(before, after, echoes), Is.GreaterThan(200), $"mode {mode}: the echoes' picture follows the mode and the time");
+                        Assert.That(Count(after, meter, 0xFF6F52) + Count(after, meter, 0xFF4D4D), Is.GreaterThan(40), $"mode {mode}: the output meter shows the chord");
+                        before = after;
+                    }
+                    Global(delay, "Duck").SetValue(0, 240);
+                    Global(delay, "Duck threshold").SetValue(0, 300);
+                    Run(0.3);
+                    var ducked = Frame(window, "neo-delay-editor-ducking");
+                    Assert.That(Count(ducked, ducking, 0xFF6F52), Is.GreaterThan(30), "the ducking meter shows the echoes turned down");
+                });
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, BuzzGUI.Common.BuzzNote.Off);
+                Run(0.1);
+            }
+            finally
+            {
+                Remove(delay, poly);
             }
         }
 

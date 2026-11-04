@@ -161,6 +161,15 @@ namespace ReBuzz.Agent.Model
             Values.GroupBy(v => v.Param).Select(g => (g.Key, g.Last().Raw));
     }
 
+    /// <summary>The song's tempo and rate where a conversion takes place: what a length in ticks or samples is in seconds.</summary>
+    public readonly record struct SuccessorTiming(double Bpm, int TicksPerBeat, int SampleRate)
+    {
+        public static readonly SuccessorTiming Default = new(120, 4, 44100);
+
+        /// <summary>Buzz's samples per tick, a whole number as the machines get it (MasterInfo.SamplesPerTick).</summary>
+        public int SamplesPerTick => (int)(60.0 * Math.Max(1, SampleRate) / (Math.Max(1, Bpm) * Math.Max(1, TicksPerBeat)));
+    }
+
     /// <summary>One event of a pattern column: time in 1/240 tick, raw value, ramp length (engine columns: a ramp to the next).</summary>
     public readonly record struct ColumnEvent(int Time, int Raw, int Duration = 0);
 
@@ -171,6 +180,8 @@ namespace ReBuzz.Agent.Model
         readonly List<SuccessorParam> news;
 
         public SuccessorMap Map { get; }
+        /// <summary>The song's tempo and rate (delay lengths in ticks or samples); 120 BPM, 4 ticks a beat, 44.1 kHz until the caller says.</summary>
+        public SuccessorTiming Timing { get; set; } = SuccessorTiming.Default;
         /// <summary>Names the mapping uses that the machines don't have (a broken mapping; nothing converts).</summary>
         public List<string> Errors { get; } = new();
 
@@ -493,6 +504,18 @@ namespace ReBuzz.Agent.Model
                 case SuccessorRuleKind.Graphic:
                     Graphic(rule, get, state, events, Put, notes);
                     break;
+                case SuccessorRuleKind.DelayTime:
+                    DelayTime(rule, get, outs, Put, notes);
+                    break;
+                case SuccessorRuleKind.FromDb:
+                {
+                    double db = get(rule.From);
+                    if (!double.IsNaN(db)) Put(rule.To, Lin(db) * rule.Scale + rule.Offset);
+                    break;
+                }
+                case SuccessorRuleKind.Filter:
+                    Filter(rule, get, outs, Put, notes);
+                    break;
             }
             return outs;
         }
@@ -582,6 +605,127 @@ namespace ReBuzz.Agent.Model
 
         static string Ms(double s) => (s * 1000).ToString(s < 0.001 ? "0.##" : "0.#", C) + " ms";
 
+        /// <summary>An old filter (a type and a cutoff) → the new machine's low cut and high cut, per the old type's name.</summary>
+        void Filter(SuccessorRule rule, Func<string, double> get, List<(SuccessorParam, int, string)> outs, Action<string, double> put, List<string> notes)
+        {
+            var type = Old(rule.Type);
+            double t = get(rule.Type), hz = get(rule.Cutoff) * rule.Scale;
+            if (type == null || double.IsNaN(t) || double.IsNaN(hz)) return;
+            string name = type.Choices != null && (int)t >= 0 && (int)t < type.Choices.Count ? type.Choices[(int)t] : ((int)Math.Round(t)).ToString(C);
+            void Set(string param, string text)
+            {
+                var p = New(param);
+                if (p == null) return;
+                try { outs.Add((p, ValueResolver.Resolve(p.Info, JsonValue.Create(text), p.Default), null)); }
+                catch (Exception e) { notes.Add($"{Map.Label}: {p.Name} = \"{text}\" failed ({e.Message})."); }
+            }
+            if (!rule.Types.TryGetValue(name, out string becomes))
+            {
+                string note = $"{rule.Type} \"{name}\" has no counterpart on {Map.To}; its low cut and high cut are left open.";
+                if (!notes.Contains(note)) notes.Add(note);
+                becomes = "none";
+            }
+            switch (becomes)
+            {
+                case "high_cut":
+                    Set(rule.LowCut, rule.LowOff);
+                    put(rule.HighCut, hz);
+                    break;
+                case "low_cut":
+                    put(rule.LowCut, hz);
+                    Set(rule.HighCut, rule.HighOpen);
+                    break;
+                case "band":
+                    put(rule.LowCut, hz / Math.Sqrt(2));
+                    put(rule.HighCut, hz * Math.Sqrt(2));
+                    break;
+                default:
+                    Set(rule.LowCut, rule.LowOff);
+                    Set(rule.HighCut, rule.HighOpen);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// A delay's length in its unit → a note value of the tempo where the length in ticks is one (the new machine then
+        /// follows tempo changes as the old one did), else Free at the seconds it lasts now; Time gets the seconds either way.
+        /// Ticks last Buzz's whole samples per tick (as the old machines count them); a right length becomes the offset.
+        /// </summary>
+        void DelayTime(SuccessorRule rule, Func<string, double> get, List<(SuccessorParam, int, string)> outs, Action<string, double> put, List<string> notes)
+        {
+            string kind = rule.UnitKind;
+            if (kind == null)
+            {
+                var unit = Old(rule.Unit);
+                double u = get(rule.Unit);
+                if (unit == null || double.IsNaN(u)) return;
+                string name = unit.Choices != null && (int)u >= 0 && (int)u < unit.Choices.Count ? unit.Choices[(int)u] : ((int)Math.Round(u)).ToString(C);
+                if (rule.Units == null || !rule.Units.TryGetValue(name, out kind)) kind = name;
+            }
+            var t = Timing;
+            double Seconds(double length, out double beats)
+            {
+                beats = double.NaN;
+                switch (kind)
+                {
+                    case "tick":
+                        beats = length / Math.Max(1, t.TicksPerBeat);
+                        return length * t.SamplesPerTick / (double)t.SampleRate;
+                    case "tick/256":
+                        beats = length / 256.0 / Math.Max(1, t.TicksPerBeat);
+                        return Math.Floor(length * t.SamplesPerTick / 256.0) / t.SampleRate;
+                    case "sample": return length / t.SampleRate;
+                    case "ms": return Math.Floor(t.SampleRate * length / 1000.0) / t.SampleRate;
+                    default: return double.NaN;
+                }
+            }
+            double left = Seconds(get(rule.Length), out double leftBeats);
+            if (double.IsNaN(left))
+            {
+                string note = $"{rule.Unit ?? "the unit"} \"{kind}\" isn't a length unit this mapping knows; {rule.Time} left as it was.";
+                if (!notes.Contains(note)) notes.Add(note);
+                return;
+            }
+            string sync = null, feel = null;
+            if (rule.Sync != null && !double.IsNaN(leftBeats))
+                foreach (var (d, beats) in rule.Divisions.Where(d => d.Value > 0))
+                {
+                    foreach (var (f, factor) in rule.Feels)
+                        if (Math.Abs(beats * factor - leftBeats) <= 1e-6 * leftBeats) { sync = d; feel = f; break; }
+                    if (sync != null) break;
+                }
+            void Choose(string param, string text)
+            {
+                var p = New(param);
+                if (p == null) return;
+                try { outs.Add((p, ValueResolver.Resolve(p.Info, JsonValue.Create(text), p.Default), null)); }
+                catch (Exception e) { notes.Add($"{Map.Label}: {p.Name} = \"{text}\" failed ({e.Message})."); }
+            }
+            if (rule.Sync != null)
+            {
+                if (sync != null)
+                {
+                    Choose(rule.Sync, sync);
+                    Choose(rule.Feel, feel);
+                }
+                else
+                {
+                    Choose(rule.Sync, rule.Divisions.FirstOrDefault(d => d.Value <= 0).Key ?? "Free");
+                    if (!double.IsNaN(leftBeats))
+                    {
+                        string note = $"{rule.Length}: {leftBeats.ToString("0.###", C)} beats is no note value {Map.To} syncs to; it is set free at {Ms(left)}, which no longer follows the tempo.";
+                        if (!notes.Contains(note)) notes.Add(note);
+                    }
+                }
+            }
+            put(rule.Time, left);
+            if (rule.LengthRight != null)
+            {
+                double right = Seconds(get(rule.LengthRight), out _);
+                if (left > 0 && !double.IsNaN(right)) put(rule.OffsetParam, right / left - 1);
+            }
+        }
+
         /// <summary>
         /// A delay swept between <c>lo</c> and <c>hi</c> → the new delay at the sweep's geometric centre, √(lo·hi), and its depth,
         /// log2(hi/lo)/2 octaves either side as a share of what 100 % spans. A sweep wider than the new machine reaches (or one
@@ -628,6 +772,11 @@ namespace ReBuzz.Agent.Model
             {
                 d = rule.Dry == null ? 0 : get(rule.Dry);
                 w = get(rule.Wet[0].From);
+                if (rule.LevelsDb && !double.IsNaN(d) && !double.IsNaN(w))
+                {
+                    d = rule.Dry == null ? 0 : Lin(d);
+                    w = Lin(w);
+                }
             }
             if (double.IsNaN(d) || double.IsNaN(w)) return;
             string Named(string name, double v) => $"{name} at {(Old(name) is { } p ? p.FormatValue(v) : (v * 100).ToString("0.#", C) + "%")}";

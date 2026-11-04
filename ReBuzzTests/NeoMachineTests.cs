@@ -91,6 +91,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Limiter = new("Neo Limiter", "Limiter", false);
         // The next batch's first successor (docs/specs/machine-safety.md §4): chorus, flanger, phaser.
         internal static readonly NeoInfo Ensemble = new("Neo Ensemble", "Ensemble", false);
+        // The successor of the classic delays (docs/specs/mcp-server.md §12.5): stereo, ping-pong and cross.
+        internal static readonly NeoInfo Delay = new("Neo Delay", "Delay", false);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -526,6 +528,81 @@ namespace ReBuzzTests
             TestContext.Out.WriteLine($"editor {size.Width:0} x {size.Height:0}");
         }
 
+        [Test]
+        public void NeoDelayEchoesBoundedPassesTheDryAtMixZeroAndShowsItsEditor()
+        {
+            using var rig = new Rig(Delay);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0));
+            Assert.That(rig.Param("Feedback").DescribeValue(rig.Param("Feedback").MaxValue), Is.EqualTo("99.0%"));
+            Assert.That(rig.Param("Feedback").DescribeValue(rig.Param("Feedback").MinValue), Is.EqualTo("−99.0%"));
+            Assert.That(rig.Param("Mode").DescribeValue(1), Is.EqualTo("Ping-pong"));
+            Assert.That(rig.Param("Sync").DescribeValue(4), Is.EqualTo("1/8"));
+            Assert.That(rig.Param("Feel").DescribeValue(1), Is.EqualTo("Dotted"));
+            Assert.That(rig.Param("Time").DescribeValue(6959), Is.EqualTo("375 ms"));
+            Assert.That(rig.Param("Low cut").DescribeValue(0), Is.EqualTo("20.0 Hz"));
+
+            // Mix 0 %: the sine reaches the master as it does without the machine (bypassed).
+            rig.Param("Mix").SetValue(0, 0);
+            rig.Play(0.3);
+            var dry = rig.Play(0.3);
+            rig.Effect.IsBypassed = true;
+            rig.Play(0.1);
+            var bypassed = rig.Play(0.3);
+            rig.Effect.IsBypassed = false;
+            rig.Play(0.1);
+            TestContext.Out.WriteLine($"Mix 0 %: {Db(Rms(dry)):F3} dB, bypassed {Db(Rms(bypassed)):F3} dB");
+            Assert.That(Db(Rms(dry) / Rms(bypassed)), Is.EqualTo(0).Within(0.001), "Mix 0 % passes the input");
+
+            // Wet only, no feedback, 100 ms: the echo is the sine, and it stops once the sine has.
+            var level = rig.Sine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters[0];
+            rig.Param("Mix").SetValue(0, 1000);
+            rig.Param("Sync").SetValue(0, 0);
+            rig.Param("Time").SetValue(0, 4593);                                // 50 ms
+            rig.Param("Feedback").SetValue(0, 990);                             // 0 %
+            rig.Param("Low cut").SetValue(0, 0);
+            rig.Param("High cut").SetValue(0, 1000);
+            rig.Play(0.5);
+            var echo = rig.Play(0.5);
+            TestContext.Out.WriteLine($"the echo of the sine: {Db(Rms(echo) / Rms(bypassed)):F3} dB against the dry sine");
+            Assert.That(Db(Rms(echo) / Rms(bypassed)), Is.EqualTo(0).Within(0.05), "a clean echo is the input, later");
+            level.SetValue(0, 0);
+            rig.Play(0.5);
+            Assert.That(Rms(rig.Play(0.3)), Is.LessThan(1e-5), "no feedback: silent once the sine has stopped");
+
+            // Full feedback, the deepest and fastest wow, the time moving: bounded, still ringing a second later, and
+            // the guard never trips.
+            level.SetValue(0, 50);
+            rig.Param("Feedback").SetValue(0, rig.Param("Feedback").MaxValue);
+            rig.Param("Mod depth").SetValue(0, 1000);
+            rig.Param("Mod rate").SetValue(0, 1000);
+            rig.Param("Mode").SetValue(0, 2);
+            var loud = rig.Play(2);
+            rig.Param("Time").SetValue(0, 5300);
+            loud = loud.Concat(rig.Play(2)).ToArray();
+            double peak = loud.Max(v => (double)Math.Abs(v));
+            TestContext.Out.WriteLine($"full feedback: {Db(Rms(loud)):F1} dB RMS, peak {Db(peak):F1} dBFS");
+            Assert.That(float.IsFinite((float)peak), Is.True);
+            Assert.That(Db(peak), Is.LessThan(18), "far under the guard's +60 dBFS");
+            Assert.That(rig.Effect.IsMuted, Is.False, "the guard never tripped");
+            level.SetValue(0, 0);
+            rig.Play(1);
+            Assert.That(Rms(rig.Play(0.5)), Is.GreaterThan(1e-4), "99 % feedback rings on after the input stops");
+
+            // The editor, as a ping-pong delay with the filters and ducking on.
+            level.SetValue(0, 50);
+            rig.Param("Mode").SetValue(0, 1);
+            rig.Param("Sync").SetValue(0, 4);
+            rig.Param("Feedback").SetValue(0, 1490);                            // +50 %
+            rig.Param("Mod depth").SetValue(0, 200);
+            rig.Param("Low cut").SetValue(0, 400);
+            rig.Param("High cut").SetValue(0, 750);
+            rig.Param("Duck").SetValue(0, 120);
+            rig.Param("Mix").SetValue(0, 400);
+            rig.Play(0.5);
+            var size = ShootEditor(rig.Effect, "neo-delay-editor");
+            TestContext.Out.WriteLine($"editor {size.Width:0} x {size.Height:0}");
+        }
+
         static readonly SourceInfo MixInfo = new("Neo Test Mix", MixSource, true);
 
         [Test]
@@ -865,7 +942,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");
