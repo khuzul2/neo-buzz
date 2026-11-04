@@ -5350,6 +5350,130 @@
    "generated": true,
    "health": "warn"
   },
+  "Neo Multiband": {
+   "gear": "Neo Multiband",
+   "kind": "effect",
+   "load_seconds": 0.13,
+   "gear_info": {
+    "file": "Effects/Neo Multiband.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "takes_midi": false
+   },
+   "parameters": 45,
+   "track_parameters": 0,
+   "inferred": 45,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 45,
+    "of": 45
+   },
+   "effect": {
+    "gain_db": -1.85,
+    "latency_samples": 4607,
+    "latency_ms": 104.47,
+    "tail_seconds": 0.1,
+    "echoes": 2,
+    "first_echo_seconds": 0.1,
+    "gap_before_echo_db": -60.0,
+    "output_correlation": 1.0,
+    "spectrum_spread_db": 5.7,
+    "tilt_db": -1.8,
+    "sine": {
+     "loud": {
+      "gain_db": -2.88,
+      "thd_percent": 2.54,
+      "thd_in_percent": 1.96,
+      "movement_db": 0.26
+     },
+     "quiet": {
+      "gain_db": -0.1,
+      "thd_percent": 1.98,
+      "thd_in_percent": 1.96,
+      "movement_db": 0.31
+     }
+    },
+    "traits": [
+     "delay",
+     "dynamics"
+    ]
+   },
+   "cpu_ms_per_s": 23.1,
+   "type": "delay",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -10.46,
+     "growth_db": -0.11,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -33.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 17.3,
+      "growth_db": -0.56,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 76
+   },
+   "sweeps": {
+    "B2 makeup": {
+     "max": {
+      "peak_dbfs": 4.84,
+      "growth_db": 0.31,
+      "verdict": "hot",
+      "raw": 480,
+      "text": "24.0 dB"
+     }
+    },
+    "B3 makeup": {
+     "max": {
+      "peak_dbfs": 10.35,
+      "growth_db": 0.45,
+      "verdict": "hot",
+      "raw": 480,
+      "text": "24.0 dB"
+     }
+    },
+    "B4 makeup": {
+     "max": {
+      "peak_dbfs": 11.99,
+      "growth_db": -0.45,
+      "verdict": "hot",
+      "raw": 480,
+      "text": "24.0 dB"
+     }
+    },
+    "Output": {
+     "max": {
+      "peak_dbfs": 13.78,
+      "growth_db": 0.31,
+      "verdict": "hot",
+      "raw": 480,
+      "text": "+24.0 dB"
+     }
+    }
+   },
+   "seconds": 24.0,
+   "platform": "linux",
+   "date": "2026-11-04",
+   "problems": [],
+   "warnings": [],
+   "hot": [
+    "hot (loud but steady) with B2 makeup at its maximum (24.0 dB): +4.8 dBFS peak; B3 makeup at its maximum (24.0 dB): +10.3 dBFS peak; B4 makeup at its maximum (24.0 dB): +12.0 dBFS peak; Output at its maximum (+24.0 dB): +13.8 dBFS peak"
+   ],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "warn"
+  },
   "Neo Poly": {
    "gear": "Neo Poly",
    "kind": "generator",
