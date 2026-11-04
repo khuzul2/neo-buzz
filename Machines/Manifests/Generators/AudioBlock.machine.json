@@ -3,7 +3,7 @@
  "gear": "AudioBlock",
  "kind": "generator",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "generator (silent at its defaults)",
  "summary": "Generator (silent at its defaults) (profiled draft): no sound from a note at its defaults.",
  "tracks": 0,

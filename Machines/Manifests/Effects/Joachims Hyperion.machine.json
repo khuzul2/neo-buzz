@@ -3,7 +3,7 @@
  "gear": "Joachims Hyperion",
  "kind": "effect",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "utility",
  "summary": "Utility (profiled draft): traits: utility; tail 0.0 s; latency 0 samples; gain +0.0 dB at the defaults.",
  "tracks": 0,
@@ -41,7 +41,318 @@
    },
    "traits": [
     "utility"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     0.0
+    ],
+    [
+     23.1,
+     0.0
+    ],
+    [
+     26.0,
+     0.0
+    ],
+    [
+     29.1,
+     0.0
+    ],
+    [
+     32.7,
+     0.0
+    ],
+    [
+     36.7,
+     0.0
+    ],
+    [
+     41.2,
+     0.0
+    ],
+    [
+     46.2,
+     0.0
+    ],
+    [
+     51.9,
+     0.0
+    ],
+    [
+     58.3,
+     0.0
+    ],
+    [
+     65.4,
+     0.0
+    ],
+    [
+     73.4,
+     0.0
+    ],
+    [
+     82.4,
+     0.0
+    ],
+    [
+     92.5,
+     0.0
+    ],
+    [
+     103.8,
+     0.0
+    ],
+    [
+     116.5,
+     0.0
+    ],
+    [
+     130.8,
+     0.0
+    ],
+    [
+     146.8,
+     0.0
+    ],
+    [
+     164.8,
+     0.0
+    ],
+    [
+     185.0,
+     0.0
+    ],
+    [
+     207.7,
+     0.0
+    ],
+    [
+     233.1,
+     0.0
+    ],
+    [
+     261.6,
+     0.0
+    ],
+    [
+     293.7,
+     0.0
+    ],
+    [
+     329.6,
+     0.0
+    ],
+    [
+     370.0,
+     0.0
+    ],
+    [
+     415.3,
+     0.0
+    ],
+    [
+     466.2,
+     0.0
+    ],
+    [
+     523.3,
+     0.0
+    ],
+    [
+     587.3,
+     0.0
+    ],
+    [
+     659.3,
+     0.0
+    ],
+    [
+     740.0,
+     0.0
+    ],
+    [
+     830.6,
+     0.0
+    ],
+    [
+     932.3,
+     0.0
+    ],
+    [
+     1046.5,
+     0.0
+    ],
+    [
+     1174.7,
+     0.0
+    ],
+    [
+     1318.5,
+     0.0
+    ],
+    [
+     1480.0,
+     0.0
+    ],
+    [
+     1661.2,
+     0.0
+    ],
+    [
+     1864.7,
+     0.0
+    ],
+    [
+     2093.0,
+     0.0
+    ],
+    [
+     2349.3,
+     0.0
+    ],
+    [
+     2637.0,
+     0.0
+    ],
+    [
+     2960.0,
+     0.0
+    ],
+    [
+     3322.4,
+     0.0
+    ],
+    [
+     3729.3,
+     0.0
+    ],
+    [
+     4186.0,
+     0.0
+    ],
+    [
+     4698.6,
+     0.0
+    ],
+    [
+     5274.0,
+     0.0
+    ],
+    [
+     5919.9,
+     0.0
+    ],
+    [
+     6644.9,
+     0.0
+    ],
+    [
+     7458.6,
+     0.0
+    ],
+    [
+     8372.0,
+     0.0
+    ],
+    [
+     9397.3,
+     0.0
+    ],
+    [
+     10548.1,
+     0.0
+    ],
+    [
+     11839.8,
+     0.0
+    ],
+    [
+     13289.8,
+     0.0
+    ],
+    [
+     14917.2,
+     0.0
+    ],
+    [
+     16744.0,
+     0.0
+    ],
+    [
+     18794.5,
+     0.0
+    ]
+   ],
+   "response_summary": {
+    "level_db": 0.0,
+    "spread_db": 0.0,
+    "centroid_oct": -0.684,
+    "max_db": 0.0,
+    "max_hz": 20.6,
+    "prominence_db": 0.0,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 18794.5,
+    "width_oct": 9.83,
+    "tilt_db": 0.0,
+    "wobble_db": 0.0
+   },
+   "impulse": {
+    "latency_samples": 0,
+    "direct_db": -1.92,
+    "early_db": -4.47,
+    "late_db": -120.0,
+    "t60_s": null,
+    "t60_span_db": 0.0,
+    "ring_s": 0.005,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      0.0
+     ],
+     [
+      -34.85,
+      0.0
+     ],
+     [
+      -28.82,
+      0.0
+     ],
+     [
+      -22.79,
+      0.0
+     ],
+     [
+      -16.77,
+      0.0
+     ],
+     [
+      -10.75,
+      0.0
+     ],
+     [
+      -4.8,
+      0.0
+     ]
+    ],
+    "compression_db": 0.0,
+    "top_slope": 1.0,
+    "knee_in_db": null,
+    "attack_s": 0.0,
+    "release_s": 0.0,
+    "attack_tau_s": null,
+    "release_tau_s": null
+   },
+   "thd_percent": 2.38
   },
   "level_test": {
    "defaults": {
@@ -185,6 +496,442 @@
      "text": "+18.0 dB"
     }
    }
+  },
+  "roles": {
+   "default": {
+    "level_db": 0.0,
+    "spread_db": 0.0,
+    "centroid_oct": -0.685,
+    "max_hz": 23.1,
+    "prominence_db": 0.0,
+    "low_corner_hz": 23.1,
+    "high_corner_hz": 16744.0,
+    "width_oct": 9.5,
+    "wobble_db": 0.0,
+    "latency_samples": 0,
+    "direct_db": -1.92,
+    "early_db": -4.47,
+    "late_db": -120.0,
+    "ring_s": 0.005,
+    "late_onset_s": 0.003,
+    "thd": 1.77,
+    "peak_dbfs": -10.42
+   },
+   "type_from_click": "utility",
+   "params": {
+    "Enable": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "OFF"
+     },
+     "max": {
+      "raw": 1,
+      "text": "ON"
+     }
+    },
+    "Input gain.": {
+     "suggested_role": "level",
+     "evidence": "the level +0.0 → +7.6 dB, the response's shape unchanged",
+     "min": {
+      "raw": 0,
+      "text": "OFF"
+     },
+     "max": {
+      "raw": 127,
+      "text": "+7.6 dB"
+     }
+    },
+    "20000 Hz": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's lower corner moves 23.1 Hz → 16.7 kHz",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "15800 Hz": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's lower corner moves 23.1 Hz → 11.8 kHz",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "12400 Hz": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's lower corner moves 23.1 Hz → 11.8 kHz",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 9800 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 8.37 kHz: its prominence +0 → +8 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 7700 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 8.37 kHz: its prominence +0 → +7 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 6100 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 5.92 kHz: its prominence +0 → +9 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 4800 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 4.19 kHz: its prominence +0 → +7 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 3800 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 4.19 kHz: its prominence +0 → +7 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 2970 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 2.96 kHz: its prominence +0 → +9 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 2340 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 2.09 kHz: its prominence +0 → +7 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 1850 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 2.09 kHz: its prominence +0 → +7 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 1460 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 1.48 kHz: its prominence +0 → +9 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    " 1150 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 1.05 kHz: its prominence +0 → +7 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "  900 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 1.05 kHz: its prominence +0 → +6 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "  710 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 740 Hz: its prominence +0 → +8 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "  560 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 523 Hz: its prominence +0 → +8 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "  440 Hz": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's upper corner moves 16.7 kHz → 523 Hz",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "  350 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 370 Hz: its prominence +0 → +8 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "  275 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 262 Hz: its prominence +0 → +8 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "  217 Hz": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's upper corner moves 16.7 kHz → 262 Hz",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "  171 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 185 Hz: its prominence +0 → +8 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "  134 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 131 Hz: its prominence +0 → +9 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "  106 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 92.5 Hz: its prominence +0 → +6 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "   84 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 92.5 Hz: its prominence +0 → +7 dB over the response",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "   66 Hz": {
+     "suggested_role": "mix.wet",
+     "evidence": "the late sound -52 → -34 dB, the direct sound unchanged",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "   52 Hz": {
+     "suggested_role": "mix.wet",
+     "evidence": "the late sound -48 → -29 dB, the direct sound unchanged",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "   41 Hz": {
+     "suggested_role": "filter.resonance",
+     "evidence": "the tail 0 ms → 104 ms (T60), a peak 0.0 → 7.04 dB",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "   32 Hz": {
+     "suggested_role": "mix.wet",
+     "evidence": "the late sound -41 → -22 dB, the direct sound unchanged",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "   25 Hz": {
+     "suggested_role": "mix.wet",
+     "evidence": "the late sound -40 → -20 dB, the direct sound unchanged",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "   20 Hz": {
+     "suggested_role": "mix.wet",
+     "evidence": "the late sound -39 → -20 dB, the direct sound unchanged",
+     "min": {
+      "raw": 1,
+      "text": "-18.0 dB"
+     },
+     "max": {
+      "raw": 255,
+      "text": "+18.0 dB"
+     }
+    },
+    "Highpass": {
+     "suggested_role": "filter.highpass",
+     "evidence": "the response's lower corner moves 23.1 Hz → 131 Hz",
+     "min": {
+      "raw": 0,
+      "text": "OFF"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100 Hz"
+     }
+    },
+    "Bandwidth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.2 oct"
+     },
+     "max": {
+      "raw": 15,
+      "text": "2.3 oct"
+     }
+    }
+   },
+   "renders": 140
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [
@@ -725,7 +1472,9 @@
     ]
    ],
    "description": "Input volume gain",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "level",
+   "role_evidence": "the level +0.0 → +7.6 dB, the response's shape unchanged"
   },
   {
    "index": 2,
@@ -740,7 +1489,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's lower corner moves 23.1 Hz → 16.7 kHz"
   },
   {
    "index": 3,
@@ -755,7 +1506,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's lower corner moves 23.1 Hz → 11.8 kHz"
   },
   {
    "index": 4,
@@ -770,7 +1523,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's lower corner moves 23.1 Hz → 11.8 kHz"
   },
   {
    "index": 5,
@@ -785,7 +1540,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "9800 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 8.37 kHz: its prominence +0 → +8 dB over the response"
   },
   {
    "index": 6,
@@ -800,7 +1557,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "7700 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 8.37 kHz: its prominence +0 → +7 dB over the response"
   },
   {
    "index": 7,
@@ -815,7 +1574,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "6100 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 5.92 kHz: its prominence +0 → +9 dB over the response"
   },
   {
    "index": 8,
@@ -830,7 +1591,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "4800 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 4.19 kHz: its prominence +0 → +7 dB over the response"
   },
   {
    "index": 9,
@@ -845,7 +1608,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "3800 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 4.19 kHz: its prominence +0 → +7 dB over the response"
   },
   {
    "index": 10,
@@ -860,7 +1625,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "2970 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 2.96 kHz: its prominence +0 → +9 dB over the response"
   },
   {
    "index": 11,
@@ -875,7 +1642,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "2340 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 2.09 kHz: its prominence +0 → +7 dB over the response"
   },
   {
    "index": 12,
@@ -890,7 +1659,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "1850 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 2.09 kHz: its prominence +0 → +7 dB over the response"
   },
   {
    "index": 13,
@@ -905,7 +1676,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "1460 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 1.48 kHz: its prominence +0 → +9 dB over the response"
   },
   {
    "index": 14,
@@ -920,7 +1693,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "1150 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 1.05 kHz: its prominence +0 → +7 dB over the response"
   },
   {
    "index": 15,
@@ -935,7 +1710,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "900 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 1.05 kHz: its prominence +0 → +6 dB over the response"
   },
   {
    "index": 16,
@@ -950,7 +1727,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "710 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 740 Hz: its prominence +0 → +8 dB over the response"
   },
   {
    "index": 17,
@@ -965,7 +1744,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "560 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 523 Hz: its prominence +0 → +8 dB over the response"
   },
   {
    "index": 18,
@@ -980,7 +1761,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "440 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's upper corner moves 16.7 kHz → 523 Hz"
   },
   {
    "index": 19,
@@ -995,7 +1778,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "350 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 370 Hz: its prominence +0 → +8 dB over the response"
   },
   {
    "index": 20,
@@ -1010,7 +1795,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "275 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 262 Hz: its prominence +0 → +8 dB over the response"
   },
   {
    "index": 21,
@@ -1025,7 +1812,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "217 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's upper corner moves 16.7 kHz → 262 Hz"
   },
   {
    "index": 22,
@@ -1040,7 +1829,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "171 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 185 Hz: its prominence +0 → +8 dB over the response"
   },
   {
    "index": 23,
@@ -1055,7 +1846,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "134 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 131 Hz: its prominence +0 → +9 dB over the response"
   },
   {
    "index": 24,
@@ -1070,7 +1863,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "106 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 92.5 Hz: its prominence +0 → +6 dB over the response"
   },
   {
    "index": 25,
@@ -1085,7 +1880,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "84 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 92.5 Hz: its prominence +0 → +7 dB over the response"
   },
   {
    "index": 26,
@@ -1100,7 +1897,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "66 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mix.wet",
+   "role_evidence": "the late sound -52 → -34 dB, the direct sound unchanged"
   },
   {
    "index": 27,
@@ -1115,7 +1914,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "52 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mix.wet",
+   "role_evidence": "the late sound -48 → -29 dB, the direct sound unchanged"
   },
   {
    "index": 28,
@@ -1130,7 +1931,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "41 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "the tail 0 ms → 104 ms (T60), a peak 0.0 → 7.04 dB"
   },
   {
    "index": 29,
@@ -1145,7 +1948,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "32 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mix.wet",
+   "role_evidence": "the late sound -41 → -22 dB, the direct sound unchanged"
   },
   {
    "index": 30,
@@ -1160,7 +1965,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "25 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mix.wet",
+   "role_evidence": "the late sound -40 → -20 dB, the direct sound unchanged"
   },
   {
    "index": 31,
@@ -1175,7 +1982,9 @@
    "b": 17.998566,
    "unit": "dB",
    "description": "20 Hz",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mix.wet",
+   "role_evidence": "the late sound -39 → -20 dB, the direct sound unchanged"
   },
   {
    "index": 32,
@@ -1698,7 +2507,9 @@
     ]
    ],
    "description": "Highpass filter / DC remover",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.highpass",
+   "role_evidence": "the response's lower corner moves 23.1 Hz → 131 Hz"
   },
   {
    "index": 33,

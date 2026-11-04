@@ -52,6 +52,529 @@
      "verdict": "silent"
     }
    }
+  },
+  "envelope": {
+   "peak_db": -8.7,
+   "attack_s": 0.02,
+   "final_db": -80.0,
+   "half_s": 0.52,
+   "length_s": 0.54,
+   "bright_mid_hz": 592.4,
+   "bright_early_hz": 266.8,
+   "bright_late_hz": null,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": 30.77,
+   "db_per_doubling": 10.47,
+   "curve": "steeper than linear (velocity squared or a dB curve)",
+   "levels_db": {
+    "16": -40.25,
+    "32": -32.98,
+    "64": -20.88,
+    "127": -9.48
+   }
+  },
+  "roles": {
+   "default": {
+    "centroid_hz": 83,
+    "peakiness_db": 14.1,
+    "tprom_db": -18.4,
+    "tprom_hz": 250,
+    "env_attack_s": 0.035,
+    "env_half_s": 0.16,
+    "env_final_db": -80.0,
+    "env_length_s": 0.195,
+    "env_peak_db": -8.4,
+    "env_bright_early_hz": 35.9,
+    "env_bright_mid_hz": 97.8
+   },
+   "params": {
+    "OSC1 Wave": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Sine"
+     },
+     "max": {
+      "raw": 22,
+      "text": "User D"
+     }
+    },
+    " - PWM Rate #1": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 62 Hz → 109 Hz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 239,
+      "text": "239"
+     }
+    },
+    " - PWM Depth #2": {
+     "suggested_role": "filter.env.decay",
+     "evidence": "the brightness 150–250 ms in 53.9 Hz → 107 Hz (RMS frequency), the start alike (114 Hz → 146 Hz)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 239,
+      "text": "239"
+     }
+    },
+    " - PW Offset #3": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 120 Hz → 70 Hz (with  - PWM Rate a third of the way up)",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100%"
+     }
+    },
+    "OSC2 Wave": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Sine"
+     },
+     "max": {
+      "raw": 22,
+      "text": "User D"
+     }
+    },
+    " - PWM Rate #5": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 555 ms → 195 ms (the default 160 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 239,
+      "text": "239"
+     }
+    },
+    " - PWM Depth #6": {
+     "suggested_role": "filter.env.decay",
+     "evidence": "the brightness 150–250 ms in 98.3 Hz → 59.9 Hz (RMS frequency), the start alike (142 Hz → 120 Hz)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 239,
+      "text": "239"
+     }
+    },
+    " - PW Offset #7": {
+     "suggested_role": "filter.keytrack",
+     "evidence": "it follows the note: the brightness (centroid) 104 Hz → 61 Hz on the low note, 448 Hz → 846 Hz 36 semitones up",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100%"
+     }
+    },
+    " - Transpose": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "-36#"
+     },
+     "max": {
+      "raw": 72,
+      "text": "36#"
+     }
+    },
+    " - Detune": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 555 ms → 145 ms (the default 160 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "0 ct"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100 ct"
+     }
+    },
+    "OSC Mix": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "100.0%:0.0%"
+     },
+     "max": {
+      "raw": 240,
+      "text": "0.0%:100.0%"
+     }
+    },
+    "SubOsc Wave": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Sine"
+     },
+     "max": {
+      "raw": 20,
+      "text": "User D'"
+     }
+    },
+    "SubOsc Vol": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 525 ms → 160 ms (the default 160 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "0 %"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100 %"
+     }
+    },
+    "Glide": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 1.25 kHz stands -18 → +13 dB over the spectrum an octave either side",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100%"
+     }
+    },
+    "Flt Type": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "6L Multipeak"
+     },
+     "max": {
+      "raw": 17,
+      "text": "No Filter"
+     }
+    },
+    " - Cutoff": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 39 Hz → 1.19 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0 %"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100 %"
+     }
+    },
+    " - Reso": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 250 Hz stands -18 → -1 dB over the spectrum an octave either side",
+     "min": {
+      "raw": 0,
+      "text": "0 %"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100 %"
+     }
+    },
+    " - EnvMod": {
+     "suggested_role": "filter.env.decay",
+     "evidence": "the brightness 150–250 ms in 26.4 Hz → 93.3 Hz (RMS frequency), the start alike (23.6 Hz → 23.4 Hz)",
+     "min": {
+      "raw": 0,
+      "text": "-200 %"
+     },
+     "max": {
+      "raw": 240,
+      "text": "200 %"
+     }
+    },
+    " - Attack": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 535 ms → 520 ms (the default 160 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "0.005 s"
+     },
+     "max": {
+      "raw": 240,
+      "text": "12.000 s"
+     }
+    },
+    " - Decay #19": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 49 Hz → 250 Hz",
+     "min": {
+      "raw": 0,
+      "text": "0.080 s"
+     },
+     "max": {
+      "raw": 240,
+      "text": "12.000 s"
+     }
+    },
+    " - Sustain #20": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 400 Hz stands -10 → +6 dB over the spectrum an octave either side",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100%"
+     }
+    },
+    " - Release #21": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 555 ms → 315 ms (the default 190 ms) to the same held level (with #0 raw:0)",
+     "min": {
+      "raw": 0,
+      "text": "0.080 s"
+     },
+     "max": {
+      "raw": 240,
+      "text": "12.000 s"
+     }
+    },
+    " - Mod Shp": {
+     "suggested_role": "filter.env.decay",
+     "evidence": "the brightness 150–250 ms in 150 Hz → 51.2 Hz (RMS frequency), the start alike (144 Hz → 157 Hz)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100%"
+     }
+    },
+    " - Inertia": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 520 ms → 555 ms (the default 160 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    " - KTrack": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 3.21 kHz → 35 Hz",
+     "min": {
+      "raw": 0,
+      "text": "-200 ct"
+     },
+     "max": {
+      "raw": 240,
+      "text": "200 ct"
+     }
+    },
+    "LFO1 Rate": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way to its held level in 195 ms → 560 ms",
+     "min": {
+      "raw": 0,
+      "text": "0.030 Hz"
+     },
+     "max": {
+      "raw": 254,
+      "text": "128 ticks"
+     }
+    },
+    " - To Cutoff #26": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 515 ms → 560 ms (the default 160 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "-100 %"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100 %"
+     }
+    },
+    " - To Env": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 520 ms → 530 ms (the default 160 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "-100 %"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100 %"
+     }
+    },
+    " - Shape #28": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "sine"
+     },
+     "max": {
+      "raw": 16,
+      "text": "S'n'H 2"
+     }
+    },
+    "LFO2 Rate": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 560 ms → 535 ms (the default 160 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "0.030 Hz"
+     },
+     "max": {
+      "raw": 254,
+      "text": "128 ticks"
+     }
+    },
+    " - To Cutoff #30": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 560 ms → 195 ms (the default 160 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "-100 %"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100 %"
+     }
+    },
+    " - To Res": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way in 550 ms → 195 ms (the default 160 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "-100 %"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100 %"
+     }
+    },
+    " - Shape #32": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "sine"
+     },
+     "max": {
+      "raw": 16,
+      "text": "S'n'H 2"
+     }
+    },
+    "Amp Attack": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 5 ms → 745 ms",
+     "min": {
+      "raw": 0,
+      "text": "0.005 s"
+     },
+     "max": {
+      "raw": 240,
+      "text": "12.000 s"
+     }
+    },
+    " - Decay #34": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 10 ms → 450 ms",
+     "min": {
+      "raw": 0,
+      "text": "0.080 s"
+     },
+     "max": {
+      "raw": 240,
+      "text": "12.000 s"
+     }
+    },
+    " - Sustain #35": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 250 Hz stands +0 → -13 dB over the spectrum an octave either side",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100%"
+     }
+    },
+    " - Release #36": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way to its held level in 195 ms → 35 ms",
+     "min": {
+      "raw": 0,
+      "text": "0.080 s"
+     },
+     "max": {
+      "raw": 240,
+      "text": "12.000 s"
+     }
+    },
+    "Mode Flags": {
+     "suggested_role": null,
+     "evidence": "silent at its maximum",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "L1L2FEAEPQMMIK"
+     }
+    },
+    "track Velocity": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way to its held level in 175 ms → 535 ms",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track Length": {
+     "suggested_role": "env.decay",
+     "evidence": "the level falls half way to its held level in 210 ms → 35 ms",
+     "min": {
+      "raw": 0,
+      "text": "0.00 tick"
+     },
+     "max": {
+      "raw": 240,
+      "text": "infinite"
+     }
+    }
+   },
+   "renders": 92
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [

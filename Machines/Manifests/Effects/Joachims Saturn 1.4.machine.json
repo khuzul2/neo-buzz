@@ -3,7 +3,7 @@
  "gear": "Joachims Saturn 1.4",
  "kind": "effect",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "utility",
  "summary": "Utility (profiled draft): traits: utility; tail 0.05 s; latency 0 samples; gain -0.0 dB at the defaults.",
  "tracks": 0,
@@ -40,7 +40,320 @@
    },
    "traits": [
     "utility"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     -0.93
+    ],
+    [
+     23.1,
+     -0.09
+    ],
+    [
+     26.0,
+     -0.43
+    ],
+    [
+     29.1,
+     -0.23
+    ],
+    [
+     32.7,
+     0.15
+    ],
+    [
+     36.7,
+     -0.28
+    ],
+    [
+     41.2,
+     -0.21
+    ],
+    [
+     46.2,
+     0.16
+    ],
+    [
+     51.9,
+     0.15
+    ],
+    [
+     58.3,
+     0.08
+    ],
+    [
+     65.4,
+     0.09
+    ],
+    [
+     73.4,
+     -0.0
+    ],
+    [
+     82.4,
+     0.01
+    ],
+    [
+     92.5,
+     0.03
+    ],
+    [
+     103.8,
+     0.0
+    ],
+    [
+     116.5,
+     0.04
+    ],
+    [
+     130.8,
+     -0.06
+    ],
+    [
+     146.8,
+     0.0
+    ],
+    [
+     164.8,
+     0.14
+    ],
+    [
+     185.0,
+     -0.01
+    ],
+    [
+     207.7,
+     0.01
+    ],
+    [
+     233.1,
+     -0.02
+    ],
+    [
+     261.6,
+     -0.01
+    ],
+    [
+     293.7,
+     -0.0
+    ],
+    [
+     329.6,
+     0.0
+    ],
+    [
+     370.0,
+     0.01
+    ],
+    [
+     415.3,
+     -0.0
+    ],
+    [
+     466.2,
+     -0.01
+    ],
+    [
+     523.3,
+     -0.0
+    ],
+    [
+     587.3,
+     0.01
+    ],
+    [
+     659.3,
+     0.01
+    ],
+    [
+     740.0,
+     -0.0
+    ],
+    [
+     830.6,
+     0.0
+    ],
+    [
+     932.3,
+     0.0
+    ],
+    [
+     1046.5,
+     0.0
+    ],
+    [
+     1174.7,
+     0.0
+    ],
+    [
+     1318.5,
+     0.0
+    ],
+    [
+     1480.0,
+     -0.0
+    ],
+    [
+     1661.2,
+     -0.0
+    ],
+    [
+     1864.7,
+     0.0
+    ],
+    [
+     2093.0,
+     -0.0
+    ],
+    [
+     2349.3,
+     -0.0
+    ],
+    [
+     2637.0,
+     0.0
+    ],
+    [
+     2960.0,
+     0.0
+    ],
+    [
+     3322.4,
+     -0.0
+    ],
+    [
+     3729.3,
+     -0.0
+    ],
+    [
+     4186.0,
+     -0.0
+    ],
+    [
+     4698.6,
+     0.0
+    ],
+    [
+     5274.0,
+     -0.0
+    ],
+    [
+     5919.9,
+     -0.0
+    ],
+    [
+     6644.9,
+     0.0
+    ],
+    [
+     7458.6,
+     -0.0
+    ],
+    [
+     8372.0,
+     -0.0
+    ],
+    [
+     9397.3,
+     0.0
+    ],
+    [
+     10548.1,
+     -0.0
+    ],
+    [
+     11839.8,
+     -0.0
+    ],
+    [
+     13289.8,
+     0.0
+    ],
+    [
+     14917.2,
+     0.0
+    ],
+    [
+     16744.0,
+     0.0
+    ],
+    [
+     18794.5,
+     -0.0
+    ]
+   ],
+   "response_summary": {
+    "level_db": 0.01,
+    "spread_db": 0.37,
+    "centroid_oct": -0.659,
+    "max_db": 0.16,
+    "max_hz": 46.2,
+    "prominence_db": 0.13,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 18794.5,
+    "width_oct": 9.83,
+    "tilt_db": 0.06,
+    "wobble_db": 0.0
+   },
+   "impulse": {
+    "latency_samples": 0,
+    "direct_db": -1.93,
+    "early_db": -4.48,
+    "late_db": -41.39,
+    "t60_s": 0.189,
+    "t60_span_db": 20.0,
+    "ring_s": 0.07,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "tail_zcr_hz": 9.3,
+    "tail_low_db": -0.23,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      -0.0
+     ],
+     [
+      -34.85,
+      0.0
+     ],
+     [
+      -28.82,
+      -0.0
+     ],
+     [
+      -22.79,
+      -0.0
+     ],
+     [
+      -16.77,
+      -0.0
+     ],
+     [
+      -10.75,
+      0.0
+     ],
+     [
+      -4.8,
+      0.0
+     ]
+    ],
+    "compression_db": 0.0,
+    "top_slope": 1.0,
+    "knee_in_db": null,
+    "attack_s": 0.0,
+    "release_s": 0.015,
+    "attack_tau_s": null,
+    "release_tau_s": 0.015
+   },
+   "thd_percent": 2.39
   },
   "level_test": {
    "defaults": {
@@ -93,6 +406,229 @@
      "text": "+127"
     }
    }
+  },
+  "roles": {
+   "default": {
+    "level_db": -0.0,
+    "spread_db": 0.18,
+    "centroid_oct": -0.655,
+    "max_hz": 32.7,
+    "prominence_db": 0.0,
+    "low_corner_hz": 23.1,
+    "high_corner_hz": 16744.0,
+    "width_oct": 9.5,
+    "wobble_db": 0.0,
+    "latency_samples": 0,
+    "direct_db": -1.93,
+    "early_db": -4.48,
+    "late_db": -41.39,
+    "t60_s": 0.189,
+    "ring_s": 0.07,
+    "late_onset_s": 0.003,
+    "tail_zcr_hz": 9.3,
+    "tail_low_db": -0.23,
+    "thd": 1.77,
+    "peak_dbfs": -10.46
+   },
+   "type_from_click": "utility",
+   "params": {
+    "Temp. Input": {
+     "suggested_role": "mix.dry",
+     "evidence": "the direct sound -45 → +25 dB while the tail stays (-44 → -41 dB)",
+     "min": {
+      "raw": 0,
+      "text": "-127"
+     },
+     "max": {
+      "raw": 254,
+      "text": "+127"
+     }
+    },
+    "Noise type": {
+     "suggested_role": "mix.dry",
+     "evidence": "the direct sound -205 → -120 dB while the tail stays (-45 → -43 dB) (with Detune Amount half way)",
+     "min": {
+      "raw": 0,
+      "text": "dark brown"
+     },
+     "max": {
+      "raw": 15,
+      "text": "-"
+     }
+    },
+    "Noise amount": {
+     "suggested_role": "delay.feedback",
+     "evidence": "the tail 0 ms → 3.22 s (T60)",
+     "min": {
+      "raw": 0,
+      "text": "OFF"
+     },
+     "max": {
+      "raw": 127,
+      "text": "-0.0 dB"
+     }
+    },
+    "Room Level": {
+     "suggested_role": "filter.highpass",
+     "evidence": "the response's lower corner moves 23.1 Hz → 8.37 kHz",
+     "min": {
+      "raw": 0,
+      "text": "OFF"
+     },
+     "max": {
+      "raw": 127,
+      "text": "-0.0 dB"
+     }
+    },
+    "Room Size": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "Bits": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "OFF"
+     },
+     "max": {
+      "raw": 4,
+      "text": "1-bit"
+     }
+    },
+    "Samplerate": {
+     "suggested_role": "mix.wet",
+     "evidence": "the late sound -27 → -41 dB, the direct sound unchanged",
+     "min": {
+      "raw": 1,
+      "text": "409 Hz"
+     },
+     "max": {
+      "raw": 255,
+      "text": "OFF"
+     }
+    },
+    "Antique": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 1.05 kHz: its prominence +0 → +7 dB over the response",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "Detune Amount": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's upper corner moves 16.7 kHz → 1.48 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "Detune Speed": {
+     "suggested_role": "lfo.depth",
+     "evidence": "the gain moves 0.1 → 8.9 dB within each tone (with Detune Amount half way)",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "Ring Mod.": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 1,
+      "text": "20 Hz"
+     },
+     "max": {
+      "raw": 32767,
+      "text": "22026 Hz"
+     }
+    },
+    "Ring Mix": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 185 Hz: its prominence +0 → +11 dB over the response",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Tube Drive": {
+     "suggested_role": "drive",
+     "evidence": "harmonics 1.8 → 34.6 % on a sine",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "Tube Shape": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-127"
+     },
+     "max": {
+      "raw": 254,
+      "text": "+127"
+     }
+    },
+    "Temp. Output": {
+     "suggested_role": "mix.dry",
+     "evidence": "the direct sound -45 → +25 dB while the tail stays (-44 → -41 dB)",
+     "min": {
+      "raw": 0,
+      "text": "-127"
+     },
+     "max": {
+      "raw": 254,
+      "text": "+127"
+     }
+    },
+    "Highpass": {
+     "suggested_role": "filter.highpass",
+     "evidence": "the response's lower corner moves 23.1 Hz → 262 Hz",
+     "min": {
+      "raw": 0,
+      "text": "OFF"
+     },
+     "max": {
+      "raw": 127,
+      "text": "200.0 Hz"
+     }
+    }
+   },
+   "renders": 70
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [
@@ -108,7 +644,24 @@
    "a": -127.0,
    "b": 127.0,
    "description": "Temperature (soft/sharp) on input signal",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mix.dry",
+   "role_evidence": "the direct sound -45 → +25 dB while the tail stays (-44 → -41 dB)"
+  },
+  {
+   "index": 1,
+   "id": "Noise type",
+   "name": "Noise type",
+   "group": "",
+   "min": 0,
+   "max": 15,
+   "default": 0,
+   "kind": "int",
+   "a": 0,
+   "description": "Type of noise to add",
+   "confidence": "values",
+   "suggested_role": "mix.dry",
+   "role_evidence": "the direct sound -205 → -120 dB while the tail stays (-45 → -43 dB) (with Detune Amount half way)"
   },
   {
    "index": 2,
@@ -631,7 +1184,9 @@
     ]
    ],
    "description": "How much of the above noise type to add",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "delay.feedback",
+   "role_evidence": "the tail 0 ms → 3.22 s (T60)"
   },
   {
    "index": 3,
@@ -1154,7 +1709,9 @@
     ]
    ],
    "description": "Room level",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.highpass",
+   "role_evidence": "the response's lower corner moves 23.1 Hz → 8.37 kHz"
   },
   {
    "index": 4,
@@ -1202,7 +1759,9 @@
    "b": 22031.2,
    "unit": "Hz",
    "description": "Samplerate degrader",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mix.wet",
+   "role_evidence": "the late sound -27 → -41 dB, the direct sound unchanged"
   },
   {
    "index": 7,
@@ -1216,7 +1775,9 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Old-style frequency response",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 1.05 kHz: its prominence +0 → +7 dB over the response"
   },
   {
    "index": 8,
@@ -1230,7 +1791,9 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Detuning amount",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's upper corner moves 16.7 kHz → 1.48 kHz"
   },
   {
    "index": 9,
@@ -1244,7 +1807,9 @@
    "a": 1.0,
    "b": 127.0,
    "description": "Detuning amount",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "lfo.depth",
+   "role_evidence": "the gain moves 0.1 → 8.9 dB within each tone (with Detune Amount half way)"
   },
   {
    "index": 10,
@@ -1734,7 +2299,9 @@
    "b": 99.514898,
    "unit": "%",
    "description": "Ring modulation wet-dry",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 185 Hz: its prominence +0 → +11 dB over the response"
   },
   {
    "index": 12,
@@ -1748,7 +2315,9 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Tube overdrive",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "drive",
+   "role_evidence": "harmonics 1.8 → 34.6 % on a sine"
   },
   {
    "index": 13,
@@ -1776,7 +2345,9 @@
    "a": -127.0,
    "b": 127.0,
    "description": "Temperature (soft/sharp) on output signal",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "mix.dry",
+   "role_evidence": "the direct sound -45 → +25 dB while the tail stays (-44 → -41 dB)"
   },
   {
    "index": 15,
@@ -1791,7 +2362,9 @@
    "b": 200.011,
    "unit": "Hz",
    "description": "Highpass / DC remover",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.highpass",
+   "role_evidence": "the response's lower corner moves 23.1 Hz → 262 Hz"
   }
  ],
  "track_parameters": []

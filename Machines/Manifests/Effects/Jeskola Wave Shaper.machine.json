@@ -3,7 +3,7 @@
  "gear": "Jeskola Wave Shaper",
  "kind": "effect",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "reverb",
  "summary": "Reverb (profiled draft): traits: reverb, distortion; tail 3.48 s; latency 0 samples; gain +13.3 dB at the defaults.",
  "tracks": 8,
@@ -41,7 +41,320 @@
    "traits": [
     "reverb",
     "distortion"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     13.09
+    ],
+    [
+     23.1,
+     13.13
+    ],
+    [
+     26.0,
+     13.13
+    ],
+    [
+     29.1,
+     13.09
+    ],
+    [
+     32.7,
+     13.13
+    ],
+    [
+     36.7,
+     13.1
+    ],
+    [
+     41.2,
+     13.1
+    ],
+    [
+     46.2,
+     13.13
+    ],
+    [
+     51.9,
+     13.13
+    ],
+    [
+     58.3,
+     13.1
+    ],
+    [
+     65.4,
+     13.13
+    ],
+    [
+     73.4,
+     13.09
+    ],
+    [
+     82.4,
+     13.09
+    ],
+    [
+     92.5,
+     13.12
+    ],
+    [
+     103.8,
+     13.09
+    ],
+    [
+     116.5,
+     13.11
+    ],
+    [
+     130.8,
+     13.1
+    ],
+    [
+     146.8,
+     13.1
+    ],
+    [
+     164.8,
+     13.14
+    ],
+    [
+     185.0,
+     13.11
+    ],
+    [
+     207.7,
+     13.1
+    ],
+    [
+     233.1,
+     13.1
+    ],
+    [
+     261.6,
+     13.12
+    ],
+    [
+     293.7,
+     13.11
+    ],
+    [
+     329.6,
+     13.11
+    ],
+    [
+     370.0,
+     13.12
+    ],
+    [
+     415.3,
+     13.11
+    ],
+    [
+     466.2,
+     13.1
+    ],
+    [
+     523.3,
+     13.11
+    ],
+    [
+     587.3,
+     13.11
+    ],
+    [
+     659.3,
+     13.1
+    ],
+    [
+     740.0,
+     13.1
+    ],
+    [
+     830.6,
+     13.11
+    ],
+    [
+     932.3,
+     13.11
+    ],
+    [
+     1046.5,
+     13.11
+    ],
+    [
+     1174.7,
+     13.12
+    ],
+    [
+     1318.5,
+     13.1
+    ],
+    [
+     1480.0,
+     13.11
+    ],
+    [
+     1661.2,
+     13.11
+    ],
+    [
+     1864.7,
+     13.1
+    ],
+    [
+     2093.0,
+     13.11
+    ],
+    [
+     2349.3,
+     13.11
+    ],
+    [
+     2637.0,
+     13.11
+    ],
+    [
+     2960.0,
+     13.11
+    ],
+    [
+     3322.4,
+     13.11
+    ],
+    [
+     3729.3,
+     13.12
+    ],
+    [
+     4186.0,
+     13.11
+    ],
+    [
+     4698.6,
+     13.11
+    ],
+    [
+     5274.0,
+     13.12
+    ],
+    [
+     5919.9,
+     13.11
+    ],
+    [
+     6644.9,
+     13.1
+    ],
+    [
+     7458.6,
+     13.12
+    ],
+    [
+     8372.0,
+     13.12
+    ],
+    [
+     9397.3,
+     13.13
+    ],
+    [
+     10548.1,
+     13.17
+    ],
+    [
+     11839.8,
+     13.21
+    ],
+    [
+     13289.8,
+     13.29
+    ],
+    [
+     14917.2,
+     13.41
+    ],
+    [
+     16744.0,
+     13.63
+    ],
+    [
+     18794.5,
+     14.05
+    ]
+   ],
+   "response_summary": {
+    "level_db": 13.11,
+    "spread_db": 0.32,
+    "centroid_oct": -0.643,
+    "max_db": 14.05,
+    "max_hz": 18794.5,
+    "prominence_db": 0.0,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 18794.5,
+    "width_oct": 9.83,
+    "tilt_db": 0.18,
+    "wobble_db": 0.0
+   },
+   "impulse": {
+    "latency_samples": 0,
+    "direct_db": 11.28,
+    "early_db": 9.02,
+    "late_db": -5.31,
+    "t60_s": 4.669,
+    "t60_span_db": 20.0,
+    "ring_s": 3.006,
+    "rings_past_window": true,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "tail_zcr_hz": 0,
+    "tail_low_db": -0.02,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      14.35
+     ],
+     [
+      -34.85,
+      14.33
+     ],
+     [
+      -28.82,
+      14.26
+     ],
+     [
+      -22.79,
+      13.99
+     ],
+     [
+      -16.77,
+      12.6
+     ],
+     [
+      -10.75,
+      8.96
+     ],
+     [
+      -4.8,
+      3.99
+     ]
+    ],
+    "compression_db": 7.86,
+    "top_slope": 0.281,
+    "knee_in_db": -16.77,
+    "attack_s": 0.0,
+    "release_s": 0.0,
+    "attack_tau_s": null,
+    "release_tau_s": null
+   },
+   "thd_percent": 7.57
   },
   "level_test": {
    "defaults": {
@@ -55,7 +368,62 @@
    ],
    "renders": 4
   },
-  "sweeps": {}
+  "sweeps": {},
+  "roles": {
+   "default": {
+    "level_db": 13.11,
+    "spread_db": 0.12,
+    "centroid_oct": -0.65,
+    "max_hz": 16744.0,
+    "prominence_db": 0.0,
+    "low_corner_hz": 23.1,
+    "high_corner_hz": 16744.0,
+    "width_oct": 9.5,
+    "wobble_db": 0.0,
+    "latency_samples": 0,
+    "direct_db": 11.28,
+    "early_db": 9.02,
+    "late_db": -8.37,
+    "t60_s": 2.325,
+    "ring_s": 1.503,
+    "late_onset_s": 0.003,
+    "tail_zcr_hz": 0,
+    "tail_low_db": -0.02,
+    "thd": 6.56,
+    "peak_dbfs": -0.0
+   },
+   "type_from_click": "reverb",
+   "params": {
+    "track gain": {
+     "suggested_role": "reverb.early",
+     "evidence": "the early reflections -13 → +14 dB",
+     "min": {
+      "raw": 0,
+      "text": "-24.0dB"
+     },
+     "max": {
+      "raw": 8192,
+      "text": "24.0dB"
+     }
+    },
+    "track shape": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 4,
+      "text": "4"
+     }
+    }
+   },
+   "renders": 8
+  },
+  "denormal": {
+   "slowdown": null
+  }
  },
  "parameters": [],
  "track_parameters": [
@@ -72,7 +440,9 @@
    "b": 24.002729,
    "unit": "dB",
    "description": "Input gain (0=-24dB, 1000=0dB, 2000=24dB)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "reverb.early",
+   "role_evidence": "the early reflections -13 → +14 dB"
   },
   {
    "index": 0,

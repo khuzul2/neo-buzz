@@ -47,7 +47,318 @@
    },
    "traits": [
     "filter or EQ"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     -0.0
+    ],
+    [
+     23.1,
+     -0.0
+    ],
+    [
+     26.0,
+     -0.0
+    ],
+    [
+     29.1,
+     -0.0
+    ],
+    [
+     32.7,
+     -0.0
+    ],
+    [
+     36.7,
+     -0.0
+    ],
+    [
+     41.2,
+     -0.01
+    ],
+    [
+     46.2,
+     -0.01
+    ],
+    [
+     51.9,
+     -0.01
+    ],
+    [
+     58.3,
+     -0.01
+    ],
+    [
+     65.4,
+     -0.02
+    ],
+    [
+     73.4,
+     -0.02
+    ],
+    [
+     82.4,
+     -0.02
+    ],
+    [
+     92.5,
+     -0.03
+    ],
+    [
+     103.8,
+     -0.04
+    ],
+    [
+     116.5,
+     -0.05
+    ],
+    [
+     130.8,
+     -0.06
+    ],
+    [
+     146.8,
+     -0.07
+    ],
+    [
+     164.8,
+     -0.1
+    ],
+    [
+     185.0,
+     -0.12
+    ],
+    [
+     207.7,
+     -0.15
+    ],
+    [
+     233.1,
+     -0.18
+    ],
+    [
+     261.6,
+     -0.23
+    ],
+    [
+     293.7,
+     -0.28
+    ],
+    [
+     329.6,
+     -0.35
+    ],
+    [
+     370.0,
+     -0.43
+    ],
+    [
+     415.3,
+     -0.53
+    ],
+    [
+     466.2,
+     -0.65
+    ],
+    [
+     523.3,
+     -0.78
+    ],
+    [
+     587.3,
+     -0.95
+    ],
+    [
+     659.3,
+     -1.13
+    ],
+    [
+     740.0,
+     -1.35
+    ],
+    [
+     830.6,
+     -1.57
+    ],
+    [
+     932.3,
+     -1.77
+    ],
+    [
+     1046.5,
+     -1.95
+    ],
+    [
+     1174.7,
+     -2.08
+    ],
+    [
+     1318.5,
+     -2.12
+    ],
+    [
+     1480.0,
+     -1.84
+    ],
+    [
+     1661.2,
+     -1.44
+    ],
+    [
+     1864.7,
+     -0.89
+    ],
+    [
+     2093.0,
+     -0.08
+    ],
+    [
+     2349.3,
+     0.71
+    ],
+    [
+     2637.0,
+     1.56
+    ],
+    [
+     2960.0,
+     2.41
+    ],
+    [
+     3322.4,
+     3.2
+    ],
+    [
+     3729.3,
+     3.91
+    ],
+    [
+     4186.0,
+     4.53
+    ],
+    [
+     4698.6,
+     5.14
+    ],
+    [
+     5274.0,
+     5.64
+    ],
+    [
+     5919.9,
+     6.07
+    ],
+    [
+     6644.9,
+     6.45
+    ],
+    [
+     7458.6,
+     6.78
+    ],
+    [
+     8372.0,
+     7.04
+    ],
+    [
+     9397.3,
+     7.29
+    ],
+    [
+     10548.1,
+     7.5
+    ],
+    [
+     11839.8,
+     7.7
+    ],
+    [
+     13289.8,
+     7.92
+    ],
+    [
+     14917.2,
+     8.19
+    ],
+    [
+     16744.0,
+     8.64
+    ],
+    [
+     18794.5,
+     9.96
+    ]
+   ],
+   "response_summary": {
+    "level_db": 1.45,
+    "spread_db": 10.31,
+    "centroid_oct": 1.444,
+    "max_db": 9.96,
+    "max_hz": 18794.5,
+    "prominence_db": 0.0,
+    "low_corner_hz": 8372.0,
+    "high_corner_hz": 18794.5,
+    "width_oct": 1.17,
+    "tilt_db": 7.49,
+    "wobble_db": 0.01
+   },
+   "impulse": {
+    "latency_samples": 0,
+    "direct_db": 5.33,
+    "early_db": 2.54,
+    "late_db": -263.05,
+    "t60_s": null,
+    "t60_span_db": 0.0,
+    "ring_s": 0.005,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      8.12
+     ],
+     [
+      -34.85,
+      7.81
+     ],
+     [
+      -28.82,
+      7.22
+     ],
+     [
+      -22.79,
+      6.28
+     ],
+     [
+      -16.77,
+      4.96
+     ],
+     [
+      -10.75,
+      3.44
+     ],
+     [
+      -4.8,
+      2.09
+     ]
+    ],
+    "compression_db": 5.2,
+    "top_slope": 0.76,
+    "knee_in_db": -22.79,
+    "attack_s": 0.0,
+    "release_s": 0.0,
+    "attack_tau_s": null,
+    "release_tau_s": null
+   },
+   "thd_percent": 3.18
   },
   "level_test": {
    "defaults": {
@@ -67,6 +378,82 @@
      "verdict": "ok"
     }
    }
+  },
+  "roles": {
+   "default": {
+    "level_db": 1.16,
+    "spread_db": 9.67,
+    "centroid_oct": 1.393,
+    "max_hz": 16744.0,
+    "prominence_db": 0.0,
+    "low_corner_hz": 5919.9,
+    "high_corner_hz": 16744.0,
+    "width_oct": 1.5,
+    "wobble_db": 0.01,
+    "latency_samples": 0,
+    "direct_db": 5.33,
+    "early_db": 2.54,
+    "late_db": -266.11,
+    "ring_s": 0.005,
+    "late_onset_s": 0.003,
+    "thd": 2.31,
+    "peak_dbfs": -4.77
+   },
+   "type_from_click": "filter or EQ",
+   "params": {
+    "Drive": {
+     "suggested_role": "mix.wet",
+     "evidence": "at its minimum the effect passes the signal unchanged; at the other end the response's shape (13.34 dB); half way less of the same",
+     "min": {
+      "raw": 1,
+      "text": "0.01×"
+     },
+     "max": {
+      "raw": 240,
+      "text": "2.00×"
+     }
+    },
+    "Pre Cut": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's lower corner moves 2.96 kHz → 23.1 Hz",
+     "min": {
+      "raw": 1,
+      "text": "30 Hz"
+     },
+     "max": {
+      "raw": 239,
+      "text": "6990 Hz"
+     }
+    },
+    "Post Cut": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's lower corner moves 4.19 kHz → 23.1 Hz",
+     "min": {
+      "raw": 1,
+      "text": "30 Hz"
+     },
+     "max": {
+      "raw": 239,
+      "text": "6990 Hz"
+     }
+    },
+    "Amount": {
+     "suggested_role": "mix.wet",
+     "evidence": "at its minimum the effect passes the signal unchanged; at the other end the response's shape (22.49 dB); half way less of the same",
+     "min": {
+      "raw": 0,
+      "text": "-inf dB"
+     },
+     "max": {
+      "raw": 240,
+      "text": "6.0 dB"
+     }
+    }
+   },
+   "renders": 18
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [

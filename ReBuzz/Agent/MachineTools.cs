@@ -1,7 +1,8 @@
 // Agent server (docs/specs/mcp-server.md §5.3): gear, machines and routing.
 // gear_list, machine_list, machine_add, machine_remove, machine_set, connect, disconnect, connection_set.
 // U2 (docs/specs/machine-safety.md §3.1, §3.4): gear_list shows the profile's categories (diverging,
-// hot, needs a window) and safe ranges; machine_add warns only for diverging machines.
+// hot, needs a window) and safe ranges; machine_add warns only for diverging machines. U2 in depth
+// (docs/specs/mcp-server.md §12.12): gear_list leaves unhealthy machines out unless asked.
 
 using System;
 using System.Collections.Generic;
@@ -29,14 +30,16 @@ namespace ReBuzz.Agent
                 Description =
                     "The machines you can add: name, generator or effect, author, what it is (type, summary) when known, its manifest (generated, " +
                     "curated, or a profiled draft: its parameters take \"800 Hz\", \"-6 dB\"; exact_units when not a draft), its health and its parameters' " +
-                    "safe ranges (param_set keeps to them). Machines with exact units come first, then drafts; machines that need a window, then unhealthy ones " +
-                    "(diverging: NaN or a runaway level; crashes) last, flagged with why. Hot ones (loud but steady at some setting) are a warning. Classic machines " +
+                    "safe ranges (param_set keeps to them). Machines with exact units come first, then drafts, then machines that need a window. Unhealthy ones " +
+                    "(diverging: NaN or a runaway level somewhere; crashes; missing) are left out unless include_unhealthy=true, which lists them last, " +
+                    "flagged with why (hidden_unhealthy names them). Hot ones (loud but steady at some setting) are a warning, listed. Classic machines " +
                     "with a Neo successor say so (machine_replace moves a song onto it). Filter by kind or text. " +
                     "Example: gear_list(kind=\"generator\", search=\"poly\").",
                 Input = Object(null,
                     Opt("kind", String("Only generators (make sound) or effects (process sound)", "generator", "effect")),
                     Opt("search", String("Text to find in the name, author or summary")),
-                    Opt("limit", Integer("At most this many (default 60)", 1, 1000))),
+                    Opt("limit", Integer("At most this many (default 60)", 1, 1000)),
+                    Opt("include_unhealthy", Boolean("Also list unhealthy machines (diverging, crashing, missing), last (default false: left out, named in hidden_unhealthy)"))),
                 Output = Object(null,
                     Req("gear", Array(Object(null,
                         Req("name", String("Pass this to machine_add")),
@@ -54,15 +57,18 @@ namespace ReBuzz.Agent
                         Opt("problems", Array(String("A problem"), "Why it is unhealthy, hot or warned about")),
                         Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it")),
                         Opt("successor", String("Its Neo successor: machine_replace moves a song's machine onto it"))), "Matching gear")),
-                    Req("total", Integer("How many matched before the limit"))),
+                    Req("total", Integer("How many matched before the limit")),
+                    Opt("hidden_unhealthy", Array(String("A machine"), "Unhealthy machines that matched and were left out (include_unhealthy=true lists them)"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
                 {
                     string kind = c.String("kind"), search = c.String("search")?.Trim();
                     int limit = c.Int("limit") ?? 60;
+                    bool includeUnhealthy = c.Bool("include_unhealthy") ?? false;
                     var r = await host.Engine("gear_list", false, _ =>
                     {
                         var rows = new List<(int Rank, string Name, JsonObject Row)>();
+                        var hidden = new List<string>();
                         foreach (var dll in core.MachineDLLs.Values)
                         {
                             var info = dll.Info;
@@ -108,19 +114,31 @@ namespace ReBuzz.Agent
                             // U5 (mcp-server.md §12.5): "successor: Neo Verb (machine_replace)".
                             var successors = MachineReplace.Successors(core, dll);
                             if (successors.Count > 0) row["successor"] = string.Join(", ", successors.Select(x => x.To)) + " (machine_replace)";
+                            // U2 in depth (mcp-server.md §12.12): unhealthy gear (diverging somewhere, crashing, missing) is left out
+                            // unless asked for. Hot gear and gear that needs a window are listed: a warning, and a status of its own.
+                            if (unhealthy && !includeUnhealthy)
+                            {
+                                hidden.Add(dll.Name);
+                                continue;
+                            }
                             rows.Add((unhealthy ? 4 : window ? 3 : exact ? 0 : manifest != null ? 1 : 2, dll.Name, row));
                         }
                         var sorted = rows.OrderBy(x => x.Rank).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();
-                        return new JsonObject
+                        var result = new JsonObject
                         {
                             ["gear"] = new JsonArray(sorted.Take(limit).Select(x => (JsonNode)x.Row).ToArray()),
                             ["total"] = sorted.Count,
                         };
+                        if (hidden.Count > 0)
+                            result["hidden_unhealthy"] = new JsonArray(hidden.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).Select(x => (JsonNode)x).ToArray());
+                        return result;
                     }, c.Cancellation);
                     var gear = r["gear"]!.AsArray();
                     string names = string.Join(", ", gear.Take(12).Select(g => g!["name"]!.GetValue<string>()));
+                    var left = r["hidden_unhealthy"]?.AsArray();
                     return ToolResult.Ok($"{r["total"]} {(kind ?? "machine")}s{(search != null ? $" matching \"{search}\"" : "")}" +
-                                         (gear.Count > 0 ? $": {names}{(gear.Count > 12 ? ", …" : "")}." : ". Try without a filter."), r);
+                                         (gear.Count > 0 ? $": {names}{(gear.Count > 12 ? ", …" : "")}." : ". Try without a filter.") +
+                                         (left?.Count > 0 ? $" Left out as unhealthy: {string.Join(", ", left.Select(x => x!.GetValue<string>()))} (include_unhealthy=true lists them)." : ""), r);
                 },
             });
 

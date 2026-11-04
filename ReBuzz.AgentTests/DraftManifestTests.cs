@@ -2,7 +2,8 @@
 // (status, note input and pitch offset, health, track parameters, table mappings with infinities)
 // and notes for machines that take them in their tracks (voices, Note events, read back).
 // U2 (docs/specs/machine-safety.md §3.1, §3.4): health categories (diverging, hot, needs a window)
-// and safe ranges, which param_set keeps agents inside unless they pass allow_unsafe.
+// and safe ranges, which param_set keeps agents inside unless they pass allow_unsafe. U2 in depth
+// (docs/specs/mcp-server.md §12.12): suggested roles in drafts, from the role vocabulary.
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
@@ -32,7 +33,8 @@ namespace ReBuzz.AgentTests
               "description": "Attack time (1 ms – 4 s exponential)", "confidence": "description" },
             { "index": 1, "name": "Volume", "min": 0, "max": 4, "default": 4, "kind": "table", "unit": "dB",
               "points": [[0, "-inf"], [1, -24.0], [2, -12.0], [3, -6.0], [4, 0.0]], "confidence": "values" },
-            { "index": 2, "name": "Cutoff", "min": 0, "max": 127, "default": 64, "kind": "freq", "a": 20, "b": 20000, "unit": "Hz", "confidence": "values" }
+            { "index": 2, "name": "Cutoff", "min": 0, "max": 127, "default": 64, "kind": "freq", "a": 20, "b": 20000, "unit": "Hz", "confidence": "values",
+              "suggested_role": "filter.cutoff", "role_evidence": "the brightness (centroid) 120 Hz → 6 kHz" }
           ],
           "track_parameters": [
             { "index": 1, "name": "Level", "min": 0, "max": 100, "default": 100, "kind": "linear", "a": 0, "b": 100, "unit": "%" }
@@ -61,6 +63,10 @@ namespace ReBuzz.AgentTests
             Assert.That(m.FindTrack("level")!.Mapping.Unit, Is.EqualTo("%"));
             Assert.That(m.Find("Env A")!.Approximate, Is.True, "read from its description");
             Assert.That(m.Find("Cutoff")!.Approximate, Is.False, "fitted to its value texts");
+            Assert.That(m.Find("Cutoff")!.SuggestedRole, Is.EqualTo("filter.cutoff"), "U2 in depth: what moving it alone changes");
+            Assert.That(m.Find("Cutoff")!.RoleEvidence, Does.Contain("centroid"));
+            Assert.That(m.Find("Cutoff")!.Role, Is.Empty, "a suggestion isn't a curated role");
+            Assert.That(m.Find("Env A")!.SuggestedRole, Is.Empty);
         }
 
         [Test]
@@ -187,6 +193,13 @@ namespace ReBuzz.AgentTests
                         Assert.That(m.Health.Status, Is.AnyOf("unhealthy", "warn"), $"{m.Gear}: a safe range comes from an end that diverges or never decays");
                     }
                     if (m.IsDraft) Assert.That(p.Confidence, Is.AnyOf("values", "description"), $"{m.Gear} {p.Name}");
+                    // U2 in depth: a draft's suggested role is a known role, with what was measured behind it.
+                    if (p.SuggestedRole.Length > 0)
+                    {
+                        Assert.That(ManifestRoles.IsKnown(p.SuggestedRole), Is.True, $"{m.Gear} {p.Name}: {p.SuggestedRole} is in the role vocabulary");
+                        Assert.That(p.RoleEvidence, Is.Not.Empty, $"{m.Gear} {p.Name}: its evidence");
+                        Assert.That(m.IsDraft, Is.True, $"{m.Gear}: curated manifests keep their own roles, not suggestions");
+                    }
                     double v = p.Mapping.Value(p.Default, p.Min, p.Max);
                     Assert.That(double.IsNaN(v), Is.False, $"{m.Gear} {p.Name}: its default maps to a value");
                 }

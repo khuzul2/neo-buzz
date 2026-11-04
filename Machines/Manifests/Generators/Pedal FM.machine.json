@@ -64,7 +64,572 @@
    ],
    "renders": 77
   },
-  "sweeps": {}
+  "sweeps": {},
+  "envelope": {
+   "peak_db": -10.62,
+   "attack_s": 0.005,
+   "final_db": -1.22,
+   "length_s": null,
+   "release_s": 2.01,
+   "release_past_window": true,
+   "bright_mid_hz": 8485.9,
+   "bright_early_hz": 8197.1,
+   "bright_late_hz": 8666.7,
+   "level_wobble_db": 0.475,
+   "bright_wobble": 0.093,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": 17.97,
+   "db_per_doubling": 6.01,
+   "curve": "linear in amplitude (about 6 dB per doubling)",
+   "levels_db": {
+    "16": -26.65,
+    "32": -20.65,
+    "64": -14.62,
+    "127": -8.68
+   }
+  },
+  "roles": {
+   "default": {
+    "pitch": 33.0,
+    "centroid_hz": 5670,
+    "peakiness_db": 60.0,
+    "tprom_db": 2.7,
+    "tprom_hz": 8000,
+    "env_attack_s": 0.005,
+    "env_final_db": -0.99,
+    "env_release_s": 1.005,
+    "env_peak_db": -10.15,
+    "env_bright_early_hz": 4760.5,
+    "env_bright_mid_hz": 4428.5,
+    "env_bright_late_hz": 3374.2,
+    "env_level_wobble_db": 0.332,
+    "env_bright_wobble": 0.068
+   },
+   "params": {
+    "Algorithm": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "1: Linear"
+     },
+     "max": {
+      "raw": 7,
+      "text": "8: Pad+carrier"
+     }
+    },
+    "Output": {
+     "suggested_role": "level",
+     "evidence": "silent at its minimum, sounding at the other end",
+     "min": {
+      "raw": 0,
+      "text": "-inf dB"
+     },
+     "max": {
+      "raw": 127,
+      "text": "-1.9 dB"
+     }
+    },
+    "Voices": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 16,
+      "text": "16"
+     }
+    },
+    "Op1 Ratio": {
+     "suggested_role": "lfo.filter",
+     "evidence": "the held note's brightness moves 182% → 2% of its mean",
+     "min": {
+      "raw": 0,
+      "text": "0.13×"
+     },
+     "max": {
+      "raw": 127,
+      "text": "16.00×"
+     }
+    },
+    "Op1 Detune": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-50 ct"
+     },
+     "max": {
+      "raw": 100,
+      "text": "+50 ct"
+     }
+    },
+    "Op1 Level": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 464 Hz → 6.62 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Op1 Attack": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 5.67 kHz → 856 Hz",
+     "min": {
+      "raw": 0,
+      "text": "0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "4 s"
+     }
+    },
+    "Op1 Decay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Op1 Sustain": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Op1 Release": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Op2 Ratio": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 2.49 kHz → 7.13 kHz (with Op1 Level a third of the way up)",
+     "min": {
+      "raw": 0,
+      "text": "0.13×"
+     },
+     "max": {
+      "raw": 127,
+      "text": "16.00×"
+     }
+    },
+    "Op2 Detune": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-50 ct"
+     },
+     "max": {
+      "raw": 100,
+      "text": "+50 ct"
+     }
+    },
+    "Op2 Level": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 630 Hz stands +29 → +3 dB over the spectrum an octave either side",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Op2 Attack": {
+     "suggested_role": "filter.env_amount",
+     "evidence": "the start's brightness 4.87 kHz → 302 Hz (RMS frequency), the held part's 3.37 kHz → 1.13 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "4 s"
+     }
+    },
+    "Op2 Decay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Op2 Sustain": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Op2 Release": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Op3 Ratio": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.13×"
+     },
+     "max": {
+      "raw": 127,
+      "text": "16.00×"
+     }
+    },
+    "Op3 Detune": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-50 ct"
+     },
+     "max": {
+      "raw": 100,
+      "text": "+50 ct"
+     }
+    },
+    "Op3 Level": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 55 Hz → 8.36 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Op3 Attack": {
+     "suggested_role": "filter.env_amount",
+     "evidence": "the start's brightness 4.87 kHz → 84.3 Hz (RMS frequency), the held part's 3.37 kHz → 1.21 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "4 s"
+     }
+    },
+    "Op3 Decay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Op3 Sustain": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Op3 Release": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Op4 Ratio": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.13×"
+     },
+     "max": {
+      "raw": 127,
+      "text": "16.00×"
+     }
+    },
+    "Op4 Detune": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-50 ct"
+     },
+     "max": {
+      "raw": 100,
+      "text": "+50 ct"
+     }
+    },
+    "Op4 Level": {
+     "suggested_role": "level",
+     "evidence": "silent at its minimum, sounding at the other end",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "Op4 Attack": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 5 ms → 805 ms",
+     "min": {
+      "raw": 0,
+      "text": "0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "4 s"
+     }
+    },
+    "Op4 Decay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Op4 Sustain": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Op4 Release": {
+     "suggested_role": "env.release",
+     "evidence": "the release 5 ms → 1 s (or longer: past the window)",
+     "min": {
+      "raw": 0,
+      "text": "0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8 s"
+     }
+    },
+    "Op1 Feedback": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 5.67 kHz → 9.79 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "Compound Mod": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 55 Hz → 9.7 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Glide": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 5.67 kHz → 55 Hz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "1 s"
+     }
+    },
+    "LFO Rate": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.05 Hz"
+     },
+     "max": {
+      "raw": 127,
+      "text": "30 Hz"
+     }
+    },
+    "LFO Shape": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 4,
+      "text": "Sample&Hold"
+     }
+    },
+    "LFO Pitch": {
+     "suggested_role": "pitch.fine",
+     "evidence": "the pitch moves -76 cents",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "1 st"
+     }
+    },
+    "LFO Mod": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 5 ms → 540 ms",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "50%"
+     }
+    },
+    "Op1 VelSens": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Op2 VelSens": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Op3 VelSens": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Op4 VelSens": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "track Velocity": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    }
+   },
+   "renders": 122
+  },
+  "denormal": {
+   "slowdown": null
+  }
  },
  "parameters": [
   {

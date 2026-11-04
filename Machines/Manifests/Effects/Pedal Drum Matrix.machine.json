@@ -48,7 +48,318 @@
    },
    "traits": [
     "utility"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     -0.05
+    ],
+    [
+     23.1,
+     -0.05
+    ],
+    [
+     26.0,
+     -0.05
+    ],
+    [
+     29.1,
+     -0.05
+    ],
+    [
+     32.7,
+     -0.05
+    ],
+    [
+     36.7,
+     -0.05
+    ],
+    [
+     41.2,
+     -0.05
+    ],
+    [
+     46.2,
+     -0.05
+    ],
+    [
+     51.9,
+     -0.05
+    ],
+    [
+     58.3,
+     -0.05
+    ],
+    [
+     65.4,
+     -0.05
+    ],
+    [
+     73.4,
+     -0.05
+    ],
+    [
+     82.4,
+     -0.05
+    ],
+    [
+     92.5,
+     -0.05
+    ],
+    [
+     103.8,
+     -0.05
+    ],
+    [
+     116.5,
+     -0.05
+    ],
+    [
+     130.8,
+     -0.05
+    ],
+    [
+     146.8,
+     -0.05
+    ],
+    [
+     164.8,
+     -0.05
+    ],
+    [
+     185.0,
+     -0.05
+    ],
+    [
+     207.7,
+     -0.05
+    ],
+    [
+     233.1,
+     -0.05
+    ],
+    [
+     261.6,
+     -0.05
+    ],
+    [
+     293.7,
+     -0.05
+    ],
+    [
+     329.6,
+     -0.05
+    ],
+    [
+     370.0,
+     -0.05
+    ],
+    [
+     415.3,
+     -0.05
+    ],
+    [
+     466.2,
+     -0.05
+    ],
+    [
+     523.3,
+     -0.05
+    ],
+    [
+     587.3,
+     -0.05
+    ],
+    [
+     659.3,
+     -0.05
+    ],
+    [
+     740.0,
+     -0.05
+    ],
+    [
+     830.6,
+     -0.05
+    ],
+    [
+     932.3,
+     -0.05
+    ],
+    [
+     1046.5,
+     -0.05
+    ],
+    [
+     1174.7,
+     -0.05
+    ],
+    [
+     1318.5,
+     -0.05
+    ],
+    [
+     1480.0,
+     -0.05
+    ],
+    [
+     1661.2,
+     -0.05
+    ],
+    [
+     1864.7,
+     -0.05
+    ],
+    [
+     2093.0,
+     -0.05
+    ],
+    [
+     2349.3,
+     -0.05
+    ],
+    [
+     2637.0,
+     -0.05
+    ],
+    [
+     2960.0,
+     -0.05
+    ],
+    [
+     3322.4,
+     -0.05
+    ],
+    [
+     3729.3,
+     -0.05
+    ],
+    [
+     4186.0,
+     -0.05
+    ],
+    [
+     4698.6,
+     -0.05
+    ],
+    [
+     5274.0,
+     -0.05
+    ],
+    [
+     5919.9,
+     -0.05
+    ],
+    [
+     6644.9,
+     -0.05
+    ],
+    [
+     7458.6,
+     -0.05
+    ],
+    [
+     8372.0,
+     -0.05
+    ],
+    [
+     9397.3,
+     -0.05
+    ],
+    [
+     10548.1,
+     -0.05
+    ],
+    [
+     11839.8,
+     -0.05
+    ],
+    [
+     13289.8,
+     -0.05
+    ],
+    [
+     14917.2,
+     -0.04
+    ],
+    [
+     16744.0,
+     -0.03
+    ],
+    [
+     18794.5,
+     -0.01
+    ]
+   ],
+   "response_summary": {
+    "level_db": -0.05,
+    "spread_db": 0.01,
+    "centroid_oct": -0.683,
+    "max_db": -0.01,
+    "max_hz": 18794.5,
+    "prominence_db": 0.0,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 18794.5,
+    "width_oct": 9.83,
+    "tilt_db": 0.01,
+    "wobble_db": 0.0
+   },
+   "impulse": {
+    "latency_samples": 0,
+    "direct_db": -1.97,
+    "early_db": -4.51,
+    "late_db": -120.0,
+    "t60_s": null,
+    "t60_span_db": 0.0,
+    "ring_s": 0.005,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      -0.0
+     ],
+     [
+      -34.85,
+      -0.0
+     ],
+     [
+      -28.82,
+      -0.0
+     ],
+     [
+      -22.79,
+      -0.02
+     ],
+     [
+      -16.77,
+      -0.07
+     ],
+     [
+      -10.75,
+      -0.27
+     ],
+     [
+      -4.8,
+      -2.59
+     ]
+    ],
+    "compression_db": 1.43,
+    "top_slope": 0.789,
+    "knee_in_db": -4.8,
+    "attack_s": 0.005,
+    "release_s": 0.06,
+    "attack_tau_s": null,
+    "release_tau_s": null
+   },
+   "thd_percent": 2.57
   },
   "level_test": {
    "defaults": {
@@ -73,7 +384,625 @@
    ],
    "renders": 74
   },
-  "sweeps": {}
+  "sweeps": {},
+  "roles": {
+   "default": {
+    "level_db": -0.05,
+    "spread_db": 0.0,
+    "centroid_oct": -0.683,
+    "max_hz": 16744.0,
+    "prominence_db": 0.0,
+    "low_corner_hz": 23.1,
+    "high_corner_hz": 16744.0,
+    "width_oct": 9.5,
+    "wobble_db": 0.0,
+    "latency_samples": 0,
+    "direct_db": -1.97,
+    "early_db": -4.51,
+    "late_db": -120.0,
+    "ring_s": 0.005,
+    "late_onset_s": 0.003,
+    "compression_db": 1.43,
+    "knee_in_db": -4.8,
+    "thd": 1.92,
+    "peak_dbfs": -0.27
+   },
+   "type_from_click": "utility",
+   "params": {
+    "Slot1Type": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "None"
+     },
+     "max": {
+      "raw": 21,
+      "text": "Exciter"
+     }
+    },
+    "Slot1Amount": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Slot2Type": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "None"
+     },
+     "max": {
+      "raw": 21,
+      "text": "Exciter"
+     }
+    },
+    "Slot2Amount": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Slot3Type": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "None"
+     },
+     "max": {
+      "raw": 21,
+      "text": "Exciter"
+     }
+    },
+    "Slot3Amount": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Slot4Type": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "None"
+     },
+     "max": {
+      "raw": 21,
+      "text": "Exciter"
+     }
+    },
+    "Slot4Amount": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Slot5Type": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "None"
+     },
+     "max": {
+      "raw": 21,
+      "text": "Exciter"
+     }
+    },
+    "Slot5Amount": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Slot6Type": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "None"
+     },
+     "max": {
+      "raw": 21,
+      "text": "Exciter"
+     }
+    },
+    "Slot6Amount": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Slot1Char": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-"
+     },
+     "max": {
+      "raw": 127,
+      "text": "-"
+     }
+    },
+    "Slot1Mode": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "-"
+     },
+     "max": {
+      "raw": 1,
+      "text": "-"
+     }
+    },
+    "Slot2Char": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-"
+     },
+     "max": {
+      "raw": 127,
+      "text": "-"
+     }
+    },
+    "Slot2Mode": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "-"
+     },
+     "max": {
+      "raw": 1,
+      "text": "-"
+     }
+    },
+    "Slot3Char": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-"
+     },
+     "max": {
+      "raw": 127,
+      "text": "-"
+     }
+    },
+    "Slot3Mode": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "-"
+     },
+     "max": {
+      "raw": 1,
+      "text": "-"
+     }
+    },
+    "Slot4Char": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-"
+     },
+     "max": {
+      "raw": 127,
+      "text": "-"
+     }
+    },
+    "Slot4Mode": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "-"
+     },
+     "max": {
+      "raw": 1,
+      "text": "-"
+     }
+    },
+    "Slot5Char": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-"
+     },
+     "max": {
+      "raw": 127,
+      "text": "-"
+     }
+    },
+    "Slot5Mode": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "-"
+     },
+     "max": {
+      "raw": 1,
+      "text": "-"
+     }
+    },
+    "Slot6Char": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-"
+     },
+     "max": {
+      "raw": 127,
+      "text": "-"
+     }
+    },
+    "Slot6Mode": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "-"
+     },
+     "max": {
+      "raw": 1,
+      "text": "-"
+     }
+    },
+    "Limiter": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "AutoGainOn": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "Feedback": {
+     "suggested_role": "delay.feedback",
+     "evidence": "the tail 0 ms → 156 ms (T60)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "FbTime": {
+     "suggested_role": "delay.time",
+     "evidence": "the first echo moves 25 ms → 500 ms (with the effect switched on: #26 raw:76, #30 raw:76)",
+     "min": {
+      "raw": 0,
+      "text": "1.0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "500 ms"
+     }
+    },
+    "FbTone": {
+     "suggested_role": "mix.wet",
+     "evidence": "the late sound -37 → -20 dB, the direct sound unchanged (with the effect switched on: #26 raw:76, #30 raw:76)",
+     "min": {
+      "raw": 0,
+      "text": "200 Hz"
+     },
+     "max": {
+      "raw": 127,
+      "text": "12.0 kHz"
+     }
+    },
+    "EnvRelease": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "20.0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "2000 ms"
+     }
+    },
+    "EnvToFb": {
+     "suggested_role": "delay.feedback",
+     "evidence": "the tail 0 ms → 144 ms (T60)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Slot1EnvDepth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "+98%"
+     }
+    },
+    "Slot2EnvDepth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "+98%"
+     }
+    },
+    "Slot3EnvDepth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "+98%"
+     }
+    },
+    "Slot4EnvDepth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "+98%"
+     }
+    },
+    "Slot5EnvDepth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "+98%"
+     }
+    },
+    "Slot6EnvDepth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "+98%"
+     }
+    },
+    "LfoRate": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "1 ticks"
+     },
+     "max": {
+      "raw": 11,
+      "text": "64 ticks"
+     }
+    },
+    "LfoWave": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Sine"
+     },
+     "max": {
+      "raw": 5,
+      "text": "Random"
+     }
+    },
+    "Slot1LfoDepth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "+98%"
+     }
+    },
+    "Slot2LfoDepth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "+98%"
+     }
+    },
+    "Slot3LfoDepth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "+98%"
+     }
+    },
+    "Slot4LfoDepth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "+98%"
+     }
+    },
+    "Slot5LfoDepth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "+98%"
+     }
+    },
+    "Slot6LfoDepth": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "-100%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "+98%"
+     }
+    },
+    "Key": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "C"
+     },
+     "max": {
+      "raw": 11,
+      "text": "B"
+     }
+    },
+    "Scale": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Major"
+     },
+     "max": {
+      "raw": 7,
+      "text": "Whole Tone"
+     }
+    },
+    "Morph": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Store": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "..."
+     },
+     "max": {
+      "raw": 1,
+      "text": "Store"
+     }
+    }
+   },
+   "renders": 164
+  },
+  "denormal": {
+   "slowdown": null
+  }
  },
  "parameters": [
   {

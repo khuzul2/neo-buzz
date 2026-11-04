@@ -47,7 +47,7 @@ namespace ReBuzz.AgentTests
             // machine-safety.md §3.5 (ReBuzz/Agent/NotesTools.cs): Song Notes
             ["song_notes_read"] = new[] { "format" },
             ["song_notes_write"] = new[] { "text", "mode" },
-            ["gear_list"] = new[] { "kind", "search", "limit" },
+            ["gear_list"] = new[] { "kind", "search", "limit", "include_unhealthy" },
             ["machine_list"] = new string[0],
             ["machine_add"] = new[] { "gear", "name", "connect_to", "insert_after", "gain_db", "tracks" },
             ["machine_remove"] = new[] { "machines", "keep_chain" },
@@ -69,7 +69,7 @@ namespace ReBuzz.AgentTests
             ["arrangement_get"] = new[] { "from", "to" },
             ["arrangement_place"] = new[] { "machine", "pattern", "at", "repeat_every_beats", "times" },
             ["arrangement_clear"] = new[] { "machine", "from", "to" },
-            ["render"] = new[] { "from", "to", "range", "section", "tail_seconds", "solo", "mute", "probes", "name" },
+            ["render"] = new[] { "from", "to", "range", "section", "tail_seconds", "solo", "mute", "probes", "name", "cpu", "cpu_window_seconds" },
             ["analyze"] = new[] { "source", "metrics", "from_seconds", "to_seconds" },
             // A2 (main: ReBuzz/Agent/AnalysisTools.cs, StateTools.cs, WaveTools.cs)
             ["analyze_mix"] = new[] { "from", "to", "section", "machines" },

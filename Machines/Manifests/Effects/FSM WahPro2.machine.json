@@ -3,7 +3,7 @@
  "gear": "FSM WahPro2",
  "kind": "effect",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "modulation",
  "summary": "Modulation (profiled draft): traits: modulation, filter or EQ; tail 0.01 s; latency 1 samples; gain +3.3 dB at the defaults.",
  "tracks": 1,
@@ -83,6 +83,133 @@
      "text": "240"
     }
    }
+  },
+  "roles": {
+   "default": {
+    "level_db": 9.96,
+    "spread_db": 27.47,
+    "centroid_oct": -0.684,
+    "max_hz": 523.3,
+    "prominence_db": 6.96,
+    "low_corner_hz": 523.3,
+    "high_corner_hz": 740.0,
+    "width_oct": 0.5,
+    "wobble_db": 0.15,
+    "latency_samples": 2,
+    "direct_db": -2.59,
+    "early_db": -5.42,
+    "late_db": -89.21,
+    "t60_s": 0.022,
+    "ring_s": 0.022,
+    "late_onset_s": 0.003,
+    "copy_s": 0.002,
+    "thd": 0.56,
+    "peak_dbfs": 6.24
+   },
+   "type_from_click": "modulation",
+   "params": {
+    "track Cutoff": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track Resonance": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track Filter": {
+     "suggested_role": "filter.type",
+     "evidence": "its choices change the response's shape (up to 44 dB), corners 2.09 kHz–2.09 kHz → 1.48 kHz–1.48 kHz",
+     "min": {
+      "raw": 0,
+      "text": "2pole LP"
+     },
+     "max": {
+      "raw": 7,
+      "text": "Vocal II"
+     }
+    },
+    "track LFO rate": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.050 Hz"
+     },
+     "max": {
+      "raw": 254,
+      "text": "128 ticks"
+     }
+    },
+    "track LFO mod": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track LFO Shape": {
+     "suggested_role": null,
+     "evidence": "diverged or failed at an end",
+     "min": {
+      "raw": 0,
+      "text": "sine"
+     },
+     "max": {
+      "raw": 16,
+      "text": "S'n'H 2",
+      "diverged": "+172.2 dBFS"
+     }
+    },
+    "track Inertia": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 60,
+      "text": "60"
+     }
+    },
+    "track Set phase": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    }
+   },
+   "renders": 29
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [],
@@ -135,7 +262,9 @@
     "Vocal II"
    ],
    "description": "Filter type",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.type",
+   "role_evidence": "its choices change the response's shape (up to 44 dB), corners 2.09 kHz–2.09 kHz → 1.48 kHz–1.48 kHz"
   },
   {
    "index": 0,

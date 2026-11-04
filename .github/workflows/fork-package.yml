@@ -8,8 +8,9 @@ name: Fork package (ReBuzz + all machines)
 # two jobs then render the same cases with rebuzz-headless on Linux and macOS and compare
 # (docs/specs/mac-engine.md M3/M4).
 #
-# Manual inputs for test work: "quick" skips the external machines and the zip, and
-# "test_filter" runs a subset of tests (dotnet test --filter syntax).
+# Manual inputs for test work: "quick" skips the external machines and the zip,
+# "test_filter" runs a subset of tests (dotnet test --filter syntax), and "profile_only"
+# profiles some machines (tools/machine-profiler.py --only) instead of every one.
 
 on:
   workflow_dispatch:
@@ -20,6 +21,10 @@ on:
         default: false
       test_filter:
         description: 'dotnet test --filter expression (empty = all tests)'
+        type: string
+        default: ''
+      profile_only:
+        description: 'Machine profiler --only patterns, comma-separated (empty = every machine)'
         type: string
         default: ''
   push:
@@ -149,17 +154,23 @@ jobs:
     # log (--pack; --unpack takes them out of a downloaded job log), for where artifacts can't be fetched.
     # A machine that crashes or hangs is a finding (the profiler restarts ReBuzz and goes on), and the
     # step never fails the job. U2 (docs/specs/machine-safety.md §3.1) adds the level tests and
-    # per-parameter sweeps: diverging, hot, needs a window, and safe ranges in the drafts.
+    # per-parameter sweeps: diverging, hot, needs a window, and safe ranges in the drafts. U2 in
+    # depth (docs/specs/mcp-server.md §12.12): the test signal, suggested roles, velocity and envelope,
+    # pitch by harmonic sieve, triggers, and slowdowns after the input goes silent.
     - name: Machine profile
       id: profile
       if: (success() || failure()) && steps.build.outcome == 'success'
       timeout-minutes: 75
       continue-on-error: true
       shell: pwsh
+      env:
+        PROFILE_ONLY: ${{ inputs.profile_only }}
       run: |
         $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
         if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
-        python tools/machine-profiler.py $exe.FullName --out machine-profile *>&1 | Tee-Object -FilePath machine-profile.log
+        $only = @()
+        if ($env:PROFILE_ONLY) { $only = @('--only', $env:PROFILE_ONLY) }
+        python tools/machine-profiler.py $exe.FullName --out machine-profile @only *>&1 | Tee-Object -FilePath machine-profile.log
         $code = $LASTEXITCODE
         if (Test-Path machine-profile/machine-profile.json) { python tools/machine-profiler.py --pack machine-profile }
         exit $code

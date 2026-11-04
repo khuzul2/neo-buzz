@@ -3,26 +3,128 @@
  "gear": "Jeskola Noise Generator",
  "kind": "generator",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
- "type": "generator (silent at its defaults)",
- "summary": "Generator (silent at its defaults) (profiled draft): no sound from a note at its defaults.",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "type": "triggered",
+ "summary": "Generator (profiled draft): plays from a trigger, not notes: its Trigger column (a track parameter), written with automation_write.",
  "tracks": 8,
  "notes": {
   "input": "none"
  },
  "health": {
-  "status": "warn",
-  "problems": [
-   "no sound from a MIDI note at its defaults (it has no Note track parameter)"
-  ]
+  "status": "ok",
+  "problems": []
  },
  "profile": {
+  "level": {
+   "note": "one trigger",
+   "integrated_lufs": -17,
+   "sample_peak_dbfs": -6.03,
+   "true_peak_dbtp": -1.49
+  },
   "level_test": {
    "defaults": {
-    "peak_dbfs": null,
-    "verdict": "silent"
+    "peak_dbfs": -6.02,
+    "growth_db": -0.02,
+    "verdict": "ok"
    },
    "all_at_once": {}
+  },
+  "trigger": {
+   "param": "Trigger",
+   "track": 0,
+   "value": 1
+  },
+  "envelope": {
+   "peak_db": -10.32,
+   "attack_s": 0.01,
+   "final_db": -80.0,
+   "half_s": 0.26,
+   "length_s": 0.28,
+   "bright_mid_hz": 9821.9,
+   "bright_early_hz": 10118.8,
+   "bright_late_hz": null,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "roles": {
+   "default": {
+    "centroid_hz": 10039,
+    "peakiness_db": 5.1,
+    "tprom_db": -2.2,
+    "tprom_hz": 1000,
+    "env_attack_s": 0.01,
+    "env_half_s": 0.26,
+    "env_final_db": -80.0,
+    "env_length_s": 0.28,
+    "env_peak_db": -10.32,
+    "env_bright_early_hz": 10118.8,
+    "env_bright_mid_hz": 9821.9
+   },
+   "params": {
+    "track Attack": {
+     "suggested_role": "drum.attack",
+     "evidence": "the attack 0 ms → 200 ms",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 65535,
+      "text": "65535"
+     }
+    },
+    "track Sustain": {
+     "suggested_role": "drum.decay",
+     "evidence": "the held level -80 → -1 dB under the peak",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 65535,
+      "text": "65535"
+     }
+    },
+    "track Release": {
+     "suggested_role": "drum.decay",
+     "evidence": "the level falls half way in 10 ms → ? (the default 260 ms) to the same held level",
+     "min": {
+      "raw": 1,
+      "text": "1"
+     },
+     "max": {
+      "raw": 65535,
+      "text": "65535"
+     }
+    },
+    "track Color": {
+     "suggested_role": "drum.tone",
+     "evidence": "the brightness (centroid) 3.17 kHz → 10 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 4096,
+      "text": "4096"
+     }
+    },
+    "track Volume": {
+     "suggested_role": "drum.level",
+     "evidence": "silent at its minimum, sounding at the other end",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "254"
+     }
+    }
+   },
+   "renders": 10
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [],
@@ -40,7 +142,9 @@
    "b": 65.535,
    "unit": "s",
    "description": "Attack time in ms",
-   "confidence": "description"
+   "confidence": "description",
+   "suggested_role": "drum.attack",
+   "role_evidence": "the attack 0 ms → 200 ms"
   },
   {
    "index": 0,
@@ -55,7 +159,9 @@
    "b": 65.535,
    "unit": "s",
    "description": "Sustain time in ms",
-   "confidence": "description"
+   "confidence": "description",
+   "suggested_role": "drum.decay",
+   "role_evidence": "the held level -80 → -1 dB under the peak"
   },
   {
    "index": 0,
@@ -70,7 +176,9 @@
    "b": 65.535,
    "unit": "s",
    "description": "Release time in ms",
-   "confidence": "description"
+   "confidence": "description",
+   "suggested_role": "drum.decay",
+   "role_evidence": "the level falls half way in 10 ms → ? (the default 260 ms) to the same held level"
   },
   {
    "index": 0,
@@ -84,7 +192,9 @@
    "a": 0.0,
    "b": 4096.0,
    "description": "Noise color (0=black, 1000=white)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "drum.tone",
+   "role_evidence": "the brightness (centroid) 3.17 kHz → 10 kHz"
   },
   {
    "index": 0,
@@ -98,7 +208,9 @@
    "a": 0.0,
    "b": 254.0,
    "description": "Volume [sustain level] (0=0%, 80=100%, FE=~200%)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "drum.level",
+   "role_evidence": "silent at its minimum, sounding at the other end"
   }
  ]
 }

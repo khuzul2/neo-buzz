@@ -1,6 +1,8 @@
 # Fork (docs/specs/mcp-server.md §12.2, U1): unit tests for tools/machine_infer.py, fed value
 # tables whose meaning is known; U2 (docs/specs/machine-safety.md §3.1): the health categories
-# (diverging, hot, needs a window), which effects get swept and the safe range's edge.
+# (diverging, hot, needs a window), which effects get swept and the safe range's edge; U2 in depth
+# (mcp-server.md §12.12): tools/machine_roles.py's measurements on synthetic signals, the suggested
+# roles from features, the harmonic sieve and the hot ends that get a range.
 # Run: python3 -m unittest discover -s tools -p "test_machine_infer.py"
 
 import math
@@ -10,6 +12,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import machine_infer as mi  # noqa: E402
+import machine_roles as mr  # noqa: E402
 
 
 def table(fmt, lo, hi, f, step=1):
@@ -319,6 +322,275 @@ class RecurateTests(unittest.TestCase):
         self.assertTrue(any("Dry: not in the new profile" in w for w in warnings), warnings)
         self.assertTrue(any("Dry thru: new in the profile" in w for w in warnings), warnings)
         self.assertTrue(any("track Wet: its range is now 0…255" in w for w in warnings), warnings)
+
+
+RATE = 44100
+
+
+def tones_signal(tones, amp=0.25):
+    x = [0.0] * int((tones[-1][2] + tones[-1][3] + 0.1) * RATE)
+    for _, f, start, dur in tones:
+        a, b = int(start * RATE), int((start + dur) * RATE)
+        for i in range(a, b):
+            x[i] = amp * math.sin(2 * math.pi * f * (i - a) / RATE)
+    return x
+
+
+def one_pole(x, fc):
+    k = 1 - math.exp(-2 * math.pi * fc / RATE)
+    y, out = 0.0, []
+    for v in x:
+        y += k * (v - y)
+        out.append(y)
+    return out
+
+
+class TestSignalTests(unittest.TestCase):
+    def test_the_sweep_covers_the_band_six_periods_a_tone(self):
+        t = mr.sweep_tones(step=4)
+        self.assertEqual(len(t), 31)
+        self.assertAlmostEqual(t[0][1], 20.6, places=1)
+        self.assertGreater(t[-1][1], 20000)
+        self.assertTrue(all(d >= 0.04 and d * f >= 5.99 for _, f, _, d in t))
+        self.assertEqual(t[0][0], 16 - 12, "sent an octave down: Neo Poly's O1 octave +1")
+
+    def test_a_low_pass_response_and_its_corner(self):
+        tones = mr.sweep_tones(step=4, low=40, high=124)
+        x = tones_signal(tones)
+        y = one_pole(x, 1000)
+        resp = mr.response(tones, RATE, x, y, y)
+        f = mr.response_features(resp)
+        self.assertLess(abs(f["max_db"]), 0.5)
+        self.assertTrue(700 <= f["high_corner_hz"] <= 1400, f)
+        self.assertLess(f["tilt_db"], -15)
+        flat = mr.response_features(mr.response(tones, RATE, x, x, x))
+        self.assertLess(flat["spread_db"], 0.1)
+        self.assertGreater(flat["centroid_oct"] - f["centroid_oct"], 1.0, "a low-pass pulls the centroid down")
+
+    def test_a_click_through_a_delay_its_echoes_and_decay(self):
+        n = int(1.5 * RATE)
+        x = [0.0] * n
+        a = int(0.05 * RATE)
+        for i in range(a, a + 44):
+            x[i] = 0.5 if (i // 3) % 2 else -0.5
+        y = list(x)
+        for k, g in ((1, 0.5), (2, 0.25), (3, 0.125)):
+            d = int(0.1 * k * RATE)
+            for i in range(a, a + 44):
+                y[i + d] += g * x[i]
+        c = mr.click_features(RATE, x, y, y, 0.05, 0.001, 1.4)
+        self.assertEqual(c["latency_samples"], 0)
+        self.assertAlmostEqual(c["direct_db"], 0, delta=0.5)
+        times = [t for t, _ in c["echoes"]]
+        self.assertEqual(len(times), 3, c["echoes"])
+        for t, want in zip(times, (0.1, 0.2, 0.3)):
+            self.assertAlmostEqual(t, want, delta=0.006)
+
+    def test_decay_rate_reads_an_exponential_tail(self):
+        env = [-60.0 * (i / 1000.0) for i in range(2000)]          # 60 dB per second, 1 ms windows
+        t60, span = mr.decay_rate(env)
+        self.assertAlmostEqual(t60, 1.0, delta=0.05)
+        self.assertGreaterEqual(span, 15)
+        self.assertEqual(mr.decay_rate([-1.0] * 100)[0], None, "nothing falls: no T60")
+
+    def test_level_steps_through_a_compressor(self):
+        notes, jump_at, end = mr.step_notes(0.1)
+        x = [0.0] * int((end + 0.1) * RATE)
+        for v, s, d in notes:
+            amp = 0.9 * v / 127
+            for i in range(int(s * RATE), int((s + d) * RATE)):
+                x[i] = amp * math.sin(2 * math.pi * 988 * i / RATE)
+
+        def comp(sig, thr_db=-20, ratio=4.0, attack=0.01):
+            env, out = 0.0, []
+            ka = 1 - math.exp(-1 / (attack * RATE))
+            for v in sig:
+                env += ka * (abs(v) - env)
+                lvl = 20 * math.log10(env) if env > 1e-6 else -120
+                over = max(0.0, lvl - thr_db)
+                out.append(v * 10 ** (-(over - over / ratio) / 20))
+            return out
+        y = comp(x)
+        f = mr.step_features(RATE, x, y, y, notes, jump_at)
+        self.assertGreater(f["compression_db"], 6)
+        self.assertIsNotNone(f["knee_in_db"])
+        self.assertLess(f["knee_in_db"], -10)
+        fast, slow = f["attack_tau_s"], mr.step_features(RATE, x, comp(x, attack=0.1), comp(x, attack=0.1), notes, jump_at)["attack_tau_s"]
+        self.assertIsNotNone(fast)
+        self.assertGreater(slow, 2 * fast, "a slower attack: a longer time constant")
+        flat = mr.step_features(RATE, x, x, x, notes, jump_at)
+        self.assertLess(abs(flat["compression_db"]), 0.2)
+
+    def test_a_held_notes_envelope(self):
+        n = int(2.0 * RATE)
+        x = []
+        for i in range(n):
+            t = i / RATE
+            amp = min(1.0, t / 0.2) if t < 0.2 else (0.25 + 0.75 * math.exp(-(t - 0.2) / 0.1)) if t < 1.0 else 0.25 * math.exp(-(t - 1.0) / 0.05)
+            x.append(0.5 * amp * math.sin(2 * math.pi * 220 * t))
+        e = mr.note_envelope(RATE, x, x, 0.0, 1.0)
+        self.assertAlmostEqual(e["attack_s"], 0.2, delta=0.03)
+        self.assertAlmostEqual(e["final_db"], -12.0, delta=1.0)
+        self.assertLess(e["half_s"], 0.15)
+        self.assertAlmostEqual(e["release_s"], 0.21, delta=0.05)
+        self.assertEqual(e.get("level_wobble_db"), 0.0, "an envelope isn't an LFO")
+
+    def test_velocity_response(self):
+        v = mr.velocity_response({16: -18.0, 32: -12.0, 64: -6.0, 127: 0.0})
+        self.assertAlmostEqual(v["db_per_doubling"], 6.0, delta=0.1)
+        self.assertIn("linear", v["curve"])
+        self.assertIn("none", mr.velocity_response({16: -6.0, 127: -6.0})["curve"])
+
+    def test_the_harmonic_sieve_hears_a_resonant_bass(self):
+        f0 = 110.0
+        x = []
+        for i in range(16384 + 2000):
+            t = i / RATE
+            s_ = sum((1.0 / k) * (4.0 if k == 7 else 1.0) * math.sin(2 * math.pi * f0 * k * t) for k in range(1, 20))
+            x.append(0.1 * s_ * math.exp(-t / 0.3))
+        binhz, mags = mr.magnitude_spectrum(x, RATE)
+        r = mr.pitch_sieve(binhz, mags, 45)
+        self.assertTrue(r["pitched"])
+        self.assertEqual(r["midi"], 45, "A2, not an octave below it")
+        self.assertLess(abs(r["cents"]), 10)
+        binhz, mags = mr.magnitude_spectrum([sum(math.sin(2 * math.pi * 440 * r * i / RATE) for r in (1.0, 1.414, 2.71, 3.97))
+                                             for i in range(16384)], RATE)
+        self.assertFalse(mr.pitch_sieve(binhz, mags, 69)["pitched"], "inharmonic partials: no pitch")
+
+    def test_third_prominence_and_wobble(self):
+        hz = [20 * 2 ** (i / 3) for i in range(30)]
+        flat = [-20.0] * 30
+        bump = list(flat)
+        bump[20] = -2.0
+        self.assertLess(mr.third_prominence(hz, flat, 55)[0], 1)
+        p, at = mr.third_prominence(hz, bump, 55)
+        self.assertAlmostEqual(p, 18, delta=0.1)
+        self.assertAlmostEqual(at, hz[20])
+        self.assertGreater(mr._wobble([3 * math.sin(i / 1.5) for i in range(30)]), 4)
+        self.assertEqual(mr._wobble([i * 0.5 for i in range(30)]), 0.0, "a ramp doesn't swing")
+
+
+def feats(level=0.0, spread=0.0, lo=20.0, hi=20000.0, prom=0.0, centroid=0.0, late=-120.0, t60=None, echoes=(), direct=0.0, steps=None, wobble=0.0, **click):
+    r = {"level_db": level, "spread_db": spread, "low_corner_hz": lo, "high_corner_hz": hi, "prominence_db": prom, "centroid_oct": centroid,
+         "max_db": level, "max_hz": 1000.0, "width_oct": math.log2(hi / lo), "wobble_db": wobble, "shape": [(1000.0, 0.0)]}
+    c = dict({"late_db": late, "t60_s": t60, "echoes": list(echoes), "direct_db": direct, "latency_samples": 0}, **click)
+    return {"response": r, "click": c, "steps": steps}
+
+
+class RoleTests(unittest.TestCase):
+    def role(self, lo, hi, default=None, mtype="filter or EQ", mid=None, **p):
+        info = dict({"name": "P", "kind": "linear", "min": 0, "max": 100}, **p)
+        r, why = mr.suggest_effect_role(info, {"min": lo, "max": hi}, default or lo, mtype, mid=mid)
+        return r
+
+    def test_a_cutoff_moves_a_corner(self):
+        self.assertEqual(self.role(feats(spread=40, hi=200, centroid=-3), feats(spread=10, hi=8000, centroid=-0.5)), "filter.cutoff")
+
+    def test_a_wet_level_with_a_tail_and_one_with_a_shape(self):
+        dry, wet = feats(), feats(level=-3, late=-12, t60=2.0)
+        self.assertEqual(self.role(dry, wet, mtype="reverb"), mr.NEED_MID)
+        self.assertEqual(self.role(dry, wet, mtype="reverb", mid=feats(level=-1, late=-18, t60=2.1)), "mix.wet")
+        # a low-pass's mix: half way the same corner; a cutoff moving out of the band: half way another corner
+        lp = feats(spread=36, hi=1500, centroid=-2)
+        self.assertEqual(self.role(dry, lp, mid=feats(spread=6, hi=1700, centroid=-1)), "mix.wet")
+        self.assertEqual(self.role(lp, dry, mid=feats(spread=20, hi=5000, centroid=-1)), "filter.cutoff")
+
+    def test_delay_time_feedback_and_a_reverbs_decay_and_predelay(self):
+        self.assertEqual(self.role(feats(late=-10, echoes=[(0.1, -6), (0.2, -12)]), feats(late=-10, echoes=[(0.4, -6), (0.8, -12)]), mtype="delay"), "delay.time")
+        self.assertEqual(self.role(feats(late=-10, t60=0.3, echoes=[(0.1, -6)]), feats(late=-5, t60=3.0, echoes=[(0.1, -6), (0.2, -7)]), mtype="delay"), "delay.feedback")
+        self.assertEqual(self.role(feats(late=-10, t60=0.5), feats(late=-8, t60=4.0), mtype="reverb"), "reverb.decay")
+        self.assertEqual(self.role(feats(late=-10, t60=2.0, echoes=[(0.01, -20)]), feats(late=-10, t60=2.1, echoes=[(0.2, -20)]), mtype="reverb"), "reverb.predelay")
+
+    def test_a_resonance_and_a_choice_of_filter_types(self):
+        self.assertEqual(self.role(feats(prom=0, hi=2000), feats(prom=18, hi=2200)), "filter.resonance")
+        lp, hp = feats(spread=30, hi=1000, centroid=-2), feats(spread=30, lo=1000, centroid=2)
+        lp["response"]["shape"], hp["response"]["shape"] = [(100.0, 0.0)], [(100.0, -30.0)]
+        self.assertEqual(self.role(lp, hp, kind="enum", choices=["LP", "HP"], max=1), "filter.type")
+        self.assertIsNone(self.role(lp, hp, kind="enum", choices=["Red", "Blue"], max=1), "a choice whose texts say nothing")
+
+    def test_dynamics_from_the_steps(self):
+        def st(comp, knee, atk=0.01, rel=0.05):
+            return {"compression_db": comp, "knee_in_db": knee, "attack_tau_s": atk, "release_tau_s": rel, "curve": [(-48, 0), (-42, 0), (-36, 0), (-30, 0)]}
+        d = feats(steps=st(8, -18))
+        self.assertEqual(self.role(feats(steps=st(0.2, None)), feats(steps=st(20, -36)), default=d, mtype="dynamics"), "dyn.threshold")
+        self.assertEqual(self.role(feats(steps=st(8, -18, atk=0.005)), feats(steps=st(3, -18, atk=0.15)), default=d, mtype="dynamics"), "dyn.attack")
+        self.assertEqual(self.role(feats(steps=st(8, -18, rel=0.01)), feats(steps=st(8, -18, rel=0.4)), default=d, mtype="dynamics"), "dyn.release")
+        self.assertEqual(self.role(feats(steps=st(0.2, None)), feats(steps=st(11, -18)), default=d, mtype="dynamics"), "dyn.ratio")
+
+    def test_generator_roles_from_a_held_note(self):
+        def g(env=None, pitch=57.0, centroid=1000.0, silent=False, **k):
+            e = dict({"peak_db": -6.0, "attack_s": 0.005, "final_db": -3.0, "release_s": 0.05, "bright_late_hz": 1000.0, "bright_early_hz": 1000.0}, **(env or {}))
+            return dict({"env": e, "pitch": pitch, "centroid_hz": centroid, "silent": silent}, **k)
+        info = {"name": "P", "kind": "linear", "min": 0, "max": 100}
+        role = lambda lo, hi, t="monosynth": mr.suggest_generator_role(info, {"min": lo, "max": hi}, g(), t)[0]
+        self.assertEqual(role(g(), g(env={"attack_s": 0.6})), "env.attack")
+        self.assertEqual(role(g(), g(env={"release_s": 0.9})), "env.release")
+        self.assertEqual(role(g(), g(pitch=64.0)), "pitch.coarse")
+        self.assertEqual(role(g(), g(pitch=57.3)), None, "under 0.4 semitones: nothing")
+        self.assertEqual(role(g(centroid=300.0), g(centroid=4000.0)), "filter.cutoff")
+        self.assertEqual(role(g(silent=True), g()), "level")
+        self.assertEqual(role(g(), g(env={"length_s": 0.8}), "drums"), None)
+        self.assertEqual(role(g(env={"length_s": 0.1}), g(env={"length_s": 0.8}), "drums"), "drum.decay")
+
+    def test_feedback_by_how_fast_the_echoes_fade_and_a_resonance_is_never_a_mix(self):
+        held = feats(late=-5, echoes=[(0.375, -8), (0.75, -9), (1.125, -10)], echo_fade_db_s=2.7)
+        default = feats(late=-8, echoes=[(0.375, -9), (0.75, -16), (1.125, -23)], echo_fade_db_s=18.7)
+        self.assertEqual(self.role(held, held, default=default, mtype="delay"), "delay.feedback", "±98 % fade alike: against the default")
+        er_off = feats(late=-8, t60=0.95, echoes=[(0.04, -26)], early_db=1.7)
+        er_on = feats(late=2.5, t60=0.77, echoes=[(0.02, -7), (0.04, -8.6), (0.07, -9.9)], early_db=5.8)
+        self.assertEqual(self.role(er_off, er_on, mtype="reverb", name="ER Out"), "reverb.early", "reflections added, the reverb's own stay")
+        ringing = feats(level=2.3, spread=13.5, prom=8.2, hi=8372, lo=5920, late=-22, t60=0.3)
+        self.assertEqual(self.role(feats(), ringing, mtype="utility", name="Resonance"), "filter.resonance")
+
+    def test_a_distortions_harmonics_first_and_a_filter_type_with_bare_numbers(self):
+        def st(comp):
+            return {"compression_db": comp, "knee_in_db": -18, "attack_tau_s": 0.001, "release_tau_s": 0.001, "curve": [(-36, 0), (-30, 0), (-24, -comp)]}
+        clean, clipped = dict(feats(steps=st(0.5)), thd=1.0), dict(feats(steps=st(9)), thd=35.0)
+        self.assertEqual(self.role(clean, clipped, mtype="distortion", name="+threshold"), "drive", "clipping squeezes the steps too")
+        flat, bp = feats(), feats(level=-4, spread=47, lo=11840, hi=16744)
+        bp["response"]["shape"] = [(1000.0, -40.0)]
+        self.assertEqual(self.role(flat, bp, mtype="utility", name="Type", max=2, texts=["0", "1", "2"]), "filter.type")
+
+    def test_key_tracking_follows_the_note_a_cutoff_doesnt(self):
+        ends = lambda a, b: {"min": {"centroid_hz": a}, "max": {"centroid_hz": b}}
+        self.assertEqual(mr.keytrack_role(ends(4000.0, 900.0), ends(3000.0, 3500.0), 36)[0], "filter.keytrack")
+        self.assertIsNone(mr.keytrack_role(ends(64.0, 10400.0), ends(440.0, 10000.0), 36), "a cutoff brightens the high note less")
+        self.assertIsNone(mr.keytrack_role(ends(56.0, 2320.0), ends(39.0, 3360.0), 36, 55.0, 440.0), "a near-silent end on the high note")
+        self.assertIsNone(mr.keytrack_role(ends(5670.0, 856.0), ends(9860.0, 6260.0), 36), "darker on both notes: an envelope, not tracking")
+
+    def test_a_blend_named_like_one_and_a_closed_filters_ring(self):
+        def st(curve):
+            return {"compression_db": curve[0] - curve[-1], "knee_in_db": -18 if curve[-1] < 0 else None, "attack_tau_s": 0.01, "release_tau_s": 0.05,
+                    "curve": [(-36 + 6 * i, g) for i, g in enumerate(curve)]}
+        dry, full = st([0, 0, 0, 0]), st([0, -2, -6, -8.4])
+        even = st([0, -0.9, -2.5, -3.2])     # -20·log10((1 + g) / 2) of the full curve
+        args = (feats(steps=dry), feats(steps=full))
+        self.assertEqual(self.role(*args, default=feats(steps=full), mtype="dynamics", mid=feats(steps=even), name="Wet/Dry"), "mix.wet")
+        self.assertEqual(self.role(*args, default=feats(steps=full), mtype="dynamics", mid=feats(steps=even), name="Ratio"), "dyn.ratio")
+        # a low-pass closed at 20 Hz rings for 85 ms: not a tail, so not a mix's wet end
+        closed = feats(level=-31, spread=97, hi=23.1, centroid=-5, late=-40, t60=0.085, echoes=[(0.04, -5.4)], wobble=3.1)
+        self.assertEqual(self.role(closed, feats(), mid=feats(spread=20, hi=9000, centroid=-1)), "filter.cutoff")
+
+    def test_categories_and_agreement(self):
+        self.assertEqual(mr.category("filter.cutoff"), "filter")
+        self.assertEqual(mr.category("eq.low.freq"), "filter")
+        self.assertEqual(mr.category("delay.time"), "time")
+        self.assertEqual(mr.category("mix.dry"), "mix")
+        self.assertIsNone(mr.category("level"))
+        self.assertTrue(mr.agrees("env.decay", "drum.decay"))
+        self.assertTrue(mr.agrees("delay.time", "delay.time_left"))
+        self.assertFalse(mr.agrees("mix.wet", "dyn.ratio"))
+
+
+class HotEndTests(unittest.TestCase):
+    def test_a_loop_or_resonance_that_rings_gets_a_range_a_level_control_doesnt(self):
+        self.assertTrue(mi.rings("Resonance", 53.8, -3.2))
+        self.assertTrue(mi.rings("FB Amp", 40.0, 0.0), "a feedback wins over the word amp")
+        self.assertFalse(mi.rings("Resonance", 16.2, 0.0), "16 dB over the default: hot, no range")
+        self.assertFalse(mi.rings("Output", 60.0, 0.0), "a level control's hot end is its job")
+        self.assertFalse(mi.rings("Wet out", 40.0, 0.0))
+        self.assertTrue(mi.level_control("Makeup Gain") and mi.level_control("Dry thru"))
+        self.assertFalse(mi.level_control("Feedback") or mi.level_control("Q"))
 
 
 if __name__ == "__main__":

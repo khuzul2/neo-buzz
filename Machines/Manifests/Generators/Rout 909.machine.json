@@ -25,14 +25,22 @@
  "health": {
   "status": "warn",
   "problems": [
-   "no sound from a MIDI note at its defaults (it has no Note track parameter)"
-  ]
+   "hot (loud but steady) with BD Level at its maximum (199%): +5.4 dBFS peak; BD Tune at its minimum (0): +1.7 dBFS peak"
+  ],
+  "hot": true
  },
  "profile": {
+  "level": {
+   "note": "one trigger",
+   "integrated_lufs": -23.9,
+   "sample_peak_dbfs": -0.65,
+   "true_peak_dbtp": -0.65
+  },
   "level_test": {
    "defaults": {
-    "peak_dbfs": null,
-    "verdict": "silent"
+    "peak_dbfs": -0.65,
+    "growth_db": -0.05,
+    "verdict": "ok"
    },
    "all_at_once": {
     "min": {
@@ -40,10 +48,431 @@
      "verdict": "silent"
     },
     "max": {
-     "peak_dbfs": null,
-     "verdict": "silent"
+     "peak_dbfs": 2.49,
+     "growth_db": 0.0,
+     "verdict": "hot"
+    }
+   },
+   "swept_because": [
+    "every parameter at its maximum at once: hot"
+   ],
+   "renders": 59
+  },
+  "sweeps": {
+   "BD Level": {
+    "max": {
+     "peak_dbfs": 5.44,
+     "growth_db": -0.02,
+     "verdict": "hot",
+     "raw": 254,
+     "text": "199%"
+    }
+   },
+   "BD Tune": {
+    "min": {
+     "peak_dbfs": 1.73,
+     "growth_db": -0.04,
+     "verdict": "hot",
+     "raw": 0,
+     "text": "0"
     }
    }
+  },
+  "trigger": {
+   "param": "BD Trigger",
+   "track": 0,
+   "value": 1,
+   "others": [
+    "SD Trigger",
+    "LT Trigger",
+    "MT Trigger",
+    "HT Trigger",
+    "RS Trigger",
+    "CP Trigger",
+    "CH Trigger",
+    "OH Trigger",
+    "CC Trigger",
+    "RC Trigger"
+   ]
+  },
+  "envelope": {
+   "peak_db": -7.61,
+   "attack_s": 0.0,
+   "final_db": -80.0,
+   "half_s": 0.445,
+   "length_s": 0.445,
+   "bright_mid_hz": 58.5,
+   "bright_early_hz": 122.2,
+   "bright_late_hz": null,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "roles": {
+   "default": {
+    "pitch": 32.74,
+    "centroid_hz": 1082,
+    "peakiness_db": 54.35,
+    "env_attack_s": 0.0,
+    "env_half_s": 0.445,
+    "env_final_db": -80.0,
+    "env_length_s": 0.445,
+    "env_peak_db": -7.61,
+    "env_bright_early_hz": 122.2,
+    "env_bright_mid_hz": 58.5
+   },
+   "params": {
+    "BD Level": {
+     "suggested_role": "drum.level",
+     "evidence": "the level +14 dB, the sound otherwise alike",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "199%"
+     }
+    },
+    "SD Level": {
+     "suggested_role": "drum.level",
+     "evidence": "silent at its minimum, sounding at the other end (hit by SD Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "199%"
+     }
+    },
+    "LT Level": {
+     "suggested_role": "drum.level",
+     "evidence": "silent at its minimum, sounding at the other end (hit by LT Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "199%"
+     }
+    },
+    "MT Level": {
+     "suggested_role": "drum.level",
+     "evidence": "silent at its minimum, sounding at the other end (hit by MT Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "199%"
+     }
+    },
+    "HT Level": {
+     "suggested_role": "drum.level",
+     "evidence": "silent at its minimum, sounding at the other end (hit by HT Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "199%"
+     }
+    },
+    "RS Level": {
+     "suggested_role": "drum.level",
+     "evidence": "silent at its minimum, sounding at the other end (hit by RS Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "199%"
+     }
+    },
+    "CP Level": {
+     "suggested_role": "drum.level",
+     "evidence": "silent at its minimum, sounding at the other end (hit by CP Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "199%"
+     }
+    },
+    "CH Level": {
+     "suggested_role": "drum.level",
+     "evidence": "silent at its minimum, sounding at the other end (hit by CH Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "199%"
+     }
+    },
+    "OH Level": {
+     "suggested_role": "drum.level",
+     "evidence": "silent at its minimum, sounding at the other end (hit by OH Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "199%"
+     }
+    },
+    "CC Level": {
+     "suggested_role": "drum.level",
+     "evidence": "silent at its minimum, sounding at the other end (hit by CC Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "199%"
+     }
+    },
+    "RC Level": {
+     "suggested_role": "drum.level",
+     "evidence": "silent at its minimum, sounding at the other end (hit by RC Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 254,
+      "text": "199%"
+     }
+    },
+    "BD Tune": {
+     "suggested_role": "drum.decay",
+     "evidence": "the hit lasts 135 ms → 450 ms (to 40 dB down)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "BD Attack": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "BD Decay": {
+     "suggested_role": "drum.tone",
+     "evidence": "the brightness (centroid) 383 Hz → 994 Hz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "SD Tune": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "SD Tone": {
+     "suggested_role": "drum.tone",
+     "evidence": "the brightness (centroid) 7.5 kHz → 2.71 kHz (hit by SD Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "SD Snap": {
+     "suggested_role": "drum.tone",
+     "evidence": "the brightness (centroid) 2.71 kHz → 7.24 kHz (hit by SD Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "LT Tune": {
+     "suggested_role": "drum.tone",
+     "evidence": "the brightness (centroid) 315 Hz → 575 Hz (hit by LT Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "LT Decay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "MT Tune": {
+     "suggested_role": "drum.tone",
+     "evidence": "a peak at 500 Hz stands -10 → +2 dB over the spectrum an octave either side (hit by MT Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "MT Decay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "HT Tune": {
+     "suggested_role": "drum.tone",
+     "evidence": "the brightness (centroid) 347 Hz → 600 Hz (hit by HT Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "HT Decay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "CH Decay": {
+     "suggested_role": "drum.decay",
+     "evidence": "the hit lasts 155 ms → 15 ms (to 40 dB down) (hit by CH Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "OH Decay": {
+     "suggested_role": "drum.decay",
+     "evidence": "the hit lasts 540 ms → 40 ms (to 40 dB down) (hit by OH Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "CC Tune": {
+     "suggested_role": "drum.decay",
+     "evidence": "the held level -12 → -42 dB under the peak, falling as fast (hit by CC Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "RC Tune": {
+     "suggested_role": "drum.tone",
+     "evidence": "the start's brightness 5.94 kHz → 8.4 kHz (RMS frequency), the held part's 4.41 kHz → 5.24 kHz (hit by RC Trigger)",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 63,
+      "text": "63"
+     }
+    },
+    "Shuffle": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "OFF"
+     },
+     "max": {
+      "raw": 254,
+      "text": "0.50 tick"
+     }
+    },
+    "Shuffle Step": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 2,
+      "text": "2"
+     },
+     "max": {
+      "raw": 32,
+      "text": "32"
+     }
+    }
+   },
+   "renders": 11
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [

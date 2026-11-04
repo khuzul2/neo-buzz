@@ -47,6 +47,14 @@ namespace ReBuzz.Agent.Model
         /// <summary>Curated: what it does, from <see cref="ManifestRoles.Known"/> ("filter.cutoff", "mix.wet"); empty: none.</summary>
         public string Role { get; init; } = "";
         /// <summary>
+        /// Drafts (U2, mcp-server.md §12.12): the role the profiler suggests from what moving this parameter alone
+        /// changes (the response's corner moves: filter.cutoff; the first echo moves: delay.time), from
+        /// <see cref="ManifestRoles.Known"/>; empty: none found. Curated manifests keep their own <see cref="Role"/>.
+        /// </summary>
+        public string SuggestedRole { get; init; } = "";
+        /// <summary>What the profiler measured behind <see cref="SuggestedRole"/> ("min → max: the −3 dB corner 120 Hz → 9.8 kHz").</summary>
+        public string RoleEvidence { get; init; } = "";
+        /// <summary>
         /// False when the machine's own value texts don't say what it does (Pedal Comp's Attack reads "0.1 ms" for
         /// 10 ms: a descriptor that scales the raw value): its values are read and written through the mapping only.
         /// </summary>
@@ -94,6 +102,8 @@ namespace ReBuzz.Agent.Model
             // EQ (band, then what)
             "eq.low.gain", "eq.low.freq", "eq.lowmid.gain", "eq.lowmid.freq", "eq.lowmid.q", "eq.mid.gain", "eq.highmid.gain",
             "eq.highmid.freq", "eq.highmid.q", "eq.high.gain", "eq.high.freq",
+            // (U2 in depth: every band takes freq and q, as the profiler's suggestions name them)
+            "eq.low.q", "eq.mid.freq", "eq.mid.q", "eq.high.q",
             // Drums
             "drum.level", "drum.tune", "drum.attack", "drum.decay", "drum.tone", "drum.snap", "drum.click", "drum.punch", "drum.buzz",
             "drum.decay_shape", "drum.release",
@@ -390,6 +400,8 @@ namespace ReBuzz.Agent.Model
                 SafeRange = SafeRange.Parse(p["safe_range"] as JsonObject, min, max),
                 PlainName = (string)p["plain_name"] ?? "",
                 Role = (string)p["role"] ?? "",
+                SuggestedRole = (string)p["suggested_role"] ?? "",
+                RoleEvidence = (string)p["role_evidence"] ?? "",
                 OwnTexts = (bool?)p["own_texts"] ?? true,
                 Mapping = new ParamMapping
                 {

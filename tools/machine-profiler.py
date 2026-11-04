@@ -53,8 +53,11 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import machine_infer as mi  # noqa: E402
+import machine_roles as mr  # noqa: E402
 
 TEMPO = 120                 # beats per minute: a beat is 0.5 s
+# U2 in depth (mcp-server.md §12.12): which passes run (main() sets them from the flags).
+DEPTH = {"on": True, "roles": True, "roles_generated": False, "denormal": True, "triggers": True}
 A4 = 69
 LEVEL_BEATS = 8             # the level test's render: 4 s
 CONFIRM_BEATS = 60          # and 30 s, when the level grew over 4 s (an attack settles; a runaway doesn't)
@@ -331,7 +334,7 @@ def params_by_kind(describe):
     return globals_, tracks
 
 
-def manifest_entry(p, inferred, safe_range=None):
+def manifest_entry(p, inferred, safe_range=None, role=None):
     e = {"index": p.get("index", 0), "id": p["name"], "name": p["name"], "group": "",
          "min": p["min"], "max": p["max"], "default": p["default_raw"]}
     if not inferred.get("kind"):
@@ -346,6 +349,9 @@ def manifest_entry(p, inferred, safe_range=None):
     if safe_range:
         # machine-safety.md §3.4: param_set keeps agents inside it unless they pass allow_unsafe.
         e["safe_range"] = safe_range
+    if role:
+        # U2 in depth (mcp-server.md §12.12): what moving it alone changes, as a role from ManifestRoles.Known.
+        e["suggested_role"], e["role_evidence"] = role
     return e
 
 
@@ -466,7 +472,7 @@ def profile_generator(c, prof, info, baseline):
         if add_test_wave(c):
             mode, first = try_modes()
             if mode is not None:
-                prof.notes.append("plays the wavetable: silent until slot 1 has a wave (profiled with a sine rooted on A4)")
+                prof.notes.append("plays the wavetable: silent until slot 1 has a wave (profiled with a sawtooth rooted on A4)")
                 prof.data["needs_wave"] = True
     notes = {"input": mode or "none"}
     prof.data["notes"] = notes
@@ -501,6 +507,12 @@ def profile_generator(c, prof, info, baseline):
         notes.update({"pitched": False, "heard": {Pitch(s): round(h, 2) for s, h in found}})
         if found:
             notes["why_unpitched"] = "its pitch doesn't follow the note by octaves" if len(found) >= 2 else "a pitch only on some notes"
+        # U2 in depth (mcp-server.md §12.12): where YIN hears no pitch (a decaying, resonant bass), the harmonic sieve.
+        sv = sieve_pitch(c, prof, mode)
+        notes["pitch_sieve"] = sv
+        if sv.get("pitched"):
+            notes.update({"pitched": True, "pitch_offset": sv["pitch_offset"], "cents": sv["cents"], "pitch_method": "harmonic sieve"})
+            notes.pop("why_unpitched", None)
     # Polyphony: chords of 1, 2, 4, 8 notes; each voice adds about 3 dB. The pitches are a tritone,
     # a fourth or a major seventh apart, never an octave or a semitone (some synths merge those).
     most = min(8, int(info.get("max_tracks") or 1)) if mode == "tracks" else 8
@@ -540,13 +552,14 @@ CHORD = [60, 66, 71, 77, 55, 49, 82, 44]
 
 
 def add_test_wave(c):
-    """A 1 s sine on A4, rendered from a Neo Poly, into wave slot 1 (rooted on A4). False when it can't be made."""
+    """A 2 s sawtooth on A4, rendered from a Neo Poly, into wave slot 1 (rooted on A4): harmonics for a sampler's filter
+    to work on (U2 in depth; U1's was a sine). False when it can't be made."""
     try:
         c.call("machine_add", gear="Neo Poly", name="WaveSrc", connect_to="Master")
-        c.call("param_set", machine="WaveSrc", changes=[{"param": p, "value": v} for p, v in SOURCE_NOISE + SOURCE_SINE])
-        set_notes(c, "WaveSrc", [note(A4, 0, 2.5, 127)], "midi", length=4)
-        r = render(c, 0, 3, 0.1, probes=["WaveSrc"])
-        c.call("wave_from_render", source=r["id"] + ":WaveSrc", from_seconds=0.05, to_seconds=1.05, slot=1, name="Profiler sine", root_note="A4")
+        c.call("param_set", machine="WaveSrc", changes=[{"param": p, "value": v} for p, v in SOURCE_NOISE + SOURCE_SINE + [("O1 shape", "2")]])
+        set_notes(c, "WaveSrc", [note(A4, 0, 4.5, 127)], "midi", length=6)
+        r = render(c, 0, 5, 0.1, probes=["WaveSrc"])
+        c.call("wave_from_render", source=r["id"] + ":WaveSrc", from_seconds=0.05, to_seconds=2.05, slot=1, name="Profiler saw", root_note="A4")
         c.call("machine_remove", machines=["WaveSrc"])
         return True
     except ToolFailed:
@@ -685,6 +698,24 @@ def profile_effect(c, prof, info, baseline):
                        "movement_db": round(db(max(env_s)) - db(min(env_s)), 2) if env_s else None}
     fx["sine"] = sine
     classify_effect(prof, fx)
+    # U2 in depth (mcp-server.md §12.12): the test signal at the defaults: the response (a stepped sine sweep in whole
+    # tones), the click's latency, decay and echoes, the level steps' curve and timing.
+    f = TestBench(c, prof, "full").measure()
+    if f.get("diverged") or f.get("error"):
+        prof.notes.append(f"the test signal at the defaults: {f.get('diverged') or f.get('error')}")
+        return
+    fx["response"] = f.get("response_points")
+    fx["response_summary"] = {k: v for k, v in (f.get("response") or {}).items() if k != "shape"}
+    fx["impulse"] = {k: v for k, v in (f.get("click") or {}).items()}
+    if f.get("steps"):
+        fx["steps"] = f["steps"]
+    if f.get("thd") is not None:
+        fx["thd_percent"] = f["thd"]
+    typed = effect_type(f.get("click"), prof.data.get("type"))
+    if typed != prof.data.get("type"):
+        prof.notes.append(f"typed {typed} from the click's decay and echoes (a 20 ms burst said {prof.data.get('type')})")
+        fx["traits"] = [typed] + [t for t in fx.get("traits", []) if t not in ("delay", "reverb", typed)]
+        prof.data["type"] = typed
 
 
 def classify_effect(prof, fx):
@@ -760,6 +791,9 @@ class Bench:
                 add_test_wave(self.c)
             if self.mode not in (None, "none"):
                 set_notes(c, "M", [note(A4, 0, HELD_BEATS, 100)], self.mode, length=HELD_BEATS)
+            elif self.prof.data.get("trigger"):
+                # U2 in depth: a generator that plays from a trigger is hit every second.
+                play(c, "M", None, self.prof.data["trigger"], [note(A4, b, 1) for b in range(0, HELD_BEATS, 2)], length=HELD_BEATS)
 
     def level(self, changes=(), reset=True):
         """(verdict, facts) with these changes (the other parameters at their defaults), then put back.
@@ -872,12 +906,13 @@ def level_tests(c, prof, kind, globals_, tracks):
     sweeps, ranges, alone_diverges, alone_hot = {}, {}, False, False
     diverges_at = set()          # the ends ("min", "max") at which some parameter alone diverges
     hot, endless = [], []
+    default_peak = out["defaults"].get("peak_dbfs")
     for p in globals_ + tracks:
         per_track = bool(p.get("per_track"))
         lo, hi = p["min"], p["max"]
         default = min(max(p["default_raw"], lo), hi)
         ref = {"param": p["name"], "track": 0} if per_track else {"param": f"#{p['index']}"}
-        ends, bad, lossless = {}, {}, {}
+        ends, bad, lossless, ringing = {}, {}, {}, {}
         for end, raw in (("min", lo), ("max", hi)):
             if raw == default:
                 continue
@@ -894,21 +929,34 @@ def level_tests(c, prof, kind, globals_, tracks):
                 (hot if v == "hot" else endless).append(f"{p['name']} at its {end}imum ({text}): {describe_level(v, f)}")
             elif v == "hot":
                 hot.append(f"{p['name']} at its {end}imum ({text}): {describe_level(v, f)}")
+                # U2 in depth: a loop's or a resonance's end that rings far past its level at the default.
+                if mi.rings(p["name"], f.get("peak_dbfs"), default_peak):
+                    ringing[end] = raw
         if ends:
             sweeps[p["name"]] = ends
-        if not bad and not lossless:
+        if not bad and not lossless and not ringing:
             continue
         if bad:
             alone_diverges = True
             diverges_at.update(bad)
 
+        probes = []
+
         def unsafe(x, ref=ref):
             v, f = bench.level([dict(ref, value=f"raw:{x}")])
-            return v in ("diverging", "crash") or bool(f.get("never_decays"))
+            peak = f.get("peak_dbfs")
+            probes.append([x, bench.text(dict(ref, value=f"raw:{x}")), peak if peak is not None else None, v])
+            return v in ("diverging", "crash") or bool(f.get("never_decays")) or \
+                (bool(ringing) and isinstance(peak, (int, float)) and isinstance(default_peak, (int, float)) and peak - default_peak > mi.RING_DB)
         # The edge: the last raw value from the default towards each unsafe end that is safe.
         edges = {}
-        for end, raw in list(bad.items()) + list(lossless.items()):
+        for end, raw in list(bad.items()) + list(lossless.items()) + list(ringing.items()):
+            if end in edges:
+                continue
+            del probes[:]
             edges[end] = mi.edge(default, raw, unsafe)
+            # The measurements behind the edge: each value tried, its text, peak and verdict.
+            ends[end]["edge_probes"] = sorted(probes)
         safe_lo, safe_hi = edges.get("min", lo), edges.get("max", hi)
         texts = {}
         for raw in (safe_lo, safe_hi):
@@ -916,9 +964,15 @@ def level_tests(c, prof, kind, globals_, tracks):
             texts[raw] = bench.texts.get((change["param"], change.get("track"), change["value"])) or text_at(p, raw)
         how = {end: ("crashes or hangs the server" if ends[end]["verdict"] == "crash" else "diverges") for end in bad}
         how.update({end: "never decays" for end in lossless})
-        where = " and ".join(f"{how[end]} at its {end}imum ({ends[end]['text']}" +
-                             (f": {describe_level(ends[end]['verdict'], ends[end])})" if how[end] != "crashes or hangs the server" else ")")
-                             for end in ("min", "max") if end in how)
+        how.update({end: "rings" for end in ringing if end not in how})
+        def says(end):
+            if how[end] == "rings":
+                pk = ends[end].get("peak_dbfs")
+                return (f"rings at its {end}imum ({ends[end]['text']}: {describe_level(ends[end]['verdict'], ends[end])}, "
+                        f"{pk - default_peak:.0f} dB over its level at the default; the edge is where it passes {mi.RING_DB:.0f} dB over it)")
+            return f"{how[end]} at its {end}imum ({ends[end]['text']}" + \
+                (f": {describe_level(ends[end]['verdict'], ends[end])})" if how[end] != "crashes or hangs the server" else ")")
+        where = " and ".join(says(end) for end in ("min", "max") if end in how)
         reason = where
         ranges[(per_track, p["name"])] = {"min": safe_lo, "max": safe_hi, "min_text": texts[safe_lo], "max_text": texts[safe_hi], "reason": reason}
         text = f"{p['name']} {reason}; safe from {texts[safe_lo]} to {texts[safe_hi]} (raw {safe_lo}–{safe_hi})"
@@ -956,6 +1010,758 @@ def text_at(p, raw):
     if not table:
         return str(raw)
     return min(table, key=lambda rt: abs(rt[0] - raw))[1]
+
+
+# ---- U2 in depth (docs/specs/mcp-server.md §12.12) -------------------------------------------------------
+# A test signal for effects, played by Neo Poly on three sources (a sine for the stepped sweep, noise for the
+# level steps, a 1 ms noise burst for the click) and captured on both sides; per-parameter sweeps that name
+# a suggested role; a generator's velocity response, envelope and pitch (harmonic sieve where YIN hears
+# none); triggers for generators without notes; denormal slowdowns (the machine's own work time per second
+# of audio after its input goes silent, against while it plays).
+
+SWEEP_SRC = SOURCE_NOISE + SOURCE_SINE + [("O1 octave", "raw:4"), ("Amp attack", "min"), ("Amp release", "min")]
+CLICK_SRC = SOURCE_NOISE + [("Amp attack", "min"), ("Amp release", "min")]
+STEP_SRC = SWEEP_SRC + [("Vel → amp", "100%"), ("Volume", "0 dB")]
+STEP_CHORD = [35, 71, 107]      # sent: B2, B5 and B8 sound (123 Hz, 988 Hz, 7.9 kHz), one in each band of a multiband
+CLICK_SECONDS = 0.001
+DYNAMIC_NAMES = re.compile(r"thresh|treshold|ratio|attack|release|knee|makeup|comp|limit|lookahead|decay lo|decay mid|decay hi", re.I)
+
+
+def beats(seconds):
+    return seconds * TEMPO / 60.0
+
+
+class TestBench:
+    """
+    The test signal's song: the machine M fed by three Neo Polys, Ck (a click, first, with time to ring out),
+    Sw (a stepped sine sweep) and St (level steps of a three-sine chord), each probed, and M probed. layout
+    "full" (at the defaults: 3 s to ring out, whole-tone sweep, steps) or "quick" (per-parameter sweeps: 1.5 s
+    to ring out, half-octave sweep, steps for dynamics only). A render that diverges leaves state running away,
+    so the song is built again after one.
+    """
+
+    def __init__(self, c, prof, layout="quick", steps=False):
+        self.c, self.prof, self.layout = c, prof, layout
+        self.with_steps = steps or layout == "full"
+        self.renders = 0
+        self.texts = {}
+        self.latency = None
+        self.dry_latency = True   # a setting with no dry sound starts where the defaults' did (not a dynamics' lookahead)
+        self.fresh = False        # a fresh instance per setting: a loop keeps what the last render left in it
+        self.held = []          # a context's changes, set again when the song is built again
+        self.click_at = 0.05
+        self.ring = {"full": 3.0, "eq": 0.4}.get(layout, 1.5)
+        t = self.click_at + self.ring
+        if layout in ("full", "eq"):
+            self.tones = mr.sweep_tones(step=2, low=16, high=134, start=t)
+        else:
+            self.tones = mr.sweep_tones(step=6, low=18, high=132, start=t)
+        _, _, last_start, last_dur = self.tones[-1]
+        t = last_start + last_dur + 0.1
+        self.steps, self.jump_at = None, None
+        if self.with_steps:
+            self.steps, self.jump_at, t = mr.step_notes(t)
+        self.end_beats = beats(t)
+        self.build()
+
+    def build(self):
+        c = self.c
+        c.call("song_new", discard_unsaved=True, tempo_bpm=TEMPO)
+        c.call("machine_add", gear=self.prof.gear, name="M", connect_to="Master")
+        length = int(math.ceil(self.end_beats)) + 1
+        self.length = length
+        for name, settings in (("Sw", SWEEP_SRC), ("Ck", CLICK_SRC)) + ((("St", STEP_SRC),) if self.with_steps else ()):
+            c.call("machine_add", gear="Neo Poly", name=name, connect_to="M")
+            c.call("param_set", machine=name, changes=[{"param": p, "value": v} for p, v in settings])
+        set_notes(c, "Sw", [note(n, beats(s), beats(d), 127) for n, _, s, d in self.tones], "midi", length=length)
+        set_notes(c, "Ck", [note(A4, beats(self.click_at), beats(CLICK_SECONDS), 127)], "midi", length=length)
+        if self.with_steps:
+            set_notes(c, "St", [note(n, beats(s), beats(d), v) for v, s, d in self.steps for n in STEP_CHORD], "midi", length=length)
+        if getattr(self, "held", None):
+            c.call("param_set", machine="M", changes=list(self.held), allow_unsafe=True)
+
+    def renew(self):
+        """A fresh instance of the machine in the same song (cheaper than building the song again): nothing a
+        loop kept from the last render comes back."""
+        c = self.c
+        c.call("machine_remove", machines=["M"], keep_chain=False)
+        c.call("machine_add", gear=self.prof.gear, name="M", connect_to="Master")
+        for name in ("Sw", "Ck") + (("St",) if self.with_steps else ()):
+            c.call("connect", **{"from": name, "to": "M"})
+        if self.held:
+            c.call("param_set", machine="M", changes=list(self.held), allow_unsafe=True)
+
+    def measure(self, changes=(), reset=True, retry=True):
+        """The features with these changes (the others at their defaults), then put back: response, click,
+        steps, thd, peak; {"diverged": reason} when the guard tripped (the song is built again). A loop that
+        still rings from the last render when the click comes (feedback near ±100 % never quite dies down in
+        the render's pre-roll) spoils it: the song is built again and it is measured once more."""
+        c = self.c
+        if changes:
+            if self.fresh:
+                self.renew()
+            r = c.call("param_set", machine="M", changes=list(changes), allow_unsafe=True)
+            for ch, got in zip(changes, r.get("changed", [])):
+                self.texts[(ch["param"], ch.get("track"), ch["value"])] = got.get("value", "")
+            # past the patterns: smoothed parameters arrive with nothing played into a loop before the click
+            render(c, self.length, self.length + WARM_BEATS, 0.0)
+        probes = ["Sw", "Ck", "M"] + (["St"] if self.with_steps else [])
+        try:
+            r = render(c, 0, self.end_beats, 0.2, probes=probes)
+        except ToolFailed as e:
+            forget_renders(c)
+            return {"error": str(e)[:200]}
+        self.renders += 1
+        out = {}
+        try:
+            if r["measure"].get("diverged"):
+                out = {"diverged": str(r["measure"]["diverged"][0] or "diverged")}
+            else:
+                out = self.features(r)
+        finally:
+            forget_renders(c)
+        if out.get("polluted") and retry and not out.get("diverged"):
+            self.build()
+            again = self.measure(changes, reset, retry=False)
+            again["rebuilt"] = True
+            return again
+        if out.get("diverged"):
+            self.build()
+        elif changes and reset:
+            c.call("param_set", machine="M", changes=[{k: v for k, v in ch.items() if k != "value"} | {"value": "default"} for ch in changes],
+                   allow_unsafe=True)
+        return out
+
+    def features(self, r):
+        files = {p.get("machine"): p.get("file") for p in r.get("probes", [])}
+        if not files.get("M"):
+            return {"error": "no probe of its output"}
+        rate, out_l, out_r = read_wav(files["M"])
+        _, sw, _ = read_wav(files["Sw"])
+        _, ck, _ = read_wav(files["Ck"])
+        peak = max(max(out_l), -min(out_l), max(out_r), -min(out_r)) if len(out_l) else 0.0
+        f = {"peak_dbfs": round(db(peak), 2) if peak > 0 else None}
+        a = int(self.click_at * rate)
+        before = max((abs(v) for v in out_l[max(0, a - int(0.04 * rate)):a]), default=0.0)
+        click = mr.click_features(rate, ck, out_l, out_r, self.click_at, CLICK_SECONDS, self.ring,
+                                  expected_latency=self.latency if self.dry_latency else None)
+        lat = (click or {}).get("latency_samples") or 0
+        if self.latency is None and click and not click.get("silent"):
+            self.latency = lat          # the defaults' latency: where the dry sound comes, for settings without one
+        after = max((abs(v) for v in out_l[a:a + int(0.3 * rate)]), default=0.0)
+        if after > 0 and before > after * 0.01:
+            f["polluted"] = True        # the last render still rings 40 dB or less under the click
+        if click is not None:
+            f["click"] = click
+        wob = []
+        resp = mr.response(self.tones, rate, sw, out_l, out_r, lat, wobble=wob)
+        f["response"] = mr.response_features(resp)
+        if f["response"] is not None and wob:
+            f["response"]["wobble_db"] = round(sorted(wob)[len(wob) // 2], 2)
+        if self.layout == "full":
+            f["response_points"] = [[hz, d] for hz, d, _ in resp if d is not None]
+        mono = [(a + b) / 2 for a, b in zip(out_l, out_r)] if self.layout == "full" else None
+        for fh in (1000.0, 250.0):
+            tone = min(self.tones, key=lambda t: abs(t[1] - fh))
+            _, f0, s, d = tone
+            a, b = int((s + 0.35 * d) * rate), int((s + 0.95 * d) * rate)
+            th, th_in = mr.harmonics(rate, sw, out_l if mono is None else mono, a, b, f0, lat)
+            if th is not None:
+                f.setdefault("thd", round(th, 2))
+                f.setdefault("thd_in", round(th_in, 2) if th_in is not None else None)
+                break
+        if self.with_steps:
+            _, st, _ = read_wav(files["St"])
+            f["steps"] = mr.step_features(rate, st, out_l, out_r, self.steps, self.jump_at, lat)
+        return f
+
+    def text(self, change):
+        return self.texts.get((change["param"], change.get("track"), change["value"]), change["value"])
+
+
+def compact(f):
+    """A setting's features for the draft: the numbers a person reads, not the curves."""
+    if not f:
+        return f
+    out = {}
+    if f.get("diverged") or f.get("error"):
+        return {k: f[k] for k in ("diverged", "error") if k in f}
+    r = f.get("response") or {}
+    for k in ("level_db", "spread_db", "centroid_oct", "max_hz", "prominence_db", "low_corner_hz", "high_corner_hz", "width_oct", "wobble_db"):
+        if r.get(k) is not None:
+            out[k] = r[k]
+    ck = f.get("click") or {}
+    for k in ("latency_samples", "direct_db", "early_db", "late_db", "t60_s", "ring_s", "late_onset_s", "copy_s", "tail_zcr_hz", "tail_low_db"):
+        if ck.get(k) is not None:
+            out[k] = ck[k]
+    if ck.get("echoes"):
+        out["echoes"] = ck["echoes"][:4]
+    st = f.get("steps") or {}
+    for k in ("compression_db", "knee_in_db", "attack_tau_s", "release_tau_s"):
+        if st.get(k) is not None:
+            out[k] = st[k]
+    for k in ("thd", "peak_dbfs", "pitch", "centroid_hz", "peakiness_db", "tprom_db", "tprom_hz"):
+        if f.get(k) is not None:
+            out[k] = f[k]
+    env = f.get("env") or {}
+    for k in ("attack_s", "half_s", "final_db", "release_s", "length_s", "peak_db", "bright_early_hz", "bright_mid_hz", "bright_late_hz", "level_wobble_db", "bright_wobble"):
+        if env.get(k) is not None:
+            out["env_" + k] = env[k]
+    return out
+
+
+def effect_type(click, prior):
+    """Delay or reverb from the click (U1 typed from a 20 ms burst and a 5 ms envelope): regular, separated echoes
+    are a delay; a smooth tail of 0.3 s or more without them a reverb. Otherwise the prior type stands."""
+    if not click or click.get("silent"):
+        return prior
+    ech = click.get("echoes") or []
+    times = [t for t, _ in ech]
+    if len(times) >= 3:
+        gaps = [b - a for a, b in zip(times, times[1:])]
+        mean = sum(gaps) / len(gaps)
+        if mean > 0.02 and max(abs(g - mean) for g in gaps) < 0.25 * mean:
+            return "delay"
+    t60 = click.get("t60_s")
+    if prior in ("delay", "reverb") and isinstance(t60, (int, float)) and t60 >= 0.3 and len(times) < 3 and (click.get("late_db") or -120) > -40:
+        return "reverb"
+    return prior
+
+
+def role_key(p, globals_):
+    """A parameter's key in profile.roles: its name ("track Volume" for a track parameter), with its index where a
+    global name repeats (FSM Infector's " - Decay #12")."""
+    if p.get("per_track"):
+        return "track " + p["name"]
+    if sum(1 for q in globals_ if q["name"] == p["name"]) > 1:
+        return f"{p['name']} #{p.get('index')}"
+    return p["name"]
+
+
+def eq_bands(names):
+    """Band names for an EQ's n gain (or frequency) parameters in order."""
+    n = len(names)
+    words = {1: ["mid"], 2: ["low", "high"], 3: ["low", "mid", "high"], 4: ["low", "lowmid", "highmid", "high"],
+             5: ["low", "lowmid", "mid", "highmid", "high"]}.get(n)
+    return dict(zip(names, words)) if words else {}
+
+
+def unit_of(p, inferred):
+    return (inferred.get((bool(p.get("per_track")), p["name"])) or {}).get("unit")
+
+
+def effect_role_sweeps(c, prof, globals_, tracks, inferred, ranges):
+    """Each parameter alone at its minimum and maximum (inside its safe range), against the defaults, through the
+    test signal: the features and a suggested role per parameter (prof.data["roles"]). An EQ's frequencies and widths
+    are measured with their band raised (they do nothing at 0 dB); parameters that change nothing at the defaults
+    and read as times or frequencies get a second look with what the sweep found to switch the effect on (a wet
+    level, a feedback) half way up."""
+    fx_type = prof.data.get("type", "")
+    dyn = fx_type == "dynamics" or any(DYNAMIC_NAMES.search(p["name"]) for p in globals_ + tracks)
+    gains = [p for p in globals_ if unit_of(p, inferred) == "dB" and re.search(r"gain|boost|level", p["name"], re.I)]
+    freqs = [p for p in globals_ if unit_of(p, inferred) == "Hz" or re.search(r"freq|cutoff|\bcut\b", p["name"], re.I)]
+    is_eq = len(gains) >= 2 and fx_type in ("EQ", "utility", "filter or EQ", "filter")
+    # an EQ's bands are read on whole tones (a narrow band falls between half-octave tones)
+    bench = TestBench(c, prof, "eq" if is_eq else "quick", steps=dyn)
+    bench.dry_latency = fx_type != "dynamics"
+    base = bench.measure()
+    bc = base.get("click") or {}
+    bench.fresh = fx_type in ("delay", "reverb", "modulation", "multi-effect") or bool(bc.get("echoes")) or \
+        (bc.get("late_db") if bc.get("late_db") is not None else -120) > -60 or bool(re.search(r"feed\s*back|\bfb\b|regen", " ".join(p["name"] for p in globals_ + tracks), re.I))
+    if base.get("diverged") or base.get("error") or not base.get("response"):
+        prof.notes.append(f"per-parameter sweeps skipped: the test signal at the defaults {base.get('diverged') or base.get('error') or 'gave no response'}")
+        return
+    kind_type = effect_type(base.get("click"), fx_type)
+    gain_band = eq_bands([p["name"] for p in gains]) if is_eq else {}
+    freq_band = eq_bands([p["name"] for p in freqs]) if is_eq and len(freqs) <= 5 else {}
+
+    def band_of(p):
+        if p["name"] in gain_band:
+            return gain_band[p["name"]]
+        if p["name"] in freq_band:
+            return freq_band[p["name"]]
+        if is_eq and re.search(r"\bq\b|width|bandw|slope", p["name"], re.I):
+            before = [f for f in freqs if f.get("index", 0) < p.get("index", -1)]
+            return freq_band.get(before[-1]["name"]) if before else None
+        return None
+
+    def sweep(p, lo, hi, default, ref, info, context=None, band=None):
+        """(role, why, ends, texts) for one parameter, in a context (changes held while it is measured)."""
+        if context:
+            c.call("param_set", machine="M", changes=context, allow_unsafe=True)
+            bench.held = list(context)
+        try:
+            cbase = bench.measure(reset=False) if context else base
+            ends, texts = {}, {}
+            for end, raw in (("min", lo), ("max", hi)):
+                if raw == default:
+                    ends[end], texts[end] = cbase, text_at(p, raw)
+                    continue
+                ch = dict(ref, value=f"raw:{raw}")
+                ends[end] = bench.measure([ch])
+                texts[end] = bench.text(ch)
+            role, why = mr.suggest_effect_role(info, ends, cbase, kind_type, eq_band=band)
+            if role == mr.NEED_MID:
+                raw = default if lo < default < hi else (lo + hi) // 2
+                mid = cbase if raw == default else bench.measure([dict(ref, value=f"raw:{raw}")])
+                role, why = mr.suggest_effect_role(info, ends, cbase, kind_type, eq_band=band, mid=mid)
+                if role == mr.NEED_MID:
+                    role, why = None, "undecided"
+            return role, why, ends, texts
+        finally:
+            if context:
+                bench.held = []
+                c.call("param_set", machine="M", changes=[dict(x, value="default") for x in context], allow_unsafe=True)
+
+    roles, plan, later = {}, [], []
+    for p in globals_ + tracks:
+        per_track = bool(p.get("per_track"))
+        sr = ranges.get((per_track, p["name"]))
+        lo, hi = (sr["min"], sr["max"]) if sr else (p["min"], p["max"])
+        default = min(max(p["default_raw"], p["min"]), p["max"])
+        ref = {"param": p["name"], "track": 0} if per_track else {"param": f"#{p['index']}"}
+        entry = inferred.get((per_track, p["name"])) or {}
+        info = {"name": p["name"], "kind": entry.get("kind"), "choices": entry.get("choices"), "min": lo, "max": hi, "unit": entry.get("unit"),
+                "texts": [t for _, t in (p.get("table") or [])][:12] if (hi - lo) <= 12 else None, "gain": p in gains}
+        plan.append((p, lo, hi, default, ref, info))
+    for p, lo, hi, default, ref, info in plan:
+        band = band_of(p) if not p.get("per_track") else None
+        context, note_ = None, ""
+        if band and p not in gains:
+            # an EQ's frequency or width: its band raised (its gain at its maximum), the others as they are
+            g = next((g for g in gains if gain_band.get(g["name"]) == band), None)
+            if g:
+                context = [{"param": f"#{g['index']}", "value": f"raw:{g['max']}"}]
+                note_ = f" (with {g['name']} at its maximum)"
+        role, why, ends, texts = sweep(p, lo, hi, default, ref, info, context, band)
+        if role is None and context:
+            # a band-split EQ's crossovers move nothing with one band raised alone: every other band raised instead
+            alt = [{"param": f"#{g['index']}", "value": "raw:" + str(g["max"] if i % 2 == 0 else g["default_raw"])} for i, g in enumerate(gains)]
+            role, why, ends, texts = sweep(p, lo, hi, default, ref, info, alt, band)
+            note_ = " (with every other band raised)"
+        if role:
+            why += note_
+        key = role_key(p, globals_)
+        roles[key] = {"suggested_role": role, "evidence": why,
+                      "min": dict(compact(ends.get("min")), raw=lo, text=texts.get("min")),
+                      "max": dict(compact(ends.get("max")), raw=hi, text=texts.get("max")),
+                      "_ends": ends}
+        if role is None and not band and not any(e.get("diverged") for e in ends.values()):
+            later.append((p, lo, hi, default, ref, info, key))
+    # A second look, for what does nothing at the defaults because the effect is off there (no wet, no feedback).
+    enablers = []
+    for p, lo, hi, default, ref, info in plan:
+        key = role_key(p, globals_)
+        r = roles.get(key) or {}
+        if r.get("suggested_role") in ("mix.wet", "delay.feedback", "reverb.decay"):
+            ends = r["_ends"]
+            # its active end: the one that isn't transparent, or with the longer tail
+            active = hi
+            if r["suggested_role"] == "mix.wet":
+                active = lo if mr._transparent(ends["max"], 6.02) else hi
+            else:
+                active = hi if (mr._tail((ends["max"].get("click") or {})) or 0) >= (mr._tail((ends["min"].get("click") or {})) or 0) else lo
+            raw = int(round(default + 0.6 * (active - default)))
+            if raw != default:
+                enablers.append(dict(ref, value=f"raw:{raw}"))
+    timed = [x for x in later if unit_of(x[0], inferred) in ("s", "ms", "Hz") or any(w in " ".join(str(t) for t in (x[5].get("texts") or [])).lower() for w in ("tick", "ms"))]
+    if enablers and timed:
+        for p, lo, hi, default, ref, info, key in timed[:12]:
+            role, why, ends, texts = sweep(p, lo, hi, default, ref, info, enablers, None)
+            if role:
+                roles[key] = {"suggested_role": role, "evidence": why + " (with the effect switched on: " +
+                              ", ".join(f"{e['param']} {e['value']}" for e in enablers) + ")",
+                              "min": dict(compact(ends.get("min")), raw=lo, text=texts.get("min")),
+                              "max": dict(compact(ends.get("max")), raw=hi, text=texts.get("max"))}
+    # A modulation effect's delay is read from where its copy sits: with the modulation's depth at the end where the
+    # response holds still, for what the first pass couldn't place.
+    steady = []
+    for p, lo, hi, default, ref, info in plan:
+        key = role_key(p, globals_)
+        r = roles.get(key) or {}
+        if r.get("suggested_role") in ("mod.depth", "lfo.depth") and r.get("_ends"):
+            wl = ((r["_ends"]["min"].get("response") or {}).get("wobble_db") or 0)
+            wh = ((r["_ends"]["max"].get("response") or {}).get("wobble_db") or 0)
+            steady.append(dict(ref, value=f"raw:{lo if wl <= wh else hi}"))
+    if steady and kind_type == "modulation":
+        for p, lo, hi, default, ref, info, key in later[:12]:
+            if roles.get(key, {}).get("suggested_role"):
+                continue
+            role, why, ends, texts = sweep(p, lo, hi, default, ref, info, steady, None)
+            if role and role != "mod.depth":
+                roles[key] = {"suggested_role": role, "evidence": why + " (with the modulation held still: " +
+                              ", ".join(f"{e['param']} {e['value']}" for e in steady) + ")",
+                              "min": dict(compact(ends.get("min")), raw=lo, text=texts.get("min")),
+                              "max": dict(compact(ends.get("max")), raw=hi, text=texts.get("max"))}
+    # And with a filter's cutoff half way (a resonance or a band's width does nothing while the filter is wide open).
+    cut = next(((p, lo, hi, ref) for p, lo, hi, default, ref, info in plan
+                if (roles.get(role_key(p, globals_)) or {}).get("suggested_role") == "filter.cutoff"), None)
+    if cut:
+        cp, clo, chi, cref = cut
+        half = [dict(cref, value=f"raw:{(clo + chi) // 2}")]
+        for p, lo, hi, default, ref, info, key in [x for x in later if not mr.is_choice(x[5]) and x[0] is not cp][:8]:
+            if roles.get(key, {}).get("suggested_role"):
+                continue
+            role, why, ends, texts = sweep(p, lo, hi, default, ref, info, half, None)
+            if role:
+                roles[key] = {"suggested_role": role, "evidence": why + f" (with {cp['name']} half way)",
+                              "min": dict(compact(ends.get("min")), raw=lo, text=texts.get("min")),
+                              "max": dict(compact(ends.get("max")), raw=hi, text=texts.get("max"))}
+    for r in roles.values():
+        r.pop("_ends", None)
+    prof.data["roles"] = {"default": compact(base), "type_from_click": kind_type, "params": roles, "renders": bench.renders}
+
+
+# ---- generators -------------------------------------------------------------------------------------------
+
+class NoteBench:
+    """A generator's held note (A4 sent as written, or its trigger), 1 s held and 1 s to let go: the envelope,
+    brightness and pitch per setting."""
+
+    def __init__(self, c, prof, mode, trigger=None, held=1.0, tail=1.0, pitch=A4):
+        self.c, self.prof, self.mode, self.trigger = c, prof, mode, trigger
+        self.held, self.tail, self.pitch = held, tail, pitch
+        self.renders = 0
+        self.texts = {}
+        self.build()
+
+    def build(self):
+        c = self.c
+        c.call("song_new", discard_unsaved=True, tempo_bpm=TEMPO)
+        c.call("machine_add", gear=self.prof.gear, name="M", connect_to="Master")
+        if self.prof.data.get("needs_wave"):
+            add_test_wave(c)
+        play(c, "M", self.mode, self.trigger, [note(self.pitch, 0, beats(self.held), 100)], length=int(beats(self.held + self.tail)) + 2)
+
+    def measure(self, changes=(), reset=True):
+        c = self.c
+        if changes:
+            r = c.call("param_set", machine="M", changes=list(changes), allow_unsafe=True)
+            for ch, got in zip(changes, r.get("changed", [])):
+                self.texts[(ch["param"], ch.get("track"), ch["value"])] = got.get("value", "")
+        try:
+            # past the note's end, so its note-off plays (a tracker machine's note is let go by an event, not by stopping)
+            r = render(c, 0, beats(self.held + 0.25), self.tail - 0.25)
+        except ToolFailed as e:
+            forget_renders(c)
+            return {"error": str(e)[:200]}
+        self.renders += 1
+        out = {}
+        try:
+            if r["measure"].get("diverged"):
+                out = {"diverged": str(r["measure"]["diverged"][0] or "diverged")}
+            elif r["measure"].get("silent", True):
+                out = {"silent": True}
+            else:
+                rate, left, right = read_wav(r["file"])
+                out["env"] = mr.note_envelope(rate, left, right, 0.0, self.held)
+                a = c.call("analyze", source=r["id"], metrics=["spectrum", "pitch"], from_seconds=0.03, to_seconds=max(0.1, self.held - 0.05))
+                sp = a.get("spectrum") or {}
+                out["centroid_hz"] = sp.get("centroid_hz")
+                out["peakiness_db"] = mr.peakiness((sp.get("third_octave") or {}).get("db") or [])
+                tp = mr.third_prominence((sp.get("third_octave") or {}).get("hz"), (sp.get("third_octave") or {}).get("db"), mr.midi_hz(self.pitch))
+                if tp:
+                    out["tprom_db"], out["tprom_hz"] = tp
+                pt = a.get("pitch") or {}
+                if pt.get("median_hz") and (pt.get("voiced_percent") or 0) >= 20:
+                    out["pitch"] = round(69 + 12 * math.log2(pt["median_hz"] / 440.0), 2)
+        finally:
+            forget_renders(c)
+        if out.get("diverged"):
+            self.build()
+        elif changes and reset:
+            c.call("param_set", machine="M", changes=[{k: v for k, v in ch.items() if k != "value"} | {"value": "default"} for ch in changes],
+                   allow_unsafe=True)
+        return out
+
+    def text(self, change):
+        return self.texts.get((change["param"], change.get("track"), change["value"]), change["value"])
+
+
+def play(c, machine, mode, trigger, notes, length=16):
+    """A fresh pattern "P" playing these notes: as notes (MIDI or tracks), or each as the generator's trigger."""
+    if not trigger:
+        set_notes(c, machine, notes, mode, length=length)
+        return
+    try:
+        c.call("pattern_delete", machine=machine, pattern="P")
+    except ToolFailed:
+        pass
+    c.call("pattern_create", machine=machine, name="P", length_beats=length)
+    args = {"machine": machine, "pattern": "P", "param": trigger["param"], "shape": "step",
+            "points": [{"at": n["start"], "value": f"raw:{trigger['value']}"} for n in notes]}
+    if trigger.get("track") is not None:
+        args["track"] = trigger["track"]
+    c.call("automation_write", **args)
+    c.call("arrangement_place", machine=machine, pattern="P", at=0)
+
+
+def find_trigger(c, prof, globals_):
+    """A generator without notes: a played track parameter (machine_describe's played_parameters) or a global one
+    named like a trigger that makes it sound when written as an event. None when none does."""
+    d = c.call("machine_describe", machine="M")
+    cands = [{"param": p["name"], "track": 0, "value": p.get("max_raw", 1)} for p in d.get("played_parameters") or []]
+    cands += [{"param": p["name"], "track": None, "value": p["max"]} for p in globals_ if re.search(r"trig", p["name"], re.I)]
+    tried, sounding = [], []
+    for cand in cands[:16]:
+        try:
+            play(c, "M", None, cand, [note(A4, 0, 1)], length=8)
+            r = render(c, 0, 4, 0.5)
+            loud = not r["measure"].get("silent", True)
+            forget_renders(c)
+        except ToolFailed as e:
+            tried.append(f"{cand['param']}: {str(e)[:80]}")
+            continue
+        tried.append(f"{cand['param']} {'sounds' if loud else 'silent'}")
+        if loud:
+            sounding.append(cand)
+    if sounding:
+        first = dict(sounding[0], tried=tried)
+        # every trigger that sounds (a drum machine's drums): each parameter is swept with its own drum's
+        first["all"] = [{k: x[k] for k in ("param", "track", "value")} for x in sounding]
+        return first
+    if tried:
+        prof.notes.append("no trigger made it sound: " + "; ".join(tried))
+    return None
+
+
+def generator_depth(c, prof, globals_, tracks, inferred, ranges, roles=True):
+    """Velocity response, envelope length and, unless roles is False, per-parameter sweeps of a held note."""
+    notes = prof.data.get("notes") or {}
+    mode, trigger = notes.get("input"), prof.data.get("trigger")
+    if (mode in (None, "none")) and not trigger:
+        return
+    pitch = A4 - (notes.get("pitch_offset") or 0) if notes.get("pitched") else A4
+    # The envelope: 2 s held, 2 s to let go.
+    eb = NoteBench(c, prof, mode, trigger, held=2.0, tail=2.0, pitch=pitch)
+    full = eb.measure()
+    if full.get("env"):
+        prof.data["envelope"] = dict(full["env"], note="A4 at velocity 100, held 2 s")
+    # Velocity: four notes, 16 … 127 (triggers have no velocity).
+    if not trigger:
+        c.call("song_new", discard_unsaved=True, tempo_bpm=TEMPO)
+        c.call("machine_add", gear=prof.gear, name="M", connect_to="Master")
+        if prof.data.get("needs_wave"):
+            add_test_wave(c)
+        vels = [16, 32, 64, 127]
+        set_notes(c, "M", [note(pitch, beats(i * 1.0), beats(0.5), v) for i, v in enumerate(vels)], mode, length=10)
+        r = render(c, 0, beats(4.0), 0.5)
+        rate, left, right = read_wav(r["file"])
+        levels = {}
+        for i, v in enumerate(vels):
+            a, b = int(i * 1.0 * rate), int((i * 1.0 + 0.6) * rate)
+            n = int(0.01 * rate)
+            best = 0.0
+            for k in range(a, b - n, n):
+                e = mr.energy(left, k, k + n) + mr.energy(right, k, k + n)
+                best = max(best, e / (2 * n))
+            levels[v] = round(10 * math.log10(best), 2) if best > 0 else None
+        forget_renders(c)
+        vr = mr.velocity_response(levels)
+        if vr:
+            prof.data["velocity"] = dict(vr, levels_db={str(k): v for k, v in levels.items()})
+    if not roles:
+        return
+    # a low note (A1, 55 Hz) fills every third octave from 500 Hz up with harmonics: a resonance's peak stands out
+    nb = NoteBench(c, prof, mode, trigger, pitch=pitch - 36)
+    base = nb.measure()
+    if base.get("silent") or base.get("diverged") or base.get("error"):
+        prof.notes.append(f"per-parameter sweeps skipped: the held note at the defaults {base}")
+        return
+    drum = prof.data.get("type") in ("unpitched",) or bool(trigger)
+    gtype = "drums" if drum else prof.data.get("type", "")
+    out, plan, ends_of = {}, [], {}
+    # A drum machine's drums each have their trigger: a parameter is swept with the drum its name starts with ("BD Decay":
+    # "BD Trigger"), the others with the first that sounds.
+    triggers = prof.data.pop("_triggers", None) or []
+    benches, current = {}, [nb]
+
+    def bench_for(p):
+        word = (p["name"].split() or [""])[0].lower()
+        t = next((x for x in triggers if (x["param"].split() or [""])[0].lower() == word), None)
+        if t is None or t["param"] == (trigger or {}).get("param"):
+            b, bb = nb, base
+        else:
+            if t["param"] not in benches:
+                b = NoteBench(c, prof, mode, t, pitch=pitch - 36)
+                benches[t["param"]] = (b, b.measure())
+                current[0] = b
+            b, bb = benches[t["param"]]
+        if current[0] is not b:
+            b.build()
+            current[0] = b
+        return b, bb
+
+    def sweep(p, lo, hi, default, ref, info, context=None):
+        b, bbase = bench_for(p)
+        if context:
+            c.call("param_set", machine="M", changes=context, allow_unsafe=True)
+        try:
+            cbase = b.measure(reset=False) if context else bbase
+            ends, texts = {}, {}
+            for end, raw in (("min", lo), ("max", hi)):
+                if raw == default:
+                    ends[end], texts[end] = cbase, text_at(p, raw)
+                    continue
+                ch = dict(ref, value=f"raw:{raw}")
+                ends[end] = b.measure([ch])
+                texts[end] = b.text(ch)
+            role, why = mr.suggest_generator_role(info, ends, cbase, gtype)
+            if b is not nb and role:
+                why += f" (hit by {b.trigger['param']})"
+            return role, why, ends, texts
+        finally:
+            if context:
+                c.call("param_set", machine="M", changes=[dict(x, value="default") for x in context], allow_unsafe=True)
+
+    for p in globals_ + tracks:
+        per_track = bool(p.get("per_track"))
+        sr = ranges.get((per_track, p["name"]))
+        lo, hi = (sr["min"], sr["max"]) if sr else (p["min"], p["max"])
+        default = min(max(p["default_raw"], p["min"]), p["max"])
+        ref = {"param": p["name"], "track": 0} if per_track else {"param": f"#{p['index']}"}
+        entry = inferred.get((per_track, p["name"])) or {}
+        info = {"name": p["name"], "kind": entry.get("kind"), "choices": entry.get("choices"), "min": lo, "max": hi, "unit": entry.get("unit"),
+                "texts": [t for _, t in (p.get("table") or [])][:12] if (hi - lo) <= 12 else None}
+        role, why, ends, texts = sweep(p, lo, hi, default, ref, info)
+        key = role_key(p, globals_)
+        plan.append((p, lo, hi, default, ref, info, key))
+        ends_of[key] = ends
+        out[key] = {"suggested_role": role, "evidence": why,
+                    "min": dict(compact(ends.get("min")), raw=lo, text=texts.get("min")),
+                    "max": dict(compact(ends.get("max")), raw=hi, text=texts.get("max"))}
+    # Key tracking reads as a cutoff on one note: what brightens the low note is tried on a note three octaves up too.
+    cutlike = [x for x in plan if out[x[6]]["suggested_role"] == "filter.cutoff" and not (x[5].get("kind") in ("enum", "switch") or x[2] - x[1] <= 4)]
+    if cutlike and not drum:
+        hb = NoteBench(c, prof, mode, trigger, pitch=pitch)
+        current[0] = hb
+        hbase = hb.measure()
+        if not (hbase.get("silent") or hbase.get("diverged") or hbase.get("error")):
+            for p, lo, hi, default, ref, info, key in cutlike[:6]:
+                hends = {end: (hbase if raw == default else hb.measure([dict(ref, value=f"raw:{raw}")])) for end, raw in (("min", lo), ("max", hi))}
+                kt = mr.keytrack_role(ends_of[key], hends, 36, mr.midi_hz(A4 - 36), mr.midi_hz(A4))   # as they sound
+                if kt:
+                    out[key]["suggested_role"], out[key]["evidence"] = kt
+        nb.renders += hb.renders
+    # A second look at times that change nothing: with a choice that shapes the level by the envelope (a VCA's mode)
+    # switched to its other setting, the amp follows the envelope instead of the gate.
+    def shaped(f):
+        e, b_ = (f or {}).get("env") or {}, (base.get("env") or {})
+        return any(isinstance(e.get(k), (int, float)) and isinstance(b_.get(k), (int, float)) and abs(e[k] - b_[k]) >= th
+                   for k, th in (("final_db", 3), ("half_s", 0.05), ("release_s", 0.1)))
+    switch = None
+    for p, lo, hi, default, ref, info, key in plan:
+        if out[key]["suggested_role"] is None and (info.get("kind") in ("enum", "switch") or hi - lo <= 4):
+            for end, raw in (("min", lo), ("max", hi)):
+                if raw != default and shaped(ends_of[key].get(end)):
+                    switch = [dict(ref, value=f"raw:{raw}")]
+                    break
+        if switch:
+            break
+    if switch:
+        timed = [x for x in plan if out[x[6]]["suggested_role"] is None and (x[5].get("unit") in ("s", "ms") or
+                                                                            re.search(r"attack|decay|release|sustain", x[0]["name"], re.I))]
+        for p, lo, hi, default, ref, info, key in timed[:8]:
+            role, why, ends, texts = sweep(p, lo, hi, default, ref, info, switch)
+            if role:
+                out[key] = {"suggested_role": role, "evidence": why + " (with " + ", ".join(f"{e['param']} {e['value']}" for e in switch) + ")",
+                            "min": dict(compact(ends.get("min")), raw=lo, text=texts.get("min")),
+                            "max": dict(compact(ends.get("max")), raw=hi, text=texts.get("max"))}
+    # And with the filter part closed (its cutoff a third of the way up), for what does nothing while it is open: a
+    # resonance above the band, a filter envelope's amount and times, key tracking.
+    cut = next(((p, lo, hi, ref) for p, lo, hi, default, ref, info, key in plan if out[key]["suggested_role"] == "filter.cutoff"), None)
+    if cut:
+        cp, clo, chi, cref = cut
+        closed = [dict(cref, value=f"raw:{int(clo + 0.35 * (chi - clo))}")]
+        rest = [x for x in plan if out[x[6]]["suggested_role"] is None and x[0] is not cp and not (x[5].get("kind") in ("enum", "switch") or x[2] - x[1] <= 4)]
+        for p, lo, hi, default, ref, info, key in rest[:12]:
+            role, why, ends, texts = sweep(p, lo, hi, default, ref, info, closed)
+            if role:
+                out[key] = {"suggested_role": role, "evidence": why + f" (with {cp['name']} a third of the way up)",
+                            "min": dict(compact(ends.get("min")), raw=lo, text=texts.get("min")),
+                            "max": dict(compact(ends.get("max")), raw=hi, text=texts.get("max"))}
+    prof.data["roles"] = {"default": compact(base), "params": out, "renders": nb.renders}
+
+
+def sieve_pitch(c, prof, mode):
+    """Where analyze's YIN hears no pitch (a decaying, resonant bass; FM): the harmonic sieve on A2, A3 and A4. The
+    pitch convention when all three agree, else unpitched with what it heard."""
+    heard = {}
+    for sent in (A4 - 24, A4 - 12, A4):
+        set_notes(c, "M", [note(sent, 0, 1.5)], mode)
+        r = render(c, 0, 2, 0.2)
+        rate, left, right = read_wav(r["file"])
+        a = int(0.03 * rate)
+        mono = [(x + y) / 2 for x, y in zip(left[a:a + 16384], right[a:a + 16384])]
+        forget_renders(c)
+        if mr.energy(mono, 0, len(mono)) <= 1e-9:
+            continue
+        binhz, mags = mr.magnitude_spectrum(mono, rate)
+        s = mr.pitch_sieve(binhz, mags, sent)
+        if s:
+            heard[Pitch(sent)] = dict(s, sent=sent)
+    pitched = [v for v in heard.values() if v.get("pitched")]
+    offs = {v["midi"] - v["sent"] for v in pitched}
+    result = {"method": "harmonic sieve (A2, A3, A4)",
+              "heard": {k: {"midi": v["midi"], "cents": v["cents"], "share": v["share"]} for k, v in heard.items()}}
+    share = sum(v["share"] for v in pitched) / len(pitched) if pitched else 0.0
+    if len(pitched) >= 2 and len(offs) == 1 and len(pitched) == len(heard) and share >= 0.6:
+        k = offs.pop()
+        result.update({"pitched": True, "pitch_offset": -k, "cents": round(sum(v["cents"] for v in pitched) / len(pitched), 1)})
+    else:
+        result["pitched"] = False
+        result["why"] = ("its harmonics hold less than 60 % of the sound (inharmonic or noisy)" if not pitched or share < 0.6
+                         else "the notes don't agree on one offset" if len(offs) > 1 else "pitched on some notes only")
+    return result
+
+
+def denormal_test(c, prof, kind):
+    """The machine's own work time per second of audio (render's cpu, the engine's counters) while its input plays
+    (2 s of noise, or a held note) and over 20 s after it stops, in 2 s windows: a machine whose time climbs once
+    its input is silent is working on denormal numbers."""
+    notes = prof.data.get("notes") or {}
+    c.call("song_new", discard_unsaved=True, tempo_bpm=TEMPO)
+    c.call("machine_add", gear=prof.gear, name="M", connect_to="Master")
+    if kind == "effect":
+        c.call("machine_add", gear="Neo Poly", name="Src", connect_to="M")
+        c.call("param_set", machine="Src", changes=[{"param": p, "value": v} for p, v in SOURCE_NOISE] + [{"param": "Amp release", "value": "min"}])
+        set_notes(c, "Src", [note(A4, 0, beats(2.0), 127)], "midi", length=8)
+    else:
+        mode, trigger = notes.get("input"), prof.data.get("trigger")
+        if mode in (None, "none") and not trigger:
+            return None
+        if prof.data.get("needs_wave"):
+            add_test_wave(c)
+        play(c, "M", mode, trigger, [note(A4, 0, beats(2.0), 100)], length=8)
+    def windows():
+        r = c.call("render", **{"from": 0, "to": beats(2.0), "tail_seconds": 20.0, "cpu": True, "cpu_window_seconds": 2.0}, timeout=max(c.timeout, 180))
+        c.renders += [r.get("file")]
+        forget_renders(c)
+        row = next((x for x in r.get("cpu") or [] if x.get("machine") == "M"), None)
+        return (row or {}).get("windows_ms_per_second", [])[:11]   # 2 s windows; the last, partial one is left out
+
+    def judge(w):
+        playing, after = w[0], w[1:]
+        out = {"playing_ms_per_s": playing, "silent_ms_per_s": sorted(after)[len(after) // 2], "silent_worst_ms_per_s": max(after), "windows_ms_per_s": w}
+        # slower for 4 s or more on end (two windows in a row), not one window's spike (a collection, a page fault)
+        slow = 2 * max(playing, 0.05)
+        runs = [min(a, b) for a, b in zip(after, after[1:]) if a > slow and b > slow and min(a, b) - playing >= 1.0]
+        if runs:
+            out["slowdown"] = round(max(runs) / max(playing, 0.05), 1)
+            out["slow_seconds"] = 2 * sum(1 for x in after if x > slow)
+        return out
+
+    w = windows()
+    if len(w) < 2:
+        return None
+    out = judge(w)
+    if out.get("slowdown"):
+        # a busy computer only adds time: a slowdown must show again, window by window, in a second render
+        w2 = windows()
+        if len(w2) == len(w):
+            out = judge([round(min(a, b), 3) for a, b in zip(w, w2)])
+            out["renders"] = 2
+    return out
 
 
 def profile_machine(c, gear, kind, baseline, generated):
@@ -1006,6 +1812,23 @@ def profile_machine(c, gear, kind, baseline, generated):
         prof.notes.append("a control machine (moves other machines' parameters): no audio test")
     elif kind == "generator":
         profile_generator(c, prof, info, baseline)
+        # U2 in depth: a generator without notes (no Note parameter, deaf to MIDI) may play from a trigger.
+        if (prof.data.get("notes") or {}).get("input") == "none" and not info.get("note_parameter") and DEPTH["triggers"]:
+            trig = find_trigger(c, prof, globals_)
+            if trig:
+                prof.data["trigger"] = {k: trig[k] for k in ("param", "track", "value")}
+                if len(trig.get("all", [])) > 1:
+                    prof.data["trigger"]["others"] = [x["param"] for x in trig["all"][1:]]
+                    prof.data["_triggers"] = trig["all"]
+                prof.warnings = [w for w in prof.warnings if "no sound from a MIDI note" not in w]
+                prof.notes.append(f"plays from a trigger, not notes: {trig['param']}" + (" (track 0)" if trig.get("track") is not None else "") +
+                                  f" written as an event (automation_write, raw {trig['value']}); tried: {'; '.join(trig.get('tried', []))}")
+                prof.data["type"] = "triggered"
+                play(c, "M", None, prof.data["trigger"], [note(A4, 0, 1)], length=8)
+                m = render(c, 0, 4, 1.0)["measure"]
+                forget_renders(c)
+                prof.data["level"] = {"note": "one trigger", "integrated_lufs": loudness(m), "sample_peak_dbfs": finite_peak(m),
+                                      "true_peak_dbtp": (m.get("peaks") or {}).get("true_peak_dbtp")}
     else:
         profile_effect(c, prof, info, baseline)
         type_from_parameters(prof, globals_)
@@ -1020,9 +1843,50 @@ def profile_machine(c, gear, kind, baseline, generated):
         prof.data["second_instance"] = dict(facts, verdict=again)
         prof.problems[-1] += (" (a second fresh instance too: " + describe_level(again, facts) + ")" if again == "diverging"
                               else f" (not a second fresh instance, {again} in the level test: it varies from instance to instance)")
+    # U2 in depth (mcp-server.md §12.12): per-parameter sweeps (suggested roles), a generator's velocity and envelope,
+    # denormal slowdowns. Neo machines keep their generated manifests: their sweeps only with --roles-generated.
+    depth_ranges = prof.data.get("safe_ranges", {})
+    if prof.data["type"] != "control" and not prof.diverging and DEPTH["on"]:
+        roles = DEPTH["roles"] and (not generated or DEPTH["roles_generated"])
+        try:
+            if kind == "effect" and not (prof.data.get("effect") or {}).get("silent"):
+                if roles:
+                    effect_role_sweeps(c, prof, globals_, tracks, inferred, depth_ranges)
+            elif kind == "generator":
+                generator_depth(c, prof, globals_, tracks, inferred, depth_ranges, roles=roles)
+            if DEPTH["denormal"]:
+                dn = denormal_test(c, prof, kind)
+                if dn:
+                    prof.data["denormal"] = dn
+                    if dn.get("slowdown"):
+                        prof.warn(f"slows down after its input goes silent (denormal numbers, likely): up to {dn['silent_worst_ms_per_s']} ms of work "
+                                  f"per second of audio, for about {dn.get('slow_seconds')} s of the 20 s after, against {dn['playing_ms_per_s']} while "
+                                  f"it plays ({dn['slowdown']}× for 4 s or more)")
+        except ToolFailed as e:
+            prof.notes.append(f"the depth passes stopped: {e}")
+    # The summary and the draft keep each parameter's role, its evidence and the ends measured; the features at each
+    # end (a few dozen numbers a parameter) go to <out>/roles-detail/ for a person checking a suggestion.
+    if prof.data.get("roles") and DEPTH.get("detail_dir"):
+        try:
+            write_json(os.path.join(DEPTH["detail_dir"], gear + ".json"), prof.data["roles"])
+        except OSError:
+            pass
+    for r in ((prof.data.get("roles") or {}).get("params") or {}).values():
+        for end in ("min", "max"):
+            if isinstance(r.get(end), dict):
+                r[end] = {k: r[end][k] for k in ("raw", "text", "diverged", "error") if k in r[end]}
+    prof.data.pop("_triggers", None)
+    suggested = {}
+    keys = {role_key(p, globals_): p for p in globals_ + tracks}
+    for key, r in ((prof.data.get("roles") or {}).get("params") or {}).items():
+        p = keys.get(key)
+        if r.get("suggested_role") and p is not None:
+            suggested[id(p)] = (r["suggested_role"], r.get("evidence", ""))
     ranges = prof.data.pop("safe_ranges", {})
-    prof.data["entries"] = {group: [manifest_entry(p, inferred[(per_track, p["name"])], ranges.get((per_track, p["name"])))
-                                    for p in ps if inferred[(per_track, p["name"])].get("kind") or (per_track, p["name"]) in ranges]
+    prof.data["entries"] = {group: [manifest_entry(p, inferred[(per_track, p["name"])], ranges.get((per_track, p["name"])),
+                                                   suggested.get(id(p)))
+                                    for p in ps if inferred[(per_track, p["name"])].get("kind") or (per_track, p["name"]) in ranges
+                                    or id(p) in suggested]
                             for group, ps, per_track in (("global", globals_, False), ("track", tracks, True))}
     if ranges:
         prof.data["safe_ranges"] = {("track " if pt else "") + n: r for (pt, n), r in ranges.items()}
@@ -1055,6 +1919,10 @@ def summary_line(e):
     k = e.get("kind")
     if k == "generator" and e.get("notes"):
         n = e["notes"]
+        if n.get("input") == "none" and e.get("trigger"):
+            tr = e["trigger"]
+            return (f"Generator (profiled draft): plays from a trigger, not notes: its {tr['param']} column" +
+                    (" (a track parameter)" if tr.get("track") is not None else "") + ", written with automation_write.")
         if n.get("input") == "none":
             return f"{t.capitalize()} (profiled draft): no sound from a note at its defaults."
         bits = []
@@ -1112,7 +1980,10 @@ def draft_manifest(e):
     if e.get("needs_window"):
         m["health"]["needs_window"] = e["needs_window"]
     # Timings (CPU, load time) vary run to run: they stay in the summary and the report, not the draft.
-    m["profile"] = {k: e[k] for k in ("level", "effect", "level_test", "sweeps") if k in e}
+    m["profile"] = {k: e[k] for k in ("level", "effect", "level_test", "sweeps", "trigger", "envelope", "velocity", "roles", "denormal") if k in e}
+    if m["profile"].get("denormal"):
+        # timings vary run to run: the draft keeps whether it slows down, the summary the numbers
+        m["profile"]["denormal"] = {k: v for k, v in m["profile"]["denormal"].items() if k == "slowdown"} or {"slowdown": None}
     m["parameters"] = (e.get("entries") or {}).get("global", [])
     m["track_parameters"] = (e.get("entries") or {}).get("track", [])
     return checked_draft(m)
@@ -1147,7 +2018,13 @@ def write_json(path, data):
         f.write("\n")
 
 
-def health_report(summary):
+def fmt_s(t):
+    return "" if not isinstance(t, (int, float)) else f"{t * 1000:.0f} ms" if t < 1 else f"{t:.2f} s"
+
+
+def health_report(summary, curated=None):
+    """The report. curated: {gear: {"name" or "track name": role}} from the curated manifests, for the roles' table."""
+    curated = curated or {}
     machines = summary["machines"]
     rows = sorted(machines.values(), key=lambda e: (e.get("kind", ""), e["gear"].lower()))
     by_platform = {}
@@ -1172,12 +2049,22 @@ def health_report(summary):
         f"{len(rows)} machines profiled ({', '.join(f'{n} on {p}' for p, n in sorted(by_platform.items()))}). "
         f"{len(groups['diverging'])} diverging, {len(groups['hot'])} hot, {len(groups['needs a window'])} needing a window, "
         f"{len(groups['unhealthy'])} with other problems, {len(groups['warn'])} with other warnings, {len(groups['ok'])} clean. "
-        f"Crashes or hangs: {len(crashes)}. Swept parameter by parameter: {len(swept)} machines; {ranges} safe ranges.",
+        f"Crashes or hangs: {len(crashes)}. Swept parameter by parameter: {len(swept)} machines; {ranges} safe ranges. "
+        f"Slow down after their input goes silent: {sum(1 for e in rows if (e.get('denormal') or {}).get('slowdown'))}. "
+        f"Suggested roles: {sum(1 for e in rows for r in ((e.get('roles') or {}).get('params') or {}).values() if r.get('suggested_role'))} "
+        f"parameters on {sum(1 for e in rows if any(r.get('suggested_role') for r in ((e.get('roles') or {}).get('params') or {}).values()))} machines.",
         "",
         "How it's measured: a level test renders 4 s of the machine alone, fed noise at a mix's level (effects, peaks near −9 dBFS) or "
         "holding A4 (generators): at its defaults, with every parameter at its minimum and at its maximum at once, and, for machines "
         "that misbehave that way and effects with a feedback, resonance, gain or Q parameter, each parameter alone at each end. A level "
-        "that grew over 4 s is rendered for 30 s: an attack settles, a runaway keeps growing (its last 10 s more than 6 dB over the 10 s before).",
+        "that grew over 4 s is rendered for 30 s: an attack settles, a runaway keeps growing (its last 10 s more than 6 dB over the 10 s before). "
+        "A loop's or a resonance's hot end that rings more than 24 dB over its level at the default gets a safe range by bisection too.",
+        "",
+        "In depth (mcp-server.md §12.12): a test signal for effects, played by Neo Poly and read on both sides: a click with time to ring out "
+        "(latency, decay, echoes), a stepped sine sweep (the response) and, for dynamics, level steps of a three-sine chord (the curve, attack "
+        "and release); each parameter alone at its ends through it, or a held note on generators, names a suggested role. Generators: velocity "
+        "response, envelope length, a harmonic sieve where YIN hears no pitch, triggers for machines without notes. Every machine: its own work "
+        "time per second of audio over the 20 s after its input stops, against while it plays.",
         "",
         "Pitch conventions of the generators (the offset `notes_write` applies so the written pitch plays): " +
         (", ".join(f"{k}: {v}" for k, v in sorted(offsets.items())) or "none profiled") + ".",
@@ -1225,26 +2112,87 @@ def health_report(summary):
         lines += [f"| {e['gear']} | {e.get('platform', '')} | {'; '.join(e['warnings'])} |" for e in warned]
     else:
         lines.append("None.")
-    lines += ["", "## Generators", "", "| Machine | Type | Notes in | Pitch offset | Voices | Level (LUFS, one note) | CPU ms/s | Health |", "|---|---|---|---|---|---|---|---|"]
+    slow = [e for e in rows if (e.get("denormal") or {}).get("slowdown")]
+    lines += ["", "## Slow after silence", "",
+              "Machines whose own work time per second of audio, for 4 s or more of the 20 s after their input stops, is more than twice what "
+              "it is while the input plays (and 1 ms/s more): denormal numbers in a decaying state, most likely. A warning: the engine's "
+              "time, not the sound.", ""]
+    if slow:
+        lines += ["| Machine | Platform | Playing ms/s | After silence ms/s (worst) | For | × |", "|---|---|---|---|---|---|"]
+        for e in slow:
+            d = e["denormal"]
+            lines.append(f"| {e['gear']} | {e.get('platform', '')} | {d.get('playing_ms_per_s')} | {d.get('silent_worst_ms_per_s')} | "
+                         f"{d.get('slow_seconds', '')} s | {d.get('slowdown')} |")
+    else:
+        lines.append("None.")
+    # Suggested roles: the filter, time and mix ones against the curated roles, then every draft's.
+    lines += ["", "## Suggested roles", "",
+              "What moving each parameter alone changes, as a role (`suggested_role` in the drafts, `machine_describe` shows it). Curated "
+              "manifests keep their own roles: for their filter, time and mix parameters, the profile's suggestion is listed beside the "
+              "curated role, and a disagreement is a note here, never a change to the manifest.", ""]
+    agree = total = 0
+    rows_c = []
+    for e in rows:
+        cur = curated.get(e["gear"])
+        params = (e.get("roles") or {}).get("params") or {}
+        if not cur:
+            continue
+        for name, role in cur.items():
+            cat = mr.category(role)
+            if not cat:
+                continue
+            r = params.get(name) or {}
+            sug = r.get("suggested_role")
+            ok_ = mr.agrees(role, sug)
+            agree += ok_
+            total += 1
+            rows_c.append(f"| {e['gear']} | {name} | {cat} | `{role}` | {('`' + sug + '`') if sug else '—'} | {'yes' if ok_ else 'no'} | "
+                          f"{(r.get('evidence') or 'not swept on this platform').replace('|', '/')} |")
+    if rows_c:
+        lines += [f"Curated filter, time and mix parameters: {agree} of {total} suggestions agree.", "",
+                  "| Machine | Parameter | Kind | Curated | Suggested | Agrees | Evidence |", "|---|---|---|---|---|---|---|"] + rows_c
+    drafts = [e for e in rows if not curated.get(e["gear"]) and not e.get("generated") and any(r.get("suggested_role") for r in ((e.get("roles") or {}).get("params") or {}).values())]
+    if drafts:
+        lines += ["", "Drafts:", "", "| Machine | Suggested roles |", "|---|---|"]
+        for e in drafts:
+            ps = (e.get("roles") or {}).get("params") or {}
+            lines.append(f"| {e['gear']} | " + "; ".join(f"{n}: `{r['suggested_role']}`" for n, r in ps.items() if r.get("suggested_role")) + " |")
+    lines += ["", "## Generators", "", "| Machine | Type | Notes in | Pitch offset | Voices | Level (LUFS, one note) | Velocity (dB per doubling) | "
+              "Attack / release / length | CPU ms/s | After silence ms/s | Health |", "|---|---|---|---|---|---|---|---|---|---|---|"]
     for e in rows:
         if e.get("kind") != "generator":
             continue
         n = e.get("notes") or {}
         off = "" if not n.get("pitched") else f"{n.get('pitch_offset', 0):+d}" + (f" ({n.get('cents'):+.0f} ct)" if abs(n.get("cents") or 0) >= 1 else "")
         lvl = (e.get("level") or {}).get("integrated_lufs")
-        lines.append(f"| {e['gear']} | {e.get('type', '')} | {n.get('input', '')} | {off} | {n.get('polyphony', '')} | "
-                     f"{'' if lvl is None else lvl} | {e.get('cpu_ms_per_s', '')} | {category(e)} |")
-    lines += ["", "## Effects", "", "| Machine | Type (traits) | Gain dB | Latency (samples) | Tail s | CPU ms/s | Health |", "|---|---|---|---|---|---|---|"]
+        vel = (e.get("velocity") or {}).get("db_per_doubling")
+        env = e.get("envelope") or {}
+        envs = " / ".join(fmt_s(env.get(k)) or "—" for k in ("attack_s", "release_s", "length_s")) if env else ""
+        if env.get("release_past_window"):
+            envs = envs.replace(fmt_s(env.get("release_s")), "> " + fmt_s(env.get("release_s")), 1)
+        inn = n.get("input", "") + (f" (trigger: {e['trigger']['param']})" if e.get("trigger") else "")
+        if n.get("pitch_method"):
+            off += " (sieve)"
+        lines.append(f"| {e['gear']} | {e.get('type', '')} | {inn} | {off} | {n.get('polyphony', '')} | "
+                     f"{'' if lvl is None else lvl} | {'' if vel is None else vel} | {envs} | {e.get('cpu_ms_per_s', '')} | "
+                     f"{(e.get('denormal') or {}).get('silent_ms_per_s', '')} | {category(e)} |")
+    lines += ["", "## Effects", "", "| Machine | Type (traits) | Gain dB | Latency (samples) | Tail s | T60 (click) | First echo | Response −3 dB band | "
+              "CPU ms/s | After silence ms/s | Health |", "|---|---|---|---|---|---|---|---|---|---|---|"]
     for e in rows:
         if e.get("kind") != "effect":
             continue
         fx = e.get("effect") or {}
+        imp, rs = fx.get("impulse") or {}, fx.get("response_summary") or {}
+        echo = (imp.get("echoes") or [[None]])[0][0]
+        band = f"{rs['low_corner_hz']:.0f} Hz – {rs['high_corner_hz'] / 1000:.1f} kHz" if rs.get("low_corner_hz") and rs.get("high_corner_hz") else ""
         lines.append(f"| {e['gear']} | {', '.join(fx.get('traits', [])) or e.get('type', '')} | {fx.get('gain_db', '')} | {fx.get('latency_samples', '')} | "
-                     f"{fx.get('tail_seconds', '')} | {e.get('cpu_ms_per_s', '')} | {category(e)} |")
+                     f"{fx.get('tail_seconds', '')} | {fmt_s(imp.get('t60_s'))} | {fmt_s(echo)} | {band} | {e.get('cpu_ms_per_s', '')} | "
+                     f"{(e.get('denormal') or {}).get('silent_ms_per_s', '')} | {category(e)} |")
     lines += ["", "## Not measured yet", "",
-              "What moving each parameter changes (for roles), velocity response and envelope length, denormal slowdowns, swept-sine and "
-              "impulse responses (the source here is a Neo Poly's noise and sine), and whether `Work` reports silence (the engine doesn't "
-              "expose it): mcp-server.md §12.7, U2.", ""]
+              "Whether `Work` reports silence (the engine doesn't expose what a machine's Work returns); a wave or a plugin to choose for "
+              "Jeskola Tracker and Polac VSTi (a person's choice, not a measurement); LFO rates (a modulation's rate shows only over seconds of "
+              "steady tone); what a parameter does only with another one set (a slot's effect, an envelope routed elsewhere) beyond the "
+              "contexts the sweep tries: mcp-server.md §12.12.", ""]
     return "\n".join(lines)
 
 
@@ -1302,24 +2250,52 @@ def merge_into_repo(root, summary, out_dir):
     write_report(root, merged)
 
 
+def curated_roles(root):
+    """{gear: {"name" (or "track name"): role}} from the curated manifests in ROOT/Machines/Manifests."""
+    out = {}
+    for sub in ("Effects", "Generators"):
+        folder = os.path.join(root, "Machines", "Manifests", sub)
+        if not os.path.isdir(folder):
+            continue
+        for f in sorted(os.listdir(folder)):
+            if not f.endswith(".machine.json"):
+                continue
+            try:
+                with open(os.path.join(folder, f), encoding="utf-8-sig") as h:
+                    m = json.load(h)
+            except (OSError, ValueError):
+                continue
+            if m.get("status") != "curated":
+                continue
+            roles = {}
+            for group, prefix in (("parameters", ""), ("track_parameters", "track ")):
+                ps = m.get(group) or []
+                for p in ps:
+                    if p.get("role"):
+                        repeated = not prefix and sum(1 for q in ps if q["name"] == p["name"]) > 1
+                        roles[prefix + p["name"] + (f" #{p.get('index')}" if repeated else "")] = p["role"]
+            out[m["gear"]] = roles
+    return out
+
+
 def write_report(root, merged):
     with open(os.path.join(root, "docs", "machine-health.md"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(health_report(merged))
+        f.write(health_report(merged, curated_roles(root)))
 
 
 PACK = "MACHINE-PROFILE-PACK"
 
 
 def pack(folder):
-    """The drafts, summary and report of an --out folder, gzipped, as base64 lines in the log: a CI
-    job's log can be read where its artifacts can't (--unpack takes them back out)."""
+    """The drafts, summary and report of an --out folder (and the role sweeps' details), gzipped, as base64 lines in
+    the log: a CI job's log can be read where its artifacts can't (--unpack takes them back out)."""
     buf = io.BytesIO()
     with tarfile.open(fileobj=buf, mode="w:gz") as tar:
         for base, _, files in os.walk(folder):
             for f in files:
                 path = os.path.join(base, f)
                 rel = os.path.relpath(path, folder).replace(os.sep, "/")
-                if rel.startswith("manifests/") or rel in ("machine-profile.json", "machine-health.md"):
+                if rel.startswith("manifests/") or rel.startswith("roles-detail/") or rel in ("machine-profile.json", "machine-health.md"):
                     tar.add(path, arcname=rel)
     data = base64.b64encode(buf.getvalue()).decode("ascii")
     print(f"{PACK}-BEGIN {len(data)}")
@@ -1361,7 +2337,14 @@ def main():
     ap.add_argument("--pack", default=None, help="print an --out folder into the log (base64 lines)")
     ap.add_argument("--unpack", default=None, help="a job log with packed lines: unpack them into --out")
     ap.add_argument("--timeout", type=float, default=90, help="seconds a call may take before the machine counts as hung")
+    ap.add_argument("--health-only", action="store_true", help="U1 and U2's health only: no test signal sweeps, roles, velocity, envelope, denormals or triggers")
+    ap.add_argument("--no-roles", action="store_true", help="leave out the per-parameter sweeps (suggested roles)")
+    ap.add_argument("--roles-generated", action="store_true", help="also sweep the machines with generated manifests (Neo): a check of the role inference")
+    ap.add_argument("--no-denormal", action="store_true", help="leave out the denormal test (20 s of silence per machine)")
     args = ap.parse_args()
+    DEPTH.update({"on": not args.health_only, "roles": not args.no_roles, "roles_generated": args.roles_generated,
+                  "denormal": not args.no_denormal, "triggers": not args.health_only,
+                  "detail_dir": os.path.join(os.path.abspath(args.out or "."), "roles-detail") if args.out else None})
     root_default = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if args.report:
         with open(os.path.join(args.report, "Machines", "Manifests", "machine-profile.json"), encoding="utf-8") as f:
@@ -1390,7 +2373,7 @@ def main():
     plat = "windows" if os.path.basename(args.exe).lower() == "rebuzz.exe" else sys.platform.replace("darwin", "macos")
     generated = generated_manifests(args.repo or root_default)
     c = Client(args.exe, os.path.join(out, "work"), args.timeout)
-    gear = c.call("gear_list", limit=1000)["gear"]
+    gear = c.call("gear_list", limit=1000, include_unhealthy=True)["gear"]
     baseline = baselines(c)
     only = [p for p in args.only.split(",") if p.strip()]
     skip = [p for p in args.skip.split(",") if p.strip()]
@@ -1415,7 +2398,7 @@ def main():
             prof.data["type"] = "unknown"
         # A native machine that crashes takes its host process down, not the server: ReBuzz marks it crashed.
         try:
-            row = next((x for x in c.call("gear_list", search=name, limit=50)["gear"] if x["name"] == name), {})
+            row = next((x for x in c.call("gear_list", search=name, limit=50, include_unhealthy=True)["gear"] if x["name"] == name), {})
             if row.get("health") in ("crashed", "missing"):
                 prof.problem(f"{row['health']} while being profiled (ReBuzz marked it)")
         except (ToolFailed, ServerGone):
@@ -1446,7 +2429,7 @@ def main():
     c.close()
     write_json(os.path.join(out, "machine-profile.json"), summary)
     with open(os.path.join(out, "machine-health.md"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(health_report(summary))
+        f.write(health_report(summary, curated_roles(args.repo or root_default)))
     if args.repo:
         merge_into_repo(os.path.abspath(args.repo), summary, out)
     cats = {}

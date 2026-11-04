@@ -3,7 +3,7 @@
  "gear": "FSM Philthy",
  "kind": "effect",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
  "type": "filter or EQ",
  "summary": "Filter or eq (profiled draft): traits: filter or EQ; tail 0.0 s; latency 10 samples; gain -7.4 dB at the defaults.",
  "tracks": 1,
@@ -37,7 +37,318 @@
    },
    "traits": [
     "filter or EQ"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     1.13
+    ],
+    [
+     23.1,
+     1.29
+    ],
+    [
+     26.0,
+     1.44
+    ],
+    [
+     29.1,
+     1.59
+    ],
+    [
+     32.7,
+     1.72
+    ],
+    [
+     36.7,
+     1.85
+    ],
+    [
+     41.2,
+     1.96
+    ],
+    [
+     46.2,
+     2.05
+    ],
+    [
+     51.9,
+     2.12
+    ],
+    [
+     58.3,
+     2.2
+    ],
+    [
+     65.4,
+     2.28
+    ],
+    [
+     73.4,
+     2.35
+    ],
+    [
+     82.4,
+     2.41
+    ],
+    [
+     92.5,
+     2.49
+    ],
+    [
+     103.8,
+     2.53
+    ],
+    [
+     116.5,
+     2.55
+    ],
+    [
+     130.8,
+     2.75
+    ],
+    [
+     146.8,
+     2.76
+    ],
+    [
+     164.8,
+     3.27
+    ],
+    [
+     185.0,
+     3.05
+    ],
+    [
+     207.7,
+     3.12
+    ],
+    [
+     233.1,
+     3.42
+    ],
+    [
+     261.6,
+     3.67
+    ],
+    [
+     293.7,
+     3.76
+    ],
+    [
+     329.6,
+     3.95
+    ],
+    [
+     370.0,
+     4.72
+    ],
+    [
+     415.3,
+     4.0
+    ],
+    [
+     466.2,
+     3.43
+    ],
+    [
+     523.3,
+     2.14
+    ],
+    [
+     587.3,
+     -1.87
+    ],
+    [
+     659.3,
+     -16.67
+    ],
+    [
+     740.0,
+     -10.21
+    ],
+    [
+     830.6,
+     -7.23
+    ],
+    [
+     932.3,
+     -8.74
+    ],
+    [
+     1046.5,
+     -12.07
+    ],
+    [
+     1174.7,
+     -16.25
+    ],
+    [
+     1318.5,
+     -20.23
+    ],
+    [
+     1480.0,
+     -24.75
+    ],
+    [
+     1661.2,
+     -29.14
+    ],
+    [
+     1864.7,
+     -33.08
+    ],
+    [
+     2093.0,
+     -37.83
+    ],
+    [
+     2349.3,
+     -42.25
+    ],
+    [
+     2637.0,
+     -46.57
+    ],
+    [
+     2960.0,
+     -50.84
+    ],
+    [
+     3322.4,
+     -55.15
+    ],
+    [
+     3729.3,
+     -59.47
+    ],
+    [
+     4186.0,
+     -63.87
+    ],
+    [
+     4698.6,
+     -68.21
+    ],
+    [
+     5274.0,
+     -72.64
+    ],
+    [
+     5919.9,
+     -77.16
+    ],
+    [
+     6644.9,
+     -81.79
+    ],
+    [
+     7458.6,
+     -86.58
+    ],
+    [
+     8372.0,
+     -91.58
+    ],
+    [
+     9397.3,
+     -98.9
+    ],
+    [
+     10548.1,
+     -100.6
+    ],
+    [
+     11839.8,
+     -108.96
+    ],
+    [
+     13289.8,
+     -100.89
+    ],
+    [
+     14917.2,
+     -111.41
+    ],
+    [
+     16744.0,
+     -133.16
+    ],
+    [
+     18794.5,
+     -151.42
+    ]
+   ],
+   "response_summary": {
+    "level_db": -0.17,
+    "spread_db": 116.13,
+    "centroid_oct": -2.965,
+    "max_db": 4.72,
+    "max_hz": 370.0,
+    "prominence_db": 1.67,
+    "low_corner_hz": 32.7,
+    "high_corner_hz": 523.3,
+    "width_oct": 4.0,
+    "tilt_db": -103.66,
+    "wobble_db": 0.13
+   },
+   "impulse": {
+    "latency_samples": 12,
+    "direct_db": -13.68,
+    "early_db": -15.06,
+    "late_db": -120.0,
+    "t60_s": null,
+    "t60_span_db": 0.0,
+    "ring_s": 0.009,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": 0.002,
+    "late_onset_s": 0.003,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      -1.51
+     ],
+     [
+      -34.85,
+      -1.54
+     ],
+     [
+      -28.82,
+      -1.58
+     ],
+     [
+      -22.79,
+      -1.67
+     ],
+     [
+      -16.77,
+      -2.11
+     ],
+     [
+      -10.75,
+      -2.51
+     ],
+     [
+      -4.8,
+      -1.31
+     ]
+    ],
+    "compression_db": 0.39,
+    "top_slope": 1.067,
+    "knee_in_db": null,
+    "attack_s": 0.0,
+    "release_s": 0.0,
+    "attack_tau_s": null,
+    "release_tau_s": null
+   },
+   "thd_percent": 1.33
   },
   "level_test": {
    "defaults": {
@@ -51,7 +362,156 @@
    ],
    "renders": 21
   },
-  "sweeps": {}
+  "sweeps": {},
+  "roles": {
+   "default": {
+    "level_db": 0.34,
+    "spread_db": 80.64,
+    "centroid_oct": -2.072,
+    "max_hz": 1046.5,
+    "prominence_db": 2.22,
+    "low_corner_hz": 261.6,
+    "high_corner_hz": 1480.0,
+    "width_oct": 2.5,
+    "wobble_db": 0.03,
+    "latency_samples": 12,
+    "direct_db": -13.68,
+    "early_db": -15.06,
+    "late_db": -120.0,
+    "ring_s": 0.009,
+    "late_onset_s": 0.003,
+    "copy_s": 0.002,
+    "thd": 1.38,
+    "peak_dbfs": -8.18
+   },
+   "type_from_click": "filter or EQ",
+   "params": {
+    "track Cutoff": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's lower corner moves 23.1 Hz → 8.37 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track Resonance": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's lower corner moves 23.1 Hz → 1.05 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track ThevFactor": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 1.48 kHz: its prominence +6 → +0 dB over the response",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track Filter": {
+     "suggested_role": "filter.type",
+     "evidence": "its choices change the response's shape (up to 99 dB), corners 262 Hz–523 Hz → 2.09 kHz–2.09 kHz",
+     "min": {
+      "raw": 0,
+      "text": "6L Multipeak"
+     },
+     "max": {
+      "raw": 16,
+      "text": "6X Vocal2"
+     }
+    },
+    "track LFO rate": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.050 Hz"
+     },
+     "max": {
+      "raw": 254,
+      "text": "128 ticks"
+     }
+    },
+    "track LFO mod": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's lower corner moves 23.1 Hz → 2.96 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 240,
+      "text": "240"
+     }
+    },
+    "track LFO Shape": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "sine"
+     },
+     "max": {
+      "raw": 16,
+      "text": "S'n'H 2"
+     }
+    },
+    "track Inertia": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0 %"
+     },
+     "max": {
+      "raw": 60,
+      "text": "25 %"
+     }
+    },
+    "track L-R phasing": {
+     "suggested_role": "filter.bandwidth",
+     "evidence": "the band's width 2.5 → 2.0 octaves",
+     "min": {
+      "raw": 0,
+      "text": "0 %"
+     },
+     "max": {
+      "raw": 240,
+      "text": "100 %"
+     }
+    },
+    "track Set phase": {
+     "suggested_role": "filter.bandwidth",
+     "evidence": "the band's width 2.5 → 2.0 octaves",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    }
+   },
+   "renders": 48
+  },
+  "denormal": {
+   "slowdown": null
+  }
  },
  "parameters": [],
  "track_parameters": [
@@ -67,7 +527,9 @@
    "a": 0.0,
    "b": 240.0,
    "description": "Cutoff frequency",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's lower corner moves 23.1 Hz → 8.37 kHz"
   },
   {
    "index": 0,
@@ -81,7 +543,9 @@
    "a": 0.0,
    "b": 240.0,
    "description": "",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's lower corner moves 23.1 Hz → 1.05 kHz"
   },
   {
    "index": 0,
@@ -95,7 +559,9 @@
    "a": 0.0,
    "b": 240.0,
    "description": "Resonance reduction for low cutoff values",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.resonance",
+   "role_evidence": "a peak at 1.48 kHz: its prominence +6 → +0 dB over the response"
   },
   {
    "index": 0,
@@ -126,7 +592,9 @@
     "6X Vocal2"
    ],
    "description": "Filter type",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.type",
+   "role_evidence": "its choices change the response's shape (up to 99 dB), corners 262 Hz–523 Hz → 2.09 kHz–2.09 kHz"
   },
   {
    "index": 0,
@@ -155,7 +623,9 @@
    "a": 0.0,
    "b": 240.0,
    "description": "LFO Modulation depth",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.cutoff",
+   "role_evidence": "the response's lower corner moves 23.1 Hz → 2.96 kHz"
   },
   {
    "index": 0,
@@ -216,7 +686,9 @@
    "b": 99.543911,
    "unit": "%",
    "description": "Left-right channel phase difference",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.bandwidth",
+   "role_evidence": "the band's width 2.5 → 2.0 octaves"
   },
   {
    "index": 0,
@@ -230,7 +702,9 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Set LFO phase",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "filter.bandwidth",
+   "role_evidence": "the band's width 2.5 → 2.0 octaves"
   }
  ]
 }

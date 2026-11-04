@@ -70,6 +70,356 @@
      "text": "100%"
     }
    }
+  },
+  "envelope": {
+   "peak_db": -5.6,
+   "attack_s": 0.005,
+   "final_db": -2.1,
+   "length_s": null,
+   "release_s": 0.315,
+   "release_past_window": false,
+   "bright_mid_hz": 550.0,
+   "bright_early_hz": 549.9,
+   "bright_late_hz": 549.9,
+   "level_wobble_db": 0.0,
+   "bright_wobble": 0.007,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "velocity": {
+   "range_db": 0.0,
+   "db_per_doubling": 0.0,
+   "curve": "none (velocity doesn't change its level)",
+   "levels_db": {
+    "16": -5.74,
+    "32": -5.74,
+    "64": -5.74,
+    "127": -5.74
+   }
+  },
+  "roles": {
+   "default": {
+    "pitch": 33.0,
+    "centroid_hz": 446,
+    "peakiness_db": 60.0,
+    "tprom_db": 4.1,
+    "tprom_hz": 630,
+    "env_attack_s": 0.01,
+    "env_half_s": 0.005,
+    "env_final_db": -3.74,
+    "env_release_s": 0.31,
+    "env_peak_db": -3.07,
+    "env_bright_early_hz": 163.1,
+    "env_bright_mid_hz": 175.5,
+    "env_bright_late_hz": 175.4,
+    "env_level_wobble_db": 0.182,
+    "env_bright_wobble": 0.098
+   },
+   "params": {
+    "Range": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "16'"
+     },
+     "max": {
+      "raw": 2,
+      "text": "4'"
+     }
+    },
+    "VCO Mod": {
+     "suggested_role": "pitch.coarse",
+     "evidence": "the pitch moves +3.6 semitones",
+     "min": {
+      "raw": 0,
+      "text": "0.00 semi"
+     },
+     "max": {
+      "raw": 127,
+      "text": "12.00 semi"
+     }
+    },
+    "PWM Source": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Manual"
+     },
+     "max": {
+      "raw": 2,
+      "text": "Env"
+     }
+    },
+    "PWM": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Pulse Lvl": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 42 Hz → 446 Hz",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Saw Lvl": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Sub Lvl": {
+     "suggested_role": "level",
+     "evidence": "the level +7 dB, the sound otherwise alike",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Noise Lvl": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 446 Hz → 1.21 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Sub Type": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Sq -1oct"
+     },
+     "max": {
+      "raw": 2,
+      "text": "Pulse -2oct"
+     }
+    },
+    "Cutoff": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 56 Hz → 2.32 kHz",
+     "min": {
+      "raw": 0,
+      "text": "20.0 Hz"
+     },
+     "max": {
+      "raw": 127,
+      "text": "20.00 kHz"
+     }
+    },
+    "Resonance": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 2.5 kHz stands +4 → +33 dB over the spectrum an octave either side",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Env Amt": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 71 Hz → 2.52 kHz",
+     "min": {
+      "raw": 0,
+      "text": "-5.00 oct"
+     },
+     "max": {
+      "raw": 128,
+      "text": "+5.00 oct"
+     }
+    },
+    "VCF Mod": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the brightness (centroid) 446 Hz → 2.69 kHz",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Kbd Follow": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 2,
+      "text": "Full"
+     }
+    },
+    "VCA Mode": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Gate"
+     },
+     "max": {
+      "raw": 1,
+      "text": "Env"
+     }
+    },
+    "Attack": {
+     "suggested_role": "env.attack",
+     "evidence": "the attack 10 ms → 860 ms",
+     "min": {
+      "raw": 0,
+      "text": "2.0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "8.00 s"
+     }
+    },
+    "Decay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "2.0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "15.00 s"
+     }
+    },
+    "Sustain": {
+     "suggested_role": "env.sustain",
+     "evidence": "the held level -47 → -1 dB under the peak",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    },
+    "Release": {
+     "suggested_role": "env.release",
+     "evidence": "the release 10 ms → 1 s (or longer: past the window)",
+     "min": {
+      "raw": 0,
+      "text": "2.0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "15.00 s"
+     }
+    },
+    "LFO Rate": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.1 Hz"
+     },
+     "max": {
+      "raw": 127,
+      "text": "30.0 Hz"
+     }
+    },
+    "LFO Wave": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Triangle"
+     },
+     "max": {
+      "raw": 3,
+      "text": "Noise"
+     }
+    },
+    "LFO Delay": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0.0 ms"
+     },
+     "max": {
+      "raw": 127,
+      "text": "2.00 s"
+     }
+    },
+    "Glide": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "off"
+     },
+     "max": {
+      "raw": 127,
+      "text": "2.00 s"
+     }
+    },
+    "Tune": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "-50 ¢"
+     },
+     "max": {
+      "raw": 100,
+      "text": "+50 ¢"
+     }
+    },
+    "Volume": {
+     "suggested_role": "level",
+     "evidence": "silent at its minimum, sounding at the other end",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 127,
+      "text": "100%"
+     }
+    }
+   },
+   "renders": 66
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [

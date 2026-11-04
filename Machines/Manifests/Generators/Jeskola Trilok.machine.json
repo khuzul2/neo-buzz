@@ -3,9 +3,9 @@
  "gear": "Jeskola Trilok",
  "kind": "generator",
  "status": "draft",
- "source": "profiled by tools/machine-profiler.py on windows, 2026-11-03; not curated",
- "type": "generator (silent at its defaults)",
- "summary": "Generator (silent at its defaults) (profiled draft): no sound from a note at its defaults.",
+ "source": "profiled by tools/machine-profiler.py on windows, 2026-11-04; not curated",
+ "type": "triggered",
+ "summary": "Generator (profiled draft): plays from a trigger, not notes: its BD Trigger column, written with automation_write.",
  "tracks": 0,
  "notes": {
   "input": "none"
@@ -13,25 +13,134 @@
  "health": {
   "status": "warn",
   "problems": [
-   "no sound from a MIDI note at its defaults (it has no Note track parameter)"
-  ]
+   "hot (loud but steady) with BD Tone at its maximum (127): +2.5 dBFS peak"
+  ],
+  "hot": true
  },
  "profile": {
+  "level": {
+   "note": "one trigger",
+   "integrated_lufs": -11.9,
+   "sample_peak_dbfs": -0.38,
+   "true_peak_dbtp": -0.38
+  },
   "level_test": {
    "defaults": {
-    "peak_dbfs": null,
-    "verdict": "silent"
+    "peak_dbfs": -0.38,
+    "growth_db": 0.0,
+    "verdict": "ok"
    },
    "all_at_once": {
     "min": {
-     "peak_dbfs": null,
-     "verdict": "silent"
+     "peak_dbfs": -0.5,
+     "growth_db": 0.0,
+     "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": null,
-     "verdict": "silent"
+     "peak_dbfs": 3.48,
+     "growth_db": 0.0,
+     "verdict": "hot"
+    }
+   },
+   "swept_because": [
+    "every parameter at its maximum at once: hot"
+   ],
+   "renders": 9
+  },
+  "sweeps": {
+   "BD Tone": {
+    "max": {
+     "peak_dbfs": 2.47,
+     "growth_db": 0.01,
+     "verdict": "hot",
+     "raw": 127,
+     "text": "127"
     }
    }
+  },
+  "trigger": {
+   "param": "BD Trigger",
+   "track": null,
+   "value": 1
+  },
+  "envelope": {
+   "peak_db": -4.05,
+   "attack_s": 0.005,
+   "final_db": -80.0,
+   "half_s": 0.15,
+   "length_s": 0.16,
+   "bright_mid_hz": null,
+   "bright_early_hz": 108.7,
+   "bright_late_hz": null,
+   "note": "A4 at velocity 100, held 2 s"
+  },
+  "roles": {
+   "default": {
+    "centroid_hz": 109,
+    "peakiness_db": 6.55,
+    "tprom_db": -10.9,
+    "tprom_hz": 500,
+    "env_attack_s": 0.005,
+    "env_half_s": 0.15,
+    "env_final_db": -80.0,
+    "env_length_s": 0.16,
+    "env_peak_db": -4.05,
+    "env_bright_early_hz": 108.7
+   },
+   "params": {
+    "BD Trigger": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 1,
+      "text": "1"
+     }
+    },
+    "BD Tone": {
+     "suggested_role": "drum.tone",
+     "evidence": "the brightness (centroid) 85 Hz → 177 Hz",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "BD Decay": {
+     "suggested_role": "drum.decay",
+     "evidence": "the level falls half way in 20 ms → 470 ms (the default 150 ms) to the same held level",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 127,
+      "text": "127"
+     }
+    },
+    "BD Volume": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 254,
+      "text": "254"
+     }
+    }
+   },
+   "renders": 7
+  },
+  "denormal": {
+   "slowdown": null
   }
  },
  "parameters": [
@@ -61,7 +170,9 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Bassdrum tone (0-7F)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "drum.tone",
+   "role_evidence": "the brightness (centroid) 85 Hz → 177 Hz"
   },
   {
    "index": 2,
@@ -75,7 +186,9 @@
    "a": 0.0,
    "b": 127.0,
    "description": "Bassdrum decay (0-7F)",
-   "confidence": "values"
+   "confidence": "values",
+   "suggested_role": "drum.decay",
+   "role_evidence": "the level falls half way in 20 ms → 470 ms (the default 150 ms) to the same held level"
   },
   {
    "index": 3,

@@ -142,7 +142,8 @@ namespace ReBuzz.Agent
                     "Draws a parameter's movement inside a pattern: points (beat in the pattern, value in the parameter's units) joined as steps or " +
                     "linear ramps; ReBuzz plays it whenever the pattern plays. Replaces the parameter's automation between the first and last " +
                     "point (clear=true removes all of it). Values outside a parameter's safe_range (machine_describe) are refused, with the reason, " +
-                    "unless allow_unsafe=true. One undo step. Example: automation_write(machine=\"Pad\", pattern=\"Build\", " +
+                    "unless allow_unsafe=true. A played parameter (machine_describe's played_parameters: a drum's trigger) takes one event per " +
+                    "point, each heard once, never ramps. One undo step. Example: automation_write(machine=\"Pad\", pattern=\"Build\", " +
                     "param=\"F1 cutoff\", points=[{\"at\": 0, \"value\": \"300 Hz\"}, {\"at\": 16, \"value\": \"4 kHz\"}]).",
                 Input = Object(null,
                     Req("machine", String("The machine")),
@@ -155,7 +156,8 @@ namespace ReBuzz.Agent
                     Opt("shape", String("linear (default) ramps between points; step jumps at each", "linear", "step")),
                     Opt("clear", Boolean("Remove all of this parameter's automation in the pattern first")),
                     Opt("allow_unsafe", Boolean("Write values outside the parameter's safe range anyway (default false: refused with the reason)"))),
-                Output = Object(null, Req("events", Integer("Automation events in the pattern for it now"))),
+                Output = Object(null, Req("events", Integer("Automation events in the pattern for it now")),
+                    Opt("played", Boolean("A played parameter (it holds no value): each event is heard once"))),
                 Annotations = ToolAnnotations.Write,
                 Handler = async c =>
                 {
@@ -163,7 +165,11 @@ namespace ReBuzz.Agent
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         var p = SongModel.Pattern(m, c.RequiredString("pattern"));
-                        var param = SongModel.Param(m, SongModel.Params(m), c.RequiredString("param"), track: c.Int("track") != null);
+                        // U2 in depth (mcp-server.md §12.12): a track parameter that holds no value (a drum's trigger) takes events too,
+                        // where no parameter that holds one has the name.
+                        AgentParam param;
+                        try { param = SongModel.Param(m, SongModel.Params(m), c.RequiredString("param"), track: c.Int("track") != null); }
+                        catch (ToolError) { param = SongModel.Param(m, SongModel.Params(m, played: true), c.RequiredString("param"), track: c.Int("track") != null); }
                         int track = c.Int("track") ?? 0;
                         bool allowUnsafe = c.Bool("allow_unsafe") ?? false;
                         string unsafeWhy = null;
@@ -195,7 +201,8 @@ namespace ReBuzz.Agent
                         var removed = clear ? existing : points.Count == 0 ? new List<PatternEvent>()
                             : existing.Where(e => e.Time >= points[0].Time && e.Time <= points[^1].Time).ToList();
                         var added = new List<PatternEvent>();
-                        bool linear = (c.String("shape") ?? "linear") == "linear";
+                        // A played parameter's values are events, each heard once: no ramps between them.
+                        bool linear = (c.String("shape") ?? "linear") == "linear" && !param.Played;
                         int step = Math.Max(1, NoteList.TimeBase / 4);
                         for (int i = 0; i < points.Count; i++)
                         {
@@ -216,13 +223,15 @@ namespace ReBuzz.Agent
                         var problems = new JsonArray();
                         if (SongModel.Placements(core, p).Count == 0) problems.Add($"\"{p.Name}\" isn't placed in the arrangement, so the automation doesn't play yet.");
                         if (unsafeWhy != null) problems.Add($"Unsafe (allow_unsafe): {param.Name} goes {unsafeWhy}.");
-                        return new JsonObject
+                        var result = new JsonObject
                         {
                             ["machine"] = m.Name, ["pattern"] = p.Name, ["param"] = param.Name, ["events"] = now.Count,
                             ["from"] = points.Count > 0 ? param.Info.Describe(points[0].Raw) : null,
                             ["to"] = points.Count > 0 ? param.Info.Describe(points[^1].Raw) : null,
                             ["problems"] = problems,
                         };
+                        if (param.Played) result["played"] = true;
+                        return result;
                     }, c.Cancellation);
                     var probs = r["problems"]!.AsArray();
                     return ToolResult.Ok($"{r["machine"]} \"{r["pattern"]}\": {r["param"]} automation now {r["events"]} events" +

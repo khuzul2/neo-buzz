@@ -20,7 +20,7 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot with every parameter at its maximum at once (+16.0 dBFS peak), but with no parameter alone"
+   "hot with every parameter at its maximum at once (+15.2 dBFS peak), but with no parameter alone"
   ],
   "hot": true
  },
@@ -50,7 +50,318 @@
    },
    "traits": [
     "filter or EQ"
-   ]
+   ],
+   "response": [
+    [
+     20.6,
+     -0.15
+    ],
+    [
+     23.1,
+     -0.06
+    ],
+    [
+     26.0,
+     -0.12
+    ],
+    [
+     29.1,
+     -0.06
+    ],
+    [
+     32.7,
+     -0.05
+    ],
+    [
+     36.7,
+     -0.08
+    ],
+    [
+     41.2,
+     -0.05
+    ],
+    [
+     46.2,
+     -0.04
+    ],
+    [
+     51.9,
+     -0.0
+    ],
+    [
+     58.3,
+     -0.02
+    ],
+    [
+     65.4,
+     -0.02
+    ],
+    [
+     73.4,
+     -0.01
+    ],
+    [
+     82.4,
+     -0.0
+    ],
+    [
+     92.5,
+     -0.01
+    ],
+    [
+     103.8,
+     -0.01
+    ],
+    [
+     116.5,
+     -0.04
+    ],
+    [
+     130.8,
+     -0.01
+    ],
+    [
+     146.8,
+     -0.01
+    ],
+    [
+     164.8,
+     0.02
+    ],
+    [
+     185.0,
+     -0.02
+    ],
+    [
+     207.7,
+     -0.03
+    ],
+    [
+     233.1,
+     -0.04
+    ],
+    [
+     261.6,
+     -0.04
+    ],
+    [
+     293.7,
+     -0.05
+    ],
+    [
+     329.6,
+     -0.07
+    ],
+    [
+     370.0,
+     -0.07
+    ],
+    [
+     415.3,
+     -0.11
+    ],
+    [
+     466.2,
+     -0.14
+    ],
+    [
+     523.3,
+     -0.18
+    ],
+    [
+     587.3,
+     -0.22
+    ],
+    [
+     659.3,
+     -0.31
+    ],
+    [
+     740.0,
+     -0.39
+    ],
+    [
+     830.6,
+     -0.51
+    ],
+    [
+     932.3,
+     -0.68
+    ],
+    [
+     1046.5,
+     -0.89
+    ],
+    [
+     1174.7,
+     -1.19
+    ],
+    [
+     1318.5,
+     -1.53
+    ],
+    [
+     1480.0,
+     -2.05
+    ],
+    [
+     1661.2,
+     -2.69
+    ],
+    [
+     1864.7,
+     -3.5
+    ],
+    [
+     2093.0,
+     -4.51
+    ],
+    [
+     2349.3,
+     -5.69
+    ],
+    [
+     2637.0,
+     -7.06
+    ],
+    [
+     2960.0,
+     -8.58
+    ],
+    [
+     3322.4,
+     -10.25
+    ],
+    [
+     3729.3,
+     -12.04
+    ],
+    [
+     4186.0,
+     -13.93
+    ],
+    [
+     4698.6,
+     -15.97
+    ],
+    [
+     5274.0,
+     -17.96
+    ],
+    [
+     5919.9,
+     -20.09
+    ],
+    [
+     6644.9,
+     -22.33
+    ],
+    [
+     7458.6,
+     -24.65
+    ],
+    [
+     8372.0,
+     -27.12
+    ],
+    [
+     9397.3,
+     -29.8
+    ],
+    [
+     10548.1,
+     -32.62
+    ],
+    [
+     11839.8,
+     -35.79
+    ],
+    [
+     13289.8,
+     -39.53
+    ],
+    [
+     14917.2,
+     -43.96
+    ],
+    [
+     16744.0,
+     -49.79
+    ],
+    [
+     18794.5,
+     -58.79
+    ]
+   ],
+   "response_summary": {
+    "level_db": -1.69,
+    "spread_db": 43.98,
+    "centroid_oct": -2.41,
+    "max_db": 0.02,
+    "max_hz": 164.8,
+    "prominence_db": 0.02,
+    "low_corner_hz": 20.6,
+    "high_corner_hz": 1661.2,
+    "width_oct": 6.33,
+    "tilt_db": -33.5,
+    "wobble_db": 0.01
+   },
+   "impulse": {
+    "latency_samples": 5,
+    "direct_db": -12.75,
+    "early_db": -15.05,
+    "late_db": -57.55,
+    "t60_s": null,
+    "t60_span_db": 0.0,
+    "ring_s": 0.006,
+    "rings_past_window": false,
+    "echoes": [],
+    "echoes_left": [],
+    "echoes_right": [],
+    "copy_s": null,
+    "late_onset_s": 0.003,
+    "balance_db": 0.0
+   },
+   "steps": {
+    "curve": [
+     [
+      -40.86,
+      -2.08
+     ],
+     [
+      -34.85,
+      -2.09
+     ],
+     [
+      -28.82,
+      -2.08
+     ],
+     [
+      -22.79,
+      -2.08
+     ],
+     [
+      -16.77,
+      -2.08
+     ],
+     [
+      -10.75,
+      -2.07
+     ],
+     [
+      -4.8,
+      -2.08
+     ]
+    ],
+    "compression_db": -0.01,
+    "top_slope": 1.0,
+    "knee_in_db": null,
+    "attack_s": 0.0,
+    "release_s": 0.04,
+    "attack_tau_s": null,
+    "release_tau_s": null
+   },
+   "thd_percent": 1.11
   },
   "level_test": {
    "defaults": {
@@ -65,8 +376,8 @@
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": 16.04,
-     "growth_db": 0.42,
+     "peak_dbfs": 15.24,
+     "growth_db": 0.38,
      "verdict": "hot"
     }
    },
@@ -76,7 +387,179 @@
    ],
    "renders": 21
   },
-  "sweeps": {}
+  "sweeps": {},
+  "roles": {
+   "default": {
+    "level_db": -1.54,
+    "spread_db": 35.81,
+    "centroid_oct": -2.41,
+    "max_hz": 130.8,
+    "prominence_db": 0.04,
+    "low_corner_hz": 23.1,
+    "high_corner_hz": 1480.0,
+    "width_oct": 6.0,
+    "wobble_db": 0.01,
+    "latency_samples": 5,
+    "direct_db": -12.75,
+    "early_db": -15.05,
+    "late_db": -120.0,
+    "ring_s": 0.006,
+    "late_onset_s": 0.003,
+    "thd": 1.29,
+    "peak_dbfs": -11.7
+   },
+   "type_from_click": "filter or EQ",
+   "params": {
+    "Mode": {
+     "suggested_role": "filter.type",
+     "evidence": "its choices change the response's shape (up to 47 dB), corners 23.1 Hz–1.48 kHz → 23.1 Hz–740 Hz",
+     "min": {
+      "raw": 0,
+      "text": "Low Pass"
+     },
+     "max": {
+      "raw": 4,
+      "text": "Comb"
+     }
+    },
+    "Slope": {
+     "suggested_role": "filter.slope",
+     "evidence": "the corners stay, the slope beyond them changes (up to 49 dB)",
+     "min": {
+      "raw": 0,
+      "text": "12 dB / FIR"
+     },
+     "max": {
+      "raw": 1,
+      "text": "24 dB / IIR"
+     }
+    },
+    "Cutoff": {
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's upper corner moves 23.1 Hz → 16.7 kHz",
+     "min": {
+      "raw": 20,
+      "text": "20 Hz"
+     },
+     "max": {
+      "raw": 18000,
+      "text": "18 kHz"
+     }
+    },
+    "Resonance": {
+     "suggested_role": "filter.resonance",
+     "evidence": "a peak at 2.09 kHz: its prominence +0 → +18 dB over the response",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 100,
+      "text": "100%"
+     }
+    },
+    "Drive": {
+     "suggested_role": "filter.drive",
+     "evidence": "harmonics 1.3 → 11.7 % on a sine",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 100,
+      "text": "10.00×"
+     }
+    },
+    "LFO Wave": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Sine"
+     },
+     "max": {
+      "raw": 5,
+      "text": "S & H"
+     }
+    },
+    "LFO Rate": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0 Hz"
+     },
+     "max": {
+      "raw": 200,
+      "text": "20 Hz"
+     }
+    },
+    "Tempo Sync": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "Off"
+     },
+     "max": {
+      "raw": 1,
+      "text": "On"
+     }
+    },
+    "LFO Div": {
+     "suggested_role": null,
+     "evidence": "a choice: its texts say what it is; no role measured",
+     "min": {
+      "raw": 0,
+      "text": "4 Bars"
+     },
+     "max": {
+      "raw": 13,
+      "text": "1/16 Trip"
+     }
+    },
+    "LFO Depth": {
+     "suggested_role": "lfo.depth",
+     "evidence": "the gain moves 0.0 → 1.0 dB within each tone",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 100,
+      "text": "4 oct"
+     }
+    },
+    "Phase Offset": {
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
+     "min": {
+      "raw": 0,
+      "text": "0"
+     },
+     "max": {
+      "raw": 180,
+      "text": "180"
+     }
+    },
+    "Mix": {
+     "suggested_role": "mix.wet",
+     "evidence": "at its minimum the effect passes the signal unchanged; at the other end the response's shape (35.81 dB); half way less of the same",
+     "min": {
+      "raw": 0,
+      "text": "0%"
+     },
+     "max": {
+      "raw": 100,
+      "text": "100"
+     }
+    }
+   },
+   "renders": 46
+  },
+  "denormal": {
+   "slowdown": null
+  }
  },
  "parameters": [
   {
