@@ -89,14 +89,14 @@ namespace NeoBuzz.Drums
         };
 
         /// <summary>A voice's parameters: tune, decay, tone, then the extras (−1 where it has none), level and pan.</summary>
-        internal readonly struct VoiceParams(int tune, int decay, int tone, int a, int b, int c, int d, int level, int pan)
+        internal readonly struct VoiceParams(int tune, int decay, int tone, int a, int b, int c, int d, int level, int pan, int e = -1)
         {
-            public readonly int Tune = tune, Decay = decay, Tone = tone, A = a, B = b, C = c, D = d, Level = level, Pan = pan;
+            public readonly int Tune = tune, Decay = decay, Tone = tone, A = a, B = b, C = c, D = d, E = e, Level = level, Pan = pan;
         }
 
         public static readonly VoiceParams[] Voice =
         {
-            new(P.KickTune, P.KickDecay, -1, P.KickSweep, P.KickSweepT, P.KickClick, P.KickDrive, P.KickLevel, P.KickPan),
+            new(P.KickTune, P.KickDecay, -1, P.KickSweep, P.KickSweepT, P.KickClick, P.KickDrive, P.KickLevel, P.KickPan, P.KickPunch),
             new(P.SnareTune, P.SnareDecay, P.SnareTone, P.SnareSnap, -1, -1, -1, P.SnareLevel, P.SnarePan),
             new(P.ClapTune, P.ClapDecay, -1, P.ClapSpread, -1, -1, -1, P.ClapLevel, P.ClapPan),
             new(P.RimTune, P.RimDecay, -1, -1, -1, -1, -1, P.RimLevel, P.RimPan),
@@ -114,7 +114,7 @@ namespace NeoBuzz.Drums
         /// Each voice's own scale: a hit at velocity 127, its level at 0 dB, peaks about where a TR-909's sits against its
         /// kick (machines.md, Neo Drums: Levels).
         /// </summary>
-        internal static readonly float[] Scale = { 0.60f, 0.62f, 2.2f, 0.42f, 1.6f, 1.6f, 0.55f, 0.55f, 0.55f, 0.75f, 1.9f, 1.6f };
+        internal static readonly float[] Scale = { 0.231f, 0.414f, 0.876f, 0.163f, 0.644f, 0.456f, 0.408f, 0.408f, 0.381f, 0.507f, 0.397f, 0.715f };
 
         readonly ParamValues values;
         readonly DrumHit[] hits = new DrumHit[VoiceCount * HitsPerVoice];
@@ -230,6 +230,7 @@ namespace NeoBuzz.Drums
                 B = Get(p.B),
                 C = Get(p.C),
                 D = Get(p.D),
+                E = Get(p.E),
                 Gain = gain * Scale[voice],
                 Bright = velTone * (push - 100f / 127f),
             };

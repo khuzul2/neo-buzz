@@ -105,7 +105,7 @@ namespace NeoBuzz.Drums
             }
 
             var kick = Voice(ctx,
-                Row((P.KickTune, "Tune"), (P.KickSweep, "Sweep"), (P.KickSweepT, "Sweep time"), (P.KickDecay, "Decay")),
+                Row((P.KickTune, "Tune"), (P.KickSweep, "Sweep"), (P.KickSweepT, "Sweep time"), (P.KickDecay, "Decay"), (P.KickPunch, "Punch")),
                 Row((P.KickClick, "Click"), (P.KickDrive, "Drive"), (P.KickLevel, "Level"), (P.KickPan, "Pan")));
             var snare = Voice(ctx,
                 Row((P.SnareTune, "Tune"), (P.SnareTone, "Tone"), (P.SnareSnap, "Snap")),

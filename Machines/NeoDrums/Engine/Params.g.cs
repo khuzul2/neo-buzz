@@ -17,64 +17,65 @@ namespace NeoBuzz.Drums
         public const int KickSweepT = 6;
         public const int KickDecay = 7;
         public const int KickClick = 8;
-        public const int KickDrive = 9;
-        public const int KickLevel = 10;
-        public const int KickPan = 11;
-        public const int SnareTune = 12;
-        public const int SnareTone = 13;
-        public const int SnareSnap = 14;
-        public const int SnareDecay = 15;
-        public const int SnareLevel = 16;
-        public const int SnarePan = 17;
-        public const int ClapTune = 18;
-        public const int ClapSpread = 19;
-        public const int ClapDecay = 20;
-        public const int ClapLevel = 21;
-        public const int ClapPan = 22;
-        public const int RimTune = 23;
-        public const int RimDecay = 24;
-        public const int RimLevel = 25;
-        public const int RimPan = 26;
-        public const int ChTune = 27;
-        public const int ChTone = 28;
-        public const int ChDecay = 29;
-        public const int ChLevel = 30;
-        public const int ChPan = 31;
-        public const int OhTune = 32;
-        public const int OhTone = 33;
-        public const int OhDecay = 34;
-        public const int OhLevel = 35;
-        public const int OhPan = 36;
-        public const int LtTune = 37;
-        public const int LtDecay = 38;
-        public const int LtTone = 39;
-        public const int LtLevel = 40;
-        public const int LtPan = 41;
-        public const int MtTune = 42;
-        public const int MtDecay = 43;
-        public const int MtTone = 44;
-        public const int MtLevel = 45;
-        public const int MtPan = 46;
-        public const int HtTune = 47;
-        public const int HtDecay = 48;
-        public const int HtTone = 49;
-        public const int HtLevel = 50;
-        public const int HtPan = 51;
-        public const int CbTune = 52;
-        public const int CbDecay = 53;
-        public const int CbLevel = 54;
-        public const int CbPan = 55;
-        public const int CcTune = 56;
-        public const int CcTone = 57;
-        public const int CcDecay = 58;
-        public const int CcLevel = 59;
-        public const int CcPan = 60;
-        public const int RcTune = 61;
-        public const int RcTone = 62;
-        public const int RcDecay = 63;
-        public const int RcLevel = 64;
-        public const int RcPan = 65;
-        public const int Count = 66;
+        public const int KickPunch = 9;
+        public const int KickDrive = 10;
+        public const int KickLevel = 11;
+        public const int KickPan = 12;
+        public const int SnareTune = 13;
+        public const int SnareTone = 14;
+        public const int SnareSnap = 15;
+        public const int SnareDecay = 16;
+        public const int SnareLevel = 17;
+        public const int SnarePan = 18;
+        public const int ClapTune = 19;
+        public const int ClapSpread = 20;
+        public const int ClapDecay = 21;
+        public const int ClapLevel = 22;
+        public const int ClapPan = 23;
+        public const int RimTune = 24;
+        public const int RimDecay = 25;
+        public const int RimLevel = 26;
+        public const int RimPan = 27;
+        public const int ChTune = 28;
+        public const int ChTone = 29;
+        public const int ChDecay = 30;
+        public const int ChLevel = 31;
+        public const int ChPan = 32;
+        public const int OhTune = 33;
+        public const int OhTone = 34;
+        public const int OhDecay = 35;
+        public const int OhLevel = 36;
+        public const int OhPan = 37;
+        public const int LtTune = 38;
+        public const int LtDecay = 39;
+        public const int LtTone = 40;
+        public const int LtLevel = 41;
+        public const int LtPan = 42;
+        public const int MtTune = 43;
+        public const int MtDecay = 44;
+        public const int MtTone = 45;
+        public const int MtLevel = 46;
+        public const int MtPan = 47;
+        public const int HtTune = 48;
+        public const int HtDecay = 49;
+        public const int HtTone = 50;
+        public const int HtLevel = 51;
+        public const int HtPan = 52;
+        public const int CbTune = 53;
+        public const int CbDecay = 54;
+        public const int CbLevel = 55;
+        public const int CbPan = 56;
+        public const int CcTune = 57;
+        public const int CcTone = 58;
+        public const int CcDecay = 59;
+        public const int CcLevel = 60;
+        public const int CcPan = 61;
+        public const int RcTune = 62;
+        public const int RcTone = 63;
+        public const int RcDecay = 64;
+        public const int RcLevel = 65;
+        public const int RcPan = 66;
+        public const int Count = 67;
     }
 
     internal static class Params
@@ -88,51 +89,52 @@ namespace NeoBuzz.Drums
             new ParamDef(P.Accent, "Accent", "Accent gain", 0, 120, 60, MapKind.Db, a: 0, b: 12, group: "Kit", description: "How much louder an accented hit plays (a hit on a row with Accent): a TR-909's accent"),
             new ParamDef(P.VelLevel, "VelLevel", "Vel → level", 0, 1000, 700, MapKind.Percent, group: "Kit", description: "How much velocity sets a hit's level: the gain is velocity^(2 × this) (100 %: velocity 64 is −12 dB; 0 %: every hit at full level)"),
             new ParamDef(P.VelTone, "VelTone", "Vel → tone", 0, 1000, 500, MapKind.Percent, group: "Kit", description: "How much velocity (and accent) opens a hit: the kick's click and sweep, the snare's snap and tone, the toms' attack, the hats' and cymbals' tone; a hit at velocity 100 sounds as its parameters say"),
-            new ParamDef(P.KickTune, "KickTune", "Kick tune", 0, 1000, 317, MapKind.Freq, a: 30, b: 150, group: "Kick", description: "The body's pitch once its sweep has settled"),
-            new ParamDef(P.KickSweep, "KickSweep", "Kick sweep", 0, 480, 240, MapKind.Linear, a: 0, b: 48, unit: "st", digits: 1, group: "Kick", description: "How far above its tune the body starts, falling to it"),
-            new ParamDef(P.KickSweepT, "KickSweepT", "Kick sweep time", 0, 1000, 500, MapKind.Time, a: 0.002, b: 0.2, group: "Kick", description: "The sweep's time constant: the pitch is 63 % of the way down after this"),
+            new ParamDef(P.KickTune, "KickTune", "Kick tune", 0, 1000, 365, MapKind.Freq, a: 30, b: 150, group: "Kick", description: "The body's pitch once its sweep has settled"),
+            new ParamDef(P.KickSweep, "KickSweep", "Kick sweep", 0, 480, 300, MapKind.Linear, a: 0, b: 48, unit: "st", digits: 1, group: "Kick", description: "How far above its tune the body starts, falling to it"),
+            new ParamDef(P.KickSweepT, "KickSweepT", "Kick sweep time", 0, 1000, 548, MapKind.Time, a: 0.002, b: 0.2, group: "Kick", description: "The sweep's time constant: the pitch is 63 % of the way down after this"),
             new ParamDef(P.KickDecay, "KickDecay", "Kick decay", 0, 1000, 525, MapKind.Time, a: 0.05, b: 4, group: "Kick", description: "Time for the body to fall 60 dB"),
-            new ParamDef(P.KickClick, "KickClick", "Kick click", 0, 1000, 450, MapKind.Percent, group: "Kick", description: "Level of the attack's click (a short burst of filtered noise)"),
+            new ParamDef(P.KickClick, "KickClick", "Kick click", 0, 1000, 500, MapKind.Percent, group: "Kick", description: "Level of the attack's click (a short burst of high-passed noise)"),
+            new ParamDef(P.KickPunch, "KickPunch", "Kick punch", 0, 1000, 500, MapKind.Percent, group: "Kick", description: "How much louder the body starts (up to +12 dB at 100 %), falling back with the sweep: a TR-909's attack"),
             new ParamDef(P.KickDrive, "KickDrive", "Kick drive", 0, 240, 30, MapKind.Db, a: 0, b: 24, group: "Kick", description: "Saturation of the body, its level kept"),
             new ParamDef(P.KickLevel, "KickLevel", "Kick level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "Kick", description: "Level of the kick"),
             new ParamDef(P.KickPan, "KickPan", "Kick pan", 0, 200, 100, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Kick", description: "Where the kick sits, from −100 % (left) to +100 % (right)"),
-            new ParamDef(P.SnareTune, "SnareTune", "Snare tune", 0, 1000, 444, MapKind.Freq, a: 100, b: 400, group: "Snare", description: "The body's lower tone (the upper sits 1.75 times above it)"),
-            new ParamDef(P.SnareTone, "SnareTone", "Snare tone", 0, 1000, 702, MapKind.Freq, a: 1000, b: 16000, group: "Snare", description: "Corner of the snappy noise's low-pass: brighter up"),
-            new ParamDef(P.SnareSnap, "SnareSnap", "Snare snap", 0, 1000, 600, MapKind.Percent, group: "Snare", description: "The snappy noise against the body (0 %: the body alone)"),
-            new ParamDef(P.SnareDecay, "SnareDecay", "Snare decay", 0, 1000, 467, MapKind.Time, a: 0.05, b: 2, group: "Snare", description: "Time for the snappy noise to fall 60 dB (the body takes about half)"),
+            new ParamDef(P.SnareTune, "SnareTune", "Snare tune", 0, 1000, 424, MapKind.Freq, a: 100, b: 400, group: "Snare", description: "The body's lower tone, once its short fall has settled (the upper sits an octave above)"),
+            new ParamDef(P.SnareTone, "SnareTone", "Snare tone", 0, 1000, 702, MapKind.Freq, a: 1000, b: 16000, group: "Snare", description: "Centre of the snappy noise's band (from about half of it to 1.6 times it): brighter up"),
+            new ParamDef(P.SnareSnap, "SnareSnap", "Snare snap", 0, 1000, 500, MapKind.Percent, group: "Snare", description: "The snappy noise against the body (0 %: the body alone)"),
+            new ParamDef(P.SnareDecay, "SnareDecay", "Snare decay", 0, 1000, 486, MapKind.Time, a: 0.05, b: 2, group: "Snare", description: "Time for the snappy noise to fall 60 dB (the body takes about half)"),
             new ParamDef(P.SnareLevel, "SnareLevel", "Snare level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "Snare", description: "Level of the snare"),
             new ParamDef(P.SnarePan, "SnarePan", "Snare pan", 0, 200, 100, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Snare", description: "Where the snare sits, from −100 % (left) to +100 % (right)"),
-            new ParamDef(P.ClapTune, "ClapTune", "Clap tune", 0, 1000, 380, MapKind.Freq, a: 500, b: 5000, group: "Clap", description: "Centre of the clap's band-pass"),
+            new ParamDef(P.ClapTune, "ClapTune", "Clap tune", 0, 1000, 301, MapKind.Freq, a: 500, b: 5000, group: "Clap", description: "Centre of the clap's band-pass"),
             new ParamDef(P.ClapSpread, "ClapSpread", "Clap spread", 0, 1000, 630, MapKind.Time, a: 0.002, b: 0.03, group: "Clap", description: "Time between the clap's three bursts"),
-            new ParamDef(P.ClapDecay, "ClapDecay", "Clap decay", 0, 1000, 564, MapKind.Time, a: 0.05, b: 2, group: "Clap", description: "Time for its tail to fall 60 dB"),
+            new ParamDef(P.ClapDecay, "ClapDecay", "Clap decay", 0, 1000, 674, MapKind.Time, a: 0.05, b: 2, group: "Clap", description: "Time for its tail to fall 60 dB"),
             new ParamDef(P.ClapLevel, "ClapLevel", "Clap level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "Clap", description: "Level of the clap"),
             new ParamDef(P.ClapPan, "ClapPan", "Clap pan", 0, 200, 100, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Clap", description: "Where the clap sits, from −100 % (left) to +100 % (right)"),
-            new ParamDef(P.RimTune, "RimTune", "Rim tune", 0, 1000, 589, MapKind.Freq, a: 500, b: 4000, group: "Rim", description: "Pitch of the rim shot's ping (a lower one sits at 0.3 of it)"),
-            new ParamDef(P.RimDecay, "RimDecay", "Rim decay", 0, 1000, 458, MapKind.Time, a: 0.01, b: 0.5, group: "Rim", description: "Time for the ping to fall 60 dB"),
+            new ParamDef(P.RimTune, "RimTune", "Rim tune", 0, 1000, 398, MapKind.Freq, a: 400, b: 4000, group: "Rim", description: "Pitch of the rim shot's highest ping (the others sit at half and 0.23 of it)"),
+            new ParamDef(P.RimDecay, "RimDecay", "Rim decay", 0, 1000, 635, MapKind.Time, a: 0.01, b: 0.5, group: "Rim", description: "Time for its pings to fall 60 dB"),
             new ParamDef(P.RimLevel, "RimLevel", "Rim level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "Rim", description: "Level of the rim shot"),
             new ParamDef(P.RimPan, "RimPan", "Rim pan", 0, 200, 100, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Rim", description: "Where the rim shot sits, from −100 % (left) to +100 % (right)"),
             new ParamDef(P.ChTune, "ChTune", "Closed hat tune", 0, 240, 120, MapKind.Linear, a: -12, b: 12, unit: "st", digits: 1, group: "Closed hat", description: "Pitch of the six metallic oscillators, in semitones from the TR-808's"),
-            new ParamDef(P.ChTone, "ChTone", "Closed hat tone", 0, 1000, 667, MapKind.Freq, a: 2000, b: 16000, group: "Closed hat", description: "Centre of the band-pass (the high-pass sits below it): brighter up"),
-            new ParamDef(P.ChDecay, "ChDecay", "Closed hat decay", 0, 1000, 477, MapKind.Time, a: 0.01, b: 1, group: "Closed hat", description: "Time to fall 60 dB"),
+            new ParamDef(P.ChTone, "ChTone", "Closed hat tone", 0, 1000, 636, MapKind.Freq, a: 2000, b: 16000, group: "Closed hat", description: "Centre of the band the hats ring in (more above it, a little across the mids): brighter up"),
+            new ParamDef(P.ChDecay, "ChDecay", "Closed hat decay", 0, 1000, 452, MapKind.Time, a: 0.01, b: 1, group: "Closed hat", description: "Time to fall 60 dB"),
             new ParamDef(P.ChLevel, "ChLevel", "Closed hat level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "Closed hat", description: "Level of the closed hat"),
             new ParamDef(P.ChPan, "ChPan", "Closed hat pan", 0, 200, 100, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Closed hat", description: "Where the closed hat sits, from −100 % (left) to +100 % (right)"),
             new ParamDef(P.OhTune, "OhTune", "Open hat tune", 0, 240, 120, MapKind.Linear, a: -12, b: 12, unit: "st", digits: 1, group: "Open hat", description: "Pitch of the six metallic oscillators, in semitones from the TR-808's"),
-            new ParamDef(P.OhTone, "OhTone", "Open hat tone", 0, 1000, 667, MapKind.Freq, a: 2000, b: 16000, group: "Open hat", description: "Centre of the band-pass (the high-pass sits below it): brighter up"),
-            new ParamDef(P.OhDecay, "OhDecay", "Open hat decay", 0, 1000, 618, MapKind.Time, a: 0.05, b: 4, group: "Open hat", description: "Time to fall 60 dB (a closed hat cuts it in 5 ms)"),
+            new ParamDef(P.OhTone, "OhTone", "Open hat tone", 0, 1000, 636, MapKind.Freq, a: 2000, b: 16000, group: "Open hat", description: "Centre of the band the hats ring in (more above it, a little across the mids): brighter up"),
+            new ParamDef(P.OhDecay, "OhDecay", "Open hat decay", 0, 1000, 567, MapKind.Time, a: 0.05, b: 4, group: "Open hat", description: "Time to fall 60 dB (a closed hat cuts it in 5 ms)"),
             new ParamDef(P.OhLevel, "OhLevel", "Open hat level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "Open hat", description: "Level of the open hat"),
             new ParamDef(P.OhPan, "OhPan", "Open hat pan", 0, 200, 100, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Open hat", description: "Where the open hat sits, from −100 % (left) to +100 % (right)"),
-            new ParamDef(P.LtTune, "LtTune", "Low tom tune", 0, 1000, 363, MapKind.Freq, a: 40, b: 500, group: "Low tom", description: "The tom's pitch once its short sweep has settled"),
-            new ParamDef(P.LtDecay, "LtDecay", "Low tom decay", 0, 1000, 586, MapKind.Time, a: 0.05, b: 3, group: "Low tom", description: "Time to fall 60 dB"),
+            new ParamDef(P.LtTune, "LtTune", "Low tom tune", 0, 1000, 147, MapKind.Freq, a: 40, b: 500, group: "Low tom", description: "The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)"),
+            new ParamDef(P.LtDecay, "LtDecay", "Low tom decay", 0, 1000, 706, MapKind.Time, a: 0.05, b: 3, group: "Low tom", description: "Time to fall 60 dB"),
             new ParamDef(P.LtTone, "LtTone", "Low tom tone", 0, 1000, 300, MapKind.Percent, group: "Low tom", description: "Level of the attack's noise"),
             new ParamDef(P.LtLevel, "LtLevel", "Low tom level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "Low tom", description: "Level of the low tom"),
             new ParamDef(P.LtPan, "LtPan", "Low tom pan", 0, 200, 100, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Low tom", description: "Where the low tom sits, from −100 % (left) to +100 % (right)"),
-            new ParamDef(P.MtTune, "MtTune", "Mid tom tune", 0, 1000, 496, MapKind.Freq, a: 40, b: 500, group: "Mid tom", description: "The tom's pitch once its short sweep has settled"),
-            new ParamDef(P.MtDecay, "MtDecay", "Mid tom decay", 0, 1000, 562, MapKind.Time, a: 0.05, b: 3, group: "Mid tom", description: "Time to fall 60 dB"),
+            new ParamDef(P.MtTune, "MtTune", "Mid tom tune", 0, 1000, 238, MapKind.Freq, a: 40, b: 500, group: "Mid tom", description: "The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)"),
+            new ParamDef(P.MtDecay, "MtDecay", "Mid tom decay", 0, 1000, 626, MapKind.Time, a: 0.05, b: 3, group: "Mid tom", description: "Time to fall 60 dB"),
             new ParamDef(P.MtTone, "MtTone", "Mid tom tone", 0, 1000, 300, MapKind.Percent, group: "Mid tom", description: "Level of the attack's noise"),
             new ParamDef(P.MtLevel, "MtLevel", "Mid tom level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "Mid tom", description: "Level of the mid tom"),
             new ParamDef(P.MtPan, "MtPan", "Mid tom pan", 0, 200, 100, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Mid tom", description: "Where the mid tom sits, from −100 % (left) to +100 % (right)"),
-            new ParamDef(P.HtTune, "HtTune", "High tom tune", 0, 1000, 617, MapKind.Freq, a: 40, b: 500, group: "High tom", description: "The tom's pitch once its short sweep has settled"),
-            new ParamDef(P.HtDecay, "HtDecay", "High tom decay", 0, 1000, 537, MapKind.Time, a: 0.05, b: 3, group: "High tom", description: "Time to fall 60 dB"),
+            new ParamDef(P.HtTune, "HtTune", "High tom tune", 0, 1000, 294, MapKind.Freq, a: 40, b: 500, group: "High tom", description: "The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)"),
+            new ParamDef(P.HtDecay, "HtDecay", "High tom decay", 0, 1000, 626, MapKind.Time, a: 0.05, b: 3, group: "High tom", description: "Time to fall 60 dB"),
             new ParamDef(P.HtTone, "HtTone", "High tom tone", 0, 1000, 300, MapKind.Percent, group: "High tom", description: "Level of the attack's noise"),
             new ParamDef(P.HtLevel, "HtLevel", "High tom level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "High tom", description: "Level of the high tom"),
             new ParamDef(P.HtPan, "HtPan", "High tom pan", 0, 200, 100, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "High tom", description: "Where the high tom sits, from −100 % (left) to +100 % (right)"),
@@ -141,13 +143,13 @@ namespace NeoBuzz.Drums
             new ParamDef(P.CbLevel, "CbLevel", "Cowbell level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "Cowbell", description: "Level of the cowbell"),
             new ParamDef(P.CbPan, "CbPan", "Cowbell pan", 0, 200, 100, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Cowbell", description: "Where the cowbell sits, from −100 % (left) to +100 % (right)"),
             new ParamDef(P.CcTune, "CcTune", "Crash tune", 0, 240, 120, MapKind.Linear, a: -12, b: 12, unit: "st", digits: 1, group: "Crash", description: "Pitch of the six metallic oscillators, in semitones from where they sit"),
-            new ParamDef(P.CcTone, "CcTone", "Crash tone", 0, 1000, 567, MapKind.Freq, a: 2000, b: 16000, group: "Crash", description: "Corner of its filters: brighter up"),
-            new ParamDef(P.CcDecay, "CcDecay", "Crash decay", 0, 1000, 650, MapKind.Time, a: 0.2, b: 8, group: "Crash", description: "Time to fall 60 dB"),
+            new ParamDef(P.CcTone, "CcTone", "Crash tone", 0, 1000, 452, MapKind.Freq, a: 1000, b: 16000, group: "Crash", description: "Centre of the wide band it rings in (more above it, a little across the mids): brighter up"),
+            new ParamDef(P.CcDecay, "CcDecay", "Crash decay", 0, 1000, 546, MapKind.Time, a: 0.2, b: 8, group: "Crash", description: "Time to fall 60 dB"),
             new ParamDef(P.CcLevel, "CcLevel", "Crash level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "Crash", description: "Level of the crash"),
             new ParamDef(P.CcPan, "CcPan", "Crash pan", 0, 200, 100, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Crash", description: "Where the crash sits, from −100 % (left) to +100 % (right)"),
             new ParamDef(P.RcTune, "RcTune", "Ride tune", 0, 240, 120, MapKind.Linear, a: -12, b: 12, unit: "st", digits: 1, group: "Ride", description: "Pitch of the six metallic oscillators, in semitones from where they sit"),
-            new ParamDef(P.RcTone, "RcTone", "Ride tone", 0, 1000, 441, MapKind.Freq, a: 2000, b: 16000, group: "Ride", description: "Centre of its band-pass, where the ping rings: brighter up"),
-            new ParamDef(P.RcDecay, "RcDecay", "Ride decay", 0, 1000, 734, MapKind.Time, a: 0.2, b: 8, group: "Ride", description: "Time to fall 60 dB"),
+            new ParamDef(P.RcTone, "RcTone", "Ride tone", 0, 1000, 615, MapKind.Freq, a: 1000, b: 16000, group: "Ride", description: "Centre of the band it pings in (more above it, a little across the mids): brighter up"),
+            new ParamDef(P.RcDecay, "RcDecay", "Ride decay", 0, 1000, 596, MapKind.Time, a: 0.2, b: 8, group: "Ride", description: "Time to fall 60 dB"),
             new ParamDef(P.RcLevel, "RcLevel", "Ride level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "Ride", description: "Level of the ride"),
             new ParamDef(P.RcPan, "RcPan", "Ride pan", 0, 200, 100, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Ride", description: "Where the ride sits, from −100 % (left) to +100 % (right)"),
         };

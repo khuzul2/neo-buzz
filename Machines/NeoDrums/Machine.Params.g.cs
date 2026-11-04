@@ -19,20 +19,23 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Vel → tone", Description = "How much velocity (and accent) opens a hit: the kick's click and sweep, the snare's snap and tone, the toms' attack, the hats' and cymbals' tone; a hit at velocity 100 sounds as its parameters say", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int VelTone { get => Values[P.VelTone]; set => Values.Set(P.VelTone, value); }
 
-        [ParameterDecl(Name = "Kick tune", Description = "The body's pitch once its sweep has settled", MinValue = 0, MaxValue = 1000, DefValue = 317)]
+        [ParameterDecl(Name = "Kick tune", Description = "The body's pitch once its sweep has settled", MinValue = 0, MaxValue = 1000, DefValue = 365)]
         public int KickTune { get => Values[P.KickTune]; set => Values.Set(P.KickTune, value); }
 
-        [ParameterDecl(Name = "Kick sweep", Description = "How far above its tune the body starts, falling to it", MinValue = 0, MaxValue = 480, DefValue = 240)]
+        [ParameterDecl(Name = "Kick sweep", Description = "How far above its tune the body starts, falling to it", MinValue = 0, MaxValue = 480, DefValue = 300)]
         public int KickSweep { get => Values[P.KickSweep]; set => Values.Set(P.KickSweep, value); }
 
-        [ParameterDecl(Name = "Kick sweep time", Description = "The sweep's time constant: the pitch is 63 % of the way down after this", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        [ParameterDecl(Name = "Kick sweep time", Description = "The sweep's time constant: the pitch is 63 % of the way down after this", MinValue = 0, MaxValue = 1000, DefValue = 548)]
         public int KickSweepT { get => Values[P.KickSweepT]; set => Values.Set(P.KickSweepT, value); }
 
         [ParameterDecl(Name = "Kick decay", Description = "Time for the body to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 525)]
         public int KickDecay { get => Values[P.KickDecay]; set => Values.Set(P.KickDecay, value); }
 
-        [ParameterDecl(Name = "Kick click", Description = "Level of the attack's click (a short burst of filtered noise)", MinValue = 0, MaxValue = 1000, DefValue = 450)]
+        [ParameterDecl(Name = "Kick click", Description = "Level of the attack's click (a short burst of high-passed noise)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int KickClick { get => Values[P.KickClick]; set => Values.Set(P.KickClick, value); }
+
+        [ParameterDecl(Name = "Kick punch", Description = "How much louder the body starts (up to +12 dB at 100 %), falling back with the sweep: a TR-909's attack", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int KickPunch { get => Values[P.KickPunch]; set => Values.Set(P.KickPunch, value); }
 
         [ParameterDecl(Name = "Kick drive", Description = "Saturation of the body, its level kept", MinValue = 0, MaxValue = 240, DefValue = 30)]
         public int KickDrive { get => Values[P.KickDrive]; set => Values.Set(P.KickDrive, value); }
@@ -43,16 +46,16 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Kick pan", Description = "Where the kick sits, from −100 % (left) to +100 % (right)", MinValue = 0, MaxValue = 200, DefValue = 100)]
         public int KickPan { get => Values[P.KickPan]; set => Values.Set(P.KickPan, value); }
 
-        [ParameterDecl(Name = "Snare tune", Description = "The body's lower tone (the upper sits 1.75 times above it)", MinValue = 0, MaxValue = 1000, DefValue = 444)]
+        [ParameterDecl(Name = "Snare tune", Description = "The body's lower tone, once its short fall has settled (the upper sits an octave above)", MinValue = 0, MaxValue = 1000, DefValue = 424)]
         public int SnareTune { get => Values[P.SnareTune]; set => Values.Set(P.SnareTune, value); }
 
-        [ParameterDecl(Name = "Snare tone", Description = "Corner of the snappy noise's low-pass: brighter up", MinValue = 0, MaxValue = 1000, DefValue = 702)]
+        [ParameterDecl(Name = "Snare tone", Description = "Centre of the snappy noise's band (from about half of it to 1.6 times it): brighter up", MinValue = 0, MaxValue = 1000, DefValue = 702)]
         public int SnareTone { get => Values[P.SnareTone]; set => Values.Set(P.SnareTone, value); }
 
-        [ParameterDecl(Name = "Snare snap", Description = "The snappy noise against the body (0 %: the body alone)", MinValue = 0, MaxValue = 1000, DefValue = 600)]
+        [ParameterDecl(Name = "Snare snap", Description = "The snappy noise against the body (0 %: the body alone)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int SnareSnap { get => Values[P.SnareSnap]; set => Values.Set(P.SnareSnap, value); }
 
-        [ParameterDecl(Name = "Snare decay", Description = "Time for the snappy noise to fall 60 dB (the body takes about half)", MinValue = 0, MaxValue = 1000, DefValue = 467)]
+        [ParameterDecl(Name = "Snare decay", Description = "Time for the snappy noise to fall 60 dB (the body takes about half)", MinValue = 0, MaxValue = 1000, DefValue = 486)]
         public int SnareDecay { get => Values[P.SnareDecay]; set => Values.Set(P.SnareDecay, value); }
 
         [ParameterDecl(Name = "Snare level", Description = "Level of the snare", MinValue = 0, MaxValue = 660, DefValue = 600)]
@@ -61,13 +64,13 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Snare pan", Description = "Where the snare sits, from −100 % (left) to +100 % (right)", MinValue = 0, MaxValue = 200, DefValue = 100)]
         public int SnarePan { get => Values[P.SnarePan]; set => Values.Set(P.SnarePan, value); }
 
-        [ParameterDecl(Name = "Clap tune", Description = "Centre of the clap's band-pass", MinValue = 0, MaxValue = 1000, DefValue = 380)]
+        [ParameterDecl(Name = "Clap tune", Description = "Centre of the clap's band-pass", MinValue = 0, MaxValue = 1000, DefValue = 301)]
         public int ClapTune { get => Values[P.ClapTune]; set => Values.Set(P.ClapTune, value); }
 
         [ParameterDecl(Name = "Clap spread", Description = "Time between the clap's three bursts", MinValue = 0, MaxValue = 1000, DefValue = 630)]
         public int ClapSpread { get => Values[P.ClapSpread]; set => Values.Set(P.ClapSpread, value); }
 
-        [ParameterDecl(Name = "Clap decay", Description = "Time for its tail to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 564)]
+        [ParameterDecl(Name = "Clap decay", Description = "Time for its tail to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 674)]
         public int ClapDecay { get => Values[P.ClapDecay]; set => Values.Set(P.ClapDecay, value); }
 
         [ParameterDecl(Name = "Clap level", Description = "Level of the clap", MinValue = 0, MaxValue = 660, DefValue = 600)]
@@ -76,10 +79,10 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Clap pan", Description = "Where the clap sits, from −100 % (left) to +100 % (right)", MinValue = 0, MaxValue = 200, DefValue = 100)]
         public int ClapPan { get => Values[P.ClapPan]; set => Values.Set(P.ClapPan, value); }
 
-        [ParameterDecl(Name = "Rim tune", Description = "Pitch of the rim shot's ping (a lower one sits at 0.3 of it)", MinValue = 0, MaxValue = 1000, DefValue = 589)]
+        [ParameterDecl(Name = "Rim tune", Description = "Pitch of the rim shot's highest ping (the others sit at half and 0.23 of it)", MinValue = 0, MaxValue = 1000, DefValue = 398)]
         public int RimTune { get => Values[P.RimTune]; set => Values.Set(P.RimTune, value); }
 
-        [ParameterDecl(Name = "Rim decay", Description = "Time for the ping to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 458)]
+        [ParameterDecl(Name = "Rim decay", Description = "Time for its pings to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 635)]
         public int RimDecay { get => Values[P.RimDecay]; set => Values.Set(P.RimDecay, value); }
 
         [ParameterDecl(Name = "Rim level", Description = "Level of the rim shot", MinValue = 0, MaxValue = 660, DefValue = 600)]
@@ -91,10 +94,10 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Closed hat tune", Description = "Pitch of the six metallic oscillators, in semitones from the TR-808's", MinValue = 0, MaxValue = 240, DefValue = 120)]
         public int ChTune { get => Values[P.ChTune]; set => Values.Set(P.ChTune, value); }
 
-        [ParameterDecl(Name = "Closed hat tone", Description = "Centre of the band-pass (the high-pass sits below it): brighter up", MinValue = 0, MaxValue = 1000, DefValue = 667)]
+        [ParameterDecl(Name = "Closed hat tone", Description = "Centre of the band the hats ring in (more above it, a little across the mids): brighter up", MinValue = 0, MaxValue = 1000, DefValue = 636)]
         public int ChTone { get => Values[P.ChTone]; set => Values.Set(P.ChTone, value); }
 
-        [ParameterDecl(Name = "Closed hat decay", Description = "Time to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 477)]
+        [ParameterDecl(Name = "Closed hat decay", Description = "Time to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 452)]
         public int ChDecay { get => Values[P.ChDecay]; set => Values.Set(P.ChDecay, value); }
 
         [ParameterDecl(Name = "Closed hat level", Description = "Level of the closed hat", MinValue = 0, MaxValue = 660, DefValue = 600)]
@@ -106,10 +109,10 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Open hat tune", Description = "Pitch of the six metallic oscillators, in semitones from the TR-808's", MinValue = 0, MaxValue = 240, DefValue = 120)]
         public int OhTune { get => Values[P.OhTune]; set => Values.Set(P.OhTune, value); }
 
-        [ParameterDecl(Name = "Open hat tone", Description = "Centre of the band-pass (the high-pass sits below it): brighter up", MinValue = 0, MaxValue = 1000, DefValue = 667)]
+        [ParameterDecl(Name = "Open hat tone", Description = "Centre of the band the hats ring in (more above it, a little across the mids): brighter up", MinValue = 0, MaxValue = 1000, DefValue = 636)]
         public int OhTone { get => Values[P.OhTone]; set => Values.Set(P.OhTone, value); }
 
-        [ParameterDecl(Name = "Open hat decay", Description = "Time to fall 60 dB (a closed hat cuts it in 5 ms)", MinValue = 0, MaxValue = 1000, DefValue = 618)]
+        [ParameterDecl(Name = "Open hat decay", Description = "Time to fall 60 dB (a closed hat cuts it in 5 ms)", MinValue = 0, MaxValue = 1000, DefValue = 567)]
         public int OhDecay { get => Values[P.OhDecay]; set => Values.Set(P.OhDecay, value); }
 
         [ParameterDecl(Name = "Open hat level", Description = "Level of the open hat", MinValue = 0, MaxValue = 660, DefValue = 600)]
@@ -118,10 +121,10 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Open hat pan", Description = "Where the open hat sits, from −100 % (left) to +100 % (right)", MinValue = 0, MaxValue = 200, DefValue = 100)]
         public int OhPan { get => Values[P.OhPan]; set => Values.Set(P.OhPan, value); }
 
-        [ParameterDecl(Name = "Low tom tune", Description = "The tom's pitch once its short sweep has settled", MinValue = 0, MaxValue = 1000, DefValue = 363)]
+        [ParameterDecl(Name = "Low tom tune", Description = "The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)", MinValue = 0, MaxValue = 1000, DefValue = 147)]
         public int LtTune { get => Values[P.LtTune]; set => Values.Set(P.LtTune, value); }
 
-        [ParameterDecl(Name = "Low tom decay", Description = "Time to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 586)]
+        [ParameterDecl(Name = "Low tom decay", Description = "Time to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 706)]
         public int LtDecay { get => Values[P.LtDecay]; set => Values.Set(P.LtDecay, value); }
 
         [ParameterDecl(Name = "Low tom tone", Description = "Level of the attack's noise", MinValue = 0, MaxValue = 1000, DefValue = 300)]
@@ -133,10 +136,10 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Low tom pan", Description = "Where the low tom sits, from −100 % (left) to +100 % (right)", MinValue = 0, MaxValue = 200, DefValue = 100)]
         public int LtPan { get => Values[P.LtPan]; set => Values.Set(P.LtPan, value); }
 
-        [ParameterDecl(Name = "Mid tom tune", Description = "The tom's pitch once its short sweep has settled", MinValue = 0, MaxValue = 1000, DefValue = 496)]
+        [ParameterDecl(Name = "Mid tom tune", Description = "The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)", MinValue = 0, MaxValue = 1000, DefValue = 238)]
         public int MtTune { get => Values[P.MtTune]; set => Values.Set(P.MtTune, value); }
 
-        [ParameterDecl(Name = "Mid tom decay", Description = "Time to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 562)]
+        [ParameterDecl(Name = "Mid tom decay", Description = "Time to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 626)]
         public int MtDecay { get => Values[P.MtDecay]; set => Values.Set(P.MtDecay, value); }
 
         [ParameterDecl(Name = "Mid tom tone", Description = "Level of the attack's noise", MinValue = 0, MaxValue = 1000, DefValue = 300)]
@@ -148,10 +151,10 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Mid tom pan", Description = "Where the mid tom sits, from −100 % (left) to +100 % (right)", MinValue = 0, MaxValue = 200, DefValue = 100)]
         public int MtPan { get => Values[P.MtPan]; set => Values.Set(P.MtPan, value); }
 
-        [ParameterDecl(Name = "High tom tune", Description = "The tom's pitch once its short sweep has settled", MinValue = 0, MaxValue = 1000, DefValue = 617)]
+        [ParameterDecl(Name = "High tom tune", Description = "The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)", MinValue = 0, MaxValue = 1000, DefValue = 294)]
         public int HtTune { get => Values[P.HtTune]; set => Values.Set(P.HtTune, value); }
 
-        [ParameterDecl(Name = "High tom decay", Description = "Time to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 537)]
+        [ParameterDecl(Name = "High tom decay", Description = "Time to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 626)]
         public int HtDecay { get => Values[P.HtDecay]; set => Values.Set(P.HtDecay, value); }
 
         [ParameterDecl(Name = "High tom tone", Description = "Level of the attack's noise", MinValue = 0, MaxValue = 1000, DefValue = 300)]
@@ -178,10 +181,10 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Crash tune", Description = "Pitch of the six metallic oscillators, in semitones from where they sit", MinValue = 0, MaxValue = 240, DefValue = 120)]
         public int CcTune { get => Values[P.CcTune]; set => Values.Set(P.CcTune, value); }
 
-        [ParameterDecl(Name = "Crash tone", Description = "Corner of its filters: brighter up", MinValue = 0, MaxValue = 1000, DefValue = 567)]
+        [ParameterDecl(Name = "Crash tone", Description = "Centre of the wide band it rings in (more above it, a little across the mids): brighter up", MinValue = 0, MaxValue = 1000, DefValue = 452)]
         public int CcTone { get => Values[P.CcTone]; set => Values.Set(P.CcTone, value); }
 
-        [ParameterDecl(Name = "Crash decay", Description = "Time to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 650)]
+        [ParameterDecl(Name = "Crash decay", Description = "Time to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 546)]
         public int CcDecay { get => Values[P.CcDecay]; set => Values.Set(P.CcDecay, value); }
 
         [ParameterDecl(Name = "Crash level", Description = "Level of the crash", MinValue = 0, MaxValue = 660, DefValue = 600)]
@@ -193,10 +196,10 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Ride tune", Description = "Pitch of the six metallic oscillators, in semitones from where they sit", MinValue = 0, MaxValue = 240, DefValue = 120)]
         public int RcTune { get => Values[P.RcTune]; set => Values.Set(P.RcTune, value); }
 
-        [ParameterDecl(Name = "Ride tone", Description = "Centre of its band-pass, where the ping rings: brighter up", MinValue = 0, MaxValue = 1000, DefValue = 441)]
+        [ParameterDecl(Name = "Ride tone", Description = "Centre of the band it pings in (more above it, a little across the mids): brighter up", MinValue = 0, MaxValue = 1000, DefValue = 615)]
         public int RcTone { get => Values[P.RcTone]; set => Values.Set(P.RcTone, value); }
 
-        [ParameterDecl(Name = "Ride decay", Description = "Time to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 734)]
+        [ParameterDecl(Name = "Ride decay", Description = "Time to fall 60 dB", MinValue = 0, MaxValue = 1000, DefValue = 596)]
         public int RcDecay { get => Values[P.RcDecay]; set => Values.Set(P.RcDecay, value); }
 
         [ParameterDecl(Name = "Ride level", Description = "Level of the ride", MinValue = 0, MaxValue = 660, DefValue = 600)]

@@ -27,67 +27,68 @@ VelLevel    "Vel → level"         0 1000 700   pct                         | H
 VelTone     "Vel → tone"          0 1000 500   pct                         | How much velocity (and accent) opens a hit: the kick's click and sweep, the snare's snap and tone, the toms' attack, the hats' and cymbals' tone; a hit at velocity 100 sounds as its parameters say
 
 group Kick
-KickTune    "Kick tune"           0 1000 317   freq 30 150                 | The body's pitch once its sweep has settled
-KickSweep   "Kick sweep"          0 480 240   lin 0 48 st 1               | How far above its tune the body starts, falling to it
-KickSweepT  "Kick sweep time"     0 1000 500   time 0.002 0.2              | The sweep's time constant: the pitch is 63 % of the way down after this
+KickTune    "Kick tune"           0 1000 365   freq 30 150                 | The body's pitch once its sweep has settled
+KickSweep   "Kick sweep"          0 480 300   lin 0 48 st 1               | How far above its tune the body starts, falling to it
+KickSweepT  "Kick sweep time"     0 1000 548   time 0.002 0.2              | The sweep's time constant: the pitch is 63 % of the way down after this
 KickDecay   "Kick decay"          0 1000 525   time 0.05 4                 | Time for the body to fall 60 dB
-KickClick   "Kick click"          0 1000 450   pct                         | Level of the attack's click (a short burst of filtered noise)
+KickClick   "Kick click"          0 1000 500   pct                         | Level of the attack's click (a short burst of high-passed noise)
+KickPunch   "Kick punch"          0 1000 500   pct                         | How much louder the body starts (up to +12 dB at 100 %), falling back with the sweep: a TR-909's attack
 KickDrive   "Kick drive"          0 240 30    db 0 24                     | Saturation of the body, its level kept
 KickLevel   "Kick level"          0 660 600   db -60 6 inf                | Level of the kick
 KickPan     "Kick pan"            0 200 100   lin -100 100 % 0            | Where the kick sits, from −100 % (left) to +100 % (right)
 
 group Snare
-SnareTune   "Snare tune"          0 1000 444   freq 100 400                | The body's lower tone (the upper sits 1.75 times above it)
-SnareTone   "Snare tone"          0 1000 702   freq 1000 16000             | Corner of the snappy noise's low-pass: brighter up
-SnareSnap   "Snare snap"          0 1000 600   pct                         | The snappy noise against the body (0 %: the body alone)
-SnareDecay  "Snare decay"         0 1000 467   time 0.05 2                 | Time for the snappy noise to fall 60 dB (the body takes about half)
+SnareTune   "Snare tune"          0 1000 424   freq 100 400                | The body's lower tone, once its short fall has settled (the upper sits an octave above)
+SnareTone   "Snare tone"          0 1000 702   freq 1000 16000             | Centre of the snappy noise's band (from about half of it to 1.6 times it): brighter up
+SnareSnap   "Snare snap"          0 1000 500   pct                         | The snappy noise against the body (0 %: the body alone)
+SnareDecay  "Snare decay"         0 1000 486   time 0.05 2                 | Time for the snappy noise to fall 60 dB (the body takes about half)
 SnareLevel  "Snare level"         0 660 600   db -60 6 inf                | Level of the snare
 SnarePan    "Snare pan"           0 200 100   lin -100 100 % 0            | Where the snare sits, from −100 % (left) to +100 % (right)
 
 group Clap
-ClapTune    "Clap tune"           0 1000 380   freq 500 5000               | Centre of the clap's band-pass
+ClapTune    "Clap tune"           0 1000 301   freq 500 5000               | Centre of the clap's band-pass
 ClapSpread  "Clap spread"         0 1000 630   time 0.002 0.03             | Time between the clap's three bursts
-ClapDecay   "Clap decay"          0 1000 564   time 0.05 2                 | Time for its tail to fall 60 dB
+ClapDecay   "Clap decay"          0 1000 674   time 0.05 2                 | Time for its tail to fall 60 dB
 ClapLevel   "Clap level"          0 660 600   db -60 6 inf                | Level of the clap
 ClapPan     "Clap pan"            0 200 100   lin -100 100 % 0            | Where the clap sits, from −100 % (left) to +100 % (right)
 
 group Rim
-RimTune     "Rim tune"            0 1000 589   freq 500 4000               | Pitch of the rim shot's ping (a lower one sits at 0.3 of it)
-RimDecay    "Rim decay"           0 1000 458   time 0.01 0.5               | Time for the ping to fall 60 dB
+RimTune     "Rim tune"            0 1000 398   freq 400 4000               | Pitch of the rim shot's highest ping (the others sit at half and 0.23 of it)
+RimDecay    "Rim decay"           0 1000 635   time 0.01 0.5               | Time for its pings to fall 60 dB
 RimLevel    "Rim level"           0 660 600   db -60 6 inf                | Level of the rim shot
 RimPan      "Rim pan"             0 200 100   lin -100 100 % 0            | Where the rim shot sits, from −100 % (left) to +100 % (right)
 
 group Closed hat
 ChTune      "Closed hat tune"     0 240 120   lin -12 12 st 1             | Pitch of the six metallic oscillators, in semitones from the TR-808's
-ChTone      "Closed hat tone"     0 1000 667   freq 2000 16000             | Centre of the band-pass (the high-pass sits below it): brighter up
-ChDecay     "Closed hat decay"    0 1000 477   time 0.01 1                 | Time to fall 60 dB
+ChTone      "Closed hat tone"     0 1000 636   freq 2000 16000             | Centre of the band the hats ring in (more above it, a little across the mids): brighter up
+ChDecay     "Closed hat decay"    0 1000 452   time 0.01 1                 | Time to fall 60 dB
 ChLevel     "Closed hat level"    0 660 600   db -60 6 inf                | Level of the closed hat
 ChPan       "Closed hat pan"      0 200 100   lin -100 100 % 0            | Where the closed hat sits, from −100 % (left) to +100 % (right)
 
 group Open hat
 OhTune      "Open hat tune"       0 240 120   lin -12 12 st 1             | Pitch of the six metallic oscillators, in semitones from the TR-808's
-OhTone      "Open hat tone"       0 1000 667   freq 2000 16000             | Centre of the band-pass (the high-pass sits below it): brighter up
-OhDecay     "Open hat decay"      0 1000 618   time 0.05 4                 | Time to fall 60 dB (a closed hat cuts it in 5 ms)
+OhTone      "Open hat tone"       0 1000 636   freq 2000 16000             | Centre of the band the hats ring in (more above it, a little across the mids): brighter up
+OhDecay     "Open hat decay"      0 1000 567   time 0.05 4                 | Time to fall 60 dB (a closed hat cuts it in 5 ms)
 OhLevel     "Open hat level"      0 660 600   db -60 6 inf                | Level of the open hat
 OhPan       "Open hat pan"        0 200 100   lin -100 100 % 0            | Where the open hat sits, from −100 % (left) to +100 % (right)
 
 group Low tom
-LtTune      "Low tom tune"        0 1000 363   freq 40 500                 | The tom's pitch once its short sweep has settled
-LtDecay     "Low tom decay"       0 1000 586   time 0.05 3                 | Time to fall 60 dB
+LtTune      "Low tom tune"        0 1000 147   freq 40 500                 | The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)
+LtDecay     "Low tom decay"       0 1000 706   time 0.05 3                 | Time to fall 60 dB
 LtTone      "Low tom tone"        0 1000 300   pct                         | Level of the attack's noise
 LtLevel     "Low tom level"       0 660 600   db -60 6 inf                | Level of the low tom
 LtPan       "Low tom pan"         0 200 100   lin -100 100 % 0            | Where the low tom sits, from −100 % (left) to +100 % (right)
 
 group Mid tom
-MtTune      "Mid tom tune"        0 1000 496   freq 40 500                 | The tom's pitch once its short sweep has settled
-MtDecay     "Mid tom decay"       0 1000 562   time 0.05 3                 | Time to fall 60 dB
+MtTune      "Mid tom tune"        0 1000 238   freq 40 500                 | The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)
+MtDecay     "Mid tom decay"       0 1000 626   time 0.05 3                 | Time to fall 60 dB
 MtTone      "Mid tom tone"        0 1000 300   pct                         | Level of the attack's noise
 MtLevel     "Mid tom level"       0 660 600   db -60 6 inf                | Level of the mid tom
 MtPan       "Mid tom pan"         0 200 100   lin -100 100 % 0            | Where the mid tom sits, from −100 % (left) to +100 % (right)
 
 group High tom
-HtTune      "High tom tune"       0 1000 617   freq 40 500                 | The tom's pitch once its short sweep has settled
-HtDecay     "High tom decay"      0 1000 537   time 0.05 3                 | Time to fall 60 dB
+HtTune      "High tom tune"       0 1000 294   freq 40 500                 | The tom's pitch once its sweep has settled (it starts 1.2 octaves above, falls an octave in about 25 ms, then the rest over about a second)
+HtDecay     "High tom decay"      0 1000 626   time 0.05 3                 | Time to fall 60 dB
 HtTone      "High tom tone"       0 1000 300   pct                         | Level of the attack's noise
 HtLevel     "High tom level"      0 660 600   db -60 6 inf                | Level of the high tom
 HtPan       "High tom pan"        0 200 100   lin -100 100 % 0            | Where the high tom sits, from −100 % (left) to +100 % (right)
@@ -100,14 +101,14 @@ CbPan       "Cowbell pan"         0 200 100   lin -100 100 % 0            | Wher
 
 group Crash
 CcTune      "Crash tune"          0 240 120   lin -12 12 st 1             | Pitch of the six metallic oscillators, in semitones from where they sit
-CcTone      "Crash tone"          0 1000 567   freq 2000 16000             | Corner of its filters: brighter up
-CcDecay     "Crash decay"         0 1000 650   time 0.2 8                  | Time to fall 60 dB
+CcTone      "Crash tone"          0 1000 452   freq 1000 16000             | Centre of the wide band it rings in (more above it, a little across the mids): brighter up
+CcDecay     "Crash decay"         0 1000 546   time 0.2 8                  | Time to fall 60 dB
 CcLevel     "Crash level"         0 660 600   db -60 6 inf                | Level of the crash
 CcPan       "Crash pan"           0 200 100   lin -100 100 % 0            | Where the crash sits, from −100 % (left) to +100 % (right)
 
 group Ride
 RcTune      "Ride tune"           0 240 120   lin -12 12 st 1             | Pitch of the six metallic oscillators, in semitones from where they sit
-RcTone      "Ride tone"           0 1000 441   freq 2000 16000             | Centre of its band-pass, where the ping rings: brighter up
-RcDecay     "Ride decay"          0 1000 734   time 0.2 8                  | Time to fall 60 dB
+RcTone      "Ride tone"           0 1000 615   freq 1000 16000             | Centre of the band it pings in (more above it, a little across the mids): brighter up
+RcDecay     "Ride decay"          0 1000 596   time 0.2 8                  | Time to fall 60 dB
 RcLevel     "Ride level"          0 660 600   db -60 6 inf                | Level of the ride
 RcPan       "Ride pan"            0 200 100   lin -100 100 % 0            | Where the ride sits, from −100 % (left) to +100 % (right)

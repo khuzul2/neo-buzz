@@ -119,9 +119,9 @@ namespace NeoBuzz.MachineTests
             foreach (var (voice, param, values, settle) in new (int, int, double[], double)[]
                      {
                          (Kick, P.KickTune, new[] { 30.0, 45, 60, 90, 150 }, 0.25),
-                         (LowTom, P.LtTune, new[] { 40.0, 80, 160, 320, 500 }, 0.25),
-                         (MidTom, P.MtTune, new[] { 60.0, 140, 300 }, 0.25),
-                         (HighTom, P.HtTune, new[] { 90.0, 190, 450 }, 0.25),
+                         (LowTom, P.LtTune, new[] { 40.0, 80, 160, 320, 500 }, 1.6),
+                         (MidTom, P.MtTune, new[] { 60.0, 140, 300 }, 1.6),
+                         (HighTom, P.HtTune, new[] { 90.0, 190, 450 }, 1.6),
                          (Snare, P.SnareTune, new[] { 100.0, 185, 400 }, 0.06),
                          (Rim, P.RimTune, new[] { 500.0, 1700, 4000 }, 0.002),
                      })
@@ -129,7 +129,7 @@ namespace NeoBuzz.MachineTests
                 double most = 0;
                 foreach (double hz in values)
                 {
-                    var x = Hit(voice, 1.5, v =>
+                    var x = Hit(voice, Math.Max(1.5, settle + 0.5), v =>
                     {
                         Set(v, param, hz);
                         if (voice == Kick) Set(v, P.KickDecay, 4.0);

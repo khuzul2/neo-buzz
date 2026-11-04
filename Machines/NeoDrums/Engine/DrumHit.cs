@@ -22,8 +22,8 @@ namespace NeoBuzz.Drums
         public double Decay;
         /// <summary>Hz (snare, hats, crash, ride) or 0 … 1 (toms' attack noise).</summary>
         public double Tone;
-        /// <summary>Kick: sweep (semitones), sweep time (s), click (0 … 1), drive (dB). Snare: snap (0 … 1). Clap: spread (s).</summary>
-        public double A, B, C, D;
+        /// <summary>Kick: sweep (semitones), sweep time (s), click (0 … 1), drive (dB), punch (0 … 1). Snare: snap (0 … 1). Clap: spread (s).</summary>
+        public double A, B, C, D, E;
         /// <summary>The hit's gain (level, velocity, accent, the voice's own scale).</summary>
         public float Gain;
         /// <summary>How far velocity and accent open the hit: 0 at velocity 100 without accent.</summary>
@@ -48,14 +48,17 @@ namespace NeoBuzz.Drums
         long age;
 
         // Oscillators and their envelopes.
-        double baseHz, sweepOct, sweep, sweepK, ratio;
-        double env1, k1, env2, k2, env3, k3;
+        double baseHz, sweepOct, sweep, sweepK, ratio, sweep2Oct, sweep2, sweep2K;
+        double env1, k1, env2, k2, env3, k3, env4, k4;
+        float mix1, mix3;
         float attack, attackStep;
         float clickLevel, noiseLevel, metalLevel, bodyLevel;
         float driveGain, driveNorm;
         bool drive;
         Rng rng;
         Svf f1, f2, f3;
+        OnePole wide;
+        double punch, punchK;
 
         // Clap: its bursts.
         int burstEvery, burstsLeft, untilBurst, tailAt;
@@ -100,60 +103,74 @@ namespace NeoBuzz.Drums
             gain = s.Gain;
             Last = 0;
             rng = new Rng(seed);
-            // The filters' modes first: their coefficients depend on them.
-            f1.Mode = SvfMode.BandPass;
-            f2.Mode = SvfMode.HighPass;
-            f3.Mode = v == DrumVoice.Crash || v == DrumVoice.Ride ? SvfMode.HighPass : SvfMode.LowPass;
             f1.Reset();
             f2.Reset();
             f3.Reset();
+            wide.Reset();
+            punch = 0;
             for (int i = 0; i < MaxPhases; i++) sinePhase[i] = 0;
             env1 = env2 = env3 = 0;
+            sweep = sweep2 = 0;
             attack = 0f;
             attackStep = Ramp(0.0003, fs);
             drive = false;
             float b = s.Bright;
+            float rate = (float)fs;
+            double top = 0.45 * fs;
+            void Set(ref Svf f, SvfMode mode, double hz, double q)
+            {
+                f.Mode = mode;
+                f.SetFast(Svf.Prewarp((float)Math.Min(top, hz), rate), (float)(1 / q));
+            }
             switch (v)
             {
                 case DrumVoice.Kick:
                 {
+                    // A sine falling from Sweep above its tune (a TR-909's), a click of high-passed noise, drive on the body.
                     baseHz = s.Tune;
                     sweepOct = Math.Max(0, s.A / 12.0 * (1 + 0.5 * b));
                     sweep = 1;
                     sweepK = PortableMath.Exp(-1.0 / (Math.Max(1e-4, s.B) * fs));
                     env1 = 1; k1 = Decay(s.Decay, fs);
-                    env2 = 1; k2 = Decay(0.012, fs);
-                    clickLevel = (float)Math.Min(1.5, s.C * PortableMath.Exp2(2 * b)) * 0.5f;
+                    // Punch: the body starts up to 4 times (+12 dB) louder, falling back with the sweep.
+                    punch = 3 * s.E; punchK = sweepK;
+                    env2 = 1; k2 = Decay(0.015, fs);
+                    clickLevel = (float)Math.Min(1.5, s.C * PortableMath.Exp2(2 * b)) * 0.35f;
                     attackStep = Ramp(0.0001, fs);
                     double g = DspMath.DbToGain(s.D);
                     drive = s.D > 0.05;
                     driveGain = (float)g;
                     driveNorm = drive ? (float)(1.0 / PortableMath.Tanh(g)) : 1f;
-                    f1.SetFast(Svf.Prewarp(2600f, (float)fs), 1.25f);
+                    Set(ref f1, SvfMode.HighPass, 900, 0.7);
+                    Set(ref f2, SvfMode.LowPass, 6000, 0.7);
                     break;
                 }
                 case DrumVoice.Snare:
                 {
+                    // Two tones an octave apart, falling 8 st (a TR-909's: most of it in 15 ms), and the snappy noise: a band round Tone, and some across the mids.
                     baseHz = s.Tune;
-                    ratio = 1.75;
-                    sweepOct = 3.0 / 12;
+                    ratio = 2.0;
+                    sweepOct = 8.0 / 12;
                     sweep = 1;
-                    sweepK = PortableMath.Exp(-1.0 / (0.004 * fs));
-                    env1 = 1; k1 = Decay(0.5 * s.Decay + 0.03, fs);
-                    env2 = 1; k2 = Decay(0.35 * s.Decay + 0.02, fs);
+                    sweepK = PortableMath.Exp(-1.0 / (0.014 * fs));
+                    env1 = 1; k1 = Decay(0.6 * s.Decay + 0.04, fs);
+                    env2 = 1; k2 = Decay(0.4 * s.Decay + 0.02, fs);
                     env3 = 1; k3 = Decay(s.Decay, fs);
                     double snap = Math.Min(1, s.A * PortableMath.Exp2(1.5 * b));
-                    bodyLevel = (float)(1 - 0.6 * snap);
-                    noiseLevel = (float)(1.6 * snap);
-                    double tone = Math.Min(0.45 * fs, s.Tone * PortableMath.Exp2(b));
-                    f3.SetFast(Svf.Prewarp((float)tone, (float)fs), 1.4142f);
-                    f2.SetFast(Svf.Prewarp(700f, (float)fs), 1.4142f);
+                    bodyLevel = (float)(1 - 0.5 * snap);
+                    noiseLevel = (float)(0.6 * snap);
+                    double tone = s.Tone * PortableMath.Exp2(b);
+                    Set(ref f1, SvfMode.HighPass, 0.55 * tone, 0.7);
+                    Set(ref f3, SvfMode.LowPass, 1.3 * tone, 0.7);
+                    Set(ref f2, SvfMode.HighPass, 600, 0.7);
                     break;
                 }
                 case DrumVoice.Clap:
                 {
-                    double centre = Math.Min(0.45 * fs, s.Tune * PortableMath.Exp2(0.5 * b));
-                    f1.SetFast(Svf.Prewarp((float)centre, (float)fs), 1f / 1.8f);
+                    // Noise in three bursts and a tail, through a band-pass (and a little of it above).
+                    double centre = s.Tune * PortableMath.Exp2(0.5 * b);
+                    Set(ref f1, SvfMode.BandPass, centre, 0.8);
+                    Set(ref f2, SvfMode.HighPass, 3 * centre, 0.7);
                     burstEvery = Math.Max(1, (int)Math.Round(s.A * fs));
                     burstsLeft = 2;
                     untilBurst = burstEvery;
@@ -165,13 +182,13 @@ namespace NeoBuzz.Drums
                 }
                 case DrumVoice.Rim:
                 {
+                    // Three pings (a TR-909's rim shot: Tune, half and 0.22 of it) and a tick.
                     baseHz = s.Tune;
-                    ratio = 0.27;
                     env1 = 1; k1 = Decay(s.Decay, fs);
-                    env2 = 1; k2 = Decay(0.7 * s.Decay, fs);
-                    env3 = 1; k3 = Decay(0.003, fs);
-                    f2.SetFast(Svf.Prewarp(400f, (float)fs), 1.4142f);
-                    f1.SetFast(Svf.Prewarp(3000f, (float)fs), 1f);
+                    env2 = 1; k2 = Decay(0.8 * s.Decay, fs);
+                    env3 = 1; k3 = Decay(s.Decay, fs);
+                    env4 = 1; k4 = Decay(0.006, fs);
+                    Set(ref f1, SvfMode.BandPass, 2000, 0.5);
                     break;
                 }
                 case DrumVoice.ClosedHat:
@@ -179,36 +196,42 @@ namespace NeoBuzz.Drums
                 case DrumVoice.Crash:
                 case DrumVoice.Ride:
                 {
+                    // The TR-808's six square waves and noise through a band round Tone, some of the noise across (a cymbal's),
+                    // then a low-pass.
                     double t = PortableMath.Exp2(s.Tune / 12.0);
                     double scale = v == DrumVoice.Ride ? 1.25 : 1.0;
                     for (int i = 0; i < MetalBank.Max; i++) hz[i] = MetalBank.Tr808[i] * t * scale;
                     metal.Start(hz, MetalBank.StartPhases, MetalBank.Max, fs);
-                    double tone = Math.Min(0.45 * fs, s.Tone * PortableMath.Exp2(b));
+                    double tone = s.Tone * PortableMath.Exp2(b);
                     env1 = 1; k1 = Decay(s.Decay, fs);
                     if (v == DrumVoice.ClosedHat || v == DrumVoice.OpenHat)
                     {
-                        f1.SetFast(Svf.Prewarp((float)tone, (float)fs), 1f / 1.4f);
-                        f2.SetFast(Svf.Prewarp((float)(0.75 * tone), (float)fs), 1.4142f);
-                        metalLevel = 1f;
-                        noiseLevel = MetalOnly ? 0f : 0.3f;
+                        Set(ref f1, SvfMode.BandPass, tone, 0.8);
+                        wide.Set(300, fs);
+                        Set(ref f2, SvfMode.LowPass, 16000, 0.7);
+                        metalLevel = 0.6f;
+                        noiseLevel = MetalOnly ? 0f : 0.8f;
+                        mix1 = 1f; mix3 = 0.35f;
                         attackStep = Ramp(0.0002, fs);
                     }
                     else if (v == DrumVoice.Crash)
                     {
-                        f2.SetFast(Svf.Prewarp((float)(0.45 * tone), (float)fs), 1.4142f);
-                        f3.SetFast(Svf.Prewarp((float)Math.Min(0.45 * fs, 0.8 * tone), (float)fs), 1.4142f);
-                        metalLevel = 1f;
-                        noiseLevel = MetalOnly ? 0f : 0.45f;
+                        Set(ref f1, SvfMode.BandPass, tone, 0.5);
+                        wide.Set(250, fs);
+                        Set(ref f2, SvfMode.LowPass, 8000, 0.7);
+                        metalLevel = 0.5f;
+                        noiseLevel = MetalOnly ? 0f : 1f;
+                        mix1 = 1f; mix3 = 0.25f;
                         attackStep = Ramp(0.001, fs);
                     }
                     else
                     {
-                        f1.SetFast(Svf.Prewarp((float)tone, (float)fs), 1f / 2.2f);
-                        f2.SetFast(Svf.Prewarp((float)Math.Min(0.45 * fs, 1.6 * tone), (float)fs), 1.4142f);
-                        f3.SetFast(Svf.Prewarp((float)Math.Min(0.45 * fs, 1.6 * tone), (float)fs), 1.4142f);
-                        metalLevel = 1f;
-                        noiseLevel = MetalOnly ? 0f : 0.15f;
-                        env2 = 1; k2 = Decay(0.6 * s.Decay, fs);
+                        Set(ref f1, SvfMode.BandPass, tone, 1.0);
+                        wide.Set(300, fs);
+                        Set(ref f2, SvfMode.LowPass, 11000, 0.7);
+                        metalLevel = 0.8f;
+                        noiseLevel = MetalOnly ? 0f : 0.5f;
+                        mix1 = 1f; mix3 = 0.3f;
                         attackStep = Ramp(0.0005, fs);
                     }
                     break;
@@ -217,24 +240,30 @@ namespace NeoBuzz.Drums
                 case DrumVoice.MidTom:
                 case DrumVoice.HighTom:
                 {
+                    // A sine (and its octave, quieter) falling as a TR-909's tom does: an octave fast, then slowly, to its tune.
                     baseHz = s.Tune;
-                    sweepOct = 5.0 / 12 * (1 + 0.5 * b);
+                    sweepOct = 1.0 * (1 + 0.5 * b);
                     sweep = 1;
-                    sweepK = PortableMath.Exp(-1.0 / (0.03 * fs));
+                    sweepK = PortableMath.Exp(-1.0 / (0.012 * fs));
+                    sweep2Oct = 0.2;
+                    sweep2 = 1;
+                    sweep2K = PortableMath.Exp(-1.0 / (0.3 * fs));
                     env1 = 1; k1 = Decay(s.Decay, fs);
                     env2 = 1; k2 = Decay(0.06, fs);
                     noiseLevel = (float)(Math.Min(1.5, s.Tone * PortableMath.Exp2(1.5 * b)) * 0.5);
-                    f3.SetFast(Svf.Prewarp((float)Math.Min(0.45 * fs, 6 * s.Tune), (float)fs), 1.4142f);
+                    Set(ref f3, SvfMode.LowPass, 4000, 0.7);
+                    attackStep = Ramp(0.006, fs);
                     break;
                 }
                 case DrumVoice.Cowbell:
                 {
+                    // The TR-808's two square waves (1 : 1.48) through a band-pass, a fast attack and a tail.
                     hz[0] = s.Tune;
                     hz[1] = s.Tune * 1.48;
                     metal.Start(hz, MetalBank.StartPhases, 2, fs);
                     env1 = 1; k1 = Decay(0.05, fs);
                     env2 = 1; k2 = Decay(s.Decay, fs);
-                    f1.SetFast(Svf.Prewarp((float)Math.Min(0.45 * fs, 3.3 * s.Tune), (float)fs), 1f);
+                    Set(ref f1, SvfMode.BandPass, 3.3 * s.Tune, 1.0);
                     attackStep = Ramp(0.0002, fs);
                     break;
                 }
@@ -303,11 +332,12 @@ namespace NeoBuzz.Drums
                 float body = (float)Sin2Pi(sinePhase[0]);
                 if (drive) body = (float)PortableMath.Tanh(driveGain * body) * driveNorm;
                 if (attack < 1f) { attack += attackStep; if (attack > 1f) attack = 1f; }
-                float click = env2 > 1e-6 ? f1.Process(rng.NextBipolar()) * (float)env2 * clickLevel * attack : 0f;
-                y = (body * (float)env1 + click) * gain * fg;
+                float click = env2 > 1e-6 ? f2.Process(f1.Process(rng.NextBipolar())) * (float)env2 * clickLevel * attack : 0f;
+                y = (body * (float)(env1 * (1 + punch)) + click) * gain * fg;
                 bus[i] += y;
                 env1 *= k1;
                 env2 *= k2;
+                punch *= punchK;
                 if (env1 < EndLevel) { active = false; break; }
             }
             Last = y;
@@ -326,9 +356,10 @@ namespace NeoBuzz.Drums
                 if (sinePhase[0] >= 1) sinePhase[0] -= 1;
                 sinePhase[1] += f * ratio * inv;
                 if (sinePhase[1] >= 1) sinePhase[1] -= 1;
-                float body = (float)(Sin2Pi(sinePhase[0]) * env1 + 0.65 * Sin2Pi(sinePhase[1]) * env2);
+                float body = (float)(Sin2Pi(sinePhase[0]) * env1 + 0.55 * Sin2Pi(sinePhase[1]) * env2);
                 if (attack < 1f) { attack += attackStep; if (attack > 1f) attack = 1f; }
-                float noise = f2.Process(f3.Process(rng.NextBipolar())) * (float)env3 * attack;
+                float white = rng.NextBipolar();
+                float noise = (f3.Process(f1.Process(white)) + 0.45f * f2.Process(white)) * (float)env3 * attack;
                 y = (body * bodyLevel + noise * noiseLevel) * gain * fg;
                 bus[i] += y;
                 env1 *= k1;
@@ -353,8 +384,8 @@ namespace NeoBuzz.Drums
                 }
                 if (tailAt > 0 && --tailAt == 0) env2 = 0.55;
                 if (attack < 1f) { attack += attackStep; if (attack > 1f) attack = 1f; }
-                double e = env1 + env2;
-                y = f1.Process(rng.NextBipolar() * (float)e * attack) * gain * fg;
+                float x = rng.NextBipolar() * (float)(env1 + env2) * attack;
+                y = (f1.Process(x) + 0.05f * f2.Process(x)) * gain * fg;
                 bus[i] += y;
                 env1 *= burstK;
                 env2 *= k2;
@@ -372,17 +403,20 @@ namespace NeoBuzz.Drums
                 if (!Fade(out float fg)) { y = 0; break; }
                 sinePhase[0] += baseHz * inv;
                 if (sinePhase[0] >= 1) sinePhase[0] -= 1;
-                sinePhase[1] += baseHz * ratio * inv;
+                sinePhase[1] += baseHz * 0.5 * inv;
                 if (sinePhase[1] >= 1) sinePhase[1] -= 1;
+                sinePhase[2] += baseHz * 0.233 * inv;
+                if (sinePhase[2] >= 1) sinePhase[2] -= 1;
                 if (attack < 1f) { attack += attackStep; if (attack > 1f) attack = 1f; }
-                float click = env3 > 1e-6 ? f1.Process(rng.NextBipolar()) * (float)env3 * 0.5f * attack : 0f;
-                float x = (float)(Sin2Pi(sinePhase[0]) * env1 + 0.7 * Sin2Pi(sinePhase[1]) * env2) + click;
-                y = f2.Process(x) * gain * fg;
+                float tick = env4 > 1e-6 ? f1.Process(rng.NextBipolar()) * (float)env4 * 1.6f * attack : 0f;
+                float x = (float)(Sin2Pi(sinePhase[0]) * env1 + 0.8 * Sin2Pi(sinePhase[1]) * env2 + 1.0 * Sin2Pi(sinePhase[2]) * env3) + tick;
+                y = x * gain * fg;
                 bus[i] += y;
                 env1 *= k1;
                 env2 *= k2;
                 env3 *= k3;
-                if (env1 < EndLevel) { active = false; break; }
+                env4 *= k4;
+                if (env1 < EndLevel && env3 < EndLevel) { active = false; break; }
             }
             Last = y;
         }
@@ -394,13 +428,15 @@ namespace NeoBuzz.Drums
             for (int i = 0; i < n; i++)
             {
                 if (!Fade(out float fg)) { y = 0; break; }
-                double f = baseHz * PortableMath.Exp2(sweepOct * sweep);
+                double f = baseHz * PortableMath.Exp2(sweepOct * sweep + sweep2Oct * sweep2);
                 sweep *= sweepK;
+                sweep2 *= sweep2K;
                 sinePhase[0] += f * inv;
                 if (sinePhase[0] >= 1) sinePhase[0] -= 1;
                 if (attack < 1f) { attack += attackStep; if (attack > 1f) attack = 1f; }
                 float noise = env2 > 1e-6 ? f3.Process(rng.NextBipolar()) * (float)env2 * noiseLevel * attack : 0f;
-                y = ((float)(Sin2Pi(sinePhase[0]) * env1) + noise) * gain * fg;
+                double body = Sin2Pi(sinePhase[0]) + 0.25 * Sin2Pi(2 * sinePhase[0]);
+                y = ((float)(body * env1) + noise) * gain * fg;
                 bus[i] += y;
                 env1 *= k1;
                 env2 *= k2;
@@ -430,24 +466,16 @@ namespace NeoBuzz.Drums
         void RenderMetal(float[] bus, int n)
         {
             float y = Last;
-            var v = voice;
             for (int i = 0; i < n; i++)
             {
                 if (!Fade(out float fg)) { y = 0; break; }
                 if (attack < 1f) { attack += attackStep; if (attack > 1f) attack = 1f; }
-                float m = metal.Next() * metalLevel;
                 float noise = noiseLevel > 0 ? rng.NextBipolar() * noiseLevel : 0f;
-                float x;
-                if (v == DrumVoice.Crash)
-                    x = f2.Process(m) * 0.7f + f3.Process(noise);
-                else if (v == DrumVoice.Ride)
-                    x = (f1.Process(m) + 0.5f * f2.Process(m)) * (float)(0.7 + 0.3 * env2) + f3.Process(noise);
-                else
-                    x = f2.Process(f1.Process(m + noise));
-                y = x * (float)env1 * attack * gain * fg;
+                float x = metal.Next() * metalLevel + noise;
+                float z = f2.Process(f1.Process(x) * mix1 + wide.HighPass(noise) * mix3);
+                y = z * (float)env1 * attack * gain * fg;
                 bus[i] += y;
                 env1 *= k1;
-                env2 *= k2;
                 if (env1 < EndLevel) { active = false; break; }
             }
             Last = y;
