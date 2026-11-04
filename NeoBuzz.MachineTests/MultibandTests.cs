@@ -372,8 +372,8 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void TheBandsSumToTheDryWhileTheCrossoversMove()
         {
-            // The linear split on its own: every partition, the crossovers somewhere new (a redesign every 4 partitions,
-            // crossfading): the bands always add up to the delayed input.
+            // The linear split on its own: every partition, the crossovers somewhere new (a redesign starting every 4
+            // partitions, its steps taken as the engine takes them, then crossfading): the bands always add up to the delayed input.
             var split = new LinearSplit(Rate, MultibandDesign.Effective(120, 1000, 6000, Rate));
             var rng = new Random(3);
             var x = Noise(64 * split.P, 0.3, 5);
@@ -388,6 +388,7 @@ namespace NeoBuzz.MachineTests
                 Array.Copy(y, k * split.P, inR, 0, split.P);
                 var target = MultibandDesign.Effective(20 * Math.Pow(1000, rng.NextDouble()), 20 * Math.Pow(1000, rng.NextDouble()), 20 * Math.Pow(1000, rng.NextDouble()), Rate);
                 split.Process(inL, inR, k % 7 != 3, target);
+                DesignSteps(split);
                 for (int n = 0; n < split.P; n++)
                 {
                     double l = 0, r = 0;
@@ -402,6 +403,114 @@ namespace NeoBuzz.MachineTests
             Measure.Report($"Neo Multiband linear split, crossovers moving every partition: {split.Designs - designs} redesigns in 64 partitions, the bands' sum within {worst:E1} of the delayed input");
             Assert.That(split.Designs - designs, Is.EqualTo(16), "at most every 4th partition");
             Assert.That(worst, Is.LessThan(2e-7));
+        }
+
+        /// <summary>The design steps the engine takes during one partition: one every DesignStride samples but at its first.</summary>
+        static void DesignSteps(LinearSplit split)
+        {
+            for (int q = LinearSplit.DesignStride; q < split.P; q += LinearSplit.DesignStride) split.DesignStep();
+        }
+
+        [Test]
+        public void TransformInPartsIsTheWholeTransformBitForBit()
+        {
+            // The FFT the crossovers' design runs in steps: in parts of any size, from the bit reversal or from data written
+            // already reversed, the same bits as one Transform, forward and inverse.
+            var rng = new Random(7);
+            foreach (int size in new[] { 8, 16, 64, 1024, 16384 })
+            {
+                var fft = new ComplexFft(size);
+                var re = new float[size];
+                var im = new float[size];
+                for (int i = 0; i < size; i++)
+                {
+                    re[i] = (float)(rng.NextDouble() - 0.5);
+                    im[i] = (float)(rng.NextDouble() - 0.5);
+                }
+                foreach (bool inverse in new[] { false, true })
+                {
+                    var wr = (float[])re.Clone();
+                    var wi = (float[])im.Clone();
+                    fft.Transform(wr, wi, inverse);
+                    foreach (int budget in new[] { 1, 7, 8, 100, 1000, 10240, int.MaxValue / 8 })
+                        foreach (bool reversed in new[] { false, true })
+                        {
+                            var pr = new float[size];
+                            var pi = new float[size];
+                            for (int i = 0; i < size; i++)
+                            {
+                                int at = reversed ? fft.Reversed(i) : i;
+                                pr[at] = re[i];
+                                pi[at] = im[i];
+                            }
+                            var progress = new FftProgress { Pass = reversed ? 1 : 0 };
+                            int calls = 1;
+                            while (!fft.TransformPart(pr, pi, inverse, ref progress, budget)) calls++;
+                            for (int i = 0; i < size; i++)
+                            {
+                                Assert.That(Bits(pr[i]), Is.EqualTo(Bits(wr[i])), $"{size} points, budget {budget}, {(reversed ? "reversed" : "in order")}, re {i}");
+                                Assert.That(Bits(pi[i]), Is.EqualTo(Bits(wi[i])), $"{size} points, budget {budget}, {(reversed ? "reversed" : "in order")}, im {i}");
+                            }
+                            if (budget >= 1 << 24) Assert.That(calls, Is.EqualTo(1), "a budget for the whole transform: one call");
+                            if (budget == 1) Assert.That(calls, Is.GreaterThanOrEqualTo(size / 2), "the smallest budget: a call for each butterfly of the two-point pass at least");
+                        }
+                }
+            }
+        }
+
+        [TestCase(44100)]
+        [TestCase(48000)]
+        [TestCase(96000)]
+        [TestCase(192000)]
+        public void TheSteppedDesignIsTheWholeDesignBitForBit(int rate)
+        {
+            // Two linear splits on the same noise, the crossovers jumping every 6 partitions through the test sets: one designs
+            // in steps (as the engine runs it), the other whole at the partition that asks (as before). Once both have taken a
+            // design and the crossfade is over, their bands are the same bits; the stepped one lands within DesignEvery
+            // partitions (3 at 44.1 and 48 kHz) and no partition takes more than its 31, 63 or 127 steps.
+            var sets = CrossoverSets.Select(c => MultibandDesign.Effective(c.F1, c.F2, c.F3, rate)).ToArray();
+            var stepped = new LinearSplit(rate, sets[0]);
+            var whole = new LinearSplit(rate, sets[0]) { DesignAtOnce = true };
+            int p = stepped.P;
+            var x = Noise(6 * sets.Length * p + 16 * p, 0.3, 17);
+            var y = Noise(x.Length, 0.3, 18);
+            var inL = new float[p];
+            var inR = new float[p];
+            int partitions = x.Length / p, compared = 0, slowest = 0, asked = -1;
+            long mostSteps = 0;
+            for (int k = 0; k < partitions; k++)
+            {
+                var target = sets[(k / 6 + 1) % sets.Length];
+                Array.Copy(x, k * p, inL, 0, p);
+                Array.Copy(y, k * p, inR, 0, p);
+                whole.Process(inL, inR, true, target);
+                stepped.Process(inL, inR, true, target);
+                if (!stepped.Designed.Equals(target) && asked < 0) asked = k;
+                if (stepped.Designed.Equals(target) && asked >= 0)
+                {
+                    slowest = Math.Max(slowest, k - asked);
+                    asked = -1;
+                }
+                long before = stepped.Steps;
+                DesignSteps(stepped);
+                mostSteps = Math.Max(mostSteps, stepped.Steps - before);
+                // Both on the same design for the whole partition: the last switch (whole: at 6m, stepped: at 6m + 3) behind.
+                if (k % 6 == 5)
+                {
+                    for (int b = 0; b < 4; b++)
+                        for (int n = 0; n < p; n++)
+                        {
+                            Assert.That(Bits(stepped.BandL[b][n]), Is.EqualTo(Bits(whole.BandL[b][n])), $"partition {k}, band {b + 1}, left {n}");
+                            Assert.That(Bits(stepped.BandR[b][n]), Is.EqualTo(Bits(whole.BandR[b][n])), $"partition {k}, band {b + 1}, right {n}");
+                        }
+                    compared++;
+                }
+            }
+            Measure.Report($"Neo Multiband at {rate} Hz: a design in steps lands {slowest} partitions after it starts ({slowest * p * 1000.0 / rate:F1} ms), at most {mostSteps} steps a partition; its bands bit for bit the whole design's ({compared} partitions compared)");
+            Assert.That(slowest, Is.InRange(1, LinearSplit.DesignEvery));
+            if (rate <= 48000) Assert.That(slowest, Is.EqualTo(3));
+            Assert.That(mostSteps, Is.LessThanOrEqualTo(p / LinearSplit.DesignStride - 1));
+            Assert.That(compared, Is.GreaterThan(sets.Length));
         }
 
         // ------------------------------------------------------------------ the dynamics
@@ -688,6 +797,124 @@ namespace NeoBuzz.MachineTests
             Measure.Report($"Neo Multiband {phase}: crossover 1 jumping across a 220 Hz sine every 1024 samples, largest step {ratio:F2}× the steady signal's" +
                            (phase == PhaseMode.Linear ? $" ({e.Linear.Designs - designs} redesigns)" : ""));
             Assert.That(ratio, Is.LessThan(1.5));
+        }
+
+        [Test]
+        public void ACrossoverSweepStaysBoundedPerBlock()
+        {
+            // Crossover 2 dragged (a parameter step every 64-sample block, 1 → 1.75 kHz and back) on noise, every band
+            // compressing, linear phase, in blocks of 64: a design starting every 4th partition. Counted: no block takes more
+            // than 4 design steps (one every 16 samples). Timed, each block's best of 5 identical runs (the machine's own
+            // hiccups drop out): the slowest block of the sweep within 2× the slowest without it (where a partition's
+            // convolution runs), and under half the slowest with each design whole in one block, as before.
+            const int Block = 64, Runs = 5;
+            var x = Noise(3 * Rate, 0.2, 31);
+            var y = Noise(3 * Rate, 0.2, 32);
+            double Slowest(bool sweep, bool whole, out int designs, out long mostSteps)
+            {
+                double[] best = null;
+                designs = 0;
+                mostSteps = 0;
+                var bl = new float[Block];
+                var br = new float[Block];
+                for (int run = 0; run < Runs; run++)
+                {
+                    var (e, v) = Make(null);
+                    e.Linear.DesignAtOnce = whole;
+                    int raw = v[P.Xo2], first = e.Linear.Designs;
+                    var times = new double[x.Length / Block];
+                    for (int b = 0; b < times.Length; b++)
+                    {
+                        if (sweep)
+                        {
+                            int k = b % 1600;
+                            v.Set(P.Xo2, raw + (k < 800 ? k : 1600 - k));
+                        }
+                        Array.Copy(x, b * Block, bl, 0, Block);
+                        Array.Copy(y, b * Block, br, 0, Block);
+                        long steps = e.Linear.Steps;
+                        long t0 = Stopwatch.GetTimestamp();
+                        e.Process(bl, br, Block);
+                        times[b] = (Stopwatch.GetTimestamp() - t0) * 1e6 / Stopwatch.Frequency;
+                        mostSteps = Math.Max(mostSteps, e.Linear.Steps - steps);
+                    }
+                    designs = e.Linear.Designs - first;
+                    if (best == null) best = times;
+                    else for (int b = 0; b < times.Length; b++) best[b] = Math.Min(best[b], times[b]);
+                }
+                return best.Skip(100).Max();
+            }
+            double still = Slowest(false, false, out _, out _);
+            double swept = Slowest(true, false, out int designs, out long most);
+            double before = Slowest(true, true, out int wholeDesigns, out _);
+            Measure.Report($"Neo Multiband: crossover 2 dragged in blocks of 64 at 48 kHz, the slowest block {swept:F0} µs ({designs} designs in steps, at most {most} steps a block) " +
+                           $"against {still:F0} µs not moving and {before:F0} µs with each design whole in one block ({wholeDesigns} designs)");
+            Assert.That(designs, Is.GreaterThan(60), "the sweep designs again every 4th partition");
+            Assert.That(designs, Is.InRange(wholeDesigns - 1, wholeDesigns), "as often as before");
+            Assert.That(most, Is.LessThanOrEqualTo(Block / LinearSplit.DesignStride));
+            Assert.That(swept, Is.LessThan(2 * still));
+            Assert.That(swept, Is.LessThan(0.5 * before));
+        }
+
+        [Test]
+        public void ASwitchInStepsIsAsSmoothAsAWholeDesigns()
+        {
+            // As CrossoverMovesAreSmooth (a 220 Hz sine, band 1 compressing hard, crossover 1 jumping across it), every 4096
+            // samples so that every design lands: the largest step between samples with the designs in steps and with each
+            // design whole at the partition that asks (as before), against the steady signal's. The same crossfade, later:
+            // no worse than before (within 5 %), and within 1.5× the steady signal's.
+            Action<ParamValues> setup = Both(OneBand(0, -40, 4, attack: 0.01, release: 0.2), v => Set(v, B(0, BP.Makeup), 6));
+            var x = Measure.Sine(220, 4 * Rate, 0.25);
+            double Steady(double hz)
+            {
+                var (s, _) = Make(Both(setup, v => Set(v, P.Xo1, hz)));
+                return MaxStep(Run(s, x, x).L, Rate);
+            }
+            double reference = Math.Max(Steady(100), Steady(400));
+            double Jumps(bool whole, out int designs)
+            {
+                var (e, v) = Make(setup);
+                e.Linear.DesignAtOnce = whole;
+                int first = e.Linear.Designs;
+                var (l, _) = Run(e, x, x, before: pos => { if (pos >= Rate / 2 && pos % 4096 == 0) Set(v, P.Xo1, (pos / 4096) % 2 == 0 ? 100 : 400); });
+                designs = e.Linear.Designs - first;
+                return MaxStep(l, Rate) / reference;
+            }
+            double stepped = Jumps(false, out int steppedDesigns), whole = Jumps(true, out int wholeDesigns);
+            Measure.Report($"Neo Multiband: crossover 1 jumping across a 220 Hz sine every 4096 samples, largest step {stepped:F3}× the steady signal's with the designs in steps ({steppedDesigns}), {whole:F3}× with each whole at once ({wholeDesigns})");
+            Assert.That(steppedDesigns, Is.EqualTo(wholeDesigns));
+            Assert.That(stepped, Is.LessThan(1.05 * whole));
+            Assert.That(stepped, Is.LessThan(1.5));
+        }
+
+        [Test]
+        public void RendersAreDeterministicWhileTheCrossoversSweep()
+        {
+            // Crossover 2 swept, a parameter step every 256 samples for 3 s, on noise: two renders in blocks of 64 and renders
+            // in blocks of 128 and 256 are the same bits. The design's steps fall on fixed samples of the partitions and nothing
+            // in the engine reads a clock, so neither the host's blocks nor the machine's speed moves a switch.
+            var x = Noise(3 * Rate, 0.2, 41);
+            var y = Noise(3 * Rate, 0.2, 42);
+            int designs = 0;
+            (float[] L, float[] R) Render(int block)
+            {
+                var (e, v) = Make(null);
+                int raw = v[P.Xo2], first = e.Linear.Designs;
+                var r = Run(e, x, y, block, pos => { if (pos % 256 == 0) v.Set(P.Xo2, raw + (pos / 256) % 400); });
+                designs = e.Linear.Designs - first;
+                return r;
+            }
+            var a = Render(64);
+            Assert.That(designs, Is.GreaterThan(50));
+            foreach (int block in new[] { 64, 128, 256 })
+            {
+                var b = Render(block);
+                for (int i = 0; i < x.Length; i++)
+                {
+                    Assert.That(Bits(b.L[i]), Is.EqualTo(Bits(a.L[i])), $"blocks of {block}, left {i}");
+                    Assert.That(Bits(b.R[i]), Is.EqualTo(Bits(a.R[i])), $"blocks of {block}, right {i}");
+                }
+            }
         }
 
         [Test]
