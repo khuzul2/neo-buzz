@@ -634,7 +634,7 @@ namespace ReBuzzTests
             Assert.That(rig.Effect.Latency, Is.EqualTo(4607), "linear phase: the FIRs' centre and one partition");
             Assert.That(rig.Param("Phase").DescribeValue(0), Is.EqualTo("Linear"));
             Assert.That(rig.Param("B2 ratio").DescribeValue(200), Is.EqualTo("1.0:1"));
-            Assert.That(rig.Param("Crossover 2").DescribeValue(rig.Param("Crossover 2").DefValue), Is.EqualTo("1.00 kHz"));
+            Assert.That(rig.Param("Crossover 2").DescribeValue(rig.Param("Crossover 2").DefValue), Is.EqualTo("1000 Hz"));
             for (int b = 1; b <= 4; b++) rig.Param($"B{b} ratio").SetValue(0, 200);   // 1:1
             var utility = rig.Parallel.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters;
 
@@ -685,7 +685,7 @@ namespace ReBuzzTests
             var size = ShootEditor(rig.Effect, "neo-multiband-editor");
             // A [notice] (tools/ci-test-summary.ps1): the WPF editor's size, which the studio's must match (NeoEditorTests).
             TestContext.Out.WriteLine($"[notice] Neo Multiband in ReBuzz: latency {4607} samples compensated (residual {Db(residual / alone):F1} dB against the inverted parallel path), " +
-                                      $"unity {Db(alone / bypassed):+0.0000;-0.0000} dB, editor {size.Width:0} x {size.Height:0}");
+                                      $"unity {Db(alone / bypassed):+0.0000;-0.0000;0.0000} dB, editor {size.Width:0} x {size.Height:0}");
         }
 
         static readonly SourceInfo MixInfo = new("Neo Test Mix", MixSource, true);

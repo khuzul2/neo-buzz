@@ -503,7 +503,7 @@ Its parameters' roles (from `ManifestRoles`), for `machine_replace` and the mani
 | Readings | DC at −10 dBFS, band 1 at −20 dB and 4:1 | b1_gr_db 7.50, b1_gr_peak_db 7.50, b1_level_db −10.00; the other bands 0 dB; latency_samples 4607; every key the manifest declares |
 | Presets | each on pink noise at −18 dBFS RMS: within ±6 dB of the input, peaks under +3 dBFS | −3.7 … +2.2 dB; peaks −8.9 … −2.6 dBFS |
 | Audio thread | 2000 blocks with the crossovers moving and Bands, Phase, Stereo and solos switching: no allocation; in the studio, a Neo Multiband with a crossover moved every buffer (its FIRs designed again), each work algorithm | 0 bytes; 0 bytes per buffer, and nothing compiled on the first play |
-| In ReBuzz | the latency reported and compensated: at unity, beside a parallel path inverted by Neo Utility, nothing is left; minimum phase reports 0 and ReBuzz sees it | MEASURED_REBUZZ |
+| In ReBuzz | the latency reported and compensated: at unity, beside a parallel path inverted by Neo Utility, nothing is left; minimum phase reports 0 and ReBuzz sees it (ReBuzzTests, Windows) | 4607 samples; the two paths cancel exactly (−240 dB, the meter's floor); 0, then 4607 again; the unity sine within 0.0000 dB of bypassed; the WPF editor 1042 × 578 |
 | CPU | stereo at 48 kHz on noise, every band compressing: linear and minimum phase ≥ 20× real time, mid/side unlinked ≥ 12×, a crossover moving every block (linear) ≥ 10× | MEASURED_CPU |
 
 As built:

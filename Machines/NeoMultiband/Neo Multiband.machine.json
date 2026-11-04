@@ -43,7 +43,7 @@
    "group": "Crossovers",
    "min": 0,
    "max": 10000,
-   "default": 5664,
+   "default": 5663,
    "kind": "freq",
    "a": 20.0,
    "b": 20000.0,
