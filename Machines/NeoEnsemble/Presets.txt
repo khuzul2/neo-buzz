@@ -1,0 +1,147 @@
+# Neo Ensemble factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoEnsemble
+machine "Neo Ensemble"
+
+preset "Chorus — Classic"
+Mode = Chorus
+Voices = 2
+Rate = 0.6
+Depth = 30
+Spread = 90
+Delay = 0.007
+Mix = 50
+
+preset "Chorus — Wide Stereo"
+Mode = Chorus
+Voices = 2
+Rate = 0.45
+Depth = 35
+Spread = 180
+Delay = 0.009
+Tone = 11000
+Mix = 50
+
+preset "Chorus — Subtle Doubling"
+Mode = Chorus
+Voices = 1
+Rate = 0.3
+Depth = 8
+Spread = 90
+Delay = 0.022
+Tone = 14000
+Mix = 35
+
+preset "Chorus — Poly Synth I"
+Mode = Chorus
+Voices = 1
+Shape = Triangle
+Rate = 0.5
+Depth = 80
+Spread = 180
+Delay = 0.0034
+Tone = 9000
+Mix = 50
+
+preset "Ensemble — Strings"
+Mode = Chorus
+Voices = 4
+Rate = 0.7
+Depth = 40
+Spread = 120
+Delay = 0.009
+Tone = 8000
+Mix = 60
+Output = -2
+
+preset "Ensemble — Thick (3 Voices)"
+Mode = Chorus
+Voices = 3
+Rate = 1.1
+Depth = 22
+Spread = 120
+Delay = 0.012
+Tone = 10000
+Mix = 55
+Output = -1.5
+
+preset "Flanger — Slow Jet"
+Mode = Flanger
+Rate = 0.08
+Depth = 85
+Spread = 20
+Delay = 0.0016
+Feedback = 70
+Tone = 16000
+Mix = 50
+
+preset "Flanger — Tape Style (Negative)"
+Mode = Flanger
+Shape = Triangle
+Rate = 0.12
+Depth = 95
+Spread = 0
+Delay = 0.0008
+Feedback = -45
+Tone = 20000
+Mix = 50
+
+preset "Flanger — Metallic"
+Mode = Flanger
+Rate = 0.25
+Depth = 30
+Spread = 45
+Delay = 0.003
+Feedback = 92
+Tone = 20000
+Mix = 50
+Output = -3
+
+preset "Phaser — 4-Stage Classic"
+Mode = Phaser
+Stages = 4
+Rate = 0.5
+Depth = 55
+Spread = 30
+Centre = 700
+Feedback = 25
+Mix = 50
+
+preset "Phaser — 8-Stage Deep"
+Mode = Phaser
+Stages = 8
+Rate = 0.3
+Depth = 65
+Spread = 90
+Centre = 800
+Feedback = 55
+Mix = 50
+
+preset "Phaser — Slow Sweep (4 Bars)"
+Mode = Phaser
+Stages = 6
+Sync = 4 bars
+Shape = Triangle
+Depth = 85
+Spread = 60
+Centre = 900
+Feedback = 40
+Mix = 50
+
+preset "Rotary — Leslie-like Fast"
+Mode = Chorus
+Voices = 1
+Rate = 6.7
+Depth = 30
+Spread = 180
+Delay = 0.0015
+Tone = 9000
+Mix = 70
+
+preset "Vibrato — Pitch Wobble"
+Mode = Chorus
+Voices = 1
+Rate = 5.5
+Depth = 25
+Spread = 0
+Delay = 0.003
+Tone = 20000
+Mix = 100
