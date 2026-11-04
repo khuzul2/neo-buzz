@@ -720,7 +720,7 @@ def pitch_sieve(binhz, mags, expected_midi, span=24, harmonics_n=8):
         i = int(round(f0 * h / binhz))
         w = max(2, int(f0 * h * 0.03 / binhz))
         held += sum(m * m for m in mags[max(lo_bin, i - w):min(hi_bin, i + w + 1)])
-    share = held / total
+    share = min(1.0, held / total)   # neighbouring harmonics can share a bin
     cents = 1200 * math.log2(fpk / f0) if fpk > 0 else 0.0
     if share < 0.45 or abs(cents) > 50:
         return {"midi": expected_midi + k, "cents": round(cents, 1), "share": round(share, 3), "pitched": False}
@@ -807,6 +807,9 @@ def _choice_role(p, texts, lo, hi, rl, rh, cl, ch, sl, sh, machine_type, t_lo, t
         el, eh = (el, _first(cd)) if el is not None else (_first(cd), eh)
     if el and eh and abs(eh - el) >= 0.005 and any(t in texts for t in TIME_TEXTS):
         return "delay.unit", f"a choice of units that moves the first echo {_fmt_s(el)} → {_fmt_s(eh)}"
+    if any(t in texts for t in TIME_TEXTS) and bool(cl.get("echoes")) != bool(ch.get("echoes")):
+        at = _first(cl) or _first(ch)
+        return "delay.unit", f"a choice of units: the first echo at {_fmt_s(at)} at one setting, within the click at the other"
     if sl and sh and ("rms" in texts or "peak" in texts) and abs((sh.get("compression_db") or 0) - (sl.get("compression_db") or 0)) >= 1:
         return "dyn.detection", f"peak or RMS: the loudest steps lose {sl.get('compression_db')} → {sh.get('compression_db')} dB"
     if rl and rh:
@@ -843,7 +846,9 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
     choice = is_choice(p)
     texts = " ".join(str(t).lower() for t in (p.get("choices") or p.get("texts") or []))
     t_lo, t_hi = _transparent(lo, mono_gain), _transparent(hi, mono_gain)
-    if choice:
+    dl, dh, ll, lh = _num(cl.get("direct_db")), _num(ch.get("direct_db")), _num(cl.get("late_db")), _num(ch.get("late_db"))
+    dry_only = not eq_band and None not in (dl, dh, ll, lh) and abs(dh - dl) >= 12 and min(dl, dh) < -25 and abs(lh - ll) <= 4 and min(ll, lh) > -45
+    if choice and not dry_only:
         return _choice_role(p, texts, lo, hi, rl, rh, cl, ch, sl, sh, machine_type, t_lo, t_hi, cd)
     # one end silent (a low-pass closed, a level at nothing): half way tells a corner from a level
     lev_l, lev_h = (rl or {}).get("level_db"), (rh or {}).get("level_db")
@@ -898,8 +903,7 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
             if blend:
                 return "mix.wet", f"at its {dry_end}imum the effect passes the signal unchanged; at the other end {what}; half way less of the same"
     # mix.dry: the direct sound comes and goes, the tail stays.
-    dl, dh, ll, lh = _num(cl.get("direct_db")), _num(ch.get("direct_db")), _num(cl.get("late_db")), _num(ch.get("late_db"))
-    if not eq_band and None not in (dl, dh, ll, lh) and abs(dh - dl) >= 12 and min(dl, dh) < -25 and abs(lh - ll) <= 4 and min(ll, lh) > -45:
+    if dry_only:
         return "mix.dry", f"the direct sound {dl:+.0f} → {dh:+.0f} dB while the tail stays ({ll:+.0f} → {lh:+.0f} dB)"
 
     # modulation: the response moves while it is measured, at one end only
@@ -967,12 +971,10 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
     if el is not None and eh is not None and abs(eh - el) >= 0.005 and (_ratio(el, eh) or 0) >= 1.3:
         # an echo added in front of those that stay (early reflections coming in) isn't the first echo moving
         early_end = cl if el < eh else ch
-        if any(abs(t - max(el, eh)) <= 0.005 for t, _ in (early_end.get("echoes") or [])):
-            if machine_type == "reverb":
-                ea, eb = _num(cl.get("early_db")), _num(ch.get("early_db"))
-                return "reverb.early", (f"reflections from {_fmt_s(min(el, eh))} come in ahead of the reverb's own at {_fmt_s(max(el, eh))}"
-                                        + (f", the early sound {ea:+.0f} → {eb:+.0f} dB" if ea is not None and eb is not None else ""))
-            el = eh = None
+        if machine_type == "reverb" and any(abs(t - max(el, eh)) <= 0.005 for t, _ in (early_end.get("echoes") or [])):
+            ea, eb = _num(cl.get("early_db")), _num(ch.get("early_db"))
+            return "reverb.early", (f"reflections from {_fmt_s(min(el, eh))} come in ahead of the reverb's own at {_fmt_s(max(el, eh))}"
+                                    + (f", the early sound {ea:+.0f} → {eb:+.0f} dB" if ea is not None and eb is not None else ""))
     if el is not None and eh is not None and abs(eh - el) >= 0.005 and (_ratio(el, eh) or 0) >= 1.3:
         if machine_type == "modulation":
             return "mod.delay", f"the delayed copy moves {_fmt_s(el)} → {_fmt_s(eh)}"
@@ -1098,7 +1100,8 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
             return got
     # distortion
     hl, hh = _num(lo.get("thd")), _num(hi.get("thd"))
-    if hl is not None and hh is not None and max(hl, hh) >= 3 and (_ratio(hl + 0.1, hh + 0.1) or 0) >= 3:
+    through = all(((r or {}).get("level_db") if (r or {}).get("level_db") is not None else -120) > -20 for r in (rl, rh))
+    if through and hl is not None and hh is not None and max(hl, hh) >= 3 and (_ratio(hl + 0.1, hh + 0.1) or 0) >= 3:
         return ("filter.drive" if machine_type in ("filter", "filter or EQ") else "drive"), f"harmonics {hl:.1f} → {hh:.1f} % on a sine"
     # stereo
     bl, bh = _num(cl.get("balance_db")), _num(ch.get("balance_db"))

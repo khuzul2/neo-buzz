@@ -1080,6 +1080,17 @@ class TestBench:
         if getattr(self, "held", None):
             c.call("param_set", machine="M", changes=list(self.held), allow_unsafe=True)
 
+    def renew(self):
+        """A fresh instance of the machine in the same song (cheaper than building the song again): nothing a
+        loop kept from the last render comes back."""
+        c = self.c
+        c.call("machine_remove", machines=["M"], keep_chain=False)
+        c.call("machine_add", gear=self.prof.gear, name="M", connect_to="Master")
+        for name in ("Sw", "Ck") + (("St",) if self.with_steps else ()):
+            c.call("connect", **{"from": name, "to": "M"})
+        if self.held:
+            c.call("param_set", machine="M", changes=list(self.held), allow_unsafe=True)
+
     def measure(self, changes=(), reset=True, retry=True):
         """The features with these changes (the others at their defaults), then put back: response, click,
         steps, thd, peak; {"diverged": reason} when the guard tripped (the song is built again). A loop that
@@ -1088,7 +1099,7 @@ class TestBench:
         c = self.c
         if changes:
             if self.fresh:
-                self.build()
+                self.renew()
             r = c.call("param_set", machine="M", changes=list(changes), allow_unsafe=True)
             for ch, got in zip(changes, r.get("changed", [])):
                 self.texts[(ch["param"], ch.get("track"), ch["value"])] = got.get("value", "")
