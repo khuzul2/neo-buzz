@@ -23,21 +23,32 @@
       "knee_db": 3.52,
       "why": "Jeskola Distortion sets everything over the threshold to the clamp level. Neo Drive's Transistor curve at Character 100% is flat at ±1 from 1.5 times its slope-1 line, so a drive of 1.5 ÷ threshold clips where Jeskola's did, and the output level puts the flat top at the clamp."
     },
-    { "kind": "unit", "from": "Amount", "to": "Mix", "why": "Amount blends the clamp level with the input for clipped samples; Mix blends the whole output." }
+    {
+      "kind": "unit",
+      "from": "Amount",
+      "to": "Mix",
+      "why": "Amount blends the clamp level with the input for clipped samples; Mix blends the whole output."
+    }
   ],
   "unmapped": [
-    { "param": "-threshold", "why": "Neo Drive clips both halves alike: the positive threshold sets both (most songs set them equal; the repo's Oomek Aggressor demo sets all four to 2305)." },
-    { "param": "-clamp", "why": "Neo Drive clips both halves alike: the positive clamp sets both." }
+    {
+      "param": "-threshold",
+      "why": "Neo Drive clips both halves alike: the positive threshold sets both (most songs set them equal; the repo's Oomek Aggressor demo sets all four to 2305)."
+    },
+    {
+      "param": "-clamp",
+      "why": "Neo Drive clips both halves alike: the positive clamp sets both."
+    }
   ],
   "remarks": [
     "Jeskola Distortion jumps from the threshold to the clamp level; Neo Drive rises to it smoothly (and oversampled, so without Jeskola's aliasing). Below the threshold Jeskola passes the input as it is, where Neo Drive is already driven: quiet material comes out louder, loud material (what a distortion is used on) matches."
   ],
   "tolerance": {
-    "loudness_db": 1.5,
+    "loudness_db": 2,
     "band_db": 6,
-    "from_hz": 50,
+    "from_hz": 80,
     "to_hz": 12000,
-    "measured": ""
+    "measured": "Windows, Neo Poly chords into it, each side against its input: at its defaults +0.9 dB, third octaves within 3.7 dB (80 Hz – 12 kHz; 3.9 dB at 50 Hz); as the Oomek Aggressor demo sets it (thresholds and clamps 112.5 %) +1.7 dB, within 2 dB from 80 Hz (below, the two make different difference tones from a chord: +8.8 dB at 50 Hz)"
   },
   "evidence": [
     "ExternalMachines/source/buzztrax-buzzmachines/Jeskola/Distortion (threshold-and-clamp per sample)",

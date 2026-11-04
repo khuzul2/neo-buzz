@@ -34,6 +34,37 @@ namespace ReBuzzTests
 
         static bool Has(string bin, string kind, string gear) => File.Exists(Path.Combine(bin, "Gear", kind, gear + ".dll"));
 
+        /// <summary>A tool call that doesn't echo its text into the test's output (long arrangements would crowd out the [notice] lines).</summary>
+        static JsonObject Quiet(Client client, string name, JsonObject args = null)
+        {
+            var r = client.Request("tools/call", new JsonObject { ["name"] = name, ["arguments"] = args ?? new JsonObject() });
+            Assert.That(r["result"]?["isError"]?.GetValue<bool>(), Is.False, $"{name}: {r["result"]?["content"]?[0]?["text"] ?? r["error"]?.ToJsonString()}");
+            return r["result"]!["structuredContent"]!.AsObject();
+        }
+
+        /// <summary>
+        /// Third-octave levels of the effect's output over its input (dB), from one render with probes on both:
+        /// "hz:db" pairs for bands within 40 dB of the input's loudest.
+        /// </summary>
+        static string Transfer(Client client, string effect = "FX", string source = "Synth")
+        {
+            var render = Quiet(client, "render", Args(("tail_seconds", 3), ("probes", new JsonArray(effect, source))));
+            string id = render["id"]!.GetValue<string>();
+            JsonArray Bands(string probe) => Quiet(client, "analyze", Args(("source", $"{id}:{probe}"), ("metrics", new JsonArray("spectrum"))))["spectrum"]!["third_octave"]!["db"]!.AsArray();
+            var output = Bands(effect);
+            var input = Bands(source);
+            double Num(JsonNode n) => n is JsonValue v && v.TryGetValue(out double d) ? d : double.NegativeInfinity;
+            double maxIn = input.Select(Num).Where(double.IsFinite).DefaultIfEmpty(0).Max();
+            double[] hz = { 20, 25, 31.5, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000, 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000, 10000, 12500, 16000, 20000 };
+            var parts = new List<string>();
+            for (int i = 0; i < Math.Min(hz.Length, output.Count); i++)
+            {
+                double o = Num(output[i]), n = Num(input[i]);
+                if (double.IsFinite(o) && double.IsFinite(n) && n > maxIn - 40) parts.Add($"{hz[i]}:{o - n:0.0}");
+            }
+            return string.Join(" ", parts);
+        }
+
         static JsonObject Args(params (string Key, JsonNode Value)[] pairs)
         {
             var o = new JsonObject();
@@ -95,6 +126,7 @@ namespace ReBuzzTests
 
             // Jeskola Reverb at its defaults (dry 0 dB, reverb −14.5 dB, 1 s), and as a send (wet only, 2.5 s).
             EffectSong(client, "Jeskola Reverb", null);
+            Quiet(client, "render", Args(("tail_seconds", 0.5)));      // the native host's first render can come out silent
             var gear = client.Tool("gear_list", Args(("search", "Jeskola Reverb")))["gear"]!.AsArray();
             Assert.That(gear.First(g => g!["name"]!.GetValue<string>() == "Jeskola Reverb")!["successor"]!.GetValue<string>(), Does.Contain("Neo Verb"));
             var described = client.Tool("machine_describe", Args(("machine", "FX")));
@@ -110,8 +142,10 @@ namespace ReBuzzTests
             Assert.That(client.Tool("machine_list")["machines"]!.ToJsonString(), Is.EqualTo(listBefore), "undo brings the original back");
             Assert.That(client.Tool("machine_describe", Args(("machine", "FX")))["parameters"]!.ToJsonString(), Is.EqualTo(paramsBefore));
 
-            EffectSong(client, "Jeskola Reverb", Changes(("Dry Out", "raw:0"), ("Rev Out", "raw:4096"), ("Rev Time", "raw:25")));
+            EffectSong(client, "Jeskola Reverb", Changes(("Dry Out", "raw:0"), ("Rev Out", "raw:4096"), ("Rev Time", "raw:25")), noise: true);
             results.Add(("Jeskola Reverb send", Within(Replace(client, "Reverb wet only, 2.5 s"))));
+            EffectSong(client, "Jeskola Reverb", Changes(("Dry Out", "raw:0"), ("Rev Out", "raw:4096"), ("Rev Time", "raw:25")));
+            Replace(client, "Reverb wet only, 2.5 s, chords");
             EffectSong(client, "Jeskola Reverb", Changes(("Dry Out", "raw:0"), ("Rev Out", "raw:0"), ("ER Out", "raw:4096")));
             Replace(client, "Reverb early reflections only");
 
@@ -158,6 +192,7 @@ namespace ReBuzzTests
             using var client = StartAgent(out string bin);
             if (!Has(bin, "Generators", "Jeskola Bass 3") || !File.Exists(Path.Combine(bin, "Gear", "Generators", "Neo Poly.NET.dll")))
                 Assert.Inconclusive("Jeskola Bass 3 or Neo Poly not in this build's Gear");
+            var report = new List<string>();
             foreach (string gear in new[] { "Jeskola Bass 3", "Jeskola Bass 2", "Jeskola Bass" })
             {
                 if (!Has(bin, "Generators", gear)) continue;
@@ -175,14 +210,13 @@ namespace ReBuzzTests
                     client.Tool("arrangement_place", Args(("machine", "Bass"), ("pattern", "00"), ("at", 0)));
                     var before = client.Tool("render", Args(("tail_seconds", 0.5)));
                     var pitch = client.Request("tools/call", new JsonObject { ["name"] = "analyze", ["arguments"] = Args(("source", before["id"]!.GetValue<string>()), ("metrics", new JsonArray("pitch", "loudness"))) });
-                    TestContext.Out.WriteLine($"[notice] {gear} {(sine ? "sine" : "default")} before: {pitch["result"]?["content"]?[0]?["text"]}");
+                    report.Add($"[notice] {gear} {(sine ? "sine" : "default")} before: {pitch["result"]?["content"]?[0]?["text"]}");
                     var r = Replace(client, $"{gear} {(sine ? "sine" : "default")}", "Bass");
                     Assert.That(r["patterns"]![0]!["notes"]!.GetValue<int>(), Is.EqualTo(line.Length), $"{gear}: every note moves");
                     var after = client.Tool("render", Args(("tail_seconds", 0.5)));
                     pitch = client.Request("tools/call", new JsonObject { ["name"] = "analyze", ["arguments"] = Args(("source", after["id"]!.GetValue<string>()), ("metrics", new JsonArray("pitch", "loudness"))) });
-                    TestContext.Out.WriteLine($"[notice] {gear} {(sine ? "sine" : "default")} after: {pitch["result"]?["content"]?[0]?["text"]}");
-                    var read = client.Tool("notes_read", Args(("machine", "Bass"), ("pattern", "00")));
-                    TestContext.Out.WriteLine($"[notice] {gear}: notes after: {read["notes"]?.ToJsonString()}");
+                    report.Add($"[notice] {gear} {(sine ? "sine" : "default")} after: {pitch["result"]?["content"]?[0]?["text"]}");
+                    report.Add($"[notice] {gear} {(sine ? "sine" : "default")}: within {Within(r)?.ToString() ?? "-"}, loudness {(r["comparison"]?["machine"] ?? r["comparison"]?["song"])?["loudness_db"]?["difference"]?.ToJsonString()} dB");
                 }
             }
 
@@ -201,13 +235,50 @@ namespace ReBuzzTests
                 client.Tool("song_open", Args(("path", path), ("discard_unsaved", true)));
                 var list = client.Tool("machine_list")["machines"]!.AsArray();
                 if (!list.Any(m => m!["name"]!.GetValue<string>() == machine)) { TestContext.Out.WriteLine($"[notice] {song}: no machine {machine}"); continue; }
-                var arrangementBefore = client.Tool("arrangement_get");
+                var arrangementBefore = Quiet(client, "arrangement_get");
                 var r = Replace(client, Path.GetFileName(song), machine);
-                TestContext.Out.WriteLine($"[notice] {Path.GetFileName(song)}: patterns {r["patterns"]?.ToJsonString()}, sequences {r["sequences"]}");
-                var arrangementAfter = client.Tool("arrangement_get");
+                report.Add($"[notice] {Path.GetFileName(song)}: within {Within(r)?.ToString() ?? "-"}, patterns {r["patterns"]?.ToJsonString()}, sequences {r["sequences"]}");
+                var arrangementAfter = Quiet(client, "arrangement_get");
                 Assert.That(Placements(arrangementAfter, machine), Is.EqualTo(Placements(arrangementBefore, machine)), $"{song}: the arrangement keeps its patterns");
                 client.Tool("undo");
             }
+            foreach (var line in report) TestContext.Out.WriteLine(line);
+            Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
+        }
+
+        /// <summary>
+        /// Measurements behind the native mappings (not assertions): each old effect's and its successor's response on noise
+        /// (output over input per third octave), at settings that isolate one thing, and Jeskola Bass 3 and Neo Poly at a few
+        /// cutoffs. The numbers go into the mappings and docs/specs/mcp-server.md §12.10.
+        /// </summary>
+        [Test]
+        public void NativeSuccessorCalibration()
+        {
+            using var client = StartAgent(out string bin);
+            if (!Has(bin, "Effects", "Jeskola Reverb") || !Has(bin, "Effects", "Jeskola EQ-3"))
+                Assert.Inconclusive("the native effects are not in this build's Gear");
+            var report = new List<string>();
+            void Measure(string effect, string label, JsonArray settings)
+            {
+                EffectSong(client, effect, settings, noise: true);
+                report.Add($"[notice] calibration {effect} {label}: {Transfer(client)}");
+            }
+            Quiet(client, "song_new", Args(("discard_unsaved", true)));
+            Measure("Jeskola Reverb", "wet 2.5 s, 5 kHz", Changes(("Dry Out", "raw:0"), ("Rev Out", "raw:4096"), ("Rev Time", "raw:25")));
+            Measure("Jeskola Reverb", "wet 2.5 s, 16 kHz", Changes(("Dry Out", "raw:0"), ("Rev Out", "raw:4096"), ("Rev Time", "raw:25"), ("High Cutoff", "raw:16384")));
+            Measure("Jeskola Reverb", "early only", Changes(("Dry Out", "raw:0"), ("Rev Out", "raw:0"), ("ER Out", "raw:4096")));
+            foreach (string mode in new[] { "Hall", "Room", "Chamber", "Plate" })
+                Measure("Neo Verb", $"{mode} wet 2.5 s, 5 kHz", Changes(("Mode", mode), ("Mix", "100%"), ("Early", "-inf"), ("Late", "0 dB"), ("Decay", "2.5 s"),
+                    ("High damping", "5 kHz"), ("Low cut", "10 Hz"), ("High cut", "22 kHz"), ("Low decay", "1")));
+            Measure("Neo Verb", "Hall early only", Changes(("Mode", "Hall"), ("Mix", "100%"), ("Early", "0 dB"), ("Late", "-inf"), ("Low cut", "10 Hz"), ("High cut", "22 kHz")));
+            Measure("Jeskola EQ-3", "flat", null);
+            foreach (string band in new[] { "Low Gain", "Mid Gain", "High Gain" })
+            {
+                Measure("Jeskola EQ-3", $"{band} +12", Changes((band, "+12 dB")));
+                Measure("Jeskola EQ-3", $"{band} -12", Changes((band, "-12 dB")));
+            }
+            Measure("Jeskola Distortion", "threshold 100 %, clamp 100 %", Changes(("+threshold", "raw:2048"), ("+clamp", "raw:2048"), ("-threshold", "raw:2048"), ("-clamp", "raw:2048")));
+            foreach (string line in report) TestContext.Out.WriteLine(line);
             Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
         }
 

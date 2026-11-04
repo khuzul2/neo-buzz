@@ -17,15 +17,37 @@
       "kind": "levels_to_mix",
       "dry": "Dry Out",
       "wet": [
-        { "from": "Rev Out", "to": "Late", "gain_db": 0 },
-        { "from": "ER Out", "to": "Early", "gain_db": 0 }
+        {
+          "from": "Rev Out",
+          "to": "Late",
+          "gain_db": 8.7
+        },
+        {
+          "from": "ER Out",
+          "to": "Early",
+          "gain_db": 9.6
+        }
       ],
       "mix": "Mix",
-      "why": "Jeskola Reverb sets dry and wet levels apart; Neo Verb crossfades. The wet gains are the measured level difference between the two machines' tails and early reflections."
+      "why": "Jeskola Reverb sets dry and wet levels apart; Neo Verb crossfades. The wet gains are the level difference between the two machines' tails (+8.7 dB) and early reflections (+9.6 dB) at the same settings, measured on Windows (ReBuzzTests/AgentReplaceTests.cs)."
     },
-    { "kind": "unit", "from": "Rev Time", "to": "Decay", "why": "Rev Time reads in seconds; the profile's tail (0.7 s to −60 dB at 1.0 s with the wet 14.5 dB down) fits a T60, which is what Neo Verb's Decay is." },
-    { "kind": "unit", "from": "Pre-Delay", "to": "Pre-delay" },
-    { "kind": "unit", "from": "High Cutoff", "to": "High damping", "why": "the tail's high cut; Neo Verb's damping corner goes from 1 kHz up." }
+    {
+      "kind": "unit",
+      "from": "Rev Time",
+      "to": "Decay",
+      "why": "Rev Time reads in seconds; the profile's tail (0.7 s to −60 dB at 1.0 s with the wet 14.5 dB down) fits a T60, which is what Neo Verb's Decay is."
+    },
+    {
+      "kind": "unit",
+      "from": "Pre-Delay",
+      "to": "Pre-delay"
+    },
+    {
+      "kind": "unit",
+      "from": "High Cutoff",
+      "to": "High damping",
+      "why": "the tail's high cut; Neo Verb's damping corner goes from 1 kHz up."
+    }
   ],
   "remarks": [
     "Jeskola Reverb is mono (ReBuzz gives a mono native effect left + right summed: the input connections take +6 dB to match); Neo Verb is stereo. Width differs by design; set Width to 0% for a mono tail.",

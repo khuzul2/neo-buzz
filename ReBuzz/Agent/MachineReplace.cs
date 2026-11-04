@@ -255,6 +255,12 @@ namespace ReBuzz.Agent
                 // song an undo brings back is the one there was.
                 var state = SaveState(old);
                 var (master, probes) = RenderTools.Render(core, dispatcher, from, to, o.TailSeconds, null, null, probe, cancellation, progress, warnings, taps);
+                // A native machine's host can start silent in a process's first render: once more, before calling it silent.
+                if (Silent(master) && old.DLL is { IsMissing: false })
+                {
+                    RestoreState(old, state);
+                    (master, probes) = RenderTools.Render(core, dispatcher, from, to, o.TailSeconds, null, null, probe, cancellation, progress, warnings, taps);
+                }
                 RestoreState(old, state);
                 beforeSong = master;
                 beforeMachine = probes.FirstOrDefault(p => p.Machine == old.Name).Audio;
@@ -322,6 +328,9 @@ namespace ReBuzz.Agent
                 try { if (p.GetValue(t) != v) p.SetValue(t | (1 << 16), v); } catch (Exception) { }
             }
         }
+
+        static bool Silent(StereoAudio a) =>
+            a == null || (a.Left.All(x => Math.Abs(x) < 1e-5f) && (a.Right ?? a.Left).All(x => Math.Abs(x) < 1e-5f));
 
         /// <summary>The sum of several captures of one render (a machine's inputs), or null for none.</summary>
         static StereoAudio Sum(IEnumerable<StereoAudio> parts)
