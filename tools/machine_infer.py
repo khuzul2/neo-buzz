@@ -517,6 +517,31 @@ def sweep_worthy(names):
     return [n for n in names if SWEEP_NAMES.search(n or "")]
 
 
+# U2 in depth (mcp-server.md §12.12): a hot end gets a safe range too, where it is honest. A level control's hot
+# end (a gain, makeup, output or wet level at +24 dB) is that control doing its job on a loud test signal: no
+# range. A loop's or a resonance's end that rings far past its input is not: the edge is where the peak rises
+# more than RING_DB over its level with the parameter at its default.
+RING_DB = 24.0
+LOOP_NAMES = re.compile(r"feed\s*back|f\.?back|\bfb\b|resonan|\breso?\b|\bq\b|regen|emphas|peak", re.I)
+LEVEL_NAMES = re.compile(r"gain|vol|level|output|\bout\b|makeup|make-up|boost|\bamp\b|amount|drive|input|\bin\b|dry|wet|mix|send|master|"
+                         r"thru|through|\bsub\b", re.I)
+
+
+def level_control(name):
+    """Whether a parameter's name says it sets a level (a gain, volume, output, wet or dry level, drive) rather than a
+    loop or a resonance (feedback, resonance, Q), which win when both appear ("FB Amp")."""
+    if LOOP_NAMES.search(name or ""):
+        return False
+    return bool(LEVEL_NAMES.search(name or ""))
+
+
+def rings(name, end_peak, default_peak):
+    """A hot end that gets a safe range: not a level control, and its peak more than RING_DB over the default's."""
+    if level_control(name) or not isinstance(end_peak, (int, float)) or not isinstance(default_peak, (int, float)):
+        return False
+    return end_peak - default_peak > RING_DB
+
+
 def edge(safe, bad, diverges):
     """
     The last raw value from safe towards bad that doesn't diverge (diverges(raw) → bool, assumed

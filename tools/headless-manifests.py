@@ -18,6 +18,10 @@
 #    window says it works in ReBuzz on Windows with its window, and is listed after the drafts but
 #    before the unhealthy ones; an unhealthy machine that doesn't diverge (a crash) gets no machine_add
 #    warning; a safe range on a track parameter holds per track.
+#  - U2 in depth (mcp-server.md §12.12): gear_list leaves unhealthy machines (the crash and the diverging
+#    one, in the copy) out and names them, and lists them with include_unhealthy; machine_describe gives a
+#    draft's suggested roles and a machine's played track parameters; automation_write writes a played
+#    parameter as events; render's cpu gives each machine's work time, window by window.
 #  - U3 (mcp-server.md §12.9): curated manifests (Pedal Juno106, SH101, EQ, Comp…) say they are curated,
 #    with exact units, quirks, plain names and roles; param_set takes a plain name; a machine whose own
 #    texts are wrong (Pedal Comp's Attack) reads and writes the real values; guide(machine=…) and the
@@ -94,8 +98,8 @@ def play_a4(s, machine, **extra):
 
 s = Server(exe, "main")
 
-# What the drafts say.
-ok, _, g = s.call("gear_list", search="Pedal", limit=100)
+# What the drafts say (unhealthy ones too: U2 in depth leaves them out unless asked; checked in the copy below).
+ok, _, g = s.call("gear_list", search="Pedal", limit=100, include_unhealthy=True)
 rows = {x["name"]: x for x in g.get("gear", [])}
 shaper = rows.get("Pedal Shaper", {})
 check(shaper.get("manifest") == "draft" and shaper.get("type") and "profiled draft" in shaper.get("summary", ""),
@@ -271,7 +275,11 @@ def gate_never_decays(m):
 edit_draft("Effects", "Pedal Gain", gain_diverges)
 edit_draft("Effects", "Pedal Gate", gate_never_decays)
 s = Server(os.path.join(copy, os.path.basename(exe)), "offset")
-ok, _, g = s.call("gear_list", search="Pedal", limit=100)
+ok, _, g0 = s.call("gear_list", search="Pedal", limit=100)
+check(ok and sorted(g0.get("hidden_unhealthy", [])) == ["Pedal Filter", "Pedal Gain"] and len(g0.get("gear", [])) == 17
+      and not {"Pedal Filter", "Pedal Gain"} & {x["name"] for x in g0.get("gear", [])},
+      f"gear_list leaves the unhealthy machines out and names them ({g0.get('hidden_unhealthy')}, {len(g0.get('gear', []))} listed)")
+ok, _, g = s.call("gear_list", search="Pedal", limit=100, include_unhealthy=True)
 rows = {x["name"]: x for x in g.get("gear", [])}
 names = [x["name"] for x in g.get("gear", [])]
 chorus = rows.get("Pedal Chorus", {})
@@ -280,7 +288,7 @@ check(chorus.get("health") == "needs_window" and "works in rebuzz on windows wit
 unhealthy = [n for n in names if rows[n].get("health") == "unhealthy"]
 check(unhealthy and names.index("Pedal Chorus") == len(names) - len(unhealthy) - 1,
       f"gear_list: it comes after the drafts and before the unhealthy ones ({names[-4:]})")
-check(len(names) == 19, f"every Pedal machine is still listed ({len(names)})")
+check(len(names) == 19, f"with include_unhealthy, every Pedal machine is listed ({len(names)})")
 ok, _, a = s.call("machine_add", gear="Pedal Filter", name="F", connect_to="none")
 check(ok and "warning" not in a, "machine_add warns only for diverging machines (not for a crash flagged in its profile)")
 
@@ -334,6 +342,29 @@ _, _, back = s.call("notes_read", machine="Bass", pattern="A")
 _, _, sent = s.call("notes_read", machine="Bass", pattern="A", apply_pitch_offset=False)
 check([n["pitch"] for n in back.get("notes", [])] == [69] and [n["pitch"] for n in sent.get("notes", [])] == [81],
       "notes_read gives the written pitch; without the offset, what the machine gets")
+
+# U2 in depth: a draft's suggested roles in machine_describe, as the draft has them; played track parameters,
+# written as events; each machine's work time in a render.
+shaper_draft = draft_of("Pedal Shaper")
+want = {p["name"]: p["suggested_role"] for p in shaper_draft.get("parameters", []) if p.get("suggested_role")}
+s.call("machine_add", gear="Pedal Shaper", name="Sh", connect_to="none")
+_, _, d = s.call("machine_describe", machine="Sh")
+got = {p["name"]: p.get("suggested_role") for p in d.get("parameters", []) if p.get("suggested_role")}
+check(got == want and all(p.get("role_evidence") for p in d.get("parameters", []) if p.get("suggested_role")),
+      f"machine_describe gives a draft's suggested roles with their evidence ({len(got)}: {sorted(got.items())[:3]})")
+s.call("machine_add", gear="Neo Poly", name="Pad")
+_, _, d = s.call("machine_describe", machine="Pad")
+played = [p["name"] for p in d.get("played_parameters", [])]
+check("Velocity" in played, f"machine_describe lists the track parameters that hold no value ({played})")
+s.call("pattern_create", machine="Pad", name="T", length_beats=4)
+ok, _, w = s.call("automation_write", machine="Pad", pattern="T", param="Velocity", track=0, points=[{"at": 0, "value": "raw:100"}, {"at": 2, "value": "raw:50"}])
+check(ok and w.get("played") is True and w.get("events") == 2, f"automation_write writes a played parameter as one event per point ({w.get('events')})")
+ok, _, r = s.call("render", **{"from": 0, "to": 8, "tail_seconds": 1, "cpu": True, "cpu_window_seconds": 1})
+cpu = {x["machine"]: x for x in r.get("cpu", [])}
+check(ok and "Bass" in cpu and isinstance(cpu["Bass"].get("ms_per_second"), (int, float)) and len(cpu["Bass"].get("windows_ms_per_second", [])) >= 4,
+      f"render's cpu gives each machine's work time, window by window ({cpu.get('Bass')})")
+ok, text, _ = s.call("render", **{"from": 0, "to": 4, "cpu_window_seconds": 1})
+check(not ok and "cpu=true" in text, "cpu_window_seconds goes with cpu=true")
 s.close()
 
 print(f"\n{len(failures)} failed" if failures else "\nall passed")

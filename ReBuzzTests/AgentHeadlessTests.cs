@@ -195,7 +195,13 @@ namespace ReBuzzTests
             }, seconds: 180);
             client.Send(new JsonObject { ["jsonrpc"] = "2.0", ["method"] = "notifications/initialized" });
 
-            var rows = client.Tool("gear_list", new JsonObject { ["limit"] = 1000 })["gear"]!.AsArray().Select(g => g!.AsObject()).ToList();
+            var rows = client.Tool("gear_list", new JsonObject { ["limit"] = 1000, ["include_unhealthy"] = true })["gear"]!.AsArray().Select(g => g!.AsObject()).ToList();
+            // U2 in depth (mcp-server.md §12.12): by default gear_list leaves unhealthy gear out and names it.
+            var listed = client.Tool("gear_list", new JsonObject { ["limit"] = 1000 });
+            var hidden = listed["hidden_unhealthy"]?.AsArray().Select(x => x!.GetValue<string>()).ToList() ?? new System.Collections.Generic.List<string>();
+            var unhealthy = rows.Where(g => g["health"]?.GetValue<string>() is "unhealthy" or "missing" or "crashed").Select(g => g["name"]!.GetValue<string>()).ToList();
+            Assert.That(hidden, Is.EquivalentTo(unhealthy), "the unhealthy gear is left out and named");
+            Assert.That(listed["gear"]!.AsArray().Select(g => g!["name"]!.GetValue<string>()), Is.EquivalentTo(rows.Select(g => g["name"]!.GetValue<string>()).Except(unhealthy)));
             var missing = rows.Where(g => g["manifest"] == null && g["health"]?.GetValue<string>() is not ("missing" or "crashed"))
                 .Select(g => g["name"]!.GetValue<string>()).ToList();
             Assert.That(missing, Is.Empty, $"every machine in the Gear has a manifest ({rows.Count} listed)");

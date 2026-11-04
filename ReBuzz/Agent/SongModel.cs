@@ -28,6 +28,11 @@ namespace ReBuzz.Agent
         /// <summary>The manifest's entry (exact units), or null.</summary>
         public ManifestParameter Manifest { get; init; }
         public bool IsTrack => Group == 2;
+        /// <summary>
+        /// A track parameter that holds no value (U2 in depth, mcp-server.md §12.12): each value written plays once, as a
+        /// drum's trigger or a note's volume does. Only automation_write takes it (as events); param_set doesn't.
+        /// </summary>
+        public bool Played { get; init; }
         public string Name => Parameter.Name;
     }
 
@@ -140,7 +145,8 @@ namespace ReBuzz.Agent
         }
 
         /// <summary>The machine's global and track parameters (not its inputs, not notes).</summary>
-        public static List<AgentParam> Params(MachineCore m)
+        /// <param name="played">Also the track parameters that hold no value (triggers), marked <see cref="AgentParam.Played"/>.</param>
+        public static List<AgentParam> Params(MachineCore m, bool played = false)
         {
             var manifest = Manifest(m.DLL);
             var list = new List<AgentParam>();
@@ -150,7 +156,8 @@ namespace ReBuzz.Agent
                 {
                     if (p.Type == ParameterType.Internal || p.Type == ParameterType.Note) continue;
                     // Track parameters that don't hold a value (a note's velocity) are played, not set.
-                    if (g == 2 && (p.Flags & ParameterFlags.State) == 0) continue;
+                    bool isPlayed = g == 2 && (p.Flags & ParameterFlags.State) == 0;
+                    if (isPlayed && !played) continue;
                     var entry = manifest?.FindAt(g == 2, p.IndexInGroup, p.Name);
                     if (entry != null && (entry.Min != p.MinValue || entry.Max != p.MaxValue)) entry = null;   // a stale manifest: trust the machine
                     var param = p;
@@ -160,6 +167,7 @@ namespace ReBuzz.Agent
                     {
                         Parameter = p,
                         Group = g,
+                        Played = isPlayed,
                         Manifest = entry,
                         Info = new ParamInfo
                         {

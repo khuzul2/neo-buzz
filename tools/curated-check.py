@@ -82,7 +82,7 @@ def disagreements(entry, table):
 def main():
     manifests = curated_manifests()
     c = profiler.Client(exe, work, 90)
-    installed = {g["name"] for g in c.call("gear_list", limit=1000).get("gear", [])}
+    installed = {g["name"] for g in c.call("gear_list", limit=1000, include_unhealthy=True).get("gear", [])}
     failures, checked, compared, skipped = [], 0, 0, []
     for gear, m in manifests.items():
         if gear not in installed:
