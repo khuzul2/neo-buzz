@@ -775,6 +775,11 @@ namespace ReBuzzTests
             var wave = rig.Core.SongCore.Wavetable.Waves[0];
             Assert.That(wave?.Name, Is.EqualTo("Sine 441"), "the wave is the song's");
             Assert.That(wave!.Layers[0].RootNote, Is.EqualTo(BuzzNote(5, 9)));
+            // The opened machine reads the song's wave in as the first one did (a render waits on Busy the same way).
+            var openedMachine = opened.ManagedMachine;
+            clock.Restart();
+            while (busy.GetValue(openedMachine) is true && clock.ElapsedMilliseconds < 10000) Thread.Sleep(20);
+            Assert.That(busy.GetValue(openedMachine), Is.False, "the opened song's wave read in");
             if (opened.TrackCount < 1) opened.TrackCount = 1;
             var note = opened.ParameterGroups[2].Parameters.Single(p => p.Name == "Note");
             note.SetValue(0, BuzzNote(5, 9));

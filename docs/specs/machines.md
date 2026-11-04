@@ -546,6 +546,8 @@ The editor: the zone map (the keyboard across, velocity up; each zone a box in i
 
 The agent's tools (mcp-server.md §5.6, §3.3): `wave_import(…, layer=true)` adds a file to a filled slot as another layer, with its own `root_note`, and undo takes it out; `wave_list` gives each slot's `layer_roots`; parameters with the unit note take note names ("C2", "F#3") and print them, and a zone's wave takes its text ("Built-in Kick", a slot's name). A kit or an instrument is built with `wave_import`, `machine_add`, `preset_load` and `param_set` (the agent guide's two workflows).
 
+Its parameters' roles (from `ManifestRoles`), for `machine_replace` and the manifest editor: Mode `osc.mode`, Polyphony `voices`, Vel → amp `velocity.amount`, Volume `level`; Amp attack, decay, sustain, release `env.attack`, `env.decay`, `env.sustain`, `env.release`; Filter `filter.type`, Cutoff `filter.cutoff`, Resonance `filter.resonance`, Filter env `filter.env_amount`, Key track `filter.keytrack`, Filter vel `filter.velocity`, Flt attack … release `filter.env.attack` … `filter.env.release`; Z*n* wave `osc.wave_zone`, key low and key high `osc.zone_split`, tune `pitch.coarse`, fine `pitch.fine`, level `osc.level`, pan `pan`. Kit base, Bend range, Vel crossfade, the zones' velocity ranges, root, start, end, loop and its points, crossfade, trigger, reverse and choke have none in the vocabulary. (Pedal M1's pair is a mapping file, not roles: mcp-server.md §12.10.)
+
 | Criterion | Target | Measured |
 |---|---|---|
 | Unity | a wave at its root and the song's rate: the wave itself, after the 0.5 ms attack | within 6·10⁻⁸ |

@@ -328,6 +328,12 @@ jobs:
         name: null-test-references
         path: null-ref
 
+    # libsndfile reads the waves the sampler's cases import (wave_import), as on Windows.
+    - name: libsndfile
+      run: |
+        sudo apt-get update -q
+        sudo apt-get install -y -q --no-install-recommends libsndfile1
+
     - name: Null test, Linux x64 vs Windows
       run: python3 tools/null-test.py compare ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless null-ref "$RUNNER_TEMP/null-test"
 
@@ -363,6 +369,9 @@ jobs:
       with:
         name: null-test-references
         path: null-ref
+
+    - name: libsndfile
+      run: brew install libsndfile || true
 
     - name: Null test, macOS arm64 vs Windows
       run: python3 tools/null-test.py compare ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless null-ref "$RUNNER_TEMP/null-test"

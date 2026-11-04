@@ -66,7 +66,8 @@ tools = request("tools/list")["result"]["tools"]
 check(len(tools) >= 50, f"{len(tools)} tools")
 
 ok, text, data = call("gear_list")
-check(ok and "Neo Poly" in text and "Neo Verb" in text, "the portable Neo machines are installed")
+names = {g.get("name") for g in data.get("gear", [])}   # the text names the first dozen only
+check(ok and "Neo Poly" in names and "Neo Verb" in names and "Neo Sampler" in names, "the portable Neo machines are installed")
 
 ok, _, _ = call("song_set", tempo_bpm=120, song_end_beats=8)
 check(ok, "song_set")
