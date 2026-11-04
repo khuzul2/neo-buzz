@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04; and Neo Multiband (mcp-server.md §8.2), 2026-11-04; and Neo Sampler (mcp-server.md §8.2, §12.5), 2026-11-04 |
+| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04; and Neo Multiband (mcp-server.md §8.2), 2026-11-04; and Neo Sampler (mcp-server.md §8.2, §12.5), 2026-11-04; and Neo Scope (mcp-server.md §8.1), 2026-11-04 |
 | Date | 2026-11-04 |
 | Scope | New high-quality machines for sound design, mixing and mastering, written in C# with custom editors: first batch "core six", second batch "mix and master", third the successors of closed machines that misbehave |
 
@@ -49,6 +49,12 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Multiband | effect | 3 or 4 bands of compression or upward expansion, split by linear-phase crossovers that sum back to the input exactly (96 ms of latency, reported to ReBuzz) or zero-latency minimum-phase Linkwitz–Riley ones with the same band shapes; Neo Comp's detector and gain computer in each band, stereo or mid/side; its gain change per band in the editor and `machine_readings`. A new machine (no classic one to succeed) |
 | Neo Sampler | generator | Sampler and drum machine: the song's waves (saved with the song) and 26 built-in samples in 16 zones by key and velocity, with layers by root and round robin, loops with crossfades, one-shot or gate, reverse, choke groups, amp and filter envelopes; a Kit mode on the General MIDI drum keys; a 32-tap windowed sinc with octave-down copies, aliases under −90 dB at any pitch. Succeeds Pedal M1 (mcp-server.md §12.5) |
 
+**The second analysis machine (mcp-server.md §8.1)**
+
+| Machine | Kind | One line |
+|---|---|---|
+| Neo Scope | effect | Oscilloscope and vectorscope: the waveform (left, right, mid, side, or both overlaid) synced to the song from 1/16 to 4 bars, each sweep starting on the song's beats and bars so a loop stands still, or free in time per division with an edge trigger and holdoff; a goniometer or polar vectorscope with a correlation meter; auto scale or gain, a trail, freeze; audio untouched. Readings for agents (peak, RMS, correlation, the trigger's lock) |
+
 ## 2. Decisions
 
 - **C#**, managed machines (`IBuzzMachine`), like the Pedal set: no native build, no 32-bit bridge.
@@ -65,7 +71,7 @@ Machines/
   NeoBuzz.Dsp/        Pure DSP (no Buzz or WPF references), internal types, linked as source
   NeoBuzz.Machine/    Buzz glue shared by the machines (parameters, notes, MIDI), linked as source
   NeoBuzz.Editor/     WPF editor kit (knobs, switches, meters, graphs, preset bar), linked as source
-  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/ NeoEq/ NeoUtility/ NeoLimiter/ NeoAnalyzer/ NeoEnsemble/ NeoDelay/ NeoMultiband/ NeoSampler/
+  NeoDrive/ NeoComp/ NeoVerb/ NeoPoly/ NeoWave/ NeoFm6/ NeoEq/ NeoUtility/ NeoLimiter/ NeoAnalyzer/ NeoEnsemble/ NeoDelay/ NeoMultiband/ NeoSampler/ NeoScope/
     Engine/           the machine's DSP: pure, tested on Linux
     Params.def        the parameter table (source of truth)
     Presets.txt       factory presets in units
@@ -581,6 +587,43 @@ As built:
 - **Pedal M1 → Neo Sampler** is a pair (mcp-server.md §12.10): its two oscillators' waves and key zones become zones 1–4 and 5–8, within ±1 dB and ±2 dB per third octave but for resonance.
 - The Linux profile (`docs/machine-health.md`): ok; −17.3 LUFS for a note at its defaults (slot 1's test wave).
 
+### Neo Scope (oscilloscope and vectorscope; mcp-server.md §8.1)
+
+An effect whose output is its input, bit for bit, with zero latency, that draws what passes: an oscilloscope synced to the song or free with a trigger, and a vectorscope. It is for people watching a signal while it plays (mcp-server.md §8.1: "mostly for people; the agent's equivalent is `plot`"); agents get four readings and a guide that sends them to `render`, `plot` and `analyze`.
+
+- **Sweeps.** A sweep is kept as the lowest and highest value of each of up to 1024 columns (a sample a column when it is shorter), of one trace or two: left, right, mid (L + R)/2, side (L − R)/2, or left and right overlaid (`Display`). So a sweep of four bars hands over as much as one of a millisecond, and the editors draw a pixel's span, the waveform's envelope where the sweep is long. The editor fills each trace as one band (its highest values left to right, its lowest back, at least a line's width thick, its points three pixels apart; a sweep shorter than the screen is a line through its samples), and the trail as one more band per trace, every earlier sweep's spans merged: its cost follows the screen's width, not the sweep's length or the trail's.
+- **Synced** (`Sync` 1/16 … 4 bars, a quarter beat to 16 beats): the screen is that note value of the tempo, and sweeps start on its multiples counted from the song's start, from the song's position as the host gives it in `Work` (the tick, the samples into it, the tick's length). A sample's column is its position in ticks within the sweep, so whole-sample ticks of different lengths (44.1 kHz at 120 BPM: 5512 and 5513) don't shift it, and a loop draws the same sweep on every pass. A jump (the loop going back, a new position, the transport starting) ends the sweep there; a start mid-bar fills the bar from there. A bar is 4 beats (Buzz's 16 ticks at 4 a beat): a machine doesn't see the song's bar list. While the song stands still (and while a pattern plays alone, which doesn't move the song's position) the sweeps run free at the tempo.
+- **Free** (`Sync` Free): ten divisions of `Time/div` (0.1 ms – 200 ms) across. With `Trigger` Rising or Falling, a sweep starts where the first trace (left in L & R) crosses `Level` (± full scale) that way, re-armed once it is 0.2 % of full scale back on the other side, and `Holdoff` after the last sweep; the crossing's place within its sample goes with the sweep, so the editor draws a fast time base without a sample's jitter. With no crossing for two sweeps' time (at least 100 ms) it runs free and says so (Auto), as a scope's auto mode does. With `Trigger` Off sweeps follow each other.
+- **Vectorscope**: the last 1024 samples as a goniometer (`Vector` Lissajous: the kit's, as Neo Analyzer's) or polar (each sample at its angle and level, folded through the centre into the upper half: mono straight up, opposed channels along the base). The correlation meter: 400 ms (the bar) and 3 s (the marker), with the analysis library's `Stereo.Measures`, as `analyze` reads it.
+- **View**: `Auto scale` fits the newest sweep (at once when it grows, back up at most 12 dB a second when it shrinks) and the vectorscope's points; off, `Gain` (−12 … +48 dB; 0 dB: full scale fills the screen). `Trail`: the sweeps before the newest stay behind it as a faint band, as a phosphor's persistence does, fading over 0.15, 0.4 or 1 s (the editor keeps the last eight). `Freeze` holds both displays; the readings go on. A sweep longer than 0.1 s draws as it goes, over the last one, with a cursor. In L & R the left trace (the trigger's) is drawn over the right.
+- **Threads**: the audio thread fills a snapshot and publishes it through the lock-free triple buffer (NeoBuzz.Dsp `TripleBuffer`), at most 60 times a second of audio (on a grid of 1/60 s, whatever the blocks), never per block: the editors draw at the display's rate. The sweeps swap between two buffers when one completes, never copied on the audio thread but into the snapshot.
+- **Readings** (docs/specs/mcp-server.md §3.5): `peak_dbfs` (the highest sample of either channel), `rms_db` (both channels, plain RMS dB: a full-scale sine reads −3 dB) and `correlation`, over 3 s in 100 ms steps; and `trigger_locked`, 1 while the sweeps start on the trigger. Only what is honest for a scope: no frequency from the trigger's period, no loudness (Neo Analyzer and `meters_read` have it).
+
+The choices that were open, and why:
+- **Min and max per column**, not decimated samples: a long sweep shows the true envelope (a decimated one aliases), and the hand-over and the drawing cost the same at any length.
+- **Columns by the song's position** in synced sweeps, not by samples since the bar: the same picture every pass even when ticks are a sample apart, and the columns are beats and bars.
+- **Auto, not Normal, when the trigger finds nothing**: the screen never stays on an old picture without saying so; the status reads Auto and `trigger_locked` 0.
+- **The trigger point at the left edge**, no pre-trigger: what the scope shows starts at the event.
+- **Display settings as parameters** (`Auto scale`, `Gain`, `Trail`, `Freeze`, `Vector`), as Neo Analyzer's are: saved with the song and in presets, one undo step each; the engine ignores them.
+
+Parameters: Display (L, R, Mid, Side, L & R), Sync (Free, 1/16, 1/8, 1/4, 1/2, 1 bar, 2 bars, 4 bars; default 1/4), Time/div (0.1 – 200 ms, default 2 ms); Trigger (Off, Rising, Falling), Level (−100 … +100 % in 0.1 % steps), Holdoff (0 – 500 ms); Auto scale, Gain (−12 … +48 dB in 0.5 dB steps), Trail (Off, Short, Medium, Long), Freeze; Vector (Lissajous, Polar). Presets (7): Synced — One Beat, One Bar (Mid), Four Bars (Overview); Free — Waveform (Triggered), Low End (Triggered, Holdoff); Stereo — Side and Polar; Levels — Fixed Gain (0 dB). The editor: the scope with its time base (the bar and beat it shows, or the time per division), the trigger's level marked at its right edge and its state (Trig'd, Auto, Frozen), the scale at the top; the vectorscope, the correlation meter and the readings; and the view's controls. Toolkit-free painters (`Core/ScopeGraphs.cs`), tested on Linux and in the studio.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Pass-through | output = input bit for bit; latency 0 | bit for bit at the machine's Work (1,024 loud random samples, in the studio and in ReBuzz); a render with Neo Scope after Neo Delay is the same file as without it (the null test checks it on every platform); latency 0 |
+| Synced | a one-bar loop, three passes: each sweep from the bar's first sample, filling the screen; the passes the same frame | the same frame at 48 kHz and 44.1 kHz (ticks of 5512 and 5513), 120 BPM; at 97 BPM (ticks a sample apart between passes) within 0.0054 (a sample's step of the test signal 0.0081); in the studio, Neo Sampler's kick on a one-bar loop: the same sweep each pass |
+| Trigger | a sine at 220 Hz (0.5) rising through +25 %, −40 %, falling through −25 %, +10 %: every sweep from the crossing, the crossing (with its offset) at the level within 3 % of a sample's step; above the peak: Auto | within 2.0·10⁻⁴ … 3.0·10⁻⁴ (a step 0.0144); Auto, unlocked; holdoff 25 ms: 27 sweeps a second (75 without) |
+| Readings | the library's measures: peak, RMS (a 1 kHz sine at 0.5 / 0.25), correlation (that sine, unrelated noise, opposed) equal to `Stereo.Measure`'s | within 0.01 dB; correlation within 10⁻⁶; silence −∞ |
+| Threads | snapshots at the display's rate, not per block; no allocation while processing (synced and looping, free and triggered, every display, freeze, the transport stopping) | 60 a second in blocks of 64; 0 bytes |
+| CPU | stereo at 48 kHz: under 1 % of real time | 0.076 % synced to a bar (1307× real time), 0.062 % free and triggered (1607×) |
+| Editors | modest: the painters' cost follows the screen's width; a frame of the whole editor, every graph redrawn, measured in the studio and in WPF against Neo Analyzer's | the painters alone (two traces and a trail of six sweeps on 680 px): 44 µs for the scope, 13 µs the goniometer, 26 µs the polar a frame (Linux CI). A frame of the whole editor rendered into a bitmap (in software in both toolkits; on a screen both draw on the GPU): in the studio 3.4 ms, Neo Analyzer's 2.7 ms (Linux CI); in WPF 29.2 ms, Neo Analyzer's 10.3 ms, with ReBuzzTests' noisy stereo mix (Windows CI). Measured with the band's points two pixels apart; three now, a third fewer points (locally the studio's scope at 2 ms a division with the long trail: 6.5 ms instead of 10 ms) |
+| In ReBuzz | a −20 dBFS sine through it to the master unchanged; the readings; the trigger locks; the WPF editor (ReBuzzTests, Windows) | within 0.01 dB; −20.00 dBFS peak, −23.01 dB RMS, correlation 1; `trigger_locked` 1 free, 0 synced; bit for bit at Work; the WPF editor 1098 × 458 (the studio's 1098 × 457) |
+
+As built:
+
+- **Not built**: a pre-trigger (the trigger point is the left edge), Normal triggering (it is always Auto), a trigger on the second trace, an X–Y mode of two inputs, a spectrum (Neo Analyzer has it), the song's bar list for synced bars (4 beats).
+- The readings and the editors are measured; the audio is not touched, so nothing of it is a sound to calibrate.
+
 ## 6. Phases
 
 | Phase | Content |
@@ -591,13 +634,14 @@ As built:
 | M3 (MCP A4) | Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer |
 | Successors (machine-safety.md §4, mcp-server.md §12.5) | Neo Ensemble; Neo EQ's graphic mode; Neo Delay |
 | Mix and master, the rest (mcp-server.md §8.2) | Neo Multiband; Neo Sampler (with the Pedal M1 successor pair, §12.5) |
+| Analysis, the rest (mcp-server.md §8.1) | Neo Scope |
 
 Each phase: pure tests (Linux CI), integration tests in ReBuzzTests (the machine loads, makes sound, its parameters and editor work, editor screenshots), then the package build.
 
-M0–M3 are done, and of the successors Neo Ensemble, Neo EQ's graphic mode and Neo Delay; and Neo Multiband and Neo Sampler. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
+M0–M3 are done, and of the successors Neo Ensemble, Neo EQ's graphic mode and Neo Delay; and Neo Multiband and Neo Sampler; and Neo Scope. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
 
 ## 7. Not in this batch
 
 Additive and physical-modelling synths, convolution: candidates for the next batch (ensemble and phaser: Neo Ensemble, built; tape delay: Neo Delay's glide, saturation and wow, built; a multi-head tape echo with its heads' spacing is not; multiband: Neo Multiband, built, and its partitioned FFT convolution is the start of convolution; a sampler: Neo Sampler, built, without sample editing, slicing or time-stretch).
 
-The MCP server spec (docs/specs/mcp-server.md §8) sets the priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak), Neo Utility and Neo Analyzer are built (M3), and Neo Delay, Neo Multiband and Neo Sampler; next Neo Scope. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.
+The MCP server spec (docs/specs/mcp-server.md §8) sets the priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak), Neo Utility and Neo Analyzer are built (M3), and Neo Delay, Neo Multiband and Neo Sampler, and the last of §8's machines, Neo Scope. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.

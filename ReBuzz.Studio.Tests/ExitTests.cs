@@ -428,8 +428,23 @@ namespace ReBuzz.Studio.Tests
                 Type("132");
                 Key(window, PhysicalKey.Enter);
                 Assert.That(Core.BPM, Is.EqualTo(132), "the BPM box");
-                ClickControl(window.Transport.GetVisualDescendants().OfType<ToggleButton>().Single(b => b.Content as string == "Loop"));
-                Assert.That(Core.Looping, Is.True, "Loop on");
+                // Loop on failed now and then on CI (runs 41644026501 and 41866682998) and once locally, Looping false after
+                // the click, and it never came back in 19 local runs under load: a failure says what the button saw.
+                var loopButton = window.Transport.GetVisualDescendants().OfType<ToggleButton>().Single(b => b.Content as string == "Loop");
+                string beforeClick = $"before the click: Looping {Core.Looping}, the button {loopButton.IsChecked}, focus on {window.FocusManager?.GetFocusedElement()?.GetType().Name ?? "nothing"}, " +
+                                $"under the pointer {(window.InputHitTest(CentreOf(loopButton, window)) as Visual)?.GetType().Name ?? "nothing"}";
+                var seen = new List<string>();
+                EventHandler<PointerPressedEventArgs> pressed = (_, e) => seen.Add($"pressed (handled {e.Handled})");
+                EventHandler<PointerReleasedEventArgs> released = (_, e) => seen.Add($"released (handled {e.Handled})");
+                EventHandler<Avalonia.Interactivity.RoutedEventArgs> clicked = (_, _) => seen.Add($"click (the button {loopButton.IsChecked}, Looping {Core.Looping})");
+                loopButton.AddHandler(InputElement.PointerPressedEvent, pressed, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+                loopButton.AddHandler(InputElement.PointerReleasedEvent, released, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+                loopButton.Click += clicked;
+                ClickControl(loopButton);
+                loopButton.RemoveHandler(InputElement.PointerPressedEvent, pressed);
+                loopButton.RemoveHandler(InputElement.PointerReleasedEvent, released);
+                loopButton.Click -= clicked;
+                Assert.That(Core.Looping, Is.True, $"Loop on; {beforeClick}; the button saw: {string.Join(", ", seen)}; after it: the button {loopButton.IsChecked}");
                 canvas.Focus();
                 Studio.Screenshot(window, "exit-7-arranged");
 

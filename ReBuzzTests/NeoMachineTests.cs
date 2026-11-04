@@ -97,6 +97,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Multiband = new("Neo Multiband", "Multiband", false);
         // The sampler (docs/specs/mcp-server.md §8.2): plays the song's waves.
         internal static readonly NeoInfo Sampler = new("Neo Sampler", "Sampler", true);
+        // The oscilloscope and vectorscope (docs/specs/mcp-server.md §8.1): looks at what passes, changes nothing.
+        internal static readonly NeoInfo Scope = new("Neo Scope", "Scope", false);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -889,6 +891,127 @@ namespace ReBuzzTests
             ShootEditor(analyzer, "neo-analyzer-editor");
         }
 
+        /// <summary>
+        /// How long the WPF editor takes to draw everything (each GraphView invalidated, laid out, rendered into a bitmap), a
+        /// frame on average over <paramref name="frames"/>, with <paramref name="between"/> run before each (the audio).
+        /// </summary>
+        static double EditorFrameMs(MachineCore machine, int frames, Action between)
+        {
+            var gui = machine.DLL.GUIFactory!.CreateGUI(null!);
+            gui.Machine = machine;
+            var element = (FrameworkElement)gui;
+            element.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var size = element.DesiredSize;
+            element.Arrange(new Rect(0, 0, size.Width, size.Height));
+            element.UpdateLayout();
+            var graphs = new System.Collections.Generic.List<FrameworkElement>();
+            void Walk(DependencyObject d)
+            {
+                if (d is FrameworkElement f && f.GetType().Name == "GraphView") graphs.Add(f);
+                for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(d); i++) Walk(System.Windows.Media.VisualTreeHelper.GetChild(d, i));
+            }
+            Walk(element);
+            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(size.Width), (int)Math.Ceiling(size.Height), 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            bitmap.Render(element);
+            var timer = new System.Diagnostics.Stopwatch();
+            for (int k = 0; k < frames; k++)
+            {
+                between();
+                Thread.Sleep(12);                                       // the editors read a new snapshot at most every 10 ms
+                timer.Start();
+                foreach (var g in graphs) g.InvalidateVisual();
+                element.UpdateLayout();
+                bitmap.Render(element);
+                timer.Stop();
+            }
+            Assert.That(graphs.Count, Is.GreaterThan(2), "the editor's graphs");
+            return timer.Elapsed.TotalMilliseconds / frames;
+        }
+
+        [Test]
+        public void NeoScopePassesAudioThroughReadsWhatItShowsAndShowsItsEditor()
+        {
+            if (!File.Exists(Scope.BuiltPath)) Assert.Inconclusive($"{Scope.Name} not built ({Scope.BuiltPath}); build the solution first");
+            Assert.That(File.Exists(Path.Combine(Path.GetDirectoryName(Scope.BuiltPath)!, "Neo Scope.prs.xml")), Is.True, "presets ship beside the DLL");
+            Assert.That(File.Exists(Path.Combine(Path.GetDirectoryName(Scope.BuiltPath)!, "Neo Scope.machine.json")), Is.True, "and the manifest");
+            using var driver = new Driver();
+            driver.Gear.AddDynamicGenerator(MixInfo);
+            driver.Gear.AddBuiltMachine(Scope, AbsoluteFilePath.Value(Scope.BuiltPath), false);
+            driver.Gear.AddBuiltMachine(Analyzer, AbsoluteFilePath.Value(Analyzer.BuiltPath), false);
+            driver.Start();
+            var fx = new DynamicMachineController(Scope.Name, Scope.Name);
+            driver.MachineGraph.InsertMachineInstanceConnectedToMasterFor(fx);
+            var source = new DynamicMachineController("Neo Test Mix", "Mix");
+            driver.MachineGraph.InsertMachineInstanceFor(source);
+            driver.MachineGraph.Connect(source, fx);
+            var scope = driver.MachineFor(fx);
+            var mix = driver.MachineFor(source);
+            var reader = driver.CreateAudioReader(256);
+            IParameter Param(string name) => scope.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters.Single(p => p.Name == name);
+            float[] Play(double seconds)
+            {
+                int frames = (int)(seconds * ReBuzzCore.masterInfo.SamplesPerSec);
+                var left = new float[frames];
+                for (int at = 0; at < frames; at += 256)
+                {
+                    int n = Math.Min(256, frames - at);
+                    reader.Read(n);
+                    for (int i = 0; i < n; i++) left[at + i] = reader.Buffer[2 * i];
+                }
+                return left;
+            }
+            var instance = scope.ManagedMachine;
+            System.Collections.Generic.IReadOnlyDictionary<string, double> Readings() =>
+                (System.Collections.Generic.IReadOnlyDictionary<string, double>)instance.GetType().GetProperty("Readings")!.GetValue(instance)!;
+
+            Assert.That(Param("Display").DescribeValue(Param("Display").DefValue), Is.EqualTo("L & R"));
+            Assert.That(Param("Sync").DescribeValue(Param("Sync").DefValue), Is.EqualTo("1/4"));
+            Assert.That(Param("Time/div").DescribeValue(Param("Time/div").DefValue), Is.EqualTo("2.00 ms"));
+            Assert.That(Param("Level").DescribeValue(Param("Level").DefValue), Is.EqualTo("0.0%"));
+            Assert.That(Param("Gain").DescribeValue(Param("Gain").DefValue), Is.EqualTo("0.0 dB"));
+            Assert.That(scope.Latency, Is.EqualTo(0));
+
+            // A 1 kHz sine peaking at −20 dBFS on both channels: the master hears it as it was; the readings are its peak, its
+            // RMS as analyze reads it (−23.01 dB), mono; the trigger is off (synced).
+            var heard = Play(4);
+            double rms = Rms(heard, heard.Length / 2);
+            var r = Readings();
+            TestContext.Out.WriteLine(string.Join(", ", r.Select(kv => $"{kv.Key} {kv.Value:F3}")));
+            Assert.That(Db(rms), Is.EqualTo(Db(0.1 / Math.Sqrt(2))).Within(0.01), "the master hears the sine as it was");
+            Assert.That(r.Count, Is.EqualTo(4), "the manifest's 4 readings");
+            Assert.That(r["peak_dbfs"], Is.EqualTo(-20).Within(0.05));
+            Assert.That(r["rms_db"], Is.EqualTo(-23.01).Within(0.05));
+            Assert.That(r["correlation"], Is.EqualTo(1).Within(1e-6));
+            Assert.That(r["trigger_locked"], Is.EqualTo(0), "synced: no trigger");
+            Param("Sync").SetValue(0, 0);                    // Free: Rising through 0 %
+            Play(0.5);
+            Assert.That(Readings()["trigger_locked"], Is.EqualTo(1), "free with the trigger: locked on the sine");
+
+            // Output equals input, bit for bit, at the machine's Work (loud random samples).
+            var work = instance.GetType().GetMethod("Work", new[] { typeof(Sample[]), typeof(Sample[]), typeof(int), typeof(WorkModes) })!;
+            var rng = new Random(9);
+            var input = Enumerable.Range(0, 1024).Select(_ => new Sample((float)(rng.NextDouble() * 2 - 1) * 32000f, (float)(rng.NextDouble() * 2 - 1) * 40000f)).ToArray();
+            var output = new Sample[1024];
+            Assert.That((bool)work.Invoke(instance, new object[] { output, input, 1024, WorkModes.WM_READWRITE })!, Is.True, "sound: true");
+            Assert.That(output.Zip(input).All(p => BitConverter.SingleToInt32Bits(p.First.L) == BitConverter.SingleToInt32Bits(p.Second.L)
+                && BitConverter.SingleToInt32Bits(p.First.R) == BitConverter.SingleToInt32Bits(p.Second.R)), Is.True, "bit for bit");
+
+            // The editor on the stereo mix, and its cost against Neo Analyzer's (an analyzer after the same mix).
+            mix.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters[0].SetValue(0, 1);
+            Param("Sync").SetValue(0, 3);
+            Play(2);
+            var size = ShootEditor(scope, "neo-scope-editor");
+            double scopeMs = EditorFrameMs(scope, 30, () => Play(1.0 / 30));
+            var az = new DynamicMachineController(Analyzer.Name, "Analyzer");
+            driver.MachineGraph.InsertMachineInstanceConnectedToMasterFor(az);
+            driver.MachineGraph.Connect(source, az);
+            Play(2);
+            double analyzerMs = EditorFrameMs(driver.MachineFor(az), 30, () => Play(1.0 / 30));
+            TestContext.Out.WriteLine($"[notice] Neo Scope in ReBuzz: a −20 dBFS sine through it within 0.01 dB, readings {r["peak_dbfs"]:F2} dBFS, {r["rms_db"]:F2} dB; " +
+                                      $"WPF editor {size.Width:0} x {size.Height:0}, {scopeMs:F1} ms a frame (Neo Analyzer's {analyzerMs:F1} ms)");
+            Assert.That(scopeMs, Is.LessThan(50), "a frame of the editor stays modest");
+        }
+
         static int BuzzNote(int octave, int semitone) => (octave << 4) + semitone + 1;   // semitone 0 = C
 
         [Test]
@@ -1142,7 +1265,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

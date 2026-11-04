@@ -24869,6 +24869,88 @@
    "generated": true,
    "health": "ok"
   },
+  "Neo Scope": {
+   "gear": "Neo Scope",
+   "kind": "effect",
+   "load_seconds": 0.1,
+   "gear_info": {
+    "file": "Effects/Neo Scope.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "takes_midi": false
+   },
+   "parameters": 11,
+   "track_parameters": 0,
+   "inferred": 11,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 11,
+    "of": 11
+   },
+   "effect": {
+    "gain_db": 0.0,
+    "latency_samples": 0,
+    "latency_ms": 0.0,
+    "tail_seconds": 0.0,
+    "echoes": 0,
+    "output_correlation": 1.0,
+    "spectrum_spread_db": 0.0,
+    "tilt_db": 0.0,
+    "sine": {
+     "loud": {
+      "gain_db": 0.0,
+      "thd_percent": 1.96,
+      "thd_in_percent": 1.96,
+      "movement_db": 0.13
+     },
+     "quiet": {
+      "gain_db": 0.0,
+      "thd_percent": 1.96,
+      "thd_in_percent": 1.96,
+      "movement_db": 0.14
+     }
+    },
+    "traits": [
+     "utility"
+    ]
+   },
+   "cpu_ms_per_s": 5.8,
+   "type": "utility",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.22,
+     "growth_db": -0.15,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -9.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": -9.2,
+      "growth_db": 0.21,
+      "verdict": "ok"
+     }
+    },
+    "swept_because": [
+     "an effect with Gain"
+    ],
+    "renders": 20
+   },
+   "sweeps": {},
+   "seconds": 4.3,
+   "platform": "linux",
+   "date": "2026-11-04",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "ok"
+  },
   "Neo Utility": {
    "gear": "Neo Utility",
    "kind": "effect",
