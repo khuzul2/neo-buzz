@@ -9,18 +9,18 @@ jobs:
 
     steps:
     - name: Checkout repository (with submodules)
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         submodules: true
 
     - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
 
     - name: Build Native Machines
       run: msbuild NativeMachines/NativeMachines.sln /p:Configuration=Release
 
     - name: Upload native artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: rebuzz-native-machines
         path: NativeMachines/bin/Release/

@@ -17,8 +17,9 @@
 //    over 10 ms. Phase changes fade the output out over 10 ms, switch and fade back in; the latency
 //    changes at the switch and ReBuzz realigns its other paths.
 // No allocation after SetSampleRate. Parameters latch at block starts; the linear path applies them
-// at its partition boundaries, which fall on fixed samples, so the output doesn't depend on how the
-// host splits it.
+// at its partition boundaries and designs its FIRs in steps at every 16th sample of a partition
+// (LinearSplit.DesignStep), which fall on fixed samples, so the output doesn't depend on how the
+// host splits it or how fast the machine runs.
 
 using System;
 using System.Collections.Generic;
@@ -367,6 +368,7 @@ namespace NeoBuzz.Multiband
                     pos = 0;
                     Partition();
                 }
+                else if ((pos & (LinearSplit.DesignStride - 1)) == 0) linear.DesignStep();
             }
         }
 
