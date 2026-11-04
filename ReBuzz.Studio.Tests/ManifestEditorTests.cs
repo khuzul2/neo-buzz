@@ -215,6 +215,43 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void ANeoMachineKeepsItsOwnEditor()
+        {
+            // Neo Delay, as every Neo machine: an editor of its own, a manifest generated from its Params.def (neither
+            // curated nor a draft), so the setting is off; and even turned on, a double click opens its own editor, as
+            // it does for any machine with a GUI. Editor... still makes the manifest one on request.
+            var (window, view) = OpenEmpty();
+            var delay = (MachineCore)Add("Neo Delay", "Echo", 0, 0);
+            try
+            {
+                Settle();
+                var manifest = SongModel.Manifest(delay.DLL)!;
+                Assert.That(manifest.IsCurated || manifest.IsDraft, Is.False, "Neo Delay's manifest is generated");
+                Assert.That(ManifestEditorSettings.OpensEditor(delay.DLL), Is.False, "off by default: not curated");
+                ManifestEditorSettings.Set(delay.DLL, true);
+                DoubleClick(window, view.PointOf(delay, window));
+                var gui = StudioMachineUiHost.GuiWindowOf(delay);
+                Assert.That(gui?.IsVisible, Is.True, "a double click opens its own editor");
+                gui!.UpdateLayout();
+                Assert.That(All(gui, "NeoDelayEditor").Count(), Is.EqualTo(1), "Neo Delay's editor");
+                Assert.That(StudioMachineUiHost.EditorWindowOf(delay), Is.Null, "not the manifest editor, even with the setting on");
+                Assert.That(StudioMachineUiHost.ParameterWindowOf(delay), Is.Null, "nor its parameter list");
+                gui.Close();
+                Settle();
+                Menu(window, view, view.PointOf(delay, window), null, "Editor...");
+                Assert.That((StudioMachineUiHost.EditorWindowOf(delay)?.Content as ManifestEditor)?.Face.Quality, Is.EqualTo("generated"),
+                    "Editor... makes its manifest editor on request");
+                StudioMachineUiHost.EditorWindowOf(delay)!.Close();
+                Settle();
+            }
+            finally
+            {
+                ManifestEditorSettings.Set(delay.DLL, false);
+                Close(window);
+            }
+        }
+
+        [AvaloniaTest]
         public void AKnobTakesATypedValueAsParamSetReadsItInOneUndoStep()
         {
             var m = Add("Pedal Juno106", "Typed Juno");
