@@ -52,4 +52,186 @@
       <Comment>A pulse wave, filter low, a short envelope: a muted bass</Comment>
     </Preset>
   </Item>
+  <Item Key="Sweep — R1">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="26" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="0" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="0" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="64" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A plain sine bass, filter open, no envelope</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — R2">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="13" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="0" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="0" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="64" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A plain sine bass, filter open, no envelope</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — R3">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="6" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="0" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="0" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="64" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment>A plain sine bass, filter open, no envelope</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — R4">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="19" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="0" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="0" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="64" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>A plain sine bass, filter open, no envelope</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — SP1">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="32" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="13" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="51" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="38" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>A saw through a closing filter: a plucked bass</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — SP2">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="26" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="0" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="38" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="38" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>A saw through a closing filter: a plucked bass</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — SP3">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="19" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="0" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="51" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="38" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="1" />
+      </Parameters>
+      <Attributes />
+      <Comment>A saw through a closing filter: a plucked bass</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — A1">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="32" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="64" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="64" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="51" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="5" />
+      </Parameters>
+      <Attributes />
+      <Comment>Its 303-style saw, resonant, with a strong envelope</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — A2">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="26" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="51" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="51" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="51" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="5" />
+      </Parameters>
+      <Attributes />
+      <Comment>Its 303-style saw, resonant, with a strong envelope</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — A3">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="19" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="77" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="64" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="51" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="5" />
+      </Parameters>
+      <Attributes />
+      <Comment>Its 303-style saw, resonant, with a strong envelope</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — A4">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="13" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="64" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="51" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="51" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="5" />
+      </Parameters>
+      <Attributes />
+      <Comment>Its 303-style saw, resonant, with a strong envelope</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — PM1">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="32" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="0" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="26" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="26" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="2" />
+      </Parameters>
+      <Attributes />
+      <Comment>A pulse wave, filter low, a short envelope: a muted bass</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — PM2">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="26" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="13" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="13" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="26" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="2" />
+      </Parameters>
+      <Attributes />
+      <Comment>A pulse wave, filter low, a short envelope: a muted bass</Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — PM3">
+    <Preset Machine="Jeskola Bass 3">
+      <Parameters>
+        <Parameter Name="Cutoff" Group="2" Index="0" Track="0" Value="19" />
+        <Parameter Name="Resonance" Group="2" Index="1" Track="0" Value="0" />
+        <Parameter Name="Envmod" Group="2" Index="2" Track="0" Value="26" />
+        <Parameter Name="Decay" Group="2" Index="3" Track="0" Value="26" />
+        <Parameter Name="Waveform" Group="2" Index="4" Track="0" Value="2" />
+      </Parameters>
+      <Attributes />
+      <Comment>A pulse wave, filter low, a short envelope: a muted bass</Comment>
+    </Preset>
+  </Item>
 </PresetDictionary>

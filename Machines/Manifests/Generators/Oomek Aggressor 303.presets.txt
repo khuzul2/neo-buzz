@@ -12,6 +12,7 @@ Filter cutoff = 60
 Filter resonance = 100
 Filter envelope amount = 70%
 Envelope decay = 60
+Volume = 60%
 
 preset "Acid — Square Rubber"
 comment "The square wave, a shorter envelope: a rubbery line"
@@ -20,6 +21,7 @@ Filter cutoff = 50
 Filter resonance = 80
 Filter envelope amount = 60%
 Envelope decay = 40
+Volume = 60%
 
 preset "Bass — Deep Round"
 comment "Filter low, little resonance, a long decay: a round bass"
@@ -28,6 +30,7 @@ Filter cutoff = 30
 Filter resonance = 30
 Filter envelope amount = 30%
 Envelope decay = 80
+Volume = 75%
 
 preset "Acid — Screamer"
 comment "Filter high and very resonant, a short decay, turned down: a screaming lead line"
@@ -36,4 +39,4 @@ Filter cutoff = 100
 Filter resonance = 110
 Filter envelope amount = 90%
 Envelope decay = 30
-Volume = 70%
+Volume = 55%

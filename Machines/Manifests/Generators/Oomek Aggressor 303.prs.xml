@@ -10,7 +10,7 @@
         <Parameter Name="Decay" Group="1" Index="4" Track="0" Value="60" />
         <Parameter Name="Accent Level" Group="1" Index="5" Track="0" Value="64" />
         <Parameter Name="Finetune" Group="1" Index="6" Track="0" Value="100" />
-        <Parameter Name="Volume" Group="1" Index="7" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="7" Track="0" Value="60" />
       </Parameters>
       <Attributes />
       <Comment>A resonant saw with a strong envelope: the classic acid line</Comment>
@@ -26,7 +26,7 @@
         <Parameter Name="Decay" Group="1" Index="4" Track="0" Value="40" />
         <Parameter Name="Accent Level" Group="1" Index="5" Track="0" Value="64" />
         <Parameter Name="Finetune" Group="1" Index="6" Track="0" Value="100" />
-        <Parameter Name="Volume" Group="1" Index="7" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="7" Track="0" Value="60" />
       </Parameters>
       <Attributes />
       <Comment>The square wave, a shorter envelope: a rubbery line</Comment>
@@ -42,7 +42,7 @@
         <Parameter Name="Decay" Group="1" Index="4" Track="0" Value="80" />
         <Parameter Name="Accent Level" Group="1" Index="5" Track="0" Value="64" />
         <Parameter Name="Finetune" Group="1" Index="6" Track="0" Value="100" />
-        <Parameter Name="Volume" Group="1" Index="7" Track="0" Value="100" />
+        <Parameter Name="Volume" Group="1" Index="7" Track="0" Value="75" />
       </Parameters>
       <Attributes />
       <Comment>Filter low, little resonance, a long decay: a round bass</Comment>
@@ -58,7 +58,7 @@
         <Parameter Name="Decay" Group="1" Index="4" Track="0" Value="30" />
         <Parameter Name="Accent Level" Group="1" Index="5" Track="0" Value="64" />
         <Parameter Name="Finetune" Group="1" Index="6" Track="0" Value="100" />
-        <Parameter Name="Volume" Group="1" Index="7" Track="0" Value="70" />
+        <Parameter Name="Volume" Group="1" Index="7" Track="0" Value="55" />
       </Parameters>
       <Attributes />
       <Comment>Filter high and very resonant, a short decay, turned down: a screaming lead line</Comment>
