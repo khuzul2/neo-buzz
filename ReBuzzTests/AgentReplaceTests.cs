@@ -423,6 +423,55 @@ namespace ReBuzzTests
             Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
         }
 
+        /// <summary>
+        /// The measurements behind the Joachims Hyperion mapping (machine-safety.md §4): its response on noise, finer than third
+        /// octaves (FineTransfer), at its defaults, one band at a few gains and at each end of Bandwidth, two neighbours, every
+        /// band at once, the end bands, Highpass and Input gain. Its parameters by index: #1 Input gain, #2 … #31 the bands from
+        /// 20 kHz down to 20 Hz, #32 Highpass, #33 Bandwidth.
+        /// </summary>
+        [Test, Explicit("measurements for the Hyperion mapping; run by name (test_filter) when it is recalibrated")]
+        public void HyperionCalibration()
+        {
+            using var client = StartAgent(out string bin);
+            if (!Has(bin, "Effects", "Joachims Hyperion")) Assert.Inconclusive("Joachims Hyperion not in this build's Gear");
+            var report = new List<string>();
+            WarmUp(client, "Joachims Hyperion");
+            var hz = FineTransfer.Frequencies();
+            void Measure(string label, params (int Index, int Raw)[] changes)
+            {
+                HeldNoise(client, "Joachims Hyperion", new JsonArray(changes.Select(c => (JsonNode)new JsonObject { ["param"] = $"#{c.Index}", ["value"] = $"raw:{c.Raw}" }).ToArray()));
+                Quiet(client, "param_set", Args(("machine", "Synth"), ("changes", Changes(("Volume", "-12 dB")))));
+                var render = Quiet(client, "render", Args(("tail_seconds", 0), ("probes", new JsonArray("FX", "Synth"))));
+                var probes = render["probes"]!.AsArray();
+                string ProbeFile(string m) => probes.First(p => p!["machine"]!.GetValue<string>() == m)!["file"]!.GetValue<string>();
+                var fx = ReBuzz.Agent.Audio.Wav.Read(ProbeFile("FX"));
+                var src = ReBuzz.Agent.Audio.Wav.Read(ProbeFile("Synth"));
+                var mono = src.Left.Zip(src.Right ?? src.Left, (l, r) => (l + r) / 2).ToArray();
+                var db = FineTransfer.Db(mono, fx.Left, fx.Rate, hz);
+                double lr = fx.Right == null ? 0 : FineTransfer.Db(fx.Left, fx.Right, fx.Rate, new[] { 1000.0 })[0];
+                report.Add($"[notice] Hyperion {label} (R/L {lr:0.00} dB): {FineTransfer.Text(hz, db)}");
+            }
+            const int Bw = 33, Hp = 32, Gain = 1, B900 = 15, B1150 = 14, B6100 = 7, B20k = 2, B20 = 31;
+            const int Plus12 = 213, Minus12 = 43, Plus6 = 170, Plus18 = 255;
+            Measure("defaults");
+            foreach (int bw in new[] { 0, 2, 4, 8, 12, 15 }) Measure($"900 Hz +12 dB, Bandwidth raw {bw}", (B900, Plus12), (Bw, bw));
+            Measure("900 Hz -12 dB, Bandwidth raw 8", (B900, Minus12), (Bw, 8));
+            Measure("900 Hz +6 dB, Bandwidth raw 8", (B900, Plus6), (Bw, 8));
+            Measure("900 Hz +18 dB, Bandwidth raw 8", (B900, Plus18), (Bw, 8));
+            Measure("900 and 1150 Hz +12 dB, Bandwidth raw 8", (B900, Plus12), (B1150, Plus12), (Bw, 8));
+            Measure("6100 Hz +12 dB, Bandwidth raw 8", (B6100, Plus12), (Bw, 8));
+            Measure("20 kHz +12 dB, Bandwidth raw 8", (B20k, Plus12), (Bw, 8));
+            Measure("20 Hz +12 dB, Bandwidth raw 8", (B20, Plus12), (Bw, 8));
+            foreach (int bw in new[] { 0, 8 })
+                Measure($"every band +6 dB, Bandwidth raw {bw}", Enumerable.Range(2, 30).Select(i => (i, Plus6)).Append((Bw, bw)).ToArray());
+            Measure("every band -6 dB, Bandwidth raw 4", Enumerable.Range(2, 30).Select(i => (i, 86)).Append((Bw, 4)).ToArray());
+            Measure("Highpass raw 64", (Hp, 64));
+            Measure("Highpass raw 127", (Hp, 127));
+            Measure("Input gain raw 60", (Gain, 60));
+            foreach (string line in report) TestContext.Out.WriteLine(line);
+            Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
+        }
+
         static string Short(JsonObject analyzeResponse)
         {
             string text = analyzeResponse["result"]?["content"]?[0]?["text"]?.GetValue<string>() ?? "";
