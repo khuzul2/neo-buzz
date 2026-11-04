@@ -629,7 +629,7 @@ namespace ReBuzz.Agent
                 Name = "machine_readings",
                 Title = "Read an analysis machine",
                 Description =
-                    "The values an analysis machine shows (Neo Analyzer: loudness, peaks, correlation, spectrum bands), from wherever the user put " +
+                    "The values an analysis machine shows (Neo Analyzer: loudness, peaks, correlation, spectrum bands; Neo Multiband: each band's gain change and level), from wherever the user put " +
                     "it in the graph. In studio mode they follow what plays; in headless mode they are what the last render played through it. " +
                     "Read-only. Example: machine_readings(machine=\"Analyzer\").",
                 Input = Object(null, Req("machine", String("The analysis machine"))),
@@ -643,7 +643,7 @@ namespace ReBuzz.Agent
                     {
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         var values = ReadingsOf(m) ?? throw new ToolError(
-                            $"{m.Name} shows no readings: only analysis machines do (Neo Analyzer). Put one after what to measure " +
+                            $"{m.Name} shows no readings: only analysis machines do (Neo Analyzer; Neo Multiband for its bands). Put one after what to measure " +
                             "(machine_add(gear=\"Neo Analyzer\"), connect), or render and analyze.");
                         var o = new JsonObject();
                         foreach (var (key, value) in values)
