@@ -62,7 +62,7 @@ jobs:
         echo "run=$run" >> "$GITHUB_OUTPUT"
         echo "built=$built" >> "$GITHUB_OUTPUT"
 
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
       if: steps.find.outputs.run != ''
       with:
         ref: ${{ steps.find.outputs.built }}
