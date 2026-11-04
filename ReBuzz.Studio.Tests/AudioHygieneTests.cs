@@ -98,8 +98,15 @@ namespace ReBuzz.Studio.Tests
                 thread.Start();
             }
 
+            /// <summary>
+            /// The thread's id as the runtime's events give it (Linux: /proc/thread-self; macOS:
+            /// pthread_threadid_np), read once as the thread starts, before anything is measured; 0 elsewhere.
+            /// </summary>
+            public long OsThreadId { get; private set; }
+
             void Loop()
             {
+                OsThreadId = CurrentOsThreadId();
                 while (true)
                 {
                     go.Wait();
@@ -155,6 +162,27 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        [System.Runtime.InteropServices.DllImport("libSystem.dylib")]
+        static extern int pthread_threadid_np(IntPtr thread, out ulong id);
+
+        /// <summary>This thread's OS id, as the runtime's events report it; 0 when it can't be read here.</summary>
+        static long CurrentOsThreadId()
+        {
+            try
+            {
+                if (OperatingSystem.IsLinux())
+                {
+                    string target = new System.IO.DirectoryInfo("/proc/thread-self").LinkTarget;   // "<pid>/task/<tid>"
+                    return target != null && long.TryParse(target[(target.LastIndexOf('/') + 1)..], out long tid) ? tid : 0;
+                }
+                if (OperatingSystem.IsMacOS()) return pthread_threadid_np(IntPtr.Zero, out ulong id) == 0 ? (long)id : 0;
+            }
+            catch (Exception)
+            {
+            }
+            return 0;
+        }
+
         /// <summary>Reads past one-time costs (the first loop of the song, first notes), then measures.</summary>
         static Cost Steady(AudioThread audio, int buffers = 400, Action perBuffer = null)
         {
@@ -166,7 +194,23 @@ namespace ReBuzz.Studio.Tests
         sealed class JitListener : System.Diagnostics.Tracing.EventListener
         {
             public readonly System.Collections.Concurrent.ConcurrentQueue<string> Methods = new();
+            readonly System.Collections.Concurrent.ConcurrentQueue<(long Thread, string Method)> byThread = new();
             public volatile bool On;
+
+            /// <summary>
+            /// What a failed check reports: the methods compiled on the audio thread first (with their
+            /// tiers: 5 is an on-stack replacement, 3 a first compile, 6 and 7 the profiling tiers), then
+            /// the first of the rest of the process's.
+            /// </summary>
+            public string Report(long audioThread)
+            {
+                var all = byThread.ToArray();
+                var mine = audioThread != 0 ? all.Where(x => x.Thread == audioThread).Select(x => x.Method).ToList() : new List<string>();
+                return $"\non the audio thread ({(audioThread != 0 ? audioThread.ToString() : "its id unknown here")}): " +
+                       (mine.Count > 0 ? "\n" + string.Join("\n", mine) : "none") +
+                       "\nelsewhere in the process meanwhile (the first 40):\n" +
+                       string.Join("\n", all.Where(x => x.Thread != audioThread).Take(40).Select(x => x.Method));
+            }
 
             protected override void OnEventSourceCreated(System.Diagnostics.Tracing.EventSource source)
             {
@@ -179,7 +223,9 @@ namespace ReBuzz.Studio.Tests
                 if (!On || e.EventName == null || !e.EventName.StartsWith("MethodLoadVerbose")) return;
                 string Get(string name) => e.PayloadNames.IndexOf(name) is int i && i >= 0 ? e.Payload[i]?.ToString() : "?";
                 int flags = int.TryParse(Get("MethodFlags"), out int f) ? f : -1;
-                Methods.Enqueue($"thread {e.OSThreadId}: {Get("MethodNamespace")}::{Get("MethodName")} (flags {flags:x}, tier {(flags >> 7) & 7}, rejit {Get("ReJITID")}, id {Get("MethodID")})");
+                string method = $"thread {e.OSThreadId}: {Get("MethodNamespace")}::{Get("MethodName")} (flags {flags:x}, tier {(flags >> 7) & 7}, rejit {Get("ReJITID")}, id {Get("MethodID")})";
+                Methods.Enqueue(method);
+                byThread.Enqueue((e.OSThreadId, method));
             }
         }
 
@@ -591,8 +637,10 @@ namespace ReBuzz.Studio.Tests
                 Thread.Sleep(300);
                 jit.On = false;
                 TestContext.Out.WriteLine($"[notice] first play compiled {play.Methods} methods, its stop {stop.Methods} (warm-up: {AudioWarmUp.Methods} in {AudioWarmUp.Ticks * 1000.0 / System.Diagnostics.Stopwatch.Frequency:F0} ms; {AudioWarmUp.Methods - warmBefore} during the play)");
-                string compiled = "\n" + string.Join("\n", jit.Methods.Take(60));
-                Assert.That(play.Methods, Is.EqualTo(0), "the first play compiles nothing on the audio or render threads; compiled in the process meanwhile:" + compiled);
+                // A failure names what compiled on the audio thread (CI run 41866682998, attempt 1: "its stop 1", and the
+                // 60 methods it listed were all the tiering thread's, so the one compiled on the audio thread wasn't shown).
+                string compiled = jit.Report(audio.OsThreadId);
+                Assert.That(play.Methods, Is.EqualTo(0), "the first play compiles nothing on the audio or render threads; compiled meanwhile:" + compiled);
                 Assert.That(stop.Methods, Is.EqualTo(0), "nor does its stop:" + compiled);
             }
             finally
