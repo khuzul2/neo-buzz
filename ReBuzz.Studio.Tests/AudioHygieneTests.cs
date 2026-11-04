@@ -6,13 +6,14 @@
 //    note lanes) and automation, with its editor open, through a Neo Ensemble (feedback, a synced
 //    LFO, its depth moved every buffer), a Neo EQ in graphic mode (a slider moved every buffer,
 //    so its solver runs), a Neo Delay (ping-pong, feedback, wow, drive and ducking, its time moved
-//    every buffer, so it glides and crossfades) and a Neo Multiband (linear phase, a crossover moved
-//    every buffer, so its FIRs are designed again and crossfade): 0 bytes a buffer, with each work
+//    every buffer, so it glides and crossfades), a Neo Multiband (linear phase, a crossover moved
+//    every buffer, so its FIRs are designed again and crossfade) and a Neo Scope (synced to the bar as
+//    the song loops, its display switched every few buffers): 0 bytes a buffer, with each work
 //    algorithm;
 //  - automation of a parameter with listeners (a parameter window's rows, the master volume's):
 //    0 bytes on the audio thread, and the listeners still see the final values;
 //  - after the warm-up (AudioWarmUp), the transport's first play and stop compile nothing (a Neo Poly
-//    through a Neo Ensemble, a Neo Delay and a Neo Multiband, all just created);
+//    through a Neo Ensemble, a Neo Delay, a Neo Multiband and a Neo Scope, all just created);
 //  - a Neo Sampler playing the song's wave and a built-in one (looped, choked, filtered, its tune moved
 //    every buffer), while the wave is loaded again into its slot and copied in on the audio thread:
 //    0 bytes a buffer, with each work algorithm.
@@ -97,8 +98,15 @@ namespace ReBuzz.Studio.Tests
                 thread.Start();
             }
 
+            /// <summary>
+            /// The thread's id as the runtime's events give it (Linux: /proc/thread-self; macOS:
+            /// pthread_threadid_np), read once as the thread starts, before anything is measured; 0 elsewhere.
+            /// </summary>
+            public long OsThreadId { get; private set; }
+
             void Loop()
             {
+                OsThreadId = CurrentOsThreadId();
                 while (true)
                 {
                     go.Wait();
@@ -154,6 +162,27 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        [System.Runtime.InteropServices.DllImport("libSystem.dylib")]
+        static extern int pthread_threadid_np(IntPtr thread, out ulong id);
+
+        /// <summary>This thread's OS id, as the runtime's events report it; 0 when it can't be read here.</summary>
+        static long CurrentOsThreadId()
+        {
+            try
+            {
+                if (OperatingSystem.IsLinux())
+                {
+                    string target = new System.IO.DirectoryInfo("/proc/thread-self").LinkTarget;   // "<pid>/task/<tid>"
+                    return target != null && long.TryParse(target[(target.LastIndexOf('/') + 1)..], out long tid) ? tid : 0;
+                }
+                if (OperatingSystem.IsMacOS()) return pthread_threadid_np(IntPtr.Zero, out ulong id) == 0 ? (long)id : 0;
+            }
+            catch (Exception)
+            {
+            }
+            return 0;
+        }
+
         /// <summary>Reads past one-time costs (the first loop of the song, first notes), then measures.</summary>
         static Cost Steady(AudioThread audio, int buffers = 400, Action perBuffer = null)
         {
@@ -165,7 +194,23 @@ namespace ReBuzz.Studio.Tests
         sealed class JitListener : System.Diagnostics.Tracing.EventListener
         {
             public readonly System.Collections.Concurrent.ConcurrentQueue<string> Methods = new();
+            readonly System.Collections.Concurrent.ConcurrentQueue<(long Thread, string Method)> byThread = new();
             public volatile bool On;
+
+            /// <summary>
+            /// What a failed check reports: the methods compiled on the audio thread first (with their
+            /// tiers: 5 is an on-stack replacement, 3 a first compile, 6 and 7 the profiling tiers), then
+            /// the first of the rest of the process's.
+            /// </summary>
+            public string Report(long audioThread)
+            {
+                var all = byThread.ToArray();
+                var mine = audioThread != 0 ? all.Where(x => x.Thread == audioThread).Select(x => x.Method).ToList() : new List<string>();
+                return $"\non the audio thread ({(audioThread != 0 ? audioThread.ToString() : "its id unknown here")}): " +
+                       (mine.Count > 0 ? "\n" + string.Join("\n", mine) : "none") +
+                       "\nelsewhere in the process meanwhile (the first 40):\n" +
+                       string.Join("\n", all.Where(x => x.Thread != audioThread).Take(40).Select(x => x.Method));
+            }
 
             protected override void OnEventSourceCreated(System.Diagnostics.Tracing.EventSource source)
             {
@@ -178,7 +223,9 @@ namespace ReBuzz.Studio.Tests
                 if (!On || e.EventName == null || !e.EventName.StartsWith("MethodLoadVerbose")) return;
                 string Get(string name) => e.PayloadNames.IndexOf(name) is int i && i >= 0 ? e.Payload[i]?.ToString() : "?";
                 int flags = int.TryParse(Get("MethodFlags"), out int f) ? f : -1;
-                Methods.Enqueue($"thread {e.OSThreadId}: {Get("MethodNamespace")}::{Get("MethodName")} (flags {flags:x}, tier {(flags >> 7) & 7}, rejit {Get("ReJITID")}, id {Get("MethodID")})");
+                string method = $"thread {e.OSThreadId}: {Get("MethodNamespace")}::{Get("MethodName")} (flags {flags:x}, tier {(flags >> 7) & 7}, rejit {Get("ReJITID")}, id {Get("MethodID")})";
+                Methods.Enqueue(method);
+                byThread.Enqueue((e.OSThreadId, method));
             }
         }
 
@@ -304,6 +351,25 @@ namespace ReBuzz.Studio.Tests
             return fx;
         }
 
+        /// <summary>
+        /// Neo Scope after a machine (mcp-server.md §8.1): synced to a bar, so as the song loops its sweeps start on the
+        /// bar and jump back with the loop; left and right overlaid, the second trace filled too.
+        /// </summary>
+        static MachineCore InsertScope(MachineCore source, string name)
+        {
+            var song = Core.SongCore;
+            var master = song.MachinesList[0];
+            song.CreateMachine("Neo Scope", null, name, null, null, null, -1, 0.85f, 0.6f);
+            var fx = song.MachinesList.Last(x => x.Name == name);
+            song.DisconnectMachines(source.Outputs.First(c => c.Destination == master));
+            song.ConnectMachines(source, fx, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            song.ConnectMachines(fx, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            var globals = fx.ParameterGroupsList[1].ParametersList;
+            globals.First(p => p.Name == "Sync").SetValue(0, 5);
+            globals.First(p => p.Name == "Display").SetValue(0, 4);
+            return fx;
+        }
+
         static void Arrange(MachineCore m, IPattern p)
         {
             var song = Core.SongCore;
@@ -405,9 +471,11 @@ namespace ReBuzz.Studio.Tests
             var eq = InsertGraphicEq(ensemble, "Hygiene EQ");
             var delay = InsertDelay(eq, "Hygiene Delay");
             var multiband = InsertMultiband(delay, "Hygiene Multiband");
+            var scope = InsertScope(multiband, "Hygiene Scope");
             try
             {
                 var detune = m.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Uni detune");
+                var display = scope.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Display");
                 var depth = ensemble.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Depth");
                 var slider = eq.ParameterGroupsList[1].ParametersList.First(p => p.Name == "G 1 kHz");
                 var time = delay.ParameterGroupsList[1].ParametersList.First(p => p.Name == "Time");
@@ -424,15 +492,17 @@ namespace ReBuzz.Studio.Tests
                         depth.SetValue(1 << 16, 200 + (n % 8) * 100);   // as automation sets it, not recorded
                         slider.SetValue(1 << 16, 120 + (n % 12) * 10);
                         time.SetValue(1 << 16, (n % 5) * 600 + 3000);     // 5 ms … 110 ms: glides, and crossfades between the ends
-                        crossover.SetValue(1 << 16, 5000 + (n++ % 9) * 100);   // 630 Hz … 1.6 kHz: the FIRs designed again
+                        crossover.SetValue(1 << 16, 5000 + (n % 9) * 100);     // 630 Hz … 1.6 kHz: the FIRs designed again
+                        if (n++ % 50 == 0) display.SetValue(1 << 16, (n / 50) % 5);   // the scope's sweep starts again
                     });
-                    AssertNoAllocation(cost, $"a pattern editor pattern playing through Neo Ensemble, a graphic Neo EQ, Neo Delay and Neo Multiband (algorithm {algorithm})");
+                    AssertNoAllocation(cost, $"a pattern editor pattern playing through Neo Ensemble, a graphic Neo EQ, Neo Delay, Neo Multiband and Neo Scope (algorithm {algorithm})");
                     Assert.That(heard.Count, Is.GreaterThan(8), $"the automation reached the machine (algorithm {algorithm})");
                     Assert.That(m.IsActive, Is.True, $"the notes sound (algorithm {algorithm})");
                     Assert.That(ensemble.IsActive, Is.True, $"and pass through Neo Ensemble (algorithm {algorithm})");
                     Assert.That(eq.IsActive, Is.True, $"and the graphic Neo EQ (algorithm {algorithm})");
                     Assert.That(delay.IsActive, Is.True, $"and Neo Delay (algorithm {algorithm})");
                     Assert.That(multiband.IsActive, Is.True, $"and Neo Multiband (algorithm {algorithm})");
+                    Assert.That(scope.IsActive, Is.True, $"and Neo Scope (algorithm {algorithm})");
                     lock (ReBuzzCore.AudioLock) Core.Playing = false;
                 }
             }
@@ -546,7 +616,8 @@ namespace ReBuzz.Studio.Tests
                 var m = AddPoly("Hygiene First");
                 var first = InsertEnsemble(m, "Hygiene First Ensemble");   // Neo effects after it, created just now too
                 var firstDelay = InsertDelay(first, "Hygiene First Delay");
-                InsertMultiband(firstDelay, "Hygiene First Multiband");
+                var firstMultiband = InsertMultiband(firstDelay, "Hygiene First Multiband");
+                InsertScope(firstMultiband, "Hygiene First Scope");
                 m.CreatePattern("00", 16);
                 var p = (PatternCore)m.Patterns.First();
                 Core.SessionLayout.EditNotes(p, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 60 + i % 5, 100)).ToArray());
@@ -566,8 +637,10 @@ namespace ReBuzz.Studio.Tests
                 Thread.Sleep(300);
                 jit.On = false;
                 TestContext.Out.WriteLine($"[notice] first play compiled {play.Methods} methods, its stop {stop.Methods} (warm-up: {AudioWarmUp.Methods} in {AudioWarmUp.Ticks * 1000.0 / System.Diagnostics.Stopwatch.Frequency:F0} ms; {AudioWarmUp.Methods - warmBefore} during the play)");
-                string compiled = "\n" + string.Join("\n", jit.Methods.Take(60));
-                Assert.That(play.Methods, Is.EqualTo(0), "the first play compiles nothing on the audio or render threads; compiled in the process meanwhile:" + compiled);
+                // A failure names what compiled on the audio thread (CI run 41866682998, attempt 1: "its stop 1", and the
+                // 60 methods it listed were all the tiering thread's, so the one compiled on the audio thread wasn't shown).
+                string compiled = jit.Report(audio.OsThreadId);
+                Assert.That(play.Methods, Is.EqualTo(0), "the first play compiles nothing on the audio or render threads; compiled meanwhile:" + compiled);
                 Assert.That(stop.Methods, Is.EqualTo(0), "nor does its stop:" + compiled);
             }
             finally

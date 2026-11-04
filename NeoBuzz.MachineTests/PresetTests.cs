@@ -35,6 +35,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Multiband"] = (NeoBuzz.Multiband.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Multiband.MultibandEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // mcp-server.md §8.2: the sampler; its kits play kick, snare and hat, its instruments the chord.
             ["Neo Sampler"] = (NeoBuzz.Sampler.Params.Table, (v, x) => RenderSampler(v, x.Length)),
+            // mcp-server.md §8.1: the oscilloscope passes its input through; its presets only change what it shows.
+            ["Neo Scope"] = (NeoBuzz.Scope.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Scope.ScopeEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n, default))),
         };
 
         // The mix and master batch: one engine per preset render, keyed by its parameter values.

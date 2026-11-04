@@ -2,8 +2,8 @@
 // Neo editor kit, toolkit-free core (docs/specs/cross-platform.md §8.3): the analysis graphs
 // (Neo Analyzer, docs/specs/machines.md §5): a spectrum with third-octave bars, held peaks and a
 // display tilt; loudness bars and readouts coloured against a target; a goniometer; and a
-// correlation bar. Painters take plain values, so they are tested on Linux and any machine (a
-// future Neo Scope) can draw with them.
+// correlation bar. Painters take plain values, so they are tested on Linux and any machine can
+// draw with them (Neo Scope draws its goniometer and correlation bar with these).
 
 using System;
 using System.Globalization;
@@ -258,7 +258,8 @@ namespace NeoBuzz.Editor
         public static NeoPoint Point(NeoPoint centre, double half, double scale, float l, float r) =>
             new NeoPoint(centre.X + (r - l) * Math.Sqrt(0.5) * scale * half, centre.Y - (l + r) * Math.Sqrt(0.5) * scale * half);
 
-        public static void Draw(INeoCanvas c, NeoRect rect, float[] l, float[] r, int count, NeoColor accent)
+        /// <param name="scale">The points' scale (Neo Scope's gain); NaN fits the loudest point (<see cref="Scale"/>).</param>
+        public static void Draw(INeoCanvas c, NeoRect rect, float[] l, float[] r, int count, NeoColor accent, double scale = double.NaN)
         {
             double side = Math.Min(rect.Width, rect.Height) - 8;
             var centre = rect.Centre;
@@ -273,7 +274,7 @@ namespace NeoBuzz.Editor
             c.Text("R", centre.X + d + 2, centre.Y - d - 12, 9, Palette.DimText, align: NeoAlign.Center);
             c.Text("M", centre.X + 4, rect.Top + 1, 9, Palette.DimText);
             if (count < 2) return;
-            double scale = Scale(l, r, count);
+            if (double.IsNaN(scale)) scale = Scale(l, r, count);
             var path = new NeoPath();
             for (int i = 0; i < count; i++) path.LineTo(Point(centre, half, scale, l[i], r[i]));
             c.Path(path, NeoFill.None, new NeoStroke(accent.WithAlpha(0x70), 1));

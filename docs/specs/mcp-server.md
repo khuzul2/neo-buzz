@@ -184,7 +184,7 @@ Neo machines resolve through their exact mappings. Legacy machines resolve by se
 
   It then measures each window with the analysis library, so live numbers mean what `analyze`'s do: momentary loudness now, short-term from a 3 s window, integrated over the window, true peak, RMS and clipped samples. The window is counted in audio frames, with a wall-clock limit for an output that isn't running.
 - **Subscriptions are not built.** §5.8's subscribable meters resource was dropped for now: clients surface tools, not resource updates, to the model, and Streamable HTTP would need a GET stream for server-sent updates. A windowed `meters_read` covers "react to live levels".
-- **`machine_readings`** reads a managed machine's `public IReadOnlyDictionary<string, double> Readings`, a snapshot it swaps in from the audio thread. Neo Analyzer is the first machine to have one; Neo Multiband the second (each band's gain change now and over the last 3 s, its level, the latency: machines.md, Neo Multiband). In headless mode the values are what the last render played through it.
+- **`machine_readings`** reads a managed machine's `public IReadOnlyDictionary<string, double> Readings`, a snapshot it swaps in from the audio thread. Neo Analyzer is the first machine to have one; Neo Multiband the second (each band's gain change now and over the last 3 s, its level, the latency: machines.md, Neo Multiband); Neo Scope the third (peak, RMS and correlation over 3 s, and whether its trigger locks: machines.md, Neo Scope). In headless mode the values are what the last render played through it.
 - **Tests** pump the audio as the device would, and freeze the session's timestamp for exact take stamps: `AgentA7Tests` in the package run, `LiveMeterTests` on Linux.
 
 ## 4. Tool design rules
@@ -289,7 +289,7 @@ Phases (§9) are marked A1 … A7.
 | Tool | Phase | Purpose |
 |---|---|---|
 | `meters_read` | A7 | Live peak and loudness of the master and chosen machines while the user plays the song, over a window (§3.5: subscriptions not built). Measured before the safety limiter; `safety` gives the master's latched over and whether the limiter acted during the window, and `clear_clip` clears the indicator first (machine-safety.md §3.3) |
-| `machine_readings` | A7 | Values an analysis machine shows (Neo Analyzer: spectrum, LUFS, correlation), from wherever the user put it |
+| `machine_readings` | A7 | Values an analysis machine shows (Neo Analyzer: spectrum, LUFS, correlation; Neo Multiband: its bands' gain changes; Neo Scope: peak, RMS, correlation, its trigger's lock), from wherever the user put it |
 
 ## 6. Guides: prompts, resources and the `guide` tool
 
@@ -351,7 +351,7 @@ Analysis machines still earn their place:
 | Machine | What | Priority |
 |---|---|---|
 | **Neo Analyzer** | Spectrum (third-octave and FFT with peak hold), LUFS momentary/short-term/integrated, loudness range, true peak, correlation and width. Readings exposed to `machine_readings` | High |
-| **Neo Scope** | Oscilloscope (tempo-synced) and goniometer/vectorscope. Mostly for people; the agent's equivalent is `plot` | Medium |
+| **Neo Scope** | Oscilloscope (tempo-synced) and goniometer/vectorscope. Mostly for people; the agent's equivalent is `plot` | Medium. **Built** 2026-11-04 (machines.md, Neo Scope): left, right, mid, side or both overlaid; synced from 1/16 to 4 bars, each sweep starting on the song's beats and bars so a loop draws the same frame every pass, or free in time per division with an edge trigger and holdoff; a goniometer or polar vectorscope with the correlation meter; auto scale or gain, a trail, freeze; audio untouched, snapshots at the display's rate. `machine_readings` gives its peak, RMS, correlation and the trigger's lock; its guide sends agents to `render`, `plot` and `analyze` |
 
 ### 8.2 Machines the agent needs to mix and master
 

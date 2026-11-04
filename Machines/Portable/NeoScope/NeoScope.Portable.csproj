@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Neo Scope, portable (docs/specs/mac-engine.md M2): see ../NeoPortable.targets. -->
+  <PropertyGroup>
+    <NeoFolder>NeoScope</NeoFolder>
+    <NeoName>Neo Scope</NeoName>
+    <NeoKind>Effects</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoPortable.targets" />
+  <ItemGroup>
+    <!-- As NeoScope.csproj: the correlation it shares with the agent server. -->
+    <Compile Include="$(M)NeoBuzz.Analysis\Fft.cs;$(M)NeoBuzz.Analysis\Spectrum.cs;$(M)NeoBuzz.Analysis\Stereo.cs" Link="Shared\Analysis\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

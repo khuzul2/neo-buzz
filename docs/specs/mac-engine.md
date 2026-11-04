@@ -205,7 +205,7 @@ The null test (exit check 2) is M3's.
 - **Left for the play test (§4):** the hour at 128 samples, with the default four render threads.
 
 **The null test against Windows (M3, M4; decision 6).** `tools/null-test.py`, in the package workflow.
-- **Cases.** 80 fixed cases cover every Neo machine (50 until Neo Ensemble's seven, 57 until Neo EQ's graphic mode's four, 61 until Neo Delay's seven, 68 until Neo Multiband's five, 73 until Neo Sampler's seven). Each runs in a fresh process: it builds a short song through the MCP tools and renders it (44.1 kHz, 32-bit float).
+- **Cases.** 82 fixed cases cover every Neo machine (50 until Neo Ensemble's seven, 57 until Neo EQ's graphic mode's four, 61 until Neo Delay's seven, 68 until Neo Multiband's five, 73 until Neo Sampler's seven, 80 until Neo Scope's two). One pair must also be the same file on every platform: Neo Delay with Neo Scope after it and without (`SAME` in the script), as a machine that only looks leaves its chain as it was. Each runs in a fresh process: it builds a short song through the MCP tools and renders it (44.1 kHz, 32-bit float).
   - Neo Poly (9): the default patch with drift, Acid, Reese, FM Growl, Sync Scream, Evolving PWM, Noise Sweep, a self-oscillating ladder with drive, ring, sync and glide, and parallel SVFs with FM and pink noise.
   - Neo Wave (7): Init, Vowel Choir, Window Sync Sweep, PM Bloom, Grit Motion, Reso Pluck, Mirror Bell.
   - Neo FM6 (7): Tine Piano, Glass Bell, Random Chimes, Bright Section, Saw Lead, Metal Sweep, and a sine at feedback 7 on the Raw 1× engine.
