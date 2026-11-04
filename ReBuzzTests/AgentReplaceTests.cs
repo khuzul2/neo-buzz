@@ -668,7 +668,7 @@ namespace ReBuzzTests
 
         /// <summary>
         /// The measurements behind Neo Sampler's successor pairs (mcp-server.md §12.10): Pedal M1, Matilde Tracker2 and Jeskola
-        /// Tracker each playing a line (A3 at the wave's root, A4, E3, A2) from a band-limited saw in the song's wavetable, against
+        /// Tracker each playing a line (A3 at the wave's root, A4, E3, A2) from a band-limited saw (16-bit) in the song's wavetable, against
         /// Neo Sampler at its defaults: each note's pitch, the line's loudness and brightness; then machine_replace's comparison of
         /// Pedal M1 → Neo Sampler at its defaults, with a key zone and both oscillators, its envelopes and filter, and resonance.
         /// </summary>
@@ -693,11 +693,12 @@ namespace ReBuzzTests
                     for (int k = 1; k < harmonics; k += step) v += Math.Sin(2 * Math.PI * k * hz * i / 48000) / k;
                     x[i] = (float)(0.3 * v);
                 }
+                // 16-bit PCM, the format every tracker reads.
                 using var w = new BinaryWriter(File.Create(path));
-                w.Write("RIFF"u8.ToArray()); w.Write(36 + x.Length * 4); w.Write("WAVE"u8.ToArray());
-                w.Write("fmt "u8.ToArray()); w.Write(16); w.Write((short)3); w.Write((short)1); w.Write(48000); w.Write(48000 * 4); w.Write((short)4); w.Write((short)32);
-                w.Write("data"u8.ToArray()); w.Write(x.Length * 4);
-                foreach (var s in x) w.Write(s);
+                w.Write("RIFF"u8.ToArray()); w.Write(36 + x.Length * 2); w.Write("WAVE"u8.ToArray());
+                w.Write("fmt "u8.ToArray()); w.Write(16); w.Write((short)1); w.Write((short)1); w.Write(48000); w.Write(48000 * 2); w.Write((short)2); w.Write((short)16);
+                w.Write("data"u8.ToArray()); w.Write(x.Length * 2);
+                foreach (var s in x) w.Write((short)Math.Round(s * 32767));
                 return path;
             }
             string saw = Wave("saw", 220, 91, 1), square = Wave("square", 440, 45, 2);
