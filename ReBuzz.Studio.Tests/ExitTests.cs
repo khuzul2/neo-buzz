@@ -46,13 +46,9 @@ namespace ReBuzz.Studio.Tests
 
         static ReBuzzCore Core => Studio.Host.Core;
 
-        [SetUp]
-        public void PutOffMenuHoverDelays() => new MachineViewTests().PutOffMenuHoverDelays();
-
         [TearDown]
-        public void RestoreMenuHoverDelays()
+        public void PutBack()
         {
-            new MachineViewTests().RestoreMenuHoverDelays();
             SongFiles.Picker = null;
             Dialogs.Responder = null;
             Dialogs.TextResponder = null;

@@ -13,6 +13,11 @@
     <IsTestProject>true</IsTestProject>
     <RootNamespace>ReBuzz.Studio.Tests</RootNamespace>
     <LangVersion>latest</LangVersion>
+    <!-- HeadlessInput.cs replaces the headless platform's settings (double clicks by the tests, not by the
+         clock), which only Avalonia's AvaloniaLocator can: its private API, through Avalonia's own switch. The
+         package is pinned (12.1.4), and its warning (AVA3001) is a message here. -->
+    <AvaloniaAccessUnstablePrivateApis>true</AvaloniaAccessUnstablePrivateApis>
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);AVA3001</MSBuildWarningsAsMessages>
   </PropertyGroup>
 
   <ItemGroup>

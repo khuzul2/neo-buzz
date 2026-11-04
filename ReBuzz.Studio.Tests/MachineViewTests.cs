@@ -49,20 +49,6 @@ namespace ReBuzz.Studio.Tests
             Dialogs.TextResponder = null;
         }
 
-        static System.TimeSpan menuDelay;
-
-        // Submenus open and close on hover after a delay of wall-clock time; a slow step (the first
-        // render) would let those timers fire mid-test. The tests click, so the delay is put off.
-        [SetUp]
-        public void PutOffMenuHoverDelays()
-        {
-            menuDelay = Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay;
-            Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay = System.TimeSpan.FromHours(1);
-        }
-
-        [TearDown]
-        public void RestoreMenuHoverDelays() => Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay = menuDelay;
-
         internal static void Settle()
         {
             Dispatcher.UIThread.RunJobs();
@@ -93,12 +79,11 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>
-        /// A double click that a slow machine can't split. Avalonia counts a press as a double click's second
-        /// only within 500 ms of the first, timed by the clock (DefaultPlatformSettings), and on a loaded CI
-        /// runner the first press's handlers took longer: the test then saw two single clicks. So the button is
-        /// pressed again until a press counts as a double click (an even ClickCount, as Avalonia's DoubleTapped
-        /// takes it: 2, or 4 right after another double click there), at most four presses; on a quick machine
-        /// that is the second, as before. Every test's double click comes here.
+        /// A double click, as the platform's mouse takes one: a press and release, then a press that counts as
+        /// the double click's second (ClickCount 2) and its release, at <paramref name="p"/>. Avalonia counts a
+        /// second press by the clock (within 500 ms of the first); here HeadlessInputSettings counts it as the
+        /// test says, so a slow press on a loaded runner can't split a double click, and the first press is a
+        /// first click however soon after an earlier one it comes. Every test's double click comes here.
         /// </summary>
         internal static void DoubleClick(TopLevel top, Point p, MouseButton button = MouseButton.Left, RawInputModifiers mods = RawInputModifiers.None)
         {
@@ -108,20 +93,26 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 top.MouseMove(p, mods);
-                for (int presses = 0; presses < 4 && !Double(clicks); presses++)
+                top.MouseDown(p, button, mods);
+                top.MouseUp(p, button, mods);
+                Assert.That(clicks, Is.EqualTo(1), "the first press is a first click");
+                HeadlessInputSettings.SecondPress = true;
+                try
                 {
                     top.MouseDown(p, button, mods);
-                    top.MouseUp(p, button, mods);
                 }
+                finally
+                {
+                    HeadlessInputSettings.SecondPress = false;
+                }
+                top.MouseUp(p, button, mods);
             }
             finally
             {
                 top.RemoveHandler(InputElement.PointerPressedEvent, pressed);
             }
-            Assert.That(Double(clicks), Is.True, $"a press counted as a double click's second (click count {clicks})");
+            Assert.That(clicks, Is.EqualTo(2), $"a press counted as a double click's second (click count {clicks})");
             Settle();
-
-            static bool Double(int clicks) => clicks >= 2 && clicks % 2 == 0;
         }
 
         internal static void Drag(TopLevel top, Point from, Point to, MouseButton button = MouseButton.Left, RawInputModifiers mods = RawInputModifiers.None, string screenshotOnTheWay = null)

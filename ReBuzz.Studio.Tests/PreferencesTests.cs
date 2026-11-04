@@ -145,11 +145,12 @@ namespace ReBuzz.Studio.Tests
                 Studio.Screenshot(prefs, "prefs-audio-open");
                 Close(prefs);
 
-                // The status line names the device; the engine's load shows from the second measure.
-                for (int i = 0; i < 2; i++)
+                // The status line names the device; the engine's load shows from the second measure, once the
+                // device has played between the two (its time is real time): measured until it shows, up to 30 s.
+                for (var until = System.DateTime.UtcNow.AddSeconds(30); window.CpuLoad == null && System.DateTime.UtcNow < until;)
                 {
-                    for (int t = 0; t < 10; t++) window.RefreshNow();
-                    System.Threading.Thread.Sleep(150);
+                    for (int t = 0; t < 10; t++) window.RefreshNow();     // a measure every tenth refresh, as the window's timer
+                    System.Threading.Thread.Sleep(50);
                 }
                 window.RefreshNow();
                 Assert.That(window.StatusText, Does.StartWith("PortAudio: "));

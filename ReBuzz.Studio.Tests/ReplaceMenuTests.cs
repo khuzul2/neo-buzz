@@ -16,18 +16,6 @@ namespace ReBuzz.Studio.Tests
     {
         static ReBuzzCore Core => Studio.Host.Core;
 
-        static System.TimeSpan menuDelay;
-
-        [SetUp]
-        public void PutOffMenuHoverDelays()
-        {
-            menuDelay = Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay;
-            Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay = System.TimeSpan.FromHours(1);
-        }
-
-        [TearDown]
-        public void RestoreMenuHoverDelays() => Avalonia.Controls.Platform.DefaultMenuInteractionHandler.MenuShowDelay = menuDelay;
-
         [AvaloniaTest]
         public void TheMachineMenuReplacesAClassicMachineWithItsSuccessorInOneUndoStep()
         {
