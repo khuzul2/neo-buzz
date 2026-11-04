@@ -303,6 +303,110 @@ namespace ReBuzzTests
             Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
         }
 
+        /// <summary>A new song: Neo Poly's noise held for 32 beats into <paramref name="gear"/> ("FX") → Master.</summary>
+        static void HeldNoise(Client client, string gear, JsonArray changes)
+        {
+            Quiet(client, "song_new", Args(("discard_unsaved", true)));
+            Quiet(client, "machine_add", Args(("gear", "Neo Poly"), ("name", "Synth")));
+            Quiet(client, "param_set", Args(("machine", "Synth"), ("changes", Changes(("Noise", "100%"), ("O1 level", "0%"), ("F1 cutoff", "20 kHz"), ("F1 env", "0%"), ("Amp sustain", "100%"), ("Volume", "0 dB")))));
+            Quiet(client, "machine_add", Args(("gear", gear), ("name", "FX"), ("insert_after", "Synth")));
+            if (changes != null) Quiet(client, "param_set", Args(("machine", "FX"), ("changes", changes)));
+            Quiet(client, "pattern_create", Args(("machine", "Synth"), ("name", "00"), ("length_beats", 32)));
+            Quiet(client, "notes_write", Args(("machine", "Synth"), ("pattern", "00"), ("notes", new JsonArray(new JsonObject { ["pitch"] = 48, ["start"] = 0, ["length"] = 31.5 }))));
+            Quiet(client, "arrangement_place", Args(("machine", "Synth"), ("pattern", "00"), ("at", 0)));
+        }
+
+        static JsonArray Raw(params (string Param, int Raw)[] changes) =>
+            new(changes.Select(c => (JsonNode)new JsonObject { ["param"] = c.Param, ["value"] = $"raw:{c.Raw}" }).ToArray());
+
+        static JsonArray OnTrack(JsonArray changes)
+        {
+            foreach (var c in changes) c!["track"] = 0;
+            return changes;
+        }
+
+        /// <summary>
+        /// The measurements behind the chorus and flanger mappings (Neo Ensemble's): each closed machine's sweep, read from its
+        /// input and output (DelaySweep), its levels, and machine_replace's comparison of each pair at a few settings.
+        /// </summary>
+        [Test, Explicit("measurements for the mappings; run by name (test_filter) when a mapping is recalibrated")]
+        public void ChorusAndFlangerCalibration()
+        {
+            using var client = StartAgent(out string bin);
+            var report = new List<string>();
+            WarmUp(client, "Jeskola Reverb");
+            void Sweep(string label, string gear, JsonArray changes, int minLag, int maxLag)
+            {
+                HeldNoise(client, gear, changes);
+                var render = Quiet(client, "render", Args(("tail_seconds", 0), ("probes", new JsonArray("FX", "Synth"))));
+                var probes = render["probes"]!.AsArray();
+                string ProbeFile(string m) => probes.First(p => p!["machine"]!.GetValue<string>() == m)!["file"]!.GetValue<string>();
+                var fx = ReBuzz.Agent.Audio.Wav.Read(ProbeFile("FX"));
+                var src = ReBuzz.Agent.Audio.Wav.Read(ProbeFile("Synth"));
+                var mono = src.Left.Zip(src.Right ?? src.Left, (l, r) => (l + r) / 2).ToArray();
+                var left = DelaySweep.Measure(mono, fx.Left, fx.Rate, minLag, maxLag);
+                double lr = DelaySweep.Correlation(fx.Left, fx.Right ?? fx.Left);
+                double level = DelaySweep.GainDb(mono, fx.Left, fx.Rate / 2);
+                report.Add($"[notice] sweep {label}: {left}; L/R {lr:0.00}; level {level:+0.0;-0.0} dB");
+            }
+            int Lag(double ms) => (int)(ms * 44.1);
+
+            Sweep("Neo Ensemble flanger 2 ms ±1 oct (1–4 ms)", "Neo Ensemble", Changes(("Mode", "Flanger"), ("Rate", "0.25 Hz"), ("Voices", "1"), ("Feedback", "0%"), ("Tone", "20 kHz"), ("Spread", "0°"), ("Mix", "100%"), ("Delay", "2 ms"), ("Depth", "50%")), 1, Lag(10));
+            if (Has(bin, "Effects", "Jeskola Flanger"))
+            {
+                (string, int)[] wet = { ("freq", 25), ("feedback", 64), ("dry out", 64), ("wet out", 128) };
+                foreach (var (md, depth) in new[] { (0, 127), (0, 64), (25, 32), (50, 127), (50, 0) })
+                    Sweep($"Jeskola Flanger md {md} depth {depth}", "Jeskola Flanger", Raw(wet.Concat(new[] { ("min. delay", md), ("depth", depth) }).ToArray()), 1, Lag(30));
+                Sweep("Jeskola Flanger dry only", "Jeskola Flanger", Raw(("freq", 25), ("feedback", 64), ("dry out", 128), ("wet out", 64), ("min. delay", 50), ("depth", 0)), 0, Lag(2));
+                Sweep("Jeskola Flanger dry 50 %", "Jeskola Flanger", Raw(("freq", 25), ("feedback", 64), ("dry out", 96), ("wet out", 64), ("min. delay", 50), ("depth", 0)), 0, Lag(2));
+                Sweep("Jeskola Flanger freq 100, md 25 depth 64", "Jeskola Flanger", Raw(("freq", 100), ("feedback", 64), ("dry out", 64), ("wet out", 128), ("min. delay", 25), ("depth", 64)), 1, Lag(30));
+            }
+            if (Has(bin, "Effects", "Jeskola Chorus"))
+            {
+                (string, int)[] wet = { ("freq", 25), ("feedback", 64), ("dry out", 64), ("wet out", 128) };
+                foreach (var (md, depth) in new[] { (25, 64), (0, 127), (10, 127), (50, 127), (25, 0) })
+                    Sweep($"Jeskola Chorus md {md} depth {depth}", "Jeskola Chorus", Raw(wet.Concat(new[] { ("min. delay", md), ("depth", depth) }).ToArray()), 1, Lag(100));
+                Sweep("Jeskola Chorus dry only", "Jeskola Chorus", Raw(("freq", 25), ("feedback", 64), ("dry out", 128), ("wet out", 64), ("min. delay", 25), ("depth", 0)), 0, Lag(2));
+            }
+            if (Has(bin, "Effects", "FSM Chorus2"))
+            {
+                Sweep("FSM Chorus2 80/90, 1 tap (8.51–10.39 ms)", "FSM Chorus2", OnTrack(Raw(("Min Delay", 80), ("Mod Depth", 90), ("Mod Rate", 9), ("Fatness", 1), ("Stereo", 0))), Lag(1), Lag(40));
+                Sweep("FSM Chorus2 40/240, 1 tap (4.28–9.28 ms)", "FSM Chorus2", OnTrack(Raw(("Min Delay", 40), ("Mod Depth", 240), ("Mod Rate", 9), ("Fatness", 1), ("Stereo", 0))), Lag(1), Lag(40));
+            }
+
+            // machine_replace's comparisons: noise and chords through each pair.
+            void Compare(string label, string gear, JsonArray changes)
+            {
+                foreach (bool noise in new[] { true, false })
+                {
+                    EffectSong(client, gear, changes?.DeepClone().AsArray(), noise);
+                    var r = Quiet(client, "machine_replace", Args(("machine", "FX")));
+                    var c = r["comparison"];
+                    var m = c?["machine"] ?? c?["song"];
+                    report.Add($"[notice] compare {label}, {(noise ? "noise" : "chords")}: within {c?["within_tolerance"]?.ToJsonString() ?? "-"}, loudness {m?["loudness_db"]?["difference"]?.ToJsonString() ?? "-"} dB, " +
+                               $"bands {m?["bands_db"]?.ToJsonString() ?? "-"}");
+                }
+            }
+            if (Has(bin, "Effects", "Jeskola Flanger"))
+            {
+                Compare("Jeskola Flanger defaults", "Jeskola Flanger", null);
+                Compare("Jeskola Flanger wet +100 %, md 10, depth 64, 0.5 Hz", "Jeskola Flanger", Raw(("wet out", 128), ("min. delay", 10), ("depth", 64), ("freq", 50)));
+            }
+            if (Has(bin, "Effects", "Jeskola Chorus"))
+            {
+                Compare("Jeskola Chorus defaults", "Jeskola Chorus", null);
+                Compare("Jeskola Chorus wet 50 %, md 10, depth 127", "Jeskola Chorus", Raw(("wet out", 96), ("min. delay", 10), ("depth", 127)));
+            }
+            if (Has(bin, "Effects", "FSM Chorus2"))
+            {
+                Compare("FSM Chorus2 defaults", "FSM Chorus2", null);
+                Compare("FSM Chorus2 Fatness 1", "FSM Chorus2", OnTrack(Raw(("Fatness", 1))));
+                Compare("FSM Chorus2 Fatness 6, Stereo 240", "FSM Chorus2", OnTrack(Raw(("Fatness", 6), ("Stereo", 240))));
+            }
+            foreach (string line in report) TestContext.Out.WriteLine(line);
+            Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
+        }
+
         static string Short(JsonObject analyzeResponse)
         {
             string text = analyzeResponse["result"]?["content"]?[0]?["text"]?.GetValue<string>() ?? "";

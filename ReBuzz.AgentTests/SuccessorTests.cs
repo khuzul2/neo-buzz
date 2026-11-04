@@ -60,6 +60,7 @@ namespace ReBuzz.AgentTests
                      {
                          "Jeskola Reverb → Neo Verb", "Pedal EQ → Neo EQ", "Jeskola Distortion → Neo Drive", "Pedal Gain → Neo Utility",
                          "Jeskola Bass → Neo Poly", "Jeskola Bass 2 → Neo Poly", "Jeskola Bass 3 → Neo Poly",
+                         "Jeskola Flanger → Neo Ensemble", "Jeskola Chorus → Neo Ensemble", "FSM Chorus2 → Neo Ensemble", "Pedal Chorus → Neo Ensemble",
                      })
                 Assert.That(pairs, Does.Contain(expected));
             foreach (var map in SuccessorLibrary.All)
@@ -83,10 +84,14 @@ namespace ReBuzz.AgentTests
                         $"{map.Label}: {p.Name} is neither mapped nor listed as unmapped with a reason");
                 Assert.That(map.Unmapped.All(u => u.Why.Length > 0), map.Label);
                 Assert.That(map.Evidence, Is.Not.Empty, map.Label);
-                // The settings at the old machine's defaults convert, every value reachable.
+                // The settings at the old machine's defaults convert, every value reachable (but Jeskola Flanger's, whose default
+                // wet out is inverted and whose sweep starts at no delay: both have no counterpart, and the notes say so).
                 var state = c.ConvertState(Raws(c));
                 Assert.That(state.Values, Is.Not.Empty, map.Label);
-                Assert.That(state.Notes, Is.Empty, map.Label);
+                if (map.From == "Jeskola Flanger")
+                    Assert.That(state.Notes, Has.Some.Contains("polarity").And.Some.Contains("sweep goes down to 0 ms"), map.Label);
+                else
+                    Assert.That(state.Notes, Is.Empty, map.Label);
                 Assert.That(state.Values.Where(v => v.Note != null).Select(v => v.Note), Is.Empty, map.Label);
             }
         }
@@ -176,6 +181,55 @@ namespace ReBuzz.AgentTests
             double want = 20 * Math.Log10(1.5 / (2305 / 65534.0 * 31.999));
             Assert.That(Value(c, hot, "Drive"), Is.EqualTo(Math.Max(0, want)).Within(0.05));
             Assert.That(hot.InputGainDb, Is.EqualTo(6.02 + Math.Min(0, want)).Within(0.05));
+        }
+
+        [Test]
+        public void ASweptDelayLandsOnItsGeometricCentreAndOctaves()
+        {
+            // FSM Chorus2 at its defaults: 2 + 1120.5 × 80 ÷ 240 samples, plus 2 × 110.25 × 90 ÷ 240 at the top (44.1 kHz).
+            var c = Converter("FSM Chorus2", "Neo Ensemble");
+            var s = c.ConvertState(Raws(c));
+            double lo = (2 + 1120.5 * 80 / 240.0) / 44100, hi = lo + 2 * 110.25 * 90 / 240.0 / 44100;
+            Assert.That(Value(c, s, "Delay"), Is.EqualTo(Math.Sqrt(lo * hi)).Within(0.01 * Math.Sqrt(lo * hi)));
+            Assert.That(Value(c, s, "Depth"), Is.EqualTo(Math.Log2(hi / lo) / 2).Within(0.006));
+            Assert.That(c.New("Voices")!.Format(Final(s, "Voices")), Is.EqualTo("3"));
+            // Fatness 3: the dry at 1 ÷ 3.5 and each tap at 2.5 ÷ 10.5, as FSM weighs them.
+            double m = Value(c, s, "Mix"), g = Math.Pow(10, Value(c, s, "Output") / 20);
+            Assert.That(g * (1 - m), Is.EqualTo(1 / 3.5).Within(0.003));
+            Assert.That(g * m / Math.Sqrt(3), Is.EqualTo(2.5 / 10.5).Within(0.003));
+            Assert.That(Value(c, s, "Spread"), Is.EqualTo(90).Within(1));
+
+            // Pedal Chorus: Delay ± Depth, and its Mix a crossfade whose output gain keeps the dry level.
+            var p = Converter("Pedal Chorus", "Neo Ensemble");
+            var ps = p.ConvertState(Raws(p, new() { ["Delay"] = 20, ["Depth"] = 50, ["Mix"] = 60 }));
+            Assert.That(Value(p, ps, "Delay"), Is.EqualTo(Math.Sqrt(0.016 * 0.024)).Within(0.0003));
+            Assert.That(Value(p, ps, "Depth"), Is.EqualTo(Math.Log2(0.024 / 0.016) / 2).Within(0.006));
+            double pm = Value(p, ps, "Mix"), pg = Math.Pow(10, Value(p, ps, "Output") / 20);
+            Assert.That(pg * (1 - pm), Is.EqualTo(0.4).Within(0.005));
+            Assert.That(pg * pm, Is.EqualTo(0.6 * 0.7071).Within(0.005));
+            Assert.That(ps.Notes, Is.Empty);
+            // A sweep down to no delay keeps its top at full depth, with a note.
+            var deep = p.ConvertState(Raws(p, new() { ["Delay"] = 5, ["Depth"] = 100 }));
+            Assert.That(Value(p, deep, "Depth"), Is.EqualTo(1).Within(0.001));
+            Assert.That(Value(p, deep, "Delay"), Is.EqualTo(0.013 / 2).Within(0.0002));
+            Assert.That(deep.Notes, Has.Some.Contains("sweep goes down to 0 ms"));
+        }
+
+        [Test]
+        public void SeparateDryAndWetBecomeACrossfadeAndAnInvertedOneIsANote()
+        {
+            var c = Converter("Jeskola Chorus", "Neo Ensemble");
+            // dry out 100 %, wet out 50 %: mix ⅓, output +3.5 dB.
+            var s = c.ConvertState(Raws(c, new() { ["dry out"] = 128, ["wet out"] = 96 }));
+            Assert.That(Value(c, s, "Mix"), Is.EqualTo(1 / 3.0).Within(0.006));
+            Assert.That(Value(c, s, "Output"), Is.EqualTo(20 * Math.Log10(1.5)).Within(0.06));
+            Assert.That(s.Notes, Is.Empty);
+            Assert.That(s.InputGainDb, Is.EqualTo(6.02).Within(0.01), "a mono machine: the inputs' sum");
+            var inverted = c.ConvertState(Raws(c, new() { ["dry out"] = 128, ["wet out"] = 0 }));
+            Assert.That(Value(c, inverted, "Mix"), Is.EqualTo(0.5).Within(0.006));
+            Assert.That(inverted.Notes, Has.Some.Contains("inverts the wet signal").And.Some.Contains("polarity is not"));
+            var feedback = c.ConvertState(Raws(c, new() { ["feedback"] = 128 }));
+            Assert.That(Value(c, feedback, "Feedback"), Is.EqualTo(0.99).Within(0.001), "Neo Ensemble's feedback stops at 99 %");
         }
 
         [Test]

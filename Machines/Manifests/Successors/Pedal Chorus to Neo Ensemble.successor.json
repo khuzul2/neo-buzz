@@ -1,0 +1,88 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Pedal Chorus",
+  "to": "Neo Ensemble",
+  "summary": "Neo Ensemble's chorus with four voices (both machines spread their LFOs evenly round the cycle): the delay swept between Delay − Depth and Delay + Depth lands on the sweep's geometric centre and its octaves, Spread on the right channel's LFO phase, Mix on a crossfade and an output gain.",
+  "set": {
+    "Mode": "Chorus",
+    "Voices": "4",
+    "Sync": "Free",
+    "Shape": "Sine",
+    "Feedback": "0%"
+  },
+  "rules": [
+    {
+      "kind": "unit",
+      "from": "Rate",
+      "to": "Rate",
+      "why": "Both in Hz, one sine LFO per voice."
+    },
+    {
+      "kind": "sweep",
+      "low": [
+        {
+          "param": "Delay",
+          "weight": 1
+        },
+        {
+          "param": "Depth",
+          "weight": -1
+        }
+      ],
+      "high": [
+        {
+          "param": "Delay",
+          "weight": 1
+        },
+        {
+          "param": "Depth",
+          "weight": 1
+        }
+      ],
+      "delay": "Delay",
+      "depth": "Depth",
+      "octaves": 1,
+      "why": "Pedal Chorus sweeps each voice's delay between Delay − Depth and Delay + Depth (straight in time; at least a sample); Neo Ensemble sweeps in octaves round its Delay, an octave either side at 100 %: the same ends, the centre where their ratio is halved."
+    },
+    {
+      "kind": "range",
+      "from": "Spread",
+      "to": "Spread",
+      "from_range": [0, 1],
+      "to_range": [0, 180],
+      "why": "Pedal Chorus pans its four voices from the centre (0 %) to hard left and right (100 %); Neo Ensemble moves the right channel's LFOs against the left's, the channels differing most at 180°. Both are mono at 0."
+    },
+    {
+      "kind": "unit",
+      "from": "Tone",
+      "to": "Tone",
+      "max": 20000,
+      "why": "Both a one-pole low-pass on the wet sound, in Hz; 20 kHz and above is open on Neo Ensemble (Pedal Chorus's own top, 22 kHz, still takes 0.8 dB off at 22 kHz)."
+    },
+    {
+      "kind": "dry_wet",
+      "mix_from": "Mix",
+      "wet_scale": 0.7071,
+      "mix": "Mix",
+      "output": "Output",
+      "why": "Pedal Chorus crossfades its input with the voices, each from the input's mono sum, panned at equal power and halved: per channel half the power of one voice where Neo Ensemble's voices sum to one voice's power, so its wet counts 0.71 (−3 dB) of Neo Ensemble's, and the output gain keeps the dry level."
+    }
+  ],
+  "unmapped": [],
+  "remarks": [
+    "Pedal Chorus sweeps its delay straight in time, Neo Ensemble in octaves: at the same ends Neo Ensemble lingers a little longer on the short delays.",
+    "Pedal Chorus pans voices made from the input's mono sum; Neo Ensemble keeps the channels apart and offsets their LFOs, so a stereo input stays stereo in its wet sound."
+  ],
+  "tolerance": {
+    "loudness_db": 1,
+    "band_db": 2,
+    "from_hz": 63,
+    "to_hz": 12000,
+    "measured": ""
+  },
+  "evidence": [
+    "ExternalMachines/source/thepedal/pedal-chorus/PedalChorus.cs (Work: delay = base + sin·depth, voiceGain 2/4, equal-power pans at ±Spread and ±Spread/3, one-pole tone 1 − e^(−2πf/sr))",
+    "Machines/Manifests/Effects/Pedal Chorus.machine.json (curated: units and roles)",
+    "Machines/NeoEnsemble/Engine/EnsembleEngine.cs (voices averaged times √voices; the right channel's LFO Spread/voices on)"
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Jeskola Flanger",
+  "to": "Neo Ensemble",
+  "summary": "Neo Ensemble's flanger: freq the LFO in Hz, min. delay and depth (the sweep's ends) its delay at the sweep's geometric centre and its octaves, feedback to ±99 %, dry out and wet out a crossfade and an output gain. An inverted dry or wet (Jeskola's default wet out is −100 %) has no counterpart.",
+  "input_gain_db": 6.02,
+  "set": {
+    "Mode": "Flanger",
+    "Voices": "1",
+    "Sync": "Free",
+    "Shape": "Sine",
+    "Spread": "0°",
+    "Tone": "20 kHz"
+  },
+  "rules": [
+    {
+      "kind": "unit",
+      "from": "freq",
+      "to": "Rate",
+      "why": "Both in Hz (Jeskola: hundredths of a Hz)."
+    },
+    {
+      "kind": "sweep",
+      "low": [
+        {
+          "param": "min. delay",
+          "weight": 1
+        }
+      ],
+      "high": [
+        {
+          "param": "min. delay",
+          "weight": 1
+        },
+        {
+          "param": "depth",
+          "weight": 0.005
+        }
+      ],
+      "delay": "Delay",
+      "depth": "Depth",
+      "octaves": 2,
+      "why": "MEASURE"
+    },
+    {
+      "kind": "unit",
+      "from": "feedback",
+      "to": "Feedback",
+      "min": -0.99,
+      "max": 0.99,
+      "why": "Both in %; Neo Ensemble's stops at ±99 % (Jeskola's runs away at +100 %: machine-safety.md §3.4)."
+    },
+    {
+      "kind": "dry_wet",
+      "dry": "dry out",
+      "wet": "wet out",
+      "mix": "Mix",
+      "output": "Output",
+      "why": "Jeskola Flanger adds its dry and wet at their own levels; Neo Ensemble crossfades them and sets the output's level: mix = wet ÷ (dry + wet), output = dry + wet."
+    }
+  ],
+  "unmapped": [],
+  "remarks": [],
+  "tolerance": {
+    "loudness_db": 1.5,
+    "band_db": 3,
+    "from_hz": 63,
+    "to_hz": 12000,
+    "measured": ""
+  },
+  "evidence": [
+    "Machines/Manifests/Effects/Jeskola Flanger.machine.json (profiled draft: units from its texts; mono)",
+    "docs/specs/machine-safety.md §4 (roles)"
+  ]
+}

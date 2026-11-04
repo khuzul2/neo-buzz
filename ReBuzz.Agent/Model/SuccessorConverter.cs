@@ -484,8 +484,79 @@ namespace ReBuzz.Agent.Model
                 case SuccessorRuleKind.Bypass:
                     if (!events) state.Bypass = get(rule.From) >= 0.5;
                     break;
+                case SuccessorRuleKind.Sweep:
+                    Sweep(rule, get, Put, notes);
+                    break;
+                case SuccessorRuleKind.DryWet:
+                    DryWet(rule, get, Put, notes);
+                    break;
             }
             return outs;
+        }
+
+        static string Ms(double s) => (s * 1000).ToString(s < 0.001 ? "0.##" : "0.#", C) + " ms";
+
+        /// <summary>
+        /// A delay swept between <c>lo</c> and <c>hi</c> → the new delay at the sweep's geometric centre, √(lo·hi), and its depth,
+        /// log2(hi/lo)/2 octaves either side as a share of what 100 % spans. A sweep wider than the new machine reaches (or one
+        /// down to no delay) keeps its top at full depth, with a note.
+        /// </summary>
+        void Sweep(SuccessorRule rule, Func<string, double> get, Action<string, double> put, List<string> notes)
+        {
+            double lo = rule.Low.Sum(t => t.Weight * get(t.Param)) + rule.LowOffset;
+            double hi = rule.High.Sum(t => t.Weight * get(t.Param)) + rule.HighOffset;
+            if (double.IsNaN(lo) || double.IsNaN(hi)) return;
+            if (hi < lo) (lo, hi) = (hi, lo);
+            double span = rule.Octaves, delay, depth;
+            if (!(hi > 0)) { delay = 0; depth = 0; }
+            else if (lo <= 0 || Math.Log2(hi / lo) > 2 * span)
+            {
+                depth = 1;
+                delay = hi / Math.Pow(2, span);
+                string note = $"{Map.From}'s sweep goes down to {Ms(Math.Max(0, lo))}; {Map.To}'s at full depth only to {Ms(delay / Math.Pow(2, span))} (its top, {Ms(hi)}, kept).";
+                if (!notes.Contains(note)) notes.Add(note);
+            }
+            else
+            {
+                delay = Math.Sqrt(lo * hi);
+                depth = Math.Log2(hi / lo) / 2 / span;
+            }
+            put(rule.Delay, delay);
+            put(rule.Depth, depth);
+        }
+
+        /// <summary>
+        /// Dry and wet amplitudes D and W (or a mix x: D = 1 − x, W = x) → mix = |W|·s / (|D| + |W|·s) and output = 20·log10(|D| + |W|·s) dB.
+        /// An inverted dry or wet has no counterpart: its level is kept, its polarity is not, with a note.
+        /// </summary>
+        void DryWet(SuccessorRule rule, Func<string, double> get, Action<string, double> put, List<string> notes)
+        {
+            double d, w;
+            if (rule.MixFrom != null)
+            {
+                double x = get(rule.MixFrom);
+                d = 1 - x;
+                w = x;
+            }
+            else
+            {
+                d = rule.Dry == null ? 0 : get(rule.Dry);
+                w = get(rule.Wet[0].From);
+            }
+            if (double.IsNaN(d) || double.IsNaN(w)) return;
+            string Named(string name, double v) => $"{name} at {(Old(name) is { } p ? p.FormatValue(v) : (v * 100).ToString("0.#", C) + "%")}";
+            string inverted = d < 0 && w < 0 ? $"{Named(rule.Dry, d)} and {Named(rule.Wet[0].From, w)} invert the whole output (alone it sounds the same; against other paths it doesn't)"
+                            : d < 0 ? $"{Named(rule.Dry, d)} inverts the dry signal against the wet, which moves the comb's notches"
+                            : w < 0 ? $"{Named(rule.Wet[0].From, w)} inverts the wet signal against the dry, which moves the comb's notches"
+                            : null;
+            if (inverted != null)
+            {
+                string note = $"{inverted}; {Map.To} has no polarity for its dry or wet, so the level is kept and the polarity is not: the sound differs.";
+                if (!notes.Contains(note)) notes.Add(note);
+            }
+            double dry = Math.Abs(d), wet = Math.Abs(w) * rule.WetScale, g = dry + wet;
+            put(rule.Mix, g > 0 ? wet / g : 0);
+            put(rule.Output, g > 0 ? 20 * Math.Log10(g) + rule.Offset : double.NegativeInfinity);
         }
 
         static double Lin(double db) => double.IsNegativeInfinity(db) || double.IsNaN(db) ? 0 : Math.Pow(10, db / 20);

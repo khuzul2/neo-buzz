@@ -40,6 +40,17 @@ namespace ReBuzz.Agent.Model
         Clip,
         /// <summary>An old bypass switch → the new machine's bypass (its state only).</summary>
         Bypass,
+        /// <summary>
+        /// A modulated delay's shortest and longest delay (weighted sums of old times) → the new one's delay at the sweep's
+        /// geometric centre and its depth in octaves either side, as a share of what 100 % spans (Neo Ensemble).
+        /// </summary>
+        Sweep,
+        /// <summary>
+        /// Separate dry and wet amplitudes (or one wet/dry mix) → a dry/wet crossfade and an output gain in dB:
+        /// mix = |W|·s / (|D| + |W|·s), output = 20·log10(|D| + |W|·s), s the wet's level on the new machine against
+        /// the old one's. An inverted dry or wet keeps its level, not its polarity (with a note).
+        /// </summary>
+        DryWet,
     }
 
     /// <summary>One wet level of a <see cref="SuccessorRuleKind.LevelsToMix"/> rule, with the level difference between the two machines' wet sounds.</summary>
@@ -79,6 +90,17 @@ namespace ReBuzz.Agent.Model
         public string Drive { get; init; }
         public string Output { get; init; }
         public double KneeDb { get; init; }
+        /// <summary>Sweep: the old shortest and longest delay (s) as weighted sums plus an offset; the new delay and depth; octaves at depth 100 %.</summary>
+        public IReadOnlyList<(string Param, double Weight)> Low { get; init; }
+        public IReadOnlyList<(string Param, double Weight)> High { get; init; }
+        public double LowOffset { get; init; }
+        public double HighOffset { get; init; }
+        public string Delay { get; init; }
+        public string Depth { get; init; }
+        public double Octaves { get; init; } = 1;
+        /// <summary>DryWet: a 0–100 % wet/dry mix instead of separate levels (dry = 1 − mix, wet = mix), and the wet's scale s.</summary>
+        public string MixFrom { get; init; }
+        public double WetScale { get; init; } = 1;
         /// <summary>Why (a line in the report): "assumed: closed source", "measured on …".</summary>
         public string Why { get; init; } = "";
 
@@ -87,6 +109,8 @@ namespace ReBuzz.Agent.Model
             SuccessorRuleKind.Sum => Terms.Select(t => t.Param),
             SuccessorRuleKind.LevelsToMix => new[] { Dry }.Where(x => x != null).Concat(Wet.Select(w => w.From)),
             SuccessorRuleKind.Clip => new[] { Threshold, Clamp },
+            SuccessorRuleKind.Sweep => Low.Concat(High).Select(t => t.Param).Distinct(StringComparer.OrdinalIgnoreCase),
+            SuccessorRuleKind.DryWet => MixFrom != null ? new[] { MixFrom } : new[] { Dry, Wet?.FirstOrDefault()?.From }.Where(x => x != null),
             SuccessorRuleKind.Db when ZeroWhen != null => new[] { From, ZeroWhen },
             SuccessorRuleKind.Unit when Times != null => new[] { From, Times },
             _ => new[] { From },
@@ -96,6 +120,8 @@ namespace ReBuzz.Agent.Model
         {
             SuccessorRuleKind.LevelsToMix => new[] { Mix }.Concat(Wet.Select(w => w.To)),
             SuccessorRuleKind.Clip => new[] { Drive, Output },
+            SuccessorRuleKind.Sweep => new[] { Delay, Depth },
+            SuccessorRuleKind.DryWet => new[] { Mix, Output },
             SuccessorRuleKind.Bypass => Array.Empty<string>(),
             _ => new[] { To },
         };
@@ -253,6 +279,9 @@ namespace ReBuzz.Agent.Model
             return new[] { (double)a[0]!, (double)a[1]! };
         }
 
+        static List<(string Param, double Weight)> Terms(JsonNode node) =>
+            (node as JsonArray)?.OfType<JsonObject>().Select(x => ((string)x["param"], (double?)x["weight"] ?? 1)).ToList();
+
         static SuccessorRule ParseRule(JsonObject r, string pair)
         {
             string kind = (string)r["kind"] ?? "unit";
@@ -267,6 +296,8 @@ namespace ReBuzz.Agent.Model
                 "levels_to_mix" => SuccessorRuleKind.LevelsToMix,
                 "clip" => SuccessorRuleKind.Clip,
                 "bypass" => SuccessorRuleKind.Bypass,
+                "sweep" => SuccessorRuleKind.Sweep,
+                "dry_wet" => SuccessorRuleKind.DryWet,
                 _ => throw new FormatException($"{pair}: unknown rule kind \"{kind}\"."),
             };
             var rule = new SuccessorRule
@@ -285,9 +316,23 @@ namespace ReBuzz.Agent.Model
                 FromRange = Pair(r["from_range"], $"{pair}: from_range"),
                 ToRange = Pair(r["to_range"], $"{pair}: to_range"),
                 Log = (string)r["curve"] == "log",
-                Terms = (r["terms"] as JsonArray)?.OfType<JsonObject>().Select(x => ((string)x["param"], (double?)x["weight"] ?? 1)).ToList(),
+                Terms = Terms(r["terms"]),
                 Dry = (string)r["dry"],
-                Wet = (r["wet"] as JsonArray)?.OfType<JsonObject>().Select(x => new SuccessorWet((string)x["from"], (string)x["to"], (double?)x["gain_db"] ?? 0)).ToList(),
+                Wet = r["wet"] switch
+                {
+                    JsonArray a => a.OfType<JsonObject>().Select(x => new SuccessorWet((string)x["from"], (string)x["to"], (double?)x["gain_db"] ?? 0)).ToList(),
+                    JsonValue v => new[] { new SuccessorWet((string)v, null, 0) },
+                    _ => null,
+                },
+                Low = Terms(r["low"]),
+                High = Terms(r["high"]),
+                LowOffset = (double?)r["low_offset"] ?? 0,
+                HighOffset = (double?)r["high_offset"] ?? 0,
+                Delay = (string)r["delay"],
+                Depth = (string)r["depth"],
+                Octaves = (double?)r["octaves"] ?? 1,
+                MixFrom = (string)r["mix_from"],
+                WetScale = (double?)r["wet_scale"] ?? 1,
                 Mix = (string)r["mix"],
                 Threshold = (string)r["threshold"],
                 Clamp = (string)r["clamp"],
@@ -299,7 +344,9 @@ namespace ReBuzz.Agent.Model
             string missing = k switch
             {
                 SuccessorRuleKind.Sum when rule.Terms == null || rule.Terms.Count == 0 || rule.To == null => "terms and to",
-                SuccessorRuleKind.LevelsToMix when rule.Wet == null || rule.Wet.Count == 0 || rule.Mix == null => "wet and mix",
+                SuccessorRuleKind.LevelsToMix when rule.Wet == null || rule.Wet.Count == 0 || rule.Mix == null || rule.Wet.Any(w => w.To == null) => "wet (from, to) and mix",
+                SuccessorRuleKind.Sweep when rule.Low == null || rule.High == null || rule.Delay == null || rule.Depth == null || !(rule.Octaves > 0) => "low, high, delay, depth and octaves",
+                SuccessorRuleKind.DryWet when (rule.MixFrom == null && (rule.Wet == null || rule.Wet.Count != 1)) || rule.Mix == null || rule.Output == null => "wet (and dry) or mix_from, mix and output",
                 SuccessorRuleKind.Clip when rule.Threshold == null || rule.Clamp == null || rule.Drive == null || rule.Output == null => "threshold, clamp, drive and output",
                 SuccessorRuleKind.Range when rule.FromRange == null || rule.ToRange == null || rule.From == null || rule.To == null => "from, to, from_range and to_range",
                 SuccessorRuleKind.Choice when rule.Map == null || rule.From == null || rule.To == null => "from, to and map",

@@ -1,0 +1,110 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "FSM Chorus2",
+  "to": "Neo Ensemble",
+  "summary": "Neo Ensemble's chorus: Min Delay and Mod Depth (the sweep from Min Delay to Min Delay + 2 × Mod Depth) land on the sweep's geometric centre and its octaves, Fatness on the voices (four at most) and on a crossfade and output gain that keep FSM's fixed 1 : 2.5 dry-to-wet balance, Stereo on Spread.",
+  "set": {
+    "Mode": "Chorus",
+    "Sync": "Free",
+    "Shape": "Sine",
+    "Feedback": "0%",
+    "Tone": "20 kHz"
+  },
+  "rules": [
+    {
+      "kind": "unit",
+      "from": "Mod Rate",
+      "to": "Rate",
+      "why": "Both in Hz (FSM: 6.6 Hz × value ÷ 240)."
+    },
+    {
+      "kind": "sweep",
+      "low": [
+        {
+          "param": "Min Delay",
+          "weight": 1.0163
+        }
+      ],
+      "high": [
+        {
+          "param": "Min Delay",
+          "weight": 1.0163
+        },
+        {
+          "param": "Mod Depth",
+          "weight": 2
+        }
+      ],
+      "delay": "Delay",
+      "depth": "Depth",
+      "octaves": 1,
+      "why": "FSM Chorus2's delay is Min Delay + Mod Depth × (1 + sin), straight in samples: 2 + 1120.5 × value ÷ 240 for Min Delay (its display says 1102.5, hence × 1.0163) and 110.25 × value ÷ 240 for Mod Depth. Neo Ensemble sweeps in octaves round its Delay: the same ends."
+    },
+    {
+      "kind": "unit",
+      "from": "Stereo",
+      "to": "Spread",
+      "why": "FSM moves the right channel's taps Stereo ÷ taps on from the left's; Neo Ensemble moves its right voices Spread ÷ voices on: the same, in degrees."
+    },
+    {
+      "kind": "choice",
+      "from": "Fatness",
+      "to": "Voices",
+      "map": {
+        "1": "1",
+        "2": "2",
+        "3": "3",
+        "4": "4",
+        "5": "4",
+        "6": "4"
+      },
+      "why": "FSM's taps; Neo Ensemble has four voices at most."
+    },
+    {
+      "kind": "choice",
+      "from": "Fatness",
+      "to": "Mix",
+      "map": {
+        "1": "71.4%",
+        "2": "63.9%",
+        "3": "59.1%",
+        "4": "55.6%",
+        "5": "52.8%",
+        "6": "50.5%"
+      },
+      "why": "FSM mixes the dry signal at 1 ÷ 3.5 and each of its n taps at 2.5 ÷ (3.5·n); Neo Ensemble averages its voices times √voices: mix m with m ÷ (1 − m) = 2.5 ÷ √n gives each voice and the dry the same weights (n ≤ 4; above, the same wet power)."
+    },
+    {
+      "kind": "choice",
+      "from": "Fatness",
+      "to": "Output",
+      "map": {
+        "1": "+0.0 dB",
+        "2": "-2.0 dB",
+        "3": "-3.1 dB",
+        "4": "-3.8 dB",
+        "5": "-4.4 dB",
+        "6": "-4.8 dB"
+      },
+      "why": "The output gain that puts the dry at 1 ÷ 3.5: (1 ÷ 3.5) ÷ (1 − m)."
+    }
+  ],
+  "unmapped": [],
+  "remarks": [
+    "FSM Chorus2 sets its taps 60° apart on the LFO (whatever their number), Neo Ensemble its voices evenly round the cycle: with two to five taps the voices sit differently, so the chorus moves differently while its ends and levels match.",
+    "FSM Chorus2 counts its delays in samples, so its times change with the sample rate; the mapping reads them at 44.1 kHz, as its manifest does.",
+    "FSM Chorus2 has no feedback and no tone control: Neo Ensemble's are off and open."
+  ],
+  "tolerance": {
+    "loudness_db": 1,
+    "band_db": 2,
+    "from_hz": 63,
+    "to_hz": 12000,
+    "measured": ""
+  },
+  "evidence": [
+    "ExternalMachines/source/buzztrax-buzzmachines/FSM/Chorus2/Chorus2.cpp (MDKWorkStereo: delay = AvgDelay + ModDepth·sin, taps 60° apart, out = (dry·n/2.5 + Σ taps) ÷ (n/2.5 + n); Tick: the right channel's phase)",
+    "Machines/Manifests/Effects/FSM Chorus2.machine.json (profiled draft: units from its texts)",
+    "Machines/NeoEnsemble/Engine/EnsembleEngine.cs (voices averaged times √voices)"
+  ]
+}
