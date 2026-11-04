@@ -12,7 +12,8 @@
 //   on a weighted least-squares fit at the centres and two points between each pair, after Liski and
 //   Välimäki's interaction-matrix design), only when a slider moves. The sliders' median is a plain
 //   gain, so all sliders at +X is +X exactly.
-// - The bands run as TPT state-variable sections in double precision; their gains glide (a 20 ms
+// - The bands run as TPT state-variable sections in double precision (as state-space updates of the
+//   SVF's own states, for a short chain per sample); their gains glide (a 20 ms
 //   one-pole in dB) in 16-sample segments that run across blocks, the sections' coefficients moving
 //   in straight lines within each, so fast automation stays smooth and stable and the output doesn't
 //   depend on how the host splits it. No allocation after construction.
@@ -364,8 +365,74 @@ namespace NeoBuzz.Eq
     }
 
     /// <summary>
+    /// One band for both channels: the TPT state-variable section (<see cref="SvfSection"/>, whose
+    /// coefficients it takes) written as its state-space update, so each step's chain through the
+    /// state is one multiply and one add: s′ = C s + B x, y = E·(x, s). The states are the SVF's own
+    /// (its integrators), so it behaves as the SVF does when its coefficients move.
+    /// </summary>
+    internal struct StereoBell
+    {
+        double c11, c12, c21, c22, b1, b2, e0, e1, e2;
+        double l1, l2, r1, r2;
+
+        /// <summary>The section's coefficients as <see cref="SvfSection.Set"/> takes them.</summary>
+        public void Set(double g, double k, double m0, double m1, double m2)
+        {
+            double a1 = 1.0 / (1.0 + g * (g + k)), a2 = g * a1, a3 = g * a2;
+            c11 = 2 * a1 - 1;
+            c12 = -2 * a2;
+            b1 = 2 * a2;
+            c21 = 2 * a2;
+            c22 = 1 - 2 * a3;
+            b2 = 2 * a3;
+            e0 = m0 + m1 * a2 + m2 * a3;
+            e1 = m1 * a1 + m2 * a2;
+            e2 = m2 * (1 - a3) - m1 * a2;
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public void Process(ref double left, ref double right)
+        {
+            double x = left, s1 = l1, s2 = l2;
+            left = e0 * x + e1 * s1 + e2 * s2;
+            l1 = b1 * x + c12 * s2 + c11 * s1;
+            l2 = b2 * x + c21 * s1 + c22 * s2;
+            x = right;
+            s1 = r1;
+            s2 = r2;
+            right = e0 * x + e1 * s1 + e2 * s2;
+            r1 = b1 * x + c12 * s2 + c11 * s1;
+            r2 = b2 * x + c21 * s1 + c22 * s2;
+        }
+
+        /// <summary>Updates the state without the output (a band at exactly 0 dB, which passes its input untouched).</summary>
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+        public void Track(double left, double right)
+        {
+            double s1 = l1, s2 = l2;
+            l1 = b1 * left + c12 * s2 + c11 * s1;
+            l2 = b2 * left + c21 * s1 + c22 * s2;
+            s1 = r1;
+            s2 = r2;
+            r1 = b1 * right + c12 * s2 + c11 * s1;
+            r2 = b2 * right + c21 * s1 + c22 * s2;
+        }
+
+        public void Reset() { l1 = l2 = r1 = r2 = 0; }
+
+        /// <summary>Flushes tiny state (once per block), as <see cref="SvfSection.Flush"/> does.</summary>
+        public void Flush()
+        {
+            l1 = DspMath.Flush(l1);
+            l2 = DspMath.Flush(l2);
+            r1 = DspMath.Flush(r1);
+            r2 = DspMath.Flush(r2);
+        }
+    }
+
+    /// <summary>
     /// The graphic mode's bands as the engine runs them: the solver's gains, gliding in 16-sample
-    /// segments, through a TPT section per band and channel, then the offset gain.
+    /// segments, through a TPT section per band (both channels), then the offset gain.
     /// </summary>
     internal sealed class GraphicBank
     {
@@ -376,7 +443,7 @@ namespace NeoBuzz.Eq
         const double Snap = 1e-4;
 
         public readonly GraphicSolver Solver = new GraphicSolver();
-        readonly SvfSection[] l = new SvfSection[N], r = new SvfSection[N];
+        readonly StereoBell[] bells = new StereoBell[N];
         readonly double[] now = new double[N], want = new double[N];
         // Coefficients now, at the segment's end and per sample: 5 per band (g, k, m0, m1, m2).
         readonly double[] cur = new double[N * 5], end = new double[N * 5], inc = new double[N * 5];
@@ -415,8 +482,7 @@ namespace NeoBuzz.Eq
                 rampLeft[k] = 0;
                 Design(k, now[k], cur);
                 Apply(k);
-                l[k].Reset();
-                r[k].Reset();
+                bells[k].Reset();
             }
             offNow = offWant;
             gainNow = DspMath.DbToGain(offNow);
@@ -457,8 +523,7 @@ namespace NeoBuzz.Eq
         void Apply(int k)
         {
             int o = k * 5;
-            l[k].Set(cur[o], cur[o + 1], cur[o + 2], cur[o + 3], cur[o + 4]);
-            r[k].Set(cur[o], cur[o + 1], cur[o + 2], cur[o + 3], cur[o + 4]);
+            bells[k].Set(cur[o], cur[o + 1], cur[o + 2], cur[o + 3], cur[o + 4]);
         }
 
         /// <summary>Processes a stereo block in place (double precision).</summary>
@@ -467,26 +532,16 @@ namespace NeoBuzz.Eq
             int active = Solver.Active;
             for (int k = 0; k < active; k++)
             {
-                ref var sl = ref l[k];
-                ref var sr = ref r[k];
+                ref var bell = ref bells[k];
                 if (now[k] == want[k] && rampLeft[k] == 0)
                 {
                     // Settled: its coefficients stay as they are for the whole block. At exactly 0 dB it passes the
-                    // signal untouched, its sections still running so that it moves off cleanly.
+                    // signal untouched, its state still running so that it moves off cleanly.
                     if (now[k] == 0)
-                        for (int i = 0; i < n; i++)
-                        {
-                            sl.Process(left[i]);
-                            sr.Process(right[i]);
-                        }
+                        for (int i = 0; i < n; i++) bell.Track(left[i], right[i]);
                     else
-                        for (int i = 0; i < n; i++)
-                        {
-                            left[i] = sl.Process(left[i]);
-                            right[i] = sr.Process(right[i]);
-                        }
-                    sl.Flush();
-                    sr.Flush();
+                        for (int i = 0; i < n; i++) bell.Process(ref left[i], ref right[i]);
+                    bell.Flush();
                     continue;
                 }
                 int o = k * 5;
@@ -509,15 +564,12 @@ namespace NeoBuzz.Eq
                             for (int c = 0; c < 5; c++) cur[o + c] = end[o + c];
                         else
                             for (int c = 0; c < 5; c++) cur[o + c] += inc[o + c];
-                        sl.Set(cur[o], cur[o + 1], cur[o + 2], cur[o + 3], cur[o + 4]);
-                        sr.Set(cur[o], cur[o + 1], cur[o + 2], cur[o + 3], cur[o + 4]);
+                        bell.Set(cur[o], cur[o + 1], cur[o + 2], cur[o + 3], cur[o + 4]);
                     }
-                    left[i] = sl.Process(left[i]);
-                    right[i] = sr.Process(right[i]);
+                    bell.Process(ref left[i], ref right[i]);
                     if (++pos == Segment) pos = 0;
                 }
-                sl.Flush();
-                sr.Flush();
+                bell.Flush();
             }
             // The offset: a plain gain, gliding as the bands do.
             {
