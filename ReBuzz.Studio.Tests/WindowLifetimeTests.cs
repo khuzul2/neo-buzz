@@ -4,8 +4,10 @@
 // held by the dispatcher and holds its view, so a view that is released has none running). Two views used
 // to subscribe as they were made and let go only once shown and hidden again (Song Notes) or once their
 // window closed after their tab was shown (Pattern): every main window whose tabs weren't all shown stayed
-// alive, its views following the engine, for as long as the process ran. And the double clicks and the
-// clicks the tests make are what they say, however long a press takes (HeadlessInput.cs).
+// alive, its views following the engine, for as long as the process ran. A song's Modern Pattern Editor
+// lets go of the engine's song when it is released (it took the song again on the next machine added, and
+// stayed). And the double clicks and the clicks the tests make are what they say, however long a press
+// takes (HeadlessInput.cs).
 
 using System.Collections.Generic;
 using System.Linq;

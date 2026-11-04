@@ -35,7 +35,7 @@ namespace ReBuzz.Studio.Tests
             if (!Dispatcher.UIThread.CheckAccess()) return;      // a plain [Test]: no windows
             var left = Open();
             if (left.Count == 0) return;
-            TestContext.Progress.WriteLine($"[test windows] {test.Name} left {left.Count} open ({string.Join(", ", left.Select(w => $"{w.GetType().Name} \"{w.Title}\""))}): closed after it");
+            TestContext.Out.WriteLine($"[test windows] {test.Name} left {left.Count} open ({string.Join(", ", left.Select(w => $"{w.GetType().Name} \"{w.Title}\""))}): closed after it");
             var responder = Dialogs.Responder;
             Dialogs.Responder = (m, c, b) => UserAnswer.No;      // a main window's song: its changes go
             try
@@ -43,8 +43,15 @@ namespace ReBuzz.Studio.Tests
                 // The questions first (they answer Cancel as they close), then the windows that asked them.
                 foreach (var w in left.OrderBy(w => w is MainWindow ? 1 : 0))
                 {
-                    w.Close();
-                    MachineViewTests.Settle();
+                    try
+                    {
+                        w.Close();
+                        MachineViewTests.Settle();
+                    }
+                    catch (Exception e)
+                    {
+                        TestContext.Out.WriteLine($"[test windows] closing {w.GetType().Name} \"{w.Title}\" after {test.Name}: {e.Message}");
+                    }
                 }
             }
             finally
@@ -53,7 +60,7 @@ namespace ReBuzz.Studio.Tests
             }
             var still = Open();
             if (still.Count > 0)
-                TestContext.Progress.WriteLine($"[test windows] still open after {test.Name}: {string.Join(", ", still.Select(w => $"{w.GetType().Name} \"{w.Title}\""))}");
+                TestContext.Out.WriteLine($"[test windows] still open after {test.Name}: {string.Join(", ", still.Select(w => $"{w.GetType().Name} \"{w.Title}\""))}");
         }
 
         static List<Window> Open()
