@@ -15,6 +15,8 @@ work="$(mktemp -d)"
 mnt="$work/mnt"
 trap 'hdiutil detach "$mnt" -force >/dev/null 2>&1 || true' EXIT
 
+codesign --verify --deep --strict "$app"
+
 python3 -m venv "$work/venv"
 "$work/venv/bin/pip" install -q "dmgbuild>=1.6,<2"
 
@@ -68,6 +70,7 @@ test "$(readlink "$mnt/Applications")" = "/Applications"
 test -f "$mnt/Read me first.txt"
 test -f "$mnt/.DS_Store"
 test -f "$mnt/.background.tiff"
+echo "extended attributes on the app in the image:"; xattr -l "$mnt/ReBuzz.app" || true
 codesign --verify --deep --strict "$mnt/ReBuzz.app"
 if [ -n "$install_to" ]; then
   mkdir -p "$install_to"

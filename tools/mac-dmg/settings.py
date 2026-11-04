@@ -11,7 +11,8 @@ format = "UDZO"
 filesystem = "HFS+"
 files = [application, readme]
 symlinks = {"Applications": "/Applications"}
-hide_extensions = ["ReBuzz.app"]
+# No hide_extensions: it writes Finder info onto the bundle, which `codesign --strict` rejects as
+# detritus; Finder hides an app's .app by itself.
 
 volume_icon = os.path.join(application, "Contents", "Resources", "ReBuzz.icns")
 if os.path.isfile(volume_icon):
