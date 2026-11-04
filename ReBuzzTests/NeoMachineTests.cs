@@ -777,14 +777,14 @@ namespace ReBuzzTests
             rig.Play(0.3);
             double all6 = Rms(rig.Play(0.3));
             foreach (var p in sliders) p.SetValue(0, 180);
-            rig.Param("G 200 Hz").SetValue(0, 300);          // +12 dB either side of the sine
-            rig.Param("G 250 Hz").SetValue(0, 300);
+            foreach (var name in new[] { "G 160 Hz", "G 200 Hz", "G 250 Hz", "G 315 Hz" })
+                rig.Param(name).SetValue(0, 300);           // +12 dB around the sine (220 Hz)
             rig.Play(0.3);
             double between = Rms(rig.Play(0.3));
-            TestContext.Out.WriteLine($"flat {Db(flat):F3} dB; graphic flat {Db(graphicFlat / flat):F4} dB; all +6 dB: {Db(all6 / flat):F4} dB; 200 and 250 Hz at +12 dB: {Db(between / flat):F3} dB at 220 Hz");
+            TestContext.Out.WriteLine($"flat {Db(flat):F3} dB; graphic flat {Db(graphicFlat / flat):F4} dB; all +6 dB: {Db(all6 / flat):F4} dB; 160 to 315 Hz at +12 dB: {Db(between / flat):F3} dB at 220 Hz");
             Assert.That(Db(graphicFlat / flat), Is.EqualTo(0).Within(0.0001), "graphic mode at 0 dB passes the input");
             Assert.That(Db(all6 / flat), Is.EqualTo(6).Within(0.01), "every slider at +6 dB is +6 dB");
-            Assert.That(Db(between / flat), Is.EqualTo(12).Within(1), "between two sliders at +12 dB");
+            Assert.That(Db(between / flat), Is.EqualTo(12).Within(1), "between sliders at +12 dB (the design: 11.73 dB at 220 Hz)");
             Assert.That(rig.Effect.IsMuted, Is.False, "the guard never tripped");
 
             // The editor in graphic mode, with a loudness smile.
