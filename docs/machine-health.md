@@ -393,7 +393,7 @@ Drafts:
 | Neo EQ | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.567 | hot |
 | Neo Limiter | utility | 0.0 | 99 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.386 | hot |
 | Neo Multiband | delay, dynamics | -1.85 | 4607 | 0.1 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.38 | hot |
-| Neo Scope | utility | 0.0 | 0 | 0.0 |  |  |  | 5.8 |  | ok |
+| Neo Scope | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 5.2 | 0.761 | ok |
 | Neo Utility | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.37 | hot |
 | Neo Verb | reverb | -2.8 | 0 | 1.52 | 2.22 s | 35 ms | 21 Hz – 18.8 kHz | 15.6 | 0.383 | hot |
 | Oomek Exciter | filter or EQ | 7.22 | 0 | 0.0 |  |  | 8372 Hz – 18.8 kHz | 7.9 | 16.537 | ok |
