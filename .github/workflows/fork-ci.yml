@@ -122,9 +122,12 @@ jobs:
       if: always()
       run: python3 -m unittest discover -s tools -p "test_machine_infer.py" -v
 
+    # Without U2's per-parameter sweeps (--no-roles), which took this step from about 4 to 12 minutes on
+    # every change: the roles come from the package job's profile (every machine, Windows), and the health,
+    # test signal, velocity, envelope, triggers and slowdown checks still run here.
     - name: Machine profile on Linux
       if: always()
-      run: python3 tools/machine-profiler.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless --out "$RUNNER_TEMP/machine-profile"
+      run: python3 tools/machine-profiler.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless --out "$RUNNER_TEMP/machine-profile" --no-roles
 
     - name: Upload machine profile
       if: always() && hashFiles('**/machine-profile.json') != ''
