@@ -106,7 +106,7 @@ namespace ReBuzz.Agent
             var dll = Dll(core, map.To) ?? throw new ToolError($"{map.To} isn't installed (gear_list shows what is).");
             if (dll.IsMissing || dll.IsCrashed) throw new ToolError($"{map.To} is {(dll.IsMissing ? "missing" : "crashed")} and can't be added.");
             var manifest = SongModel.Manifest(dll) ?? throw new ToolError($"{map.To} has no manifest beside it, so its values can't be set in units.");
-            var oldManifest = SongModel.Manifest(old.DLL);
+            var oldManifest = ManifestOf(core, old.DLL);
             var olds = new List<SuccessorParam>();
             for (int g = 1; g <= 2 && g < old.ParameterGroups.Count; g++)
                 foreach (var p in old.ParameterGroups[g].Parameters)
@@ -133,6 +133,32 @@ namespace ReBuzz.Agent
             };
             plan.State = converter.ConvertState(sp => Current(old, sp, 0));
             return plan;
+        }
+
+        static readonly System.Collections.Concurrent.ConcurrentDictionary<string, MachineManifest> byName = new(StringComparer.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// The gear's manifest: beside its DLL, or, for a machine whose DLL isn't here (a placeholder for a closed native off
+        /// Windows, mac-engine.md M2), the draft or curated one Gear carries for it all the same (AppGear.targets, build.ps1).
+        /// </summary>
+        static MachineManifest ManifestOf(ReBuzzCore core, IMachineDLL dll)
+        {
+            var manifest = SongModel.Manifest(dll);
+            if (manifest != null || string.IsNullOrEmpty(dll?.Name)) return manifest;
+            return byName.GetOrAdd(dll.Name, name =>
+            {
+                foreach (var dir in core.MachineDLLs.Values.Select(d => d.Path).Where(p => !string.IsNullOrEmpty(p))
+                             .Select(System.IO.Path.GetDirectoryName).Where(d => d != null).Distinct())
+                {
+                    try
+                    {
+                        var found = MachineManifest.Load(System.IO.Path.Combine(dir, name + MachineManifest.Suffix));
+                        if (found != null) return found;
+                    }
+                    catch (Exception) { }
+                }
+                return null;
+            });
         }
 
         static IParameter Parameter(IMachine m, SuccessorParam sp)

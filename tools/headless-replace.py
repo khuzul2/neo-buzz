@@ -188,6 +188,39 @@ _, _, listed = s.call("machine_list")
 names = {m["name"]: m for m in listed.get("machines", [])}
 check(good and names.get("Trim", {}).get("gear") == "Neo Utility" and names.get("FX", {}).get("muted") is True, "keep_old: the old one stays, muted, beside the successor")
 
+# --- songs with closed natives, which are silent placeholders here (as on a Mac) ---------------------
+# Their values are the song's, their units from the manifests Gear carries for them: the successor plays them.
+root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+songs = os.path.join(root, "ExternalMachines", "source", "buzztrax-buzzmachines")
+good, text, _ = s.call("song_open", path=os.path.join(songs, "Oomek", "Masterizer", "Masterizer_test.bmx"), discard_unsaved=True)
+if good:
+    good, text, r = s.call("machine_replace", machine="Reverb")
+    mapped = {m["param"]: m["value"] for m in r.get("mapping", [])}
+    check(good and mapped.get("Mix") == "6.7%" and mapped.get("Decay") == "801 ms" and mapped.get("High damping") == "11.98 kHz",
+          f"a placeholder Jeskola Reverb's song values in units: Mix {mapped.get('Mix')}, Decay {mapped.get('Decay')}, High damping {mapped.get('High damping')}")
+    check(r.get("comparison", {}).get("within_tolerance") is None, "a silent placeholder: nothing to compare, and it says so")
+    _, _, listed = s.call("machine_list")
+    eq3 = next((m for m in listed.get("machines", []) if m["name"] == "EQ-3"), {})
+    check(any(o.get("to") == "Reverb" and abs((o.get("gain_db") or 0) - 6.02) < 0.05 for o in eq3.get("outputs", [])),
+          "the connection into it takes +6 dB (a mono native got left + right)")
+    s.ok("undo")
+    _, _, listed = s.call("machine_list")
+    check(any(m["name"] == "Reverb" and m["gear"] == "Jeskola Reverb" for m in listed.get("machines", [])), "undo brings the placeholder back")
+else:
+    check(False, "Masterizer_test.bmx opens")
+good, text, _ = s.call("song_open", path=os.path.join(songs, "Elak", "SVF", "Elak_SVF.bmx"), discard_unsaved=True)
+if good:
+    good, text, r = s.call("machine_replace", machine="Bass")
+    pats = {p["pattern"]: p for p in r.get("patterns", [])}
+    check(good and pats.get("00", {}).get("notes") == 5 and pats.get("01", {}).get("notes") == 5,
+          f"Jeskola Bass's tracker patterns (the pattern editor's columns) become Neo Poly's notes, a slide two: {pats}")
+    _, text, _ = s.call("automation_read", machine="Bass", pattern="00")
+    check("Glide: 0.238 s at 2" in text, "the slide's two ticks at 126 BPM become a 0.238 s glide where it starts")
+    _, text, _ = s.call("notes_read", machine="Bass", pattern="00")
+    check("5 notes" in text, "notes_read reads them on Neo Poly")
+else:
+    check(False, "Elak_SVF.bmx opens")
+
 # --- refusals ----------------------------------------------------------------------------------------
 song("Pedal Chorus", None)
 good, text, _ = s.call("machine_replace", machine="FX")
