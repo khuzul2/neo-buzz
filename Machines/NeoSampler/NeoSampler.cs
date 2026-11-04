@@ -25,7 +25,7 @@ namespace NeoBuzz.Sampler
             SamplerText.Install(Params.Table);
             Bank = new SampleBank();
             Engine = new SamplerEngine(Values, Bank);
-            Source = new WaveSource(() => Wavetable, Bank, z => Values[SamplerEngine.ZoneParam(z, SamplerEngine.FWave)]);
+            Source = new WaveSource(() => Wavetable, Bank, ZoneWave);
             SamplerText.SongWaveName = Source.NameOf;
             // The built-in samples are made once per process, in the background, not when a note first asks.
             BuiltIns.StartBuilding();
@@ -68,6 +68,39 @@ namespace NeoBuzz.Sampler
         }
 
         public void Dispose() => Source.Dispose();
+
+        IParameter[] zoneWaves;
+
+        /// <summary>
+        /// Zone z's wave as the host holds it: a value set (param_set, machine_replace, automation) reaches the engine at the next
+        /// tick, the host at once, so a render waiting on Busy reads in a wave a zone has just been given. Off the audio thread
+        /// (WaveSource's scans); the engine's value where there's no host.
+        /// </summary>
+        int ZoneWave(int z)
+        {
+            try
+            {
+                var ps = zoneWaves ??= HostZoneWaves();
+                if (ps != null) return ps[z].GetValue(0);
+            }
+            catch (Exception) { }
+            return Values[SamplerEngine.ZoneParam(z, SamplerEngine.FWave)];
+        }
+
+        IParameter[] HostZoneWaves()
+        {
+            var groups = host?.Machine?.ParameterGroups;
+            if (groups == null || groups.Count < 2) return null;
+            var globals = groups[1].Parameters;
+            var found = new IParameter[SamplerEngine.ZoneCount];
+            for (int z = 0; z < found.Length; z++)
+            {
+                int i = SamplerEngine.ZoneParam(z, SamplerEngine.FWave);
+                if (i >= globals.Count || globals[i].Name != $"Z{z + 1} wave") return null;
+                found[z] = globals[i];
+            }
+            return found;
+        }
 
         public IEnumerable<IMenuItem> Commands => new IMenuItem[]
         {

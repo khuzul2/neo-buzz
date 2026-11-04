@@ -38,6 +38,8 @@ A sampled instrument:
 4. Sustain: a sample with a loop of its own loops as the wavetable says (`Zn loop` Wave); otherwise set `Zn loop` Forward with `Zn loop start` and `Zn loop end` (in % of the wave) and a `Zn crossfade` of 10–100 ms.
 5. `wave_import(…, layer=true)` adds a file as another layer of a slot (with its own root): layers split a zone's keys by root, and layers of one root alternate (round robin: several snare hits in one slot).
 
+A song with Pedal M1 moves over with `machine_replace(machine="Keys")`: its oscillators' waves and key zones become zones 1–4 and 5–8 (the same waves, at the same pitch), its envelopes, low-pass and levels carry over, and its notes become Neo Sampler's. Its LFOs and portamento have no counterpart, and its resonance comes out a little different (the reply says how much).
+
 Check a kit or an instrument: render it (`render(probes=["Drums"])`) and `analyze` its loudness and spectrum; `wave_list()` shows each slot's root and loop.
 
 Kick, snare and hats from the built-ins:
