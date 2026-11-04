@@ -72,6 +72,8 @@ foreach ($r in $results) {
         if ($t -like '`[notice`]*') { $reports.Add("[$($r.testName)] " + $t.Substring(8).Trim()) }
     }
 }
+# In full in the log too: an annotation is cut at about 4 kB.
+foreach ($line in $reports) { Write-Host $line }
 if ($reports.Count -gt 0) { Send-Annotation 'notice' 'Test reports' @($reports | Select-Object -First 60) }
 
 if ($failed.Count -eq 0) { exit 0 }
