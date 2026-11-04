@@ -52,6 +52,7 @@ namespace ReBuzz.AgentEval
             new("render_bit_identical", "Renders bit-identical across runs", RenderBitIdentical),
             new("analyze_reference", "analyze meets reference values", AnalyzeReference),
             new("undo_exact", "Undo restores the song exactly", UndoExact),
+            new("machine_replace", "machine_replace moves a machine onto its successor; undo restores the song", MachineReplace),
         };
 
         // ---- protocol ---------------------------------------------------------------------------
@@ -493,6 +494,42 @@ namespace ReBuzz.AgentEval
         {
             string s = n?.ToJsonString() ?? "(absent)";
             return s.Length > 80 ? s[..80] + "…" : s;
+        }
+
+        /// <summary>
+        /// U5 (docs/specs/mcp-server.md §12.5): a classic machine this ReBuzz has (the Pedal ones on Linux and in a full
+        /// Windows build, the natives in any Windows build) moves onto its Neo successor: a dry run changes nothing; the
+        /// replacement takes its place, renders before and after and compares them; one undo brings the song back exactly.
+        /// Whether the comparison is within the pair's tolerance is noted (the tests assert it, with each pair's material).
+        /// </summary>
+        static void MachineReplace(Studio s, CheckRun r, Env env)
+        {
+            var c = s.C;
+            var withSuccessor = J.Objects(c.Ok("gear_list", new JsonObject { ["limit"] = 1000 })["gear"]).Where(g => g["successor"] != null).Select(g => J.Str(g["name"])).ToHashSet();
+            var pairs = new[] { ("Pedal EQ", "LM Gain", "+6 dB"), ("Pedal Gain", "Gain", "50%"), ("Jeskola Reverb", "Rev Time", "2 s"), ("Jeskola Gain", "Gain", "-6 dB") };
+            var (gear, param, value) = pairs.FirstOrDefault(p => withSuccessor.Contains(p.Item1));
+            if (gear == null) { r.Note("no machine with a successor mapping is installed here: nothing to replace"); return; }
+            s.New(120);
+            Recipes.Add(s, Recipes.Synth, "Synth", -6);
+            Recipes.Set(s, "Synth", ("Drift", "0%"));
+            Recipes.Add(s, gear, "FX", 0, insertAfter: "Synth");
+            c.Ok("param_set", new JsonObject { ["machine"] = "FX", ["changes"] = J.Changes((param, value)) });
+            Recipes.Pattern(s, "Synth", "P", 8, new[] { ("C3", 0.0), ("G3", 2.0), ("E3", 4.0), ("A2", 6.0) }.SelectMany(n => new[] { J.Note(n.Item1, n.Item2, 1.5), J.Note("C4", n.Item2, 1.5, 80) }));
+            Recipes.Place(s, "Synth", "P", 0, 8, 2);
+            var s0 = State(c);
+            var dry = c.Ok("machine_replace", new JsonObject { ["machine"] = "FX", ["dry_run"] = true });
+            r.Expect(dry["dry_run"]?.GetValue<bool>() == true && J.Objects(dry["mapping"]).Any(), "a dry run reports the mapping");
+            var d = Diff(Content(s0), Content(State(c)));
+            r.Expect(d.Count == 0, "a dry run changed the song: " + string.Join("; ", d));
+            var res = c.Ok("machine_replace", new JsonObject { ["machine"] = "FX" });
+            string successor = J.Str(res["to"]);
+            r.Expect(J.Objects(c.Ok("machine_list")["machines"]).Any(m => J.Str(m["name"]) == "FX" && J.Str(m["gear"]) == successor), $"FX isn't {successor} after the replacement");
+            var cmp = res["comparison"];
+            r.Expect(cmp?["song"] != null, "no comparison of before and after");
+            r.Note($"{gear} → {successor}: within tolerance {cmp?["within_tolerance"]?.ToJsonString() ?? "-"}, loudness {(cmp?["machine"] ?? cmp?["song"])?["loudness_db"]?["difference"]?.ToJsonString() ?? "-"} dB");
+            c.Ok("undo");
+            var back = Diff(Content(s0), Content(State(c)));
+            r.Expect(back.Count == 0, "after undo the song differs from before: " + string.Join("; ", back));
         }
 
         static void UndoExact(Studio s, CheckRun r, Env env)

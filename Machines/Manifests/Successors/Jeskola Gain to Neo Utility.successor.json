@@ -1,0 +1,15 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Jeskola Gain",
+  "to": "Neo Utility",
+  "summary": "Gain in dB carries over (−inf … +12 dB), Bypass becomes the machine's bypass.",
+  "rules": [
+    { "kind": "unit", "from": "Gain", "to": "Gain" },
+    { "kind": "bypass", "from": "Bypass", "why": "Neo Utility has no bypass parameter: the machine's bypass takes it." }
+  ],
+  "unmapped": [
+    { "param": "ATrackParam", "why": "a track parameter that does nothing (its name and texts say so)." }
+  ],
+  "tolerance": { "loudness_db": 0.2, "band_db": 0.3, "from_hz": 20, "to_hz": 20000, "measured": "" },
+  "evidence": [ "Machines/Manifests/Effects/Jeskola Gain.machine.json (draft: Gain's own texts in dB, −inf to +12 dB)" ]
+}

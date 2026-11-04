@@ -1,0 +1,46 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Jeskola Reverb",
+  "to": "Neo Verb",
+  "summary": "Dry Out, Rev Out and ER Out become Neo Verb's Mix, Late and Early, with the output connections making up the level the crossfade takes; Rev Time, Pre-Delay and High Cutoff carry over in seconds and Hz.",
+  "input_gain_db": 6.02,
+  "set": {
+    "Mode": "Hall",
+    "Low decay": "1",
+    "Low cut": "10 Hz",
+    "High cut": "22 kHz",
+    "Shimmer": "0%",
+    "Freeze": "Off"
+  },
+  "rules": [
+    {
+      "kind": "levels_to_mix",
+      "dry": "Dry Out",
+      "wet": [
+        { "from": "Rev Out", "to": "Late", "gain_db": 0 },
+        { "from": "ER Out", "to": "Early", "gain_db": 0 }
+      ],
+      "mix": "Mix",
+      "why": "Jeskola Reverb sets dry and wet levels apart; Neo Verb crossfades. The wet gains are the measured level difference between the two machines' tails and early reflections."
+    },
+    { "kind": "unit", "from": "Rev Time", "to": "Decay", "why": "Rev Time reads in seconds; the profile's tail (0.7 s to −60 dB at 1.0 s with the wet 14.5 dB down) fits a T60, which is what Neo Verb's Decay is." },
+    { "kind": "unit", "from": "Pre-Delay", "to": "Pre-delay" },
+    { "kind": "unit", "from": "High Cutoff", "to": "High damping", "why": "the tail's high cut; Neo Verb's damping corner goes from 1 kHz up." }
+  ],
+  "remarks": [
+    "Jeskola Reverb is mono (ReBuzz gives a mono native effect left + right summed: the input connections take +6 dB to match); Neo Verb is stereo. Width differs by design; set Width to 0% for a mono tail.",
+    "The algorithms differ (a 2000s Buzz reverb against a 16-line feedback delay network): the tail's colour and density are not the same, its level and length are."
+  ],
+  "tolerance": {
+    "loudness_db": 1.5,
+    "band_db": 4,
+    "from_hz": 50,
+    "to_hz": 12000,
+    "measured": ""
+  },
+  "evidence": [
+    "Machines/Manifests/Effects/Jeskola Reverb.machine.json (curated: levels 20·log10(raw/4096) dB, Rev Time 0.1–6.4 s, Pre-Delay 0–100 ms, High Cutoff 100–16384 Hz)",
+    "Machines/Manifests/machine-profile.json: Jeskola Reverb's gain +6.2 dB at the defaults, output correlation 1.0, tail 0.7 s",
+    "Machines/NeoVerb/Engine/VerbEngine.cs: out = in + (wet − in)·Mix, wet = Early·ER·0.5 + Late·tail"
+  ]
+}

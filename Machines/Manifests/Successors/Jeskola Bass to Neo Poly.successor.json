@@ -1,0 +1,109 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Jeskola Bass",
+  "to": "Neo Poly",
+  "summary": "Jeskola Bass's line plays on Neo Poly as a mono legato bass: notes as notes (in its pitch convention), slides as glides, volume as velocity; cutoff, resonance and waveform carry over.",
+  "output_gain_db": 0,
+  "set": {
+    "Voice mode": "Legato",
+    "Glide mode": "Legato",
+    "Unison": "1",
+    "Drift": "0%",
+    "Vel → amp": "100%",
+    "Volume": "+6 dB",
+    "O1 level": "100%",
+    "O2 level": "0%",
+    "O3 level": "0%",
+    "Noise": "0%",
+    "Ring 1×2": "0%",
+    "F1 type": "Ladder 24",
+    "F1 drive": "0 dB",
+    "F1 key track": "0%",
+    "F1 velocity": "0%",
+    "F2 type": "Off",
+    "Flt attack": "0.5 ms",
+    "Flt sustain": "0%",
+    "Flt release": "10 ms",
+    "Amp attack": "0.5 ms",
+    "Amp decay": "20 s",
+    "Amp sustain": "100%",
+    "Amp release": "5 ms",
+    "F1 env": "0%"
+  },
+  "describe": {
+    "Volume": {
+      "kind": "linear",
+      "a": 0,
+      "b": 198.4375,
+      "unit": "%"
+    }
+  },
+  "rules": [
+    {
+      "kind": "range",
+      "from": "Cutoff",
+      "to": "F1 cutoff",
+      "from_range": [
+        0,
+        128
+      ],
+      "to_range": [
+        80,
+        16000
+      ],
+      "curve": "log",
+      "why": "assumed: 0–0x80 laid on 80 Hz – 16 kHz"
+    },
+    {
+      "kind": "range",
+      "from": "Resonance",
+      "to": "F1 reso",
+      "from_range": [
+        0,
+        128
+      ],
+      "to_range": [
+        0,
+        1
+      ]
+    },
+    {
+      "kind": "choice",
+      "from": "Waveform",
+      "to": "O1 shape",
+      "map": {
+        "1": "2",
+        "2": "3",
+        "3": "1"
+      },
+      "why": "1 sawtooth, 2 pulse, 3 triangle (its description)"
+    }
+  ],
+  "notes": {
+    "note": "Note",
+    "slide": "Slide note",
+    "slide_length": "Slide lenght",
+    "volume": "Volume",
+    "volume_at_full": 1.984375,
+    "volume_holds": true,
+    "glide": "Glide",
+    "why": "Each row's note lasts to the track's next; Slide note glides to it over Slide lenght ticks; Volume (0x80 = 100 %, it holds) is the velocity, 0x80 → 64, with Vel → amp at 100 % and Volume +6 dB making up for it."
+  },
+  "remarks": [
+    "No new machine (machine-safety.md §4, H4): Neo Poly in Legato with glide plays the bass line; its ladder filter and envelopes take the cutoff, resonance and envelope settings.",
+    "The cutoff and envelope scales are assumed (closed source: the texts are bare 0–100 % or 0–128): a cutoff of 0 % is laid on 80 Hz and 100 % on 16 kHz, logarithmically; the timbres differ, the notes, their lengths, slides and loudness carry over.",
+    "Jeskola Bass has no filter envelope: Neo Poly's F1 env is set to 0 %."
+  ],
+  "tolerance": {
+    "loudness_db": 3,
+    "band_db": null,
+    "from_hz": 50,
+    "to_hz": 12000,
+    "measured": "",
+    "why_not": "Not measured per band: the filters and oscillators are different models and the closed machines' cutoff and envelope scales are unmeasured, so the timbre differs; loudness is matched (the output gain) and checked."
+  },
+  "evidence": [
+    "Machines/Manifests/Generators/Jeskola Bass.machine.json (draft: descriptions give 0–0x80 scales, Waveform 1–3, Volume 0x80 = 100 %, slide length in ticks)",
+    "ExternalMachines/source/buzztrax-buzzmachines/Elak/SVF/Elak_SVF.bmx: its parameter table and a pattern with notes and slides"
+  ]
+}

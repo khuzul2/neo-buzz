@@ -15,7 +15,7 @@ namespace ReBuzzTests
     /// <c>ReBuzz.exe --agent</c>, with the package's own gear: it answers on stdio, makes a sound
     /// with a Neo synth through the tools, and exits when stdin closes.
     /// </summary>
-    public class AgentHeadlessTests
+    public partial class AgentHeadlessTests
     {
         sealed class Client : IDisposable
         {

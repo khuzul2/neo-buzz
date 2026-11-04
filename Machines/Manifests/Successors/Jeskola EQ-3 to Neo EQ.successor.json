@@ -1,0 +1,46 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Jeskola EQ-3",
+  "to": "Neo EQ",
+  "summary": "The three bands become Mid Gain on Neo EQ's output and a low and a high shelf at the two crossovers, each with its band's gain relative to the mid.",
+  "input_gain_db": 6.02,
+  "set": {
+    "B1 on": "Off",
+    "B2 on": "On",
+    "B2 type": "Low shelf",
+    "B2 Q": "0.7071",
+    "B3 on": "Off",
+    "B4 on": "Off",
+    "B5 on": "Off",
+    "B6 on": "Off",
+    "B7 on": "On",
+    "B7 type": "High shelf",
+    "B7 Q": "0.7071",
+    "B8 on": "Off"
+  },
+  "rules": [
+    { "kind": "unit", "from": "Mid Gain", "to": "Output" },
+    { "kind": "sum", "terms": [ { "param": "Low Gain", "weight": 1 }, { "param": "Mid Gain", "weight": -1 } ], "to": "B2 gain" },
+    { "kind": "sum", "terms": [ { "param": "High Gain", "weight": 1 }, { "param": "Mid Gain", "weight": -1 } ], "to": "B7 gain" },
+    { "kind": "unit", "from": "Low Cutoff", "to": "B2 freq" },
+    { "kind": "unit", "from": "High Cutoff", "to": "B7 freq" }
+  ],
+  "unmapped": [
+    { "param": "Dry Thru", "why": "closed source, and its texts say only 0 and 1: what it does is unknown." }
+  ],
+  "remarks": [
+    "Jeskola EQ-3 splits the bands with crossovers of unknown slope (closed source); Neo EQ's shelves are second order, so the bands' edges are gentler or steeper than they were, while their gains are the same.",
+    "Mono in and out: ReBuzz gives a mono native effect left + right summed, so the input connections take +6 dB; Neo EQ keeps the stereo."
+  ],
+  "tolerance": {
+    "loudness_db": 1,
+    "band_db": 4,
+    "from_hz": 50,
+    "to_hz": 12000,
+    "measured": ""
+  },
+  "evidence": [
+    "Machines/Manifests/Effects/Jeskola EQ-3.machine.json (curated: gains ±24 dB, crossovers in Hz)",
+    "Machines/Manifests/machine-profile.json: +6.0 dB at the defaults (the summed input)"
+  ]
+}
