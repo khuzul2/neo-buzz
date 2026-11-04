@@ -10,6 +10,7 @@ You can't hear, so you measure: probes on every part, the master analyzed after 
 - **Probes** capture parts during a render without changing the song: `render(from=…, to=…, probes=["Kick", "Bass", "Pad"])`. Each probe is a machine's output after its first connection's gain, aligned with the master, with its own id ("r4:Bass") for `analyze`. Probe the last machine of a chain (the "Bass Duck" compressor, not "Bass") to measure the processed part.
 - `analyze_mix(section="Drop")` probes every track feeding Master in one call and reports per-track loudness, peaks, crest and bands, the masking pairs, the headroom and the biggest problems, worst first. Run it before and after each stage.
 - `machine_list` shows every connection with its gain and pan; read it before changing gains, since `connection_set` takes absolute values.
+- An old song's classic machines (Jeskola Reverb, EQ-3, Distortion; Pedal EQ, Comp, Gain) have Neo successors that are measurable and exact in units: `machine_replace(machine=…)` swaps one in, its settings and automation converted, and says how close before and after are. Do it before mixing, so the moves you make are on the successor.
 
 ## Gain staging
 

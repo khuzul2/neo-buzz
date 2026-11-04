@@ -176,9 +176,9 @@ The final output to the audio device gets a **safety limiter**:
 |---|---|---|
 | Jeskola Flanger (and Chorus, FSM Chorus2, Pedal Chorus) | **Neo Ensemble** (chorus, flanger, phaser) | A new Neo machine, first in the batch. Feedback bounded (±99 %) with a saturating loop, so it can't run away |
 | Joachims Hyperion | **Neo EQ, graphic mode** | 31 bands at the ISO centres, constant-Q, in Neo EQ (H2 A), and a Hyperion mapping for `machine_replace` |
-| Jeskola Bass (1) | **Neo Poly**, mono/slide preset | No new machine; a mapping (cutoff, resonance, waveform, volume, slide), as for Bass 2/3 |
+| Jeskola Bass (1) | **Neo Poly**, mono/slide preset | No new machine; a mapping (cutoff, resonance, waveform, volume, slide), as for Bass 2/3. **Built** (U5): `Machines/Manifests/Successors/Jeskola Bass to Neo Poly.successor.json`, and Bass 2 and 3 beside it |
 
-`machine_replace` (U5) moves a song over: parameters by role and unit, patterns' columns mapped, a render before and after compared. The original stays installed so old songs play. On the Mac every closed native is a silent placeholder, so a successor and `machine_replace` are how those songs play there.
+`machine_replace` (U5, built: [mcp-server.md](mcp-server.md) §12.10) moves a song over: parameters by unit through a mapping file per pair, patterns' columns and notes mapped, the arrangement and the Session View following, a render before and after compared against the pair's stated tolerance, one undo step; in the machine menu as "Replace with <successor>..." in the studio and ReBuzz.exe. The original stays installed so old songs play. On the Mac every closed native is a silent placeholder, so a successor and `machine_replace` are how those songs play there: its comparison then says the old machine was silent (there is nothing to measure against), and the conversion itself is the same. Neo Ensemble and Neo EQ's graphic mode add their mappings (Jeskola Flanger and Chorus, Pedal Chorus; Joachims Hyperion) as files beside these when they land.
 
 ## 5. Tests
 

@@ -51,6 +51,8 @@ namespace ReBuzz.Agent.Model
         public string From { get; init; }
         public string To { get; init; }
         public double Scale { get; init; } = 1;
+        /// <summary>Unit: another old parameter the value is multiplied by (Pedal Plate's decay time scales with its Size).</summary>
+        public string Times { get; init; }
         public double Offset { get; init; }
         /// <summary>Clamp of the result, in the new parameter's base unit (Hz, s, dB, fractions for %).</summary>
         public double? Min { get; init; }
@@ -86,6 +88,7 @@ namespace ReBuzz.Agent.Model
             SuccessorRuleKind.LevelsToMix => new[] { Dry }.Where(x => x != null).Concat(Wet.Select(w => w.From)),
             SuccessorRuleKind.Clip => new[] { Threshold, Clamp },
             SuccessorRuleKind.Db when ZeroWhen != null => new[] { From, ZeroWhen },
+            SuccessorRuleKind.Unit when Times != null => new[] { From, Times },
             _ => new[] { From },
         };
 
@@ -272,6 +275,7 @@ namespace ReBuzz.Agent.Model
                 From = (string)r["from"],
                 To = (string)r["to"],
                 Scale = (double?)r["scale"] ?? 1,
+                Times = (string)r["times"],
                 Offset = (double?)r["offset"] ?? 0,
                 Min = (double?)r["min"],
                 Max = (double?)r["max"],

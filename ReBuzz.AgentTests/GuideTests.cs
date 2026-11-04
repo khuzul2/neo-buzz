@@ -51,6 +51,7 @@ namespace ReBuzz.AgentTests
             ["machine_list"] = new string[0],
             ["machine_add"] = new[] { "gear", "name", "connect_to", "insert_after", "gain_db", "tracks" },
             ["machine_remove"] = new[] { "machines", "keep_chain" },
+            ["machine_replace"] = new[] { "machine", "with", "name", "keep_old", "dry_run", "compare", "from", "to", "section" },
             ["machine_set"] = new[] { "machine", "rename", "mute", "reset", "solo", "bypass", "tracks" },
             ["connect"] = new[] { "from", "to", "gain_db", "pan", "input" },
             ["disconnect"] = new[] { "from", "to" },

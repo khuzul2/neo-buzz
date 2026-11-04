@@ -234,7 +234,7 @@ Phases (§9) are marked A1 … A7.
 | `machine_set` | A1 | Rename, mute, solo, bypass, track count. `reset: true` is Reset and unmute for a diverged machine (machine-safety.md §3.2); `mute: false` does the same |
 | `connect`, `disconnect` | A1 | Audio connections with gain dB and pan; `input: "sidechain"` for machines with a second input (Neo Comp) |
 | `connection_set` | A1 | Gain and pan of existing connections, in a batch |
-| `machine_replace` | A4 | Swaps a machine for another (a classic for its Neo successor, §12.5), keeping connections and patterns. Maps parameters through manifest roles and units, then renders before and after and reports the difference |
+| `machine_replace` | U5 | Moves a classic machine onto its Neo successor (§12.5; built: §12.10): the successor in its place (connections with their gain and pan, position, name, mute and bypass), every parameter converted through real units by the pair's successor mapping, its patterns' columns and notes moved (engine automation and the pattern editor's tracker columns, ramps kept; tracker notes as notes, slides as glides), the arrangement and the Session View following; the old machine removed or (`keep_old`) kept muted. Renders the song (the first 60 s, or `from`/`to`/`section`) before and after and compares the machine's output, read against its input, with the pair's stated tolerance (loudness, third octaves), saying why not when it misses. `dry_run` reports the mapping and the expected differences. One undo step. `gear_list` (`successor`) and `machine_describe` (`successors`) name a machine's successors |
 
 ### 5.4 Sound design
 
@@ -441,6 +441,7 @@ Scores per task and tool-call counts (fewer wrong calls means clearer tools) are
 | `render_bit_identical` | A song (LFOs, drift, reverb, saturation, compression) renders to the same bits, probes included, each time it is opened afresh, and in a second ReBuzz process |
 | `analyze_reference` | EBU Tech 3341's 1 kHz sine at −23 dBFS reads −23 LUFS and −23 dBTP, crest 3.01 dB. Anti-phase noise reads correlation −1. 120 BPM clicks read 120 BPM. A sawtooth on A3 reads A3 at 0 cents. A C major scale reads C major. On a render, the tool's loudness, true peak, tilt and correlation equal our meters' |
 | `undo_exact` | 24 changing calls of every kind (song, machines, routing, parameters, presets, patterns, notes, transforms, automation, markers, the session grid, waves, snapshots), undone one by one, give back the full tool-read state exactly; redone, the state after them. A call that fails changes nothing and leaves undo where it was |
+| `machine_replace` | U5 (§12.10): a machine this ReBuzz has with a successor mapping (Pedal EQ or Gain here and in a full Windows build, else Jeskola Reverb or Gain) moves onto its successor: a dry run changes nothing, the replacement takes its place and compares before and after, one undo gives back the full tool-read state exactly. Whether the comparison is within the pair's tolerance is noted; the tests assert it |
 
 **Agent tasks.** Each task (`Tasks/*.cs`) has four parts:
 
@@ -610,7 +611,7 @@ Where a machine's design limits its quality (2000s-era reverbs and delays, unlab
 2. it converts values through units, not raw numbers;
 3. it renders before and after with the analysis library, and reports the difference.
 
-The tool works for agents and, from the machine menu, for people.
+The tool works for agents and, from the machine menu, for people. Built in U5 (§12.10), with the mappings as data (one file per pair) rather than from roles alone: a role says what a parameter is for, not how two machines' levels, curves and topologies line up.
 
 | Classic machines | Successor | Status |
 |---|---|---|
@@ -656,7 +657,7 @@ Unhealthy machines (decided 2026-11-03) are in [machine-safety.md](machine-safet
 | **U2 Profile in depth** (tier 1, second half) | A test-signal source for effects (sweep, impulse, level steps through a general tool), per-parameter sweeps (what moving each one changes) as suggested roles, velocity response and envelope length, denormal and extreme-value checks per parameter. `gear_list` leaves unhealthy machines out unless asked. **Built first** ([machine-safety.md](machine-safety.md) §3.1, §3.4): the level test with each parameter alone at each end, diverging, hot and needs-a-window instead of one "unhealthy", `safe_range` in the drafts and `param_set`'s refusal (§12.8, last part) | Suggested roles for the filter, time and mix parameters of the 25 most used machines; every unhealthy machine has a reason in the report | M |
 | **U3 Curate** (tier 1 done) | Curated manifests for the top 25 (summary, plain names, roles, safe ranges, quirks); manuals (`rebuzz://machines/…`) for every machine with a manifest; `GuideTests` check curated names and values. **Built** (§12.9) | 25 curated, the rest drafts: every machine in the package has a manifest | M |
 | **U4 A better face** (tier 2) | The manifest editor on the editor kit (groups, knobs in units, choices, ADSR and response plots), a per-machine setting; factory presets for the top machines | The editor opens for every curated machine in the studio and ReBuzz.exe; its presets load through `preset_load` | L |
-| **U5 `machine_replace`** (tier 4) | Role mapping, unit conversion, render before and after with `compare`; one undo step; the machine menu's Replace | Jeskola Reverb → Neo Verb, Pedal EQ → Neo EQ, Jeskola Distortion → Neo Drive and Pedal Gain → Neo Utility convert within a stated tolerance, or say why not | M |
+| **U5 `machine_replace`** (tier 4) | Role mapping, unit conversion, render before and after with `compare`; one undo step; the machine menu's Replace. **Built** (§12.10) | Jeskola Reverb → Neo Verb, Pedal EQ → Neo EQ, Jeskola Distortion → Neo Drive and Pedal Gain → Neo Utility convert within a stated tolerance, or say why not | M |
 | **U6 Source fixes** (tier 3, C#) | Pedal and ReBuzz machines: manifests from code, MIDI input for the Pedal synths, denormal guards, smoothing, silence reporting; the Neo measurement suite on them | Their health report is clean; their manifests no longer drafts; old songs render as before | L |
 | **U7 Natives with sources** (tier 3) | The Buzztrax MSVC header fix, x64 builds, fixes and generated manifests | The Buzztrax machines build in the package; §12.6's "Done when" holds | L |
 
@@ -801,6 +802,59 @@ For example, Pedal Juno106's `VCF Freq`: the draft had raw 0–127 with no unit 
 - Columns the tools can't write: Rout 909's triggers, KickXP's Trigger, the Aggressor's slide and accent, Bass 3's volume, length and slide (non-state track parameters).
 - Jeskola Filter's Resonance is hot near its top (+53.8 dBFS): a safe range needs the bisection U2 does only for diverging and never-decaying ends.
 - Curated "how it sounds" pages for these machines, and factory presets (U4).
+
+### 12.10 U5 as built
+
+**Mappings are data.** One file per pair, `Machines/Manifests/Successors/<old> to <new>.successor.json` (format `rebuzz-successor/1`), embedded in `ReBuzz.Agent` and read by `SuccessorLibrary`; a new successor adds its file (Neo Ensemble's and Neo EQ's graphic mode will). Roles alone weren't enough: the Neo manifests have none, and a role says what a parameter is for, not how two machines' levels, curves and topologies line up (Jeskola Reverb sets dry and wet apart where Neo Verb crossfades; Jeskola Distortion's threshold is a drive). A mapping has:
+
+| Field | What |
+|---|---|
+| `set` | The successor's settings first, as `param_set` takes them (`"Mode": "Plate"`) |
+| `rules` | Each old parameter's way to the new one, in real units. `unit` (the same quantity, times `scale` and another parameter's value with `times`, plus `offset`), `db` (a fraction or linear gain to dB, `zero_when` a switch is on), `inverse_db` (a threshold to the gain that brings it to full scale), `choice` (by name, or by raw value), `range` (a bare scale laid on a unit range, linear or log), `sum` (EQ-3's bands relative to its mid), `levels_to_mix` (separate dry and wet levels to a crossfade, the output connections making up the level it takes away; pattern events keep that make-up), `clip` (threshold and clamp to drive into a hard clip and an output level), `bypass` (a bypass parameter to the machine's bypass) |
+| `describe` | How old parameters read where their manifest doesn't say: non-state columns (Jeskola Bass 3's Volume), or a measured table (Pedal Plate's Decay in seconds) |
+| `input_gain_db`, `output_gain_db` | Added to the successor's connections: +6.02 dB in for a mono native effect, which ReBuzz feeds left + right summed |
+| `notes` | For generators: the note, slide, slide length, note length and volume columns; tracker notes become notes, slides glides (the new machine's glide time set where each starts), volume velocity |
+| `unmapped` | Old parameters with no counterpart, each with why |
+| `tolerance` | Loudness (dB), third octaves (dB, level-matched, over a frequency range, ignoring bands 40 dB under the loudest), what was measured, and why not where it misses |
+| `remarks`, `evidence` | What changes by design ("Neo Verb is stereo"), and what the mapping rests on |
+
+`SuccessorConverter` takes each old raw value through its manifest (or `describe`) to a value, the rule to the new value, and the new manifest to a raw value; a value that lands more than 0.3 dB, 3 % in frequency or time, or 1 % of a level away gets a note ("High damping: 900 Hz is out of its reach; set to 1.00 kHz").
+
+**What moves** (`ReBuzz/Agent/MachineReplace.cs`, one undo step):
+
+- the successor in the old machine's place: its position, its name (or a given one), mute and bypass, the same connections in and out with their gain, pan and channels (plus the mapping's gains, at most +12 dB);
+- its settings, converted;
+- its patterns: each becomes the successor's pattern of the same name and length; the old pattern's parameter columns (the engine's automation columns, and the pattern editor's tracker columns, where the k-th column of a track parameter is track k) become engine-played automation columns of the successor's parameters, event by event with the other inputs as they stand then, ramps kept; notes (tracker notes through `notes`, MIDI notes as they are) go in through `MachineNotes`, in the successor's pitch convention;
+- the arrangement: each old sequence gets one of the successor's beside it with the same events (patterns by name, parts, gains, clip ids); the Session View's tracks take the old ones' slots and colours, and the successor's clips the old clip settings, return, cue and crossfader side (`SessionLayout.Adopt`);
+- the old machine is deleted, or kept, muted, with `keep_old`. A failed call takes back what it did.
+
+ReBuzz's own Replace (the machine menu's, `ReplaceMachineAction`) isn't used: it makes the sequences again empty (its event copy is commented out) and moves no patterns.
+
+**The comparison.** The song from its start (60 s at most; 30 s from the menu), or `from`/`to`/`section`, renders before and after. The machine's output (its first connection) is probed and its inputs tapped, and `AudioReport.Tolerance` reads each side against its own input: loudness and each third octave of output over input, after against before. Without that, a source that plays differently each render (Neo Poly's noise, free-running oscillators) moved the low third octaves by ±1.5 dB between two renders of an exact conversion (Pedal Gain at 50 %). The master is compared too (`song`), with `compare`'s reads as `differences`. The verdict is `within_tolerance`, and `why_not` (the mapping's, or the measured reads) when it misses. A render plays the patterns, which move the old machine's parameters: its state is put back after the first render, so undo gives back the song as it was.
+
+**Pairs.** Measured on Neo Poly playing chords (its saw) or noise into the effect, each side against its input:
+
+| Pair | Tolerance (loudness, bands) | Measured | Where |
+|---|---|---|---|
+| Pedal EQ → Neo EQ | ±0.2 dB, ±0.5 dB, 20 Hz – 20 kHz | 0.0 dB; every band 0.0 dB (both are the RBJ cookbook's biquads: Pedal EQ's shelves at slope 1 are Q 0.7071) | Linux |
+| Pedal Gain → Neo Utility | ±0.1 dB, ±0.2 dB | ±0.02 dB; bands 0.0 dB | Linux |
+| Pedal Comp → Neo Comp | ±1 dB, ±2 dB | −0.7 … +0.4 dB; bands within 0.7 dB (with Neo Comp's Auto release on: Pedal Comp's release is program-dependent; off, Neo Comp came out 1.3 dB quieter) | Linux |
+| Pedal Plate → Neo Verb (Plate) | ±1.5 dB, ±6 dB | −0.8 … +1.5 dB; bands within 2.6 dB with the dry sound in, 6 dB wet only (the lowest band; a saw's harmonics, where the two plates' resonances fall differently) | Linux |
+| Jeskola Reverb → Neo Verb | ±1.5 dB, ±4 dB | WINDOWS_REVERB | Windows |
+| Jeskola Distortion → Neo Drive | ±1.5 dB, ±6 dB | WINDOWS_DIST | Windows |
+| Jeskola EQ-3 → Neo EQ | ±1 dB, ±4 dB | WINDOWS_EQ3 | Windows |
+| Jeskola Gain → Neo Utility | ±0.2 dB, ±0.3 dB | WINDOWS_GAIN | Windows |
+| Jeskola Bass 1, 2, 3 → Neo Poly | ±3 dB, bands not checked | WINDOWS_BASS | Windows |
+
+The tests: `ReBuzz.AgentTests/SuccessorTests.cs` (every mapping parses and fits both manifests, every old parameter mapped or unmapped with a reason, the defaults convert with every value reachable; percent to dB, tables to Hz, levels to a crossfade with the dry path exact, threshold and clamp; pattern events and ramps, the make-up kept for events; tracker notes, slides, volume as velocity; the tolerance check), `tools/headless-replace.py` in Fork CI (Pedal EQ, Gain and Comp within tolerance; successors named; a dry run changes nothing; the settings, connections, automation, arrangement and Session View track carry over; one undo restores the whole tool-read state, redo replaces again; `keep_old`; refusals), `ReBuzzTests/AgentReplaceTests.cs` in the package job (the native pairs on representative material, asserting the exit-check pairs within tolerance, undo exact; the Basses with their notes, pitch and level; the repo's songs that use these machines, their arrangement kept), `ReBuzz.Studio.Tests/ReplaceMenuTests.cs` (the menu, one undo step) and the evaluation's `machine_replace` check.
+
+**The UI.** The machine menu offers "Replace with <successor>..." on a machine with a mapping, in the studio (`MachineMenus`) and in ReBuzz.exe (`BuzzGUI.Common.MachineSuccessors`, set by ReBuzz at start, read by `BuzzGUI.MachineView`). It runs `MachineReplace.FromMenu`: the same code, one undo step, the song's first 30 s compared, the summary in a message (and ReBuzz.exe's status line).
+
+**Left.**
+
+- The successor's patterns hold the converted data in engine-played columns, which play, render and read back through the tools (`automation_read`, `notes_read`) and show in the Session View's lanes; the pattern editor's tracker grid of the successor starts empty (the editor's own data format has no host-side writer).
+- Jeskola Bass 1–3: their cutoff and envelope scales and slide behaviour are closed and unmeasured (assumed, stated per rule); only loudness is checked.
+- No mapping yet where the successor isn't built or the evidence is thin: Jeskola Stereo Reverb and Raverb (drafts whose level tables are inexact), the delays (Neo Delay), Jeskola Filter and Pedal Filter (Neo Filter), the choruses and flangers (Neo Ensemble, in parallel), Joachims Hyperion (Neo EQ's graphic mode), Oomek Aggressor 303 and Pedal SH101 (Neo Poly, unmeasured).
 
 ## 13. Inventory notes (for implementers)
 

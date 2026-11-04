@@ -314,6 +314,42 @@ namespace ReBuzz.Agent
             return sum;
         }
 
+        /// <summary>
+        /// The machine menu's "Replace with …" (the studio and ReBuzz.exe): the same as the tool, one undo step (a failure
+        /// takes back what it did), the song's first 30 s compared; the result in a message (a dialog), and returned.
+        /// UI thread (the engine's).
+        /// </summary>
+        public static string FromMenu(ReBuzzCore core, MachineCore machine, string gear)
+        {
+            var stack = core.SongCore.ActionStack;
+            int steps = 0;
+            void Count(IEnumerable<IAction> actions, bool done) { if (done) steps++; }
+            stack.BeginActionGroup();
+            stack.PostDoOrUndoGroup += Count;
+            JsonObject r = null;
+            string error = null;
+            try
+            {
+                r = Run(core, core.dispatcher, machine, gear, new ReplaceOptions { MaxSeconds = 30 });
+            }
+            catch (Exception e) { error = e is ToolError ? e.Message : $"{e.GetType().Name}: {e.Message}"; }
+            finally
+            {
+                stack.PostDoOrUndoGroup -= Count;
+                stack.EndActionGroup();
+            }
+            if (error != null)
+            {
+                if (steps > 0) { try { stack.Undo(); } catch (Exception) { } }
+                core.UserMessages?.Info($"{machine.Name} wasn't replaced: {error}", "Replace");
+                return null;
+            }
+            core.SetModifiedFlag();
+            string text = ReplaceTools.Summary(r);
+            core.UserMessages?.Info(text, $"Replaced with {gear}");
+            return text;
+        }
+
         static JsonArray Strings(IEnumerable<string> list) => new(list.Distinct().Select(x => (JsonNode)x).ToArray());
 
         static JsonObject Expected(SuccessorMap map)

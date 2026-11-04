@@ -415,7 +415,7 @@ namespace ReBuzz.Agent.Model
             switch (rule.Kind)
             {
                 case SuccessorRuleKind.Unit:
-                    Put(rule.To, get(rule.From) * rule.Scale + rule.Offset);
+                    Put(rule.To, get(rule.From) * rule.Scale * (rule.Times != null ? get(rule.Times) : 1) + rule.Offset);
                     break;
                 case SuccessorRuleKind.Db:
                 {
