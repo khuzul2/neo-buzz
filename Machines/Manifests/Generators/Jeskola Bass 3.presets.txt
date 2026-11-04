@@ -5,19 +5,19 @@
 # Each track is its own voice with its own filter (these set the first track's); closed source: bare 0–100 % scales.
 machine "Jeskola Bass 3"
 
-preset "Bass — Round Sine"
-comment "A plain sine bass, filter open, no envelope"
-Oscillator wave = sine
-Filter cutoff = 100%
+preset "Bass — Round Saw"
+comment "A sawtooth with the filter nearly closed and no envelope: a round, soft bass"
+Oscillator wave = sawtooth
+Filter cutoff = 15%
 Filter resonance = 0%
 Filter envelope amount = 0%
 
 preset "Bass — Saw Pluck"
 comment "A saw through a closing filter: a plucked bass"
 Oscillator wave = sawtooth
-Filter cutoff = 40%
-Filter resonance = 30%
-Filter envelope amount = 60%
+Filter cutoff = 20%
+Filter resonance = 0%
+Filter envelope amount = 30%
 Filter envelope decay = 30%
 
 preset "Bass — Acid 303 Saw"
@@ -36,110 +36,74 @@ Filter resonance = 10%
 Filter envelope amount = 30%
 Filter envelope decay = 20%
 
-preset "Sweep — R1"
-comment "A plain sine bass, filter open, no envelope"
-Oscillator wave = sine
-Filter cutoff = 20%
-Filter resonance = 0%
-Filter envelope amount = 0%
+preset "Sweep — AC1"
+comment "Its 303-style saw, resonant, with a strong envelope"
+Oscillator wave = 303 saw
+Filter cutoff = 15%
+Filter resonance = 25%
+Filter envelope amount = 40%
+Filter envelope decay = 40%
 
-preset "Sweep — R2"
-comment "A plain sine bass, filter open, no envelope"
-Oscillator wave = sine
+preset "Sweep — AC2"
+comment "Its 303-style saw, resonant, with a strong envelope"
+Oscillator wave = 303 saw
 Filter cutoff = 10%
-Filter resonance = 0%
-Filter envelope amount = 0%
+Filter resonance = 30%
+Filter envelope amount = 30%
+Filter envelope decay = 40%
 
-preset "Sweep — R3"
-comment "A plain sine bass, filter open, no envelope"
-Oscillator wave = sine
+preset "Sweep — AC3"
+comment "Its 303-style saw, resonant, with a strong envelope"
+Oscillator wave = sawtooth
+Filter cutoff = 15%
+Filter resonance = 30%
+Filter envelope amount = 40%
+Filter envelope decay = 40%
+
+preset "Sweep — AC4"
+comment "Its 303-style saw, resonant, with a strong envelope"
+Oscillator wave = 303 saw
+Filter cutoff = 20%
+Filter resonance = 15%
+Filter envelope amount = 50%
+Filter envelope decay = 40%
+
+preset "Sweep — AC5"
+comment "Its 303-style saw, resonant, with a strong envelope"
+Oscillator wave = sawtooth
+Filter cutoff = 10%
+Filter resonance = 50%
+Filter envelope amount = 30%
+Filter envelope decay = 40%
+
+preset "Sweep — PM4"
+comment "A pulse wave, filter low, a short envelope: a muted bass"
+Oscillator wave = pulse
 Filter cutoff = 5%
 Filter resonance = 0%
-Filter envelope amount = 0%
-
-preset "Sweep — R4"
-comment "A plain sine bass, filter open, no envelope"
-Oscillator wave = sawtooth
-Filter cutoff = 15%
-Filter resonance = 0%
-Filter envelope amount = 0%
-
-preset "Sweep — SP1"
-comment "A saw through a closing filter: a plucked bass"
-Oscillator wave = sawtooth
-Filter cutoff = 25%
-Filter resonance = 10%
-Filter envelope amount = 40%
-Filter envelope decay = 30%
-
-preset "Sweep — SP2"
-comment "A saw through a closing filter: a plucked bass"
-Oscillator wave = sawtooth
-Filter cutoff = 20%
-Filter resonance = 0%
-Filter envelope amount = 30%
-Filter envelope decay = 30%
-
-preset "Sweep — SP3"
-comment "A saw through a closing filter: a plucked bass"
-Oscillator wave = sawtooth
-Filter cutoff = 15%
-Filter resonance = 0%
-Filter envelope amount = 40%
-Filter envelope decay = 30%
-
-preset "Sweep — A1"
-comment "Its 303-style saw, resonant, with a strong envelope"
-Oscillator wave = 303 saw
-Filter cutoff = 25%
-Filter resonance = 50%
-Filter envelope amount = 50%
-Filter envelope decay = 40%
-
-preset "Sweep — A2"
-comment "Its 303-style saw, resonant, with a strong envelope"
-Oscillator wave = 303 saw
-Filter cutoff = 20%
-Filter resonance = 40%
-Filter envelope amount = 40%
-Filter envelope decay = 40%
-
-preset "Sweep — A3"
-comment "Its 303-style saw, resonant, with a strong envelope"
-Oscillator wave = 303 saw
-Filter cutoff = 15%
-Filter resonance = 60%
-Filter envelope amount = 50%
-Filter envelope decay = 40%
-
-preset "Sweep — A4"
-comment "Its 303-style saw, resonant, with a strong envelope"
-Oscillator wave = 303 saw
-Filter cutoff = 10%
-Filter resonance = 50%
-Filter envelope amount = 40%
-Filter envelope decay = 40%
-
-preset "Sweep — PM1"
-comment "A pulse wave, filter low, a short envelope: a muted bass"
-Oscillator wave = pulse
-Filter cutoff = 25%
-Filter resonance = 0%
-Filter envelope amount = 20%
-Filter envelope decay = 20%
-
-preset "Sweep — PM2"
-comment "A pulse wave, filter low, a short envelope: a muted bass"
-Oscillator wave = pulse
-Filter cutoff = 20%
-Filter resonance = 10%
 Filter envelope amount = 10%
 Filter envelope decay = 20%
 
-preset "Sweep — PM3"
+preset "Sweep — PM5"
 comment "A pulse wave, filter low, a short envelope: a muted bass"
 Oscillator wave = pulse
-Filter cutoff = 15%
+Filter cutoff = 0%
 Filter resonance = 0%
 Filter envelope amount = 20%
+Filter envelope decay = 20%
+
+preset "Sweep — PM6"
+comment "A pulse wave, filter low, a short envelope: a muted bass"
+Oscillator wave = triangle
+Filter cutoff = 10%
+Filter resonance = 0%
+Filter envelope amount = 20%
+Filter envelope decay = 20%
+
+preset "Sweep — PM7"
+comment "A pulse wave, filter low, a short envelope: a muted bass"
+Oscillator wave = noise
+Filter cutoff = 10%
+Filter resonance = 40%
+Filter envelope amount = 50%
 Filter envelope decay = 20%

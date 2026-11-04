@@ -48,40 +48,4 @@
       <Comment>Harmonics of the bass, so it reads on small speakers</Comment>
     </Preset>
   </Item>
-  <Item Key="Sweep — X20">
-    <Preset Machine="Oomek Exciter">
-      <Parameters>
-        <Parameter Name="Drive" Group="1" Index="0" Track="0" Value="96" />
-        <Parameter Name="Pre Cut" Group="1" Index="1" Track="0" Value="2" />
-        <Parameter Name="Post Cut" Group="1" Index="2" Track="0" Value="7" />
-        <Parameter Name="Amount" Group="1" Index="3" Track="0" Value="12" />
-      </Parameters>
-      <Attributes />
-      <Comment>Harmonics of the bass, so it reads on small speakers</Comment>
-    </Preset>
-  </Item>
-  <Item Key="Sweep — X28">
-    <Preset Machine="Oomek Exciter">
-      <Parameters>
-        <Parameter Name="Drive" Group="1" Index="0" Track="0" Value="96" />
-        <Parameter Name="Pre Cut" Group="1" Index="1" Track="0" Value="2" />
-        <Parameter Name="Post Cut" Group="1" Index="2" Track="0" Value="7" />
-        <Parameter Name="Amount" Group="1" Index="3" Track="0" Value="5" />
-      </Parameters>
-      <Attributes />
-      <Comment>Harmonics of the bass, so it reads on small speakers</Comment>
-    </Preset>
-  </Item>
-  <Item Key="Sweep — X24D3">
-    <Preset Machine="Oomek Exciter">
-      <Parameters>
-        <Parameter Name="Drive" Group="1" Index="0" Track="0" Value="36" />
-        <Parameter Name="Pre Cut" Group="1" Index="1" Track="0" Value="2" />
-        <Parameter Name="Post Cut" Group="1" Index="2" Track="0" Value="7" />
-        <Parameter Name="Amount" Group="1" Index="3" Track="0" Value="8" />
-      </Parameters>
-      <Attributes />
-      <Comment>Harmonics of the bass, so it reads on small speakers</Comment>
-    </Preset>
-  </Item>
 </PresetDictionary>

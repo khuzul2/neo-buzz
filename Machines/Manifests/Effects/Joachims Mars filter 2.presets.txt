@@ -16,7 +16,7 @@ Bass attenuator = 0
 preset "Fuzz — God of Iron"
 comment "A heavier, saturated character"
 Distortion character = God of iron
-Input gain = -3 dB
+Input gain = -9 dB
 Amount = 70
 
 preset "Warm — Rusty"
@@ -29,66 +29,6 @@ Treble attenuator = -40
 preset "Heavy — Cannon"
 comment "Heavy distortion with the bass kept out of it"
 Distortion character = Cannon
-Input gain = 0 dB
-Amount = 80
-Bass attenuator = -60
-
-preset "Sweep — G9"
-comment "A heavier, saturated character"
-Distortion character = God of iron
-Input gain = -9 dB
-Amount = 70
-
-preset "Sweep — G15"
-comment "A heavier, saturated character"
-Distortion character = God of iron
-Input gain = -15 dB
-Amount = 70
-
-preset "Sweep — G9A50"
-comment "A heavier, saturated character"
-Distortion character = God of iron
-Input gain = -9 dB
-Amount = 50
-
-preset "Sweep — C10"
-comment "Heavy distortion with the bass kept out of it"
-Distortion character = Cannon
-Input gain = -10 dB
-Amount = 80
-Bass attenuator = -60
-
-preset "Sweep — C20"
-comment "Heavy distortion with the bass kept out of it"
-Distortion character = Cannon
 Input gain = -20 dB
 Amount = 80
 Bass attenuator = -60
-
-preset "Sweep — C10A50"
-comment "Heavy distortion with the bass kept out of it"
-Distortion character = Cannon
-Input gain = -10 dB
-Amount = 50
-Bass attenuator = -60
-
-preset "Sweep — C20A60"
-comment "Heavy distortion with the bass kept out of it"
-Distortion character = Cannon
-Input gain = -20 dB
-Amount = 60
-Bass attenuator = -60
-
-preset "Sweep — C30"
-comment "Heavy distortion with the bass kept out of it"
-Distortion character = Cannon
-Input gain = -30 dB
-Amount = 80
-Bass attenuator = -60
-
-preset "Sweep — W3"
-comment "A gentle, darker drive"
-Distortion character = Rusty
-Input gain = +3 dB
-Amount = 60
-Treble attenuator = -40

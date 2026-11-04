@@ -41,21 +41,3 @@ Buzz amount = 0%
 Click amount = 10%
 Punch amount = 20%
 Amp decay time = 0.4 s
-
-preset "Sweep — K60"
-comment "A high start and a strong click: cuts through a dense mix"
-Start pitch = 400 Hz
-End pitch = 60 Hz
-Buzz amount = 40%
-Click amount = 60%
-Punch amount = 70%
-Amp decay time = 0.18 s
-
-preset "Sweep — K50P60"
-comment "A high start and a strong click: cuts through a dense mix"
-Start pitch = 400 Hz
-End pitch = 60 Hz
-Buzz amount = 40%
-Click amount = 50%
-Punch amount = 60%
-Amp decay time = 0.18 s

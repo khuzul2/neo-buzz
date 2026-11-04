@@ -32,24 +32,3 @@ Drive = 0.8
 Pre high-pass = 60 Hz
 Post high-pass = 200 Hz
 Amount = -24 dB
-
-preset "Sweep — X20"
-comment "Harmonics of the bass, so it reads on small speakers"
-Drive = 0.8
-Pre high-pass = 60 Hz
-Post high-pass = 200 Hz
-Amount = -20 dB
-
-preset "Sweep — X28"
-comment "Harmonics of the bass, so it reads on small speakers"
-Drive = 0.8
-Pre high-pass = 60 Hz
-Post high-pass = 200 Hz
-Amount = -28 dB
-
-preset "Sweep — X24D3"
-comment "Harmonics of the bass, so it reads on small speakers"
-Drive = 0.3
-Pre high-pass = 60 Hz
-Post high-pass = 200 Hz
-Amount = -24 dB
