@@ -1,0 +1,32 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Pedal Gain",
+  "to": "Neo Utility",
+  "summary": "Gain in percent of the input becomes dB (100% is 0 dB, 200% +6.0 dB, 0% −inf); Mute becomes −inf.",
+  "rules": [
+    {
+      "kind": "db",
+      "from": "Gain",
+      "to": "Gain",
+      "zero_when": "Mute",
+      "why": "Pedal Gain multiplies by Gain ÷ 100, and by 0 while Mute is on (its source); Neo Utility's Gain is in dB, 0.1 dB steps."
+    }
+  ],
+  "unmapped": [
+    {
+      "param": "Inertia",
+      "why": "Mute's fade time; Neo Utility smooths every gain change itself (about 20 ms), with no setting. A Mute moved in a pattern fades in 20 ms, not in Inertia."
+    }
+  ],
+  "tolerance": {
+    "loudness_db": 0.1,
+    "band_db": 0.2,
+    "from_hz": 20,
+    "to_hz": 20000,
+    "measured": "rebuzz-headless (Linux), Neo Poly noise through it at 50 % and 150 %, each side read against its input: loudness within 0.02 dB, every third octave 0.0 dB (tools/headless-replace.py)"
+  },
+  "evidence": [
+    "ExternalMachines/source/thepedal/pedal-gain/PedalGainMachine.cs: output = input × Gain/100, 0 while Mute is on",
+    "Machines/NeoUtility/Params.def: Gain −60.1 … +24 dB in 0.1 dB steps, −inf at its bottom"
+  ]
+}

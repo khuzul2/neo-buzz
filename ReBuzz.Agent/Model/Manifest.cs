@@ -332,6 +332,9 @@ namespace ReBuzz.Agent.Model
                 ? (text.Trim().StartsWith("-") ? double.NegativeInfinity : double.PositiveInfinity)
                 : (double)v!;
 
+        /// <summary>One parameter entry as a manifest writes it (successor mappings describe parameters a manifest leaves out this way).</summary>
+        internal static ManifestParameter ParseParameterEntry(JsonObject p) => ParseParameter(p);
+
         static ManifestParameter ParseParameter(JsonObject p)
         {
             string kind = (string)p["kind"] ?? "linear";

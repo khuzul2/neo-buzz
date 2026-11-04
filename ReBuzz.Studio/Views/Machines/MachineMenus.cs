@@ -1,6 +1,7 @@
 // Fork (docs/specs/studio-mvp.md S3): the machine view's context menus, as BuzzGUI.MachineView
 // has them: on empty space, New (the installed machines by kind) and the view's commands; on a
 // machine, mute, solo or bypass, its parameters, MIDI input channel, replace, rename, delete.
+// Fork (mcp-server.md §12.5, U5): "Replace with <successor>..." on a machine with a Neo successor.
 // Fork (machine-safety.md §3.2–3.3): Reset and unmute on a diverged machine; on the Master, clearing
 // the clip indicator.
 
@@ -100,6 +101,10 @@ namespace ReBuzz.Studio.Views.Machines
             menu.Items.Add(Item("Parameters...", () => MachineEdits.OpenParameters(machine)));
             menu.Items.Add(Sub("MIDI Input Channel", MidiChannels(machine)));
             menu.Items.Add(new Separator());
+            // U5 (mcp-server.md §12.5): a classic machine's Neo successors, the song moved over as machine_replace does it.
+            if (machine is MachineCore classic)
+                foreach (var successor in ReBuzz.Agent.MachineReplace.Successors(core, machine.DLL))
+                    menu.Items.Add(Item($"Replace with {successor.To}...", () => MachineEdits.ReplaceWithSuccessor(core, classic, successor.To)));
             menu.Items.Add(Sub("Replace", Gear(i => MachineEdits.Replace(core, machine, i))));
             menu.Items.Add(Item("Rename...", () => MachineEdits.Rename(machine)));
             menu.Items.Add(Item("Delete", () => MachineEdits.Delete(core, selection), key: new KeyGesture(Key.Delete)));

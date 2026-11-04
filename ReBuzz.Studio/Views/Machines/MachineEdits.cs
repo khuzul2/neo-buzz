@@ -229,6 +229,13 @@ namespace ReBuzz.Studio.Views.Machines
         /// <summary>A double click: the machine's own GUI (its parameter window when it has none here).</summary>
         public static void OpenGui(ReBuzzCore core, IMachine machine) => core.UiHost?.OpenGui(machine, null);
 
+        /// <summary>
+        /// U5 (mcp-server.md §12.5): the machine onto its Neo successor, as machine_replace does it (settings in units, patterns,
+        /// arrangement, Session View), one undo step; the comparison of before and after in a message. Returns that text, or null.
+        /// </summary>
+        public static string ReplaceWithSuccessor(ReBuzzCore core, MachineCore machine, string gear) =>
+            MachineReplace.FromMenu(core, machine, gear);
+
         public static void Replace(ReBuzzCore core, IMachine machine, IInstrument with) =>
             core.SongCore.ReplaceMachine(machine, with.MachineDLL.Name, with.Name, machine.Position.Item1, machine.Position.Item2);
 

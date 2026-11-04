@@ -176,7 +176,7 @@ The final output to the audio device gets a **safety limiter**:
 |---|---|---|
 | Jeskola Flanger (and Chorus, FSM Chorus2, Pedal Chorus) | **Neo Ensemble** (chorus, flanger, phaser) | A new Neo machine, first in the batch. Feedback bounded (±99 %) with a saturating loop, so it can't run away. **Built** 2026-11-04 (below; machines.md, Neo Ensemble) |
 | Joachims Hyperion | **Neo EQ, graphic mode** | 31 bands at the ISO centres, constant-Q, in Neo EQ (H2 A), and a Hyperion mapping for `machine_replace` |
-| Jeskola Bass (1) | **Neo Poly**, mono/slide preset | No new machine; a mapping (cutoff, resonance, waveform, volume, slide), as for Bass 2/3 |
+| Jeskola Bass (1) | **Neo Poly**, mono/slide preset | No new machine; a mapping (cutoff, resonance, waveform, volume, slide), as for Bass 2/3. **Built** (U5): `Machines/Manifests/Successors/Jeskola Bass to Neo Poly.successor.json`, and Bass 2 and 3 beside it |
 
 **Neo Ensemble, as built.** Chorus (1–4 voices), flanger and phaser (2–12 stages) on one LFO, in Hz or synced to the tempo, zero latency, the dry signal bit for bit at Mix 0 %. Feedback runs −99 … +99 % and can't run away at any setting, however fast the LFO sweeps: the delay loop's reads and its tone filter are convex combinations of past samples (each pass at most 0.99 of the largest), the phaser's stages lossless lattices (the loop's energy gain at most 0.99), and a saturator caps what goes round at +6 dBFS. Its tests: the loop gain below 1 at every frequency over 864 settings (ends included, at most 0.99), and every parameter at each end and the worst combinations at ±99 % under 30 s of noise: bounded (+10.1 dBFS at most, before Output's gain), levelling off and decaying after. Its Linux profile is clean but for Output at +12 dB (hot), so it needs no safe range (machines.md, Neo Ensemble).
 
@@ -185,9 +185,9 @@ It succeeds four machines. Its parameters' roles (from `ManifestRoles`), for `ma
 | Neo Ensemble | Unit | Role | Jeskola Flanger | Jeskola Chorus | FSM Chorus2 (track) | Pedal Chorus |
 |---|---|---|---|---|---|---|
 | Mode | Chorus, Flanger, Phaser | `fx.mode` | Flanger | Chorus | Chorus | Chorus |
-| Rate | Hz | `mod.rate` | freq (Hz) | freq (Hz) | Mod Rate (Hz) | Rate (`mod.rate`, Hz) |
+| Rate | Hz | `mod.rate` | freq ÷ 2 (measured: the LFO runs at half its text) | freq ÷ 2 (measured) | Mod Rate (Hz) | Rate (`mod.rate`, Hz) |
 | Sync | Free, 1/32 … 16 bars | `lfo.sync` | Free | Free | Free | Free |
-| Shape | Sine, Triangle | `lfo.wave` | — | — | — | — |
+| Shape | Sine, Triangle | `lfo.wave` | Triangle (measured) | Triangle (measured) | Sine | Sine |
 | Depth | % (100 %: 1, 2 or 3 octaves either side) | `mod.depth` | from depth and min. delay | from depth and min. delay | from Mod Depth (ms) and Min Delay | from Depth (`mod.depth`, ± ms) and Delay |
 | Spread | ° | `mod.spread` | 0° | 0° | Stereo (°) | from Spread (`mod.spread`, %) |
 | Delay | s (the sweep's geometric centre) | `mod.delay` | from min. delay (0–5 ms) and depth | from min. delay (0–50 ms; to 30 ms) | from Min Delay and Mod Depth | Delay (`mod.delay`) |
@@ -199,9 +199,9 @@ It succeeds four machines. Its parameters' roles (from `ManifestRoles`), for `ma
 | Mix | % | `mix.wet` | wet out ÷ (dry out + wet out) | wet out ÷ (dry out + wet out) | — | Mix (`mix.wet`) |
 | Output | dB | `level` | dry out + wet out | dry out + wet out | — | — |
 
-The conversions (a closed machine's minimum delay and depth to a centre delay and an octave span, a wet level to a mix and an output gain, ± ms of depth to octaves) belong to U5, which renders before and after and compares; a negative dry or wet out (a polarity) has no counterpart, nor has FSM Chorus2's per-track setting.
+**Built (U5).** The four mappings are in `Machines/Manifests/Successors/` (`sweep` and `dry_wet` rules, [mcp-server.md](mcp-server.md) §12.10). Each sweep's ends land on Neo Ensemble's Delay (their geometric centre) and Depth (half their ratio in octaves, over what 100 % spans), the levels on Mix and Output. FSM Chorus2's and Pedal Chorus's sweeps come from their source; Jeskola Flanger's and Chorus's were measured (the delay read from input and output over a render, `ReBuzzTests/DelaySweep.cs`): a triangle from min. delay up by depth × 9.92 ms, its period twice what freq says, mono, dry and wet straight in amplitude. A negative dry or wet out (Jeskola Flanger's default wet out is −100 %) has no counterpart: the level is kept, not the polarity, and the result says so; a sweep from no delay keeps its top at full depth (16 : 1 in Flanger mode); Neo Ensemble's Delay stops at 30 ms (Jeskola Chorus's min. delay goes to 50 ms).
 
-`machine_replace` (U5) moves a song over: parameters by role and unit, patterns' columns mapped, a render before and after compared. The original stays installed so old songs play. On the Mac every closed native is a silent placeholder, so a successor and `machine_replace` are how those songs play there.
+`machine_replace` (U5, built: [mcp-server.md](mcp-server.md) §12.10) moves a song over: parameters by unit through a mapping file per pair, patterns' columns and notes mapped, the arrangement and the Session View following, a render before and after compared against the pair's stated tolerance, one undo step; in the machine menu as "Replace with <successor>..." in the studio and ReBuzz.exe. The original stays installed so old songs play. On the Mac every closed native is a silent placeholder, so a successor and `machine_replace` are how those songs play there: its comparison then says the old machine was silent (there is nothing to measure against), and the conversion itself is the same. Neo Ensemble's four mappings are in (above); Neo EQ's graphic mode adds Joachims Hyperion's as a file beside them when it lands.
 
 ## 5. Tests
 

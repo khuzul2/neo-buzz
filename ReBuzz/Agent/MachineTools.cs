@@ -30,7 +30,8 @@ namespace ReBuzz.Agent
                     "The machines you can add: name, generator or effect, author, what it is (type, summary) when known, its manifest (generated, " +
                     "curated, or a profiled draft: its parameters take \"800 Hz\", \"-6 dB\"; exact_units when not a draft), its health and its parameters' " +
                     "safe ranges (param_set keeps to them). Machines with exact units come first, then drafts; machines that need a window, then unhealthy ones " +
-                    "(diverging: NaN or a runaway level; crashes) last, flagged with why. Hot ones (loud but steady at some setting) are a warning. Filter by kind or text. " +
+                    "(diverging: NaN or a runaway level; crashes) last, flagged with why. Hot ones (loud but steady at some setting) are a warning. Classic machines " +
+                    "with a Neo successor say so (machine_replace moves a song onto it). Filter by kind or text. " +
                     "Example: gear_list(kind=\"generator\", search=\"poly\").",
                 Input = Object(null,
                     Opt("kind", String("Only generators (make sound) or effects (process sound)", "generator", "effect")),
@@ -51,7 +52,8 @@ namespace ReBuzz.Agent
                         Opt("needs_window", String("It works in ReBuzz on Windows with its window, not headless")),
                         Opt("safe_ranges", Array(Object("A parameter's safe range", Req("param", String("Its name")), Req("range", String("The safe values"))), "Where param_set keeps agents")),
                         Opt("problems", Array(String("A problem"), "Why it is unhealthy, hot or warned about")),
-                        Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it"))), "Matching gear")),
+                        Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it")),
+                        Opt("successor", String("Its Neo successor: machine_replace moves a song's machine onto it"))), "Matching gear")),
                     Req("total", Integer("How many matched before the limit"))),
                 Annotations = ToolAnnotations.Read,
                 Handler = async c =>
@@ -103,6 +105,9 @@ namespace ReBuzz.Agent
                                     ["reason"] = p.SafeRange.Reason,
                                 }).ToArray());
                             if (manifest?.Quirks.Count > 0) row["quirks"] = new JsonArray(manifest.Quirks.Select(x => (JsonNode)x).ToArray());
+                            // U5 (mcp-server.md §12.5): "successor: Neo Verb (machine_replace)".
+                            var successors = MachineReplace.Successors(core, dll);
+                            if (successors.Count > 0) row["successor"] = string.Join(", ", successors.Select(x => x.To)) + " (machine_replace)";
                             rows.Add((unhealthy ? 4 : window ? 3 : exact ? 0 : manifest != null ? 1 : 2, dll.Name, row));
                         }
                         var sorted = rows.OrderBy(x => x.Rank).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase).ToList();

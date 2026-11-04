@@ -147,6 +147,13 @@ jobs:
       if: always()
       run: python3 tools/curated-check.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/curated"
 
+    # U5 (docs/specs/mcp-server.md §12.5): machine_replace with the portable machines. Pedal EQ → Neo EQ, Pedal Gain →
+    # Neo Utility and Pedal Comp → Neo Comp within their stated tolerance; the successor in the old one's place with
+    # its settings, automation, arrangement and session track; one undo brings the original back. The natives: the package job.
+    - name: machine_replace on Linux
+      if: always()
+      run: python3 tools/headless-replace.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/replace"
+
     # Live audio (mac-engine.md M5): rebuzz-headless --audio through PortAudio on the PulseAudio
     # null sink (clocked, so in real time); the live tools play, meter and stop it. The null sink
     # through ALSA's PulseAudio plugin takes nothing for about 2 s after an underrun, and at its
