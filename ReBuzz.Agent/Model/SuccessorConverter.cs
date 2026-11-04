@@ -206,6 +206,8 @@ namespace ReBuzz.Agent.Model
             {
                 foreach (var n in new[] { notes.Note, notes.Slide, notes.SlideLength, notes.Length, notes.Volume }.Where(x => x != null))
                     if (Old(n) == null) Errors.Add($"{map.From} has no parameter \"{n}\" (notes).");
+                foreach (var t in notes.Triggers)
+                    if (Old(t.Column) == null) Errors.Add($"{map.From} has no parameter \"{t.Column}\" (notes, triggers).");
                 if (notes.Glide != null && New(notes.Glide) == null) Errors.Add($"{map.To} has no parameter \"{notes.Glide}\" (notes).");
             }
         }
@@ -231,7 +233,7 @@ namespace ReBuzz.Agent.Model
             {
                 var set = new HashSet<SuccessorParam>(Map.Rules.SelectMany(r => r.Inputs).Select(Old).Where(p => p != null));
                 if (Map.Notes is { } n)
-                    foreach (var name in new[] { n.Note, n.Slide, n.SlideLength, n.Length, n.Volume })
+                    foreach (var name in new[] { n.Note, n.Slide, n.SlideLength, n.Length, n.Volume }.Concat(n.Triggers.Select(t => t.Column)))
                         if (OldColumn(name) is { } p) set.Add(p);
                 return set;
             }
@@ -351,7 +353,7 @@ namespace ReBuzz.Agent.Model
             var result = new List<NoteEvent>();
             if (spec == null) return result;
             var noteParam = OldColumn(spec.Note);
-            if (noteParam == null) return result;
+            if (noteParam == null && spec.Triggers.Count == 0) return result;
             IReadOnlyList<ColumnEvent> Column(string name, int track) =>
                 OldColumn(name) is { } p && columns.TryGetValue((p, track), out var list) ? list : Array.Empty<ColumnEvent>();
             int? At(string name, int track, int time)
@@ -362,7 +364,7 @@ namespace ReBuzz.Agent.Model
             var volumeParam = OldColumn(spec.Volume);
             var glideParam = New(spec.Glide);
             int outOfRange = 0;
-            var tracks = columns.Keys.Where(k => k.Param == noteParam).Select(k => k.Track).Distinct().OrderBy(t => t).ToList();
+            var tracks = noteParam == null ? new List<int>() : columns.Keys.Where(k => k.Param == noteParam).Select(k => k.Track).Distinct().OrderBy(t => t).ToList();
             foreach (int track in tracks)
             {
                 var events = Column(spec.Note, track).OrderBy(e => e.Time).ToList();
@@ -381,6 +383,7 @@ namespace ReBuzz.Agent.Model
                     }
                     int pitch = TrackNotes.FromBuzz(e.Raw);
                     if (pitch < 0) continue;
+                    if (spec.FixedPitch is int fixedPitch) pitch = fixedPitch - pitchShift;
                     int end = i + 1 < events.Count ? events[i + 1].Time : patternTime;
                     if (spec.Length != null && At(spec.Length, track, e.Time) is int len && len > 0)
                         end = Math.Min(end, e.Time + len * NoteList.TimeBase);
@@ -400,6 +403,31 @@ namespace ReBuzz.Agent.Model
                                      : spec.SlideLength != null && OldColumn(spec.SlideLength) is { } slp ? slp.Value(baseRaw(slp, track))
                                      : (end - e.Time) / (double)NoteList.TimeBase;
                         if (glideParam != null) glides.Add((e.Time, glideParam.Raw(Math.Max(0, ticks) * secondsPerTick)));
+                    }
+                }
+            }
+            // Hit columns (drum machines' triggers): each value plays its pitch; a row with a note is the note's.
+            foreach (var trigger in spec.Triggers)
+            {
+                var column = OldColumn(trigger.Column);
+                if (column == null) continue;
+                foreach (var key in columns.Keys.Where(k => k.Param == column).OrderBy(k => k.Track))
+                {
+                    var noteTimes = noteParam != null && columns.TryGetValue((noteParam, key.Track), out var ns)
+                        ? ns.Where(x => TrackNotes.FromBuzz(x.Raw) >= 0).Select(x => x.Time).ToHashSet() : new HashSet<int>();
+                    var hits = columns[key].OrderBy(x => x.Time).ToList();
+                    for (int i = 0; i < hits.Count; i++)
+                    {
+                        var h = hits[i];
+                        if (noteTimes.Contains(h.Time)) continue;
+                        double value = column.Value(h.Raw);
+                        if (!(value >= trigger.MinValue)) continue;
+                        int velocity = trigger.Velocity ?? (trigger.ValueAtFull is double full && full > 0 ? (int)Math.Round(127 * value / full) : spec.Velocity);
+                        if (velocity <= 0) continue;
+                        int end = i + 1 < hits.Count ? hits[i + 1].Time : patternTime;
+                        end = Math.Min(Math.Max(end, h.Time + 1), h.Time + NoteList.TimeBase);
+                        if (trigger.Pitch < 0 || trigger.Pitch > 127) { outOfRange++; continue; }
+                        result.Add(new NoteEvent(h.Time, end - h.Time, trigger.Pitch, Math.Min(127, velocity)));
                     }
                 }
             }
@@ -479,6 +507,13 @@ namespace ReBuzz.Agent.Model
                 case SuccessorRuleKind.Sum:
                     Put(rule.To, rule.Terms.Sum(term => term.Weight * get(term.Param)) + rule.Offset);
                     break;
+                case SuccessorRuleKind.Interval:
+                {
+                    double from = get(rule.From), over = get(rule.Over);
+                    double octaves = rule.OctaveTerms?.Sum(t => t.Weight * get(t.Param)) ?? 0;
+                    if (from > 0 && over > 0) Put(rule.To, 12 * (Math.Log2(from / over) + octaves) * rule.Scale + rule.Offset);
+                    break;
+                }
                 case SuccessorRuleKind.LevelsToMix:
                     LevelsToMix(rule, get, state, events, Put, notes);
                     break;
