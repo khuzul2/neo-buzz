@@ -600,7 +600,9 @@ namespace ReBuzzTests
             rig.Param("Mix").SetValue(0, 400);
             rig.Play(0.5);
             var size = ShootEditor(rig.Effect, "neo-delay-editor");
-            TestContext.Out.WriteLine($"editor {size.Width:0} x {size.Height:0}");
+            // A [notice] (tools/ci-test-summary.ps1): the WPF editor's size, which the studio's must match (NeoEditorTests).
+            TestContext.Out.WriteLine($"[notice] Neo Delay in ReBuzz: Mix 0 % {Db(Rms(dry) / Rms(bypassed)):+0.000;-0.000} dB against bypassed, the clean echo {Db(Rms(echo) / Rms(bypassed)):+0.000;-0.000} dB, " +
+                                      $"full feedback peak {Db(peak):+0.0;-0.0} dBFS, editor {size.Width:0} x {size.Height:0}");
         }
 
         static readonly SourceInfo MixInfo = new("Neo Test Mix", MixSource, true);
