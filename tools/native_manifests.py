@@ -81,11 +81,14 @@ SPECS = [
         "summary": "Stereo chorus of 1 to 6 modulated delay taps (Fatness), with the minimum delay, modulation depth and rate, and "
                    "the stereo phase between the two sides' LFOs.",
         "cases": [
-            # Cases 0 and 1 print milliseconds at the engine's sample rate: no fixed unit.
-            C(0, "int", "v", ["float v=float((2+1102.5*value/240)/pMasterInfo->SamplesPerSec);", 'sprintf(txt,"%0.2f ms",1000*v);'],
-              note="(2 + 1102.5·v/240) samples, which its text shows in ms at the engine's rate (0.05–25.0 ms at 44.1 kHz)"),
-            C(1, "int", "v", ["float v=float(110.25*value/240/pMasterInfo->SamplesPerSec);", 'sprintf(txt,"%0.2f ms",1000*v);'],
-              note="110.25·v/240 samples, which its text shows in ms at the engine's rate (0–2.5 ms at 44.1 kHz)"),
+            # Cases 0 and 1 print milliseconds of a count of samples: the manifest's seconds are at 44.1 kHz, ReBuzz's rate.
+            C(0, "linear", "(2+1102.5*v/240)/44100", ["float v=float((2+1102.5*value/240)/pMasterInfo->SamplesPerSec);",
+                                                     'sprintf(txt,"%0.2f ms",1000*v);', "float MinDelay=float(2+1120.5*Tracks[0].mindelay/240);"],
+              unit="s", note="(2 + 1102.5·v/240) samples as its text says, in seconds at 44.1 kHz (they scale with the rate); its Work "
+                             "delays 2 + 1120.5·v/240 samples, 1.6 % more"),
+            C(1, "linear", "110.25*v/240/44100", ["float v=float(110.25*value/240/pMasterInfo->SamplesPerSec);", 'sprintf(txt,"%0.2f ms",1000*v);',
+                                                 "float ModDepth=float(110.25*Tracks[0].moddepth/240);"],
+              unit="s", note="110.25·v/240 samples either way of the minimum delay's, in seconds at 44.1 kHz"),
             C(2, "linear", "6.6*v/240.0", 'sprintf(txt,"%0.2f Hz",6.6*value/240.0);', unit="Hz"),
             C(4, "linear", "v*180/240.0", 'sprintf(txt,"%0.2f deg",value*180/240.0);', unit="°"),
         ],

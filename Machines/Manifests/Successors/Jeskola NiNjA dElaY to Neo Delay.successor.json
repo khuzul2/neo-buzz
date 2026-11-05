@@ -80,7 +80,12 @@
       "why": "Dry thru (on or off) and the echoes at Wet out (raw/128) add; Neo Delay crossfades them and sets the output's level."
     }
   ],
-  "unmapped": [],
+  "unmapped": [
+    {
+      "param": "f. bandwidth",
+      "why": "The width of its band-pass and band-reject (Hz, 100 by default: the band-pass measured about 100 Hz wide); Neo Delay has neither type, so those open the filters, with a note."
+    }
+  ],
   "remarks": [
     "NiNjA dElaY is mono: ReBuzz gives it left + right summed (+6 dB for a centred sound, taken on the output connections so the line keeps the input's level); Neo Delay in Stereo mode keeps the input's image.",
     "Each of its tracks is a tap of its own with its own filter (up to 8); Neo Delay has one: the first track's settings move.",
@@ -96,7 +101,7 @@
   },
   "evidence": [
     "ExternalMachines/source/buzztrax-buzzmachines/Jeskola/Ninja/Ninja.cpp: the filter in the loop (o = filter(buf); buf = in + fb · o; out += wet · o), Butterworth (dsplib), lengths as Jeskola Delay's",
-    "Machines/Manifests/Effects/Jeskola NiNjA dElaY.machine.json (profiled draft: its binary has no f. bandwidth, which its source has)",
+    "Machines/Manifests/Effects/Jeskola NiNjA dElaY.machine.json (generated from its source, U7: f. bandwidth, 1–10000 Hz, which the profiled draft had left out; the binary has it, \"1cps\" … \"10000cps\")",
     "ReBuzzTests/AgentReplaceTests.cs DelayCalibration (Windows): the echoes' times and levels, and the filter's response, read from its input and output"
   ]
 }

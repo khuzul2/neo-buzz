@@ -458,9 +458,11 @@
    "min": 0,
    "max": 240,
    "default": 80,
-   "kind": "int",
-   "a": 0.0,
-   "description": "Minimum Delay. (2 + 1102.5·v/240) samples, which its text shows in ms at the engine's rate (0.05–25.0 ms at 44.1 kHz)"
+   "kind": "linear",
+   "unit": "s",
+   "a": 4.5351e-05,
+   "b": 0.025045351,
+   "description": "Minimum Delay. (2 + 1102.5·v/240) samples as its text says, in seconds at 44.1 kHz (they scale with the rate); its Work delays 2 + 1120.5·v/240 samples, 1.6 % more"
   },
   {
    "index": 1,
@@ -469,9 +471,11 @@
    "min": 0,
    "max": 240,
    "default": 90,
-   "kind": "int",
+   "kind": "linear",
+   "unit": "s",
    "a": 0.0,
-   "description": "Modulation Depth. 110.25·v/240 samples, which its text shows in ms at the engine's rate (0–2.5 ms at 44.1 kHz)"
+   "b": 0.0025,
+   "description": "Modulation Depth. 110.25·v/240 samples either way of the minimum delay's, in seconds at 44.1 kHz"
   },
   {
    "index": 2,

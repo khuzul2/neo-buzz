@@ -407,6 +407,10 @@
         "Matilde",
         "Oomek"
       ],
+      "patches": [
+        "FSM/dspchips/DSPChips.h: no copysign macro on MSVC (it rewrote <cmath>'s declarations when Infector's <complex> included it after); the one call is _copysign, which the macro made it (U7)",
+        "FSM/WahMan, WahManPro, WahPro2: the glide's start cutoff (and WahManPro's LFO phase, whose default sets none) set to 0 in Init; they were never set (U7)"
+      ],
       "natives": [
         {
           "gear": "FSM Infector",
