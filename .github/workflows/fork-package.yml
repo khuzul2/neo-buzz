@@ -222,6 +222,25 @@ jobs:
           --unfixed U64=build/ExternalMachines/natives-unfixed/x64/Gear
         exit $LASTEXITCODE
 
+    # TEMPORARY (agent/ci-flakes measurement, reverted before the final runs): the fixed machines' gate, 12 times.
+    - name: Natives soak (temporary)
+      if: (success() || failure()) && steps.build.outcome == 'success' && inputs.quick != true
+      timeout-minutes: 60
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        New-Item -ItemType Directory -Force -Path soak | Out-Null
+        $fails = 0
+        for ($k = 1; $k -le 12; $k++) {
+          python tools/native-compare.py $exe.FullName "soak/w$k" --gate --only "FSM WahMan,FSM WahManPro,FSM WahPro2" --json "soak/soak$k.json" `
+            --variant R64=build/ExternalMachines/natives/x64/Gear --variant R86=build/ExternalMachines/natives/x86/Gear `
+            --unfixed U64=build/ExternalMachines/natives-unfixed/x64/Gear *> "soak/soak$k.log"
+          $code = $LASTEXITCODE
+          if ($code -ne 0) { $fails++ }
+          Get-Content "soak/soak$k.log" | Where-Object { $_ -match '^(FAIL|  FSM|FSM Wah\S*\s+(package|R64|R86|U64)|\d+ machines)' } | ForEach-Object { "[$k] $_" }
+        }
+        "soak: $fails of 12 runs failed"
+
     - name: Upload machine profile
       if: always() && hashFiles('machine-profile/machine-profile.json') != ''
       uses: actions/upload-artifact@v6
