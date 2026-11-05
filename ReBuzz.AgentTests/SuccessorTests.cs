@@ -462,6 +462,8 @@ namespace ReBuzz.AgentTests
         public void Rout909sTriggersBecomeHitsOnTheGeneralMidiKeysAndItsScalesTheVoicesUnits()
         {
             var c = Converter("Rout 909", "Neo Drums");
+            Assert.That(c.Map.Notes!.Note, Is.Null, "Rout 909 has no note column: its triggers are its notes");
+            Assert.That(c.OldColumn("Note"), Is.Null);
             // Its defaults (every scale at 32, levels at 100 %): the voices as Neo Drums' defaults were voiced against them.
             var d = c.ConvertState(Raws(c));
             Assert.That(Value(c, d, "Volume"), Is.EqualTo(7.5).Within(0.05), "the headroom Neo Drums keeps, made up");
@@ -539,6 +541,17 @@ namespace ReBuzz.AgentTests
             Assert.That(result.Select(n => (n.Time, n.Pitch, n.Velocity)),
                 Is.EqualTo(new[] { (0, 36, 127), (T, 36, 64), (2 * T, 36, 127), (3 * T, 36, 127) }));
             Assert.That(c.New("Vel → level")!.Format(Final(d, "Vel → level")), Is.EqualTo("50%"));
+
+            // In the patterns each note moves the kick's tune (and sweep) as it plays, as automation; a note-off moves nothing.
+            var withOff = new Dictionary<(SuccessorParam, int), IReadOnlyList<ColumnEvent>>(columns)
+            {
+                [(noteColumn, 0)] = new[] { new ColumnEvent(0, a1), new ColumnEvent(T / 2, 255), new ColumnEvent(3 * T, e1) },
+            };
+            var moved = c.ConvertEvents(d, (p, t) => p.Default, withOff, new List<string>());
+            var tune = moved[(c.New("Kick tune")!, 0)];
+            Assert.That(tune.Select(e => e.Time), Is.EqualTo(new[] { 0, 3 * T }), "a note-off moves nothing");
+            Assert.That(c.New("Kick tune")!.Value(tune[1].Raw), Is.EqualTo(41.2).Within(0.3), "E1's kick at E1");
+            Assert.That(moved.ContainsKey((c.New("Kick sweep")!, 0)), Is.True);
         }
 
         [Test]

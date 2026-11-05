@@ -670,7 +670,7 @@ The editor: the pads (two rows of six, each lit by its voice's level, named with
 | CPU | all twelve voices hit every 100 ms at their longest decays (12 hits sounding), 48 kHz: over 10 × real time | 45 × (locally) |
 | Extremes | every parameter at random ends, 24 accented hits a round: finite | finite (peak +32 dBFS: drive 24 dB, level +6, Volume +12 and accent 12 dB at once) |
 | Presets | each sounds at the synths' level (kick, snare and hat together: loudest 50 ms between −30 and −6 dB RMS, peak under −1 dBFS) | all 6: −15.9 to −20.2 dB RMS, peaks −3.7 to −9.0 dBFS |
-| In ReBuzz | C2 on the Note column plays the kick at its tune; the SD column the snare; saved as .bmx and .bmxml and opened again, the kit comes back; the WPF editor (ReBuzzTests, Windows) | WPF_FIGURES |
+| In ReBuzz | C2 on the Note column plays the kick at its tune; the SD column the snare; saved as .bmx and .bmxml and opened again, the kit comes back; the WPF editor (ReBuzzTests, Windows) | C2's kick at 53.98 Hz (its tune 54.0 Hz), the SD column −29.8 dB RMS over 0.4 s; after .bmx and .bmxml the kick at its new tune, 67.08 Hz; the WPF editor 1232 × 738 (the studio's 1232 × 735) |
 
 As built:
 

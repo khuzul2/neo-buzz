@@ -453,7 +453,7 @@
     }
   ],
   "notes": {
-    "note": "Note",
+    "note": null,
     "velocity": 127,
     "pitch_offset": 0,
     "triggers": [

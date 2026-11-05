@@ -142,7 +142,7 @@ namespace ReBuzz.Agent
             {
                 plan.State = converter.ConvertState(sp => sp == noteColumn ? note : Current(old, sp, 0));
                 if (distinct > 1)
-                    plan.State.Notes.Add($"{old.Name}'s notes tune it, and they are at {distinct} pitches; {map.To} plays every one at the most common, {Pitch.Name(TrackNotes.FromBuzz(note))}.");
+                    plan.State.Notes.Add($"{old.Name}'s notes tune it, and they are at {distinct} pitches: {map.To}'s settings start at the most common, {Pitch.Name(TrackNotes.FromBuzz(note))}, and each note moves them as it plays (automation in the converted patterns).");
             }
             return plan;
         }

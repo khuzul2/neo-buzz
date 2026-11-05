@@ -302,8 +302,11 @@ namespace ReBuzz.Agent.Model
                 if (events.Any(e => Same(e.Key.Param.Name, rule.From) && e.Value.Count > 0))
                     notes.Add($"{rule.From}'s pattern column can't move: it is {Map.To}'s bypass now (the machine's, not a parameter).");
 
+            // A note column the rules read (notes.rules_read_note): each note moves what they set from it, as it plays; its
+            // note-offs and empty rows move nothing.
+            var noteColumn = Map.Notes is { RulesReadNote: true } ? OldColumn(Map.Notes.Note) : null;
             var all = events.Where(e => byInput.ContainsKey(e.Key.Param))
-                .SelectMany(e => e.Value.Select(x => (e.Key.Param, e.Key.Track, Event: x)))
+                .SelectMany(e => e.Value.Where(x => e.Key.Param != noteColumn || TrackNotes.FromBuzz(x.Raw) >= 0).Select(x => (e.Key.Param, e.Key.Track, Event: x)))
                 .OrderBy(x => x.Event.Time).ToList();
             bool multiTrack = false;
             foreach (var group in all.GroupBy(x => x.Event.Time))

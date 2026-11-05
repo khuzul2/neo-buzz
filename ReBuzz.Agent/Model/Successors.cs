@@ -245,7 +245,7 @@ namespace ReBuzz.Agent.Model
     /// <summary>How a generator's notes move (tracker notes to the successor's notes).</summary>
     public sealed class SuccessorNotes
     {
-        /// <summary>The old machine's note column (a Note track parameter).</summary>
+        /// <summary>The old machine's note column (a Note track parameter), or null (JSON null): it has none (Rout 909 plays from its triggers).</summary>
         public string Note { get; init; } = "Note";
         /// <summary>A column holding a note to glide to (Jeskola Bass's Slide note), or null.</summary>
         public string Slide { get; init; }
@@ -341,7 +341,7 @@ namespace ReBuzz.Agent.Model
             if (root["notes"] is JsonObject n)
                 notes = new SuccessorNotes
                 {
-                    Note = (string)n["note"] ?? "Note",
+                    Note = n.ContainsKey("note") ? (string)n["note"] : "Note",
                     Slide = (string)n["slide"],
                     SlideLength = (string)n["slide_length"],
                     Length = (string)n["length"],
