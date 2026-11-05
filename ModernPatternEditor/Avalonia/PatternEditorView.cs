@@ -28,7 +28,8 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         readonly TextBlock status1 = StatusText(100), status2 = StatusText(150), status3 = StatusText(double.NaN);
         readonly Border help;
 
-        readonly ToggleButton playButton = SmallToggle("▶", "Play/Stop Pattern (Space)");
+        // Fork: Space plays and stops the song (the studio's window has it); Shift+Space this pattern, from the cursor.
+        readonly ToggleButton playButton = SmallToggle("▶", "Play/Stop Pattern (Shift+Space: from the cursor)");
         readonly NumericUpDown beatsBox = Number(1, 8192, "Beats");
         readonly NumericUpDown tracksBox = Number(0, 128, "Tracks");
         readonly ComboBox waveBox = new ComboBox { Width = 160, Margin = new Thickness(4, 4, 0, 4) };
@@ -373,6 +374,8 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 new[] { "Alt+Y", "Select keyboard mapping" },
                 new[] { "Alt+N", "Toggle Play Notes" },
                 new[] { "Return", "Switch to sequence editor" },
+                new[] { "Space", "Play/stop the song" },
+                new[] { "Shift+Space", "Play pattern from cursor position / stop it" },
                 new[] { "Ctrl+Return", "Create pattern" },
                 new[] { "Ctrl+Shift+Return", "Clone pattern" },
                 new[] { "Ctrl+Del", "Delete pattern" },

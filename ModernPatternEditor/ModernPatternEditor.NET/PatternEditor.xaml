@@ -164,7 +164,7 @@
                                     <Label Target="patternBox" VerticalAlignment="Center" Margin="4,0,0,0"  Visibility="Visible">Pattern:</Label>
                                     <ComboBox Name="patternBox" Margin="4,4,0,4" Height="22" Width="100" SelectedItem="{Binding SelectedMachine.SelectedPattern}" ItemsSource="{Binding SelectedMachine.Patterns}" DisplayMemberPath="Name" ToolTip="Pattern (Alt+P)"  Visibility="Visible"/>
 -->
-                                    <ToggleButton Width="14" Height="14" VerticalAlignment="Center" Margin="8,4,0,4" Focusable="False" Padding="3" ToolTip="Play/Stop Pattern (Space)" IsChecked="{Binding SelectedMachine.SelectedPattern.Pattern.IsPlayingSolo, Mode=TwoWay}">
+                                    <ToggleButton Width="14" Height="14" VerticalAlignment="Center" Margin="8,4,0,4" Focusable="False" Padding="3" ToolTip="Play/Stop Pattern (Shift+Space: from the cursor)" IsChecked="{Binding SelectedMachine.SelectedPattern.Pattern.IsPlayingSolo, Mode=TwoWay}">
                                         <ToggleButton.Content>
                                             <Path Data="{DynamicResource RightArrow}" Stretch="Fill" Fill="#F0F0F0" />
                                         </ToggleButton.Content>

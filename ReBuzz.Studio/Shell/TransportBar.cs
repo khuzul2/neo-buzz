@@ -31,8 +31,8 @@ namespace ReBuzz.Studio.Shell
             Padding = new Thickness(8, 4);
             BorderBrush = new SolidColorBrush(Color.FromRgb(0x30, 0x30, 0x30));
             BorderThickness = new Thickness(0, 0, 0, 1);
-            ToolTip.SetTip(play, "Play (F5)");
-            ToolTip.SetTip(stop, "Stop (F8): again to silence everything");
+            ToolTip.SetTip(play, "Play (Space or F5)");
+            ToolTip.SetTip(stop, "Stop (Space or F8). Stop or F8 again silences everything");
             ToolTip.SetTip(record, "Record (F7)");
             play.Click += (s, e) => Play();
             stop.Click += (s, e) => Stop();

@@ -755,8 +755,26 @@ namespace ReBuzz
 
             this.PreviewKeyDown += (sender, e) =>
             {
-                // Fork: the docked Session View gets its keys (Space, arrows, digits, Ctrl+Z...)
-                // before the main window's shortcuts; it leaves F-keys and Ctrl+Tab alone.
+                // Fork: Space plays and stops the song in every view, Shift+Space in the pattern view plays
+                // the pattern from the editor's cursor (TransportKeys): before the views and the focused
+                // control, so a focused button doesn't click too; not while typing in a box.
+                switch (TransportKeys.For(e.Key, Keyboard.Modifiers, e.IsRepeat, Buzz.ActiveView == BuzzView.PatternView, e.OriginalSource as DependencyObject))
+                {
+                    case TransportKeys.Command.TogglePlaying:
+                        TransportCommands.TogglePlaying(Buzz);
+                        e.Handled = true;
+                        return;
+                    case TransportKeys.Command.PatternPreview:
+                        TransportCommands.TogglePatternPreview(Buzz);
+                        e.Handled = true;
+                        return;
+                    case TransportKeys.Command.Repeat:
+                        e.Handled = true;
+                        return;
+                }
+
+                // Fork: the docked Session View gets its keys (arrows, digits, Ctrl+Z...) before the
+                // main window's shortcuts; it leaves F-keys and Ctrl+Tab alone.
                 if (Buzz.ActiveView == BuzzView.SessionView && sessionDock != null && sessionDock.HandleKeyEvent(e))
                     return;
 
@@ -869,46 +887,7 @@ namespace ReBuzz
                         buzzCore.AudioEngine.Reset();
                         e.Handled = true;
                     }
-                    else if (e.Key == Key.Space)
-                    {
-                        if (Buzz.ActiveView == BuzzView.PatternView)
-                        {
-                            if (Buzz.PatternEditorPattern != null)
-                            {
-                                if (!Buzz.PatternEditorPattern.IsPlayingSolo && Buzz.Playing)
-                                {
-                                    Buzz.Playing = false;
-                                }
-                                else
-                                {
-                                    Buzz.PatternEditorPattern.IsPlayingSolo ^= true;
-                                }
-                            }
-                            e.Handled = true;
-                        }
-                    }
-                }
-                if (Keyboard.Modifiers == ModifierKeys.Shift)
-                {
-                    if (e.Key == Key.Space)
-                    {
-                        if (Buzz.ActiveView == BuzzView.PatternView)
-                        {
-                            if (Buzz.PatternEditorPattern != null)
-                            {
-                                if (Buzz.PatternEditorPattern.IsPlayingSolo)
-                                {
-                                    Buzz.PatternEditorPattern.IsPlayingSolo = false;
-                                }
-                                else
-                                {
-                                    var pattern = Buzz.PatternEditorPattern as PatternCore;
-                                    pattern.PlayFormPatternEditorPosition();
-                                }
-                            }
-                            e.Handled = true;
-                        }
-                    }
+                    // Fork: Space and Shift+Space are handled above (TransportKeys).
                 }
 
                 if (Keyboard.Modifiers == ModifierKeys.Control)

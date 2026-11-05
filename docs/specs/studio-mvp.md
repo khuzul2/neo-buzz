@@ -58,6 +58,7 @@
    - It needs no .NET install.
    - Settings live in `~/Library/Application Support/ReBuzz`, as for `rebuzz-headless`.
 10. **Edit commands go to the selected view first.** Avalonia's window key bindings see Ctrl/Command shortcuts before the views do. So the shell's Edit menu and its shortcuts (Undo, Redo, Cut, Copy, Paste) go to a focused text box first, as a Mac app's go to the first responder, then to the selected tab's view when it implements `IStudioEditTarget`. A view returns false to pass the command on to the song's undo history. Views don't bind these keys themselves.
+11. **Space plays and stops the song, in every view, in both apps.** As in most DAWs, and as the Session View had it; F5, F8 and F7 stay as Buzz has them (fn+F5 on a Mac keyboard). The main window takes Space before the focused control (`Shell/TransportKeys.cs`, a tunnel handler; ReBuzz.exe: its PreviewKeyDown, `AppViews/TransportKeys.cs`), so a focused button or check box doesn't click too. It leaves Space to a text box that can be typed in (the Song Notes editor, the BPM box, the pattern editor's number boxes, the Session View's clip boxes, an editable drop-down; on Windows also Song Info, the machine list's search and password boxes), an open drop-down and a menu. A start waiting for its tick counts as playing (`PlayRequested`), so a second press stops it; a held Space toggles once. Shift+Space on the Pattern tab plays the pattern editor's pattern on its own from the editor's cursor, and stops it, as ReBuzz.exe's Shift+Space does; upstream's plain Space there (the pattern solo) is the transport's now, and stops a pattern playing on its own too. Space is not a macOS menu bar key equivalent, which would reach the menu before a text box: Transport ▸ Play or Stop shows it in its text. One command for both apps and both Session Views (`ReBuzz/Core/TransportCommands.cs`). Tests: `TransportKeysTests` (the studio), `TransportKeysTests` in ReBuzzTests (ReBuzz.exe's decision and the command; its main window isn't built in the tests).
 
 ## 4. Steps (PR-sized)
 
@@ -89,8 +90,8 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 4. **Turn a knob.** Double-click Poly: its editor. Drag F1 cutoff. ⌘Z undoes it.
 5. **Type a pattern.** F2. Click the grid, Tab to the Note column, type `z c b q`.
 6. **Arrange.** F4. Bar 1 of Poly's track has the pattern already; click bar 2, type `0`. Click bar 1, ⌘B; bar 2, ⌘E: the loop is those two bars.
-7. **Play.** Loop on (the transport bar), F5: you hear it, looping. F8 stops.
-8. **Save, reopen.** ⇧⌘S (save as `.bmxml`), ⌘N, ⌘O it again, F5: the same.
+7. **Play.** Loop on (the transport bar), Space: you hear it, looping. Space again stops. (F5 and F8 do too, fn+F5 and fn+F8 on a Mac keyboard.) Click in the Song Notes editor and press Space: a space is typed and the song plays on.
+8. **Save, reopen.** ⇧⌘S (save as `.bmxml`), ⌘N, ⌘O it again, Space: the same.
 9. **An old song of yours.** ⌘O a `.bmx` made on Windows: native machines show "missing", Neo and Pedal machines play. ⇧⌘S a copy, reopen it: the same machines, patterns and arrangement.
 10. **An agent.** ⇧⌘A: tick Allow agents, Copy the line. Paste it in a terminal (`claude mcp add --transport http rebuzz …`). In Claude Code: "What's in my ReBuzz song?" The status line shows `Agent: studio_status…`, and the answer names your machines.
 11. **Look and feel.** Fonts and Retina sharpness, trackpad scroll and pinch in the machine view, the menu bar (what it shows with a machine window in front), ⌘ shortcuts.
@@ -343,7 +344,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 - **The Session View's Sync and Controllers menus** (⚙), as WPF's, which S5 left out.
 - **Menus** (`AppMenu`): one model, shown as the macOS menu bar (`NativeMenu`) on a Mac and as the window's menu elsewhere.
   - The app menu: About ReBuzz, Preferences… ⌘,; Avalonia adds Services, Hide, Show All and Quit ⌘Q (Quit asks about unsaved changes through the window's closing).
-  - File (New, Open…, Open Recent ▸, Save, Save As…; Exit elsewhere), Edit (Undo, Redo, Cut, Copy, Paste; Preferences elsewhere), Transport (Play F5, Stop F8, Record F7, Restart audio F12), View (the tabs: Pattern F2, Machines F3, Sequence F4, Session Ctrl+Tab and back), Window (Minimize, Zoom, Agent connection… ⇧⌘A), Help (Keyboard shortcuts…; About elsewhere).
+  - File (New, Open…, Open Recent ▸, Save, Save As…; Exit elsewhere), Edit (Undo, Redo, Cut, Copy, Paste; Preferences elsewhere), Transport (Play or Stop Space, Play F5, Stop F8, Record F7, Restart audio F12; Space is the window's key, not a menu bar key equivalent, so the menu bar shows it in the item's text: §3.11), View (the tabs: Pattern F2, Machines F3, Sequence F4, Session Ctrl+Tab and back), Window (Minimize, Zoom, Agent connection… ⇧⌘A), Help (Keyboard shortcuts…; About elsewhere).
   - Submenus are built as they open (recent files). The View keys are the window's, after the views (F2 renames in the Session View), not menu key equivalents; Minimize has no ⌘M, which the machine view uses for mute.
 - **Recent files:** File ▸ Open Recent lists the engine's "Recent File List" (song, then its folder), greyed when the file is gone, with Clear Menu.
 - **Autosave:** at start-up a leftover autosave is offered (Yes opens it unsaved under its song's name, No deletes, Cancel keeps it), then unsaved changes autosave once a minute when due, as WPF's `StartAutosave` (`SongAutosave`). Not in `--smoke`.

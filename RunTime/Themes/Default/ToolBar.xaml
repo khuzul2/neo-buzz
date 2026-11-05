@@ -201,7 +201,7 @@
       <Separator/>
 
       <ToggleButton IsChecked="{Binding Path=Playing, Mode=TwoWay}">
-        <ToggleButton.ToolTip>Play (F5)</ToggleButton.ToolTip>
+        <ToggleButton.ToolTip>Play (Space or F5)</ToggleButton.ToolTip>
         <Image Source="gfx/button_play.png"/>
       </ToggleButton>
       <ToggleButton IsChecked="{Binding Path=Recording, Mode=TwoWay}">
@@ -209,7 +209,7 @@
         <Image Source="gfx/button_rec.png"/>
       </ToggleButton>
       <Button Command="{Binding StopCommand}">
-        <Button.ToolTip>Stop (F8)</Button.ToolTip>
+        <Button.ToolTip>Stop (Space or F8)</Button.ToolTip>
         <Image Source="gfx/button_stop.png" Style="{StaticResource ButtonImageStyle}"/>
       </Button>
       <ToggleButton IsChecked="{Binding Path=Looping, Mode=TwoWay}">
