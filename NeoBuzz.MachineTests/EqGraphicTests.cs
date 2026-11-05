@@ -593,23 +593,18 @@ namespace NeoBuzz.MachineTests
             var r = new float[EqEngine.MaxBlock];
             var rng = new Random(1);
             var settings = Enumerable.Range(0, 8).Select(_ => Random(rng)).ToArray();
-            void Blocks(int count)
+            void Block(int b)
             {
-                for (int b = 0; b < count; b++)
-                {
-                    for (int i = 0; i < l.Length; i++) l[i] = r[i] = (float)Math.Sin(i * 0.05 + b);
-                    var s = settings[b % settings.Length];
-                    for (int k = 0; k < N; k++) v.Set(GraphicDesign.Slider(k), Params.Table[GraphicDesign.Slider(k)].Raw(s[k]));
-                    if (b % 50 == 49) v.Set(P.Mode, 1 - v[P.Mode]);
-                    e.Process(l, r, l.Length);
-                }
+                for (int i = 0; i < l.Length; i++) l[i] = r[i] = (float)Math.Sin(i * 0.05 + b);
+                var s = settings[b % settings.Length];
+                for (int k = 0; k < N; k++) v.Set(GraphicDesign.Slider(k), Params.Table[GraphicDesign.Slider(k)].Raw(s[k]));
+                if (b % 50 == 49) v.Set(P.Mode, 1 - v[P.Mode]);
+                e.Process(l, r, l.Length);
             }
-            Blocks(200);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            Blocks(2000);
-            long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+            for (int b = 0; b < 200; b++) Block(b);
+            var (bytes, why) = AllocationCheck.Run(2000, Block);
             Measure.Report($"Neo EQ graphic: {bytes} bytes allocated over 2000 blocks with the sliders moving every block and the mode switching");
-            Assert.That(bytes, Is.EqualTo(0));
+            Assert.That(bytes, Is.EqualTo(0), why);
         }
 
         // ------------------------------------------------------------------ switching and passing

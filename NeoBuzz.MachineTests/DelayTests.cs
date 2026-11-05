@@ -700,24 +700,19 @@ namespace NeoBuzz.MachineTests
             var l = new float[DelayEngine.MaxBlock];
             var r = new float[DelayEngine.MaxBlock];
             var rng = new Random(1);
-            void Blocks(int count)
+            void Block(int b)
             {
-                for (int b = 0; b < count; b++)
-                {
-                    for (int i = 0; i < l.Length; i++) l[i] = r[i] = (float)Math.Sin(i * 0.05 + b) * 0.3f;
-                    if (b % 3 == 0) v.Set(P.Time, rng.Next(10001));
-                    if (b % 50 == 7) v.Set(P.Sync, rng.Next(9));
-                    if (b % 70 == 9) v.Set(P.Mode, rng.Next(3));
-                    if (b % 90 == 11) e.Tempo = 90 + rng.Next(80);
-                    e.Process(l, r, l.Length);
-                }
+                for (int i = 0; i < l.Length; i++) l[i] = r[i] = (float)Math.Sin(i * 0.05 + b) * 0.3f;
+                if (b % 3 == 0) v.Set(P.Time, rng.Next(10001));
+                if (b % 50 == 7) v.Set(P.Sync, rng.Next(9));
+                if (b % 70 == 9) v.Set(P.Mode, rng.Next(3));
+                if (b % 90 == 11) e.Tempo = 90 + rng.Next(80);
+                e.Process(l, r, l.Length);
             }
-            Blocks(200);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            Blocks(2000);
-            long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+            for (int b = 0; b < 200; b++) Block(b);
+            var (bytes, why) = AllocationCheck.Run(2000, Block);
             Measure.Report($"Neo Delay: {bytes} bytes allocated over 2000 blocks with the time, Sync, Mode and tempo moving");
-            Assert.That(bytes, Is.EqualTo(0));
+            Assert.That(bytes, Is.EqualTo(0), why);
         }
 
         [Test]

@@ -9,6 +9,13 @@
 // thread of its own), what the runtime did on the reading thread through the stretch: JIT (each method and its tier),
 // type loads, exceptions, lock contention, waits, assembly loads and the GC's allocation ticks (which name a type), each
 // placed in the buffer it fell in; and the GCs, on whatever thread.
+//
+// NeoBuzz.MachineTests compiles this file too (its AllocationCheck: every machine's zero-allocation test), where a stretch
+// is a machine's blocks: the unit names them. The thread is the OS's id, as the runtime's events carry it (Windows, Linux
+// and macOS). The other threads' events are kept too (fewer), and a buffer that allocated lists them after this thread's:
+// what else ran then, and what to read where this thread's id didn't match the events'.
+
+#nullable enable
 
 using System;
 using System.Collections.Concurrent;
@@ -33,18 +40,21 @@ namespace ReBuzzTests.Automation
         readonly long thread;
         readonly DateTime anchorUtc;
         readonly long anchorTimestamp;
+        readonly string unit;
 
         /// <param name="buffers">The most buffers to keep (more are measured, not kept).</param>
         /// <param name="listen">Whether to listen to the runtime's events through the stretch.</param>
-        public AllocationWindow(int buffers, bool listen = true)
+        /// <param name="unit">What one measured stretch is called in the description ("buffer", "block").</param>
+        public AllocationWindow(int buffers, bool listen = true, string unit = "buffer")
         {
+            this.unit = unit;
             bytes = new long[buffers];
             methods = new long[buffers];
             jitTicks = new long[buffers];
             starts = new long[buffers];
             ends = new long[buffers];
             gcs = new int[buffers];
-            thread = OperatingSystem.IsWindows() ? GetCurrentThreadId() : OperatingSystem.IsLinux() ? gettid() : -1;
+            thread = CurrentOsThreadId();
             if (listen) events = new RuntimeEvents(thread);
             // Once before the stretch: whatever these reads compile or load, here.
             Begin();
@@ -59,6 +69,24 @@ namespace ReBuzzTests.Automation
 
         [DllImport("libc", EntryPoint = "gettid")]
         static extern int gettid();
+
+        [DllImport("libc", EntryPoint = "pthread_threadid_np")]
+        static extern int pthread_threadid_np(IntPtr thread, out ulong id);
+
+        /// <summary>This thread's id as the runtime's events carry it (macOS: pthread_threadid_np); -1 where unknown.</summary>
+        static long CurrentOsThreadId()
+        {
+            try
+            {
+                if (OperatingSystem.IsWindows()) return GetCurrentThreadId();
+                if (OperatingSystem.IsLinux()) return gettid();
+                if (OperatingSystem.IsMacOS()) return pthread_threadid_np(IntPtr.Zero, out ulong id) == 0 ? (long)id : -1;
+            }
+            catch (Exception e) when (e is DllNotFoundException or EntryPointNotFoundException)
+            {
+            }
+            return -1;
+        }
 
         /// <summary>Buffers measured.</summary>
         public int Count => count;
@@ -118,27 +146,41 @@ namespace ReBuzzTests.Automation
             double median = durations.Count > 0 ? durations[durations.Count / 2] : 0;
             var placed = all.Select(e => (Entry: e, Buffer: BufferAt(e.Time))).ToList();
             var text = new StringBuilder();
-            text.Append($"\nwhat this thread did in the buffers that allocated (a buffer took {median:F3} ms at the median):");
+            text.Append($"\nwhat this thread did in the {unit}s that allocated (a {unit} took {median:F3} ms at the median" +
+                        (thread < 0 ? "; this thread's id unknown: every thread's events kept" : "") + "):");
             foreach (int i in allocating)
             {
-                text.Append($"\n  buffer {i}: {bytes[i]} bytes in {Ms(ends[i] - starts[i]):F3} ms; the JIT compiled {methods[i]} methods on this thread " +
+                text.Append($"\n  {unit} {i}: {bytes[i]} bytes in {Ms(ends[i] - starts[i]):F3} ms; the JIT compiled {methods[i]} methods on this thread " +
                             $"({TimeSpan.FromTicks(jitTicks[i]).TotalMilliseconds:F3} ms); GCs {gcs[i]}");
-                var mine = placed.Where(p => p.Buffer == i).Select(p => p.Entry).ToList();
+                var inIt = placed.Where(p => p.Buffer == i).Select(p => p.Entry).ToList();
+                var mine = inIt.Where(e => e.Thread == thread || IsGc(e)).ToList();
+                var others = inIt.Where(e => e.Thread != thread && !IsGc(e)).ToList();
                 if (!listened)
                     text.Append("; the runtime's events weren't listened to");
                 else if (mine.Count == 0)
                     text.Append("; no runtime event on this thread or GC in it");
                 foreach (var e in mine.Take(25))
                     text.Append($"\n    {(e.Thread == thread ? "" : $"[thread {e.Thread}] ")}{e.Name} {e.Payload}");
+                if (others.Count > 0)
+                    text.Append($"\n    other threads in it: {others.Count} events");
+                foreach (var e in others.Take(10))
+                    text.Append($"\n    [thread {e.Thread}] {e.Name} {e.Payload}");
             }
             var elsewhere = placed.Where(p => p.Entry.Thread == thread && p.Buffer > -2 && !allocating.Contains(p.Buffer)).Select(p => p.Entry).ToList();
             text.Append($"\n  runtime events on this thread elsewhere in the stretch: {elsewhere.Count}");
             foreach (var e in elsewhere.Take(10))
                 text.Append($"\n    {e.Name} {e.Payload}");
             if (listened)
-                text.Append($"\n  ({all.Count} runtime events kept in all: this thread's and the GCs)");
+            {
+                int own = all.Count(e => e.Thread == thread);
+                text.Append($"\n  ({all.Count} runtime events kept in all: this thread's {own}, the GCs and other threads' the rest)");
+                if (own == 0 && all.Count > 0)
+                    text.Append($"\n  (none carried this thread's id, {thread}: where the OS's ids don't match the events', read the other threads' above)");
+            }
             return text.ToString();
         }
+
+        static bool IsGc(RuntimeEvents.Entry e) => e.Name.StartsWith("GCStart", StringComparison.Ordinal) || e.Name.StartsWith("GCEnd", StringComparison.Ordinal);
 
         public void Dispose()
         {
@@ -147,8 +189,8 @@ namespace ReBuzzTests.Automation
         }
 
         /// <summary>
-        /// The runtime's events (Microsoft-Windows-DotNETRuntime) on one thread, and its GCs: kept, at most 5000, with
-        /// their time, thread, name and payload.
+        /// The runtime's events (Microsoft-Windows-DotNETRuntime) on one thread and its GCs, kept, at most 5000, and the other
+        /// threads' events, at most 2000: each with its time, thread, name and payload.
         /// </summary>
         internal sealed class RuntimeEvents : EventListener
         {
@@ -165,8 +207,9 @@ namespace ReBuzzTests.Automation
                 | 0x40000000000); // waits on wait handles
 
             static long target;
+            [ThreadStatic] static long dispatcher;      // the thread this listener hears on (+1; 0: not read yet)
             readonly ConcurrentQueue<Entry> kept = new();
-            int keptCount;
+            int keptCount, otherCount;
             long last = Stopwatch.GetTimestamp();
 
             public RuntimeEvents(long thread)
@@ -186,8 +229,12 @@ namespace ReBuzzTests.Automation
                 string name = e.EventName ?? $"event {e.EventId}";
                 if (name == "R2RGetEntryPointStart" || name == "TypeLoadStart") return;      // their ends say what
                 bool gc = name.StartsWith("GCStart", StringComparison.Ordinal) || name.StartsWith("GCEnd", StringComparison.Ordinal);
-                if (e.OSThreadId != Volatile.Read(ref target) && !gc) return;
-                if (Interlocked.Increment(ref keptCount) > 5000) return;
+                // Not the listener's own (the thread its events come in on, compiling and loading what it runs).
+                if (dispatcher == 0) dispatcher = CurrentOsThreadId() + 1;
+                if (e.OSThreadId == dispatcher - 1 && !gc) return;
+                // This thread's and the GCs up to 5000, the other threads' up to 2000.
+                if (e.OSThreadId == Volatile.Read(ref target) || gc ? Interlocked.Increment(ref keptCount) > 5000 : Interlocked.Increment(ref otherCount) > 2000)
+                    return;
                 var payload = new StringBuilder();
                 if (e.PayloadNames != null && e.Payload != null)
                     for (int i = 0; i < e.PayloadNames.Count && i < e.Payload.Count; i++)

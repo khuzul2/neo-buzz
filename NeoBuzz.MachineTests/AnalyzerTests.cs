@@ -278,17 +278,16 @@ namespace NeoBuzz.MachineTests
             Run(e, l, r);   // warm up (JIT, first frames)
             var bl = new float[256];
             var br = new float[256];
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            for (int pos = 0; pos + 256 <= l.Length; pos += 256)
+            var (allocated, why) = AllocationCheck.Run(l.Length / 256, b =>
             {
+                int pos = b * 256;
                 Array.Copy(l, pos, bl, 0, 256);
                 Array.Copy(r, pos, br, 0, 256);
                 if (pos == 256 * 100) { v.Set(P.Smoothing, 3); v.Set(P.Speed, 3); v.Set(P.Reset, 1); }
                 e.Process(bl, br, 256);
-            }
-            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            });
             Measure.Report($"Neo Analyzer: allocation while processing 4 s with parameter changes and a reset: {allocated} bytes");
-            Assert.That(allocated, Is.EqualTo(0));
+            Assert.That(allocated, Is.EqualTo(0), why);
         }
 
         [Test]
