@@ -696,7 +696,7 @@
         "min_value": 0.004
       }
     ],
-    "why": "A note hits the kick and sets the floor its pitch falls to; a Trigger value hits it too and sets its volume (128 = 100 %, kept for later notes). Every hit becomes a kick on C2, its volume the velocity (Vel → level 50 %: velocity in proportion to the level); the song's most common note tunes the kick."
+    "why": "A note hits the kick and sets the floor its pitch falls to; a Trigger value hits it too and sets its volume (128 = 100 %, kept for later notes). Every hit becomes a kick on C2, its volume the velocity (Vel → level 50 %: velocity in proportion to the level); the song's most common note tunes the kick, and each note retunes it as it plays (Kick tune and sweep automated in the converted patterns)."
   },
   "unmapped": [
     {
