@@ -581,29 +581,24 @@ namespace NeoBuzz.MachineTests
             var l = new float[DrumsEngine.MaxBlock];
             var r = new float[DrumsEngine.MaxBlock];
             var pending = new PendingHits(16);
-            void Blocks(int count)
+            void Block(int b)
             {
-                for (int b = 0; b < count; b++)
-                {
-                    if (b % 3 == 0) pending.Set(b % 16, b % DrumsEngine.VoiceCount, 30 + b % 97);
-                    if (b % 7 == 0) pending.Accent();
-                    if (b % 5 == 0) e.NoteOn(1000 + 36 + b % 24, 36 + b % 24, 0.5f);
-                    if (b % 11 == 0) v.Set(P.KickTune, 100 + b % 500);
-                    if (b % 13 == 0) v.Set(P.ChPan, b % 200);
-                    if (b % 17 == 0) v.Set(P.OhDecay, 300 + b % 600);
-                    if (b % 101 == 0) e.AllNotesOff(true);
-                    bool accent = pending.TakeAccent();
-                    e.TickAccent = accent;
-                    pending.Drain(e, accent);
-                    e.Process(l, r, DrumsEngine.MaxBlock);
-                }
+                if (b % 3 == 0) pending.Set(b % 16, b % DrumsEngine.VoiceCount, 30 + b % 97);
+                if (b % 7 == 0) pending.Accent();
+                if (b % 5 == 0) e.NoteOn(1000 + 36 + b % 24, 36 + b % 24, 0.5f);
+                if (b % 11 == 0) v.Set(P.KickTune, 100 + b % 500);
+                if (b % 13 == 0) v.Set(P.ChPan, b % 200);
+                if (b % 17 == 0) v.Set(P.OhDecay, 300 + b % 600);
+                if (b % 101 == 0) e.AllNotesOff(true);
+                bool accent = pending.TakeAccent();
+                e.TickAccent = accent;
+                pending.Drain(e, accent);
+                e.Process(l, r, DrumsEngine.MaxBlock);
             }
-            Blocks(300);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            Blocks(2000);
-            long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+            for (int b = 0; b < 300; b++) Block(b);
+            var (bytes, why) = AllocationCheck.Run(2000, Block);
             Measure.Report($"Neo Drums: {bytes} bytes allocated over 2000 blocks (hits, chokes, notes, accents, tune, pan and decay moving)");
-            Assert.That(bytes, Is.EqualTo(0));
+            Assert.That(bytes, Is.EqualTo(0), why);
         }
 
         [Test]

@@ -623,27 +623,22 @@ namespace NeoBuzz.MachineTests
             var l = new float[FilterEngine.MaxBlock];
             var r = new float[FilterEngine.MaxBlock];
             var rng = new Random(1);
-            void Blocks(int count)
+            void Block(int b)
             {
-                for (int b = 0; b < count; b++)
-                {
-                    for (int i = 0; i < l.Length; i++) l[i] = r[i] = (float)Math.Sin(i * 0.05 + b) * 0.3f;
-                    v.Set(P.Cutoff, rng.Next(10001));
-                    if (b % 50 == 7) v.Set(P.Type, rng.Next(7));
-                    if (b % 60 == 3) v.Set(P.Slope, rng.Next(2));
-                    if (b % 70 == 9) v.Set(P.LfoSync, rng.Next(19));
-                    if (b % 80 == 11) v.Set(P.LfoRetrig, rng.Next(3));
-                    if (b % 90 == 13) v.Set(P.Resonance, rng.Next(1001));
-                    e.Transport = new FilterTransport { Playing = true, Tick = b, SamplesPerTick = 256, TicksPerBeat = 4 };
-                    e.Process(l, r, l.Length);
-                }
+                for (int i = 0; i < l.Length; i++) l[i] = r[i] = (float)Math.Sin(i * 0.05 + b) * 0.3f;
+                v.Set(P.Cutoff, rng.Next(10001));
+                if (b % 50 == 7) v.Set(P.Type, rng.Next(7));
+                if (b % 60 == 3) v.Set(P.Slope, rng.Next(2));
+                if (b % 70 == 9) v.Set(P.LfoSync, rng.Next(19));
+                if (b % 80 == 11) v.Set(P.LfoRetrig, rng.Next(3));
+                if (b % 90 == 13) v.Set(P.Resonance, rng.Next(1001));
+                e.Transport = new FilterTransport { Playing = true, Tick = b, SamplesPerTick = 256, TicksPerBeat = 4 };
+                e.Process(l, r, l.Length);
             }
-            Blocks(200);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            Blocks(2000);
-            long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+            for (int b = 0; b < 200; b++) Block(b);
+            var (bytes, why) = AllocationCheck.Run(2000, Block);
             Measure.Report($"Neo Filter: {bytes} bytes allocated over 2000 blocks with the cutoff moving every block and the type, slope, sync and retrig switching");
-            Assert.That(bytes, Is.EqualTo(0));
+            Assert.That(bytes, Is.EqualTo(0), why);
         }
 
         // ------------------------------------------------------------------ presets, CPU
