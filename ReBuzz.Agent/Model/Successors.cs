@@ -92,6 +92,14 @@ namespace ReBuzz.Agent.Model
         /// + offset (FSM KickXP's Start over its End: Neo Drums' kick sweep). <c>octaves_from</c>: old values adding octaves.
         /// </summary>
         Interval,
+        /// <summary>
+        /// A value read from a table over two old values, interpolated bilinearly (<c>curve</c> "log": in the logarithm of the
+        /// values) and held at the table's edges: <c>x</c> and <c>y</c> the old parameters, <c>xs</c> and <c>ys</c> their values
+        /// along the table (rising), <c>values</c> its rows, one per y (without <c>y</c>: one row, a table over <c>x</c> alone).
+        /// For what two old parameters set together that no formula of the new ones separates: a classic filter's cutoff and
+        /// resonance onto the new one's (Neo Filter's pairs, fitted to the old filter's measured response at each point).
+        /// </summary>
+        Grid,
     }
 
     /// <summary>
@@ -207,11 +215,27 @@ namespace ReBuzz.Agent.Model
         public string LowOff { get; init; }
         public string HighOpen { get; init; }
         public IReadOnlyDictionary<string, SuccessorFilterType> Types { get; init; }
+        /// <summary>Grid: the old parameters across and down, their values along the table, and its rows (one per y value).</summary>
+        public string X { get; init; }
+        public string Y { get; init; }
+        public double[] Xs { get; init; }
+        public double[] Ys { get; init; }
+        public double[][] Values { get; init; }
+        /// <summary>
+        /// Any rule: it applies only while this old parameter is one of <see cref="WhenIs"/> (its choice names, or raw values where it
+        /// has none); otherwise it sets nothing. Two rules on one output, each with its own condition, choose between them (Pedal
+        /// Filter's LFO division, taken only with Tempo Sync on).
+        /// </summary>
+        public string When { get; init; }
+        public IReadOnlyList<string> WhenIs { get; init; }
         /// <summary>Why (a line in the report): "assumed: closed source", "measured on …".</summary>
         public string Why { get; init; } = "";
 
-        public IEnumerable<string> Inputs => Kind switch
+        public IEnumerable<string> Inputs => (When == null ? OwnInputs : OwnInputs.Append(When)).Distinct(StringComparer.OrdinalIgnoreCase);
+
+        IEnumerable<string> OwnInputs => Kind switch
         {
+            SuccessorRuleKind.Grid => Y == null ? new[] { X } : new[] { X, Y },
             SuccessorRuleKind.Sum => Terms.Select(t => t.Param),
             SuccessorRuleKind.LevelsToMix => new[] { Dry }.Where(x => x != null).Concat(Wet.Select(w => w.From)),
             SuccessorRuleKind.Clip => new[] { Threshold, Clamp },
@@ -412,6 +436,14 @@ namespace ReBuzz.Agent.Model
             return new[] { (double)a[0]!, (double)a[1]! };
         }
 
+        static double[] Numbers(JsonNode node) => (node as JsonArray)?.Select(x => (double)x!).ToArray();
+
+        static bool Rising(double[] v)
+        {
+            for (int i = 1; i < v.Length; i++) if (!(v[i] > v[i - 1])) return false;
+            return true;
+        }
+
         static List<SuccessorBand> Bands(JsonNode node) =>
             (node as JsonArray)?.OfType<JsonObject>().Select(x => new SuccessorBand((string)x["param"], (double?)x["hz"] ?? 0)).ToList();
 
@@ -440,6 +472,7 @@ namespace ReBuzz.Agent.Model
                 "filter" => SuccessorRuleKind.Filter,
                 "key_zones" => SuccessorRuleKind.KeyZones,
                 "interval" => SuccessorRuleKind.Interval,
+                "grid" => SuccessorRuleKind.Grid,
                 _ => throw new FormatException($"{pair}: unknown rule kind \"{kind}\"."),
             };
             var rule = new SuccessorRule
@@ -518,6 +551,13 @@ namespace ReBuzz.Agent.Model
                 Drive = (string)r["drive"],
                 Output = (string)r["output"],
                 KneeDb = (double?)r["knee_db"] ?? 0,
+                X = (string)r["x"],
+                Y = (string)r["y"],
+                Xs = Numbers(r["xs"]),
+                Ys = Numbers(r["ys"]),
+                Values = (r["values"] as JsonArray)?.Select(Numbers).ToArray(),
+                When = (string)r["when"]?["param"],
+                WhenIs = r["when"]?["is"] is JsonArray whenIs ? Strings(whenIs) : r["when"]?["is"] is JsonValue one ? new[] { Text(one) } : null,
                 Why = (string)r["why"] ?? "",
             };
             string missing = k switch
@@ -546,6 +586,11 @@ namespace ReBuzz.Agent.Model
                     => "waves, a split for each wave after the first, a zone (wave, low, high) for each wave; with enable: enable_when",
                 SuccessorRuleKind.Unit or SuccessorRuleKind.Db or SuccessorRuleKind.InverseDb or SuccessorRuleKind.FromDb when rule.From == null || rule.To == null => "from and to",
                 SuccessorRuleKind.Interval when rule.From == null || rule.Over == null || rule.To == null => "from, over and to",
+                SuccessorRuleKind.Grid when rule.X == null || rule.To == null || rule.Xs == null || rule.Values == null || rule.Xs.Length < 2 || !Rising(rule.Xs) ||
+                                            (rule.Y == null ? rule.Ys != null || rule.Values.Length != 1 : rule.Ys == null || rule.Ys.Length < 2 || !Rising(rule.Ys) || rule.Values.Length != rule.Ys.Length) ||
+                                            rule.Values.Any(row => row == null || row.Length != rule.Xs.Length) || (rule.Log && rule.Values.Any(row => row.Any(v => !(v > 0))))
+                    => "x, to, xs (at least two, rising) and values (a row of xs' length per y, or one row without y; positive for a log curve), and with y its ys (at least two, rising)",
+                _ when rule.When != null && (rule.WhenIs == null || rule.WhenIs.Count == 0) => "when.param and when.is",
                 _ => null,
             };
             if (missing != null) throw new FormatException($"{pair}: a {kind} rule needs {missing}.");

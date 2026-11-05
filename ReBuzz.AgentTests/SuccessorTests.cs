@@ -660,6 +660,49 @@ namespace ReBuzz.AgentTests
         }
 
         [Test]
+        public void AGridIsReadBetweenItsPointsHeldAtItsEdgesAndAConditionPicksItsRule()
+        {
+            // Two rules on one output, each for its own type; a two-way table in the logarithm and a one-way one in the value.
+            var map = SuccessorMap.Parse("""
+                {
+                  "format": "rebuzz-successor/1", "from": "Jeskola Filter", "to": "Neo Filter",
+                  "rules": [
+                    { "kind": "grid", "x": "Cutoff", "y": "Resonance", "xs": [0, 64, 128], "ys": [0, 128], "values": [[100, 1000, 10000], [200, 2000, 20000]],
+                      "curve": "log", "to": "Cutoff", "when": { "param": "Type", "is": ["lowpass", "highpass"] } },
+                    { "kind": "grid", "x": "Cutoff", "xs": [0, 128], "values": [[50, 150]], "to": "Cutoff", "when": { "param": "Type", "is": "bandpass" } },
+                    { "kind": "grid", "x": "Resonance", "xs": [0, 128], "values": [[0.5, 8]], "curve": "log", "to": "Resonance" }
+                  ],
+                  "evidence": ["a test"]
+                }
+                """);
+            Assert.That(map.Rules[0].Inputs, Is.EquivalentTo(new[] { "Cutoff", "Resonance", "Type" }));
+            Assert.That(map.Rules[1].Inputs, Is.EquivalentTo(new[] { "Cutoff", "Type" }));
+            var c = new SuccessorConverter(map, OldParams(map), SuccessorParam.FromManifest(All()["Neo Filter"]));
+            Assert.That(c.Errors, Is.Empty);
+            double Hz(int type, int cutoff, int res) => Value(c, c.ConvertState(Raws(c, new() { ["Type"] = type, ["Cutoff"] = cutoff, ["Resonance"] = res })), "Cutoff");
+            Assert.That(Hz(0, 64, 0), Is.EqualTo(1000).Within(1), "a point");
+            Assert.That(Hz(1, 32, 0), Is.EqualTo(Math.Sqrt(100 * 1000)).Within(0.5), "halfway in the logarithm");
+            Assert.That(Hz(0, 32, 64), Is.EqualTo(Math.Sqrt(100 * 1000) * Math.Sqrt(2)).Within(0.5), "both ways");
+            Assert.That(Hz(0, 128, 128), Is.EqualTo(20000).Within(20), "the corner");
+            Assert.That(Hz(2, 64, 0), Is.EqualTo(100).Within(0.2), "the band-pass's own rule, in the value");
+            var q = c.ConvertState(Raws(c, new() { ["Resonance"] = 64 }));
+            Assert.That(Value(c, q, "Resonance"), Is.EqualTo(2).Within(0.02), "a table over one parameter");
+            Assert.That(q.Notes, Is.Empty);
+            // Held at its edges: a value past the table's last point reads the last.
+            var held = SuccessorMap.Parse("""
+                { "format": "rebuzz-successor/1", "from": "Jeskola Filter", "to": "Neo Filter", "evidence": ["a test"],
+                  "rules": [ { "kind": "grid", "x": "Cutoff", "xs": [0, 64], "values": [[100, 400]], "curve": "log", "to": "Cutoff" } ] }
+                """);
+            var h = new SuccessorConverter(held, OldParams(held), SuccessorParam.FromManifest(All()["Neo Filter"]));
+            Assert.That(Value(h, h.ConvertState(Raws(h, new() { ["Cutoff"] = 128 })), "Cutoff"), Is.EqualTo(400).Within(0.5));
+            // A table whose rows don't match its axes is refused.
+            Assert.That(() => SuccessorMap.Parse("""
+                { "format": "rebuzz-successor/1", "from": "Jeskola Filter", "to": "Neo Filter",
+                  "rules": [ { "kind": "grid", "x": "Cutoff", "y": "Resonance", "xs": [0, 64], "ys": [0, 128], "values": [[1, 2, 3], [1, 2, 3]], "to": "Cutoff" } ] }
+                """), Throws.InstanceOf<FormatException>());
+        }
+
+        [Test]
         public void ToleranceReadsLoudnessAndThirdOctaves()
         {
             int rate = 44100;

@@ -642,7 +642,7 @@ namespace ReBuzzTests
             Assert.That(rig.Param("LFO sync").DescribeValue(9), Is.EqualTo("1/4"));
             Assert.That(rig.Param("Drive").DescribeValue(240), Is.EqualTo("24.0 dB"));
 
-            // Mix 0 %: the 1 kHz sine reaches the master as it does without the machine (bypassed).
+            // Mix 0 %: the 220 Hz sine reaches the master as it does without the machine (bypassed).
             rig.Param("Mix").SetValue(0, 0);
             rig.Play(0.3);
             var dry = rig.Play(0.3);
@@ -656,12 +656,12 @@ namespace ReBuzzTests
             // The SVF low-pass with its cutoff on the sine, Q 0.71: −3.0 dB; the high-pass two octaves above it: −24.1 dB.
             rig.Param("Mix").SetValue(0, 1000);
             rig.Param("Type").SetValue(0, 2);
-            rig.Param("Cutoff").SetValue(0, (int)Math.Round(10000 * Math.Log(1000.0 / 20) / Math.Log(1000)));
+            rig.Param("Cutoff").SetValue(0, (int)Math.Round(10000 * Math.Log(220.0 / 20) / Math.Log(1000)));
             rig.Param("Resonance").SetValue(0, 65);                             // Q 0.705
             rig.Play(0.5);
             var lowpass = rig.Play(0.5);
             rig.Param("Type").SetValue(0, 4);
-            rig.Param("Cutoff").SetValue(0, (int)Math.Round(10000 * Math.Log(4000.0 / 20) / Math.Log(1000)));
+            rig.Param("Cutoff").SetValue(0, (int)Math.Round(10000 * Math.Log(880.0 / 20) / Math.Log(1000)));
             rig.Play(0.5);
             var highpass = rig.Play(0.5);
             TestContext.Out.WriteLine($"low-pass at the sine {Db(Rms(lowpass) / Rms(bypassed)):F3} dB, high-pass two octaves up {Db(Rms(highpass) / Rms(bypassed)):F3} dB");
