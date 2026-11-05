@@ -2477,7 +2477,8 @@ def main():
     c.close()
     write_json(os.path.join(out, "machine-profile.json"), summary)
     with open(os.path.join(out, "machine-health.md"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(health_report(summary, curated_roles(args.repo or root_default), from_source(args.repo or root_default)))
+        f.write(health_report(summary, curated_roles(args.repo or root_default), from_source(args.repo or root_default),
+                                rebuilt_natives(args.repo or root_default)))
     if args.repo:
         merge_into_repo(os.path.abspath(args.repo), summary, out)
     cats = {}

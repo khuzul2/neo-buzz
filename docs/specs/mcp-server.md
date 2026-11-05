@@ -1185,6 +1185,7 @@ The curated manifests stay curated; checked against the code (ranges, defaults, 
 - The Jeskola six: a licence from Jeskola (or Buzztrax's word on one) would let five of them ship rebuilt as x64 (`"redistribute": true`, `"ship": "rebuilt"`, `"shipPlatform": "x64"`); Cross Delay would need Jeskola's original source.
 - WahManPro's fix is built and measured but not shipped: it changes the LFO's start where upstream's binary starts it elsewhere (above).
 - The rest of the Buzztrax collection (Fuzzpilz, Matilde, Arguru, Geonik and the others) stays source only; upstream ships few of them.
+- Oomek Masterizer returns false (silence) when its Input gain is 0 (−inf dB) whatever the mode; ReBuzz keeps a native's buffer as the machine left it (§12.13), so there it passes its input through instead of muting. Read from the code, not measured; upstream's binary does the same, and the fix belongs with the engine's silence handling (§12.13).
 - R1 (cross-platform.md §4.2): what this says about building them for macOS and Linux is there.
 
 ## 13. Inventory notes (for implementers)
