@@ -193,8 +193,8 @@ jobs:
         fails=0
         for k in $(seq 1 25); do
           dotnet test NeoBuzz.MachineTests --no-build --filter "FullyQualifiedName~AnalyzerTests|FullyQualifiedName~CompTests|FullyQualifiedName~DelayTests|FullyQualifiedName~MeasureTests" --logger "console;verbosity=normal" > soak$k.log 2>&1 || fails=$((fails+1))
-          grep -E "^Neo Delay: [0-9]+ bytes|^Neo Analyzer: allocation" soak$k.log | sed "s/^/[$k] /"
-          grep -E "^\s+Failed " -A60 soak$k.log | head -90 | sed "s/^/[$k] /"
+          grep -E "^Neo Delay: [0-9]+ bytes|^Neo Analyzer: allocation" soak$k.log | sed "s/^/[$k] /" || true
+          grep -E "^\s+Failed " -A60 soak$k.log | head -90 | sed "s/^/[$k] /" || true
         done
-        grep -h -A12 "^4[0-9]* bytes in 300 blocks" soak1.log | head -14
+        grep -h -A12 "bytes in 300 blocks" soak1.log | head -14 || true
         echo "soak: $fails of 25 runs failed"
