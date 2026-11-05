@@ -109,11 +109,16 @@ namespace WDE.PedalPlate
         // MAX_TAIL_SEC is a generous upper bound: Decay is capped at 0.94 and
         // Feedback below the outer loop's edge (see Work), so the energy in the
         // tank always converges in finite time — 8 seconds outlasts the usual
-        // tails (the longest, at full Decay with Feedback at its cap, ring on
-        // beyond it and are cut when the input has been silent for 8 s).
+        // tails. Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): the longest
+        // (Decay 100: −53 dBFS at 8 s) rang on beyond it and were cut, since ReBuzz
+        // passes an effect's input on when Work returns false; now it also waits
+        // for the last block's output to be under OUTPUT_SILENT (−120 dBFS).
+        // Where it was by 8 s, as at the defaults (−142 dBFS), nothing changes.
 
         const float SILENCE_THRESHOLD = 1e-5f;   // ~−100 dBFS
         const float MAX_TAIL_SEC      = 8f;       // seconds to wait after input goes silent
+        const float OUTPUT_SILENT     = 32768e-6f; // −120 dBFS of Buzz's ±32768 (U6)
+        float _lastOutPeak = float.MaxValue;      // the last block's output peak while the input is silent (U6)
 
         int _tailCountdown;   // samples remaining before we declare silence
 
@@ -263,7 +268,7 @@ namespace WDE.PedalPlate
                 {
                     // Tank has fully decayed: nothing left to output
                     _tailCountdown = 0;
-                    return false;
+                    if (_lastOutPeak < OUTPUT_SILENT) return false;
                 }
             }
 
@@ -379,6 +384,15 @@ namespace WDE.PedalPlate
                 output[i].R = dry * input[i].R + wet * outR;
             }
 
+            // Fork (neo-buzz, U6): what the countdown above waits for; read only while the input is silent.
+            _lastOutPeak = float.MaxValue;
+            if (inputPeak <= SILENCE_THRESHOLD)
+            {
+                float peak = 0f;
+                for (int i = 0; i < n; i++)
+                    peak = MathF.Max(peak, MathF.Max(MathF.Abs(output[i].L), MathF.Abs(output[i].R)));
+                _lastOutPeak = peak;
+            }
             return true;
         }
     }

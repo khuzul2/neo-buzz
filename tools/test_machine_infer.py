@@ -583,6 +583,20 @@ class RoleTests(unittest.TestCase):
         self.assertTrue(mr.agrees("delay.time", "delay.time_left"))
         self.assertFalse(mr.agrees("mix.wet", "dyn.ratio"))
 
+    def test_a_subsonic_decay_is_not_a_tail(self):
+        # U6: Pedal Filter's DC blocker decays after a click (13.6 Hz RMS frequency, T60 0.31 s): not a reverb's tail
+        self.assertTrue(mr.subsonic(13.6))
+        self.assertFalse(mr.subsonic(0) or mr.subsonic(None) or mr.subsonic(900.0))
+        click = {"late_db": -37.5, "t60_s": 0.306, "tail_zcr_hz": 13.6}
+        self.assertEqual(mr._tail(click), 0.0)
+        self.assertAlmostEqual(mr._tail(dict(click, tail_zcr_hz=900.0)), 0.306)
+        # its cutoff at 20 Hz takes the direct sound away while the decay stays: a cutoff still, not a dry level
+        lo = feats(level=-47, spread=40, hi=23.1, centroid=-5, direct=-47, late=-35, t60=0.3, tail_zcr_hz=12.0)
+        hi = feats(direct=-2, late=-38, t60=0.3, tail_zcr_hz=14.0)
+        self.assertEqual(self.role(lo, hi, mid=feats(spread=20, hi=2000, centroid=-1)), "filter.cutoff")
+        lo["click"]["tail_zcr_hz"] = hi["click"]["tail_zcr_hz"] = 900.0
+        self.assertEqual(self.role(lo, hi, mid=feats(spread=20, hi=2000, centroid=-1)), "mix.dry")
+
 
 class HotEndTests(unittest.TestCase):
     def test_a_loop_or_resonance_that_rings_gets_a_range_a_level_control_doesnt(self):

@@ -18,10 +18,8 @@
  ],
  "tracks": 0,
  "health": {
-  "status": "warn",
-  "problems": [
-   "slows down after its input goes silent (denormal numbers, likely): up to 20.996 ms of work per second of audio, for about 8 s of the 20 s after, against 1.61 while it plays (12.7× for 4 s or more)"
-  ]
+  "status": "ok",
+  "problems": []
  },
  "profile": {
   "effect": {
@@ -29,6 +27,7 @@
    "latency_samples": 0,
    "latency_ms": 0.0,
    "tail_seconds": 2.47,
+   "tail_hz": 6267.4,
    "echoes": 2,
    "first_echo_seconds": 0.14,
    "gap_before_echo_db": -60.0,
@@ -548,7 +547,7 @@
    "renders": 39
   },
   "denormal": {
-   "slowdown": 12.7
+   "slowdown": null
   }
  },
  "parameters": [

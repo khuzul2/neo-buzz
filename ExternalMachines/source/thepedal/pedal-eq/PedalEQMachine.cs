@@ -199,6 +199,8 @@ namespace WDE.PedalEQ
         const int   SILENCE_HOLDOFF   = 32;     // buffers; ~170 ms at 44.1kHz/256
         int  _silentBuffers = 0;
         bool _isSleeping    = false;
+        // Fork (neo-buzz, U6): the last block's output peak while the input is silent (sleep waits for it too).
+        float _lastOutPeak  = float.MaxValue;
 
         // ── Parameter cache ───────────────────────────────────────────────────
         int _sr;
@@ -588,7 +590,12 @@ namespace WDE.PedalEQ
 
             if (inputPeak < SILENCE_THRESHOLD)
             {
-                if (++_silentBuffers > SILENCE_HOLDOFF)
+                // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): and only once the last block's output is
+                // silent too. ReBuzz passes an effect's input on when Work returns false, so sleeping while a boosted
+                // band still rang cut its tail off (LM at 100 Hz, Q 10, +24 dB: at −30 dBFS, 32 blocks after the
+                // input stopped, so when depended on the block size). Where the output was silent by then, as at moderate
+                // settings, it sleeps on the same block as before.
+                if (++_silentBuffers > SILENCE_HOLDOFF && _lastOutPeak < SILENCE_THRESHOLD)
                 {
                     FlushAllStates();
                     _isSleeping = true;
@@ -630,6 +637,7 @@ namespace WDE.PedalEQ
             if (allFlat)
             {
                 Array.Copy(input, output, n);
+                _lastOutPeak = inputPeak;
                 return true;
             }
 
@@ -695,6 +703,15 @@ namespace WDE.PedalEQ
                 output[i] = new Sample(outL * _gainCurrent, outR * _gainCurrent);
             }
 
+            // Fork (neo-buzz, U6): what the sleep above waits for; read only while the input is silent.
+            _lastOutPeak = float.MaxValue;
+            if (inputPeak < SILENCE_THRESHOLD)
+            {
+                float peak = 0f;
+                for (int i = 0; i < n; i++)
+                    peak = MathF.Max(peak, MathF.Max(MathF.Abs(output[i].L), MathF.Abs(output[i].R)));
+                _lastOutPeak = peak;
+            }
             return true;
         }
     }

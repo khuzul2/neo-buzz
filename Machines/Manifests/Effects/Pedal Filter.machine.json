@@ -20,7 +20,7 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot with every parameter at its maximum at once (+15.2 dBFS peak), but with no parameter alone"
+   "hot with every parameter at its maximum at once (+15.5 dBFS peak), but with no parameter alone"
   ],
   "hot": true
  },
@@ -29,7 +29,8 @@
    "gain_db": -9.49,
    "latency_samples": 3,
    "latency_ms": 0.07,
-   "tail_seconds": 0.0,
+   "tail_seconds": 0.16,
+   "tail_hz": 3.5,
    "echoes": 0,
    "output_correlation": 1.0,
    "spectrum_spread_db": 45.7,
@@ -309,17 +310,19 @@
    "impulse": {
     "latency_samples": 5,
     "direct_db": -12.75,
-    "early_db": -15.05,
-    "late_db": -57.55,
-    "t60_s": null,
-    "t60_span_db": 0.0,
-    "ring_s": 0.006,
+    "early_db": -14.98,
+    "late_db": -37.54,
+    "t60_s": 0.306,
+    "t60_span_db": 20.0,
+    "ring_s": 0.17,
     "rings_past_window": false,
     "echoes": [],
     "echoes_left": [],
     "echoes_right": [],
     "copy_s": null,
     "late_onset_s": 0.003,
+    "tail_zcr_hz": 13.6,
+    "tail_low_db": -0.09,
     "balance_db": 0.0
    },
    "steps": {
@@ -376,8 +379,8 @@
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": 15.24,
-     "growth_db": 0.38,
+     "peak_dbfs": 15.54,
+     "growth_db": 0.44,
      "verdict": "hot"
     }
    },
@@ -401,10 +404,13 @@
     "wobble_db": 0.01,
     "latency_samples": 5,
     "direct_db": -12.75,
-    "early_db": -15.05,
-    "late_db": -120.0,
-    "ring_s": 0.006,
+    "early_db": -14.98,
+    "late_db": -37.54,
+    "t60_s": 0.306,
+    "ring_s": 0.17,
     "late_onset_s": 0.003,
+    "tail_zcr_hz": 13.6,
+    "tail_low_db": -0.09,
     "thd": 1.29,
     "peak_dbfs": -11.7
    },
@@ -519,8 +525,8 @@
      }
     },
     "LFO Depth": {
-     "suggested_role": "lfo.depth",
-     "evidence": "the gain moves 0.0 → 1.0 dB within each tone",
+     "suggested_role": "filter.cutoff",
+     "evidence": "the response's upper corner moves 5.92 kHz → 2.09 kHz (with Cutoff half way)",
      "min": {
       "raw": 0,
       "text": "0"
@@ -555,7 +561,7 @@
      }
     }
    },
-   "renders": 46
+   "renders": 50
   },
   "denormal": {
    "slowdown": null

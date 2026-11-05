@@ -50,6 +50,63 @@ namespace NeoBuzz.PedalTests
             Assert.That(lastNonZero, Is.LessThan(sound + quiet - Rate), "exact zero for the last second of 30 s of silence");
         }
 
+        /// <summary>Settings whose tails ring longest: what a silence report must wait for.</summary>
+        static IEnumerable<TestCaseData> Ringing()
+        {
+            foreach (var e in Effect.All)
+                yield return new TestCaseData(e.Name, "defaults").SetName($"{e.Name} at its defaults");
+            yield return new TestCaseData("Pedal EQ", "LMFreq=0 LMQ=16 LMGain=96").SetName("Pedal EQ, low-mid at 100 Hz, Q 10, +24 dB");
+            yield return new TestCaseData("Pedal EQ", "LSFreq=0 LSGain=96").SetName("Pedal EQ, low shelf at 20 Hz, +24 dB");
+            yield return new TestCaseData("Pedal Plate", "Decay=100").SetName("Pedal Plate, Decay 100");
+            yield return new TestCaseData("Pedal Plate", "Decay=100 Feedback=95").SetName("Pedal Plate, Decay 100, Feedback 95");
+            yield return new TestCaseData("Pedal Filter", "CutoffHz=60 Resonance=100").SetName("Pedal Filter, 60 Hz, Resonance 100");
+        }
+
+        /// <summary>
+        /// ReBuzz passes an effect's input on when its Work returns false ("silent"), so a machine that says so while
+        /// its tail still rings cuts the tail off. Each time a machine starts saying so after the input has faded out,
+        /// the block before it was under −80 dBFS (U6: Pedal EQ stopped a ringing band at −30 dBFS, Pedal Plate at full
+        /// Decay at −53 dBFS 8 s on; the machines' own thresholds are −90 dBFS on a block's input, output or state).
+        /// </summary>
+        [TestCaseSource(nameof(Ringing))]
+        public void ASilenceReportCutsNoTail(string name, string setting)
+        {
+            var e = Effect.Named(name);
+            int sound = Rate, quiet = 60 * Rate, fade = Rate / 20, block = 256;
+            var (l, r) = Noise(sound + quiet);
+            for (int i = sound - fade; i < sound; i++)
+            {
+                float g = 0.5f * (1f + MathF.Cos(MathF.PI * (i - (sound - fade)) / fade));
+                l[i] *= g; r[i] *= g;
+            }
+            for (int i = sound; i < l.Length; i++) l[i] = r[i] = 0;
+            var run = new Runner(e, m =>
+            {
+                if (setting == "defaults") return;
+                foreach (var kv in setting.Split(' '))
+                    m.GetType().GetProperty(kv.Split('=')[0])!.SetValue(m, int.Parse(kv.Split('=')[1]));
+            }) { Reported = new List<int>() };
+            var ol = new float[l.Length];
+            var or = new float[l.Length];
+            run.Run(l, r, 0, l.Length, block, ol, or);
+            double worst = 0;
+            int first = -1, previous = int.MinValue;
+            foreach (int at in run.Reported)
+            {
+                bool starts = previous != at - block && at >= block;   // only where it starts saying so
+                previous = at;
+                if (!starts) continue;
+                double before = 0;
+                for (int i = at - block; i < at; i++)
+                    before = Math.Max(before, Math.Max(Math.Abs(ol[i]), Math.Abs(or[i])));
+                worst = Math.Max(worst, before);
+                if (first < 0) first = at;
+            }
+            PedalReport.Report(first < 0 ? $"{name} ({setting}): never reports silence (60 s after its input stops)"
+                : $"{name} ({setting}): reports silence from {(first - sound) / (double)Rate:F2} s after its input stops, the block before at {Measure.Db(worst):F1} dBFS at most");
+            Assert.That(Measure.Db(worst), Is.LessThan(-80), "silence reported only once the tail is silent");
+        }
+
         [TestCaseSource(nameof(Effects))]
         public void BlocksOf256And117GiveTheSameOutput(Effect e)
         {

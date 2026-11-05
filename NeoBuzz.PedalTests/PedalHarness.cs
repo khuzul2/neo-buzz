@@ -119,6 +119,9 @@ namespace NeoBuzz.PedalTests
 
         public void Set(string property, int value) => Machine.GetType().GetProperty(property)!.SetValue(Machine, value);
 
+        /// <summary>Where given, the first frame of each block whose Work returned false (silent: ReBuzz passes the input on).</summary>
+        public List<int> Reported;
+
         /// <summary>
         /// Processes <paramref name="left"/>/<paramref name="right"/> (±1) from <paramref name="from"/> for
         /// <paramref name="count"/> frames in blocks of <paramref name="block"/>, into <paramref name="outL"/>/<paramref name="outR"/> (±1).
@@ -135,6 +138,7 @@ namespace NeoBuzz.PedalTests
                     output[i] = default;
                 }
                 bool wrote = Effect.Work(Machine, output, input, n);
+                if (!wrote) Reported?.Add(at);
                 var src = wrote ? output : input;
                 for (int i = 0; i < n; i++)
                 {

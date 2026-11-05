@@ -10,8 +10,7 @@
  "health": {
   "status": "warn",
   "problems": [
-   "hot (loud but steady) with Drive at its maximum (96): +1.0 dBFS peak; Output at its maximum (96): +14.6 dBFS peak",
-   "slows down after its input goes silent (denormal numbers, likely): up to 39.384 ms of work per second of audio, for about 20 s of the 20 s after, against 2.061 while it plays (17.6× for 4 s or more)"
+   "hot (loud but steady) with Drive at its maximum (+24.0 dB): +1.0 dBFS peak; Output at its maximum (+24.0 dB): +14.6 dBFS peak"
   ],
   "hot": true
  },
@@ -369,8 +368,8 @@
      "verdict": "ok"
     },
     "max": {
-     "peak_dbfs": 4.64,
-     "growth_db": -0.06,
+     "peak_dbfs": 4.86,
+     "growth_db": -0.02,
      "verdict": "hot"
     }
    },
@@ -386,7 +385,7 @@
      "growth_db": -0.04,
      "verdict": "hot",
      "raw": 96,
-     "text": "96"
+     "text": "+24.0 dB"
     }
    },
    "Output": {
@@ -395,7 +394,7 @@
      "growth_db": 0.35,
      "verdict": "hot",
      "raw": 96,
-     "text": "96"
+     "text": "+24.0 dB"
     }
    }
   },
@@ -429,11 +428,11 @@
      "evidence": "the response's lower corner moves 23.1 Hz → 46.2 Hz",
      "min": {
       "raw": 0,
-      "text": "0"
+      "text": "-24.0 dB"
      },
      "max": {
       "raw": 96,
-      "text": "96"
+      "text": "+24.0 dB"
      }
     },
     "Shape": {
@@ -453,11 +452,11 @@
      "evidence": "the response's lower corner moves 23.1 Hz → 1.05 kHz",
      "min": {
       "raw": 0,
-      "text": "0"
+      "text": "-100%"
      },
      "max": {
       "raw": 127,
-      "text": "127"
+      "text": "98.4%"
      }
     },
     "Bias": {
@@ -465,11 +464,11 @@
      "evidence": "no measurable change between its ends with the others at their defaults",
      "min": {
       "raw": 0,
-      "text": "0"
+      "text": "-100%"
      },
      "max": {
       "raw": 127,
-      "text": "127"
+      "text": "98.4%"
      }
     },
     "Mix": {
@@ -477,7 +476,7 @@
      "evidence": "no measurable change between its ends with the others at their defaults",
      "min": {
       "raw": 0,
-      "text": "0"
+      "text": "0%"
      },
      "max": {
       "raw": 127,
@@ -489,11 +488,11 @@
      "evidence": "the level -24.2 → +23.8 dB, the response's shape unchanged",
      "min": {
       "raw": 0,
-      "text": "0"
+      "text": "-24.0 dB"
      },
      "max": {
       "raw": 96,
-      "text": "96"
+      "text": "+24.0 dB"
      }
     },
     "Hysteresis": {
@@ -505,7 +504,7 @@
      },
      "max": {
       "raw": 127,
-      "text": "127"
+      "text": "10 ms"
      }
     },
     "Dust": {
@@ -517,14 +516,14 @@
      },
      "max": {
       "raw": 127,
-      "text": "127"
+      "text": "100%"
      }
     }
    },
    "renders": 40
   },
   "denormal": {
-   "slowdown": 17.6
+   "slowdown": null
   }
  },
  "parameters": [

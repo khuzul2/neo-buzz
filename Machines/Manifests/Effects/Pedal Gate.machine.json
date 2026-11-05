@@ -8,10 +8,8 @@
  "summary": "Noise gate with an open threshold and a lower close threshold (hysteresis), attack, hold and release, peak or RMS detection, a closed-gate floor (Range), lookahead and a sidechain input: it shuts quiet passages and lets the loud ones through.",
  "tracks": 0,
  "health": {
-  "status": "warn",
-  "problems": [
-   "slows down after its input goes silent (denormal numbers, likely): up to 2.397 ms of work per second of audio, for about 20 s of the 20 s after, against 0.743 while it plays (3.2× for 4 s or more)"
-  ]
+  "status": "ok",
+  "problems": []
  },
  "profile": {
   "effect": {
@@ -412,11 +410,11 @@
      "evidence": "no measurable change between its ends with the others at their defaults",
      "min": {
       "raw": 0,
-      "text": "0"
+      "text": "0.0 dB"
      },
      "max": {
       "raw": 20,
-      "text": "20"
+      "text": "+20.0 dB"
      }
     },
     "Attack ms": {
@@ -424,11 +422,11 @@
      "evidence": "the band's width 9.5 → 9.0 octaves",
      "min": {
       "raw": 0,
-      "text": "0"
+      "text": "0 ms"
      },
      "max": {
       "raw": 500,
-      "text": "500"
+      "text": "500 ms"
      }
     },
     "Hold ms": {
@@ -436,11 +434,11 @@
      "evidence": "the loudest steps lose -76 → 0 dB against the quietest, from the same knee",
      "min": {
       "raw": 0,
-      "text": "0"
+      "text": "0 ms"
      },
      "max": {
       "raw": 2000,
-      "text": "2000"
+      "text": "2 s"
      }
     },
     "Release ms": {
@@ -448,11 +446,11 @@
      "evidence": "the loudest steps lose -90 → -2 dB against the quietest, from the same knee",
      "min": {
       "raw": 1,
-      "text": "1"
+      "text": "1 ms"
      },
      "max": {
       "raw": 2000,
-      "text": "2000"
+      "text": "2 s"
      }
     },
     "Range dB": {
@@ -464,7 +462,7 @@
      },
      "max": {
       "raw": 90,
-      "text": "90"
+      "text": "0.0 dB"
      }
     },
     "Detection": {
@@ -488,7 +486,7 @@
      },
      "max": {
       "raw": 25,
-      "text": "25"
+      "text": "25 ms"
      }
     },
     "Bypass": {
@@ -507,7 +505,7 @@
    "renders": 29
   },
   "denormal": {
-   "slowdown": 3.2
+   "slowdown": null
   }
  },
  "parameters": [

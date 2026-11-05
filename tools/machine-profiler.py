@@ -626,7 +626,8 @@ def profile_effect(c, prof, info, baseline):
         prof.diverges(f"diverges on a click at its defaults ({peak_text(rc['measure'])})")
     else:
         _, cl, cr = read_wav(probe_file(rc, "M"))
-        env = envelope([(a + b) / 2 for a, b in zip(cl, cr)], rate, 5)
+        mono = [(a + b) / 2 for a, b in zip(cl, cr)]
+        env = envelope(mono, rate, 5)
         peak = max(env) if env else 0
         if peak > 0:
             start = int(0.025 / 0.005)    # after the click
@@ -635,6 +636,10 @@ def profile_effect(c, prof, info, baseline):
             fx["tail_seconds"] = round(max(0, last_loud + 1 - start) * 0.005, 2)
             if last_loud >= len(env) - 2:
                 fx["tail_seconds_note"] = "rings longer than the 3 s rendered"
+            # U6 (§12.13): the tail's brightness, so a DC blocker's subsonic decay isn't read as a reverb's tail.
+            hz = mr.rms_hz(mono, int(start * 0.005 * rate), int((last_loud + 1) * 0.005 * rate), rate) if last_loud > start else None
+            if hz is not None:
+                fx["tail_hz"] = round(hz, 1)
             # Echoes: from 60 ms on (pre-delay and early reflections come sooner), the tail rising
             # again by 10 dB or more from a dip. A dense reverb tail doesn't; a delay does, after a gap.
             echoes, low, first, gap = 0, None, None, None
@@ -725,7 +730,7 @@ def classify_effect(prof, fx):
     delay = fx.get("echoes", 0) >= 2 or (fx.get("echoes", 0) == 1 and (fx.get("gap_before_echo_db") or 0) < -40)
     if delay:
         traits.append("delay")
-    elif (fx.get("tail_seconds") or 0) > 0.15:
+    elif (fx.get("tail_seconds") or 0) > 0.15 and not mr.subsonic(fx.get("tail_hz")):
         traits.append("reverb")
     thd, thd_in = loud.get("thd_percent") or 0, loud.get("thd_in_percent") or 0
     if thd > thd_in + 1.5 and thd > 1.5 * thd_in:
@@ -1223,9 +1228,11 @@ def effect_type(click, prior):
         if mean > 0.02 and max(abs(g - mean) for g in gaps) < 0.25 * mean:
             return "delay"
     t60 = click.get("t60_s")
-    if prior in ("delay", "reverb") and isinstance(t60, (int, float)) and t60 >= 0.3 and len(times) < 3 and (click.get("late_db") or -120) > -40:
+    if prior in ("delay", "reverb") and isinstance(t60, (int, float)) and t60 >= 0.3 and len(times) < 3 and (click.get("late_db") or -120) > -40 \
+            and not mr.subsonic(click.get("tail_zcr_hz")):
         return "reverb"
     return prior
+
 
 
 def role_key(p, globals_):
