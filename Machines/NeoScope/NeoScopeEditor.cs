@@ -27,14 +27,16 @@ namespace NeoBuzz.Scope
         internal override ParamDef[] Table => Params.Table;
 
         /// <summary>
-        /// The snapshot the graphs draw, copied from the engine at most once per frame, the trail
-        /// (the sweeps before the newest, with when each was replaced) and the auto scale.
+        /// The snapshot the graphs draw, copied from the engine when it has published a new one (so once a
+        /// frame for the graphs that share it, and never one behind: a 10 ms wall-clock throttle kept the
+        /// last one when a test's offline render outran it, Fork Mac 41966698814), the trail (the sweeps
+        /// before the newest, with when each was replaced) and the auto scale.
         /// </summary>
         internal sealed class Live
         {
             public const int TrailFrames = 8;
             readonly ScopeEngine engine;
-            long last = long.MinValue / 2;   // far enough back that the first read happens, without overflow
+            long lastPublished = -1;         // the engine's count at the last read (none yet: the first read happens)
             public readonly ScopeSnapshot Snapshot = new ScopeSnapshot();
             readonly ScopeFrame[] trail = new ScopeFrame[TrailFrames];
             readonly long[] replacedAt = new long[TrailFrames];
@@ -57,9 +59,10 @@ namespace NeoBuzz.Scope
             public ScopeSnapshot Get()
             {
                 long now = Environment.TickCount64;
-                if (engine != null && now - last >= 10)
+                long published = engine?.Published ?? 0;
+                if (engine != null && published != lastPublished)
                 {
-                    last = now;
+                    lastPublished = published;
                     engine.Read(Snapshot);
                     Reads++;
                     var f = Snapshot.Frame;

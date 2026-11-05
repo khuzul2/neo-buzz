@@ -128,6 +128,8 @@ namespace NeoBuzz.Multiband
         /// Splits <paramref name="n"/> samples into four bands per channel: <paramref name="bandL"/>[b][i] and
         /// <paramref name="bandR"/>[b][i]. With three bands, bands 3 and 4 together are the third band.
         /// </summary>
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Process(float[] inL, float[] inR, int n, double[][] bandL, double[][] bandR)
         {
             for (int i = 0; i < n; i++)

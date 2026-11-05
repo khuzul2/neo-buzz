@@ -23,6 +23,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Multiband
@@ -372,6 +373,8 @@ namespace NeoBuzz.Multiband
             }
         }
 
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Partition()
         {
             int p = linear.P;
@@ -431,6 +434,7 @@ namespace NeoBuzz.Multiband
         }
 
         /// <summary>The bands' dynamics over <paramref name="n"/> samples of bandL/bandR and dryL/dryR, into <paramref name="yl"/>, <paramref name="yr"/> from <paramref name="at"/>.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Dynamics(int n, float[] yl, float[] yr, int at)
         {
             bool ms = stereo == StereoMode.MidSide;

@@ -6,7 +6,10 @@
 #  - parameters: each one's value texts across its range (machine_describe value_table), read as a
 #    unit, a mapping and choices (tools/machine_infer.py);
 #  - generators: how they take notes (MIDI, or their Note track parameter), the pitch convention
-#    (which note plays 440 Hz, from analyze's pitch metric), polyphony and level at the defaults;
+#    (which note plays 440 Hz, from analyze's pitch metric), polyphony and level at the defaults; one
+#    silent on A4 is tried on its manifest's note map (notes.map: {name: key}), then on C2 and D2
+#    (General MIDI's kick and snare: Neo Drums, Neo Sampler's Kit mode) and profiled on the key that
+#    sounds, as a drum kit, else from its played (trigger) parameters, Note parameter or not;
 #  - effects, fed noise and a sine from a Neo Poly: what kind they are, latency, tail, gain at the
 #    defaults, whether gain depends on level, harmonics added, stereo and movement;
 #  - health: load failures, crashes and hangs, NaN or runaway output, sound from silence, output
@@ -438,7 +441,35 @@ def heard_pitch(c, render_id, until):
     return 69 + 12 * math.log2(hz / 440.0), voiced
 
 
-def profile_generator(c, prof, info, baseline):
+def note_number(x):
+    """A MIDI note number from a number or a note name ("C2" = 36, "F#2" = 42; C4 = 60); None when it isn't one."""
+    if isinstance(x, int) and 0 <= x <= 127:
+        return x
+    m = re.fullmatch(r"([A-Ga-g])([#b]?)(-?\d)", str(x).strip())
+    if not m:
+        return None
+    n = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}[m.group(1).upper()] + {"#": 1, "b": -1, "": 0}[m.group(2)]
+    n += 12 * (int(m.group(3)) + 1)
+    return n if 0 <= n <= 127 else None
+
+
+def note_map_keys(manifest):
+    """The keys of a manifest's note map (notes.map: {name: MIDI number or note name}, a drum kit's keys), in its order."""
+    nm = ((manifest or {}).get("notes") or {}).get("map") or {}
+    keys = [note_number(v) for v in (nm.values() if isinstance(nm, dict) else nm)]
+    return [k for i, k in enumerate(keys) if k is not None and k not in keys[:i]]
+
+
+# A drum kit's keys where A4 is silent: General MIDI's kick and snare (Neo Drums, and Neo Sampler's Kit mode, from C2).
+KIT_KEYS = [(36, "General MIDI's kick"), (38, "General MIDI's snare")]
+
+
+def key_of(prof):
+    """The note a generator is played on: A4, or the key that made a kit sound where A4 is silent."""
+    return (prof.data.get("notes") or {}).get("key") or A4
+
+
+def profile_generator(c, prof, info, baseline, manifest=None):
     """How it takes notes, its pitch convention, polyphony and level."""
     note_param = info.get("note_parameter")
     takes_midi = info.get("takes_midi")
@@ -451,18 +482,27 @@ def profile_generator(c, prof, info, baseline):
         prof.warn(f"sounds with no notes ({finite_peak(idle['measure'])} dBFS peak): a drone, noise or a free-running sequencer")
     if blown(idle["measure"]):
         prof.diverges(f"diverges with no notes ({peak_text(idle['measure'])})")
-    def try_modes():
+    def try_modes(pitch=A4):
         for m in modes:
-            set_notes(c, "M", [note(A4)], m)
+            set_notes(c, "M", [note(pitch)], m)
             r = render(c, 0, 4, 1.0)
             if blown(r["measure"]):
-                prof.diverges(f"diverges playing A4 ({peak_text(r['measure'])})")
+                prof.diverges(f"diverges playing {Pitch(pitch)} ({peak_text(r['measure'])})")
                 return m, r
             if not r["measure"].get("silent", True) and (idle["measure"].get("silent", True) or (loudness(r["measure"]) or -99) > (loudness(idle["measure"]) or -99) + 3):
                 return m, r
         return None, None
 
     mode, first = try_modes()
+    key, why_key = A4, None
+    if mode is None:
+        # A drum kit is silent on A4: its manifest's note map first, then General MIDI's kick and snare (C2, D2).
+        tries = [(k, "its manifest's note map") for k in note_map_keys(manifest)] + KIT_KEYS
+        for k, why in [(k, w) for i, (k, w) in enumerate(tries) if k != A4 and k not in [x for x, _ in tries[:i]]]:
+            mode, first = try_modes(k)
+            if mode is not None:
+                key, why_key = k, why
+                break
     if first is not None and blown(first["measure"]):
         prof.data["notes"] = {"input": mode}
         prof.data["type"] = "generator (blows up)"
@@ -482,9 +522,16 @@ def profile_generator(c, prof, info, baseline):
         prof.data["type"] = "generator (silent at its defaults)"
         return
     m = first["measure"]
-    prof.data["level"] = {"note": "A4 at velocity 100, 1.5 beats", "integrated_lufs": loudness(m), "sample_peak_dbfs": finite_peak(m),
+    prof.data["level"] = {"note": f"{Pitch(key)} at velocity 100, 1.5 beats", "integrated_lufs": loudness(m), "sample_peak_dbfs": finite_peak(m),
                           "true_peak_dbtp": (m.get("peaks") or {}).get("true_peak_dbtp")}
     prof.data["cpu_ms_per_s"] = cpu(c, baseline["empty"])
+    if key != A4:
+        # A drum kit: its keys are its drums, so neither A4's pitch nor chords of other keys say anything; the rest of
+        # the profile plays this key.
+        notes.update({"key": key, "pitched": False, "why_unpitched": f"a drum kit: silent on A4, sounds on {Pitch(key)} ({why_key})"})
+        prof.notes.append(f"silent on A4; sounds on {Pitch(key)} ({why_key}), as a drum kit: profiled on that key")
+        prof.data["type"] = "unpitched"
+        return
     # Pitch: A4 sent, then A3 and A5 to see that it follows the keyboard.
     # Short, decaying notes (a 303's) are voiced for a fifth of the window: enough for a median.
     heard, voiced = heard_pitch(c, first["id"], 0.6)
@@ -772,7 +819,7 @@ def type_from_parameters(prof, globals_):
 class Bench:
     """
     The level test's song (machine-safety.md §3.1): the machine alone, fed noise at a mix's level
-    (effects) or holding A4 (generators, as it takes notes), through 4 s renders. A render that
+    (effects) or holding A4 (generators, as it takes notes; a drum kit hit on its key), through 4 s renders. A render that
     diverges leaves the machine's state running away (delay lines, filter memories), so the song is
     built again after one.
     """
@@ -794,7 +841,10 @@ class Bench:
         else:
             if self.prof.data.get("needs_wave"):
                 add_test_wave(self.c)
-            if self.mode not in (None, "none"):
+            if self.mode not in (None, "none") and key_of(self.prof) != A4:
+                # A drum kit is hit on its key every second, as a trigger is.
+                set_notes(c, "M", [note(key_of(self.prof), b, 1, 100) for b in range(0, HELD_BEATS, 2)], self.mode, length=HELD_BEATS)
+            elif self.mode not in (None, "none"):
                 set_notes(c, "M", [note(A4, 0, HELD_BEATS, 100)], self.mode, length=HELD_BEATS)
             elif self.prof.data.get("trigger"):
                 # U2 in depth: a generator that plays from a trigger is hit every second.
@@ -1538,12 +1588,12 @@ def generator_depth(c, prof, globals_, tracks, inferred, ranges, roles=True):
     mode, trigger = notes.get("input"), prof.data.get("trigger")
     if (mode in (None, "none")) and not trigger:
         return
-    pitch = A4 - (notes.get("pitch_offset") or 0) if notes.get("pitched") else A4
+    pitch = A4 - (notes.get("pitch_offset") or 0) if notes.get("pitched") else key_of(prof)
     # The envelope: 2 s held, 2 s to let go.
     eb = NoteBench(c, prof, mode, trigger, held=2.0, tail=2.0, pitch=pitch)
     full = eb.measure()
     if full.get("env"):
-        prof.data["envelope"] = dict(full["env"], note="A4 at velocity 100, held 2 s")
+        prof.data["envelope"] = dict(full["env"], note=f"{Pitch(key_of(prof))} at velocity 100, held 2 s")
     # Velocity: four notes, 16 … 127 (triggers have no velocity).
     if not trigger:
         c.call("song_new", discard_unsaved=True, tempo_bpm=TEMPO)
@@ -1569,8 +1619,10 @@ def generator_depth(c, prof, globals_, tracks, inferred, ranges, roles=True):
             prof.data["velocity"] = dict(vr, levels_db={str(k): v for k, v in levels.items()})
     if not roles:
         return
-    # a low note (A1, 55 Hz) fills every third octave from 500 Hz up with harmonics: a resonance's peak stands out
-    nb = NoteBench(c, prof, mode, trigger, pitch=pitch - 36)
+    # a low note (A1, 55 Hz) fills every third octave from 500 Hz up with harmonics: a resonance's peak stands out (a kit:
+    # its key, its drum)
+    low = pitch if notes.get("key") else pitch - 36
+    nb = NoteBench(c, prof, mode, trigger, pitch=low)
     base = nb.measure()
     if base.get("silent") or base.get("diverged") or base.get("error"):
         prof.notes.append(f"per-parameter sweeps skipped: the held note at the defaults {base}")
@@ -1590,7 +1642,7 @@ def generator_depth(c, prof, globals_, tracks, inferred, ranges, roles=True):
             b, bb = nb, base
         else:
             if t["param"] not in benches:
-                b = NoteBench(c, prof, mode, t, pitch=pitch - 36)
+                b = NoteBench(c, prof, mode, t, pitch=low)
                 benches[t["param"]] = (b, b.measure())
                 current[0] = b
             b, bb = benches[t["param"]]
@@ -1739,7 +1791,7 @@ def denormal_test(c, prof, kind):
             return None
         if prof.data.get("needs_wave"):
             add_test_wave(c)
-        play(c, "M", mode, trigger, [note(A4, 0, beats(2.0), 100)], length=8)
+        play(c, "M", mode, trigger, [note(key_of(prof), 0, beats(2.0), 100)], length=8)
     def windows():
         r = c.call("render", **{"from": 0, "to": beats(2.0), "tail_seconds": 20.0, "cpu": True, "cpu_window_seconds": 2.0}, timeout=max(c.timeout, 180))
         c.renders += [r.get("file")]
@@ -1818,16 +1870,17 @@ def profile_machine(c, gear, kind, baseline, generated):
         prof.data["type"] = "control"
         prof.notes.append("a control machine (moves other machines' parameters): no audio test")
     elif kind == "generator":
-        profile_generator(c, prof, info, baseline)
-        # U2 in depth: a generator without notes (no Note parameter, deaf to MIDI) may play from a trigger.
-        if (prof.data.get("notes") or {}).get("input") == "none" and not info.get("note_parameter") and DEPTH["triggers"]:
+        profile_generator(c, prof, info, baseline, generated)
+        # U2 in depth: a generator no note made sound (deaf to MIDI, no Note parameter, or one that no key played) may play
+        # from a trigger: a drum machine's hit columns.
+        if (prof.data.get("notes") or {}).get("input") == "none" and DEPTH["triggers"]:
             trig = find_trigger(c, prof, globals_)
             if trig:
                 prof.data["trigger"] = {k: trig[k] for k in ("param", "track", "value")}
                 if len(trig.get("all", [])) > 1:
                     prof.data["trigger"]["others"] = [x["param"] for x in trig["all"][1:]]
                     prof.data["_triggers"] = trig["all"]
-                prof.warnings = [w for w in prof.warnings if "no sound from a MIDI note" not in w]
+                prof.warnings = [w for w in prof.warnings if "no sound from a" not in w]
                 prof.notes.append(f"plays from a trigger, not notes: {trig['param']}" + (" (track 0)" if trig.get("track") is not None else "") +
                                   f" written as an event (automation_write, raw {trig['value']}); tried: {'; '.join(trig.get('tried', []))}")
                 prof.data["type"] = "triggered"
@@ -1933,13 +1986,16 @@ def summary_line(e):
         if n.get("input") == "none":
             return f"{t.capitalize()} (profiled draft): no sound from a note at its defaults."
         bits = []
-        if n.get("pitched"):
+        if n.get("key"):
+            bits.append(f"a drum kit: silent on A4, sounds on {Pitch(n['key'])}")
+        elif n.get("pitched"):
             off = n.get("pitch_offset", 0)
             bits.append("pitched" + (f", plays {abs(off)} semitones {'low' if off > 0 else 'high'} (corrected by its pitch offset)" if off else ", plays A4 at 440 Hz as written"))
         else:
             bits.append("unpitched")
-        p = n.get("polyphony", 1)
-        bits.append("monophonic" if p == 1 else f"{p}+ voices" if p >= 8 else f"{p} voices")
+        p = n.get("polyphony", None if n.get("key") else 1)
+        if p is not None:
+            bits.append("monophonic" if p == 1 else f"{p}+ voices" if p >= 8 else f"{p} voices")
         bits.append("takes notes in its tracks" if n.get("input") == "tracks" else "takes MIDI notes")
         lvl = (e.get("level") or {}).get("integrated_lufs")
         if isinstance(lvl, (int, float)):
@@ -2066,7 +2122,7 @@ def health_report(summary, curated=None, sourced=None, rebuilt=None):
         f"parameters on {sum(1 for e in rows if any(r.get('suggested_role') for r in ((e.get('roles') or {}).get('params') or {}).values()))} machines.",
         "",
         "How it's measured: a level test renders 4 s of the machine alone, fed noise at a mix's level (effects, peaks near −9 dBFS) or "
-        "holding A4 (generators): at its defaults, with every parameter at its minimum and at its maximum at once, and, for machines "
+        "holding A4 (generators; a drum kit silent on A4 hit on the key that sounds, every second): at its defaults, with every parameter at its minimum and at its maximum at once, and, for machines "
         "that misbehave that way and effects with a feedback, resonance, gain or Q parameter, each parameter alone at each end. A level "
         "that grew over 4 s is rendered for 30 s: an attack settles, a runaway keeps growing (its last 10 s more than 6 dB over the 10 s before). "
         "A loop's or a resonance's hot end that rings more than 24 dB over its level at the default gets a safe range by bisection too.",
@@ -2074,7 +2130,7 @@ def health_report(summary, curated=None, sourced=None, rebuilt=None):
         "In depth (mcp-server.md §12.12): a test signal for effects, played by Neo Poly and read on both sides: a click with time to ring out "
         "(latency, decay, echoes), a stepped sine sweep (the response) and, for dynamics, level steps of a three-sine chord (the curve, attack "
         "and release); each parameter alone at its ends through it, or a held note on generators, names a suggested role. Generators: velocity "
-        "response, envelope length, a harmonic sieve where YIN hears no pitch, triggers for machines without notes. Every machine: its own work "
+        "response, envelope length, a harmonic sieve where YIN hears no pitch, a drum kit's keys (its manifest's note map, else C2 and D2) and triggers where no note sounds. Every machine: its own work "
         "time per second of audio over the 20 s after its input stops, against while it plays.",
         "",
         "Pitch conventions of the generators (the offset `notes_write` applies so the written pitch plays): " +
@@ -2189,7 +2245,7 @@ def health_report(summary, curated=None, sourced=None, rebuilt=None):
         envs = " / ".join(fmt_s(env.get(k)) or "—" for k in ("attack_s", "release_s", "length_s")) if env else ""
         if env.get("release_past_window"):
             envs = envs.replace(fmt_s(env.get("release_s")), "> " + fmt_s(env.get("release_s")), 1)
-        inn = n.get("input", "") + (f" (trigger: {e['trigger']['param']})" if e.get("trigger") else "")
+        inn = n.get("input", "") + (f" (trigger: {e['trigger']['param']})" if e.get("trigger") else "") + (f" on {Pitch(n['key'])}" if n.get("key") else "")
         if n.get("pitch_method"):
             off += " (sieve)"
         lines.append(f"| {e['gear']} | {e.get('type', '')} | {inn} | {off} | {n.get('polyphony', '')} | "

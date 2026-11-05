@@ -63,6 +63,8 @@ namespace NeoBuzz.Multiband
         public int Reversed(int i) => rev[i];
 
         /// <summary>In place, unscaled: the inverse is the conjugate transform (scale by 1/n yourself).</summary>
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Transform(float[] re, float[] im, bool inverse)
         {
             int n = Size;
@@ -113,6 +115,7 @@ namespace NeoBuzz.Multiband
         /// transform with a new <paramref name="at"/> (Pass 1 when the data was written in bit-reversed order, see
         /// <see cref="Reversed"/>), and don't touch <paramref name="re"/>, <paramref name="im"/> between the parts.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public bool TransformPart(float[] re, float[] im, bool inverse, ref FftProgress at, int budget)
         {
             int n = Size, half = n / 2;
@@ -198,6 +201,7 @@ namespace NeoBuzz.Multiband
         }
 
         /// <summary>Butterflies <paramref name="from"/> … <paramref name="to"/> − 1 of the group at <paramref name="start"/> in the stage of half-length <paramref name="h"/> (whole vectors: multiples of 8 from h = 8 up).</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Stage(float[] re, float[] im, int start, int h, float[] sin, int from, int to)
         {
             int k = from;

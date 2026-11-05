@@ -19,6 +19,7 @@
 //   depend on how the host splits it. No allocation after construction.
 // Pure: tested by NeoBuzz.MachineTests (EqGraphicTests).
 
+using System.Runtime.CompilerServices;
 using System;
 using NeoBuzz.Dsp;
 
@@ -239,6 +240,8 @@ namespace NeoBuzz.Eq
         }
 
         /// <summary>Solves for the sliders' values in dB (<paramref name="sliders"/>[k] for band k; null: all 0).</summary>
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Solve(double[] sliders)
         {
             int n = Active;
@@ -317,6 +320,7 @@ namespace NeoBuzz.Eq
         }
 
         // normal = JᵀJ (lower triangle used).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Normal(int n)
         {
             for (int i = 0; i < n; i++)
@@ -329,6 +333,7 @@ namespace NeoBuzz.Eq
         }
 
         // In place: normal's lower triangle becomes L, normal = L Lᵀ.
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Cholesky(int n)
         {
             for (int j = 0; j < n; j++)
@@ -347,6 +352,7 @@ namespace NeoBuzz.Eq
         }
 
         // step = (L Lᵀ)⁻¹ rhs.
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Substitute(int n)
         {
             for (int i = 0; i < n; i++)
@@ -527,6 +533,7 @@ namespace NeoBuzz.Eq
         }
 
         /// <summary>Processes a stereo block in place (double precision).</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Process(double[] left, double[] right, int n)
         {
             int active = Solver.Active;

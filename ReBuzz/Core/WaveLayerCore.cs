@@ -140,6 +140,8 @@ namespace ReBuzz.Core
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void GetDataAsFloat(float[] output, int outoffset, int outstride, int channel, int offset, int count)
         {
             if (accessor == null)

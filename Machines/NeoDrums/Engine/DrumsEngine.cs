@@ -7,6 +7,7 @@
 // the machine's per-track hit columns and the editor's pads all become Hit(voice, velocity, accent) at a block start,
 // so the output doesn't depend on how the host splits it. Pure; nothing allocates after construction.
 
+using System.Runtime.CompilerServices;
 using System;
 using NeoBuzz.Dsp;
 
@@ -287,6 +288,8 @@ namespace NeoBuzz.Drums
         // ── audio ───────────────────────────────────────────────────────────
 
         /// <summary>Renders a block (overwrites the buffers). Whether anything sounded.</summary>
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public bool Process(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));

@@ -15,7 +15,13 @@
 // made (its own class at once, on the thread making it, before it can tick). Compiling runs no
 // code of the methods (P/Invoke stubs, which would load native libraries, are left out), so
 // nothing the engine or a song holds changes. Recompiling hot methods at a higher tier happens on
-// the runtime's own background thread, as before.
+// the runtime's own background thread, as before, but for one thing: a tier-0 method whose loops
+// run about a thousand times in one call is replaced while it runs (on-stack replacement), by code
+// compiled on the thread running it, once after its first ten such calls and again after the
+// runtime gives it a profiling tier (on its own clock, so whether that falls in a given buffer is
+// chance: CI's first play compiled Neo Multiband's four this way). So the audio path's long loops
+// (the Neo machines' block and partition loops, the sync clock's line fit, a wave layer's copy) are
+// marked AggressiveOptimization: compiled here, fully optimised, once, and never again.
 
 using System;
 using System.Collections.Concurrent;

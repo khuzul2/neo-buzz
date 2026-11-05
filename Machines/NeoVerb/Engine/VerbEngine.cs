@@ -6,6 +6,7 @@
 // stays below 1 at every frequency, whatever the settings (see Bounded), and the shimmer loop is
 // held just inside its edge where it would grow (see the shimmer guard).
 
+using System.Runtime.CompilerServices;
 using System;
 using NeoBuzz.Dsp;
 
@@ -413,6 +414,8 @@ namespace NeoBuzz.Verb
         }
 
         /// <summary>Processes a stereo block in place.</summary>
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Process(float[] left, float[] right, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));

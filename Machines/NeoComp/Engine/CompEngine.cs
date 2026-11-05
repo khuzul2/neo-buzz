@@ -6,6 +6,7 @@
 // computer and the detector's levels, link and smoothing are the shared ones (NeoBuzz.Dsp
 // Dynamics.cs), which Neo Multiband uses too.
 
+using System.Runtime.CompilerServices;
 using System;
 using NeoBuzz.Dsp;
 
@@ -178,6 +179,8 @@ namespace NeoBuzz.Comp
         /// Processes a stereo block in place. <paramref name="keyLeft"/>/<paramref name="keyRight"/>
         /// are input 2 (null when nothing is connected); used when the sidechain is external.
         /// </summary>
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Process(float[] left, float[] right, float[] keyLeft, float[] keyRight, int n)
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
