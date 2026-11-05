@@ -14,7 +14,7 @@ A synthesised drum kit in the TR-909 and TR-808 manner, nothing sampled: twelve 
 | Cowbell | G#3 | CB | two squares a fifth-ish apart (1 : 1.48) through a band-pass |
 | Crash, ride | C#3 (also A3), D#3 (also B3) | CC, RC | the metallic oscillators and noise, band-passed round their tone |
 
-Measured (NeoBuzz.MachineTests, DrumsTests): the kick, toms, snare and rim settle within 3 cents of their tune; the kick's pitch follows 2^(sweep × e^(−t / sweep time)) within 0.6 % per cycle; every decay is the time to fall 60 dB within 6 %; the metallic oscillators are band-limited (aliases under −115 dB at 44.1 and 48 kHz, tune ±12 st, tone 16 kHz); a retrigger fades the voice's last hit over 3 ms and a closed hat cuts the open one in 5 ms without a click; all twelve voices at their longest decays run about 45 times faster than real time; nothing is allocated while it plays, and every block size gives the same samples.
+Measured (NeoBuzz.MachineTests, DrumsTests): the kick, toms, snare and rim settle within 3 cents of their tune; the kick's pitch follows 2^(sweep × e^(−t / sweep time)) within 0.6 % per cycle; every decay is the time to fall 60 dB within 6 %; the metallic oscillators are band-limited (aliases under −115 dB at 44.1 and 48 kHz, tune ±12 st, tone 16 kHz); a retrigger fades the voice's last hit over 3 ms and a closed hat cuts the open one in 5 ms without a click; all twelve voices at their longest decays run about 50 times faster than real time; nothing is allocated while it plays, and every block size gives the same samples.
 
 ## Signal flow
 

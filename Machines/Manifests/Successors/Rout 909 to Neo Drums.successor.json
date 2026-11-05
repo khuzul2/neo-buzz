@@ -542,7 +542,7 @@
     "band_db": null,
     "from_hz": 40,
     "to_hz": 16000,
-    "measured": "",
+    "measured": "Windows (DrumMachinesMoveOntoNeoDrums, package run 41945695705): a two-bar beat of all eleven drums on its trigger columns at its defaults +0.8 dB; with BD Tune 0, BD Decay 63, SD Tune 63, SD Snap 63, CH Decay 0, CC Tune 63 and BD Level 64 −2.5 dB. The repo's songs: 909.bmx and 909_excite.bmx +2.8 dB, Oomek_Aggressor_demo.bmx +2.3 dB, Csi.bmx +1.7 dB; Exciter/test.bmx +3.1 dB, just outside; Masterizer_test.bmx not compared. Third octaves differ most at 40–50 Hz (11–16 dB, the samples' sub-fundamental thump)",
     "why_not": "Rout 909 plays samples of a TR-909; Neo Drums synthesises its voices: their spectra match within a few dB where each voice has most of its energy, not band for band. The level is matched and checked."
   },
   "remarks": [

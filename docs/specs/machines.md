@@ -667,7 +667,7 @@ The editor: the pads (two rows of six, each lit by its voice's level, named with
 | Keys, columns | the General MIDI keys from C2; each hit column at its velocity; Accent on the tick | as set (tests) |
 | Blocks, determinism | blocks of 256, 117 and 16: the same output; every hit of a voice the same | identical |
 | Audio thread | 2000 blocks of hits, chokes, notes, accents and tune, pan and decay moving: no allocation; in the studio, every voice from its keys and the BD column, each work algorithm | 0 bytes; 0 bytes per buffer |
-| CPU | all twelve voices hit every 100 ms at their longest decays (12 hits sounding), 48 kHz: over 10 × real time | 45 × (locally) |
+| CPU | all twelve voices hit every 100 ms at their longest decays (12 hits sounding), 48 kHz: over 10 × real time | 50 × (Linux CI) |
 | Extremes | every parameter at random ends, 24 accented hits a round: finite | finite (peak +32 dBFS: drive 24 dB, level +6, Volume +12 and accent 12 dB at once) |
 | Presets | each sounds at the synths' level (kick, snare and hat together: loudest 50 ms between −30 and −6 dB RMS, peak under −1 dBFS) | all 6: −15.9 to −20.2 dB RMS, peaks −3.7 to −9.0 dBFS |
 | In ReBuzz | C2 on the Note column plays the kick at its tune; the SD column the snare; saved as .bmx and .bmxml and opened again, the kit comes back; the WPF editor (ReBuzzTests, Windows) | C2's kick at 53.98 Hz (its tune 54.0 Hz), the SD column −29.8 dB RMS over 0.4 s; after .bmx and .bmxml the kick at its new tune, 67.08 Hz; the WPF editor 1232 × 738 (the studio's 1232 × 735) |
@@ -676,6 +676,7 @@ As built:
 
 - **Not built**: per-voice outputs (above), a sequencer of its own (patterns are ReBuzz's), flams and swing (Rout 909's Shuffle has no counterpart), sampled layers, a second kick or snare model.
 - **Against the Rout 909 at the defaults** (`DrumsCalibration` data, the probe in `NeoBuzz.MachineTests`' terms): each voice's pitch over time and its times to fall 20, 40 and 60 dB follow the sample's; the third-octave spectra match within a few dB where each voice has most of its energy, not band for band (the worst band differs by 7–21 dB, in bands where the sample has sub-fundamental thump or noise: the toms' 40–63 Hz, the ride's lows).
+- **The successor pairs** (mcp-server.md §12.10, Windows): Rout 909 → Neo Drums, a two-bar beat of its eleven drums at its defaults within 0.8 dB of its loudness (±3 dB), the repo's songs +1.7 to +2.8 dB but Exciter/test.bmx (+3.1 dB, just outside: the songs lean on the kick, which carries more of its energy past the attack than the sample); FSM KickXP → Neo Drums, its kicks at its defaults within 0.0 dB, tuned up and slower −1.2 dB. Pedal Drum Matrix is a multi-effect rack for drums, not a drum machine: no pair.
 - The Linux profile (`docs/machine-health.md`): warn, "silent at its defaults": the profiler plays A4 (MIDI 69), which is no drum key, and tries triggers only for generators without a Note parameter. Neo Drums sounds on C2 and from its hit columns (the tests above and the null test's three cases).
 
 ## 6. Phases

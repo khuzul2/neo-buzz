@@ -729,7 +729,7 @@
     "band_db": null,
     "from_hz": 30,
     "to_hz": 12000,
-    "measured": "",
+    "measured": "Windows (DrumMachinesMoveOntoNeoDrums, package run 41945695705): eight kicks on A1 and a Trigger hit at half volume, at its defaults +0.0 dB; on A2 with Start 180, T DecRate 60, Buzz 0 and A DecTime 60 −1.2 dB. Third octaves differ most at 1.6–2 kHz (9–13 dB: KickXP's buzz layer and thump against Neo Drums' click)",
     "why_not": "Two different kick models: KickXP's pitch falls on a power curve with a buzz layer, Neo Drums' exponentially through a saturator. The pitch it ends on, the fall's time and the level are matched, not the spectrum band for band."
   },
   "remarks": [
