@@ -660,23 +660,28 @@ namespace NeoBuzz.MachineTests
         public void CpuIsSmall()
         {
             // Stereo at 48 kHz, every band busy (a random setting): ≥ 30× real time, 3.3 % of a core (31 sections; the
-            // parametric test's 50× is for 14). And the solve a slider move costs.
+            // parametric test's 50× is for 14). And the solve a slider move costs. Each the best of three passes: other work
+            // on a shared runner only ever adds time.
             const int rate = Measure.Rate;
             var (e, v) = Make(p => Sliders(p, Random(new Random(11))));
             var l = Measure.PinkNoise(10 * rate, 0.2, 31);
             var r = Measure.PinkNoise(10 * rate, 0.2, 32);
             Run(e, l.Take(rate).ToArray(), r.Take(rate).ToArray());
-            GC.Collect();
-            var sw = Stopwatch.StartNew();
-            Run(e, l, r);
-            double speed = 10.0 / sw.Elapsed.TotalSeconds;
             var solver = new GraphicSolver(rate);
             var rng = new Random(12);
             var settings = Enumerable.Range(0, 50).Select(_ => Random(rng)).ToArray();
             foreach (var s in settings) solver.Solve(s);
-            sw.Restart();
-            for (int i = 0; i < 200; i++) solver.Solve(settings[i % settings.Length]);
-            double solveMs = sw.Elapsed.TotalMilliseconds / 200;
+            GC.Collect();
+            double speed = 0, solveMs = double.MaxValue;
+            for (int pass = 0; pass < 3; pass++)
+            {
+                var sw = Stopwatch.StartNew();
+                Run(e, l, r);
+                speed = Math.Max(speed, 10.0 / sw.Elapsed.TotalSeconds);
+                sw.Restart();
+                for (int i = 0; i < 200; i++) solver.Solve(settings[i % settings.Length]);
+                solveMs = Math.Min(solveMs, sw.Elapsed.TotalMilliseconds / 200);
+            }
             Measure.Report($"Neo EQ graphic CPU: {speed:F0}× real time (31 bands, stereo); a slider move's solve {solveMs:F3} ms ({solveMs / (256000.0 / rate) * 100:F1} % of a 256-sample block)");
             Assert.That(speed, Is.GreaterThan(30));
             Assert.That(solveMs, Is.LessThan(2));

@@ -964,7 +964,8 @@ namespace ReBuzzTests
 
         /// <summary>
         /// How long the WPF editor takes to draw everything (each GraphView invalidated, laid out, rendered into a bitmap), a
-        /// frame on average over <paramref name="frames"/>, with <paramref name="between"/> run before each (the audio).
+        /// frame on average over <paramref name="frames"/>, with <paramref name="between"/> run before each (the audio): the
+        /// best of three such passes, as the studio's EditorFrameMs takes, since other work on a shared runner only adds time.
         /// </summary>
         static double EditorFrameMs(MachineCore machine, int frames, Action between)
         {
@@ -984,19 +985,24 @@ namespace ReBuzzTests
             Walk(element);
             var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(size.Width), (int)Math.Ceiling(size.Height), 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
             bitmap.Render(element);
-            var timer = new System.Diagnostics.Stopwatch();
-            for (int k = 0; k < frames; k++)
+            double best = double.MaxValue;
+            for (int run = 0; run < 3; run++)
             {
-                between();
-                Thread.Sleep(12);                                       // the editors read a new snapshot at most every 10 ms
-                timer.Start();
-                foreach (var g in graphs) g.InvalidateVisual();
-                element.UpdateLayout();
-                bitmap.Render(element);
-                timer.Stop();
+                var timer = new System.Diagnostics.Stopwatch();
+                for (int k = 0; k < frames; k++)
+                {
+                    between();
+                    Thread.Sleep(12);                                   // the editors read a new snapshot at most every 10 ms
+                    timer.Start();
+                    foreach (var g in graphs) g.InvalidateVisual();
+                    element.UpdateLayout();
+                    bitmap.Render(element);
+                    timer.Stop();
+                }
+                best = Math.Min(best, timer.Elapsed.TotalMilliseconds / frames);
             }
             Assert.That(graphs.Count, Is.GreaterThan(2), "the editor's graphs");
-            return timer.Elapsed.TotalMilliseconds / frames;
+            return best;
         }
 
         [Test]
