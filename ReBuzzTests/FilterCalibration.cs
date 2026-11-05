@@ -40,29 +40,27 @@ namespace ReBuzzTests
                 Report($"[notice] Filter calibration, {label} (rate {fx.Rate}, R/L {lr:0.00} dB): {FineTransfer.Text(hz, FineTransfer.Db(mono, fx.Left, fx.Rate, hz))}");
             }
 
-            // Jeskola Filter and Filter 2: Type 0 lowpass, 1 highpass, 2 bandpass; Cutoff, Resonance and Bandwidth 0–128.
+            // Jeskola Filter and Filter 2 (measured in package run 41981112935: each a Chamberlin state-variable filter, f and its damping
+            // q = 1 − sin(π · Resonance / 256) from the raw scales; Jeskola Filter's f = sin(π · Cutoff / 256)). Here: Filter 2's cutoff
+            // scale every 4 steps, both filters' top of the cutoff scale in each type, and Jeskola Filter's Bandwidth in band-pass.
+            for (int c = 0; c <= 128; c += 4)
+                Response($"Jeskola Filter 2 lowpass, cutoff {c}, resonance 0", "Jeskola Filter 2", Raw(("Type", 0), ("Cutoff", c), ("Resonance", 0)));
             foreach (var gear in new[] { "Jeskola Filter", "Jeskola Filter 2" })
             {
-                foreach (int c in new[] { 0, 8, 16, 32, 48, 64, 80, 96, 112, 120, 128 })
+                foreach (int c in new[] { 124, 126, 127 })
                     Response($"{gear} lowpass, cutoff {c}, resonance 0", gear, Raw(("Type", 0), ("Cutoff", c), ("Resonance", 0)));
-                foreach (int r in new[] { 16, 32, 48, 64, 80, 96, 112, 118 })
-                    Response($"{gear} lowpass, cutoff 64, resonance {r}", gear, Raw(("Type", 0), ("Cutoff", 64), ("Resonance", r)));
-                foreach (int c in new[] { 32, 96 })
-                    foreach (int r in new[] { 64, 112 })
-                        Response($"{gear} lowpass, cutoff {c}, resonance {r}", gear, Raw(("Type", 0), ("Cutoff", c), ("Resonance", r)));
-                foreach (int c in new[] { 16, 48, 80, 112 })
-                    Response($"{gear} highpass, cutoff {c}, resonance 0", gear, Raw(("Type", 1), ("Cutoff", c), ("Resonance", 0)));
-                Response($"{gear} highpass, cutoff 64, resonance 64", gear, Raw(("Type", 1), ("Cutoff", 64), ("Resonance", 64)));
-                foreach (int c in new[] { 32, 64, 96 })
-                    Response($"{gear} bandpass, cutoff {c}, resonance 0, bandwidth 0", gear, Raw(("Type", 2), ("Cutoff", c), ("Resonance", 0), ("Bandwidth", 0)));
-                foreach (int b in new[] { 32, 64, 96, 128 })
-                    Response($"{gear} bandpass, cutoff 64, resonance 0, bandwidth {b}", gear, Raw(("Type", 2), ("Cutoff", 64), ("Resonance", 0), ("Bandwidth", b)));
-                foreach (int b in new[] { 0, 64 })
-                    Response($"{gear} bandpass, cutoff 64, resonance 64, bandwidth {b}", gear, Raw(("Type", 2), ("Cutoff", 64), ("Resonance", 64), ("Bandwidth", b)));
-                // Whether its resonance is linear: the same setting 18 dB quieter and 6 dB louder.
-                Response($"{gear} lowpass, cutoff 64, resonance 112, input -30 dB", gear, Raw(("Type", 0), ("Cutoff", 64), ("Resonance", 112)), "-30 dB");
-                Response($"{gear} lowpass, cutoff 64, resonance 112, input -6 dB", gear, Raw(("Type", 0), ("Cutoff", 64), ("Resonance", 112)), "-6 dB");
+                foreach (int c in new[] { 120, 128 })
+                    foreach (int type in new[] { 1, 2 })
+                        Response($"{gear} {(type == 1 ? "highpass" : "bandpass")}, cutoff {c}, resonance 0", gear, Raw(("Type", type), ("Cutoff", c), ("Resonance", 0)));
+                Response($"{gear} bandpass, cutoff 64, resonance 64", gear, Raw(("Type", 2), ("Cutoff", 64), ("Resonance", 64)));
+                Response($"{gear} lowpass, cutoff 40, resonance 120", gear, Raw(("Type", 0), ("Cutoff", 40), ("Resonance", 120)));
             }
+            foreach (int r in new[] { 0, 64 })
+                foreach (int b in new[] { 4, 8, 16, 24, 32, 40, 48, 56 })
+                    Response($"Jeskola Filter bandpass, cutoff 64, resonance {r}, bandwidth {b}", "Jeskola Filter", Raw(("Type", 2), ("Cutoff", 64), ("Resonance", r), ("Bandwidth", b)));
+            foreach (int c in new[] { 16, 96 })
+                Response($"Jeskola Filter bandpass, cutoff {c}, resonance 0, bandwidth 64", "Jeskola Filter", Raw(("Type", 2), ("Cutoff", c), ("Resonance", 0), ("Bandwidth", 64)));
+            Response("Jeskola Filter lowpass, cutoff 64, resonance 0, bandwidth 64", "Jeskola Filter", Raw(("Type", 0), ("Cutoff", 64), ("Resonance", 0), ("Bandwidth", 64)));
 
             // FSM WahMan with its LFO still (Modulation 0): its cutoff and resonance scales (its source: a biquad low-pass at
             // 264 · 32^(Cutoff/240) Hz, Q from Resonance).
