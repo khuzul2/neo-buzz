@@ -253,6 +253,35 @@ namespace ReBuzzTests
                     results.Add((label, Within(Replace(client, label))));
                 }
             }
+            // Neo Filter's pairs (mcp-server.md §12.10), on noise: each classic filter at its defaults and in each type. The LFOs
+            // run free in both (FSM WahMan's at its defaults, Pedal Filter's synced): where each is in its cycle when the render
+            // starts differs, so those are reported, not asserted.
+            if (File.Exists(Path.Combine(bin, "Gear", "Effects", "Neo Filter.NET.dll")))
+            {
+                foreach (var (filter, label, changes, assert) in new (string Gear, string Label, JsonArray Changes, bool Assert)[]
+                {
+                    ("Jeskola Filter", "Jeskola Filter defaults (low-pass, open)", null, true),
+                    ("Jeskola Filter", "Jeskola Filter low-pass 64, resonance 64", Raw(("Cutoff", 64), ("Resonance", 64)), true),
+                    ("Jeskola Filter", "Jeskola Filter high-pass 48", Raw(("Type", 1), ("Cutoff", 48)), true),
+                    ("Jeskola Filter", "Jeskola Filter band-pass 32, resonance 96", Raw(("Type", 2), ("Cutoff", 32), ("Resonance", 96)), true),
+                    ("Jeskola Filter 2", "Jeskola Filter 2 defaults (low-pass, open)", null, true),
+                    ("Jeskola Filter 2", "Jeskola Filter 2 low-pass 64, resonance 64", Raw(("Cutoff", 64), ("Resonance", 64)), true),
+                    ("Jeskola Filter 2", "Jeskola Filter 2 high-pass 48", Raw(("Type", 1), ("Cutoff", 48)), true),
+                    ("Jeskola Filter 2", "Jeskola Filter 2 band-pass 96, resonance 110", Raw(("Type", 2), ("Cutoff", 96), ("Resonance", 110)), true),
+                    ("FSM WahMan", "FSM WahMan cutoff 60, resonance 200, LFO still", OnTrack(Raw(("Cutoff", 60), ("Resonance", 200), ("Modulation", 0))), true),
+                    ("FSM WahMan", "FSM WahMan cutoff 200, resonance 0, LFO still", OnTrack(Raw(("Cutoff", 200), ("Resonance", 0), ("Modulation", 0))), true),
+                    ("FSM WahMan", "FSM WahMan defaults (its LFO at 0.11 Hz, ±0.6 octave)", null, false),
+                    ("Pedal Filter", "Pedal Filter defaults (low pass 2 kHz)", null, true),
+                    ("Pedal Filter", "Pedal Filter high pass 24 dB 500 Hz, resonance 60 %", Raw(("Mode", 1), ("Slope", 1), ("Cutoff", 500), ("Resonance", 60)), true),
+                    ("Pedal Filter", "Pedal Filter band pass 1 kHz, resonance 80 %, its LFO on 1/4", Raw(("Mode", 2), ("Cutoff", 1000), ("Resonance", 80), ("Tempo Sync", 1), ("LFO Div", 4), ("LFO Depth", 25)), false),
+                })
+                {
+                    if (!Has(bin, "Effects", filter) && !Has(bin, "Effects", filter + ".NET")) continue;
+                    EffectSong(client, filter, changes, noise: true);
+                    var within = Within(Replace(client, label));
+                    if (assert) results.Add((label, within));
+                }
+            }
             Assert.That(client.CloseAndWait(60), Is.True, client.Errors);
             Assert.That(results.Where(x => x.Within != true).Select(x => $"{x.Label}: {x.Within?.ToString() ?? "not compared"}"), Is.Empty,
                 "the exit-check pairs convert within their stated tolerance");

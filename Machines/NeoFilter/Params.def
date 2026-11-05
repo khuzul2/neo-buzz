@@ -1,0 +1,28 @@
+# Neo Filter parameters (docs/specs/machines.md §5). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoFilter
+namespace NeoBuzz.Filter
+class NeoFilterMachine
+summary Stereo resonant filter effect with Neo Poly's filters: the ladder (low-pass 24 or 12 dB/oct) and the state-variable filter (low-pass, band-pass, high-pass, notch, peak; 12 or 24 dB/oct), cutoff in Hz, resonance as Q up to self-oscillation that stays bounded, drive (soft saturation, oversampled), an envelope follower (attack, release, sensitivity, ± octaves) and an LFO (free or synced to the tempo, seven shapes, stereo phase, locked to the song or restarted by the input) both moving the cutoff, dry/wet mix and output. Zero latency; at Mix 0 % it passes the input bit for bit. Use it for filter sweeps, auto-wah, dub high-pass and low-pass moves, resonant tones and tempo-synced movement.
+
+group Filter
+Type      "Type"            0 6     0     enum Ladder_24 Ladder_12 SVF_LP SVF_BP SVF_HP SVF_Notch SVF_Peak | Ladder: Neo Poly's transistor ladder, low-pass 24 or 12 dB/oct (resonance thins the lows, as a ladder does); SVF: the state-variable filter's low-pass, band-pass, high-pass, notch or peak (unity on both sides, a peak of 2Q at the cutoff)
+Slope     "Slope"           0 1     0     enum 12_dB/oct 24_dB/oct      | SVF low-pass, band-pass, high-pass and notch: one section (12 dB/oct) or two alike in series (24 dB/oct, the resonance's peak doubled in dB). The ladder and the peak ignore it
+Cutoff    "Cutoff"          0 10000 6667  freq 20 20000                 | Cutoff frequency (the ladder's stages, the SVF's centre): where the resonance peaks and the filter self-oscillates
+Resonance "Resonance"       0 1000  66    exp 0.5 100 2                 | Resonance as the Q of the filter's resonant poles: 0.5 none, 0.71 flat (Butterworth), 2–5 a bump, 10 and up a whistle; at its top the filter self-oscillates, at a bounded level
+Drive     "Drive"           0 240   0     lin 0 24 dB 1                 | Soft saturation before the filter, oversampled: quiet signals pass as they are, louder ones bend from −Drive dBFS; 0 dB is clean
+group Envelope
+EnvAmount "Env amount"      0 1200  600   lin -6 6 oct 2                | How far the input's envelope moves the cutoff, in octaves at full envelope (negative: down)
+EnvSens   "Env sensitivity" 0 480   120   lin -12 36 dB 1               | Gain on the detected level: the envelope is full when the input's peak reaches −Sensitivity dBFS
+EnvAttack "Env attack"      0 1000  459   time 0.0001 0.5               | Envelope follower attack: the time constant of its rise (63 % of a step)
+EnvRelease "Env release"    0 1000  588   time 0.001 5                  | Envelope follower release: the time constant of its fall (to 37 %)
+group LFO
+LfoRate   "LFO rate"        0 1000  489   freq 0.01 30                  | LFO speed when LFO sync is Free
+LfoSync   "LFO sync"        0 18    0     enum Free 1/32 1/16T 1/16 1/16D 1/8T 1/8 1/8D 1/4T 1/4 1/4D 1/2T 1/2 1/2D 1_bar 2_bars 4_bars 8_bars 16_bars | One LFO cycle per note value of the song's tempo (T triplet, D dotted); Free: LFO rate
+LfoShape  "LFO shape"       0 6     0     enum Sine Triangle Saw_up Saw_down Square S&H Smooth_random | LFO waveform (S&H: a random step per cycle; Smooth random: random points joined smoothly)
+LfoDepth  "LFO depth"       0 400   0     lin 0 4 oct 2                 | How far the LFO moves the cutoff either way, in octaves
+LfoSpread "LFO spread"      0 180   0     lin 0 180 ° 0                 | The right channel's LFO phase against the left's: 0° both alike, 90° in quadrature, 180° opposite
+LfoRetrig "LFO retrig"      0 2     1     enum Free Song Env            | Free: the LFO runs on; Song: its phase follows the song's position while it plays (the same sweep on every pass and render); Env: it restarts at LFO phase when the input's envelope rises past half
+LfoPhase  "LFO phase"       0 360   0     lin 0 360 ° 0                 | The LFO's phase at the song's start (Song) or where it restarts (Env)
+group Output
+Mix       "Mix"             0 1000  1000  pct                           | Dry against filtered (a crossfade): 100 % only the filter
+Output    "Output"          0 480   240   db -24 24                     | Output gain, −24 … +24 dB in 0.1 dB steps

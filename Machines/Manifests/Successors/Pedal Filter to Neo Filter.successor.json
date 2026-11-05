@@ -1,0 +1,172 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Pedal Filter",
+  "to": "Neo Filter",
+  "summary": "Pedal Filter's state-variable filter becomes Neo Filter's: the same modes but Comb, slopes, cutoff in Hz, resonance as Q with Pedal's level compensation on the output, drive, and its LFO (free or synced, stereo offset) on Neo Filter's.",
+  "set": {
+    "LFO retrig": "Free"
+  },
+  "rules": [
+    {
+      "kind": "choice",
+      "from": "Mode",
+      "to": "Type",
+      "map": {
+        "Low Pass": "SVF LP",
+        "High Pass": "SVF HP",
+        "Band Pass": "SVF BP",
+        "Band Reject": "SVF Notch"
+      },
+      "why": "both state-variable filters (Pedal's source: a TPT SVF; band reject is its low-pass plus high-pass, Neo Filter's notch); Comb, a delay line, has no counterpart"
+    },
+    {
+      "kind": "choice",
+      "from": "Slope",
+      "to": "Slope",
+      "map": {
+        "12 dB / FIR": "12 dB/oct",
+        "24 dB / IIR": "24 dB/oct"
+      },
+      "why": "24 dB is two alike in series in both"
+    },
+    {
+      "kind": "unit",
+      "from": "Cutoff",
+      "to": "Cutoff"
+    },
+    {
+      "kind": "grid",
+      "x": "Resonance",
+      "xs": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.88, 0.9, 0.92, 0.94, 0.95, 0.96, 0.97, 0.98, 0.99, 1.0],
+      "values": [
+        [0.5, 0.5552, 0.6242, 0.7128, 0.8306, 0.995, 1.1044, 1.2407, 1.4154, 1.6474, 1.9704, 2.451, 3.2415, 4.0193, 4.7847, 5.9102, 7.728, 9.1324, 11.16, 14.35, 20.08, 33.44, 99.4]
+      ],
+      "curve": "log",
+      "to": "Resonance",
+      "why": "its source: damping 2R, R = 1 − 0.995 · Resonance/100, so Q = 1/(2R): 0.5 at 0 %, 0.62 at the default, 100 at 100 % (held at 99.4, Neo Filter's last step below self-oscillation: Pedal's never sings)"
+    },
+    {
+      "kind": "grid",
+      "x": "Resonance",
+      "xs": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.88, 0.9, 0.92, 0.94, 0.95, 0.96, 0.97, 0.98, 0.99, 1.0],
+      "values": [
+        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -0.86, -1.87, -3.02, -4.34, -5.89, -7.79, -10.21, -12.08, -13.6, -15.43, -17.76, -19.21, -20.95, -23.14, -26.06, -30.49, -40.0]
+      ],
+      "to": "Output",
+      "why": "its resonance compensation: the filter's output times min(1, 2R), 1/Q once Q passes 1 (above 50 %), down to −40 dB at 100 %"
+    },
+    {
+      "kind": "db",
+      "from": "Drive",
+      "to": "Drive",
+      "why": "its source: a gain of 1 + 9 · Drive/100 into tanh, 0 to 20 dB"
+    },
+    {
+      "kind": "choice",
+      "from": "LFO Wave",
+      "to": "LFO shape",
+      "map": {
+        "Sine": "Sine",
+        "Triangle": "Triangle",
+        "Square": "Square",
+        "Saw Up": "Saw up",
+        "Saw Down": "Saw down",
+        "S & H": "S&H"
+      }
+    },
+    {
+      "kind": "choice",
+      "from": "Tempo Sync",
+      "to": "LFO sync",
+      "map": {
+        "Off": "Free"
+      },
+      "when": {
+        "param": "Tempo Sync",
+        "is": [
+          "Off"
+        ]
+      }
+    },
+    {
+      "kind": "unit",
+      "from": "LFO Rate",
+      "to": "LFO rate",
+      "when": {
+        "param": "Tempo Sync",
+        "is": [
+          "Off"
+        ]
+      },
+      "why": "free, in Hz (Pedal's 0 stops it; Neo Filter's slowest is 0.01 Hz)"
+    },
+    {
+      "kind": "choice",
+      "from": "LFO Div",
+      "to": "LFO sync",
+      "when": {
+        "param": "Tempo Sync",
+        "is": [
+          "On"
+        ]
+      },
+      "map": {
+        "4 Bars": "4 bars",
+        "2 Bars": "2 bars",
+        "1 Bar": "1 bar",
+        "1/2": "1/2",
+        "1/4": "1/4",
+        "1/8": "1/8",
+        "1/16": "1/16",
+        "1/32": "1/32",
+        "1/2 Dot": "1/2D",
+        "1/4 Dot": "1/4D",
+        "1/8 Dot": "1/8D",
+        "1/4 Trip": "1/4T",
+        "1/8 Trip": "1/8T",
+        "1/16 Trip": "1/16T"
+      },
+      "why": "the same divisions (its source's beats: 16 for 4 bars down to 1/6 for 1/16 triplets)"
+    },
+    {
+      "kind": "unit",
+      "from": "LFO Depth",
+      "to": "LFO depth",
+      "why": "both octaves either way around the cutoff"
+    },
+    {
+      "kind": "range",
+      "from": "Phase Offset",
+      "from_range": [0, 180],
+      "to_range": [0, 180],
+      "to": "LFO spread",
+      "why": "the right channel's LFO phase ahead of the left's, in degrees, in both"
+    },
+    {
+      "kind": "unit",
+      "from": "Mix",
+      "to": "Mix"
+    }
+  ],
+  "unmapped": [],
+  "remarks": [
+    "Both are state-variable filters with the same Q and the same two-in-series 24 dB slope. Pedal Filter's runs at the song's rate (the bilinear transform, prewarped at the cutoff) and Neo Filter's four times faster, so near the top of the range Pedal's slopes steepen toward Nyquist where Neo Filter's keep the analog shape: the further above the cutoff, the more (3 dB at 10 kHz for the default 2 kHz low-pass).",
+    "Pedal Filter turns its filter down by 1/Q once Q passes 1 (Resonance above 50 %): that becomes Neo Filter's Output, which reaches −24 dB, so Resonance above 97 % (−26 to −40 dB) is out of its reach.",
+    "Its drive divides by a running peak before tanh, so it distorts alike at any level; Neo Filter's drive is on the level itself (quiet signals pass clean), so a quiet input distorts less after.",
+    "Comb mode (a delay line with feedback at the cutoff's period) has no counterpart on Neo Filter.",
+    "Its LFO runs free from where it is, synced or not; Neo Filter's runs free too (LFO retrig Free), at the division's rate when synced."
+  ],
+  "tolerance": {
+    "loudness_db": 1,
+    "band_db": 3,
+    "from_hz": 50,
+    "to_hz": 12000,
+    "measured": "Linux (tools/headless-replace.py) and Windows (package run 42001593667), Neo Poly noise into it, each side against its input: at its defaults (low pass 2 kHz) +0.06 dB, third octaves within 2.8 dB (Windows +0.16 dB, 2.7 dB: the 10 kHz band); high pass 24 dB at 500 Hz, resonance 60 % −0.02 dB, within 0.2 dB (Windows −0.01 dB, 0.3 dB); band pass 800 Hz, resonance 85 % +0.02 dB, within 1.5 dB; band pass 1 kHz, resonance 80 %, its LFO on 1/4 (Windows) +0.13 dB, within 1.7 dB",
+    "why_not": "Above about 2 kHz at 24 dB/oct the top third octaves differ by up to 5 dB (4 kHz low-pass: 10 kHz band), and a notch or high-pass near 8 kHz loses up to 3.5 dB of loudness: Pedal Filter's state-variable filter at the base rate closes toward Nyquist, Neo Filter's, oversampled, keeps the analog slope."
+  },
+  "evidence": [
+    "ExternalMachines/source/thepedal/pedal-filter/PedalFilter.cs — Work (cutoff, R, resonance compensation, drive, LFO, divisions) and TptSvfStep",
+    "Machines/Manifests/Effects/Pedal Filter.machine.json (curated: cutoff in Hz, drive ×, LFO rate Hz and depth in octaves)",
+    "the method checked on Windows (FilterCalibration, run 41988788419): low pass 1 kHz at 20 % and 24 dB at 60 % against its source"
+  ]
+}

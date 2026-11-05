@@ -4,9 +4,9 @@
 #  - gear_list and machine_describe name a machine's successor;
 #  - a dry run reports the mapping and the expected differences and changes nothing;
 #  - Pedal EQ → Neo EQ and Pedal Gain → Neo Utility (U5's exit check, the portable half), Pedal Comp →
-#    Neo Comp and Pedal Chorus → Neo Ensemble convert within their stated tolerance, on noise played through
-#    them, each read against its input; Pedal M1 → Neo Sampler (its key zones, both oscillators, envelopes
-#    and filter) playing a line from the song's waves, its notes moved;
+#    Neo Comp, Pedal Chorus → Neo Ensemble and Pedal Filter → Neo Filter convert within their stated
+#    tolerance, on noise played through them, each read against its input; Pedal M1 → Neo Sampler (its key
+#    zones, both oscillators, envelopes and filter) playing a line from the song's waves, its notes moved;
 #  - the successor takes the old machine's place: its name, connections (gain and pan), parameters in
 #    units (param_get), its patterns' automation (ramps kept), the arrangement and the Session View's track;
 #  - one undo brings the original back exactly (machines, parameters, automation, arrangement, session),
@@ -105,9 +105,10 @@ def verdict(r):
 # --- successors are named ---------------------------------------------------------------------------
 _, _, gear = s.call("gear_list", search="Pedal", limit=100)
 rows = {g["name"]: g for g in gear.get("gear", [])}
-for name, successor in [("Pedal EQ", "Neo EQ"), ("Pedal Gain", "Neo Utility"), ("Pedal Comp", "Neo Comp"), ("Pedal Chorus", "Neo Ensemble"), ("Pedal M1", "Neo Sampler")]:
+for name, successor in [("Pedal EQ", "Neo EQ"), ("Pedal Gain", "Neo Utility"), ("Pedal Comp", "Neo Comp"), ("Pedal Chorus", "Neo Ensemble"), ("Pedal M1", "Neo Sampler"),
+                        ("Pedal Filter", "Neo Filter")]:
     check(successor in (rows.get(name, {}).get("successor") or ""), f"gear_list: {name}'s successor is {successor}")
-check("successor" not in rows.get("Pedal Filter", {}), "gear_list: Pedal Filter has no successor mapping")
+check("successor" not in rows.get("Pedal Gate", {}), "gear_list: Pedal Gate has no successor mapping")
 
 # --- Pedal EQ → Neo EQ: settings, automation with a ramp, arrangement, session, undo, redo ---------------
 song("Pedal EQ", [{"param": "LM Gain", "value": "+6 dB"}, {"param": "HS Gain", "value": "-4 dB"}, {"param": "LS Freq", "value": "100 Hz"},
@@ -183,6 +184,11 @@ for effect, settings, label in [
     ("Pedal Chorus", [{"param": "Depth", "value": "6 ms"}, {"param": "Delay", "value": "20 ms"}, {"param": "Spread", "value": "100%"}, {"param": "Mix", "value": "60%"}, {"param": "Rate", "value": "1 Hz"}],
      "Pedal Chorus, deep and wide → Neo Ensemble"),
     ("Pedal Chorus", [{"param": "Spread", "value": "0%"}, {"param": "Tone", "value": "6 kHz"}, {"param": "Mix", "value": "100%"}], "Pedal Chorus, mono, dark, wet only → Neo Ensemble"),
+    ("Pedal Filter", [], "Pedal Filter (low pass 2 kHz) → Neo Filter"),
+    ("Pedal Filter", [{"param": "Mode", "value": "High Pass"}, {"param": "Slope", "value": "24 dB / IIR"}, {"param": "Cutoff", "value": "500 Hz"}, {"param": "Resonance", "value": "60%"}],
+     "Pedal Filter, high pass 24 dB at 500 Hz, resonant → Neo Filter"),
+    ("Pedal Filter", [{"param": "Mode", "value": "Band Pass"}, {"param": "Cutoff", "value": "800 Hz"}, {"param": "Resonance", "value": "85%"}],
+     "Pedal Filter, band pass 800 Hz, resonance 85 % (its compensation on Output) → Neo Filter"),
 ]:
     song(effect, settings)
     good, text, r = s.call("machine_replace", machine="FX")
@@ -261,7 +267,7 @@ else:
     check(False, "Elak_SVF.bmx opens")
 
 # --- refusals ----------------------------------------------------------------------------------------
-song("Pedal Filter", None)
+song("Pedal Gate", None)
 good, text, _ = s.call("machine_replace", machine="FX")
 check(not good and "no successor mapping" in text, "a machine without a mapping is refused, with the gear that has one")
 song("Pedal EQ", None)

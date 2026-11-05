@@ -14,6 +14,7 @@ How to describe a sound in numbers, then recipes with exact values for the Neo s
    | Saturation, compression and space as part of the sound | Neo Drive, Neo Comp, Neo Verb | the effect recipes below |
    | Movement and width: chorus, ensemble, flanger, phaser, vibrato | Neo Ensemble | the recipes below or a "Chorus —", "Flanger —", "Phaser —" preset |
    | Echoes: tempo delays, ping-pong, dub and tape echo, slapback, combs | Neo Delay | the recipes below or a "Mix —", "Dub —", "Texture —" preset |
+   | Filter movement: sweeps, auto-wah, dub filters, resonant and synced filters | Neo Filter | the recipes below or a "Sweep —", "Auto-Wah —", "LFO —" preset |
 
 2. `machine_add(gear="Neo Poly", name="Pad")`, then `preset_list(machine="Pad", search="pad")` and `preset_load(machine="Pad", preset="Pad — Warm Strings")`, or apply a recipe with `param_set`.
 3. An audition pattern in the sound's register: `pattern_create(machine="Pad", name="Audition", length_beats=8)`, `notes_write(machine="Pad", pattern="Audition", notes=[{"pitch": "A3", "start": 0, "length": 4}, {"pitch": "C4", "start": 0, "length": 4}, {"pitch": "E4", "start": 0, "length": 4}, {"pitch": "G4", "start": 4, "length": 0.5}])`. Place it with `arrangement_place`: at 0 in an empty song, otherwise after the song's end. Placing it there moves the song end, so note the length from `studio_status` first; when done, `arrangement_clear(machine="Pad", from=…, to=…)` and `song_set(song_end_beats=…)` put the song back.
@@ -746,6 +747,40 @@ Metallic comb on a drum loop or noise (a pitched resonance at 1 ÷ Time):
 - Tape stop and pitch bends: automate `Time` slowly (`automation_write` with a ramp): small steps glide and bend the pitch, as tape does; a jump to another `Sync` crossfades.
 - Rhythmic stutter: "Rhythm — Sixteenth Stutter"; for triplet bounce "Cross — Triplet Bounce".
 - Haas widening without a repeat: "Mix — Doubler (Wide)" (18 ms left, 29 ms right, no feedback).
+
+### Neo Filter
+
+Neo Poly's ladder and state-variable filter as an effect, with drive in front and an envelope follower and an LFO moving the cutoff in octaves. The SVF band-pass's peak is Q times the input; the ladder's passband drops a few dB as its resonance rises.
+
+Acid on a plain saw bass (insert; the envelope opens it on each note):
+
+| Parameter | Value | Why |
+|---|---|---|
+| Type | Ladder 24 | |
+| Cutoff | 400 Hz | |
+| Resonance | 12.0 | squelch, short of singing |
+| Drive | 12.0 dB | grit before the filter |
+| Env amount | 2.50 oct | up to about 2.3 kHz on each note |
+| Env sensitivity | 12.0 dB | full on a −12 dBFS part |
+| Env attack | 1.0 ms | |
+| Env release | 150 ms | |
+| Output | 3.0 dB | the ladder's level back |
+
+Sixteenth-note gated sweep on a pad (synced, the same on every pass):
+
+| Parameter | Value | Why |
+|---|---|---|
+| Type | SVF LP | |
+| Slope | 24 dB/oct | |
+| Cutoff | 1.20 kHz | |
+| Resonance | 2.00 | |
+| LFO sync | 1/16 | |
+| LFO shape | Saw down | each step opens then closes |
+| LFO depth | 2.00 oct | |
+| LFO retrig | Song | |
+
+- A pitched drone from nothing: Resonance at its top makes the filter sing at its cutoff (bounded, about −8 dBFS on the SVF); set `Cutoff` to the note's frequency (A3: 220 Hz).
+- Measure a sweep: `render(probes=["Filter"])` and a spectrogram (`plot(kind="spectrogram", …)`); `LFO retrig` Song makes each render the same.
 
 ## Checklist
 
