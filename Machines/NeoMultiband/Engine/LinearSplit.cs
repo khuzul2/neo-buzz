@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using NeoBuzz.Dsp;
 
 namespace NeoBuzz.Multiband
@@ -197,6 +198,8 @@ namespace NeoBuzz.Multiband
         /// crossfading over this partition; when <paramref name="target"/> differs from the design and
         /// the last design started long enough ago, a new one starts (its steps: DesignStep).
         /// </summary>
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Process(float[] inL, float[] inR, bool third, in Xover target)
         {
             // The dry ring.
@@ -324,6 +327,7 @@ namespace NeoBuzz.Multiband
         }
 
         /// <summary>One FIR over the delay line: Σ X[now − j] · H[j], then the inverse transform; its last P samples.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Convolve(int s, int f, float[] outL, float[] outR)
         {
             Array.Clear(accRe);
@@ -393,13 +397,7 @@ namespace NeoBuzz.Multiband
                 for (int j = 0; j < K; j++)
                 {
                     // Bands 1 and 2 together (real and imaginary parts), then band 3.
-                    for (int n = 0; n < P; n++)
-                    {
-                        segRe[n] = taps[0][j * P + n];
-                        segIm[n] = taps[1][j * P + n];
-                    }
-                    Array.Clear(segRe, P, P);
-                    Array.Clear(segIm, P, P);
+                    Segment(j, 0, 1);
                     fftAt = default;
                     do
                     {
@@ -407,13 +405,7 @@ namespace NeoBuzz.Multiband
                         yield return true;
                     } while (!done);
                     SplitPair(s, j);
-                    for (int n = 0; n < P; n++)
-                    {
-                        segRe[n] = taps[2][j * P + n];
-                        segIm[n] = 0;
-                    }
-                    Array.Clear(segRe, P, P);
-                    Array.Clear(segIm, P, P);
+                    Segment(j, 2, -1);
                     fftAt = default;
                     do
                     {
@@ -477,6 +469,7 @@ namespace NeoBuzz.Multiband
         /// exactly symmetric, scaled for both inverse transforms (1/M here, 1/2P in Convolve); and its largest. The last tap
         /// (2D + 1 = N − 1) stays 0.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Taps(int f, int from, int to)
         {
             float scale = (float)(1.0 / M / (2.0 * P));
@@ -499,7 +492,26 @@ namespace NeoBuzz.Multiband
             peak[f] = most;
         }
 
+        /// <summary>
+        /// Partition <paramref name="j"/>'s taps into segRe (FIR <paramref name="re"/>) and segIm (FIR <paramref name="im"/>, or
+        /// zeros for −1), zero-padded to 2P: a step's copy of P samples (1024 and more from 88.2 kHz) in a method of its own.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        void Segment(int j, int re, int im)
+        {
+            var a = taps[re];
+            var b = im >= 0 ? taps[im] : null;
+            for (int n = 0; n < P; n++)
+            {
+                segRe[n] = a[j * P + n];
+                segIm[n] = b != null ? b[j * P + n] : 0;
+            }
+            Array.Clear(segRe, P, P);
+            Array.Clear(segIm, P, P);
+        }
+
         /// <summary>Partition <paramref name="j"/>'s spectrum of FIRs 1 and 2 (the real and imaginary parts of segRe/segIm's transform) into set <paramref name="s"/>.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void SplitPair(int s, int j)
         {
             var aRe = hRe[s][0 * K + j];
@@ -520,6 +532,7 @@ namespace NeoBuzz.Multiband
         }
 
         /// <summary>Partitions <paramref name="from"/> … <paramref name="to"/> − 1 of FIR <paramref name="f"/>: the first and last with a tap above its floor.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Skip(int f, int from, int to, ref int first, ref int last)
         {
             float floor = peak[f] * 1e-9f;

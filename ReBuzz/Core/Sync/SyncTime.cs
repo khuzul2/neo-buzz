@@ -10,6 +10,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Threading;
 
 namespace ReBuzz.Core.Sync
@@ -89,6 +90,8 @@ namespace ReBuzz.Core.Sync
             slope = nominalSlope;
         }
 
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Add(double x, double y)
         {
             if (count == 0) { baseX = x; baseY = y; }

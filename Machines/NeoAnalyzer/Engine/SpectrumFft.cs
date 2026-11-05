@@ -7,6 +7,7 @@
 
 using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace NeoBuzz.Analyzer
 {
@@ -48,6 +49,8 @@ namespace NeoBuzz.Analyzer
         public int Size => size;
 
         /// <summary>The forward transform in place (as NeoBuzz.Analysis Fft.Transform with inverse false).</summary>
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Forward(double[] re, double[] im)
         {
             var s = swaps;

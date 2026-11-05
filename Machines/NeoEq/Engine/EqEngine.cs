@@ -10,6 +10,7 @@
 // the default, the engine runs exactly as before graphic mode was added.
 // Pure: tested by NeoBuzz.MachineTests.
 
+using System.Runtime.CompilerServices;
 using System;
 using NeoBuzz.Dsp;
 
@@ -325,6 +326,8 @@ namespace NeoBuzz.Eq
             OutMeter.Feed(left, right, n);
         }
 
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void ProcessBand(Band b, float[] left, float[] right, int n)
         {
             var sl = b.L;

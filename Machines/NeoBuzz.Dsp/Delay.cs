@@ -69,6 +69,8 @@ namespace NeoBuzz.Dsp
         }
 
         /// <summary>Scales everything in the line (a renormalisation).</summary>
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Scale(float factor)
         {
             for (int i = 0; i < data.Length; i++) data[i] *= factor;

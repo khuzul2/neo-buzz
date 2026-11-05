@@ -13,6 +13,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Runtime.CompilerServices;
 using NeoBuzz.Analysis;
 using NeoBuzz.Dsp;
 
@@ -88,6 +89,8 @@ namespace NeoBuzz.Scope
         public bool Has(int c) => AMin[c] <= AMax[c];
 
         /// <summary>An empty sweep of <paramref name="columns"/> columns and <paramref name="samples"/> samples.</summary>
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Begin(int columns, int samples, int display)
         {
             Columns = Math.Clamp(columns, 1, MaxColumns);

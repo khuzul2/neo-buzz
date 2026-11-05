@@ -3,6 +3,7 @@
 // for nonlinear effects. Integer latency at every factor, so a dry signal can be aligned with
 // the wet one; MaxLatency is the latency to report when the factor can change.
 
+using System.Runtime.CompilerServices;
 using System;
 
 namespace NeoBuzz.Dsp
@@ -86,6 +87,8 @@ namespace NeoBuzz.Dsp
         /// Upsamples <paramref name="n"/> base samples; returns the high-rate buffer (n × Factor
         /// samples), which the caller processes in place before <see cref="Down"/>.
         /// </summary>
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public float[] Up(float[] input, int offset, int n)
         {
             if (n > maxBlock) throw new ArgumentOutOfRangeException(nameof(n));
@@ -115,6 +118,7 @@ namespace NeoBuzz.Dsp
         }
 
         /// <summary>Downsamples the high-rate buffer <see cref="Up"/> returned into <paramref name="output"/>.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public void Down(float[] output, int offset, int n)
         {
             int used = Stages;

@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using NeoBuzz.Analysis;
 using NeoBuzz.Dsp;
 using AFft = NeoBuzz.Analysis.Fft;
@@ -390,6 +391,8 @@ namespace NeoBuzz.Analyzer
             return (corr, w);
         }
 
+        // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void SpectrumFrame()
         {
             // The last `size` samples, oldest first, Hann-windowed: left in re, right in im.
@@ -469,6 +472,7 @@ namespace NeoBuzz.Analyzer
         }
 
         /// <summary>cum[k] = p[0] + … + p[k − 1].</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         static void RunningSums(double[] p, double[] cum)
         {
             double running = 0;
