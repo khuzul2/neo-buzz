@@ -22738,7 +22738,7 @@
   "Neo Drums": {
    "gear": "Neo Drums",
    "kind": "generator",
-   "load_seconds": 0.1,
+   "load_seconds": 0.12,
    "gear_info": {
     "file": "Generators/Neo Drums.NET.dll",
     "managed": true,
@@ -22756,13 +22756,24 @@
     "of": 67
    },
    "notes": {
-    "input": "none"
+    "input": "midi",
+    "key": 36,
+    "pitched": false,
+    "why_unpitched": "a drum kit: silent on A4, sounds on C2 (General MIDI's kick)"
    },
-   "type": "generator (silent at its defaults)",
+   "level": {
+    "note": "C2 at velocity 100, 1.5 beats",
+    "integrated_lufs": -25.6,
+    "sample_peak_dbfs": -11.18,
+    "true_peak_dbtp": -11.17
+   },
+   "cpu_ms_per_s": 0.0,
+   "type": "unpitched",
    "level_test": {
     "defaults": {
-     "peak_dbfs": null,
-     "verdict": "silent"
+     "peak_dbfs": -11.18,
+     "growth_db": 0.0,
+     "verdict": "ok"
     },
     "all_at_once": {
      "min": {
@@ -22770,20 +22781,78 @@
       "verdict": "silent"
      },
      "max": {
-      "peak_dbfs": null,
-      "verdict": "silent"
+      "peak_dbfs": 13.14,
+      "growth_db": 0.0,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 137
+   },
+   "sweeps": {
+    "Volume": {
+     "max": {
+      "peak_dbfs": 0.82,
+      "growth_db": 0.0,
+      "verdict": "hot",
+      "raw": 720,
+      "text": "+12.0 dB"
      }
     }
    },
-   "seconds": 2.0,
+   "envelope": {
+    "peak_db": -13.93,
+    "attack_s": 0.0,
+    "final_db": -80.0,
+    "half_s": 0.25,
+    "length_s": 0.25,
+    "bright_mid_hz": null,
+    "bright_early_hz": 126.0,
+    "bright_late_hz": null,
+    "note": "C2 at velocity 100, held 2 s"
+   },
+   "velocity": {
+    "range_db": 25.18,
+    "db_per_doubling": 8.4,
+    "curve": "steeper than linear (velocity squared or a dB curve)",
+    "levels_db": {
+     "16": -36.97,
+     "32": -28.48,
+     "64": -20.27,
+     "127": -11.79
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 1.277,
+    "silent_ms_per_s": 0.312,
+    "silent_worst_ms_per_s": 0.326,
+    "windows_ms_per_s": [
+     1.277,
+     0.303,
+     0.309,
+     0.309,
+     0.318,
+     0.326,
+     0.323,
+     0.312,
+     0.309,
+     0.314,
+     0.307
+    ]
+   },
+   "seconds": 9.1,
    "platform": "linux",
    "date": "2026-11-05",
    "problems": [],
-   "warnings": [
-    "no sound from a note at its defaults, as MIDI or in its tracks, even with a wave in slot 1"
+   "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Volume at its maximum (+12.0 dB): +0.8 dBFS peak"
    ],
-   "hot": [],
-   "notes_profiler": [],
+   "notes_profiler": [
+    "silent on A4; sounds on C2 (General MIDI's kick), as a drum kit: profiled on that key"
+   ],
    "generated": true,
    "health": "warn"
   },
