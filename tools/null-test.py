@@ -270,6 +270,18 @@ CASES = [
         auto=[("Kick tune", None, [(0, "45 Hz"), (1, "60 Hz"), (1.5, "38 Hz")]), ("Kick decay", None, [(0, "0.3 s"), (1, "1.5 s")]),
               ("Snare level", None, [(2, "-12 dB"), (2.5, "0 dB"), (3, "-6 dB")]), ("Closed hat tone", None, [(0, "4 kHz"), (2, "14 kHz")])],
         tail=1.5),
+    # Neo Filter: the ladder swept by an LFO locked to the song, the band-pass auto-wah on the envelope, the SVF at 24 dB/oct
+    # driven (the saturator's anti-aliasing at four times the rate) with a sample-and-hold LFO and stereo spread, the ladder
+    # and the SVF self-oscillating (the limiter), and the type, slope, cutoff and resonance automated (the fade, the glides).
+    fx("filter-ladder-sweep", "Neo Filter", "Sweep — Ladder Low-Pass (1 Bar)", [("LFO sync", "1/4")]),
+    fx("filter-autowah-bp", "Neo Filter", "Auto-Wah — Funky (Band-Pass)", [("Env sensitivity", "18 dB")]),
+    fx("filter-svf24-driven", "Neo Filter", "Sweep — High-Pass Build (8 Bars)",
+       [("Drive", "18 dB"), ("LFO sync", "1/8"), ("LFO shape", "S&H"), ("LFO spread", 90), ("Resonance", "4")]),
+    fx("filter-self-oscillating", "Neo Filter", "Resonant — Ladder Low-Pass", [("Resonance", "100"), ("Cutoff", "880 Hz")],
+       auto=[("Type", [(2, "SVF Peak")])], tail=0.5),
+    fx("filter-moves", "Neo Filter", "Auto-Wah — Bass (Ladder 12)", [("LFO retrig", "Env"), ("LFO depth", "1.5 oct"), ("LFO sync", "1/16")],
+       auto=[("Cutoff", [(0, "300 Hz"), (1, "2 kHz"), (2, "150 Hz")]), ("Type", [(1.5, "SVF HP"), (3, "SVF Notch")]), ("Slope", [(2.5, "24 dB/oct")]),
+             ("Resonance", [(0.5, "12"), (3.5, "0.71")])]),
     # Long: what drifts with time (oscillator and LFO phases, modulated delays) shows here. 16 s each.
     gen("long-poly", "Neo Poly", "Pad — Evolving PWM", [], LONG, beats=32),
     gen("long-wave", "Neo Wave", "Pad — Organ Drift", [], LONG, beats=32),
@@ -281,6 +293,8 @@ CASES = [
     fx("long-delay", "Neo Delay", "Tape — Analog Wobble (Dark)", [("Feedback", "85%")], tail=2.0, beats=32,
        source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 4) for p in ("C4", "E4", "G4")])),
     gen("long-sampler", "Neo Sampler", "Pad — Vox Aah (Looped)", [("Z2 wave", 221), ("Z2 tune", 12)], LONG, beats=32),
+    fx("long-filter", "Neo Filter", "LFO — Stereo Sweep (1/2, 90°)", [("LFO retrig", "Free"), ("LFO sync", "Free"), ("LFO rate", "0.23 Hz"), ("LFO shape", "Smooth random")],
+       tail=1.0, beats=32, source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 2) for p in ("C4", "E4", "G4")])),
 ]
 
 

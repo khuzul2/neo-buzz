@@ -477,8 +477,24 @@ namespace ReBuzz.Agent.Model
                 int raw = p.Raw(v);
                 outs.Add((p, raw, Reachable(p, v, raw) ? null : $"{p.Name}: {p.FormatValue(v)} is out of its reach; set to {p.Format(raw)}."));
             }
+            // A rule with conditions sets nothing while one of them doesn't hold.
+            foreach (var w in rule.When)
+            {
+                if (Old(w.Param) is not { } whenParam) continue;
+                double v = get(w.Param);
+                if (w.Is.Count > 0)
+                {
+                    int index = (int)Math.Round(v);
+                    string name = whenParam.Choices != null && index >= 0 && index < whenParam.Choices.Count ? whenParam.Choices[index] : null;
+                    if (!w.Is.Any(x => Same(x, name ?? "") || Same(x, index.ToString(C)))) return outs;
+                }
+                if ((w.From is double lo && !(v >= lo)) || (w.To is double hi && !(v <= hi))) return outs;
+            }
             switch (rule.Kind)
             {
+                case SuccessorRuleKind.Grid:
+                    Put(rule.To, Grid(rule, get(rule.X), rule.Y == null ? 0 : get(rule.Y)));
+                    break;
                 case SuccessorRuleKind.Unit:
                 {
                     double octaves = rule.OctaveTerms?.Sum(t => t.Weight * get(t.Param)) ?? 0;
@@ -943,6 +959,25 @@ namespace ReBuzz.Agent.Model
         }
 
         /// <summary>Whether the raw value lands on the value within what can be heard (0.3 dB, 3 % in frequency or time, 1 % of a level).</summary>
+        /// <summary>A grid rule's table at (x, y): bilinear between its points (in the logarithm for a log curve), held at its edges; without y, its one row.</summary>
+        static double Grid(SuccessorRule rule, double x, double y)
+        {
+            (int I, double T) Locate(double[] axis, double v)
+            {
+                if (double.IsNaN(v) || v <= axis[0]) return (0, 0);
+                if (v >= axis[^1]) return (axis.Length - 2, 1);
+                int i = 0;
+                while (v > axis[i + 1]) i++;
+                return (i, (v - axis[i]) / (axis[i + 1] - axis[i]));
+            }
+            var (ix, tx) = Locate(rule.Xs, x);
+            var (iy, ty) = rule.Ys == null ? (0, 0.0) : Locate(rule.Ys, y);
+            double At(int r, int c) => rule.Log ? Math.Log(rule.Values[r][c]) : rule.Values[r][c];
+            double Row(int r) => At(r, ix) + (At(r, ix + 1) - At(r, ix)) * tx;
+            double v = rule.Ys == null ? Row(0) : Row(iy) + (Row(iy + 1) - Row(iy)) * ty;
+            return rule.Log ? Math.Exp(v) : v;
+        }
+
         static bool Reachable(SuccessorParam p, double v, int raw)
         {
             double back = p.Value(raw);

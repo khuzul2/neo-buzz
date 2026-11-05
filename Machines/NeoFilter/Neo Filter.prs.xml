@@ -1,0 +1,445 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Sweep — Ladder Low-Pass (1 Bar)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="5511" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="338" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="14" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="220" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="270" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — Slow Rise (4 Bars, Saw)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="1" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="6150" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="262" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="16" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="2" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="280" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Sweep — High-Pass Build (8 Bars)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="4" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="1" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="4660" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="165" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="17" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="2" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="240" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Auto-Wah — Funky (Band-Pass)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="4407" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="392" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="900" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="240" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="399" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="562" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Auto-Wah — Bass (Ladder 12)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="1" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="3471" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="392" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="950" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="240" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="352" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="622" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Auto-Wah — Closing (Low-Pass, Envelope Down)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="7841" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="338" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="300" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="210" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="648" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Dub — High-Pass Throw">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="4" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="1" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="4407" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="111" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Dub — Resonant Low-Pass Siren (1/4)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="5147" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="523" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="60" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="9" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="100" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Resonant — Ladder Low-Pass">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="5663" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="469" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="30" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Resonant — Acid (Ladder, Drive, Envelope)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="4660" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="600" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="120" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="800" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="240" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="270" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="270" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="LFO — Stepped Filter (1/8, Square)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="5927" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="207" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="6" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="4" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="150" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="LFO — Stereo Sweep (1/2, 90°)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="0" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="6250" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="338" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="12" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="200" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="90" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="LFO — Sample and Hold (1/16)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="5663" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="435" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="3" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="5" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="200" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mix — Gentle Top Cut (12 kHz)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="2" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="9261" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="66" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mix — Telephone Band">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="3" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="1" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="6043" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="131" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="0" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="300" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Notch — Swept Notch (2 Bars)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="5" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="5663" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="262" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="15" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="200" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="240" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Peak — Resonant Peak Sweep (1 Bar)">
+    <Preset Machine="Neo Filter">
+      <Parameters>
+        <Parameter Name="Type" Group="1" Index="0" Track="0" Value="6" />
+        <Parameter Name="Slope" Group="1" Index="1" Track="0" Value="0" />
+        <Parameter Name="Cutoff" Group="1" Index="2" Track="0" Value="6250" />
+        <Parameter Name="Resonance" Group="1" Index="3" Track="0" Value="392" />
+        <Parameter Name="Drive" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Env amount" Group="1" Index="5" Track="0" Value="600" />
+        <Parameter Name="Env sensitivity" Group="1" Index="6" Track="0" Value="120" />
+        <Parameter Name="Env attack" Group="1" Index="7" Track="0" Value="459" />
+        <Parameter Name="Env release" Group="1" Index="8" Track="0" Value="588" />
+        <Parameter Name="LFO rate" Group="1" Index="9" Track="0" Value="489" />
+        <Parameter Name="LFO sync" Group="1" Index="10" Track="0" Value="14" />
+        <Parameter Name="LFO shape" Group="1" Index="11" Track="0" Value="1" />
+        <Parameter Name="LFO depth" Group="1" Index="12" Track="0" Value="150" />
+        <Parameter Name="LFO spread" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="LFO retrig" Group="1" Index="14" Track="0" Value="1" />
+        <Parameter Name="LFO phase" Group="1" Index="15" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="16" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="17" Track="0" Value="180" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>
