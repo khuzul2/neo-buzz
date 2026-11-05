@@ -65,7 +65,7 @@ jobs:
       run: |
         # Hashtable splatting: an array of '-Switch' strings would bind as positional arguments.
         $extra = @{}
-        if ($env:QUICK -eq 'true') { $extra = @{ SkipManagedMachines = $true; SkipBinaries = $true; NoZip = $true } }
+        if ($env:QUICK -eq 'true') { $extra = @{ SkipManagedMachines = $true; SkipNativeMachines = $true; SkipBinaries = $true; NoZip = $true } }
         ./build.ps1 -Version "${{ github.ref_type == 'tag' && github.ref_name || format('ci-{0}', github.run_number) }}" @extra *>&1 | Tee-Object -FilePath build.log
 
     # Copies error lines and the log tail into annotations, readable through the API.
@@ -198,6 +198,23 @@ jobs:
         $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
         if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
         python tools/preset-check.py $exe.FullName preset-check
+        exit $LASTEXITCODE
+
+    # U7 (docs/specs/mcp-server.md §12.14): the natives with sources, rebuilt by build.ps1 (step 4b, x86 and x64), against
+    # the binaries upstream ships (RunTime/Gear): every build of each machine plays the same cases side by side in one
+    # render, each probed (tools/native-compare.py). Fails when a machine the package ships rebuilt doesn't render as
+    # upstream's does (bit for bit, or within -100 dBFS; a machine with a source fix as one of four upstream instances, and
+    # the same for every instance of its own), or a pitched generator doesn't play the written pitch through notes_write.
+    # Full builds only (quick ones build no natives).
+    - name: Natives, rebuilt against shipped
+      if: (success() || failure()) && steps.build.outcome == 'success' && inputs.quick != true
+      timeout-minutes: 40
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
+        python tools/native-compare.py $exe.FullName native-compare --gate --pitch --json native-compare/native-compare.json `
+          --variant R64=build/ExternalMachines/natives/x64/Gear --variant R86=build/ExternalMachines/natives/x86/Gear
         exit $LASTEXITCODE
 
     - name: Upload machine profile

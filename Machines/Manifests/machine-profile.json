@@ -1282,7 +1282,7 @@
     },
     "thd_percent": 2.84
    },
-   "cpu_ms_per_s": 8.2,
+   "cpu_ms_per_s": 15.3,
    "type": "modulation",
    "level_test": {
     "defaults": {
@@ -1379,26 +1379,26 @@
     "renders": 34
    },
    "denormal": {
-    "playing_ms_per_s": 17.543,
-    "silent_ms_per_s": 17.084,
-    "silent_worst_ms_per_s": 17.636,
+    "playing_ms_per_s": 17.825,
+    "silent_ms_per_s": 20.105,
+    "silent_worst_ms_per_s": 20.889,
     "windows_ms_per_s": [
-     17.543,
-     17.636,
-     17.18,
-     17.134,
-     17.113,
-     17.084,
-     16.985,
-     16.921,
-     16.934,
-     17.064,
-     17.078
+     17.825,
+     17.146,
+     17.07,
+     17.051,
+     18.233,
+     20.039,
+     20.145,
+     20.298,
+     20.105,
+     20.889,
+     20.175
     ]
    },
-   "seconds": 13.8,
+   "seconds": 17.2,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -1449,7 +1449,7 @@
     "sample_peak_dbfs": -5.74,
     "true_peak_dbtp": -5.73
    },
-   "cpu_ms_per_s": 20.8,
+   "cpu_ms_per_s": 9.2,
    "type": "polysynth",
    "level_test": {
     "defaults": {
@@ -1988,26 +1988,26 @@
     "renders": 92
    },
    "denormal": {
-    "playing_ms_per_s": 11.947,
-    "silent_ms_per_s": 12.561,
-    "silent_worst_ms_per_s": 12.804,
+    "playing_ms_per_s": 14.412,
+    "silent_ms_per_s": 10.847,
+    "silent_worst_ms_per_s": 12.064,
     "windows_ms_per_s": [
-     11.947,
-     10.508,
-     10.567,
-     11.912,
-     11.087,
-     10.554,
-     12.777,
-     12.804,
-     12.561,
-     12.715,
-     12.797
+     14.412,
+     11.303,
+     10.62,
+     12.064,
+     11.175,
+     10.6,
+     10.753,
+     10.749,
+     10.9,
+     10.845,
+     10.847
     ]
    },
-   "seconds": 16.6,
+   "seconds": 14.9,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -2057,7 +2057,7 @@
     "sample_peak_dbfs": -0.89,
     "true_peak_dbtp": -0.7
    },
-   "cpu_ms_per_s": 6.4,
+   "cpu_ms_per_s": 3.8,
    "type": "monosynth",
    "level_test": {
     "defaults": {
@@ -2250,26 +2250,26 @@
     "renders": 37
    },
    "denormal": {
-    "playing_ms_per_s": 5.857,
-    "silent_ms_per_s": 9.714,
-    "silent_worst_ms_per_s": 10.315,
+    "playing_ms_per_s": 7.244,
+    "silent_ms_per_s": 5.337,
+    "silent_worst_ms_per_s": 10.279,
     "windows_ms_per_s": [
-     5.857,
-     5.343,
-     5.368,
-     5.308,
-     5.112,
-     7.896,
-     10.211,
-     10.263,
-     10.12,
-     9.714,
-     10.315
+     7.244,
+     10.279,
+     8.653,
+     5.488,
+     5.271,
+     5.243,
+     5.244,
+     5.271,
+     5.337,
+     5.33,
+     5.375
     ]
    },
-   "seconds": 4.1,
+   "seconds": 3.8,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -2296,6 +2296,7 @@
     "latency_samples": 0,
     "latency_ms": 0.0,
     "tail_seconds": 2.62,
+    "tail_hz": 8238.1,
     "echoes": 6,
     "first_echo_seconds": 0.375,
     "gap_before_echo_db": -60.0,
@@ -2709,7 +2710,7 @@
     },
     "thd_percent": 3.15
    },
-   "cpu_ms_per_s": 10.1,
+   "cpu_ms_per_s": 6.0,
    "type": "delay",
    "level_test": {
     "defaults": {
@@ -2987,26 +2988,26 @@
     "renders": 51
    },
    "denormal": {
-    "playing_ms_per_s": 15.349,
-    "silent_ms_per_s": 14.713,
-    "silent_worst_ms_per_s": 15.676,
+    "playing_ms_per_s": 15.328,
+    "silent_ms_per_s": 14.426,
+    "silent_worst_ms_per_s": 14.958,
     "windows_ms_per_s": [
-     15.349,
-     15.587,
-     15.676,
-     15.526,
-     14.713,
-     14.342,
-     14.328,
-     14.328,
-     14.342,
-     14.517,
-     14.874
+     15.328,
+     14.871,
+     14.958,
+     14.404,
+     14.35,
+     14.426,
+     14.269,
+     14.377,
+     14.657,
+     14.569,
+     14.212
     ]
    },
-   "seconds": 28.9,
+   "seconds": 28.8,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -3368,7 +3369,7 @@
     },
     "thd_percent": 1.13
    },
-   "cpu_ms_per_s": 6.5,
+   "cpu_ms_per_s": 7.2,
    "type": "filter or EQ",
    "level_test": {
     "defaults": {
@@ -3535,26 +3536,26 @@
     "renders": 46
    },
    "denormal": {
-    "playing_ms_per_s": 16.292,
-    "silent_ms_per_s": 15.232,
-    "silent_worst_ms_per_s": 15.412,
+    "playing_ms_per_s": 15.659,
+    "silent_ms_per_s": 15.478,
+    "silent_worst_ms_per_s": 15.699,
     "windows_ms_per_s": [
-     16.292,
-     15.262,
-     15.232,
-     15.331,
-     15.213,
-     15.302,
-     15.412,
-     15.209,
-     15.169,
-     15.2,
-     15.217
+     15.659,
+     15.648,
+     15.699,
+     15.478,
+     15.29,
+     15.469,
+     15.61,
+     15.411,
+     15.498,
+     15.468,
+     15.457
     ]
    },
-   "seconds": 21.9,
+   "seconds": 21.5,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -3916,7 +3917,7 @@
     },
     "thd_percent": 1.33
    },
-   "cpu_ms_per_s": 7.7,
+   "cpu_ms_per_s": 9.3,
    "type": "filter or EQ",
    "level_test": {
     "defaults": {
@@ -4078,26 +4079,26 @@
     "renders": 48
    },
    "denormal": {
-    "playing_ms_per_s": 16.991,
-    "silent_ms_per_s": 16.736,
-    "silent_worst_ms_per_s": 17.716,
+    "playing_ms_per_s": 16.913,
+    "silent_ms_per_s": 17.131,
+    "silent_worst_ms_per_s": 17.318,
     "windows_ms_per_s": [
-     16.991,
-     17.295,
-     17.234,
-     17.716,
-     16.619,
-     16.609,
-     16.769,
-     16.674,
-     16.694,
-     16.663,
-     16.736
+     16.913,
+     17.154,
+     17.157,
+     17.318,
+     17.216,
+     17.089,
+     17.113,
+     17.131,
+     17.034,
+     16.841,
+     16.829
     ]
    },
-   "seconds": 23.0,
+   "seconds": 24.2,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -4124,6 +4125,7 @@
     "latency_samples": 6,
     "latency_ms": 0.14,
     "tail_seconds": 0.01,
+    "tail_hz": 1459.0,
     "echoes": 0,
     "output_correlation": 1.0,
     "spectrum_spread_db": 60.2,
@@ -4614,7 +4616,7 @@
      },
      "track Modulation": {
       "suggested_role": "drive",
-      "evidence": "harmonics 0.6 → 78.6 % on a sine",
+      "evidence": "harmonics 0.6 → 3.1 % on a sine",
       "min": {
        "raw": 0,
        "text": "0"
@@ -4652,26 +4654,26 @@
     "renders": 24
    },
    "denormal": {
-    "playing_ms_per_s": 7.926,
-    "silent_ms_per_s": 7.781,
-    "silent_worst_ms_per_s": 7.897,
+    "playing_ms_per_s": 8.619,
+    "silent_ms_per_s": 8.021,
+    "silent_worst_ms_per_s": 8.228,
     "windows_ms_per_s": [
-     7.926,
-     7.897,
-     7.811,
-     7.761,
-     7.726,
-     7.787,
-     7.748,
-     7.655,
-     7.567,
-     7.839,
-     7.781
+     8.619,
+     8.067,
+     8.038,
+     8.021,
+     8.228,
+     7.829,
+     7.848,
+     8.072,
+     7.961,
+     8.016,
+     7.855
     ]
    },
-   "seconds": 9.9,
+   "seconds": 9.7,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -5037,7 +5039,7 @@
     },
     "thd_percent": 1.78
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 0.3,
    "type": "distortion",
    "level_test": {
     "defaults": {
@@ -5263,8 +5265,8 @@
       }
      },
      "track Inertia": {
-      "suggested_role": "filter.resonance",
-      "evidence": "a peak at 740 Hz: its prominence +20 → +11 dB over the response",
+      "suggested_role": null,
+      "evidence": "no measurable change between its ends with the others at their defaults",
       "min": {
        "raw": 0,
        "text": "0"
@@ -5287,29 +5289,29 @@
       }
      }
     },
-    "renders": 38
+    "renders": 44
    },
    "denormal": {
-    "playing_ms_per_s": 8.386,
-    "silent_ms_per_s": 8.571,
-    "silent_worst_ms_per_s": 10.571,
+    "playing_ms_per_s": 8.711,
+    "silent_ms_per_s": 8.816,
+    "silent_worst_ms_per_s": 8.933,
     "windows_ms_per_s": [
-     8.386,
-     8.804,
-     8.729,
-     9.33,
-     10.571,
-     8.36,
-     8.462,
-     8.571,
-     8.55,
-     8.509,
-     8.53
+     8.711,
+     8.714,
+     8.933,
+     8.816,
+     8.644,
+     8.901,
+     8.612,
+     8.711,
+     8.731,
+     8.878,
+     8.857
     ]
    },
-   "seconds": 13.0,
+   "seconds": 14.4,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -5339,6 +5341,7 @@
     "latency_samples": 1,
     "latency_ms": 0.02,
     "tail_seconds": 0.01,
+    "tail_hz": 425.7,
     "echoes": 0,
     "output_correlation": 1.0,
     "spectrum_spread_db": 26.7,
@@ -5360,9 +5363,320 @@
     "traits": [
      "modulation",
      "filter or EQ"
-    ]
+    ],
+    "response": [
+     [
+      20.6,
+      -8.83
+     ],
+     [
+      23.1,
+      -8.71
+     ],
+     [
+      26.0,
+      -8.85
+     ],
+     [
+      29.1,
+      -8.71
+     ],
+     [
+      32.7,
+      -8.58
+     ],
+     [
+      36.7,
+      -8.75
+     ],
+     [
+      41.2,
+      -8.65
+     ],
+     [
+      46.2,
+      -8.3
+     ],
+     [
+      51.9,
+      -8.16
+     ],
+     [
+      58.3,
+      -8.13
+     ],
+     [
+      65.4,
+      -7.83
+     ],
+     [
+      73.4,
+      -7.91
+     ],
+     [
+      82.4,
+      -7.64
+     ],
+     [
+      92.5,
+      -6.95
+     ],
+     [
+      103.8,
+      -7.0
+     ],
+     [
+      116.5,
+      -6.06
+     ],
+     [
+      130.8,
+      -6.05
+     ],
+     [
+      146.8,
+      -5.38
+     ],
+     [
+      164.8,
+      -3.06
+     ],
+     [
+      185.0,
+      -2.59
+     ],
+     [
+      207.7,
+      -1.26
+     ],
+     [
+      233.1,
+      0.79
+     ],
+     [
+      261.6,
+      3.39
+     ],
+     [
+      293.7,
+      6.19
+     ],
+     [
+      329.6,
+      10.7
+     ],
+     [
+      370.0,
+      15.49
+     ],
+     [
+      415.3,
+      12.78
+     ],
+     [
+      466.2,
+      9.41
+     ],
+     [
+      523.3,
+      7.32
+     ],
+     [
+      587.3,
+      6.28
+     ],
+     [
+      659.3,
+      6.06
+     ],
+     [
+      740.0,
+      6.58
+     ],
+     [
+      830.6,
+      8.03
+     ],
+     [
+      932.3,
+      10.67
+     ],
+     [
+      1046.5,
+      14.05
+     ],
+     [
+      1174.7,
+      13.15
+     ],
+     [
+      1318.5,
+      8.81
+     ],
+     [
+      1480.0,
+      4.75
+     ],
+     [
+      1661.2,
+      1.99
+     ],
+     [
+      1864.7,
+      -0.18
+     ],
+     [
+      2093.0,
+      -1.86
+     ],
+     [
+      2349.3,
+      -3.24
+     ],
+     [
+      2637.0,
+      -4.33
+     ],
+     [
+      2960.0,
+      -5.21
+     ],
+     [
+      3322.4,
+      -5.94
+     ],
+     [
+      3729.3,
+      -6.53
+     ],
+     [
+      4186.0,
+      -7.02
+     ],
+     [
+      4698.6,
+      -7.44
+     ],
+     [
+      5274.0,
+      -7.72
+     ],
+     [
+      5919.9,
+      -7.97
+     ],
+     [
+      6644.9,
+      -8.18
+     ],
+     [
+      7458.6,
+      -8.34
+     ],
+     [
+      8372.0,
+      -8.48
+     ],
+     [
+      9397.3,
+      -8.59
+     ],
+     [
+      10548.1,
+      -8.66
+     ],
+     [
+      11839.8,
+      -8.73
+     ],
+     [
+      13289.8,
+      -8.81
+     ],
+     [
+      14917.2,
+      -8.85
+     ],
+     [
+      16744.0,
+      -8.85
+     ],
+     [
+      18794.5,
+      -8.85
+     ]
+    ],
+    "response_summary": {
+     "level_db": 6.43,
+     "spread_db": 24.34,
+     "centroid_oct": -0.678,
+     "max_db": 15.49,
+     "max_hz": 370.0,
+     "prominence_db": 8.91,
+     "low_corner_hz": 370.0,
+     "high_corner_hz": 415.3,
+     "width_oct": 0.17,
+     "tilt_db": -2.79,
+     "wobble_db": 0.03
+    },
+    "impulse": {
+     "latency_samples": 2,
+     "direct_db": -2.59,
+     "early_db": -5.42,
+     "late_db": -89.21,
+     "t60_s": 0.022,
+     "t60_span_db": 20.0,
+     "ring_s": 0.022,
+     "rings_past_window": false,
+     "echoes": [],
+     "echoes_left": [],
+     "echoes_right": [],
+     "copy_s": 0.002,
+     "late_onset_s": 0.003,
+     "balance_db": 0.0
+    },
+    "steps": {
+     "curve": [
+      [
+       -40.86,
+       7.7
+      ],
+      [
+       -34.85,
+       9.03
+      ],
+      [
+       -28.82,
+       10.39
+      ],
+      [
+       -22.79,
+       10.45
+      ],
+      [
+       -16.77,
+       8.4
+      ],
+      [
+       -10.75,
+       5.64
+      ],
+      [
+       -4.8,
+       5.24
+      ]
+     ],
+     "compression_db": 2.93,
+     "top_slope": 0.736,
+     "knee_in_db": -10.75,
+     "attack_s": 0.5,
+     "release_s": 0.22,
+     "attack_tau_s": null,
+     "release_tau_s": 0.005
+    },
+    "thd_percent": 0.78
    },
-   "cpu_ms_per_s": 0.3,
+   "cpu_ms_per_s": 0.7,
    "type": "modulation",
    "level_test": {
     "defaults": {
@@ -5491,15 +5805,14 @@
      },
      "track LFO Shape": {
       "suggested_role": null,
-      "evidence": "diverged or failed at an end",
+      "evidence": "a choice: its texts say what it is; no role measured",
       "min": {
        "raw": 0,
        "text": "sine"
       },
       "max": {
        "raw": 16,
-       "text": "S'n'H 2",
-       "diverged": "+172.2 dBFS"
+       "text": "S'n'H 2"
       }
      },
      "track Inertia": {
@@ -5527,37 +5840,35 @@
       }
      }
     },
-    "renders": 29
+    "renders": 30
    },
    "denormal": {
-    "playing_ms_per_s": 8.475,
-    "silent_ms_per_s": 8.947,
-    "silent_worst_ms_per_s": 9.196,
+    "playing_ms_per_s": 9.304,
+    "silent_ms_per_s": 9.122,
+    "silent_worst_ms_per_s": 10.538,
     "windows_ms_per_s": [
-     8.475,
-     8.868,
-     8.945,
-     8.963,
-     9.116,
-     9.196,
-     8.947,
-     8.969,
-     8.935,
-     8.699,
-     8.835
+     9.304,
+     10.538,
+     9.404,
+     9.044,
+     9.117,
+     9.113,
+     9.193,
+     9.047,
+     9.122,
+     9.101,
+     9.253
     ]
    },
-   "seconds": 11.8,
+   "seconds": 13.0,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [
     "hot (loud but steady) with Cutoff at its maximum (240): +3.1 dBFS peak; Filter at its minimum (2pole LP): +4.2 dBFS peak; LFO mod at its maximum (240): +0.7 dBFS peak"
    ],
-   "notes_profiler": [
-    "the test signal at the defaults: +82.9 dBFS"
-   ],
+   "notes_profiler": [],
    "generated": false,
    "health": "warn"
   },
@@ -6926,6 +7237,7 @@
     "latency_samples": 0,
     "latency_ms": 0.0,
     "tail_seconds": 3.0,
+    "tail_hz": 8231.2,
     "echoes": 6,
     "first_echo_seconds": 0.375,
     "gap_before_echo_db": -60.0,
@@ -7319,7 +7631,7 @@
     },
     "thd_percent": 2.47
    },
-   "cpu_ms_per_s": 6.8,
+   "cpu_ms_per_s": 6.5,
    "type": "delay",
    "level_test": {
     "defaults": {
@@ -7486,26 +7798,26 @@
     "renders": 21
    },
    "denormal": {
-    "playing_ms_per_s": 6.857,
-    "silent_ms_per_s": 7.61,
-    "silent_worst_ms_per_s": 7.751,
+    "playing_ms_per_s": 7.853,
+    "silent_ms_per_s": 8.05,
+    "silent_worst_ms_per_s": 8.151,
     "windows_ms_per_s": [
-     6.857,
-     7.751,
-     7.692,
-     7.673,
-     7.568,
-     7.585,
-     7.622,
-     7.516,
-     7.55,
-     7.61,
-     7.555
+     7.853,
+     8.002,
+     8.05,
+     8.151,
+     8.08,
+     8.051,
+     8.113,
+     8.037,
+     7.855,
+     8.014,
+     7.993
     ]
    },
-   "seconds": 12.6,
+   "seconds": 12.9,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -7534,6 +7846,7 @@
     "latency_samples": 0,
     "latency_ms": 0.0,
     "tail_seconds": 3.38,
+    "tail_hz": 8231.2,
     "echoes": 7,
     "first_echo_seconds": 0.375,
     "gap_before_echo_db": -60.0,
@@ -7959,7 +8272,7 @@
     },
     "thd_percent": 2.6
    },
-   "cpu_ms_per_s": 6.6,
+   "cpu_ms_per_s": 7.2,
    "type": "delay",
    "level_test": {
     "defaults": {
@@ -8192,21 +8505,21 @@
     "renders": 17
    },
    "denormal": {
-    "playing_ms_per_s": 7.063,
-    "silent_ms_per_s": 7.272,
-    "silent_worst_ms_per_s": 9.674,
+    "playing_ms_per_s": 7.043,
+    "silent_ms_per_s": 7.217,
+    "silent_worst_ms_per_s": 7.382,
     "windows_ms_per_s": [
-     7.063,
-     8.733,
-     9.674,
-     7.322,
-     7.182,
-     7.207,
-     7.272,
-     7.175,
-     7.187,
-     7.222,
-     7.357
+     7.043,
+     7.382,
+     7.164,
+     7.268,
+     7.243,
+     7.195,
+     7.18,
+     7.194,
+     7.264,
+     7.217,
+     7.052
     ]
    },
    "safe_ranges": {
@@ -8218,9 +8531,9 @@
      "reason": "never decays at its minimum (-100.0%: +30.4 dBFS peak over 30 s, never decays) and rings at its maximum (100.0%: +31.3 dBFS peak, 31 dB over its level at the default; the edge is where it passes 24 dB over it)"
     }
    },
-   "seconds": 11.8,
+   "seconds": 12.0,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -8693,26 +9006,26 @@
     "renders": 20
    },
    "denormal": {
-    "playing_ms_per_s": 6.614,
-    "silent_ms_per_s": 6.991,
-    "silent_worst_ms_per_s": 7.37,
+    "playing_ms_per_s": 7.652,
+    "silent_ms_per_s": 7.27,
+    "silent_worst_ms_per_s": 7.351,
     "windows_ms_per_s": [
-     6.614,
+     7.652,
      7.322,
-     7.37,
-     7.028,
-     6.991,
-     6.867,
-     6.827,
-     6.754,
-     6.835,
-     6.984,
-     7.258
+     7.227,
+     7.16,
+     7.27,
+     7.325,
+     7.267,
+     7.075,
+     7.322,
+     7.187,
+     7.351
     ]
    },
-   "seconds": 13.0,
+   "seconds": 13.3,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -11430,6 +11743,7 @@
     "latency_samples": 0,
     "latency_ms": 0.0,
     "tail_seconds": 3.38,
+    "tail_hz": 8407.5,
     "echoes": 10,
     "first_echo_seconds": 0.375,
     "gap_before_echo_db": -60.0,
@@ -11855,7 +12169,7 @@
     },
     "thd_percent": 2.7
    },
-   "cpu_ms_per_s": 15.8,
+   "cpu_ms_per_s": 17.6,
    "type": "delay",
    "level_test": {
     "defaults": {
@@ -11889,7 +12203,7 @@
       "over_seconds": 30,
       "verdict": "hot",
       "raw": 0,
-      "text": "0"
+      "text": "Off"
      }
     },
     "Length": {
@@ -12093,7 +12407,7 @@
       "evidence": "the direct sound -120 → +4 dB while the tail stays (+6 → +6 dB)",
       "min": {
        "raw": 0,
-       "text": "0"
+       "text": "Off"
       },
       "max": {
        "raw": 1,
@@ -12188,21 +12502,21 @@
     "renders": 29
    },
    "denormal": {
-    "playing_ms_per_s": 8.26,
-    "silent_ms_per_s": 8.113,
-    "silent_worst_ms_per_s": 8.25,
+    "playing_ms_per_s": 9.206,
+    "silent_ms_per_s": 8.619,
+    "silent_worst_ms_per_s": 8.722,
     "windows_ms_per_s": [
-     8.26,
-     8.078,
-     8.18,
-     8.25,
-     8.175,
-     8.113,
-     8.117,
-     7.924,
-     7.931,
-     8.085,
-     8.001
+     9.206,
+     8.722,
+     8.491,
+     8.714,
+     8.612,
+     8.593,
+     8.636,
+     8.434,
+     8.619,
+     8.714,
+     8.588
     ]
    },
    "safe_ranges": {
@@ -12214,14 +12528,14 @@
      "reason": "rings at its minimum (-100.0%: +38.7 dBFS peak over 30 s, 35 dB over its level at the default; the edge is where it passes 24 dB over it) and rings at its maximum (100.0%: +39.2 dBFS peak, 36 dB over its level at the default; the edge is where it passes 24 dB over it)"
     }
    },
-   "seconds": 19.8,
+   "seconds": 16.9,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [
     "hot at its defaults (+3.6 dBFS peak)",
-    "hot (loud but steady) with Dry thru at its minimum (0): +1.8 dBFS peak over 30 s; Length at its minimum (1): +3.3 dBFS peak; Length at its maximum (32768): +5.2 dBFS peak over 30 s; Length unit at its maximum (tick/256): +3.1 dBFS peak; Feedback at its minimum (-100.0%): +38.7 dBFS peak over 30 s; Feedback at its maximum (100.0%): +39.2 dBFS peak; f. type at its maximum (bandreject): +3.4 dBFS peak; f. cutoff at its minimum (10Hz): +3.6 dBFS peak; and 3 more"
+    "hot (loud but steady) with Dry thru at its minimum (Off): +1.8 dBFS peak over 30 s; Length at its minimum (1): +3.3 dBFS peak; Length at its maximum (32768): +5.2 dBFS peak over 30 s; Length unit at its maximum (tick/256): +3.1 dBFS peak; Feedback at its minimum (-100.0%): +38.7 dBFS peak over 30 s; Feedback at its maximum (100.0%): +39.2 dBFS peak; f. type at its maximum (bandreject): +3.4 dBFS peak; f. cutoff at its minimum (10Hz): +3.6 dBFS peak; and 3 more"
    ],
    "notes_profiler": [
     "safe range: Feedback rings at its minimum (-100.0%: +38.7 dBFS peak over 30 s, 35 dB over its level at the default; the edge is where it passes 24 dB over it) and rings at its maximum (100.0%: +39.2 dBFS peak, 36 dB over its level at the default; the edge is where it passes 24 dB over it); safe from -98.4% to 98.4% (raw 1–127)"
@@ -12358,26 +12672,26 @@
     "renders": 10
    },
    "denormal": {
-    "playing_ms_per_s": 5.543,
-    "silent_ms_per_s": 5.164,
-    "silent_worst_ms_per_s": 5.342,
+    "playing_ms_per_s": 5.917,
+    "silent_ms_per_s": 5.287,
+    "silent_worst_ms_per_s": 6.556,
     "windows_ms_per_s": [
-     5.543,
-     5.342,
-     5.259,
-     5.217,
-     5.147,
-     5.105,
-     5.164,
-     5.144,
-     5.108,
-     5.206,
-     5.073
+     5.917,
+     5.26,
+     5.354,
+     5.287,
+     5.254,
+     5.352,
+     5.199,
+     5.184,
+     6.556,
+     5.392,
+     5.253
     ]
    },
-   "seconds": 3.1,
+   "seconds": 1.6,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -14486,7 +14800,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "BD Tone": {
@@ -14529,26 +14843,26 @@
     "renders": 7
    },
    "denormal": {
-    "playing_ms_per_s": 5.594,
-    "silent_ms_per_s": 5.198,
-    "silent_worst_ms_per_s": 5.338,
+    "playing_ms_per_s": 5.741,
+    "silent_ms_per_s": 5.515,
+    "silent_worst_ms_per_s": 9.693,
     "windows_ms_per_s": [
-     5.594,
-     5.338,
-     5.284,
-     5.205,
-     5.271,
-     5.159,
-     5.069,
-     5.171,
-     5.198,
-     5.15,
-     5.167
+     5.741,
+     5.845,
+     5.629,
+     5.41,
+     5.296,
+     4.9,
+     5.263,
+     9.693,
+     9.631,
+     5.515,
+     5.299
     ]
    },
    "seconds": 1.9,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -26403,7 +26717,7 @@
   "Oomek Aggressor 303": {
    "gear": "Oomek Aggressor 303",
    "kind": "generator",
-   "load_seconds": 0.02,
+   "load_seconds": 0.03,
    "gear_info": {
     "file": "Generators/Oomek Aggressor 303.x64.dll",
     "managed": false,
@@ -26459,7 +26773,7 @@
     "sample_peak_dbfs": -1.6,
     "true_peak_dbtp": -1.57
    },
-   "cpu_ms_per_s": 5.2,
+   "cpu_ms_per_s": 3.3,
    "type": "monosynth",
    "level_test": {
     "defaults": {
@@ -26628,26 +26942,26 @@
     "renders": 28
    },
    "denormal": {
-    "playing_ms_per_s": 7.585,
-    "silent_ms_per_s": 5.928,
-    "silent_worst_ms_per_s": 9.1,
+    "playing_ms_per_s": 11.26,
+    "silent_ms_per_s": 10.311,
+    "silent_worst_ms_per_s": 10.743,
     "windows_ms_per_s": [
-     7.585,
-     5.928,
-     5.906,
-     6.065,
-     5.805,
-     5.905,
-     5.813,
-     5.907,
-     6.084,
-     6.157,
-     9.1
+     11.26,
+     10.311,
+     10.233,
+     10.33,
+     10.265,
+     10.251,
+     10.187,
+     10.105,
+     10.743,
+     10.512,
+     10.546
     ]
    },
-   "seconds": 5.3,
+   "seconds": 5.8,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -26660,7 +26974,7 @@
   "Oomek Exciter": {
    "gear": "Oomek Exciter",
    "kind": "effect",
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Effects/Oomek Exciter.x64.dll",
     "managed": false,
@@ -27009,7 +27323,7 @@
     },
     "thd_percent": 3.18
    },
-   "cpu_ms_per_s": 7.9,
+   "cpu_ms_per_s": 7.7,
    "type": "filter or EQ",
    "level_test": {
     "defaults": {
@@ -27104,26 +27418,26 @@
     "renders": 18
    },
    "denormal": {
-    "playing_ms_per_s": 16.655,
-    "silent_ms_per_s": 16.537,
-    "silent_worst_ms_per_s": 17.085,
+    "playing_ms_per_s": 16.546,
+    "silent_ms_per_s": 16.897,
+    "silent_worst_ms_per_s": 17.039,
     "windows_ms_per_s": [
-     16.655,
-     17.064,
-     16.879,
-     17.085,
-     16.447,
-     16.575,
-     16.46,
-     16.446,
-     16.537,
-     16.321,
-     16.371
+     16.546,
+     16.941,
+     16.853,
+     16.945,
+     16.897,
+     17.039,
+     16.893,
+     16.734,
+     16.952,
+     16.774,
+     16.537
     ]
    },
-   "seconds": 10.8,
+   "seconds": 9.1,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -27483,7 +27797,7 @@
     },
     "thd_percent": 2.38
    },
-   "cpu_ms_per_s": 18.6,
+   "cpu_ms_per_s": 18.9,
    "type": "EQ",
    "level_test": {
     "defaults": {
@@ -27658,26 +27972,26 @@
     "renders": 46
    },
    "denormal": {
-    "playing_ms_per_s": 27.422,
-    "silent_ms_per_s": 27.431,
-    "silent_worst_ms_per_s": 28.693,
+    "playing_ms_per_s": 28.335,
+    "silent_ms_per_s": 27.496,
+    "silent_worst_ms_per_s": 29.3,
     "windows_ms_per_s": [
-     27.422,
-     27.184,
-     27.259,
-     27.855,
-     27.426,
-     27.431,
-     27.552,
-     28.259,
-     28.693,
-     27.169,
-     27.4
+     28.335,
+     27.182,
+     27.128,
+     27.496,
+     27.272,
+     27.173,
+     27.634,
+     27.336,
+     29.3,
+     27.895,
+     27.657
     ]
    },
-   "seconds": 37.8,
+   "seconds": 38.5,
    "platform": "windows",
-   "date": "2026-11-04",
+   "date": "2026-11-05",
    "problems": [],
    "warnings": [],
    "hot": [],

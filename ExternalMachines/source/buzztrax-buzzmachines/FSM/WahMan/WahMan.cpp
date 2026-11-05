@@ -309,6 +309,11 @@ void mi::Init(CMachineDataInput * const pi)
     vals.lfodepth=paraModDepth.DefValue;
     vals.lfophase=paraLFOPhase.DefValue;
     vals.inertia=paraInertia.DefValue;
+    // neo-buzz (U7): the cutoff the glide starts from, and the filter coefficients DoWork reads before it
+    // first computes them, were never set: heap garbage, so an instance could start anywhere. 0 is where a
+    // fresh (zeroed) allocation started them, so every instance now sounds as those did.
+    Tracks[c].CurCutoff = 0.0f;
+    Tracks[c].a0 = Tracks[c].a1 = Tracks[c].a2 = 0.0f;
     TickTrack(&Tracks[c], &vals);
     Tracks[c].x1=Tracks[c].y1=Tracks[c].x2=Tracks[c].y2=0.0f;
   }

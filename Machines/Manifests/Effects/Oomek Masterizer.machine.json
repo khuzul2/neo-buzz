@@ -4516,8 +4516,8 @@
    "max": 112,
    "default": 17,
    "kind": "linear",
-   "a": 15.621461,
-   "b": 819.856017,
+   "a": 15.62235,
+   "b": 819.851574,
    "unit": "Hz",
    "description": "About 16–820 Hz (its own estimate at 44.1 kHz)."
   },
@@ -4532,8 +4532,8 @@
    "max": 240,
    "default": 18,
    "kind": "linear",
-   "a": 1023.580398,
-   "b": 8042.286821,
+   "a": 1023.564428,
+   "b": 8042.29249,
    "unit": "Hz",
    "description": "About 1–8 kHz (its own estimate at 44.1 kHz)."
   },
