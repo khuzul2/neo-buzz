@@ -132,8 +132,10 @@ namespace ReBuzz.AgentTests
         static Dictionary<string, List<string>>? presets;
 
         /// <summary>The Neo manifests by gear name (Machines/*/*.machine.json, generated; not the drafts and curated manifests in Machines/Manifests).</summary>
+        // The Neo machines' generated manifests, beside their sources (U6's generated from source live in Machines/Manifests).
         static Dictionary<string, MachineManifest> Manifests() =>
             manifests ??= Directory.GetFiles(Path.Combine(RepoRoot(), "Machines"), "*" + MachineManifest.Suffix, SearchOption.AllDirectories)
+                .Where(f => !f.Replace('\\', '/').Contains("/Machines/Manifests/"))
                 .Select(f => MachineManifest.Load(f)!).Where(m => m.Quality == "generated").ToDictionary(m => m.Gear);
 
         static Dictionary<string, MachineManifest>? exact;

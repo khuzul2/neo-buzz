@@ -626,7 +626,8 @@ def profile_effect(c, prof, info, baseline):
         prof.diverges(f"diverges on a click at its defaults ({peak_text(rc['measure'])})")
     else:
         _, cl, cr = read_wav(probe_file(rc, "M"))
-        env = envelope([(a + b) / 2 for a, b in zip(cl, cr)], rate, 5)
+        mono = [(a + b) / 2 for a, b in zip(cl, cr)]
+        env = envelope(mono, rate, 5)
         peak = max(env) if env else 0
         if peak > 0:
             start = int(0.025 / 0.005)    # after the click
@@ -635,6 +636,10 @@ def profile_effect(c, prof, info, baseline):
             fx["tail_seconds"] = round(max(0, last_loud + 1 - start) * 0.005, 2)
             if last_loud >= len(env) - 2:
                 fx["tail_seconds_note"] = "rings longer than the 3 s rendered"
+            # U6 (§12.13): the tail's brightness, so a DC blocker's subsonic decay isn't read as a reverb's tail.
+            hz = mr.rms_hz(mono, int(start * 0.005 * rate), int((last_loud + 1) * 0.005 * rate), rate) if last_loud > start else None
+            if hz is not None:
+                fx["tail_hz"] = round(hz, 1)
             # Echoes: from 60 ms on (pre-delay and early reflections come sooner), the tail rising
             # again by 10 dB or more from a dip. A dense reverb tail doesn't; a delay does, after a gap.
             echoes, low, first, gap = 0, None, None, None
@@ -725,7 +730,7 @@ def classify_effect(prof, fx):
     delay = fx.get("echoes", 0) >= 2 or (fx.get("echoes", 0) == 1 and (fx.get("gap_before_echo_db") or 0) < -40)
     if delay:
         traits.append("delay")
-    elif (fx.get("tail_seconds") or 0) > 0.15:
+    elif (fx.get("tail_seconds") or 0) > 0.15 and not mr.subsonic(fx.get("tail_hz")):
         traits.append("reverb")
     thd, thd_in = loud.get("thd_percent") or 0, loud.get("thd_in_percent") or 0
     if thd > thd_in + 1.5 and thd > 1.5 * thd_in:
@@ -1223,9 +1228,11 @@ def effect_type(click, prior):
         if mean > 0.02 and max(abs(g - mean) for g in gaps) < 0.25 * mean:
             return "delay"
     t60 = click.get("t60_s")
-    if prior in ("delay", "reverb") and isinstance(t60, (int, float)) and t60 >= 0.3 and len(times) < 3 and (click.get("late_db") or -120) > -40:
+    if prior in ("delay", "reverb") and isinstance(t60, (int, float)) and t60 >= 0.3 and len(times) < 3 and (click.get("late_db") or -120) > -40 \
+            and not mr.subsonic(click.get("tail_zcr_hz")):
         return "reverb"
     return prior
+
 
 
 def role_key(p, globals_):
@@ -2022,9 +2029,11 @@ def fmt_s(t):
     return "" if not isinstance(t, (int, float)) else f"{t * 1000:.0f} ms" if t < 1 else f"{t:.2f} s"
 
 
-def health_report(summary, curated=None):
-    """The report. curated: {gear: {"name" or "track name": role}} from the curated manifests, for the roles' table."""
+def health_report(summary, curated=None, sourced=None):
+    """The report. curated: {gear: {"name" or "track name": role}} from the curated manifests, for the roles' table;
+    sourced: the gear with manifests generated from their source (U6), which have no draft's suggestions."""
     curated = curated or {}
+    sourced = sourced or set()
     machines = summary["machines"]
     rows = sorted(machines.values(), key=lambda e: (e.get("kind", ""), e["gear"].lower()))
     by_platform = {}
@@ -2151,7 +2160,7 @@ def health_report(summary, curated=None):
     if rows_c:
         lines += [f"Curated filter, time and mix parameters: {agree} of {total} suggestions agree.", "",
                   "| Machine | Parameter | Kind | Curated | Suggested | Agrees | Evidence |", "|---|---|---|---|---|---|---|"] + rows_c
-    drafts = [e for e in rows if not curated.get(e["gear"]) and not e.get("generated") and any(r.get("suggested_role") for r in ((e.get("roles") or {}).get("params") or {}).values())]
+    drafts = [e for e in rows if not curated.get(e["gear"]) and not e.get("generated") and e["gear"] not in sourced and any(r.get("suggested_role") for r in ((e.get("roles") or {}).get("params") or {}).values())]
     if drafts:
         lines += ["", "Drafts:", "", "| Machine | Suggested roles |", "|---|---|"]
         for e in drafts:
@@ -2189,7 +2198,8 @@ def health_report(summary, curated=None):
                      f"{fx.get('tail_seconds', '')} | {fmt_s(imp.get('t60_s'))} | {fmt_s(echo)} | {band} | {e.get('cpu_ms_per_s', '')} | "
                      f"{(e.get('denormal') or {}).get('silent_ms_per_s', '')} | {category(e)} |")
     lines += ["", "## Not measured yet", "",
-              "Whether `Work` reports silence (the engine doesn't expose what a machine's Work returns); a wave or a plugin to choose for "
+              "Whether `Work` reports silence (the engine keeps what it returns only for the activity LED, and a managed effect's false "
+              "means \"pass my input\", not \"I'm silent\": mcp-server.md §12.13); a wave or a plugin to choose for "
               "Jeskola Tracker and Polac VSTi (a person's choice, not a measurement); LFO rates (a modulation's rate shows only over seconds of "
               "steady tone); what a parameter does only with another one set (a slot's effect, an envelope routed elsewhere) beyond the "
               "contexts the sweep tries: mcp-server.md §12.12.", ""]
@@ -2237,17 +2247,35 @@ def merge_into_repo(root, summary, out_dir):
             with open(src, encoding="utf-8") as f:
                 draft = checked_draft(json.load(f))
             dst = os.path.join(folder, subfolder(e), e["gear"] + ".machine.json")
-            # U3 (mcp-server.md §12.9): a curated manifest keeps its curation and takes the new measurements.
+            # U3 (mcp-server.md §12.9): a curated manifest keeps its curation and takes the new measurements;
+            # U6 (§12.13): so does one generated from the machine's source (tools/source_manifests.py).
             existing = None
             if os.path.exists(dst):
                 with open(dst, encoding="utf-8") as f:
                     existing = json.load(f)
-            if existing and existing.get("status") == "curated":
+            if existing and existing.get("status") in ("curated", "generated"):
                 draft, warnings = mi.recurate(existing, draft)
                 for w in warnings:
-                    print(f"  curated {e['gear']}: {w}", flush=True)
+                    print(f"  {existing['status']} {e['gear']}: {w}", flush=True)
             write_json(dst, draft)
     write_report(root, merged)
+
+
+def from_source(root):
+    """U6 (mcp-server.md §12.13): the gear whose manifests in ROOT/Machines/Manifests are generated from their source:
+    not drafts, so the report lists no suggested roles for them."""
+    out = set()
+    for sub in ("Effects", "Generators"):
+        folder = os.path.join(root, "Machines", "Manifests", sub)
+        for f in sorted(os.listdir(folder)) if os.path.isdir(folder) else []:
+            if f.endswith(".machine.json"):
+                try:
+                    with open(os.path.join(folder, f), encoding="utf-8-sig") as h:
+                        if json.load(h).get("status") == "generated":
+                            out.add(f[:-len(".machine.json")])
+                except (OSError, ValueError):
+                    pass
+    return out
 
 
 def curated_roles(root):
@@ -2280,7 +2308,7 @@ def curated_roles(root):
 
 def write_report(root, merged):
     with open(os.path.join(root, "docs", "machine-health.md"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(health_report(merged, curated_roles(root)))
+        f.write(health_report(merged, curated_roles(root), from_source(root)))
 
 
 PACK = "MACHINE-PROFILE-PACK"
@@ -2429,7 +2457,7 @@ def main():
     c.close()
     write_json(os.path.join(out, "machine-profile.json"), summary)
     with open(os.path.join(out, "machine-health.md"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(health_report(summary, curated_roles(args.repo or root_default)))
+        f.write(health_report(summary, curated_roles(args.repo or root_default), from_source(args.repo or root_default)))
     if args.repo:
         merge_into_repo(os.path.abspath(args.repo), summary, out)
     cats = {}

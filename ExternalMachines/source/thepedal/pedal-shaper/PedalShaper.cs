@@ -136,6 +136,12 @@ namespace PedalShaper
         float _dustAttackCoef  = 0f;  // v1.2 — buffer-rate; depends only on sr
         float _dustReleaseCoef = 0f;  // v1.2 — buffer-rate; depends only on sr
 
+        // Fork (neo-buzz, U6): Drive, Output, Bias, Tone and Mix glide to a new setting (Glide, below);
+        // the coefficients above are where they land. Tone and Mix glide as their −1…+1 and 0…1 readings.
+        float _toneN = 0f, _mixN = 1f;
+        Glide _gDrive, _gOutput, _gBias, _gTone, _gMix;
+        bool  _glidesSet;
+
         // ── Constructor — store the host, init filter state ───────────────
         // Per Core §15, ParameterGroups is NOT yet populated here.  Stick
         // to plain field init and host capture.
@@ -291,12 +297,14 @@ namespace PedalShaper
             float toneN = (Tone - TONE_OFFSET) / (float)TONE_OFFSET;   // −1..+1
             _toneLowGain  = 1f - toneN * 0.75f;
             _toneHighGain = 1f + toneN * 0.75f;
+            _toneN = toneN;
 
             // Mix.  Linear crossfade; equal-power isn't needed because
             // the dry and wet are correlated (wet is derived from dry).
             float mixN = Mix / 127f;
             _mixDry = 1f - mixN;
             _mixWet = mixN;
+            _mixN = mixN;
 
             // Tone filter coefficient — only recompute on actual SR change.
             // The cutoff is fixed; only its discretisation depends on sr.
@@ -355,6 +363,26 @@ namespace PedalShaper
             // is exactly 0 so the unconditional mul-add in the hot loop
             // is mathematically transparent.
             _dustGain = (Dust / 127f) * 0.8f;
+
+            // Fork (neo-buzz, U6): glide there; the first time, and at a new sample rate, start there.
+            if (!_glidesSet || srChanged)
+            {
+                _gDrive.Snap(_driveLin);
+                _gOutput.Snap(_outputLin);
+                _gBias.Snap(_biasLin);
+                _gTone.Snap(_toneN);
+                _gMix.Snap(_mixN);
+                _glidesSet = true;
+            }
+            else
+            {
+                int len = (int)(Glide.Ms * 0.001f * sr);
+                _gDrive.Set(_driveLin, len);
+                _gOutput.Set(_outputLin, len);
+                _gBias.Set(_biasLin, len);
+                _gTone.Set(_toneN, len);
+                _gMix.Set(_mixN, len);
+            }
         }
 
         // ───────────────────────────────────────────────────────────────────
@@ -397,9 +425,23 @@ namespace PedalShaper
             float dustG    = _dustGain;       // v1.1; 0   when Dust=0
             float dustAtt  = _dustAttackCoef;  // v1.2; sample-rate-dependent
             float dustRel  = _dustReleaseCoef; // v1.2; sample-rate-dependent
+            // Fork (neo-buzz, U6): while a setting glides, these follow it sample by sample.
+            bool gliding = _gDrive.Left > 0 || _gOutput.Left > 0 || _gBias.Left > 0 || _gTone.Left > 0 || _gMix.Left > 0;
 
             for (int i = 0; i < n; i++)
             {
+                if (gliding)
+                {
+                    driveLin = _gDrive.Next();
+                    outLin   = _gOutput.Next();
+                    biasLin  = _gBias.Next();
+                    float tn = _gTone.Next();
+                    toneLow  = 1f - tn * 0.75f;
+                    toneHigh = 1f + tn * 0.75f;
+                    mixWet   = _gMix.Next();
+                    mixDry   = 1f - mixWet;
+                }
+
                 // ── 1. ±32768 → ±1.0 ───────────────────────────────────
                 float dryL = input[i].L * SCALE;
                 float dryR = input[i].R * SCALE;
@@ -465,6 +507,34 @@ namespace PedalShaper
             }
 
             return true;
+        }
+    }
+
+    // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): a setting that glides to a new value in a straight line over
+    // Ms milliseconds, sample by sample, and lands on it exactly, so a setting that doesn't move is the same number as
+    // before. Automation and pattern events change parameters once a tick or subtick; applied once a block they stepped
+    // (3 dB at a time on a quarter-second ramp of 24 dB), which clicks.
+    struct Glide
+    {
+        public const float Ms = 20f;
+        public float Value, Target, Step;
+        public int Left;
+
+        public void Snap(float v) { Value = Target = v; Left = 0; }
+
+        public void Set(float v, int samples)
+        {
+            if (v == Target) return;
+            Target = v;
+            if (samples <= 1) { Snap(v); return; }
+            Left = samples;
+            Step = (v - Value) / samples;
+        }
+
+        public float Next()
+        {
+            if (Left > 0) Value = --Left == 0 ? Target : Value + Step;
+            return Value;
         }
     }
 }

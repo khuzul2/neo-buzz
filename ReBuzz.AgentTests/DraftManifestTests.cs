@@ -176,7 +176,8 @@ namespace ReBuzz.AgentTests
                 string sub = Path.GetFileName(Path.GetDirectoryName(file))!;
                 Assert.That(Path.GetFileName(file), Is.EqualTo(m.Gear + MachineManifest.Suffix));
                 Assert.That(sub, Is.AnyOf("Generators", "Effects"), file);
-                Assert.That(m.IsDraft || m.IsCurated, Is.True, m.Gear + ": drafts and curated manifests here (U3); generated manifests live with their machines");
+                Assert.That(m.IsDraft || m.IsCurated || m.IsGeneratedFromSource, Is.True,
+                    m.Gear + ": drafts, curated manifests (U3) and manifests from source (U6) here; the Neo machines' generated manifests live with them");
                 Assert.That(m.Kind, Is.AnyOf("generator", "effect"));
                 if (m.IsDraft) Assert.That(m.Summary, Does.Contain("profiled draft"), m.Gear);
                 Assert.That(m.Health, Is.Not.Null, m.Gear);
@@ -198,7 +199,7 @@ namespace ReBuzz.AgentTests
                     {
                         Assert.That(ManifestRoles.IsKnown(p.SuggestedRole), Is.True, $"{m.Gear} {p.Name}: {p.SuggestedRole} is in the role vocabulary");
                         Assert.That(p.RoleEvidence, Is.Not.Empty, $"{m.Gear} {p.Name}: its evidence");
-                        Assert.That(m.IsDraft, Is.True, $"{m.Gear}: curated manifests keep their own roles, not suggestions");
+                        Assert.That(m.IsDraft, Is.True, $"{m.Gear}: curated manifests and manifests from source have no suggestions");
                     }
                     double v = p.Mapping.Value(p.Default, p.Min, p.Max);
                     Assert.That(double.IsNaN(v), Is.False, $"{m.Gear} {p.Name}: its default maps to a value");

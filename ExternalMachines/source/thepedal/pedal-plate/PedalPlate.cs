@@ -109,13 +109,23 @@ namespace WDE.PedalPlate
         // MAX_TAIL_SEC is a generous upper bound: Decay is capped at 0.94 and
         // Feedback below the outer loop's edge (see Work), so the energy in the
         // tank always converges in finite time — 8 seconds outlasts the usual
-        // tails (the longest, at full Decay with Feedback at its cap, ring on
-        // beyond it and are cut when the input has been silent for 8 s).
+        // tails. Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): the longest
+        // (Decay 100: −53 dBFS at 8 s) rang on beyond it and were cut, since ReBuzz
+        // passes an effect's input on when Work returns false; now it also waits
+        // for the last block's output to be under OUTPUT_SILENT (−120 dBFS).
+        // Where it was by 8 s, as at the defaults (−142 dBFS), nothing changes.
 
         const float SILENCE_THRESHOLD = 1e-5f;   // ~−100 dBFS
         const float MAX_TAIL_SEC      = 8f;       // seconds to wait after input goes silent
+        const float OUTPUT_SILENT     = 32768e-6f; // −120 dBFS of Buzz's ±32768 (U6)
+        float _lastOutPeak = float.MaxValue;      // the last block's output peak while the input is silent (U6)
 
         int _tailCountdown;   // samples remaining before we declare silence
+
+        // Fork (neo-buzz, U6): Mix glides to a new setting (Glide, below).
+        Glide _gWet;
+        bool  _glidesSet;
+        int   _glideSr;
 
         // ── Constructor ───────────────────────────────────────────────────────
 
@@ -172,11 +182,21 @@ namespace WDE.PedalPlate
 
         // ── DSP helpers ───────────────────────────────────────────────────────
 
+        // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): every value a loop writes back (the
+        // all-passes' stores, the damping and low-cut states) settles to exact zero below Tiny,
+        // 1e-15 of full scale (−300 dBFS; samples here are ±32768). After the input stopped, the
+        // low cut's state and then the diffusers decayed into denormal floats within a second and
+        // stayed there, which cost up to 18 ms of work a second against 1.6 while playing, until
+        // the silence countdown (MAX_TAIL_SEC) stopped the machine. Only a sound already under about −160 dBFS
+        // can bring a state that low, so what is heard is unchanged; the tank now empties to zero.
+        const float Tiny = 32768e-15f;
+
         // Standard Schroeder all-pass
         static float AP(float[] buf, ref int pos, float x, float g)
         {
             float d = buf[pos];
             float v = x - g * d;
+            if (MathF.Abs(v) < Tiny) v = 0f;
             buf[pos] = v;
             pos = pos + 1 < buf.Length ? pos + 1 : 0;
             return d + g * v;
@@ -202,6 +222,7 @@ namespace WDE.PedalPlate
             float d = buf[r0] * (1f - frac) + buf[r1] * frac;
 
             float v = x - g * d;
+            if (MathF.Abs(v) < Tiny) v = 0f;
             buf[pos] = v;
             pos = pos + 1 < len ? pos + 1 : 0;
             return d + g * v;
@@ -247,13 +268,17 @@ namespace WDE.PedalPlate
                 {
                     // Tank has fully decayed: nothing left to output
                     _tailCountdown = 0;
-                    return false;
+                    if (_lastOutPeak < OUTPUT_SILENT) return false;
                 }
             }
 
             // ── Block-rate parameter conversion ───────────────────────────────
             float wet  = Mix      / 100f;
             float dry  = 1f - wet;
+            // Fork (neo-buzz, U6): glide to Mix; the first time, and at a new rate, start there.
+            if (!_glidesSet || _sr != _glideSr) { _gWet.Snap(wet); _glidesSet = true; _glideSr = _sr; }
+            else _gWet.Set(wet, (int)(Glide.Ms * 0.001f * _sr));
+            bool gliding = _gWet.Left > 0;
             float dec  = Decay    / 100f * 0.94f;   // keep < 1 for stability
             float damp = Damping  / 100f * 0.88f;
             float dmp1 = 1f - damp;
@@ -292,6 +317,12 @@ namespace WDE.PedalPlate
 
             for (int i = 0; i < n; i++)
             {
+                if (gliding)
+                {
+                    wet = _gWet.Next();
+                    dry = 1f - wet;
+                }
+
                 // ── LFO advance ───────────────────────────────────────────────
                 _lfoL += lfoInc; if (_lfoL >= MathF.Tau) _lfoL -= MathF.Tau;
                 _lfoR += lfoInc; if (_lfoR >= MathF.Tau) _lfoR -= MathF.Tau;
@@ -301,6 +332,8 @@ namespace WDE.PedalPlate
                 // ── High-pass filter on stereo inputs ─────────────────────────
                 _hpL += hpAlpha * (input[i].L - _hpL);
                 _hpR += hpAlpha * (input[i].R - _hpR);
+                if (MathF.Abs(_hpL) < Tiny) _hpL = 0f;
+                if (MathF.Abs(_hpR) < Tiny) _hpR = 0f;
                 float filtL = input[i].L - _hpL;
                 float filtR = input[i].R - _hpR;
 
@@ -328,6 +361,7 @@ namespace WDE.PedalPlate
                 float aL1 = ModAP(_apL1, ref _pAL1, sig + dec * xfeedR, gTk1, modL);
                 float dL1 = Del  (_dL1,  ref _pDL1, aL1);
                 _lpL       = dL1 * dmp1 + _lpL * damp;
+                if (MathF.Abs(_lpL) < Tiny) _lpL = 0f;
                 float aL2 = AP   (_apL2, ref _pAL2, _lpL * dec, gTk2);
                 float dL2 = Del  (_dL2,  ref _pDL2, aL2);
 
@@ -335,6 +369,7 @@ namespace WDE.PedalPlate
                 float aR1 = ModAP(_apR1, ref _pAR1, sig + dec * xfeedL, gTk1, modR);
                 float dR1 = Del  (_dR1,  ref _pDR1, aR1);
                 _lpR       = dR1 * dmp1 + _lpR * damp;
+                if (MathF.Abs(_lpR) < Tiny) _lpR = 0f;
                 float aR2 = AP   (_apR2, ref _pAR2, _lpR * dec, gTk2);
                 float dR2 = Del  (_dR2,  ref _pDR2, aR2);
 
@@ -349,7 +384,44 @@ namespace WDE.PedalPlate
                 output[i].R = dry * input[i].R + wet * outR;
             }
 
+            // Fork (neo-buzz, U6): what the countdown above waits for; read only while the input is silent.
+            _lastOutPeak = float.MaxValue;
+            if (inputPeak <= SILENCE_THRESHOLD)
+            {
+                float peak = 0f;
+                for (int i = 0; i < n; i++)
+                    peak = MathF.Max(peak, MathF.Max(MathF.Abs(output[i].L), MathF.Abs(output[i].R)));
+                _lastOutPeak = peak;
+            }
             return true;
+        }
+    }
+
+    // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): a setting that glides to a new value in a straight line over
+    // Ms milliseconds, sample by sample, and lands on it exactly, so a setting that doesn't move is the same number as
+    // before. Automation and pattern events change parameters once a tick or subtick; applied once a block they stepped
+    // (3 dB at a time on a quarter-second ramp of 24 dB), which clicks.
+    struct Glide
+    {
+        public const float Ms = 20f;
+        public float Value, Target, Step;
+        public int Left;
+
+        public void Snap(float v) { Value = Target = v; Left = 0; }
+
+        public void Set(float v, int samples)
+        {
+            if (v == Target) return;
+            Target = v;
+            if (samples <= 1) { Snap(v); return; }
+            Left = samples;
+            Step = (v - Value) / samples;
+        }
+
+        public float Next()
+        {
+            if (Left > 0) Value = --Left == 0 ? Target : Value + Step;
+            return Value;
         }
     }
 }

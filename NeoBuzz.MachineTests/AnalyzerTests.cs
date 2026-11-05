@@ -188,6 +188,26 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void SilenceAfterSoundSettlesToExactZero()
+        {
+            // U6 (docs/specs/mcp-server.md §12.13): the K-weighting's states settle to zero once the input stops,
+            // instead of decaying into denormal numbers (which cost 25 ms of work a second on silence). A second
+            // of silence after noise reads −∞ (the momentary window holds only zeros), and the filter's output is
+            // exactly zero.
+            var (e, _) = Make();
+            var noise = Measure.PinkNoise(Rate, 0.1);
+            var z = new float[3 * Rate];
+            Run(e, noise, noise);
+            Run(e, z, z);
+            Assert.That(double.IsNegativeInfinity(Snapshot(e).Momentary), Is.True, "silence after sound reads −∞");
+            var k = Loudness.KWeighting.For(Rate);
+            k.SumOfSquares(noise, 0, noise.Length);
+            k.SumOfSquares(z, 0, Rate);
+            Assert.That(k.SumOfSquares(z, 0, Rate), Is.EqualTo(0.0), "the K-weighting's output is exactly zero a second into silence");
+            Assert.That(Loudness.Measure(noise.Concat(z).ToArray(), null, Rate).Momentary[^1], Is.EqualTo(double.NegativeInfinity), "and the batch reads the same");
+        }
+
+        [Test]
         public void SilenceReadsMinusInfinityAndGatesStayShut()
         {
             var (e, _) = Make();

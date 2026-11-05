@@ -240,6 +240,10 @@ namespace ReBuzz.Agent.Model
                     if (raw < p.Min || raw > p.Max) throw new ToolError($"{p.Name}: raw {raw} is outside {p.Min}…{p.Max}.");
                     return raw;
                 }
+                // Fork (U6, mcp-server.md §12.13): a choice named like a keyword (EnvelopeBlock's "Default") is that choice.
+                if (lower is "min" or "max" or "default" && p.Mapping is { Kind: MappingKind.Enum or MappingKind.Switch, Names: { } named })
+                    for (int i = 0; i < named.Count; i++)
+                        if (string.Equals(named[i].Trim(), text, StringComparison.OrdinalIgnoreCase)) return Math.Clamp(p.Min + i, p.Min, p.Max);
                 if (lower == "min") return p.Min;
                 if (lower == "max") return p.Max;
                 if (lower == "default") return p.Default;

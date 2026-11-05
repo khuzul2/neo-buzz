@@ -147,6 +147,11 @@ namespace WDE.PedalComp
         float _kneeEntryLin     = 0f;
         float _makeupLin        = 1f;
 
+        // Fork (neo-buzz, U6): Makeup Gain (or Auto Makeup's) and Wet/Dry glide to a new setting.
+        Glide _gMakeup, _gWet;
+        bool  _glidesSet;
+        int   _glideSr;
+
         void UpdateCoefficients(int sr)
         {
             bool dirty = sr         != _cachedSr         ||
@@ -313,6 +318,23 @@ namespace WDE.PedalComp
             float wetF     = WetDry / 100f;
             float dryF     = 1f - wetF;
 
+            // Fork (neo-buzz, U6): glide to the makeup and mix; the first time, and at a new rate, start there.
+            if (!_glidesSet || sr != _glideSr)
+            {
+                _gMakeup.Snap(_makeupLin);
+                _gWet.Snap(wetF);
+                _glidesSet = true;
+                _glideSr = sr;
+            }
+            else
+            {
+                int len = (int)(Glide.Ms * 0.001f * sr);
+                _gMakeup.Set(_makeupLin, len);
+                _gWet.Set(wetF, len);
+            }
+            bool  gliding  = _gMakeup.Left > 0 || _gWet.Left > 0;
+            float makeup   = _makeupLin;
+
             EnsureLookahead(sr);
             EnsureRms(sr);
             int  bufLen  = _laBuffer.Length;
@@ -324,6 +346,13 @@ namespace WDE.PedalComp
 
             for (int i = 0; i < n; i++)
             {
+                if (gliding)
+                {
+                    makeup = _gMakeup.Next();
+                    wetF   = _gWet.Next();
+                    dryF   = 1f - wetF;
+                }
+
                 // ── Normalise to ±1.0 ────────────────────────────────────────
                 float inL = input[i].L * SCALE;
                 float inR = input[i].R * SCALE;
@@ -361,6 +390,11 @@ namespace WDE.PedalComp
                     coef = _fastReleaseCoef + (_releaseCoef - _fastReleaseCoef) * dropRatio;
                 }
                 env = level + (env - level) * coef;
+                // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): settle to exact zero below
+                // −300 dBFS. In silence the follower's decay stopped among the denormal floats and
+                // stayed there. Compression starts at −66 dBFS at the lowest (_kneeEntryLin), so
+                // the output is as before, bit for bit.
+                if (env < 1e-15f) env = 0f;
 
                 // ── Gain computation ──────────────────────────────────────────
                 // FastLinToDb / FastDbToLin replace MathF.Log10 / MathF.Pow here.
@@ -377,8 +411,8 @@ namespace WDE.PedalComp
                 }
 
                 // ── Apply gain + makeup + wet/dry ─────────────────────────────
-                float outL = delayed.L * (gr * _makeupLin * wetF + dryF);
-                float outR = delayed.R * (gr * _makeupLin * wetF + dryF);
+                float outL = delayed.L * (gr * makeup * wetF + dryF);
+                float outR = delayed.R * (gr * makeup * wetF + dryF);
 
                 // ── Soft-clip ─────────────────────────────────────────────────
                 if (MathF.Abs(outL) > 0.9f || MathF.Abs(outR) > 0.9f)
@@ -400,6 +434,34 @@ namespace WDE.PedalComp
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
+    }
+
+    // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): a setting that glides to a new value in a straight line over
+    // Ms milliseconds, sample by sample, and lands on it exactly, so a setting that doesn't move is the same number as
+    // before. Automation and pattern events change parameters once a tick or subtick; applied once a block they stepped
+    // (3 dB at a time on a quarter-second ramp of 24 dB), which clicks.
+    struct Glide
+    {
+        public const float Ms = 20f;
+        public float Value, Target, Step;
+        public int Left;
+
+        public void Snap(float v) { Value = Target = v; Left = 0; }
+
+        public void Set(float v, int samples)
+        {
+            if (v == Target) return;
+            Target = v;
+            if (samples <= 1) { Snap(v); return; }
+            Left = samples;
+            Step = (v - Value) / samples;
+        }
+
+        public float Next()
+        {
+            if (Left > 0) Value = --Left == 0 ? Target : Value + Step;
+            return Value;
+        }
     }
 
 #if WINDOWS   // fork (studio-mvp.md S2): the GUI is WPF; portable builds have none

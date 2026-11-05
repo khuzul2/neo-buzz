@@ -13,6 +13,9 @@
 // the machine's source, documentation and profile: a summary that says what it's for, quirks, the
 // evidence it rests on, and per parameter a plain-English name, a role (ManifestRoles) and a mapping
 // that is exact (no unit read from a description alone). It lives where the draft did and replaces it.
+// U6 (§12.13): a manifest generated from a machine's source ("status": "generated", tools/source_manifests.py)
+// for the Pedal effects and ReBuzz's own machines: names, ranges and texts from its [ParameterDecl]s, units and
+// mappings from the code that uses them, exact; it keeps the profile's measurements as a curated one does.
 
 using System;
 using System.Collections.Generic;
@@ -242,6 +245,8 @@ namespace ReBuzz.Agent.Model
         /// <summary>Curated: what its claims rest on (its source files, documentation, the profile, its value texts).</summary>
         public IReadOnlyList<string> Evidence { get; init; } = Array.Empty<string>();
         public bool IsCurated => Status == "curated";
+        /// <summary>U6: generated from the machine's source (its parameter declarations and the code that uses them), not profiled guesswork.</summary>
+        public bool IsGeneratedFromSource => Status == "generated";
 
         public ManifestParameter Find(string name) =>
             Parameters.FirstOrDefault(p => p.Name == name) ?? Parameters.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));

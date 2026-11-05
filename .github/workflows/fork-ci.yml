@@ -73,6 +73,33 @@ jobs:
         MEASUREMENTS_DIR: ${{ github.workspace }}/measurements
       run: dotnet test NeoBuzz.MachineTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath machine-test.log
 
+    # U6 (docs/specs/mcp-server.md §12.13): the Neo measurement suite on the Pedal effects U6 changed, run on their
+    # own Work: silence after sound settles to exact zero (no denormals), blocks of 256 and 117 alike, nothing
+    # allocated per block, levels and NaN at every parameter's ends, the Shaper's aliasing, parameter changes that glide,
+    # and silence reported only once a tail is silent.
+    - name: Pedal effect tests
+      if: always()
+      shell: pwsh
+      env:
+        MEASUREMENTS_DIR: ${{ github.workspace }}/measurements
+      run: dotnet test NeoBuzz.PedalTests --logger "console;verbosity=normal" *>&1 | Tee-Object -FilePath pedal-test.log
+
+    - name: Pedal effect measurements
+      if: always() && hashFiles('measurements/pedal-measurements.txt') != ''
+      shell: pwsh
+      run: |
+        # In notices of up to 3800 characters each (an annotation's limit), whole lines.
+        $lines = Get-Content measurements/pedal-measurements.txt | Sort-Object
+        $chunks = @(); $cur = ""
+        foreach ($l in $lines) {
+          if ($cur.Length -gt 0 -and $cur.Length + $l.Length + 1 -gt 3800) { $chunks += $cur; $cur = "" }
+          $cur = if ($cur.Length -gt 0) { "$cur`n$l" } else { $l }
+        }
+        if ($cur.Length -gt 0) { $chunks += $cur }
+        for ($i = 0; $i -lt $chunks.Count; $i++) {
+          Write-Host "::notice title=Pedal effect measurements ($($i + 1)/$($chunks.Count))::$($chunks[$i] -replace '%', '%25' -replace "`n", '%0A')"
+        }
+
     # The measured figures (aliasing, decay times, speed…) as one notice, readable through the API.
     - name: Machine measurements
       if: always() && hashFiles('measurements/machine-measurements.txt') != ''
@@ -224,6 +251,7 @@ jobs:
       run: |
         if (Test-Path test.log) { ./tools/ci-annotate-log.ps1 test.log }
         if (Test-Path machine-test.log) { ./tools/ci-annotate-log.ps1 machine-test.log }
+        if (Test-Path pedal-test.log) { ./tools/ci-annotate-log.ps1 pedal-test.log }
         if (Test-Path agent-test.log) { ./tools/ci-annotate-log.ps1 agent-test.log }
 
   core-build:
