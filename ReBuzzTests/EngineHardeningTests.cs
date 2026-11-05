@@ -327,17 +327,20 @@ namespace ReBuzzTests
 
         // ------------------------------------------------------------------ 4. allocation and time per buffer
 
-        /// <summary>Bytes allocated reading <paramref name="buffers"/> buffers (each after <paramref name="perBuffer"/>, if any: counted too).</summary>
-        static long AllocatedWhileReading(Rig rig, Driver.AudioReader reader, int buffers, int frames, List<string> log, Action? perBuffer = null)
+        /// <summary>
+        /// Bytes allocated reading <paramref name="buffers"/> buffers (each after <paramref name="perBuffer"/>, if any: counted
+        /// too), each measured by <paramref name="window"/>, which keeps what the thread did in it.
+        /// </summary>
+        static long AllocatedWhileReading(Rig rig, Driver.AudioReader reader, int buffers, int frames, List<string> log, AllocationWindow window, Action? perBuffer = null)
         {
             long total = 0;
             for (int i = 0; i < buffers; i++)
             {
                 int posBefore = ReBuzzCore.masterInfo.PosInTick;
-                long before = GC.GetAllocatedBytesForCurrentThread();
+                window.Begin();
                 perBuffer?.Invoke();
                 reader.Read(frames);
-                long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+                long bytes = window.End();
                 total += bytes;
                 if (bytes > 0 && log.Count < 20)
                     log.Add($"buffer {i}: {bytes} bytes (PosInTick {posBefore} -> {ReBuzzCore.masterInfo.PosInTick}, clock {rig.Session.Clock})");
@@ -345,10 +348,9 @@ namespace ReBuzzTests
             return total;
         }
 
-        [Test]
-        public void SteadyPlaybackAllocatesNothing()
+        /// <summary>The rig's four Hums, two playing from the arrangement and two from the session, P then Q, looping over 4 bars: playing, warmed up.</summary>
+        static Driver.AudioReader SteadyPlayback(Rig rig)
         {
-            using var rig = new Rig(4, hum: true);
             for (int i = 0; i < 4; i++)
             {
                 var m = rig.Machines[i];
@@ -363,15 +365,53 @@ namespace ReBuzzTests
             var reader = rig.Driver.CreateAudioReader(256);
             rig.Core.Playing = true;
             WarmUp(reader, "steady playback");
+            return reader;
+        }
 
+        /// <summary>
+        /// Steady playback allocates nothing on the audio thread. It met a one-off allocation after the warm-up now and then on
+        /// CI (848, 1512 and 2048 bytes in one buffer, at no particular place in the song; runs 41916587037, 41966650618 and
+        /// 41912541139), which reading on afterwards never met again: a failure says what the thread did in that buffer
+        /// (AllocationWindow: the JIT, type loads, exceptions, waits and GCs, from the runtime's own events).
+        /// </summary>
+        [Test]
+        public void SteadyPlaybackAllocatesNothing()
+        {
+            using var rig = new Rig(4, hum: true);
+            var reader = SteadyPlayback(rig);
+            using var window = new AllocationWindow(400);
             var log = new List<string>();
-            long bytes = AllocatedWhileReading(rig, reader, 400, 256, log);   // ~2.3 s: several ticks and a loop wrap
+            long bytes = AllocatedWhileReading(rig, reader, 400, 256, log, window);   // ~2.3 s: several ticks and a loop wrap
 
             TestContext.Out.WriteLine($"[notice] steady playback allocated {bytes} bytes in 400 buffers of 256 frames");
-            string types = bytes > 0 ? AllocatedTypes(reader) : "";
+            string what = bytes > 0 ? window.Describe() + AllocatedTypes(reader) : "";
             Assert.That(bytes, Is.EqualTo(0),
-                "steady playback must not allocate on the audio thread (GC pauses are dropouts):\n" + string.Join("\n", log) + types);
+                "steady playback must not allocate on the audio thread (GC pauses are dropouts):\n" + string.Join("\n", log) + what);
         }
+
+        /// <summary>
+        /// Not a check (run by name): SteadyPlaybackAllocatesNothing's measurement on <see cref="SoakRuns"/> fresh rigs, each
+        /// window that allocated reported with what the thread did in it ([notice] lines), to catch its rare one-off allocation.
+        /// </summary>
+        [Test, Explicit("a soak for SteadyPlaybackAllocatesNothing's rare one-off allocation; run by name")]
+        public void SteadyPlaybackAllocationSoak()
+        {
+            int allocated = 0;
+            for (int run = 0; run < SoakRuns; run++)
+            {
+                using var rig = new Rig(4, hum: true);
+                var reader = SteadyPlayback(rig);
+                using var window = new AllocationWindow(400);
+                var log = new List<string>();
+                long bytes = AllocatedWhileReading(rig, reader, 400, 256, log, window);
+                if (bytes == 0) continue;
+                allocated++;
+                TestContext.Out.WriteLine($"[notice] soak run {run + 1}: {bytes} bytes in 400 buffers: " + string.Join("; ", log) + window.Describe().Replace("\n", " | "));
+            }
+            TestContext.Out.WriteLine($"[notice] soak: {allocated} of {SoakRuns} steady windows allocated");
+        }
+
+        const int SoakRuns = 150;
 
         /// <summary>Reads past one-time costs (JIT, first launches, tiered compilation), each buffer after <paramref name="perBuffer"/>.</summary>
         internal static void WarmUp(Driver.AudioReader reader, string what, Action? perBuffer = null)
@@ -449,13 +489,14 @@ namespace ReBuzzTests
 
             var log = new List<string>();
             int heardBefore = heard[0];
-            long bytes = AllocatedWhileReading(rig, reader, 400, 256, log, perBuffer);
+            using var window = new AllocationWindow(400);
+            long bytes = AllocatedWhileReading(rig, reader, 400, 256, log, window, perBuffer);
             int values = heard[0] - heardBefore;
             int ticks = 400 * 256 / rig.SamplesPerTick;
 
             TestContext.Out.WriteLine($"[notice] {source}: {bytes} bytes in 400 buffers of 256 frames; the machines were set {values} values in {ticks} ticks");
             Assert.That(values, Is.GreaterThanOrEqualTo(4 * ticks), "each machine was set values on every tick");
-            string types = bytes > 0 ? AllocatedTypes(reader, perBuffer) : "";
+            string types = bytes > 0 ? window.Describe() + AllocatedTypes(reader, perBuffer) : "";
             Assert.That(bytes, Is.EqualTo(0),
                 "parameter changes must not allocate on the audio thread (GC pauses are dropouts):\n" + string.Join("\n", log) + types);
         }
