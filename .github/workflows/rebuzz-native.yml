@@ -1,5 +1,7 @@
 name: ReBuzz Native Machines Build
 
+# TEMPORARY (U7 iteration): builds the Buzztrax native machines with tools/build-natives.ps1.
+
 on:
   workflow_dispatch:
 
@@ -8,19 +10,22 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository (with submodules)
+    - name: Checkout repository
       uses: actions/checkout@v5
-      with:
-        submodules: true
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v3
-
-    - name: Build Native Machines
-      run: msbuild NativeMachines/NativeMachines.sln /p:Configuration=Release
-
-    - name: Upload native artifacts
-      uses: actions/upload-artifact@v6
-      with:
-        name: rebuzz-native-machines
-        path: NativeMachines/bin/Release/
+    - name: Build native machines
+      shell: pwsh
+      run: |
+        ./tools/build-natives.ps1 -OutDir build/natives
+        $code = $LASTEXITCODE
+        foreach ($p in 'x86', 'x64') {
+          $log = "build/natives/$p/build.log"
+          if (Test-Path $log) {
+            $errs = @(Select-String -Path $log -Pattern ': (fatal )?error ' | ForEach-Object { $_.Line.Trim() } | Select-Object -Unique)
+            Write-Host "::notice title=$p errors::$($errs.Count) error lines"
+            $i = 0
+            foreach ($e in ($errs | Select-Object -First 40)) { $i++; Write-Host "::error title=$p $i::$e" }
+          }
+        }
+        Get-ChildItem build/natives -Recurse -Filter *.dll | ForEach-Object { Write-Host $_.FullName }
+        exit $code

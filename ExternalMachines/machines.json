@@ -406,6 +406,255 @@
         "Fuzzpilz",
         "Matilde",
         "Oomek"
+      ],
+      "natives": [
+        {
+          "gear": "FSM Infector",
+          "gearFolder": "Generators",
+          "dir": "FSM/Infector",
+          "sources": [
+            "Infector.cpp",
+            "Filters.cpp",
+            "Channel.cpp",
+            "Track.cpp",
+            "Vegetable.cpp"
+          ],
+          "defines": [
+            "NOMINMAX",
+            "_USE_MATH_DEFINES"
+          ],
+          "files": {
+            "FSM_Infector.prs": "FSM Infector.prs",
+            "FSM_Infector.html": "FSM Infector.html"
+          },
+          "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
+          "upstreamBinary": "x64"
+        },
+        {
+          "gear": "FSM KickXP",
+          "gearFolder": "Generators",
+          "dir": "FSM/KickXP",
+          "sources": [
+            "KickXP.cpp"
+          ],
+          "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
+          "upstreamBinary": "x64"
+        },
+        {
+          "gear": "FSM PhatMan",
+          "gearFolder": "Effects",
+          "dir": "FSM/PhatMan",
+          "sources": [
+            "PhatMan.cpp"
+          ],
+          "defines": [
+            "NOMINMAX",
+            "_USE_MATH_DEFINES"
+          ],
+          "libs": [
+            "mdk",
+            "dsplib"
+          ],
+          "files": {
+            "FSM_PhatMan.prs": "FSM PhatMan.prs"
+          },
+          "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
+          "upstreamBinary": "x64"
+        },
+        {
+          "gear": "FSM PanzerDelay",
+          "gearFolder": "Effects",
+          "dir": "FSM/PanzerDelay",
+          "sources": [
+            "PanzerDelay.cpp"
+          ],
+          "defines": [
+            "NOMINMAX",
+            "_USE_MATH_DEFINES"
+          ],
+          "libs": [
+            "mdk",
+            "dsplib"
+          ],
+          "files": {
+            "FSM_PanzerDelay.prs": "FSM PanzerDelay.prs"
+          },
+          "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
+          "upstreamBinary": "x64"
+        },
+        {
+          "gear": "FSM Chorus2",
+          "gearFolder": "Effects",
+          "dir": "FSM/Chorus2",
+          "sources": [
+            "Chorus2.cpp"
+          ],
+          "defines": [
+            "NOMINMAX",
+            "_USE_MATH_DEFINES"
+          ],
+          "libs": [
+            "mdk",
+            "dsplib"
+          ],
+          "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
+          "upstreamBinary": "x64"
+        },
+        {
+          "gear": "FSM WahMan",
+          "gearFolder": "Effects",
+          "dir": "FSM/WahMan",
+          "sources": [
+            "WahMan.cpp"
+          ],
+          "defines": [
+            "NOMINMAX",
+            "_USE_MATH_DEFINES"
+          ],
+          "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
+          "upstreamBinary": "x64"
+        },
+        {
+          "gear": "FSM WahManPro",
+          "gearFolder": "Effects",
+          "dir": "FSM/WahManPro",
+          "sources": [
+            "WahManPro.cpp"
+          ],
+          "defines": [
+            "NOMINMAX",
+            "_USE_MATH_DEFINES"
+          ],
+          "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
+          "upstreamBinary": "x64"
+        },
+        {
+          "gear": "FSM WahPro2",
+          "gearFolder": "Effects",
+          "dir": "FSM/WahPro2",
+          "sources": [
+            "WahPro2.cpp"
+          ],
+          "defines": [
+            "NOMINMAX",
+            "_USE_MATH_DEFINES"
+          ],
+          "files": {
+            "FSM_WahPro2.prs": "FSM WahPro2.prs"
+          },
+          "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
+          "upstreamBinary": "x64"
+        },
+        {
+          "gear": "Oomek Aggressor 303",
+          "gearFolder": "Generators",
+          "dir": "Oomek/Aggressor",
+          "sources": [
+            "303.cpp"
+          ],
+          "libs": [
+            "user32",
+            "mdk",
+            "dsplib"
+          ],
+          "license": "GPL-3.0-or-later (the source's header)",
+          "upstreamBinary": "x64"
+        },
+        {
+          "gear": "Oomek Exciter",
+          "gearFolder": "Effects",
+          "dir": "Oomek/Exciter",
+          "sources": [
+            "Exciter.cpp"
+          ],
+          "libs": [
+            "mdk",
+            "dsplib"
+          ],
+          "license": "GPL-3.0-or-later (the source's header)",
+          "upstreamBinary": "x64"
+        },
+        {
+          "gear": "Oomek Masterizer",
+          "gearFolder": "Effects",
+          "dir": "Oomek/Masterizer",
+          "sources": [
+            "Masterizer.cpp"
+          ],
+          "libs": [
+            "mdk",
+            "dsplib"
+          ],
+          "license": "GPL-3.0-or-later (the source's header)",
+          "upstreamBinary": "x64"
+        },
+        {
+          "gear": "Jeskola Delay",
+          "gearFolder": "Effects",
+          "dir": "Jeskola/Delay",
+          "sources": [
+            "Delay.cpp"
+          ],
+          "license": "None stated (Jeskola folder: no licence file or header)",
+          "upstreamBinary": "x86"
+        },
+        {
+          "gear": "Jeskola Cross Delay",
+          "gearFolder": "Effects",
+          "dir": "Jeskola/CrossDelay",
+          "sources": [
+            "CrossDelay.cpp"
+          ],
+          "license": "None stated (Jeskola folder: no licence file or header)",
+          "upstreamBinary": "x86",
+          "notes": "Buzztrax's rewrite: 'the original source is not available' (its first line)"
+        },
+        {
+          "gear": "Jeskola Distortion",
+          "gearFolder": "Effects",
+          "dir": "Jeskola/Distortion",
+          "sources": [
+            "Distortion.cpp"
+          ],
+          "license": "None stated (Jeskola folder: no licence file or header)",
+          "upstreamBinary": "x86"
+        },
+        {
+          "gear": "Jeskola NiNjA dElaY",
+          "gearFolder": "Effects",
+          "dir": "Jeskola/Ninja",
+          "sources": [
+            "Ninja.cpp"
+          ],
+          "libs": [
+            "dsplib"
+          ],
+          "license": "None stated (Jeskola folder: no licence file or header)",
+          "upstreamBinary": "x86"
+        },
+        {
+          "gear": "Jeskola Trilok",
+          "gearFolder": "Generators",
+          "dir": "Jeskola/Trilok",
+          "sources": [
+            "Trilok.cpp"
+          ],
+          "license": "None stated (Jeskola folder: no licence file or header)",
+          "upstreamBinary": "x86"
+        },
+        {
+          "gear": "Jeskola Noise Generator",
+          "gearFolder": "Generators",
+          "dir": "Jeskola/Noise",
+          "sources": [
+            "Noise.cpp"
+          ],
+          "libs": [
+            "dsplib"
+          ],
+          "license": "None stated (Jeskola folder: no licence file or header)",
+          "upstreamBinary": "x86"
+        }
       ]
     },
     {
