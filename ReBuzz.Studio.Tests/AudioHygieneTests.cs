@@ -16,7 +16,9 @@
 //    through a Neo Ensemble, a Neo Delay, a Neo Multiband and a Neo Scope, all just created);
 //  - a Neo Sampler playing the song's wave and a built-in one (looped, choked, filtered, its tune moved
 //    every buffer), while the wave is loaded again into its slot and copied in on the audio thread:
-//    0 bytes a buffer, with each work algorithm.
+//    0 bytes a buffer, with each work algorithm;
+//  - a Neo Drums playing every voice from its keys and hits from its BD column, its kick's tune and its
+//    snare's level moved every buffer: 0 bytes a buffer, with each work algorithm.
 // The tests build in Debug, where the JIT doesn't optimize: no allocation here is one that only an
 // optimizing compiler (tier 1) would remove.
 
@@ -711,6 +713,51 @@ namespace ReBuzz.Studio.Tests
                     });
                     AssertNoAllocation(cost, $"a Neo Sampler playing the song's wave and a built-in one (algorithm {algorithm})");
                     Assert.That(m.IsActive, Is.True, $"the notes sound (algorithm {algorithm})");
+                    lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                }
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                NewSong();
+            }
+        }
+
+        // ------------------------------------------------------------------ Neo Drums
+
+        [AvaloniaTest]
+        public void NeoDrumsPlayingEveryVoiceAllocatesNothing()
+        {
+            NewSong();
+            var song = Core.SongCore;
+            song.CreateMachine("Neo Drums", null, "Hygiene Drums", null, null, null, -1, 0.3f, 0.3f);
+            var m = song.MachinesList.Last(x => x.Name == "Hygiene Drums");
+            song.ConnectMachines(m, song.MachinesList[0], new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            var globals = m.ParameterGroupsList[1].ParametersList;
+            m.CreatePattern("00", 16);
+            var pattern = (PatternCore)m.Patterns.First();
+            // Every voice's key (General MIDI from C2), at rising velocities: the closed hats choke the open one.
+            int[] keys = { 36, 42, 38, 42, 36, 46, 39, 42, 37, 44, 43, 47, 50, 56, 49, 51 };
+            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, keys[i], 40 + i * 5)).ToArray());
+            Arrange(m, pattern);
+            var tune = globals.First(p => p.Name == "Kick tune");
+            var level = globals.First(p => p.Name == "Snare level");
+            var bd = m.ParameterGroupsList[2].ParametersList.First(p => p.Name == "BD");
+            try
+            {
+                int n = 0;
+                foreach (int algorithm in new[] { 0, 1, 2 })
+                {
+                    using var audio = new AudioThread(algorithm);
+                    lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                    var cost = Steady(audio, perBuffer: () =>
+                    {
+                        tune.SetValue(1 << 16, 300 + n % 200);
+                        level.SetValue(1 << 16, 500 + n % 100);
+                        if (++n % 7 == 0) bd.SetValue(0, 60 + n % 60);   // a kick from the hit column
+                    });
+                    AssertNoAllocation(cost, $"a Neo Drums playing every voice and hits from its BD column (algorithm {algorithm})");
+                    Assert.That(m.IsActive, Is.True, $"the hits sound (algorithm {algorithm})");
                     lock (ReBuzzCore.AudioLock) Core.Playing = false;
                 }
             }

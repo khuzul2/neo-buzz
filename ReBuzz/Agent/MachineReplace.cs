@@ -136,6 +136,14 @@ namespace ReBuzz.Agent
                 OldPitchOffset = map.Notes?.PitchOffset ?? (oldManifest?.Notes is { Pitched: true } n ? n.PitchOffset : 0),
             };
             plan.State = converter.ConvertState(sp => Current(old, sp, 0));
+            // A drum machine tuned by its notes (FSM KickXP): the rules read the song's most common note.
+            if (map.Notes is { RulesReadNote: true } && converter.OldColumn(map.Notes.Note) is { } noteColumn
+                && converter.MostCommonNote(old.Patterns.Select(p => (IReadOnlyDictionary<(SuccessorParam, int), IReadOnlyList<ColumnEvent>>)Columns(plan, p)), out int distinct) is int note)
+            {
+                plan.State = converter.ConvertState(sp => sp == noteColumn ? note : Current(old, sp, 0));
+                if (distinct > 1)
+                    plan.State.Notes.Add($"{old.Name}'s notes tune it, and they are at {distinct} pitches: {map.To}'s settings start at the most common, {Pitch.Name(TrackNotes.FromBuzz(note))}, and each note moves them as it plays (automation in the converted patterns).");
+            }
             return plan;
         }
 

@@ -22735,6 +22735,58 @@
    "generated": true,
    "health": "warn"
   },
+  "Neo Drums": {
+   "gear": "Neo Drums",
+   "kind": "generator",
+   "load_seconds": 0.1,
+   "gear_info": {
+    "file": "Generators/Neo Drums.NET.dll",
+    "managed": true,
+    "min_tracks": 1,
+    "max_tracks": 16,
+    "note_parameter": "Note",
+    "takes_midi": true
+   },
+   "parameters": 67,
+   "track_parameters": 0,
+   "inferred": 67,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 67,
+    "of": 67
+   },
+   "notes": {
+    "input": "none"
+   },
+   "type": "generator (silent at its defaults)",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": null,
+     "verdict": "silent"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     }
+    }
+   },
+   "seconds": 2.0,
+   "platform": "linux",
+   "date": "2026-11-05",
+   "problems": [],
+   "warnings": [
+    "no sound from a note at its defaults, as MIDI or in its tracks, even with a wave in slot 1"
+   ],
+   "hot": [],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "warn"
+  },
   "Neo Ensemble": {
    "gear": "Neo Ensemble",
    "kind": "effect",
