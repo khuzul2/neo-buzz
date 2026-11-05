@@ -52,7 +52,7 @@ namespace ReBuzz.Studio.Tests
             SongNotesStore.Now = () => clock;
         }
 
-        [TearDown]
+        // Not a [TearDown]: each test runs it when it ends, failed or not (Studio.AfterTest).
         public void PutBack()
         {
             SongNotesStore.Now = () => DateTime.UtcNow;
@@ -209,6 +209,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TypedNotesTakeFormatsAndReadAsTheyLook()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var (window, view) = OpenNotes();
             try
             {
@@ -268,6 +269,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void EditsAreStepsOnTheSongsUndoHistory()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var (window, view) = OpenNotes();
             try
             {
@@ -318,6 +320,7 @@ namespace ReBuzz.Studio.Tests
         [TestCase(".bmxml")]
         public void NotesSaveWithTheSongAndOpenAgain(string extension)
         {
+            using var restore = Studio.AfterTest(PutBack);
             const string notes = "# Ideas\n\nA **bold** line, *italic*, <u>under</u>, ~~gone~~ and `code`\nnext line: ü € 音\n\n- one\n  - nested\n1. first\n> quoted\n" +
                                  "[ReBuzz](https://github.com/wasteddesign/ReBuzz) <span style=\"color:#ff8000\">orange</span>";
             var (window, view) = OpenNotes();
@@ -359,6 +362,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void ASongWithoutNotesSavesNoSubsection()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var (window, _) = OpenNotes();
             try
             {
@@ -472,6 +476,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void AnInfoMachinesTextIsImportedAndTheSongSavesBackUnchanged()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var (window, view) = OpenNotes();
             string dir = Folder("info");
             var data = InfoData();
@@ -538,6 +543,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void AnInfoTextChangedSinceComesInBelowTheNotes()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var (window, view) = OpenNotes();
             string dir = Folder("info-changed");
             try
@@ -569,6 +575,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheSongsInfoTextComesInToo()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var (window, view) = OpenNotes();
             string dir = Folder("blah");
             try
@@ -598,6 +605,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void LinksInTheNotesOpen()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var (window, view) = OpenNotes();
             var opened = new List<string>();
             SongNotesView.OpenLink = uri =>
@@ -662,6 +670,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void AgentsReadAndWriteTheNotes()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var (window, view) = OpenNotes();
             string dir = Folder("agent");
             try

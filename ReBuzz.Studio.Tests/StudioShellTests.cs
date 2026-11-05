@@ -59,7 +59,7 @@ namespace ReBuzz.Studio.Tests
             Core.Modified = false;
         }
 
-        [TearDown]
+        // Not a [TearDown]: each test runs it when it ends, failed or not (Studio.AfterTest).
         public void Reset()
         {
             SongFiles.Picker = null;
@@ -74,6 +74,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void SavedAndOpenedSongsAppearInOpenRecent()
         {
+            using var restore = Studio.AfterTest(Reset);
             RecentFiles.Clear(Host.Registry);
             var window = Open();
             try
@@ -127,6 +128,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void AnAutosaveLeftOverIsOfferedAndRestored()
         {
+            using var restore = Studio.AfterTest(Reset);
             var window = Open();
             try
             {
@@ -198,6 +200,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheMacMenuBarHasTheAppMenuAndTheStudiosMenus()
         {
+            using var restore = Studio.AfterTest(Reset);
             var window = Open();
             try
             {
@@ -248,6 +251,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void ShortcutsOpenPreferencesTheAgentPageAndTheViews()
         {
+            using var restore = Studio.AfterTest(Reset);
             var window = Open();
             try
             {
@@ -289,6 +293,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheWindowKeepsItsSizeAndPlace()
         {
+            using var restore = Studio.AfterTest(Reset);
             var registry = Host.Registry;
             var window = new MainWindow(Host) { Width = 1000, Height = 700 };
             window.Show();
@@ -324,6 +329,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void AboutShowsTheBuildAndTheCredits()
         {
+            using var restore = Studio.AfterTest(Reset);
             var about = AboutWindow.Open();
             Settle(about);
             Assert.That(about.Text, Does.StartWith("ReBuzz").And.Contain("Oskari Tammelin"));
@@ -336,6 +342,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheStatusLineShowsTheAgentAndNoLoadWithoutAudio()
         {
+            using var restore = Studio.AfterTest(Reset);
             var window = Open();
             try
             {
@@ -354,6 +361,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheSessionViewsSyncAndControllersMenus()
         {
+            using var restore = Studio.AfterTest(Reset);
             var sync = Core.SessionSync;
             using var rig = new SessionRig("Lead");
             var view = rig.Show();

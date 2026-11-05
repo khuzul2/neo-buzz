@@ -36,6 +36,28 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        /// <summary>
+        /// Runs <paramref name="putBack"/> when the test ends, passed or failed: <c>using var restore = Studio.AfterTest(PutBack);</c>
+        /// as the test's first statement, where a fixture would have had a [TearDown] put back the global state its tests
+        /// change (pickers, responders, hooks, the transport, the safety settings). Avalonia.Headless.NUnit (12.1.4) runs
+        /// an [AvaloniaTest]'s TearDown only after the test method returns, so a failed test skipped it, and the next tests
+        /// started from what it left (AudioHygieneTests' Looping in ExitTests, PR #94). It runs after the test's own
+        /// finally blocks, as the TearDown did.
+        /// </summary>
+        public static System.IDisposable AfterTest(System.Action putBack) => new PutBack(putBack);
+
+        sealed class PutBack(System.Action action) : System.IDisposable
+        {
+            bool done;
+
+            public void Dispose()
+            {
+                if (done) return;
+                done = true;
+                action();
+            }
+        }
+
         /// <summary>Draws the window and saves it as name.png; returns the path.</summary>
         public static string Screenshot(TopLevel window, string name)
         {
