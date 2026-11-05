@@ -47,6 +47,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Sampler", "NeoSamplerEditor", "neo-sampler-editor", 1144, 778),
             ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 458),
             ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1232, 738),
+            ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 802, 620),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;
@@ -920,6 +921,93 @@ namespace ReBuzz.Studio.Tests
             {
                 Remove(m);
             }
+        }
+
+        // ------------------------------------------------------------------ Neo Filter
+
+        [AvaloniaTest]
+        public void NeoFiltersResponseFollowsItsLfoAndEnvelopeAndItsHandleDrags()
+        {
+            // Neo Poly → Neo Filter → Master, a chord held. With the LFO sweeping the cutoff the response's live curve moves from
+            // frame to frame; with the envelope on, its meter shows the chord. The handle on the cutoff drags the cutoff (across)
+            // and the resonance (up) as one undo step, and the response redraws there.
+            var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var poly = Add("Neo Poly", "Filter Poly", -0.6f, 0);
+            var filter = Add("Neo Filter", "Sweep Filter", 0, 0);
+            try
+            {
+                Core.SongCore.ConnectMachines(poly, filter, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                Core.SongCore.ConnectMachines(filter, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                var window = OpenEditor(filter);
+                poly.TrackCount = Math.Max(poly.TrackCount, 3);
+                var note = poly.ParameterGroups[2].Parameters.First(p => p.Name == "Note");
+                int[] chord = { (3 << 4) + 1, (3 << 4) + 5, (3 << 4) + 8 };   // C-3, E-3, G-3
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, chord[t]);
+                var graph = Controls(window, "InteractiveGraph").Single(g => Math.Abs(g.Bounds.Width - 586) < 1);
+                var area = BoundsIn(graph, window);
+                var envelope = BoundsIn(Find(window, "Meter", "Envelope"), window);
+                Assert.Multiple(() =>
+                {
+                    Global(filter, "LFO retrig").SetValue(0, 0);
+                    Global(filter, "LFO rate").SetValue(0, Params(filter, "LFO rate", "4 Hz"));
+                    Global(filter, "LFO depth").SetValue(0, 200);
+                    Run(0.1);
+                    var a = Frame(window);
+                    Run(0.07);
+                    var b = Frame(window, "neo-filter-editor-sweeping");
+                    Assert.That(Changed(a, b, area), Is.GreaterThan(300), "the live curve follows the LFO");
+
+                    Global(filter, "LFO depth").SetValue(0, 0);
+                    Global(filter, "Env amount").SetValue(0, 900);
+                    Global(filter, "Env sensitivity").SetValue(0, 360);
+                    Run(0.3);
+                    var c = Frame(window, "neo-filter-editor-envelope");
+                    Assert.That(Count(c, envelope, 0xD4E157), Is.GreaterThan(30), "the envelope meter shows the chord");
+
+                    // The handle: at the cutoff (2 kHz) and 20·log10 Q (−3 dB at Q 0.71) on the graph (ResponseGraph's plot: 30 px in,
+                    // 8 down, −42 … +24 dB).
+                    Global(filter, "Env amount").SetValue(0, 600);
+                    Run(0.1);
+                    var cutoff = Global(filter, "Cutoff");
+                    var resonance = Global(filter, "Resonance");
+                    int cutoff0 = cutoff.GetValue(0), resonance0 = resonance.GetValue(0), steps = Core.SongCore.ActionStack.Actions.Count();
+                    double plotW = area.Width - 38, plotH = area.Height - 26;
+                    var handle = new Point(area.Left + 30 + Math.Log(2000.9 / 20) / Math.Log(1000) * plotW, area.Top + 8 + (24 + 3) / 66.0 * plotH);
+                    var before = Frame(window);
+                    window.MouseDown(handle, MouseButton.Left);
+                    for (int d = 8; d <= 40; d += 8) window.MouseMove(handle + new Point(d, -d));
+                    window.MouseUp(handle + new Point(40, -40), MouseButton.Left);
+                    Assert.That(cutoff.GetValue(0), Is.GreaterThan(cutoff0), "dragging right raises the cutoff");
+                    Assert.That(resonance.GetValue(0), Is.GreaterThan(resonance0), "and up the resonance");
+                    Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(steps + 1), "the drag is one undo step");
+                    Run(0.05);
+                    var after = Frame(window, "neo-filter-editor-dragged");
+                    Assert.That(Changed(before, after, area), Is.GreaterThan(300), "the response redraws where the handle went");
+                    Core.SongCore.Undo();
+                    Assert.That((cutoff.GetValue(0), resonance.GetValue(0)), Is.EqualTo((cutoff0, resonance0)), "undo puts both back");
+                });
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, BuzzGUI.Common.BuzzNote.Off);
+                Run(0.1);
+            }
+            finally
+            {
+                Remove(filter, poly);
+            }
+        }
+
+        /// <summary>A parameter's raw value for a value as its machine describes it ("4 Hz"): the nearest by its own texts.</summary>
+        static int Params(IMachine m, string name, string text)
+        {
+            var p = Global(m, name);
+            int best = p.MinValue;
+            double want = double.Parse(text.Split(' ')[0], System.Globalization.CultureInfo.InvariantCulture), bestErr = double.MaxValue;
+            for (int raw = p.MinValue; raw <= p.MaxValue; raw++)
+            {
+                var d = p.DescribeValue(raw).Split(' ');
+                if (d.Length == 0 || !double.TryParse(d[0], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out double v)) continue;
+                if (Math.Abs(v - want) < bestErr) { bestErr = Math.Abs(v - want); best = raw; }
+            }
+            return best;
         }
 
         // ------------------------------------------------------------------ Neo Scope

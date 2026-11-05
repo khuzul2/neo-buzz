@@ -13,12 +13,15 @@
 //  - automation of a parameter with listeners (a parameter window's rows, the master volume's):
 //    0 bytes on the audio thread, and the listeners still see the final values;
 //  - after the warm-up (AudioWarmUp), the transport's first play and stop compile nothing (a Neo Poly
-//    through a Neo Ensemble, a Neo Delay, a Neo Multiband and a Neo Scope, all just created);
+//    through a Neo Ensemble, a Neo Delay, a Neo Multiband, a Neo Scope and a Neo Filter, all just created);
 //  - a Neo Sampler playing the song's wave and a built-in one (looped, choked, filtered, its tune moved
 //    every buffer), while the wave is loaded again into its slot and copied in on the audio thread:
 //    0 bytes a buffer, with each work algorithm;
 //  - a Neo Drums playing every voice from its keys and hits from its BD column, its kick's tune and its
-//    snare's level moved every buffer: 0 bytes a buffer, with each work algorithm.
+//    snare's level moved every buffer: 0 bytes a buffer, with each work algorithm;
+//  - a Neo Poly pattern through a Neo Filter (the ladder driven, its LFO following the song, the
+//    envelope moving the cutoff, the cutoff moved every buffer and the type switched now and then):
+//    0 bytes a buffer, with each work algorithm; it is in the first play's chain too.
 // The tests build in Debug, where the JIT doesn't optimize: no allocation here is one that only an
 // optimizing compiler (tier 1) would remove.
 
@@ -373,6 +376,29 @@ namespace ReBuzz.Studio.Tests
             return fx;
         }
 
+        /// <summary>
+        /// Neo Filter after a machine (mcp-server.md §12.5): the ladder driven, its LFO following the song (synced to a quarter),
+        /// the envelope moving the cutoff, so every segment computes new coefficients on the audio thread.
+        /// </summary>
+        static MachineCore InsertFilter(MachineCore source, string name)
+        {
+            var song = Core.SongCore;
+            var master = song.MachinesList[0];
+            song.CreateMachine("Neo Filter", null, name, null, null, null, -1, 0.85f, 0.75f);
+            var fx = song.MachinesList.Last(x => x.Name == name);
+            song.DisconnectMachines(source.Outputs.First(c => c.Destination == master));
+            song.ConnectMachines(source, fx, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            song.ConnectMachines(fx, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            var globals = fx.ParameterGroupsList[1].ParametersList;
+            globals.First(p => p.Name == "Resonance").SetValue(0, 500);
+            globals.First(p => p.Name == "Drive").SetValue(0, 120);
+            globals.First(p => p.Name == "LFO sync").SetValue(0, 9);
+            globals.First(p => p.Name == "LFO depth").SetValue(0, 150);
+            globals.First(p => p.Name == "Env amount").SetValue(0, 900);
+            globals.First(p => p.Name == "Env sensitivity").SetValue(0, 240);
+            return fx;
+        }
+
         static void Arrange(MachineCore m, IPattern p)
         {
             var song = Core.SongCore;
@@ -620,7 +646,8 @@ namespace ReBuzz.Studio.Tests
                 var first = InsertEnsemble(m, "Hygiene First Ensemble");   // Neo effects after it, created just now too
                 var firstDelay = InsertDelay(first, "Hygiene First Delay");
                 var firstMultiband = InsertMultiband(firstDelay, "Hygiene First Multiband");
-                InsertScope(firstMultiband, "Hygiene First Scope");
+                var firstScope = InsertScope(firstMultiband, "Hygiene First Scope");
+                InsertFilter(firstScope, "Hygiene First Filter");
                 m.CreatePattern("00", 16);
                 var p = (PatternCore)m.Patterns.First();
                 Core.SessionLayout.EditNotes(p, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 60 + i % 5, 100)).ToArray());
@@ -759,6 +786,45 @@ namespace ReBuzz.Studio.Tests
                     });
                     AssertNoAllocation(cost, $"a Neo Drums playing every voice and hits from its BD column (algorithm {algorithm})");
                     Assert.That(m.IsActive, Is.True, $"the hits sound (algorithm {algorithm})");
+                    lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                }
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                NewSong();
+            }
+        }
+
+        // ------------------------------------------------------------------ Neo Filter
+
+        [AvaloniaTest]
+        public void ANeoFilterSweepingAPatternAllocatesNothing()
+        {
+            NewSong();
+            var m = AddPoly("Hygiene Filter Poly");
+            m.CreatePattern("00", 16);
+            var pattern = (PatternCore)m.Patterns.First();
+            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 48 + (i * 5) % 12, 60 + i * 4)).ToArray());
+            Arrange(m, pattern);
+            var filter = InsertFilter(m, "Hygiene Filter");
+            var globals = filter.ParameterGroupsList[1].ParametersList;
+            var cutoff = globals.First(p => p.Name == "Cutoff");
+            var type = globals.First(p => p.Name == "Type");
+            try
+            {
+                int n = 0;
+                foreach (int algorithm in new[] { 0, 1, 2 })
+                {
+                    using var audio = new AudioThread(algorithm);
+                    lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                    var cost = Steady(audio, perBuffer: () =>
+                    {
+                        cutoff.SetValue(1 << 16, 3000 + (n % 40) * 100);           // as automation sets it, not recorded
+                        if (++n % 100 == 0) type.SetValue(1 << 16, (n / 100) % 7);  // a type change: the fade, the switch
+                    });
+                    AssertNoAllocation(cost, $"a pattern through a Neo Filter sweeping (algorithm {algorithm})");
+                    Assert.That(filter.IsActive, Is.True, $"the filter sounds (algorithm {algorithm})");
                     lock (ReBuzzCore.AudioLock) Core.Playing = false;
                 }
             }

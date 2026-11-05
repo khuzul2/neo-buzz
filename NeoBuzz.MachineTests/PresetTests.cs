@@ -39,6 +39,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Scope"] = (NeoBuzz.Scope.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Scope.ScopeEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n, default))),
             // mcp-server.md §8.2: the drum kit; each kit plays kick, snare and closed hat together.
             ["Neo Drums"] = (NeoBuzz.Drums.Params.Table, (v, x) => RenderDrums(v, x.Length)),
+            // mcp-server.md §12.5: the filter effect (its LFO free-running here: no song plays).
+            ["Neo Filter"] = (NeoBuzz.Filter.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Filter.FilterEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
         };
 
         // The mix and master batch: one engine per preset render, keyed by its parameter values.
