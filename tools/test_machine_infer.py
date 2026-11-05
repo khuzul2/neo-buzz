@@ -2,7 +2,8 @@
 # tables whose meaning is known; U2 (docs/specs/machine-safety.md §3.1): the health categories
 # (diverging, hot, needs a window), which effects get swept and the safe range's edge; U2 in depth
 # (mcp-server.md §12.12): tools/machine_roles.py's measurements on synthetic signals, the suggested
-# roles from features, the harmonic sieve and the hot ends that get a range.
+# roles from features, the harmonic sieve and the hot ends that get a range. U6 (§12.13): the manifests generated
+# from the machines' source (tools/source_manifests.py) are what their source generates, and its fits are exact.
 # Run: python3 -m unittest discover -s tools -p "test_machine_infer.py"
 
 import math
@@ -13,6 +14,7 @@ import unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import machine_infer as mi  # noqa: E402
 import machine_roles as mr  # noqa: E402
+import source_manifests as sm  # noqa: E402
 
 
 def table(fmt, lo, hi, f, step=1):
@@ -591,6 +593,43 @@ class HotEndTests(unittest.TestCase):
         self.assertFalse(mi.rings("Wet out", 40.0, 0.0))
         self.assertTrue(mi.level_control("Makeup Gain") and mi.level_control("Dry thru"))
         self.assertFalse(mi.level_control("Feedback") or mi.level_control("Q"))
+
+
+class SourceManifestTests(unittest.TestCase):
+    """U6 (mcp-server.md §12.13): manifests from the machines' source."""
+
+    def test_committed_manifests_are_what_their_sources_generate(self):
+        self.assertEqual(sm.run(write=False), [])
+
+    def test_the_declarations_are_read_as_rebuzz_reads_them(self):
+        glob, track = sm.machine_params(sm.PEDAL + "pedal-gain-multi/PedalGainMultiMachine.cs")
+        self.assertEqual([p["name"] for p in glob], ["Gain", "Master Mute", "Inertia"])
+        self.assertEqual([p["name"] for p in track], ["Solo", "Mute", "Volume", "Pan", "Mono"])
+        self.assertEqual((glob[0]["min"], glob[0]["max"], glob[0]["default"]), (0, 181, 161))
+        self.assertEqual((glob[1]["min"], glob[1]["max"]), (0, 1))
+        # The MIDI output's Note, Volume, Delay and Cut hold no value: played, not in its manifest.
+        _, track = sm.machine_params("Machines/MidiOutput/MidiOutput.cs")
+        self.assertEqual([p["name"] for p in track], ["Device", "MidiCC", "MidiCCValue", "Channel"])
+
+    def test_kinds_fit_exactly_or_fail(self):
+        p = {"name": "X", "min": 0, "max": 96, "texts": None, "descriptor": None}
+        m = sm.mapping(sm.P("X", "db", "(v - 48) * 0.5", unit="dB"), p, {})
+        self.assertEqual((m["a"], m["b"]), (-24.0, 24.0))
+        with self.assertRaises(sm.Problem):
+            sm.mapping(sm.P("X", "db", "v * v / 96", unit="dB"), p, {})   # not a line
+        r = {"name": "R", "min": 0, "max": 127, "texts": None, "descriptor": None}
+        m = sm.mapping(sm.P("R", "ratio", "v >= 127 ? 1e6 : pow(40, v / 126)", unit=":1", flag="max_inf"), r, {})
+        self.assertAlmostEqual(m["b"], 40 ** (127 / 126), places=6)
+        self.assertTrue(m["flag"])
+
+    def test_code_that_changed_is_caught(self):
+        spec = dict(next(x for x in sm.SPECS if x["gear"] == "Pedal Gain"))
+        spec["params"] = [dict(spec["params"][0], code=["Gain * 0.02f"])] + spec["params"][1:]
+        with self.assertRaises(sm.Problem):
+            sm.generate(spec, None)
+        spec["params"] = spec["params"][1:]
+        with self.assertRaises(sm.Problem):   # a parameter the source declares and this file doesn't
+            sm.generate(spec, None)
 
 
 if __name__ == "__main__":

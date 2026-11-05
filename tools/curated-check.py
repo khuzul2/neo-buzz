@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# Fork (docs/specs/mcp-server.md §12.9, U3): the curated manifests against the machines themselves.
-# For every curated manifest in Machines/Manifests whose gear the server has, add the machine, read
+# Fork (docs/specs/mcp-server.md §12.9, U3): the curated manifests against the machines themselves, and (U6, §12.13)
+# the manifests generated from the machines' source (tools/source_manifests.py), which must agree with the machine
+# as much. For every curated or generated manifest in Machines/Manifests whose gear the server has, add the machine, read
 # its value texts (machine_describe value_table) and check each curated parameter:
 #  - its range is the machine's (a curated manifest of another version is stale);
 #  - where the manifest keeps the machine's own texts (own_texts, the default) and maps to a unit, every
@@ -43,7 +44,7 @@ def curated_manifests():
             if f.endswith(".machine.json"):
                 with open(os.path.join(folder, f), encoding="utf-8") as h:
                     m = json.load(h)
-                if m.get("status") == "curated":
+                if m.get("status") in ("curated", "generated"):
                     out[m["gear"]] = m
     return out
 
@@ -133,7 +134,7 @@ def main():
     c.close()
     for s in skipped:
         print("skip " + s, flush=True)
-    print(f"\n{checked} curated machines checked here ({compared} parameters against their own texts), {len(failures)} problems", flush=True)
+    print(f"\n{checked} curated and generated machines checked here ({compared} parameters against their own texts), {len(failures)} problems", flush=True)
     sys.exit(1 if failures or checked == 0 else 0)
 
 

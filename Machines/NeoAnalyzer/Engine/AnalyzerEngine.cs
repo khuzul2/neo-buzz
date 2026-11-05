@@ -408,7 +408,14 @@ namespace NeoBuzz.Analyzer
                 frame[k] = 0.5 * c * (lr0 * lr0 + li * li + rr0 * rr0 + ri * ri);
             }
             if (frames == 0) Array.Copy(frame, average, half + 1);
-            else for (int k = 0; k <= half; k++) average[k] += alpha * (frame[k] - average[k]);
+            else for (int k = 0; k <= half; k++)
+            {
+                average[k] += alpha * (frame[k] - average[k]);
+                // In silence the average decays by a constant factor a frame; after a few minutes
+                // it would sit among the denormal numbers for good (docs/specs/mcp-server.md §12.13,
+                // U6). Below 1e-30 (−300 dB) it settles to zero, which reads −∞.
+                if (average[k] < 1e-30) average[k] = 0;
+            }
             frames++;
 
             RunningSums(average, cumulative);

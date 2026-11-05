@@ -124,6 +124,14 @@ namespace PedalMComp
         public volatile float MeterOutLeftDb  = -120f;
         public volatile float MeterOutRightDb = -120f;
 
+        // Fork (neo-buzz, U6): Output Gain, Dry-Wet and the bands' makeups glide to a new setting (Glide, below), and
+        // so do the crossovers, in octaves, their filters taking the new frequencies every XO_STEP samples meanwhile.
+        private Glide _gOut, _gWet, _gXo1, _gXo2, _gXo3;
+        private readonly Glide[] _gMakeup = new Glide[4];
+        private bool _glidesSet;
+        private int _glideSr;
+        private const int XO_STEP = 16;
+
         public PedalMCompMachine(IBuzzMachineHost host)
         {
             _host = host;
@@ -808,6 +816,29 @@ namespace PedalMComp
             return MathF.Pow(RATIO_MAX, t);
         }
 
+        // Fork (neo-buzz, U6): the crossover filters (and the phase-linear all-passes) at these frequencies.
+        private void SetCrossovers(float f1, float f2, float f3, int sr, bool phaseLinear)
+        {
+            _xoMidLP.UpdateCoefs(f2, sr);
+            _xoMidHP.UpdateCoefs(f2, sr);
+            _xoLowLP.UpdateCoefs(f1, sr);
+            _xoLowHP.UpdateCoefs(f1, sr);
+            _xoHighLP.UpdateCoefs(f3, sr);
+            _xoHighHP.UpdateCoefs(f3, sr);
+            if (phaseLinear)
+            {
+                _apHighOnLowBranch.UpdateCoefs(f3, sr);
+                _apLowOnHighBranch.UpdateCoefs(f1, sr);
+            }
+        }
+
+        // Fork (neo-buzz, U6): a crossover glide `samples` further on, in Hz; once it has landed, exactly `target`.
+        private static float StepBy(ref Glide g, int samples, float target)
+        {
+            for (int k = 0; k < samples && g.Left > 0; k++) g.Next();
+            return g.Left > 0 ? MathF.Pow(2f, g.Value) : target;
+        }
+
         // ─────────────────────────────────────────────────────────────────
         //  Work() — per-buffer audio processing
         // ─────────────────────────────────────────────────────────────────
@@ -909,6 +940,36 @@ namespace PedalMComp
             float dry        = 1f - wet;
             int   listen     = Listen;
 
+            // Fork (neo-buzz, U6): glide to the new settings; the first time, and at a new rate, start there.
+            // The crossovers glide in octaves (log2 Hz) and land on the frequencies above exactly.
+            if (!_glidesSet || sr != _glideSr)
+            {
+                _gOut.Snap(outGainLin);
+                _gWet.Snap(wet);
+                for (int b = 0; b < 4; b++) _gMakeup[b].Snap(_makeupLin[b]);
+                _gXo1.Snap(MathF.Log2(fc1));
+                _gXo2.Snap(MathF.Log2(fc2));
+                _gXo3.Snap(MathF.Log2(fc3));
+                _glidesSet = true;
+                _glideSr = sr;
+            }
+            else
+            {
+                int len = (int)(Glide.Ms * 0.001f * sr);
+                _gOut.Set(outGainLin, len);
+                _gWet.Set(wet, len);
+                for (int b = 0; b < 4; b++) _gMakeup[b].Set(_makeupLin[b], len);
+                if (MathF.Log2(fc1) != _gXo1.Target) _gXo1.Set(MathF.Log2(fc1), len);
+                if (MathF.Log2(fc2) != _gXo2.Target) _gXo2.Set(MathF.Log2(fc2), len);
+                if (MathF.Log2(fc3) != _gXo3.Target) _gXo3.Set(MathF.Log2(fc3), len);
+            }
+            bool gliding = _gOut.Left > 0 || _gWet.Left > 0 || _gMakeup[0].Left > 0 || _gMakeup[1].Left > 0
+                           || _gMakeup[2].Left > 0 || _gMakeup[3].Left > 0;
+            bool xoGliding = _gXo1.Left > 0 || _gXo2.Left > 0 || _gXo3.Left > 0;
+            // While they glide, the crossovers take the glide's frequencies every XO_STEP samples from the block's
+            // first (the coefficients set above are the targets', where the glide lands exactly).
+            float tfc1 = fc1, tfc2 = fc2, tfc3 = fc3;
+
             // Output-meter envelope: ~100 ms release (-60 dB/sec falloff).
             // Attack is instantaneous (peak follows input upward immediately).
             float outRelCoef = MathF.Exp(-1f / (0.1f * sr));
@@ -918,6 +979,22 @@ namespace PedalMComp
             // ── Per-sample loop ──
             for (int i = 0; i < n; i++)
             {
+                if (gliding)
+                {
+                    outGainLin = _gOut.Next();
+                    wet = _gWet.Next();
+                    dry = 1f - wet;
+                    for (int b = 0; b < 4; b++) _makeupLin[b] = _gMakeup[b].Next();
+                }
+                if (xoGliding && (i % XO_STEP) == 0)
+                {
+                    float x1 = StepBy(ref _gXo1, XO_STEP, tfc1);
+                    float x2 = StepBy(ref _gXo2, XO_STEP, tfc2);
+                    float x3 = StepBy(ref _gXo3, XO_STEP, tfc3);
+                    SetCrossovers(x1, x2, x3, sr, phaseLinear);
+                    xoGliding = _gXo1.Left > 0 || _gXo2.Left > 0 || _gXo3.Left > 0;
+                }
+
                 float dryL = input[i].L * SCALE;
                 float dryR = input[i].R * SCALE;
 
@@ -1037,6 +1114,34 @@ namespace PedalMComp
             MeterOutRightDb = outEnvR > 1e-6f ? FastMath.LinToDb(outEnvR) : -120f;
 
             return true;
+        }
+    }
+
+    // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): a setting that glides to a new value in a straight line over
+    // Ms milliseconds, sample by sample, and lands on it exactly, so a setting that doesn't move is the same number as
+    // before. Automation and pattern events change parameters once a tick or subtick; applied once a block they stepped
+    // (3 dB at a time on a quarter-second ramp of 24 dB), which clicks.
+    struct Glide
+    {
+        public const float Ms = 20f;
+        public float Value, Target, Step;
+        public int Left;
+
+        public void Snap(float v) { Value = Target = v; Left = 0; }
+
+        public void Set(float v, int samples)
+        {
+            if (v == Target) return;
+            Target = v;
+            if (samples <= 1) { Snap(v); return; }
+            Left = samples;
+            Step = (v - Value) / samples;
+        }
+
+        public float Next()
+        {
+            if (Left > 0) Value = --Left == 0 ? Target : Value + Step;
+            return Value;
         }
     }
 }

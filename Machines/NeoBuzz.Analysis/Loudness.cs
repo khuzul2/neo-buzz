@@ -33,9 +33,17 @@ namespace NeoBuzz.Analysis
     {
         const double Offset = -0.691;
 
-        /// <summary>The K-weighting filter (BS.1770 stage 1 shelf + stage 2 high-pass) for a sample rate.</summary>
+        /// <summary>
+        /// The K-weighting filter (BS.1770 stage 1 shelf + stage 2 high-pass) for a sample rate.
+        /// Each stage's output settles to exact zero below <see cref="Tiny"/> (docs/specs/mcp-server.md
+        /// §12.13, U6): in silence, or on a constant input, the states otherwise decayed into denormal
+        /// numbers and stayed there, and Neo Analyzer, which runs this filter on every block, spent
+        /// 25 ms of work a second on silence against 5.5 on music. 1e-15 of full scale is −300 dB, far
+        /// under any gate: the measures are as before (a step of silence reads −∞ a little sooner).
+        /// </summary>
         internal struct KWeighting
         {
+            const double Tiny = 1e-15;
             double b0, b1, b2, a1, a2, c0, c1, c2, d1, d2;
             double x1, x2, y1, y2, u1, u2, v1, v2;
 
@@ -66,8 +74,10 @@ namespace NeoBuzz.Analysis
             public double Process(double x)
             {
                 double y = b0 * x + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+                if (Math.Abs(y) < Tiny) y = 0;
                 x2 = x1; x1 = x; y2 = y1; y1 = y;
                 double z = c0 * y + c1 * u1 + c2 * u2 - d1 * v1 - d2 * v2;
+                if (Math.Abs(z) < Tiny) z = 0;
                 u2 = u1; u1 = y; v2 = v1; v1 = z;
                 return z;
             }
@@ -85,8 +95,10 @@ namespace NeoBuzz.Analysis
                 {
                     double xi = x[i];
                     double y = sb0 * xi + sb1 * sx1 + sb2 * sx2 - sa1 * sy1 - sa2 * sy2;
+                    if (Math.Abs(y) < Tiny) y = 0;
                     sx2 = sx1; sx1 = xi; sy2 = sy1; sy1 = y;
                     double z = sc0 * y + sc1 * su1 + sc2 * su2 - sd1 * sv1 - sd2 * sv2;
+                    if (Math.Abs(z) < Tiny) z = 0;
                     su2 = su1; su1 = y; sv2 = sv1; sv1 = z;
                     sum += z * z;
                 }

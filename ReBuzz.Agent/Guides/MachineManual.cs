@@ -98,8 +98,11 @@ namespace ReBuzz.Agent.Guides
                 ? $"{count} parameters in units from a profiled draft manifest (tools/machine-profiler.py, not curated: check by ear)"
                 : manifest.IsCurated
                     ? $"{count} parameters in exact units from a curated manifest, with plain names and roles"
-                    : $"{manifest.Parameters.Count} parameters in exact units");
-            bool profiled = manifest.IsDraft || manifest.IsCurated;
+                    : manifest.IsGeneratedFromSource
+                        ? $"{count} parameters in exact units, generated from its source code"
+                        : $"{manifest.Parameters.Count} parameters in exact units");
+            // U6: a manifest generated from a machine's source keeps its profile (health, how it takes notes), as a curated one does.
+            bool profiled = manifest.IsDraft || manifest.IsCurated || manifest.IsGeneratedFromSource;
             if (manifest.Tracks > 0)
                 facts.Add(!profiled ? $"{manifest.Tracks} tracks: one note each (Note and Velocity per track), played from patterns as MIDI"
                     : manifest.Tracks == 1 ? "1 track"
@@ -173,6 +176,9 @@ namespace ReBuzz.Agent.Guides
             }
             else if (manifest.IsDraft)
                 sb.Append("\nThis manual comes from a profiled draft: names are the machine's own, units fitted to its value texts. `machine_describe(machine=…, value_table=true)` shows those texts.\n");
+            else if (manifest.IsGeneratedFromSource)
+                sb.Append("\n## Sources\n\nGenerated from the machine's source: its parameter declarations, and the code that uses each value (")
+                  .Append(manifest.Source).Append(").\n");
             return sb.ToString();
         }
 

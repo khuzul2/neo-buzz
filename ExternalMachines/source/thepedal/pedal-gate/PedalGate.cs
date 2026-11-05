@@ -67,6 +67,11 @@ namespace WDE.PedalGate
         // ── Cached sample rate ────────────────────────────────────────────────
         int _sr = 0;
 
+        // Fork (neo-buzz, U6): the Range floor's glide.
+        Glide _gRange;
+        bool  _glidesSet;
+        int   _glideSr;
+
         // ── Metering — written by audio thread, read by GUI timer ─────────────
         // Reads of float/int on x64 are atomic; volatile ensures visibility.
         public volatile float MeterLevel = 0f;   // detection level  (0 = silence, 1 = 0 dBFS)
@@ -288,6 +293,12 @@ namespace WDE.PedalGate
 
             // Range floor: gain applied when gate is fully closed
             float rangeLin = DbToLin(RangeParam - 90);
+            // Fork (neo-buzz, U6): the floor glides to a new Range (Glide, below); the first time, and at a new
+            // rate, it starts there. Applied once a block, a Range moved while the gate was shut stepped the
+            // output (12 dB at a time on a quarter-second ramp).
+            if (!_glidesSet || _sr != _glideSr) { _gRange.Snap(rangeLin); _glidesSet = true; _glideSr = _sr; }
+            else _gRange.Set(rangeLin, (int)(Glide.Ms * 0.001f * sr_f));
+            bool gliding = _gRange.Left > 0;
 
             // Per-sample gain step sizes
             float attackRate  = (AttackMs  > 0) ? 1f / (AttackMs  * 0.001f * sr_f) : 1f;
@@ -323,6 +334,8 @@ namespace WDE.PedalGate
             // ── Per-sample loop ───────────────────────────────────────────────
             for (int i = 0; i < n; i++)
             {
+                if (gliding) rangeLin = _gRange.Next();
+
                 // Audio to be gated — always from main input (pin 0)
                 float L = main[i].L * SCALE;
                 float R = main[i].R * SCALE;
@@ -350,6 +363,12 @@ namespace WDE.PedalGate
                     _envPeak = (peak > _envPeak)
                         ? peakAtk * _envPeak + (1f - peakAtk) * peak
                         : peakRel * _envPeak + (1f - peakRel) * peak;
+                    // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): settle to exact zero
+                    // below −300 dBFS. In silence the follower's decay stopped among the denormal
+                    // floats and stayed there (2.0 ms of work a second against 0.6 while playing).
+                    // Its thresholds are −80 dBFS at the lowest, so the gate acts as before, bit
+                    // for bit.
+                    if (_envPeak < 1e-15f) _envPeak = 0f;
                     level = _envPeak;
                 }
 
@@ -559,6 +578,34 @@ namespace WDE.PedalGate
             return index == 0 ? "Main" : "Sidechain";
         }
     } // end PedalGateMachine
+
+    // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): a setting that glides to a new value in a straight line over
+    // Ms milliseconds, sample by sample, and lands on it exactly, so a setting that doesn't move is the same number as
+    // before. Automation and pattern events change parameters once a tick or subtick; applied once a block they stepped
+    // (3 dB at a time on a quarter-second ramp of 24 dB), which clicks.
+    struct Glide
+    {
+        public const float Ms = 20f;
+        public float Value, Target, Step;
+        public int Left;
+
+        public void Snap(float v) { Value = Target = v; Left = 0; }
+
+        public void Set(float v, int samples)
+        {
+            if (v == Target) return;
+            Target = v;
+            if (samples <= 1) { Snap(v); return; }
+            Left = samples;
+            Step = (v - Value) / samples;
+        }
+
+        public float Next()
+        {
+            if (Left > 0) Value = --Left == 0 ? Target : Value + Step;
+            return Value;
+        }
+    }
 
 #if WINDOWS   // fork (studio-mvp.md S2): the GUI is WPF; portable builds have none
     // =========================================================================

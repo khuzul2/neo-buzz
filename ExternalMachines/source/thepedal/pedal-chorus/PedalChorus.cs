@@ -219,6 +219,10 @@ namespace WDE.PedalChorus
             // Mix
             float wet = Mix  / 100.0f;
             float dry = 1.0f - wet;
+            // Fork (neo-buzz, U6): glide to Mix; the first time, and at a new rate, start there.
+            if (!_glidesSet || sr != _glideSr) { _gWet.Snap(wet); _glidesSet = true; _glideSr = sr; }
+            else _gWet.Set(wet, (int)(Glide.Ms * 0.001f * sr));
+            bool gliding = _gWet.Left > 0;
 
             // One-pole LP for Tone: cutoff sweeps 22 kHz → 2 kHz
             float toneFreq  = (float)(22000.0 - Tone / 100.0 * 20000.0);
@@ -227,9 +231,11 @@ namespace WDE.PedalChorus
             // Equal-power pan table — voices spread across the stereo field.
             // Positions: −1, −0.33, +0.33, +1  scaled by Spread.
             float sp = Spread / 100.0f;
-            float[] pos  = { -sp, -sp * 0.333f, sp * 0.333f, sp };
-            float[] panL = new float[VOICES];
-            float[] panR = new float[VOICES];
+            // Fork (neo-buzz, U6): into arrays made once (three were allocated every block).
+            float[] pos  = _pos;
+            pos[0] = -sp; pos[1] = -sp * 0.333f; pos[2] = sp * 0.333f; pos[3] = sp;
+            float[] panL = _panL;
+            float[] panR = _panR;
             for (int v = 0; v < VOICES; v++)
             {
                 double angle = Math.PI / 4.0 * (1.0 + pos[v]);
@@ -243,6 +249,12 @@ namespace WDE.PedalChorus
             // ── Sample loop ───────────────────────────────────────────────────
             for (int i = 0; i < n; i++)
             {
+                if (gliding)
+                {
+                    wet = _gWet.Next();
+                    dry = 1.0f - wet;
+                }
+
                 float inL = input[i].L;
                 float inR = input[i].R;
 
@@ -286,6 +298,10 @@ namespace WDE.PedalChorus
                 // Tone filter (wet path only — dry transient stays untouched)
                 toneStateL += toneCoeff * (sumL - toneStateL);
                 toneStateR += toneCoeff * (sumR - toneStateR);
+                // Fork (neo-buzz, U6): settle to exact zero below 1e-15 of full scale (−300 dBFS): as the
+                // tail drained, the tone filter's state went through the denormal numbers.
+                if (Math.Abs(toneStateL) < 32768e-15f) toneStateL = 0f;
+                if (Math.Abs(toneStateR) < 32768e-15f) toneStateR = 0f;
                 sumL = toneStateL;
                 sumR = toneStateR;
 
@@ -297,6 +313,40 @@ namespace WDE.PedalChorus
             }
 
             return true;
+        }
+
+        // Fork (neo-buzz, U6): Mix glides to a new setting (Glide, below).
+        readonly float[] _pos = new float[VOICES], _panL = new float[VOICES], _panR = new float[VOICES];
+        Glide _gWet;
+        bool  _glidesSet;
+        int   _glideSr;
+    }
+
+    // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): a setting that glides to a new value in a straight line over
+    // Ms milliseconds, sample by sample, and lands on it exactly, so a setting that doesn't move is the same number as
+    // before. Automation and pattern events change parameters once a tick or subtick; applied once a block they stepped
+    // (3 dB at a time on a quarter-second ramp of 24 dB), which clicks.
+    struct Glide
+    {
+        public const float Ms = 20f;
+        public float Value, Target, Step;
+        public int Left;
+
+        public void Snap(float v) { Value = Target = v; Left = 0; }
+
+        public void Set(float v, int samples)
+        {
+            if (v == Target) return;
+            Target = v;
+            if (samples <= 1) { Snap(v); return; }
+            Left = samples;
+            Step = (v - Value) / samples;
+        }
+
+        public float Next()
+        {
+            if (Left > 0) Value = --Left == 0 ? Target : Value + Step;
+            return Value;
         }
     }
 }

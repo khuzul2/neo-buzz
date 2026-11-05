@@ -169,6 +169,14 @@ namespace WDE.PedalEQ
         const int SMOOTH_SAMPLES = 256;
         int   _blendRemain = 0;
         float _gainCurrent = 1f;
+        // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): Output glides to a new setting over 20 ms in a straight
+        // line and lands on it exactly. It ramped over one block, and blocks end at every tick and subtick, so a
+        // fast ramp moved 0.27 dB between two samples. A held Output is the same number as before.
+        float _gainTarget = 1f, _gainStep;
+        int   _gainLeft;
+        bool  _gainSet;
+        readonly BiquadCoeffs[] _soloCoeffs = new BiquadCoeffs[4];
+        readonly int[] _soloFlags = new int[4];
 
         // ── DSP state — parallel chain (solo mode) ────────────────────────────
         // Solo switches to parallel topology so each band filters the dry input
@@ -517,6 +525,8 @@ namespace WDE.PedalEQ
                 stSoloL[i].Reset(); stSoloR[i].Reset();
             }
             _gainCurrent = MathF.Pow(10f, (OutGain - 48) * 0.025f);
+            _gainTarget  = _gainCurrent;
+            _gainLeft    = 0;
         }
 
         // =========================================================================
@@ -595,7 +605,18 @@ namespace WDE.PedalEQ
             // ── Output gain ramp ──────────────────────────────────────────────
             // (OutGain − 48) × 0.5 = dB → linear = 10^(dB/20)
             float targetGain = MathF.Pow(10f, (OutGain - 48) * 0.025f);
-            float gainStep   = (targetGain - _gainCurrent) / n;
+            if (!_gainSet)
+            {
+                // The first block starts at its setting (it ramped from unity over the first block).
+                _gainCurrent = _gainTarget = targetGain;
+                _gainSet = true;
+            }
+            else if (targetGain != _gainTarget)
+            {
+                _gainTarget = targetGain;
+                _gainLeft   = Math.Max(1, (int)(0.020f * sr));
+                _gainStep   = (targetGain - _gainCurrent) / _gainLeft;
+            }
 
             // ── Zero-work fast path ───────────────────────────────────────────
             bool anySolo = LSSolo != 0 || LMSolo != 0 || HMSolo != 0 || HSSolo != 0;
@@ -604,6 +625,7 @@ namespace WDE.PedalEQ
                         && LSGain  == 48 && LMGain == 48
                         && HMGain  == 48 && HSGain == 48
                         && OutGain == 48
+                        && _gainLeft == 0
                         && MathF.Abs(_gainCurrent - 1f) < 1e-6f;
             if (allFlat)
             {
@@ -646,8 +668,11 @@ namespace WDE.PedalEQ
                 if (anySolo)
                 {
                     // Parallel: each band filters dry input; sum only soloed bands.
-                    BiquadCoeffs[] bArr   = { b0, b1, b2, b3 };
-                    int[]          soloFlags = { LSSolo, LMSolo, HMSolo, HSSolo };
+                    // Fork (neo-buzz, U6): into arrays made once (two were allocated per sample here).
+                    var bArr = _soloCoeffs;
+                    bArr[0] = b0; bArr[1] = b1; bArr[2] = b2; bArr[3] = b3;
+                    var soloFlags = _soloFlags;
+                    soloFlags[0] = LSSolo; soloFlags[1] = LMSolo; soloFlags[2] = HMSolo; soloFlags[3] = HSSolo;
                     outL = 0f; outR = 0f;
                     for (int b = 0; b < 4; b++)
                     {
@@ -666,11 +691,10 @@ namespace WDE.PedalEQ
                     outL = stL[3].Process(outL, b3); outR = stR[3].Process(outR, b3);
                 }
 
-                _gainCurrent += gainStep;
+                if (_gainLeft > 0) _gainCurrent = --_gainLeft == 0 ? _gainTarget : _gainCurrent + _gainStep;
                 output[i] = new Sample(outL * _gainCurrent, outR * _gainCurrent);
             }
 
-            _gainCurrent = targetGain;
             return true;
         }
     }

@@ -1,3 +1,5 @@
+using System;
+
 namespace PedalShaper
 {
     // Per-channel DSP state for the wet signal path:
@@ -11,8 +13,18 @@ namespace PedalShaper
     // gives free stereo width on mono sources without delay-based tricks.
     //
     // No SDK usings — pure DSP, per Build §6.3.
+    //
+    // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): every recursive state below Tiny
+    // (1e-15 of full scale, −300 dBFS) settles to exact zero. After the input stops, the tone
+    // low-pass, the DC blocker, the hysteresis and the dust follower each decayed into denormal
+    // floats and stayed there (in round-to-nearest a one-pole's decay stops a few steps above
+    // zero), so silence cost 27 ms of work a second against 1.9 while playing. A state only gets
+    // that small when the signal feeding it is below about −160 dBFS, so audible output is
+    // unchanged.
     internal sealed class ChannelFilters
     {
+        const float Tiny = 1e-15f;
+
         // ── Tone tilt (one-pole low-pass split) ───────────────────────────
         // The tilt is built from a single one-pole low-pass and the
         // complementary high-pass (input − low).  The tone knob mixes
@@ -113,6 +125,7 @@ namespace PedalShaper
         {
             // One-pole LP: y[n] = y[n-1] + coef · (x − y[n-1])
             _lpState += _toneLpCoef * (x - _lpState);
+            if (MathF.Abs(_lpState) < Tiny) _lpState = 0f;
             float low  = _lpState;
             float high = x - low;
             return low * toneLowGain + high * toneHighGain;
@@ -132,6 +145,7 @@ namespace PedalShaper
             float diff = target - _hystState;
             float coef = (diff >= 0f) ? upCoef : downCoef;
             _hystState += diff * coef;
+            if (MathF.Abs(_hystState) < Tiny) _hystState = 0f;
             return _hystState;
         }
 
@@ -171,6 +185,7 @@ namespace PedalShaper
             float diff = level - _dustEnv;
             float coef = (diff >= 0f) ? attackCoef : releaseCoef;
             _dustEnv += diff * coef;
+            if (_dustEnv < Tiny) _dustEnv = 0f;
             return _dustEnv;
         }
 
@@ -179,6 +194,7 @@ namespace PedalShaper
         public float DcBlock(float x)
         {
             float y = x - _dcLastIn + DC_R * _dcLastOut;
+            if (MathF.Abs(y) < Tiny) y = 0f;
             _dcLastIn  = x;
             _dcLastOut = y;
             return y;
