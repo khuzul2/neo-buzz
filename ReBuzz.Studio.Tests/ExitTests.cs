@@ -229,6 +229,9 @@ namespace ReBuzz.Studio.Tests
             var (window, view) = OpenEmpty();
             ToolTip.SetServiceEnabled(window, false);
             var master = Machine("Master");
+            // The transport as the app starts: looping off. It isn't part of a song (a new song keeps it), so it is
+            // whatever the tests before left, and a failed [AvaloniaTest] skips the TearDown that would put it back.
+            Core.Looping = false;
             try
             {
                 Studio.Screenshot(window, "exit-1-empty");
@@ -428,8 +431,10 @@ namespace ReBuzz.Studio.Tests
                 Type("132");
                 Key(window, PhysicalKey.Enter);
                 Assert.That(Core.BPM, Is.EqualTo(132), "the BPM box");
-                // Loop on failed now and then on CI (runs 41644026501 and 41866682998) and once locally, Looping false after
-                // the click, and it never came back in 19 local runs under load: a failure says what the button saw.
+                // Loop on failed now and then on CI, Looping false after the click: Looping was already on, left by a test
+                // before (run 41644026501: the session rig, before it put it back; 41866682998, 41926371493, 41937966540,
+                // 41938676130, 41953730788: AudioHygieneTests' first play had failed, its TearDown skipped), so the click
+                // turned it off. The test starts with it off now; a failure still says what the button saw.
                 var loopButton = window.Transport.GetVisualDescendants().OfType<ToggleButton>().Single(b => b.Content as string == "Loop");
                 string beforeClick = $"before the click: Looping {Core.Looping}, the button {loopButton.IsChecked}, focus on {window.FocusManager?.GetFocusedElement()?.GetType().Name ?? "nothing"}, " +
                                 $"under the pointer {(window.InputHitTest(CentreOf(loopButton, window)) as Visual)?.GetType().Name ?? "nothing"}";

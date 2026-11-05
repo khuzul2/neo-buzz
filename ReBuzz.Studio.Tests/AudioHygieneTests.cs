@@ -53,14 +53,14 @@ namespace ReBuzz.Studio.Tests
 
         static ReBuzzCore Core => Studio.Host.Core;
 
-        // Looping isn't part of the song (a new song keeps it): the tests after these start as they would have.
-        bool looping;
+        // Looping isn't part of the song (a new song keeps it): the tests after these start as they would have. NewSong
+        // puts it back, in every test's finally, not a TearDown: Avalonia.Headless.NUnit (12.1.4) skips a failed test's
+        // TearDown, and a first play that failed here left Looping on for ExitTests' song from scratch (CI runs
+        // 41866682998, 41926371493, 41937966540, 41938676130, 41953730788: its Loop click turned looping off).
+        static bool looping;
 
         [SetUp]
         public void KeepLooping() => looping = Core.Looping;
-
-        [TearDown]
-        public void RestoreLooping() => Core.Looping = looping;
 
         /// <summary>The device's default (Audio preferences): Recursive Tasks.</summary>
         const int DeviceAlgorithm = 1;
@@ -243,6 +243,7 @@ namespace ReBuzz.Studio.Tests
             Core.ExecuteCommand(BuzzCommand.Stop);
             Core.Modified = false;
             Core.ExecuteCommand(BuzzCommand.NewFile);
+            Core.Looping = looping;
             Pump();
         }
 
