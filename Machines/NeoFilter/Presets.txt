@@ -1,0 +1,151 @@
+# Neo Filter factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoFilter
+machine "Neo Filter"
+
+preset "Sweep — Ladder Low-Pass (1 Bar)"
+Type = Ladder 24
+Cutoff = 900
+Resonance = 3
+LFO sync = 1 bar
+LFO shape = Sine
+LFO depth = 2.2
+LFO retrig = Song
+LFO phase = 270
+
+preset "Sweep — Slow Rise (4 Bars, Saw)"
+Type = SVF LP
+Slope = 24 dB/oct
+Cutoff = 1400
+Resonance = 2
+LFO sync = 4 bars
+LFO shape = Saw up
+LFO depth = 2.8
+LFO retrig = Song
+
+preset "Sweep — High-Pass Build (8 Bars)"
+Type = SVF HP
+Slope = 24 dB/oct
+Cutoff = 500
+Resonance = 1.2
+LFO sync = 8 bars
+LFO shape = Saw up
+LFO depth = 2.4
+LFO retrig = Song
+
+preset "Auto-Wah — Funky (Band-Pass)"
+Type = SVF BP
+Cutoff = 420
+Resonance = 4
+Env amount = 3
+Env sensitivity = 12
+Env attack = 0.003
+Env release = 0.12
+
+preset "Auto-Wah — Bass (Ladder 12)"
+Type = Ladder 12
+Cutoff = 220
+Resonance = 4
+Env amount = 3.5
+Env sensitivity = 12
+Env attack = 0.002
+Env release = 0.2
+
+preset "Auto-Wah — Closing (Low-Pass, Envelope Down)"
+Type = SVF LP
+Cutoff = 4500
+Resonance = 3
+Env amount = -3
+Env sensitivity = 9
+Env attack = 0.005
+Env release = 0.25
+
+preset "Dub — High-Pass Throw"
+Type = SVF HP
+Slope = 24 dB/oct
+Cutoff = 420
+Resonance = 0.9
+
+preset "Dub — Resonant Low-Pass Siren (1/4)"
+Type = Ladder 24
+Cutoff = 700
+Resonance = 8
+Drive = 6
+LFO sync = 1/4
+LFO shape = Triangle
+LFO depth = 1
+LFO retrig = Song
+
+preset "Resonant — Ladder Low-Pass"
+Type = Ladder 24
+Cutoff = 1000
+Resonance = 6
+Drive = 3
+
+preset "Resonant — Acid (Ladder, Drive, Envelope)"
+Type = Ladder 24
+Cutoff = 500
+Resonance = 12
+Drive = 12
+Env amount = 2
+Env sensitivity = 12
+Env attack = 0.001
+Env release = 0.15
+Output = 3
+
+preset "LFO — Stepped Filter (1/8, Square)"
+Type = SVF LP
+Cutoff = 1200
+Resonance = 1.5
+LFO sync = 1/8
+LFO shape = Square
+LFO depth = 1.5
+LFO retrig = Song
+
+preset "LFO — Stereo Sweep (1/2, 90°)"
+Type = Ladder 24
+Cutoff = 1500
+Resonance = 3
+LFO sync = 1/2
+LFO shape = Sine
+LFO depth = 2
+LFO spread = 90
+LFO retrig = Song
+
+preset "LFO — Sample and Hold (1/16)"
+Type = SVF BP
+Cutoff = 1000
+Resonance = 5
+LFO sync = 1/16
+LFO shape = S&H
+LFO depth = 2
+LFO retrig = Song
+
+preset "Mix — Gentle Top Cut (12 kHz)"
+Type = SVF LP
+Cutoff = 12000
+Resonance = 0.71
+
+preset "Mix — Telephone Band"
+Type = SVF BP
+Slope = 24 dB/oct
+Cutoff = 1300
+Resonance = 1
+Output = 6
+
+preset "Notch — Swept Notch (2 Bars)"
+Type = SVF Notch
+Cutoff = 1000
+Resonance = 2
+LFO sync = 2 bars
+LFO shape = Sine
+LFO depth = 2
+LFO retrig = Song
+
+preset "Peak — Resonant Peak Sweep (1 Bar)"
+Type = SVF Peak
+Cutoff = 1500
+Resonance = 4
+LFO sync = 1 bar
+LFO shape = Triangle
+LFO depth = 1.5
+LFO retrig = Song
+Output = -6

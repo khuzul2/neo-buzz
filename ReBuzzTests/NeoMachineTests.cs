@@ -101,6 +101,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Scope = new("Neo Scope", "Scope", false);
         // The drum kit (docs/specs/mcp-server.md §8.2, §12.5): General MIDI keys from C2 and Buzz drum machines' hit columns.
         internal static readonly NeoInfo Drums = new("Neo Drums", "Drums", true);
+        // The filter effect (docs/specs/mcp-server.md §12.5): Neo Poly's filters with an envelope follower and an LFO.
+        internal static readonly NeoInfo Filter = new("Neo Filter", "Filter", false);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -626,6 +628,73 @@ namespace ReBuzzTests
             // A [notice] (tools/ci-test-summary.ps1): the WPF editor's size, which the studio's must match (NeoEditorTests).
             TestContext.Out.WriteLine($"[notice] Neo Delay in ReBuzz: Mix 0 % {Db(Rms(dry) / Rms(bypassed)):+0.000;-0.000} dB against bypassed, the clean echo {Db(Rms(echo) / Rms(bypassed)):+0.000;-0.000} dB, " +
                                       $"full feedback peak {Db(peak):+0.0;-0.0} dBFS, editor {size.Width:0} x {size.Height:0}");
+        }
+
+        [Test]
+        public void NeoFilterFiltersSelfOscillatesBoundedPassesTheDryAtMixZeroAndShowsItsEditor()
+        {
+            using var rig = new Rig(Filter);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0));
+            Assert.That(rig.Param("Type").DescribeValue(0), Is.EqualTo("Ladder 24"));
+            Assert.That(rig.Param("Type").DescribeValue(6), Is.EqualTo("SVF Peak"));
+            Assert.That(rig.Param("Cutoff").DescribeValue(6667), Is.EqualTo("2.00 kHz"));
+            Assert.That(rig.Param("Resonance").DescribeValue(66), Is.EqualTo("0.71"));
+            Assert.That(rig.Param("LFO sync").DescribeValue(9), Is.EqualTo("1/4"));
+            Assert.That(rig.Param("Drive").DescribeValue(240), Is.EqualTo("24.0 dB"));
+
+            // Mix 0 %: the 1 kHz sine reaches the master as it does without the machine (bypassed).
+            rig.Param("Mix").SetValue(0, 0);
+            rig.Play(0.3);
+            var dry = rig.Play(0.3);
+            rig.Effect.IsBypassed = true;
+            rig.Play(0.1);
+            var bypassed = rig.Play(0.3);
+            rig.Effect.IsBypassed = false;
+            rig.Play(0.1);
+            Assert.That(Db(Rms(dry) / Rms(bypassed)), Is.EqualTo(0).Within(0.001), "Mix 0 % passes the input");
+
+            // The SVF low-pass with its cutoff on the sine, Q 0.71: −3.0 dB; the high-pass two octaves above it: −24.1 dB.
+            rig.Param("Mix").SetValue(0, 1000);
+            rig.Param("Type").SetValue(0, 2);
+            rig.Param("Cutoff").SetValue(0, (int)Math.Round(10000 * Math.Log(1000.0 / 20) / Math.Log(1000)));
+            rig.Param("Resonance").SetValue(0, 65);                             // Q 0.705
+            rig.Play(0.5);
+            var lowpass = rig.Play(0.5);
+            rig.Param("Type").SetValue(0, 4);
+            rig.Param("Cutoff").SetValue(0, (int)Math.Round(10000 * Math.Log(4000.0 / 20) / Math.Log(1000)));
+            rig.Play(0.5);
+            var highpass = rig.Play(0.5);
+            TestContext.Out.WriteLine($"low-pass at the sine {Db(Rms(lowpass) / Rms(bypassed)):F3} dB, high-pass two octaves up {Db(Rms(highpass) / Rms(bypassed)):F3} dB");
+            Assert.That(Db(Rms(lowpass) / Rms(bypassed)), Is.EqualTo(-3.0).Within(0.15), "the low-pass at its cutoff");
+            Assert.That(Db(Rms(highpass) / Rms(bypassed)), Is.EqualTo(-24.1).Within(0.4), "the high-pass two octaves past it");
+
+            // Resonance at its top: the ladder sings at its cutoff on its own once the sine stops, bounded; the guard never trips.
+            var level = rig.Sine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters[0];
+            rig.Param("Type").SetValue(0, 0);
+            rig.Param("Resonance").SetValue(0, rig.Param("Resonance").MaxValue);
+            rig.Param("Drive").SetValue(0, 240);
+            rig.Play(1);
+            level.SetValue(0, 0);
+            rig.Play(1);
+            var sings = rig.Play(1);
+            double peak = sings.Max(v => (double)Math.Abs(v));
+            TestContext.Out.WriteLine($"self-oscillation: {Db(Rms(sings)):F1} dB RMS, peak {Db(peak):F1} dBFS");
+            Assert.That(Rms(sings), Is.GreaterThan(0.01), "it rings on by itself");
+            Assert.That(Db(peak), Is.LessThan(0), "bounded");
+            Assert.That(rig.Effect.IsMuted, Is.False, "the guard never tripped");
+
+            // The editor, sweeping: the ladder with an LFO on the song's quarter notes and the envelope.
+            level.SetValue(0, 50);
+            rig.Param("Resonance").SetValue(0, 500);
+            rig.Param("Drive").SetValue(0, 60);
+            rig.Param("LFO sync").SetValue(0, 9);
+            rig.Param("LFO depth").SetValue(0, 150);
+            rig.Param("Env amount").SetValue(0, 800);
+            rig.Play(0.5);
+            var size = ShootEditor(rig.Effect, "neo-filter-editor");
+            // A [notice] (tools/ci-test-summary.ps1): the WPF editor's size, which the studio's must match (NeoEditorTests).
+            TestContext.Out.WriteLine($"[notice] Neo Filter in ReBuzz: Mix 0 % {Db(Rms(dry) / Rms(bypassed)):+0.000;-0.000} dB against bypassed, low-pass at its cutoff {Db(Rms(lowpass) / Rms(bypassed)):+0.000;-0.000} dB, " +
+                                      $"high-pass two octaves up {Db(Rms(highpass) / Rms(bypassed)):+0.00;-0.00} dB, self-oscillation peak {Db(peak):+0.0;-0.0} dBFS, editor {size.Width:0} x {size.Height:0}");
         }
 
         [Test]
@@ -1336,7 +1405,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

@@ -43,7 +43,8 @@ namespace ReBuzzTests
             // Jeskola Filter and Filter 2 (measured in package run 41981112935: each a Chamberlin state-variable filter, f and its damping
             // q = 1 − sin(π · Resonance / 256) from the raw scales; Jeskola Filter's f = sin(π · Cutoff / 256)). Here: Filter 2's cutoff
             // scale every 4 steps, both filters' top of the cutoff scale in each type, and Jeskola Filter's Bandwidth in band-pass.
-            for (int c = 0; c <= 128; c += 4)
+            // Filter 2's cutoff scale, every 4 steps at resonance 0, was measured in run 41983622777; here the odd steps between two of them.
+            foreach (int c in new[] { 33, 34, 35, 97, 98, 99 })
                 Response($"Jeskola Filter 2 lowpass, cutoff {c}, resonance 0", "Jeskola Filter 2", Raw(("Type", 0), ("Cutoff", c), ("Resonance", 0)));
             foreach (var gear in new[] { "Jeskola Filter", "Jeskola Filter 2" })
             {
@@ -53,7 +54,7 @@ namespace ReBuzzTests
                     foreach (int type in new[] { 1, 2 })
                         Response($"{gear} {(type == 1 ? "highpass" : "bandpass")}, cutoff {c}, resonance 0", gear, Raw(("Type", type), ("Cutoff", c), ("Resonance", 0)));
                 Response($"{gear} bandpass, cutoff 64, resonance 64", gear, Raw(("Type", 2), ("Cutoff", 64), ("Resonance", 64)));
-                Response($"{gear} lowpass, cutoff 40, resonance 120", gear, Raw(("Type", 0), ("Cutoff", 40), ("Resonance", 120)));
+                Response($"{gear} lowpass, cutoff 40, resonance 116", gear, Raw(("Type", 0), ("Cutoff", 40), ("Resonance", 116)));
             }
             foreach (int r in new[] { 0, 64 })
                 foreach (int b in new[] { 4, 8, 16, 24, 32, 40, 48, 56 })
