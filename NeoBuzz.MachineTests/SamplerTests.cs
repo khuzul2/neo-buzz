@@ -647,24 +647,19 @@ namespace NeoBuzz.MachineTests
             var l = new float[SamplerEngine.MaxBlock];
             var r = new float[SamplerEngine.MaxBlock];
             int n = 0;
-            void Blocks(int count)
+            void Block(int b)
             {
-                for (int b = 0; b < count; b++)
-                {
-                    if (b % 7 == 0) e.NoteOn(b % 16, 36 + (b * 5) % 60, 0.3f + (b % 5) * 0.15f);
-                    if (b % 11 == 0) e.NoteOff((b + 3) % 16);
-                    if (b % 13 == 0) v.Set(Z(0, SamplerEngine.FTune), 40 + b % 17);
-                    if (b % 17 == 0) e.PitchBend((b % 9) / 4.5f - 1);
-                    e.Process(l, r, SamplerEngine.MaxBlock);
-                    n++;
-                }
+                if (b % 7 == 0) e.NoteOn(b % 16, 36 + (b * 5) % 60, 0.3f + (b % 5) * 0.15f);
+                if (b % 11 == 0) e.NoteOff((b + 3) % 16);
+                if (b % 13 == 0) v.Set(Z(0, SamplerEngine.FTune), 40 + b % 17);
+                if (b % 17 == 0) e.PitchBend((b % 9) / 4.5f - 1);
+                e.Process(l, r, SamplerEngine.MaxBlock);
+                n++;
             }
-            Blocks(200);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            Blocks(2000);
-            long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+            for (int b = 0; b < 200; b++) Block(b);
+            var (bytes, why) = AllocationCheck.Run(2000, Block);
             Measure.Report($"Neo Sampler: {bytes} bytes allocated over 2000 blocks (notes, steals, chokes, tune and bend moving)");
-            Assert.That(bytes, Is.EqualTo(0));
+            Assert.That(bytes, Is.EqualTo(0), why);
         }
 
         [Test]

@@ -451,17 +451,20 @@ namespace NeoBuzz.MachineTests
             var r = Measure.PinkNoise(6 * Rate, 0.2, 82);
             var bl = new float[256];
             var br = new float[256];
+            int blocks = l.Length / 256;
+            void Step(Song song, int k, Action<int> at)
+            {
+                int pos = k * 256;
+                at?.Invoke(k);
+                Array.Copy(l, pos, bl, 0, 256);
+                Array.Copy(r, pos, br, 0, 256);
+                int n = song.Block(256);
+                e.Process(bl, br, n, song.Transport);
+                song.Advance(n);
+            }
             void Run(Song song, Action<int> at)
             {
-                for (int pos = 0; pos + 256 <= l.Length; pos += 256)
-                {
-                    at?.Invoke(pos / 256);
-                    Array.Copy(l, pos, bl, 0, 256);
-                    Array.Copy(r, pos, br, 0, 256);
-                    int n = song.Block(256);
-                    e.Process(bl, br, n, song.Transport);
-                    song.Advance(n);
-                }
+                for (int k = 0; k < blocks; k++) Step(song, k, at);
             }
             // Every mode once (warm-up), then measured: synced with a loop, free with the trigger,
             // holdoff, every display, freeze on and off, the transport stopping.
@@ -476,12 +479,9 @@ namespace NeoBuzz.MachineTests
             Action<int> moves = Moves;
             Song a = new Song(Rate, 128) { LoopStart = 8, LoopEnd = 40 }, b = new Song(Rate, 128) { LoopStart = 8, LoopEnd = 40 }, c = new Song(Rate, 90) { Playing = false };
             Run(a, moves);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            Run(b, moves);
-            Run(c, moves);
-            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            var (allocated, why) = AllocationCheck.Run(2 * blocks, k => Step(k < blocks ? b : c, k % blocks, moves));
             Measure.Report($"Neo Scope: allocation while processing 12 s (synced and looping, free and triggered, every display, freeze, stopped): {allocated} bytes");
-            Assert.That(allocated, Is.EqualTo(0));
+            Assert.That(allocated, Is.EqualTo(0), why);
         }
 
         [TestCase(5, 0, "synced to a bar, left and right")]

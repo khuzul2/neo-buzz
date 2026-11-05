@@ -593,23 +593,18 @@ namespace NeoBuzz.MachineTests
             var r = new float[EqEngine.MaxBlock];
             var rng = new Random(1);
             var settings = Enumerable.Range(0, 8).Select(_ => Random(rng)).ToArray();
-            void Blocks(int count)
+            void Block(int b)
             {
-                for (int b = 0; b < count; b++)
-                {
-                    for (int i = 0; i < l.Length; i++) l[i] = r[i] = (float)Math.Sin(i * 0.05 + b);
-                    var s = settings[b % settings.Length];
-                    for (int k = 0; k < N; k++) v.Set(GraphicDesign.Slider(k), Params.Table[GraphicDesign.Slider(k)].Raw(s[k]));
-                    if (b % 50 == 49) v.Set(P.Mode, 1 - v[P.Mode]);
-                    e.Process(l, r, l.Length);
-                }
+                for (int i = 0; i < l.Length; i++) l[i] = r[i] = (float)Math.Sin(i * 0.05 + b);
+                var s = settings[b % settings.Length];
+                for (int k = 0; k < N; k++) v.Set(GraphicDesign.Slider(k), Params.Table[GraphicDesign.Slider(k)].Raw(s[k]));
+                if (b % 50 == 49) v.Set(P.Mode, 1 - v[P.Mode]);
+                e.Process(l, r, l.Length);
             }
-            Blocks(200);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            Blocks(2000);
-            long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+            for (int b = 0; b < 200; b++) Block(b);
+            var (bytes, why) = AllocationCheck.Run(2000, Block);
             Measure.Report($"Neo EQ graphic: {bytes} bytes allocated over 2000 blocks with the sliders moving every block and the mode switching");
-            Assert.That(bytes, Is.EqualTo(0));
+            Assert.That(bytes, Is.EqualTo(0), why);
         }
 
         // ------------------------------------------------------------------ switching and passing
@@ -665,23 +660,28 @@ namespace NeoBuzz.MachineTests
         public void CpuIsSmall()
         {
             // Stereo at 48 kHz, every band busy (a random setting): ≥ 30× real time, 3.3 % of a core (31 sections; the
-            // parametric test's 50× is for 14). And the solve a slider move costs.
+            // parametric test's 50× is for 14). And the solve a slider move costs. Each the best of three passes: other work
+            // on a shared runner only ever adds time.
             const int rate = Measure.Rate;
             var (e, v) = Make(p => Sliders(p, Random(new Random(11))));
             var l = Measure.PinkNoise(10 * rate, 0.2, 31);
             var r = Measure.PinkNoise(10 * rate, 0.2, 32);
             Run(e, l.Take(rate).ToArray(), r.Take(rate).ToArray());
-            GC.Collect();
-            var sw = Stopwatch.StartNew();
-            Run(e, l, r);
-            double speed = 10.0 / sw.Elapsed.TotalSeconds;
             var solver = new GraphicSolver(rate);
             var rng = new Random(12);
             var settings = Enumerable.Range(0, 50).Select(_ => Random(rng)).ToArray();
             foreach (var s in settings) solver.Solve(s);
-            sw.Restart();
-            for (int i = 0; i < 200; i++) solver.Solve(settings[i % settings.Length]);
-            double solveMs = sw.Elapsed.TotalMilliseconds / 200;
+            GC.Collect();
+            double speed = 0, solveMs = double.MaxValue;
+            for (int pass = 0; pass < 3; pass++)
+            {
+                var sw = Stopwatch.StartNew();
+                Run(e, l, r);
+                speed = Math.Max(speed, 10.0 / sw.Elapsed.TotalSeconds);
+                sw.Restart();
+                for (int i = 0; i < 200; i++) solver.Solve(settings[i % settings.Length]);
+                solveMs = Math.Min(solveMs, sw.Elapsed.TotalMilliseconds / 200);
+            }
             Measure.Report($"Neo EQ graphic CPU: {speed:F0}× real time (31 bands, stereo); a slider move's solve {solveMs:F3} ms ({solveMs / (256000.0 / rate) * 100:F1} % of a 256-sample block)");
             Assert.That(speed, Is.GreaterThan(30));
             Assert.That(solveMs, Is.LessThan(2));

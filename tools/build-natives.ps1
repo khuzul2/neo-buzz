@@ -17,10 +17,19 @@
     .x64.dll, which is how ReBuzz knows to run them in its 64-bit host), the machine's extra files, and
     build.log. Exit code 1 when a machine didn't build.
 
+    -ZeroHeap builds nothing from source: for each machine whose entry names a source fix ("fix": state
+    upstream never initialises) it copies upstream's x64 binary (RunTime\Gear) to
+    <OutDir>\x64\Gear\<Generators|Effects> importing ZEROHEAP.dll where it imported KERNEL32.dll
+    (tools\native-zeroheap.py), and builds <OutDir>\x64\ZEROHEAP.dll (tools\native-zeroheap.cpp), which forwards
+    to kernel32 but zeroes every block HeapAlloc returns: upstream's own binary on a zeroed heap, the start its
+    fix gives. The package job's comparison (tools/native-compare.py --zeroed) holds the fixed builds to it.
+
 .EXAMPLE
     ./tools/build-natives.ps1 -OutDir build/natives
 .EXAMPLE
     ./tools/build-natives.ps1 -OutDir build/natives-o2 -Flags '/O2' -Suffix ' O2' -Platforms x64
+.EXAMPLE
+    ./tools/build-natives.ps1 -OutDir build/natives-zeroed -ZeroHeap
 #>
 [CmdletBinding()]
 param(
@@ -30,7 +39,8 @@ param(
     [string]$Suffix = '',
     [string[]]$Only,
     [string]$VsPath,
-    [switch]$NoExtras
+    [switch]$NoExtras,
+    [switch]$ZeroHeap
 )
 
 Set-StrictMode -Version Latest
@@ -60,6 +70,29 @@ function Get-Prop($Object, [string]$Name) {
 }
 # A folder for cl's /Fo: two backslashes before the closing quote (one would escape it).
 function QDir([string]$s) { '"' + $s + '\\"' }
+
+if ($ZeroHeap) {
+    $fixed = @($machines | Where-Object { (Get-Prop $_ 'fix') -and (Get-Prop $_ 'upstreamBinary') -eq 'x64' })
+    if ($fixed.Count -eq 0) { throw 'no machine with a source fix and an x64 upstream binary' }
+    $out = Join-Path $OutDir 'x64'
+    if (Test-Path -LiteralPath $out) { Remove-Item -LiteralPath $out -Recurse -Force }
+    New-Item -ItemType Directory -Force -Path $out | Out-Null
+    $def = Join-Path $out 'zeroheap.def'
+    $rels = @($fixed | ForEach-Object { $_.gearFolder + '\' + $_.gear + '.x64.dll' })
+    & python (Join-Path $PSScriptRoot 'native-zeroheap.py') --from (Join-Path $Root 'RunTime\Gear') --to (Join-Path $out 'Gear') --def $def @rels
+    if ($LASTEXITCODE -ne 0) { throw 'native-zeroheap.py failed' }
+    $vcvars = Join-Path $VsPath 'VC\Auxiliary\Build\vcvars64.bat'
+    $obj = Join-Path $out 'obj'
+    New-Item -ItemType Directory -Force -Path $obj | Out-Null
+    $cmd = Join-Path $out 'build.cmd'
+    @('@echo off', "call $(Q $vcvars) >nul || exit /b 2",
+      "cl /nologo /O2 /GS- /LD $(Q (Join-Path $PSScriptRoot 'native-zeroheap.cpp')) /Fo$(QDir $obj) /Fe$(Q (Join-Path $out 'ZEROHEAP.dll')) /link /NOLOGO /NODEFAULTLIB /NOENTRY kernel32.lib /DEF:$(Q $def) /IMPLIB:$(Q (Join-Path $obj 'zeroheap.lib')) || exit /b 1") |
+        Set-Content -LiteralPath $cmd -Encoding Ascii
+    & cmd.exe /d /c (Q $cmd) *>&1 | Tee-Object -FilePath (Join-Path $out 'build.log') | Out-Host
+    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath (Join-Path $out 'ZEROHEAP.dll'))) { throw 'ZEROHEAP.dll did not build' }
+    Write-Host "Upstream's binaries on a zeroed heap: $($fixed.Count) machines into $out\Gear, ZEROHEAP.dll beside them"
+    exit 0
+}
 
 $failed = New-Object System.Collections.Generic.List[string]
 $built = 0

@@ -36,6 +36,8 @@
     <!-- The analysis library's BS.1770 true peak: Neo Limiter's ceiling is measured with what the
          agent server measures with (docs/specs/mcp-server.md §7). Only this file, by name. -->
     <Compile Include="..\Machines\NeoBuzz.Analysis\Loudness.cs" Link="Analysis\Loudness.cs" />
+    <!-- The zero-allocation tests measure each block with the engine tests' AllocationWindow (AllocationCheck.cs). -->
+    <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />
   </ItemGroup>
 
   <ItemGroup>
