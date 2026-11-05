@@ -298,6 +298,17 @@ This adds a Mac route to mcp-server.md §12.5 (Neo successors); it doesn't repla
 | Joachims ×7, FSM Philthy, BTDSys PeerChord, Bigyo Wood One, Intoxicat ACloud15, KrimZon AY-3-8910, kibibu Green Milk, mixIO | closed | R3 where §12.5 lists a successor, otherwise R4 |
 | Polac ×8 | closed | ReBuzz's own Audio In/Out and MIDI machines; VST through D5 |
 
+**R1 after U7** (mcp-server.md §12.14, measured on Windows 2026-11-05; no Linux or macOS native was built). What building the 17 on Windows says about R1:
+
+- **The sources are ready.** They build with today's MSVC after one header change (`DSPChips.h`'s `copysign` macro rewrote `<cmath>`), and all 17 pass gcc on Linux with Buzztrax's own `windef`, `mdk` and open `dsplib` (a syntax check here; Buzztrax's autotools build does the rest). How each builds (sources, defines, libraries) is data now, the `natives` list in `ExternalMachines/machines.json`, which a CMake build for dylibs can read as `tools/build-natives.ps1` does.
+- **Same code, same sound holds where the arithmetic is the same, and only there.** Upstream's x64 FSM and Oomek binaries turned out to be Buzztrax's sources, and today's compiler reproduces them bit for bit (x86 SSE2 builds too). An x87 build of the same code, whose only change is wider intermediates, already differs by −55 dBFS on FSM Chorus2, −68 on PhatMan and −80 on Infector and Aggressor 303: modulation and feedback spread a last-bit difference. On arm64, clang fuses `a*b + c` into FMAs by default (`-ffp-contract=on`), and libm's `sin`, `pow` and `exp` aren't the Windows C runtime's: R1 builds need `-ffp-contract=off`, and even then the modulated machines will likely miss §4.3's −100 dBFS and need the clones' tolerances (level ±0.5 dB, third octaves ±1 dB) for those. The static, unmodulated ones (Distortion, Exciter, Masterizer, the delays without modulation) should land close.
+- **dsplib.** The Windows builds call ReBuzz's own `dsplib.dll`, as upstream's do; R1 links Buzztrax's open `dsplib` instead, whose Butterworth filters (NiNjA dElaY) and mixing routines (the MDK) are reimplementations: one more source of difference, to measure.
+- **Fewer than 17.** The Jeskola folder states no licence, so its six can be built but not redistributed (the Windows package keeps upstream's binaries of them), and Buzztrax's Cross Delay is a rewrite that sounds nothing like the original. R1 as planned covers the 11 FSM and Oomek machines; the Jeskola six need Jeskola's permission (five of them would match: their Windows x64 rebuilds are identical to the 32-bit originals or within −119 dBFS).
+- **Uninitialised state** varies with the allocator: the FSM wahs started their filter glide from heap garbage (fixed in source, §12.14); a different platform would have shown different garbage.
+- **The acceptance test exists.** `tools/native-compare.py` plays each build of a machine side by side through the agent server and compares; on a Mac it would compare against renders of upstream's Windows binary, as the null test does for the Neo machines.
+
+The portable host (`ReBuzzEngine` without MFC, POSIX shared memory) is still the bulk of R1's cost, and untouched.
+
 **Run a song census before any R2.** A small tool counts machine use across a corpus of songs: yours, plus public .bmx archives. Weight each machine by how much it is used, then clone only the top 3–5.
 
 The A2 profiler (mcp-server §12.2) already measures what a clone has to match: parameter text across each range, frequency and impulse responses, pitch convention, latency. Run it on Windows against the original, and make the clone's tests assert the same numbers.
@@ -399,7 +410,7 @@ Upstream is busy and speeding up: 415 commits on `main` in the last 12 months, 9
 | XPF, if chosen: shim gaps, custom-drawing speed, the vendor's future | medium | stuck on one version | Spike the real app during the 30-day trial before paying; the licence is perpetual |
 | Wine, if chosen: Rosetta ends (macOS 28), FEX matures slowly, 32-bit support shrinks | high | an OS update breaks the bridge | Don't build on it (D2) |
 | Mac CI cost | low | about 10× Linux per minute | PRs into main only; a self-hosted Mac mini if usage grows |
-| Licences of recompiled or cloned machines | low | can't redistribute | Check each author's licence; `MachineInterface.h` is freeware-only; keep the repo private until cleared |
+| Licences of recompiled or cloned machines | low | can't redistribute | Check each author's licence; `MachineInterface.h` is freeware-only; keep the repo private until cleared. Checked for the 17 (U7): FSM LGPL-2.1, Oomek GPL-3.0-or-later; Jeskola's six have none, so they aren't redistributed |
 
 ## 8. What to do now (cheap, whatever you pick)
 

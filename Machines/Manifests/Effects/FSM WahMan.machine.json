@@ -21,6 +21,7 @@
    "latency_samples": 6,
    "latency_ms": 0.14,
    "tail_seconds": 0.01,
+   "tail_hz": 1459.0,
    "echoes": 0,
    "output_correlation": 1.0,
    "spectrum_spread_db": 60.2,
@@ -509,7 +510,7 @@
     },
     "track Modulation": {
      "suggested_role": "drive",
-     "evidence": "harmonics 0.6 → 78.6 % on a sine",
+     "evidence": "harmonics 0.6 → 3.1 % on a sine",
      "min": {
       "raw": 0,
       "text": "0"

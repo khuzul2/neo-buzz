@@ -475,8 +475,9 @@ def main(argv):
                 continue
             verdict = "identical" if b["identical"] else ("within" if b["match"] else "DIFFERS")
             if "match_any_upstream" in b:
-                verdict += (", as an upstream instance in every case" if b["match_any_upstream"] else ", unlike every upstream instance in a case") + \
-                           (f", the same bits as {'/'.join(b['same_as'])}" if b.get("same_as") else "")
+                # A machine with a fix: upstream's own instances disagree, so the verdict is against the closest of them.
+                verdict = ("as one of upstream's instances in every case" if b["match_any_upstream"] else "UNLIKE every upstream instance in a case") + \
+                          (f", the same bits as {'/'.join(b['same_as'])}" if b.get("same_as") else "")
             rows.append((gear, label, verdict, fmt(b["worst_dbfs"]), b["errors"]))
             # The package's own binary where it is upstream's file is the same machine: a difference there is the machine
             # not rendering the same twice (reported, not a failure).

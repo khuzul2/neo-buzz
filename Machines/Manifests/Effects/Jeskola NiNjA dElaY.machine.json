@@ -11,7 +11,7 @@
   "status": "warn",
   "problems": [
    "hot at its defaults (+3.6 dBFS peak)",
-   "hot (loud but steady) with Dry thru at its minimum (0): +1.8 dBFS peak over 30 s; Length at its minimum (1): +3.3 dBFS peak; Length at its maximum (32768): +5.2 dBFS peak over 30 s; Length unit at its maximum (tick/256): +3.1 dBFS peak; Feedback at its minimum (-100.0%): +38.7 dBFS peak over 30 s; Feedback at its maximum (100.0%): +39.2 dBFS peak; f. type at its maximum (bandreject): +3.4 dBFS peak; f. cutoff at its minimum (10Hz): +3.6 dBFS peak; and 3 more"
+   "hot (loud but steady) with Dry thru at its minimum (Off): +1.8 dBFS peak over 30 s; Length at its minimum (1): +3.3 dBFS peak; Length at its maximum (32768): +5.2 dBFS peak over 30 s; Length unit at its maximum (tick/256): +3.1 dBFS peak; Feedback at its minimum (-100.0%): +38.7 dBFS peak over 30 s; Feedback at its maximum (100.0%): +39.2 dBFS peak; f. type at its maximum (bandreject): +3.4 dBFS peak; f. cutoff at its minimum (10Hz): +3.6 dBFS peak; and 3 more"
   ],
   "hot": true
  },
@@ -21,6 +21,7 @@
    "latency_samples": 0,
    "latency_ms": 0.0,
    "tail_seconds": 3.38,
+   "tail_hz": 8407.5,
    "echoes": 10,
    "first_echo_seconds": 0.375,
    "gap_before_echo_db": -60.0,
@@ -478,7 +479,7 @@
      "over_seconds": 30,
      "verdict": "hot",
      "raw": 0,
-     "text": "0"
+     "text": "Off"
     }
    },
    "Length": {
@@ -682,7 +683,7 @@
      "evidence": "the direct sound -120 → +4 dB while the tail stays (+6 → +6 dB)",
      "min": {
       "raw": 0,
-      "text": "0"
+      "text": "Off"
      },
      "max": {
       "raw": 1,
