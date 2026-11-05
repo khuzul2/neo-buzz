@@ -225,7 +225,7 @@
    "a": 1000.0,
    "b": 16000.0,
    "unit": "Hz",
-   "description": "Centre of the snappy noise's band (from about half of it to 1.6 times it): brighter up"
+   "description": "Centre of the snappy noise's band (from about half of it to 1.3 times it): brighter up"
   },
   {
    "index": 15,

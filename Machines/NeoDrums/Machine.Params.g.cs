@@ -49,7 +49,7 @@ namespace NeoBuzz.Drums
         [ParameterDecl(Name = "Snare tune", Description = "The body's lower tone, once its short fall has settled (the upper sits an octave above)", MinValue = 0, MaxValue = 1000, DefValue = 424)]
         public int SnareTune { get => Values[P.SnareTune]; set => Values.Set(P.SnareTune, value); }
 
-        [ParameterDecl(Name = "Snare tone", Description = "Centre of the snappy noise's band (from about half of it to 1.6 times it): brighter up", MinValue = 0, MaxValue = 1000, DefValue = 702)]
+        [ParameterDecl(Name = "Snare tone", Description = "Centre of the snappy noise's band (from about half of it to 1.3 times it): brighter up", MinValue = 0, MaxValue = 1000, DefValue = 702)]
         public int SnareTone { get => Values[P.SnareTone]; set => Values.Set(P.SnareTone, value); }
 
         [ParameterDecl(Name = "Snare snap", Description = "The snappy noise against the body (0 %: the body alone)", MinValue = 0, MaxValue = 1000, DefValue = 500)]

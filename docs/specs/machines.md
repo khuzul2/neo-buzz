@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04; and Neo Multiband (mcp-server.md §8.2), 2026-11-04; and Neo Sampler (mcp-server.md §8.2, §12.5), 2026-11-04; and Neo Scope (mcp-server.md §8.1), 2026-11-04 |
-| Date | 2026-11-04 |
+| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04; and Neo Multiband (mcp-server.md §8.2), 2026-11-04; and Neo Sampler (mcp-server.md §8.2, §12.5), 2026-11-04; and Neo Scope (mcp-server.md §8.1), 2026-11-04; and Neo Drums (mcp-server.md §8.2, §12.5), 2026-11-05 |
+| Date | 2026-11-05 |
 | Scope | New high-quality machines for sound design, mixing and mastering, written in C# with custom editors: first batch "core six", second batch "mix and master", third the successors of closed machines that misbehave |
 
 ---
@@ -54,6 +54,12 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Machine | Kind | One line |
 |---|---|---|
 | Neo Scope | effect | Oscilloscope and vectorscope: the waveform (left, right, mid, side, or both overlaid) synced to the song from 1/16 to 4 bars, each sweep starting on the song's beats and bars so a loop stands still, or free in time per division with an edge trigger and holdoff; a goniometer or polar vectorscope with a correlation meter; auto scale or gain, a trail, freeze; audio untouched. Readings for agents (peak, RMS, correlation, the trigger's lock) |
+
+**The drum machine (mcp-server.md §8.2, §12.5)**
+
+| Machine | Kind | One line |
+|---|---|---|
+| Neo Drums | generator | A synthesised kit in the TR-909 and TR-808 manner: kick, snare, clap, rim, closed and open hats (choked), three toms, cowbell, crash and ride, each with its tune, decay, tone, level and pan in real units; the General MIDI drum keys from C2 and Buzz drum machines' hit columns with an Accent column; the metallic voices band-limited (aliases under −115 dB). Succeeds Rout 909 and FSM KickXP (mcp-server.md §12.5) |
 
 ## 2. Decisions
 
@@ -624,6 +630,54 @@ As built:
 - **Not built**: a pre-trigger (the trigger point is the left edge), Normal triggering (it is always Auto), a trigger on the second trace, an X–Y mode of two inputs, a spectrum (Neo Analyzer has it), the song's bar list for synced bars (4 beats).
 - The readings and the editors are measured; the audio is not touched, so nothing of it is a sound to calibrate.
 
+### Neo Drums (synthesised drum kit; mcp-server.md §8.2, §12.5)
+
+A drum machine that synthesises every voice, so a kit is a set of numbers in real units and sounds the same in every song and on every platform. Its defaults were voiced against the Rout 909's samples at their defaults (third-octave spectra, pitch over time, the times to fall 20, 40 and 60 dB: `DrumsCalibration`, ReBuzzTests); the "808 — Classic" kit is the TR-808's manner. It is the successor of Rout 909 and FSM KickXP (`machine_replace` pairs, mcp-server.md §12.10); Pedal Drum Matrix is an effect (a multi-effect rack for drums: six slots of 21 effects), not a drum machine, so it has no pair.
+
+- **Voices** (`Engine/DrumHit.cs`). Kick: a sine falling from `Kick sweep` (0–48 st) above `Kick tune` (30–150 Hz) with the time constant `Kick sweep time` (2–200 ms), louder at first by `Kick punch` (up to +12 dB, falling back with the sweep), a click of high-passed noise (15 ms), drive (0–24 dB, the level kept). Snare: two sines an octave apart falling 8 st over about 15 ms to `Snare tune`, and the snappy noise, band-passed from about half `Snare tone` to 1.3 times it plus some across the mids, `Snare snap` balancing them. Clap: three bursts of noise through a band-pass at `Clap tune`, `Clap spread` apart, then the tail. Rim: three pings (`Rim tune`, half and 0.23 of it) and a 6 ms tick. Hats, crash and ride: six square oscillators at the TR-808's frequencies (205.3, 304.4, 369.6, 522.7, 540 and 800 Hz, the ride's 1.25 times higher), moved by `tune` in semitones, and noise, through a band-pass round `tone` and a low-pass, with a wide high-passed path of the noise. Toms: a sine and its octave (quieter) falling 1.2 octaves above `tune`, an octave in about 25 ms, then the rest over about a second, with attack noise (`tone`). Cowbell: two squares 1 : 1.48 apart through a band-pass at 3.3 times `Cowbell tune`, its attack falling in 50 ms and its tail over `Cowbell decay`.
+- **Band-limited squares** (`MetalBank.cs`). Each square's steps are corrected by a BLEP (24 zero crossings, 256 phases, cut at 0.46 of the rate, Blackman–Harris windowed), primed so the first sample already is band-limited. The hats' and cymbals' oscillators alone alias under −115 dB at 44.1 and 48 kHz (tune ±12 st, tone 16 kHz); the cowbell's under −135 dB.
+- **Decay** is each voice's time to fall 60 dB (its straight part in dB), tune its pitch once its sweep has settled, level in dB, pan equal power.
+- **Hits.** A note on a key (or a hit column's value) hits its voice: the hit takes the voice's tune, decay and tone as they are (level and pan follow it, glided over 10 ms). Each voice holds three hits; a new hit fades the voice's older ones over 3 ms (a short residual takes their last value down in 0.5 ms), so a retrigger, a roll or four kicks in 2 ms don't click. A closed hat (F#2, the pedal key G#2, the CH column) fades the open hat out in 5 ms; nothing else chokes. A note-off does nothing: a hit sounds out its decay.
+- **Keys and columns.** The General MIDI drum keys from C2, as Neo Sampler's Kit mode: C2 kick (B1 too), C#2 rim, D2 snare (E2 too), D#2 clap, F#2 closed hat (G#2 too), A#2 open hat, G2, B2 and D3 the toms (F2, A2, C3 too), G#3 cowbell, C#3 crash (A3 too), D#3 ride (B3 too). Each of its 16 tracks has Note and Velocity (a note on any key), the hit columns BD, SD, CP, RS, CH, OH, LT, MT, HT, CB, CC and RC (a value 1–127 hits the voice at that velocity) and Accent (it accents every hit of its tick, on any track), as Buzz drum machines play; MIDI too. The columns are stateless track parameters (the generator's new `track` lines in Params.def): agents write them with `automation_write`, as played parameters.
+- **Velocity and accent.** A hit's gain is velocity^(2 × `Vel → level`) (70 %: velocity 64 is 8.3 dB under 127); `Vel → tone` opens the kick's click and sweep, the snare's snap and tone, the toms' attack, the hats' and cymbals' tone, the clap's band, by velocity above 100 and by an accent (as if a quarter of full velocity harder); an accent adds `Accent gain` (0–12 dB).
+- **Buses.** Each voice renders into its own bus, mixed to one stereo output by its level and pan, then `Volume`: the place per-voice outputs would come from. They aren't offered (below).
+- **Robustness.** Every parameter at random ends with accented hits: finite and bounded; silence goes idle; the output doesn't depend on block sizes (256, 117, 16); every hit of a voice is the same and renders are deterministic (each voice's noise reseeded per hit); `Work` allocates nothing. Portable maths only (§4).
+
+The choices that were open, and why:
+- **One stereo output.** The engine runs managed generators with several outputs (`MULTI_IO`, `MultiWork`, a connection's source channels; ReBuzz.exe's machine view picks a connection's channels), but the rest doesn't reach them: the studio connects and inserts on output 0 only and has no channel picker (`MachineEdits.cs`), the agent's `connect` takes the destination's input but not the source's output, `machine_replace` connects output 0, the Session View's mixer has one strip per machine, and the engine allocates an output channel's buffer on the audio thread the first time a connection uses it (`MachineWorkInstance.cs`, the managed multi-IO path). Offered as they are, a kick on its own output would work in ReBuzz.exe and nowhere else. The voices' buses are where the outputs will come from once the studio, the tools and the mixer route them.
+- **Hits latch tune, decay and tone**, as a TR-909's voices do: a slide moves the next hit, and a hit never changes pitch under itself. Level and pan follow, so a fade or a pan move is heard at once.
+- **Accent per tick, not per track**: a TR-909's accent step accents the whole step; written on any track it holds for every hit of its tick.
+- **A voice's hits are the same** (each its noise from the same seed): a pattern renders identically every time, and an agent's comparison of two renders measures the settings, not chance.
+- **Levels with headroom.** At velocity 127 and its defaults each voice peaks about 7.5 dB under the Rout 909's sample of it (kick −8 dBFS), so a kick, snare and hat together or an accented hit stay under 0 dBFS; the Rout 909 pair sets `Volume` +7.5 dB.
+- **The toms' slow fall** (0.2 octave over a time constant of 0.3 s after the fast one) is the Rout 909's (its toms still fall 7 % between 0.1 and 0.6 s); their tune is the pitch once that has settled.
+
+Parameters (67 global, in this order): Volume (−60 … +12 dB, 0 dB), Accent gain (0–12 dB, 6 dB), Vel → level (0–100 %, 70 %), Vel → tone (0–100 %, 50 %); Kick tune (30–150 Hz, 54 Hz), sweep (0–48 st, 30 st), sweep time (2–200 ms, 25 ms), decay (0.05–4 s, 0.5 s), click (50 %), punch (50 %), drive (0–24 dB, 3 dB), level, pan; Snare tune (100–400 Hz, 180 Hz), tone (1–16 kHz, 7 kHz), snap (50 %), decay (0.05–2 s, 0.3 s), level, pan; Clap tune (0.5–5 kHz, 1 kHz), spread (2–30 ms, 11 ms), decay (0.05–2 s, 0.6 s), level, pan; Rim tune (0.4–4 kHz, 1 kHz), decay (10–500 ms, 120 ms), level, pan; Closed hat and Open hat tune (±12 st), tone (2–16 kHz, 7.5 kHz), decay (10 ms – 1 s, 80 ms; 50 ms – 4 s, 0.6 s), level, pan; Low, Mid and High tom tune (40–500 Hz: 58, 73, 84 Hz), decay (0.05–3 s: 0.9, 0.65, 0.65 s), tone (30 %), level, pan; Cowbell tune (300–1500 Hz, 545 Hz), decay (20 ms – 2 s, 0.4 s), level, pan; Crash and Ride tune (±12 st), tone (1–16 kHz: 3.5, 5.5 kHz), decay (0.2–8 s: 1.5, 1.8 s), level, pan. Levels −60 … +6 dB (0 dB), pans ±100 %. Track parameters: Note, Velocity, Accent, BD … RC. Presets (6): 909 — Classic, Techno; 808 — Classic, Electro Boom; Lo-Fi — Dusty; Minimal — Tight.
+
+The editor: the pads (two rows of six, each lit by its voice's level, named with its column and key; a click plays the voice, harder towards the pad's top, velocity 127 to 40, and selects it), the selected voice's hit at velocity 100 as its settings make it now (rendered by a copy of the engine at 24 kHz, up to 4 s: its waveform over its decay, its peak and length), the kit (Volume, Accent, Vel → level and tone, the output meter), and each voice's controls. Toolkit-free views (`DrumsViews.cs`), tested in the studio.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Pitch | kick, toms, the snare's lower tone and the rim's ping at their tune once settled: within 5 cents | within 2.8 cents (kick 1.1, low tom 1.4, mid tom 2.8, high tom 1.2, snare 0.6, rim 1.6) |
+| Kick sweep | each cycle's pitch 2^(sweep · e^(−t/time)) above its tune: within 1 % | 50 Hz, 24 st, 20 ms: 0.075 %; 40 Hz, 12 st, 80 ms: 0.008 %; 90 Hz, 36 st, 5 ms: 0.6 % |
+| Decay | the time to fall 60 dB within 8 % of the setting | within 6 % (kick 0.1 s → 0.094 s; open hat 3 s → 3.07 s) |
+| Level, pan | level in dB within 0.1 dB, pan equal power | as set (tests) |
+| Velocity, accent, tone | velocity^(2 × Vel → level); the accent's gain; Vel → tone brighter with velocity | the closed hat's centroid 7.1, 8.3, 8.9 kHz at 40, 100, 127, 9.8 kHz accented; the snare's 0.4, 0.8, 1.3, 2.7 kHz |
+| Aliasing | the metallic oscillators alone (hats, crash, ride, cowbell), tune ±12 st, tone 16 kHz, 44.1 and 48 kHz: under −90 dB | −115.5 dB at worst (the closed hat +12 st at 44.1 kHz −118.5 dB); cowbell under −135 dB |
+| Retrigger, choke | the largest step at a retrigger within the two hits' own; four kicks in 2 ms within twice; a choked open hat silent within 5 ms | 0.54–0.95 ×; 1.29 ×; choke 0.67 ×, silent after 5 ms |
+| Keys, columns | the General MIDI keys from C2; each hit column at its velocity; Accent on the tick | as set (tests) |
+| Blocks, determinism | blocks of 256, 117 and 16: the same output; every hit of a voice the same | identical |
+| Audio thread | 2000 blocks of hits, chokes, notes, accents and tune, pan and decay moving: no allocation; in the studio, every voice from its keys and the BD column, each work algorithm | 0 bytes; 0 bytes per buffer |
+| CPU | all twelve voices hit every 100 ms at their longest decays (12 hits sounding), 48 kHz: over 10 × real time | 45 × (locally) |
+| Extremes | every parameter at random ends, 24 accented hits a round: finite | finite (peak +32 dBFS: drive 24 dB, level +6, Volume +12 and accent 12 dB at once) |
+| Presets | each sounds at the synths' level (kick, snare and hat together: loudest 50 ms between −30 and −6 dB RMS, peak under −1 dBFS) | all 6: −15.9 to −20.2 dB RMS, peaks −3.7 to −9.0 dBFS |
+| In ReBuzz | C2 on the Note column plays the kick at its tune; the SD column the snare; saved as .bmx and .bmxml and opened again, the kit comes back; the WPF editor (ReBuzzTests, Windows) | WPF_FIGURES |
+
+As built:
+
+- **Not built**: per-voice outputs (above), a sequencer of its own (patterns are ReBuzz's), flams and swing (Rout 909's Shuffle has no counterpart), sampled layers, a second kick or snare model.
+- **Against the Rout 909 at the defaults** (`DrumsCalibration` data, the probe in `NeoBuzz.MachineTests`' terms): each voice's pitch over time and its times to fall 20, 40 and 60 dB follow the sample's; the third-octave spectra match within a few dB where each voice has most of its energy, not band for band (the worst band differs by 7–21 dB, in bands where the sample has sub-fundamental thump or noise: the toms' 40–63 Hz, the ride's lows).
+- The Linux profile (`docs/machine-health.md`): warn, "silent at its defaults": the profiler plays A4 (MIDI 69), which is no drum key, and tries triggers only for generators without a Note parameter. Neo Drums sounds on C2 and from its hit columns (the tests above and the null test's three cases).
+
 ## 6. Phases
 
 | Phase | Content |
@@ -635,13 +689,14 @@ As built:
 | Successors (machine-safety.md §4, mcp-server.md §12.5) | Neo Ensemble; Neo EQ's graphic mode; Neo Delay |
 | Mix and master, the rest (mcp-server.md §8.2) | Neo Multiband; Neo Sampler (with the Pedal M1 successor pair, §12.5) |
 | Analysis, the rest (mcp-server.md §8.1) | Neo Scope |
+| The drum machine (mcp-server.md §8.2, §12.5) | Neo Drums (with the Rout 909 and FSM KickXP successor pairs, §12.10) |
 
 Each phase: pure tests (Linux CI), integration tests in ReBuzzTests (the machine loads, makes sound, its parameters and editor work, editor screenshots), then the package build.
 
-M0–M3 are done, and of the successors Neo Ensemble, Neo EQ's graphic mode and Neo Delay; and Neo Multiband and Neo Sampler; and Neo Scope. Every machine also ships factory presets (12–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
+M0–M3 are done, and of the successors Neo Ensemble, Neo EQ's graphic mode and Neo Delay; and Neo Multiband and Neo Sampler; and Neo Scope; and Neo Drums. Every machine also ships factory presets (6–18 each), checked by a test: each preset sounds, at a consistent level (synths: loudest 50 ms of a chord between −30 and −6 dB RMS, peak below −1 dBFS).
 
 ## 7. Not in this batch
 
-Additive and physical-modelling synths, convolution: candidates for the next batch (ensemble and phaser: Neo Ensemble, built; tape delay: Neo Delay's glide, saturation and wow, built; a multi-head tape echo with its heads' spacing is not; multiband: Neo Multiband, built, and its partitioned FFT convolution is the start of convolution; a sampler: Neo Sampler, built, without sample editing, slicing or time-stretch).
+Additive and physical-modelling synths, convolution: candidates for the next batch (ensemble and phaser: Neo Ensemble, built; tape delay: Neo Delay's glide, saturation and wow, built; a multi-head tape echo with its heads' spacing is not; multiband: Neo Multiband, built, and its partitioned FFT convolution is the start of convolution; a sampler: Neo Sampler, built, without sample editing, slicing or time-stretch; a drum synthesiser: Neo Drums, built, with one stereo output).
 
 The MCP server spec (docs/specs/mcp-server.md §8) sets the priorities by what an agent needs to mix and master: Neo EQ, Neo Limiter (true peak), Neo Utility and Neo Analyzer are built (M3), and Neo Delay, Neo Multiband and Neo Sampler, and the last of §8's machines, Neo Scope. Every Neo machine also publishes a manifest (its parameter table as JSON) so agents set values in real units.

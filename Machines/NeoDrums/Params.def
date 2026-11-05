@@ -39,7 +39,7 @@ KickPan     "Kick pan"            0 200 100   lin -100 100 % 0            | Wher
 
 group Snare
 SnareTune   "Snare tune"          0 1000 424   freq 100 400                | The body's lower tone, once its short fall has settled (the upper sits an octave above)
-SnareTone   "Snare tone"          0 1000 702   freq 1000 16000             | Centre of the snappy noise's band (from about half of it to 1.6 times it): brighter up
+SnareTone   "Snare tone"          0 1000 702   freq 1000 16000             | Centre of the snappy noise's band (from about half of it to 1.3 times it): brighter up
 SnareSnap   "Snare snap"          0 1000 500   pct                         | The snappy noise against the body (0 %: the body alone)
 SnareDecay  "Snare decay"         0 1000 486   time 0.05 2                 | Time for the snappy noise to fall 60 dB (the body takes about half)
 SnareLevel  "Snare level"         0 660 600   db -60 6 inf                | Level of the snare

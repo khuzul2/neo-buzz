@@ -99,7 +99,7 @@ namespace NeoBuzz.Drums
             new ParamDef(P.KickLevel, "KickLevel", "Kick level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "Kick", description: "Level of the kick"),
             new ParamDef(P.KickPan, "KickPan", "Kick pan", 0, 200, 100, MapKind.Linear, a: -100, b: 100, unit: "%", digits: 0, group: "Kick", description: "Where the kick sits, from −100 % (left) to +100 % (right)"),
             new ParamDef(P.SnareTune, "SnareTune", "Snare tune", 0, 1000, 424, MapKind.Freq, a: 100, b: 400, group: "Snare", description: "The body's lower tone, once its short fall has settled (the upper sits an octave above)"),
-            new ParamDef(P.SnareTone, "SnareTone", "Snare tone", 0, 1000, 702, MapKind.Freq, a: 1000, b: 16000, group: "Snare", description: "Centre of the snappy noise's band (from about half of it to 1.6 times it): brighter up"),
+            new ParamDef(P.SnareTone, "SnareTone", "Snare tone", 0, 1000, 702, MapKind.Freq, a: 1000, b: 16000, group: "Snare", description: "Centre of the snappy noise's band (from about half of it to 1.3 times it): brighter up"),
             new ParamDef(P.SnareSnap, "SnareSnap", "Snare snap", 0, 1000, 500, MapKind.Percent, group: "Snare", description: "The snappy noise against the body (0 %: the body alone)"),
             new ParamDef(P.SnareDecay, "SnareDecay", "Snare decay", 0, 1000, 486, MapKind.Time, a: 0.05, b: 2, group: "Snare", description: "Time for the snappy noise to fall 60 dB (the body takes about half)"),
             new ParamDef(P.SnareLevel, "SnareLevel", "Snare level", 0, 660, 600, MapKind.Db, a: -60, b: 6, flag: true, group: "Snare", description: "Level of the snare"),
