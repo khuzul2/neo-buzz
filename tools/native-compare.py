@@ -10,8 +10,9 @@
 # The builds of a machine, as gear names in the app's Gear (the script copies them in and takes them out again):
 #   "<gear> shipped"  the binary upstream ReBuzz ships (RunTime/Gear in the repo): the reference
 #   "<gear>"          what this package has (the rebuilt DLL where it ships in place, else the upstream one)
-#   "<gear> <label>"  each --variant LABEL=DIR: the DLL tools/build-natives.ps1 built (DIR\<Generators|Effects>);
-#                     each --unfixed LABEL=DIR likewise: build-natives.ps1 -Unfixed, a fixed machine without its fix
+#   "<gear> <label>"  each --variant LABEL=DIR: the DLL tools/build-natives.ps1 built (DIR\<Generators|Effects>)
+#   "<gear> <label>", "… <label> 2"  for --zeroed LABEL=DIR: upstream's binary of a machine with a source fix, run on a
+#                     zeroed heap (build-natives.ps1 -ZeroHeap; DIR\..\ZEROHEAP.dll goes beside the 64-bit host meanwhile)
 # Each gets a copy of the machine's manifest, so notes and triggers reach it as they reach the original.
 #
 # A build matches when every case's samples are bit-identical to the reference's, or differ by at most
@@ -20,29 +21,24 @@
 # and C runtime maths show up at −150…−110 dBFS). With --gate, the package's own build of every machine must
 # match, else the script fails: what songs hear doesn't change.
 #
-# A machine whose entry names a source fix (machines.json "fix": state upstream's code never initialises, so its start
-# is whatever the heap held and two instances of upstream's binary can play the same song differently) can't be held
-# to upstream's binary from the first sample: four instances of it ("<gear> shipped", "… shipped 2" to "… shipped 4")
-# split two or three ways, or all agree on a start that isn't the fix's, run to run. Its gate is three checks that
-# don't depend on what the heap held, each of which a broken rebuild fails:
-#   one sound     the fixed builds (the package's, every --variant: x64 and x86, each its own instance and process)
-#                 render the same bits in every case: the fix leaves nothing unset.
-#   the fix is    the fixed build renders the same bits as the --unfixed one in every case: upstream's code without
-#   the start     the fix, every allocation zeroed (tools/native-zeroed-heap.cpp), so it starts as a fresh allocation
-#                 did; the fix is that start and changes nothing else.
-#   settled       each case again after PREROLL beats of silence ("settled …"): by the time the input comes, the state
-#                 upstream left unset has converged (the glide has reached its cutoff, the first block's coefficients
-#                 are gone, the filters held zeros throughout), so upstream's instances render what the fixed build
-#                 does; it must match at least one of the four (bit for bit or within the tolerance; one instance
-#                 whose start was NaN or far out can't fail it). This is the check against upstream's binary.
-# Before settling, which of upstream's instances the fixed build matches is reported, not judged.
+# A machine whose entry names a source fix (machines.json "fix": state upstream's code never initialises) can't be held to
+# upstream's binary as it runs: each instance (its own host process) starts that state as whatever the process's heap
+# held, so four instances of it ("<gear> shipped", "… shipped 2" to "… shipped 4") split two or three ways, or all agree on
+# a start that isn't the fix's, run to run, and no case makes them agree (WahMan's glide never reaches its cutoff from a
+# start of 1e10). The fix starts that state at 0, where a fresh, zeroed allocation started it, so the gate holds the fixed
+# build to upstream's binary on a zeroed heap, which is deterministic (--zeroed: two instances, which must agree):
+#   one sound     the fixed builds (the package's, every --variant: x64 and x86, each its own instance) render the same
+#                 bits in every case: the fix leaves nothing unset.
+#   upstream's    the package's build renders the same bits as upstream's binary on a zeroed heap in every case: the
+#   start         rebuild is upstream's code, and the fix is the start a fresh allocation gives and nothing else.
+# Which of upstream's instances as they come the fixed build matches is reported, not judged.
 #
 # --pitch (§12.6's "Done when"): every pitched generator among them (its manifest's notes.pitched) plays the written
 # pitch through notes_write, its manifest's pitch offset applied as an agent's call applies it: A3, A4 and A5, each its own
 # render, heard by analyze's pitch (YIN) or, where that hears none (a 303's squelch), the profiler's harmonic sieve
 # (tools/machine_roles.py) on the note's first 0.37 s. A note heard a semitone or more away fails the script.
 #
-#   python tools/native-compare.py <ReBuzz.exe> <work> [--variant LABEL=DIR ...] [--unfixed LABEL=DIR] [--only gear,...]
+#   python tools/native-compare.py <ReBuzz.exe> <work> [--variant LABEL=DIR ...] [--zeroed LABEL=DIR] [--only gear,...]
 #                                  [--gate] [--shipped RunTime/Gear] [--json out.json] [--pitch] [--no-compare]
 
 import hashlib
@@ -66,10 +62,6 @@ TOLERANCE_DBFS = -100.0
 TEMPO = 120
 BEATS = 4
 TAIL = 2.0
-# Silence before the input in a fixed machine's settled cases (2 s at TEMPO). The slowest glide among the cases (FSM
-# WahPro2 at three quarters of its inertia range, 1.85 cutoff units per 64 samples; WahMan's slowest, 2.5) moves 2,500
-# units in it; a start anywhere in the cutoff's own range (−120 … 360 with the LFO) is at most 480 away.
-PREROLL = 4
 UPSTREAM_INSTANCES = 4
 SOURCE_NOTES = nt.SOURCE[3]
 
@@ -134,18 +126,15 @@ def raw_changes(glob, track, frac):
     return out
 
 
-def case_list(kind, fixed=False):
-    """(name, fraction of the raw range or None for the defaults, input gain dB, beats of silence first)."""
-    cases = [("default", None, 0.0, 0)]
-    cases += [("quarter", 0.25, 0.0, 0), ("three-quarters", 0.75, 0.0, 0)]
+def case_list(kind):
+    cases = [("default", None, 0.0)]
+    cases += [("quarter", 0.25, 0.0), ("three-quarters", 0.75, 0.0)]
     if kind == "effect":
-        cases.append(("quiet-input", None, -40.0, 0))
-    if fixed:
-        cases += [("settled " + name, frac, db, PREROLL) for name, frac, db, _ in cases]
+        cases.append(("quiet-input", None, -40.0))
     return cases
 
 
-def play_generator(c, machine, spec, trigger, mode, at=0):
+def play_generator(c, machine, spec, trigger, mode):
     c.call("pattern_create", machine=machine, name="P", length_beats=BEATS)
     if trigger:
         args = {"machine": machine, "pattern": "P", "param": trigger["param"], "shape": "step",
@@ -156,7 +145,7 @@ def play_generator(c, machine, spec, trigger, mode, at=0):
     else:
         notes = KICKS if "KickXP" in spec["gear"] else CHORD if "Infector" in spec["gear"] else GEN_NOTES
         c.call("notes_write", machine=machine, pattern="P", notes=notes, input=mode, apply_pitch_offset=False)
-    c.call("arrangement_place", machine=machine, pattern="P", at=[at])
+    c.call("arrangement_place", machine=machine, pattern="P", at=[0])
 
 
 def manifest_of(gear_dir, gear):
@@ -170,10 +159,10 @@ def manifest_of(gear_dir, gear):
 def render_case(run, spec, builds, case, man):
     """One render of every build of the machine side by side; {build: wav path} or raises."""
     c = run.client()
-    name, frac, input_db, preroll = case
+    name, frac, input_db = case
     kind = "generator" if spec["gearFolder"] == "Generators" else "effect"
     c.call("song_new", discard_unsaved=True, tempo_bpm=TEMPO)
-    c.call("song_set", song_end_beats=BEATS + preroll)
+    c.call("song_set", song_end_beats=BEATS)
     names = {}
     if kind == "effect":
         gear, preset, params, notes = nt.SOURCE
@@ -182,7 +171,7 @@ def render_case(run, spec, builds, case, man):
         nt.set_params(c, "Src", params)
         c.call("pattern_create", machine="Src", name="A", length_beats=BEATS)
         c.call("notes_write", machine="Src", pattern="A", notes=notes)
-        c.call("arrangement_place", machine="Src", pattern="A", at=[preroll])
+        c.call("arrangement_place", machine="Src", pattern="A", at=[0])
     notes = man.get("notes") or {}
     trigger = (man.get("profile") or {}).get("trigger")
     mode = notes.get("input") if notes.get("input") not in (None, "none") else "tracks"
@@ -201,8 +190,8 @@ def render_case(run, spec, builds, case, man):
             if changes:
                 c.call("param_set", machine=m, changes=changes, allow_unsafe=True)
         if kind == "generator":
-            play_generator(c, m, spec, trigger, mode, at=preroll)
-    r = c.call("render", **{"from": 0, "to": BEATS + preroll, "tail_seconds": TAIL, "probes": list(names.values()),
+            play_generator(c, m, spec, trigger, mode)
+    r = c.call("render", **{"from": 0, "to": BEATS, "tail_seconds": TAIL, "probes": list(names.values()),
                             "name": (spec["gear"] + "-" + name).replace(" ", "_")})
     files = {p["machine"]: p["file"] for p in r.get("probes") or []}
     diverged = {d.get("machine") for d in r.get("diverged") or []}
@@ -299,13 +288,13 @@ def fmt(x):
 
 
 
-# The roles of a machine's builds: instances of upstream's binary, the package's own build, the --variant builds
-# (built from the sources with the fix, where the machine has one) and the --unfixed ones.
+# The roles of a machine's builds: instances of upstream's binary as it comes ("upstream") and on a zeroed heap
+# ("zeroed"), the package's own build, and the --variant builds (from the sources, with the fix where there is one).
 OURS = ("package (rebuilt)", "rebuilt")
 
 
 def where(d):
-    """' (X dBFS, from Y s)' for a difference [identical, max difference dBFS, first differing s]."""
+    """' (X dBFS, from Y s)' for a difference [the same bits, max difference dBFS, first differing s]."""
     if not d:
         return ""
     _, worst, first = d
@@ -314,19 +303,16 @@ def where(d):
 
 def judge_fixed(cases, roles):
     """The gate on a machine with a source fix (the top of this file): for every build that isn't an instance of
-    upstream's binary, its verdict and, for the builds with the fix, what fails it.
+    upstream's binary, its verdict and what fails it.
 
     cases: {case name: {label: entry}}; an entry has "status" ("ok" or "diverged") or "error", "sha1" and, for a
-    build that isn't upstream's, "as_upstream" (the upstream labels it matches: bit for bit or within the
-    tolerance), "closest_upstream" ([identical, max difference dBFS, first differing s] against the closest of
-    them) and "vs" ({label: [identical, …]} against each other build that isn't upstream's; identical means the
-    same bits). roles: {label: "upstream", "package (upstream)", "package (rebuilt)", "rebuilt" or "unfixed"}.
+    build that isn't upstream's as it comes, "as_upstream" (the upstream labels it matches: bit for bit or within the
+    tolerance) and "vs" ({label: [the same bits, max difference dBFS, first differing s]} against each other build that
+    isn't). roles: {label: "upstream", "zeroed", "package (upstream)", "package (rebuilt)" or "rebuilt"}.
     Returns {label: {"verdict": str, "failures": [str]}}; the gate is the package build's failures."""
     upstream = [lb for lb, r in roles.items() if r == "upstream"]
     ours = [lb for lb, r in roles.items() if r in OURS]
-    unfixed = [lb for lb, r in roles.items() if r == "unfixed"]
-    settled = [c for c in cases if c.startswith("settled ")]
-    before = [c for c in cases if not c.startswith("settled ")]
+    zeroed = [lb for lb, r in roles.items() if r == "zeroed"]
     out = {}
     for label, role in roles.items():
         if role == "upstream":
@@ -334,43 +320,36 @@ def judge_fixed(cases, roles):
         es = {c: cases[c].get(label) or {"error": "not rendered"} for c in cases}
         failures = [f"{c}: {e.get('error') or e.get('status')}" for c, e in es.items()
                     if "error" in e or e.get("status") not in (None, "ok")]
-        # Once settled: as at least one of upstream's instances (the check against upstream's binary).
-        for c in settled:
-            if es[c].get("as_upstream") or "error" in es[c]:
+        alike, unlike = [], []
+        if role == "zeroed":
+            others = [z for z in zeroed if z != label]
+        elif role in OURS:
+            others = [x for x in ours if x != label] + zeroed
+        else:
+            others = zeroed
+        for t in others:
+            bad = [c for c in cases if "error" not in es[c] and not ((es[c].get("vs") or {}).get(t) or [False])[0]]
+            if not bad:
+                alike.append(t)
                 continue
-            groups = {}
-            for u in upstream:
-                groups.setdefault((cases[c].get(u) or {}).get("sha1"), []).append(u)
-            failures.append(f"{c}: unlike every instance of upstream's" + where(es[c].get("closest_upstream"))
-                            + ("; upstream's own instances render " + " | ".join(", ".join(g) for g in groups.values())
-                               if len(groups) > 1 else "") + ": the rebuild doesn't play upstream's DSP"
-                            + (", or the fix changes more than the start" if role in OURS else ""))
-        # One sound (the fixed builds alike in every case) and the fix as the start a zeroed allocation gives.
-        alike = []
-        if role in OURS:
-            for t in [x for x in ours if x != label] + unfixed:
-                bad = [c for c in cases if "error" not in es[c] and not ((es[c].get("vs") or {}).get(t) or [False])[0]]
-                if not bad:
-                    alike.append(t)
-                    continue
-                d = (es[bad[0]].get("vs") or {}).get(t)
-                if t in unfixed:
-                    failures.append(f"not the same bits as {t} (upstream's code from a zeroed start) in {', '.join(bad)}" + where(d)
-                                    + ": the fix isn't the start a fresh allocation gives, or changes more than the start")
-                else:
-                    failures.append(f"not the same bits as {t} in {', '.join(bad)}" + where(d)
-                                    + ": the fix leaves state unset, or the two builds compute differently")
+            unlike.append(t)
+            d = (es[bad[0]].get("vs") or {}).get(t)
+            if role == "zeroed":
+                why = "upstream's binary on a zeroed heap plays differently twice: the zeroing didn't take (ZEROHEAP.dll not loaded?), or its start depends on more than its heap"
+            elif t in zeroed:
+                why = "not upstream's binary from a zeroed start: the rebuild doesn't play upstream's code, or the fix is more than that start"
+            else:
+                why = "the fix leaves state unset, or the two builds compute differently"
+            failures.append(f"not the same bits as {t} in {', '.join(bad)}" + where(d) + ": " + why)
         n = len(upstream)
         verdict = []
-        if settled:
-            counts = [len(es[c].get("as_upstream") or []) for c in settled]
-            verdict.append(("once settled as upstream's instances" if all(counts) else "once settled UNLIKE upstream's instances in a case")
-                           + f" ({', '.join(f'{k}/{n}' for k in counts)})")
         if alike:
             verdict.append(f"the same bits as {'/'.join(alike)} in every case")
-        if before:
-            verdict.append("from the start as " + ", ".join(f"{len(es[c].get('as_upstream') or [])}/{n}" for c in before)
-                           + " of upstream's instances (not judged: their start is heap garbage)")
+        if unlike:
+            verdict.append(f"UNLIKE {'/'.join(unlike)}")
+        if n:
+            verdict.append("as " + ", ".join(f"{len(es[c].get('as_upstream') or [])}/{n}" for c in cases)
+                           + " of upstream's instances as they come (not judged: their start is heap garbage)")
         out[label] = {"verdict": "; ".join(verdict), "failures": failures}
     return out
 
@@ -381,7 +360,7 @@ def main(argv):
     except AttributeError:
         pass
     if len(argv) < 2:
-        print(__doc__ or "usage: native-compare.py <ReBuzz.exe> <work> [--variant LABEL=DIR] [--unfixed LABEL=DIR] [--only a,b] [--gate]")
+        print(__doc__ or "usage: native-compare.py <ReBuzz.exe> <work> [--variant LABEL=DIR] [--zeroed LABEL=DIR] [--only a,b] [--gate]")
         return 2
     exe, work = os.path.abspath(argv[0]), os.path.abspath(argv[1])
     variants, only, gate, shipped_dir, json_out = [], None, False, os.path.join(ROOT, "RunTime", "Gear"), None
@@ -389,9 +368,9 @@ def main(argv):
     i = 2
     while i < len(argv):
         a = argv[i]
-        if a in ("--variant", "--unfixed"):
+        if a in ("--variant", "--zeroed"):
             label, _, d = argv[i + 1].partition("=")
-            variants.append((label, os.path.abspath(d), "unfixed" if a == "--unfixed" else "rebuilt"))
+            variants.append((label, os.path.abspath(d), "zeroed" if a == "--zeroed" else "rebuilt"))
             i += 2
         elif a == "--only":
             only = set(argv[i + 1].split(","))
@@ -449,12 +428,22 @@ def main(argv):
             for label, d, role in variants:
                 for ext in (".x64.dll", ".dll"):
                     src = os.path.join(d, s["gearFolder"], s["gear"] + ext)
-                    if os.path.exists(src):
-                        dst = os.path.join(folder, s["gear"] + " " + label + ext)
+                    if not os.path.exists(src):
+                        continue
+                    for lb in (label, label + " 2") if role == "zeroed" else (label,):
+                        dst = os.path.join(folder, s["gear"] + " " + lb + ext)
                         shutil.copyfile(src, dst)
                         added.append(dst)
-                        builds.append((label, s["gear"] + " " + label))
-                        rl[label] = role
+                        builds.append((lb, s["gear"] + " " + lb))
+                        rl[lb] = role
+                    if role == "zeroed":
+                        # Its ZEROHEAP.dll beside the 64-bit host, where the loader looks first.
+                        proxy, host = os.path.join(os.path.dirname(d), "ZEROHEAP.dll"), os.path.join(os.path.dirname(exe), "bin64", "ZEROHEAP.dll")
+                        if not os.path.exists(proxy):
+                            raise SystemExit(f"{proxy} not found (build-natives.ps1 -ZeroHeap builds it)")
+                        if not os.path.exists(host):
+                            shutil.copyfile(proxy, host)
+                            added.append(host)
             man_src = os.path.join(folder, s["gear"] + ".machine.json")
             if os.path.exists(man_src):
                 for label, g in builds:
@@ -496,7 +485,7 @@ def main(argv):
             ref_label = builds[0][0]
             res = {label: {"cases": {}} for label, _ in builds}
             upstream = [lb for lb, _ in builds if rl[lb] == "upstream"]
-            for case in case_list(kind, fixed):
+            for case in case_list(kind):
                 t = time.time()
                 try:
                     files = render_case(run, s, builds, case, man)
@@ -534,10 +523,9 @@ def main(argv):
                         entry["peak_dbfs"] = peak_db(f)
                         entry["sha1"] = sha[label]
                     if fixed and f and rl[label] != "upstream":
-                        # A fixed machine: which of upstream's instances it matches, and each other build of ours.
+                        # A fixed machine: which of upstream's instances as they come it matches, and every other build.
                         ds = {u: compare(u, label) for u in upstream if files.get(u, (0, None))[1]}
                         entry["as_upstream"] = [u for u, d in ds.items() if d[0] or d[1] <= TOLERANCE_DBFS]
-                        entry["closest_upstream"] = min(ds.values(), key=lambda d: d[1]) if ds else None
                         entry["vs"] = {o: compare(o, label) for o, _ in builds if o != label and rl[o] != "upstream" and files.get(o, (0, None))[1]}
                     res[label]["cases"][case[0]] = entry
                 groups = {}
@@ -564,7 +552,7 @@ def main(argv):
                 res[label]["match"] = (label == ref_label) or (worst is not None and worst <= TOLERANCE_DBFS and not errors)
                 res[label]["errors"] = len(errors)
             if fixed:
-                cases = {c[0]: {lb: res[lb]["cases"].get(c[0]) for lb, _ in builds} for c in case_list(kind, fixed)}
+                cases = {c[0]: {lb: res[lb]["cases"].get(c[0]) for lb, _ in builds} for c in case_list(kind)}
                 for label, j in judge_fixed(cases, rl).items():
                     res[label]["judged"] = j
             results[s["gear"]] = {"reference": ref_label, "fixed": fixed, "roles": rl, "builds": res}
@@ -603,8 +591,8 @@ def main(argv):
             if gate and label == "package (rebuilt)":
                 if r["fixed"]:
                     why = b.get("judged", {"failures": ["not judged"]})["failures"]
-                    if not any(v == "unfixed" for v in r["roles"].values()):
-                        why = why + ["no --unfixed build to hold the fix to"]
+                    if not any(v == "zeroed" for v in r["roles"].values()):
+                        why = why + ["no --zeroed build (upstream's binary on a zeroed heap) to hold it to"]
                     if why:
                         failed.append(f"{gear} ({label})")
                         reasons += [f"{gear} ({label}): {w}" for w in why]
@@ -622,7 +610,7 @@ def main(argv):
     print(summary, flush=True)
     if json_out:
         with open(json_out, "w", encoding="utf-8") as f:
-            json.dump({"tolerance_dbfs": TOLERANCE_DBFS, "preroll_beats": PREROLL, "results": results, "pitch": pitches, "failures": reasons},
+            json.dump({"tolerance_dbfs": TOLERANCE_DBFS, "results": results, "pitch": pitches, "failures": reasons},
                       f, indent=1, default=str)
     if os.environ.get("GITHUB_ACTIONS"):
         kind = "error" if failed else "notice"

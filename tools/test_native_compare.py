@@ -1,20 +1,31 @@
-# Fork (docs/specs/mcp-server.md §12.14): unit tests for tools/native-compare.py's gate on the natives with a source
-# fix (judge_fixed), fed the groupings the package job has seen, so the verdict on each is known without Windows.
+# Fork (docs/specs/mcp-server.md §12.14): unit tests for tools/native-compare.py's gate on the natives with a source fix
+# (judge_fixed), fed the groupings the package job has seen, so the verdict on each is known without Windows; and for
+# tools/native-zeroheap.py, which makes upstream's binaries run on a zeroed heap, on the binaries in RunTime/Gear.
 # Run: python3 -m unittest discover -s tools -p "test_*.py"
 
 import importlib.util
 import os
+import tempfile
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-_spec = importlib.util.spec_from_file_location("native_compare", os.path.join(HERE, "native-compare.py"))
-nc = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(nc)
+ROOT = os.path.dirname(HERE)
+
+
+def load(name, file):
+    spec = importlib.util.spec_from_file_location(name, os.path.join(HERE, file))
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+nc = load("native_compare", "native-compare.py")
+zh = load("native_zeroheap", "native-zeroheap.py")
 
 UP = ["shipped", "shipped 2", "shipped 3", "shipped 4"]
 ROLES = {**{u: "upstream" for u in UP}, "package (rebuilt)": "package (rebuilt)", "R64": "rebuilt", "R86": "rebuilt",
-         "U64": "unfixed"}
-BASE = ["default", "quarter", "three-quarters", "quiet-input"]
+         "Z64": "zeroed", "Z64 2": "zeroed"}
+CASES = ["default", "quarter", "three-quarters", "quiet-input"]
 
 
 def case(bits, apart=2.0):
@@ -22,105 +33,94 @@ def case(bits, apart=2.0):
     out = {}
     for label, b in bits.items():
         e = {"status": "ok", "sha1": f"sha-{b}"}
-        if ROLES.get(label, "upstream") != "upstream":
-            ds = {u: [bits[u] == b, float("-inf") if bits[u] == b else apart, None if bits[u] == b else 0.01]
-                  for u in UP if u in bits}
-            e["as_upstream"] = [u for u, d in ds.items() if d[0] or d[1] <= nc.TOLERANCE_DBFS]
-            e["closest_upstream"] = min(ds.values(), key=lambda d: d[1])
+        if ROLES[label] != "upstream":
+            e["as_upstream"] = [u for u in UP if bits[u] == b]
             e["vs"] = {o: [bits[o] == b, float("-inf") if bits[o] == b else apart, None if bits[o] == b else 0.5]
-                       for o in bits if o != label and ROLES.get(o) != "upstream"}
+                       for o in bits if o != label and ROLES[o] != "upstream"}
         out[label] = e
     return out
 
 
-def fixed_bits(up, ours="F", r86=None, unfixed=None):
-    """Upstream's four instances rendering `up` (four values), our builds `ours` (R86 and U64 may differ)."""
-    return {**dict(zip(UP, up)), "package (rebuilt)": ours, "R64": ours, "R86": r86 or ours, "U64": unfixed or ours}
+def renders(up, ours="F", r86=None, zeroed="F", zeroed2=None):
+    """Upstream's four instances as they come rendering `up` (four values), ours `ours`, the zeroed upstream `zeroed`."""
+    return {**dict(zip(UP, up)), "package (rebuilt)": ours, "R64": ours, "R86": r86 or ours, "Z64": zeroed, "Z64 2": zeroed2 or zeroed}
 
 
-def machine(before, settled):
-    """{case: entries}: the four cases from the start, then the four settled ones."""
-    cases = {c: case(b) for c, b in zip(BASE, before)}
-    cases.update({"settled " + c: case(b) for c, b in zip(BASE, settled)})
-    return cases
-
-
-SETTLED_OK = [fixed_bits("FFFF")] * 4
+def machine(*per_case):
+    return {c: case(b) for c, b in zip(CASES, per_case)}
 
 
 class FixedGateTests(unittest.TestCase):
-    def gate(self, cases):
-        return nc.judge_fixed(cases, ROLES)["package (rebuilt)"]
+    def gate(self, cases, label="package (rebuilt)"):
+        return nc.judge_fixed(cases, ROLES)[label]
 
     def test_run_41983193582_passes(self):
-        # WahMan in run 41983193582: at the defaults all four upstream instances agreed on a start that isn't the
-        # fix's (the old gate failed); at the other cases they split as below. Once settled they render ours.
-        j = self.gate(machine([fixed_bits("GGGG"), fixed_bits("FHFH"), fixed_bits("FHFF"), fixed_bits("FHHF")], SETTLED_OK))
+        # WahMan in run 41983193582: at the defaults all four upstream instances agreed on a start that isn't the fix's
+        # (the old gate, as one of them, failed); at the other cases they split as below. Upstream's binary on a zeroed
+        # heap renders what the fixed build does.
+        j = self.gate(machine(renders("GGGG"), renders("FHFH"), renders("FHFF"), renders("FHHF")))
         self.assertEqual(j["failures"], [])
-        self.assertIn("once settled as upstream's instances (4/4, 4/4, 4/4, 4/4)", j["verdict"])
-        self.assertIn("from the start as 0/4, 2/4, 3/4, 2/4", j["verdict"])
-        self.assertIn("the same bits as R64/R86/U64", j["verdict"])
+        self.assertIn("the same bits as R64/R86/Z64/Z64 2 in every case", j["verdict"])
+        self.assertIn("as 0/4, 2/4, 3/4, 2/4 of upstream's instances as they come", j["verdict"])
 
-    def test_one_upstream_instance_settled_is_enough(self):
-        # An instance whose start was NaN or far out never converges: three of four like that still pass.
-        settled = [fixed_bits("FXYZ"), fixed_bits("XFXX"), fixed_bits("FFFF"), fixed_bits("XXXF")]
-        self.assertEqual(self.gate(machine(SETTLED_OK, settled))["failures"], [])
+    def test_no_upstream_instance_alike_is_not_judged(self):
+        # Run 42000620560's settled quiet-input: three of four upstream instances agreed on a sound that isn't the
+        # zeroed start's, after 2 s of silence, and the fourth matched. None at all must pass as well.
+        self.assertEqual(self.gate(machine(*[renders("XXXX")] * 4))["failures"], [])
 
-    def test_a_broken_rebuild_fails_once_settled(self):
-        # Our builds (and the unfixed one, built the same way) render something upstream's instances never do.
-        bad = [{**dict(zip(UP, "UUUU")), "package (rebuilt)": "F", "R64": "F", "R86": "F", "U64": "F"}] * 4
-        j = self.gate(machine([fixed_bits("UUUU")] * 4, bad))
-        self.assertEqual(len(j["failures"]), 4)
-        self.assertIn("settled default: unlike every instance of upstream's (2.0 dBFS, from 0.01 s)", j["failures"][0])
-        self.assertIn("the rebuild doesn't play upstream's DSP", j["failures"][0])
-
-    def test_upstream_disagreeing_after_the_preroll_is_named(self):
-        bad = [fixed_bits("ABCD")] + SETTLED_OK[1:]
-        j = self.gate(machine(SETTLED_OK, bad))
-        self.assertEqual(len(j["failures"]), 1)
-        self.assertIn("upstream's own instances render shipped | shipped 2 | shipped 3 | shipped 4", j["failures"][0])
+    def test_a_broken_rebuild_fails(self):
+        # The rebuild plays something upstream's binary on a zeroed heap doesn't (the same in every build of ours).
+        j = self.gate(machine(renders("FFFF", ours="B"), *[renders("FFFF")] * 3))
+        self.assertEqual(len(j["failures"]), 2)
+        self.assertTrue(all("not upstream's binary from a zeroed start" in f for f in j["failures"]))
+        self.assertIn("not the same bits as Z64 in default (2.0 dBFS, from 0.50 s)", j["failures"][0])
 
     def test_x86_unlike_x64_fails(self):
-        j = self.gate(machine([fixed_bits("FFFF", r86="G")] + [fixed_bits("FFFF")] * 3, SETTLED_OK))
+        j = self.gate(machine(renders("FFFF", r86="G"), *[renders("FFFF")] * 3))
         self.assertEqual(len(j["failures"]), 1)
         self.assertIn("not the same bits as R86 in default (2.0 dBFS, from 0.50 s)", j["failures"][0])
         self.assertIn("the fix leaves state unset", j["failures"][0])
+        # and R86's own verdict names both what it's unlike
+        self.assertIn("UNLIKE", self.gate(machine(renders("FFFF", r86="G"), *[renders("FFFF")] * 3), "R86")["verdict"])
 
-    def test_a_fix_that_isnt_the_zeroed_start_fails(self):
-        # A fix that starts somewhere else than a fresh allocation: alike in every instance and once settled,
-        # but not upstream's code from a zeroed start.
-        j = self.gate(machine([fixed_bits("FFFF", unfixed="Z")] * 4, SETTLED_OK))
-        self.assertEqual(len(j["failures"]), 1)
-        self.assertIn("not the same bits as U64 (upstream's code from a zeroed start) in default, quarter, three-quarters, quiet-input",
-                      j["failures"][0])
+    def test_a_zeroing_that_didnt_take_is_named(self):
+        j = self.gate(machine(renders("FFFF", zeroed2="G"), *[renders("FFFF")] * 3), "Z64")
+        self.assertIn("the zeroing didn't take", j["failures"][0])
 
     def test_a_diverged_case_fails(self):
-        cases = machine(SETTLED_OK, SETTLED_OK)
+        cases = machine(*[renders("FFFF")] * 4)
         cases["quarter"]["package (rebuilt)"]["status"] = "diverged"
         self.assertIn("quarter: diverged", self.gate(cases)["failures"])
 
-    def test_unfixed_build_gets_a_verdict_not_a_gate(self):
-        j = nc.judge_fixed(machine([fixed_bits("GGGG", unfixed="G")] * 4, SETTLED_OK), ROLES)["U64"]
-        self.assertIn("from the start as 4/4, 4/4, 4/4, 4/4", j["verdict"])
-        self.assertEqual(j["failures"], [])
 
+class ZeroHeapTests(unittest.TestCase):
+    def test_upstreams_wahs_import_zeroheap_and_nothing_else_changes(self):
+        for gear in ("FSM WahMan", "FSM WahPro2", "FSM WahManPro"):
+            src = os.path.join(ROOT, "RunTime", "Gear", "Effects", gear + ".x64.dll")
+            with tempfile.TemporaryDirectory() as d:
+                dst = os.path.join(d, "out.dll")
+                fns = zh.patch(src, dst)
+                self.assertIn("HeapAlloc", fns)
+                with open(src, "rb") as f:
+                    a = f.read()
+                with open(dst, "rb") as f:
+                    b = f.read()
+                self.assertEqual(len(a), len(b))
+                differ = [i for i in range(len(a)) if a[i] != b[i]]
+                self.assertTrue(0 < len(differ) <= len(zh.PROXY), f"{gear}: only the import's name changes")
+                dlls = [n.upper() for n, _, _ in zh.Pe(b).imports()]
+                self.assertIn("ZEROHEAP.DLL", dlls)
+                self.assertNotIn("KERNEL32.DLL", dlls)
 
-class CaseTests(unittest.TestCase):
-    def test_fixed_effects_add_settled_cases(self):
-        plain = nc.case_list("effect")
-        cases = nc.case_list("effect", fixed=True)
-        self.assertEqual([c[0] for c in plain], BASE)
-        self.assertEqual([c[0] for c in cases], BASE + ["settled " + c for c in BASE])
-        self.assertTrue(all(c[3] == 0 for c in plain))
-        self.assertTrue(all(c[3] == nc.PREROLL for c in cases[4:]))
-        self.assertEqual([c[1:3] for c in cases[4:]], [c[1:3] for c in plain])
-
-    def test_preroll_outlasts_the_slowest_glide(self):
-        # FSM WahPro2 at three quarters of its inertia (raw 45 of 0…60): 10·e^(−9·45/240) cutoff units per 64 samples.
-        import math
-        step = 10 * math.exp(-9 * 45 / 240)
-        blocks = nc.PREROLL * 60 / nc.TEMPO * 44100 / 64
-        self.assertGreater(step * blocks, 480 * 5)
+    def test_the_def_forwards_all_but_heapalloc(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "z.def")
+            zh.write_def(path, ["HeapAlloc", "HeapFree", "GetLastError", "HeapFree"])
+            with open(path, encoding="ascii") as f:
+                lines = f.read().split("\n")
+            self.assertEqual(lines[:2], ["LIBRARY ZEROHEAP", "EXPORTS"])
+            self.assertEqual([x.strip() for x in lines[2:5]],
+                             ["GetLastError=kernel32.GetLastError", "HeapAlloc=NbZeroHeapAlloc", "HeapFree=kernel32.HeapFree"])
 
 
 if __name__ == "__main__":
