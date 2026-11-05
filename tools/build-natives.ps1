@@ -53,6 +53,11 @@ if (-not $VsPath) {
 }
 
 function Q([string]$s) { '"' + $s + '"' }
+function Get-Prop($Object, [string]$Name) {
+    $p = $Object.PSObject.Properties[$Name]
+    if ($p) { return $p.Value }
+    return $null
+}
 # A folder for cl's /Fo: two backslashes before the closing quote (one would escape it).
 function QDir([string]$s) { '"' + $s + '\\"' }
 
@@ -84,14 +89,13 @@ foreach ($platform in $Platforms) {
         $gearDir = Join-Path $out ('Gear\' + $m.gearFolder)
         New-Item -ItemType Directory -Force -Path $gearDir | Out-Null
         $dll = Join-Path $gearDir ($m.gear + $Suffix + $(if ($platform -eq 'x64') { '.x64.dll' } else { '.dll' }))
-        $defs = (@($m.defines) | Where-Object { $_ } | ForEach-Object { "/D$_" }) -join ' '
+        $defs = (@(Get-Prop $m 'defines') | Where-Object { $_ } | ForEach-Object { "/D$_" }) -join ' '
         $srcs = (@($m.sources) | ForEach-Object { Q (Join-Path $dir $_) }) -join ' '
         $libs = @()
-        foreach ($l in @($m.libs)) {
+        foreach ($l in @(@(Get-Prop $m 'libs') | Where-Object { $_ })) {
             switch ($l) {
                 'mdk' { $libs += (Q $mdk) }
                 'dsplib' { $libs += (Q $dsplib) }
-                $null { }
                 default { $libs += "$l.lib" }
             }
         }
@@ -109,8 +113,9 @@ foreach ($platform in $Platforms) {
         $dll = Join-Path $gearDir ($m.gear + $Suffix + $(if ($platform -eq 'x64') { '.x64.dll' } else { '.dll' }))
         if (Test-Path -LiteralPath $dll) {
             $built++
-            if (-not $NoExtras -and (Get-Member -InputObject $m -Name files -MemberType NoteProperty)) {
-                foreach ($p in $m.files.PSObject.Properties) {
+            $files = Get-Prop $m 'files'
+            if (-not $NoExtras -and $files) {
+                foreach ($p in $files.PSObject.Properties) {
                     Copy-Item -LiteralPath (Join-Path (Join-Path $src $m.dir) $p.Name) -Destination (Join-Path $gearDir $p.Value) -Force
                 }
             }
