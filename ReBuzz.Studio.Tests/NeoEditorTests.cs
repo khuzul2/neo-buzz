@@ -384,6 +384,77 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        /// <summary>The sequence number of the newest snapshot a Neo Analyzer's or Neo Scope's engine has published (through reflection).</summary>
+        static long NewestSnapshot(MachineCore m)
+        {
+            var engine = Get(m.ManagedMachine, "Engine");
+            var read = engine.GetType().GetMethod("Read")!;
+            var snapshot = Activator.CreateInstance(read.GetParameters()[0].ParameterType)!;
+            read.Invoke(engine, new[] { snapshot });
+            return (long)snapshot.GetType().GetField("Sequence")!.GetValue(snapshot)!;
+        }
+
+        [AvaloniaTest]
+        public void TheAnalysisEditorsDrawTheNewestSnapshotAfterEveryRender()
+        {
+            // Neo Poly (a chord held) → Neo Analyzer → Neo Scope → Master, both editors open. A frame of one of an editor's
+            // graphs, a short offline render (a few blocks, a few ms of wall clock here), another frame: the second draws the
+            // engine's newest snapshot, not the first frame's. The editors copied the snapshot at most every 10 ms of wall
+            // clock, so a render that outran that left the next frame drawing the one before (Fork Mac 41966698814: Neo
+            // Scope's; Neo Analyzer's had the same throttle). The frames are one graph each, the smallest, drawn into a bitmap:
+            // a whole window's frame can take the 10 ms by itself.
+            var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var poly = Add("Neo Poly", "Fresh Poly", -0.6f, 0);
+            var analyzer = Add("Neo Analyzer", "Fresh Analyzer", -0.2f, 0);
+            var scope = Add("Neo Scope", "Fresh Scope", 0.2f, 0);
+            var note = poly.ParameterGroups[2].Parameters.First(p => p.Name == "Note");
+            int[] chord = { (3 << 4) + 1, (3 << 4) + 5, (3 << 4) + 8 };   // C-3, E-3, G-3
+            try
+            {
+                Core.SongCore.ConnectMachines(poly, analyzer, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                Core.SongCore.ConnectMachines(analyzer, scope, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                Core.SongCore.ConnectMachines(scope, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                poly.TrackCount = Math.Max(poly.TrackCount, 3);
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, chord[t]);
+                var editors = new[] { (Machine: analyzer, Window: OpenEditor(analyzer)), (Machine: scope, Window: OpenEditor(scope)) };
+                Run(0.2);
+                Assert.Multiple(() =>
+                {
+                    foreach (var (machine, window) in editors)
+                    {
+                        var live = Get(window.Content!, "Data");
+                        var snapshot = Field(live, "Snapshot");
+                        var graph = Controls(window, "GraphView").OrderBy(g => g.Bounds.Width * g.Bounds.Height).First();
+                        using var bitmap = new RenderTargetBitmap(new PixelSize((int)Math.Ceiling(graph.Bounds.Width), (int)Math.Ceiling(graph.Bounds.Height)));
+                        long Drawn()
+                        {
+                            bitmap.Render(graph);
+                            return (long)Field(snapshot, "Sequence");
+                        }
+                        long drawn = Drawn();
+                        Assert.That(drawn, Is.EqualTo(NewestSnapshot(machine)), $"{machine.Name}: the first frame draws the newest snapshot");
+                        for (int k = 0; k < 8; k++)
+                        {
+                            var clock = System.Diagnostics.Stopwatch.StartNew();
+                            Run(0.05);
+                            long next = Drawn();
+                            double ms = clock.Elapsed.TotalMilliseconds;
+                            long newest = NewestSnapshot(machine);
+                            Assert.That(next, Is.Not.EqualTo(drawn), $"{machine.Name}: the frame after a render {ms:F1} ms long draws another snapshot than the one before");
+                            Assert.That(next, Is.EqualTo(newest), $"{machine.Name}: the engine's newest");
+                            drawn = next;
+                        }
+                    }
+                });
+            }
+            finally
+            {
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, BuzzGUI.Common.BuzzNote.Off);
+                Run(0.1);
+                Remove(scope, analyzer, poly);
+            }
+        }
+
         [AvaloniaTest]
         public void NeoEnsemblesSweepFollowsItsModeAndItsLfo()
         {
@@ -970,8 +1041,7 @@ namespace ReBuzz.Studio.Tests
                 var timer = new System.Diagnostics.Stopwatch();
                 for (int k = 0; k < 20; k++)
                 {
-                    Run(1.0 / 30);
-                    Thread.Sleep(11);                                   // the editors read a new snapshot at most every 10 ms
+                    Run(1.0 / 30);                                      // the editors read the snapshot the render published
                     timer.Start();
                     foreach (var g in graphs) g.InvalidateVisual();
                     bitmap.Render(content);
@@ -1013,7 +1083,7 @@ namespace ReBuzz.Studio.Tests
                     using var bitmap = new RenderTargetBitmap(size);
                     bitmap.Render(c);
                     var t = new System.Diagnostics.Stopwatch();
-                    for (int k = 0; k < 20; k++) { Run(1.0 / 30); Thread.Sleep(11); t.Start(); c.InvalidateVisual(); bitmap.Render(c); t.Stop(); }
+                    for (int k = 0; k < 20; k++) { Run(1.0 / 30); t.Start(); c.InvalidateVisual(); bitmap.Render(c); t.Stop(); }
                     return t.Elapsed.TotalMilliseconds / 20;
                 }
                 foreach (var (name, value, label) in new[] { ("Trail", 0, "trail off"), ("Trail", 3, "trail long"), ("Display", 0, "L only"), ("Display", 4, "L&R"), ("Sync", 0, "free 2ms"), ("Sync", 5, "1 bar"), ("Vector", 1, "polar"), ("Vector", 0, "lissajous"),
