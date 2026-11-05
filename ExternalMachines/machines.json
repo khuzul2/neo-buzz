@@ -732,6 +732,23 @@
       "notes": "Tiny .bmx player with C reimplementations of classic machines, plus demo songs"
     }
   ],
+  "licenseTexts": {
+    "$comment": "The licence texts the package ships (Licenses\\<id>.txt), keyed by the id a machine's 'license' starts with ('-or-later' and '-only' aside: 'GPL-3.0-or-later (...)' is GPL-3.0). build.ps1 names every machine built from source in the package in Licenses\\NOTICE.txt, with its licence and source, and ships the text of each licence here among them; a native ships rebuilt only with its licence's text. 'file' is under ExternalMachines; 'check' are lines its head must have.",
+    "LGPL-2.1": {
+      "file": "source/buzztrax-buzzmachines/FSM/COPYING",
+      "check": [
+        "GNU LESSER GENERAL PUBLIC LICENSE",
+        "Version 2.1, February 1999"
+      ]
+    },
+    "GPL-3.0": {
+      "file": "source/thepedal/pedal-drum-matrix/LICENSE",
+      "check": [
+        "GNU GENERAL PUBLIC LICENSE",
+        "Version 3, 29 June 2007"
+      ]
+    }
+  },
   "releaseBinaries": [
     {
       "repo": "thepedal/pedal-M1",
