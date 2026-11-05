@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Fork addition (docs/specs/mcp-server.md §12.13, U6): the Neo machines' measurement suite on the Pedal
+    effects U6 changed. Compiles their sources as the portable builds do (ExternalMachines/portable: no
+    WPF GUI, PortableMessageBox) against the portable machine API, and runs each machine's Work directly
+    through a small host (PedalHarness.cs): silence after sound settles to exact zero, blocks of 256 and
+    117 give the same output, nothing allocates per block, levels and NaN at the defaults and at every
+    parameter's ends, the Shaper's aliasing, and parameter changes that glide. Not part of ReBuzz.sln,
+    like NeoBuzz.MachineTests.
+
+      dotnet test NeoBuzz.PedalTests
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>NeoBuzz.PedalTests</RootNamespace>
+    <Optimize>true</Optimize>
+    <TieredCompilation>false</TieredCompilation>
+    <NoWarn>$(NoWarn);MSB3277;CS0067;CS0108;CS0162;CS0168;CS0169;CS0219;CS0414;CS0649;CS1591;CS8600;CS8601;CS8602;CS8603;CS8604;CS8618;CS8625;CS8632;CA1416</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PedalRoot>..\ExternalMachines\source\thepedal\</PedalRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="$(PedalRoot)pedal-shaper\*.cs;$(PedalRoot)pedal-plate\*.cs;$(PedalRoot)pedal-gate\*.cs;$(PedalRoot)pedal-comp\*.cs;$(PedalRoot)pedal-chorus\*.cs;$(PedalRoot)pedal-filter\*.cs" Link="Pedal\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(PedalRoot)pedal-mcomp\*.cs" Exclude="$(PedalRoot)pedal-mcomp\PedalMCompGui.cs" Link="Pedal\MComp\%(Filename)%(Extension)" />
+    <Compile Include="$(PedalRoot)pedal-eq\*.cs" Exclude="$(PedalRoot)pedal-eq\PedalEQGui.cs" Link="Pedal\EQ\%(Filename)%(Extension)" />
+    <Compile Include="..\ExternalMachines\portable\PortableMessageBox.cs" Link="Pedal\PortableMessageBox.cs" />
+    <!-- The Neo tests' measurement helpers and the DSP library they use (spectra, test noise). -->
+    <Compile Include="..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\NeoBuzz.MachineTests\Measure.cs" Link="Measure.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="NUnit" Version="4.4.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="5.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+</Project>

@@ -168,11 +168,12 @@ namespace ReBuzz.Studio.Tests
         public void ADraftOpensItsListUntilTheSettingIsTurnedOn()
         {
             var (window, view) = OpenEmpty();
-            var gain = (MachineCore)Add("Pedal Gain", "Trim", 0, 0);
+            // U6 (mcp-server.md §12.13): Pedal Gain's manifest is generated from its source now; Pedal Tracker's is a draft.
+            var gain = (MachineCore)Add("Pedal Tracker", "Trim", 0, 0);
             try
             {
                 Settle();
-                Assert.That(SongModel.Manifest(gain.DLL)!.IsDraft, Is.True, "Pedal Gain's manifest is a draft");
+                Assert.That(SongModel.Manifest(gain.DLL)!.IsDraft, Is.True, "Pedal Tracker's manifest is a draft");
                 Assert.That(ManifestEditorSettings.OpensEditor(gain.DLL), Is.False, "off by default for drafts");
                 DoubleClick(window, view.PointOf(gain, window));
                 Assert.That(StudioMachineUiHost.ParameterWindowOf(gain)?.IsVisible, Is.True, "a double click opens the parameter list");
@@ -191,7 +192,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(editorWindow?.IsVisible, Is.True, "now a double click opens the editor");
                 var editor = (ManifestEditor)editorWindow!.Content!;
                 Assert.That(editor.Face.Quality, Is.EqualTo("draft"));
-                Studio.Screenshot(editorWindow, "manifest-editor-draft-pedal-gain");
+                Studio.Screenshot(editorWindow, "manifest-editor-draft-pedal-tracker");
                 editorWindow.Close();
                 Settle();
             }

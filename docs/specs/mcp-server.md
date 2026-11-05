@@ -660,7 +660,7 @@ Unhealthy machines (decided 2026-11-03) are in [machine-safety.md](machine-safet
 | **U3 Curate** (tier 1 done) | Curated manifests for the top 25 (summary, plain names, roles, safe ranges, quirks); manuals (`rebuzz://machines/…`) for every machine with a manifest; `GuideTests` check curated names and values. **Built** (§12.9) | 25 curated, the rest drafts: every machine in the package has a manifest | M |
 | **U4 A better face** (tier 2) | The manifest editor on the editor kit (groups, knobs in units, choices, ADSR and response plots), a per-machine setting; factory presets for the top machines. **Built** (§12.11) | The editor opens for every curated machine in the studio and ReBuzz.exe; its presets load through `preset_load` | L |
 | **U5 `machine_replace`** (tier 4) | Role mapping, unit conversion, render before and after with `compare`; one undo step; the machine menu's Replace. **Built** (§12.10) | Jeskola Reverb → Neo Verb, Pedal EQ → Neo EQ, Jeskola Distortion → Neo Drive and Pedal Gain → Neo Utility convert within a stated tolerance, or say why not | M |
-| **U6 Source fixes** (tier 3, C#) | Pedal and ReBuzz machines: manifests from code, MIDI input for the Pedal synths, denormal guards, smoothing, silence reporting; the Neo measurement suite on them | Their health report is clean; their manifests no longer drafts; old songs render as before | L |
+| **U6 Source fixes** (tier 3, C#) | Pedal and ReBuzz machines: manifests from code, MIDI input for the Pedal synths, denormal guards, smoothing, silence reporting; the Neo measurement suite on them. **Built for the Pedal effects and ReBuzz's own machines** (§12.13), with Neo Analyzer's slowdown; the Pedal synths left (no MIDI input or source change) | Their health report is clean; their manifests no longer drafts; old songs render as before | L |
 | **U7 Natives with sources** (tier 3) | The Buzztrax MSVC header fix, x64 builds, fixes and generated manifests | The Buzztrax machines build in the package; §12.6's "Done when" holds | L |
 
 The successors of §12.5 still to build (Neo Filter, Drums, Sampler; Neo Ensemble and Neo Delay are built) are machine batches of their own (machines spec); `machine_replace` takes each one's mapping as it lands.
@@ -1014,12 +1014,101 @@ Drafts get `suggested_role` and `role_evidence` per parameter and `profile.roles
 **CI time.** The profile step is what grows: in the package job from 7.8 minutes to 15–25 (93 machines; the same step's time varies 1.7× with the runner, as the job's other steps do), on Linux from 4.5 to 11 minutes for 33 machines (two shared cores, measured locally; Fork CI's runner is faster). The per-parameter sweeps take most of it (a fresh instance per setting for machines with a loop), the 22 s render for slowdowns the rest. `--no-roles`, `--no-denormal` and `--health-only` turn the deeper passes off where time matters, and the package workflow's `profile_only` narrows a measuring run to some gear. Fork CI, which runs on every change, profiles with `--no-roles` (decided 2026-11-05): the roles come from the full package job's profile, and the Linux step keeps the health, test signal, velocity, envelope, trigger and slowdown passes.
 
 **Left.**
-- Whether `Work` reports silence: the engine doesn't keep what `Work` returns, and keeping it is an engine change.
+- Whether `Work` reports silence: the engine doesn't keep what `Work` returns, and keeping it is an engine change. (U6 found that it keeps it for the machine's LED only, and that a managed effect's false passes its input on: §12.13.)
 - Jeskola Tracker and Polac VSTi stay silent until a person chooses a wave or a plugin: what to load is a choice, not a measurement.
 - `midi_play` into a tracks-only machine (it would set the Note parameter live): a live-input feature rather than a profile.
-- The denormal slowdowns found (above) are measured, not fixed: fixing them is a change to those machines' code (U6, and the Neo machines' own batch).
+- The denormal slowdowns found (above) are measured, not fixed: fixing them is a change to those machines' code (U6, and the Neo machines' own batch). U6 fixed the Pedal machines' and Neo Analyzer's (§12.13); the natives' remain.
 - An LFO's rate isn't read (the sweeps hear depth, not speed: a 2 s held note is too short for the slow ones). Roles that need two parameters at once (an envelope's amount with its times, a multiband's crossovers) or a state the defaults don't reach are left to curation, which the report's notes point at.
 - The test signal is the profiler's own, not a general tool: Neo Poly is in every host and the profiler reads what really went in; a general `test_signal` tool (Neo Sampler playing a known file sample-exact is the obvious one now) can come when an agent needs one.
+
+### 12.13 U6 as built
+
+Tier 3 (§12.4) for the C# machines, built for the Pedal effects, ReBuzz's own machines and Neo Analyzer. The Pedal synths are left as they are (decided with U6's scope): no MIDI input and no source change for Juno106, SH101, FM, M1 and Tracker, nor for Chord, LFO, Peer Control and Drum Matrix. No parameter, range or saved datum moved, and nothing in the engine changed: the null test stays bit-identical (its cases use no Pedal machine, and Neo Analyzer passes its audio unchanged).
+
+**Slowdowns after silence** (§12.12 found them): each was a one-pole decay or a filter's state left decaying towards zero in floats, where rounding stops it a few steps above zero, among the denormal numbers the CPU handles slowly. Each such state is now set to zero once it is under 1e-15 of full scale (−300 dBFS), sample by sample, in the machine's own code, not by the engine's floating-point mode, so anything louder is the same bit for bit and the output doesn't depend on the block size:
+
+| Machine | The states |
+|---|---|
+| Pedal Shaper | its tone low-pass, DC blocker, hysteresis and dust envelope |
+| Neo Analyzer | its K-weighting filters (`NeoBuzz.Analysis/Loudness.cs`, doubles) and, after minutes, its spectrum's average |
+| Pedal Plate | its input high-pass, the diffusers' and tank's all-passes and the tank's damping |
+| Pedal Gate | its peak follower |
+| Pedal Comp | its envelope |
+| Pedal Chorus | its tone filter (8 denormal samples came out) |
+
+Measured as the profiler measures it (§12.12: the machine's own work time per second of audio while noise plays, then over the 20 s after it stops), in ms/s, playing → after silence (worst 2 s window):
+
+| Machine | Linux before | Linux after | Windows before | Windows after |
+|---|---|---|---|---|
+| Pedal Shaper | 2.48 → 37.2 (45.7), 17.5× for 20 s | 2.85 → 1.44 (1.53) | 2.24 → 38.4 (47.6), 19.2× for 20 s | 1.95 → 1.67 (1.82) |
+| Neo Analyzer | 8.16 → 36.6 (42.1), 4.5× for 20 s | 8.49 → 6.06 (8.16) | 7.29 → 33.7 (35.7), 4.7× for 20 s | 5.90 → 5.34 (6.22) |
+| Pedal Plate | 2.02 → 24.4 for 8 s, 12×, then 0.38 | 2.37 → 0.50 (2.35 while its tail rings) | 2.86 → 25.2 for 8 s, 8.4×, then 0.39 | 2.23 → 0.40 (2.84 while its tail rings) |
+| Pedal Gate | 0.95 → 2.96 (3.07), 3.1× for 20 s | 0.96 → 0.77 (0.90) | 1.12 → 3.09 (3.19), 2.8× for 18 s | 0.86 → 0.89 (0.94) |
+| Pedal Comp | 1.86 → 3.23 (3.36), 1.7× | 1.77 → 0.83 (0.89) | 1.57 → 3.12 (3.28), 2.0× for 6 s | 1.40 → 0.88 (1.01) |
+
+Linux: rebuzz-headless, the build before U6 and after it alternately, each with a warm-up render, the median of four, .NET's tiered compilation off (with it on, a window's time depended on which code was still unoptimised). Windows: the package job's profiler, run 41941025882 before (613a5ef), run 41945508945 after (6bebfaf, the same machine code as U6's head for these figures). Pedal MComp, Chorus, EQ and Filter weren't slow and aren't now (MComp 9.8 → 4.8 ms/s before and after). The flushes cost a little while playing: Pedal Shaper 2.48 → 2.85 ms/s and Pedal Plate 2.02 → 2.37 on Linux, within the runner's spread on Windows. `docs/machine-health.md` lists no machine slow after silence.
+
+**Smoothing.** Automation and pattern events change a parameter once a tick or subtick, and the machines applied a new value once a block: a quarter-second ramp of 24 dB went up 3 dB at a time, and a mix 13 % at a time. A gain, a mix, a bias, a tone or a crossover now glides to its new value in a straight line over 20 ms, sample by sample, and lands on it exactly (the `Glide` struct in each machine's source; Pedal Filter's Mix in doubles, Pedal EQ's Output gain extending its own ramp to 20 ms). A setting that doesn't move is the same number as before, so the output is bit-identical; the first block, and a new sample rate, start at the setting. Pedal MComp's crossovers glide in octaves, their filters recomputed every 16 samples while they move.
+
+Measured with `automation_write` ramping the parameter over 0.25 s while a held sine (Neo Poly) plays through the machine: the largest step between two samples, as a gain (the output over the machine's with the parameter held) or a share of the mix; for parameters that aren't a gain, the largest second difference during the ramp over the steady sine's before it (a click shows up as a spike):
+
+| Parameter | Ramp | Before | After |
+|---|---|---|---|
+| Pedal Shaper Output, Drive | 24 dB | 3.0 dB, 3.2 dB steps | 0.004, 0.005 dB (a smooth ramp's step: 0.002) |
+| Pedal Shaper Mix | 0 → 100 % | 12.6 % (6.0 dB of the wet) | 0.017 % (0.002 dB) |
+| Pedal Shaper Tone, Bias | full range, a quarter | spikes 118×, 9515× | 1.0×, 12.6× (a bias moving changes the waveform itself) |
+| Pedal Comp Makeup Gain | 6 dB | 1.0 dB | 0.001 dB |
+| Pedal Comp Wet/Dry, Pedal MComp Dry-Wet, Pedal Plate, Chorus and Filter Mix | 0 → 100 % | 13 % (1.7–6.4 dB of the wet) | 0.015 % (0.001–0.006 dB) |
+| Pedal MComp Output Gain, LM Makeup | 24 dB | 3.0, 2.9 dB | 0.004, 0.010 dB |
+| Pedal MComp Xover L-LM | full | spikes 28× | 1.4× |
+| Pedal Gate Range dB | 90 dB | 12 dB | 0.03 dB |
+| Pedal EQ Output | 24 dB | 0.27 dB (its ramp over one block) | 0.004 dB |
+
+Not changed, measured smooth already: Pedal Gain's and Gain Multi's gains (their own ramps, 0.019 and 0.012 dB), Pedal EQ's bands (it blends its coefficients), Pedal Filter's Cutoff, Pedal Plate's LowCut and Damping, Pedal Chorus's Tone (spikes 0.3–1.7×).
+
+**Silence reporting.** What the engine does with what `Work` returns: `MachineWorkInstance.WorkMachine` keeps it in `MachineCore.IsActive`, which lights the machine's LED in the machine view (`MachineControl`, `GroupControl`), and the recursive work algorithm overwrites it each block with `GetActivity` (the output's level) anyway. No machine is skipped, and none is told its input is silent: effects are always called with `WM_READWRITE`, never `WM_NOIO`. It matters for the sound in one place: a managed machine's false leaves its output buffer uncopied (`ManagedMachineHost.Work`), so an effect's output is its input (the native host keeps the shared buffer as the machine left it). An effect that says it is silent while its tail still rings cuts the tail off, and the four Pedal effects that say so did:
+
+| Machine | Cut | Now |
+|---|---|---|
+| Pedal EQ | after 32 blocks of input under −90 dBFS, whatever its output: a band at 100 Hz, Q 10, +24 dB at −30 dBFS (and when, by the block size) | also waits for its last block's output to be under −90 dBFS |
+| Pedal Plate | 8 s after its input stopped: at Decay 100 at −47 dBFS (−40 with Feedback 95) | also waits for its last block's output to be under −120 dBFS: at Decay 100 33 s on; at Decay 100 and Feedback 95 not within 60 s |
+| Pedal Filter | when its input and filter states were silent, its DC blocker's decay not counted: up to −24 dBFS on the test's pink noise, a click, at a moment that depended on the block size | counts it (the decay of its 3.5 Hz DC blocker plays out: 0.3 s at the defaults) |
+| Pedal Chorus | 100 ms after its input stops (its delays are 33 ms at most) | unchanged: correct |
+
+Where the old report came when the output was silent already (the defaults, and every moderate setting measured: Pedal Plate's tail is under −130 dBFS 8 s on at its defaults), the new one comes on the same block, bit for bit. Pedal Shaper, Gate, Comp and MComp return true while they have an input, as before. `NeoBuzz.PedalTests` checks every start of a report against the block before it (under −80 dBFS: −89.6 dBFS at most, Pedal Filter's).
+
+What the engine would need for silence to save work (not built): (1) per connection, whether its source's last `Work` returned false; (2) an effect whose inputs are all silent called with `WM_WRITE` only, and skipped once it reports silence too, as Buzz's contract has it; (3) a reported silence treated as a silent output, zeros rather than the input, for that to be safe; (4) a check of each machine's report against its output (the engine's own comment says some report wrong: a profiler pass that flags a false with output over −90 dBFS), and a per-gear opt-out; (5) the null test: its references stay only where every machine in its cases reports truly, since a skipped machine's tail under the threshold becomes zero. The gain is small for the Pedal effects (0.4–1.7 ms/s idle after U6, Pedal MComp 4.7) and larger for the natives (Jeskola Reverb's 111 ms/s after silence on Windows, §12.12).
+
+**Manifests from code.** `tools/source_manifests.py` (standard library only) writes the manifests of 15 machines from their C# source: Pedal Shaper, Gate, Gain, Gain Multi and MComp (the Pedal effects that were drafts) and ReBuzz's AudioBlock, Connection Mixer Console, EnvelopeBlock, QuickNote, ReBuzz Audio In, Audio Out, Groove, Midi Output, Session Clip Player and ManagedMultiIOEffect, 118 parameters. It reads each machine's `[ParameterDecl]`s as `MachineParameter.Create` builds them (properties are global parameters, methods track parameters; a bool a switch; value descriptions that reset a range; played track parameters left out), and its constants; a table in the script gives each parameter's kind and the code's own expression for its value, translated to Python, and the mapping must reproduce that expression for every raw value, or the script stops with the parameter. Whether the machine's texts say the value decides `own_texts`. The result is `status: "generated"` (`Manifest.IsGeneratedFromSource`) with `source` naming the file; the profile, health, type, notes and safe ranges carry over, and the profiler's `--merge` keeps a generated manifest's mapping as it keeps a curated one's. The server shows them in exact units, like the Neo machines' (`machine_describe`'s `exact_units`; the manual says "generated from its source code"). `python3 tools/source_manifests.py` checks the committed ones against the code (`--write` writes them); `test_machine_infer.py` runs that check in Fork CI.
+
+What the code proved the drafts wrong on: Pedal Shaper's Drive and Output (−24 … +24 dB, where the draft had raw numbers), Tone and Bias (−100 … +98.4 %), Mix and Dust (percent) and Hysteresis (0–10 ms); Pedal Gate's Range (−90 … 0 dB); Pedal Gain Multi's switches, Pan (bipolar) and 24 tracks; Pedal MComp's crossovers (exactly 40–600, 200–3000 and 800–12000 Hz in octaves), its Ratio curve (40^(v/126), so 41.19:1 at the top where the draft fitted 41.33), attack and release times, and Lookahead (a table, Off at 0); Connection Mixer Console's Vol (linear, 0–400 %) and Pan (bipolar); ReBuzz Groove's step count (an integer) and steps (×1–3); Midi Output's integers. Found and noted in its manifest, not fixed (a fix would change what old songs send): ReBuzz Midi Output's `Work` reads the controller number from the track's fourth parameter (Delay) and the channel from its sixth (MidiCC), and encodes every message without a channel, so MidiCC and Channel do nothing. The curated Pedal effects (Chorus, Comp, Filter, Plate) were checked against their code and are right; they stay curated, as do Pedal EQ and Drum Matrix.
+
+**The Neo measurement suite** (machines.md §6) on the eight Pedal effects U6 changed: `NeoBuzz.PedalTests`, 62 cases on the machines' own `Work` through a host stub at 48 kHz (`PedalHarness.cs`), in Fork CI with its figures in notices.
+
+| Check | Result |
+|---|---|
+| Silence after sound settles to exact zero, no denormal output | all eight: Pedal Shaper in 0.22 s, MComp 0.15 s, Filter 0.30 s, Chorus 0.01 s, Plate 8.0 s, the others at once |
+| Blocks of 256 and 117 give the same output | bit for bit, but Pedal Filter: 115 samples differ, by −90.7 dBFS at most (it decides once a block that its tail is silent) |
+| Allocation per block once running | 0 bytes for all eight (Pedal Chorus allocated three arrays a block, Pedal EQ two per sample in solo mode: now made once) |
+| Level at the defaults, pink noise at −20 dBFS RMS | Shaper −1.1 dB, Plate −5.7, Gate 0.0, Comp −1.0, MComp −0.2, Chorus −3.7, Filter −1.9, EQ 0.0; every parameter alone at each end finite |
+| Aliasing (Pedal Shaper: Drive +12 dB, 4.7 kHz at −6 dBFS; no oversampling) | Soft −41.0, Fold −38.8, Hard −32.9, Crush −32.8, Tube −30.5 dB under the fundamental: recorded, not judged (Neo Drive is its successor) |
+| A stepped gain or mix glides and lands | 11 parameters: at most 0.009 dB or 0.1 % of the mix per sample, then the same output as set from the start |
+| A silence report cuts no tail | above |
+
+**Render changes.** At settings that don't move, bit for bit the same as before U6, but for: Pedal Shaper's tails under −300 dBFS (now zero), 54 of Pedal Chorus's samples at −314 dBFS, Pedal Filter's DC blocker's decay (no longer cut: from 3 ms after the input stops, up to −57 dBFS at the defaults), and the ringing tails that Pedal EQ and Plate cut (Pedal Plate at Decay 100 from 8 s after its input, by up to −46 dBFS; Pedal EQ's band at 100 Hz, Q 10, +24 dB from 96 ms on, by up to −35 dBFS). Pedal Plate at its defaults and at Decay 80 over 14 s, Pedal EQ at its defaults and with +6 and +12 dB bands over 6 s: identical. A parameter that moves differs during its 20 ms glide (by −10 to −44 dBFS at a step of a gain or a mix) and is the same once landed; Pedal MComp's crossover for a quarter of a second, under −99 dBFS from 25 ms on.
+
+**The profiler.** A tail whose RMS frequency is under 20 Hz is a DC blocker's or a high-pass's decay, not a reverb's: it doesn't type an effect a reverb (U1's burst and U2's click) or count as the tail that stays for `mix.dry` (`machine_roles.subsonic`). Pedal Filter's decay, no longer cut, had made it a reverb with Cutoff as `mix.dry`; with the rule its type and roles are as before. A generated manifest is recurated like a curated one, and the health report leaves generated manifests out of its drafts' suggested roles.
+
+**The server.** A choice named like a keyword (`min`, `max`, `default`: EnvelopeBlock's Default) is that choice in `param_set`, before the keyword.
+
+**Tests.** `NeoBuzz.PedalTests` (above); `NeoBuzz.MachineTests` `AnalyzerTests.SilenceAfterSoundSettlesToExactZero`; `tools/test_machine_infer.py` (70: the committed manifests against their source, declarations read as ReBuzz reads them, kinds that fit exactly or fail, code that changed caught; the subsonic tail); ReBuzz.AgentTests (`CuratedManifestTests`: the 15 from source exact in every value and the rest drafts, their manuals; `DraftManifestTests`; `GuideTests`' manuals for the Neo machines); `tools/headless-manifests.py` (Pedal Shaper's generated manifest through the tools: "+6 dB" is raw 60 and reads "+6.0 dB", Mix 50 % is raw 63 or 64, `exact_units`; the draft checks on Pedal Tracker); `tools/curated-check.py` checks generated manifests as curated ones; `ManifestEditorTests`' draft editor on Pedal Tracker.
+
+**Left.**
+- The Pedal synths: MIDI input, and denormal guards, smoothing and silence reporting in Juno106, SH101, FM, M1 and Tracker (none is slow after silence in the profile); Pedal Tracker's, Chord's, LFO's and Peer Control's manifests stay drafts; their own preset banks (§12.11) aren't levelled.
+- Silence that saves work: an engine change (above).
+- Pedal Shaper aliases (measured above): oversampling would change its sound; Neo Drive is the successor.
+- ReBuzz Midi Output's MidiCC and Channel (noted in its manifest).
+- Pedal Plate at Decay 100 with Feedback 95 rings for more than a minute, running all the while: correct, and its cost is its playing cost.
 
 ## 13. Inventory notes (for implementers)
 

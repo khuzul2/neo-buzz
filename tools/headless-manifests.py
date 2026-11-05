@@ -26,6 +26,9 @@
 #    with exact units, quirks, plain names and roles; param_set takes a plain name; a machine whose own
 #    texts are wrong (Pedal Comp's Attack) reads and writes the real values; guide(machine=…) and the
 #    rebuzz://machines/<slug>/manual resources cover drafts and curated machines alike.
+#  - U6 (mcp-server.md §12.13): the Pedal effects that had drafts have manifests generated from their source
+#    (Pedal Shaper: exact units, dB read from its code where its own texts are bare numbers); the drafts'
+#    checks use a Pedal machine that still has one (Pedal Tracker).
 #
 #   python3 tools/headless-manifests.py <path to rebuzz-headless> [work folder]
 
@@ -101,10 +104,13 @@ s = Server(exe, "main")
 # What the drafts say (unhealthy ones too: U2 in depth leaves them out unless asked; checked in the copy below).
 ok, _, g = s.call("gear_list", search="Pedal", limit=100, include_unhealthy=True)
 rows = {x["name"]: x for x in g.get("gear", [])}
+tracker = rows.get("Pedal Tracker", {})
+check(tracker.get("manifest") == "draft" and tracker.get("type") and "profiled draft" in tracker.get("summary", ""),
+      f"gear_list: Pedal Tracker has a draft manifest saying what it is ({tracker.get('type')}: {tracker.get('summary', '')[:80]})")
+check(tracker.get("exact_units") is False, "gear_list: a draft's units aren't called exact")
 shaper = rows.get("Pedal Shaper", {})
-check(shaper.get("manifest") == "draft" and shaper.get("type") and "profiled draft" in shaper.get("summary", ""),
-      f"gear_list: Pedal Shaper has a draft manifest saying what it is ({shaper.get('type')}: {shaper.get('summary', '')[:80]})")
-check(shaper.get("exact_units") is False, "gear_list: a draft's units aren't called exact")
+check(shaper.get("manifest") == "generated" and shaper.get("exact_units") is True and "waveshaping" in shaper.get("summary", ""),
+      f"gear_list: Pedal Shaper's manifest is generated from its source, exact ({shaper.get('manifest')}: {shaper.get('summary', '')[:80]})")
 juno = rows.get("Pedal Juno106", {})
 check(juno.get("manifest") == "curated" and juno.get("exact_units") is True and "polysynth" in juno.get("summary", "") and juno.get("quirks"),
       f"gear_list: Pedal Juno106 is curated, exact, says what it's for and its quirks ({juno.get('summary', '')[:80]})")
@@ -192,9 +198,19 @@ ok, _, gd = s.call("guide", machine="Pedal Juno106")
 md = gd.get("markdown", "")
 check(ok and "## Quirks" in md and "**Filter cutoff** (`filter.cutoff`)" in md and "| VCF Freq |" in md and "## Sources" in md,
       "guide(machine=\"Pedal Juno106\"): the curated manual")
+ok, _, gd = s.call("guide", machine="Pedal Tracker")
+check(ok and gd.get("markdown", "").startswith("# Pedal Tracker manual") and "profiled draft" in gd.get("markdown", "") and "Pedal Tracker" in gd.get("manuals", []),
+      "guide(machine=\"Pedal Tracker\"): a draft's manual, and the list names it")
+# U6: a manifest generated from the source. Pedal Shaper's Drive reads bare numbers (48); its code makes it dB.
+s.call("machine_add", gear="Pedal Shaper", name="Shp", connect_to="none")
+ok, _, p = s.call("param_set", machine="Shp", changes=[{"param": "Drive", "value": "+6 dB"}, {"param": "Mix", "value": "50%"}])
+vals = {x["param"]: (x["value"], x.get("raw")) for x in p.get("changed", [])}
+_, _, dsh = s.call("machine_describe", machine="Shp")
+check(ok and vals.get("Drive") == ("+6.0 dB", 60) and vals.get("Mix", (None, None))[1] in (63, 64) and p.get("manifest") != "draft"
+      and dsh.get("exact_units") is True,
+      f"param_set on a manifest from source: Drive in dB, Mix in %, exact ({vals}, exact_units {dsh.get('exact_units')})")
 ok, _, gd = s.call("guide", machine="Pedal Shaper")
-check(ok and gd.get("markdown", "").startswith("# Pedal Shaper manual") and "profiled draft" in gd.get("markdown", "") and "Pedal Shaper" in gd.get("manuals", []),
-      "guide(machine=\"Pedal Shaper\"): a draft's manual, and the list names it")
+check(ok and "| Drive |" in gd.get("markdown", "") and "profiled draft" not in gd.get("markdown", ""), "guide(machine=\"Pedal Shaper\"): the manual of a manifest from source")
 res = s.request("resources/list")
 uris = {r["uri"] for r in (res.get("result") or {}).get("resources", [])}
 check({"rebuzz://machines/pedal-shaper/manual", "rebuzz://machines/pedal-juno106/manual"} <= uris,
@@ -345,9 +361,9 @@ check([n["pitch"] for n in back.get("notes", [])] == [69] and [n["pitch"] for n 
 
 # U2 in depth: a draft's suggested roles in machine_describe, as the draft has them; played track parameters,
 # written as events; each machine's work time in a render.
-shaper_draft = draft_of("Pedal Shaper")
-want = {p["name"]: p["suggested_role"] for p in shaper_draft.get("parameters", []) if p.get("suggested_role")}
-s.call("machine_add", gear="Pedal Shaper", name="Sh", connect_to="none")
+shaper_draft = draft_of("Pedal Tracker")
+want = {p["name"]: p["suggested_role"] for p in shaper_draft.get("parameters", []) + shaper_draft.get("track_parameters", []) if p.get("suggested_role")}
+s.call("machine_add", gear="Pedal Tracker", name="Sh", connect_to="none")
 _, _, d = s.call("machine_describe", machine="Sh")
 got = {p["name"]: p.get("suggested_role") for p in d.get("parameters", []) if p.get("suggested_role")}
 check(got == want and all(p.get("role_evidence") for p in d.get("parameters", []) if p.get("suggested_role")),

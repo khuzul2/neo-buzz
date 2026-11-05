@@ -260,6 +260,23 @@ namespace WDE.PedalFilter
             double maxCutoff = sr * 0.499;
             double wet       = Mix  / 100.0;
             double dry       = 1.0 - wet;
+            // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): Mix glides to a new setting in a straight line
+            // over 20 ms, sample by sample, landing on it exactly (a Mix that doesn't move is the same number as
+            // before). Applied once a block it stepped with automation (0.13 of the mix at a time), which clicked.
+            if (!_mixGlideSet || sr != _mixGlideSr)
+            {
+                _mixValue = _mixTarget = wet;
+                _mixLeft = 0;
+                _mixGlideSet = true;
+                _mixGlideSr = sr;
+            }
+            else if (wet != _mixTarget)
+            {
+                _mixTarget = wet;
+                _mixLeft = Math.Max(1, (int)(0.020 * sr));
+                _mixStep = (wet - _mixValue) / _mixLeft;
+            }
+            bool mixGliding = _mixLeft > 0;
             double driveGain = 1.0 + (Drive / 100.0) * 9.0;
 
             double lfoHz;
@@ -303,6 +320,13 @@ namespace WDE.PedalFilter
             // ── Sample loop ───────────────────────────────────────────────────
             for (int i = 0; i < n; i++)
             {
+                if (mixGliding)
+                {
+                    if (_mixLeft > 0) _mixValue = --_mixLeft == 0 ? _mixTarget : _mixValue + _mixStep;
+                    wet = _mixValue;
+                    dry = 1.0 - wet;
+                }
+
                 // Per-sample parameter smoothing (~20 Hz bandwidth).
                 // Prevents zipper noise on discrete Cutoff / Resonance jumps.
                 // LFO modulation is applied AFTER smoothing at full resolution.
@@ -474,8 +498,14 @@ namespace WDE.PedalFilter
         // Silence check
         // =========================================================================
 
+        // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, U6): the DC blocker's output too. Returning false makes
+        // ReBuzz pass the input (silence) instead of the output, and the blocker's tail lasts a few hundred ms after
+        // the filter's own states are quiet: it was cut at up to −24 dBFS, a click whose time depended on where the
+        // blocks fell.
         bool StatesAreSilent()
-            => Math.Abs(s1_L1) < SILENCE_THRESHOLD
+            => Math.Abs(_dcOutL) < SILENCE_THRESHOLD
+            && Math.Abs(_dcOutR) < SILENCE_THRESHOLD
+            && Math.Abs(s1_L1) < SILENCE_THRESHOLD
             && Math.Abs(s2_L1) < SILENCE_THRESHOLD
             && Math.Abs(s1_R1) < SILENCE_THRESHOLD
             && Math.Abs(s2_R1) < SILENCE_THRESHOLD
@@ -591,6 +621,11 @@ namespace WDE.PedalFilter
 
         public void Stop() { }
         public void MidiNote(int channel, int value, int velocity) { }
+
+        // Fork (neo-buzz, U6): the Mix glide (Work).
+        double _mixValue, _mixTarget, _mixStep, _mixGlideSr;
+        int    _mixLeft;
+        bool   _mixGlideSet;
         public void MidiControlChange(int ctrl, int channel, int value) { }
     }
 }

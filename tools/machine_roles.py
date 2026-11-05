@@ -776,9 +776,15 @@ def _first(c, key="echoes"):
     return e[0][0] if e else None
 
 
+def subsonic(hz):
+    """U6 (mcp-server.md §12.13): a tail whose RMS frequency is under 20 Hz is a DC blocker's or a high-pass's decay
+    (Pedal Filter's, since its tail is no longer cut off), not a reverb's or a delay's."""
+    return isinstance(hz, (int, float)) and 0 < hz < 20
+
+
 def _tail(c):
-    """A setting's tail: its T60 where the late sound is within 40 dB of the click, else 0."""
-    if (c.get("late_db") if c.get("late_db") is not None else -120) < -40:
+    """A setting's tail: its T60 where the late sound is within 40 dB of the click and not subsonic, else 0."""
+    if (c.get("late_db") if c.get("late_db") is not None else -120) < -40 or subsonic(c.get("tail_zcr_hz")):
         return 0.0
     t = _num(c.get("t60_s"))
     return t if t is not None else _num(c.get("ring_s"))
@@ -851,7 +857,8 @@ def suggest_effect_role(p, ends, default, machine_type, mono_gain=6.02, eq_band=
     texts = " ".join(str(t).lower() for t in (p.get("choices") or p.get("texts") or []))
     t_lo, t_hi = _transparent(lo, mono_gain), _transparent(hi, mono_gain)
     dl, dh, ll, lh = _num(cl.get("direct_db")), _num(ch.get("direct_db")), _num(cl.get("late_db")), _num(ch.get("late_db"))
-    dry_only = not eq_band and None not in (dl, dh, ll, lh) and abs(dh - dl) >= 12 and min(dl, dh) < -25 and abs(lh - ll) <= 4 and min(ll, lh) > -45
+    dry_only = not eq_band and None not in (dl, dh, ll, lh) and abs(dh - dl) >= 12 and min(dl, dh) < -25 and abs(lh - ll) <= 4 and min(ll, lh) > -45 \
+        and not subsonic(cl.get("tail_zcr_hz")) and not subsonic(ch.get("tail_zcr_hz"))
     if choice and not dry_only:
         return _choice_role(p, texts, lo, hi, rl, rh, cl, ch, sl, sh, machine_type, t_lo, t_hi, cd)
     # one end silent (a low-pass closed, a level at nothing): half way tells a corner from a level
