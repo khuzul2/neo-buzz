@@ -65,7 +65,7 @@ namespace ReBuzz.AgentTests
                          "Jeskola Delay → Neo Delay", "Jeskola Cross Delay → Neo Delay", "Jeskola NiNjA dElaY → Neo Delay", "FSM PanzerDelay → Neo Delay",
                          "Pedal M1 → Neo Sampler",
                          "Rout 909 → Neo Drums", "FSM KickXP → Neo Drums",
-                         "FSM WahMan → Neo Filter", "Pedal Filter → Neo Filter",
+                         "Jeskola Filter → Neo Filter", "Jeskola Filter 2 → Neo Filter", "FSM WahMan → Neo Filter", "Pedal Filter → Neo Filter",
                      })
                 Assert.That(pairs, Does.Contain(expected));
             foreach (var map in SuccessorLibrary.All)
@@ -658,6 +658,86 @@ namespace ReBuzz.AgentTests
 
             // Enable off bypasses Neo EQ.
             Assert.That(c.ConvertState(Raws(c, new() { ["Enable"] = 0 })).Bypass, Is.True);
+        }
+
+        [Test]
+        public void JeskolaFiltersReadTheirTypesTableAndTheTopOfResonanceSingsOnlyAtItsTop()
+        {
+            var c = Converter("Jeskola Filter", "Neo Filter");
+            // Its defaults: the low-pass at the top of its scale passes everything (f = 1, q = 1); the fit is Neo Filter's
+            // low-pass at 20 kHz, about flat.
+            var d = c.ConvertState(Raws(c));
+            Assert.That(c.New("Type")!.Format(Final(d, "Type")), Is.EqualTo("SVF LP"));
+            Assert.That(Value(c, d, "Cutoff"), Is.GreaterThan(15000));
+            Assert.That(d.InputGainDb, Is.EqualTo(6.02).Within(0.001), "a mono native effect: the input takes +6 dB");
+            // Low-pass at 64 (f = 0.707: 5.07 kHz as a Chamberlin filter's cutoff), resonance 64 (q = 0.29, Q 3.4).
+            var lp = c.ConvertState(Raws(c, new() { ["Cutoff"] = 64, ["Resonance"] = 64 }));
+            Assert.That(Value(c, lp, "Cutoff"), Is.EqualTo(5500).Within(400));
+            Assert.That(Value(c, lp, "Resonance"), Is.EqualTo(3.3).Within(0.4));
+            // Its own table per type: the high-pass at the same setting differs.
+            var hp = c.ConvertState(Raws(c, new() { ["Type"] = 1, ["Cutoff"] = 64, ["Resonance"] = 0 }));
+            Assert.That(c.New("Type")!.Format(Final(hp, "Type")), Is.EqualTo("SVF HP"));
+            Assert.That(Value(c, hp, "Output"), Is.GreaterThan(3), "the Chamberlin high-pass rises on to Nyquist: level made up");
+            var bp = c.ConvertState(Raws(c, new() { ["Type"] = 2, ["Cutoff"] = 32, ["Resonance"] = 96 }));
+            Assert.That(Value(c, bp, "Resonance"), Is.EqualTo(13.1).Within(1.5));
+            // Above 116 the Q holds under self-oscillation; at 128 (no damping) Neo Filter sings.
+            var high = c.ConvertState(Raws(c, new() { ["Resonance"] = 124, ["Cutoff"] = 40 }));
+            Assert.That(Final(high, "Resonance"), Is.LessThan(c.New("Resonance")!.Max));
+            var top = c.ConvertState(Raws(c, new() { ["Resonance"] = 128, ["Cutoff"] = 40 }));
+            Assert.That(Final(top, "Resonance"), Is.EqualTo(c.New("Resonance")!.Max));
+            foreach (var s in new[] { d, lp, hp, bp, high, top }) Assert.That(s.Notes.Concat(s.Values.Where(v => v.Note != null).Select(v => v.Note)), Is.Empty);
+            // Filter 2's types are bare numbers.
+            var c2 = Converter("Jeskola Filter 2", "Neo Filter");
+            var hp2 = c2.ConvertState(Raws(c2, new() { ["Type"] = 1, ["Cutoff"] = 48 }));
+            Assert.That(c2.New("Type")!.Format(Final(hp2, "Type")), Is.EqualTo("SVF HP"));
+            Assert.That(Value(c2, hp2, "Cutoff"), Is.LessThan(Value(c2, c2.ConvertState(Raws(c2, new() { ["Type"] = 1, ["Cutoff"] = 64 })), "Cutoff")));
+        }
+
+        [Test]
+        public void PedalFiltersResonanceIsQWithItsCompensationOnTheOutputAndItsDivisionsTheSync()
+        {
+            var c = Converter("Pedal Filter", "Neo Filter");
+            var d = c.ConvertState(Raws(c));
+            Assert.That(c.New("Type")!.Format(Final(d, "Type")), Is.EqualTo("SVF LP"));
+            Assert.That(Value(c, d, "Cutoff"), Is.EqualTo(2000).Within(2));
+            Assert.That(Value(c, d, "Resonance"), Is.EqualTo(1 / (2 - 0.0199 * 20)).Within(0.005), "Q = 1/(2R)");
+            Assert.That(Value(c, d, "Output"), Is.EqualTo(0).Within(0.05), "no compensation under 50 %");
+            Assert.That(c.New("LFO sync")!.Format(Final(d, "LFO sync")), Is.EqualTo("Free"));
+            Assert.That(Value(c, d, "LFO rate"), Is.EqualTo(2).Within(0.01));
+            var hot = c.ConvertState(Raws(c, new() { ["Mode"] = 3, ["Slope"] = 1, ["Resonance"] = 85, ["Drive"] = 100, ["Tempo Sync"] = 1, ["LFO Div"] = 10, ["LFO Depth"] = 50, ["Phase Offset"] = 90 }));
+            Assert.That(c.New("Type")!.Format(Final(hot, "Type")), Is.EqualTo("SVF Notch"));
+            Assert.That(c.New("Slope")!.Format(Final(hot, "Slope")), Is.EqualTo("24 dB/oct"));
+            Assert.That(Value(c, hot, "Resonance"), Is.EqualTo(1 / (2 - 0.0199 * 85)).Within(0.02));
+            Assert.That(Value(c, hot, "Output"), Is.EqualTo(20 * Math.Log10(2 - 0.0199 * 85)).Within(0.06), "times 2R above 50 %");
+            Assert.That(Value(c, hot, "Drive"), Is.EqualTo(20).Within(0.05), "a gain of 10");
+            Assert.That(c.New("LFO sync")!.Format(Final(hot, "LFO sync")), Is.EqualTo("1/8D"), "1/8 Dot with Tempo Sync on");
+            Assert.That(Value(c, hot, "LFO depth"), Is.EqualTo(2).Within(0.01));
+            Assert.That(Value(c, hot, "LFO spread"), Is.EqualTo(90).Within(0.5));
+            Assert.That(hot.Notes, Is.Empty);
+            var comb = c.ConvertState(Raws(c, new() { ["Mode"] = 4 }));
+            Assert.That(comb.Notes, Has.Some.Contains("Comb"), "Comb has no counterpart, and the notes say so");
+            var top = c.ConvertState(Raws(c, new() { ["Resonance"] = 100 }));
+            Assert.That(c.New("Resonance")!.Format(Final(top, "Resonance")), Is.Not.EqualTo(c.New("Resonance")!.Format(1000)), "held under self-oscillation");
+            Assert.That(top.Values.Where(v => v.Note != null).Select(v => v.Note), Has.Some.Contains("Output"), "−40 dB is out of Output's reach");
+        }
+
+        [Test]
+        public void WahMansFilterReadsItsFittedTableAndItsLfoBecomesOctaves()
+        {
+            var c = Converter("FSM WahMan", "Neo Filter");
+            var d = c.ConvertState(Raws(c));
+            Assert.That(c.New("Type")!.Format(Final(d, "Type")), Is.EqualTo("SVF LP"));
+            // Cutoff 120, Resonance 120: its biquad's pole at 1.53 kHz (264 · 32^0.5 = 1.49 kHz over √B), Q 12.3.
+            Assert.That(Value(c, d, "Cutoff"), Is.EqualTo(1525).Within(40));
+            Assert.That(Value(c, d, "Resonance"), Is.EqualTo(12.3).Within(2));
+            Assert.That(Value(c, d, "LFO depth"), Is.EqualTo(60 / 96.0).Within(0.01), "±Modulation/96 octaves");
+            Assert.That(Value(c, d, "LFO rate"), Is.EqualTo(0.05 * Math.Pow(800, 30 / 255.0)).Within(0.002));
+            Assert.That(c.New("LFO retrig")!.Format(Final(d, "LFO retrig")), Is.EqualTo("Free"));
+            var open = c.ConvertState(Raws(c, new() { ["Cutoff"] = 240, ["Resonance"] = 0, ["Modulation"] = 240 }));
+            Assert.That(Value(c, open, "Cutoff"), Is.GreaterThan(12000), "its pole far above 8.4 kHz at Resonance 0");
+            Assert.That(Value(c, open, "Resonance"), Is.LessThan(2));
+            Assert.That(Value(c, open, "LFO depth"), Is.EqualTo(2.5).Within(0.01));
+            Assert.That(open.Notes, Is.Empty);
         }
 
         [Test]
