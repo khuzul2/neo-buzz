@@ -5,7 +5,7 @@
   "summary": "FSM KickXP's kick plays as Neo Drums' kick: its notes (which tune it: the pitch falls to the note) and Trigger hits become kicks on C2, the note's pitch the kick's tune, its sweep from Start fitted as the kick's sweep, its decay, click and buzz as the kick's decay, click and drive.",
   "output_gain_db": 0,
   "set": {
-    "Volume": "+7 dB",
+    "Volume": "+12 dB",
     "Vel → level": "50%",
     "Vel → tone": "0%",
     "Kick punch": "0%"
