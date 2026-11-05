@@ -804,26 +804,32 @@ namespace NeoBuzz.MachineTests
         {
             // Crossover 2 dragged (a parameter step every 64-sample block, 1 → 1.75 kHz and back) on noise, every band
             // compressing, linear phase, in blocks of 64: a design starting every 4th partition. Counted: no block takes more
-            // than 4 design steps (one every 16 samples). Timed, each block's best of 5 identical runs (the machine's own
-            // hiccups drop out): the slowest block of the sweep within 2× the slowest without it (where a partition's
-            // convolution runs), and under half the slowest with each design whole in one block, as before.
-            const int Block = 64, Runs = 5;
+            // than 4 design steps (one every 16 samples), and the sweep designs as often as with each design whole.
+            // Timed against a calibration in the same run, so that a shared runner's noise can't decide it: not moving, the
+            // sweep and each design whole run interleaved, 5 times each, every block timed. What a block does is fixed by
+            // what it holds (where in the partition it falls, how many design steps it takes and from which step of the
+            // design, whether a design takes over in it), so blocks are grouped by that and each group's time is its fastest
+            // block over every run: tens to hundreds of the same work each, so preemption and slow spells (noise only adds
+            // time) drop out where the slowest single block of a run couldn't shed them (run 41991632485: 498 µs against a
+            // 393 µs limit, the next run 237). The slowest group of the sweep within 2× the slowest not moving (where a
+            // partition's convolution runs), and under half the slowest with each design whole in one block, as before.
+            const int Block = 64, Runs = 5, Skip = 100;
             var x = Noise(3 * Rate, 0.2, 31);
             var y = Noise(3 * Rate, 0.2, 32);
-            double Slowest(bool sweep, bool whole, out int designs, out long mostSteps)
-            {
-                double[] best = null;
-                designs = 0;
-                mostSteps = 0;
-                var bl = new float[Block];
-                var br = new float[Block];
-                for (int run = 0; run < Runs; run++)
+            var bl = new float[Block];
+            var br = new float[Block];
+            var fastest = new[] { new Dictionary<(int, long, long, bool), (double Us, int Count)>(), new(), new() };
+            int designs = 0, wholeDesigns = 0;
+            long most = 0, perDesign = 0;
+            for (int run = 0; run < Runs; run++)
+                for (int way = 0; way < 3; way++)
                 {
+                    bool sweep = way > 0;
                     var (e, v) = Make(null);
-                    e.Linear.DesignAtOnce = whole;
-                    int raw = v[P.Xo2], first = e.Linear.Designs;
-                    var times = new double[x.Length / Block];
-                    for (int b = 0; b < times.Length; b++)
+                    e.Linear.DesignAtOnce = way == 2;
+                    perDesign = e.Linear.Steps;                 // the initial design's: every design takes as many
+                    int raw = v[P.Xo2], first = e.Linear.Designs, perPartition = e.Linear.P / Block;
+                    for (int b = 0; b < x.Length / Block; b++)
                     {
                         if (sweep)
                         {
@@ -833,22 +839,25 @@ namespace NeoBuzz.MachineTests
                         Array.Copy(x, b * Block, bl, 0, Block);
                         Array.Copy(y, b * Block, br, 0, Block);
                         long steps = e.Linear.Steps;
+                        var designed = e.Linear.Designed;
                         long t0 = Stopwatch.GetTimestamp();
                         e.Process(bl, br, Block);
-                        times[b] = (Stopwatch.GetTimestamp() - t0) * 1e6 / Stopwatch.Frequency;
-                        mostSteps = Math.Max(mostSteps, e.Linear.Steps - steps);
+                        double us = (Stopwatch.GetTimestamp() - t0) * 1e6 / Stopwatch.Frequency;
+                        long taken = e.Linear.Steps - steps;
+                        if (way == 1) most = Math.Max(most, taken);
+                        if (b < Skip) continue;
+                        var group = (b % perPartition, taken, taken > 0 ? (steps - perDesign) % perDesign : -1, !e.Linear.Designed.Equals(designed));
+                        fastest[way][group] = fastest[way].TryGetValue(group, out var f) ? (Math.Min(f.Us, us), f.Count + 1) : (us, 1);
                     }
-                    designs = e.Linear.Designs - first;
-                    if (best == null) best = times;
-                    else for (int b = 0; b < times.Length; b++) best[b] = Math.Min(best[b], times[b]);
+                    if (way == 1) designs = e.Linear.Designs - first;
+                    if (way == 2) wholeDesigns = e.Linear.Designs - first;
                 }
-                return best.Skip(100).Max();
-            }
-            double still = Slowest(false, false, out _, out _);
-            double swept = Slowest(true, false, out int designs, out long most);
-            double before = Slowest(true, true, out int wholeDesigns, out _);
-            Measure.Report($"Neo Multiband: crossover 2 dragged in blocks of 64 at 48 kHz, the slowest block {swept:F0} µs ({designs} designs in steps, at most {most} steps a block) " +
-                           $"against {still:F0} µs not moving and {before:F0} µs with each design whole in one block ({wholeDesigns} designs)");
+            var slowest = fastest.Select(g => g.MaxBy(kv => kv.Value.Us)).ToArray();
+            double still = slowest[0].Value.Us, swept = slowest[1].Value.Us, before = slowest[2].Value.Us;
+            string Group(int way) => $"{fastest[way].Count} groups, the slowest the fastest of {slowest[way].Value.Count}";
+            Measure.Report($"Neo Multiband: crossover 2 dragged in blocks of 64 at 48 kHz, the slowest block {swept:F0} µs ({designs} designs in steps of {perDesign}, " +
+                           $"at most {most} steps a block; {Group(1)}) against {still:F0} µs not moving ({Group(0)}) and {before:F0} µs with each design whole in one block " +
+                           $"({wholeDesigns} designs; {Group(2)})");
             Assert.That(designs, Is.GreaterThan(60), "the sweep designs again every 4th partition");
             Assert.That(designs, Is.InRange(wholeDesigns - 1, wholeDesigns), "as often as before");
             Assert.That(most, Is.LessThanOrEqualTo(Block / LinearSplit.DesignStride));
