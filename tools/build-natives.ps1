@@ -17,10 +17,18 @@
     .x64.dll, which is how ReBuzz knows to run them in its 64-bit host), the machine's extra files, and
     build.log. Exit code 1 when a machine didn't build.
 
+    -Unfixed builds only the machines whose entry names a source fix ("fix": state upstream never
+    initialises), defines NEOBUZZ_UNFIXED, which leaves each fix out, and links tools\native-zeroed-heap.cpp,
+    which zeroes every allocation the DLL makes: upstream's code as it plays from a fresh, zeroed allocation,
+    built as ours is. The package job's comparison (tools/native-compare.py --unfixed) requires the fixed
+    build to render the same bits as that one in every case: the fix is that start and nothing else.
+
 .EXAMPLE
     ./tools/build-natives.ps1 -OutDir build/natives
 .EXAMPLE
     ./tools/build-natives.ps1 -OutDir build/natives-o2 -Flags '/O2' -Suffix ' O2' -Platforms x64
+.EXAMPLE
+    ./tools/build-natives.ps1 -OutDir build/natives-unfixed -Unfixed -Platforms x64 -NoExtras
 #>
 [CmdletBinding()]
 param(
@@ -30,7 +38,8 @@ param(
     [string]$Suffix = '',
     [string[]]$Only,
     [string]$VsPath,
-    [switch]$NoExtras
+    [switch]$NoExtras,
+    [switch]$Unfixed
 )
 
 Set-StrictMode -Version Latest
@@ -43,6 +52,10 @@ $bt = $manifest.machines | Where-Object { $_.id -eq 'buzztrax-buzzmachines' } | 
 if (-not $bt) { throw 'machines.json has no buzztrax-buzzmachines entry' }
 $src = Join-Path $Root ('ExternalMachines/' + $bt.path)
 $machines = @($bt.natives | Where-Object { -not $Only -or $Only -contains $_.gear })
+if ($Unfixed) {
+    $machines = @($machines | Where-Object { $_.PSObject.Properties['fix'] -and $_.fix })
+    $Flags = ($Flags + ' /DNEOBUZZ_UNFIXED').Trim()
+}
 if ($machines.Count -eq 0) { throw 'no machines to build' }
 
 if (-not $VsPath) {
@@ -91,6 +104,7 @@ foreach ($platform in $Platforms) {
         $dll = Join-Path $gearDir ($m.gear + $Suffix + $(if ($platform -eq 'x64') { '.x64.dll' } else { '.dll' }))
         $defs = (@(Get-Prop $m 'defines') | Where-Object { $_ } | ForEach-Object { "/D$_" }) -join ' '
         $srcs = (@($m.sources) | ForEach-Object { Q (Join-Path $dir $_) }) -join ' '
+        if ($Unfixed) { $srcs += ' ' + (Q (Join-Path $PSScriptRoot 'native-zeroed-heap.cpp')) }
         $libs = @()
         foreach ($l in @(@(Get-Prop $m 'libs') | Where-Object { $_ })) {
             switch ($l) {

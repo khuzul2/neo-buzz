@@ -147,7 +147,7 @@ jobs:
     # sweeps and safe ranges, which param_set keeps agents inside unless they pass allow_unsafe.
     - name: Machine profiler inference tests
       if: always()
-      run: python3 -m unittest discover -s tools -p "test_machine_infer.py" -v
+      run: python3 -m unittest discover -s tools -p "test_*.py" -v
 
     # Without U2's per-parameter sweeps (--no-roles), which took this step from about 4 to 12 minutes on
     # every change: the roles come from the package job's profile (every machine, Windows), and the health,

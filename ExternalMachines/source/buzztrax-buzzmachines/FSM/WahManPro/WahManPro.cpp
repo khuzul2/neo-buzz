@@ -469,8 +469,12 @@ void mi::Init(CMachineDataInput * const pi)
     // neo-buzz (U7): the cutoff the glide starts from, and the LFO phase (its default, 255, sets none),
     // were never set: heap garbage, so an instance could start anywhere, or blow up. 0 is where a fresh
     // (zeroed) allocation started them, so every instance now sounds as those did.
+    // Built without it (NEOBUZZ_UNFIXED, tools/build-natives.ps1 -Unfixed), it is upstream's code again: the
+    // package job's comparison checks that build against upstream's binary.
+#ifndef NEOBUZZ_UNFIXED
     Tracks[c].CurCutoff = 0.0f;
     Tracks[c].LFOPhase = 0.0;
+#endif
     TickTrack(&Tracks[c], &vals);
     Tracks[c].ResetFilter();
 	}
