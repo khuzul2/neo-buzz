@@ -399,7 +399,7 @@
       "vendoredOn": "2026-10-25",
       "path": "source/buzztrax-buzzmachines",
       "license": "Per author; see COPYING and each author folder",
-      "notes": "~120 classic machines (Arguru, FSM, Geonik, Jeskola, Makk, Oomek, WhiteNoise...). The nmake build covers FSM, Fuzzpilz, Matilde and Oomek; the rest are source only.",
+      "notes": "~120 classic machines (Arguru, FSM, Geonik, Jeskola, Makk, Oomek, WhiteNoise...). The nmake build covers FSM, Fuzzpilz, Matilde and Oomek; the rest are source only. The machines listed under natives (FSM, Oomek, Jeskola) build with tools/build-natives.ps1 as x86 and x64 in every full package build (docs/specs/mcp-server.md §12.14).",
       "project": "makefile.nmake",
       "nmakeBuilds": [
         "FSM",
@@ -428,7 +428,9 @@
             "FSM_Infector.html": "FSM Infector.html"
           },
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
-          "upstreamBinary": "x64"
+          "redistribute": true,
+          "upstreamBinary": "x64",
+          "ship": "upstream"
         },
         {
           "gear": "FSM KickXP",
@@ -438,7 +440,9 @@
             "KickXP.cpp"
           ],
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
-          "upstreamBinary": "x64"
+          "redistribute": true,
+          "upstreamBinary": "x64",
+          "ship": "upstream"
         },
         {
           "gear": "FSM PhatMan",
@@ -459,7 +463,9 @@
             "FSM_PhatMan.prs": "FSM PhatMan.prs"
           },
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
-          "upstreamBinary": "x64"
+          "redistribute": true,
+          "upstreamBinary": "x64",
+          "ship": "upstream"
         },
         {
           "gear": "FSM PanzerDelay",
@@ -480,7 +486,9 @@
             "FSM_PanzerDelay.prs": "FSM PanzerDelay.prs"
           },
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
-          "upstreamBinary": "x64"
+          "redistribute": true,
+          "upstreamBinary": "x64",
+          "ship": "upstream"
         },
         {
           "gear": "FSM Chorus2",
@@ -498,7 +506,9 @@
             "dsplib"
           ],
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
-          "upstreamBinary": "x64"
+          "redistribute": true,
+          "upstreamBinary": "x64",
+          "ship": "upstream"
         },
         {
           "gear": "FSM WahMan",
@@ -512,7 +522,9 @@
             "_USE_MATH_DEFINES"
           ],
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
-          "upstreamBinary": "x64"
+          "redistribute": true,
+          "upstreamBinary": "x64",
+          "ship": "upstream"
         },
         {
           "gear": "FSM WahManPro",
@@ -526,7 +538,9 @@
             "_USE_MATH_DEFINES"
           ],
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
-          "upstreamBinary": "x64"
+          "redistribute": true,
+          "upstreamBinary": "x64",
+          "ship": "upstream"
         },
         {
           "gear": "FSM WahPro2",
@@ -543,7 +557,9 @@
             "FSM_WahPro2.prs": "FSM WahPro2.prs"
           },
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
-          "upstreamBinary": "x64"
+          "redistribute": true,
+          "upstreamBinary": "x64",
+          "ship": "upstream"
         },
         {
           "gear": "Oomek Aggressor 303",
@@ -558,7 +574,9 @@
             "dsplib"
           ],
           "license": "GPL-3.0-or-later (the source's header)",
-          "upstreamBinary": "x64"
+          "redistribute": true,
+          "upstreamBinary": "x64",
+          "ship": "upstream"
         },
         {
           "gear": "Oomek Exciter",
@@ -572,7 +590,9 @@
             "dsplib"
           ],
           "license": "GPL-3.0-or-later (the source's header)",
-          "upstreamBinary": "x64"
+          "redistribute": true,
+          "upstreamBinary": "x64",
+          "ship": "upstream"
         },
         {
           "gear": "Oomek Masterizer",
@@ -586,7 +606,9 @@
             "dsplib"
           ],
           "license": "GPL-3.0-or-later (the source's header)",
-          "upstreamBinary": "x64"
+          "redistribute": true,
+          "upstreamBinary": "x64",
+          "ship": "upstream"
         },
         {
           "gear": "Jeskola Delay",
@@ -596,7 +618,9 @@
             "Delay.cpp"
           ],
           "license": "None stated (Jeskola folder: no licence file or header)",
-          "upstreamBinary": "x86"
+          "redistribute": false,
+          "upstreamBinary": "x86",
+          "ship": "upstream"
         },
         {
           "gear": "Jeskola Cross Delay",
@@ -606,8 +630,10 @@
             "CrossDelay.cpp"
           ],
           "license": "None stated (Jeskola folder: no licence file or header)",
+          "redistribute": false,
           "upstreamBinary": "x86",
-          "notes": "Buzztrax's rewrite: 'the original source is not available' (its first line)"
+          "notes": "Buzztrax's rewrite: 'the original source is not available' (its first line)",
+          "ship": "upstream"
         },
         {
           "gear": "Jeskola Distortion",
@@ -617,7 +643,9 @@
             "Distortion.cpp"
           ],
           "license": "None stated (Jeskola folder: no licence file or header)",
-          "upstreamBinary": "x86"
+          "redistribute": false,
+          "upstreamBinary": "x86",
+          "ship": "upstream"
         },
         {
           "gear": "Jeskola NiNjA dElaY",
@@ -630,7 +658,9 @@
             "dsplib"
           ],
           "license": "None stated (Jeskola folder: no licence file or header)",
-          "upstreamBinary": "x86"
+          "redistribute": false,
+          "upstreamBinary": "x86",
+          "ship": "upstream"
         },
         {
           "gear": "Jeskola Trilok",
@@ -640,7 +670,9 @@
             "Trilok.cpp"
           ],
           "license": "None stated (Jeskola folder: no licence file or header)",
-          "upstreamBinary": "x86"
+          "redistribute": false,
+          "upstreamBinary": "x86",
+          "ship": "upstream"
         },
         {
           "gear": "Jeskola Noise Generator",
@@ -653,7 +685,9 @@
             "dsplib"
           ],
           "license": "None stated (Jeskola folder: no licence file or header)",
-          "upstreamBinary": "x86"
+          "redistribute": false,
+          "upstreamBinary": "x86",
+          "ship": "upstream"
         }
       ]
     },

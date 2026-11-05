@@ -9,22 +9,22 @@
     3. Builds ReBuzz.sln (Release|x64) into bin\Release\x64\net10.0-windows10.0.26100.0.
        This includes ReBuzz's own machines and copies RunTime\Gear (73 prebuilt machines).
     4. Builds ExternalMachines: every 'rebuzz-managed' entry in ExternalMachines\machines.json
-       (dotnet build). With -NativeMachines also the Buzztrax nmake subset (FSM, Fuzzpilz,
-       Matilde, Oomek) as x64; off by default because those 2000s sources don't compile with
-       current MSVC headers yet, and upstream Gear already ships all but one of them.
+       (dotnet build), and the classic native machines with sources (the "natives" of its
+       Buzztrax entry: FSM, Oomek and Jeskola) as x86 and x64 with tools\build-natives.ps1.
+       A rebuilt native replaces upstream's binary only where its entry says "ship": "rebuilt"
+       (it renders as upstream's does: tools\native-compare.py) and its licence allows it.
     5. Merges prebuilt DLLs from ExternalMachines\binaries.
     6. Writes GEAR-INVENTORY.txt, BUILD-INFO.txt and README-FIRST.txt, then zips to dist\.
 
     Precedence: upstream machines > machines built from source > prebuilt binaries.
-    Nothing ever overwrites a file already in the Gear folder, and "Foo.dll" and
+    Nothing ever overwrites a file already in the Gear folder (but the rebuilt natives marked
+    "ship": "rebuilt", which replace upstream's binary of the same machine), and "Foo.dll" and
     "Foo.x64.dll" count as the same machine. Files this script added on a previous run are
     removed first, so re-runs (and -SkipCore) start from the upstream Gear set.
 
     A machine that fails to build is reported and skipped (use -StrictMachines to fail).
 
     Run from a normal PowerShell prompt on Windows (Windows PowerShell 5.1 or pwsh 7).
-    For -NativeMachines, clone the repo to a path without spaces (the Buzztrax makefiles
-    don't quote paths).
 
 .PARAMETER Version
     Version label for the package. Default: yyyy.MM.dd-<git short sha>.
@@ -41,7 +41,7 @@
 .EXAMPLE
     .\build.ps1 -SkipCore
 .EXAMPLE
-    .\build.ps1 -NativeMachines
+    .\build.ps1 -SkipNativeMachines
 .EXAMPLE
     .\build.ps1 -Version 0.1.0-session-mvp
 #>
@@ -53,7 +53,7 @@ param(
     [string]$PlatformToolset,
     [switch]$SkipCore,
     [switch]$SkipManagedMachines,
-    [switch]$NativeMachines,
+    [switch]$SkipNativeMachines,
     [switch]$SkipBinaries,
     [switch]$StrictMachines,
     [switch]$NoZip,
@@ -198,7 +198,7 @@ if (-not $Version) {
     $Version = '{0:yyyy.MM.dd}-{1}' -f (Get-Date), $suffix
 }
 Assert-DotNet10
-$needVs = (-not $SkipCore) -or $NativeMachines
+$needVs = (-not $SkipCore) -or (-not $SkipNativeMachines)
 $vs = $null
 if ($needVs) {
     $vs = Find-VisualStudio
@@ -333,51 +333,49 @@ if (-not $SkipManagedMachines) {
     }
 }
 
-# ---------------------------------------------------------------- 4b. native Buzztrax machines
+# ---------------------------------------------------------------- 4b. native machines with sources (fork, U7)
 
-if ($NativeMachines) {
-    $bt = $manifest.machines | Where-Object { $_.kind -eq 'native-nmake' } | Select-Object -First 1
-    if ($bt) {
-        Write-Step "Building Buzztrax machines ($((Get-Prop $bt 'nmakeBuilds') -join ', ')) as x64"
-        if ($Root.Contains(' ')) {
-            # The Buzztrax makefiles use unquoted install paths.
-            Add-MachineFailure "buzztrax: skipped because the repo path contains spaces ($Root). Clone to a path without spaces."
-            $bt = $null
-        }
-    }
-    if ($bt) {
-        $btDir = [IO.Path]::Combine($ExtRoot, ($bt.path -replace '/', '\'))
-        $btStage = [IO.Path]::Combine($StageRoot, 'buzztrax')
-        if (Test-Path -LiteralPath $btStage) { Remove-Item -LiteralPath $btStage -Recurse -Force }
-        New-Dir $btStage
-        if (-not (Test-Path -LiteralPath $vs.VcVars)) { throw "vcvars64.bat not found at $($vs.VcVars)" }
-        # A temp .cmd avoids PowerShell/cmd quoting differences across PowerShell versions.
-        # /K keeps going past a machine that fails to compile; whatever built is installed.
-        $cmdFile = [IO.Path]::Combine($StageRoot, 'build-buzztrax.cmd')
-        @(
-            '@echo off',
-            "call `"$($vs.VcVars)`" >nul || exit /b 1",
-            'set PLATFORM=x64',
-            "cd /d `"$btDir`" || exit /b 1",
-            'set RC=0',
-            'nmake /nologo /K -f makefile.nmake PLATFORM=x64 CONFIGURATION=Release all || set RC=1',
-            "nmake /nologo /K -f makefile.nmake PLATFORM=x64 CONFIGURATION=Release `"INSTALLDIR=$btStage`" install || set RC=1",
-            'exit /b %RC%'
-        ) | Set-Content -LiteralPath $cmdFile -Encoding Oem   # cmd.exe reads batch files in the OEM code page
-        & cmd.exe /d /c "`"$cmdFile`""
+# The classic native machines whose sources are in ExternalMachines (docs/specs/mcp-server.md §12.14): built
+# as x86 and x64 into build\ExternalMachines\natives\<platform>\Gear by tools\build-natives.ps1. What goes
+# into Gear is each entry's "ship": "rebuilt" replaces upstream's binary of that machine with the rebuilt one
+# of the same platform, or of "shipPlatform" (it renders as upstream's: tools\native-compare.py checks it in
+# the package run), "upstream" keeps upstream's. A machine whose licence doesn't allow redistribution ("redistribute": false)
+# is built for the comparison only, never added.
+if (-not $SkipNativeMachines) {
+    $bt = $manifest.machines | Where-Object { $_.id -eq 'buzztrax-buzzmachines' } | Select-Object -First 1
+    $natives = @(if ($bt) { Get-Prop $bt 'natives' })
+    if ($natives.Count -gt 0) {
+        Write-Step "Building $($natives.Count) native machines from source (x86, x64)"
+        $nativeOut = [IO.Path]::Combine($StageRoot, 'natives')
+        $buildArgs = @{ OutDir = $nativeOut; VsPath = $vs.Path }
+        & ([IO.Path]::Combine($Root, 'tools', 'build-natives.ps1')) @buildArgs
         if ($LASTEXITCODE -ne 0) {
-            Add-MachineFailure "buzztrax: some machines failed to build (see nmake output above); the rest are included"
+            Add-MachineFailure "natives: some machines failed to build (see the compiler output above); upstream's binaries stay for those"
         }
-        foreach ($sub in 'Generators', 'Effects') {
-            $dir = [IO.Path]::Combine($btStage, 'Gear', $sub)
-            if (-not (Test-Path -LiteralPath $dir)) { continue }
-            # ReBuzz loads a native DLL in its 64-bit host only when the name ends in "x64.dll";
-            # anything else goes to the 32-bit host. Presets and help keep their base names.
-            Get-ChildItem -LiteralPath $dir -File -Filter '*.dll' |
-                Where-Object { $_.Name -notlike '*.x64.dll' } |
-                ForEach-Object { Rename-Item -LiteralPath $_.FullName -NewName ($_.BaseName + '.x64.dll') }
-            $n = Copy-IntoGear -Files @(Get-ChildItem -LiteralPath $dir -File) -GearFolder $sub -Origin 'external:buzztrax'
-            Write-Host "Added $n Buzztrax file(s) to Gear\$sub (the rest are already in upstream Gear)"
+        foreach ($n in $natives) {
+            $upFile = $n.gear + $(if ((Get-Prop $n 'upstreamBinary') -eq 'x86') { '.dll' } else { '.x64.dll' })
+            # Upstream's binary back first, where a previous run (-SkipCore) replaced it.
+            $upstream = [IO.Path]::Combine($Root, 'RunTime', 'Gear', $n.gearFolder, $upFile)
+            $inGear = [IO.Path]::Combine($OutDir, 'Gear', $n.gearFolder, $upFile)
+            if ((Test-Path -LiteralPath $upstream) -and -not (Test-Path -LiteralPath $inGear)) { Copy-Item -LiteralPath $upstream -Destination $inGear }
+            if ((Get-Prop $n 'ship') -ne 'rebuilt' -or (Get-Prop $n 'redistribute') -eq $false) { continue }
+            # The platform that ships: upstream's, or "shipPlatform" (an x64 build where upstream has only x86).
+            $platform = Get-Prop $n 'shipPlatform'
+            if (-not $platform) { $platform = if ((Get-Prop $n 'upstreamBinary') -eq 'x86') { 'x86' } else { 'x64' } }
+            $file = $n.gear + $(if ($platform -eq 'x64') { '.x64.dll' } else { '.dll' })
+            $built = [IO.Path]::Combine($nativeOut, $platform, 'Gear', $n.gearFolder, $file)
+            if (-not (Test-Path -LiteralPath $built)) {
+                Add-MachineFailure "natives: $($n.gear) ($platform) didn't build; upstream's binary stays"
+                continue
+            }
+            $dest = [IO.Path]::Combine($OutDir, 'Gear', $n.gearFolder)
+            # Upstream's binary of the machine (either name) makes way for the rebuilt one.
+            Get-ChildItem -LiteralPath $dest -File -Filter '*.dll' | Where-Object { (Get-GearKey $_.Name) -eq (Get-GearKey $file) } |
+                ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
+            Copy-Item -LiteralPath $built -Destination ([IO.Path]::Combine($dest, $file))
+            $Origins["$($n.gearFolder)\$file"] = 'external:buzztrax'
+            Add-Content -LiteralPath $AddedList -Value "$($n.gearFolder)\$file" -Encoding UTF8
+            Write-Host "Gear\$($n.gearFolder)\$file rebuilt from source (in place of upstream's)"
         }
     }
 }

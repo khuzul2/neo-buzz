@@ -27,9 +27,9 @@
 
 #include <algorithm>
 
-#ifdef __MSVC__
-#define copysign(x,y) _copysign(x,y);
-#else
+// neo-buzz (U7): no copysign macro on MSVC any more: it rewrote <cmath>'s own declarations when a later header
+// included it (Infector's <complex>). The call below is _copysign, which the macro made it before.
+#ifndef __MSVC__
 #define _copysign(x,y) copysign(x,y)
 #endif
 
@@ -67,7 +67,7 @@ public:
     if (fabs(m_fAccum-value)<diff)
       m_fAccum=value;
     else
-      m_fAccum+=(float)copysign(diff,value-m_fAccum);
+      m_fAccum+=(float)_copysign(diff,value-m_fAccum);
     return m_fAccum;
   }
 };
