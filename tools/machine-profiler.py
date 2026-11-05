@@ -2029,11 +2029,13 @@ def fmt_s(t):
     return "" if not isinstance(t, (int, float)) else f"{t * 1000:.0f} ms" if t < 1 else f"{t:.2f} s"
 
 
-def health_report(summary, curated=None, sourced=None):
+def health_report(summary, curated=None, sourced=None, rebuilt=None):
     """The report. curated: {gear: {"name" or "track name": role}} from the curated manifests, for the roles' table;
-    sourced: the gear with manifests generated from their source (U6), which have no draft's suggestions."""
+    sourced: the gear with manifests generated from their source (U6), which have no draft's suggestions; rebuilt: the
+    natives the package builds from source in place of upstream's binaries (U7)."""
     curated = curated or {}
     sourced = sourced or set()
+    rebuilt = rebuilt or []
     machines = summary["machines"]
     rows = sorted(machines.values(), key=lambda e: (e.get("kind", ""), e["gear"].lower()))
     by_platform = {}
@@ -2078,6 +2080,14 @@ def health_report(summary, curated=None, sourced=None):
         "Pitch conventions of the generators (the offset `notes_write` applies so the written pitch plays): " +
         (", ".join(f"{k}: {v}" for k, v in sorted(offsets.items())) or "none profiled") + ".",
         "",
+    ]
+    if rebuilt:
+        lines += [
+            f"Built from source (mcp-server.md §12.14, U7): {', '.join(sorted(rebuilt))} ship rebuilt in place of upstream's binaries, "
+            "which they render as (`tools/native-compare.py`), and are profiled as rebuilt; the other natives are upstream's binaries.",
+            "",
+        ]
+    lines += [
         "## Diverging",
         "",
         "The output runs away: NaN or infinity, above +60 dBFS, or still growing after 20 s. Unhealthy: `gear_list` lists them last, "
@@ -2308,7 +2318,17 @@ def curated_roles(root):
 
 def write_report(root, merged):
     with open(os.path.join(root, "docs", "machine-health.md"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(health_report(merged, curated_roles(root), from_source(root)))
+        f.write(health_report(merged, curated_roles(root), from_source(root), rebuilt_natives(root)))
+
+
+def rebuilt_natives(root):
+    """U7 (mcp-server.md §12.14): the natives ExternalMachines/machines.json ships rebuilt from source."""
+    try:
+        with open(os.path.join(root, "ExternalMachines", "machines.json"), encoding="utf-8") as f:
+            bt = next((m for m in json.load(f)["machines"] if m.get("id") == "buzztrax-buzzmachines"), {})
+    except (OSError, ValueError):
+        return []
+    return [n["gear"] for n in bt.get("natives", []) if n.get("ship") == "rebuilt" and n.get("redistribute", True)]
 
 
 PACK = "MACHINE-PROFILE-PACK"
@@ -2457,7 +2477,8 @@ def main():
     c.close()
     write_json(os.path.join(out, "machine-profile.json"), summary)
     with open(os.path.join(out, "machine-health.md"), "w", encoding="utf-8", newline="\n") as f:
-        f.write(health_report(summary, curated_roles(args.repo or root_default), from_source(args.repo or root_default)))
+        f.write(health_report(summary, curated_roles(args.repo or root_default), from_source(args.repo or root_default),
+                                rebuilt_natives(args.repo or root_default)))
     if args.repo:
         merge_into_repo(os.path.abspath(args.repo), summary, out)
     cats = {}

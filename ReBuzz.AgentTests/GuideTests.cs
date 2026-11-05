@@ -655,9 +655,9 @@ namespace ReBuzz.AgentTests
             var server2 = new McpServer(new ServerInfo { Name = "t", Title = "t", Version = "1" }, gear);
             var listed = TestTools.CallTool(server2, "guide", new JsonObject()).Data["manuals"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
             Assert.That(listed, Is.SupersetOf(profiled.Keys).And.SupersetOf(NeoGear));
-            var draft = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "jeskola noise generator" });
+            var draft = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "jeskola organ" });   // U7 made Noise Generator's from its source
             Assert.That(draft.Error, Is.False, draft.Text);
-            Assert.That(draft.Data["markdown"]!.GetValue<string>(), Does.StartWith("# Jeskola Noise Generator manual").And.Contain("profiled draft"));
+            Assert.That(draft.Data["markdown"]!.GetValue<string>(), Does.StartWith("# Jeskola Organ manual").And.Contain("profiled draft"));
             var sh101 = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "Pedal SH101" }).Data["markdown"]!.GetValue<string>();
             Assert.That(sh101, Does.Contain("**Filter cutoff** (`filter.cutoff`)").And.Contain("## Quirks"));
             var typo = TestTools.CallTool(server2, "guide", new JsonObject { ["machine"] = "Pedal SH-1O1" });

@@ -9,7 +9,7 @@ Third-party Buzz/ReBuzz machines kept inside this repo so we can build, ship and
 | Kind (`machines.json`) | Count | What `build.ps1` does with it |
 |---|---|---|
 | `rebuzz-managed` — C# machines for ReBuzz (.NET 10) | 19 | Built from source against our own ReBuzz build and added to the package |
-| `native-nmake` — Buzztrax collection (~120 classic C++ machines) | 1 repo | Only with `build.ps1 -NativeMachines`: builds the nmake subset (FSM, Fuzzpilz, Matilde, Oomek) as x64. **Doesn't compile yet with current MSVC** (old headers clash with `<cmath>`), and upstream Gear already ships all of these except Fuzzpilz UnwieldyTracker. The other authors' folders are source only |
+| `native-nmake` — Buzztrax collection (~120 classic C++ machines) | 1 repo | Builds the 17 machines its entry lists under `natives` (FSM Infector, KickXP, PhatMan, PanzerDelay, Chorus2, WahMan, WahManPro, WahPro2; Oomek Aggressor 303, Exciter, Masterizer; Jeskola Delay, Cross Delay, Distortion, NiNjA dElaY, Trilok, Noise Generator) as x86 and x64 with `tools/build-natives.ps1`, in every full build (`-SkipNativeMachines` skips them). A rebuilt machine replaces upstream's binary only where its entry says `"ship": "rebuilt"` and its licence allows it (below, and Natives with sources). The rest of the collection (Fuzzpilz, Matilde, the other authors) is source only; its `makefile.nmake` is upstream's, unused |
 | `buzz1503-managed` / `buzz1503-native` — written for classic Jeskola Buzz 1503 | 7 | Source only. Porting one to ReBuzz is mostly retargeting to `net10.0-windows` (see the `rebuzz-managed` twins) |
 | `native-source` — Jeskola developer examples, PatternXP | 1 | Source only (no x64 build files yet) |
 | `reference` — bmxplay | 1 | Not a machine. C reimplementations of classic DSP plus demo `.bmx` songs, useful for testing |
@@ -54,11 +54,17 @@ Precedence in the package: upstream `RunTime/Gear` > built from source > prebuil
 
 When re-syncing from upstream, re-apply the entries under `patches`.
 
+## Natives with sources (U7)
+
+`tools/build-natives.ps1` builds each machine of the Buzztrax entry's `natives` list from its sources, defines and libraries there, with the Buzztrax makefiles' flags (`/MT`, no optimisation switch, `WIN32`, `__MSVC__`, `_X86_` or `WIN64 _AMD64_`), against Buzztrax's MDK (`common/mdk`, static) and ReBuzz's own dsplib import libraries (`ReBuzzEngine/dsplib`, `dsplib64`), so a rebuilt machine loads the same `dsplib.dll` from `bin32` or `bin64` as the shipped one does. x64 DLLs are named `*.x64.dll`, which is how ReBuzz runs them in its 64-bit host (`bin64/ReBuzzEngine64.exe`, a process of their own); any other native DLL runs in `bin32/ReBuzzEngine32.exe`. One change was needed for the current MSVC: `FSM/dspchips/DSPChips.h` defined `copysign` as a macro, which rewrote `<cmath>`'s own declarations when Infector's `<complex>` included it after (`patches`).
+
+Each entry records its licence (`license`, `redistribute`) and what ships (`ship`): `upstream` keeps the binary upstream ReBuzz ships, `rebuilt` puts the rebuilt one in its place. `tools/native-compare.py` renders every build of each machine side by side through `ReBuzz.exe --agent` in each full package run (docs/specs/mcp-server.md §12.14), and fails the run when a machine shipped rebuilt doesn't render as upstream's binary does.
+
 ## Licensing — read before publishing this repo
 
 - **Most thepedal repos, retracker and the Jeskola examples have no license file.** By default that means all rights reserved: fine for a private repo and personal builds, not fine to redistribute publicly without asking the authors.
 - `pedal-juno106`, `pedal-sh101`, `pedal-drum-matrix` and several buzz1503 ports are **GPL-3.0**. Shipping their binaries in our zip is fine as long as the source (this folder) is available with the package.
-- Buzztrax machines carry **per-author licenses**; check each author folder.
+- Buzztrax machines carry **per-author licenses**; check each author folder. For the 17 natives (`machines.json`, `natives`): FSM is LGPL-2.1 (`FSM/COPYING`), Oomek GPL-3.0-or-later (each source's header): both allow building and redistributing with the source. The Jeskola folder states **no licence** (no file, no header; Cross Delay is Buzztrax's own rewrite, also unlicensed), so its six are built for measurement only (`"redistribute": false`) and the package keeps upstream's binaries of them.
 - Buzz's `MachineInterface.h` (Oskari Tammelin) allows **freeware machines only**. Nothing built from it may be sold.
 
 Recommendation: keep the repo private until the unlicensed sources are cleared with their authors, or publish without `source/thepedal` and `binaries/`.
