@@ -99,6 +99,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Sampler = new("Neo Sampler", "Sampler", true);
         // The oscilloscope and vectorscope (docs/specs/mcp-server.md §8.1): looks at what passes, changes nothing.
         internal static readonly NeoInfo Scope = new("Neo Scope", "Scope", false);
+        // The drum kit (docs/specs/mcp-server.md §8.2, §12.5): General MIDI keys from C2 and Buzz drum machines' hit columns.
+        internal static readonly NeoInfo Drums = new("Neo Drums", "Drums", true);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -807,6 +809,75 @@ namespace ReBuzzTests
             }
         }
 
+        [TestCase(".bmx")]
+        [TestCase(".bmxml")]
+        [Apartment(ApartmentState.STA)]
+        public void NeoDrumsPlaysFromItsKeysAndHitColumnsKeepsItsKitThroughASaveAndShowsItsEditor(string extension)
+        {
+            // C2 (Buzz C-3, MIDI 36) on the Note column plays the kick, at its tune once its sweep has settled; the SD column
+            // plays the snare; a note-off stops nothing (a hit sounds out). Saved and opened again, the kit's settings come back.
+            using var rig = new Rig(Drums);
+            string dir = Path.GetDirectoryName(Drums.BuiltPath)!;
+            Assert.That(File.Exists(Path.Combine(dir, "Neo Drums.prs.xml")), Is.True, "presets ship beside the DLL");
+            Assert.That(File.Exists(Path.Combine(dir, "Neo Drums.machine.json")), Is.True, "and the manifest");
+            Assert.That(rig.Param("Kick tune").DescribeValue(365), Is.EqualTo("54.0 Hz"));
+            IParameter Track(MachineCore m, string name) => m.ParameterGroups[2].Parameters.Single(p => p.Name == name);
+
+            rig.Notes(BuzzNote(3, 0));
+            var kick = rig.PlayUntilSound(0.6);
+            double f = Frequency(kick, rig.Rate, rig.Rate * 3 / 10), level = Db(Rms(kick));
+            TestContext.Out.WriteLine($"C2: the kick at {f:F2} Hz (its tune 54.0 Hz), {level:F2} dB RMS over 0.6 s");
+            Assert.That(f, Is.EqualTo(54.0).Within(1.0), "the kick on C2, at its tune");
+            rig.Notes(255);
+            var after = rig.Play(0.1);
+            Assert.That(Rms(after), Is.GreaterThan(1e-5), "a note-off doesn't cut the hit");
+            rig.Play(1.5);
+            Assert.That(Rms(rig.Play(0.2)), Is.LessThan(1e-5), "and it falls silent");
+
+            Track(rig.Effect, "SD").SetValue(0, 127);
+            var snare = rig.Play(0.4);
+            double crossings = Frequency(snare, rig.Rate);
+            TestContext.Out.WriteLine($"SD 127: {Db(Rms(snare)):F2} dB RMS, zero crossings at {crossings:F0} a second");
+            Assert.That(Rms(snare), Is.GreaterThan(1e-3), "the SD column plays the snare");
+            Assert.That(crossings, Is.GreaterThan(150), "a snare, not the kick");
+            rig.Play(1.5);
+
+            // The kit's settings through the file: the kick tuned up (67.1 Hz) and the snare snappier.
+            rig.Param("Kick tune").SetValue(0, 500);
+            rig.Param("Snare snap").SetValue(0, 800);
+            string songPath = Path.Combine(TestContext.CurrentContext.WorkDirectory, "neo-drums-" + Guid.NewGuid().ToString("N") + extension);
+            rig.Core.SaveSongCopy(songPath);
+            rig.Core.Modified = false;
+            rig.Core.OpenSongFile(songPath);
+            rig.Driver.AssertNoErrorsReportedToUser();
+            var opened = rig.Core.SongCore.MachinesList.Single(m => m.DLL.Name == "Neo Drums");
+            Assert.That(opened, Is.Not.SameAs(rig.Effect), "the song was opened");
+            var globals = opened.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters;
+            Assert.That(globals.Single(p => p.Name == "Kick tune").GetValue(0), Is.EqualTo(500));
+            Assert.That(globals.Single(p => p.Name == "Snare snap").GetValue(0), Is.EqualTo(800));
+            if (opened.TrackCount < 1) opened.TrackCount = 1;
+            Track(opened, "Note").SetValue(0, BuzzNote(3, 0));
+            float[] b = null;
+            for (int i = 0; i < 100; i++)
+            {
+                b = rig.Play(0.6);
+                if (Rms(b) > 1e-3) break;
+                Thread.Sleep(20);
+            }
+            double f2 = Frequency(b!, rig.Rate, rig.Rate * 3 / 10);
+            TestContext.Out.WriteLine($"opened again ({extension}): the kick at {f2:F2} Hz (its tune 67.1 Hz)");
+            Assert.That(f2, Is.EqualTo(67.08).Within(1.2), "the opened song's kick at its new tune");
+            Track(opened, "Note").SetValue(0, 255);
+            rig.Play(1.5);
+
+            if (extension == ".bmx")
+            {
+                var size = ShootEditor(opened, "neo-drums-editor");
+                // A [notice] (tools/ci-test-summary.ps1): the WPF editor's size, which the studio's must match (NeoEditorTests).
+                TestContext.Out.WriteLine($"[notice] Neo Drums in ReBuzz: C2's kick {f:F2} Hz, SD column {Db(Rms(snare)):F1} dB RMS; after {extension} {f2:F2} Hz; editor {size.Width:0} x {size.Height:0}");
+            }
+        }
+
         [Test]
         public void NeoAnalyzerPassesAudioThroughReadsWhatItMeasuresAndShowsItsEditor()
         {
@@ -1265,7 +1336,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

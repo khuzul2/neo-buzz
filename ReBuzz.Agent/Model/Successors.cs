@@ -87,7 +87,20 @@ namespace ReBuzz.Agent.Model
         /// for the names (or raw values) in <c>enable_when</c>.
         /// </summary>
         KeyZones,
+        /// <summary>
+        /// The interval from one old frequency down to another, in semitones: 12·(log2(from / over) + Σ weight · term)·scale
+        /// + offset (FSM KickXP's Start over its End: Neo Drums' kick sweep). <c>octaves_from</c>: old values adding octaves.
+        /// </summary>
+        Interval,
     }
+
+    /// <summary>
+    /// A column of hits that becomes notes (Rout 909's BD Trigger … RC Trigger, FSM KickXP's Trigger/volume): each value in it at
+    /// least <c>min_value</c> (as the column's manifest or the mapping's describe reads it) plays <c>pitch</c>, at
+    /// <c>velocity</c>, or with <c>value_at_full</c> at 127 · value / value_at_full; a row whose note column has a note is that
+    /// note's (its volume), not a hit of its own.
+    /// </summary>
+    public sealed record SuccessorTrigger(string Column, int Pitch, int? Velocity, double? ValueAtFull, double MinValue);
 
     /// <summary>A zone a <see cref="SuccessorRuleKind.KeyZones"/> rule sets: its wave, lowest key and highest key parameters.</summary>
     public sealed record SuccessorZone(string Wave, string Low, string High);
@@ -157,6 +170,8 @@ namespace ReBuzz.Agent.Model
         public double HighOffset { get; init; }
         public string Delay { get; init; }
         public string Depth { get; init; }
+        /// <summary>Interval: the old frequency the interval is measured down to.</summary>
+        public string Over { get; init; }
         public double Octaves { get; init; } = 1;
         /// <summary>DryWet: a 0–100 % wet/dry mix instead of separate levels (dry = 1 − mix, wet = mix), and the wet's scale s.</summary>
         public string MixFrom { get; init; }
@@ -208,6 +223,7 @@ namespace ReBuzz.Agent.Model
             SuccessorRuleKind.KeyZones => Waves.Concat(Splits).Concat(new[] { Enable }.Where(x => x != null)),
             SuccessorRuleKind.DelayTime => new[] { Length, LengthRight, Unit }.Where(x => x != null),
             SuccessorRuleKind.Filter => new[] { Type, Cutoff },
+            SuccessorRuleKind.Interval => new[] { From, Over }.Concat(OctaveTerms?.Select(t => t.Param) ?? Enumerable.Empty<string>()),
             _ => new[] { From },
         };
 
@@ -229,7 +245,7 @@ namespace ReBuzz.Agent.Model
     /// <summary>How a generator's notes move (tracker notes to the successor's notes).</summary>
     public sealed class SuccessorNotes
     {
-        /// <summary>The old machine's note column (a Note track parameter).</summary>
+        /// <summary>The old machine's note column (a Note track parameter), or null (JSON null): it has none (Rout 909 plays from its triggers).</summary>
         public string Note { get; init; } = "Note";
         /// <summary>A column holding a note to glide to (Jeskola Bass's Slide note), or null.</summary>
         public string Slide { get; init; }
@@ -245,10 +261,21 @@ namespace ReBuzz.Agent.Model
         public int Velocity { get; init; } = 100;
         /// <summary>Whether a volume holds until the next (a state parameter) or is the row's only (a non-state one).</summary>
         public bool VolumeHolds { get; init; } = true;
+        /// <summary>The volume a track has before its column sets one (FSM KickXP's 100 %: its Trigger column holds no value), or null: the machine's current value.</summary>
+        public double? VolumeStart { get; init; }
         /// <summary>The new machine's glide time parameter, set where a slide starts.</summary>
         public string Glide { get; init; }
         /// <summary>Semitones the old machine plays above what's written (its manifest's pitch offset when this is null).</summary>
         public int? PitchOffset { get; init; }
+        /// <summary>Every note becomes this pitch, as heard (a drum machine's key for a one-voice machine: FSM KickXP's notes, the kick).</summary>
+        public int? FixedPitch { get; init; }
+        /// <summary>
+        /// Rules that read the note column read the song's most common note (MostCommonNote): a drum machine whose notes tune
+        /// it (FSM KickXP's Pitch limit, the floor its pitch falls to) gives that note to the successor's tune.
+        /// </summary>
+        public bool RulesReadNote { get; init; }
+        /// <summary>Columns of hits that become notes (drum machines' triggers), each on its own pitch.</summary>
+        public IReadOnlyList<SuccessorTrigger> Triggers { get; init; } = Array.Empty<SuccessorTrigger>();
         public string Why { get; init; } = "";
     }
 
@@ -314,7 +341,7 @@ namespace ReBuzz.Agent.Model
             if (root["notes"] is JsonObject n)
                 notes = new SuccessorNotes
                 {
-                    Note = (string)n["note"] ?? "Note",
+                    Note = n.ContainsKey("note") ? (string)n["note"] : "Note",
                     Slide = (string)n["slide"],
                     SlideLength = (string)n["slide_length"],
                     Length = (string)n["length"],
@@ -322,8 +349,15 @@ namespace ReBuzz.Agent.Model
                     VolumeAtFull = (double?)n["volume_at_full"] ?? 1,
                     Velocity = (int?)n["velocity"] ?? 100,
                     VolumeHolds = (bool?)n["volume_holds"] ?? true,
+                    VolumeStart = (double?)n["volume_start"],
                     Glide = (string)n["glide"],
                     PitchOffset = (int?)n["pitch_offset"],
+                    FixedPitch = (int?)n["fixed_pitch"],
+                    RulesReadNote = (bool?)n["rules_read_note"] ?? false,
+                    Triggers = (n["triggers"] as JsonArray)?.OfType<JsonObject>().Select(t => new SuccessorTrigger(
+                        (string)t["column"] ?? throw new FormatException($"{from} → {to}: a trigger names its column."),
+                        (int?)t["pitch"] ?? throw new FormatException($"{from} → {to}: a trigger names its pitch."),
+                        (int?)t["velocity"], (double?)t["value_at_full"], (double?)t["min_value"] ?? 1)).ToList() ?? (IReadOnlyList<SuccessorTrigger>)Array.Empty<SuccessorTrigger>(),
                     Why = (string)n["why"] ?? "",
                 };
             var describe = new Dictionary<string, ManifestParameter>(StringComparer.OrdinalIgnoreCase);
@@ -405,6 +439,7 @@ namespace ReBuzz.Agent.Model
                 "from_db" => SuccessorRuleKind.FromDb,
                 "filter" => SuccessorRuleKind.Filter,
                 "key_zones" => SuccessorRuleKind.KeyZones,
+                "interval" => SuccessorRuleKind.Interval,
                 _ => throw new FormatException($"{pair}: unknown rule kind \"{kind}\"."),
             };
             var rule = new SuccessorRule
@@ -444,6 +479,7 @@ namespace ReBuzz.Agent.Model
                 LowOffset = (double?)r["low_offset"] ?? 0,
                 HighOffset = (double?)r["high_offset"] ?? 0,
                 Delay = (string)r["delay"],
+                Over = (string)r["over"],
                 Depth = (string)r["depth"],
                 Octaves = (double?)r["octaves"] ?? 1,
                 MixFrom = (string)r["mix_from"],
@@ -509,6 +545,7 @@ namespace ReBuzz.Agent.Model
                                                 (rule.Enable != null && rule.EnableWhen.Count == 0)
                     => "waves, a split for each wave after the first, a zone (wave, low, high) for each wave; with enable: enable_when",
                 SuccessorRuleKind.Unit or SuccessorRuleKind.Db or SuccessorRuleKind.InverseDb or SuccessorRuleKind.FromDb when rule.From == null || rule.To == null => "from and to",
+                SuccessorRuleKind.Interval when rule.From == null || rule.Over == null || rule.To == null => "from, over and to",
                 _ => null,
             };
             if (missing != null) throw new FormatException($"{pair}: a {kind} rule needs {missing}.");

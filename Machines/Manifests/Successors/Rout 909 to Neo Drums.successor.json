@@ -1,0 +1,558 @@
+{
+  "format": "rebuzz-successor/1",
+  "from": "Rout 909",
+  "to": "Neo Drums",
+  "summary": "Rout 909's eleven drums play on Neo Drums' voices: each trigger column becomes a hit on the voice's General MIDI key, its levels carry over in decibels, and its tunes, decays, attack, tone and snap become the voices' settings in their units, as measured.",
+  "output_gain_db": 0,
+  "set": {
+    "Volume": "+7.5 dB",
+    "Accent gain": "0 dB"
+  },
+  "describe": {
+    "BD Tune": {
+      "kind": "table",
+      "unit": "s",
+      "points": [
+        [
+          0,
+          0.009
+        ],
+        [
+          16,
+          0.02
+        ],
+        [
+          32,
+          0.025
+        ],
+        [
+          48,
+          0.031
+        ],
+        [
+          63,
+          0.045
+        ]
+      ]
+    },
+    "BD Decay": {
+      "kind": "table",
+      "unit": "s",
+      "points": [
+        [
+          0,
+          0.45
+        ],
+        [
+          16,
+          0.45
+        ],
+        [
+          32,
+          0.5
+        ],
+        [
+          48,
+          0.6
+        ],
+        [
+          63,
+          0.8
+        ]
+      ]
+    },
+    "SD Tune": {
+      "kind": "table",
+      "unit": "Hz",
+      "points": [
+        [
+          0,
+          122.4
+        ],
+        [
+          16,
+          147.5
+        ],
+        [
+          32,
+          179.3
+        ],
+        [
+          48,
+          215.7
+        ],
+        [
+          63,
+          241.3
+        ]
+      ]
+    },
+    "SD Tone": {
+      "kind": "table",
+      "unit": "s",
+      "points": [
+        [
+          0,
+          0.45
+        ],
+        [
+          16,
+          0.38
+        ],
+        [
+          32,
+          0.3
+        ],
+        [
+          48,
+          0.24
+        ],
+        [
+          63,
+          0.2
+        ]
+      ]
+    },
+    "LT Tune": {
+      "kind": "table",
+      "unit": "Hz",
+      "points": [
+        [
+          0,
+          42.8
+        ],
+        [
+          16,
+          50.3
+        ],
+        [
+          32,
+          59.6
+        ],
+        [
+          48,
+          70.3
+        ],
+        [
+          63,
+          82.4
+        ]
+      ]
+    },
+    "MT Tune": {
+      "kind": "table",
+      "unit": "Hz",
+      "points": [
+        [
+          0,
+          53.3
+        ],
+        [
+          16,
+          62.8
+        ],
+        [
+          32,
+          74.2
+        ],
+        [
+          48,
+          87.8
+        ],
+        [
+          63,
+          103.0
+        ]
+      ]
+    },
+    "HT Tune": {
+      "kind": "table",
+      "unit": "Hz",
+      "points": [
+        [
+          0,
+          60.9
+        ],
+        [
+          16,
+          71.8
+        ],
+        [
+          32,
+          84.9
+        ],
+        [
+          48,
+          100.4
+        ],
+        [
+          63,
+          117.9
+        ]
+      ]
+    },
+    "CH Decay": {
+      "kind": "table",
+      "unit": "s",
+      "points": [
+        [
+          0,
+          0.195
+        ],
+        [
+          16,
+          0.175
+        ],
+        [
+          32,
+          0.07
+        ],
+        [
+          48,
+          0.03
+        ],
+        [
+          63,
+          0.025
+        ]
+      ]
+    },
+    "OH Decay": {
+      "kind": "table",
+      "unit": "s",
+      "points": [
+        [
+          0,
+          0.57
+        ],
+        [
+          16,
+          0.55
+        ],
+        [
+          32,
+          0.2
+        ],
+        [
+          48,
+          0.08
+        ],
+        [
+          63,
+          0.05
+        ]
+      ]
+    }
+  },
+  "rules": [
+    {
+      "kind": "db",
+      "from": "BD Level",
+      "to": "Kick level",
+      "why": "its level, linear (100 % at raw 128, measured: half is −6 dB, 198 % +5.9 dB), as decibels"
+    },
+    {
+      "kind": "db",
+      "from": "SD Level",
+      "to": "Snare level",
+      "why": "its level, linear (100 % at raw 128, measured: half is −6 dB, 198 % +5.9 dB), as decibels"
+    },
+    {
+      "kind": "db",
+      "from": "LT Level",
+      "to": "Low tom level",
+      "why": "its level, linear (100 % at raw 128, measured: half is −6 dB, 198 % +5.9 dB), as decibels"
+    },
+    {
+      "kind": "db",
+      "from": "MT Level",
+      "to": "Mid tom level",
+      "why": "its level, linear (100 % at raw 128, measured: half is −6 dB, 198 % +5.9 dB), as decibels"
+    },
+    {
+      "kind": "db",
+      "from": "HT Level",
+      "to": "High tom level",
+      "why": "its level, linear (100 % at raw 128, measured: half is −6 dB, 198 % +5.9 dB), as decibels"
+    },
+    {
+      "kind": "db",
+      "from": "RS Level",
+      "to": "Rim level",
+      "why": "its level, linear (100 % at raw 128, measured: half is −6 dB, 198 % +5.9 dB), as decibels"
+    },
+    {
+      "kind": "db",
+      "from": "CP Level",
+      "to": "Clap level",
+      "why": "its level, linear (100 % at raw 128, measured: half is −6 dB, 198 % +5.9 dB), as decibels"
+    },
+    {
+      "kind": "db",
+      "from": "CH Level",
+      "to": "Closed hat level",
+      "why": "its level, linear (100 % at raw 128, measured: half is −6 dB, 198 % +5.9 dB), as decibels"
+    },
+    {
+      "kind": "db",
+      "from": "OH Level",
+      "to": "Open hat level",
+      "why": "its level, linear (100 % at raw 128, measured: half is −6 dB, 198 % +5.9 dB), as decibels"
+    },
+    {
+      "kind": "db",
+      "from": "CC Level",
+      "to": "Crash level",
+      "why": "its level, linear (100 % at raw 128, measured: half is −6 dB, 198 % +5.9 dB), as decibels"
+    },
+    {
+      "kind": "db",
+      "from": "RC Level",
+      "to": "Ride level",
+      "why": "its level, linear (100 % at raw 128, measured: half is −6 dB, 198 % +5.9 dB), as decibels"
+    },
+    {
+      "kind": "unit",
+      "from": "BD Tune",
+      "to": "Kick sweep time",
+      "why": "measured: BD Tune keeps the kick's end pitch (54 Hz) and slows its fall (pitch over time at 0, 16, 32, 48 and 63, fitted to the sweep's time constant)"
+    },
+    {
+      "kind": "range",
+      "from": "BD Attack",
+      "to": "Kick click",
+      "from_range": [
+        0,
+        63
+      ],
+      "to_range": [
+        0,
+        1
+      ],
+      "why": "measured: the attack's click (the peak rises 4.3 dB from 0 to 63)"
+    },
+    {
+      "kind": "unit",
+      "from": "BD Decay",
+      "to": "Kick decay",
+      "why": "measured: BD Decay reshapes the sample within its length (about 0.5 s); more sustain upward"
+    },
+    {
+      "kind": "unit",
+      "from": "SD Tune",
+      "to": "Snare tune",
+      "why": "measured: the body's pitch once settled (122–241 Hz)"
+    },
+    {
+      "kind": "unit",
+      "from": "SD Tone",
+      "to": "Snare decay",
+      "why": "measured: SD Tone shortens the snappy noise's tail (its late centroid falls from 6.1 kHz to 0.2 kHz)"
+    },
+    {
+      "kind": "range",
+      "from": "SD Snap",
+      "to": "Snare snap",
+      "from_range": [
+        0,
+        63
+      ],
+      "to_range": [
+        0.1,
+        0.9
+      ],
+      "why": "measured: the snappy noise against the body (the early centroid rises from 240 Hz to 830 Hz)"
+    },
+    {
+      "kind": "unit",
+      "from": "LT Tune",
+      "to": "Low tom tune",
+      "why": "measured: the pitch at 0.3–0.6 s, less the 3 % Neo Drums' tom still has to fall there"
+    },
+    {
+      "kind": "unit",
+      "from": "MT Tune",
+      "to": "Mid tom tune",
+      "why": "measured: the pitch at 0.3–0.6 s, less the 3 % Neo Drums' tom still has to fall there"
+    },
+    {
+      "kind": "unit",
+      "from": "HT Tune",
+      "to": "High tom tune",
+      "why": "measured: the pitch at 0.3–0.6 s, less the 3 % Neo Drums' tom still has to fall there"
+    },
+    {
+      "kind": "unit",
+      "from": "CH Decay",
+      "to": "Closed hat decay",
+      "why": "measured: the time to fall 60 dB, shorter upward (195 ms at 0, 25 ms at 63)"
+    },
+    {
+      "kind": "unit",
+      "from": "OH Decay",
+      "to": "Open hat decay",
+      "why": "measured: the time to fall 60 dB, shorter upward (575 ms at 0, 50 ms at 63)"
+    },
+    {
+      "kind": "range",
+      "from": "CC Tune",
+      "to": "Crash tune",
+      "from_range": [
+        0,
+        63
+      ],
+      "to_range": [
+        -5,
+        5
+      ],
+      "why": "measured: the sample's rate (its centroid ×1.68 and its length ÷1.97 from 0 to 63: about ±5 semitones)"
+    },
+    {
+      "kind": "range",
+      "from": "CC Tune",
+      "to": "Crash decay",
+      "from_range": [
+        0,
+        63
+      ],
+      "to_range": [
+        2.12,
+        1.07
+      ],
+      "curve": "log",
+      "why": "measured: the crash's length, 1.98 s at 0 to 1.0 s at 63 (Neo Drums' 1.5 s at 32, its default)"
+    },
+    {
+      "kind": "range",
+      "from": "RC Tune",
+      "to": "Ride tune",
+      "from_range": [
+        0,
+        63
+      ],
+      "to_range": [
+        -5,
+        5
+      ],
+      "why": "measured: the sample's rate (its centroid ×1.76 and its length ÷1.97 from 0 to 63: about ±5 semitones)"
+    },
+    {
+      "kind": "range",
+      "from": "RC Tune",
+      "to": "Ride decay",
+      "from_range": [
+        0,
+        63
+      ],
+      "to_range": [
+        2.53,
+        1.29
+      ],
+      "curve": "log",
+      "why": "measured: the ride's length, 1.92 s at 0 to 0.97 s at 63 (Neo Drums' 1.8 s at 32, its default)"
+    }
+  ],
+  "notes": {
+    "note": null,
+    "velocity": 127,
+    "pitch_offset": 0,
+    "triggers": [
+      {
+        "column": "BD Trigger",
+        "pitch": 36,
+        "velocity": 127
+      },
+      {
+        "column": "SD Trigger",
+        "pitch": 38,
+        "velocity": 127
+      },
+      {
+        "column": "LT Trigger",
+        "pitch": 43,
+        "velocity": 127
+      },
+      {
+        "column": "MT Trigger",
+        "pitch": 47,
+        "velocity": 127
+      },
+      {
+        "column": "HT Trigger",
+        "pitch": 50,
+        "velocity": 127
+      },
+      {
+        "column": "RS Trigger",
+        "pitch": 37,
+        "velocity": 127
+      },
+      {
+        "column": "CP Trigger",
+        "pitch": 39,
+        "velocity": 127
+      },
+      {
+        "column": "CH Trigger",
+        "pitch": 42,
+        "velocity": 127
+      },
+      {
+        "column": "OH Trigger",
+        "pitch": 46,
+        "velocity": 127
+      },
+      {
+        "column": "CC Trigger",
+        "pitch": 49,
+        "velocity": 127
+      },
+      {
+        "column": "RC Trigger",
+        "pitch": 51,
+        "velocity": 127
+      }
+    ],
+    "why": "Rout 909 has no notes: each drum sounds from its trigger column (a 1 on a row hits it), at its level. Each becomes a note on Neo Drums' key for the voice (C2 kick, D2 snare, G2 B2 D3 toms, C#2 rim, D#2 clap, F#2 and A#2 hats, C#3 crash, D#3 ride), at velocity 127."
+  },
+  "unmapped": [
+    {
+      "param": "LT Decay",
+      "why": "measured: no effect on the sample (the same render at 0, 16, 48 and 63)"
+    },
+    {
+      "param": "MT Decay",
+      "why": "measured: no effect on the sample (the same render at 0, 16, 48 and 63)"
+    },
+    {
+      "param": "HT Decay",
+      "why": "measured: no effect on the sample (the same render at 0, 16, 48 and 63)"
+    },
+    {
+      "param": "Shuffle",
+      "why": "Neo Drums has no swing: the hits land on their rows as written (Rout 909 delays every other step by up to half a tick)"
+    },
+    {
+      "param": "Shuffle Step",
+      "why": "goes with Shuffle"
+    }
+  ],
+  "tolerance": {
+    "loudness_db": 3,
+    "band_db": null,
+    "from_hz": 40,
+    "to_hz": 16000,
+    "measured": "Windows (DrumMachinesMoveOntoNeoDrums, package run 41945695705): a two-bar beat of all eleven drums on its trigger columns at its defaults +0.8 dB; with BD Tune 0, BD Decay 63, SD Tune 63, SD Snap 63, CH Decay 0, CC Tune 63 and BD Level 64 −2.5 dB. The repo's songs: 909.bmx and 909_excite.bmx +2.8 dB, Oomek_Aggressor_demo.bmx +2.3 dB, Csi.bmx +1.7 dB; Exciter/test.bmx +3.1 dB, just outside; Masterizer_test.bmx not compared. Third octaves differ most at 40–50 Hz (11–16 dB, the samples' sub-fundamental thump)",
+    "why_not": "Rout 909 plays samples of a TR-909; Neo Drums synthesises its voices: their spectra match within a few dB where each voice has most of its energy, not band for band. The level is matched and checked."
+  },
+  "remarks": [
+    "Neo Drums' defaults were voiced against the Rout 909's samples at its defaults (third octaves, pitch over time, decay); Volume +7.5 dB makes up the headroom Neo Drums keeps.",
+    "Rout 909's parameters are bare 0–63 scales: each was measured at 0, 16, 32, 48 and 63 (DrumsCalibration, ReBuzzTests) and laid on Neo Drums' units through those points.",
+    "Neo Drums' cowbell is left as it is: Rout 909 has none."
+  ],
+  "evidence": [
+    "Machines/Manifests/Generators/Rout 909.machine.json (curated)",
+    "ReBuzzTests/DrumsCalibration.cs: each drum alone at its defaults and at 0, 16, 32, 48 and 63 of each scale, its level at 0, 64, 192 and 254 (peaks, the times to fall 20, 40 and 60 dB, centroids, pitch over time, third octaves)",
+    "Machines/NeoDrums/Engine/DrumHit.cs and DrumsEngine.cs: the voices and their units"
+  ]
+}

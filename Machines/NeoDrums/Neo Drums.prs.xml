@@ -1,0 +1,453 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="909 — Classic">
+    <Preset Machine="Neo Drums">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="600" />
+        <Parameter Name="Accent gain" Group="1" Index="1" Track="0" Value="60" />
+        <Parameter Name="Vel → level" Group="1" Index="2" Track="0" Value="700" />
+        <Parameter Name="Vel → tone" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Kick tune" Group="1" Index="4" Track="0" Value="365" />
+        <Parameter Name="Kick sweep" Group="1" Index="5" Track="0" Value="300" />
+        <Parameter Name="Kick sweep time" Group="1" Index="6" Track="0" Value="548" />
+        <Parameter Name="Kick decay" Group="1" Index="7" Track="0" Value="525" />
+        <Parameter Name="Kick click" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Kick punch" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Kick drive" Group="1" Index="10" Track="0" Value="30" />
+        <Parameter Name="Kick level" Group="1" Index="11" Track="0" Value="600" />
+        <Parameter Name="Kick pan" Group="1" Index="12" Track="0" Value="100" />
+        <Parameter Name="Snare tune" Group="1" Index="13" Track="0" Value="424" />
+        <Parameter Name="Snare tone" Group="1" Index="14" Track="0" Value="702" />
+        <Parameter Name="Snare snap" Group="1" Index="15" Track="0" Value="500" />
+        <Parameter Name="Snare decay" Group="1" Index="16" Track="0" Value="486" />
+        <Parameter Name="Snare level" Group="1" Index="17" Track="0" Value="600" />
+        <Parameter Name="Snare pan" Group="1" Index="18" Track="0" Value="100" />
+        <Parameter Name="Clap tune" Group="1" Index="19" Track="0" Value="301" />
+        <Parameter Name="Clap spread" Group="1" Index="20" Track="0" Value="630" />
+        <Parameter Name="Clap decay" Group="1" Index="21" Track="0" Value="674" />
+        <Parameter Name="Clap level" Group="1" Index="22" Track="0" Value="600" />
+        <Parameter Name="Clap pan" Group="1" Index="23" Track="0" Value="100" />
+        <Parameter Name="Rim tune" Group="1" Index="24" Track="0" Value="398" />
+        <Parameter Name="Rim decay" Group="1" Index="25" Track="0" Value="635" />
+        <Parameter Name="Rim level" Group="1" Index="26" Track="0" Value="600" />
+        <Parameter Name="Rim pan" Group="1" Index="27" Track="0" Value="100" />
+        <Parameter Name="Closed hat tune" Group="1" Index="28" Track="0" Value="120" />
+        <Parameter Name="Closed hat tone" Group="1" Index="29" Track="0" Value="636" />
+        <Parameter Name="Closed hat decay" Group="1" Index="30" Track="0" Value="452" />
+        <Parameter Name="Closed hat level" Group="1" Index="31" Track="0" Value="600" />
+        <Parameter Name="Closed hat pan" Group="1" Index="32" Track="0" Value="100" />
+        <Parameter Name="Open hat tune" Group="1" Index="33" Track="0" Value="120" />
+        <Parameter Name="Open hat tone" Group="1" Index="34" Track="0" Value="636" />
+        <Parameter Name="Open hat decay" Group="1" Index="35" Track="0" Value="567" />
+        <Parameter Name="Open hat level" Group="1" Index="36" Track="0" Value="600" />
+        <Parameter Name="Open hat pan" Group="1" Index="37" Track="0" Value="100" />
+        <Parameter Name="Low tom tune" Group="1" Index="38" Track="0" Value="147" />
+        <Parameter Name="Low tom decay" Group="1" Index="39" Track="0" Value="706" />
+        <Parameter Name="Low tom tone" Group="1" Index="40" Track="0" Value="300" />
+        <Parameter Name="Low tom level" Group="1" Index="41" Track="0" Value="600" />
+        <Parameter Name="Low tom pan" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="Mid tom tune" Group="1" Index="43" Track="0" Value="238" />
+        <Parameter Name="Mid tom decay" Group="1" Index="44" Track="0" Value="626" />
+        <Parameter Name="Mid tom tone" Group="1" Index="45" Track="0" Value="300" />
+        <Parameter Name="Mid tom level" Group="1" Index="46" Track="0" Value="600" />
+        <Parameter Name="Mid tom pan" Group="1" Index="47" Track="0" Value="100" />
+        <Parameter Name="High tom tune" Group="1" Index="48" Track="0" Value="294" />
+        <Parameter Name="High tom decay" Group="1" Index="49" Track="0" Value="626" />
+        <Parameter Name="High tom tone" Group="1" Index="50" Track="0" Value="300" />
+        <Parameter Name="High tom level" Group="1" Index="51" Track="0" Value="600" />
+        <Parameter Name="High tom pan" Group="1" Index="52" Track="0" Value="100" />
+        <Parameter Name="Cowbell tune" Group="1" Index="53" Track="0" Value="371" />
+        <Parameter Name="Cowbell decay" Group="1" Index="54" Track="0" Value="651" />
+        <Parameter Name="Cowbell level" Group="1" Index="55" Track="0" Value="600" />
+        <Parameter Name="Cowbell pan" Group="1" Index="56" Track="0" Value="100" />
+        <Parameter Name="Crash tune" Group="1" Index="57" Track="0" Value="120" />
+        <Parameter Name="Crash tone" Group="1" Index="58" Track="0" Value="452" />
+        <Parameter Name="Crash decay" Group="1" Index="59" Track="0" Value="546" />
+        <Parameter Name="Crash level" Group="1" Index="60" Track="0" Value="600" />
+        <Parameter Name="Crash pan" Group="1" Index="61" Track="0" Value="100" />
+        <Parameter Name="Ride tune" Group="1" Index="62" Track="0" Value="120" />
+        <Parameter Name="Ride tone" Group="1" Index="63" Track="0" Value="615" />
+        <Parameter Name="Ride decay" Group="1" Index="64" Track="0" Value="596" />
+        <Parameter Name="Ride level" Group="1" Index="65" Track="0" Value="600" />
+        <Parameter Name="Ride pan" Group="1" Index="66" Track="0" Value="100" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="909 — Techno">
+    <Preset Machine="Neo Drums">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="580" />
+        <Parameter Name="Accent gain" Group="1" Index="1" Track="0" Value="80" />
+        <Parameter Name="Vel → level" Group="1" Index="2" Track="0" Value="700" />
+        <Parameter Name="Vel → tone" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Kick tune" Group="1" Index="4" Track="0" Value="317" />
+        <Parameter Name="Kick sweep" Group="1" Index="5" Track="0" Value="260" />
+        <Parameter Name="Kick sweep time" Group="1" Index="6" Track="0" Value="500" />
+        <Parameter Name="Kick decay" Group="1" Index="7" Track="0" Value="633" />
+        <Parameter Name="Kick click" Group="1" Index="8" Track="0" Value="700" />
+        <Parameter Name="Kick punch" Group="1" Index="9" Track="0" Value="700" />
+        <Parameter Name="Kick drive" Group="1" Index="10" Track="0" Value="90" />
+        <Parameter Name="Kick level" Group="1" Index="11" Track="0" Value="600" />
+        <Parameter Name="Kick pan" Group="1" Index="12" Track="0" Value="100" />
+        <Parameter Name="Snare tune" Group="1" Index="13" Track="0" Value="463" />
+        <Parameter Name="Snare tone" Group="1" Index="14" Track="0" Value="702" />
+        <Parameter Name="Snare snap" Group="1" Index="15" Track="0" Value="650" />
+        <Parameter Name="Snare decay" Group="1" Index="16" Track="0" Value="436" />
+        <Parameter Name="Snare level" Group="1" Index="17" Track="0" Value="600" />
+        <Parameter Name="Snare pan" Group="1" Index="18" Track="0" Value="100" />
+        <Parameter Name="Clap tune" Group="1" Index="19" Track="0" Value="301" />
+        <Parameter Name="Clap spread" Group="1" Index="20" Track="0" Value="691" />
+        <Parameter Name="Clap decay" Group="1" Index="21" Track="0" Value="752" />
+        <Parameter Name="Clap level" Group="1" Index="22" Track="0" Value="600" />
+        <Parameter Name="Clap pan" Group="1" Index="23" Track="0" Value="100" />
+        <Parameter Name="Rim tune" Group="1" Index="24" Track="0" Value="398" />
+        <Parameter Name="Rim decay" Group="1" Index="25" Track="0" Value="635" />
+        <Parameter Name="Rim level" Group="1" Index="26" Track="0" Value="600" />
+        <Parameter Name="Rim pan" Group="1" Index="27" Track="0" Value="100" />
+        <Parameter Name="Closed hat tune" Group="1" Index="28" Track="0" Value="120" />
+        <Parameter Name="Closed hat tone" Group="1" Index="29" Track="0" Value="723" />
+        <Parameter Name="Closed hat decay" Group="1" Index="30" Track="0" Value="349" />
+        <Parameter Name="Closed hat level" Group="1" Index="31" Track="0" Value="600" />
+        <Parameter Name="Closed hat pan" Group="1" Index="32" Track="0" Value="100" />
+        <Parameter Name="Open hat tune" Group="1" Index="33" Track="0" Value="120" />
+        <Parameter Name="Open hat tone" Group="1" Index="34" Track="0" Value="723" />
+        <Parameter Name="Open hat decay" Group="1" Index="35" Track="0" Value="444" />
+        <Parameter Name="Open hat level" Group="1" Index="36" Track="0" Value="570" />
+        <Parameter Name="Open hat pan" Group="1" Index="37" Track="0" Value="100" />
+        <Parameter Name="Low tom tune" Group="1" Index="38" Track="0" Value="147" />
+        <Parameter Name="Low tom decay" Group="1" Index="39" Track="0" Value="706" />
+        <Parameter Name="Low tom tone" Group="1" Index="40" Track="0" Value="300" />
+        <Parameter Name="Low tom level" Group="1" Index="41" Track="0" Value="600" />
+        <Parameter Name="Low tom pan" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="Mid tom tune" Group="1" Index="43" Track="0" Value="238" />
+        <Parameter Name="Mid tom decay" Group="1" Index="44" Track="0" Value="626" />
+        <Parameter Name="Mid tom tone" Group="1" Index="45" Track="0" Value="300" />
+        <Parameter Name="Mid tom level" Group="1" Index="46" Track="0" Value="600" />
+        <Parameter Name="Mid tom pan" Group="1" Index="47" Track="0" Value="100" />
+        <Parameter Name="High tom tune" Group="1" Index="48" Track="0" Value="294" />
+        <Parameter Name="High tom decay" Group="1" Index="49" Track="0" Value="626" />
+        <Parameter Name="High tom tone" Group="1" Index="50" Track="0" Value="300" />
+        <Parameter Name="High tom level" Group="1" Index="51" Track="0" Value="600" />
+        <Parameter Name="High tom pan" Group="1" Index="52" Track="0" Value="100" />
+        <Parameter Name="Cowbell tune" Group="1" Index="53" Track="0" Value="371" />
+        <Parameter Name="Cowbell decay" Group="1" Index="54" Track="0" Value="651" />
+        <Parameter Name="Cowbell level" Group="1" Index="55" Track="0" Value="600" />
+        <Parameter Name="Cowbell pan" Group="1" Index="56" Track="0" Value="100" />
+        <Parameter Name="Crash tune" Group="1" Index="57" Track="0" Value="120" />
+        <Parameter Name="Crash tone" Group="1" Index="58" Track="0" Value="452" />
+        <Parameter Name="Crash decay" Group="1" Index="59" Track="0" Value="546" />
+        <Parameter Name="Crash level" Group="1" Index="60" Track="0" Value="600" />
+        <Parameter Name="Crash pan" Group="1" Index="61" Track="0" Value="100" />
+        <Parameter Name="Ride tune" Group="1" Index="62" Track="0" Value="120" />
+        <Parameter Name="Ride tone" Group="1" Index="63" Track="0" Value="675" />
+        <Parameter Name="Ride decay" Group="1" Index="64" Track="0" Value="674" />
+        <Parameter Name="Ride level" Group="1" Index="65" Track="0" Value="600" />
+        <Parameter Name="Ride pan" Group="1" Index="66" Track="0" Value="100" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="808 — Classic">
+    <Preset Machine="Neo Drums">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="600" />
+        <Parameter Name="Accent gain" Group="1" Index="1" Track="0" Value="60" />
+        <Parameter Name="Vel → level" Group="1" Index="2" Track="0" Value="700" />
+        <Parameter Name="Vel → tone" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Kick tune" Group="1" Index="4" Track="0" Value="305" />
+        <Parameter Name="Kick sweep" Group="1" Index="5" Track="0" Value="70" />
+        <Parameter Name="Kick sweep time" Group="1" Index="6" Track="0" Value="622" />
+        <Parameter Name="Kick decay" Group="1" Index="7" Track="0" Value="725" />
+        <Parameter Name="Kick click" Group="1" Index="8" Track="0" Value="150" />
+        <Parameter Name="Kick punch" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Kick drive" Group="1" Index="10" Track="0" Value="0" />
+        <Parameter Name="Kick level" Group="1" Index="11" Track="0" Value="600" />
+        <Parameter Name="Kick pan" Group="1" Index="12" Track="0" Value="100" />
+        <Parameter Name="Snare tune" Group="1" Index="13" Track="0" Value="625" />
+        <Parameter Name="Snare tone" Group="1" Index="14" Track="0" Value="580" />
+        <Parameter Name="Snare snap" Group="1" Index="15" Track="0" Value="400" />
+        <Parameter Name="Snare decay" Group="1" Index="16" Track="0" Value="402" />
+        <Parameter Name="Snare level" Group="1" Index="17" Track="0" Value="600" />
+        <Parameter Name="Snare pan" Group="1" Index="18" Track="0" Value="100" />
+        <Parameter Name="Clap tune" Group="1" Index="19" Track="0" Value="342" />
+        <Parameter Name="Clap spread" Group="1" Index="20" Track="0" Value="555" />
+        <Parameter Name="Clap decay" Group="1" Index="21" Track="0" Value="624" />
+        <Parameter Name="Clap level" Group="1" Index="22" Track="0" Value="600" />
+        <Parameter Name="Clap pan" Group="1" Index="23" Track="0" Value="100" />
+        <Parameter Name="Rim tune" Group="1" Index="24" Track="0" Value="628" />
+        <Parameter Name="Rim decay" Group="1" Index="25" Track="0" Value="354" />
+        <Parameter Name="Rim level" Group="1" Index="26" Track="0" Value="600" />
+        <Parameter Name="Rim pan" Group="1" Index="27" Track="0" Value="100" />
+        <Parameter Name="Closed hat tune" Group="1" Index="28" Track="0" Value="120" />
+        <Parameter Name="Closed hat tone" Group="1" Index="29" Track="0" Value="667" />
+        <Parameter Name="Closed hat decay" Group="1" Index="30" Track="0" Value="349" />
+        <Parameter Name="Closed hat level" Group="1" Index="31" Track="0" Value="600" />
+        <Parameter Name="Closed hat pan" Group="1" Index="32" Track="0" Value="100" />
+        <Parameter Name="Open hat tune" Group="1" Index="33" Track="0" Value="120" />
+        <Parameter Name="Open hat tone" Group="1" Index="34" Track="0" Value="667" />
+        <Parameter Name="Open hat decay" Group="1" Index="35" Track="0" Value="501" />
+        <Parameter Name="Open hat level" Group="1" Index="36" Track="0" Value="600" />
+        <Parameter Name="Open hat pan" Group="1" Index="37" Track="0" Value="100" />
+        <Parameter Name="Low tom tune" Group="1" Index="38" Track="0" Value="321" />
+        <Parameter Name="Low tom decay" Group="1" Index="39" Track="0" Value="586" />
+        <Parameter Name="Low tom tone" Group="1" Index="40" Track="0" Value="100" />
+        <Parameter Name="Low tom level" Group="1" Index="41" Track="0" Value="600" />
+        <Parameter Name="Low tom pan" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="Mid tom tune" Group="1" Index="43" Track="0" Value="467" />
+        <Parameter Name="Mid tom decay" Group="1" Index="44" Track="0" Value="537" />
+        <Parameter Name="Mid tom tone" Group="1" Index="45" Track="0" Value="100" />
+        <Parameter Name="Mid tom level" Group="1" Index="46" Track="0" Value="600" />
+        <Parameter Name="Mid tom pan" Group="1" Index="47" Track="0" Value="100" />
+        <Parameter Name="High tom tune" Group="1" Index="48" Track="0" Value="617" />
+        <Parameter Name="High tom decay" Group="1" Index="49" Track="0" Value="475" />
+        <Parameter Name="High tom tone" Group="1" Index="50" Track="0" Value="100" />
+        <Parameter Name="High tom level" Group="1" Index="51" Track="0" Value="600" />
+        <Parameter Name="High tom pan" Group="1" Index="52" Track="0" Value="100" />
+        <Parameter Name="Cowbell tune" Group="1" Index="53" Track="0" Value="365" />
+        <Parameter Name="Cowbell decay" Group="1" Index="54" Track="0" Value="588" />
+        <Parameter Name="Cowbell level" Group="1" Index="55" Track="0" Value="600" />
+        <Parameter Name="Cowbell pan" Group="1" Index="56" Track="0" Value="100" />
+        <Parameter Name="Crash tune" Group="1" Index="57" Track="0" Value="120" />
+        <Parameter Name="Crash tone" Group="1" Index="58" Track="0" Value="750" />
+        <Parameter Name="Crash decay" Group="1" Index="59" Track="0" Value="564" />
+        <Parameter Name="Crash level" Group="1" Index="60" Track="0" Value="600" />
+        <Parameter Name="Crash pan" Group="1" Index="61" Track="0" Value="100" />
+        <Parameter Name="Ride tune" Group="1" Index="62" Track="0" Value="120" />
+        <Parameter Name="Ride tone" Group="1" Index="63" Track="0" Value="615" />
+        <Parameter Name="Ride decay" Group="1" Index="64" Track="0" Value="596" />
+        <Parameter Name="Ride level" Group="1" Index="65" Track="0" Value="600" />
+        <Parameter Name="Ride pan" Group="1" Index="66" Track="0" Value="100" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="808 — Electro Boom">
+    <Preset Machine="Neo Drums">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="570" />
+        <Parameter Name="Accent gain" Group="1" Index="1" Track="0" Value="60" />
+        <Parameter Name="Vel → level" Group="1" Index="2" Track="0" Value="500" />
+        <Parameter Name="Vel → tone" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Kick tune" Group="1" Index="4" Track="0" Value="209" />
+        <Parameter Name="Kick sweep" Group="1" Index="5" Track="0" Value="120" />
+        <Parameter Name="Kick sweep time" Group="1" Index="6" Track="0" Value="699" />
+        <Parameter Name="Kick decay" Group="1" Index="7" Track="0" Value="893" />
+        <Parameter Name="Kick click" Group="1" Index="8" Track="0" Value="250" />
+        <Parameter Name="Kick punch" Group="1" Index="9" Track="0" Value="200" />
+        <Parameter Name="Kick drive" Group="1" Index="10" Track="0" Value="60" />
+        <Parameter Name="Kick level" Group="1" Index="11" Track="0" Value="600" />
+        <Parameter Name="Kick pan" Group="1" Index="12" Track="0" Value="100" />
+        <Parameter Name="Snare tune" Group="1" Index="13" Track="0" Value="569" />
+        <Parameter Name="Snare tone" Group="1" Index="14" Track="0" Value="646" />
+        <Parameter Name="Snare snap" Group="1" Index="15" Track="0" Value="700" />
+        <Parameter Name="Snare decay" Group="1" Index="16" Track="0" Value="486" />
+        <Parameter Name="Snare level" Group="1" Index="17" Track="0" Value="600" />
+        <Parameter Name="Snare pan" Group="1" Index="18" Track="0" Value="100" />
+        <Parameter Name="Clap tune" Group="1" Index="19" Track="0" Value="380" />
+        <Parameter Name="Clap spread" Group="1" Index="20" Track="0" Value="630" />
+        <Parameter Name="Clap decay" Group="1" Index="21" Track="0" Value="784" />
+        <Parameter Name="Clap level" Group="1" Index="22" Track="0" Value="600" />
+        <Parameter Name="Clap pan" Group="1" Index="23" Track="0" Value="100" />
+        <Parameter Name="Rim tune" Group="1" Index="24" Track="0" Value="398" />
+        <Parameter Name="Rim decay" Group="1" Index="25" Track="0" Value="635" />
+        <Parameter Name="Rim level" Group="1" Index="26" Track="0" Value="600" />
+        <Parameter Name="Rim pan" Group="1" Index="27" Track="0" Value="100" />
+        <Parameter Name="Closed hat tune" Group="1" Index="28" Track="0" Value="120" />
+        <Parameter Name="Closed hat tone" Group="1" Index="29" Track="0" Value="696" />
+        <Parameter Name="Closed hat decay" Group="1" Index="30" Track="0" Value="301" />
+        <Parameter Name="Closed hat level" Group="1" Index="31" Track="0" Value="600" />
+        <Parameter Name="Closed hat pan" Group="1" Index="32" Track="0" Value="100" />
+        <Parameter Name="Open hat tune" Group="1" Index="33" Track="0" Value="120" />
+        <Parameter Name="Open hat tone" Group="1" Index="34" Track="0" Value="696" />
+        <Parameter Name="Open hat decay" Group="1" Index="35" Track="0" Value="567" />
+        <Parameter Name="Open hat level" Group="1" Index="36" Track="0" Value="600" />
+        <Parameter Name="Open hat pan" Group="1" Index="37" Track="0" Value="100" />
+        <Parameter Name="Low tom tune" Group="1" Index="38" Track="0" Value="274" />
+        <Parameter Name="Low tom decay" Group="1" Index="39" Track="0" Value="706" />
+        <Parameter Name="Low tom tone" Group="1" Index="40" Track="0" Value="300" />
+        <Parameter Name="Low tom level" Group="1" Index="41" Track="0" Value="600" />
+        <Parameter Name="Low tom pan" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="Mid tom tune" Group="1" Index="43" Track="0" Value="435" />
+        <Parameter Name="Mid tom decay" Group="1" Index="44" Track="0" Value="626" />
+        <Parameter Name="Mid tom tone" Group="1" Index="45" Track="0" Value="300" />
+        <Parameter Name="Mid tom level" Group="1" Index="46" Track="0" Value="600" />
+        <Parameter Name="Mid tom pan" Group="1" Index="47" Track="0" Value="100" />
+        <Parameter Name="High tom tune" Group="1" Index="48" Track="0" Value="573" />
+        <Parameter Name="High tom decay" Group="1" Index="49" Track="0" Value="626" />
+        <Parameter Name="High tom tone" Group="1" Index="50" Track="0" Value="300" />
+        <Parameter Name="High tom level" Group="1" Index="51" Track="0" Value="600" />
+        <Parameter Name="High tom pan" Group="1" Index="52" Track="0" Value="100" />
+        <Parameter Name="Cowbell tune" Group="1" Index="53" Track="0" Value="365" />
+        <Parameter Name="Cowbell decay" Group="1" Index="54" Track="0" Value="651" />
+        <Parameter Name="Cowbell level" Group="1" Index="55" Track="0" Value="570" />
+        <Parameter Name="Cowbell pan" Group="1" Index="56" Track="0" Value="100" />
+        <Parameter Name="Crash tune" Group="1" Index="57" Track="0" Value="120" />
+        <Parameter Name="Crash tone" Group="1" Index="58" Track="0" Value="452" />
+        <Parameter Name="Crash decay" Group="1" Index="59" Track="0" Value="546" />
+        <Parameter Name="Crash level" Group="1" Index="60" Track="0" Value="600" />
+        <Parameter Name="Crash pan" Group="1" Index="61" Track="0" Value="100" />
+        <Parameter Name="Ride tune" Group="1" Index="62" Track="0" Value="120" />
+        <Parameter Name="Ride tone" Group="1" Index="63" Track="0" Value="615" />
+        <Parameter Name="Ride decay" Group="1" Index="64" Track="0" Value="596" />
+        <Parameter Name="Ride level" Group="1" Index="65" Track="0" Value="600" />
+        <Parameter Name="Ride pan" Group="1" Index="66" Track="0" Value="100" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Lo-Fi — Dusty">
+    <Preset Machine="Neo Drums">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="580" />
+        <Parameter Name="Accent gain" Group="1" Index="1" Track="0" Value="60" />
+        <Parameter Name="Vel → level" Group="1" Index="2" Track="0" Value="700" />
+        <Parameter Name="Vel → tone" Group="1" Index="3" Track="0" Value="300" />
+        <Parameter Name="Kick tune" Group="1" Index="4" Track="0" Value="388" />
+        <Parameter Name="Kick sweep" Group="1" Index="5" Track="0" Value="180" />
+        <Parameter Name="Kick sweep time" Group="1" Index="6" Track="0" Value="548" />
+        <Parameter Name="Kick decay" Group="1" Index="7" Track="0" Value="501" />
+        <Parameter Name="Kick click" Group="1" Index="8" Track="0" Value="200" />
+        <Parameter Name="Kick punch" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Kick drive" Group="1" Index="10" Track="0" Value="120" />
+        <Parameter Name="Kick level" Group="1" Index="11" Track="0" Value="600" />
+        <Parameter Name="Kick pan" Group="1" Index="12" Track="0" Value="100" />
+        <Parameter Name="Snare tune" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Snare tone" Group="1" Index="14" Track="0" Value="396" />
+        <Parameter Name="Snare snap" Group="1" Index="15" Track="0" Value="550" />
+        <Parameter Name="Snare decay" Group="1" Index="16" Track="0" Value="376" />
+        <Parameter Name="Snare level" Group="1" Index="17" Track="0" Value="600" />
+        <Parameter Name="Snare pan" Group="1" Index="18" Track="0" Value="100" />
+        <Parameter Name="Clap tune" Group="1" Index="19" Track="0" Value="204" />
+        <Parameter Name="Clap spread" Group="1" Index="20" Track="0" Value="630" />
+        <Parameter Name="Clap decay" Group="1" Index="21" Track="0" Value="528" />
+        <Parameter Name="Clap level" Group="1" Index="22" Track="0" Value="600" />
+        <Parameter Name="Clap pan" Group="1" Index="23" Track="0" Value="100" />
+        <Parameter Name="Rim tune" Group="1" Index="24" Track="0" Value="477" />
+        <Parameter Name="Rim decay" Group="1" Index="25" Track="0" Value="635" />
+        <Parameter Name="Rim level" Group="1" Index="26" Track="0" Value="600" />
+        <Parameter Name="Rim pan" Group="1" Index="27" Track="0" Value="100" />
+        <Parameter Name="Closed hat tune" Group="1" Index="28" Track="0" Value="120" />
+        <Parameter Name="Closed hat tone" Group="1" Index="29" Track="0" Value="390" />
+        <Parameter Name="Closed hat decay" Group="1" Index="30" Track="0" Value="389" />
+        <Parameter Name="Closed hat level" Group="1" Index="31" Track="0" Value="600" />
+        <Parameter Name="Closed hat pan" Group="1" Index="32" Track="0" Value="100" />
+        <Parameter Name="Open hat tune" Group="1" Index="33" Track="0" Value="120" />
+        <Parameter Name="Open hat tone" Group="1" Index="34" Track="0" Value="390" />
+        <Parameter Name="Open hat decay" Group="1" Index="35" Track="0" Value="475" />
+        <Parameter Name="Open hat level" Group="1" Index="36" Track="0" Value="600" />
+        <Parameter Name="Open hat pan" Group="1" Index="37" Track="0" Value="100" />
+        <Parameter Name="Low tom tune" Group="1" Index="38" Track="0" Value="147" />
+        <Parameter Name="Low tom decay" Group="1" Index="39" Track="0" Value="706" />
+        <Parameter Name="Low tom tone" Group="1" Index="40" Track="0" Value="150" />
+        <Parameter Name="Low tom level" Group="1" Index="41" Track="0" Value="600" />
+        <Parameter Name="Low tom pan" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="Mid tom tune" Group="1" Index="43" Track="0" Value="238" />
+        <Parameter Name="Mid tom decay" Group="1" Index="44" Track="0" Value="626" />
+        <Parameter Name="Mid tom tone" Group="1" Index="45" Track="0" Value="150" />
+        <Parameter Name="Mid tom level" Group="1" Index="46" Track="0" Value="600" />
+        <Parameter Name="Mid tom pan" Group="1" Index="47" Track="0" Value="100" />
+        <Parameter Name="High tom tune" Group="1" Index="48" Track="0" Value="294" />
+        <Parameter Name="High tom decay" Group="1" Index="49" Track="0" Value="626" />
+        <Parameter Name="High tom tone" Group="1" Index="50" Track="0" Value="150" />
+        <Parameter Name="High tom level" Group="1" Index="51" Track="0" Value="600" />
+        <Parameter Name="High tom pan" Group="1" Index="52" Track="0" Value="100" />
+        <Parameter Name="Cowbell tune" Group="1" Index="53" Track="0" Value="371" />
+        <Parameter Name="Cowbell decay" Group="1" Index="54" Track="0" Value="651" />
+        <Parameter Name="Cowbell level" Group="1" Index="55" Track="0" Value="600" />
+        <Parameter Name="Cowbell pan" Group="1" Index="56" Track="0" Value="100" />
+        <Parameter Name="Crash tune" Group="1" Index="57" Track="0" Value="120" />
+        <Parameter Name="Crash tone" Group="1" Index="58" Track="0" Value="330" />
+        <Parameter Name="Crash decay" Group="1" Index="59" Track="0" Value="436" />
+        <Parameter Name="Crash level" Group="1" Index="60" Track="0" Value="600" />
+        <Parameter Name="Crash pan" Group="1" Index="61" Track="0" Value="100" />
+        <Parameter Name="Ride tune" Group="1" Index="62" Track="0" Value="120" />
+        <Parameter Name="Ride tone" Group="1" Index="63" Track="0" Value="452" />
+        <Parameter Name="Ride decay" Group="1" Index="64" Track="0" Value="486" />
+        <Parameter Name="Ride level" Group="1" Index="65" Track="0" Value="600" />
+        <Parameter Name="Ride pan" Group="1" Index="66" Track="0" Value="100" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Minimal — Tight">
+    <Preset Machine="Neo Drums">
+      <Parameters>
+        <Parameter Name="Volume" Group="1" Index="0" Track="0" Value="600" />
+        <Parameter Name="Accent gain" Group="1" Index="1" Track="0" Value="60" />
+        <Parameter Name="Vel → level" Group="1" Index="2" Track="0" Value="700" />
+        <Parameter Name="Vel → tone" Group="1" Index="3" Track="0" Value="500" />
+        <Parameter Name="Kick tune" Group="1" Index="4" Track="0" Value="431" />
+        <Parameter Name="Kick sweep" Group="1" Index="5" Track="0" Value="180" />
+        <Parameter Name="Kick sweep time" Group="1" Index="6" Track="0" Value="389" />
+        <Parameter Name="Kick decay" Group="1" Index="7" Track="0" Value="409" />
+        <Parameter Name="Kick click" Group="1" Index="8" Track="0" Value="800" />
+        <Parameter Name="Kick punch" Group="1" Index="9" Track="0" Value="600" />
+        <Parameter Name="Kick drive" Group="1" Index="10" Track="0" Value="30" />
+        <Parameter Name="Kick level" Group="1" Index="11" Track="0" Value="600" />
+        <Parameter Name="Kick pan" Group="1" Index="12" Track="0" Value="100" />
+        <Parameter Name="Snare tune" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Snare tone" Group="1" Index="14" Track="0" Value="702" />
+        <Parameter Name="Snare snap" Group="1" Index="15" Track="0" Value="600" />
+        <Parameter Name="Snare decay" Group="1" Index="16" Track="0" Value="298" />
+        <Parameter Name="Snare level" Group="1" Index="17" Track="0" Value="600" />
+        <Parameter Name="Snare pan" Group="1" Index="18" Track="0" Value="100" />
+        <Parameter Name="Clap tune" Group="1" Index="19" Track="0" Value="301" />
+        <Parameter Name="Clap spread" Group="1" Index="20" Track="0" Value="512" />
+        <Parameter Name="Clap decay" Group="1" Index="21" Track="0" Value="486" />
+        <Parameter Name="Clap level" Group="1" Index="22" Track="0" Value="600" />
+        <Parameter Name="Clap pan" Group="1" Index="23" Track="0" Value="100" />
+        <Parameter Name="Rim tune" Group="1" Index="24" Track="0" Value="512" />
+        <Parameter Name="Rim decay" Group="1" Index="25" Track="0" Value="458" />
+        <Parameter Name="Rim level" Group="1" Index="26" Track="0" Value="600" />
+        <Parameter Name="Rim pan" Group="1" Index="27" Track="0" Value="100" />
+        <Parameter Name="Closed hat tune" Group="1" Index="28" Track="0" Value="140" />
+        <Parameter Name="Closed hat tone" Group="1" Index="29" Track="0" Value="774" />
+        <Parameter Name="Closed hat decay" Group="1" Index="30" Track="0" Value="239" />
+        <Parameter Name="Closed hat level" Group="1" Index="31" Track="0" Value="600" />
+        <Parameter Name="Closed hat pan" Group="1" Index="32" Track="0" Value="100" />
+        <Parameter Name="Open hat tune" Group="1" Index="33" Track="0" Value="140" />
+        <Parameter Name="Open hat tone" Group="1" Index="34" Track="0" Value="774" />
+        <Parameter Name="Open hat decay" Group="1" Index="35" Track="0" Value="316" />
+        <Parameter Name="Open hat level" Group="1" Index="36" Track="0" Value="600" />
+        <Parameter Name="Open hat pan" Group="1" Index="37" Track="0" Value="100" />
+        <Parameter Name="Low tom tune" Group="1" Index="38" Track="0" Value="147" />
+        <Parameter Name="Low tom decay" Group="1" Index="39" Track="0" Value="508" />
+        <Parameter Name="Low tom tone" Group="1" Index="40" Track="0" Value="300" />
+        <Parameter Name="Low tom level" Group="1" Index="41" Track="0" Value="600" />
+        <Parameter Name="Low tom pan" Group="1" Index="42" Track="0" Value="100" />
+        <Parameter Name="Mid tom tune" Group="1" Index="43" Track="0" Value="238" />
+        <Parameter Name="Mid tom decay" Group="1" Index="44" Track="0" Value="475" />
+        <Parameter Name="Mid tom tone" Group="1" Index="45" Track="0" Value="300" />
+        <Parameter Name="Mid tom level" Group="1" Index="46" Track="0" Value="600" />
+        <Parameter Name="Mid tom pan" Group="1" Index="47" Track="0" Value="100" />
+        <Parameter Name="High tom tune" Group="1" Index="48" Track="0" Value="294" />
+        <Parameter Name="High tom decay" Group="1" Index="49" Track="0" Value="438" />
+        <Parameter Name="High tom tone" Group="1" Index="50" Track="0" Value="300" />
+        <Parameter Name="High tom level" Group="1" Index="51" Track="0" Value="600" />
+        <Parameter Name="High tom pan" Group="1" Index="52" Track="0" Value="100" />
+        <Parameter Name="Cowbell tune" Group="1" Index="53" Track="0" Value="371" />
+        <Parameter Name="Cowbell decay" Group="1" Index="54" Track="0" Value="438" />
+        <Parameter Name="Cowbell level" Group="1" Index="55" Track="0" Value="600" />
+        <Parameter Name="Cowbell pan" Group="1" Index="56" Track="0" Value="100" />
+        <Parameter Name="Crash tune" Group="1" Index="57" Track="0" Value="120" />
+        <Parameter Name="Crash tone" Group="1" Index="58" Track="0" Value="452" />
+        <Parameter Name="Crash decay" Group="1" Index="59" Track="0" Value="376" />
+        <Parameter Name="Crash level" Group="1" Index="60" Track="0" Value="600" />
+        <Parameter Name="Crash pan" Group="1" Index="61" Track="0" Value="100" />
+        <Parameter Name="Ride tune" Group="1" Index="62" Track="0" Value="120" />
+        <Parameter Name="Ride tone" Group="1" Index="63" Track="0" Value="615" />
+        <Parameter Name="Ride decay" Group="1" Index="64" Track="0" Value="436" />
+        <Parameter Name="Ride level" Group="1" Index="65" Track="0" Value="600" />
+        <Parameter Name="Ride pan" Group="1" Index="66" Track="0" Value="100" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>
