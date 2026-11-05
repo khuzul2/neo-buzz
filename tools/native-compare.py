@@ -19,6 +19,12 @@
 # and C runtime maths show up at −150…−110 dBFS). With --gate, the package's own build of every machine must
 # match, else the script fails: what songs hear doesn't change.
 #
+# A machine whose entry names a source fix (machines.json "fix": state that was never initialised, so two instances of
+# upstream's binary could start differently) plays with four instances of upstream's binary ("<gear> shipped",
+# "… shipped 2" to "… shipped 4"): each case lists which builds rendered the same bits. Its package build must render
+# the same as its other rebuilt instance (the fix: one sound for every instance) and match at least one of upstream's
+# instances in every case (the sound an instance of it made).
+#
 # --pitch (§12.6's "Done when"): every pitched generator among them (its manifest's notes.pitched) plays the written
 # pitch through notes_write, its manifest's pitch offset applied as an agent's call applies it: A3, A4 and A5, each its own
 # render, heard by analyze's pitch (YIN) or, where that hears none (a 303's squelch), the profiler's harmonic sieve
@@ -27,6 +33,7 @@
 #   python tools/native-compare.py <ReBuzz.exe> <work> [--variant LABEL=DIR ...] [--only gear,...] [--gate]
 #                                  [--shipped RunTime/Gear] [--json out.json] [--pitch] [--no-compare]
 
+import hashlib
 import importlib.util
 import json
 import math
@@ -329,10 +336,12 @@ def main(argv):
                     pkg = os.path.join(folder, cand)
                     break
             if os.path.exists(ship):
-                dst = os.path.join(folder, s["gear"] + " shipped" + (".x64.dll" if x64 else ".dll"))
-                shutil.copyfile(ship, dst)
-                added.append(dst)
-                builds.append(("shipped", s["gear"] + " shipped"))
+                for k in range(1, 5 if s.get("fix") else 2):
+                    label = "shipped" + ("" if k == 1 else f" {k}")
+                    dst = os.path.join(folder, s["gear"] + " " + label + (".x64.dll" if x64 else ".dll"))
+                    shutil.copyfile(ship, dst)
+                    added.append(dst)
+                    builds.append((label, s["gear"] + " " + label))
             if pkg:
                 same = os.path.exists(ship) and open(pkg, "rb").read() == open(ship, "rb").read()
                 builds.append(("package" + (" (upstream)" if same else " (rebuilt)"), s["gear"]))
@@ -382,6 +391,7 @@ def main(argv):
             kind = "generator" if s["gearFolder"] == "Generators" else "effect"
             ref_label = builds[0][0]
             res = {label: {"cases": {}} for label, _ in builds}
+            upstream = [lb for lb, _ in builds if lb.startswith("shipped")]
             for case in case_list(kind):
                 t = time.time()
                 try:
@@ -399,9 +409,20 @@ def main(argv):
                     if f and ref and label != ref_label:
                         same, worst, rel, first = diff(ref, f)
                         entry.update(identical=same, max_diff_dbfs=worst, rel_diff_db=rel, first_diff_s=first)
+                        if len(upstream) > 1 and not label.startswith("shipped"):
+                            # the closest of upstream's instances (a machine with a fix: they needn't agree)
+                            best = min((diff(files[u][1], f)[1] for u in upstream if files.get(u, (0, None))[1]), default=None)
+                            entry["best_upstream_dbfs"] = best
                     if f:
                         entry["peak_dbfs"] = peak_db(f)
+                        with open(f, "rb") as h:
+                            entry["sha1"] = hashlib.sha1(h.read()[44:]).hexdigest()[:12]
                     res[label]["cases"][case[0]] = entry
+                groups = {}
+                for label, _ in builds:
+                    groups.setdefault(res[label]["cases"][case[0]].get("sha1"), []).append(label)
+                if len(groups) > 1:
+                    print(f"  {s['gear']} {case[0]}: the same bits: " + " | ".join(", ".join(g) for g in groups.values()), flush=True)
                 for _, f in files.values():      # the reference too, once every build is compared with it
                     try:
                         os.remove(f)
@@ -419,6 +440,14 @@ def main(argv):
                 res[label]["worst_dbfs"] = worst
                 res[label]["identical"] = all(e.get("identical") for e in cs) if label != ref_label and cs else None
                 res[label]["match"] = (label == ref_label) or (worst is not None and worst <= TOLERANCE_DBFS and not errors)
+                if len(upstream) > 1 and not label.startswith("shipped"):
+                    # A fixed machine: the closest upstream instance within tolerance in every case.
+                    bests = [e.get("best_upstream_dbfs") for e in cs]
+                    res[label]["worst_best_upstream_dbfs"] = max((b for b in bests if b is not None), default=None)
+                    res[label]["match_any_upstream"] = all(b is not None and b <= TOLERANCE_DBFS for b in bests) and not errors
+                    twins = [lb for lb, g in builds if lb != label and not lb.startswith("shipped") and lb in ("R64", "R86")]
+                    res[label]["same_as"] = [t for t in twins if all(res[label]["cases"][c].get("sha1") == res[t]["cases"][c].get("sha1")
+                                                                     for c in res[label]["cases"])]
                 res[label]["errors"] = len(errors)
             results[s["gear"]] = {"reference": ref_label, "builds": res}
         run.close()
@@ -445,12 +474,18 @@ def main(argv):
             if label == r["reference"]:
                 continue
             verdict = "identical" if b["identical"] else ("within" if b["match"] else "DIFFERS")
+            if "match_any_upstream" in b:
+                verdict += (", as an upstream instance in every case" if b["match_any_upstream"] else ", unlike every upstream instance in a case") + \
+                           (f", the same bits as {'/'.join(b['same_as'])}" if b.get("same_as") else "")
             rows.append((gear, label, verdict, fmt(b["worst_dbfs"]), b["errors"]))
             # The package's own binary where it is upstream's file is the same machine: a difference there is the machine
             # not rendering the same twice (reported, not a failure).
-            if gate and label == "package (rebuilt)" and not b["match"]:
-                failed.append(f"{gear} ({label})")
-    lines = [f"{g:<24} {lb:<20} {v:<9} worst {w} dBFS" + (f", {e} case(s) failed or diverged" if e else "") for g, lb, v, w, e in rows]
+            if gate and label == "package (rebuilt)":
+                fixed = "match_any_upstream" in b
+                ok = (b["match_any_upstream"] and (b.get("same_as") or not any(x in r["builds"] for x in ("R64", "R86")))) if fixed else b["match"]
+                if not ok:
+                    failed.append(f"{gear} ({label})")
+    lines = [f"{g:<24} {lb:<20} {v} (worst {w} dBFS against upstream's first)" + (f", {e} case(s) failed or diverged" if e else "") for g, lb, v, w, e in rows]
     lines += [f"{g:<24} notes_write plays " + ", ".join(f"{k} as {v['heard']} ({v['cents']:+.1f} ct)" if v.get("heard") is not None else f"{k}: no pitch heard"
                                                     for k, v in pr.items() if isinstance(v, dict)) for g, pr in pitches.items()]
     print("\n".join(lines), flush=True)

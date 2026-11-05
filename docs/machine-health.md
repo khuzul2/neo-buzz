@@ -255,16 +255,10 @@ Drafts:
 
 | Machine | Suggested roles |
 |---|---|
-| FSM Chorus2 | track Min Delay: `mod.delay`; track Mod Depth: `mod.depth`; track Mod Rate: `mod.depth` |
-| FSM PhatMan | Dry out: `filter.cutoff`; Reset Phase: `filter.bandwidth`; track Minimum delay: `filter.cutoff`; track Modulation: `filter.cutoff`; track LFO rate: `filter.cutoff`; track Wet out: `filter.cutoff`; track Feedback: `filter.cutoff` |
 | FSM Philthy | track Cutoff: `filter.cutoff`; track Resonance: `filter.cutoff`; track ThevFactor: `filter.resonance`; track Filter: `filter.type`; track LFO mod: `filter.cutoff`; track L-R phasing: `filter.bandwidth`; track Set phase: `filter.bandwidth` |
-| FSM WahMan | track Cutoff: `filter.resonance`; track Resonance: `mix.wet`; track LFO rate: `lfo.depth`; track Modulation: `drive`; track Set phase: `filter.resonance`; track Inertia: `filter.cutoff` |
-| FSM WahManPro | track Cutoff: `filter.cutoff`; track Resonance: `filter.resonance`; track Filter: `filter.type`; track LFO mod: `drive`; track Inertia: `filter.resonance`; track Set phase: `filter.resonance` |
-| FSM WahPro2 | track Filter: `filter.type` |
 | Jeskola Chorus | freq: `mix.wet`; depth: `mod.delay`; feedback: `mod.feedback`; min. delay: `mod.delay`; dry out: `mix.wet`; wet out: `mix.wet` |
 | Jeskola Filter 2 | Type: `filter.type`; Cutoff: `filter.cutoff`; Resonance: `filter.resonance` |
 | Jeskola Gain | Gain: `level` |
-| Jeskola NiNjA dElaY | Dry thru: `mix.dry`; track Length: `delay.time`; track Length unit: `delay.unit`; track Feedback: `delay.feedback`; track f. cutoff: `delay.feedback`; track Wet out: `mix.wet` |
 | Jeskola Raverb | Rev Time: `reverb.decay`; HF Damp: `mix.wet`; Rev Out: `mix.wet` |
 | Jeskola Stereo Reverb | Dry Out: `mix.dry`; Rev Out: `mix.wet`; ER Out: `reverb.early`; Rev Time: `reverb.decay`; High Cutoff: `mix.wet` |
 | Jeskola Wave Shaper | track gain: `reverb.early` |
@@ -275,9 +269,7 @@ Drafts:
 | Bigyo Wood One | Noise Time: `filter.cutoff`; Pulse Color: `filter.env_amount`; Inharmonicity: `pitch.coarse`; Damping: `pitch.fine`; Brightness: `filter.env_amount`; Resonator F: `env.decay`; Resonator Q: `env.decay`; Resonator G: `level`; Decay: `filter.cutoff`; Release: `env.release` |
 | Jeskola Bass | Cutoff: `level`; Resonance: `filter.resonance` |
 | Jeskola Bass 2 | track Cutoff: `level`; track Resonance: `filter.resonance`; track Envmod: `env.decay`; track Decay: `env.decay` |
-| Jeskola Noise Generator | track Attack: `drum.attack`; track Sustain: `drum.decay`; track Release: `drum.decay`; track Color: `drum.tone`; track Volume: `drum.level` |
 | Jeskola Organ | Attack: `env.attack`; Release: `env.release` |
-| Jeskola Trilok | BD Tone: `drum.tone`; BD Decay: `drum.decay` |
 | kibibu Green Milk | Unison Depth: `env.decay`; Unison Min S: `env.attack`; Unison Max S: `env.attack`; Oscillators: `level`; Glide: `env.attack`; Amp A: `env.attack`; Amp D: `filter.env_amount`; Amp S: `env.decay`; Amp R: `env.release`; Filt Cut: `filter.resonance`; Filt Res: `lfo.filter`; Filt Env: `filter.env_amount`; Filt A: `filter.cutoff`; Filt D: `filter.env.decay`; Filt S: `filter.cutoff`; Length Scale: `env.release`; PreF Dist: `filter.env.decay`; PostF Dist: `filter.cutoff`; TLFO1 Speed: `env.attack`; TLFO1 Delay: `env.attack`; TLFO1->Cut: `lfo.filter`; TLFO1->Res: `lfo.filter`; TLFO2 Speed: `env.attack`; TLFO2 Delay: `env.decay`; TLFO2->Cut: `filter.env_amount`; TLFO2->Res: `filter.env.decay`; TLFO2->Pitch: `env.attack` |
 | KrimZon AY-3-8910 | FinalAmp: `level`; Tune: `env.decay`; track NumSubNotes: `env.decay`; track SubLength: `env.decay`; track Glide: `filter.cutoff`; track EnvTime: `level`; track Volume: `level` |
 | Matilde Tracker2 | Ampl.Decay: `level`; Offset: `level`; track Volume: `level` |

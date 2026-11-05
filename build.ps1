@@ -639,6 +639,8 @@ Needs (same as upstream ReBuzz):
 
 GEAR-INVENTORY.txt lists every machine and where it came from. BUILD-INFO.txt lists any machine
 that failed to build. Machine licenses vary; see ExternalMachines\README.md in the source repo.
+The FSM and Oomek machines marked external:buzztrax are built from source: FSM's under the LGPL 2.1,
+Oomek's under the GPL 3 or later; their sources are ExternalMachines\source\buzztrax-buzzmachines.
 '@ | Set-Content -LiteralPath ([IO.Path]::Combine($pkgDir, 'README-FIRST.txt')) -Encoding UTF8
 
 if (-not $NoZip) {

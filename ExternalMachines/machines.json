@@ -434,7 +434,7 @@
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
           "redistribute": true,
           "upstreamBinary": "x64",
-          "ship": "upstream"
+          "ship": "rebuilt"
         },
         {
           "gear": "FSM KickXP",
@@ -446,7 +446,7 @@
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
           "redistribute": true,
           "upstreamBinary": "x64",
-          "ship": "upstream"
+          "ship": "rebuilt"
         },
         {
           "gear": "FSM PhatMan",
@@ -469,7 +469,7 @@
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
           "redistribute": true,
           "upstreamBinary": "x64",
-          "ship": "upstream"
+          "ship": "rebuilt"
         },
         {
           "gear": "FSM PanzerDelay",
@@ -492,7 +492,7 @@
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
           "redistribute": true,
           "upstreamBinary": "x64",
-          "ship": "upstream"
+          "ship": "rebuilt"
         },
         {
           "gear": "FSM Chorus2",
@@ -512,7 +512,7 @@
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
           "redistribute": true,
           "upstreamBinary": "x64",
-          "ship": "upstream"
+          "ship": "rebuilt"
         },
         {
           "gear": "FSM WahMan",
@@ -528,7 +528,8 @@
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
           "redistribute": true,
           "upstreamBinary": "x64",
-          "ship": "upstream"
+          "fix": "the glide's start cutoff set to 0 in Init (never set: heap garbage)",
+          "ship": "rebuilt"
         },
         {
           "gear": "FSM WahManPro",
@@ -544,6 +545,7 @@
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
           "redistribute": true,
           "upstreamBinary": "x64",
+          "fix": "the glide's start cutoff and the LFO phase set to 0 in Init (never set: heap garbage)",
           "ship": "upstream"
         },
         {
@@ -563,7 +565,8 @@
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
           "redistribute": true,
           "upstreamBinary": "x64",
-          "ship": "upstream"
+          "fix": "the glide's start cutoff set to 0 in Init (never set: heap garbage)",
+          "ship": "rebuilt"
         },
         {
           "gear": "Oomek Aggressor 303",
@@ -580,7 +583,7 @@
           "license": "GPL-3.0-or-later (the source's header)",
           "redistribute": true,
           "upstreamBinary": "x64",
-          "ship": "upstream"
+          "ship": "rebuilt"
         },
         {
           "gear": "Oomek Exciter",
@@ -596,7 +599,7 @@
           "license": "GPL-3.0-or-later (the source's header)",
           "redistribute": true,
           "upstreamBinary": "x64",
-          "ship": "upstream"
+          "ship": "rebuilt"
         },
         {
           "gear": "Oomek Masterizer",
@@ -612,7 +615,7 @@
           "license": "GPL-3.0-or-later (the source's header)",
           "redistribute": true,
           "upstreamBinary": "x64",
-          "ship": "upstream"
+          "ship": "rebuilt"
         },
         {
           "gear": "Jeskola Delay",
