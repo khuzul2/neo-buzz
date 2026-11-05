@@ -694,7 +694,7 @@ Neo Poly's filters as an effect: the same ladder and state-variable filter, with
 
 The choices that were open, and why:
 - **One filter, no second in series or parallel.** Every pair it succeeds has one filter, and a second (with its own type, cutoff, resonance and modulation) would double the parameters and the editor for what two Neo Filters in a row already do. `Slope` gives the SVF types 24 dB/oct instead: two sections alike, as Pedal Filter's 24 dB is.
-- **Four times oversampling for everything**, not only the drive: the drive needs it (aliases under −137 dB at −12 dBFS with 24 dB of drive), and the filters gain the analog response to 20 kHz (a cutoff of 18 kHz is 18 kHz, its resonance where it is set), at 61–105 × real time.
+- **Four times oversampling for everything**, not only the drive: the drive needs it (aliases under −137 dB at −12 dBFS with 24 dB of drive), and the filters gain the analog response to 20 kHz (a cutoff of 18 kHz is 18 kHz, its resonance where it is set), at 52–81 × real time (Linux CI).
 - **The SVF's limiter, linear below +18 dB.** At first it held the band from full scale up at every setting; the pairs' comparisons on noise (a mono effect's input takes +6 dB) then measured a classic band-pass at Q 41 6.7 dB louder than Neo Filter's (the classic filters are linear at any level). Now it holds the band from 8 times full scale (a quarter at self-oscillation, which sets the tone's level): the old filters' loudest resonant peaks pass as they are, and a Q of 100 on loud noise still stops at +21.5 dBFS.
 - **The ladder's passband falls as its resonance rises** (about −4 dB at Q 4 and above), as a ladder's does; the SVF low-pass keeps 0 dB. The editor draws both.
 - **Song by default for the LFO's retrig**, so a synced sweep is the same on every pass and in every render; WahMan's and Pedal Filter's free LFOs map to Free.
@@ -718,7 +718,7 @@ The editor: the filter (type, slope, cutoff, resonance, drive), the response (58
 | Mix 0 % | the input bit for bit | bit for bit |
 | Silence | after noise into a Q 20 filter at 60 Hz, silence costs no more than noise; no subnormals; idle after its tail | 0.75 ×, 0.83 ×, 1.04 × (Ladder 24, SVF LP, BP); none; idle |
 | Audio thread | 2000 blocks with the cutoff moving every block and type, slope, sync and retrig switching: no allocation; in the studio, a pattern through it, its cutoff and type moving, with each work algorithm, and the first play | 0 bytes; 0 bytes per buffer, nothing compiled at first play |
-| CPU | the heaviest setting (drive, both modulations, 24 dB/oct), 48 kHz stereo: over 20 × real time | Ladder 24 61 ×, SVF LP 24 105 × (Linux) |
+| CPU | the heaviest setting (drive, both modulations, 24 dB/oct), 48 kHz stereo: over 20 × real time | Ladder 24 52 ×, SVF LP 24 81 × (Linux CI) |
 | Presets | each within ±12 dB of its input, peaks under 0 dBFS | −5.2 to +1.7 dB, peaks −3.9 to −10.9 dBFS |
 | In ReBuzz | Mix 0 % against bypassed; the SVF low-pass at its cutoff −3.0 dB, the high-pass two octaves up −24.1 dB; self-oscillation bounded; the WPF editor (ReBuzzTests, Windows) | +0.000 dB; −3.031 dB, −24.10 dB; −13.4 dBFS; the WPF editor 802 × 622 (the studio's 802 × 620) |
 
@@ -726,7 +726,7 @@ As built:
 
 - **Not built**: a second filter (above), a formant or comb type (Pedal Filter's Comb has no counterpart), key tracking from MIDI notes, a sidechain input for the envelope.
 - **The classic filters, measured** (`FilterCalibration`, ReBuzzTests, Windows; held noise through each, 12 points an octave): Jeskola Filter and Filter 2 are Chamberlin state-variable filters, f from the cutoff scale (Jeskola Filter's sin(π · Cutoff / 256), so its top is fs/6, 7.35 kHz at 44.1 kHz; Filter 2's its own smooth scale from 0.0123 to 1) and damping q = 1 − sin(π · Resonance / 256), within 0.1 dB of that model in every type up to Resonance 116; FSM WahMan its source's biquad (coefficients for 44.1 kHz at any rate), within 0.14 dB; Pedal Filter its source's TPT SVF, within 0.13 dB. Jeskola Filter's Bandwidth changes its band-pass alone, widening it (its skirts up to 4.7 dB at cutoff 64, 22 dB at 16), not a shape Neo Filter's band-pass makes: left out of the pair.
-- **The successor pairs** (mcp-server.md §12.10): PAIRS
+- **The successor pairs** (mcp-server.md §12.10; Windows, package run 42001593667, and Linux, on Neo Poly's noise): Jeskola Filter and Filter 2 → Neo Filter on tables fitted point by point (their cutoff, Q and level per type), within 0.4 dB of loudness and 0.9 dB in every third octave at their defaults, a resonant low-pass, a high-pass and a resonant band-pass (Filter 2's at Q 41: −0.34 dB, 0.9 dB); FSM WahMan → Neo Filter (SVF LP) with its LFO still within 0.2 dB and 0.8 dB, at its defaults (its LFO free-running, at another point of its cycle) +0.4 dB and 2.6 dB, reported; Pedal Filter → Neo Filter (the same filter, its units carried over) within 0.2 dB, its defaults' 10 kHz band 2.7–2.8 dB (its SVF closes toward Nyquist at the base rate), a resonant high-pass 0.3 dB. Joachims Mars filter 2 is a distortion: no pair.
 - The Linux profile (`docs/machine-health.md`): warn, hot with Output at +24 dB (+5.1 dBFS), as every Neo machine with an output gain; at its defaults (Ladder 24 at 2 kHz) −12.2 dB on the profiler's noise.
 
 ## 6. Phases

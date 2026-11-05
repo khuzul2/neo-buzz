@@ -323,7 +323,7 @@
     "band_db": 2.5,
     "from_hz": 50,
     "to_hz": 12000,
-    "measured": "MEASURED",
+    "measured": "Windows (package run 42001593667), Neo Poly noise into it, each side against its input: at its defaults (low-pass, open) +0.07 dB, third octaves within 0.6 dB; low-pass 64 at resonance 64 +0.03 dB, within 0.8 dB; high-pass 48 +0.03 dB, within 0.1 dB; band-pass 32 at resonance 96 +0.04 dB, within 0.6 dB",
     "why_not": "Bandwidth above 0 widens the old band-pass (above: up to 4.7 dB at cutoff 64, 22 dB at 16), which the conversion doesn't follow; Resonance above 116 is a Q past Neo Filter's."
   },
   "evidence": [

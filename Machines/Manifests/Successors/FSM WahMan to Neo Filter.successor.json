@@ -143,14 +143,15 @@
   ],
   "tolerance": {
     "loudness_db": 1,
-    "band_db": 2,
+    "band_db": 2.5,
     "from_hz": 50,
     "to_hz": 12000,
-    "measured": "MEASURED",
-    "why_not": ""
+    "measured": "Windows (package run 42001593667), Neo Poly noise into it, each side against its input, its LFO still (Modulation 0): Cutoff 60 at Resonance 200 −0.17 dB, third octaves within 0.6 dB; Cutoff 200 at Resonance 0 −0.11 dB, within 0.8 dB. Its biquad measured against its source within 0.14 dB (FilterCalibration, run 41993401237)",
+    "why_not": "Its LFO runs free from when the machine was made, Neo Filter's from when it is: at its defaults (0.11 Hz, ±0.6 octave) the two sweeps are at different points of their cycle over a render (+0.41 dB, 2.6 dB at 10 kHz over 4 s)."
   },
   "evidence": [
     "ExternalMachines/source/buzztrax-buzzmachines/FSM/WahMan/WahMan.cpp — CalcCoeffs (cutoff, Q, the biquad), DoWork (the LFO on the raw cutoff, the inertia), the LFO rate's scale",
+    "measured on Windows (FilterCalibration, ReBuzzTests; package run 41993401237): its response at Cutoff 0, 120 and 240 and Resonance 0, 120 and 240, its LFO still, within 0.14 dB of its source's biquad (+6.02 dB: the summed input)",
     "the table: fitted offline against Neo Filter's design (FilterDesign.Core) by machine_replace's measure; worst 1.5 dB over the table",
     "Machines/Manifests/machine-profile.json: +10 dB at the defaults (the resonant peak, and the summed input)"
   ]

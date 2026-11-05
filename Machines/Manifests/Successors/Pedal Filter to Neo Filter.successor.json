@@ -161,7 +161,7 @@
     "band_db": 3,
     "from_hz": 50,
     "to_hz": 12000,
-    "measured": "MEASURED",
+    "measured": "Linux (tools/headless-replace.py) and Windows (package run 42001593667), Neo Poly noise into it, each side against its input: at its defaults (low pass 2 kHz) +0.06 dB, third octaves within 2.8 dB (Windows +0.16 dB, 2.7 dB: the 10 kHz band); high pass 24 dB at 500 Hz, resonance 60 % −0.02 dB, within 0.2 dB (Windows −0.01 dB, 0.3 dB); band pass 800 Hz, resonance 85 % +0.02 dB, within 1.5 dB; band pass 1 kHz, resonance 80 %, its LFO on 1/4 (Windows) +0.13 dB, within 1.7 dB",
     "why_not": "Above about 2 kHz at 24 dB/oct the top third octaves differ by up to 5 dB (4 kHz low-pass: 10 kHz band), and a notch or high-pass near 8 kHz loses up to 3.5 dB of loudness: Pedal Filter's state-variable filter at the base rate closes toward Nyquist, Neo Filter's, oversampled, keeps the analog slope."
   },
   "evidence": [

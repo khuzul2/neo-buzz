@@ -317,7 +317,7 @@
     "band_db": 2.5,
     "from_hz": 50,
     "to_hz": 12000,
-    "measured": "MEASURED",
+    "measured": "Windows (package run 42001593667), Neo Poly noise into it, each side against its input: at its defaults (low-pass, open) +0.07 dB, third octaves within 0.6 dB; low-pass 64 at resonance 64 +0.07 dB, within 0.9 dB; high-pass 48 −0.03 dB, within 0.1 dB; band-pass 96 at resonance 110 (Q 41) −0.34 dB, within 0.9 dB",
     "why_not": "Resonance above 116 is a Q past Neo Filter's."
   },
   "evidence": [
