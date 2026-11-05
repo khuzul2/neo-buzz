@@ -14,7 +14,9 @@
        A rebuilt native replaces upstream's binary only where its entry says "ship": "rebuilt"
        (it renders as upstream's does: tools\native-compare.py) and its licence allows it.
     5. Merges prebuilt DLLs from ExternalMachines\binaries.
-    6. Writes GEAR-INVENTORY.txt, BUILD-INFO.txt and README-FIRST.txt, then zips to dist\.
+    6. Writes GEAR-INVENTORY.txt, BUILD-INFO.txt, README-FIRST.txt and Licenses\ (NOTICE.txt: each
+       machine built from source, its licence and source; the licence texts machines.json's
+       "licenseTexts" has for them, and ReBuzz's and its libraries'), then zips to dist\.
 
     Precedence: upstream machines > machines built from source > prebuilt binaries.
     Nothing ever overwrites a file already in the Gear folder (but the rebuilt natives marked
@@ -112,6 +114,31 @@ function New-Dir([string]$Path) {
 # "FSM Infector.x64.dll" and "FSM Infector.dll" are the same machine; compare without ".x64".
 function Get-GearKey([string]$Name) {
     return ($Name -replace '\.x64(?=\.)', '').ToLowerInvariant()
+}
+
+# Fork (licences): a machine's licence id is how its "license" starts, "-or-later" and "-only" aside
+# ("GPL-3.0-or-later (the source's header)" is GPL-3.0, "LGPL-2.1 (FSM/COPYING; ...)" LGPL-2.1).
+function Get-LicenseId([string]$License) {
+    if (-not $License) { return $null }
+    $first = ($License.Trim() -split '[\s;,(]')[0]
+    return ($first -replace '(-or-later|-only|\+)$', '')
+}
+
+# The text of a licence the package can ship: machines.json's "licenseTexts" entry for the id, its file (under
+# ExternalMachines) checked to start as that licence does. $null when the table has none.
+function Get-LicenseText([string]$Id) {
+    if (-not $Id) { return $null }
+    $texts = Get-Prop $manifest 'licenseTexts'
+    if (-not $texts) { return $null }
+    $t = Get-Prop $texts $Id
+    if (-not $t -or -not (Get-Prop $t 'file')) { return $null }
+    $path = [IO.Path]::Combine($ExtRoot, ($t.file -replace '/', '\'))
+    if (-not (Test-Path -LiteralPath $path)) { throw "machines.json licenseTexts: $Id's text $($t.file) is not in ExternalMachines" }
+    $head = (Get-Content -LiteralPath $path -TotalCount 30) -join "`n"
+    foreach ($line in @(Get-Prop $t 'check')) {
+        if ($line -and -not $head.Contains($line)) { throw "machines.json licenseTexts: $($t.file) doesn't start as $Id does (no '$line')" }
+    }
+    return [pscustomobject]@{ Id = $Id; Path = $path }
 }
 
 # Copies files into a Gear subfolder unless the folder already has them (also under their
@@ -359,6 +386,11 @@ if (-not $SkipNativeMachines) {
             $inGear = [IO.Path]::Combine($OutDir, 'Gear', $n.gearFolder, $upFile)
             if ((Test-Path -LiteralPath $upstream) -and -not (Test-Path -LiteralPath $inGear)) { Copy-Item -LiteralPath $upstream -Destination $inGear }
             if ((Get-Prop $n 'ship') -ne 'rebuilt' -or (Get-Prop $n 'redistribute') -eq $false) { continue }
+            # Its licence's text ships with it (Licenses\, machines.json's "licenseTexts"), or upstream's binary stays.
+            if (-not (Get-LicenseText (Get-LicenseId (Get-Prop $n 'license')))) {
+                Add-MachineFailure "natives: $($n.gear): machines.json's licenseTexts has no text of its licence ($($n.license)); upstream's binary stays"
+                continue
+            }
             # The platform that ships: upstream's, or "shipPlatform" (an x64 build where upstream has only x86).
             $platform = Get-Prop $n 'shipPlatform'
             if (-not $platform) { $platform = if ((Get-Prop $n 'upstreamBinary') -eq 'x86') { 'x86' } else { 'x64' } }
@@ -623,7 +655,105 @@ $info = @(
 $info += @($Failures | ForEach-Object { "  - $_" })
 $info | Set-Content -LiteralPath ([IO.Path]::Combine($pkgDir, 'BUILD-INFO.txt')) -Encoding UTF8
 
-@'
+# ---------------------------------------------------------------- 6b. licences (fork)
+
+# Licenses\NOTICE.txt names each machine DLL in Gear built from ExternalMachines (or prebuilt from its repos' releases),
+# from what machines.json says of it: its licence, where its source is in this repository and upstream, and what was
+# changed. The text of each of their licences that machines.json's "licenseTexts" has ships beside it (Licenses\<id>.txt),
+# so a machine added there later gets its licence's text too. Then the components that aren't machines whose licence
+# texts are in the repository (ReBuzz's own MIT licence, Serilog's and r8brain's).
+$licDir = [IO.Path]::Combine($pkgDir, 'Licenses')
+New-Dir $licDir
+$bt = $manifest.machines | Where-Object { $_.id -eq 'buzztrax-buzzmachines' } | Select-Object -First 1
+$groups = [ordered]@{}           # machine entry id -> files of it in Gear
+$shippedTexts = [ordered]@{}     # licence id -> text, for those that ship
+$byLicence = [ordered]@{}        # licence -> machine names, for README-FIRST
+foreach ($sub in 'Generators', 'Effects') {
+    $dir = [IO.Path]::Combine($pkgDir, 'Gear', $sub)
+    if (-not (Test-Path -LiteralPath $dir)) { continue }
+    foreach ($d in @(Get-ChildItem -LiteralPath $dir -File -Filter '*.dll' | Sort-Object Name)) {
+        $origin = $Origins["$sub\$($d.Name)"]
+        $entry = $null; $native = $null; $how = 'built from source'
+        if ($origin -eq 'external:buzztrax' -and $bt) {
+            $entry = $bt
+            $native = @(Get-Prop $bt 'natives') | Where-Object { (Get-GearKey ($_.gear + '.dll')) -eq (Get-GearKey $d.Name) } | Select-Object -First 1
+        } elseif ($origin -like 'external:*') {
+            $entry = $manifest.machines | Where-Object { $_.id -eq $origin.Substring(9) } | Select-Object -First 1
+        } elseif ($origin -like 'binaries:*') {
+            $entry = $manifest.machines | Where-Object { $_.origin -eq ('https://github.com/' + $origin.Substring(9)) } | Select-Object -First 1
+            $how = "prebuilt, from the repository's latest release"
+        }
+        if (-not $entry) { continue }
+        $licence = if ($native) { Get-Prop $native 'license' } else { Get-Prop $entry 'license' }
+        $text = Get-LicenseText (Get-LicenseId $licence)
+        if ($text) { $shippedTexts[$text.Id] = $text }
+        if (-not $groups.Contains($entry.id)) { $groups[$entry.id] = New-Object System.Collections.Generic.List[object] }
+        $groups[$entry.id].Add([pscustomobject]@{ File = "Gear\$sub\$($d.Name)"; Licence = $licence; Text = $text; Native = $native; How = $how })
+        $key = if ($text) { "$($text.Id) (Licenses\$($text.Id).txt)" } else { "$licence" }
+        if (-not $byLicence.Contains($key)) { $byLicence[$key] = New-Object System.Collections.Generic.List[string] }
+        $byLicence[$key].Add(($d.BaseName -replace '\.x64$', ''))
+    }
+}
+$notice = New-Object System.Collections.Generic.List[string]
+$notice.Add("Licences in this package ($pkgName)")
+$notice.Add('')
+$notice.Add("Machines built from the sources in this fork's ExternalMachines folder (neo-buzz repository, commit $shaText),")
+$notice.Add('each with its licence, its source and upstream, and what this fork changed. A licence''s text is in this folder.')
+foreach ($id in $groups.Keys) {
+    $entry = $manifest.machines | Where-Object { $_.id -eq $id } | Select-Object -First 1
+    $notice.Add('')
+    $notice.Add("ExternalMachines\$($entry.path -replace '/', '\')")
+    $notice.Add("  upstream: $($entry.origin) (commit $($entry.commit))")
+    $patches = @(@(Get-Prop $entry 'patches') | Where-Object { $_ })
+    if ($patches.Count -gt 0) { $notice.Add("  changed here: $($patches -join '; ')") }
+    foreach ($f in $groups[$id]) {
+        $notice.Add("  $($f.File)")
+        $licText = if ($f.Text) { "$($f.Licence); text: Licenses\$($f.Text.Id).txt" } elseif ("$($f.Licence)" -like 'None*') { "$($f.Licence): no licence text to ship" } else { "$($f.Licence)" }
+        $notice.Add("    licence: $licText")
+        if ($f.Native) {
+            $notice.Add("    source:  ExternalMachines\$($entry.path -replace '/', '\')\$($f.Native.dir -replace '/', '\') ($($f.Native.sources -join ', ')); upstream's $($f.Native.dir)")
+            if (Get-Prop $f.Native 'fix') { $notice.Add("    fixed:   $($f.Native.fix)") }
+        } else {
+            $notice.Add("    $($f.How)")
+        }
+    }
+}
+foreach ($t in $shippedTexts.Values) {
+    Copy-Item -LiteralPath $t.Path -Destination ([IO.Path]::Combine($licDir, "$($t.Id).txt")) -Force
+}
+# Components that aren't machines, built from source here or bundled, whose licence text is in the repository.
+$components = @(
+    [pscustomobject]@{ Name = 'ReBuzz (wasteddesign/ReBuzz) and this fork'; Licence = 'MIT'; Text = 'LICENSE'; As = 'ReBuzz-LICENSE.txt'; File = 'ReBuzz.exe' },
+    [pscustomobject]@{ Name = 'Serilog (serilog.dll, from 3rdParty\serilog\serilog)'; Licence = 'Apache-2.0'; Text = '3rdParty\serilog\serilog\LICENSE'; As = 'Serilog-LICENSE.txt'; File = 'serilog.dll' },
+    [pscustomobject]@{ Name = 'Serilog.Sinks.RichTextBox.Wpf (from 3rdParty\serilog\serilog-sinks-richtextbox)'; Licence = 'Apache-2.0'; Text = '3rdParty\serilog\serilog-sinks-richtextbox\LICENSE'; As = 'Serilog.Sinks.RichTextBox.Wpf-LICENSE.txt'; File = 'Serilog.Sinks.RichTextBox.Wpf.dll' },
+    [pscustomobject]@{ Name = 'r8brain-free-src (r8bsrc64.dll, from 3rdParty\r8b\r8brain-free-src)'; Licence = 'MIT'; Text = '3rdParty\r8b\r8brain-free-src\LICENSE'; As = 'r8brain-free-src-LICENSE.txt'; File = 'r8bsrc64.dll' }
+)
+$notice.Add('')
+$notice.Add('Other components and their licences')
+foreach ($c in $components) {
+    $src = [IO.Path]::Combine($Root, $c.Text)
+    if (-not (Test-Path -LiteralPath ([IO.Path]::Combine($pkgDir, $c.File)))) { continue }
+    if (Test-Path -LiteralPath $src) {
+        Copy-Item -LiteralPath $src -Destination ([IO.Path]::Combine($licDir, $c.As)) -Force
+        $notice.Add("  $($c.Name): $($c.Licence); text: Licenses\$($c.As)")
+    } else {
+        $notice.Add("  $($c.Name): $($c.Licence) (its text, $($c.Text), wasn't in this checkout)")
+        Write-Warning "Licence text $($c.Text) not found (submodules not initialised?): $($c.Name) ships without it"
+    }
+}
+if (Test-Path -LiteralPath ([IO.Path]::Combine($pkgDir, 'LinkHelper', 'Link-LICENSE.md'))) {
+    $notice.Add('  ReBuzzLink.exe (Ableton Link): GPL-2.0-or-later; text and source: LinkHelper\ (Link-LICENSE.md, Link-GNU-GPL-v2.0.md, main.cpp)')
+}
+$notice | Set-Content -LiteralPath ([IO.Path]::Combine($licDir, 'NOTICE.txt')) -Encoding UTF8
+$licenceReadme = New-Object System.Collections.Generic.List[string]
+if ($byLicence.Count -gt 0) {
+    $licenceReadme.Add('Machines built from source in this package, by licence (Licenses\NOTICE.txt: where each one''s source is):')
+    foreach ($k in $byLicence.Keys) { $licenceReadme.Add("  $k`: $($byLicence[$k] -join ', ')") }
+}
+$licenceReadme.Add('Licenses\ also has the licence texts of ReBuzz itself and of the libraries built from source with it.')
+Write-Host "Licenses\: $((@(Get-ChildItem -LiteralPath $licDir -File | ForEach-Object Name)) -join ', ')"
+
+$readme = @'
 ReBuzz (fork) - portable build
 ==============================
 
@@ -639,9 +769,9 @@ Needs (same as upstream ReBuzz):
 
 GEAR-INVENTORY.txt lists every machine and where it came from. BUILD-INFO.txt lists any machine
 that failed to build. Machine licenses vary; see ExternalMachines\README.md in the source repo.
-The FSM and Oomek machines marked external:buzztrax are built from source: FSM's under the LGPL 2.1,
-Oomek's under the GPL 3 or later; their sources are ExternalMachines\source\buzztrax-buzzmachines.
-'@ | Set-Content -LiteralPath ([IO.Path]::Combine($pkgDir, 'README-FIRST.txt')) -Encoding UTF8
+'@
+@($readme -split "`r?`n") + @($licenceReadme) | Set-Content -LiteralPath ([IO.Path]::Combine($pkgDir, 'README-FIRST.txt')) -Encoding UTF8
+$licenceReadme | ForEach-Object { Write-Host "README-FIRST.txt: $_" }
 
 if (-not $NoZip) {
     $zip = [IO.Path]::Combine($DistDir, "$pkgName.zip")
@@ -651,6 +781,31 @@ if (-not $NoZip) {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     [IO.Compression.ZipFile]::CreateFromDirectory($pkgDir, $zip, [IO.Compression.CompressionLevel]::Optimal, $true)
     Write-Host "Package: $zip ($([math]::Round((Get-Item -LiteralPath $zip).Length / 1MB, 1)) MB)" -ForegroundColor Green
+    # Fork (licences): the licence files as the zip has them, in the log, the step summary and an annotation.
+    $licEntries = New-Object System.Collections.Generic.List[string]
+    $archive = [IO.Compression.ZipFile]::OpenRead($zip)
+    try {
+        foreach ($e in $archive.Entries) {
+            if ($e.FullName -match '[\\/]Licenses[\\/].|LICENSE[^\\/]*$|COPYING[^\\/]*$|GPL[^\\/]*\.(md|txt)$') {
+                $licEntries.Add(('{0} ({1} bytes)' -f ($e.FullName -replace '\\', '/'), $e.Length))
+            }
+        }
+    } finally {
+        $archive.Dispose()
+    }
+    Write-Host "Licence files in the zip ($($licEntries.Count)):"
+    $licEntries | ForEach-Object { Write-Host "  $_" }
+    $noticeFile = [IO.Path]::Combine($pkgDir, 'Licenses', 'NOTICE.txt')
+    Write-Host 'Licenses\NOTICE.txt:'
+    Get-Content -LiteralPath $noticeFile | ForEach-Object { Write-Host "  $_" }
+    if ($env:GITHUB_ACTIONS -eq 'true') {
+        Write-Host "::notice title=Licence files in the zip ($($licEntries.Count))::$(($licEntries -join '; ').Replace('%', '%25'))"
+        if ($env:GITHUB_STEP_SUMMARY) {
+            $md = @('### Licence files in the zip', '') + @($licEntries | ForEach-Object { "- ``$_``" }) +
+                  @('', '<details><summary>Licenses/NOTICE.txt</summary>', '', '```') + @(Get-Content -LiteralPath $noticeFile) + @('```', '</details>', '')
+            $md | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Encoding UTF8
+        }
+    }
 } else {
     Write-Host "Package folder: $pkgDir" -ForegroundColor Green
 }

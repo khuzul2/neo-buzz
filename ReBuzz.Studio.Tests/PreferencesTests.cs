@@ -50,7 +50,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(PreferencesWindow.Current, Is.Null);
         }
 
-        [TearDown]
+        // Not a [TearDown]: each test runs it when it ends, failed or not (Studio.AfterTest).
         public void CloseWhatIsOpen()
         {
             PreferencesWindow.Current?.Close();
@@ -65,6 +65,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void AudioChoicesWriteTheRegistryAndReopenTheDevice()
         {
+            using var restore = Studio.AfterTest(CloseWhatIsOpen);
             var registry = Host.Registry;
             const string monitors = "PortAudio: Studio Monitors (Core Audio)", mic = "PortAudio: Studio Mic (Core Audio)";
             AudioPage.OutputSource = () => new[] { "PortAudio: default", monitors };
@@ -124,6 +125,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void RestartAudioOpensTheDeviceForReal()
         {
+            using var restore = Studio.AfterTest(CloseWhatIsOpen);
             Assume.That(PortAudio.Available, "PortAudio isn't installed here");
             var core = Host.Core;
             // What opening a device changes in the shared engine, put back after: the rate, and the
@@ -211,6 +213,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void MidiDevicesOpenAndFollowPlugging()
         {
+            using var restore = Studio.AfterTest(CloseWhatIsOpen);
             var core = Host.Core;
             var registry = Host.Registry;
             var backend = new StandInMidi();
@@ -274,6 +277,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void MidiPageRendersWithTheEnginesDevicesAndItsSettings()
         {
+            using var restore = Studio.AfterTest(CloseWhatIsOpen);
             var prefs = Open("MIDI");
             var page = prefs.Page<MidiPage>();
             var core = Host.Core;
@@ -303,6 +307,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void SyncChoicesRoundTrip()
         {
+            using var restore = Studio.AfterTest(CloseWhatIsOpen);
             var sync = Host.Core.SessionSync;
             var registry = Host.Registry;
             var prefs = Open("Sync");
@@ -353,6 +358,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void GeneralSettingsShowFromTheirAttributesAndRoundTrip()
         {
+            using var restore = Studio.AfterTest(CloseWhatIsOpen);
             var prefs = Open("General");
             var page = prefs.Page<GeneralPage>();
             Studio.Screenshot(prefs, "prefs-general");

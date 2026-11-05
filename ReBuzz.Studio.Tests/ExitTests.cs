@@ -46,7 +46,7 @@ namespace ReBuzz.Studio.Tests
 
         static ReBuzzCore Core => Studio.Host.Core;
 
-        [TearDown]
+        // Not a [TearDown]: each test runs it when it ends, failed or not (Studio.AfterTest).
         public void PutBack()
         {
             SongFiles.Picker = null;
@@ -226,6 +226,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void ASongFromScratchByTheUiAloneSavesAndOpensAsItWas()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var (window, view) = OpenEmpty();
             ToolTip.SetServiceEnabled(window, false);
             var master = Machine("Master");
@@ -616,6 +617,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void OldSongsOpenWithPlaceholdersAndSaveBackWithoutLoss()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var songs = OldSongs();
             if (songs.Count == 0) Assert.Ignore("the demo songs aren't in this checkout");
             var (window, view) = OpenEmpty();
@@ -773,6 +775,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheAgentStartupOptionAllowsAgentsForOneRunWithoutSavingIt()
         {
+            using var restore = Studio.AfterTest(PutBack);
             // ReBuzz.Studio --agent-port <p> --agent-token <t>, as CI starts the app for the live
             // scenarios (tools/headless-live.py --studio). Here a second server on the shared engine.
             int port;

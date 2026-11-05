@@ -23,31 +23,42 @@ namespace NeoBuzz.Analyzer
         protected override NeoColor Accent => AccentColor;
         internal override ParamDef[] Table => Params.Table;
 
-        /// <summary>The snapshot the graphs draw, copied from the engine at most once per frame.</summary>
-        sealed class Live
+        /// <summary>
+        /// The snapshot the graphs draw, copied from the engine when it has published a new one (so once a frame
+        /// for the graphs that share it, and never one behind), as Neo Scope's editor does: a 10 ms wall-clock
+        /// throttle kept the last one when an offline render outran it (Fork Mac 41966698814, Neo Scope's).
+        /// </summary>
+        internal sealed class Live
         {
             readonly AnalyzerEngine engine;
-            long last = long.MinValue / 2;   // far enough back that the first draw reads, without overflow
+            long lastPublished = -1;         // the engine's count at the last read (none yet: the first read happens)
             public readonly AnalyzerSnapshot Snapshot = new AnalyzerSnapshot();
 
             public Live(AnalyzerEngine engine) { this.engine = engine; }
 
+            /// <summary>Snapshots read so far (tests).</summary>
+            public int Reads { get; private set; }
+
             public AnalyzerSnapshot Get()
             {
-                long now = Environment.TickCount64;
-                if (engine != null && now - last >= 10)
+                long published = engine?.Published ?? 0;
+                if (engine != null && published != lastPublished)
                 {
-                    last = now;
+                    lastPublished = published;
                     engine.Read(Snapshot);
+                    Reads++;
                 }
                 return Snapshot;
             }
         }
 
+        /// <summary>The live data behind the open editor (tests read it).</summary>
+        internal Live Data { get; private set; }
+
         internal override UIElement BuildBody(EditorContext ctx)
         {
             var machine = ctx.Machine?.ManagedMachine as NeoAnalyzerMachine;
-            var live = new Live(machine?.Engine);
+            var live = Data = new Live(machine?.Engine);
             var ci = CultureInfo.InvariantCulture;
 
             var spectrum = new GraphView(600, 240, (g, r) =>

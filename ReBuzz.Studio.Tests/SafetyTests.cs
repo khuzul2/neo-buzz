@@ -56,7 +56,7 @@ namespace ReBuzz.Studio.Tests
             Core.SafeMaster.Reset();
         }
 
-        [TearDown]
+        // Not a [TearDown]: each test runs it when it ends, failed or not (Studio.AfterTest).
         public void PutBack()
         {
             Core.MasterVolume = masterVolume;
@@ -135,6 +135,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void AMachineThatRunsAwayIsSilencedStoppedAndMutedAndTheRestPlaysOn()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var (window, view) = MachineViewTests.OpenEmpty();
             var notices = new List<string>();
             Action<MachineCore> notice = m => notices.Add(m.Name);
@@ -196,6 +197,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void AMachineWritingNaNIsCaughtAndTheAgentSeesAndResetsIt()
         {
+            using var restore = Studio.AfterTest(PutBack);
             NewSong();
             var steady = Add("Steady", Sine, dbfs: -12, x: -0.4f);
             // Blocks counts Work calls, which sub-ticks can make shorter than 256 frames.
@@ -249,6 +251,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void NormalAudioPassesTheGuardBitForBit()
         {
+            using var restore = Studio.AfterTest(PutBack);
             NewSong();
             Add("Hot", Sine, dbfs: 12, x: -0.4f);
             Add("Quiet", Sine, dbfs: -40, x: 0.4f);
@@ -265,6 +268,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheGuardAndTheSafeMasterAllocateNothing()
         {
+            using var restore = Studio.AfterTest(PutBack);
             NewSong();
             var m = Add("Steady", Sine);
             var block = new Sample[256];
@@ -293,6 +297,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void TheSafeMasterScrubsLimitsAndLeavesQuietAudioAlone()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var safe = new SafeMaster();
             var rng = new Random(7);
             var quiet = Enumerable.Range(0, 1024).Select(_ => (float)(rng.NextDouble() * 1.9 - 0.95)).ToArray();
@@ -329,6 +334,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void ASineAt12dBFSReachesTheDeviceAtTheCeilingAndTheClipIndicatorLatches()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var (window, view) = MachineViewTests.OpenEmpty();
             int rate = Core.SelectedAudioDriverSampleRate;
             var provider = new CommonAudioProvider(Core, Core.EngineSettings, rate, 2, 256, false, Host.Registry);
@@ -401,6 +407,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest]
         public void PreferencesAskBeforeTheLimiterOrTheGuardGoesOff()
         {
+            using var restore = Studio.AfterTest(PutBack);
             var registry = Host.Registry;
             try
             {
