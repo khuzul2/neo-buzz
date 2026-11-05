@@ -409,7 +409,7 @@
       ],
       "patches": [
         "FSM/dspchips/DSPChips.h: no copysign macro on MSVC (it rewrote <cmath>'s declarations when Infector's <complex> included it after); the one call is _copysign, which the macro made it (U7)",
-        "FSM/WahMan, WahManPro, WahPro2: the glide's start cutoff (and WahManPro's LFO phase, whose default sets none) set to 0 in Init; they were never set (U7)"
+        "FSM/WahMan, WahManPro, WahPro2: the glide's start cutoff (and WahManPro's LFO phase, whose default sets none, and WahMan's filter coefficients, which DoWork reads before it first computes them) set to 0 in Init; they were never set (U7)"
       ],
       "natives": [
         {
@@ -528,7 +528,7 @@
           "license": "LGPL-2.1 (FSM/COPYING; the sources' headers: LGPL-2 or later)",
           "redistribute": true,
           "upstreamBinary": "x64",
-          "fix": "the glide's start cutoff set to 0 in Init (never set: heap garbage)",
+          "fix": "the glide's start cutoff and the filter coefficients set to 0 in Init (never set: heap garbage)",
           "ship": "rebuilt"
         },
         {
