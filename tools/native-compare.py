@@ -19,8 +19,13 @@
 # and C runtime maths show up at −150…−110 dBFS). With --gate, the package's own build of every machine must
 # match, else the script fails: what songs hear doesn't change.
 #
+# --pitch (§12.6's "Done when"): every pitched generator among them (its manifest's notes.pitched) plays the written
+# pitch through notes_write, its manifest's pitch offset applied as an agent's call applies it: A3, A4 and A5, each its own
+# render, heard by analyze's pitch (YIN) or, where that hears none (a 303's squelch), the profiler's harmonic sieve
+# (tools/machine_roles.py) on the note's first 0.37 s. A note heard a semitone or more away fails the script.
+#
 #   python tools/native-compare.py <ReBuzz.exe> <work> [--variant LABEL=DIR ...] [--only gear,...] [--gate]
-#                                  [--shipped RunTime/Gear] [--json out.json]
+#                                  [--shipped RunTime/Gear] [--json out.json] [--pitch] [--no-compare]
 
 import importlib.util
 import json
@@ -32,6 +37,8 @@ import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+import machine_roles as mr  # noqa: E402
 _spec = importlib.util.spec_from_file_location("nulltest", os.path.join(HERE, "null-test.py"))
 nt = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(nt)
@@ -182,6 +189,49 @@ def render_case(run, spec, builds, case, man):
     return out
 
 
+def heard_pitch(c, path, render_id, expected):
+    """(MIDI note heard, cents, how): YIN through analyze, else the harmonic sieve on the note's start."""
+    try:
+        a = c.call("analyze", source=render_id, metrics=["pitch"], from_seconds=0.03, to_seconds=0.45)
+        pt = a.get("pitch") or {}
+        if pt.get("median_hz") and (pt.get("voiced_percent") or 0) >= 20:
+            m = 69 + 12 * math.log2(pt["median_hz"] / 440.0)
+            return round(m), round((m - round(m)) * 100, 1), "yin"
+    except Exception:
+        pass
+    rate, ch, x = nt.read_wav(path)
+    mono = [x[i] for i in range(0, len(x), ch)]
+    binhz, mags = mr.magnitude_spectrum(mono, rate)
+    r = mr.pitch_sieve(binhz, mags, expected)
+    if r and r.get("pitched"):
+        return r["midi"], r["cents"], "sieve"
+    return None, None, "none"
+
+
+NOTE_NAMES = {"A3": 57, "A4": 69, "A5": 81}
+
+
+def pitch_check(run, spec, man):
+    """notes_write as an agent calls it (the manifest's offset applied) on the package's build: the pitch heard per note."""
+    c = run.client()
+    out = {}
+    for name, midi in NOTE_NAMES.items():
+        c.call("song_new", discard_unsaved=True, tempo_bpm=TEMPO)
+        c.call("song_set", song_end_beats=2)
+        c.call("machine_add", gear=spec["gear"], name="G")
+        c.call("pattern_create", machine="G", name="P", length_beats=2)
+        c.call("notes_write", machine="G", pattern="P", notes=[n(name, 0, 1.5, 100)])
+        c.call("arrangement_place", machine="G", pattern="P", at=[0])
+        r = c.call("render", **{"from": 0, "to": 2, "tail_seconds": 0.2, "name": (spec["gear"] + "-pitch-" + name).replace(" ", "_")})
+        got, cents, how = heard_pitch(c, r["file"], r["id"], midi)
+        out[name] = {"expected": midi, "heard": got, "cents": cents, "method": how}
+        try:
+            os.remove(r["file"])
+        except OSError:
+            pass
+    return out
+
+
 def diff(ref, got):
     """(identical, max |difference| in dBFS, difference RMS over the reference's in dB, first differing second)."""
     r_rate, r_ch, a = nt.read_wav(ref)
@@ -231,6 +281,7 @@ def main(argv):
         return 2
     exe, work = os.path.abspath(argv[0]), os.path.abspath(argv[1])
     variants, only, gate, shipped_dir, json_out = [], None, False, os.path.join(ROOT, "RunTime", "Gear"), None
+    do_pitch, do_compare = False, True
     i = 2
     while i < len(argv):
         a = argv[i]
@@ -247,6 +298,12 @@ def main(argv):
         elif a == "--shipped":
             shipped_dir = os.path.abspath(argv[i + 1])
             i += 2
+        elif a == "--pitch":
+            do_pitch = True
+            i += 1
+        elif a == "--no-compare":
+            do_compare = False
+            i += 1
         elif a == "--json":
             json_out = os.path.abspath(argv[i + 1])
             i += 2
@@ -299,9 +356,24 @@ def main(argv):
             os.remove(cache)
 
         run = Run(exe, os.path.join(work, "server"))
-        results = {}
+        results, pitches = {}, {}
         started = time.time()
         for s in specs:
+            if not do_pitch:
+                break
+            man = manifest_of(os.path.join(gear_root, s["gearFolder"]), s["gear"])
+            if not (man.get("notes") or {}).get("pitched") or not any(g == s["gear"] for _, g in plan[s["gear"]]):
+                continue
+            try:
+                pitches[s["gear"]] = pitch_check(run, s, man)
+            except Exception as e:
+                pitches[s["gear"]] = {"error": str(e)[:300]}
+                run.restart()
+            print(f"pitch {s['gear']:<22} " + "; ".join(f"{k}: " + (f"heard {v['heard']} ({v['cents']:+.1f} ct, {v['method']})" if v.get("heard") is not None else f"none ({v.get('method')})")
+                                                   for k, v in pitches[s["gear"]].items() if isinstance(v, dict)), flush=True)
+        for s in specs:
+            if not do_compare:
+                break
             builds = plan[s["gear"]]
             if len(builds) < 2:
                 print(f"skip {s['gear']}: {len(builds)} build(s) in Gear", flush=True)
@@ -330,6 +402,7 @@ def main(argv):
                     if f:
                         entry["peak_dbfs"] = peak_db(f)
                     res[label]["cases"][case[0]] = entry
+                for _, f in files.values():      # the reference too, once every build is compared with it
                     try:
                         os.remove(f)
                     except (OSError, TypeError):
@@ -363,22 +436,32 @@ def main(argv):
 
     # ---- report
     rows, failed = [], []
+    for gear, pr in pitches.items():
+        bad = [k for k, v in pr.items() if not isinstance(v, dict) or v.get("heard") != v.get("expected")]
+        if bad or "error" in pr:
+            failed.append(f"{gear} (pitch: {', '.join(bad) or pr.get('error')})")
     for gear, r in results.items():
         for label, b in r["builds"].items():
             if label == r["reference"]:
                 continue
             verdict = "identical" if b["identical"] else ("within" if b["match"] else "DIFFERS")
             rows.append((gear, label, verdict, fmt(b["worst_dbfs"]), b["errors"]))
-            if gate and label.startswith("package") and not b["match"]:
+            # The package's own binary where it is upstream's file is the same machine: a difference there is the machine
+            # not rendering the same twice (reported, not a failure).
+            if gate and label == "package (rebuilt)" and not b["match"]:
                 failed.append(f"{gear} ({label})")
     lines = [f"{g:<24} {lb:<20} {v:<9} worst {w} dBFS" + (f", {e} case(s) failed or diverged" if e else "") for g, lb, v, w, e in rows]
+    lines += [f"{g:<24} notes_write plays " + ", ".join(f"{k} as {v['heard']} ({v['cents']:+.1f} ct)" if v.get("heard") is not None else f"{k}: no pitch heard"
+                                                    for k, v in pr.items() if isinstance(v, dict)) for g, pr in pitches.items()]
     print("\n".join(lines), flush=True)
-    summary = (f"{len(results)} machines, {len(rows)} builds against upstream's binaries, tolerance {TOLERANCE_DBFS:.0f} dBFS; "
-               + (f"package builds that differ: {', '.join(failed)}" if failed else "every package build matches") + f" ({time.time() - started:.0f} s)")
+    summary = (f"{len(results)} machines, {len(rows)} builds against upstream's binaries, tolerance {TOLERANCE_DBFS:.0f} dBFS"
+               + (f", {len(pitches)} pitched generators" if pitches else "") + "; "
+               + (f"failed: {', '.join(failed)}" if failed else "every package build matches" + (", every note at its pitch" if pitches else ""))
+               + f" ({time.time() - started:.0f} s)")
     print(summary, flush=True)
     if json_out:
         with open(json_out, "w", encoding="utf-8") as f:
-            json.dump({"tolerance_dbfs": TOLERANCE_DBFS, "results": results}, f, indent=1, default=str)
+            json.dump({"tolerance_dbfs": TOLERANCE_DBFS, "results": results, "pitch": pitches}, f, indent=1, default=str)
     if os.environ.get("GITHUB_ACTIONS"):
         kind = "error" if failed else "notice"
         chunk, n_ = [], 0

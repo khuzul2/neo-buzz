@@ -540,6 +540,10 @@ void mi::Init(CMachineDataInput * const pi)
     vals.lfoshape=paraLFOShape.DefValue;
     vals.inertia=paraInertia.DefValue;
     vals.filtype=paraFilterType.DefValue;
+    // neo-buzz (U7): the cutoff the glide starts from was never set: heap garbage, so an instance could
+    // start anywhere, or at NaN. 0 is where a fresh (zeroed) allocation started it, so every instance now
+    // sounds as those did.
+    Tracks[c].CurCutoff = 0.0f;
     TickTrack(&Tracks[c], &vals);
     Tracks[c].ResetFilter();
 	}

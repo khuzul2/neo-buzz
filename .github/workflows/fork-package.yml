@@ -215,7 +215,7 @@ jobs:
         ./tools/build-natives.ps1 -OutDir build/natives-o2 -Flags '/O2' *> natives-o2.log
         ./tools/build-natives.ps1 -OutDir build/natives-ia32 -Flags '/arch:IA32' -Platforms x86 *> natives-ia32.log
         ./tools/build-natives.ps1 -OutDir build/natives-ia32o2 -Flags '/O2 /arch:IA32' -Platforms x86 *> natives-ia32o2.log
-        python tools/native-compare.py $exe.FullName native-compare --gate --json native-compare/native-compare.json `
+        python tools/native-compare.py $exe.FullName native-compare --gate --pitch --json native-compare/native-compare.json `
           --variant R64=build/ExternalMachines/natives/x64/Gear --variant R86=build/ExternalMachines/natives/x86/Gear `
           --variant O264=build/natives-o2/x64/Gear --variant O286=build/natives-o2/x86/Gear `
           --variant IA86=build/natives-ia32/x86/Gear --variant IAO2=build/natives-ia32o2/x86/Gear

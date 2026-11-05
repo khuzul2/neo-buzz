@@ -485,8 +485,8 @@
    "max": 239,
    "default": 128,
    "kind": "linear",
-   "a": 30.228138,
-   "b": 6990.499895,
+   "a": 30.2447,
+   "b": 6990.483495,
    "unit": "Hz",
    "description": "High-pass before the shaper, about 30 Hz – 7 kHz."
   },
@@ -501,8 +501,8 @@
    "max": 239,
    "default": 60,
    "kind": "linear",
-   "a": 30.228138,
-   "b": 6990.499895,
+   "a": 30.2447,
+   "b": 6990.483495,
    "unit": "Hz",
    "description": "High-pass after the shaper."
   },
