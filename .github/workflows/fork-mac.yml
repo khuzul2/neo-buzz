@@ -175,3 +175,26 @@ jobs:
           echo "::notice title=$f::total ${total:-?}, passed ${passed:-?}, failed ${failed:-0}"
           grep -E "^\s+Failed " "$f" | head -20 | while read -r line; do echo "::error title=$f::$line"; done
         done
+
+  # TEMPORARY (agent/ci-flakes measurement, reverted before the final runs): Neo Delay's one-off allocation on this
+  # runner, hunted with the per-block AllocationCheck: the fixtures that ran before it when it failed, 25 times.
+  allocation-soak:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - name: Soak
+      shell: bash
+      run: |
+        dotnet build NeoBuzz.MachineTests -nologo -v:q
+        fails=0
+        for k in $(seq 1 25); do
+          dotnet test NeoBuzz.MachineTests --no-build --filter "FullyQualifiedName~AnalyzerTests|FullyQualifiedName~CompTests|FullyQualifiedName~DelayTests|FullyQualifiedName~MeasureTests" --logger "console;verbosity=normal" > soak$k.log 2>&1 || fails=$((fails+1))
+          grep -E "^Neo Delay: [0-9]+ bytes|^Neo Analyzer: allocation" soak$k.log | sed "s/^/[$k] /"
+          grep -E "^\s+Failed " -A60 soak$k.log | head -90 | sed "s/^/[$k] /"
+        done
+        grep -h -A12 "^4[0-9]* bytes in 300 blocks" soak1.log | head -14
+        echo "soak: $fails of 25 runs failed"
