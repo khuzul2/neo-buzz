@@ -222,16 +222,16 @@ namespace ReBuzz.Agent.Model
         public double[] Ys { get; init; }
         public double[][] Values { get; init; }
         /// <summary>
-        /// Any rule: it applies only while this old parameter is one of <see cref="WhenIs"/> (its choice names, or raw values where it
-        /// has none); otherwise it sets nothing. Two rules on one output, each with its own condition, choose between them (Pedal
-        /// Filter's LFO division, taken only with Tempo Sync on).
+        /// Any rule (<c>when</c>, one condition or a list of them, all to hold): it applies only while each old parameter is one of
+        /// <c>is</c> (its choice names, or raw values where it has none), or its value lies from <c>from</c> to <c>to</c>; otherwise
+        /// it sets nothing. Two rules on one output, each with its own condition, choose between them (Pedal Filter's LFO
+        /// division, taken only with Tempo Sync on; Jeskola Filter's band-pass by its Bandwidth).
         /// </summary>
-        public string When { get; init; }
-        public IReadOnlyList<string> WhenIs { get; init; }
+        public IReadOnlyList<SuccessorCondition> When { get; init; } = Array.Empty<SuccessorCondition>();
         /// <summary>Why (a line in the report): "assumed: closed source", "measured on …".</summary>
         public string Why { get; init; } = "";
 
-        public IEnumerable<string> Inputs => (When == null ? OwnInputs : OwnInputs.Append(When)).Distinct(StringComparer.OrdinalIgnoreCase);
+        public IEnumerable<string> Inputs => OwnInputs.Concat(When.Select(w => w.Param)).Distinct(StringComparer.OrdinalIgnoreCase);
 
         IEnumerable<string> OwnInputs => Kind switch
         {
@@ -302,6 +302,10 @@ namespace ReBuzz.Agent.Model
         public IReadOnlyList<SuccessorTrigger> Triggers { get; init; } = Array.Empty<SuccessorTrigger>();
         public string Why { get; init; } = "";
     }
+
+    /// <summary>A rule's condition: the old parameter is one of <paramref name="Is"/> (choice names or raw values), or its value lies from
+    /// <paramref name="From"/> to <paramref name="To"/> (either may be left out).</summary>
+    public sealed record SuccessorCondition(string Param, IReadOnlyList<string> Is, double? From, double? To);
 
     /// <summary>What a conversion is measured against, and what was measured.</summary>
     public sealed class SuccessorTolerance
@@ -436,6 +440,11 @@ namespace ReBuzz.Agent.Model
             return new[] { (double)a[0]!, (double)a[1]! };
         }
 
+        static SuccessorCondition Condition(JsonObject c) => new(
+            (string)c["param"],
+            c["is"] is JsonArray list ? Strings(list) : c["is"] is JsonValue one ? new[] { Text(one) } : Array.Empty<string>(),
+            (double?)c["from"], (double?)c["to"]);
+
         static double[] Numbers(JsonNode node) => (node as JsonArray)?.Select(x => (double)x!).ToArray();
 
         static bool Rising(double[] v)
@@ -556,8 +565,12 @@ namespace ReBuzz.Agent.Model
                 Xs = Numbers(r["xs"]),
                 Ys = Numbers(r["ys"]),
                 Values = (r["values"] as JsonArray)?.Select(Numbers).ToArray(),
-                When = (string)r["when"]?["param"],
-                WhenIs = r["when"]?["is"] is JsonArray whenIs ? Strings(whenIs) : r["when"]?["is"] is JsonValue one ? new[] { Text(one) } : null,
+                When = r["when"] switch
+                {
+                    JsonObject one => new[] { Condition(one) },
+                    JsonArray all => all.OfType<JsonObject>().Select(Condition).ToArray(),
+                    _ => Array.Empty<SuccessorCondition>(),
+                },
                 Why = (string)r["why"] ?? "",
             };
             string missing = k switch
@@ -590,7 +603,7 @@ namespace ReBuzz.Agent.Model
                                             (rule.Y == null ? rule.Ys != null || rule.Values.Length != 1 : rule.Ys == null || rule.Ys.Length < 2 || !Rising(rule.Ys) || rule.Values.Length != rule.Ys.Length) ||
                                             rule.Values.Any(row => row == null || row.Length != rule.Xs.Length) || (rule.Log && rule.Values.Any(row => row.Any(v => !(v > 0))))
                     => "x, to, xs (at least two, rising) and values (a row of xs' length per y, or one row without y; positive for a log curve), and with y its ys (at least two, rising)",
-                _ when rule.When != null && (rule.WhenIs == null || rule.WhenIs.Count == 0) => "when.param and when.is",
+                _ when rule.When.Any(w => w.Param == null || (w.Is.Count == 0 && w.From == null && w.To == null)) => "when: a param and is (or from and to) in each condition",
                 _ => null,
             };
             if (missing != null) throw new FormatException($"{pair}: a {kind} rule needs {missing}.");

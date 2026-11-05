@@ -477,12 +477,18 @@ namespace ReBuzz.Agent.Model
                 int raw = p.Raw(v);
                 outs.Add((p, raw, Reachable(p, v, raw) ? null : $"{p.Name}: {p.FormatValue(v)} is out of its reach; set to {p.Format(raw)}."));
             }
-            // A rule with a condition sets nothing while its old parameter isn't one of the values it names.
-            if (rule.When != null && Old(rule.When) is { } whenParam)
+            // A rule with conditions sets nothing while one of them doesn't hold.
+            foreach (var w in rule.When)
             {
-                int index = (int)Math.Round(get(rule.When));
-                string name = whenParam.Choices != null && index >= 0 && index < whenParam.Choices.Count ? whenParam.Choices[index] : null;
-                if (!rule.WhenIs.Any(w => Same(w, name ?? "") || Same(w, index.ToString(C)))) return outs;
+                if (Old(w.Param) is not { } whenParam) continue;
+                double v = get(w.Param);
+                if (w.Is.Count > 0)
+                {
+                    int index = (int)Math.Round(v);
+                    string name = whenParam.Choices != null && index >= 0 && index < whenParam.Choices.Count ? whenParam.Choices[index] : null;
+                    if (!w.Is.Any(x => Same(x, name ?? "") || Same(x, index.ToString(C)))) return outs;
+                }
+                if ((w.From is double lo && !(v >= lo)) || (w.To is double hi && !(v <= hi))) return outs;
             }
             switch (rule.Kind)
             {

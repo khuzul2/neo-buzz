@@ -65,6 +65,7 @@ namespace ReBuzz.AgentTests
                          "Jeskola Delay → Neo Delay", "Jeskola Cross Delay → Neo Delay", "Jeskola NiNjA dElaY → Neo Delay", "FSM PanzerDelay → Neo Delay",
                          "Pedal M1 → Neo Sampler",
                          "Rout 909 → Neo Drums", "FSM KickXP → Neo Drums",
+                         "FSM WahMan → Neo Filter", "Pedal Filter → Neo Filter",
                      })
                 Assert.That(pairs, Does.Contain(expected));
             foreach (var map in SuccessorLibrary.All)
@@ -669,14 +670,15 @@ namespace ReBuzz.AgentTests
                   "rules": [
                     { "kind": "grid", "x": "Cutoff", "y": "Resonance", "xs": [0, 64, 128], "ys": [0, 128], "values": [[100, 1000, 10000], [200, 2000, 20000]],
                       "curve": "log", "to": "Cutoff", "when": { "param": "Type", "is": ["lowpass", "highpass"] } },
-                    { "kind": "grid", "x": "Cutoff", "xs": [0, 128], "values": [[50, 150]], "to": "Cutoff", "when": { "param": "Type", "is": "bandpass" } },
+                    { "kind": "grid", "x": "Cutoff", "xs": [0, 128], "values": [[50, 150]], "to": "Cutoff", "when": [{ "param": "Type", "is": "bandpass" }, { "param": "Bandwidth", "to": 63 }] },
+                    { "kind": "grid", "x": "Cutoff", "xs": [0, 128], "values": [[1000, 1000]], "to": "Cutoff", "when": [{ "param": "Type", "is": "bandpass" }, { "param": "Bandwidth", "from": 64 }] },
                     { "kind": "grid", "x": "Resonance", "xs": [0, 128], "values": [[0.5, 8]], "curve": "log", "to": "Resonance" }
                   ],
                   "evidence": ["a test"]
                 }
                 """);
             Assert.That(map.Rules[0].Inputs, Is.EquivalentTo(new[] { "Cutoff", "Resonance", "Type" }));
-            Assert.That(map.Rules[1].Inputs, Is.EquivalentTo(new[] { "Cutoff", "Type" }));
+            Assert.That(map.Rules[1].Inputs, Is.EquivalentTo(new[] { "Cutoff", "Type", "Bandwidth" }));
             var c = new SuccessorConverter(map, OldParams(map), SuccessorParam.FromManifest(All()["Neo Filter"]));
             Assert.That(c.Errors, Is.Empty);
             double Hz(int type, int cutoff, int res) => Value(c, c.ConvertState(Raws(c, new() { ["Type"] = type, ["Cutoff"] = cutoff, ["Resonance"] = res })), "Cutoff");
@@ -685,6 +687,8 @@ namespace ReBuzz.AgentTests
             Assert.That(Hz(0, 32, 64), Is.EqualTo(Math.Sqrt(100 * 1000) * Math.Sqrt(2)).Within(0.5), "both ways");
             Assert.That(Hz(0, 128, 128), Is.EqualTo(20000).Within(20), "the corner");
             Assert.That(Hz(2, 64, 0), Is.EqualTo(100).Within(0.2), "the band-pass's own rule, in the value");
+            var wide = c.ConvertState(Raws(c, new() { ["Type"] = 2, ["Cutoff"] = 64, ["Bandwidth"] = 100 }));
+            Assert.That(Value(c, wide, "Cutoff"), Is.EqualTo(1000).Within(1), "both conditions: a range of values");
             var q = c.ConvertState(Raws(c, new() { ["Resonance"] = 64 }));
             Assert.That(Value(c, q, "Resonance"), Is.EqualTo(2).Within(0.02), "a table over one parameter");
             Assert.That(q.Notes, Is.Empty);
