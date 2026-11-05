@@ -514,10 +514,10 @@
 				</StackPanel>
 				
 				
-					<ToggleButton  Width="40" Height="40" Margin="0" ClickMode="Press" IsChecked="{Binding Path=Playing, Mode=TwoWay}" Style="{StaticResource PlayButtonStyle}" ToolTip="Play - F5"/>
+					<ToggleButton  Width="40" Height="40" Margin="0" ClickMode="Press" IsChecked="{Binding Path=Playing, Mode=TwoWay}" Style="{StaticResource PlayButtonStyle}" ToolTip="Play - Space or F5"/>
 					<ToggleButton  Width="38" Height="40" Margin="0" ClickMode="Press" IsChecked="{Binding Path=Recording, Mode=TwoWay}" Style="{StaticResource RecordButtonStyle}" ToolTip="Record - F7"/>
 					<Button Style="{StaticResource StopButtonStyle1}" Margin="0" Width="38" Height="40" Command="{Binding StopCommand}">
-						<Button.ToolTip>Stop (F8)</Button.ToolTip>
+						<Button.ToolTip>Stop (Space or F8)</Button.ToolTip>
 					</Button>
 				
 				<ToggleButton  Width="39" Height="40" Margin="0" ClickMode="Press" IsChecked="{Binding Path=Looping, Mode=TwoWay}" Style="{StaticResource LoopButtonStyle}" ToolTip="Loop"/>

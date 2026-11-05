@@ -87,6 +87,8 @@ namespace ReBuzz.Studio.Shell
             AddHandler(KeyDownEvent, OnViewKey, RoutingStrategies.Bubble);
             AddHandler(KeyDownEvent, OnSessionKey, RoutingStrategies.Tunnel);
             AddHandler(KeyDownEvent, OnNotesKey, RoutingStrategies.Tunnel);
+            // Space: play and stop in every view, before a focused button takes it; not while typing.
+            _ = new TransportKeys(this, () => tabs.ItemCount > 0 ? host.Core : null, () => SelectedTitle == "Pattern");
 
             refresh.Tick += (s, e) => Refresh();
             if (host.Core != null) OnStarted();
@@ -185,6 +187,9 @@ namespace ReBuzz.Studio.Shell
             yield return Sub("_Edit", () => EditItems(mac, cmd));
             yield return Sub("_Transport", () => new[]
             {
+                // Space is the window's (TransportKeys), not a menu bar key equivalent, which would take it
+                // from text boxes; the menu bar shows it in the text instead.
+                Item(mac ? "Play or Stop (Space)" : "Play or St_op", () => TransportCommands.TogglePlaying(host.Core), Keys(Key.Space), running, nativeKey: false),
                 Item("_Play", () => transport.Play(), Keys(Key.F5), running),
                 Item("_Stop", () => transport.Stop(), Keys(Key.F8), running),
                 Item("_Record", () => transport.ToggleRecord(), Keys(Key.F7), running),
@@ -277,6 +282,8 @@ namespace ReBuzz.Studio.Shell
             return $"{c}N / {c}O / {c}S / {s}{c}S\tnew, open, save, save as\n" +
                    $"{c}Z / {(mac ? $"{s}{c}Z" : $"{c}Y")}\tundo / redo (the selected view's first)\n" +
                    $"{c}X / {c}C / {c}V\tcut, copy, paste in the selected view\n" +
+                   "Space\tplay / stop, in every view (not while typing in a box)\n" +
+                   $"{s}Space\tplay the pattern from the cursor / stop it (Pattern)\n" +
                    "F5 / F8 / F7\tplay / stop (twice: silence) / record\n" +
                    "F12\trestart audio\n" +
                    "F2 / F3 / F4\tPattern / Machines / Sequence\n" +

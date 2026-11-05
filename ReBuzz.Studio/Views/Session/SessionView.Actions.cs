@@ -450,7 +450,8 @@ namespace ReBuzz.Studio.Views.Session
             }
             if (none && key == Key.Space)
             {
-                buzz.Playing = !buzz.PlayRequested;
+                // The main window takes Space first in every view (TransportKeys); the same command.
+                TransportCommands.TogglePlaying(buzz);
                 return true;
             }
             if (none && (key >= Key.D1 && key <= Key.D9 || key >= Key.NumPad1 && key <= Key.NumPad9))

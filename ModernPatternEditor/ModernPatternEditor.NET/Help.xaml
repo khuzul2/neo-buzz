@@ -123,7 +123,7 @@
 							<Paragraph>Space</Paragraph>
 						</TableCell>
 						<TableCell>
-							<Paragraph>Play/stop pattern</Paragraph>
+							<Paragraph>Play/stop the song</Paragraph>
 						</TableCell>
 					</TableRow>
                     
@@ -132,7 +132,7 @@
                             <Paragraph>Shift+Space</Paragraph>
                         </TableCell>
                         <TableCell>
-                            <Paragraph>Play pattern from cursor position</Paragraph>
+                            <Paragraph>Play pattern from cursor position (again: stop it)</Paragraph>
                         </TableCell>
                     </TableRow>
 
