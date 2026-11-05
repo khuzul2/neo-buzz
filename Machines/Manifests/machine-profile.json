@@ -24062,7 +24062,7 @@
   "Neo Filter": {
    "gear": "Neo Filter",
    "kind": "effect",
-   "load_seconds": 0.11,
+   "load_seconds": 0.12,
    "gear_info": {
     "file": "Effects/Neo Filter.NET.dll",
     "managed": true,
@@ -24416,7 +24416,7 @@
     },
     "thd_percent": 0.37
    },
-   "cpu_ms_per_s": 5.0,
+   "cpu_ms_per_s": 4.9,
    "type": "filter or EQ",
    "level_test": {
     "defaults": {
@@ -24454,24 +24454,24 @@
     }
    },
    "denormal": {
-    "playing_ms_per_s": 14.997,
-    "silent_ms_per_s": 0.275,
-    "silent_worst_ms_per_s": 2.112,
+    "playing_ms_per_s": 14.793,
+    "silent_ms_per_s": 0.265,
+    "silent_worst_ms_per_s": 2.046,
     "windows_ms_per_s": [
-     14.997,
-     2.112,
-     0.282,
-     1.773,
-     0.288,
-     0.261,
-     0.266,
-     0.264,
+     14.793,
+     2.046,
+     1.37,
+     0.249,
+     0.253,
+     0.246,
+     0.246,
+     0.318,
+     0.263,
      0.265,
-     0.275,
-     0.273
+     0.269
     ]
    },
-   "seconds": 8.9,
+   "seconds": 12.6,
    "platform": "linux",
    "date": "2026-11-05",
    "problems": [],

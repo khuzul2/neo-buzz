@@ -376,7 +376,7 @@ Drafts:
 | Neo Drive | distortion | -0.62 | 62 | 0.01 | 32 ms |  | 21 Hz – 18.8 kHz | 0.0 | 0.412 | hot |
 | Neo Ensemble | modulation, filter or EQ | -3.94 | 0 | 0.05 | 47 ms |  | 330 Hz – 0.4 kHz | 0.0 | 0.379 | hot |
 | Neo EQ | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.567 | hot |
-| Neo Filter | filter or EQ | -12.17 | 14 | 0.0 |  |  | 21 Hz – 1.2 kHz | 5.0 | 0.275 | hot |
+| Neo Filter | filter or EQ | -12.17 | 14 | 0.0 |  |  | 21 Hz – 1.2 kHz | 4.9 | 0.265 | hot |
 | Neo Limiter | utility | 0.0 | 99 | 0.0 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.386 | hot |
 | Neo Multiband | delay, dynamics | -1.85 | 4607 | 0.1 |  |  | 21 Hz – 18.8 kHz | 0.0 | 0.38 | hot |
 | Neo Scope | utility | 0.0 | 0 | 0.0 |  |  | 21 Hz – 18.8 kHz | 5.2 | 0.761 | ok |

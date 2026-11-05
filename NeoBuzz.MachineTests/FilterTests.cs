@@ -247,7 +247,8 @@ namespace NeoBuzz.MachineTests
             // Each type and slope at the top of Resonance and at Q 100 below it, with the most drive, the deepest and fastest LFO
             // and envelope sweeps, at the lowest and highest cutoff; and 40 random settings with every parameter at either end: 5 s
             // of loud pink noise, a sine at +20 dBFS at 1 kHz, then silence. Finite, and never more than 12 dB over the input's peak
-            // (+20 dBFS: at Mix 0 % the input itself).
+            // (+20 dBFS: at Mix 0 % the input itself); the noise (peaking near 0 dBFS) at most 30 dB over it: a resonance at Q 100
+            // rings up to its limiter, 8 times full scale in each section (FilterDesign.LimitThreshold), and no further.
             var rng = new Random(5);
             double worst = double.MinValue, worstNoise = double.MinValue;
             string at = "", atNoise = "";
@@ -261,7 +262,7 @@ namespace NeoBuzz.MachineTests
                 double peak = Db(Math.Max(Measure.Peak(l, 0, l.Length), Measure.Peak(r, 0, r.Length)));
                 double noisePeak = Db(Math.Max(Measure.Peak(l, 0, 2 * Rate), Measure.Peak(r, 0, 2 * Rate)));
                 Assert.That(peak, Is.LessThan(32), label);
-                Assert.That(noisePeak, Is.LessThan(18), label + ": the noise (peaking near 0 dBFS)");
+                Assert.That(noisePeak, Is.LessThan(30), label + ": the noise (peaking near 0 dBFS)");
                 if (peak > worst) { worst = peak; at = label; }
                 if (noisePeak > worstNoise) { worstNoise = noisePeak; atNoise = label; }
             }

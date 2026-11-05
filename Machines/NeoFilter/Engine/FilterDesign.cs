@@ -81,11 +81,13 @@ namespace NeoBuzz.Filter
         internal const double SvfSelfOscK = -0.1;
 
         /// <summary>
-        /// The SVF's resonance limiter: past <see cref="LimitThreshold"/> of band amplitude (full scale; at
-        /// self-oscillation <see cref="OscThreshold"/>) the damping grows by <see cref="LimitGain"/> × the
-        /// excess squared, so a resonance can't ring louder than a little over it, whatever comes in.
+        /// The SVF's resonance limiter: past <see cref="LimitThreshold"/> of band amplitude (8 times full scale, +18 dB:
+        /// below self-oscillation the filter is linear for anything a mix sends it, a loud input's resonant peak included,
+        /// as the classic filters it succeeds are; at self-oscillation <see cref="OscThreshold"/>, the tone's level) the
+        /// damping grows by <see cref="LimitGain"/> × the excess squared, so a resonance can't ring louder than a little
+        /// over it, whatever comes in.
         /// </summary>
-        internal const double LimitThreshold = 2.0, OscThreshold = 0.25, LimitGain = 10;
+        internal const double LimitThreshold = 8.0, OscThreshold = 0.25, LimitGain = 10;
 
         /// <summary>LFO sync's note values in beats (a beat is a quarter note; Free: 0).</summary>
         internal static readonly double[] SyncBeats =
