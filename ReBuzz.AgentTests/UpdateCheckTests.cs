@@ -38,7 +38,8 @@ namespace ReBuzz.AgentTests
             var hits = new List<string>();
             foreach (var file in Files(root, "*.cs", "*.xaml", "*.axaml", "*.cpp", "*.h", "*.ps1", "*.py", "*.sh"))
             {
-                if (file.StartsWith(Updater(root) + Sep) || Path.GetFileName(file) == "UpdateCheckTests.cs") continue;
+                if (file.StartsWith(Updater(root) + Sep) || Path.GetFileName(file) == "UpdateCheckTests.cs"
+                    || Path.GetFileName(file) == "package-check.py") continue;   // checks the updater is NOT in the package
                 bool settings = Path.GetFileName(file) == "GeneralSettings.cs";
                 int n = 0;
                 foreach (var line in File.ReadLines(file))
