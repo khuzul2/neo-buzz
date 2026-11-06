@@ -57,7 +57,7 @@ namespace ReBuzz
             if (ReBuzz.Agent.HeadlessAgent.Requested(Environment.GetCommandLineArgs()))
             {
                 // Headless and not serving yet: report on stderr and exit; a dialog would hang the client.
-                Console.Error.WriteLine("[ReBuzz] Unhandled exception: " + GetFullExceptionMessage(ex));
+                Console.Error.WriteLine(Product.LogPrefix + "Unhandled exception: " + GetFullExceptionMessage(ex));
                 Environment.Exit(1);
             }
 
@@ -65,7 +65,7 @@ namespace ReBuzz
                 GetFullExceptionMessage(ex)
                 + "Do you want the application to terminate? " +
                 "Not terminating the application might leave an unresponsive process running in the background.",
-                "Unhandled Exception — " + (ex.Source ?? "ReBuzz"),
+                Product.Name + ": unhandled exception" + (ex.Source != null ? " (" + ex.Source + ")" : ""),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Error,
                 MessageBoxResult.No);

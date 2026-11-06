@@ -279,6 +279,16 @@ namespace NeoBuzz.Editor
             if (shown) poll.Start();
         }
 
+        /// <summary>
+        /// The machine is going away: every note ends and the keyboard lets go of the settings it follows (WPF hides machine
+        /// windows instead of closing them, so they never unload).
+        /// </summary>
+        public void Release()
+        {
+            Detach();
+            player.AllOff();
+        }
+
         void Detach()
         {
             if (!attached) return;

@@ -29,7 +29,7 @@ namespace ReBuzz.Studio.Shell
                 var newest = leftovers[0];
                 string song = string.IsNullOrEmpty(newest.Song) ? "an untitled song" : "'" + Path.GetFileName(newest.Song) + "'";
                 var answer = await Dialogs.Ask(
-                    $"ReBuzz didn't close normally last time. There are unsaved changes to {song}, autosaved at {newest.Saved:g}.\n\n" +
+                    $"{Product.Name} didn't close normally last time. There are unsaved changes to {song}, autosaved at {newest.Saved:g}.\n\n" +
                     "Yes: open them (then save to keep them)\nNo: delete them\nCancel: keep them for next time",
                     "Recover unsaved changes", UserButtons.YesNoCancel);
                 if (answer == UserAnswer.Yes)

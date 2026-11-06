@@ -4,7 +4,7 @@ A multiband compressor and upward expander: the input split into 3 or 4 bands, e
 
 | Phase | What it does | Use it for |
 |---|---|---|
-| Linear (the default) | the bands sum back to the input exactly, with no phase shift; about 96 ms of latency (4607 samples at 44.1 and 48 kHz), which ReBuzz compensates | mastering, and any bus where phase matters (parallel paths, mid/side) |
+| Linear (the default) | the bands sum back to the input exactly, with no phase shift; about 96 ms of latency (4607 samples at 44.1 and 48 kHz), which NeoBuzz Live compensates | mastering, and any bus where phase matters (parallel paths, mid/side) |
 | Minimum | zero latency, the same band shapes (Linkwitz–Riley, 24 dB/oct, −6 dB at a crossover), the crossovers' phase shift | live playing, buses where the latency would be in the way |
 
 Each band's ratio works above its threshold: above 1:1 it compresses (∞:1 limits), below 1:1 it expands upward (0.5:1 doubles how far a peak rises over the threshold), 1:1 does nothing. `Range` caps the change either way. Measured: a band's static curve is Neo Comp's gain computer to 0.0003 dB; attack and release times within 2.5 % of their settings; with every band at 1:1 the input comes out bit for bit, 4607 samples later at 44.1 and 48 kHz.
@@ -16,7 +16,7 @@ Input → crossovers (`Crossover 1`, `Crossover 2`, and with 4 bands `Crossover 
 - Band 1 is everything below `Crossover 1`, band 2 between `Crossover 1` and `Crossover 2`, and so on; the top band is everything above the last crossover.
 - `Attack` is the time to 63 % of the gain change, `Release` back to 37 %, either way (compression or expansion).
 - `Solo` on any band plays only the soloed bands (`Mix` is ignored meanwhile); `Bypass` passes a band untouched.
-- Changing `Phase` while playing fades out, switches and fades back in (into linear phase, after its latency); ReBuzz realigns the other paths.
+- Changing `Phase` while playing fades out, switches and fades back in (into linear phase, after its latency); NeoBuzz Live realigns the other paths.
 - `machine_readings(machine=…)` gives each band's gain change now (`b1_gr_db` …), its largest over the last 3 s (`b1_gr_peak_db`) and its peak level (`b1_level_db`, what the threshold compares against), and `latency_samples`.
 
 ## How to use it
@@ -79,7 +79,7 @@ Parallel multiband squash on drums:
 ## Gotchas
 
 - The defaults compress (every band 2:1 at −20 dB): set the bands you don't want to 1:1, or start from a preset.
-- Linear phase delays by about 96 ms. ReBuzz delays the other paths to match when its machine delay compensation is on (an engine setting, off by default: Preferences ▸ Engine in ReBuzz.exe, Preferences ▸ General in the studio); with it off, a parallel path around it combs, and a live input monitored through it arrives late. Use `Phase` Minimum there, or turn the compensation on. Renders start that much later: give them the tail.
+- Linear phase delays by about 96 ms. NeoBuzz Live delays the other paths to match when its machine delay compensation is on (an engine setting, off by default: Preferences ▸ Engine on Windows, Preferences ▸ General in the studio); with it off, a parallel path around it combs, and a live input monitored through it arrives late. Use `Phase` Minimum there, or turn the compensation on. Renders start that much later: give them the tail.
 - The linear-phase crossovers ring a little before a transient below about 100 Hz (pre-echo, the price of no phase shift); minimum phase rings after it instead.
 - `Crossover 3` only matters with 4 bands. A crossover set below the one before it sits at that one.
 - Thresholds read the band's peak, not the whole signal's: a band holds only part of the energy, so its level (`bN_level_db`) is lower than the input's.

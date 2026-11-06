@@ -22,7 +22,7 @@ namespace ReBuzz.Studio.Shell
     /// </summary>
     public class AgentSettings : BuzzGUI.Common.Settings.Settings
     {
-        [BuzzSetting(false, Description = "Let AI agents (Claude Code or any MCP client) work in this ReBuzz over a local connection (127.0.0.1 only, with a token).")]
+        [BuzzSetting(false, Description = "Let AI agents (Claude Code or any MCP client) work in this " + Product.Name + " over a local connection (127.0.0.1 only, with a token).")]
         public bool AllowAgents { get; set; }
 
         [BuzzSetting("7481", Description = "The local port agents connect to.")]
@@ -102,7 +102,7 @@ namespace ReBuzz.Studio.Shell
         }
 
         /// <summary>The line to paste into a terminal.</summary>
-        public string ConnectCommand => $"claude mcp add --transport http rebuzz {Url} --header \"Authorization: Bearer {Token}\"";
+        public string ConnectCommand => ClaudeCode.HttpCommand(Url, Token);
 
         public string LogFolder => Path.GetDirectoryName(Host.Log.FilePath);
 

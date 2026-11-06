@@ -33,7 +33,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         {
             this.agent = agent;
             Heading("Agents");
-            Row("", allow, "AI agents (Claude Code or any MCP client) can then work in this ReBuzz over a local connection: 127.0.0.1 only, with a token. " +
+            Row("", allow, $"AI agents (Claude Code or any MCP client) can then work in this {Product.Name} over a local connection: 127.0.0.1 only, with a token. " +
                            "They see and change the open song as you do, and hear it through your audio output; each change is one undo step.");
             Row("Port", port, $"The local port agents connect to (default {AgentServer.DefaultPort}).");
             Row("Now", state);
@@ -42,7 +42,7 @@ namespace ReBuzz.Studio.Shell.Preferences
             Note("Run this in a terminal:");
             Body.Children.Add(command);
             Body.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { copy, renew } });
-            Note("The token is a password for this ReBuzz: anyone with it can change your song while ReBuzz runs. A new token makes the old one stop working.");
+            Note($"The token is a password for this {Product.Name}: anyone with it can change your song while {Product.Name} runs. A new token makes the old one stop working.");
             Body.Children.Add(log);
 
             allow.IsCheckedChanged += (s, e) =>

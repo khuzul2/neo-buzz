@@ -1,11 +1,11 @@
-// Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): `ReBuzz.exe --agent --keyboard-shots <folder>`, the keyboard
-// under machine windows as ReBuzz.exe shows it (WpfMachineUiHost), for ReBuzzTests on the Windows package run (the
-// natives load only in ReBuzz.exe's engine, which the tests run as a process, as --editor-shots does). The engine starts
+// Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): `NeoBuzzLive.exe --agent --keyboard-shots <folder>`, the
+// keyboard under machine windows as the Windows app shows it (WpfMachineUiHost), for ReBuzzTests on the Windows package
+// run (the natives load only in the Windows app's engine, which the tests run as a process, as --editor-shots does). The engine starts
 // headless as for --agent; machines are added and their windows opened; the keyboard is checked, drawn
 // (<folder>/keyboard-wpf-*.png), played through its own pointer handling (a press at a key's place, the release, a glide)
 // with the engine rendered offline (<folder>/keyboard-*.wav, for the tests to hear the pitch), and its notes checked to end
 // when the window hides, the keyboard is hidden or the pointer's capture is lost; Space in the window plays and stops the
-// song with the keys focused. keyboard.json holds what was found; then ReBuzz exits.
+// song with the keys focused. keyboard.json holds what was found; then the app exits.
 
 using System;
 using System.Collections.Generic;

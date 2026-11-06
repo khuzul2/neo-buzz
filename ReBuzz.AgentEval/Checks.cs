@@ -60,7 +60,9 @@ namespace ReBuzz.AgentEval
         static void Protocol(Studio s, CheckRun r, Env env)
         {
             var c = s.C;
-            r.Expect(J.Str(c.ServerInfo?["name"]) == "rebuzz", $"serverInfo.name is {J.Str(c.ServerInfo?["name"])}, not rebuzz");
+            r.Expect(J.Str(c.ServerInfo?["name"]) == Product.McpName, $"serverInfo.name is {J.Str(c.ServerInfo?["name"])}, not {Product.McpName}");
+            r.Expect(J.Str(c.ServerInfo?["title"]) == Product.Name, $"serverInfo.title is {J.Str(c.ServerInfo?["title"])}, not {Product.Name}");
+            r.Expect(c.Instructions?.StartsWith(Product.Name + " is ") == true, $"the instructions don't say what {Product.Name} is");
             r.Expect(c.ServerCapabilities?["tools"] != null, "the server doesn't declare the tools capability");
             r.Expect(!string.IsNullOrWhiteSpace(c.Instructions), "no instructions in initialize");
             var tools = c.ListTools();
@@ -284,7 +286,7 @@ namespace ReBuzz.AgentEval
                 other.Initialize();
                 var o = other.Ok("render", args);
                 string f3 = J.Str(o["file"]);
-                r.Expect(Hash(f1) == Hash(f3), $"a second ReBuzz process renders the song differently: max sample difference {MaxDifference(f1, f3):E2}");
+                r.Expect(Hash(f1) == Hash(f3), $"a second {Product.Name} process renders the song differently: max sample difference {MaxDifference(f1, f3):E2}");
                 r.Result.Calls += other.Calls;
                 r.Result.Errors += other.ErrorCalls;
                 other.CloseAndWait(30);

@@ -77,7 +77,7 @@ namespace ReBuzz.Agent
             });
         }
 
-        static SongNotesStore Store(ReBuzzCore core) => core.SongNotes ?? throw new ToolError("This ReBuzz keeps no song notes.");
+        static SongNotesStore Store(ReBuzzCore core) => core.SongNotes ?? throw new ToolError($"This {Product.Name} keeps no song notes.");
 
         static JsonObject Notes(SongNotesStore store, bool plain)
         {

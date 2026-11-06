@@ -19,7 +19,7 @@ namespace NeoBuzz.Multiband
         [ParameterDecl(Name = "Crossover 3", Description = "Between bands 3 and 4 with four bands (never below Crossover 2)", MinValue = 0, MaxValue = 10000, DefValue = 8257)]
         public int Xo3 { get => Values[P.Xo3]; set => Values.Set(P.Xo3, value); }
 
-        [ParameterDecl(Name = "Phase", Description = "Linear: the bands sum back to the input exactly, no phase shift, about 96 ms of latency (reported to ReBuzz). Minimum: zero latency, the same band shapes, the crossovers' phase shift (as an analog crossover's)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        [ParameterDecl(Name = "Phase", Description = "Linear: the bands sum back to the input exactly, no phase shift, about 96 ms of latency (reported to NeoBuzz Live). Minimum: zero latency, the same band shapes, the crossovers' phase shift (as an analog crossover's)", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int Phase { get => Values[P.Phase]; set => Values.Set(P.Phase, value); }
 
         [ParameterDecl(Name = "Stereo", Description = "What each band's detector and gain work on: left and right, or mid and side", MinValue = 0, MaxValue = 1, DefValue = 0)]

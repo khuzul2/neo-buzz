@@ -332,6 +332,9 @@ namespace ReBuzz.AppViews
 
         public void ReleaseMachine(IMachine machine)
         {
+            // The keyboards under its windows end their notes and let go of the settings they follow.
+            foreach (var w in new Window[] { Find(machine)?.Parameters, Find(machine)?.Gui, Find(machine)?.Editor })
+                KeyboardOf(w)?.Release();
             // The manifest editor lets go of the machine's parameters.
             if (Find(machine)?.Editor is Window editorWindow)
             {

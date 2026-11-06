@@ -221,12 +221,13 @@ namespace ReBuzz.Midi
             // they are all sourced from different locations, and we want virtual
             // devices to behave like physical devices.
 
-            string userSuppliedName = "ReBuzz";
-            string userSuppliedDescription = "ReBuzz DAW";
+            // Fork (rename): named after the app as other apps list it; ProductInstanceId below (its identity) stays.
+            string userSuppliedName = Product.Name;
+            string userSuppliedDescription = Product.Name + " DAW";
 
-            string transportSuppliedName = "ReBuzz Controller";
+            string transportSuppliedName = Product.Name + " Controller";
             string transportSuppliedDescription = "MIDI virtual device";
-            string transportSuppliedManufacturerName = "ReBuzz";
+            string transportSuppliedManufacturerName = Product.Name;
 
             string endpointSuppliedName = transportSuppliedName;
 

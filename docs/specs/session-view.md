@@ -828,7 +828,7 @@ An independent review of 0.7.1 and of the paths 0.8 builds on (MIDI in and out, 
 - A pad's release goes to the slot its press played, even if the ring moved or shift was pressed in between. Pads outside the session do nothing.
 - A script that throws (matching, saying hello, lighting) is let go and logged, never taking ReBuzz down. Let go, every light it was sent is turned off before its own mode comes back.
 
-*New controllers.* Any class deriving from `ControllerScript` in a .dll in the `Controllers` folder next to `ReBuzz.exe` is loaded at start. Build it against `ReBuzz.dll`. For example, a 4 × 4 pad box:
+*New controllers.* Any class deriving from `ControllerScript` in a .dll in the `Controllers` folder next to `NeoBuzzLive.exe` (the studio: next to its executable) is loaded at start. Build it against `ReBuzz.dll`. For example, a 4 × 4 pad box:
 
 ```csharp
 using ReBuzz.Control;

@@ -271,6 +271,19 @@ jobs:
       shell: pwsh
       run: dotnet build ReBuzz/ReBuzz.csproj -c Release "-p:SolutionDir=$($PWD.Path)\" -p:ReBuzzCleanBuild=true -nologo *>&1 | Tee-Object -FilePath build.log
 
+    # The app people launch is NeoBuzzLive.exe: ReBuzz.csproj names its apphost so, beside the assembly it
+    # starts, ReBuzz.dll (machines, plugins and tests load it by name), and the file says NeoBuzz Live.
+    - name: The app's executable (NeoBuzzLive.exe)
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'NeoBuzzLive.exe not built under bin\' }
+        if (Test-Path (Join-Path $exe.DirectoryName 'ReBuzz.exe')) { throw "a ReBuzz.exe beside $($exe.FullName)" }
+        foreach ($f in 'ReBuzz.dll', 'ReBuzz.runtimeconfig.json') { if (-not (Test-Path (Join-Path $exe.DirectoryName $f))) { throw "$f isn't beside it" } }
+        $v = $exe.VersionInfo
+        if ($v.FileDescription -ne 'NeoBuzz Live' -or $v.ProductName -ne 'NeoBuzz Live') { throw "its version info says '$($v.FileDescription)', '$($v.ProductName)'" }
+        Write-Host "::notice title=The app's executable::$($exe.Name) beside ReBuzz.dll; FileDescription and ProductName '$($v.FileDescription)'"
+
     # The Modern Pattern Editor (WPF): its machine side is shared with its portable builds
     # (docs/specs/studio-mvp.md S6), so the Windows editor builds here too.
     - name: Build the Modern Pattern Editor (WPF)

@@ -43,7 +43,7 @@ namespace ReBuzz.Studio.Shell
         public MainWindow(StudioHost host)
         {
             this.host = host;
-            Title = "ReBuzz";
+            Title = Product.Name;
             Width = 1280;
             Height = 820;
             MinWidth = 640;
@@ -170,7 +170,7 @@ namespace ReBuzz.Studio.Shell
         /// </summary>
         internal IEnumerable<MenuEntry> AppMenuModel() => new[]
         {
-            Item("About ReBuzz", () => AboutWindow.Open()),
+            Item("About " + Product.Name, () => AboutWindow.Open()),
             MenuEntry.Separator,
             Item("Preferences…", ShowPreferences, Keys(Key.OemComma, KeyModifiers.Meta), () => host.Core != null),
         };
@@ -271,7 +271,7 @@ namespace ReBuzz.Studio.Shell
             if (!mac)
             {
                 yield return MenuEntry.Separator;
-                yield return Item("_About ReBuzz", () => AboutWindow.Open());
+                yield return Item("_About " + Product.Name, () => AboutWindow.Open());
             }
         }
 
@@ -376,7 +376,7 @@ namespace ReBuzz.Studio.Shell
             undo.Refresh();
             redo.Refresh();
             string name = core.SongCore.SongName == null ? "Untitled" : Path.GetFileName(core.SongCore.SongName);
-            Title = $"{name}{(core.Modified ? " •" : "")} — ReBuzz";
+            Title = $"{name}{(core.Modified ? " •" : "")} — {Product.Name}";
             var device = core.AudioEngine?.SelectedOutDevice;
             if (ticks++ % 10 == 0) MeasureCpu(core);
             string audio = device != null

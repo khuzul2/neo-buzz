@@ -48,7 +48,7 @@ Reproduce, measure, isolate, fix one thing, measure again. Each section: what yo
 
 ## Latency
 
-- Neo Drive adds 62 samples at every quality; Neo Comp adds its `Lookahead` (0–5 ms). Both tell ReBuzz, and renders stay aligned.
+- Neo Drive adds 62 samples at every quality; Neo Comp adds its `Lookahead` (0–5 ms). Both tell NeoBuzz Live, and renders stay aligned.
 - Live playing in studio mode adds the audio buffer; renders don't.
 - Two routes with different latency meeting again cause phase problems (above).
 
@@ -62,7 +62,7 @@ Reproduce, measure, isolate, fix one thing, measure again. Each section: what yo
 ## Missing machines
 
 - `gear_list` marks unusable gear with its health ("missing", "crashed"). `machine_list` shows what actually loaded from a song.
-- It also shows what each machine's profile found. *Unhealthy* machines (diverging: NaN or a runaway level at some setting; crashing; missing) are left out of `gear_list` and named in `hidden_unhealthy`; `gear_list(include_unhealthy=true)` lists them last, and `machine_add` warns about diverging ones. Where a parameter's end diverges, its loop never decays (feedback at ±100 %), or a loop or resonance rings far past its input (more than 24 dB over its level at the default), the parameter has a `safe_range`: `param_set` and `automation_write` keep inside it, refusing values outside with the reason unless you pass `allow_unsafe=true`. *Hot* ones (loud but steady at a setting, above 0 dBFS) are a warning: check the level after turning that setting up. Machines that *need a window* work in ReBuzz on Windows with their window, not here. A draft's parameters carry a `suggested_role` (what moving each alone changed in its profile): a hint where nobody has curated a role.
+- It also shows what each machine's profile found. *Unhealthy* machines (diverging: NaN or a runaway level at some setting; crashing; missing) are left out of `gear_list` and named in `hidden_unhealthy`; `gear_list(include_unhealthy=true)` lists them last, and `machine_add` warns about diverging ones. Where a parameter's end diverges, its loop never decays (feedback at ±100 %), or a loop or resonance rings far past its input (more than 24 dB over its level at the default), the parameter has a `safe_range`: `param_set` and `automation_write` keep inside it, refusing values outside with the reason unless you pass `allow_unsafe=true`. *Hot* ones (loud but steady at a setting, above 0 dBFS) are a warning: check the level after turning that setting up. Machines that *need a window* work in NeoBuzz Live on Windows with their window, not here. A draft's parameters carry a `suggested_role` (what moving each alone changed in its profile): a hint where nobody has curated a role.
 - A machine without notes that plays from a trigger (a drum machine's per-drum switch) shows it in `machine_describe`'s `played_parameters`: write it with `automation_write(param=…, track=0, points=[{"at": 0, "value": 1}, …])`, one hit per point.
 - Substitutes (successors with the same role): Jeskola Reverb, Raverb and Pedal Plate → Neo Verb; Jeskola Distortion → Neo Drive; Pedal Comp → Neo Comp; Jeskola Bass, Oomek Aggressor 303 → Neo Poly ("Bass — Acid"); Pedal FM → Neo FM6. Search with `gear_list(search=…)`.
 - A machine with a `successor` (gear_list, machine_describe) moves onto it with `machine_replace(machine=…)`: settings in units, patterns, arrangement and connections with it, before and after compared against a stated tolerance, one undo step (`dry_run=true` first shows the mapping). On a Mac every closed native is a silent placeholder, so this is how those songs play there.
@@ -70,7 +70,7 @@ Reproduce, measure, isolate, fix one thing, measure again. Each section: what yo
 
 ## Machines that don't play notes
 
-- `notes_write` puts notes in each pattern's engine MIDI column, and ReBuzz sends them to the machine as MIDI. Neo machines and most managed machines play them; some older native machines ignore MIDI.
+- `notes_write` puts notes in each pattern's engine MIDI column, and NeoBuzz Live sends them to the machine as MIDI. Neo machines and most managed machines play them; some older native machines ignore MIDI.
 - Check: `machine_describe(machine=…)` (its notes field), then one note rendered solo and `analyze(source=…, metrics=["pitch"])`.
 - Fix: use a Neo synth or another machine. For a tracker-only machine the user can move the notes to the Pattern View's note lanes (Session View slot menu, "Move notes to the Pattern View").
 - An octave off: the tools use C4 = 60, which the Pattern View shows as C-5. Some older machines play an octave away; measure the pitch and shift with `notes_transform(machine=…, pattern=…, transforms=[{"op": "transpose", "semitones": 12}])`.

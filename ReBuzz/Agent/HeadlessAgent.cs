@@ -44,9 +44,9 @@ namespace ReBuzz.Agent
             var stdout = Console.OpenStandardOutput();
             var stdin = Console.OpenStandardInput();
             Console.SetOut(Console.Error);   // stdout carries the protocol only
-            NonModal.CaptureAlways(m => Console.Error.WriteLine("[ReBuzz] " + m.Replace('\n', ' ')));
+            NonModal.CaptureAlways(m => Console.Error.WriteLine(Product.LogPrefix + m.Replace('\n', ' ')));
             var clock = System.Diagnostics.Stopwatch.StartNew();
-            void Step(string what) => Console.Error.WriteLine($"[ReBuzz] {clock.Elapsed.TotalSeconds:F1} s: {what}");
+            void Step(string what) => Console.Error.WriteLine($"{Product.LogPrefix}{clock.Elapsed.TotalSeconds:F1} s: {what}");
             Step("starting headless");
 
             var engineSettings = Global.EngineSettings;
@@ -72,7 +72,7 @@ namespace ReBuzz.Agent
             Step("engine step 1");
             init.StartReBuzzEngineStep1((s, e) => { });
             // Native machines want a parent window: a message-only window, never shown.
-            var hidden = new HwndSource(new HwndSourceParameters("ReBuzz agent") { ParentWindow = new IntPtr(-3), WindowStyle = 0, Width = 0, Height = 0 });
+            var hidden = new HwndSource(new HwndSourceParameters(Product.Name + " agent") { ParentWindow = new IntPtr(-3), WindowStyle = 0, Width = 0, Height = 0 });
             Step("engine step 2");
             init.StartReBuzzEngineStep2(hidden.Handle);
             Step("engine step 3 (gear scan)");
@@ -94,7 +94,7 @@ namespace ReBuzz.Agent
             {
                 Step("editor shots");
                 try { EditorShots.Run(core, Path.GetFullPath(shots), Step); }
-                catch (Exception e) { Console.Error.WriteLine("[ReBuzz] editor shots: " + e); }
+                catch (Exception e) { Console.Error.WriteLine(Product.LogPrefix + "editor shots: " + e); }
                 try { init.ShutDownReBuzzEngine(); } catch (Exception) { }
                 hidden.Dispose();
                 app.Shutdown();
@@ -107,7 +107,7 @@ namespace ReBuzz.Agent
             {
                 Step("keyboard shots");
                 try { KeyboardShots.Run(core, Path.GetFullPath(keyboardShots), Step); }
-                catch (Exception e) { Console.Error.WriteLine("[ReBuzz] keyboard shots: " + e); }
+                catch (Exception e) { Console.Error.WriteLine(Product.LogPrefix + "keyboard shots: " + e); }
                 try { init.ShutDownReBuzzEngine(); } catch (Exception) { }
                 hidden.Dispose();
                 app.Shutdown();
@@ -118,12 +118,12 @@ namespace ReBuzz.Agent
             if (song != null)
             {
                 if (File.Exists(song)) core.OpenSongForAgent(Path.GetFullPath(song));
-                else Console.Error.WriteLine($"[ReBuzz] No song at {song}; starting with an empty song.");
+                else Console.Error.WriteLine($"{Product.LogPrefix}No song at {song}; starting with an empty song.");
             }
 
             string logs = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ReBuzz", "agent-logs");
             var host = new AgentHost(core, dispatcher, "headless", logs);
-            Console.Error.WriteLine($"[ReBuzz] Headless agent server ready (MCP on stdio). Log: {host.Log.FilePath}");
+            Console.Error.WriteLine($"{Product.LogPrefix}Headless agent server ready (MCP on stdio). Log: {host.Log.FilePath}");
 
             Task.Run(async () =>
             {
@@ -133,7 +133,7 @@ namespace ReBuzz.Agent
                 }
                 catch (Exception e)
                 {
-                    Console.Error.WriteLine("[ReBuzz] stdio ended: " + e.Message);
+                    Console.Error.WriteLine(Product.LogPrefix + "stdio ended: " + e.Message);
                 }
                 app.Dispatcher.BeginInvoke(() =>
                 {

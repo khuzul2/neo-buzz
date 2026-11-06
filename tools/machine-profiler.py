@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Fork (docs/specs/mcp-server.md §12.2, U1): the machine profiler. Drives an MCP server over stdio
-# as any client does (rebuzz-headless --agent on Linux and macOS, ReBuzz.exe --agent on Windows,
+# as any client does (rebuzz-headless --agent on Linux and macOS, NeoBuzzLive.exe --agent on Windows,
 # which hosts the native machines) and measures every machine in its Gear with the server's own
 # tools:
 #  - parameters: each one's value texts across its range (machine_describe value_table), read as a
@@ -27,7 +27,7 @@
 # Machines/Manifests/machine-profile.json (entries from other platforms kept), and the report into
 # docs/machine-health.md.
 #
-#   python3 tools/machine-profiler.py <rebuzz-headless | ReBuzz.exe> [--out DIR] [--only "Pedal*,Jeskola Delay"]
+#   python3 tools/machine-profiler.py <rebuzz-headless | NeoBuzzLive.exe> [--out DIR] [--only "Pedal*,Jeskola Delay"]
 #                                     [--skip PATTERN,...] [--repo ROOT] [--timeout SECONDS]
 #   python3 tools/machine-profiler.py --merge DIR --repo ROOT   (an earlier run's --out, e.g. a CI artifact, into ROOT)
 #   python3 tools/machine-profiler.py --report ROOT              (rewrite docs/machine-health.md from the summary)
@@ -72,6 +72,11 @@ FORMAT = "rebuzz-machine-manifest/1"
 
 # ---- MCP client (as tools/null-test.py's, restartable) -----------------------------------------
 
+def windows_app(exe):
+    """Whether exe is the Windows app (NeoBuzzLive.exe; ReBuzz.exe in builds from before the rename): it takes no --settings."""
+    return os.path.basename(exe).lower() in ("neobuzzlive.exe", "rebuzz.exe")
+
+
 class ServerGone(Exception):
     """The server died or stopped answering: the machine it was working on crashed or hung."""
 
@@ -88,7 +93,7 @@ class Client:
         self.renders = []
         os.makedirs(self.work, exist_ok=True)
         args = [self.exe, "--agent"]
-        if os.path.basename(self.exe).lower() != "rebuzz.exe":
+        if not windows_app(self.exe):
             args += ["--settings", os.path.abspath(os.path.join(self.work, "settings"))]
         self.stderr_path = os.path.join(self.work, f"server-{self.starts}.stderr.txt")
         self.stderr = open(self.stderr_path, "wb")
@@ -1840,7 +1845,7 @@ def profile_machine(c, gear, kind, baseline, generated):
     except ToolFailed as e:
         why = mi.needs_window(gear, str(e))
         if why:
-            # machine-safety.md §3.1: not an audio fault; it works in ReBuzz on Windows with its window.
+            # machine-safety.md §3.1: not an audio fault; it works in NeoBuzz Live on Windows with its window.
             prof.window = why
             prof.notes.append(f"needs a window: {why} ({str(e)[:300]})")
             prof.data["needs_window"] = why
@@ -2016,7 +2021,7 @@ def summary_line(e):
     if t == "control":
         return "Control machine (profiled draft): moves other machines' parameters; makes no sound."
     if e.get("needs_window"):
-        return f"Needs a window (profiled draft): {e['needs_window']}. Works in ReBuzz on Windows with its window; it can't be built headless."
+        return f"Needs a window (profiled draft): {e['needs_window']}. Works in NeoBuzz Live on Windows with its window; it can't be built headless."
     return f"{t.capitalize() or 'Machine'} (profiled draft)."
 
 
@@ -2170,7 +2175,7 @@ def health_report(summary, curated=None, sourced=None, rebuilt=None):
     else:
         lines.append("None.")
     lines += ["", "## Needs a window", "",
-              "Managed machines whose construction fails without a UI: not an audio fault. `gear_list` says they work in ReBuzz on Windows with their window.", ""]
+              "Managed machines whose construction fails without a UI: not an audio fault. `gear_list` says they work in NeoBuzz Live on Windows with their window.", ""]
     if groups["needs a window"]:
         lines += ["| Machine | Platform | Why |", "|---|---|---|"]
         lines += [f"| {e['gear']} | {e.get('platform', '')} | {e['needs_window']} |" for e in groups["needs a window"]]
@@ -2431,7 +2436,7 @@ def unpack(log, folder):
 
 def main():
     ap = argparse.ArgumentParser(description="Profile every machine an MCP server offers (docs/specs/mcp-server.md §12.2).")
-    ap.add_argument("exe", nargs="?", help="rebuzz-headless or ReBuzz.exe")
+    ap.add_argument("exe", nargs="?", help="rebuzz-headless or NeoBuzzLive.exe")
     ap.add_argument("--out", default=None, help="where drafts, the summary and the report go (default: a temp folder)")
     ap.add_argument("--only", default="", help="comma-separated gear names or patterns")
     ap.add_argument("--skip", default="", help="comma-separated gear names or patterns to leave out")
@@ -2474,7 +2479,7 @@ def main():
         ap.error("give the server to profile with")
     out = os.path.abspath(args.out or tempfile.mkdtemp(prefix="machine-profile-"))
     os.makedirs(out, exist_ok=True)
-    plat = "windows" if os.path.basename(args.exe).lower() == "rebuzz.exe" else sys.platform.replace("darwin", "macos")
+    plat = "windows" if windows_app(args.exe) else sys.platform.replace("darwin", "macos")
     generated = generated_manifests(args.repo or root_default)
     c = Client(args.exe, os.path.join(out, "work"), args.timeout)
     gear = c.call("gear_list", limit=1000, include_unhealthy=True)["gear"]

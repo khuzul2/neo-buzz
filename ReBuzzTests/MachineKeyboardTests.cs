@@ -18,8 +18,8 @@ using ReBuzzTests.Automation.TestMachinesControllers;
 namespace ReBuzzTests
 {
     /// <summary>
-    /// Fork addition (machine keyboard, docs/specs/studio-mvp.md §3.12): the keyboard under machine windows in ReBuzz.exe.
-    /// <c>ReBuzz.exe --agent --keyboard-shots</c> opens machines' windows through the WPF host, draws them (screenshots beside
+    /// Fork addition (machine keyboard, docs/specs/studio-mvp.md §3.12): the keyboard under machine windows in the Windows app.
+    /// <c>NeoBuzzLive.exe --agent --keyboard-shots</c> opens machines' windows through the WPF host, draws them (screenshots beside
     /// SessionViewTests', keyboard-wpf-*.png), plays the keyboard through its own pointer handling with the engine rendered
     /// offline, and reads back: a Neo synth's editor (MIDI) and a native machine's parameter window (its Note track, with its
     /// manifest's pitch offset, FSM Infector's +12) both play the written A4 at 440 Hz, heard here by YIN; a strike's height
@@ -37,8 +37,8 @@ namespace ReBuzzTests
         {
             if (shots != null) return shots;
             string bin = File.ReadLines(TestAssemblyDirectory.Value.AddFileName("ReBuzzLocation.txt").ToString()).First();
-            string exe = Path.Combine(bin, "ReBuzz.exe");
-            if (!File.Exists(exe)) Assert.Inconclusive($"ReBuzz.exe not built ({exe})");
+            string exe = Path.Combine(bin, ReBuzz.Product.WindowsExe);
+            if (!File.Exists(exe)) Assert.Inconclusive($"{ReBuzz.Product.WindowsExe} not built ({exe})");
             folder = Path.Combine(Path.GetTempPath(), "rebuzz-keyboard-shots-" + Environment.ProcessId);
             if (Directory.Exists(folder)) Directory.Delete(folder, true);
             var psi = new ProcessStartInfo(exe, $"--agent --keyboard-shots \"{folder}\"")
@@ -58,7 +58,7 @@ namespace ReBuzzTests
             if (!process.WaitForExit(TimeSpan.FromMinutes(4)))
             {
                 process.Kill(true);
-                Assert.Fail("ReBuzz --keyboard-shots didn't finish in 4 minutes:\n" + string.Join("\n", stderr.TakeLast(40)));
+                Assert.Fail($"{ReBuzz.Product.WindowsExe} --keyboard-shots didn't finish in 4 minutes:\n" + string.Join("\n", stderr.TakeLast(40)));
             }
             string log = string.Join("\n", stderr);
             TestContext.Out.WriteLine(log);

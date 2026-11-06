@@ -1,18 +1,18 @@
 // Evaluation (docs/specs/mcp-server.md §10, A6): the command line.
 //
-//   run      --exe ReBuzz.exe [--out eval-out] [--baseline eval/baseline.json] [--update-baseline]
+//   run      --exe NeoBuzzLive.exe [--out eval-out] [--baseline eval/baseline.json] [--update-baseline]
 //            [--tolerance 0.05] [--only name,name] [--no-checks] [--no-tasks] [--verbose]
 //            The scripted suite: every check, then every task's setup, reference solution and score.
 //            Writes eval-results.json and eval-summary.md (and appends to $GITHUB_STEP_SUMMARY);
 //            exits 1 when the gate (Results.cs) finds a regression.
-//   prepare  --exe ReBuzz.exe --task NAME [--out agent-eval]
-//            A task's starting song, brief.md and mcp.json (the MCP config a client runs ReBuzz with).
-//   score    --exe ReBuzz.exe --task NAME [--out agent-eval] [--song result.bmxml] [--transcript t.jsonl]
+//   prepare  --exe NeoBuzzLive.exe --task NAME [--out agent-eval]
+//            A task's starting song, brief.md and mcp.json (the MCP config a client runs NeoBuzz Live with).
+//   score    --exe NeoBuzzLive.exe --task NAME [--out agent-eval] [--song result.bmxml] [--transcript t.jsonl]
 //            [--results agent-results.json]: scores the song an agent saved; appends to the results.
 //   report   --results agent-results.json [--title …]: the results as a markdown table.
 //   rebaseline --results eval-results.json [--baseline eval/baseline.json]
 //   tasks    the task names; brief NAME [--out dir] prints a brief
-//   selftest the client and the scorers on synthetic signals (no ReBuzz; runs on Linux)
+//   selftest the client and the scorers on synthetic signals (no NeoBuzz Live; runs on Linux)
 
 using System;
 using System.Collections.Generic;
@@ -58,9 +58,9 @@ namespace ReBuzz.AgentEval
 
         const string Usage =
             "ReBuzz.AgentEval: the MCP server's evaluation (docs/specs/mcp-server.md §10).\n" +
-            "  run --exe ReBuzz.exe [--out eval-out] [--baseline eval/baseline.json] [--update-baseline] [--tolerance 0.05] [--only a,b] [--no-checks] [--no-tasks] [--verbose]\n" +
-            "  prepare --exe ReBuzz.exe --task NAME [--out agent-eval]\n" +
-            "  score --exe ReBuzz.exe --task NAME [--out agent-eval] [--song FILE] [--transcript FILE] [--results FILE]\n" +
+            "  run --exe NeoBuzzLive.exe [--out eval-out] [--baseline eval/baseline.json] [--update-baseline] [--tolerance 0.05] [--only a,b] [--no-checks] [--no-tasks] [--verbose]\n" +
+            "  prepare --exe NeoBuzzLive.exe --task NAME [--out agent-eval]\n" +
+            "  score --exe NeoBuzzLive.exe --task NAME [--out agent-eval] [--song FILE] [--transcript FILE] [--results FILE]\n" +
             "  report --results FILE [--title TEXT]\n" +
             "  rebaseline --results eval-out/eval-results.json [--baseline eval/baseline.json]\n" +
             "  tasks | brief NAME [--out DIR] | selftest";
@@ -96,7 +96,7 @@ namespace ReBuzz.AgentEval
         static string Exe(Args a)
         {
             string exe = Path.GetFullPath(a.Required("exe"));
-            if (!File.Exists(exe)) throw new ArgumentException($"No ReBuzz at {exe}.");
+            if (!File.Exists(exe)) throw new ArgumentException($"No {Product.Name} at {exe}.");
             return exe;
         }
 
@@ -243,7 +243,7 @@ namespace ReBuzz.AgentEval
             {
                 ["mcpServers"] = new JsonObject
                 {
-                    ["rebuzz"] = new JsonObject { ["type"] = "stdio", ["command"] = exe, ["args"] = J.A("--agent", ctx.StartSong) },
+                    [Product.McpName] = new JsonObject { ["type"] = "stdio", ["command"] = exe, ["args"] = J.A("--agent", ctx.StartSong) },
                 },
             };
             File.WriteAllText(ctx.File("mcp.json"), mcp.ToJsonString(EvalRun.Indented) + "\n");

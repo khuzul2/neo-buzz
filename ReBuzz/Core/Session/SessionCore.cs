@@ -1207,13 +1207,13 @@ namespace ReBuzz.Core.Session
         static SequenceCore ToSequence(ISequence track)
         {
             if (track is SequenceCore seq) return seq;
-            throw new ArgumentException("Not a ReBuzz sequence.", nameof(track));
+            throw new ArgumentException("Not a sequence of this engine.", nameof(track));
         }
 
         static PatternCore ToClip(SequenceCore seq, IPattern clip)
         {
             if (clip is not PatternCore pat)
-                throw new ArgumentException("Not a ReBuzz pattern.", nameof(clip));
+                throw new ArgumentException("Not a pattern of this engine.", nameof(clip));
             if (pat.Machine != seq.Machine)
                 throw new ArgumentException($"Pattern '{pat.Name}' belongs to '{pat.Machine?.Name}', not to the track's machine '{seq.Machine?.Name}'.", nameof(clip));
             return pat;

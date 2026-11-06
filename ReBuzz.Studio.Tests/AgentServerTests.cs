@@ -91,7 +91,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(agent.Url, Is.EqualTo(url));
                 string token = agent.Token;
                 Assert.That(token.Length, Is.GreaterThanOrEqualTo(24));
-                Assert.That(page.CommandBox.Text, Is.EqualTo($"claude mcp add --transport http rebuzz {url} --header \"Authorization: Bearer {token}\""));
+                Assert.That(page.CommandBox.Text, Is.EqualTo($"claude mcp add --transport http neobuzz-live {url} --header \"Authorization: Bearer {token}\""), "the server's name is the app's");
                 Assert.That(page.StateText, Is.EqualTo($"Listening on {url}"));
                 Assert.That(new AgentSettings().AllowAgents, Is.True, "saved");
                 Studio.Screenshot(prefs, "prefs-agent");
@@ -128,7 +128,8 @@ namespace ReBuzz.Studio.Tests
                 Assert.That((int)init.StatusCode, Is.EqualTo(200));
                 string session = init.Headers.GetValues("Mcp-Session-Id").Single();
                 var info = JsonNode.Parse(Pump(init.Content.ReadAsStringAsync()))!;
-                Assert.That(info["result"]!["serverInfo"]!["name"]!.GetValue<string>(), Is.EqualTo("rebuzz"));
+                Assert.That(info["result"]!["serverInfo"]!["name"]!.GetValue<string>(), Is.EqualTo("neobuzz-live"));
+                Assert.That(info["result"]!["serverInfo"]!["title"]!.GetValue<string>(), Is.EqualTo("NeoBuzz Live"));
                 Pump(client.SendAsync(Post("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}", session)));
 
                 var status = Call(session, 2, "studio_status", new JsonObject());

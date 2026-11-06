@@ -7,7 +7,7 @@
  "type": "EQ",
  "summary": "Classic Buzz 3-band EQ: low, mid and high gains of ±24 dB with two crossover frequencies. For broad tone shaping; Neo EQ is the precise one.",
  "quirks": [
-  "Mono out (the profile measured an output correlation of 1.0), and about 6 dB louder than its input at unity settings: ReBuzz feeds a mono native effect left + right summed (ReBuzz/NativeMachine/NativeMessage.cs). Profile: +6.0 dB at the defaults.",
+  "Mono out (the profile measured an output correlation of 1.0), and about 6 dB louder than its input at unity settings: NeoBuzz Live feeds a mono native effect left + right summed (ReBuzz/NativeMachine/NativeMessage.cs). Profile: +6.0 dB at the defaults.",
   "The bands are split by Low Cutoff and High Cutoff: the mid band is everything between them.",
   "Gains near their top are hot: +18.8 dBFS with Mid or High Gain at +24 dB on noise (profile).",
   "Closed source: names and units come from its own descriptions and texts."

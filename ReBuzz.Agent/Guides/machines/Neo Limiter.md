@@ -13,7 +13,7 @@ The signal goes through `Input gain`, then a 4× oversampled true-peak detector 
 
 - `Ceiling` is in dB, meaning dBTP: −12 to 0 dB in 0.1 dB steps.
 - `Release` is the time to recover 63 % of a reduction.
-- Latency is `Lookahead` plus 11 samples. ReBuzz is told about it and compensates.
+- Latency is `Lookahead` plus 11 samples. NeoBuzz Live is told about it and compensates.
 
 ## How to use it
 

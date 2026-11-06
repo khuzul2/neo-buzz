@@ -94,7 +94,7 @@ namespace ReBuzz.Agent
                             throw new ToolError($"{m.Name} already has a pattern \"{name}\". Choose another name, or notes_write into it.");
                         name ??= NextName(m);
                         AgentActions.Do(core, new CreatePatternAction(m, name, ticks));
-                        var p = m.Patterns.FirstOrDefault(x => x.Name == name) ?? throw new ToolError($"ReBuzz didn't create the pattern \"{name}\".");
+                        var p = m.Patterns.FirstOrDefault(x => x.Name == name) ?? throw new ToolError($"{Product.Name} didn't create the pattern \"{name}\".");
                         return new JsonObject { ["machine"] = m.Name, ["pattern"] = PatternJson(core, p) };
                     }, c.Cancellation);
                     return ToolResult.Ok($"Created {r["machine"]}'s pattern \"{r["pattern"]!["name"]}\", {r["pattern"]!["length_beats"]} beats.", r);
@@ -182,7 +182,7 @@ namespace ReBuzz.Agent
                             throw new ToolError($"{m.Name} already has a pattern \"{name}\".");
                         name ??= BuzzGUI.Common.Actions.PatternNames.Copy(m, p.Name);
                         AgentActions.DuplicatePattern(core, p, name);
-                        var copy = m.Patterns.FirstOrDefault(x => x.Name == name) ?? throw new ToolError($"ReBuzz didn't create \"{name}\".");
+                        var copy = m.Patterns.FirstOrDefault(x => x.Name == name) ?? throw new ToolError($"{Product.Name} didn't create \"{name}\".");
                         return new JsonObject { ["machine"] = m.Name, ["from"] = p.Name, ["pattern"] = PatternJson(core, copy) };
                     }, c.Cancellation);
                     return ToolResult.Ok($"Copied {r["machine"]}'s \"{r["from"]}\" to \"{r["pattern"]!["name"]}\" ({r["pattern"]!["notes"]} notes).", r);
@@ -485,7 +485,7 @@ namespace ReBuzz.Agent
                         if (seq == null)
                         {
                             AgentActions.Do(core, new AddSequenceAction(m));
-                            seq = core.SongCore.Sequences.LastOrDefault(s => s.Machine == m) ?? throw new ToolError($"ReBuzz didn't make a lane for {m.Name}.");
+                            seq = core.SongCore.Sequences.LastOrDefault(s => s.Machine == m) ?? throw new ToolError($"{Product.Name} didn't make a lane for {m.Name}.");
                         }
                         var notes = new List<string>();
                         int loopEndBefore = core.SongCore.LoopEnd;

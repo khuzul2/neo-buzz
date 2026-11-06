@@ -1,7 +1,8 @@
 <#
 .SYNOPSIS
-    Builds ReBuzz (this fork) plus every buildable external machine, and packs a
-    ready-to-run zip with all machines already in place.
+    Builds NeoBuzz Live (this fork of ReBuzz) plus every buildable external machine, and packs a
+    ready-to-run zip with all machines already in place: dist\NeoBuzz-Live-<version>-x64.zip, whose
+    NeoBuzzLive.exe is the app (the apphost of ReBuzz.csproj; its assembly stays ReBuzz.dll).
 
 .DESCRIPTION
     1. Finds Visual Studio (MSBuild + C++ x64 tools) and the .NET 10 SDK.
@@ -36,7 +37,7 @@
     older Visual Studio is found and this is not set, v143 is used with a warning.
 
 .PARAMETER SkipCore
-    Reuse an existing ReBuzz build (machines + package only).
+    Reuse an existing build (machines + package only).
 
 .EXAMPLE
     .\build.ps1
@@ -260,8 +261,10 @@ if (-not $SkipCore) {
     Invoke-Checked $vs.MSBuild $msbuildArgs
 }
 
-if (-not (Test-Path -LiteralPath ([IO.Path]::Combine($OutDir, 'ReBuzz.exe')))) {
-    throw "ReBuzz.exe not found in $OutDir. Run without -SkipCore first."
+# The app's executable (ReBuzz.csproj names its apphost NeoBuzzLive.exe; ReBuzz.Product.WindowsExe).
+$AppExe = 'NeoBuzzLive.exe'
+if (-not (Test-Path -LiteralPath ([IO.Path]::Combine($OutDir, $AppExe)))) {
+    throw "$AppExe not found in $OutDir. Run without -SkipCore first."
 }
 
 # ---------------------------------------------------------------- 3b. Link helper (fork, 0.8)
@@ -492,7 +495,7 @@ foreach ($sub in 'Generators', 'Effects') {
 # ---------------------------------------------------------------- 6. package
 
 Write-Step 'Packaging'
-$pkgName = "ReBuzz-$Version-x64"
+$pkgName = "NeoBuzz-Live-$Version-x64"
 $pkgDir = [IO.Path]::Combine($DistDir, $pkgName)
 if (Test-Path -LiteralPath $pkgDir) { Remove-Item -LiteralPath $pkgDir -Recurse -Force }
 New-Dir $pkgDir
@@ -501,6 +504,9 @@ $exclude = @('*.pdb', '*.ilk', '*.exp', '*.lib', '*.iobj', '*.ipdb')
 Get-ChildItem -LiteralPath $OutDir -Recurse -File | Where-Object {
     $name = $_.Name
     -not ($exclude | Where-Object { $name -like $_ })
+} | Where-Object {
+    # A ReBuzz.exe beside the app is an apphost left by a build from before the rename (NeoBuzzLive.exe): not shipped.
+    $_.FullName.Substring($OutDir.Length).TrimStart('\') -ne 'ReBuzz.exe'
 } | ForEach-Object {
     $rel = $_.FullName.Substring($OutDir.Length).TrimStart('\')
     $target = [IO.Path]::Combine($pkgDir, $rel)
@@ -644,7 +650,7 @@ if ($env:GITHUB_ACTIONS -eq 'true') {
 $toolsetText = if ($PlatformToolset) { $PlatformToolset } else { 'project default (v145)' }
 $shaText = if ($sha) { $sha } else { 'unknown' }
 $info = @(
-    "ReBuzz fork build $Version",
+    "NeoBuzz Live build $Version (a fork of ReBuzz)",
     "Commit:      $shaText",
     "Built:       $((Get-Date).ToString('u'))",
     "Config:      $Configuration|x64",
@@ -723,7 +729,7 @@ foreach ($t in $shippedTexts.Values) {
 }
 # Components that aren't machines, built from source here or bundled, whose licence text is in the repository.
 $components = @(
-    [pscustomobject]@{ Name = 'ReBuzz (wasteddesign/ReBuzz) and this fork'; Licence = 'MIT'; Text = 'LICENSE'; As = 'ReBuzz-LICENSE.txt'; File = 'ReBuzz.exe' },
+    [pscustomobject]@{ Name = 'NeoBuzz Live and ReBuzz (wasteddesign/ReBuzz), which it is based on'; Licence = 'MIT'; Text = 'LICENSE'; As = 'ReBuzz-LICENSE.txt'; File = $AppExe },
     [pscustomobject]@{ Name = 'Serilog (serilog.dll, from 3rdParty\serilog\serilog)'; Licence = 'Apache-2.0'; Text = '3rdParty\serilog\serilog\LICENSE'; As = 'Serilog-LICENSE.txt'; File = 'serilog.dll' },
     [pscustomobject]@{ Name = 'Serilog.Sinks.RichTextBox.Wpf (from 3rdParty\serilog\serilog-sinks-richtextbox)'; Licence = 'Apache-2.0'; Text = '3rdParty\serilog\serilog-sinks-richtextbox\LICENSE'; As = 'Serilog.Sinks.RichTextBox.Wpf-LICENSE.txt'; File = 'Serilog.Sinks.RichTextBox.Wpf.dll' },
     [pscustomobject]@{ Name = 'r8brain-free-src (r8bsrc64.dll, from 3rdParty\r8b\r8brain-free-src)'; Licence = 'MIT'; Text = '3rdParty\r8b\r8brain-free-src\LICENSE'; As = 'r8brain-free-src-LICENSE.txt'; File = 'r8bsrc64.dll' }
@@ -750,14 +756,24 @@ if ($byLicence.Count -gt 0) {
     $licenceReadme.Add('Machines built from source in this package, by licence (Licenses\NOTICE.txt: where each one''s source is):')
     foreach ($k in $byLicence.Keys) { $licenceReadme.Add("  $k`: $($byLicence[$k] -join ', ')") }
 }
-$licenceReadme.Add('Licenses\ also has the licence texts of ReBuzz itself and of the libraries built from source with it.')
+$licenceReadme.Add('Licenses\ also has the MIT licence NeoBuzz Live keeps from ReBuzz (ReBuzz-LICENSE.txt) and the licence texts of the libraries built from source with it.')
 Write-Host "Licenses\: $((@(Get-ChildItem -LiteralPath $licDir -File | ForEach-Object Name)) -join ', ')"
 
 $readme = @'
-ReBuzz (fork) - portable build
-==============================
+NeoBuzz Live - portable build
+=============================
 
-Unzip anywhere and run ReBuzz.exe. The first start scans all machines in Gear\, which takes a while.
+NeoBuzz Live is a fork of ReBuzz, by WDE and the ReBuzz contributors (MIT licence):
+https://github.com/wasteddesign/ReBuzz
+
+Start: unzip anywhere and run NeoBuzzLive.exe. The first start scans all machines in Gear\, which takes
+a while. Songs (.bmx, .bmxml), settings and machines from ReBuzz carry over as they are: the settings stay
+where ReBuzz keeps them (%APPDATA%\ReBuzz, %LOCALAPPDATA%\ReBuzz, Documents\ReBuzz and the registry's
+Software\ReBuzz).
+
+AI agents: with the window open, Settings > Agent > Allow agents, then Ctrl+Shift+A shows the line to
+connect Claude Code (the server is neobuzz-live). Headless, on stdio:
+  claude mcp add neobuzz-live -- "<this folder>\NeoBuzzLive.exe" --agent
 
 Needs (same as upstream ReBuzz):
   1. .NET 10 Desktop Runtime x64   https://dotnet.microsoft.com/download/dotnet/10.0

@@ -167,7 +167,7 @@ namespace ReBuzz.Studio.Tests
                 };
                 Assert.That(Autosave.OfferRecovery(Core).Result, Is.True);
                 Settle(window);
-                Assert.That(asked, Does.Contain("didn't close normally").And.Contain("'crashed song.bmxml'"));
+                Assert.That(asked, Does.StartWith("NeoBuzz Live didn't close normally").And.Contain("'crashed song.bmxml'"));
                 Assert.That(Core.SongCore.SongName, Is.EqualTo(song));
                 Assert.That(Core.SongCore.MachinesList.Select(m => m.Name), Does.Contain("After Crash"));
                 Assert.That(Core.BPM, Is.EqualTo(133));
@@ -197,6 +197,46 @@ namespace ReBuzz.Studio.Tests
 
         // ------------------------------------------------------------------ menus and keys
 
+        /// <summary>
+        /// Fork (rename): the app is NeoBuzz Live: the window's title, the application's name (the macOS app menu's
+        /// About, Hide and Quit items and, unbundled, the menu bar take it), the About items, and the questions' caption.
+        /// </summary>
+        [AvaloniaTest]
+        public void TheWindowAndTheMenusSayNeoBuzzLive()
+        {
+            using var restore = Studio.AfterTest(Reset);
+            Assert.That(Application.Current!.Name, Is.EqualTo("NeoBuzz Live"), "the macOS app menu: About, Hide and Quit NeoBuzz Live");
+            var window = Open();
+            try
+            {
+                NewSong();
+                window.RefreshNow();
+                Assert.That(window.Title, Is.EqualTo("Untitled — NeoBuzz Live"));
+                Core.Modified = true;
+                window.RefreshNow();
+                Assert.That(window.Title, Is.EqualTo("Untitled • — NeoBuzz Live"), "modified");
+
+                var appMenu = AppMenu.ToNativeMenu(window.AppMenuModel());
+                Assert.That(appMenu.Items.OfType<NativeMenuItem>().First().Header, Is.EqualTo("About NeoBuzz Live"), "the macOS app menu");
+                Assert.That(AppMenu.Find(window.MenuModel(mac: false), "Help/About NeoBuzz Live"), Is.Not.Null, "Help elsewhere");
+                Assert.That(window.MenuModel(mac: false).SelectMany(e => e.IsSeparator ? Enumerable.Empty<MenuEntry>() : e.Items?.Invoke() ?? Enumerable.Empty<MenuEntry>())
+                                .Select(e => e.Text).Where(t => t != null && t.Contains("ReBuzz")), Is.Empty, "no menu item says ReBuzz");
+                Assert.That(MainWindow.ShortcutsText(mac: true) + MainWindow.ShortcutsText(mac: false), Does.Not.Contain("ReBuzz"), "the shortcut list");
+
+                // Closing a changed song asks, under the app's name.
+                string caption = null;
+                Dialogs.Responder = (m, c, b) => { caption = c; return UserAnswer.Cancel; };
+                Assert.That(SongFiles.ConfirmDiscard().Result, Is.False);
+                Assert.That(caption, Is.EqualTo("NeoBuzz Live"));
+            }
+            finally
+            {
+                Dialogs.Responder = null;
+                NewSong();
+                window.Close();
+            }
+        }
+
         [AvaloniaTest]
         public void TheMacMenuBarHasTheAppMenuAndTheStudiosMenus()
         {
@@ -205,7 +245,7 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 var app = window.AppMenuModel().Where(e => !e.IsSeparator).ToList();
-                Assert.That(app.Select(e => e.Text), Is.EqualTo(new[] { "About ReBuzz", "Preferences…" }));
+                Assert.That(app.Select(e => e.Text), Is.EqualTo(new[] { "About NeoBuzz Live", "Preferences…" }));
                 Assert.That(app[1].Gesture, Is.EqualTo(new KeyGesture(Key.OemComma, KeyModifiers.Meta)), "Command+,");
 
                 var mac = window.MenuModel(mac: true).ToList();
@@ -237,7 +277,7 @@ namespace ReBuzz.Studio.Tests
                 // Elsewhere: the window's own menu, with Preferences in Edit and About in Help.
                 var other = window.MenuModel(mac: false).ToList();
                 Assert.That(AppMenu.Find(other, "Edit/Preferences…").Gesture, Is.EqualTo(new KeyGesture(Key.OemComma, KeyModifiers.Control)));
-                Assert.That(AppMenu.Find(other, "Help/About ReBuzz"), Is.Not.Null);
+                Assert.That(AppMenu.Find(other, "Help/About NeoBuzz Live"), Is.Not.Null);
                 Assert.That(AppMenu.Find(other, "File/Exit"), Is.Not.Null);
                 if (!System.OperatingSystem.IsMacOS())
                     Assert.That(window.WindowMenu.Items.OfType<MenuItem>().Select(i => (string)i.Tag), Is.EqualTo(new[] { "File", "Edit", "Transport", "View", "Window", "Help" }));
@@ -332,7 +372,11 @@ namespace ReBuzz.Studio.Tests
             using var restore = Studio.AfterTest(Reset);
             var about = AboutWindow.Open();
             Settle(about);
-            Assert.That(about.Text, Does.StartWith("ReBuzz").And.Contain("Oskari Tammelin"));
+            Assert.That(about.Title, Is.EqualTo("About NeoBuzz Live"));
+            Assert.That(about.Text, Does.StartWith("NeoBuzz Live").And.Contain("Oskari Tammelin"));
+            // What it is based on: ReBuzz, its authors and link, its licence.
+            Assert.That(about.Text, Does.Contain("Based on ReBuzz\nby WDE and the ReBuzz contributors\ngithub.com/wasteddesign/ReBuzz\n"));
+            Assert.That(about.Text, Does.Contain(" WDE, MIT licence\n"));
             if (!string.IsNullOrWhiteSpace(BuildInfo.Number)) Assert.That(about.Text, Does.Contain("(build " + BuildInfo.Number.Trim() + ")"));
             Assert.That(AboutWindow.Open(), Is.SameAs(about), "one at a time");
             Studio.Screenshot(about, "studio-about");

@@ -7,7 +7,7 @@
  "type": "reverb",
  "summary": "Classic Buzz mono reverb with dry, reverb and early-reflection levels, reverb time up to 6.4 s, pre-delay and a high cut. For quick ambience in old-school Buzz songs; Neo Verb is the better reverb.",
  "quirks": [
-  "Mono out (the profile measured an output correlation of 1.0), and about 6 dB louder than its input at unity settings: ReBuzz feeds a mono native effect left + right summed (ReBuzz/NativeMachine/NativeMessage.cs). Profile: +6.2 dB at the defaults.",
+  "Mono out (the profile measured an output correlation of 1.0), and about 6 dB louder than its input at unity settings: NeoBuzz Live feeds a mono native effect left + right summed (ReBuzz/NativeMachine/NativeMessage.cs). Profile: +6.2 dB at the defaults.",
   "Rev Out or ER Out at their top (0 dB) peak above 0 dBFS on a hot input (profile: +3.3 and +2.3 dBFS).",
   "Closed source: names and units come from its own descriptions and texts."
  ],
