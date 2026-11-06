@@ -11,6 +11,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.NUnit;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using BuzzGUI.Common;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
@@ -67,6 +68,112 @@ namespace ReBuzz.Studio.Tests
             PreferencesWindow.Current?.Close();
             Core.Modified = false;
             Settle();
+        }
+
+        // ------------------------------------------------------------------ the status line
+
+        [AvaloniaTest]
+        public void TheStatusLineCountsTheMachinesYouSee()
+        {
+            // Gallery mac-010 ("1 machines" for the Master alone) and mac-020 ("15 machines" for the
+            // demo song's 10 and the Master, its 4 hidden pattern-editor machines counted).
+            NewSong();
+            var window = Open();
+            try
+            {
+                window.RefreshNow();
+                Assert.That(window.StatusText, Does.Contain(" · no machines"), "a new song: the Master alone");
+                var song = Core.SongCore;
+                song.CreateMachine("Neo Poly", null, "Lead", null, null, null, -1, 0.2f, 0.2f);
+                window.RefreshNow();
+                Assert.That(window.StatusText, Does.Contain(" · 1 machine").And.Not.Contain("1 machines"));
+                song.CreateMachine("Neo Poly", null, "Bass", null, null, null, -1, -0.2f, 0.2f);
+                song.CreateMachine("Neo Poly", null, "Editor", null, null, null, -1, -0.2f, -0.2f);
+                song.MachinesList.Single(m => m.Name == "Editor").Hidden = true;      // as a song's pattern-editor machines are
+                window.RefreshNow();
+                Assert.That(window.StatusText, Does.Contain(" · 2 machines"), "not the hidden one, not the Master");
+                Assert.That(song.MachinesList.Count, Is.EqualTo(4));
+            }
+            finally
+            {
+                NewSong();
+                window.Close();
+            }
+        }
+
+        // ------------------------------------------------------------------ a machine that stops working
+
+        [AvaloniaTest]
+        public void AMachineThatStopsWorkingIsToldByNameInTheStatusLine()
+        {
+            // Gallery win-704: a native machine's host stopped answering; only the debug console said so,
+            // and its "Process hang" line named no machine.
+            NewSong();
+            var window = Open();
+            var told = new System.Collections.Generic.List<string>();
+            System.Action<MachineCore, string> handler = (m, reason) => told.Add($"{m.Name}: {reason}");
+            Core.MachineCrashed += handler;
+            try
+            {
+                Core.SongCore.CreateMachine("Neo Poly", null, "Delay", null, null, null, -1, 0.2f, 0.2f);
+                var delay = Core.SongCore.MachinesList.Single(m => m.Name == "Delay");
+                Core.ReportMachineCrashed(delay, "its host process didn't answer within 2000 ms");
+                Core.ReportMachineCrashed(delay, "again");
+                Settle(window);
+                Assert.That(told, Is.EqualTo(new[] { "Delay: its host process didn't answer within 2000 ms" }), "told once, by name");
+                window.RefreshNow();
+                Assert.That(window.StatusText, Does.Contain(" · Stopped working: Delay"));
+                NewSong();
+                window.RefreshNow();
+                Assert.That(window.StatusText, Does.Not.Contain("Stopped working"), "a new song starts clean");
+            }
+            finally
+            {
+                Core.MachineCrashed -= handler;
+                NewSong();
+                window.Close();
+            }
+        }
+
+        // ------------------------------------------------------------------ a song that can't be opened
+
+        [AvaloniaTest]
+        public void ASongThatCantBeOpenedSaysSoWithTheExceptionUnderDetails()
+        {
+            // Gallery mac-338: the error said only "Unable to read beyond the end of the stream."
+            NewSong();
+            var window = Open();
+            Window dialog = null;
+            using var opened = Window.WindowOpenedEvent.AddClassHandler<Window>((w, e) => { if (w != window) dialog = w; });
+            string broken = Path.Combine(SongFolder, "Broken song.bmx");
+            File.WriteAllBytes(broken, System.Text.Encoding.ASCII.GetBytes("Buzz\0not a song at all"));
+            try
+            {
+                var opening = SongFiles.Open(broken);
+                for (int i = 0; i < 40 && dialog == null; i++) Settle(window);
+                Assert.That(dialog, Is.Not.Null, "an error dialog");
+                var text = dialog!.GetVisualDescendants().OfType<TextBlock>().Single(t => (t.Tag as string) == "message");
+                Assert.That(text.Text, Is.EqualTo("\u201CBroken song.bmx\u201D couldn't be opened. The file is damaged or isn't a song this app can read."));
+                var details = dialog.GetVisualDescendants().OfType<Expander>().Single();
+                Assert.That((details.Header as string, details.IsExpanded), Is.EqualTo(("Details", false)), "the exception under Details, closed");
+                details.IsExpanded = true;
+                Settle(window);
+                var box = dialog.GetVisualDescendants().OfType<TextBox>().Single(t => (t.Tag as string) == "details");
+                Assert.That(box.Text, Does.Contain("Exception: "), "the exception's type and message");
+                Studio.Screenshot(dialog, "error-open-details");
+                dialog.GetVisualDescendants().OfType<Button>().Single(b => (b.Content as string) == "OK").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                for (int i = 0; i < 20 && !opening.IsCompleted; i++) Settle(window);
+                Assert.That(opening.IsCompleted && !opening.Result, Is.True, "it didn't open");
+
+                // A song that needs a machine that isn't installed says so (the loader's own reason, kept).
+                Assert.That(ReBuzzCore.OpenFailedMessage("/songs/Makk_M4.bmw", new System.Exception("To load this song, you need to have following machine in your Gear forlder: M4")),
+                    Is.EqualTo("\u201CMakk_M4.bmw\u201D couldn't be opened: it uses M4, a machine that isn't installed."));
+            }
+            finally
+            {
+                NewSong();
+                window.Close();
+            }
         }
 
         // ------------------------------------------------------------------ recent files

@@ -1034,7 +1034,7 @@ namespace ReBuzz.Studio.Tests
                     Click(window, seq.Canvas.TranslatePoint(new Point(geo.XOf(2 * 16) + 6, geo.YOf(1) + geo.TrackHeight * 0.6), window)!.Value, MouseButton.Right);
                     menus.Add(seq.OpenMenu!);
                     var item = ItemOf(seq.OpenMenu!, "Set Time Signature...");
-                    DialogOnOpen(window, () => Click(window, Centre(item, window)), "336-sequence-time-signature", "Sequence: Set Time Signature (the bar's length in ticks).", "T in the Sequence View, or its menu ▸ Set Time Signature….");
+                    DialogOnOpen(window, () => Click(window, Centre(item, window)), "336-sequence-time-signature", "Sequence: Set Time Signature (beats/note, as 4/4, or ticks; checked as it is typed).", "T in the Sequence View, or its menu ▸ Set Time Signature….");
                     window.ShowView("Machines");
                 });
                 Try("337-autosave-recovery", () =>
@@ -1058,7 +1058,7 @@ namespace ReBuzz.Studio.Tests
                 {
                     string broken = Path.Combine(SongFolder, "Broken song.bmx");
                     File.WriteAllBytes(broken, Encoding.ASCII.GetBytes("Buzz\0not a song at all"));
-                    DialogOnOpen(window, () => _ = SongFiles.Open(broken), "338-error-open", "An error: a file that isn't a song, opened.", "File ▸ Open… a damaged file.");
+                    DialogOnOpen(window, () => _ = SongFiles.Open(broken), "338-error-open", "An error: a file that isn't a song, opened. What happened in words; the exception under Details (closed).", "File ▸ Open… a damaged file.");
                 });
             }
             finally
@@ -1274,7 +1274,10 @@ namespace ReBuzz.Studio.Tests
                     for (int k = 0; k < gear.Count; k++)
                     {
                         float x = -0.9f + 1.6f * (k % cols) / (cols - 1), y = -0.85f + 1.6f * (k / cols) / System.Math.Max(1, (gear.Count - 1) / cols);
-                        Core.SongCore.CreateMachine(gear[k], null, gear[k].Replace("Neo ", "").Replace("Pedal ", "P "), null, null, null, -1, x, y);
+                        // As right-click ▸ New makes them (a spot taken moves to free space).
+                        var instrument = Core.Instruments.First(i => i.MachineDLL?.Name == gear[k]);
+                        var made = ReBuzz.Studio.Views.Machines.MachineEdits.Create(Core, instrument, x, y);
+                        if (made is MachineCore mc) mc.Name = gear[k].Replace("Neo ", "").Replace("Pedal ", "P ");
                     }
                     Settle();
                     window.ShowView("Machines");

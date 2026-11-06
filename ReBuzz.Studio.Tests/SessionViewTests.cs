@@ -114,6 +114,210 @@ namespace ReBuzz.Studio.Tests
             Assert.That(rig.Session.GetPlaying(rig.Layout.SequenceOf(0)), Is.Null);
         }
 
+        static bool LitAsPlaying(SessionView.SlotCell cell) =>
+            ReferenceEquals(cell.Background, SessionPalette.Playing) || ReferenceEquals(cell.Background, SessionPalette.Lighten(SessionPalette.Playing, 0.1));
+
+        [AvaloniaTest]
+        public void OnlyTheSlotAClipPlaysFromShowsItPlaying()
+        {
+            // The demo song's case (gallery mac-042): one pattern in several slots of a track. A
+            // track plays one clip at a time, so only the slot it was launched from may light up.
+            using var rig = new SessionRig("Drums", "Pad");
+            var beat = rig.Pattern(rig.Machine("Drums"), "Beat", Bar, (0, 36), (8, 38));
+            var chords = rig.Pattern(rig.Machine("Pad"), "Chords", Bar, (0, 60));
+            var layout = rig.Layout;
+            layout.Ensure();
+            for (int s = 0; s < 3; s++) layout.SetSlot(1, s, chords);
+            layout.ClearSlot(0, 0);
+            layout.SetSlot(0, 1, beat);
+            layout.SetSlot(0, 2, beat);
+            var view = rig.Show();
+
+            rig.Click(view.Scenes[2]);
+            Assert.That(layout.SlotState(1, 2), Is.EqualTo(ClipState.Queued));
+            Assert.That(layout.SlotState(1, 0), Is.EqualTo(ClipState.Stopped), "the same pattern in another scene doesn't wait");
+            rig.RunTicks(6);
+            view.RefreshState();
+            Assert.That(layout.SlotState(1, 2), Is.EqualTo(ClipState.Playing));
+            Assert.That(layout.SlotState(0, 2), Is.EqualTo(ClipState.Playing));
+            Assert.That(new[] { layout.SlotState(1, 0), layout.SlotState(1, 1), layout.SlotState(0, 1) }, Is.All.EqualTo(ClipState.Stopped));
+            Assert.That(LitAsPlaying(view.SlotAt(1, 2)) && LitAsPlaying(view.SlotAt(0, 2)), Is.True, "the scene launched plays");
+            Assert.That(new[] { view.SlotAt(1, 0), view.SlotAt(1, 1), view.SlotAt(0, 1) }.Where(LitAsPlaying).Select(c => $"{c.Track},{c.Scene}"), Is.Empty,
+                "slots sharing the playing pattern stay unlit");
+            rig.Screenshot("session-one-slot-plays");
+
+            // Launching the same pattern from another slot: that slot waits, the playing one plays on.
+            rig.Click(view.SlotAt(1, 0).LaunchArea);
+            Assert.That(layout.SlotState(1, 0), Is.EqualTo(ClipState.Queued));
+            Assert.That(layout.SlotState(1, 2), Is.EqualTo(ClipState.Playing), "until the bar line");
+            Assert.That(layout.SlotState(1, 1), Is.EqualTo(ClipState.Stopped));
+            rig.RunTicks(Bar);
+            Assert.That(layout.SlotState(1, 0), Is.EqualTo(ClipState.Playing));
+            Assert.That(layout.SlotState(1, 2), Is.EqualTo(ClipState.Stopped));
+
+            // A launch that doesn't say its slot (the agent's): the first slot holding the clip.
+            rig.Session.Launch(layout.SequenceOf(0), beat);
+            rig.RunTicks(Bar);
+            Assert.That(layout.SlotState(0, 1), Is.EqualTo(ClipState.Playing));
+            Assert.That(layout.SlotState(0, 2), Is.EqualTo(ClipState.Stopped));
+
+            // The clip panel of a slot sharing the playing pattern says it's stopped.
+            rig.Click(view.SlotAt(1, 2), fx: 0.8);
+            view.RefreshState();
+            Assert.That(view.Selected, Is.EqualTo((1, 2)));
+            Assert.That(view.ClipPanelView.StatusText, Is.EqualTo("stopped"));
+        }
+
+        // ------------------------------------------------------------------ tracks (gallery mac-224, mac-227)
+
+        [AvaloniaTest]
+        public void TheTrackMenuRenamesArmsStopsAndRemovesAndPlusTrackLeavesOutReturns()
+        {
+            using var rig = new SessionRig("Drums", "Lead");
+            var verb = rig.Add("Neo Verb", "Verb", track: false);
+            rig.Add("Neo Delay", "Delay", track: false);
+            var beat = rig.Pattern(rig.Machine("Drums"), "Beat", Bar, (0, 36), (8, 38));
+            rig.Pattern(rig.Machine("Lead"), "Hook", Bar, (0, 72));
+            var layout = rig.Layout;
+            layout.Ensure();
+            layout.AddReturn(verb);
+            var view = rig.Show();
+
+            // + Track offers the machines without a track, not the Verb return (mac-227).
+            Assert.That(layout.MachinesWithoutTrack().Select(m => m.Name), Is.EqualTo(new[] { "Delay" }));
+            rig.Click(view.AddTrackButton);
+            Assert.That(view.ClickMenuItem("Verb"), Is.False, "a return isn't offered");
+            Assert.That(view.ClickMenuItem("Delay"), Is.True);
+            rig.Settle();
+            Assert.That(layout.Document.Tracks.Select(t => t.Machine), Is.EqualTo(new[] { "Drums", "Lead", "Delay" }));
+
+            // The header's menu (mac-224): arm, stop, rename, remove.
+            rig.Click(view.Headers[0], MouseButton.Right);
+            rig.Menu("Arm");
+            Assert.That(layout.IsArmed(0), Is.True);
+            rig.Click(view.Headers[0], MouseButton.Right);
+            rig.Screenshot("session-track-menu");
+            rig.Menu("Arm");
+            Assert.That(layout.IsArmed(0), Is.False);
+
+            rig.Click(view.SlotAt(0, 0).LaunchArea);
+            rig.RunTicks(Bar);
+            Assert.That(rig.Session.GetPlaying(layout.SequenceOf(0)), Is.SameAs(beat));
+            rig.Click(view.Headers[0], MouseButton.Right);
+            rig.Menu("Stop clips");
+            rig.RunTicks(Bar);
+            Assert.That(rig.Session.GetPlaying(layout.SequenceOf(0)), Is.Null, "Stop clips stopped the track");
+
+            Dialogs.TextResponder = (title, current) => current == "Drums" ? "Kit" : null;
+            rig.Click(view.Headers[0], MouseButton.Right);
+            rig.Menu("Rename…");
+            Assert.That(layout.SequenceOf(0).Machine.Name, Is.EqualTo("Kit"), "renaming the track renames its machine");
+
+            rig.Click(view.Headers[1], MouseButton.Right);
+            rig.Menu("Remove track");
+            Assert.That(layout.Document.Tracks.Select(t => t.Machine), Is.EqualTo(new[] { "Kit", "Delay" }));
+            Assert.That(rig.Core.Song.Machines.Any(m => m.Name == "Lead"), Is.True, "the machine stays");
+            rig.Core.SongCore.ActionStack.Undo();
+            rig.Settle();
+            Assert.That(layout.Document.Tracks.Select(t => t.Machine), Is.EquivalentTo(new[] { "Kit", "Lead", "Delay" }), "undo brings the track back");
+        }
+
+        // ------------------------------------------------------------------ the view's layout (gallery mac-043/044/046, win-703)
+
+        static Rect InWindow(Control control) =>
+            new Rect(control.TranslatePoint(new Point(0, 0), TopLevel.GetTopLevel(control)!)!.Value, control.Bounds.Size);
+
+        [AvaloniaTest]
+        public void HidingTheMixerGivesTheGridMoreRowsAndTheClipPanelIsFullHeight()
+        {
+            using var rig = new SessionRig("Drums", "Bass");
+            rig.Pattern(rig.Machine("Drums"), "Beat", Bar, (0, 36));
+            rig.Pattern(rig.Machine("Bass"), "Line", Bar, (0, 40));
+            var layout = rig.Layout;
+            layout.Ensure();
+            var view = rig.Show(1100, 760);
+            var panel = view.ClipPanelView;
+
+            // The clip panel runs down beside the mixer to the bottom, not to the mixer's top edge.
+            Assert.That(InWindow(panel).Bottom, Is.EqualTo(rig.Window.Bounds.Height).Within(1), "the clip panel is full height");
+            var strip = view.MixerStrips[0];
+            Assert.That(InWindow(panel).Left, Is.GreaterThanOrEqualTo(InWindow(strip).Right - 1), "the mixer is beside it");
+
+            int withMixer = view.SpareRows;
+            double stopsWithMixer = InWindow(view.StopAllCell).Top;
+            rig.Click(view.MixerButton);
+            rig.Settle();
+            Assert.That(layout.Document.ShowMixer, Is.False);
+            Assert.That(view.SpareRows, Is.GreaterThan(withMixer + 4), "the room the mixer had is more (empty) rows");
+            Assert.That(InWindow(view.StopAllCell).Top, Is.GreaterThan(stopsWithMixer + 100), "the stop buttons stay at the grid's bottom");
+            Assert.That(InWindow(view.StopAllCell).Bottom, Is.LessThanOrEqualTo(rig.Window.Bounds.Height));
+            rig.Screenshot("session-mixer-hidden-rows");
+
+            // A spare row double-clicked makes a clip there, adding the scenes down to it (one undo step).
+            int scenes = layout.SceneCount;
+            var spare = view.SpareSlotsOf(1);
+            rig.DoubleClick(spare, fy: (RowHeightForTests * 2.5) / spare.Bounds.Height);
+            Assert.That(layout.SceneCount, Is.EqualTo(scenes + 3));
+            Assert.That(layout.PatternAt(1, scenes + 2), Is.Not.Null, "a clip in the row double-clicked");
+            Assert.That(view.Selected, Is.EqualTo((1, scenes + 2)));
+            rig.Click(view.MixerButton);
+        }
+
+        const double RowHeightForTests = 28;          // a grid row: 26 and the 2 px gap
+
+        [AvaloniaTest]
+        public void InANarrowWindowTheSceneColumnStaysAtTheRightEdge()
+        {
+            using var rig = new SessionRig("Drums", "Bass", "Lead", "Pad", "Keys", "Arp", "Pluck");
+            foreach (var name in new[] { "Drums", "Bass", "Lead", "Pad", "Keys", "Arp", "Pluck" })
+                rig.Pattern(rig.Machine(name), name + " 1", Bar, (0, 60));
+            var layout = rig.Layout;
+            layout.Ensure();
+            layout.RenameScene(0, "Intro");
+            var view = rig.Show(960, 520);
+            Assert.That(view.ScenesFrozen, Is.True, "seven tracks don't fit beside the clip panel");
+            var scene = InWindow(view.Scenes[0]);
+            var panel = InWindow(view.ClipPanelView);
+            Assert.That(scene.Right, Is.LessThanOrEqualTo(panel.Left + 1), "the scene column is in view, left of the clip panel");
+            Assert.That(scene.Left, Is.GreaterThan(0));
+            var master = InWindow(view.MixerStrips.Single(s => s.Kind == SessionView.StripKind.Master));
+            Assert.That(master.Left, Is.EqualTo(scene.Left).Within(1), "the master strip stays under the scenes");
+
+            // Scrolled sideways, the tracks pass under it; it still launches.
+            view.GridScroll.Offset = new Vector(400, 0);
+            rig.Settle();
+            Assert.That(InWindow(view.Scenes[0]).Left, Is.EqualTo(scene.Left).Within(1));
+            var top = TopLevel.GetTopLevel(view)!;
+            var p = new Point(scene.Center.X, scene.Center.Y);
+            top.MouseDown(p, MouseButton.Left);
+            top.MouseUp(p, MouseButton.Left);
+            rig.Settle();
+            Assert.That(rig.Session.GetQueued(layout.SequenceOf(0)) ?? rig.Session.GetPlaying(layout.SequenceOf(0)), Is.Not.Null, "the click launched the scene");
+            rig.Screenshot("session-narrow-frozen-scenes");
+
+            // Wide enough, it sits right after the last track.
+            rig.Window.Width = 1600;
+            rig.Settle();
+            Assert.That(view.ScenesFrozen, Is.False);
+            var lastHeader = InWindow(view.Headers.Last());
+            Assert.That(InWindow(view.Scenes[0]).Left, Is.EqualTo(lastHeader.Right).Within(3));
+        }
+
+        [AvaloniaTest]
+        public void TheClipPanelStatusWrapsInsteadOfBeingCut()
+        {
+            using var rig = new SessionRig("Pad");
+            rig.Pattern(rig.Machine("Pad"), "00", 64 * Bar);
+            rig.Layout.Ensure();
+            var view = rig.Show();
+            rig.Click(view.SlotAt(0, 0), fx: 0.6);
+            var status = view.ClipPanelView.StatusBlock;
+            status.Text = "▶ playing  21/1024  follow in 12  ● recording";      // the longest it gets (gallery mac-046)
+            rig.Window.UpdateLayout();
+            Assert.That(status.Bounds.Right, Is.LessThanOrEqualTo(SessionView.ClipPanel.PanelWidth));
+            Assert.That(status.TextLayout.TextLines.Count, Is.GreaterThan(1), "wrapped onto a second line");
+        }
+
         // ------------------------------------------------------------------ clips and notes (SessionPlayableTests, PianoRollTests)
 
         [AvaloniaTest]
@@ -488,6 +692,35 @@ namespace ReBuzz.Studio.Tests
         }
 
         // ------------------------------------------------------------------ the clip panel (SessionClipTests, SessionPerformanceTests)
+
+        [AvaloniaTest]
+        public void TheLoopEndBoxShowsTheEndTheClipLoopsAt()
+        {
+            // Gallery mac-041…046: the Loop end box was empty while the text below said where it loops.
+            using var rig = new SessionRig("Lead");
+            var hook = rig.Pattern(rig.Machine("Lead"), "Hook", 2 * Bar, (0, 72));
+            var layout = rig.Layout;
+            layout.Ensure();
+            var view = rig.Show();
+            var panel = view.ClipPanelView;
+            rig.Click(view.SlotAt(0, 0), fx: 0.6);
+            Assert.That(panel.TitleText, Is.EqualTo("Hook"));
+            Assert.That(panel.RegionText, Is.EqualTo("Plays from 0, loops 0–32 of 32 ticks."));
+            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("32"), "the box says what the text says");
+
+            // Another marker committed with the end as shown: the end stays the clip's own (0).
+            panel.LoopStartBox.Focus();
+            panel.LoopStartBox.Text = "8";
+            rig.Key(PhysicalKey.Enter);
+            Assert.That((layout.ClipOf(hook).LoopStart, layout.ClipOf(hook).LoopEnd), Is.EqualTo((8, 0)));
+            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("32"));
+
+            // Without loop the box is the end it stops at.
+            rig.Click(panel.LoopBox);
+            Assert.That(layout.ClipOf(hook).Loop, Is.False);
+            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("32"));
+            Assert.That(panel.RegionText, Is.EqualTo("Plays 0–32 of 32 ticks once."));
+        }
 
         [AvaloniaTest]
         public void TheClipPanelEditsClipAndSceneProperties()
