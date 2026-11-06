@@ -105,9 +105,13 @@ namespace ReBuzzTests
             var path = Path.Combine(bin, "Gear", "Generators", "Modern Pattern Editor.NET.dll");
             if (!File.Exists(path)) Assert.Inconclusive($"the Modern Pattern Editor isn't built ({path})");
             // The editor takes its look from the app's theme (Themes\Default\ModernPatternEditor\*.xaml beside
-            // the app); here the app is the tests' folder, so the repository's theme goes there first.
+            // the app) and its keys from PEKeys.xml there (without it, it shows a message box and waits);
+            // here the app is the tests' folder, so the repository's theme and keys go there first.
+            string app = BuzzGUI.Common.Global.BuzzPath;
+            string keys = Path.Combine(app, "PEKeys.xml");
+            if (!File.Exists(keys)) File.Copy(Path.Combine(RepoRoot(), "RunTime", "PEKeys.xml"), keys);
             var theme = Path.Combine(RepoRoot(), "RunTime", "Themes", "Default");
-            var themeHere = Path.Combine(TestAssemblyDirectory.Value.ToString(), "Themes", "Default");
+            var themeHere = Path.Combine(app, "Themes", "Default");
             foreach (var file in Directory.GetFiles(theme, "*", SearchOption.AllDirectories))
             {
                 var to = Path.Combine(themeHere, Path.GetRelativePath(theme, file));
@@ -120,6 +124,7 @@ namespace ReBuzzTests
 
             var type = Assembly.LoadFrom(path).GetType("WDE.ModernPatternEditor.ModernPatternEditorMachine", true)!;
             var sw = Stopwatch.StartNew();
+            wpfStage += ", created";
             var editor = Activator.CreateInstance(type, new object[] { null! })!;
             var control = (UserControl)type.GetMethod("PatternEditorControl")!.Invoke(editor, null)!;
             type.GetMethod("SetEditorPattern")!.Invoke(editor, new object[] { pattern });
@@ -135,9 +140,11 @@ namespace ReBuzzTests
                 Top = 0,
                 ShowActivated = false,
             };
+            wpfStage += ", showing";
             window.Show();
             window.UpdateLayout();
             double openMs = sw.Elapsed.TotalMilliseconds;
+            wpfStage += ", shown";
             try
             {
                 var bitmap = new RenderTargetBitmap(W, H, 96, 96, PixelFormats.Pbgra32);
@@ -174,17 +181,28 @@ namespace ReBuzzTests
             }
         }
 
+        static volatile string wpfStage = "start";
+
         [Test]
         public void DyeStressAndDyeEssenceInTheWpfParameterWindowAndPatternEditor()
         {
+            // A modal dialog or a layout that never ends would hang the run silently: after three minutes
+            // say where it stopped and end the test host.
+            using var watchdog = new Timer(_ =>
+            {
+                Console.Error.WriteLine($"[DyeStress WPF] stuck at: {wpfStage}");
+                Environment.FailFast($"DyeStressAndDyeEssenceInTheWpfParameterWindowAndPatternEditor stuck at: {wpfStage}");
+            }, null, TimeSpan.FromMinutes(3), Timeout.InfiniteTimeSpan);
             var lines = new List<string>();
             foreach (var (info, globals, name) in new[] { (DyeStress, 704, "dye-stress"), (Dye, 97, "dye-essence") })
             {
                 using var rig = new Rig(info);
                 var machine = rig.Effect;
                 Assert.That(machine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters.Count, Is.EqualTo(globals), info.Name);
+                wpfStage = info.Name + ": parameter window";
                 string window = MeasureParameterWindow(machine, name + "-wpf-parameters", globals);
                 TestContext.Out.WriteLine($"[notice] {info.Name} in WPF: {window}");
+                wpfStage = info.Name + ": pattern editor";
                 string editor = MeasurePatternEditor(machine, name + "-wpf-pattern-editor", globals);
                 lines.Add($"{info.Name}: {window}; {editor}");
                 TestContext.Out.WriteLine($"[notice] {info.Name} in WPF: {editor}");
