@@ -274,7 +274,10 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(fileMenu.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Open Recent").Menu, Is.Not.Null);
                 var viewMenu = bar.Items.OfType<NativeMenuItem>().Single(i => i.Header == "View").Menu;
                 Assert.That(viewMenu.Items.OfType<NativeMenuItem>().Select(i => i.Header), Is.EqualTo(new[] { "Machines", "Sequence", "Session", "Pattern", "Song Notes" }));
-                Assert.That(viewMenu.Items.OfType<NativeMenuItem>().All(i => i.Gesture == null), "view keys stay with the window (F2 renames in the Session View)");
+                Assert.That(viewMenu.Items.OfType<NativeMenuItem>().Select(i => i.Gesture), Is.EqualTo(new[] { new KeyGesture(Key.F3), new KeyGesture(Key.F4),
+                    new KeyGesture(Key.Tab, KeyModifiers.Control), new KeyGesture(Key.F2), new KeyGesture(Key.F10) }), "the view keys, key equivalents too (ui-gallery.md)");
+                var windowMenu = bar.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Window").Menu;
+                Assert.That(windowMenu.Items.OfType<NativeMenuItem>().First(i => i.Header == "Minimize").Gesture, Is.EqualTo(new KeyGesture(Key.M, KeyModifiers.Meta)), "⌘M");
                 var appMenu = AppMenu.ToNativeMenu(window.AppMenuModel());
                 var preferences = appMenu.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Preferences…");
                 Assert.That(preferences.Gesture, Is.EqualTo(new KeyGesture(Key.OemComma, KeyModifiers.Meta)));
@@ -514,6 +517,56 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 AudioPage.OutputSource = null;
+                PreferencesWindow.Current?.Close();
+                window.Close();
+            }
+        }
+
+        [AvaloniaTest]
+        public void TheViewItemsKeyEquivalentsDoWhatTheirKeysDoAndMinimizeIsTheKeyWindows()
+        {
+            // Fork (ui-gallery.md): the macOS menu bar's View items have their keys as key equivalents. The menu bar takes
+            // them before the window, so an item chosen by its key does what the key does in the window (Ctrl+Tab goes back
+            // from the Session View; F2 renames a clip there), and a click chooses the view. Minimize (⌘M) minimizes the
+            // key window.
+            using var restore = Studio.AfterTest(Reset);
+            var window = Open();
+            try
+            {
+                string Shown() => (window.Tabs.SelectedItem as TabItem)?.Header as string;
+                var menus = window.MenuModel(mac: true).ToList();
+                var session = AppMenu.Find(menus, "View/Session");
+                window.ShowView("Session");
+                MacApp.KeyDownSource = () => Key.Tab;               // chosen by Ctrl+Tab
+                session.Run();
+                Assert.That(Shown(), Is.EqualTo("Sequence"), "Ctrl+Tab from the Session View goes back, as in the window");
+                MacApp.KeyDownSource = () => null;                  // a click
+                session.Run();
+                session.Run();
+                Assert.That(Shown(), Is.EqualTo("Session"), "a click chooses the Session View");
+                MacApp.KeyDownSource = () => Key.F3;
+                AppMenu.Find(menus, "View/Machines").Run();
+                Assert.That(Shown(), Is.EqualTo("Machines"), "F3, which nothing in the Session View takes: the Machine View");
+
+                var prefs = PreferencesWindow.Open(Host);
+                Settle(prefs);
+                prefs.Activate();
+                Settle(prefs);
+                Assert.That(prefs.IsActive, Is.True, "Preferences is the key window");
+                AppMenu.Find(menus, "Window/Minimize").Run();
+                Assert.That(prefs.WindowState, Is.EqualTo(WindowState.Minimized), "the key window minimized");
+                Assert.That(window.WindowState, Is.Not.EqualTo(WindowState.Minimized), "not the main window");
+                prefs.Close();
+
+                // The Machine View's mute: M on a Mac (⌘M minimizes there), Ctrl+M elsewhere.
+                var machines = window.Tabs.Items.OfType<TabItem>().Select(t => t.Content).OfType<ReBuzz.Studio.Views.Machines.MachineView>().First();
+                bool macMute = machines.Canvas.KeyBindings.Any(b => b.Gesture.Equals(new KeyGesture(Key.M)));
+                bool ctrlMute = machines.KeyBindings.Any(b => b.Gesture.Equals(new KeyGesture(Key.M, KeyModifiers.Control)));
+                Assert.That((macMute, ctrlMute), Is.EqualTo(System.OperatingSystem.IsMacOS() ? (true, false) : (false, true)));
+            }
+            finally
+            {
+                MacApp.KeyDownSource = null;
                 PreferencesWindow.Current?.Close();
                 window.Close();
             }

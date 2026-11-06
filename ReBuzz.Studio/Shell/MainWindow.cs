@@ -204,6 +204,9 @@ namespace ReBuzz.Studio.Shell
                 desktop.TryShutdown();
         }
 
+        /// <summary>The window the keyboard is in (the key window on a Mac), else this one.</summary>
+        Window ActiveWindow => App.Windows.LastOrDefault(w => w.IsActive && w.IsVisible) ?? this;
+
         /// <summary>
         /// The menus: File, Edit, Transport, View, Window, Help. On a Mac (<paramref name="mac"/>)
         /// About, Preferences and Quit are in the app menu instead.
@@ -226,10 +229,11 @@ namespace ReBuzz.Studio.Shell
                 Item("Restart _audio", RestartAudio, Keys(Key.F12), running),
             });
             yield return Sub("_View", () => ViewItems(cmd));
+            // The key window's, as on a Mac: Preferences minimizes itself. ⌘M as macOS has it (the Machine View mutes with M).
             yield return Sub("_Window", () => new[]
             {
-                Item("_Minimize", () => WindowState = WindowState.Minimized),
-                Item("_Zoom", () => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized),
+                Item("_Minimize", () => ActiveWindow.WindowState = WindowState.Minimized, mac ? Keys(Key.M, KeyModifiers.Meta) : null),
+                Item("_Zoom", () => { var w = ActiveWindow; w.WindowState = w.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized; }),
                 MenuEntry.Separator,
                 Item("_Agent connection…", ShowAgent, Keys(Key.A, cmd | KeyModifiers.Shift), running),
             });
@@ -266,7 +270,12 @@ namespace ReBuzz.Studio.Shell
             }
         }
 
-        /// <summary>The views' tabs, with ReBuzz.exe's keys (F2 Pattern, F3 Machines, F4 Sequence, Ctrl+Tab Session, F10 Song Notes).</summary>
+        /// <summary>
+        /// The views' tabs, with ReBuzz.exe's keys (F2 Pattern, F3 Machines, F4 Sequence, Ctrl+Tab Session, F10 Song Notes),
+        /// key equivalents in the macOS menu bar too (fork, ui-gallery.md). The menu bar takes a key equivalent before the
+        /// window, so the item chosen by its key does what the key does in the window (ViewFromMenu): F2 still renames a
+        /// clip in the Session View, Ctrl+Tab still goes back from the Session View to Sequence.
+        /// </summary>
         IEnumerable<MenuEntry> ViewItems(KeyModifiers cmd)
         {
             foreach (var view in StudioViews.All)
@@ -275,13 +284,34 @@ namespace ReBuzz.Studio.Shell
                 yield return new MenuEntry
                 {
                     Header = "_" + title,
-                    Run = () => ShowView(title),
+                    Run = () => ViewFromMenu(title),
                     CanRun = () => tabs.ItemCount > 0,
                     IsChecked = () => (tabs.SelectedItem as TabItem)?.Header as string == title,
                     Gesture = ViewKey(title),
-                    NativeKey = false,          // the window's handler has them, after the views (F2 renames in the Session View)
                 };
             }
+        }
+
+        /// <summary>
+        /// A View item: chosen by a click, the view; chosen by its key (a key equivalent: AppKit's event is that key's),
+        /// the key as the key window's focused control would have had it, through the views to the window's handlers,
+        /// and the view only if nothing took it.
+        /// </summary>
+        internal void ViewFromMenu(string title)
+        {
+            var key = ViewKey(title);
+            if (key != null && MacApp.KeyThatChoseTheMenuItem() == key.Key && SendKey(key)) return;
+            ShowView(title);
+        }
+
+        /// <summary>A key, as the focused control (else the key window) gets it when typed. True when something took it.</summary>
+        bool SendKey(KeyGesture key)
+        {
+            var window = ActiveWindow;
+            var target = window.FocusManager?.GetFocusedElement() as Interactive ?? window;
+            var e = new KeyEventArgs { RoutedEvent = KeyDownEvent, Key = key.Key, KeyModifiers = key.KeyModifiers };
+            target.RaiseEvent(e);
+            return e.Handled;
         }
 
         static KeyGesture ViewKey(string title) => title switch
@@ -319,7 +349,8 @@ namespace ReBuzz.Studio.Shell
                    "Ctrl+Tab\tSession View (again: back to Sequence)\n" +
                    "F10\tSong Notes\n" +
                    $"{c},\tPreferences\n" +
-                   $"{s}{c}A\tagent connection (Preferences ▸ Agent)";
+                   $"{s}{c}A\tagent connection (Preferences ▸ Agent)" +
+                   (mac ? "\n⌘M\tminimize the window\nM\tmute the selected machines (Machines)" : "");
         }
 
         void AddKeys()
