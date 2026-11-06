@@ -42,7 +42,7 @@ namespace ReBuzz.Agent
         public async Task<T> Run<T>(string what, Func<T> work, CancellationToken cancellation = default)
         {
             if (!await gate.WaitAsync(Timeout, cancellation).ConfigureAwait(false))
-                throw new ToolError($"ReBuzz is still busy with {current ?? "another call"} after {Timeout.TotalSeconds:F0} s; try again shortly.");
+                throw new ToolError($"{Product.Name} is still busy with {current ?? "another call"} after {Timeout.TotalSeconds:F0} s; try again shortly.");
             try
             {
                 current = what;
@@ -52,7 +52,7 @@ namespace ReBuzz.Agent
                 if (finished != task)
                 {
                     cancellation.ThrowIfCancellationRequested();
-                    throw new ToolError($"{what} took longer than {Timeout.TotalSeconds:F0} s and was abandoned; ReBuzz may finish it later. Check studio_status before retrying.");
+                    throw new ToolError($"{what} took longer than {Timeout.TotalSeconds:F0} s and was abandoned; {Product.Name} may finish it later. Check studio_status before retrying.");
                 }
                 return await task.ConfigureAwait(false);
             }
@@ -74,7 +74,7 @@ namespace ReBuzz.Agent
         readonly System.Collections.Concurrent.BlockingCollection<Action> work = new();
         readonly Thread thread;
 
-        public DedicatedEngineThread(string name = "ReBuzz agent engine")
+        public DedicatedEngineThread(string name = Product.Name + " agent engine")
         {
             thread = new Thread(() =>
             {

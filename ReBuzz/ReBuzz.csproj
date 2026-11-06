@@ -128,7 +128,9 @@
     <ProjectReference Include="..\ReBuzz.Engine\ReBuzz.Engine.csproj" />
     <ProjectReference Include="..\3rdParty\serilog\Serilog.Sinks.RichTextBox.Wpf.csproj" />
     <ProjectReference Include="..\ModernPatternEditor\ModernPatternEditor.NET\ModernPatternEditor.NET.csproj" />
-    <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.BuzzUpdate\BuzzGUI.BuzzUpdate.csproj" />
+    <!-- Fork (NeoBuzz Live): no BuzzGUI.BuzzUpdate. Upstream's update check offered upstream ReBuzz's installer, which
+         would replace NeoBuzz Live. The project stays in the solution, built but not referenced or shipped, and inert
+         (UpdateService.Enabled), to be removed or pointed at NeoBuzz Live's releases later. -->
     <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" />
     <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.EnvelopeControl\BuzzGUI.EnvelopeControl.csproj" />
     <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.FileBrowser\BuzzGUI.FileBrowser.csproj" />
@@ -210,8 +212,29 @@
   <PropertyGroup>
     <!-- Fork (engine-split.md PR 10): ReBuzz.Engine stamps BuildDate.txt before it builds, before this project. -->
     <ProduceReferenceAssembly>True</ProduceReferenceAssembly>
-    <Title>ReBuzz</Title>
+    <Title>NeoBuzz Live</Title>
   </PropertyGroup>
+
+  <!-- Fork (rename): the executable people launch is NeoBuzzLive.exe (ReBuzz.Product.WindowsExe). Only the apphost,
+       the small native launcher, takes the new name: it starts ReBuzz.dll, whose name it carries, so the assembly that
+       machines, plugins and tests load by name stays ReBuzz (with ReBuzz.runtimeconfig.json and ReBuzz.deps.json).
+       Its version resource says NeoBuzz Live (AssemblyInfo.cs), as Task Manager and the volume mixer show it. -->
+  <PropertyGroup>
+    <AppExecutableName>NeoBuzzLive</AppExecutableName>
+  </PropertyGroup>
+  <Target Name="NameTheAppHost" AfterTargets="_ComputeNETCoreBuildOutputFiles" BeforeTargets="AssignTargetPaths" Condition="'$(AppHostIntermediatePath)' != ''">
+    <ItemGroup>
+      <None Condition="'%(FullPath)' == '$(AppHostIntermediatePath)'">
+        <Link>$(AppExecutableName)$(_NativeExecutableExtension)</Link>
+      </None>
+    </ItemGroup>
+  </Target>
+  <!-- dotnet run (and anything else that asks for RunCommand) starts it under that name too. -->
+  <Target Name="RunTheNamedAppHost" BeforeTargets="ComputeRunArguments">
+    <PropertyGroup>
+      <RunCommand>$(TargetDir)$(AppExecutableName)$(_NativeExecutableExtension)</RunCommand>
+    </PropertyGroup>
+  </Target>
   <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net10.0-windows|AnyCPU'">
     <DebugType>full</DebugType>
   </PropertyGroup>

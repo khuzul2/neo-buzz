@@ -89,7 +89,7 @@ namespace NeoBuzz.Editor
                 var message = new TextBlock { Text = text ?? "", Foreground = Theme.Text, TextWrapping = Avalonia.Media.TextWrapping.Wrap, MaxWidth = 420, Margin = new Thickness(0, 0, 0, 12) };
                 var window = new Window
                 {
-                    Title = string.IsNullOrEmpty(caption) ? "ReBuzz" : caption,
+                    Title = string.IsNullOrEmpty(caption) ? "NeoBuzz Live" : caption,     // the app's name (ReBuzz.Product.Name; machines don't reference it)
                     SizeToContent = SizeToContent.WidthAndHeight,
                     CanResize = false,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner,

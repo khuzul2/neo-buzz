@@ -77,7 +77,7 @@ Loud but steady: above 0 dBFS, under +60 dBFS, not growing, at the setting named
 
 ## Needs a window
 
-Managed machines whose construction fails without a UI: not an audio fault. `gear_list` says they work in ReBuzz on Windows with their window.
+Managed machines whose construction fails without a UI: not an audio fault. `gear_list` says they work in NeoBuzz Live on Windows with their window.
 
 None.
 

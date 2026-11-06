@@ -66,7 +66,7 @@ An 808 boom kick and its hats:
 - A hit keeps the tune, decay and tone it started with: a slide on `Kick tune` changes the next hit, not the one sounding. Level and pan move the sounding hit (smoothed over 10 ms).
 - The closed hat (F#2, the pedal key G#2 and CH) chokes the open hat; nothing else chokes.
 - Accent is per tick, not per track: on any track it accents every hit of that tick, notes and hit columns alike.
-- One stereo output: per-voice outputs aren't there (ReBuzz's machines output one stereo pair to every connection). For a kick on its own channel, use a second Neo Drums with the other voices' levels at −inf, or the same kit twice with complementary levels.
+- One stereo output: per-voice outputs aren't there (NeoBuzz Live's machines output one stereo pair to every connection). For a kick on its own channel, use a second Neo Drums with the other voices' levels at −inf, or the same kit twice with complementary levels.
 - `Kick sweep` is in semitones, `Kick sweep time` is a time constant (63 % of the fall), not the whole fall.
 - The hats', crash's and ride's tune is in semitones from the TR-808's oscillators (205 Hz … 800 Hz), not a pitch.
 

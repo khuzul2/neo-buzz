@@ -41,9 +41,15 @@ on:
       - 'NeoBuzz.MachineTests/**'
       - '.github/workflows/fork-mac.yml'
   workflow_dispatch:
+    inputs:
+      gallery:
+        description: 'Instead of the tests: draw the UI gallery on a Mac (docs/specs/ui-gallery.md), pushed to ci-artifacts-mac'
+        type: boolean
+        default: false
 
 jobs:
   portable-tests:
+    if: ${{ inputs.gallery != true }}
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -118,15 +124,17 @@ jobs:
       run: python3 tools/headless-live.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/live" --expect-workgroup
 
     # MIDI and Link (mac-engine.md M6), as another app on the Mac sees them: a keyboard plugged in
-    # while it plays, notes into ReBuzz's virtual destination, clock out from its virtual source,
+    # while it plays, notes into its virtual destination "NeoBuzz Live", clock out from its virtual source,
     # and the Link helper running beside it.
     - name: MIDI and Link on macOS (CoreMIDI)
       if: always()
       run: python3 tools/headless-midi.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/midi"
 
-    # The studio (docs/specs/studio-mvp.md): its headless view tests on arm64, then ReBuzz.app
-    # (self-contained, ad-hoc signed) built, packed into the disk image people install from
-    # (tools/mac-dmg.sh), and installed out of it; the installed copy is started for real: it opens
+    # The studio (docs/specs/studio-mvp.md): its headless view tests on arm64, then NeoBuzz Live.app
+    # (self-contained, ad-hoc signed; tools/mac-bundle.sh checks its Info.plist names, executable and
+    # signature) built, packed into the disk image people install from (tools/mac-dmg.sh: it mounts
+    # as "NeoBuzz Live", the app in it is named NeoBuzz Live and verifies, the read-me says how to
+    # install and open it), and installed out of it; the installed copy is started for real: it opens
     # its window, starts the engine with the runner's audio device, and quits (--smoke). The disk
     # image is uploaded with the run; mac-release.yml publishes it when the change reaches main.
     - name: Studio (Avalonia, headless) on arm64
@@ -136,35 +144,36 @@ jobs:
         SCREENSHOTS_DIR: ${{ github.workspace }}/studio-screenshots
       run: dotnet test ReBuzz.Studio.Tests --logger "console;verbosity=normal" 2>&1 | tee studio-test.log
 
-    - name: ReBuzz.app (osx-arm64)
+    - name: NeoBuzz Live.app (osx-arm64)
       if: always()
       shell: bash
       run: |
         brew install dylibbundler libsndfile >/dev/null || true
         tools/mac-bundle.sh "$RUNNER_TEMP/app"
-        tools/mac-dmg.sh "$RUNNER_TEMP/app/ReBuzz.app" "$RUNNER_TEMP/app/ReBuzz-macos-arm64.dmg" "$RUNNER_TEMP/installed"
+        tools/mac-dmg.sh "$RUNNER_TEMP/app/NeoBuzz Live.app" "$RUNNER_TEMP/app/NeoBuzz-Live-macos-arm64.dmg" "$RUNNER_TEMP/installed"
         # The installed app's runtime settings: methods with loops compiled fully optimised at once (daw-modes.md §8.1).
-        grep -Eq '"System.Runtime.TieredCompilation.QuickJitForLoops": *false' "$RUNNER_TEMP/installed/ReBuzz.app/Contents/MacOS/ReBuzz.Studio.runtimeconfig.json" || { echo "::error::the app's runtimeconfig.json doesn't turn quick JIT for loops off"; exit 1; }
+        grep -Eq '"System.Runtime.TieredCompilation.QuickJitForLoops": *false' "$RUNNER_TEMP/installed/NeoBuzz Live.app/Contents/MacOS/ReBuzz.Studio.runtimeconfig.json" || { echo "::error::the app's runtimeconfig.json doesn't turn quick JIT for loops off"; exit 1; }
         python3 -c "import subprocess, sys; sys.exit(subprocess.run(sys.argv[1:], timeout=180).returncode)" \
-          "$RUNNER_TEMP/installed/ReBuzz.app/Contents/MacOS/ReBuzz.Studio" --smoke --settings "$RUNNER_TEMP/studio-settings" 2>&1 | tee studio-smoke.log
+          "$RUNNER_TEMP/installed/NeoBuzz Live.app/Contents/MacOS/NeoBuzz Live" --smoke --settings "$RUNNER_TEMP/studio-settings" 2>&1 | tee studio-smoke.log
         grep -q "smoke: ok" studio-smoke.log
+        grep -q "^\[NeoBuzz Live\] " studio-smoke.log
 
     - name: Upload the disk image
       if: always()
       uses: actions/upload-artifact@v6
       with:
-        name: ReBuzz-macos-arm64-dmg
-        path: ${{ runner.temp }}/app/ReBuzz-macos-arm64.dmg
+        name: NeoBuzz-Live-macos-arm64-dmg
+        path: ${{ runner.temp }}/app/NeoBuzz-Live-macos-arm64.dmg
         compression-level: 0
         if-no-files-found: ignore
 
-    # P3's exit (docs/specs/studio-mvp.md S9): ReBuzz.app itself, with the runner's audio device and
+    # P3's exit (docs/specs/studio-mvp.md S9): NeoBuzz Live.app itself, with the runner's audio device and
     # agents allowed on a free port for this run (--agent-port, --agent-token: nothing saved), and
     # the A7 live scenarios against it over Streamable HTTP, as Claude Code connects: transport,
     # session launch and record, midi_play, meters_read, a render. Then the system asks it to quit.
-    - name: The studio's MCP server, live (ReBuzz.app)
+    - name: The studio's MCP server, live (NeoBuzz Live.app)
       if: always()
-      run: python3 tools/headless-live.py --studio "$RUNNER_TEMP/installed/ReBuzz.app/Contents/MacOS/ReBuzz.Studio" "$RUNNER_TEMP/studio-live" --expect-workgroup
+      run: python3 tools/headless-live.py --studio "$RUNNER_TEMP/installed/NeoBuzz Live.app/Contents/MacOS/NeoBuzz Live" "$RUNNER_TEMP/studio-live" --expect-workgroup
 
     - name: Summary
       if: always()
@@ -177,3 +186,54 @@ jobs:
           echo "::notice title=$f::total ${total:-?}, passed ${passed:-?}, failed ${failed:-0}"
           grep -E "^\s+Failed " "$f" | head -20 | while read -r line; do echo "::error title=$f::$line"; done
         done
+
+  # The UI gallery on a Mac (docs/specs/ui-gallery.md), by hand only (gallery: true): the headless gallery drawn with
+  # macOS's fonts, and the real NeoBuzz Live.app on the runner's screen (screencapture: its window and the menu bar), to
+  # check the headless pictures against. Pushed as one commit to the ci-artifacts-mac branch, overwritten each time.
+  gallery:
+    if: ${{ inputs.gallery == true }}
+    runs-on: macos-15
+    timeout-minutes: 50
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@v5
+
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Libraries
+      run: brew install portaudio libsndfile dylibbundler >/dev/null || true
+
+    - name: Headless gallery (macOS fonts)
+      shell: bash
+      env:
+        GALLERY_DIR: ${{ github.workspace }}/gallery/headless
+      run: |
+        git submodule update --init --depth 1 3rdParty/serilog/serilog
+        dotnet test ReBuzz.Studio.Tests -c Release --filter TestCategory=Gallery --logger "console;verbosity=normal" 2>&1 | grep -E "gallery\]|Passed |Failed |Total tests|error" || true
+
+    - name: The real app on the runner's screen
+      if: always()
+      shell: bash
+      run: |
+        tools/mac-bundle.sh "$RUNNER_TEMP/app"
+        tools/ui-gallery-mac.sh "$RUNNER_TEMP/app/NeoBuzz Live.app" "gallery/headless/Night Drive.bmxml" gallery/real
+
+    - name: Publish to ci-artifacts-mac
+      if: always() && hashFiles('gallery/**/*.png') != ''
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        dir="$RUNNER_TEMP/ci-artifacts-mac"
+        mkdir -p "$dir"
+        cp -R gallery/. "$dir/"
+        echo "Mac UI gallery from run $GITHUB_RUN_ID of $GITHUB_REF_NAME at $GITHUB_SHA." > "$dir/README.md"
+        cd "$dir"
+        git init -q -b ci-artifacts-mac
+        git add -A
+        git -c user.name='github-actions' -c user.email='github-actions@users.noreply.github.com' commit -q -m "Mac UI gallery: run $GITHUB_RUN_ID ($GITHUB_REF_NAME $GITHUB_SHA)"
+        git push -q -f "https://x-access-token:$GH_TOKEN@github.com/$GITHUB_REPOSITORY.git" ci-artifacts-mac
+        echo "::notice title=Mac UI gallery::$(find . -name '*.png' | wc -l) pictures pushed to ci-artifacts-mac"

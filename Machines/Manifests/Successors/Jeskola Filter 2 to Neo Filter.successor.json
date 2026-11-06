@@ -310,7 +310,7 @@
     "Jeskola Filter 2 is a Chamberlin state-variable filter (measured: its response matches one within 0.01 dB): f from its Cutoff scale (f from its own scale: 0.0123 at 0 rising smoothly to 1 at 128, measured every 4 steps and between them (0.08 %)), damping q = 1 − sin(π · Resonance/256). Its cutoff in Hz is a share of the song's rate: the tables are fitted at 44.1 kHz (the cutoff at the top of the scale, f = 1, is fs/6, 7.35 kHz); at 48 kHz the old one's cutoffs are 8.8 % higher.",
     "Near the top of its scale the Chamberlin filter isn't an analog shape: its high-pass rises on to Nyquist and its low-pass at f = 1 passes everything. Neo Filter's, four times oversampled, keeps the analog shape, so each point is fitted (cutoff, Q and a level on Output), within 2.4 dB of the old one's third octaves (Resonance up to 116; between the table's points, in the logarithm).",
     "Resonance above 116 is a Q beyond Neo Filter's (it holds at 99.4, the last step below self-oscillation), and 128 is no damping at all: the old one's ringing grows without bound (+54 dBFS in 30 s on noise, its safe range ends at 118), Neo Filter's self-oscillation is a bounded tone.",
-    "Mono in and out: ReBuzz gives a mono native effect left + right summed, so the input connections take +6 dB; Neo Filter keeps the stereo."
+    "Mono in and out: NeoBuzz Live gives a mono native effect left + right summed, so the input connections take +6 dB; Neo Filter keeps the stereo."
   ],
   "tolerance": {
     "loudness_db": 1,

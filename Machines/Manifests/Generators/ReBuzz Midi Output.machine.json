@@ -36,7 +36,7 @@
    "default": 0,
    "kind": "int",
    "a": 0,
-   "description": "The MIDI output device, by its number in ReBuzz's list"
+   "description": "The MIDI output device, by its number in NeoBuzz Live's list"
   },
   {
    "index": 1,

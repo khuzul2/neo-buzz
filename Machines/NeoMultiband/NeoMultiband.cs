@@ -71,7 +71,7 @@ namespace NeoBuzz.Multiband
                     ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Multiband — a multiband compressor and upward expander for mastering and buses: 3 or 4 bands " +
                         "split by linear-phase crossovers that sum back to the input exactly (about 96 ms of latency, which " +
-                        "ReBuzz compensates) or zero-latency minimum-phase Linkwitz–Riley ones with the same band shapes; per band " +
+                        "NeoBuzz Live compensates) or zero-latency minimum-phase Linkwitz–Riley ones with the same band shapes; per band " +
                         "threshold, ratio, attack, release, knee, range, makeup, solo and bypass; the detector in stereo or " +
                         "mid/side; mix and output. With every band at 1:1 it passes the input, delayed, bit for bit.\n\n" +
                         "Part of neo-buzz (docs/specs/machines.md).", "Neo Multiband"),

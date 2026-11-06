@@ -35,7 +35,7 @@ namespace ReBuzz.AgentEval
             var clock = Stopwatch.StartNew();
             var init = c.Initialize();
             ServerVersion ??= $"{J.Str(init["serverInfo"]?["version"])} (protocol {J.Str(init["protocolVersion"])})";
-            Log($"ReBuzz {ServerVersion} answered in {clock.Elapsed.TotalSeconds:F1} s");
+            Log($"{Product.Name} {ServerVersion} answered in {clock.Elapsed.TotalSeconds:F1} s");
             if (verbose) c.CallMade += call => Console.Error.WriteLine($"    {call.Tool} {(call.IsError ? "ERROR " : "")}{call.Seconds:F2}s: {Trim(call.Text, 160)}");
             return c;
         }
@@ -50,7 +50,7 @@ namespace ReBuzz.AgentEval
             if (client != null && Alive(client)) return new Studio(client);
             if (client != null)
             {
-                Problems.Add($"ReBuzz stopped answering before {what}; restarted it. Its last words: {Trim(client.Diagnostics(), 600)}");
+                Problems.Add($"{Product.Name} stopped answering before {what}; restarted it. Its last words: {Trim(client.Diagnostics(), 600)}");
                 client.Dispose();
             }
             client = Start();
@@ -175,7 +175,7 @@ namespace ReBuzz.AgentEval
         public void Close()
         {
             if (client == null) return;
-            if (!client.CloseAndWait(60)) Problems.Add("ReBuzz didn't exit within 60 s of stdin closing.");
+            if (!client.CloseAndWait(60)) Problems.Add(Product.Name + " didn't exit within 60 s of stdin closing.");
             if (client.ProtocolViolations.Count > 0) Problems.Add("stdout carried non-protocol lines: " + string.Join(" | ", client.ProtocolViolations.Take(3)));
             client.Dispose();
             client = null;

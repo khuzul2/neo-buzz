@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | S0–S9 built 2026-11-03 (§7). The exit test passes headless on Linux and arm64, and the A7 live scenarios pass against the studio app on Linux (Xvfb) and against ReBuzz.app on macOS CI. Left: the user's hand test on a Mac (§5), and P2's hands-on test (mac-engine.md) |
+| Status | S0–S9 built 2026-11-03 (§7). The exit test passes headless on Linux and arm64, and the A7 live scenarios pass against the studio app on Linux (Xvfb) and against NeoBuzz Live.app on macOS CI. Left: the user's hand test on a Mac (§5), and P2's hands-on test (mac-engine.md) |
 | Scope | cross-platform.md §5.2 P3: ReBuzz's studio UI on Avalonia, Mac first. Windows keeps the WPF app until P4 |
 | Exit | On a Mac: compose a song from scratch with Neo and Pedal machines; old songs open (native machines as placeholders) and save back without loss; the MCP server works in studio mode |
 | Related | cross-platform.md (D1–D5, §3.1 O2), mac-engine.md (the engine on macOS), machines.md §4 (the Neo editor kit), session-view.md (the Session View) |
@@ -54,7 +54,7 @@
    - The Mac job builds the app bundle, and starts it headless, once per PR into main.
 8. **The dev loop builds locally.** The workspace can't reach NuGet, so a workflow (`dev-nuget-cache.yml`) restores the studio's and the tests' packages on Linux and publishes them as one asset of a prerelease (`dev-nuget-cache`). A local build reads them as its only package source. This is tooling only: the product build restores from NuGet as usual.
 9. **The app on the Mac in P3:**
-   - CI publishes a self-contained osx-arm64 `ReBuzz.app` (zip) with PortAudio, libsndfile and the Link helper inside, unsigned.
+   - CI publishes a self-contained osx-arm64 `NeoBuzz Live.app` (zip) with PortAudio, libsndfile and the Link helper inside, unsigned.
    - It needs no .NET install.
    - Settings live in `~/Library/Application Support/ReBuzz`, as for `rebuzz-headless`.
 10. **Edit commands go to the selected view first.** Avalonia's window key bindings see Ctrl/Command shortcuts before the views do. So the shell's Edit menu and its shortcuts (Undo, Redo, Cut, Copy, Paste) go to a focused text box first, as a Mac app's go to the first responder, then to the selected tab's view when it implements `IStudioEditTarget`. A view returns false to pass the command on to the song's undo history. Views don't bind these keys themselves.
@@ -79,13 +79,13 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 
 ## 5. What only the user can do
 
-- **Try it on a Mac:** download the disk image from the release *ReBuzz for Mac (latest main)*, drag ReBuzz to Applications, open it (Open Anyway the first time). The feel matters here: scrolling, fonts, Retina, keyboard shortcuts. So does the menu bar.
+- **Try it on a Mac:** download the disk image from the release *NeoBuzz Live for Mac (latest main)*, drag NeoBuzz Live to Applications, open it (Open Anyway the first time). The feel matters here: scrolling, fonts, Retina, keyboard shortcuts. So does the menu bar.
 - **The exit test by hand:** a song from scratch, and an old song of yours. The checklist below.
 - **Signing:** decided against (decision 2): no Developer ID, no notarization. The ad-hoc signed disk image plus the one-time Open Anyway step is the distribution.
 
 **The hand test** (about ten minutes, on an Apple-silicon Mac):
-1. **Get it.** GitHub → the repo's Releases → *ReBuzz for Mac (latest main)* → `ReBuzz-macos-arm64.dmg`. Open it and drag ReBuzz onto Applications. (A branch's build: Actions → *Fork Mac* → its run → Artifacts → `ReBuzz-macos-arm64-dmg`, a zip holding the disk image.)
-2. **Open it.** Double-click ReBuzz in Applications. macOS says it can't verify it: close the message (not Move to Trash), then System Settings → Privacy & Security → Open Anyway, and confirm. Once per version. (Or in Terminal: `xattr -dr com.apple.quarantine /Applications/ReBuzz.app`.)
+1. **Get it.** GitHub → the repo's Releases → *NeoBuzz Live for Mac (latest main)* → `NeoBuzz-Live-macos-arm64.dmg`. Open it and drag NeoBuzz Live onto Applications. (A branch's build: Actions → *Fork Mac* → its run → Artifacts → `ReBuzz-macos-arm64-dmg`, a zip holding the disk image.)
+2. **Open it.** Double-click NeoBuzz Live in Applications. macOS says it can't verify it: close the message (not Move to Trash), then System Settings → Privacy & Security → Open Anyway, and confirm. Once per version. (Or in Terminal: `xattr -dr com.apple.quarantine /Applications/ReBuzz.app`.)
 3. **Build a chain.** Machines tab: right-click → New ▸ Generators ▸ Neo Poly, New ▸ Effects ▸ Neo Verb. Shift-drag Poly → Verb, Verb → Master. Right-click the Poly → Master arrow → disconnect.
 4. **Turn a knob.** Double-click Poly: its editor. Drag F1 cutoff. ⌘Z undoes it.
 5. **Type a pattern.** F2. Click the grid, Tab to the Note column, type `z c b q`.
@@ -93,7 +93,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 7. **Play.** Loop on (the transport bar), Space: you hear it, looping. Space again stops. (F5 and F8 do too, fn+F5 and fn+F8 on a Mac keyboard.) Click in the Song Notes editor and press Space: a space is typed and the song plays on.
 8. **Save, reopen.** ⇧⌘S (save as `.bmxml`), ⌘N, ⌘O it again, Space: the same.
 9. **An old song of yours.** ⌘O a `.bmx` made on Windows: native machines show "missing", Neo and Pedal machines play. ⇧⌘S a copy, reopen it: the same machines, patterns and arrangement.
-10. **An agent.** ⇧⌘A: tick Allow agents, Copy the line. Paste it in a terminal (`claude mcp add --transport http rebuzz …`). In Claude Code: "What's in my ReBuzz song?" The status line shows `Agent: studio_status…`, and the answer names your machines.
+10. **An agent.** ⇧⌘A: tick Allow agents, Copy the line. Paste it in a terminal (`claude mcp add --transport http neobuzz-live …`). In Claude Code: "What's in my NeoBuzz Live song?" The status line shows `Agent: studio_status…`, and the answer names your machines.
 11. **Look and feel.** Fonts and Retina sharpness, trackpad scroll and pinch in the machine view, the menu bar (what it shows with a machine window in front), ⌘ shortcuts.
 12. **Song Notes.** F10 (fn+F10 on a Mac keyboard): type a few lines, select a word and ⌘B, the • button on two lines, ⌘K for a link. ⌘Z undoes them one by one. ⌘S, reopen: the notes are there.
 
@@ -126,8 +126,9 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - F5 plays and stop stops;
   - save as, new, then open gives the song back.
   - The window is saved as PNGs, which CI uploads (`studio-screenshots`).
+  - The UI gallery for reviews (`GalleryTests`, category `Gallery`, explicit: `dotnet test ReBuzz.Studio.Tests --filter TestCategory=Gallery`): every view, menu, context menu, window and dialog with a demo song, at 1440×900 and scale 2, with an index; ReBuzz.exe's half is `--ui-shots` on the package run. How to regenerate both: [ui-gallery.md](ui-gallery.md).
 - **Dev NuGet cache** (§3.8): `dev-nuget-cache.yml` keeps the restored packages as one release asset (`dev-nuget-cache`, a prerelease, not a ReBuzz release). Locally: `dotnet restore <project> --configfile <a nuget.config whose only source is that unpacked folder>`. The test projects also run locally that way.
-- **The Mac app:** `tools/mac-bundle.sh` builds `ReBuzz.app`. It is self-contained osx-arm64, with PortAudio, libsndfile (and its libraries) and the Link helper inside, and ad-hoc signed, with ReBuzz's icon. `tools/mac-dmg.sh` packs it into `ReBuzz-macos-arm64.dmg` with dmgbuild (MIT): a window with the app, an arrow to Applications and how to open an app that isn't notarized (`tools/mac-dmg/`: the settings, and the background with the script that draws it), plus `Read me first.txt`. The Mac job runs the headless view tests on arm64, builds the app and the disk image, checks the image (it verifies, mounts with those items, and the app copied out keeps its signature), then starts the installed copy for real (`--smoke`, with the runner's audio device) and runs the live MCP scenarios against it, and uploads the image (`ReBuzz-macos-arm64-dmg`). `mac-release.yml` publishes it as the prerelease *ReBuzz for Mac (latest main)* (tag `mac-latest`) when the change reaches main: it reuses the image Fork Mac built for the same tree, so it spends no macOS minutes.
+- **The Mac app:** `tools/mac-bundle.sh` builds `NeoBuzz Live.app` (its executable "NeoBuzz Live", the studio's apphost renamed; the bundle identifier `org.neobuzz.rebuzz`). It is self-contained osx-arm64, with PortAudio, libsndfile (and its libraries) and the Link helper inside, and ad-hoc signed, with ReBuzz's icon. `tools/mac-dmg.sh` packs it into `NeoBuzz-Live-macos-arm64.dmg` (the volume "NeoBuzz Live") with dmgbuild (MIT): a window with the app, an arrow to Applications and how to open an app that isn't notarized (`tools/mac-dmg/`: the settings, and the background with the script that draws it), plus `Read me first.txt`. The Mac job runs the headless view tests on arm64, builds the app and the disk image, checks the image (it verifies, mounts as "NeoBuzz Live" with those items, the app's Info.plist names NeoBuzz Live, the read-me says how to install and open it, and the app copied out keeps its signature), then starts the installed copy for real (`--smoke`, with the runner's audio device) and runs the live MCP scenarios against it, and uploads the image (`ReBuzz-macos-arm64-dmg`). `mac-release.yml` publishes it as the prerelease *ReBuzz for Mac (latest main)* (tag `mac-latest`) when the change reaches main: it reuses the image Fork Mac built for the same tree, so it spends no macOS minutes.
 
 **S1, the Neo editors** (#55).
 - **`NeoBuzz.Editor.Avalonia`** (`Machines/NeoBuzz.Editor.Avalonia/`, linked as source like the WPF kit):
@@ -340,10 +341,10 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - *MIDI:* the backend's inputs and outputs (CoreMIDI on macOS; none on Linux) and the remembered ones that aren't connected, checked to open them, with their state (open, not connected, didn't open). A change saves the device by name and opens the inputs (or outputs) again as WPF's OK does. The page follows plugging (polled each second while shown; the engine's watcher opens remembered devices). Below them, `MIDISettings`.
   - *Sync:* Ableton Link (with its peers and tempo), start/stop with peers, follow MIDI clock in, and MIDI clock out per open output (and the chosen ones not open). `SessionSync` keeps them.
   - *Agent:* S8.
-  - *General:* `EngineSettings` and `GeneralSettings` from their `[BuzzSetting]`s, as WPF's Settings window lists them: a check box for on/off, a choice of the options (the default in bold), text otherwise; names in sentence case, the description under each. The ones only ReBuzz.exe reads aren't shown (WPF rendering and DPI, the sequence editor type, the piano keyboard, update checks, the Windows fill thread).
+  - *General:* `EngineSettings` and `GeneralSettings` from their `[BuzzSetting]`s, as WPF's Settings window lists them: a check box for on/off, a choice of the options (the default in bold), text otherwise; names in sentence case, the description under each. The ones only ReBuzz.exe reads aren't shown (WPF rendering and DPI, the sequence editor type, the piano keyboard, the Windows fill thread). Upstream's update check is no setting at all any more (FORK.md: no update check).
 - **The Session View's Sync and Controllers menus** (⚙), as WPF's, which S5 left out.
 - **Menus** (`AppMenu`): one model, shown as the macOS menu bar (`NativeMenu`) on a Mac and as the window's menu elsewhere.
-  - The app menu: About ReBuzz, Preferences… ⌘,; Avalonia adds Services, Hide, Show All and Quit ⌘Q (Quit asks about unsaved changes through the window's closing).
+  - The app menu: About NeoBuzz Live, Preferences… ⌘,; Avalonia adds Services, Hide NeoBuzz Live, Show All and Quit NeoBuzz Live ⌘Q (`Application.Name`) (Quit asks about unsaved changes through the window's closing).
   - File (New, Open…, Open Recent ▸, Save, Save As…; Exit elsewhere), Edit (Undo, Redo, Cut, Copy, Paste; Preferences elsewhere), Transport (Play or Stop Space, Play F5, Stop F8, Record F7, Restart audio F12; Space is the window's key, not a menu bar key equivalent, so the menu bar shows it in the item's text: §3.11), View (the tabs: Pattern F2, Machines F3, Sequence F4, Session Ctrl+Tab and back), Window (Minimize, Zoom, Agent connection… ⇧⌘A), Help (Keyboard shortcuts…; About elsewhere).
   - Submenus are built as they open (recent files). The View keys are the window's, after the views (F2 renames in the Session View), not menu key equivalents; Minimize has no ⌘M, which the machine view uses for mute.
 - **Recent files:** File ▸ Open Recent lists the engine's "Recent File List" (song, then its folder), greyed when the file is gone, with Clear Menu.
@@ -362,7 +363,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
 
 **S8, the MCP server in studio mode** (`Shell/AgentServer.cs`, `Preferences/AgentPage.cs`).
 - As ReBuzz.exe's `StudioAgent`: `AgentHost` in "studio" mode on the studio's dispatcher, so the A7 live tools (transport, session launch and record, `midi_play`, meters) play through the studio's audio device. It starts with the engine and listens on 127.0.0.1 (Streamable HTTP, bearer token) when allowed.
-- **Preferences ▸ Agent** (Shift+Command+A, Window ▸ Agent connection…): allow agents, the port (7481), the state (listening, or the port in use), the `claude mcp add --transport http rebuzz … --header "Authorization: Bearer …"` line with Copy and New token, and the log folder. The settings are WPF's `AgentSettings` (`BuzzGUI\AgentSettings`); the token is in the settings folder's `settings.json`, the logs in its `agent-logs`.
+- **Preferences ▸ Agent** (Shift+Command+A, Window ▸ Agent connection…): allow agents, the port (7481), the state (listening, or the port in use), the `claude mcp add --transport http neobuzz-live … --header "Authorization: Bearer …"` line with Copy and New token, and the log folder. The settings are WPF's `AgentSettings` (`BuzzGUI\AgentSettings`); the token is in the settings folder's `settings.json`, the logs in its `agent-logs`.
 - The status line shows where it listens, or the call running ("Agent: machine_add…").
 - The engine's messages during an agent call become the call's error, not a dialog (`StudioMessages`, as WPF's `UserMessagesViaMessageBox`).
 - **The views follow the agent's edits** through the engine's events, as they follow the user's: the machine view (song and machine events), the Session View (`SessionLayout.Changed` and its 50 ms poll), the transport, title and status (the window's 100 ms timer), the Neo editors (their parameters, as undo shows).
@@ -388,7 +389,7 @@ S1 to S6 are independent once S0 is in: they run in parallel, each in its own br
   - `ReBuzz.Studio --agent-port <port> [--agent-token <token>]` allows agents for one run, on that port with that token (else the saved one), whatever Preferences ▸ Agent says, and saves nothing. The page shows it; a change there ends it. Tested headless too.
   - `tools/headless-live.py` gained Streamable HTTP. `--studio <app>` starts the app with audio, a settings folder of its own and a fresh token, waits for its server, runs the scenarios and asks it to quit (SIGTERM: it has unsaved changes). `--url <url> --token <token>` drives one already running.
   - New scenarios, for rebuzz-headless too: a Session View clip launched, heard and stopped; a two-bar take recording what midi_play plays into it on the bar. With the old ones (midi_play, meters_read, the transport in real time, four synths, a render with the device open), that is A7's live set.
-  - CI: Linux runs it on Xvfb with the null sink; the Mac job runs it against `ReBuzz.app` after the smoke start, with `--expect-workgroup`.
+  - CI: Linux runs it on Xvfb with the null sink; the Mac job runs it against `NeoBuzz Live.app` after the smoke start, with `--expect-workgroup`.
 - **Found:**
   - **BMXML songs replay their stateless values when they open** (the engine, Windows too). `BMXMLFile.CopyParameters` gives each machine the last saved value of every parameter, notes included; BMX's loader (`BMXFile.CopyParameters`) gives state parameters only, as Buzz does. So a song saved after playing opens with its last note sounding until a note-off comes. The fix is one condition there (state, not a note, not the input group), but it changes Windows' engine, so it is left to the user. The test sets those values to "no value" before saving.
   - A machine's pattern editor without patterns (Master's, made when Master is selected) isn't in a BMX file, which links editors through patterns; BMXML keeps it. Nothing is lost.

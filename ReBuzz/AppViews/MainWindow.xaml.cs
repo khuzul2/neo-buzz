@@ -323,6 +323,7 @@ namespace ReBuzz
 
                 StartAutosave();
                 ParseArgs();
+                StartUiShots();     // fork (docs/specs/ui-gallery.md): --ui-shots <folder>
 
                 splashScreenWindow.UpdateText("Done");
                 splashScreenWindow.CloseWindow();
@@ -331,10 +332,10 @@ namespace ReBuzz
                 Topmost = false; // important
                 Focus();         // important
 
-                if (generalSettings.CheckForUpdates)
-                {
-                    BuzzGUI.BuzzUpdate.UpdateService.CheckForUpdates(Buzz);
-                }
+                // Fork (NeoBuzz Live): no update check. Upstream's (BuzzGUI.BuzzUpdate) polled ReBuzz's latest release
+                // and offered upstream's installer, which would replace NeoBuzz Live; its builds come from its own
+                // downloads (Releases → mac-latest, the Windows package). The UpdateCheckTests (AgentTests, ReBuzzTests,
+                // Studio.Tests) keep it out.
             };
 
             mainGrid.Loaded += (s, e2) =>
@@ -998,7 +999,7 @@ namespace ReBuzz
             if (Buzz.Modified)
             {
                 var song = Buzz.Song;
-                var result = UiUtils.MessageBox("Save changes to " + (song.SongName == null ? "Untitled" : song.SongName), "ReBuzz", MessageBoxButton.YesNoCancel);
+                var result = UiUtils.MessageBox("Save changes to " + (song.SongName == null ? "Untitled" : song.SongName), Product.Name, MessageBoxButton.YesNoCancel);
                 if (result == MessageBoxResult.Yes)
                 {
                     Buzz.SaveSongFile(song.SongName);
@@ -1099,6 +1100,7 @@ namespace ReBuzz
         /// </summary>
         private void StartAutosave()
         {
+            if (UiShotsRequested) return;   // fork (ui-gallery.md): no recovery question, no autosaves while the gallery draws
             try
             {
                 var leftovers = SongAutosave.FindLeftovers();
@@ -1107,7 +1109,7 @@ namespace ReBuzz
                     var newest = leftovers[0];
                     string song = string.IsNullOrEmpty(newest.Song) ? "an untitled song" : "'" + Path.GetFileName(newest.Song) + "'";
                     var answer = MessageBox.Show(this,
-                        $"ReBuzz didn't close normally last time. There are unsaved changes to {song}, autosaved at {newest.Saved:g}.\n\n" +
+                        $"{Product.Name} didn't close normally last time. There are unsaved changes to {song}, autosaved at {newest.Saved:g}.\n\n" +
                         "Yes: open them (then save to keep them)\nNo: delete them\nCancel: keep them for next time",
                         "Recover unsaved changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
                     if (answer == MessageBoxResult.Yes)
@@ -1344,7 +1346,7 @@ namespace ReBuzz
             else if (Buzz.ActiveView == BuzzView.SessionView)
                 currentView = "[Session]";
 
-            this.Title = (Buzz.SongCore.SongName == null ? "Untitled" : Buzz.SongCore.SongName) + (Buzz.Modified == true ? "*" : "") + " | " + "ReBuzz Digital Audio Workstation | " + currentView;
+            this.Title = (Buzz.SongCore.SongName == null ? "Untitled" : Buzz.SongCore.SongName) + (Buzz.Modified == true ? "*" : "") + " | " + Product.Name + " | " + currentView;
         }
 
         internal void SetStatusBarText(string text, int item)

@@ -195,7 +195,7 @@ namespace ReBuzz.Core.Session
             catch (Exception e)
             {
                 return $"{candidate.Script.Name}: its ports ({candidate.InputName}, {candidate.OutputName}) didn't open ({e.Message}). " +
-                       "If ReBuzz's MIDI settings have them on, turn them off there: the controller needs them to itself.";
+                       "If " + Product.Name + "'s MIDI settings have them on, turn them off there: the controller needs them to itself.";
             }
             Attach(candidate.Script, port, $"{candidate.Script.Name} ({candidate.InputName})");
             return null;

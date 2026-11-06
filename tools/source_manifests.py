@@ -192,7 +192,7 @@ SPECS = [
         "summary": "Sends notes and controller changes from its tracks to a MIDI output device.",
         "params": [],
         "track_params": [
-            P("Device", "int", "v", "ne.device = pg.Parameters[DeviceIndex].GetValue(t);", note="The MIDI output device, by its number in ReBuzz's list"),
+            P("Device", "int", "v", "ne.device = pg.Parameters[DeviceIndex].GetValue(t);", note="The MIDI output device, by its number in NeoBuzz Live's list"),
             P("MidiCC", "int", "v", ["ce.control = pg.Parameters[MidiCCIndex].GetValue(t);", "else if (ce.control <= 127)",
                                      "MIDI.Encode(MIDI.PitchWheel, ce.channel, v & 127, v >> 7)"],
               note="The controller a new MidiCCValue goes to: 0–127 a controller number, 224 the pitch wheel; any other sends "

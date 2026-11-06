@@ -463,7 +463,7 @@ namespace ReBuzz.Agent
             // The successor.
             var before = SongModel.Machines(core).ToHashSet();
             song.CreateMachine(plan.To.Name, null, tempName, null, null, null, -1, x, y);
-            var made = SongModel.Machines(core).FirstOrDefault(m => !before.Contains(m)) ?? throw new ToolError($"ReBuzz didn't create {plan.To.Name}.");
+            var made = SongModel.Machines(core).FirstOrDefault(m => !before.Contains(m)) ?? throw new ToolError($"{Product.Name} didn't create {plan.To.Name}.");
 
             // Its settings.
             foreach (var (sp, raw) in plan.State.Final)

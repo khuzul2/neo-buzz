@@ -1,6 +1,10 @@
 #!/bin/bash
-# Fork (docs/specs/studio-mvp.md §3.9): ReBuzz.app for Apple silicon, self-contained (no .NET
-# install needed), with PortAudio, libsndfile (and what it links) and the Link helper inside.
+# Fork (docs/specs/studio-mvp.md §3.9): NeoBuzz Live.app for Apple silicon, self-contained (no .NET
+# install needed), with PortAudio, libsndfile (and what it links) and the Link helper inside. The
+# studio's apphost is renamed "NeoBuzz Live" (the Dock, Activity Monitor and crash reports show the
+# app's name); it starts ReBuzz.Studio.dll, whose name it carries, so the assemblies keep their names.
+# The bundle identifier stays org.neobuzz.rebuzz: macOS keeps the app's permissions (the microphone)
+# under it.
 # Unsigned for distribution: ad-hoc signed only, as arm64 requires (no paid Developer ID, so not
 # notarized). tools/mac-dmg.sh wraps it in the disk image people install from; the first time it
 # opens, macOS asks for Privacy & Security → Open Anyway (or `xattr -dr com.apple.quarantine`).
@@ -9,12 +13,15 @@
 set -euo pipefail
 out="${1:-out}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
-app="$out/ReBuzz.app"
+name="NeoBuzz Live"                 # the app's name (ReBuzz.Product.Name): bundle, menu bar, Dock, Finder
+identifier="org.neobuzz.rebuzz"     # unchanged by the rename (permissions are keyed to it)
+app="$out/$name.app"
 macos="$app/Contents/MacOS"
-rm -rf "$app"
+rm -rf "$app" "$out/ReBuzz.app"
 mkdir -p "$macos" "$app/Contents/Resources"
 
 dotnet publish "$root/ReBuzz.Studio/ReBuzz.Studio.csproj" -c Release -r osx-arm64 --self-contained -p:UseAppHost=true -nologo -v:q -o "$macos"
+mv "$macos/ReBuzz.Studio" "$macos/$name"
 
 # Native libraries, beside the app (NativeLibraries looks there first), with what they link.
 brew_lib="$(brew --prefix)/lib"
@@ -27,7 +34,7 @@ for lib in libportaudio.dylib libsndfile.dylib; do
 done
 
 # The app icon: ReBuzz's own (ReBuzz/rebuzzlogo.ico holds one 256 px PNG), as an .icns up to 256 px.
-iconset="$out/ReBuzz.iconset"
+iconset="$out/AppIcon.iconset"
 rm -rf "$iconset" && mkdir -p "$iconset"
 python3 - "$root/ReBuzz/rebuzzlogo.ico" "$iconset/source.png" <<'PY'
 import struct, sys
@@ -45,7 +52,7 @@ for px in 16 32 128 256; do
   fi
 done
 rm "$iconset/source.png"
-iconutil -c icns "$iconset" -o "$app/Contents/Resources/ReBuzz.icns"
+iconutil -c icns "$iconset" -o "$app/Contents/Resources/AppIcon.icns"
 rm -rf "$iconset"
 
 version="$(tr -cd '0-9' < "$root/ReBuzz/BuildNumber.txt" 2>/dev/null || echo 0)"
@@ -54,17 +61,17 @@ cat > "$app/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleName</key><string>ReBuzz</string>
-  <key>CFBundleDisplayName</key><string>ReBuzz</string>
-  <key>CFBundleIdentifier</key><string>org.neobuzz.rebuzz</string>
-  <key>CFBundleExecutable</key><string>ReBuzz.Studio</string>
-  <key>CFBundleIconFile</key><string>ReBuzz</string>
+  <key>CFBundleName</key><string>$name</string>
+  <key>CFBundleDisplayName</key><string>$name</string>
+  <key>CFBundleIdentifier</key><string>$identifier</string>
+  <key>CFBundleExecutable</key><string>$name</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>0.$version</string>
   <key>CFBundleVersion</key><string>$version</string>
   <key>LSMinimumSystemVersion</key><string>12.0</string>
   <key>NSHighResolutionCapable</key><true/>
-  <key>NSMicrophoneUsageDescription</key><string>ReBuzz records audio takes from your audio input.</string>
+  <key>NSMicrophoneUsageDescription</key><string>$name records audio takes from your audio input.</string>
   <key>NSLocalNetworkUsageDescription</key><string>Ableton Link finds other apps on your network.</string>
 </dict>
 </plist>
@@ -72,4 +79,16 @@ PLIST
 
 # Ad-hoc signature (free, no Developer ID): arm64 runs nothing unsigned.
 codesign --force --deep --sign - "$app"
-echo "$app: $(du -sh "$app" | cut -f1)"
+
+# What macOS reads of it: the names, the executable they point at (the renamed apphost, beside the
+# assembly it starts), the identifier and the signature's.
+plutil -lint "$app/Contents/Info.plist" >/dev/null
+for key in CFBundleName CFBundleDisplayName CFBundleExecutable; do
+  test "$(/usr/libexec/PlistBuddy -c "Print :$key" "$app/Contents/Info.plist")" = "$name" || { echo "$key isn't $name" >&2; exit 1; }
+done
+test "$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app/Contents/Info.plist")" = "$identifier"
+test -x "$macos/$name" && test -f "$macos/ReBuzz.Studio.dll" && test ! -e "$macos/ReBuzz.Studio"
+file "$macos/$name" | grep "Mach-O 64-bit executable arm64" >/dev/null
+test -f "$app/Contents/Resources/AppIcon.icns"
+codesign -dv "$app" 2>&1 | grep "^Identifier=$identifier$" >/dev/null
+echo "$app: $(du -sh "$app" | cut -f1); CFBundleName, CFBundleDisplayName and CFBundleExecutable \"$name\", $identifier"

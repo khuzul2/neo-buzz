@@ -41,10 +41,10 @@ From a code inventory (file references in §13):
 ## 3. Architecture
 
 ```
-Claude Code ──(stdio)──────────► ReBuzz.exe --agent            headless: no window, no audio device
-Claude Code ──(Streamable HTTP)─► ReBuzz.exe (window open)     http://127.0.0.1:<port>/mcp, token
+Claude Code ──(stdio)──────────► NeoBuzzLive.exe --agent       headless: no window, no audio device
+Claude Code ──(Streamable HTTP)─► NeoBuzzLive.exe (window open) http://127.0.0.1:<port>/mcp, token
 
-ReBuzz process
+NeoBuzz Live process (ReBuzz.dll; rebuzz-headless and the studio host the same engine)
   ReBuzz.Agent (new assembly, pure C#: builds and tests on Linux)
     Mcp              JSON-RPC 2.0, schemas and validation, tools, resources, prompts, progress; stdio and HTTP
     EngineQueue      every call runs on the engine/UI thread, one at a time, with a timeout
@@ -56,13 +56,15 @@ ReBuzz process
 
 ### 3.1 Two modes, one tool set
 
+The server announces itself as `neobuzz-live`, titled "NeoBuzz Live" (`GuideLibrary.AppServer`, from `ReBuzz.Product`), so Claude Code lists its tools as `mcp__neobuzz-live__<tool>`; the tools' own names don't carry the app's name.
+
 - **Studio (window open).** `Settings → Agent → Allow agents` starts Streamable HTTP on `127.0.0.1`.
-  - The port and a bearer token are shown with a ready-to-paste `claude mcp add --transport http …` line.
+  - The port and a bearer token are shown with a ready-to-paste `claude mcp add --transport http neobuzz-live …` line (`ClaudeCode.HttpCommand`).
   - The `Origin` header is validated and only localhost is served.
   - The user sees every change as it happens; an "Agent" badge shows when a call is running.
   - Every agent edit is one undo step labelled `Agent: <what>`.
   - The Avalonia studio (macOS; studio-mvp.md S8) serves the same: Preferences ▸ Agent (Command+Shift+A) with the port, the token and the `claude mcp add` line; "studio" mode, so the live tools play through its audio device.
-- **Headless.** `ReBuzz.exe --agent [song.bmxml]` serves MCP on stdio.
+- **Headless.** `NeoBuzzLive.exe --agent [song.bmxml]` serves MCP on stdio (`claude mcp add neobuzz-live -- "<path>\NeoBuzzLive.exe" --agent`; on macOS and Linux `rebuzz-headless --agent`).
   - No window and no audio device; playback tools render instead.
   - For autonomous sessions and for CI evaluations (§10).
   - Song files written are ordinary songs the user can open later.
@@ -427,7 +429,7 @@ Scores per task and tool-call counts (fewer wrong calls means clearer tools) are
 
 **`ReBuzz.AgentEval`** is a net10.0 console app with no packages and no WPF. It references `ReBuzz.Agent` for its WAV reader and `NeoBuzz.Analysis`, so every score comes from our own meters on the files `render` wrote, never from a tool's report of itself.
 
-- **The client** (`McpClient.cs`) is the one from `AgentHeadlessTests`, made reusable. It starts `ReBuzz.exe --agent [song]` and does `initialize`, `tools/list` and `tools/call`, with structured results, `isError` and timeouts. It counts calls and error calls. On failure it reports ReBuzz's stderr and, on Windows, the process's visible windows.
+- **The client** (`McpClient.cs`) is the one from `AgentHeadlessTests`, made reusable. It starts `NeoBuzzLive.exe --agent [song]` (or `rebuzz-headless --agent`) and does `initialize`, `tools/list` and `tools/call`, with structured results, `isError` and timeouts. It counts calls and error calls. On failure it reports ReBuzz's stderr and, on Windows, the process's visible windows.
 - **The self-test** runs without ReBuzz:
   - the client against our protocol layer, in process;
   - the meters on signals with known answers: spectral and envelope distance, masking, resonance prominence, correlation of a widened noise, silent gaps;
@@ -509,9 +511,9 @@ dotnet run --project ReBuzz.AgentEval -- selftest          # any OS, no ReBuzz
 **Real-agent runs** (`agent-eval.yml`).
 - **The secret.** It needs the repository secret `ANTHROPIC_API_KEY`: Settings → Secrets and variables → Actions → New repository secret. Without it, the run posts a notice and skips the Windows job; the workflow stays green.
 - **Each task:**
-  1. `prepare` builds the starting song, `brief.md` and an `mcp.json` that runs `ReBuzz.exe --agent start.bmxml`.
-  2. Claude Code runs headless from an empty folder (no repository context): `claude -p "<brief>" --bare --mcp-config mcp.json --strict-mcp-config --tools "" --allowedTools "mcp__rebuzz__*" --permission-mode dontAsk --max-turns 80 --max-budget-usd 5 --output-format stream-json --verbose --no-session-persistence`. Flags were checked against the CLI's own help, 2.1.316: only the rebuzz tools are available and allowed, everything else is denied without a prompt. `MCP_TIMEOUT` is raised to 240 s, since the CLI waits 30 s by default for a server to answer and ReBuzz's start-up can take longer.
-  3. `score` opens the starting song and the saved one in a fresh headless ReBuzz, scores them, and reads the transcript: rebuzz tool calls, error calls with their texts, turns, cost, how it stopped.
+  1. `prepare` builds the starting song, `brief.md` and an `mcp.json` that runs `NeoBuzzLive.exe --agent start.bmxml` as the server `neobuzz-live`.
+  2. Claude Code runs headless from an empty folder (no repository context): `claude -p "<brief>" --bare --mcp-config mcp.json --strict-mcp-config --tools "" --allowedTools "mcp__neobuzz-live__*" --permission-mode dontAsk --max-turns 80 --max-budget-usd 5 --output-format stream-json --verbose --no-session-persistence`. Flags were checked against the CLI's own help, 2.1.316: only the rebuzz tools are available and allowed, everything else is denied without a prompt. `MCP_TIMEOUT` is raised to 240 s, since the CLI waits 30 s by default for a server to answer and ReBuzz's start-up can take longer.
+  3. `score` opens the starting song and the saved one in a fresh headless NeoBuzz Live, scores them, and reads the transcript: the app's tool calls, error calls with their texts, turns, cost, how it stopped.
 - **Inputs:** tasks, model, turn cap, budget, CLI version.
 - **Uploads:** transcripts, songs and scores. The step summary has the table, and the tools whose errors the agent hit, worst first.
 

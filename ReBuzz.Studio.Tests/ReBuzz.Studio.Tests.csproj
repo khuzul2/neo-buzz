@@ -40,6 +40,11 @@
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 
+  <!-- The UI gallery's demo song (docs/specs/ui-gallery.md), shared with ReBuzz.exe (its ui-shots switch). -->
+  <ItemGroup>
+    <Compile Include="..\ReBuzz\AppViews\GallerySong.cs" Link="GallerySong.cs" />
+  </ItemGroup>
+
   <!-- Fixtures the tests read beside them: Info's saved state (machine-safety.md §3.5). -->
   <ItemGroup>
     <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />

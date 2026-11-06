@@ -379,7 +379,8 @@ namespace ReBuzz.Midi
                 {
                     for (int i = 0; i < midiOutDevsCount; i++)
                     {
-                        if (backend.OutputName(i) == item.Key)
+                        // Fork (rename): the app's own virtual port, saved as "ReBuzz", is "NeoBuzz Live" now.
+                        if (backend.OutputName(i) == item.Key || backend.OutputName(i) == CoreMidiBackend.Current(item.Key))
                         {
                             CreateMidiOut(i);
                             break;

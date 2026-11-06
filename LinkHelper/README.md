@@ -1,13 +1,13 @@
 # ReBuzzLink
 
-Ableton Link for ReBuzz's Session View (`docs/specs/session-view.md`, 0.8), in a process of
-its own.
+Ableton Link for NeoBuzz Live's Session View (`docs/specs/session-view.md`, 0.8), in a process of
+its own. Its name, `ReBuzzLink`, is the helper process's and stays.
 
 **Licence: GPL-2.0-or-later.** This program links [Ableton Link](https://github.com/Ableton/link)
 (GPL-2.0-or-later, or a proprietary licence from Ableton), included here as a git submodule at
-`LinkHelper/link` (tag `Link-4.1.1`, with its `asio-standalone` submodule). ReBuzz itself stays
-MIT: it only starts this program and exchanges lines of text with it over standard input and
-output, as it would with any other program. The ReBuzz package ships `ReBuzzLink.exe` with this
+`LinkHelper/link` (tag `Link-4.1.1`, with its `asio-standalone` submodule). NeoBuzz Live itself
+stays MIT: it only starts this program and exchanges lines of text with it over standard input and
+output, as it would with any other program. The Windows package ships `ReBuzzLink.exe` with this
 folder's source and Link's licence beside it.
 
 ## Build
@@ -23,7 +23,7 @@ cmake -S LinkHelper -B build/LinkHelper -A x64
 cmake --build build/LinkHelper --config Release
 ```
 
-`build.ps1` does this and puts `ReBuzzLink.exe` next to `ReBuzz.exe`.
+`build.ps1` does this and puts `ReBuzzLink.exe` next to `NeoBuzzLive.exe`.
 
 macOS and Linux (`docs/specs/mac-engine.md` M6):
 
