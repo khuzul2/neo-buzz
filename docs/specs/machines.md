@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04; and Neo Multiband (mcp-server.md §8.2), 2026-11-04; and Neo Sampler (mcp-server.md §8.2, §12.5), 2026-11-04; and Neo Scope (mcp-server.md §8.1), 2026-11-04; and Neo Drums (mcp-server.md §8.2, §12.5), 2026-11-05; and Neo Filter (mcp-server.md §12.5), 2026-11-05 |
+| Status | v1.3 — core six (M0–M2) and the mix and master batch (M3: Neo EQ, Neo Utility, Neo Limiter, Neo Analyzer) built: measured values below are from Linux CI, 2026-11-01 and 2026-11-02. Next batch (successors, machine-safety.md §4, mcp-server.md §12.5): Neo Ensemble, Neo EQ's graphic mode and Neo Delay built, 2026-11-04; and Neo Multiband (mcp-server.md §8.2), 2026-11-04; and Neo Sampler (mcp-server.md §8.2, §12.5), 2026-11-04; and Neo Scope (mcp-server.md §8.1), 2026-11-04; and Neo Drums (mcp-server.md §8.2, §12.5), 2026-11-05; and Neo Filter (mcp-server.md §12.5), 2026-11-05; and Neo Clipper and Neo Limiter v2 (mastering-tools.md M2), 2026-11-06 |
 | Date | 2026-11-05 |
 | Scope | New high-quality machines for sound design, mixing and mastering, written in C# with custom editors: first batch "core six", second batch "mix and master", third the successors of closed machines that misbehave |
 
@@ -31,7 +31,8 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 |---|---|---|
 | Neo EQ | effect | 8-band parametric EQ: bell, shelves, cuts at 12/24/48 dB/oct, notch; minimum phase; response graph with draggable bands over the spectrum |
 | Neo Utility | effect | Gain, balance or mono pan, width, bass mono, polarity, swap and DC removal, each exact; a mid/side matrix (encode, decode) for M/S work with any stereo machine |
-| Neo Limiter | effect | True-peak lookahead limiter: a ceiling in dBTP as BS.1770 measures it, auto or set release, stereo link |
+| Neo Limiter | effect | True-peak lookahead limiter: a ceiling in dBTP as BS.1770 measures it, auto or set release, stereo link; v2 (mastering-tools.md §5.2): upward compression, transient emphasis, a 4× soft clip, a two-stage release, transient unlink, Unity listen and Delta, each off by default (v1's bits), set by the "Style —" presets |
+| Neo Clipper | effect | Hard, soft, tanh or knee clipping into a ceiling no sample passes, 1×–8× oversampled with antiderivative anti-aliasing, up to three bands, L/R or M/S, Delta and Match (mastering-tools.md §5.1) |
 | Neo Analyzer | effect | Spectrum (FFT with peak hold, third-octave bars), loudness (momentary, short-term, integrated LUFS, range, true peak) and stereo (correlation, width, goniometer) with the analysis library's numbers; readings for agents; audio untouched |
 
 **Third batch (successors: machine-safety.md §4)**
@@ -96,7 +97,7 @@ tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 
 ### 3.1 Core fix
 
-`MachineCore.parametersChanged` is keyed by parameter, so when one parameter changes on several tracks in the same tick only the last track reaches a managed machine: a chord on tracks 1–3 plays one note. (The Pedal synths work around it by reading ReBuzz's private fields.) M0 keys it by parameter and track.
+`MachineCore.parametersChanged` is keyed by parameter, so when one parameter changes on several tracks in the same tick only the last track reaches a managed machine: a chord on tracks 1–3 plays one note. (The Pedal synths work around it by reading ReBuzz's private fields, and take MIDI notes since mcp-server.md §12.15, a voice each.) M0 keys it by parameter and track.
 
 ## 4. Shared foundation (M0)
 
@@ -355,6 +356,40 @@ Parameters: Input gain (−12 … +24 dB), Ceiling (−12 … 0 dB true peak, 0.
 | CPU | stereo, limiting a drum loop: ≥ 150× on x64, ≥ 110× on arm64 (a throughput guard, §4: × real time at the reference's speed; on the Linux, Windows and macOS runners and locally, 20 runs quiet and 20 with every core busy each); was ≥ 50× as timed | Linux 200–216, Windows 191–234, macOS 150–152, locally 204–206; twice the work at most 118 |
 
 Not built: a target-LUFS mode. Integrated loudness needs the whole programme, so a live machine can only guess it, and limiting makes loudness grow slower than the input gain; the agent instead renders, measures (`analyze`) and sets Input gain, which is exact.
+
+**v2** (docs/specs/mastering-tools.md §5.2, M2): ten parameters after the six, each off at its default, so a song made before them renders v1's bits ("Classic": four settings' hashes pinned in `LimiterClassicTests`, at blocks of 256 and 117). In signal order: `Upward` and `Upward threshold` (a 3 s linked RMS; the lift half a dB per dB under, at most 6 dB, never below −60 dBFS, gliding over 0.5 s); `Transients` (NeoBuzz.Dsp's `TransientSplit`, up to +6 dB on hits); `Soft clip` (the shared Knee curve 3, 9 or 30 dB under the ceiling, 4× `FirOversampler` with first-order ADAA, `Clip mix`; +58 samples of latency while on); in the limiter a `Slow stage` (a one-pole on the reduction, 50 ms up, `Slow release` down, holding its share) and `Transient unlink` (the link lowered by the transient weight); then `Delta` (the output minus the driven input, at the input's level) and `Unity listen` (the output trimmed by the gain-match reading, −24 … +12 dB, gliding over 0.3 s). Readings: `gain_match_db`, `gain_reduction_db` (the most over 3 s), `latency_samples`. The editor gains a Stages section.
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Classic | v1's renders bit for bit at the new parameters' defaults | the hashes equal in four settings and two block sizes; the null test's 92 existing cases identical against M1's Limiter and Analyzer (Linux) |
+| True peak | soft clip at each knee, 44.1/48/96 kHz, drums +12 dB into −1 dBTP: worst ≤ ceiling + 0.1 dB | +0.030 dB (44.1 kHz, 3 dB knee); +0.003 at 96 kHz |
+| Alias | the clip stage, 3.1 kHz +12 dB into the knee: ≤ −90 dB | −103.5 (3 dB knee), −129.7 (9), −146.2 (30); +12 dB over the ceiling −94.0, −83.5, −108.1; Classic −96.3 |
+| IMD | SMPTE 60 Hz + 7 kHz (4:1) at 3, 6, 9 dB on the peaks, each style against Classic | Classic 0.73 / 1.40 / 2.03 %; Transparent 0.22 / 0.41 / 0.57; Punchy 0.72 / 1.39 / 2.02; Dense 32.6 / 69.9 / 116; Loud 39.7 / 92.2 / 130 (the soft clip styles say so: they clip the tone's 60 Hz) |
+| Pumping | a 1 kHz tone's sidebands (1–40 Hz off) under a 50 Hz kick driving 6 dB | Classic −19.8 dB, Transparent −21.8, Punchy −21.9, Dense −17.0, Loud −16.9; the slow stage at 60 % alone −22.7 |
+| Loudness at a distortion budget | the drive at 1 % SMPTE IMD, and drums through it there | Classic 4.2 dB (drums −14.0 LUFS); Transparent 18.6 dB (−9.5); Punchy 4.2 (−14.0); Dense and Loud past 1 % at 0 dB |
+| Stages | Upward: a −30 dBFS passage under −20 dB lifted by 5 (±0.6), −14 dBFS not, silence silent; Transients +6 dB: a kick's onset > +3 dB, its tail within 0.3 dB; unlink lets the other side duck less; Unity within 0.5 LU of the input; Delta exact | +5.39 dB, +0.00, silent; +5.7 dB, +0.00; −6.09 dB linked, −3.41 at 100 %; −0.19 LU; within 6·10⁻⁸ |
+| Blk, Alloc | every stage on: blocks of 256/128/117/16 identical; 0 bytes | identical; 0 bytes (and 0 on the studio's audio thread) |
+| CPU | ≥ 50× (the card) | every stage on, the soft clip at 4×: 30× on the 2-core test machine (Classic 159× there; the 4× oversampler is most of it) |
+| Listening | ABX notes at −9 and −7 LUFS on a fixed corpus | not done: needs a person |
+
+### Neo Clipper (docs/specs/mastering-tools.md §5.1)
+
+Drive → (mid/side) → (bands: zero-latency Linkwitz–Riley crossovers, each band with its drive) → per band: ÷ ceiling → `FirOversampler` up → the curve with first-order ADAA (NeoBuzz.Dsp `ClipCurve`, `ClipAdaa`; 1× plain) → down → × ceiling → (the bands summed, mid/side decoded, and with bands or M/S the curve again on left and right) → the ceiling guard → mix with the dry signal (delayed to match) → Delta → Output. Curves, normalised to the ceiling: Hard; Soft, u − 4u³/27 to 1.5; Tanh; Knee, straight to T = 10^(−knee/20), then u − (u − T)²/(4(1 − T)) to 2 − T. The latency is the same at every setting: two oversampled stages at 8× (124 samples) and the guard (5 ms) − 1: 363 samples at 48 kHz.
+
+- **The ceiling guard.** The curves never pass the ceiling, but downsampling rings past it (up to 2 dB on drums driven 18 dB). Clamping those samples aliased like a 1× clipper (the floor −42 dB); instead Neo Limiter's construction on sample peaks, linked: the needed gain's sliding minimum over 5 ms, averaged by two box filters, so every sample ends ≤ the ceiling and the gain moves smoothly. A 0.5 ms hold left −64 dB, 1 ms −67, 2 ms −71, 5 ms −94.
+- Parameters: Drive (−12 … +24 dB), Ceiling (−24 … 0 dBFS), Shape, Knee (0 – 12 dB), Oversampling (1×, 2×, 4×, 8×), Bands (1 – 3), Crossover 1 and 2, Low, Mid and High drive (±12 dB), Stereo (L/R, M/S), Mix, Output (±24 dB), Delta. Readings: `gain_match_db`, `clip_db`, `clipped_percent`, `latency_samples`. The editor: the curve with the input's peak on it, and Match (Output from the gain-match reading, one undo step).
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Ceiling | hard: every sample ≤ ceiling exactly; soft and knee: ≤ ceiling | every shape and factor, 1 and 3 bands, L/R and M/S, drums +18 dB into −0.3 and −6 dB: at most the ceiling (−0.0000 dB) |
+| Alias | 3.1 kHz at +12 dB into the knee (the curve's 3 dB knee), 4×: ≤ −90 dB; each factor reported | Knee 4× −93.7 dB, 8× −100.6, 2× −74.7, 1× −39.5; Soft 4× −96.8; Tanh 4× −119.1; Hard 4× −80.7, 8× −86.8 |
+| TP | reported (Neo Limiter after it promises it) | drums +12 dB into −1 dB: Hard 4× +0.54 dB, Soft +0.44, Tanh +0.72, Knee +0.50 over the ceiling (1×: up to +2.9) |
+| THD | against the knee; under the knee THD+N ≤ −100 dB | under a 6 dB knee, 8 dB down: −136.8 dB; 1 kHz at +3 dB over: −17.5 (hard) … −20.1 dB (12 dB knee) |
+| Response | under the knee | 20 kHz: 1× 0.00 dB, 2× −2.01, 4× −0.47, 8× −0.12; three bands flat to −0.53 dB at 15 kHz (two ADAA stages) |
+| Mix0, Blk, Lat, Alloc | Mix 0 the input delayed bit for bit; blocks of 256/128/117/16 identical; the same latency at every setting; 0 bytes | all hold; 0 bytes (and 0 on the studio's audio thread) |
+| Delta, Match | Delta the output minus the input; the gain match against the integrated difference | exact (0.0); +9 dB on drums: 7.40 dB against 7.36 LU; the studio's Match set Output −11.5 dB for 11.55 |
+| CPU | ≥ 100× (the card) | 1 band 4× 50×, 8× 28×, 1× 275×; three bands M/S 4× 14× (the 2-core test machine; the shared 4× oversampler alone runs at 84×): floors set at 20×, 10×, 100×, 5× |
+
 
 ### Neo Analyzer (spectrum, loudness, stereo; MCP A4)
 

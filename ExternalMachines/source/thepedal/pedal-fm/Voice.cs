@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;   // fork (neo-buzz): MethodImplOptions.AggressiveOptimization
 
 namespace PedalFM
 {
@@ -140,6 +141,23 @@ namespace PedalFM
             Held = false;
         }
 
+        /// <summary>
+        /// Fork (neo-buzz, docs/specs/mcp-server.md §12.15): released, every envelope done, its anti-click gain where it
+        /// is going and no note pending, so it plays exact silence until its next note: the machine leaves it out. Such a
+        /// voice stayed Active (its gain stays at its velocity after a release), so the machine rendered it, and said it
+        /// was sounding, for as long as it ran. Its state is as it was: its next note starts as it did before.
+        /// </summary>
+        public bool Finished
+        {
+            get
+            {
+                if (Held || _pendingTrigger || _curGain != _targetGain) return false;
+                for (int i = 0; i < OpCount; i++)
+                    if (Ops[i].Env.IsActive) return false;
+                return true;
+            }
+        }
+
         public bool IsIdle()
         {
             if (_pendingTrigger) return false;
@@ -168,10 +186,12 @@ namespace PedalFM
         /// <param name="lfoPitchSemis">Pitch LFO offset, semitones, constant for the buffer.</param>
         /// <param name="voiceLfoLevel">Level LFO multiplier (1.0 = no swing), constant for the buffer.</param>
         /// <param name="sr">Sample rate, used for control-rate Inc recompute.</param>
+        /// <param name="levelRamp">Fork (neo-buzz, §12.15): per op, its level for each sample while it glides (else null).</param>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]   // fork (neo-buzz): never compiled on the audio thread
         public void Render(float[] dst, int n, byte algo,
                            float feedback, float compoundAtten,
                            float lfoPitchSemis, float voiceLfoLevel,
-                           int sr)
+                           int sr, float[][] levelRamp = null)
         {
             if (!Active && !_pendingTrigger && _curGain <= NearZero) return;
 
@@ -199,10 +219,14 @@ namespace PedalFM
 
             Operator op0 = Ops[0], op1 = Ops[1], op2 = Ops[2], op3 = Ops[3];
 
-            bool op0Live = op0.Level > 0f;
-            bool op1Live = op1.Level > 0f;
-            bool op2Live = op2.Level > 0f;
-            bool op3Live = op3.Level > 0f;
+            // Fork (neo-buzz, §12.15): an op whose level glides takes it sample by sample; the others as before.
+            float[] r0 = levelRamp?[0], r1 = levelRamp?[1], r2 = levelRamp?[2], r3 = levelRamp?[3];
+            float lv0 = op0.Level, lv1 = op1.Level, lv2 = op2.Level, lv3 = op3.Level;
+
+            bool op0Live = op0.Level > 0f || r0 != null;
+            bool op1Live = op1.Level > 0f || r1 != null;
+            bool op2Live = op2.Level > 0f || r2 != null;
+            bool op3Live = op3.Level > 0f || r3 != null;
 
             // ─── Frequency / Inc setup ───
             // hzPerInc converts Hz to a uint phase increment per sample.
@@ -265,7 +289,8 @@ namespace PedalFM
                         uint  ph0 = (fbCycles != 0f)
                             ? unchecked((uint)((long)op0.Phase + (long)(fbCycles * ModScale)))
                             : op0.Phase;
-                        out0 = SineTable.Lookup(ph0) * op0.Level * e0;
+                        if (r0 != null) lv0 = r0[s] * op0.VelScale;
+                        out0 = SineTable.Lookup(ph0) * lv0 * e0;
                     }
                     else
                     {
@@ -285,7 +310,8 @@ namespace PedalFM
                         uint  ph1 = (modCycles != 0f)
                             ? unchecked((uint)((long)op1.Phase + (long)(modCycles * ModScale)))
                             : op1.Phase;
-                        out1 = SineTable.Lookup(ph1) * op1.Level * e1;
+                        if (r1 != null) lv1 = r1[s] * op1.VelScale;
+                        out1 = SineTable.Lookup(ph1) * lv1 * e1;
                     }
                     else
                     {
@@ -305,7 +331,8 @@ namespace PedalFM
                         uint  ph2 = (modCycles != 0f)
                             ? unchecked((uint)((long)op2.Phase + (long)(modCycles * ModScale)))
                             : op2.Phase;
-                        out2 = SineTable.Lookup(ph2) * op2.Level * e2;
+                        if (r2 != null) lv2 = r2[s] * op2.VelScale;
+                        out2 = SineTable.Lookup(ph2) * lv2 * e2;
                     }
                     else
                     {
@@ -326,7 +353,8 @@ namespace PedalFM
                         uint  ph3 = (modCycles != 0f)
                             ? unchecked((uint)((long)op3.Phase + (long)(modCycles * ModScale)))
                             : op3.Phase;
-                        out3 = SineTable.Lookup(ph3) * op3.Level * e3;
+                        if (r3 != null) lv3 = r3[s] * op3.VelScale;
+                        out3 = SineTable.Lookup(ph3) * lv3 * e3;
                     }
                     else
                     {

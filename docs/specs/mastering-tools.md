@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | v0.3 — M0 (engine and library prerequisites) built on `machines/mastering-m0`, 2026-11-06; M1 (the assistant's measurements and tools, Neo Utility's matrix, the Delta and gain-match helpers) built on `machines/mastering-m1`, 2026-11-06; M2 next |
+| Status | v0.4 — M0 (engine and library prerequisites) built on `machines/mastering-m0`, 2026-11-06; M1 (the assistant's measurements and tools, Neo Utility's matrix, the Delta and gain-match helpers) built on `machines/mastering-m1`, 2026-11-06; M2 (Neo Clipper, Neo Limiter v2, the editor's Match) built on `machines/mastering-m2`, 2026-11-06; M3 next |
 | Date | 2026-11-06 |
 | Scope | Mixing and mastering machines after iZotope Ozone 12 (and the best of FabFilter, Neutron, soothe and others), the engine work they need, and an assistant that is our agent plus deterministic measurements |
 | Design basis | The analysis "Mixing and mastering machines for NeoBuzz Live, after iZotope Ozone" (2026-11-06): today's inventory (machines.md §5), the Ozone 12.2 module inventory, proposal cards with techniques and measurements, effort and risks. Its findings are summarised here where they decide something |
@@ -36,8 +36,8 @@ These are the repo's rules (machines.md §2–§4, mcp-server.md §12) as they a
 
 House conventions for the new mixing and mastering machines (decided in M1, used from M2 on):
 
-- **Delta.** A `Delta` switch (Off/On) among the last parameters of each dynamics and EQ machine: the output becomes wet − dry (the dry delayed by the machine's latency), so the user hears what the machine changes (Ozone's Delta buttons). Off by default. Built in M1 as `NeoBuzz.Dsp.DeltaListen`: the dry through a ring every block (on or off, so a switch has it at once), the switch gliding over 10 ms, off exactly the wet signal; a machine with a Mix applies it to the full wet signal, before the mix.
-- **Gain match.** A reading `gain_match_db` (short-term loudness out − in, K-weighted, over 3 s) on each of those machines, and in the editor a "Match" action that sets `Output` by it: one undoable parameter change, never automatic gain riding. Built in M1 as `NeoBuzz.Analysis.GainMatch` (the K-weighting of `Loudness`, 30 steps of 100 ms, unknown until 3 s have passed and while either side is under −70 LUFS; `GainMatch.Match` gives the Output setting on its 0.1 dB steps); the editor's Match action comes with the first machine that has the reading (M2).
+- **Delta.** A `Delta` switch (Off/On) among the last parameters of each dynamics and EQ machine: the output becomes wet − dry (the dry delayed by the machine's latency), so the user hears what the machine changes (Ozone's Delta buttons). Off by default. Built in M1 as `NeoBuzz.Dsp.DeltaListen`: the dry through a ring every block (on or off, so a switch has it at once), the switch gliding over 10 ms, off exactly the wet signal. As built in M2 it is the output minus the input (at a Mix under 100 %, the change that mix makes), before Output; Neo Limiter's is at the input's level (÷ its input gain), so it isn't 24 dB louder than what went in.
+- **Gain match.** A reading `gain_match_db` (short-term loudness out − in, K-weighted, over 3 s) on each of those machines, and in the editor a "Match" action that sets `Output` by it: one undoable parameter change, never automatic gain riding. Built in M1 as `NeoBuzz.Analysis.GainMatch` (the K-weighting of `Loudness`, 30 steps of 100 ms, unknown until 3 s have passed and while either side is under −70 LUFS; `GainMatch.Match` gives the Output setting on its 0.1 dB steps); the editor's Match action came with Neo Clipper (M2). Neo Limiter has the reading and Unity listen instead of an Output to match.
 - **Zero latency available.** Every machine with latency has a zero-latency mode or setting (live Session View play and monitoring), and reports its latency exactly; a latency that depends on a setting changes only through the engine's crossfade (§4.1).
 - **Transient/Sustain.** Where a machine offers Ozone's Transient/Sustain channel modes, they come from the shared `TransientSplit` (§4.2), so they mean the same everywhere.
 
@@ -339,3 +339,26 @@ Decisions taken in M0 that the user may want differently are listed in §8 with 
 The lookahead test's "no gap" threshold (M0) is relaxed from half the level to a quarter, with the reason in the tests: the crossfade sums the two taps for 10 ms, which comb (0.79 of the level on Linux, 0.51 on Windows); a gap is silence.
 
 **Decisions the user may want otherwise.** (1) Style targets are files (`targets/` beside the agent's log, or a path), not song data: one target serves every song and a song doesn't carry the user's references' measurements. (2) `tonal` is a metric of its own; `spectrum` is unchanged, so its existing reads and tests stand. (3) Platform figures other than Spotify's are observed values, labelled so, and those services only turn down. (4) eq_fit's defaults: 4 bands, ±4 dB each, the wanted change clipped to ±3 dB (the guide's EQ rule), fitted 25 Hz – 16 kHz, cuts and notches never placed. (5) The matrix round trip is within one float rounding, not bit for bit (§3's "done when" asked for bit for bit; in float that can't hold for every input).
+
+### M2 (2026-11-06, `machines/mastering-m2`)
+
+**Neo Clipper** (`Machines/NeoClipper/`; machines.md, Neo Clipper, has every figure). The card's criteria hold but the CPU (50× at 4× on the 2-core test machine against 100×: the shared 4× oversampler alone runs at 84×). What it took that the card didn't say: a ceiling that holds exactly after oversampling needs a guard, since the downsampled clip rings past the ceiling (up to 2 dB); clamping aliased at −42 dB, so a 5 ms lookahead gain on sample peaks (Neo Limiter's construction) keeps −94 dB. The curves and their ADAA moved to NeoBuzz.Dsp (`ClipCurve`, `ClipAdaa`) for Neo Limiter's soft clip.
+
+**Neo Limiter v2** (machines.md, Neo Limiter, v2). Classic renders v1's bits (four settings' hashes pinned, two block sizes; the null test's existing cases identical). Every stage measured; the styles are presets ("Style — Classic", "Transparent", "Punchy", "Dense (Soft Clip 9 dB, Upward)", "Loud (Soft Clip 3 dB)"), not a parameter, so a style is a starting point the user edits.
+
+**Match.** Neo Clipper's editor: after 3 s of sound the button shows the gain-match reading and a click sets Output from it (`GainMatch.Match`, 0.1 dB steps), one undo step (the studio test: 11.55 dB read, Output −11.5 dB).
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Clipper ceiling | every sample ≤ ceiling | at most the ceiling in every shape, factor, band count and stereo mode |
+| Clipper alias | ≤ −90 dB at 4×, into the knee | −93.7 dB (Knee), −96.8 (Soft), −119.1 (Tanh); Hard −80.7 (8×: −86.8) |
+| Clipper CPU | ≥ 100× | 50× (4×), 275× (1×) |
+| Limiter Classic | v1 bit for bit | equal |
+| Limiter TP | ≤ ceiling + 0.1 dB with the soft clip, each knee and rate | +0.030 dB worst |
+| Limiter alias | the clip stage ≤ −90 dB | −103.5 dB worst into the knee |
+| Limiter IMD and pumping | each style against Classic, reported | Transparent IMD 0.41 % at 6 dB (Classic 1.40), pumping −21.8 dB (−19.8); the soft clip styles 70–92 % at 6 dB |
+| Limiter CPU | ≥ 50× | 30× with every stage (the soft clip at 4×); Classic 159× |
+| Listening | ABX notes on a corpus | not done |
+| Unchanged | the null test's existing cases | 92 of 92 identical (Linux) against M1's Limiter and Analyzer |
+
+**Decisions the user may want otherwise.** (1) The Clipper's ceiling guard (5 ms lookahead, part of its 7.6 ms latency at 48 kHz) to hold "every sample ≤ ceiling" without aliasing; without it the alias target and the ceiling can't both hold. (2) 1× runs the curve without ADAA (ADAA's mean costs 7.6 dB at 20 kHz there). (3) Delta is the output minus the input (Mix included), and Neo Limiter's is at the input's level. (4) Neo Limiter has no Output for Match: Unity listen trims by the gain-match reading instead (a monitor; off for rendering). (5) The styles are presets, and the two soft-clip styles distort a full-scale test tone far more than limiting; they say so in their names and the guide. (6) CPU floors below the cards' (the shared oversampler's cost). (7) The K-weighting coefficients (`Loudness.KWeighting.For`) now use the portable maths, as the gain match feeds Unity listen's audio; analysis numbers move by an ulp at most.

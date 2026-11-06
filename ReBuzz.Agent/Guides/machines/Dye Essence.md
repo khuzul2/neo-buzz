@@ -1,0 +1,75 @@
+## How it sounds
+
+A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetable of 64 frames (the Wavetable engine) or a classic analog wave (the Analog engine), with up to 16 unison voices and two warps in series; plus a sub and a noise. Every note has two filters (ladder, state-variable, comb) that run from serial to parallel. Voices run at Standard 2× (the default) or High 4×: harmonics reach 18 kHz at every pitch below 9 kHz and a plain saw's alias floor is −92 dB or lower. Good for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
+
+## Signal flow
+
+- Slots A, B and C: `A engine` (Off, Wavetable or Analog; more engines come later). Wavetable: `A table`, `A position` (0–100 % through the table), octave, semitone and fine tune, level and pan; `A unison` (1–16 voices), `A detune` (the outermost voices this many cents either side), `A spread` (stereo); `A phase` and `A random` (how much of a random start phase each voice gets); `A warp 1` and `A warp 2` with their amounts; `A modulator` (what FM, PM, AM and Ring take: another slot, the sub or the noise); `A → filter 2` (0 %: filter 1, 100 %: filter 2). Analog: `A shape` (sine, triangle, saw, square, pulse), `A pulse width` (3–50 %, for Pulse) and `A drift` (each voice a little out of tune, up to ±12 cents, fixed for the note); the slot's tuning, unison, warps and routing as above. B and C the same; B and C start Off.
+- Sub (sine, triangle, saw or square, 0, −1 or −2 octaves) and noise (`Noise color` 0 % dark … 100 % white), each with level, pan and `→ filter 2`.
+- Filter 1 and Filter 2: Ladder 24, Ladder 12, LP/BP/HP 12 and 24, Notch, Peak, Comb+ and Comb− (the cutoff is the comb's pitch; `F1 key track` 100 % plays it in tune), with drive, envelope amount (±6 octaves), key tracking and velocity. `Filter routing` 0 %: filter 1 into filter 2; 100 %: side by side.
+- Amp and filter envelopes; voice mode (Poly, Mono, Legato), polyphony up to 32, glide, bend range, `Quality`.
+
+| Table | Position 0 % → 100 % |
+|---|---|
+| Basic | sine → triangle (33 %) → saw (67 %) → square |
+| PWM | pulse width 50 % → 3 % |
+| Harmonics | more and more saw harmonics |
+| Formants | vowels A → E → I → O → U |
+| Sync sweep | hard-synced saw, ratio 1 → 8 |
+| FM sweep | FM 1:1, index 0 → 6 |
+| Organ | drawbar registrations |
+| Resonant | a saw through a resonant low-pass sweeping up |
+| Digital | stepped saw, 4 → 256 steps |
+| Grit | seeded spectra, morphing |
+| User | that slot's own table (`machine_data_import`) |
+
+| Warp | What it does at full amount | Aliasing at 70 %, 880 Hz |
+|---|---|---|
+| Bend+, Bend− | reads the cycle slowly at the start and fast at the end (or the reverse): brighter, vocal | edged: −55 to −71 dB at Standard, −63 to −86 dB at High |
+| Squeeze | plays the whole cycle in 4 % of the period and holds: pulse-width modulation for any wave | edged: −39 to −62 dB, High −49 to −77 dB |
+| Mirror | crossfades in the cycle read forward to its half and back (smooth turns): symmetric, hollow, an octave-ish lift | clean (−92 dB) |
+| Asym | wobbles the read speed through the cycle: phase distortion | clean |
+| Sync | hard sync, the cycle read up to 8 times per period | edged: −45 to −53 dB, High −52 to −60 dB |
+| Window sync | sync with each restart windowed: the sync sound without the edge | clean (−98 dB) |
+| FM | linear FM through zero from the modulator (±4 × the pitch at full amount) | clean |
+| PM | phase modulation from the modulator (±1 cycle) | clean |
+| AM | amplitude modulation from the modulator | clean |
+| Ring | ring modulation, crossfaded in | clean |
+
+## How to use it
+
+- Supersaw-style leads: `A position` 67 % (saw), `A unison` 5–9, `A detune` 15–30 ct, `A spread` 80–100 %, filter 1 a Ladder 24 near 4–6 kHz.
+- FM and PM: set a slot's `A warp 1` to FM or PM, `A modulator` to another slot (or the sub), and give that slot `B engine` Wavetable and `B level` 0 % to hear only the carrier. A modulator an octave up (`B octave` +1) keeps the result harmonic.
+- Basses: `Voice mode` Mono, the sub at −1 octave, a short filter envelope; Window sync or FM for growl.
+- Two filters: send a slot to filter 2 with `B → filter 2` 100 % and set `Filter routing` 100 % for two parallel paths; at 0 % filter 2 also hears filter 1.
+- Edged warps (Bend, Squeeze, Sync) alias on high notes at Standard: `Quality` High 4× keeps them 7–15 dB cleaner at twice the CPU.
+- Analog basses and strings: `A engine` Analog, `A shape` Saw or Pulse, `A drift` 30–60 % for the analog spread; Pulse with a narrow width for reedy tones. The waves are band-limited as the tables are: the same −92 dB alias floor.
+- Your own table, per slot: a WAV of 2048-sample frames (or a clm chunk saying the frame size) or a single cycle. `machine_data_import(machine="Dye", kind="wavetable", path="C:/Tables/mine.wav", item=1)` loads it into slot B and sets `B table` to User.
+
+## Gotchas
+
+- Freshly added it plays a saw (`A table` Basic at 67 %) through a Ladder 24; B and C are Off.
+- A silent slot still renders when it is another's modulator (its level only mutes it).
+- `Sub octave` takes the text "0", "-1" or "-2" (quoted), not a number.
+- Tables are built in the background on first use; renders wait for them (up to 5 s).
+- Unison costs CPU per voice: 16 notes × 3 slots × 8 voices run some 3–6× real time on a desktop core; prefer fewer, wider voices.
+- Combs with feedback near 100 % ring loud: watch the peaks.
+
+## Preset map
+
+| Preset | What | Tweak first |
+|---|---|---|
+| "Init — Basic" | a saw through the ladder | everything |
+| "Lead — Wide Unison" | 7 + 5 detuned saws, an octave apart | `A detune`, `F1 cutoff` |
+| "Lead — Sub PM" | a triangle phase-modulated by the sub | `A warp 1 amt` |
+| "Pad — Glass Choir" | Formants in unison over Harmonics, slow | `A position` |
+| "Pad — Two Filters" | Grit to filter 1, Resonant to a band-pass in parallel | `F2 cutoff` |
+| "Bass — FM Growl" | a sine FM'd by a silent saw, mono, glide | `A warp 1 amt` |
+| "Bass — Window Sync" | a window-synced saw with a sub | `A warp 1 amt` |
+| "Bass — Detuned Stack" | three detuned saws and one an octave down | `F1 env` |
+| "Bass — Analog Saw" | an analog saw over a 30 % pulse an octave down, mono | `F1 cutoff`, `B pulse width` |
+| "Pad — Analog Strings" | six drifting analog saws and a narrow pulse an octave up | `A drift`, `A detune` |
+| "Pluck — Mirror Bell" | Harmonics mirrored, a fast filter envelope | `A warp 1 amt` |
+| "Keys — Bent Organ" | Organ with Bend+, an octave layer | `A warp 1 amt` |
+| "Texture — Comb Noise" | noise through a tuned comb | `F1 reso` |
+| "FX — Squeeze Sweep" | Digital squeezed and warped, High 4× | `A warp 1 amt` |

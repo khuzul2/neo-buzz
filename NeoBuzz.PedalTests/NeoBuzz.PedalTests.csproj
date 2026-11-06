@@ -34,10 +34,19 @@
     <Compile Include="$(PedalRoot)pedal-shaper\*.cs;$(PedalRoot)pedal-plate\*.cs;$(PedalRoot)pedal-gate\*.cs;$(PedalRoot)pedal-comp\*.cs;$(PedalRoot)pedal-chorus\*.cs;$(PedalRoot)pedal-filter\*.cs" Link="Pedal\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="$(PedalRoot)pedal-mcomp\*.cs" Exclude="$(PedalRoot)pedal-mcomp\PedalMCompGui.cs" Link="Pedal\MComp\%(Filename)%(Extension)" />
     <Compile Include="$(PedalRoot)pedal-eq\*.cs" Exclude="$(PedalRoot)pedal-eq\PedalEQGui.cs" Link="Pedal\EQ\%(Filename)%(Extension)" />
+    <!-- The Pedal synths (§12.15): each in its own folder and namespace. -->
+    <Compile Include="$(PedalRoot)pedal-juno106\*.cs" Link="Pedal\Juno106\%(Filename)%(Extension)" />
+    <Compile Include="$(PedalRoot)pedal-sh101\*.cs" Link="Pedal\SH101\%(Filename)%(Extension)" />
+    <Compile Include="$(PedalRoot)pedal-fm\*.cs" Link="Pedal\FM\%(Filename)%(Extension)" />
+    <Compile Include="$(PedalRoot)pedal-M1\*.cs" Link="Pedal\M1\%(Filename)%(Extension)" />
+    <Compile Include="$(PedalRoot)pedal-tracker\*.cs" Link="Pedal\Tracker\%(Filename)%(Extension)" />
     <Compile Include="..\ExternalMachines\portable\PortableMessageBox.cs" Link="Pedal\PortableMessageBox.cs" />
     <!-- The Neo tests' measurement helpers and the DSP library they use (spectra, test noise). -->
     <Compile Include="..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\NeoBuzz.MachineTests\Measure.cs" Link="Measure.cs" />
+    <!-- The zero-allocation checks measure each block with the engine tests' AllocationWindow (AllocationCheck.cs). -->
+    <Compile Include="..\NeoBuzz.MachineTests\AllocationCheck.cs" Link="AllocationCheck.cs" />
+    <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -52,6 +61,9 @@
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
+    <!-- AllocationCheck.cs and AllocationWindow.cs are written for implicit usings (NeoBuzz.MachineTests has them). -->
+    <Using Include="System.Collections.Generic" />
+    <Using Include="System.Linq" />
   </ItemGroup>
 
 </Project>

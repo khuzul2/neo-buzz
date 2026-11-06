@@ -10,6 +10,11 @@ Per Build §3.3: parameter index is the declaration-order position on the
 machine class. Reordering ParameterDecls in the source breaks every preset
 in this file. Append-only for v1.1+.
 
+Fork (neo-buzz, docs/specs/mcp-server.md §12.15): the presets that peaked at or above -1 dBFS, or played
+louder than -8 LUFS, in tools/preset-check.py --theirs (a track's note: full level) were levelled by their
+VCA Level alone, to -1.3 dBFS and -8.3 LUFS at most, and so was one that peaked over -1 dBFS through MIDI at
+velocity 100 (how preset-check plays them now); nothing else in them changed.
+
 Each preset only lists overrides from DEFAULTS — keeps the script readable
 and lets new globals added in a future version inherit their DefValue
 without touching every preset.
@@ -83,6 +88,7 @@ PRESETS = {
         "VCF Freq": 72, "VCF Reso": 12, "VCF Env Amt": 25,
         "Env A": 75, "Env D": 80, "Env S": 110, "Env R": 90,
         "Chorus": 2, "LFO Rate": 48,
+        "VCA Level": 87,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Pad — Hollow": {
         "DCO Saw": 0, "DCO Pulse": 1, "DCO PW": 90,
@@ -90,23 +96,27 @@ PRESETS = {
         "VCF Freq": 70, "VCF Reso": 18, "VCF Env Amt": 15,
         "Env A": 80, "Env D": 80, "Env S": 110, "Env R": 85,
         "Chorus": 1, "LFO Rate": 40,
+        "VCA Level": 78,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Pad — Vintage Strings": {
         "DCO Sub": 70, "DCO LFO": 8,
         "VCF Freq": 80, "VCF Reso": 12, "VCF Env Amt": 15,
         "Env A": 65, "Env D": 80, "Env S": 115, "Env R": 90,
         "Chorus": 2, "LFO Rate": 55, "LFO Delay": 35,
+        "VCA Level": 76,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Pad — Air": {
         "DCO Noise": 25, "HPF": 1,
         "VCF Freq": 88, "VCF Reso": 8, "VCF Env Amt": 15,
         "Env A": 95, "Env D": 90, "Env S": 110, "Env R": 110,
         "Chorus": 3,
+        "VCA Level": 78,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Pad — Sweep": {
         "VCF Freq": 70, "VCF Reso": 22, "VCF Env Amt": 25, "VCF LFO": 75,
         "Env A": 90, "Env D": 80, "Env S": 115, "Env R": 100,
         "Chorus": 2, "LFO Rate": 22,
+        "VCA Level": 89,   # fork (neo-buzz, §12.15): levelled (was 100; peaked at -0.3 dBFS through MIDI)
     },
     "Pad — Choir": {
         "DCO LFO": 18, "LFO Delay": 45,
@@ -119,6 +129,7 @@ PRESETS = {
         "VCF Freq": 70, "VCF Reso": 12, "VCF Env Amt": 22, "VCF Key Trk": 90,
         "Env A": 80, "Env D": 80, "Env S": 115, "Env R": 90,
         "Chorus": 2,
+        "VCA Level": 79,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Pad — Dark Drone": {
         "DCO Saw": 0, "DCO Pulse": 1, "DCO PW": 80,
@@ -132,27 +143,32 @@ PRESETS = {
         "DCO Pulse": 1, "DCO PW": 70,
         "VCF Freq": 58, "VCF Reso": 18, "VCF Env Amt": 75,
         "Env A": 18, "Env D": 70, "Env S": 80, "Env R": 50,
+        "VCA Level": 66,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Brass — Soft": {
         "VCF Freq": 65, "VCF Reso": 12, "VCF Env Amt": 50,
         "Env A": 38, "Env D": 70, "Env S": 90, "Env R": 60,
         "Chorus": 1,
+        "VCA Level": 92,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Brass — Stack": {
         "DCO Sub": 50,
         "VCF Freq": 60, "VCF Reso": 18, "VCF Env Amt": 75,
         "Env A": 20, "Env D": 70, "Env S": 80, "Env R": 50,
         "Chorus": 2,
+        "VCA Level": 94,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Brass — Punchy": {
         "DCO Pulse": 1, "DCO PW": 72,
         "VCF Freq": 55, "VCF Reso": 25, "VCF Env Amt": 90,
         "Env A": 8, "Env D": 50, "Env S": 70, "Env R": 40,
+        "VCA Level": 71,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Brass — Mellow": {
         "VCF Freq": 70, "VCF Reso": 12, "VCF Env Amt": 42,
         "Env A": 50, "Env D": 80, "Env S": 100, "Env R": 70,
         "Chorus": 1,
+        "VCA Level": 92,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
 
     # ─── LEADS (8) ───────────────────────────────────────────────────────
@@ -161,26 +177,31 @@ PRESETS = {
         "VCF Freq": 85, "VCF Reso": 22, "VCF Env Amt": 30,
         "Env A": 5, "Env D": 60, "Env S": 100, "Env R": 40,
         "Chorus": 1, "LFO Rate": 55,
+        "VCA Level": 96,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Lead — Square": {
         "DCO Saw": 0, "DCO Pulse": 1, "DCO PW": 64,
         "VCF Freq": 80, "VCF Reso": 18, "VCF Env Amt": 30,
         "Env A": 5, "Env D": 60, "Env S": 100, "Env R": 40,
         "Chorus": 1,
+        "VCA Level": 70,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Lead — Sync": {
         "DCO Saw": 0, "DCO Pulse": 1, "DCO PW": 92,
         "VCF Freq": 70, "VCF Reso": 42, "VCF Env Amt": 70,
         "Env A": 5, "Env D": 60, "Env S": 80, "Env R": 40,
+        "VCA Level": 51,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Lead — Acid": {
         "VCF Freq": 50, "VCF Reso": 110, "VCF Env Amt": 95,
         "Env A": 5, "Env D": 70, "Env S": 70, "Env R": 50,
+        "VCA Level": 93,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Lead — Bright": {
         "VCF Freq": 110, "VCF Reso": 10, "VCF Env Amt": 10,
         "Env A": 5, "Env D": 60, "Env S": 110, "Env R": 50,
         "Chorus": 2,
+        "VCA Level": 84,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Lead — PWM": {
         "DCO Saw": 0, "DCO Pulse": 1, "DCO PW": 64,
@@ -188,11 +209,13 @@ PRESETS = {
         "VCF Freq": 85, "VCF Reso": 20, "VCF Env Amt": 20,
         "Env A": 10, "Env D": 60, "Env S": 110, "Env R": 50,
         "Chorus": 2, "LFO Rate": 50,
+        "VCA Level": 70,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Lead — Mono": {
         "DCO Sub": 30,
         "VCF Freq": 78, "VCF Reso": 30, "VCF Env Amt": 40,
         "Env A": 5, "Env D": 60, "Env S": 90, "Env R": 40,
+        "VCA Level": 73,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Lead — Cosmic": {
         "VCF Freq": 75, "VCF Reso": 42, "VCF Env Amt": 22, "VCF LFO": 60,
@@ -206,17 +229,20 @@ PRESETS = {
         "DCO Range": 0,
         "VCF Freq": 45, "VCF Reso": 10, "VCF Env Amt": 10,
         "Env A": 0, "Env D": 70, "Env S": 110, "Env R": 20,
+        "VCA Level": 61,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Bass — Saw": {
         "DCO Sub": 40, "DCO Range": 0,
         "VCF Freq": 50, "VCF Reso": 22, "VCF Env Amt": 30,
         "Env A": 0, "Env D": 60, "Env S": 90, "Env R": 22,
+        "VCA Level": 77,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Bass — Pulse": {
         "DCO Saw": 0, "DCO Pulse": 1, "DCO PW": 70,
         "DCO Range": 0,
         "VCF Freq": 55, "VCF Reso": 18, "VCF Env Amt": 22,
         "Env A": 0, "Env D": 60, "Env S": 90, "Env R": 22,
+        "VCA Level": 47,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Bass — Acid": {
         "DCO Range": 0,
@@ -227,24 +253,28 @@ PRESETS = {
         "DCO Sub": 50, "DCO Range": 0,
         "VCF Freq": 45, "VCF Reso": 28, "VCF Env Amt": 80,
         "Env A": 0, "Env D": 40, "Env S": 70, "Env R": 15,
+        "VCA Level": 87,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Bass — Funky": {
         "DCO Saw": 0, "DCO Pulse": 1, "DCO PW": 72,
         "DCO Range": 0,
         "VCF Freq": 50, "VCF Reso": 32, "VCF Env Amt": 70,
         "Env A": 0, "Env D": 30, "Env S": 40, "Env R": 15,
+        "VCA Level": 88,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Bass — Stack": {
         "DCO Pulse": 1, "DCO PW": 70,
         "DCO Range": 0,
         "VCF Freq": 55, "VCF Reso": 22, "VCF Env Amt": 60, "VCF Key Trk": 80,
         "Env A": 0, "Env D": 40, "Env S": 70, "Env R": 18,
+        "VCA Level": 84,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Bass — Wobble": {
         "DCO Range": 0,
         "VCF Freq": 50, "VCF Reso": 50, "VCF Env Amt": 22, "VCF LFO": 65,
         "Env A": 0, "Env D": 60, "Env S": 100, "Env R": 22,
         "LFO Rate": 70,
+        "VCA Level": 85,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
 
     # ─── KEYS / PLUCKS (6) ───────────────────────────────────────────────
@@ -258,12 +288,14 @@ PRESETS = {
         "VCF Freq": 65, "VCF Reso": 12, "VCF Env Amt": 50,
         "Env A": 0, "Env D": 50, "Env S": 22, "Env R": 40,
         "Chorus": 2,
+        "VCA Level": 81,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Keys — Bell": {
         "DCO Saw": 0, "DCO Pulse": 1, "DCO PW": 100,
         "VCF Freq": 90, "VCF Reso": 32, "VCF Env Amt": 40,
         "Env A": 0, "Env D": 70, "Env S": 12, "Env R": 50,
         "Chorus": 2,
+        "VCA Level": 88,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Keys — Mallet": {
         "VCF Freq": 55, "VCF Reso": 22, "VCF Env Amt": 60,
@@ -275,11 +307,13 @@ PRESETS = {
         "VCF Freq": 65, "VCF Reso": 15, "VCF Env Amt": 50,
         "Env A": 0, "Env D": 70, "Env S": 40, "Env R": 50,
         "Chorus": 2,
+        "VCA Level": 95,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Keys — Funky Clav": {
         "DCO Saw": 0, "DCO Pulse": 1, "DCO PW": 92,
         "VCF Freq": 60, "VCF Reso": 32, "VCF Env Amt": 70,
         "Env A": 0, "Env D": 30, "Env S": 12, "Env R": 22,
+        "VCA Level": 73,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
 
     # ─── FX / SPECIAL (6) ────────────────────────────────────────────────
@@ -305,6 +339,7 @@ PRESETS = {
         "VCA Mode": 1,
         "Env A": 0, "Env D": 10, "Env S": 100, "Env R": 10,
         "LFO Rate": 80,
+        "VCA Level": 77,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "FX — Vibrato Lead": {
         "DCO LFO": 75, "LFO Delay": 30,
@@ -343,6 +378,7 @@ PRESETS = {
         "VCF Freq": 75, "VCF Reso": 15, "VCF Env Amt": 22,
         "Env A": 10, "Env D": 70, "Env S": 110, "Env R": 60,
         "Chorus": 2,
+        "VCA Level": 94,   # fork (neo-buzz, §12.15): levelled (was 100)
     },
     "Classic — Eno Drone": {
         "VCF Freq": 50, "VCF Reso": 22, "VCF Env Amt": 10, "VCF LFO": 30,

@@ -27,7 +27,7 @@ namespace NeoBuzz.MachineTests
         {
             foreach (var (gear, (table, _)) in PresetTests.Machines)
             {
-                string folder = Directory.GetDirectories(MachinesDir(), "Neo*").Single(d => File.Exists(Path.Combine(d, gear + ".machine.json")));
+                string folder = Directory.GetDirectories(MachinesDir()).Where(PresetTests.IsNeoFamily).Single(d => File.Exists(Path.Combine(d, gear + ".machine.json")));
                 var doc = JsonNode.Parse(File.ReadAllText(Path.Combine(folder, gear + ".machine.json")))!.AsObject();
                 Assert.That(doc["gear"]!.GetValue<string>(), Is.EqualTo(gear));
                 var ps = doc["parameters"]!.AsArray();
