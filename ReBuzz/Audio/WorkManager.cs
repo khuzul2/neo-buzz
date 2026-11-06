@@ -85,7 +85,23 @@ namespace ReBuzz.Audio
             var masterGlobalParameters = master.ParameterGroupsList[1].ParametersList;
         }
 
-        internal void CopyMasterInfo()
+        internal void CopyMasterInfo() => CopyEngineMasterInfo();
+
+        /// <summary>
+        /// Fork: a tick has copied the master info (<see cref="MasterInfoData"/>) in this process. Until one has, it is all
+        /// zeros (no audio device: the agent server, the UI gallery, a test host), and native machines set up meanwhile were
+        /// told 0 Hz, 0 BPM and 0 samples a tick (see <see cref="CopyEngineMasterInfo"/>).
+        /// </summary>
+        internal static volatile bool MasterInfoCopied;
+
+        /// <summary>
+        /// The engine's master info (tempo, rate, tick length, position) into what native machines are sent: each tick, and,
+        /// Fork, for a native machine's Init before the engine has ticked (UIMessage.UIInit). Without it a machine set up
+        /// before the first tick computed its state for 0 Hz: Jeskola Delay's and Cross Delay's lines were 0 samples long, and
+        /// their first Work looped for ever (its host stopped answering, the UI gallery's "Jeskola Delay stopped working"), and
+        /// FSM Infector played silence until the song was opened again (a process's first render, native-songs' warm-up).
+        /// </summary>
+        internal static void CopyEngineMasterInfo()
         {
             var masterInfo = ReBuzzCore.masterInfo;
             MasterInfoStruct.BeatsPerMin = masterInfo.BeatsPerMin;
@@ -97,6 +113,7 @@ namespace ReBuzz.Audio
 
             // Update array
             MasterInfoData = Utils.SerializeValueTypeChangePointer(MasterInfoStruct, ref MasterInfoData);
+            MasterInfoCopied = true;
         }
 
         internal void CopySubTickInfo()
