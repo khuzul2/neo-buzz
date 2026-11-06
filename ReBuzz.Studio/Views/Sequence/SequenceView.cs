@@ -236,8 +236,9 @@ namespace ReBuzz.Studio.Views.Sequence
 
         static readonly IBrush ItemHover = new SolidColorBrush(Color.Parse("#E0E0D8"));
         static readonly IBrush ItemPressed = new SolidColorBrush(Color.Parse("#D0D0C6"));
-        static readonly IBrush ItemSelected = new SolidColorBrush(Color.Parse("#2F6DAE"));
-        static readonly IBrush ItemSelectedHover = new SolidColorBrush(Color.Parse("#285F9C"));
+        // Fork (ux-overhaul.md §3.1): the selection fill token, white text on it at 6.4:1.
+        static readonly IBrush ItemSelected = ReBuzz.Studio.Shell.Design.StudioTokens.SelectionFillBrush;
+        static readonly IBrush ItemSelectedHover = new SolidColorBrush(Color.Parse("#1A528F"));
 
         /// <summary>Every state of a light list's items readable: dark text on light, white on the selection's blue (4.5:1 and more).</summary>
         internal static void ListStates(ListBox list)
@@ -350,6 +351,34 @@ namespace ReBuzz.Studio.Views.Sequence
             Canvas.Edits.Clear(r);
             Canvas.Selection.Kill();
             Canvas.Changed();
+            return true;
+        }
+
+        /// <summary>Duplicate (⌘D): the selection (or the block under the cursor) again right after itself; the selection follows it.</summary>
+        public bool Duplicate()
+        {
+            if (Target() is not { } r) return false;
+            Canvas.Edits.Duplicate(r);
+            if (Canvas.Selection.NotEmpty) Canvas.Selection.Kill();
+            Canvas.MoveCursor(r.End, r.Row);
+            Canvas.Changed();
+            return true;
+        }
+
+        /// <summary>Deselect All (⇧⌘A, Esc).</summary>
+        public bool DeselectAll()
+        {
+            if (!Canvas.Selection.NotEmpty) return false;
+            Canvas.Selection.Kill();
+            Canvas.Changed();
+            return true;
+        }
+
+        /// <summary>Rename (⌘R): the track's machine.</summary>
+        public bool Rename()
+        {
+            if (Canvas.CursorSequence?.Machine == null) return false;
+            RenameMachine();
             return true;
         }
 
@@ -538,6 +567,11 @@ namespace ReBuzz.Studio.Views.Sequence
                         return true;
                 }
             }
+            else if (mods == (KeyModifiers.Control | KeyModifiers.Shift) && key is Key.Delete or Key.Back)
+            {
+                DeleteAll();
+                return true;
+            }
             else if (shift && key == Key.OemComma)
             {
                 c.Edits.SetEvent(c.CursorRow, c.CursorTime, new SequenceEvent(SequenceEventType.Off));
@@ -558,7 +592,9 @@ namespace ReBuzz.Studio.Views.Sequence
                     case Key.E: SetEnd(); return true;
                     case Key.T: _ = AskTimeSignature(); return true;
                     case Key.I: InsertAll(); return true;
-                    case Key.D: DeleteAll(); return true;
+                    // Fork (ux-overhaul.md §4): ⌘D duplicates in every view; Delete (All Tracks) is ⇧⌘⌫ (⇧⌘⌦).
+                    case Key.D: Duplicate(); return true;
+                    case Key.R: Rename(); return true;
                     // The shell's Edit menu routes Cut, Copy and Paste here (IStudioEditTarget) but shows their
                     // keys without binding them (MenuItem.InputGesture), so the view takes them itself for now.
                     case Key.X: Cut(); return true;
@@ -637,9 +673,12 @@ namespace ReBuzz.Studio.Views.Sequence
 
             var colour = new MenuItem { Header = "Color", IsEnabled = c.CursorPattern != null };
             var palette = SequenceSongState.Palette;
+            int current = c.CursorPattern != null ? ReBuzz.Core.Session.PatternColors.Get(c.CursorPattern) : -1;
             for (int i = 0; i < palette.Count; i++)
             {
                 int index = i;
+                // Fork (ux-overhaul.md §3.1): the state colours (play, record, arrangement override) aren't offered; one in use stays.
+                if (ReBuzz.Studio.Shell.Design.StudioTokens.IsReservedForState(Color.FromUInt32(palette[i].Argb)) && current % palette.Count != i) continue;
                 var item = Item(palette[i].Name, () => SetColour(index));
                 item.Icon = new Border { Width = 16, Height = 16, Background = new SolidColorBrush(Color.FromUInt32(palette[i].Argb)) };
                 colour.Items.Add(item);
@@ -669,11 +708,12 @@ namespace ReBuzz.Studio.Views.Sequence
                     Item("Set Time Signature...", () => _ = AskTimeSignature(), Gesture(Key.T)),
                     new Separator(),
                     Item("Insert (All Tracks)", InsertAll, Gesture(Key.I), hasTrack),
-                    Item("Delete (All Tracks)", DeleteAll, Gesture(Key.D), hasTrack),
+                    Item("Delete (All Tracks)", DeleteAll, new KeyGesture(IsMac ? Key.Back : Key.Delete, (IsMac ? KeyModifiers.Meta : KeyModifiers.Control) | KeyModifiers.Shift), hasTrack),
+                    Item("Duplicate", () => Duplicate(), Gesture(Key.D), hasTarget),
                     new Separator(),
                     colour,
                     new Separator(),
-                    Item("Rename Machine...", RenameMachine, null, hasTrack),
+                    Item("Rename Machine...", RenameMachine, Gesture(Key.R), hasTrack),
                     quick,
                     new Separator(),
                     Item("Cut", () => Cut(), Gesture(Key.X), hasTarget),

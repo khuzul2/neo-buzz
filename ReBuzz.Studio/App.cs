@@ -26,6 +26,15 @@ namespace ReBuzz.Studio
         {
             Styles.Add(new FluentTheme());
             RequestedThemeVariant = ThemeVariant.Dark;
+            // Fork (ux-overhaul.md §3.1): placeholders at the placeholder token, drawn whole: Fluent draws them at half opacity
+            // over its own grey, 2.54:1 in Song Notes (gallery mac-014); the token is 4.6:1 or more on the views and panels.
+            foreach (var key in new[] { "TextControlPlaceholderForeground", "TextControlPlaceholderForegroundPointerOver", "TextControlPlaceholderForegroundFocused" })
+                Resources[key] = Shell.Design.StudioTokens.TextPlaceholderBrush;
+            Avalonia.Controls.Primitives.TemplatedControl.TemplateAppliedEvent.AddClassHandler<TextBox>((box, e) =>
+            {
+                // The template sets its opacity itself, which a style can't override: a local value can.
+                if (e.NameScope.Find<Avalonia.Controls.Control>("PART_Placeholder") is { } placeholder) placeholder.Opacity = 1;
+            }, RoutingStrategies.Direct);
             Name = Product.Name;     // the macOS app menu: About, Hide and Quit NeoBuzz Live
             // Fork (ui-gallery.md): the app menu here, before Avalonia's exporter starts (it starts after Initialize and
             // makes its own "About Avalonia" menu when the application has none; a menu set later never reached it).
@@ -37,6 +46,22 @@ namespace ReBuzz.Studio
                 GiveMenus(w);
             }, RoutingStrategies.Direct, handledEventsToo: true);
             Window.WindowClosedEvent.AddClassHandler<Window>((w, e) => windows.Remove(w), RoutingStrategies.Direct, handledEventsToo: true);
+            // Fork (ux-overhaul.md §3.5): Preferences name notes another way: every window draws its notes again.
+            if (!namingWatched)
+            {
+                namingWatched = true;
+                BuzzGUI.Common.NoteNames.Changed += () => Dispatcher.UIThread.Post(RedrawAll);
+            }
+        }
+
+        static bool namingWatched;
+
+        /// <summary>Every open window's controls draw themselves again (the names they draw changed).</summary>
+        internal static void RedrawAll()
+        {
+            foreach (var w in windows.ToList())
+                foreach (var v in Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(w))
+                    v.InvalidateVisual();
         }
 
         static readonly System.Collections.Generic.List<Window> windows = new System.Collections.Generic.List<Window>();

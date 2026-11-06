@@ -35,8 +35,11 @@ namespace ReBuzz.Studio.Views.Machines
         static MenuItem Item(string header, Action run, bool enabled = true, KeyGesture key = null) =>
             new MenuItem { Header = header, Command = new Command(run), IsEnabled = enabled, InputGesture = key };
 
-        static MenuItem Check(string header, bool on, Action run, bool enabled = true) =>
-            new MenuItem { Header = header, Command = new Command(run), IsEnabled = enabled, ToggleType = MenuItemToggleType.CheckBox, IsChecked = on };
+        static MenuItem Check(string header, bool on, Action run, bool enabled = true, KeyGesture key = null) =>
+            new MenuItem { Header = header, Command = new Command(run), IsEnabled = enabled, ToggleType = MenuItemToggleType.CheckBox, IsChecked = on, InputGesture = key };
+
+        /// <summary>Delete's key as the platform has it (ux-overhaul.md §4): ⌫ on a Mac (MacBooks have no ⌦), Delete elsewhere.</summary>
+        static KeyGesture DeleteKey => new KeyGesture(OperatingSystem.IsMacOS() ? Key.Back : Key.Delete);
 
         static MenuItem Sub(string header, IEnumerable<object> items)
         {
@@ -62,12 +65,12 @@ namespace ReBuzz.Studio.Views.Machines
                 var m = MachineEdits.Create(core, i, (float)at.X, (float)at.Y);
                 if (m != null) canvas.Select(new[] { m });
             })));
-            menu.Items.Add(Item("Unmute all machines", canvas.UnmuteAll, key: new KeyGesture(Key.U, CommandKey)));
+            menu.Items.Add(Item("Unmute All Machines", canvas.UnmuteAll, key: new KeyGesture(Key.U, CommandKey)));
             menu.Items.Add(new Separator());
-            menu.Items.Add(Item("Snap Machines", () => MachineEdits.Snap(core, canvas.Selection.Count > 0 ? canvas.Selection.ToList() : core.SongCore.Machines.ToList(), 10)));
+            menu.Items.Add(Item("Snap Machines to Grid", () => MachineEdits.Snap(core, canvas.Selection.Count > 0 ? canvas.Selection.ToList() : core.SongCore.Machines.ToList(), 10)));
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Select All", canvas.SelectAll, key: new KeyGesture(Key.A, CommandKey)));
-            menu.Items.Add(Item("Deselect", canvas.ClearSelection, canvas.Selection.Count > 0, new KeyGesture(Key.D, CommandKey)));
+            menu.Items.Add(Item("Deselect All", canvas.ClearSelection, canvas.Selection.Count > 0, new KeyGesture(Key.A, CommandKey | KeyModifiers.Shift)));
             return menu;
         }
 
@@ -87,16 +90,16 @@ namespace ReBuzz.Studio.Views.Machines
             if ((machine as MachineCore)?.IsDiverged == true)
             {
                 // One undo step; the guard trips again if it is still broken.
-                menu.Items.Add(Item("Reset and unmute", () => MachineEdits.Mute(core, new[] { machine }, false)));
+                menu.Items.Add(Item("Reset and Unmute", () => MachineEdits.Mute(core, new[] { machine }, false)));
                 menu.Items.Add(new Separator());
             }
 
             bool generator = type == MachineType.Generator;
-            menu.Items.Add(Check("Mute", machine.IsMuted, () => MachineEdits.Mute(core, selection, !machine.IsMuted)));
+            menu.Items.Add(Check("Mute", machine.IsMuted, () => MachineEdits.Mute(core, selection, !machine.IsMuted), key: new KeyGesture(Key.M)));
             if (generator)
-                menu.Items.Add(Check("Solo", machine.IsSoloed, () => MachineEdits.Solo(core, selection, !machine.IsSoloed)));
+                menu.Items.Add(Check("Solo", machine.IsSoloed, () => MachineEdits.Solo(core, selection, !machine.IsSoloed), key: new KeyGesture(Key.S)));
             else
-                menu.Items.Add(Check("Bypass", machine.IsBypassed, () => MachineEdits.Bypass(core, selection, !machine.IsBypassed)));
+                menu.Items.Add(Check("Bypass", machine.IsBypassed, () => MachineEdits.Bypass(core, selection, !machine.IsBypassed), key: new KeyGesture(Key.B)));
             menu.Items.Add(Check("Oversample", machine.OversampleFactor != 1, () => machine.OversampleFactor = machine.OversampleFactor != 1 ? 1 : 2,
                 (generator && !machine.IsControlMachine) || machine.DLL.Info.Flags.HasFlag(MachineInfoFlags.MULTI_IO)));
             menu.Items.Add(new Separator());
@@ -114,8 +117,10 @@ namespace ReBuzz.Studio.Views.Machines
                 foreach (var successor in ReBuzz.Agent.MachineReplace.Successors(core, machine.DLL))
                     menu.Items.Add(Item($"Replace with {successor.To}...", () => MachineEdits.ReplaceWithSuccessor(core, classic, successor.To)));
             menu.Items.Add(Sub("Replace", Gear(i => MachineEdits.Replace(core, machine, i))));
-            menu.Items.Add(Item("Rename...", () => MachineEdits.Rename(machine)));
-            menu.Items.Add(Item("Delete", () => MachineEdits.Delete(core, selection), key: new KeyGesture(Key.Delete)));
+            menu.Items.Add(Item("Duplicate", () => { var copies = MachineEdits.Duplicate(core, selection.Where(m => m.DLL.Info.Type != MachineType.Master).ToList()); if (copies.Count > 0) canvas.Select(copies); },
+                key: new KeyGesture(Key.D, CommandKey)));
+            menu.Items.Add(Item("Rename...", () => MachineEdits.Rename(machine), key: new KeyGesture(Key.R, CommandKey)));
+            menu.Items.Add(Item("Delete", () => MachineEdits.Delete(core, selection), key: DeleteKey));
             return menu;
         }
 

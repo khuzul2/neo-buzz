@@ -328,7 +328,7 @@ namespace ReBuzz.Studio.Views.Session
 
             var effects = SessionMixer.EffectMachines(buzz.Song).ToList();
             var returnItem = new MenuItem { Header = "Return tracks", Tag = "Return tracks" };
-            ToolTip.SetTip(returnItem, "Effect machines that tracks send to from their mixer strips (like Live's return tracks)");
+            ToolTip.SetTip(returnItem, "Effect machines that tracks send to from their mixer strips (return tracks)");
             foreach (var m in effects)
             {
                 var machine = m;
@@ -461,13 +461,15 @@ namespace ReBuzz.Studio.Views.Session
                     playing |= state == ClipState.Playing || state == ClipState.Stopping;
                     queued |= state == ClipState.Queued;
                 }
-                var background = playing ? SessionPalette.Playing : SessionPalette.GroupHeader;
+                // Fork (ux-overhaul.md §3.1): the header keeps its colour; playing lights the ▶ and the outline in the play colour.
+                var background = SessionPalette.GroupHeader;
                 if (IsPointerOver) background = SessionPalette.Lighten(background, 0.1);
                 Background = background;
                 var text = SessionPalette.TextOn(background);
                 label.Foreground = text;
-                glyph.Foreground = queued ? (blinkOn ? SessionPalette.Progress : text) : text;
-                BorderBrush = queued && blinkOn ? SessionPalette.Progress : SessionPalette.Transparent;
+                bool lit = playing || (queued && blinkOn);
+                glyph.Foreground = lit ? SessionPalette.Playing : text;
+                BorderBrush = lit ? SessionPalette.Playing : SessionPalette.Transparent;
             }
         }
 
@@ -962,12 +964,12 @@ namespace ReBuzz.Studio.Views.Session
 
                 if (!string.IsNullOrEmpty(Caption))
                 {
-                    var caption = MakeText(Caption, 10, SessionPalette.Text);
+                    var caption = MakeText(Caption, 11, SessionPalette.Text);
                     dc.DrawText(caption, new Point(4, (h - caption.Height) / 2));
                 }
                 if (!string.IsNullOrEmpty(valueText))
                 {
-                    var text = MakeText(valueText, 10, SessionPalette.Text);
+                    var text = MakeText(valueText, 11, SessionPalette.Text);
                     dc.DrawText(text, new Point(Math.Max(0, w - text.Width - 4), (h - text.Height) / 2));
                 }
             }

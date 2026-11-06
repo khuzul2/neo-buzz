@@ -546,19 +546,35 @@ namespace ReBuzz.Studio.Views.Sequence
             ctx.DrawRectangle(null, BorderPen, tracksArea.Deflate(0.5));
         }
 
+        /// <summary>The 1-based bar a tick is in, counted over the song's time signatures from its start.</summary>
+        internal int BarNumberAt(int tick)
+        {
+            var tsl = state.TimeSignatures;
+            int bar = 1;
+            for (int t = 0; t + tsl.GetBarLengthAt(t) <= tick && bar < 1_000_000; t += Math.Max(1, tsl.GetBarLengthAt(t))) bar++;
+            return bar;
+        }
+
+        /// <summary>The ruler's tooltip at a tick: "Bar 9 · tick 128".</summary>
+        internal string RulerTip(int tick) => $"Bar {BarNumberAt(tick)} · tick {tick}\nClick: move the play position here";
+
         void DrawRuler(DrawingContext ctx, Rect area, List<(int Start, int Length)> bars)
         {
             using var clip = ctx.PushClip(area);
             ctx.FillRectangle(RulerBrush, area);
             var tsl = state.TimeSignatures;
             double lastLabelEnd = double.MinValue;
+            // Fork (ux-overhaul.md §2, one time unit): bar numbers from 1, as the transport counts ("9" where it says 9.1.1;
+            // the ruler counted ticks, 128). Ticks are in the ruler's tooltip (RulerTip). Bold where the time signature
+            // changes; none that would overlap.
+            int number = bars.Count > 0 ? BarNumberAt(bars[0].Start) - 1 : 0;      // the bars are consecutive: count on from the first
             foreach (var bar in bars)
             {
+                number++;
                 double x = geo.XOf(bar.Start);
                 if (bar.Start > 0) ctx.FillRectangle(LineBrush, new Rect(Math.Floor(x), 0, 1, area.Height));
-                // Tick numbers (TimelineNumbers = Tick), bold where the time signature changes; none that would overlap.
                 if (x + 3 < lastLabelEnd) continue;
-                var ft = new FormattedText(bar.Start.ToString(CultureInfo.InvariantCulture), Culture, FlowDirection.LeftToRight,
+                var ft = new FormattedText(number.ToString(CultureInfo.InvariantCulture), Culture, FlowDirection.LeftToRight,
                     tsl.TimeSignatureChangesAt(bar.Start) ? BoldFont : Font, 12, Brushes.Black);
                 ctx.DrawText(ft, new Point(x + 3, 3));
                 lastLabelEnd = x + 3 + ft.Width + 4;
@@ -712,7 +728,7 @@ namespace ReBuzz.Studio.Views.Sequence
                 // The machine's name, centred above the buttons.
                 var name = new FormattedText(seq.Machine?.Name ?? "", Culture, FlowDirection.LeftToRight, Font, 12, Brushes.Black)
                 { MaxTextWidth = area.Width - 8, MaxLineCount = 1, Trimming = TextTrimming.CharacterEllipsis };
-                ctx.DrawText(name, new Point(4 + (area.Width - 8 - name.Width) / 2, y + 4 + (geo.TrackHeight - 16 - 4 - name.Height) / 2));
+                ctx.DrawText(name, new Point(4 + (area.Width - 8 - name.Width) / 2, y + 4 + (geo.TrackHeight - SequenceGeometry.HeaderButtonSize - 4 - name.Height) / 2));
 
                 DrawMute(ctx, HeaderButton(row, 0), seq.Machine?.IsMuted == true);
                 DrawSolo(ctx, HeaderButton(row, 1), seq.Machine?.IsSoloed == true);
@@ -721,12 +737,15 @@ namespace ReBuzz.Studio.Views.Sequence
             }
         }
 
-        /// <summary>A header's M, S or D button (TrackHeaderControl's bottom row: *, 16, 16, 16).</summary>
+        /// <summary>A header's M, S or D button (TrackHeaderControl's bottom row: *, 16, 16, 16; 20 pt each, ux-overhaul.md §3.2).</summary>
         public Rect HeaderButton(int row, int index)
         {
             double s = SequenceGeometry.HeaderButtonSize;
-            return new Rect(SequenceGeometry.HeaderWidth - 6 - (3 - index) * s, geo.YOf(row) + geo.TrackHeight - s, s, s);
+            return new Rect(SequenceGeometry.HeaderWidth - 6 - (3 - index) * (s + 2), geo.YOf(row) + geo.TrackHeight - s - 2, s, s);
         }
+
+        /// <summary>The top left of a button's 16-unit icon, centred in the button.</summary>
+        static Point IconAt(Rect r) => new Point(r.X + (r.Width - 16) / 2, r.Y + (r.Height - 16) / 2);
 
         static void ButtonBox(DrawingContext ctx, Rect r, IBrush fill) =>
             ctx.DrawRectangle(fill, ButtonPen, r.Deflate(1.5), 2, 2);
@@ -735,26 +754,27 @@ namespace ReBuzz.Studio.Views.Sequence
         static void DrawMute(DrawingContext ctx, Rect r, bool on)
         {
             ButtonBox(ctx, r, on ? MuteOnBrush : ButtonOffBrush);
+            var o = IconAt(r);
             var g = new StreamGeometry();
             using (var gc = g.Open())
             {
-                gc.BeginFigure(new Point(r.X + 4, r.Y + 6.5), true);
-                gc.LineTo(new Point(r.X + 6, r.Y + 6.5));
-                gc.LineTo(new Point(r.X + 10, r.Y + 3.5));
-                gc.LineTo(new Point(r.X + 10, r.Y + 12.5));
-                gc.LineTo(new Point(r.X + 6, r.Y + 9.5));
-                gc.LineTo(new Point(r.X + 4, r.Y + 9.5));
+                gc.BeginFigure(new Point(o.X + 4, o.Y + 6.5), true);
+                gc.LineTo(new Point(o.X + 6, o.Y + 6.5));
+                gc.LineTo(new Point(o.X + 10, o.Y + 3.5));
+                gc.LineTo(new Point(o.X + 10, o.Y + 12.5));
+                gc.LineTo(new Point(o.X + 6, o.Y + 9.5));
+                gc.LineTo(new Point(o.X + 4, o.Y + 9.5));
                 gc.EndFigure(true);
             }
             ctx.DrawGeometry(on ? new SolidColorBrush(Color.Parse("#5A3A30")) : new SolidColorBrush(Color.Parse("#404040")), null, g);
-            if (on) ctx.DrawLine(new Pen(Brushes.Black, 1.2), new Point(r.X + 4, r.Y + 4), new Point(r.X + 12, r.Y + 12));
+            if (on) ctx.DrawLine(new Pen(Brushes.Black, 1.2), new Point(o.X + 4, o.Y + 4), new Point(o.X + 12, o.Y + 12));
         }
 
         /// <summary>solo_on/off_icon.png: an S, on green when on.</summary>
         static void DrawSolo(DrawingContext ctx, Rect r, bool on)
         {
             ButtonBox(ctx, r, on ? SoloOnBrush : ButtonOffBrush);
-            var ft = new FormattedText("S", Culture, FlowDirection.LeftToRight, BoldFont, 10, on ? new SolidColorBrush(Color.Parse("#2F7A25")) : Brushes.DimGray);
+            var ft = new FormattedText("S", Culture, FlowDirection.LeftToRight, BoldFont, 11, on ? new SolidColorBrush(Color.Parse("#1F5A18")) : new SolidColorBrush(Color.Parse("#3A3A3A")));
             ctx.DrawText(ft, new Point(r.X + (r.Width - ft.Width) / 2, r.Y + (r.Height - ft.Height) / 2));
         }
 
@@ -762,7 +782,7 @@ namespace ReBuzz.Studio.Views.Sequence
         static void DrawDisable(DrawingContext ctx, Rect r, bool on)
         {
             ButtonBox(ctx, r, on ? Brushes.DimGray : ButtonOffBrush);
-            var ft = new FormattedText("D", Culture, FlowDirection.LeftToRight, Font, 10, on ? Brushes.White : new SolidColorBrush(Color.Parse("#111")));
+            var ft = new FormattedText("D", Culture, FlowDirection.LeftToRight, Font, 11, on ? Brushes.White : new SolidColorBrush(Color.Parse("#111")));
             ctx.DrawText(ft, new Point(r.X + (r.Width - ft.Width) / 2, r.Y + (r.Height - ft.Height) / 2));
         }
 
@@ -963,10 +983,39 @@ namespace ReBuzz.Studio.Views.Sequence
             MoveCursor(cursorTime, row);
         }
 
+        /// <summary>What the pointer's tooltip says where it is (ux-overhaul.md P1): the ruler's bar and tick, the M, S, D buttons.</summary>
+        internal string TipAt(Point p)
+        {
+            if (SequenceGeometry.InRuler(p)) return RulerTip(Math.Max(0, geo.TimeAt(p.X)));
+            if (!SequenceGeometry.InHeaders(p)) return null;
+            int row = geo.RawRowAt(p.Y);
+            if (row < 0 || row >= Rows) return null;
+            for (int i = 0; i < 3; i++)
+                if (HeaderButton(row, i).Contains(p))
+                    return i switch
+                    {
+                        0 => "Mute the track's machine",
+                        1 => "Solo the track's machine",
+                        _ => "Disable the track: its patterns don't play (the machine still sounds)",
+                    };
+            return null;
+        }
+
+        string shownTip;
+
         protected override void OnPointerMoved(PointerEventArgs e)
         {
             base.OnPointerMoved(e);
             var p = e.GetPosition(this);
+            if (drag == Drag.None)
+            {
+                string tip = TipAt(p);
+                if (tip != shownTip)
+                {
+                    shownTip = tip;
+                    ToolTip.SetTip(this, tip);
+                }
+            }
             switch (drag)
             {
                 case Drag.PendingMove:
@@ -1180,10 +1229,22 @@ namespace ReBuzz.Studio.Views.Sequence
             }
         }
 
+        static readonly IBrush PlayEdge = new SolidColorBrush(Color.Parse("#B0000000"));
+
         static void Marker(DrawingContext ctx, double x, IBrush brush, double height, int side, bool flag = true)
         {
             x = Math.Floor(x);
-            ctx.FillRectangle(brush, new Rect(x, 0, 1, height));
+            if (ReferenceEquals(brush, PlayBrush))
+            {
+                // Fork (ux-overhaul.md §3.2): the playhead 2 pt wide with a dark edge, readable on any lane (1 px yellow on
+                // tan was 2.76:1, gallery mac-071).
+                ctx.FillRectangle(PlayEdge, new Rect(x - 1, 0, 4, height));
+                ctx.FillRectangle(brush, new Rect(x, 0, 2, height));
+            }
+            else
+            {
+                ctx.FillRectangle(brush, new Rect(x, 0, 1, height));
+            }
             if (!flag) return;
             var g = new StreamGeometry();
             using (var gc = g.Open())

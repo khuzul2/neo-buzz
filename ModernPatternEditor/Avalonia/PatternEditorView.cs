@@ -7,6 +7,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -128,12 +129,28 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                     case "KeyboardMapping": mappingBox.IsDropDownOpen = true; break;
                 }
             };
+            // Fork (ux-overhaul.md §3.5): the base octave as Preferences name notes (Buzz's 4 is 2 when C3 is 60).
+            octaveBox.ItemTemplate = new FuncDataTemplate<int>((o, _) => new TextBlock { Text = NoteNames.Octave(o).ToString(System.Globalization.CultureInfo.InvariantCulture) });
+            NoteNames.Changed += OnNoteNames;
             Follow(editor.SelectedMachine);
             UpdateAll();
         }
 
+        /// <summary>Preferences name notes another way: the base octaves again (the grid draws its notes again itself).</summary>
+        void OnNoteNames() => Dispatcher.UIThread.Post(() =>
+        {
+            updating = true;
+            try { octaveBox.ItemsSource = Enumerable.Range(0, 10).ToArray(); }
+            finally { updating = false; }
+            UpdateAll();
+        });
+
+        /// <summary>The base octaves as the list shows them, for tests.</summary>
+        public IEnumerable<string> OctaveTexts => octaveBox.Items.OfType<int>().Select(o => NoteNames.Octave(o).ToString(System.Globalization.CultureInfo.InvariantCulture));
+
         public void Dispose()
         {
+            NoteNames.Changed -= OnNoteNames;
             editor.PropertyChanged -= Editor_PropertyChanged;
             Follow(null);
             grid.Release();
@@ -371,10 +388,11 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             return b;
         }
 
-        /// <summary>The keyboard commands (Help.xaml), as a table.</summary>
-        static Control HelpText()
-        {
-            string[][] rows =
+        /// <summary>
+        /// The keyboard commands (Help.xaml), as a table. Fork (ux-overhaul.md §4): the studio's Keyboard Shortcuts window
+        /// lists them too (it finds this field by name: the studio doesn't reference the editor).
+        /// </summary>
+        internal static readonly string[][] KeyRows =
             {
                 new[] { "F1", "Show/hide help" },
                 new[] { "Ctrl+Z/Y", "Undo/Redo" },
@@ -413,6 +431,10 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 new[] { "Ctrl+1,2,3... (numpad)", "Step down" },
                 new[] { "Ctrl+Alt+1,2,3... (numpad)", "Step right" },
             };
+
+        static Control HelpText()
+        {
+            var rows = KeyRows;
             var g = new Grid { ColumnDefinitions = new ColumnDefinitions("*,2*"), Margin = new Thickness(4) };
             var title = new TextBlock { Text = "Keyboard Commands", FontWeight = FontWeight.Bold, Foreground = Brushes.Black, Background = Brushes.LightSteelBlue, Padding = new Thickness(2) };
             Grid.SetColumnSpan(title, 2);
