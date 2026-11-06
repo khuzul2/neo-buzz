@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -94,6 +95,10 @@ namespace ReBuzz.Studio.Views.Sequence
                     new Setter(MinHeightProperty, 0.0),
                 },
             });
+            // The list is light in a dark theme: its items' states get light-list colours. The dark
+            // theme's pointer-over drew white text on a near-white tint ("1. Arp" at 1.06:1, gallery
+            // mac-070), and its selection white on light blue.
+            ListStates(patternList);
 
             foreach (var s in Steps) steps.Items.Add(s);
             steps.SelectedItem = state.TimeSignatures.GetBarLengthAt(0);
@@ -162,6 +167,8 @@ namespace ReBuzz.Studio.Views.Sequence
         public Slider ZoomSlider => zoom;
         public ComboBox StepsBox => steps;
         public ListBox PatternList => patternList;
+        /// <summary>The list's own background (its items' states draw on it).</summary>
+        internal static Color PatternListBackground => Color.Parse("#F7F7F3");
         public Button AddTrackButton => addTrack;
 
         /// <summary>The menu a right click (or the add-track button) opened last (tests click through it).</summary>
@@ -226,6 +233,32 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         // ------------------------------------------------------------------ the pattern list
+
+        static readonly IBrush ItemHover = new SolidColorBrush(Color.Parse("#E0E0D8"));
+        static readonly IBrush ItemPressed = new SolidColorBrush(Color.Parse("#D0D0C6"));
+        static readonly IBrush ItemSelected = new SolidColorBrush(Color.Parse("#2F6DAE"));
+        static readonly IBrush ItemSelectedHover = new SolidColorBrush(Color.Parse("#285F9C"));
+
+        /// <summary>Every state of a light list's items readable: dark text on light, white on the selection's blue (4.5:1 and more).</summary>
+        internal static void ListStates(ListBox list)
+        {
+            void State(Func<Selector, Selector> state, IBrush background, IBrush foreground) =>
+                list.Styles.Add(new Style(x => state(x.OfType<ListBoxItem>()).Template().OfType<ContentPresenter>().Name("PART_ContentPresenter"))
+                {
+                    Setters =
+                    {
+                        new Setter(ContentPresenter.BackgroundProperty, background),
+                        new Setter(ContentPresenter.ForegroundProperty, foreground),
+                    },
+                });
+            State(x => x, Brushes.Transparent, Brushes.Black);
+            State(x => x.Class(":pointerover"), ItemHover, Brushes.Black);
+            State(x => x.Class(":pressed"), ItemPressed, Brushes.Black);
+            State(x => x.Class(":selected"), ItemSelected, Brushes.White);
+            State(x => x.Class(":selected").Class(":focus"), ItemSelected, Brushes.White);
+            State(x => x.Class(":selected").Class(":pointerover"), ItemSelectedHover, Brushes.White);
+            State(x => x.Class(":selected").Class(":pressed"), ItemSelectedHover, Brushes.White);
+        }
 
         /// <summary>The n-th pattern's key: 0–9, then a–z, then A–Z (TrackHeaderControl.UpdatePatternList).</summary>
         static char KeyOf(int i) => i < 10 ? (char)('0' + i) : i < 36 ? (char)('a' + i - 10) : (char)('A' + i - 36);
