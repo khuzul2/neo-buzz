@@ -428,6 +428,7 @@ namespace ReBuzz.Core
             set
             {
                 latency = value;
+                engineLatency = value;
                 if (engineSettings.MachineDelayCompensation)
                 {
                     var bc = graph.Buzz as ReBuzzCore;
@@ -435,18 +436,6 @@ namespace ReBuzz.Core
                     PropertyChanged.Raise(this, " Latency");
                 }
             }
-        }
-
-        /// <summary>
-        /// Fork (docs/specs/machines.md 3.1): the machine's own latency changed (e.g. a lookahead
-        /// setting); applied on the UI thread, where delay compensation is recomputed.
-        /// </summary>
-        internal void UpdateLatencyFromMachine(int samples)
-        {
-            dispatcher.BeginInvoke(() =>
-            {
-                if (latency != samples) Latency = samples;
-            });
         }
 
         int overrideLatency = -1;
@@ -461,6 +450,140 @@ namespace ReBuzz.Core
                     PropertyChanged.Raise(this, "OverrideLatency");
                 }
             }
+        }
+
+        // Fork (docs/specs/mastering-tools.md §4.1): the latency delay compensation uses for this machine, as the
+        // audio thread sees it: set with Latency, and by the machine's own report at its tick (a lookahead
+        // setting), which reaches the compensation in that same block, before the work; Latency follows on the
+        // UI thread through the UI event queue.
+        int engineLatency;
+        int latencyEventPending;
+
+        /// <summary>The latency the compensation counts: the override if set, else the machine's; a bypass that can't keep it (not a stereo effect) counts 0.</summary>
+        internal int LatencyCompensated =>
+            IsBypassed && !BypassKeepsLatency ? 0 : overrideLatency >= 0 ? overrideLatency : engineLatency;
+
+        /// <summary>
+        /// Fork (docs/specs/machines.md 3.1, mastering-tools.md §4.1): the machine's own latency changed (a lookahead setting),
+        /// reported at its tick on the audio thread: the compensation applies it before this block's work (no allocation),
+        /// and the UI thread then updates Latency and grows the delays if they need room.
+        /// </summary>
+        internal void UpdateLatencyFromMachine(int samples)
+        {
+            if (samples == engineLatency) return;
+            engineLatency = samples;
+            if (graph.Buzz is ReBuzzCore bc) bc.LatencyDirty = true;
+            if (uiEvents != null)
+            {
+                if (Interlocked.Exchange(ref latencyEventPending, 1) == 0) uiEvents.Enqueue(this, 0, LatencyEvent);
+            }
+            else
+            {
+                dispatcher?.BeginInvoke(DeliverLatency);
+            }
+        }
+
+        const int LatencyEvent = 1;
+
+        void DeliverLatency()
+        {
+            Volatile.Write(ref latencyEventPending, 0);
+            if (latency != engineLatency)
+            {
+                latency = engineLatency;
+                PropertyChanged.Raise(this, "Latency");
+            }
+            // The delays already moved on the audio thread; this grows any ring that needed more room.
+            if (engineSettings.MachineDelayCompensation) (graph.Buzz as ReBuzzCore)?.UpdateMachineDelayCompensation();
+        }
+
+        // ── the bypass keeps the latency (mastering-tools.md §4.1) ──
+        //
+        // A bypassed effect with latency still counts it in the compensation, and passes its dry input delayed by
+        // it, so bypassing doesn't move the mix. It keeps working while bypassed (its output unused), so it comes
+        // back with its state current, and switching crossfades the wet output and the delayed dry over 5 ms.
+        // The dry input goes through BypassRing every block while the machine has latency, so a bypass has its
+        // history at once. Without latency, or with compensation off, a bypass is what it was: no work, the input
+        // passed on. Multi-I/O machines too.
+
+        /// <summary>The dry input delayed by the machine's latency (null until the machine has latency).</summary>
+        internal LatencyRing BypassRing;
+        readonly Sample[] dryDelayed = new Sample[256];
+        float bypassAmount;           // 0: the machine's output, 1: the delayed dry
+
+        /// <summary>A bypass here can keep the latency: a stereo effect (not multi-I/O).</summary>
+        internal bool BypassKeepsLatency =>
+            DLL != null && DLL.Info.Type == MachineType.Effect && (DLL.Info.Flags & MachineInfoFlags.MULTI_IO) == 0;
+
+        /// <summary>UI thread, audio lock held: room for the dry input's delay (the compensation's plan calls it).</summary>
+        internal void EnsureBypassRing(int samples)
+        {
+            if (!BypassKeepsLatency) return;
+            BypassRing ??= new LatencyRing();
+            BypassRing.EnsureCapacity(samples);
+        }
+
+        /// <summary>
+        /// Audio thread, at the start of the machine's work: this block goes through the latency-keeping bypass (the machine is
+        /// worked, its dry input delayed and mixed in by <see cref="BypassMix"/>): compensation on, a stereo effect with
+        /// latency or a bypass crossfade under way.
+        /// </summary>
+        internal bool BypassLatent(bool compensation)
+        {
+            var ring = BypassRing;
+            bool latent = compensation && ring != null && BypassKeepsLatency &&
+                          (LatencyCompensated > 0 || ring.Live || (bypassAmount > 0f && bypassAmount < 1f));
+            // Otherwise the plain bypass (or none) plays: the crossfade starts from where it stands.
+            if (!latent) bypassAmount = IsBypassed ? 1f : 0f;
+            return latent;
+        }
+
+        /// <summary>Audio thread: the block's dry input (before the machine's work changes it) into the bypass's delay.</summary>
+        internal void BypassCapture(Sample[] input, int n)
+        {
+            var ring = BypassRing;
+            ring.Request(LatencyCompensated, Math.Max(64, ReBuzzCore.masterInfo.SamplesPerSec / 200));
+            if (ring.Live)
+            {
+                ring.Write(input, n);
+                ring.Read(dryDelayed, n);
+            }
+            else
+            {
+                // No delay (the latency went to 0): the dry as it is.
+                ring.Passed();
+                Array.Copy(input, dryDelayed, n);
+            }
+        }
+
+        /// <summary>
+        /// Audio thread: the machine's output <paramref name="wet"/> (in place) as the bypass has it: itself, the delayed dry once
+        /// bypassed, a 5 ms crossfade between them when the bypass switches.
+        /// </summary>
+        internal Sample[] BypassMix(Sample[] wet, int n)
+        {
+            float target = IsBypassed ? 1f : 0f;
+            float a = bypassAmount;
+            if (a == target && a == 0f) return wet;
+            if (a == target)
+            {
+                Array.Copy(dryDelayed, wet, n);
+                return wet;
+            }
+            float step = 1f / Math.Max(64, ReBuzzCore.masterInfo.SamplesPerSec / 200);
+            for (int i = 0; i < n; i++)
+            {
+                a = target > a ? Math.Min(target, a + step) : Math.Max(target, a - step);
+                float g = a * a * (3f - 2f * a);
+                if (a == 1f) wet[i] = dryDelayed[i];
+                else if (a > 0f)
+                {
+                    wet[i].L += (dryDelayed[i].L - wet[i].L) * g;
+                    wet[i].R += (dryDelayed[i].R - wet[i].R) * g;
+                }
+            }
+            bypassAmount = a;
+            return wet;
         }
 
         public IMachineDLL PatternEditorDLL
@@ -637,6 +760,11 @@ namespace ReBuzz.Core
 
         void UiEventQueue.ITarget.Deliver(int arg, int kind)
         {
+            if (kind == LatencyEvent)
+            {
+                DeliverLatency();
+                return;
+            }
             Volatile.Write(ref isActiveEventPending, 0);
             PropertyChanged.Raise(this, "IsActive");
         }
@@ -649,7 +777,7 @@ namespace ReBuzz.Core
             if (dispatcher != null)
             {
                 uiEvents = UiEventQueue.For(dispatcher);
-                uiEvents.Reserve(1);                // its IsActive event
+                uiEvents.Reserve(2);                // its IsActive and Latency events
             }
 
             baseOctave = Global.GeneralSettings.DefaultMachineBaseOctave;
@@ -1058,6 +1186,7 @@ namespace ReBuzz.Core
             this.inputs.Add(mcc);
             var buzz = graph.Buzz as ReBuzzCore;
             buzz.TopologyGeneration++; // #107: invalidate cached work order
+            buzz.LatencyGraphChanged(); // fork (mastering-tools.md §4.1): the compensation's plan follows
             //if (mcc.Source.DLL.Info.Flags.HasFlag(MachineInfoFlags.DOES_INPUT_MIXING))
             buzz.MachineManager.AddInput(this, mcc.Source, true);
         }
@@ -1139,6 +1268,7 @@ namespace ReBuzz.Core
         {
             var buzz = graph.Buzz as ReBuzzCore;
             buzz.TopologyGeneration++; // #107: invalidate cached work order
+            buzz.LatencyGraphChanged(); // fork (mastering-tools.md §4.1): the compensation's plan follows
             var group = parameterGroups[0];
             int trackToRemove = Inputs.IndexOf(mc);
 
