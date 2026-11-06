@@ -106,8 +106,11 @@ namespace ReBuzz.Studio.Shell
 
         BuzzGUI.Common.ManagedActionStack Stack => host.Core?.SongCore?.ActionStack;
 
-        /// <summary>The selected view, when it has edit commands of its own.</summary>
-        IStudioEditTarget Target => (tabs.SelectedItem as TabItem)?.Content as IStudioEditTarget;
+        /// <summary>
+        /// The selected view, when it has edit commands of its own and this is the key window: on a Mac every window has the
+        /// menus (ui-gallery.md), and ⌘Z in a machine window undoes in the song, not in the Pattern View behind it.
+        /// </summary>
+        IStudioEditTarget Target => ActiveWindow == this ? (tabs.SelectedItem as TabItem)?.Content as IStudioEditTarget : null;
 
         /// <summary>
         /// The text box with the keyboard focus, if any: the Edit commands act on it first, as a Mac app's
