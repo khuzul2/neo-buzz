@@ -18,6 +18,11 @@ namespace NeoBuzz.DyeEssence
 
         static readonly int[] OscBase = { P.AType, P.BType, P.CType };
         static readonly int[] AnalogBase = { P.AShape, P.BShape, P.CShape };
+        static readonly int[] EnvBase = { P.E1Delay, P.E2Delay };
+        static readonly int[] LfoBase = { P.L1Shape, P.L2Shape, P.L3Shape, P.L4Shape };
+        static readonly int[] MacroParam = { P.M1, P.M2, P.M3, P.M4 };
+        /// <summary>The LFO sync choices' periods in beats (Free: 0).</summary>
+        static readonly float[] SyncBeats = { 0, 1f / 8, 1f / 6, 1f / 4, 1f / 3, 1f / 2, 2f / 3, 1, 2, 4, 8, 16 };
         static readonly int[] FilterBase = { P.F1Type, P.F2Type };
 
         readonly ParamValues values;
@@ -43,6 +48,8 @@ namespace NeoBuzz.DyeEssence
         public NoteBank Bank { get; }
         public readonly LevelMeter OutMeter = new LevelMeter();
         public float ModWheelValue, AftertouchValue;
+        /// <summary>The song's tempo (BPM), for synced LFOs and envelopes.</summary>
+        public double Tempo = 120;
 
         public void SetSampleRate(float sr)
         {
@@ -153,6 +160,40 @@ namespace NeoBuzz.DyeEssence
                 fs.Vel = values.F(b + (P.F1Vel - P.F1Type));
             }
             s.Routing = values.F(P.Routing);
+            for (int e = 0; e < 2; e++)
+            {
+                var me = s.ModEnv[e];
+                int b = EnvBase[e];
+                me.Delay = values.F(b);
+                me.A = values.F(b + (P.E1A - P.E1Delay));
+                me.Hold = values.F(b + (P.E1Hold - P.E1Delay));
+                me.D = values.F(b + (P.E1D - P.E1Delay));
+                me.S = values.F(b + (P.E1S - P.E1Delay));
+                me.R = values.F(b + (P.E1R - P.E1Delay));
+                me.ACurve = values.F(b + (P.E1ACurve - P.E1Delay));
+                me.DCurve = values.F(b + (P.E1DCurve - P.E1Delay));
+                me.RCurve = values.F(b + (P.E1RCurve - P.E1Delay));
+                me.Sync = values.On(b + (P.E1Sync - P.E1Delay));
+            }
+            for (int l = 0; l < 4; l++)
+            {
+                var lfo = s.Lfo[l];
+                int b = LfoBase[l];
+                lfo.Shape = (WaveShape)values.Choice(b);
+                lfo.Rate = values.F(b + (P.L1Rate - P.L1Shape));
+                lfo.Beats = SyncBeats[Math.Clamp(values.Choice(b + (P.L1Sync - P.L1Shape)), 0, SyncBeats.Length - 1)];
+                lfo.Retrig = values.On(b + (P.L1Retrig - P.L1Shape));
+                lfo.Phase = values.F(b + (P.L1Phase - P.L1Shape)) / 360f;
+                lfo.Fade = values.F(b + (P.L1Fade - P.L1Shape));
+            }
+            for (int m = 0; m < 4; m++) s.Macro[m] = values.F(MacroParam[m]);
+            for (int r = 0; r < s.Routes.Length; r++)
+            {
+                int b = P.R1Src + 3 * r;
+                s.Routes[r].Source = (RouteSource)values.Choice(b);
+                s.Routes[r].Dest = (RouteDest)values.Choice(b + 1);
+                s.Routes[r].Amount = values.F(b + 2);
+            }
             Env(s.Amp, P.AmpA, P.AmpD, P.AmpS, P.AmpR);
             Env(s.Flt, P.FltA, P.FltD, P.FltS, P.FltR);
             values.Clean();
@@ -171,6 +212,9 @@ namespace NeoBuzz.DyeEssence
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);
             Bank.S.Bend = bend * bendRange;
+            Bank.S.ModWheel = ModWheelValue;
+            Bank.S.Aftertouch = AftertouchValue;
+            Bank.S.Tempo = Tempo;
             bool any = Bank.Process(left, right, n);
             OutMeter.Feed(left, right, n);
             return any || OutMeter.Peak > 1e-6f;
