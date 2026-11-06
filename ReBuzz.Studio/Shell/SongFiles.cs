@@ -53,7 +53,7 @@ namespace ReBuzz.Studio.Shell
             var core = Core;
             if (core == null || !core.Modified) return true;
             string name = core.SongCore.SongName == null ? "Untitled" : System.IO.Path.GetFileName(core.SongCore.SongName);
-            var answer = await Dialogs.Ask($"Save changes to {name}?", Product.Name, UserButtons.YesNoCancel);
+            var answer = await Dialogs.Ask($"Save changes to {name}?", Product.Name, UserButtons.YesNoCancel, DialogChoices.SaveChanges);
             if (answer == UserAnswer.Cancel) return false;
             if (answer == UserAnswer.Yes) return await Save();
             core.Modified = false;

@@ -167,6 +167,24 @@ namespace BuzzGUI.Common
                 Grid.SetRow(tb, row);
                 grid.Children.Add(tb);
 
+                // Fork (docs/specs/ui-gallery.md): a free value (a string, as Agent's Port) has no options to choose from:
+                // a text box, saved as it loses the focus or on Return. Every setting was a drop-down of its options, so
+                // View ▸ Settings… threw (NullReferenceException) once the Agent page was there, as it always is.
+                if (p.Options == null)
+                {
+                    var text = new TextBox() { Margin = new Thickness(0, 0, 0, 4), VerticalContentAlignment = VerticalAlignment.Center, ToolTip = p.Description };
+                    text.SetBinding(TextBox.TextProperty, new Binding("Value") { Source = p, Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.LostFocus, ValidatesOnExceptions = true });
+                    text.KeyDown += (sender, e) =>
+                    {
+                        if (e.Key == Key.Enter) text.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
+                    };
+                    Grid.SetRow(text, row);
+                    Grid.SetColumn(text, 1);
+                    grid.Children.Add(text);
+                    row++;
+                    continue;
+                }
+
                 var cb = new ComboBox() { Margin = new Thickness(0, 0, 0, 4), ItemTemplate = Resources["ComboBoxItemTemplate"] as DataTemplate };
                 Grid.SetRow(cb, row);
                 Grid.SetColumn(cb, 1);

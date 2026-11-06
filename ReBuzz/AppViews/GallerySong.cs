@@ -30,10 +30,7 @@ namespace ReBuzz.Gallery
             public IEnumerable<MachineCore> Generators => new[] { Drums, Bass, Lead, Pad, NativeGenerator }.Where(m => m != null);
         }
 
-        /// <summary>
-        /// The song's parts in the open song (by their names), once it has been saved and opened again. The galleries
-        /// do that: notes moved onto the note lanes show in the Pattern View once the song is opened, as a user's are.
-        /// </summary>
+        /// <summary>The song's parts in the open song, by their names (the galleries save it first, so the title names it).</summary>
         public static Song Find(ReBuzzCore core)
         {
             var s = new Song();
@@ -53,7 +50,7 @@ namespace ReBuzz.Gallery
 
         /// <summary>
         /// Builds the song into the open (new, empty) song of <paramref name="core"/>, on the UI thread. Song end and
-        /// loop cover the 16-bar arrangement; the song is left with changes (the galleries save it and open it again).
+        /// loop cover the 16-bar arrangement; the song is left with changes (the galleries save it).
         /// </summary>
         public static Song Build(ReBuzzCore core)
         {
