@@ -344,6 +344,7 @@ namespace ReBuzz
             Directory.CreateDirectory(songFolder);
             string songPath = Path.Combine(songFolder, GallerySong.Title + ".bmxml");
             Buzz.SaveSongFile(songPath);
+            Buzz.SongCore.SongName = songPath;      // the song's file now, as Save As makes it (a named path doesn't)
             Buzz.Modified = false;
             await Idle(2000);
             var song = GallerySong.Find(Buzz);

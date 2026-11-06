@@ -79,8 +79,8 @@ namespace ReBuzzTests
             {
                 Assert.That(window.HasOutput, Is.False);
                 Assert.That(window.NoOutputText, Does.Contain("No audio output"), "it says why it can't record");
-                Assert.That(window.RecordCommand.CanExecute(null), Is.False, "Record waits for a device");
-                Assert.That(window.RenderLoopCommand.CanExecute(null), Is.False, "Render Loop too (it renders through the device's provider)");
+                Assert.That(window.RecordCommand.CanExecute(null!), Is.False, "Record waits for a device");
+                Assert.That(window.RenderLoopCommand.CanExecute(null!), Is.False, "Render Loop too (it renders through the device's provider)");
             }
             finally
             {
@@ -109,13 +109,13 @@ namespace ReBuzzTests
             {
                 view.MachineGraph = song;
                 Assert.That(view.Connections.Count(), Is.EqualTo(1), "the wire to the Master");
-                view.MachineGraph = null;
+                view.MachineGraph = null!;
 
                 machine.Ready = false;
                 Assert.DoesNotThrow(() => view.MachineGraph = song, "the view made again with the song open");
                 Assert.That(view.Machines.Select(m => m.Machine), Does.Not.Contain(machine), "a machine that isn't ready isn't shown");
                 Assert.That(view.Connections, Is.Empty, "nor its wire");
-                view.MachineGraph = null;
+                view.MachineGraph = null!;
                 machine.Ready = true;
                 view.MachineGraph = song;
                 Assert.That(view.Connections.Count(), Is.EqualTo(1), "shown again once it is");
@@ -123,7 +123,7 @@ namespace ReBuzzTests
             finally
             {
                 machine.Ready = true;
-                view.MachineGraph = null;
+                view.MachineGraph = null!;
                 view.Release();
             }
         }
