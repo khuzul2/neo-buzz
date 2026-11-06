@@ -1214,7 +1214,10 @@ namespace ReBuzz.Studio.Tests
                     for (int k = 0; k < gear.Count; k++)
                     {
                         float x = -0.9f + 1.6f * (k % cols) / (cols - 1), y = -0.85f + 1.6f * (k / cols) / System.Math.Max(1, (gear.Count - 1) / cols);
-                        Core.SongCore.CreateMachine(gear[k], null, gear[k].Replace("Neo ", "").Replace("Pedal ", "P "), null, null, null, -1, x, y);
+                        // As right-click ▸ New makes them (a spot taken moves to free space).
+                        var instrument = Core.Instruments.First(i => i.MachineDLL?.Name == gear[k]);
+                        var made = ReBuzz.Studio.Views.Machines.MachineEdits.Create(Core, instrument, x, y);
+                        if (made is MachineCore mc) mc.Name = gear[k].Replace("Neo ", "").Replace("Pedal ", "P ");
                     }
                     Settle();
                     window.ShowView("Machines");

@@ -325,6 +325,48 @@ namespace ReBuzz.Studio.Tests
             MachineEdits.Create(Core, Core.Instruments.First(i => i.MachineDLL.Name == gear && i.Name.Length == 0), x, y);
 
         [AvaloniaTest]
+        public void NewMachinesGoWhereThereIsRoom()
+        {
+            // Gallery mac-510: a new machine on top of the Master.
+            var (window, view) = OpenEmpty();
+            try
+            {
+                var song = Core.SongCore;
+                var master = Machine("Master");
+                bool Apart(IMachine a, IMachine b) =>
+                    System.Math.Abs(a.Position.Item1 - b.Position.Item1) >= BuzzGUI.Common.MachinePlacement.MinDx - 1e-4 ||
+                    System.Math.Abs(a.Position.Item2 - b.Position.Item2) >= BuzzGUI.Common.MachinePlacement.MinDy - 1e-4;
+                var poly = Core.Instruments.First(i => i.MachineDLL?.Name == "Neo Poly");
+                var eq = Core.Instruments.First(i => i.MachineDLL?.Name == "Neo EQ");
+
+                // The menu's New at the Master's own spot (as the gallery's harness did): beside it.
+                var a = MachineEdits.Create(Core, poly, master.Position.Item1, master.Position.Item2);
+                var b = MachineEdits.Create(Core, eq, master.Position.Item1, master.Position.Item2);
+                Assert.That(Apart(a, master) && Apart(b, master) && Apart(a, b), Is.True,
+                    $"Master {master.Position}, {a.Name} {a.Position}, {b.Name} {b.Position}");
+                Settle();
+                Assert.That(view.Canvas.BoxOf(a).Intersects(view.Canvas.BoxOf(master)), Is.False, "the boxes don't overlap on the canvas");
+                Assert.That(view.Canvas.BoxOf(b).Intersects(view.Canvas.BoxOf(master)), Is.False);
+                Assert.That(view.Canvas.BoxOf(b).Intersects(view.Canvas.BoxOf(a)), Is.False);
+
+                // The agent's machine_add places in columns: forty effects, none on another or the Master.
+                for (int i = 0; i < 40; i++)
+                {
+                    var (x, y) = ReBuzz.Agent.SongModel.NewPosition(Core, generator: false);
+                    song.CreateMachine("Neo EQ", null, $"EQ {i}", null, null, null, -1, x, y);
+                }
+                var all = song.Machines.ToList();
+                var clashes = all.SelectMany((m, i) => all.Skip(i + 1).Where(n => !Apart(m, n)).Select(n => $"{m.Name}/{n.Name}")).ToList();
+                Assert.That(clashes, Is.Empty);
+                Studio.Screenshot(window, "machines-new-in-free-space");
+            }
+            finally
+            {
+                Close(window);
+            }
+        }
+
+        [AvaloniaTest]
         public void ADoubleClickOpensTheGuiAndTheMenuOpensTheParameters()
         {
             var (window, view) = OpenEmpty();

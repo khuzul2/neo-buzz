@@ -63,14 +63,17 @@ namespace ReBuzz.Agent
 
         public static bool IsMaster(IMachine m) => m.DLL?.Info?.Type == MachineType.Master;
 
-        /// <summary>Where a new machine goes in the machine view: generators left, effects in the middle, in columns.</summary>
+        /// <summary>
+        /// Where a new machine goes in the machine view: generators left, effects in the middle, in
+        /// columns; moved to the nearest free spot when another machine is there (the Master, gallery mac-510).
+        /// </summary>
         public static (float X, float Y) NewPosition(ReBuzzCore core, bool generator)
         {
             int n = Machines(core).Count(m => !IsMaster(m) && (Kind(m) == "generator") == generator);
             float x = generator ? -0.75f : -0.25f;
             x += (n / 8) * 0.2f;
             float y = -0.8f + (n % 8) * 0.2f;
-            return (Math.Clamp(x, -0.95f, 0.95f), y);
+            return BuzzGUI.Common.MachinePlacement.Free(Machines(core), Math.Clamp(x, -0.95f, 0.95f), y);
         }
 
         // ------------------------------------------------------------------ patterns
