@@ -37,18 +37,16 @@ namespace ReBuzz
             {
                 msv.Markdown = tbInfo.Text;
             };
+            msv.Markdown = tbInfo.Text;
 
             Unloaded += (s, e) =>
             {
                 BindingOperations.ClearBinding(tbInfo, TextBox.TextProperty);
             };
 
-            Loaded += (s, e) =>
-            {   
-                // Force draw
-                tbInfo.Text = " ";
-                tbInfo.Text = "";
-            };
+            // Fork: no "force draw" on Loaded any more. It set the box to " " then "" through the TwoWay
+            // binding: a view loaded with a song open (a theme change makes a new one) showed no info
+            // text, and wrote "" over the song's InfoText when the box next lost focus.
 
             tbInfo.PreviewMouseWheel += (sender, e) =>
             {

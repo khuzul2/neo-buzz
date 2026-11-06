@@ -382,7 +382,7 @@ namespace ReBuzz
                 await Shot(this, "050-wavetable", "Wavetable View with its file browser panel (no waves loaded in the demo song).", "F9.", settle: 1000);
 
                 Buzz.ActiveView = BuzzView.SongInfoView;
-                await Shot(this, "060-song-info", "Song Info View (Buzz's Info, the song's notes).", "F10.", settle: 800);
+                await Shot(this, "060-song-info", "Song Notes (F10): the demo song's notes (Markdown) in the editor and as they read, with the formatting toolbar; the Mac app's Song Notes view. Buzz's old info text comes in as an imported note.", "F10.", settle: 800);
 
                 Buzz.ActiveView = BuzzView.SessionView;
                 await Shot(this, "070-session", "Session View docked in the main window (stopped): the demo song's scenes, clips, colours, mixer.", "Ctrl+Tab, or View ▸ Session View.", settle: 1000);
