@@ -264,3 +264,50 @@ Amp release = 1.6
 Flt attack = 0.6
 Flt decay = 2
 Volume = -10
+
+preset "Pad — Position Sweep"
+A table = Formants
+A position = 20
+A unison = 4
+A detune = 14
+A spread = 90
+F1 type = LP 12
+F1 cutoff = 2500
+F1 env = 0
+Amp attack = 0.7
+Amp decay = 2
+Amp sustain = 90
+Amp release = 2.2
+LFO1 shape = Triangle
+LFO1 rate = 0.15
+LFO1 retrig = Off
+Env1 attack = 2.5
+Env1 decay = 3
+Env1 sustain = 40
+R1 source = LFO 1
+R1 dest = A position
+R1 amount = 35
+R2 source = Mod env 1
+R2 dest = F1 cutoff
+R2 amount = 25
+Volume = -6
+
+preset "Lead — Delayed Vibrato"
+A unison = 3
+A detune = 12
+F1 cutoff = 4500
+F1 reso = 20
+LFO1 shape = Sine
+LFO1 rate = 5.5
+LFO1 fade = 0.7
+R1 source = LFO 1
+R1 dest = Pitch
+R1 amount = 1.5
+R2 source = Mod wheel
+R2 dest = F1 cutoff
+R2 amount = 30
+Amp attack = 0.01
+Amp sustain = 90
+Amp release = 0.3
+Volume = -9
+

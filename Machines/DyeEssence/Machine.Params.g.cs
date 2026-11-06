@@ -325,6 +325,294 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "C drift", Description = "The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are", MinValue = 0, MaxValue = 1000, DefValue = 200)]
         public int CDrift { get => Values[P.CDrift]; set => Values.Set(P.CDrift, value); }
 
+        [ParameterDecl(Name = "Env1 delay", Description = "Delay before the attack", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int E1Delay { get => Values[P.E1Delay]; set => Values.Set(P.E1Delay, value); }
+
+        [ParameterDecl(Name = "Env1 attack", Description = "Attack time", MinValue = 0, MaxValue = 1000, DefValue = 300)]
+        public int E1A { get => Values[P.E1A]; set => Values.Set(P.E1A, value); }
+
+        [ParameterDecl(Name = "Env1 hold", Description = "Hold at the top", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int E1Hold { get => Values[P.E1Hold]; set => Values.Set(P.E1Hold, value); }
+
+        [ParameterDecl(Name = "Env1 decay", Description = "Decay time", MinValue = 0, MaxValue = 1000, DefValue = 600)]
+        public int E1D { get => Values[P.E1D]; set => Values.Set(P.E1D, value); }
+
+        [ParameterDecl(Name = "Env1 sustain", Description = "Sustain level", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int E1S { get => Values[P.E1S]; set => Values.Set(P.E1S, value); }
+
+        [ParameterDecl(Name = "Env1 release", Description = "Release time", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int E1R { get => Values[P.E1R]; set => Values.Set(P.E1R, value); }
+
+        [ParameterDecl(Name = "Env1 att curve", Description = "Attack shape: −100 % fast start, 0 straight, +100 % slow start", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int E1ACurve { get => Values[P.E1ACurve]; set => Values.Set(P.E1ACurve, value); }
+
+        [ParameterDecl(Name = "Env1 dec curve", Description = "Decay shape: −100 % fast start, 0 straight, +100 % slow start", MinValue = 0, MaxValue = 1000, DefValue = 200)]
+        public int E1DCurve { get => Values[P.E1DCurve]; set => Values.Set(P.E1DCurve, value); }
+
+        [ParameterDecl(Name = "Env1 rel curve", Description = "Release shape: −100 % fast start, 0 straight, +100 % slow start", MinValue = 0, MaxValue = 1000, DefValue = 200)]
+        public int E1RCurve { get => Values[P.E1RCurve]; set => Values.Set(P.E1RCurve, value); }
+
+        [ParameterDecl(Name = "Env1 sync", Description = "Beats: each time is read as beats of the song's tempo (1 s = 1 beat)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int E1Sync { get => Values[P.E1Sync]; set => Values.Set(P.E1Sync, value); }
+
+        [ParameterDecl(Name = "Env2 delay", Description = "Delay before the attack", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int E2Delay { get => Values[P.E2Delay]; set => Values.Set(P.E2Delay, value); }
+
+        [ParameterDecl(Name = "Env2 attack", Description = "Attack time", MinValue = 0, MaxValue = 1000, DefValue = 300)]
+        public int E2A { get => Values[P.E2A]; set => Values.Set(P.E2A, value); }
+
+        [ParameterDecl(Name = "Env2 hold", Description = "Hold at the top", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int E2Hold { get => Values[P.E2Hold]; set => Values.Set(P.E2Hold, value); }
+
+        [ParameterDecl(Name = "Env2 decay", Description = "Decay time", MinValue = 0, MaxValue = 1000, DefValue = 600)]
+        public int E2D { get => Values[P.E2D]; set => Values.Set(P.E2D, value); }
+
+        [ParameterDecl(Name = "Env2 sustain", Description = "Sustain level", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int E2S { get => Values[P.E2S]; set => Values.Set(P.E2S, value); }
+
+        [ParameterDecl(Name = "Env2 release", Description = "Release time", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int E2R { get => Values[P.E2R]; set => Values.Set(P.E2R, value); }
+
+        [ParameterDecl(Name = "Env2 att curve", Description = "Attack shape: −100 % fast start, 0 straight, +100 % slow start", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int E2ACurve { get => Values[P.E2ACurve]; set => Values.Set(P.E2ACurve, value); }
+
+        [ParameterDecl(Name = "Env2 dec curve", Description = "Decay shape: −100 % fast start, 0 straight, +100 % slow start", MinValue = 0, MaxValue = 1000, DefValue = 200)]
+        public int E2DCurve { get => Values[P.E2DCurve]; set => Values.Set(P.E2DCurve, value); }
+
+        [ParameterDecl(Name = "Env2 rel curve", Description = "Release shape: −100 % fast start, 0 straight, +100 % slow start", MinValue = 0, MaxValue = 1000, DefValue = 200)]
+        public int E2RCurve { get => Values[P.E2RCurve]; set => Values.Set(P.E2RCurve, value); }
+
+        [ParameterDecl(Name = "Env2 sync", Description = "Beats: each time is read as beats of the song's tempo (1 s = 1 beat)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int E2Sync { get => Values[P.E2Sync]; set => Values.Set(P.E2Sync, value); }
+
+        [ParameterDecl(Name = "LFO1 shape", Description = "Waveform", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        public int L1Shape { get => Values[P.L1Shape]; set => Values.Set(P.L1Shape, value); }
+
+        [ParameterDecl(Name = "LFO1 rate", Description = "Rate (free)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int L1Rate { get => Values[P.L1Rate]; set => Values.Set(P.L1Rate, value); }
+
+        [ParameterDecl(Name = "LFO1 sync", Description = "Tempo sync (overrides the rate)", MinValue = 0, MaxValue = 11, DefValue = 0)]
+        public int L1Sync { get => Values[P.L1Sync]; set => Values.Set(P.L1Sync, value); }
+
+        [ParameterDecl(Name = "LFO1 retrig", Description = "Restart with each note (one per note); off: one free LFO for all notes", MinValue = 0, MaxValue = 1, DefValue = 1)]
+        public int L1Retrig { get => Values[P.L1Retrig]; set => Values.Set(P.L1Retrig, value); }
+
+        [ParameterDecl(Name = "LFO1 phase", Description = "Start phase (retrig)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int L1Phase { get => Values[P.L1Phase]; set => Values.Set(P.L1Phase, value); }
+
+        [ParameterDecl(Name = "LFO1 fade", Description = "Fade-in time after the note starts", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int L1Fade { get => Values[P.L1Fade]; set => Values.Set(P.L1Fade, value); }
+
+        [ParameterDecl(Name = "LFO2 shape", Description = "Waveform", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        public int L2Shape { get => Values[P.L2Shape]; set => Values.Set(P.L2Shape, value); }
+
+        [ParameterDecl(Name = "LFO2 rate", Description = "Rate (free)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int L2Rate { get => Values[P.L2Rate]; set => Values.Set(P.L2Rate, value); }
+
+        [ParameterDecl(Name = "LFO2 sync", Description = "Tempo sync (overrides the rate)", MinValue = 0, MaxValue = 11, DefValue = 0)]
+        public int L2Sync { get => Values[P.L2Sync]; set => Values.Set(P.L2Sync, value); }
+
+        [ParameterDecl(Name = "LFO2 retrig", Description = "Restart with each note (one per note); off: one free LFO for all notes", MinValue = 0, MaxValue = 1, DefValue = 1)]
+        public int L2Retrig { get => Values[P.L2Retrig]; set => Values.Set(P.L2Retrig, value); }
+
+        [ParameterDecl(Name = "LFO2 phase", Description = "Start phase (retrig)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int L2Phase { get => Values[P.L2Phase]; set => Values.Set(P.L2Phase, value); }
+
+        [ParameterDecl(Name = "LFO2 fade", Description = "Fade-in time after the note starts", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int L2Fade { get => Values[P.L2Fade]; set => Values.Set(P.L2Fade, value); }
+
+        [ParameterDecl(Name = "LFO3 shape", Description = "Waveform", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        public int L3Shape { get => Values[P.L3Shape]; set => Values.Set(P.L3Shape, value); }
+
+        [ParameterDecl(Name = "LFO3 rate", Description = "Rate (free)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int L3Rate { get => Values[P.L3Rate]; set => Values.Set(P.L3Rate, value); }
+
+        [ParameterDecl(Name = "LFO3 sync", Description = "Tempo sync (overrides the rate)", MinValue = 0, MaxValue = 11, DefValue = 0)]
+        public int L3Sync { get => Values[P.L3Sync]; set => Values.Set(P.L3Sync, value); }
+
+        [ParameterDecl(Name = "LFO3 retrig", Description = "Restart with each note (one per note); off: one free LFO for all notes", MinValue = 0, MaxValue = 1, DefValue = 1)]
+        public int L3Retrig { get => Values[P.L3Retrig]; set => Values.Set(P.L3Retrig, value); }
+
+        [ParameterDecl(Name = "LFO3 phase", Description = "Start phase (retrig)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int L3Phase { get => Values[P.L3Phase]; set => Values.Set(P.L3Phase, value); }
+
+        [ParameterDecl(Name = "LFO3 fade", Description = "Fade-in time after the note starts", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int L3Fade { get => Values[P.L3Fade]; set => Values.Set(P.L3Fade, value); }
+
+        [ParameterDecl(Name = "LFO4 shape", Description = "Waveform", MinValue = 0, MaxValue = 6, DefValue = 0)]
+        public int L4Shape { get => Values[P.L4Shape]; set => Values.Set(P.L4Shape, value); }
+
+        [ParameterDecl(Name = "LFO4 rate", Description = "Rate (free)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int L4Rate { get => Values[P.L4Rate]; set => Values.Set(P.L4Rate, value); }
+
+        [ParameterDecl(Name = "LFO4 sync", Description = "Tempo sync (overrides the rate)", MinValue = 0, MaxValue = 11, DefValue = 0)]
+        public int L4Sync { get => Values[P.L4Sync]; set => Values.Set(P.L4Sync, value); }
+
+        [ParameterDecl(Name = "LFO4 retrig", Description = "Restart with each note (one per note); off: one free LFO for all notes", MinValue = 0, MaxValue = 1, DefValue = 1)]
+        public int L4Retrig { get => Values[P.L4Retrig]; set => Values.Set(P.L4Retrig, value); }
+
+        [ParameterDecl(Name = "LFO4 phase", Description = "Start phase (retrig)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int L4Phase { get => Values[P.L4Phase]; set => Values.Set(P.L4Phase, value); }
+
+        [ParameterDecl(Name = "LFO4 fade", Description = "Fade-in time after the note starts", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int L4Fade { get => Values[P.L4Fade]; set => Values.Set(P.L4Fade, value); }
+
+        [ParameterDecl(Name = "Macro 1", Description = "A knob for routes to follow", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int M1 { get => Values[P.M1]; set => Values.Set(P.M1, value); }
+
+        [ParameterDecl(Name = "Macro 2", Description = "A knob for routes to follow", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int M2 { get => Values[P.M2]; set => Values.Set(P.M2, value); }
+
+        [ParameterDecl(Name = "Macro 3", Description = "A knob for routes to follow", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int M3 { get => Values[P.M3]; set => Values.Set(P.M3, value); }
+
+        [ParameterDecl(Name = "Macro 4", Description = "A knob for routes to follow", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int M4 { get => Values[P.M4]; set => Values.Set(P.M4, value); }
+
+        [ParameterDecl(Name = "R1 source", Description = "Route 1: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R1Src { get => Values[P.R1Src]; set => Values.Set(P.R1Src, value); }
+
+        [ParameterDecl(Name = "R1 dest", Description = "Route 1: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R1Dst { get => Values[P.R1Dst]; set => Values.Set(P.R1Dst, value); }
+
+        [ParameterDecl(Name = "R1 amount", Description = "Route 1: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R1Amt { get => Values[P.R1Amt]; set => Values.Set(P.R1Amt, value); }
+
+        [ParameterDecl(Name = "R2 source", Description = "Route 2: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R2Src { get => Values[P.R2Src]; set => Values.Set(P.R2Src, value); }
+
+        [ParameterDecl(Name = "R2 dest", Description = "Route 2: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R2Dst { get => Values[P.R2Dst]; set => Values.Set(P.R2Dst, value); }
+
+        [ParameterDecl(Name = "R2 amount", Description = "Route 2: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R2Amt { get => Values[P.R2Amt]; set => Values.Set(P.R2Amt, value); }
+
+        [ParameterDecl(Name = "R3 source", Description = "Route 3: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R3Src { get => Values[P.R3Src]; set => Values.Set(P.R3Src, value); }
+
+        [ParameterDecl(Name = "R3 dest", Description = "Route 3: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R3Dst { get => Values[P.R3Dst]; set => Values.Set(P.R3Dst, value); }
+
+        [ParameterDecl(Name = "R3 amount", Description = "Route 3: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R3Amt { get => Values[P.R3Amt]; set => Values.Set(P.R3Amt, value); }
+
+        [ParameterDecl(Name = "R4 source", Description = "Route 4: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R4Src { get => Values[P.R4Src]; set => Values.Set(P.R4Src, value); }
+
+        [ParameterDecl(Name = "R4 dest", Description = "Route 4: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R4Dst { get => Values[P.R4Dst]; set => Values.Set(P.R4Dst, value); }
+
+        [ParameterDecl(Name = "R4 amount", Description = "Route 4: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R4Amt { get => Values[P.R4Amt]; set => Values.Set(P.R4Amt, value); }
+
+        [ParameterDecl(Name = "R5 source", Description = "Route 5: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R5Src { get => Values[P.R5Src]; set => Values.Set(P.R5Src, value); }
+
+        [ParameterDecl(Name = "R5 dest", Description = "Route 5: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R5Dst { get => Values[P.R5Dst]; set => Values.Set(P.R5Dst, value); }
+
+        [ParameterDecl(Name = "R5 amount", Description = "Route 5: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R5Amt { get => Values[P.R5Amt]; set => Values.Set(P.R5Amt, value); }
+
+        [ParameterDecl(Name = "R6 source", Description = "Route 6: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R6Src { get => Values[P.R6Src]; set => Values.Set(P.R6Src, value); }
+
+        [ParameterDecl(Name = "R6 dest", Description = "Route 6: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R6Dst { get => Values[P.R6Dst]; set => Values.Set(P.R6Dst, value); }
+
+        [ParameterDecl(Name = "R6 amount", Description = "Route 6: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R6Amt { get => Values[P.R6Amt]; set => Values.Set(P.R6Amt, value); }
+
+        [ParameterDecl(Name = "R7 source", Description = "Route 7: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R7Src { get => Values[P.R7Src]; set => Values.Set(P.R7Src, value); }
+
+        [ParameterDecl(Name = "R7 dest", Description = "Route 7: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R7Dst { get => Values[P.R7Dst]; set => Values.Set(P.R7Dst, value); }
+
+        [ParameterDecl(Name = "R7 amount", Description = "Route 7: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R7Amt { get => Values[P.R7Amt]; set => Values.Set(P.R7Amt, value); }
+
+        [ParameterDecl(Name = "R8 source", Description = "Route 8: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R8Src { get => Values[P.R8Src]; set => Values.Set(P.R8Src, value); }
+
+        [ParameterDecl(Name = "R8 dest", Description = "Route 8: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R8Dst { get => Values[P.R8Dst]; set => Values.Set(P.R8Dst, value); }
+
+        [ParameterDecl(Name = "R8 amount", Description = "Route 8: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R8Amt { get => Values[P.R8Amt]; set => Values.Set(P.R8Amt, value); }
+
+        [ParameterDecl(Name = "R9 source", Description = "Route 9: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R9Src { get => Values[P.R9Src]; set => Values.Set(P.R9Src, value); }
+
+        [ParameterDecl(Name = "R9 dest", Description = "Route 9: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R9Dst { get => Values[P.R9Dst]; set => Values.Set(P.R9Dst, value); }
+
+        [ParameterDecl(Name = "R9 amount", Description = "Route 9: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R9Amt { get => Values[P.R9Amt]; set => Values.Set(P.R9Amt, value); }
+
+        [ParameterDecl(Name = "R10 source", Description = "Route 10: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R10Src { get => Values[P.R10Src]; set => Values.Set(P.R10Src, value); }
+
+        [ParameterDecl(Name = "R10 dest", Description = "Route 10: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R10Dst { get => Values[P.R10Dst]; set => Values.Set(P.R10Dst, value); }
+
+        [ParameterDecl(Name = "R10 amount", Description = "Route 10: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R10Amt { get => Values[P.R10Amt]; set => Values.Set(P.R10Amt, value); }
+
+        [ParameterDecl(Name = "R11 source", Description = "Route 11: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R11Src { get => Values[P.R11Src]; set => Values.Set(P.R11Src, value); }
+
+        [ParameterDecl(Name = "R11 dest", Description = "Route 11: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R11Dst { get => Values[P.R11Dst]; set => Values.Set(P.R11Dst, value); }
+
+        [ParameterDecl(Name = "R11 amount", Description = "Route 11: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R11Amt { get => Values[P.R11Amt]; set => Values.Set(P.R11Amt, value); }
+
+        [ParameterDecl(Name = "R12 source", Description = "Route 12: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R12Src { get => Values[P.R12Src]; set => Values.Set(P.R12Src, value); }
+
+        [ParameterDecl(Name = "R12 dest", Description = "Route 12: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R12Dst { get => Values[P.R12Dst]; set => Values.Set(P.R12Dst, value); }
+
+        [ParameterDecl(Name = "R12 amount", Description = "Route 12: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R12Amt { get => Values[P.R12Amt]; set => Values.Set(P.R12Amt, value); }
+
+        [ParameterDecl(Name = "R13 source", Description = "Route 13: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R13Src { get => Values[P.R13Src]; set => Values.Set(P.R13Src, value); }
+
+        [ParameterDecl(Name = "R13 dest", Description = "Route 13: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R13Dst { get => Values[P.R13Dst]; set => Values.Set(P.R13Dst, value); }
+
+        [ParameterDecl(Name = "R13 amount", Description = "Route 13: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R13Amt { get => Values[P.R13Amt]; set => Values.Set(P.R13Amt, value); }
+
+        [ParameterDecl(Name = "R14 source", Description = "Route 14: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R14Src { get => Values[P.R14Src]; set => Values.Set(P.R14Src, value); }
+
+        [ParameterDecl(Name = "R14 dest", Description = "Route 14: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R14Dst { get => Values[P.R14Dst]; set => Values.Set(P.R14Dst, value); }
+
+        [ParameterDecl(Name = "R14 amount", Description = "Route 14: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R14Amt { get => Values[P.R14Amt]; set => Values.Set(P.R14Amt, value); }
+
+        [ParameterDecl(Name = "R15 source", Description = "Route 15: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R15Src { get => Values[P.R15Src]; set => Values.Set(P.R15Src, value); }
+
+        [ParameterDecl(Name = "R15 dest", Description = "Route 15: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R15Dst { get => Values[P.R15Dst]; set => Values.Set(P.R15Dst, value); }
+
+        [ParameterDecl(Name = "R15 amount", Description = "Route 15: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R15Amt { get => Values[P.R15Amt]; set => Values.Set(P.R15Amt, value); }
+
+        [ParameterDecl(Name = "R16 source", Description = "Route 16: what modulates", MinValue = 0, MaxValue = 17, DefValue = 0)]
+        public int R16Src { get => Values[P.R16Src]; set => Values.Set(P.R16Src, value); }
+
+        [ParameterDecl(Name = "R16 dest", Description = "Route 16: what it moves", MinValue = 0, MaxValue = 27, DefValue = 0)]
+        public int R16Dst { get => Values[P.R16Dst]; set => Values.Set(P.R16Dst, value); }
+
+        [ParameterDecl(Name = "R16 amount", Description = "Route 16: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int R16Amt { get => Values[P.R16Amt]; set => Values.Set(P.R16Amt, value); }
+
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);
 

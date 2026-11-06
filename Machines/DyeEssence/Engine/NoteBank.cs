@@ -79,6 +79,20 @@ namespace NeoBuzz.DyeEssence
         public float Glide;
         /// <summary>Pitch bend now, in semitones.</summary>
         public float Bend;
+        /// <summary>Modulation (§4.5): two envelopes, four LFOs, four macros (0 … 1), sixteen routes; the song's tempo; the wheel and pressure (0 … 1).</summary>
+        public readonly ModEnvSettings[] ModEnv = { new ModEnvSettings(), new ModEnvSettings() };
+        public readonly LfoSettings[] Lfo = { new LfoSettings(), new LfoSettings(), new LfoSettings(), new LfoSettings() };
+        public readonly float[] Macro = new float[4];
+        public readonly RouteSettings[] Routes = NewRoutes();
+        public double Tempo = 120;
+        public float ModWheel, Aftertouch;
+
+        static RouteSettings[] NewRoutes()
+        {
+            var r = new RouteSettings[16];
+            for (int i = 0; i < r.Length; i++) r[i] = new RouteSettings();
+            return r;
+        }
     }
 
     internal sealed class NoteBank
@@ -167,6 +181,28 @@ namespace NeoBuzz.DyeEssence
         readonly float[] pendKey = new float[Notes], pendVel = new float[Notes], pendFrom = new float[Notes];
         readonly bool[] live = new bool[Notes], pendingControl = new bool[Notes], snap = new bool[Notes];
         readonly uint[] seeds = new uint[Notes];
+
+        // Modulation per note: the envelopes, the LFOs (phase, the random values either side, the time
+        // since the note began), a random value, and the destinations this tick and the last.
+        const int DestCount = (int)RouteDest.Count;
+        readonly int[] envStage = new int[2 * Notes];
+        readonly double[] envTime = new double[2 * Notes];
+        readonly float[] envLevel = new float[2 * Notes], envFrom = new float[2 * Notes];
+        readonly double[] lfoPhase = new double[4 * Notes], noteAge = new double[Notes];
+        readonly float[] lfoHeld = new float[4 * Notes], lfoNext = new float[4 * Notes];
+        readonly uint[] lfoSeed = new uint[Notes];
+        readonly float[] noteRandom = new float[Notes];
+        readonly float[] dest = new float[Notes * DestCount], destLast = new float[Notes * DestCount];
+        readonly float[] srcValue = new float[(int)RouteSource.Count];
+        readonly bool[] modMoved = new bool[Notes];
+        // The free LFOs (retrig off): one for every note.
+        readonly double[] freePhase = new double[4];
+        readonly float[] freeHeld = new float[4], freeNext = new float[4], freeValue = new float[4];
+        uint freeSeed = 0x6A09E667u;
+        bool anyRoute;
+
+        /// <summary>Destination <paramref name="d"/>'s modulation for a note (0 without routes).</summary>
+        float Md(int note, RouteDest d) => dest[note * DestCount + (int)d];
 
         // The sub and the noise, notes as lanes.
         readonly LaneState sub = new LaneState(Notes);
@@ -445,6 +481,24 @@ namespace NeoBuzz.DyeEssence
                     Array.Clear(combR[f], slot * NoteFilters.CombLength, NoteFilters.CombLength);
                 }
             }
+            // Modulation starts with the note: envelopes from their delay, LFOs at their phase.
+            var mr = new Rng(seeds[slot] ^ 0x9B05688Cu);
+            for (int e = 0; e < 2; e++)
+            {
+                envStage[2 * slot + e] = ModEnvelope.Delay;
+                envTime[2 * slot + e] = 0;
+                envLevel[2 * slot + e] = envFrom[2 * slot + e] = 0;
+            }
+            for (int l = 0; l < 4; l++)
+            {
+                lfoPhase[4 * slot + l] = s.Lfo[l].Phase - Math.Floor(s.Lfo[l].Phase);
+                lfoHeld[4 * slot + l] = mr.NextBipolar();
+                lfoNext[4 * slot + l] = mr.NextBipolar();
+            }
+            lfoSeed[slot] = mr.NextUInt() | 1u;
+            noteRandom[slot] = mr.NextBipolar();
+            noteAge[slot] = 0;
+            Array.Clear(dest, slot * DestCount, DestCount);
             snap[slot] = true;
             pendingControl[slot] = true;
         }
@@ -574,6 +628,24 @@ namespace NeoBuzz.DyeEssence
             NoteEnvelope.Factors(s.Amp, tickDt, out ampKa, out ampKd, out ampKr);
             NoteEnvelope.Factors(s.Flt, tickDt, out fltKa, out fltKd, out fltKr);
             glideK = GlideFactor(tickDt);
+            anyRoute = false;
+            foreach (var r in s.Routes) anyRoute |= r.Source != RouteSource.Off && r.Dest != RouteDest.Off && r.Amount != 0;
+            for (int l = 0; l < 4; l++)
+            {
+                var lfo = s.Lfo[l];
+                if (lfo.Retrig) continue;
+                double p = freePhase[l] + LfoRate(lfo, 0f) * tickDt;
+                if (p >= 1)
+                {
+                    p -= Math.Floor(p);
+                    freeHeld[l] = freeNext[l];
+                    var rng = new Rng(freeSeed);
+                    freeNext[l] = rng.NextBipolar();
+                    freeSeed = rng.NextUInt() | 1u;
+                }
+                freePhase[l] = p;
+                freeValue[l] = LfoWave.Value(lfo.Shape, p, freeHeld[l], freeNext[l]);
+            }
             for (int f = 0; f < 2; f++)
             {
                 var t = s.Filter[f].Type;
@@ -665,6 +737,7 @@ namespace NeoBuzz.DyeEssence
             }
             float amp = NoteEnvelope.Advance(ref ampStage[note], ref ampLevel[note], gate[note], s.Amp, dt, ka, kd, kr);
             float fe = NoteEnvelope.Advance(ref fltStage[note], ref fltLevel[note], gate[note], s.Flt, dt, fa, fd, fr);
+            Modulate(note, dt, amp, fe);
             if (noteKey[note] != noteTarget[note])
             {
                 float k = noteTarget[note] + (noteKey[note] - noteTarget[note]) * (float)kg;
@@ -678,17 +751,17 @@ namespace NeoBuzz.DyeEssence
             }
             float invCount = 1f / count;
             float vel = noteVel[note];
-            float target = ampStage[note] == NoteEnvelope.Idle ? 0f : amp * Sm(SmVolume) * (1f - s.VelAmp + s.VelAmp * vel) * f;
+            float target = ampStage[note] == NoteEnvelope.Idle ? 0f : amp * Sm(SmVolume) * (1f - s.VelAmp + s.VelAmp * vel) * f * Math.Max(0f, 1f + Md(note, RouteDest.Amp));
             noteGain[Notes + note] = (target - noteGain[note]) * invCount;
 
-            double noteHz = DspMath.NoteToHz(noteKey[note] + s.Bend);
+            double noteHz = DspMath.NoteToHz(noteKey[note] + s.Bend + 12f * Md(note, RouteDest.Pitch));
             double vr = VoiceRate;
             // Mip levels: the plain ones keep harmonics under 44 kHz (the decimator takes 20–24 kHz
             // out); a warped one allows for how fast its warps read, up to the voice rate's Nyquist.
             double limitPlain = Math.Min(44000.0, vr * 0.5 - 100) / vr;
             double limitWarp = (vr * 0.5 - 100) / vr;
             double subRatio = s.SubOctave <= -2 ? 0.25 : s.SubOctave == -1 ? 0.5 : 1.0;
-            if (laid[note] && !settingsMoved && noteHz == lastHz[note])
+            if (laid[note] && !settingsMoved && !modMoved[note] && noteHz == lastHz[note])
             {
                 // Steady: stop the ramps once (each gain exactly at its target), then nothing to do.
                 if (rampsLive[note]) Settle(note);
@@ -739,7 +812,7 @@ namespace NeoBuzz.DyeEssence
             for (int o = 0; o < Oscillators; o++) if (modOf[o] >= 0 && modOf[o] < Oscillators) isMod[modOf[o]] = true;
             for (int o = 0; o < Oscillators; o++)
             {
-                if (playU[o] > 0 && !isMod[o] && OscLevel(o) <= 0) playU[o] = 0;
+                if (playU[o] > 0 && !isMod[o] && Level(note, o) <= 0) playU[o] = 0;
                 // Voices that stop: the next time they play they ramp in from silence.
                 for (int l = playU[o], was = placedUnison[note * Oscillators + o]; l < was; l++)
                     for (int r = 0; r < 4; r++) voiceGain[r * v + nb + o * MaxUnison + l] = 0;
@@ -813,6 +886,8 @@ namespace NeoBuzz.DyeEssence
                 var engine = EngineOf(os);
                 var table = engine.TableOf(os);
                 double baseInc = noteHz * oscRatio[o] / vr;
+                float pitchMod = Md(note, RouteDest.APitch + o);
+                if (pitchMod != 0) baseInc *= PortableMath.Exp2(pitchMod);   // ±12 st at full amount
                 double top = Math.Min(baseInc * topRatio[o], 0.49);
                 int level;
                 if (!warped[o]) level = Wavetable.LevelFor(top, limitPlain);
@@ -821,12 +896,12 @@ namespace NeoBuzz.DyeEssence
                     int m = modOf[o];
                     double modHz = m < 0 || m == Oscillators + 1 ? 0 : m == Oscillators ? noteHz * subRatio : noteHz * oscRatio[m] * topRatio[m];
                     float modRatio = (float)(modHz / Math.Max(1e-9, noteHz * oscRatio[o]));
-                    double speed = Warps.Speed(os.Warp1, OscAmount(o, 0), modRatio) * Warps.Speed(os.Warp2, OscAmount(o, 1), modRatio);
+                    double speed = Warps.Speed(os.Warp1, Amount(note, o, 0), modRatio) * Warps.Speed(os.Warp2, Amount(note, o, 1), modRatio);
                     level = Wavetable.LevelFor(top * speed, limitWarp);
-                    SetWarps(ref warpSet[note * Oscillators + o], os, OscAmount(o, 0), OscAmount(o, 1), m, TableArena.Log2(level));
+                    SetWarps(ref warpSet[note * Oscillators + o], os, Amount(note, o, 0), Amount(note, o, 1), m, TableArena.Log2(level));
                 }
                 // The frame pair for this tick, shared by every voice.
-                float fpos = OscPosition(o) * (table.FrameCount - 1);
+                float fpos = Math.Clamp(OscPosition(o) + Md(note, RouteDest.APosition + o), 0f, 1f) * (table.FrameCount - 1);
                 int f0 = (int)fpos;
                 float ff = fpos - f0;
                 // On a frame (to within 10⁻⁴ of one): that frame alone, no morph to pay for.
@@ -843,7 +918,7 @@ namespace NeoBuzz.DyeEssence
                 }
                 int offA = TableArena.Offset(f0, level), offB = ff > 0 ? TableArena.Offset(f0 + 1, level) : offA;
                 uint log2 = (uint)TableArena.Log2(level);
-                float norm = OscLevel(o) / MathF.Sqrt(u);
+                float norm = Level(note, o) / MathF.Sqrt(u);
                 float to2 = OscToF2(o), to1 = 1f - to2;
                 bool f2 = to2 > 0;
                 for (int l = 0; l < u; l++)
@@ -893,6 +968,79 @@ namespace NeoBuzz.DyeEssence
                 toF2 |= f2;
             }
             noteToF2[note] = toF2;
+        }
+
+        float Level(int note, int o) => Math.Max(0f, OscLevel(o) + Md(note, RouteDest.ALevel + o));
+        float Amount(int note, int o, int w) => Math.Clamp(OscAmount(o, w) + Md(note, RouteDest.AWarp1 + 2 * o + w), 0f, 1f);
+
+        double LfoRate(LfoSettings l, float mod)
+        {
+            double hz = l.Beats > 0 ? S.Tempo / 60.0 / l.Beats : l.Rate;
+            return mod == 0 ? hz : hz * PortableMath.Exp2(4.0 * mod);
+        }
+
+        /// <summary>
+        /// A note's modulation for the tick: its envelopes and LFOs advanced by <paramref name="dt"/>,
+        /// every source's value, and each destination the sum of its routes (source × amount). The LFO
+        /// rates take last tick's routes.
+        /// </summary>
+        void Modulate(int note, double dt, float amp, float fe)
+        {
+            var s = S;
+            noteAge[note] += dt;
+            int db = note * DestCount;
+            if (!anyRoute)
+            {
+                // No routes: nothing moves (once the last ones' values are gone).
+                bool live = false;
+                for (int i = 0; i < DestCount && !live; i++) live = dest[db + i] != 0;
+                if (live) Array.Clear(dest, db, DestCount);
+                modMoved[note] = live;
+                return;
+            }
+            double beat = 60.0 / Math.Max(1.0, s.Tempo);
+            for (int e = 0; e < 2; e++)
+                srcValue[(int)RouteSource.ModEnv1 + e] = ModEnvelope.Advance(ref envStage[2 * note + e], ref envTime[2 * note + e],
+                    ref envLevel[2 * note + e], ref envFrom[2 * note + e], gate[note], s.ModEnv[e], dt, beat);
+            for (int l = 0; l < 4; l++)
+            {
+                var lfo = s.Lfo[l];
+                float v;
+                if (lfo.Retrig)
+                {
+                    int i = 4 * note + l;
+                    double p = lfoPhase[i] + LfoRate(lfo, dest[db + (int)RouteDest.Lfo1Rate + l]) * dt;
+                    if (p >= 1)
+                    {
+                        p -= Math.Floor(p);
+                        lfoHeld[i] = lfoNext[i];
+                        var rng = new Rng(lfoSeed[note]);
+                        lfoNext[i] = rng.NextBipolar();
+                        lfoSeed[note] = rng.NextUInt() | 1u;
+                    }
+                    lfoPhase[i] = p;
+                    v = LfoWave.Value(lfo.Shape, p, lfoHeld[i], lfoNext[i]);
+                }
+                else v = freeValue[l];
+                if (lfo.Fade > 0) v *= (float)Math.Min(1.0, noteAge[note] / lfo.Fade);
+                srcValue[(int)RouteSource.Lfo1 + l] = v;
+            }
+            srcValue[(int)RouteSource.AmpEnv] = amp;
+            srcValue[(int)RouteSource.FilterEnv] = fe;
+            srcValue[(int)RouteSource.Velocity] = noteVel[note];
+            srcValue[(int)RouteSource.Key] = (noteKey[note] - 60f) / 60f;
+            srcValue[(int)RouteSource.ModWheel] = s.ModWheel;
+            srcValue[(int)RouteSource.Aftertouch] = s.Aftertouch;
+            for (int m = 0; m < 4; m++) srcValue[(int)RouteSource.Macro1 + m] = s.Macro[m];
+            srcValue[(int)RouteSource.Random] = noteRandom[note];
+            Array.Copy(dest, db, destLast, db, DestCount);
+            Array.Clear(dest, db, DestCount);
+            foreach (var r in s.Routes)
+                if (r.Source != RouteSource.Off && r.Dest != RouteDest.Off && r.Source < RouteSource.Count && r.Dest < RouteDest.Count)
+                    dest[db + (int)r.Dest] += srcValue[(int)r.Source] * r.Amount;
+            bool moved = false;
+            for (int i = 0; i < DestCount && !moved; i++) moved = dest[db + i] != destLast[db + i];
+            modMoved[note] = moved;
         }
 
         /// <summary>A steady note's ramps stopped: every voice's gains exactly at their targets, the sub's and noise's still.</summary>
@@ -999,8 +1147,8 @@ namespace NeoBuzz.DyeEssence
             sub.ShiftL[note] = log2;
             sub.Data[note] = SubTables[(int)s.SubShape].Data;
             sub.OffsetA[note] = sub.OffsetB[note] = TableArena.Offset(0, level);
-            Gains(subGain, note, Sm(SmSub), Sm(SmSub + 1), subPanL, subPanR, invCount);
-            Gains(noiseGain, note, Sm(SmNoise), Sm(SmNoise + 1), noisePanL, noisePanR, invCount);
+            Gains(subGain, note, Math.Max(0f, Sm(SmSub) + Md(note, RouteDest.SubLevel)), Sm(SmSub + 1), subPanL, subPanR, invCount);
+            Gains(noiseGain, note, Math.Max(0f, Sm(SmNoise) + Md(note, RouteDest.NoiseLevel)), Sm(SmNoise + 1), noisePanL, noisePanR, invCount);
         }
 
         static void Gains(float[] g, int note, float lv, float to2, float pl, float pr, float invCount)
@@ -1026,8 +1174,8 @@ namespace NeoBuzz.DyeEssence
                 var t = type[f];
                 if (t == FilterType.Off) continue;
                 var fs = s.Filter[f];
-                double oct = fs.Env * fe + fs.Key * (key - 60f) / 12f - fs.Vel * (1f - vel) + Sm(SmFilter + 3 * f);
-                float reso = Sm(SmFilter + 3 * f + 1);
+                double oct = fs.Env * fe + fs.Key * (key - 60f) / 12f - fs.Vel * (1f - vel) + Sm(SmFilter + 3 * f) + 6f * Md(note, RouteDest.F1Cutoff + f);
+                float reso = Math.Clamp(Sm(SmFilter + 3 * f + 1) + Md(note, RouteDest.F1Reso + f), 0f, 1f);
                 var cur = coefCur[f];
                 var step = coefStep[f];
                 int fk = f * Notes + note;
