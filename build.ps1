@@ -13,7 +13,8 @@
        (dotnet build), and the classic native machines with sources (the "natives" of its
        Buzztrax entry: FSM, Oomek and Jeskola) as x86 and x64 with tools\build-natives.ps1.
        A rebuilt native replaces upstream's binary only where its entry says "ship": "rebuilt"
-       (it renders as upstream's does: tools\native-compare.py) and its licence allows it.
+       (it renders as upstream's does: tools\native-compare.py) and its licence allows it, or its
+       "licenseException" is exactly the one recorded below (no licence in its source; user decision).
     5. Merges prebuilt DLLs from ExternalMachines\binaries.
     6. Writes GEAR-INVENTORY.txt, BUILD-INFO.txt, README-FIRST.txt and Licenses\ (NOTICE.txt: each
        machine built from source, its licence and source; the licence texts machines.json's
@@ -370,7 +371,13 @@ if (-not $SkipManagedMachines) {
 # into Gear is each entry's "ship": "rebuilt" replaces upstream's binary of that machine with the rebuilt one
 # of the same platform, or of "shipPlatform" (it renders as upstream's: tools\native-compare.py checks it in
 # the package run), "upstream" keeps upstream's. A machine whose licence doesn't allow redistribution ("redistribute": false)
-# is built for the comparison only, never added.
+# is built for the comparison only, never added, and one whose licence has no text in "licenseTexts" ships upstream's binary,
+# but for one exception, recorded here and nowhere else: an entry whose "licenseException" is exactly $NativeLicenceException
+# (sources that carry no licence, Jeskola's: shipped rebuilt by the user's decision of 2026-11-06, for private use; NOTICE.txt
+# and README-FIRST.txt say so, and that they must be re-cleared, or set back to "ship": "upstream", before any public release).
+# Any other "licenseException" is a failure, and the machine ships upstream's binary.
+$NativeLicenceException = 'no licence in source; shipped by user decision 2026-11-06 for private use'
+$ShippedByException = New-Object System.Collections.Generic.List[string]   # gear, for NOTICE.txt and README-FIRST.txt
 if (-not $SkipNativeMachines) {
     $bt = $manifest.machines | Where-Object { $_.id -eq 'buzztrax-buzzmachines' } | Select-Object -First 1
     $natives = @(if ($bt) { Get-Prop $bt 'natives' })
@@ -388,11 +395,20 @@ if (-not $SkipNativeMachines) {
             $upstream = [IO.Path]::Combine($Root, 'RunTime', 'Gear', $n.gearFolder, $upFile)
             $inGear = [IO.Path]::Combine($OutDir, 'Gear', $n.gearFolder, $upFile)
             if ((Test-Path -LiteralPath $upstream) -and -not (Test-Path -LiteralPath $inGear)) { Copy-Item -LiteralPath $upstream -Destination $inGear }
-            if ((Get-Prop $n 'ship') -ne 'rebuilt' -or (Get-Prop $n 'redistribute') -eq $false) { continue }
-            # Its licence's text ships with it (Licenses\, machines.json's "licenseTexts"), or upstream's binary stays.
-            if (-not (Get-LicenseText (Get-LicenseId (Get-Prop $n 'license')))) {
-                Add-MachineFailure "natives: $($n.gear): machines.json's licenseTexts has no text of its licence ($($n.license)); upstream's binary stays"
-                continue
+            if ((Get-Prop $n 'ship') -ne 'rebuilt') { continue }
+            $exception = Get-Prop $n 'licenseException'
+            if ($null -ne $exception) {
+                if ($exception -cne $NativeLicenceException) {
+                    Add-MachineFailure "natives: $($n.gear): its licenseException ('$exception') isn't the one build.ps1 records ('$NativeLicenceException'); upstream's binary stays"
+                    continue
+                }
+            } else {
+                if ((Get-Prop $n 'redistribute') -eq $false) { continue }
+                # Its licence's text ships with it (Licenses\, machines.json's "licenseTexts"), or upstream's binary stays.
+                if (-not (Get-LicenseText (Get-LicenseId (Get-Prop $n 'license')))) {
+                    Add-MachineFailure "natives: $($n.gear): machines.json's licenseTexts has no text of its licence ($($n.license)); upstream's binary stays"
+                    continue
+                }
             }
             # The platform that ships: upstream's, or "shipPlatform" (an x64 build where upstream has only x86).
             $platform = Get-Prop $n 'shipPlatform'
@@ -410,7 +426,12 @@ if (-not $SkipNativeMachines) {
             Copy-Item -LiteralPath $built -Destination ([IO.Path]::Combine($dest, $file))
             $Origins["$($n.gearFolder)\$file"] = 'external:buzztrax'
             Add-Content -LiteralPath $AddedList -Value "$($n.gearFolder)\$file" -Encoding UTF8
-            Write-Host "Gear\$($n.gearFolder)\$file rebuilt from source (in place of upstream's)"
+            if ($null -ne $exception) {
+                $ShippedByException.Add($n.gear)
+                Write-Host "Gear\$($n.gearFolder)\$file rebuilt from source (in place of upstream's), its source without a licence: $NativeLicenceException"
+            } else {
+                Write-Host "Gear\$($n.gearFolder)\$file rebuilt from source (in place of upstream's)"
+            }
         }
     }
 }
@@ -705,6 +726,12 @@ $notice.Add("Licences in this package ($pkgName)")
 $notice.Add('')
 $notice.Add("Machines built from the sources in this fork's ExternalMachines folder (neo-buzz repository, commit $shaText),")
 $notice.Add('each with its licence, its source and upstream, and what this fork changed. A licence''s text is in this folder.')
+if ($ShippedByException.Count -gt 0) {
+    $notice.Add('')
+    $notice.Add("NOT FOR PUBLIC RELEASE AS IS: $($ShippedByException -join ', ') are built from sources that carry no licence (no licence file, no")
+    $notice.Add("header), and ship rebuilt only by an exception: $NativeLicenceException. Before any public release they must be")
+    $notice.Add('re-cleared with their author, or reverted to upstream''s binaries (machines.json: "ship": "upstream").')
+}
 foreach ($id in $groups.Keys) {
     $entry = $manifest.machines | Where-Object { $_.id -eq $id } | Select-Object -First 1
     $notice.Add('')
@@ -716,6 +743,9 @@ foreach ($id in $groups.Keys) {
         $notice.Add("  $($f.File)")
         $licText = if ($f.Text) { "$($f.Licence); text: Licenses\$($f.Text.Id).txt" } elseif ("$($f.Licence)" -like 'None*') { "$($f.Licence): no licence text to ship" } else { "$($f.Licence)" }
         $notice.Add("    licence: $licText")
+        if ($f.Native -and (Get-Prop $f.Native 'licenseException') -ceq $NativeLicenceException) {
+            $notice.Add("    exception: $NativeLicenceException. Its source carries no licence: re-clear it with its author, or ship upstream's binary again (machines.json: ""ship"": ""upstream""), before any public release")
+        }
         if ($f.Native) {
             $notice.Add("    source:  ExternalMachines\$($entry.path -replace '/', '\')\$($f.Native.dir -replace '/', '\') ($($f.Native.sources -join ', ')); upstream's $($f.Native.dir)")
             if (Get-Prop $f.Native 'fix') { $notice.Add("    fixed:   $($f.Native.fix)") }
@@ -756,6 +786,10 @@ if ($byLicence.Count -gt 0) {
     $licenceReadme.Add('Machines built from source in this package, by licence (Licenses\NOTICE.txt: where each one''s source is):')
     foreach ($k in $byLicence.Keys) { $licenceReadme.Add("  $k`: $($byLicence[$k] -join ', ')") }
 }
+if ($ShippedByException.Count -gt 0) {
+    $licenceReadme.Add("Built from sources that carry no licence, for private use only: $($ShippedByException -join ', ') ($NativeLicenceException).")
+    $licenceReadme.Add('  They must be re-cleared with their author, or reverted to upstream''s binaries, before any public release (Licenses\NOTICE.txt).')
+}
 $licenceReadme.Add('Licenses\ also has the MIT licence NeoBuzz Live keeps from ReBuzz (ReBuzz-LICENSE.txt) and the licence texts of the libraries built from source with it.')
 Write-Host "Licenses\: $((@(Get-ChildItem -LiteralPath $licDir -File | ForEach-Object Name)) -join ', ')"
 
@@ -788,6 +822,9 @@ that failed to build. Machine licenses vary; see ExternalMachines\README.md in t
 '@
 @($readme -split "`r?`n") + @($licenceReadme) | Set-Content -LiteralPath ([IO.Path]::Combine($pkgDir, 'README-FIRST.txt')) -Encoding UTF8
 $licenceReadme | ForEach-Object { Write-Host "README-FIRST.txt: $_" }
+if ($ShippedByException.Count -gt 0 -and $env:GITHUB_ACTIONS -eq 'true') {
+    Write-Host "::notice title=Built from sources without a licence::$($ShippedByException -join ', ') ship rebuilt by the exception build.ps1 records ($NativeLicenceException): re-clear them, or revert them to upstream's binaries, before any public release"
+}
 
 if (-not $NoZip) {
     $zip = [IO.Path]::Combine($DistDir, "$pkgName.zip")
