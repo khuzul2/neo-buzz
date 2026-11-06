@@ -1309,7 +1309,7 @@ namespace ReBuzzTests
             Assert.That(Rms(user), Is.GreaterThan(1e-3), "the user table sounds after a state round trip");
 
             var size = ShootEditor(rig.Effect, "dye-essence-editor");
-            TestContext.Out.WriteLine($"Dye Essence's WPF editor: {size.Width:0} x {size.Height:0}");
+            TestContext.Out.WriteLine($"[notice] Dye Essence in ReBuzz: init {Db(Rms(basic)):F1} dB, slot B's user table {Db(Rms(user)):F1} dB after a state round trip, WPF editor {size.Width:0} x {size.Height:0}");
         }
 
         [Test]

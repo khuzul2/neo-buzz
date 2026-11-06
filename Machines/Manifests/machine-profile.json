@@ -423,6 +423,123 @@
    "generated": false,
    "health": "ok"
   },
+  "Dye Essence": {
+   "gear": "Dye Essence",
+   "kind": "generator",
+   "load_seconds": 0.52,
+   "gear_info": {
+    "file": "Generators/Dye Essence.NET.dll",
+    "managed": true,
+    "min_tracks": 1,
+    "max_tracks": 16,
+    "note_parameter": "Note",
+    "takes_midi": true
+   },
+   "parameters": 97,
+   "track_parameters": 0,
+   "inferred": 97,
+   "from_description": 1,
+   "inference_check": {
+    "agree": 96,
+    "of": 97
+   },
+   "notes": {
+    "input": "midi",
+    "pitched": true,
+    "pitch_offset": 0,
+    "cents": 0.0,
+    "heard": {
+     "A4": 69.0,
+     "A3": 57.0,
+     "A5": 81.0
+    },
+    "polyphony": 8,
+    "polyphony_levels": {
+     "1": -28.4,
+     "2": -25.2,
+     "4": -22,
+     "8": -19.1
+    }
+   },
+   "level": {
+    "note": "A4 at velocity 100, 1.5 beats",
+    "integrated_lufs": -28,
+    "sample_peak_dbfs": -21.7,
+    "true_peak_dbtp": -21.64
+   },
+   "cpu_ms_per_s": 18.2,
+   "type": "polysynth",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -21.69,
+     "growth_db": 0.0,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": -19.79,
+      "growth_db": -24.15,
+      "verdict": "ok"
+     }
+    }
+   },
+   "envelope": {
+    "peak_db": -28.54,
+    "attack_s": 0.0,
+    "final_db": -1.29,
+    "length_s": null,
+    "release_s": 0.045,
+    "release_past_window": false,
+    "bright_mid_hz": 1061.1,
+    "bright_early_hz": 1131.7,
+    "bright_late_hz": 1061.1,
+    "level_wobble_db": 0.116,
+    "bright_wobble": 0.013,
+    "note": "A4 at velocity 100, held 2 s"
+   },
+   "velocity": {
+    "range_db": 8.38,
+    "db_per_doubling": 2.79,
+    "curve": "gentle (less than linear)",
+    "levels_db": {
+     "16": -35.56,
+     "32": -33.65,
+     "64": -30.98,
+     "127": -27.18
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 20.482,
+    "silent_ms_per_s": 6.022,
+    "silent_worst_ms_per_s": 7.011,
+    "windows_ms_per_s": [
+     20.482,
+     7.011,
+     6.432,
+     6.022,
+     5.7,
+     5.9,
+     6.16,
+     6.361,
+     5.321,
+     4.809,
+     4.985
+    ]
+   },
+   "seconds": 6.5,
+   "platform": "windows",
+   "date": "2026-11-06",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "ok"
+  },
   "EasyRec": {
    "gear": "EasyRec",
    "kind": "effect",

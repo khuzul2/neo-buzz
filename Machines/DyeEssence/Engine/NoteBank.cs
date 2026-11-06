@@ -188,7 +188,8 @@ namespace NeoBuzz.DyeEssence
         readonly IirHalfband dec4L = new IirHalfband(Decimator), dec4R = new IirHalfband(Decimator);
         readonly float[] scratch = new float[96];
         float sampleRate = 48000;
-        int controlCounter, oversample = 2;
+        int controlCounter, oversample = 2, quietSamples;
+        bool idle;
         LaneKind kind;
         // This tick's shared factors: the envelopes' and the glide's.
         double tickDt, ampKa, ampKd, ampKr, fltKa, fltKd, fltKr, glideK;
@@ -203,6 +204,43 @@ namespace NeoBuzz.DyeEssence
         readonly float[] smTarget = new float[SmCount], smNow = new float[SmCount];
         bool smoothStarted;
         float smoothK = 1;
+
+        // Steady ticks (P1a, §5.4): when nothing a note's voices depend on has moved since the last
+        // tick (the settings, the smoothed values, the note's pitch), its lanes keep their layout, phases
+        // and increments and only their ramps are stopped; a filter whose cutoff and resonance stand
+        // still keeps its coefficients. Most ticks of a held note are steady.
+        readonly float[] smLast = new float[SmCount];
+        readonly object[] snapRef = new object[Oscillators];
+        readonly float[] snapF = new float[Oscillators * 10 + 8];
+        bool settingsMoved = true;
+        readonly bool[] laid = new bool[Notes], rampsLive = new bool[Notes];
+        readonly double[] lastHz = new double[Notes];
+        readonly double[] filterKey = new double[2 * Notes];
+        readonly bool[] filterRamps = new bool[2 * Notes];
+
+        /// <summary>Whether any setting the voices read changed since the last tick (and keeps the new ones).</summary>
+        bool SettingsMoved()
+        {
+            var s = S;
+            bool moved = false;
+            void F(int i, float v)
+            {
+                if (snapF[i] != v || float.IsNaN(snapF[i])) { snapF[i] = v; moved = true; }
+            }
+            for (int o = 0; o < Oscillators; o++)
+            {
+                var os = s.Osc[o];
+                if (!ReferenceEquals(snapRef[o], os.Table)) { snapRef[o] = os.Table; moved = true; }
+                int b = 10 * o;
+                F(b, (int)os.Type); F(b + 1, os.Transpose); F(b + 2, os.Unison); F(b + 3, os.Detune); F(b + 4, os.Spread);
+                F(b + 5, os.Pan); F(b + 6, (int)os.Warp1); F(b + 7, (int)os.Warp2); F(b + 8, (int)os.Mod);
+            }
+            int g = 10 * Oscillators;
+            F(g, s.SubOctave); F(g + 1, (int)s.SubShape); F(g + 2, s.Sub.Pan); F(g + 3, s.Noise.Pan); F(g + 4, oversample);
+            for (int i = 0; i < SmCount; i++)
+                if (smLast[i] != smNow[i]) { smLast[i] = smNow[i]; moved = true; }
+            return moved;
+        }
 
         float Sm(int i) => smNow[i];
         float OscLevel(int o) => smNow[SmOsc + 5 * o];
@@ -373,6 +411,7 @@ namespace NeoBuzz.DyeEssence
                     voicePhase[nb + o * MaxUnison + l] = unchecked((uint)(long)(start + random * rng.NextUInt()));
                 placedUnison[slot * Oscillators + o] = 0;
             }
+            laid[slot] = false;
             seeds[slot] = rng.NextUInt();
             int v = Notes * MaxLanes;
             for (int r = 0; r < 4; r++) Array.Clear(voiceGain, r * v + nb, MaxLanes);
@@ -417,6 +456,31 @@ namespace NeoBuzz.DyeEssence
                 oversample = want;
                 decL.Reset(); decR.Reset(); dec4L.Reset(); dec4R.Reset();
                 controlCounter = 0;
+            }
+            if (idle)
+            {
+                bool wake = false;
+                for (int note = 0; note < Notes && !wake; note++) wake = Active(note);
+                if (!wake)
+                {
+                    // Resting (nothing has sounded for a while): only the grid's ticks run, for the
+                    // settings' glides, and the output is silence.
+                    for (int at = 0; at < n;)
+                    {
+                        if (controlCounter <= 0)
+                        {
+                            controlCounter = ControlRate;
+                            Tick();
+                        }
+                        int step = Math.Min(controlCounter, n - at);
+                        controlCounter -= step;
+                        at += step;
+                    }
+                    Array.Clear(left, 0, n);
+                    Array.Clear(right, 0, n);
+                    return false;
+                }
+                idle = false;
             }
             int os = oversample;
             Array.Clear(hiL, 0, os * n);
@@ -472,6 +536,14 @@ namespace NeoBuzz.DyeEssence
                 var st = filterState[f];
                 for (int i = 0; i < st.Length; i++) st[i] = DspMath.Flush(st[i]);
             }
+            // After 100 ms with nothing sounding the decimators' tails are long gone: rest.
+            quietSamples = any ? 0 : quietSamples + n;
+            if (quietSamples >= sampleRate / 10)
+            {
+                idle = true;
+                quietSamples = 0;
+                decL.Reset(); decR.Reset(); dec4L.Reset(); dec4R.Reset();
+            }
             return any;
         }
 
@@ -480,6 +552,7 @@ namespace NeoBuzz.DyeEssence
         {
             var s = S;
             Smooth();
+            settingsMoved = SettingsMoved();
             tickDt = ControlRate / (double)sampleRate;
             NoteEnvelope.Factors(s.Amp, tickDt, out ampKa, out ampKd, out ampKr);
             NoteEnvelope.Factors(s.Flt, tickDt, out fltKa, out fltKd, out fltKr);
@@ -598,8 +671,19 @@ namespace NeoBuzz.DyeEssence
             double limitPlain = Math.Min(44000.0, vr * 0.5 - 100) / vr;
             double limitWarp = (vr * 0.5 - 100) / vr;
             double subRatio = s.SubOctave <= -2 ? 0.25 : s.SubOctave == -1 ? 0.5 : 1.0;
-            Voices(note, invCount, noteHz, vr, limitPlain, limitWarp, subRatio);
-            Sources(note, invCount, noteHz * subRatio / vr, limitPlain);
+            if (laid[note] && !settingsMoved && noteHz == lastHz[note])
+            {
+                // Steady: stop the ramps once (each gain exactly at its target), then nothing to do.
+                if (rampsLive[note]) Settle(note);
+            }
+            else
+            {
+                Voices(note, invCount, noteHz, vr, limitPlain, limitWarp, subRatio);
+                Sources(note, invCount, noteHz * subRatio / vr, limitPlain);
+                lastHz[note] = noteHz;
+                laid[note] = true;
+                rampsLive[note] = true;
+            }
             Filters(note, invCount, fe, vr);
             snap[note] = false;
         }
@@ -684,10 +768,16 @@ namespace NeoBuzz.DyeEssence
                 if (modOf[o] == Oscillators) noteSubMod[note] = true;
                 if (modOf[o] == Oscillators + 1) noteNoiseMod[note] = true;
             }
-            for (int k = 0; k < groups; k++)
+            for (int k = 0; k < groups; k++) groupMorph[gb + k] = groupToF2[gb + k] = groupStore[gb + k] = false;
+            // Only the padding lanes need quieting: every other lane is set below.
+            int used = 0;
+            for (int o = 0; o < Oscillators; o++) if (playU[o] > 0 && !warped[o]) used += playU[o];
+            for (int i = used; i < 8 * ((used + 7) >> 3); i++) Quiet(lanes, nb + i);
+            for (int o = 0; o < Oscillators; o++)
             {
-                groupMorph[gb + k] = groupToF2[gb + k] = groupStore[gb + k] = false;
-                for (int l = 0; l < 8; l++) Quiet(lanes, nb + 8 * k + l);
+                if (playU[o] == 0 || !warped[o]) continue;
+                int first = slotOf[nb + o * MaxUnison];
+                for (int i = first + playU[o]; i < first + 8 * ((playU[o] + 7) >> 3); i++) Quiet(lanes, nb + i);
             }
 
             bool toF2 = false;
@@ -759,6 +849,24 @@ namespace NeoBuzz.DyeEssence
                 toF2 |= f2;
             }
             noteToF2[note] = toF2;
+        }
+
+        /// <summary>A steady note's ramps stopped: every voice's gains exactly at their targets, the sub's and noise's still.</summary>
+        void Settle(int note)
+        {
+            int nb = note * MaxLanes, v = Notes * MaxLanes, total = lanes.Total;
+            for (int o = 0; o < Oscillators; o++)
+                for (int l = 0, u = placedUnison[note * Oscillators + o]; l < u; l++)
+                {
+                    int canon = nb + o * MaxUnison + l, at = nb + slotOf[canon];
+                    for (int r = 0; r < 4; r++)
+                    {
+                        lanes.Gain[r * total + at] = voiceGain[r * v + canon];
+                        lanes.Gain[(4 + r) * total + at] = 0;
+                    }
+                }
+            for (int r = 4; r < 8; r++) subGain[r * Notes + note] = noiseGain[r * Notes + note] = 0;
+            rampsLive[note] = false;
         }
 
         int Place(int note, int o, int groups)
@@ -874,15 +982,33 @@ namespace NeoBuzz.DyeEssence
                 var t = type[f];
                 if (t == FilterType.Off) continue;
                 var fs = s.Filter[f];
-                double oct = fs.Env * fe + fs.Key * (key - 60f) / 12f - fs.Vel * (1f - vel);
-                float hz = (float)DspMath.Clamp(PortableMath.Exp2(Sm(SmFilter + 3 * f) + oct), 16.0, 0.45 * vr);
+                double oct = fs.Env * fe + fs.Key * (key - 60f) / 12f - fs.Vel * (1f - vel) + Sm(SmFilter + 3 * f);
                 float reso = Sm(SmFilter + 3 * f + 1);
+                var cur = coefCur[f];
+                var step = coefStep[f];
+                int fk = f * Notes + note;
+                if (!snap[note] && !settingsMoved && oct == filterKey[fk])
+                {
+                    // Standing still: the ramp stopped once, exactly at the target.
+                    if (filterRamps[fk])
+                    {
+                        for (int r = 0; r < NoteFilters.Rows; r++)
+                        {
+                            int i = r * Notes + note;
+                            cur[i] = coefTarget[f][i];
+                            step[i] = 0;
+                        }
+                        filterRamps[fk] = false;
+                    }
+                    continue;
+                }
+                filterKey[fk] = oct;
+                filterRamps[fk] = true;
+                float hz = (float)DspMath.Clamp(PortableMath.Exp2(oct), 16.0, 0.45 * vr);
                 var target = coefTarget[f];
                 if (NoteFilters.IsLadder(t)) NoteFilters.Ladder(target, Notes, note, Svf.Prewarp(hz, (float)vr), reso);
                 else if (NoteFilters.IsComb(t)) NoteFilters.Comb(target, Notes, note, hz, (float)vr, reso, t == FilterType.CombMinus);
                 else NoteFilters.Svf(target, Notes, note, NoteFilters.SvfModeOf(t), Svf.Prewarp(hz, (float)vr), 2f - 1.96f * reso);
-                var cur = coefCur[f];
-                var step = coefStep[f];
                 for (int r = 0; r < NoteFilters.Rows; r++)
                 {
                     int i = r * Notes + note;

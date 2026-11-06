@@ -193,8 +193,8 @@ namespace NeoBuzz.MachineTests
             Assert.That(h, Is.EqualTo(pinned), "the render's bits");
         }
 
-        const ulong PinnedGateHash = 0x9892E8D1954BA8F2UL;
-        const ulong PinnedEverythingHash = 0xE1A6709D2162EDE3UL;
+        const ulong PinnedGateHash = 0x852B6940C3C1FF68UL;
+        const ulong PinnedEverythingHash = 0x56547DF10D4EE17AUL;
 
         // ------------------------------------------------------------------ CPU
 
@@ -696,6 +696,18 @@ namespace NeoBuzz.MachineTests
             Assert.That(sounding, Is.False, "silent after the release");
             Assert.That(b.ActiveNotes, Is.EqualTo(0));
             foreach (var v in l.Concat(r)) Assert.That(float.IsSubnormal(v), Is.False, "no subnormals");
+
+            // 100 ms later it rests: silence for almost nothing, and a new note plays at once.
+            for (int i = 0; i < 40; i++) b.Process(l, r, 256);
+            var sw = Stopwatch.StartNew();
+            for (int i = 0; i < 2000; i++) b.Process(l, r, 256);
+            double restUs = sw.Elapsed.TotalMilliseconds * 1000 / 2000;
+            Assert.That(l.Concat(r).All(v => v == 0), Is.True, "silence while resting");
+            b.NoteOn(0, 60, 1f);
+            bool sounds = false;
+            for (int i = 0; i < 4 && !sounds; i++) sounds = b.Process(l, r, 256) && l.Any(v => v != 0);
+            Measure.Report($"Dye Essence resting: {restUs:F1} µs a block of 256 ({restUs / (256e6 / Rate) * 100:F2} % of real time); a note after the rest sounds at once");
+            Assert.That(sounds, Is.True, "a note after the rest");
         }
 
         static DyeEngine Engine(ParamValues v)
@@ -735,7 +747,7 @@ namespace NeoBuzz.MachineTests
                         }
                     }
                 }
-            Measure.Report($"Dye Essence: every parameter at its minimum and maximum, a held chord: finite, loudest {Measure.Db(loudest):+0.0;−0.0} dBFS ({where})");
+            Measure.Report($"Dye Essence: every parameter at its minimum and maximum, a held chord: finite, loudest {Measure.Db(loudest):F1} dBFS ({where})");
             Assert.That(loudest, Is.LessThan(4));
         }
 
