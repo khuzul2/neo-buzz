@@ -129,6 +129,7 @@ jobs:
         TEST_FILTER: ${{ inputs.test_filter }}
         NEOBUZZ_HANG_STACKS: '1'      # FU1-DIAG (temporary)
       run: |
+        $env:NEOBUZZ_TRACE_PE = Join-Path $env:RUNNER_TEMP 'trace-pe.txt'   # FU1-DIAG (temporary)
         $env:NEOBUZZ_HANG_DIR = Join-Path $env:RUNNER_TEMP 'hang'   # FU1-DIAG (temporary)
         $dll = Get-ChildItem build -Recurse -Filter ReBuzzTests.dll |
             Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
@@ -151,6 +152,7 @@ jobs:
       shell: pwsh
       run: |
         foreach ($f in Get-ChildItem "$env:RUNNER_TEMP\hang" -Filter 'native-hang-*.txt' -ErrorAction SilentlyContinue) { Write-Host "==== $($f.Name)"; Get-Content $f.FullName }
+        if (Test-Path "$env:RUNNER_TEMP\trace-pe.txt") { Write-Host "==== trace-pe"; Get-Content "$env:RUNNER_TEMP\trace-pe.txt" | Select-Object -First 400 }
         $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
         $cand = @()
         if (Test-Path build/ExternalMachines/natives/x64/Gear) { $cand = @('--candidate', 'build/ExternalMachines/natives/x64/Gear') }

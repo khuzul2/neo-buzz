@@ -77,6 +77,7 @@ namespace ReBuzz
             {
                 if (selectedMachine != value)
                 {
+                    ReBuzzCore.TracePe($"EditorView.SelectedMachine = {value?.Machine?.Name} (its pattern {value?.SelectedPattern?.Name})");
                     selectedMachine = value;
                     PropertyChanged.Raise(this, "SelectedMachine");
 

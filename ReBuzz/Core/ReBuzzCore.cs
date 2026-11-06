@@ -1916,8 +1916,22 @@ namespace ReBuzz.Core
         public event Action<IMachine> SelectedMachineChanged;
 
 
+        // FU1-DIAG (temporary): who selects the pattern editor's machine and pattern, NEOBUZZ_TRACE_PE=<file>.
+        internal static void TracePe(string what)
+        {
+            string f = Environment.GetEnvironmentVariable("NEOBUZZ_TRACE_PE");
+            if (string.IsNullOrEmpty(f)) return;
+            try
+            {
+                var st = new System.Diagnostics.StackTrace(1, false).GetFrames().Take(14).Select(fr => fr.GetMethod()?.DeclaringType?.Name + "." + fr.GetMethod()?.Name);
+                File.AppendAllText(f, $"{DateTime.Now:HH:mm:ss.fff} {what} <- {string.Join(" <- ", st)}\n");
+            }
+            catch (Exception) { }
+        }
+
         public void SetPatternEditorMachine(IMachine m)
         {
+            TracePe($"SetPatternEditorMachine({m?.Name})");
             PatternEditorMachine = m;
             object patternEditorControl;
             MachineCore mc;
@@ -1955,6 +1969,7 @@ namespace ReBuzz.Core
 
         public void SetPatternEditorPattern(IPattern p)
         {
+            TracePe($"SetPatternEditorPattern({p?.Machine?.Name}/{p?.Name})");
             PatternEditorPattern = p;
             if (p != null)
             {

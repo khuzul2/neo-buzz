@@ -373,8 +373,10 @@ namespace ReBuzz
                     await Shot(this, "021-machines-selected", "Machine View with Lead selected.", "Click a machine.");
                 }
 
+                ReBuzzCore.TracePe("gallery: 030 asks for Line A");
                 Buzz.SetPatternEditorPattern(song.LineA);
                 Buzz.ActivatePatternEditor();
+                ReBuzzCore.TracePe("gallery: 030 activated");
                 await Shot(this, "030-pattern", "Pattern View: Bass's Line A in the Modern Pattern Editor.", "F2, or double-click a pattern in the Sequence View.", settle: 1200);
                 ScrollRight(EditorView);
                 await Shot(this, "032-pattern-lanes", "Pattern View: Bass's Line A scrolled right, to its MIDI note lanes (the notes, velocities, delays).", "F2, then scroll right (or Tab to the tracks).", settle: 500);
