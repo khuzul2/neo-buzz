@@ -184,10 +184,10 @@ namespace ReBuzz.MachineManagement
                 {
                     if (outConnection.Destination.InputChannelCount == 0 || (outConnection.Destination as MachineCore).Hidden) continue;
 
-                    var channels = outConnection.SourceChannels;
-                    for (int channelIndex = 0; channelIndex < channels.Count(); channelIndex++)
+                    var channels = ((MachineConnectionCore)outConnection).SourceChannelArray;      // fork: no enumerator boxed per buffer
+                    for (int channelIndex = 0; channelIndex < channels.Length; channelIndex++)
                     {
-                        int channel = channels.ElementAt(channelIndex);
+                        int channel = channels[channelIndex];
                         if (multiSamplesOutBuffers[channel] == null)
                             multiSamplesOutBuffers[channel] = new Sample[256];
 
@@ -309,10 +309,10 @@ namespace ReBuzz.MachineManagement
                 {
                     if (outConnection.Destination.InputChannelCount == 0 || (outConnection.Destination as MachineCore).Hidden) continue;
 
-                    var channels = outConnection.SourceChannels;
-                    for (int channelIndex = 0; channelIndex < channels.Count(); channelIndex++)
+                    var channels = ((MachineConnectionCore)outConnection).SourceChannelArray;      // fork: no enumerator boxed per buffer
+                    for (int channelIndex = 0; channelIndex < channels.Length; channelIndex++)
                     {
-                        int channel = channels.ElementAt(channelIndex);
+                        int channel = channels[channelIndex];
                         if (multiSamplesOutBuffers[channel] == null)
                             multiSamplesOutBuffers[channel] = new Sample[256];
 

@@ -63,12 +63,13 @@ namespace ReBuzz.Audio
         float[] playWaveBuffer = new float[256 * 2];
         // Audio-thread-owned reusable buffer for PlayPatternColumnEvents (zero-alloc
         // GetEventsInto). Single audio thread, fully consumed each column iteration.
-        readonly List<PatternEvent> playColumnEvents = new List<PatternEvent>();
+        // Fork (follow-ups): sized ahead, so the transport's first play doesn't grow them on the audio thread.
+        readonly List<PatternEvent> playColumnEvents = new List<PatternEvent>(256);
 
         // Fork (Session View): patterns given a play position by the last UpdatePatternPositions
         // call, each once - session clips and arranged patterns. Audio thread only.
-        readonly List<PatternCore> activePatterns = new List<PatternCore>();
-        readonly HashSet<PatternCore> activePatternSet = new HashSet<PatternCore>();
+        readonly List<PatternCore> activePatterns = new List<PatternCore>(256);
+        readonly HashSet<PatternCore> activePatternSet = new HashSet<PatternCore>(256);
 
         public WorkManager(ReBuzzCore buzzCore, WorkThreadEngine workEngine, int algorithm, EngineSettings settings)
         {
@@ -633,7 +634,7 @@ namespace ReBuzz.Audio
             internal IPattern Pattern { get; set; }
         }
 
-        readonly List<PlayingEventsStruct> playingEvents = new List<PlayingEventsStruct>();
+        readonly List<PlayingEventsStruct> playingEvents = new List<PlayingEventsStruct>(256);   // fork (follow-ups): sized ahead
         internal void UpdatePatternColumnEvents(int sampleCount)
         {
             if (!buzzCore.Playing)

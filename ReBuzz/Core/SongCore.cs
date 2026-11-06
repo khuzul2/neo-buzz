@@ -341,7 +341,7 @@ namespace ReBuzz.Core
         /// Fork (0.4.1): patterns given a play position in the last block, so the next block
         /// clears just those. Audio thread (WorkManager, under AudioLock).
         /// </summary>
-        internal readonly List<PatternCore> PositionedPatterns = new List<PatternCore>();
+        internal readonly List<PatternCore> PositionedPatterns = new List<PatternCore>(256);   // fork (audio hygiene): room made here, not by the first play
         public bool SoloMode { get; private set; }
 
         public event Action<IMachine> MachineAdded;

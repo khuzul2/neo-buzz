@@ -130,6 +130,9 @@ namespace NeoBuzz.Drums
         public DrumsEngine(ParamValues values)
         {
             this.values = values;
+            // The static tables made now, not by the first hit on the audio thread.
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(DrumsEngine).TypeHandle);
+            System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(MetalBank).TypeHandle);
             for (int i = 0; i < hits.Length; i++) hits[i] = new DrumHit();
             for (int v = 0; v < VoiceCount; v++) bus[v] = new float[MaxBlock];
             SetSampleRate(48000);
