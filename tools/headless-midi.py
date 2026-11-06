@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # Fork (docs/specs/mac-engine.md M6): rebuzz-headless's MIDI and Link on macOS, end to end, as
 # another app on the same Mac sees them (CoreMIDI through ctypes). In live mode (--audio) it checks:
-#  - a keyboard plugged in while ReBuzz runs (a virtual source this script makes, named with
+#  - a keyboard plugged in while it runs (a virtual source this script makes, named with
 #    --midi-in) opens, and its notes play the machine last added: meters_read hears them;
-#  - another app sending to ReBuzz's virtual "ReBuzz" destination plays it too;
-#  - MIDI clock out (--clock-out ReBuzz) reaches another app through ReBuzz's virtual "ReBuzz"
-#    source: Start, 24 pulses a beat at the song's tempo, then Stop;
+#  - another app sending to its virtual "NeoBuzz Live" destination plays it too;
+#  - MIDI clock out reaches another app through its virtual "NeoBuzz Live" source: Start, 24 pulses
+#    a beat at the song's tempo, then Stop. --clock-out names it by its former name, "ReBuzz", as
+#    settings saved before the rename do: that still means the virtual source;
 #  - --link starts the ReBuzzLink helper beside rebuzz-headless, and it ends with it.
 # macOS CI runs it on the runner's virtual sound device.
 #
@@ -140,13 +141,13 @@ check(keys is not None, f'a virtual source "{KEYS}" (the keyboard)')
 listing = subprocess.run([exe, "--list-devices"], capture_output=True, text=True, timeout=60)
 print("devices:\n  " + "\n  ".join((listing.stdout + listing.stderr).strip().splitlines()), flush=True)
 check(("  " + KEYS) in listing.stdout, "--list-devices lists the keyboard as a MIDI input")
-cm.MIDIEndpointDispose(keys)                       # unplugged until ReBuzz runs
+cm.MIDIEndpointDispose(keys)                       # unplugged until NeoBuzz Live runs
 time.sleep(0.5)
 
-# ---------------------------------------------------------------- ReBuzz, live
+# ---------------------------------------------------------------- NeoBuzz Live (rebuzz-headless), live
 
 command = [exe, "--agent", "--settings", settings, "--audio", "--buffer", "256",
-           "--midi-in", KEYS, "--clock-out", "ReBuzz", "--link"]
+           "--midi-in", KEYS, "--clock-out", "ReBuzz", "--link"]   # ReBuzz: the virtual source's former name
 proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=open(stderr_path, "w"), text=True, bufsize=1)
 next_id = 0
 
@@ -180,7 +181,7 @@ def level(window=1.0):
 
 
 init = request("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "midi", "version": "1"}})
-check(init.get("result", {}).get("serverInfo", {}).get("name") == "rebuzz", "initialize")
+check(init.get("result", {}).get("serverInfo", {}).get("name") == "neobuzz-live", "initialize")
 proc.stdin.write(json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n")
 proc.stdin.flush()
 ok, _, status = call("studio_status")
@@ -189,11 +190,11 @@ check(call("machine_add", gear="Neo Poly", name="Keys")[0], "machine_add Neo Pol
 heard, rms = level(0.5)
 check(not heard, f"silence before any note ({rms} dBFS RMS)")
 
-# The keyboard, plugged in now: ReBuzz hears of it and opens it (it is in --midi-in).
+# The keyboard, plugged in now: NeoBuzz Live hears of it and opens it (it is in --midi-in).
 keys = make_keys()
 check(keys is not None, "the keyboard plugged in")
 opened = wait_for_log(f"MIDI {KEYS}: open")
-check(opened is not None, f"ReBuzz hears of it and opens it ({opened if opened is None else round(opened, 2)} s)")
+check(opened is not None, f"NeoBuzz Live hears of it and opens it ({opened if opened is None else round(opened, 2)} s)")
 time.sleep(0.2)
 chord = [60, 64, 67]
 for n in chord:
@@ -206,18 +207,18 @@ heard_after, rms_after = level(0.5)
 check(not heard_after or (isinstance(rms, (int, float)) and isinstance(rms_after, (int, float)) and rms_after < rms - 20),
       f"note offs let go ({rms_after} dBFS RMS)")
 
-# Another app, sending to ReBuzz's virtual destination.
-rebuzz_in = find(False, "ReBuzz")
-check(rebuzz_in is not None, 'ReBuzz\'s virtual destination "ReBuzz" is there for other apps')
+# Another app, sending to NeoBuzz Live's virtual destination.
+rebuzz_in = find(False, "NeoBuzz Live")
+check(rebuzz_in is not None, 'the virtual destination "NeoBuzz Live" is there for other apps')
 if rebuzz_in is not None:
     out_port = Ref()
-    cm.MIDIOutputPortCreate(client, cfstr("to ReBuzz"), ctypes.byref(out_port))
+    cm.MIDIOutputPortCreate(client, cfstr("to NeoBuzz Live"), ctypes.byref(out_port))
     cm.MIDISend(out_port, rebuzz_in, packets([0x90, 57, 100, 0x90, 60, 100, 0x90, 64, 100]))
     heard, rms = level()
-    check(heard, f"another app plays ReBuzz through it ({rms} dBFS RMS)")
+    check(heard, f"another app plays NeoBuzz Live through it ({rms} dBFS RMS)")
     cm.MIDISend(out_port, rebuzz_in, packets([0x80, 57, 0, 0x80, 60, 0, 0x80, 64, 0]))
 
-# MIDI clock out, received from ReBuzz's virtual source.
+# MIDI clock out, received from NeoBuzz Live's virtual source.
 received = []
 
 
@@ -236,11 +237,12 @@ def on_read(packet_list, ref_con, conn_ref_con):
 
 
 reader = READ(on_read)
-rebuzz_out = find(True, "ReBuzz")
-check(rebuzz_out is not None, 'ReBuzz\'s virtual source "ReBuzz" is there for other apps')
+rebuzz_out = find(True, "NeoBuzz Live")
+check(rebuzz_out is not None, 'the virtual source "NeoBuzz Live" is there for other apps')
+check(find(True, "ReBuzz", 0) is None and find(False, "ReBuzz", 0) is None, 'no port keeps the former name "ReBuzz"')
 if rebuzz_out is not None:
     in_port = Ref()
-    cm.MIDIInputPortCreate(client, cfstr("from ReBuzz"), reader, None, ctypes.byref(in_port))
+    cm.MIDIInputPortCreate(client, cfstr("from NeoBuzz Live"), reader, None, ctypes.byref(in_port))
     cm.MIDIPortConnectSource(in_port, rebuzz_out, None)
     time.sleep(0.3)
     # The loop end too: the song stops there when not looping (it starts at 4 beats, 2 s here).

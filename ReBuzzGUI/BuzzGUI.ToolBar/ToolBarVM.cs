@@ -670,7 +670,7 @@ namespace BuzzGUI.ToolBar
                     {
                         new MenuItemVM() { Text = "_Contents...", Command = HelpCommand },
                         new MenuItemVM() { IsSeparator = true },
-                        new MenuItemVM() { Text = "_About ReBuzz...", Command = AboutCommand },
+                        new MenuItemVM() { Text = "_About NeoBuzz Live...", Command = AboutCommand },
                     }
                 };
 

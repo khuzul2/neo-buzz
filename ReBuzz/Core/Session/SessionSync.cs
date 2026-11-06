@@ -57,7 +57,8 @@ namespace ReBuzz.Core.Session
             if (buzz.SessionCore != null) buzz.SessionCore.PropertyChanged += OnSessionChanged;
 
             linkStartStop = Read("LinkStartStop", 0) != 0;
-            clockOutNames = Read("MidiClockOut", "").Split('|', StringSplitOptions.RemoveEmptyEntries).ToList();
+            // Fork (rename): clock out to the app's own virtual port, saved as "ReBuzz", goes to "NeoBuzz Live" now.
+            clockOutNames = Read("MidiClockOut", "").Split('|', StringSplitOptions.RemoveEmptyEntries).Select(ReBuzz.Midi.CoreMidiBackend.Current).Distinct().ToList();
             if (Read("MidiClockIn", 0) != 0) SetFollowMidiClock(true);
             if (Read("LinkEnabled", 0) != 0) SetLink(true);
             UpdateClockOut();

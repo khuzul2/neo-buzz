@@ -784,7 +784,7 @@ namespace ReBuzz.Studio.Views.Session
             {
                 var none = new MenuItem { Header = "No controller found", Tag = "No controller found", IsEnabled = false };
                 ToolTip.SetTip(none, "Known: " + string.Join(", ", controllers.Scripts.Select(s => s.Name)) +
-                                     ".\nMore can be added as scripts (.dll) in the Controllers folder next to ReBuzz.");
+                                     ".\nMore can be added as scripts (.dll) in the Controllers folder next to " + Product.Name + ".");
                 item.Items.Add(none);
             }
             foreach (var problem in controllers.ScriptProblems)

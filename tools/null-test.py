@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Fork (docs/specs/mac-engine.md decision 6, M3/M4): the null test. Neo machine renders on Linux and
-# macOS (rebuzz-headless) must be bit-identical to the Windows package's (ReBuzz.exe --agent): every
+# macOS (rebuzz-headless) must be bit-identical to the Windows package's (NeoBuzzLive.exe --agent): every
 # sample the same. The Neo machines compute only with IEEE basic operations (NeoBuzz.Dsp's portable
 # maths, docs/specs/machines.md §4), so nothing may differ.
 #
@@ -15,7 +15,7 @@
 #   python3 tools/null-test.py diff    <ref-dir> <dir>               compares two folders of renders
 #   ... [--only case,case]
 #
-# <exe> is ReBuzz.exe (Windows) or rebuzz-headless. compare fails a case on any differing sample, on a
+# <exe> is NeoBuzzLive.exe (Windows) or rebuzz-headless. compare fails a case on any differing sample, on a
 # length or rate mismatch, or when it is missing from either side. A case that differs reports its
 # first differing sample (frame, time, channel, both values, how many samples differ) and its largest
 # difference in dBFS and where. Under GitHub Actions it writes the figures as a notice annotation
@@ -306,7 +306,7 @@ class Client:
     def __init__(self, exe, work, label):
         os.makedirs(work, exist_ok=True)
         args = [exe, "--agent"]
-        if os.path.basename(exe).lower() != "rebuzz.exe":
+        if os.path.basename(exe).lower() not in ("neobuzzlive.exe", "rebuzz.exe"):   # the Windows app takes no --settings
             args += ["--settings", os.path.abspath(os.path.join(work, "settings"))]   # a clean one per case
         self.stderr_path = os.path.join(work, label + ".stderr.txt")
         self.stderr = open(self.stderr_path, "wb")

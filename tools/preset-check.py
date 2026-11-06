@@ -11,9 +11,9 @@
 #  - with its sample peak below -1 dBFS, and no NaN (the engine's guard would list it as diverged).
 # With --theirs, the presets the curated machines ship themselves (Pedal Juno106's, SH101's, Drum Matrix's…)
 # are measured too and reported, not judged. Runs on rebuzz-headless (Linux, macOS: the Pedal machines) and
-# ReBuzz.exe (Windows: the natives).
+# NeoBuzzLive.exe (Windows: the natives).
 #
-#   python3 tools/preset-check.py <rebuzz-headless | ReBuzz.exe> [work folder] [--theirs]
+#   python3 tools/preset-check.py <rebuzz-headless | NeoBuzzLive.exe> [work folder] [--theirs]
 
 import importlib.util
 import json
@@ -32,7 +32,7 @@ spec.loader.exec_module(profiler)
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 theirs = "--theirs" in sys.argv
 if not args:
-    sys.exit("usage: preset-check.py <rebuzz-headless | ReBuzz.exe> [work folder] [--theirs]")
+    sys.exit("usage: preset-check.py <rebuzz-headless | NeoBuzzLive.exe> [work folder] [--theirs]")
 exe = args[0]
 work = args[1] if len(args) > 1 else tempfile.mkdtemp(prefix="rebuzz-presets-")
 root = os.path.dirname(HERE)

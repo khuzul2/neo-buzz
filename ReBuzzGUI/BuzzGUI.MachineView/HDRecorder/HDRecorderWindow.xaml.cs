@@ -137,7 +137,7 @@ namespace BuzzGUI.MachineView.HDRecorder
 
         public HDRecorderWindow()
         {
-            string fileName = Global.Buzz.Song.SongName != null ? Path.GetFileNameWithoutExtension(Global.Buzz.Song.SongName) + ".wav" : "ReBuzz.wav";
+            string fileName = Global.Buzz.Song.SongName != null ? Path.GetFileNameWithoutExtension(Global.Buzz.Song.SongName) + ".wav" : "NeoBuzz Live.wav";
             baseName = System.IO.Path.Combine(
                 RegistryEx.Read<string>("HDRecorderPath", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)),
                 fileName);

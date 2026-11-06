@@ -192,7 +192,7 @@ SPECS = [
         "summary": "Sends notes and controller changes from its tracks to a MIDI output device.",
         "params": [],
         "track_params": [
-            P("Device", "int", "v", "ne.device = pg.Parameters[0].GetValue(t);", note="The MIDI output device, by its number in ReBuzz's list"),
+            P("Device", "int", "v", "ne.device = pg.Parameters[0].GetValue(t);", note="The MIDI output device, by its number in NeoBuzz Live's list"),
             P("MidiCC", "int", "v", ["public void MidiCC(int value, int track)", "ce.control = pg.Parameters[3].GetValue(t);"],
               note="Meant as the controller number, but Work reads the controller from the track's fourth parameter (Delay), "
                    "so this one does nothing (MidiOutput.cs)"),

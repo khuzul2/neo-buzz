@@ -93,7 +93,7 @@ namespace ReBuzz.Agent.Audio
             if (data == null || channels < 1 || rate <= 0) throw new ToolError($"{path} has no audio data or no format chunk.");
             int bytesPer = bits / 8;
             if (!(format == PcmFormat && bits is 16 or 24 or 32) && !(format == FloatFormat && bits == 32))
-                throw new ToolError($"{path} is a WAV ReBuzz can't read (format {format}, {bits} bits); use 16/24/32-bit PCM or 32-bit float.");
+                throw new ToolError($"{path} is a WAV {Product.Name} can't read (format {format}, {bits} bits); use 16/24/32-bit PCM or 32-bit float.");
             int frames = data.Length / (bytesPer * channels);
             var left = new float[frames];
             var right = channels > 1 ? new float[frames] : null;

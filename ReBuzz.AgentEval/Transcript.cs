@@ -1,5 +1,5 @@
 // Evaluation: reads a real agent's transcript (Claude Code's `--output-format stream-json`, one
-// JSON message per line) for the scores: the rebuzz tool calls it made, the ones that came back
+// JSON message per line) for the scores: the app's tool calls it made, the ones that came back
 // as errors (and their texts: the tools whose errors agents hit get rewritten, §10), its turns,
 // cost and how it stopped.
 
@@ -13,7 +13,16 @@ namespace ReBuzz.AgentEval
 {
     internal static class Transcript
     {
-        public const string ToolPrefix = "mcp__rebuzz__";
+        /// <summary>The app's tools as Claude Code names them: mcp__neobuzz-live__&lt;tool&gt; (the server's name, Product.McpName).</summary>
+        public const string ToolPrefix = "mcp__" + Product.McpName + "__";
+
+        /// <summary>The server's name before the app was NeoBuzz Live, in transcripts recorded then.</summary>
+        const string FormerServer = "rebuzz";
+        const string FormerToolPrefix = "mcp__" + FormerServer + "__";
+
+        /// <summary>The app's tool a call names (studio_status), or null for another tool.</summary>
+        static string AppTool(string name) =>
+            name.StartsWith(ToolPrefix) ? name[ToolPrefix.Length..] : name.StartsWith(FormerToolPrefix) ? name[FormerToolPrefix.Length..] : null;
 
         public static void Read(string file, TaskResult result)
         {
@@ -34,7 +43,7 @@ namespace ReBuzz.AgentEval
                 {
                     agent["model"] = m["model"]?.DeepClone();
                     agent["claude_code"] = m["claude_code_version"]?.DeepClone();
-                    var server = J.Objects(m["mcp_servers"]).FirstOrDefault(x => J.Str(x["name"]) == "rebuzz");
+                    var server = J.Objects(m["mcp_servers"]).FirstOrDefault(x => J.Str(x["name"]) is Product.McpName or FormerServer);
                     agent["mcp_status"] = server?["status"]?.DeepClone() ?? "missing";
                 }
                 else if (type == "assistant")
@@ -43,10 +52,9 @@ namespace ReBuzz.AgentEval
                     {
                         string name = J.Str(block["name"]) ?? "";
                         names[J.Str(block["id"]) ?? ""] = name;
-                        if (name.StartsWith(ToolPrefix))
+                        if (AppTool(name) is string tool)
                         {
                             calls++;
-                            string tool = name[ToolPrefix.Length..];
                             tools[tool] = tools.GetValueOrDefault(tool) + 1;
                         }
                         else otherTools++;
@@ -57,12 +65,12 @@ namespace ReBuzz.AgentEval
                     foreach (var block in J.Objects(m["message"]?["content"]).Where(b => J.Str(b["type"]) == "tool_result" && J.Bool(b["is_error"])))
                     {
                         string name = names.GetValueOrDefault(J.Str(block["tool_use_id"]) ?? "", "");
-                        if (!name.StartsWith(ToolPrefix)) continue;
+                        if (AppTool(name) is not string tool) continue;
                         errorCalls++;
                         string text = block["content"] is JsonArray parts
                             ? string.Join(" ", J.Objects(parts).Select(p => J.Str(p["text"])).Where(t => t != null))
                             : J.Str(block["content"]) ?? "";
-                        if (errors.Count < 40) errors.Add(new JsonObject { ["tool"] = name[ToolPrefix.Length..], ["text"] = text.Length > 400 ? text[..400] + "…" : text });
+                        if (errors.Count < 40) errors.Add(new JsonObject { ["tool"] = tool, ["text"] = text.Length > 400 ? text[..400] + "…" : text });
                     }
                 }
                 else if (type == "result")

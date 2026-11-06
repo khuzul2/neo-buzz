@@ -227,7 +227,7 @@ namespace ReBuzz.Agent
                         catch (Exception e)
                         {
                             pd.Remove(name);
-                            throw new ToolError($"Couldn't write {pd.Filename}: {e.Message}. The gear folder may be read-only (install ReBuzz somewhere writable).");
+                            throw new ToolError($"Couldn't write {pd.Filename}: {e.Message}. The gear folder may be read-only (install {Product.Name} somewhere writable).");
                         }
                         presetFiles.TryRemove(pd.Filename, out var stale);
                         return new JsonObject { ["machine"] = m.Name, ["preset"] = name, ["file"] = pd.Filename };

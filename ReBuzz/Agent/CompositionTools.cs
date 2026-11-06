@@ -101,7 +101,7 @@ namespace ReBuzz.Agent
                     bool changes = set?.Count > 0 || remove?.Count > 0;
                     var r = await host.Engine("arrangement_markers", changes, _ =>
                     {
-                        var store = core.MarkerStore ?? throw new ToolError("This ReBuzz has no song markers.");
+                        var store = core.MarkerStore ?? throw new ToolError($"This {Product.Name} has no song markers.");
                         if (changes)
                         {
                             var before = store.All.ToList();
@@ -140,7 +140,7 @@ namespace ReBuzz.Agent
                 Title = "Write automation",
                 Description =
                     "Draws a parameter's movement inside a pattern: points (beat in the pattern, value in the parameter's units) joined as steps or " +
-                    "linear ramps; ReBuzz plays it whenever the pattern plays. Replaces the parameter's automation between the first and last " +
+                    "linear ramps; " + Product.Name + " plays it whenever the pattern plays. Replaces the parameter's automation between the first and last " +
                     "point (clear=true removes all of it). Values outside a parameter's safe_range (machine_describe) are refused, with the reason, " +
                     "unless allow_unsafe=true. A played parameter (machine_describe's played_parameters: a drum's trigger) takes one event per " +
                     "point, each heard once, never ramps. One undo step. Example: automation_write(machine=\"Pad\", pattern=\"Build\", " +
@@ -435,7 +435,7 @@ namespace ReBuzz.Agent
                 {
                     var r = await host.Engine("session_clip_set", true, _ =>
                     {
-                        var layout = core.SessionLayout ?? throw new ToolError("This ReBuzz has no Session View.");
+                        var layout = core.SessionLayout ?? throw new ToolError($"This {Product.Name} has no Session View.");
                         var m = SongModel.Machine(core, c.RequiredString("machine"));
                         if (SongModel.IsMaster(m)) throw new ToolError("Master has no session track.");
                         IPattern pattern = c.Arguments["pattern"] is JsonValue v && v.TryGetValue(out string pn) ? SongModel.Pattern(m, pn) : null;
@@ -485,7 +485,7 @@ namespace ReBuzz.Agent
                 {
                     var r = await host.Engine("session_scene_set", true, _ =>
                     {
-                        var layout = core.SessionLayout ?? throw new ToolError("This ReBuzz has no Session View.");
+                        var layout = core.SessionLayout ?? throw new ToolError($"This {Product.Name} has no Session View.");
                         var doc = layout.Ensure();
                         var before = doc.CloneLayout();
                         int scene = c.Int("scene")!.Value - 1;

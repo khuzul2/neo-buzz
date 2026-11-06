@@ -52,7 +52,7 @@ namespace ReBuzz.Agent
                         Opt("presets", Integer("Factory presets")),
                         Opt("health", String("missing or crashed (not usable); unhealthy, warn or needs_window (from its profile)")),
                         Opt("diverging", Boolean("Its output runs away at some setting (NaN or a runaway level)")),
-                        Opt("needs_window", String("It works in ReBuzz on Windows with its window, not headless")),
+                        Opt("needs_window", String("It works in " + Product.Name + " on Windows with its window, not headless")),
                         Opt("safe_ranges", Array(Object("A parameter's safe range", Req("param", String("Its name")), Req("range", String("The safe values"))), "Where param_set keeps agents")),
                         Opt("problems", Array(String("A problem"), "Why it is unhealthy, hot or warned about")),
                         Opt("quirks", Array(String("A quirk"), "Curated: what to know before using it")),
@@ -231,7 +231,7 @@ namespace ReBuzz.Agent
                                                 "studio_status shows what undo would revert.");
                         }
                         var made = SongModel.Machines(core).FirstOrDefault(m => !before.Contains(m))
-                                   ?? throw new ToolError($"ReBuzz didn't create {dll.Name}." + (profiled?.NeedsWindow == true ? " " + ParamTools.WindowNote(profiled) : ""));
+                                   ?? throw new ToolError($"{Product.Name} didn't create {dll.Name}." + (profiled?.NeedsWindow == true ? " " + ParamTools.WindowNote(profiled) : ""));
                         int amp = Levels.DbToAmp(gainDb ?? 0);
                         if (after != null)
                         {
@@ -334,7 +334,7 @@ namespace ReBuzz.Agent
                 Title = "Rename, mute, solo, bypass",
                 Description =
                     "Changes a machine's name, mute, solo, bypass (effects pass the sound through untouched) or track count. One undo step. " +
-                    "Mute and solo change the song (ReBuzz's solo: soloing an effect silences the generators). To hear parts alone without " +
+                    "Mute and solo change the song (" + Product.Name + "'s solo: soloing an effect silences the generators). To hear parts alone without " +
                     "changing the song, use render(solo=[…]). reset=true is Reset and unmute for a machine whose guard tripped (machine_list " +
                     "and machine_describe show diverged: NaN, infinity or above +60 dBFS): it is stopped and plays again, and the guard trips " +
                     "again if it is still broken. " +

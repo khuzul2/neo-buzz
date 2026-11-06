@@ -43,9 +43,9 @@ namespace ReBuzz.Studio.Shell.Preferences
             Note("Checked outputs are what MIDI out machines and MIDI clock (Sync) send to.");
             Body.Children.Add(outputPanel);
             if (OperatingSystem.IsMacOS())
-                Note($"Other apps also reach ReBuzz through its virtual \"{CoreMidiBackend.VirtualName}\" ports while it runs.");
+                Note($"Other apps also reach {Product.Name} through its virtual \"{CoreMidiBackend.VirtualName}\" ports while it runs.");
             else if (midi.Backend is NoMidiBackend)
-                Note("This system has no MIDI devices for ReBuzz (it uses CoreMIDI on macOS).");
+                Note($"This system has no MIDI devices for {Product.Name} (it uses CoreMIDI on macOS).");
 
             Heading("Options");
             AddSettings(Global.MIDISettings);

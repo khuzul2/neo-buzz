@@ -10,9 +10,9 @@
 #  - choices kept from the machine are its texts.
 # A curated mapping that overrides the machine's texts (own_texts false: texts that are bare numbers,
 # or wrong) rests on its source instead and is not compared. Machines that don't load are reported.
-# Runs on rebuzz-headless (Linux, macOS: the Pedal machines) and ReBuzz.exe (Windows: the natives).
+# Runs on rebuzz-headless (Linux, macOS: the Pedal machines) and NeoBuzzLive.exe (Windows: the natives).
 #
-#   python3 tools/curated-check.py <rebuzz-headless | ReBuzz.exe> [work folder]
+#   python3 tools/curated-check.py <rebuzz-headless | NeoBuzzLive.exe> [work folder]
 
 import importlib.util
 import json
@@ -30,7 +30,7 @@ profiler = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(profiler)
 
 if len(sys.argv) < 2:
-    sys.exit(__doc__ or "usage: curated-check.py <rebuzz-headless | ReBuzz.exe> [work folder]")
+    sys.exit(__doc__ or "usage: curated-check.py <rebuzz-headless | NeoBuzzLive.exe> [work folder]")
 exe = sys.argv[1]
 work = sys.argv[2] if len(sys.argv) > 2 else tempfile.mkdtemp(prefix="rebuzz-curated-")
 root = os.path.dirname(HERE)

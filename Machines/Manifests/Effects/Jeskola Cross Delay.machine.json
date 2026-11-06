@@ -10,7 +10,7 @@
   "Mono in, stereo out: the left line's echo feeds the right line and the other way round, so different lengths ping-pong.",
   "Each track is its own pair of lines with its own lengths, feedback and level (8 at most).",
   "Lengths count in Length unit, ticks by default.",
-  "ReBuzz feeds it left + right summed, so a centred signal comes out about 6 dB louder with Dry thru on (profile: +6.1 dB)."
+  "NeoBuzz Live feeds it left + right summed, so a centred signal comes out about 6 dB louder with Dry thru on (profile: +6.1 dB)."
  ],
  "evidence": [
   "ExternalMachines/source/buzztrax-buzzmachines/Jeskola/CrossDelay/CrossDelay.cpp — parameters, DescribeValue, cross feedback in DoWork",

@@ -61,7 +61,7 @@ namespace ReBuzz.Core.Sync
         public string Start()
         {
             if (IsRunning) return null;
-            if (!File.Exists(path)) return $"The Link helper ({Path.GetFileName(path)}) isn't installed next to ReBuzz.";
+            if (!File.Exists(path)) return $"The Link helper ({Path.GetFileName(path)}) isn't installed next to {Product.Name}.";
             try
             {
                 var info = new ProcessStartInfo(path)

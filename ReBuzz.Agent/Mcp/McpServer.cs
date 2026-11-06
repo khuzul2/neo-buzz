@@ -218,7 +218,7 @@ namespace ReBuzz.Agent.Mcp
                 }
                 catch (Exception e)
                 {
-                    result = ToolResult.Fail($"{tool.Name} failed inside ReBuzz: {Describe(e)}. The song may be partly changed; studio_status shows what undo would revert.");
+                    result = ToolResult.Fail($"{tool.Name} failed inside {Product.Name}: {Describe(e)}. The song may be partly changed; studio_status shows what undo would revert.");
                 }
             }
             ToolCalled?.Invoke(new ToolCallRecord(tool.Name, args, result.IsError, result.Summary, sw.Elapsed));

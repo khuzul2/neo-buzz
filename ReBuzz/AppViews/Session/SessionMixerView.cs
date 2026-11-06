@@ -340,7 +340,7 @@ namespace ReBuzz.AppViews.Session
                 returnItem.Items.Add(new MenuItem { Header = "(no effect machines: add one in the Machine View)", IsEnabled = false });
             menu.Items.Add(returnItem);
 
-            var cueItem = new MenuItem { Header = "Cue output", ToolTip = "Machine the Cue buttons connect tracks to: one that plays to a second output\n(ReBuzzAudioOut or Polac Out set to other channels), not connected to the master" };
+            var cueItem = new MenuItem { Header = "Cue output", ToolTip = "Machine the Cue buttons connect tracks to: one that plays to a second output\n(ReBuzz Audio Out or Polac Out set to other channels), not connected to the master" };
             cueItem.Items.Add(new MenuItem { Header = "None", IsChecked = doc.CueMachine.Length == 0, Command = new RelayCommand(() => layout.SetCueMachine(null)) });
             foreach (var m in effects)
             {

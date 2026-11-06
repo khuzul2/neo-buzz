@@ -42,6 +42,8 @@
     <Compile Include="..\ReBuzz\Core\Notes\NotesMarkdown.cs;..\ReBuzz\Core\Notes\RtfToMarkdown.cs;..\ReBuzz\Core\Notes\InfoMachineState.cs" Link="Engine\%(Filename)%(Extension)" />
     <!-- The seams for hosts without Windows or a UI toolkit (docs/specs/mac-engine.md M0), with the interfaces they implement. -->
     <Compile Include="..\ReBuzz\Platform\*.cs" Link="Platform\%(Filename)%(Extension)" />
+    <!-- The app's name (NeoBuzz Live), which the seams' messages and CoreMIDI's names use. -->
+    <Compile Include="..\ReBuzz.Agent\Product.cs" Link="Platform\Product.cs" />
     <Compile Include="..\ReBuzz\Core\IRegistryEx.cs;..\ReBuzz\Core\IRegistryKey.cs;..\ReBuzz\Core\IUiDispatcher.cs;..\ReBuzz\Core\IUiSignal.cs;..\ReBuzz\Core\IUiTimer.cs;..\ReBuzz\Core\IUserMessages.cs;..\ReBuzzGUI\BuzzGUI.Common\IRegistryStore.cs" Link="Platform\%(Filename)%(Extension)" />
   </ItemGroup>
 

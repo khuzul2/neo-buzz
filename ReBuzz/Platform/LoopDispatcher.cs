@@ -97,7 +97,7 @@ namespace ReBuzz.Platform
         }
 
         /// <summary>Runs the loop on a thread of its own (background).</summary>
-        public void Start(string name = "ReBuzz engine loop")
+        public void Start(string name = Product.Name + " engine loop")
         {
             using var started = new ManualResetEventSlim();
             var t = new Thread(() =>
@@ -163,7 +163,7 @@ namespace ReBuzz.Platform
         {
             var handler = UnhandledException;
             if (handler != null) handler(e);
-            else Console.Error.WriteLine("[ReBuzz] " + e.GetType().Name + " on the engine loop: " + e.Message);
+            else Console.Error.WriteLine(Product.LogPrefix + e.GetType().Name + " on the engine loop: " + e.Message);
         }
 
         /// <summary>

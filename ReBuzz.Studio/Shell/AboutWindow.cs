@@ -1,5 +1,6 @@
-// Fork (docs/specs/studio-mvp.md S7): About ReBuzz, after ReBuzz.exe's AboutWindow: the build and
-// the credits in white on black, rolling slowly upwards (the WPF window's particles aren't ported).
+// Fork (docs/specs/studio-mvp.md S7): About NeoBuzz Live, after ReBuzz.exe's AboutWindow: the build,
+// what it is based on (ReBuzz, its authors and link) and the credits in white on black, rolling slowly
+// upwards (the WPF window's particles aren't ported).
 
 using System;
 using Avalonia;
@@ -21,7 +22,7 @@ namespace ReBuzz.Studio.Shell
 
         public AboutWindow()
         {
-            Title = "About ReBuzz";
+            Title = "About " + Product.Name;
             Width = 700;
             Height = 400;
             CanResize = false;
@@ -60,11 +61,13 @@ namespace ReBuzz.Studio.Shell
             string number = BuildInfo.Number?.Trim();
             string date = BuildInfo.Date?.Trim() ?? "";
             string year = date.Length >= 4 ? date.Substring(0, 4) : DateTime.Now.Year.ToString();
-            return "ReBuzz" + (string.IsNullOrEmpty(number) ? "" : $" (build {number})") + "\n" +
-                   $"(C) {year} WDE\n" +
+            return Product.Name + (string.IsNullOrEmpty(number) ? "" : $" (build {number})") + "\n" +
                    $"The studio, on Avalonia ({System.Runtime.InteropServices.RuntimeInformation.RuntimeIdentifier})\n" +
                    "\n" +
-                   "Thank you for choosing ReBuzz\nDigital Audio Workstation!\nWe are grateful to all our\ncontributors who have helped\nus make this software\nwhat it is today.\n\n" +
+                   $"Based on {Product.Upstream}\nby {Product.UpstreamAuthors}\n{Product.UpstreamUrl.Replace("https://", "")}\n" +
+                   $"(C) {year} WDE, MIT licence\n" +
+                   "\n" +
+                   "Thank you for choosing NeoBuzz Live!\nIt is built on the ReBuzz\nDigital Audio Workstation.\nWe are grateful to all\nReBuzz contributors who have helped\nmake this software\nwhat it is today.\n\n" +
                    "We encourage users and developers\nalike to continue using and\nimproving ReBuzz.\n\nLet's make music together!\n\n" +
                    "Thanks to\n\nOskari Tammelin\nCreator of the original\nJeskola Buzz DAW\n\n" +
                    "clvn - Buzè\nFrank Potulski - Polac VST Loaders\nMark Heath - NAudio\nAleksey Vaneev - r8brain-free-src\n" +

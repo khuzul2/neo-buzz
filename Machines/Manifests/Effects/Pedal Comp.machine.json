@@ -7,7 +7,7 @@
  "type": "dynamics",
  "summary": "Feed-forward compressor with soft knee, lookahead, peak or RMS detection, auto makeup and a wet/dry mix (parallel compression). For taming peaks and gluing tracks or buses.",
  "quirks": [
-  "Its own value texts for Attack, Release, Lookahead and Makeup Gain are wrong (ReBuzz's ms and dB descriptors scale the raw value, which the machine uses directly as ms and dB): the manifest gives the real values, from its source.",
+  "Its own value texts for Attack, Release, Lookahead and Makeup Gain are wrong (NeoBuzz Live's ms and dB descriptors scale the raw value, which the machine uses directly as ms and dB): the manifest gives the real values, from its source.",
   "Lookahead delays the output by the lookahead time.",
   "Auto Makeup replaces Makeup Gain with the gain lost at 0 dBFS, −threshold × (1 − 1/ratio), up to +24 dB."
  ],

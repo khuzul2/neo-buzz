@@ -7,7 +7,7 @@
  "type": "filter",
  "summary": "Classic Buzz resonant filter: low-pass, high-pass or band-pass with cutoff, resonance and bandwidth on 0–128 scales. For sweeps in old-school Buzz songs; Neo Poly's filters and Pedal Filter have units.",
  "quirks": [
-  "Mono out (the profile measured an output correlation of 1.0), and about 6 dB louder than its input at unity settings: ReBuzz feeds a mono native effect left + right summed (ReBuzz/NativeMachine/NativeMessage.cs). Profile: +6.0 dB at the defaults.",
+  "Mono out (the profile measured an output correlation of 1.0), and about 6 dB louder than its input at unity settings: NeoBuzz Live feeds a mono native effect left + right summed (ReBuzz/NativeMachine/NativeMessage.cs). Profile: +6.0 dB at the defaults.",
   "Resonance at its top self-oscillates very loudly: +53.8 dBFS steady on noise (profile), so the master limiter clamps it. Keep it well below 128 and check the level with render.",
   "Cutoff, Resonance and Bandwidth are bare 0–128 scales (no units in its texts).",
   "Closed source: names come from its own descriptions."

@@ -557,11 +557,11 @@ namespace ReBuzz.AgentTests
             Assert.That(prompts.Select(p => p.Name).ToList(), Is.EquivalentTo(new[] { "compose", "design-sound", "mix", "master", "critique" }));
 
             string compose = Render("compose", new Dictionary<string, string> { ["genre"] = "synthwave", ["mood"] = "melancholic", ["tempo"] = "92", ["length"] = "2 minutes" });
-            Assert.That(compose, Does.StartWith("Compose a melancholic synthwave track in ReBuzz at 92 BPM, 2 minutes long."));
+            Assert.That(compose, Does.StartWith("Compose a melancholic synthwave track in NeoBuzz Live at 92 BPM, 2 minutes long."));
             Assert.That(compose, Does.Contain("Template: \"Synthwave\""));
             Assert.That(compose, Does.Contain("48 bars of 4/4 at 92 BPM (125 s)"));
             Assert.That(compose, Does.Contain("# Composition"), "the guide comes with it");
-            Assert.That(compose, Does.Contain("# Working in ReBuzz"));
+            Assert.That(compose, Does.Contain("# Working in NeoBuzz Live"));
             string other = Render("compose", new Dictionary<string, string> { ["genre"] = "polka" });
             Assert.That(other, Does.Contain("No template for \"polka\""));
             string bars = Render("compose", new Dictionary<string, string> { ["genre"] = "house", ["length"] = "64 bars" });

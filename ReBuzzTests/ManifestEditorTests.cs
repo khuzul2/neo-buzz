@@ -31,8 +31,8 @@ namespace ReBuzzTests
         public void EveryCuratedMachineOpensItsManifestEditorInReBuzz()
         {
             string bin = File.ReadLines(TestAssemblyDirectory.Value.AddFileName("ReBuzzLocation.txt").ToString()).First();
-            string exe = Path.Combine(bin, "ReBuzz.exe");
-            if (!File.Exists(exe)) Assert.Inconclusive($"ReBuzz.exe not built ({exe})");
+            string exe = Path.Combine(bin, ReBuzz.Product.WindowsExe);
+            if (!File.Exists(exe)) Assert.Inconclusive($"{ReBuzz.Product.WindowsExe} not built ({exe})");
             string folder = Path.Combine(Path.GetTempPath(), "rebuzz-editor-shots-" + Environment.ProcessId);
             if (Directory.Exists(folder)) Directory.Delete(folder, true);
 
