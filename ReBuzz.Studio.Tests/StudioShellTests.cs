@@ -69,6 +69,37 @@ namespace ReBuzz.Studio.Tests
             Settle();
         }
 
+        // ------------------------------------------------------------------ the status line
+
+        [AvaloniaTest]
+        public void TheStatusLineCountsTheMachinesYouSee()
+        {
+            // Gallery mac-010 ("1 machines" for the Master alone) and mac-020 ("15 machines" for the
+            // demo song's 10 and the Master, its 4 hidden pattern-editor machines counted).
+            NewSong();
+            var window = Open();
+            try
+            {
+                window.RefreshNow();
+                Assert.That(window.StatusText, Does.Contain(" · no machines"), "a new song: the Master alone");
+                var song = Core.SongCore;
+                song.CreateMachine("Neo Poly", null, "Lead", null, null, null, -1, 0.2f, 0.2f);
+                window.RefreshNow();
+                Assert.That(window.StatusText, Does.Contain(" · 1 machine").And.Not.Contain("1 machines"));
+                song.CreateMachine("Neo Poly", null, "Bass", null, null, null, -1, -0.2f, 0.2f);
+                song.CreateMachine("Neo Poly", null, "Editor", null, null, null, -1, -0.2f, -0.2f);
+                song.MachinesList.Single(m => m.Name == "Editor").Hidden = true;      // as a song's pattern-editor machines are
+                window.RefreshNow();
+                Assert.That(window.StatusText, Does.Contain(" · 2 machines"), "not the hidden one, not the Master");
+                Assert.That(song.MachinesList.Count, Is.EqualTo(4));
+            }
+            finally
+            {
+                NewSong();
+                window.Close();
+            }
+        }
+
         // ------------------------------------------------------------------ recent files
 
         [AvaloniaTest]
