@@ -215,5 +215,76 @@ namespace ReBuzzTests
                 new Typeface(list.FontFamily, list.FontStyle, list.FontWeight, list.FontStretch), list.FontSize, Brushes.Black, 1.0);
             Assert.That(column.Width, Is.GreaterThanOrEqualTo(text.WidthIncludingTrailingWhitespace + 12), $"\"{longest}\" in its column");
         }
+
+        // ------------------------------------------------------------------ the Pattern View opens on its pattern (win-030, win-032)
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void ThePatternViewOpensOnThePatternItWasGiven(bool cursorOnAPattern)
+        {
+            // The gallery's win-030 and win-032 showed Drums' Break for Bass's Line A. Becoming active, the Pattern View had
+            // the sequence editor (Auto Select Pattern, on by default) put what is under its cursor in the pattern editor:
+            // a pattern there, or else its machine, whose pattern from before the editor view's pattern box then chose.
+            using var driver = new Driver();
+            var drumsTone = ToneController.NewInstance("Drums");
+            var bassTone = ToneController.NewInstance("Bass");
+            driver.Gear.AddDynamicGenerator(ToneController.Info);
+            driver.Start();
+            driver.MachineGraph.InsertMachineInstanceConnectedToMasterFor(drumsTone);
+            driver.MachineGraph.InsertMachineInstanceConnectedToMasterFor(bassTone);
+            var core = driver.Core;
+            var song = core.SongCore;
+            var drums = driver.MachineFor(drumsTone);
+            var bass = driver.MachineFor(bassTone);
+            foreach (var m in new[] { drums, bass })
+                if (!song.SequencesList.Any(s => s.Machine == m))
+                    song.AddSequence(m, song.SequencesList.Count);
+            drums.CreatePattern("Break", 16);
+            bass.CreatePattern("Line A", 16);
+            var breakPattern = drums.PatternsList.Single(p => p.Name == "Break");
+            var lineA = bass.PatternsList.Single(p => p.Name == "Line A");
+            if (cursorOnAPattern)
+                song.SequencesList.Single(s => s.Machine == drums).SetEvent(0, new SequenceEvent(SequenceEventType.PlayPattern, breakPattern));
+            Assert.That(song.SequencesList[0].Machine, Is.EqualTo(drums), "Drums' track first: the sequence editor's cursor starts on it");
+
+            var settings = BuzzGUI.SequenceEditor.SequenceEditor.Settings;
+            bool autoSelect = settings.AutoSelectPattern;
+            settings.AutoSelectPattern = true;
+            var sequenceEditor = new BuzzGUI.SequenceEditor.SequenceEditor(core, null);
+            var editorView = new ReBuzz.EditorView(core, new FakeInMemoryRegistry()) { SequenceEditor = sequenceEditor };
+            try
+            {
+                sequenceEditor.Song = song;
+                core.SetPatternEditorPattern(breakPattern);   // shown before: the editor view keeps it as Drums' pattern
+                Pump();
+                core.ActiveView = BuzzView.MachineView;
+                core.SetPatternEditorPattern(lineA);          // a pattern opened from the Machine View, a menu or the agent
+                core.ActivatePatternEditor();
+                Pump();
+                Assert.Multiple(() =>
+                {
+                    Assert.That(core.ActiveView, Is.EqualTo(BuzzView.PatternView));
+                    Assert.That(core.PatternEditorPattern?.Name, Is.EqualTo("Line A"), "the pattern editor's pattern");
+                    Assert.That(core.PatternEditorMachine?.Name, Is.Not.EqualTo("Drums"), "the pattern editor's machine");
+                    Assert.That(editorView.SelectedMachine?.Machine?.Name, Is.EqualTo("Bass"), "the editor view's Machine box");
+                    Assert.That(editorView.SelectedMachine?.SelectedPattern?.Name, Is.EqualTo("Line A"), "the editor view's Pattern box");
+                });
+
+                // Moving the cursor still selects what it moves to (MoveCursor's UpdateSelectedRow).
+                sequenceEditor.UpdateSelectedRow();
+                Pump();
+                Assert.That(editorView.SelectedMachine?.Machine?.Name, Is.EqualTo("Drums"), "the cursor's machine");
+                if (cursorOnAPattern)
+                    Assert.That(core.PatternEditorPattern?.Name, Is.EqualTo("Break"), "the cursor's pattern");
+            }
+            finally
+            {
+                sequenceEditor.Song = null;
+                sequenceEditor.Release();
+                settings.AutoSelectPattern = autoSelect;
+            }
+
+            static void Pump() => System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+        }
     }
 }
