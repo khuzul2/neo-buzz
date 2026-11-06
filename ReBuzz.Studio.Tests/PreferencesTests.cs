@@ -415,6 +415,7 @@ namespace ReBuzz.Studio.Tests
             var prefs = Open("General");
             var page = prefs.Page<GeneralPage>();
             var box = (ComboBox)page.SettingControl("GeneralSettings/NoteNames");
+            var octaveBox = (ComboBox)page.SettingControl("GeneralSettings/DefaultMachineBaseOctave");
             try
             {
                 Assert.That(box, Is.Not.Null, "General ▸ Note names");
@@ -437,6 +438,8 @@ namespace ReBuzz.Studio.Tests
                     Assert.That(NoteNames.TryTracker(C5), Is.EqualTo(tracker), $"{naming}: the pattern editor, three characters");
                     Assert.That(ReBuzz.Core.Session.ClipNotes.Name(60), Is.EqualTo(name), $"{naming}: the piano roll");
                     Assert.That(NeoBuzz.Editor.KeyboardFace.NoteName(60), Is.EqualTo(name), $"{naming}: the machine keyboards");
+                    Assert.That(((ComboBoxItem)octaveBox.SelectedItem!).Content, Is.EqualTo(NoteNames.Octave(general.DefaultMachineBaseOctave, naming).ToString()),
+                        $"{naming}: the default base octave named as the notes are (Buzz's 4 is 2 when C3 is 60)");
                 }
                 Assert.That(BuzzNote.TryToString((5 << 4) + 1), Is.EqualTo("C-5"), "the editors' own names (what they parse and save) stay");
             }

@@ -25,6 +25,7 @@ namespace ReBuzz.Studio.Shell.Preferences
 
         protected readonly StackPanel Body = new StackPanel { Margin = new Thickness(24, 12, 24, 20), Spacing = 6 };
         readonly List<Action> settingRefreshes = new List<Action>();
+        readonly List<Action> relabels = new List<Action>();
         readonly Dictionary<string, Control> settingControls = new Dictionary<string, Control>();
 
         protected PrefsPage()
@@ -86,10 +87,18 @@ namespace ReBuzz.Studio.Shell.Preferences
         {
             base.OnAttachedToVisualTree(e);
             poll?.Start();
+            BuzzGUI.Common.NoteNames.Changed += Relabel;
         }
+
+        /// <summary>Fork (ux-overhaul.md §3.5): notes are named another way: the choices that name octaves say it.</summary>
+        void Relabel() => Dispatcher.UIThread.Post(() =>
+        {
+            foreach (var relabel in relabels) relabel();
+        });
 
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
+            BuzzGUI.Common.NoteNames.Changed -= Relabel;
             poll?.Stop();
             base.OnDetachedFromVisualTree(e);
         }
@@ -178,7 +187,12 @@ namespace ReBuzz.Studio.Shell.Preferences
                 else if (s.Options != null)
                 {
                     var combo = Choices(240);
-                    combo.ItemsSource = s.Options.Select(o => new ComboBoxItem { Content = OptionLabel(s, o), FontWeight = o == s.Default ? FontWeight.Bold : FontWeight.Normal }).ToList();
+                    var items = s.Options.Select(o => new ComboBoxItem { Content = OptionLabel(s, o), FontWeight = o == s.Default ? FontWeight.Bold : FontWeight.Normal }).ToList();
+                    combo.ItemsSource = items;
+                    relabels.Add(() =>
+                    {
+                        for (int i = 0; i < items.Count; i++) items[i].Content = OptionLabel(s, s.Options[i]);
+                    });
                     OnPick(combo, i => Set(s.Options[i]));
                     settingRefreshes.Add(() => combo.SelectedIndex = Array.IndexOf(s.Options, s.Value));
                     Row(Pretty(s.Name), combo, s.Description);
@@ -201,10 +215,13 @@ namespace ReBuzz.Studio.Shell.Preferences
 
         /// <summary>
         /// An option as the list shows it: an enum value's [Description] (General ▸ Note names: "C3 = MIDI 60",
-        /// ux-overhaul.md §3.5), else its name with spaces for underscores.
+        /// ux-overhaul.md §3.5), an octave as notes are named (the default base octave: Buzz's 4 is 2 when C3 is 60), else
+        /// its name with spaces for underscores.
         /// </summary>
         internal static string OptionLabel(BuzzGUI.Common.Settings.Setting s, string option)
         {
+            if (s.Name == nameof(BuzzGUI.Common.Settings.GeneralSettings.DefaultMachineBaseOctave) && int.TryParse(option, out int octave))
+                return BuzzGUI.Common.NoteNames.Octave(octave).ToString(System.Globalization.CultureInfo.InvariantCulture);
             if (s.ValueObject is Enum e && e.GetType().GetField(option) is { } field &&
                 Attribute.GetCustomAttribute(field, typeof(System.ComponentModel.DescriptionAttribute)) is System.ComponentModel.DescriptionAttribute d)
                 return d.Description;
