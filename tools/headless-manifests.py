@@ -27,8 +27,10 @@
 #    texts are wrong (Pedal Comp's Attack) reads and writes the real values; guide(machine=…) and the
 #    rebuzz://machines/<slug>/manual resources cover drafts and curated machines alike.
 #  - U6 (mcp-server.md §12.13): the Pedal effects that had drafts have manifests generated from their source
-#    (Pedal Shaper: exact units, dB read from its code where its own texts are bare numbers); the drafts'
-#    checks use a Pedal machine that still has one (Pedal Tracker).
+#    (Pedal Shaper: exact units, dB read from its code where its own texts are bare numbers).
+#  - U6 for the Pedal synths (mcp-server.md §12.15): Pedal Tracker's manifest is generated from its source too, so no
+#    Pedal machine has a draft left: the drafts' checks run in the copy, on Pedal Tracker made a draft again. The
+#    synths take MIDI notes: notes_write's default for Pedal SH101 is its MIDI column, and its Note track still plays.
 #
 #   python3 tools/headless-manifests.py <path to rebuzz-headless> [work folder]
 
@@ -105,9 +107,8 @@ s = Server(exe, "main")
 ok, _, g = s.call("gear_list", search="Pedal", limit=100, include_unhealthy=True)
 rows = {x["name"]: x for x in g.get("gear", [])}
 tracker = rows.get("Pedal Tracker", {})
-check(tracker.get("manifest") == "draft" and tracker.get("type") and "profiled draft" in tracker.get("summary", ""),
-      f"gear_list: Pedal Tracker has a draft manifest saying what it is ({tracker.get('type')}: {tracker.get('summary', '')[:80]})")
-check(tracker.get("exact_units") is False, "gear_list: a draft's units aren't called exact")
+check(tracker.get("manifest") == "generated" and tracker.get("exact_units") is True and "Matilde" in tracker.get("summary", ""),
+      f"gear_list: Pedal Tracker's manifest is generated from its source, exact ({tracker.get('manifest')}: {tracker.get('summary', '')[:80]})")
 shaper = rows.get("Pedal Shaper", {})
 check(shaper.get("manifest") == "generated" and shaper.get("exact_units") is True and "waveshaping" in shaper.get("summary", ""),
       f"gear_list: Pedal Shaper's manifest is generated from its source, exact ({shaper.get('manifest')}: {shaper.get('summary', '')[:80]})")
@@ -146,26 +147,28 @@ check(order == sorted(order), f"gear_list: unhealthy machines come last ({[n for
 hot = [n for n, x in rows.items() if x.get("health") == "warn" and any(p.startswith("hot") for p in x.get("problems", []))]
 check(hot and all(not rows[n].get("diverging") for n in hot), f"gear_list: hot machines are a warning, not diverging ({hot})")
 
-# A Pedal synth plays the written pitch through notes_write: its draft says it takes notes in its tracks.
+# A Pedal synth plays the written pitch through notes_write: as MIDI (§12.15), and in its Note track as old songs have it.
 s.call("song_new", discard_unsaved=True, tempo_bpm=120)
 s.call("machine_add", gear="Pedal SH101", name="Bass")
 _, _, d = s.call("machine_describe", machine="Bass")
 info = d.get("gear_info", {})
-check(d.get("manifest") == "curated" and info.get("note_input") == "tracks" and info.get("takes_midi") is False,
-      f"machine_describe: SH101's curated manifest says notes go in its tracks ({info})")
+check(d.get("manifest") == "curated" and info.get("note_input") == "midi" and info.get("takes_midi") is True,
+      f"machine_describe: SH101 takes MIDI notes, and its curated manifest sends them as MIDI ({info})")
 cut = next((p for p in d.get("parameters", []) if p["name"] == "Cutoff"), {})
 check(cut.get("plain_name") == "Filter cutoff" and cut.get("role") == "filter.cutoff" and d.get("quirks"),
       f"machine_describe: plain names, roles and quirks ({cut.get('plain_name')}, {cut.get('role')}, {len(d.get('quirks') or [])} quirks)")
 ok, w, r = play_a4(s, "Bass")
-check(ok and w.get("input") == "tracks", f"notes_write A4 to Pedal SH101 goes into its Note track column (input {w.get('input')})")
+check(ok and w.get("input") == "midi", f"notes_write A4 to Pedal SH101 goes into the pattern's MIDI column (input {w.get('input')})")
 hz, name = heard(s, r.get("id", "r1"))
 check(name == "A4" and hz is not None and abs(hz - 440) < 2, f"Pedal SH101 plays A4 at 440 Hz through notes_write ({hz} Hz, {name})")
 _, _, back = s.call("notes_read", machine="Bass", pattern="A")
 check([(n["pitch"], n["start"], n["length"]) for n in back.get("notes", [])] == [(69, 0, 2)], f"notes_read gives back what was written ({back.get('notes')})")
 s.call("undo")
 s.call("pattern_delete", machine="Bass", pattern="A")
-ok, w, r = play_a4(s, "Bass", input="midi")
-check(ok and r.get("measure", {}).get("silent") is True, "as MIDI alone (the old path) the same note is silent: the draft made it play")
+ok, w, r = play_a4(s, "Bass", input="tracks")
+hz, name = heard(s, r.get("id", "r1"))
+check(ok and w.get("input") == "tracks" and name == "A4" and hz is not None and abs(hz - 440) < 2,
+      f"in its Note track (input tracks, as old songs have it) the same note plays as well ({hz} Hz, {name})")
 
 # Units on Pedal machines, through their drafts.
 s.call("machine_add", gear="Pedal EQ", name="EQ")
@@ -199,8 +202,9 @@ md = gd.get("markdown", "")
 check(ok and "## Quirks" in md and "**Filter cutoff** (`filter.cutoff`)" in md and "| VCF Freq |" in md and "## Sources" in md,
       "guide(machine=\"Pedal Juno106\"): the curated manual")
 ok, _, gd = s.call("guide", machine="Pedal Tracker")
-check(ok and gd.get("markdown", "").startswith("# Pedal Tracker manual") and "profiled draft" in gd.get("markdown", "") and "Pedal Tracker" in gd.get("manuals", []),
-      "guide(machine=\"Pedal Tracker\"): a draft's manual, and the list names it")
+check(ok and gd.get("markdown", "").startswith("# Pedal Tracker manual") and "generated from its source code" in gd.get("markdown", "")
+      and "Pedal Tracker" in gd.get("manuals", []),
+      "guide(machine=\"Pedal Tracker\"): the manual of a manifest from source, and the list names it")
 # U6: a manifest generated from the source. Pedal Shaper's Drive reads bare numbers (48); its code makes it dB.
 s.call("machine_add", gear="Pedal Shaper", name="Shp", connect_to="none")
 ok, _, p = s.call("param_set", machine="Shp", changes=[{"param": "Drive", "value": "+6 dB"}, {"param": "Mix", "value": "50%"}])
@@ -288,8 +292,19 @@ def gate_never_decays(m):
             p["safe_range"] = {"min": p["min"], "max": 1000, "reason": "never decays at its maximum (a test)"}
 
 
+def tracker_draft(m):
+    # Pedal Tracker as the profiled draft it was before §12.15 (the drafts' checks: no Pedal machine has one now).
+    m["status"] = "draft"
+    m["source"] = "profiled by tools/machine-profiler.py (a test); not curated"
+    m["summary"] = "Monosynth (profiled draft): pitched, plays A4 at 440 Hz as written; takes MIDI notes (a test)."
+    for p in m["parameters"] + m["track_parameters"]:
+        if p["name"] in ("Master", "Volume"):
+            p["suggested_role"], p["role_evidence"] = "level", "silent at its minimum, sounding at the other end (a test)"
+
+
 edit_draft("Effects", "Pedal Gain", gain_diverges)
 edit_draft("Effects", "Pedal Gate", gate_never_decays)
+edit_draft("Generators", "Pedal Tracker", tracker_draft)
 s = Server(os.path.join(copy, os.path.basename(exe)), "offset")
 ok, _, g0 = s.call("gear_list", search="Pedal", limit=100)
 check(ok and sorted(g0.get("hidden_unhealthy", [])) == ["Pedal Filter", "Pedal Gain"] and len(g0.get("gear", [])) == 17
@@ -298,6 +313,13 @@ check(ok and sorted(g0.get("hidden_unhealthy", [])) == ["Pedal Filter", "Pedal G
 ok, _, g = s.call("gear_list", search="Pedal", limit=100, include_unhealthy=True)
 rows = {x["name"]: x for x in g.get("gear", [])}
 names = [x["name"] for x in g.get("gear", [])]
+tracker = rows.get("Pedal Tracker", {})
+check(tracker.get("manifest") == "draft" and tracker.get("type") and "profiled draft" in tracker.get("summary", ""),
+      f"gear_list: a draft manifest says what the machine is ({tracker.get('type')}: {tracker.get('summary', '')[:80]})")
+check(tracker.get("exact_units") is False, "gear_list: a draft's units aren't called exact")
+ok, _, gd = s.call("guide", machine="Pedal Tracker")
+check(ok and gd.get("markdown", "").startswith("# Pedal Tracker manual") and "profiled draft" in gd.get("markdown", ""),
+      "guide(machine=\"Pedal Tracker\"): a draft's manual")
 chorus = rows.get("Pedal Chorus", {})
 check(chorus.get("health") == "needs_window" and "works in neobuzz live on windows with its window" in chorus.get("needs_window", "").lower(),
       f"gear_list: a machine that needs a window says it works in NeoBuzz Live on Windows with its window ({chorus.get('needs_window')})")
@@ -361,12 +383,13 @@ check([n["pitch"] for n in back.get("notes", [])] == [69] and [n["pitch"] for n 
 
 # U2 in depth: a draft's suggested roles in machine_describe, as the draft has them; played track parameters,
 # written as events; each machine's work time in a render.
-shaper_draft = draft_of("Pedal Tracker")
-want = {p["name"]: p["suggested_role"] for p in shaper_draft.get("parameters", []) + shaper_draft.get("track_parameters", []) if p.get("suggested_role")}
+with open(os.path.join(copy, "Gear", "Generators", "Pedal Tracker.machine.json"), encoding="utf-8") as f:
+    tracker_m = json.load(f)
+want = {p["name"]: p["suggested_role"] for p in tracker_m["parameters"] + tracker_m["track_parameters"] if p.get("suggested_role")}
 s.call("machine_add", gear="Pedal Tracker", name="Sh", connect_to="none")
 _, _, d = s.call("machine_describe", machine="Sh")
 got = {p["name"]: p.get("suggested_role") for p in d.get("parameters", []) if p.get("suggested_role")}
-check(got == want and all(p.get("role_evidence") for p in d.get("parameters", []) if p.get("suggested_role")),
+check(got == want and want and all(p.get("role_evidence") for p in d.get("parameters", []) if p.get("suggested_role")),
       f"machine_describe gives a draft's suggested roles with their evidence ({len(got)}: {sorted(got.items())[:3]})")
 s.call("machine_add", gear="Neo Poly", name="Pad")
 _, _, d = s.call("machine_describe", machine="Pad")

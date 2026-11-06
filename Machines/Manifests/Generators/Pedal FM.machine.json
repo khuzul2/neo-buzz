@@ -3,35 +3,37 @@
  "gear": "Pedal FM",
  "kind": "generator",
  "status": "curated",
- "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed Updated by hand (2026-11-06, mcp-server.md §12.15, U6 for the Pedal synths) for MIDI input.",
  "type": "polysynth",
- "summary": "4-operator FM synth (DX21/TX81Z lineage), 8 algorithms, up to 16 voices with one per track: electric pianos, bells, brass, chord stabs and FM basses.",
+ "summary": "4-operator FM synth (DX21/TX81Z lineage), 8 algorithms, up to 16 voices (MIDI notes, or one per track): electric pianos, bells, brass, chord stabs and FM basses.",
  "quirks": [
-  "One voice per track (16 at most; Voices caps it): notes_write spreads chords over tracks.",
-  "Velocity is the per-track Velocity column (sticky: it holds for later notes), not the note's own velocity.",
-  "Glide only slides between overlapping notes on the same track.",
+  "MIDI notes (notes_write's default) take any of its voices up to Voices (8 by default, 16 at most), a free one first, else the one released longest ago; a note's velocity does what the Velocity column does, for that note (velocity / 127, through each operator's VelSens); pitch bend moves every voice ±2 semitones, the mod wheel brings in the LFO's vibrato (as LFO Pitch, up to its maximum) and the sustain pedal holds released notes.",
+  "Its Note track (notes_write with input \"tracks\") still plays as before, for old songs: one voice per track (16 at most; Voices caps it), and velocity is the per-track Velocity column (sticky: it holds for later notes).",
+  "Glide only slides between overlapping notes on the same voice (a held MIDI key's voice, or a track).",
   "The profiler heard A2 for every note on its default patch: a bright FM spectrum fools the pitch tracker. Its source plays 440 · 2^((note − 69)/12) times each operator's ratio, the note conversion Pedal SH101 uses (measured at 440 Hz), so notes play as written.",
   "Operators run in order 1 → 4; which ones are heard (carriers) depends on Algorithm: in 1 (linear chain) only Operator 4.",
-  "Every parameter at its maximum at once peaks above 0 dBFS (+3.4 dBFS); no single parameter does."
+  "Every parameter at its maximum at once peaks above 0 dBFS (+4.1 dBFS over 30 s); no single parameter does."
  ],
  "evidence": [
   "ExternalMachines/source/thepedal/pedal-fm/README.md — design, parameters, limitations",
   "ExternalMachines/source/thepedal/pedal-fm/PedalFMMachine.cs — parameter scaling (MapRatio, MapTime, MapOutLevel, LFO)",
   "ExternalMachines/source/thepedal/pedal-fm/Algorithms.cs — the eight algorithms",
   "ExternalMachines/source/thepedal/pedal-fm/Voice.cs — note to frequency",
-  "profile (tools/machine-profiler.py, linux 2026-11-03) — 16 voices, level, hot with everything at its maximum"
+  "profile (tools/machine-profiler.py, linux 2026-11-03) — 16 voices, level, hot with everything at its maximum",
+  "ExternalMachines/source/thepedal/pedal-fm/MidiIn.cs — MIDI notes and controllers (§12.15)",
+  "NeoBuzz.PedalTests/PedalSynthTests.cs — MIDI against a track's note, velocity, chords, bend, mod wheel, sustain (§12.15)"
  ],
  "tracks": 16,
  "notes": {
-  "input": "tracks",
+  "input": "midi",
   "pitch_offset": 0,
   "pitched": true,
-  "polyphony": 16
+  "polyphony": 8
  },
  "health": {
   "status": "warn",
   "problems": [
-   "hot with every parameter at its maximum at once (+3.4 dBFS peak), but with no parameter alone"
+   "hot with every parameter at its maximum at once (+4.1 dBFS peak over 30 s), but with no parameter alone"
   ],
   "hot": true
  },
@@ -54,15 +56,16 @@
      "verdict": "silent"
     },
     "max": {
-     "peak_dbfs": 3.44,
-     "growth_db": -0.03,
+     "peak_dbfs": 4.13,
+     "growth_db": -0.33,
+     "over_seconds": 30,
      "verdict": "hot"
     }
    },
    "swept_because": [
     "every parameter at its maximum at once: hot"
    ],
-   "renders": 77
+   "renders": 79
   },
   "sweeps": {},
   "envelope": {
@@ -80,14 +83,14 @@
    "note": "A4 at velocity 100, held 2 s"
   },
   "velocity": {
-   "range_db": 17.97,
-   "db_per_doubling": 6.01,
+   "range_db": 17.77,
+   "db_per_doubling": 5.95,
    "curve": "linear in amplitude (about 6 dB per doubling)",
    "levels_db": {
     "16": -26.65,
-    "32": -20.65,
-    "64": -14.62,
-    "127": -8.68
+    "32": -20.84,
+    "64": -14.84,
+    "127": -8.88
    }
   },
   "roles": {
@@ -182,7 +185,7 @@
     },
     "Op1 Attack": {
      "suggested_role": "filter.cutoff",
-     "evidence": "the brightness (centroid) 5.67 kHz → 856 Hz",
+     "evidence": "the brightness (centroid) 5.67 kHz → 854 Hz",
      "min": {
       "raw": 0,
       "text": "0 ms"
@@ -266,7 +269,7 @@
     },
     "Op2 Attack": {
      "suggested_role": "filter.env_amount",
-     "evidence": "the start's brightness 4.87 kHz → 302 Hz (RMS frequency), the held part's 3.37 kHz → 1.13 kHz",
+     "evidence": "the start's brightness 4.87 kHz → 301 Hz (RMS frequency), the held part's 3.37 kHz → 1.13 kHz",
      "min": {
       "raw": 0,
       "text": "0 ms"
@@ -338,7 +341,7 @@
     },
     "Op3 Level": {
      "suggested_role": "filter.cutoff",
-     "evidence": "the brightness (centroid) 55 Hz → 8.36 kHz",
+     "evidence": "the brightness (centroid) 55 Hz → 8.37 kHz",
      "min": {
       "raw": 0,
       "text": "0%"
@@ -350,7 +353,7 @@
     },
     "Op3 Attack": {
      "suggested_role": "filter.env_amount",
-     "evidence": "the start's brightness 4.87 kHz → 84.3 Hz (RMS frequency), the held part's 3.37 kHz → 1.21 kHz",
+     "evidence": "the start's brightness 4.87 kHz → 82.5 Hz (RMS frequency), the held part's 3.37 kHz → 1.21 kHz",
      "min": {
       "raw": 0,
       "text": "0 ms"
@@ -482,7 +485,7 @@
     },
     "Op1 Feedback": {
      "suggested_role": "filter.cutoff",
-     "evidence": "the brightness (centroid) 5.67 kHz → 9.79 kHz",
+     "evidence": "the brightness (centroid) 5.67 kHz → 9.76 kHz",
      "min": {
       "raw": 0,
       "text": "0"
@@ -505,8 +508,8 @@
      }
     },
     "Glide": {
-     "suggested_role": "filter.cutoff",
-     "evidence": "the brightness (centroid) 5.67 kHz → 55 Hz",
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
      "min": {
       "raw": 0,
       "text": "0"
@@ -542,7 +545,7 @@
     },
     "LFO Pitch": {
      "suggested_role": "pitch.fine",
-     "evidence": "the pitch moves -76 cents",
+     "evidence": "the pitch moves +84 cents",
      "min": {
       "raw": 0,
       "text": "0"
@@ -554,7 +557,7 @@
     },
     "LFO Mod": {
      "suggested_role": "env.attack",
-     "evidence": "the attack 5 ms → 540 ms",
+     "evidence": "the attack 5 ms → 140 ms",
      "min": {
       "raw": 0,
       "text": "0"
@@ -625,7 +628,7 @@
      }
     }
    },
-   "renders": 122
+   "renders": 121
   },
   "denormal": {
    "slowdown": null

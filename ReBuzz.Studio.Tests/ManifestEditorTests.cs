@@ -5,7 +5,10 @@
 // the others markers; a draft opens its parameter list until the per-gear setting says otherwise, and
 // the machine menu has "Editor..." and that setting; the plain list stays a click away.
 
+using System.Collections.Concurrent;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using Avalonia;
 using Avalonia.Automation;
 using Avalonia.Controls;
@@ -168,8 +171,15 @@ namespace ReBuzz.Studio.Tests
         public void ADraftOpensItsListUntilTheSettingIsTurnedOn()
         {
             var (window, view) = OpenEmpty();
-            // U6 (mcp-server.md §12.13): Pedal Gain's manifest is generated from its source now; Pedal Tracker's is a draft.
+            // U6 (mcp-server.md §12.13, §12.15): every Pedal machine's manifest is curated or generated from its source
+            // now, so Pedal Tracker's is made a draft (its manifest as read, marked a draft) for this test.
             var gain = (MachineCore)Add("Pedal Tracker", "Trim", 0, 0);
+            var cache = (ConcurrentDictionary<string, MachineManifest>)typeof(SongModel)
+                .GetField("manifests", BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
+            var real = SongModel.Manifest(gain.DLL)!;
+            string text = File.ReadAllText(MachineManifest.PathFor(gain.DLL.Path, gain.DLL.Name));
+            Assert.That(text, Does.Contain("\"status\": \"generated\""));
+            cache[gain.DLL.Path] = MachineManifest.Parse(text.Replace("\"status\": \"generated\"", "\"status\": \"draft\""));
             try
             {
                 Settle();
@@ -199,6 +209,7 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 ManifestEditorSettings.Set(gain.DLL, false);
+                cache[gain.DLL.Path] = real;
                 Close(window);
             }
         }
