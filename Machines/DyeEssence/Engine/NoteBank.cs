@@ -17,9 +17,6 @@ using NeoBuzz.Dsp;
 
 namespace NeoBuzz.DyeEssence
 {
-    /// <summary>What an engine slot holds (append only: the engines to come take the next values).</summary>
-    internal enum SlotType { Off, Wavetable }
-
     /// <summary>An oscillator's modulator for FM, PM, AM and Ring (append only).</summary>
     internal enum ModSource { OscA, OscB, OscC, Sub, Noise }
 
@@ -45,9 +42,9 @@ namespace NeoBuzz.DyeEssence
         public Warp Warp1, Warp2;
         public float Amount1, Amount2;
         public ModSource Mod = ModSource.OscB;
-
-        /// <summary>Has something to play (a silent one still renders when it modulates another).</summary>
-        public bool Plays => Type == SlotType.Wavetable && Table != null;
+        /// <summary>The Analog engine: its wave, pulse width (0.03 … 0.5) and drift (0 … 1).</summary>
+        public AnalogShape Shape = AnalogShape.Saw;
+        public float PulseWidth = 0.5f, Drift;
     }
 
     internal sealed class SourceSettings
@@ -115,6 +112,15 @@ namespace NeoBuzz.DyeEssence
 
         public readonly BankSettings S = new BankSettings();
 
+        /// <summary>The engines, by <see cref="SlotType"/> (Off has none).</summary>
+        public readonly IEngine[] Engines = { null, new WavetableEngine(), new AnalogEngine() };
+        public AnalogEngine Analog => (AnalogEngine)Engines[(int)SlotType.Analog];
+
+        IEngine EngineOf(OscSettings os) => (int)os.Type < Engines.Length ? Engines[(int)os.Type] : null;
+
+        /// <summary>Has something to play (a silent one still renders when it modulates another).</summary>
+        bool Plays(OscSettings os) => EngineOf(os)?.TableOf(os) != null;
+
         // Lanes: note n's from n · MaxLanes, its groups of eight in render order.
         readonly LaneState lanes = new LaneState(Notes * MaxLanes);
         // Per unison voice (note · MaxLanes + osc · MaxUnison + voice): its phase, its last gain targets
@@ -123,6 +129,12 @@ namespace NeoBuzz.DyeEssence
         readonly float[] voiceGain = new float[4 * Notes * MaxLanes];
         readonly int[] slotOf = new int[Notes * MaxLanes];
         readonly int[] placedUnison = new int[Notes * Oscillators];
+        readonly float[] voiceDrift = new float[Notes * MaxLanes];
+        // Per note × oscillator this tick: its table read, for a group it fills alone (the uniform kernel).
+        readonly float[][] oscData = new float[Notes * Oscillators][];
+        readonly int[] oscOffA = new int[Notes * Oscillators], oscOffB = new int[Notes * Oscillators], oscLog2 = new int[Notes * Oscillators];
+        readonly float[] oscMix = new float[Notes * Oscillators];
+        readonly int[] groupUniform = new int[Notes * MaxGroups];   // −1: lanes of several oscillators or padding; else the oscillator
         // Per note, its groups this tick (note · MaxGroups + k).
         readonly int[] groupCount = new int[Notes];
         readonly int[] groupOsc = new int[Notes * MaxGroups];      // −1: plain voices of any oscillators; else the warped one
@@ -230,10 +242,11 @@ namespace NeoBuzz.DyeEssence
             for (int o = 0; o < Oscillators; o++)
             {
                 var os = s.Osc[o];
-                if (!ReferenceEquals(snapRef[o], os.Table)) { snapRef[o] = os.Table; moved = true; }
+                var table = EngineOf(os)?.TableOf(os);
+                if (!ReferenceEquals(snapRef[o], table)) { snapRef[o] = table; moved = true; }
                 int b = 10 * o;
                 F(b, (int)os.Type); F(b + 1, os.Transpose); F(b + 2, os.Unison); F(b + 3, os.Detune); F(b + 4, os.Spread);
-                F(b + 5, os.Pan); F(b + 6, (int)os.Warp1); F(b + 7, (int)os.Warp2); F(b + 8, (int)os.Mod);
+                F(b + 5, os.Pan); F(b + 6, (int)os.Warp1); F(b + 7, (int)os.Warp2); F(b + 8, (int)os.Mod); F(b + 9, os.Drift);
             }
             int g = 10 * Oscillators;
             F(g, s.SubOctave); F(g + 1, (int)s.SubShape); F(g + 2, s.Sub.Pan); F(g + 3, s.Noise.Pan); F(g + 4, oversample);
@@ -258,7 +271,7 @@ namespace NeoBuzz.DyeEssence
                 int b = SmOsc + 5 * o;
                 smTarget[b] = Math.Max(0f, os.Level);
                 smTarget[b + 1] = DspMath.Clamp(os.ToF2, 0f, 1f);
-                smTarget[b + 2] = DspMath.Clamp(os.Position, 0f, 1f);
+                smTarget[b + 2] = DspMath.Clamp(EngineOf(os)?.PositionOf(os) ?? 0f, 0f, 1f);
                 smTarget[b + 3] = DspMath.Clamp(os.Amount1, 0f, 1f);
                 smTarget[b + 4] = DspMath.Clamp(os.Amount2, 0f, 1f);
             }
@@ -412,6 +425,10 @@ namespace NeoBuzz.DyeEssence
                 placedUnison[slot * Oscillators + o] = 0;
             }
             laid[slot] = false;
+            // Each voice's own fixed detune for engines that drift, from a stream of its own (the phases
+            // above stay as they were).
+            var drift = new Rng(seeds[slot] ^ 0x5BD1E995u);
+            for (int i = 0; i < MaxLanes; i++) voiceDrift[nb + i] = drift.NextBipolar();
             seeds[slot] = rng.NextUInt();
             int v = Notes * MaxLanes;
             for (int r = 0; r < 4; r++) Array.Clear(voiceGain, r * v + nb, MaxLanes);
@@ -703,7 +720,7 @@ namespace NeoBuzz.DyeEssence
             for (int o = 0; o < Oscillators; o++)
             {
                 var os = s.Osc[o];
-                int u = os.Plays ? Math.Clamp(os.Unison, 1, MaxUnison) : 0;
+                int u = Plays(os) ? Math.Clamp(os.Unison, 1, MaxUnison) : 0;
                 playU[o] = u;
                 warped[o] = u > 0 && (os.Warp1 != Warp.None || os.Warp2 != Warp.None);
                 if (u > 0) Shape(o, u, os);
@@ -729,14 +746,16 @@ namespace NeoBuzz.DyeEssence
             }
 
             // Plain voices packed from lane 0; then each warped oscillator in whole groups, after its modulator.
+            // Oscillators that fill whole groups first, so their groups take the uniform kernel.
             int slot = 0;
-            for (int o = 0; o < Oscillators; o++)
-            {
-                placed[o] = false;
-                if (playU[o] == 0 || warped[o]) continue;
-                for (int l = 0; l < playU[o]; l++) slotOf[nb + o * MaxUnison + l] = slot++;
-                placed[o] = true;
-            }
+            for (int o = 0; o < Oscillators; o++) placed[o] = false;
+            for (int pass = 0; pass < 2; pass++)
+                for (int o = 0; o < Oscillators; o++)
+                {
+                    if (placed[o] || playU[o] == 0 || warped[o] || (pass == 0) != (playU[o] % 8 == 0)) continue;
+                    for (int l = 0; l < playU[o]; l++) slotOf[nb + o * MaxUnison + l] = slot++;
+                    placed[o] = true;
+                }
             int groups = (slot + 7) >> 3;
             for (int k = 0; k < groups; k++) groupOsc[gb + k] = -1;
             while (true)
@@ -768,7 +787,11 @@ namespace NeoBuzz.DyeEssence
                 if (modOf[o] == Oscillators) noteSubMod[note] = true;
                 if (modOf[o] == Oscillators + 1) noteNoiseMod[note] = true;
             }
-            for (int k = 0; k < groups; k++) groupMorph[gb + k] = groupToF2[gb + k] = groupStore[gb + k] = false;
+            for (int k = 0; k < groups; k++)
+            {
+                groupMorph[gb + k] = groupToF2[gb + k] = groupStore[gb + k] = false;
+                groupUniform[gb + k] = -1;
+            }
             // Only the padding lanes need quieting: every other lane is set below.
             int used = 0;
             for (int o = 0; o < Oscillators; o++) if (playU[o] > 0 && !warped[o]) used += playU[o];
@@ -787,7 +810,8 @@ namespace NeoBuzz.DyeEssence
                 placedUnison[note * Oscillators + o] = u;
                 if (u == 0) continue;
                 var os = s.Osc[o];
-                var table = os.Table;
+                var engine = EngineOf(os);
+                var table = engine.TableOf(os);
                 double baseInc = noteHz * oscRatio[o] / vr;
                 double top = Math.Min(baseInc * topRatio[o], 0.49);
                 int level;
@@ -805,6 +829,13 @@ namespace NeoBuzz.DyeEssence
                 float fpos = OscPosition(o) * (table.FrameCount - 1);
                 int f0 = (int)fpos;
                 float ff = fpos - f0;
+                // On a frame (to within 10⁻⁴ of one): that frame alone, no morph to pay for.
+                if (ff > 0.9999f)
+                {
+                    f0++;
+                    ff = 0;
+                }
+                else if (ff < 1e-4f) ff = 0;
                 if (f0 >= table.FrameCount - 1)
                 {
                     f0 = table.FrameCount - 1;
@@ -819,7 +850,10 @@ namespace NeoBuzz.DyeEssence
                 {
                     int canon = nb + o * MaxUnison + l, at = nb + slotOf[canon];
                     lanes.Phase[at] = voicePhase[canon];
-                    lanes.Inc[at] = (uint)(Math.Min(baseInc * ratio[o * MaxUnison + l], 0.49) * PhaseScale);
+                    float cents = engine.DriftCents(os, voiceDrift[canon]);
+                    double li = baseInc * ratio[o * MaxUnison + l];
+                    if (cents != 0) li *= PortableMath.Exp2(cents / 1200.0);
+                    lanes.Inc[at] = (uint)(Math.Min(li, 0.49) * PhaseScale);
                     lanes.ShiftR[at] = 32 - log2;
                     lanes.ShiftL[at] = log2;
                     lanes.Data[at] = table.Data;
@@ -839,7 +873,17 @@ namespace NeoBuzz.DyeEssence
                     Ramp(at, canon, 2, pl * to2, invCount, total, v);
                     Ramp(at, canon, 3, pr * to2, invCount, total, v);
                 }
+                int no = note * Oscillators + o;
+                oscData[no] = table.Data;
+                oscOffA[no] = offA;
+                oscOffB[no] = offB;
+                oscMix[no] = ff;
+                oscLog2[no] = (int)log2;
                 int k0 = slotOf[nb + o * MaxUnison] >> 3, k1 = slotOf[nb + o * MaxUnison + u - 1] >> 3;
+                // A plain group this oscillator fills alone, all eight lanes, reads one table: the uniform kernel.
+                if (!warped[o])
+                    for (int k = k0; k <= k1; k++)
+                        if (slotOf[nb + o * MaxUnison] <= 8 * k && slotOf[nb + o * MaxUnison + u - 1] >= 8 * k + 7) groupUniform[gb + k] = o;
                 for (int k = k0; k <= k1; k++)
                 {
                     groupMorph[gb + k] |= ff > 0;
@@ -1063,7 +1107,14 @@ namespace NeoBuzz.DyeEssence
                 {
                     int o = groupOsc[gb + k];
                     var store = groupStore[gb + k] ? modBuf : null;
-                    if (o < 0)
+                    int uo = groupUniform[gb + k];
+                    if (o < 0 && uo >= 0)
+                    {
+                        int no = note * Oscillators + uo;
+                        UnisonKernel.Uniform<TL, TF, TU>(lanes, nb + 8 * k, oscData[no], oscOffA[no], oscOffB[no], oscMix[no], oscLog2[no],
+                            acc, count, groupToF2[gb + k], store, 8 * k, MaxLanes);
+                    }
+                    else if (o < 0)
                         UnisonKernel.Plain<TL, TF, TU>(lanes, nb + 8 * k, acc, count, groupMorph[gb + k], groupToF2[gb + k], store, 8 * k, MaxLanes);
                     else
                     {

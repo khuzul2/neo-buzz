@@ -1,10 +1,10 @@
 ## How it sounds
 
-A hybrid wavetable synth with three engine slots (A, B, C), each a morphing wavetable of 64 frames with up to 16 unison voices and two warps in series, plus a sub and a noise. Every note has two filters (ladder, state-variable, comb) that run from serial to parallel. Voices run at Standard 2× (the default) or High 4×: harmonics reach 18 kHz at every pitch below 9 kHz and a plain saw's alias floor is −92 dB or lower. Good for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
+A hybrid synth with three engine slots (A, B, C). Each plays a morphing wavetable of 64 frames (the Wavetable engine) or a classic analog wave (the Analog engine), with up to 16 unison voices and two warps in series; plus a sub and a noise. Every note has two filters (ladder, state-variable, comb) that run from serial to parallel. Voices run at Standard 2× (the default) or High 4×: harmonics reach 18 kHz at every pitch below 9 kHz and a plain saw's alias floor is −92 dB or lower. Good for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
 
 ## Signal flow
 
-- Slots A, B and C: `A engine` (Off or Wavetable; more engines come later), `A table`, `A position` (0–100 % through the table), octave, semitone and fine tune, level and pan; `A unison` (1–16 voices), `A detune` (the outermost voices this many cents either side), `A spread` (stereo); `A phase` and `A random` (how much of a random start phase each voice gets); `A warp 1` and `A warp 2` with their amounts; `A modulator` (what FM, PM, AM and Ring take: another slot, the sub or the noise); `A → filter 2` (0 %: filter 1, 100 %: filter 2). B and C the same; B and C start Off.
+- Slots A, B and C: `A engine` (Off, Wavetable or Analog; more engines come later). Wavetable: `A table`, `A position` (0–100 % through the table), octave, semitone and fine tune, level and pan; `A unison` (1–16 voices), `A detune` (the outermost voices this many cents either side), `A spread` (stereo); `A phase` and `A random` (how much of a random start phase each voice gets); `A warp 1` and `A warp 2` with their amounts; `A modulator` (what FM, PM, AM and Ring take: another slot, the sub or the noise); `A → filter 2` (0 %: filter 1, 100 %: filter 2). Analog: `A shape` (sine, triangle, saw, square, pulse), `A pulse width` (3–50 %, for Pulse) and `A drift` (each voice a little out of tune, up to ±12 cents, fixed for the note); the slot's tuning, unison, warps and routing as above. B and C the same; B and C start Off.
 - Sub (sine, triangle, saw or square, 0, −1 or −2 octaves) and noise (`Noise color` 0 % dark … 100 % white), each with level, pan and `→ filter 2`.
 - Filter 1 and Filter 2: Ladder 24, Ladder 12, LP/BP/HP 12 and 24, Notch, Peak, Comb+ and Comb− (the cutoff is the comb's pitch; `F1 key track` 100 % plays it in tune), with drive, envelope amount (±6 octaves), key tracking and velocity. `Filter routing` 0 %: filter 1 into filter 2; 100 %: side by side.
 - Amp and filter envelopes; voice mode (Poly, Mono, Legato), polyphony up to 32, glide, bend range, `Quality`.
@@ -43,6 +43,7 @@ A hybrid wavetable synth with three engine slots (A, B, C), each a morphing wave
 - Basses: `Voice mode` Mono, the sub at −1 octave, a short filter envelope; Window sync or FM for growl.
 - Two filters: send a slot to filter 2 with `B → filter 2` 100 % and set `Filter routing` 100 % for two parallel paths; at 0 % filter 2 also hears filter 1.
 - Edged warps (Bend, Squeeze, Sync) alias on high notes at Standard: `Quality` High 4× keeps them 7–15 dB cleaner at twice the CPU.
+- Analog basses and strings: `A engine` Analog, `A shape` Saw or Pulse, `A drift` 30–60 % for the analog spread; Pulse with a narrow width for reedy tones. The waves are band-limited as the tables are: the same −92 dB alias floor.
 - Your own table, per slot: a WAV of 2048-sample frames (or a clm chunk saying the frame size) or a single cycle. `machine_data_import(machine="Dye", kind="wavetable", path="C:/Tables/mine.wav", item=1)` loads it into slot B and sets `B table` to User.
 
 ## Gotchas
@@ -66,6 +67,8 @@ A hybrid wavetable synth with three engine slots (A, B, C), each a morphing wave
 | "Bass — FM Growl" | a sine FM'd by a silent saw, mono, glide | `A warp 1 amt` |
 | "Bass — Window Sync" | a window-synced saw with a sub | `A warp 1 amt` |
 | "Bass — Detuned Stack" | three detuned saws and one an octave down | `F1 env` |
+| "Bass — Analog Saw" | an analog saw over a 30 % pulse an octave down, mono | `F1 cutoff`, `B pulse width` |
+| "Pad — Analog Strings" | six drifting analog saws and a narrow pulse an octave up | `A drift`, `A detune` |
 | "Pluck — Mirror Bell" | Harmonics mirrored, a fast filter envelope | `A warp 1 amt` |
 | "Keys — Bent Organ" | Organ with Bend+, an octave layer | `A warp 1 amt` |
 | "Texture — Comb Noise" | noise through a tuned comb | `F1 reso` |

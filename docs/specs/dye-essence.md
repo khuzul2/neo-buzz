@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v0.3 — P0 (the G0 gate) merged (#104); P1a, the playable machine, built on `machines/dye-essence-p1` and measured (§4.3, §5.4) |
+| Status | Draft v0.4 — P0 merged (#104); P1a accepted (`machines/dye-essence-p1`, §4.3, §5.4); P1b's first step built on `machines/dye-essence-p1b`: the WPF hand check (§5.5), engines behind `IEngine` and the Analog engine (§4.4) |
 | Date | 2026-11-06 |
 | Scope | A hybrid wavetable and multi-engine synth machine of the class of today's flagship software synths, built as a Neo-family machine: managed C#, the same bits on every platform, no allocation on the audio thread, every sound parameter a Buzz parameter in real units, one editor source for WPF and Avalonia |
 | Design basis | The feasibility analysis of 2026-11-06 (feature inventories, build plan, CPU budget model, architecture, parameter model, IP limits); this spec carries its decisions forward and records what was built and measured |
@@ -87,6 +87,14 @@ Files: `Machines/DyeEssence/` (the machine, its editor, `Params.def`, `Presets.t
 - **Parameters** (97, append-only from this phase's merge): voice (8), slots A, B, C (19 each), sub (5), noise (4), filter 1 and 2 (7 each) and the routing, amp and filter envelopes (4 each). The manifest is generated as for every Neo machine; 12 factory presets in units (`Presets.txt`), levelled by the preset tools; the agent's page `ReBuzz.Agent/Guides/machines/Dye Essence.md`; null-test cases (`tools/null-test.py`, `dye-*` and `long-dye`).
 - **Editor, first page** (`DyeEssenceEditor.cs`, one source for WPF and Avalonia): the three slots, each with its table in 3-D and a loader, the sub and noise, both filters and the routing, the voice, the envelopes and the meter.
 - **Not in P1a** (moved, with the reason): the `IEngine` interface behind the slots comes with the second engine (P1b's Analog), when there is something to abstract over; the WPF hand check of §5.3 (the WPF parameter window and pattern editor at 704 parameters in the package run) needs a WPF host for them in ReBuzzTests that doesn't exist yet and goes with P1b; the preset generator's `state` line comes with routes (P1c).
+
+### 4.4 P1b, first step: engines and the WPF hand check (as built)
+
+- **`IEngine`** (`Engines.cs`): an engine says which band-limited table a slot reads now, where in it (0 … 1, glided across ticks by the bank) and how far each voice drifts from the note; the bank renders every engine so far through the same lanes and kernels. The **Wavetable engine** is P1a's slot. Engines that need kernels of their own (samples, grains, partials: P2, P3) add them behind the interface.
+- **The Analog engine** (`SlotType.Analog`, appended to the slot enum): sine, triangle, saw and square read from the built-in Basic table's exact frames (0, 21, 42, 63 of 64), pulses of 3–50 % from the PWM table, so the classic waves are as band-limited as the tables (−92 to −101 dB alias floors at 880 Hz and 1.9 kHz); each voice gets its own fixed detune for the note (`drift`, up to ±12 cents at 100 %, seeded, from a stream of its own so the phases stay as they were). It takes the slot's tuning, unison, warps, modulator and routing. Parameters appended per slot: `shape`, `pulse width`, `drift` (106 in all).
+- **P0's kernel again for uniform groups** (`UnisonKernel.Uniform`): a plain group one oscillator fills alone (all eight lanes, one table, one level, one frame pair) reads through constant shifts and a single table reference instead of eight; the same operations, so the same bits (the pinned renders did not change). Oscillators whose unison fills whole groups are packed first, so a 16 + 3 patch has two uniform groups. A frame position within 10⁻⁴ of a frame reads that frame alone (no morph to pay for).
+- **The WPF hand check** (`ReBuzzTests/NeoMachineTests.DyeStressWpf.cs`, in the package run): ReBuzzTests builds the 704-parameter stress machine beside itself (not into the app's Gear) and opens it, and Dye Essence, in the WPF parameter window (the theme's `ParameterWindow.xaml` with `ParameterWindowVM`, as the app opens it) and in the app's own Modern Pattern Editor on a pattern of the machine (the repository's theme copied beside the tests, as the app has it beside itself): §5.5.
+- **Still to come in P1b**: envelopes with curves, LFOs, macros and the modulation engine (§6).
 
 ## 5. The G0 gate
 
@@ -186,6 +194,17 @@ Runs 42212607166 (Linux x64) and 42212610289 (macOS arm64), on 7f266231; the run
 | Machine profile (Windows, `tools/machine-profiler.py`) | health ok | ok: no problems or warnings; 7.1 ms of CPU a second playing A4 (polyphony 8 heard), −28 LUFS for one note of the init sound (package run 42244703390) | |
 
 On one machine (a two-core container, P0's renderer and P1a's built side by side, best of five), the 16 × 3 × 8 case runs 10.2× against P0's 8.8× and one voice per oscillator 19.8× against 9.4×; before steady ticks, per-tick control took over a third of the time and P1a ran 26 % slower than P0. On the runners the 8-unison row reads below P0's: x64 9.4× against 11.2× and 16.7× (its runners vary from run to run by that much), arm64 7.5× against 9.7× and 8.8×, which looks real: the per-lane table references and variable shifts that packing needs cost more on two Vector128 halves. A group whose eight lanes share one table and level could take P0's single-table kernel again (P1b).
+
+### 5.5 The WPF hand check (P1b)
+
+Package run 42266048469 (99bd76f6) (Windows, `windows-latest`), ReBuzzTests `DyeStressAndDyeEssenceInTheWpfParameterWindowAndPatternEditor`:
+
+| | Target (§5.2) | Dye Stress (704) | Dye Essence (106) |
+|---|---|---|---|
+| WPF parameter window | a row per parameter, the last reachable and moving its parameter; open in about a second | 704 rows; opened and laid out in 2.5 s (3.7 s in run 42263794010); a layout pass 32 ms; the last row reached in 5 ms and moving its parameter | 106 rows; 464 ms; a layout pass 0.4 ms |
+| WPF Modern Pattern Editor | every column, the last reachable; a frame well under 100 ms | every column (extent 22 107 px), the last reached (offset 20 589 of 20 589 px) in 198 ms; opened in 1.1 s; a frame as drawn 201 ms, a full redraw 279 ms at the first columns, 228 ms at the last | extent 3 263 px, the last reached; opened in 136 ms; a frame as drawn 86 ms, a full redraw 97 ms and 88 ms |
+
+**Verdict: ReBuzz's WPF views carry Dye Essence (106 parameters) within the targets but not 704.** Frames here are drawn by `RenderTargetBitmap`, in software on the runner, so they read slower than the app's own; what matters is the ratio: at 704 parameters a frame of the pattern editor costs 2.3× the 106-parameter one with the same pixels on screen, because the WPF editor, like the studio's before P0's fix, lays out and draws every column of a column set, not only those in view; and the parameter window builds every row up front (2.5–3.7 s at 704). Before the table grows past a few hundred parameters (P1c onwards): cull columns horizontally in the WPF pattern editor's column renderer (as `PatternGrid.DrawBeat` does in the studio) and virtualise the WPF parameter window's rows. Both are outside Dye Essence; to schedule.
 
 ## 6. Phases
 

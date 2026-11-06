@@ -31,7 +31,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "Volume", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 739)]
         public int Volume { get => Values[P.Volume]; set => Values.Set(P.Volume, value); }
 
-        [ParameterDecl(Name = "A engine", Description = "What slot A plays (more engines to come)", MinValue = 0, MaxValue = 1, DefValue = 1)]
+        [ParameterDecl(Name = "A engine", Description = "What slot A plays (more engines to come)", MinValue = 0, MaxValue = 2, DefValue = 1)]
         public int AType { get => Values[P.AType]; set => Values.Set(P.AType, value); }
 
         [ParameterDecl(Name = "A table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 0)]
@@ -88,7 +88,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "A → filter 2", Description = "Balance between filter 1 (0 %) and filter 2 (100 %)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int AToF2 { get => Values[P.AToF2]; set => Values.Set(P.AToF2, value); }
 
-        [ParameterDecl(Name = "B engine", Description = "What slot B plays (more engines to come)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        [ParameterDecl(Name = "B engine", Description = "What slot B plays (more engines to come)", MinValue = 0, MaxValue = 2, DefValue = 0)]
         public int BType { get => Values[P.BType]; set => Values.Set(P.BType, value); }
 
         [ParameterDecl(Name = "B table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 2)]
@@ -145,7 +145,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "B → filter 2", Description = "Balance between filter 1 (0 %) and filter 2 (100 %)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int BToF2 { get => Values[P.BToF2]; set => Values.Set(P.BToF2, value); }
 
-        [ParameterDecl(Name = "C engine", Description = "What slot C plays (more engines to come)", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        [ParameterDecl(Name = "C engine", Description = "What slot C plays (more engines to come)", MinValue = 0, MaxValue = 2, DefValue = 0)]
         public int CType { get => Values[P.CType]; set => Values.Set(P.CType, value); }
 
         [ParameterDecl(Name = "C table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 3)]
@@ -297,6 +297,33 @@ namespace NeoBuzz.DyeEssence
 
         [ParameterDecl(Name = "Flt release", Description = "Release time", MinValue = 0, MaxValue = 1000, DefValue = 450)]
         public int FltR { get => Values[P.FltR]; set => Values.Set(P.FltR, value); }
+
+        [ParameterDecl(Name = "A shape", Description = "The Analog engine's wave", MinValue = 0, MaxValue = 4, DefValue = 2)]
+        public int AShape { get => Values[P.AShape]; set => Values.Set(P.AShape, value); }
+
+        [ParameterDecl(Name = "A pulse width", Description = "The Analog engine's pulse width (Pulse)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int APw { get => Values[P.APw]; set => Values.Set(P.APw, value); }
+
+        [ParameterDecl(Name = "A drift", Description = "The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are", MinValue = 0, MaxValue = 1000, DefValue = 200)]
+        public int ADrift { get => Values[P.ADrift]; set => Values.Set(P.ADrift, value); }
+
+        [ParameterDecl(Name = "B shape", Description = "The Analog engine's wave", MinValue = 0, MaxValue = 4, DefValue = 2)]
+        public int BShape { get => Values[P.BShape]; set => Values.Set(P.BShape, value); }
+
+        [ParameterDecl(Name = "B pulse width", Description = "The Analog engine's pulse width (Pulse)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int BPw { get => Values[P.BPw]; set => Values.Set(P.BPw, value); }
+
+        [ParameterDecl(Name = "B drift", Description = "The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are", MinValue = 0, MaxValue = 1000, DefValue = 200)]
+        public int BDrift { get => Values[P.BDrift]; set => Values.Set(P.BDrift, value); }
+
+        [ParameterDecl(Name = "C shape", Description = "The Analog engine's wave", MinValue = 0, MaxValue = 4, DefValue = 2)]
+        public int CShape { get => Values[P.CShape]; set => Values.Set(P.CShape, value); }
+
+        [ParameterDecl(Name = "C pulse width", Description = "The Analog engine's pulse width (Pulse)", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int CPw { get => Values[P.CPw]; set => Values.Set(P.CPw, value); }
+
+        [ParameterDecl(Name = "C drift", Description = "The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are", MinValue = 0, MaxValue = 1000, DefValue = 200)]
+        public int CDrift { get => Values[P.CDrift]; set => Values.Set(P.CDrift, value); }
 
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);

@@ -138,6 +138,67 @@ namespace NeoBuzz.DyeEssence
         }
 
         /// <summary>
+        /// Eight lanes of one plain oscillator that fill their group (P0's kernel): one table, one level
+        /// (<paramref name="log2Len"/>), one frame pair for every lane, so constant shifts and a single
+        /// table reference. The same operations as <see cref="Plain"/>, so the same bits.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public static void Uniform<TL, TF, TU>(LaneState s, int at, float[] data, int offA, int offB, float frameMix, int log2Len,
+            float[] acc, int count, bool toF2, float[] mod, int modAt, int modStride)
+            where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
+        {
+            ref float ta = ref data[offA];
+            ref float tb = ref data[offB];
+            bool morph = frameMix > 0;
+            int total = s.Total;
+            var g = s.Gain;
+            TU ph = TL.LoadU(s.Phase, at), dph = TL.LoadU(s.Inc, at);
+            int shr = 32 - log2Len, shl = log2Len;
+            TF ff = TL.Splat(frameMix);
+            TF g1l = TL.Load(g, at), g1r = TL.Load(g, total + at), g2l = TL.Load(g, 2 * total + at), g2r = TL.Load(g, 3 * total + at);
+            TF d1l = TL.Load(g, 4 * total + at), d1r = TL.Load(g, 5 * total + at), d2l = TL.Load(g, 6 * total + at), d2r = TL.Load(g, 7 * total + at);
+            TF half = TL.Splat(0.5f), oneHalf = TL.Splat(1.5f), two = TL.Splat(2f), twoHalf = TL.Splat(2.5f);
+            TF fracScale = TL.Splat(FracScale);
+            for (int t = 0; t < count; t++)
+            {
+                TU idx = TL.ShiftRight(ph, shr);
+                TF x = TL.Mul(TL.ToFloat(TL.ShiftRight(TL.ShiftLeft(ph, shl), 8)), fracScale);
+                TL.Read4(ref ta, idx, out TF y0, out TF y1, out TF y2, out TF y3);
+                if (morph)
+                {
+                    TL.Read4(ref tb, idx, out TF b0, out TF b1, out TF b2, out TF b3);
+                    y0 = TL.Add(y0, TL.Mul(TL.Sub(b0, y0), ff));
+                    y1 = TL.Add(y1, TL.Mul(TL.Sub(b1, y1), ff));
+                    y2 = TL.Add(y2, TL.Mul(TL.Sub(b2, y2), ff));
+                    y3 = TL.Add(y3, TL.Mul(TL.Sub(b3, y3), ff));
+                }
+                TF y = Cubic<TL, TF, TU>(y0, y1, y2, y3, x, half, oneHalf, two, twoHalf);
+                if (mod != null) TL.Store(y, mod, modAt + t * modStride);
+                int o = t * AccStride;
+                TL.Store(TL.Add(TL.Load(acc, o), TL.Mul(y, g1l)), acc, o);
+                TL.Store(TL.Add(TL.Load(acc, o + 8), TL.Mul(y, g1r)), acc, o + 8);
+                g1l = TL.Add(g1l, d1l);
+                g1r = TL.Add(g1r, d1r);
+                if (toF2)
+                {
+                    TL.Store(TL.Add(TL.Load(acc, o + 16), TL.Mul(y, g2l)), acc, o + 16);
+                    TL.Store(TL.Add(TL.Load(acc, o + 24), TL.Mul(y, g2r)), acc, o + 24);
+                    g2l = TL.Add(g2l, d2l);
+                    g2r = TL.Add(g2r, d2r);
+                }
+                ph = TL.AddU(ph, dph);
+            }
+            TL.StoreU(ph, s.Phase, at);
+            TL.Store(g1l, g, at);
+            TL.Store(g1r, g, total + at);
+            if (toF2)
+            {
+                TL.Store(g2l, g, 2 * total + at);
+                TL.Store(g2r, g, 3 * total + at);
+            }
+        }
+
+        /// <summary>
         /// Eight lanes of one warped oscillator (one level for all, <see cref="WarpSet.Log2Len"/>): the
         /// phase through the warps in float, then the read. Its modulator per sample: another
         /// oscillator's lanes from <paramref name="mod"/> (each lane's ModSlot, stride

@@ -17,6 +17,7 @@ namespace NeoBuzz.DyeEssence
         const float Headroom = 0.25f;
 
         static readonly int[] OscBase = { P.AType, P.BType, P.CType };
+        static readonly int[] AnalogBase = { P.AShape, P.BShape, P.CShape };
         static readonly int[] FilterBase = { P.F1Type, P.F2Type };
 
         readonly ParamValues values;
@@ -92,6 +93,12 @@ namespace NeoBuzz.DyeEssence
             s.Volume = double.IsNegativeInfinity(vol) ? 0f : (float)DspMath.DbToGain(vol) * Headroom;
 
             bool pendingNow = false;
+            // The Analog engine's tables: the built-in Basic and PWM.
+            var basic = TableBank.Get(0);
+            var pulse = TableBank.Get(1);
+            if (basic == null || pulse == null) pendingNow = true;
+            Bank.Analog.Basic = basic ?? Bank.Analog.Basic;
+            Bank.Analog.Pulse = pulse ?? Bank.Analog.Pulse;
             for (int o = 0; o < NoteBank.Oscillators; o++)
             {
                 var os = s.Osc[o];
@@ -117,6 +124,10 @@ namespace NeoBuzz.DyeEssence
                 os.Amount2 = values.F(b + (P.AWarp2Amt - P.AType));
                 os.Mod = (ModSource)values.Choice(b + (P.AMod - P.AType));
                 os.ToF2 = values.F(b + (P.AToF2 - P.AType));
+                int a = AnalogBase[o];
+                os.Shape = (AnalogShape)values.Choice(a);
+                os.PulseWidth = values.F(a + (P.APw - P.AShape)) / 100f;
+                os.Drift = values.F(a + (P.ADrift - P.AShape));
             }
             tablesPending = pendingNow;
 

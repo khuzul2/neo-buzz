@@ -130,12 +130,13 @@
    "name": "A engine",
    "group": "Osc A",
    "min": 0,
-   "max": 1,
+   "max": 2,
    "default": 1,
    "kind": "enum",
    "choices": [
     "Off",
-    "Wavetable"
+    "Wavetable",
+    "Analog"
    ],
    "description": "What slot A plays (more engines to come)"
   },
@@ -416,12 +417,13 @@
    "name": "B engine",
    "group": "Osc B",
    "min": 0,
-   "max": 1,
+   "max": 2,
    "default": 0,
    "kind": "enum",
    "choices": [
     "Off",
-    "Wavetable"
+    "Wavetable",
+    "Analog"
    ],
    "description": "What slot B plays (more engines to come)"
   },
@@ -702,12 +704,13 @@
    "name": "C engine",
    "group": "Osc C",
    "min": 0,
-   "max": 1,
+   "max": 2,
    "default": 0,
    "kind": "enum",
    "choices": [
     "Off",
-    "Wavetable"
+    "Wavetable",
+    "Analog"
    ],
    "description": "What slot C plays (more engines to come)"
   },
@@ -1430,6 +1433,138 @@
    "b": 20.0,
    "unit": "s",
    "description": "Release time"
+  },
+  {
+   "index": 97,
+   "id": "AShape",
+   "name": "A shape",
+   "group": "Osc A",
+   "min": 0,
+   "max": 4,
+   "default": 2,
+   "kind": "enum",
+   "choices": [
+    "Sine",
+    "Triangle",
+    "Saw",
+    "Square",
+    "Pulse"
+   ],
+   "description": "The Analog engine's wave"
+  },
+  {
+   "index": 98,
+   "id": "APw",
+   "name": "A pulse width",
+   "group": "Osc A",
+   "min": 0,
+   "max": 1000,
+   "default": 1000,
+   "kind": "linear",
+   "a": 3.0,
+   "b": 50.0,
+   "unit": "%",
+   "description": "The Analog engine's pulse width (Pulse)"
+  },
+  {
+   "index": 99,
+   "id": "ADrift",
+   "name": "A drift",
+   "group": "Osc A",
+   "min": 0,
+   "max": 1000,
+   "default": 200,
+   "kind": "percent",
+   "unit": "%",
+   "description": "The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are"
+  },
+  {
+   "index": 100,
+   "id": "BShape",
+   "name": "B shape",
+   "group": "Osc B",
+   "min": 0,
+   "max": 4,
+   "default": 2,
+   "kind": "enum",
+   "choices": [
+    "Sine",
+    "Triangle",
+    "Saw",
+    "Square",
+    "Pulse"
+   ],
+   "description": "The Analog engine's wave"
+  },
+  {
+   "index": 101,
+   "id": "BPw",
+   "name": "B pulse width",
+   "group": "Osc B",
+   "min": 0,
+   "max": 1000,
+   "default": 1000,
+   "kind": "linear",
+   "a": 3.0,
+   "b": 50.0,
+   "unit": "%",
+   "description": "The Analog engine's pulse width (Pulse)"
+  },
+  {
+   "index": 102,
+   "id": "BDrift",
+   "name": "B drift",
+   "group": "Osc B",
+   "min": 0,
+   "max": 1000,
+   "default": 200,
+   "kind": "percent",
+   "unit": "%",
+   "description": "The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are"
+  },
+  {
+   "index": 103,
+   "id": "CShape",
+   "name": "C shape",
+   "group": "Osc C",
+   "min": 0,
+   "max": 4,
+   "default": 2,
+   "kind": "enum",
+   "choices": [
+    "Sine",
+    "Triangle",
+    "Saw",
+    "Square",
+    "Pulse"
+   ],
+   "description": "The Analog engine's wave"
+  },
+  {
+   "index": 104,
+   "id": "CPw",
+   "name": "C pulse width",
+   "group": "Osc C",
+   "min": 0,
+   "max": 1000,
+   "default": 1000,
+   "kind": "linear",
+   "a": 3.0,
+   "b": 50.0,
+   "unit": "%",
+   "description": "The Analog engine's pulse width (Pulse)"
+  },
+  {
+   "index": 105,
+   "id": "CDrift",
+   "name": "C drift",
+   "group": "Osc C",
+   "min": 0,
+   "max": 1000,
+   "default": 200,
+   "kind": "percent",
+   "unit": "%",
+   "description": "The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are"
   }
  ],
  "imports": [

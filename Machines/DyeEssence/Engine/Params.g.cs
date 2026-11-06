@@ -105,7 +105,16 @@ namespace NeoBuzz.DyeEssence
         public const int FltD = 94;
         public const int FltS = 95;
         public const int FltR = 96;
-        public const int Count = 97;
+        public const int AShape = 97;
+        public const int APw = 98;
+        public const int ADrift = 99;
+        public const int BShape = 100;
+        public const int BPw = 101;
+        public const int BDrift = 102;
+        public const int CShape = 103;
+        public const int CPw = 104;
+        public const int CDrift = 105;
+        public const int Count = 106;
     }
 
     internal static class Params
@@ -123,7 +132,7 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.Quality, "Quality", "Quality", 0, 1, 0, MapKind.Enum, names: new[] { "Standard 2×", "High 4×" }, group: "Voice", description: "Voices at 2× or 4× the sample rate: High keeps hard FM, PM and sync cleaner at twice the CPU"),
             new ParamDef(P.VelAmp, "VelAmp", "Vel → amp", 0, 1000, 700, MapKind.Percent, group: "Voice", description: "How much velocity changes loudness"),
             new ParamDef(P.Volume, "Volume", "Volume", 0, 1000, 739, MapKind.Db, a: -40, b: 6, flag: true, group: "Voice", description: "Output level"),
-            new ParamDef(P.AType, "AType", "A engine", 0, 1, 1, MapKind.Enum, names: new[] { "Off", "Wavetable" }, group: "Osc A", description: "What slot A plays (more engines to come)"),
+            new ParamDef(P.AType, "AType", "A engine", 0, 2, 1, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog" }, group: "Osc A", description: "What slot A plays (more engines to come)"),
             new ParamDef(P.ATable, "ATable", "A table", 0, 10, 0, MapKind.Enum, names: new[] { "Basic", "PWM", "Harmonics", "Formants", "Sync sweep", "FM sweep", "Organ", "Resonant", "Digital", "Grit", "User" }, group: "Osc A", description: "Wavetable (User: a table loaded for this slot)"),
             new ParamDef(P.APos, "APos", "A position", 0, 1000, 667, MapKind.Percent, group: "Osc A", description: "Position in the table (frames morph smoothly)"),
             new ParamDef(P.AOct, "AOct", "A octave", 0, 8, 4, MapKind.Int, a: -4, b: 0, flag: true, unit: "oct", group: "Osc A", description: "Octave"),
@@ -142,7 +151,7 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.AWarp2Amt, "AWarp2Amt", "A warp 2 amt", 0, 1000, 0, MapKind.Percent, group: "Osc A", description: "Second warp's amount"),
             new ParamDef(P.AMod, "AMod", "A modulator", 0, 4, 1, MapKind.Enum, names: new[] { "Osc A", "Osc B", "Osc C", "Sub", "Noise" }, group: "Osc A", description: "What FM, PM, AM and Ring take (not the slot itself)"),
             new ParamDef(P.AToF2, "AToF2", "A → filter 2", 0, 1000, 0, MapKind.Percent, group: "Osc A", description: "Balance between filter 1 (0 %) and filter 2 (100 %)"),
-            new ParamDef(P.BType, "BType", "B engine", 0, 1, 0, MapKind.Enum, names: new[] { "Off", "Wavetable" }, group: "Osc B", description: "What slot B plays (more engines to come)"),
+            new ParamDef(P.BType, "BType", "B engine", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog" }, group: "Osc B", description: "What slot B plays (more engines to come)"),
             new ParamDef(P.BTable, "BTable", "B table", 0, 10, 2, MapKind.Enum, names: new[] { "Basic", "PWM", "Harmonics", "Formants", "Sync sweep", "FM sweep", "Organ", "Resonant", "Digital", "Grit", "User" }, group: "Osc B", description: "Wavetable (User: a table loaded for this slot)"),
             new ParamDef(P.BPos, "BPos", "B position", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Position in the table (frames morph smoothly)"),
             new ParamDef(P.BOct, "BOct", "B octave", 0, 8, 4, MapKind.Int, a: -4, b: 0, flag: true, unit: "oct", group: "Osc B", description: "Octave"),
@@ -161,7 +170,7 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.BWarp2Amt, "BWarp2Amt", "B warp 2 amt", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Second warp's amount"),
             new ParamDef(P.BMod, "BMod", "B modulator", 0, 4, 0, MapKind.Enum, names: new[] { "Osc A", "Osc B", "Osc C", "Sub", "Noise" }, group: "Osc B", description: "What FM, PM, AM and Ring take (not the slot itself)"),
             new ParamDef(P.BToF2, "BToF2", "B → filter 2", 0, 1000, 0, MapKind.Percent, group: "Osc B", description: "Balance between filter 1 (0 %) and filter 2 (100 %)"),
-            new ParamDef(P.CType, "CType", "C engine", 0, 1, 0, MapKind.Enum, names: new[] { "Off", "Wavetable" }, group: "Osc C", description: "What slot C plays (more engines to come)"),
+            new ParamDef(P.CType, "CType", "C engine", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Wavetable", "Analog" }, group: "Osc C", description: "What slot C plays (more engines to come)"),
             new ParamDef(P.CTable, "CTable", "C table", 0, 10, 3, MapKind.Enum, names: new[] { "Basic", "PWM", "Harmonics", "Formants", "Sync sweep", "FM sweep", "Organ", "Resonant", "Digital", "Grit", "User" }, group: "Osc C", description: "Wavetable (User: a table loaded for this slot)"),
             new ParamDef(P.CPos, "CPos", "C position", 0, 1000, 0, MapKind.Percent, group: "Osc C", description: "Position in the table (frames morph smoothly)"),
             new ParamDef(P.COct, "COct", "C octave", 0, 8, 4, MapKind.Int, a: -4, b: 0, flag: true, unit: "oct", group: "Osc C", description: "Octave"),
@@ -212,6 +221,15 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.FltD, "FltD", "Flt decay", 0, 1000, 520, MapKind.Time, a: 0.0005, b: 20, group: "Filter env", description: "Decay time"),
             new ParamDef(P.FltS, "FltS", "Flt sustain", 0, 1000, 300, MapKind.Percent, group: "Filter env", description: "Sustain level"),
             new ParamDef(P.FltR, "FltR", "Flt release", 0, 1000, 450, MapKind.Time, a: 0.0005, b: 20, group: "Filter env", description: "Release time"),
+            new ParamDef(P.AShape, "AShape", "A shape", 0, 4, 2, MapKind.Enum, names: new[] { "Sine", "Triangle", "Saw", "Square", "Pulse" }, group: "Osc A", description: "The Analog engine's wave"),
+            new ParamDef(P.APw, "APw", "A pulse width", 0, 1000, 1000, MapKind.Linear, a: 3, b: 50, unit: "%", digits: 1, group: "Osc A", description: "The Analog engine's pulse width (Pulse)"),
+            new ParamDef(P.ADrift, "ADrift", "A drift", 0, 1000, 200, MapKind.Percent, group: "Osc A", description: "The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are"),
+            new ParamDef(P.BShape, "BShape", "B shape", 0, 4, 2, MapKind.Enum, names: new[] { "Sine", "Triangle", "Saw", "Square", "Pulse" }, group: "Osc B", description: "The Analog engine's wave"),
+            new ParamDef(P.BPw, "BPw", "B pulse width", 0, 1000, 1000, MapKind.Linear, a: 3, b: 50, unit: "%", digits: 1, group: "Osc B", description: "The Analog engine's pulse width (Pulse)"),
+            new ParamDef(P.BDrift, "BDrift", "B drift", 0, 1000, 200, MapKind.Percent, group: "Osc B", description: "The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are"),
+            new ParamDef(P.CShape, "CShape", "C shape", 0, 4, 2, MapKind.Enum, names: new[] { "Sine", "Triangle", "Saw", "Square", "Pulse" }, group: "Osc C", description: "The Analog engine's wave"),
+            new ParamDef(P.CPw, "CPw", "C pulse width", 0, 1000, 1000, MapKind.Linear, a: 3, b: 50, unit: "%", digits: 1, group: "Osc C", description: "The Analog engine's pulse width (Pulse)"),
+            new ParamDef(P.CDrift, "CDrift", "C drift", 0, 1000, 200, MapKind.Percent, group: "Osc C", description: "The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are"),
         };
     }
 }

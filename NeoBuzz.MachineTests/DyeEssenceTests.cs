@@ -60,6 +60,8 @@ namespace NeoBuzz.MachineTests
             s.Filter[1].Cutoff = 8000; s.Filter[1].Reso = 0.2f; s.Filter[1].Env = 1; s.Filter[1].Key = 0.5f;
             s.Amp.A = 0.005f; s.Amp.D = 0.3f; s.Amp.S = 1; s.Amp.R = 0.4f;
             s.Flt.A = 0.01f; s.Flt.D = 0.5f; s.Flt.S = 0.3f; s.Flt.R = 0.5f;
+            b.Analog.Basic = TableBank.GetNow(0);
+            b.Analog.Pulse = TableBank.GetNow(1);
             tweak?.Invoke(s);
             return b;
         }
@@ -142,6 +144,8 @@ namespace NeoBuzz.MachineTests
             ("phase warps", 3, 2, s => { s.Osc[0].Warp1 = Warp.BendMinus; s.Osc[0].Amount1 = 0.7f; s.Osc[0].Warp2 = Warp.Squeeze; s.Osc[0].Amount2 = 0.5f;
                                          s.Osc[1].Warp1 = Warp.Mirror; s.Osc[1].Amount1 = 0.6f; s.Osc[1].Warp2 = Warp.Asym; s.Osc[1].Amount2 = 0.9f;
                                          s.Osc[2].Warp1 = Warp.Sync; s.Osc[2].Amount1 = 0.45f; }),
+            ("the Analog engine: a pulse, a drifting saw stack filling its groups, a square", 8, 2, s => { foreach (var o in s.Osc) { o.Type = SlotType.Analog; o.Drift = 0.7f; }
+                                         s.Osc[0].Shape = AnalogShape.Pulse; s.Osc[0].PulseWidth = 0.2f; s.Osc[0].Unison = 3; s.Osc[2].Shape = AnalogShape.Square; s.Osc[2].Unison = 1; }),
             ("AM, ring, FM in a ring of modulators, noise", 2, 2, s => { s.Osc[0].Warp1 = Warp.Am; s.Osc[0].Amount1 = 0.8f; s.Osc[0].Mod = ModSource.Noise;
                                          s.Osc[1].Warp1 = Warp.Ring; s.Osc[1].Amount1 = 0.5f; s.Osc[1].Mod = ModSource.OscC;
                                          s.Osc[2].Warp1 = Warp.Fm; s.Osc[2].Amount1 = 0.9f; s.Osc[2].Mod = ModSource.OscB; s.Noise.Level = 0.2f; s.Noise.ToF2 = 0.5f; }),
@@ -409,6 +413,59 @@ namespace NeoBuzz.MachineTests
                 }
             Measure.Report("Dye Essence, warp alias floors at 70 %, A5 (880 Hz), modulator an octave up: " + string.Join("; ", lines));
             Assert.That(fails, Is.Empty);
+        }
+
+        /// <summary>One voice of the Analog engine, filters off.</summary>
+        static NoteBank Analog(AnalogShape shape, float width = 0.5f, float drift = 0f)
+        {
+            var b = Clean(2);
+            var o = b.S.Osc[0];
+            o.Type = SlotType.Analog;
+            o.Shape = shape;
+            o.PulseWidth = width;
+            o.Drift = drift;
+            b.Analog.Basic = TableBank.GetNow(0);
+            b.Analog.Pulse = TableBank.GetNow(1);
+            return b;
+        }
+
+        [Test]
+        public void TheAnalogEngineIsCleanInTuneAndPulseWide()
+        {
+            // The Analog engine reads the built-in tables' exact frames: the saw's and square's alias
+            // floors under −80 dB at 880 Hz and 1.9 kHz; a pulse of 25 % is high a quarter of each cycle
+            // (within 2 %); a voice drifts by at most 12 cents at 100 % and not at all at 0.
+            var lines = new List<string>();
+            foreach (var shape in new[] { AnalogShape.Saw, AnalogShape.Square, AnalogShape.Triangle })
+                foreach (int note in new[] { 81, 94 })
+                {
+                    var b = Analog(shape);
+                    b.NoteOn(0, note, 1f);
+                    var y = Left(Render(b, 8192 + Measure.N), 8192, Measure.N);
+                    double floor = PolyTests.AliasFloorWindowed(y, 0, Measure.N, DspMath.NoteToHz(note));
+                    lines.Add($"{shape} at {DspMath.NoteToHz(note):F0} Hz {floor:F1} dB");
+                    Assert.That(floor, Is.LessThan(-80), $"{shape} at note {note}");
+                }
+            foreach (float width in new[] { 0.25f, 0.1f })
+            {
+                var p = Analog(AnalogShape.Pulse, width);
+                p.NoteOn(0, 45, 1f);   // 110 Hz: some 436 samples a cycle
+                var y = Left(Render(p, 8192 + 48000), 8192, 48000);
+                double high = y.Count(v => v > 0) / (double)y.Length;
+                lines.Add($"pulse {width * 100:F0} % high {high * 100:F1} % of the cycle");
+                Assert.That(high, Is.EqualTo(width).Within(0.02), $"pulse {width}");
+            }
+            foreach (float drift in new[] { 0f, 1f })
+            {
+                var d = Analog(AnalogShape.Sine, drift: drift);
+                d.NoteOn(0, 69, 1f);
+                var y = Left(Render(d, 4096 + Measure.N), 4096, Measure.N);
+                double cents = Measure.Cents(PeakHz(y, 440), 440);
+                lines.Add($"drift {drift * 100:F0} %: {cents:+0.00;-0.00} ct");
+                if (drift == 0) Assert.That(Math.Abs(cents), Is.LessThan(0.05));
+                else Assert.That(Math.Abs(cents), Is.InRange(0.05, AnalogEngine.MaxDrift + 0.05));
+            }
+            Measure.Report("Dye Essence, the Analog engine: " + string.Join("; ", lines));
         }
 
         static double PeakHz(float[] y, double near, int width = 8)
