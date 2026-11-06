@@ -23,12 +23,12 @@ namespace ReBuzzTests
     /// reaches a managed machine whole.
     /// </summary>
     [Apartment(ApartmentState.STA)]
-    public class NeoMachineTests
+    public partial class NeoMachineTests
     {
         // ------------------------------------------------------------------ machines
 
         /// <summary>A Neo machine as the solution build made it.</summary>
-        internal sealed class NeoInfo(string name, string shortName, bool generator, bool multiIo = false) : ITestMachineInfo
+        internal sealed class NeoInfo(string name, string shortName, bool generator, bool multiIo = false, string builtPath = null) : ITestMachineInfo
         {
             public string Name { get; } = name;
             public bool Generator { get; } = generator;
@@ -71,6 +71,7 @@ namespace ReBuzzTests
             {
                 get
                 {
+                    if (builtPath != null) return builtPath;
                     var bin = File.ReadLines(TestAssemblyDirectory.Value.AddFileName("ReBuzzLocation.txt").ToString()).First();
                     return Path.Combine(bin, "Gear", Generator ? "Generators" : "Effects", DllName);
                 }
