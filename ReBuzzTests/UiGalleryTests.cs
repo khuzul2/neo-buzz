@@ -8,8 +8,8 @@ using ReBuzzTests.Automation;
 namespace ReBuzzTests
 {
     /// <summary>
-    /// Fork addition (docs/specs/ui-gallery.md): ReBuzz.exe's half of the UI gallery. <c>ReBuzz.exe --ui-shots</c> starts
-    /// ReBuzz as people do (main window, Gear with the natives, themes), loads the galleries' demo song and draws its
+    /// Fork addition (docs/specs/ui-gallery.md): the Windows app's half of the UI gallery. <c>NeoBuzzLive.exe --ui-shots</c> starts
+    /// it as people do (main window, Gear with the natives, themes), loads the galleries' demo song and draws its
     /// windows: every view, the main menu's menus, the Machine View's context menus, both themes, Preferences and Settings
     /// (every page), About, the agent connection, rename, parameter windows, tool windows (win-*.png), with
     /// index-windows.md. They go where the other tests' screenshots go (SESSION_SCREENSHOT_DIR: the ci-artifacts branch).
@@ -18,11 +18,11 @@ namespace ReBuzzTests
     public class UiGalleryTests
     {
         [Test]
-        public void ReBuzzDrawsItsWindowsForTheUiGallery()
+        public void TheAppDrawsItsWindowsForTheUiGallery()
         {
             string bin = File.ReadLines(TestAssemblyDirectory.Value.AddFileName("ReBuzzLocation.txt").ToString()).First();
-            string exe = Path.Combine(bin, "ReBuzz.exe");
-            if (!File.Exists(exe)) Assert.Inconclusive($"ReBuzz.exe not built ({exe})");
+            string exe = Path.Combine(bin, ReBuzz.Product.WindowsExe);
+            if (!File.Exists(exe)) Assert.Inconclusive($"{ReBuzz.Product.WindowsExe} not built ({exe})");
             string folder = Path.Combine(Path.GetTempPath(), "rebuzz-ui-shots-" + Environment.ProcessId);
             if (Directory.Exists(folder)) Directory.Delete(folder, true);
 
@@ -44,7 +44,7 @@ namespace ReBuzzTests
             string log = Path.Combine(folder, "ui-shots.log");
             TestContext.Out.WriteLine(File.Exists(log) ? File.ReadAllText(log) : "(no ui-shots.log)");
             lock (stderr) TestContext.Out.WriteLine(string.Join("\n", stderr.TakeLast(60)));
-            Assert.That(exited, Is.True, "ReBuzz --ui-shots finished in 10 minutes");
+            Assert.That(exited, Is.True, $"{ReBuzz.Product.WindowsExe} --ui-shots finished in 10 minutes");
             Assert.That(File.Exists(Path.Combine(folder, "done.txt")), Is.True, "the gallery finished (done.txt)");
 
             string shots = Environment.GetEnvironmentVariable("SESSION_SCREENSHOT_DIR") ?? TestContext.CurrentContext.WorkDirectory;

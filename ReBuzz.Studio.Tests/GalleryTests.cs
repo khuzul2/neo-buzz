@@ -143,7 +143,7 @@ namespace ReBuzz.Studio.Tests
             sb.AppendLine("| App | File | What it shows | How a user reaches it | Window size and scale | Song | Notes |");
             sb.AppendLine("|---|---|---|---|---|---|---|");
             foreach (var r in rows.OrderBy(r => r.File, System.StringComparer.Ordinal))
-                sb.AppendLine($"| Mac (ReBuzz.Studio, headless) | {Cell(r.File)} | {Cell(r.What)} | {Cell(r.How)} | {Cell(r.Size)} | {Cell(r.Song)} | {Cell(r.Notes)} |");
+                sb.AppendLine($"| Mac ({Product.Name}, headless) | {Cell(r.File)} | {Cell(r.What)} | {Cell(r.How)} | {Cell(r.Size)} | {Cell(r.Song)} | {Cell(r.Notes)} |");
             if (failures.Count > 0)
             {
                 sb.AppendLine();
@@ -469,7 +469,7 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 Try("010-start-empty", () => Shot(window, "010-start-empty", "The main window on a new, empty song: transport bar, view tabs (Machines selected), the Master alone, status line.",
-                    "Start ReBuzz (or File ▸ New, ⌘N).", song: "none (new song)", notes: Headless));
+                    $"Start {Product.Name} (or File ▸ New, ⌘N).", song: "none (new song)", notes: Headless));
                 Try("011-start-sequence-empty", () => { window.ShowView("Sequence"); Shot(window, "011-start-sequence-empty", "The Sequence tab on a new song: no tracks yet.", "F4, or the Sequence tab.", song: "none (new song)"); });
                 Try("012-start-session-empty", () => { window.ShowView("Session"); Shot(window, "012-start-session-empty", "The Session tab on a new song: an empty launch grid with its toolbar and mixer.", "Ctrl+Tab, or the Session tab.", song: "none (new song)"); });
                 Try("013-start-pattern-empty", () => { window.ShowView("Pattern"); Shot(window, "013-start-pattern-empty", "The Pattern tab on a new song: no machine with patterns yet.", "F2, or the Pattern tab.", song: "none (new song)"); });
@@ -728,7 +728,7 @@ namespace ReBuzz.Studio.Tests
         /// <summary>The Mac's menus as an in-window menu: the app menu (ReBuzz) and the menu bar's File … Help, from the same model.</summary>
         static Menu MacMenuBar(MainWindow window)
         {
-            var model = new[] { new MenuEntry { Header = Avalonia.Application.Current?.Name ?? "ReBuzz", Items = () => window.AppMenuModel() } }.Concat(window.MenuModel(mac: true));
+            var model = new[] { new MenuEntry { Header = Avalonia.Application.Current?.Name ?? Product.Name, Items = () => window.AppMenuModel() } }.Concat(window.MenuModel(mac: true));
             var bar = AppMenu.ToMenu(model);
             var dock = (DockPanel)window.Transport.Parent!;
             DockPanel.SetDock(bar, Dock.Top);
@@ -751,7 +751,7 @@ namespace ReBuzz.Studio.Tests
                 string[] ids = { "100-menu-app", "101-menu-file", "102-menu-edit", "103-menu-transport", "104-menu-view", "105-menu-window", "106-menu-help" };
                 string[] whats =
                 {
-                    "The app menu (ReBuzz): About ReBuzz, Preferences… (⌘,). macOS adds Services, Hide ReBuzz, Hide Others, Show All and Quit ReBuzz (⌘Q) below them (not drawn).",
+                    $"The app menu ({Product.Name}) as the model has it: About {Product.Name}, Preferences… (⌘,). macOS adds Services, Hide, Hide Others, Show All and Quit (⌘Q) below them (not drawn). On the real Mac this menu shows Avalonia's About Avalonia instead of these two (see mac-real-100).",
                     "File: New, Open…, Open Recent ▸, Save, Save As… (no Exit: Quit is in the app menu).",
                     "Edit: Undo, Redo, Cut, Copy, Paste (Preferences is in the app menu).",
                     "Transport: Play or Stop (Space), Play, Stop, Record, Restart audio.",
@@ -948,7 +948,7 @@ namespace ReBuzz.Studio.Tests
                         prefs.ShowPage(page);
                         Settle();
                         Shot(prefs, id, $"Preferences ▸ {page} (a window of its own; changes apply as they are made).",
-                            page == "Agent" ? "ReBuzz ▸ Preferences… (⌘,) ▸ Agent; or Window ▸ Agent connection… (⇧⌘A)." : $"ReBuzz ▸ Preferences… (⌘,) ▸ {page}.",
+                            page == "Agent" ? $"{Product.Name} ▸ Preferences… (⌘,) ▸ Agent; or Window ▸ Agent connection… (⇧⌘A)." : $"{Product.Name} ▸ Preferences… (⌘,) ▸ {page}.",
                             notes: page == "Audio" ? Devices : null);
                         var scroll = prefs.Selected as ScrollViewer;
                         if (scroll != null && scroll.Extent.Height > scroll.Viewport.Height + 4)
@@ -956,7 +956,7 @@ namespace ReBuzz.Studio.Tests
                             scroll.Offset = new Vector(0, scroll.Extent.Height);
                             Settle();
                             string more = $"{300 + k * 2 + 1:000}-prefs-{page.ToLowerInvariant()}-scrolled";
-                            Shot(prefs, more, $"Preferences ▸ {page}, scrolled to its end.", $"ReBuzz ▸ Preferences… ▸ {page}, scrolled.", notes: page == "Audio" ? Devices : null);
+                            Shot(prefs, more, $"Preferences ▸ {page}, scrolled to its end.", $"{Product.Name} ▸ Preferences… ▸ {page}, scrolled.", notes: page == "Audio" ? Devices : null);
                             scroll.Offset = default;
                         }
                     });
@@ -983,7 +983,7 @@ namespace ReBuzz.Studio.Tests
                 prefs.Close();
                 Settle();
 
-                Try("330-about", () => DialogOnOpen(window, () => AboutWindow.Open(), "330-about", "About ReBuzz: the build and the credits.", "ReBuzz ▸ About ReBuzz."));
+                Try("330-about", () => DialogOnOpen(window, () => AboutWindow.Open(), "330-about", $"About {Product.Name}: the build and the credits.", $"{Product.Name} ▸ About {Product.Name}."));
                 Try("331-keyboard-shortcuts", () => DialogOnOpen(window, () => _ = Dialogs.Info(MainWindow.ShortcutsText(mac: true), "Keyboard shortcuts"),
                     "331-keyboard-shortcuts", "Help ▸ Keyboard shortcuts: the studio's keys (Mac glyphs: ⌘ ⇧).", "Help ▸ Keyboard shortcuts…."));
                 Try("332-save-changes", () =>
@@ -1038,8 +1038,8 @@ namespace ReBuzz.Studio.Tests
                     Assert.That(Core.Autosave.SaveNow(System.DateTime.Now), Is.True);
                     try
                     {
-                        DialogOnOpen(window, () => _ = Autosave.OfferRecovery(Core), "337-autosave-recovery", "At start-up after ReBuzz didn't close normally: recover the autosaved changes? (Yes, No, Cancel).",
-                            "Start ReBuzz after a crash, with unsaved changes autosaved.");
+                        DialogOnOpen(window, () => _ = Autosave.OfferRecovery(Core), "337-autosave-recovery", $"At start-up after {Product.Name} didn't close normally: recover the autosaved changes? (Yes, No, Cancel).",
+                            $"Start {Product.Name} after a crash, with unsaved changes autosaved.");
                     }
                     finally
                     {

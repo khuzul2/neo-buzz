@@ -1,16 +1,16 @@
 #!/bin/bash
-# Fork (docs/specs/ui-gallery.md): the real ReBuzz.app on a Mac's screen, to check the headless gallery against: the
+# Fork (docs/specs/ui-gallery.md): the real NeoBuzz Live.app on a Mac's screen, to check the headless gallery against: the
 # screen with the app open on the demo song (its window and the macOS menu bar), then each menu of the menu bar opened
 # through System Events, where the Mac allows it (Accessibility; a runner may not). Fork Mac's gallery job runs it.
 #
-#   tools/ui-gallery-mac.sh <ReBuzz.app> <song> <output folder>
+#   tools/ui-gallery-mac.sh <NeoBuzz Live.app> <song> <output folder>
 set -uo pipefail
 app="$1"
 song="$2"
 out="$3"
 mkdir -p "$out"
 settings="$(mktemp -d)"
-exe="$app/Contents/MacOS/ReBuzz.Studio"
+exe="$app/Contents/MacOS/$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")"
 
 system_profiler SPDisplaysDataType 2>/dev/null | grep -iE "resolution|retina" > "$out/screen.txt" || true
 echo "screen: $(tr -s ' ' < "$out/screen.txt" | tr '\n' ' ')"
@@ -36,8 +36,8 @@ shot() {
 shot mac-real-010-screen
 
 n=100
-for menu in ReBuzz File Edit Transport View Window Help; do
-  if [ "$menu" = ReBuzz ]; then item="menu bar item 2 of menu bar 1"; else item="menu bar item \"$menu\" of menu bar 1"; fi
+for menu in App File Edit Transport View Window Help; do
+  if [ "$menu" = App ]; then item="menu bar item 2 of menu bar 1"; else item="menu bar item \"$menu\" of menu bar 1"; fi
   if osascript -e "tell application \"System Events\" to tell (first process whose unix id is $pid) to click $item" > /dev/null 2> "$out/osascript.txt"; then
     sleep 1
     shot "mac-real-$n-menu-$(echo "$menu" | tr '[:upper:]' '[:lower:]')"

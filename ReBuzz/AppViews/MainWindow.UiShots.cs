@@ -1,9 +1,9 @@
-// Fork (docs/specs/ui-gallery.md): `ReBuzz.exe --ui-shots <folder>`, ReBuzz.exe's half of the UI gallery for reviews.
-// ReBuzz starts as it always does (main window, Gear with the natives, themes), loads the demo song both galleries
+// Fork (docs/specs/ui-gallery.md): `NeoBuzzLive.exe --ui-shots <folder>`, the Windows app's half of the UI gallery for
+// reviews. The app starts as it always does (main window, Gear with the natives, themes), loads the demo song both galleries
 // share (GallerySong.cs), and draws its windows to <folder>/win-NNN-*.png at 1440×900: the main window in every view,
 // the main menu's menus, the Machine View's context menus, both shipped themes, Preferences and Settings (every page),
 // About, the agent connection, rename, the parameter windows of native and Pedal machines, the tool windows. Then
-// index-windows.md (what each shows, how a user gets there) and done.txt, and ReBuzz ends. ReBuzzTests'
+// index-windows.md (what each shows, how a user gets there) and done.txt, and the app ends. ReBuzzTests'
 // UiGalleryTests runs it on the package run; the pictures go to the ci-artifacts branch with the others.
 //
 // The window's client area is drawn (RenderTargetBitmap, 96 dpi): no Windows title bar. Menus and context menus are
@@ -214,7 +214,7 @@ namespace ReBuzz
             sb.AppendLine("| App | File | What it shows | How a user reaches it | Window size and scale | Song | Notes |");
             sb.AppendLine("|---|---|---|---|---|---|---|");
             foreach (var r in shotRows.OrderBy(r => r.File, StringComparer.Ordinal))
-                sb.AppendLine($"| Windows (ReBuzz.exe, WPF) | {Cell(r.File)} | {Cell(r.What)} | {Cell(r.How)} | {Cell(r.Size)} | {Cell(r.Song)} | {Cell(r.Notes)} |");
+                sb.AppendLine($"| Windows ({Product.WindowsExe}, WPF) | {Cell(r.File)} | {Cell(r.What)} | {Cell(r.How)} | {Cell(r.Size)} | {Cell(r.Song)} | {Cell(r.Notes)} |");
             if (shotFailures.Count > 0)
             {
                 sb.AppendLine();
@@ -333,7 +333,7 @@ namespace ReBuzz
             ShotLog($"window {ActualWidth}×{ActualHeight}");
 
             const string Empty = "none (new song)";
-            await Shot(this, "010-start-empty", "The main window on a new song: menu, toolbar, Machine View with the Master alone, status bar.", "Start ReBuzz (or File ▸ New, Ctrl+N).", Empty,
+            await Shot(this, "010-start-empty", "The main window on a new song: menu, toolbar, Machine View with the Master alone, status bar.", $"Start {Product.Name} (or File ▸ New, Ctrl+N).", Empty,
                 "The window's client area (no Windows title bar).");
 
             // The demo song, saved and opened again as a user's song is (notes on the note lanes show once it's opened).
@@ -500,7 +500,7 @@ namespace ReBuzz
             });
 
             // Settings (BuzzGUI's), every page, Agent among them.
-            // View ▸ Settings… throws in ReBuzz.exe as it is: SettingsWindow.AddTab takes every setting's Options, and the
+            // View ▸ Settings… throws in the Windows app as it is: SettingsWindow.AddTab takes every setting's Options, and the
             // Agent page's Port (a string setting, AgentSettings) has none (NullReferenceException). Listed when it does.
             await Step("settings", async () =>
             {
@@ -534,7 +534,7 @@ namespace ReBuzz
                 var shell = UiUtils.GetUserControlXAML<Window>("ParameterWindowShell.xaml", buzzPath);
                 about.Resources.MergedDictionaries.Add(shell.Resources);
                 about.Show();
-                await Shot(about, "500-about", "About ReBuzz: the build and the credits.", "Help ▸ About ReBuzz….", settle: 800);
+                await Shot(about, "500-about", $"About {Product.Name}: the build and the credits.", $"Help ▸ About {Product.Name}….", settle: 800);
                 about.Close();
             });
             await Step("agent connection", async () =>

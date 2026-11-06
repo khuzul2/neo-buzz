@@ -186,7 +186,7 @@ jobs:
         done
 
   # The UI gallery on a Mac (docs/specs/ui-gallery.md), by hand only (gallery: true): the headless gallery drawn with
-  # macOS's fonts, and the real ReBuzz.app on the runner's screen (screencapture: its window and the menu bar), to
+  # macOS's fonts, and the real NeoBuzz Live.app on the runner's screen (screencapture: its window and the menu bar), to
   # check the headless pictures against. Pushed as one commit to the ci-artifacts-mac branch, overwritten each time.
   gallery:
     if: ${{ inputs.gallery == true }}
@@ -217,7 +217,7 @@ jobs:
       shell: bash
       run: |
         tools/mac-bundle.sh "$RUNNER_TEMP/app"
-        tools/ui-gallery-mac.sh "$RUNNER_TEMP/app/ReBuzz.app" "gallery/headless/Night Drive.bmxml" gallery/real
+        tools/ui-gallery-mac.sh "$RUNNER_TEMP/app/NeoBuzz Live.app" "gallery/headless/Night Drive.bmxml" gallery/real
 
     - name: Publish to ci-artifacts-mac
       if: always() && hashFiles('gallery/**/*.png') != ''
