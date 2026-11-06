@@ -30,6 +30,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)InterfaceExtensions\MachineExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)LinqExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MIDI.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MachinePlacement.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ManagedActionStack.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MenuItemVM.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PortableMessageBox.cs" />

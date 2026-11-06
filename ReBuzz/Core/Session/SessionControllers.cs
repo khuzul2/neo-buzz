@@ -470,7 +470,7 @@ namespace ReBuzz.Core.Session
                         s.SetPad(x, y, armed ? PadState.ArmedEmpty : PadState.Empty, Rgb.Black);
                         continue;
                     }
-                    var state = session.GetState(seq, pattern);
+                    var state = layout.SlotState(seq, pattern, track, scene);
                     PadState pad;
                     if (layout.IsRecordingInto(seq, pattern))
                         pad = state == BuzzGUI.Interfaces.ClipState.Playing || state == BuzzGUI.Interfaces.ClipState.Stopping ? PadState.Recording : PadState.RecordQueued;

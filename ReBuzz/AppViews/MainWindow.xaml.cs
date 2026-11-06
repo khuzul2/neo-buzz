@@ -37,7 +37,8 @@ namespace ReBuzz
         MachineView MachineView { get; set; }
         WavetableVM WavetableVM { get; set; }
         UserControl WavetableControl { get; set; }
-        InfoView InfoView { get; set; }
+        // Fork: F10 is Song Notes (the studio's view, ported), not Buzz's Info view (gallery win-060).
+        AppViews.SongNotesView SongNotesView { get; set; }
 
         PreferencesWindow preferencesWindow;
         AppViews.Session.SessionWindow sessionWindow;   // fork: Session View in its own window
@@ -234,6 +235,7 @@ namespace ReBuzz
                 splashScreenWindow.UpdateText("Init views");
 
                 UiUtils.RestoreWindowStateFromRegistry(this, registryEx, "MainWindowWP");
+                UiUtils.KeepOnWorkArea(this);          // fork (ui-gallery.md): within the screen, not off a small one
                 UiUtils.RestoreWindowStateFromRegistry(debugWindow, registryEx, "DebugWindowWP");
 
                 UiUtils.InitUtils(this);
@@ -259,11 +261,9 @@ namespace ReBuzz
                 WavetableControl.DataContext = WavetableVM;
                 WavetableVM.Wavetable = song.Wavetable;
 
-                // Info view
-                InfoView = new InfoView(Buzz);
-                rd = UiUtils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.InfoView.Source, buzzPath);
-                InfoView.Resources.MergedDictionaries.Add(rd);
-                borderInfo.Child = InfoView;
+                // Song Notes (F10)
+                SongNotesView = new AppViews.SongNotesView(Buzz);
+                borderInfo.Child = SongNotesView;
 
                 // Editor view
                 var res = UiUtils.GetBuzzThemeResources(Buzz.Theme.SequenceEditor.Source, buzzPath);
@@ -315,6 +315,8 @@ namespace ReBuzz
 
                 // Fork (docs/specs/machine-safety.md §3.2): a machine whose guard tripped shows muted; say why.
                 Buzz.MachineDiverged += m => SetStatusBarText($"{m.Name} diverged ({m.DivergedReason}): the guard silenced, stopped and muted it. Unmute it to reset it.", 0);
+                // Fork: a machine that stopped working (its host process hung or exited) is told here, named (gallery win-704).
+                Buzz.MachineCrashed += (m, reason) => SetStatusBarText($"{m.Name} stopped working ({reason}): it is left out of the sound. The debug console has the details.", 0);
 
                 UpdateTitle();
 
@@ -368,10 +370,6 @@ namespace ReBuzz
                 else if (e.PropertyName == "Modified")
                 {
                     UpdateTitle();
-                }
-                else if (e.PropertyName == "InfoText")
-                {
-                    InfoView.tbInfo.Text = Buzz.InfoText;
                 }
                 else if (e.PropertyName == "IsHardDiskRecorderWindowVisible")
                 {
@@ -608,7 +606,9 @@ namespace ReBuzz
                         break;
                     case BuzzView.SongInfoView:
                         {
-                            // ToDo
+                            // Fork: the notes' edits are steps on the song's history.
+                            if (cmd == BuzzCommand.Undo) SongNotesView?.Undo();
+                            else if (cmd == BuzzCommand.Redo) SongNotesView?.Redo();
                         }
                         break;
                 }
@@ -1271,11 +1271,9 @@ namespace ReBuzz
             WavetableControl.DataContext = WavetableVM;
             WavetableVM.Wavetable = song.Wavetable;
 
-            // Info view
-            InfoView = new InfoView(Buzz);
-            rd = UiUtils.GetUserControlXAML<ResourceDictionary>(Buzz.Theme.InfoView.Source, buzzPath);
-            InfoView.Resources.MergedDictionaries.Add(rd);
-            borderInfo.Child = InfoView;
+            // Song Notes (F10): drawn in its own colours, whatever the theme.
+            SongNotesView = new AppViews.SongNotesView(Buzz);
+            borderInfo.Child = SongNotesView;
 
             // Editor view
             if (seqenceEditor != null)
@@ -1336,7 +1334,7 @@ namespace ReBuzz
         {
             string currentView = "[Machines]";
             if (Buzz.ActiveView == BuzzView.SongInfoView)
-                currentView = "[Info]";
+                currentView = "[Song Notes]";
             else if (Buzz.ActiveView == BuzzView.PatternView)
                 currentView = "[Patterns]";
             else if (Buzz.ActiveView == BuzzView.SequenceView)
@@ -1430,7 +1428,7 @@ namespace ReBuzz
                     contentGrid.RowDefinitions[4].Height = new GridLength(1, GridUnitType.Star);
                     borderInfo.Visibility = Visibility.Visible;
                     borderInfo.Focus();
-                    InfoView.Focus();
+                    SongNotesView.Editor.Focus();
                     break;
                 case BuzzView.SessionView:
                     // Fork: docked Session View (docs/specs/session-view.md 0.3).
@@ -1463,7 +1461,7 @@ namespace ReBuzz
                 case BuzzView.WaveTableView:
                     return WavetableControl;
                 case BuzzView.SongInfoView:
-                    return InfoView;
+                    return SongNotesView;
                 case BuzzView.SessionView:
                     return sessionDock;
                 default:

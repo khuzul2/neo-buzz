@@ -87,6 +87,7 @@ namespace ReBuzz.Studio.Views.Machines
             {
                 bool songWasEmpty = song.Machines.Count == 1;
                 var before = song.Machines.ToHashSet();
+                (x, y) = MachinePlacement.Free(song.Machines, x, y);      // not on top of another (the Master, gallery mac-510)
                 song.CreateMachine(instrument.MachineDLL.Name, instrument.Name, null, null, null, null, -1, x, y);
                 var machine = song.Machines.FirstOrDefault(m => !before.Contains(m));
                 if (machine == null) return null;

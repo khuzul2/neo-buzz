@@ -5,6 +5,7 @@
 using System;
 using System.Linq;
 using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -384,6 +385,52 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void TheHeadersStayOverTheirColumnsInView()
+        {
+            // Gallery mac-051 cut "Closed hat tune" at the left, mac-052 the set label "Pad / Track" at the right.
+            var s = Open("PE Headers");
+            try
+            {
+                var grid = Grid(s);
+                Pump();
+                double view = (double)grid.HeaderWidth;
+                int wide = -1;
+                for (int i = 0; i < (int)grid.ColumnSetCount && wide < 0; i++)
+                {
+                    var span = ((double Left, double Right))grid.SetSpan(i);
+                    if (span.Right - span.Left > view + 300) wide = i;
+                }
+                Assert.That(wide, Is.GreaterThanOrEqualTo(0), "Neo Poly's parameters make a set wider than the view");
+
+                // Scrolled into the middle of that set: its label is over the part in view.
+                var start = ((double Left, double Right))grid.SetSpan(wide);
+                grid.ScrollSideways(start.Left + 150);
+                Pump();
+                var label = (Rect)grid.SetLabelBounds(wide);
+                Assert.That(label.Left, Is.GreaterThanOrEqualTo(0), "the set label starts in view");
+                Assert.That(label.Right, Is.LessThanOrEqualTo(view), "and ends in view");
+                Assert.That(label.Center.X, Is.EqualTo(view / 2).Within(view / 4), "centred over the part in view");
+
+                // A column half scrolled out at the left: its name moves into the part in view.
+                int column = 3;
+                double cw = (double)grid.ColumnWidth(wide, column);
+                double contentX = (double)grid.ColumnX(wide, column) + (double)grid.SidewaysOffset;
+                grid.ScrollSideways(contentX + cw * 0.4);                 // its left 40% out of view
+                Pump();
+                double cx = (double)grid.ColumnX(wide, column);
+                Assert.That(cx, Is.LessThan(0), "the column starts out of view");
+                var name = (Rect)grid.ColumnLabelBounds(wide, column);
+                Assert.That(name.Left, Is.GreaterThanOrEqualTo(0), "its name is in view");
+                Assert.That(name.Right, Is.LessThanOrEqualTo(cx + cw + 0.01), "inside its column");
+                Studio.Screenshot(s.Window, "pattern-editor-headers-scrolled");
+            }
+            finally
+            {
+                Close(s);
+            }
+        }
+
+        [AvaloniaTest]
         public void TheMouseMovesTheCursorAndSelects()
         {
             var s = Open("PE Mouse");
@@ -513,6 +560,166 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 Close(s);
+            }
+        }
+
+        [AvaloniaTest]
+        public void TheToolbarsNumberBoxesShowTheirLargestValueWhole()
+        {
+            // Fork (ui-gallery.md, bug 6): Beats was a fixed 96-point box whose spinner left room for one digit and a half,
+            // so a 32-beat pattern showed "3:" (mac-053). Each box is as wide as its largest value in its own font.
+            var s = Open("PE Boxes");
+            try
+            {
+                s.Window.UpdateLayout();
+                var boxes = s.EditorView.GetVisualDescendants().OfType<NumericUpDown>().Where(b => b.IsEffectivelyVisible).ToList();      // the keyboard mapping's are hidden
+                Assert.That(boxes.Select(b => ToolTip.GetTip(b) as string), Does.Contain("Beats").And.Contain("Tracks"));
+                foreach (var box in boxes)
+                {
+                    var presenter = box.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.TextPresenter>().First();
+                    var typeface = new Avalonia.Media.Typeface(presenter.FontFamily, presenter.FontStyle, presenter.FontWeight);
+                    string largest = ((int)box.Maximum).ToString();
+                    double needed = new Avalonia.Media.TextFormatting.TextLayout(largest, typeface, presenter.FontSize, null).WidthIncludingTrailingWhitespace;
+                    Assert.That(presenter.Bounds.Width, Is.GreaterThanOrEqualTo(needed),
+                        $"{ToolTip.GetTip(box)}: room for \"{largest}\" ({needed:F1} pt) in its text ({presenter.Bounds.Width:F1} pt)");
+                }
+                var beats = boxes.First(b => ToolTip.GetTip(b) as string == "Beats");
+                beats.Value = 32;               // a 32-beat pattern, as the gallery's Arp
+                Pump();
+                Studio.Screenshot(s.Window, "pattern-editor-beats-32");
+            }
+            finally
+            {
+                Close(s);
+            }
+        }
+
+        [AvaloniaTest]
+        public void PatternPropertiesListsAndDrawsTheColumns()
+        {
+            // Fork (ui-gallery.md, bug 6): the gallery's Pattern Properties (mac-056) showed an empty column list, and so
+            // does the app: skipping the hidden pattern editors' names (U+0001 first) by the culture's StartsWith, which
+            // ignores control characters, skipped every machine on macOS and Linux.
+            var s = Open("PE Props List");
+            Window dialog = null;
+            int boxes = 0, drawn = 0;
+            string notes = null;
+            using var handler = Window.WindowOpenedEvent.AddClassHandler<Window>((w, e) =>
+            {
+                if (w is MainWindow) return;
+                Dispatcher.UIThread.Post(() =>
+                {
+                    try
+                    {
+                        Pump();
+                        dialog = w;
+                        var checks = w.GetVisualDescendants().OfType<CheckBox>().ToList();
+                        boxes = checks.Count;
+                        drawn = checks.Count(c => c.IsEffectivelyVisible && c.Bounds.Height > 0 && c.TranslatePoint(new Point(0, 0), w) is { } at && at.Y >= 0 && at.Y < w.Bounds.Height);
+                        notes = string.Join(", ", checks.Take(6).Select(c => $"{c.Content} {c.Bounds}"));
+                        Studio.Screenshot(w, "pattern-properties-dialog");
+                    }
+                    finally
+                    {
+                        w.Close();
+                    }
+                }, DispatcherPriority.Background);
+            }, Avalonia.Interactivity.RoutingStrategies.Direct, handledEventsToo: true);
+            try
+            {
+                Key(s, PhysicalKey.Backspace, RawInputModifiers.Control);
+                for (int i = 0; i < 20 && dialog == null; i++) Pump();
+                Assert.That(dialog, Is.Not.Null, "Ctrl+Backspace opened Pattern Properties");
+                TestContext.Out.WriteLine($"{boxes} boxes, {drawn} in view: {notes}");
+                Assert.That(boxes, Is.GreaterThan(10), "a box per column the pattern can have");
+                Assert.That(drawn, Is.GreaterThan(3), "the first of them in view, laid out");
+            }
+            finally
+            {
+                Close(s);
+            }
+        }
+
+        /// <summary>
+        /// The labels of the shown pattern's columns and, for each, the values its beats show (the grid's model), as
+        /// "label: values" with empty rows left out.
+        /// </summary>
+        static System.Collections.Generic.Dictionary<string, string[]> Shown(dynamic patternVM)
+        {
+            var shown = new System.Collections.Generic.Dictionary<string, string[]>();
+            int beats = patternVM.BeatCount;
+            int set = 0;
+            foreach (dynamic cs in (System.Collections.IEnumerable)patternVM.ColumnSets)
+            {
+                foreach (dynamic column in (System.Collections.IEnumerable)cs.Columns)
+                {
+                    var values = new System.Collections.Generic.List<string>();
+                    for (int b = 0; b < beats; b++)
+                    {
+                        object beat = column.FetchBeat(b);       // a private class: its interface's rows, by reflection
+                        var rows = (System.Collections.IEnumerable)beat.GetType().GetInterfaces().First(i => i.Name == "IBeat").GetProperty("Rows")!.GetValue(beat)!;
+                        foreach (object row in rows)
+                        {
+                            string v = (string)row.GetType().GetField("ValueString")!.GetValue(row)!;
+                            if (!v.All(c => c == '.')) values.Add(v);
+                        }
+                    }
+                    shown[$"{set}/{(string)column.Label}"] = values.ToArray();
+                }
+                set++;
+            }
+            return shown;
+        }
+
+        [AvaloniaTest]
+        public void NotesMovedOntoTheLanesOfAPatternNeverShownShowWhenItIs()
+        {
+            // Fork (ui-gallery.md, bug 5): the editor makes a view of each pattern as it's created (and shows the newest),
+            // with the columns the pattern had then. Notes moved onto the MIDI note lanes of another pattern, before it
+            // was ever shown, made its lanes, but its view kept its old columns: the Pattern View showed no lanes and no
+            // notes until the song was saved and opened again. Both apps share this code (PatternEditor.Core.cs).
+            var core = Studio.Host.Core;
+            core.SongCore.CreateMachine("Neo Poly", null, "PE Unseen", null, null, null, 2, 0.3f, 0.3f);
+            var machine = core.SongCore.MachinesList.First(m => m.Name == "PE Unseen");
+            MainWindow window = null;
+            try
+            {
+                machine.CreatePattern("A", 16);
+                machine.CreatePattern("B", 16);                 // the newest: the one the editor shows
+                var a = machine.Patterns.First(p => p.Name == "A");
+                core.SongCore.AddSequence(machine, core.SongCore.SequencesList.Count);
+                var track = core.SongCore.SequencesList.First(q => q.Machine == machine);
+                var layout = core.SessionLayout;
+                layout.Ensure();
+                const int TB = PatternEvent.TimeBase;
+                var notes = new[] { new ReBuzz.Core.Session.ClipNote(0, TB, 60, 100), new ReBuzz.Core.Session.ClipNote(4 * TB, TB, 64, 100),
+                                    new ReBuzz.Core.Session.ClipNote(8 * TB, TB, 67, 100), new ReBuzz.Core.Session.ClipNote(12 * TB, 2 * TB, 72, 100) };
+                layout.EditNotes(a, null, notes);
+                Assert.That(layout.MoveNotesToPatternView(track, a), Is.Null, "the notes moved onto A's note lanes");
+                Assert.That(layout.PatternViewNotesOf(a).Count, Is.EqualTo(4), "the lanes have them");
+
+                window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
+                window.Show();
+                Pump();
+                PatternView.Edit(a);
+                Pump();
+                Assert.That(PatternView.Page.Pattern, Is.EqualTo(a), "the Pattern View shows A");
+                dynamic editor = ((dynamic)PatternView.Page.EditorControl).Editor;
+                dynamic vm = editor.SelectedMachine.SelectedPattern;
+                Assert.That((IPattern)vm.Pattern, Is.EqualTo(a));
+                System.Collections.Generic.Dictionary<string, string[]> shown = Shown(vm);
+                var lane = shown.Where(kv => kv.Key.EndsWith("/MIDI Note")).Select(kv => kv.Value).FirstOrDefault();
+                Assert.That(lane, Is.Not.Null, "A's view has its MIDI Note lane (columns: " + string.Join(", ", shown.Keys) + ")");
+                Assert.That(shown.Where(kv => kv.Key.EndsWith("/MIDI Note")).SelectMany(kv => kv.Value).Where(v => v != "off"), Is.EqualTo(new[] { "C-5", "E-5", "G-5", "C-6" }),
+                    "and the notes on it (MIDI 60 is the editor's C-5; each ends in an off), as the song opened again would show them");
+                Studio.Screenshot(window, "pattern-editor-unseen-lanes");
+            }
+            finally
+            {
+                core.Modified = false;
+                window?.Close();
+                Pump();
+                core.SongCore.DeleteMachines(new[] { machine });
             }
         }
     }

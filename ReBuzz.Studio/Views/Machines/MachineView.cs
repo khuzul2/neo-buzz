@@ -77,7 +77,11 @@ namespace ReBuzz.Studio.Views.Machines
             Bind(Key.A, cmd, Canvas.SelectAll);
             Bind(Key.D, cmd, Canvas.ClearSelection);
             Bind(Key.U, cmd, Canvas.UnmuteAll);
-            Bind(Key.M, cmd, Canvas.ToggleMuteSelection);
+            // Mute: Ctrl+M as ReBuzz.exe has it; on a Mac M on the canvas (fork, ui-gallery.md), as ⌘M minimizes the window there.
+            if (OperatingSystem.IsMacOS())
+                Canvas.KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.M), Command = new Command(Canvas.ToggleMuteSelection) });
+            else
+                Bind(Key.M, cmd, Canvas.ToggleMuteSelection);
         }
 
         static Control Right(Control c)

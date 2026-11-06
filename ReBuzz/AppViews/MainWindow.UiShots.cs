@@ -336,18 +336,19 @@ namespace ReBuzz
             await Shot(this, "010-start-empty", "The main window on a new song: menu, toolbar, Machine View with the Master alone, status bar.", $"Start {Product.Name} (or File ▸ New, Ctrl+N).", Empty,
                 "The window's client area (no Windows title bar).");
 
-            // The demo song, saved and opened again as a user's song is (notes on the note lanes show once it's opened).
+            // The demo song, saved (the title names it). Not opened again: the notes moved onto the note lanes show in the
+            // Pattern View as they are written (they showed only once the song was opened again before).
             var built = GallerySong.Build(Buzz);
             foreach (var p in built.Problems) ShotLog("demo song: " + p);
             string songFolder = Path.Combine(Path.GetTempPath(), "rebuzz-ui-shots-" + Environment.ProcessId);
             Directory.CreateDirectory(songFolder);
             string songPath = Path.Combine(songFolder, GallerySong.Title + ".bmxml");
             Buzz.SaveSongFile(songPath);
+            Buzz.SongCore.SongName = songPath;      // the song's file now, as Save As makes it (a named path doesn't)
             Buzz.Modified = false;
-            Buzz.OpenSongFile(songPath);
             await Idle(2000);
             var song = GallerySong.Find(Buzz);
-            ShotLog($"demo song: {Buzz.SongCore.MachinesList.Count} machines, opened as {Buzz.SongCore.SongName}");
+            ShotLog($"demo song: {Buzz.SongCore.MachinesList.Count} machines, saved as {Buzz.SongCore.SongName}");
 
             // Every view.
             await Step("views", async () =>
@@ -382,7 +383,7 @@ namespace ReBuzz
                 await Shot(this, "050-wavetable", "Wavetable View with its file browser panel (no waves loaded in the demo song).", "F9.", settle: 1000);
 
                 Buzz.ActiveView = BuzzView.SongInfoView;
-                await Shot(this, "060-song-info", "Song Info View (Buzz's Info, the song's notes).", "F10.", settle: 800);
+                await Shot(this, "060-song-info", "Song Notes (F10): the demo song's notes (Markdown) in the editor and as they read, with the formatting toolbar; the Mac app's Song Notes view. Buzz's old info text comes in as an imported note.", "F10.", settle: 800);
 
                 Buzz.ActiveView = BuzzView.SessionView;
                 await Shot(this, "070-session", "Session View docked in the main window (stopped): the demo song's scenes, clips, colours, mixer.", "Ctrl+Tab, or View ▸ Session View.", settle: 1000);
@@ -499,9 +500,7 @@ namespace ReBuzz
                 }
             });
 
-            // Settings (BuzzGUI's), every page, Agent among them.
-            // View ▸ Settings… throws in the Windows app as it is: SettingsWindow.AddTab takes every setting's Options, and the
-            // Agent page's Port (a string setting, AgentSettings) has none (NullReferenceException). Listed when it does.
+            // Settings (BuzzGUI's), every page, Agent among them (its Port a text box: a free value has no options).
             await Step("settings", async () =>
             {
                 Buzz.ActiveView = BuzzView.MachineView;
@@ -518,7 +517,7 @@ namespace ReBuzz
                         tabs.SelectedItem = tab;
                         string header = tab.Header?.ToString() ?? $"page {i}";
                         string slug = new string(header.ToLowerInvariant().Replace(' ', '-').Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
-                        await Shot(settings, $"{430 + i++:000}-settings-{slug}", $"Settings ▸ {header} (each setting a drop-down; bold: changed from its default).", $"View ▸ Settings… ▸ {header}.", settle: 500);
+                        await Shot(settings, $"{430 + i++:000}-settings-{slug}", $"Settings ▸ {header} (a drop-down per setting, its default in bold; a text box for a free value such as Agent's Port).", $"View ▸ Settings… ▸ {header}.", settle: 500);
                     }
                 }
                 finally
@@ -593,7 +592,8 @@ namespace ReBuzz
                 Buzz.IsHardDiskRecorderWindowVisible = true;
                 await Idle(600);
                 if (hDRecorderWindow == null) throw new InvalidOperationException("the Hard Disk Recorder didn't open");
-                await Shot(hDRecorderWindow, "701-hard-disk-recorder", "The Hard Disk Recorder window.", "View ▸ Hard Disk Recorder.");
+                await Shot(hDRecorderWindow, "701-hard-disk-recorder", "The Hard Disk Recorder window.", "View ▸ Hard Disk Recorder.",
+                    notes: Buzz.AudioEngine?.SelectedOutDevice == null ? "The runner has no audio device: the window says there's nothing to record and waits for one." : "");
                 Buzz.IsHardDiskRecorderWindowVisible = false;
             });
             await Step("piano keyboard", async () =>
@@ -620,41 +620,31 @@ namespace ReBuzz
                 debugWindow.Dispatcher.Invoke(() => debugWindow.Hide());
             });
 
-            // The shipped themes.
+            // The shipped themes, switched with the demo song open (it threw in the Machine View, made again, before:
+            // ui-gallery.md).
             await Step("themes", async () =>
             {
-                // The theme chosen on an empty song, then the song opened: switching it with the demo song open throws
-                // here (NullReferenceException in BuzzGUI.MachineView.Connection.UpdateVisuals as the Machine View is made again).
-                const string ThemeNote = "The theme was chosen on a new song and the demo song opened after it (switching with the song open threw in the harness: see the spec).";
+                foreach (var m in Buzz.SongCore.MachinesList.Where(m => !m.Ready && !m.Hidden))
+                    ShotLog($"themes: {m.Name} ({m.DLL?.Name}) isn't ready: the Machine View leaves it and its wires out");
                 foreach (var theme in Buzz.Themes.Where(t => t != "<default>" && t != "Default").ToList())
                 {
                     string slug = new string(theme.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
-                    Buzz.Modified = false;
-                    Buzz.ExecuteCommand(BuzzCommand.NewFile);
-                    await Idle(800);
                     Buzz.SelectedTheme = theme;
                     await Idle(1500);
-                    Buzz.Modified = false;
-                    Buzz.OpenSongFile(songPath);
-                    await Idle(2000);
-                    song = GallerySong.Find(Buzz);
                     Buzz.ActiveView = BuzzView.MachineView;
-                    await Shot(this, $"300-theme-{slug}-machines", $"The {theme} theme: Machine View and its toolbar.", $"Theme ▸ {theme}.", notes: ThemeNote, settle: 1000);
+                    await Shot(this, $"300-theme-{slug}-machines", $"The {theme} theme: Machine View and its toolbar.", $"Theme ▸ {theme}.", settle: 1000);
                     Buzz.ActiveView = BuzzView.SequenceView;
-                    await Shot(this, $"301-theme-{slug}-sequence", $"The {theme} theme: Sequence View.", $"Theme ▸ {theme}, then F4.", notes: ThemeNote, settle: 800);
+                    await Shot(this, $"301-theme-{slug}-sequence", $"The {theme} theme: Sequence View.", $"Theme ▸ {theme}, then F4.", settle: 800);
                     Buzz.SetPatternEditorPattern(song.LineA);
                     Buzz.ActivatePatternEditor();
                     await Idle(800);
                     ScrollRight(EditorView);
-                    await Shot(this, $"302-theme-{slug}-pattern", $"The {theme} theme: Pattern View (Bass's Line A, scrolled to its note lanes).", $"Theme ▸ {theme}, then F2.", notes: ThemeNote, settle: 600);
+                    await Shot(this, $"302-theme-{slug}-pattern", $"The {theme} theme: Pattern View (Bass's Line A, scrolled to its note lanes).", $"Theme ▸ {theme}, then F2.", settle: 600);
                     Buzz.ActiveView = BuzzView.SessionView;
-                    await Shot(this, $"303-theme-{slug}-session", $"The {theme} theme: Session View (its clip colours are the theme's pattern colours).", $"Theme ▸ {theme}, then Ctrl+Tab.", notes: ThemeNote, settle: 1000);
+                    await Shot(this, $"303-theme-{slug}-session", $"The {theme} theme: Session View (its clip colours are the theme's pattern colours).", $"Theme ▸ {theme}, then Ctrl+Tab.", settle: 1000);
                     Buzz.ActiveView = BuzzView.WaveTableView;
-                    await Shot(this, $"304-theme-{slug}-wavetable", $"The {theme} theme: Wavetable View with the file browser.", $"Theme ▸ {theme}, then F9.", notes: ThemeNote, settle: 1000);
+                    await Shot(this, $"304-theme-{slug}-wavetable", $"The {theme} theme: Wavetable View with the file browser.", $"Theme ▸ {theme}, then F9.", settle: 1000);
                 }
-                Buzz.Modified = false;
-                Buzz.ExecuteCommand(BuzzCommand.NewFile);
-                await Idle(800);
                 Buzz.SelectedTheme = "<default>";
                 await Idle(1500);
                 Buzz.ActiveView = BuzzView.MachineView;

@@ -238,7 +238,7 @@ namespace ReBuzz.Studio.Views.Session
             {
                 var answer = await Dialogs.Ask(
                     $"Pattern '{pattern.Name}' is also used in the arrangement. Deleting it removes it there too, and undo only brings the pattern back.\n\nDelete it?",
-                    "Delete pattern", UserButtons.YesNo);
+                    "Delete pattern", UserButtons.YesNo, DialogChoices.Delete);
                 if (answer != UserAnswer.Yes) return;
             }
             layout.DeleteClip(pattern);
@@ -631,12 +631,31 @@ namespace ReBuzz.Studio.Views.Session
             int track = header.Track;
             var menu = new ContextMenu();
             menu.Items.Add(ColorMenu("Track colour", track < doc.Tracks.Count ? doc.Tracks[track].ColorIndex : -1, i => layout.SetTrackColor(track, i)));
-            if (header.Machine != null)
+            var machine = header.Machine;
+            if (machine != null)
             {
-                menu.Items.Add(Check("Mute", header.Machine.IsMuted, () => header.Machine.IsMuted = !header.Machine.IsMuted));
-                menu.Items.Add(Check("Solo", header.Machine.IsSoloed, () => header.Machine.IsSoloed = !header.Machine.IsSoloed));
+                // The track is its machine's sequence: renaming it renames the machine (undoable).
+                menu.Items.Add(Item("Rename…", () => ReBuzz.Studio.Views.Machines.MachineEdits.Rename(machine)));
+                menu.Items.Add(Check("Arm", layout.IsArmed(track), () => ToggleArm(track),
+                    "Arm for recording: MIDI you play goes to this track's machine and is recorded (the header's ●)"));
+                menu.Items.Add(Item("Stop clips", () => StopTrack(track), "Backspace"));
+                menu.Items.Add(new Separator());
+                menu.Items.Add(Check("Mute", machine.IsMuted, () => machine.IsMuted = !machine.IsMuted));
+                menu.Items.Add(Check("Solo", machine.IsSoloed, () => machine.IsSoloed = !machine.IsSoloed));
+                menu.Items.Add(new Separator());
+                var remove = Item("Remove track", () => RemoveTrack(track));
+                ToolTip.SetTip(remove, "Removes the machine's track (its sequence, with its arrangement) from the song; the machine stays.\nEdit ▸ Undo brings it back.");
+                menu.Items.Add(remove);
             }
             OpenMenu(menu, header);
+        }
+
+        /// <summary>Removes a track: its sequence, as the Sequence View's Delete Track does (one step of the song's undo).</summary>
+        void RemoveTrack(int track)
+        {
+            var seq = layout.SequenceOf(track);
+            if (seq?.Machine == null) return;
+            buzz.SongCore.ActionStack.Do(new ReBuzz.Studio.Views.Sequence.DeleteSequenceAction(seq));
         }
 
         void ShowMidiOnlyMenu(Control anchor, SessionTarget target, int track, int scene, string what)

@@ -35,13 +35,31 @@ namespace ReBuzz.AppViews.Session
         readonly SessionLayout layout;
         readonly SessionMidi midi;
 
-        readonly Grid grid = new Grid { Background = SessionPalette.Window, Margin = new Thickness(6) };
-        readonly Grid mixerGrid = new Grid { Background = SessionPalette.Window, Margin = new Thickness(6, 0, 6, 4) };
+        readonly Grid grid = new Grid { Background = SessionPalette.Window, Margin = new Thickness(6, 6, 0, 6) };
+        // The scene column and the master strip: beside the tracks, frozen at the right edge when they don't fit (SessionBody).
+        readonly Grid sceneGrid = new Grid { Background = SessionPalette.Window, Margin = new Thickness(0, 6, 6, 6), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top };
+        readonly Grid mixerGrid = new Grid { Background = SessionPalette.Window, Margin = new Thickness(6, 0, 0, 4) };
+        readonly Border masterHolder = new Border { Width = SceneColumnWidth + Gap, Margin = new Thickness(0, 0, 6, 4), HorizontalAlignment = HorizontalAlignment.Left };
         readonly ScrollViewer mixerPanel;
+        readonly Border masterSection;
+        readonly ScrollViewer scroll;
+        readonly ScrollViewer sceneScroll;
+        readonly SessionBody body;
+        int spareRows;                    // empty rows under the last scene, as many as fit (FitRows)
         readonly FlatButton mixerButton;
         readonly FlatButton clipButton;
         readonly ClipPanel clipPanel;
         internal ClipPanel ClipPanelView => clipPanel;
+        /// <summary>For tests: the cell of a slot.</summary>
+        internal SlotCell SlotAt(int track, int scene) => CellAt(track, scene);
+        internal IReadOnlyList<SceneCell> Scenes => scenes;
+        internal IReadOnlyList<TrackHeader> Headers => headers;
+        internal int SpareRows => spareRows;
+        internal bool ScenesFrozen => body.ScenesFrozen;
+        internal FlatButton StopAllCell => stopAllCell;
+        internal ScrollViewer GridScroll => scroll;
+        internal ComboBox QuantizeBox => quantizeBox;
+        internal ComboBox BeatsBox => beatsBox;
         readonly TextBlock clockText;
         readonly TextBlock hintText;
         readonly TextBlock statusText;
@@ -144,7 +162,6 @@ namespace ReBuzz.AppViews.Session
             followButton = new FlatButton("Follow", () => layout.SetFollowActionsEnabled(!(layout.Document?.FollowActionsEnabled ?? true)), "");
             followButton.MouseRightButtonUp += (s, e) => { ShowMidiOnlyMenu(followButton, SessionTarget.FollowActions, 0, 0, "Follow actions on/off"); e.Handled = true; };
             left.Children.Add(followButton);
-            left.Children.Add(Label("Launch"));
             quantizeBox = new ComboBox
             {
                 Width = 82,
@@ -162,8 +179,7 @@ namespace ReBuzz.AppViews.Session
                     layout.SetLaunchQuantization(QuantizeChoices[quantizeBox.SelectedIndex].Value);
             };
             quantizeBox.MouseRightButtonUp += (s, e) => { ShowMidiOnlyMenu(quantizeBox, SessionTarget.Quantization, 0, 0, "launch quantization"); e.Handled = true; };
-            left.Children.Add(quantizeBox);
-            left.Children.Add(Label("Beats/bar"));
+            left.Children.Add(Labelled("Launch", quantizeBox));      // a label wraps with its box (gallery win-850)
             beatsBox = new ComboBox { Width = 50, Margin = new Thickness(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Center };
             for (int i = 1; i <= 12; i++) beatsBox.Items.Add(i.ToString());
             beatsBox.SelectionChanged += (s, e) =>
@@ -171,7 +187,7 @@ namespace ReBuzz.AppViews.Session
                 if (!syncingSettings && beatsBox.SelectedIndex >= 0)
                     layout.SetBeatsPerBar(beatsBox.SelectedIndex + 1);
             };
-            left.Children.Add(beatsBox);
+            left.Children.Add(Labelled("Beats/bar", beatsBox));
 
             // Tempo (0.6): tap, and nudge while held (Live's), each MIDI-learnable.
             tempoText = new TextBlock
@@ -260,11 +276,20 @@ namespace ReBuzz.AppViews.Session
                        "or create machines in the Machine View. Drop audio files here for audio tracks.",
                 Visibility = Visibility.Collapsed
             };
-            var scroll = new ScrollViewer
+            scroll = new ScrollViewer
             {
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Content = new StackPanel { Children = { hintText, grid } },
+                Content = grid,
+                Background = SessionPalette.Window,
+                Focusable = false
+            };
+            // The scene column scrolls up and down with the grid, never sideways.
+            sceneScroll = new ScrollViewer
+            {
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Hidden,
+                Content = sceneGrid,
                 Background = SessionPalette.Window,
                 Focusable = false
             };
@@ -281,19 +306,35 @@ namespace ReBuzz.AppViews.Session
                 Focusable = false,
                 Padding = new Thickness(0, 4, 0, 0)
             };
-            scroll.ScrollChanged += (s, e) => mixerPanel.ScrollToHorizontalOffset(scroll.HorizontalOffset);
+            masterSection = new Border
+            {
+                Background = SessionPalette.Window,
+                BorderBrush = SessionPalette.Header,
+                BorderThickness = new Thickness(0, 1, 0, 0),
+                Padding = new Thickness(0, 4, 0, 0),
+                Child = masterHolder
+            };
+            scroll.ScrollChanged += (s, e) =>
+            {
+                mixerPanel.ScrollToHorizontalOffset(scroll.HorizontalOffset);
+                if (sceneScroll.VerticalOffset != scroll.VerticalOffset) sceneScroll.ScrollToVerticalOffset(scroll.VerticalOffset);
+            };
+            sceneScroll.ScrollChanged += (s, e) =>
+            {
+                if (scroll.VerticalOffset != sceneScroll.VerticalOffset) scroll.ScrollToVerticalOffset(sceneScroll.VerticalOffset);
+            };
             clipPanel = new ClipPanel(this);
+            body = new SessionBody(scroll, sceneScroll, mixerPanel, masterSection, FitRows, ScrollsUpAndDown) { Background = SessionPalette.Window };
 
+            // The clip panel first: full height beside the grid and the mixer (gallery win-850, win-853).
             var root = new DockPanel();
             DockPanel.SetDock(bar, Dock.Top);
             root.Children.Add(bar);
             DockPanel.SetDock(statusBar, Dock.Top);
             root.Children.Add(statusBar);
-            DockPanel.SetDock(mixerPanel, Dock.Bottom);
-            root.Children.Add(mixerPanel);
             DockPanel.SetDock(clipPanel, Dock.Right);
             root.Children.Add(clipPanel);
-            root.Children.Add(scroll);
+            root.Children.Add(body);
             Content = root;
 
             timer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(50) };
@@ -374,6 +415,13 @@ namespace ReBuzz.AppViews.Session
             Margin = new Thickness(10, 0, 6, 0)
         };
 
+        /// <summary>A label and its box as one item of the top bar, so a narrow view wraps them together.</summary>
+        static StackPanel Labelled(string text, UIElement control) => new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Children = { Label(text), control }
+        };
+
         // ------------------------------------------------------------------ structure
 
         /// <summary>Rebuilds the grid from the layout (auto-filling one for songs without).</summary>
@@ -393,10 +441,13 @@ namespace ReBuzz.AppViews.Session
             SyncSettings();
 
             grid.Children.Clear();
+            sceneGrid.Children.Clear();
             ringBoxes.Clear();                // 0.8: drawn again on the new grid
             shownRings = null;
             grid.RowDefinitions.Clear();
             grid.ColumnDefinitions.Clear();
+            sceneGrid.RowDefinitions.Clear();
+            sceneGrid.ColumnDefinitions.Clear();
             slots.Clear();
             scenes.Clear();
             headers.Clear();
@@ -408,16 +459,26 @@ namespace ReBuzz.AppViews.Session
             sceneCount = doc.Scenes.Count;
             hintText.Visibility = trackCount == 0 ? Visibility.Visible : Visibility.Collapsed;
             PlanColumns(doc);
-            int sceneColumn = columns.Count;
+            int stopRow = sceneCount + 2;     // under the spare rows (row sceneCount + 1)
 
             for (int c = 0; c < columns.Count; c++)
                 grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(ColumnWidth + Gap) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(SceneColumnWidth + Gap) });
-
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(HeaderHeight + Gap) });
-            for (int s = 0; s < sceneCount; s++)
-                grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(RowHeight + Gap) });
-            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(RowHeight + 8) });
+            sceneGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(SceneColumnWidth + Gap) });
+            foreach (var g in new[] { grid, sceneGrid })
+            {
+                g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(HeaderHeight + Gap) });
+                for (int s = 0; s < sceneCount; s++)
+                    g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(RowHeight + Gap) });
+                g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(spareRows * (RowHeight + Gap)) });
+                g.RowDefinitions.Add(new RowDefinition { Height = new GridLength(RowHeight + 8) });
+            }
+            if (trackCount == 0)
+            {
+                // The hint takes a column of its own (the scene column is beside the grid).
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3 * ColumnWidth) });
+                Grid.SetRowSpan(hintText, Math.Max(1, sceneCount));
+                Place(hintText, 1, columns.Count);
+            }
 
             // Columns: track headers, slots and stop buttons; groups; returns
             for (int c = 0; c < columns.Count; c++)
@@ -449,7 +510,8 @@ namespace ReBuzz.AppViews.Session
                 };
                 stop.MouseRightButtonUp += (s, e) => { ShowMidiOnlyMenu(stop, SessionTarget.TrackStop, track, 0, "this track's stop button"); e.Handled = true; };
                 trackStops.Add((t, stop));
-                Place(stop, sceneCount + 1, c);
+                Place(stop, stopRow, c);
+                Place(new SpareSlots(this, t), sceneCount + 1, c);
 
                 for (int s = 0; s < sceneCount; s++)
                 {
@@ -461,23 +523,24 @@ namespace ReBuzz.AppViews.Session
             }
 
             // Scene column header and Stop all
-            Place(new Border
+            PlaceScene(new Border
             {
                 Background = SessionPalette.Header,
                 Margin = new Thickness(0, 0, 0, Gap),
                 Padding = new Thickness(6, 0, 6, 0),
                 Child = new TextBlock { Text = "Scenes", Foreground = SessionPalette.DimText, VerticalAlignment = VerticalAlignment.Center }
-            }, 0, sceneColumn);
+            }, 0);
             stopAllCell = new FlatButton("■  Stop all clips", () => session.StopAll(), Tip("Stop every clip", SessionTarget.StopAll, 0, 0)) { Margin = new Thickness(0, 6, 0, 0) };
             stopAllCell.MouseRightButtonUp += (s, e) => { ShowMidiOnlyMenu(stopAllCell, SessionTarget.StopAll, 0, 0, "Stop all clips"); e.Handled = true; };
-            Place(stopAllCell, sceneCount + 1, sceneColumn);
+            PlaceScene(stopAllCell, stopRow);
+            PlaceScene(new SpareSlots(this, -1, scenesColumn: true), sceneCount + 1);
 
             // Scene buttons
             for (int s = 0; s < sceneCount; s++)
             {
                 var scene = new SceneCell(this, s, doc.Scenes[s], midi?.Describe(SessionTarget.Scene, 0, s));
                 scenes.Add(scene);
-                Place(scene, s + 1, sceneColumn);
+                PlaceScene(scene, s + 1);
             }
 
             // Outline of the MIDI note grid (Live's "session ring"), when its tracks are shown.
@@ -507,6 +570,9 @@ namespace ReBuzz.AppViews.Session
             if (selected is { } sel && (sel.Track >= trackCount || sel.Scene >= sceneCount || trackColumn[sel.Track] < 0))
                 selected = null;
             BuildMixer(doc);
+            // The body measures its parts unconstrained to place the scene column: a rebuilt grid or
+            // mixer re-measured within its old size wouldn't tell it that the natural size changed.
+            body.InvalidateMeasure();
             UpdateBarTips();
             followButton.SetLit(doc.FollowActionsEnabled ? SessionPalette.Fader : null);
             clipPanel.Visibility = doc.ShowClipPanel ? Visibility.Visible : Visibility.Collapsed;
@@ -559,6 +625,47 @@ namespace ReBuzz.AppViews.Session
             Grid.SetRow(element, row);
             Grid.SetColumn(element, column);
             grid.Children.Add(element);
+        }
+
+        void PlaceScene(UIElement element, int row)
+        {
+            Grid.SetRow(element, row);
+            sceneGrid.Children.Add(element);
+        }
+
+        /// <summary>
+        /// The grid's height is known (SessionBody, before it measures the grid): spare empty rows
+        /// under the last scene fill what's left above the stop buttons, so hiding the mixer gives
+        /// the grid more rows. None when the scenes don't fit. While the tracks scroll sideways their
+        /// scroll bar takes room under them: the scene column gets as much more room at its bottom,
+        /// so both scroll the same distance.
+        /// </summary>
+        void FitRows(double height, bool scrollsSideways)
+        {
+            double bar = scrollsSideways ? SystemParameters.HorizontalScrollBarHeight : 0;
+            var margin = new Thickness(0, 6, 6, 6 + bar);
+            if (sceneGrid.Margin != margin) sceneGrid.Margin = margin;
+            double used = 12 + HeaderHeight + Gap + sceneCount * (RowHeight + Gap) + RowHeight + 8 + bar;
+            int rows = Math.Max(0, (int)Math.Floor((height - used) / (RowHeight + Gap)));
+            int spare = sceneCount + 1;
+            if (grid.RowDefinitions.Count <= spare || sceneGrid.RowDefinitions.Count <= spare) return;
+            if (rows == spareRows && grid.RowDefinitions[spare].Height.Value == rows * (RowHeight + Gap)) return;
+            spareRows = rows;
+            var h = new GridLength(rows * (RowHeight + Gap));
+            grid.RowDefinitions[spare].Height = h;
+            sceneGrid.RowDefinitions[spare].Height = h;
+        }
+
+        /// <summary>The grid's rows (header, scenes, stop buttons) don't fit in a height: it scrolls up and down.</summary>
+        bool ScrollsUpAndDown(double height) =>
+            12 + HeaderHeight + Gap + sceneCount * (RowHeight + Gap) + RowHeight + 8 > height + 0.5;
+
+        /// <summary>A spare row double-clicked: the scenes down to it are added, and a clip made in the track's slot (track -1: just the scenes).</summary>
+        internal void UseSpareRow(int track, int scene)
+        {
+            layout.AddScenesTo(scene + 1);
+            if (track >= 0)
+                CreateClip(track, scene);
         }
 
         void SyncSettings()

@@ -646,10 +646,13 @@ namespace WDE.ModernPatternEditor
                 PatternEditorUtils.WriteClipNotes(mpePattern, rows, tracks);
             }
             bool done = true;
-            // The pattern shown here shows its lanes as they are now.
-            var shown = SelectedMachine?.SelectedPattern;
-            if (shown != null && shown.Pattern == pat)
-                shown.Pattern = pat;
+            // The pattern's view shows its lanes as they are now, whether it is shown or not (fork, ui-gallery.md bug 5):
+            // a view keeps the columns its pattern had when it was made (as the pattern was created), so the view of a
+            // pattern never shown yet kept none of the lanes made here, and the Pattern View showed no notes on them
+            // until the song was opened again.
+            var view = SelectedMachine?.Patterns.FirstOrDefault(p => p.Pattern == pat);
+            if (view != null)
+                view.Pattern = pat;
             SetModifiedFlag();
             return done;
         }

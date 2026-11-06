@@ -326,7 +326,7 @@ namespace ReBuzz.Studio.Views.Session
                 }
 
                 var color = SessionPalette.ColorBrush(PatternColors.Get(Pattern));
-                var state = session.GetState(Sequence, Pattern);
+                var state = view.layout.SlotState(Sequence, Pattern, Track, Scene);   // only the slot it plays from
                 bool sounding = state == ClipState.Playing || state == ClipState.Stopping;
                 // Uncoloured clips turn green while playing (as in 0.1); coloured ones keep their
                 // colour, lightened, with the green ▶, outline and progress bar.
@@ -489,7 +489,7 @@ namespace ReBuzz.Studio.Views.Session
                 Machine = machine;
                 Background = SessionPalette.Header;
                 Margin = new Thickness(0, 0, Gap, Gap);
-                ToolTip.SetTip(this, name + (track < 0 ? "\nright-click for more" : "\nright-click: track colour"));
+                ToolTip.SetTip(this, name + (track < 0 ? "\nright-click for more" : "\nright-click: colour, rename, arm, stop, remove the track"));
 
                 var strip = new Border { Height = 3, Background = SessionPalette.ColorBrush(colorIndex) ?? SessionPalette.Transparent, IsHitTestVisible = false };
                 mute = new Chip("M", SessionPalette.Mute, "Mute", () => { if (Machine != null) Machine.IsMuted = !Machine.IsMuted; });

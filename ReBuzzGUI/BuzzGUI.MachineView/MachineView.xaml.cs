@@ -165,6 +165,13 @@ namespace BuzzGUI.MachineView
             MachineControl src = GetMachineControl(mc.Source);
             MachineControl dst = GetMachineControl(mc.Destination);
 
+            // Fork (docs/specs/ui-gallery.md): a wire to or from a machine the view doesn't show (one that isn't ready: a
+            // machine whose start didn't finish in time as a song opened, or one being deleted) has nothing to be drawn
+            // between. Made again (a theme switch) with such a song open, the view threw a NullReferenceException in
+            // Connection.UpdateVisuals.
+            if (src == null || dst == null)
+                return;
+
             Connection c = new Connection(mc, this, src, dst, new Point(0, 0));
             dst.inputs.Add(c);
             src.outputs.Add(c);
@@ -178,13 +185,15 @@ namespace BuzzGUI.MachineView
             MachineControl src = GetMachineControl(mc.Source);
             MachineControl dst = GetMachineControl(mc.Destination);
 
-            var c = dst.inputs.First(x => x.MachineConnection == mc);
+            var c = dst?.inputs.FirstOrDefault(x => x.MachineConnection == mc);
+            if (c == null)
+                return;         // never drawn (see ConnectionAdded)
             c.RemoveVisuals();
             dst.inputs.Remove(c);
-            src.outputs.Remove(c);
+            src?.outputs.Remove(c);
 
             if (dst.Machine.IsWireless)
-                src.UpdateWirelessOutputs();
+                src?.UpdateWirelessOutputs();
         }
 
         public IEnumerable<MachineControl> Machines {
@@ -1442,6 +1451,8 @@ namespace BuzzGUI.MachineView
             {
                 bool songwasempty = machineGraph.Machines.Count == 1;
 
+                // Fork: not on top of another machine (the Master, gallery mac-510).
+                (x, y) = BuzzGUI.Common.MachinePlacement.Free(machineGraph.Machines, x, y);
                 machineGraph.CreateMachine(instrument.MachineDLL.Name, instrument.Name, null, null, null, null, -1, x, y);
 
                 var machine = machineGraph.Machines.Last();
