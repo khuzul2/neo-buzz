@@ -164,6 +164,25 @@ namespace ReBuzzTests
             SessionViewTests.Screenshot((FrameworkElement)window.Content, "error-open-details", 520, 360);
         }
 
+        // ------------------------------------------------------------------ new machines in free space (mac-510)
+
+        [Test]
+        public void NewMachinesGoWhereThereIsRoom()
+        {
+            // The Machine View's New (MachineView.CreateInstrument) and the agent's machine_add place
+            // through MachinePlacement: asked for the Master's spot, a machine goes beside it.
+            using var driver = new Driver();
+            driver.Start();
+            var song = driver.Core.SongCore;
+            var master = song.Machines.Single(m => m.DLL.Info.Type == MachineType.Master);
+            var (x, y) = BuzzGUI.Common.MachinePlacement.Free(song.Machines, master.Position.Item1, master.Position.Item2);
+            Assert.That(Math.Abs(x - master.Position.Item1) >= BuzzGUI.Common.MachinePlacement.MinDx - 1e-4 ||
+                        Math.Abs(y - master.Position.Item2) >= BuzzGUI.Common.MachinePlacement.MinDy - 1e-4, Is.True, $"({x}, {y}) is off the Master");
+            Assert.That(BuzzGUI.Common.MachinePlacement.IsFree(song.Machines, x, y), Is.True);
+            var (fx, fy) = BuzzGUI.Common.MachinePlacement.Free(song.Machines, -0.6f, -0.6f);
+            Assert.That((fx, fy), Is.EqualTo((-0.6f, -0.6f)), "a free spot stays as asked");
+        }
+
         // ------------------------------------------------------------------ a machine that stops working (win-704)
 
         [Test]
