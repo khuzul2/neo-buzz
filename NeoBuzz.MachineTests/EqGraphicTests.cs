@@ -128,6 +128,8 @@ namespace NeoBuzz.MachineTests
             foreach (var (_, machine, name, values) in PresetTests.AllPresets())
             {
                 if (machine != "Neo EQ" || values.GetValueOrDefault(P.Mode) == 1) continue;   // the graphic presets came with graphic mode
+                // v2's presets (M3) came with v2: they set its parameters (after the graphic sliders).
+                if (values.Keys.Any(k => k >= P.B1Chan && values[k] != Params.Table[k].Default)) continue;
                 var vals = values;
                 // The 49 parameters songs and presets stored before graphic mode.
                 yield return ("preset " + name, v => { foreach (var kv in vals) if (kv.Key >= 0 && kv.Key < 49) v.Set(kv.Key, kv.Value); }, null);

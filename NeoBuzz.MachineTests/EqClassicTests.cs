@@ -1,3 +1,4 @@
+#nullable enable
 using System.Security.Cryptography;
 using NeoBuzz.Dsp;
 using NeoBuzz.Eq;

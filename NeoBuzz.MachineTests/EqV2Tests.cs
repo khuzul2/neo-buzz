@@ -1,3 +1,4 @@
+#nullable enable
 using System.Diagnostics;
 using System.Security.Cryptography;
 using NeoBuzz.Dsp;
@@ -617,25 +618,31 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void RunsFasterThanRealTimeWithEightDynamicBands()
         {
-            var (e, _) = Make(p =>
+            // The card asks 30× with 8 dynamic bands. A throughput guard (Throughput.cs; machines.md §4): timed against the
+            // reference workload in the same run, 1 s played untimed, then 2 s; the floors per architecture.
+            var (l, r) = LimiterTests.Drums(Rate * 3);
+            const int Warm = Rate;
+            Throughput.Guard("Neo EQ v2 CPU (8 dynamic bands, stereo, drums)", Throughput.Floor(x64: 43, arm64: 28), 2, Rate, EqEngine.MaxBlock, () =>
             {
-                for (int b = 0; b < EqDesign.Bands; b++)
+                var (e, _) = Make(p =>
                 {
-                    EqTests.Band(p, b, b == 0 ? BandType.LowShelf : b == 7 ? BandType.HighShelf : BandType.Bell, 40 * Math.Pow(400, b / 7.0), b % 2 == 0 ? 3 : -3, 1.5);
-                    Dynamic(p, b, threshold: -36, range: 6, attack: 0.005, release: 0.1);
+                    for (int b = 0; b < EqDesign.Bands; b++)
+                    {
+                        EqTests.Band(p, b, b == 0 ? BandType.LowShelf : b == 7 ? BandType.HighShelf : BandType.Bell, 40 * Math.Pow(400, b / 7.0), b % 2 == 0 ? 3 : -3, 1.5);
+                        Dynamic(p, b, threshold: -36, range: 6, attack: 0.005, release: 0.1);
+                    }
+                });
+                var bl = new float[EqEngine.MaxBlock];
+                var br = new float[EqEngine.MaxBlock];
+                void Block(int pos, int n)
+                {
+                    Array.Copy(l, pos, bl, 0, n);
+                    Array.Copy(r, pos, br, 0, n);
+                    e.Process(bl, br, n);
                 }
-            });
-            var (l, r) = LimiterTests.Drums(Rate * 4);
-            Run(e, l[..Rate], r[..Rate]);
-            double speed = 0;
-            for (int run = 0; run < 3; run++)
-            {
-                var clock = Stopwatch.StartNew();
-                Run(e, l, r);
-                speed = Math.Max(speed, 4 / clock.Elapsed.TotalSeconds);
-            }
-            Measure.Report($"Neo EQ v2 CPU, 8 dynamic bands (stereo, drums): {speed:F0}× real time (best of three 4 s runs)");
-            Assert.That(speed, Is.GreaterThan(30));
+                for (int pos = 0; pos < Warm; pos += EqEngine.MaxBlock) Block(pos, EqEngine.MaxBlock);
+                return Throughput.InBlocks(EqEngine.MaxBlock, (pos, n) => Block(Warm + pos, n));
+            }, Measure.Report);
         }
     }
 }

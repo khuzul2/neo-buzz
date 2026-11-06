@@ -444,33 +444,38 @@ namespace NeoBuzz.MachineTests
             Assert.That(bytes, Is.EqualTo(0), why);
         }
 
-        // The card asks 100× at 4× (M3: the FastOversampler, the block ADAA and GainMatch's filters side by side took it
-        // from about 50× to about 140× on the 2-core test machine). The best of three 4 s runs, so a busy runner's
-        // moment doesn't decide it.
-        [TestCase(1, 4, 0, 100)]
-        [TestCase(1, 1, 0, 100)]
-        [TestCase(1, 8, 0, 40)]
-        [TestCase(3, 4, 1, 15)]
-        public void RunsFasterThanRealTime(int bands, int factor, int ms, double target)
+        // The card asks 100× at 4× (M3: the FastOversampler, the block ADAA and GainMatch's filters side by side took it from
+        // about 50× to about 140× as timed on the 2-core test machine). A throughput guard (Throughput.cs; machines.md §4):
+        // timed against the reference workload in the same run, 1 s played untimed, then 2 s; the floors per architecture.
+        [TestCase(1, 4, 0, 140, 90)]
+        [TestCase(1, 1, 0, 200, 130)]
+        [TestCase(1, 8, 0, 90, 55)]
+        [TestCase(3, 4, 1, 40, 25)]
+        public void RunsFasterThanRealTime(int bands, int factor, int ms, double x64, double arm64)
         {
-            var (e, _) = Make(v =>
+            var (l, r) = LimiterTests.Drums(Measure.Rate * 3);
+            const int Warm = Measure.Rate;
+            Throughput.Guard($"Neo Clipper CPU ({bands} band(s), {factor}×, {(ms == 1 ? "M/S" : "L/R")}, drums +9 dB)", Throughput.Floor(x64, arm64), 2,
+                Measure.Rate, ClipperEngine.MaxBlock, () =>
             {
-                Set(v, P.Drive, 9);
-                v.Set(P.Bands, bands - 1);
-                v.Set(P.Oversample, (int)Math.Log2(factor));
-                v.Set(P.Stereo, ms);
-            });
-            var (l, r) = LimiterTests.Drums(Measure.Rate * 4);
-            Run(e, l.Take(Measure.Rate).ToArray(), r.Take(Measure.Rate).ToArray());
-            double factorRt = 0;
-            for (int run = 0; run < 3; run++)
-            {
-                var clock = Stopwatch.StartNew();
-                Run(e, l, r);
-                factorRt = Math.Max(factorRt, 4 / clock.Elapsed.TotalSeconds);
-            }
-            Measure.Report($"Neo Clipper {bands} band(s), {factor}×, {(ms == 1 ? "M/S" : "L/R")}: {factorRt:F0}× real time");
-            Assert.That(factorRt, Is.GreaterThan(target));
+                var (e, _) = Make(v =>
+                {
+                    Set(v, P.Drive, 9);
+                    v.Set(P.Bands, bands - 1);
+                    v.Set(P.Oversample, (int)Math.Log2(factor));
+                    v.Set(P.Stereo, ms);
+                });
+                var bl = new float[ClipperEngine.MaxBlock];
+                var br = new float[ClipperEngine.MaxBlock];
+                void Block(int pos, int n)
+                {
+                    Array.Copy(l, pos, bl, 0, n);
+                    Array.Copy(r, pos, br, 0, n);
+                    e.Process(bl, br, n);
+                }
+                for (int pos = 0; pos < Warm; pos += ClipperEngine.MaxBlock) Block(pos, ClipperEngine.MaxBlock);
+                return Throughput.InBlocks(ClipperEngine.MaxBlock, (pos, n) => Block(Warm + pos, n));
+            }, Measure.Report);
         }
     }
 }
