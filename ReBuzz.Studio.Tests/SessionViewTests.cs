@@ -168,6 +168,102 @@ namespace ReBuzz.Studio.Tests
             Assert.That(view.ClipPanelView.StatusText, Is.EqualTo("stopped"));
         }
 
+        // ------------------------------------------------------------------ the view's layout (gallery mac-043/044/046, win-703)
+
+        static Rect InWindow(Control control) =>
+            new Rect(control.TranslatePoint(new Point(0, 0), TopLevel.GetTopLevel(control)!)!.Value, control.Bounds.Size);
+
+        [AvaloniaTest]
+        public void HidingTheMixerGivesTheGridMoreRowsAndTheClipPanelIsFullHeight()
+        {
+            using var rig = new SessionRig("Drums", "Bass");
+            rig.Pattern(rig.Machine("Drums"), "Beat", Bar, (0, 36));
+            rig.Pattern(rig.Machine("Bass"), "Line", Bar, (0, 40));
+            var layout = rig.Layout;
+            layout.Ensure();
+            var view = rig.Show(1100, 760);
+            var panel = view.ClipPanelView;
+
+            // The clip panel runs down beside the mixer to the bottom, not to the mixer's top edge.
+            Assert.That(InWindow(panel).Bottom, Is.EqualTo(rig.Window.Bounds.Height).Within(1), "the clip panel is full height");
+            var strip = view.MixerStrips[0];
+            Assert.That(InWindow(panel).Left, Is.GreaterThanOrEqualTo(InWindow(strip).Right - 1), "the mixer is beside it");
+
+            int withMixer = view.SpareRows;
+            double stopsWithMixer = InWindow(view.StopAllCell).Top;
+            rig.Click(view.MixerButton);
+            rig.Settle();
+            Assert.That(layout.Document.ShowMixer, Is.False);
+            Assert.That(view.SpareRows, Is.GreaterThan(withMixer + 4), "the room the mixer had is more (empty) rows");
+            Assert.That(InWindow(view.StopAllCell).Top, Is.GreaterThan(stopsWithMixer + 100), "the stop buttons stay at the grid's bottom");
+            Assert.That(InWindow(view.StopAllCell).Bottom, Is.LessThanOrEqualTo(rig.Window.Bounds.Height));
+            rig.Screenshot("session-mixer-hidden-rows");
+
+            // A spare row double-clicked makes a clip there, adding the scenes down to it (one undo step).
+            int scenes = layout.SceneCount;
+            var spare = view.SpareSlotsOf(1);
+            rig.DoubleClick(spare, fy: (RowHeightForTests * 2.5) / spare.Bounds.Height);
+            Assert.That(layout.SceneCount, Is.EqualTo(scenes + 3));
+            Assert.That(layout.PatternAt(1, scenes + 2), Is.Not.Null, "a clip in the row double-clicked");
+            Assert.That(view.Selected, Is.EqualTo((1, scenes + 2)));
+            rig.Click(view.MixerButton);
+        }
+
+        const double RowHeightForTests = 28;          // a grid row: 26 and the 2 px gap
+
+        [AvaloniaTest]
+        public void InANarrowWindowTheSceneColumnStaysAtTheRightEdge()
+        {
+            using var rig = new SessionRig("Drums", "Bass", "Lead", "Pad", "Keys", "Arp", "Pluck");
+            foreach (var name in new[] { "Drums", "Bass", "Lead", "Pad", "Keys", "Arp", "Pluck" })
+                rig.Pattern(rig.Machine(name), name + " 1", Bar, (0, 60));
+            var layout = rig.Layout;
+            layout.Ensure();
+            layout.RenameScene(0, "Intro");
+            var view = rig.Show(960, 520);
+            Assert.That(view.ScenesFrozen, Is.True, "seven tracks don't fit beside the clip panel");
+            var scene = InWindow(view.Scenes[0]);
+            var panel = InWindow(view.ClipPanelView);
+            Assert.That(scene.Right, Is.LessThanOrEqualTo(panel.Left + 1), "the scene column is in view, left of the clip panel");
+            Assert.That(scene.Left, Is.GreaterThan(0));
+            var master = InWindow(view.MixerStrips.Single(s => s.Kind == SessionView.StripKind.Master));
+            Assert.That(master.Left, Is.EqualTo(scene.Left).Within(1), "the master strip stays under the scenes");
+
+            // Scrolled sideways, the tracks pass under it; it still launches.
+            view.GridScroll.Offset = new Vector(400, 0);
+            rig.Settle();
+            Assert.That(InWindow(view.Scenes[0]).Left, Is.EqualTo(scene.Left).Within(1));
+            var top = TopLevel.GetTopLevel(view)!;
+            var p = new Point(scene.Center.X, scene.Center.Y);
+            top.MouseDown(p, MouseButton.Left);
+            top.MouseUp(p, MouseButton.Left);
+            rig.Settle();
+            Assert.That(rig.Session.GetQueued(layout.SequenceOf(0)) ?? rig.Session.GetPlaying(layout.SequenceOf(0)), Is.Not.Null, "the click launched the scene");
+            rig.Screenshot("session-narrow-frozen-scenes");
+
+            // Wide enough, it sits right after the last track.
+            rig.Window.Width = 1600;
+            rig.Settle();
+            Assert.That(view.ScenesFrozen, Is.False);
+            var lastHeader = InWindow(view.Headers.Last());
+            Assert.That(InWindow(view.Scenes[0]).Left, Is.EqualTo(lastHeader.Right).Within(3));
+        }
+
+        [AvaloniaTest]
+        public void TheClipPanelStatusWrapsInsteadOfBeingCut()
+        {
+            using var rig = new SessionRig("Pad");
+            rig.Pattern(rig.Machine("Pad"), "00", 64 * Bar);
+            rig.Layout.Ensure();
+            var view = rig.Show();
+            rig.Click(view.SlotAt(0, 0), fx: 0.6);
+            var status = view.ClipPanelView.StatusBlock;
+            status.Text = "▶ playing  21/1024  follow in 12  ● recording";      // the longest it gets (gallery mac-046)
+            rig.Window.UpdateLayout();
+            Assert.That(status.Bounds.Right, Is.LessThanOrEqualTo(SessionView.ClipPanel.PanelWidth));
+            Assert.That(status.TextLayout.TextLines.Count, Is.GreaterThan(1), "wrapped onto a second line");
+        }
+
         // ------------------------------------------------------------------ clips and notes (SessionPlayableTests, PianoRollTests)
 
         [AvaloniaTest]

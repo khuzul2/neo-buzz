@@ -224,6 +224,12 @@ namespace ReBuzz.Core.Session
 
         public void InsertScene(int index) => Edit(doc => doc.InsertScene(index));
 
+        /// <summary>Adds empty scenes at the bottom until there are <paramref name="count"/> (one undo step; the views' spare rows).</summary>
+        public void AddScenesTo(int count) => Edit(doc =>
+        {
+            while (doc.Scenes.Count < Math.Min(count, 999)) doc.InsertScene(doc.Scenes.Count);
+        });
+
         public void RemoveScene(int index) => Edit(doc => doc.RemoveScene(index));
 
         public void DuplicateScene(int index) => Edit(doc => doc.DuplicateScene(index));

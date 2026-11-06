@@ -52,6 +52,7 @@ namespace ReBuzz.Studio.Views.Session
         bool metering;
         long lastMeterTicks;
         readonly Control mixerSection;
+        readonly Control masterSection;       // the master strip, under the scene column
         // The meters move on a timer of their own (the WPF view used the render loop): ~40 fps.
         readonly DispatcherTimer meterTimer = new DispatcherTimer(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(25) };
 
@@ -154,7 +155,7 @@ namespace ReBuzz.Studio.Views.Session
                 Margin = new Thickness(0, 6, Gap, 0),
                 HorizontalContentAlignment = HorizontalAlignment.Center
             };
-            Place(stop, sceneCount + 1, c);
+            Place(stop, sceneCount + 2, c);
         }
 
         void PlaceReturnColumn(Column col, int c)
@@ -165,7 +166,7 @@ namespace ReBuzz.Studio.Views.Session
             Place(header, 0, c);
             var filler = new Border { Background = SessionPalette.MixerBack, Margin = new Thickness(0, 0, Gap, Gap) };
             ToolTip.SetTip(filler, $"Return {ReturnLetter(col.Return)}: {col.Machine.Name}. Tracks send to it from their mixer strips.");
-            Grid.SetRowSpan(filler, Math.Max(1, sceneCount));
+            Grid.SetRowSpan(filler, Math.Max(1, sceneCount + 1));      // the scenes and the spare rows
             if (sceneCount > 0)
                 Place(filler, 1, c);
         }
@@ -176,8 +177,10 @@ namespace ReBuzz.Studio.Views.Session
         {
             mixerGrid.Children.Clear();
             mixerGrid.ColumnDefinitions.Clear();
+            masterHolder.Child = null;
             strips.Clear();
             mixerSection.IsVisible = doc.ShowMixer;
+            masterSection.IsVisible = doc.ShowMixer;
             mixerButton.SetLit(doc.ShowMixer ? SessionPalette.Fader : null);
             if (!doc.ShowMixer)
             {
@@ -206,11 +209,9 @@ namespace ReBuzz.Studio.Views.Session
                 Grid.SetColumn(strip, c);
                 mixerGrid.Children.Add(strip);
             }
-            mixerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(SceneColumnWidth + Gap) });
             var master = new MixerStrip(this, StripKind.Master, null, "Master", returns);
             strips.Add(master);
-            Grid.SetColumn(master, columns.Count);
-            mixerGrid.Children.Add(master);
+            masterHolder.Child = master;          // under the scene column, frozen with it
             UpdateMetering();
         }
 

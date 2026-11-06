@@ -193,6 +193,111 @@ namespace ReBuzzTests
             Assert.That(layout.SlotState(2, 2), Is.EqualTo(ClipState.Stopped));
         }
 
+        static Rect BoundsIn(FrameworkElement element, FrameworkElement view) =>
+            new Rect(element.TranslatePoint(new Point(0, 0), view), new Size(element.ActualWidth, element.ActualHeight));
+
+        [Test]
+        public void TheClipPanelIsFullHeightAndHidingTheMixerGivesTheGridMoreRows()
+        {
+            // Gallery win-850, win-853: the clip panel stopped at the mixer's top edge; mac-044: a
+            // hidden mixer left empty space under the grid.
+            using var rig = new Rig();
+            rig.Pattern(rig.Drums, "Beat", Bar);
+            rig.Pattern(rig.Bass, "Line", Bar);
+            var layout = rig.Core.SessionLayout;
+            layout.Ensure();
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            Screenshot(view, "session-view-layout-mixer", 1100, 700);
+            var panel = view.ClipPanelView;
+            Assert.That(BoundsIn(panel, view).Bottom, Is.EqualTo(700).Within(1), "the clip panel runs down to the bottom, beside the mixer");
+            int withMixer = view.SpareRows;
+            double stops = BoundsIn(view.StopAllCell, view).Top;
+
+            layout.SetShowMixer(false);
+            view.Rebuild();
+            Screenshot(view, "session-view-layout-no-mixer", 1100, 700);
+            Assert.That(view.SpareRows, Is.GreaterThan(withMixer + 4), "the mixer's room is more (empty) rows");
+            Assert.That(BoundsIn(view.StopAllCell, view).Top, Is.GreaterThan(stops + 100), "the stop buttons stay at the grid's bottom");
+            Assert.That(BoundsIn(view.StopAllCell, view).Bottom, Is.LessThanOrEqualTo(700));
+
+            // A spare row used: the scenes down to it, and a clip there.
+            int scenes = layout.SceneCount;
+            view.UseSpareRow(1, scenes + 1);
+            Assert.That(layout.SceneCount, Is.EqualTo(scenes + 2));
+            Assert.That(layout.PatternAt(1, scenes + 1), Is.Not.Null);
+            layout.SetShowMixer(true);
+        }
+
+        [Test]
+        public void InANarrowViewTheSceneColumnStaysAtTheRightEdge()
+        {
+            // Gallery win-703: in the Session window (960×520) the scene column scrolled off to the right.
+            using var rig = new Rig();
+            rig.Pattern(rig.Drums, "Beat", Bar);
+            rig.Pattern(rig.Bass, "Line", Bar);
+            rig.Pattern(rig.Lead, "Hook", Bar);
+            var layout = rig.Core.SessionLayout;
+            layout.Ensure();
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            Screenshot(view, "session-view-narrow", 640, 480);
+            Assert.That(view.ScenesFrozen, Is.True, "three tracks, the scenes and the clip panel don't fit in 640");
+            var scene = BoundsIn(view.Scenes[0], view);
+            var panel = BoundsIn(view.ClipPanelView, view);
+            Assert.That(scene.Right, Is.LessThanOrEqualTo(panel.Left + 1), "the scene column is in view, left of the clip panel");
+            Assert.That(scene.Left, Is.GreaterThan(0));
+
+            view.GridScroll.ScrollToHorizontalOffset(200);
+            Screenshot(view, "session-view-narrow-scrolled", 640, 480);
+            Assert.That(BoundsIn(view.Scenes[0], view).Left, Is.EqualTo(scene.Left).Within(1), "the tracks scroll under it");
+
+            Screenshot(view, "session-view-wide", 1400, 480);
+            Assert.That(view.ScenesFrozen, Is.False);
+            Assert.That(BoundsIn(view.Scenes[0], view).Left, Is.EqualTo(BoundsIn(view.Headers.Last(), view).Right).Within(3), "wide enough: right after the last track");
+        }
+
+        [Test]
+        public void TheTopBarWrapsLabelsWithTheirBoxes()
+        {
+            // Gallery win-850: a narrow view wrapped "Launch" onto one row and its box onto the next.
+            using var rig = new Rig();
+            rig.Core.SessionLayout.Ensure();
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            FrameworkElement LabelOf(FrameworkElement box) =>
+                ((System.Windows.Controls.Panel)VisualTreeHelper.GetParent(box)).Children.OfType<System.Windows.Controls.TextBlock>().Single();
+            for (int width = 420; width <= 1300; width += 20)
+            {
+                view.Measure(new Size(width, 500));
+                view.Arrange(new Rect(0, 0, width, 500));
+                view.UpdateLayout();
+                foreach (var box in new FrameworkElement[] { view.QuantizeBox, view.BeatsBox })
+                {
+                    var label = LabelOf(box);
+                    double labelY = BoundsIn(label, view).Top + label.ActualHeight / 2, boxY = BoundsIn(box, view).Top + box.ActualHeight / 2;
+                    Assert.That(labelY, Is.EqualTo(boxY).Within(4), $"at {width} px, \"{((System.Windows.Controls.TextBlock)label).Text}\" is on its box's row");
+                }
+            }
+        }
+
+        [Test]
+        public void TheClipPanelStatusWrapsInsteadOfBeingCut()
+        {
+            // Gallery mac-046: "▶ playing 21/1024 ● recording" ran past the panel's edge.
+            using var rig = new Rig();
+            rig.Pattern(rig.Drums, "Beat", Bar);
+            rig.Core.SessionLayout.Ensure();
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            view.Select(0, 0);
+            var status = view.ClipPanelView.StatusBlock;
+            status.Text = "▶ playing  21/1024  follow in 12  ● recording";
+            Screenshot(view, "session-view-status-wraps", 1100, 640);
+            Assert.That(BoundsIn(status, view.ClipPanelView).Right, Is.LessThanOrEqualTo(SessionView.ClipPanel.PanelWidth));
+            Assert.That(status.ActualHeight, Is.GreaterThan(status.FontSize * 2), "on two lines");
+        }
+
         [Test]
         public void NewSongDropsTheLayout()
         {

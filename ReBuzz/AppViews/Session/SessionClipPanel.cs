@@ -86,7 +86,8 @@ namespace ReBuzz.AppViews.Session
 
                 title = new TextBlock { FontWeight = FontWeights.SemiBold, FontSize = 13, TextTrimming = TextTrimming.CharacterEllipsis, Text = "Clip" };
                 info = new TextBlock { Foreground = SessionPalette.DimText, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
-                status = new TextBlock { Foreground = SessionPalette.DimText, Margin = new Thickness(0, 2, 0, 6), FontFamily = new FontFamily("Consolas") };
+                // Wraps: "▶ playing 21/1024 follow in 12 ● recording" is wider than the panel (gallery mac-046).
+                status = new TextBlock { Foreground = SessionPalette.DimText, Margin = new Thickness(0, 2, 0, 6), FontFamily = new FontFamily("Consolas"), TextWrapping = TextWrapping.Wrap };
                 hint = new TextBlock { Foreground = SessionPalette.DimText, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) };
 
                 mode = Combo(Modes, () => Commit(c => c.Mode = Modes[mode.SelectedIndex].Value),
@@ -205,6 +206,7 @@ namespace ReBuzz.AppViews.Session
             internal MixerBar VelocityBar => velocity;
             internal string RegionText => region.Text;
             internal string StatusText => status.Text;
+            internal TextBlock StatusBlock => status;
             internal void CommitTypedMarkers() => CommitMarkers();
             internal FollowEditor ClipFollow => clipFollow;
             internal FollowEditor SceneFollow => sceneFollow;
