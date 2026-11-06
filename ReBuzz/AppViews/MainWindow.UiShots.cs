@@ -104,7 +104,7 @@ namespace ReBuzz
                 info.MaxSize.X = Math.Max(info.MaxSize.X, 4000);
                 info.MaxSize.Y = Math.Max(info.MaxSize.Y, 3000);
                 Marshal.StructureToPtr(info, lParam, true);
-                handled = true;
+                // Not handled: the window's own handler reads the enlarged size next (it keeps it as its largest).
             }
             return IntPtr.Zero;
         }
@@ -124,6 +124,7 @@ namespace ReBuzz
             {
                 if (source.RootVisual is not FrameworkElement popup || popup.GetType().Name != "PopupRoot" || !popup.IsVisible || popup.ActualWidth < 1) continue;
                 if (popup.Dispatcher != root.Dispatcher) continue;
+                if (Descendants<ToolTip>(popup).Any()) continue;          // a tooltip under wherever the runner's pointer is
                 var at = popup.PointToScreen(new Point(0, 0));
                 found.Add((popup, new Point((at.X - origin.X) / scale, (at.Y - origin.Y) / scale)));
             }
@@ -197,10 +198,14 @@ namespace ReBuzz
             }
             catch (Exception e)
             {
-                shotFailures.Add($"{name}: {e.GetType().Name}: {e.Message}");
+                string at = string.Join(" < ", (e.StackTrace ?? "").Split('\n').Select(l => l.Trim()).Where(l => l.StartsWith("at ")).Take(3));
+                shotFailures.Add($"{name}: {e.GetType().Name}: {e.Message} ({at})");
                 ShotLog($"{name} failed: {e}");
             }
         }
+
+        [DllImport("user32.dll")]
+        static extern bool SetCursorPos(int x, int y);
 
         void WriteShotIndex()
         {
@@ -300,23 +305,31 @@ namespace ReBuzz
             Top = 0;
             Width = ShotWidth;
             Height = ShotHeight;
+            await Idle(300);
+            Width = ShotWidth;
+            Height = ShotHeight;
+            // The runner's pointer away from the window (else a tooltip waits under it).
+            SetCursorPos((int)SystemParameters.PrimaryScreenWidth - 1, (int)SystemParameters.PrimaryScreenHeight - 1);
             Buzz.ActiveView = BuzzView.MachineView;
             await Idle(1500);
+            ShotLog($"window {ActualWidth}×{ActualHeight}");
 
             const string Empty = "none (new song)";
             await Shot(this, "010-start-empty", "The main window on a new song: menu, toolbar, Machine View with the Master alone, status bar.", "Start ReBuzz (or File ▸ New, Ctrl+N).", Empty,
                 "The window's client area (no Windows title bar).");
 
-            // The demo song, saved and named as a user's would be.
-            var song = GallerySong.Build(Buzz);
-            foreach (var p in song.Problems) ShotLog("demo song: " + p);
+            // The demo song, saved and opened again as a user's song is (notes on the note lanes show once it's opened).
+            var built = GallerySong.Build(Buzz);
+            foreach (var p in built.Problems) ShotLog("demo song: " + p);
             string songFolder = Path.Combine(Path.GetTempPath(), "rebuzz-ui-shots-" + Environment.ProcessId);
             Directory.CreateDirectory(songFolder);
             string songPath = Path.Combine(songFolder, GallerySong.Title + ".bmxml");
             Buzz.SaveSongFile(songPath);
-            Buzz.SongCore.SongName = songPath;
             Buzz.Modified = false;
-            await Idle(800);
+            Buzz.OpenSongFile(songPath);
+            await Idle(2000);
+            var song = GallerySong.Find(Buzz);
+            ShotLog($"demo song: {Buzz.SongCore.MachinesList.Count} machines, opened as {Buzz.SongCore.SongName}");
 
             // Every view.
             await Step("views", async () =>
@@ -331,9 +344,10 @@ namespace ReBuzz
                 }
 
                 Buzz.SetPatternEditorPattern(song.LineA);
-                Buzz.ActiveView = BuzzView.PatternView;
+                Buzz.ActivatePatternEditor();
                 await Shot(this, "030-pattern", "Pattern View: Bass's Line A in the Modern Pattern Editor.", "F2, or double-click a pattern in the Sequence View.", settle: 1200);
                 Buzz.SetPatternEditorPattern(song.Beat);
+                Buzz.ActivatePatternEditor();
                 await Shot(this, "031-pattern-drums", "Pattern View: Drums' Beat.", "F2, then choose the machine and pattern.", settle: 1000);
 
                 Buzz.ActiveView = BuzzView.SequenceView;
@@ -358,6 +372,7 @@ namespace ReBuzz
                 Buzz.Playing = false;
                 await Idle(300);
                 Buzz.SongCore.PlayPosition = 0;
+                Buzz.BPM = 124;                 // the Drop scene's tempo, put back
                 Buzz.ActiveView = BuzzView.MachineView;
                 await Idle(500);
             });
@@ -436,30 +451,6 @@ namespace ReBuzz
                 await CloseMenus();
             });
 
-            // The shipped themes.
-            await Step("themes", async () =>
-            {
-                foreach (var theme in Buzz.Themes.Where(t => t != "<default>" && t != "Default").ToList())
-                {
-                    string slug = new string(theme.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
-                    Buzz.SelectedTheme = theme;
-                    await Idle(1500);
-                    Buzz.ActiveView = BuzzView.MachineView;
-                    await Shot(this, $"300-theme-{slug}-machines", $"The {theme} theme: Machine View and its toolbar.", $"Theme ▸ {theme}.", settle: 1000);
-                    Buzz.ActiveView = BuzzView.SequenceView;
-                    await Shot(this, $"301-theme-{slug}-sequence", $"The {theme} theme: Sequence View.", $"Theme ▸ {theme}, then F4.", settle: 800);
-                    Buzz.SetPatternEditorPattern(song.LineA);
-                    Buzz.ActiveView = BuzzView.PatternView;
-                    await Shot(this, $"302-theme-{slug}-pattern", $"The {theme} theme: Pattern View.", $"Theme ▸ {theme}, then F2.", settle: 1000);
-                    Buzz.ActiveView = BuzzView.WaveTableView;
-                    await Shot(this, $"303-theme-{slug}-wavetable", $"The {theme} theme: Wavetable View with the file browser.", $"Theme ▸ {theme}, then F9.", settle: 1000);
-                }
-                Buzz.SelectedTheme = "<default>";
-                await Idle(1500);
-                Buzz.ActiveView = BuzzView.MachineView;
-                await Idle(500);
-            });
-
             // Preferences, every page.
             await Step("preferences", async () =>
             {
@@ -486,6 +477,8 @@ namespace ReBuzz
             // Settings (BuzzGUI's), every page, Agent among them.
             await Step("settings", async () =>
             {
+                Buzz.ActiveView = BuzzView.MachineView;
+                await Idle(500);
                 SettingsWindow.Show(MachineView, null);
                 await Idle(600);
                 var settings = Application.Current.Windows.OfType<SettingsWindow>().FirstOrDefault() ?? throw new InvalidOperationException("Settings didn't open");
@@ -560,36 +553,68 @@ namespace ReBuzz
                 else shotFailures.Add("win-603-parameters-pedal: no Pedal machine in Gear (a quick package leaves them out)");
             });
 
-            // The tool windows.
-            await Step("tool windows", async () =>
+            // The tool windows, each on its own.
+            await Step("cpu monitor", async () =>
             {
-                Buzz.IsCPUMonitorWindowVisible = true;
                 Buzz.ActiveView = BuzzView.MachineView;
+                Buzz.IsCPUMonitorWindowVisible = true;
                 await Shot(this, "700-cpu-monitor", "Machine View with the CPU monitor on.", "View ▸ CPU Monitor.", settle: 800);
                 Buzz.IsCPUMonitorWindowVisible = false;
-
+            });
+            await Step("hard disk recorder", async () =>
+            {
                 Buzz.IsHardDiskRecorderWindowVisible = true;
                 await Idle(600);
-                if (hDRecorderWindow != null) await Shot(hDRecorderWindow, "701-hard-disk-recorder", "The Hard Disk Recorder window.", "View ▸ Hard Disk Recorder.");
+                if (hDRecorderWindow == null) throw new InvalidOperationException("the Hard Disk Recorder didn't open");
+                await Shot(hDRecorderWindow, "701-hard-disk-recorder", "The Hard Disk Recorder window.", "View ▸ Hard Disk Recorder.");
                 Buzz.IsHardDiskRecorderWindowVisible = false;
-
+            });
+            await Step("piano keyboard", async () =>
+            {
                 Buzz.IsPianoKeyboardVisible = true;
                 await Idle(600);
-                if (keyboardWindow != null) await Shot(keyboardWindow, "702-piano-keyboard", "The piano keyboard window.", "The toolbar's keyboard button.");
+                if (keyboardWindow == null) throw new InvalidOperationException("the keyboard didn't open");
+                await Shot(keyboardWindow, "702-piano-keyboard", "The piano keyboard window.", "The toolbar's keyboard button.");
                 Buzz.IsPianoKeyboardVisible = false;
-
+            });
+            await Step("session window", async () =>
+            {
                 ToggleSessionWindow();
                 await Idle(800);
-                if (sessionWindow != null)
-                {
-                    await Shot(sessionWindow, "703-session-window", "The Session View in a window of its own.", "View ▸ Session View in a Window.");
-                    sessionWindow.Hide();
-                }
-
+                if (sessionWindow == null) throw new InvalidOperationException("the Session window didn't open");
+                await Shot(sessionWindow, "703-session-window", "The Session View in a window of its own.", "View ▸ Session View in a Window.");
+                sessionWindow.Hide();
+            });
+            await Step("debug console", async () =>
+            {
                 debugWindow.Show();
                 await Idle(600);
                 await Shot(debugWindow, "704-debug-console", "The debug console.", "View ▸ Debug Console.", notes: "Its own UI thread: drawn there (no popups).");
                 debugWindow.Dispatcher.Invoke(() => debugWindow.Hide());
+            });
+
+            // The shipped themes.
+            await Step("themes", async () =>
+            {
+                foreach (var theme in Buzz.Themes.Where(t => t != "<default>" && t != "Default").ToList())
+                {
+                    string slug = new string(theme.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
+                    Buzz.SelectedTheme = theme;
+                    await Idle(1500);
+                    Buzz.ActiveView = BuzzView.MachineView;
+                    await Shot(this, $"300-theme-{slug}-machines", $"The {theme} theme: Machine View and its toolbar.", $"Theme ▸ {theme}.", settle: 1000);
+                    Buzz.ActiveView = BuzzView.SequenceView;
+                    await Shot(this, $"301-theme-{slug}-sequence", $"The {theme} theme: Sequence View.", $"Theme ▸ {theme}, then F4.", settle: 800);
+                    Buzz.SetPatternEditorPattern(song.LineA);
+                    Buzz.ActivatePatternEditor();
+                    await Shot(this, $"302-theme-{slug}-pattern", $"The {theme} theme: Pattern View.", $"Theme ▸ {theme}, then F2.", settle: 1000);
+                    Buzz.ActiveView = BuzzView.WaveTableView;
+                    await Shot(this, $"303-theme-{slug}-wavetable", $"The {theme} theme: Wavetable View with the file browser.", $"Theme ▸ {theme}, then F9.", settle: 1000);
+                }
+                Buzz.SelectedTheme = "<default>";
+                await Idle(1500);
+                Buzz.ActiveView = BuzzView.MachineView;
+                await Idle(500);
             });
         }
     }

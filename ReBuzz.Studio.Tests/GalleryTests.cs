@@ -174,12 +174,13 @@ namespace ReBuzz.Studio.Tests
             using var target = new RenderTargetBitmap(size, new Vector(96, 96));
             using (var dc = target.CreateDrawingContext())
             {
-                dc.DrawImage(back, new Rect(0, 0, size.Width, size.Height));
+                // Source rectangles in pixels: the frames are 192 dpi, and DrawImage's default source (Size, in points) would take a quarter.
+                dc.DrawImage(back, new Rect(0, 0, size.Width, size.Height), new Rect(0, 0, size.Width, size.Height));
                 double x = System.Math.Round((size.Width - front.PixelSize.Width) / 2.0), y = System.Math.Round((size.Height - front.PixelSize.Height) / 3.0);
                 var r = new Rect(x, y, front.PixelSize.Width, front.PixelSize.Height);
                 for (int i = 1; i <= 12; i++)
                     dc.DrawRectangle(new SolidColorBrush(Colors.Black, 0.035), null, r.Inflate(i * 2).Translate(new Vector(0, i)), 12 + i, 12 + i);
-                dc.DrawImage(front, r);
+                dc.DrawImage(front, new Rect(0, 0, front.PixelSize.Width, front.PixelSize.Height), r);
                 dc.DrawRectangle(null, new Pen(new SolidColorBrush(Color.FromArgb(0x60, 0x80, 0x80, 0x80)), 2), r);
             }
             Save(target, file);
@@ -264,11 +265,17 @@ namespace ReBuzz.Studio.Tests
             foreach (var w in mains) foreach (var mi in w.GetVisualDescendants().OfType<MenuItem>().Where(i => i.IsSubMenuOpen)) mi.Close();
         }
 
+        static int failuresBefore;
+
+        /// <summary>At a test's start: its failures are the ones listed after this.</summary>
+        static void BeforeAll() => failuresBefore = failures.Count;
+
         static void AfterAll()
         {
             WriteIndex();
             TestContext.Out.WriteLine($"[gallery] {rows.Count} shots in {Folder}");
-            if (failures.Count > 0) Assert.Fail($"{failures.Count} shot(s) not captured:\n" + string.Join("\n", failures));
+            var mine = failures.Skip(failuresBefore).ToList();
+            if (mine.Count > 0) Assert.Fail($"{mine.Count} shot(s) not captured:\n" + string.Join("\n", mine));
         }
 
         // ------------------------------------------------------------------ the main window and the song
@@ -315,13 +322,14 @@ namespace ReBuzz.Studio.Tests
             Dialogs.Responder = null;
         }
 
-        /// <summary>The demo song, built in a new song and saved as "Night Drive.bmxml" (its name in the title).</summary>
+        /// <summary>The demo song, built in a new song, saved as "Night Drive.bmxml" and opened again, as a user's song is.</summary>
         static GallerySong.Song LoadDemo()
         {
             NewSong();
-            var song = GallerySong.Build(Core);
-            foreach (var p in song.Problems) TestContext.Out.WriteLine("[gallery] demo song: " + p);
-            SongFiles.Picker = _ => Path.Combine(SongFolder, GallerySong.Title + ".bmxml");
+            var built = GallerySong.Build(Core);
+            foreach (var p in built.Problems) TestContext.Out.WriteLine("[gallery] demo song: " + p);
+            string path = Path.Combine(SongFolder, GallerySong.Title + ".bmxml");
+            SongFiles.Picker = _ => path;
             try
             {
                 Assert.That(SongFiles.SaveAs().Result, Is.True, "the demo song saved");
@@ -330,8 +338,10 @@ namespace ReBuzz.Studio.Tests
             {
                 SongFiles.Picker = null;
             }
+            Core.Modified = false;
+            Assert.That(SongFiles.Open(path).Result, Is.True, "the demo song opened");
             Settle();
-            return song;
+            return GallerySong.Find(Core);
         }
 
         /// <summary>The main window at 1440×900, scale 2, as on a Mac: no in-window menu (the menu bar has it).</summary>
@@ -428,6 +438,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest, Order(1)]
         public void Views()
         {
+            BeforeAll();
             using var restore = Studio.AfterTest(() => { SessionCore.Timestamp = System.Diagnostics.Stopwatch.GetTimestamp; Core.ExecuteCommand(BuzzCommand.Stop); Core.Recording = false; });
             NewSong();
             var window = Open();
@@ -665,6 +676,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest, Order(2)]
         public void Menus()
         {
+            BeforeAll();
             LoadDemo();
             var window = Open("Machines");
             try
@@ -718,6 +730,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest, Order(3)]
         public void ContextMenus()
         {
+            BeforeAll();
             var demo = LoadDemo();
             var window = Open("Machines");
             try
@@ -839,6 +852,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest, Order(4)]
         public void WindowsAndDialogs()
         {
+            BeforeAll();
             using var restore = Studio.AfterTest(() =>
             {
                 AudioPage.OutputSource = null;
@@ -946,9 +960,11 @@ namespace ReBuzz.Studio.Tests
                     window.ShowView("Sequence");
                     Settle();
                     var seq = Tab<SequenceView>(window, "Sequence");
-                    seq.Canvas.Focus();
-                    Settle();
-                    DialogOnOpen(window, () => Key(window, PhysicalKey.T), "336-sequence-time-signature", "Sequence: Set Time Signature (the bar's length in ticks).", "T in the Sequence View, or its menu ▸ Set Time Signature….");
+                    var geo = seq.Canvas.Geometry;
+                    Click(window, seq.Canvas.TranslatePoint(new Point(geo.XOf(2 * 16) + 6, geo.YOf(1) + geo.TrackHeight * 0.6), window)!.Value, MouseButton.Right);
+                    menus.Add(seq.OpenMenu!);
+                    var item = ItemOf(seq.OpenMenu!, "Set Time Signature...");
+                    DialogOnOpen(window, () => Click(window, Centre(item, window)), "336-sequence-time-signature", "Sequence: Set Time Signature (the bar's length in ticks).", "T in the Sequence View, or its menu ▸ Set Time Signature….");
                     window.ShowView("Machines");
                 });
                 Try("337-autosave-recovery", () =>
@@ -987,6 +1003,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest, Order(5)]
         public void MachineWindows()
         {
+            BeforeAll();
             var demo = LoadDemo();
             var window = Open("Machines");
             var made = new List<MachineCore>();
@@ -1079,6 +1096,7 @@ namespace ReBuzz.Studio.Tests
         [AvaloniaTest, Order(6)]
         public void SongsAndStates()
         {
+            BeforeAll();
             using var restore = Studio.AfterTest(() =>
             {
                 MachineGuard.Enabled = true;

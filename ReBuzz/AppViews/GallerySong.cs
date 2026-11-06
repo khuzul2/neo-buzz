@@ -31,8 +31,29 @@ namespace ReBuzz.Gallery
         }
 
         /// <summary>
+        /// The song's parts in the open song (by their names), once it has been saved and opened again. The galleries
+        /// do that: notes moved onto the note lanes show in the Pattern View once the song is opened, as a user's are.
+        /// </summary>
+        public static Song Find(ReBuzzCore core)
+        {
+            var s = new Song();
+            var song = core.SongCore;
+            MachineCore M(string name) => song.MachinesList.FirstOrDefault(m => m.Name == name);
+            IPattern P(MachineCore m, string name) => m?.Patterns.FirstOrDefault(p => p.Name == name);
+            s.Master = song.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            s.Drums = M("Drums"); s.Bass = M("Bass"); s.Lead = M("Lead"); s.Pad = M("Pad");
+            s.Drive = M("Drive"); s.Comp = M("Drum Bus"); s.Delay = M("Delay"); s.Verb = M("Verb"); s.Eq = M("EQ"); s.Limiter = M("Limiter");
+            s.NativeGenerator = M("Infector"); s.NativeEffect = M("Jeskola Delay");
+            s.Beat = P(s.Drums, "Beat"); s.Fill = P(s.Drums, "Fill"); s.Break = P(s.Drums, "Break");
+            s.LineA = P(s.Bass, "Line A"); s.LineB = P(s.Bass, "Line B");
+            s.Hook = P(s.Lead, "Hook"); s.Answer = P(s.Lead, "Answer"); s.Arp = P(s.Lead, "Arp");
+            s.Chords = P(s.Pad, "Chords");
+            return s;
+        }
+
+        /// <summary>
         /// Builds the song into the open (new, empty) song of <paramref name="core"/>, on the UI thread. Song end and
-        /// loop cover the 16-bar arrangement; the song is left with changes (the galleries save it or clear the flag).
+        /// loop cover the 16-bar arrangement; the song is left with changes (the galleries save it and open it again).
         /// </summary>
         public static Song Build(ReBuzzCore core)
         {

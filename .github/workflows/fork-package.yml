@@ -88,6 +88,15 @@ jobs:
       with:
         files: dist/*.zip
 
+    # The UI gallery (docs/specs/ui-gallery.md, UiGalleryTests) draws ReBuzz's window at 1440×900: a screen that holds
+    # it, so that menus open where they would for a user (the runner's is smaller; the gallery copes if this fails).
+    - name: Screen for the UI gallery
+      continue-on-error: true
+      shell: pwsh
+      run: |
+        Set-DisplayResolution -Width 1920 -Height 1080 -Force
+        Get-CimInstance Win32_VideoController | ForEach-Object { Write-Host "screen: $($_.CurrentHorizontalResolution)x$($_.CurrentVerticalResolution)" }
+
     # Upstream's NUnit suite (ReBuzzTests), built by build.ps1 as part of the solution.
     # It drives the real audio engine, so it catches regressions in the playback code.
     - name: Run ReBuzz tests
