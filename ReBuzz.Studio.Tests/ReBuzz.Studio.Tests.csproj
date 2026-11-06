@@ -20,6 +20,10 @@
     <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);AVA3001</MSBuildWarningsAsMessages>
   </PropertyGroup>
 
+  <!-- Fork (docs/specs/daw-modes.md §8.1): methods with loops compiled fully optimised at once, so the audio
+       thread never compiles an on-stack replacement (tools/msbuild/AudioThreadRuntime.props). -->
+  <Import Project="..\tools\msbuild\AudioThreadRuntime.props" />
+
   <ItemGroup>
     <PackageReference Include="Avalonia.Headless.NUnit" Version="12.1.4" />
     <PackageReference Include="Avalonia.Skia" Version="12.1.4" />
@@ -34,6 +38,11 @@
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+  <!-- The machine keyboard's tests hear the pitch a click plays with the analysis library's YIN (as the agent's analyze does). -->
+  <ItemGroup>
+    <Compile Include="..\Machines\NeoBuzz.Analysis\Yin.cs;..\Machines\NeoBuzz.Analysis\Fft.cs" Link="Analysis\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <!-- The UI gallery's demo song (docs/specs/ui-gallery.md), shared with ReBuzz.exe (its ui-shots switch). -->
@@ -62,6 +71,9 @@
   <Target Name="GuardTestGear" AfterTargets="Build">
     <MSBuild Projects="TestMachines\GuardTest.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_GuardTestRestore=true" />
     <MSBuild Projects="TestMachines\GuardTest.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
+    <!-- The machine keyboard's synth that takes notes only in its Note track (TestMachines/KeysTest), the same way. -->
+    <MSBuild Projects="TestMachines\KeysTest\KeysTest.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_KeysTestRestore=true" />
+    <MSBuild Projects="TestMachines\KeysTest\KeysTest.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
   </Target>
 
   <!-- Dye Essence's G0 stress machine (docs/specs/dye-essence.md §5.2): about 700 parameters and a large

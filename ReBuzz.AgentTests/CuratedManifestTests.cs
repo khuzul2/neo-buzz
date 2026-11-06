@@ -171,6 +171,37 @@ namespace ReBuzz.AgentTests
             Assert.That(shaper.OwnTexts, Is.False, "its own texts are bare numbers");
         }
 
+        [Test]
+        public void TextsThatNeedTheEnginesRateOrPictureASliderReadThroughTheirMappings()
+        {
+            // UI gallery review (win-912, win-913): Oomek Exciter's corners read "1 Hz" while its markers stood near 1.8 and
+            // 3.7 kHz; Oomek Masterizer's crossovers read "1 Hz" and "0 Hz" and its Knee "-- 16 -- h a r d". The mappings
+            // are right: they are the machines' own formulas at 44.1 kHz (DescribeValue in Exciter.cpp and Masterizer.cpp).
+            // Their own texts divide by the engine's sample rate, which a native has only once the engine has run (0
+            // before), and the knee's is a picture for Buzz's slider: these parameters read through their mappings.
+            var curated = Curated();
+            var exciter = curated["Oomek Exciter"];
+            var masterizer = curated["Oomek Masterizer"];
+            foreach (var (manifest, name, raw, text) in new[]
+            {
+                (exciter, "Pre Cut", 128, "3.74 kHz"), (exciter, "Post Cut", 60, "1.76 kHz"),
+                (masterizer, "Lo | Mid Split", 17, "125 Hz"), (masterizer, "Mid | Hi Split", 18, "1.55 kHz"), (masterizer, "Knee", 16, "16"),
+            })
+            {
+                var p = manifest.Find(name)!;
+                Assert.That(p.OwnTexts, Is.False, $"{manifest.Gear} {name}: read through its mapping");
+                Assert.That(p.Default, Is.EqualTo(raw));
+                Assert.That(MachineManual.Format(p, raw), Is.EqualTo(text), $"{manifest.Gear} {name} at its default");
+            }
+            // The machines' formulas at 44.1 kHz, at the ends of their ranges.
+            const double w = 6.28319 / 44100;
+            Assert.That(exciter.Find("Pre Cut")!.Mapping.Value(239, 1, 239), Is.EqualTo(239 * 0.0041666666667 / w + 1).Within(0.5));
+            Assert.That(exciter.Find("Post Cut")!.Mapping.Value(1, 1, 239), Is.EqualTo(1 * 0.0041666666667 / w + 1).Within(0.5));
+            Assert.That(masterizer.Find("Lo | Mid Split")!.Mapping.Value(112, 2, 112), Is.EqualTo(112 / 960.0 / w + 1).Within(0.5));
+            Assert.That(masterizer.Find("Mid | Hi Split")!.Mapping.Value(240, 0, 240), Is.EqualTo((240 + 35) / 240.0 / w).Within(0.5));
+            Assert.That(curated["Rout 909"].Summary, Does.Not.Contain("repo"), "no developer notes in the summary the editor shows");
+        }
+
         /// <summary>Why a curated parameter's mapping isn't exact and usable, if it isn't.</summary>
         static IEnumerable<string> MappingProblems(ManifestParameter p)
         {

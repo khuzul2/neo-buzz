@@ -47,6 +47,8 @@ namespace NeoBuzz.Editor
         const double MaxBodyWidth = 1240, MaxBodyHeight = 760;
         /// <summary>About how wide the kit's 11 px text is per character, to size controls before they draw.</summary>
         const double CharWidth = 6.2;
+        /// <summary>The widest a knob's label goes on a line; a longer one takes a second line.</summary>
+        internal const double KnobLabelWidth = 104;
 
         readonly MachineFace face;
         readonly ParamDef[] table;
@@ -96,9 +98,14 @@ namespace NeoBuzz.Editor
             var accent = Accent;
             var root = new StackPanel { Orientation = Orientation.Vertical, Margin = new Thickness(4, 0, 4, 2) };
 
-            if (face.Summary.Length > 0) root.Children.Add(Note(face.Summary, Theme.Text));
-            root.Children.Add(Note(face.Provenance + (face.Tracks > 1 && face.Params.Any(p => p.IsTrack)
-                ? $" Track parameters show the first of its {face.Tracks} tracks; the parameter list has every track." : ""), Theme.DimText));
+            // The summary, with what its values rest on (the manifest's provenance: notes for whoever checks it) behind an ⓘ.
+            var summary = Note(face.Summary.Length > 0 ? face.Summary : face.Gear, Theme.Text);
+            summary.Margin = new Thickness(4, 0, 2, 4);
+            var about = Info(face.Provenance);
+            about.Margin = new Thickness(2, 0, 4, 4);
+            root.Children.Add(Layout.Row(summary, about));
+            if (face.Tracks > 1 && face.Params.Any(p => p.IsTrack))
+                root.Children.Add(Note($"Track parameters show the first of its {face.Tracks} tracks; the parameter list has every track.", Theme.DimText));
 
             var sections = new WrapPanel { Orientation = Orientation.Horizontal, MaxWidth = MaxBodyWidth };
             if (face.Response != null) sections.Children.Add(ResponseSection(face.Response, accent));
@@ -112,6 +119,25 @@ namespace NeoBuzz.Editor
             });
             root.Children.Add(Footer(accent));
             return root;
+        }
+
+        /// <summary>
+        /// An ⓘ that holds notes for whoever checks the editor (where its values and pictures come from) in its tooltip,
+        /// out of the way of people playing the machine.
+        /// </summary>
+        internal static TextBlock Info(string tip)
+        {
+            var info = new TextBlock
+            {
+                Text = "ⓘ",
+                Foreground = Theme.DimText,
+                FontFamily = Theme.FontFamily,
+                FontSize = 12,
+                VerticalAlignment = VerticalAlignment.Top,
+            };
+            info.ToolTip = tip;
+            AutomationProperties.SetName(info, "About");
+            return info;
         }
 
         static TextBlock Note(string text, Brush brush) => new TextBlock
@@ -132,11 +158,12 @@ namespace NeoBuzz.Editor
                 (c, r) => FacePainters.Response(c, r, response, Raw, accent));
             AutomationProperties.SetName(plot, "Response");
             ctx.Changed += plot.InvalidateVisual;
-            var caption = Note(response.Caption, Theme.DimText);
-            caption.MaxWidth = FacePainters.ResponseWidth;
-            caption.FontSize = 10.5;
-            caption.Margin = new Thickness(0, 4, 0, 0);
-            return new Section(response.Computed ? "Response" : "Frequencies", accent, Layout.Column(plot, caption));
+            // How the plot is made (a design computed, or markers only) is a note for whoever checks it: its tooltip and an ⓘ.
+            plot.ToolTip = response.Caption;
+            var about = Info(response.Caption);
+            about.HorizontalAlignment = HorizontalAlignment.Right;
+            about.Margin = new Thickness(0, 2, 0, 0);
+            return new Section(response.Computed ? "Response" : "Frequencies", accent, Layout.Column(plot, about));
         }
 
         UIElement BuildSection(FaceSection s, NeoColor accent)
@@ -196,8 +223,8 @@ namespace NeoBuzz.Editor
                 }
                 default:
                 {
-                    var knob = new ParamKnob(ctx, p.Slot, label) { Bipolar = p.Bipolar, Safe = p.SafePositions };
-                    knob.Width = Math.Clamp(label.Length * CharWidth + 10, knob.Width, 132);
+                    // As wide as its label (the kit measures it), a long one on two lines.
+                    var knob = new ParamKnob(ctx, p.Slot, label) { Origin = p.ArcOrigin, Safe = p.SafePositions, MaxLabelWidth = KnobLabelWidth };
                     knob.ToolTip = tip;
                     knob.RightClicked += () => Select(p, focus: true);
                     knob.UserChanged += t => Select(p, focus: false);
@@ -211,7 +238,8 @@ namespace NeoBuzz.Editor
 
         /// <summary>
         /// A control's label in its section: the section's name left off the front ("Low shelf gain" in Low shelf is
-        /// "Gain", "LFO 1 delay" in LFO 1 "Delay"), and at most 20 characters (the tooltip has the whole name).
+        /// "Gain", "LFO 1 delay" in LFO 1 "Delay"); whole (a knob's takes two lines where it is long), cut only past 40
+        /// characters (the tooltip has the whole name).
         /// </summary>
         internal static string Label(string label, string section)
         {
@@ -227,8 +255,11 @@ namespace NeoBuzz.Editor
                     break;
                 }
             }
-            return s.Length <= 20 ? s : s.Substring(0, 19) + "…";
+            return s.Length <= MaxLabel ? s : s.Substring(0, MaxLabel - 1) + "…";
         }
+
+        /// <summary>The longest label shown whole (two lines of a knob).</summary>
+        const int MaxLabel = 40;
 
         static string Tip(FaceParam p)
         {

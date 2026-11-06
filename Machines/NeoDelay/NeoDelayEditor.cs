@@ -80,7 +80,7 @@ namespace NeoBuzz.Delay
         {
             var values = new ParamValues(Params.Table);
             for (int i = 0; i < Params.Table.Length; i++) values.Set(i, ctx.Raw(i));
-            double rate = 48000, tempo = machine?.Engine.Tempo ?? 120;
+            double rate = 48000, tempo = ctx.SongTempo(machine?.Engine.Tempo ?? 120);
             var s = DelayDesign.From(values, tempo, rate);
             var grid = new NeoStroke(Palette.Grid, 1, false);
 
@@ -127,8 +127,12 @@ namespace NeoBuzz.Delay
             g.Text("1k", FX(1000) + 2, bottom.Bottom - 11, 9, Palette.DimText);
             g.Text("10k", FX(10000) + 2, bottom.Bottom - 11, 9, Palette.DimText);
 
-            g.Text(Summary(s, values, tempo), r.X + 6, r.Y + 2, 10, Palette.DimText, maxWidth: r.Width - 12);
+            Caption = Summary(s, values, tempo);
+            g.Text(Caption, r.X + 6, r.Y + 2, 10, Palette.DimText, maxWidth: r.Width - 12);
         }
+
+        /// <summary>The echoes' caption as last drawn: mode, time, tempo (tests).</summary>
+        internal string Caption { get; private set; } = "";
 
         /// <summary>"Ping-pong · 1/8 dotted = 375 ms · R 375 ms · 120 BPM": the mode, the time and the tempo.</summary>
         static string Summary(in DelaySetting s, ParamValues v, double tempo)

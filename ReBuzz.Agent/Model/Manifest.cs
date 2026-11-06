@@ -185,6 +185,25 @@ namespace ReBuzz.Agent.Model
         public bool Pitched { get; init; } = true;
         /// <summary>Voices heard at once (0: not measured).</summary>
         public int Polyphony { get; init; }
+        /// <summary>
+        /// A drum kit's keys by name (notes.map: {"Kick": 36, "Snare": "D2"}, MIDI numbers or scientific names, as
+        /// the profiler reads it), in the manifest's order; empty when it names none. The machine keyboard labels them.
+        /// </summary>
+        public IReadOnlyList<(string Name, int Key)> Map { get; init; } = Array.Empty<(string, int)>();
+
+        internal static IReadOnlyList<(string Name, int Key)> ParseMap(JsonNode node)
+        {
+            var map = new List<(string, int)>();
+            if (node is not JsonObject o) return map;
+            foreach (var (name, value) in o)
+            {
+                int key = -1;
+                if (value is JsonValue v && v.TryGetValue<int>(out int n)) key = n;
+                else if (value is JsonValue s && s.TryGetValue<string>(out string text) && Pitch.TryParse(text, out int parsed, out _)) key = parsed;
+                if (key >= 0 && key <= 127 && !string.IsNullOrWhiteSpace(name)) map.Add((name.Trim(), key));
+            }
+            return map;
+        }
     }
 
     /// <summary>
@@ -303,6 +322,7 @@ namespace ReBuzz.Agent.Model
                     PitchOffset = (int?)n["pitch_offset"] ?? 0,
                     Pitched = (bool?)n["pitched"] ?? true,
                     Polyphony = (int?)n["polyphony"] ?? 0,
+                    Map = ManifestNotes.ParseMap(n["map"]),
                 };
             ManifestHealth health = null;
             if (root["health"] is JsonObject h)

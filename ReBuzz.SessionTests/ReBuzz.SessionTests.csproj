@@ -19,6 +19,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <!-- Fork (docs/specs/daw-modes.md §8.1): methods with loops compiled fully optimised at once, so the audio
+       thread never compiles an on-stack replacement (tools/msbuild/AudioThreadRuntime.props). -->
+  <Import Project="..\tools\msbuild\AudioThreadRuntime.props" />
+
   <ItemGroup>
     <Compile Include="..\ReBuzz\Core\Session\SessionScheduler.cs" Link="Engine\SessionScheduler.cs" />
     <Compile Include="..\ReBuzz\Core\Session\SessionDocument.cs" Link="Engine\SessionDocument.cs" />

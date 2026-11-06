@@ -18,7 +18,7 @@ namespace ReBuzz.Agent.Audio
     public static partial class AudioReport
     {
         /// <summary>Every metric <see cref="Measure"/> knows.</summary>
-        public static readonly string[] Metrics = { "loudness", "peaks", "dynamics", "spectrum", "stereo", "pitch", "key", "tempo" };
+        public static readonly string[] Metrics = { "loudness", "peaks", "dynamics", "spectrum", "stereo", "pitch", "key", "tempo", "microdynamics", "tonal", "platform" };
 
         /// <summary>The quick pair a render reports by itself (the rest cost more on a whole song).</summary>
         public static readonly string[] Basic = { "loudness", "peaks" };
@@ -45,7 +45,11 @@ namespace ReBuzz.Agent.Audio
         /// </summary>
         public static JsonObject Measure(StereoAudio audio, IReadOnlyCollection<string> metrics) => Measure(new Analysed(audio), metrics);
 
-        internal static JsonObject Measure(Analysed a, IReadOnlyCollection<string> metrics)
+        /// <summary>
+        /// The same against <paramref name="target"/> (docs/specs/mastering-tools.md §6): tonal, microdynamics, stereo, loudness and
+        /// dynamics each say where the audio stands against it.
+        /// </summary>
+        internal static JsonObject Measure(Analysed a, IReadOnlyCollection<string> metrics, StyleTarget target = null)
         {
             var audio = a.Audio;
             var r = a.LoudnessResult;
@@ -69,6 +73,7 @@ namespace ReBuzz.Agent.Audio
                     ["range_lu"] = double.IsNaN(r.Range) || double.IsInfinity(r.Range) ? 0 : Math.Round(r.Range, 1),
                 };
                 Add(LoudnessReads(r));
+                if (!metrics.Contains("dynamics")) Add(TargetLevelReads(r, null, target));
             }
             if (metrics.Contains("peaks"))
             {
@@ -84,6 +89,7 @@ namespace ReBuzz.Agent.Audio
             {
                 result["dynamics"] = DynamicsJson(a.DynamicsResult);
                 Add(DynamicsReads(a.DynamicsResult));
+                if (target != null) Add(TargetLevelReads(r, a.DynamicsResult, target));
             }
             if (metrics.Contains("spectrum"))
             {
@@ -93,7 +99,9 @@ namespace ReBuzz.Agent.Audio
             if (metrics.Contains("stereo"))
             {
                 result["stereo"] = StereoJson(a.StereoResult);
+                ((JsonObject)result["stereo"])["ms_bands"] = MsBandsJson(a.StereoResult, target);
                 Add(StereoReads(a.StereoResult));
+                Add(MsBandsReads(a.StereoResult, target));
             }
             if (metrics.Contains("pitch"))
             {
@@ -110,6 +118,23 @@ namespace ReBuzz.Agent.Audio
                 result["tempo"] = TempoJson(a.TempoResult, audio.Seconds);
                 Add(TempoReads(a.TempoResult));
             }
+            if (metrics.Contains("microdynamics"))
+            {
+                result["microdynamics"] = MicrodynamicsJson(a.Microdynamics, target);
+                Add(MicrodynamicsReads(a.Microdynamics, target));
+            }
+            if (metrics.Contains("tonal"))
+            {
+                var diff = target != null ? Tonal.Difference(a.Tonal, target.Curve) : null;
+                result["tonal"] = TonalJson(a.Tonal, target, diff);
+                Add(TonalReads(a.Tonal, target, diff));
+            }
+            if (metrics.Contains("platform"))
+            {
+                result["platform"] = PlatformJson(r);
+                Add(PlatformReads(r));
+            }
+            if (target != null) result["target"] = TargetJson(target);
             result["reads"] = reads;
             return result;
         }

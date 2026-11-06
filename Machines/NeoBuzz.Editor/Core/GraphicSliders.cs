@@ -48,6 +48,8 @@ namespace NeoBuzz.Editor
             this.graph = graph;
             this.sliders = sliders;
             Selected = selected;
+            // A cap at 20 Hz or 20 kHz, or at the top or bottom of the range, stays clear of the axis labels.
+            graph.NeedRoom(CapWidth / 2 + 1.5);
         }
 
         public int Selected { get; private set; }

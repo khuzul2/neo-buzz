@@ -70,7 +70,7 @@ namespace ReBuzz.AgentTests
             ["arrangement_place"] = new[] { "machine", "pattern", "at", "repeat_every_beats", "times" },
             ["arrangement_clear"] = new[] { "machine", "from", "to" },
             ["render"] = new[] { "from", "to", "range", "section", "tail_seconds", "solo", "mute", "probes", "name", "cpu", "cpu_window_seconds" },
-            ["analyze"] = new[] { "source", "metrics", "from_seconds", "to_seconds" },
+            ["analyze"] = new[] { "source", "metrics", "from_seconds", "to_seconds", "target" },
             // A2 (main: ReBuzz/Agent/AnalysisTools.cs, StateTools.cs, WaveTools.cs)
             ["analyze_mix"] = new[] { "from", "to", "section", "machines" },
             ["compare"] = new[] { "a", "b", "from_seconds", "to_seconds" },
@@ -103,17 +103,20 @@ namespace ReBuzz.AgentTests
             ["midi_play"] = new[] { "machine", "notes", "start", "stop" },
             ["meters_read"] = new[] { "machines", "window_seconds", "clear_clip" },
             ["machine_readings"] = new[] { "machine" },
+            // M1 (mastering-tools.md §6: ReBuzz/Agent/MasteringTools.cs)
+            ["target_build"] = new[] { "name", "sources", "file" },
+            ["eq_fit"] = new[] { "source", "target", "curve", "bands", "max_gain_db", "limit_db", "machine" },
         };
 
         /// <summary>analyze's metrics (AudioReport.Metrics on agent/a2-analysis).</summary>
-        static readonly string[] Metrics = { "loudness", "peaks", "dynamics", "spectrum", "stereo", "pitch", "key", "tempo" };
+        static readonly string[] Metrics = { "loudness", "peaks", "dynamics", "spectrum", "stereo", "pitch", "key", "tempo", "microdynamics", "tonal", "platform" };
         /// <summary>plot's kinds (AudioPlot.Kinds).</summary>
         static readonly string[] PlotKinds = { "spectrum", "spectrogram", "waveform", "loudness", "goniometer", "bands" };
         static readonly string[] TheoryOps = { "chord", "progression", "scale", "key", "degree", "fit" };
         static readonly string[] TransformOps = { "transpose", "quantize", "humanize", "velocity", "shift", "stretch", "reverse", "invert", "legato", "staccato" };
 
         /// <summary>Tool areas: a backticked snake_case word starting with one of these must be a tool.</summary>
-        static readonly string[] Areas = { "studio", "song", "gear", "machine", "connection", "param", "preset", "snapshot", "pattern", "notes", "automation", "arrangement", "session", "wave", "theory", "render", "analyze", "guide" };
+        static readonly string[] Areas = { "studio", "song", "gear", "machine", "connection", "param", "preset", "snapshot", "pattern", "notes", "automation", "arrangement", "session", "wave", "theory", "render", "analyze", "guide", "target", "eq" };
 
         // ---- the repository -------------------------------------------------------------------
 
@@ -583,6 +586,8 @@ namespace ReBuzz.AgentTests
             Assert.That(Render("master", new Dictionary<string, string> { ["target"] = "broadcast-us" }), Does.Contain("-24 LUFS ±2, true peak at or below -2 dBTP"));
             Assert.That(Render("master", new Dictionary<string, string> { ["target"] = "-12 LUFS" }), Does.Contain("integrated -12 LUFS ±0.5"));
             Assert.That(Render("master", new Dictionary<string, string>()), Does.Contain("# Mastering"));
+            Assert.That(Render("master", new Dictionary<string, string> { ["reference"] = "C:/Refs/a.wav" }), Does.Contain("matching \"C:/Refs/a.wav\""));
+            Assert.That(Render("master", new Dictionary<string, string>()), Does.Not.Contain("matching"));
 
             string critique = Render("critique", new Dictionary<string, string>());
             Assert.That(critique, Does.Contain("read-only"));

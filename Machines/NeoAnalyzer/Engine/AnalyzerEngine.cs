@@ -36,6 +36,12 @@ namespace NeoBuzz.Analyzer
         /// <summary>Correlation and width (side/mid energy) over 3 s, and over 400 ms (the meter).</summary>
         public double Correlation, Width, CorrelationNow, WidthNow;
 
+        /// <summary>
+        /// Whether those windows held sound (above −100 dBFS): in silence there is nothing to correlate, so the editor
+        /// shows no reading ("—") where the library's numbers (correlation 1, width 0, the readings agents get) stand.
+        /// </summary>
+        public bool Stereo, StereoNow;
+
         /// <summary>Levels of Bands.Named over 3 s, dB RMS.</summary>
         public readonly double[] NamedDb = new double[Bands.Named.Length];
 
@@ -73,6 +79,7 @@ namespace NeoBuzz.Analyzer
             o.MomentaryMax = MomentaryMax; o.ShortTermMax = ShortTermMax; o.Seconds = Seconds;
             o.TruePeakMax = TruePeakMax; o.TruePeakNow = TruePeakNow; o.TruePeakHold = TruePeakHold;
             o.Correlation = Correlation; o.Width = Width; o.CorrelationNow = CorrelationNow; o.WidthNow = WidthNow;
+            o.Stereo = Stereo; o.StereoNow = StereoNow;
             Array.Copy(NamedDb, o.NamedDb, NamedDb.Length);
             Array.Copy(ThirdsDb, o.ThirdsDb, ThirdsDb.Length);
             Array.Copy(Curve, o.Curve, Curve.Length);
@@ -142,6 +149,8 @@ namespace NeoBuzz.Analyzer
 
         const int StereoSteps = 30, StereoFastSteps = 4;
         const double BandSeconds = 3;
+        /// <summary>A stereo window's mean square below this (−100 dBFS) is silence: no correlation or width to show.</summary>
+        const double SilentMeanSquare = 1e-10;
 
         readonly ParamValues values;
         readonly TripleBuffer<AnalyzerSnapshot> exchange =
@@ -160,6 +169,7 @@ namespace NeoBuzz.Analyzer
         double ll, rr, lr;
         int stereoPos, stereoFilled;
         double correlation = 1, width, correlationNow = 1, widthNow;
+        bool stereo, stereoNow;
 
         // Spectrum.
         int size, mask, half, hop, toHop, frames;
@@ -239,6 +249,12 @@ namespace NeoBuzz.Analyzer
             Array.Clear(stepLL); Array.Clear(stepRR); Array.Clear(stepLR);
             ll = rr = lr = 0;
             stereoPos = stereoFilled = 0;
+            correlation = correlationNow = 1;
+            width = widthNow = 0;
+            stereo = stereoNow = false;
+            // No frame yet: the spectrum is empty (−∞, drawn at the floor), not 0 dB.
+            Array.Fill(curve, float.NegativeInfinity);
+            Array.Fill(thirds, float.NegativeInfinity);
             Array.Clear(gonioL); Array.Clear(gonioR);
             gonioPos = 0;
             gonioTotal = 0;
@@ -371,11 +387,11 @@ namespace NeoBuzz.Analyzer
             ll = rr = lr = 0;
             stereoPos = stereoPos + 1 == StereoSteps ? 0 : stereoPos + 1;
             if (stereoFilled < StereoSteps) stereoFilled++;
-            (correlation, width) = StereoOver(StereoSteps);
-            (correlationNow, widthNow) = StereoOver(StereoFastSteps);
+            (correlation, width, stereo) = StereoOver(StereoSteps);
+            (correlationNow, widthNow, stereoNow) = StereoOver(StereoFastSteps);
         }
 
-        (double Correlation, double Width) StereoOver(int steps)
+        (double Correlation, double Width, bool Sound) StereoOver(int steps)
         {
             steps = Math.Min(steps, stereoFilled);
             double a = 0, b = 0, c = 0;
@@ -388,7 +404,8 @@ namespace NeoBuzz.Analyzer
                 c += stepLR[j];
             }
             var (corr, w, _) = Stereo.Measures(a, b, c);
-            return (corr, w);
+            double samplesIn = steps * (double)loudness.StepSamples;
+            return (corr, w, samplesIn > 0 && (a + b) / (2 * samplesIn) > SilentMeanSquare);
         }
 
         // Fully optimised at its first compile (the warm-up's), so the audio thread never compiles an on-stack replacement of its loops (AudioWarmUp).
@@ -530,6 +547,8 @@ namespace NeoBuzz.Analyzer
             s.Width = width;
             s.CorrelationNow = correlationNow;
             s.WidthNow = widthNow;
+            s.Stereo = stereo;
+            s.StereoNow = stereoNow;
             Array.Copy(namedDb, s.NamedDb, namedDb.Length);
             Array.Copy(thirdsDb, s.ThirdsDb, thirdsDb.Length);
             Array.Copy(curve, s.Curve, CurvePoints);

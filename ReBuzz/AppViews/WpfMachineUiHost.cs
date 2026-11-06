@@ -21,6 +21,12 @@ namespace ReBuzz.AppViews
     /// Fork (docs/specs/mcp-server.md §12.11, U4): a machine's manifest editor (Machines/NeoBuzz.ManifestEditor) in a
     /// window of its own, what a double click opens on a machine without a GUI when the per-gear setting says so,
     /// and the machine menu's "Editor...". Not saved in songs.
+    /// Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): each of these windows of a machine that plays notes has the
+    /// keyboard under its content (NeoBuzz.Editor.MachineKeyboardFrame), the window grown by its height; songs keep the
+    /// windows' sizes without it, so a GUI opens at its own size with or without it. Space plays and stops the song in these
+    /// windows (TransportKeys, as in the main window), so a focused keyboard never takes it.
+    /// Fork (UI gallery review): each of these windows is kept inside the screen's work area; a managed GUI of a fixed layout
+    /// (a Neo editor) and the manifest editor scroll where the window is smaller than them, and may be resized (MachineWindowFit).
     /// </summary>
     internal sealed class WpfMachineUiHost : IMachineUiHost
     {
@@ -35,6 +41,34 @@ namespace ReBuzz.AppViews
 
         static MachineWindows Find(IMachine machine) =>
             machine is MachineCore mc && windows.TryGetValue(mc, out var w) ? w : null;
+
+        /// <summary>The height a machine window's keyboard takes (0 without one).</summary>
+        static double KeyboardHeight(Window w) => NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(w?.Content);
+
+        /// <summary>The keyboard under a machine window's content, or null (tests, --keyboard-check, the UI gallery).</summary>
+        internal static NeoBuzz.Editor.MachineKeyboard KeyboardOf(Window w) => NeoBuzz.Editor.MachineKeyboardFrame.Of(w?.Content);
+
+        /// <summary>A machine window's own content (its GUI, parameters or editor), without the keyboard under it.</summary>
+        internal static object ContentOf(Window w) => NeoBuzz.Editor.MachineKeyboardFrame.ContentOf(w?.Content);
+
+        /// <summary>Space plays and stops the song in a machine window too, before its focused control (the keyboard's keys, a button).</summary>
+        static void TakeTransportKeys(Window window, MachineCore mc)
+        {
+            window.PreviewKeyDown += (s, e) =>
+            {
+                if (e.Handled || mc.Graph?.Buzz is not ReBuzzCore core) return;
+                switch (TransportKeys.For(e.Key, Keyboard.Modifiers, e.IsRepeat, false, e.OriginalSource as DependencyObject))
+                {
+                    case TransportKeys.Command.TogglePlaying:
+                        TransportCommands.TogglePlaying(core);
+                        e.Handled = true;
+                        break;
+                    case TransportKeys.Command.Repeat:
+                        e.Handled = true;
+                        break;
+                }
+            };
+        }
 
         /// <summary>IMachine.ParameterWindow: null until the window has been opened.</summary>
         internal static Window ParameterWindowOf(IMachine machine) => Find(machine)?.Parameters;
@@ -56,12 +90,16 @@ namespace ReBuzz.AppViews
                 var window = new Window
                 {
                     Title = mc.Name + " \u2014 editor",
-                    Content = editor,
+                    // Its layout is fixed: it scrolls where the window is smaller than it (the screen's work area, or resized),
+                    // above the keyboard where the machine has one.
+                    Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(mc, editor, scroll: true),
                     SizeToContent = SizeToContent.WidthAndHeight,
-                    ResizeMode = ResizeMode.CanMinimize,
+                    ResizeMode = ResizeMode.CanResize,
                     ShowInTaskbar = false,
                     Background = editor.Background,
                 };
+                TakeTransportKeys(window, mc);
+                MachineWindowFit.Clamp(window);
                 // Kept for the machine's life, as its other windows: closing hides it.
                 window.Closing += (s, e) =>
                 {
@@ -99,6 +137,15 @@ namespace ReBuzz.AppViews
                 parameterWindow.Owner = window;
 
                 parameterWindow.DataContext = pWindowVM;
+                // The keyboard under the parameter list (the theme's content), for a machine that plays notes.
+                if (parameterWindow.Content is UIElement themed)
+                {
+                    parameterWindow.Content = null;
+                    parameterWindow.Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(mc, themed);
+                }
+                TakeTransportKeys(parameterWindow, mc);
+                // Never taller than the screen's work area: its rows scroll (they have their own scroll viewer).
+                MachineWindowFit.Clamp(parameterWindow);
                 parameterWindow.Closing += (s, e) =>
                 {
                     if (w.Parameters != null)
@@ -117,7 +164,7 @@ namespace ReBuzz.AppViews
                     parameterWindow.Left = rect.Left;
                     parameterWindow.Top = rect.Top;
                     parameterWindow.Width = rect.Width;
-                    parameterWindow.Height = rect.Height;
+                    parameterWindow.Height = rect.Height + KeyboardHeight(parameterWindow);   // songs keep the list's height
                 }
             }
 
@@ -156,6 +203,7 @@ namespace ReBuzz.AppViews
 
                 machineGUIWindow.Title = mc.Name;
                 machineGUIWindow.ResizeMode = DLL.GUIFactoryDecl.IsGUIResizable ? ResizeMode.CanResize : ResizeMode.NoResize;
+                TakeTransportKeys(machineGUIWindow, mc);
 
                 machineGUIWindow.Closing += (s, e) =>
                 {
@@ -184,7 +232,8 @@ namespace ReBuzz.AppViews
                         Viewbox vb = new Viewbox();
                         vb.Stretch = System.Windows.Media.Stretch.Fill;
                         vb.Child = guiUIElement;
-                        machineGUIWindow.Content = vb;
+                        // Fork (machine keyboard): the keyboard under the GUI, the window as tall as both.
+                        machineGUIWindow.Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(mc, vb);
 
                         double scale = 1.0;
 
@@ -194,13 +243,13 @@ namespace ReBuzz.AppViews
                             vb.Height = guiUIElement.ActualHeight * scale;
 
                             machineGUIWindow.Width = vb.Width;
-                            machineGUIWindow.Height = vb.Height;
+                            machineGUIWindow.Height = vb.Height + KeyboardHeight(machineGUIWindow);
                         };
 
                         machineGUIWindow.SizeChanged += (sender, e) =>
                         {
                             machineGUIWindow.Width = vb.Width + SystemParameters.VerticalScrollBarWidth;
-                            machineGUIWindow.Height = vb.Height + SystemParameters.HorizontalScrollBarHeight + SystemParameters.ResizeFrameHorizontalBorderHeight;
+                            machineGUIWindow.Height = vb.Height + KeyboardHeight(machineGUIWindow) + SystemParameters.HorizontalScrollBarHeight + SystemParameters.ResizeFrameHorizontalBorderHeight;
                         };
 
                         machineGUIWindow.PreviewMouseWheel += (sender, e) =>
@@ -215,7 +264,7 @@ namespace ReBuzz.AppViews
                                 vb.Height = guiUIElement.ActualHeight * scale;
 
                                 machineGUIWindow.Width = vb.Width;
-                                machineGUIWindow.Height = vb.Height;
+                                machineGUIWindow.Height = vb.Height + KeyboardHeight(machineGUIWindow);
 
                                 e.Handled = true;
                             }
@@ -223,7 +272,15 @@ namespace ReBuzz.AppViews
                     }
                     else
                     {
-                        machineGUIWindow.Content = guiUIElement;
+                        // A GUI of a fixed layout (a Neo editor) scrolls where the screen can't hold it (above the keyboard,
+                        // where the machine has one), in a window that may be resized; a resizable one fills its window, as
+                        // before. Either never larger than the work area.
+                        bool fixedLayout = !DLL.GUIFactoryDecl.IsGUIResizable;
+                        machineGUIWindow.Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(mc, guiUIElement, scroll: fixedLayout);
+                        if (fixedLayout) machineGUIWindow.ResizeMode = ResizeMode.CanResize;
+                        // A GUI of a fixed size: the window is that and the keyboard.
+                        if (machineGUIWindow.SizeToContent == SizeToContent.Manual) machineGUIWindow.Height += KeyboardHeight(machineGUIWindow);
+                        MachineWindowFit.Clamp(machineGUIWindow);
                     }
                 }
                 catch (Exception ex)
@@ -240,7 +297,7 @@ namespace ReBuzz.AppViews
                     machineGUIWindow.Left = rect.Left;
                     machineGUIWindow.Top = rect.Top;
                     machineGUIWindow.Width = rect.Width;
-                    machineGUIWindow.Height = rect.Height;
+                    machineGUIWindow.Height = rect.Height + KeyboardHeight(machineGUIWindow);   // songs keep the GUI's height
                 }
             }
 
@@ -280,18 +337,22 @@ namespace ReBuzz.AppViews
             bool parameterWindowVisible = pw != null && pw.Visibility == Visibility.Visible;
             bool guiWindowVisible = mGUI != null && mGUI.Visibility == Visibility.Visible;
 
+            // Songs keep a window's size without its keyboard (the GUI's own), so it opens right with or without one.
             return new MachineWindowState(
-                parameterWindowVisible, parameterWindowVisible ? new WindowPlacement(pw.Left, pw.Top, pw.ActualWidth, pw.ActualHeight) : default,
-                guiWindowVisible, guiWindowVisible ? new WindowPlacement(mGUI.Left, mGUI.Top, mGUI.ActualWidth, mGUI.ActualHeight) : default);
+                parameterWindowVisible, parameterWindowVisible ? new WindowPlacement(pw.Left, pw.Top, pw.ActualWidth, Math.Max(0, pw.ActualHeight - KeyboardHeight(pw))) : default,
+                guiWindowVisible, guiWindowVisible ? new WindowPlacement(mGUI.Left, mGUI.Top, mGUI.ActualWidth, Math.Max(0, mGUI.ActualHeight - KeyboardHeight(mGUI))) : default);
         }
 
         public void ReleaseMachine(IMachine machine)
         {
+            // The keyboards under its windows end their notes and let go of the settings they follow.
+            foreach (var w in new Window[] { Find(machine)?.Parameters, Find(machine)?.Gui, Find(machine)?.Editor })
+                KeyboardOf(w)?.Release();
             // The manifest editor lets go of the machine's parameters.
             if (Find(machine)?.Editor is Window editorWindow)
             {
                 editorWindow.Hide();
-                if (editorWindow.Content is NeoBuzz.Editor.ManifestEditor editor) editor.Machine = null;
+                if (ContentOf(editorWindow) is NeoBuzz.Editor.ManifestEditor editor) editor.Machine = null;
             }
             var pw = Find(machine)?.Parameters;
             if (pw != null)

@@ -187,19 +187,21 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void EightVoicesRunFasterThanRealTime()
         {
-            var (e, _) = Make(v =>
+            // Timed against the reference workload in the same run (Throughput.cs).
+            Throughput.Guard("Neo Wave, 8 voices (2 tables, sub, ladder, 2× oversampled)", Throughput.Floor(x64: 15, arm64: 14), 2, Measure.Rate, WaveEngine.MaxBlock, () =>
             {
-                v.Set(P.BLevel, 700);
-                v.Set(P.SubLevel, 400);
-                v.Set(P.FReso, 500);
-            });
-            for (int k = 0; k < 8; k++) e.NoteOn(k, 45 + 4 * k, 1f);
-            Render(e, 4800);
-            var sw = Stopwatch.StartNew();
-            Render(e, 10 * Measure.Rate);
-            double factor = 10 / sw.Elapsed.TotalSeconds;
-            Measure.Report($"Neo Wave, 8 voices (2 tables, sub, ladder, 2× oversampled): {factor:F1}× real time");
-            Assert.That(factor, Is.GreaterThan(4));
+                var (e, _) = Make(v =>
+                {
+                    v.Set(P.BLevel, 700);
+                    v.Set(P.SubLevel, 400);
+                    v.Set(P.FReso, 500);
+                });
+                for (int k = 0; k < 8; k++) e.NoteOn(k, 45 + 4 * k, 1f);
+                Render(e, 4800);
+                var l = new float[WaveEngine.MaxBlock];
+                var r = new float[WaveEngine.MaxBlock];
+                return Throughput.InBlocks(WaveEngine.MaxBlock, (pos, n) => e.Process(l, r, n));
+            }, Measure.Report);
         }
 
         [Test]

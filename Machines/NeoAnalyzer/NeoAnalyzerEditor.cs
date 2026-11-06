@@ -106,13 +106,14 @@ namespace NeoBuzz.Analyzer
             var correlation = new GraphView(170, 34, (g, r) =>
             {
                 var s = live.Get();
-                CorrelationBar.Draw(g, r, s.CorrelationNow, s.Correlation, AccentColor);
+                CorrelationBar.Draw(g, r, StereoReadout.Bar(s.CorrelationNow, s.StereoNow), StereoReadout.Bar(s.Correlation, s.Stereo), AccentColor);
             }, animate: true);
             var stereoText = new GraphView(170, 40, (g, r) =>
             {
                 var s = live.Get();
-                string corr = s.Correlation.ToString("+0.00;−0.00;0.00", ci);
-                string width = double.IsPositiveInfinity(s.Width) ? "∞" : s.Width.ToString("0.00", ci);
+                // In silence there is nothing to correlate yet: no reading.
+                string corr = StereoReadout.Correlation(s.Correlation, s.Stereo);
+                string width = StereoReadout.Width(s.Width, s.Stereo);
                 g.Text("Correlation (3 s)", r.X + 6, r.Y + 4, 10.5, Palette.DimText);
                 g.Text(corr, r.Right - 6, r.Y + 4, 11.5, Palette.Text, bold: true, align: NeoAlign.Right);
                 g.Text("Width (side / mid)", r.X + 6, r.Y + 21, 10.5, Palette.DimText);

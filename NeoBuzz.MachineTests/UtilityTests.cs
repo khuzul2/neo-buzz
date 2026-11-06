@@ -270,6 +270,98 @@ namespace NeoBuzz.MachineTests
             Assert.That(biggest, Is.LessThan(0.001));
         }
 
+        // ── the mid/side matrix (docs/specs/mastering-tools.md, M1) ──
+
+        [Test]
+        public void MatrixEncodesMidAndSide()
+        {
+            var (e, _) = Make(p => p.Set(P.Matrix, (int)Matrix.Encode));
+            var l = Noise(9600, 21);
+            var r = Noise(9600, 22);
+            var (yl, yr) = Run(e, l, r);
+            for (int i = 0; i < l.Length; i++)
+            {
+                Assert.That(yl[i], Is.EqualTo((float)(0.5 * ((double)l[i] + r[i]))), "mid on the left");
+                Assert.That(yr[i], Is.EqualTo((float)(0.5 * ((double)l[i] - r[i]))), "side on the right");
+            }
+            // A mono input has no side; an inverted one no mid.
+            var (ml, mr) = Run(Make(p => p.Set(P.Matrix, (int)Matrix.Encode)).Engine, l, l);
+            var (al, ar) = Run(Make(p => p.Set(P.Matrix, (int)Matrix.Encode)).Engine, l, l.Select(x => -x).ToArray());
+            Assert.That(mr.All(x => x == 0), Is.True, "mono: side 0");
+            Assert.That(ml, Is.EqualTo(l), "mono: mid = the input");
+            Assert.That(al.All(x => x == 0), Is.True, "anti-phase: mid 0");
+            Assert.That(ar, Is.EqualTo(l), "anti-phase: side = the input");
+        }
+
+        [Test]
+        public void MatrixRoundTripIsWithinAnUlp()
+        {
+            var l = Noise(48000, 23);
+            var r = Noise(48000, 24, 0.05);
+            // Two Utilities: the first encodes, the second decodes (with gain and width at their defaults between them).
+            var (ml, mr) = Run(Make(p => p.Set(P.Matrix, (int)Matrix.Encode)).Engine, l, r);
+            var (yl, yr) = Run(Make(p => p.Set(P.Matrix, (int)Matrix.Decode)).Engine, ml, mr);
+            double worstUlps = 0, err = 0, sig = 0;
+            for (int i = 0; i < l.Length; i++)
+            {
+                double scale = Math.Max(Math.Abs(l[i]), Math.Abs(r[i]));
+                if (scale == 0) continue;
+                double ulp = MathF.BitIncrement((float)scale) - (float)scale;
+                worstUlps = Math.Max(worstUlps, Math.Max(Math.Abs(yl[i] - l[i]), Math.Abs(yr[i] - r[i])) / ulp);
+                err += (yl[i] - l[i]) * (double)(yl[i] - l[i]) + (yr[i] - r[i]) * (double)(yr[i] - r[i]);
+                sig += l[i] * (double)l[i] + r[i] * (double)r[i];
+            }
+            double nullDb = 10 * Math.Log10(Math.Max(err, 1e-300) / sig);
+            Measure.Report($"Neo Utility matrix: encode then decode within {worstUlps:F2} ulp of the larger channel, null {nullDb:F1} dB");
+            Assert.That(worstUlps, Is.LessThanOrEqualTo(1.5));
+            Assert.That(nullDb, Is.LessThan(-140));
+        }
+
+        [Test]
+        public void HalvingTheSideBetweenEncodeAndDecodeIsWidth50()
+        {
+            var l = Noise(19200, 25);
+            var r = Noise(19200, 26);
+            var (ml, mr) = Run(Make(p => p.Set(P.Matrix, (int)Matrix.Encode)).Engine, l, r);
+            for (int i = 0; i < mr.Length; i++) mr[i] *= 0.5f;
+            var (yl, yr) = Run(Make(p => p.Set(P.Matrix, (int)Matrix.Decode)).Engine, ml, mr);
+            var (wl, wr) = Run(Make(p => Set(p, P.Width, 50)).Engine, l, r);
+            double worst = 0;
+            for (int i = 0; i < l.Length; i++) worst = Math.Max(worst, Math.Max(Math.Abs(yl[i] - wl[i]), Math.Abs(yr[i] - wr[i])));
+            Measure.Report($"Neo Utility matrix: the side at −6 dB between encode and decode against Width 50 %: within {worst:E1}");
+            Assert.That(worst, Is.LessThan(1e-6));
+        }
+
+        [Test]
+        public void MatrixSwitchesGlide()
+        {
+            var (e, v) = Make();
+            var bl = new float[256];
+            var br = new float[256];
+            double biggest = 0;
+            float lastL = 0.5f, lastR = 0.25f;
+            for (int b = 0; b < 120; b++)
+            {
+                if (b == 10) v.Set(P.Matrix, (int)Matrix.Encode);
+                if (b == 40) v.Set(P.Matrix, (int)Matrix.Decode);
+                if (b == 80) v.Set(P.Matrix, (int)Matrix.Off);
+                Array.Fill(bl, 0.5f);
+                Array.Fill(br, 0.25f);
+                e.Process(bl, br, 256);
+                for (int i = 0; i < 256; i++)
+                {
+                    biggest = Math.Max(biggest, Math.Max(Math.Abs(bl[i] - lastL), Math.Abs(br[i] - lastR)));
+                    lastL = bl[i];
+                    lastR = br[i];
+                }
+            }
+            Assert.That(bl[255], Is.EqualTo(0.5f), "off again: the input");
+            Assert.That(br[255], Is.EqualTo(0.25f));
+            // Encode moves (0.5, 0.25) to (0.375, 0.125), decode to (0.75, 0.25), each over 5 ms (240 samples).
+            Measure.Report($"Neo Utility matrix switches: largest step per sample {biggest:E2} (each over 5 ms)");
+            Assert.That(biggest, Is.LessThan(0.003));
+        }
+
         [Test]
         public void ExtremeSettingsStayFinite()
         {
