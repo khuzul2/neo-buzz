@@ -332,3 +332,18 @@ Measured (Mac gallery, headless, scale 2; `tools/ux-measure.py`):
 | Pattern list selection text | 5.36:1 | 6.44:1 |
 
 Frame times (headless, Linux, the gallery's demo song, 1440×900; medians of 3 runs before and 4 after, `UxFrameTimeTests`): Machines drawn 5.29 → 5.19 ms, Sequence 54.2 → 56.7 ms (+4.6 %), Session with a scene launched 4.70 → 4.64 ms, the Session View's state refresh (20 a second) 0.060 → 0.067 ms, the window's status refresh (10 a second, now with the problem bar and the badge) 0.004 → 0.008 ms.
+
+### P2a: the design tokens (`ux/overhaul-2-foundations`, first PR)
+
+Built: `Machines/NeoBuzz.Editor/Core/Tokens.cs` (the table, §3.1), `StudioTokens` and the kit's `Palette` (on Avalonia) made from it, Inter as the app's default family (`App.FontOptions`, in the app and the tests) and the kit's, the identity accents of thirteen Neo editors and of the manifest editors (from the manifest's type), the adoption note (§6). Tests: `TokensTests` (NeoBuzz.MachineTests: contrast on every surface, the identities' and series' distances, the manifest types' categories, the grid, the classic app's colours kept), `UxFoundationTests` (the studio and the kit read one table, Inter in the shell and the editors, seven editors' accents), `NeoEditorTests` (the meters and graphs found by their new colours).
+
+Measured (Mac gallery, headless, before: main's run 42274820119, after: run 42287794670; `tools/ux-measure.py`):
+
+| What | Before | After |
+|---|---|---|
+| A knob's value text in Neo Poly (mac-411) | 5.15:1 (#8A92A0 on #1E2127) | 6.63:1 (#A0A0AA on #1B1B1E) |
+| A knob's label | 13.0:1 | 14.1:1 |
+| A knob's unfilled track | 3.02:1 | 3.42:1 |
+| Editor accents within ΔE 24 of a state colour | 4 of 13 (Neo Drive 8.3 from override, Neo Drums 13.7, Neo Scope 14.9 from play, Neo Delay 17.9 from record) | 0 (Neo Wave's stays until `fix/followups-1`) |
+| Closest pair of editor accents | ΔE 5.8 (Neo Multiband and Neo Sampler) | ΔE 37 between categories |
+| The headless Mac shell's typeface | the platform's | Inter (the real app's already) |
