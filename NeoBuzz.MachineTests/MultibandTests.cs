@@ -1025,21 +1025,20 @@ namespace NeoBuzz.MachineTests
         {
             var phase = (PhaseMode)phaseMode;
             // 2 s of noise with every band compressing, then 20 s of silence: nothing subnormal in the delay line, the sections,
-            // the gains or the output; silence costs no more than noise; idle once everything has left.
+            // the gains or the output; idle once everything has left; a second of silence costs less than 3 seconds of noise,
+            // timed as the throughput guards are (Measure.SilenceCost).
             var (e, _) = Make(null, phase: phase);
             var noise = Noise(2 * Rate, 0.3, 9);
             var silent = new float[20 * Rate];
-            var sw = Stopwatch.StartNew();
             Run(e, noise, noise);
-            double noiseSeconds = sw.Elapsed.TotalSeconds / 2;
-            sw.Restart();
             var (l, r) = Run(e, silent, silent);
-            double silenceSeconds = sw.Elapsed.TotalSeconds / 20;
-            Assert.That(e.HoldsSubnormals(), Is.False, "no subnormal state");
-            Assert.That(l.Concat(r).Any(float.IsSubnormal), Is.False, "no subnormal output");
-            Assert.That(e.Idle, Is.True, "idle after the tail");
-            Measure.Report($"Neo Multiband {phase}: silence after noise costs {silenceSeconds / noiseSeconds:F2}× noise; no subnormals; idle after the tail");
-            Assert.That(silenceSeconds, Is.LessThan(3 * noiseSeconds + 0.002));
+            Assert.Multiple(() =>
+            {
+                Assert.That(e.HoldsSubnormals(), Is.False, "no subnormal state");
+                Assert.That(l.Concat(r).Any(float.IsSubnormal), Is.False, "no subnormal output");
+                Assert.That(e.Idle, Is.True, "idle after the tail");
+                Measure.SilenceCost($"Neo Multiband {phase}, silence after noise", 3, MultibandEngine.MaxBlock, () => Make(null, phase: phase).Engine.Process, noise);
+            });
         }
 
         [TestCase(0)]

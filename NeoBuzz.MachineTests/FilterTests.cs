@@ -594,24 +594,24 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void SilenceAfterNoiseLeavesNoSubnormalsAndRunsAtFullSpeed()
         {
-            // 2 s of noise through a resonant low-pass, then 20 s of silence: nothing subnormal in the states or the output, silence
-            // costs no more than noise, and the machine goes idle once the tail is gone.
+            // 2 s of noise through a resonant low-pass, then 20 s of silence: nothing subnormal in the states or the output, the
+            // machine goes idle once the tail is gone, and a second of silence costs less than 1.5 seconds of noise, timed as the
+            // throughput guards are (Measure.SilenceCost: each chunk the fastest of several reps, the two renders interleaved).
+            var noise = Noise(2 * Rate, 0.3, 9);
             foreach (int type in new[] { 0, 2, 3 })
             {
-                var (e, _) = Make(v => { v.Set(P.Type, type); Set(v, P.Resonance, 20); Set(v, P.Cutoff, 60); v.Set(P.Slope, 1); });
-                var noise = Noise(2 * Rate, 0.3, 9);
-                var silent = new float[20 * Rate];
-                var sw = Stopwatch.StartNew();
+                Action<ParamValues> setup = v => { v.Set(P.Type, type); Set(v, P.Resonance, 20); Set(v, P.Cutoff, 60); v.Set(P.Slope, 1); };
+                var (e, _) = Make(setup);
                 Run(e, noise, noise);
-                double noiseSeconds = sw.Elapsed.TotalSeconds / 2;
-                sw.Restart();
+                var silent = new float[20 * Rate];
                 var (l, r) = Run(e, silent, silent);
-                double silenceSeconds = sw.Elapsed.TotalSeconds / 20;
-                Assert.That(e.HoldsSubnormals(), Is.False, "no subnormal state");
-                Assert.That(l.Concat(r).Any(float.IsSubnormal), Is.False, "no subnormal output");
-                Assert.That(e.Idle, Is.True, "idle after the tail");
-                Measure.Report($"Neo Filter {(FilterType)type}, Q 20 at 60 Hz: silence after noise costs {silenceSeconds / noiseSeconds:F2}× noise; no subnormals; idle after the tail");
-                Assert.That(silenceSeconds, Is.LessThan(1.5 * noiseSeconds + 0.002));
+                Assert.Multiple(() =>
+                {
+                    Assert.That(e.HoldsSubnormals(), Is.False, "no subnormal state");
+                    Assert.That(l.Concat(r).Any(float.IsSubnormal), Is.False, "no subnormal output");
+                    Assert.That(e.Idle, Is.True, "idle after the tail");
+                    Measure.SilenceCost($"Neo Filter {(FilterType)type}, Q 20 at 60 Hz, silence after noise", 1.5, FilterEngine.MaxBlock, () => Make(setup).Engine.Process, noise);
+                });
             }
         }
 

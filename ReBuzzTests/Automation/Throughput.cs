@@ -226,6 +226,112 @@ namespace ReBuzzTests.Automation
             return new Result(what, bestSpeed * unitSeconds / NominalUnitSeconds, audio * reps / all, bestSpeed, unitSeconds, chunks, chunkSamples, units, reps, slowdown);
         }
 
+        // ---- one render's cost against another's -------------------------------------------------------------------
+
+        /// <summary>The figures of one comparison (<see cref="CompareCost"/>).</summary>
+        public sealed record Cost(string What, double Ratio, double BaseRealTime, double TestRealTime, int BaseChunks, int TestChunks, int ChunkSamples, int Reps, int Slowdown)
+        {
+            /// <summary>One line for the test output and the measurements.</summary>
+            public override string ToString() => string.Format(CultureInfo.InvariantCulture,
+                "{0}: a second of it costs {1:F3}× a second of the baseline ({2:F1}× real time, the baseline {3:F1}×; {4} chunks, the baseline {5}, of {6} samples; {7} reps{8})",
+                What, Ratio, TestRealTime, BaseRealTime, TestChunks, BaseChunks, ChunkSamples, Reps, Slowdown > 1 ? $", the test's work ×{Slowdown}" : "");
+        }
+
+        /// <summary>
+        /// The cost guard: a second of <paramref name="test"/> (a render of <paramref name="testSeconds"/>) costs less than
+        /// <paramref name="limit"/> times a second of <paramref name="baseline"/> (<paramref name="baseSeconds"/>), both the
+        /// same machine (silence after noise against noise): <see cref="CompareCost"/>, asserted, or Soak times over and
+        /// reported. NEOBUZZ_THROUGHPUT_SLOWDOWN does the test's chunks that many times.
+        /// </summary>
+        public static Cost CostGuard(string what, double limit, int rate, int block, double baseSeconds, Func<Func<int, Action<int>>> baseline,
+                                     double testSeconds, Func<Func<int, Action<int>>> test, Action<string>? report = null)
+        {
+            report ??= line => TestContext.Out.WriteLine(line);
+            int soak = Soak;
+            if (soak == 0)
+            {
+                var r = CompareCost(what, rate, block, baseSeconds, baseline, testSeconds, test);
+                report(r.ToString());
+                Assert.That(r.Ratio, Is.LessThan(limit), $"{what}: a second of it costs {r.Ratio:F2}× a second of the baseline, over its limit of {limit}× ({r})");
+                return r;
+            }
+            var runs = new List<Cost>();
+            for (int i = 0; i < soak; i++)
+            {
+                var r = CompareCost(what, rate, block, baseSeconds, baseline, testSeconds, test);
+                runs.Add(r);
+                Record(string.Format(CultureInfo.InvariantCulture, "soak {0} run {1}/{2}: ratio {3:F4} base_xrt {4:F2} test_xrt {5:F2} chunks {6}+{7}x{8} reps {9} slowdown {10} limit {11}",
+                    what, i + 1, soak, r.Ratio, r.BaseRealTime, r.TestRealTime, r.BaseChunks, r.TestChunks, r.ChunkSamples, r.Reps, r.Slowdown, limit), report);
+            }
+            var sorted = runs.Select(r => r.Ratio).OrderBy(x => x).ToList();
+            Record(string.Format(CultureInfo.InvariantCulture, "soak {0} summary: ratio {1:F4} … {2:F4} (median {3:F4}); {4}/{5} over the limit {6} on {7}",
+                what, sorted[0], sorted[^1], sorted[sorted.Count / 2], runs.Count(r => r.Ratio >= limit), runs.Count, limit, Platform), report);
+            return runs[^1];
+        }
+
+        /// <summary>
+        /// What a second of one render costs against a second of another of the same machine, measured as <see cref="Measure"/>
+        /// measures (machines.md §4): each render made Reps times or more from its start (<paramref name="baseline"/> and
+        /// <paramref name="test"/> make the machine anew, set up and warmed untimed, as for <see cref="Guard"/>), split into
+        /// chunks of whole blocks at fixed places (the same size for both: about 1 ms of the baseline's work), so chunk c of
+        /// every rep is the same work; the two renders' chunks interleaved in proportion to their lengths, the first of each
+        /// pair alternating rep to rep; a chunk's time its fastest over the reps, each render's time the sum of its chunks'.
+        /// Other work on a shared runner only adds time, so it drops out unless it hits a chunk in every rep, and a runner
+        /// that is slower, or slowed for the whole run, slows both renders alike: the ratio stays.
+        /// </summary>
+        public static Cost CompareCost(string what, int rate, int block, double baseSeconds, Func<Func<int, Action<int>>> baseline,
+                                       double testSeconds, Func<Func<int, Action<int>>> test)
+        {
+            int slowdown = Slowdown;
+            int baseTotal = Math.Max(block, (int)Math.Round(baseSeconds * rate / block) * block);
+            int testTotal = Math.Max(block, (int)Math.Round(testSeconds * rate / block) * block);
+
+            // Warm-up: a whole baseline, untimed but for its pace (a typical block's), which sizes the chunks.
+            int baseBlocks = baseTotal / block;
+            var warm = baseline()(block);
+            var paces = new double[baseBlocks];
+            for (int c = 0; c < baseBlocks; c++) paces[c] = TimeChunk(warm, c, 1);
+            Array.Sort(paces);
+            double perBlock = Math.Max(1e-9, paces[baseBlocks / 2]);
+            int blocksPerChunk = Math.Clamp((int)Math.Round(ChunkSeconds / perBlock), 1, Math.Max(1, baseBlocks / LeastChunks));
+            int chunkSamples = blocksPerChunk * block;
+            int baseChunks = baseTotal / chunkSamples, testChunks = testTotal / chunkSamples;
+            int reps = Math.Clamp((int)Math.Ceiling(LeastSeconds / (perBlock * blocksPerChunk * baseChunks)), Reps, 64);
+
+            var baseBest = new double[baseChunks];
+            var testBest = new double[testChunks];
+            Array.Fill(baseBest, double.MaxValue);
+            Array.Fill(testBest, double.MaxValue);
+            for (int rep = 0; rep < reps; rep++)
+            {
+                var b = baseline()(chunkSamples);
+                var t = test()(chunkSamples);
+                GC.Collect();
+                int i = 0, j = 0;
+                while (i < baseChunks || j < testChunks)
+                {
+                    // The render further behind in its own length goes next; on a tie, the baseline in even reps.
+                    long pb = (long)i * testChunks, pt = (long)j * baseChunks;
+                    bool baseNext = j >= testChunks || (i < baseChunks && (pb < pt || (pb == pt && (rep & 1) == 0)));
+                    if (baseNext)
+                    {
+                        double s = TimeChunk(b, i, 1);
+                        if (s < baseBest[i]) baseBest[i] = s;
+                        i++;
+                    }
+                    else
+                    {
+                        double s = TimeChunk(t, j, slowdown);
+                        if (s < testBest[j]) testBest[j] = s;
+                        j++;
+                    }
+                }
+            }
+            double baseAudio = (double)baseChunks * chunkSamples / rate, testAudio = (double)testChunks * chunkSamples / rate;
+            double basePerSecond = baseBest.Sum() / baseAudio, testPerSecond = testBest.Sum() / testAudio;
+            return new Cost(what, testPerSecond / basePerSecond, 1 / basePerSecond, 1 / testPerSecond, baseChunks, testChunks, chunkSamples, reps, slowdown);
+        }
+
         static double Seconds(long ticks) => ticks / (double)Stopwatch.Frequency;
 
         static double TimeChunk(Action<int> chunk, int c, int slowdown)
