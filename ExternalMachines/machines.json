@@ -15,7 +15,8 @@
       "gearFolder": "Generators",
       "assembly": "Pedal M1.NET",
       "patches": [
-        "Replaced 3 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+        "Replaced 3 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
+        "Fork (mcp-server.md §12.15, U6 for the Pedal synths): MIDI input (MidiNote and MidiControlChange: notes with velocity, pitch bend, mod wheel, sustain, all notes and sound off) beside the Note track; denormal states flushed under 1e-15; levels, mixes and filter settings glide over 20 ms; silence reported once the output is exactly zero. No parameter, range, default or saved datum changed"
       ]
     },
     {
@@ -31,7 +32,9 @@
       "gearFolder": "Generators",
       "assembly": "Pedal Juno106.NET",
       "patches": [
-        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
+        "Fork (mcp-server.md §12.15, U6 for the Pedal synths): MIDI input (MidiNote and MidiControlChange: notes with velocity, pitch bend, mod wheel, sustain, all notes and sound off) beside the Note track; denormal states flushed under 1e-15; levels, mixes and filter settings glide over 20 ms; silence reported once the output is exactly zero. No parameter, range, default or saved datum changed",
+        "Fork (§12.15): the factory bank levelled by VCA Level alone (31 of 48 presets), every preset under -1 dBFS and -8 LUFS in tools/preset-check.py"
       ]
     },
     {
@@ -47,7 +50,9 @@
       "gearFolder": "Generators",
       "assembly": "Pedal SH101.NET",
       "patches": [
-        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+        "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
+        "Fork (mcp-server.md §12.15, U6 for the Pedal synths): MIDI input (MidiNote and MidiControlChange: notes with velocity, pitch bend, mod wheel, sustain, all notes and sound off) beside the Note track; denormal states flushed under 1e-15; levels, mixes and filter settings glide over 20 ms; silence reported once the output is exactly zero. No parameter, range, default or saved datum changed",
+        "Fork (§12.15): the factory bank levelled by Volume alone (7 of 22 presets), every preset under -1 dBFS and -8 LUFS in tools/preset-check.py"
       ]
     },
     {
@@ -63,7 +68,8 @@
       "gearFolder": "Generators",
       "assembly": "Pedal FM.NET",
       "patches": [
-        "Replaced 2 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)"
+        "Replaced 2 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
+        "Fork (mcp-server.md §12.15, U6 for the Pedal synths): MIDI input (MidiNote and MidiControlChange: notes with velocity, pitch bend, mod wheel, sustain, all notes and sound off) beside the Note track; denormal states flushed under 1e-15; levels, mixes and filter settings glide over 20 ms; silence reported once the output is exactly zero. No parameter, range, default or saved datum changed"
       ]
     },
     {
@@ -80,7 +86,8 @@
       "assembly": "Pedal Tracker.NET",
       "patches": [
         "Replaced 1 hard-coded 'C:\\Program Files\\ReBuzz' path(s) with $(ReBuzzDir)",
-        "Portable build (studio-mvp.md S2): MenuEntry derives from DependencyObject only under #if WINDOWS (plain properties otherwise)"
+        "Portable build (studio-mvp.md S2): MenuEntry derives from DependencyObject only under #if WINDOWS (plain properties otherwise)",
+        "Fork (mcp-server.md §12.15, U6 for the Pedal synths): MIDI input (MidiNote and MidiControlChange: notes with velocity, pitch bend, mod wheel, sustain, all notes and sound off) beside the Note track; denormal states flushed under 1e-15; levels, mixes and filter settings glide over 20 ms; silence reported once the output is exactly zero. No parameter, range, default or saved datum changed; no allocation per note (its trigger trace formats on demand)"
       ]
     },
     {

@@ -664,7 +664,7 @@ Unhealthy machines (decided 2026-11-03) are in [machine-safety.md](machine-safet
 | **U3 Curate** (tier 1 done) | Curated manifests for the top 25 (summary, plain names, roles, safe ranges, quirks); manuals (`rebuzz://machines/…`) for every machine with a manifest; `GuideTests` check curated names and values. **Built** (§12.9) | 25 curated, the rest drafts: every machine in the package has a manifest | M |
 | **U4 A better face** (tier 2) | The manifest editor on the editor kit (groups, knobs in units, choices, ADSR and response plots), a per-machine setting; factory presets for the top machines. **Built** (§12.11) | The editor opens for every curated machine in the studio and ReBuzz.exe; its presets load through `preset_load` | L |
 | **U5 `machine_replace`** (tier 4) | Role mapping, unit conversion, render before and after with `compare`; one undo step; the machine menu's Replace. **Built** (§12.10) | Jeskola Reverb → Neo Verb, Pedal EQ → Neo EQ, Jeskola Distortion → Neo Drive and Pedal Gain → Neo Utility convert within a stated tolerance, or say why not | M |
-| **U6 Source fixes** (tier 3, C#) | Pedal and ReBuzz machines: manifests from code, MIDI input for the Pedal synths, denormal guards, smoothing, silence reporting; the Neo measurement suite on them. **Built for the Pedal effects and ReBuzz's own machines** (§12.13), with Neo Analyzer's slowdown; the Pedal synths left (no MIDI input or source change) | Their health report is clean; their manifests no longer drafts; old songs render as before | L |
+| **U6 Source fixes** (tier 3, C#) | Pedal and ReBuzz machines: manifests from code, MIDI input for the Pedal synths, denormal guards, smoothing, silence reporting; the Neo measurement suite on them. **Built** for the Pedal effects and ReBuzz's own machines (§12.13), with Neo Analyzer's slowdown, and for the Pedal synths (§12.15): MIDI input, their glides and silence, Pedal Tracker's, Chord's, LFO's and Peer Control's manifests from code, Juno106's and SH101's banks levelled | Their health report is clean; their manifests no longer drafts; old songs render as before | L |
 | **U7 Natives with sources** (tier 3) | The Buzztrax MSVC header fix, x64 builds, fixes and generated manifests. **Built** (§12.14): all 17 build as x86 and x64; the 11 FSM and Oomek x64 rebuilds are bit-identical to upstream's, 10 ship in its place (WahMan and WahPro2 with a fix); Jeskola's six aren't redistributable (no licence); 8 manifests from code | The Buzztrax machines build in the package; §12.6's "Done when" holds | L |
 
 The successors of §12.5 were machine batches of their own (machines spec), each landing with its `machine_replace` mappings: Neo Ensemble, Neo Delay, Neo Sampler, Neo Drums and Neo Filter are built; Jeskola Organ's (Neo Wave's organ table, or a tonewheel organ) is still proposed.
@@ -717,7 +717,7 @@ The successors of §12.5 were machine batches of their own (machines spec), each
 - Fork CI also runs the profiler on every portable machine (artifact `machine-profile-linux`), and the package job on everything in ReBuzz.exe's Gear (artifact `machine-profile-windows`, never failing the job).
 
 **Found.** 108 machines: 29 on Linux (10 Neo, 19 Pedal) and 89 in the Windows package's Gear (quick build: the 73 upstream machines, ReBuzz's own and the Neo ones). `docs/machine-health.md` has them all.
-- **Notes.** Apart from the three Neo synths, no generator in the package plays a MIDI note: every Pedal synth and every native one takes notes only in its Note track parameter. Before U1, `notes_write` left all of them silent.
+- **Notes.** Apart from the three Neo synths, no generator in the package plays a MIDI note: every Pedal synth and every native one takes notes only in its Note track parameter. Before U1, `notes_write` left all of them silent. (The Pedal synths take MIDI notes too since §12.15.)
 - **Pitch conventions.** Most pitched generators play A4 at 440 Hz as written (offset 0). Three don't:
   - **FSM Infector** and **kibibu Green Milk** play an octave low (offset +12);
   - **KrimZon AY-3-8910** plays 13 semitones high (offset −13).
@@ -946,7 +946,7 @@ Fewer or none, and why:
 - Joachims Mars filter 2's God of Iron at −9 dB input (+6.1 → +2.7 dB) and Cannon at −20 dB (+13.8 → −2.4 dB), which also brings its four within 9.4 LU of each other (20.5 before).
 - On the first Linux run the check's source moved from −6 to −12 dB (a part's level in a mix, peaking near −10 dBFS), where Pedal Comp's makeup gain had peaked at −0.2 … −0.5 dBFS; Pedal FM's Output levels were set to −14 … −20 dB.
 
-**The Pedal machines' own banks** (`--theirs`, Linux; reported, not judged, not changed: they are the machines' own, and levelling another author's bank belongs with their source, U6):
+**The Pedal machines' own banks** (`--theirs`, Linux; reported, not judged, not changed here: they are the machines' own, and levelling another author's bank belongs with their source, U6; Juno106's and SH101's are levelled since, §12.15):
 - Pedal Juno106: 30 of its 48 peak above −1 dBFS or play louder than −8 LUFS with the check's chords at velocity 100 (worst: Bass — Pulse +5.1 dBFS at −5.7 LUFS, Lead — Sync +4.3 dBFS, Bass — Sub +2.9 dBFS).
 - Pedal SH101: 6 of its 22 (Deep Sub +2.3 dBFS; Sub Bass +0.2 dBFS at −4.3 LUFS; Kick +0.3; Wobble Bass +0.1; PWM Sweep −0.9; Sci-Fi Drone −0.6).
 - Pedal Drum Matrix: none peaks above −1 dBFS, but 17 of its 30 are more than 6 dB louder than their input (Resonant Drone +15.5 dB, Dub Chamber +11.8 dB, Evolving Texture +10.9 dB, Pentatonic Arp +10.8 dB, Telephone +10.4 dB at −1.2 dBFS).
@@ -963,7 +963,7 @@ Fewer or none, and why:
 - Computed curves for more designs: the synth filters whose source we have (Pedal SH101's Moog ladder, Juno106's, M1's) could be drawn at the knob's cutoff, but they move with every note; and the closed effects (Jeskola EQ-3, Filter) would need measuring (U2's test-signal source) before a curve could be honest.
 - Track parameters show the first track's; the plain list has every track.
 - The editor's window isn't restored with a song.
-- Rout 909 and Pedal M1 presets (above); the Pedal banks' own presets that peak above −1 dBFS are theirs, reported, not changed.
+- Rout 909 and Pedal M1 presets (above); Pedal Drum Matrix's own presets that gain more than 6 dB are theirs, reported, not changed (Juno106's and SH101's are levelled, §12.15).
 - The natives' own banks beside ours (Infector's 609, Aggressor 303's 60, PanzerDelay's 27, Mars filter 2's one) aren't measured: the check measures our files, and `--theirs` the curated machines without one.
 - The check plays each machine's presets one after another, as someone trying them would; FSM Infector's peaks move by up to 2 dB with what played before (its oscillators keep their phases), which the 1 dB margins cover for the orders measured, not for every order. Jeskola Bass 3 and Infector have no level of their own: velocity is it.
 
@@ -1035,7 +1035,7 @@ Drafts get `suggested_role` and `role_evidence` per parameter and `profile.roles
 
 ### 12.13 U6 as built
 
-Tier 3 (§12.4) for the C# machines, built for the Pedal effects, ReBuzz's own machines and Neo Analyzer. The Pedal synths are left as they are (decided with U6's scope): no MIDI input and no source change for Juno106, SH101, FM, M1 and Tracker, nor for Chord, LFO, Peer Control and Drum Matrix. No parameter, range or saved datum moved, and nothing in the engine changed: the null test stays bit-identical (its cases use no Pedal machine, and Neo Analyzer passes its audio unchanged).
+Tier 3 (§12.4) for the C# machines, built for the Pedal effects, ReBuzz's own machines and Neo Analyzer. The Pedal synths were left as they were (decided with U6's scope): no MIDI input and no source change for Juno106, SH101, FM, M1 and Tracker, nor for Chord, LFO, Peer Control and Drum Matrix; §12.15 did the synths' share since. No parameter, range or saved datum moved, and nothing in the engine changed: the null test stays bit-identical (its cases use no Pedal machine, and Neo Analyzer passes its audio unchanged).
 
 **Slowdowns after silence** (§12.12 found them): each was a one-pole decay or a filter's state left decaying towards zero in floats, where rounding stops it a few steps above zero, among the denormal numbers the CPU handles slowly. Each such state is now set to zero once it is under 1e-15 of full scale (−300 dBFS), sample by sample, in the machine's own code, not by the engine's floating-point mode, so anything louder is the same bit for bit and the output doesn't depend on the block size:
 
@@ -1116,7 +1116,7 @@ What the code proved the drafts wrong on: Pedal Shaper's Drive and Output (−24
 **Tests.** `NeoBuzz.PedalTests` (above); `NeoBuzz.MachineTests` `AnalyzerTests.SilenceAfterSoundSettlesToExactZero`; `tools/test_machine_infer.py` (70: the committed manifests against their source, declarations read as ReBuzz reads them, kinds that fit exactly or fail, code that changed caught; the subsonic tail); ReBuzz.AgentTests (`CuratedManifestTests`: the 15 from source exact in every value and the rest drafts, their manuals; `DraftManifestTests`; `GuideTests`' manuals for the Neo machines); `tools/headless-manifests.py` (Pedal Shaper's generated manifest through the tools: "+6 dB" is raw 60 and reads "+6.0 dB", Mix 50 % is raw 63 or 64, `exact_units`; the draft checks on Pedal Tracker); `tools/curated-check.py` checks generated manifests as curated ones; `ManifestEditorTests`' draft editor on Pedal Tracker.
 
 **Left.**
-- The Pedal synths: MIDI input, and denormal guards, smoothing and silence reporting in Juno106, SH101, FM, M1 and Tracker (none is slow after silence in the profile); Pedal Tracker's, Chord's, LFO's and Peer Control's manifests stay drafts; their own preset banks (§12.11) aren't levelled.
+- The Pedal synths: MIDI input, and denormal guards, smoothing and silence reporting in Juno106, SH101, FM, M1 and Tracker; Pedal Tracker's, Chord's, LFO's and Peer Control's manifests from code; Juno106's and SH101's own banks levelled. **Built** since (§12.15); what that leaves is listed there.
 - Silence that saves work: an engine change (above).
 - Pedal Shaper aliases (measured above): oversampling would change its sound; Neo Drive is the successor.
 - ReBuzz Midi Output's MidiCC and Channel (noted in its manifest).
@@ -1204,6 +1204,148 @@ The curated manifests stay curated; checked against the code (ranges, defaults, 
 - The rest of the Buzztrax collection (Fuzzpilz, Matilde, Arguru, Geonik and the others) stays source only; upstream ships few of them.
 - Oomek Masterizer returns false (silence) when its Input gain is 0 (−inf dB) whatever the mode; ReBuzz keeps a native's buffer as the machine left it (§12.13), so there it passes its input through instead of muting. Read from the code, not measured; upstream's binary does the same, and the fix belongs with the engine's silence handling (§12.13).
 - R1 (cross-platform.md §4.2): what this says about building them for macOS and Linux is there.
+
+### 12.15 U6 for the Pedal synths, as built
+
+Tier 3 (§12.4) for the five Pedal synths, the part §12.13 left: MIDI input for Pedal Juno106, SH101, FM, M1 and Tracker, with the denormal guards, parameter glides and silence reporting U6 gave the Pedal effects, and the Neo measurement suite on them; manifests generated from code for Pedal Tracker, Chord, LFO and Peer Control, the last drafts among the Pedal machines; and Juno106's and SH101's own banks levelled. No parameter, range, default or saved datum moved, and nothing in the engine changed: the null test stays bit-identical (its cases use only the Neo machines).
+
+**MIDI input.** Each synth has `MidiNote` and `MidiControlChange`, which `ManagedMachineHost` finds by reflection, so a MIDI keyboard and a pattern's MIDI column (`notes_write`, `midi_play`) play it beside its Note track. ReBuzz calls them on the MIDI thread or the audio thread; they go into a queue (`MidiIn.cs` in each synth's folder: a 1024-entry ring, a lock on the writing side, nothing allocated and no wait on the audio thread) that the synth applies at the start of its next block, after the block's track notes. A track's note on a voice takes it from MIDI; a track's note plays as it did, bit for bit.
+
+| Synth | MIDI notes | Velocity | Mod wheel |
+|---|---|---|---|
+| Pedal Juno106 | any of its 6 voices: a free one, the highest first (tracks take the first), else the one released longest ago, else the oldest | the voice's level, velocity / 127 | vibrato as DCO LFO, up to its maximum |
+| Pedal SH101 | monophonic, the last key down, back to a key still held when it is let go (its pitch, no retrigger; Glide slides as between overlapping notes) | the level, velocity / 127 | vibrato up to ±1 semitone, or VCO Mod's if more |
+| Pedal FM | any voice up to Voices (8 by default, 16 at most), picked as Juno106's | what the Velocity column does, for that note: velocity / 127, through each operator's VelSens | vibrato as LFO Pitch, up to its maximum |
+| Pedal M1 | any of its 8 voices, picked as Juno106's | what the Volume column does (127 full), through Amp Vel and Filter Vel | vibrato as LFO1 to Pitch, up to its maximum |
+| Pedal Tracker | any of its 16 voices, the last first, playing the wave track 1 last chose (wave 1 until it chooses one) | through the Volume column's curve, (velocity / 127)² | none (no LFO: its vibrato is command 04) |
+
+All five: pitch bend ±2 semitones (every voice; the Tracker's MIDI voices), the sustain pedal (CC 64) holds released notes until it comes up, All Notes Off (CC 123) releases them and All Sound Off (CC 120) also fades what sounds, and the transport stopping releases MIDI notes (a track's note on SH101 and FM rings on after Stop, as before). Juno106 bends by an exact ratio (its fast exponential is a few cents out between octaves). Measured in `NeoBuzz.PedalTests` (48 kHz, the defaults):
+
+| | Juno106 | SH101 | FM | M1 | Tracker |
+|---|---|---|---|---|---|
+| A4 through MIDI at 127, against a track's note | 440.14 Hz on voice 6, its level within 0.07 dB (track 1's voice: 437.34 Hz, −10.4 cents, as before) | the same samples | the same samples | the same samples | the same samples |
+| Velocity 100, 64, 20 against 127 | −2.08, −5.95, −16.06 dB | the same | the same | −1.25, −3.25, −6.57 dB (Amp Vel 80) | −4.15, −11.90, −32.11 dB |
+| Bend at the top, the bottom | +200.0, −200.1 cents | +200.0, −200.2 | +200.0, −200.2 | +199.9, −205.3 (G4 played is there too: its own exponential) | +200.0, −200.2 |
+| Mod wheel at the top: the pitch spreads over | 179 cents | 171 | 197 | 188 | — |
+| C4 E4 G4 as MIDI: each fundamental against the note alone | within 0.06 dB | (one voice: the last key) | 0.00 dB | within 0.04 dB | within 0.03 dB |
+| A note let go with the pedal down, 1 s on | −0.6 dB (held) | −0.3 dB | −0.2 dB | 0.0 dB | 0.0 dB |
+
+SH101's key stack: A3, then E4 over it (329.6 Hz), E4 let go: A3 again (220.0 Hz) without a retrigger. Keys 0 and 127, velocities 1 and 127 and both controllers at their ends stay finite on all five.
+
+**Silence, denormals and work after silence.** The decaying states that rounding left among the denormal numbers are set to zero under 1e-15 (−300 dBFS), sample by sample, as §12.13 did: Juno106's HPF and its chorus's three low-passes, M1's state-variable filter. A synth's `Work` returning false makes ReBuzz play silence there (the samples aren't copied), so each says it only for a block of exact silence and once its tail has ended: FM and M1 skip a voice once it has finished (its envelopes done, no trigger waiting), where a released voice had stayed active for good; the Tracker returns false only when no voice is active or its master mute has faded all the way. Measured on the old and new sources alike (`ItSaysItIsSilentOnceItIsAndOnlyThen`, `SilenceAfterSoundSettlesToExactZero`, `SilenceCostsNoMoreAfterNotesThanBefore`, `ProcessingAllocatesNothing`; work in ms of the machine's own `Work` per second of audio, interleaved runs, best of each group):
+
+| Machine | Before | After |
+|---|---|---|
+| Pedal Juno106, Chorus II and HPF 3 | never exact zero: 1,420,863 denormal output samples in 30 s; never said silent; 23.87 ms/s after silence against 1.67 before its first note (14.3×) | exact zero 0.38 s after the last note off, no denormal sample; says so from then; 1.64 against 1.64 |
+| Pedal Juno106, Chorus III and HPF 1 | never exact zero (1,416,516 denormal samples); never said silent | exact zero and says so from 0.41 s |
+| Pedal FM | never said silent (its output exact zero from 11.34 s); 3.71 ms/s after silence against 0.36 (10.4×) | says so from 11.34 s; 0.37 against 0.37 |
+| Pedal M1 | never said silent; 7.55 ms/s after silence against 1.42 (5.3×); with a 0.1 s wave that ends while the note holds, 20 denormal samples | says so from 0.16 s; 2.32 against 1.56 (1.5×: its finished voices' LFOs still step, so a later note's random values are as before); no denormal |
+| Pedal Tracker | muted while it played, said silent while its fade was at −28.6 dBFS (heard anyway: a multi-output machine's outputs are used whatever it says); 21,632 bytes allocated per 2 s (a string formatted per trigger) | says so only for exact silence; 0 bytes (the trigger's trace formats on demand) |
+| Pedal SH101, and the others at their defaults | already right: SH101 silent and saying so from 0.76 s, Juno106 0.37 s, Tracker 0.01 s; 0.31 ms/s after silence against 0.31 | the same, bit for bit |
+
+With MIDI notes as well as tracks the figures are the same. Nothing allocates per block on any of the five, notes, MIDI and moving parameters included (`AllocationCheck`, as the Neo machines' tests). Every `Work` and the voice render loops (FM's `Voice.Render`, the Tracker's `VoiceRender.Render`, M1's LFO skip) are `AggressiveOptimization`: in a song played through rebuzz-headless with `DOTNET_JitDisasmSummary=1`, they compile once fully optimised and no audio-path method needs an on-stack replacement (the Tracker's sinc tables do, in its constructor).
+
+**Glides.** A level, a mix, a pulse width, a cutoff or a resonance now glides to its new value in a straight line over 20 ms, sample by sample, and lands on it exactly (the `ParamGlide` struct in each synth; SH101's and FM's own Glide parameters are portamento): Juno106 VCA Level, DCO Sub, Noise and PW, VCF Freq (in octaves) and Reso; SH101 Volume, the four mixer levels, PWM, Cutoff and Resonance (and a new note's velocity level, over 2 ms); FM Output and the four operator levels (per sample through the voices); M1 Volume, OSC1 and OSC2 Level, Cutoff and Resonance; the Tracker's Master. A setting that doesn't move is the same number as before. The first block, a new sample rate, and a block that starts with no voice sounding start at the setting: a preset loaded or a parameter set between phrases plays its next note at once, as before, with no sweep of its first 20 ms (`ASettingChangedInSilenceStartsTheNextNoteAtIt`: without that rule, the next note's first 50 ms were −1.6 to −17.9 dB from the setting's; with it, the same samples).
+
+Stepped mid-note (`ASteppedParameterGlides`), a gain as the largest change of the output's gain between two samples (least squares over 17 samples about each), the others as what the step changes in the output over its first 5 ms against 20–40 ms on:
+
+| Parameter | Before | After |
+|---|---|---|
+| Juno106 VCA Level 100 → 50 | 0.50 dB | 0.022 dB |
+| SH101 Volume 96 → 48; Pulse, Saw, Sub Lvl | 0.68; 0.28, 0.36, 0.32 dB | 0.018; 0.022, 0.022, 0.024 dB |
+| FM Output 100 → 60; Op4 Level 127 → 60 | 1.57; 0.67 dB | 0.037; 0.026 dB |
+| M1 Volume 100 → 50; OSC1 Level 100 → 40 | 0.47; 0.59 dB | 0.009; 0.013 dB |
+| Tracker Master 0x8000 → 0x4000 | 0.52 dB | 0.009 dB |
+| Juno106 VCF Freq, Reso, DCO PW, DCO Sub into the filter's soft clip | +0.3, +0.2, 0.0, −1.7 dB | −13.2, −13.5, −8.1, −17.4 dB |
+| SH101 Cutoff, Resonance, PWM | 0.0, +0.3, −0.4 dB | −13.7, −9.4, −7.7 dB |
+| FM Op3 Level (a modulator) | +0.1 dB | −15.0 dB |
+| M1 Cutoff, Resonance | −0.9, −0.8 dB | −23.1, −12.5 dB |
+
+(A moving edge, a pulse width's, comes in as the square root of the glide, so its figure is the smallest.) After the glide each plays what a machine set there from the start plays: the same samples, or within −61 to −109 dBFS where the step went into a filter whose state takes its time.
+
+**What stays bit for bit.** The old and new sources rendered side by side through their Note tracks (`$S/synthcmp`, not in the repo: the harness on each source tree): the defaults at blocks of 256, 117 and 64, every parameter alone at each end, 12 settings whose state carries across notes (M1's sample-and-hold LFOs, FM's glide into a released voice), and every preset of the banks (Juno106's 48, SH101's 22, FM's 32 and our 6), 477 renders: 455 the same bit for bit; the other 22, Juno106 with its chorus or HPF on, differ only under 1e-15 of full scale (5.6e-16 at most: the flushed tails). Blocks of 256 and 117 give the same output on SH101, FM, M1 and the Tracker; Juno106's drift steps once a block (its pitch 0.001 cents and its level 0.006 dB apart), as before.
+
+**Found and left as they are** (a fix would change what songs play):
+- Juno106's default patch rings: VCF Env Amt 80 opens the filter to its ceiling (0.45 × the sample rate), where VCF Reso 30 sustains a tone at 0.41 × the rate (18.2 kHz at 44.1 kHz, 19.8 kHz at 48), about 80 % of the output's energy and so of its peaks and loudness meters. Two voices' tones can cancel: the profile heard one voice for a MIDI chord (+1.2 dB for two notes; their fundamentals add as they should). None of its factory presets does it. Its manifest says so.
+- Juno106's voices 1, 3 and 5 play about 10 cents flat (its fast exponential falls short just under an octave, on their negative detunes); its drift steps by blocks.
+- M1's fast exponential is up to 5 cents out between octaves (G4 at −205.3 cents from A4, bent or played); FM's LFO moves once a block.
+- FM with Glide on: a track's note after a released note on the same voice takes the legato path and stays silent.
+- SH101's and FM's track notes ring on after Stop (MIDI notes don't).
+
+**Manifests from code.** `tools/source_manifests.py` now reads a declaration's constants and enum members (`PERIOD_MIN`, `(int)Interp.Cubic`) and a wave number's fixed range (1–200, default 1, whatever it declares), and generates Pedal Tracker's (20 parameters and 6 per track: Master in % of unity, Mute Inertia in seconds, Volume as its (v / 128)² curve in dB, the commands and arguments as integers), Pedal Chord's (12 per track: 51 voicings, 6 modes, ticks, percent), Pedal LFO's (8: Phase in degrees, 127 being 357.2°) and Pedal Peer Control's (Inertia in ticks, Value in percent): 19 manifests from source, every value checked against the code. No Pedal machine has a draft now, so `tools/headless-manifests.py` makes Pedal Tracker one in its copy of the app for the drafts' checks, and `ManifestEditorTests` puts a draft of it in the server's manifest cache for the draft editor's.
+
+The synths' manifests (curated, and the Tracker's generated one) take MIDI: `notes.input` "midi", so `notes_write` writes the MIDI column and the note's velocity plays (Juno106 6 voices, SH101 1, FM 8, M1 8, Tracker 16); `input: "tracks"` still writes the Note track, as old songs have it. Their quirks say how each takes MIDI, and the ones that said "no velocity, pitch bend" or "a chord plays as one voice" are gone. The Tracker is typed a sampler (it plays the wavetable, as M1 does). Profiled again on Linux (`tools/machine-profiler.py --only`, the five and Chord, LFO and Peer Control; merged): every pitch heard within 1 cent through MIDI (Juno106's A4 −0.4 cents on voice 6, where track 1 was −11.4), M1's chord heard as 8 voices (1 through its tracks), the Tracker's as 8 (as many as the profiler plays), velocity linear in amplitude on Juno106, SH101 and FM (6.0 dB a doubling), gentle on M1 (2.3), squared on the Tracker (12.0); `docs/machine-health.md` lists no synth slow after silence.
+
+**Their preset banks** (§12.11 measured them, not judged). Levelled, changing only each preset's output value (Juno106's VCA Level, SH101's Volume, both linear in amplitude after the voices), to −1.3 dBFS and −8.3 LUFS at most, 0.3 dB inside the check's limits; `gen_presets.py` beside each bank writes the same file. The check now judges these two banks preset by preset, as ours (not their spread, 14 and 21 LU: a kick and a pad share a bank), so Fork CI fails if one goes over; Drum Matrix's stays reported. `tools/preset-check.py --theirs`, the loudest 400 ms of the check's phrase (chords on Juno106, a line on SH101) in LUFS / the sample peak in dBFS; before, through the Note track (the manifests' input then); after, both ways, through the Note track at full level and through MIDI at velocity 100 (how the check plays them now):
+
+| | Flagged | Peaks up to | Loudest 400 ms |
+|---|---|---|---|
+| Juno106 (48) before | 30 | +5.1 dBFS | −21.9 … −5.3 LUFS |
+| Juno106 after, a track's note | 0 | −1.1 dBFS | −21.9 … −8.3 LUFS |
+| Juno106 after, MIDI at velocity 100 | 0 | −1.3 dBFS | −23.9 … −9.7 LUFS |
+| SH101 (22) before | 6 | +2.3 dBFS | −31.4 … −4.3 LUFS |
+| SH101 after, a track's note | 0 | −1.3 dBFS | −29.5 … −8.3 LUFS |
+| SH101 after, MIDI at velocity 100 | 0 | −3.4 dBFS | −31.6 … −10.4 LUFS |
+
+The 31 and 7 presets changed:
+
+**Pedal Juno106** (VCA Level; loudest 400 ms in LUFS / sample peak in dBFS):
+
+| Preset | VCA Level | Before (a track's note) | After, a track's note | After, MIDI at velocity 100 |
+|---|---|---|---|---|
+| Pad — Lush | 100 → 87 | -7.9 / -0.1 | -9.1 / -1.4 | -10.6 / -3.1 |
+| Pad — Hollow | 100 → 78 | -6.7 / +0.8 | -8.8 / -1.4 | -10.8 / -2.8 |
+| Pad — Vintage Strings | 100 → 76 | -6.6 / +1.0 | -9.0 / -1.4 | -11.0 / -2.8 |
+| Pad — Air | 100 → 78 | -7.5 / +0.8 | -9.7 / -1.3 | -10.5 / -2.3 |
+| Pad — Sweep | 100 → 89 | -8.3 / -1.1 | -9.3 / -2.1 | -10.4 / -1.3 |
+| Pad — Wide Stack | 100 → 79 | -7.2 / +0.7 | -9.2 / -1.3 | -11.0 / -2.8 |
+| Brass — Synth | 100 → 66 | -7.0 / +2.3 | -10.6 / -1.3 | -12.5 / -3.8 |
+| Brass — Soft | 100 → 92 | -8.7 / -0.6 | -9.4 / -1.3 | -11.4 / -2.9 |
+| Brass — Stack | 100 → 94 | -9.6 / -0.8 | -10.1 / -1.4 | -10.9 / -3.3 |
+| Brass — Punchy | 100 → 71 | -9.8 / +1.5 | -12.7 / -1.4 | -14.6 / -4.0 |
+| Brass — Mellow | 100 → 92 | -7.7 / -0.6 | -8.4 / -1.3 | -10.1 / -2.1 |
+| Lead — Saw | 100 → 96 | -9.4 / -1.0 | -9.7 / -1.3 | -11.8 / -4.1 |
+| Lead — Square | 100 → 70 | -6.6 / +1.7 | -9.7 / -1.4 | -11.8 / -3.8 |
+| Lead — Sync | 100 → 51 | -7.7 / +4.3 | -13.6 / -1.5 | -15.5 / -3.5 |
+| Lead — Acid | 100 → 93 | -11.2 / -0.8 | -11.8 / -1.4 | -13.7 / -4.0 |
+| Lead — Bright | 100 → 84 | -7.5 / +0.2 | -9.1 / -1.3 | -10.9 / -3.8 |
+| Lead — PWM | 100 → 70 | -6.3 / +1.7 | -9.4 / -1.4 | -11.4 / -1.3 |
+| Lead — Mono | 100 → 73 | -7.8 / +1.4 | -10.6 / -1.3 | -12.0 / -3.6 |
+| Bass — Sub | 100 → 61 | -5.3 / +2.9 | -9.6 / -1.4 | -11.8 / -3.4 |
+| Bass — Saw | 100 → 77 | -8.7 / +0.9 | -10.9 / -1.3 | -13.0 / -3.3 |
+| Bass — Pulse | 100 → 47 | -5.7 / +5.1 | -12.3 / -1.4 | -14.6 / -3.6 |
+| Bass — Hard | 100 → 87 | -11.2 / -0.1 | -12.4 / -1.4 | -14.4 / -3.4 |
+| Bass — Funky | 100 → 88 | -13.5 / -0.2 | -14.6 / -1.3 | -16.9 / -3.4 |
+| Bass — Stack | 100 → 84 | -10.5 / +0.2 | -12.1 / -1.3 | -15.0 / -3.7 |
+| Bass — Wobble | 100 → 85 | -10.3 / +0.1 | -11.7 / -1.3 | -13.6 / -3.7 |
+| Keys — Soft Pluck | 100 → 81 | -13.2 / +0.5 | -15.1 / -1.4 | -17.2 / -3.5 |
+| Keys — Bell | 100 → 88 | -12.8 / -0.2 | -13.9 / -1.3 | -15.8 / -3.5 |
+| Keys — EP Stack | 100 → 95 | -11.2 / -0.9 | -11.6 / -1.3 | -12.6 / -3.7 |
+| Keys — Funky Clav | 100 → 73 | -19.1 / +1.4 | -21.8 / -1.3 | -23.9 / -3.3 |
+| FX — Filter Pulse | 100 → 77 | -8.3 / +0.9 | -10.6 / -1.3 | -12.5 / -3.8 |
+| Classic — Polysynth | 100 → 94 | -7.8 / -0.9 | -8.4 / -1.4 | -10.2 / -2.6 |
+
+**Pedal SH101** (Volume; loudest 400 ms in LUFS / sample peak in dBFS):
+
+| Preset | Volume | Before (a track's note) | After, a track's note | After, MIDI at velocity 100 |
+|---|---|---|---|---|
+| Sub Bass | 96 → 60 | -4.3 / +0.2 | -8.4 / -3.9 | -10.4 / -5.9 |
+| Deep Sub | 100 → 66 | -12.0 / +2.3 | -15.6 / -1.3 | -17.7 / -3.4 |
+| Wobble Bass | 100 → 85 | -9.0 / +0.1 | -10.4 / -1.3 | -11.9 / -4.2 |
+| PWM Sweep | 100 → 95 | -8.2 / -0.9 | -8.7 / -1.4 | -10.7 / -3.4 |
+| Sci-Fi Drone | 90 → 83 | -9.7 / -0.6 | -10.4 / -1.3 | -16.5 / -5.2 |
+| Kick | 110 → 91 | -18.4 / +0.3 | -20.0 / -1.4 | -22.1 / -3.5 |
+| Snare Burst | 100 → 124 | -31.4 / -15.1 | -29.5 / -13.3 | -31.6 / -15.8 |
+
+Juno106's Pad — Sweep passed through its track (−1.1 dBFS) but peaked at −0.3 dBFS through MIDI, whose notes take other voices (other detunes beating in its chorus); SH101's Snare Burst, at −31.4 LUFS through its track, played under the check's −32 LUFS through MIDI at velocity 100, so it went up. Juno106's chords and SH101's line through MIDI at velocity 100 are otherwise 2.1 dB under the same through the Note track, within ±0.6 dB (other voices, an LFO's phase), but for SH101's Sci-Fi Drone: its self-oscillating filter plays on from the preset the check played before it (−10.4 LUFS through its track, −16.5 through MIDI; played alone, both −15.2).
+
+**Tests.** `NeoBuzz.PedalTests` (219 cases; the synths' on their own `Work` through a host stub, `SynthHarness.cs`): the MIDI tests above, and each hygiene test with track notes alone and with MIDI as well: silence settles to exact zero with no denormal sample and is said once it's there (for M1 also with a wave that ends while the note holds, for the Tracker also muted while it plays), work after silence at most twice that before the first note, no allocation per block, blocks of 256 and 117 alike (Juno106: its pitch and level), every parameter alone at each end and MIDI at its ends finite, 20 parameters' glides and the 20 set in silence. On the old sources 33 of the 79 that can run there fail (the 34 with MIDI can't: the old synths have no `MidiNote`): the 20 glides, Juno106's chorus and HPF tails, FM's and M1's silence reports and work after silence, M1's short wave, the Tracker's allocation and its report while muted; the 20 settings changed in silence pass there, as the old synths had no glide (that test is the glide's own rule, and fails without it). With the fixes, all pass. The Pedal effects' allocation tests go through `AllocationCheck` too (U6's counted the whole run, and caught the runner's own allocations now and then). `CuratedManifestTests` (19 from source), `AgentHeadlessTests`, `tools/headless-manifests.py` (SH101's notes as MIDI, and through its Note track; the drafts' checks on a Pedal Tracker made a draft), `tools/test_machine_infer.py`, `tools/preset-check.py --theirs` (above: judging the two banks).
+
+**Left.**
+- Juno106's default patch tone, voice detune and block-size drift, M1's bend, FM's block-rate LFO and Glide on a released voice (above): fixes that change the sound, for a decision.
+- Pedal Drum Matrix: no source change and no MIDI (it is an effect); its own bank isn't levelled (17 of its presets gain 6–12 dB over their input in the check, reported).
+- Pedal Chord, LFO and Peer Control: manifests from code, no source change (they make no sound).
+- Silence that saves work: the engine change §12.13 describes.
 
 ## 13. Inventory notes (for implementers)
 
