@@ -165,7 +165,7 @@ namespace ReBuzz.Studio.Tests
                     "the window grew by the keyboard's height (the editor keeps its own)");
                 Assert.That(kb.Keys.Layout.Octaves, Is.GreaterThanOrEqualTo(4), $"a wide editor gets more octaves ({editor.ClientSize.Width:0} px)");
                 Assert.That(kb.Keys.Layout.Contains(60), Is.True, "around middle C");
-                Assert.That(AutomationProperties.GetName(kb.Keys.ElementOf(61)!), Is.EqualTo("C#4"), "keys are named for screen readers");
+                Assert.That(AutomationProperties.GetName(kb.Keys.ElementOf(61)!), Is.EqualTo("C#3"), "keys are named for screen readers (as Preferences name notes: C3 is 60 by default)");
                 Studio.Screenshot(editor, "keyboard-neo-poly-editor");
 
                 verb = Add("Neo Verb", "Kb Verb");
@@ -198,7 +198,7 @@ namespace ReBuzz.Studio.Tests
                 var dk = KeyboardOf(dw)!;
                 Assert.That(dk.Keys.Layout.First, Is.EqualTo(36), "a drum machine starts at its drums (C2)");
                 Assert.That(dk.Keys.ElementOf(38)!.Drum, Is.EqualTo("Snare"));
-                Assert.That(AutomationProperties.GetName(dk.Keys.ElementOf(38)!), Is.EqualTo("D2, Snare"));
+                Assert.That(AutomationProperties.GetName(dk.Keys.ElementOf(38)!), Is.EqualTo("D1, Snare"));
                 Assert.That(dk.Keys.ElementOf(42)!.Drum, Is.EqualTo("Closed hat"));
                 Assert.That(dk.Keys.ElementOf(53)!.Drum, Is.Null, "F3 plays no drum");
                 Studio.Screenshot(dw, "keyboard-neo-drums-editor");
@@ -532,6 +532,37 @@ namespace ReBuzz.Studio.Tests
             {
                 foreach (var m in new[] { a, juno }.Where(m => m != null)) KeyboardSettings.Set(m.DLL, KeyboardSettings.Default);
                 Remove(a, b, juno);
+            }
+        }
+
+        [AvaloniaTest]
+        public void TheKeysAreNamedAsPreferencesNameNotes()
+        {
+            // Fork (ux-overhaul.md §3.5): the keys, the octave and the readout name notes as the pattern editor and the piano
+            // roll do (Preferences ▸ General ▸ Note names), and follow a change at once.
+            var naming = NoteNames.Naming;
+            MachineCore poly = null;
+            try
+            {
+                NoteNames.Naming = NoteNaming.C3;
+                poly = Add("Neo Poly", "Kb Names");
+                var kb = KeyboardOf(Gui(poly))!;
+                int first = kb.Keys.Layout.First;
+                Assert.That(kb.OctaveText, Is.EqualTo(NoteNames.Name(first, NoteNaming.C3)));
+                Assert.That(AutomationProperties.GetName(kb.Keys.ElementOf(60)!), Is.EqualTo("C3"));
+                NoteNames.Naming = NoteNaming.Scientific;
+                Settle();
+                Assert.That(kb.OctaveText, Is.EqualTo(NoteNames.Name(first, NoteNaming.Scientific)), "the octave follows");
+                Assert.That(AutomationProperties.GetName(kb.Keys.ElementOf(60)!), Is.EqualTo("C4"), "and the keys");
+                NoteNames.Naming = NoteNaming.Buzz;
+                Settle();
+                Assert.That(AutomationProperties.GetName(kb.Keys.ElementOf(61)!), Is.EqualTo("C#5"));
+                Assert.That(KeyboardFace.Readout(60, null, 96), Is.EqualTo("C-5 · velocity 96"));
+            }
+            finally
+            {
+                NoteNames.Naming = naming;
+                Remove(poly);
             }
         }
 

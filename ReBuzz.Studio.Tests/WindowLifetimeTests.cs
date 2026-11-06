@@ -133,7 +133,7 @@ namespace ReBuzz.Studio.Tests
             window.Show();
             Settle();
             var tabs = window.Tabs.Items.Cast<TabItem>().ToList();
-            Assert.That(tabs.Select(t => t.Header), Is.EqualTo(new[] { "Machines", "Sequence", "Session", "Pattern", "Song Notes" }));
+            Assert.That(tabs.Select(t => t.Header), Is.EqualTo(new[] { "Sequence", "Session", "Machines", "Pattern", "Song Notes" }));
             if (showEveryTab)
                 foreach (var tab in tabs)
                 {

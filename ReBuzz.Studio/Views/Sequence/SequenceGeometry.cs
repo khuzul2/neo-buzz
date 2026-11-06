@@ -89,7 +89,7 @@ namespace ReBuzz.Studio.Views.Sequence
         public const double MinBlockWidth = 10;
 
         /// <summary>The bottom strip of a header holds the M, S and D buttons (16 px each).</summary>
-        public const double HeaderButtonSize = 16;
+        public const double HeaderButtonSize = 20;      // fork (ux-overhaul.md §3.2): 20 pt targets (Buzz's were 16, gallery mac-030)
 
         public double TrackHeight { get; set; } = 80;   // TrackHeights.Normal
         public double TickWidth { get; set; } = DefaultTickWidth;

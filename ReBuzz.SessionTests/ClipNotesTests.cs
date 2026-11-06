@@ -104,12 +104,25 @@ namespace ReBuzz.SessionTests
         }
 
         [Test]
-        public void NotesAreNamedLiveStyle()
+        public void NotesAreNamedAsPreferencesSay()
         {
+            // The default (BuzzGUI.Common.NoteNames.Default): C3 is middle C, 60.
             Assert.That(ClipNotes.Name(60), Is.EqualTo("C3"));
             Assert.That(ClipNotes.Name(0), Is.EqualTo("C-2"));
             Assert.That(ClipNotes.Name(127), Is.EqualTo("G8"));
             Assert.That(ClipNotes.Name(61), Is.EqualTo("C#3"));
+            var naming = BuzzGUI.Common.NoteNames.Naming;
+            try
+            {
+                BuzzGUI.Common.NoteNames.Naming = BuzzGUI.Common.NoteNaming.Scientific;
+                Assert.That(ClipNotes.Name(60), Is.EqualTo("C4"));
+                Assert.That(ClipNotes.Name(0), Is.EqualTo("C-1"));
+                BuzzGUI.Common.NoteNames.Naming = BuzzGUI.Common.NoteNaming.Buzz;
+                Assert.That(ClipNotes.Name(60), Is.EqualTo("C-5"), "Buzz's: three characters");
+                Assert.That(ClipNotes.Name(61), Is.EqualTo("C#5"));
+                Assert.That(ClipNotes.Name(0), Is.EqualTo("C-0"));
+            }
+            finally { BuzzGUI.Common.NoteNames.Naming = naming; }
         }
     }
 }

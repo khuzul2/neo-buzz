@@ -92,6 +92,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             Controller.SelectionChanged += overlay.InvalidateVisual;
             Controller.Invalidated += InvalidateAll;
             PatternEditor.Settings.PropertyChanged += Settings_PropertyChanged;
+            BuzzGUI.Common.NoteNames.Changed += OnNoteNames;
 
             timer.Tick += (s, e) => TimerUpdate();
             AttachedToVisualTree += (s, e) => timer.Start();
@@ -134,8 +135,12 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             Controller.SelectionChanged -= overlay.InvalidateVisual;
             Controller.Invalidated -= InvalidateAll;
             PatternEditor.Settings.PropertyChanged -= Settings_PropertyChanged;
+            BuzzGUI.Common.NoteNames.Changed -= OnNoteNames;
             Unwatch();
         }
+
+        /// <summary>Fork (ux-overhaul.md §3.5): Preferences name notes another way: draw them again.</summary>
+        void OnNoteNames() => Dispatcher.UIThread.Post(InvalidateAll);
 
         void Unwatch()
         {

@@ -113,7 +113,7 @@ namespace ReBuzz.Core.Notes
             {
                 var n = added[k];
                 if (TrackNotes.ToBuzz(n.Note) < 0)
-                    return $"{ClipNotes.Name(n.Note)} is above what {pattern.Machine.Name} takes in its tracks (B-9 is the highest Buzz note).";
+                    return $"{ClipNotes.Name(n.Note)} is above what {pattern.Machine.Name} takes in its tracks ({BuzzGUI.Common.NoteNames.Name(119)} is the highest a Buzz track takes).";
                 int track = removed.Count == added.Count && freed[k] >= 0 && freed[k] < tracks && Free(freed[k], n) ? freed[k] : -1;
                 for (int t = 0; t < tracks && track < 0; t++)
                     if (Free(t, n)) track = t;

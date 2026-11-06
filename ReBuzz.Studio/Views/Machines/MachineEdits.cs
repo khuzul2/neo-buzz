@@ -237,6 +237,26 @@ namespace ReBuzz.Studio.Views.Machines
         public static string ReplaceWithSuccessor(ReBuzzCore core, MachineCore machine, string gear) =>
             MachineReplace.FromMenu(core, machine, gear);
 
+        /// <summary>
+        /// Duplicate (⌘D): each machine cloned with its settings (SongCore.CloneMachine, as WPF's Clone), offset down and to
+        /// the right, one undo step. The copies, in the order given.
+        /// </summary>
+        public static List<IMachine> Duplicate(ReBuzzCore core, IReadOnlyList<IMachine> machines)
+        {
+            var song = core.SongCore;
+            var before = song.Machines.ToHashSet();
+            using (Group(core))
+                foreach (var m in machines)
+                {
+                    var at = CanvasMap.Clamp(new Avalonia.Point(m.Position.Item1 + DuplicateOffset, m.Position.Item2 + DuplicateOffset));
+                    song.CloneMachine(m, (float)at.X, (float)at.Y);
+                }
+            return song.Machines.Where(m => !before.Contains(m) && !(m is MachineCore mc && mc.Hidden)).ToList();
+        }
+
+        /// <summary>How far a copy lands from its machine, in song coordinates (the canvas spans −1 to 1).</summary>
+        public const float DuplicateOffset = 0.06f;
+
         public static void Replace(ReBuzzCore core, IMachine machine, IInstrument with) =>
             core.SongCore.ReplaceMachine(machine, with.MachineDLL.Name, with.Name, machine.Position.Item1, machine.Position.Item2);
 

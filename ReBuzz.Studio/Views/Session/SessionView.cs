@@ -36,7 +36,7 @@ namespace ReBuzz.Studio.Views.Session
 
     internal sealed partial class SessionView : UserControl, IStudioEditTarget
     {
-        const double ColumnWidth = 116;
+        const double ColumnWidth = 126;     // fork (ux-overhaul.md §3.2): 116 left the name 36 pt beside 20 pt chips
         const double SceneColumnWidth = 140;
         const double RowHeight = 26;
         const double HeaderHeight = 32;
@@ -148,13 +148,13 @@ namespace ReBuzz.Studio.Views.Session
                 "Undo removes a whole recording pass (↶ here).");
             left.Children.Add(recordButton);
             overdubButton = new FlatButton("◉  Overdub", ToggleSessionRecord,
-                "Session record (Live's): tracks armed with ● in their header record what you play into their clips.\n" +
+                "Session record: tracks armed with ● in their header record what you play into their clips.\n" +
                 "A track playing a clip overdubs it; a track playing none records a new take into its first empty slot\n" +
                 "from the selected scene. Off ends every recording. Each pass is one undo step.\n" +
                 "An armed track's empty slots also have their own ● to record a take there.");
             left.Children.Add(overdubButton);
             captureButton = new FlatButton("⤓  Capture", Capture,
-                "Capture MIDI (Live's): what you played lately on armed tracks, recording or not, becomes a clip\n" +
+                "Capture MIDI: what you played lately on armed tracks, recording or not, becomes a clip\n" +
                 "in their first empty slot from the selected scene, from the bar line before the first note\n" +
                 "(1, 2, 4 or 8 bars), and plays on at once in phase.");
             left.Children.Add(captureButton);
@@ -247,18 +247,21 @@ namespace ReBuzz.Studio.Views.Session
             bar.Children.Add(left);
 
             var right = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 4, 6, 4), VerticalAlignment = VerticalAlignment.Top };
-            undoButton = new FlatButton("↶", () => layout.Undo(), $"Undo grid edit ({ModName}+Z)") { Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 2, 0) };
-            redoButton = new FlatButton("↷", () => layout.Redo(), $"Redo grid edit ({ModName}+Y)") { Padding = new Thickness(8, 3, 8, 3) };
+            undoButton = new FlatButton("↶", () => layout.Undo(), $"Undo grid edit ({Shell.Commands.KeyText.Of("Cmd+Z")})") { Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 2, 0) };
+            redoButton = new FlatButton("↷", () => layout.Redo(), $"Redo grid edit ({Shell.Commands.KeyText.Of(OperatingSystem.IsMacOS() ? "Shift+Cmd+Z" : "Cmd+Y")})") { Padding = new Thickness(8, 3, 8, 3) };
+            // Fork (ux-overhaul.md §3.2): the ↶ ↷ glyphs at 16 pt (they drew about 6 pt tall, gallery mac-012).
+            Avalonia.Controls.Documents.TextElement.SetFontSize(undoButton, 16);
+            Avalonia.Controls.Documents.TextElement.SetFontSize(redoButton, 16);
             right.Children.Add(undoButton);
             right.Children.Add(redoButton);
-            addSceneButton = new FlatButton("+ Scene", () => layout.InsertScene(layout.SceneCount), $"Add a scene row at the bottom ({ModName}+I inserts one below the selection)");
+            addSceneButton = new FlatButton("+ Scene", () => layout.InsertScene(layout.SceneCount), $"Add a scene row at the bottom ({Shell.Commands.KeyText.Of("Cmd+I")} inserts one below the selection)");
             right.Children.Add(addSceneButton);
             addTrackButton = new FlatButton("+ Track", () => ShowAddTrackMenu(addTrackButton), "Add a track for a machine that has none");
             right.Children.Add(addTrackButton);
             clipButton = new FlatButton("Clip", () => layout.SetShowClipPanel(!layout.Ensure().ShowClipPanel),
                 "Show or hide the clip panel: how the selected clip launches (mode, quantization, legato, loop region, velocity)");
             right.Children.Add(clipButton);
-            mixerButton = new FlatButton("Mixer", ToggleMixer, $"Show or hide the mixer under the grid ({ModName}+Alt+M)\nReturn tracks and the cue output: ⚙");
+            mixerButton = new FlatButton("Mixer", ToggleMixer, $"Show or hide the mixer under the grid ({Shell.Commands.StudioKeymap.Get("view.mixer").KeyLabel()})\nReturn tracks and the cue output: ⚙");
             right.Children.Add(mixerButton);
             settingsButton = new FlatButton("⚙", () => ShowSettingsMenu(settingsButton), "New clip length, recording, sync, controllers, mixer returns and cue output, MIDI mapping, keyboard shortcuts") { Margin = new Thickness(0) };
             right.Children.Add(settingsButton);
@@ -451,7 +454,7 @@ namespace ReBuzz.Studio.Views.Session
         /// <summary>Tooltips of the top bar's performance controls, with their MIDI mappings.</summary>
         void UpdateBarTips()
         {
-            ToolTip.SetTip(followButton, Tip("Follow actions on or off for the whole song (Live's switch): clips and scenes\n" +
+            ToolTip.SetTip(followButton, Tip("Follow actions on or off for the whole song: clips and scenes\n" +
                                              "launch the next one at their follow time when lit. Set them in the clip panel.", SessionTarget.FollowActions, 0, 0));
             ToolTip.SetTip(tapButton, Tip("Tap tempo: tap the beat; from the third tap the tempo follows the last four.", SessionTarget.TapTempo, 0, 0));
             ToolTip.SetTip(nudgeDownButton, Tip("Nudge down: plays 4% slower while held, to bring the session back in step with\n" +
@@ -559,7 +562,7 @@ namespace ReBuzz.Studio.Views.Session
                 Place(header, 0, c);
 
                 int track = t;
-                var stop = new FlatButton("■", () => StopTrack(track), Tip("Stop this track (Backspace stops the selected track)", SessionTarget.TrackStop, t, 0))
+                var stop = new FlatButton("■", () => StopTrack(track), Tip("Stop this track (Enter on its empty slot does too)", SessionTarget.TrackStop, t, 0))
                 {
                     Margin = new Thickness(0, 6, Gap, 0),
                     HorizontalContentAlignment = HorizontalAlignment.Center
@@ -846,7 +849,7 @@ namespace ReBuzz.Studio.Views.Session
             double error = buzz.SyncClock.ErrorMicros;
             string tip = following && !double.IsNaN(error)
                 ? $"Following: the session is {Math.Abs(error) / 1000:0.0} ms {(error >= 0 ? "ahead of" : "behind")} the clock."
-                : "Sync: Ableton Link, MIDI clock in and out.";
+                : "Sync: Link, MIDI clock in and out.";
             if (tip != shownSyncTip)
             {
                 shownSyncTip = tip;

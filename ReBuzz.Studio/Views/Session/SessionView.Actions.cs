@@ -23,26 +23,21 @@ namespace ReBuzz.Studio.Views.Session
 
     internal sealed partial class SessionView
     {
+        /// <summary>
+        /// The view's keys, as the shortcuts window lists them (ux-overhaul.md §4: one keymap, StudioKeymap), and how the mouse
+        /// works here.
+        /// </summary>
         internal static string KeyboardHelp =>
-            "Arrows\tmove the selection\n" +
-            "Enter\tlaunch the selected slot (stops the track if empty); release matters for Gate and Repeat clips\n" +
-            "Space\tstart/stop the transport\n" +
-            "1 – 9\tlaunch scene 1 – 9\n" +
-            "Backspace\tstop the selected track\n" +
-            "Delete\tremove the clip from the slot\n" +
-            "Shift+Delete\tdelete the clip's pattern\n" +
-            $"{ModName}+Shift+M\tcreate a clip in the selected slot\n" +
-            $"{ModName}+D\tduplicate the clip into the slot below\n" +
-            "F2\trename the clip's pattern\n" +
-            $"{ModName}+I\tinsert a scene below the selection\n" +
-            $"{ModName}+Z / {ModName}+Y\tundo / redo grid edits\n" +
-            $"{ModName}+Alt+Z\tundo the last launch (the previous clip comes back in step)\n" +
-            $"{ModName}+Alt+M\tshow / hide the mixer\n" +
-            "Esc\tcancel MIDI learn\n\n" +
+            string.Join("\n", Shell.Commands.StudioKeymap.ViewKeys().Where(k => k.Section == "Session").Select(k => k.Keys + "\t" + k.What)) + "\n\n" +
             "Mouse: ▶ launches (hold it for Gate and Repeat clips); click selects and shows the clip in the clip panel; " +
             $"double-click edits a clip or creates one in an empty slot ({ModName}+double-click: its notes in the piano roll); " +
             $"drag a clip to move it within its track (hold {ModName} to copy); right-click for menus and MIDI learn.\n" +
             "Mixer: drag a fader, pan or send (Shift for fine), use the wheel, double-click to reset.";
+
+        /// <summary>A key of the keymap as the menus show it ("⇧⌫", "Ctrl+D").</summary>
+        static string KeyOf(string keys) => Shell.Commands.KeyText.Of(keys);
+
+        static string DeleteKeys => OperatingSystem.IsMacOS() ? "Back" : "Delete";
 
         // ------------------------------------------------------------------ selection and playing
 
@@ -181,6 +176,29 @@ namespace ReBuzz.Studio.Views.Session
         }
 
         // The shell's Edit menu and shortcuts (IStudioEditTarget): Undo and Redo are the grid's own history, as on Windows.
+        // Fork (ux-overhaul.md §4): Duplicate, Delete and Rename act on the selected slot, as the view's own keys do.
+
+        public bool Duplicate()
+        {
+            if (selected is not { } at || layout.PatternAt(at.Track, at.Scene) == null) return false;
+            DuplicateClip(at.Track, at.Scene);
+            return true;
+        }
+
+        public bool Delete()
+        {
+            if (selected is not { } at || layout.PatternAt(at.Track, at.Scene) == null) return false;
+            layout.ClearSlot(at.Track, at.Scene);
+            return true;
+        }
+
+        public bool Rename()
+        {
+            if (selected is not { } at || layout.PatternAt(at.Track, at.Scene) is not { } pattern) return false;
+            _ = RenameClip(pattern);
+            return true;
+        }
+
         public bool Undo()
         {
             if (!layout.UndoStack.CanUndo) return false;
@@ -482,9 +500,10 @@ namespace ReBuzz.Studio.Views.Session
                 }
                 return true;
             }
-            if (none && key == Key.Back) { StopTrack(at.Track); return true; }
-            if (none && key == Key.Delete) { layout.ClearSlot(at.Track, at.Scene); return true; }
-            if (mods == KeyModifiers.Shift && key == Key.Delete) { _ = DeleteClip(pattern); return true; }
+            // Fork (ux-overhaul.md §4): ⌫ deletes in every view: here the clip leaves its slot (⌫ stopped the track; Enter on an
+            // empty slot, its ■, or the track menu do that); ⇧⌫ deletes its pattern, after asking.
+            if (none && key is Key.Back or Key.Delete) { layout.ClearSlot(at.Track, at.Scene); return true; }
+            if (mods == KeyModifiers.Shift && key is Key.Back or Key.Delete) { _ = DeleteClip(pattern); return true; }
             if (mods == (KeyModifiers.Control | KeyModifiers.Shift) && key == Key.M) { CreateClip(at.Track, at.Scene); return true; }
             if (ctrl && key == Key.D) { DuplicateClip(at.Track, at.Scene); return true; }
             if ((none && key == Key.F2) || (ctrl && key == Key.R)) { _ = RenameClip(pattern); return true; }
@@ -539,7 +558,7 @@ namespace ReBuzz.Studio.Views.Session
                 menu.Items.Add(Item("Launch", () => LaunchSlot(cell), "Enter"));
                 menu.Items.Add(Item("Clip settings", ShowClipPanel));
                 menu.Items.Add(Item("Edit pattern", () => EditPattern(pattern), "double-click"));
-                menu.Items.Add(Item("Edit notes (piano roll)…", () => EditNotes(cell.Sequence, pattern), $"{ModName}+double-click"));
+                menu.Items.Add(Item("Edit notes (piano roll)…", () => EditNotes(cell.Sequence, pattern)));
                 if (layout.CanMoveNotes(pattern))
                 {
                     int clipNotes = layout.NotesOf(pattern).Count;
@@ -549,8 +568,8 @@ namespace ReBuzz.Studio.Views.Session
                     if (laneNotes > 0)
                         menu.Items.Add(Item($"Move notes from the Pattern View ({laneNotes})", () => MoveNotes(cell.Sequence, pattern, toPatternView: false)));
                 }
-                menu.Items.Add(Item("Rename…", () => _ = RenameClip(pattern), "F2"));
-                menu.Items.Add(Item("Duplicate", () => DuplicateClip(cell.Track, cell.Scene), $"{ModName}+D"));
+                menu.Items.Add(Item("Rename…", () => _ = RenameClip(pattern), KeyOf("Cmd+R")));
+                menu.Items.Add(Item("Duplicate", () => DuplicateClip(cell.Track, cell.Scene), KeyOf("Cmd+D")));
                 menu.Items.Add(ColorMenu("Colour", PatternColors.Get(pattern), i => layout.SetClipColor(pattern, i)));
                 int notes = layout.RecordedNoteCount(pattern);
                 if (notes > 0)
@@ -559,12 +578,12 @@ namespace ReBuzz.Studio.Views.Session
                 if (moves > 0)
                     menu.Items.Add(Item($"Clear recorded automation ({moves})", () => layout.ClearRecordedAutomation(pattern)));
                 menu.Items.Add(new Separator());
-                menu.Items.Add(Item("Remove from slot", () => layout.ClearSlot(cell.Track, cell.Scene), "Del"));
-                menu.Items.Add(Item("Delete pattern…", () => _ = DeleteClip(pattern), "Shift+Del"));
+                menu.Items.Add(Item("Remove from slot", () => layout.ClearSlot(cell.Track, cell.Scene), KeyOf(DeleteKeys)));
+                menu.Items.Add(Item("Delete pattern…", () => _ = DeleteClip(pattern), KeyOf("Shift+" + DeleteKeys)));
             }
             else
             {
-                menu.Items.Add(Item("Create clip", () => CreateClip(cell.Track, cell.Scene), $"{ModName}+Shift+M", () => machine != null));
+                menu.Items.Add(Item("Create clip", () => CreateClip(cell.Track, cell.Scene), KeyOf("Shift+Cmd+M"), () => machine != null));
                 menu.Items.Add(Item("Record a take here", () => RecordInto(cell), null, () => layout.IsArmed(cell.Track)));
             }
 
@@ -614,7 +633,7 @@ namespace ReBuzz.Studio.Views.Session
             }, tag: "Follow action…"));
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Insert scene above", () => layout.InsertScene(scene)));
-            menu.Items.Add(Item("Insert scene below", () => layout.InsertScene(scene + 1), $"{ModName}+I"));
+            menu.Items.Add(Item("Insert scene below", () => layout.InsertScene(scene + 1), KeyOf("Cmd+I")));
             menu.Items.Add(Item("Duplicate scene", () => layout.DuplicateScene(scene)));
             menu.Items.Add(Item("Delete scene", () => layout.RemoveScene(scene)));
             menu.Items.Add(new Separator());
@@ -638,7 +657,7 @@ namespace ReBuzz.Studio.Views.Session
                 menu.Items.Add(Item("Rename…", () => ReBuzz.Studio.Views.Machines.MachineEdits.Rename(machine)));
                 menu.Items.Add(Check("Arm", layout.IsArmed(track), () => ToggleArm(track),
                     "Arm for recording: MIDI you play goes to this track's machine and is recorded (the header's ●)"));
-                menu.Items.Add(Item("Stop clips", () => StopTrack(track), "Backspace"));
+                menu.Items.Add(Item("Stop clips", () => StopTrack(track)));
                 menu.Items.Add(new Separator());
                 menu.Items.Add(Check("Mute", machine.IsMuted, () => machine.IsMuted = !machine.IsMuted));
                 menu.Items.Add(Check("Solo", machine.IsSoloed, () => machine.IsSoloed = !machine.IsSoloed));
@@ -764,7 +783,7 @@ namespace ReBuzz.Studio.Views.Session
             }
 
             menu.Items.Add(new Separator());
-            menu.Items.Add(Item("Keyboard shortcuts…", () => _ = Dialogs.Info(KeyboardHelp, "Session View shortcuts")));
+            menu.Items.Add(Item("Keyboard shortcuts…", () => Shell.Commands.ShortcutsWindow.Open(TopLevel.GetTopLevel(this) as Window).Search = "Session"));
             OpenMenu(menu, anchor);
         }
 
@@ -822,10 +841,10 @@ namespace ReBuzz.Studio.Views.Session
                 if (sync.Problem != null) _ = Dialogs.Info(sync.Problem, title);
                 RefreshState();
             }
-            item.Items.Add(Check(!sync.LinkEnabled ? "Ableton Link" : sync.LinkPeers > 0 ? $"Ableton Link ({sync.LinkPeers} peer{(sync.LinkPeers == 1 ? "" : "s")})" : "Ableton Link (no peers yet)",
-                sync.LinkEnabled, () => { sync.SetLink(!sync.LinkEnabled); Report("Ableton Link"); },
+            item.Items.Add(Check(!sync.LinkEnabled ? "Link" : sync.LinkPeers > 0 ? $"Link ({sync.LinkPeers} peer{(sync.LinkPeers == 1 ? "" : "s")})" : "Link (no peers yet)",
+                sync.LinkEnabled, () => { sync.SetLink(!sync.LinkEnabled); Report("Link"); },
                 "On: tempo and bar phase follow Live and other Link apps on the network; alone, they follow the session.\n" +
-                "A start waits for Link's next bar line, so it lands in step. Runs Link in a helper program (ReBuzzLink).", tag: "Ableton Link"));
+                "A start waits for Link's next bar line, so it lands in step. Runs Link in a helper program (ReBuzzLink).", tag: "Link"));
             var startStop = Check("Start and stop with Link peers", sync.LinkStartStop, () => sync.SetLinkStartStop(!sync.LinkStartStop),
                 "On: play and stop are shared with peers that have start/stop sync on (Live: Link › Start Stop Sync).");
             startStop.IsEnabled = sync.LinkEnabled;
@@ -855,12 +874,12 @@ namespace ReBuzz.Studio.Views.Session
         {
             var item = new MenuItem { Header = header, Tag = header };
             item.Items.Add(Check("None", current < 0, () => set(-1)));
-            var choices = SessionPalette.ColorChoices;
-            for (int i = 0; i < choices.Length; i++)
+            // Fork (ux-overhaul.md §3.1): the state colours aren't offered (a colour in use stays, ticked).
+            int count = SessionPalette.ColorChoices.Length;
+            foreach (var (index, name, colour) in SessionPalette.OfferedColours(current))
             {
-                int index = i;
-                var choice = Check(choices[i].Name, current >= 0 && current % choices.Length == i, () => set(index));
-                choice.Icon = new Border { Width = 14, Height = 14, Background = SessionPalette.BrushOf(choices[i].Color) };
+                var choice = Check(name, current >= 0 && current % count == index, () => set(index));
+                choice.Icon = new Border { Width = 14, Height = 14, Background = SessionPalette.BrushOf(colour) };
                 item.Items.Add(choice);
             }
             return item;

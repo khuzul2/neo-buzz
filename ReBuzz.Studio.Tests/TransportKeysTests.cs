@@ -264,7 +264,8 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(toggle.NativeKey, Is.False);
                 var transportMenu = AppMenu.ToNativeMenu(mac).Items.OfType<NativeMenuItem>().Single(i => i.Header == "Transport").Menu;
                 var items = transportMenu.Items.OfType<NativeMenuItem>().Where(i => i is not NativeMenuItemSeparator).ToList();
-                Assert.That(items.Select(i => i.Header), Is.EqualTo(new[] { "Play or Stop (Space)", "Play", "Stop", "Record", "Restart audio" }));
+                // Fork (ux-overhaul.md §4): Loop, Metronome and Go to Start; the single keys in the text, as Space.
+                Assert.That(items.Select(i => i.Header), Is.EqualTo(new[] { "Play or Stop (Space)", "Play", "Stop", "Record (R)", "Loop (C)", "Metronome (K)", "Go to Start (Home)", "Restart Audio" }));
                 Assert.That(items.Any(i => i.Gesture?.Key == Key.Space), Is.False, "no Space key equivalent");
                 Assert.That(items.Single(i => i.Header == "Play").Gesture, Is.EqualTo(new KeyGesture(Key.F5)));
                 Assert.That(items.Single(i => i.Header == "Stop").Gesture, Is.EqualTo(new KeyGesture(Key.F8)));
@@ -285,11 +286,12 @@ namespace ReBuzz.Studio.Tests
                 entry.Run();
                 Assert.That(Core.PlayRequested, Is.False, "and stops");
 
-                Assert.That(MainWindow.ShortcutsText(mac: false), Does.Contain("Space\tplay / stop").And.Contain("Shift+Space\tplay the pattern"));
+                Assert.That(MainWindow.ShortcutsText(mac: false), Does.Contain("Space\tPlay or Stop").And.Contain("Shift+Space\tplay the pattern"));
                 Assert.That(MainWindow.ShortcutsText(mac: true), Does.Contain("⇧Space"));
+                // Fork (ux-overhaul.md §4): the tooltips from the keymap: the button's keys, and Space.
                 var buttons = window.Transport.GetVisualDescendants().OfType<Button>().ToList();
-                Assert.That(ToolTip.GetTip(buttons.Single(b => b.Content as string == "▶")) as string, Does.Contain("Space or F5"));
-                Assert.That(ToolTip.GetTip(buttons.Single(b => b.Content as string == "■")) as string, Does.Contain("Space or F8"));
+                Assert.That(ToolTip.GetTip(buttons.Single(b => b.Content as string == "▶")) as string, Does.StartWith("Play (F5)").And.Contain("Space plays and stops"));
+                Assert.That(ToolTip.GetTip(buttons.Single(b => b.Content as string == "■")) as string, Does.StartWith("Stop (F8)").And.Contain("Space plays and stops"));
             }
             finally
             {

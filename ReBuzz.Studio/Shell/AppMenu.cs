@@ -15,7 +15,7 @@ namespace ReBuzz.Studio.Shell
     internal sealed class MenuEntry
     {
         /// <summary>Its text, with an access key ("_File"); the menu bar drops the underscore.</summary>
-        public string Header { get; init; }
+        public string Header { get; set; }
 
         public Action Run { get; init; }
 
@@ -37,6 +37,9 @@ namespace ReBuzz.Studio.Shell
         public Func<IEnumerable<MenuEntry>> Items { get; init; }
 
         public bool IsSeparator { get; init; }
+
+        /// <summary>The key is written in <see cref="Header"/> ("Record (R)", the Mac's way for a key the menu bar mustn't take): not shown again beside it.</summary>
+        public bool KeyInText { get; init; }
 
         /// <summary>The macOS Services submenu (the system fills it).</summary>
         public bool IsServices { get; init; }
@@ -60,7 +63,7 @@ namespace ReBuzz.Studio.Shell
         static object ToItem(MenuEntry entry)
         {
             if (entry.IsSeparator) return new Separator();
-            var item = new MenuItem { Header = entry.Header, InputGesture = entry.Gesture, Tag = entry.Text };
+            var item = new MenuItem { Header = entry.Header, InputGesture = entry.KeyInText ? null : entry.Gesture, Tag = entry.Text };
             if (entry.Items != null)
             {
                 Fill(item, entry);

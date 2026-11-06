@@ -99,6 +99,10 @@ namespace ReBuzz.Studio.Shell
             {
                 string label = choices?.Labels != null && choices.Labels.TryGetValue(choice, out var l) ? l : choice.ToString();
                 var b = new Button { Content = label, MinWidth = 72, IsDefault = choice == @default, IsCancel = choice == safe, Tag = choice };
+                // Fork (ux-overhaul.md P1, mac-321): the default answer accented (Return gives it; both buttons were the same grey,
+                // 1.66:1), an answer that can't be taken back in the record red.
+                if (choice == @default) b.Classes.Add("accent");
+                if (choices?.Destructive == choice) b.Foreground = Design.StudioTokens.RecordBrush;
                 b.Click += (s, e) => { answer = choice; window.Close(); };
                 row.Children.Add(b);
             }
@@ -132,6 +136,7 @@ namespace ReBuzz.Studio.Shell
                 ShowInTaskbar = false,
             };
             var ok = new Button { Content = "OK", MinWidth = 72, IsDefault = true, IsCancel = true };
+            ok.Classes.Add("accent");
             ok.Click += (s, e) => window.Close();
             var box = new TextBox
             {
@@ -186,13 +191,14 @@ namespace ReBuzz.Studio.Shell
             };
             var ok = new Button { Content = "OK", MinWidth = 72, IsDefault = true };
             var cancel = new Button { Content = "Cancel", MinWidth = 72, IsCancel = true };
+            ok.Classes.Add("accent");
             ok.Click += (s, e) => { result = box.Text; window.Close(); };
             cancel.Click += (s, e) => window.Close();
             window.Content = new StackPanel
             {
                 Margin = new Thickness(20),
                 Spacing = 12,
-                Children = { box, new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { ok, cancel } } },
+                Children = { box, ButtonRow(ok, cancel) },
             };
             window.Opened += (s, e) => { box.Focus(); box.SelectAll(); };
             if (owner != null) await window.ShowDialog(owner);
@@ -233,6 +239,7 @@ namespace ReBuzz.Studio.Shell
             };
             var ok = new Button { Content = "OK", MinWidth = 72, IsDefault = true };
             var cancel = new Button { Content = "Cancel", MinWidth = 72, IsCancel = true };
+            ok.Classes.Add("accent");
             void Check()
             {
                 string problem = validate(box.Text);
@@ -253,7 +260,9 @@ namespace ReBuzz.Studio.Shell
             if (!string.IsNullOrEmpty(prompt)) panel.Children.Add(new TextBlock { Text = prompt, TextWrapping = TextWrapping.Wrap, MaxWidth = 320 });
             panel.Children.Add(box);
             panel.Children.Add(error);
-            panel.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Margin = new Thickness(0, 4, 0, 0), Children = { ok, cancel } });
+            var buttons = ButtonRow(ok, cancel);
+            buttons.Margin = new Thickness(0, 4, 0, 0);
+            panel.Children.Add(buttons);
             window.Content = panel;
             Check();
             window.Opened += (s, e) => { box.Focus(); box.SelectAll(); };
@@ -266,6 +275,15 @@ namespace ReBuzz.Studio.Shell
                 await closed.Task;
             }
             return result;
+        }
+
+        /// <summary>OK and Cancel in the platform's order: Cancel then OK on a Mac (the default on the right), OK then Cancel elsewhere.</summary>
+        static StackPanel ButtonRow(Button ok, Button cancel)
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8 };
+            if (OperatingSystem.IsMacOS()) { row.Children.Add(cancel); row.Children.Add(ok); }
+            else { row.Children.Add(ok); row.Children.Add(cancel); }
+            return row;
         }
 
         /// <summary>Runs a dialog to its end on the UI thread, for callers that can't await.</summary>
@@ -295,12 +313,16 @@ namespace ReBuzz.Studio.Shell
         /// <summary>The answer Escape and closing the window give.</summary>
         public UserAnswer? Safe { get; init; }
 
+        /// <summary>An answer that can't be taken back (Turn Off, Delete), drawn in the record red.</summary>
+        public UserAnswer? Destructive { get; init; }
+
         /// <summary>Turning a safety off: Turn Off (Yes) or Keep On (No), Keep On on Return and Escape.</summary>
         public static DialogChoices TurnOff => new DialogChoices
         {
             Labels = new() { [UserAnswer.Yes] = "Turn Off", [UserAnswer.No] = "Keep On" },
             Default = UserAnswer.No,
             Safe = UserAnswer.No,
+            Destructive = UserAnswer.Yes,
         };
 
         /// <summary>Unsaved changes: Save (Yes, on Return), Don't Save (No), Cancel (on Escape).</summary>
@@ -319,12 +341,22 @@ namespace ReBuzz.Studio.Shell
             Safe = UserAnswer.Cancel,
         };
 
+        /// <summary>Revert to Saved: Revert (Yes) or Cancel (No), Cancel on Return and Escape.</summary>
+        public static DialogChoices Revert => new DialogChoices
+        {
+            Labels = new() { [UserAnswer.Yes] = "Revert", [UserAnswer.No] = "Cancel" },
+            Default = UserAnswer.No,
+            Safe = UserAnswer.No,
+            Destructive = UserAnswer.Yes,
+        };
+
         /// <summary>Deleting: Delete (Yes) or Cancel (No), Cancel on Return and Escape.</summary>
         public static DialogChoices Delete => new DialogChoices
         {
             Labels = new() { [UserAnswer.Yes] = "Delete", [UserAnswer.No] = "Cancel" },
             Default = UserAnswer.No,
             Safe = UserAnswer.No,
+            Destructive = UserAnswer.Yes,
         };
     }
 }
