@@ -591,7 +591,8 @@ namespace ReBuzz
                 Buzz.IsHardDiskRecorderWindowVisible = true;
                 await Idle(600);
                 if (hDRecorderWindow == null) throw new InvalidOperationException("the Hard Disk Recorder didn't open");
-                await Shot(hDRecorderWindow, "701-hard-disk-recorder", "The Hard Disk Recorder window.", "View ▸ Hard Disk Recorder.");
+                await Shot(hDRecorderWindow, "701-hard-disk-recorder", "The Hard Disk Recorder window.", "View ▸ Hard Disk Recorder.",
+                    notes: Buzz.AudioEngine?.SelectedOutDevice == null ? "The runner has no audio device: the window says there's nothing to record and waits for one." : "");
                 Buzz.IsHardDiskRecorderWindowVisible = false;
             });
             await Step("piano keyboard", async () =>

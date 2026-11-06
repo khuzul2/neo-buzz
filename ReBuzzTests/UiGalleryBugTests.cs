@@ -53,5 +53,29 @@ namespace ReBuzzTests
                 SettingsWindow.RemoveSettings(header);
             }
         }
+
+        [Test]
+        public void TheHardDiskRecorderOpensWithoutAnAudioDeviceAndSaysSo()
+        {
+            // ReBuzzCore.OutputChannels asked the audio provider of a device that isn't there (NullReferenceException), and
+            // the window's constructor asks it: View ▸ Hard Disk Recorder threw on a machine with no audio output.
+            using var driver = new Driver();
+            driver.Start();
+            Assert.That(driver.Core.AudioEngine.SelectedOutDevice, Is.Null, "the tests have no audio device");
+            Assert.That(driver.Core.OutputChannels, Is.EqualTo(0), "no output channels without a device");
+
+            var window = new HDRecorderWindow();
+            try
+            {
+                Assert.That(window.HasOutput, Is.False);
+                Assert.That(window.NoOutputText, Does.Contain("No audio output"), "it says why it can't record");
+                Assert.That(window.RecordCommand.CanExecute(null), Is.False, "Record waits for a device");
+                Assert.That(window.RenderLoopCommand.CanExecute(null), Is.False, "Render Loop too (it renders through the device's provider)");
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
     }
 }
