@@ -10,7 +10,7 @@
 #            has tracks; its first parameter automated in its pattern), each saved as .bmx and .bmxml; every saved song then
 #            opened again and rendered (each machine probed; the first song is rendered once before, as a native host can
 #            start silent in a process's first render), its parameters read, and saved once more. So do the songs in the
-#            repository that classic Buzz saved with these machines (ExternalMachines/source, *.bmx), from their start.
+#            repository that classic Buzz saved with these machines (ExternalMachines/source, *.bmx), start to end.
 #   phase B  the package's own Gear (the rebuilt DLLs); the same files opened, read, rendered and saved again.
 #
 # For each machine and song: the file ReBuzz loaded (gear_info: upstream's in A, the package's in B, and a *.x64.dll is an
@@ -54,7 +54,8 @@ nt = nc.nt
 
 SETTINGS = (("defaults", None), ("quarter", 0.25), ("three-quarters", 0.75))
 FORMATS = (".bmx", ".bmxml")
-CLASSIC_BEATS = 16
+CLASSIC_BEATS = None           # a classic song plays to its end (its machines come in late: the Aggressor demo's 3o3 at beat 16)
+CLASSIC_MAX_BEATS = 192
 JUDGED = ("rebuilt",)          # roles whose sound is judged; "fixed" and "candidate" are reported
 SILENT_DBFS = -140.0           # a probe that never comes above this proves nothing by being the same
 DLL_MACHINE = {0x14C: "x86", 0x8664: "x64"}
@@ -203,8 +204,10 @@ def read_song(c, path, names, beats, label, resave):
     """Open path, then per machine (song name -> gear): the file it loaded, every parameter's raw value on every track, its
     health; render it with each machine probed; save it again to resave. {"machines": {...}, "status": ..., "graph": ...}"""
     st = c.call("song_open", path=path, discard_unsaved=True)
+    if beats is None:
+        beats = min(CLASSIC_MAX_BEATS, max(nc.BEATS, round(st.get("length_beats") or 0)))
     listing = {m["name"]: m for m in c.call("machine_list").get("machines") or []}
-    out = {"warnings": len(st.get("warnings") or []), "machines": {}}
+    out = {"warnings": len(st.get("warnings") or []), "machines": {}, "beats": beats}
     out["graph"] = {n: [i.get("from") for i in (m.get("inputs") or [])] for n, m in listing.items()}
     for name in names:
         m = listing.get(name)
@@ -460,7 +463,8 @@ def main(argv):
                         c = nt.Client(exe, os.path.join(work, "server"), f"phase{phase}-again{len(reads[phase])}")
                         c.initialize()
                         continue
-                    print(f"phase {phase} {label}: {len(names)} machines read and rendered ({time.time() - t:.1f} s)", flush=True)
+                    print(f"phase {phase} {label}: {len(names)} machines read and rendered, {reads[phase][label]['beats']} beats "
+                          f"({time.time() - t:.1f} s)", flush=True)
             finally:
                 c.close()
     finally:
@@ -477,7 +481,7 @@ def main(argv):
             (notes_out if e["role"] == "candidate" else failed).append(f"{e['gear']}: {e['ours'][1]} is {got}, not {want}: ReBuzz hosts it by its name")
     for label, path, names, beats in songs:
         a_song, b_song = reads["A"].get(label) or {}, reads["B"].get(label) or {}
-        classic = beats == CLASSIC_BEATS
+        classic = beats is CLASSIC_BEATS
         if "error" in a_song:
             rows.append((label, "-", "-", "not judged: it doesn't open with upstream's binaries either: " + a_song["error"][:200]))
             continue
