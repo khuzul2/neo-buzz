@@ -2748,45 +2748,123 @@ namespace ReBuzz.Core
         }
 
         internal int totalLatency = 0;
+
+        // Fork (docs/specs/mastering-tools.md §4.1): machine delay compensation as a plan (LatencyPlan): the
+        // machines reaching Master in topological order with their inputs, built here on the UI thread when the
+        // graph changes and applied again, allocating nothing, on the audio thread when a machine's latency
+        // changes (ApplyLatencyIfDirty, before the block's work): the same samples every run. Each input's
+        // delay goes to its connection's LatencyRing, which crossfades to a new delay instead of dropping what
+        // is in flight. A bypassed effect keeps its latency (its dry input is delayed by it, MachineCore).
+        LatencyPlan latencyPlan;
+        MachineCore[] latencyMachines = Array.Empty<MachineCore>();
+        MachineConnectionCore[] latencyConnections = Array.Empty<MachineConnectionCore>();
+        int[] latencyOwn = Array.Empty<int>(), latencyDelays = Array.Empty<int>();
+
+        /// <summary>A machine's latency changed on the audio thread: the plan is applied before the next block's work.</summary>
+        internal volatile bool LatencyDirty;
+
+        /// <summary>The graph changed since the plan was built (MachineCore.AddInput, RemoveInput): a rebuild is queued.</summary>
+        internal bool LatencyPlanStale { get; private set; }
+        int latencyRebuildQueued;
+
+        /// <summary>The compensation's crossfade when a delay changes: 10 ms.</summary>
+        static int LatencyFade => Math.Max(64, (masterInfo?.SamplesPerSec ?? 44100) / 100);
+
+        /// <summary>UI thread: builds the plan from the graph as it is and applies it (growing the rings it needs).</summary>
         internal void UpdateMachineDelayCompensation()
         {
-            totalLatency = HandleLatencyCalcRecursive(songCore.Machines[0] as MachineCore);
+            lock (AudioLock)
+            {
+                LatencyPlanStale = false;
+                if (songCore == null || songCore.MachinesList.Count == 0) return;
+                BuildLatencyPlan();
+                ApplyLatencyPlan(onUiThread: true);
+            }
         }
 
-        internal int HandleLatencyCalcRecursive(MachineCore machine)
+        /// <summary>
+        /// A connection came or went (UI thread, MachineCore.AddInput and RemoveInput): the plan is rebuilt once the change is
+        /// done, so paths that change the graph without asking for compensation (inserting a machine into a connection,
+        /// opening a song) are compensated too. Renders rebuild it first when it is stale (RenderTools).
+        /// </summary>
+        internal void LatencyGraphChanged()
         {
-            int maxLatency = 0;
-            Dictionary<MachineCore, int> inputMachineLatency = new Dictionary<MachineCore, int>();
-
-            // Get cumulative latency from all inputs
-            foreach (var input in machine.Inputs)
+            LatencyPlanStale = true;
+            if (dispatcher == null || Interlocked.Exchange(ref latencyRebuildQueued, 1) == 1) return;
+            dispatcher.BeginInvoke(() =>
             {
-                var sourceMachine = input.Source as MachineCore;
-                int cumulativeInputLatency = HandleLatencyCalcRecursive(sourceMachine);
-                maxLatency = Math.Max(cumulativeInputLatency, maxLatency);
-                inputMachineLatency[sourceMachine] = cumulativeInputLatency;
-            }
+                Volatile.Write(ref latencyRebuildQueued, 0);
+                if (LatencyPlanStale) UpdateMachineDelayCompensation();
+            });
+        }
 
-            // All inputs handled (if any). Add latency to inputs that are have lower latency than max.
-            foreach (var input in machine.Inputs)
+        /// <summary>Audio thread, before the block's work (AudioLock held): a machine's new latency reaches the delays at once.</summary>
+        internal void ApplyLatencyIfDirty()
+        {
+            if (!LatencyDirty) return;
+            LatencyDirty = false;
+            ApplyLatencyPlan(onUiThread: false);
+        }
+
+        void BuildLatencyPlan()
+        {
+            var ids = new Dictionary<MachineCore, int>();
+            var machines = new List<MachineCore>();
+            var connections = new List<MachineConnectionCore>();
+            int Id(MachineCore m)
             {
-                var inputMachine = input.Source as MachineCore;
-                var inputConnectionCore = input as MachineConnectionCore;
-                int addLatency = 0;
-                if (engineSettings.MachineDelayCompensation)
+                if (!ids.TryGetValue(m, out int id))
                 {
-                    addLatency = maxLatency - inputMachineLatency[inputMachine];
-                    if (addLatency < 0) addLatency = 0;
+                    id = machines.Count;
+                    ids[m] = id;
+                    machines.Add(m);
                 }
-                inputConnectionCore.UpdateLatencyBuffers(addLatency);
+                return id;
             }
+            Id(songCore.MachinesList[0]);
+            var plan = LatencyPlan.Build(0, id =>
+            {
+                var edges = new List<(int, int)>();
+                foreach (var input in machines[id].Inputs)
+                {
+                    edges.Add((connections.Count, Id(input.Source as MachineCore)));
+                    connections.Add(input as MachineConnectionCore);
+                }
+                return edges;
+            });
+            latencyPlan = plan;
+            latencyMachines = plan.Nodes.Select(n => machines[n]).ToArray();
+            latencyConnections = plan.Connections.Select(c => connections[c]).ToArray();
+            latencyOwn = new int[plan.Count];
+            latencyDelays = new int[latencyConnections.Length];
+        }
 
-            int machineLatency = machine.OverrideLatency >= 0 ? machine.OverrideLatency : machine.Latency;
+        void ApplyLatencyPlan(bool onUiThread)
+        {
+            var plan = latencyPlan;
+            if (plan == null) return;
+            bool on = engineSettings.MachineDelayCompensation;
+            for (int i = 0; i < latencyMachines.Length; i++)
+                latencyOwn[i] = on ? latencyMachines[i].LatencyCompensated : 0;
+            plan.Apply(latencyOwn, latencyDelays);
+            int fade = LatencyFade;
+            for (int j = 0; j < latencyConnections.Length; j++)
+            {
+                var ring = latencyConnections[j].Ring;
+                if (onUiThread) ring.EnsureCapacity(latencyDelays[j]);
+                ring.Request(latencyDelays[j], fade);
+            }
+            if (onUiThread)
+                for (int i = 0; i < latencyMachines.Length; i++)
+                    if (on && latencyOwn[i] > 0) latencyMachines[i].EnsureBypassRing(latencyOwn[i]);
+            totalLatency = on ? plan.Total : 0;
+        }
 
-            if (machine.IsBypassed)
-                machineLatency = 0;
-
-            return engineSettings.MachineDelayCompensation ? maxLatency + machineLatency : 0;
+        /// <summary>The delays the plan gives (tests): each compensated input with its delay now.</summary>
+        internal IEnumerable<(MachineConnectionCore Connection, int Delay)> CompensationDelays()
+        {
+            for (int j = 0; j < latencyConnections.Length; j++)
+                yield return (latencyConnections[j], latencyDelays[j]);
         }
 
         public string GetInfoText()

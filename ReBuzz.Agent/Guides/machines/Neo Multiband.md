@@ -79,7 +79,7 @@ Parallel multiband squash on drums:
 ## Gotchas
 
 - The defaults compress (every band 2:1 at −20 dB): set the bands you don't want to 1:1, or start from a preset.
-- Linear phase delays by about 96 ms. NeoBuzz Live delays the other paths to match when its machine delay compensation is on (an engine setting, off by default: Preferences ▸ Engine on Windows, Preferences ▸ General in the studio); with it off, a parallel path around it combs, and a live input monitored through it arrives late. Use `Phase` Minimum there, or turn the compensation on. Renders start that much later: give them the tail.
+- Linear phase delays by about 96 ms. NeoBuzz Live delays the other paths to match (its machine delay compensation, on by default: Preferences ▸ Engine on Windows, Preferences ▸ General in the studio); bypassed, it still delays by that much, so the other paths stay lined up. If the user turned the compensation off, a parallel path around it combs; a live input monitored through it arrives late either way. Use `Phase` Minimum there. Renders start that much later: give them the tail.
 - The linear-phase crossovers ring a little before a transient below about 100 Hz (pre-echo, the price of no phase shift); minimum phase rings after it instead.
 - `Crossover 3` only matters with 4 bands. A crossover set below the one before it sits at that one.
 - Thresholds read the band's peak, not the whole signal's: a band holds only part of the energy, so its level (`bN_level_db`) is lower than the input's.

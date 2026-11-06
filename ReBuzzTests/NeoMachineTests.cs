@@ -763,6 +763,53 @@ namespace ReBuzzTests
                                       $"unity {Db(alone / bypassed):+0.0000;-0.0000;0.0000} dB, editor {size.Width:0} x {size.Height:0}");
         }
 
+        [Test]
+        public void ABypassedLatentMachineKeepsItsLatencyAndALookaheadChangeMovesTheOtherPathSmoothly()
+        {
+            // Machine delay compensation (docs/specs/mastering-tools.md §4.1): on by default; a bypassed Neo Multiband keeps its
+            // 4607 samples (its dry input delayed by them), so the inverted parallel path still cancels, through the switch too.
+            using (var rig = new Rig(Multiband, Utility))
+            {
+                Assert.That(rig.Core.EngineSettings.MachineDelayCompensation, Is.True, "on by default");
+                for (int b = 1; b <= 4; b++) rig.Param($"B{b} ratio").SetValue(0, 200);   // 1:1
+                var utility = rig.Parallel.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters;
+                utility.Single(p => p.Name == "Invert L").SetValue(0, 1);
+                utility.Single(p => p.Name == "Invert R").SetValue(0, 1);
+                rig.Play(0.5);
+                double before = Rms(rig.Play(0.3));
+                rig.Effect.IsBypassed = true;
+                double through = Rms(rig.Play(0.5));
+                rig.Effect.IsBypassed = false;
+                double after = Rms(rig.Play(0.5));
+                TestContext.Out.WriteLine($"[notice] Bypassing Neo Multiband beside an inverted parallel path: residual {Db(before):F1}, bypassed {Db(through):F1}, back {Db(after):F1} dBFS");
+                Assert.That(before, Is.LessThan(1e-7), "compensated");
+                Assert.That(through, Is.LessThan(1e-7), "the bypass keeps the latency");
+                Assert.That(after, Is.LessThan(1e-7), "and back");
+            }
+
+            // Neo Limiter's lookahead changed while playing (2 → 5 ms): the parallel path's delay follows by a crossfade,
+            // without a gap or a click (heard on the parallel path alone: the limiter's connection at 0, its latency still
+            // counted; muting would stop its work here, where ProcessMutedMachines is off, so its lookahead wouldn't change).
+            using (var rig = new Rig(Limiter, Utility))
+            {
+                rig.Param("Ceiling").SetValue(0, 120);                                   // 0 dBTP
+                rig.Effect.Outputs.Single().Amp = 0;
+                rig.Play(0.5);
+                var steady = rig.Play(0.3);
+                double own = 0;
+                for (int i = 1; i < steady.Length; i++) own = Math.Max(own, Math.Abs(steady[i] - steady[i - 1]));
+                rig.Param("Lookahead").SetValue(0, 450);                                 // 5 ms
+                var moving = rig.Play(0.5);
+                double step = 0, quietest = double.MaxValue;
+                for (int i = 1; i < moving.Length; i++) step = Math.Max(step, Math.Abs(moving[i] - moving[i - 1]));
+                for (int w = 0; w + 64 <= moving.Length; w += 64) quietest = Math.Min(quietest, Rms(moving[w..(w + 64)]));
+                TestContext.Out.WriteLine($"[notice] Neo Limiter's lookahead 2 → 5 ms while playing: the parallel path's largest step {step / own:F3}× the sine's own, quietest 64 samples {quietest / Rms(steady):F3} of its level");
+                Assert.That(rig.Effect.Latency, Is.EqualTo(LimiterLatency(5, rig.Rate)), "the new latency reached ReBuzz");
+                Assert.That(step, Is.LessThan(1.2 * own), "no click");
+                Assert.That(quietest, Is.GreaterThan(0.5 * Rms(steady)), "no gap");
+            }
+        }
+
         static readonly SourceInfo MixInfo = new("Neo Test Mix", MixSource, true);
 
         /// <summary>A mono 32-bit float WAV (for the wavetable).</summary>
