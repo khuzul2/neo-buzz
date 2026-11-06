@@ -3,9 +3,9 @@
 // 16 notes, each with three wavetable oscillators whose unison voices (1–16) are lanes of the
 // oscillator, not voices of their own; per note two filters (a ladder, then a state-variable filter,
 // serial or parallel and anything between), an amp envelope and a filter envelope. Notes are lanes of
-// the filters. Voices run at 1× or 2× the sample rate (2×: an IIR halfband brings the mix down, so
-// every mip level keeps the audible band); the control values change every 16 samples of the base
-// rate on a grid that runs across blocks. No allocation after construction. Pure.
+// the filters. Voices run at 1×, 2× or 4× the sample rate (an IIR halfband per octave brings the mix
+// down, so every mip level keeps the audible band); the control values change every 16 samples of
+// the base rate on a grid that runs across blocks. No allocation after construction. Pure.
 //
 // This is the renderer the G0 gate measures (CPU at 16 notes × 3 oscillators × 8 and 16 unison, the
 // same bits on every platform). P1 builds the playable machine on it.
@@ -33,7 +33,7 @@ namespace NeoBuzz.DyeEssence
 
     internal sealed class BankSettings
     {
-        /// <summary>1 or 2: voices at the sample rate or twice it.</summary>
+        /// <summary>1, 2 or 4: voices at the sample rate, twice or four times it.</summary>
         public int Oversample = 2;
         public readonly OscSettings[] Osc = { new OscSettings(), new OscSettings(), new OscSettings() };
         // Filter 1: the ladder.
@@ -58,7 +58,7 @@ namespace NeoBuzz.DyeEssence
         public const int Oscillators = 3;
         public const int MaxUnison = 16;
         public const int ControlRate = 16;              // base-rate samples per control tick
-        public const int MaxOversample = 2;
+        public const int MaxOversample = 4;
         public const int MaxTick = ControlRate * MaxOversample;
         public const int MaxBlock = 256;
         const int Stacks = Notes * Oscillators;
@@ -95,6 +95,9 @@ namespace NeoBuzz.DyeEssence
 
         readonly float[] hiL = new float[MaxOversample * MaxBlock], hiR = new float[MaxOversample * MaxBlock];
         readonly IirHalfband decL = new IirHalfband(Decimator), decR = new IirHalfband(Decimator);
+        // 4×: a first stage from four times the rate to twice it (the same design: what it passes
+        // above 20 kHz the second stage takes out).
+        readonly IirHalfband dec4L = new IirHalfband(Decimator), dec4R = new IirHalfband(Decimator);
         readonly uint[] seeds = new uint[Notes];
         float sampleRate = 48000;
         int controlCounter;
@@ -229,7 +232,17 @@ namespace NeoBuzz.DyeEssence
                 controlCounter -= m;
                 pos += m;
             }
-            if (os == 2)
+            if (os == 4)
+            {
+                for (int i = 0; i < 2 * n; i++)
+                {
+                    hiL[i] = dec4L.Down(hiL[2 * i], hiL[2 * i + 1]);
+                    hiR[i] = dec4R.Down(hiR[2 * i], hiR[2 * i + 1]);
+                }
+                dec4L.Flush();
+                dec4R.Flush();
+            }
+            if (os >= 2)
             {
                 for (int i = 0; i < n; i++)
                 {
@@ -250,6 +263,7 @@ namespace NeoBuzz.DyeEssence
         }
 
         /// <summary><paramref name="count"/> voice-rate samples of the current tick, from <paramref name="at"/>.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         bool Render<TL, TF, TU>(int at, int count)
             where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
         {
@@ -294,6 +308,7 @@ namespace NeoBuzz.DyeEssence
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void RenderStack<TL, TF, TU>(int stack, TableArena table, int count)
             where TL : struct, ILanes<TF, TU> where TF : struct where TU : struct
         {
@@ -316,6 +331,7 @@ namespace NeoBuzz.DyeEssence
         readonly int[] levelOf = new int[Stacks];
 
         /// <summary>The control values of one note for a tick of <paramref name="count"/> voice-rate samples.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Control(int note, int count)
         {
             var s = S;
@@ -395,6 +411,7 @@ namespace NeoBuzz.DyeEssence
         }
 
         /// <summary>Each lane's detune ratio and pan for an oscillator, recomputed only when they change.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Shape(int o, int u, float detune, float spread)
         {
             if (shapeUnison[o] == u && shapeDetune[o] == detune && shapeSpread[o] == spread) return;

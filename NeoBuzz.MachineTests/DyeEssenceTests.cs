@@ -106,6 +106,7 @@ namespace NeoBuzz.MachineTests
             ("unison 16, 2×, drive, resonance, high-pass", 16, 2, s => { s.Drive1 = 4; s.Reso1 = 0.95f; s.Mode2 = SvfMode.HighPass; s.Reso2 = 0.9f; }),
             ("unison 5, on a frame, notch", 5, 2, s => { foreach (var o in s.Osc) o.Position = 0; s.Mode2 = SvfMode.Notch; }),
             ("unison 8, filters bypassed", 8, 2, s => s.FilterBypass = true),
+            ("unison 6, 4×", 6, 4, s => s.Routing = 0.3f),
         };
 
         [Test]
@@ -194,6 +195,10 @@ namespace NeoBuzz.MachineTests
             Measure.Report($"Dye Essence G0, 16 notes × 3 osc × 16 unison + ladder and SVF, 2× ({kind}): {wall16:F2}× real time (CPU {cpu16:F2}×)");
             var (wall1x, cpu1x) = Speed(Gate(kind, 8, 1), 6);
             Measure.Report($"Dye Essence G0, 16 notes × 3 osc × 8 unison + ladder and SVF, 1× ({kind}): {wall1x:F2}× real time (CPU {cpu1x:F2}×)");
+            var (wall4x, cpu4x) = Speed(Gate(kind, 8, 4), 6);
+            Measure.Report($"Dye Essence G0, 16 notes × 3 osc × 8 unison + ladder and SVF, 4× ({kind}): {wall4x:F2}× real time (CPU {cpu4x:F2}×)");
+            var (wall16x4, cpu16x4) = Speed(Gate(kind, 16, 4), 6);
+            Measure.Report($"Dye Essence G0, 16 notes × 3 osc × 16 unison + ladder and SVF, 4× ({kind}): {wall16x4:F2}× real time (CPU {cpu16x4:F2}×)");
             var (wallU1, cpuU1) = Speed(Gate(kind, 1), 6);
             Measure.Report($"Dye Essence G0, 16 notes × 3 osc × 1 voice + ladder and SVF, 2× ({kind}): {wallU1:F2}× real time (CPU {cpuU1:F2}×)");
             var (wallNo, cpuNo) = Speed(Gate(kind, 8, 2, s => { foreach (var o in s.Osc) o.Enabled = false; }), 6);
@@ -230,6 +235,8 @@ namespace NeoBuzz.MachineTests
         [TestCase(33, 2)]
         [TestCase(94, 1)]
         [TestCase(57, 1)]
+        [TestCase(94, 4)]
+        [TestCase(57, 4)]
         public void SawAliasFloor(int note, int oversample)
         {
             // Neo Wave's criterion (machines.md §5): the saw table at a note, everything that is not a
@@ -250,10 +257,11 @@ namespace NeoBuzz.MachineTests
         [TestCase(105, 2)]
         [TestCase(69, 1)]
         [TestCase(93, 1)]
+        [TestCase(93, 4)]
         public void KeepsTheAudibleBand(int note, int oversample)
         {
-            // Neo Wave's criterion: the harmonic nearest 18 kHz within 1.5 dB of a saw's at 2×. At 1× it is
-            // reported (the level that keeps every harmonic under Nyquist can drop the top octave).
+            // Neo Wave's criterion: the harmonic nearest 18 kHz within 1.5 dB of a saw's at 2× and 4×. At 1×
+            // it is reported (the level that keeps every harmonic under Nyquist can drop the top octave).
             var b = Clean(oversample);
             b.NoteOn(0, note, 1f);
             var y = Left(Render(b, 8192 + 32768), 8192, 32768);
@@ -273,7 +281,7 @@ namespace NeoBuzz.MachineTests
             double rel = Measure.Db(At(h * f0) / At(f0));
             double ideal = -20 * Math.Log10(h);
             Measure.Report($"Dye Essence G0, saw at {f0:F0} Hz, {oversample}×: harmonic {h} ({h * f0 / 1000:F1} kHz) at {rel:F1} dB (ideal {ideal:F1})");
-            if (oversample == 2) Assert.That(rel, Is.EqualTo(ideal).Within(1.5));
+            if (oversample >= 2) Assert.That(rel, Is.EqualTo(ideal).Within(1.5));
         }
 
         [Test]
