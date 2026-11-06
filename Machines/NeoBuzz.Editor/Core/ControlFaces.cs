@@ -63,6 +63,46 @@ namespace NeoBuzz.Editor
         }
     }
 
+    /// <summary>
+    /// An Off/On switch as one toggle named for its function ("Solo", "Auto makeup"): lit in the accent, with its lamp
+    /// on, when on; plain when off. It stands where a row of choice buttons would (the same height, the button on
+    /// the buttons' line), so layouts keep their places. UI gallery review: drawn as "Off | On" segments, the lit
+    /// segment was often "Off", so an accent-lit control could mean off.
+    /// </summary>
+    internal sealed class ToggleFace
+    {
+        public const double TextSize = 11, Lamp = 3, Padding = 6, Gap = 4;
+
+        /// <param name="minWidth">The least width (a row of two choice cells' width keeps a layout's place).</param>
+        public ToggleFace(string label, double minWidth, INeoTextMeasure measure)
+        {
+            Label = label ?? "";
+            double text = measure?.MeasureText(Label, TextSize, bold: true) ?? Label.Length * 6;
+            Width = Math.Ceiling(Math.Max(Math.Max(minWidth, 34), Padding + 2 * Lamp + Gap + text + Padding + 2));
+        }
+
+        public string Label { get; }
+        public double Width { get; }
+        public double Height => ChoiceStrip.LabelHeight + 24;
+
+        /// <summary>The button (on the line choice buttons stand on).</summary>
+        public NeoRect Button => new NeoRect(0, ChoiceStrip.LabelHeight, Width - 2, 22);
+
+        public bool Hit(double x, double y) => Button.Contains(x, y);
+
+        public void Draw(INeoCanvas c, bool on, bool hover, NeoColor accent)
+        {
+            var r = Button;
+            c.Rect(r, on ? accent.WithAlpha(0x38) : hover ? Palette.Track : Palette.Panel, new NeoStroke(on ? accent : Palette.PanelEdge, 1), 3);
+            double cy = r.Y + r.Height / 2;
+            var lamp = new NeoPoint(r.X + Padding + Lamp, cy);
+            if (on) c.Ellipse(lamp, Lamp, Lamp, accent, NeoStroke.None);
+            else c.Ellipse(lamp, Lamp, Lamp, NeoFill.None, new NeoStroke(Palette.DimText, 1));
+            double textX = r.X + Padding + 2 * Lamp + Gap;
+            c.Text(Label, textX, r.Y + (r.Height - 15) / 2, TextSize, on ? accent : Palette.Text, on, NeoAlign.Left, maxWidth: Math.Max(1, r.Right - textX - 2));
+        }
+    }
+
     /// <summary>A label over a box showing the current choice (the list itself is the toolkit's menu).</summary>
     internal static class DropdownFace
     {

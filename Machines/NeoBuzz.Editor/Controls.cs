@@ -44,11 +44,15 @@ namespace NeoBuzz.Editor
         }
     }
 
-    /// <summary>A row of buttons, one per choice, for an enum (or switch) parameter.</summary>
+    /// <summary>
+    /// A row of buttons, one per choice, for an enum parameter; an Off/On switch is one toggle named for its function,
+    /// lit when on (ToggleFace).
+    /// </summary>
     internal sealed class ParamChoice : FrameworkElement
     {
         readonly EditorContext ctx;
         readonly ChoiceStrip strip;
+        readonly ToggleFace toggle;
         readonly WpfCanvas canvas;
         int selected;
         int hover = -1;
@@ -59,8 +63,9 @@ namespace NeoBuzz.Editor
             canvas = new WpfCanvas(this);
             var def = ctx.Table[index];
             strip = new ChoiceStrip(label ?? def.Name, ParamMapping.ChoiceNames(def), cellWidth, vertical, canvas);
-            Width = strip.Width;
-            Height = strip.Height;
+            if (ParamMapping.IsToggle(def)) toggle = new ToggleFace(strip.Label, strip.Width, canvas);
+            Width = toggle?.Width ?? strip.Width;
+            Height = toggle?.Height ?? strip.Height;
             Binding = ctx.Bind(index, Show);
             ToolTip = def.Description;
             Cursor = Cursors.Hand;
@@ -71,6 +76,12 @@ namespace NeoBuzz.Editor
         public string Label => strip.Label;
         public bool Vertical => strip.Vertical;
 
+        /// <summary>An Off/On switch, drawn as one toggle (a click switches it).</summary>
+        public bool IsToggle => toggle != null;
+
+        /// <summary>Whether a toggle is on (lit).</summary>
+        public bool IsOn => toggle != null && selected == 1;
+
         void Show(int raw)
         {
             selected = raw - Binding.Def.Min;
@@ -80,13 +91,15 @@ namespace NeoBuzz.Editor
         int CellAt(MouseEventArgs e)
         {
             var p = e.GetPosition(this);
+            if (toggle != null) return toggle.Hit(p.X, p.Y) ? 0 : -1;
             return strip.CellAt(p.X, p.Y);
         }
 
         protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
         {
             int i = CellAt(e);
-            if (i >= 0) Binding.Set(Binding.Def.Min + i);
+            // A toggle switches; a row picks the button.
+            if (i >= 0) Binding.Set(toggle != null ? (selected == 1 ? Binding.Def.Min : Binding.Def.Max) : Binding.Def.Min + i);
             e.Handled = true;
         }
 
@@ -106,7 +119,11 @@ namespace NeoBuzz.Editor
             InvalidateVisual();
         }
 
-        protected override void OnRender(DrawingContext dc) => strip.Draw(canvas.On(dc), selected, hover, ctx.Accent);
+        protected override void OnRender(DrawingContext dc)
+        {
+            if (toggle != null) toggle.Draw(canvas.On(dc), selected == 1, hover >= 0, ctx.Accent);
+            else strip.Draw(canvas.On(dc), selected, hover, ctx.Accent);
+        }
     }
 
     /// <summary>A titled panel holding controls.</summary>

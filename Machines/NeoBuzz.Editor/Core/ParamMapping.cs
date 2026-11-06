@@ -57,6 +57,15 @@ namespace NeoBuzz.Editor
             return Math.Clamp((t - min) / (max - min), 0, 1);
         }
 
+        /// <summary>
+        /// A switch drawn as one toggle named for its function, lit when on (ToggleFace): an Off/On switch. A two-state
+        /// parameter with names of its own ("Linear"/"Minimum") stays a choice.
+        /// </summary>
+        public static bool IsToggle(ParamDef def) =>
+            def.Kind == MapKind.Switch && def.Max - def.Min == 1 &&
+            (def.Names == null || (def.Names.Length == 2 && string.Equals(def.Names[0], "Off", StringComparison.OrdinalIgnoreCase) &&
+                                   string.Equals(def.Names[1], "On", StringComparison.OrdinalIgnoreCase)));
+
         /// <summary>The names of a choice parameter's values: its own, Off/On for a switch, else each value described.</summary>
         public static string[] ChoiceNames(ParamDef def)
         {

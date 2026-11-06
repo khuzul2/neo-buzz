@@ -38,7 +38,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Drive", "NeoDriveEditor", "neo-drive-editor", 746, 322),
             ("Neo EQ", "NeoEqEditor", "neo-eq-editor", 822, 508),
             ("Neo Limiter", "NeoLimiterEditor", "neo-limiter-editor", 718, 292),
-            ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 627, 296),
+            ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 675, 296),   // its switches as toggles, 92 px each (627 before)
             ("Neo Verb", "NeoVerbEditor", "neo-verb-editor", 880, 332),
             ("Neo Analyzer", "NeoAnalyzerEditor", "neo-analyzer-editor", 1118, 398),
             ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 978, 338),
@@ -368,6 +368,42 @@ namespace ReBuzz.Studio.Tests
                 Core.SongCore.Undo();
                 Run(0.05);
                 Assert.That(Get(bar, "Current"), Is.EqualTo("Init"), "undo: the sound is the defaults again");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
+        public void SwitchesAreTogglesThatLightOnlyWhenOn()
+        {
+            // UI gallery review (mac-401, mac-410, mac-414): a switch was drawn "Off | On" with the lit segment "Off", so an
+            // accent-lit control could mean off. One toggle named for its function, lit only when on; one click, one step.
+            var m = Add("Neo Comp", "Toggle Comp");
+            try
+            {
+                var window = OpenEditor(m);
+                var makeup = Find(window, "ParamChoice", "Auto makeup");
+                Assert.That((bool)Get(makeup, "IsToggle"), Is.True, "Auto makeup is a toggle");
+                Assert.That(Controls(window, "ParamChoice").Where(c => (bool)Get(c, "IsToggle")).Select(c => AutomationProperties.GetName(c)),
+                    Is.EquivalentTo(new[] { "Auto release", "Auto makeup" }), "Neo Comp's two switches; its choices stay rows");
+                var area = BoundsIn(makeup, window);
+                var param = Global(m, "Auto makeup");
+                Assert.That(param.GetValue(0), Is.EqualTo(0));
+                var off = Frame(window);
+                Assert.That(Count(off, area, 0x2EC4B6, 60), Is.EqualTo(0), "off: nothing in the accent");
+                var stack = Core.SongCore.ActionStack;
+                int steps = stack.Actions.Count();
+                var button = (Rect)makeup.GetType().GetMethod("CellBounds")!.Invoke(makeup, new object[] { 0 })!;
+                Click(window, At(makeup, window, button.Center.X, button.Center.Y));
+                Assert.That(param.GetValue(0), Is.EqualTo(1), "a click switches it on");
+                Assert.That(stack.Actions.Count(), Is.EqualTo(steps + 1), "one undo step");
+                Assert.That((bool)Get(makeup, "IsOn"), Is.True);
+                var on = Frame(window, "neo-comp-editor-toggle-on");
+                Assert.That(Count(on, area, 0x2EC4B6, 60), Is.GreaterThan(30), "on: lit in the accent");
+                Click(window, At(makeup, window, button.Center.X, button.Center.Y));
+                Assert.That(param.GetValue(0), Is.EqualTo(0), "and off again");
             }
             finally
             {

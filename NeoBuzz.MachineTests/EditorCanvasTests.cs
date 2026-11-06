@@ -335,6 +335,43 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void AnOffOnSwitchIsOneToggleThatLightsWhenOn()
+        {
+            // UI gallery review (mac-401, mac-410, mac-414): switches were "Off | On" segments, the lit one often "Off",
+            // so an accent-lit control could mean off. A switch is one toggle named for its function, lit only when on.
+            var makeup = NeoBuzz.Comp.Params.Table[NeoBuzz.Comp.P.AutoMakeup];
+            var dcRemove = NeoBuzz.Utility.Params.Table[NeoBuzz.Utility.P.DcRemove];
+            Assert.That(ParamMapping.IsToggle(makeup) && ParamMapping.IsToggle(dcRemove), Is.True, "Off/On switches");
+            Assert.That(ParamMapping.IsToggle(NeoBuzz.Utility.Params.Table[NeoBuzz.Utility.P.PanLaw]), Is.False, "a choice with names stays a row");
+            var named = new ParamDef(0, "Phase", "Phase", 0, 1, 0, MapKind.Switch, 0, 1, names: new[] { "Linear", "Minimum" });
+            Assert.That(ParamMapping.IsToggle(named), Is.False, "a two-state choice with names of its own stays a row");
+
+            var measure = new RecordingCanvas();
+            var toggle = new ToggleFace("Auto makeup", 72, measure);
+            Assert.That(toggle.Height, Is.EqualTo(new ChoiceStrip("x", new[] { "Off", "On" }, 36, false, measure).Height), "where a row of buttons stood");
+            Assert.That(toggle.Width, Is.GreaterThanOrEqualTo(72));
+            Assert.That(toggle.Hit(toggle.Width / 2, ChoiceStrip.LabelHeight + 11), Is.True);
+            Assert.That(toggle.Hit(toggle.Width / 2, 5), Is.False, "above the button");
+
+            NeoDrawCall[] Drawn(bool on)
+            {
+                var c = new RecordingCanvas();
+                toggle.Draw(c, on, false, Accent);
+                return c.Calls.ToArray();
+            }
+            bool Lit(NeoDrawCall x) => x.Fill.Color.R == Accent.R && x.Fill.Color.G == Accent.G && x.Fill.Color.B == Accent.B && x.Fill.Color.IsVisible
+                                       || x.Stroke.Color == Accent || x.Color == Accent;
+            var off = Drawn(false);
+            var on = Drawn(true);
+            Assert.That(off.Where(x => x.Kind == NeoDrawKind.Text).Select(x => x.Text), Is.EqualTo(new[] { "Auto makeup" }), "named for its function: no Off, no On");
+            Assert.That(off.Any(Lit), Is.False, "off: nothing in the accent");
+            Assert.That(on.Single(x => x.Kind == NeoDrawKind.Rect).Fill.Color, Is.EqualTo(Accent.WithAlpha(0x38)), "on: lit");
+            Assert.That(on.Single(x => x.Kind == NeoDrawKind.Text).Color, Is.EqualTo(Accent));
+            Assert.That(on.Single(x => x.Kind == NeoDrawKind.Ellipse).Fill.Color, Is.EqualTo(Accent), "its lamp on");
+            Assert.That(off.Single(x => x.Kind == NeoDrawKind.Ellipse).Fill.IsNone, Is.True, "and off");
+        }
+
+        [Test]
         public void KnobArcsStartAtTheValueZeroOrTheMinimum()
         {
             // mac-409: Neo Limiter's Input gain (−12 … +24 dB) at 0.0 dB lit an arc from +6 dB, the knob's middle.
