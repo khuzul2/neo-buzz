@@ -30,6 +30,10 @@ namespace ReBuzz
                 ReBuzz.Agent.HeadlessAgent.Start(this, e.Args);
                 return;
             }
+            // Fork (docs/specs/ui-gallery.md): --ui-shots draws the windows for the UI gallery; nobody answers
+            // a message box there, so they go to stderr (the test that runs it reads it).
+            if (ReBuzz.MainWindow.UiShotsRequested)
+                ReBuzz.Agent.NonModal.CaptureAlways(m => Console.Error.WriteLine("[ReBuzz] " + m.Replace('\n', ' ')));
             // Fork: the main window is chosen here rather than in App.xaml, so --agent opens none
             // (StartupUri can't be cleared once set: WPF throws on null).
             StartupUri = new Uri("AppViews/MainWindow.xaml", UriKind.Relative);

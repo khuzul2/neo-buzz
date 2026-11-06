@@ -256,7 +256,8 @@ jobs:
         if-no-files-found: error
 
     # Screenshots rendered by UI tests, force-pushed as a single commit to the ci-artifacts
-    # branch: viewable in the repo (and fetchable with git) without downloading artifacts.
+    # branch: viewable in the repo (and fetchable with git) without downloading artifacts. Among
+    # them ReBuzz.exe's half of the UI gallery (UiGalleryTests: win-*.png, docs/specs/ui-gallery.md).
     - name: Publish screenshots
       if: always() && hashFiles('screenshots/*.png') != ''
       continue-on-error: true
@@ -267,6 +268,8 @@ jobs:
         $dir = Join-Path $env:RUNNER_TEMP 'ci-artifacts'
         New-Item -ItemType Directory -Force $dir | Out-Null
         Copy-Item screenshots/*.png $dir
+        # The UI gallery's index (docs/specs/ui-gallery.md: index-windows.md), beside its pictures.
+        Copy-Item screenshots/*.md $dir -ErrorAction SilentlyContinue
         Set-Content (Join-Path $dir 'README.md') "Screenshots from run $env:GITHUB_RUN_ID of $env:GITHUB_REF_NAME at $env:GITHUB_SHA."
         Push-Location $dir
         git init -q -b ci-artifacts
