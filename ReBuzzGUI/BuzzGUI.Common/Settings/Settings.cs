@@ -114,8 +114,10 @@ namespace BuzzGUI.Common.Settings
             foreach (var p in Properties)
             {
                 var decl = p.GetCustomAttributes(false).FirstOrDefault(z => z.GetType() == typeof(BuzzSetting)) as BuzzSetting;
-                if (decl != null)
-                    p.SetValue(this, decl.DefaultValue, null);
+                // Fork: a property without [BuzzSetting] isn't a setting (GeneralSettings.CheckForUpdates): not listed,
+                // loaded or saved.
+                if (decl == null) continue;
+                p.SetValue(this, decl.DefaultValue, null);
 
                 Setting s = new Setting(this, p)
                 {
