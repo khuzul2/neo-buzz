@@ -150,7 +150,7 @@ namespace NeoBuzz.Filter
 
         static void DrawLfo(INeoCanvas g, NeoRect r, EditorContext ctx, NeoFilterMachine machine)
         {
-            var s = Setting(ctx, machine?.Engine.Tempo ?? 120);
+            var s = Setting(ctx, ctx.SongTempo(machine?.Engine.Tempo ?? 120));
             var area = new NeoRect(r.X + 4, r.Y + 4, r.Width - 8, r.Height - 8);
             double mid = area.Y + area.Height / 2;
             g.Line(area.Left, mid, area.Right, mid, new NeoStroke(Palette.Track, 1));

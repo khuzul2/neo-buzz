@@ -1055,6 +1055,35 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        [AvaloniaTest]
+        public void EditorsShowTheSongsTempoWhileItIsStopped()
+        {
+            // UI gallery review (mac-402, mac-413): with the song at 124 BPM and the transport stopped, Neo Delay's and Neo
+            // Scope's editors said 120 BPM, their engines' start-up tempo: an engine hears the tempo only while it runs.
+            int bpm = Core.BPM;
+            var delay = Add("Neo Delay", "Tempo Delay", -0.3f, 0.4f);
+            var scope = Add("Neo Scope", "Tempo Scope", 0.3f, 0.4f);
+            try
+            {
+                Core.BPM = 124;
+                Assert.That(Core.Playing, Is.False, "the transport is stopped");
+                var dw = OpenEditor(delay);
+                Frame(dw);
+                var delayEditor = Controls(dw, "NeoDelayEditor").Single();
+                Assert.That((string)Get(delayEditor, "Caption"), Does.EndWith("· 124 BPM"), "Neo Delay's echoes say the song's tempo");
+                var sw = OpenEditor(scope);
+                Frame(sw);
+                var view = Get(Controls(sw, "NeoScopeEditor").Single(), "View");
+                string left = (string)view.GetType().GetField("Left")!.GetValue(view)!;
+                Assert.That(left, Does.Contain("124 BPM"), "Neo Scope's time base says the song's tempo");
+            }
+            finally
+            {
+                Core.BPM = bpm;
+                Remove(scope, delay);
+            }
+        }
+
         /// <summary>A parameter's raw value for a value as its machine describes it ("4 Hz"): the nearest by its own texts.</summary>
         static int Params(IMachine m, string name, string text)
         {

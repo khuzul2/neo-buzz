@@ -168,7 +168,8 @@ namespace NeoBuzz.Scope
                     view.MajorEvery = 5;
                     view.Right = DisplayNames[Math.Clamp(ctx.Raw(P.Display), 0, 4)];
                 }
-                string tempo = s.Bpm.ToString("0.#", ci) + " BPM";
+                // The song's tempo, also while it is stopped (the engine hears it only while it runs).
+                string tempo = ctx.SongTempo(s.Bpm > 0 ? s.Bpm : 120).ToString("0.#", ci) + " BPM";
                 view.Left = sync == 0
                     ? $"{Params.Table[P.Time].Describe(ctx.Raw(P.Time))}/div"
                     : f.Synced || !s.HasFrame ? $"{Params.Table[P.Sync].Describe(sync)} · {tempo}"
