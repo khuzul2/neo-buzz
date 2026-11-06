@@ -232,6 +232,41 @@ namespace ReBuzz.Common
             return monitor != IntPtr.Zero;
         }
 
+        /// <summary>
+        /// Fork (docs/specs/ui-gallery.md): a window's bounds (place and size, device-independent pixels) moved and shrunk
+        /// to lie within a screen's work area (without the taskbar): narrower or shorter where larger, then moved in.
+        /// </summary>
+        public static Rect FitToWorkArea(Rect bounds, Rect workArea)
+        {
+            double width = Math.Min(bounds.Width, workArea.Width), height = Math.Min(bounds.Height, workArea.Height);
+            double left = Math.Clamp(bounds.Left, workArea.Left, workArea.Right - width), top = Math.Clamp(bounds.Top, workArea.Top, workArea.Bottom - height);
+            return new Rect(left, top, width, height);
+        }
+
+        /// <summary>
+        /// Fork (docs/specs/ui-gallery.md): keeps a normal window within the work area of the screen it is on (its default
+        /// 1500×800 ran off a small screen and under the taskbar). The size it then has is the one saved as it closes.
+        /// </summary>
+        internal static void KeepOnWorkArea(Window window)
+        {
+            if (window.WindowState != WindowState.Normal) return;
+            var handle = new WindowInteropHelper(window).Handle;
+            var screen = handle != IntPtr.Zero ? System.Windows.Forms.Screen.FromHandle(handle) : System.Windows.Forms.Screen.PrimaryScreen;
+            if (screen == null) return;
+            var dpi = VisualTreeHelper.GetDpi(window);
+            var area = new Rect(screen.WorkingArea.Left / dpi.DpiScaleX, screen.WorkingArea.Top / dpi.DpiScaleY,
+                                screen.WorkingArea.Width / dpi.DpiScaleX, screen.WorkingArea.Height / dpi.DpiScaleY);
+            double width = double.IsNaN(window.Width) ? window.ActualWidth : window.Width, height = double.IsNaN(window.Height) ? window.ActualHeight : window.Height;
+            var bounds = new Rect(window.Left, window.Top, width, height);
+            if (!double.IsFinite(bounds.Left) || !double.IsFinite(bounds.Top) || width <= 0 || height <= 0) return;
+            var fit = FitToWorkArea(bounds, area);
+            if (fit == bounds) return;
+            window.Width = fit.Width;
+            window.Height = fit.Height;
+            window.Left = fit.Left;
+            window.Top = fit.Top;
+        }
+
         internal static void SaveWindowStateToRegistry(Window window, IRegistryEx registry, string registryKey)
         {
             if (window == null)

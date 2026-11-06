@@ -32,6 +32,7 @@ namespace ReBuzz.Studio.Shell.Preferences
             MinWidth = 560;
             MinHeight = 360;
             ShowInTaskbar = false;
+            WindowBounds.KeepOnScreen(this);
             var core = host.Core;
             pages.Add(new AudioPage(core, host.Registry));
             pages.Add(new MidiPage(core.MidiInOutEngine, host.Registry));

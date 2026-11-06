@@ -378,6 +378,44 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void TheWindowFitsTheScreensVisibleArea()
+        {
+            // Fork (ui-gallery.md): the default 1280×820 window ran off a 1024×768 screen. On opening, a window is moved and
+            // shrunk into its screen's visible area (the Mac's without the menu bar and the Dock), title bar included.
+            using var restore = Studio.AfterTest(Reset);
+            var area = new Rect(0, 25, 1024, 680);                  // a 1024×768 Mac: the menu bar above, the Dock below
+            Assert.That(WindowBounds.Fit(new Rect(128, 50, 1280, 848), area), Is.EqualTo(area), "the default frame on a small screen");
+            Assert.That(WindowBounds.Fit(new Rect(100, 50, 600, 400), area), Is.EqualTo(new Rect(100, 50, 600, 400)), "a window that fits stays");
+            Assert.That(WindowBounds.Fit(new Rect(900, 500, 600, 400), area), Is.EqualTo(new Rect(424, 305, 600, 400)), "one that hangs off is moved in");
+            Assert.That(WindowBounds.Fit(new Rect(-50, 0, 600, 400), area), Is.EqualTo(new Rect(0, 25, 600, 400)), "or up and left");
+
+            // The main window, kept at a size larger than the (headless, 1920×1280) screen.
+            var registry = Host.Registry;
+            registry.Write("MainWindowWidth", 5000.0, "Studio");
+            registry.Write("MainWindowHeight", 4000.0, "Studio");
+            registry.Write("MainWindowX", 300, "Studio");
+            registry.Write("MainWindowY", 200, "Studio");
+            MainWindow window = null;
+            try
+            {
+                window = new MainWindow(Host);
+                window.Show();
+                Settle(window);
+                var screen = window.Screens.Primary!.WorkingArea;
+                Assert.That((window.Width, window.Height), Is.EqualTo(((double)screen.Width, (double)screen.Height)), "as large as the screen, no larger");
+                Assert.That(window.Position, Is.EqualTo(new PixelPoint(screen.X, screen.Y)), "on it");
+                window.Close();
+                Settle();
+                Assert.That(registry.Read("MainWindowWidth", 0.0, "Studio"), Is.EqualTo(screen.Width), "the size it has is the one kept");
+            }
+            finally
+            {
+                window?.Close();
+                foreach (var key in new[] { "Width", "Height", "X", "Y", "Maximized" }) registry.DeleteCurrentUserValue("MainWindow" + key, "Studio");
+            }
+        }
+
+        [AvaloniaTest]
         public void AboutShowsTheBuildAndTheCredits()
         {
             using var restore = Studio.AfterTest(Reset);

@@ -49,6 +49,7 @@ namespace ReBuzz.Studio.Shell
             MinWidth = 640;
             MinHeight = 400;
             WindowBounds.Restore(this, host.Registry, PlacementName);
+            WindowBounds.KeepOnScreen(this);
 
             // The selected view first (IStudioEditTarget), then the song's undo history.
             // A focused text box first (FocusedText), then the selected view, then the song's history.

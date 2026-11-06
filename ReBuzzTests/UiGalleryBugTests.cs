@@ -127,5 +127,24 @@ namespace ReBuzzTests
                 view.Release();
             }
         }
+
+        [Test]
+        public void TheMainWindowIsKeptWithinTheScreensWorkArea()
+        {
+            // Fork (UX review): the window's default 1500×800 (and a size saved on a larger screen) ran off a small screen
+            // and under the taskbar. As it loads, it is moved and shrunk into its screen's work area.
+            var area = new Rect(0, 0, 1024, 728);           // a 1024×768 screen above a 40-pixel taskbar
+            Assert.That(UiUtils.FitToWorkArea(new Rect(0, 0, 1500, 800), area), Is.EqualTo(area), "the default size on a small screen");
+            Assert.That(UiUtils.FitToWorkArea(new Rect(100, 50, 600, 400), area), Is.EqualTo(new Rect(100, 50, 600, 400)), "a window that fits stays");
+            Assert.That(UiUtils.FitToWorkArea(new Rect(900, 500, 600, 400), area), Is.EqualTo(new Rect(424, 328, 600, 400)), "one that hangs off is moved in");
+
+            var window = new Window { Width = 20000, Height = 20000, Left = 50, Top = 50, WindowStartupLocation = WindowStartupLocation.Manual };
+            UiUtils.KeepOnWorkArea(window);
+            var work = SystemParameters.WorkArea;           // the primary screen's (the window has no screen of its own yet)
+            Assert.That(window.Width, Is.LessThanOrEqualTo(work.Width + 1));
+            Assert.That(window.Height, Is.LessThanOrEqualTo(work.Height + 1));
+            Assert.That(window.Left, Is.GreaterThanOrEqualTo(work.Left - 1).And.LessThanOrEqualTo(work.Right - window.Width + 1));
+            Assert.That(window.Top, Is.GreaterThanOrEqualTo(work.Top - 1).And.LessThanOrEqualTo(work.Bottom - window.Height + 1));
+        }
     }
 }
