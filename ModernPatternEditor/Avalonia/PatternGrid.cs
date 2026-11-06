@@ -259,6 +259,24 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         /// <summary>The cursor (for tests).</summary>
         public Digit Cursor => Controller.CurrentPattern.CursorPosition;
 
+        // For tests: the header's labels where they're drawn, in the header's own coordinates (the
+        // beats' x minus the sideways scroll), and the part of a set or column in view.
+        public Rect SetLabelBounds(int columnSet) => header.SetLabel(columnSet).Bounds.Translate(new Vector(-Offset.X, 0));
+        public Rect ColumnLabelBounds(int columnSet, int column) => header.ColumnLabel(columnSet, column).Bounds.Translate(new Vector(-Offset.X, 0));
+        public double HeaderWidth => header.Bounds.Width;
+        public (double Left, double Right) SetSpan(int columnSet) => (Layout.SetX(columnSet) - Offset.X, Layout.SetX(columnSet) + Layout.SetWidth(columnSet) - Offset.X);
+        public void ScrollSideways(double x) => Scroller.Offset = new Vector(x, Scroller.Offset.Y);
+        public double SidewaysOffset => Offset.X;
+        public int ColumnSetCount => Layout.Pattern.ColumnSets.Count;
+        public int ColumnCount(int columnSet) => Layout.Pattern.ColumnSets[columnSet].Columns.Count;
+        public double ColumnX(int columnSet, int column)
+        {
+            double x = Layout.SetX(columnSet);
+            for (int c = 0; c < column; c++) x += Layout.ColumnWidthAt(columnSet, c);
+            return x - Offset.X;
+        }
+        public double ColumnWidth(int columnSet, int column) => Layout.ColumnWidthAt(columnSet, column);
+
         /// <summary>How long the last drawing of the beats took (for tests: the grid redraws a lot).</summary>
         public TimeSpan LastRenderTime => Body.LastRenderTime;
 
@@ -601,7 +619,6 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             if (layout == null) return;
             double ox = grid.Offset.X;
             var sets = layout.Pattern.ColumnSets;
-            var labelFont = new Typeface(FontFamily.Default);
             using (dc.PushTransform(Matrix.CreateTranslation(-ox, 0)))
             {
                 for (int s = 0; s < sets.Count; s++)
@@ -612,15 +629,10 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                     var labelRect = new Rect(x, 0, w, PatternGrid.SetLabelHeight);
                     if (hover is Point h && labelRect.Contains(new Point(h.X + ox, h.Y)))
                         dc.DrawRectangle(PatternTheme.LabelHover, null, labelRect, 3, 3);
-                    var label = new FormattedText(cs.Label ?? "", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, labelFont, 12,
-                        cs.Muted ? PatternTheme.ColumnSetLabelMuted : PatternTheme.ColumnSetLabel);
-                    double natural = Math.Max(1, label.WidthIncludingTrailingWhitespace);
-                    label.MaxTextWidth = natural;
-                    label.TextAlignment = TextAlignment.Center;
-                    // Viewbox (DownOnly): a label wider than its set shrinks to fit.
-                    double scale = Math.Min(1.0, Math.Min((w - 4) / natural, (PatternGrid.SetLabelHeight - 4) / Math.Max(1, label.Height)));
-                    using (dc.PushTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(x + w / 2 - natural * scale / 2, PatternGrid.SetLabelHeight / 2 - label.Height * scale / 2)))
-                        dc.DrawText(label, new Point(0, 0));
+                    var set = SetLabel(s);
+                    using (dc.PushClip(labelRect))
+                    using (dc.PushTransform(Matrix.CreateScale(set.Scale, set.Scale) * Matrix.CreateTranslation(set.Bounds.X, set.Bounds.Y)))
+                        dc.DrawText(set.Text, new Point(0, 0));
 
                     if (!PatternEditor.Settings.ColumnLabels) continue;
                     double cx = x;
@@ -628,19 +640,80 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                     {
                         int cw = layout.ColumnWidthAt(s, c);
                         var col = new Rect(cx, PatternGrid.SetLabelHeight, cw, PatternGrid.ColumnLabelHeight);
-                        if (hover is Point hp && col.Contains(new Point(hp.X + ox, hp.Y)))
-                            dc.DrawRectangle(PatternTheme.LabelHover, null, col, 3, 3);
-                        var name = new FormattedText(cs.Columns[c].Label ?? "", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, labelFont, 10, PatternTheme.ColumnLabel)
-                        { MaxTextWidth = PatternGrid.ColumnLabelHeight - 4, Trimming = TextTrimming.CharacterEllipsis, MaxLineCount = 1 };
-                        // Turned -90°, its start at the bottom, centred in the column.
-                        double tx = cx + cw / 2.0 - name.Height / 2;
-                        double ty = PatternGrid.SetLabelHeight + PatternGrid.ColumnLabelHeight - 2;
-                        using (dc.PushTransform(Matrix.CreateRotation(-Math.PI / 2) * Matrix.CreateTranslation(tx, ty)))
-                            dc.DrawText(name, new Point(0, 0));
+                        if (cx <= ox + Bounds.Width && cx + cw >= ox)
+                        {
+                            if (hover is Point hp && col.Contains(new Point(hp.X + ox, hp.Y)))
+                                dc.DrawRectangle(PatternTheme.LabelHover, null, col, 3, 3);
+                            var name = ColumnLabel(s, c);
+                            // Turned -90°, its start at the bottom.
+                            using (dc.PushClip(col))
+                            using (dc.PushTransform(Matrix.CreateRotation(-Math.PI / 2) * Matrix.CreateTranslation(name.Bounds.X, name.Bounds.Bottom)))
+                                dc.DrawText(name.Text, new Point(0, 0));
+                        }
                         cx += cw;
                     }
                 }
             }
+        }
+
+        static readonly Typeface LabelFont = new Typeface(FontFamily.Default);
+
+        /// <summary>
+        /// A column set's label and where it goes (the beats' coordinates): shrunk to fit its set
+        /// (a Viewbox, DownOnly), centred over the part of the set in view, so a set wider than the
+        /// view keeps its label on screen while it scrolls (gallery mac-052 cut "Pad / Track" at
+        /// the right); never outside its set.
+        /// </summary>
+        internal (FormattedText Text, Rect Bounds, double Scale) SetLabel(int s)
+        {
+            var layout = grid.Layout;
+            var cs = layout.Pattern.ColumnSets[s];
+            double x = layout.SetX(s), w = layout.SetWidth(s);
+            var label = new FormattedText(cs.Label ?? "", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, LabelFont, 12,
+                cs.Muted ? PatternTheme.ColumnSetLabelMuted : PatternTheme.ColumnSetLabel);
+            double natural = Math.Max(1, label.WidthIncludingTrailingWhitespace);
+            label.MaxTextWidth = natural;
+            label.TextAlignment = TextAlignment.Center;
+            double scale = Math.Min(1.0, Math.Min((w - 4) / natural, (PatternGrid.SetLabelHeight - 4) / Math.Max(1, label.Height)));
+            double width = natural * scale, height = label.Height * scale;
+            double left = Stick(x, w, width, 2);
+            return (label, new Rect(left, PatternGrid.SetLabelHeight / 2 - height / 2, width, height), scale);
+        }
+
+        /// <summary>
+        /// A column's name, turned upright, and where it goes (the beats' coordinates, the box it
+        /// fills once turned): centred in the part of its column in view, so a column half
+        /// scrolled out keeps its name readable (gallery mac-051 cut "Closed hat tune" at the left).
+        /// </summary>
+        internal (FormattedText Text, Rect Bounds) ColumnLabel(int s, int c)
+        {
+            var layout = grid.Layout;
+            var cs = layout.Pattern.ColumnSets[s];
+            double cx = layout.SetX(s);
+            for (int i = 0; i < c; i++) cx += layout.ColumnWidthAt(s, i);
+            int cw = layout.ColumnWidthAt(s, c);
+            var name = new FormattedText(cs.Columns[c].Label ?? "", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, LabelFont, 10, PatternTheme.ColumnLabel)
+            { MaxTextWidth = PatternGrid.ColumnLabelHeight - 4, Trimming = TextTrimming.CharacterEllipsis, MaxLineCount = 1 };
+            double thickness = name.Height, length = Math.Min(name.WidthIncludingTrailingWhitespace, PatternGrid.ColumnLabelHeight - 4);
+            double left = Stick(cx, cw, thickness, 0);
+            double bottom = PatternGrid.SetLabelHeight + PatternGrid.ColumnLabelHeight - 2;
+            return (name, new Rect(left, bottom - length, thickness, length));
+        }
+
+        /// <summary>
+        /// Where something <paramref name="width"/> wide goes across a span (start, width): centred in
+        /// the span's part in view when it fits there, else as far into view as the span allows.
+        /// </summary>
+        double Stick(double start, double span, double width, double pad)
+        {
+            double ox = grid.Offset.X, view = Bounds.Width > 0 ? Bounds.Width : double.PositiveInfinity;
+            double lo = Math.Max(start, ox), hi = Math.Min(start + span, ox + view);
+            double first = start + pad, last = start + span - pad - width;      // inside the span
+            if (last < first) return start + span / 2 - width / 2;              // wider than the span: centred, clipped by it
+            double left = hi > lo ? (lo + hi) / 2 - width / 2 : start + span / 2 - width / 2;
+            if (hi - lo >= width + 2 * pad) left = Math.Clamp(left, lo + pad, hi - pad - width);
+            else left = Math.Clamp(lo + pad, first, last);
+            return Math.Clamp(left, first, last);
         }
 
         protected override void OnPointerMoved(PointerEventArgs e)
