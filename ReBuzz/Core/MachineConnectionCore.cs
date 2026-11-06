@@ -223,18 +223,9 @@ namespace ReBuzz.Core
 
         internal void UpdateBuffer(Sample[] samples, int nSamples)
         {
-            // Zero-latency fast path. When addedLatency == 0 the latency ring's
-            // read position always equals its write position (both start equal
-            // and advance in lockstep), so the ring is a pass-through: the second
-            // loop below would read back exactly what the first loop wrote. Write
-            // the amp/pan-scaled samples straight into buffer instead, skipping
-            // the ring copy and the per-sample modulo. Arithmetic, the amp ramp,
-            // and the interpolatorAmp.Tick() side effect above are all identical
-            // to the ring path, so this is bit-exact. latencyBuffer is read
-            // nowhere else, and every transition back to a latency > 0 state goes
-            // through UpdateLatencyBuffers, which resets both positions - so not
-            // advancing them here is unobservable.
-            if (addedLatency == 0)
+            // Zero-latency fast path: with no delay and none on the way (docs/specs/mastering-tools.md
+            // §4.1), the amp/pan-scaled samples go straight into buffer, as before the ring existed.
+            if (!Ring.Live)
             {
                 for (int i = 0; i < nSamples; i++)
                 {
@@ -245,15 +236,17 @@ namespace ReBuzz.Core
             }
             else
             {
-                // Latency-compensated path. Ring wrap via a branch rather than a
-                // per-sample integer divide (% Length); positions are always
-                // < Length, so ++pos == Length is exactly the wrap case.
-                int tmpLatencyBufferWritePos = latencyBufferWritePos;
+                // Latency-compensated path: into the ring at the block's position (ClearBuffer cleared
+                // it); PostUpdateBufferActions reads the delayed tap out. Positions wrap with the ring's
+                // mask (a power of two). The same adds as before, so a settled delay renders as it did.
+                var ring = Ring.Ring;
+                int mask = Ring.Mask;
+                int w = Ring.Position;
                 for (int i = 0; i < nSamples; i++)
                 {
-                    latencyBuffer[tmpLatencyBufferWritePos].L += samples[i].L * ampStart * panL;
-                    latencyBuffer[tmpLatencyBufferWritePos].R += samples[i].R * ampStart * panR;
-                    if (++tmpLatencyBufferWritePos == latencyBuffer.Length) tmpLatencyBufferWritePos = 0;
+                    ring[w].L += samples[i].L * ampStart * panL;
+                    ring[w].R += samples[i].R * ampStart * panR;
+                    w = (w + 1) & mask;
                     ampStart += ampStep;
                 }
             }
@@ -261,22 +254,9 @@ namespace ReBuzz.Core
 
         internal void PostUpdateBufferActions(int nSamples)
         {
-            // If there was latency, copy the latency ring's read position into the output buffer. The ring is a pass-through when addedLatency == 0, so skip this copy in that case.
-            if (addedLatency > 0)
-            {
-                // Fork: read from the read position, addedLatency samples behind the block
-                // just written, then move the write position past that block. Reading at the
-                // write position (as in upstream 3eac655) returned the block undelayed, which
-                // turned delay compensation off (NativeEffectLatencyCompensationTests).
-                for (int i = 0; i < nSamples; i++)
-                {
-                    buffer[i].L = latencyBuffer[latencyBufferReadPos].L;
-                    buffer[i].R = latencyBuffer[latencyBufferReadPos].R;
-                    if (++latencyBufferReadPos == latencyBuffer.Length) latencyBufferReadPos = 0;
-                }
-                latencyBufferWritePos += nSamples;
-                if (latencyBufferWritePos >= latencyBuffer.Length) latencyBufferWritePos -= latencyBuffer.Length;
-            }
+            // The delayed tap out of the ring (crossfading while a delay changes), or the block passed directly.
+            if (Ring.Live) Ring.Read(buffer, nSamples);
+            else Ring.Passed();
 
             burstProtection.Process(buffer, 0, nSamples, true, true);
 
@@ -327,16 +307,7 @@ namespace ReBuzz.Core
                 buffer[i].R = 0;
             }
 
-            if (addedLatency > 0)
-            {
-                int tmpLatencyBufferWritePos = latencyBufferWritePos;
-                for (int i = 0; i < nSamples; i++)
-                {   
-                    latencyBuffer[tmpLatencyBufferWritePos].L = 0;
-                    latencyBuffer[tmpLatencyBufferWritePos].R = 0;
-                    if (++tmpLatencyBufferWritePos == latencyBuffer.Length) tmpLatencyBufferWritePos = 0;
-                }
-            }
+            Ring.Clear(nSamples);
         }
 
         public MachineConnectionCore(IUiDispatcher dispatcher, EngineSettings engineSettings)
@@ -378,25 +349,14 @@ namespace ReBuzz.Core
             burstProtection.Release();
         }
 
-        internal void UpdateLatencyBuffers(int latencyDelta)
-        {
-            lock (ReBuzzCore.AudioLock)
-            {
-                if (latencyDelta >= 0 && addedLatency != latencyDelta)
-                {
-                    addedLatency = latencyDelta;
-                    latencyBuffer = new Sample[256 + latencyDelta];
-                }
-                latencyBufferReadPos = 0;
-                latencyBufferWritePos = latencyDelta;
-            }
-        }
+        /// <summary>
+        /// Fork (docs/specs/mastering-tools.md §4.1): the delay machine delay compensation gives this connection, changed by a
+        /// crossfade (or at once while nothing is in flight) instead of reallocating and resetting a buffer, which dropped what
+        /// was in flight on every recompute, changed or not. Grown on the UI thread; the audio lock is held by the caller.
+        /// </summary>
+        internal readonly LatencyRing Ring = new LatencyRing();
 
         Sample[] buffer = new Sample[256];
-        Sample[] latencyBuffer = new Sample[256];
-        int addedLatency = 0;
-        int latencyBufferReadPos = 0;
-        int latencyBufferWritePos = 0;
         private readonly IUiDispatcher dispatcher;
         private readonly EngineSettings engineSettings;
 
