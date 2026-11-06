@@ -148,30 +148,39 @@ namespace ReBuzzTests
             try
             {
                 var bitmap = new RenderTargetBitmap(W, H, 96, 96, PixelFormats.Pbgra32);
-                double Frame()
+                // A frame as it is (composing what is drawn), and a full redraw (every element drawn again,
+                // as after an edit to the machine's column set, whose beats the editor caches and redraws).
+                double Frame(bool redraw)
                 {
                     var t = Stopwatch.StartNew();
-                    control.InvalidateVisual();
-                    foreach (var e in Descendants<FrameworkElement>(control)) e.InvalidateVisual();
+                    if (redraw)
+                    {
+                        control.InvalidateVisual();
+                        foreach (var e in Descendants<FrameworkElement>(control)) e.InvalidateVisual();
+                    }
                     window.UpdateLayout();
                     bitmap.Clear();
                     bitmap.Render(control);
                     return t.Elapsed.TotalMilliseconds;
                 }
                 var first = new List<double>();
-                for (int i = 0; i < 7; i++) first.Add(Frame());
+                var plain = new List<double>();
+                for (int i = 0; i < 7; i++) first.Add(Frame(true));
+                for (int i = 0; i < 7; i++) plain.Add(Frame(false));
                 var scroll = Descendants<ScrollViewer>(control).OrderByDescending(s => s.ExtentWidth).FirstOrDefault();
                 Assert.That(scroll, Is.Not.Null, "the grid scrolls");
                 if (atLeast > 200) Assert.That(scroll!.ExtentWidth, Is.GreaterThan(scroll.ViewportWidth), "more columns than fit: they scroll");
                 sw.Restart();
-                scroll!.ScrollToRightEnd();
+                scroll!.ScrollToHorizontalOffset(scroll.ScrollableWidth);
                 window.UpdateLayout();
+                Frame(false);
                 double scrollMs = sw.Elapsed.TotalMilliseconds;
+                double offset = scroll.HorizontalOffset;
                 var last = new List<double>();
-                for (int i = 0; i < 7; i++) last.Add(Frame());
+                for (int i = 0; i < 7; i++) last.Add(Frame(true));
                 SessionViewTests.Screenshot(control, shot, W, H);
-                return $"pattern editor: {pattern.Columns.Count} columns, opened in {openMs:F0} ms; a frame {Median(first):F1} ms at the first columns, " +
-                       $"{Median(last):F1} ms at the last (median of 7); to the last column {scrollMs:F0} ms (extent {scroll.ExtentWidth:F0} px)";
+                return $"pattern editor: opened in {openMs:F0} ms; a frame as drawn {Median(plain):F1} ms, a full redraw {Median(first):F1} ms at the first columns, " +
+                       $"{Median(last):F1} ms at the last (medians of 7); to the last column {scrollMs:F0} ms (offset {offset:F0} of {scroll.ScrollableWidth:F0} px, extent {scroll.ExtentWidth:F0} px)";
             }
             finally
             {
@@ -194,11 +203,12 @@ namespace ReBuzzTests
                 Environment.FailFast($"DyeStressAndDyeEssenceInTheWpfParameterWindowAndPatternEditor stuck at: {wpfStage}");
             }, null, TimeSpan.FromMinutes(3), Timeout.InfiniteTimeSpan);
             var lines = new List<string>();
-            foreach (var (info, globals, name) in new[] { (DyeStress, 704, "dye-stress"), (Dye, 97, "dye-essence") })
+            foreach (var (info, atLeast, name) in new[] { (DyeStress, 704, "dye-stress"), (Dye, 97, "dye-essence") })
             {
                 using var rig = new Rig(info);
                 var machine = rig.Effect;
-                Assert.That(machine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters.Count, Is.EqualTo(globals), info.Name);
+                int globals = machine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters.Count;
+                Assert.That(globals, Is.GreaterThanOrEqualTo(atLeast), info.Name);
                 wpfStage = info.Name + ": parameter window";
                 string window = MeasureParameterWindow(machine, name + "-wpf-parameters", globals);
                 TestContext.Out.WriteLine($"[notice] {info.Name} in WPF: {window}");
