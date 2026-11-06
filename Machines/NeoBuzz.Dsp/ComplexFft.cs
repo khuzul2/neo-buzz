@@ -1,18 +1,18 @@
 #nullable disable
-// Neo Multiband (docs/specs/machines.md §5): the complex FFT its linear-phase crossovers run on, in
-// single precision, for the audio thread: a radix-2 transform whose twiddles and bit reversal are
-// made once, then no allocation. The butterflies of the stages from four points up run four or
-// eight bins at once (Vector128 or Vector256, element by element: the same operations as one bin at
-// a time, so the same bits on every CPU, docs/specs/machines.md §4); the twiddles come from the
-// portable maths. TransformPart runs the same transform a bounded number of butterflies at a time,
-// so a long one can be spread over audio blocks (the crossovers' design, LinearSplit).
+// Neo machines shared DSP (docs/specs/machines.md §4; moved from Neo Multiband, docs/specs/mastering-tools.md
+// §4.2): the complex FFT for the audio thread, in single precision: a radix-2 transform whose twiddles and
+// bit reversal are made once, then no allocation. The butterflies of the stages from four points up run
+// four or eight bins at once (Vector128 or Vector256, element by element: the same operations as one bin
+// at a time, so the same bits on every CPU, docs/specs/machines.md §4); the twiddles come from the
+// portable maths. TransformPart runs the same transform a bounded number of butterflies at a time, so a
+// long one can be spread over audio blocks (SteppedFirDesign). Fft (Fft.cs) is the double-precision one
+// for analysis and design off the audio thread.
 
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
-using NeoBuzz.Dsp;
 
-namespace NeoBuzz.Multiband
+namespace NeoBuzz.Dsp
 {
     internal sealed class ComplexFft
     {
