@@ -135,7 +135,8 @@ namespace ReBuzz.Studio.Shell.Preferences
                 string saved = SavedOutput;
                 outputs = listed.ToList();
                 if (!outputs.Contains(saved)) outputs.Add(saved);
-                output.ItemsSource = outputs.Select(n => listed.Contains(n) ? n : n + " (not connected)").ToList();
+                // "Not connected" only once the devices have been listed (the window draws before it lists them).
+                output.ItemsSource = outputs.Select(n => listed.Contains(n) || !devicesListed ? n : n + " (not connected)").ToList();
                 output.SelectedIndex = outputs.IndexOf(saved);
 
                 string savedInput = registry.Read("Input", "", PortAudioDriver.Section) ?? "";

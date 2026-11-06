@@ -553,6 +553,7 @@ namespace ReBuzz.Studio.Tests
                 var audio = prefs.Page<AudioPage>();
                 Assert.That(audio.LimiterBox.IsChecked, Is.True, "the rest of the page is there as it shows (no limiter shown off)");
                 Assert.That(audio.SaysPortAudioIsMissing, Is.False, "nor PortAudio missing before it has been asked");
+                Assert.That(audio.OutputBox.Items.OfType<string>(), Has.None.Contains("not connected"), "nor the device not connected");
                 Settle(prefs);
                 Assert.That(asked, Is.EqualTo(1), "then once");
                 Assert.That(shown, Is.True, "with the window shown");
