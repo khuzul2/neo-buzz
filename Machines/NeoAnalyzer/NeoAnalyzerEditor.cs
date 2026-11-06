@@ -16,7 +16,8 @@ namespace NeoBuzz.Analyzer
 {
     internal sealed class NeoAnalyzerEditor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0x5C, 0xD6, 0xF2);
+        // Fork (ux-overhaul.md P2a): the Utility identity in the studio, its own colour in the classic app.
+        static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.Utility, NeoColor.FromRgb(0x5C, 0xD6, 0xF2));
         static readonly double[] Tilts = { 0, 3, 4.5 };
 
         protected override string Title => "Neo Analyzer";

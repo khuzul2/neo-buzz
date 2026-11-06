@@ -17,6 +17,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using BuzzGUI.Common.InterfaceExtensions;
 using BuzzGUI.Interfaces;
+using NeoBuzz.Editor;
 using ReBuzz.Audio;
 using ReBuzz.Core;
 using ReBuzz.Studio.Platform;
@@ -156,6 +157,12 @@ namespace ReBuzz.Studio.Tests
         }
 
         /// <summary>Pixels in <paramref name="area"/> within <paramref name="tolerance"/> of an RGB colour.</summary>
+        /// <summary>A category's identity colour as the pixels have it (ux-overhaul.md P2a: the editors' accents).</summary>
+        static uint Rgb(MachineCategory category) => Tokens.Identity(category).Argb & 0xFFFFFF;
+
+        /// <summary>A level meter over 0 dB (Tokens.MeterOver).</summary>
+        static readonly uint Over = Tokens.MeterOver.Argb & 0xFFFFFF;
+
         static int Count((uint[] Pixels, int Width, int Height) f, Rect area, uint rgb, int tolerance = 40)
         {
             int n = 0;
@@ -401,7 +408,7 @@ namespace ReBuzz.Studio.Tests
                 var param = Global(m, "Auto makeup");
                 Assert.That(param.GetValue(0), Is.EqualTo(0));
                 var off = Frame(window);
-                Assert.That(Count(off, area, 0x2EC4B6, 60), Is.EqualTo(0), "off: nothing in the accent");
+                Assert.That(Count(off, area, Rgb(MachineCategory.Dynamics), 60), Is.EqualTo(0), "off: nothing in the accent");
                 var stack = Core.SongCore.ActionStack;
                 int steps = stack.Actions.Count();
                 var button = (Rect)makeup.GetType().GetMethod("CellBounds")!.Invoke(makeup, new object[] { 0 })!;
@@ -410,7 +417,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(stack.Actions.Count(), Is.EqualTo(steps + 1), "one undo step");
                 Assert.That((bool)Get(makeup, "IsOn"), Is.True);
                 var on = Frame(window, "neo-comp-editor-toggle-on");
-                Assert.That(Count(on, area, 0x2EC4B6, 60), Is.GreaterThan(30), "on: lit in the accent");
+                Assert.That(Count(on, area, Rgb(MachineCategory.Dynamics), 60), Is.GreaterThan(30), "on: lit in the accent");
                 Click(window, At(makeup, window, button.Center.X, button.Center.Y));
                 Assert.That(param.GetValue(0), Is.EqualTo(0), "and off again");
             }
@@ -501,15 +508,15 @@ namespace ReBuzz.Studio.Tests
                 {
                     // Neo Poly's output meter: its bar, in the accent (or red above 0 dB).
                     var meter = BoundsIn(Find(polyWindow, "Meter", "Output"), polyWindow);
-                    Assert.That(Count(polyQuiet, meter, 0xFF5C8A), Is.EqualTo(0), "silent: no bar");
-                    Assert.That(Count(polyLoud, meter, 0xFF5C8A) + Count(polyLoud, meter, 0xFF4D4D), Is.GreaterThan(40), "Neo Poly's meter shows the chord");
+                    Assert.That(Count(polyQuiet, meter, Rgb(MachineCategory.Synth)), Is.EqualTo(0), "silent: no bar");
+                    Assert.That(Count(polyLoud, meter, Rgb(MachineCategory.Synth)) + Count(polyLoud, meter, Over), Is.GreaterThan(40), "Neo Poly's meter shows the chord");
 
                     // Neo EQ: the response curve always; the output spectrum under it once audio runs.
                     var graph = BoundsIn(Controls(eqWindow, "InteractiveGraph").Single(), eqWindow);
                     Assert.That(Count(eqQuiet, graph, 0x4FB3FF), Is.GreaterThan(300), "Neo EQ's response curve");
                     Assert.That(Changed(eqQuiet, eqLoud, graph), Is.GreaterThan(1500), "Neo EQ's spectrum shows the chord");
                     var eqOut = BoundsIn(Find(eqWindow, "Meter", "Output"), eqWindow);
-                    Assert.That(Count(eqLoud, eqOut, 0x4FB3FF) + Count(eqLoud, eqOut, 0xFF4D4D), Is.GreaterThan(40), "Neo EQ's output meter");
+                    Assert.That(Count(eqLoud, eqOut, 0x4FB3FF) + Count(eqLoud, eqOut, Over), Is.GreaterThan(40), "Neo EQ's output meter");
 
                     // Neo Analyzer: the spectrum (and loudness, stereo) from the engine's snapshots.
                     var spectrum = BoundsIn(Controls(analyzerWindow, "GraphView").First(g => g.Bounds.Width >= 590), analyzerWindow);
@@ -634,7 +641,7 @@ namespace ReBuzz.Studio.Tests
                         Run(0.12);
                         var b = Frame(window, shot);
                         Assert.That(Changed(a, b, sweep), Is.GreaterThan(400), $"mode {mode}: the sweep's picture moves with the LFO");
-                        Assert.That(Count(b, meter, 0xFF7EDB) + Count(b, meter, 0xFF4D4D), Is.GreaterThan(40), $"mode {mode}: the output meter shows the chord");
+                        Assert.That(Count(b, meter, Rgb(MachineCategory.Modulation)) + Count(b, meter, Over), Is.GreaterThan(40), $"mode {mode}: the output meter shows the chord");
                     }
                     Assert.That((bool)Get(sweepView, "Animating"), Is.True, "the sweep redraws on its own while shown");
                 });
@@ -681,14 +688,14 @@ namespace ReBuzz.Studio.Tests
                         Run(0.3);
                         var after = Frame(window, shot);
                         Assert.That(Changed(before, after, echoes), Is.GreaterThan(200), $"mode {mode}: the echoes' picture follows the mode and the time");
-                        Assert.That(Count(after, meter, 0xFF6F52) + Count(after, meter, 0xFF4D4D), Is.GreaterThan(40), $"mode {mode}: the output meter shows the chord");
+                        Assert.That(Count(after, meter, Rgb(MachineCategory.DelayReverb)) + Count(after, meter, Over), Is.GreaterThan(40), $"mode {mode}: the output meter shows the chord");
                         before = after;
                     }
                     Global(delay, "Duck").SetValue(0, 240);
                     Global(delay, "Duck threshold").SetValue(0, 300);
                     Run(0.3);
                     var ducked = Frame(window, "neo-delay-editor-ducking");
-                    Assert.That(Count(ducked, ducking, 0xFF6F52), Is.GreaterThan(30), "the ducking meter shows the echoes turned down");
+                    Assert.That(Count(ducked, ducking, Rgb(MachineCategory.DelayReverb)), Is.GreaterThan(30), "the ducking meter shows the echoes turned down");
                 });
                 for (int t = 0; t < chord.Length; t++) note.SetValue(t, BuzzGUI.Common.BuzzNote.Off);
                 Run(0.1);
@@ -729,7 +736,7 @@ namespace ReBuzz.Studio.Tests
                 var area = BoundsIn(graph, window);
                 var meters = Controls(window, "GraphView").Where(g => Math.Abs(g.Bounds.Width - 30) < 1).OrderBy(g => BoundsIn(g, window).X).ToList();
                 Assert.That(meters, Has.Count.EqualTo(4), "a meter per band");
-                uint[] colours = { 0xFF6B6B, 0x8FD14F, 0x4FB3FF, 0xC38CFF };
+                uint[] colours = Tokens.Series.Take(4).Select(c => c.Argb & 0xFFFFFF).ToArray();     // the series (ux-overhaul.md P2a)
                 var f = Frame(window, "neo-multiband-editor-compressing");
                 Assert.Multiple(() =>
                 {
@@ -774,7 +781,7 @@ namespace ReBuzz.Studio.Tests
                 var up = Frame(window, "neo-multiband-editor-expanding");
                 var box = BoundsIn(meters[0], window);
                 var upper = new Rect(box.X, box.Y, box.Width, box.Height * 0.3);
-                Assert.That(Count(up, upper, 0xFF6B6B, 120), Is.GreaterThan(20), "band 1's meter grows up while it expands");
+                Assert.That(Count(up, upper, Tokens.Series[0].Argb & 0xFFFFFF, 120), Is.GreaterThan(20), "band 1's meter grows up while it expands");
                 for (int t = 0; t < chord.Length; t++) note.SetValue(t, BuzzGUI.Common.BuzzNote.Off);
                 Run(0.1);
             }
@@ -1109,7 +1116,7 @@ namespace ReBuzz.Studio.Tests
                     Global(filter, "Env sensitivity").SetValue(0, 360);
                     Run(0.3);
                     var c = Frame(window, "neo-filter-editor-envelope");
-                    Assert.That(Count(c, envelope, 0xD4E157), Is.GreaterThan(30), "the envelope meter shows the chord");
+                    Assert.That(Count(c, envelope, Rgb(MachineCategory.EqFilter)), Is.GreaterThan(30), "the envelope meter shows the chord");
 
                     // The handle: at the cutoff (2 kHz) and 20·log10 Q (−3 dB at Q 0.71) on the graph (ResponseGraph's plot with the
                     // handles' room, 11 px, kept around it: 41 px in, 12 down, 53 px narrower and 41 lower, −42 … +24 dB).

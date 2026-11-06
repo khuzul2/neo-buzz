@@ -14,7 +14,8 @@ namespace NeoBuzz.Comp
 {
     internal sealed class NeoCompEditor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0x2E, 0xC4, 0xB6);
+        // Fork (ux-overhaul.md P2a): the Dynamics identity in the studio, its own colour in the classic app.
+        static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.Dynamics, NeoColor.FromRgb(0x2E, 0xC4, 0xB6));
 
         protected override string Title => "Neo Comp";
         protected override NeoColor Accent => AccentColor;

@@ -14,7 +14,8 @@ namespace NeoBuzz.Drive
 {
     internal sealed class NeoDriveEditor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xFF, 0x8A, 0x3D);
+        // Fork (ux-overhaul.md P2a): the Distortion identity in the studio, its own colour in the classic app.
+        static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.Distortion, NeoColor.FromRgb(0xFF, 0x8A, 0x3D));
 
         protected override string Title => "Neo Drive";
         protected override NeoColor Accent => AccentColor;

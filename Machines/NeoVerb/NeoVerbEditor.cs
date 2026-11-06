@@ -14,7 +14,8 @@ namespace NeoBuzz.Verb
 {
     internal sealed class NeoVerbEditor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0x7C, 0x8C, 0xFF);
+        // Fork (ux-overhaul.md P2a): the DelayReverb identity in the studio, its own colour in the classic app.
+        static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.DelayReverb, NeoColor.FromRgb(0x7C, 0x8C, 0xFF));
         static readonly NeoColor LowColor = NeoColor.FromRgb(0xFF, 0xB0, 0x5C);
         static readonly NeoColor HighColor = NeoColor.FromRgb(0x5C, 0xE1, 0xFF);
 

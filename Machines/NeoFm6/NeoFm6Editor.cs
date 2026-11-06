@@ -19,7 +19,8 @@ namespace NeoBuzz.Fm6
 {
     internal sealed class NeoFm6Editor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xFF, 0xC4, 0x3D);
+        // Fork (ux-overhaul.md P2a): the Synth identity in the studio, its own colour in the classic app.
+        static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.Synth, NeoColor.FromRgb(0xFF, 0xC4, 0x3D));
         const double D = 34, Small = 24, SmallWidth = 46;
 
         protected override string Title => "Neo FM6";

@@ -70,8 +70,8 @@ namespace NeoBuzz.Editor
         /// <summary>The window's height the keyboard takes: the strip alone while hidden, and the keys while shown.</summary>
         public const double CollapsedHeight = KeyboardLayout.BarHeight, ExpandedHeight = KeyboardLayout.BarHeight + KeyboardLayout.KeysHeight + Bottom;
 
-        /// <summary>Lit keys: the generators' warm accent (the manifest editor's), unless the editor above has its own.</summary>
-        public static readonly NeoColor DefaultAccent = NeoColor.FromRgb(0xE8, 0xA8, 0x4A);
+        /// <summary>Lit keys: the synths' identity (the classic app: the manifest editor's warm accent), unless the editor above has its own.</summary>
+        public static readonly NeoColor DefaultAccent = Tokens.Identity(MachineCategory.Synth, NeoColor.FromRgb(0xE8, 0xA8, 0x4A));
 
         readonly MachineCore machine;
         readonly NeoColor accent;

@@ -61,7 +61,7 @@ Names: one name per thing. "Arrangement" (not Sequence), "Clip" in the Session V
 
 ### 3.1 Tokens
 
-One token set, dark by default, seeded by the Session View (the one screen already in a shared modern language). P1 adds it to the studio (`ReBuzz.Studio/Shell/Design/StudioTokens.cs`) and uses the state, text and contrast parts; P2 moves the values into the editor kit's toolkit-free core (`Machines/NeoBuzz.Editor/Core/Design/Tokens.cs`), so the studio, the Avalonia kit, the WPF kit and every machine editor read one table.
+One token set, dark by default, seeded by the Session View (the one screen already in a shared modern language). P1 added it to the studio and used the state, text and contrast parts; since P2a the table is the editor kit's toolkit-free `Machines/NeoBuzz.Editor/Core/Tokens.cs` (`NeoColor`s and constants, no toolkit), which every build of the kit compiles: the studio's `StudioTokens` gives it to Avalonia, the kit's `Palette` is made from it on Avalonia (the studio's editors), and machine editors read it through the kit. The classic WPF app keeps its own colours (§1: bug fixes only): `Palette` answers with the classic ones there, and so do `Identity(category, classic)`, `Partner(accent, classic)` and `Bands(classic)`.
 
 | Token | Value | Rule | Measured (WCAG) |
 |---|---|---|---|
@@ -77,10 +77,30 @@ One token set, dark by default, seeded by the Session View (the one screen alrea
 | State: record | #FF453A | Recording dot, the recording slot, Record lit (white glyph) | 5.0:1 on view; 3.4:1 white on it (a UI part) |
 | State: arrangement override | #E8823A | "Back to arrangement", tracks the session has taken | 6.3:1 on view |
 | Text on a colour | #FFFFFF or #000000, whichever has more contrast | Clip, track and scene labels on their colour | ≥4.58:1 on any colour |
-| Meter | #43C463 → #E8CD3A → #F0473C | Level only | – |
-| Identity | one colour per machine, by category, ≥ ΔE 30 between categories | Its track's and its clips' default colour (P3) | – |
+| State: warning | #FFB340 | Dropouts, a guard off; black text on it | 10.3:1 on base |
+| Meter | #7BE495 → #FFC43D (within 6 dB of full scale) → record (over 0 dB) | Level only | – |
+| Grid line, control track | #2A2A30, #6E6E7A | Graph and editor grids; a knob's unfilled track | track 3.4:1 on view |
+| Identity | one colour per machine category (§3.1.1) | An editor's accent; from P3h its box's, track's and clips' default colour | each ≥5:1 on view |
+| Graph series | sky, amber, teal, pink, lime, violet, salmon, orchid (the identities' hues) | Bands and lines of one graph, in this order; a stereo pair's second trace is `Partner(accent)` (sky, or amber beside a blue accent) | ≥ ΔE 30 apart |
 
 **State colours are never offered as clip, track or scene colours.** A palette entry within ΔE (CIE76) 20 of a state colour is left out of the colour menus (in the default palette: Red, Orange, Ochre and Kelly Green); a song that already uses one keeps it (§1.4). A clip keeps its own fill in every state: state is drawn by the ▶/● chip on a dark ground, a 2 pt outline and a 3 pt progress bar, in the state's colour.
+
+#### 3.1.1 Identity colours
+
+One per category of the machine browser (P3d); `Tokens.Identity(category)`. Each is 5:1 or more on a view (it can be text), 37 or more (ΔE) from every other, and 24 or more from the accent and the three state colours (so no green, red or orange accent). A manifest's `type` gives a manifest editor's category (`Tokens.CategoryOf`: "monosynth" → Synth, "reverb" → Delay and reverb, "EQ" and "filter" → EQ and filter, …; other generators Synth, other effects Utility).
+
+| Category | Colour | Machines |
+|---|---|---|
+| Synth | #F34C82 pink | Neo Poly, Neo FM6, Neo Wave, Dye Essence, Pedal SH101, Juno106, FM, and manifest generators |
+| Drums | #EDB235 amber | Neo Drums, drum generators ("drums", "triggered") |
+| Sampler | #CFAAF8 lavender | Neo Sampler, Pedal M1 |
+| Dynamics | #0BD1B9 teal | Neo Comp, Neo Multiband, Neo Limiter, Neo Clipper, Pedal Comp |
+| EQ and filter | #16BCFF sky | Neo Eq, Neo Filter, Pedal EQ, Pedal Filter |
+| Delay and reverb | #8777FF violet | Neo Delay, Neo Verb, Pedal Plate |
+| Modulation | #E361D3 orchid | Neo Ensemble, Pedal Chorus |
+| Distortion | #F8A98D salmon | Neo Drive (Pedal Shaper once its manifest says "distortion") |
+| Utility | #A8B4C4 slate | Neo Utility, Neo Scope, Neo Analyzer, Pedal Gain, Pedal Gain Multi, Pedal Drum Matrix ("multi-effect") |
+| Control | #D1E181 lime | Pedal Chord, Pedal LFO (Pedal Peer Control once its manifest says "control") |
 
 ### 3.2 Type, size, spacing
 
@@ -89,13 +109,14 @@ One token set, dark by default, seeded by the Session View (the one screen alrea
 | Font | Inter (shipped, `Avalonia.Fonts.Inter`) in the shell and the kit; a monospace (Menlo, Consolas, DejaVu Sans Mono) only for the tracker grid and code |
 | Sizes | 13 pt body, 12 pt dense lists, **11 pt minimum** anywhere (12 px on Windows at 100 %); semibold headings; tabular figures for counters and clocks |
 | Targets | Controls at least 20×20 pt, hit targets 24×24 pt; menu rows the platform's (22 pt on a Mac) |
-| Grid | 8 pt (4 pt half-steps inside controls) for margins, paddings and gaps (P2 sweeps the shell) |
+| Grid | 8 pt (4 pt half-steps inside controls) for margins, paddings and gaps (P2b sweeps the shell); `Tokens.Grid`, `Tokens.Space(n)`; radii 4, 6, 8 |
+| Scale | `Tokens.FontCaption` 11, `FontBody` 13, `FontTitle` 15, `FontHeading` 20 |
 | Labels | Never rotated; two lines instead of "…" when a label is wider than its control |
 | Contrast floor | Text 4.5:1 (3:1 at 18 pt or 14 pt bold), icons and UI parts 3:1, against the surface they sit on, measured from pixels |
 
 ### 3.3 Themes
 
-Dark (default); Light (P4); Classic Buzz, the beige machine canvas and brown arrangement, as an option. Chosen in Preferences ▸ Appearance (P3), not a top-level menu. A theme is a token table; views never hard-code colours (P2 removes the 133 literal colours the studio has today, outside the code-drawn views' theme hooks).
+Dark (default); Light (P4); Classic Buzz, the beige machine canvas and brown arrangement, as an option. Chosen in Preferences ▸ Appearance (P2b), not a top-level menu. A theme is a token table; views never hard-code colours (P2 removes the 133 literal colours the studio has today, outside the code-drawn views' theme hooks).
 
 ### 3.4 Colours saved in songs
 
@@ -184,8 +205,10 @@ Exit: the gallery shows each change; the measured figures in §8 meet the floor 
 
 Needs `integrate/keyboard-kit-core` on main (the kit and the machine windows change there).
 
-- **P2a Tokens in the kit.** `Tokens` in `NeoBuzz.Editor/Core` (toolkit-free, ARGB), read by the Avalonia kit and the WPF kit (its Classic look unchanged on WPF until P6), by the studio's `StudioTokens`, and offered to the machines: the Neo editors, Dye Essence and the mastering machines adopt it through the kit's panel, knob, meter and graph colours (their accents move to the identity table, ≥ ΔE 30 apart). No literal colour left in the studio's views outside the theme hooks of the code-drawn canvases.
-- **P2b Inter and the 8 pt grid.** One `StudioType` (sizes, weights, tabular figures) and spacing constants; a sweep of the shell, the Session View and the Preferences to them.
+P2 lands in three mergeable steps from `ux/overhaul-2-foundations`, tokens first so the machine threads can adopt them:
+
+- **P2a Tokens (first PR).** `Tokens` in `NeoBuzz.Editor/Core` (toolkit-free, ARGB; §3.1), read by the studio's `StudioTokens` and by the kit's `Palette` on Avalonia (the classic WPF app keeps its look until P6); Inter as the app's typeface (the shell's default family and the kit's); the Neo editors this overhaul owns take their category's identity as their accent (Neo Poly, FM6, Sampler, Drums, Comp, Multiband, Filter, Delay, Verb, Ensemble, Drive, Scope, Analyzer; Neo Wave after `fix/followups-1`), manifest editors theirs from the manifest's type; the adoption note for the other machines (§6).
+- **P2b Views on the tokens; Appearance.** The Sequence view and every other view, dialog and Preferences page on the tokens: no beige by default, no literal colour outside the theme hooks of the code-drawn canvases; the type scale and the 8 pt grid swept through the shell, the Session View and the Preferences; Preferences ▸ Appearance with Dark (the default) and Classic Buzz (the beige machine canvas and arrangement), a new settings key.
 - **P2c One selection.** `StudioSelection` (machine, track, clip, pattern, wire, scene; plus "nothing": the song): the Machine View, Arrangement, Session View and Pattern View publish to it and follow it (select a machine: its track is highlighted in the Arrangement and the Session View, the Pattern View shows its pattern). A test per view pair.
 
 Exit: the gallery unchanged except where tokens moved a colour (listed), every Neo editor's screenshot compared before and after.
@@ -221,7 +244,17 @@ The package and installer ship the studio as the main exe (`NeoBuzzLive.exe`) an
 
 ## 6. Notes for the parallel threads
 
-- **Dye Essence, the mastering machines (Neo Utility, EQ, Limiter, Clipper), NeoBuzz.Dsp/Analysis, the Pedal synths:** this overhaul doesn't edit their code. From P2a they get `Tokens` (surfaces, text, accent, state, meter, identity) and the kit's components; what each should change is listed in the P2a report. Until then: no new literal colours in editors, no text under 11 pt, no state colour (green/red/orange) as an accent, units on every value.
+- **Dye Essence, the mastering machines (Neo Utility, EQ, Limiter, Clipper), NeoBuzz.Dsp/Analysis, the Pedal synths:** this overhaul doesn't edit their code. Since P2a they have `Tokens` (§3.1) and the kit's components.
+
+**Adopting the tokens** (any machine editor on the kit; each step keeps the classic WPF app as it is, because the old colour is passed along):
+
+1. The accent: `static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.<its category>, NeoColor.FromRgb(<the old accent>));` (§3.1.1).
+2. A second trace (a stereo pair's right side): `Tokens.Partner(AccentColor, <the old colour>)`. A graph's band colours: `Tokens.Bands(new[] { <the old colours> })`.
+3. No other literal colour: surfaces, text, lines, knob tracks and meters come from the kit (`Palette`, `Theme`, its knobs, meters and graphs), which are the tokens in the studio. A colour the kit lacks is a new token in `Tokens.cs`, not a literal.
+4. Text 11 pt or more (`Tokens.FontCaption`), `TextSecondary` or brighter on a panel; no state colour (play green, record red, override orange) as an accent or a graph line; units on every value.
+5. Gaps and sizes on the 8 pt grid (`Tokens.Space(n)`); targets 24 pt (`Tokens.HitTarget`).
+
+What each thread changes (as of P2a): **mastering**: Neo Eq's accent → `Identity(EqFilter, …)` and its eight band colours → `Bands(…)` (the first, #FF6B6B, reads as record red: ΔE 24); Neo Limiter's accent → `Identity(Dynamics, …)`, its input colour (#4A5260) → `Palette.Track`; Neo Clipper's accent (#F2A63B, ΔE 19.8 from override orange) → `Identity(Dynamics, …)`; Neo Utility's accent (#8FD14F, ΔE 24 from play green) → `Identity(Utility, …)`. **Dye Essence**: its accent (#E06CD8) → `Identity(Synth, …)`. **Pedal**: the Pedal machines' editors are manifest editors, which take their category from the manifest's `type` already; Pedal Shaper's type should say "distortion" and Pedal Peer Control's "control" for them to get the Distortion and Control identities (both fall back to Utility and Synth today).
 
 ## 7. Risks
 
@@ -258,6 +291,14 @@ What WPF has that the studio needs before it replaces it on Windows: native (Win
 10. **Octaves below 0 in the tracker** (MIDI 0–23 in C3 naming, 0–11 in scientific) add their minus sign: "C--2", "C#-2", four characters, drawn over the column's gap. They are rare (below 33 Hz), and three characters can't tell them from octave 2.
 11. **An octave typed is the octave shown**: in C3 naming, 5 on a note's octave digit is C-5 as shown (Buzz's C-7); an octave Buzz doesn't have (8 and 9 in C3 naming) changes nothing. The base octave list shows the named octaves (−2…7 in C3 naming); the machine's value stays Buzz's.
 12. **The agent server stays scientific**: a display setting must not change what a tool means. The UI's Replace report and the piano roll's tracker messages, which the user reads, follow the setting.
+
+### P2a
+
+13. **Identity colours** (§3.1.1) were searched for, not picked: ten colours each ≥5:1 on a view, ≥37 (ΔE) apart, ≥24 from the accent and the states, each within ΔE 9 of a colour a Neo editor already used where one fitted. Neo Scope and Neo Analyzer are Utility (slate), as the browser's categories have no Analysis.
+14. **Meters stay green, amber, red** (#7BE495, #FFC43D, record red over 0 dB): the convention every meter has; the mint green is ΔE 23 from play green (outside the reserved 20) and never a control's accent.
+15. **The classic WPF app keeps its look**: the kit's palette and the editors' accents are the tokens only where AVALONIA is defined (the studio and the machines' studio builds); the old colours are written beside the new (`Identity(category, classic)`), so the classic look is one place to change at P6.
+16. **Inter in the editors too** (they used Segoe UI's widths: Helvetica Neue on a Mac, Inter on Linux): one typeface across the studio. The local gallery drew them in Inter already, so their layouts fit it.
+17. **Neo Wave keeps its accent until `fix/followups-1` lands** (it edits that editor); Neo Sampler's sixteen zone colours stay for P2b's sweep.
 
 ## 11. Progress
 

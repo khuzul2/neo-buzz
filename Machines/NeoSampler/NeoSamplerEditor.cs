@@ -23,7 +23,8 @@ namespace NeoBuzz.Sampler
 {
     internal sealed class NeoSamplerEditor : NeoEditor
     {
-        static readonly NeoColor AccentColor = NeoColor.FromRgb(0xF2, 0xB4, 0x4C);
+        // Fork (ux-overhaul.md P2a): the Sampler identity in the studio, its own colour in the classic app.
+        static readonly NeoColor AccentColor = Tokens.Identity(MachineCategory.Sampler, NeoColor.FromRgb(0xF2, 0xB4, 0x4C));
 
         protected override string Title => "Neo Sampler";
         protected override NeoColor Accent => AccentColor;

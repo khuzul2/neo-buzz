@@ -181,6 +181,8 @@ namespace NeoBuzz.Editor
         public string Quality { get; init; } = "";
         public string Summary { get; init; } = "";
         public bool Generator { get; init; }
+        /// <summary>The manifest's type ("monosynth", "reverb"): its category, for the editor's accent (ux-overhaul.md P2a).</summary>
+        public string Type { get; init; } = "";
         /// <summary>Its track count when the editor was made (track parameters show the first track's).</summary>
         public int Tracks { get; init; }
         public IReadOnlyList<FaceParam> Params { get; init; } = Array.Empty<FaceParam>();
@@ -206,7 +208,7 @@ namespace NeoBuzz.Editor
         /// stages, and the response plot (ResponseModels).
         /// </summary>
         public static MachineFace Plan(string gear, string quality, string summary, bool generator, int tracks,
-            IReadOnlyList<FaceParam> ps, Func<FaceParam, int> raw, Func<double> sampleRate)
+            IReadOnlyList<FaceParam> ps, Func<FaceParam, int> raw, Func<double> sampleRate, string type = "")
         {
             var sections = new List<FaceSection>();
             var byTitle = new Dictionary<string, FaceSection>(StringComparer.Ordinal);
@@ -228,6 +230,7 @@ namespace NeoBuzz.Editor
                 Quality = quality ?? "",
                 Summary = summary ?? "",
                 Generator = generator,
+                Type = type ?? "",
                 Tracks = tracks,
                 Params = ps,
                 Sections = sections,
