@@ -13,6 +13,11 @@ Format per Build §3.2:
   - Parameter Index matches declaration order in PedalSH101.cs
   - Parameter Value is the raw stored value (pre-MinValue offset)
 
+Fork (neo-buzz, docs/specs/mcp-server.md §12.15): the presets that peaked at or above -1 dBFS, or played
+louder than -8 LUFS, in tools/preset-check.py --theirs (a track's note: full level) were levelled by their
+Volume alone, to -1.3 dBFS and -8.3 LUFS at most, and one raised that played under -32 LUFS through MIDI at
+velocity 100 (how preset-check plays them now); nothing else in them changed.
+
 Editing rule (Build §3.3): if you add a parameter to PedalSH101.cs, APPEND
 it to the end of PARAM_INDEX and DEFAULTS — never insert in the middle —
 or every existing preset will write to the wrong parameter.
@@ -101,6 +106,7 @@ PRESETS = {
         # Pure sub at -1 oct square. Round, fat, sustains while held.
         "Pulse Lvl": 0, "Sub Lvl": 127,
         "Cutoff": 70,
+        "Volume": 60,   # fork (neo-buzz, §12.15): levelled (was 96)
     },
 
     "Deep Sub": {
@@ -108,7 +114,7 @@ PRESETS = {
         "Range": 0,
         "Pulse Lvl": 0, "Sub Lvl": 127, "Sub Type": 2,
         "Cutoff": 50,
-        "Volume": 100,
+        "Volume": 66,   # fork (neo-buzz, §12.15): was 100, levelled
     },
 
     "Reese-ish": {
@@ -130,7 +136,7 @@ PRESETS = {
         "VCF Mod": 80,
         "VCA Mode": 0,            # Gate — let LFO shape the level
         "LFO Rate": 50,
-        "Volume": 100,
+        "Volume": 85,   # fork (neo-buzz, §12.15): was 100, levelled
     },
 
     # ─── Lead ─────────────────────────────────────────────────────────
@@ -248,7 +254,7 @@ PRESETS = {
         "Cutoff": 80, "Resonance": 20,
         "Kbd Follow": 1,
         "Attack": 80, "Decay": 80, "Sustain": 70, "Release": 95,
-        "Volume": 100,
+        "Volume": 95,   # fork (neo-buzz, §12.15): was 100, levelled
     },
 
     # ─── FX ───────────────────────────────────────────────────────────
@@ -264,7 +270,7 @@ PRESETS = {
         "VCA Mode": 0,            # Gate — sustained drone
         "Attack": 75, "Release": 100,
         "LFO Rate": 15,
-        "Volume": 90,
+        "Volume": 83,   # fork (neo-buzz, §12.15): was 90, levelled
     },
 
     "S&H Robot": {
@@ -305,7 +311,7 @@ PRESETS = {
         "Pulse Lvl": 0, "Saw Lvl": 100, "Sub Lvl": 100, "Noise Lvl": 30,
         "Cutoff": 25, "Resonance": 20, "Env Amt": 114,
         "Decay": 52, "Sustain": 0, "Release": 40,
-        "Volume": 110,
+        "Volume": 91,   # fork (neo-buzz, §12.15): was 110, levelled
     },
 
     "Snare Burst": {
@@ -313,7 +319,7 @@ PRESETS = {
         "Pulse Lvl": 0, "Noise Lvl": 127,
         "Cutoff": 80, "Resonance": 20, "Env Amt": 54,
         "Decay": 52, "Sustain": 0, "Release": 40,
-        "Volume": 100,
+        "Volume": 124,   # fork (neo-buzz, §12.15): was 100, raised (-33.5 LUFS through MIDI at velocity 100)
     },
 }
 

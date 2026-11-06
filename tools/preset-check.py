@@ -10,8 +10,9 @@
 #    and the machine's presets within 14 LU of each other;
 #  - with its sample peak below -1 dBFS, and no NaN (the engine's guard would list it as diverged).
 # With --theirs, the presets the curated machines ship themselves (Pedal Juno106's, SH101's, Drum Matrix's…)
-# are measured too and reported, not judged. Runs on rebuzz-headless (Linux, macOS: the Pedal machines) and
-# NeoBuzzLive.exe (Windows: the natives).
+# are measured too and reported, not judged, but for the banks levelled since (§12.15: Juno106's and SH101's),
+# judged preset by preset as ours are (not their spread: a kick and a pad share a bank). Runs on
+# rebuzz-headless (Linux, macOS: the Pedal machines) and NeoBuzzLive.exe (Windows: the natives).
 #
 #   python3 tools/preset-check.py <rebuzz-headless | NeoBuzzLive.exe> [work folder] [--theirs]
 
@@ -42,6 +43,7 @@ GEN_LOUD = (-32.0, -8.0)          # LUFS, the loudest 400 ms (momentary max) of 
 FX_GAIN = (-12.0, 6.0)            # dB, an effect's integrated loudness over its input's
 SPREAD = 14.0                     # LU between a machine's quietest and loudest preset
 SILENT = -50.0                    # LUFS: below this, it doesn't sound
+LEVELLED = {"Pedal Juno106", "Pedal SH101"}   # their own banks, levelled (mcp-server.md §12.15): judged
 BEATS = 8
 
 
@@ -230,12 +232,13 @@ def main():
                 shown = f"{mom:.1f} LUFS" if mom is not None else "?"
             if level is not None:
                 levels.append(level)
-            verdict = "ok" if not problems else ("FAIL" if ours else "warn")
+            judged = ours or gear in LEVELLED
+            verdict = "ok" if not problems else ("FAIL" if judged else "warn")
             rows.append((gear, name, shown, f"{peak:+.1f}" if peak is not None else "?", f"{tp:+.1f}" if tp is not None else "?",
                          "; ".join(problems), "ours" if ours else "own"))
             print(f"{verdict:4} {gear} / {name}: {shown}, peak {rows[-1][3]} dBFS, true peak {rows[-1][4]} dBTP" +
                   ("" if not problems else " — " + "; ".join(problems)), flush=True)
-            if problems and ours:
+            if problems and judged:
                 failures.append(f"{gear} / {name}: " + "; ".join(problems))
         if levels and ours and max(levels) - min(levels) > SPREAD:
             failures.append(f"{gear}: its presets' levels spread over {max(levels) - min(levels):.1f} LU (at most {SPREAD})")
