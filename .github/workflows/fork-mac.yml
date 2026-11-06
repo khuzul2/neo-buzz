@@ -143,6 +143,8 @@ jobs:
         brew install dylibbundler libsndfile >/dev/null || true
         tools/mac-bundle.sh "$RUNNER_TEMP/app"
         tools/mac-dmg.sh "$RUNNER_TEMP/app/ReBuzz.app" "$RUNNER_TEMP/app/ReBuzz-macos-arm64.dmg" "$RUNNER_TEMP/installed"
+        # The installed app's runtime settings: methods with loops compiled fully optimised at once (daw-modes.md §8.1).
+        grep -Eq '"System.Runtime.TieredCompilation.QuickJitForLoops": *false' "$RUNNER_TEMP/installed/ReBuzz.app/Contents/MacOS/ReBuzz.Studio.runtimeconfig.json" || { echo "::error::the app's runtimeconfig.json doesn't turn quick JIT for loops off"; exit 1; }
         python3 -c "import subprocess, sys; sys.exit(subprocess.run(sys.argv[1:], timeout=180).returncode)" \
           "$RUNNER_TEMP/installed/ReBuzz.app/Contents/MacOS/ReBuzz.Studio" --smoke --settings "$RUNNER_TEMP/studio-settings" 2>&1 | tee studio-smoke.log
         grep -q "smoke: ok" studio-smoke.log
