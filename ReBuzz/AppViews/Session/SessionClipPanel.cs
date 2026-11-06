@@ -273,12 +273,14 @@ namespace ReBuzz.AppViews.Session
                     velocity.ValueText = $"{c.Velocity}%";
                     start.Text = c.Start.ToString();
                     loopStart.Text = c.LoopStart.ToString();
-                    loopEnd.Text = c.LoopEnd == 0 ? "" : c.LoopEnd.ToString();
+                    // The end it plays to, the clip's own end when the setting is 0 (as the text below says);
+                    // committed unchanged, the clip's end stays 0 and follows the pattern's length.
+                    var (s, ls, end) = new ClipShape(c.Start, c.LoopStart, c.LoopEnd, c.Loop).Resolve(shownLength);
+                    loopEnd.Text = end.ToString();
                     loopStartLabel.Opacity = c.Loop ? 1 : 0.4;
                     loopStart.IsEnabled = c.Loop;
                     loopEndLabel.Text = c.Loop ? "Loop end" : "End";
 
-                    var (s, ls, end) = new ClipShape(c.Start, c.LoopStart, c.LoopEnd, c.Loop).Resolve(shownLength);
                     region.Text = c.Loop
                         ? $"Plays from {s}, loops {ls}–{end} of {shownLength} ticks."
                         : $"Plays {s}–{end} of {shownLength} ticks once.";

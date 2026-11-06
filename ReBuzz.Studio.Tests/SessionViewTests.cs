@@ -544,6 +544,35 @@ namespace ReBuzz.Studio.Tests
         // ------------------------------------------------------------------ the clip panel (SessionClipTests, SessionPerformanceTests)
 
         [AvaloniaTest]
+        public void TheLoopEndBoxShowsTheEndTheClipLoopsAt()
+        {
+            // Gallery mac-041…046: the Loop end box was empty while the text below said where it loops.
+            using var rig = new SessionRig("Lead");
+            var hook = rig.Pattern(rig.Machine("Lead"), "Hook", 2 * Bar, (0, 72));
+            var layout = rig.Layout;
+            layout.Ensure();
+            var view = rig.Show();
+            var panel = view.ClipPanelView;
+            rig.Click(view.SlotAt(0, 0), fx: 0.6);
+            Assert.That(panel.TitleText, Is.EqualTo("Hook"));
+            Assert.That(panel.RegionText, Is.EqualTo("Plays from 0, loops 0–32 of 32 ticks."));
+            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("32"), "the box says what the text says");
+
+            // Another marker committed with the end as shown: the end stays the clip's own (0).
+            panel.LoopStartBox.Focus();
+            panel.LoopStartBox.Text = "8";
+            rig.Key(PhysicalKey.Enter);
+            Assert.That((layout.ClipOf(hook).LoopStart, layout.ClipOf(hook).LoopEnd), Is.EqualTo((8, 0)));
+            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("32"));
+
+            // Without loop the box is the end it stops at.
+            rig.Click(panel.LoopBox);
+            Assert.That(layout.ClipOf(hook).Loop, Is.False);
+            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("32"));
+            Assert.That(panel.RegionText, Is.EqualTo("Plays 0–32 of 32 ticks once."));
+        }
+
+        [AvaloniaTest]
         public void TheClipPanelEditsClipAndSceneProperties()
         {
             using var rig = new SessionRig("Drums", "Bass");
