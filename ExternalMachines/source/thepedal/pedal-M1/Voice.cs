@@ -68,6 +68,25 @@ namespace WDE.PedalM1
         public bool HasPendingTrigger;
         public byte PendingTriggerNote;
 
+        // Fork (neo-buzz, docs/specs/mcp-server.md §12.15): a MIDI note plays at its own velocity (velocity / 127),
+        // a track's note at the track's Volume (Velocity, above), exactly as before.
+        public bool  FromMidi;
+        public float MidiVelocity = 1f;
+        public bool  PendingFromMidi;
+        public float PendingMidiVelocity = 1f;
+
+        /// <summary>The note's velocity, 0 … 1.</summary>
+        public float NoteVelocity => FromMidi ? MidiVelocity : Velocity;
+
+        /// <summary>
+        /// Fork (neo-buzz, §12.15): released, both envelopes done, its anti-click gain where it is going and no note
+        /// pending, so it plays exact silence until its next note: the machine only keeps its LFOs' time (their
+        /// random values carry over to the next note) and says it is silent. Such a voice stayed active (its gain
+        /// target stays 1 after a release), so the machine rendered it, and said it was sounding, for as long as it ran.
+        /// </summary>
+        public bool Finished
+            => !AmpEnv.IsActive && !FilterEnv.IsActive && !HasPendingTrigger && CurrentGain == TargetGain;
+
         public bool IsActive
             => AmpEnv.IsActive || CurrentGain > NEAR_ZERO || TargetGain > 0f
             || HasPendingTrigger;

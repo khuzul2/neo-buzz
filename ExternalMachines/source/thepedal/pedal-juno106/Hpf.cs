@@ -65,6 +65,9 @@ namespace PedalJuno106
         {
             if (!_isOn) return input;
             _z += _coef * (input - _z);
+            // Fork (neo-buzz, docs/specs/mcp-server.md §12.15): settle to exact zero below −300 dBFS. In silence the
+            // one-pole's decay stopped among the denormal floats and stayed there, so the machine never went quiet.
+            if (_z > -1e-15f && _z < 1e-15f) _z = 0f;
             return input - _z;
         }
     }

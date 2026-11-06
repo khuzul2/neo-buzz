@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;   // IEnumerable<T> for Commands
+using System.Runtime.CompilerServices;   // fork (neo-buzz): MethodImplOptions.AggressiveOptimization
 using System.Windows;               // MessageBox (About window)
 using Buzz.MachineInterface;
 using BuzzGUI.Interfaces;
@@ -90,9 +91,30 @@ namespace PedalSH101
         bool _hasNoteOff = false;
         byte _pendingBuzzNote = 0;
 
+        // ── Fork (neo-buzz, docs/specs/mcp-server.md §12.15): MIDI notes and controllers (MidiIn.cs) ───────
+        // Monophonic, last-note priority: a new key retriggers, as a track's note does; letting go of it goes back
+        // to the key still held, without a retrigger (gliding there with Glide on). The velocity is a level on the
+        // VCA (velocity / 127; a track's note is 1, exactly as before), moving over 2 ms between overlapping notes.
+        // Pitch bend ±2 semitones, the mod wheel brings in the LFO's vibrato up to ±1 semitone (the SH-101's
+        // modulation lever), the sustain pedal holds MIDI notes. The transport stopping releases a MIDI note.
+        readonly MidiIn _midi = new MidiIn();
+        readonly int[]  _keys = new int[16];   // MIDI keys down, oldest first: the last one sounds
+        int   _keyCount;
+        bool  _midiSounding;                   // the note sounding is a MIDI note
+        bool  _midiSustained;                  // its keys are up; the pedal holds it
+        bool  _wasPlaying;
+        const float VelocityGlideMs = 2f;
+
+        // ── Fork (neo-buzz, §12.15): Volume, the mixer's levels, PWM, Cutoff (as its 0…1 position) and
+        // Resonance glide to a new setting over 20 ms, the velocity level over 2 ms (ParamGlide, below); a setting that
+        // doesn't move is the same number as before. The first block, and a new sample rate, start at the setting.
+        ParamGlide _gVolume, _gPulse, _gSaw, _gSub, _gNoise, _gPwm, _gCutoff, _gReso, _gVel;
+        bool  _glidesSet;
+
         public PedalSH101Machine(IBuzzMachineHost host)
         {
             this.host = host;
+            _gVel.Snap(1f);   // fork (neo-buzz, §12.15): a track's note is at full level
         }
 
         // ─────────────────────────────────────────────────────────────
@@ -332,6 +354,12 @@ namespace PedalSH101
             int semi = (buzzNote & 0xF) - 1;
             int midi = oct * 12 + semi;
 
+            TriggerPitch(midi, 1f);   // fork (neo-buzz, §12.15): a track's note has no velocity
+        }
+
+        // Fork (neo-buzz, §12.15): a note by its MIDI number, from a track or MIDI, with its velocity level.
+        void TriggerPitch(int midi, float velocity)
+        {
             float pitch = midi;
 
             bool wasIdle = !_env.IsActive;
@@ -341,30 +369,134 @@ namespace PedalSH101
             if (Glide == 0 || wasIdle)
                 _currentPitchSemis = pitch;
 
+            // Fork (neo-buzz, §12.15): the velocity level; from silence it starts there.
+            if (!_glidesSet || wasIdle) _gVel.Snap(velocity);
+            else _gVel.Set(velocity, (int)(VelocityGlideMs * 0.001f * host.MasterInfo.SamplesPerSec));
+
             _env.NoteOn();
             _gateActive = true;
             _lfo.NoteOn(_lfoDelaySamps);
         }
 
         // ─────────────────────────────────────────────────────────────
+        //  Fork (neo-buzz, docs/specs/mcp-server.md §12.15): MIDI from
+        //  ReBuzz (a keyboard, a pattern's MIDI column), queued and
+        //  applied at the start of the next block.
+        // ─────────────────────────────────────────────────────────────
+
+        /// <summary>ReBuzz: a MIDI note for this machine (velocity 0 releases).</summary>
+        public void MidiNote(int channel, int value, int velocity) => _midi.Note(value, velocity);
+
+        /// <summary>ReBuzz: a MIDI controller, pitch bend (0xE0 / 0xFF) or channel pressure (0xD0 / 0xFC).</summary>
+        public void MidiControlChange(int ctrl, int channel, int value) => _midi.Controller(ctrl, value);
+
+        void ProcessMidi()
+        {
+            while (_midi.Next(out int kind, out int a, out int b))
+            {
+                if (kind == MidiIn.NoteOn) MidiNoteOn(a, b);
+                else if (kind == MidiIn.NoteOff) MidiNoteOff(a);
+                else switch (a)
+                {
+                    case MidiIn.AllNotesOff:
+                        ReleaseMidiNote();
+                        break;
+                    case MidiIn.AllSoundOff:
+                        bool sounding = _midiSounding;
+                        ReleaseMidiNote();
+                        if (sounding) { _env.HardReset(); _gateActive = false; }
+                        break;
+                    default:
+                        if (_midi.Apply(a, b) && _midiSustained && _keyCount == 0)   // the pedal came up
+                            ReleaseMidiNote();
+                        break;
+                }
+            }
+        }
+
+        void MidiNoteOn(int key, int velocity)
+        {
+            RemoveKey(key);
+            if (_keyCount == _keys.Length) RemoveAt(0);
+            _keys[_keyCount++] = key;
+            TriggerPitch(key, velocity / 127f);
+            _midiSounding  = true;
+            _midiSustained = false;
+        }
+
+        void MidiNoteOff(int key)
+        {
+            bool sounding = _keyCount > 0 && _keys[_keyCount - 1] == key;
+            RemoveKey(key);
+            if (!_midiSounding || !sounding) return;
+            if (_keyCount > 0)
+            {
+                // Back to the key still held: its pitch, no retrigger.
+                _targetPitchSemis = _keys[_keyCount - 1];
+                if (Glide == 0) _currentPitchSemis = _targetPitchSemis;
+                return;
+            }
+            if (_midi.Pedal) { _midiSustained = true; return; }
+            ReleaseMidiNote();
+        }
+
+        void ReleaseMidiNote()
+        {
+            _keyCount = 0;
+            _midiSustained = false;
+            if (!_midiSounding) return;
+            _midiSounding = false;
+            _env.NoteOff();
+            _gateActive = false;
+        }
+
+        void RemoveKey(int key)
+        {
+            for (int i = 0; i < _keyCount; i++)
+                if (_keys[i] == key) { RemoveAt(i); return; }
+        }
+
+        void RemoveAt(int i)
+        {
+            for (int j = i + 1; j < _keyCount; j++) _keys[j - 1] = _keys[j];
+            _keyCount--;
+        }
+
+        // The transport stopping releases a MIDI note (a track's note rings on, as before).
+        void CheckTransport()
+        {
+            bool nowPlaying;
+            try { nowPlaying = host?.Machine?.Graph?.Buzz?.Playing ?? false; }
+            catch { nowPlaying = _wasPlaying; }
+            if (_wasPlaying && !nowPlaying) ReleaseMidiNote();
+            _wasPlaying = nowPlaying;
+        }
+
+        // ─────────────────────────────────────────────────────────────
         //  Audio process
         // ─────────────────────────────────────────────────────────────
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]   // fork (neo-buzz): never compiled on the audio thread
         public bool Work(Sample[] output, int n, WorkModes mode)
         {
             int sr = host.MasterInfo.SamplesPerSec;
+            if (sr != _cSr) _glidesSet = false;   // fork (neo-buzz, §12.15): a new rate starts at the settings
             UpdateCoefs(sr);
+            CheckTransport();                     // fork (neo-buzz, §12.15): for MIDI notes
+            bool wasIdle = !_env.IsActive && !_gateActive;   // fork: before this block's notes
 
             // Drain pending events. Process note-on before note-off so a
             // pattern row containing both retriggers cleanly.
-            if (_hasNoteOn)  { TriggerNote(_pendingBuzzNote); _hasNoteOn = false; }
-            if (_hasNoteOff) { _env.NoteOff(); _gateActive = false; _hasNoteOff = false; }
-
-            // Idle fast-path: zero output, return false so ReBuzz can prune.
-            if (!_env.IsActive && !_gateActive)
+            if (_hasNoteOn)
             {
-                for (int i = 0; i < n; i++) output[i] = new Sample(0f, 0f);
-                return false;
+                TriggerNote(_pendingBuzzNote); _hasNoteOn = false;
+                _keyCount = 0; _midiSounding = false; _midiSustained = false;   // fork: the track's note took over
             }
+            if (_hasNoteOff)
+            {
+                _env.NoteOff(); _gateActive = false; _hasNoteOff = false;
+                _keyCount = 0; _midiSounding = false; _midiSustained = false;   // fork
+            }
+            ProcessMidi();                        // fork (neo-buzz, §12.15): after the track's note
 
             // ── Hoist parameter conversions out of the per-sample loop ──
             float rangeOffsetSemi = (Range == 0) ? -12f : ((Range == 2) ? 12f : 0f);
@@ -377,13 +509,56 @@ namespace PedalSH101
             int   subType         = SubType;
             int   pwmSrc          = PwmSource;
             float pwmAmt          = PwmAmount  / 127f;
-            float baseCutoffHz    = 20f * MathF.Pow(1000f, Cutoff / 127f); // 20..20k Hz log
+            float cutoffN         = Cutoff / 127f;                    // fork: glides as this
+            float baseCutoffHz    = 20f * MathF.Pow(1000f, cutoffN);  // 20..20k Hz log
             float resN            = Resonance  / 127f;                // 0..1
+            float volume          = Volume / 127f;
+
+            // Fork (neo-buzz, §12.15): glide to the settings; the first time, at a new rate, and in silence or from it,
+            // start there (a note after silence starts at the settings).
+            bool idle = !_env.IsActive && !_gateActive;
+            if (!_glidesSet || idle || wasIdle)
+            {
+                _gVolume.Snap(volume);
+                _gPulse.Snap(pulseLvl);
+                _gSaw.Snap(sawLvl);
+                _gSub.Snap(subLvl);
+                _gNoise.Snap(noiseLvl);
+                _gPwm.Snap(pwmAmt);
+                _gCutoff.Snap(cutoffN);
+                _gReso.Snap(resN);
+                _glidesSet = true;
+            }
+            else
+            {
+                int len = (int)(ParamGlide.Ms * 0.001f * sr);
+                _gVolume.Set(volume, len);
+                _gPulse.Set(pulseLvl, len);
+                _gSaw.Set(sawLvl, len);
+                _gSub.Set(subLvl, len);
+                _gNoise.Set(noiseLvl, len);
+                _gPwm.Set(pwmAmt, len);
+                _gCutoff.Set(cutoffN, len);
+                _gReso.Set(resN, len);
+            }
+
+            // Idle fast-path: zero output, return false so ReBuzz can prune.
+            if (idle)
+            {
+                for (int i = 0; i < n; i++) output[i] = new Sample(0f, 0f);
+                return false;
+            }
+
+            bool  gliding  = _gVolume.Left > 0 || _gPulse.Left > 0 || _gSaw.Left > 0 || _gSub.Left > 0 || _gNoise.Left > 0
+                          || _gPwm.Left > 0 || _gCutoff.Left > 0 || _gReso.Left > 0 || _gVel.Left > 0;
+            float velGain  = _gVel.Value;
+            // Fork (neo-buzz, §12.15): pitch bend, and the mod wheel's vibrato (0 without MIDI: the same numbers).
+            float bendSemi = _midi.Bend * MidiIn.BendSemitones;
+            if (_midi.Mod > vcoModSemi) vcoModSemi = _midi.Mod;          // up to ±1 semitone
             float envAmtOctaves   = ((EnvAmount - 64) / 64f) * 5f;     // ±5 oct
             float lfoFiltOctaves  = (VcfMod / 127f) * 4f;              // up to 4 oct
             int   kbdFollowMode   = KbdFollow;
             int   vcaMode         = VcaMode;
-            float volume          = Volume / 127f;
             float glideCoef       = _glideCoef;
             float currentPitch    = _currentPitchSemis;
             float targetPitch     = _targetPitchSemis;
@@ -400,6 +575,21 @@ namespace PedalSH101
 
             for (int i = 0; i < n; i++)
             {
+                // Fork (neo-buzz, §12.15): while a setting glides, these follow it sample by sample.
+                if (gliding)
+                {
+                    volume   = _gVolume.Next();
+                    pulseLvl = _gPulse.Next();
+                    sawLvl   = _gSaw.Next();
+                    subLvl   = _gSub.Next();
+                    noiseLvl = _gNoise.Next();
+                    pwmAmt   = _gPwm.Next();
+                    float cn = _gCutoff.Next();
+                    if (cn != cutoffN) { cutoffN = cn; baseCutoffHz = 20f * MathF.Pow(1000f, cn); }
+                    resN     = _gReso.Next();
+                    velGain  = _gVel.Next();
+                }
+
                 // 1. Portamento (one-pole approach to target)
                 if (glideCoef == 0f)
                     currentPitch = targetPitch;
@@ -414,7 +604,8 @@ namespace PedalSH101
                 float pitchSemis = currentPitch
                                  + rangeOffsetSemi
                                  + fineSemi
-                                 + lfo * vcoModSemi;
+                                 + lfo * vcoModSemi
+                                 + bendSemi;                   // fork (neo-buzz, §12.15)
                 float freq = 440f * MathF.Pow(2f, (pitchSemis - 69f) * (1f / 12f));
                 if (freq < 1f) freq = 1f;
 
@@ -463,7 +654,7 @@ namespace PedalSH101
 
                 // 8. VCA
                 float gain = (vcaMode == 1) ? env : (_gateActive ? 1f : 0f);
-                float sample = filtered * gain * volume;
+                float sample = filtered * gain * volume * velGain;   // fork: × 1 for a track's note
 
                 // 9. Output (mono → both channels). Generators write directly
                 //    at ±32768 scale (PedalComp §1).
@@ -572,5 +763,33 @@ namespace PedalSH101
 
         static string FormatPercent(int v)
             => ((int)MathF.Round(v * 100f / 127f)).ToString(InvCulture) + "%";
+    }
+
+    // Fork (neo-buzz, docs/specs/mcp-server.md §12.13, §12.15): a setting that glides to a new value in a straight
+    // line over Ms milliseconds (or the given samples), sample by sample, and lands on it exactly, so a setting that
+    // doesn't move is the same number as before. Automation and pattern events change parameters once a tick or
+    // subtick; applied once a block they stepped, which clicks. As in the Pedal effects (U6).
+    struct ParamGlide
+    {
+        public const float Ms = 20f;
+        public float Value, Target, Step;
+        public int Left;
+
+        public void Snap(float v) { Value = Target = v; Left = 0; }
+
+        public void Set(float v, int samples)
+        {
+            if (v == Target) return;
+            Target = v;
+            if (samples <= 1) { Snap(v); return; }
+            Left = samples;
+            Step = (v - Value) / samples;
+        }
+
+        public float Next()
+        {
+            if (Left > 0) Value = --Left == 0 ? Target : Value + Step;
+            return Value;
+        }
     }
 }

@@ -51,6 +51,11 @@ namespace PedalJuno106
         public float AntiClickTarget;      // 0 = fading out, 1 = fading in
         public bool  HasPendingTrigger;    // a Trigger() was deferred during a fade-out
         public byte  PendingNote;          // the note to actually trigger when fade hits 0
+        public float PendingVelocity = 1f; // fork (neo-buzz, §12.15): its velocity level
+
+        // Fork (neo-buzz, docs/specs/mcp-server.md §12.15): the note's velocity as a level on the voice's output,
+        // velocity / 127 for a MIDI note; 1 (exactly as before) for a track's note, which has no velocity.
+        public float Velocity = 1f;
 
         // ── Per-voice drift (analog-like detuning) ────────────────────────────
         // StaticDetuneCents is a small constant per-voice offset (component
@@ -119,7 +124,10 @@ namespace PedalJuno106
         /// TickAntiClick when the fade completes. Otherwise (silent voice)
         /// trigger immediately and fade in from 0.
         /// </summary>
-        public void Trigger(byte midiNote)
+        public void Trigger(byte midiNote) => Trigger(midiNote, 1f);
+
+        /// <summary>Fork (neo-buzz, §12.15): a note with its velocity level (MIDI notes; a track's note is 1).</summary>
+        public void Trigger(byte midiNote, float velocity)
         {
             if (Active && AntiClick > NearZero)
             {
@@ -127,12 +135,13 @@ namespace PedalJuno106
                 // The actual reset happens later in TickAntiClick.
                 HasPendingTrigger = true;
                 PendingNote       = midiNote;
+                PendingVelocity   = velocity;
                 AntiClickTarget   = 0f;
                 return;
             }
 
             // Voice is silent — fire immediately, fade in from 0.
-            DoTrigger(midiNote);
+            DoTrigger(midiNote, velocity);
             AntiClickTarget = 1f;
         }
 
@@ -170,7 +179,7 @@ namespace PedalJuno106
             if (HasPendingTrigger && AntiClick <= NearZero && AntiClickTarget == 0f)
             {
                 HasPendingTrigger = false;
-                DoTrigger(PendingNote);
+                DoTrigger(PendingNote, PendingVelocity);
                 AntiClickTarget = 1f;        // fade back in
             }
         }
@@ -180,8 +189,9 @@ namespace PedalJuno106
         /// only Trigger() and TickAntiClick() (deferred dispatch) call it,
         /// and they take care of the AntiClick state around it.
         /// </summary>
-        void DoTrigger(byte midiNote)
+        void DoTrigger(byte midiNote, float velocity)
         {
+            Velocity    = velocity;
             CurrentNote = midiNote;
             MidiNote    = midiNote;
             Frequency   = DspMath.MidiToHz(midiNote);

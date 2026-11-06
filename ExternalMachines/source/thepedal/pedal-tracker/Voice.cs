@@ -164,6 +164,7 @@ namespace WDE.PedalTracker
         // null-safe so it's free when not enabled.
         public static System.Action<string> Trace;
 
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]   // fork (neo-buzz): never compiled on the audio thread
         public static void Render(Voice v, float[] outL, float[] outR, int n,
                                   Interp interp, double engineSampleRate, float masterGain)
         {
