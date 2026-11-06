@@ -160,12 +160,7 @@ namespace ReBuzz.Core.Session
             return found;
         }
 
-        /// <summary>Note name, Live's way: C3 is middle C (60).</summary>
-        public static string Name(int note)
-        {
-            string[] names = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-            note = Math.Clamp(note, 0, 127);
-            return names[note % 12] + (note / 12 - 2);
-        }
+        /// <summary>A note's name as Preferences name notes (BuzzGUI.Common.NoteNames; by default C3 is middle C, 60).</summary>
+        public static string Name(int note) => BuzzGUI.Common.NoteNames.Name(note);
     }
 }

@@ -286,7 +286,12 @@ namespace WDE.ModernPatternEditor
                     if (d.Index == 0)
                         value = newvalue;
                     else if (beat.HasValue(d.RowInBeat) && beat.Rows[d.RowInBeat].Value != BuzzNote.Off)
-                        value = (beat.Rows[d.RowInBeat].Value & 15) | (newvalue << 4);
+                    {
+                        // Fork: the octave digit as the notes are named (ux-overhaul.md §3.5): 3 is Buzz's 5 when C3 is 60.
+                        int octave = NoteNames.BuzzOctave(newvalue);
+                        if (octave < BuzzNote.MinOctave || octave > BuzzNote.MaxOctave) return null;
+                        value = (beat.Rows[d.RowInBeat].Value & 15) | (octave << 4);
+                    }
                     else
                         return null;
                 }

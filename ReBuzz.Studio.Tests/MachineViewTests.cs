@@ -34,9 +34,9 @@ namespace ReBuzz.Studio.Tests
             SongFiles.New().Wait();
             var window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
             window.Show();
-            window.Tabs.SelectedIndex = 0;
+            window.ShowView("Machines");
             Settle();
-            var view = (MachineView)((TabItem)window.Tabs.Items[0]!).Content!;
+            var view = window.Tabs.Items.Cast<TabItem>().Select(t => t.Content).OfType<MachineView>().First();
             Assert.That(Graph(), Is.EqualTo("Master"), "a new song has Master alone");
             return (window, view);
         }
@@ -462,6 +462,21 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(machines.Count, Is.GreaterThan(1));
                 foreach (var m in machines)
                     Near(view.Canvas.BoxOf(m).Center, view.Canvas.Map.PointAt(System.Math.Clamp(m.Position.Item1, -2, 2), System.Math.Clamp(m.Position.Item2, -2, 2)), m.Name);
+
+                // Fork (ux-overhaul.md P1, UX review mac-500): the problem bar says it in plain words, with a button to find them.
+                var missing = Core.SongCore.MachinesList.Where(m => !m.Hidden && m.DLL.IsMissing).ToList();
+                if (missing.Count > 0 && !System.OperatingSystem.IsWindows())
+                {
+                    window.RefreshNow();
+                    Settle();
+                    Assert.That(window.Problems.Text, Does.StartWith($"{missing.Count} machines in this song are Windows-only (").And.Contain("kept and saved unchanged"));
+                    var show = window.Problems.Buttons.Single();
+                    Assert.That(show.Content, Is.EqualTo("Show Them"));
+                    view.Canvas.ClearSelection();
+                    show.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    Settle();
+                    Assert.That(view.Canvas.Selection, Is.EquivalentTo(missing), "the button selects them in the Machine View");
+                }
                 Studio.Screenshot(window, "machines-12-old-song");
             }
             finally
@@ -567,11 +582,14 @@ namespace ReBuzz.Studio.Tests
                 Undo(window);
                 Assert.That((poly.Position, verb.Position, master.Position), Is.EqualTo((polyAt, verbAt, masterAt)));
 
-                // Ctrl+A, Ctrl+D (Command on a Mac); a click on empty space clears.
+                // Ctrl+A, Shift+Ctrl+A (Command on a Mac; ux-overhaul.md §4: ⌘D duplicates now), Esc; a click on empty space clears.
                 window.KeyPressQwerty(PhysicalKey.A, Cmd);
                 Assert.That(view.Canvas.Selection.Count, Is.EqualTo(3));
-                window.KeyPressQwerty(PhysicalKey.D, Cmd);
+                window.KeyPressQwerty(PhysicalKey.A, Cmd | RawInputModifiers.Shift);
                 Assert.That(view.Canvas.Selection, Is.Empty);
+                window.KeyPressQwerty(PhysicalKey.A, Cmd);
+                window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+                Assert.That(view.Canvas.Selection, Is.Empty, "Esc deselects too");
                 // (Off the centre: a press where the last one was, this soon, would be a double click.)
                 Click(window, view.PointOf(poly, window) + Aside);
                 Click(window, view.PointOf(verb, window) + Aside, mods: Cmd);

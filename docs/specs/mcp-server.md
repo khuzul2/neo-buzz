@@ -85,7 +85,7 @@ The server announces itself as `neobuzz-live`, titled "NeoBuzz Live" (`GuideLibr
 | Parameter | its name (`"F1 cutoff"`), or `#index` when a legacy machine repeats names | Track parameters take `track` |
 | Pattern | machine + pattern name | |
 | Time | **beats** (float) from the song start; bars accepted as `"17.1"` (bar.beat) | Ticks, TPB and Buzz's 240-per-tick time base stay inside the server |
-| Pitch | MIDI number or scientific name: `60` = `"C4"`, `69` = `"A4"` = 440 Hz | The Buzz pattern editor shows the same notes an octave higher (`C-5`, `A-5`); tools always say which they mean |
+| Pitch | MIDI number or scientific name: `60` = `"C4"`, `69` = `"A4"` = 440 Hz | The apps name notes as Preferences ▸ General ▸ Note names says (ux-overhaul.md §3.5): C3 = 60 by default (the pattern editor's `C-3`), scientific, or Buzz's (`C-5`, `A-5`); tools always say which they mean |
 | Levels | dB everywhere (connection gain, faders, meters); pan −1 … +1 | Raw Buzz amp/pan values are converted |
 | Parameter values | in the parameter's own unit: `"800 Hz"`, `"-6 dB"`, `"35%"`, `"Saw"`, `"1/8"`, or relative `"+3 dB"`, `"x2"`; `raw:512` as the escape hatch | Neo machines publish exact units and mappings (§8.3); legacy machines are resolved by searching their value descriptions. A whole-number parameter whose unit is a note (Neo Sampler's keys, roots and kit base) takes and prints a pitch name (`"C2"`, `"F#3"`) as well as its number, and one whose unit is a wave takes its own text (`"Built-in Kick"`, a slot's name, `"Off"`); its own value texts come first (`"Wave"` for a root that follows the wavetable) |
 

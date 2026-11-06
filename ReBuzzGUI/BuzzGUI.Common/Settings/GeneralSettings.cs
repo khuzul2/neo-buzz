@@ -53,6 +53,11 @@
         [BuzzSetting(true, Description = "Show a piano keyboard under the window of every machine that plays notes. A window's Keyboard toggle (Ctrl+K, ⌘K on a Mac) shows or hides it for that machine type.")]
         public bool MachineKeyboard { get; set; }
 
+        // Fork (docs/specs/ux-overhaul.md §3.5): how notes are named on screen. NoteNames holds it, for the displays that
+        // can't read settings (and the tests that link them); a new key, display only.
+        [BuzzSetting(BuzzGUI.Common.NoteNames.Default, Description = "How notes are named on screen, by what middle C (MIDI note 60) is called: in the pattern editor (always three characters, as C-3), the piano roll, the keyboards under machine windows and MIDI mappings. Songs don't change.")]
+        public NoteNaming NoteNames { get => BuzzGUI.Common.NoteNames.Naming; set => BuzzGUI.Common.NoteNames.Naming = value; }
+
         [BuzzSetting(DpiScalingType.System, Description = "DPI scaling.")]
         public DpiScalingType DpiScaling { get; internal set; }
 

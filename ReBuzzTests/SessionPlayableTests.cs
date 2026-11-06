@@ -258,7 +258,9 @@ namespace ReBuzzTests
             Press(rig, NoteOn(36 + 4 + 2));            // third row from the top, third pad: track 3, scene 3
             Assert.That(rig.Core.Session.GetState(layout.SequenceOf(0)!, beat), Is.EqualTo(ClipState.Queued));
             Assert.That(rig.Core.Session.GetState(layout.SequenceOf(2)!, hook), Is.EqualTo(ClipState.Queued));
-            Assert.That(midi.Describe(SessionTarget.Slot, 2, 2), Does.Contain("F#2"));
+            // MIDI 42, named as Preferences name notes (ux-overhaul.md §3.5): F#1 when C3 is 60, the default.
+            Assert.That(midi.Describe(SessionTarget.Slot, 2, 2), Does.Contain(BuzzGUI.Common.NoteNames.Name(42)));
+            Assert.That(BuzzGUI.Common.NoteNames.Name(42, BuzzGUI.Common.NoteNaming.C3), Is.EqualTo("F#1"));
         }
 
         [Test]

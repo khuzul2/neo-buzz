@@ -719,10 +719,14 @@ namespace ReBuzz.Studio.Tests
             rig.Click(rig.At(16, 1));
             rig.Type("0,0");
 
-            // Colour: Riff red, from the menu on its block.
+            // Colour: Riff lilac, from the menu on its block. Fork (ux-overhaul.md §3.1): the state colours aren't offered.
             rig.Click(rig.At(16, 0, dx: 12), MouseButton.Right);
-            rig.Menu("Color", "Red");
-            int red = SequenceSongState.Palette.ToList().FindIndex(c => c.Name == "Red");
+            var offered = rig.View.OpenMenu!.Items.OfType<MenuItem>().Single(x => x.Header as string == "Color").Items.OfType<MenuItem>().Select(x => x.Header as string).ToList();
+            Assert.That(offered, Has.None.EqualTo("Red").And.None.EqualTo("Orange").And.None.EqualTo("Ochre").And.None.EqualTo("Kelly Green"),
+                "play green, record red and override orange are the states' colours");
+            Assert.That(offered, Does.Contain("Lilac").And.Contain("Default"));
+            rig.Menu("Color", "Lilac");
+            int red = SequenceSongState.Palette.ToList().FindIndex(c => c.Name == "Lilac");
             var state = SequenceSongState.For(Core);
             Assert.That(state.ColourIndexOf(Rig.Pattern("Lead", "Riff")), Is.EqualTo(red));
             Assert.That(ReBuzz.Core.PatternColours.Current.TryGet(Rig.Pattern("Lead", "Riff"), out int engineColour) && engineColour == red, Is.True,

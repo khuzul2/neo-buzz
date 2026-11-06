@@ -500,6 +500,18 @@ namespace ReBuzz.Studio.Views.Sequence
             if (clipboard.ContainsData && row >= 0 && row < song.Sequences.Count) Do(new PasteSequenceEventsAction(song, time, row, clipboard));
         }
 
+        /// <summary>
+        /// Fork (ux-overhaul.md §4): Duplicate (⌘D): the block again right after itself, one undo step. The user's clipboard
+        /// is left as it was.
+        /// </summary>
+        public void Duplicate(SequenceRect r)
+        {
+            if (r.Row < 0 || r.Row >= song.Sequences.Count || r.Span <= 0) return;
+            var copy = new SequenceClipboard();
+            copy.Copy(song, r);
+            Do(new PasteSequenceEventsAction(song, r.End, r.Row, copy));
+        }
+
         public void AddTrack(IMachine machine)
         {
             if (machine != null) Do(new AddSequenceAction(machine));

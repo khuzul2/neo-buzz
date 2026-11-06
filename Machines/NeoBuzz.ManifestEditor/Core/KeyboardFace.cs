@@ -174,13 +174,13 @@ namespace NeoBuzz.Editor
     /// <summary>Names and pictures of the keyboard's keys.</summary>
     internal static class KeyboardFace
     {
-        static readonly string[] Sharps = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+        /// <summary>
+        /// A pitch's name as Preferences name notes (BuzzGUI.Common.NoteNames, docs/specs/ux-overhaul.md §3.5), as the pattern
+        /// editor and the piano roll name it: MIDI 60 is "C3" by default, "C4" in scientific naming, "C-5" in Buzz's.
+        /// </summary>
+        public static string NoteName(int midi) => BuzzGUI.Common.NoteNames.Name(midi);
 
-        /// <summary>A pitch's scientific name: MIDI 60 → "C4" (as the Neo machines and the agent server write them).</summary>
-        public static string NoteName(int midi) =>
-            Sharps[((midi % 12) + 12) % 12] + ((int)Math.Floor(midi / 12.0) - 1).ToString(CultureInfo.InvariantCulture);
-
-        /// <summary>A key as a screen reader says it: "C#4", "D2, Snare".</summary>
+        /// <summary>A key as a screen reader says it: "C#3", "D1, Snare".</summary>
         public static string AccessibleName(int midi, string drum) => string.IsNullOrEmpty(drum) ? NoteName(midi) : NoteName(midi) + ", " + drum;
 
         /// <summary>A name that fits a width: whole, its first word, its initials ("Closed hat" → "CH"), or its first letters.</summary>
@@ -276,7 +276,7 @@ namespace NeoBuzz.Editor
             c.Text(text, width / 2, (height - 14) / 2, 11, enabled ? (on || hover ? accent : Palette.Text) : Palette.DimText, false, NeoAlign.Center);
         }
 
-        /// <summary>The strip's readout: the key under the pointer or played, its drum and its velocity ("D2 · Snare · 96").</summary>
+        /// <summary>The strip's readout: the key under the pointer or played, its drum and its velocity ("D1 · Snare · velocity 96").</summary>
         public static string Readout(int note, string drum, int velocity)
         {
             if (note < 0) return "";

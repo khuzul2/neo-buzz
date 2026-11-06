@@ -11,6 +11,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core.Session;
+using ReBuzz.Studio.Shell.Design;
 
 namespace ReBuzz.Studio.Views.Session
 {
@@ -35,6 +36,7 @@ namespace ReBuzz.Studio.Views.Session
 
             readonly SessionView view;
             readonly Border progress;
+            readonly Border chip;
             readonly TextBlock glyph;
             readonly TextBlock label;
             readonly TextBlock flags;
@@ -64,9 +66,9 @@ namespace ReBuzz.Studio.Views.Session
                 Pattern = pattern;
 
                 Margin = new Thickness(0, 0, Gap, Gap);
-                BorderThickness = new Thickness(1);
+                BorderThickness = new Thickness(2);      // fork (ux-overhaul.md §3.1): a 2 pt outline for the state and the selection
                 Background = SessionPalette.Empty;
-                ToolTip.SetTip(this, Tip(pattern, midiText, settings));
+                ToolTip.SetTip(this, Tip(view, pattern, midiText, settings));
 
                 progress = new Border
                 {
@@ -85,7 +87,9 @@ namespace ReBuzz.Studio.Views.Session
                 if (pattern != null)
                 {
                     glyph = new TextBlock { Text = "▶", FontSize = 11, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
-                    var launchArea = new Border { Background = SessionPalette.Transparent, Cursor = Hand, Child = glyph };
+                    // A dark chip under the glyph while the slot has a state (ux-overhaul.md §3.1): the state colour reads on any clip colour.
+                    chip = new Border { Margin = new Thickness(2), CornerRadius = new CornerRadius(3), Background = SessionPalette.Transparent, Child = glyph, IsHitTestVisible = false };
+                    var launchArea = new Border { Background = SessionPalette.Transparent, Cursor = Hand, Child = chip };
                     // Press launches; the release (button up, or the capture lost) is the clip's release.
                     bool held = false;
                     launchArea.PointerPressed += (s, e) =>
@@ -119,7 +123,7 @@ namespace ReBuzz.Studio.Views.Session
                         flags = new TextBlock
                         {
                             Text = marks,
-                            FontSize = 9,
+                            FontSize = 11,
                             Margin = new Thickness(0, 0, 4, 0),
                             VerticalAlignment = VerticalAlignment.Center,
                             Opacity = 0.75,
@@ -198,13 +202,14 @@ namespace ReBuzz.Studio.Views.Session
                 PointerCaptureLost += (s, e) => EndDrag(null, false);
             }
 
-            static string Tip(IPattern pattern, string midiText, SessionDocument.ClipSettings settings)
+            static string Tip(SessionView view, IPattern pattern, string midiText, SessionDocument.ClipSettings settings)
             {
+                // Fork (ux-overhaul.md §2): its length in bars and beats (it was ticks).
                 string tip = pattern != null
-                    ? $"{pattern.Name} ({pattern.Length} ticks)\n▶ launches · double-click edits · drag moves ({ModName} copies) · right-click for more"
+                    ? $"{pattern.Name} ({Shell.TimeText.Length(pattern.Length, view.buzz.TPB, view.session.BeatsPerBar)})\n▶ launches · double-click edits · drag moves ({ModName} copies) · right-click for more"
                     : "Empty slot\n■ stops the track · double-click creates a clip · right-click for more";
                 if (pattern != null && settings != null && !settings.IsDefault)
-                    tip += "\n" + Summary(settings);
+                    tip += "\n" + Summary(view, settings);
                 return midiText == null ? tip : tip + "\n" + midiText;
             }
 
@@ -223,8 +228,9 @@ namespace ReBuzz.Studio.Views.Session
                 return string.Join(" ", parts);
             }
 
-            static string Summary(SessionDocument.ClipSettings c)
+            static string Summary(SessionView view, SessionDocument.ClipSettings c)
             {
+                string Place(int t) => Shell.TimeText.Position(t, view.buzz.TPB, view.session.BeatsPerBar);
                 var parts = new List<string> { c.Mode };
                 if (c.Quantization != SessionDocument.ClipSettings.GlobalQuantization)
                 {
@@ -234,7 +240,7 @@ namespace ReBuzz.Studio.Views.Session
                 if (c.Legato) parts.Add("legato");
                 parts.Add(c.Loop ? "loop" : "one shot");
                 if (c.Start != 0 || c.LoopStart != 0 || c.LoopEnd != 0)
-                    parts.Add($"start {c.Start}, loop {c.LoopStart}–{(c.LoopEnd == 0 ? "end" : c.LoopEnd.ToString())}");
+                    parts.Add($"start {Place(c.Start)}, loop {Place(c.LoopStart)}–{(c.LoopEnd == 0 ? "end" : Place(c.LoopEnd))}");
                 if (c.Velocity != 0) parts.Add($"velocity {c.Velocity}%");
                 string text = "Clip: " + string.Join(" · ", parts);
                 if (c.Audio is { } a)
@@ -327,54 +333,55 @@ namespace ReBuzz.Studio.Views.Session
 
                 var color = SessionPalette.ColorBrush(PatternColors.Get(Pattern));
                 var state = view.layout.SlotState(Sequence, Pattern, Track, Scene);   // only the slot it plays from
-                bool sounding = state == ClipState.Playing || state == ClipState.Stopping;
-                // Uncoloured clips turn green while playing (as in 0.1); coloured ones keep their
-                // colour, lightened, with the green ▶, outline and progress bar.
-                var background = color == null
-                    ? (sounding ? SessionPalette.Playing : SessionPalette.Clip)
-                    : (sounding ? SessionPalette.Lighten(color, 0.2) : color);
+                // Fork (ux-overhaul.md §3.1): a clip keeps its own fill in every state (an uncoloured one turned green while it
+                // played, the same green a user can pick); its state is the chip under ▶ or ●, a 2 pt outline and the progress
+                // bar, in the reserved state colours. Waiting for the launch point (queued, stopping, a take about to record) blinks.
+                var background = color ?? SessionPalette.Clip;
                 if (hover) background = SessionPalette.Lighten(background, 0.1);
                 var text = SessionPalette.TextOn(background);
 
                 Background = background;
                 label.Foreground = text;
                 if (flags != null) flags.Foreground = text;
+                IBrush stateBrush = null;
+                bool waiting = false;
                 switch (state)
                 {
                     case ClipState.Playing:
-                        glyph.Foreground = color == null ? text : SessionPalette.Progress;
-                        border ??= color == null ? null : SessionPalette.Playing;
+                        stateBrush = SessionPalette.Playing;
                         break;
                     case ClipState.Queued:
-                        glyph.Foreground = blinkOn ? SessionPalette.Progress : text;
-                        border ??= blinkOn ? SessionPalette.Progress : null;
-                        break;
                     case ClipState.Stopping:
-                        glyph.Foreground = blinkOn ? SessionPalette.Stopping : (color == null ? text : SessionPalette.Progress);
-                        border ??= color == null ? null : SessionPalette.Playing;
-                        break;
-                    default:
-                        glyph.Foreground = text;
+                        stateBrush = SessionPalette.Playing;
+                        waiting = true;
                         break;
                 }
                 // 0.7: a take waiting or recording, or the clip an armed track overdubs: red.
-                if (view.layout.IsRecordingInto(Sequence, Pattern))
+                bool recording = view.layout.IsRecordingInto(Sequence, Pattern);
+                if (recording)
                 {
-                    glyph.Text = "●";
-                    glyph.Foreground = state == ClipState.Playing || blinkOn ? SessionPalette.Record : text;
-                    border ??= SessionPalette.Record;
+                    stateBrush = SessionPalette.Record;
+                    waiting = state != ClipState.Playing;
+                    if (glyph.Text != "●") glyph.Text = "●";
                 }
                 else if (glyph.Text != "▶")
                 {
                     glyph.Text = "▶";
                 }
+                bool lit = stateBrush != null && (!waiting || blinkOn);
+                chip.Background = stateBrush != null ? SessionPalette.StateChip : SessionPalette.Transparent;
+                glyph.Foreground = lit ? stateBrush : stateBrush != null ? SessionPalette.LabelText : text;
+                bool sounding = state == ClipState.Playing || state == ClipState.Stopping;
+                border ??= stateBrush != null && (sounding || lit) ? stateBrush : null;
                 BorderBrush = border ?? SessionPalette.Transparent;
+                progress.Background = recording ? SessionPalette.Record : SessionPalette.Progress;
+                ShownState = stateBrush == null ? "" : (recording ? "recording" : state.ToString().ToLowerInvariant()) + (waiting ? (lit ? " (on)" : " (off)") : "");
 
                 if (state == ClipState.Playing || state == ClipState.Stopping)
                 {
                     int pos = session.GetClipPosition(Sequence);
                     int len = Math.Max(1, Pattern.Length);
-                    progress.Width = pos < 0 ? 0 : Math.Max(0, Bounds.Width - 2) * (pos + 1) / len;
+                    progress.Width = pos < 0 ? 0 : Math.Max(0, Bounds.Width - 4) * (pos + 1) / len;
                 }
                 else
                 {
@@ -385,6 +392,11 @@ namespace ReBuzz.Studio.Views.Session
             /// <summary>What the slot shows now, for tests: its glyph and outline.</summary>
             internal string Glyph => glyph?.Text;
             internal IBrush Outline => BorderBrush;
+            internal IBrush GlyphColour => glyph?.Foreground;
+            internal IBrush ChipColour => chip?.Background;
+
+            /// <summary>The state drawn now (tests): "", "playing", "queued (on)", "stopping (off)", "recording"…</summary>
+            internal string ShownState { get; private set; } = "";
         }
 
         /// <summary>Scene launch button: colour strip, ▶ and name.</summary>
@@ -423,7 +435,7 @@ namespace ReBuzz.Studio.Views.Session
                     var tag = new TextBlock
                     {
                         Text = settings,
-                        FontSize = 10,
+                        FontSize = 11,
                         Foreground = SessionPalette.DimText,
                         Margin = new Thickness(0, 0, 5, 0),
                         VerticalAlignment = VerticalAlignment.Center,
@@ -551,13 +563,14 @@ namespace ReBuzz.Studio.Views.Session
             public Chip(string label, IBrush activeBrush, string tooltip, Action onClick)
             {
                 this.activeBrush = activeBrush;
-                Width = 18;
-                Height = 16;
+                // Fork (ux-overhaul.md §3.2): 20×20 pt, an 11 pt label at 4.6:1 (was 18×16 pt, 10 pt at 3.5:1, gallery mac-040).
+                Width = StudioTokens.MinControl;
+                Height = StudioTokens.MinControl;
                 Margin = new Thickness(2, 0, 0, 0);
                 Background = SessionPalette.Scene;
                 Cursor = Hand;
                 ToolTip.SetTip(this, tooltip);
-                text = new TextBlock { Text = label, FontSize = 10, FontWeight = FontWeight.Bold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = SessionPalette.DimText };
+                text = new TextBlock { Text = label, FontSize = StudioTokens.MinFontSize, FontWeight = FontWeight.Bold, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Foreground = SessionPalette.LabelText };
                 Child = text;
                 PointerPressed += (s, e) =>
                 {
@@ -575,7 +588,7 @@ namespace ReBuzz.Studio.Views.Session
                 shown = true;
                 active = value;
                 Background = active ? activeBrush : SessionPalette.Scene;
-                text.Foreground = active ? SessionPalette.DarkText : SessionPalette.DimText;
+                text.Foreground = active ? SessionPalette.TextOn(activeBrush) : SessionPalette.LabelText;
             }
         }
 

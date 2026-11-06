@@ -404,6 +404,53 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void NoteNamesAreOneSettingThatEveryNoteDisplayReads()
+        {
+            // Fork (ux-overhaul.md §3.5): MIDI 60 was "C-5" in the pattern editor, "C3" in the piano roll and "C4" on the
+            // machine keyboards. One setting now names notes for each of them (and MIDI mappings): Buzz, C3 = 60 (the
+            // default) or scientific. A new key, display only.
+            using var restore = Studio.AfterTest(CloseWhatIsOpen);
+            var general = Global.GeneralSettings;
+            var saved = general.NoteNames;
+            var prefs = Open("General");
+            var page = prefs.Page<GeneralPage>();
+            var box = (ComboBox)page.SettingControl("GeneralSettings/NoteNames");
+            var octaveBox = (ComboBox)page.SettingControl("GeneralSettings/DefaultMachineBaseOctave");
+            try
+            {
+                Assert.That(box, Is.Not.Null, "General ▸ Note names");
+                Assert.That(box.Items.Cast<ComboBoxItem>().Select(i => i.Content), Is.EqualTo(new[] { "Buzz: C-5 = MIDI 60", "C3 = MIDI 60", "Scientific: C4 = MIDI 60" }));
+                Assert.That(general.List.Single(s => s.Name == "NoteNames").Default, Is.EqualTo("C3"), "C3 = 60 by default");
+                Assert.That(((ComboBoxItem)box.Items[1]!).FontWeight, Is.EqualTo(Avalonia.Media.FontWeight.Bold), "the default in bold");
+                Assert.That(PrefsPage.Pretty("NoteNames"), Is.EqualTo("Note names"));
+                foreach (var (index, naming, tracker, name) in new[]
+                {
+                    (2, NoteNaming.Scientific, "C-4", "C4"),
+                    (0, NoteNaming.Buzz, "C-5", "C-5"),
+                    (1, NoteNaming.C3, "C-3", "C3"),
+                })
+                {
+                    box.SelectedIndex = index;
+                    Settle(prefs);
+                    Assert.That(NoteNames.Naming, Is.EqualTo(naming), "the displays' naming");
+                    Assert.That(new GeneralSettings().NoteNames, Is.EqualTo(naming), "saved");
+                    const int C5 = (5 << 4) + 1;        // Buzz's C-5: MIDI 60
+                    Assert.That(NoteNames.TryTracker(C5), Is.EqualTo(tracker), $"{naming}: the pattern editor, three characters");
+                    Assert.That(ReBuzz.Core.Session.ClipNotes.Name(60), Is.EqualTo(name), $"{naming}: the piano roll");
+                    Assert.That(NeoBuzz.Editor.KeyboardFace.NoteName(60), Is.EqualTo(name), $"{naming}: the machine keyboards");
+                    Assert.That(((ComboBoxItem)octaveBox.SelectedItem!).Content, Is.EqualTo(NoteNames.Octave(general.DefaultMachineBaseOctave, naming).ToString()),
+                        $"{naming}: the default base octave named as the notes are (Buzz's 4 is 2 when C3 is 60)");
+                }
+                Assert.That(BuzzNote.TryToString((5 << 4) + 1), Is.EqualTo("C-5"), "the editors' own names (what they parse and save) stay");
+            }
+            finally
+            {
+                general.Set("NoteNames", saved.ToString());
+                general.Save();
+            }
+        }
+
+        [AvaloniaTest]
         public void LongPagesScrollVisiblyToTheirLastSetting()
         {
             // Fork (UX review): the Audio and General pages ran past the window, their last setting cut off, with nothing to

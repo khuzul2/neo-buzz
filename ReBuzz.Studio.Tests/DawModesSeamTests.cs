@@ -370,6 +370,10 @@ namespace ReBuzz.Studio.Tests
             string why = source.Edit(null, chord);
             Assert.That(why, Does.Contain("track"), "refused, with the reason");
             Assert.That(source.Notes().Count, Is.EqualTo(2));
+            // Notes named as Preferences name them (ux-overhaul.md §3.5): Buzz's B-9 is MIDI 119.
+            why = source.Edit(null, new[] { new ClipNote(12 * TB, TB, 120, 100) });
+            Assert.That(why, Does.StartWith($"{BuzzGUI.Common.NoteNames.Name(120)} is above").And.Contain($"({BuzzGUI.Common.NoteNames.Name(119)} is the highest a Buzz track takes)"));
+            Assert.That(source.Notes().Count, Is.EqualTo(2));
 
             // A move keeps its track; undo is the song's.
             var moved = new ClipNote(TB, 3 * TB, 38, 100);
