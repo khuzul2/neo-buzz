@@ -62,6 +62,9 @@
   <Target Name="GuardTestGear" AfterTargets="Build">
     <MSBuild Projects="TestMachines\GuardTest.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_GuardTestRestore=true" />
     <MSBuild Projects="TestMachines\GuardTest.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
+    <!-- The machine keyboard's synth that takes notes only in its Note track (TestMachines/KeysTest), the same way. -->
+    <MSBuild Projects="TestMachines\KeysTest\KeysTest.csproj" Targets="Restore" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration);_KeysTestRestore=true" />
+    <MSBuild Projects="TestMachines\KeysTest\KeysTest.csproj" Targets="Build" Properties="GearDir=$(MSBuildProjectDirectory)/$(OutDir)Gear/;Configuration=$(Configuration)" />
   </Target>
 
 </Project>

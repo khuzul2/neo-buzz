@@ -72,6 +72,7 @@ namespace ReBuzz.Core.Keyboards
             if (machine is not MachineCore m || m.Hidden || m.DLL?.Info == null || m.DLL.IsMissing) return None;
             var info = m.DLL.Info;
             if (info.Type != MachineType.Generator || m.IsControlMachine || (info.Flags & MachineInfoFlags.CONTROL_MACHINE) != 0) return None;
+            if (ReBuzz.Core.Session.SessionLayout.IsClipPlayer(m)) return None;      // audio tracks play clips, not notes
             var manifest = SongModel.Manifest(m.DLL);
             if (manifest?.Type == "control") return None;
             var notes = manifest?.Notes;

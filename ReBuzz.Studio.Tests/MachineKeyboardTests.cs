@@ -1,7 +1,8 @@
 // Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): the keyboard under the windows of machines that play notes,
 // headless. It shows under a generator's editor, parameter window and manifest editor, not an effect's or a controller's;
-// a click plays the written pitch, heard by YIN in a render, on a machine that takes MIDI (Neo Poly) and on one that takes
-// notes only in its Note track (Pedal SH101); where the key is struck is the velocity; every note ends (released anywhere,
+// a click plays the written pitch, heard by YIN in a render, on a machine that takes MIDI (Neo Poly) and on ones that take
+// notes only in their Note track (the tests' Keys Test, and Pedal SH101 while it takes no MIDI); where the key is struck is
+// the velocity; every note ends (released anywhere,
 // the pointer leaving the window, the window closing or losing focus, the keyboard hidden); the toggle hides and shows it
 // and persists per machine type, under the Preferences default; Space stays the transport's with the keys focused; keys
 // light up for what the machine plays from any source; an armed track records what it plays.
@@ -178,7 +179,7 @@ namespace ReBuzz.Studio.Tests
                 var parameters = Parameters(sh101);
                 var pk = KeyboardOf(parameters);
                 Assert.That(pk, Is.Not.Null, "a generic parameter window has it");
-                Assert.That(pk!.BadgeText, Is.EqualTo("Note tracks"), "Pedal SH101 takes notes in its Note track");
+                Assert.That(pk!.BadgeText, Is.EqualTo(pk.Player.Route.Input == KeyboardInput.Midi ? "MIDI" : "Note tracks"), "it says how the machine gets the notes");
                 Assert.That(pk.Keys.Layout.Octaves, Is.EqualTo(2), "a narrow window: two octaves");
                 Assert.That(parameters.ClientSize.Width, Is.GreaterThanOrEqualTo(KeyboardLayout.MinWidth));
                 Studio.Screenshot(parameters, "keyboard-parameter-window");
@@ -187,8 +188,10 @@ namespace ReBuzz.Studio.Tests
                 Settle();
                 Assert.That(KeyboardOf(StudioMachineUiHost.EditorWindowOf(sh101)!), Is.Not.Null, "its manifest editor has it");
 
-                juno = Add("Pedal Juno106", "Kb Juno");
-                Studio.Screenshot(Parameters(juno), "keyboard-pedal-juno106-parameters");
+                juno = Add("Keys Test", "Kb Tracks");
+                var tw = Parameters(juno);
+                Assert.That(KeyboardOf(tw)!.BadgeText, Is.EqualTo("Note tracks"), "a machine that takes notes only in its Note track");
+                Assert.That(KeyboardOf(tw)!.Player.Route.Input, Is.EqualTo(KeyboardInput.Tracks));
 
                 drums = Add("Neo Drums", "Kb Drums");
                 var dw = Gui(drums);
@@ -234,16 +237,18 @@ namespace ReBuzz.Studio.Tests
 
         [AvaloniaTest]
         [TestCase("Neo Poly", 69, "Midi")]          // A4, 440 Hz: MIDI
-        [TestCase("Pedal SH101", 57, "Tracks")]     // A3, 220 Hz: its Note track
+        [TestCase("Keys Test", 57, "Tracks")]       // A3, 220 Hz: its Note track
+        [TestCase("Pedal SH101", 57, "")]           // A3: its Note track today, MIDI once it takes it (machines/pedal-synths)
         public void AClickPlaysTheWrittenPitch(string gear, int note, string how)
         {
-            var input = Enum.Parse<KeyboardInput>(how);
             var m = Add(gear, "Kb Pitch " + gear);
             try
             {
                 var w = gear.StartsWith("Neo") ? Gui(m) : Parameters(m);
                 var kb = KeyboardOf(w)!;
+                var input = how.Length > 0 ? Enum.Parse<KeyboardInput>(how) : kb.Player.Route.Input;
                 Assert.That(kb.Player.Route.Input, Is.EqualTo(input));
+                TestContext.Out.WriteLine($"{gear}: played by {input}");
                 QuietAfter();
                 var at = On(w, kb, note);
                 w.MouseDown(at, MouseButton.Left);
@@ -298,21 +303,28 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(sent[2], Is.GreaterThan(115), "near the bottom: loud");
                 Assert.That(levels[2], Is.GreaterThan(levels[0] + 3), "and the machine plays it louder");
 
-                // A machine that takes notes in its tracks gets the velocity beside the note (Pedal FM: Velocity 0–127).
-                fm = Add("Pedal FM", "Kb Vel FM");
+                // A machine that takes notes in its tracks gets the velocity beside the note, scaled to its parameter's range
+                // (Keys Test: Velocity 1–127, a sine at velocity / 127 of its level).
+                fm = Add("Keys Test", "Kb Vel Tracks");
                 var pw = Parameters(fm);
                 var pk = KeyboardOf(pw)!;
                 var velocity = fm.ParameterGroups[2].Parameters.First(p => p.Name == "Velocity");
                 var top = On(pw, pk, 60, 0.06);
                 pw.MouseDown(top, MouseButton.Left);
                 int soft = velocity.GetValue(0);
+                var softAudio = Render(0.3);
                 pw.MouseUp(top, MouseButton.Left);
+                QuietAfter();
                 var bottom = On(pw, pk, 62, 0.95);
                 pw.MouseDown(bottom, MouseButton.Left);
                 int loud = velocity.GetValue(0);
+                var loudAudio = Render(0.3);
                 pw.MouseUp(bottom, MouseButton.Left);
                 Assert.That(soft, Is.LessThan(25));
                 Assert.That(loud, Is.GreaterThan(115));
+                double gained = Db(Rms(loudAudio, loudAudio.Length / 2)) - Db(Rms(softAudio, softAudio.Length / 2));
+                TestContext.Out.WriteLine($"Keys Test: velocities {soft} and {loud}, {gained:0.0} dB apart");
+                Assert.That(gained, Is.EqualTo(20 * Math.Log10(loud / (double)soft)).Within(0.5), "the machine plays the velocity it got");
             }
             finally
             {
@@ -354,21 +366,25 @@ namespace ReBuzz.Studio.Tests
             MachineCore juno = null, sh101 = null;
             try
             {
-                juno = Add("Pedal Juno106", "Kb Chord");
+                juno = Add("Keys Test", "Kb Chord");
                 juno.TrackCount = 3;                // a voice per track: three for a triad
                 Parameters(juno);
                 var player = new KeyboardPlayer(juno);
+                Assert.That(player.Route.Input, Is.EqualTo(KeyboardInput.Tracks));
                 var note = juno.ParameterGroups[2].Parameters.First(p => p.Type == ParameterType.Note);
                 foreach (int k in new[] { 60, 64, 67 }) Assert.That(player.On(k, 100), Is.True);
                 Assert.That(Enumerable.Range(0, 3).Select(t => note.GetValue(t)), Is.EqualTo(new[] { 60, 64, 67 }.Select(BuzzNote.FromMIDINote)),
                     "a note per track, the lowest free");
                 Render(0.3);
+                var playing = (int[])juno.ManagedMachine.GetType().GetProperty("Playing")!.GetValue(juno.ManagedMachine)!;
+                Assert.That(playing.Take(3), Is.All.EqualTo(100), "the machine plays all three, each at its velocity");
                 player.Off(64);
                 Assert.That(note.GetValue(1), Is.EqualTo(BuzzNote.Off), "a release lets go of its track");
                 player.AllOff();
                 Assert.That(new[] { note.GetValue(0), note.GetValue(2) }, Is.All.EqualTo(BuzzNote.Off), "every note ends");
 
-                sh101 = Add("Pedal SH101", "Kb Mono");
+                sh101 = Add("Keys Test", "Kb Mono");          // one track: one note at a time
+                Assert.That(sh101.TrackCount, Is.EqualTo(1));
                 var mono = new KeyboardPlayer(sh101);
                 var monoNote = sh101.ParameterGroups[2].Parameters.First(p => p.Type == ParameterType.Note);
                 mono.On(60, 100);
@@ -498,6 +514,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(ka.Shown, Is.True);
                 Assert.That(KeyboardSettings.Choice(a.DLL), Is.Null, "back to the default: no choice kept");
                 Assert.That(wa.ClientSize.Height, Is.EqualTo(shownHeight).Within(1), "the window grows back");
+                Assert.That(ReBuzz.Studio.Shell.MainWindow.ShortcutsText(mac: true), Does.Contain("⌘K\tshow / hide the keyboard"), "Help ▸ Keyboard shortcuts lists it");
 
                 // Preferences' default: hidden for every type without a choice of its own.
                 setting.Value = "False";
@@ -595,7 +612,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(kb.Keys.ElementOf(64)!.Look.Velocity, Is.EqualTo(0), "and goes out");
 
                 // A pattern's notes: its Note track as the tick sends it.
-                sh101 = Add("Pedal SH101", "Kb Lights SH101");
+                sh101 = Add("Keys Test", "Kb Lights Tracks");
                 var pw = Parameters(sh101);
                 var pk = KeyboardOf(pw)!;
                 var note = sh101.ParameterGroups[2].Parameters.First(p => p.Type == ParameterType.Note);
