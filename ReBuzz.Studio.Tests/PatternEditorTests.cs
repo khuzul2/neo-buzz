@@ -515,5 +515,88 @@ namespace ReBuzz.Studio.Tests
                 Close(s);
             }
         }
+
+        /// <summary>
+        /// The labels of the shown pattern's columns and, for each, the values its beats show (the grid's model), as
+        /// "label: values" with empty rows left out.
+        /// </summary>
+        static System.Collections.Generic.Dictionary<string, string[]> Shown(dynamic patternVM)
+        {
+            var shown = new System.Collections.Generic.Dictionary<string, string[]>();
+            int beats = patternVM.BeatCount;
+            int set = 0;
+            foreach (dynamic cs in (System.Collections.IEnumerable)patternVM.ColumnSets)
+            {
+                foreach (dynamic column in (System.Collections.IEnumerable)cs.Columns)
+                {
+                    var values = new System.Collections.Generic.List<string>();
+                    for (int b = 0; b < beats; b++)
+                    {
+                        object beat = column.FetchBeat(b);       // a private class: its interface's rows, by reflection
+                        var rows = (System.Collections.IEnumerable)beat.GetType().GetInterfaces().First(i => i.Name == "IBeat").GetProperty("Rows")!.GetValue(beat)!;
+                        foreach (object row in rows)
+                        {
+                            string v = (string)row.GetType().GetField("ValueString")!.GetValue(row)!;
+                            if (!v.All(c => c == '.')) values.Add(v);
+                        }
+                    }
+                    shown[$"{set}/{(string)column.Label}"] = values.ToArray();
+                }
+                set++;
+            }
+            return shown;
+        }
+
+        [AvaloniaTest]
+        public void NotesMovedOntoTheLanesOfAPatternNeverShownShowWhenItIs()
+        {
+            // Fork (ui-gallery.md, bug 5): the editor makes a view of each pattern as it's created (and shows the newest),
+            // with the columns the pattern had then. Notes moved onto the MIDI note lanes of another pattern, before it
+            // was ever shown, made its lanes, but its view kept its old columns: the Pattern View showed no lanes and no
+            // notes until the song was saved and opened again. Both apps share this code (PatternEditor.Core.cs).
+            var core = Studio.Host.Core;
+            core.SongCore.CreateMachine("Neo Poly", null, "PE Unseen", null, null, null, 2, 0.3f, 0.3f);
+            var machine = core.SongCore.MachinesList.First(m => m.Name == "PE Unseen");
+            MainWindow window = null;
+            try
+            {
+                machine.CreatePattern("A", 16);
+                machine.CreatePattern("B", 16);                 // the newest: the one the editor shows
+                var a = machine.Patterns.First(p => p.Name == "A");
+                core.SongCore.AddSequence(machine, core.SongCore.SequencesList.Count);
+                var track = core.SongCore.SequencesList.First(q => q.Machine == machine);
+                var layout = core.SessionLayout;
+                layout.Ensure();
+                const int TB = PatternEvent.TimeBase;
+                var notes = new[] { new ReBuzz.Core.Session.ClipNote(0, TB, 60, 100), new ReBuzz.Core.Session.ClipNote(4 * TB, TB, 64, 100),
+                                    new ReBuzz.Core.Session.ClipNote(8 * TB, TB, 67, 100), new ReBuzz.Core.Session.ClipNote(12 * TB, 2 * TB, 72, 100) };
+                layout.EditNotes(a, null, notes);
+                Assert.That(layout.MoveNotesToPatternView(track, a), Is.Null, "the notes moved onto A's note lanes");
+                Assert.That(layout.PatternViewNotesOf(a).Count, Is.EqualTo(4), "the lanes have them");
+
+                window = new MainWindow(Studio.Host) { Width = 1280, Height = 800 };
+                window.Show();
+                Pump();
+                PatternView.Edit(a);
+                Pump();
+                Assert.That(PatternView.Page.Pattern, Is.EqualTo(a), "the Pattern View shows A");
+                dynamic editor = ((dynamic)PatternView.Page.EditorControl).Editor;
+                dynamic vm = editor.SelectedMachine.SelectedPattern;
+                Assert.That((IPattern)vm.Pattern, Is.EqualTo(a));
+                System.Collections.Generic.Dictionary<string, string[]> shown = Shown(vm);
+                var lane = shown.Where(kv => kv.Key.EndsWith("/MIDI Note")).Select(kv => kv.Value).FirstOrDefault();
+                Assert.That(lane, Is.Not.Null, "A's view has its MIDI Note lane (columns: " + string.Join(", ", shown.Keys) + ")");
+                Assert.That(shown.Where(kv => kv.Key.EndsWith("/MIDI Note")).SelectMany(kv => kv.Value).Where(v => v != "off"), Is.EqualTo(new[] { "C-5", "E-5", "G-5", "C-6" }),
+                    "and the notes on it (MIDI 60 is the editor's C-5; each ends in an off), as the song opened again would show them");
+                Studio.Screenshot(window, "pattern-editor-unseen-lanes");
+            }
+            finally
+            {
+                core.Modified = false;
+                window?.Close();
+                Pump();
+                core.SongCore.DeleteMachines(new[] { machine });
+            }
+        }
     }
 }

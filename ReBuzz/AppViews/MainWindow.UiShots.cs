@@ -336,7 +336,8 @@ namespace ReBuzz
             await Shot(this, "010-start-empty", "The main window on a new song: menu, toolbar, Machine View with the Master alone, status bar.", $"Start {Product.Name} (or File ▸ New, Ctrl+N).", Empty,
                 "The window's client area (no Windows title bar).");
 
-            // The demo song, saved and opened again as a user's song is (notes on the note lanes show once it's opened).
+            // The demo song, saved (the title names it). Not opened again: the notes moved onto the note lanes show in the
+            // Pattern View as they are written (they showed only once the song was opened again before).
             var built = GallerySong.Build(Buzz);
             foreach (var p in built.Problems) ShotLog("demo song: " + p);
             string songFolder = Path.Combine(Path.GetTempPath(), "rebuzz-ui-shots-" + Environment.ProcessId);
@@ -344,10 +345,9 @@ namespace ReBuzz
             string songPath = Path.Combine(songFolder, GallerySong.Title + ".bmxml");
             Buzz.SaveSongFile(songPath);
             Buzz.Modified = false;
-            Buzz.OpenSongFile(songPath);
             await Idle(2000);
             var song = GallerySong.Find(Buzz);
-            ShotLog($"demo song: {Buzz.SongCore.MachinesList.Count} machines, opened as {Buzz.SongCore.SongName}");
+            ShotLog($"demo song: {Buzz.SongCore.MachinesList.Count} machines, saved as {Buzz.SongCore.SongName}");
 
             // Every view.
             await Step("views", async () =>

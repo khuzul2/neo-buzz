@@ -337,7 +337,11 @@ namespace ReBuzz.Studio.Tests
             Dialogs.Responder = null;
         }
 
-        /// <summary>The demo song, built in a new song, saved as "Night Drive.bmxml" and opened again, as a user's song is.</summary>
+        /// <summary>
+        /// The demo song, built in a new song and saved as "Night Drive.bmxml" (the title names it). Not opened again: the
+        /// notes moved onto the note lanes show in the Pattern View as they are written (they showed only once the song was
+        /// opened again before; ui-gallery.md).
+        /// </summary>
         static GallerySong.Song LoadDemo()
         {
             NewSong();
@@ -355,15 +359,6 @@ namespace ReBuzz.Studio.Tests
             }
             Core.Modified = false;
             File.Copy(path, Path.Combine(Folder, GallerySong.Title + ".bmxml"), true);      // beside the pictures (the Mac job opens it in the app)
-            Dialogs.Responder = (m, c, b) => UserAnswer.No;
-            try
-            {
-                Assert.That(Await(SongFiles.Open(path)), Is.True, "the demo song opened");
-            }
-            finally
-            {
-                Dialogs.Responder = null;
-            }
             Settle();
             return GallerySong.Find(Core);
         }
