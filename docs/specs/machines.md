@@ -96,7 +96,7 @@ tools/gen-machine-presets.py  Presets.txt → <Name>.prs.xml
 
 ### 3.1 Core fix
 
-`MachineCore.parametersChanged` is keyed by parameter, so when one parameter changes on several tracks in the same tick only the last track reaches a managed machine: a chord on tracks 1–3 plays one note. (The Pedal synths work around it by reading ReBuzz's private fields.) M0 keys it by parameter and track.
+`MachineCore.parametersChanged` is keyed by parameter, so when one parameter changes on several tracks in the same tick only the last track reaches a managed machine: a chord on tracks 1–3 plays one note. (The Pedal synths work around it by reading ReBuzz's private fields, and take MIDI notes since mcp-server.md §12.15, a voice each.) M0 keys it by parameter and track.
 
 ## 4. Shared foundation (M0)
 
