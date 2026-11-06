@@ -499,9 +499,7 @@ namespace ReBuzz
                 }
             });
 
-            // Settings (BuzzGUI's), every page, Agent among them.
-            // View ▸ Settings… throws in the Windows app as it is: SettingsWindow.AddTab takes every setting's Options, and the
-            // Agent page's Port (a string setting, AgentSettings) has none (NullReferenceException). Listed when it does.
+            // Settings (BuzzGUI's), every page, Agent among them (its Port a text box: a free value has no options).
             await Step("settings", async () =>
             {
                 Buzz.ActiveView = BuzzView.MachineView;
@@ -518,7 +516,7 @@ namespace ReBuzz
                         tabs.SelectedItem = tab;
                         string header = tab.Header?.ToString() ?? $"page {i}";
                         string slug = new string(header.ToLowerInvariant().Replace(' ', '-').Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
-                        await Shot(settings, $"{430 + i++:000}-settings-{slug}", $"Settings ▸ {header} (each setting a drop-down; bold: changed from its default).", $"View ▸ Settings… ▸ {header}.", settle: 500);
+                        await Shot(settings, $"{430 + i++:000}-settings-{slug}", $"Settings ▸ {header} (a drop-down per setting, its default in bold; a text box for a free value such as Agent's Port).", $"View ▸ Settings… ▸ {header}.", settle: 500);
                     }
                 }
                 finally
