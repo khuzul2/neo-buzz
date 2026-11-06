@@ -244,9 +244,17 @@ namespace ReBuzz.Studio.Tests
             var window = Open();
             try
             {
+                // Fork (ui-gallery.md): the app menu whole, as Mac apps have it (Avalonia's standard items left out: their
+                // Quit had no name and Hide Others was on ⌥⌘Q).
                 var app = window.AppMenuModel().Where(e => !e.IsSeparator).ToList();
-                Assert.That(app.Select(e => e.Text), Is.EqualTo(new[] { "About NeoBuzz Live", "Preferences…" }));
-                Assert.That(app[1].Gesture, Is.EqualTo(new KeyGesture(Key.OemComma, KeyModifiers.Meta)), "Command+,");
+                Assert.That(app.Select(e => e.Text), Is.EqualTo(new[] { "About NeoBuzz Live", "Preferences…", "Services", "Hide NeoBuzz Live", "Hide Others", "Show All", "Quit NeoBuzz Live" }));
+                Assert.That(app.Select(e => e.Gesture), Is.EqualTo(new[] { null, new KeyGesture(Key.OemComma, KeyModifiers.Meta), null,
+                    new KeyGesture(Key.H, KeyModifiers.Meta), new KeyGesture(Key.H, KeyModifiers.Meta | KeyModifiers.Alt), null, new KeyGesture(Key.Q, KeyModifiers.Meta) }),
+                    "⌘, ⌘H ⌥⌘H ⌘Q");
+                Assert.That(app.Single(e => e.Text == "Services").IsServices, Is.True, "the system's Services submenu");
+                var early = AppMenu.ToNativeMenu(MainWindow.AppMenuModel(null)).Items.OfType<NativeMenuItem>().Single(i => i.Header == "Preferences…");
+                Assert.That(early.IsEnabled, Is.True, "Preferences… on though the menu is made before the engine runs (it was greyed out on the Mac)");
+                Assert.That(window.AppMenuModel().Select(e => e.IsSeparator), Is.EqualTo(new[] { false, true, false, true, false, true, false, false, false, true, false }), "grouped as macOS groups them");
 
                 var mac = window.MenuModel(mac: true).ToList();
                 Assert.That(mac.Select(e => e.Text), Is.EqualTo(new[] { "File", "Edit", "Transport", "View", "Window", "Help" }));
@@ -430,6 +438,84 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 sync.SetFollowMidiClock(false);
+            }
+        }
+
+        [AvaloniaTest]
+        public void OnAMacEveryWindowHasTheMenuBarsMenus()
+        {
+            // Fork (ui-gallery.md): macOS shows the key window's menus. Preferences, About and the other windows had none,
+            // so while one was the key window the menu bar showed the app menu alone.
+            using var restore = Studio.AfterTest(Reset);
+            bool mac = App.MacMenus;
+            App.MacMenus = true;
+            MainWindow window = null;
+            try
+            {
+                window = Open();
+                Assert.That(NativeMenu.GetMenu(window), Is.Not.Null, "the main window's own");
+                var prefs = PreferencesWindow.Open(Host);
+                Settle(prefs);
+                var menu = NativeMenu.GetMenu(prefs);
+                Assert.That(menu, Is.Not.Null, "Preferences has the menus");
+                Assert.That(menu.Items.OfType<NativeMenuItem>().Select(i => i.Header), Is.EqualTo(new[] { "File", "Edit", "Transport", "View", "Window", "Help" }));
+                prefs.Close();
+                var about = AboutWindow.Open();
+                Settle(about);
+                Assert.That(NativeMenu.GetMenu(about)?.Items.Count, Is.EqualTo(6), "About too");
+                about.Close();
+
+                var own = new NativeMenu();
+                var other = new Window();
+                NativeMenu.SetMenu(other, own);
+                other.Show();
+                Assert.That(NativeMenu.GetMenu(other), Is.SameAs(own), "a window with menus of its own keeps them");
+                other.Close();
+                if (System.OperatingSystem.IsMacOS())
+                    Assert.That(NativeMenu.GetMenu(Application.Current!)?.Items.OfType<NativeMenuItem>().First().Header, Is.EqualTo("About NeoBuzz Live"),
+                        "the app menu, set on the application as it starts (before Avalonia's exporter made its own)");
+            }
+            finally
+            {
+                App.MacMenus = mac;
+                window?.Close();
+            }
+        }
+
+        [AvaloniaTest]
+        public void PreferencesDrawsBeforeItAsksForTheDevices()
+        {
+            // Fork (ui-gallery.md): 2 s after ⌘, the real Mac's Preferences was still blank. The page's state (PortAudio's
+            // devices, CoreMIDI's) comes once the window has drawn.
+            using var restore = Studio.AfterTest(Reset);
+            var window = Open();
+            int asked = 0;
+            bool shown = false;
+            AudioPage.OutputSource = () =>
+            {
+                asked++;
+                shown = PreferencesWindow.Current?.IsVisible == true;
+                return new[] { "PortAudio: default", "PortAudio: Test Speakers (Core Audio)" };
+            };
+            try
+            {
+                var prefs = PreferencesWindow.Open(Host, PreferencesWindow.AudioPageName);
+                Assert.That(prefs.IsVisible, Is.True);
+                Assert.That(prefs.Selected?.Title, Is.EqualTo(PreferencesWindow.AudioPageName), "on its page");
+                Assert.That(asked, Is.EqualTo(0), "the devices aren't asked for before the window shows");
+                var audio = prefs.Page<AudioPage>();
+                Assert.That(audio.LimiterBox.IsChecked, Is.True, "the rest of the page is there as it shows (no limiter shown off)");
+                Assert.That(audio.SaysPortAudioIsMissing, Is.False, "nor PortAudio missing before it has been asked");
+                Settle(prefs);
+                Assert.That(asked, Is.EqualTo(1), "then once");
+                Assert.That(shown, Is.True, "with the window shown");
+                Assert.That(prefs.Page<AudioPage>().OutputBox.ItemCount, Is.GreaterThanOrEqualTo(2), "and the page filled");
+            }
+            finally
+            {
+                AudioPage.OutputSource = null;
+                PreferencesWindow.Current?.Close();
+                window.Close();
             }
         }
     }

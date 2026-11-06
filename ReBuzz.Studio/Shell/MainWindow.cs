@@ -61,7 +61,7 @@ namespace ReBuzz.Studio.Shell
             transport = new TransportBar(host);
 
             // The macOS menu bar has the menus there; elsewhere they are the window's own.
-            if (OperatingSystem.IsMacOS())
+            if (App.MacMenus)
                 NativeMenu.SetMenu(this, AppMenu.ToNativeMenu(MenuModel(mac: true)));
             else
             {
@@ -90,10 +90,18 @@ namespace ReBuzz.Studio.Shell
             // Space: play and stop in every view, before a focused button takes it; not while typing.
             _ = new TransportKeys(this, () => tabs.ItemCount > 0 ? host.Core : null, () => SelectedTitle == "Pattern");
 
+            Opened += (s, e) => open.Add(this);
+            Closed += (s, e) => open.Remove(this);
+
             refresh.Tick += (s, e) => Refresh();
             if (host.Core != null) OnStarted();
             else host.Started += OnStarted;
         }
+
+        static readonly List<MainWindow> open = new List<MainWindow>();
+
+        /// <summary>The main windows open, oldest first (one in the app; tests open more).</summary>
+        internal static IReadOnlyList<MainWindow> OpenWindows => open;
 
         BuzzGUI.Common.ManagedActionStack Stack => host.Core?.SongCore?.ActionStack;
 
@@ -165,15 +173,36 @@ namespace ReBuzz.Studio.Shell
         static MenuEntry Sub(string header, Func<IEnumerable<MenuEntry>> items) => new MenuEntry { Header = header, Items = items };
 
         /// <summary>
-        /// The macOS app menu's own items: About and Preferences. Avalonia adds Services, Hide,
-        /// Hide Others, Show All and Quit (Command+Q) after them.
+        /// The macOS app menu, whole, as Mac apps have it: About, Preferences… (⌘,), Services, Hide NeoBuzz Live (⌘H),
+        /// Hide Others (⌥⌘H), Show All, Quit NeoBuzz Live (⌘Q). Fork (ui-gallery.md): Avalonia's own standard items are
+        /// left out (MacOSPlatformOptions.DisableDefaultApplicationMenuItems): their Quit has no name and their Hide
+        /// Others is on ⌥⌘Q. Set on the application before Avalonia's exporter starts (App.Initialize), else Avalonia's
+        /// "About Avalonia" menu stays.
         /// </summary>
-        internal IEnumerable<MenuEntry> AppMenuModel() => new[]
+        internal static IEnumerable<MenuEntry> AppMenuModel(StudioHost host) => new[]
         {
             Item("About " + Product.Name, () => AboutWindow.Open()),
             MenuEntry.Separator,
-            Item("Preferences…", ShowPreferences, Keys(Key.OemComma, KeyModifiers.Meta), () => host.Core != null),
+            // Always on: the menu is made before the engine runs, and Preferences opens only once it does.
+            Item("Preferences…", () => PreferencesWindow.Open(host), Keys(Key.OemComma, KeyModifiers.Meta)),
+            MenuEntry.Separator,
+            new MenuEntry { Header = "Services", Items = () => Array.Empty<MenuEntry>(), IsServices = true },
+            MenuEntry.Separator,
+            Item("Hide " + Product.Name, MacApp.Hide, Keys(Key.H, KeyModifiers.Meta)),
+            Item("Hide Others", MacApp.HideOthers, Keys(Key.H, KeyModifiers.Meta | KeyModifiers.Alt)),
+            Item("Show All", MacApp.ShowAll),
+            MenuEntry.Separator,
+            Item("Quit " + Product.Name, Quit, Keys(Key.Q, KeyModifiers.Meta)),
         };
+
+        internal IEnumerable<MenuEntry> AppMenuModel() => AppMenuModel(host);
+
+        /// <summary>Quit: the windows close as they do when the app quits (a changed song asks first).</summary>
+        static void Quit()
+        {
+            if (Application.Current?.ApplicationLifetime is Avalonia.Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime desktop)
+                desktop.TryShutdown();
+        }
 
         /// <summary>
         /// The menus: File, Edit, Transport, View, Window, Help. On a Mac (<paramref name="mac"/>)

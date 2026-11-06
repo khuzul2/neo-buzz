@@ -746,7 +746,7 @@ namespace ReBuzz.Studio.Tests
                 string[] ids = { "100-menu-app", "101-menu-file", "102-menu-edit", "103-menu-transport", "104-menu-view", "105-menu-window", "106-menu-help" };
                 string[] whats =
                 {
-                    $"The app menu ({Product.Name}) as the model has it: About {Product.Name}, Preferences… (⌘,). macOS adds Services, Hide, Hide Others, Show All and Quit (⌘Q) below them (not drawn). On the real Mac this menu shows Avalonia's About Avalonia instead of these two (see mac-real-100).",
+                    $"The app menu ({Product.Name}) as the model has it, whole: About {Product.Name}, Preferences… (⌘,), Services (the system fills it), Hide {Product.Name} (⌘H), Hide Others (⌥⌘H), Show All, Quit {Product.Name} (⌘Q). The real Mac's is mac-real-100.",
                     "File: New, Open…, Open Recent ▸, Save, Save As… (no Exit: Quit is in the app menu).",
                     "Edit: Undo, Redo, Cut, Copy, Paste (Preferences is in the app menu).",
                     "Transport: Play or Stop (Space), Play, Stop, Record, Restart audio.",

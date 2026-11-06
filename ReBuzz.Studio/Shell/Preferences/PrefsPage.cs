@@ -57,6 +57,12 @@ namespace ReBuzz.Studio.Shell.Preferences
 
         protected virtual void OnShown() => Refresh();
 
+        /// <summary>
+        /// Fork (ui-gallery.md): while set, a page leaves out what is slow to ask for (PortAudio's devices) when it is
+        /// shown: the window shows the page that way first, draws, and shows it again whole.
+        /// </summary>
+        public bool LeaveOutSlowState { get; set; }
+
         /// <summary>The window closes.</summary>
         public virtual void Closed() { }
 

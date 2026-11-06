@@ -108,18 +108,30 @@ namespace ReBuzz.Studio.Shell.Preferences
 
         protected override void OnShown()
         {
+            if (LeaveOutSlowState)
+            {
+                // The devices once the window has drawn (PortAudio may take a while to list them); the rest now.
+                Refresh();
+                return;
+            }
             listed = (OutputSource?.Invoke() ?? Outputs()).ToList();
             inputs = new List<string> { "", "default" };
             inputs.AddRange((InputSource?.Invoke() ?? Inputs()).Where(n => !inputs.Contains(n)));
+            devicesListed = true;
             Refresh();
         }
+
+        bool devicesListed;
+
+        /// <summary>Whether the page says PortAudio isn't installed (only once it has asked for the devices).</summary>
+        internal bool SaysPortAudioIsMissing => missing.IsVisible;
 
         public override void Refresh()
         {
             Filling = true;
             try
             {
-                missing.IsVisible = listed.Count == 0;
+                missing.IsVisible = devicesListed && listed.Count == 0;
                 string saved = SavedOutput;
                 outputs = listed.ToList();
                 if (!outputs.Contains(saved)) outputs.Add(saved);
