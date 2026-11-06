@@ -37,8 +37,10 @@ namespace WDE.ModernPatternEditor.AvaloniaView
         public static readonly ImmutableSolidColorBrush ColumnLabel = B(0xFFCCCCCC);           // ColumnLabelBrush
         public static readonly ImmutableSolidColorBrush LabelHover = B(0x28000000);            // PatternControl's highlight
         public static readonly ImmutableSolidColorBrush PlayPosition = B(0x40000000);          // playPosRectangle
-        public static readonly ImmutableSolidColorBrush SelectionFill = B(0x20400000);         // SelectionRectangleStyle
-        public static readonly IPen SelectionStroke = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromArgb(128, 255, 255, 255)), 1);
+        // Fork (ux-overhaul.md §3.1, UX review mac-052): the block selection in the studio's accent at 35 % with an accent
+        // outline. WPF's SelectionRectangleStyle (#20400000, a 1.06:1 tint) couldn't be seen on the dark grid.
+        public static readonly ImmutableSolidColorBrush SelectionFill = B(0x594C8DF6);
+        public static readonly IPen SelectionStroke = new ImmutablePen(new ImmutableSolidColorBrush(Color.FromRgb(0x4C, 0x8D, 0xF6)), 1.5);
         public static readonly ImmutableSolidColorBrush StatusText = B(0xFFF0F0F0);
 
         /// <summary>The note colours (PatternNoteColors: 12 colours, hue 0 → 0.916667, saturation 0.7, perceived brightness 0.6).</summary>

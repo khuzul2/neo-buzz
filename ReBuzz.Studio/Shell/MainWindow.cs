@@ -2,6 +2,8 @@
 // Mac, the window's own menu elsewhere: AppMenu), transport bar, one tab per view (StudioViews),
 // status line (audio, CPU, dropouts, the agent). Until the engine runs it shows its start-up steps.
 // Its size and place are kept in the settings.
+// Fork (ux-overhaul.md P1): the menus and keys from one keymap; a problem bar under the transport says what's wrong in
+// plain words with a button that fixes it; the status line starts with the audio's health.
 
 using System;
 using System.Collections.Generic;
@@ -14,9 +16,12 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
 using ReBuzz.Studio.Platform;
+using ReBuzz.Studio.Shell.Commands;
+using ReBuzz.Studio.Shell.Design;
 using ReBuzz.Studio.Shell.Preferences;
 using ReBuzz.Studio.Views;
 using BuzzCommand = BuzzGUI.Interfaces.BuzzCommand;
@@ -31,7 +36,9 @@ namespace ReBuzz.Studio.Shell
         readonly TextBlock startup = new TextBlock { Foreground = Brushes.Gray, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         readonly DockPanel root = new DockPanel();
         readonly TransportBar transport;
-        readonly TextBlock status = new TextBlock { Margin = new Thickness(8, 3), FontSize = 12, Foreground = Brushes.Gray };
+        readonly TextBlock status = new TextBlock { Margin = new Thickness(8, 3), FontSize = 12, Foreground = StudioTokens.TextSecondaryBrush, VerticalAlignment = VerticalAlignment.Center };
+        readonly AudioHealthBadge health;
+        readonly ProblemBar problems = new ProblemBar();
         readonly TabControl tabs = new TabControl();
         readonly DispatcherTimer refresh = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
         readonly Command undo, redo;
@@ -60,6 +67,14 @@ namespace ReBuzz.Studio.Shell
             redo = new Command(() => { if (FocusedOwnUndo is { } t) t.Redo(); else if (Target?.Redo() != true) Stack?.Redo(); },
                                () => FocusedOwnUndo != null || Target != null || Stack?.CanRedo == true);
             transport = new TransportBar(host);
+            health = new AudioHealthBadge(() => host.Core, () => PreferencesWindow.Open(host, PreferencesWindow.AudioPageName));
+            singleKeys = new (string, Action)[]
+            {
+                ("transport.record", () => transport.ToggleRecord()),
+                ("transport.loop", () => transport.ToggleLoop()),
+                ("transport.metronome", () => transport.ToggleMetronome()),
+                ("transport.start", () => transport.GoToStart()),
+            };
 
             // The macOS menu bar has the menus there; elsewhere they are the window's own.
             if (App.MacMenus)
@@ -71,9 +86,15 @@ namespace ReBuzz.Studio.Shell
                 root.Children.Add(menu);
             }
             DockPanel.SetDock(transport, Dock.Top);
-            var statusBar = new Border { Child = status, BorderBrush = new SolidColorBrush(Color.FromRgb(0x30, 0x30, 0x30)), BorderThickness = new Thickness(0, 1, 0, 0) };
+            DockPanel.SetDock(problems, Dock.Top);
+            var statusRow = new DockPanel { LastChildFill = true };
+            DockPanel.SetDock(health, Dock.Left);
+            statusRow.Children.Add(health);
+            statusRow.Children.Add(status);
+            var statusBar = new Border { Child = statusRow, BorderBrush = new SolidColorBrush(Color.FromRgb(0x30, 0x30, 0x30)), BorderThickness = new Thickness(0, 1, 0, 0) };
             DockPanel.SetDock(statusBar, Dock.Bottom);
             root.Children.Add(transport);
+            root.Children.Add(problems);
             root.Children.Add(statusBar);
             root.Children.Add(startup);
             Content = root;
@@ -86,6 +107,7 @@ namespace ReBuzz.Studio.Shell
             // View keys after the views: F2 renames in the Session View, and picks the Pattern tab elsewhere.
             // Ctrl+Tab before focus navigation takes it (as ReBuzz.exe's PreviewKeyDown).
             AddHandler(KeyDownEvent, OnViewKey, RoutingStrategies.Bubble);
+            AddHandler(KeyDownEvent, OnSingleKey, RoutingStrategies.Bubble);
             AddHandler(KeyDownEvent, OnSessionKey, RoutingStrategies.Tunnel);
             AddHandler(KeyDownEvent, OnNotesKey, RoutingStrategies.Tunnel);
             // Space: play and stop in every view, before a focused button takes it; not while typing.
@@ -156,7 +178,7 @@ namespace ReBuzz.Studio.Shell
                 }
                 tabs.Items.Add(new TabItem { Header = view.Title, Content = content });
             }
-            tabs.SelectedIndex = 0;
+            ShowView(StudioViews.FirstShown);
             root.Children.Add(tabs);
             transport.IsEnabled = true;
             if (host.Agent != null) host.Agent.Changed += Refresh;
@@ -165,6 +187,9 @@ namespace ReBuzz.Studio.Shell
         }
 
         // ------------------------------------------------------------------ menus and keys
+
+        // Fork (ux-overhaul.md §4): the menus, the window's keys, the shortcuts window and the tooltips come from one keymap
+        // (Commands/StudioKeymap): a key is written once, and ⌘D, ⌫, ⌘A, ⌘R mean the same in every view.
 
         /// <summary>Command on macOS, Control elsewhere.</summary>
         internal static KeyModifiers CommandModifiers => OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control;
@@ -175,6 +200,20 @@ namespace ReBuzz.Studio.Shell
             new MenuEntry { Header = header, Run = run, Gesture = key, CanRun = can, NativeKey = nativeKey };
 
         static MenuEntry Sub(string header, Func<IEnumerable<MenuEntry>> items) => new MenuEntry { Header = header, Items = items };
+
+        /// <summary>
+        /// A command of the keymap as a menu entry. On a Mac a key the menu bar mustn't take (Space, ⌫, the single-key
+        /// transport keys) is written in the item's text instead: "Record (R)".
+        /// </summary>
+        static MenuEntry Command(string id, bool mac, Action run, Func<bool> can = null, Func<bool> isChecked = null)
+        {
+            var c = StudioKeymap.Get(id);
+            var key = c.Gesture(mac);
+            string header = c.Title;
+            bool inText = mac && !c.Native && key != null;
+            if (inText) header += " (" + KeyText.Of(key, true) + ")";
+            return new MenuEntry { Header = header, Run = run, CanRun = can, IsChecked = isChecked, Gesture = key, NativeKey = c.Native, KeyInText = inText };
+        }
 
         /// <summary>
         /// The macOS app menu, whole, as Mac apps have it: About, Preferences… (⌘,), Services, Hide NeoBuzz Live (⌘H),
@@ -217,95 +256,262 @@ namespace ReBuzz.Studio.Shell
         /// </summary>
         internal IEnumerable<MenuEntry> MenuModel(bool mac)
         {
-            var cmd = mac ? KeyModifiers.Meta : KeyModifiers.Control;
             bool running() => host.Core != null;
-            yield return Sub("_File", () => FileItems(mac, cmd, running));
-            yield return Sub("_Edit", () => EditItems(mac, cmd));
-            yield return Sub("_Transport", () => new[]
-            {
-                // Space is the window's (TransportKeys), not a menu bar key equivalent, which would take it
-                // from text boxes; the menu bar shows it in the text instead.
-                Item(mac ? "Play or Stop (Space)" : "Play or St_op", () => TransportCommands.TogglePlaying(host.Core), Keys(Key.Space), running, nativeKey: false),
-                Item("_Play", () => transport.Play(), Keys(Key.F5), running),
-                Item("_Stop", () => transport.Stop(), Keys(Key.F8), running),
-                Item("_Record", () => transport.ToggleRecord(), Keys(Key.F7), running),
-                MenuEntry.Separator,
-                Item("Restart _audio", RestartAudio, Keys(Key.F12), running),
-            });
-            yield return Sub("_View", () => ViewItems(cmd));
-            // The key window's, as on a Mac: Preferences minimizes itself. ⌘M as macOS has it (the Machine View mutes with M).
-            yield return Sub("_Window", () => new[]
-            {
-                Item("_Minimize", () => ActiveWindow.WindowState = WindowState.Minimized, mac ? Keys(Key.M, KeyModifiers.Meta) : null),
-                Item("_Zoom", () => { var w = ActiveWindow; w.WindowState = w.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized; }),
-                MenuEntry.Separator,
-                Item("_Agent connection…", ShowAgent, Keys(Key.A, cmd | KeyModifiers.Shift), running),
-            });
+            yield return Sub("_File", () => FileItems(mac, running));
+            yield return Sub("_Edit", () => EditItems(mac));
+            yield return Sub("_Transport", () => TransportItems(mac, running));
+            yield return Sub("_View", () => ViewItems(mac));
+            yield return Sub("_Window", () => WindowItems(mac, running));
             yield return Sub("_Help", () => HelpItems(mac));
         }
 
-        IEnumerable<MenuEntry> FileItems(bool mac, KeyModifiers cmd, Func<bool> running)
+        IEnumerable<MenuEntry> FileItems(bool mac, Func<bool> running)
         {
-            yield return Item("_New", () => _ = SongFiles.New(), Keys(Key.N, cmd), running);
-            yield return Item("_Open…", () => _ = SongFiles.Open(), Keys(Key.O, cmd), running);
+            yield return Command("file.new", mac, () => _ = SongFiles.New(), running);
+            yield return Command("file.open", mac, () => _ = SongFiles.Open(), running);
             yield return Sub("Open _Recent", () => RecentFiles.Menu(host.Registry));
             yield return MenuEntry.Separator;
-            yield return Item("_Save", () => _ = SongFiles.Save(), Keys(Key.S, cmd), running);
-            yield return Item("Save _As…", () => _ = SongFiles.SaveAs(), Keys(Key.S, cmd | KeyModifiers.Shift), running);
+            var close = Command("file.close", mac, CloseFromMenu);
+            if (ActiveWindow == this) close.Header = "_Close Song";
+            yield return close;
+            yield return Command("file.save", mac, () => _ = SongFiles.Save(), running);
+            yield return Command("file.saveas", mac, () => _ = SongFiles.SaveAs(), running);
+            yield return Command("file.revert", mac, () => _ = RevertToSaved(), () => running() && host.Core.SongCore.SongName != null && host.Core.Modified);
             if (!mac)
             {
                 yield return MenuEntry.Separator;
-                yield return Item("E_xit", Close, Keys(Key.Q, cmd));
+                yield return Command("file.exit", mac, Close);
             }
         }
 
-        IEnumerable<MenuEntry> EditItems(bool mac, KeyModifiers cmd)
+        IEnumerable<MenuEntry> EditItems(bool mac)
         {
-            yield return new MenuEntry { Header = "_Undo", Run = () => undo.Execute(null), CanRun = () => undo.CanExecute(null), Gesture = Keys(Key.Z, cmd) };
-            yield return new MenuEntry { Header = "_Redo", Run = () => redo.Execute(null), CanRun = () => redo.CanExecute(null), Gesture = mac ? Keys(Key.Z, cmd | KeyModifiers.Shift) : Keys(Key.Y, cmd) };
+            yield return Command("edit.undo", mac, () => undo.Execute(null), () => undo.CanExecute(null));
+            yield return Command("edit.redo", mac, () => redo.Execute(null), () => redo.CanExecute(null));
             yield return MenuEntry.Separator;
-            yield return Item("Cu_t", Cut, Keys(Key.X, cmd));
-            yield return Item("_Copy", Copy, Keys(Key.C, cmd));
-            yield return Item("_Paste", Paste, Keys(Key.V, cmd));
+            yield return Command("edit.cut", mac, Cut);
+            yield return Command("edit.copy", mac, Copy);
+            yield return Command("edit.paste", mac, Paste);
+            yield return Command("edit.duplicate", mac, Duplicate);
+            yield return Command("edit.delete", mac, Delete);
+            yield return MenuEntry.Separator;
+            yield return Command("edit.selectall", mac, SelectAll);
+            yield return Command("edit.deselect", mac, DeselectAll);
+            yield return MenuEntry.Separator;
+            yield return Command("edit.rename", mac, Rename);
             if (!mac)
             {
                 yield return MenuEntry.Separator;
-                yield return Item("Pr_eferences…", ShowPreferences, Keys(Key.OemComma, cmd), () => host.Core != null);
+                yield return Command("edit.preferences", mac, ShowPreferences, () => host.Core != null);
             }
         }
+
+        IEnumerable<MenuEntry> TransportItems(bool mac, Func<bool> running)
+        {
+            // Space is the window's (TransportKeys), not a menu bar key equivalent, which would take it from text boxes; the
+            // single-key transport keys likewise (OnSingleKey): the Mac's menu bar shows them in the text.
+            yield return Command("transport.playstop", mac, () => TransportCommands.TogglePlaying(host.Core), running);
+            yield return Command("transport.play", mac, () => transport.Play(), running);
+            yield return Command("transport.stop", mac, () => transport.Stop(), running);
+            yield return Command("transport.record", mac, () => transport.ToggleRecord(), running, () => transport.Recording);
+            yield return MenuEntry.Separator;
+            yield return Command("transport.loop", mac, () => transport.ToggleLoop(), running, () => host.Core?.Looping == true);
+            yield return Command("transport.metronome", mac, () => transport.ToggleMetronome(), running, () => transport.MetronomeOn);
+            yield return Command("transport.start", mac, () => transport.GoToStart(), running);
+            yield return MenuEntry.Separator;
+            yield return Command("transport.restartaudio", mac, RestartAudio, running);
+        }
+
+        /// <summary>The keymap's command for a view's tab.</summary>
+        static string ViewCommand(string title) => title switch
+        {
+            "Sequence" => "view.sequence",
+            "Session" => "view.session",
+            "Machines" => "view.machines",
+            "Pattern" => "view.pattern",
+            Views.Notes.SongNotesTab.TabTitle => "view.notes",
+            _ => null,
+        };
 
         /// <summary>
-        /// The views' tabs, with ReBuzz.exe's keys (F2 Pattern, F3 Machines, F4 Sequence, Ctrl+Tab Session, F10 Song Notes),
-        /// key equivalents in the macOS menu bar too (fork, ui-gallery.md). The menu bar takes a key equivalent before the
-        /// window, so the item chosen by its key does what the key does in the window (ViewFromMenu): F2 still renames a
-        /// clip in the Session View, Ctrl+Tab still goes back from the Session View to Sequence.
+        /// The views' tabs, ⌘1–⌘5 in tab order (ux-overhaul.md §4) as the menu bar's key equivalents; ReBuzz.exe's keys
+        /// (F2 Pattern, F3 Machines, F4 Sequence, Ctrl+Tab Session, F10 Song Notes) stay the window's, so F2 still renames a
+        /// clip in the Session View and Ctrl+Tab still goes back from it.
         /// </summary>
-        IEnumerable<MenuEntry> ViewItems(KeyModifiers cmd)
+        IEnumerable<MenuEntry> ViewItems(bool mac)
         {
             foreach (var view in StudioViews.All)
             {
                 string title = view.Title;
-                yield return new MenuEntry
+                string id = ViewCommand(title);
+                var entry = Command(id, mac, () => UnlessEditorKeeps(id, () => ShowView(title)), () => tabs.ItemCount > 0, () => SelectedTitle == title);
+                yield return entry;
+            }
+            yield return MenuEntry.Separator;
+            yield return Command("view.mixer", mac, ToggleSessionMixer, () => host.Core?.SessionLayout != null, () => host.Core?.SessionLayout?.Document?.ShowMixer == true);
+        }
+
+        IEnumerable<MenuEntry> WindowItems(bool mac, Func<bool> running)
+        {
+            // The key window's, as on a Mac: Preferences minimizes itself.
+            yield return Command("window.minimize", mac, () => ActiveWindow.WindowState = WindowState.Minimized);
+            yield return Command("window.zoom", mac, () => { var w = ActiveWindow; w.WindowState = w.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized; });
+            if (mac) yield return Command("window.front", mac, BringAllToFront);
+            // The open windows (machine editors, the piano roll, Preferences…), so a window behind another is found again.
+            var open = App.Windows.Where(w => w.IsVisible && !string.IsNullOrEmpty(w.Title)).ToList();
+            if (open.Count > 0)
+            {
+                yield return MenuEntry.Separator;
+                foreach (var w in open)
                 {
-                    Header = "_" + title,
-                    Run = () => ViewFromMenu(title),
-                    CanRun = () => tabs.ItemCount > 0,
-                    IsChecked = () => (tabs.SelectedItem as TabItem)?.Header as string == title,
-                    Gesture = ViewKey(title),
-                };
+                    var window = w;
+                    yield return new MenuEntry { Header = window.Title.Replace("_", "__"), Run = () => window.Activate(), IsChecked = () => window.IsActive };
+                }
+            }
+            yield return MenuEntry.Separator;
+            yield return Command("window.agent", mac, ShowAgent, running);
+        }
+
+        IEnumerable<MenuEntry> HelpItems(bool mac)
+        {
+            yield return Command("help.shortcuts", mac, ShowShortcuts);
+            if (!mac)
+            {
+                yield return MenuEntry.Separator;
+                yield return Command("help.about", mac, () => AboutWindow.Open());
+            }
+        }
+
+        /// <summary>The keyboard shortcuts as text, one per line (the keymap's, as the shortcuts window lists them).</summary>
+        internal static string ShortcutsText(bool mac) =>
+            string.Join("\n", ShortcutsWindow.AllRows(mac).Select(r => $"{r.Keys}\t{r.What} ({r.Section})"));
+
+        void ShowShortcuts() => ShortcutsWindow.Open(this);
+
+        void BringAllToFront()
+        {
+            if (OperatingSystem.IsMacOS()) MacApp.BringAllToFront();
+            else foreach (var w in App.Windows.Where(w => w.IsVisible).ToList()) w.Activate();
+        }
+
+        /// <summary>The Session View's mixer, shown or hidden (⌥⌘M), from any view.</summary>
+        void ToggleSessionMixer()
+        {
+            var layout = host.Core?.SessionLayout;
+            if (layout == null) return;
+            layout.SetShowMixer(!layout.Ensure().ShowMixer);
+            ShowView("Session");
+        }
+
+        // ---- Edit: the focused text box first, then the selected view (IStudioEditTarget)
+
+        bool forwardingKey;
+
+        /// <summary>
+        /// A command of the selected view. On a Mac the menu bar takes a key equivalent before the window: when the view
+        /// doesn't take the command, the key goes to the focused control as if typed, so the tracker's own ⌘R (randomize)
+        /// and ⌘W (rotate) still work. True when something took it.
+        /// </summary>
+        bool FromMenu(string id, Func<bool> command)
+        {
+            if (forwardingKey) return false;
+            if (command()) return true;
+            var key = StudioKeymap.Get(id).Gesture(true);
+            if (key == null || MacApp.KeyThatChoseTheMenuItem() != key.Key) return false;
+            forwardingKey = true;
+            try
+            {
+                return SendKey(key);
+            }
+            finally
+            {
+                forwardingKey = false;
             }
         }
 
         /// <summary>
-        /// A View item: chosen by a click, the view; chosen by its key (a key equivalent: AppKit's event is that key's),
-        /// the key as the key window's focused control would have had it, through the views to the window's handlers,
-        /// and the view only if nothing took it.
+        /// Whether the tracker, focused, has this key itself (its ⌘R randomizes, ⌘W rotates, ⌘1–⌘9 set the beat's
+        /// subdivision, ⌘I interpolates, ⌘T writes the machine's state; PatternEditorView.KeyRows): there the window leaves
+        /// it to the editor, and the views are on their F-keys.
         /// </summary>
-        internal void ViewFromMenu(string title)
+        internal bool EditorKeepsKey(KeyGesture key)
         {
-            var key = ViewKey(title);
-            if (key != null && MacApp.KeyThatChoseTheMenuItem() == key.Key && SendKey(key)) return;
-            ShowView(title);
+            if (key == null || !key.KeyModifiers.HasFlag(CommandModifiers) || SelectedTitle != "Pattern") return false;
+            if (!(key.Key is Key.R or Key.W or Key.I or Key.T || (key.Key >= Key.D0 && key.Key <= Key.D9))) return false;
+            return (tabs.SelectedItem as TabItem)?.Content is Visual page && FocusManager?.GetFocusedElement() is Visual focused && page.IsVisualAncestorOf(focused);
+        }
+
+        /// <summary>A command the tracker may have under the same key: chosen by that key while it has the focus, the key is its.</summary>
+        void UnlessEditorKeeps(string id, Action run)
+        {
+            var key = StudioKeymap.Get(id).Gesture(OperatingSystem.IsMacOS());
+            if (key != null && MacApp.KeyThatChoseTheMenuItem() == key.Key && EditorKeepsKey(key) && !forwardingKey)
+            {
+                forwardingKey = true;
+                try
+                {
+                    SendKey(key);
+                }
+                finally
+                {
+                    forwardingKey = false;
+                }
+                return;
+            }
+            run();
+        }
+
+        void Duplicate() => FromMenu("edit.duplicate", () => Target?.Duplicate() == true);
+
+        void Delete()
+        {
+            if (FocusedText is { IsReadOnly: false } t)
+            {
+                if (!string.IsNullOrEmpty(t.SelectedText)) t.SelectedText = "";
+                return;
+            }
+            Target?.Delete();
+        }
+
+        void SelectAll()
+        {
+            if (FocusedText is { } t) t.SelectAll();
+            else FromMenu("edit.selectall", () => Target?.SelectAll() == true);
+        }
+
+        void DeselectAll()
+        {
+            if (FocusedText is { } t) t.ClearSelection();
+            else FromMenu("edit.deselect", () => Target?.DeselectAll() == true);
+        }
+
+        void Rename() => UnlessEditorKeeps("edit.rename", () => FromMenu("edit.rename", () => Target?.Rename() == true));
+
+        /// <summary>Close (⌘W): the window in front; on the main window, the song (asking to save first), unless the view takes ⌘W.</summary>
+        void CloseFromMenu() => UnlessEditorKeeps("file.close", CloseFrontOrSong);
+
+        void CloseFrontOrSong()
+        {
+            var front = ActiveWindow;
+            if (front != this)
+            {
+                front.Close();
+                return;
+            }
+            if (host.Core != null) _ = SongFiles.New();
+        }
+
+        /// <summary>Revert to Saved: the saved song again, after asking (the changes since are lost).</summary>
+        async System.Threading.Tasks.Task RevertToSaved()
+        {
+            var core = host.Core;
+            string path = core?.SongCore.SongName;
+            if (path == null || !core.Modified) return;
+            var answer = await Dialogs.Ask($"Revert to the saved “{Path.GetFileNameWithoutExtension(path)}”? The changes made since it was saved are lost.",
+                                           Product.Name, ReBuzz.Core.UserButtons.YesNo, DialogChoices.Revert);
+            if (answer != ReBuzz.Core.UserAnswer.Yes) return;
+            core.Modified = false;
+            core.TryOpenSongFile(path);
         }
 
         /// <summary>A key, as the focused control (else the key window) gets it when typed. True when something took it.</summary>
@@ -318,68 +524,74 @@ namespace ReBuzz.Studio.Shell
             return e.Handled;
         }
 
-        static KeyGesture ViewKey(string title) => title switch
+        void AddKeys()
         {
-            "Pattern" => new KeyGesture(Key.F2),
-            "Machines" => new KeyGesture(Key.F3),
-            "Sequence" => new KeyGesture(Key.F4),
-            "Session" => new KeyGesture(Key.Tab, KeyModifiers.Control),
-            Views.Notes.SongNotesTab.TabTitle => new KeyGesture(Key.F10),     // Buzz's Info view
-            _ => null,
-        };
-
-        IEnumerable<MenuEntry> HelpItems(bool mac)
-        {
-            yield return Item("_Keyboard shortcuts…", () => _ = Dialogs.Info(ShortcutsText(mac), "Keyboard shortcuts"));
-            if (!mac)
+            // Every key of the keymap that has a modifier or is an F-key, as the window's: the in-window menu only shows its
+            // keys, and the Mac's menu bar is skipped by headless tests. The views' own bindings and handlers see a key first.
+            // A key the focused tracker has itself (⌘R, ⌘W, ⌘1–⌘9) is left to it: a binding that can't run lets the key on.
+            void Bind(string id, Action run, Func<KeyGesture, bool> which = null)
             {
-                yield return MenuEntry.Separator;
-                yield return Item("_About " + Product.Name, () => AboutWindow.Open());
+                foreach (var key in StudioKeymap.Get(id).Gestures())
+                    if (which == null || which(key))
+                        KeyBindings.Add(new KeyBinding { Gesture = key, Command = new Command(run, () => !EditorKeepsKey(key)) });
+            }
+            static bool Modified(KeyGesture k) => k.KeyModifiers != KeyModifiers.None;
+            Bind("file.new", () => _ = SongFiles.New());
+            Bind("file.open", () => _ = SongFiles.Open());
+            Bind("file.close", CloseFromMenu);
+            Bind("file.save", () => _ = SongFiles.Save());
+            Bind("file.saveas", () => _ = SongFiles.SaveAs());
+            foreach (var key in StudioKeymap.Get("edit.undo").Gestures()) KeyBindings.Add(new KeyBinding { Gesture = key, Command = undo });
+            foreach (var key in StudioKeymap.Get("edit.redo").Gestures()) KeyBindings.Add(new KeyBinding { Gesture = key, Command = redo });
+            // The in-window menu only shows its gestures: these make them work. They act on a focused
+            // text box first, then on the selected view (§3.10).
+            Bind("edit.cut", Cut);
+            Bind("edit.copy", Copy);
+            Bind("edit.paste", Paste);
+            Bind("edit.duplicate", Duplicate);
+            Bind("edit.selectall", SelectAll);
+            Bind("edit.deselect", DeselectAll, Modified);
+            Bind("edit.rename", Rename);
+            Bind("transport.play", () => transport.Play());
+            Bind("transport.stop", () => transport.Stop());
+            Bind("transport.record", () => transport.ToggleRecord(), Modified2);
+            Bind("transport.restartaudio", RestartAudio);
+            foreach (var view in StudioViews.All)
+            {
+                string title = view.Title;
+                Bind(ViewCommand(title), () => ShowView(title), k => k.KeyModifiers == CommandModifiers && k.Key >= Key.D1 && k.Key <= Key.D9);
+            }
+            Bind("view.mixer", ToggleSessionMixer);
+            Bind("help.shortcuts", ShowShortcuts);
+            KeyBindings.Add(new KeyBinding { Gesture = Keys(Key.OemComma, CommandModifiers), Command = new Command(ShowPreferences) });
+            if (!OperatingSystem.IsMacOS()) Bind("file.exit", Close);
+        }
+
+        /// <summary>An F-key (F7: record), which the window binds; the single keys are OnSingleKey's.</summary>
+        static bool Modified2(KeyGesture k) => k.KeyModifiers != KeyModifiers.None || (k.Key >= Key.F1 && k.Key <= Key.F24);
+
+        /// <summary>
+        /// The single-key transport keys (R record, C loop, K metronome, Home go to start; ux-overhaul.md §4), after the views
+        /// (a bubble handler), in the views that don't type letters, never while typing in a box.
+        /// </summary>
+        void OnSingleKey(object sender, KeyEventArgs e)
+        {
+            if (e.Handled || tabs.ItemCount == 0 || e.KeyModifiers != KeyModifiers.None || !SingleKeysWork || TransportKeys.KeepsSpace(e.Source)) return;
+            foreach (var (id, run) in singleKeys)
+            {
+                if (StudioKeymap.Get(id).Gestures().Any(g => g.Key == e.Key && g.KeyModifiers == KeyModifiers.None))
+                {
+                    run();
+                    e.Handled = true;
+                    return;
+                }
             }
         }
 
-        internal static string ShortcutsText(bool mac)
-        {
-            string c = mac ? "⌘" : "Ctrl+";
-            string s = mac ? "⇧" : "Shift+";
-            return $"{c}N / {c}O / {c}S / {s}{c}S\tnew, open, save, save as\n" +
-                   $"{c}Z / {(mac ? $"{s}{c}Z" : $"{c}Y")}\tundo / redo (the selected view's first)\n" +
-                   $"{c}X / {c}C / {c}V\tcut, copy, paste in the selected view\n" +
-                   "Space\tplay / stop, in every view (not while typing in a box)\n" +
-                   $"{s}Space\tplay the pattern from the cursor / stop it (Pattern)\n" +
-                   "F5 / F8 / F7\tplay / stop (twice: silence) / record\n" +
-                   "F12\trestart audio\n" +
-                   "F2 / F3 / F4\tPattern / Machines / Sequence\n" +
-                   "Ctrl+Tab\tSession View (again: back to Sequence)\n" +
-                   "F10\tSong Notes\n" +
-                   $"{c},\tPreferences\n" +
-                   $"{s}{c}A\tagent connection (Preferences ▸ Agent)" +
-                   (mac ? "\n⌘M\tminimize the window\nM\tmute the selected machines (Machines)" : "");
-        }
+        (string Id, Action Run)[] singleKeys;
 
-        void AddKeys()
-        {
-            var cmd = CommandModifiers;
-            void Bind(KeyGesture key, Action run) => KeyBindings.Add(new KeyBinding { Gesture = key, Command = new Command(run) });
-            Bind(Keys(Key.N, cmd), () => _ = SongFiles.New());
-            Bind(Keys(Key.O, cmd), () => _ = SongFiles.Open());
-            Bind(Keys(Key.S, cmd), () => _ = SongFiles.Save());
-            Bind(Keys(Key.S, cmd | KeyModifiers.Shift), () => _ = SongFiles.SaveAs());
-            KeyBindings.Add(new KeyBinding { Gesture = Keys(Key.Z, cmd), Command = undo });
-            KeyBindings.Add(new KeyBinding { Gesture = OperatingSystem.IsMacOS() ? Keys(Key.Z, cmd | KeyModifiers.Shift) : Keys(Key.Y, cmd), Command = redo });
-            // The in-window menu only shows its gestures: these make them work. They act on a focused
-            // text box first, then on the selected view (§3.10).
-            Bind(Keys(Key.X, cmd), Cut);
-            Bind(Keys(Key.C, cmd), Copy);
-            Bind(Keys(Key.V, cmd), Paste);
-            Bind(Keys(Key.F5), () => transport.Play());
-            Bind(Keys(Key.F8), () => transport.Stop());
-            Bind(Keys(Key.F7), () => transport.ToggleRecord());
-            Bind(Keys(Key.F12), RestartAudio);
-            Bind(Keys(Key.OemComma, cmd), ShowPreferences);
-            Bind(Keys(Key.A, cmd | KeyModifiers.Shift), ShowAgent);
-            if (!OperatingSystem.IsMacOS()) Bind(Keys(Key.Q, cmd), Close);
-        }
+        /// <summary>Whether the selected view leaves single letters to the transport: not the arrangement (pattern keys) or the tracker (notes).</summary>
+        bool SingleKeysWork => SelectedTitle is "Machines" or "Session" or Views.Notes.SongNotesTab.TabTitle;
 
         void OnViewKey(object sender, KeyEventArgs e)
         {
@@ -442,12 +654,39 @@ namespace ReBuzz.Studio.Shell
             Title = $"{name}{(core.Modified ? " •" : "")} — {Product.Name}";
             var device = core.AudioEngine?.SelectedOutDevice;
             if (ticks++ % 10 == 0) MeasureCpu(core);
+            // Without an output the audio-health badge before it says so (it was said twice, ux-overhaul.md P1).
             string audio = device != null
-                ? $"{device.Name}, {core.SelectedAudioDriverSampleRate} Hz, {core.AudioEngine.CurrentDriver?.BufferSize} frames" + (cpu is double load ? $" · CPU {load:0}%" : "")
-                : "no audio output";
+                ? $"{device.Name}, {core.SelectedAudioDriverSampleRate} Hz, {core.AudioEngine.CurrentDriver?.BufferSize} frames" + (cpu is double load ? $" · CPU {load:0}%" : "") + " · "
+                : "";
             string agent = host.Agent?.Status;
-            status.Text = $"{audio} · dropouts {ReBuzzCore.DeadlineMisses} · {MachineCountText(core)}" + SafetyText(core) + (string.IsNullOrEmpty(agent) ? "" : " · " + agent);
+            status.Text = $"{audio}dropouts {ReBuzzCore.DeadlineMisses} · {MachineCountText(core)}" + SafetyText(core) + (string.IsNullOrEmpty(agent) ? "" : " · " + agent);
+            health.Refresh();
+            if (ticks % 5 == 1) RefreshProblems();
         }
+
+        /// <summary>The problem bar now (the window's timer does it twice a second).</summary>
+        internal void RefreshProblems()
+        {
+            var core = host.Core;
+            if (core == null) return;
+            problems.Show(ProblemBar.Find(core, ShowMachines, m => Views.Machines.MachineEdits.OpenParameters(m),
+                m => Views.Machines.MachineEdits.Mute(core, new[] { m }, false),
+                on => { core.SafeMaster.LimiterOn = on; core.SafeMaster.Save(host.Registry); }));
+        }
+
+        /// <summary>The Machine View, with these machines selected.</summary>
+        void ShowMachines(IReadOnlyList<MachineCore> machines)
+        {
+            ShowView("Machines");
+            var view = tabs.Items.OfType<TabItem>().Select(t => t.Content).OfType<Views.Machines.MachineView>().FirstOrDefault();
+            view?.Canvas.Select(machines);
+        }
+
+        /// <summary>The problem bar (tests).</summary>
+        internal ProblemBar Problems => problems;
+
+        /// <summary>The audio-health badge (tests).</summary>
+        internal AudioHealthBadge Health => health;
 
         /// <summary>
         /// The song's machines as the user sees them in the Machine View: not the Master, not the
@@ -466,8 +705,9 @@ namespace ReBuzz.Studio.Shell
         /// </summary>
         internal static string SafetyText(ReBuzzCore core)
         {
+            // Fork (ux-overhaul.md P1): plain words ("diverged" was the guard's jargon); the problem bar has the whole story.
             var diverged = core.SongCore.MachinesList.Where(m => m.IsDiverged).Select(m => $"{m.Name} ({m.DivergedReason})").ToList();
-            string text = diverged.Count > 0 ? " · Diverged: muted: " + string.Join(", ", diverged) : "";
+            string text = diverged.Count > 0 ? " · Muted to protect your ears: " + string.Join(", ", diverged) : "";
             // Fork: machines that stopped working (a host that hung or exited, gallery win-704), named.
             var stopped = core.SongCore.MachinesList.Where(core.IsReportedCrashed).Select(m => m.Name).ToList();
             if (stopped.Count > 0) text += " · Stopped working: " + string.Join(", ", stopped);
@@ -494,8 +734,12 @@ namespace ReBuzz.Studio.Shell
             lastPerformance = now;
         }
 
-        /// <summary>The status line now, as the window's timer would (tests).</summary>
-        internal void RefreshNow() => Refresh();
+        /// <summary>The status line and the problem bar now, as the window's timer would (tests).</summary>
+        internal void RefreshNow()
+        {
+            Refresh();
+            RefreshProblems();
+        }
 
         /// <summary>The engine's load in percent (null without an audio device), for tests.</summary>
         internal double? CpuLoad => cpu;

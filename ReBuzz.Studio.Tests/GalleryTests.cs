@@ -545,7 +545,7 @@ namespace ReBuzz.Studio.Tests
                     RunTicks(20);
                     session.RefreshState();
                     session.RefreshMeters();
-                    Shot(window, "042-session-playing", "Session playing: the Drop scene's clips playing (green with their progress), the clock running, meters moving.", "After a launch, at the bar line; the transport runs.");
+                    Shot(window, "042-session-playing", "Session playing: the Drop scene's clips playing (each keeps its colour; its ▶ on a dark chip, its outline and progress bar in the play green), the clock running, meters moving.", "After a launch, at the bar line; the transport runs.");
                 });
                 Try("043-session-clip-panel", () =>
                 {
@@ -695,7 +695,7 @@ namespace ReBuzz.Studio.Tests
                     RunTicks(22);
                     Wait(300);
                     window.RefreshNow();
-                    Shot(window, "071-transport-playing", "The transport playing from bar 9: ▶ lit, the position counting, the meter showing the level, the play cursor in the Sequence View.", "Space or F5 plays.");
+                    Shot(window, "071-transport-playing", "The transport playing from bar 9: ▶ lit in the play green, the position counting, the meter showing the level, the play cursor in the Sequence View.", "Space or F5 plays.");
                 });
                 Try("072-transport-recording", () =>
                 {
@@ -703,7 +703,7 @@ namespace ReBuzz.Studio.Tests
                     RunTicks(4);
                     Wait(200);
                     window.RefreshNow();
-                    Shot(window, "072-transport-recording", "The transport recording while it plays: ● lit.", "F7 (or the ● button) while playing.");
+                    Shot(window, "072-transport-recording", "The transport recording while it plays: ● lit in the record red.", "F7 (or the ● button) while playing.");
                     Core.Recording = false;
                     Core.ExecuteCommand(BuzzCommand.Stop);
                     RunTicks(2);
@@ -979,8 +979,11 @@ namespace ReBuzz.Studio.Tests
                 Settle();
 
                 Try("330-about", () => DialogOnOpen(window, () => AboutWindow.Open(), "330-about", $"About {Product.Name}: the build and the credits.", $"{Product.Name} ▸ About {Product.Name}."));
-                Try("331-keyboard-shortcuts", () => DialogOnOpen(window, () => _ = Dialogs.Info(MainWindow.ShortcutsText(mac: true), "Keyboard shortcuts"),
-                    "331-keyboard-shortcuts", "Help ▸ Keyboard shortcuts: the studio's keys (Mac glyphs: ⌘ ⇧).", "Help ▸ Keyboard shortcuts…."));
+                Try("331-keyboard-shortcuts", () => DialogOnOpen(window, () => ReBuzz.Studio.Shell.Commands.ShortcutsWindow.Open(window),
+                    "331-keyboard-shortcuts", "Help ▸ Keyboard Shortcuts: one searchable list from the keymap the menus are made from (ux-overhaul.md §4): the commands by menu, then each view's own keys.",
+                    "Help ▸ Keyboard Shortcuts… (⌘/)."));
+                Try("339-keyboard-shortcuts-search", () => DialogOnOpen(window, () => ReBuzz.Studio.Shell.Commands.ShortcutsWindow.Open(window).Search = "delete",
+                    "339-keyboard-shortcuts-search", "Keyboard Shortcuts searched for \"delete\": every key that deletes, in every view.", "Type in the window's search box."));
                 Try("332-save-changes", () =>
                 {
                     Core.SetModifiedFlag();
@@ -1182,7 +1185,9 @@ namespace ReBuzz.Studio.Tests
                         Dialogs.Responder = null;
                     }
                     Settle();
-                    Try("500-old-song-machines", () => Shot(window, "500-old-song-machines", "An old Windows song with native machines: each a placeholder box (the song plays without them and saves them back unchanged).", "File ▸ Open… a .bmx made on Windows.", Song, Natives));
+                    window.RefreshNow();
+                    Settle();
+                    Try("500-old-song-machines", () => Shot(window, "500-old-song-machines", "An old Windows song with native machines: each a placeholder box marked Windows only, and the problem bar saying so in plain words (the song plays without them and saves them back unchanged), with Show Them.", "File ▸ Open… a .bmx made on Windows.", Song, Natives));
                     Try("501-old-song-sequence", () => { window.ShowView("Sequence"); Shot(window, "501-old-song-sequence", "The old song's arrangement.", "F4.", Song, Natives); });
                     Try("502-old-song-placeholder-parameters", () =>
                     {
@@ -1237,11 +1242,11 @@ namespace ReBuzz.Studio.Tests
                         var view = Tab<MachineView>(window, "Machines");
                         window.MouseMove(view.PointOf(m, window));
                         Settle();
-                        Shot(window, "520-safety-diverged", "Safety: a machine whose signal ran away (the guard tripped): drawn red and muted, the status line says why.", "Happens when a machine goes wild (NaN, infinity, over +60 dBFS).",
+                        Shot(window, "520-safety-diverged", "Safety: a machine whose signal ran away (the guard tripped): drawn red and muted; the problem bar says why in plain words, with Reset and Unmute and Parameters….", "Happens when a machine goes wild (NaN, infinity, over +60 dBFS).",
                             song: "a test song (one misbehaving machine)", notes: "Guard Test is the tests' own machine, built to diverge.");
                         Click(window, view.PointOf(m, window), MouseButton.Right);
                         menus.Add(view.Canvas.OpenMenu!);
-                        Shot(window, "521-safety-diverged-menu", "Safety: the diverged machine's menu, Reset and unmute first.", "Right-click the red machine.", song: "a test song (one misbehaving machine)");
+                        Shot(window, "521-safety-diverged-menu", "Safety: the diverged machine's menu, Reset and Unmute first.", "Right-click the red machine.", song: "a test song (one misbehaving machine)");
                     });
                 }
                 else failures.Add("mac-520: the Guard Test machine isn't in the tests' Gear");

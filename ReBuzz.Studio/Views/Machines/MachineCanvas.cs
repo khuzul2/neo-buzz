@@ -437,11 +437,13 @@ namespace ReBuzz.Studio.Views.Machines
             // Mode: .NET / 32, the MIDI channel, oversampling (ModeText), Arial 8 at 13,2.
             string mode = ModeText(m);
             if (mode != null)
-                ctx.DrawText(new FormattedText(mode, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, PlainFace, 8, text), new Point(box.X + 13, box.Y + 2));
+                ctx.DrawText(new FormattedText(mode, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, PlainFace, 11, text), new Point(box.X + 13, box.Y + 2));
 
             // Missing or crashed (ErrorText): dark red at the bottom. Fork (machine-safety.md §3.2): diverged, in white on red.
             bool diverged = IsDiverged(m);
-            string error = m.DLL.IsMissing ? "missing" : m.DLL.IsCrashed ? "crashed" : diverged ? "diverged" : null;
+            // Fork (ux-overhaul.md P1): plain words: a machine this computer can't run is "Windows only" off Windows, one
+            // the guard muted "muted: blew up" ("missing" and "diverged" were the engine's words, gallery mac-500, mac-520).
+            string error = m.DLL.IsMissing ? Shell.PlainWords.Missing : m.DLL.IsCrashed ? "stopped working" : diverged ? "muted: blew up" : null;
             if (error != null)
             {
                 var ft = new FormattedText(error, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, NameFace, diverged ? 11 : 15, diverged ? Brushes.White : Brushes.DarkRed);
@@ -452,7 +454,7 @@ namespace ReBuzz.Studio.Views.Machines
             if (type == MachineType.Master && core.MasterOver)
             {
                 ctx.DrawRectangle(null, new Pen(Shell.MasterMeter.ClipBrush, 3), box.Deflate(1.5));
-                var ft = new FormattedText(core.MasterOverText, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, NameFace, 10, Shell.MasterMeter.ClipBrush);
+                var ft = new FormattedText(core.MasterOverText, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, NameFace, 11, Shell.MasterMeter.ClipBrush);
                 ctx.DrawText(ft, new Point(box.X + (box.Width - ft.Width) / 2, box.Bottom - ft.Height - 2));
             }
 
@@ -530,7 +532,7 @@ namespace ReBuzz.Studio.Views.Machines
         {
             string s = "";
             if (m.DLL.IsOutOfProcess) s += "32 ";
-            else if (m.DLL.IsManaged) s += ".NET ";
+            // Fork (ux-overhaul.md P1): no ".NET" tag on managed machines, an implementation detail (gallery mac-010).
             int midi = m.MIDIInputChannel;
             if (midi >= 0) s += midi == 0 ? "MIDI A" : "MIDI " + midi;
             if (m.OversampleFactor > 1) s += (s.Length > 0 ? ", " : "") + "2x";
@@ -702,8 +704,8 @@ namespace ReBuzz.Studio.Views.Machines
 
         /// <summary>The tip the canvas shows now (tests).</summary>
         public string HoverTip => hover is MachineCore mc && mc.IsDiverged
-            ? $"Diverged: muted. Its output went to {mc.DivergedReason} at beat {mc.DivergedPosition / (double)Math.Max(1, core.TPB):0.##}; " +
-              "the guard silenced and stopped it. Reset and unmute is on its menu."
+            ? $"Muted to protect your ears: it {Shell.PlainWords.Diverged(mc)} at beat {mc.DivergedPosition / (double)Math.Max(1, core.TPB):0.##}, " +
+              "so the guard silenced and stopped it. Reset and Unmute is on its menu and in the bar above."
             : null;
 
         protected override void OnPointerExited(PointerEventArgs e)
@@ -926,6 +928,42 @@ namespace ReBuzz.Studio.Views.Machines
 
         /// <summary>Ctrl+U.</summary>
         public void UnmuteAll() => MachineEdits.UnmuteAll(core);
+
+        /// <summary>S (ux-overhaul.md §4): solos the selected generators, or unsolos them if the first is soloed.</summary>
+        public void ToggleSoloSelection()
+        {
+            var sel = SelectedNow().Where(m => m.DLL.Info.Type == MachineType.Generator && !m.IsControlMachine).ToList();
+            if (sel.Count > 0) MachineEdits.Solo(core, sel, !sel[0].IsSoloed);
+        }
+
+        /// <summary>B: bypasses the selected effects, or brings them back if the first is bypassed.</summary>
+        public void ToggleBypassSelection()
+        {
+            var sel = SelectedNow().Where(m => m.DLL.Info.Type == MachineType.Effect && !m.IsControlMachine).ToList();
+            if (sel.Count > 0) MachineEdits.Bypass(core, sel, !sel[0].IsBypassed);
+        }
+
+        /// <summary>
+        /// ⌘D (ux-overhaul.md §4): the selected machines again, with their settings, a little below and to the right, one
+        /// undo step; the copies are selected. Not the Master.
+        /// </summary>
+        public bool DuplicateSelection()
+        {
+            var sel = SelectedNow().Where(m => m.DLL.Info.Type != MachineType.Master).ToList();
+            if (sel.Count == 0) return false;
+            var copies = MachineEdits.Duplicate(core, sel);
+            if (copies.Count > 0) Select(copies);
+            return true;
+        }
+
+        /// <summary>⌘R: renames the selected machine (one).</summary>
+        public bool RenameSelection()
+        {
+            var sel = SelectedNow();
+            if (sel.Count != 1) return false;
+            MachineEdits.Rename(sel[0]);
+            return true;
+        }
 
         #endregion
     }

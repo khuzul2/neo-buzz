@@ -371,10 +371,11 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             return b;
         }
 
-        /// <summary>The keyboard commands (Help.xaml), as a table.</summary>
-        static Control HelpText()
-        {
-            string[][] rows =
+        /// <summary>
+        /// The keyboard commands (Help.xaml), as a table. Fork (ux-overhaul.md §4): the studio's Keyboard Shortcuts window
+        /// lists them too (it finds this field by name: the studio doesn't reference the editor).
+        /// </summary>
+        internal static readonly string[][] KeyRows =
             {
                 new[] { "F1", "Show/hide help" },
                 new[] { "Ctrl+Z/Y", "Undo/Redo" },
@@ -413,6 +414,10 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 new[] { "Ctrl+1,2,3... (numpad)", "Step down" },
                 new[] { "Ctrl+Alt+1,2,3... (numpad)", "Step right" },
             };
+
+        static Control HelpText()
+        {
+            var rows = KeyRows;
             var g = new Grid { ColumnDefinitions = new ColumnDefinitions("*,2*"), Margin = new Thickness(4) };
             var title = new TextBlock { Text = "Keyboard Commands", FontWeight = FontWeight.Bold, Foreground = Brushes.Black, Background = Brushes.LightSteelBlue, Padding = new Thickness(2) };
             Grid.SetColumnSpan(title, 2);

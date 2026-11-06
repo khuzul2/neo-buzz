@@ -15,7 +15,7 @@ namespace ReBuzz.Studio.Shell.Preferences
     internal sealed class SyncPage : PrefsPage
     {
         readonly SessionSync sync;
-        readonly CheckBox link = new CheckBox { Content = "Ableton Link" };
+        readonly CheckBox link = new CheckBox { Content = "Link: tempo and beat shared with apps on this network" };
         readonly CheckBox startStop = new CheckBox { Content = "Start and stop with Link peers" };
         readonly CheckBox clockIn = new CheckBox { Content = "Follow MIDI clock in" };
         readonly StackPanel clockOuts = new StackPanel { Spacing = 2 };
@@ -27,7 +27,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         public SyncPage(SessionSync sync)
         {
             this.sync = sync;
-            Heading("Ableton Link");
+            Heading("Link");
             Row("", new StackPanel { Spacing = 2, Children = { link, linkState } },
                 "Tempo and bar phase follow Live and other Link apps on the network; alone, they follow the session. " +
                 "A start waits for Link's next bar line, so it lands in step. Link runs in a helper program (ReBuzzLink).");

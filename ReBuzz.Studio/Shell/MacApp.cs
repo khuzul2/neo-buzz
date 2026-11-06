@@ -54,6 +54,9 @@ namespace ReBuzz.Studio.Shell
         /// <summary>Show All.</summary>
         public static void ShowAll() => Tell("unhideAllApplications:");
 
+        /// <summary>Window ▸ Bring All to Front.</summary>
+        public static void BringAllToFront() => Tell("arrangeInFront:");
+
         /// <summary>Tests: what the event that chose a menu item was, instead of asking AppKit.</summary>
         internal static Func<Key?> KeyDownSource { get; set; }
 
@@ -78,6 +81,16 @@ namespace ReBuzz.Studio.Shell
                     118 => Key.F4,
                     109 => Key.F10,
                     48 => Key.Tab,
+                    // Fork (ux-overhaul.md §4): the Edit and File commands a view may have under the same key (the tracker's ⌘R, ⌘W).
+                    0 => Key.A,
+                    2 => Key.D,
+                    13 => Key.W,
+                    15 => Key.R,
+                    18 => Key.D1,
+                    19 => Key.D2,
+                    20 => Key.D3,
+                    21 => Key.D4,
+                    23 => Key.D5,
                     _ => null,
                 };
             }
