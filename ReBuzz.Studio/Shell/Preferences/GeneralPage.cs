@@ -13,7 +13,7 @@ namespace ReBuzz.Studio.Shell.Preferences
 
         internal static readonly string[] WindowsOnlyGeneral =
         {
-            "CheckForUpdates", "WPFIdealFontMetrics", "WPFSoftwareRendering", "SequenceView", "PianoKeyboardTopmost", "DpiScaling",
+            "WPFIdealFontMetrics", "WPFSoftwareRendering", "SequenceView", "PianoKeyboardTopmost", "DpiScaling",
         };
 
         public GeneralPage()

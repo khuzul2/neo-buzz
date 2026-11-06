@@ -2143,9 +2143,17 @@ def health_report(summary, curated=None, sourced=None, rebuilt=None):
         "",
     ]
     if rebuilt:
+        names = sorted(n if isinstance(n, str) else n["gear"] for n in rebuilt)
+        fixed = sorted(n["gear"] for n in rebuilt if not isinstance(n, str) and n.get("fix"))
+        excepted = sorted(n["gear"] for n in rebuilt if not isinstance(n, str) and n.get("licenseException"))
         lines += [
-            f"Built from source (mcp-server.md §12.14, U7): {', '.join(sorted(rebuilt))} ship rebuilt in place of upstream's binaries, "
-            "which they render as (`tools/native-compare.py`), and are profiled as rebuilt; the other natives are upstream's binaries.",
+            f"Built from source (mcp-server.md §12.14, U7): {', '.join(names)} ship rebuilt in place of upstream's binaries, "
+            "which they render as (`tools/native-compare.py`"
+            + (f"; {', '.join(fixed)} as upstream's binary on a zeroed heap, the start their fix gives" if fixed else "") + "), "
+            "and are profiled as rebuilt"
+            + (f"; {', '.join(excepted)} are x64 builds of upstream's 32-bit binaries, from sources without a licence "
+               "(shipped by user decision 2026-11-06 for private use)" if excepted else "")
+            + "; the other natives are upstream's binaries.",
             "",
         ]
     lines += [
@@ -2382,14 +2390,20 @@ def write_report(root, merged):
         f.write(health_report(merged, curated_roles(root), from_source(root), rebuilt_natives(root)))
 
 
+# build.ps1's one exception to the licence gate (its $NativeLicenceException; tools/test_native_compare.py keeps the two the same).
+NATIVE_LICENCE_EXCEPTION = "no licence in source; shipped by user decision 2026-11-06 for private use"
+
+
 def rebuilt_natives(root):
-    """U7 (mcp-server.md §12.14): the natives ExternalMachines/machines.json ships rebuilt from source."""
+    """U7 (mcp-server.md §12.14): the natives ExternalMachines/machines.json ships rebuilt from source (their entries): those
+    whose licence allows it, and those whose source has none, shipped by build.ps1's one recorded exception."""
     try:
         with open(os.path.join(root, "ExternalMachines", "machines.json"), encoding="utf-8") as f:
             bt = next((m for m in json.load(f)["machines"] if m.get("id") == "buzztrax-buzzmachines"), {})
     except (OSError, ValueError):
         return []
-    return [n["gear"] for n in bt.get("natives", []) if n.get("ship") == "rebuilt" and n.get("redistribute", True)]
+    return [n for n in bt.get("natives", []) if n.get("ship") == "rebuilt"
+            and (n.get("licenseException") == NATIVE_LICENCE_EXCEPTION if "licenseException" in n else n.get("redistribute", True))]
 
 
 PACK = "MACHINE-PROFILE-PACK"
