@@ -19,15 +19,18 @@ namespace ReBuzz.AppViews.Session
         {
             readonly FrameworkElement tracks, scenes, mixer, master;
             readonly Action<double, bool> fitRows;
+            readonly Func<double, bool> scrollsUpAndDown;
 
             /// <param name="fitRows">Called with the grid's height before it is measured (and whether the tracks scroll sideways).</param>
-            public SessionBody(FrameworkElement tracks, FrameworkElement scenes, FrameworkElement mixer, FrameworkElement master, Action<double, bool> fitRows)
+            /// <param name="scrollsUpAndDown">Whether the grid's rows overflow a height: its vertical scroll bar then takes room beside the tracks.</param>
+            public SessionBody(FrameworkElement tracks, FrameworkElement scenes, FrameworkElement mixer, FrameworkElement master, Action<double, bool> fitRows, Func<double, bool> scrollsUpAndDown)
             {
                 this.tracks = tracks;
                 this.scenes = scenes;
                 this.mixer = mixer;
                 this.master = master;
                 this.fitRows = fitRows;
+                this.scrollsUpAndDown = scrollsUpAndDown;
                 Children.Add(tracks);
                 Children.Add(scenes);
                 Children.Add(mixer);
@@ -49,13 +52,16 @@ namespace ReBuzz.AppViews.Session
                 master.Measure(infinite);
 
                 rightWidth = Math.Max(scenes.DesiredSize.Width, mixerShown ? master.DesiredSize.Width : 0);
-                double leftWanted = Math.Max(tracks.DesiredSize.Width, mixerShown ? mixer.DesiredSize.Width : 0);
-                double width = double.IsInfinity(available.Width) ? leftWanted + rightWidth : available.Width;
-                leftWidth = Math.Max(0, Math.Min(leftWanted, width - rightWidth));
-                ScenesFrozen = leftWanted > leftWidth + 0.5;
                 mixerHeight = mixerShown ? Math.Max(mixer.DesiredSize.Height, master.DesiredSize.Height) : 0;
                 double height = double.IsInfinity(available.Height) ? tracks.DesiredSize.Height + mixerHeight : available.Height;
                 double gridHeight = Math.Max(0, height - mixerHeight);
+                // WPF's scroll bars take room (the studio's lie over the content): rows that don't fit
+                // bring a vertical bar beside the last track, which the tracks' width must hold.
+                double bar = scrollsUpAndDown(gridHeight) ? SystemParameters.VerticalScrollBarWidth : 0;
+                double leftWanted = Math.Max(tracks.DesiredSize.Width + bar, mixerShown ? mixer.DesiredSize.Width : 0);
+                double width = double.IsInfinity(available.Width) ? leftWanted + rightWidth : available.Width;
+                leftWidth = Math.Max(0, Math.Min(leftWanted, width - rightWidth));
+                ScenesFrozen = leftWanted > leftWidth + 0.5;
 
                 fitRows(gridHeight, ScenesFrozen);
                 tracks.Measure(new Size(leftWidth, gridHeight));

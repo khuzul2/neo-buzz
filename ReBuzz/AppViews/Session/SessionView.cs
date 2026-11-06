@@ -324,7 +324,7 @@ namespace ReBuzz.AppViews.Session
                 if (scroll.VerticalOffset != sceneScroll.VerticalOffset) scroll.ScrollToVerticalOffset(sceneScroll.VerticalOffset);
             };
             clipPanel = new ClipPanel(this);
-            body = new SessionBody(scroll, sceneScroll, mixerPanel, masterSection, FitRows) { Background = SessionPalette.Window };
+            body = new SessionBody(scroll, sceneScroll, mixerPanel, masterSection, FitRows, ScrollsUpAndDown) { Background = SessionPalette.Window };
 
             // The clip panel first: full height beside the grid and the mixer (gallery win-850, win-853).
             var root = new DockPanel();
@@ -655,6 +655,10 @@ namespace ReBuzz.AppViews.Session
             grid.RowDefinitions[spare].Height = h;
             sceneGrid.RowDefinitions[spare].Height = h;
         }
+
+        /// <summary>The grid's rows (header, scenes, stop buttons) don't fit in a height: it scrolls up and down.</summary>
+        bool ScrollsUpAndDown(double height) =>
+            12 + HeaderHeight + Gap + sceneCount * (RowHeight + Gap) + RowHeight + 8 > height + 0.5;
 
         /// <summary>A spare row double-clicked: the scenes down to it are added, and a clip made in the track's slot (track -1: just the scenes).</summary>
         internal void UseSpareRow(int track, int scene)

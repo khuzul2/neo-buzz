@@ -254,7 +254,9 @@ namespace ReBuzzTests
 
             Screenshot(view, "session-view-wide", 1400, 480);
             Assert.That(view.ScenesFrozen, Is.False);
-            Assert.That(BoundsIn(view.Scenes[0], view).Left, Is.EqualTo(BoundsIn(view.Headers.Last(), view).Right).Within(3), "wide enough: right after the last track");
+            Assert.That(BoundsIn(view.Headers[0], view).Left, Is.EqualTo(6).Within(1), "nothing scrolled sideways: every track in view");
+            // Right after the last track (and the grid's vertical scroll bar, which takes room in WPF when the rows overflow).
+            Assert.That(BoundsIn(view.Scenes[0], view).Left, Is.EqualTo(BoundsIn(view.Headers.Last(), view).Right).Within(SystemParameters.VerticalScrollBarWidth + 3), "wide enough: right after the last track");
         }
 
         [Test]
