@@ -30,8 +30,11 @@ namespace NeoBuzz.Editor
         public string Label { get; set; } = "";
         /// <summary>Text of the current value (set by the owner).</summary>
         public string ValueText { get; set; } = "";
-        /// <summary>The value arc grows from the centre (for −/+ parameters).</summary>
-        public bool Bipolar { get; set; }
+        /// <summary>
+        /// Where the value arc starts, as a position 0 … 1: the value 0 for −/+ parameters (ParamMapping.ArcOrigin),
+        /// else 0, the range's minimum.
+        /// </summary>
+        public double Origin { get; set; }
         public double Default { get; set; }
         /// <summary>Steps for the wheel: the parameter's range.</summary>
         public int Steps { get; set; } = 100;
@@ -114,7 +117,7 @@ namespace NeoBuzz.Editor
             // Track and value arcs.
             c.Arc(centre, r - 2, -Sweep, Sweep, new NeoStroke(Palette.Track, 4));
             double a = -Sweep + 2 * Sweep * Value;
-            double from = Bipolar ? 0 : -Sweep;
+            double from = -Sweep + 2 * Sweep * Math.Clamp(Origin, 0, 1);
             if (Math.Abs(a - from) > 0.5)
                 c.Arc(centre, r - 2, from, a, new NeoStroke(accent, 4));
             if (Safe is (double lo, double hi))

@@ -32,8 +32,8 @@ namespace NeoBuzz.Editor
         public string Label { get => model.Label; set => model.Label = value; }
         /// <summary>Text of the current value (set by the owner).</summary>
         public string ValueText { get => model.ValueText; set => model.ValueText = value; }
-        /// <summary>The value arc grows from the centre (for −/+ parameters).</summary>
-        public bool Bipolar { get => model.Bipolar; set => model.Bipolar = value; }
+        /// <summary>Where the value arc starts, a position 0 … 1 (the value 0 for −/+ parameters, else the minimum).</summary>
+        public double Origin { get => model.Origin; set => model.Origin = value; }
         public double Default { get => model.Default; set => model.Default = value; }
         /// <summary>Steps for wheel and arrow keys: the parameter's range.</summary>
         public int Steps { get => model.Steps; set => model.Steps = value; }

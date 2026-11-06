@@ -257,12 +257,69 @@ namespace NeoBuzz.MachineTests
             Assert.That(c.Calls[4].Text == "Drive" && c.Calls[4].Align == NeoAlign.Center, Is.True);
             Assert.That(c.Calls[5].Color, Is.EqualTo(Palette.DimText), "the value is dim until hovered");
 
-            // Bipolar at the centre: no value arc.
-            var b = new KnobModel(46) { Bipolar = true };
+            // At its origin (the middle, for a symmetric −/+ range): no value arc.
+            var b = new KnobModel(46) { Origin = 0.5 };
             b.Set(0.5);
             var c2 = new RecordingCanvas();
             b.Draw(c2, 64, Accent);
             Assert.That(c2.Of(NeoDrawKind.Arc).Count(), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void KnobArcsStartAtTheValueZeroOrTheMinimum()
+        {
+            // mac-409: Neo Limiter's Input gain (−12 … +24 dB) at 0.0 dB lit an arc from +6 dB, the knob's middle.
+            var gain = NeoBuzz.Limiter.Params.Table[NeoBuzz.Limiter.P.InputGain];
+            Assert.That(gain.Value(gain.Default), Is.EqualTo(0).Within(1e-9), "its default is 0 dB");
+            double origin = ParamMapping.ArcOrigin(gain);
+            Assert.That(origin, Is.EqualTo(1 / 3.0).Within(1e-9), "0 dB is a third of the way round");
+
+            KnobModel Knob(ParamDef def, int raw)
+            {
+                var k = new KnobModel(46) { Origin = ParamMapping.ArcOrigin(def) };
+                k.Set(ParamMapping.Normalized(def, raw));
+                return k;
+            }
+            List<NeoDrawCall> ValueArcs(KnobModel k)
+            {
+                var c = new RecordingCanvas();
+                k.Draw(c, 64, Accent);
+                return c.Of(NeoDrawKind.Arc).Where(a => a.Stroke.Color == Accent).ToList();
+            }
+            double Angle(double position) => -KnobModel.Sweep + 2 * KnobModel.Sweep * position;
+
+            Assert.That(ValueArcs(Knob(gain, gain.Default)), Is.Empty, "at 0 dB: no arc");
+            var up = ValueArcs(Knob(gain, gain.Raw(6))).Single();
+            Assert.That(up.FromDegrees, Is.EqualTo(Angle(origin)).Within(1e-6), "+6 dB: from 0 dB …");
+            Assert.That(up.ToDegrees, Is.EqualTo(Angle(ParamMapping.Normalized(gain, gain.Raw(6)))).Within(1e-6), "… to +6 dB");
+            var down = ValueArcs(Knob(gain, gain.Raw(-6))).Single();
+            Assert.That(down.ToDegrees, Is.EqualTo(Angle(origin)).Within(1e-6), "−6 dB: from −6 dB up to 0 dB");
+
+            // A symmetric −/+ range starts in the middle; a one-sided one at its minimum.
+            var pan = NeoBuzz.Utility.Params.Table[NeoBuzz.Utility.P.Pan];
+            Assert.That(ParamMapping.IsBipolar(pan), Is.True);
+            Assert.That(ParamMapping.ArcOrigin(pan), Is.EqualTo(0.5).Within(1e-3), "Pan: the middle");
+            var ceiling = NeoBuzz.Limiter.Params.Table[NeoBuzz.Limiter.P.Ceiling];
+            Assert.That(ParamMapping.ArcOrigin(ceiling), Is.EqualTo(0), "Ceiling, −12 … 0 dB: from its minimum");
+            var lookahead = NeoBuzz.Limiter.Params.Table[NeoBuzz.Limiter.P.Lookahead];
+            Assert.That(ParamMapping.ArcOrigin(lookahead), Is.EqualTo(0));
+            var low = ValueArcs(Knob(ceiling, ceiling.Raw(-6))).Single();
+            Assert.That(low.FromDegrees, Is.EqualTo(-KnobModel.Sweep).Within(1e-9));
+            // Any range across 0, whatever its kind: a ±50 ct fine tune, ±99 % feedback, Neo Delay's −50 … +100 % offset.
+            var fine = NeoBuzz.Wave.Params.Table[NeoBuzz.Wave.P.AFine];
+            Assert.That(ParamMapping.ArcOrigin(fine), Is.EqualTo(0.5).Within(1e-9), "A fine (±50 ct): the middle");
+            Assert.That(ValueArcs(Knob(fine, fine.Default)), Is.Empty, "at 0 ct: no arc");
+            var offset = NeoBuzz.Delay.Params.Table[NeoBuzz.Delay.P.Offset];
+            Assert.That(ParamMapping.ArcOrigin(offset), Is.EqualTo(1 / 3.0).Within(1e-3), "Offset: from 0 %");
+            // A level whose bottom is silence is one-sided: from the minimum.
+            var volume = NeoBuzz.Wave.Params.Table[NeoBuzz.Wave.P.Volume];
+            Assert.That(volume.Value(volume.Min), Is.EqualTo(double.NegativeInfinity));
+            Assert.That(ParamMapping.ArcOrigin(volume), Is.EqualTo(0), "Volume (−∞ … +6 dB): from the minimum");
+
+            // The crossing between two raw values, and ranges that fall.
+            Assert.That(ParamMapping.ZeroPosition(r => r - 2.5, 0, 10), Is.EqualTo(0.25).Within(1e-12));
+            Assert.That(ParamMapping.ZeroPosition(r => 5 - r, 0, 10), Is.EqualTo(0.5).Within(1e-12));
+            Assert.That(ParamMapping.ZeroPosition(r => r + 1, 0, 10), Is.EqualTo(0), "never 0: the minimum");
         }
 
         [Test]

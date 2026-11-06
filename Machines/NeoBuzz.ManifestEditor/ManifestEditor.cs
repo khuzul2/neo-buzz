@@ -196,7 +196,7 @@ namespace NeoBuzz.Editor
                 }
                 default:
                 {
-                    var knob = new ParamKnob(ctx, p.Slot, label) { Bipolar = p.Bipolar, Safe = p.SafePositions };
+                    var knob = new ParamKnob(ctx, p.Slot, label) { Origin = p.ArcOrigin, Safe = p.SafePositions };
                     knob.Width = Math.Clamp(label.Length * CharWidth + 10, knob.Width, 132);
                     knob.ToolTip = tip;
                     knob.RightClicked += () => Select(p, focus: true);

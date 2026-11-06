@@ -25,7 +25,7 @@ namespace NeoBuzz.Editor
         {
             var def = ctx.Table[index];
             Label = label ?? def.Name;
-            Bipolar = ParamMapping.IsBipolar(def);
+            Origin = ParamMapping.ArcOrigin(def);
             Steps = def.Max - def.Min;
             Binding = ctx.Bind(index, Show);
             Default = Binding.Normalized(def.Default);
