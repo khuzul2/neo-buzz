@@ -1579,7 +1579,10 @@ namespace ReBuzz.Core
                 }
                 catch (Exception e)
                 {
-                    userMessages.Error(e.InnerException == null ? e.Message : e.InnerException.Message, "Error loading " + filename, e);
+                    // Fork: what happened in words, the exception under Details (the apps' Error dialogs);
+                    // it said only "Unable to read beyond the end of the stream." (gallery mac-338).
+                    userMessages.Error(OpenFailedMessage(filename), Product.Name, e);
+                    DCWriteLine($"Opening {filename}: {e}", DCLogLevel.Error);
                     bmxFile.EndFileOperation(false);
                     NewSong();
                     return false;
@@ -1610,6 +1613,10 @@ namespace ReBuzz.Core
             }
             return false;
         }
+
+        /// <summary>Fork: the message when a song can't be opened (the exception goes under the dialog's Details).</summary>
+        internal static string OpenFailedMessage(string filename) =>
+            $"\u201C{Path.GetFileName(filename)}\u201D couldn't be opened. The file is damaged or isn't a song this app can read.";
 
         internal void ImportSong(float x, float y)
         {

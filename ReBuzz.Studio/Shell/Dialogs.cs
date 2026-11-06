@@ -76,6 +76,57 @@ namespace ReBuzz.Studio.Shell
 
         public static Task Info(string message, string caption) => Ask(message, caption, UserButtons.Ok);
 
+        /// <summary>
+        /// An error: what happened in words, and what went wrong technically under Details (closed
+        /// at first; its text can be selected and copied). Tests answer it with <see cref="Responder"/> (OK).
+        /// </summary>
+        public static async Task Error(string message, string caption, string details)
+        {
+            if (Responder?.Invoke(message, caption, UserButtons.Ok) is UserAnswer) return;
+            var owner = Owner;
+            var window = new Window
+            {
+                Title = caption,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                CanResize = false,
+                WindowStartupLocation = owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen,
+                ShowInTaskbar = false,
+            };
+            var ok = new Button { Content = "OK", MinWidth = 72, IsDefault = true, IsCancel = true };
+            ok.Click += (s, e) => window.Close();
+            var box = new TextBox
+            {
+                Text = details ?? "",
+                IsReadOnly = true,
+                TextWrapping = TextWrapping.Wrap,
+                FontFamily = new FontFamily("Menlo, Consolas, DejaVu Sans Mono, monospace"),
+                FontSize = 11,
+                MaxHeight = 220,
+                Tag = "details",
+            };
+            var expander = new Expander { Header = "Details", Content = box, IsExpanded = false, HorizontalAlignment = HorizontalAlignment.Stretch };
+            window.Content = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Spacing = 12,
+                Width = 480,
+                Children =
+                {
+                    new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, Tag = "message" },
+                    expander,
+                    new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { ok } },
+                },
+            };
+            if (owner != null) await window.ShowDialog(owner);
+            else
+            {
+                var closed = new TaskCompletionSource();
+                window.Closed += (s, e) => closed.TrySetResult();
+                window.Show();
+                await closed.Task;
+            }
+        }
+
         /// <summary>Tests answer text questions here: (title, current) → the text, or null for cancel.</summary>
         public static Func<string, string, string> TextResponder { get; set; }
 

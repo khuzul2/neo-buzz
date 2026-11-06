@@ -135,6 +135,33 @@ namespace ReBuzzTests
             Assert.That(driver.Core.InfoText, Is.EqualTo("Made with Buzz"), "and writes nothing over it");
         }
 
+        // ------------------------------------------------------------------ a song that can't be opened (mac-338)
+
+        [Test]
+        public void ASongThatCantBeOpenedSaysSoWithTheExceptionUnderDetails()
+        {
+            using var driver = new Driver();
+            driver.Start();
+            string broken = Path.Combine(Path.GetTempPath(), "neo-buzz-open-" + Environment.ProcessId, "Broken song.bmx");
+            Directory.CreateDirectory(Path.GetDirectoryName(broken)!);
+            File.WriteAllBytes(broken, System.Text.Encoding.ASCII.GetBytes("Buzz\0not a song at all"));
+            Assert.That(driver.Core.TryOpenSongFile(broken), Is.False);
+            Assert.That(driver.UserMessages.Message, Is.EqualTo("\u201CBroken song.bmx\u201D couldn't be opened. The file is damaged or isn't a song this app can read."),
+                "what happened in words, not the exception's message");
+            Assert.That(driver.UserMessages.Caption, Is.EqualTo(ReBuzz.Product.Name));
+
+            var outer = new InvalidOperationException("outer", new EndOfStreamException("Unable to read beyond the end of the stream."));
+            string details = ReBuzz.Core.ErrorDetails.Of(outer);
+            Assert.That(details, Does.StartWith("System.InvalidOperationException: outer" + Environment.NewLine +
+                                                "System.IO.EndOfStreamException: Unable to read beyond the end of the stream."));
+            var window = new ErrorDetailsWindow(driver.UserMessages.Message, driver.UserMessages.Caption, details);
+            Assert.That(window.MessageText.Text, Is.EqualTo(driver.UserMessages.Message));
+            Assert.That((window.Details.Header, window.Details.IsExpanded), Is.EqualTo(("Details", false)), "the exception under Details, closed");
+            Assert.That(window.DetailsBox.Text, Does.Contain("EndOfStreamException"));
+            window.Details.IsExpanded = true;
+            SessionViewTests.Screenshot((FrameworkElement)window.Content, "error-open-details", 520, 360);
+        }
+
         [Test]
         public void TheFileBrowsersDateColumnHoldsTheLongestDate()
         {

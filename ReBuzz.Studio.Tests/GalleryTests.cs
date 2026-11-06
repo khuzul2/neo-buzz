@@ -1052,7 +1052,7 @@ namespace ReBuzz.Studio.Tests
                 {
                     string broken = Path.Combine(SongFolder, "Broken song.bmx");
                     File.WriteAllBytes(broken, Encoding.ASCII.GetBytes("Buzz\0not a song at all"));
-                    DialogOnOpen(window, () => _ = SongFiles.Open(broken), "338-error-open", "An error: a file that isn't a song, opened.", "File ▸ Open… a damaged file.");
+                    DialogOnOpen(window, () => _ = SongFiles.Open(broken), "338-error-open", "An error: a file that isn't a song, opened. What happened in words; the exception under Details (closed).", "File ▸ Open… a damaged file.");
                 });
             }
             finally
