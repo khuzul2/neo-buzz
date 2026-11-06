@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Fork (docs/specs/dye-essence.md §5.2): Dye Essence's G0 stress machine (DyeStress.cs), about 700
+    parameters from its Params.def and a machine state of megabytes, built for net10.0 into the studio
+    tests' Gear/Generators as "Dye Stress.NET.dll", as the portable Neo machines are, with its
+    manifest beside it. The tests' project builds it; it is not shipped.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>Dye Stress.NET</AssemblyName>
+    <RootNamespace>ReBuzz.Studio.Tests.DyeStress</RootNamespace>
+    <Optimize>true</Optimize>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);MSB3277;CS1591;CS0067;CS0414;CS0169;CS0649</NoWarn>
+    <M>$(MSBuildThisFileDirectory)..\..\..\Machines\</M>
+    <GearDir Condition="'$(GearDir)' == ''">$(MSBuildThisFileDirectory)bin\Gear\</GearDir>
+    <OutDir>$([MSBuild]::EnsureTrailingSlash('$(GearDir)'))Generators\</OutDir>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="DyeStress.cs;Machine.Params.g.cs;Engine\Params.g.cs" />
+    <Compile Include="$(M)NeoBuzz.Dsp\**\*.cs" Link="Shared\Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="$(M)NeoBuzz.Machine\**\*.cs" Link="Shared\Machine\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="Dye Stress.machine.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The engine's portable machine API; the host provides it at run time (not copied). -->
+    <ProjectReference Include="..\..\..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" Private="false" GlobalPropertiesToRemove="GearDir" />
+    <ProjectReference Include="..\..\..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" Private="false" GlobalPropertiesToRemove="GearDir" />
+  </ItemGroup>
+</Project>

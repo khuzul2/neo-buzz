@@ -24,6 +24,8 @@
   <ItemGroup>
     <Compile Include="..\Machines\NeoBuzz.Dsp\**\*.cs" Link="Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\Machines\Neo*\Engine\**\*.cs" Link="Engines\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Dye Essence (docs/specs/dye-essence.md): a Neo-family machine with its own name. -->
+    <Compile Include="..\Machines\DyeEssence\Engine\**\*.cs" Link="Engines\DyeEssence\%(RecursiveDir)%(Filename)%(Extension)" />
     <!-- Neo Analyzer measures with the analysis library (docs/specs/mcp-server.md §7): its streaming
          meters, FFT, bands and stereo measures, checked here against the library's batch measures. -->
     <Compile Include="..\Machines\NeoBuzz.Analysis\LoudnessMeter.cs;..\Machines\NeoBuzz.Analysis\Fft.cs;..\Machines\NeoBuzz.Analysis\Spectrum.cs;..\Machines\NeoBuzz.Analysis\Stereo.cs;..\Machines\NeoBuzz.Analysis\GainMatch.cs" Link="Analysis\%(Filename)%(Extension)" />
