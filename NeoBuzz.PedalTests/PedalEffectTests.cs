@@ -2,7 +2,7 @@
 // effects U6 changed, run on their own Work (PedalHarness.cs):
 //  - silence after sound settles to exact zero, with no denormal number on the way (U6's fixes);
 //  - blocks of 256 and of 117 give the same output;
-//  - nothing allocates per block once running;
+//  - nothing allocates per block once running (each block measured by AllocationCheck);
 //  - the level at the defaults, and finite output with each parameter alone at each end;
 //  - the Shaper's aliasing (a distortion without oversampling: measured and recorded, not judged);
 //  - parameter changes glide: a step in a gain or a mix moves the output by small steps, and lands.
@@ -137,13 +137,14 @@ namespace NeoBuzz.PedalTests
             var ol = new float[l.Length];
             var or = new float[l.Length];
             run.Run(l, r, 0, Rate, 256, ol, or);                    // warm up: first-block set-up, the JIT
-            long calls = Stub.Calls, before = GC.GetAllocatedBytesForCurrentThread();
-            run.Run(l, r, Rate, 2 * Rate, 256, ol, or);
-            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            // Each block measured on its own (AllocationCheck: a failure says which blocks allocated, and what the thread
+            // did in them).
+            long calls = Stub.Calls;
+            var (bytes, why) = AllocationCheck.Run(2 * Rate / 256, b => run.Run(l, r, Rate + 256 * b, 256, 256, ol, or));
             // What the test's stand-in for ReBuzz's IBuzz allocated, answering (Pedal Comp asks it for the rate).
-            allocated -= (Stub.Calls - calls) * StubCallBytes();
+            long allocated = bytes - (Stub.Calls - calls) * StubCallBytes();
             PedalReport.Report($"{e.Name}: {allocated} bytes allocated over 2 s of blocks of 256");
-            Assert.That(allocated, Is.EqualTo(0));
+            Assert.That(allocated, Is.EqualTo(0), why);
         }
 
         /// <summary>Bytes the IBuzz stand-in allocates for one answer (it boxes it).</summary>
@@ -165,9 +166,8 @@ namespace NeoBuzz.PedalTests
             var ol = new float[l.Length];
             var or = new float[l.Length];
             run.Run(l, r, 0, Rate, 256, ol, or);
-            long before = GC.GetAllocatedBytesForCurrentThread();
-            run.Run(l, r, Rate, Rate, 256, ol, or);
-            Assert.That(GC.GetAllocatedBytesForCurrentThread() - before, Is.EqualTo(0), "soloed bands: no arrays per sample");
+            var (bytes, why) = AllocationCheck.Run(Rate / 256, b => run.Run(l, r, Rate + 256 * b, 256, 256, ol, or));
+            Assert.That(bytes, Is.EqualTo(0), "soloed bands: no arrays per sample. " + why);
         }
 
         [TestCaseSource(nameof(Effects))]

@@ -119,6 +119,9 @@ namespace PedalJuno106
 
             // Pre-LPF (BBD bandwidth)
             _preLpf += _bbdCoef * (input - _preLpf);
+            // Fork (neo-buzz, docs/specs/mcp-server.md §12.15): the filters settle to exact zero below −300 dBFS
+            // instead of decaying into the denormal floats (where they stayed, so the machine never went quiet).
+            if (_preLpf > -1e-15f && _preLpf < 1e-15f) _preLpf = 0f;
 
             // Write to both delay buffers
             _delayL[_writeIdx] = _preLpf;
@@ -139,6 +142,8 @@ namespace PedalJuno106
             // Post-LPF
             _postLpfL += _bbdCoef * (wetL - _postLpfL);
             _postLpfR += _bbdCoef * (wetR - _postLpfR);
+            if (_postLpfL > -1e-15f && _postLpfL < 1e-15f) _postLpfL = 0f;
+            if (_postLpfR > -1e-15f && _postLpfR < 1e-15f) _postLpfR = 0f;
 
             // Mix dry + wet
             outL = (input + _postLpfL) * 0.5f;

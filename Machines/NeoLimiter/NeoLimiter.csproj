@@ -21,6 +21,8 @@
     <Compile Include="..\NeoBuzz.Dsp\**\*.cs" Link="Shared\Dsp\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\NeoBuzz.Machine\**\*.cs" Link="Shared\Machine\%(RecursiveDir)%(Filename)%(Extension)" />
     <Compile Include="..\NeoBuzz.Editor\**\*.cs" Link="Shared\Editor\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- v2's gain-match reading and Unity listen (mastering-tools.md §2, §5.2). -->
+    <Compile Include="..\NeoBuzz.Analysis\Loudness.cs;..\NeoBuzz.Analysis\GainMatch.cs" Link="Shared\Analysis\%(Filename)%(Extension)" />
     <None Include="Params.def" />
     <None Include="Neo Limiter.prs.xml" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Neo Limiter.machine.json" CopyToOutputDirectory="PreserveNewest" />

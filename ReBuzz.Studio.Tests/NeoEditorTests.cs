@@ -37,7 +37,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Comp", "NeoCompEditor", "neo-comp-editor", 880, 294),
             ("Neo Drive", "NeoDriveEditor", "neo-drive-editor", 746, 322),
             ("Neo EQ", "NeoEqEditor", "neo-eq-editor", 822, 508),
-            ("Neo Limiter", "NeoLimiterEditor", "neo-limiter-editor", 718, 292),
+            ("Neo Limiter", "NeoLimiterEditor", "neo-limiter-editor", 940, 363),
             ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 679, 296),   // its switches as toggles, 92 px each (627 before); M1's Matrix drop-down, 96 px, widens the column (675 before)
             ("Neo Verb", "NeoVerbEditor", "neo-verb-editor", 880, 332),
             ("Neo Analyzer", "NeoAnalyzerEditor", "neo-analyzer-editor", 1118, 398),
@@ -48,7 +48,8 @@ namespace ReBuzz.Studio.Tests
             ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 458),
             ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1232, 738),
             ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 802, 620),
-            ("Dye Essence", "DyeEssenceEditor", "dye-essence-editor", 1299, 1666),
+            ("Dye Essence", "DyeEssenceEditor", "dye-essence-editor", 1299, 1672),
+            ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 956, 277),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;
@@ -1071,6 +1072,52 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        // ------------------------------------------------------------------ Neo Clipper
+
+        [AvaloniaTest]
+        public void NeoClippersMatchSetsOutputFromItsGainMatchAsOneUndoStep()
+        {
+            // Neo Poly → Neo Clipper (+12 dB of drive) → Master, a chord held: after 3 s the gain-match reading is known, the
+            // button shows it, and a click sets Output so the loudness comes back to the input's, as one undo step.
+            var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var poly = Add("Neo Poly", "Match Poly", -0.6f, 0);
+            var m = Add("Neo Clipper", "Match", 0, 0);
+            try
+            {
+                Core.SongCore.ConnectMachines(poly, m, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                Core.SongCore.ConnectMachines(m, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                Global(m, "Drive").SetValue(0, 240);   // +12 dB
+                var window = OpenEditor(m);
+                poly.TrackCount = Math.Max(poly.TrackCount, 3);
+                var note = poly.ParameterGroups[2].Parameters.First(p => p.Name == "Note");
+                int[] chord = { (3 << 4) + 1, (3 << 4) + 5, (3 << 4) + 8 };
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, chord[t]);
+                Run(3.6);
+                var engine = Get(m.ManagedMachine, "Engine");
+                double db = (double)Get(engine, "GainMatchDb");
+                Assert.That(double.IsFinite(db) && db > 1, Is.True, $"the clipper made it louder: gain match {db:F2} dB");
+                foreach (var v in window.GetVisualDescendants()) v.InvalidateVisual();
+                Thread.Sleep(300);
+                Dispatcher.UIThread.RunJobs();
+                var button = Controls(window, "ActionButton").Single(c => AutomationProperties.GetName(c)?.StartsWith("Match") == true);
+                var output = Global(m, "Output");
+                int before = output.GetValue(0), steps = Core.SongCore.ActionStack.Actions.Count();
+                Click(window, Centre(button, window));
+                int after = output.GetValue(0);
+                double set = (after - before) * 0.1;
+                TestContext.Out.WriteLine($"[notice] Neo Clipper's Match: gain match {db:F2} dB, Output {set:+0.0;-0.0} dB");
+                Assert.That(set, Is.EqualTo(-db).Within(0.15), "Output takes back what the clipper added");
+                Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(steps + 1), "one undo step");
+                Studio.Screenshot(window, "neo-clipper-editor-matched");
+                Core.SongCore.Undo();
+                Assert.That(output.GetValue(0), Is.EqualTo(before), "undo puts Output back");
+            }
+            finally
+            {
+                Remove(m, poly);
+            }
+        }
+
         // ------------------------------------------------------------------ Neo Filter
 
         [AvaloniaTest]
@@ -1373,9 +1420,15 @@ namespace ReBuzz.Studio.Tests
             var sampler = Add("Neo Sampler", "Scope Kick", -0.6f, 0);
             var scope = Add("Neo Scope", "Scope", 0, 0);
             bool looping = Core.Looping;
-            int loopStart = song.LoopStart, loopEnd = song.LoopEnd, songEnd = song.SongEnd;
+            int loopStart = song.LoopStart, loopEnd = song.LoopEnd, songEnd = song.SongEnd, bpm = Core.BPM, tpb = Core.TPB;
             try
             {
+                // Each pass draws the same sweep from a known start: 126 BPM at 4 ticks a beat (5250 samples a tick at
+                // 44.1 kHz), and the transport starting on a tick (below). The engine keeps its place in the tick while
+                // stopped and rescales it when the tempo changes, so earlier tests (ExitTests types 132 BPM) left it
+                // anywhere: from 1458 samples into a tick the second pass drew another sweep than the third.
+                Core.BPM = 126;
+                Core.TPB = 4;
                 song.ConnectMachines(sampler, scope, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
                 song.ConnectMachines(scope, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
                 Global(sampler, "Mode").SetValue(0, 1);                       // Kit: zone 1 on C2
@@ -1398,9 +1451,13 @@ namespace ReBuzz.Studio.Tests
                 Run(0.1);
                 var quiet = Frame(window);
 
-                // ---- Synced: three passes of the loop.
+                // ---- Synced: three passes of the loop, the transport starting on a tick.
                 var sweeps = new List<(long Number, double Start, bool Synced, int Filled, int Columns, float[] Max, float[] Min)>();
-                lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                lock (ReBuzzCore.AudioLock)
+                {
+                    ReBuzzCore.masterInfo.PosInTick = 0;
+                    Core.Playing = true;
+                }
                 double bar = 16.0 * ReBuzzCore.masterInfo.SamplesPerTick / ReBuzzCore.masterInfo.SamplesPerSec;
                 for (int k = 0; k < (int)(3.6 * bar / 0.05); k++)
                 {
@@ -1555,6 +1612,8 @@ namespace ReBuzz.Studio.Tests
                 song.LoopEnd = loopEnd;
                 song.LoopStart = loopStart;
                 song.SongEnd = songEnd;
+                Core.BPM = bpm;
+                Core.TPB = tpb;
                 foreach (var seq in song.Sequences.Where(q => q.Machine == sampler).ToList()) song.RemoveSequence(seq);
                 Remove(scope, sampler);
             }

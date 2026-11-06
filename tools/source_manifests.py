@@ -12,6 +12,8 @@
 # health, profile, notes) stay from the committed manifest, which tools/machine-profiler.py --merge keeps
 # up to date as it does a curated one's.
 #
+# U6 for the Pedal synths (§12.15) added Pedal Tracker, Chord, LFO and Peer Control, which had stayed drafts.
+#
 #   python3 tools/source_manifests.py            check: every committed manifest is what its source generates
 #   python3 tools/source_manifests.py --write    write them (Machines/Manifests/<Effects|Generators>/<Gear>.machine.json)
 
@@ -142,6 +144,89 @@ SPECS = [
               note="Off at 0"),
             P("Phase Linear", "switch", group="Output"),
             P("Spectrum View", "switch", group="Output", note="Shows the output's spectrum in its window; no effect on the sound"),
+        ],
+    },
+    # ---- the Pedal machines that were drafts after U6 (mcp-server.md §12.15) ------------------------------------
+    {
+        "gear": "Pedal Tracker", "kind": "generator", "file": PEDAL + "pedal-tracker/PedalTracker.cs", "section": "§12.15",
+        "summary": "A tracker after BTDSys Matilde: up to 16 tracks, each a voice playing a wave from the song's wavetable with "
+                   "its own volume and two effect-command columns (pitch slides, tone portamento, vibrato, sample offset, volume "
+                   "slides, retrigger, note cut and delay); a master level, master and per-track mutes that fade over Mute "
+                   "Inertia, a choice of interpolation, and an output per track beside the master mix. MIDI notes play the wave "
+                   "track 1 last chose (wave 1 until it chooses one), on free voices from the last.",
+        "params": [
+            P("Master", "linear", "v / 32768 * 100", "float  master = MasterParam / 32768f;", unit="%",
+              note="The master mix's level in % of unity (0x8000), up to 200 %; the per-track outputs leave it out"),
+            P("Mute", "switch"),
+            P("Mute Inertia", "linear", "v / 1000", "(inertiaMs / 1000f) * _engineRate", unit="s", own_texts=False,
+              note="0 is a one-block fade. Its own text (the engine's Milliseconds descriptor) reads the raw value over 500, "
+                   "0.0 … 1.0 ms; the code takes the raw value as ms"),
+        ] + [P(f"Mute Track {i}", "switch") for i in range(1, 17)] + [
+            P("Interpolation", "enum"),
+        ],
+        "track_params": [
+            P("Wave", "int", "v", "v.PendingWave = (byte)value;", note="The wave slot the track plays from its next note on; setting it sets the track's volume to unity"),
+            P("Volume", "table", "v > 0 ? 40 * Math.Log10(v / 128) : -inf", ["float davol    = v.PendingVolume / 128f;", "v.Volume       = davol * davol;"],
+              unit="dB", note="The amplitude is (v / 128)²: 0x80 is unity, 0xFE +11.9 dB, 0 silent"),
+            P("Cmd", "int", "v", "v.PendingCmd[slot] = (byte)value;", note="01/02 slide, 03 tone portamento, 04 vibrato, 09 sample offset, 0A volume slide, 0C set volume, 0E extended"),
+            P("Arg", "int", "v", "v.PendingArg[slot] = (byte)value;"),
+            P("Cmd2", "int", "v", "v.PendingCmd[slot] = (byte)value;"),
+            P("Arg2", "int", "v", "v.PendingArg[slot] = (byte)value;"),
+        ],
+    },
+    {
+        "gear": "Pedal Chord", "kind": "generator", "file": PEDAL + "pedal-chord/PedalChord.cs", "section": "§12.15",
+        "summary": "A control machine that turns each note in its track into a chord or an arpeggio on a target machine: 51 voicings, "
+                   "chord or five arpeggio modes, a step and octave range with octave walks, swing, and humanised timing and "
+                   "velocity. It makes no sound of its own.",
+        "params": [],
+        "track_params": [
+            P("Velocity", "int", "v", "_vs.Velocity = Math.Max(1, Math.Min(127, value));", note="The velocity it sends"),
+            P("Chord", "enum"),
+            P("Mode", "enum"),
+            P("Speed", "int", "v", "_vs.Speed = Math.Max(1, value);", unit="ticks", note="Ticks between arpeggio steps"),
+            P("Length", "int", "v", ["_vs.Length = Math.Max(0, value);", "_vs.SlotOff[0]   = _vs.Length > 0 ? _vs.Length : 0;"], unit="ticks",
+              note="0 holds each note until the next"),
+            P("Octaves", "int", "v", "_vs.OctaveSpread = Math.Max(1, Math.Min(4, value));"),
+            P("Step", "int", "v", "_vs.Step = Math.Max(1, Math.Min(8, value));"),
+            P("Oct Walk", "enum"),
+            P("Swing", "percent", "v / 100", "double ratio  = 1.0 + _vs.Swing / 100.0;", unit="%",
+              note="The long step of each pair is (1 + Swing) of the short: 100 % is 2:1"),
+            P("Swing On", "enum", choices=["1st beat", "2nd beat"]),
+            P("Humanize", "percent", "v / 100", "double drift = _vs.Speed * _vs.Humanize / 200.0;", unit="%",
+              note="Each step's timing moves by up to ±half this share of a step, at random"),
+            P("Hum. Vel", "percent", "v / 100", "? (int)Math.Round(_vs.Velocity * _vs.HumanizeVel / 200.0) : 0;", unit="%",
+              note="Each step's velocity moves by up to ±half this share of it, at random"),
+        ],
+    },
+    {
+        "gear": "Pedal LFO", "kind": "generator", "file": PEDAL + "pedal-lfo/PedalLFO.cs", "section": "§12.15",
+        "summary": "A control machine that moves another machine's parameter with a low-frequency wave (sine, triangle, square, "
+                   "saws, sample and hold) around a centre by a depth, free-running over a period in ticks or locked to the "
+                   "song's beat. It makes no sound of its own.",
+        "params": [
+            P("Shape", "enum"),
+            P("Period", "int", "v", "int    period = Period;", unit="ticks", note="One cycle; Sync other than Free overrides it"),
+            P("Depth", "percent", "v / 100", "double swing    = (Depth / 100.0) * range * 0.5;", unit="%"),
+            P("Center", "percent", "v / 100", "double centerNorm = Center / 100.0;", unit="%"),
+            P("Phase", "linear", "v / 128 * 360", "double phaseOffset = Phase / 128.0;", unit="°",
+              note="127 is 357.2° (the code divides by 128)"),
+            P("Sync", "enum"),
+            P("Bypass", "switch"),
+            P("Start", "switch"),
+        ],
+    },
+    {
+        "gear": "Pedal Peer Control", "kind": "generator", "file": PEDAL + "pedal-peer-control/PeerCtrl.cs", "section": "§12.15",
+        "summary": "A control machine with up to 64 tracks, each sending its Value through a mapping curve to a parameter of "
+                   "another machine (or out as MIDI controllers), gliding over Inertia; a track can mirror the one before it. "
+                   "It makes no sound of its own.",
+        "params": [
+            P("Inertia", "linear", "v / 10", "InertiaLength = value / 10.0f;", unit="ticks", note="The glide to a new value; 0 is off"),
+        ],
+        "track_params": [
+            P("Slaved", "switch", choices=["No", "Yes"], note="On a track after the first: it follows the track before"),
+            P("Value", "percent", "v / 65534", "ValueChange(_tracks[track], track, value / 65534.0f);", unit="%"),
         ],
     },
     # ---- ReBuzz's own managed machines ---------------------------------------------------------------------------
@@ -279,15 +364,23 @@ def split_args(text):
     return parts
 
 
-def literal(text):
+def literal(text, names=None):
+    """A ParameterDecl argument's value: a literal, or (U6 for the synths, §12.15) a constant of the machine's or an enum
+    member, cast or not ("PERIOD_MIN", "(int)Interp.Cubic"), from <names>."""
     t = text.strip()
+    cast = re.match(r"^\(\s*int\s*\)\s*([\w.]+)$", t)
+    if names is not None and (cast or re.match(r"^[A-Za-z_][\w.]*$", t)):
+        key = cast.group(1) if cast else t
+        for k in (key, key.split(".")[-1]):
+            if k in names:
+                return int(names[k]) if cast or float(names[k]).is_integer() else names[k]
     if t.startswith('"'):
         return json.loads(t)
     if t in ("true", "false"):
         return t == "true"
     m = re.match(r"^new\s*(?:[Ss]tring)?\s*\[\s*\]\s*\{(.*)\}$", t, re.S)
     if m:
-        return [literal(x) for x in split_args(m.group(1))]
+        return [literal(x, names) for x in split_args(m.group(1))]
     m = re.match(r"^(?:Descriptors|Transformations)\.(\w+)$", t)
     if m:
         return m.group(1)
@@ -298,9 +391,28 @@ def literal(text):
     raise ValueError(f"can't read {t!r} in a ParameterDecl")
 
 
+def source_names(path):
+    """The machine's constants (its file) and enum members (by "Enum.Member", from every file of its folder)."""
+    src = strip_comments(open(os.path.join(ROOT, path), encoding="utf-8-sig").read())
+    names = constants(src)
+    folder = os.path.dirname(os.path.join(ROOT, path))
+    for f in sorted(os.listdir(folder)):
+        if not f.endswith(".cs"):
+            continue
+        text = strip_comments(open(os.path.join(folder, f), encoding="utf-8-sig").read())
+        for m in re.finditer(r"\benum\s+(\w+)\s*(?::\s*\w+\s*)?\{([^}]*)\}", text):
+            value = -1
+            for part in split_args(m.group(2)):
+                k, _, v = part.partition("=")
+                value = int(v.strip(), 0) if v.strip() else value + 1
+                names[f"{m.group(1)}.{k.strip()}"] = value
+    return names
+
+
 def declarations(path):
     """The [ParameterDecl]s of a machine source, in order: (member name, type, is_method, {argument: value})."""
     src = strip_comments(open(os.path.join(ROOT, path), encoding="utf-8-sig").read())
+    names = source_names(path)
     out = []
     for m in re.finditer(r"\[\s*ParameterDecl\s*\(", src):
         i, depth = m.end(), 1
@@ -318,7 +430,7 @@ def declarations(path):
         args = {}
         for part in split_args(src[m.end():i - 1]):
             k, _, v = part.partition("=")
-            args[k.strip()] = literal(v)
+            args[k.strip()] = literal(v, names)
         d = re.compile(r"\]\s*(?:\[[^\]]*\]\s*)*public\s+(?:override\s+|virtual\s+)?([\w.<>\[\]]+)\s+(\w+)\s*(\(|\{|=>)").match(src, i)
         if not d:
             raise ValueError(f"{path}: a ParameterDecl at offset {m.start()} isn't on a public property or method")
@@ -338,7 +450,9 @@ def machine_params(path):
         name = a.get("Name") or member
         stateless = bool(a.get("IsStateless"))
         vd = a.get("ValueDescriptions")
-        if typ == "bool":
+        if a.get("IsWaveNumber"):
+            lo, hi, de = 1, 200, 1   # MachineParameter.Create: a wave number is 1–200, default 1, whatever it declares
+        elif typ == "bool":
             lo, hi, de = 0, 1, 1 if a.get("DefValue") is True else 0
         elif typ == "Note":
             continue
@@ -383,6 +497,7 @@ def to_python(expr):
 
 def evaluate(expr, names, v=None):
     env = dict(names)
+    env.setdefault("inf", math.inf)
     if v is not None:
         env["v"] = v
     return eval(to_python(expr), {"math": math, "__builtins__": {}}, env)
@@ -484,7 +599,7 @@ def generate(spec, existing):
     consts = constants(src)
     glob, track = machine_params(path)
     m = {"format": FORMAT, "gear": spec["gear"], "kind": spec["kind"], "status": "generated",
-         "source": f"generated by tools/source_manifests.py from {path} (mcp-server.md §12.13, U6)"}
+         "source": f"generated by tools/source_manifests.py from {path} (mcp-server.md {spec.get('section', '§12.13, U6')})"}
     for k in ("type",):
         if existing and k in existing:
             m[k] = existing[k]

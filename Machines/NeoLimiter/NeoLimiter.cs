@@ -55,8 +55,14 @@ namespace NeoBuzz.Limiter
             return Join(left, right, output, n) || hasInput;
         }
 
-        /// <summary>Samples of delay ReBuzz compensates: the lookahead and the true-peak interpolator.</summary>
+        /// <summary>Samples of delay ReBuzz compensates: the lookahead and the true-peak interpolator (and v2's soft clip, when on).</summary>
         public int GetLatency() => Engine.Latency;
+
+        /// <summary>
+        /// For agents (machine_readings, docs/specs/mcp-server.md §3.5): gain_match_db (short-term loudness out − in, once 3 s
+        /// have played), gain_reduction_db (the most in the last 3 s) and latency_samples. Safe from any thread.
+        /// </summary>
+        public IReadOnlyDictionary<string, double> Readings => Engine.Readings();
 
         public IEnumerable<IMenuItem> Commands => new IMenuItem[]
         {
@@ -68,7 +74,8 @@ namespace NeoBuzz.Limiter
                     CanExecuteDelegate = _ => true,
                     ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Limiter — true-peak lookahead limiter: the output's 4× oversampled peak (as BS.1770 " +
-                        "measures it) stays under the ceiling. Auto or set release, stereo link.\n\n" +
+                        "measures it) stays under the ceiling. Auto or set release, stereo link; v2's upward compression, " +
+                        "transient emphasis, soft clip, two-stage release, transient unlink, Unity listen and Delta.\n\n" +
                         "Part of neo-buzz (docs/specs/machines.md).", "Neo Limiter"),
                 },
             },

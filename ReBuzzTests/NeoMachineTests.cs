@@ -106,6 +106,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Filter = new("Neo Filter", "Filter", false);
         // The hybrid wavetable synth (docs/specs/dye-essence.md): a Neo-family machine with its own name.
         internal static readonly NeoInfo Dye = new("Dye Essence", "Dye", true);
+        // The clipper (docs/specs/mastering-tools.md §5.1): oversampled curves into a ceiling no sample passes.
+        internal static readonly NeoInfo Clipper = new("Neo Clipper", "Clipper", false);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -1472,6 +1474,36 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void NeoClipperHoldsItsCeilingReportsItsLatencyAndReadingsAndShowsItsEditor()
+        {
+            using var rig = new Rig(Clipper);
+            Assert.That(rig.Param("Ceiling").DescribeValue(rig.Param("Ceiling").DefValue), Is.EqualTo("−0.3 dB"));
+            rig.Play(0.05);
+            // Two oversampled stages at 8× (62 samples each) and the 5 ms ceiling guard, at every setting.
+            int expected = 124 + (int)Math.Round(0.005 * rig.Rate) - 1;
+            Assert.That(rig.Effect.Latency, Is.EqualTo(expected), "the latency is reported");
+            rig.Param("Oversampling").SetValue(0, 0);
+            rig.Play(0.05);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(expected), "the same at 1×");
+
+            rig.Sine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters[0].SetValue(0, 100);   // 0 dBFS
+            rig.Param("Oversampling").SetValue(0, rig.Param("Oversampling").DefValue);
+            rig.Param("Drive").SetValue(0, 240);   // +12 dB into a −0.3 dB ceiling
+            rig.Play(0.5);
+            var y = rig.Play(3.5);
+            double peak = y.Max(s => Math.Abs((double)s));
+            TestContext.Out.WriteLine($"[notice] Neo Clipper in ReBuzz: peak {Db(peak):F4} dBFS with the ceiling at −0.3 dB and +12 dB in");
+            Assert.That(Db(peak), Is.LessThanOrEqualTo(-0.3 + 1e-4), "under the ceiling");
+            Assert.That(Db(peak), Is.GreaterThan(-1.5), "and clipping, not muting");
+            var instance = rig.Effect.ManagedMachine;
+            var readings = (System.Collections.Generic.IReadOnlyDictionary<string, double>)instance.GetType().GetProperty("Readings")!.GetValue(instance)!;
+            TestContext.Out.WriteLine($"[notice] Neo Clipper readings: {string.Join(", ", readings.Select(kv => $"{kv.Key} {kv.Value}"))}");
+            Assert.That(readings["clip_db"], Is.GreaterThan(10), "how far over");
+            Assert.That(readings.ContainsKey("gain_match_db"), Is.True, "3 s of sound: the gain match is known");
+            ShootEditor(rig.Effect, "neo-clipper-editor");
+        }
+
+        [Test]
         public void NeoLimiterHoldsTheCeilingReportsItsLatencyAndShowsItsEditor()
         {
             using var rig = new Rig(Limiter);
@@ -1506,9 +1538,33 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void NeoLimiterV2sSoftClipMovesItsLatencyAndTheCeilingHolds()
+        {
+            // mastering-tools.md §5.2: the soft clip (4× oversampled) adds 58 samples while on; the true-peak ceiling holds.
+            using var rig = new Rig(Limiter);
+            rig.Play(0.05);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(LimiterLatency(2, rig.Rate)));
+            rig.Param("Soft clip").SetValue(0, 2);   // 9 dB
+            rig.Play(0.1);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(LimiterLatency(2, rig.Rate) + 58), "the soft clip's latency reached ReBuzz");
+            rig.Sine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters[0].SetValue(0, 100);   // 0 dBFS
+            rig.Param("Input gain").SetValue(0, 240);   // +12 dB into −1 dBTP
+            rig.Param("Transients").SetValue(0, 30);
+            rig.Param("Slow stage").SetValue(0, 500);
+            rig.Play(0.5);
+            var y = rig.Play(0.5);
+            double peak = y.Max(s => Math.Abs((double)s));
+            TestContext.Out.WriteLine($"[notice] Neo Limiter v2 in ReBuzz, soft clip 9 dB and +12 dB in: peak {Db(peak):F3} dBFS under a −1 dBTP ceiling");
+            Assert.That(Db(peak), Is.LessThanOrEqualTo(-1 + 0.01));
+            rig.Param("Soft clip").SetValue(0, 0);
+            rig.Play(0.1);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(LimiterLatency(2, rig.Rate)), "and back");
+        }
+
+        [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, Clipper })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

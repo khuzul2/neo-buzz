@@ -335,6 +335,8 @@ namespace NeoBuzz.MachineTests
             for (int round = 0; round < 30; round++)
             {
                 foreach (var d in Params.Table) v.Set(d.Index, rng.Next(3) switch { 0 => d.Min, 1 => d.Max, _ => rng.Next(d.Min, d.Max + 1) });
+                // Unity listen restores the input's loudness: up to 24 dB louder than the ceiling (a monitor, off for rendering).
+                v.Set(P.Unity, 0);
                 var (yl, yr) = Run(e, l, r);
                 foreach (var s in yl.Concat(yr))
                 {

@@ -84,3 +84,52 @@ Ceiling = -1
 Release = 0.01
 Auto release = Off
 Lookahead = 0.5
+
+# v2's styles (docs/specs/mastering-tools.md §5.2): the stages set, each at +6 dB into −1 dBTP. Classic is v1.
+preset "Style — Classic"
+Input gain = 6
+Ceiling = -1
+Release = 0.1
+Auto release = On
+Lookahead = 2
+
+preset "Style — Transparent"
+Input gain = 6
+Ceiling = -1
+Release = 0.1
+Auto release = On
+Lookahead = 5
+Slow stage = 50
+Slow release = 1.5
+Transient unlink = 50
+
+preset "Style — Punchy"
+Input gain = 6
+Ceiling = -1
+Release = 0.1
+Auto release = On
+Lookahead = 2
+Transients = 3
+Transient unlink = 50
+Slow stage = 30
+
+preset "Style — Dense (Soft Clip 9 dB, Upward)"
+Input gain = 6
+Ceiling = -1
+Release = 0.1
+Auto release = On
+Lookahead = 2
+Upward = 3
+Upward threshold = -18
+Soft clip = 9 dB
+Slow stage = 40
+
+preset "Style — Loud (Soft Clip 3 dB)"
+Input gain = 6
+Ceiling = -1
+Release = 0.1
+Auto release = On
+Lookahead = 2
+Soft clip = 3 dB
+Transients = 1.5
+Slow stage = 30

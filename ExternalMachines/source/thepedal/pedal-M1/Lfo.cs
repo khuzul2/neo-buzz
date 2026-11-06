@@ -11,6 +11,7 @@
 // Fade-in: linear ramp from 0 to 1 over F ms after delay expires.
 
 using System;
+using System.Runtime.CompilerServices;
 
 namespace WDE.PedalM1
 {
@@ -60,6 +61,61 @@ namespace WDE.PedalM1
 
         // Per-sample tick. Returns LFO value in [-1, +1] scaled by fade-in.
         // During delay returns 0.
+        /// <summary>
+        /// Fork (neo-buzz, docs/specs/mcp-server.md §12.15): <paramref name="n"/> ticks' worth of time for both of a voice's
+        /// LFOs, their output unread: the same steps as Tick (the phase, its random values at each wrap, the delay and fade
+        /// counters), for a voice whose note has ended, so its next note's random values are what they were. Side by side,
+        /// the two phases' additions overlap (each is a chain of float adds, one per sample).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]   // a loop per block on the audio thread
+        public static void Skip(Lfo a, Lfo b, int n)
+        {
+            int ia = a.SkipCounting(n), ib = b.SkipCounting(n);
+            float pa = a._phase, pb = b._phase, inca = a._phaseInc, incb = b._phaseInc;
+            int both = n - Math.Max(ia, ib);
+            // The one with the shorter delay or fade first catches up to the other.
+            for (int i = ia; i < ib; i++) { pa += inca; if (pa >= 1f) { a._phase = pa; a.Wrap(); pa = a._phase; } }
+            for (int i = ib; i < ia; i++) { pb += incb; if (pb >= 1f) { b._phase = pb; b.Wrap(); pb = b._phase; } }
+            for (int i = 0; i < both; i++)
+            {
+                pa += inca;
+                pb += incb;
+                if (pa >= 1f) { a._phase = pa; a.Wrap(); pa = a._phase; }
+                if (pb >= 1f) { b._phase = pb; b.Wrap(); pb = b._phase; }
+            }
+            a._phase = pa;
+            b._phase = pb;
+        }
+
+        /// <summary>Tick's steps while its delay or fade counts (rarely, after a note); the samples it took.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        int SkipCounting(int n)
+        {
+            int i = 0;
+            for (; i < n && (_delayCounter > 0 || (_fadeCounter > 0 && _fadeSamples > 0)); i++)
+            {
+                if (_delayCounter > 0)
+                {
+                    _delayCounter--;
+                    _phase += _phaseInc;
+                    if (_phase >= 1f) _phase -= 1f;
+                    continue;
+                }
+                _fadeCounter--;
+                _phase += _phaseInc;
+                if (_phase >= 1f) Wrap();
+            }
+            return i;
+        }
+
+        void Wrap()
+        {
+            _phase -= 1f;
+            _shCurrent = NextRandom();
+            _smoothFrom = _smoothTo;
+            _smoothTo   = NextRandom();
+        }
+
         public float Tick()
         {
             if (_delayCounter > 0)

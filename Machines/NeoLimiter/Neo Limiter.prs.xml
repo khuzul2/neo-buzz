@@ -9,6 +9,16 @@
         <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
         <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="150" />
         <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -23,6 +33,16 @@
         <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
         <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="450" />
         <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -37,6 +57,16 @@
         <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
         <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="250" />
         <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -51,6 +81,16 @@
         <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
         <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="50" />
         <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -65,6 +105,16 @@
         <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
         <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="150" />
         <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -79,6 +129,16 @@
         <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
         <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="250" />
         <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -93,6 +153,16 @@
         <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
         <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="100" />
         <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -107,6 +177,16 @@
         <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="0" />
         <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="50" />
         <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -121,6 +201,16 @@
         <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
         <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="100" />
         <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -135,6 +225,16 @@
         <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="0" />
         <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="450" />
         <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -149,6 +249,16 @@
         <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
         <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="0" />
         <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
@@ -163,6 +273,136 @@
         <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="0" />
         <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="0" />
         <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Style — Classic">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="180" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="110" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="150" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="0" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Style — Transparent">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="180" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="110" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="450" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="572" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Style — Punchy">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="180" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="110" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="150" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="30" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="0" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="300" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="500" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Style — Dense (Soft Clip 9 dB, Upward)">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="180" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="110" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="150" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="30" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="220" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="0" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="2" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="400" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Style — Loud (Soft Clip 3 dB)">
+    <Preset Machine="Neo Limiter">
+      <Parameters>
+        <Parameter Name="Input gain" Group="1" Index="0" Track="0" Value="180" />
+        <Parameter Name="Ceiling" Group="1" Index="1" Track="0" Value="110" />
+        <Parameter Name="Release" Group="1" Index="2" Track="0" Value="1000" />
+        <Parameter Name="Auto release" Group="1" Index="3" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="4" Track="0" Value="150" />
+        <Parameter Name="Stereo link" Group="1" Index="5" Track="0" Value="1000" />
+        <Parameter Name="Upward" Group="1" Index="6" Track="0" Value="0" />
+        <Parameter Name="Upward threshold" Group="1" Index="7" Track="0" Value="200" />
+        <Parameter Name="Transients" Group="1" Index="8" Track="0" Value="15" />
+        <Parameter Name="Soft clip" Group="1" Index="9" Track="0" Value="1" />
+        <Parameter Name="Clip mix" Group="1" Index="10" Track="0" Value="1000" />
+        <Parameter Name="Slow stage" Group="1" Index="11" Track="0" Value="300" />
+        <Parameter Name="Slow release" Group="1" Index="12" Track="0" Value="500" />
+        <Parameter Name="Transient unlink" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Unity listen" Group="1" Index="14" Track="0" Value="0" />
+        <Parameter Name="Delta" Group="1" Index="15" Track="0" Value="0" />
       </Parameters>
       <Attributes />
       <Comment></Comment>
