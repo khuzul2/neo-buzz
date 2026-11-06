@@ -24029,7 +24029,7 @@
   "Neo EQ": {
    "gear": "Neo EQ",
    "kind": "effect",
-   "load_seconds": 0.12,
+   "load_seconds": 0.32,
    "gear_info": {
     "file": "Effects/Neo EQ.NET.dll",
     "managed": true,
@@ -24037,13 +24037,13 @@
     "max_tracks": 0,
     "takes_midi": false
    },
-   "parameters": 81,
+   "parameters": 162,
    "track_parameters": 0,
-   "inferred": 81,
+   "inferred": 162,
    "from_description": 0,
    "inference_check": {
-    "agree": 81,
-    "of": 81
+    "agree": 162,
+    "of": 162
    },
    "effect": {
     "gain_db": 0.0,
@@ -24383,8 +24383,8 @@
     },
     "thd_percent": 2.38
    },
-   "cpu_ms_per_s": 0.0,
-   "type": "EQ",
+   "cpu_ms_per_s": 79.6,
+   "type": "dynamics",
    "level_test": {
     "defaults": {
      "peak_dbfs": -9.22,
@@ -24398,7 +24398,7 @@
       "verdict": "ok"
      },
      "max": {
-      "peak_dbfs": 32.8,
+      "peak_dbfs": 31.63,
       "growth_db": 0.21,
       "verdict": "hot"
      }
@@ -24407,7 +24407,7 @@
      "every parameter at its maximum at once: hot",
      "an effect with B1 gain, B1 Q, B2 gain, B2 Q"
     ],
-    "renders": 145
+    "renders": 274
    },
    "sweeps": {
     "B4 gain": {
@@ -24457,33 +24457,33 @@
     }
    },
    "denormal": {
-    "playing_ms_per_s": 2.507,
-    "silent_ms_per_s": 0.567,
-    "silent_worst_ms_per_s": 2.138,
+    "playing_ms_per_s": 8.439,
+    "silent_ms_per_s": 0.922,
+    "silent_worst_ms_per_s": 11.428,
     "windows_ms_per_s": [
-     2.507,
-     2.138,
-     0.839,
-     0.666,
-     0.567,
-     0.575,
-     0.543,
-     0.517,
-     0.489,
-     0.484,
-     0.459
+     8.439,
+     11.428,
+     5.383,
+     0.922,
+     0.799,
+     10.561,
+     0.699,
+     0.656,
+     0.645,
+     1.712,
+     0.594
     ]
    },
-   "seconds": 14.6,
-   "platform": "windows",
-   "date": "2026-11-04",
+   "seconds": 91.6,
+   "platform": "linux",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
    "hot": [
     "hot (loud but steady) with B4 gain at its maximum (+24.0 dB): +0.7 dBFS peak; B5 gain at its maximum (+24.0 dB): +3.7 dBFS peak; B6 gain at its maximum (+24.0 dB): +7.2 dBFS peak; B7 gain at its maximum (+24.0 dB): +10.8 dBFS peak; Output at its maximum (+24.0 dB): +15.0 dBFS peak"
    ],
    "notes_profiler": [
-    "flat at its defaults; an EQ by its parameters (frequencies and gains)"
+    "unchanged at its defaults; dynamics by its parameters (threshold, ratio)"
    ],
    "generated": true,
    "health": "warn"

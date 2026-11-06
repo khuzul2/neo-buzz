@@ -36,7 +36,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo FM6", "NeoFm6Editor", "neo-fm6-editor", 1276, 946),
             ("Neo Comp", "NeoCompEditor", "neo-comp-editor", 880, 294),
             ("Neo Drive", "NeoDriveEditor", "neo-drive-editor", 746, 322),
-            ("Neo EQ", "NeoEqEditor", "neo-eq-editor", 822, 508),
+            ("Neo EQ", "NeoEqEditor", "neo-eq-editor", 892, 598),
             ("Neo Limiter", "NeoLimiterEditor", "neo-limiter-editor", 940, 363),
             ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 627, 296),
             ("Neo Verb", "NeoVerbEditor", "neo-verb-editor", 880, 332),

@@ -41,7 +41,8 @@ namespace NeoBuzz.Eq
             var main = input != null && input.Count > 0 ? input[0] : null;
             var key = input != null && input.Count > 1 ? input[1] : null;
             var outBuf = output != null && output.Count > 0 ? output[0] : null;
-            bool hasInput = (mode & WorkModes.WM_READ) != 0 && main != null && HasSignal(main, n);
+            // The host calls a two-input machine with WM_WRITE alone (MachineWorkInstance): an input is there when it has sound.
+            bool hasInput = main != null && HasSignal(main, n);
             if (!hasInput)
             {
                 // Run until resonant bands have rung out (a Q 30 bell at 20 Hz takes a while), then rest.
@@ -59,7 +60,15 @@ namespace NeoBuzz.Eq
             if (key != null) Split(key, keyLeft, keyRight, n);
             Engine.Process(left, right, key != null ? keyLeft : null, key != null ? keyRight : null, n);
             if (outBuf == null) return false;
-            return Join(left, right, outBuf, n) || hasInput;
+            bool active = Join(left, right, outBuf, n) || hasInput;
+            // As the host did for v1's one-input Work returning false (quiet in, under −120 dB out): the input passes as it
+            // is. The two-input host keeps whatever the buffer holds, so the machine copies it: v1's renders stay bit for bit.
+            if (!active)
+            {
+                if (main != null) Array.Copy(main, outBuf, n);
+                else Array.Clear(outBuf, 0, n);
+            }
+            return active;
         }
 
         /// <summary>Minimum phase: no latency.</summary>

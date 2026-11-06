@@ -6,6 +6,10 @@
 // engine runs it), and below it the selected slider's knob. WPF lays the editor out; the graph
 // draws on the kit's canvas (INeoCanvas) and its input is toolkit-free (Core/ResponseGraph.cs,
 // Core/GraphicSliders.cs).
+// v2 (docs/specs/mastering-tools.md §5.3): each band's channel and shape beside its type, a second row with its
+// dynamics (Off/Down/Up, the detector, threshold, ratio, knee, range, attack, release); in the graph a dynamic band's
+// range shaded and the curve drawn where its gain is now, a band off Stereo labelled L, R, M or S at its handle;
+// Delta and Match (Output set from the gain-match reading, one undo step) under Output.
 
 using System;
 #if !AVALONIA   // the studio's flavour takes these names from its kit (NeoBuzz.Editor.Avalonia/WpfNames.cs)
@@ -51,19 +55,31 @@ namespace NeoBuzz.Eq
             }, new ModeInput(Graphic, handles, sliders), animate: true);
             ctx.Changed += view.InvalidateVisual;
 
-            // One row of controls per band; only the selected band's is shown.
+            // One block of controls per band; only the selected band's is shown: its filter, then (v2) its dynamics.
             var rows = new Grid();
             var rowOf = new UIElement[EqDesign.Bands];
             for (int b = 0; b < EqDesign.Bands; b++)
             {
-                var row = Layout.Row(
+                var filter = Layout.Row(
                     new ParamChoice(ctx, EqDesign.On(b), "On", 34),
                     Layout.Gap(10),
                     Layout.Column(new ParamDropdown(ctx, EqDesign.TypeOf(b), "Type", 112), Layout.Gap(1, 6), new ParamDropdown(ctx, EqDesign.Slope(b), "Slope (cuts)", 112)),
+                    Layout.Gap(6),
+                    Layout.Column(new ParamDropdown(ctx, EqDesign.Channel(b), "Channel", 104), Layout.Gap(1, 6), new ParamDropdown(ctx, EqDesign.ShapeOf(b), "Shape", 104)),
                     Layout.Gap(8),
                     new ParamKnob(ctx, EqDesign.Freq(b), "Freq", 50),
                     new ParamKnob(ctx, EqDesign.Gain(b), "Gain", 50),
                     new ParamKnob(ctx, EqDesign.Q(b), "Q", 50));
+                var dynamics = Layout.Row(
+                    Layout.Column(new ParamChoice(ctx, EqDesign.Dynamic(b), "Dynamic", 40), Layout.Gap(1, 4), new ParamDropdown(ctx, EqDesign.Detect(b), "Detector", 120)),
+                    Layout.Gap(8),
+                    new ParamKnob(ctx, EqDesign.Threshold(b), "Thresh", 36),
+                    new ParamKnob(ctx, EqDesign.Ratio(b), "Ratio", 36),
+                    new ParamKnob(ctx, EqDesign.Knee(b), "Knee", 36),
+                    new ParamKnob(ctx, EqDesign.Range(b), "Range", 36),
+                    new ParamKnob(ctx, EqDesign.Attack(b), "Attack", 36),
+                    new ParamKnob(ctx, EqDesign.Release(b), "Release", 36));
+                var row = Layout.Column(filter, Layout.Gap(1, 6), dynamics);
                 row.Visibility = b == handles.Selected ? Visibility.Visible : Visibility.Collapsed;
                 rowOf[b] = row;
                 rows.Children.Add(row);
@@ -123,13 +139,38 @@ namespace NeoBuzz.Eq
             ShowMode();
             ctx.Changed += ShowMode;
 
-            var output = Layout.Column(
-                new ParamKnob(ctx, P.Output, diameter: 56),
-                Layout.Gap(1, 8),
-                Layout.Row(
-                    new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 200),
-                    Layout.Gap(6),
-                    new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 200)));
+            // v2: Match sets Output from the gain-match reading (one undo step); Delta hears what the EQ changes.
+            var match = new ActionButton("Match", AccentColor, 96) { ToolTip = "Output takes back the loudness the EQ added or took (the gain-match reading, 3 s): one undo step" };
+            match.Click += () =>
+            {
+                double db = machine?.Engine.GainMatchDb ?? double.NaN;
+                if (!double.IsFinite(db)) return;
+                double to = NeoBuzz.Analysis.GainMatch.Match(ctx.Value(P.Output), db, -24, 24);
+                ctx.Set(P.Output, Params.Table[P.Output].Raw(to));
+                ctx.RaiseChanged();
+            };
+            Poll.Every(match, 0.25, () =>
+            {
+                double db = machine?.Engine.GainMatchDb ?? double.NaN;
+                string text = double.IsFinite(db) ? $"Match {(-db).ToString("+0.0;−0.0;0.0")} dB" : "Match";
+                if (text != match.Text)
+                {
+                    match.Text = text;
+                    match.InvalidateVisual();
+                }
+            });
+
+            var output = Layout.Row(
+                Layout.Column(
+                    new ParamKnob(ctx, P.Output, diameter: 56),
+                    Layout.Gap(1, 10),
+                    new ParamChoice(ctx, P.Delta, "Delta", 40),
+                    Layout.Gap(1, 8),
+                    match),
+                Layout.Gap(10),
+                new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 240),
+                Layout.Gap(6),
+                new Meter("Output", () => machine?.Engine.OutMeter.Peak ?? 0, AccentColor, 240));
 
             return Layout.Column(
                 Layout.Row(
@@ -137,6 +178,8 @@ namespace NeoBuzz.Eq
                     new Section("Output", AccentColor, output)),
                 new Section("Band", AccentColor, Layout.Row(mode, Layout.Gap(14), swap)));
         }
+
+        static readonly string[] ChannelLetters = { "", "L", "R", "M", "S" };
 
         static void Show(UIElement e, bool shown)
         {
@@ -251,8 +294,9 @@ namespace NeoBuzz.Eq
             public (double Hz, double Db, bool On, bool HasGain) Band(int i)
             {
                 var type = (BandType)(int)ctx.Value(EqDesign.TypeOf(i));
+                bool allPass = (BandShape)ctx.Raw(EqDesign.ShapeOf(i)) == BandShape.AllPass;
                 return (ctx.Value(EqDesign.Freq(i)), ctx.Value(EqDesign.Gain(i)), ctx.Value(EqDesign.On(i)) > 0,
-                    type is BandType.Bell or BandType.LowShelf or BandType.HighShelf);
+                    type is BandType.Bell or BandType.LowShelf or BandType.HighShelf && !allPass);
             }
 
             public void Move(int i, double hz, double? db)
@@ -415,21 +459,58 @@ namespace NeoBuzz.Eq
 
             int sel = handles.Selected;
             var colour = BandColors[sel];
+            // v2: each dynamic band where its gain is now (the engine's reading), in the selected band's curve and the total.
+            var now = new BandSettings[EqDesign.Bands];
+            for (int b = 0; b < EqDesign.Bands; b++)
+            {
+                now[b] = EqDesign.Settings(values, b);
+                now[b].GainDb += machine?.Engine.DynamicDb(b) ?? 0;
+            }
             if (values.On(EqDesign.On(sel)))
             {
                 var s = EqDesign.Settings(values, sel);
-                Func<double, double> own = hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(s, hz, rate)));
+                if (values.Choice(EqDesign.Dynamic(sel)) != 0 && s.HasGain)
+                {
+                    // The dynamic range: between the band at its setting and moved by Range, down or up.
+                    double range = values.Value(EqDesign.Range(sel)) * (values.Choice(EqDesign.Dynamic(sel)) == 1 ? -1 : 1);
+                    var moved = s;
+                    moved.GainDb = Math.Clamp(s.GainDb + range, -EqEngine.MaxDynamicDb, EqEngine.MaxDynamicDb);
+                    Func<double, double> at = hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(s, hz, rate)));
+                    Func<double, double> far = hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(moved, hz, rate)));
+                    g.Path(graph.Curve(far, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(0x70), 1));
+                    g.Path(graph.Curve(at, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(0x70), 1));
+                }
+                var live = now[sel];
+                Func<double, double> own = hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(live, hz, rate)));
                 g.Path(graph.Area(own), colour.WithAlpha(0x2C), NeoStroke.None);
                 g.Path(graph.Curve(own, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(0xB0), 1.2));
             }
-            g.Path(graph.Curve(hz => EqDesign.ResponseDb(values, hz, rate)), NeoFill.None, new NeoStroke(AccentColor, 2.2));
+            g.Path(graph.Curve(hz =>
+            {
+                double db = values.Value(P.Output);
+                for (int b = 0; b < EqDesign.Bands; b++)
+                    if (values.On(EqDesign.On(b))) db += 20 * Math.Log10(Math.Max(1e-12, EqDesign.Magnitude(now[b], hz, rate)));
+                return db;
+            }), NeoFill.None, new NeoStroke(AccentColor, 2.2));
             handles.Draw(g, BandColors);
+            // v2: a band on one channel or half carries its letter beside its handle.
+            for (int b = 0; b < EqDesign.Bands; b++)
+            {
+                int chan = values.Choice(EqDesign.Channel(b));
+                if (chan == 0 || !values.On(EqDesign.On(b))) continue;
+                var at = handles.Position(b);
+                g.Text(ChannelLetters[chan], at.X + BandHandleInput.Radius + 1, at.Y - 16, 9.5, BandColors[b]);
+            }
 
-            var b = EqDesign.Settings(values, sel);
-            string text = $"Band {sel + 1} · {Params.Table[EqDesign.TypeOf(sel)].Describe(values[EqDesign.TypeOf(sel)])} · {ParamDef.Freq(b.Hz)}";
-            if (b.HasGain) text += $" · {Params.Table[EqDesign.Gain(sel)].Describe(values[EqDesign.Gain(sel)])}";
-            text += $" · Q {b.Q:0.00}";
-            if (b.Type is BandType.LowCut or BandType.HighCut) text += $" · {Params.Table[EqDesign.Slope(sel)].Describe(values[EqDesign.Slope(sel)])}";
+            var cur = EqDesign.Settings(values, sel);
+            string text = $"Band {sel + 1} · {Params.Table[EqDesign.TypeOf(sel)].Describe(values[EqDesign.TypeOf(sel)])} · {ParamDef.Freq(cur.Hz)}";
+            if (cur.HasGain) text += $" · {Params.Table[EqDesign.Gain(sel)].Describe(values[EqDesign.Gain(sel)])}";
+            text += $" · Q {cur.Q:0.00}";
+            if (cur.Type is BandType.LowCut or BandType.HighCut) text += $" · {Params.Table[EqDesign.Slope(sel)].Describe(values[EqDesign.Slope(sel)])}";
+            if (cur.Shape != BandShape.Standard) text += $" · {Params.Table[EqDesign.ShapeOf(sel)].Describe(values[EqDesign.ShapeOf(sel)])}";
+            if (values.Choice(EqDesign.Channel(sel)) != 0) text += $" · {Params.Table[EqDesign.Channel(sel)].Describe(values[EqDesign.Channel(sel)])}";
+            if (values.Choice(EqDesign.Dynamic(sel)) != 0 && cur.HasGain)
+                text += $" · dynamic {Params.Table[EqDesign.Dynamic(sel)].Describe(values[EqDesign.Dynamic(sel)]).ToLowerInvariant()} {(machine?.Engine.DynamicDb(sel) ?? 0).ToString("+0.0;−0.0;0.0")} dB";
             if (!values.On(EqDesign.On(sel))) text += " (off)";
             g.Text(text, graph.Plot.Left + 6, graph.Plot.Top + 2, 10.5, values.On(EqDesign.On(sel)) ? colour : Palette.DimText);
         }

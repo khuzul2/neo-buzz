@@ -180,6 +180,16 @@ CASES = [
        auto=[("G 250 Hz", [(0, "-12 dB"), (1, "+12 dB"), (1.5, "-18 dB"), (2, "+6 dB")]),
              ("G 2 kHz", [(0, "+9 dB"), (0.75, "-9 dB"), (2.25, "+18 dB")]),
              ("Mode", [(0, "Graphic"), (2.5, "Parametric"), (3.25, "Graphic")])]),
+    # Neo EQ v2 (docs/specs/mastering-tools.md §5.3, M3): dynamic bands down and up (the detector on the band's shape,
+    # its envelope from the 90° pair, the 16-sample grid and its spline), Mid and Side bands, the shapes, Delta.
+    fx("eq-v2-deess", "Neo EQ", "Dynamic — De-ess", [("B6 threshold", "-50 dB"), ("B6 range", "12 dB")]),
+    fx("eq-v2-mid-resonance", "Neo EQ", "Dynamic — Resonance Control (Mid)", [("B4 threshold", "-50 dB"), ("B4 Q", 1.5)],
+       auto=[("B4 channel", [(2, "Side")])]),
+    fx("eq-v2-up-click", "Neo EQ", "Dynamic — Click on Hits (Up)", [("B6 threshold", "-50 dB"), ("B3 dynamic", "Down"), ("B3 freq", "300 Hz")]),
+    fx("eq-v2-shapes", "Neo EQ", "Character — Baxandall Tilt", [("B3 shape", "Proportional Q"), ("B3 gain", "+6 dB"), ("B4 shape", "All-pass"),
+       ("B5 channel", "Left"), ("B5 gain", "+4 dB"), ("B6 channel", "Right"), ("B6 gain", "-5 dB")]),
+    fx("eq-v2-vintage-ms-delta", "Neo EQ", "Character — Vintage Low Boost", [("B1 on", "on"), ("B1 channel", "Side"), ("B1 freq", "150 Hz"),
+       ("B8 on", "on"), ("B8 channel", "Mid"), ("B8 freq", "9 kHz")], auto=[("Delta", [(3, "On")])]),
     # Neo Limiter: pushed hard, auto and set release; Neo Analyzer after it (audio passes through).
     fx("limiter-loud", "Neo Limiter", "Mastering — Loud", [("Input gain", "+18 dB")], extra=[("Neo Analyzer", "Mix", [])]),
     fx("limiter-smash", "Neo Limiter", "Creative — Smash", [("Input gain", "+24 dB"), ("Auto release", "off")]),
