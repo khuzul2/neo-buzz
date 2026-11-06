@@ -399,7 +399,7 @@
       "vendoredOn": "2026-10-25",
       "path": "source/buzztrax-buzzmachines",
       "license": "Per author; see COPYING and each author folder",
-      "notes": "~120 classic machines (Arguru, FSM, Geonik, Jeskola, Makk, Oomek, WhiteNoise...). The nmake build covers FSM, Fuzzpilz, Matilde and Oomek; the rest are source only. The machines listed under natives (FSM, Oomek, Jeskola) build with tools/build-natives.ps1 as x86 and x64 in every full package build (docs/specs/mcp-server.md §12.14).",
+      "notes": "~120 classic machines (Arguru, FSM, Geonik, Jeskola, Makk, Oomek, WhiteNoise...). The nmake build covers FSM, Fuzzpilz, Matilde and Oomek; the rest are source only. The machines listed under natives (FSM, Oomek, Jeskola) build with tools/build-natives.ps1 as x86 and x64 in every full package build (docs/specs/mcp-server.md §12.14). A native whose source has no licence ships rebuilt only with \"licenseException\" set to exactly the exception build.ps1 records (user decision 2026-11-06, for private use): re-clear those, or set them back to \"ship\": \"upstream\", before any public release.",
       "project": "makefile.nmake",
       "nmakeBuilds": [
         "FSM",
@@ -409,7 +409,7 @@
       ],
       "patches": [
         "FSM/dspchips/DSPChips.h: no copysign macro on MSVC (it rewrote <cmath>'s declarations when Infector's <complex> included it after); the one call is _copysign, which the macro made it (U7)",
-        "FSM/WahMan, WahManPro, WahPro2: the glide's start cutoff (and WahManPro's LFO phase, whose default sets none, and WahMan's filter coefficients, which DoWork reads before it first computes them) set to 0 in Init; they were never set (U7)"
+        "FSM/WahMan, WahManPro, WahPro2: the glide's start cutoff (and WahManPro's LFO phase, whose default sets none, and WahMan's filter coefficients, which DoWork reads before it first computes them) set to 0 in Init; they were never set (U7). WahManPro's fix also starts its LFO at phase 0 where upstream's binary mostly started it elsewhere, so songs that leave its Set phase at no value can sound different (shipped by user decision 2026-11-06)"
       ],
       "natives": [
         {
@@ -546,7 +546,8 @@
           "redistribute": true,
           "upstreamBinary": "x64",
           "fix": "the glide's start cutoff and the LFO phase set to 0 in Init (never set: heap garbage)",
-          "ship": "upstream"
+          "notes": "Ships rebuilt with the fix by user decision 2026-11-06: with Set phase at no value (its default) the LFO starts at phase 0, where upstream's binary started it wherever its heap held (mostly elsewhere: its defaults then sound up to 8.1 dBFS apart). The same start as upstream's binary on a zeroed heap, bit for bit (tools/native-compare.py)",
+          "ship": "rebuilt"
         },
         {
           "gear": "FSM WahPro2",
@@ -627,6 +628,7 @@
           "license": "None stated (Jeskola folder: no licence file or header)",
           "redistribute": false,
           "upstreamBinary": "x86",
+          "notes": "Its x64 rebuild matches upstream's 32-bit binary within -150.5 dBFS (tools/native-compare.py), not bit for bit, so it isn't shipped: only rebuilds bit-identical to upstream's in every case ship under the licence exception (user decision 2026-11-06)",
           "ship": "upstream"
         },
         {
@@ -639,7 +641,7 @@
           "license": "None stated (Jeskola folder: no licence file or header)",
           "redistribute": false,
           "upstreamBinary": "x86",
-          "notes": "Buzztrax's rewrite: 'the original source is not available' (its first line)",
+          "notes": "Buzztrax's rewrite: 'the original source is not available' (its first line). Its rebuild doesn't play as upstream's binary (+3.0 dBFS apart at the defaults, as loud as the signal at the other settings: tools/native-compare.py), so upstream's stays",
           "ship": "upstream"
         },
         {
@@ -651,8 +653,10 @@
           ],
           "license": "None stated (Jeskola folder: no licence file or header)",
           "redistribute": false,
+          "licenseException": "no licence in source; shipped by user decision 2026-11-06 for private use",
           "upstreamBinary": "x86",
-          "ship": "upstream"
+          "ship": "rebuilt",
+          "shipPlatform": "x64"
         },
         {
           "gear": "Jeskola NiNjA dElaY",
@@ -667,6 +671,7 @@
           "license": "None stated (Jeskola folder: no licence file or header)",
           "redistribute": false,
           "upstreamBinary": "x86",
+          "notes": "Its x64 rebuild matches upstream's 32-bit binary within -119.4 dBFS (tools/native-compare.py), not bit for bit, so it isn't shipped: only rebuilds bit-identical to upstream's in every case ship under the licence exception (user decision 2026-11-06)",
           "ship": "upstream"
         },
         {
@@ -678,8 +683,10 @@
           ],
           "license": "None stated (Jeskola folder: no licence file or header)",
           "redistribute": false,
+          "licenseException": "no licence in source; shipped by user decision 2026-11-06 for private use",
           "upstreamBinary": "x86",
-          "ship": "upstream"
+          "ship": "rebuilt",
+          "shipPlatform": "x64"
         },
         {
           "gear": "Jeskola Noise Generator",
@@ -693,8 +700,10 @@
           ],
           "license": "None stated (Jeskola folder: no licence file or header)",
           "redistribute": false,
+          "licenseException": "no licence in source; shipped by user decision 2026-11-06 for private use",
           "upstreamBinary": "x86",
-          "ship": "upstream"
+          "ship": "rebuilt",
+          "shipPlatform": "x64"
         }
       ]
     },

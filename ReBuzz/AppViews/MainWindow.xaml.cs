@@ -332,10 +332,10 @@ namespace ReBuzz
                 Topmost = false; // important
                 Focus();         // important
 
-                if (generalSettings.CheckForUpdates && !UiShotsRequested)
-                {
-                    BuzzGUI.BuzzUpdate.UpdateService.CheckForUpdates(Buzz);
-                }
+                // Fork (NeoBuzz Live): no update check. Upstream's (BuzzGUI.BuzzUpdate) polled ReBuzz's latest release
+                // and offered upstream's installer, which would replace NeoBuzz Live; its builds come from its own
+                // downloads (Releases → mac-latest, the Windows package). The UpdateCheckTests (AgentTests, ReBuzzTests,
+                // Studio.Tests) keep it out.
             };
 
             mainGrid.Loaded += (s, e2) =>
