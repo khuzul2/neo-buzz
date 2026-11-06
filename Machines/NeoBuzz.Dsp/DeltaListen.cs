@@ -44,6 +44,15 @@ namespace NeoBuzz.Dsp
 
         public int MaxLatency { get; }
 
+        /// <summary>A new rate: the glide's length follows it (the switch keeps where it is).</summary>
+        public void SetSampleRate(double sampleRate)
+        {
+            float v = mix.Value, t = mix.Target;
+            mix.Setup(SwitchSeconds, sampleRate);
+            mix.Reset(v);
+            mix.SetTarget(t);
+        }
+
         /// <summary>The machine's latency now, samples (0 … MaxLatency): how far the dry is delayed.</summary>
         public int Latency
         {
@@ -69,6 +78,32 @@ namespace NeoBuzz.Dsp
             Array.Clear(l, 0, l.Length);
             Array.Clear(r, 0, r.Length);
             pos = 0;
+        }
+
+        /// <summary>
+        /// As <see cref="Process"/>, with the delta scaled by <paramref name="scale"/> once fully on (gliding with the switch):
+        /// wet becomes (wet − m·dry)·(1 + m·(scale − 1)). Neo Limiter hears what its limiting removes at the input's level
+        /// (scale 1/input gain), not 24 dB louder.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public void Process(float[] dryL, float[] dryR, float[] wetL, float[] wetR, int n, float scale)
+        {
+            if (!Active || scale == 1)
+            {
+                Process(dryL, dryR, wetL, wetR, n);
+                return;
+            }
+            for (int i = 0; i < n; i++)
+            {
+                pos = (pos + 1) & mask;
+                l[pos] = dryL[i];
+                if (dryR != null) r[pos] = dryR[i];
+                int at = (pos - latency) & mask;
+                float m = mix.Next();
+                float k = 1 + m * (scale - 1);
+                wetL[i] = (wetL[i] - m * l[at]) * k;
+                if (wetR != null) wetR[i] = (wetR[i] - m * r[at]) * k;
+            }
         }
 
         /// <summary>

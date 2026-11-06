@@ -14,6 +14,7 @@ namespace PedalFM
         public uint  Phase;
         public uint  Inc;                   // written by Voice each control block
         public float Level;
+        public float VelScale = 1f;         // fork (neo-buzz, §12.15): Level is the op's level × this, for its glide
         public readonly Envelope Env = new Envelope();
 
         // Per-op frequency config. RatioWithDetune folds the detune Pow into a

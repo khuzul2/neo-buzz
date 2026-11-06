@@ -52,8 +52,8 @@ namespace NeoBuzz.Analysis
                 var k = new KWeighting();
                 // Stage 1: high shelf (+4 dB above ~1.7 kHz), coefficients for any rate (as libebur128).
                 double f0 = 1681.974450955533, g = 3.999843853973347, q = 0.7071752369554196;
-                double kk = Math.Tan(Math.PI * f0 / rate);
-                double vh = Math.Pow(10, g / 20), vb = Math.Pow(vh, 0.4996667741545416);
+                double kk = NeoBuzz.Dsp.PortableMath.Tan(Math.PI * f0 / rate);
+                double vh = NeoBuzz.Dsp.PortableMath.Pow(10, g / 20), vb = NeoBuzz.Dsp.PortableMath.Pow(vh, 0.4996667741545416);
                 double a0 = 1 + kk / q + kk * kk;
                 k.b0 = (vh + vb * kk / q + kk * kk) / a0;
                 k.b1 = 2 * (kk * kk - vh) / a0;
@@ -63,7 +63,7 @@ namespace NeoBuzz.Analysis
                 // Stage 2: RLB high-pass (~38 Hz).
                 f0 = 38.13547087602444;
                 q = 0.5003270373238773;
-                kk = Math.Tan(Math.PI * f0 / rate);
+                kk = NeoBuzz.Dsp.PortableMath.Tan(Math.PI * f0 / rate);
                 double a0b = 1 + kk / q + kk * kk;
                 k.c0 = 1; k.c1 = -2; k.c2 = 1;
                 k.d1 = 2 * (kk * kk - 1) / a0b;

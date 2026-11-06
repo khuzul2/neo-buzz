@@ -14,7 +14,17 @@ namespace NeoBuzz.Limiter
         public const int AutoRelease = 3;
         public const int Lookahead = 4;
         public const int Link = 5;
-        public const int Count = 6;
+        public const int Upward = 6;
+        public const int UpThreshold = 7;
+        public const int Transients = 8;
+        public const int SoftClip = 9;
+        public const int ClipMix = 10;
+        public const int SlowStage = 11;
+        public const int SlowRelease = 12;
+        public const int Unlink = 13;
+        public const int Unity = 14;
+        public const int Delta = 15;
+        public const int Count = 16;
     }
 
     internal static class Params
@@ -30,6 +40,16 @@ namespace NeoBuzz.Limiter
             new ParamDef(P.AutoRelease, "AutoRelease", "Auto release", 0, 1, 1, MapKind.Switch, group: "Limiter", description: "Program-dependent release: short peaks recover fast, sustained limiting slowly (less distortion on dense material)"),
             new ParamDef(P.Lookahead, "Lookahead", "Lookahead", 0, 450, 150, MapKind.Linear, a: 0.5, b: 5, unit: "ms", digits: 2, group: "Detector", description: "The gain starts falling this long before a peak arrives (longer: smoother, less distortion; adds latency)"),
             new ParamDef(P.Link, "Link", "Stereo link", 0, 1000, 1000, MapKind.Percent, group: "Detector", description: "100 %: both channels get the same gain (the image stays put); 0 %: each channel on its own"),
+            new ParamDef(P.Upward, "Upward", "Upward", 0, 60, 0, MapKind.Linear, a: 0, b: 6, unit: "dB", digits: 1, group: "Stages", description: "Upward compression before the limiter (v2): quiet passages lifted by up to this much, half a dB for each dB their 3 s RMS sits under Upward threshold. 0 dB: off (as v1)"),
+            new ParamDef(P.UpThreshold, "UpThreshold", "Upward threshold", 0, 400, 200, MapKind.Linear, a: -40, b: 0, unit: "dB", digits: 1, group: "Stages", description: "The RMS level (dBFS, after Input gain) under which Upward lifts"),
+            new ParamDef(P.Transients, "Transients", "Transients", 0, 60, 0, MapKind.Linear, a: 0, b: 6, unit: "dB", digits: 1, group: "Stages", description: "Transient emphasis (v2): the first milliseconds of hits raised by up to this much before the limiter (the shared transient/sustain split), so limiting keeps their punch. 0 dB: off"),
+            new ParamDef(P.SoftClip, "SoftClip", "Soft clip", 0, 3, 0, MapKind.Enum, names: new[] { "Off", "3 dB", "9 dB", "30 dB" }, group: "Stages", description: "A soft clip before the limiter (v2), 4× oversampled with anti-aliasing: the curve bends from this far under the ceiling, so the limiter does less. Off: as v1 (adds 58 samples of latency when on)"),
+            new ParamDef(P.ClipMix, "ClipMix", "Clip mix", 0, 1000, 1000, MapKind.Percent, group: "Stages", description: "How much of the soft clip is heard (the rest the signal unclipped, delayed to match); the ceiling holds either way"),
+            new ParamDef(P.SlowStage, "SlowStage", "Slow stage", 0, 1000, 0, MapKind.Percent, group: "Stages", description: "Two-stage release (v2): a slow stage holds this much of the sustained reduction, so dense material doesn't pump between hits. 0 %: off (as v1)"),
+            new ParamDef(P.SlowRelease, "SlowRelease", "Slow release", 0, 1000, 500, MapKind.Time, a: 0.3, b: 5, group: "Stages", description: "The slow stage's release"),
+            new ParamDef(P.Unlink, "Unlink", "Transient unlink", 0, 1000, 0, MapKind.Percent, group: "Stages", description: "Transients limited per channel (v2): on hits the stereo link drops by this much, so one side's transient doesn't duck the other; sustained sound stays linked. 0 %: as v1"),
+            new ParamDef(P.Unity, "Unity", "Unity listen", 0, 1, 0, MapKind.Switch, group: "Stages", description: "Monitor at the input's loudness (v2): the output trimmed by the gain-match reading (short-term loudness out − in), to judge what limiting does at equal loudness. Off for rendering"),
+            new ParamDef(P.Delta, "Delta", "Delta", 0, 1, 0, MapKind.Switch, group: "Stages", description: "Hear only what the limiting changes (v2): the output minus the driven input, delayed to match, at the input's level (the input gain taken back off), gliding over 10 ms"),
         };
     }
 }

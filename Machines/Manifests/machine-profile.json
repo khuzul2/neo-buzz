@@ -423,6 +423,123 @@
    "generated": false,
    "health": "ok"
   },
+  "Dye Essence": {
+   "gear": "Dye Essence",
+   "kind": "generator",
+   "load_seconds": 0.39,
+   "gear_info": {
+    "file": "Generators/Dye Essence.NET.dll",
+    "managed": true,
+    "min_tracks": 1,
+    "max_tracks": 16,
+    "note_parameter": "Note",
+    "takes_midi": true
+   },
+   "parameters": 106,
+   "track_parameters": 0,
+   "inferred": 106,
+   "from_description": 1,
+   "inference_check": {
+    "agree": 105,
+    "of": 106
+   },
+   "notes": {
+    "input": "midi",
+    "pitched": true,
+    "pitch_offset": 0,
+    "cents": 0.0,
+    "heard": {
+     "A4": 69.0,
+     "A3": 57.0,
+     "A5": 81.0
+    },
+    "polyphony": 8,
+    "polyphony_levels": {
+     "1": -28.4,
+     "2": -25.2,
+     "4": -22,
+     "8": -19.1
+    }
+   },
+   "level": {
+    "note": "A4 at velocity 100, 1.5 beats",
+    "integrated_lufs": -28,
+    "sample_peak_dbfs": -21.7,
+    "true_peak_dbtp": -21.64
+   },
+   "cpu_ms_per_s": 11.8,
+   "type": "polysynth",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -21.69,
+     "growth_db": 0.0,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": null,
+      "verdict": "silent"
+     },
+     "max": {
+      "peak_dbfs": -19.51,
+      "growth_db": -26.52,
+      "verdict": "ok"
+     }
+    }
+   },
+   "envelope": {
+    "peak_db": -28.54,
+    "attack_s": 0.0,
+    "final_db": -1.29,
+    "length_s": null,
+    "release_s": 0.045,
+    "release_past_window": false,
+    "bright_mid_hz": 1061.1,
+    "bright_early_hz": 1131.7,
+    "bright_late_hz": 1061.1,
+    "level_wobble_db": 0.116,
+    "bright_wobble": 0.013,
+    "note": "A4 at velocity 100, held 2 s"
+   },
+   "velocity": {
+    "range_db": 8.38,
+    "db_per_doubling": 2.79,
+    "curve": "gentle (less than linear)",
+    "levels_db": {
+     "16": -35.56,
+     "32": -33.65,
+     "64": -30.98,
+     "127": -27.18
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 12.484,
+    "silent_ms_per_s": 6.34,
+    "silent_worst_ms_per_s": 7.608,
+    "windows_ms_per_s": [
+     12.484,
+     7.071,
+     7.608,
+     6.34,
+     6.142,
+     6.132,
+     6.128,
+     6.197,
+     6.324,
+     7.006,
+     6.762
+    ]
+   },
+   "seconds": 4.7,
+   "platform": "windows",
+   "date": "2026-11-06",
+   "problems": [],
+   "warnings": [],
+   "hot": [],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "ok"
+  },
   "EasyRec": {
    "gear": "EasyRec",
    "kind": "effect",
@@ -21719,6 +21836,429 @@
    "generated": true,
    "health": "ok"
   },
+  "Neo Clipper": {
+   "gear": "Neo Clipper",
+   "kind": "effect",
+   "load_seconds": 0.14,
+   "gear_info": {
+    "file": "Effects/Neo Clipper.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "takes_midi": false
+   },
+   "parameters": 15,
+   "track_parameters": 0,
+   "inferred": 15,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 15,
+    "of": 15
+   },
+   "effect": {
+    "gain_db": -0.14,
+    "latency_samples": 343,
+    "latency_ms": 7.78,
+    "tail_seconds": 0.01,
+    "echoes": 0,
+    "output_correlation": 1.0,
+    "spectrum_spread_db": 0.7,
+    "tilt_db": -0.1,
+    "sine": {
+     "loud": {
+      "gain_db": -0.0,
+      "thd_percent": 1.96,
+      "thd_in_percent": 1.96,
+      "movement_db": 0.13
+     },
+     "quiet": {
+      "gain_db": -0.0,
+      "thd_percent": 1.96,
+      "thd_in_percent": 1.96,
+      "movement_db": 0.13
+     }
+    },
+    "traits": [
+     "utility"
+    ],
+    "response": [
+     [
+      20.6,
+      0.0
+     ],
+     [
+      23.1,
+      -0.0
+     ],
+     [
+      26.0,
+      0.0
+     ],
+     [
+      29.1,
+      -0.0
+     ],
+     [
+      32.7,
+      -0.0
+     ],
+     [
+      36.7,
+      0.0
+     ],
+     [
+      41.2,
+      0.0
+     ],
+     [
+      46.2,
+      -0.0
+     ],
+     [
+      51.9,
+      -0.0
+     ],
+     [
+      58.3,
+      -0.0
+     ],
+     [
+      65.4,
+      -0.0
+     ],
+     [
+      73.4,
+      -0.0
+     ],
+     [
+      82.4,
+      -0.0
+     ],
+     [
+      92.5,
+      -0.0
+     ],
+     [
+      103.8,
+      -0.0
+     ],
+     [
+      116.5,
+      -0.0
+     ],
+     [
+      130.8,
+      0.0
+     ],
+     [
+      146.8,
+      0.0
+     ],
+     [
+      164.8,
+      0.0
+     ],
+     [
+      185.0,
+      0.0
+     ],
+     [
+      207.7,
+      -0.0
+     ],
+     [
+      233.1,
+      0.0
+     ],
+     [
+      261.6,
+      0.0
+     ],
+     [
+      293.7,
+      0.0
+     ],
+     [
+      329.6,
+      -0.0
+     ],
+     [
+      370.0,
+      0.0
+     ],
+     [
+      415.3,
+      -0.0
+     ],
+     [
+      466.2,
+      0.0
+     ],
+     [
+      523.3,
+      -0.0
+     ],
+     [
+      587.3,
+      -0.0
+     ],
+     [
+      659.3,
+      -0.0
+     ],
+     [
+      740.0,
+      -0.0
+     ],
+     [
+      830.6,
+      -0.0
+     ],
+     [
+      932.3,
+      -0.0
+     ],
+     [
+      1046.5,
+      -0.0
+     ],
+     [
+      1174.7,
+      -0.0
+     ],
+     [
+      1318.5,
+      -0.0
+     ],
+     [
+      1480.0,
+      -0.0
+     ],
+     [
+      1661.2,
+      -0.0
+     ],
+     [
+      1864.7,
+      -0.0
+     ],
+     [
+      2093.0,
+      -0.01
+     ],
+     [
+      2349.3,
+      -0.01
+     ],
+     [
+      2637.0,
+      -0.01
+     ],
+     [
+      2960.0,
+      -0.01
+     ],
+     [
+      3322.4,
+      -0.01
+     ],
+     [
+      3729.3,
+      -0.02
+     ],
+     [
+      4186.0,
+      -0.02
+     ],
+     [
+      4698.6,
+      -0.03
+     ],
+     [
+      5274.0,
+      -0.04
+     ],
+     [
+      5919.9,
+      -0.05
+     ],
+     [
+      6644.9,
+      -0.06
+     ],
+     [
+      7458.6,
+      -0.08
+     ],
+     [
+      8372.0,
+      -0.1
+     ],
+     [
+      9397.3,
+      -0.12
+     ],
+     [
+      10548.1,
+      -0.15
+     ],
+     [
+      11839.8,
+      -0.19
+     ],
+     [
+      13289.8,
+      -0.24
+     ],
+     [
+      14917.2,
+      -0.3
+     ],
+     [
+      16744.0,
+      -0.4
+     ],
+     [
+      18794.5,
+      -0.5
+     ]
+    ],
+    "response_summary": {
+     "level_db": -0.01,
+     "spread_db": 0.3,
+     "centroid_oct": -0.722,
+     "max_db": 0.0,
+     "max_hz": 20.6,
+     "prominence_db": 0.0,
+     "low_corner_hz": 20.6,
+     "high_corner_hz": 18794.5,
+     "width_oct": 9.83,
+     "tilt_db": -0.19,
+     "wobble_db": 0.0
+    },
+    "impulse": {
+     "latency_samples": 343,
+     "direct_db": -2.07,
+     "early_db": -4.58,
+     "late_db": -120.0,
+     "t60_s": null,
+     "t60_span_db": 0.0,
+     "ring_s": 0.005,
+     "rings_past_window": false,
+     "echoes": [],
+     "echoes_left": [],
+     "echoes_right": [],
+     "copy_s": null,
+     "late_onset_s": 0.003,
+     "balance_db": 0.0
+    },
+    "steps": {
+     "curve": [
+      [
+       -40.86,
+       -0.03
+      ],
+      [
+       -34.85,
+       -0.03
+      ],
+      [
+       -28.82,
+       -0.03
+      ],
+      [
+       -22.79,
+       -0.03
+      ],
+      [
+       -16.77,
+       -0.03
+      ],
+      [
+       -10.75,
+       -0.03
+      ],
+      [
+       -4.8,
+       -0.76
+      ]
+     ],
+     "compression_db": 0.36,
+     "top_slope": 0.939,
+     "knee_in_db": null,
+     "attack_s": 0.0,
+     "release_s": 0.0,
+     "attack_tau_s": null,
+     "release_tau_s": null
+    },
+    "thd_percent": 2.36
+   },
+   "cpu_ms_per_s": 3.2,
+   "type": "utility",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.26,
+     "growth_db": 0.27,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -33.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 25.29,
+      "growth_db": 0.23,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 28
+   },
+   "sweeps": {
+    "Output": {
+     "max": {
+      "peak_dbfs": 14.45,
+      "growth_db": 0.02,
+      "verdict": "hot",
+      "raw": 480,
+      "text": "+24.0 dB"
+     }
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 15.719,
+    "silent_ms_per_s": 0.516,
+    "silent_worst_ms_per_s": 0.881,
+    "windows_ms_per_s": [
+     15.719,
+     0.881,
+     0.542,
+     0.546,
+     0.505,
+     0.504,
+     0.499,
+     0.505,
+     0.522,
+     0.516,
+     0.5
+    ]
+   },
+   "seconds": 8.7,
+   "platform": "linux",
+   "date": "2026-11-06",
+   "problems": [],
+   "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Output at its maximum (+24.0 dB): +14.4 dBFS peak"
+   ],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "warn"
+  },
   "Neo Comp": {
    "gear": "Neo Comp",
    "kind": "effect",
@@ -28435,7 +28975,7 @@
    "gear": "Pedal Chord",
    "kind": "generator",
    "no_output": true,
-   "load_seconds": 0.01,
+   "load_seconds": 0.04,
    "gear_info": {
     "file": "Generators/Pedal Chord.NET.dll",
     "managed": true,
@@ -28450,9 +28990,9 @@
    "inferred": 12,
    "from_description": 1,
    "type": "control",
-   "seconds": 0.0,
+   "seconds": 0.2,
    "platform": "linux",
-   "date": "2026-11-04",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -31798,24 +32338,24 @@
   "Pedal FM": {
    "gear": "Pedal FM",
    "kind": "generator",
-   "load_seconds": 0.01,
+   "load_seconds": 0.05,
    "gear_info": {
     "file": "Generators/Pedal FM.NET.dll",
     "managed": true,
     "min_tracks": 1,
     "max_tracks": 16,
     "note_parameter": "Note",
-    "takes_midi": false,
-    "note_input": "tracks",
+    "takes_midi": true,
+    "note_input": "midi",
     "pitch_offset": 0,
-    "polyphony": 16
+    "polyphony": 8
    },
    "parameters": 42,
    "track_parameters": 1,
    "inferred": 43,
    "from_description": 18,
    "notes": {
-    "input": "tracks",
+    "input": "midi",
     "pitched": true,
     "heard": {
      "A4": 45.0,
@@ -31848,13 +32388,12 @@
     "pitch_offset": 0,
     "cents": 0.7,
     "pitch_method": "harmonic sieve",
-    "polyphony_note": "one voice per track, up to its 16 tracks",
-    "polyphony": 16,
+    "polyphony": 8,
     "polyphony_levels": {
      "1": -6,
      "2": -2.9,
-     "4": 0.2,
-     "8": 3.1
+     "4": 0.1,
+     "8": 3
     }
    },
    "level": {
@@ -31877,15 +32416,16 @@
       "verdict": "silent"
      },
      "max": {
-      "peak_dbfs": 3.44,
-      "growth_db": -0.03,
+      "peak_dbfs": 4.13,
+      "growth_db": -0.33,
+      "over_seconds": 30,
       "verdict": "hot"
      }
     },
     "swept_because": [
      "every parameter at its maximum at once: hot"
     ],
-    "renders": 77
+    "renders": 79
    },
    "sweeps": {},
    "envelope": {
@@ -31903,14 +32443,14 @@
     "note": "A4 at velocity 100, held 2 s"
    },
    "velocity": {
-    "range_db": 17.97,
-    "db_per_doubling": 6.01,
+    "range_db": 17.77,
+    "db_per_doubling": 5.95,
     "curve": "linear in amplitude (about 6 dB per doubling)",
     "levels_db": {
      "16": -26.65,
-     "32": -20.65,
-     "64": -14.62,
-     "127": -8.68
+     "32": -20.84,
+     "64": -14.84,
+     "127": -8.88
     }
    },
    "roles": {
@@ -32005,7 +32545,7 @@
      },
      "Op1 Attack": {
       "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 5.67 kHz → 856 Hz",
+      "evidence": "the brightness (centroid) 5.67 kHz → 854 Hz",
       "min": {
        "raw": 0,
        "text": "0 ms"
@@ -32089,7 +32629,7 @@
      },
      "Op2 Attack": {
       "suggested_role": "filter.env_amount",
-      "evidence": "the start's brightness 4.87 kHz → 302 Hz (RMS frequency), the held part's 3.37 kHz → 1.13 kHz",
+      "evidence": "the start's brightness 4.87 kHz → 301 Hz (RMS frequency), the held part's 3.37 kHz → 1.13 kHz",
       "min": {
        "raw": 0,
        "text": "0 ms"
@@ -32161,7 +32701,7 @@
      },
      "Op3 Level": {
       "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 55 Hz → 8.36 kHz",
+      "evidence": "the brightness (centroid) 55 Hz → 8.37 kHz",
       "min": {
        "raw": 0,
        "text": "0%"
@@ -32173,7 +32713,7 @@
      },
      "Op3 Attack": {
       "suggested_role": "filter.env_amount",
-      "evidence": "the start's brightness 4.87 kHz → 84.3 Hz (RMS frequency), the held part's 3.37 kHz → 1.21 kHz",
+      "evidence": "the start's brightness 4.87 kHz → 82.5 Hz (RMS frequency), the held part's 3.37 kHz → 1.21 kHz",
       "min": {
        "raw": 0,
        "text": "0 ms"
@@ -32305,7 +32845,7 @@
      },
      "Op1 Feedback": {
       "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 5.67 kHz → 9.79 kHz",
+      "evidence": "the brightness (centroid) 5.67 kHz → 9.76 kHz",
       "min": {
        "raw": 0,
        "text": "0"
@@ -32328,8 +32868,8 @@
       }
      },
      "Glide": {
-      "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 5.67 kHz → 55 Hz",
+      "suggested_role": null,
+      "evidence": "no measurable change between its ends with the others at their defaults",
       "min": {
        "raw": 0,
        "text": "0"
@@ -32365,7 +32905,7 @@
      },
      "LFO Pitch": {
       "suggested_role": "pitch.fine",
-      "evidence": "the pitch moves -76 cents",
+      "evidence": "the pitch moves +84 cents",
       "min": {
        "raw": 0,
        "text": "0"
@@ -32377,7 +32917,7 @@
      },
      "LFO Mod": {
       "suggested_role": "env.attack",
-      "evidence": "the attack 5 ms → 540 ms",
+      "evidence": "the attack 5 ms → 140 ms",
       "min": {
        "raw": 0,
        "text": "0"
@@ -32448,33 +32988,33 @@
       }
      }
     },
-    "renders": 122
+    "renders": 121
    },
    "denormal": {
-    "playing_ms_per_s": 1.692,
-    "silent_ms_per_s": 1.702,
-    "silent_worst_ms_per_s": 1.835,
+    "playing_ms_per_s": 2.858,
+    "silent_ms_per_s": 1.359,
+    "silent_worst_ms_per_s": 2.116,
     "windows_ms_per_s": [
-     1.692,
-     1.658,
-     1.649,
-     1.782,
-     1.656,
-     1.678,
-     1.79,
-     1.83,
-     1.835,
-     1.699,
-     1.702
+     2.858,
+     2.055,
+     2.084,
+     2.116,
+     1.67,
+     1.359,
+     0.979,
+     0.443,
+     0.405,
+     0.386,
+     0.388
     ]
    },
-   "seconds": 18.0,
+   "seconds": 39.1,
    "platform": "linux",
-   "date": "2026-11-04",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
    "hot": [
-    "hot with every parameter at its maximum at once (+3.4 dBFS peak), but with no parameter alone"
+    "hot with every parameter at its maximum at once (+4.1 dBFS peak over 30 s), but with no parameter alone"
    ],
    "notes_profiler": [],
    "generated": false,
@@ -34033,15 +34573,15 @@
   "Pedal Juno106": {
    "gear": "Pedal Juno106",
    "kind": "generator",
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/Pedal Juno106.NET.dll",
     "managed": true,
     "min_tracks": 1,
     "max_tracks": 6,
     "note_parameter": "Note",
-    "takes_midi": false,
-    "note_input": "tracks",
+    "takes_midi": true,
+    "note_input": "midi",
     "pitch_offset": 0,
     "polyphony": 6
    },
@@ -34050,35 +34590,35 @@
    "inferred": 25,
    "from_description": 6,
    "notes": {
-    "input": "tracks",
+    "input": "midi",
     "pitched": true,
     "pitch_offset": 0,
-    "cents": -11.4,
+    "cents": -0.4,
     "heard": {
-     "A4": 68.9,
-     "A3": 56.89,
-     "A5": 80.87
+     "A4": 69.02,
+     "A3": 56.99,
+     "A5": 80.98
     },
-    "polyphony_note": "one voice per track, up to its 6 tracks",
-    "polyphony": 6,
+    "polyphony": 1,
     "polyphony_levels": {
-     "1": -9.8,
-     "2": -6.4,
-     "4": -4.1
+     "1": -11.9,
+     "2": -10.7,
+     "4": -7.7,
+     "8": -4.6
     }
    },
    "level": {
     "note": "A4 at velocity 100, 1.5 beats",
-    "integrated_lufs": -9.8,
-    "sample_peak_dbfs": -4.43,
-    "true_peak_dbtp": -4.31
+    "integrated_lufs": -11.9,
+    "sample_peak_dbfs": -6.63,
+    "true_peak_dbtp": -6.52
    },
    "cpu_ms_per_s": 0.0,
-   "type": "polysynth",
+   "type": "monosynth",
    "level_test": {
     "defaults": {
-     "peak_dbfs": -4.43,
-     "growth_db": 0.0,
+     "peak_dbfs": -6.63,
+     "growth_db": 0.01,
      "verdict": "ok"
     },
     "all_at_once": {
@@ -34087,60 +34627,60 @@
       "verdict": "silent"
      },
      "max": {
-      "peak_dbfs": -3.68,
-      "growth_db": -1.31,
+      "peak_dbfs": -5.46,
+      "growth_db": -1.07,
       "verdict": "ok"
      }
     }
    },
    "envelope": {
-    "peak_db": -11.42,
+    "peak_db": -13.6,
     "attack_s": 0.005,
-    "final_db": -3.92,
-    "half_s": 0.135,
+    "final_db": -3.85,
+    "half_s": 0.14,
     "length_s": null,
-    "release_s": 0.215,
+    "release_s": 0.22,
     "release_past_window": false,
-    "bright_mid_hz": 12353.3,
-    "bright_early_hz": 12354.8,
-    "bright_late_hz": 12360.2,
+    "bright_mid_hz": 12334.2,
+    "bright_early_hz": 12337.7,
+    "bright_late_hz": 12339.0,
     "level_wobble_db": 0.0,
-    "bright_wobble": 0.002,
+    "bright_wobble": 0.003,
     "note": "A4 at velocity 100, held 2 s"
    },
    "velocity": {
-    "range_db": 0.0,
-    "db_per_doubling": 0.0,
-    "curve": "none (velocity doesn't change its level)",
+    "range_db": 17.99,
+    "db_per_doubling": 6.02,
+    "curve": "linear in amplitude (about 6 dB per doubling)",
     "levels_db": {
-     "16": -11.6,
-     "32": -11.6,
-     "64": -11.6,
-     "127": -11.6
+     "16": -29.6,
+     "32": -23.58,
+     "64": -17.56,
+     "127": -11.61
     }
    },
    "roles": {
     "default": {
-     "pitch": 32.9,
-     "centroid_hz": 2616,
+     "pitch": 33.0,
+     "centroid_hz": 2622,
      "peakiness_db": 60.0,
-     "tprom_db": -2.0,
+     "tprom_db": -2.1,
      "tprom_hz": 1250,
      "env_attack_s": 0.005,
      "env_half_s": 0.06,
-     "env_final_db": -7.41,
-     "env_release_s": 0.18,
-     "env_peak_db": -11.29,
-     "env_bright_early_hz": 12163.4,
-     "env_bright_mid_hz": 544.0,
-     "env_bright_late_hz": 466.1,
-     "env_level_wobble_db": 0.867,
-     "env_bright_wobble": 0.179
+     "env_final_db": -8.1,
+     "env_release_s": 0.19,
+     "env_peak_db": -13.36,
+     "env_bright_early_hz": 12161.6,
+     "env_bright_mid_hz": 545.0,
+     "env_bright_late_hz": 475.9,
+     "env_level_wobble_db": 0.818,
+     "env_bright_wobble": 0.159
     },
     "params": {
      "LFO Rate": {
       "suggested_role": "env.decay",
-      "evidence": "the level falls half way in 10 ms → 10 ms (the default 5 ms) to the same held level (with VCF Freq a third of the way up)",
+      "evidence": "the level falls half way in 5 ms → 5 ms (the default 10 ms) to the same held level (with VCF Freq a third of the way up)",
       "min": {
        "raw": 0,
        "text": "0.1 Hz"
@@ -34260,7 +34800,7 @@
      },
      "DCO Noise": {
       "suggested_role": "filter.env.decay",
-      "evidence": "the brightness 150–250 ms in 544 Hz → 4.81 kHz (RMS frequency), the start alike (12.2 kHz → 11.3 kHz)",
+      "evidence": "the brightness 150–250 ms in 545 Hz → 4.93 kHz (RMS frequency), the start alike (12.2 kHz → 11.6 kHz)",
       "min": {
        "raw": 0,
        "text": "0"
@@ -34284,7 +34824,7 @@
      },
      "VCF Freq": {
       "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 64 Hz → 10.4 kHz",
+      "evidence": "the brightness (centroid) 64 Hz → 10.6 kHz",
       "min": {
        "raw": 0,
        "text": "30 Hz"
@@ -34296,7 +34836,7 @@
      },
      "VCF Reso": {
       "suggested_role": "filter.resonance",
-      "evidence": "a peak at 10 kHz stands -2 → +27 dB over the spectrum an octave either side",
+      "evidence": "a peak at 10 kHz stands -2 → +28 dB over the spectrum an octave either side",
       "min": {
        "raw": 0,
        "text": "0%"
@@ -34308,7 +34848,7 @@
      },
      "VCF Env Amt": {
       "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 449 Hz → 10.7 kHz",
+      "evidence": "the brightness (centroid) 452 Hz → 10.6 kHz",
       "min": {
        "raw": 0,
        "text": "0 oct"
@@ -34332,7 +34872,7 @@
      },
      "VCF LFO": {
       "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 2.62 kHz → 10.9 kHz",
+      "evidence": "the brightness (centroid) 2.62 kHz → 11 kHz",
       "min": {
        "raw": 0,
        "text": "0"
@@ -34344,7 +34884,7 @@
      },
      "VCF Key Trk": {
       "suggested_role": "filter.keytrack",
-      "evidence": "it follows the note: the brightness (centroid) 10.7 kHz → 985 Hz on the low note, 10.6 kHz → 10.7 kHz 36 semitones up",
+      "evidence": "it follows the note: the brightness (centroid) 10.6 kHz → 991 Hz on the low note, 11 kHz → 11 kHz 36 semitones up",
       "min": {
        "raw": 0,
        "text": "0%"
@@ -34380,7 +34920,7 @@
      },
      "Env A": {
       "suggested_role": "env.attack",
-      "evidence": "the attack 5 ms → 900 ms",
+      "evidence": "the attack 5 ms → 840 ms",
       "min": {
        "raw": 0,
        "text": "1 ms"
@@ -34392,7 +34932,7 @@
      },
      "Env D": {
       "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 1.63 kHz → 10.4 kHz",
+      "evidence": "the brightness (centroid) 1.64 kHz → 10.6 kHz",
       "min": {
        "raw": 0,
        "text": "5 ms"
@@ -34404,7 +34944,7 @@
      },
      "Env S": {
       "suggested_role": "filter.cutoff",
-      "evidence": "the brightness (centroid) 926 Hz → 10.4 kHz",
+      "evidence": "the brightness (centroid) 930 Hz → 10.6 kHz",
       "min": {
        "raw": 0,
        "text": "0%"
@@ -34442,26 +34982,26 @@
     "renders": 66
    },
    "denormal": {
-    "playing_ms_per_s": 2.141,
-    "silent_ms_per_s": 0.618,
-    "silent_worst_ms_per_s": 0.886,
+    "playing_ms_per_s": 4.224,
+    "silent_ms_per_s": 0.817,
+    "silent_worst_ms_per_s": 2.991,
     "windows_ms_per_s": [
-     2.141,
-     0.886,
-     0.608,
-     0.668,
-     0.608,
-     0.604,
-     0.85,
-     0.562,
-     0.618,
-     0.618,
-     0.603
+     4.224,
+     1.172,
+     0.819,
+     0.817,
+     0.833,
+     0.812,
+     0.793,
+     2.991,
+     0.786,
+     0.798,
+     0.806
     ]
    },
-   "seconds": 5.9,
+   "seconds": 6.8,
    "platform": "linux",
-   "date": "2026-11-04",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -34489,7 +35029,7 @@
    "type": "control",
    "seconds": 0.0,
    "platform": "linux",
-   "date": "2026-11-04",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -34503,17 +35043,17 @@
   "Pedal M1": {
    "gear": "Pedal M1",
    "kind": "generator",
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/Pedal M1.NET.dll",
     "managed": true,
     "min_tracks": 1,
     "max_tracks": 8,
     "note_parameter": "Note",
-    "takes_midi": false,
-    "note_input": "tracks",
+    "takes_midi": true,
+    "note_input": "midi",
     "pitch_offset": 0,
-    "polyphony": 1
+    "polyphony": 8
    },
    "parameters": 53,
    "track_parameters": 1,
@@ -34521,7 +35061,7 @@
    "from_description": 18,
    "needs_wave": true,
    "notes": {
-    "input": "tracks",
+    "input": "midi",
     "pitched": true,
     "pitch_offset": 0,
     "cents": 0.0,
@@ -34530,25 +35070,25 @@
      "A3": 57.0,
      "A5": 81.0
     },
-    "polyphony": 1,
+    "polyphony": 8,
     "polyphony_levels": {
-     "1": -25.9,
-     "2": -25.3,
-     "4": -24.3,
-     "8": -23.3
+     "1": -27.2,
+     "2": -24,
+     "4": -20.8,
+     "8": -18
     }
    },
    "level": {
     "note": "A4 at velocity 100, 1.5 beats",
-    "integrated_lufs": -25.5,
-    "sample_peak_dbfs": -21.21,
-    "true_peak_dbtp": -21.04
+    "integrated_lufs": -26.7,
+    "sample_peak_dbfs": -22.46,
+    "true_peak_dbtp": -22.29
    },
    "cpu_ms_per_s": 0.0,
-   "type": "monosynth",
+   "type": "polysynth",
    "level_test": {
     "defaults": {
-     "peak_dbfs": -21.21,
+     "peak_dbfs": -22.46,
      "verdict": "ok"
     },
     "all_at_once": {
@@ -34563,7 +35103,7 @@
     }
    },
    "envelope": {
-    "peak_db": -27.0,
+    "peak_db": -28.25,
     "attack_s": 0.005,
     "final_db": -0.48,
     "length_s": null,
@@ -34577,13 +35117,13 @@
     "note": "A4 at velocity 100, held 2 s"
    },
    "velocity": {
-    "range_db": 0.03,
-    "db_per_doubling": 0.01,
-    "curve": "none (velocity doesn't change its level)",
+    "range_db": 6.98,
+    "db_per_doubling": 2.33,
+    "curve": "gentle (less than linear)",
     "levels_db": {
-     "16": -27.19,
-     "32": -27.16,
-     "64": -27.16,
+     "16": -34.14,
+     "32": -32.69,
+     "64": -30.41,
      "127": -27.16
     }
    },
@@ -34598,7 +35138,7 @@
      "env_half_s": 0.005,
      "env_final_db": -3.72,
      "env_release_s": 0.08,
-     "env_peak_db": -24.12,
+     "env_peak_db": -25.37,
      "env_bright_early_hz": 243.5,
      "env_bright_mid_hz": 237.0,
      "env_bright_late_hz": 243.6,
@@ -35243,8 +35783,8 @@
       }
      },
      "track Volume": {
-      "suggested_role": "level",
-      "evidence": "the level +9 dB, the sound otherwise alike",
+      "suggested_role": null,
+      "evidence": "no measurable change between its ends with the others at their defaults",
       "min": {
        "raw": 0,
        "text": "0"
@@ -35258,26 +35798,26 @@
     "renders": 115
    },
    "denormal": {
-    "playing_ms_per_s": 2.737,
-    "silent_ms_per_s": 0.926,
-    "silent_worst_ms_per_s": 1.033,
+    "playing_ms_per_s": 10.329,
+    "silent_ms_per_s": 4.194,
+    "silent_worst_ms_per_s": 7.373,
     "windows_ms_per_s": [
-     2.737,
-     1.033,
-     0.929,
-     0.926,
-     0.943,
-     0.951,
-     0.903,
-     0.88,
-     0.862,
-     0.826,
-     0.81
+     10.329,
+     6.054,
+     6.114,
+     6.128,
+     4.194,
+     1.499,
+     3.354,
+     3.335,
+     1.323,
+     3.318,
+     7.373
     ]
    },
-   "seconds": 10.6,
+   "seconds": 13.8,
    "platform": "linux",
-   "date": "2026-11-04",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -36188,7 +36728,7 @@
   "Pedal Peer Control": {
    "gear": "Pedal Peer Control",
    "kind": "generator",
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/Pedal Peer Control.NET.dll",
     "managed": true,
@@ -36222,9 +36762,9 @@
      }
     }
    },
-   "seconds": 0.4,
+   "seconds": 0.8,
    "platform": "linux",
-   "date": "2026-11-04",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [
     "no sound from a MIDI note at its defaults (it has no Note track parameter)"
@@ -36808,15 +37348,15 @@
   "Pedal SH101": {
    "gear": "Pedal SH101",
    "kind": "generator",
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Generators/Pedal SH101.NET.dll",
     "managed": true,
     "min_tracks": 1,
     "max_tracks": 1,
     "note_parameter": "Note",
-    "takes_midi": false,
-    "note_input": "tracks",
+    "takes_midi": true,
+    "note_input": "midi",
     "pitch_offset": 0,
     "polyphony": 1
    },
@@ -36825,7 +37365,7 @@
    "inferred": 25,
    "from_description": 0,
    "notes": {
-    "input": "tracks",
+    "input": "midi",
     "pitched": true,
     "pitch_offset": 0,
     "cents": 0.0,
@@ -36836,20 +37376,23 @@
     },
     "polyphony": 1,
     "polyphony_levels": {
-     "1": -5.6
+     "1": -7.7,
+     "2": -7.9,
+     "4": -8.6,
+     "8": -9.2
     }
    },
    "level": {
     "note": "A4 at velocity 100, 1.5 beats",
-    "integrated_lufs": -5.9,
-    "sample_peak_dbfs": -4.29,
-    "true_peak_dbtp": -4.29
+    "integrated_lufs": -8,
+    "sample_peak_dbfs": -6.37,
+    "true_peak_dbtp": -6.37
    },
    "cpu_ms_per_s": 0.0,
    "type": "monosynth",
    "level_test": {
     "defaults": {
-     "peak_dbfs": -4.29,
+     "peak_dbfs": -6.37,
      "growth_db": -0.01,
      "verdict": "ok"
     },
@@ -36859,20 +37402,21 @@
       "verdict": "silent"
      },
      "max": {
-      "peak_dbfs": 10.86,
-      "growth_db": 1.09,
+      "peak_dbfs": 39.0,
+      "growth_db": 3.14,
+      "over_seconds": 30,
       "verdict": "hot"
      }
     },
     "swept_because": [
      "every parameter at its maximum at once: hot"
     ],
-    "renders": 38
+    "renders": 40
    },
    "sweeps": {
     "Sub Lvl": {
      "max": {
-      "peak_dbfs": 2.74,
+      "peak_dbfs": 0.69,
       "growth_db": -0.01,
       "verdict": "hot",
       "raw": 127,
@@ -36881,7 +37425,7 @@
     }
    },
    "envelope": {
-    "peak_db": -5.6,
+    "peak_db": -7.67,
     "attack_s": 0.005,
     "final_db": -2.1,
     "length_s": null,
@@ -36895,13 +37439,13 @@
     "note": "A4 at velocity 100, held 2 s"
    },
    "velocity": {
-    "range_db": 0.0,
-    "db_per_doubling": 0.0,
-    "curve": "none (velocity doesn't change its level)",
+    "range_db": 17.99,
+    "db_per_doubling": 6.02,
+    "curve": "linear in amplitude (about 6 dB per doubling)",
     "levels_db": {
-     "16": -5.74,
-     "32": -5.74,
-     "64": -5.74,
+     "16": -23.73,
+     "32": -17.72,
+     "64": -11.7,
      "127": -5.74
     }
    },
@@ -36910,13 +37454,13 @@
      "pitch": 33.0,
      "centroid_hz": 446,
      "peakiness_db": 60.0,
-     "tprom_db": 4.1,
+     "tprom_db": 4.2,
      "tprom_hz": 630,
      "env_attack_s": 0.01,
      "env_half_s": 0.005,
      "env_final_db": -3.74,
      "env_release_s": 0.31,
-     "env_peak_db": -3.07,
+     "env_peak_db": -5.14,
      "env_bright_early_hz": 163.1,
      "env_bright_mid_hz": 175.5,
      "env_bright_late_hz": 175.4,
@@ -37228,30 +37772,30 @@
     "renders": 66
    },
    "denormal": {
-    "playing_ms_per_s": 1.397,
-    "silent_ms_per_s": 1.407,
-    "silent_worst_ms_per_s": 1.599,
+    "playing_ms_per_s": 1.863,
+    "silent_ms_per_s": 0.28,
+    "silent_worst_ms_per_s": 0.864,
     "windows_ms_per_s": [
-     1.397,
-     1.372,
-     1.407,
-     1.359,
-     1.402,
-     1.406,
-     1.357,
-     1.482,
-     1.599,
-     1.435,
-     1.416
+     1.863,
+     0.864,
+     0.28,
+     0.296,
+     0.272,
+     0.295,
+     0.275,
+     0.28,
+     0.274,
+     0.283,
+     0.277
     ]
    },
-   "seconds": 10.0,
+   "seconds": 12.8,
    "platform": "linux",
-   "date": "2026-11-04",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
    "hot": [
-    "hot (loud but steady) with Sub Lvl at its maximum (100%): +2.7 dBFS peak"
+    "hot (loud but steady) with Sub Lvl at its maximum (100%): +0.7 dBFS peak"
    ],
    "notes_profiler": [],
    "generated": false,
@@ -37814,17 +38358,17 @@
   "Pedal Tracker": {
    "gear": "Pedal Tracker",
    "kind": "generator",
-   "load_seconds": 0.04,
+   "load_seconds": 0.05,
    "gear_info": {
     "file": "Generators/Pedal Tracker.NET.dll",
     "managed": true,
     "min_tracks": 1,
     "max_tracks": 16,
     "note_parameter": "Note",
-    "takes_midi": false,
-    "note_input": "tracks",
+    "takes_midi": true,
+    "note_input": "midi",
     "pitch_offset": 0,
-    "polyphony": 1
+    "polyphony": 16
    },
    "parameters": 20,
    "track_parameters": 6,
@@ -37832,7 +38376,7 @@
    "from_description": 0,
    "needs_wave": true,
    "notes": {
-    "input": "tracks",
+    "input": "midi",
     "pitched": true,
     "pitch_offset": 0,
     "cents": 0.0,
@@ -37841,25 +38385,25 @@
      "A3": 57.0,
      "A5": 81.0
     },
-    "polyphony": 1,
+    "polyphony": 8,
     "polyphony_levels": {
-     "1": -15.8,
-     "2": -15.8,
-     "4": -15.8,
-     "8": -16.8
+     "1": -19.9,
+     "2": -16.8,
+     "4": -13.4,
+     "8": -10.6
     }
    },
    "level": {
     "note": "A4 at velocity 100, 1.5 beats",
-    "integrated_lufs": -15.3,
-    "sample_peak_dbfs": -10.78,
-    "true_peak_dbtp": -10.78
+    "integrated_lufs": -19.5,
+    "sample_peak_dbfs": -14.93,
+    "true_peak_dbtp": -14.93
    },
    "cpu_ms_per_s": 0.0,
-   "type": "monosynth",
+   "type": "polysynth",
    "level_test": {
     "defaults": {
-     "peak_dbfs": -10.78,
+     "peak_dbfs": -14.93,
      "verdict": "ok"
     },
     "all_at_once": {
@@ -37874,7 +38418,7 @@
     }
    },
    "envelope": {
-    "peak_db": -16.8,
+    "peak_db": -20.96,
     "attack_s": 0.0,
     "final_db": -0.49,
     "length_s": null,
@@ -37888,13 +38432,13 @@
     "note": "A4 at velocity 100, held 2 s"
    },
    "velocity": {
-    "range_db": 0.0,
-    "db_per_doubling": 0.0,
-    "curve": "none (velocity doesn't change its level)",
+    "range_db": 35.98,
+    "db_per_doubling": 12.04,
+    "curve": "steeper than linear (velocity squared or a dB curve)",
     "levels_db": {
-     "16": -17.0,
-     "32": -17.0,
-     "64": -17.0,
+     "16": -52.98,
+     "32": -40.94,
+     "64": -28.9,
      "127": -17.0
     }
    },
@@ -37909,7 +38453,7 @@
      "env_half_s": 0.005,
      "env_final_db": -3.72,
      "env_release_s": 0.005,
-     "env_peak_db": -13.95,
+     "env_peak_db": -18.1,
      "env_bright_early_hz": 243.7,
      "env_bright_mid_hz": 237.2,
      "env_bright_late_hz": 243.8,
@@ -37938,7 +38482,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Inertia": {
@@ -37955,14 +38499,14 @@
      },
      "Mute Track 1": {
       "suggested_role": null,
-      "evidence": "silent at its maximum",
+      "evidence": "a choice: its texts say what it is; no role measured",
       "min": {
        "raw": 0,
        "text": "0"
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 2": {
@@ -37974,7 +38518,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 3": {
@@ -37986,7 +38530,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 4": {
@@ -37998,7 +38542,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 5": {
@@ -38010,7 +38554,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 6": {
@@ -38022,7 +38566,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 7": {
@@ -38034,7 +38578,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 8": {
@@ -38046,7 +38590,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 9": {
@@ -38058,7 +38602,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 10": {
@@ -38070,7 +38614,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 11": {
@@ -38082,7 +38626,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 12": {
@@ -38094,7 +38638,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 13": {
@@ -38106,7 +38650,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 14": {
@@ -38118,7 +38662,7 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 15": {
@@ -38130,19 +38674,19 @@
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Mute Track 16": {
       "suggested_role": null,
-      "evidence": "a choice: its texts say what it is; no role measured",
+      "evidence": "silent at its maximum",
       "min": {
        "raw": 0,
        "text": "0"
       },
       "max": {
        "raw": 1,
-       "text": "1"
+       "text": "On"
       }
      },
      "Interpolation": {
@@ -38170,8 +38714,8 @@
       }
      },
      "track Volume": {
-      "suggested_role": "level",
-      "evidence": "silent at its minimum, sounding at the other end",
+      "suggested_role": null,
+      "evidence": "no measurable change between its ends with the others at their defaults",
       "min": {
        "raw": 0,
        "text": "00  (silent)"
@@ -38233,26 +38777,26 @@
     "renders": 31
    },
    "denormal": {
-    "playing_ms_per_s": 3.366,
-    "silent_ms_per_s": 1.449,
-    "silent_worst_ms_per_s": 1.522,
+    "playing_ms_per_s": 2.107,
+    "silent_ms_per_s": 3.748,
+    "silent_worst_ms_per_s": 11.842,
     "windows_ms_per_s": [
-     3.366,
-     1.435,
-     1.463,
-     1.439,
-     1.522,
-     1.426,
-     1.43,
-     1.432,
-     1.51,
-     1.449,
-     1.508
+     2.107,
+     1.752,
+     1.741,
+     1.781,
+     1.738,
+     3.78,
+     3.788,
+     1.718,
+     11.842,
+     3.748,
+     9.815
     ]
    },
-   "seconds": 4.5,
+   "seconds": 4.7,
    "platform": "linux",
-   "date": "2026-11-04",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
    "hot": [],

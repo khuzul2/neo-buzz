@@ -3,27 +3,29 @@
  "gear": "Pedal M1",
  "kind": "generator",
  "status": "curated",
- "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed",
+ "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on linux, 2026-11-03 and the evidence listed Updated by hand (2026-11-06, mcp-server.md §12.15, U6 for the Pedal synths) for MIDI input.",
  "type": "sampler",
  "summary": "M1-style two-oscillator sample synth: each oscillator plays waves from the song's wavetable (up to four key zones), into a 2-pole low-pass, ADSRs and two LFOs. For pianos, strings, brass and other multisampled sounds.",
  "quirks": [
   "Needs a wave: it plays the song's wavetable (OSC1 Wave defaults to slot 1) and is silent until that slot holds one (wave_import).",
   "A wave edited or replaced after it first played is cached: reload the machine to hear the change (README).",
-  "Velocity is the track Volume column (127 = full); Amp Vel and Filter Vel at 0 ignore it.",
-  "Chords written by notes_write played as one voice in the profile, though its README says each track is a voice (U1: the multi-track note workaround, tier 3).",
+  "MIDI notes (notes_write's default) take any of its 8 voices, a free one first, else the one released longest ago; a note's velocity does what the Volume column does (127 = full), through Amp Vel and Filter Vel (at 0 they ignore it); pitch bend moves every voice ±2 semitones, the mod wheel brings in LFO 1's vibrato (as LFO1 to Pitch, up to its maximum) and the sustain pedal holds released notes.",
+  "Its Note track (notes_write with input \"tracks\") still plays as before, for old songs: a voice per track, its velocity the track Volume column; the 2026-11-03 profile heard a chord written there as one voice (U1: the multi-track note workaround, tier 3).",
   "It runs about 6 dB below other synths (README: internal headroom); raise Volume."
  ],
  "evidence": [
   "ExternalMachines/source/thepedal/pedal-M1/README.md — voice architecture, multisample zones, velocity, limitations",
   "ExternalMachines/source/thepedal/pedal-M1/PedalM1.cs — parameter scaling (TimeMs, CutoffHz, LfoSpeedHz, modulation depths in Work)",
-  "profile (tools/machine-profiler.py, linux 2026-11-03) — A4 at 440 Hz with a sine in wave slot 1, one voice heard for a chord, level"
+  "profile (tools/machine-profiler.py, linux 2026-11-03) — A4 at 440 Hz with a sine in wave slot 1, one voice heard for a chord, level",
+  "ExternalMachines/source/thepedal/pedal-M1/MidiIn.cs — MIDI notes and controllers (§12.15)",
+  "NeoBuzz.PedalTests/PedalSynthTests.cs — MIDI against a track's note, velocity, chords, bend, mod wheel, sustain (§12.15)"
  ],
  "tracks": 8,
  "notes": {
-  "input": "tracks",
+  "input": "midi",
   "pitch_offset": 0,
   "pitched": true,
-  "polyphony": 1
+  "polyphony": 8
  },
  "health": {
   "status": "ok",
@@ -32,13 +34,13 @@
  "profile": {
   "level": {
    "note": "A4 at velocity 100, 1.5 beats",
-   "integrated_lufs": -25.5,
-   "sample_peak_dbfs": -21.21,
-   "true_peak_dbtp": -21.04
+   "integrated_lufs": -26.7,
+   "sample_peak_dbfs": -22.46,
+   "true_peak_dbtp": -22.29
   },
   "level_test": {
    "defaults": {
-    "peak_dbfs": -21.21,
+    "peak_dbfs": -22.46,
     "verdict": "ok"
    },
    "all_at_once": {
@@ -53,7 +55,7 @@
    }
   },
   "envelope": {
-   "peak_db": -27.0,
+   "peak_db": -28.25,
    "attack_s": 0.005,
    "final_db": -0.48,
    "length_s": null,
@@ -67,13 +69,13 @@
    "note": "A4 at velocity 100, held 2 s"
   },
   "velocity": {
-   "range_db": 0.03,
-   "db_per_doubling": 0.01,
-   "curve": "none (velocity doesn't change its level)",
+   "range_db": 6.98,
+   "db_per_doubling": 2.33,
+   "curve": "gentle (less than linear)",
    "levels_db": {
-    "16": -27.19,
-    "32": -27.16,
-    "64": -27.16,
+    "16": -34.14,
+    "32": -32.69,
+    "64": -30.41,
     "127": -27.16
    }
   },
@@ -88,7 +90,7 @@
     "env_half_s": 0.005,
     "env_final_db": -3.72,
     "env_release_s": 0.08,
-    "env_peak_db": -24.12,
+    "env_peak_db": -25.37,
     "env_bright_early_hz": 243.5,
     "env_bright_mid_hz": 237.0,
     "env_bright_late_hz": 243.6,
@@ -733,8 +735,8 @@
      }
     },
     "track Volume": {
-     "suggested_role": "level",
-     "evidence": "the level +9 dB, the sound otherwise alike",
+     "suggested_role": null,
+     "evidence": "no measurable change between its ends with the others at their defaults",
      "min": {
       "raw": 0,
       "text": "0"
