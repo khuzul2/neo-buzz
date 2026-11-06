@@ -244,6 +244,7 @@ It would arrive roughly where O2 lands, with a better plugin ecosystem. Rust has
 - **Downloaded machines:** managed machine DLLs are IL, so library validation doesn't apply to them. Native dylibs that users download are quarantined by Gatekeeper: install them through the app, which clears the quarantine flag.
 - **arm64 only.** macOS 27 requires Apple silicon, and Intel Macs stop at macOS 26.
 - **Sign every bundled dylib:** PortAudio, libsndfile, SoundTouch, r8brain, rnnoise, LinkHelper, the portable native host.
+- **Updates:** none built in, on either platform. Upstream's update check (`BuzzGUI.BuzzUpdate`, Windows) polled ReBuzz's latest release and offered upstream's installer, which would replace NeoBuzz Live; it is off and no longer referenced, and its setting is gone (FORK.md). A new build comes from NeoBuzz Live's downloads: the `mac-latest` release for the Mac, the Fork package run's zip for Windows. A check of NeoBuzz Live's own releases (and, on the Mac, something like Sparkle, MIT) is a later decision.
 
 **Mac CI**
 
