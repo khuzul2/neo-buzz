@@ -753,5 +753,36 @@ namespace NeoBuzz.PedalTests
             PedalReport.Report($"Pedal Juno106 at its defaults: its energy above 16 kHz, the most in any 8192 samples of a held note's first second, by key: {string.Join(", ", worst)}");
             Assert.That(most, Is.LessThan(0.05), "no ring at the top of the band");
         }
+
+        /// <summary>
+        /// Pedal FM with Glide on: a track's note after that track's note was released starts as it does with Glide off
+        /// (the same samples), during the release or after it; until the follow-ups it took the legato path, keeping the
+        /// released envelopes, and stayed silent. A note while the last is held still glides (legato).
+        /// </summary>
+        [Test]
+        public void FMsGlideRetriggersAReleasedVoice()
+        {
+            var s = Synth.Named("Pedal FM");
+            Action<object> Glide(int g) => m => ((PedalFM.PedalFMMachine)m).Glide = g;
+            int off = Rate / 2, during = Rate, after = Tail(s) + Rate, frames = after + Rate;
+            var e = Events((0, r => r.Note(0, 60)), (off, r => r.Off(0)), (during, r => r.Note(0, 67)), (during + off, r => r.Off(0)),
+                           (after, r => r.Note(0, 64)));
+            var glide = SynthRunner.Render(s, frames, 256, e, Glide(60));
+            var plain = SynthRunner.Render(s, frames, 256, e, Glide(0));
+            double first = Measure.Db(Measure.Rms(plain.L, Rate / 10, Rate / 4));
+            double inRelease = Measure.Db(Measure.Rms(glide.L, during + Rate / 10, Rate / 4));
+            double afterIt = Measure.Db(Measure.Rms(glide.L, after + Rate / 10, Rate / 4));
+            int differ = 0;
+            for (int i = 0; i < frames; i++) if (glide.L[i] != plain.L[i]) differ++;
+            var legato = SynthRunner.Render(s, Rate, 256, Events((0, r => r.Note(0, 60)), (Rate / 2, r => r.Note(0, 67))), Glide(60));
+            var legatoOff = SynthRunner.Render(s, Rate, 256, Events((0, r => r.Note(0, 60)), (Rate / 2, r => r.Note(0, 67))), Glide(0));
+            double moved = 0;
+            for (int i = Rate / 2; i < Rate; i++) moved = Math.Max(moved, Math.Abs(legato.L[i] - legatoOff.L[i]));
+            PedalReport.Report($"Pedal FM, Glide 60: a track's note after its released one at {inRelease:F1} dBFS RMS in the release, {afterIt:F1} after it (the first note {first:F1}); " +
+                               $"{(differ == 0 ? "the same samples as with Glide off" : $"{differ} samples differ from Glide off")}; a held note's next one glides (legato)");
+            Assert.That(differ, Is.EqualTo(0), "a released voice retriggers, as with Glide off");
+            Assert.That(afterIt, Is.EqualTo(first).Within(1), "the note after the release plays");
+            Assert.That(moved, Is.GreaterThan(0.01), "legato still glides");
+        }
     }
 }

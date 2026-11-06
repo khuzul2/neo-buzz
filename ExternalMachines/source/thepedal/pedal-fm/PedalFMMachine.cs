@@ -640,7 +640,7 @@ namespace PedalFM
                 v = _midiVoices.Pick(cap, _voiceFree, _voiceReleased);
             }
             var voice = _voices[v];
-            voice.Trigger(key, -1, velocity / 127f, voice.Held ? glideSamples : 0);
+            voice.Trigger(key, -1, velocity / 127f, glideSamples);   // legato only on a held voice (Voice.Trigger)
             _midiVoices.Start(v, key);
         }
 
