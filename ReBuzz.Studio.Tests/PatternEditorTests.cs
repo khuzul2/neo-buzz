@@ -5,6 +5,7 @@
 using System;
 using System.Linq;
 using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -509,6 +510,83 @@ namespace ReBuzz.Studio.Tests
                 times.Sort();
                 TestContext.Out.WriteLine($"Neo Poly's grid ({s.Machine.ParameterGroups[1].Parameters.Count} globals): median {times[5]:F1} ms to draw the beats in view");
                 Assert.That(times[5], Is.LessThan(100), "a frame of beats draws in well under 100 ms");
+            }
+            finally
+            {
+                Close(s);
+            }
+        }
+
+        [AvaloniaTest]
+        public void TheToolbarsNumberBoxesShowTheirLargestValueWhole()
+        {
+            // Fork (ui-gallery.md, bug 6): Beats was a fixed 96-point box whose spinner left room for one digit and a half,
+            // so a 32-beat pattern showed "3:" (mac-053). Each box is as wide as its largest value in its own font.
+            var s = Open("PE Boxes");
+            try
+            {
+                s.Window.UpdateLayout();
+                var boxes = s.EditorView.GetVisualDescendants().OfType<NumericUpDown>().Where(b => b.IsEffectivelyVisible).ToList();      // the keyboard mapping's are hidden
+                Assert.That(boxes.Select(b => ToolTip.GetTip(b) as string), Does.Contain("Beats").And.Contain("Tracks"));
+                foreach (var box in boxes)
+                {
+                    var presenter = box.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.TextPresenter>().First();
+                    var typeface = new Avalonia.Media.Typeface(presenter.FontFamily, presenter.FontStyle, presenter.FontWeight);
+                    string largest = ((int)box.Maximum).ToString();
+                    double needed = new Avalonia.Media.TextFormatting.TextLayout(largest, typeface, presenter.FontSize, null).WidthIncludingTrailingWhitespace;
+                    Assert.That(presenter.Bounds.Width, Is.GreaterThanOrEqualTo(needed),
+                        $"{ToolTip.GetTip(box)}: room for \"{largest}\" ({needed:F1} pt) in its text ({presenter.Bounds.Width:F1} pt)");
+                }
+                var beats = boxes.First(b => ToolTip.GetTip(b) as string == "Beats");
+                beats.Value = 32;               // a 32-beat pattern, as the gallery's Arp
+                Pump();
+                Studio.Screenshot(s.Window, "pattern-editor-beats-32");
+            }
+            finally
+            {
+                Close(s);
+            }
+        }
+
+        [AvaloniaTest]
+        public void PatternPropertiesListsAndDrawsTheColumns()
+        {
+            // Fork (ui-gallery.md, bug 6): the gallery's Pattern Properties (mac-056) showed an empty column list, and so
+            // does the app: skipping the hidden pattern editors' names (U+0001 first) by the culture's StartsWith, which
+            // ignores control characters, skipped every machine on macOS and Linux.
+            var s = Open("PE Props List");
+            Window dialog = null;
+            int boxes = 0, drawn = 0;
+            string notes = null;
+            using var handler = Window.WindowOpenedEvent.AddClassHandler<Window>((w, e) =>
+            {
+                if (w is MainWindow) return;
+                Dispatcher.UIThread.Post(() =>
+                {
+                    try
+                    {
+                        Pump();
+                        dialog = w;
+                        var checks = w.GetVisualDescendants().OfType<CheckBox>().ToList();
+                        boxes = checks.Count;
+                        drawn = checks.Count(c => c.IsEffectivelyVisible && c.Bounds.Height > 0 && c.TranslatePoint(new Point(0, 0), w) is { } at && at.Y >= 0 && at.Y < w.Bounds.Height);
+                        notes = string.Join(", ", checks.Take(6).Select(c => $"{c.Content} {c.Bounds}"));
+                        Studio.Screenshot(w, "pattern-properties-dialog");
+                    }
+                    finally
+                    {
+                        w.Close();
+                    }
+                }, DispatcherPriority.Background);
+            }, Avalonia.Interactivity.RoutingStrategies.Direct, handledEventsToo: true);
+            try
+            {
+                Key(s, PhysicalKey.Backspace, RawInputModifiers.Control);
+                for (int i = 0; i < 20 && dialog == null; i++) Pump();
+                Assert.That(dialog, Is.Not.Null, "Ctrl+Backspace opened Pattern Properties");
+                TestContext.Out.WriteLine($"{boxes} boxes, {drawn} in view: {notes}");
+                Assert.That(boxes, Is.GreaterThan(10), "a box per column the pattern can have");
+                Assert.That(drawn, Is.GreaterThan(3), "the first of them in view, laid out");
             }
             finally
             {

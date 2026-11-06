@@ -58,7 +58,9 @@ namespace WDE.ModernPatternEditor.AvaloniaView
             var tree = new StackPanel { Margin = new Thickness(8, 0) };
             foreach (var mac in Global.Buzz.Song.Machines)
             {
-                if (mac.Name.StartsWith("\u0001")) continue;        // the hidden pattern editors
+                // The hidden pattern editors. Ordinal (fork, ui-gallery.md): the culture's comparison ignores control
+                // characters, so every name "started with" U+0001 and the list was empty on macOS and Linux.
+                if (mac.Name.StartsWith('\u0001')) continue;
                 tree.Children.Add(new TextBlock { Text = mac.Name, FontWeight = FontWeight.Bold, Margin = new Thickness(0, 6, 0, 2) });
                 AddGroup(tree, "Pattern Editor", PatternEditorUtils.GetInternalParameters(mac));
                 AddGroup(tree, "Parameters", mac.ParameterGroups[1].Parameters.Concat(mac.ParameterGroups[2].Parameters));
