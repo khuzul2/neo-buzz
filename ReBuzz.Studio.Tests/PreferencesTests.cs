@@ -410,6 +410,8 @@ namespace ReBuzz.Studio.Tests
             // show there was more: a page (a ScrollViewer's subclass) had no template, so it didn't scroll at all. Each
             // page scrolls when it is longer than the window, its bar shown, to its last setting whole.
             using var restore = Studio.AfterTest(CloseWhatIsOpen);
+            AudioPage.OutputSource = () => new[] { "PortAudio: default", "PortAudio: Test Speakers (Core Audio)" };
+            AudioPage.InputSource = () => new[] { "PortAudio: Test Microphone (Core Audio)" };
             var prefs = Open(PreferencesWindow.AudioPageName);
             prefs.Height = 420;
             Settle(prefs);
