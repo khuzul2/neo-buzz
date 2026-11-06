@@ -282,30 +282,44 @@ namespace WDE.ModernPatternEditor.AvaloniaView
 
         // ------------------------------------------------------------------ drawing a beat (BeatVisual)
 
-        /// <summary>BeatVisual.RenderVisual: a beat of a column set at (x, y), its background and each column's rows.</summary>
-        internal void DrawBeat(DrawingContext dc, IColumnSet set, int[] widths, int index, double x0, double y0, int h)
+        /// <summary>
+        /// BeatVisual.RenderVisual: a beat of a column set at (x, y), its background and each column's rows.
+        /// Fork (docs/specs/dye-essence.md §5.2): only the columns between <paramref name="visibleFrom"/>
+        /// and <paramref name="visibleTo"/> (the view, in the same coordinates as <paramref name="x0"/>)
+        /// are fetched and drawn. A machine's globals are one set: with hundreds of parameters every
+        /// frame laid out text for all of them, 1.2 s a frame at 704.
+        /// </summary>
+        internal void DrawBeat(DrawingContext dc, IColumnSet set, int[] widths, int index, double x0, double y0, int h,
+            double visibleFrom = double.NegativeInfinity, double visibleTo = double.PositiveInfinity)
         {
-            var beats = set.Columns.Select(c => c.FetchBeat(index)).ToArray();
+            int c0 = 0;
+            double x = x0;
+            while (c0 < widths.Length && x + widths[c0] < visibleFrom) x += widths[c0++];
+            int c1 = c0;
+            for (double end = x; c1 < widths.Length && end <= visibleTo; c1++) end += widths[c1];
+            var beats = new IBeat[c1 - c0];
+            for (int i = 0; i < beats.Length; i++) beats[i] = set.Columns[c0 + i].FetchBeat(index);
             double total = widths.Sum();
             if (PatternEditor.Settings.BeatHighlight == BeatHighlightMode.Block)
             {
                 dc.FillRectangle((index & 1) == 0 ? PatternTheme.BeatDark : PatternTheme.Beat, new Rect(x0, y0, total, h));
             }
-            else if (beats.Length > 0)
+            else if (set.Columns.Count > 0)
             {
-                double rowHeight = Math.Floor(h / (double)beats[0].Rows.Count);
+                var rows = (beats.Length > 0 ? beats[0] : set.Columns[0].FetchBeat(index)).Rows;
+                double rowHeight = Math.Floor(h / (double)rows.Count);
                 dc.FillRectangle(PatternTheme.BeatDark, new Rect(x0, y0, total, rowHeight));
                 dc.FillRectangle(PatternTheme.Beat, new Rect(x0, y0 + rowHeight, total, h - rowHeight));
             }
 
-            double x = x0;
             for (int i = 0; i < beats.Length; i++)
             {
-                double xoffset = set.Columns[i].TiedToNext ? Math.Ceiling(Font.Width(0)) / 2 : 0;
+                int c = c0 + i;
+                double xoffset = set.Columns[c].TiedToNext ? Math.Ceiling(Font.Width(0)) / 2 : 0;
                 if (PatternEditor.Settings.TextDropShadow)
-                    DrawColumn(dc, beats[i], x + xoffset + 1, y0, 1, widths[i], h, true);
-                DrawColumn(dc, beats[i], x + xoffset, y0, 0, widths[i], h, false);
-                x += widths[i];
+                    DrawColumn(dc, beats[i], x + xoffset + 1, y0, 1, widths[c], h, true);
+                DrawColumn(dc, beats[i], x + xoffset, y0, 0, widths[c], h, false);
+                x += widths[c];
             }
         }
 
@@ -406,7 +420,7 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 if (x > o.X + v.Width || x + layout.SetWidth(s) < o.X) continue;
                 var widths = sets[s].Columns.Select(layout.ColumnWidth).ToArray();
                 for (int b = first; b <= last; b++)
-                    grid.DrawBeat(dc, sets[s], widths, b, x, b * h, h);
+                    grid.DrawBeat(dc, sets[s], widths, b, x, b * h, h, o.X, o.X + v.Width);
             }
             LastRenderTime = clock.Elapsed;
         }
@@ -639,6 +653,12 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                     for (int c = 0; c < cs.Columns.Count; c++)
                     {
                         int cw = layout.ColumnWidthAt(s, c);
+                        // Fork (docs/specs/dye-essence.md §5.2): the labels in view only.
+                        if (cx + cw < ox || cx > ox + Bounds.Width)
+                        {
+                            cx += cw;
+                            continue;
+                        }
                         var col = new Rect(cx, PatternGrid.SetLabelHeight, cw, PatternGrid.ColumnLabelHeight);
                         if (cx <= ox + Bounds.Width && cx + cw >= ox)
                         {
