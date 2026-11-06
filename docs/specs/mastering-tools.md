@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | v0.1 — plan written; M0 (engine and library prerequisites) in progress on `machines/mastering-m0` |
+| Status | v0.2 — M0 (engine and library prerequisites) built on `machines/mastering-m0`, 2026-11-06; M1 next |
 | Date | 2026-11-06 |
 | Scope | Mixing and mastering machines after iZotope Ozone 12 (and the best of FabFilter, Neutron, soothe and others), the engine work they need, and an assistant that is our agent plus deterministic measurements |
 | Design basis | The analysis "Mixing and mastering machines for NeoBuzz Live, after iZotope Ozone" (2026-11-06): today's inventory (machines.md §5), the Ozone 12.2 module inventory, proposal cards with techniques and measurements, effort and risks. Its findings are summarised here where they decide something |
@@ -84,7 +84,7 @@ Not planned unless measurements call for them: Neo Limiter's multiband (IRC 5-li
 | Latency change | the same graph with Neo Limiter (lookahead 0.5 → 5 ms, automated) in place of the multiband, on a sine: no sample-to-sample step larger than the sine's own (×1.2) anywhere, the null restored within 10 ms + the new delay of the change |
 | Ring | a delay change on a running signal: the output is the old tap, a raised-cosine blend, then the new tap, exactly; a silent connection switches at once; growing the ring keeps what's in flight bit for bit |
 | Plan | diamonds, chains and fan-outs: the delays equal the recursive walk's; applying it allocates nothing |
-| Determinism | renders with a latency automated mid-song bit-identical across runs and processes |
+| Determinism | a latency change reaches the delays on the audio thread before the block's work, with the UI thread not run (so a render doesn't depend on it); renders start from a plan rebuilt for the graph as it is |
 | Bypass | bypassing the latent machine in the parallel graph: the null holds (the dry path is delayed by its latency); bypass and un-bypass while playing: no step larger than the signal's own; a bypassed machine without latency renders as before, bit for bit |
 | Unchanged | the null test bit-identical; ReBuzzTests' existing latency tests pass |
 
@@ -283,4 +283,33 @@ Decisions taken in M0 that the user may want differently are listed in §8 with 
 
 ## 8. As built
 
-(Filled in at the end of each phase: what was built, measured figures, decisions.)
+### M0 (2026-11-06, `machines/mastering-m0`)
+
+**Engine.** `ReBuzz/Core/LatencyPlan.cs` (the plan), `ReBuzz/Core/LatencyRing.cs` (the delay), wired through `ReBuzzCore` (build on the UI thread, apply on either thread), `MachineConnectionCore` (its ring), `MachineCore` (the audio thread's view of its latency, the UI event, the bypass's delay and crossfade), `MachineWorkInstance` (the bypass path), `WorkManager` (the apply before each block's work), `ManagedMachineHost` (the report at the tick) and `RenderTools` (a stale plan rebuilt before a render).
+
+- **On by default.** `EngineSettings.MachineDelayCompensation` defaults to true; a value a user stored is kept (settings store only what was changed). Songs don't store it. The null test's 91 cases (serial chains) render bit-identical with every M0 change in, against renders made before it. Old songs change only where a parallel path (a send, a dry/wet split, a sidechain) holds a machine with latency: those now play aligned (Neo Drive's 62 samples on a track with a send, for example). That is the fix, and it is the one change to existing renders.
+- **Found on the way.** Inserting a machine into a connection (`InsertMachineAction`) and opening a song never recomputed the compensation, and every recompute reset every compensated connection's ring, changed or not, dropping what was in flight. Now the plan follows every connection added or removed (`MachineCore.AddInput`, `RemoveInput`: a rebuild queued on the UI thread, and done at once before an agent's render), and a ring is touched only when its delay changes.
+- **A latency that changes while playing** (Neo Limiter's or Neo Comp's lookahead) is applied to the plan on the audio thread at the machine's tick, before that block's work, allocating nothing; the UI's `Latency` follows through the UI event queue, which also grows a ring that needs room. Before, it waited for the UI thread, so where it landed in a render depended on it.
+- **The crossfade.** A changed delay goes from the old tap to the new over 10 ms on a smooth curve (3x² − 2x³, no libm). From delay 0 the ring first collects the new delay's worth of history (the change lands that much later: 96 ms for Neo Multiband); while nothing has passed yet, or everything in flight is silent, the change is instant and exact. A settled delay and the direct path render bit for bit as before.
+- **The bypass keeps the latency.** A bypassed stereo effect with latency stays in the plan with it; its dry input runs through its own ring every block (so a bypass has its history at once); it keeps working while bypassed, its output unused, so it comes back current; the switch crossfades over 5 ms. Effects without latency, multi-I/O machines (Neo Comp, for its sidechain) and everything with the compensation off bypass as before.
+
+| Criterion | Target | Measured (Linux, this branch) |
+|---|---|---|
+| Parallel path | Neo Multiband (linear, unity) beside an inverted Neo Utility path, compensation at its default: cancels; off: combs | cancels exactly (residual 0; the multiband alone −20.4 dBFS); off: +4.6 dB against the multiband alone |
+| Latency change | Neo Limiter's lookahead 2 → 5 ms (99 → 231 samples at 44.1 kHz) under a sine, the other path alone: no step larger than the sine's own ×1.2, no gap; the null back after | largest step 1.001×; the quietest 64 samples at 0.79 of the level (the 10 ms comb of two copies 132 samples apart); the null back exactly; the delay moved without the UI thread |
+| Ring | 0 → 4607 samples under a 1 kHz sine: direct, then the curve, then the new tap, sample for sample; shorter at once; back to direct; silence switches at once; growing keeps what is in flight; clamped beyond capacity until grown; no allocation | all exact; largest step 1.003× the sine's own |
+| Plan | delays against the recursive walk on 300 random graphs; a diamond; a cycle cut; no allocation | equal on all 300; 0 bytes |
+| Bypass | the parallel null held through bypass and back; compressing hard, bypass and back: no step over ×1.5 the louder signal's own | null exact throughout; see the CI notice |
+| Inserted machine | Neo Drive inserted into a connection: the parallel path delayed by its 62 samples, nothing else asked | 62 |
+| Unchanged | the null test, bit for bit | 91 of 91 identical |
+
+**Library** (`Machines/NeoBuzz.Dsp/`).
+
+| Block | Measured |
+|---|---|
+| `ComplexFft`, `PartitionedConvolver`, `SteppedFirDesign`, `LinearPhaseFilters` (moved from Neo Multiband) | Neo Multiband bit for bit: its 59 tests (`CpuIsSmall` aside, under load on a shared machine: 19×), the null test's five Multiband cases (the crossover moves included); one and two FIRs against direct convolution within −137.4 and −130.9 dB |
+| `Stft` (N = 512, 2048, 4096; hop N/4) | unit spectrum: the input N − 1 samples back within −137.7 … −139.3 dB; a gain on the left alone (Unpack, Pack): left within −137.5 dB, right −139.2 dB; blocks of 256, 128, 117, 16 and 1 bit-identical; 65× real time at N = 2048 stereo (the transforms alone, a loaded runner); no allocation |
+| `QuadratureAllpass` | 90° within ±0.098° (44.1 kHz, 12 coefficients), ±0.108° (48 kHz, 12), ±0.129° (96 kHz, 13) from 20 Hz to 20 kHz; magnitude 1 within 4·10⁻¹⁴; the envelope of sines from 25 Hz to 19 kHz flat within 0.015 dB |
+| `TransientSplit` | steady sines at 25, 40, 100, 1000 and 10 000 Hz: weight exactly 0 after 300 ms; 200 Hz hits decaying with 60 ms: 0.55 at 1 ms, 0.78 at 2, 0.82 at 3, 0.80 at 5, 0.64 at 10, 0.41 at 20, 0.16 at 40, 0 from 60 ms on; unity gain exactly 1; blocks of 256, 128, 117 and 16 identical; no allocation |
+
+**Decisions the user may want otherwise.** (1) Compensation on by default, a stored "off" kept. (2) A latent effect keeps working while bypassed (CPU for an aligned, click-free return), where Buzz skipped its work. (3) The 10 ms smooth crossfade for delay changes (a brief comb of the two taps rather than a dip to silence), and coming from no delay, the change lands after the new delay's worth of audio. (4) Multi-I/O effects (Neo Comp) keep the plain bypass: their lookahead isn't kept when bypassed (up to 5 ms); the multi-I/O path can follow when a latent multi-I/O machine needs it (a de-esser with a sidechain, M6). (5) The Session View's heard time still counts only the device's latency (§7).

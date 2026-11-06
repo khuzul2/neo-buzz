@@ -358,7 +358,9 @@ namespace NeoBuzz.Dsp
         /// <summary>
         /// Grid points <paramref name="from"/> … <paramref name="to"/> − 1 of the zero-phase magnitudes (real and even), and
         /// their mirrors, each where the transform's bit reversal would move it (the values are only moved, so the bits match).
+        /// Its loop runs in the design's steps on the audio thread: compiled fully optimised at once (no on-stack replacement there).
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Grid(int from, int to)
         {
             for (int k = from; k < to; k++)
