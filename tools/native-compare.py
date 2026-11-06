@@ -15,6 +15,13 @@
 #                     zeroed heap (build-natives.ps1 -ZeroHeap; DIR\..\ZEROHEAP.dll goes beside the 64-bit host meanwhile)
 # Each gets a copy of the machine's manifest, so notes and triggers reach it as they reach the original.
 #
+# A case compares sound: where the reference or the package's build peaks under SOUNDS_DBFS (−60 dBFS) it proves
+# little by matching, and --gate fails it. Every global and track parameter at a quarter and three quarters of its range
+# silences FSM Infector (so does any one fraction of 0.1, 0.2, 0.25 and 0.5 to 0.9; 0.3 and 0.4 play), so its cases are
+# at 0.3 and 0.4 (CASE_FRACTIONS); Jeskola Noise Generator's Attack (ms, to 65535) at a quarter is a 16 s fade-in, so its
+# cases leave Attack at its default (HOLD). Measured in run 42272808783 (tools/fu1-sweep.py, all parameters at each
+# fraction, each one alone, every one but one).
+#
 # A build matches when every case's samples are bit-identical to the reference's, or differ by at most
 # TOLERANCE_DBFS (−100 dBFS, the null test's line across platforms, docs/specs/cross-platform.md §4.3: below a
 # 16-bit step, −96 dBFS, so no 16-bit export can tell; rounding differences between compilers, x87 against SSE2
@@ -59,6 +66,9 @@ nt = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(nt)
 
 TOLERANCE_DBFS = -100.0
+SOUNDS_DBFS = -60.0            # a case under it compares (near) silence: the lowest that plays, Chorus2's quiet input, peaks at -52.3
+CASE_FRACTIONS = {"FSM Infector": (0.3, 0.4)}      # the fractions of its ranges a machine's two cases set (else 0.25 and 0.75)
+HOLD = {"Jeskola Noise Generator": ("Attack",)}    # parameters its fraction cases leave at their defaults
 TEMPO = 120
 BEATS = 4
 TAIL = 2.0
@@ -114,24 +124,36 @@ def describe(c, machine):
     return d, [p for p in ps if not p.get("per_track")], [p for p in ps if p.get("per_track")]
 
 
-def raw_changes(glob, track, frac):
-    """Every parameter frac of the way up its raw range; globals by index (FSM Infector repeats names)."""
+def raw_changes(glob, track, frac, hold=()):
+    """Every parameter frac of the way up its raw range but those named in hold; globals by index (FSM Infector repeats
+    names)."""
+    held = {h.strip().lower() for h in hold}
     out = []
     for p in glob:
+        if (p.get("name") or "").strip().lower() in held:
+            continue
         lo, hi = p["min"], p["max"]
         out.append({"param": f"#{p['index']}", "value": f"raw:{lo + int((hi - lo) * frac)}"})
     for p in track:
+        if (p.get("name") or "").strip().lower() in held:
+            continue
         lo, hi = p["min"], p["max"]
         out.append({"param": p["name"], "value": f"raw:{lo + int((hi - lo) * frac)}", "track": 0})
     return out
 
 
-def case_list(kind):
+def case_list(kind, gear=None):
+    lo, hi = CASE_FRACTIONS.get(gear, (0.25, 0.75))
     cases = [("default", None, 0.0)]
-    cases += [("quarter", 0.25, 0.0), ("three-quarters", 0.75, 0.0)]
+    cases += [("quarter", lo, 0.0), ("three-quarters", hi, 0.0)] if (lo, hi) == (0.25, 0.75) else [(f"{lo:g} of the ranges", lo, 0.0), (f"{hi:g} of the ranges", hi, 0.0)]
     if kind == "effect":
         cases.append(("quiet-input", None, -40.0))
     return cases
+
+
+def silent_cases(cases):
+    """The cases (name: entry with peak_dbfs) under SOUNDS_DBFS, or that have no peak: they compare nothing."""
+    return [c for c, e in cases.items() if e and "error" not in e and (e.get("peak_dbfs") is None or e["peak_dbfs"] < SOUNDS_DBFS)]
 
 
 def play_generator(c, machine, spec, trigger, mode):
@@ -186,7 +208,7 @@ def render_case(run, spec, builds, case, man):
         if frac is not None:
             if glob is None:
                 _, glob, track = describe(c, m)
-            changes = raw_changes(glob, track, frac)
+            changes = raw_changes(glob, track, frac, HOLD.get(spec["gear"], ()))
             if changes:
                 c.call("param_set", machine=m, changes=changes, allow_unsafe=True)
         if kind == "generator":
@@ -275,6 +297,15 @@ def diff(ref, got):
 def peak_db(path):
     _, _, a = nt.read_wav(path)
     return nt.db(max((abs(x) for x in a), default=0.0))
+
+
+def pfmt(x):
+    """A peak: in dBFS, "silent" when the render is all zeros, and marked under SOUNDS_DBFS."""
+    if x is None:
+        return "-"
+    if x == float("-inf"):
+        return "silent"
+    return f"{x:.1f} dBFS" + (" (under the line: compares nothing)" if x < SOUNDS_DBFS else "")
 
 
 def fmt(x):
@@ -485,7 +516,7 @@ def main(argv):
             ref_label = builds[0][0]
             res = {label: {"cases": {}} for label, _ in builds}
             upstream = [lb for lb, _ in builds if rl[lb] == "upstream"]
-            for case in case_list(kind):
+            for case in case_list(kind, s["gear"]):
                 t = time.time()
                 try:
                     files = render_case(run, s, builds, case, man)
@@ -542,7 +573,7 @@ def main(argv):
                                                ("identical" if e.get("identical") else f"{fmt(e.get('max_diff_dbfs'))} dBFS ({fmt(e.get('rel_diff_db'))} dB rel)"))
                                  + ("" if e.get("status") in (None, "ok") else f" [{e.get('status')}]")
                                  for lb, e in ((lb, res[lb]["cases"].get(case[0], {})) for lb, _ in builds))
-                print(f"{s['gear']:<24} {case[0]:<24} peak {fmt(ref_peak)} dBFS  {line}  ({time.time() - t:.1f} s)", flush=True)
+                print(f"{s['gear']:<24} {case[0]:<24} peak {pfmt(ref_peak)}  {line}  ({time.time() - t:.1f} s)", flush=True)
             for label, _ in builds:
                 cs = res[label]["cases"].values()
                 worst = max((e.get("max_diff_dbfs", float("-inf")) for e in cs if "max_diff_dbfs" in e), default=None)
@@ -552,7 +583,7 @@ def main(argv):
                 res[label]["match"] = (label == ref_label) or (worst is not None and worst <= TOLERANCE_DBFS and not errors)
                 res[label]["errors"] = len(errors)
             if fixed:
-                cases = {c[0]: {lb: res[lb]["cases"].get(c[0]) for lb, _ in builds} for c in case_list(kind)}
+                cases = {c[0]: {lb: res[lb]["cases"].get(c[0]) for lb, _ in builds} for c in case_list(kind, s["gear"])}
                 for label, j in judge_fixed(cases, rl).items():
                     res[label]["judged"] = j
             results[s["gear"]] = {"reference": ref_label, "fixed": fixed, "roles": rl, "builds": res}
@@ -589,6 +620,11 @@ def main(argv):
             # The package's own binary where it is upstream's file is the same machine: a difference there is the machine
             # not rendering the same twice (reported, not a failure).
             if gate and label == "package (rebuilt)":
+                quiet = sorted(set(silent_cases(b["cases"])) | set(silent_cases(r["builds"][r["reference"]]["cases"])))
+                if quiet:
+                    failed.append(f"{gear} ({label})")
+                    reasons += [f"{gear} ({label}): {c}: silent (peak under {SOUNDS_DBFS:.0f} dBFS) in the reference or this build: it compares nothing"
+                                for c in quiet]
                 if r["fixed"]:
                     why = b.get("judged", {"failures": ["not judged"]})["failures"]
                     if not any(v == "zeroed" for v in r["roles"].values()):

@@ -279,5 +279,25 @@ class NativeSongsTests(unittest.TestCase):
         self.assertEqual(ns.fed_by(graph, "B", {"D"}), [])
 
 
+class NativeCompareCasesTests(unittest.TestCase):
+    """tools/native-compare.py's cases: each sounds."""
+
+    def test_infector_and_noise_generator_get_cases_that_sound(self):
+        # run 42272808783 (tools/fu1-sweep.py): every parameter at 0.25 or 0.75 of its range silences FSM Infector, 0.3 and
+        # 0.4 play; Noise Generator's Attack at a quarter is a 16 s fade-in (-83.8 dBFS in 6 s), held at its default
+        self.assertEqual([c[:2] for c in nc.case_list("generator", "FSM Infector")], [("default", None), ("0.3 of the ranges", 0.3), ("0.4 of the ranges", 0.4)])
+        self.assertEqual([c[:2] for c in nc.case_list("effect", "FSM PhatMan")], [("default", None), ("quarter", 0.25), ("three-quarters", 0.75), ("quiet-input", None)])
+        glob = [{"index": 0, "name": "Attack ", "min": 0, "max": 65535}, {"index": 1, "name": "Sustain", "min": 0, "max": 100}]
+        self.assertEqual(nc.raw_changes(glob, [], 0.25, nc.HOLD["Jeskola Noise Generator"]), [{"param": "#1", "value": "raw:25"}])
+        self.assertEqual(len(nc.raw_changes(glob, [], 0.25)), 2)
+
+    def test_a_silent_case_compares_nothing(self):
+        cases = {"default": {"peak_dbfs": 1.8}, "quarter": {"peak_dbfs": float("-inf")}, "three-quarters": {"peak_dbfs": -85.2},
+                 "quiet-input": {"peak_dbfs": -52.3}, "broken": {"error": "x"}}
+        self.assertEqual(nc.silent_cases(cases), ["quarter", "three-quarters"])
+        self.assertEqual(nc.pfmt(float("-inf")), "silent")
+        self.assertIn("compares nothing", nc.pfmt(-83.8))
+
+
 if __name__ == "__main__":
     unittest.main()
