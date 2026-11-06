@@ -144,6 +144,7 @@ namespace ReBuzz.NativeMachine
                     SetMessageData(pos);
                     //DoSendMessage();
                     DoSendMessage(machine);
+                    if (NativeTrace.On) NativeTrace.Tick(machine, globalVals, trackVals);   // FU1-DIAG
                 }
             }
             catch (Exception e)
@@ -196,6 +197,7 @@ namespace ReBuzz.NativeMachine
                             GetMessageSamples(samples, numSamples, true);
                         }
                     }
+                    if (NativeTrace.On) NativeTrace.Work(machine, "Work", numChannels, mode, isAudioOutputted, samples, numSamples);   // FU1-DIAG
                     return isAudioOutputted;
                 }
             }
@@ -236,6 +238,7 @@ namespace ReBuzz.NativeMachine
                     {
                         GetMessageSamples(samples, nSamples, true);
                     }
+                    if (NativeTrace.On) NativeTrace.Work(machine, "WorkM2S", gotPin ? 1 : 0, mode, isAudioOutputted, samples, nSamples);   // FU1-DIAG
 
                     return isAudioOutputted;
                 }

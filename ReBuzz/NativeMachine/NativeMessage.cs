@@ -207,7 +207,10 @@ namespace ReBuzz.NativeMachine
                     {
                         bool success = ChannelListener.WaitHandlePongWaitOne(machine, waitTime);
                         if (!success)
+                        {
+                            NativeHangReport.Report(ChannelListener.buzz, NativeHost, machine, Channel, MessageName(sending));
                             throw new Exception(HangMessage(machine, sending));
+                        }
                     }
 
                     msg = DoReceiveReply(); // Reply read
@@ -228,7 +231,10 @@ namespace ReBuzz.NativeMachine
                     {
                         bool success = ChannelListener.WaitHandlePongWaitOne(machine, waitTime);
                         if (!success)
+                        {
+                            NativeHangReport.Report(ChannelListener.buzz, NativeHost, machine, Channel, MessageName(sending));
                             throw new Exception(HangMessage(machine, sending));
+                        }
                     }
                 }
             }
@@ -417,13 +423,43 @@ namespace ReBuzz.NativeMachine
 
         readonly object hostMessageLock = new object();
         // Messages from buzzengine are HostMessages.
+        // Fork (NativeHangReport): the message from the host this side is handling (-1: none), and since when.
+        int handling = -1;
+        long handlingSince;
+
+        internal string DescribeHandling()
+        {
+            int h = handling;
+            if (h < 0) return "this side handling nothing";
+            double ms = (System.Diagnostics.Stopwatch.GetTimestamp() - handlingSince) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            string name = Enum.IsDefined(typeof(HostMessages), h) ? ((HostMessages)h).ToString() : h.ToString();
+            return $"this side handling the host's {name} for {ms:0} ms";
+        }
+
         public void HandleIncomingMessage(MessageContent msg)
+        {
+            int handled = handling;
+            long since = handlingSince;
+            try
+            {
+                HandleIncomingMessageCore(msg);
+            }
+            finally
+            {
+                handlingSince = since;
+                handling = handled;
+            }
+        }
+
+        void HandleIncomingMessageCore(MessageContent msg)
         {
             //lock (hostMessageLock)
             {
                 this.receaveMessageTable = msg.ReceaveMessageData.ToArray();
                 offset = 0;
                 HostMessages uiMessageID = (HostMessages)GetMessageData<int>();
+                handlingSince = System.Diagnostics.Stopwatch.GetTimestamp();
+                handling = (int)uiMessageID;
                 switch (uiMessageID)
                 {
                     case HostMessages.HostDCWriteLine:

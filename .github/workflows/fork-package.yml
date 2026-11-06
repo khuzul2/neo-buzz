@@ -127,7 +127,9 @@ jobs:
       shell: pwsh
       env:
         TEST_FILTER: ${{ inputs.test_filter }}
+        NEOBUZZ_HANG_STACKS: '1'      # FU1-DIAG (temporary)
       run: |
+        $env:NEOBUZZ_HANG_DIR = Join-Path $env:RUNNER_TEMP 'hang'   # FU1-DIAG (temporary)
         $dll = Get-ChildItem build -Recurse -Filter ReBuzzTests.dll |
             Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
         if (-not $dll) { throw 'ReBuzzTests.dll not found under build\' }
@@ -140,6 +142,29 @@ jobs:
         if ($link) { $env:REBUZZ_LINK_HELPER = $link.FullName }
         # --blame-hang: a test stuck for 5 minutes (e.g. on a modal dialog) is killed and named.
         dotnet test $dll.FullName @filter --blame-hang --blame-hang-timeout 5m --logger "trx;LogFileName=tests.trx" --results-directory TestResults --logger "console;verbosity=minimal" *>&1 | Tee-Object -FilePath test.log
+
+    # FU1-DIAG (temporary, fix/followups-1): native hosts' first renders, the Infector demo's determinism, gallery hangs.
+    - name: FU1 diagnostics
+      if: (success() || failure()) && steps.build.outcome == 'success'
+      timeout-minutes: 40
+      continue-on-error: true
+      shell: pwsh
+      run: |
+        $kits = "${env:ProgramFiles(x86)}\Windows Kits\10\Debuggers"
+        foreach ($a in 'x86', 'x64') { Write-Host "cdb $a`: $(Test-Path (Join-Path $kits "$a\cdb.exe"))" }
+        foreach ($f in Get-ChildItem "$env:RUNNER_TEMP\hang" -Filter 'native-hang-*.txt' -ErrorAction SilentlyContinue) { Write-Host "==== $($f.Name)"; Get-Content $f.FullName }
+        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        $out = Join-Path $env:RUNNER_TEMP 'zeroed'
+        New-Item -ItemType Directory -Force $out | Out-Null
+        python tools/native-zeroheap.py --from RunTime/Gear --to "$out/Gear" --def "$out/zeroheap.def" 'Generators\FSM Infector.x64.dll'
+        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+        $vs = & $vswhere -latest -prerelease -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath | Select-Object -First 1
+        $cmd = Join-Path $out 'build.cmd'
+        @('@echo off', "call `"$vs\VC\Auxiliary\Build\vcvars64.bat`" >nul || exit /b 2",
+          "cl /nologo /O2 /GS- /LD `"$PWD\tools\native-zeroheap.cpp`" /Fo`"$out\\`" /Fe`"$out\ZEROHEAP.dll`" /link /NOLOGO /NODEFAULTLIB /NOENTRY kernel32.lib /DEF:`"$out\zeroheap.def`"") | Set-Content -LiteralPath $cmd -Encoding Ascii
+        & cmd.exe /d /c "`"$cmd`""
+        python tools/fu1-diag.py $exe.FullName fu1-diag --zeroed $out
+        foreach ($f in Get-ChildItem fu1-diag -Recurse -Filter '*.stderr.txt' -ErrorAction SilentlyContinue) { $t = Get-Content $f.FullName -Raw; if ($t -match 'hang') { Write-Host "==== $($f.Name)"; Write-Host $t } }
 
     # Failed tests grouped by error, with message and top stack frames, as annotations.
     - name: Summarise tests

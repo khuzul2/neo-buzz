@@ -375,6 +375,7 @@ namespace ReBuzz.Agent
                     var preparing = machines.Where(Busy).Select(m => m.Name).ToList();
                     if (preparing.Count > 0)
                         warnings.Add($"{string.Join(", ", preparing)} still preparing after 30 s: the render may differ from run to run.");
+                    ReBuzz.NativeMachine.NativeTrace.RenderStart(machines);   // FU1-DIAG
                     // Tails of what played before (reverbs, delays) die away first, so renders compare.
                     for (long quiet = 0, run = 0; run < 5L * rate && quiet < rate / 10; run += 256)
                     {
