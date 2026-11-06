@@ -687,5 +687,18 @@ namespace NeoBuzz.MachineTests
                 Assert.That(factor, Is.GreaterThan(3));
             }
         }
+
+        [Test]
+        public void AnEmptyZoneSaysWhatToDoInAUsersWords()
+        {
+            // UI gallery review (mac-412): the empty state named the agent server's tool ("…or wave_import").
+            foreach (int raw in new[] { 0, 1, SampleBank.SongSlots, SampleBank.SongSlots + 1 })
+            {
+                string text = SamplerText.NoWave(raw);
+                Assert.That(text, Does.Not.Contain("_").And.Not.Contain("wave_import"), $"Wave {raw}: \"{text}\"");
+            }
+            Assert.That(SamplerText.NoWave(1), Is.EqualTo("Empty slot: load a sound file into it with Load… below"));
+            Assert.That(SamplerText.NoWave(0), Does.StartWith("Off"));
+        }
     }
 }
