@@ -38,15 +38,35 @@ namespace NeoBuzz.Editor
             set
             {
                 model.Label = value;
-                model.FitLabel(canvas);
-                Width = model.Width;
                 AutomationProperties.SetName(this, value);
-                InvalidateVisual();
+                Fit();
             }
         }
 
-        /// <summary>The label's width as drawn.</summary>
+        /// <summary>The widest its label goes on a line before it wraps onto a second (KnobModel.MaxLabelWidth).</summary>
+        public double MaxLabelWidth
+        {
+            get => model.MaxLabelWidth;
+            set
+            {
+                model.MaxLabelWidth = value;
+                Fit();
+            }
+        }
+
+        /// <summary>The label's width as drawn (its widest line).</summary>
         public double LabelWidth => model.LabelWidth;
+
+        /// <summary>The label's lines as drawn.</summary>
+        public string[] LabelLines => model.LabelLines;
+
+        void Fit()
+        {
+            model.FitLabel(canvas);
+            Width = model.Width;
+            Height = model.Height;
+            InvalidateVisual();
+        }
 
         /// <summary>Text of the current value (set by the owner).</summary>
         public string ValueText { get => model.ValueText; set => model.ValueText = value; }

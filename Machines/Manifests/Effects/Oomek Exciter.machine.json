@@ -9,6 +9,7 @@
  "quirks": [
   "Adds to the dry signal, so it gets louder as Amount rises (+7.2 dB on noise at the defaults).",
   "Its filter corners are one-pole coefficients; the texts (and these Hz) are its own estimate at 44.1 kHz and move with the sample rate.",
+  "Its own texts for the corners divide by the engine's sample rate, which a native has only once the engine has run (before, every corner reads \"1 Hz\"): the corners read through their mappings, its 44.1 kHz estimate.",
   "Stereo in and out."
  ],
  "evidence": [
@@ -488,6 +489,7 @@
    "a": 30.2447,
    "b": 6990.483495,
    "unit": "Hz",
+   "own_texts": false,
    "description": "High-pass before the shaper, about 30 Hz – 7 kHz."
   },
   {
@@ -504,6 +506,7 @@
    "a": 30.2447,
    "b": 6990.483495,
    "unit": "Hz",
+   "own_texts": false,
    "description": "High-pass after the shaper."
   },
   {

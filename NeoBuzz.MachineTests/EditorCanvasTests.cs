@@ -287,6 +287,36 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void ALongLabelWrapsOntoASecondLineWhereTheKnobHasAWidthToKeep()
+        {
+            // UI gallery review (mac-460, win-901, win-903, win-909): the manifest editor cut long labels with "…"
+            // ("Pulse width / PWM d…"). With a width to keep, a label wraps at a space onto a second line, whole.
+            var measure = new RecordingCanvas();
+            var k = new KnobModel(46) { Label = "Pulse width / PWM depth", ValueText = "0%", MaxLabelWidth = 104 };
+            k.FitLabel(measure);
+            Assert.That(measure.MeasureText(k.Label, KnobModel.LabelSize), Is.GreaterThan(104), "too long for one line");
+            Assert.That(k.LabelLines, Is.EqualTo(new[] { "Pulse width / PWM", "depth" }));
+            Assert.That(k.Width, Is.LessThanOrEqualTo(104 + 6), "the knob keeps its width");
+            Assert.That(k.Height, Is.EqualTo(46 + 34 + KnobModel.LineHeight), "one line taller");
+            var c = new RecordingCanvas();
+            k.Draw(c, k.Width, Accent);
+            var texts = c.Of(NeoDrawKind.Text).ToList();
+            Assert.That(texts.Select(t => t.Text), Is.EqualTo(new[] { "Pulse width / PWM", "depth", "0%" }), "both lines, then the value");
+            Assert.That(texts.All(t => !t.Text.Contains('…')), Is.True);
+            Assert.That(texts[1].Points[0].Y - texts[0].Points[0].Y, Is.EqualTo(KnobModel.LineHeight));
+            Assert.That(texts[2].Bounds.Bottom, Is.LessThanOrEqualTo(k.Height + 1), "the value inside the knob's height");
+            foreach (var t in texts) Assert.That(t.Bounds.Left >= 0 && t.Bounds.Right <= k.Width, Is.True, $"\"{t.Text}\" inside the knob");
+
+            var shortOne = new KnobModel(46) { Label = "Cutoff", MaxLabelWidth = 104 };
+            shortOne.FitLabel(measure);
+            Assert.That(shortOne.LabelLines, Is.EqualTo(new[] { "Cutoff" }));
+            Assert.That(shortOne.Height, Is.EqualTo(80), "a short label: one line");
+            var noLimit = new KnobModel(46) { Label = "Pulse width / PWM depth" };
+            noLimit.FitLabel(measure);
+            Assert.That(noLimit.LabelLines, Has.Length.EqualTo(1), "without a width to keep (the Neo editors): one line, the knob as wide");
+        }
+
+        [Test]
         public void KnobArcsStartAtTheValueZeroOrTheMinimum()
         {
             // mac-409: Neo Limiter's Input gain (−12 … +24 dB) at 0.0 dB lit an arc from +6 dB, the knob's middle.

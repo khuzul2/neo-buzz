@@ -9,6 +9,7 @@
  "quirks": [
   "Latency: 176 samples (4 ms) from its lookahead (profile).",
   "Envelope times assume 44.1 kHz (its README); the crossover frequencies are its own estimate and move with the sample rate.",
+  "Its own texts for the crossovers divide by the engine's sample rate, which a native has only once the engine has run (before, they read \"1 Hz\" and \"0 Hz\"), and its Knee's are a picture for Buzz's slider (\"t -- 16 -- h a r d\"): these read through their mappings.",
   "Stereo in and out; the Stereo Link attribute links the channels."
  ],
  "evidence": [
@@ -4519,6 +4520,7 @@
    "a": 15.62235,
    "b": 819.851574,
    "unit": "Hz",
+   "own_texts": false,
    "description": "About 16–820 Hz (its own estimate at 44.1 kHz)."
   },
   {
@@ -4535,6 +4537,7 @@
    "a": 1023.564428,
    "b": 8042.29249,
    "unit": "Hz",
+   "own_texts": false,
    "description": "About 1–8 kHz (its own estimate at 44.1 kHz)."
   },
   {
@@ -4549,6 +4552,7 @@
    "default": 16,
    "kind": "int",
    "a": 0,
+   "own_texts": false,
    "description": "0 soft to 32 hard."
   }
  ],

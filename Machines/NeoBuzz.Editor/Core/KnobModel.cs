@@ -28,20 +28,57 @@ namespace NeoBuzz.Editor
         /// <summary>The label's text size.</summary>
         public const double LabelSize = 11;
 
+        /// <summary>The height a second line of label adds.</summary>
+        public const double LineHeight = 13;
+
         /// <summary>
         /// As wide as the knob needs, and as its label (measured by <see cref="FitLabel"/>): a long label ("Duck
         /// threshold") never runs into the control beside it.
         /// </summary>
         public double Width => Math.Max(Math.Max(Diameter + 18, 64), Math.Ceiling(LabelWidth) + 6);
-        public double Height => Diameter + 34;
+        /// <summary>The knob, its label (one line or two) and its value.</summary>
+        public double Height => Diameter + 34 + (LabelLines.Length - 1) * LineHeight;
 
         public string Label { get; set; } = "";
 
-        /// <summary>The label's width as the canvas draws it (0 until measured).</summary>
+        /// <summary>
+        /// The widest the label goes on one line: a longer one wraps onto a second at a space (a second line still too
+        /// long is cut with an ellipsis). Unlimited by default: the knob grows to its label.
+        /// </summary>
+        public double MaxLabelWidth { get; set; } = double.PositiveInfinity;
+
+        /// <summary>The label as drawn: one line, or two (<see cref="MaxLabelWidth"/>).</summary>
+        public string[] LabelLines { get; private set; } = { "" };
+
+        /// <summary>The label's width as the canvas draws it, its widest line (0 until measured).</summary>
         public double LabelWidth { get; private set; }
 
-        /// <summary>Measures the label, for <see cref="Width"/>; call it when the label changes.</summary>
-        public void FitLabel(INeoTextMeasure measure) => LabelWidth = measure?.MeasureText(Label ?? "", LabelSize) ?? 0;
+        /// <summary>Measures the label (wrapping it at <see cref="MaxLabelWidth"/>), for <see cref="Width"/> and <see cref="Height"/>; call it when the label changes.</summary>
+        public void FitLabel(INeoTextMeasure measure)
+        {
+            string label = Label ?? "";
+            double W(string s) => measure?.MeasureText(s, LabelSize) ?? 0;
+            LabelLines = new[] { label };
+            LabelWidth = W(label);
+            if (LabelWidth <= MaxLabelWidth) return;
+            // The most words that fit on the first line; the rest on the second.
+            var words = label.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            int take = 0;
+            for (int n = 1; n < words.Length; n++)
+            {
+                if (W(string.Join(" ", words, 0, n)) > MaxLabelWidth) break;
+                take = n;
+            }
+            if (take == 0)
+            {
+                // One long word: one line, cut to the width.
+                LabelWidth = MaxLabelWidth;
+                return;
+            }
+            string first = string.Join(" ", words, 0, take), second = string.Join(" ", words, take, words.Length - take);
+            LabelLines = new[] { first, second };
+            LabelWidth = Math.Max(W(first), Math.Min(W(second), MaxLabelWidth));
+        }
         /// <summary>Text of the current value (set by the owner).</summary>
         public string ValueText { get; set; } = "";
         /// <summary>
@@ -159,9 +196,14 @@ namespace NeoBuzz.Editor
             bool lit = Dragging || Hover;
             c.Line(inner, tip, new NeoStroke(lit ? accent : Palette.Text, 2.5));
 
-            // Label, then the value while hovered or dragged.
+            // Label (one line, or two), then the value while hovered or dragged.
             double y = 6 + Diameter;
-            c.Text(Label, w / 2, y, LabelSize, lit ? Palette.DimText : Palette.Text, align: NeoAlign.Center);
+            var label = lit ? Palette.DimText : Palette.Text;
+            double cut = double.IsPositiveInfinity(MaxLabelWidth) ? 0 : Math.Max(1, Math.Min(MaxLabelWidth, w - 2));
+            var lines = LabelLines.Length > 1 || LabelLines[0] == (Label ?? "") ? LabelLines : new[] { Label ?? "" };
+            for (int i = 0; i < lines.Length; i++)
+                c.Text(lines[i], w / 2, y + i * LineHeight, LabelSize, label, align: NeoAlign.Center, maxWidth: cut);
+            y += (lines.Length - 1) * LineHeight;
             c.Text(ValueText, w / 2, y + 14, 11, OutsideSafe ? Unsafe : lit ? accent : Palette.DimText, align: NeoAlign.Center);
         }
     }
