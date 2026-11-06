@@ -48,7 +48,8 @@ Reproduce, measure, isolate, fix one thing, measure again. Each section: what yo
 
 ## Latency
 
-- Neo Drive adds 62 samples at every quality; Neo Comp adds its `Lookahead` (0–5 ms). Both tell NeoBuzz Live, and renders stay aligned.
+- Neo Drive adds 62 samples at every quality; Neo Comp adds its `Lookahead` (0–5 ms), Neo Limiter its `Lookahead` plus 11 samples, Neo Multiband in linear phase about 96 ms. Each tells NeoBuzz Live, whose machine delay compensation (on by default) delays the other paths to match, so renders stay aligned.
+- A latency that changes while playing (a lookahead moved) moves the other paths' delays by a 10 ms crossfade, in the same block; a bypassed effect keeps its latency (its input delayed by it), so bypassing doesn't shift the mix. If two routes still comb, check that the compensation wasn't turned off (Preferences ▸ Engine on Windows, Preferences ▸ General in the studio).
 - Live playing in studio mode adds the audio buffer; renders don't.
 - Two routes with different latency meeting again cause phase problems (above).
 

@@ -330,6 +330,10 @@ namespace ReBuzz.Agent
             foreach (var (label, conn, amp) in connections ?? System.Array.Empty<(string Label, IMachineConnection Connection, double Amp)>())
                 taps.Add(new Probe(label, conn, (float)(amp / Levels.UnityAmp / 32768.0)));
 
+            // The delay compensation follows the graph as it is now (a connection just made: docs/specs/mastering-tools.md §4.1),
+            // whatever the UI thread has got to, so renders are the same each time.
+            if (core.LatencyPlanStale) core.UpdateMachineDelayCompensation();
+
             lock (ReBuzzCore.AudioLock)
             {
                 try

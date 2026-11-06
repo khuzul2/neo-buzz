@@ -785,7 +785,7 @@ namespace ReBuzz.ManagedMachine
                 if (latency != lastLatency)
                 {
                     lastLatency = latency;
-                    if (latency != machine.Latency) machine.UpdateLatencyFromMachine(latency);
+                    machine.UpdateLatencyFromMachine(latency);    // fork (mastering-tools.md §4.1): applied before this block's work
                 }
             }
 
