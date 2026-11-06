@@ -266,6 +266,27 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void AKnobIsAsWideAsItsLabel()
+        {
+            // mac-402, win-802: Neo Delay's "Duck threshold" label, wider than its knob, ran under the duck meter beside it.
+            var measure = new RecordingCanvas();
+            var k = new KnobModel(46) { Label = "Duck threshold", ValueText = "−30.0 dB" };
+            Assert.That(k.Width, Is.EqualTo(64), "unmeasured: the knob's own width");
+            k.FitLabel(measure);
+            double label = measure.MeasureText("Duck threshold", KnobModel.LabelSize);
+            Assert.That(label, Is.GreaterThan(64), "the label is wider than the knob");
+            Assert.That(k.Width, Is.GreaterThanOrEqualTo(label + 6), "the knob takes its label's width");
+            var c = new RecordingCanvas();
+            k.Draw(c, k.Width, Accent);
+            foreach (var t in c.Of(NeoDrawKind.Text))
+                Assert.That(t.Bounds.Left >= 0 && t.Bounds.Right <= k.Width, Is.True, $"\"{t.Text}\" inside the knob's width");
+
+            var mix = new KnobModel(46) { Label = "Mix" };
+            mix.FitLabel(measure);
+            Assert.That(mix.Width, Is.EqualTo(64), "a short label keeps the knob's own width");
+        }
+
+        [Test]
         public void KnobArcsStartAtTheValueZeroOrTheMinimum()
         {
             // mac-409: Neo Limiter's Input gain (−12 … +24 dB) at 0.0 dB lit an arc from +6 dB, the knob's middle.

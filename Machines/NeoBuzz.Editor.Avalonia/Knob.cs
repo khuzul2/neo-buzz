@@ -31,15 +31,22 @@ namespace NeoBuzz.Editor
         public NeoColor Accent { get; }
         public double Diameter => model.Diameter;
 
+        /// <summary>Its label; the knob grows to its width (KnobModel.Width).</summary>
         public string Label
         {
             get => model.Label;
             set
             {
                 model.Label = value;
+                model.FitLabel(canvas);
+                Width = model.Width;
                 AutomationProperties.SetName(this, value);
+                InvalidateVisual();
             }
         }
+
+        /// <summary>The label's width as drawn.</summary>
+        public double LabelWidth => model.LabelWidth;
 
         /// <summary>Text of the current value (set by the owner).</summary>
         public string ValueText { get => model.ValueText; set => model.ValueText = value; }

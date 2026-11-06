@@ -24,10 +24,24 @@ namespace NeoBuzz.Editor
         }
 
         public double Diameter { get; }
-        public double Width => Math.Max(Diameter + 18, 64);
+
+        /// <summary>The label's text size.</summary>
+        public const double LabelSize = 11;
+
+        /// <summary>
+        /// As wide as the knob needs, and as its label (measured by <see cref="FitLabel"/>): a long label ("Duck
+        /// threshold") never runs into the control beside it.
+        /// </summary>
+        public double Width => Math.Max(Math.Max(Diameter + 18, 64), Math.Ceiling(LabelWidth) + 6);
         public double Height => Diameter + 34;
 
         public string Label { get; set; } = "";
+
+        /// <summary>The label's width as the canvas draws it (0 until measured).</summary>
+        public double LabelWidth { get; private set; }
+
+        /// <summary>Measures the label, for <see cref="Width"/>; call it when the label changes.</summary>
+        public void FitLabel(INeoTextMeasure measure) => LabelWidth = measure?.MeasureText(Label ?? "", LabelSize) ?? 0;
         /// <summary>Text of the current value (set by the owner).</summary>
         public string ValueText { get; set; } = "";
         /// <summary>
@@ -147,7 +161,7 @@ namespace NeoBuzz.Editor
 
             // Label, then the value while hovered or dragged.
             double y = 6 + Diameter;
-            c.Text(Label, w / 2, y, 11, lit ? Palette.DimText : Palette.Text, align: NeoAlign.Center);
+            c.Text(Label, w / 2, y, LabelSize, lit ? Palette.DimText : Palette.Text, align: NeoAlign.Center);
             c.Text(ValueText, w / 2, y + 14, 11, OutsideSafe ? Unsafe : lit ? accent : Palette.DimText, align: NeoAlign.Center);
         }
     }

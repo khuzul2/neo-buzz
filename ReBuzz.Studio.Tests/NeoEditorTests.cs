@@ -1084,6 +1084,30 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        [AvaloniaTest]
+        public void NeoDelaysDuckThresholdLabelClearsTheDuckMeter()
+        {
+            // UI gallery review (mac-402, win-802): the duck meter cut off the "Duck threshold" label, wider than its knob.
+            var m = Add("Neo Delay", "Label Delay");
+            try
+            {
+                var window = OpenEditor(m);
+                var knob = Find(window, "ParamKnob", "Duck threshold");
+                double label = (double)Get(knob, "LabelWidth");
+                Assert.That(label, Is.GreaterThan(60), "the label was measured");
+                Assert.That(knob.Bounds.Width, Is.GreaterThanOrEqualTo(label), "the knob is as wide as its label");
+                var k = BoundsIn(knob, window);
+                var meter = BoundsIn(Find(window, "Meter", "Ducking"), window);
+                Assert.That(meter.Left, Is.GreaterThanOrEqualTo(k.Center.X + label / 2), "the label ends before the meter");
+                foreach (var other in Controls(window, "ParamKnob"))
+                    Assert.That(other.Bounds.Width, Is.GreaterThanOrEqualTo((double)Get(other, "LabelWidth") - 0.5), $"{AutomationProperties.GetName(other)}: as wide as its label");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
         /// <summary>A parameter's raw value for a value as its machine describes it ("4 Hz"): the nearest by its own texts.</summary>
         static int Params(IMachine m, string name, string text)
         {

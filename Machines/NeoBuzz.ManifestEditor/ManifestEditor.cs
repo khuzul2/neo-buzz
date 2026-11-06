@@ -196,8 +196,8 @@ namespace NeoBuzz.Editor
                 }
                 default:
                 {
+                    // As wide as its label (the kit measures it).
                     var knob = new ParamKnob(ctx, p.Slot, label) { Origin = p.ArcOrigin, Safe = p.SafePositions };
-                    knob.Width = Math.Clamp(label.Length * CharWidth + 10, knob.Width, 132);
                     knob.ToolTip = tip;
                     knob.RightClicked += () => Select(p, focus: true);
                     knob.UserChanged += t => Select(p, focus: false);
