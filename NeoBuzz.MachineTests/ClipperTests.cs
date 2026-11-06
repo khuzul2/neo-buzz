@@ -447,10 +447,12 @@ namespace NeoBuzz.MachineTests
         // The card asks 100× at 4× (M3: the FastOversampler, the block ADAA and GainMatch's filters side by side took it from
         // about 50× to about 140× as timed on the 2-core test machine). A throughput guard (Throughput.cs; machines.md §4):
         // timed against the reference workload in the same run, 1 s played untimed, then 2 s; the floors per architecture.
-        [TestCase(1, 4, 0, 140, 90)]
-        [TestCase(1, 1, 0, 200, 130)]
-        [TestCase(1, 8, 0, 90, 55)]
-        [TestCase(3, 4, 1, 40, 25)]
+        // Figures at the reference's speed (1 band 4×, 1×, 8×; three bands M/S 4×): the 2-core Xeon 217, 305, 138, 63; the Linux
+        // runner 201, 305, 138, 72; the Mac runner 138, 312, 87, 43. Floors between the slowest × 0.9 and the fastest's half × 1.1.
+        [TestCase(1, 4, 0, 150, 100)]
+        [TestCase(1, 1, 0, 220, 220)]
+        [TestCase(1, 8, 0, 100, 62)]
+        [TestCase(3, 4, 1, 48, 30)]
         public void RunsFasterThanRealTime(int bands, int factor, int ms, double x64, double arm64)
         {
             var (l, r) = LimiterTests.Drums(Measure.Rate * 3);

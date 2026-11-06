@@ -1414,6 +1414,13 @@ namespace ReBuzz.Studio.Tests
             // the loop draws the same sweep, from the bar's first sample. Then a held sine and the free time base with the trigger:
             // it locks at the level, rising. The controls are one undo step each; Freeze holds the picture; Polar redraws the
             // vectorscope. The scope passes its input bit for bit, and its editor's frames are timed.
+            // A new song first: after ExitTests' songs the loop's first wrap came a column (82 samples) late, so pass 2 drew
+            // the kick shifted and passes 1 and 3 didn't (on main too, run after ExitTests alone).
+            lock (ReBuzzCore.AudioLock) Core.Playing = false;
+            Core.ExecuteCommand(BuzzCommand.Stop);
+            Core.Modified = false;
+            Core.ExecuteCommand(BuzzCommand.NewFile);
+            Run(0.1);
             var song = Core.SongCore;
             var master = song.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
             var sampler = Add("Neo Sampler", "Scope Kick", -0.6f, 0);

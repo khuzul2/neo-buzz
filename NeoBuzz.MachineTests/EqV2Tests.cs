@@ -619,10 +619,11 @@ namespace NeoBuzz.MachineTests
         public void RunsFasterThanRealTimeWithEightDynamicBands()
         {
             // The card asks 30× with 8 dynamic bands. A throughput guard (Throughput.cs; machines.md §4): timed against the
-            // reference workload in the same run, 1 s played untimed, then 2 s; the floors per architecture.
+            // reference workload in the same run, 1 s played untimed, then 2 s; the floors per architecture. At the reference's
+            // speed: the 2-core Xeon 66, the Linux runner 57, the Mac runner 43.
             var (l, r) = LimiterTests.Drums(Rate * 3);
             const int Warm = Rate;
-            Throughput.Guard("Neo EQ v2 CPU (8 dynamic bands, stereo, drums)", Throughput.Floor(x64: 43, arm64: 28), 2, Rate, EqEngine.MaxBlock, () =>
+            Throughput.Guard("Neo EQ v2 CPU (8 dynamic bands, stereo, drums)", Throughput.Floor(x64: 44, arm64: 31), 2, Rate, EqEngine.MaxBlock, () =>
             {
                 var (e, _) = Make(p =>
                 {

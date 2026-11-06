@@ -298,9 +298,10 @@ namespace NeoBuzz.MachineTests
             // The card asks 50× (M3: Upward on a 16-sample grid, the transient split's allpasses a section at a time, the
             // FastOversampler and the block ADAA took it from about 30× to about 60× as timed on the 2-core test machine). A
             // throughput guard (Throughput.cs): timed against the reference workload in the same run, 1 s untimed, then 2 s.
+            // At the reference's speed: the 2-core Xeon 88, the Linux runner 91, the Mac runner 66.
             var (l, r) = LimiterTests.Drums(Measure.Rate * 3);
             const int Warm = Measure.Rate;
-            Throughput.Guard("Neo Limiter v2 CPU (every stage, the soft clip at 4×, drums)", Throughput.Floor(x64: 57, arm64: 35), 2, Measure.Rate,
+            Throughput.Guard("Neo Limiter v2 CPU (every stage, the soft clip at 4×, drums)", Throughput.Floor(x64: 64, arm64: 50), 2, Measure.Rate,
                 LimiterEngine.MaxBlock, () =>
             {
                 var (e, _) = Make(Setup);

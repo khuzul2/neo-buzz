@@ -335,7 +335,7 @@ The editor: each band's channel and shape beside its type, a row with its dynami
 | Blk | blocks of 256/117/16/1/200 identical | identical with every channel, shape and dynamic kind and the sidechain; with moves at 256/128/16/1 identical (a type, channel, shape or dynamic switch changes at the next host block, as v1's) |
 | Alloc | 0 bytes | 0 bytes over 2000 blocks with everything moving; 0 on the studio's audio thread, each work algorithm |
 | Sidechain | from input 2 | a −40 dBFS input under a −10 dBFS key: −15.007 dB (the curve −15.00); a quiet key or none: 0.000 dB |
-| CPU | 8 dynamic bands ≥ 30× | 55× (stereo, drums; best of three 4 s runs on the 2-core test machine); static bands as before (153×) |
+| CPU | 8 dynamic bands ≥ 30× | a throughput guard (§4), stereo drums, at the reference's speed: 66× (Xeon), 57× (Linux runner), 43× (Mac runner); floors 44× (x64), 31× (arm64). Static bands as before (Neo EQ's guard: 193× on the Linux runner) |
 | Delta, Readings | output − input; the gain match | exact (0.0); a +6 dB high shelf on pink noise reads +3.43 dB |
 
 ### Neo Utility (gain, pan, width)
@@ -392,7 +392,7 @@ Not built: a target-LUFS mode. Integrated loudness needs the whole programme, so
 | Loudness at a distortion budget | the drive at 1 % SMPTE IMD, and drums through it there | Classic 4.2 dB (drums −14.0 LUFS); Transparent 18.6 dB (−9.5); Punchy 4.2 (−14.0); Dense and Loud past 1 % at 0 dB |
 | Stages | Upward: a −30 dBFS passage under −20 dB lifted by 5 (±0.6), −14 dBFS not, silence silent; Transients +6 dB: a kick's onset > +3 dB, its tail within 0.3 dB; unlink lets the other side duck less; Unity within 0.5 LU of the input; Delta exact | +5.39 dB, +0.00, silent; +5.7 dB, +0.00; −6.09 dB linked, −3.41 at 100 %; −0.19 LU; within 6·10⁻⁸ |
 | Blk, Alloc | every stage on: blocks of 256/128/117/16 identical; 0 bytes | identical; 0 bytes (and 0 on the studio's audio thread) |
-| CPU | ≥ 50× (the card) | every stage on, the soft clip at 4×: 52–68× on the 2-core test machine, best of three 4 s runs (M2: 30×); floor 50×. M3 took it there: the `FastOversampler`, the block ADAA, Upward on a 16-sample grid, the transient split's allpasses a section at a time, the gain match's filters side by side (Classic 147×) |
+| CPU | ≥ 50× (the card) | every stage on, the soft clip at 4×, a throughput guard (§4): 88× at the reference's speed on the 2-core Xeon, 91× on the Linux runner, 66× on the Mac runner (M2: 30× as timed on the Xeon); floors 64× (x64), 50× (arm64). M3 took it there: the `FastOversampler`, the block ADAA, Upward on a 16-sample grid, the transient split's allpasses a section at a time, the gain match's filters side by side |
 | Listening | ABX notes at −9 and −7 LUFS on a fixed corpus | not done: needs a person |
 
 ### Neo Clipper (docs/specs/mastering-tools.md §5.1)
@@ -411,7 +411,7 @@ Drive → (mid/side) → (bands: zero-latency Linkwitz–Riley crossovers, each 
 | Response | under the knee | 20 kHz: 1× 0.00 dB, 2× −2.01, 4× −0.47, 8× −0.12; three bands flat to −0.53 dB at 15 kHz (two ADAA stages) |
 | Mix0, Blk, Lat, Alloc | Mix 0 the input delayed bit for bit; blocks of 256/128/117/16 identical; the same latency at every setting; 0 bytes | all hold; 0 bytes (and 0 on the studio's audio thread) |
 | Delta, Match | Delta the output minus the input; the gain match against the integrated difference | exact (0.0); +9 dB on drums: 7.40 dB against 7.36 LU; the studio's Match set Output −11.5 dB for 11.55 |
-| CPU | ≥ 100× (the card) | M3: 1 band 4× 133–147×, 8× 91–100×, 1× 199–224×; three bands M/S 4× 27–30× (the 2-core test machine, best of three 4 s runs; M2: 50×, 28×, 275×, 14×): floors 100×, 40×, 100×, 15×. The `FastOversampler` (each halfband branch over the whole block, its outputs in vector lanes: 4× up and down for two channels 276–414× against `FirOversampler`'s 52–85×) and the ADAA four or eight samples at a time (min/max curves without branches) |
+| CPU | ≥ 100× (the card) | M3, throughput guards (§4), at the reference's speed: 1 band 4× 217 (Xeon), 201 (Linux runner), 138 (Mac runner); 1× 305, 305, 312; 8× 138, 138, 87; three bands M/S 4× 63, 72, 43 (M2, as timed on the Xeon: 50×, 275×, 28×, 14×); floors x64 150, 220, 100, 48, arm64 100, 220, 62, 30. The `FastOversampler` (each halfband branch over the whole block, its outputs in vector lanes: 4× up and down for two channels 276–414× as timed against `FirOversampler`'s 52–85×) and the ADAA four or eight samples at a time (min/max curves without branches) |
 
 
 ### Neo Analyzer (spectrum, loudness, stereo; MCP A4)
