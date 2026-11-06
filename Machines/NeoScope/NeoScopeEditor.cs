@@ -209,7 +209,7 @@ namespace NeoBuzz.Scope
             var correlation = new GraphView(240, 34, (g, r) =>
             {
                 var s = live.Get();
-                CorrelationBar.Draw(g, r, s.CorrelationNow, s.Correlation, AccentColor);
+                CorrelationBar.Draw(g, r, StereoReadout.Bar(s.CorrelationNow, s.StereoNow), StereoReadout.Bar(s.Correlation, s.Stereo), AccentColor);
             }, animate: true)
             {
                 ToolTip = "Correlation over 400 ms (bar) and 3 s (marker): +1 mono, 0 unrelated, −1 opposed",
@@ -224,7 +224,7 @@ namespace NeoBuzz.Scope
                 }
                 static string Db(double db, string unit, CultureInfo c) =>
                     double.IsNegativeInfinity(db) ? "−∞ " + unit : db.ToString("+0.0;−0.0;0.0", c) + " " + unit;
-                Row(0, "Correlation (3 s)", s.Correlation.ToString("+0.00;−0.00;0.00", ci));
+                Row(0, "Correlation (3 s)", StereoReadout.Correlation(s.Correlation, s.Stereo));
                 Row(1, "Peak (3 s)", Db(s.PeakDb, "dBFS", ci));
                 Row(2, "RMS (3 s)", Db(s.RmsDb, "dB", ci));
             }, animate: true);

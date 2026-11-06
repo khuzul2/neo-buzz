@@ -223,6 +223,46 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void BeforeAndInSilenceTheSpectrumIsEmptyAndTheStereoReadingsWait()
+        {
+            // UI gallery review (mac-400): with no signal yet every spectrum band read 0 dB (the engine's arrays before
+            // its first frame), and correlation +1.00 / width 0.00. The spectrum starts empty (−∞, at the floor), and the
+            // stereo readings wait for sound ("—"); the readings agents get keep the library's numbers.
+            var (e, _) = Make();
+            var fresh = Snapshot(e);
+            Assert.That(fresh.Thirds.All(float.IsNegativeInfinity) && fresh.ThirdsPeak.All(float.IsNegativeInfinity), Is.True, "no frame yet: no bars");
+            Assert.That(fresh.Curve.All(float.IsNegativeInfinity) && fresh.CurvePeak.All(float.IsNegativeInfinity), Is.True, "and no curve");
+            Assert.That(fresh.Stereo || fresh.StereoNow, Is.False, "nothing to correlate yet");
+            Assert.That(StereoReadout.Correlation(fresh.Correlation, fresh.Stereo), Is.EqualTo("—"));
+            Assert.That(StereoReadout.Width(fresh.Width, fresh.Stereo), Is.EqualTo("—"));
+            Assert.That(double.IsNaN(StereoReadout.Bar(fresh.CorrelationNow, fresh.StereoNow)), Is.True, "no bar");
+
+            // Drawn: nothing in the plot but the grid.
+            var c = new RecordingCanvas();
+            SpectrumGraph.Draw(c, new NeoRect(0, 0, 600, 240), AnalyzerEngine.CurveHz, fresh.Curve, fresh.CurvePeak, AnalyzerEngine.ThirdLo, AnalyzerEngine.ThirdHi,
+                fresh.Thirds, fresh.ThirdsPeak, 0, Accent);
+            Assert.That(c.Of(NeoDrawKind.Rect), Is.Empty, "no bar drawn");
+            Assert.That(c.Of(NeoDrawKind.Path).SelectMany(p => p.Points).All(p => p.Y >= SpectrumGraph.Plot(new NeoRect(0, 0, 600, 240)).Bottom), Is.True, "the curve lies at the floor");
+
+            // Seconds of silence: the same.
+            var z = new float[4 * Rate];
+            Run(e, z, z);
+            var quiet = Snapshot(e);
+            Assert.That(quiet.Thirds.All(float.IsNegativeInfinity), Is.True);
+            Assert.That(quiet.Stereo || quiet.StereoNow, Is.False);
+            Assert.That(quiet.ToReadings()["correlation"], Is.EqualTo(1), "agents keep the library's reading");
+
+            // Sound: readings.
+            var x = Measure.Sine(1000, 2 * Rate, 0.5);
+            Run(e, x, x);
+            var loud = Snapshot(e);
+            Assert.That(loud.Stereo && loud.StereoNow, Is.True);
+            Assert.That(StereoReadout.Correlation(loud.Correlation, loud.Stereo), Is.EqualTo("+1.00"));
+            Assert.That(StereoReadout.Width(loud.Width, loud.Stereo), Is.EqualTo("0.00"));
+            Assert.That(loud.Thirds.Count(float.IsFinite), Is.GreaterThan(20));
+        }
+
+        [Test]
         public void ResetStartsTheIntegratedMeasuresAgain()
         {
             var (e, v) = Make();

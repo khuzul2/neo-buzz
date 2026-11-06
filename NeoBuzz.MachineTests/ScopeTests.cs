@@ -601,5 +601,33 @@ namespace NeoBuzz.MachineTests
             Assert.That(left.Y, Is.LessThan(100));
             Assert.That(left.X - 100, Is.EqualTo(left.Y - 100).Within(1e-9), "at 45°");
         }
+
+        [Test]
+        public void InSilenceTheCorrelationWaitsForSound()
+        {
+            // UI gallery review (mac-413): in silence the editor read correlation +1.00. Until the windows hold sound
+            // the snapshot says there is no reading; agents keep the library's correlation.
+            var (e, _) = Make();
+            var s = new ScopeSnapshot();
+            e.Read(s);
+            Assert.That(s.Stereo || s.StereoNow, Is.False, "nothing yet");
+            var stopped = new ScopeTransport { Bpm = 120 };
+            var z = new float[ScopeEngine.MaxBlock];
+            for (int i = 0; i < 2 * Rate / ScopeEngine.MaxBlock; i++) e.Process(z, z, z.Length, stopped);
+            e.Read(s);
+            Assert.That(s.Stereo || s.StereoNow, Is.False, "silence: no reading");
+            Assert.That(StereoReadout.Correlation(s.Correlation, s.Stereo), Is.EqualTo("—"));
+            Assert.That(s.ToReadings()["correlation"], Is.EqualTo(1), "agents keep the library's reading");
+            var x = Measure.Sine(440, Rate, 0.5);
+            var bl = new float[ScopeEngine.MaxBlock];
+            for (int pos = 0; pos + bl.Length <= x.Length; pos += bl.Length)
+            {
+                Array.Copy(x, pos, bl, 0, bl.Length);
+                e.Process(bl, bl, bl.Length, stopped);
+            }
+            e.Read(s);
+            Assert.That(s.Stereo && s.StereoNow, Is.True, "sound: readings");
+            Assert.That(StereoReadout.Correlation(s.Correlation, s.Stereo), Is.EqualTo("+1.00"));
+        }
     }
 }
