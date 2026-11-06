@@ -714,9 +714,10 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(knob.IsEffectivelyVisible && knob.Opacity > 0 && knob.IsHitTestVisible, Is.True, "the selected slider's knob shows");
 
                 // Draw: press beside the 1 kHz cap at +12 dB and drag right to the 2 kHz track at the same height.
-                // The plot inside the graph: 30 px in, 8 down, 642 × 272 for 20 Hz – 20 kHz and ±24 dB.
-                double X(double hz) => 30 + Math.Log(hz / 20) / Math.Log(1000) * (graph.Bounds.Width - 38);
-                double Y(double db) => 8 + (graph.Bounds.Height - 26) * (24 - db) / 48;
+                // The plot inside the graph, with the handles' room (11 px) around it: 41 px in, 12 down, 627 × 257 for
+                // 20 Hz – 20 kHz and ±24 dB.
+                double X(double hz) => 41 + Math.Log(hz / 20) / Math.Log(1000) * (graph.Bounds.Width - 53);
+                double Y(double db) => 12 + (graph.Bounds.Height - 41) * (24 - db) / 48;
                 double y12 = Y(12);
                 window.MouseDown(At(graph, window, X(1000), y12), MouseButton.Left);
                 for (double hz = 1000; hz <= 2000; hz *= Math.Pow(2, 1 / 12.0)) window.MouseMove(At(graph, window, X(hz), y12));
@@ -964,15 +965,15 @@ namespace ReBuzz.Studio.Tests
                     var c = Frame(window, "neo-filter-editor-envelope");
                     Assert.That(Count(c, envelope, 0xD4E157), Is.GreaterThan(30), "the envelope meter shows the chord");
 
-                    // The handle: at the cutoff (2 kHz) and 20·log10 Q (−3 dB at Q 0.71) on the graph (ResponseGraph's plot: 30 px in,
-                    // 8 down, −42 … +24 dB).
+                    // The handle: at the cutoff (2 kHz) and 20·log10 Q (−3 dB at Q 0.71) on the graph (ResponseGraph's plot with the
+                    // handles' room, 11 px, kept around it: 41 px in, 12 down, 53 px narrower and 41 lower, −42 … +24 dB).
                     Global(filter, "Env amount").SetValue(0, 600);
                     Run(0.1);
                     var cutoff = Global(filter, "Cutoff");
                     var resonance = Global(filter, "Resonance");
                     int cutoff0 = cutoff.GetValue(0), resonance0 = resonance.GetValue(0), steps = Core.SongCore.ActionStack.Actions.Count();
-                    double plotW = area.Width - 38, plotH = area.Height - 26;
-                    var handle = new Point(area.Left + 30 + Math.Log(2000.9 / 20) / Math.Log(1000) * plotW, area.Top + 8 + (24 + 3) / 66.0 * plotH);
+                    double plotW = area.Width - 53, plotH = area.Height - 41;
+                    var handle = new Point(area.Left + 41 + Math.Log(2000.9 / 20) / Math.Log(1000) * plotW, area.Top + 12 + (24 + 3) / 66.0 * plotH);
                     var before = Frame(window);
                     window.MouseDown(handle, MouseButton.Left);
                     for (int d = 8; d <= 40; d += 8) window.MouseMove(handle + new Point(d, -d));
@@ -992,6 +993,65 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 Remove(filter, poly);
+            }
+        }
+
+        /// <summary>Pixels in <paramref name="area"/> of a saturated colour: a curve or a trace, not the grey of labels, grid, frame or background.</summary>
+        static int Coloured((uint[] Pixels, int Width, int Height) f, Rect area, int spread = 60)
+        {
+            int n = 0;
+            for (int y = Math.Max(0, (int)area.Top); y < (int)area.Bottom && y < f.Height; y++)
+                for (int x = Math.Max(0, (int)area.Left); x < (int)area.Right && x < f.Width; x++)
+                {
+                    uint p = f.Pixels[y * f.Width + x];
+                    int r = (int)((p >> 16) & 0xFF), g = (int)((p >> 8) & 0xFF), b = (int)(p & 0xFF);
+                    if (Math.Max(r, Math.Max(g, b)) - Math.Min(r, Math.Min(g, b)) > spread) n++;
+                }
+            return n;
+        }
+
+        [AvaloniaTest]
+        public void GraphsKeepToTheirPlotsAndLeaveTheirLabelsAndCaptionsClear()
+        {
+            // UI gallery review (mac-408, win-808, mac-410, win-811, mac-416): Neo Filter's and Neo Multiband's response curves
+            // ran past the plot's floor over the frequency labels, and Neo Wave's traces over its caption. At their defaults
+            // each curve falls below the plot's floor; the strip of labels under the plot keeps only their grey.
+            var filter = Add("Neo Filter", "Clip Filter", -0.3f, -0.3f);
+            var multiband = Add("Neo Multiband", "Clip Multiband", 0.3f, -0.3f);
+            var wave = Add("Neo Wave", "Clip Wave", 0, 0.5f);
+            try
+            {
+                Assert.Multiple(() =>
+                {
+                    foreach (var (m, width) in new[] { (filter, 586.0), (multiband, 600.0) })
+                    {
+                        var window = OpenEditor(m);
+                        var graph = Controls(window, "InteractiveGraph").Single(g => Math.Abs(g.Bounds.Width - width) < 1);
+                        var area = BoundsIn(graph, window);
+                        var f = Frame(window);
+                        var plot = new Rect(area.Left + 50, area.Top + 30, area.Width - 70, area.Height - 70);
+                        Assert.That(Coloured(f, plot), Is.GreaterThan(200), $"{m.Name}: its curves are drawn");
+                        var labels = new Rect(area.Left + 2, area.Bottom - 16, area.Width - 4, 14);
+                        Assert.That(Coloured(f, labels), Is.EqualTo(0), $"{m.Name}: nothing but the labels' grey under the plot");
+                        Core.UiHost.CloseWindows(m);
+                    }
+
+                    var waveWindow = OpenEditor(wave);
+                    WaitReady(wave, waveWindow);
+                    var tables = Controls(waveWindow, "GraphView").Where(g => Math.Abs(g.Bounds.Width - 384) < 1).ToList();
+                    Assert.That(tables, Has.Count.EqualTo(2), "Neo Wave: a picture per oscillator");
+                    var w = Frame(waveWindow, "neo-wave-editor-captions");
+                    foreach (var t in tables)
+                    {
+                        var area = BoundsIn(t, waveWindow);
+                        Assert.That(Coloured(w, new Rect(area.Left + 2, area.Top + 24, area.Width - 4, area.Height - 26)), Is.GreaterThan(200), "Neo Wave: the traces are drawn");
+                        Assert.That(Coloured(w, new Rect(area.Left + 2, area.Top + 2, area.Width - 4, 17)), Is.EqualTo(0), "Neo Wave: the caption's strip holds only the caption");
+                    }
+                });
+            }
+            finally
+            {
+                Remove(wave, multiband, filter);
             }
         }
 

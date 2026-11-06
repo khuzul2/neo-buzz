@@ -61,9 +61,13 @@ namespace NeoBuzz.Editor
             }
             if (response.Computed && response.DbAt != null)
             {
-                var area = graph.Area(hz => Clamp(response.DbAt(hz), response));
-                c.Path(area, accent.WithAlpha(0x22), NeoStroke.None);
-                c.Path(graph.Curve(hz => Clamp(response.DbAt(hz), response)), NeoFill.None, new NeoStroke(accent, 2));
+                // Inside the plot, never over the frequency labels.
+                graph.InPlot(c, () =>
+                {
+                    var area = graph.Area(hz => Clamp(response.DbAt(hz), response));
+                    c.Path(area, accent.WithAlpha(0x22), NeoStroke.None);
+                    c.Path(graph.Curve(hz => Clamp(response.DbAt(hz), response)), NeoFill.None, new NeoStroke(accent, 2));
+                });
             }
             else
             {

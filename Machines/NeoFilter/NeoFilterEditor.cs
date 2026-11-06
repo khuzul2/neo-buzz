@@ -113,22 +113,26 @@ namespace NeoBuzz.Filter
             var st = Stages(machine, rate);
             double osc = s.SelfOsc ? 1 : 0;
             double Curve(double cutoff, double hz) => FilterDesign.Db(s.Type, s.Steep, cutoff, s.Q, hz, rate, st, osc);
-            // The setting's curve, faint and filled; then where the modulation has the cutoff now, each channel's.
-            g.Path(Under(graph, hz => Curve(s.CutoffHz, hz)), AccentColor.WithAlpha(0x28), NeoStroke.None);
-            g.Path(graph.Curve(hz => Curve(s.CutoffHz, hz)), NeoFill.None, new NeoStroke(AccentColor.WithAlpha(0x80), 1.2));
-            if (engine != null)
+            // The setting's curve, faint and filled; then where the modulation has the cutoff now, each channel's:
+            // inside the plot, never over the frequency labels.
+            graph.InPlot(g, () =>
             {
-                double l = engine.Cutoff(0), rr = engine.Cutoff(1);
-                if (Math.Abs(rr / l - 1) > 1e-3)
+                g.Path(Under(graph, hz => Curve(s.CutoffHz, hz)), AccentColor.WithAlpha(0x28), NeoStroke.None);
+                g.Path(graph.Curve(hz => Curve(s.CutoffHz, hz)), NeoFill.None, new NeoStroke(AccentColor.WithAlpha(0x80), 1.2));
+                if (engine != null)
                 {
-                    g.Path(graph.Curve(hz => Curve(rr, hz)), NeoFill.None, new NeoStroke(RightColor, 1.6));
-                    g.Line(graph.X(rr), graph.Plot.Top, graph.X(rr), graph.Plot.Bottom, new NeoStroke(RightColor.WithAlpha(0x70), 1, false));
+                    double l = engine.Cutoff(0), rr = engine.Cutoff(1);
+                    if (Math.Abs(rr / l - 1) > 1e-3)
+                    {
+                        g.Path(graph.Curve(hz => Curve(rr, hz)), NeoFill.None, new NeoStroke(RightColor, 1.6));
+                        g.Line(graph.X(rr), graph.Plot.Top, graph.X(rr), graph.Plot.Bottom, new NeoStroke(RightColor.WithAlpha(0x70), 1, false));
+                    }
+                    g.Path(graph.Curve(hz => Curve(l, hz)), NeoFill.None, new NeoStroke(AccentColor, 2));
+                    g.Line(graph.X(l), graph.Plot.Top, graph.X(l), graph.Plot.Bottom, new NeoStroke(AccentColor.WithAlpha(0x70), 1, false));
                 }
-                g.Path(graph.Curve(hz => Curve(l, hz)), NeoFill.None, new NeoStroke(AccentColor, 2));
-                g.Line(graph.X(l), graph.Plot.Top, graph.X(l), graph.Plot.Bottom, new NeoStroke(AccentColor.WithAlpha(0x70), 1, false));
-            }
+                g.Text(FilterDesign.Summary(s), graph.Plot.Left + 4, graph.Plot.Top + 2, 10, Palette.DimText);
+            });
             handle.Draw(g, new[] { AccentColor });
-            g.Text(FilterDesign.Summary(s), graph.Plot.Left + 4, graph.Plot.Top + 2, 10, Palette.DimText);
         }
 
         /// <summary>The area under a curve, down to the plot's floor.</summary>
