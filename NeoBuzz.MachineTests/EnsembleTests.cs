@@ -727,21 +727,30 @@ namespace NeoBuzz.MachineTests
         public void CpuIsSmall()
         {
             // Stereo at 48 kHz: four chorus voices, and twelve phaser stages, each with feedback.
-            foreach (var (name, setup) in new (string, Action<ParamValues>)[]
+            foreach (var (name, setup, floor) in new (string, Action<ParamValues>, double)[]
             {
-                ("chorus, 4 voices", v => { v.Set(P.Voices, 4); Set(v, P.Feedback, 50); }),
-                ("flanger", v => { v.Set(P.Mode, 1); Set(v, P.Feedback, 80); }),
-                ("phaser, 12 stages", v => { v.Set(P.Mode, 2); v.Set(P.Stages, 12); Set(v, P.Feedback, 60); }),
+                ("chorus, 4 voices", v => { v.Set(P.Voices, 4); Set(v, P.Feedback, 50); }, Throughput.Floor(x64: 130, arm64: 120)),
+                ("flanger", v => { v.Set(P.Mode, 1); Set(v, P.Feedback, 80); }, Throughput.Floor(x64: 260, arm64: 200)),
+                ("phaser, 12 stages", v => { v.Set(P.Mode, 2); v.Set(P.Stages, 12); Set(v, P.Feedback, 60); }, Throughput.Floor(x64: 190, arm64: 120)),
             })
             {
-                var (e, _) = Make(setup);
-                var x = Noise(10 * Rate, 0.2, 4);
-                Run(e, x, x);   // warm
-                var sw = Stopwatch.StartNew();
-                Run(e, x, x);
-                double speed = 10 / sw.Elapsed.TotalSeconds;
-                Measure.Report($"Neo Ensemble CPU ({name}): {speed:F0}× real time");
-                Assert.That(speed, Is.GreaterThan(50));
+                // Timed against the reference workload in the same run (Throughput.cs): 0.5 s played untimed, then 2 s.
+                var x = Noise(3 * Rate, 0.2, 4);
+                const int Warm = Rate / 2;
+                Throughput.Guard($"Neo Ensemble CPU ({name})", floor, 2, Rate, EnsembleEngine.MaxBlock, () =>
+                {
+                    var (e, _) = Make(setup);
+                    var bl = new float[EnsembleEngine.MaxBlock];
+                    var br = new float[EnsembleEngine.MaxBlock];
+                    void Block(int pos, int n)
+                    {
+                        Array.Copy(x, pos, bl, 0, n);
+                        Array.Copy(x, pos, br, 0, n);
+                        e.Process(bl, br, n);
+                    }
+                    for (int pos = 0; pos < Warm; pos += EnsembleEngine.MaxBlock) Block(pos, EnsembleEngine.MaxBlock);
+                    return Throughput.InBlocks(EnsembleEngine.MaxBlock, (pos, n) => Block(Warm + pos, n));
+                }, Measure.Report);
             }
         }
     }
