@@ -230,6 +230,10 @@ namespace ReBuzz.Audio
                     // Tick all machines first and then call tick again if sendcontrolchanges flag set?
                     CallTick();
 
+                    // Fork (docs/specs/mastering-tools.md §4.1): a latency a machine reported at its tick reaches the
+                    // delay compensation before this block's work (the same samples every run).
+                    buzzCore.ApplyLatencyIfDirty();
+
                     // Call work
                     ReadWork(buffer, workBufferOffset, framesToProcess);
 
