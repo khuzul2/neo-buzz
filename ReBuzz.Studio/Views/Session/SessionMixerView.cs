@@ -328,7 +328,7 @@ namespace ReBuzz.Studio.Views.Session
 
             var effects = SessionMixer.EffectMachines(buzz.Song).ToList();
             var returnItem = new MenuItem { Header = "Return tracks", Tag = "Return tracks" };
-            ToolTip.SetTip(returnItem, "Effect machines that tracks send to from their mixer strips (like Live's return tracks)");
+            ToolTip.SetTip(returnItem, "Effect machines that tracks send to from their mixer strips (return tracks)");
             foreach (var m in effects)
             {
                 var machine = m;

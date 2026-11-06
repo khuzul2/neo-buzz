@@ -106,7 +106,7 @@ namespace ReBuzz.Studio.Views.Session
                     "Also the rate of Repeat. Scenes use the session's quantization.");
                 legato = Check("Legato",
                     "The clip starts where the clip it replaces on the track has got to,\n" +
-                    "instead of from its start (Live's legato: switch variations without losing the phrase).",
+                    "instead of from its start (legato: switch variations without losing the phrase).",
                     () => Commit(c => c.Legato = legato.IsChecked == true));
                 loop = Check("Loop",
                     "On: after the end the clip repeats its loop region.\nOff: it plays once, from the start marker to the end, and the track stops.",
