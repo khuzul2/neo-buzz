@@ -1609,7 +1609,7 @@ namespace ReBuzz.Core
                 {
                     // Fork: what happened in words, the exception under Details (the apps' Error dialogs);
                     // it said only "Unable to read beyond the end of the stream." (gallery mac-338).
-                    userMessages.Error(OpenFailedMessage(filename), Product.Name, e);
+                    userMessages.Error(OpenFailedMessage(filename, e), Product.Name, e);
                     DCWriteLine($"Opening {filename}: {e}", DCLogLevel.Error);
                     bmxFile.EndFileOperation(false);
                     NewSong();
@@ -1642,9 +1642,19 @@ namespace ReBuzz.Core
             return false;
         }
 
-        /// <summary>Fork: the message when a song can't be opened (the exception goes under the dialog's Details).</summary>
-        internal static string OpenFailedMessage(string filename) =>
-            $"\u201C{Path.GetFileName(filename)}\u201D couldn't be opened. The file is damaged or isn't a song this app can read.";
+        /// <summary>
+        /// Fork: the message when a song can't be opened (the exception goes under the dialog's Details):
+        /// a machine it needs that isn't installed, by name (the loader's own reason), else damaged or not a song.
+        /// </summary>
+        internal static string OpenFailedMessage(string filename, Exception exception = null)
+        {
+            string name = $"\u201C{Path.GetFileName(filename)}\u201D";
+            const string Needs = "To load this song, you need to have following machine in your Gear forlder: ";     // BMXFile's
+            string message = exception?.InnerException?.Message ?? exception?.Message;
+            if (message != null && message.StartsWith(Needs))
+                return $"{name} couldn't be opened: it uses {message.Substring(Needs.Length).Trim()}, a machine that isn't installed.";
+            return $"{name} couldn't be opened. The file is damaged or isn't a song this app can read.";
+        }
 
         internal void ImportSong(float x, float y)
         {

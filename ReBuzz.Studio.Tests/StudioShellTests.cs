@@ -164,6 +164,10 @@ namespace ReBuzz.Studio.Tests
                 dialog.GetVisualDescendants().OfType<Button>().Single(b => (b.Content as string) == "OK").RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
                 for (int i = 0; i < 20 && !opening.IsCompleted; i++) Settle(window);
                 Assert.That(opening.IsCompleted && !opening.Result, Is.True, "it didn't open");
+
+                // A song that needs a machine that isn't installed says so (the loader's own reason, kept).
+                Assert.That(ReBuzzCore.OpenFailedMessage("/songs/Makk_M4.bmw", new System.Exception("To load this song, you need to have following machine in your Gear forlder: M4")),
+                    Is.EqualTo("\u201CMakk_M4.bmw\u201D couldn't be opened: it uses M4, a machine that isn't installed."));
             }
             finally
             {
