@@ -326,7 +326,7 @@ namespace ReBuzz.Studio.Views.Session
                 }
 
                 var color = SessionPalette.ColorBrush(PatternColors.Get(Pattern));
-                var state = session.GetState(Sequence, Pattern);
+                var state = view.layout.SlotState(Sequence, Pattern, Track, Scene);   // only the slot it plays from
                 bool sounding = state == ClipState.Playing || state == ClipState.Stopping;
                 // Uncoloured clips turn green while playing (as in 0.1); coloured ones keep their
                 // colour, lightened, with the green ▶, outline and progress bar.

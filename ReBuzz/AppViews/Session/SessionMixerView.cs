@@ -443,7 +443,7 @@ namespace ReBuzz.AppViews.Session
                     var seq = view.layout.SequenceOf(t);
                     var pattern = view.layout.PatternAt(t, Scene);
                     if (seq == null || pattern == null) continue;
-                    var state = session.GetState(seq, pattern);
+                    var state = view.layout.SlotState(seq, pattern, t, Scene);
                     playing |= state == ClipState.Playing || state == ClipState.Stopping;
                     queued |= state == ClipState.Queued;
                 }

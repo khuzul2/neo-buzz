@@ -362,7 +362,7 @@ namespace ReBuzz.Studio.Views.Session
                     return;
                 }
                 var session = view.session;
-                var state = session.GetState(shownSequence, shownPattern);
+                var state = shownSlot is { } at ? view.layout.SlotState(shownSequence, shownPattern, at.Track, at.Scene) : session.GetState(shownSequence, shownPattern);
                 string text = state switch
                 {
                     ClipState.Playing => "▶ playing",

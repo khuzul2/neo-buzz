@@ -114,6 +114,60 @@ namespace ReBuzz.Studio.Tests
             Assert.That(rig.Session.GetPlaying(rig.Layout.SequenceOf(0)), Is.Null);
         }
 
+        static bool LitAsPlaying(SessionView.SlotCell cell) =>
+            ReferenceEquals(cell.Background, SessionPalette.Playing) || ReferenceEquals(cell.Background, SessionPalette.Lighten(SessionPalette.Playing, 0.1));
+
+        [AvaloniaTest]
+        public void OnlyTheSlotAClipPlaysFromShowsItPlaying()
+        {
+            // The demo song's case (gallery mac-042): one pattern in several slots of a track. A
+            // track plays one clip at a time, so only the slot it was launched from may light up.
+            using var rig = new SessionRig("Drums", "Pad");
+            var beat = rig.Pattern(rig.Machine("Drums"), "Beat", Bar, (0, 36), (8, 38));
+            var chords = rig.Pattern(rig.Machine("Pad"), "Chords", Bar, (0, 60));
+            var layout = rig.Layout;
+            layout.Ensure();
+            for (int s = 0; s < 3; s++) layout.SetSlot(1, s, chords);
+            layout.ClearSlot(0, 0);
+            layout.SetSlot(0, 1, beat);
+            layout.SetSlot(0, 2, beat);
+            var view = rig.Show();
+
+            rig.Click(view.Scenes[2]);
+            Assert.That(layout.SlotState(1, 2), Is.EqualTo(ClipState.Queued));
+            Assert.That(layout.SlotState(1, 0), Is.EqualTo(ClipState.Stopped), "the same pattern in another scene doesn't wait");
+            rig.RunTicks(6);
+            view.RefreshState();
+            Assert.That(layout.SlotState(1, 2), Is.EqualTo(ClipState.Playing));
+            Assert.That(layout.SlotState(0, 2), Is.EqualTo(ClipState.Playing));
+            Assert.That(new[] { layout.SlotState(1, 0), layout.SlotState(1, 1), layout.SlotState(0, 1) }, Is.All.EqualTo(ClipState.Stopped));
+            Assert.That(LitAsPlaying(view.SlotAt(1, 2)) && LitAsPlaying(view.SlotAt(0, 2)), Is.True, "the scene launched plays");
+            Assert.That(new[] { view.SlotAt(1, 0), view.SlotAt(1, 1), view.SlotAt(0, 1) }.Where(LitAsPlaying).Select(c => $"{c.Track},{c.Scene}"), Is.Empty,
+                "slots sharing the playing pattern stay unlit");
+            rig.Screenshot("session-one-slot-plays");
+
+            // Launching the same pattern from another slot: that slot waits, the playing one plays on.
+            rig.Click(view.SlotAt(1, 0).LaunchArea);
+            Assert.That(layout.SlotState(1, 0), Is.EqualTo(ClipState.Queued));
+            Assert.That(layout.SlotState(1, 2), Is.EqualTo(ClipState.Playing), "until the bar line");
+            Assert.That(layout.SlotState(1, 1), Is.EqualTo(ClipState.Stopped));
+            rig.RunTicks(Bar);
+            Assert.That(layout.SlotState(1, 0), Is.EqualTo(ClipState.Playing));
+            Assert.That(layout.SlotState(1, 2), Is.EqualTo(ClipState.Stopped));
+
+            // A launch that doesn't say its slot (the agent's): the first slot holding the clip.
+            rig.Session.Launch(layout.SequenceOf(0), beat);
+            rig.RunTicks(Bar);
+            Assert.That(layout.SlotState(0, 1), Is.EqualTo(ClipState.Playing));
+            Assert.That(layout.SlotState(0, 2), Is.EqualTo(ClipState.Stopped));
+
+            // The clip panel of a slot sharing the playing pattern says it's stopped.
+            rig.Click(view.SlotAt(1, 2), fx: 0.8);
+            view.RefreshState();
+            Assert.That(view.Selected, Is.EqualTo((1, 2)));
+            Assert.That(view.ClipPanelView.StatusText, Is.EqualTo("stopped"));
+        }
+
         // ------------------------------------------------------------------ clips and notes (SessionPlayableTests, PianoRollTests)
 
         [AvaloniaTest]

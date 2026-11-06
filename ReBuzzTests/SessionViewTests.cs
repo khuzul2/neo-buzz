@@ -160,6 +160,40 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void OnlyTheSlotAClipPlaysFromLightsUp()
+        {
+            // Gallery mac-042: one pattern in three scenes of a track. A track plays one clip at a
+            // time, so only the slot it was launched from may show it playing.
+            using var rig = new Rig();
+            var chords = rig.Pattern(rig.Lead, "Chords", Bar);
+            var layout = rig.Core.SessionLayout;
+            layout.Ensure();
+            for (int s = 0; s < 3; s++) layout.SetSlot(2, s, chords);
+
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            layout.LaunchScene(2);
+            rig.RunTicks(6);
+            view.RefreshState();
+            Screenshot(view, "session-view-one-slot-plays");
+
+            Assert.That(layout.SlotState(2, 2), Is.EqualTo(ClipState.Playing));
+            Assert.That(layout.SlotState(2, 0), Is.EqualTo(ClipState.Stopped));
+            Assert.That(layout.SlotState(2, 1), Is.EqualTo(ClipState.Stopped));
+            Assert.That(view.SlotAt(2, 2).Background, Is.SameAs(SessionPalette.Playing), "the slot launched plays");
+            Assert.That(view.SlotAt(2, 0).Background, Is.Not.SameAs(SessionPalette.Playing), "the same pattern in another scene stays unlit");
+            Assert.That(view.SlotAt(2, 1).Background, Is.Not.SameAs(SessionPalette.Playing));
+
+            // The same pattern launched from scene 1: it waits there, scene 3's plays on until the bar line.
+            layout.LaunchClip(layout.SequenceOf(2)!, chords, slot: 0);
+            Assert.That(layout.SlotState(2, 0), Is.EqualTo(ClipState.Queued));
+            Assert.That(layout.SlotState(2, 2), Is.EqualTo(ClipState.Playing));
+            rig.RunTicks(Bar);
+            Assert.That(layout.SlotState(2, 0), Is.EqualTo(ClipState.Playing));
+            Assert.That(layout.SlotState(2, 2), Is.EqualTo(ClipState.Stopped));
+        }
+
+        [Test]
         public void NewSongDropsTheLayout()
         {
             using var rig = new Rig();

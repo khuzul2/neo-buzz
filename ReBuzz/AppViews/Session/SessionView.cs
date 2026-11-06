@@ -42,6 +42,8 @@ namespace ReBuzz.AppViews.Session
         readonly FlatButton clipButton;
         readonly ClipPanel clipPanel;
         internal ClipPanel ClipPanelView => clipPanel;
+        /// <summary>For tests: the cell of a slot.</summary>
+        internal SlotCell SlotAt(int track, int scene) => CellAt(track, scene);
         readonly TextBlock clockText;
         readonly TextBlock hintText;
         readonly TextBlock statusText;
