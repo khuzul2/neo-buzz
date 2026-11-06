@@ -93,8 +93,12 @@ namespace ReBuzz.Studio.Tests
             Assert.That(StateOf(rig, 0, beat), Is.EqualTo(ClipState.Playing));
             Assert.That(StateOf(rig, 1, line), Is.EqualTo(ClipState.Playing));
             Assert.That(view.ClockText, Does.StartWith("1.2."), "the session clock: bar.beat.tick");
-            Assert.That(view.SlotAt(0, 0).Background, Is.SameAs(SessionPalette.Playing).Or.SameAs(SessionPalette.Lighten(SessionPalette.Playing, 0.1)),
-                "an uncoloured clip turns green while it plays");
+            // Fork (ux-overhaul.md §3.1): a clip keeps its fill while it plays; the play green is its ▶ on a dark chip and its outline.
+            Assert.That(view.SlotAt(0, 0).Background, Is.SameAs(SessionPalette.Clip).Or.SameAs(SessionPalette.Lighten(SessionPalette.Clip, 0.1)),
+                "an uncoloured clip keeps its colour while it plays (it turned green, a colour a user can pick)");
+            Assert.That(LitAsPlaying(view.SlotAt(0, 0)), Is.True, "its ▶ in the play colour");
+            Assert.That(LitAsPlaying(view.SlotAt(1, 0)) && ReferenceEquals(view.SlotAt(1, 0).Outline, SessionPalette.Playing), Is.True, "an unselected one's outline too");
+            Assert.That(view.SlotAt(0, 0).ChipColour, Is.SameAs(SessionPalette.StateChip));
 
             // Line B waits for the next bar on the bass track: its ▶ launches it.
             rig.Click(view.SlotAt(1, 1).LaunchArea);
@@ -114,8 +118,9 @@ namespace ReBuzz.Studio.Tests
             Assert.That(rig.Session.GetPlaying(rig.Layout.SequenceOf(0)), Is.Null);
         }
 
+        // Its ▶ in the play colour on the dark chip (the outline too, unless the slot is selected: then it has the selection's).
         static bool LitAsPlaying(SessionView.SlotCell cell) =>
-            ReferenceEquals(cell.Background, SessionPalette.Playing) || ReferenceEquals(cell.Background, SessionPalette.Lighten(SessionPalette.Playing, 0.1));
+            cell.ShownState == "playing" && ReferenceEquals(cell.GlyphColour, SessionPalette.Playing) && ReferenceEquals(cell.ChipColour, SessionPalette.StateChip);
 
         [AvaloniaTest]
         public void OnlyTheSlotAClipPlaysFromShowsItPlaying()
@@ -705,21 +710,22 @@ namespace ReBuzz.Studio.Tests
             var panel = view.ClipPanelView;
             rig.Click(view.SlotAt(0, 0), fx: 0.6);
             Assert.That(panel.TitleText, Is.EqualTo("Hook"));
-            Assert.That(panel.RegionText, Is.EqualTo("Plays from 0, loops 0–32 of 32 ticks."));
-            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("32"), "the box says what the text says");
+            // Fork (ux-overhaul.md §2): places as bar.beat.tick from 1, as the transport counts; the clip's length in bars.
+            Assert.That(panel.RegionText, Is.EqualTo("Plays from 1.1.1, loops 1.1.1–3.1.1 of 2 bars."));
+            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("3.1.1"), "the box says what the text says");
 
             // Another marker committed with the end as shown: the end stays the clip's own (0).
             panel.LoopStartBox.Focus();
-            panel.LoopStartBox.Text = "8";
+            panel.LoopStartBox.Text = "1.3";                              // bar 1, beat 3: tick 8
             rig.Key(PhysicalKey.Enter);
             Assert.That((layout.ClipOf(hook).LoopStart, layout.ClipOf(hook).LoopEnd), Is.EqualTo((8, 0)));
-            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("32"));
+            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("3.1.1"));
 
             // Without loop the box is the end it stops at.
             rig.Click(panel.LoopBox);
             Assert.That(layout.ClipOf(hook).Loop, Is.False);
-            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("32"));
-            Assert.That(panel.RegionText, Is.EqualTo("Plays 0–32 of 32 ticks once."));
+            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("3.1.1"));
+            Assert.That(panel.RegionText, Is.EqualTo("Plays 1.1.1–3.1.1 of 2 bars once."));
         }
 
         [AvaloniaTest]
@@ -737,7 +743,7 @@ namespace ReBuzz.Studio.Tests
 
             rig.Click(view.SlotAt(0, 0), fx: 0.6);
             Assert.That(panel.TitleText, Is.EqualTo("Beat"));
-            Assert.That(panel.InfoText, Does.Contain("1 bar (16 ticks)"));
+            Assert.That(panel.InfoText, Does.Contain(" · 1 bar").And.Not.Contain("ticks"), "its length in bars (ux-overhaul.md §2)");
 
             rig.Choose(panel.ModeBox, 1);                              // Gate
             rig.Choose(panel.QuantizeBox, 4);                          // 1 beat
@@ -752,11 +758,14 @@ namespace ReBuzz.Studio.Tests
                 box.Text = text;
                 rig.Key(PhysicalKey.Enter);
             }
-            Type(panel.StartBox, "4");
-            Type(panel.LoopEndBox, "12");
+            Type(panel.StartBox, "4t");                                 // ticks, with a t
+            Type(panel.LoopEndBox, "1.4");                              // bar 1, beat 4: tick 12
             Assert.That(layout.ClipOf(beat).Start, Is.EqualTo(4));
             Assert.That(layout.ClipOf(beat).LoopEnd, Is.EqualTo(12));
-            Assert.That(panel.RegionText, Is.EqualTo("Plays from 4, loops 0–12 of 16 ticks."));
+            Assert.That(panel.RegionText, Is.EqualTo("Plays from 1.2.1, loops 1.1.1–1.4.1 of 1 bar."));
+            Type(panel.StartBox, "seven");                              // not a place: back to what it was
+            Assert.That(layout.ClipOf(beat).Start, Is.EqualTo(4));
+            Assert.That(panel.StartBox.Text, Is.EqualTo("1.2.1"));
 
             rig.Drag(panel.VelocityBar, 90, 0);                          // committed when the drag ends
             Assert.That(layout.ClipOf(beat).Velocity, Is.GreaterThan(0));
@@ -858,8 +867,8 @@ namespace ReBuzz.Studio.Tests
             var view = rig.Show();
 
             rig.Click(view.SlotAt(0, 0), MouseButton.Right, fx: 0.6);
-            rig.Menu("Colour/Red");
-            Assert.That(PatternColors.Get(beat), Is.EqualTo(9));
+            rig.Menu("Colour/Lilac");                                   // fork (ux-overhaul.md §3.1): Red is the record state's, no longer offered
+            Assert.That(PatternColors.Get(beat), Is.EqualTo(8));
             rig.Click(view.SlotAt(0, 2), MouseButton.Right, fx: 0.6);
             rig.Menu("Assign pattern/Fill");
             Assert.That(layout.PatternAt(0, 2), Is.SameAs(fill));

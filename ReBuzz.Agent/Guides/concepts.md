@@ -21,7 +21,7 @@
 
 ## Pitch
 - MIDI numbers: 60 = C4 (middle C), 69 = A4 = 440 Hz. Names with sharps or flats: "F#3", "Bb2".
-- The Buzz pattern editor shows the same notes an octave higher ("C-5" for C4). The tools always use MIDI and scientific names; "C-5" style is refused so it can't be misread.
+- The pattern editor, the piano roll and the keyboards name notes as the user's Preferences ▸ General ▸ Note names says: C3 = 60 by default (the pattern editor shows "C-3" for C4), scientific ("C-4"), or Buzz's own ("C-5"). The tools always use MIDI and scientific names; "C-5" style is refused so it can't be misread. When you tell the user a note, give the MIDI number or say which naming you mean.
 
 ## Levels
 - Gains in dB: 0 dB leaves a level as is, -6 dB halves the amplitude, "-inf" is silent. A connection goes up to +12 dB.

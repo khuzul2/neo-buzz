@@ -33,6 +33,12 @@ namespace ReBuzz.Studio.Views
         bool Copy() => false;
         bool Paste() => false;
         bool Delete() => false;
+
+        // Fork (ux-overhaul.md §4): one keymap, the same commands in every view.
+        bool Duplicate() => false;
+        bool SelectAll() => false;
+        bool DeselectAll() => false;
+        bool Rename() => false;
     }
 
     internal static class StudioViews
@@ -40,14 +46,21 @@ namespace ReBuzz.Studio.Views
         /// <summary>Whether a view with this title is built (not a placeholder still).</summary>
         public static bool Has(string title) => All.Any(v => v.Title == title && v is not Placeholder);
 
+        /// <summary>
+        /// The views in tab order, which is ⌘1–⌘5's: the three main views first (ux-overhaul.md §2: the arrangement, the
+        /// Session View, the machines), then Pattern and Song Notes, which P3 moves into the window's panels.
+        /// </summary>
         public static IReadOnlyList<IStudioView> All { get; } = new IStudioView[]
         {
-            new Machines.MachinesTab(),
             new Sequence.SequenceTab(),
             new Session.SessionStudioView(),
+            new Machines.MachinesTab(),
             new PatternView(),
             new Notes.SongNotesTab(),       // fork (machine-safety.md §3.5)
         };
+
+        /// <summary>The view the window shows when it opens: the machines, where a song starts.</summary>
+        public const string FirstShown = "Machines";
 
         /// <summary>A tab whose view isn't built yet.</summary>
         sealed class Placeholder : IStudioView

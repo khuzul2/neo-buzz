@@ -20,8 +20,6 @@ namespace ReBuzz.Core.Session
     /// <summary>A note or controller number on a MIDI channel (0-15).</summary>
     internal readonly record struct MidiControl(MidiControlType Type, int Channel, int Number)
     {
-        static readonly string[] NoteNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
-
         /// <summary>
         /// Decodes a short MIDI message as packed by ReBuzz (status | data1 &lt;&lt; 8 | data2 &lt;&lt; 16).
         /// Note on with velocity 0 counts as note off. <paramref name="isPress"/> is true for
@@ -58,8 +56,8 @@ namespace ReBuzz.Core.Session
             }
         }
 
-        public static string NoteName(int note) =>
-            NoteNames[((note % 12) + 12) % 12] + (note / 12 - 1).ToString(CultureInfo.InvariantCulture);
+        /// <summary>A note's name as Preferences name notes (BuzzGUI.Common.NoteNames; by default C3 is middle C, 60).</summary>
+        public static string NoteName(int note) => BuzzGUI.Common.NoteNames.Name(note);
 
         public override string ToString() =>
             (Type == MidiControlType.Note ? "Note " + NoteName(Number) : "CC " + Number.ToString(CultureInfo.InvariantCulture)) +

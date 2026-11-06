@@ -129,9 +129,10 @@ namespace ReBuzz.Studio.Views.Session
                 };
                 velocity.DragEnded += CommitVelocity;
 
-                start = NumberBox("Start marker in ticks: where the clip starts playing.");
-                loopStart = NumberBox("Loop start in ticks: where the clip goes back to after the loop end.");
-                loopEnd = NumberBox("Loop end in ticks (the tick after the last one played); 0 or empty for the clip's end.\nWithout loop: where the clip ends.");
+                // Fork (ux-overhaul.md §2): places in the clip as bar.beat.tick from 1, as the transport counts (they were ticks).
+                start = NumberBox("Start marker: where the clip starts playing, as bar.beat.tick (1.1.1 is its start; 16t is tick 16).");
+                loopStart = NumberBox("Loop start: where the clip goes back to after the loop end, as bar.beat.tick.");
+                loopEnd = NumberBox("Loop end: where the loop ends, as bar.beat.tick (the clip's end when empty).\nWithout loop: where the clip ends.");
                 loopStartLabel = FieldLabel("Loop start");
                 loopEndLabel = FieldLabel("Loop end");
                 region = new TextBlock { Foreground = SessionPalette.DimText, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0), FontSize = 11 };
@@ -283,19 +284,20 @@ namespace ReBuzz.Studio.Views.Session
                     loop.IsChecked = c.Loop;
                     velocity.Value = c.Velocity / 100.0;
                     velocity.ValueText = $"{c.Velocity}%";
-                    start.Text = c.Start.ToString();
-                    loopStart.Text = c.LoopStart.ToString();
+                    start.Text = Place(c.Start);
+                    loopStart.Text = Place(c.LoopStart);
                     // The end it plays to, the clip's own end when the setting is 0 (as the text below says);
                     // committed unchanged, the clip's end stays 0 and follows the pattern's length.
                     var (s, ls, end) = new ClipShape(c.Start, c.LoopStart, c.LoopEnd, c.Loop).Resolve(shownLength);
-                    loopEnd.Text = end.ToString();
+                    loopEnd.Text = Place(end);
                     loopStartLabel.Opacity = c.Loop ? 1 : 0.4;
                     loopStart.IsEnabled = c.Loop;
                     loopEndLabel.Text = c.Loop ? "Loop end" : "End";
 
                     region.Text = c.Loop
-                        ? $"Plays from {s}, loops {ls}–{end} of {shownLength} ticks."
-                        : $"Plays {s}–{end} of {shownLength} ticks once.";
+                        ? $"Plays from {Place(s)}, loops {Place(ls)}–{Place(end)} of {Length(shownLength)}."
+                        : $"Plays {Place(s)}–{Place(end)} of {Length(shownLength)} once.";
+                    ToolTip.SetTip(region, $"In ticks: from {s}, {(c.Loop ? $"loops {ls}–{end}" : $"to {end}")} of {shownLength}.");
                     clipFollow.Load(c.Follow);
                 }
                 finally
@@ -347,15 +349,15 @@ namespace ReBuzz.Studio.Views.Session
                 view.layout.SetSceneFollow(at.Scene, f);
             }
 
-            string Describe(int ticks)
-            {
-                int tpb = Math.Max(1, view.buzz.TPB);
-                int bar = tpb * Math.Max(1, view.session.BeatsPerBar);
-                string length = ticks % bar == 0 ? (ticks / bar == 1 ? "1 bar" : $"{ticks / bar} bars")
-                              : ticks % tpb == 0 ? (ticks / tpb == 1 ? "1 beat" : $"{ticks / tpb} beats")
-                              : $"{ticks} ticks";
-                return ticks % bar == 0 || ticks % tpb == 0 ? $"{length} ({ticks} ticks)" : length;
-            }
+            string Describe(int ticks) => Length(ticks);
+
+            int TicksPerBeat => Math.Max(1, view.buzz.TPB);
+            int BeatsPerBar => Math.Max(1, view.session.BeatsPerBar);
+
+            /// <summary>A place in the clip, bar.beat.tick from 1.</summary>
+            string Place(int ticks) => Shell.TimeText.Position(ticks, TicksPerBeat, BeatsPerBar);
+
+            string Length(int ticks) => Shell.TimeText.Length(ticks, TicksPerBeat, BeatsPerBar);
 
             /// <summary>Playing state and position (called on every refresh).</summary>
             public void UpdateStatus()
@@ -377,12 +379,12 @@ namespace ReBuzz.Studio.Views.Session
                 if (state == ClipState.Playing || state == ClipState.Stopping)
                 {
                     int pos = session.GetClipPosition(shownSequence);
-                    if (pos >= 0) text += $"  {pos + 1}/{shownLength}";
+                    if (pos >= 0) text += $"  bar {Shell.TimeText.BarBeat(pos, TicksPerBeat, BeatsPerBar)} of {Length(shownLength)}";
                     if (session is SessionCore core)
                     {
                         if (core.IsRepeating(shownSequence)) text += "  repeat";
                         long followAt = core.GetFollowAt(shownSequence);
-                        if (followAt >= 0 && session.Clock >= 0) text += $"  follow in {followAt - session.Clock}";
+                        if (followAt >= 0 && session.Clock >= 0) text += $"  follow in {Length((int)Math.Max(0, followAt - session.Clock))}";
                     }
                 }
                 if (view.layout.IsRecordingInto(shownSequence, shownPattern)) text += "  ● recording";
@@ -403,7 +405,7 @@ namespace ReBuzz.Studio.Views.Session
             void CommitMarkers()
             {
                 if (loading || shownPattern == null) return;
-                if (!TryTicks(start.Text, out int s) || !TryTicks(loopStart.Text, out int ls) || !TryTicks(loopEnd.Text, out int le))
+                if (!TryPlace(start.Text, out int s) || !TryPlace(loopStart.Text, out int ls) || !TryPlace(loopEnd.Text, out int le))
                 {
                     Load();       // not a number: back to what it was
                     return;
@@ -414,6 +416,13 @@ namespace ReBuzz.Studio.Views.Session
                     c.LoopStart = Math.Min(ls, shownLength - 1);
                     c.LoopEnd = le >= shownLength ? 0 : le;
                 });
+            }
+
+            /// <summary>A marker typed as bar.beat.tick from 1 (or ticks with a t); empty is the clip's start (its end for the loop end).</summary>
+            bool TryPlace(string text, out int ticks)
+            {
+                ticks = 0;
+                return string.IsNullOrWhiteSpace(text) || Shell.TimeText.TryParsePosition(text, TicksPerBeat, BeatsPerBar, out ticks);
             }
 
             static bool TryTicks(string text, out int ticks)
@@ -466,7 +475,7 @@ namespace ReBuzz.Studio.Views.Session
             {
                 Text = text.ToUpperInvariant(),
                 Foreground = SessionPalette.DimText,
-                FontSize = 10,
+                FontSize = 11,
                 FontWeight = FontWeight.SemiBold,
                 Margin = new Thickness(0, 10, 0, 4)
             };
