@@ -183,6 +183,15 @@ CASES = [
     # Neo Limiter: pushed hard, auto and set release; Neo Analyzer after it (audio passes through).
     fx("limiter-loud", "Neo Limiter", "Mastering — Loud", [("Input gain", "+18 dB")], extra=[("Neo Analyzer", "Mix", [])]),
     fx("limiter-smash", "Neo Limiter", "Creative — Smash", [("Input gain", "+24 dB"), ("Auto release", "off")]),
+    # Neo Limiter v2 (docs/specs/mastering-tools.md §5.2, M2): each style's stages; the soft clip switched on while playing
+    # (its latency moving through the engine's crossfade); upward compression and the slow stage on a quiet passage.
+    fx("limiter-v2-transparent", "Neo Limiter", "Style — Transparent", [("Input gain", "+12 dB")]),
+    fx("limiter-v2-punchy", "Neo Limiter", "Style — Punchy", [("Input gain", "+9 dB")]),
+    fx("limiter-v2-dense", "Neo Limiter", "Style — Dense (Soft Clip 9 dB, Upward)", [("Clip mix", "70%")]),
+    fx("limiter-v2-loud-switched", "Neo Limiter", "Style — Loud (Soft Clip 3 dB)", [("Input gain", "+9 dB")],
+       auto=[("Soft clip", [(0, "Off"), (2, "3 dB")])]),
+    fx("limiter-v2-upward-quiet", "Neo Limiter", "Style — Classic", [("Input gain", "-12 dB"), ("Upward", "6 dB"), ("Upward threshold", "-10 dB"),
+                                                                       ("Slow stage", "60%")]),
     # Neo Utility: gain, pan law, width, bass mono, polarity, swap, DC removal.
     fx("utility-bass-mono-wide", "Neo Utility", "Mastering — Bass Mono 120 Hz", [("Width", "180%"), ("Gain", "-3.5 dB")]),
     fx("utility-pan-dc-swap", "Neo Utility", "Mastering — Clean Up (Bass Mono 80 Hz, DC)",

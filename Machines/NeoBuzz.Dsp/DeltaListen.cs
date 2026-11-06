@@ -81,6 +81,32 @@ namespace NeoBuzz.Dsp
         }
 
         /// <summary>
+        /// As <see cref="Process"/>, with the delta scaled by <paramref name="scale"/> once fully on (gliding with the switch):
+        /// wet becomes (wet − m·dry)·(1 + m·(scale − 1)). Neo Limiter hears what its limiting removes at the input's level
+        /// (scale 1/input gain), not 24 dB louder.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public void Process(float[] dryL, float[] dryR, float[] wetL, float[] wetR, int n, float scale)
+        {
+            if (!Active || scale == 1)
+            {
+                Process(dryL, dryR, wetL, wetR, n);
+                return;
+            }
+            for (int i = 0; i < n; i++)
+            {
+                pos = (pos + 1) & mask;
+                l[pos] = dryL[i];
+                if (dryR != null) r[pos] = dryR[i];
+                int at = (pos - latency) & mask;
+                float m = mix.Next();
+                float k = 1 + m * (scale - 1);
+                wetL[i] = (wetL[i] - m * l[at]) * k;
+                if (wetR != null) wetR[i] = (wetR[i] - m * r[at]) * k;
+            }
+        }
+
+        /// <summary>
         /// <paramref name="n"/> samples: the machine's input (<paramref name="dryL"/>, <paramref name="dryR"/>) goes into the
         /// ring, and its output (<paramref name="wetL"/>, <paramref name="wetR"/>, in place) becomes wet − dry·m, m gliding to
         /// the switch. Right null: mono. Off and settled, the wet signal is untouched.

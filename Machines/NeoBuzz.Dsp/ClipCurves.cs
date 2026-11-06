@@ -1,5 +1,6 @@
 #nullable disable
-// Neo Clipper (docs/specs/mastering-tools.md §5.1): the curves, normalised to a ceiling of 1, each with its
+// Neo machines shared DSP (docs/specs/mastering-tools.md §5.1, §5.2): Neo Clipper's curves (and Neo Limiter v2's soft
+// clip, the Knee curve), normalised to a ceiling of 1, each with its
 // antiderivative for first-order antiderivative anti-aliasing (ADAA): y[n] = (F(u[n]) − F(u[n−1])) / (u[n] − u[n−1]),
 // the mean of the curve between two samples. Every curve is odd, has slope 1 at 0 and never passes ±1, so neither
 // does the mean. In double, with the portable maths (the same bits everywhere).
@@ -11,9 +12,8 @@
 
 using System;
 using System.Runtime.CompilerServices;
-using NeoBuzz.Dsp;
 
-namespace NeoBuzz.Clipper
+namespace NeoBuzz.Dsp
 {
     internal enum ClipShape { Hard, Soft, Tanh, Knee }
 

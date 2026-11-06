@@ -2,7 +2,7 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoLimiter
 namespace NeoBuzz.Limiter
 class NeoLimiterMachine
-summary True-peak lookahead limiter: input gain drives the signal into a ceiling in dBTP, detected 4× oversampled as BS.1770 measures it, so the output's true peak stays under the ceiling. Program-dependent (auto) or set release, stereo link. Use it last on the master to reach a loudness target without overs, or to catch peaks on a bus.
+summary True-peak lookahead limiter: input gain drives the signal into a ceiling in dBTP, detected 4× oversampled as BS.1770 measures it, so the output's true peak stays under the ceiling. Program-dependent (auto) or set release, stereo link. v2's stages, each off by default (as v1): upward compression, transient emphasis, a 4× soft clip, a two-stage release, transient unlink, Unity listen and Delta; the "Style —" presets set them. Use it last on the master to reach a loudness target without overs, or to catch peaks on a bus.
 
 group Limiter
 InputGain   "Input gain"   0 360  120  db -12 24        | Gain into the limiter in 0.1 dB steps: raises loudness by pushing the signal into the ceiling
@@ -12,3 +12,19 @@ AutoRelease "Auto release" 0 1    1    switch           | Program-dependent rele
 group Detector
 Lookahead   "Lookahead"    0 450  150  lin 0.5 5 ms 2   | The gain starts falling this long before a peak arrives (longer: smoother, less distortion; adds latency)
 Link        "Stereo link"  0 1000 1000 pct              | 100 %: both channels get the same gain (the image stays put); 0 %: each channel on its own
+group Stages
+Upward      "Upward"           0 60   0    lin 0 6 dB 1     | Upward compression before the limiter (v2): quiet passages lifted by up to this much, half a dB for each dB their 3 s RMS sits under Upward threshold. 0 dB: off (as v1)
+UpThreshold "Upward threshold" 0 400  200  lin -40 0 dB 1   | The RMS level (dBFS, after Input gain) under which Upward lifts
+Transients  "Transients"       0 60   0    lin 0 6 dB 1     | Transient emphasis (v2): the first milliseconds of hits raised by up to this much before the limiter (the shared transient/sustain split), so limiting keeps their punch. 0 dB: off
+SoftClip    "Soft clip"        0 3    0    enum Off 3_dB 9_dB 30_dB | A soft clip before the limiter (v2), 4× oversampled with anti-aliasing: the curve bends from this far under the ceiling, so the limiter does less. Off: as v1 (adds 58 samples of latency when on)
+ClipMix     "Clip mix"         0 1000 1000 pct              | How much of the soft clip is heard (the rest the signal unclipped, delayed to match); the ceiling holds either way
+SlowStage   "Slow stage"       0 1000 0    pct              | Two-stage release (v2): a slow stage holds this much of the sustained reduction, so dense material doesn't pump between hits. 0 %: off (as v1)
+SlowRelease "Slow release"     0 1000 500  time 0.3 5       | The slow stage's release
+Unlink      "Transient unlink" 0 1000 0    pct              | Transients limited per channel (v2): on hits the stereo link drops by this much, so one side's transient doesn't duck the other; sustained sound stays linked. 0 %: as v1
+Unity       "Unity listen"     0 1    0    switch           | Monitor at the input's loudness (v2): the output trimmed by the gain-match reading (short-term loudness out − in), to judge what limiting does at equal loudness. Off for rendering
+Delta       "Delta"            0 1    0    switch           | Hear only what the limiting changes (v2): the output minus the driven input, delayed to match, at the input's level (the input gain taken back off), gliding over 10 ms
+
+# What the limiter measures (NeoLimiterMachine.Readings, machine_readings).
+reading gain_match_db       dB      | Short-term loudness out − in (K-weighted, 3 s): what Unity listen takes back
+reading gain_reduction_db   dB      | The most gain reduction in the last 3 s
+reading latency_samples     samples | The limiter's latency, reported to NeoBuzz Live

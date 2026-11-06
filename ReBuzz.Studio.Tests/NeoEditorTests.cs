@@ -37,7 +37,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Comp", "NeoCompEditor", "neo-comp-editor", 880, 294),
             ("Neo Drive", "NeoDriveEditor", "neo-drive-editor", 746, 322),
             ("Neo EQ", "NeoEqEditor", "neo-eq-editor", 822, 508),
-            ("Neo Limiter", "NeoLimiterEditor", "neo-limiter-editor", 718, 292),
+            ("Neo Limiter", "NeoLimiterEditor", "neo-limiter-editor", 940, 363),
             ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 627, 296),
             ("Neo Verb", "NeoVerbEditor", "neo-verb-editor", 880, 332),
             ("Neo Analyzer", "NeoAnalyzerEditor", "neo-analyzer-editor", 1118, 398),
@@ -48,7 +48,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Scope", "NeoScopeEditor", "neo-scope-editor", 1098, 458),
             ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1232, 738),
             ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 802, 620),
-            ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 1000, 300),
+            ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 956, 277),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;

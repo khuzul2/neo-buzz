@@ -21,7 +21,9 @@
 //    snare's level moved every buffer: 0 bytes a buffer, with each work algorithm;
 //  - a Neo Poly pattern through a Neo Filter (the ladder driven, its LFO following the song, the
 //    envelope moving the cutoff, the cutoff moved every buffer and the type switched now and then):
-//    0 bytes a buffer, with each work algorithm; it is in the first play's chain too.
+//    0 bytes a buffer, with each work algorithm; it is in the first play's chain too;
+//  - a pattern through a Neo Clipper (three bands, mid/side, its drive moved every buffer, Delta switched) and a Neo
+//    Limiter with every v2 stage (its soft clip switched, so its latency moves): 0 bytes a buffer, each algorithm.
 // The tests build in Debug, where the JIT doesn't optimize: no allocation here is one that only an
 // optimizing compiler (tier 1) would remove.
 
@@ -825,6 +827,73 @@ namespace ReBuzz.Studio.Tests
                     });
                     AssertNoAllocation(cost, $"a pattern through a Neo Filter sweeping (algorithm {algorithm})");
                     Assert.That(filter.IsActive, Is.True, $"the filter sounds (algorithm {algorithm})");
+                    lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                }
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                NewSong();
+            }
+        }
+
+        // ------------------------------------------------------------------ Neo Clipper and Neo Limiter v2
+
+        /// <summary>Inserts <paramref name="gear"/> between <paramref name="source"/> and whatever it fed.</summary>
+        static MachineCore InsertAfter(MachineCore source, string gear, string name)
+        {
+            var song = Core.SongCore;
+            var to = source.Outputs.First().Destination;
+            song.CreateMachine(gear, null, name, null, null, null, -1, 0.85f, 0.75f);
+            var fx = song.MachinesList.Last(x => x.Name == name);
+            song.DisconnectMachines(source.Outputs.First(c => c.Destination == to));
+            song.ConnectMachines(source, fx, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            song.ConnectMachines(fx, to, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+            return fx;
+        }
+
+        [AvaloniaTest]
+        public void ANeoClipperAndANeoLimiterWithEveryStageAllocateNothing()
+        {
+            // mastering-tools.md §5.1, §5.2: a pattern through Neo Clipper (three bands, mid/side, its drive moved every buffer,
+            // Delta switched now and then) and Neo Limiter with every v2 stage (the soft clip switched now and then: its
+            // latency moves through the engine's crossfade).
+            NewSong();
+            var m = AddPoly("Hygiene Clip Poly");
+            m.CreatePattern("00", 16);
+            var pattern = (PatternCore)m.Patterns.First();
+            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 40 + (i * 7) % 24, 100)).ToArray());
+            Arrange(m, pattern);
+            var clipper = InsertAfter(m, "Neo Clipper", "Hygiene Clipper");
+            var limiter = InsertAfter(clipper, "Neo Limiter", "Hygiene Limiter");
+            var cg = clipper.ParameterGroupsList[1].ParametersList;
+            cg.First(p => p.Name == "Bands").SetValue(0, 2);
+            cg.First(p => p.Name == "Stereo").SetValue(0, 1);
+            var drive = cg.First(p => p.Name == "Drive");
+            var delta = cg.First(p => p.Name == "Delta");
+            var lg = limiter.ParameterGroupsList[1].ParametersList;
+            lg.First(p => p.Name == "Input gain").SetValue(0, 220);
+            lg.First(p => p.Name == "Upward").SetValue(0, 30);
+            lg.First(p => p.Name == "Transients").SetValue(0, 30);
+            lg.First(p => p.Name == "Slow stage").SetValue(0, 500);
+            lg.First(p => p.Name == "Transient unlink").SetValue(0, 500);
+            lg.First(p => p.Name == "Unity listen").SetValue(0, 1);
+            var clip = lg.First(p => p.Name == "Soft clip");
+            try
+            {
+                int n = 0;
+                foreach (int algorithm in new[] { 0, 1, 2 })
+                {
+                    using var audio = new AudioThread(algorithm);
+                    lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                    var cost = Steady(audio, perBuffer: () =>
+                    {
+                        drive.SetValue(1 << 16, 180 + (n % 40) * 3);
+                        if (++n % 100 == 0) delta.SetValue(1 << 16, (n / 100) % 2);
+                        if (n % 150 == 0) clip.SetValue(1 << 16, (n / 150) % 4);
+                    });
+                    AssertNoAllocation(cost, $"a pattern through a Neo Clipper and a Neo Limiter with every stage (algorithm {algorithm})");
+                    Assert.That(limiter.IsActive, Is.True, $"the limiter sounds (algorithm {algorithm})");
                     lock (ReBuzzCore.AudioLock) Core.Playing = false;
                 }
             }

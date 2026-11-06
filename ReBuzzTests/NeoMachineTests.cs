@@ -1490,6 +1490,30 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void NeoLimiterV2sSoftClipMovesItsLatencyAndTheCeilingHolds()
+        {
+            // mastering-tools.md §5.2: the soft clip (4× oversampled) adds 58 samples while on; the true-peak ceiling holds.
+            using var rig = new Rig(Limiter);
+            rig.Play(0.05);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(LimiterLatency(2, rig.Rate)));
+            rig.Param("Soft clip").SetValue(0, 2);   // 9 dB
+            rig.Play(0.1);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(LimiterLatency(2, rig.Rate) + 58), "the soft clip's latency reached ReBuzz");
+            rig.Sine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters[0].SetValue(0, 100);   // 0 dBFS
+            rig.Param("Input gain").SetValue(0, 240);   // +12 dB into −1 dBTP
+            rig.Param("Transients").SetValue(0, 30);
+            rig.Param("Slow stage").SetValue(0, 500);
+            rig.Play(0.5);
+            var y = rig.Play(0.5);
+            double peak = y.Max(s => Math.Abs((double)s));
+            TestContext.Out.WriteLine($"[notice] Neo Limiter v2 in ReBuzz, soft clip 9 dB and +12 dB in: peak {Db(peak):F3} dBFS under a −1 dBTP ceiling");
+            Assert.That(Db(peak), Is.LessThanOrEqualTo(-1 + 0.01));
+            rig.Param("Soft clip").SetValue(0, 0);
+            rig.Play(0.1);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(LimiterLatency(2, rig.Rate)), "and back");
+        }
+
+        [Test]
         public void NeoPresetsLoad()
         {
             foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Clipper })
