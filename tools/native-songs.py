@@ -18,7 +18,9 @@
 # in B is the same file as in A (BMXML: but its root's name and build stamps). The run fails on any of these for a machine
 # shipped rebuilt, and on one that sounds in none of the songs built here (a silent probe proves nothing; FSM Infector is
 # silent at both fractions); a machine with a source fix ("fix": upstream's binary starts state as its heap happens to be) is reported
-# for its sound, not judged; so is a machine's sound in a classic song where a machine of that kind feeds it.
+# for its sound, not judged; so is a machine's sound in a classic song where a machine of that kind feeds it, and FSM Infector's
+# in a classic song and that of what it feeds there (PROCESS_DEPENDENT: its fast releases sound as its process's heap lands;
+# the songs built here play notes that never take that path, native-compare.py's CHORD, and judge it).
 #
 # --candidate DIR: the x64 rebuilds (build-natives.ps1's x64 Gear) of the natives the package keeps upstream's 32-bit
 # binaries of (Jeskola Delay, Cross Delay, NiNjA dElaY): in phase B in place of upstream's, reported, never judged, so
@@ -57,6 +59,13 @@ CLASSIC_BEATS = None           # a classic song plays to its end (its machines c
 CLASSIC_MAX_BEATS = 192
 JUDGED = ("rebuilt",)          # roles whose sound is judged; "fixed" and "candidate" are reported
 SILENT_DBFS = -140.0           # a probe that never comes above this proves nothing by being the same
+# Machines whose sound in a classic song depends on the process their instance runs in, upstream's binary and the rebuild
+# alike: FSM Infector renders the fast release of a note played over a sounding one with the track past the end of its
+# array (Infector.cpp, DoWorkChannel: Tracks[MAX_TRACKS+1] of MAX_TRACKS+1), whose vibrato depth is the low half of a heap
+# pointer: a NaN or infinity in about one process in 128, and that release then plays NaN, zeroed by its Work. Its demo
+# differed so in 1 of 12 fresh processes (run 42272808783) and in 2 of 4 package runs (Infector2 -41.4 dBFS from 41.91 s);
+# docs/specs/mcp-server.md §12.14 has the evidence.
+PROCESS_DEPENDENT = ("FSM Infector",)
 DLL_MACHINE = {0x14C: "x86", 0x8664: "x64"}
 
 
@@ -285,7 +294,7 @@ def fed_by(graph, name, roles):
 
 # ---- the verdicts -------------------------------------------------------------------------------------------------------
 
-def judge(entry, a, b, sound, classic_feeders=()):
+def judge(entry, a, b, sound, classic_feeders=(), process_dependent=False):
     """One machine in one song: (failures, notes). a, b: read_song's entry of it in phase A and B; sound: the probes'
     [the same bits, max difference dBFS, first differing s] or None. Failures fail the run only for a judged role. A
     silent probe is a note ("silent in phase …"): the run fails a machine that sounds in none of the songs built here."""
@@ -322,6 +331,8 @@ def judge(entry, a, b, sound, classic_feeders=()):
         text = f"plays {nc.fmt(sound[1])} dBFS apart" + (f" from {sound[2]:.2f} s" if sound[2] is not None else "")
         if entry["role"] not in JUDGED:
             notes.append(text + (" (upstream's binary starts state as its heap happens to be: reported)" if entry["role"] == "fixed" else " (not shipped: reported)"))
+        elif process_dependent:
+            notes.append(text + " (in a classic song its fast releases sound as its process lands: reported)")
         elif classic_feeders:
             notes.append(text + f" (fed by {', '.join(classic_feeders)}, whose upstream binary isn't deterministic: reported)")
         elif sound[1] > nc.TOLERANCE_DBFS:
@@ -488,8 +499,9 @@ def main(argv):
             if a and b and a.get("wav") and b.get("wav"):
                 same, worst, _, first = nc.diff(a["wav"], b["wav"])
                 sound = [same, worst, first]
-            feeders = fed_by(a_song.get("graph") or {}, name, {n for n, r in song_roles.items() if r not in JUDGED}) if classic else []
-            fails, notes = judge(entry, a, b, sound, feeders)
+            unjudged = {n for n, r in song_roles.items() if r not in JUDGED or names[n] in PROCESS_DEPENDENT}
+            feeders = fed_by(a_song.get("graph") or {}, name, unjudged) if classic else []
+            fails, notes = judge(entry, a, b, sound, feeders, classic and gear in PROCESS_DEPENDENT)
             if not classic and not fails and not any(n.startswith("silent in phase B") or (n.startswith("silent in phase A") and entry["role"] != "fixed") for n in notes):
                 sounded.add(gear)
             peak = f" (peak {pk((a or {}).get('peak_dbfs'))} dBFS)"

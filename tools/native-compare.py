@@ -88,7 +88,13 @@ def n(pitch, start, length, velocity=100):
 
 
 GEN_NOTES = [n("A3", 0, 0.75), n("C4", 1, 0.75, 70), n("E4", 2, 0.5, 120), n("A4", 2.5, 0.5, 40), n("A2", 3, 1)]
-CHORD = [n("A3", 0, 1.5), n("C4", 0, 1.5), n("E4", 0, 1.5), n("G4", 2, 1.5, 80), n("D4", 2, 1.5, 80)]
+# FSM Infector's: a note per track, the second chord on tracks of its own (the first still holds its three). A note on a
+# track whose last one still sounds moves that one to a spare channel for a fast release, and Infector renders such a
+# channel with a track past the end of its array (Infector.cpp, DoWorkChannel: Tracks[MAX_TRACKS+1] of MAX_TRACKS+1),
+# whose vibrato depth is the low half of a pointer the process's heap gave its user wavetables: in about one process in
+# 128 a NaN or infinity, and the release then plays NaN, which its Work zeroes. So that path sounds as the process lands,
+# and these notes never take it (docs/specs/mcp-server.md §12.14).
+CHORD = [n("A3", 0, 2.5), n("C4", 0, 2.5), n("E4", 0, 2.5), n("G4", 2, 1.5, 80), n("D4", 2, 1.5, 80)]
 KICKS = [n("C3", b, 0.25, 127) for b in (0, 1, 2, 2.5, 3)]
 
 

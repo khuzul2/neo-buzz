@@ -278,9 +278,21 @@ class NativeSongsTests(unittest.TestCase):
         self.assertEqual(sorted(ns.fed_by(graph, "C", {"A", "D"})), ["A", "D"])
         self.assertEqual(ns.fed_by(graph, "B", {"D"}), [])
 
+    def test_infectors_sound_in_a_classic_song_is_reported_and_in_the_songs_built_here_judged(self):
+        # 2 of 4 package runs: Infector2 -41.4 dBFS apart from 41.91 s in FSM_Infector_Demo.bmx (its fast releases read a
+        # track past the end of its array: PROCESS_DEPENDENT); the songs built here play notes that never take that path
+        e = dict(self.E, gear="FSM Infector", folder="Generators")
+        a, b = self.read("Generators/FSM Infector.x64.dll"), self.read("Generators/FSM Infector.x64.dll")
+        fails, notes = ns.judge(dict(e, upstream=("u", "FSM Infector.x64.dll"), ours=("o", "FSM Infector.x64.dll")), a, b, [False, -41.4, 41.91], (), True)
+        self.assertEqual(fails, [])
+        self.assertIn("plays -41.4 dBFS apart from 41.91 s (in a classic song its fast releases sound as its process lands: reported)", notes)
+        fails, _ = ns.judge(dict(e, upstream=("u", "FSM Infector.x64.dll"), ours=("o", "FSM Infector.x64.dll")), a, b, [False, -41.4, 41.91])
+        self.assertEqual(fails, ["plays -41.4 dBFS apart from 41.91 s"])
+        self.assertIn("FSM Infector", ns.PROCESS_DEPENDENT)
+
 
 class NativeCompareCasesTests(unittest.TestCase):
-    """tools/native-compare.py's cases: each sounds."""
+    """tools/native-compare.py's cases: each sounds, and FSM Infector's notes never take its process-dependent path."""
 
     def test_infector_and_noise_generator_get_cases_that_sound(self):
         # run 42272808783 (tools/fu1-sweep.py): every parameter at 0.25 or 0.75 of its range silences FSM Infector, 0.3 and
@@ -297,6 +309,13 @@ class NativeCompareCasesTests(unittest.TestCase):
         self.assertEqual(nc.silent_cases(cases), ["quarter", "three-quarters"])
         self.assertEqual(nc.pfmt(float("-inf")), "silent")
         self.assertIn("compares nothing", nc.pfmt(-83.8))
+
+    def test_infectors_chord_plays_one_note_per_track(self):
+        # Every note starts before any ends, so each takes a track of its own (tracks free up when their note ends) and
+        # none is played over a sounding one: no fast release on a spare channel, the path that reads past Infector's tracks.
+        starts = [x["start"] for x in nc.CHORD]
+        ends = [x["start"] + x["length"] for x in nc.CHORD]
+        self.assertLess(max(starts), min(ends))
 
 
 if __name__ == "__main__":
