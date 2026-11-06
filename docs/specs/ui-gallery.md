@@ -47,6 +47,7 @@ Every package run of every branch overwrites `ci-artifacts`: fetch it as soon as
 - No window frame or title bar; text is in the headless platform's fonts, greyscale-antialiased; shortcuts that the code spells by platform (`OperatingSystem.IsMacOS()`) show Ctrl off a Mac.
 - No audio device: the engine is run offline (a WorkManager filling buffers) for the playing and recording states; the Audio page's device lists are injected. Native (Windows) machines don't load: an old Windows song shows their placeholders.
 - Tooltips are off in the headless tests (HeadlessInput), except where a shot turns them on.
+- Machine windows (4xx) are kept inside the work area of the Mac drawn, 1440 × 875 pt (its screen less the menu bar), as the app keeps them inside a real screen's (`MachineWindowFit`): an editor taller than that scrolls. The headless platform's own screen is 1920 × 1280 and it cuts windows off at 1080 pt.
 
 **Windows (NeoBuzzLive.exe).**
 - The app starts normally (`--ui-shots` changes only: no autosave recovery question, no update check, message boxes go to stderr instead of waiting for a click), builds the demo song, draws, writes `index-windows.md` and `done.txt`, and kills itself.

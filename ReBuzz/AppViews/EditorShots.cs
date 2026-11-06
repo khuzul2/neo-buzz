@@ -99,7 +99,7 @@ namespace ReBuzz.AppViews
                 if (!core.UiHost.OpenEditor(m)) throw new InvalidOperationException("OpenEditor gave no editor");
                 window = WpfMachineUiHost.EditorWindowOf(m);
             }
-            if (window?.Content is not ManifestEditor editor) throw new InvalidOperationException("its editor window holds no manifest editor");
+            if (WpfMachineUiHost.ContentOf(window) is not ManifestEditor editor) throw new InvalidOperationException("its editor window holds no manifest editor");
             window.UpdateLayout();
             editor.UpdateLayout();
             var face = editor.Face;

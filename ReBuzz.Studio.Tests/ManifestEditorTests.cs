@@ -58,11 +58,11 @@ namespace ReBuzz.Studio.Tests
             Core.UiHost.OpenGui(m, null);
             var window = StudioMachineUiHost.EditorWindowOf(m);
             Assert.That(window, Is.Not.Null, $"{m.DLL.Name}: its manifest editor opened");
-            Assert.That(window!.Content, Is.InstanceOf<ManifestEditor>());
+            Assert.That(StudioMachineUiHost.ContentOf(window), Is.InstanceOf<ManifestEditor>());
             Dispatcher.UIThread.RunJobs();
             window.UpdateLayout();
             window.CaptureRenderedFrame();
-            return (window, (ManifestEditor)window.Content!);
+            return (window!, (ManifestEditor)StudioMachineUiHost.ContentOf(window)!);
         }
 
         static ReBuzz.Audio.WorkManager work;
@@ -144,7 +144,7 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(StudioMachineUiHost.ParameterWindowOf(bass)?.IsVisible, Is.True, "Parameters... opens the plain list");
                 StudioMachineUiHost.ParameterWindowOf(bass)!.Close();
                 Settle();
-                var editor = (ManifestEditor)editorWindow!.Content!;
+                var editor = (ManifestEditor)StudioMachineUiHost.ContentOf(editorWindow)!;
                 editorWindow.UpdateLayout();
                 var list = All(editorWindow, "ActionButton").Single(b => AutomationProperties.GetName(b) == "Parameter list");
                 Click(editorWindow, Centre(list, editorWindow));
@@ -190,7 +190,7 @@ namespace ReBuzz.Studio.Tests
                 DoubleClick(window, view.PointOf(gain, window));
                 var editorWindow = StudioMachineUiHost.EditorWindowOf(gain);
                 Assert.That(editorWindow?.IsVisible, Is.True, "now a double click opens the editor");
-                var editor = (ManifestEditor)editorWindow!.Content!;
+                var editor = (ManifestEditor)StudioMachineUiHost.ContentOf(editorWindow)!;
                 Assert.That(editor.Face.Quality, Is.EqualTo("draft"));
                 Studio.Screenshot(editorWindow, "manifest-editor-draft-pedal-tracker");
                 editorWindow.Close();
@@ -228,7 +228,7 @@ namespace ReBuzz.Studio.Tests
                 gui.Close();
                 Settle();
                 Menu(window, view, view.PointOf(delay, window), null, "Editor...");
-                Assert.That((StudioMachineUiHost.EditorWindowOf(delay)?.Content as ManifestEditor)?.Face.Quality, Is.EqualTo("generated"),
+                Assert.That((StudioMachineUiHost.ContentOf(StudioMachineUiHost.EditorWindowOf(delay)) as ManifestEditor)?.Face.Quality, Is.EqualTo("generated"),
                     "Editor... makes its manifest editor on request");
                 StudioMachineUiHost.EditorWindowOf(delay)!.Close();
                 Settle();

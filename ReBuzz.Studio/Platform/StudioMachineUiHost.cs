@@ -8,6 +8,8 @@
 // in a window of its own: what a double click opens on a machine with no GUI here when the per-gear
 // setting says so (on by default for curated manifests), and the machine menu's "Editor...". It isn't
 // saved in songs (the parameter window and GUI are, as before).
+// Fork (UI gallery review): each of these windows is kept inside the screen's work area and can be resized; a GUI of
+// a fixed layout (a Neo editor, the manifest editor) scrolls where the window is smaller than it (MachineWindowFit).
 
 using System;
 using System.Runtime.CompilerServices;
@@ -56,8 +58,9 @@ namespace ReBuzz.Studio.Platform
         public void OpenParameterWindow(IMachine machine, WindowPlacement? at)
         {
             var w = windows.GetValue(machine, _ => new Windows());
+            // The parameter window scrolls its rows itself.
             w.Parameters ??= Make(machine, $"{machine.Name} — parameters",
-                ParameterWindowContent?.Invoke(machine) ?? Note("The parameter window comes in step S2."), () => w.Parameters = null);
+                ParameterWindowContent?.Invoke(machine) ?? Note("The parameter window comes in step S2."), () => w.Parameters = null, scroll: false);
             Show(w.Parameters, at);
         }
 
@@ -75,8 +78,8 @@ namespace ReBuzz.Studio.Platform
                     OpenParameterWindow(machine, at);
                     return;
                 }
-                w.Gui = Make(machine, machine.Name, content, () => w.Gui = null);
-                w.Gui.CanResize = MachineGuis.Resizable(machine);
+                // A GUI of a fixed layout (the factory says so: the Neo editors) scrolls where the screen can't hold it.
+                w.Gui = Make(machine, machine.Name, content, () => w.Gui = null, scroll: !MachineGuis.Resizable(machine));
             }
             Show(w.Gui, at);
         }
@@ -88,8 +91,7 @@ namespace ReBuzz.Studio.Platform
             {
                 var editor = ReBuzz.Agent.MachineFaces.Editor(machine, () => OpenParameterWindow(machine, null));
                 if (editor == null) return false;
-                w.Editor = Make(machine, $"{machine.Name} — editor", editor, () => w.Editor = null);
-                w.Editor.CanResize = false;
+                w.Editor = Make(machine, $"{machine.Name} — editor", editor, () => w.Editor = null, scroll: true);
             }
             Show(w.Editor, null);
             return true;
@@ -120,18 +122,24 @@ namespace ReBuzz.Studio.Platform
         public string AskName(string title, string current, int x, int y) =>
             Dialogs.Modal(() => Dialogs.AskText(title, current));
 
-        static Window Make(IMachine machine, string title, Control content, Action closed)
+        /// <param name="scroll">A GUI of a fixed layout: in a scroll viewer, for where the window is smaller than it.</param>
+        static Window Make(IMachine machine, string title, Control content, Action closed, bool scroll)
         {
             var window = new Window
             {
                 Title = title,
-                Content = content,
+                Content = scroll ? MachineWindowFit.Scroll(content) : content,
                 SizeToContent = SizeToContent.WidthAndHeight,
                 ShowInTaskbar = false,
             };
+            // Never larger than the screen's work area; resizable (the content scrolls).
+            MachineWindowFit.Clamp(window);
             window.Closed += (s, e) => closed();
             return window;
         }
+
+        /// <summary>A machine window's own content (its GUI, parameter window or editor), without the scroll viewer around it.</summary>
+        public static Control ContentOf(Window window) => MachineWindowFit.ContentOf(window?.Content);
 
         static void Show(Window window, WindowPlacement? at)
         {

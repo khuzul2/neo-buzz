@@ -194,15 +194,16 @@ namespace ReBuzz.Studio.Tests
                     try
                     {
                         var window = OpenEditor(m);
-                        Assert.That(window.Content?.GetType().Name, Is.EqualTo(e.Editor), $"{e.Machine}: its own editor, not the parameter window");
+                        Assert.That(StudioMachineUiHost.ContentOf(window)?.GetType().Name, Is.EqualTo(e.Editor), $"{e.Machine}: its own editor, not the parameter window");
                         WaitReady(m, window);
                         Studio.Screenshot(window, e.Shot);
                         Assert.That(Controls(window, "TextBlock").Select(t => ((TextBlock)t).Text ?? ""), Has.None.StartsWith("Editor error"), $"{e.Machine}: the body built");
                         Assert.That(Controls(window, "ParamKnob").Count(), Is.GreaterThan(1), $"{e.Machine}: knobs");
                         Assert.That(Controls(window, "Section").Count(), Is.GreaterThan(2), $"{e.Machine}: sections");
                         Assert.That(Controls(window, "PresetBar").Count(), Is.EqualTo(1), $"{e.Machine}: the preset bar");
-                        // The WPF editor's layout: the same size, give or take the fonts' metrics.
-                        var size = window.ClientSize;
+                        // The WPF editor's layout: the same size, give or take the fonts' metrics (the editor's own: a
+                        // window smaller than the screen's work area shows it whole, else scrolls it).
+                        var size = StudioMachineUiHost.ContentOf(window)!.Bounds.Size;
                         Assert.That(size.Width, Is.EqualTo(e.WpfWidth).Within(6).Percent, $"{e.Machine}: width (WPF {e.WpfWidth})");
                         Assert.That(size.Height, Is.EqualTo(e.WpfHeight).Within(6).Percent, $"{e.Machine}: height (WPF {e.WpfHeight})");
                         TestContext.Out.WriteLine($"{e.Machine}: {size.Width:0} x {size.Height:0} (WPF {e.WpfWidth} x {e.WpfHeight})");
@@ -412,6 +413,53 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void MachineWindowsStayInsideTheScreensWorkAreaAndScroll()
+        {
+            // UI gallery review: Neo FM6's, Neo Poly's and Neo Wave's editors (942–1000 pt tall) were fixed in size and the
+            // parameter window 1080 pt, taller than a laptop's screen. On a 1280 × 720 work area each window stays inside it
+            // and can be resized; an editor keeps its own layout and scrolls.
+            var area = MachineWindowFit.WorkArea;
+            MachineWindowFit.WorkArea = w => new Size(1280, 720);
+            var wave = Add("Neo Wave", "Fit Wave");
+            var poly = Add("Neo Poly", "Fit Poly", 0.3f, 0.6f);
+            try
+            {
+                double maxH = 720 - MachineWindowFit.FrameHeight;
+                var window = OpenEditor(wave);
+                WaitReady(wave, window);
+                window.UpdateLayout();
+                var editor = StudioMachineUiHost.ContentOf(window)!;
+                Assert.That(editor.GetType().Name, Is.EqualTo("NeoWaveEditor"));
+                Assert.That(window.ClientSize.Height, Is.LessThanOrEqualTo(maxH + 0.5), "the window inside the work area");
+                Assert.That(window.CanResize, Is.True, "and resizable");
+                editor.Measure(Size.Infinity);
+                Assert.That(editor.Bounds.Height, Is.EqualTo(editor.DesiredSize.Height).Within(1), "the editor at its own height: never squashed");
+                Assert.That(editor.Bounds.Height, Is.GreaterThan(window.ClientSize.Height + 100), "taller than the window");
+                var scroller = editor.GetVisualParent() as ScrollViewer ?? editor.GetVisualAncestors().OfType<ScrollViewer>().First();
+                Assert.That(scroller.Extent.Height, Is.EqualTo(editor.Bounds.Height).Within(1), "all of it can be scrolled to");
+                scroller.Offset = new Vector(0, editor.Bounds.Height);
+                Dispatcher.UIThread.RunJobs();
+                window.UpdateLayout();
+                Assert.That(scroller.Offset.Y, Is.EqualTo(scroller.Extent.Height - scroller.Viewport.Height).Within(1), "scrolled to its bottom");
+                Studio.Screenshot(window, "neo-wave-editor-small-screen");
+
+                Core.UiHost.OpenParameterWindow(poly, null);
+                var parameters = StudioMachineUiHost.ParameterWindowOf(poly)!;
+                Dispatcher.UIThread.RunJobs();
+                parameters.UpdateLayout();
+                parameters.CaptureRenderedFrame();
+                Assert.That(parameters.ClientSize.Height, Is.LessThanOrEqualTo(maxH + 0.5), "the parameter window inside the work area");
+                Assert.That(parameters.CanResize, Is.True);
+                Studio.Screenshot(parameters, "parameters-neo-poly-small-screen");
+            }
+            finally
+            {
+                MachineWindowFit.WorkArea = area;
+                Remove(poly, wave);
+            }
+        }
+
+        [AvaloniaTest]
         public void TheLivePartsDrawWhatTheAudioDoes()
         {
             // Neo Poly → Neo EQ → Neo Analyzer → Master, a chord held.
@@ -512,7 +560,7 @@ namespace ReBuzz.Studio.Tests
                 {
                     foreach (var (machine, window) in editors)
                     {
-                        var live = Get(window.Content!, "Data");
+                        var live = Get(StudioMachineUiHost.ContentOf(window)!, "Data");
                         var snapshot = Field(live, "Snapshot");
                         var graph = Controls(window, "GraphView").OrderBy(g => g.Bounds.Width * g.Bounds.Height).First();
                         using var bitmap = new RenderTargetBitmap(new PixelSize((int)Math.Ceiling(graph.Bounds.Width), (int)Math.Ceiling(graph.Bounds.Height)));
@@ -1233,7 +1281,7 @@ namespace ReBuzz.Studio.Tests
         /// </summary>
         static double EditorFrameMs(Window window)
         {
-            var content = (Control)window.Content!;
+            var content = StudioMachineUiHost.ContentOf(window)!;
             var size = new PixelSize((int)Math.Ceiling(content.Bounds.Width), (int)Math.Ceiling(content.Bounds.Height));
             using var bitmap = new RenderTargetBitmap(size);
             bitmap.Render(content);
@@ -1278,7 +1326,7 @@ namespace ReBuzz.Studio.Tests
                 note.SetValue(0, (5 << 4) + 1);
                 var window = OpenEditor(scope);
                 Run(1.0);
-                var content = (Control)window.Content!;
+                var content = StudioMachineUiHost.ContentOf(window)!;
                 var graphs = content.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "GraphView").ToList();
                 double Time(Control c)
                 {
@@ -1337,7 +1385,7 @@ namespace ReBuzz.Studio.Tests
                 song.SongEnd = 16;
                 Global(scope, "Sync").SetValue(0, 5);                         // 1 bar
                 var window = OpenEditor(scope);
-                var editor = window.Content!;
+                var editor = StudioMachineUiHost.ContentOf(window)!;
                 Run(0.1);
                 var quiet = Frame(window);
 

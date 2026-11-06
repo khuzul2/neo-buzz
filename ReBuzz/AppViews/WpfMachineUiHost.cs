@@ -21,6 +21,8 @@ namespace ReBuzz.AppViews
     /// Fork (docs/specs/mcp-server.md §12.11, U4): a machine's manifest editor (Machines/NeoBuzz.ManifestEditor) in a
     /// window of its own, what a double click opens on a machine without a GUI when the per-gear setting says so,
     /// and the machine menu's "Editor...". Not saved in songs.
+    /// Fork (UI gallery review): each of these windows is kept inside the screen's work area; a managed GUI of a fixed layout
+    /// (a Neo editor) and the manifest editor scroll where the window is smaller than them, and may be resized (MachineWindowFit).
     /// </summary>
     internal sealed class WpfMachineUiHost : IMachineUiHost
     {
@@ -45,6 +47,9 @@ namespace ReBuzz.AppViews
         /// <summary>The machine's manifest editor window, null until opened.</summary>
         internal static Window EditorWindowOf(IMachine machine) => Find(machine)?.Editor;
 
+        /// <summary>A machine window's own content (its GUI, parameters or editor), without the scroll viewer around it.</summary>
+        internal static object ContentOf(Window w) => MachineWindowFit.ContentOf(w?.Content);
+
         public bool OpenEditor(IMachine machine)
         {
             if (machine is not MachineCore mc) return false;
@@ -56,12 +61,14 @@ namespace ReBuzz.AppViews
                 var window = new Window
                 {
                     Title = mc.Name + " \u2014 editor",
-                    Content = editor,
+                    // Its layout is fixed: it scrolls where the window is smaller than it (the screen's work area, or resized).
+                    Content = MachineWindowFit.Scroll(editor),
                     SizeToContent = SizeToContent.WidthAndHeight,
-                    ResizeMode = ResizeMode.CanMinimize,
+                    ResizeMode = ResizeMode.CanResize,
                     ShowInTaskbar = false,
                     Background = editor.Background,
                 };
+                MachineWindowFit.Clamp(window);
                 // Kept for the machine's life, as its other windows: closing hides it.
                 window.Closing += (s, e) =>
                 {
@@ -99,6 +106,8 @@ namespace ReBuzz.AppViews
                 parameterWindow.Owner = window;
 
                 parameterWindow.DataContext = pWindowVM;
+                // Never taller than the screen's work area: its rows scroll (they have their own scroll viewer).
+                MachineWindowFit.Clamp(parameterWindow);
                 parameterWindow.Closing += (s, e) =>
                 {
                     if (w.Parameters != null)
@@ -223,7 +232,15 @@ namespace ReBuzz.AppViews
                     }
                     else
                     {
-                        machineGUIWindow.Content = guiUIElement;
+                        // A GUI of a fixed layout (a Neo editor) scrolls where the screen can't hold it, in a window that may
+                        // be resized; a resizable one fills its window, as before. Either never larger than the work area.
+                        if (DLL.GUIFactoryDecl.IsGUIResizable) machineGUIWindow.Content = guiUIElement;
+                        else
+                        {
+                            machineGUIWindow.Content = MachineWindowFit.Scroll(guiUIElement);
+                            machineGUIWindow.ResizeMode = ResizeMode.CanResize;
+                        }
+                        MachineWindowFit.Clamp(machineGUIWindow);
                     }
                 }
                 catch (Exception ex)
@@ -291,7 +308,7 @@ namespace ReBuzz.AppViews
             if (Find(machine)?.Editor is Window editorWindow)
             {
                 editorWindow.Hide();
-                if (editorWindow.Content is NeoBuzz.Editor.ManifestEditor editor) editor.Machine = null;
+                if (ContentOf(editorWindow) is NeoBuzz.Editor.ManifestEditor editor) editor.Machine = null;
             }
             var pw = Find(machine)?.Parameters;
             if (pw != null)
