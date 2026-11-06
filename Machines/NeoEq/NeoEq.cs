@@ -2,6 +2,8 @@
 // Neo EQ (docs/specs/machines.md §5): the eight-band parametric equaliser machine, with a 31-band graphic
 // mode (machine-safety.md §4). DSP in Engine/,
 // parameters generated from Params.def, editor in NeoEqEditor.cs.
+// v2 (docs/specs/mastering-tools.md §5.3): two inputs, 1 the signal, 2 the sidechain a dynamic band's detector can
+// hear (connect a machine to the second input); the readings (gain match, the dynamic bands' changes).
 
 using System;
 using System.Collections.Generic;
@@ -12,10 +14,11 @@ using NeoBuzz.Machine;
 
 namespace NeoBuzz.Eq
 {
-    [MachineDecl(Name = "Neo EQ", ShortName = "EQ", Author = "neo-buzz", MaxTracks = 0, InputCount = 1, OutputCount = 1)]
+    [MachineDecl(Name = "Neo EQ", ShortName = "EQ", Author = "neo-buzz", MaxTracks = 0, InputCount = 2, OutputCount = 1)]
     public partial class NeoEqMachine : NeoMachineBase, IBuzzMachine
     {
         readonly float[] left = new float[EqEngine.MaxBlock], right = new float[EqEngine.MaxBlock];
+        readonly float[] keyLeft = new float[EqEngine.MaxBlock], keyRight = new float[EqEngine.MaxBlock];
         int rate;
         int quietBlocks;
 
@@ -28,14 +31,17 @@ namespace NeoBuzz.Eq
 
         internal EqEngine Engine { get; }
 
-        public bool Work(Sample[] output, Sample[] input, int n, WorkModes mode)
+        public bool Work(IList<Sample[]> output, IList<Sample[]> input, int n, WorkModes mode)
         {
             if (SampleRate != rate)
             {
                 rate = SampleRate;
                 Engine.SetSampleRate(rate);
             }
-            bool hasInput = (mode & WorkModes.WM_READ) != 0 && input != null && HasSignal(input, n);
+            var main = input != null && input.Count > 0 ? input[0] : null;
+            var key = input != null && input.Count > 1 ? input[1] : null;
+            var outBuf = output != null && output.Count > 0 ? output[0] : null;
+            bool hasInput = (mode & WorkModes.WM_READ) != 0 && main != null && HasSignal(main, n);
             if (!hasInput)
             {
                 // Run until resonant bands have rung out (a Q 30 bell at 20 Hz takes a while), then rest.
@@ -47,15 +53,22 @@ namespace NeoBuzz.Eq
             else
             {
                 quietBlocks = 0;
-                Split(input, left, right, n);
+                Split(main, left, right, n);
             }
             if (n > EqEngine.MaxBlock) throw new InvalidOperationException("block larger than 256");
-            Engine.Process(left, right, n);
-            return Join(left, right, output, n) || hasInput;
+            if (key != null) Split(key, keyLeft, keyRight, n);
+            Engine.Process(left, right, key != null ? keyLeft : null, key != null ? keyRight : null, n);
+            if (outBuf == null) return false;
+            return Join(left, right, outBuf, n) || hasInput;
         }
 
         /// <summary>Minimum phase: no latency.</summary>
         public int GetLatency() => Engine.Latency;
+
+        public string GetChannelName(bool input, int index) => input ? (index == 0 ? "Input" : "Sidechain") : "Output";
+
+        /// <summary>What the EQ measures (machine_readings): the gain match, each band's dynamic change.</summary>
+        public IReadOnlyDictionary<string, double> Readings => Engine.Readings();
 
         public IEnumerable<IMenuItem> Commands => new IMenuItem[]
         {
@@ -70,7 +83,10 @@ namespace NeoBuzz.Eq
                         "minimum phase, zero latency. Drag a band's handle for frequency and gain, the wheel for Q, " +
                         "double-click to switch it.\n\nMode Graphic: a 31-band graphic equaliser at the ISO third-octave " +
                         "centres, constant-Q, whose response passes through its sliders (±18 dB). Drag a slider, or draw " +
-                        "across them.\n\nPart of neo-buzz (docs/specs/machines.md).", "Neo EQ"),
+                        "across them.\n\nv2: each band on Stereo, Left, Right, Mid or Side; proportional-Q bells, Baxandall " +
+                        "and Vintage shelves, all-pass bands; dynamic bands that move their gain down or up above a " +
+                        "threshold, hearing their own band or the sidechain (input 2); Delta and Match.\n\nPart of " +
+                        "neo-buzz (docs/specs/machines.md).", "Neo EQ"),
                 },
             },
         };

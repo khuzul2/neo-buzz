@@ -2,7 +2,7 @@
 # store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoEq
 namespace NeoBuzz.Eq
 class NeoEqMachine
-summary Eight-band parametric EQ, minimum phase and zero latency: bell, low and high shelf, low and high cut at 12/24/48 dB/oct, notch; frequency in Hz, gain in 0.1 dB steps, Q. Bands 2–7 start on at 0 dB (transparent until a gain is set); the cuts, bands 1 and 8, start off. Use it for precise, labelled moves such as "B3: Bell, 320 Hz, −3 dB, Q 1.4". Mode Graphic makes it a 31-band graphic EQ at the ISO third-octave centres (G 20 Hz … G 20 kHz, ±18 dB in 0.1 dB steps) whose response passes through its sliders: for a curve given band by band, such as "G 125 Hz −3 dB, G 4 kHz +2 dB".
+summary Eight-band parametric EQ, minimum phase and zero latency: bell, low and high shelf, low and high cut at 12/24/48 dB/oct, notch; frequency in Hz, gain in 0.1 dB steps, Q. Bands 2–7 start on at 0 dB (transparent until a gain is set); the cuts, bands 1 and 8, start off. Use it for precise, labelled moves such as "B3: Bell, 320 Hz, −3 dB, Q 1.4". Mode Graphic makes it a 31-band graphic EQ at the ISO third-octave centres (G 20 Hz … G 20 kHz, ±18 dB in 0.1 dB steps) whose response passes through its sliders: for a curve given band by band, such as "G 125 Hz −3 dB, G 4 kHz +2 dB". v2: each band on Stereo, Left, Right, Mid or Side; shapes (proportional-Q bell, Baxandall and Vintage shelves, all-pass); dynamic bands (gain down or up above a threshold, the detector on the band's own shape or on the sidechain, input 2), e.g. "B5: Bell, 6.5 kHz, Side, dynamic Down, threshold −30 dB, range 6 dB" to tame sibilance; Delta, and the gain-match reading.
 
 group Band 1
 B1On     "B1 on"     0 1     0     switch                                         | Band 1 in or out (an off band passes the signal untouched)
@@ -96,3 +96,107 @@ G10k     "G 10 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 10 kHz (
 G12_5k   "G 12.5 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 12.5 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
 G16k     "G 16 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 16 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
 G20k     "G 20 kHz" 0 360 180 db -18 18 | Graphic mode: the response at 20 kHz (an ISO third-octave band), −18 … +18 dB in 0.1 dB steps
+
+# v2 (docs/specs/mastering-tools.md §5.3, M3): per band its channel, a shape, and dynamics, at the end so old songs
+# and presets keep their sound (the defaults are v1's: Stereo, Standard, Off); then Delta.
+group Band 1 channel and dynamics
+B1Chan    "B1 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 1: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+B1Shape   "B1 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 1: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+B1Dyn     "B1 dynamic"   0 2    0   enum Off Down Up | Band 1 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+B1Thresh  "B1 threshold" 0 600  300 lin -60 0 dB 1 | Band 1 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+B1Ratio   "B1 ratio"     0 1000 463 ratio 1 20 inf | Band 1 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+B1Knee    "B1 knee"      0 240  60  lin 0 24 dB 1 | Band 1 dynamic: width of the soft knee around the threshold
+B1Range   "B1 range"     0 240  60  lin 0 24 dB 1 | Band 1 dynamic: the most the gain moves from its setting
+B1Attack  "B1 attack"    0 1000 639 time 0.00005 0.2 | Band 1 dynamic: time to 63 % of a gain change
+B1Release "B1 release"   0 1000 532 time 0.005 3 | Band 1 dynamic: time back to 37 % of a gain change
+B1Detect  "B1 detector"  0 1    0   enum Band Sidechain | Band 1 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+group Band 2 channel and dynamics
+B2Chan    "B2 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 2: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+B2Shape   "B2 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 2: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+B2Dyn     "B2 dynamic"   0 2    0   enum Off Down Up | Band 2 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+B2Thresh  "B2 threshold" 0 600  300 lin -60 0 dB 1 | Band 2 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+B2Ratio   "B2 ratio"     0 1000 463 ratio 1 20 inf | Band 2 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+B2Knee    "B2 knee"      0 240  60  lin 0 24 dB 1 | Band 2 dynamic: width of the soft knee around the threshold
+B2Range   "B2 range"     0 240  60  lin 0 24 dB 1 | Band 2 dynamic: the most the gain moves from its setting
+B2Attack  "B2 attack"    0 1000 639 time 0.00005 0.2 | Band 2 dynamic: time to 63 % of a gain change
+B2Release "B2 release"   0 1000 532 time 0.005 3 | Band 2 dynamic: time back to 37 % of a gain change
+B2Detect  "B2 detector"  0 1    0   enum Band Sidechain | Band 2 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+group Band 3 channel and dynamics
+B3Chan    "B3 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 3: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+B3Shape   "B3 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 3: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+B3Dyn     "B3 dynamic"   0 2    0   enum Off Down Up | Band 3 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+B3Thresh  "B3 threshold" 0 600  300 lin -60 0 dB 1 | Band 3 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+B3Ratio   "B3 ratio"     0 1000 463 ratio 1 20 inf | Band 3 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+B3Knee    "B3 knee"      0 240  60  lin 0 24 dB 1 | Band 3 dynamic: width of the soft knee around the threshold
+B3Range   "B3 range"     0 240  60  lin 0 24 dB 1 | Band 3 dynamic: the most the gain moves from its setting
+B3Attack  "B3 attack"    0 1000 639 time 0.00005 0.2 | Band 3 dynamic: time to 63 % of a gain change
+B3Release "B3 release"   0 1000 532 time 0.005 3 | Band 3 dynamic: time back to 37 % of a gain change
+B3Detect  "B3 detector"  0 1    0   enum Band Sidechain | Band 3 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+group Band 4 channel and dynamics
+B4Chan    "B4 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 4: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+B4Shape   "B4 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 4: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+B4Dyn     "B4 dynamic"   0 2    0   enum Off Down Up | Band 4 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+B4Thresh  "B4 threshold" 0 600  300 lin -60 0 dB 1 | Band 4 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+B4Ratio   "B4 ratio"     0 1000 463 ratio 1 20 inf | Band 4 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+B4Knee    "B4 knee"      0 240  60  lin 0 24 dB 1 | Band 4 dynamic: width of the soft knee around the threshold
+B4Range   "B4 range"     0 240  60  lin 0 24 dB 1 | Band 4 dynamic: the most the gain moves from its setting
+B4Attack  "B4 attack"    0 1000 639 time 0.00005 0.2 | Band 4 dynamic: time to 63 % of a gain change
+B4Release "B4 release"   0 1000 532 time 0.005 3 | Band 4 dynamic: time back to 37 % of a gain change
+B4Detect  "B4 detector"  0 1    0   enum Band Sidechain | Band 4 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+group Band 5 channel and dynamics
+B5Chan    "B5 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 5: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+B5Shape   "B5 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 5: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+B5Dyn     "B5 dynamic"   0 2    0   enum Off Down Up | Band 5 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+B5Thresh  "B5 threshold" 0 600  300 lin -60 0 dB 1 | Band 5 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+B5Ratio   "B5 ratio"     0 1000 463 ratio 1 20 inf | Band 5 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+B5Knee    "B5 knee"      0 240  60  lin 0 24 dB 1 | Band 5 dynamic: width of the soft knee around the threshold
+B5Range   "B5 range"     0 240  60  lin 0 24 dB 1 | Band 5 dynamic: the most the gain moves from its setting
+B5Attack  "B5 attack"    0 1000 639 time 0.00005 0.2 | Band 5 dynamic: time to 63 % of a gain change
+B5Release "B5 release"   0 1000 532 time 0.005 3 | Band 5 dynamic: time back to 37 % of a gain change
+B5Detect  "B5 detector"  0 1    0   enum Band Sidechain | Band 5 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+group Band 6 channel and dynamics
+B6Chan    "B6 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 6: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+B6Shape   "B6 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 6: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+B6Dyn     "B6 dynamic"   0 2    0   enum Off Down Up | Band 6 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+B6Thresh  "B6 threshold" 0 600  300 lin -60 0 dB 1 | Band 6 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+B6Ratio   "B6 ratio"     0 1000 463 ratio 1 20 inf | Band 6 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+B6Knee    "B6 knee"      0 240  60  lin 0 24 dB 1 | Band 6 dynamic: width of the soft knee around the threshold
+B6Range   "B6 range"     0 240  60  lin 0 24 dB 1 | Band 6 dynamic: the most the gain moves from its setting
+B6Attack  "B6 attack"    0 1000 639 time 0.00005 0.2 | Band 6 dynamic: time to 63 % of a gain change
+B6Release "B6 release"   0 1000 532 time 0.005 3 | Band 6 dynamic: time back to 37 % of a gain change
+B6Detect  "B6 detector"  0 1    0   enum Band Sidechain | Band 6 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+group Band 7 channel and dynamics
+B7Chan    "B7 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 7: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+B7Shape   "B7 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 7: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+B7Dyn     "B7 dynamic"   0 2    0   enum Off Down Up | Band 7 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+B7Thresh  "B7 threshold" 0 600  300 lin -60 0 dB 1 | Band 7 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+B7Ratio   "B7 ratio"     0 1000 463 ratio 1 20 inf | Band 7 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+B7Knee    "B7 knee"      0 240  60  lin 0 24 dB 1 | Band 7 dynamic: width of the soft knee around the threshold
+B7Range   "B7 range"     0 240  60  lin 0 24 dB 1 | Band 7 dynamic: the most the gain moves from its setting
+B7Attack  "B7 attack"    0 1000 639 time 0.00005 0.2 | Band 7 dynamic: time to 63 % of a gain change
+B7Release "B7 release"   0 1000 532 time 0.005 3 | Band 7 dynamic: time back to 37 % of a gain change
+B7Detect  "B7 detector"  0 1    0   enum Band Sidechain | Band 7 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+group Band 8 channel and dynamics
+B8Chan    "B8 channel"   0 4    0   enum Stereo Left Right Mid Side | Band 8: which channel it works on. Stereo: both (as v1); Left or Right: that one alone; Mid or Side: the mid (L+R)/2 or the side (L−R)/2 alone, the other untouched (mid/side encoded and decoded around the band)
+B8Shape   "B8 shape"     0 4    0   enum Standard Proportional_Q Baxandall Vintage All-pass | Band 8: Standard: the type as it is (as v1). Proportional Q: a bell narrows as its gain grows (Q × 10^(|gain|/40): about twice as narrow for every 12 dB). Baxandall: a shelf becomes first order, 6 dB/oct, the gentle tone-control curve (Q unused). Vintage: a shelf gets its complementary dip, Pultec-style: a bell of half its gain the other way, Q 1, an octave above a low shelf or below a high shelf. All-pass: whatever the type, the band only turns the phase (second order at its frequency, Q its width)
+B8Dyn     "B8 dynamic"   0 2    0   enum Off Down Up | Band 8 dynamic EQ (bells and shelves): Down: above the threshold the band's gain moves down (compresses what it hears), Up: it moves up; by the ratio, at most Range. The detector hears the band's own shape (a band-pass for a bell, low-pass for a low shelf, high-pass for a high shelf). Off: static (as v1)
+B8Thresh  "B8 threshold" 0 600  300 lin -60 0 dB 1 | Band 8 dynamic: the level the band's detector must pass before its gain moves (dBFS, the envelope of what it hears)
+B8Ratio   "B8 ratio"     0 1000 463 ratio 1 20 inf | Band 8 dynamic: the gain moves by 1 − 1/ratio dB for each dB over the threshold (∞: all of it)
+B8Knee    "B8 knee"      0 240  60  lin 0 24 dB 1 | Band 8 dynamic: width of the soft knee around the threshold
+B8Range   "B8 range"     0 240  60  lin 0 24 dB 1 | Band 8 dynamic: the most the gain moves from its setting
+B8Attack  "B8 attack"    0 1000 639 time 0.00005 0.2 | Band 8 dynamic: time to 63 % of a gain change
+B8Release "B8 release"   0 1000 532 time 0.005 3 | Band 8 dynamic: time back to 37 % of a gain change
+B8Detect  "B8 detector"  0 1    0   enum Band Sidechain | Band 8 dynamic: Band: the detector hears the band's own input; Sidechain: the machine's second input (connect a machine to it), through the same shape and channel
+group Monitor
+Delta    "Delta"   0 1   0   switch | Hear only what the EQ changes: the output minus the input, before Output (zero latency, nothing to delay), gliding over 10 ms. Off for rendering
+
+# What the EQ measures (NeoEqMachine.Readings, machine_readings).
+reading gain_match_db  dB | Short-term loudness out − in (K-weighted, 3 s): the editor's Match sets Output by it
+reading b1_dynamic_db dB | Band 1's dynamic gain change now (negative: down), 0 while static
+reading b2_dynamic_db dB | Band 2's dynamic gain change now (negative: down), 0 while static
+reading b3_dynamic_db dB | Band 3's dynamic gain change now (negative: down), 0 while static
+reading b4_dynamic_db dB | Band 4's dynamic gain change now (negative: down), 0 while static
+reading b5_dynamic_db dB | Band 5's dynamic gain change now (negative: down), 0 while static
+reading b6_dynamic_db dB | Band 6's dynamic gain change now (negative: down), 0 while static
+reading b7_dynamic_db dB | Band 7's dynamic gain change now (negative: down), 0 while static
+reading b8_dynamic_db dB | Band 8's dynamic gain change now (negative: down), 0 while static

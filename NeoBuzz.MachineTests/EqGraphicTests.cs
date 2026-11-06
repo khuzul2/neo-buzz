@@ -208,6 +208,17 @@ namespace NeoBuzz.MachineTests
             ["48000 switches"] = 0x037ACF32336834B7UL,
         };
 
+        /// <summary>
+        /// v2's deliberate fix (docs/specs/mastering-tools.md §5.3): a live cut band ignored a new slope (SectionCount of a cut
+        /// at 12 dB/oct is 1, so the slope check passed), until it was switched off and on. Now a slope change fades the band
+        /// out and in as a type change does. "switches" changes a live low cut's slope at 0.21 s: its renders after that differ.
+        /// </summary>
+        static readonly Dictionary<string, ulong> SlopeFix = new()
+        {
+            ["44100 switches"] = 0x03B95985379EC9DEUL,
+            ["48000 switches"] = 0x2870BC33066F6E8FUL,
+        };
+
         [Test]
         public void ParametricModeIsBitIdenticalToBefore()
         {
@@ -225,7 +236,8 @@ namespace NeoBuzz.MachineTests
                     var (yl, yr) = EqTests.Run(e, l, r, block == null ? null : pos => block(v, pos));
                     string key = $"{rate} {name}";
                     Assert.That(Before.ContainsKey(key), Is.True, key);
-                    if (Hash(yl, yr) != Before[key]) changed.Add(key);
+                    ulong want = SlopeFix.TryGetValue(key, out ulong fixedHash) ? fixedHash : Before[key];
+                    if (Hash(yl, yr) != want) changed.Add($"{key} 0x{Hash(yl, yr):X16}UL");
                     count++;
                 }
             Measure.Report($"Neo EQ parametric mode: {count - changed.Count} of {count} renders bit-identical to before graphic mode (defaults, test curves, the 14 factory presets' stored values, automation; 44.1 and 48 kHz)");
