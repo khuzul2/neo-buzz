@@ -304,6 +304,8 @@ def judge(entry, a, b, sound, classic_feeders=()):
         if e.get("status") not in (None, "ok"):
             if ph == "A" and entry["role"] == "fixed":     # upstream's binary from heap garbage: WahPro2's has blown up so
                 notes.append(f"phase A: {e.get('status')} (upstream's binary from its heap's start: reported)")
+            elif classic_feeders:                           # what it was fed differs (run 42187730991: PhatMan after Cross Delay's x64 build)
+                notes.append(f"phase {ph}: {e.get('status')} (fed by {', '.join(classic_feeders)}: reported)")
             else:
                 fails.append(f"phase {ph}: {e.get('status')}")
     if fails:

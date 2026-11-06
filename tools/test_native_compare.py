@@ -195,6 +195,10 @@ class NativeSongsTests(unittest.TestCase):
         fails, notes = self.judge(sound=(False, 3.0, 0.4), feeders=["N2"])
         self.assertEqual(fails, [])
         self.assertIn("fed by N2", notes[0])
+        # run 42187730991: FSM PhatMan diverged in FSM_Infector_Demo.bmx after Cross Delay's x64 build, which fed it
+        fails, notes = self.judge(b=self.read("Effects/Jeskola Distortion.x64.dll", status="diverged"), sound=(False, 40.0, 0.0), feeders=["X-Delay"])
+        self.assertEqual(fails, [])
+        self.assertIn("phase B: diverged (fed by X-Delay: reported)", notes)
 
     def test_silence_proves_nothing(self):
         # run 42181254466: a process's first render left the natives silent in both phases, the same bits; and FSM Infector
