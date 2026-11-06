@@ -1028,7 +1028,7 @@ namespace ReBuzz.Studio.Tests
                     Click(window, seq.Canvas.TranslatePoint(new Point(geo.XOf(2 * 16) + 6, geo.YOf(1) + geo.TrackHeight * 0.6), window)!.Value, MouseButton.Right);
                     menus.Add(seq.OpenMenu!);
                     var item = ItemOf(seq.OpenMenu!, "Set Time Signature...");
-                    DialogOnOpen(window, () => Click(window, Centre(item, window)), "336-sequence-time-signature", "Sequence: Set Time Signature (the bar's length in ticks).", "T in the Sequence View, or its menu ▸ Set Time Signature….");
+                    DialogOnOpen(window, () => Click(window, Centre(item, window)), "336-sequence-time-signature", "Sequence: Set Time Signature (beats/note, as 4/4, or ticks; checked as it is typed).", "T in the Sequence View, or its menu ▸ Set Time Signature….");
                     window.ShowView("Machines");
                 });
                 Try("337-autosave-recovery", () =>

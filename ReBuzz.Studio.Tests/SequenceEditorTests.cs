@@ -11,6 +11,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.NUnit;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.VisualTree;
@@ -535,6 +536,62 @@ namespace ReBuzz.Studio.Tests
             Settle();
             Assert.That(ItemContrast(hook), Is.GreaterThanOrEqualTo(4.5), "the selected item under the pointer");
             Assert.That(ItemContrast(arp), Is.GreaterThanOrEqualTo(4.5), "an item the pointer left");
+        }
+
+        // ------------------------------------------------------------------ Set Time Signature (gallery mac-336)
+
+        [AvaloniaTest]          // SequenceView's statics are Avalonia brushes: on the UI thread
+        public void ABarLengthIsATimeSignatureOrTicks()
+        {
+            int Ticks(string text, int tpb = 4) => SequenceView.ParseBarLength(text, tpb, out int t) == null ? t : -1;
+            Assert.That(Ticks("4/4"), Is.EqualTo(16));
+            Assert.That(Ticks(" 3/4 "), Is.EqualTo(12));
+            Assert.That(Ticks("7/8"), Is.EqualTo(14));
+            Assert.That(Ticks("6/8"), Is.EqualTo(12));
+            Assert.That(Ticks("7/16"), Is.EqualTo(7));
+            Assert.That(Ticks("5/4", 6), Is.EqualTo(30));
+            Assert.That(Ticks("16"), Is.EqualTo(16), "ticks, as before");
+            foreach (var bad in new[] { "", "4/x", "x", "4/3", "0/4", "1/32", "2000", "-4", "4/4/4" })
+                Assert.That(SequenceView.ParseBarLength(bad, 4, out _), Is.Not.Null.And.Not.Empty, $"\"{bad}\" says what's wrong");
+            Assert.That(SequenceView.TimeSignatureText(16, 4), Is.EqualTo("4/4"));
+            Assert.That(SequenceView.TimeSignatureText(14, 4), Is.EqualTo("7/8"));
+            Assert.That(SequenceView.TimeSignatureText(7, 4), Is.EqualTo("7"));
+        }
+
+        [AvaloniaTest]
+        public void SetTimeSignatureTakes44AndSaysWhatIsWrongInline()
+        {
+            using var rig = new Rig();
+            Rig.Machine("Lead", ("Hook", 16, new[] { 0 }));
+            rig.Click(rig.View.AddTrackButton.TranslatePoint(new Point(10, 10), rig.Window)!.Value);
+            rig.Menu("Lead");
+            rig.Click(rig.At(32, 0));
+            Window dialog = null;
+            void Opened(Window w, RoutedEventArgs e) { if (w != rig.Window) dialog = w; }
+            using var subscription = Window.WindowOpenedEvent.AddClassHandler<Window>(Opened);
+            var asked = rig.View.AskTimeSignature();
+            for (int i = 0; i < 20 && dialog == null; i++) Settle();
+            Assert.That(dialog, Is.Not.Null, "the dialog opened");
+            var box = dialog!.GetVisualDescendants().OfType<TextBox>().Single();
+            var ok = dialog.GetVisualDescendants().OfType<Button>().Single(b => (b.Content as string) == "OK");
+            var error = dialog.GetVisualDescendants().OfType<TextBlock>().Single(t => (t.Tag as string) == "error");
+            Assert.That(box.Text, Is.EqualTo("4/4"), "the bar as a time signature");
+            Assert.That((ok.IsEnabled, error.IsVisible), Is.EqualTo((true, false)));
+
+            box.Text = "4/x";
+            Settle();
+            Assert.That(error.IsVisible, Is.True, "what's wrong shows under the box");
+            Assert.That(error.Text, Does.Contain("isn't a time signature"));
+            Assert.That(ok.IsEnabled, Is.False, "OK waits until it is right");
+            Studio.Screenshot(dialog, "sequence-time-signature-invalid");
+
+            box.Text = "3/4";
+            Settle();
+            Assert.That((ok.IsEnabled, error.IsVisible), Is.EqualTo((true, false)));
+            ok.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            for (int i = 0; i < 20 && !asked.IsCompleted; i++) Settle();
+            Assert.That(asked.IsCompleted, Is.True);
+            Assert.That(rig.Canvas.CursorSpan, Is.EqualTo(12), "3/4 at 4 ticks a beat: 12-tick bars from the cursor on");
         }
 
         // ------------------------------------------------------------------ markers and playback

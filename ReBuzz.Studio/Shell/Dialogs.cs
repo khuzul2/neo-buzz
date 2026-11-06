@@ -116,6 +116,68 @@ namespace ReBuzz.Studio.Shell
             return result;
         }
 
+        /// <summary>
+        /// A line of text checked as it is typed: <paramref name="validate"/> gives what's wrong with
+        /// it (null: nothing), shown under the box, and OK waits until it is right, so an answer is
+        /// never dropped without a word (Set Time Signature ignored "4/4", gallery mac-336). Null when
+        /// cancelled. With <see cref="TextResponder"/> (tests), an answer that isn't right is null.
+        /// </summary>
+        public static async Task<string> AskText(string title, string current, string prompt, Func<string, string> validate)
+        {
+            if (TextResponder != null)
+            {
+                string answer = TextResponder(title, current);
+                return answer != null && validate(answer) == null ? answer : null;
+            }
+            var owner = Owner;
+            var box = new TextBox { Text = current ?? "", MinWidth = 260 };
+            var error = new TextBlock { Foreground = new SolidColorBrush(Color.Parse("#FF7A70")), TextWrapping = TextWrapping.Wrap, MaxWidth = 320, IsVisible = false, Tag = "error" };
+            string result = null;
+            var window = new Window
+            {
+                Title = title,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                CanResize = false,
+                WindowStartupLocation = owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen,
+                ShowInTaskbar = false,
+            };
+            var ok = new Button { Content = "OK", MinWidth = 72, IsDefault = true };
+            var cancel = new Button { Content = "Cancel", MinWidth = 72, IsCancel = true };
+            void Check()
+            {
+                string problem = validate(box.Text);
+                error.Text = problem ?? "";
+                error.IsVisible = problem != null;
+                ok.IsEnabled = problem == null;
+            }
+            box.TextChanged += (s, e) => Check();
+            ok.Click += (s, e) =>
+            {
+                Check();
+                if (!ok.IsEnabled) return;
+                result = box.Text;
+                window.Close();
+            };
+            cancel.Click += (s, e) => window.Close();
+            var panel = new StackPanel { Margin = new Thickness(20), Spacing = 8 };
+            if (!string.IsNullOrEmpty(prompt)) panel.Children.Add(new TextBlock { Text = prompt, TextWrapping = TextWrapping.Wrap, MaxWidth = 320 });
+            panel.Children.Add(box);
+            panel.Children.Add(error);
+            panel.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Margin = new Thickness(0, 4, 0, 0), Children = { ok, cancel } });
+            window.Content = panel;
+            Check();
+            window.Opened += (s, e) => { box.Focus(); box.SelectAll(); };
+            if (owner != null) await window.ShowDialog(owner);
+            else
+            {
+                var closed = new TaskCompletionSource();
+                window.Closed += (s, e) => closed.TrySetResult();
+                window.Show();
+                await closed.Task;
+            }
+            return result;
+        }
+
         /// <summary>Runs a dialog to its end on the UI thread, for callers that can't await.</summary>
         public static T Modal<T>(Func<Task<T>> dialog)
         {
