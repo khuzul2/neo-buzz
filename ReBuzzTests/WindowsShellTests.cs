@@ -250,7 +250,9 @@ namespace ReBuzzTests
             var settings = BuzzGUI.SequenceEditor.SequenceEditor.Settings;
             bool autoSelect = settings.AutoSelectPattern;
             settings.AutoSelectPattern = true;
-            var sequenceEditor = new BuzzGUI.SequenceEditor.SequenceEditor(core, null);
+            // The default theme's resources, as the app gives them (its XAML names them).
+            var themed = UiUtils.GetUserControlXAML<ResourceDictionary>("SequenceEditor\\SequenceEditor.xaml", UiGalleryBugTests.FindRunTime());
+            var sequenceEditor = new BuzzGUI.SequenceEditor.SequenceEditor(core, themed);
             var editorView = new ReBuzz.EditorView(core, new FakeInMemoryRegistry()) { SequenceEditor = sequenceEditor };
             try
             {

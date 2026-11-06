@@ -156,8 +156,7 @@ jobs:
         $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
         $cand = @()
         if (Test-Path build/ExternalMachines/natives/x64/Gear) { $cand = @('--candidate', 'build/ExternalMachines/natives/x64/Gear') }
-        python tools/fu1-sweep.py $exe.FullName fu1-sweep
-        python tools/fu1-diag.py $exe.FullName fu1-diag @cand
+        python tools/fu1-wah.py $exe.FullName fu1-wah --reps 12 --procs 4
 
     # Failed tests grouped by error, with message and top stack frames, as annotations.
     - name: Summarise tests
