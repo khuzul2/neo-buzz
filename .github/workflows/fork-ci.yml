@@ -257,6 +257,28 @@ jobs:
         if (Test-Path pedal-test.log) { ./tools/ci-annotate-log.ps1 pedal-test.log }
         if (Test-Path agent-test.log) { ./tools/ci-annotate-log.ps1 agent-test.log }
 
+  # FU1-DIAG (temporary, fix/followups-1): the silence-cost guards soaked, quiet and with every core busy.
+  fu1-soak:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: '10.0.x'
+    - name: Soak
+      shell: bash
+      run: |
+        git submodule update --init --depth 1 3rdParty/serilog/serilog
+        dotnet build NeoBuzz.MachineTests -c Release -nologo -v:q
+        SOAK_OUT=soak bash tools/throughput-soak.sh NeoBuzz.MachineTests "FullyQualifiedName~SilenceAfterNoise" 20 -c Release > soak.log 2>&1 || true
+        grep -h "summary" soak/*/throughput.txt
+        cat soak/*.log | grep -E "Passed!|Failed!|Failed " | head -20
+
   core-build:
     runs-on: windows-latest
     steps:
