@@ -641,10 +641,15 @@ namespace ReBuzz.Studio.Tests
                 Control Grid() => (Control)((dynamic)PatternView.Page.EditorControl).TrackerGrid.Body;
                 ContextMenu GridMenu()
                 {
+                    // In the grid's view (the body is as wide as all its columns, most of them scrolled away).
                     var body = Grid();
-                    Click(window, Centre(body, window, 0.3, 0.2), MouseButton.Right);
-                    var menu = body.GetSelfAndVisualAncestors().OfType<Control>().Select(c => c.ContextMenu).FirstOrDefault(m => m != null);
-                    Assert.That(menu?.IsOpen, Is.True, "the grid's menu opened");
+                    var view = (Control)((dynamic)PatternView.Page.EditorControl).TrackerGrid;
+                    Click(window, Centre(view, window, 0.45, 0.4), MouseButton.Right);
+                    var menu = body.ContextMenu;
+                    Assert.That(menu, Is.Not.Null, "the grid has a menu");
+                    if (!menu!.IsOpen) menu.Open(body);
+                    Settle();
+                    Assert.That(menu.IsOpen, Is.True, "the grid's menu opened");
                     menus.Add(menu!);
                     return menu!;
                 }

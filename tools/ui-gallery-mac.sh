@@ -50,6 +50,22 @@ for menu in ReBuzz File Edit Transport View Window Help; do
   n=$((n + 1))
 done
 
+# A few more by the keyboard, as a user would: Preferences (Command+,), the Session View (Ctrl+Tab), the Pattern View (F2).
+keys() { osascript -e "tell application \"System Events\" to tell (first process whose unix id is $pid) to $1" > /dev/null 2> "$out/osascript.txt" || echo "keys ($1): $(tr '\n' ' ' < "$out/osascript.txt")"; }
+osascript -e "$front" > /dev/null 2>&1 || true
+keys 'keystroke "," using command down'
+sleep 2
+shot mac-real-200-preferences
+keys 'key code 53'
+sleep 1
+osascript -e "$front" > /dev/null 2>&1 || true
+keys 'key code 48 using control down'
+sleep 2
+shot mac-real-210-session
+keys 'key code 120'
+sleep 2
+shot mac-real-220-pattern
+
 kill "$pid" 2>/dev/null || true
 sleep 2
 kill -9 "$pid" 2>/dev/null || true
