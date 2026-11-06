@@ -192,14 +192,18 @@ SPECS = [
         "summary": "Sends notes and controller changes from its tracks to a MIDI output device.",
         "params": [],
         "track_params": [
-            P("Device", "int", "v", "ne.device = pg.Parameters[0].GetValue(t);", note="The MIDI output device, by its number in ReBuzz's list"),
-            P("MidiCC", "int", "v", ["public void MidiCC(int value, int track)", "ce.control = pg.Parameters[3].GetValue(t);"],
-              note="Meant as the controller number, but Work reads the controller from the track's fourth parameter (Delay), "
-                   "so this one does nothing (MidiOutput.cs)"),
-            P("MidiCCValue", "int", "v", "GetCCEvent(track).value = value;", note="The value sent with a controller change"),
-            P("Channel", "int", "v", ["ne.channel = pg.Parameters[5].GetValue(t);", "MIDI.Encode(MIDI.NoteOn, midiNote, ne.velocity)"],
-              note="Not used: Work reads the track's sixth parameter (MidiCC) as the channel, and encodes every message without one, "
-                   "so they go out on channel 1 (MidiOutput.cs)"),
+            P("Device", "int", "v", "ne.device = pg.Parameters[DeviceIndex].GetValue(t);", note="The MIDI output device, by its number in ReBuzz's list"),
+            P("MidiCC", "int", "v", ["ce.control = pg.Parameters[MidiCCIndex].GetValue(t);", "else if (ce.control <= 127)",
+                                     "MIDI.Encode(MIDI.PitchWheel, ce.channel, v & 127, v >> 7)"],
+              note="The controller a new MidiCCValue goes to: 0–127 a controller number, 224 the pitch wheel; any other sends "
+                   "nothing"),
+            P("MidiCCValue", "int", "v", ["GetCCEvent(track).value = value;", "Math.Min(v, MaxControllerValue)"],
+              note="Sent to MidiCC's controller when it changes: up to 127 for a controller (above, 127), 0–16383 for the pitch "
+                   "wheel (8192 its centre; above, 16383)"),
+            P("Channel", "int", "v", ["ne.channel = pg.Parameters[ChannelIndex].GetValue(t) & 0x0F;",
+                                      "MIDI.Encode(MIDI.NoteOn, ne.channel, midiNote, ne.velocity)"],
+              note="The MIDI channel, 0 for channel 1 … 15 for 16: the track's notes and controller changes go out on it (a "
+                   "note's note-off on the channel the note went out on)"),
         ],
     },
     {

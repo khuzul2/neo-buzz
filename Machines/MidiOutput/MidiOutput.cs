@@ -118,6 +118,21 @@ namespace WDE.MidiOutput
         {
         }
 
+        // Fork (docs/specs/mcp-server.md §12.13): the track parameters Work reads, by their place in the
+        // group. ReBuzz orders a machine's track parameters as they are declared above (by metadata token):
+        // Device, Note, Volume, Delay, Cut, MidiCC, MidiCCValue, Channel. Work read the controller number
+        // from 3 (Delay) and the channel from 5 (MidiCC), the places they had before Delay and Cut were
+        // declared, and a velocity no Volume had set from 0's default (Device's: 0, which MIDI takes for a
+        // note-off); and it encoded every message without its channel, so all went out on channel 1.
+        const int DeviceIndex = 0, VolumeIndex = 2, MidiCCIndex = 5, ChannelIndex = 7;
+
+        // MidiCC 0–127 is a controller number; 224 (0xE0, the status byte's) sends MidiCCValue as the pitch
+        // wheel, 14 bits; any other number names no message and sends nothing. A value beyond what its
+        // message holds (127 for a controller, 16383 for the wheel) is sent as the highest: on Windows the
+        // excess went out as a data byte with its top bit set (a status byte to the receiver), on macOS
+        // wrapped round (CoreMidi.Sender keeps a data byte's low 7 bits).
+        const int MaxControllerValue = 127, MaxPitchWheelValue = 16383;
+
         public bool Work(Sample[] output, int n, WorkModes mode)
 		{
 
@@ -130,9 +145,9 @@ namespace WDE.MidiOutput
 					if (noteEvents[t].note.Value != 0)
 					{
                         NoteEvent ne = noteEvents[t];
-                        ne.device = pg.Parameters[0].GetValue(t);
-                        ne.velocity = dictVelocity.ContainsKey(t) ? dictVelocity[t] : pg.Parameters[0].DefValue;
-                        ne.channel = pg.Parameters[5].GetValue(t);
+                        ne.device = pg.Parameters[DeviceIndex].GetValue(t);
+                        ne.velocity = dictVelocity.ContainsKey(t) ? dictVelocity[t] : pg.Parameters[VolumeIndex].DefValue;
+                        ne.channel = pg.Parameters[ChannelIndex].GetValue(t) & 0x0F;
                     }
 					else
 					{
@@ -143,9 +158,9 @@ namespace WDE.MidiOutput
 				if (ccEvents.ContainsKey(t))
 				{
 					var ce = ccEvents[t];
-                    ce.device = pg.Parameters[0].GetValue(t);
-                    ce.control = pg.Parameters[3].GetValue(t);
-                    ce.channel = pg.Parameters[5].GetValue(t);
+                    ce.device = pg.Parameters[DeviceIndex].GetValue(t);
+                    ce.control = pg.Parameters[MidiCCIndex].GetValue(t);
+                    ce.channel = pg.Parameters[ChannelIndex].GetValue(t) & 0x0F;
                 }
 			}
 
@@ -167,7 +182,7 @@ namespace WDE.MidiOutput
 						MidiNoteOff(t);
 						int midiNote = BuzzNote.ToMIDINote(ne.note.Value);
 						pNote[t] = ne.Copy();
-						var data = MIDI.Encode(MIDI.NoteOn, midiNote, ne.velocity);
+						var data = MIDI.Encode(MIDI.NoteOn, ne.channel, midiNote, ne.velocity);
 						Global.Buzz.SendMIDIOutput(ne.device, data);
 						ne.NoteOnHandled = true;
 
@@ -191,12 +206,13 @@ namespace WDE.MidiOutput
 				int v = ce.value;
 				if (ce.control == MIDI.PitchWheel)
 				{
-                    var data = MIDI.Encode(MIDI.PitchWheel, v & 127, v >> 7);
+                    v = Math.Min(v, MaxPitchWheelValue);
+                    var data = MIDI.Encode(MIDI.PitchWheel, ce.channel, v & 127, v >> 7);
 					Global.Buzz.SendMIDIOutput(ce.device, data);
                 }
-				else
+				else if (ce.control <= 127)
 				{
-					var data = MIDI.Encode(MIDI.ControlChange, ce.control, v);
+					var data = MIDI.Encode(MIDI.ControlChange, ce.channel, ce.control, Math.Min(v, MaxControllerValue));
 					Global.Buzz.SendMIDIOutput(ce.device, data);
                 }
                 ccEvents.Remove(t);
@@ -211,7 +227,7 @@ namespace WDE.MidiOutput
             {
                 var pn = pNote[t];
                 int midiNote = BuzzNote.ToMIDINote(pn.note.Value);
-                var data = MIDI.Encode(MIDI.NoteOff, midiNote, pn.velocity);
+                var data = MIDI.Encode(MIDI.NoteOff, pn.channel, midiNote, pn.velocity);   // the channel the note went out on
                 pNote.Remove(t);
                 Global.Buzz.SendMIDIOutput(pn.device, data);
             }
