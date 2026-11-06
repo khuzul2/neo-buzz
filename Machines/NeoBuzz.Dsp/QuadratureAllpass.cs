@@ -10,9 +10,15 @@
 // transition width), 60 dB of halfband attenuation: 90° within ±0.11° from 20 Hz to 20 kHz at 44.1 and
 // 48 kHz with 12 coefficients, ±0.13° at 96 kHz with 13. Double precision: the lowest sections' poles sit
 // close to the unit circle. Allocation-free after construction; IEEE basic operations only.
+// M3: Block runs a stereo pair a block at a time, a section at a time over the block (each section's recursion
+// reaches two samples back, so the samples overlap instead of waiting for the section before), the two
+// channels in the lanes of a Vector128<double> and the two branches side by side: every value comes from the
+// same operations on the same inputs as Process, so the same bits.
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 
 namespace NeoBuzz.Dsp
 {
@@ -99,6 +105,122 @@ namespace NeoBuzz.Dsp
                 s = y;
             }
             return s;
+        }
+
+        /// <summary>
+        /// A stereo pair (<paramref name="left"/> and <paramref name="right"/>, the same design), <paramref name="n"/> samples:
+        /// <paramref name="a"/> holds the inputs interleaved (left, right, left, …) and receives the in-phase branch's outputs;
+        /// <paramref name="b"/> receives the quadrature branch's. The same bits as <see cref="Process"/> one sample at a time
+        /// on each channel, with <see cref="Flush"/> after sample <paramref name="flushFirst"/> and every 64 samples after it.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        public static void Block(QuadratureAllpass left, QuadratureAllpass right, double[] a, double[] b, int n, int flushFirst)
+        {
+            if (left.ca.Length != right.ca.Length || left.cb.Length != right.cb.Length) throw new ArgumentException("Two designs.");
+            if (a.Length < 2 * n || b.Length < 2 * n) throw new ArgumentOutOfRangeException(nameof(n));
+            // The quadrature branch's input: the input a sample later (its delay flushed where Flush would have).
+            b[0] = left.prev;
+            b[1] = right.prev;
+            for (int j = 1; j < n; j++)
+            {
+                double pl = a[2 * j - 2], pr = a[2 * j - 1];
+                if (Flushes(j - 1, flushFirst))
+                {
+                    pl = DspMath.Flush(pl);
+                    pr = DspMath.Flush(pr);
+                }
+                b[2 * j] = pl;
+                b[2 * j + 1] = pr;
+            }
+            if (n > 0)
+            {
+                double pl = a[2 * n - 2], pr = a[2 * n - 1];
+                left.prev = Flushes(n - 1, flushFirst) ? DspMath.Flush(pl) : pl;
+                right.prev = Flushes(n - 1, flushFirst) ? DspMath.Flush(pr) : pr;
+            }
+            int both = Math.Min(left.ca.Length, left.cb.Length);
+            for (int i = 0; i < both; i++) Two(left, right, i, a, b, n, flushFirst);
+            for (int i = both; i < left.ca.Length; i++) One(left.ca[i], left.xa1, left.xa2, left.ya1, left.ya2, right.xa1, right.xa2, right.ya1, right.ya2, i, a, n, flushFirst);
+            for (int i = both; i < left.cb.Length; i++) One(left.cb[i], left.xb1, left.xb2, left.yb1, left.yb2, right.xb1, right.xb2, right.yb1, right.yb2, i, b, n, flushFirst);
+        }
+
+        static bool Flushes(int j, int first) => j >= first && ((j - first) & 63) == 0;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static Vector128<double> FlushV(Vector128<double> v) =>
+            Vector128.ConditionalSelect(Vector128.GreaterThan(v, Vector128.Create(-1e-30)) & Vector128.LessThan(v, Vector128.Create(1e-30)), Vector128<double>.Zero, v);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static Vector128<double> Pair(double[] l, double[] r, int i) => Vector128.Create(l[i], r[i]);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static void Store(Vector128<double> v, double[] l, double[] r, int i)
+        {
+            l[i] = v.GetElement(0);
+            r[i] = v.GetElement(1);
+        }
+
+        /// <summary>Section <paramref name="i"/> of both branches over the block.</summary>
+        static void Two(QuadratureAllpass L, QuadratureAllpass R, int i, double[] a, double[] b, int n, int flushFirst)
+        {
+            var ca = Vector128.Create(L.ca[i]);
+            var cb = Vector128.Create(L.cb[i]);
+            Vector128<double> ax1 = Pair(L.xa1, R.xa1, i), ax2 = Pair(L.xa2, R.xa2, i), ay1 = Pair(L.ya1, R.ya1, i), ay2 = Pair(L.ya2, R.ya2, i);
+            Vector128<double> bx1 = Pair(L.xb1, R.xb1, i), bx2 = Pair(L.xb2, R.xb2, i), by1 = Pair(L.yb1, R.yb1, i), by2 = Pair(L.yb2, R.yb2, i);
+            ref double ra = ref MemoryMarshal.GetArrayDataReference(a);
+            ref double rb = ref MemoryMarshal.GetArrayDataReference(b);
+            int next = flushFirst;
+            for (int j = 0; j < n; j++)
+            {
+                var sa = Vector128.LoadUnsafe(ref ra, (nuint)(2 * j));
+                var sb = Vector128.LoadUnsafe(ref rb, (nuint)(2 * j));
+                var ya = ca * (sa + ay2) - ax2;
+                var yb = cb * (sb + by2) - bx2;
+                ax2 = ax1;
+                ax1 = sa;
+                ay2 = ay1;
+                ay1 = ya;
+                bx2 = bx1;
+                bx1 = sb;
+                by2 = by1;
+                by1 = yb;
+                ya.StoreUnsafe(ref ra, (nuint)(2 * j));
+                yb.StoreUnsafe(ref rb, (nuint)(2 * j));
+                if (j == next)
+                {
+                    ax1 = FlushV(ax1); ax2 = FlushV(ax2); ay1 = FlushV(ay1); ay2 = FlushV(ay2);
+                    bx1 = FlushV(bx1); bx2 = FlushV(bx2); by1 = FlushV(by1); by2 = FlushV(by2);
+                    next += 64;
+                }
+            }
+            Store(ax1, L.xa1, R.xa1, i); Store(ax2, L.xa2, R.xa2, i); Store(ay1, L.ya1, R.ya1, i); Store(ay2, L.ya2, R.ya2, i);
+            Store(bx1, L.xb1, R.xb1, i); Store(bx2, L.xb2, R.xb2, i); Store(by1, L.yb1, R.yb1, i); Store(by2, L.yb2, R.yb2, i);
+        }
+
+        /// <summary>Section <paramref name="i"/> of one branch over the block (the longer branch's last).</summary>
+        static void One(double c, double[] lx1, double[] lx2, double[] ly1, double[] ly2, double[] rx1, double[] rx2, double[] ry1, double[] ry2,
+            int i, double[] buf, int n, int flushFirst)
+        {
+            var cv = Vector128.Create(c);
+            Vector128<double> x1 = Pair(lx1, rx1, i), x2 = Pair(lx2, rx2, i), y1 = Pair(ly1, ry1, i), y2 = Pair(ly2, ry2, i);
+            ref double rf = ref MemoryMarshal.GetArrayDataReference(buf);
+            int next = flushFirst;
+            for (int j = 0; j < n; j++)
+            {
+                var s = Vector128.LoadUnsafe(ref rf, (nuint)(2 * j));
+                var y = cv * (s + y2) - x2;
+                x2 = x1;
+                x1 = s;
+                y2 = y1;
+                y1 = y;
+                y.StoreUnsafe(ref rf, (nuint)(2 * j));
+                if (j == next)
+                {
+                    x1 = FlushV(x1); x2 = FlushV(x2); y1 = FlushV(y1); y2 = FlushV(y2);
+                    next += 64;
+                }
+            }
+            Store(x1, lx1, rx1, i); Store(x2, lx2, rx2, i); Store(y1, ly1, ry1, i); Store(y2, ly2, ry2, i);
         }
 
         /// <summary>Flushes state under 1e-30 to zero (call on a grid of the caller's own samples, not per host block, so the output doesn't depend on the blocks).</summary>

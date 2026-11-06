@@ -79,10 +79,23 @@ namespace NeoBuzz.Analysis
             while (n > 0)
             {
                 int m = Math.Min(n, hop - inStep);
-                inSum += inL.SumOfSquares(inLeft, offset, m) * (inRight == null ? 2 : 1);
-                if (inRight != null) inSum += inR.SumOfSquares(inRight, offset, m);
-                outSum += outL.SumOfSquares(outLeft, offset, m) * (outRight == null ? 2 : 1);
-                if (outRight != null) outSum += outR.SumOfSquares(outRight, offset, m);
+                if (inRight != null && outRight != null)
+                {
+                    // Stereo: the four filters side by side, the same bits as one after the other (M3).
+                    Loudness.KWeighting.SumOfSquares4(ref inL, ref inR, ref outL, ref outR, inLeft, inRight, outLeft, outRight, offset, m,
+                        out double il, out double ir, out double ol, out double or);
+                    inSum += il;
+                    inSum += ir;
+                    outSum += ol;
+                    outSum += or;
+                }
+                else
+                {
+                    inSum += inL.SumOfSquares(inLeft, offset, m) * (inRight == null ? 2 : 1);
+                    if (inRight != null) inSum += inR.SumOfSquares(inRight, offset, m);
+                    outSum += outL.SumOfSquares(outLeft, offset, m) * (outRight == null ? 2 : 1);
+                    if (outRight != null) outSum += outR.SumOfSquares(outRight, offset, m);
+                }
                 offset += m;
                 n -= m;
                 inStep += m;

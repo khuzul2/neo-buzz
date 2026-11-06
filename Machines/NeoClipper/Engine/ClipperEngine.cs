@@ -1,6 +1,6 @@
 #nullable disable
 // Neo Clipper (docs/specs/mastering-tools.md §5.1): drive → (mid/side) → (bands, each with its drive) → per band:
-// ÷ ceiling → up (FirOversampler) → the curve with first-order ADAA → down → × ceiling → (the bands summed;
+// ÷ ceiling → up (FastOversampler: FirOversampler's filters, faster, M3) → the curve with first-order ADAA → down → × ceiling → (the bands summed;
 // mid/side decoded) → (with bands or mid/side: the curve again on left and right, oversampled the same way) →
 // the ceiling guard → mix with the dry signal → Delta → output. Pure: tested by NeoBuzz.MachineTests.
 //  - The ceiling holds exactly: the curves never pass it, but the downsampling filter rings past it after hard
@@ -27,21 +27,21 @@ namespace NeoBuzz.Clipper
         public const int MaxBlock = 256;
         const double GlideSeconds = 0.02;
         /// <summary>Samples of delay at a rate, the same at every setting: two oversampled stages at the largest factor and the guard.</summary>
-        public static int LatencyAt(double sampleRate) => 2 * FirOversampler.MaxLatency + CeilingGuard.HoldFor(sampleRate) - 1;
+        public static int LatencyAt(double sampleRate) => 2 * FastOversampler.MaxLatency + CeilingGuard.HoldFor(sampleRate) - 1;
 
         /// <summary>Samples of delay at the rate set.</summary>
         public int Latency => LatencyAt(sampleRate);
 
         const int MaxHold = 1920;                                    // the guard's hold up to 384 kHz
-        static readonly int Ring = 2 * FirOversampler.MaxLatency + MaxHold + 2;
+        static readonly int Ring = 2 * FastOversampler.MaxLatency + MaxHold + 2;
 
         const int Steps = 30;               // readings: 3 s of 100 ms steps
 
         /// <summary>One oversampled clip stage on one stream.</summary>
         sealed class Stage
         {
-            public readonly FirOversampler Os = new FirOversampler(MaxBlock);
-            public readonly DelayLineF Pad = new DelayLineF(FirOversampler.MaxLatency + 1);
+            public readonly FastOversampler Os = new FastOversampler(MaxBlock);
+            public readonly DelayLineF Pad = new DelayLineF(FastOversampler.MaxLatency + 1);
             public ClipAdaa Adaa;
 
             public void Reset()
@@ -67,6 +67,7 @@ namespace NeoBuzz.Clipper
         readonly float[] sumL = new float[MaxBlock], sumR = new float[MaxBlock];
         readonly float[] dryOutL = new float[MaxBlock], dryOutR = new float[MaxBlock];
         readonly float[] ceil1 = new float[MaxBlock], ceil2 = new float[MaxBlock], invCeil = new float[MaxBlock];
+        readonly double[] adaaU = new double[ClipAdaa.ScratchFor(8 * MaxBlock)], adaaF = new double[ClipAdaa.ScratchFor(8 * MaxBlock)];
         BandSplit split;
 
         ClipCurve curve;
@@ -203,9 +204,9 @@ namespace NeoBuzz.Clipper
             if (factor == 1)
                 for (int i = 0; i < m; i++) hi[i] = (float)c.F(hi[i]);
             else
-                for (int i = 0; i < m; i++) hi[i] = (float)s.Adaa.Process(in c, hi[i]);
+                s.Adaa.Process(in c, hi, m, adaaU, adaaF);
             s.Os.Down(y, 0, n);
-            int pad = FirOversampler.MaxLatency - s.Os.Latency;
+            int pad = FastOversampler.MaxLatency - s.Os.Latency;
             if (pad > 0)
                 for (int i = 0; i < n; i++)
                 {
@@ -230,7 +231,7 @@ namespace NeoBuzz.Clipper
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);
             InMeter.Feed(left, right, n);
-            int L1 = FirOversampler.MaxLatency, L2 = 2 * L1, latency = Latency;
+            int L1 = FastOversampler.MaxLatency, L2 = 2 * L1, latency = Latency;
             double bendsAbove = curve.BendsAbove;
             float blockClip = 1;
 

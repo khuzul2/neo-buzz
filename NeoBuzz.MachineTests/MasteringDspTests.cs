@@ -155,8 +155,64 @@ namespace NeoBuzz.MachineTests
                 return w;
             }
             var reference = Run(256);
-            foreach (int block in new[] { 128, 117, 16 })
+            foreach (int block in new[] { 128, 117, 16, 1, 1000 })
                 Assert.That(Run(block), Is.EqualTo(reference), $"blocks of {block}");
+        }
+
+        [TestCase(48000)]
+        [TestCase(96000)]
+        public void TransientSplitsBlocksAreItsOneSampleAtATimeBitForBit(int rate)
+        {
+            // M3 runs the 90° pair a section at a time over a block; against the pair one sample at a time and the followers
+            // as documented, with stretches of signal near 1e-35 so the flush every 64 samples matters.
+            var x = Hits(rate, rate, 90, 120, rate / 5);
+            var noise = Measure.PinkNoise(x.Length, 0.05);
+            var r = new float[x.Length];
+            for (int i = 0; i < x.Length; i++)
+            {
+                r[i] = 0.5f * x[i] + noise[i];
+                if (i % 20000 < 3000)
+                {
+                    x[i] *= 1e-34f;
+                    r[i] = i % 7 == 0 ? 1e-35f : 0f;
+                }
+            }
+            var split = new TransientSplit(rate);
+            var got = new float[x.Length];
+            var part = new float[300];
+            var rng = new Random(3);
+            for (int i = 0; i < x.Length;)
+            {
+                int n = Math.Min(1 + rng.Next(300), x.Length - i);
+                split.Process(x, r, i, n, part);
+                Array.Copy(part, 0, got, i, n);
+                i += n;
+            }
+            var pl = new QuadratureAllpass(rate);
+            var pr = new QuadratureAllpass(rate);
+            double fa = Detector.Coef(0.0003, rate), fr = Detector.Coef(0.020, rate), sa = Detector.Coef(0.020, rate), sr = Detector.Coef(0.060, rate);
+            double deadband = DspMath.DbToGain(0.5), f = 0, s = 0;
+            int flushed = 0;
+            for (int i = 0; i < x.Length; i++)
+            {
+                pl.Process(x[i], out double la, out double lb);
+                pr.Process(r[i], out double ra, out double rb);
+                double level = Math.Sqrt(Math.Max(la * la + lb * lb, ra * ra + rb * rb));
+                f = level + (f - level) * (level > f ? fa : fr);
+                s = level + (s - level) * (level > s ? sa : sr);
+                double t = f > 1e-12 ? 1 - deadband * s / f : 0;
+                float want = t > 0 ? (float)t : 0f;
+                Assert.That(BitConverter.SingleToInt32Bits(got[i]), Is.EqualTo(BitConverter.SingleToInt32Bits(want)), $"sample {i}");
+                if (((i + 1) & 63) == 0)
+                {
+                    if (f != DspMath.Flush(f) || s != DspMath.Flush(s)) flushed++;
+                    f = DspMath.Flush(f);
+                    s = DspMath.Flush(s);
+                    pl.Flush();
+                    pr.Flush();
+                }
+            }
+            Assert.That(flushed, Is.GreaterThan(0), "the flush mattered");
         }
 
         // ── the STFT ────────────────────────────────────────────────────────
@@ -349,6 +405,56 @@ namespace NeoBuzz.MachineTests
             }
         }
 
+        // ── the faster oversampler (M3) ────────────────────────────────────
+
+        [TestCase(2)]
+        [TestCase(4)]
+        [TestCase(8)]
+        public void TheFastOversamplerIsFirOversamplersFiltersFaster(int factor)
+        {
+            // The same designs and latency; the sums in another order, so within float rounding of FirOversampler, not its bits.
+            var slow = new FirOversampler(256);
+            var fast = new FastOversampler(256);
+            slow.SetFactor(factor);
+            fast.SetFactor(factor);
+            Assert.That(fast.Latency, Is.EqualTo(slow.Latency));
+            var x = Measure.PinkNoise(256 * 200, 0.3, 41);
+            var a = new float[x.Length];
+            var b = new float[x.Length];
+            var block = new float[256];
+            double worst = 0, peak = 0;
+            for (int at = 0; at < x.Length; at += 256)
+            {
+                Array.Copy(x, at, block, 0, 256);
+                var hs = slow.Up(block, 0, 256);
+                var hf = fast.Up(block, 0, 256);
+                for (int i = 0; i < 256 * factor; i++)
+                {
+                    worst = Math.Max(worst, Math.Abs(hs[i] - hf[i]));
+                    // A curve in between, as a clipper's: both see the same.
+                    hs[i] = MathF.Max(-0.2f, MathF.Min(0.2f, hs[i]));
+                    hf[i] = MathF.Max(-0.2f, MathF.Min(0.2f, hf[i]));
+                }
+                slow.Down(a, at, 256);
+                fast.Down(b, at, 256);
+            }
+            for (int i = 0; i < x.Length; i++)
+            {
+                worst = Math.Max(worst, Math.Abs(a[i] - b[i]));
+                peak = Math.Max(peak, Math.Abs(a[i]));
+            }
+            // Speed: up and down, two channels' worth, 10 s at 48 kHz.
+            var clock = Stopwatch.StartNew();
+            for (int k = 0; k < Measure.Rate * 10 / 256 * 2; k++) { fast.Up(block, 0, 256); fast.Down(block, 0, 256); }
+            double fastX = 10 / clock.Elapsed.TotalSeconds;
+            clock.Restart();
+            for (int k = 0; k < Measure.Rate * 10 / 256 * 2; k++) { slow.Up(block, 0, 256); slow.Down(block, 0, 256); }
+            double slowX = 10 / clock.Elapsed.TotalSeconds;
+            Measure.Report($"FastOversampler {factor}×: within {Measure.Db(worst / peak):F0} dB of FirOversampler; up and down for two channels {fastX:F0}× real time (FirOversampler {slowX:F0}×)");
+            Assert.That(worst / peak, Is.LessThan(1e-5));
+            Assert.That(fastX, Is.GreaterThan(slowX));
+        }
+
         // ── Delta and gain match (the house conventions, §2) ───────────────
 
         /// <summary>A stand-in machine: the input delayed by <paramref name="latency"/> and scaled by <paramref name="gain"/>.</summary>
@@ -434,6 +540,32 @@ namespace NeoBuzz.MachineTests
             }
             Assert.That(step, Is.LessThanOrEqualTo(own * 1.05 + 1e-6), "the glide adds no step");
             Assert.That(reference.Skip(12000 + glide).ToArray(), Is.EqualTo(wl.Skip(12000 + glide).ToArray()), "off again: the wet signal bit for bit");
+        }
+
+        [Test]
+        public void KWeightingsFourStreamsAreFourOneAtATimeBitForBit()
+        {
+            // GainMatch's stereo path (M3): four filters side by side against each alone, across blocks, with silence (the 1e-15 snap).
+            var rng = new Random(5);
+            var x = new float[4][];
+            for (int c = 0; c < 4; c++)
+            {
+                x[c] = Measure.PinkNoise(20000, 0.2, (uint)(11 + c));
+                for (int i = 8000; i < 12000; i++) x[c][i] = 0;
+            }
+            var one = new NeoBuzz.Analysis.Loudness.KWeighting[4];
+            var four = new NeoBuzz.Analysis.Loudness.KWeighting[4];
+            for (int c = 0; c < 4; c++) one[c] = four[c] = NeoBuzz.Analysis.Loudness.KWeighting.For(44100 + 1000 * c);
+            for (int at = 0; at < 20000;)
+            {
+                int n = Math.Min(1 + rng.Next(700), 20000 - at);
+                NeoBuzz.Analysis.Loudness.KWeighting.SumOfSquares4(ref four[0], ref four[1], ref four[2], ref four[3], x[0], x[1], x[2], x[3], at, n,
+                    out double s0, out double s1, out double s2, out double s3);
+                var got = new[] { s0, s1, s2, s3 };
+                for (int c = 0; c < 4; c++)
+                    Assert.That(BitConverter.DoubleToInt64Bits(got[c]), Is.EqualTo(BitConverter.DoubleToInt64Bits(one[c].SumOfSquares(x[c], at, n))), $"stream {c} at {at}");
+                at += n;
+            }
         }
 
         [Test]
