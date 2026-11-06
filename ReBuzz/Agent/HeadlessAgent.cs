@@ -101,13 +101,13 @@ namespace ReBuzz.Agent
                 return;
             }
 
-            // Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): --keyboard-shots <folder> opens, draws, plays and checks
-            // the keyboard under machine windows (ReBuzzTests on the package run), then exits.
-            if (KeyboardShots.Folder(args) is string keyboardShots)
+            // Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): --keyboard-check <folder> opens, plays and checks the
+            // keyboard under machine windows (ReBuzzTests on the package run), then exits.
+            if (KeyboardCheck.Folder(args) is string keyboardCheck)
             {
-                Step("keyboard shots");
-                try { KeyboardShots.Run(core, Path.GetFullPath(keyboardShots), Step); }
-                catch (Exception e) { Console.Error.WriteLine(Product.LogPrefix + "keyboard shots: " + e); }
+                Step("keyboard check");
+                try { KeyboardCheck.Run(core, Path.GetFullPath(keyboardCheck), Step); }
+                catch (Exception e) { Console.Error.WriteLine(Product.LogPrefix + "keyboard check: " + e); }
                 try { init.ShutDownReBuzzEngine(); } catch (Exception) { }
                 hidden.Dispose();
                 app.Shutdown();

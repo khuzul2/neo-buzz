@@ -560,6 +560,40 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        [AvaloniaTest]
+        public void AnEditorTallerThanTheScreenHoldsScrollsRatherThanBeingSquashed()
+        {
+            // Neo Wave's editor is about 1000 px high: with the keyboard it is more than the 1080 px test screen holds (a
+            // laptop's or a CI runner's screen is smaller still). The editor keeps its own layout and scrolls above the keys.
+            var m = Add("Neo Wave", "Kb Tall");
+            try
+            {
+                var w = Gui(m);
+                var content = (Control)StudioMachineUiHost.ContentOf(w)!;
+                var view = (Control)MachineKeyboardFrame.TopOf(w.Content)!;
+                var kb = KeyboardOf(w)!;
+                double shown = view.Bounds.Height, height = content.Bounds.Height;
+                Assert.That(shown + kb.ExtraHeight, Is.EqualTo(w.ClientSize.Height).Within(1), "the editor's view and the keys fill the window");
+                Assert.That(height, Is.GreaterThan(shown + 1), "the screen can't hold the whole editor and the keys");
+                Assert.That(view, Is.InstanceOf<ScrollViewer>(), "the editor scrolls");
+                Assert.That(((ScrollViewer)view).Extent.Height, Is.EqualTo(height).Within(1), "all of it can be scrolled to");
+                content.Measure(Size.Infinity);
+                Assert.That(height, Is.EqualTo(content.DesiredSize.Height).Within(1), "at its own height: never squashed");
+                ((ScrollViewer)view).Offset = new Vector(0, height);
+                Settle();
+                Assert.That(((ScrollViewer)view).Offset.Y, Is.EqualTo(height - shown).Within(1), "scrolled to its bottom");
+                var top = kb.TranslatePoint(new Point(0, 0), w)!.Value.Y;
+                var bottom = kb.TranslatePoint(new Point(0, kb.Bounds.Height), w)!.Value.Y;
+                Assert.That(top, Is.GreaterThanOrEqualTo(shown - 1), "the keys stay under the editor");
+                Assert.That(bottom, Is.LessThanOrEqualTo(w.ClientSize.Height + 1), "and in view");
+                Studio.Screenshot(w, "keyboard-neo-wave-scrolled");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
         // ------------------------------------------------------------------ Space
 
         [AvaloniaTest]

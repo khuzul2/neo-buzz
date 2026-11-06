@@ -1,11 +1,12 @@
-// Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): `NeoBuzzLive.exe --agent --keyboard-shots <folder>`, the
+// Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): `NeoBuzzLive.exe --agent --keyboard-check <folder>`, the
 // keyboard under machine windows as the Windows app shows it (WpfMachineUiHost), for ReBuzzTests on the Windows package
-// run (the natives load only in the Windows app's engine, which the tests run as a process, as --editor-shots does). The engine starts
-// headless as for --agent; machines are added and their windows opened; the keyboard is checked, drawn
-// (<folder>/keyboard-wpf-*.png), played through its own pointer handling (a press at a key's place, the release, a glide)
-// with the engine rendered offline (<folder>/keyboard-*.wav, for the tests to hear the pitch), and its notes checked to end
-// when the window hides, the keyboard is hidden or the pointer's capture is lost; Space in the window plays and stops the
-// song with the keys focused. keyboard.json holds what was found; then the app exits.
+// run (the natives load only in the Windows app's engine, which the tests run as a process, as --editor-shots does). The
+// engine starts headless as for --agent; machines are added and their windows opened; the keyboard is checked (the GUI
+// kept at its own size), played through its own pointer handling (a press at a key's place, the release, a glide) with
+// the engine rendered offline (<folder>/keyboard-*.wav, for the tests to hear the pitch), and its notes checked to end when
+// the window hides, the keyboard is hidden or the pointer's capture is lost; Space in the window plays and stops the song
+// with the keys focused. keyboard.json holds what was found; then the app exits. The pictures are the UI gallery's
+// (--ui-shots: docs/specs/ui-gallery.md), which draws these windows with their keyboards.
 
 using System;
 using System.Collections.Generic;
@@ -15,8 +16,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using BuzzGUI.Interfaces;
 using NeoBuzz.Editor;
 using ReBuzz.Agent;
@@ -26,18 +25,18 @@ using ReBuzz.Core.Keyboards;
 
 namespace ReBuzz.AppViews
 {
-    internal static class KeyboardShots
+    internal static class KeyboardCheck
     {
-        public const string Switch = "--keyboard-shots";
+        public const string Switch = "--keyboard-check";
 
-        /// <summary>The folder after --keyboard-shots, or null.</summary>
+        /// <summary>The folder after --keyboard-check, or null.</summary>
         public static string Folder(string[] args)
         {
             int i = Array.FindIndex(args, a => string.Equals(a, Switch, StringComparison.OrdinalIgnoreCase));
             return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
         }
 
-        /// <summary>Opens, draws, plays and checks the keyboards; on the UI thread, the engine started.</summary>
+        /// <summary>Opens, plays and checks the keyboards; on the UI thread, the engine started.</summary>
         public static void Run(ReBuzzCore core, string folder, Action<string> log)
         {
             Directory.CreateDirectory(folder);
@@ -58,7 +57,6 @@ namespace ReBuzz.AppViews
                 core.UiHost.OpenGui(m, null);
                 var window = WpfMachineUiHost.GuiWindowOf(m) ?? throw new InvalidOperationException("no GUI window");
                 var kb = Opened(window, r);
-                r["png"] = Shoot((FrameworkElement)window.Content, Path.Combine(folder, "keyboard-wpf-neo-poly-editor.png"));
                 Quiet(work);
                 Press(kb, 69, 0.8);
                 r["held"] = kb.Player.IsHeld(69);
@@ -118,7 +116,6 @@ namespace ReBuzz.AppViews
                 var window = WpfMachineUiHost.ParameterWindowOf(m) ?? throw new InvalidOperationException("no parameter window");
                 var kb = Opened(window, r);
                 r["offset"] = kb.Player.Route.Offset;
-                r["png"] = Shoot((FrameworkElement)window.Content, Path.Combine(folder, "keyboard-wpf-parameter-window.png"));
                 Quiet(work);
                 var note = m.ParameterGroups[2].Parameters.First(p => p.Type == ParameterType.Note);
                 Press(kb, 69, 0.8);
@@ -137,7 +134,6 @@ namespace ReBuzz.AppViews
                 var window = WpfMachineUiHost.GuiWindowOf(m) ?? throw new InvalidOperationException("no GUI window");
                 var kb = Opened(window, r);
                 r["snare"] = kb.Keys.NameOf(38);
-                r["png"] = Shoot((FrameworkElement)window.Content, Path.Combine(folder, "keyboard-wpf-neo-drums-editor.png"));
             }));
 
             // An effect: none.
@@ -189,6 +185,20 @@ namespace ReBuzz.AppViews
             r["octaves"] = kb.Keys.Layout?.Octaves ?? 0;
             r["frame_height"] = ((FrameworkElement)window.Content).ActualHeight;
             r["content_height"] = content.ActualHeight;
+            r["window_height"] = window.ActualHeight;
+            // What shows the GUI above the keyboard: a GUI of a fixed layout scrolls where the screen can't hold it and the
+            // keyboard (a runner's screen is small), so all of it stays reachable at its own size.
+            var top = (FrameworkElement)MachineKeyboardFrame.TopOf(window.Content);
+            r["view_height"] = top.ActualHeight;
+            r["scrolls"] = top is System.Windows.Controls.ScrollViewer;
+            if (top is System.Windows.Controls.ScrollViewer scroller)
+            {
+                content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity)); // as the scroller measures it
+                r["own_width"] = content.DesiredSize.Width;
+                r["own_height"] = content.DesiredSize.Height;
+                r["extent_width"] = scroller.ExtentWidth;
+                r["extent_height"] = scroller.ExtentHeight;
+            }
             r["keyboard_height"] = kb.ActualHeight;
             r["extra_height"] = kb.ExtraHeight;
             r["key_name"] = kb.Keys.ElementOf(kb.Keys.Layout.First + 1) is { } key ? System.Windows.Automation.AutomationProperties.GetName(key) : null;
@@ -285,24 +295,6 @@ namespace ReBuzz.AppViews
             w.Write("data"u8);
             w.Write(bytes);
             foreach (var v in x) w.Write(v);
-        }
-
-        static string Shoot(FrameworkElement element, string path)
-        {
-            element.UpdateLayout();
-            int w = Math.Max(1, (int)Math.Ceiling(element.ActualWidth)), h = Math.Max(1, (int)Math.Ceiling(element.ActualHeight));
-            var bitmap = new RenderTargetBitmap(w, h, 96, 96, PixelFormats.Pbgra32);
-            var visual = new DrawingVisual();
-            using (var dc = visual.RenderOpen())
-            {
-                dc.DrawRectangle(Brushes.Black, null, new Rect(0, 0, w, h));
-                dc.DrawRectangle(new VisualBrush(element), null, new Rect(0, 0, w, h));
-            }
-            bitmap.Render(visual);
-            var encoder = new PngBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(bitmap));
-            using (var file = File.Create(path)) encoder.Save(file);
-            return Path.GetFileName(path);
         }
     }
 }

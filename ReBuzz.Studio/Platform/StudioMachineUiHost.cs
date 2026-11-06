@@ -79,7 +79,7 @@ namespace ReBuzz.Studio.Platform
                     OpenParameterWindow(machine, at);
                     return;
                 }
-                w.Gui = Make(machine, machine.Name, content, () => w.Gui = null);
+                w.Gui = Make(machine, machine.Name, content, () => w.Gui = null, scroll: true);
                 w.Gui.CanResize = MachineGuis.Resizable(machine);
             }
             Show(w.Gui, at);
@@ -92,7 +92,7 @@ namespace ReBuzz.Studio.Platform
             {
                 var editor = ReBuzz.Agent.MachineFaces.Editor(machine, () => OpenParameterWindow(machine, null));
                 if (editor == null) return false;
-                w.Editor = Make(machine, $"{machine.Name} — editor", editor, () => w.Editor = null);
+                w.Editor = Make(machine, $"{machine.Name} — editor", editor, () => w.Editor = null, scroll: true);
                 w.Editor.CanResize = false;
             }
             Show(w.Editor, null);
@@ -124,12 +124,13 @@ namespace ReBuzz.Studio.Platform
         public string AskName(string title, string current, int x, int y) =>
             Dialogs.Modal(() => Dialogs.AskText(title, current));
 
-        static Window Make(IMachine machine, string title, Control content, Action closed)
+        /// <param name="scroll">A GUI of a fixed layout (a Neo editor, a manifest editor): scrolled where the screen can't hold it and the keyboard.</param>
+        static Window Make(IMachine machine, string title, Control content, Action closed, bool scroll = false)
         {
             var window = new Window
             {
                 Title = title,
-                Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(machine, content),
+                Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(machine, content, scroll),
                 SizeToContent = SizeToContent.WidthAndHeight,
                 ShowInTaskbar = false,
             };

@@ -202,10 +202,16 @@ namespace ReBuzz.Studio.Tests
                         Assert.That(Controls(window, "Section").Count(), Is.GreaterThan(2), $"{e.Machine}: sections");
                         Assert.That(Controls(window, "PresetBar").Count(), Is.EqualTo(1), $"{e.Machine}: the preset bar");
                         // The WPF editor's layout: the same size, give or take the fonts' metrics; the window is the
-                        // editor's size and the keyboard's under it (the machine keyboard), the editor never squashed.
+                        // editor's size and the keyboard's under it (the machine keyboard), the editor never squashed:
+                        // where the screen can't hold both (Neo Wave's on the 1080 px test screen), the editor scrolls.
                         var size = StudioMachineUiHost.ContentOf(window)!.Bounds.Size;
-                        Assert.That(window.ClientSize.Height, Is.EqualTo(size.Height + NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(window.Content)).Within(1),
-                            $"{e.Machine}: the window is the editor and its keyboard");
+                        var view = (Control)NeoBuzz.Editor.MachineKeyboardFrame.TopOf(window.Content)!;
+                        double extra = NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(window.Content);
+                        Assert.That(window.ClientSize.Height, Is.EqualTo(view.Bounds.Height + extra).Within(1), $"{e.Machine}: the window is the editor and its keyboard");
+                        bool fits = view.Bounds.Height >= size.Height - 1;
+                        Assert.That(fits || view is ScrollViewer { Extent.Height: var reach } && reach >= size.Height - 1, Is.True,
+                            $"{e.Machine}: shown whole, or scrolled where the screen can't hold it and the keyboard ({view.Bounds.Height:0} of {size.Height:0} px shown)");
+                        if (!fits) TestContext.Out.WriteLine($"{e.Machine}: {view.Bounds.Height:0} of {size.Height:0} px shown, the rest scrolled (screen {window.ClientSize.Height:0} px)");
                         Assert.That(size.Width, Is.EqualTo(e.WpfWidth).Within(6).Percent, $"{e.Machine}: width (WPF {e.WpfWidth})");
                         Assert.That(size.Height, Is.EqualTo(e.WpfHeight).Within(6).Percent, $"{e.Machine}: height (WPF {e.WpfHeight})");
                         TestContext.Out.WriteLine($"{e.Machine}: {size.Width:0} x {size.Height:0} (WPF {e.WpfWidth} x {e.WpfHeight})");

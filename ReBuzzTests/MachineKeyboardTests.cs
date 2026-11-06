@@ -19,8 +19,8 @@ namespace ReBuzzTests
 {
     /// <summary>
     /// Fork addition (machine keyboard, docs/specs/studio-mvp.md §3.12): the keyboard under machine windows in the Windows app.
-    /// <c>NeoBuzzLive.exe --agent --keyboard-shots</c> opens machines' windows through the WPF host, draws them (screenshots beside
-    /// SessionViewTests', keyboard-wpf-*.png), plays the keyboard through its own pointer handling with the engine rendered
+    /// <c>NeoBuzzLive.exe --agent --keyboard-check</c> opens machines' windows through the WPF host (the UI gallery, --ui-shots, draws
+    /// them), plays the keyboard through its own pointer handling with the engine rendered
     /// offline, and reads back: a Neo synth's editor (MIDI) and a native machine's parameter window (its Note track, with its
     /// manifest's pitch offset, FSM Infector's +12) both play the written A4 at 440 Hz, heard here by YIN; a strike's height
     /// is its velocity; a glide plays one note; every note ends on release, the window hiding, the keyboard hidden and the
@@ -32,16 +32,16 @@ namespace ReBuzzTests
         static JsonObject? shots;
         static string? folder;
 
-        /// <summary>Runs ReBuzz.exe --keyboard-shots once for the fixture.</summary>
+        /// <summary>Runs the app with --keyboard-check once for the fixture.</summary>
         static JsonObject Shots()
         {
             if (shots != null) return shots;
             string bin = File.ReadLines(TestAssemblyDirectory.Value.AddFileName("ReBuzzLocation.txt").ToString()).First();
             string exe = Path.Combine(bin, ReBuzz.Product.WindowsExe);
             if (!File.Exists(exe)) Assert.Inconclusive($"{ReBuzz.Product.WindowsExe} not built ({exe})");
-            folder = Path.Combine(Path.GetTempPath(), "rebuzz-keyboard-shots-" + Environment.ProcessId);
+            folder = Path.Combine(Path.GetTempPath(), "rebuzz-keyboard-check-" + Environment.ProcessId);
             if (Directory.Exists(folder)) Directory.Delete(folder, true);
-            var psi = new ProcessStartInfo(exe, $"--agent --keyboard-shots \"{folder}\"")
+            var psi = new ProcessStartInfo(exe, $"--agent --keyboard-check \"{folder}\"")
             {
                 RedirectStandardInput = true,
                 RedirectStandardError = true,
@@ -58,16 +58,12 @@ namespace ReBuzzTests
             if (!process.WaitForExit(TimeSpan.FromMinutes(4)))
             {
                 process.Kill(true);
-                Assert.Fail($"{ReBuzz.Product.WindowsExe} --keyboard-shots didn't finish in 4 minutes:\n" + string.Join("\n", stderr.TakeLast(40)));
+                Assert.Fail($"{ReBuzz.Product.WindowsExe} --keyboard-check didn't finish in 4 minutes:\n" + string.Join("\n", stderr.TakeLast(40)));
             }
             string log = string.Join("\n", stderr);
             TestContext.Out.WriteLine(log);
             string json = Path.Combine(folder, "keyboard.json");
             Assert.That(File.Exists(json), Is.True, "keyboard.json written:\n" + log);
-            // Screenshots where the tests' others go (published with the run).
-            string screenshots = Environment.GetEnvironmentVariable("SESSION_SCREENSHOT_DIR") ?? TestContext.CurrentContext.WorkDirectory;
-            Directory.CreateDirectory(screenshots);
-            foreach (var png in Directory.GetFiles(folder, "*.png")) File.Copy(png, Path.Combine(screenshots, Path.GetFileName(png)), true);
             shots = JsonNode.Parse(File.ReadAllText(json))!.AsObject();
             TestContext.Out.WriteLine(shots.ToJsonString());
             return shots;
@@ -81,7 +77,7 @@ namespace ReBuzzTests
             return r;
         }
 
-        /// <summary>A WAV --keyboard-shots wrote (32-bit float, mono): its samples and rate.</summary>
+        /// <summary>A WAV --keyboard-check wrote (32-bit float, mono): its samples and rate.</summary>
         static (float[] Samples, int Rate) ReadWav(string name)
         {
             var bytes = File.ReadAllBytes(Path.Combine(folder!, name));
@@ -111,8 +107,16 @@ namespace ReBuzzTests
             Assert.That(r["shown"]!.GetValue<bool>(), Is.True);
             Assert.That(r["badge"]!.GetValue<string>(), Is.EqualTo("MIDI"));
             Assert.That(r["octaves"]!.GetValue<int>(), Is.GreaterThanOrEqualTo(4), "a wide editor: more octaves");
-            Assert.That(r["frame_height"]!.GetValue<double>(), Is.EqualTo(r["content_height"]!.GetValue<double>() + r["extra_height"]!.GetValue<double>()).Within(1),
+            Assert.That(r["frame_height"]!.GetValue<double>(), Is.EqualTo(r["view_height"]!.GetValue<double>() + r["extra_height"]!.GetValue<double>()).Within(1),
                 "the window is the editor and the keyboard under it");
+            // A runner's screen is small: the editor scrolls rather than being cut off, and all of it stays reachable.
+            Assert.That(r["scrolls"]!.GetValue<bool>(), Is.True, "a fixed-layout editor is in a scroller above the keyboard");
+            Assert.That(r["extent_height"]!.GetValue<double>(), Is.GreaterThanOrEqualTo(r["own_height"]!.GetValue<double>() - 1),
+                $"all of the editor's height can be scrolled to (the window is {r["window_height"]} px high)");
+            Assert.That(r["extent_width"]!.GetValue<double>(), Is.GreaterThanOrEqualTo(r["own_width"]!.GetValue<double>() - 1),
+                "all of the editor's width can be scrolled to");
+            Assert.That(r["content_height"]!.GetValue<double>(), Is.GreaterThanOrEqualTo(r["own_height"]!.GetValue<double>() - 1),
+                "the editor keeps its own height");
             Assert.That(r["key_name"]!.GetValue<string>(), Does.Match(@"^C#\d$"), "keys are named for screen readers");
             Assert.That(r["held"]!.GetValue<bool>(), Is.True);
             Assert.That(PitchOf("keyboard-neo-poly-a4.wav"), Is.EqualTo(69).Within(0.15), "A4 (440 Hz)");
@@ -154,7 +158,7 @@ namespace ReBuzzTests
             Assert.That(r["badge"]!.GetValue<string>(), Is.EqualTo("Note tracks"));
             Assert.That(r["offset"]!.GetValue<int>(), Is.EqualTo(12), "its manifest: it plays an octave low");
             Assert.That(r["octaves"]!.GetValue<int>(), Is.GreaterThanOrEqualTo(2));
-            Assert.That(r["frame_height"]!.GetValue<double>(), Is.EqualTo(r["content_height"]!.GetValue<double>() + r["extra_height"]!.GetValue<double>()).Within(1));
+            Assert.That(r["frame_height"]!.GetValue<double>(), Is.EqualTo(r["view_height"]!.GetValue<double>() + r["extra_height"]!.GetValue<double>()).Within(1));
             // A4 written: A5 sent (+12), heard at 440 Hz.
             Assert.That(r["note_value"]!.GetValue<int>(), Is.EqualTo(BuzzNote.FromMIDINote(69 + 12)), "the Note track gets A4 plus the offset");
             Assert.That(PitchOf("keyboard-fsm-infector-a4.wav"), Is.EqualTo(69).Within(0.25), "the written A4 (440 Hz) plays");
@@ -227,7 +231,6 @@ namespace ReBuzzTests
                 var track = Yin.Track(audio.Skip(audio.Length / 3).ToArray(), rate);
                 TestContext.Out.WriteLine($"[notice] Neo Poly (in process): A4 pressed, heard MIDI {track.MedianMidi:0.00} ({track.MedianHz:0.0} Hz)");
                 Assert.That(track.MedianMidi, Is.EqualTo(69).Within(0.15), "A4 (440 Hz)");
-                SessionViewTests.Screenshot(frame, "keyboard-wpf-frame", 640, (int)Math.Ceiling(height));
                 kb.Keys.Up();
                 Assert.That(Sounding(), Is.Empty, "released");
 

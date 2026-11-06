@@ -43,7 +43,7 @@ namespace ReBuzz.AppViews
         /// <summary>The height a machine window's keyboard takes (0 without one).</summary>
         static double KeyboardHeight(Window w) => NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(w?.Content);
 
-        /// <summary>The keyboard under a machine window's content, or null (tests, --keyboard-shots).</summary>
+        /// <summary>The keyboard under a machine window's content, or null (tests, --keyboard-check, the UI gallery).</summary>
         internal static NeoBuzz.Editor.MachineKeyboard KeyboardOf(Window w) => NeoBuzz.Editor.MachineKeyboardFrame.Of(w?.Content);
 
         /// <summary>A machine window's own content (its GUI, parameters or editor), without the keyboard under it.</summary>
@@ -88,7 +88,7 @@ namespace ReBuzz.AppViews
                 var window = new Window
                 {
                     Title = mc.Name + " \u2014 editor",
-                    Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(mc, editor),
+                    Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(mc, editor, scroll: true),
                     SizeToContent = SizeToContent.WidthAndHeight,
                     ResizeMode = ResizeMode.CanMinimize,
                     ShowInTaskbar = false,
@@ -265,7 +265,7 @@ namespace ReBuzz.AppViews
                     }
                     else
                     {
-                        machineGUIWindow.Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(mc, guiUIElement);
+                        machineGUIWindow.Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(mc, guiUIElement, scroll: true);
                         // A GUI of a fixed size: the window is that and the keyboard.
                         if (machineGUIWindow.SizeToContent == SizeToContent.Manual) machineGUIWindow.Height += KeyboardHeight(machineGUIWindow);
                     }

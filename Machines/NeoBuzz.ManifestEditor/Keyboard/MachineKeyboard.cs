@@ -47,6 +47,8 @@ using Dock = Avalonia.Controls.Dock;
 using Window = Avalonia.Controls.Window;
 using GridUnitType = Avalonia.Controls.GridUnitType;
 using KeyEventArgs = Avalonia.Input.KeyEventArgs;
+using ScrollViewer = Avalonia.Controls.ScrollViewer;
+using ScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility;
 #else
 using System.Windows;
 using System.Windows.Automation;
@@ -937,22 +939,37 @@ namespace NeoBuzz.Editor
     /// <summary>
     /// A machine window's content with the keyboard under it, for machines that play notes (others keep
     /// their content as it is). Grows the window by the keyboard's height when the keys show or hide, so
-    /// the GUI above keeps its size; Ctrl+K (⌘K) in the window shows or hides them.
+    /// the GUI above keeps its size; Ctrl+K (⌘K) in the window shows or hides them. A GUI of a fixed layout
+    /// (a Neo editor, a managed GUI, a manifest editor) sits in a scroll viewer: where the screen can't hold
+    /// it and the keyboard (Neo Poly's editor is 972 px tall), it keeps its size and scrolls rather than being
+    /// cut. A parameter window scrolls its rows itself.
     /// </summary>
     internal sealed class MachineKeyboardFrame : Grid
     {
         readonly UIElement content;
         Window window;
 
-        MachineKeyboardFrame(UIElement content, MachineKeyboard keyboard)
+        MachineKeyboardFrame(UIElement content, MachineKeyboard keyboard, bool scroll)
         {
             this.content = content;
             Keyboard = keyboard;
             RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            Grid.SetRow(content, 0);
+            UIElement top = content;
+            if (scroll)
+            {
+                top = new ScrollViewer
+                {
+                    Content = content,
+                    HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                    Focusable = false,
+                };
+            }
+            Top = top;
+            Grid.SetRow(top, 0);
             Grid.SetRow(keyboard, 1);
-            Children.Add(content);
+            Children.Add(top);
             Children.Add(keyboard);
             keyboard.HeightChanged += Grow;
 #if AVALONIA
@@ -968,11 +985,15 @@ namespace NeoBuzz.Editor
 
         public UIElement Content => content;
 
+        /// <summary>What shows the content above the keyboard: the content, or the scroller it's in.</summary>
+        public UIElement Top { get; }
+
         /// <summary>The content with the keyboard under it when the machine plays notes, else the content itself.</summary>
-        public static UIElement Wrap(IMachine machine, UIElement content)
+        /// <param name="scroll">A GUI of a fixed layout: scrolled where the screen can't hold it and the keyboard.</param>
+        public static UIElement Wrap(IMachine machine, UIElement content, bool scroll = false)
         {
             if (content == null || machine is not MachineCore m || !KeyboardRoute.For(m).Shows) return content;
-            return new MachineKeyboardFrame(content, new MachineKeyboard(m, AccentOf(content)));
+            return new MachineKeyboardFrame(content, new MachineKeyboard(m, AccentOf(content)), scroll);
         }
 
         /// <summary>The height a window's keyboard takes (0 without one): songs keep the GUI's own size without it.</summary>
@@ -980,6 +1001,9 @@ namespace NeoBuzz.Editor
 
         /// <summary>A window's own content: inside the frame when it has one.</summary>
         public static object ContentOf(object windowContent) => windowContent is MachineKeyboardFrame f ? f.Content : windowContent;
+
+        /// <summary>What shows a window's own content above its keyboard (the content, or its scroller).</summary>
+        public static object TopOf(object windowContent) => windowContent is MachineKeyboardFrame f ? f.Top : windowContent;
 
         /// <summary>The keyboard in a window's content, or null.</summary>
         public static MachineKeyboard Of(object windowContent) => (windowContent as MachineKeyboardFrame)?.Keyboard;
