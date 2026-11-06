@@ -144,7 +144,7 @@ namespace ReBuzz.AppViews.Session
                 Margin = new Thickness(0, 6, Gap, 0),
                 HorizontalContentAlignment = HorizontalAlignment.Center
             };
-            Place(stop, sceneCount + 1, c);
+            Place(stop, sceneCount + 2, c);
         }
 
         void PlaceReturnColumn(Column col, int c)
@@ -154,7 +154,7 @@ namespace ReBuzz.AppViews.Session
             headers.Add(header);
             Place(header, 0, c);
             var filler = new Border { Background = SessionPalette.MixerBack, Margin = new Thickness(0, 0, Gap, Gap), ToolTip = $"Return {ReturnLetter(col.Return)}: {col.Machine.Name}. Tracks send to it from their mixer strips." };
-            Grid.SetRowSpan(filler, Math.Max(1, sceneCount));
+            Grid.SetRowSpan(filler, Math.Max(1, sceneCount + 1));      // the scenes and the spare rows
             if (sceneCount > 0)
                 Place(filler, 1, c);
         }
@@ -165,8 +165,10 @@ namespace ReBuzz.AppViews.Session
         {
             mixerGrid.Children.Clear();
             mixerGrid.ColumnDefinitions.Clear();
+            masterHolder.Child = null;
             strips.Clear();
             mixerPanel.Visibility = doc.ShowMixer ? Visibility.Visible : Visibility.Collapsed;
+            masterSection.Visibility = mixerPanel.Visibility;
             mixerButton.SetLit(doc.ShowMixer ? SessionPalette.Fader : null);
             if (!doc.ShowMixer)
             {
@@ -195,11 +197,9 @@ namespace ReBuzz.AppViews.Session
                 Grid.SetColumn(strip, c);
                 mixerGrid.Children.Add(strip);
             }
-            mixerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(SceneColumnWidth + Gap) });
             var master = new MixerStrip(this, StripKind.Master, null, "Master", returns);
             strips.Add(master);
-            Grid.SetColumn(master, columns.Count);
-            mixerGrid.Children.Add(master);
+            masterHolder.Child = master;          // under the scene column, frozen with it
             UpdateMetering();
         }
 
@@ -443,7 +443,7 @@ namespace ReBuzz.AppViews.Session
                     var seq = view.layout.SequenceOf(t);
                     var pattern = view.layout.PatternAt(t, Scene);
                     if (seq == null || pattern == null) continue;
-                    var state = session.GetState(seq, pattern);
+                    var state = view.layout.SlotState(seq, pattern, t, Scene);
                     playing |= state == ClipState.Playing || state == ClipState.Stopping;
                     queued |= state == ClipState.Queued;
                 }

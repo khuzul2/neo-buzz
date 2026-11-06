@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -94,6 +95,10 @@ namespace ReBuzz.Studio.Views.Sequence
                     new Setter(MinHeightProperty, 0.0),
                 },
             });
+            // The list is light in a dark theme: its items' states get light-list colours. The dark
+            // theme's pointer-over drew white text on a near-white tint ("1. Arp" at 1.06:1, gallery
+            // mac-070), and its selection white on light blue.
+            ListStates(patternList);
 
             foreach (var s in Steps) steps.Items.Add(s);
             steps.SelectedItem = state.TimeSignatures.GetBarLengthAt(0);
@@ -162,6 +167,8 @@ namespace ReBuzz.Studio.Views.Sequence
         public Slider ZoomSlider => zoom;
         public ComboBox StepsBox => steps;
         public ListBox PatternList => patternList;
+        /// <summary>The list's own background (its items' states draw on it).</summary>
+        internal static Color PatternListBackground => Color.Parse("#F7F7F3");
         public Button AddTrackButton => addTrack;
 
         /// <summary>The menu a right click (or the add-track button) opened last (tests click through it).</summary>
@@ -226,6 +233,32 @@ namespace ReBuzz.Studio.Views.Sequence
         }
 
         // ------------------------------------------------------------------ the pattern list
+
+        static readonly IBrush ItemHover = new SolidColorBrush(Color.Parse("#E0E0D8"));
+        static readonly IBrush ItemPressed = new SolidColorBrush(Color.Parse("#D0D0C6"));
+        static readonly IBrush ItemSelected = new SolidColorBrush(Color.Parse("#2F6DAE"));
+        static readonly IBrush ItemSelectedHover = new SolidColorBrush(Color.Parse("#285F9C"));
+
+        /// <summary>Every state of a light list's items readable: dark text on light, white on the selection's blue (4.5:1 and more).</summary>
+        internal static void ListStates(ListBox list)
+        {
+            void State(Func<Selector, Selector> state, IBrush background, IBrush foreground) =>
+                list.Styles.Add(new Style(x => state(x.OfType<ListBoxItem>()).Template().OfType<ContentPresenter>().Name("PART_ContentPresenter"))
+                {
+                    Setters =
+                    {
+                        new Setter(ContentPresenter.BackgroundProperty, background),
+                        new Setter(ContentPresenter.ForegroundProperty, foreground),
+                    },
+                });
+            State(x => x, Brushes.Transparent, Brushes.Black);
+            State(x => x.Class(":pointerover"), ItemHover, Brushes.Black);
+            State(x => x.Class(":pressed"), ItemPressed, Brushes.Black);
+            State(x => x.Class(":selected"), ItemSelected, Brushes.White);
+            State(x => x.Class(":selected").Class(":focus"), ItemSelected, Brushes.White);
+            State(x => x.Class(":selected").Class(":pointerover"), ItemSelectedHover, Brushes.White);
+            State(x => x.Class(":selected").Class(":pressed"), ItemSelectedHover, Brushes.White);
+        }
 
         /// <summary>The n-th pattern's key: 0–9, then a–z, then A–Z (TrackHeaderControl.UpdatePatternList).</summary>
         static char KeyOf(int i) => i < 10 ? (char)('0' + i) : i < 36 ? (char)('a' + i - 10) : (char)('A' + i - 36);
@@ -367,13 +400,55 @@ namespace ReBuzz.Studio.Views.Sequence
             else state.Set(p, index);
         }
 
-        /// <summary>Set Time Signature... (Ctrl+T): the bar length from the cursor on, asked for (StepEditWindow).</summary>
+        /// <summary>
+        /// Set Time Signature... (Ctrl+T): the bar length from the cursor on, asked for (StepEditWindow)
+        /// as a time signature ("3/4", "7/8") or in ticks ("12"), checked as it is typed: "4/4" was
+        /// silently ignored (gallery mac-336).
+        /// </summary>
         public async Task AskTimeSignature()
         {
             int time = Canvas.CursorTime;
-            string answer = await Dialogs.AskText("Bar length (ticks)", Canvas.CursorSpan.ToString());
-            if (int.TryParse(answer, out int step) && step > 0 && step <= 1024) Canvas.Edits.SetTimeSignature(time, step);
+            int tpb = Math.Max(1, core.TPB);
+            string answer = await Dialogs.AskText("Set Time Signature", TimeSignatureText(Canvas.CursorSpan, tpb),
+                $"The bar's length from the cursor on: beats/note (4/4, 3/4, 7/8) or in ticks ({tpb} ticks a beat).",
+                text => ParseBarLength(text, tpb, out _));
+            if (answer != null && ParseBarLength(answer, tpb, out int step) == null) Canvas.Edits.SetTimeSignature(time, step);
             Canvas.Focus();
+        }
+
+        /// <summary>A bar length as a time signature where it is one (16 ticks at 4 a beat: "4/4"), else in ticks.</summary>
+        internal static string TimeSignatureText(int ticks, int tpb) =>
+            ticks % tpb == 0 ? $"{ticks / tpb}/4" : ticks * 2 % tpb == 0 ? $"{ticks * 2 / tpb}/8" : ticks.ToString();
+
+        /// <summary>
+        /// A bar length typed as beats/note ("3/4": three quarter notes; "7/8") or in ticks ("12"), at
+        /// <paramref name="tpb"/> ticks per beat (a quarter note). Null when it is one (in
+        /// <paramref name="ticks"/>), else what's wrong with it, to show under the box.
+        /// </summary>
+        internal static string ParseBarLength(string text, int tpb, out int ticks)
+        {
+            ticks = 0;
+            text = text?.Trim() ?? "";
+            var number = System.Globalization.NumberStyles.None;
+            var invariant = System.Globalization.CultureInfo.InvariantCulture;
+            if (text.Length == 0) return "Type a time signature (4/4) or the bar's length in ticks.";
+            int slash = text.IndexOf('/');
+            if (slash < 0)
+            {
+                if (!int.TryParse(text, number, invariant, out ticks)) return $"\"{text}\" isn't a time signature (4/4) or a number of ticks.";
+            }
+            else
+            {
+                if (!int.TryParse(text[..slash].Trim(), number, invariant, out int beats) || !int.TryParse(text[(slash + 1)..].Trim(), number, invariant, out int note))
+                    return $"\"{text}\" isn't a time signature: beats/note, as 4/4 or 7/8.";
+                if (beats < 1) return "A bar has 1 beat or more (the number before the /).";
+                if (note is not (1 or 2 or 4 or 8 or 16 or 32)) return "The note (after the /) is 1, 2, 4, 8, 16 or 32.";
+                long length = (long)beats * tpb * 4;
+                if (length % note != 0) return $"{beats}/{note} isn't a whole number of ticks at {tpb} ticks a beat: give the length in ticks, or raise ticks per beat.";
+                ticks = (int)Math.Min(int.MaxValue, length / note);
+            }
+            if (ticks < 1 || ticks > 1024) return "A bar is 1 to 1024 ticks long.";
+            return null;
         }
 
         void RenameMachine()

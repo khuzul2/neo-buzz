@@ -510,6 +510,12 @@ namespace ReBuzz.Core.Session
 
         public IPattern GetQueued(ISequence track) => track is SequenceCore seq ? scheduler.GetQueued(seq) : null;
 
+        /// <summary>The slot (scene row) the playing clip was launched from, or -1 when none or not known.</summary>
+        public int GetPlayingSlot(ISequence track) => track is SequenceCore seq ? scheduler.GetPlayingSlot(seq) : -1;
+
+        /// <summary>The slot (scene row) the waiting launch comes from, or -1 when none or not known.</summary>
+        public int GetQueuedSlot(ISequence track) => track is SequenceCore seq ? scheduler.GetQueuedSlot(seq) : -1;
+
         public ClipState GetState(ISequence track, IPattern clip) =>
             track is SequenceCore seq && clip is PatternCore pat ? (ClipState)scheduler.GetState(seq, pat) : ClipState.Stopped;
 

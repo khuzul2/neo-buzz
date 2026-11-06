@@ -19,7 +19,8 @@ namespace ReBuzz.Studio.Platform
         {
             if (NonModal.TryCapture(message, caption)) return;
             log($"{caption}: {message}" + (exception != null ? $" ({exception.GetType().Name}: {exception.Message})" : ""));
-            _ = Dialogs.Info(message, caption);
+            if (exception != null) _ = Dialogs.Error(message, caption, ErrorDetails.Of(exception));     // the exception under Details
+            else _ = Dialogs.Info(message, caption);
         }
 
         public void Info(string message, string caption)

@@ -160,6 +160,187 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void OnlyTheSlotAClipPlaysFromLightsUp()
+        {
+            // Gallery mac-042: one pattern in three scenes of a track. A track plays one clip at a
+            // time, so only the slot it was launched from may show it playing.
+            using var rig = new Rig();
+            var chords = rig.Pattern(rig.Lead, "Chords", Bar);
+            var layout = rig.Core.SessionLayout;
+            layout.Ensure();
+            for (int s = 0; s < 3; s++) layout.SetSlot(2, s, chords);
+
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            layout.LaunchScene(2);
+            rig.RunTicks(6);
+            view.RefreshState();
+            Screenshot(view, "session-view-one-slot-plays");
+
+            Assert.That(layout.SlotState(2, 2), Is.EqualTo(ClipState.Playing));
+            Assert.That(layout.SlotState(2, 0), Is.EqualTo(ClipState.Stopped));
+            Assert.That(layout.SlotState(2, 1), Is.EqualTo(ClipState.Stopped));
+            Assert.That(view.SlotAt(2, 2).Background, Is.SameAs(SessionPalette.Playing), "the slot launched plays");
+            Assert.That(view.SlotAt(2, 0).Background, Is.Not.SameAs(SessionPalette.Playing), "the same pattern in another scene stays unlit");
+            Assert.That(view.SlotAt(2, 1).Background, Is.Not.SameAs(SessionPalette.Playing));
+
+            // The same pattern launched from scene 1: it waits there, scene 3's plays on until the bar line.
+            layout.LaunchClip(layout.SequenceOf(2)!, chords, slot: 0);
+            Assert.That(layout.SlotState(2, 0), Is.EqualTo(ClipState.Queued));
+            Assert.That(layout.SlotState(2, 2), Is.EqualTo(ClipState.Playing));
+            rig.RunTicks(Bar);
+            Assert.That(layout.SlotState(2, 0), Is.EqualTo(ClipState.Playing));
+            Assert.That(layout.SlotState(2, 2), Is.EqualTo(ClipState.Stopped));
+        }
+
+        static Rect BoundsIn(FrameworkElement element, FrameworkElement view) =>
+            new Rect(element.TranslatePoint(new Point(0, 0), view), new Size(element.ActualWidth, element.ActualHeight));
+
+        [Test]
+        public void TheClipPanelIsFullHeightAndHidingTheMixerGivesTheGridMoreRows()
+        {
+            // Gallery win-850, win-853: the clip panel stopped at the mixer's top edge; mac-044: a
+            // hidden mixer left empty space under the grid.
+            using var rig = new Rig();
+            rig.Pattern(rig.Drums, "Beat", Bar);
+            rig.Pattern(rig.Bass, "Line", Bar);
+            var layout = rig.Core.SessionLayout;
+            layout.Ensure();
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            Screenshot(view, "session-view-layout-mixer", 1100, 700);
+            var panel = view.ClipPanelView;
+            Assert.That(BoundsIn(panel, view).Bottom, Is.EqualTo(700).Within(1), "the clip panel runs down to the bottom, beside the mixer");
+            int withMixer = view.SpareRows;
+            double stops = BoundsIn(view.StopAllCell, view).Top;
+
+            layout.SetShowMixer(false);
+            view.Rebuild();
+            Screenshot(view, "session-view-layout-no-mixer", 1100, 700);
+            Assert.That(view.SpareRows, Is.GreaterThan(withMixer + 4), "the mixer's room is more (empty) rows");
+            Assert.That(BoundsIn(view.StopAllCell, view).Top, Is.GreaterThan(stops + 100), "the stop buttons stay at the grid's bottom");
+            Assert.That(BoundsIn(view.StopAllCell, view).Bottom, Is.LessThanOrEqualTo(700));
+
+            // A spare row used: the scenes down to it, and a clip there.
+            int scenes = layout.SceneCount;
+            view.UseSpareRow(1, scenes + 1);
+            Assert.That(layout.SceneCount, Is.EqualTo(scenes + 2));
+            Assert.That(layout.PatternAt(1, scenes + 1), Is.Not.Null);
+            layout.SetShowMixer(true);
+        }
+
+        [Test]
+        public void InANarrowViewTheSceneColumnStaysAtTheRightEdge()
+        {
+            // Gallery win-703: in the Session window (960×520) the scene column scrolled off to the right.
+            using var rig = new Rig();
+            rig.Pattern(rig.Drums, "Beat", Bar);
+            rig.Pattern(rig.Bass, "Line", Bar);
+            rig.Pattern(rig.Lead, "Hook", Bar);
+            var layout = rig.Core.SessionLayout;
+            layout.Ensure();
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            Screenshot(view, "session-view-narrow", 640, 480);
+            Assert.That(view.ScenesFrozen, Is.True, "three tracks, the scenes and the clip panel don't fit in 640");
+            var scene = BoundsIn(view.Scenes[0], view);
+            var panel = BoundsIn(view.ClipPanelView, view);
+            Assert.That(scene.Right, Is.LessThanOrEqualTo(panel.Left + 1), "the scene column is in view, left of the clip panel");
+            Assert.That(scene.Left, Is.GreaterThan(0));
+
+            view.GridScroll.ScrollToHorizontalOffset(200);
+            Screenshot(view, "session-view-narrow-scrolled", 640, 480);
+            Assert.That(BoundsIn(view.Scenes[0], view).Left, Is.EqualTo(scene.Left).Within(1), "the tracks scroll under it");
+
+            Screenshot(view, "session-view-wide", 1400, 480);
+            Assert.That(view.ScenesFrozen, Is.False);
+            Assert.That(BoundsIn(view.Headers[0], view).Left, Is.EqualTo(6).Within(1), "nothing scrolled sideways: every track in view");
+            // Right after the last track (and the grid's vertical scroll bar, which takes room in WPF when the rows overflow).
+            Assert.That(BoundsIn(view.Scenes[0], view).Left, Is.EqualTo(BoundsIn(view.Headers.Last(), view).Right).Within(SystemParameters.VerticalScrollBarWidth + 3), "wide enough: right after the last track");
+        }
+
+        [Test]
+        public void TheTopBarWrapsLabelsWithTheirBoxes()
+        {
+            // Gallery win-850: a narrow view wrapped "Launch" onto one row and its box onto the next.
+            using var rig = new Rig();
+            rig.Core.SessionLayout.Ensure();
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            FrameworkElement LabelOf(FrameworkElement box) =>
+                ((System.Windows.Controls.Panel)VisualTreeHelper.GetParent(box)).Children.OfType<System.Windows.Controls.TextBlock>().Single();
+            for (int width = 420; width <= 1300; width += 20)
+            {
+                view.Measure(new Size(width, 500));
+                view.Arrange(new Rect(0, 0, width, 500));
+                view.UpdateLayout();
+                foreach (var box in new FrameworkElement[] { view.QuantizeBox, view.BeatsBox })
+                {
+                    var label = LabelOf(box);
+                    double labelY = BoundsIn(label, view).Top + label.ActualHeight / 2, boxY = BoundsIn(box, view).Top + box.ActualHeight / 2;
+                    Assert.That(labelY, Is.EqualTo(boxY).Within(4), $"at {width} px, \"{((System.Windows.Controls.TextBlock)label).Text}\" is on its box's row");
+                }
+            }
+        }
+
+        [Test]
+        public void TheClipPanelStatusWrapsInsteadOfBeingCut()
+        {
+            // Gallery mac-046: "▶ playing 21/1024 ● recording" ran past the panel's edge.
+            using var rig = new Rig();
+            rig.Pattern(rig.Drums, "Beat", Bar);
+            rig.Core.SessionLayout.Ensure();
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            view.Select(0, 0);
+            var status = view.ClipPanelView.StatusBlock;
+            status.Text = "▶ playing  21/1024  follow in 12  ● recording";
+            Screenshot(view, "session-view-status-wraps", 1100, 640);
+            Assert.That(BoundsIn(status, view.ClipPanelView).Right, Is.LessThanOrEqualTo(SessionView.ClipPanel.PanelWidth));
+            Assert.That(status.ActualHeight, Is.GreaterThan(status.FontSize * 2), "on two lines");
+        }
+
+        [Test]
+        public void TheTrackMenuHasRenameArmStopAndRemoveAndPlusTrackLeavesOutReturns()
+        {
+            // Gallery mac-224: the header menu had colour, mute and solo only; mac-227: + Track offered a return.
+            using var rig = new Rig();
+            var beat = rig.Pattern(rig.Drums, "Beat", Bar);
+            var song = rig.Core.SongCore;
+            song.RemoveSequence(song.SequencesList.Single(s => s.Machine == rig.Lead));      // Lead could get a track…
+            var layout = rig.Core.SessionLayout;
+            layout.Ensure();
+            Assert.That(layout.MachinesWithoutTrack().Select(m => m.Name), Is.EqualTo(new[] { "Lead" }));
+            layout.AddReturn(rig.Lead);                                                      // …until it is a return
+            Assert.That(layout.MachinesWithoutTrack(), Is.Empty, "a return isn't offered for a track");
+
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            var menu = view.TrackMenu(view.Headers[0]);
+            System.Windows.Controls.MenuItem Item(string header) =>
+                menu.Items.OfType<System.Windows.Controls.MenuItem>().Single(i => (string)i.Header == header);
+            Assert.That(menu.Items.OfType<System.Windows.Controls.MenuItem>().Select(i => i.Header as string).Where(h => h != null),
+                Is.SupersetOf(new[] { "Rename…", "Arm", "Stop clips", "Mute", "Solo", "Remove track" }));
+
+            Item("Arm").Command.Execute(null);
+            Assert.That(layout.IsArmed(0), Is.True);
+            Item("Arm").Command.Execute(null);
+
+            layout.LaunchClip(layout.SequenceOf(0)!, beat, slot: 0);
+            rig.RunTicks(Bar + 2);
+            Assert.That(rig.Core.Session.GetPlaying(layout.SequenceOf(0)!), Is.SameAs(beat));
+            view.TrackMenu(view.Headers[0]).Items.OfType<System.Windows.Controls.MenuItem>().Single(i => (string)i.Header == "Stop clips").Command.Execute(null);
+            rig.RunTicks(Bar + 2);
+            Assert.That(rig.Core.Session.GetPlaying(layout.SequenceOf(0)!), Is.Null, "Stop clips stopped the track");
+
+            view.TrackMenu(view.Headers[1]).Items.OfType<System.Windows.Controls.MenuItem>().Single(i => (string)i.Header == "Remove track").Command.Execute(null);
+            Assert.That(layout.Document!.Tracks.Select(t => t.Machine), Is.EqualTo(new[] { "Drums" }));
+            Assert.That(song.MachinesList.Any(m => m.Name == "Bass"), Is.True, "the machine stays");
+            song.ActionStack.Undo();
+            Assert.That(layout.Document!.Tracks.Select(t => t.Machine), Is.EquivalentTo(new[] { "Drums", "Bass" }), "undo brings the track back");
+        }
+
+        [Test]
         public void NewSongDropsTheLayout()
         {
             using var rig = new Rig();

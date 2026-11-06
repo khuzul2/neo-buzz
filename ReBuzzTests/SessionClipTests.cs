@@ -562,6 +562,29 @@ namespace ReBuzzTests
         // ------------------------------------------------------------------ clip panel
 
         [Test]
+        public void TheLoopEndBoxShowsTheEndTheClipLoopsAt()
+        {
+            // Gallery win-853: the Loop end box was empty while the text below said where it loops.
+            using var rig = new ClipRig(1);
+            var hook = rig.Pattern(rig.Machines[0], "Hook", 2 * Bar);
+            var layout = rig.Layout;
+            layout.Ensure();
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            view.Select(0, 0);
+            var panel = view.ClipPanelView;
+            Assert.That(panel.Pattern, Is.SameAs(hook));
+            Assert.That(panel.RegionText, Does.Contain("loops 0–32 of 32"));
+            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("32"), "the box says what the text says");
+
+            panel.LoopStartBox.Text = "8";
+            panel.CommitTypedMarkers();
+            Assert.That((layout.ClipOf(hook).LoopStart, layout.ClipOf(hook).LoopEnd), Is.EqualTo((8, 0)), "the end as shown stays the clip's own");
+            view.Rebuild();
+            Assert.That(panel.LoopEndBox.Text, Is.EqualTo("32"));
+        }
+
+        [Test]
         public void ClipPanelEditsTheSelectedClip()
         {
             using var rig = new ClipRig(3);
