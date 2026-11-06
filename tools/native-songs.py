@@ -54,7 +54,13 @@ SETTINGS = (("quarter", 0.25), ("three-quarters", 0.75))
 FORMATS = (".bmx", ".bmxml")
 CLASSIC_BEATS = 16
 JUDGED = ("rebuilt",)          # roles whose sound is judged; "fixed" and "candidate" are reported
+SILENT_DBFS = -140.0           # a probe that never comes above this proves nothing by being the same
 DLL_MACHINE = {0x14C: "x86", 0x8664: "x64"}
+
+
+def pk(x):
+    """A peak in dBFS as text."""
+    return "-" if x is None else "-inf" if x == float("-inf") else f"{x:.1f}"
 
 
 def gear_key(name):
@@ -222,6 +228,7 @@ def read_song(c, path, names, beats, label, resave):
         if e is not None and "error" not in e:
             e["wav"] = files.get(name)
             e["status"] = "diverged" if name in diverged else "ok"
+            e["peak_dbfs"] = nc.peak_db(e["wav"]) if e["wav"] else None
     try:
         os.remove(r["file"])
     except (OSError, KeyError, TypeError):
@@ -271,9 +278,10 @@ def fed_by(graph, name, roles):
 
 # ---- the verdicts -------------------------------------------------------------------------------------------------------
 
-def judge(entry, a, b, sound, classic_feeders=()):
+def judge(entry, a, b, sound, classic_feeders=(), must_sound=True):
     """One machine in one song: (failures, notes). a, b: read_song's entry of it in phase A and B; sound: the probes'
-    [the same bits, max difference dBFS, first differing s] or None. Failures fail the run only for a judged role."""
+    [the same bits, max difference dBFS, first differing s] or None. Failures fail the run only for a judged role.
+    must_sound: the song plays the machine (the songs built here), so a silent probe is a failure, not a match."""
     fails, notes = [], []
     up_file = entry["folder"] + "/" + entry["upstream"][1]
     our_file = entry["folder"] + "/" + entry["ours"][1]
@@ -286,9 +294,20 @@ def judge(entry, a, b, sound, classic_feeders=()):
         if e.get("file") != want:
             fails.append(f"phase {ph} loaded {e.get('file')}, not {want}")
         if e.get("status") not in (None, "ok"):
-            fails.append(f"phase {ph}: {e.get('status')}")
+            if ph == "A" and entry["role"] == "fixed":     # upstream's binary from heap garbage: WahPro2's has blown up so
+                notes.append(f"phase A: {e.get('status')} (upstream's binary from its heap's start: reported)")
+            else:
+                fails.append(f"phase {ph}: {e.get('status')}")
     if fails:
         return fails, notes
+    for ph, e in (("A", a), ("B", b)):
+        peak = e.get("peak_dbfs")
+        if peak is not None and peak < SILENT_DBFS:
+            text = f"silent in phase {ph} (peak {pk(peak)} dBFS): nothing to compare"
+            if must_sound and not (entry["role"] == "fixed" and ph == "A"):
+                fails.append(text)
+            else:
+                notes.append(text)
     if a.get("params") != b.get("params"):
         diff = [k for k in sorted(set(a["params"]) | set(b["params"])) if a["params"].get(k) != b["params"].get(k)]
         fails.append("parameters differ: " + ", ".join(f"{k} {a['params'].get(k)} -> {b['params'].get(k)}" for k in diff[:8]))
@@ -419,6 +438,15 @@ def main(argv):
                         build_song(c, entries, gear_root, frac)
                         for ext in FORMATS:
                             c.call("song_save", path=os.path.join(work, "saved", "natives-" + name + ext), overwrite=True)
+                # A native machine's host can start silent in a process's first render (ReBuzz/Agent/MachineReplace.cs; run
+                # 42181254466's first song was the same bits in both phases where it can't have been): the first song, opened
+                # and rendered once before anything is measured.
+                c.call("song_open", path=songs[0][1], discard_unsaved=True)
+                warm = c.call("render", **{"from": 0, "to": 1, "tail_seconds": 0, "name": f"{phase}-warm-up"})
+                try:
+                    os.remove(warm["file"])
+                except (OSError, KeyError, TypeError):
+                    pass
                 for label, path, names, beats in songs:
                     t = time.time()
                     try:
@@ -463,8 +491,10 @@ def main(argv):
                 same, worst, _, first = nc.diff(a["wav"], b["wav"])
                 sound = [same, worst, first]
             feeders = fed_by(a_song.get("graph") or {}, name, {n for n, r in song_roles.items() if r not in JUDGED}) if classic else []
-            fails, notes = judge(entry, a, b, sound, feeders)
-            verdict = "; ".join(fails) if fails else ("the same parameters, the same bits" if sound and sound[0] else "the same parameters; " + "; ".join(notes))
+            fails, notes = judge(entry, a, b, sound, feeders, must_sound=not classic)
+            peak = f" (peak {pk((a or {}).get('peak_dbfs'))} dBFS)"
+            verdict = "; ".join(fails) if fails else ("the same parameters, the same bits" + peak if sound and sound[0] and not notes
+                                                      else "the same parameters; " + "; ".join(notes) + peak)
             rows.append((label, f"{gear} ({name})", entry["role"], verdict))
             results.setdefault(gear, []).append({"song": label, "role": entry["role"], "failures": fails, "notes": notes,
                                                  "sound": sound, "file_a": (a or {}).get("file"), "file_b": (b or {}).get("file")})

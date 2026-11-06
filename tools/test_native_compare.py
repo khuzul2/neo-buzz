@@ -196,6 +196,15 @@ class NativeSongsTests(unittest.TestCase):
         self.assertEqual(fails, [])
         self.assertIn("fed by N2", notes[0])
 
+    def test_silence_proves_nothing(self):
+        # run 42181254466: a process's first render left the natives silent in both phases, the same bits
+        silent = dict(self.read("Effects/Jeskola Distortion.x64.dll"), peak_dbfs=float("-inf"))
+        self.assertEqual(self.judge(b=silent)[0], ["silent in phase B (peak -inf dBFS): nothing to compare"])
+        e = dict(self.E)
+        fails, notes = ns.judge(e, self.read("Effects/Jeskola Distortion.dll"), silent, [True, float("-inf"), None], (), must_sound=False)
+        self.assertEqual(fails, [])
+        self.assertIn("silent in phase B", notes[0])
+
     def test_a_parameter_that_moved_fails(self):
         fails, _ = self.judge(b=self.read("Effects/Jeskola Distortion.x64.dll", {"Threshold@-": 100, "Amount@-": 95}))
         self.assertEqual(fails, ["parameters differ: Amount@- 96 -> 95"])
@@ -207,6 +216,10 @@ class NativeSongsTests(unittest.TestCase):
 
     def test_a_diverged_or_missing_machine_fails(self):
         self.assertEqual(self.judge(b=self.read("Effects/Jeskola Distortion.x64.dll", status="diverged"))[0], ["phase B: diverged"])
+        # upstream's binary of a machine with a source fix may blow up from its heap's start (WahPro2's has): reported
+        fails, notes = self.judge(a=self.read("Effects/Jeskola Distortion.dll", status="diverged"), role="fixed")
+        self.assertEqual(fails, [])
+        self.assertIn("phase A: diverged", notes[0])
         self.assertEqual(self.judge(b={"error": "not in the song"})[0], ["phase B: not in the song"])
 
     def test_the_swap_puts_one_machine_in_and_takes_it_out_again(self):
