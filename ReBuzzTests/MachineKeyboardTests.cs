@@ -98,7 +98,7 @@ namespace ReBuzzTests
             var tail = x.Skip(x.Length / 3).ToArray();
             var track = Yin.Track(tail, rate);
             double rms = Math.Sqrt(tail.Sum(v => v * (double)v) / Math.Max(1, tail.Length));
-            TestContext.Out.WriteLine($"{wav}: MIDI {track.MedianMidi:0.00} ({track.MedianHz:0.0} Hz), voiced {track.VoicedShare:P0}, {20 * Math.Log10(Math.Max(1e-12, rms)):0.0} dBFS");
+            TestContext.Out.WriteLine($"[notice] {wav}: MIDI {track.MedianMidi:0.00} ({track.MedianHz:0.0} Hz), voiced {track.VoicedShare:P0}, {20 * Math.Log10(Math.Max(1e-12, rms)):0.0} dBFS");
             Assert.That(track.VoicedShare, Is.GreaterThan(0.5), $"{wav}: a pitch is heard");
             return track.MedianMidi;
         }
@@ -119,6 +119,8 @@ namespace ReBuzzTests
             Assert.That(r["held_after_release"]!.GetValue<int>(), Is.EqualTo(0));
             Assert.That(r["monitor_after_release"]!.GetValue<string>(), Is.Empty, "the machine got the note-off");
             Assert.That(r["quiet_db_after_release"]!.GetValue<double>(), Is.LessThan(-60), "the note ends");
+            TestContext.Out.WriteLine($"[notice] Neo Poly in its window: velocities {r["velocity_top"]} (top) and {r["velocity_bottom"]} (bottom), " +
+                                      $"{r["quiet_db_after_release"]} dBFS after the release, {r["octaves"]} octaves from {r["first"]}, keyboard {r["extra_height"]} px");
             Assert.That(r["velocity_top"]!.GetValue<int>(), Is.LessThan(25), "struck at the top: soft");
             Assert.That(r["velocity_bottom"]!.GetValue<int>(), Is.GreaterThan(115), "at the bottom: loud");
             Assert.That(r["glide_held"]!.GetValue<string>(), Is.EqualTo("64"), "a glide plays one note, the key under the pointer");
@@ -223,7 +225,7 @@ namespace ReBuzzTests
                     for (int i = 0; i < n; i++) audio[at + i] = reader.Buffer[2 * i];
                 }
                 var track = Yin.Track(audio.Skip(audio.Length / 3).ToArray(), rate);
-                TestContext.Out.WriteLine($"Neo Poly: A4 pressed, heard MIDI {track.MedianMidi:0.00} ({track.MedianHz:0.0} Hz)");
+                TestContext.Out.WriteLine($"[notice] Neo Poly (in process): A4 pressed, heard MIDI {track.MedianMidi:0.00} ({track.MedianHz:0.0} Hz)");
                 Assert.That(track.MedianMidi, Is.EqualTo(69).Within(0.15), "A4 (440 Hz)");
                 SessionViewTests.Screenshot(frame, "keyboard-wpf-frame", 640, (int)Math.Ceiling(height));
                 kb.Keys.Up();
