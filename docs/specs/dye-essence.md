@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v0.1 — P0 (the G0 gate) in progress on `machines/dye-essence-p0` |
+| Status | Draft v0.2 — P0 (the G0 gate) built on `machines/dye-essence-p0`: measured, recommendation go (§5.3) |
 | Date | 2026-11-06 |
 | Scope | A hybrid wavetable and multi-engine synth machine of the class of today's flagship software synths, built as a Neo-family machine: managed C#, the same bits on every platform, no allocation on the audio thread, every sound parameter a Buzz parameter in real units, one editor source for WPF and Avalonia |
 | Design basis | The feasibility analysis of 2026-11-06 (feature inventories, build plan, CPU budget model, architecture, parameter model, IP limits); this spec carries its decisions forward and records what was built and measured |
@@ -80,29 +80,62 @@ Files: `Machines/DyeEssence/` (the machine, its editor, `Params.def`, `Presets.t
 
 ### 5.1 Renderer
 
-| Criterion | Target | Measured |
-|---|---|---|
-| CPU, 16 notes × 3 osc × 8 unison + ladder and SVF per note, stereo, 2× | ≥ 2× real time on one core of the CI x64 runner and of the Mac arm64 runner | (CI) |
-| CPU, the same with 16 unison | reported | (CI) |
-| Same bits | the three lane implementations: every sample the same, 6 settings (unison 1, 3, 5, 8, 16; 1× and 2×; serial, parallel, half; LP12, band-pass, high-pass, notch; drive; on a frame; bypassed) | (CI) |
-| Same on every platform | one render's checksum pinned, the same on Linux x64 and macOS arm64 | (CI) |
-| Alias floor, saw, unison 1 | ≤ −80 dB (Neo Wave's target), 2× and 1× | (CI) |
-| Bandwidth at 2× | the harmonic nearest 18 kHz within 1.5 dB of a saw's, 110 Hz – 3.5 kHz | (CI) |
-| Pitch | a lane, and two detuned lanes, within 0.05 cent | (CI) |
-| Blocks | 256, 117 and 16, notes starting mid-tick: the same samples | (CI) |
-| Audio thread | 2000 blocks, notes, unison and positions moving: 0 bytes | (CI) |
+Measured on the CI runners: Linux x64 (Fork CI, GitHub's `ubuntu-latest`, AVX2) and macOS arm64 (Fork Mac, `macos-15`), runs 42206819392 and 42206823024. "× real time" is wall clock on one core; the CPU-time figure beside it agreed within 2 % on both runners.
+
+| Criterion | Target | x64 (AVX2) | arm64 (2 × Vector128) |
+|---|---|---|---|
+| CPU, 16 notes × 3 osc × 8 unison + ladder and SVF per note, stereo, 2× | ≥ 2× real time | **11.2×** (8.9 % of a core) | **9.7×** (10.4 %) |
+| CPU, the same with 16 unison | reported | **7.0×** | **5.9×** |
+| CPU, 8 unison at 1× | reported | 20.1× | 18.3× |
+| CPU, 1 voice per oscillator (a group of eight lanes, seven idle) | reported | 12.4× | 8.6× |
+| CPU, without the oscillators (filters, envelopes, control, decimation) | reported | 28.8× (3.5 %) | 26.2× (3.8 %) |
+| CPU, 8 unison, the Vector128 path on x64 (a CPU without AVX2) | reported | 8.9× | — |
+| Same bits | the three lane implementations, every sample, 6 settings (unison 1, 3, 5, 8, 16; 1× and 2×; serial, parallel, half; LP12, band-pass, high-pass, notch; drive; on a frame; bypassed) | scalar = Pair = AVX2 | scalar = Pair |
+| Same on every platform | one render's checksum pinned, the same on both runners | `6B53E8A804EE8673` | `6B53E8A804EE8673` |
+| Alias floor, saw, unison 1 | ≤ −80 dB, 2× and 1× | 2×: −92.2 … −98.6 dB (55 Hz – 1.9 kHz); 1×: −93.0, −101.0 dB | the same (same bits) |
+| Bandwidth at 2× | the harmonic nearest 18 kHz within 1.5 dB of a saw's, 110 Hz – 3.5 kHz | within 1.4 dB (−44.5 for −44.2 at 110 Hz … −18.6 for −20.0 at 1.76 kHz) | the same |
+| Bandwidth at 1× | reported | the top octave is gone: at 440 Hz and 1.76 kHz nothing above 14 kHz (the level that keeps every harmonic under Nyquist halves them) | the same |
+| Pitch | a lane, and two detuned lanes, within 0.05 cent | −0.009, −0.009, +0.008 cent | the same |
+| Blocks | 256, 117 and 16, notes starting mid-tick: the same samples | identical | identical |
+| Audio thread | 2000 blocks, notes, unison and positions moving: 0 bytes | 0 bytes (AVX2 and Pair) | 0 bytes |
+| Memory | reported | a 256-frame table 19.7 MB (11 mip levels) | |
+
+The analysis estimated 25–55 % of a core for the 8-unison case with SIMD; the renderer takes 9–10 %. What remains of the fixed cost (3.5–3.8 %) is mostly the per-sample sums across lanes and the envelopes stepped sample by sample at each tick (§6, P1a).
 
 ### 5.2 ReBuzz with ~700 parameters and large state
 
-A test machine, **Dye Stress** (`ReBuzz.Studio.Tests/TestMachines/DyeStress/`, not shipped), has a parameter table of about 700 parameters shaped as Dye Essence's will be (option A: three slots of about 90, the filters, envelopes, LFOs, macros, route amounts, FX slots), generated from its `Params.def` by `tools/gen-machine-params.py`, 16 tracks of Note and Velocity, and a machine state of several megabytes (three 256-frame tables as base64, the routes as text). Measured in the studio (Linux CI and the Mac runner) and in ReBuzzTests (Windows, package run): loading, the parameter window, the pattern editor with every column, a pattern playing every column, `.bmx` and `.bmxml` round trips, MIDI learn on every parameter, a preset with its data, the manifest and `machine_describe`.
+**Dye Stress** (`ReBuzz.Studio.Tests/TestMachines/DyeStress/`, not shipped): 704 parameters shaped as Dye Essence's table will be (option A: three slots of 99, utility, two filters, amp, four envelopes, ten LFOs, functions, randoms and combinators, eight macros, 64 route amounts, ten FX slots of ten, arpeggiator, MPE and tuning), its `Params.def` written by `make-params.py` and its code and manifest by `tools/gen-machine-params.py`; 16 tracks of Note and Velocity; a machine state of 8.4 MB (three 256-frame tables as base64 floats, as Neo Wave keeps a user table, and 64 routes as text). Measured in the studio, headless (`DyeStressTests`), on both runners:
 
-| Criterion | Target | Measured |
-|---|---|---|
-| (to be filled) | | |
+Runs 42212607166 (Linux x64) and 42212610289 (macOS arm64), on 7f266231:
 
-### 5.3 Recommendation
+| Criterion | Target | Linux x64 | macOS arm64 |
+|---|---|---|---|
+| Loading | the machine loads with its 704 parameters and Note and Velocity; its manifest beside it | 10 ms; manifest 162 KB | 10 ms |
+| Parameter window | a row per parameter (704), the last one reachable and moving its parameter; opens in about a second at most | opens in 426 ms; a frame 1.0 ms | 288 ms; 0.9 ms |
+| Pattern editor | every column; a value typed into the last (column 704); a frame of the grid well under 100 ms (Neo Poly's test) | opens in 61 ms; a frame 3.3 ms at the first columns, 7.8 ms at the last (Neo Poly's 3.1 ms) | 30 ms; 3.2 ms, 16.1 ms (2.3 ms) |
+| A pattern playing every parameter | 704 automation columns reach the machine, all values; the cost of every parameter changing on every tick well under an audio buffer (5.3 ms at 256 samples) | all 704 values at tick 0 and tick 8; 1.03 ms a tick for 704 changes (1.5 µs a change) | all; 0.75 ms (1.1 µs) |
+| `.bmx` | values, the 8.4 MB state, 704 automation columns and 704 MIDI bindings come back | 8.5 MB; saved in 157 ms, opened in 145 ms; all back | 149 ms, 122 ms; all back |
+| `.bmxml` | the same | 12.4 MB; 175 ms, 281 ms; all back | 119 ms, 167 ms; all back |
+| MIDI learn | every parameter bound to a controller (six channels × 128), each controller moving its own | all 704; 8.5 µs a message among 704 bindings | 13.0 µs |
+| Preset with its data | the editor kit's Save (values and the machine's data), read and applied to a reset machine: every value and the state back | 11.2 MB of XML; made in 197 ms, applied in 186 ms | 135 ms, 323 ms |
+| Agents | `machine_describe` in real units; `param_set` in units on the last parameters (an enum by name, a bipolar amount in %) | all 704: 326 KB of JSON in 221 ms; one group (Slot 1) 45 KB; `param_set` exact | 251 ms; the same |
 
-(After the CI runs.)
+**Found and fixed in P0** (outside Dye Essence; each covered by the stress test):
+- **The studio's pattern editor drew every column of a set on every frame.** A machine's globals are one column set, so a frame laid out the text of all 704 columns: locally (a busy two-core machine) 1.25 s a frame against Neo Poly's 41 ms, 2.1 s to open. `PatternGrid.DrawBeat` and the column labels now take only the columns in view (`ModernPatternEditor/Avalonia/PatternGrid.cs`): locally 69–88 ms, on the runners 3–16 ms.
+- **`.bmx` lost MIDI bindings past the 256th state parameter.** Buzz's MIDI section stores the parameter index in a byte, so a binding of parameter 512 came back on parameter 0 (Neo Sampler, with 325 parameters, was already affected). A new `MID2` section holds every binding with a 16-bit track and index and is read instead when a file has it; Buzz's section keeps the bindings that fit, so Buzz and earlier versions read those as before (`ReBuzz/FileOps/BMXFile.cs`).
+
+**Found, not fixed** (for the lead to schedule):
+- **`machine_describe` without a group returns every parameter**: 326 KB of JSON at 704, far more than an agent should read at once. For agents, P1c makes a large machine's describe answer with its groups (names, counts) unless a group is asked for (one group is 45 KB), and the guide works page by page.
+- **The studio's parameter window builds every row up front** (a `StackPanel` of `ParameterRow`s): 0.3–0.4 s at 704 on the runners, seconds on a busy machine. Acceptable for the fallback view (Dye Essence's own editor is its main face); virtualising the rows would remove it.
+- **Not measured**: the WPF parameter window and the WPF pattern editor in NeoBuzz Live on Windows (they need the app's main window and theme files, which ReBuzzTests doesn't have). The WPF pattern editor caches a drawn beat per column set and culls only vertically, so its cost would show when a beat is redrawn (an edit), not on every frame.
+
+### 5.3 Recommendation: go, with these adjustments
+
+- **Go.** The renderer runs the gate's case at 11× real time on x64 and 10× on arm64 (target 2×), the same bits on both, and ReBuzz carries 704 parameters and 8 MB of state through songs, presets, patterns, MIDI learn and the agent, with the two fixes above.
+- **Unison budget: 16 per oscillator**, as the targets have: 16 notes × 3 × 16 runs at 7× and 6×.
+- **Quality modes**: **Standard 2×** (the default; the measured figures), **High 4×** for audio-rate FM/PM and the sync-type warps (P1a measures their alias floors at 2× and 4× and sets the mode per warp), and no 1× mode for users: at 1× the top octave of harmonics goes (nothing above 14 kHz at 440 Hz), which is not this machine's quality, and 2× is affordable.
+- **P1a optimisations, measured as they land**: lane sums across eight samples at once (a transpose instead of a horizontal sum per sample); envelopes in closed form per tick; unison stacks of 1–4 lanes in a 4-lane group, or lanes of several oscillators packed into one group.
+- **Before Dye Essence ships (P1c)**: the large-machine `machine_describe` (agent server); the WPF parameter window and pattern editor checked by hand in NeoBuzz Live with Dye Essence; optionally the studio's parameter window virtualised.
 
 ## 6. Phases
 
@@ -111,7 +144,7 @@ Each phase is its own branch (`machines/dye-essence-p0`, `-p1a`, …), green on 
 | Phase | Content | Exit |
 |---|---|---|
 | **P0** | The G0 gate: the SIMD unison renderer with per-note filters (§4, §5.1); the ReBuzz stress test (§5.2); this spec | The figures; a go / adjust recommendation (unison budget, quality modes) |
-| **P1a** | The machine shell and the core: note input and allocator v2 (on the NoteBank), engine slots behind `IEngine` with the Wavetable engine (Neo Wave's tables and import, dual warp, audio-rate FM/PM with a quality mode), sub and noise, mixer, the two filters (Neo Filter's design function and the first new models), amp; the parameter table (A + C), the manifest; a first editor page on both backends; presets in units; the measurement suite for what exists; null-test cases | A playable Dye Essence: one engine, measured |
+| **P1a** | The machine shell and the core: note input and allocator v2 (on the NoteBank: stealing with fades, mono/legato, glide), engine slots behind `IEngine` with the Wavetable engine (Neo Wave's tables and import, dual warp, audio-rate FM/PM; Standard 2× and High 4×, §5.3), sub and noise, mixer, the two filters (Neo Filter's design function, coefficient ramps against zipper, the first new models), amp; the renderer's optimisations of §5.3; the parameter table (A + C), the manifest; a first editor page on both backends; presets in units; the measurement suite for what exists; null-test cases | A playable Dye Essence: one engine, measured |
 | **P1b** | Envelopes with curves (DAHDSR, per-segment curves, tempo sync), LFOs (breakpoint shapes, tempo sync, retrig), macros, the modulation engine (routes in state, amounts as parameters, audio rate where flagged), the Analog engine (Neo Poly's oscillators) | Modulation measured (rates, curves, zipper) |
 | **P1c** | The effects rack shell linking Neo engines on Trio and Duo; editor v1 with pages on both backends (the piano keyboard from `ui/machine-keyboard`, the kit fixes from `fix/editor-kit-bugs`); agent support for routes and tables; at least 30 levelled presets; the full measurement suite | P1 complete |
 | **P2** | Sample, multisample (an SFZ subset) and granular engines | Each measured as a standalone engine too |
