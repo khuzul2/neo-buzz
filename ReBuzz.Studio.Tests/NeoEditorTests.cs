@@ -38,7 +38,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Drive", "NeoDriveEditor", "neo-drive-editor", 746, 322),
             ("Neo EQ", "NeoEqEditor", "neo-eq-editor", 822, 508),
             ("Neo Limiter", "NeoLimiterEditor", "neo-limiter-editor", 718, 292),
-            ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 675, 296),   // its switches as toggles, 92 px each (627 before)
+            ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 679, 296),   // its switches as toggles, 92 px each (627 before); M1's Matrix drop-down, 96 px, widens the column (675 before)
             ("Neo Verb", "NeoVerbEditor", "neo-verb-editor", 880, 332),
             ("Neo Analyzer", "NeoAnalyzerEditor", "neo-analyzer-editor", 1118, 398),
             ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 978, 338),

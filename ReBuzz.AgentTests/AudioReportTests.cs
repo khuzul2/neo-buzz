@@ -16,7 +16,7 @@ namespace ReBuzz.AgentTests
         [Test]
         public void MetricsListsEveryMeasure()
         {
-            Assert.That(AudioReport.Metrics, Is.EqualTo(new[] { "loudness", "peaks", "dynamics", "spectrum", "stereo", "pitch", "key", "tempo" }));
+            Assert.That(AudioReport.Metrics, Is.EqualTo(new[] { "loudness", "peaks", "dynamics", "spectrum", "stereo", "pitch", "key", "tempo", "microdynamics", "tonal", "platform" }));
             Assert.That(AudioReport.Basic, Is.EqualTo(new[] { "loudness", "peaks" }));
         }
 
