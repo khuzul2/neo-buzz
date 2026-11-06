@@ -245,7 +245,8 @@ namespace ReBuzz.Core
 
         internal IUiTimer dtEngineThread;
 
-        public int OutputChannels { get => AudioEngine.GetAudioProvider().AudioSampleProvider.OutputChannels; }
+        // Fork (docs/specs/ui-gallery.md): none without an audio device (it threw, and the Hard Disk Recorder with it).
+        public int OutputChannels { get => AudioEngine.GetAudioProvider()?.AudioSampleProvider.OutputChannels ?? 0; }
         public int InputChannels { get => AudioEngine.SelectedInDevice != null ? AudioEngine.SelectedInDevice.WaveFormat.Channels : 0; }
 
         int speed;
@@ -2123,7 +2124,7 @@ namespace ReBuzz.Core
         }
 
         int masterTapChannelCount = 2;
-        public int MasterTapChannelCount { get => masterTapChannelCount; set { masterTapChannelCount = Math.Max(2, Math.Min(AudioEngine.GetAudioProvider().AudioSampleProvider.MaxStereoChannelCount * 2, value)); PropertyChanged.Raise(this, "MasterTapChannelCount"); } }
+        public int MasterTapChannelCount { get => masterTapChannelCount; set { masterTapChannelCount = Math.Max(2, Math.Min((AudioEngine.GetAudioProvider()?.AudioSampleProvider.MaxStereoChannelCount ?? 1) * 2, value)); PropertyChanged.Raise(this, "MasterTapChannelCount"); } }
 
         internal MachineCore CloneMachine(MachineCore machineToClone, float x, float y)
         {

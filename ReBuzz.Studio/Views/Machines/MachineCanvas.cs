@@ -917,7 +917,7 @@ namespace ReBuzz.Studio.Views.Machines
             if (sel.Count > 0) MachineEdits.Delete(core, sel);
         }
 
-        /// <summary>Ctrl+M: mutes the selection, or unmutes it if the first is muted (MachineControl.MuteCommand).</summary>
+        /// <summary>Ctrl+M (M on a Mac): mutes the selection, or unmutes it if the first is muted (MachineControl.MuteCommand).</summary>
         public void ToggleMuteSelection()
         {
             var sel = SelectedNow();

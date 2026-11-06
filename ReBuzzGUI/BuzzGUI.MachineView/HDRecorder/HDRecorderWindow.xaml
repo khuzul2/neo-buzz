@@ -4,11 +4,15 @@
        Title="Hard Disk Recorder" Height="300" Width="500" WindowStyle="ToolWindow" ResizeMode="NoResize" ShowInTaskbar="False" SizeToContent="Height"
 				UseLayoutRounding="True" TextOptions.TextFormattingMode="{Binding TextFormattingMode}" Background="{DynamicResource MVChildWindowBackgroundBrush}"
 				Style="{DynamicResource ThemeWindowStyle}">
+	<Window.Resources>
+		<BooleanToVisibilityConverter x:Key="visibleIf"/>
+	</Window.Resources>
 	<Grid Margin="8">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+			<RowDefinition Height="Auto"/>
 			<RowDefinition Height="Auto"/>
 		</Grid.RowDefinitions>
 
@@ -46,14 +50,18 @@
         </StackPanel>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,8,0,0">
-			<Button Width="100" Height="22" Content="Record"  Command="{Binding RecordCommand}" IsEnabled="{Binding IsNotRecording}"/>
-			<Button Width="100" Height="22" Margin="4,0,0,0" Content="Record Loop" Command="{Binding RecordLoopCommand}" IsEnabled="{Binding IsNotRecording}"/>
-			<Button Width="100" Height="22" Margin="4,0,0,0" Content="Render Loop" Command="{Binding RenderLoopCommand}" IsEnabled="{Binding IsNotRecording}"/>
-			<Button Width="100" Height="22" Margin="4,0,0,0" Content="Render Loop 2" Command="{Binding RenderLoop2Command}" IsEnabled="{Binding IsNotRecording}" ToolTip="Play the loop twice and record the second time."/>
+			<Button Width="100" Height="22" Content="Record"  Command="{Binding RecordCommand}" IsEnabled="{Binding CanRecord}"/>
+			<Button Width="100" Height="22" Margin="4,0,0,0" Content="Record Loop" Command="{Binding RecordLoopCommand}" IsEnabled="{Binding CanRecord}"/>
+			<Button Width="100" Height="22" Margin="4,0,0,0" Content="Render Loop" Command="{Binding RenderLoopCommand}" IsEnabled="{Binding CanRecord}"/>
+			<Button Width="100" Height="22" Margin="4,0,0,0" Content="Render Loop 2" Command="{Binding RenderLoop2Command}" IsEnabled="{Binding CanRecord}" ToolTip="Play the loop twice and record the second time."/>
 			<Button Width="61.99" Height="22" Margin="4,0,0,0" Content="Stop" Command="{Binding StopCommand}" IsEnabled="{Binding IsRecording}"/>
 		</StackPanel>
 	
 		<ProgressBar Name="progress" Grid.Row="3" Height="22" Margin="0,8,0,0" IsEnabled="False"/>
+
+		<!-- Fork (docs/specs/ui-gallery.md): with no audio output there is nothing to record: says so. -->
+		<TextBlock Grid.Row="4" Margin="0,8,0,0" TextWrapping="Wrap" Text="{Binding NoOutputText, Mode=OneTime}"
+				   Visibility="{Binding NoOutput, Converter={StaticResource visibleIf}}"/>
 
 	</Grid>
 </Window>

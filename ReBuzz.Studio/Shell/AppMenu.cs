@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 
@@ -36,6 +37,9 @@ namespace ReBuzz.Studio.Shell
         public Func<IEnumerable<MenuEntry>> Items { get; init; }
 
         public bool IsSeparator { get; init; }
+
+        /// <summary>The macOS Services submenu (the system fills it).</summary>
+        public bool IsServices { get; init; }
 
         public static MenuEntry Separator => new MenuEntry { IsSeparator = true };
 
@@ -89,6 +93,11 @@ namespace ReBuzz.Studio.Shell
         {
             var menu = new NativeMenu();
             foreach (var entry in entries) menu.Items.Add(ToNativeItem(entry));
+            // Its items' enabled states as it opens (a submenu is built again then; the app menu is this menu itself).
+            menu.NeedsUpdate += (s, e) =>
+            {
+                foreach (var item in menu.Items.OfType<NativeMenuItem>()) (item.Command as Command)?.Refresh();
+            };
             return menu;
         }
 
@@ -99,6 +108,7 @@ namespace ReBuzz.Studio.Shell
             if (entry.Items != null)
             {
                 var sub = new NativeMenu();
+                if (entry.IsServices && ServicesProperty != null) sub.SetValue(ServicesProperty, true);
                 FillNative(sub, entry);
                 // macOS asks before it shows the menu: recent files and enabled states then.
                 sub.NeedsUpdate += (s, e) => FillNative(sub, entry);
@@ -115,6 +125,13 @@ namespace ReBuzz.Studio.Shell
             }
             return item;
         }
+
+        /// <summary>
+        /// Avalonia's mark for the Services submenu (an attached property of an internal class, found by its name once the
+        /// macOS platform has registered it); null elsewhere, and the menu is then an empty submenu.
+        /// </summary>
+        static AvaloniaProperty ServicesProperty =>
+            AvaloniaPropertyRegistry.Instance.GetRegisteredAttached(typeof(NativeMenu)).FirstOrDefault(p => p.Name == "IsServicesSubmenu" && p.PropertyType == typeof(bool));
 
         static void FillNative(NativeMenu menu, MenuEntry entry)
         {

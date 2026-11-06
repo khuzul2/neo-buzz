@@ -1,5 +1,6 @@
 // Fork (docs/specs/studio-mvp.md S7): the main window's size and place, kept in the settings
-// ("Studio" section) when it closes and put back when it opens, on a screen that is still there.
+// ("Studio" section) when it closes and put back when it opens, on a screen that is still there, and (ui-gallery.md)
+// within its visible area.
 
 using System;
 using System.Linq;
@@ -41,6 +42,44 @@ namespace ReBuzz.Studio.Shell
                 };
             }
             if (registry.Read(name + "Maximized", false, Section)) window.WindowState = WindowState.Maximized;
+        }
+
+        /// <summary>
+        /// A window's frame (its place and size, in points) moved and shrunk to lie within the screen's visible area (the
+        /// Mac's without the menu bar and the Dock): narrower or shorter where it is larger, then moved in.
+        /// </summary>
+        internal static Rect Fit(Rect frame, Rect area)
+        {
+            double width = Math.Min(frame.Width, area.Width), height = Math.Min(frame.Height, area.Height);
+            double x = Math.Clamp(frame.X, area.X, area.Right - width), y = Math.Clamp(frame.Y, area.Y, area.Bottom - height);
+            return new Rect(x, y, width, height);
+        }
+
+        /// <summary>
+        /// Fork (ui-gallery.md): as the window opens, it is kept within its screen's visible area, its title bar
+        /// included: a 1280×820 window ran off a 1024×768 screen. The size it then has is the one kept when it closes.
+        /// </summary>
+        public static void KeepOnScreen(Window window)
+        {
+            window.Opened += (s, e) => FitToScreen(window);
+        }
+
+        internal static void FitToScreen(Window window)
+        {
+            var screens = window.Screens;
+            var screen = screens?.ScreenFromWindow(window) ?? screens?.Primary ?? screens?.All.FirstOrDefault();
+            if (screen == null || window.WindowState != WindowState.Normal) return;
+            double scale = screen.Scaling > 0 ? screen.Scaling : 1;
+            var area = new Rect(screen.WorkingArea.X / scale, screen.WorkingArea.Y / scale, screen.WorkingArea.Width / scale, screen.WorkingArea.Height / scale);
+            var client = window.ClientSize;
+            var frameSize = window.FrameSize ?? client;
+            double chromeW = Math.Max(0, frameSize.Width - client.Width), chromeH = Math.Max(0, frameSize.Height - client.Height);
+            var frame = new Rect(window.Position.X / scale, window.Position.Y / scale, client.Width + chromeW, client.Height + chromeH);
+            var fit = Fit(frame, area);
+            if (fit == frame) return;
+            window.Width = Math.Max(1, fit.Width - chromeW);
+            window.Height = Math.Max(1, fit.Height - chromeH);
+            window.Position = new PixelPoint((int)Math.Round(fit.X * scale), (int)Math.Round(fit.Y * scale));
         }
 
         /// <summary>As it closes. A maximized window keeps the size it had before.</summary>

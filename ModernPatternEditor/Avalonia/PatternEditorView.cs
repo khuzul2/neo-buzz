@@ -333,10 +333,21 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                 Maximum = max,
                 Increment = 1,
                 FormatString = "0",
-                Width = 96,
                 Height = 26,
                 Margin = new Thickness(4, 4, 0, 4),
                 FontSize = 12,
+            };
+            // Fork (ui-gallery.md): as wide as its largest value. A fixed 96 points left the text one digit and a half
+            // beside the spinner, so 32 beats showed "3:". The text box takes the widest value in its own font.
+            n.TemplateApplied += (s, e) =>
+            {
+                if (e.NameScope.Find<TextBox>("PART_TextBox") is not { } text) return;
+                var typeface = new Typeface(text.FontFamily, text.FontStyle, text.FontWeight);
+                double Width(string value) => new Avalonia.Media.TextFormatting.TextLayout(value, typeface, n.FontSize, null).WidthIncludingTrailingWhitespace;
+                double widestDigit = Enumerable.Range(0, 10).Max(d => Width(d.ToString()));
+                int digits = Math.Max(min.ToString().Length, max.ToString().Length);
+                text.MinWidth = Math.Ceiling(Math.Max(Width(max.ToString()), digits * widestDigit))
+                                + text.Padding.Left + text.Padding.Right + text.BorderThickness.Left + text.BorderThickness.Right + 4;
             };
             ToolTip.SetTip(n, tip);
             return n;

@@ -235,6 +235,7 @@ namespace ReBuzz
                 splashScreenWindow.UpdateText("Init views");
 
                 UiUtils.RestoreWindowStateFromRegistry(this, registryEx, "MainWindowWP");
+                UiUtils.KeepOnWorkArea(this);          // fork (ui-gallery.md): within the screen, not off a small one
                 UiUtils.RestoreWindowStateFromRegistry(debugWindow, registryEx, "DebugWindowWP");
 
                 UiUtils.InitUtils(this);

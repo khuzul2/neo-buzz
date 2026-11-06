@@ -19,6 +19,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.NUnit;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Buzz.MachineInterface;
 using BuzzGUI.Interfaces;
 using ReBuzz.Agent.Mcp;
@@ -403,6 +404,51 @@ namespace ReBuzz.Studio.Tests
         }
 
         // ------------------------------------------------------------------ preferences
+
+        [AvaloniaTest]
+        public void ReturnAndEscapeKeepTheLimiterOnAndTheQuestionNamesItsActions()
+        {
+            // Fork (UX review, mac-321): every question made its first choice (Yes) the default, so Return in "Turn the
+            // safety limiter off?" turned it off. Its buttons are Turn Off and Keep On; Return and Escape keep it on.
+            using var restore = Studio.AfterTest(PutBack);
+            Assert.That(Dialogs.Order(new[] { UserAnswer.Yes, UserAnswer.No, UserAnswer.Cancel }, UserAnswer.Yes, UserAnswer.Cancel, mac: true),
+                Is.EqualTo(new[] { UserAnswer.No, UserAnswer.Cancel, UserAnswer.Yes }), "macOS: Don't Save, Cancel, Save (the default rightmost)");
+            Assert.That(Dialogs.Order(new[] { UserAnswer.Yes, UserAnswer.No, UserAnswer.Cancel }, UserAnswer.Yes, UserAnswer.Cancel, mac: false),
+                Is.EqualTo(new[] { UserAnswer.Yes, UserAnswer.No, UserAnswer.Cancel }), "elsewhere: Save, Don't Save, Cancel");
+
+            var prefs = PreferencesWindow.Open(Host, "Audio");
+            Settle();
+            var page = prefs.Page<AudioPage>();
+            Window dialog = null;
+            using var opened = Window.WindowOpenedEvent.AddClassHandler<Window>((w, e) => { if (w.Title == "Safety limiter") dialog = w; },
+                Avalonia.Interactivity.RoutingStrategies.Direct, handledEventsToo: true);
+            try
+            {
+                foreach (var key in new[] { PhysicalKey.Enter, PhysicalKey.Escape })
+                {
+                    dialog = null;
+                    page.LimiterBox.IsChecked = false;          // asks
+                    for (int i = 0; i < 20 && dialog == null; i++) Settle();
+                    Assert.That(dialog, Is.Not.Null, "the question");
+                    Settle();
+                    var buttons = dialog.GetVisualDescendants().OfType<Button>().ToList();
+                    Assert.That(buttons.Select(b => b.Content as string), Is.EquivalentTo(new[] { "Turn Off", "Keep On" }), "its actions, not Yes and No");
+                    Assert.That(buttons.Single(b => b.IsDefault).Content, Is.EqualTo("Keep On"), "Return keeps it on");
+                    Assert.That(buttons.Single(b => b.IsCancel).Content, Is.EqualTo("Keep On"), "Escape keeps it on");
+                    if (OperatingSystem.IsMacOS()) Assert.That(buttons.Last().Content, Is.EqualTo("Keep On"), "the default rightmost");
+                    dialog.KeyPressQwerty(key, RawInputModifiers.None);           // (its release goes to a closed window)
+                    for (int i = 0; i < 10 && dialog.IsVisible; i++) Settle();
+                    Assert.That(dialog.IsVisible, Is.False, key + " answered it");
+                    Assert.That(Core.SafeMaster.LimiterOn, Is.True, key + ": still on");
+                    Assert.That(page.LimiterBox.IsChecked, Is.True);
+                }
+            }
+            finally
+            {
+                if (dialog?.IsVisible == true) dialog.Close();
+                prefs.Close();
+            }
+        }
 
         [AvaloniaTest]
         public void PreferencesAskBeforeTheLimiterOrTheGuardGoesOff()
