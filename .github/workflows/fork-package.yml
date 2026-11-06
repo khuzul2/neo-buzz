@@ -221,6 +221,24 @@ jobs:
           --zeroed Z64=build/ExternalMachines/natives-zeroed/x64/Gear
         exit $LASTEXITCODE
 
+    # §12.14: songs saved with upstream's binaries of the natives the package ships rebuilt (two songs built with them here,
+    # and the classic Buzz songs in ExternalMachines/source that use them) open with the rebuilt ones, Jeskola's x64 builds
+    # in place of the 32-bit originals among them: the same parameters on every track, the same bits (or within -100 dBFS)
+    # from every machine, the same file saved again (tools/native-songs.py). The x64 rebuilds of the natives the package keeps
+    # upstream's 32-bit binaries of are measured the same way and reported. It also checks that the machine profile above
+    # profiled each one from the package's file. Full builds only.
+    - name: Natives, songs saved with upstream's binaries
+      if: (success() || failure()) && steps.build.outcome == 'success' && inputs.quick != true
+      timeout-minutes: 20
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
+        $profile = @()
+        if (Test-Path machine-profile/machine-profile.json) { $profile = @('--profile', 'machine-profile/machine-profile.json') }
+        python tools/native-songs.py $exe.FullName native-songs --candidate build/ExternalMachines/natives/x64/Gear --json native-songs.json @profile
+        exit $LASTEXITCODE
+
     - name: Upload machine profile
       if: always() && hashFiles('machine-profile/machine-profile.json') != ''
       uses: actions/upload-artifact@v6

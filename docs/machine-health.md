@@ -10,7 +10,7 @@ In depth (mcp-server.md §12.12): a test signal for effects, played by Neo Poly 
 
 Pitch conventions of the generators (the offset `notes_write` applies so the written pitch plays): no sound from a note: 11, offset +0: 17, offset +12: 2, offset -13: 1, unpitched: 1.
 
-Built from source (mcp-server.md §12.14, U7): FSM Chorus2, FSM Infector, FSM KickXP, FSM PanzerDelay, FSM PhatMan, FSM WahMan, FSM WahPro2, Oomek Aggressor 303, Oomek Exciter, Oomek Masterizer ship rebuilt in place of upstream's binaries, which they render as (`tools/native-compare.py`), and are profiled as rebuilt; the other natives are upstream's binaries.
+Built from source (mcp-server.md §12.14, U7): FSM Chorus2, FSM Infector, FSM KickXP, FSM PanzerDelay, FSM PhatMan, FSM WahMan, FSM WahManPro, FSM WahPro2, Jeskola Distortion, Jeskola Noise Generator, Jeskola Trilok, Oomek Aggressor 303, Oomek Exciter, Oomek Masterizer ship rebuilt in place of upstream's binaries, which they render as (`tools/native-compare.py`; FSM WahMan, FSM WahManPro, FSM WahPro2 as upstream's binary on a zeroed heap, the start their fix gives), and are profiled as rebuilt; Jeskola Distortion, Jeskola Noise Generator, Jeskola Trilok are x64 builds of upstream's 32-bit binaries, from sources without a licence (shipped by user decision 2026-11-06 for private use); the other natives are upstream's binaries.
 
 ## Diverging
 
