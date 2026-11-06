@@ -107,6 +107,11 @@ namespace ReBuzzTests
             TestContext.Out.WriteLine($"[notice] {label}: within {c?["within_tolerance"]?.ToJsonString() ?? "-"}, " +
                                       $"loudness {m?["loudness_db"]?["difference"]?.ToJsonString() ?? "-"} dB, worst band {m?["worst_band"]?["difference_db"]?.ToJsonString() ?? "-"} dB " +
                                       $"at {m?["worst_band"]?["hz"]?.ToJsonString() ?? "-"} Hz");
+            // Fork (follow-ups, item 9): outside its tolerance, everything the comparison saw, so a rare miss can be read
+            // afterwards (FSM WahMan "cutoff 200, resonance 0, LFO still" once read as if its LFO were moving: run 42283293394).
+            if (Within(r) == false)
+                TestContext.Out.WriteLine($"[notice] {label}: comparison {c?.ToJsonString() ?? "-"}; warnings {r["warnings"]?.ToJsonString() ?? "-"}; " +
+                                          $"notes {r["notes"]?.ToJsonString() ?? "-"}");
             return r;
         }
 
