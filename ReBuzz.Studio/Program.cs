@@ -52,8 +52,12 @@ namespace ReBuzz.Studio
             return exit;
         }
 
-        /// <summary>Also what the headless tests start (ReBuzz.Studio.Tests).</summary>
+        /// <summary>
+        /// Also what the headless tests start (ReBuzz.Studio.Tests). The macOS app menu is the studio's own, whole
+        /// (MainWindow.AppMenuModel): Avalonia's standard items are left out (ui-gallery.md).
+        /// </summary>
         public static AppBuilder BuildAvaloniaApp() =>
-            AppBuilder.Configure<App>().UsePlatformDetect().WithInterFont().LogToTrace();
+            AppBuilder.Configure<App>().UsePlatformDetect().WithInterFont().LogToTrace()
+                .With(new MacOSPlatformOptions { DisableDefaultApplicationMenuItems = true });
     }
 }

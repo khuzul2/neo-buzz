@@ -337,7 +337,11 @@ namespace ReBuzz.Studio.Tests
             Dialogs.Responder = null;
         }
 
-        /// <summary>The demo song, built in a new song, saved as "Night Drive.bmxml" and opened again, as a user's song is.</summary>
+        /// <summary>
+        /// The demo song, built in a new song and saved as "Night Drive.bmxml" (the title names it). Not opened again: the
+        /// notes moved onto the note lanes show in the Pattern View as they are written (they showed only once the song was
+        /// opened again before; ui-gallery.md).
+        /// </summary>
         static GallerySong.Song LoadDemo()
         {
             NewSong();
@@ -355,15 +359,6 @@ namespace ReBuzz.Studio.Tests
             }
             Core.Modified = false;
             File.Copy(path, Path.Combine(Folder, GallerySong.Title + ".bmxml"), true);      // beside the pictures (the Mac job opens it in the app)
-            Dialogs.Responder = (m, c, b) => UserAnswer.No;
-            try
-            {
-                Assert.That(Await(SongFiles.Open(path)), Is.True, "the demo song opened");
-            }
-            finally
-            {
-                Dialogs.Responder = null;
-            }
             Settle();
             return GallerySong.Find(Core);
         }
@@ -751,7 +746,7 @@ namespace ReBuzz.Studio.Tests
                 string[] ids = { "100-menu-app", "101-menu-file", "102-menu-edit", "103-menu-transport", "104-menu-view", "105-menu-window", "106-menu-help" };
                 string[] whats =
                 {
-                    $"The app menu ({Product.Name}) as the model has it: About {Product.Name}, Preferences… (⌘,). macOS adds Services, Hide, Hide Others, Show All and Quit (⌘Q) below them (not drawn). On the real Mac this menu shows Avalonia's About Avalonia instead of these two (see mac-real-100).",
+                    $"The app menu ({Product.Name}) as the model has it, whole: About {Product.Name}, Preferences… (⌘,), Services (the system fills it), Hide {Product.Name} (⌘H), Hide Others (⌥⌘H), Show All, Quit {Product.Name} (⌘Q). The real Mac's is mac-real-100.",
                     "File: New, Open…, Open Recent ▸, Save, Save As… (no Exit: Quit is in the app menu).",
                     "Edit: Undo, Redo, Cut, Copy, Paste (Preferences is in the app menu).",
                     "Transport: Play or Stop (Space), Play, Stop, Record, Restart audio.",
@@ -976,7 +971,7 @@ namespace ReBuzz.Studio.Tests
                 {
                     prefs.ShowPage("Audio");
                     var audio = prefs.Page<AudioPage>();
-                    DialogOnOpen(prefs, () => audio.LimiterBox.IsChecked = false, "321-prefs-safety-question", "The safety question before the limiter goes off (Preferences ▸ Audio ▸ Safety).",
+                    DialogOnOpen(prefs, () => audio.LimiterBox.IsChecked = false, "321-prefs-safety-question", "The safety question before the limiter goes off (Preferences ▸ Audio ▸ Safety): Turn Off or Keep On, Keep On on Return and Escape.",
                         "Preferences ▸ Audio: untick Safety limiter.", notes: Devices);
                     Settle();
                 });
@@ -989,7 +984,7 @@ namespace ReBuzz.Studio.Tests
                 Try("332-save-changes", () =>
                 {
                     Core.SetModifiedFlag();
-                    DialogOnOpen(window, () => _ = SongFiles.ConfirmDiscard(), "332-save-changes", "Save changes? before a new song, opening another or closing (Yes, No, Cancel).",
+                    DialogOnOpen(window, () => _ = SongFiles.ConfirmDiscard(), "332-save-changes", "Save changes? before a new song, opening another or closing: Don't Save, Cancel, Save (Return; macOS's order, the default rightmost).",
                         "File ▸ New / Open… / close the window with unsaved changes.");
                     Settle();
                     Core.Modified = false;
@@ -1038,7 +1033,7 @@ namespace ReBuzz.Studio.Tests
                     Assert.That(Core.Autosave.SaveNow(System.DateTime.Now), Is.True);
                     try
                     {
-                        DialogOnOpen(window, () => _ = Autosave.OfferRecovery(Core), "337-autosave-recovery", $"At start-up after {Product.Name} didn't close normally: recover the autosaved changes? (Yes, No, Cancel).",
+                        DialogOnOpen(window, () => _ = Autosave.OfferRecovery(Core), "337-autosave-recovery", $"At start-up after {Product.Name} didn't close normally: recover the autosaved changes? Discard… (asks again), Decide Later (Escape), Restore (Return).",
                             $"Start {Product.Name} after a crash, with unsaved changes autosaved.");
                     }
                     finally

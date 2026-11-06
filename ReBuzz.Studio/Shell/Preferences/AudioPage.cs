@@ -108,22 +108,35 @@ namespace ReBuzz.Studio.Shell.Preferences
 
         protected override void OnShown()
         {
+            if (LeaveOutSlowState)
+            {
+                // The devices once the window has drawn (PortAudio may take a while to list them); the rest now.
+                Refresh();
+                return;
+            }
             listed = (OutputSource?.Invoke() ?? Outputs()).ToList();
             inputs = new List<string> { "", "default" };
             inputs.AddRange((InputSource?.Invoke() ?? Inputs()).Where(n => !inputs.Contains(n)));
+            devicesListed = true;
             Refresh();
         }
+
+        bool devicesListed;
+
+        /// <summary>Whether the page says PortAudio isn't installed (only once it has asked for the devices).</summary>
+        internal bool SaysPortAudioIsMissing => missing.IsVisible;
 
         public override void Refresh()
         {
             Filling = true;
             try
             {
-                missing.IsVisible = listed.Count == 0;
+                missing.IsVisible = devicesListed && listed.Count == 0;
                 string saved = SavedOutput;
                 outputs = listed.ToList();
                 if (!outputs.Contains(saved)) outputs.Add(saved);
-                output.ItemsSource = outputs.Select(n => listed.Contains(n) ? n : n + " (not connected)").ToList();
+                // "Not connected" only once the devices have been listed (the window draws before it lists them).
+                output.ItemsSource = outputs.Select(n => listed.Contains(n) || !devicesListed ? n : n + " (not connected)").ToList();
                 output.SelectedIndex = outputs.IndexOf(saved);
 
                 string savedInput = registry.Read("Input", "", PortAudioDriver.Section) ?? "";
@@ -174,7 +187,7 @@ namespace ReBuzz.Studio.Shell.Preferences
             {
                 Refresh();      // stays on until confirmed
                 var answer = await Dialogs.Ask("Turn the safety limiter off? Then nothing stops a loud or broken signal from reaching your " +
-                                               "speakers or headphones at full scale and beyond.", "Safety limiter", UserButtons.YesNo);
+                                               "speakers or headphones at full scale and beyond.", "Safety limiter", UserButtons.YesNo, DialogChoices.TurnOff);
                 if (answer != UserAnswer.Yes) return;
             }
             safe.LimiterOn = on;
@@ -190,7 +203,7 @@ namespace ReBuzz.Studio.Shell.Preferences
                 Refresh();
                 var answer = await Dialogs.Ask("Turn the machine guard off for this song? A machine that goes wild (NaN, infinity or more than " +
                                                "+60 dBFS) then plays on into the rest of the song; only the safety limiter stands between it and " +
-                                               "your speakers. A new or opened song turns the guard on again.", "Machine guard", UserButtons.YesNo);
+                                               "your speakers. A new or opened song turns the guard on again.", "Machine guard", UserButtons.YesNo, DialogChoices.TurnOff);
                 if (answer != UserAnswer.Yes) return;
             }
             MachineGuard.Enabled = on;
