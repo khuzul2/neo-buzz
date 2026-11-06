@@ -43,6 +43,8 @@ namespace NeoBuzz.MachineTests
             ["Neo Filter"] = (NeoBuzz.Filter.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Filter.FilterEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // docs/specs/dye-essence.md: a Neo-family machine with its own name.
             ["Dye Essence"] = (NeoBuzz.DyeEssence.Params.Table, (v, x) => RenderSynth(DyeEngine(v), (e, l, r, n) => ((NeoBuzz.DyeEssence.DyeEngine)e).Process(l, r, n), x.Length)),
+            // mastering-tools.md §5.1: the clipper.
+            ["Neo Clipper"] = (NeoBuzz.Clipper.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Clipper.ClipperEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
         };
 
         /// <summary>The Neo-family machine folders: Neo* and Dye Essence (docs/specs/dye-essence.md §2).</summary>

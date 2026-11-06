@@ -65,7 +65,7 @@ Master has no insert slots: the chain sits in front of it.
 1. `machine_list`: note every machine connected to Master and its gain.
 2. `machine_add(gear="Neo EQ", name="M EQ", connect_to="Master")`.
 3. For each of those machines: `disconnect(from="Bass Duck", to="Master")`, then `connect(from="Bass Duck", to="M EQ", gain_db=-4)` with the same gain it had.
-4. Each next stage goes after the previous: `machine_add(gear="Neo Comp", name="M Glue", insert_after="M EQ")`, `machine_add(gear="Neo Drive", name="M Sat", insert_after="M Glue")`, `machine_add(gear="Neo Limiter", name="M Limit", insert_after="M Sat")`.
+4. Each next stage goes after the previous: `machine_add(gear="Neo Comp", name="M Glue", insert_after="M EQ")`, `machine_add(gear="Neo Drive", name="M Sat", insert_after="M Glue")`, optionally `machine_add(gear="Neo Clipper", name="M Clip", insert_after="M Sat")`, then `machine_add(gear="Neo Limiter", name="M Limit", insert_after="M Clip")` (after "M Sat" without the clipper).
 5. `machine_list` again: only the last stage reaches Master. Render and confirm the loudness hasn't moved before you set anything.
 
 Without Neo EQ, start the chain with the compressor. Without Neo Limiter, end it with Neo Comp as a limiter (below).
@@ -118,6 +118,10 @@ Only one band misbehaves (a boomy kick, harsh 2–6 kHz, sibilance)? Neo Multiba
 
 After it: PLR 0.5–1 dB lower, tilt within ±0.3 dB/oct, `high_mid` up no more than 1 dB. Skip it on a mix that is already dense or saturated. A lighter touch: "Utility — Subtle Glue". Its `Output` (−24 … +24 dB) is a clean gain stage into the limiter.
 
+### 3b. Clipping (Neo Clipper, optional)
+
+A clipper before the limiter shaves the first milliseconds of the loudest transients, which the limiter would otherwise pump on, so the master gets louder for the same limiting. Start from "Mastering — Transparent (Before a Limiter)" (+2 dB into −0.3 dB, a 3 dB knee, 4×) and raise `Drive` until `machine_readings(machine="M Clip")` shows `clip_db` 1–3 dB on the loudest hits. Then lower the limiter's `Input gain` by about the same and measure: PLR within 0.5 dB, the loudness at least as high. `Delta` On plays what it removes: clicks or a buzz mean too much. The clipper's "Match" (or `Output` set to minus `gain_match_db`) compares it at equal loudness. Three bands ("Mastering — Three Bands") clip the lows less if the kick breaks up.
+
 ### 4. Limiter
 
 Neo Limiter: `Ceiling` (dBTP), `Input gain` (how hard it is driven), `Auto release` or `Release`, `Lookahead` (default is fine), `Stereo link` 100 %. Set:
@@ -130,6 +134,8 @@ Neo Limiter: `Ceiling` (dBTP), `Input gain` (how hard it is driven), `Auto relea
 | Reduction on the loudest peaks | 3–4 dB at most | 6–8 dB at most | little or none |
 
 It has no target-LUFS mode: render, read `integrated_lufs`, and raise `Input gain` by the difference (it is close to dB for dB until the limiting is heavy), then render again.
+
+Its styles set v2's stages (`guide(machine="Neo Limiter")`): "Style — Transparent" (5 ms lookahead, a slow release stage, transient unlink) distorts least, a third of Classic's IMD at the same reduction, and pumps less: the first choice for a dynamic master. "Style — Punchy" keeps hits forward. The two soft-clip styles ("Style — Dense (Soft Clip 9 dB, Upward)", "Style — Loud (Soft Clip 3 dB)") buy density with distortion: judge them by ear with `Unity listen` On (the output at the input's loudness), and turn it off before rendering.
 
 Without Neo Limiter, Neo Comp as the last stage (it catches peaks within about 1 dB, but isn't a true-peak limiter, so the threshold sits 1.5 dB under the ceiling):
 

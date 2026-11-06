@@ -37,7 +37,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Comp", "NeoCompEditor", "neo-comp-editor", 880, 294),
             ("Neo Drive", "NeoDriveEditor", "neo-drive-editor", 746, 322),
             ("Neo EQ", "NeoEqEditor", "neo-eq-editor", 822, 508),
-            ("Neo Limiter", "NeoLimiterEditor", "neo-limiter-editor", 718, 292),
+            ("Neo Limiter", "NeoLimiterEditor", "neo-limiter-editor", 940, 363),
             ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 679, 296),   // its switches as toggles, 92 px each (627 before); M1's Matrix drop-down, 96 px, widens the column (675 before)
             ("Neo Verb", "NeoVerbEditor", "neo-verb-editor", 880, 332),
             ("Neo Analyzer", "NeoAnalyzerEditor", "neo-analyzer-editor", 1118, 398),
@@ -49,6 +49,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Drums", "NeoDrumsEditor", "neo-drums-editor", 1232, 738),
             ("Neo Filter", "NeoFilterEditor", "neo-filter-editor", 802, 620),
             ("Dye Essence", "DyeEssenceEditor", "dye-essence-editor", 1274, 988),
+            ("Neo Clipper", "NeoClipperEditor", "neo-clipper-editor", 956, 277),
         };
 
         static ReBuzzCore Core => Studio.Host.Core;
@@ -1068,6 +1069,52 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 Remove(m);
+            }
+        }
+
+        // ------------------------------------------------------------------ Neo Clipper
+
+        [AvaloniaTest]
+        public void NeoClippersMatchSetsOutputFromItsGainMatchAsOneUndoStep()
+        {
+            // Neo Poly → Neo Clipper (+12 dB of drive) → Master, a chord held: after 3 s the gain-match reading is known, the
+            // button shows it, and a click sets Output so the loudness comes back to the input's, as one undo step.
+            var master = Core.SongCore.MachinesList.First(m => m.DLL.Info.Type == MachineType.Master);
+            var poly = Add("Neo Poly", "Match Poly", -0.6f, 0);
+            var m = Add("Neo Clipper", "Match", 0, 0);
+            try
+            {
+                Core.SongCore.ConnectMachines(poly, m, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                Core.SongCore.ConnectMachines(m, master, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
+                Global(m, "Drive").SetValue(0, 240);   // +12 dB
+                var window = OpenEditor(m);
+                poly.TrackCount = Math.Max(poly.TrackCount, 3);
+                var note = poly.ParameterGroups[2].Parameters.First(p => p.Name == "Note");
+                int[] chord = { (3 << 4) + 1, (3 << 4) + 5, (3 << 4) + 8 };
+                for (int t = 0; t < chord.Length; t++) note.SetValue(t, chord[t]);
+                Run(3.6);
+                var engine = Get(m.ManagedMachine, "Engine");
+                double db = (double)Get(engine, "GainMatchDb");
+                Assert.That(double.IsFinite(db) && db > 1, Is.True, $"the clipper made it louder: gain match {db:F2} dB");
+                foreach (var v in window.GetVisualDescendants()) v.InvalidateVisual();
+                Thread.Sleep(300);
+                Dispatcher.UIThread.RunJobs();
+                var button = Controls(window, "ActionButton").Single(c => AutomationProperties.GetName(c)?.StartsWith("Match") == true);
+                var output = Global(m, "Output");
+                int before = output.GetValue(0), steps = Core.SongCore.ActionStack.Actions.Count();
+                Click(window, Centre(button, window));
+                int after = output.GetValue(0);
+                double set = (after - before) * 0.1;
+                TestContext.Out.WriteLine($"[notice] Neo Clipper's Match: gain match {db:F2} dB, Output {set:+0.0;-0.0} dB");
+                Assert.That(set, Is.EqualTo(-db).Within(0.15), "Output takes back what the clipper added");
+                Assert.That(Core.SongCore.ActionStack.Actions.Count(), Is.EqualTo(steps + 1), "one undo step");
+                Studio.Screenshot(window, "neo-clipper-editor-matched");
+                Core.SongCore.Undo();
+                Assert.That(output.GetValue(0), Is.EqualTo(before), "undo puts Output back");
+            }
+            finally
+            {
+                Remove(m, poly);
             }
         }
 

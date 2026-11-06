@@ -21836,6 +21836,429 @@
    "generated": true,
    "health": "ok"
   },
+  "Neo Clipper": {
+   "gear": "Neo Clipper",
+   "kind": "effect",
+   "load_seconds": 0.14,
+   "gear_info": {
+    "file": "Effects/Neo Clipper.NET.dll",
+    "managed": true,
+    "min_tracks": 0,
+    "max_tracks": 0,
+    "takes_midi": false
+   },
+   "parameters": 15,
+   "track_parameters": 0,
+   "inferred": 15,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 15,
+    "of": 15
+   },
+   "effect": {
+    "gain_db": -0.14,
+    "latency_samples": 343,
+    "latency_ms": 7.78,
+    "tail_seconds": 0.01,
+    "echoes": 0,
+    "output_correlation": 1.0,
+    "spectrum_spread_db": 0.7,
+    "tilt_db": -0.1,
+    "sine": {
+     "loud": {
+      "gain_db": -0.0,
+      "thd_percent": 1.96,
+      "thd_in_percent": 1.96,
+      "movement_db": 0.13
+     },
+     "quiet": {
+      "gain_db": -0.0,
+      "thd_percent": 1.96,
+      "thd_in_percent": 1.96,
+      "movement_db": 0.13
+     }
+    },
+    "traits": [
+     "utility"
+    ],
+    "response": [
+     [
+      20.6,
+      0.0
+     ],
+     [
+      23.1,
+      -0.0
+     ],
+     [
+      26.0,
+      0.0
+     ],
+     [
+      29.1,
+      -0.0
+     ],
+     [
+      32.7,
+      -0.0
+     ],
+     [
+      36.7,
+      0.0
+     ],
+     [
+      41.2,
+      0.0
+     ],
+     [
+      46.2,
+      -0.0
+     ],
+     [
+      51.9,
+      -0.0
+     ],
+     [
+      58.3,
+      -0.0
+     ],
+     [
+      65.4,
+      -0.0
+     ],
+     [
+      73.4,
+      -0.0
+     ],
+     [
+      82.4,
+      -0.0
+     ],
+     [
+      92.5,
+      -0.0
+     ],
+     [
+      103.8,
+      -0.0
+     ],
+     [
+      116.5,
+      -0.0
+     ],
+     [
+      130.8,
+      0.0
+     ],
+     [
+      146.8,
+      0.0
+     ],
+     [
+      164.8,
+      0.0
+     ],
+     [
+      185.0,
+      0.0
+     ],
+     [
+      207.7,
+      -0.0
+     ],
+     [
+      233.1,
+      0.0
+     ],
+     [
+      261.6,
+      0.0
+     ],
+     [
+      293.7,
+      0.0
+     ],
+     [
+      329.6,
+      -0.0
+     ],
+     [
+      370.0,
+      0.0
+     ],
+     [
+      415.3,
+      -0.0
+     ],
+     [
+      466.2,
+      0.0
+     ],
+     [
+      523.3,
+      -0.0
+     ],
+     [
+      587.3,
+      -0.0
+     ],
+     [
+      659.3,
+      -0.0
+     ],
+     [
+      740.0,
+      -0.0
+     ],
+     [
+      830.6,
+      -0.0
+     ],
+     [
+      932.3,
+      -0.0
+     ],
+     [
+      1046.5,
+      -0.0
+     ],
+     [
+      1174.7,
+      -0.0
+     ],
+     [
+      1318.5,
+      -0.0
+     ],
+     [
+      1480.0,
+      -0.0
+     ],
+     [
+      1661.2,
+      -0.0
+     ],
+     [
+      1864.7,
+      -0.0
+     ],
+     [
+      2093.0,
+      -0.01
+     ],
+     [
+      2349.3,
+      -0.01
+     ],
+     [
+      2637.0,
+      -0.01
+     ],
+     [
+      2960.0,
+      -0.01
+     ],
+     [
+      3322.4,
+      -0.01
+     ],
+     [
+      3729.3,
+      -0.02
+     ],
+     [
+      4186.0,
+      -0.02
+     ],
+     [
+      4698.6,
+      -0.03
+     ],
+     [
+      5274.0,
+      -0.04
+     ],
+     [
+      5919.9,
+      -0.05
+     ],
+     [
+      6644.9,
+      -0.06
+     ],
+     [
+      7458.6,
+      -0.08
+     ],
+     [
+      8372.0,
+      -0.1
+     ],
+     [
+      9397.3,
+      -0.12
+     ],
+     [
+      10548.1,
+      -0.15
+     ],
+     [
+      11839.8,
+      -0.19
+     ],
+     [
+      13289.8,
+      -0.24
+     ],
+     [
+      14917.2,
+      -0.3
+     ],
+     [
+      16744.0,
+      -0.4
+     ],
+     [
+      18794.5,
+      -0.5
+     ]
+    ],
+    "response_summary": {
+     "level_db": -0.01,
+     "spread_db": 0.3,
+     "centroid_oct": -0.722,
+     "max_db": 0.0,
+     "max_hz": 20.6,
+     "prominence_db": 0.0,
+     "low_corner_hz": 20.6,
+     "high_corner_hz": 18794.5,
+     "width_oct": 9.83,
+     "tilt_db": -0.19,
+     "wobble_db": 0.0
+    },
+    "impulse": {
+     "latency_samples": 343,
+     "direct_db": -2.07,
+     "early_db": -4.58,
+     "late_db": -120.0,
+     "t60_s": null,
+     "t60_span_db": 0.0,
+     "ring_s": 0.005,
+     "rings_past_window": false,
+     "echoes": [],
+     "echoes_left": [],
+     "echoes_right": [],
+     "copy_s": null,
+     "late_onset_s": 0.003,
+     "balance_db": 0.0
+    },
+    "steps": {
+     "curve": [
+      [
+       -40.86,
+       -0.03
+      ],
+      [
+       -34.85,
+       -0.03
+      ],
+      [
+       -28.82,
+       -0.03
+      ],
+      [
+       -22.79,
+       -0.03
+      ],
+      [
+       -16.77,
+       -0.03
+      ],
+      [
+       -10.75,
+       -0.03
+      ],
+      [
+       -4.8,
+       -0.76
+      ]
+     ],
+     "compression_db": 0.36,
+     "top_slope": 0.939,
+     "knee_in_db": null,
+     "attack_s": 0.0,
+     "release_s": 0.0,
+     "attack_tau_s": null,
+     "release_tau_s": null
+    },
+    "thd_percent": 2.36
+   },
+   "cpu_ms_per_s": 3.2,
+   "type": "utility",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -9.26,
+     "growth_db": 0.27,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -33.15,
+      "growth_db": 0.23,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 25.29,
+      "growth_db": 0.23,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 28
+   },
+   "sweeps": {
+    "Output": {
+     "max": {
+      "peak_dbfs": 14.45,
+      "growth_db": 0.02,
+      "verdict": "hot",
+      "raw": 480,
+      "text": "+24.0 dB"
+     }
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 15.719,
+    "silent_ms_per_s": 0.516,
+    "silent_worst_ms_per_s": 0.881,
+    "windows_ms_per_s": [
+     15.719,
+     0.881,
+     0.542,
+     0.546,
+     0.505,
+     0.504,
+     0.499,
+     0.505,
+     0.522,
+     0.516,
+     0.5
+    ]
+   },
+   "seconds": 8.7,
+   "platform": "linux",
+   "date": "2026-11-06",
+   "problems": [],
+   "warnings": [],
+   "hot": [
+    "hot (loud but steady) with Output at its maximum (+24.0 dB): +14.4 dBFS peak"
+   ],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "warn"
+  },
   "Neo Comp": {
    "gear": "Neo Comp",
    "kind": "effect",

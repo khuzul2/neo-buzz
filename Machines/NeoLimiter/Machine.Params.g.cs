@@ -24,5 +24,35 @@ namespace NeoBuzz.Limiter
 
         [ParameterDecl(Name = "Stereo link", Description = "100 %: both channels get the same gain (the image stays put); 0 %: each channel on its own", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
         public int Link { get => Values[P.Link]; set => Values.Set(P.Link, value); }
+
+        [ParameterDecl(Name = "Upward", Description = "Upward compression before the limiter (v2): quiet passages lifted by up to this much, half a dB for each dB their 3 s RMS sits under Upward threshold. 0 dB: off (as v1)", MinValue = 0, MaxValue = 60, DefValue = 0)]
+        public int Upward { get => Values[P.Upward]; set => Values.Set(P.Upward, value); }
+
+        [ParameterDecl(Name = "Upward threshold", Description = "The RMS level (dBFS, after Input gain) under which Upward lifts", MinValue = 0, MaxValue = 400, DefValue = 200)]
+        public int UpThreshold { get => Values[P.UpThreshold]; set => Values.Set(P.UpThreshold, value); }
+
+        [ParameterDecl(Name = "Transients", Description = "Transient emphasis (v2): the first milliseconds of hits raised by up to this much before the limiter (the shared transient/sustain split), so limiting keeps their punch. 0 dB: off", MinValue = 0, MaxValue = 60, DefValue = 0)]
+        public int Transients { get => Values[P.Transients]; set => Values.Set(P.Transients, value); }
+
+        [ParameterDecl(Name = "Soft clip", Description = "A soft clip before the limiter (v2), 4× oversampled with anti-aliasing: the curve bends from this far under the ceiling, so the limiter does less. Off: as v1 (adds 58 samples of latency when on)", MinValue = 0, MaxValue = 3, DefValue = 0)]
+        public int SoftClip { get => Values[P.SoftClip]; set => Values.Set(P.SoftClip, value); }
+
+        [ParameterDecl(Name = "Clip mix", Description = "How much of the soft clip is heard (the rest the signal unclipped, delayed to match); the ceiling holds either way", MinValue = 0, MaxValue = 1000, DefValue = 1000)]
+        public int ClipMix { get => Values[P.ClipMix]; set => Values.Set(P.ClipMix, value); }
+
+        [ParameterDecl(Name = "Slow stage", Description = "Two-stage release (v2): a slow stage holds this much of the sustained reduction, so dense material doesn't pump between hits. 0 %: off (as v1)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int SlowStage { get => Values[P.SlowStage]; set => Values.Set(P.SlowStage, value); }
+
+        [ParameterDecl(Name = "Slow release", Description = "The slow stage's release", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int SlowRelease { get => Values[P.SlowRelease]; set => Values.Set(P.SlowRelease, value); }
+
+        [ParameterDecl(Name = "Transient unlink", Description = "Transients limited per channel (v2): on hits the stereo link drops by this much, so one side's transient doesn't duck the other; sustained sound stays linked. 0 %: as v1", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int Unlink { get => Values[P.Unlink]; set => Values.Set(P.Unlink, value); }
+
+        [ParameterDecl(Name = "Unity listen", Description = "Monitor at the input's loudness (v2): the output trimmed by the gain-match reading (short-term loudness out − in), to judge what limiting does at equal loudness. Off for rendering", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int Unity { get => Values[P.Unity]; set => Values.Set(P.Unity, value); }
+
+        [ParameterDecl(Name = "Delta", Description = "Hear only what the limiting changes (v2): the output minus the driven input, delayed to match, at the input's level (the input gain taken back off), gliding over 10 ms", MinValue = 0, MaxValue = 1, DefValue = 0)]
+        public int Delta { get => Values[P.Delta]; set => Values.Set(P.Delta, value); }
     }
 }
