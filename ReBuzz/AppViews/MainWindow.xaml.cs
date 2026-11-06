@@ -323,6 +323,7 @@ namespace ReBuzz
 
                 StartAutosave();
                 ParseArgs();
+                StartUiShots();     // fork (docs/specs/ui-gallery.md): --ui-shots <folder>
 
                 splashScreenWindow.UpdateText("Done");
                 splashScreenWindow.CloseWindow();
@@ -1099,6 +1100,7 @@ namespace ReBuzz
         /// </summary>
         private void StartAutosave()
         {
+            if (UiShotsRequested) return;   // fork (ui-gallery.md): no recovery question, no autosaves while the gallery draws
             try
             {
                 var leftovers = SongAutosave.FindLeftovers();
