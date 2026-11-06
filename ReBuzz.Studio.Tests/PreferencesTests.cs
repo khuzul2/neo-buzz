@@ -6,11 +6,13 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.NUnit;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using BuzzGUI.Common;
 using BuzzGUI.Common.Settings;
 using ReBuzz.Audio;
@@ -399,6 +401,39 @@ namespace ReBuzz.Studio.Tests
             }
             Assert.That(PrefsPage.Pretty("LowLatencyGC"), Is.EqualTo("Low latency GC"));
             Assert.That(PrefsPage.Pretty("MIDIFiltering"), Is.EqualTo("MIDI filtering"));
+        }
+
+        [AvaloniaTest]
+        public void LongPagesScrollVisiblyToTheirLastSetting()
+        {
+            // Fork (UX review): the Audio and General pages ran past the window, their last setting cut off, with nothing to
+            // show there was more: a page (a ScrollViewer's subclass) had no template, so it didn't scroll at all. Each
+            // page scrolls when it is longer than the window, its bar shown, to its last setting whole.
+            using var restore = Studio.AfterTest(CloseWhatIsOpen);
+            var prefs = Open(PreferencesWindow.AudioPageName);
+            prefs.Height = 420;
+            Settle(prefs);
+            int longPages = 0;
+            foreach (var page in prefs.Pages.ToList())
+            {
+                prefs.ShowPage(page.Title);
+                Settle(prefs);
+                Settle(prefs);
+                var body = (Avalonia.Controls.Control)page.Content!;
+                if (page.Extent.Height <= page.Viewport.Height + 1) continue;
+                longPages++;
+                Assert.That(page.AllowAutoHide, Is.False, page.Title + ": its scroll bar stays shown");
+                var bar = page.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ScrollBar>().FirstOrDefault(b => b.Orientation == Avalonia.Layout.Orientation.Vertical && b.TemplatedParent == page);
+                Assert.That(bar?.IsEffectivelyVisible, Is.True, page.Title + ": its vertical scroll bar");
+                page.ScrollToEnd();
+                Settle(prefs);
+                Dispatcher.UIThread.RunJobs();
+                var last = ((Panel)body).Children.Last(c => c.IsVisible);
+                var bottom = last.TranslatePoint(new Avalonia.Point(0, last.Bounds.Height), page)!.Value.Y;
+                Assert.That(bottom, Is.LessThanOrEqualTo(page.Bounds.Height + 0.5), page.Title + ": the last setting whole at the end");
+            }
+            Assert.That(longPages, Is.GreaterThanOrEqualTo(2), "pages longer than a 420-point window (Audio among them)");
+            Close(prefs);
         }
     }
 }

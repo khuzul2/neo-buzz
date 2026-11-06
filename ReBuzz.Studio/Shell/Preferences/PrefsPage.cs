@@ -31,8 +31,14 @@ namespace ReBuzz.Studio.Shell.Preferences
         {
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+            AllowAutoHide = false;          // a bar that shows there's more (macOS's and Fluent's hide until scrolled)
             Content = Body;
         }
+
+        // Fork (UX review): a ScrollViewer's look and template, which a subclass doesn't get by itself (Avalonia finds a
+        // control's theme by its own type). Without it a page didn't scroll at all: the Audio and General pages ran past
+        // the window, their last settings cut off, with nothing to show there was more.
+        protected override Type StyleKeyOverride => typeof(ScrollViewer);
 
         /// <summary>The page's tab.</summary>
         public abstract string Title { get; }
