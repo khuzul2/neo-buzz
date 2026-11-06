@@ -46,10 +46,10 @@ namespace ReBuzz.Studio.Tests
             Core.UiHost.OpenParameterWindow(machine, null);
             var window = StudioMachineUiHost.ParameterWindowOf(machine);
             Assert.That(window, Is.Not.Null);
-            Assert.That(window!.Content, Is.InstanceOf<ParameterWindowView>());
+            Assert.That(StudioMachineUiHost.ContentOf(window), Is.InstanceOf<ParameterWindowView>());
             Dispatcher.UIThread.RunJobs();
             window.UpdateLayout();
-            return (window, (ParameterWindowView)window.Content!);
+            return (window!, (ParameterWindowView)StudioMachineUiHost.ContentOf(window)!);
         }
 
         static void Remove(MachineCore machine)

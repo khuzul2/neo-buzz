@@ -101,6 +101,19 @@ namespace ReBuzz.Agent
                 return;
             }
 
+            // Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): --keyboard-shots <folder> opens, draws, plays and checks
+            // the keyboard under machine windows (ReBuzzTests on the package run), then exits.
+            if (KeyboardShots.Folder(args) is string keyboardShots)
+            {
+                Step("keyboard shots");
+                try { KeyboardShots.Run(core, Path.GetFullPath(keyboardShots), Step); }
+                catch (Exception e) { Console.Error.WriteLine("[ReBuzz] keyboard shots: " + e); }
+                try { init.ShutDownReBuzzEngine(); } catch (Exception) { }
+                hidden.Dispose();
+                app.Shutdown();
+                return;
+            }
+
             string song = args.SkipWhile(a => !string.Equals(a, Switch, StringComparison.OrdinalIgnoreCase)).Skip(1).FirstOrDefault(a => !a.StartsWith("-"));
             if (song != null)
             {

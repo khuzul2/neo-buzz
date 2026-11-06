@@ -55,6 +55,11 @@
     <Using Include="NUnit.Framework" />
   </ItemGroup>
 
+  <!-- Fork (machine keyboard): MachineKeyboardTests hear the pitch a key plays with the analysis library's YIN (as the agent's analyze does). -->
+  <ItemGroup>
+    <Compile Include="..\Machines\NeoBuzz.Analysis\Yin.cs;..\Machines\NeoBuzz.Analysis\Fft.cs" Link="Analysis\%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <ItemGroup>
     <!-- Fork (1.0): the wavetable reads audio files with libsndfile, which ReBuzz.exe has beside it
          (RunTime copies it there); the tests import WAV files too (SessionAudioTests). -->

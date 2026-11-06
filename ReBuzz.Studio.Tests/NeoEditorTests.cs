@@ -194,15 +194,18 @@ namespace ReBuzz.Studio.Tests
                     try
                     {
                         var window = OpenEditor(m);
-                        Assert.That(window.Content?.GetType().Name, Is.EqualTo(e.Editor), $"{e.Machine}: its own editor, not the parameter window");
+                        Assert.That(StudioMachineUiHost.ContentOf(window)?.GetType().Name, Is.EqualTo(e.Editor), $"{e.Machine}: its own editor, not the parameter window");
                         WaitReady(m, window);
                         Studio.Screenshot(window, e.Shot);
                         Assert.That(Controls(window, "TextBlock").Select(t => ((TextBlock)t).Text ?? ""), Has.None.StartsWith("Editor error"), $"{e.Machine}: the body built");
                         Assert.That(Controls(window, "ParamKnob").Count(), Is.GreaterThan(1), $"{e.Machine}: knobs");
                         Assert.That(Controls(window, "Section").Count(), Is.GreaterThan(2), $"{e.Machine}: sections");
                         Assert.That(Controls(window, "PresetBar").Count(), Is.EqualTo(1), $"{e.Machine}: the preset bar");
-                        // The WPF editor's layout: the same size, give or take the fonts' metrics.
-                        var size = window.ClientSize;
+                        // The WPF editor's layout: the same size, give or take the fonts' metrics; the window is the
+                        // editor's size and the keyboard's under it (the machine keyboard), the editor never squashed.
+                        var size = StudioMachineUiHost.ContentOf(window)!.Bounds.Size;
+                        Assert.That(window.ClientSize.Height, Is.EqualTo(size.Height + NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(window.Content)).Within(1),
+                            $"{e.Machine}: the window is the editor and its keyboard");
                         Assert.That(size.Width, Is.EqualTo(e.WpfWidth).Within(6).Percent, $"{e.Machine}: width (WPF {e.WpfWidth})");
                         Assert.That(size.Height, Is.EqualTo(e.WpfHeight).Within(6).Percent, $"{e.Machine}: height (WPF {e.WpfHeight})");
                         TestContext.Out.WriteLine($"{e.Machine}: {size.Width:0} x {size.Height:0} (WPF {e.WpfWidth} x {e.WpfHeight})");
@@ -422,7 +425,7 @@ namespace ReBuzz.Studio.Tests
                 {
                     foreach (var (machine, window) in editors)
                     {
-                        var live = Get(window.Content!, "Data");
+                        var live = Get(StudioMachineUiHost.ContentOf(window)!, "Data");
                         var snapshot = Field(live, "Snapshot");
                         var graph = Controls(window, "GraphView").OrderBy(g => g.Bounds.Width * g.Bounds.Height).First();
                         using var bitmap = new RenderTargetBitmap(new PixelSize((int)Math.Ceiling(graph.Bounds.Width), (int)Math.Ceiling(graph.Bounds.Height)));
@@ -1030,7 +1033,7 @@ namespace ReBuzz.Studio.Tests
         /// </summary>
         static double EditorFrameMs(Window window)
         {
-            var content = (Control)window.Content!;
+            var content = StudioMachineUiHost.ContentOf(window)!;
             var size = new PixelSize((int)Math.Ceiling(content.Bounds.Width), (int)Math.Ceiling(content.Bounds.Height));
             using var bitmap = new RenderTargetBitmap(size);
             bitmap.Render(content);
@@ -1075,7 +1078,7 @@ namespace ReBuzz.Studio.Tests
                 note.SetValue(0, (5 << 4) + 1);
                 var window = OpenEditor(scope);
                 Run(1.0);
-                var content = (Control)window.Content!;
+                var content = StudioMachineUiHost.ContentOf(window)!;
                 var graphs = content.GetVisualDescendants().OfType<Control>().Where(c => c.GetType().Name == "GraphView").ToList();
                 double Time(Control c)
                 {
@@ -1134,7 +1137,7 @@ namespace ReBuzz.Studio.Tests
                 song.SongEnd = 16;
                 Global(scope, "Sync").SetValue(0, 5);                         // 1 bar
                 var window = OpenEditor(scope);
-                var editor = window.Content!;
+                var editor = StudioMachineUiHost.ContentOf(window)!;
                 Run(0.1);
                 var quiet = Frame(window);
 

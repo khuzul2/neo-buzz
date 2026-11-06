@@ -8,6 +8,10 @@
 // in a window of its own: what a double click opens on a machine with no GUI here when the per-gear
 // setting says so (on by default for curated manifests), and the machine menu's "Editor...". It isn't
 // saved in songs (the parameter window and GUI are, as before).
+// Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): each of these windows of a machine that plays notes
+// has the keyboard under its content (MachineKeyboardFrame), the window grown by its height; songs keep the
+// windows' sizes without it, so a GUI opens at its own size with or without it. Space plays and stops the
+// song in these windows too (TransportKeys, as in the main window), so a focused keyboard never takes it.
 
 using System;
 using System.Runtime.CompilerServices;
@@ -125,13 +129,20 @@ namespace ReBuzz.Studio.Platform
             var window = new Window
             {
                 Title = title,
-                Content = content,
+                Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(machine, content),
                 SizeToContent = SizeToContent.WidthAndHeight,
                 ShowInTaskbar = false,
             };
+            _ = new TransportKeys(window, () => machine.Graph?.Buzz as ReBuzzCore, () => false);
             window.Closed += (s, e) => closed();
             return window;
         }
+
+        /// <summary>A machine window's own content (its GUI, parameter window or editor), without the keyboard under it.</summary>
+        public static Control ContentOf(Window window) => NeoBuzz.Editor.MachineKeyboardFrame.ContentOf(window?.Content) as Control;
+
+        /// <summary>The keyboard under a machine window's content, or null (for tests).
+        public static NeoBuzz.Editor.MachineKeyboard KeyboardOf(Window window) => NeoBuzz.Editor.MachineKeyboardFrame.Of(window?.Content);
 
         static void Show(Window window, WindowPlacement? at)
         {
@@ -140,7 +151,8 @@ namespace ReBuzz.Studio.Platform
                 window.SizeToContent = SizeToContent.Manual;
                 window.Position = new PixelPoint((int)p.Left, (int)p.Top);
                 window.Width = p.Width;
-                window.Height = p.Height;
+                // Songs keep the GUI's height; the keyboard comes on top of it.
+                window.Height = p.Height + NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(window.Content);
             }
             var owner = Dialogs.Owner;
             if (!window.IsVisible)
@@ -152,7 +164,8 @@ namespace ReBuzz.Studio.Platform
         }
 
         static WindowPlacement Placement(Window window) =>
-            window == null ? default : new WindowPlacement(window.Position.X, window.Position.Y, window.Bounds.Width, window.Bounds.Height);
+            window == null ? default : new WindowPlacement(window.Position.X, window.Position.Y, window.Bounds.Width,
+                Math.Max(0, window.Bounds.Height - NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(window.Content)));
 
         static Control Note(string text) => new TextBlock { Text = text, Margin = new Thickness(24), Foreground = Brushes.Gray };
     }

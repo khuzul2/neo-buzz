@@ -46,6 +46,10 @@
         [BuzzSetting(false, Description = "Make PianoKeyboard topmost.")]
         public bool PianoKeyboardTopmost { get; internal set; }
 
+        // Fork (machine keyboard): the keyboard under the windows of machines that play notes.
+        [BuzzSetting(true, Description = "Show a piano keyboard under the window of every machine that plays notes. A window's Keyboard toggle (Ctrl+K, ⌘K on a Mac) shows or hides it for that machine type.")]
+        public bool MachineKeyboard { get; set; }
+
         [BuzzSetting(DpiScalingType.System, Description = "DPI scaling.")]
         public DpiScalingType DpiScaling { get; internal set; }
 
