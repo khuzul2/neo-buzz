@@ -317,6 +317,24 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void TheKnobsUnfilledTrackStandsOutFromThePanel()
+        {
+            // UI gallery review: the unfilled track was 1.39:1 against the panel; a control's parts need 3:1 (WCAG 1.4.11).
+            Assert.That(Contrast.Ratio(Palette.Track, Palette.Panel), Is.LessThan(1.5), "the old track colour");
+            Assert.That(Contrast.Ratio(NeoColor.FromRgb(0xFF, 0xFF, 0xFF), NeoColor.FromRgb(0, 0, 0)), Is.EqualTo(21).Within(1e-9));
+            var k = new KnobModel(46);
+            k.Set(0.3);
+            var c = new RecordingCanvas();
+            k.Draw(c, 64, Accent);
+            var track = c.Of(NeoDrawKind.Arc).First();
+            Assert.That(track.FromDegrees, Is.EqualTo(-KnobModel.Sweep).Within(1e-9), "the whole sweep: the track");
+            double ratio = Contrast.Ratio(track.Stroke.Color, Palette.Panel);
+            TestContext.Out.WriteLine($"track {track.Stroke.Color} on the panel {Palette.Panel}: {ratio:F2}:1");
+            Assert.That(ratio, Is.GreaterThanOrEqualTo(3), "3:1 against the panel");
+            Assert.That(Contrast.Ratio(track.Stroke.Color, Palette.Background), Is.GreaterThanOrEqualTo(3), "and the window's background");
+        }
+
+        [Test]
         public void KnobArcsStartAtTheValueZeroOrTheMinimum()
         {
             // mac-409: Neo Limiter's Input gain (−12 … +24 dB) at 0.0 dB lit an arc from +6 dB, the knob's middle.

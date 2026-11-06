@@ -166,7 +166,7 @@ namespace NeoBuzz.Editor
             double r = Diameter / 2;
 
             // Track and value arcs.
-            c.Arc(centre, r - 2, -Sweep, Sweep, new NeoStroke(Palette.Track, 4));
+            c.Arc(centre, r - 2, -Sweep, Sweep, new NeoStroke(Palette.KnobTrack, 4));
             double a = -Sweep + 2 * Sweep * Value;
             double from = -Sweep + 2 * Sweep * Math.Clamp(Origin, 0, 1);
             if (Math.Abs(a - from) > 0.5)
