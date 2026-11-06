@@ -117,12 +117,50 @@ namespace NeoBuzz.DyeEssence
                 Build.Envelope(ctx, a, d, s, r, 4 * 60, 44),
                 Build.Knobs(ctx, 4, D, a, d, s, r)));
 
+            UIElement ModEnv(int e)
+            {
+                int b = e == 0 ? P.E1Delay : P.E2Delay;
+                int I(int p) => b + (p - P.E1Delay);
+                return S("Mod env " + (e + 1), Layout.Column(
+                    Build.Knobs(ctx, 6, D, I(P.E1Delay), I(P.E1A), I(P.E1Hold), I(P.E1D), I(P.E1S), I(P.E1R)),
+                    Layout.Row(Build.Knobs(ctx, 3, D, I(P.E1ACurve), I(P.E1DCurve), I(P.E1RCurve)), Layout.Gap(8), new ParamChoice(ctx, I(P.E1Sync), cellWidth: 56))));
+            }
+            UIElement Lfo(int l)
+            {
+                int b = P.L1Shape + l * (P.L2Shape - P.L1Shape);
+                int I(int p) => b + (p - P.L1Shape);
+                return S("LFO " + (l + 1), Layout.Column(
+                    Layout.Row(new ParamDropdown(ctx, I(P.L1Shape), width: 92), Layout.Gap(4), new ParamDropdown(ctx, I(P.L1Sync), width: 66)),
+                    Build.Knobs(ctx, 3, D, I(P.L1Rate), I(P.L1Phase), I(P.L1Fade)),
+                    new ParamChoice(ctx, I(P.L1Retrig), "Retrig", 30)));
+            }
+            var routes = new Grid();
+            for (int c = 0; c < 12; c++) routes.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            for (int r = 0; r < 4; r++) routes.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            for (int i = 0; i < 16; i++)
+            {
+                int b = P.R1Src + 3 * i;
+                int row = i % 4, col = (i / 4) * 3;
+                var src = new ParamDropdown(ctx, b, $"{i + 1} source", 96) { Margin = new Thickness(0, 0, 4, 2) };
+                var dst = new ParamDropdown(ctx, b + 1, "dest", 100) { Margin = new Thickness(0, 0, 4, 2) };
+                var amt = new ParamKnob(ctx, b + 2, "amount", 28) { Margin = new Thickness(0, 0, 12, 0) };
+                Grid.SetRow(src, row); Grid.SetColumn(src, col);
+                Grid.SetRow(dst, row); Grid.SetColumn(dst, col + 1);
+                Grid.SetRow(amt, row); Grid.SetColumn(amt, col + 2);
+                routes.Children.Add(src);
+                routes.Children.Add(dst);
+                routes.Children.Add(amt);
+            }
+
             return Layout.Column(
                 Layout.Row(Slot(0), Slot(1), Slot(2)),
                 Layout.Row(sub, noise, Filter(0), Filter(1), routing, voice),
                 Layout.Row(MakeEnv("Amp envelope", P.AmpA, P.AmpD, P.AmpS, P.AmpR),
                            MakeEnv("Filter envelope", P.FltA, P.FltD, P.FltS, P.FltR),
-                           S("Out", meter)));
+                           S("Out", meter)),
+                Layout.Row(ModEnv(0), ModEnv(1), S("Macros", Build.Knobs(ctx, 2, D, P.M1, P.M2, P.M3, P.M4))),
+                Layout.Row(Lfo(0), Lfo(1), Lfo(2), Lfo(3)),
+                Layout.Row(S("Routes", routes)));
         }
 
         static string UserLabel(DyeEssenceMachine machine, int slot) =>

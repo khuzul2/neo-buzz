@@ -137,3 +137,110 @@ group Osc C
 CShape     "C shape"       0 4    2    enum Sine Triangle Saw Square Pulse | The Analog engine's wave
 CPw        "C pulse width" 0 1000 1000 lin 3 50 % 1                   | The Analog engine's pulse width (Pulse)
 CDrift     "C drift"       0 1000 200  pct                             | The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are
+
+# P1b (appended): modulation. Two DAHDSR envelopes with curves, four LFOs, four macros and sixteen
+# routes (source, destination, amount), evaluated per note on the control grid.
+group Mod env 1
+E1Delay    "Env1 delay"    0 1000 0    pow 0 10 3 s 3                  | Delay before the attack
+E1A        "Env1 attack"   0 1000 300  time 0.0005 20                  | Attack time
+E1Hold     "Env1 hold"     0 1000 0    pow 0 10 3 s 3                  | Hold at the top
+E1D        "Env1 decay"    0 1000 600  time 0.0005 20                  | Decay time
+E1S        "Env1 sustain"  0 1000 0    pct                             | Sustain level
+E1R        "Env1 release"  0 1000 500  time 0.0005 20                  | Release time
+E1ACurve   "Env1 att curve" 0 1000 500 bip                             | Attack shape: −100 % fast start, 0 straight, +100 % slow start
+E1DCurve   "Env1 dec curve" 0 1000 200 bip                             | Decay shape: −100 % fast start, 0 straight, +100 % slow start
+E1RCurve   "Env1 rel curve" 0 1000 200 bip                             | Release shape: −100 % fast start, 0 straight, +100 % slow start
+E1Sync     "Env1 sync"     0 1    0    switch Seconds Beats            | Beats: each time is read as beats of the song's tempo (1 s = 1 beat)
+group Mod env 2
+E2Delay    "Env2 delay"    0 1000 0    pow 0 10 3 s 3                  | Delay before the attack
+E2A        "Env2 attack"   0 1000 300  time 0.0005 20                  | Attack time
+E2Hold     "Env2 hold"     0 1000 0    pow 0 10 3 s 3                  | Hold at the top
+E2D        "Env2 decay"    0 1000 600  time 0.0005 20                  | Decay time
+E2S        "Env2 sustain"  0 1000 0    pct                             | Sustain level
+E2R        "Env2 release"  0 1000 500  time 0.0005 20                  | Release time
+E2ACurve   "Env2 att curve" 0 1000 500 bip                             | Attack shape: −100 % fast start, 0 straight, +100 % slow start
+E2DCurve   "Env2 dec curve" 0 1000 200 bip                             | Decay shape: −100 % fast start, 0 straight, +100 % slow start
+E2RCurve   "Env2 rel curve" 0 1000 200 bip                             | Release shape: −100 % fast start, 0 straight, +100 % slow start
+E2Sync     "Env2 sync"     0 1    0    switch Seconds Beats            | Beats: each time is read as beats of the song's tempo (1 s = 1 beat)
+group LFO 1
+L1Shape    "LFO1 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L1Rate     "LFO1 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+L1Sync     "LFO1 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+L1Retrig   "LFO1 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
+L1Phase    "LFO1 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
+L1Fade     "LFO1 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+group LFO 2
+L2Shape    "LFO2 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L2Rate     "LFO2 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+L2Sync     "LFO2 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+L2Retrig   "LFO2 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
+L2Phase    "LFO2 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
+L2Fade     "LFO2 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+group LFO 3
+L3Shape    "LFO3 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L3Rate     "LFO3 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+L3Sync     "LFO3 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+L3Retrig   "LFO3 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
+L3Phase    "LFO3 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
+L3Fade     "LFO3 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+group LFO 4
+L4Shape    "LFO4 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L4Rate     "LFO4 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
+L4Sync     "LFO4 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
+L4Retrig   "LFO4 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
+L4Phase    "LFO4 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
+L4Fade     "LFO4 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
+group Macros
+M1       "Macro 1"       0 1000 0    pct                             | A knob for routes to follow
+M2       "Macro 2"       0 1000 0    pct                             | A knob for routes to follow
+M3       "Macro 3"       0 1000 0    pct                             | A knob for routes to follow
+M4       "Macro 4"       0 1000 0    pct                             | A knob for routes to follow
+group Routes
+R1Src      "R1 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 1: what modulates
+R1Dst      "R1 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 1: what it moves
+R1Amt      "R1 amount"     0 1000 500  bip                             | Route 1: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R2Src      "R2 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 2: what modulates
+R2Dst      "R2 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 2: what it moves
+R2Amt      "R2 amount"     0 1000 500  bip                             | Route 2: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R3Src      "R3 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 3: what modulates
+R3Dst      "R3 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 3: what it moves
+R3Amt      "R3 amount"     0 1000 500  bip                             | Route 3: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R4Src      "R4 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 4: what modulates
+R4Dst      "R4 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 4: what it moves
+R4Amt      "R4 amount"     0 1000 500  bip                             | Route 4: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R5Src      "R5 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 5: what modulates
+R5Dst      "R5 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 5: what it moves
+R5Amt      "R5 amount"     0 1000 500  bip                             | Route 5: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R6Src      "R6 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 6: what modulates
+R6Dst      "R6 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 6: what it moves
+R6Amt      "R6 amount"     0 1000 500  bip                             | Route 6: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R7Src      "R7 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 7: what modulates
+R7Dst      "R7 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 7: what it moves
+R7Amt      "R7 amount"     0 1000 500  bip                             | Route 7: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R8Src      "R8 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 8: what modulates
+R8Dst      "R8 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 8: what it moves
+R8Amt      "R8 amount"     0 1000 500  bip                             | Route 8: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R9Src      "R9 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 9: what modulates
+R9Dst      "R9 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 9: what it moves
+R9Amt      "R9 amount"     0 1000 500  bip                             | Route 9: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R10Src      "R10 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 10: what modulates
+R10Dst      "R10 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 10: what it moves
+R10Amt      "R10 amount"     0 1000 500  bip                             | Route 10: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R11Src      "R11 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 11: what modulates
+R11Dst      "R11 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 11: what it moves
+R11Amt      "R11 amount"     0 1000 500  bip                             | Route 11: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R12Src      "R12 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 12: what modulates
+R12Dst      "R12 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 12: what it moves
+R12Amt      "R12 amount"     0 1000 500  bip                             | Route 12: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R13Src      "R13 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 13: what modulates
+R13Dst      "R13 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 13: what it moves
+R13Amt      "R13 amount"     0 1000 500  bip                             | Route 13: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R14Src      "R14 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 14: what modulates
+R14Dst      "R14 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 14: what it moves
+R14Amt      "R14 amount"     0 1000 500  bip                             | Route 14: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R15Src      "R15 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 15: what modulates
+R15Dst      "R15 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 15: what it moves
+R15Amt      "R15 amount"     0 1000 500  bip                             | Route 15: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)
+R16Src      "R16 source"     0 17   0    enum Off Mod_env_1 Mod_env_2 LFO_1 LFO_2 LFO_3 LFO_4 Amp_env Filter_env Velocity Key Mod_wheel Aftertouch Macro_1 Macro_2 Macro_3 Macro_4 Random | Route 16: what modulates
+R16Dst      "R16 dest"       0 27   0    enum Off Pitch A_pitch B_pitch C_pitch A_position B_position C_position A_warp_1 A_warp_2 B_warp_1 B_warp_2 C_warp_1 C_warp_2 A_level B_level C_level Sub_level Noise_level F1_cutoff F2_cutoff F1_reso F2_reso Amp LFO_1_rate LFO_2_rate LFO_3_rate LFO_4_rate | Route 16: what it moves
+R16Amt      "R16 amount"     0 1000 500  bip                             | Route 16: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)

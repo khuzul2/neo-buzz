@@ -114,7 +114,103 @@ namespace NeoBuzz.DyeEssence
         public const int CShape = 103;
         public const int CPw = 104;
         public const int CDrift = 105;
-        public const int Count = 106;
+        public const int E1Delay = 106;
+        public const int E1A = 107;
+        public const int E1Hold = 108;
+        public const int E1D = 109;
+        public const int E1S = 110;
+        public const int E1R = 111;
+        public const int E1ACurve = 112;
+        public const int E1DCurve = 113;
+        public const int E1RCurve = 114;
+        public const int E1Sync = 115;
+        public const int E2Delay = 116;
+        public const int E2A = 117;
+        public const int E2Hold = 118;
+        public const int E2D = 119;
+        public const int E2S = 120;
+        public const int E2R = 121;
+        public const int E2ACurve = 122;
+        public const int E2DCurve = 123;
+        public const int E2RCurve = 124;
+        public const int E2Sync = 125;
+        public const int L1Shape = 126;
+        public const int L1Rate = 127;
+        public const int L1Sync = 128;
+        public const int L1Retrig = 129;
+        public const int L1Phase = 130;
+        public const int L1Fade = 131;
+        public const int L2Shape = 132;
+        public const int L2Rate = 133;
+        public const int L2Sync = 134;
+        public const int L2Retrig = 135;
+        public const int L2Phase = 136;
+        public const int L2Fade = 137;
+        public const int L3Shape = 138;
+        public const int L3Rate = 139;
+        public const int L3Sync = 140;
+        public const int L3Retrig = 141;
+        public const int L3Phase = 142;
+        public const int L3Fade = 143;
+        public const int L4Shape = 144;
+        public const int L4Rate = 145;
+        public const int L4Sync = 146;
+        public const int L4Retrig = 147;
+        public const int L4Phase = 148;
+        public const int L4Fade = 149;
+        public const int M1 = 150;
+        public const int M2 = 151;
+        public const int M3 = 152;
+        public const int M4 = 153;
+        public const int R1Src = 154;
+        public const int R1Dst = 155;
+        public const int R1Amt = 156;
+        public const int R2Src = 157;
+        public const int R2Dst = 158;
+        public const int R2Amt = 159;
+        public const int R3Src = 160;
+        public const int R3Dst = 161;
+        public const int R3Amt = 162;
+        public const int R4Src = 163;
+        public const int R4Dst = 164;
+        public const int R4Amt = 165;
+        public const int R5Src = 166;
+        public const int R5Dst = 167;
+        public const int R5Amt = 168;
+        public const int R6Src = 169;
+        public const int R6Dst = 170;
+        public const int R6Amt = 171;
+        public const int R7Src = 172;
+        public const int R7Dst = 173;
+        public const int R7Amt = 174;
+        public const int R8Src = 175;
+        public const int R8Dst = 176;
+        public const int R8Amt = 177;
+        public const int R9Src = 178;
+        public const int R9Dst = 179;
+        public const int R9Amt = 180;
+        public const int R10Src = 181;
+        public const int R10Dst = 182;
+        public const int R10Amt = 183;
+        public const int R11Src = 184;
+        public const int R11Dst = 185;
+        public const int R11Amt = 186;
+        public const int R12Src = 187;
+        public const int R12Dst = 188;
+        public const int R12Amt = 189;
+        public const int R13Src = 190;
+        public const int R13Dst = 191;
+        public const int R13Amt = 192;
+        public const int R14Src = 193;
+        public const int R14Dst = 194;
+        public const int R14Amt = 195;
+        public const int R15Src = 196;
+        public const int R15Dst = 197;
+        public const int R15Amt = 198;
+        public const int R16Src = 199;
+        public const int R16Dst = 200;
+        public const int R16Amt = 201;
+        public const int Count = 202;
     }
 
     internal static class Params
@@ -230,6 +326,102 @@ namespace NeoBuzz.DyeEssence
             new ParamDef(P.CShape, "CShape", "C shape", 0, 4, 2, MapKind.Enum, names: new[] { "Sine", "Triangle", "Saw", "Square", "Pulse" }, group: "Osc C", description: "The Analog engine's wave"),
             new ParamDef(P.CPw, "CPw", "C pulse width", 0, 1000, 1000, MapKind.Linear, a: 3, b: 50, unit: "%", digits: 1, group: "Osc C", description: "The Analog engine's pulse width (Pulse)"),
             new ParamDef(P.CDrift, "CDrift", "C drift", 0, 1000, 200, MapKind.Percent, group: "Osc C", description: "The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are"),
+            new ParamDef(P.E1Delay, "E1Delay", "Env1 delay", 0, 1000, 0, MapKind.Power, a: 0, b: 10, exponent: 3, unit: "s", digits: 3, group: "Mod env 1", description: "Delay before the attack"),
+            new ParamDef(P.E1A, "E1A", "Env1 attack", 0, 1000, 300, MapKind.Time, a: 0.0005, b: 20, group: "Mod env 1", description: "Attack time"),
+            new ParamDef(P.E1Hold, "E1Hold", "Env1 hold", 0, 1000, 0, MapKind.Power, a: 0, b: 10, exponent: 3, unit: "s", digits: 3, group: "Mod env 1", description: "Hold at the top"),
+            new ParamDef(P.E1D, "E1D", "Env1 decay", 0, 1000, 600, MapKind.Time, a: 0.0005, b: 20, group: "Mod env 1", description: "Decay time"),
+            new ParamDef(P.E1S, "E1S", "Env1 sustain", 0, 1000, 0, MapKind.Percent, group: "Mod env 1", description: "Sustain level"),
+            new ParamDef(P.E1R, "E1R", "Env1 release", 0, 1000, 500, MapKind.Time, a: 0.0005, b: 20, group: "Mod env 1", description: "Release time"),
+            new ParamDef(P.E1ACurve, "E1ACurve", "Env1 att curve", 0, 1000, 500, MapKind.Bipolar, group: "Mod env 1", description: "Attack shape: −100 % fast start, 0 straight, +100 % slow start"),
+            new ParamDef(P.E1DCurve, "E1DCurve", "Env1 dec curve", 0, 1000, 200, MapKind.Bipolar, group: "Mod env 1", description: "Decay shape: −100 % fast start, 0 straight, +100 % slow start"),
+            new ParamDef(P.E1RCurve, "E1RCurve", "Env1 rel curve", 0, 1000, 200, MapKind.Bipolar, group: "Mod env 1", description: "Release shape: −100 % fast start, 0 straight, +100 % slow start"),
+            new ParamDef(P.E1Sync, "E1Sync", "Env1 sync", 0, 1, 0, MapKind.Switch, names: new[] { "Seconds", "Beats" }, group: "Mod env 1", description: "Beats: each time is read as beats of the song's tempo (1 s = 1 beat)"),
+            new ParamDef(P.E2Delay, "E2Delay", "Env2 delay", 0, 1000, 0, MapKind.Power, a: 0, b: 10, exponent: 3, unit: "s", digits: 3, group: "Mod env 2", description: "Delay before the attack"),
+            new ParamDef(P.E2A, "E2A", "Env2 attack", 0, 1000, 300, MapKind.Time, a: 0.0005, b: 20, group: "Mod env 2", description: "Attack time"),
+            new ParamDef(P.E2Hold, "E2Hold", "Env2 hold", 0, 1000, 0, MapKind.Power, a: 0, b: 10, exponent: 3, unit: "s", digits: 3, group: "Mod env 2", description: "Hold at the top"),
+            new ParamDef(P.E2D, "E2D", "Env2 decay", 0, 1000, 600, MapKind.Time, a: 0.0005, b: 20, group: "Mod env 2", description: "Decay time"),
+            new ParamDef(P.E2S, "E2S", "Env2 sustain", 0, 1000, 0, MapKind.Percent, group: "Mod env 2", description: "Sustain level"),
+            new ParamDef(P.E2R, "E2R", "Env2 release", 0, 1000, 500, MapKind.Time, a: 0.0005, b: 20, group: "Mod env 2", description: "Release time"),
+            new ParamDef(P.E2ACurve, "E2ACurve", "Env2 att curve", 0, 1000, 500, MapKind.Bipolar, group: "Mod env 2", description: "Attack shape: −100 % fast start, 0 straight, +100 % slow start"),
+            new ParamDef(P.E2DCurve, "E2DCurve", "Env2 dec curve", 0, 1000, 200, MapKind.Bipolar, group: "Mod env 2", description: "Decay shape: −100 % fast start, 0 straight, +100 % slow start"),
+            new ParamDef(P.E2RCurve, "E2RCurve", "Env2 rel curve", 0, 1000, 200, MapKind.Bipolar, group: "Mod env 2", description: "Release shape: −100 % fast start, 0 straight, +100 % slow start"),
+            new ParamDef(P.E2Sync, "E2Sync", "Env2 sync", 0, 1, 0, MapKind.Switch, names: new[] { "Seconds", "Beats" }, group: "Mod env 2", description: "Beats: each time is read as beats of the song's tempo (1 s = 1 beat)"),
+            new ParamDef(P.L1Shape, "L1Shape", "LFO1 shape", 0, 6, 0, MapKind.Enum, names: new[] { "Sine", "Triangle", "Saw up", "Saw down", "Square", "S&H", "Smooth" }, group: "LFO 1", description: "Waveform"),
+            new ParamDef(P.L1Rate, "L1Rate", "LFO1 rate", 0, 1000, 500, MapKind.Freq, a: 0.02, b: 50, group: "LFO 1", description: "Rate (free)"),
+            new ParamDef(P.L1Sync, "L1Sync", "LFO1 sync", 0, 11, 0, MapKind.Enum, names: new[] { "Free", "1/32", "1/16T", "1/16", "1/8T", "1/8", "1/4T", "1/4", "1/2", "1 bar", "2 bars", "4 bars" }, group: "LFO 1", description: "Tempo sync (overrides the rate)"),
+            new ParamDef(P.L1Retrig, "L1Retrig", "LFO1 retrig", 0, 1, 1, MapKind.Switch, group: "LFO 1", description: "Restart with each note (one per note); off: one free LFO for all notes"),
+            new ParamDef(P.L1Phase, "L1Phase", "LFO1 phase", 0, 1000, 0, MapKind.Linear, a: 0, b: 360, unit: "°", digits: 0, group: "LFO 1", description: "Start phase (retrig)"),
+            new ParamDef(P.L1Fade, "L1Fade", "LFO1 fade", 0, 1000, 0, MapKind.Power, a: 0, b: 5, exponent: 2, unit: "s", digits: 2, group: "LFO 1", description: "Fade-in time after the note starts"),
+            new ParamDef(P.L2Shape, "L2Shape", "LFO2 shape", 0, 6, 0, MapKind.Enum, names: new[] { "Sine", "Triangle", "Saw up", "Saw down", "Square", "S&H", "Smooth" }, group: "LFO 2", description: "Waveform"),
+            new ParamDef(P.L2Rate, "L2Rate", "LFO2 rate", 0, 1000, 500, MapKind.Freq, a: 0.02, b: 50, group: "LFO 2", description: "Rate (free)"),
+            new ParamDef(P.L2Sync, "L2Sync", "LFO2 sync", 0, 11, 0, MapKind.Enum, names: new[] { "Free", "1/32", "1/16T", "1/16", "1/8T", "1/8", "1/4T", "1/4", "1/2", "1 bar", "2 bars", "4 bars" }, group: "LFO 2", description: "Tempo sync (overrides the rate)"),
+            new ParamDef(P.L2Retrig, "L2Retrig", "LFO2 retrig", 0, 1, 1, MapKind.Switch, group: "LFO 2", description: "Restart with each note (one per note); off: one free LFO for all notes"),
+            new ParamDef(P.L2Phase, "L2Phase", "LFO2 phase", 0, 1000, 0, MapKind.Linear, a: 0, b: 360, unit: "°", digits: 0, group: "LFO 2", description: "Start phase (retrig)"),
+            new ParamDef(P.L2Fade, "L2Fade", "LFO2 fade", 0, 1000, 0, MapKind.Power, a: 0, b: 5, exponent: 2, unit: "s", digits: 2, group: "LFO 2", description: "Fade-in time after the note starts"),
+            new ParamDef(P.L3Shape, "L3Shape", "LFO3 shape", 0, 6, 0, MapKind.Enum, names: new[] { "Sine", "Triangle", "Saw up", "Saw down", "Square", "S&H", "Smooth" }, group: "LFO 3", description: "Waveform"),
+            new ParamDef(P.L3Rate, "L3Rate", "LFO3 rate", 0, 1000, 500, MapKind.Freq, a: 0.02, b: 50, group: "LFO 3", description: "Rate (free)"),
+            new ParamDef(P.L3Sync, "L3Sync", "LFO3 sync", 0, 11, 0, MapKind.Enum, names: new[] { "Free", "1/32", "1/16T", "1/16", "1/8T", "1/8", "1/4T", "1/4", "1/2", "1 bar", "2 bars", "4 bars" }, group: "LFO 3", description: "Tempo sync (overrides the rate)"),
+            new ParamDef(P.L3Retrig, "L3Retrig", "LFO3 retrig", 0, 1, 1, MapKind.Switch, group: "LFO 3", description: "Restart with each note (one per note); off: one free LFO for all notes"),
+            new ParamDef(P.L3Phase, "L3Phase", "LFO3 phase", 0, 1000, 0, MapKind.Linear, a: 0, b: 360, unit: "°", digits: 0, group: "LFO 3", description: "Start phase (retrig)"),
+            new ParamDef(P.L3Fade, "L3Fade", "LFO3 fade", 0, 1000, 0, MapKind.Power, a: 0, b: 5, exponent: 2, unit: "s", digits: 2, group: "LFO 3", description: "Fade-in time after the note starts"),
+            new ParamDef(P.L4Shape, "L4Shape", "LFO4 shape", 0, 6, 0, MapKind.Enum, names: new[] { "Sine", "Triangle", "Saw up", "Saw down", "Square", "S&H", "Smooth" }, group: "LFO 4", description: "Waveform"),
+            new ParamDef(P.L4Rate, "L4Rate", "LFO4 rate", 0, 1000, 500, MapKind.Freq, a: 0.02, b: 50, group: "LFO 4", description: "Rate (free)"),
+            new ParamDef(P.L4Sync, "L4Sync", "LFO4 sync", 0, 11, 0, MapKind.Enum, names: new[] { "Free", "1/32", "1/16T", "1/16", "1/8T", "1/8", "1/4T", "1/4", "1/2", "1 bar", "2 bars", "4 bars" }, group: "LFO 4", description: "Tempo sync (overrides the rate)"),
+            new ParamDef(P.L4Retrig, "L4Retrig", "LFO4 retrig", 0, 1, 1, MapKind.Switch, group: "LFO 4", description: "Restart with each note (one per note); off: one free LFO for all notes"),
+            new ParamDef(P.L4Phase, "L4Phase", "LFO4 phase", 0, 1000, 0, MapKind.Linear, a: 0, b: 360, unit: "°", digits: 0, group: "LFO 4", description: "Start phase (retrig)"),
+            new ParamDef(P.L4Fade, "L4Fade", "LFO4 fade", 0, 1000, 0, MapKind.Power, a: 0, b: 5, exponent: 2, unit: "s", digits: 2, group: "LFO 4", description: "Fade-in time after the note starts"),
+            new ParamDef(P.M1, "M1", "Macro 1", 0, 1000, 0, MapKind.Percent, group: "Macros", description: "A knob for routes to follow"),
+            new ParamDef(P.M2, "M2", "Macro 2", 0, 1000, 0, MapKind.Percent, group: "Macros", description: "A knob for routes to follow"),
+            new ParamDef(P.M3, "M3", "Macro 3", 0, 1000, 0, MapKind.Percent, group: "Macros", description: "A knob for routes to follow"),
+            new ParamDef(P.M4, "M4", "Macro 4", 0, 1000, 0, MapKind.Percent, group: "Macros", description: "A knob for routes to follow"),
+            new ParamDef(P.R1Src, "R1Src", "R1 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 1: what modulates"),
+            new ParamDef(P.R1Dst, "R1Dst", "R1 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 1: what it moves"),
+            new ParamDef(P.R1Amt, "R1Amt", "R1 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 1: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R2Src, "R2Src", "R2 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 2: what modulates"),
+            new ParamDef(P.R2Dst, "R2Dst", "R2 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 2: what it moves"),
+            new ParamDef(P.R2Amt, "R2Amt", "R2 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 2: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R3Src, "R3Src", "R3 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 3: what modulates"),
+            new ParamDef(P.R3Dst, "R3Dst", "R3 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 3: what it moves"),
+            new ParamDef(P.R3Amt, "R3Amt", "R3 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 3: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R4Src, "R4Src", "R4 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 4: what modulates"),
+            new ParamDef(P.R4Dst, "R4Dst", "R4 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 4: what it moves"),
+            new ParamDef(P.R4Amt, "R4Amt", "R4 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 4: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R5Src, "R5Src", "R5 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 5: what modulates"),
+            new ParamDef(P.R5Dst, "R5Dst", "R5 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 5: what it moves"),
+            new ParamDef(P.R5Amt, "R5Amt", "R5 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 5: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R6Src, "R6Src", "R6 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 6: what modulates"),
+            new ParamDef(P.R6Dst, "R6Dst", "R6 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 6: what it moves"),
+            new ParamDef(P.R6Amt, "R6Amt", "R6 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 6: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R7Src, "R7Src", "R7 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 7: what modulates"),
+            new ParamDef(P.R7Dst, "R7Dst", "R7 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 7: what it moves"),
+            new ParamDef(P.R7Amt, "R7Amt", "R7 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 7: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R8Src, "R8Src", "R8 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 8: what modulates"),
+            new ParamDef(P.R8Dst, "R8Dst", "R8 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 8: what it moves"),
+            new ParamDef(P.R8Amt, "R8Amt", "R8 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 8: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R9Src, "R9Src", "R9 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 9: what modulates"),
+            new ParamDef(P.R9Dst, "R9Dst", "R9 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 9: what it moves"),
+            new ParamDef(P.R9Amt, "R9Amt", "R9 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 9: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R10Src, "R10Src", "R10 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 10: what modulates"),
+            new ParamDef(P.R10Dst, "R10Dst", "R10 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 10: what it moves"),
+            new ParamDef(P.R10Amt, "R10Amt", "R10 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 10: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R11Src, "R11Src", "R11 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 11: what modulates"),
+            new ParamDef(P.R11Dst, "R11Dst", "R11 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 11: what it moves"),
+            new ParamDef(P.R11Amt, "R11Amt", "R11 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 11: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R12Src, "R12Src", "R12 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 12: what modulates"),
+            new ParamDef(P.R12Dst, "R12Dst", "R12 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 12: what it moves"),
+            new ParamDef(P.R12Amt, "R12Amt", "R12 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 12: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R13Src, "R13Src", "R13 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 13: what modulates"),
+            new ParamDef(P.R13Dst, "R13Dst", "R13 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 13: what it moves"),
+            new ParamDef(P.R13Amt, "R13Amt", "R13 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 13: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R14Src, "R14Src", "R14 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 14: what modulates"),
+            new ParamDef(P.R14Dst, "R14Dst", "R14 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 14: what it moves"),
+            new ParamDef(P.R14Amt, "R14Amt", "R14 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 14: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R15Src, "R15Src", "R15 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 15: what modulates"),
+            new ParamDef(P.R15Dst, "R15Dst", "R15 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 15: what it moves"),
+            new ParamDef(P.R15Amt, "R15Amt", "R15 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 15: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
+            new ParamDef(P.R16Src, "R16Src", "R16 source", 0, 17, 0, MapKind.Enum, names: new[] { "Off", "Mod env 1", "Mod env 2", "LFO 1", "LFO 2", "LFO 3", "LFO 4", "Amp env", "Filter env", "Velocity", "Key", "Mod wheel", "Aftertouch", "Macro 1", "Macro 2", "Macro 3", "Macro 4", "Random" }, group: "Routes", description: "Route 16: what modulates"),
+            new ParamDef(P.R16Dst, "R16Dst", "R16 dest", 0, 27, 0, MapKind.Enum, names: new[] { "Off", "Pitch", "A pitch", "B pitch", "C pitch", "A position", "B position", "C position", "A warp 1", "A warp 2", "B warp 1", "B warp 2", "C warp 1", "C warp 2", "A level", "B level", "C level", "Sub level", "Noise level", "F1 cutoff", "F2 cutoff", "F1 reso", "F2 reso", "Amp", "LFO 1 rate", "LFO 2 rate", "LFO 3 rate", "LFO 4 rate" }, group: "Routes", description: "Route 16: what it moves"),
+            new ParamDef(P.R16Amt, "R16Amt", "R16 amount", 0, 1000, 500, MapKind.Bipolar, group: "Routes", description: "Route 16: how far (pitch ±12 st, cutoff ±6 oct, LFO rate ±4 oct, the rest their whole range)"),
         };
     }
 }
