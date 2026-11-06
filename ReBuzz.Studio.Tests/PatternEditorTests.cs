@@ -385,6 +385,52 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void TheHeadersStayOverTheirColumnsInView()
+        {
+            // Gallery mac-051 cut "Closed hat tune" at the left, mac-052 the set label "Pad / Track" at the right.
+            var s = Open("PE Headers");
+            try
+            {
+                var grid = Grid(s);
+                Pump();
+                double view = (double)grid.HeaderWidth;
+                int wide = -1;
+                for (int i = 0; i < (int)grid.ColumnSetCount && wide < 0; i++)
+                {
+                    var span = ((double Left, double Right))grid.SetSpan(i);
+                    if (span.Right - span.Left > view + 300) wide = i;
+                }
+                Assert.That(wide, Is.GreaterThanOrEqualTo(0), "Neo Poly's parameters make a set wider than the view");
+
+                // Scrolled into the middle of that set: its label is over the part in view.
+                var start = ((double Left, double Right))grid.SetSpan(wide);
+                grid.ScrollSideways(start.Left + 150);
+                Pump();
+                var label = (Rect)grid.SetLabelBounds(wide);
+                Assert.That(label.Left, Is.GreaterThanOrEqualTo(0), "the set label starts in view");
+                Assert.That(label.Right, Is.LessThanOrEqualTo(view), "and ends in view");
+                Assert.That(label.Center.X, Is.EqualTo(view / 2).Within(view / 4), "centred over the part in view");
+
+                // A column half scrolled out at the left: its name moves into the part in view.
+                int column = 3;
+                double cw = (double)grid.ColumnWidth(wide, column);
+                double contentX = (double)grid.ColumnX(wide, column) + (double)grid.SidewaysOffset;
+                grid.ScrollSideways(contentX + cw * 0.4);                 // its left 40% out of view
+                Pump();
+                double cx = (double)grid.ColumnX(wide, column);
+                Assert.That(cx, Is.LessThan(0), "the column starts out of view");
+                var name = (Rect)grid.ColumnLabelBounds(wide, column);
+                Assert.That(name.Left, Is.GreaterThanOrEqualTo(0), "its name is in view");
+                Assert.That(name.Right, Is.LessThanOrEqualTo(cx + cw + 0.01), "inside its column");
+                Studio.Screenshot(s.Window, "pattern-editor-headers-scrolled");
+            }
+            finally
+            {
+                Close(s);
+            }
+        }
+
+        [AvaloniaTest]
         public void TheMouseMovesTheCursorAndSelects()
         {
             var s = Open("PE Mouse");

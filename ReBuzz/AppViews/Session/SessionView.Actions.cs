@@ -519,7 +519,10 @@ namespace ReBuzz.AppViews.Session
             OpenMenu(menu, cell);
         }
 
-        void ShowTrackMenu(TrackHeader header)
+        void ShowTrackMenu(TrackHeader header) => OpenMenu(TrackMenu(header), header);
+
+        /// <summary>A track header's menu (built apart for tests).</summary>
+        internal ContextMenu TrackMenu(TrackHeader header)
         {
             var doc = layout.Ensure();
             int track = header.Track;
@@ -527,6 +530,18 @@ namespace ReBuzz.AppViews.Session
             menu.Items.Add(ColorMenu("Track colour", track < doc.Tracks.Count ? doc.Tracks[track].ColorIndex : -1, i => layout.SetTrackColor(track, i)));
             if (header.Machine != null)
             {
+                // The track is its machine's sequence: renaming it renames the machine (undoable).
+                var named = header.Machine;
+                menu.Items.Add(Item("Rename…", () => named.ShowDialog(MachineDialog.Rename, 0, 0)));
+                menu.Items.Add(new MenuItem
+                {
+                    Header = "Arm",
+                    IsChecked = layout.IsArmed(track),
+                    ToolTip = "Arm for recording: MIDI you play goes to this track's machine and is recorded (the header's ●)",
+                    Command = new RelayCommand(() => ToggleArm(track))
+                });
+                menu.Items.Add(Item("Stop clips", () => StopTrack(track), "Backspace"));
+                menu.Items.Add(new Separator());
                 menu.Items.Add(new MenuItem { Header = "Mute", IsChecked = header.Machine.IsMuted, Command = new RelayCommand(() => header.Machine.IsMuted = !header.Machine.IsMuted) });
                 menu.Items.Add(new MenuItem { Header = "Solo", IsChecked = header.Machine.IsSoloed, Command = new RelayCommand(() => header.Machine.IsSoloed = !header.Machine.IsSoloed) });
                 if (SessionLayout.IsClipPlayer(header.Machine))
@@ -538,8 +553,20 @@ namespace ReBuzz.AppViews.Session
                     menu.Items.Add(new MenuItem { Header = "Record its input (machines connected to it)", IsChecked = !master, Command = new RelayCommand(() => SessionLayout.SetInputOf(machine, 0)) });
                     menu.Items.Add(new MenuItem { Header = "Record the master (resampling)", IsChecked = master, Command = new RelayCommand(() => SessionLayout.SetInputOf(machine, 1)) });
                 }
+                menu.Items.Add(new Separator());
+                var remove = Item("Remove track", () => RemoveTrack(track));
+                remove.ToolTip = "Removes the machine's track (its sequence, with its arrangement) from the song; the machine stays.\nUndo brings it back.";
+                menu.Items.Add(remove);
             }
-            OpenMenu(menu, header);
+            return menu;
+        }
+
+        /// <summary>Removes a track: its sequence, as the Sequence View's Delete Track does (one step of the song's undo).</summary>
+        void RemoveTrack(int track)
+        {
+            var seq = layout.SequenceOf(track);
+            if (seq?.Machine == null) return;
+            buzz.SongCore.ActionStack.Do(new BuzzGUI.Common.Actions.MachineActions.DeleteSequenceAction(seq));
         }
 
         void ShowMidiOnlyMenu(FrameworkElement anchor, SessionTarget target, int track, int scene, string what)

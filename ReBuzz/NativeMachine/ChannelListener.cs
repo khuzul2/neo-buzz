@@ -98,7 +98,8 @@ namespace ReBuzz.NativeMachine
                 {
                     machine.MachineDLL.IsCrashed = true;
                     machine.Ready = false;
-                    Global.Buzz.DCWriteLine(machine.Name + " crashed.", BuzzGUI.Interfaces.DCLogLevel.Fatal);
+                    // Fork: named, and told to the user (it said "<machine> crashed." in the debug console only).
+                    buzz.ReportMachineCrashed(machine, $"its host process didn't answer within {waitTime} ms");
                 }
                 return false;
             }

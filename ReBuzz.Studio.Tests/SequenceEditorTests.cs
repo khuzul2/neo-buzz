@@ -11,7 +11,9 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.NUnit;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
+using Avalonia.Media;
 using Avalonia.VisualTree;
 using Avalonia.Threading;
 using BuzzGUI.Interfaces;
@@ -477,6 +479,119 @@ namespace ReBuzz.Studio.Tests
                 Dispatcher.UIThread.RunJobs();
             Assert.That(text.IsCompleted ? text.Result : null, Is.EqualTo(bpmBox.Text), "the BPM box's text is on the clipboard");
             Assert.That(Events(0), Is.EqualTo("0:Hook 32:Hook"), "the arrangement is untouched");
+        }
+
+        // ------------------------------------------------------------------ the pattern list's colours
+
+        static double Luminance(Color c)
+        {
+            static double Channel(byte v) { double x = v / 255.0; return x <= 0.03928 ? x / 12.92 : Math.Pow((x + 0.055) / 1.055, 2.4); }
+            return 0.2126 * Channel(c.R) + 0.7152 * Channel(c.G) + 0.0722 * Channel(c.B);
+        }
+
+        static Color Over(Color top, Color under)
+        {
+            double a = top.A / 255.0;
+            byte Mix(byte t, byte u) => (byte)Math.Round(t * a + u * (1 - a));
+            return Color.FromRgb(Mix(top.R, under.R), Mix(top.G, under.G), Mix(top.B, under.B));
+        }
+
+        /// <summary>The contrast of an item's text on what it is drawn on (WCAG ratio).</summary>
+        static double ItemContrast(ListBoxItem item)
+        {
+            var presenter = item.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.ContentPresenter>().First(p => p.Name == "PART_ContentPresenter");
+            var under = SequenceView.PatternListBackground;
+            var back = presenter.Background is ISolidColorBrush b ? Over(b.Color, under) : under;
+            var text = ((ISolidColorBrush)presenter.Foreground!).Color;
+            double l1 = Luminance(back), l2 = Luminance(Over(text, back));
+            return (Math.Max(l1, l2) + 0.05) / (Math.Min(l1, l2) + 0.05);
+        }
+
+        [AvaloniaTest]
+        public void ThePatternListIsReadableInEveryState()
+        {
+            // Gallery mac-070…072: "1. Arp" under the pointer was white on near-white (1.06:1).
+            using var rig = new Rig();
+            Rig.Machine("Lead", ("Answer", 16, new[] { 0 }), ("Arp", 16, new[] { 0 }), ("Hook", 16, new[] { 0 }));
+            rig.Click(rig.View.AddTrackButton.TranslatePoint(new Point(10, 10), rig.Window)!.Value);
+            rig.Menu("Lead");
+            rig.Click(rig.At(0, 0));
+            rig.Type("2");                                                  // Hook at the cursor, selected in the list
+            rig.Click(rig.At(0, 0));
+            var list = rig.View.PatternList;
+            Assert.That(list.SelectedIndex, Is.EqualTo(2));
+            var arp = (ListBoxItem)list.ContainerFromIndex(1)!;
+            var hook = (ListBoxItem)list.ContainerFromIndex(2)!;
+            var answer = (ListBoxItem)list.ContainerFromIndex(0)!;
+            Assert.That(ItemContrast(answer), Is.GreaterThanOrEqualTo(4.5), "an item");
+            Assert.That(ItemContrast(hook), Is.GreaterThanOrEqualTo(4.5), "the selected item");
+
+            rig.Window.MouseMove(arp.TranslatePoint(new Point(20, arp.Bounds.Height / 2), rig.Window)!.Value);
+            Settle();
+            Assert.That(arp.IsPointerOver, Is.True);
+            Assert.That(ItemContrast(arp), Is.GreaterThanOrEqualTo(4.5), "the item under the pointer");
+            rig.Screenshot("sequence-pattern-list-hover");
+
+            rig.Window.MouseMove(hook.TranslatePoint(new Point(20, hook.Bounds.Height / 2), rig.Window)!.Value);
+            Settle();
+            Assert.That(ItemContrast(hook), Is.GreaterThanOrEqualTo(4.5), "the selected item under the pointer");
+            Assert.That(ItemContrast(arp), Is.GreaterThanOrEqualTo(4.5), "an item the pointer left");
+        }
+
+        // ------------------------------------------------------------------ Set Time Signature (gallery mac-336)
+
+        [AvaloniaTest]          // SequenceView's statics are Avalonia brushes: on the UI thread
+        public void ABarLengthIsATimeSignatureOrTicks()
+        {
+            int Ticks(string text, int tpb = 4) => SequenceView.ParseBarLength(text, tpb, out int t) == null ? t : -1;
+            Assert.That(Ticks("4/4"), Is.EqualTo(16));
+            Assert.That(Ticks(" 3/4 "), Is.EqualTo(12));
+            Assert.That(Ticks("7/8"), Is.EqualTo(14));
+            Assert.That(Ticks("6/8"), Is.EqualTo(12));
+            Assert.That(Ticks("7/16"), Is.EqualTo(7));
+            Assert.That(Ticks("5/4", 6), Is.EqualTo(30));
+            Assert.That(Ticks("16"), Is.EqualTo(16), "ticks, as before");
+            foreach (var bad in new[] { "", "4/x", "x", "4/3", "0/4", "1/32", "2000", "-4", "4/4/4" })
+                Assert.That(SequenceView.ParseBarLength(bad, 4, out _), Is.Not.Null.And.Not.Empty, $"\"{bad}\" says what's wrong");
+            Assert.That(SequenceView.TimeSignatureText(16, 4), Is.EqualTo("4/4"));
+            Assert.That(SequenceView.TimeSignatureText(14, 4), Is.EqualTo("7/8"));
+            Assert.That(SequenceView.TimeSignatureText(7, 4), Is.EqualTo("7"));
+        }
+
+        [AvaloniaTest]
+        public void SetTimeSignatureTakes44AndSaysWhatIsWrongInline()
+        {
+            using var rig = new Rig();
+            Rig.Machine("Lead", ("Hook", 16, new[] { 0 }));
+            rig.Click(rig.View.AddTrackButton.TranslatePoint(new Point(10, 10), rig.Window)!.Value);
+            rig.Menu("Lead");
+            rig.Click(rig.At(32, 0));
+            Window dialog = null;
+            void Opened(Window w, RoutedEventArgs e) { if (w != rig.Window) dialog = w; }
+            using var subscription = Window.WindowOpenedEvent.AddClassHandler<Window>(Opened);
+            var asked = rig.View.AskTimeSignature();
+            for (int i = 0; i < 20 && dialog == null; i++) Settle();
+            Assert.That(dialog, Is.Not.Null, "the dialog opened");
+            var box = dialog!.GetVisualDescendants().OfType<TextBox>().Single();
+            var ok = dialog.GetVisualDescendants().OfType<Button>().Single(b => (b.Content as string) == "OK");
+            var error = dialog.GetVisualDescendants().OfType<TextBlock>().Single(t => (t.Tag as string) == "error");
+            Assert.That(box.Text, Is.EqualTo("4/4"), "the bar as a time signature");
+            Assert.That((ok.IsEnabled, error.IsVisible), Is.EqualTo((true, false)));
+
+            box.Text = "4/x";
+            Settle();
+            Assert.That(error.IsVisible, Is.True, "what's wrong shows under the box");
+            Assert.That(error.Text, Does.Contain("isn't a time signature"));
+            Assert.That(ok.IsEnabled, Is.False, "OK waits until it is right");
+            Studio.Screenshot(dialog, "sequence-time-signature-invalid");
+
+            box.Text = "3/4";
+            Settle();
+            Assert.That((ok.IsEnabled, error.IsVisible), Is.EqualTo((true, false)));
+            ok.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            for (int i = 0; i < 20 && !asked.IsCompleted; i++) Settle();
+            Assert.That(asked.IsCompleted, Is.True);
+            Assert.That(rig.Canvas.CursorSpan, Is.EqualTo(12), "3/4 at 4 ticks a beat: 12-tick bars from the cursor on");
         }
 
         // ------------------------------------------------------------------ markers and playback

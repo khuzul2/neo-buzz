@@ -112,6 +112,7 @@ namespace ReBuzz.Core.Session
             int players = song.Machines.Count(IsClipPlayer);
             float x = Math.Clamp(-0.7f + 0.12f * (players % 6), -0.95f, 0.95f);
             float y = Math.Clamp(-0.7f + 0.15f * (players / 6 % 6), -0.95f, 0.95f);
+            (x, y) = MachinePlacement.Free(song.Machines, x, y);          // not on top of another machine
             var master = song.Machines.FirstOrDefault(m => m.DLL?.Info?.Type == MachineType.Master);
 
             IMachine machine;

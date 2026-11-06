@@ -1118,6 +1118,20 @@ namespace ReBuzz.Core.Session
             return next != null && next.IsStop;
         }
 
+        /// <summary>The slot (scene row) the playing clip was launched from, or -1 (none, or not known).</summary>
+        public int GetPlayingSlot(TTrack track)
+        {
+            var st = Find(track);
+            return st != null && IsRunning && st.Playing != null ? st.Slot : -1;
+        }
+
+        /// <summary>The slot (scene row) the waiting launch comes from, or -1 (none, a stop, or not known).</summary>
+        public int GetQueuedSlot(TTrack track)
+        {
+            var next = Find(track)?.Next;
+            return next != null && !next.IsStop ? next.Spec.Slot : -1;
+        }
+
         public long GetStartClock(TTrack track)
         {
             var st = Find(track);

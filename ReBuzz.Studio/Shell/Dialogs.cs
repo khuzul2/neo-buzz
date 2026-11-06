@@ -115,6 +115,57 @@ namespace ReBuzz.Studio.Shell
 
         public static Task Info(string message, string caption) => Ask(message, caption, UserButtons.Ok);
 
+        /// <summary>
+        /// An error: what happened in words, and what went wrong technically under Details (closed
+        /// at first; its text can be selected and copied). Tests answer it with <see cref="Responder"/> (OK).
+        /// </summary>
+        public static async Task Error(string message, string caption, string details)
+        {
+            if (Responder?.Invoke(message, caption, UserButtons.Ok) is UserAnswer) return;
+            var owner = Owner;
+            var window = new Window
+            {
+                Title = caption,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                CanResize = false,
+                WindowStartupLocation = owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen,
+                ShowInTaskbar = false,
+            };
+            var ok = new Button { Content = "OK", MinWidth = 72, IsDefault = true, IsCancel = true };
+            ok.Click += (s, e) => window.Close();
+            var box = new TextBox
+            {
+                Text = details ?? "",
+                IsReadOnly = true,
+                TextWrapping = TextWrapping.Wrap,
+                FontFamily = new FontFamily("Menlo, Consolas, DejaVu Sans Mono, monospace"),
+                FontSize = 11,
+                MaxHeight = 220,
+                Tag = "details",
+            };
+            var expander = new Expander { Header = "Details", Content = box, IsExpanded = false, HorizontalAlignment = HorizontalAlignment.Stretch };
+            window.Content = new StackPanel
+            {
+                Margin = new Thickness(20),
+                Spacing = 12,
+                Width = 480,
+                Children =
+                {
+                    new TextBlock { Text = message, TextWrapping = TextWrapping.Wrap, Tag = "message" },
+                    expander,
+                    new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Children = { ok } },
+                },
+            };
+            if (owner != null) await window.ShowDialog(owner);
+            else
+            {
+                var closed = new TaskCompletionSource();
+                window.Closed += (s, e) => closed.TrySetResult();
+                window.Show();
+                await closed.Task;
+            }
+        }
+
         /// <summary>Tests answer text questions here: (title, current) → the text, or null for cancel.</summary>
         public static Func<string, string, string> TextResponder { get; set; }
 
@@ -143,6 +194,68 @@ namespace ReBuzz.Studio.Shell
                 Spacing = 12,
                 Children = { box, new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Children = { ok, cancel } } },
             };
+            window.Opened += (s, e) => { box.Focus(); box.SelectAll(); };
+            if (owner != null) await window.ShowDialog(owner);
+            else
+            {
+                var closed = new TaskCompletionSource();
+                window.Closed += (s, e) => closed.TrySetResult();
+                window.Show();
+                await closed.Task;
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// A line of text checked as it is typed: <paramref name="validate"/> gives what's wrong with
+        /// it (null: nothing), shown under the box, and OK waits until it is right, so an answer is
+        /// never dropped without a word (Set Time Signature ignored "4/4", gallery mac-336). Null when
+        /// cancelled. With <see cref="TextResponder"/> (tests), an answer that isn't right is null.
+        /// </summary>
+        public static async Task<string> AskText(string title, string current, string prompt, Func<string, string> validate)
+        {
+            if (TextResponder != null)
+            {
+                string answer = TextResponder(title, current);
+                return answer != null && validate(answer) == null ? answer : null;
+            }
+            var owner = Owner;
+            var box = new TextBox { Text = current ?? "", MinWidth = 260 };
+            var error = new TextBlock { Foreground = new SolidColorBrush(Color.Parse("#FF7A70")), TextWrapping = TextWrapping.Wrap, MaxWidth = 320, IsVisible = false, Tag = "error" };
+            string result = null;
+            var window = new Window
+            {
+                Title = title,
+                SizeToContent = SizeToContent.WidthAndHeight,
+                CanResize = false,
+                WindowStartupLocation = owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen,
+                ShowInTaskbar = false,
+            };
+            var ok = new Button { Content = "OK", MinWidth = 72, IsDefault = true };
+            var cancel = new Button { Content = "Cancel", MinWidth = 72, IsCancel = true };
+            void Check()
+            {
+                string problem = validate(box.Text);
+                error.Text = problem ?? "";
+                error.IsVisible = problem != null;
+                ok.IsEnabled = problem == null;
+            }
+            box.TextChanged += (s, e) => Check();
+            ok.Click += (s, e) =>
+            {
+                Check();
+                if (!ok.IsEnabled) return;
+                result = box.Text;
+                window.Close();
+            };
+            cancel.Click += (s, e) => window.Close();
+            var panel = new StackPanel { Margin = new Thickness(20), Spacing = 8 };
+            if (!string.IsNullOrEmpty(prompt)) panel.Children.Add(new TextBlock { Text = prompt, TextWrapping = TextWrapping.Wrap, MaxWidth = 320 });
+            panel.Children.Add(box);
+            panel.Children.Add(error);
+            panel.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Margin = new Thickness(0, 4, 0, 0), Children = { ok, cancel } });
+            window.Content = panel;
+            Check();
             window.Opened += (s, e) => { box.Focus(); box.SelectAll(); };
             if (owner != null) await window.ShowDialog(owner);
             else

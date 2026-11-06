@@ -67,7 +67,7 @@
                             <RowDefinition/>
                             <RowDefinition Height="30"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Margin="4" Text="Contollers:"/>
+                        <TextBlock Margin="4" Text="Controllers:"/>
                         <ScrollViewer Grid.Row="1">
                             <ListView x:Name="lvControllers" ItemsSource="{Binding SourceCollection}">
                                 <ListView.View>
@@ -84,8 +84,8 @@
                     </Grid>
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Name="btAddController" Margin ="4" Height ="20" Width="60" VerticalAlignment="Bottom" Content="Add"></Button>
-                        <Button Name="btModifyController" Margin ="4" Height ="20" Width="60" VerticalAlignment="Bottom" Content="Modify" IsEnabled="{Binding IsControllerSelected}"></Button>
-                        <Button Name="btRemoveController" Margin ="4" Height ="20" Width="60" VerticalAlignment="Bottom" Content="Remove"></Button>
+                        <Button Name="btModifyController" Margin ="4" Height ="20" Width="60" VerticalAlignment="Bottom" Content="Modify" IsEnabled="False"></Button>
+                        <Button Name="btRemoveController" Margin ="4" Height ="20" Width="60" VerticalAlignment="Bottom" Content="Remove" IsEnabled="False"></Button>
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -126,7 +126,7 @@
                             <RowDefinition/>
                             <RowDefinition Height="30"/>
                         </Grid.RowDefinitions>
-                        <TextBlock Margin="4" Text="Contollers:"/>
+                        <TextBlock Margin="4" Text="Controllers:"/>
                         <ScrollViewer Grid.Row="1">
                             <ListView x:Name="lvDAWControllers" ItemsSource="{Binding SourceCollection}">
                                 <ListView.View>
@@ -143,8 +143,8 @@
                     </Grid>
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Grid.Column="1" Margin="0,0,0,0">
                         <Button Name="btAddDAWController" Margin ="4" Height ="20" Width="60" VerticalAlignment="Bottom" Content="Add"></Button>
-                        <Button Name="btModifyDAWController" Margin ="4" Height ="20" Width="60" VerticalAlignment="Bottom" Content="Modify" IsEnabled="{Binding IsControllerSelected}"></Button>
-                        <Button Name="btRemoveDAWController" Margin ="4" Height ="20" Width="60" VerticalAlignment="Bottom" Content="Remove"></Button>
+                        <Button Name="btModifyDAWController" Margin ="4" Height ="20" Width="60" VerticalAlignment="Bottom" Content="Modify" IsEnabled="False"></Button>
+                        <Button Name="btRemoveDAWController" Margin ="4" Height ="20" Width="60" VerticalAlignment="Bottom" Content="Remove" IsEnabled="False"></Button>
                     </StackPanel>
                 </Grid>
 
@@ -175,7 +175,7 @@
             </TabItem>
         </TabControl>
         <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Name="btOk" Margin ="4" Height ="20" Width="60" VerticalAlignment="Bottom" Content="Ok"></Button>
+            <Button Name="btOk" Margin ="4" Height ="20" Width="60" VerticalAlignment="Bottom" Content="OK"></Button>
             <Button Name="btCancel" Margin ="4" Height ="20" Width="60" VerticalAlignment="Bottom" Content="Cancel" IsDefault="True" IsCancel="True"></Button>
         </StackPanel>
     </Grid>

@@ -175,9 +175,53 @@ namespace ReBuzz.Core.Session
             return SequenceOf(track)?.Machine?.Patterns.FirstOrDefault(p => p.Name == name);
         }
 
-        /// <summary>Machines that have no sequence yet, i.e. could get a new track.</summary>
-        public IEnumerable<IMachine> MachinesWithoutTrack() =>
-            song.Machines.Where(m => m.DLL?.Info?.Type != MachineType.Master && !song.Sequences.Any(s => s.Machine == m));
+        /// <summary>
+        /// What one slot shows: its clip's state on the track, but only in the slot the clip plays
+        /// or waits in. A pattern can fill several slots of a track (the demo song's Chords is in
+        /// three scenes) while the track plays one clip at a time: the slot it was launched from
+        /// is the one that plays (the first slot holding it when that isn't known, as for a launch
+        /// from the agent); the others show stopped.
+        /// </summary>
+        public ClipState SlotState(int track, int scene) => SlotState(SequenceOf(track), PatternAt(track, scene), track, scene);
+
+        /// <summary><see cref="SlotState(int, int)"/> for a slot whose sequence and pattern the caller holds.</summary>
+        public ClipState SlotState(ISequence sequence, IPattern pattern, int track, int scene)
+        {
+            if (sequence == null || pattern == null || Session == null) return ClipState.Stopped;
+            var state = Session.GetState(sequence, pattern);
+            if (state == ClipState.Stopped || Session is not SessionCore core) return state;
+            bool playsHere = ReferenceEquals(core.GetPlaying(sequence), pattern) && SlotHolding(track, pattern, core.GetPlayingSlot(sequence)) == scene;
+            bool waitsHere = ReferenceEquals(core.GetQueued(sequence), pattern) && SlotHolding(track, pattern, core.GetQueuedSlot(sequence)) == scene;
+            return state switch
+            {
+                ClipState.Playing or ClipState.Stopping => playsHere ? state : ClipState.Stopped,
+                ClipState.Queued => waitsHere ? ClipState.Queued : playsHere ? ClipState.Playing : ClipState.Stopped,
+                _ => state
+            };
+        }
+
+        /// <summary>The slot of a track a clip plays from: the known one if it still holds the clip, else the first that does; -1 for none.</summary>
+        int SlotHolding(int track, IPattern pattern, int known)
+        {
+            var doc = Document;
+            if (doc == null) return -1;
+            if (known >= 0 && known < doc.Scenes.Count && ReferenceEquals(PatternAt(track, known), pattern)) return known;
+            for (int s = 0; s < doc.Scenes.Count; s++)
+                if (ReferenceEquals(PatternAt(track, s), pattern)) return s;
+            return -1;
+        }
+
+        /// <summary>
+        /// Machines that have no sequence yet, i.e. could get a new track: not the Master, and not
+        /// the session's return tracks or cue output, which have their own columns (+ Track offered
+        /// the Verb return, gallery mac-227).
+        /// </summary>
+        public IEnumerable<IMachine> MachinesWithoutTrack()
+        {
+            var doc = Document;
+            var own = doc == null ? new HashSet<string>() : new HashSet<string>(doc.Returns.Append(doc.CueMachine).Where(n => !string.IsNullOrEmpty(n)));
+            return song.Machines.Where(m => m.DLL?.Info?.Type != MachineType.Master && !own.Contains(m.Name) && !song.Sequences.Any(s => s.Machine == m));
+        }
 
         // ------------------------------------------------------------------ grid edits (undoable)
 
@@ -187,6 +231,12 @@ namespace ReBuzz.Core.Session
         public void ClearSlot(int track, int scene) => SetSlot(track, scene, null);
 
         public void InsertScene(int index) => Edit(doc => doc.InsertScene(index));
+
+        /// <summary>Adds empty scenes at the bottom until there are <paramref name="count"/> (one undo step; the views' spare rows).</summary>
+        public void AddScenesTo(int count) => Edit(doc =>
+        {
+            while (doc.Scenes.Count < Math.Min(count, 999)) doc.InsertScene(doc.Scenes.Count);
+        });
 
         public void RemoveScene(int index) => Edit(doc => doc.RemoveScene(index));
 
