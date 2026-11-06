@@ -443,7 +443,8 @@
    "unit": "s",
    "a": 0.0,
    "b": 0.5,
-   "description": "Mute fade time in ms (0 = instant). 0 is a one-block fade"
+   "own_texts": false,
+   "description": "Mute fade time in ms (0 = instant). 0 is a one-block fade. Its own text (the engine's Milliseconds descriptor) reads the raw value over 500, 0.0 … 1.0 ms; the code takes the raw value as ms"
   },
   {
    "index": 3,

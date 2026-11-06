@@ -158,7 +158,9 @@ SPECS = [
             P("Master", "linear", "v / 32768 * 100", "float  master = MasterParam / 32768f;", unit="%",
               note="The master mix's level in % of unity (0x8000), up to 200 %; the per-track outputs leave it out"),
             P("Mute", "switch"),
-            P("Mute Inertia", "linear", "v / 1000", "(inertiaMs / 1000f) * _engineRate", unit="s", note="0 is a one-block fade"),
+            P("Mute Inertia", "linear", "v / 1000", "(inertiaMs / 1000f) * _engineRate", unit="s", own_texts=False,
+              note="0 is a one-block fade. Its own text (the engine's Milliseconds descriptor) reads the raw value over 500, "
+                   "0.0 … 1.0 ms; the code takes the raw value as ms"),
         ] + [P(f"Mute Track {i}", "switch") for i in range(1, 17)] + [
             P("Interpolation", "enum"),
         ],
