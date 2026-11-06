@@ -267,7 +267,7 @@ namespace NeoBuzz.MachineTests
             string root = MachinesDir();
             var files = Directory.GetFiles(Path.Combine(root, "NeoBuzz.Dsp"), "*.cs")
                 .Concat(Directory.GetFiles(Path.Combine(root, "NeoBuzz.Machine"), "*.cs"))
-                .Concat(Directory.GetDirectories(root, "Neo*")
+                .Concat(Directory.GetDirectories(root, "Neo*").Append(Path.Combine(root, "DyeEssence"))
                     .Where(d => Directory.Exists(Path.Combine(d, "Engine")) && Path.GetFileName(d) != "NeoAnalyzer")
                     .SelectMany(d => Directory.GetFiles(Path.Combine(d, "Engine"), "*.cs", SearchOption.AllDirectories)))
                 .Where(f => Path.GetFileName(f) != "PortableMath.cs")
