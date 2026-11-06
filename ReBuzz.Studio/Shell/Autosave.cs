@@ -17,8 +17,9 @@ namespace ReBuzz.Studio.Shell
         static DispatcherTimer timer;
 
         /// <summary>
-        /// Offers the newest leftover autosave: Yes opens it (unsaved, under its song's name), No
-        /// deletes them, Cancel keeps them for next time. True when one was opened.
+        /// Offers the newest leftover autosave: Restore opens it (unsaved, under its song's name),
+        /// Discard… deletes them once confirmed, Decide Later keeps them for next time (Return restores,
+        /// Escape decides later: UX review). True when one was opened.
         /// </summary>
         public static async Task<bool> OfferRecovery(ReBuzzCore core)
         {
@@ -30,8 +31,8 @@ namespace ReBuzz.Studio.Shell
                 string song = string.IsNullOrEmpty(newest.Song) ? "an untitled song" : "'" + Path.GetFileName(newest.Song) + "'";
                 var answer = await Dialogs.Ask(
                     $"{Product.Name} didn't close normally last time. There are unsaved changes to {song}, autosaved at {newest.Saved:g}.\n\n" +
-                    "Yes: open them (then save to keep them)\nNo: delete them\nCancel: keep them for next time",
-                    "Recover unsaved changes", UserButtons.YesNoCancel);
+                    "Restore opens them (then save to keep them); Decide Later keeps them for next time.",
+                    "Recover unsaved changes", UserButtons.YesNoCancel, DialogChoices.Recover);
                 if (answer == UserAnswer.Yes)
                 {
                     bool opened = core.Autosave.Recover(newest);
@@ -39,7 +40,9 @@ namespace ReBuzz.Studio.Shell
                         SongAutosave.Delete(older.Path);
                     return opened;
                 }
-                if (answer == UserAnswer.No)
+                if (answer == UserAnswer.No &&
+                    await Dialogs.Ask($"Discard the unsaved changes to {song}? They can't be brought back.", "Discard unsaved changes", UserButtons.YesNo,
+                        new DialogChoices { Labels = new() { [UserAnswer.Yes] = "Discard", [UserAnswer.No] = "Keep" }, Default = UserAnswer.Yes, Safe = UserAnswer.No }) == UserAnswer.Yes)
                     foreach (var leftover in leftovers)
                         SongAutosave.Delete(leftover.Path);
             }
