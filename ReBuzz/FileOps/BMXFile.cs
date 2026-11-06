@@ -88,7 +88,8 @@ namespace ReBuzz.FileOps
             RBSG = 0x52425347, // ReBuzz Song Settings
             XQES = 0x58514553, // Sequence properties
             MGRP = 0x5052474D,  // Machine groups
-            YNOC = 0x7A7A7543
+            YNOC = 0x7A7A7543,
+            MID2 = 0x3244494D   // Fork: MIDI bindings with 16-bit track and parameter indices (CreateMIDI)
         }
 
         public BMXFile(ReBuzzCore buzz, string buzzPath, IUiDispatcher dispatcher, IKeyboard keyboard, EngineSettings engineSettings)
@@ -1321,7 +1322,11 @@ namespace ReBuzz.FileOps
         private bool LoadMIDI()
         {
             Section section;
-            if (sections.TryGetValue(SectionType.MIDI, out section))
+            // Fork (docs/specs/dye-essence.md §5.2): MID2 has every binding with 16-bit indices, and
+            // is read instead of Buzz's MIDI section when a file has it. MIDI keeps a byte per index,
+            // so a binding of a machine's 257th state parameter or later was read as another one's.
+            bool wide = sections.TryGetValue(SectionType.MID2, out section);
+            if (wide || sections.TryGetValue(SectionType.MIDI, out section))
             {
                 FileOpsEvent(FileEventType.StatusUpdate, "Load MIDI Properties...");
 
@@ -1334,8 +1339,8 @@ namespace ReBuzz.FileOps
                         break;
 
                     int group = ReadByte(fs);
-                    int track = ReadByte(fs);
-                    int paramIndex = ReadByte(fs);
+                    int track = wide ? ReadUShort(fs) : ReadByte(fs);
+                    int paramIndex = wide ? ReadUShort(fs) : ReadByte(fs);
                     int midiChannel = ReadByte(fs);
                     int midiController = ReadByte(fs);
 
@@ -1345,8 +1350,9 @@ namespace ReBuzz.FileOps
                     if (machine != null)
                     {
                         var all = machine.AllParameters().Where(p => p.Flags.HasFlag(ParameterFlags.State));
-                        var param = all.ElementAt(paramIndex);
-                        buzz.MidiControllerAssignments.BindParameter(param as ParameterCore, track, midiChannel, midiController);
+                        var param = all.ElementAtOrDefault(paramIndex);
+                        if (param != null)
+                            buzz.MidiControllerAssignments.BindParameter(param as ParameterCore, track, midiChannel, midiController);
                     }
                 }
             }
@@ -2431,6 +2437,7 @@ namespace ReBuzz.FileOps
         private bool CreateMIDI()
         {
             MemoryStream ms = new MemoryStream();
+            MemoryStream wide = new MemoryStream();
             var song = buzz.SongCore;
 
             var controllers = buzz.MidiControllerAssignments.ContollerBindings;
@@ -2441,24 +2448,41 @@ namespace ReBuzz.FileOps
             {
                 var machine = controller.Parameter.Group.Machine;
                 var all = machine.AllParameters().Where(p => p.Flags.HasFlag(ParameterFlags.State));
-                WriteString(ms, machine.Name);
                 int group = machine.ParameterGroups.IndexOf(controller.Parameter.Group);
                 int track = controller.Track;
                 int paramIndex = all.FindIndex(m => m == controller.Parameter);
                 int midiChannel = controller.MidiChannel;
                 int midiController = controller.MidiController;
+                if (paramIndex < 0)
+                    continue;
 
-                WriteByte(ms, (byte)group);
-                WriteByte(ms, (byte)track);
-                WriteByte(ms, (byte)paramIndex);
-                WriteByte(ms, (byte)midiChannel);
-                WriteByte(ms, (byte)midiController);
+                // Buzz's section, a byte each: the bindings that fit (Buzz and earlier versions read it).
+                if (group <= 255 && track <= 255 && paramIndex <= 255 && midiChannel <= 255 && midiController <= 255)
+                {
+                    WriteString(ms, machine.Name);
+                    WriteByte(ms, (byte)group);
+                    WriteByte(ms, (byte)track);
+                    WriteByte(ms, (byte)paramIndex);
+                    WriteByte(ms, (byte)midiChannel);
+                    WriteByte(ms, (byte)midiController);
+                }
+
+                // Fork (docs/specs/dye-essence.md §5.2): MID2, every binding, the track and the index
+                // in 16 bits (LoadMIDI reads it instead of MIDI).
+                WriteString(wide, machine.Name);
+                WriteByte(wide, (byte)group);
+                WriteUShort(wide, (ushort)track);
+                WriteUShort(wide, (ushort)paramIndex);
+                WriteByte(wide, (byte)midiChannel);
+                WriteByte(wide, (byte)midiController);
             }
 
             // Machine name == ""
             WriteByte(ms, 0);
+            WriteByte(wide, 0);
 
             AddSection(ms.ToArray(), SectionType.MIDI);
+            AddSection(wide.ToArray(), SectionType.MID2);
             return true;
         }
 
