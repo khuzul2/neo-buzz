@@ -32,22 +32,6 @@ namespace ReBuzzTests
             return client;
         }
 
-        /// <summary>
-        /// The first native machine of an agent process can render silent (or its host crash) the first time it plays; a throwaway
-        /// one plays first so the measured ones are each machine's own sound.
-        /// </summary>
-        static void WarmUp(Client client, string effect)
-        {
-            Quiet(client, "song_new", Args(("discard_unsaved", true)));
-            Quiet(client, "machine_add", Args(("gear", "Neo Poly"), ("name", "Warm")));
-            Quiet(client, "machine_add", Args(("gear", effect), ("name", "Up"), ("insert_after", "Warm")));
-            Quiet(client, "pattern_create", Args(("machine", "Warm"), ("name", "00"), ("length_beats", 4)));
-            Quiet(client, "notes_write", Args(("machine", "Warm"), ("pattern", "00"), ("notes", new JsonArray(new JsonObject { ["pitch"] = 60, ["start"] = 0, ["length"] = 1 }))));
-            Quiet(client, "arrangement_place", Args(("machine", "Warm"), ("pattern", "00"), ("at", 0)));
-            Quiet(client, "render", Args(("tail_seconds", 0.5)));
-            Quiet(client, "render", Args(("tail_seconds", 0.5)));
-        }
-
         static bool Has(string bin, string kind, string gear) =>
             File.Exists(Path.Combine(bin, "Gear", kind, gear + ".dll")) || File.Exists(Path.Combine(bin, "Gear", kind, gear + ".x64.dll"));
 
@@ -141,7 +125,6 @@ namespace ReBuzzTests
             var results = new List<(string Label, bool? Within)>();
 
             // Jeskola Reverb at its defaults (dry 0 dB, reverb −14.5 dB, 1 s), and as a send (wet only, 2.5 s).
-            WarmUp(client, "Jeskola Reverb");
             EffectSong(client, "Jeskola Reverb", null);
             var gear = client.Tool("gear_list", Args(("search", "Jeskola Reverb")))["gear"]!.AsArray();
             Assert.That(gear.First(g => g!["name"]!.GetValue<string>() == "Jeskola Reverb")!["successor"]!.GetValue<string>(), Does.Contain("Neo Verb"));
@@ -298,7 +281,6 @@ namespace ReBuzzTests
             if (!Has(bin, "Generators", "Jeskola Bass 3") || !File.Exists(Path.Combine(bin, "Gear", "Generators", "Neo Poly.NET.dll")))
                 Assert.Inconclusive("Jeskola Bass 3 or Neo Poly not in this build's Gear");
             var report = new List<string>();
-            WarmUp(client, "Jeskola Reverb");
             foreach (string gear in new[] { "Jeskola Bass 3", "Jeskola Bass 2", "Jeskola Bass" })
             {
                 if (!Has(bin, "Generators", gear)) continue;
@@ -366,7 +348,6 @@ namespace ReBuzzTests
             if (!Has(bin, "Generators", "Jeskola Bass") || !Has(bin, "Generators", "Jeskola Bass 3"))
                 Assert.Inconclusive("the Jeskola Basses are not in this build's Gear");
             var report = new List<string>();
-            WarmUp(client, "Jeskola Reverb");
             string Centroid(string gear, string param, string value, bool track)
             {
                 Quiet(client, "song_new", Args(("discard_unsaved", true)));
@@ -431,7 +412,6 @@ namespace ReBuzzTests
         {
             using var client = StartAgent(out string bin);
             var report = new List<string>();
-            WarmUp(client, "Jeskola Reverb");
             void Sweep(string label, string gear, JsonArray changes, int minLag, int maxLag)
             {
                 HeldNoise(client, gear, changes);
@@ -508,7 +488,6 @@ namespace ReBuzzTests
             using var client = StartAgent(out string bin);
             if (!Has(bin, "Effects", "Joachims Hyperion")) Assert.Inconclusive("Joachims Hyperion not in this build's Gear");
             var report = new List<string>();
-            WarmUp(client, "Joachims Hyperion");
             var hz = FineTransfer.Frequencies();
             void Measure(string label, params (int Index, int Raw)[] changes)
             {
@@ -618,7 +597,6 @@ namespace ReBuzzTests
                 report.Add(line);
                 TestContext.Out.WriteLine(line);   // as it comes: a failure later keeps what was measured
             }
-            WarmUp(client, "Jeskola Delay");
             var hz = FineTransfer.Frequencies(40, 16000, 3);
             void Echoes(string label, string gear, JsonArray changes, double pan = 0, bool track = false)
             {
@@ -711,7 +689,6 @@ namespace ReBuzzTests
                 report.Add(line);
                 TestContext.Out.WriteLine(line);   // as it comes: a failure later keeps what was measured
             }
-            WarmUp(client, "Jeskola Delay");
             string Wave(string name, double hz, int harmonics, int step)
             {
                 string path = Path.Combine(Path.GetTempPath(), $"neo-sampler-calibration-{name}-{Guid.NewGuid():N}.wav");

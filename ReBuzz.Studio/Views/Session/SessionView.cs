@@ -148,13 +148,13 @@ namespace ReBuzz.Studio.Views.Session
                 "Undo removes a whole recording pass (↶ here).");
             left.Children.Add(recordButton);
             overdubButton = new FlatButton("◉  Overdub", ToggleSessionRecord,
-                "Session record (Live's): tracks armed with ● in their header record what you play into their clips.\n" +
+                "Session record: tracks armed with ● in their header record what you play into their clips.\n" +
                 "A track playing a clip overdubs it; a track playing none records a new take into its first empty slot\n" +
                 "from the selected scene. Off ends every recording. Each pass is one undo step.\n" +
                 "An armed track's empty slots also have their own ● to record a take there.");
             left.Children.Add(overdubButton);
             captureButton = new FlatButton("⤓  Capture", Capture,
-                "Capture MIDI (Live's): what you played lately on armed tracks, recording or not, becomes a clip\n" +
+                "Capture MIDI: what you played lately on armed tracks, recording or not, becomes a clip\n" +
                 "in their first empty slot from the selected scene, from the bar line before the first note\n" +
                 "(1, 2, 4 or 8 bars), and plays on at once in phase.");
             left.Children.Add(captureButton);
@@ -451,7 +451,7 @@ namespace ReBuzz.Studio.Views.Session
         /// <summary>Tooltips of the top bar's performance controls, with their MIDI mappings.</summary>
         void UpdateBarTips()
         {
-            ToolTip.SetTip(followButton, Tip("Follow actions on or off for the whole song (Live's switch): clips and scenes\n" +
+            ToolTip.SetTip(followButton, Tip("Follow actions on or off for the whole song (one switch for all of them): clips and scenes\n" +
                                              "launch the next one at their follow time when lit. Set them in the clip panel.", SessionTarget.FollowActions, 0, 0));
             ToolTip.SetTip(tapButton, Tip("Tap tempo: tap the beat; from the third tap the tempo follows the last four.", SessionTarget.TapTempo, 0, 0));
             ToolTip.SetTip(nudgeDownButton, Tip("Nudge down: plays 4% slower while held, to bring the session back in step with\n" +

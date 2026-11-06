@@ -8,8 +8,7 @@
 #            the null test's Neo FM6 phrase or playing its notes or triggers, at its defaults, or its global and track
 #            parameters a quarter or three quarters of the way up their raw ranges and a second track the other way where it
 #            has tracks; its first parameter automated in its pattern), each saved as .bmx and .bmxml; every saved song then
-#            opened again and rendered (each machine probed; the first song is rendered once before, as a native host can
-#            start silent in a process's first render), its parameters read, and saved once more. So do the songs in the
+#            opened again and rendered (each machine probed), its parameters read, and saved once more. So do the songs in the
 #            repository that classic Buzz saved with these machines (ExternalMachines/source, *.bmx), start to end.
 #   phase B  the package's own Gear (the rebuilt DLLs); the same files opened, read, rendered and saved again.
 #
@@ -444,15 +443,6 @@ def main(argv):
                         build_song(c, entries, gear_root, frac)
                         for ext in FORMATS:
                             c.call("song_save", path=os.path.join(work, "saved", "natives-" + name + ext), overwrite=True)
-                # A native machine's host can start silent in a process's first render (ReBuzz/Agent/MachineReplace.cs; run
-                # 42181254466's first song was the same bits in both phases where it can't have been): the first song, opened
-                # and rendered once before anything is measured.
-                c.call("song_open", path=songs[0][1], discard_unsaved=True)
-                warm = c.call("render", **{"from": 0, "to": 1, "tail_seconds": 0, "name": f"{phase}-warm-up"})
-                try:
-                    os.remove(warm["file"])
-                except (OSError, KeyError, TypeError):
-                    pass
                 for label, path, names, beats in songs:
                     t = time.time()
                     try:

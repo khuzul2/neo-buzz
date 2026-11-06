@@ -45,6 +45,9 @@ namespace ReBuzzTests
             TestContext.Out.WriteLine(File.Exists(log) ? File.ReadAllText(log) : "(no ui-shots.log)");
             lock (stderr) TestContext.Out.WriteLine(string.Join("\n", stderr.TakeLast(60)));
             Assert.That(exited, Is.True, $"{ReBuzz.Product.WindowsExe} --ui-shots finished in 10 minutes");
+            // Follow-ups: Jeskola Delay's host stopped answering 12-14 s after the demo song was built, at the first offline play
+            // (a machine set up before the engine's first tick ran at 0 Hz: NativeFirstTickTests). No host may stop answering.
+            lock (stderr) Assert.That(stderr.Where(l => l.Contains("native host hang")), Is.Empty, "no native machine's host stopped answering");
             Assert.That(File.Exists(Path.Combine(folder, "done.txt")), Is.True, "the gallery finished (done.txt)");
 
             string shots = Environment.GetEnvironmentVariable("SESSION_SCREENSHOT_DIR") ?? TestContext.CurrentContext.WorkDirectory;

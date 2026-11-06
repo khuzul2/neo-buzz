@@ -565,23 +565,22 @@ namespace NeoBuzz.MachineTests
         public void SilenceAfterNoiseLeavesNoSubnormals()
         {
             // 2 s of noise through a random setting (some bands ringing at 40 dB and more), then 20 s of silence: no
-            // subnormal number comes out (the sections are flushed, tails below 1e-30 are 0) and silence costs no more
-            // than noise.
+            // subnormal number comes out (the sections are flushed, tails below 1e-30 are 0) and a second of silence costs
+            // less than 3 seconds of noise, timed as the throughput guards are (Measure.SilenceCost).
             const int rate = Measure.Rate;
-            var (e, _) = Make(p => Sliders(p, Zigzag(18)));
+            Action<ParamValues> setup = p => Sliders(p, Zigzag(18));
+            var (e, _) = Make(setup);
             var noise = Measure.PinkNoise(2 * rate, 0.3, 9);
             var silent = new float[20 * rate];
-            var sw = Stopwatch.StartNew();
             Run(e, noise, noise);
-            double noiseSeconds = sw.Elapsed.TotalSeconds / 2;
-            sw.Restart();
             var (l, r) = Run(e, silent, silent);
-            double silenceSeconds = sw.Elapsed.TotalSeconds / 20;
-            Assert.That(l.Concat(r).Any(float.IsSubnormal), Is.False, "no subnormal output");
-            Assert.That(l.Concat(r).All(float.IsFinite), Is.True);
-            Assert.That(l[^1], Is.EqualTo(0f));
-            Measure.Report($"Neo EQ graphic (zigzag ±18 dB): silence after noise costs {silenceSeconds / noiseSeconds:F2}× noise; no subnormals; silent at the end");
-            Assert.That(silenceSeconds, Is.LessThan(3 * noiseSeconds + 0.002));
+            Assert.Multiple(() =>
+            {
+                Assert.That(l.Concat(r).Any(float.IsSubnormal), Is.False, "no subnormal output");
+                Assert.That(l.Concat(r).All(float.IsFinite), Is.True);
+                Assert.That(l[^1], Is.EqualTo(0f));
+                Measure.SilenceCost("Neo EQ graphic (zigzag ±18 dB), silence after noise", 3, EqEngine.MaxBlock, () => Make(setup).Engine.Process, noise);
+            });
         }
 
         [Test]

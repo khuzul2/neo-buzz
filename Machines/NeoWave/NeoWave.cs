@@ -134,8 +134,8 @@ namespace NeoBuzz.Wave
                     ExecuteDelegate = _ => NeoBuzz.Machine.NeoAbout.Show(
                         "Neo Wave — wavetable synth: two morphing wavetable oscillators with warp modes, a sub " +
                         "oscillator, ladder and state-variable filters, three envelopes, two LFOs and an " +
-                        "8-slot matrix, oversampled 2×. Ten generated tables plus your own (WAV, Serum-style " +
-                        "2048-sample frames or a single cycle).\n\nPart of neo-buzz (docs/specs/machines.md).", "Neo Wave"),
+                        "8-slot matrix, oversampled 2×. Ten generated tables plus your own (wavetable WAVs in the " +
+                        "common 2048-samples-per-frame layout, or a single cycle).\n\nPart of neo-buzz (docs/specs/machines.md).", "Neo Wave"),
                 },
             },
         };
