@@ -665,26 +665,28 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void ThirtyTwoVoicesRunFasterThanRealTime()
         {
-            foreach (var (wave, filter, label) in new[] { (221, 1, "stereo strings, ladder LP24"), (219, 0, "mono E-piano, no filter") })
+            // Timed against the reference workload in the same run (Throughput.cs).
+            foreach (var (wave, filter, label, floor) in new[] { (221, 1, "stereo strings, ladder LP24", Throughput.Floor(x64: 8.6, arm64: 6.4)), (219, 0, "mono E-piano, no filter", Throughput.Floor(x64: 17, arm64: 17)) })
             {
-                var (e, v, _) = Make(v =>
+                Throughput.Guard($"Neo Sampler, 32 voices ({label}, every pitch 1–4 octaves around the roots)", floor, 2, Rate, SamplerEngine.MaxBlock, () =>
                 {
-                    v.Set(Z(0, SamplerEngine.FWave), wave);
-                    v.Set(Z(0, SamplerEngine.FLoop), 2);
-                    v.Set(Z(0, SamplerEngine.FLoopS), 30000);
-                    v.Set(Z(0, SamplerEngine.FLoopE), 50000);
-                    v.Set(P.FType, filter);
-                    v.Set(P.FCutoff, 700);
-                    v.Set(P.Volume, 300);
-                });
-                for (int k = 0; k < 32; k++) e.NoteOn(k, 36 + 2 * k + k % 3, 1f);
-                RunL(e, Rate);
-                Assert.That(e.ActiveVoices, Is.EqualTo(32));
-                var sw = Stopwatch.StartNew();
-                RunL(e, 10 * Rate);
-                double factor = 10 / sw.Elapsed.TotalSeconds;
-                Measure.Report($"Neo Sampler, 32 voices ({label}, every pitch 1–4 octaves around the roots): {factor:F1}× real time");
-                Assert.That(factor, Is.GreaterThan(3));
+                    var (e, v, _) = Make(v =>
+                    {
+                        v.Set(Z(0, SamplerEngine.FWave), wave);
+                        v.Set(Z(0, SamplerEngine.FLoop), 2);
+                        v.Set(Z(0, SamplerEngine.FLoopS), 30000);
+                        v.Set(Z(0, SamplerEngine.FLoopE), 50000);
+                        v.Set(P.FType, filter);
+                        v.Set(P.FCutoff, 700);
+                        v.Set(P.Volume, 300);
+                    });
+                    for (int k = 0; k < 32; k++) e.NoteOn(k, 36 + 2 * k + k % 3, 1f);
+                    RunL(e, Rate);
+                    Assert.That(e.ActiveVoices, Is.EqualTo(32));
+                    var l = new float[SamplerEngine.MaxBlock];
+                    var r = new float[SamplerEngine.MaxBlock];
+                    return Throughput.InBlocks(SamplerEngine.MaxBlock, (pos, n) => e.Process(l, r, n));
+                }, Measure.Report);
             }
         }
 

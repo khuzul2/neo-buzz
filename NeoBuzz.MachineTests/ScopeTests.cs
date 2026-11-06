@@ -484,38 +484,35 @@ namespace NeoBuzz.MachineTests
             Assert.That(allocated, Is.EqualTo(0), why);
         }
 
-        [TestCase(5, 0, "synced to a bar, left and right")]
-        [TestCase(0, 1, "free at 2 ms/div, triggered")]
-        public void LookingCostsLittle(int sync, int trigger, string what)
+        [TestCase(5, 0, "synced to a bar, left and right", 980, 740)]
+        [TestCase(0, 1, "free at 2 ms/div, triggered", 1100, 880)]
+        public void LookingCostsLittle(int sync, int trigger, string what, double x64, double arm64)
         {
-            var (e, _) = Make(v => { v.Set(P.Sync, sync); v.Set(P.Trigger, trigger); });
-            var l = Measure.PinkNoise(10 * Rate, 0.2, 91);
-            var r = Measure.PinkNoise(10 * Rate, 0.2, 92);
-            void Run()
+            // Under 1 % of real time: over 100×, timed against the reference workload in the same run (Throughput.cs): 1 s
+            // played untimed, then 2 s, in blocks of 256 split at the song's ticks as ReBuzz splits them.
+            var l = Measure.PinkNoise(3 * Rate, 0.2, 91);
+            var r = Measure.PinkNoise(3 * Rate, 0.2, 92);
+            Throughput.Guard($"Neo Scope: stereo at 48 kHz, {what}", Throughput.Floor(x64, arm64), 2, Rate, 256, () =>
             {
+                var (e, _) = Make(v => { v.Set(P.Sync, sync); v.Set(P.Trigger, trigger); });
                 var song = new Song(Rate, 120);
                 var bl = new float[256];
                 var br = new float[256];
-                for (int pos = 0; pos + 256 <= l.Length;)
+                void Block(int pos, int count)
                 {
-                    int n = song.Block(256);
-                    Array.Copy(l, pos, bl, 0, n);
-                    Array.Copy(r, pos, br, 0, n);
-                    e.Process(bl, br, n, song.Transport);
-                    song.Advance(n);
-                    pos += n;
+                    for (int done = 0; done < count;)
+                    {
+                        int n = song.Block(count - done);
+                        Array.Copy(l, pos + done, bl, 0, n);
+                        Array.Copy(r, pos + done, br, 0, n);
+                        e.Process(bl, br, n, song.Transport);
+                        song.Advance(n);
+                        done += n;
+                    }
                 }
-            }
-            Run();
-            double share = double.MaxValue;
-            for (int k = 0; k < 3; k++)
-            {
-                var sw = Stopwatch.StartNew();
-                Run();
-                share = Math.Min(share, sw.Elapsed.TotalSeconds / 10);
-            }
-            Measure.Report($"Neo Scope: stereo at 48 kHz, {what}: {100 * share:F3} % of real time ({1 / share:F0}× real time)");
-            Assert.That(share, Is.LessThan(0.01));
+                for (int pos = 0; pos < Rate; pos += 256) Block(pos, 256);
+                return Throughput.InBlocks(256, (pos, n) => Block(Rate + pos, n));
+            }, Measure.Report);
         }
 
         // ------------------------------------------------------------------ the painters

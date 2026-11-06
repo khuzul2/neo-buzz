@@ -672,16 +672,25 @@ namespace NeoBuzz.MachineTests
         {
             // Stereo at 48 kHz, every part working (drive, the envelope and a fast LFO moving the cutoff every segment, resonance),
             // each family at its heaviest: the ladder (its coefficients each sample) and the SVF at 24 dB/oct.
-            foreach (var (name, type, slope) in new[] { ("Ladder 24", 0, 0), ("SVF LP 24", 2, 1) })
+            foreach (var (name, type, slope, floor) in new[] { ("Ladder 24", 0, 0, Throughput.Floor(x64: 46, arm64: 26)), ("SVF LP 24", 2, 1, Throughput.Floor(x64: 72, arm64: 52)) })
             {
-                var (e, _) = Make(v => { v.Set(P.Type, type); v.Set(P.Slope, slope); v.Set(P.Drive, 240); Set(v, P.LfoDepth, 2); Set(v, P.LfoRate, 8); Set(v, P.EnvAmount, 3); Set(v, P.Resonance, 8); v.Set(P.Mix, 500); });
-                var x = Noise(10 * Rate, 0.2, 4);
-                Run(e, x, x);
-                var sw = Stopwatch.StartNew();
-                Run(e, x, x);
-                double speed = 10 / sw.Elapsed.TotalSeconds;
-                Measure.Report($"Neo Filter CPU ({name}, everything on): {speed:F0}× real time");
-                Assert.That(speed, Is.GreaterThan(20));
+                // Timed against the reference workload in the same run (Throughput.cs): 0.5 s played untimed, then 2 s.
+                var x = Noise(3 * Rate, 0.2, 4);
+                const int Warm = Rate / 2;
+                Throughput.Guard($"Neo Filter CPU ({name}, everything on)", floor, 2, Rate, FilterEngine.MaxBlock, () =>
+                {
+                    var (e, _) = Make(v => { v.Set(P.Type, type); v.Set(P.Slope, slope); v.Set(P.Drive, 240); Set(v, P.LfoDepth, 2); Set(v, P.LfoRate, 8); Set(v, P.EnvAmount, 3); Set(v, P.Resonance, 8); v.Set(P.Mix, 500); });
+                    var bl = new float[FilterEngine.MaxBlock];
+                    var br = new float[FilterEngine.MaxBlock];
+                    void Block(int pos, int n)
+                    {
+                        Array.Copy(x, pos, bl, 0, n);
+                        Array.Copy(x, pos, br, 0, n);
+                        e.Process(bl, br, n);
+                    }
+                    for (int pos = 0; pos < Warm; pos += FilterEngine.MaxBlock) Block(pos, FilterEngine.MaxBlock);
+                    return Throughput.InBlocks(FilterEngine.MaxBlock, (pos, n) => Block(Warm + pos, n));
+                }, Measure.Report);
             }
         }
     }

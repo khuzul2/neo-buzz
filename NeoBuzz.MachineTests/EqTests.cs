@@ -293,22 +293,29 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void RunsFasterThanRealTime()
         {
-            var (e, _) = Make(v =>
+            // 50× is 2 % of a core. Timed against the reference workload in the same run (Throughput.cs): 1 s played untimed, then 2 s.
+            var l = Measure.PinkNoise(Measure.Rate * 3, 0.2, 31);
+            var r = Measure.PinkNoise(Measure.Rate * 3, 0.2, 32);
+            const int Warm = Measure.Rate;
+            Throughput.Guard("Neo EQ CPU (8 bands, 48 dB/oct cuts at both ends, stereo)", Throughput.Floor(x64: 170, arm64: 110), 2, Measure.Rate, EqEngine.MaxBlock, () =>
             {
-                Band(v, 0, BandType.LowCut, 30, slope: 2);
-                Band(v, 7, BandType.HighCut, 18000, slope: 2);
-                for (int b = 1; b < 7; b++) Set(v, EqDesign.Gain(b), b % 2 == 0 ? 3 : -3);
-            });
-            var l = Measure.PinkNoise(Measure.Rate * 10, 0.2, 31);
-            var r = Measure.PinkNoise(Measure.Rate * 10, 0.2, 32);
-            Run(e, l.Take(48000).ToArray(), r.Take(48000).ToArray());
-            GC.Collect();
-            var sw = Stopwatch.StartNew();
-            Run(e, l, r);
-            double speed = 10.0 / sw.Elapsed.TotalSeconds;
-            Measure.Report($"Neo EQ CPU: {speed:F0}× real time (8 bands, 48 dB/oct cuts at both ends, stereo)");
-            // 50× is 2 % of a core; shared CI runners vary (measured 144× there).
-            Assert.That(speed, Is.GreaterThan(50));
+                var (e, _) = Make(v =>
+                {
+                    Band(v, 0, BandType.LowCut, 30, slope: 2);
+                    Band(v, 7, BandType.HighCut, 18000, slope: 2);
+                    for (int b = 1; b < 7; b++) Set(v, EqDesign.Gain(b), b % 2 == 0 ? 3 : -3);
+                });
+                var bl = new float[EqEngine.MaxBlock];
+                var br = new float[EqEngine.MaxBlock];
+                void Block(int pos, int n)
+                {
+                    Array.Copy(l, pos, bl, 0, n);
+                    Array.Copy(r, pos, br, 0, n);
+                    e.Process(bl, br, n);
+                }
+                for (int pos = 0; pos < Warm; pos += EqEngine.MaxBlock) Block(pos, EqEngine.MaxBlock);
+                return Throughput.InBlocks(EqEngine.MaxBlock, (pos, n) => Block(Warm + pos, n));
+            }, Measure.Report);
         }
 
         [Test]

@@ -68,6 +68,18 @@ jobs:
         if ($env:QUICK -eq 'true') { $extra = @{ SkipManagedMachines = $true; SkipNativeMachines = $true; SkipBinaries = $true; NoZip = $true } }
         ./build.ps1 -Version "${{ github.ref_type == 'tag' && github.ref_name || format('ci-{0}', github.run_number) }}" @extra *>&1 | Tee-Object -FilePath build.log
 
+    # Every .NET app in the package runs with methods that have loops compiled fully optimised at once, so the
+    # audio thread never compiles an on-stack replacement (docs/specs/daw-modes.md §8.1, tools/msbuild/AudioThreadRuntime.props).
+    - name: Runtime settings in the package
+      if: steps.build.outcome == 'success'
+      shell: pwsh
+      run: |
+        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        $configs = Get-ChildItem (Split-Path $exe.FullName) -Filter *.runtimeconfig.json
+        foreach ($c in $configs) { Write-Host "$($c.Name): $((Get-Content $c.FullName -Raw) -replace '\s+', ' ')" }
+        $bad = $configs | Where-Object { -not ((Get-Content $_.FullName -Raw) -match '"System.Runtime.TieredCompilation.QuickJitForLoops":\s*false') }
+        if (-not $configs -or $bad) { throw "quick JIT for loops not off in: $(($bad | ForEach-Object Name) -join ', ')" }
+
     # Copies error lines and the log tail into annotations, readable through the API.
     - name: Annotate build log
       if: failure() && hashFiles('TestResults/*.trx') == ''

@@ -703,20 +703,24 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void AnalysisCostsUnderTwoPercentOfRealTime()
         {
-            var (e, _) = Make();
-            var l = Measure.PinkNoise(10 * Rate, 0.2, 51);
-            var r = Measure.PinkNoise(10 * Rate, 0.2, 52);
-            Run(e, l, r);   // warm up
-            // The best of three 10 s passes: other work on a shared runner only ever adds time.
-            double share = double.MaxValue;
-            for (int k = 0; k < 3; k++)
+            // Under 2 % of real time: over 50×, timed against the reference workload in the same run (Throughput.cs): 1 s
+            // played untimed, then 2 s.
+            var l = Measure.PinkNoise(3 * Rate, 0.2, 51);
+            var r = Measure.PinkNoise(3 * Rate, 0.2, 52);
+            Throughput.Guard("Neo Analyzer: stereo at 48 kHz (8192-point FFT every 2048 samples, loudness, true peak, stereo)", Throughput.Floor(x64: 140, arm64: 99), 2, Rate, AnalyzerEngine.MaxBlock, () =>
             {
-                var sw = Stopwatch.StartNew();
-                Run(e, l, r);
-                share = Math.Min(share, sw.Elapsed.TotalSeconds / 10);
-            }
-            Measure.Report($"Neo Analyzer: stereo at 48 kHz (8192-point FFT every 2048 samples, loudness, true peak, stereo): {100 * share:F2} % of real time ({1 / share:F0}× real time)");
-            Assert.That(share, Is.LessThan(0.02));
+                var (e, _) = Make();
+                var bl = new float[AnalyzerEngine.MaxBlock];
+                var br = new float[AnalyzerEngine.MaxBlock];
+                void Block(int pos, int n)
+                {
+                    Array.Copy(l, pos, bl, 0, n);
+                    Array.Copy(r, pos, br, 0, n);
+                    e.Process(bl, br, n);
+                }
+                for (int pos = 0; pos < Rate; pos += AnalyzerEngine.MaxBlock) Block(pos, AnalyzerEngine.MaxBlock);
+                return Throughput.InBlocks(AnalyzerEngine.MaxBlock, (pos, n) => Block(Rate + pos, n));
+            }, Measure.Report);
         }
     }
 }

@@ -605,34 +605,34 @@ namespace NeoBuzz.MachineTests
         public void EveryVoicePlayingAtOnceRunsFasterThanRealTime()
         {
             // Every voice hit every 100 ms, the decays at their longest: twelve hits sounding, and each 100 ms twelve fading out.
-            var (e, _) = Make(v =>
+            // Timed against the reference workload in the same run (Throughput.cs).
+            int sounding = 0;
+            Throughput.Guard("Neo Drums, all 12 voices hit every 100 ms with their longest decays, 48 kHz", Throughput.Floor(x64: 34, arm64: 30), 2, Rate, DrumsEngine.MaxBlock, () =>
             {
-                foreach (var p in DrumsEngine.Voice) v.Set(p.Decay, NeoBuzz.Drums.Params.Table[p.Decay].Max);
-                Set(v, P.KickDrive, 12.0);
-            });
-            var l = new float[DrumsEngine.MaxBlock];
-            var r = new float[DrumsEngine.MaxBlock];
-            int every = Rate / 10, since = every;
-            void Seconds(double s)
-            {
-                for (int pos = 0; pos < s * Rate; pos += DrumsEngine.MaxBlock)
+                var (e, _) = Make(v =>
+                {
+                    foreach (var p in DrumsEngine.Voice) v.Set(p.Decay, NeoBuzz.Drums.Params.Table[p.Decay].Max);
+                    Set(v, P.KickDrive, 12.0);
+                });
+                var l = new float[DrumsEngine.MaxBlock];
+                var r = new float[DrumsEngine.MaxBlock];
+                int every = Rate / 10, since = every;
+                void Block(int n)
                 {
                     if (since >= every)
                     {
                         since = 0;
                         for (int v = 0; v < DrumsEngine.VoiceCount; v++) e.Hit(v, 1f);
                     }
-                    e.Process(l, r, DrumsEngine.MaxBlock);
-                    since += DrumsEngine.MaxBlock;
+                    e.Process(l, r, n);
+                    since += n;
                 }
-            }
-            Seconds(1);
-            Assert.That(e.ActiveHits, Is.GreaterThanOrEqualTo(DrumsEngine.VoiceCount));
-            var sw = Stopwatch.StartNew();
-            Seconds(10);
-            double factor = 10 / sw.Elapsed.TotalSeconds;
-            Measure.Report($"Neo Drums, all 12 voices hit every 100 ms with their longest decays ({e.ActiveHits} hits sounding), 48 kHz: {factor:F1}× real time");
-            Assert.That(factor, Is.GreaterThan(10));
+                for (int pos = 0; pos < Rate; pos += DrumsEngine.MaxBlock) Block(DrumsEngine.MaxBlock);
+                Assert.That(e.ActiveHits, Is.GreaterThanOrEqualTo(DrumsEngine.VoiceCount));
+                sounding = e.ActiveHits;
+                return Throughput.InBlocks(DrumsEngine.MaxBlock, (pos, n) => Block(n));
+            }, Measure.Report);
+            Measure.Report($"Neo Drums: {sounding} hits sounding after the first second");
         }
     }
 }
