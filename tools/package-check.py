@@ -3,7 +3,7 @@
 #  - the zip is NeoBuzz-Live-<version>-x64.zip (no ReBuzz-*.zip), its one top folder named the same; with
 #    -NoZip (a quick package run) the folder alone;
 #  - the app is NeoBuzzLive.exe, beside ReBuzz.dll and its runtimeconfig (the assembly keeps its name, which
-#    machines, plugins and tests load), with no ReBuzz.exe;
+#    machines, plugins and tests load), with no ReBuzz.exe and no update checker (BuzzGUI.BuzzUpdate.dll);
 #  - README-FIRST.txt says NeoBuzz Live, how to start it, that it's a fork of ReBuzz (its authors and link),
 #    and the `claude mcp add neobuzz-live` line; BUILD-INFO.txt names it; ReBuzz's MIT licence ships intact;
 #  - NeoBuzzLive.exe, started from the package (unzipped into a fresh folder), answers MCP on stdio as
@@ -69,6 +69,7 @@ else:
 files = set(os.listdir(app))
 check("NeoBuzzLive.exe" in files, "the app is NeoBuzzLive.exe")
 check("ReBuzz.exe" not in files, "no ReBuzz.exe")
+check("BuzzGUI.BuzzUpdate.dll" not in files, "no update checker (upstream's offered upstream ReBuzz's installer)")
 check({"ReBuzz.dll", "ReBuzz.runtimeconfig.json", "ReBuzz.deps.json"} <= files, "beside ReBuzz.dll, its runtimeconfig and deps (the assembly keeps its name)")
 check(os.path.isfile(os.path.join(app, "bin64", "ReBuzzEngine64.exe")), "the engine hosts keep their names (bin64\\ReBuzzEngine64.exe)")
 

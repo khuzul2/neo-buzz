@@ -57,6 +57,8 @@ namespace BuzzGUI.BuzzUpdate
 
         public UpdateWindow(int latestBuild)
         {
+            // Fork (NeoBuzz Live): the offer of upstream's installer is never shown.
+            if (!UpdateService.Enabled) throw new InvalidOperationException("NeoBuzz Live doesn't offer upstream ReBuzz's installer.");
             DataContext = this;
             InitializeComponent();
 
@@ -75,6 +77,7 @@ namespace BuzzGUI.BuzzUpdate
 
         public static void DownloadBuildCount(IBuzz buzz)
         {
+            if (!UpdateService.Enabled) return;     // fork (NeoBuzz Live): no request to upstream's releases, no offer
             currentBuild = buzz.BuildNumber;
             _ = DownloadBuildCountAsync(buzz);
         }
