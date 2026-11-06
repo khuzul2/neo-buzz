@@ -230,6 +230,8 @@ namespace ReBuzz.Studio.Tests
                 {
                     try
                     {
+                        CloseMenus();           // the menu that opened it has gone by the time a user sees the dialog
+                        Settle();
                         DialogShot(main, w, id, what, how, song, notes);
                     }
                     catch (System.Exception e)
@@ -311,6 +313,19 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        /// <summary>A task's result, the dispatcher running meanwhile (a blocking wait could deadlock on the UI thread); up to a minute.</summary>
+        static T Await<T>(System.Threading.Tasks.Task<T> task)
+        {
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            while (!task.IsCompleted && clock.Elapsed.TotalSeconds < 60)
+            {
+                Thread.Sleep(10);
+                Settle();
+            }
+            Assert.That(task.IsCompleted, Is.True, "it finished within a minute");
+            return task.Result;
+        }
+
         static void NewSong()
         {
             Dialogs.Responder = (m, c, b) => UserAnswer.No;
@@ -332,14 +347,23 @@ namespace ReBuzz.Studio.Tests
             SongFiles.Picker = _ => path;
             try
             {
-                Assert.That(SongFiles.SaveAs().Result, Is.True, "the demo song saved");
+                Assert.That(Await(SongFiles.SaveAs()), Is.True, "the demo song saved");
             }
             finally
             {
                 SongFiles.Picker = null;
             }
             Core.Modified = false;
-            Assert.That(SongFiles.Open(path).Result, Is.True, "the demo song opened");
+            File.Copy(path, Path.Combine(Folder, GallerySong.Title + ".bmxml"), true);      // beside the pictures (the Mac job opens it in the app)
+            Dialogs.Responder = (m, c, b) => UserAnswer.No;
+            try
+            {
+                Assert.That(Await(SongFiles.Open(path)), Is.True, "the demo song opened");
+            }
+            finally
+            {
+                Dialogs.Responder = null;
+            }
             Settle();
             return GallerySong.Find(Core);
         }
@@ -612,6 +636,41 @@ namespace ReBuzz.Studio.Tests
                     for (int i = 0; i < 4; i++) Key(window, PhysicalKey.PageDown);
                     Wait(150);
                     Shot(window, "053-pattern-long-scrolled", "Pattern: Lead's 8-bar Arp (128 rows), scrolled down with the cursor past the middle.", "Page Down in a long pattern.");
+                });
+
+                Control Grid() => (Control)((dynamic)PatternView.Page.EditorControl).TrackerGrid.Body;
+                ContextMenu GridMenu()
+                {
+                    var body = Grid();
+                    Click(window, Centre(body, window, 0.3, 0.2), MouseButton.Right);
+                    var menu = body.GetSelfAndVisualAncestors().OfType<Control>().Select(c => c.ContextMenu).FirstOrDefault(m => m != null);
+                    Assert.That(menu?.IsOpen, Is.True, "the grid's menu opened");
+                    menus.Add(menu!);
+                    return menu!;
+                }
+                Try("054-pattern-menu", () =>
+                {
+                    GridMenu();
+                    Shot(window, "054-pattern-menu", "Pattern: the grid's context menu (Edit ▸, Select All, Unselect, Pattern Properties…).", "Right-click in the pattern grid.");
+                });
+                Try("055-pattern-menu-edit", () =>
+                {
+                    Hover(ItemOf(GridMenu(), "Edit"));
+                    Shot(window, "055-pattern-menu-edit", "Pattern: the grid menu's Edit ▸ (increase, interpolate, randomize, rotate, write state, undo, clipboard).", "Right-click in the pattern grid ▸ Edit.");
+                });
+                Try("056-pattern-properties", () =>
+                {
+                    var item = GridMenu().Items.OfType<MenuItem>().First(i => (i.Header as string)?.StartsWith("Pattern Properties") == true);
+                    DialogOnOpen(window, () => Click(window, Centre(item, window)), "056-pattern-properties", "Pattern Properties: name, length, rows per beat, the columns shown (the MIDI lanes among them).",
+                        "Right-click in the pattern grid ▸ Pattern Properties… (Ctrl+Backspace).");
+                });
+                Try("057-pattern-help", () =>
+                {
+                    var help = window.GetVisualDescendants().OfType<Avalonia.Controls.Primitives.ToggleButton>().First(b => b.Content as string == "Help");
+                    Click(window, Centre(help, window));
+                    Wait(150);
+                    Shot(window, "057-pattern-help", "Pattern: the editor's help panel (its keys).", "The pattern toolbar's Help button (F1).");
+                    Click(window, Centre(help, window));
                 });
 
                 Try("060-song-notes", () =>
@@ -1113,7 +1172,15 @@ namespace ReBuzz.Studio.Tests
                 {
                     const string Song = "FSM_Infector_Demo.bmx (a Windows Buzz song)";
                     const string Natives = "Native (Windows) machines don't load on the Mac: they open as placeholders that keep their data.";
-                    Assert.That(SongFiles.Open(old).Result, Is.True);
+                    Dialogs.Responder = (m, c, b) => UserAnswer.No;
+                    try
+                    {
+                        Assert.That(Await(SongFiles.Open(old)), Is.True, "the old song opened");
+                    }
+                    finally
+                    {
+                        Dialogs.Responder = null;
+                    }
                     Settle();
                     Try("500-old-song-machines", () => Shot(window, "500-old-song-machines", "An old Windows song with native machines: each a placeholder box (the song plays without them and saves them back unchanged).", "File ▸ Open… a .bmx made on Windows.", Song, Natives));
                     Try("501-old-song-sequence", () => { window.ShowView("Sequence"); Shot(window, "501-old-song-sequence", "The old song's arrangement.", "F4.", Song, Natives); });

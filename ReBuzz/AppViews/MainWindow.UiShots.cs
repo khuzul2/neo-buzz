@@ -256,6 +256,24 @@ namespace ReBuzz
 
         ReBuzz.Audio.WorkManager shotWork;
 
+        /// <summary>Scrolls a view's scrollable areas to their right end (and <paramref name="down"/> of the way down).</summary>
+        static void ScrollRight(FrameworkElement view, double down = 0)
+        {
+            if (view == null) return;
+            view.UpdateLayout();
+            foreach (var scroll in Descendants<ScrollViewer>(view))
+            {
+                if (scroll.ScrollableWidth > 0) scroll.ScrollToHorizontalOffset(scroll.ScrollableWidth);
+                if (down > 0 && scroll.ScrollableHeight > 0) scroll.ScrollToVerticalOffset(scroll.ScrollableHeight * down);
+            }
+            foreach (var bar in Descendants<ScrollBar>(view).Where(b => b.Orientation == Orientation.Horizontal && b.Maximum > b.Minimum))
+                bar.Value = bar.Maximum;
+            if (down > 0)
+                foreach (var bar in Descendants<ScrollBar>(view).Where(b => b.Orientation == Orientation.Vertical && b.Maximum > b.Minimum))
+                    bar.Value = bar.Minimum + (bar.Maximum - bar.Minimum) * down;
+            view.UpdateLayout();
+        }
+
         async Task CloseMenus()
         {
             foreach (var menu in Descendants<MenuItem>(this).Where(m => m.IsSubmenuOpen).ToList()) menu.IsSubmenuOpen = false;
@@ -346,6 +364,13 @@ namespace ReBuzz
                 Buzz.SetPatternEditorPattern(song.LineA);
                 Buzz.ActivatePatternEditor();
                 await Shot(this, "030-pattern", "Pattern View: Bass's Line A in the Modern Pattern Editor.", "F2, or double-click a pattern in the Sequence View.", settle: 1200);
+                ScrollRight(EditorView);
+                await Shot(this, "032-pattern-lanes", "Pattern View: Bass's Line A scrolled right, to its MIDI note lanes (the notes, velocities, delays).", "F2, then scroll right (or Tab to the tracks).", settle: 500);
+                Buzz.SetPatternEditorPattern(song.Arp);
+                Buzz.ActivatePatternEditor();
+                await Idle(1000);
+                ScrollRight(EditorView, 0.5);
+                await Shot(this, "033-pattern-long-scrolled", "Pattern View: Lead's 8-bar Arp (128 rows) scrolled to its note lanes and halfway down.", "Scroll a long pattern.", settle: 500);
                 Buzz.SetPatternEditorPattern(song.Beat);
                 Buzz.ActivatePatternEditor();
                 await Shot(this, "031-pattern-drums", "Pattern View: Drums' Beat.", "F2, then choose the machine and pattern.", settle: 1000);
@@ -475,6 +500,8 @@ namespace ReBuzz
             });
 
             // Settings (BuzzGUI's), every page, Agent among them.
+            // View ▸ Settings… throws in ReBuzz.exe as it is: SettingsWindow.AddTab takes every setting's Options, and the
+            // Agent page's Port (a string setting, AgentSettings) has none (NullReferenceException). Listed when it does.
             await Step("settings", async () =>
             {
                 Buzz.ActiveView = BuzzView.MachineView;
@@ -596,21 +623,38 @@ namespace ReBuzz
             // The shipped themes.
             await Step("themes", async () =>
             {
+                // The theme chosen on an empty song, then the song opened: switching it with the demo song open throws
+                // here (NullReferenceException in BuzzGUI.MachineView.Connection.UpdateVisuals as the Machine View is made again).
+                const string ThemeNote = "The theme was chosen on a new song and the demo song opened after it (switching with the song open threw in the harness: see the spec).";
                 foreach (var theme in Buzz.Themes.Where(t => t != "<default>" && t != "Default").ToList())
                 {
                     string slug = new string(theme.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
+                    Buzz.Modified = false;
+                    Buzz.ExecuteCommand(BuzzCommand.NewFile);
+                    await Idle(800);
                     Buzz.SelectedTheme = theme;
                     await Idle(1500);
+                    Buzz.Modified = false;
+                    Buzz.OpenSongFile(songPath);
+                    await Idle(2000);
+                    song = GallerySong.Find(Buzz);
                     Buzz.ActiveView = BuzzView.MachineView;
-                    await Shot(this, $"300-theme-{slug}-machines", $"The {theme} theme: Machine View and its toolbar.", $"Theme ▸ {theme}.", settle: 1000);
+                    await Shot(this, $"300-theme-{slug}-machines", $"The {theme} theme: Machine View and its toolbar.", $"Theme ▸ {theme}.", notes: ThemeNote, settle: 1000);
                     Buzz.ActiveView = BuzzView.SequenceView;
-                    await Shot(this, $"301-theme-{slug}-sequence", $"The {theme} theme: Sequence View.", $"Theme ▸ {theme}, then F4.", settle: 800);
+                    await Shot(this, $"301-theme-{slug}-sequence", $"The {theme} theme: Sequence View.", $"Theme ▸ {theme}, then F4.", notes: ThemeNote, settle: 800);
                     Buzz.SetPatternEditorPattern(song.LineA);
                     Buzz.ActivatePatternEditor();
-                    await Shot(this, $"302-theme-{slug}-pattern", $"The {theme} theme: Pattern View.", $"Theme ▸ {theme}, then F2.", settle: 1000);
+                    await Idle(800);
+                    ScrollRight(EditorView);
+                    await Shot(this, $"302-theme-{slug}-pattern", $"The {theme} theme: Pattern View (Bass's Line A, scrolled to its note lanes).", $"Theme ▸ {theme}, then F2.", notes: ThemeNote, settle: 600);
+                    Buzz.ActiveView = BuzzView.SessionView;
+                    await Shot(this, $"303-theme-{slug}-session", $"The {theme} theme: Session View (its clip colours are the theme's pattern colours).", $"Theme ▸ {theme}, then Ctrl+Tab.", notes: ThemeNote, settle: 1000);
                     Buzz.ActiveView = BuzzView.WaveTableView;
-                    await Shot(this, $"303-theme-{slug}-wavetable", $"The {theme} theme: Wavetable View with the file browser.", $"Theme ▸ {theme}, then F9.", settle: 1000);
+                    await Shot(this, $"304-theme-{slug}-wavetable", $"The {theme} theme: Wavetable View with the file browser.", $"Theme ▸ {theme}, then F9.", notes: ThemeNote, settle: 1000);
                 }
+                Buzz.Modified = false;
+                Buzz.ExecuteCommand(BuzzCommand.NewFile);
+                await Idle(800);
                 Buzz.SelectedTheme = "<default>";
                 await Idle(1500);
                 Buzz.ActiveView = BuzzView.MachineView;
