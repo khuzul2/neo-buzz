@@ -19,7 +19,7 @@ namespace ReBuzz.Agent
 {
     public class AgentSettings : BuzzGUI.Common.Settings.Settings
     {
-        [BuzzSetting(false, Description = "Let AI agents (Claude Code or any MCP client) work in this ReBuzz over a local connection (127.0.0.1 only, with a token). Ctrl+Shift+A shows how to connect.")]
+        [BuzzSetting(false, Description = "Let AI agents (Claude Code or any MCP client) work in this " + Product.Name + " over a local connection (127.0.0.1 only, with a token). Ctrl+Shift+A shows how to connect.")]
         public bool AllowAgents { get; set; }
 
         [BuzzSetting("7481", Description = "The local port agents connect to.")]
@@ -130,19 +130,19 @@ namespace ReBuzz.Agent
             }
             else
             {
-                Line("Connect Claude Code to this ReBuzz (run in a terminal):");
-                var command = Command($"claude mcp add --transport http rebuzz {Url} --header \"Authorization: Bearer {Token}\"");
-                Line("The token is a password for this ReBuzz: anyone with it can change your song while ReBuzz runs. New token makes old ones stop working.", 10);
+                Line($"Connect Claude Code to this {Product.Name} (run in a terminal):");
+                var command = Command(ClaudeCode.HttpCommand(Url, Token));
+                Line($"The token is a password for this {Product.Name}: anyone with it can change your song while {Product.Name} runs. New token makes old ones stop working.", 10);
                 var renew = new Button { Content = "New token", HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(10, 2, 10, 2) };
                 renew.Click += (s, e) =>
                 {
                     NewToken();
-                    command.Text = $"claude mcp add --transport http rebuzz {Url} --header \"Authorization: Bearer {Token}\"";
+                    command.Text = ClaudeCode.HttpCommand(Url, Token);
                 };
                 panel.Children.Add(renew);
             }
-            Line("Or run ReBuzz headless (no window, for autonomous sessions) as an MCP server on stdio:", 14);
-            Command($"claude mcp add rebuzz -- \"{Environment.ProcessPath}\" --agent");
+            Line($"Or run {Product.Name} headless (no window, for autonomous sessions) as an MCP server on stdio:", 14);
+            Command(ClaudeCode.StdioCommand(Environment.ProcessPath));
             Line($"Agent log: {Path.GetDirectoryName(host.Log.FilePath)}", 10);
             window.Content = panel;
             window.Show();

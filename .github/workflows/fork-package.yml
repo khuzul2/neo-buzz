@@ -1,10 +1,10 @@
-name: Fork package (ReBuzz + all machines)
+name: Fork package (NeoBuzz Live + all machines)
 
 # Builds the whole solution plus ExternalMachines with build.ps1, uploads the zip and runs
 # upstream's test suite (ReBuzzTests). Run it by hand from the Actions tab, or push a tag
 # like fork-v0.1.0 to also attach the zip to a GitHub release.
 #
-# It also renders the null test's references (Neo machines, tools/null-test.py) with ReBuzz.exe;
+# It also renders the null test's references (Neo machines, tools/null-test.py) with NeoBuzzLive.exe;
 # two jobs then render the same cases with rebuzz-headless on Linux and macOS and compare
 # (docs/specs/mac-engine.md M3/M4).
 #
@@ -74,11 +74,22 @@ jobs:
       shell: pwsh
       run: ./tools/ci-annotate-log.ps1 build.log
 
+    # The package as people get it is NeoBuzz Live (tools/package-check.py): NeoBuzz-Live-<version>-x64.zip (the
+    # folder alone in a quick run), NeoBuzzLive.exe beside ReBuzz.dll and no ReBuzz.exe, README-FIRST.txt and the
+    # licences; and NeoBuzzLive.exe started from it answers MCP as neobuzz-live.
+    - name: Package check (names)
+      if: steps.build.outcome == 'success'
+      timeout-minutes: 15
+      shell: pwsh
+      run: |
+        python tools/package-check.py dist "$env:RUNNER_TEMP/package-check"
+        exit $LASTEXITCODE
+
     - name: Upload package
       if: inputs.quick != true
       uses: actions/upload-artifact@v6
       with:
-        name: rebuzz-fork-package
+        name: NeoBuzz-Live-package
         path: dist/*.zip
         if-no-files-found: error
 
@@ -126,7 +137,7 @@ jobs:
       run: ./tools/ci-test-summary.ps1 TestResults/tests.trx
 
     # The agent server's evaluation (docs/specs/mcp-server.md §10, A6): ReBuzz.AgentEval drives the
-    # built ReBuzz.exe --agent over MCP stdio, as a client does: the scripted checks, then each task's
+    # built NeoBuzzLive.exe --agent over MCP stdio, as a client does: the scripted checks, then each task's
     # setup, scripted reference solution and score. Runs in quick and full builds alike (the Neo
     # machines are part of the solution). Fails on a regression against eval/baseline.json; the
     # results are in the step summary, as annotations, and in the eval-results artifact.
@@ -135,8 +146,8 @@ jobs:
       timeout-minutes: 15
       shell: pwsh
       run: |
-        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
+        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
         dotnet build ReBuzz.AgentEval -c Release -nologo -v:q
         if ($LASTEXITCODE -ne 0) { throw 'ReBuzz.AgentEval did not build' }
         dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll run --exe $exe.FullName --out eval-out --baseline eval/baseline.json *>&1 | Tee-Object -FilePath eval.log
@@ -156,12 +167,12 @@ jobs:
           eval.log
         if-no-files-found: warn
 
-    # The machine profiler (docs/specs/mcp-server.md §12.2, U1) through ReBuzz.exe --agent, which hosts the
+    # The machine profiler (docs/specs/mcp-server.md §12.2, U1) through NeoBuzzLive.exe --agent, which hosts the
     # native machines: every machine in its Gear (quick builds leave out the external ones). Draft manifests,
     # docs/machine-health.md and the summary go up as the machine-profile-windows artifact, to commit with
     # `python tools/machine-profiler.py --merge <artifact folder> --repo .`. They are also packed into the
     # log (--pack; --unpack takes them out of a downloaded job log), for where artifacts can't be fetched.
-    # A machine that crashes or hangs is a finding (the profiler restarts ReBuzz and goes on), and the
+    # A machine that crashes or hangs is a finding (the profiler restarts the app and goes on), and the
     # step never fails the job. U2 (docs/specs/machine-safety.md §3.1) adds the level tests and
     # per-parameter sweeps: diverging, hot, needs a window, and safe ranges in the drafts. U2 in
     # depth (docs/specs/mcp-server.md §12.12): the test signal, suggested roles, velocity and envelope,
@@ -175,8 +186,8 @@ jobs:
       env:
         PROFILE_ONLY: ${{ inputs.profile_only }}
       run: |
-        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
+        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
         $only = @()
         if ($env:PROFILE_ONLY) { $only = @('--only', $env:PROFILE_ONLY) }
         python tools/machine-profiler.py $exe.FullName --out machine-profile @only *>&1 | Tee-Object -FilePath machine-profile.log
@@ -192,8 +203,8 @@ jobs:
       timeout-minutes: 15
       shell: pwsh
       run: |
-        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
+        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
         python tools/curated-check.py $exe.FullName curated-check
         exit $LASTEXITCODE
 
@@ -204,8 +215,8 @@ jobs:
       timeout-minutes: 20
       shell: pwsh
       run: |
-        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
+        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
         python tools/preset-check.py $exe.FullName preset-check
         exit $LASTEXITCODE
 
@@ -221,8 +232,8 @@ jobs:
       timeout-minutes: 40
       shell: pwsh
       run: |
-        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
+        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
         ./tools/build-natives.ps1 -OutDir build/ExternalMachines/natives-zeroed -ZeroHeap
         if ($LASTEXITCODE -ne 0) { throw "upstream's binaries on a zeroed heap weren't made" }
         python tools/native-compare.py $exe.FullName native-compare --gate --pitch --json native-compare/native-compare.json `
@@ -244,15 +255,15 @@ jobs:
         if-no-files-found: warn
 
     # The null test's references (docs/specs/mac-engine.md decision 6, M3/M4): every Neo machine, in
-    # fixed cases, rendered by the built ReBuzz.exe --agent, one fresh process per case. The Linux and
+    # fixed cases, rendered by the built NeoBuzzLive.exe --agent, one fresh process per case. The Linux and
     # macOS jobs below render the same cases with rebuzz-headless and compare, sample by sample.
     - name: Null test references
       if: (success() || failure()) && steps.build.outcome == 'success'
       timeout-minutes: 15
       shell: pwsh
       run: |
-        $exe = Get-ChildItem bin -Recurse -Filter ReBuzz.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
-        if (-not $exe) { throw 'ReBuzz.exe not found under bin\' }
+        $exe = Get-ChildItem bin -Recurse -Filter NeoBuzzLive.exe | Where-Object { $_.FullName -notmatch '\\obj\\' } | Select-Object -First 1
+        if (-not $exe) { throw 'NeoBuzzLive.exe not found under bin\' }
         python tools/null-test.py render $exe.FullName null-ref
         exit $LASTEXITCODE
 
@@ -346,7 +357,7 @@ jobs:
         foreach ($l in $lines) { $i++; Write-Host "::notice title=Engine diagnostics $i::$l" }
 
   # The null test (docs/specs/mac-engine.md decision 6, M3/M4): rebuzz-headless renders the same cases
-  # as the package job's ReBuzz.exe, and each must be bit-identical to the Windows reference, every
+  # as the package job's NeoBuzzLive.exe, and each must be bit-identical to the Windows reference, every
   # sample. A case that differs reports its first differing sample and its largest difference (dBFS).
   # The per-case results are a notice annotation and in the step summary.
   null-test-linux:

@@ -163,7 +163,7 @@ namespace ReBuzz.Core.Session
             }
             if (!CanMakeAudioTracks)
             {
-                error = $"The {SessionClipHost.MachineName} machine isn't installed (Gear\\Effects), so ReBuzz can't play audio clips.";
+                error = $"The {SessionClipHost.MachineName} machine isn't installed (Gear\\Effects), so {Product.Name} can't play audio clips.";
                 return null;
             }
             int wave = FreeWave();

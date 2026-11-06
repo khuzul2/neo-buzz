@@ -15,7 +15,7 @@
 #    safe range (Pedal Gain) is warned about, and param_set and automation_write refuse values outside
 #    the range with the reason (nothing in the call changes) unless allow_unsafe, which says so; a hot
 #    machine whose loop never decays (Pedal Gate) has a range but no warning; a machine that needs a
-#    window says it works in ReBuzz on Windows with its window, and is listed after the drafts but
+#    window says it works in NeoBuzz Live on Windows with its window, and is listed after the drafts but
 #    before the unhealthy ones; an unhealthy machine that doesn't diverge (a crash) gets no machine_add
 #    warning; a safe range on a track parameter holds per track.
 #  - U2 in depth (mcp-server.md §12.12): gear_list leaves unhealthy machines (the crash and the diverging
@@ -299,8 +299,8 @@ ok, _, g = s.call("gear_list", search="Pedal", limit=100, include_unhealthy=True
 rows = {x["name"]: x for x in g.get("gear", [])}
 names = [x["name"] for x in g.get("gear", [])]
 chorus = rows.get("Pedal Chorus", {})
-check(chorus.get("health") == "needs_window" and "works in rebuzz on windows with its window" in chorus.get("needs_window", "").lower(),
-      f"gear_list: a machine that needs a window says it works in ReBuzz on Windows with its window ({chorus.get('needs_window')})")
+check(chorus.get("health") == "needs_window" and "works in neobuzz live on windows with its window" in chorus.get("needs_window", "").lower(),
+      f"gear_list: a machine that needs a window says it works in NeoBuzz Live on Windows with its window ({chorus.get('needs_window')})")
 unhealthy = [n for n in names if rows[n].get("health") == "unhealthy"]
 check(unhealthy and names.index("Pedal Chorus") == len(names) - len(unhealthy) - 1,
       f"gear_list: it comes after the drafts and before the unhealthy ones ({names[-4:]})")

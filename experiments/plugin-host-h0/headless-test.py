@@ -94,7 +94,7 @@ def stderr_lines():
 
 
 init = request("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "h0", "version": "1"}})
-check(init.get("result", {}).get("serverInfo", {}).get("name") == "rebuzz", "initialize")
+check(init.get("result", {}).get("serverInfo", {}).get("name") == "neobuzz-live", "initialize")
 print("     " + json.dumps(init)[:200], flush=True)
 proc.stdin.write(json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n")
 proc.stdin.flush()

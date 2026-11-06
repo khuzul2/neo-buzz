@@ -116,7 +116,7 @@ namespace ReBuzz.Platform
 
         static void RunNotifications(ManualResetEventSlim ready)
         {
-            IntPtr name = CFString("ReBuzz");
+            IntPtr name = CFString(Product.Name);
             try
             {
                 clientStatus = MIDIClientCreate(name, &Notify, null, out client);
@@ -166,7 +166,7 @@ namespace ReBuzz.Platform
                 {
                     if (outputPort != 0) return outputPort;
                     uint c = Client;
-                    IntPtr name = CFString("ReBuzz out");
+                    IntPtr name = CFString(Product.Name + " out");
                     try { Check(MIDIOutputPortCreate(c, name, out outputPort), "MIDIOutputPortCreate"); }
                     finally { CFRelease(name); }
                     return outputPort;
@@ -323,7 +323,7 @@ namespace ReBuzz.Platform
             public Input(uint source, Action<int> received) : base(received)
             {
                 this.source = source;
-                IntPtr name = CFString("ReBuzz in");
+                IntPtr name = CFString(Product.Name + " in");
                 try
                 {
                     Check(MIDIInputPortCreate(Client, name, &Read, (void*)Id, out port), "MIDIInputPortCreate");
@@ -392,6 +392,8 @@ namespace ReBuzz.Platform
 
         static void KeepId(uint endpoint, string key)
         {
+            // "ReBuzz ", the app's name when the IDs were first given: kept, so the IDs stay the same across the
+            // rename to NeoBuzz Live (the endpoints' names changed; apps that remember them by ID keep them).
             uint hash = 2166136261;                                     // FNV-1a of the key
             foreach (char c in "ReBuzz " + key) hash = (hash ^ c) * 16777619;
             MIDIObjectSetIntegerProperty(endpoint, Keys.UniqueId, (int)(hash & 0x7FFFFFFF));   // taken (another ReBuzz): CoreMIDI keeps its own

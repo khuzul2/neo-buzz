@@ -110,6 +110,7 @@ namespace ReBuzz.SessionTests
         [Test]
         public void TheSettingsFolderIsThePlatformsOwn()
         {
+            // Named ReBuzz, as before the app was NeoBuzz Live: the settings carry over.
             string folder = JsonRegistry.SettingsFolder;
             if (OperatingSystem.IsMacOS()) Assert.That(folder, Does.EndWith(Path.Combine("Library", "Application Support", "ReBuzz")));
             else if (OperatingSystem.IsWindows()) Assert.That(folder, Does.EndWith("ReBuzz"));
@@ -210,13 +211,13 @@ namespace ReBuzz.SessionTests
             var output = new StringWriter();
             var m = new ConsoleUserMessages(output);
             m.Error("Can't open\nthe device", "Audio", new IOException("busy"));
-            Assert.That(m.Ask("Save changes?", "ReBuzz", UserButtons.YesNoCancel), Is.EqualTo(UserAnswer.Cancel));
+            Assert.That(m.Ask("Save changes?", "NeoBuzz Live", UserButtons.YesNoCancel), Is.EqualTo(UserAnswer.Cancel));
             Assert.That(m.Ask("Load it safely?", "Machine", UserButtons.YesNo), Is.EqualTo(UserAnswer.No));
-            Assert.That(m.Ask("Done.", "ReBuzz", UserButtons.Ok), Is.EqualTo(UserAnswer.Ok));
+            Assert.That(m.Ask("Done.", "NeoBuzz Live", UserButtons.Ok), Is.EqualTo(UserAnswer.Ok));
             Assert.That(m.KeepWaiting("Still loading", "Machines"), Is.True);
             var lines = output.ToString().Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-            Assert.That(lines[0], Is.EqualTo("[ReBuzz] error: Audio: Can't open the device (IOException: busy)"));
-            Assert.That(lines[1], Is.EqualTo("[ReBuzz] question: ReBuzz: Save changes? → Cancel"));
+            Assert.That(lines[0], Is.EqualTo("[NeoBuzz Live] error: Audio: Can't open the device (IOException: busy)"), "the app's name on each line");
+            Assert.That(lines[1], Is.EqualTo("[NeoBuzz Live] question: NeoBuzz Live: Save changes? → Cancel"));
             Assert.That(lines.Length, Is.EqualTo(5));
         }
     }

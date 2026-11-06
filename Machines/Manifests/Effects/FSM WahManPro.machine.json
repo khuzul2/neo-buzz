@@ -718,7 +718,7 @@
    "default": 127,
    "kind": "int",
    "a": 0,
-   "description": "Set LFO phase. Declared default 255 is outside its range; ReBuzz takes 127"
+   "description": "Set LFO phase. Declared default 255 is outside its range; NeoBuzz Live takes 127"
   }
  ]
 }

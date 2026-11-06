@@ -341,7 +341,7 @@ namespace ReBuzz.Studio.Views.Session
             menu.Items.Add(returnItem);
 
             var cueItem = new MenuItem { Header = "Cue output", Tag = "Cue output" };
-            ToolTip.SetTip(cueItem, "Machine the Cue buttons connect tracks to: one that plays to a second output\n(ReBuzzAudioOut or Polac Out set to other channels), not connected to the master");
+            ToolTip.SetTip(cueItem, "Machine the Cue buttons connect tracks to: one that plays to a second output\n(ReBuzz Audio Out or Polac Out set to other channels), not connected to the master");
             cueItem.Items.Add(Check("None", doc.CueMachine.Length == 0, () => layout.SetCueMachine(null)));
             foreach (var m in effects)
             {

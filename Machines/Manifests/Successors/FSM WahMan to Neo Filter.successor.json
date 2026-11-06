@@ -139,7 +139,7 @@
     "Its coefficients assume 44.1 kHz whatever the song's rate (its source): at 48 kHz its cutoff is 8.8 % higher than at 44.1 kHz. The table is fitted at 44.1 kHz.",
     "Its attribute Theviderness factor (0 by default) lowers the resonance at low cutoffs; the table assumes 0.",
     "With several tracks, each filters the input and the last one's output is what plays; the conversion reads the first track.",
-    "Mono in and out: ReBuzz gives a mono native effect left + right summed, so the input connections take +6 dB; Neo Filter keeps the stereo."
+    "Mono in and out: NeoBuzz Live gives a mono native effect left + right summed, so the input connections take +6 dB; Neo Filter keeps the stereo."
   ],
   "tolerance": {
     "loudness_db": 1,

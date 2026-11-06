@@ -15,7 +15,7 @@ Input 1 (the signal) and input 2 ("Sidechain", for an external trigger) → dete
 
 - `Attack` is the time to 63 % of the gain change, `Release` back to 37 %.
 - `Auto makeup` adds the gain a −12 dBFS signal loses.
-- `Lookahead` (0–5 ms) delays the audio so peaks are caught (overshoot within 1 dB at ratio ∞ and attack 0); it adds latency, which ReBuzz is told about.
+- `Lookahead` (0–5 ms) delays the audio so peaks are caught (overshoot within 1 dB at ratio ∞ and attack 0); it adds latency, which NeoBuzz Live is told about.
 - `Ratio` at its top is ∞:1: limiting.
 
 ## How to use it

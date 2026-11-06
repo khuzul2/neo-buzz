@@ -1458,7 +1458,7 @@ namespace ReBuzz.FileOps
             Section section;
             if (sections.TryGetValue(SectionType.RBSG, out section))
             {
-                FileOpsEvent(FileEventType.StatusUpdate, "Load ReBuzz Song Settings...");
+                FileOpsEvent(FileEventType.StatusUpdate, "Load Song Settings...");
 
                 fs.Position = section.Offset;
                 int numberOfItems = ReadInt(fs);

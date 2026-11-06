@@ -75,7 +75,7 @@ namespace ReBuzz.Studio.Shell
                 log.Add(message);
                 if (log.Count > 1000) log.RemoveAt(0);
             }
-            Console.Error.WriteLine("[ReBuzz] " + message);
+            Console.Error.WriteLine(Product.LogPrefix + message);
             Logged?.Invoke(message);
         }
 

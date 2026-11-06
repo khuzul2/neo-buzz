@@ -48,8 +48,8 @@ namespace ReBuzz.Agent
         static void RequireStudio(AgentHost host, string tool, string instead)
         {
             if (!host.Live)
-                throw new ToolError($"{tool} plays live for the user to hear, which needs studio mode (ReBuzz open, Settings → Agent → Allow agents) " +
-                                    $"or rebuzz-headless --audio. This is headless ReBuzz, with no audio output: {instead}");
+                throw new ToolError($"{tool} plays live for the user to hear, which needs studio mode ({Product.Name} open, Settings → Agent → Allow agents) " +
+                                    $"or rebuzz-headless --audio. This is headless {Product.Name}, with no audio output: {instead}");
         }
 
         // ------------------------------------------------------------------ what plays now
@@ -219,7 +219,7 @@ namespace ReBuzz.Agent
                     RequireStudio(host, "session_launch", "put the patterns in the arrangement (arrangement_place) and render the range.");
                     var s = await host.Engine("session_launch", false, _ =>
                     {
-                        var layout = core.SessionLayout ?? throw new ToolError("This ReBuzz has no Session View.");
+                        var layout = core.SessionLayout ?? throw new ToolError($"This {Product.Name} has no Session View.");
                         var session = core.SessionCore;
                         int? scene = c.Int("scene") is int sc ? sc - 1 : null;
                         string machineName = c.String("machine"), patternName = c.String("pattern");
@@ -299,7 +299,7 @@ namespace ReBuzz.Agent
                     string action = c.RequiredString("action");
                     var r = await host.Engine("session_record", true, _ =>
                     {
-                        var layout = core.SessionLayout ?? throw new ToolError("This ReBuzz has no Session View.");
+                        var layout = core.SessionLayout ?? throw new ToolError($"This {Product.Name} has no Session View.");
                         layout.Ensure();
                         var result = new JsonObject();
                         MachineCore m = c.String("machine") is string name ? SongModel.Machine(core, name) : null;
@@ -593,7 +593,7 @@ namespace ReBuzz.Agent
                         }, System.Threading.CancellationToken.None);
                     }
                     if (master.Frames == 0)
-                        throw new ToolError($"No audio came out in {Math.Round(window + 2, 1)} s: ReBuzz's audio output isn't running (Settings → Audio, or the device is in use).");
+                        throw new ToolError($"No audio came out in {Math.Round(window + 2, 1)} s: {Product.Name}'s audio output isn't running (Settings → Audio, or the device is in use).");
                     var meters = new JsonArray();
                     var lines = new List<string>();
                     foreach (var meter in new[] { master }.Concat(taps.Select(t => t.Meter)))

@@ -64,18 +64,8 @@ namespace ReBuzz.Agent
             CompositionTools.Register(tools, this);
             WaveTools.Register(tools, this);
             LiveTools.Register(tools, this);
-            Server = new McpServer(new ServerInfo
-            {
-                Name = "rebuzz",
-                Title = "ReBuzz",
-                Version = Version,
-                Instructions =
-                    "ReBuzz is a modular music studio (Buzz): generators and effects connected in a graph, patterns placed in an arrangement. " +
-                    "Start every session with studio_status, and read guide(topic=\"workflow\") once. Times are in beats from the song start " +
-                    "(or \"bar.beat\" text); pitches are MIDI numbers or names (60 = C4); levels in dB. Every changing call is one undo step " +
-                    "(undo reverts it); a call that fails changes nothing. Hear your work with render and check it with analyze. In studio and live mode the user " +
-                    "listens live too: transport, session_launch and meters_read play with them. Errors say what to do next.",
-            }, tools, GuideLibrary.Prompts(), GuideLibrary.Resources().Concat(Manuals(core)));
+            // Named after the app (Product: neobuzz-live, "NeoBuzz Live"), with the instructions an agent reads first.
+            Server = new McpServer(GuideLibrary.AppServer(Version), tools, GuideLibrary.Prompts(), GuideLibrary.Resources().Concat(Manuals(core)));
             Server.ToolCalled += Log.Write;
         }
 
@@ -155,10 +145,10 @@ namespace ReBuzz.Agent
                 {
                     return work(messages.Messages);
                 }
-                catch (ToolError e) when (messages.Messages.Count > 0 && !e.Message.Contains("ReBuzz said:"))
+                catch (ToolError e) when (messages.Messages.Count > 0 && !e.Message.Contains(Product.Name + " said:"))
                 {
                     failed = true;
-                    throw new ToolError(e.Message + " ReBuzz said: " + string.Join(" | ", messages.Messages));
+                    throw new ToolError(e.Message + " " + Product.Name + " said: " + string.Join(" | ", messages.Messages));
                 }
                 catch (Exception)
                 {

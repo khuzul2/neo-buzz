@@ -21,7 +21,7 @@ namespace ReBuzzTests
             driver.NewFile();   // the safe answer: Cancel
 
             Assert.That(driver.UserMessages.Questions, Has.Count.EqualTo(1));
-            Assert.That(driver.UserMessages.Questions[0].Caption, Is.EqualTo("ReBuzz"));
+            Assert.That(driver.UserMessages.Questions[0].Caption, Is.EqualTo("NeoBuzz Live"), "the app's name");
             Assert.That(driver.UserMessages.Questions[0].Buttons, Is.EqualTo(UserButtons.YesNoCancel));
             Assert.That(driver.Core.Modified, Is.True, "Cancel keeps the song");
 
@@ -55,7 +55,7 @@ namespace ReBuzzTests
 
             messages.Error("broken", "Error", new System.Exception("x"));
             messages.Info("hello", "Info");
-            var save = messages.Ask("Save changes to Untitled", "ReBuzz", UserButtons.YesNoCancel);
+            var save = messages.Ask("Save changes to Untitled", "NeoBuzz Live", UserButtons.YesNoCancel);
             var skip = messages.Ask("Skip initializing Polac?", "Safe load machine?", UserButtons.YesNo);
             var ok = messages.Ask("Done", "", UserButtons.Ok);
             bool wait = messages.KeepWaiting("Loading is slow", "Wait more?");
@@ -68,7 +68,7 @@ namespace ReBuzzTests
             {
                 "Error: broken",
                 "Info: hello",
-                "ReBuzz: Save changes to Untitled",
+                "NeoBuzz Live: Save changes to Untitled",
                 "Safe load machine?: Skip initializing Polac?",
                 "Done",
                 "Wait more?: Loading is slow",

@@ -75,7 +75,7 @@
   ],
   "remarks": [
     "Jeskola EQ-3 splits its bands with steep crossovers whose corners move with the gain: a +12 dB low band is half up at the Low Cutoff (400 Hz) and dips 3.5 dB an octave above, a −12 dB one is half down at 130 Hz (measured on Windows on noise). Neo EQ's shelves are symmetric second-order curves, so one shelf per band is fitted between the two: the gains carry over exactly, the corners within 4.8 dB at ±12 dB and less at smaller gains.",
-    "Mono in and out: ReBuzz gives a mono native effect left + right summed, so the input connections take +6 dB; Neo EQ keeps the stereo."
+    "Mono in and out: NeoBuzz Live gives a mono native effect left + right summed, so the input connections take +6 dB; Neo EQ keeps the stereo."
   ],
   "tolerance": {
     "loudness_db": 1.5,

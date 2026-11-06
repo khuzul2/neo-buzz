@@ -157,7 +157,7 @@ namespace ReBuzz.AgentEval
             finally
             {
                 closed = true;
-                foreach (var kv in pending) kv.Value.TrySetException(new McpException("ReBuzz closed stdout."));
+                foreach (var kv in pending) kv.Value.TrySetException(new McpException(Product.Name + " closed stdout."));
             }
         }
 
@@ -184,7 +184,7 @@ namespace ReBuzz.AgentEval
         /// <summary>Sends a request and waits for its response; throws McpException on a timeout or a JSON-RPC error.</summary>
         public JsonObject Request(string method, JsonObject parameters, double seconds = 120)
         {
-            if (closed) throw new McpException($"{method}: ReBuzz has closed stdout.\n{Diagnostics()}");
+            if (closed) throw new McpException($"{method}: {Product.Name} has closed stdout.\n{Diagnostics()}");
             int id = Interlocked.Increment(ref nextId);
             var tcs = new TaskCompletionSource<JsonObject>(TaskCreationOptions.RunContinuationsAsynchronously);
             pending[id] = tcs;

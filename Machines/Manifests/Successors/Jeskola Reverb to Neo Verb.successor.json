@@ -50,7 +50,7 @@
     }
   ],
   "remarks": [
-    "Jeskola Reverb is mono (ReBuzz gives a mono native effect left + right summed: the input connections take +6 dB to match); Neo Verb is stereo. Width differs by design; set Width to 0% for a mono tail.",
+    "Jeskola Reverb is mono (NeoBuzz Live gives a mono native effect left + right summed: the input connections take +6 dB to match); Neo Verb is stereo. Width differs by design; set Width to 0% for a mono tail.",
     "The algorithms differ (a 2000s Buzz reverb against a 16-line feedback delay network): the tail's density and the early reflections' pattern are not the same; its level, length and colour are close. Room is the Neo Verb mode whose tail is as flat in the lows as Jeskola Reverb's."
   ],
   "tolerance": {

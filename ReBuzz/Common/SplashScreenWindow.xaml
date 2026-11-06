@@ -79,7 +79,7 @@
                 </EventTrigger>
             </TextBlock.Triggers>
             Loading
-            ReBuzz...
+            NeoBuzz Live...
         </TextBlock>
         <TextBlock Name="tbLoadingMore" Grid.Row="0" Margin="0, 200" HorizontalAlignment="Center" FontSize="30" Foreground="White" TextWrapping="Wrap" Opacity="0" >
             <TextBlock.Effect>
