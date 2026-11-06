@@ -16,8 +16,11 @@
         [BuzzSetting(false, Description = "Keep song backups.")]
         public bool KeepBackups { get; internal set; }
 
-        [BuzzSetting(true, Description = "Check jeskola.net for updates at startup.")]
-        public bool CheckForUpdates { get; set; }
+        // Fork (NeoBuzz Live): not a setting any more, and always false. Upstream's update check offered upstream ReBuzz's
+        // installer, which would replace NeoBuzz Live (BuzzGUI.BuzzUpdate is off). With no [BuzzSetting] the Settings
+        // window doesn't list it and a saved True isn't read back; the property stays for code that reads or sets it.
+        [System.Obsolete("NeoBuzz Live doesn't check for updates: always false.")]
+        public bool CheckForUpdates { get => false; set { } }
 
         [BuzzSetting(true, Description = "Use TextFormattingMode.Ideal for UI text rendering. Usually looks better if Windows text scaling is set to >100%. Restart required.")]
         public bool WPFIdealFontMetrics { get; set; }

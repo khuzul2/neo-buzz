@@ -55,7 +55,9 @@ SPECS = [
     {
         "gear": "FSM WahManPro", "files": ["FSM/WahManPro/WahManPro.cpp"],
         "summary": "Auto-wah with a choice of 2- and 4-pole low-pass and peak filters and nine LFO shapes sweeping the cutoff, "
-                   "with depth, rate, phase and cutoff inertia.",
+                   "with depth, rate, phase and cutoff inertia. It starts its LFO phase and its cutoff glide at 0 until Set phase "
+                   "sets the phase (this build's fix: upstream's binary started them as its heap held, so its sweep could start "
+                   "anywhere).",
         "cases": [
             C(2, "enum", choices=["2pole LP", "2pole Peak I", "2pole Peak II", "4pole LP", "4pole Peak"]),
             C(3, "freq", LFO_FSM, ["#define LFOPAR2TIME(value) (0.05*pow(800.0,value/255.0))",

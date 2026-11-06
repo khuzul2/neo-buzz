@@ -124,7 +124,9 @@
     <ProjectReference Include="..\ReBuzz.Engine\ReBuzz.Engine.csproj" />
     <ProjectReference Include="..\3rdParty\serilog\Serilog.Sinks.RichTextBox.Wpf.csproj" />
     <ProjectReference Include="..\ModernPatternEditor\ModernPatternEditor.NET\ModernPatternEditor.NET.csproj" />
-    <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.BuzzUpdate\BuzzGUI.BuzzUpdate.csproj" />
+    <!-- Fork (NeoBuzz Live): no BuzzGUI.BuzzUpdate. Upstream's update check offered upstream ReBuzz's installer, which
+         would replace NeoBuzz Live. The project stays in the solution, built but not referenced or shipped, and inert
+         (UpdateService.Enabled), to be removed or pointed at NeoBuzz Live's releases later. -->
     <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" />
     <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.EnvelopeControl\BuzzGUI.EnvelopeControl.csproj" />
     <ProjectReference Include="..\ReBuzzGUI\BuzzGUI.FileBrowser\BuzzGUI.FileBrowser.csproj" />
