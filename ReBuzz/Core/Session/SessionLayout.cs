@@ -211,9 +211,17 @@ namespace ReBuzz.Core.Session
             return -1;
         }
 
-        /// <summary>Machines that have no sequence yet, i.e. could get a new track.</summary>
-        public IEnumerable<IMachine> MachinesWithoutTrack() =>
-            song.Machines.Where(m => m.DLL?.Info?.Type != MachineType.Master && !song.Sequences.Any(s => s.Machine == m));
+        /// <summary>
+        /// Machines that have no sequence yet, i.e. could get a new track: not the Master, and not
+        /// the session's return tracks or cue output, which have their own columns (+ Track offered
+        /// the Verb return, gallery mac-227).
+        /// </summary>
+        public IEnumerable<IMachine> MachinesWithoutTrack()
+        {
+            var doc = Document;
+            var own = doc == null ? new HashSet<string>() : new HashSet<string>(doc.Returns.Append(doc.CueMachine).Where(n => !string.IsNullOrEmpty(n)));
+            return song.Machines.Where(m => m.DLL?.Info?.Type != MachineType.Master && !own.Contains(m.Name) && !song.Sequences.Any(s => s.Machine == m));
+        }
 
         // ------------------------------------------------------------------ grid edits (undoable)
 

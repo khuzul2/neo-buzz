@@ -299,6 +299,46 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void TheTrackMenuHasRenameArmStopAndRemoveAndPlusTrackLeavesOutReturns()
+        {
+            // Gallery mac-224: the header menu had colour, mute and solo only; mac-227: + Track offered a return.
+            using var rig = new Rig();
+            var beat = rig.Pattern(rig.Drums, "Beat", Bar);
+            var song = rig.Core.SongCore;
+            song.RemoveSequence(song.SequencesList.Single(s => s.Machine == rig.Lead));      // Lead could get a track…
+            var layout = rig.Core.SessionLayout;
+            layout.Ensure();
+            Assert.That(layout.MachinesWithoutTrack().Select(m => m.Name), Is.EqualTo(new[] { "Lead" }));
+            layout.AddReturn(rig.Lead);                                                      // …until it is a return
+            Assert.That(layout.MachinesWithoutTrack(), Is.Empty, "a return isn't offered for a track");
+
+            var view = new SessionView(rig.Core);
+            view.Rebuild();
+            var menu = view.TrackMenu(view.Headers[0]);
+            System.Windows.Controls.MenuItem Item(string header) =>
+                menu.Items.OfType<System.Windows.Controls.MenuItem>().Single(i => (string)i.Header == header);
+            Assert.That(menu.Items.OfType<System.Windows.Controls.MenuItem>().Select(i => i.Header as string).Where(h => h != null),
+                Is.SupersetOf(new[] { "Rename…", "Arm", "Stop clips", "Mute", "Solo", "Remove track" }));
+
+            Item("Arm").Command.Execute(null);
+            Assert.That(layout.IsArmed(0), Is.True);
+            Item("Arm").Command.Execute(null);
+
+            layout.LaunchClip(layout.SequenceOf(0)!, beat, slot: 0);
+            rig.RunTicks(Bar + 2);
+            Assert.That(rig.Core.Session.GetPlaying(layout.SequenceOf(0)!), Is.SameAs(beat));
+            view.TrackMenu(view.Headers[0]).Items.OfType<System.Windows.Controls.MenuItem>().Single(i => (string)i.Header == "Stop clips").Command.Execute(null);
+            rig.RunTicks(Bar + 2);
+            Assert.That(rig.Core.Session.GetPlaying(layout.SequenceOf(0)!), Is.Null, "Stop clips stopped the track");
+
+            view.TrackMenu(view.Headers[1]).Items.OfType<System.Windows.Controls.MenuItem>().Single(i => (string)i.Header == "Remove track").Command.Execute(null);
+            Assert.That(layout.Document!.Tracks.Select(t => t.Machine), Is.EqualTo(new[] { "Drums" }));
+            Assert.That(song.MachinesList.Any(m => m.Name == "Bass"), Is.True, "the machine stays");
+            song.ActionStack.Undo();
+            Assert.That(layout.Document!.Tracks.Select(t => t.Machine), Is.EquivalentTo(new[] { "Drums", "Bass" }), "undo brings the track back");
+        }
+
+        [Test]
         public void NewSongDropsTheLayout()
         {
             using var rig = new Rig();

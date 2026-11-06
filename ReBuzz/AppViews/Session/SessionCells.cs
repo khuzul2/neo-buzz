@@ -440,7 +440,7 @@ namespace ReBuzz.AppViews.Session
                 Machine = machine;
                 Background = SessionPalette.Header;
                 Margin = new Thickness(0, 0, Gap, Gap);
-                ToolTip = name + (track < 0 ? "\nright-click for more" : "\nright-click: track colour");
+                ToolTip = name + (track < 0 ? "\nright-click for more" : "\nright-click: colour, rename, arm, stop, remove the track");
 
                 var strip = new Rectangle { Height = 3, Fill = SessionPalette.ColorBrush(colorIndex) ?? SessionPalette.Transparent, IsHitTestVisible = false };
                 mute = new Chip("M", SessionPalette.Mute, "Mute", () => { if (Machine != null) Machine.IsMuted = !Machine.IsMuted; });

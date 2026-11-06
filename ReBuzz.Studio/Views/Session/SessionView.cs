@@ -919,6 +919,7 @@ namespace ReBuzz.Studio.Views.Session
         internal FlatButton TapButton => tapButton;
         internal FlatButton UndoLaunchButton => undoLaunchButton;
         internal FlatButton AddSceneButton => addSceneButton;
+        internal FlatButton AddTrackButton => addTrackButton;
         internal FlatButton SettingsButton => settingsButton;
         internal FlatButton NudgeUpButton => nudgeUpButton;
         internal ComboBox QuantizeBox => quantizeBox;

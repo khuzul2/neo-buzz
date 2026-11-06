@@ -168,6 +168,60 @@ namespace ReBuzz.Studio.Tests
             Assert.That(view.ClipPanelView.StatusText, Is.EqualTo("stopped"));
         }
 
+        // ------------------------------------------------------------------ tracks (gallery mac-224, mac-227)
+
+        [AvaloniaTest]
+        public void TheTrackMenuRenamesArmsStopsAndRemovesAndPlusTrackLeavesOutReturns()
+        {
+            using var rig = new SessionRig("Drums", "Lead");
+            var verb = rig.Add("Neo Verb", "Verb", track: false);
+            rig.Add("Neo Delay", "Delay", track: false);
+            var beat = rig.Pattern(rig.Machine("Drums"), "Beat", Bar, (0, 36), (8, 38));
+            rig.Pattern(rig.Machine("Lead"), "Hook", Bar, (0, 72));
+            var layout = rig.Layout;
+            layout.Ensure();
+            layout.AddReturn(verb);
+            var view = rig.Show();
+
+            // + Track offers the machines without a track, not the Verb return (mac-227).
+            Assert.That(layout.MachinesWithoutTrack().Select(m => m.Name), Is.EqualTo(new[] { "Delay" }));
+            rig.Click(view.AddTrackButton);
+            Assert.That(view.ClickMenuItem("Verb"), Is.False, "a return isn't offered");
+            Assert.That(view.ClickMenuItem("Delay"), Is.True);
+            rig.Settle();
+            Assert.That(layout.Document.Tracks.Select(t => t.Machine), Is.EqualTo(new[] { "Drums", "Lead", "Delay" }));
+
+            // The header's menu (mac-224): arm, stop, rename, remove.
+            rig.Click(view.Headers[0], MouseButton.Right);
+            rig.Menu("Arm");
+            Assert.That(layout.IsArmed(0), Is.True);
+            rig.Click(view.Headers[0], MouseButton.Right);
+            rig.Screenshot("session-track-menu");
+            rig.Menu("Arm");
+            Assert.That(layout.IsArmed(0), Is.False);
+
+            rig.Click(view.SlotAt(0, 0).LaunchArea);
+            rig.RunTicks(Bar);
+            Assert.That(rig.Session.GetPlaying(layout.SequenceOf(0)), Is.SameAs(beat));
+            rig.Click(view.Headers[0], MouseButton.Right);
+            rig.Menu("Stop clips");
+            rig.RunTicks(Bar);
+            Assert.That(rig.Session.GetPlaying(layout.SequenceOf(0)), Is.Null, "Stop clips stopped the track");
+
+            Dialogs.TextResponder = (title, current) => current == "Drums" ? "Kit" : null;
+            rig.Click(view.Headers[0], MouseButton.Right);
+            rig.Menu("Rename…");
+            Assert.That(layout.SequenceOf(0).Machine.Name, Is.EqualTo("Kit"), "renaming the track renames its machine");
+
+            rig.Click(view.Headers[1], MouseButton.Right);
+            rig.Menu("Remove track");
+            Assert.That(layout.Document.Tracks.Select(t => t.Machine), Is.EqualTo(new[] { "Kit", "Delay" }));
+            Assert.That(rig.Core.Song.Machines.Any(m => m.Name == "Lead"), Is.True, "the machine stays");
+            rig.Core.SongCore.ActionStack.Undo();
+            rig.Settle();
+            Assert.That(layout.Document.Tracks.Select(t => t.Machine), Is.EquivalentTo(new[] { "Kit", "Lead", "Delay" }), "undo brings the track back");
+        }
+
         // ------------------------------------------------------------------ the view's layout (gallery mac-043/044/046, win-703)
 
         static Rect InWindow(Control control) =>
