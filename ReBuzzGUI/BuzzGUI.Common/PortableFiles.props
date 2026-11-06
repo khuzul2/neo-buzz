@@ -33,6 +33,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)MachinePlacement.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ManagedActionStack.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MenuItemVM.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)NoteNames.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PortableMessageBox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PowerCollections\Algorithms.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PowerCollections\Bag.cs" />

@@ -551,7 +551,7 @@ namespace WDE.ModernSequenceEditor
                         }
                         else if (pec.Parameter.Type == ParameterType.Note)
                         {
-                            toolTip = BuzzNote.TryToString(pe.Value);
+                            toolTip = NoteNames.TryTracker(pe.Value);
                         }
                         else if (pec.Parameter.Type != ParameterType.Note)
                         {
@@ -615,7 +615,7 @@ namespace WDE.ModernSequenceEditor
                         }
                         else
                         {
-                            toolTip = BuzzNote.TryToString(pe.Value);
+                            toolTip = NoteNames.TryTracker(pe.Value);
                         }
 
                         int time = pe.Time;
@@ -710,7 +710,7 @@ namespace WDE.ModernSequenceEditor
 
                         noteColumns[noteColumnPos] = val.Data1;
 
-                        toolTip = BuzzNote.TryToString(BuzzNote.FromMIDINote(val.Data1));
+                        toolTip = NoteNames.TryTracker(BuzzNote.FromMIDINote(val.Data1));
                     }
                     else if (val.Command == ChannelCommand.NoteOff)
                     {
@@ -786,7 +786,7 @@ namespace WDE.ModernSequenceEditor
 
                     if (val.Command == ChannelCommand.NoteOn)
                     {
-                        toolTip = BuzzNote.TryToString(BuzzNote.FromMIDINote(val.Data1));
+                        toolTip = NoteNames.TryTracker(BuzzNote.FromMIDINote(val.Data1));
                     }
                     else if (val.Command == ChannelCommand.NoteOff)
                     {

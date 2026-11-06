@@ -376,19 +376,23 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(AppMenu.Find(mac, "Edit/Redo").Gesture, Is.EqualTo(new KeyGesture(Key.Z, KeyModifiers.Meta | KeyModifiers.Shift)));
                 Assert.That(AppMenu.Find(mac, "File/Save As…").Gesture, Is.EqualTo(new KeyGesture(Key.S, KeyModifiers.Meta | KeyModifiers.Shift)));
                 Assert.That(AppMenu.Find(mac, "View/Session"), Is.Not.Null);
-                Assert.That(AppMenu.Find(mac, "Window/Agent connection…").Gesture, Is.EqualTo(new KeyGesture(Key.A, KeyModifiers.Meta | KeyModifiers.Shift)));
+                // Fork (ux-overhaul.md §4): ⇧⌘A is Deselect All (it was the agent's page, still in the Window menu).
+                Assert.That(AppMenu.Find(mac, "Window/Agent Connection…").Gesture, Is.Null);
+                Assert.That(AppMenu.Find(mac, "Edit/Deselect All").Gesture, Is.EqualTo(new KeyGesture(Key.A, KeyModifiers.Meta | KeyModifiers.Shift)));
 
                 // As the menu bar gets them (NativeMenu): headers without access keys, key equivalents, submenus.
                 var bar = AppMenu.ToNativeMenu(mac);
                 Assert.That(bar.Items.OfType<NativeMenuItem>().Select(i => i.Header), Is.EqualTo(new[] { "File", "Edit", "Transport", "View", "Window", "Help" }));
                 var fileMenu = bar.Items.OfType<NativeMenuItem>().First().Menu;
-                Assert.That(fileMenu.Items.OfType<NativeMenuItem>().Where(i => i is not NativeMenuItemSeparator).Select(i => i.Header), Is.EqualTo(new[] { "New", "Open…", "Open Recent", "Save", "Save As…" }));
+                Assert.That(fileMenu.Items.OfType<NativeMenuItem>().Where(i => i is not NativeMenuItemSeparator).Select(i => i.Header),
+                    Is.EqualTo(new[] { "New", "Open…", "Open Recent", "Close Song", "Save", "Save As…", "Revert to Saved" }), "Close (⌘W) and Revert (UX review mac-real-101)");
                 Assert.That(fileMenu.Items[3], Is.InstanceOf<NativeMenuItemSeparator>());
                 Assert.That(fileMenu.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Open Recent").Menu, Is.Not.Null);
                 var viewMenu = bar.Items.OfType<NativeMenuItem>().Single(i => i.Header == "View").Menu;
-                Assert.That(viewMenu.Items.OfType<NativeMenuItem>().Select(i => i.Header), Is.EqualTo(new[] { "Machines", "Sequence", "Session", "Pattern", "Song Notes" }));
-                Assert.That(viewMenu.Items.OfType<NativeMenuItem>().Select(i => i.Gesture), Is.EqualTo(new[] { new KeyGesture(Key.F3), new KeyGesture(Key.F4),
-                    new KeyGesture(Key.Tab, KeyModifiers.Control), new KeyGesture(Key.F2), new KeyGesture(Key.F10) }), "the view keys, key equivalents too (ui-gallery.md)");
+                var views = viewMenu.Items.OfType<NativeMenuItem>().Take(5).ToList();
+                Assert.That(views.Select(i => i.Header), Is.EqualTo(new[] { "Sequence", "Session", "Machines", "Pattern", "Song Notes" }));
+                Assert.That(views.Select(i => i.Gesture), Is.EqualTo(Enumerable.Range(0, 5).Select(i => new KeyGesture(Key.D1 + i, KeyModifiers.Meta))),
+                    "⌘1–⌘5 in tab order (ux-overhaul.md §4); Buzz's F-keys stay the window's");
                 var windowMenu = bar.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Window").Menu;
                 Assert.That(windowMenu.Items.OfType<NativeMenuItem>().First(i => i.Header == "Minimize").Gesture, Is.EqualTo(new KeyGesture(Key.M, KeyModifiers.Meta)), "⌘M");
                 var appMenu = AppMenu.ToNativeMenu(window.AppMenuModel());
@@ -425,9 +429,9 @@ namespace ReBuzz.Studio.Tests
                 PreferencesWindow.Current.Close();
                 Settle();
 
-                window.KeyPressQwerty(PhysicalKey.A, Cmd | RawInputModifiers.Shift);
+                AppMenu.Find(window.MenuModel(mac: false), "Window/Agent Connection…").Run();
                 Settle(window);
-                Assert.That(PreferencesWindow.Current?.Selected?.Title, Is.EqualTo("Agent"), "Shift+Command+A: the agent's connection");
+                Assert.That(PreferencesWindow.Current?.Selected?.Title, Is.EqualTo("Agent"), "Window ▸ Agent Connection…: the agent's connection");
                 PreferencesWindow.Current.Close();
                 Settle();
 
@@ -444,9 +448,17 @@ namespace ReBuzz.Studio.Tests
                 window.KeyPressQwerty(PhysicalKey.Tab, RawInputModifiers.Control);
                 Assert.That(Selected(), Is.EqualTo("Sequence"), "and back to the arrangement");
 
+                // ⌘1–⌘5 (Ctrl elsewhere), in tab order (ux-overhaul.md §4).
+                string[] order = { "Sequence", "Session", "Machines", "Pattern", "Song Notes" };
+                for (int i = 4; i >= 0; i--)
+                {
+                    window.KeyPressQwerty(PhysicalKey.Digit1 + i, Cmd);
+                    Assert.That(Selected(), Is.EqualTo(order[i]), $"⌘{i + 1}");
+                }
+
                 // The View menu's check follows.
                 var view = AppMenu.Find(window.MenuModel(mac: false), "View").Items().ToList();
-                Assert.That(view.Single(e => e.IsChecked()).Text, Is.EqualTo("Sequence"));
+                Assert.That(view.Take(5).Single(e => e.IsChecked()).Text, Is.EqualTo("Sequence"));
             }
             finally
             {
@@ -553,7 +565,9 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 window.RefreshNow();
-                Assert.That(window.StatusText, Does.StartWith("no audio output").And.Not.Contain("CPU"));
+                // Fork (ux-overhaul.md P1): the audio-health badge says it, in red; the status line doesn't repeat it.
+                Assert.That((window.Health.Shown, window.Health.Text), Is.EqualTo((AudioHealthBadge.State.NoOutput, "No audio output")));
+                Assert.That(window.StatusText, Does.StartWith("dropouts ").And.Not.Contain("CPU").And.Not.Contain("no audio output"));
                 Assert.That(window.CpuLoad, Is.Null);
             }
             finally
@@ -675,30 +689,24 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void TheViewItemsKeyEquivalentsDoWhatTheirKeysDoAndMinimizeIsTheKeyWindows()
+        public void TheViewItemsChooseTheirViewsAndMinimizeIsTheKeyWindows()
         {
-            // Fork (ui-gallery.md): the macOS menu bar's View items have their keys as key equivalents. The menu bar takes
-            // them before the window, so an item chosen by its key does what the key does in the window (Ctrl+Tab goes back
-            // from the Session View; F2 renames a clip there), and a click chooses the view. Minimize (⌘M) minimizes the
-            // key window.
+            // Fork (ux-overhaul.md §4): the View items' key equivalents are ⌘1–⌘5; Buzz's F-keys and Ctrl+Tab are the
+            // window's, so F2 still renames a clip in the Session View and Ctrl+Tab still goes back from it. Minimize (⌘M)
+            // minimizes the key window.
             using var restore = Studio.AfterTest(Reset);
             var window = Open();
             try
             {
                 string Shown() => (window.Tabs.SelectedItem as TabItem)?.Header as string;
                 var menus = window.MenuModel(mac: true).ToList();
-                var session = AppMenu.Find(menus, "View/Session");
                 window.ShowView("Session");
-                MacApp.KeyDownSource = () => Key.Tab;               // chosen by Ctrl+Tab
-                session.Run();
-                Assert.That(Shown(), Is.EqualTo("Sequence"), "Ctrl+Tab from the Session View goes back, as in the window");
-                MacApp.KeyDownSource = () => null;                  // a click
-                session.Run();
-                session.Run();
-                Assert.That(Shown(), Is.EqualTo("Session"), "a click chooses the Session View");
-                MacApp.KeyDownSource = () => Key.F3;
                 AppMenu.Find(menus, "View/Machines").Run();
-                Assert.That(Shown(), Is.EqualTo("Machines"), "F3, which nothing in the Session View takes: the Machine View");
+                Assert.That(Shown(), Is.EqualTo("Machines"));
+                AppMenu.Find(menus, "View/Session").Run();
+                Assert.That(Shown(), Is.EqualTo("Session"), "an item chooses its view");
+                window.KeyPressQwerty(PhysicalKey.Tab, RawInputModifiers.Control);
+                Assert.That(Shown(), Is.EqualTo("Sequence"), "Ctrl+Tab from the Session View goes back, as before");
 
                 var prefs = PreferencesWindow.Open(Host);
                 Settle(prefs);
@@ -710,11 +718,11 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(window.WindowState, Is.Not.EqualTo(WindowState.Minimized), "not the main window");
                 prefs.Close();
 
-                // The Machine View's mute: M on a Mac (⌘M minimizes there), Ctrl+M elsewhere.
+                // The Machine View's mute: M in both apps (ux-overhaul.md §4; ⌘M minimizes on a Mac), and Ctrl+M too off a Mac.
                 var machines = window.Tabs.Items.OfType<TabItem>().Select(t => t.Content).OfType<ReBuzz.Studio.Views.Machines.MachineView>().First();
-                bool macMute = machines.Canvas.KeyBindings.Any(b => b.Gesture.Equals(new KeyGesture(Key.M)));
+                bool mute = machines.Canvas.KeyBindings.Any(b => b.Gesture.Equals(new KeyGesture(Key.M)));
                 bool ctrlMute = machines.KeyBindings.Any(b => b.Gesture.Equals(new KeyGesture(Key.M, KeyModifiers.Control)));
-                Assert.That((macMute, ctrlMute), Is.EqualTo(System.OperatingSystem.IsMacOS() ? (true, false) : (false, true)));
+                Assert.That((mute, ctrlMute), Is.EqualTo((true, !System.OperatingSystem.IsMacOS())));
             }
             finally
             {

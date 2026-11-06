@@ -48,6 +48,11 @@ namespace ReBuzz.Agent
         public double TailSeconds { get; init; } = 2;
         /// <summary>Without a range, the comparison covers at most this much of the song.</summary>
         public double MaxSeconds { get; init; } = 60;
+        /// <summary>
+        /// How the report names a note: the agent server's scientific names ("C4" is 60) by default; the UI's Replace passes
+        /// the names Preferences gives (BuzzGUI.Common.NoteNames, docs/specs/ux-overhaul.md §3.5), as its message shows them.
+        /// </summary>
+        public Func<int, string> NoteName { get; init; } = Pitch.Name;
     }
 
     internal static class MachineReplace
@@ -85,7 +90,7 @@ namespace ReBuzz.Agent
             public int OldPitchOffset;
         }
 
-        static Plan MakePlan(ReBuzzCore core, MachineCore old, string toGear)
+        static Plan MakePlan(ReBuzzCore core, MachineCore old, string toGear, Func<int, string> noteName = null)
         {
             if (SongModel.IsMaster(old)) throw new ToolError("Master can't be replaced.");
             var maps = SuccessorLibrary.For(old.DLL?.Name).ToList();
@@ -142,7 +147,7 @@ namespace ReBuzz.Agent
             {
                 plan.State = converter.ConvertState(sp => sp == noteColumn ? note : Current(old, sp, 0));
                 if (distinct > 1)
-                    plan.State.Notes.Add($"{old.Name}'s notes tune it, and they are at {distinct} pitches: {map.To}'s settings start at the most common, {Pitch.Name(TrackNotes.FromBuzz(note))}, and each note moves them as it plays (automation in the converted patterns).");
+                    plan.State.Notes.Add($"{old.Name}'s notes tune it, and they are at {distinct} pitches: {map.To}'s settings start at the most common, {(noteName ?? Pitch.Name)(TrackNotes.FromBuzz(note))}, and each note moves them as it plays (automation in the converted patterns).");
             }
             return plan;
         }
@@ -237,7 +242,7 @@ namespace ReBuzz.Agent
         public static JsonObject Run(ReBuzzCore core, IUiDispatcher dispatcher, MachineCore old, string toGear, ReplaceOptions o,
             CancellationToken cancellation = default, Action<double, double, string> progress = null)
         {
-            var plan = MakePlan(core, old, toGear);
+            var plan = MakePlan(core, old, toGear, o?.NoteName);
             var result = Report(plan);
             var notes = new List<string>(plan.State.Notes);
             notes.AddRange(plan.State.Values.Where(v => v.Note != null).Select(v => v.Note));
@@ -377,7 +382,7 @@ namespace ReBuzz.Agent
             string error = null;
             try
             {
-                r = Run(core, core.dispatcher, machine, gear, new ReplaceOptions { MaxSeconds = 30 });
+                r = Run(core, core.dispatcher, machine, gear, new ReplaceOptions { MaxSeconds = 30, NoteName = BuzzGUI.Common.NoteNames.Name });
             }
             catch (Exception e) { error = e is ToolError ? e.Message : $"{e.GetType().Name}: {e.Message}"; }
             finally

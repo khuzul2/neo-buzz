@@ -26,7 +26,7 @@ namespace ReBuzz.Studio.Views.Machines
         public Control Create(StudioHost host) => new MachineView(host.Core);
     }
 
-    internal sealed class MachineView : DockPanel
+    internal sealed class MachineView : DockPanel, IStudioEditTarget
     {
         readonly ScrollBar horizontal = new ScrollBar { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Bottom, AllowAutoHide = true };
         readonly ScrollBar vertical = new ScrollBar { Orientation = Orientation.Vertical, HorizontalAlignment = HorizontalAlignment.Right, AllowAutoHide = true };
@@ -72,16 +72,49 @@ namespace ReBuzz.Studio.Views.Machines
         {
             var cmd = OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control;
             void Bind(Key key, KeyModifiers mods, Action run) => KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(key, mods), Command = new Command(run) });
+            // Fork (ux-overhaul.md §4): one keymap: ⌫ and Delete delete, ⌘D duplicates (it deselected), ⇧⌘A and Esc deselect.
             Bind(Key.Delete, KeyModifiers.None, Canvas.DeleteSelection);
-            if (OperatingSystem.IsMacOS()) Bind(Key.Back, KeyModifiers.None, Canvas.DeleteSelection);
+            Bind(Key.Back, KeyModifiers.None, Canvas.DeleteSelection);
             Bind(Key.A, cmd, Canvas.SelectAll);
-            Bind(Key.D, cmd, Canvas.ClearSelection);
+            Bind(Key.D, cmd, () => Canvas.DuplicateSelection());
+            Bind(Key.A, cmd | KeyModifiers.Shift, Canvas.ClearSelection);
+            Bind(Key.Escape, KeyModifiers.None, Canvas.ClearSelection);
+            Bind(Key.R, cmd, () => Canvas.RenameSelection());
             Bind(Key.U, cmd, Canvas.UnmuteAll);
-            // Mute: Ctrl+M as ReBuzz.exe has it; on a Mac M on the canvas (fork, ui-gallery.md), as ⌘M minimizes the window there.
-            if (OperatingSystem.IsMacOS())
-                Canvas.KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.M), Command = new Command(Canvas.ToggleMuteSelection) });
-            else
+            // Mute: M on the canvas in both apps (on a Mac ⌘M minimizes the window), and Ctrl+M as ReBuzz.exe has it off a
+            // Mac; S solos, B bypasses.
+            Canvas.KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.M), Command = new Command(Canvas.ToggleMuteSelection) });
+            Canvas.KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.S), Command = new Command(Canvas.ToggleSoloSelection) });
+            Canvas.KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.B), Command = new Command(Canvas.ToggleBypassSelection) });
+            if (!OperatingSystem.IsMacOS())
                 Bind(Key.M, cmd, Canvas.ToggleMuteSelection);
+        }
+
+        // IStudioEditTarget (ux-overhaul.md §4): the Edit menu's commands on the selected machines. Machine edits are on the
+        // song's history, so Undo and Redo fall through to it.
+        public bool Undo() => false;
+        public bool Redo() => false;
+        public bool Duplicate() => Canvas.DuplicateSelection();
+        public bool Rename() => Canvas.RenameSelection();
+
+        public bool Delete()
+        {
+            if (Canvas.Selection.Count == 0) return false;
+            Canvas.DeleteSelection();
+            return true;
+        }
+
+        public bool SelectAll()
+        {
+            Canvas.SelectAll();
+            return true;
+        }
+
+        public bool DeselectAll()
+        {
+            if (Canvas.Selection.Count == 0) return false;
+            Canvas.ClearSelection();
+            return true;
         }
 
         static Control Right(Control c)

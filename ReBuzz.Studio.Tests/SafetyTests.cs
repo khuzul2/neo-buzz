@@ -162,10 +162,16 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(runaway.IsMuted, Is.True, "a diverged machine reads as muted until it is reset");
                 Assert.That(notices, Is.EqualTo(new[] { "Runaway" }));
                 window.RefreshNow();
-                Assert.That(window.StatusText, Does.Contain("Diverged: muted: Runaway (+"));
+                Assert.That(window.StatusText, Does.Contain("Muted to protect your ears: Runaway (+"));
+                // Fork (ux-overhaul.md P1): the problem bar says it in plain words, with the buttons that fix it.
+                window.RefreshProblems();
+                Settle();
+                Assert.That(window.Problems.IsVisible, Is.True);
+                Assert.That(window.Problems.Text, Does.StartWith("Runaway got far too loud (+").And.EndWith("and was muted to protect your ears."));
+                Assert.That(window.Problems.Buttons.Select(b => b.Content as string), Is.EqualTo(new[] { "Reset and Unmute", "Parameters…" }));
                 window.MouseMove(view.PointOf(runaway, window));
                 Settle();
-                Assert.That(view.Canvas.HoverTip, Does.StartWith("Diverged: muted."));
+                Assert.That(view.Canvas.HoverTip, Does.StartWith("Muted to protect your ears: it got far too loud (+"));
                 Studio.Screenshot(window, "safety-diverged");
 
                 // Reset and unmute, from its menu: it plays again (Stop started its loop over), until it trips again.
@@ -173,7 +179,7 @@ namespace ReBuzz.Studio.Tests
                 var menu = view.Canvas.OpenMenu;
                 Assert.That(menu?.IsOpen, Is.True);
                 var reset = menu!.Items.OfType<MenuItem>().First();
-                Assert.That(reset.Header, Is.EqualTo("Reset and unmute"), "first on a diverged machine's menu");
+                Assert.That(reset.Header, Is.EqualTo("Reset and Unmute"), "first on a diverged machine's menu");
                 Studio.Screenshot(TopLevel.GetTopLevel(reset)!, "safety-diverged-menu");
                 MachineViewTests.ClickItem(reset);
                 Assert.That(runaway.IsDiverged, Is.False);
@@ -181,12 +187,25 @@ namespace ReBuzz.Studio.Tests
                 var again = Render(2);
                 Assert.That(Peak(again), Is.GreaterThan(1.0f), "the runaway plays again (from full scale, growing)");
                 window.RefreshNow();
-                Assert.That(window.StatusText, Does.Not.Contain("Diverged"));
+                Assert.That(window.StatusText, Does.Not.Contain("Muted to protect"));
+                window.RefreshProblems();
+                Assert.That(window.Problems.IsVisible, Is.False, "the bar goes with the problem");
 
                 // One undo step: undone, it is muted (not diverged).
                 Core.SongCore.ActionStack.Undo();
                 Assert.That(runaway.IsMuted, Is.True);
                 Assert.That(runaway.IsDiverged, Is.False);
+
+                // Unmuted it blows up again; the bar's Reset and Unmute fixes it as the menu did.
+                MachineEdits.Mute(Core, new[] { runaway }, false);
+                Render(40);
+                Settle();
+                Assert.That(runaway.IsDiverged, Is.True);
+                window.RefreshProblems();
+                var fix = window.Problems.Buttons.First(b => b.Content as string == "Reset and Unmute");
+                fix.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+                Settle();
+                Assert.That((runaway.IsDiverged, runaway.IsMuted), Is.EqualTo((false, false)), "the bar's button reset and unmuted it");
             }
             finally
             {

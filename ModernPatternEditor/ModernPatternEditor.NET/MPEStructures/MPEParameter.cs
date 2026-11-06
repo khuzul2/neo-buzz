@@ -170,7 +170,7 @@ namespace WDE.ModernPatternEditor.MPEStructures
 
         public string DescribeValue(int value)
         {
-            return BuzzNote.TryToString(value);
+            return NoteNames.TryTracker(value);     // Fork: as Preferences name notes (ux-overhaul.md §3.5)
         }
 
         public string GetDisplayName(int track)

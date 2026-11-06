@@ -107,20 +107,21 @@ namespace ReBuzz.Studio.Views.Notes
             Editor.Resources["TextControlBorderThemeThicknessFocused"] = new Thickness(0);
 
             // The toolbar: the formats, and where the notes are kept.
-            Tool("B", "Bold (Ctrl/Command+B)", Bold, b => b.FontWeight = FontWeight.Bold);
-            Tool("I", "Italic (Ctrl/Command+I)", Italic, b => b.FontStyle = FontStyle.Italic);
-            Tool("U", "Underline (Ctrl/Command+U)", Underline, b => b.Content = new TextBlock { Text = "U", TextDecorations = TextDecorations.Underline });
+            // Fork (ux-overhaul.md §4): the keys as the platform writes them (⌘B on a Mac, Ctrl+B elsewhere).
+            Tool("B", $"Bold ({KeyName("Cmd+B")})", Bold, b => b.FontWeight = FontWeight.Bold);
+            Tool("I", $"Italic ({KeyName("Cmd+I")})", Italic, b => b.FontStyle = FontStyle.Italic);
+            Tool("U", $"Underline ({KeyName("Cmd+U")})", Underline, b => b.Content = new TextBlock { Text = "U", TextDecorations = TextDecorations.Underline });
             Tool("S", "Strike through", Strike, b => b.Content = new TextBlock { Text = "S", TextDecorations = TextDecorations.Strikethrough });
             bar.Children.Add(new Border { Width = 10 });
             Tool("H", "Heading: a larger line; again for a smaller heading, a fourth time back to text", Heading, b => b.FontWeight = FontWeight.Bold);
             Tool("•", "Bulleted list", Bullets);
             Tool("1.", "Numbered list", Numbers);
             bar.Children.Add(new Border { Width = 10 });
-            Tool("Link", "Link (Ctrl/Command+K): the selected text links to an address", Link);
+            Tool("Link", $"Link ({KeyName("Cmd+K")}): the selected text links to an address", Link);
             bar.Children.Add(new TextBlock
             {
                 Text = "Saved with the song · Markdown",
-                Foreground = DimBrush,
+                Foreground = Shell.Design.StudioTokens.TextSecondaryBrush,      // 5.7:1 on the bar (was 4.1:1)
                 FontSize = 11,
                 Margin = new Thickness(14, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center,
@@ -177,6 +178,8 @@ namespace ReBuzz.Studio.Views.Notes
         internal string BannerText => bannerText.Text;
 
         internal Button DismissButton => dismiss;
+
+        static string KeyName(string keys) => Shell.Commands.KeyText.Of(keys);
 
         void Tool(string text, string tip, Action run, Action<Button> look = null)
         {

@@ -270,6 +270,7 @@ namespace NeoBuzz.Editor
             KeyboardSettings.Changed += GearChanged;
             general = Global.GeneralSettings;
             if (general != null) general.PropertyChanged += GeneralChanged;
+            NoteNames.Changed += NamingChanged;
 #if AVALONIA
             window = TopLevel.GetTopLevel(this) as Window;
 #else
@@ -300,6 +301,7 @@ namespace NeoBuzz.Editor
             keys.Released();
             KeyboardSettings.Changed -= GearChanged;
             if (general != null) general.PropertyChanged -= GeneralChanged;
+            NoteNames.Changed -= NamingChanged;
             general = null;
             if (window != null) window.Deactivated -= WindowDeactivated;
             window = null;
@@ -321,6 +323,13 @@ namespace NeoBuzz.Editor
         {
             if (e.PropertyName == nameof(BuzzGUI.Common.Settings.GeneralSettings.MachineKeyboard) || string.IsNullOrEmpty(e.PropertyName))
                 SetShown(KeyboardSettings.Shown(machine.DLL));
+        }
+
+        /// <summary>Preferences name notes another way (docs/specs/ux-overhaul.md §3.5): the octave and the keys say it.</summary>
+        void NamingChanged()
+        {
+            UpdateOctave();
+            keys.Renamed();
         }
 
         /// <summary>
@@ -508,6 +517,12 @@ namespace NeoBuzz.Editor
             }
             foreach (var e in elements.Values) e.UpdateName();
             UpdateLooks();
+        }
+
+        /// <summary>The notes are named another way: each key's label and name again.</summary>
+        public void Renamed()
+        {
+            foreach (var e in elements.Values) e.UpdateName();
         }
 
         /// <summary>What the machine plays now, from the monitor (pitches as it gets them, less its offset).</summary>

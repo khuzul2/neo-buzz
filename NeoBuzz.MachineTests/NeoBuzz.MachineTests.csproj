@@ -35,6 +35,8 @@
     <!-- The manifest editor's face (docs/specs/mcp-server.md §12.11, U4): planning, pictures and response models,
          toolkit-free and engine-free like the kit's core. -->
     <Compile Include="..\Machines\NeoBuzz.ManifestEditor\Core\**\*.cs" Link="ManifestEditor\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- The keyboard names its keys as Preferences name notes (docs/specs/ux-overhaul.md §3.5); pure, by name. -->
+    <Compile Include="..\ReBuzzGUI\BuzzGUI.Common\NoteNames.cs" Link="ManifestEditor\NoteNames.cs" />
     <!-- The analysis library's BS.1770 true peak: Neo Limiter's ceiling is measured with what the
          agent server measures with (docs/specs/mcp-server.md §7). Only this file, by name. -->
     <Compile Include="..\Machines\NeoBuzz.Analysis\Loudness.cs" Link="Analysis\Loudness.cs" />

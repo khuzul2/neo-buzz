@@ -26,7 +26,7 @@ namespace ReBuzz.Studio.Shell
         readonly Bars bars = new Bars { Width = 120, Height = 16, VerticalAlignment = VerticalAlignment.Center };
         readonly Button clip = new Button { MinWidth = 64, Padding = new Thickness(6, 1), FontSize = 11, VerticalAlignment = VerticalAlignment.Center, HorizontalContentAlignment = HorizontalAlignment.Center };
         readonly Border limit = new Border { CornerRadius = new CornerRadius(2), Padding = new Thickness(4, 1), VerticalAlignment = VerticalAlignment.Center };
-        readonly TextBlock limitText = new TextBlock { Text = "LIM", FontSize = 10, FontWeight = FontWeight.Bold };
+        readonly TextBlock limitText = new TextBlock { Text = "LIM", FontSize = 11, FontWeight = FontWeight.Bold };
 
         public MasterMeter(Func<ReBuzzCore> core)
         {
