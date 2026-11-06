@@ -44,6 +44,15 @@ namespace NeoBuzz.Dsp
 
         public int MaxLatency { get; }
 
+        /// <summary>A new rate: the glide's length follows it (the switch keeps where it is).</summary>
+        public void SetSampleRate(double sampleRate)
+        {
+            float v = mix.Value, t = mix.Target;
+            mix.Setup(SwitchSeconds, sampleRate);
+            mix.Reset(v);
+            mix.SetTarget(t);
+        }
+
         /// <summary>The machine's latency now, samples (0 … MaxLatency): how far the dry is delayed.</summary>
         public int Latency
         {

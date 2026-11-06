@@ -192,6 +192,14 @@ CASES = [
     fx("utility-ms-eq-chain", "Neo Utility", "Mid/Side — Encode (Before a Stereo Machine)", [("Width", "120%")],
        extra=[("Neo EQ", "Mastering — Air Shelf", []), ("Neo Utility", "Mid/Side — Decode (After It)", [])],
        auto=[("Matrix", [(2, "Off"), (3, "Encode M/S")])]),
+    # Neo Clipper (docs/specs/mastering-tools.md §5.1, M2): the knee at 4× before a limiter; hard at 1×; three bands in
+    # mid/side with the drive automated (its ramps, the second stage, the ceiling guard); Delta switched on by automation.
+    fx("clipper-knee-limiter", "Neo Clipper", "Mastering — Transparent (Before a Limiter)", [("Drive", "+9 dB")],
+       extra=[("Neo Limiter", "Mastering — Streaming (−1 dBTP)", [])]),
+    fx("clipper-hard-1x", "Neo Clipper", "Character — 1× Grit", [("Mix", "100%")]),
+    fx("clipper-bands-ms", "Neo Clipper", "Mastering — Three Bands", [("Stereo", "M/S"), ("Oversampling", "8×")],
+       auto=[("Drive", [(0, "+12 dB"), (1.5, "+3 dB"), (2.5, "+18 dB")])]),
+    fx("clipper-delta", "Neo Clipper", "Drums — Hard Snap", [("Drive", "+12 dB")], auto=[("Delta", [(2, "On")])]),
     # Neo Verb: the four algorithms, modulation, shimmer, a 20-second decay, and freeze switched on
     # mid-render by automation (the tail held with no loss).
     fx("verb-hall", "Neo Verb", "Hall — Concert", tail=2.5),

@@ -1,0 +1,77 @@
+# Neo Clipper factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoClipper
+machine "Neo Clipper"
+
+preset "Mastering — Transparent (Before a Limiter)"
+Drive = 2
+Ceiling = -0.3
+Shape = Knee
+Knee = 3
+Oversampling = 4×
+
+preset "Mastering — Loud (Knee 6 dB)"
+Drive = 4
+Ceiling = -0.3
+Shape = Knee
+Knee = 6
+Oversampling = 8×
+
+preset "Mastering — Three Bands"
+Drive = 3
+Ceiling = -0.3
+Shape = Knee
+Knee = 3
+Bands = 3 bands
+Crossover 1 = 120
+Crossover 2 = 2000
+Low drive = -2
+Mid drive = 0
+High drive = 1
+
+preset "Mastering — Clip the Mid (M/S)"
+Drive = 3
+Ceiling = -0.3
+Shape = Knee
+Knee = 3
+Stereo = M/S
+
+preset "Drums — Hard Snap"
+Drive = 6
+Ceiling = -1
+Shape = Hard
+Oversampling = 4×
+
+preset "Drums — Soft Weight"
+Drive = 5
+Ceiling = -1
+Shape = Soft
+Oversampling = 4×
+
+preset "Drums — Kick Only (Low Band)"
+Drive = 0
+Ceiling = -1
+Shape = Knee
+Knee = 3
+Bands = 2 bands
+Crossover 1 = 150
+Low drive = 6
+High drive = -6
+
+preset "Bus — Tanh Glue"
+Drive = 3
+Ceiling = -1
+Shape = Tanh
+Mix = 70
+
+preset "Character — 1× Grit"
+Drive = 12
+Ceiling = -3
+Shape = Hard
+Oversampling = 1×
+Mix = 40
+Output = -2
+
+preset "Mixing — Catch the Peaks"
+Drive = 0
+Ceiling = -6
+Shape = Knee
+Knee = 2
