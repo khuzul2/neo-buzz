@@ -43,8 +43,57 @@ namespace NeoBuzz.Editor
         /// <summary>The plotting area (inside the frame, leaving room for the labels).</summary>
         public NeoRect Plot { get; private set; } = new NeoRect(0, 0, 1, 1);
 
-        public void Layout(NeoRect frame) =>
-            Plot = new NeoRect(frame.X + 30, frame.Y + 8, Math.Max(1, frame.Width - 38), Math.Max(1, frame.Height - 26));
+        NeoRect frame = new NeoRect(0, 0, 0, 0);
+        double handleRoom;
+
+        /// <summary>
+        /// Room (px) kept clear around the plot for what is drawn over its edges (band handles, slider caps): the
+        /// axis labels sit beyond it, so a handle at 20 Hz or at the top or bottom of the range never covers them.
+        /// Handle inputs ask for what they need (<see cref="NeedRoom"/>).
+        /// </summary>
+        public double HandleRoom
+        {
+            get => handleRoom;
+            set
+            {
+                handleRoom = Math.Max(0, value);
+                if (frame.Width > 0) Layout(frame);
+            }
+        }
+
+        /// <summary>Makes <see cref="HandleRoom"/> at least <paramref name="room"/>.</summary>
+        public void NeedRoom(double room)
+        {
+            if (room > handleRoom) HandleRoom = room;
+        }
+
+        public void Layout(NeoRect frame)
+        {
+            this.frame = frame;
+            double room = handleRoom, top = Math.Max(8, room + 1), right = Math.Max(8, room + 1);
+            Plot = new NeoRect(frame.X + 30 + room, frame.Y + top, Math.Max(1, frame.Width - 30 - room - right), Math.Max(1, frame.Height - top - 18 - room));
+        }
+
+        /// <summary>
+        /// Draws <paramref name="body"/> clipped to the plot: curves, areas and spectra end at its edges and never run
+        /// over the axis labels. Handles are drawn after it, unclipped, in <see cref="HandleRoom"/>. A drawing error
+        /// ends the body there (as in GraphFrame), and the clip is always popped.
+        /// </summary>
+        public void InPlot(INeoCanvas g, Action body)
+        {
+            g.PushClip(Plot);
+            try
+            {
+                body?.Invoke();
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                g.PopClip();
+            }
+        }
 
         public double X(double hz) => Plot.Left + Math.Log(Math.Max(1e-3, hz) / MinHz) / Math.Log(MaxHz / MinHz) * Plot.Width;
 
@@ -58,9 +107,10 @@ namespace NeoBuzz.Editor
         public static string FreqLabel(double hz) =>
             hz >= 1000 ? (hz / 1000).ToString("0.#", CultureInfo.InvariantCulture) + "k" : hz.ToString("0", CultureInfo.InvariantCulture);
 
-        /// <summary>Frequency lines (decades brighter) with labels below, dB lines with labels at the left.</summary>
+        /// <summary>Frequency lines (decades brighter) with labels below, dB lines with labels at the left, both beyond <see cref="HandleRoom"/>.</summary>
         public void DrawGrid(INeoCanvas g)
         {
+            double room = handleRoom;
             var minor = new NeoStroke(Palette.Grid, 1, false);
             var major = new NeoStroke(Palette.Track, 1, false);
             for (double decade = 10; decade <= 10000; decade *= 10)
@@ -74,12 +124,12 @@ namespace NeoBuzz.Editor
             {
                 bool decade = f == 100 || f == 1000 || f == 10000;
                 if (decade) g.Line(X(f), Plot.Top, X(f), Plot.Bottom, major);
-                g.Text(FreqLabel(f), X(f), Plot.Bottom + 3, 9.5, Palette.DimText, align: NeoAlign.Center);
+                g.Text(FreqLabel(f), X(f), Plot.Bottom + 3 + room, 9.5, Palette.DimText, align: NeoAlign.Center);
             }
             for (double d = Math.Ceiling(MinDb / DbStep) * DbStep; d <= MaxDb + 1e-9; d += DbStep)
             {
                 g.Line(Plot.Left, Y(d), Plot.Right, Y(d), d == 0 ? major : minor);
-                g.Text(d.ToString("+0;−0;0", CultureInfo.InvariantCulture), Plot.Left - 4, Y(d) - 7, 9.5, Palette.DimText, align: NeoAlign.Right);
+                g.Text(d.ToString("+0;−0;0", CultureInfo.InvariantCulture), Plot.Left - 4 - room, Y(d) - 7, 9.5, Palette.DimText, align: NeoAlign.Right);
             }
         }
 
@@ -162,7 +212,12 @@ namespace NeoBuzz.Editor
         {
             this.graph = graph;
             this.bands = bands;
+            // A selected handle (its radius and ring) at an edge of the plot stays clear of the axis labels.
+            graph.NeedRoom(Room);
         }
+
+        /// <summary>How far a handle reaches past its centre: the selected radius and its ring.</summary>
+        public const double Room = Radius + 3;
 
         public int Selected { get; private set; }
         public int Hover { get; private set; } = -1;

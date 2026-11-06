@@ -307,16 +307,23 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void RunsFasterThanRealTime()
         {
-            var (e, _) = Make(v => Set(v, P.InputGain, 12));
-            var (l, r) = Drums(Measure.Rate * 10);
-            Run(e, l.Take(48000).ToArray(), r.Take(48000).ToArray());
-            GC.Collect();
-            var sw = Stopwatch.StartNew();
-            Run(e, l, r);
-            double speed = 10.0 / sw.Elapsed.TotalSeconds;
-            Measure.Report($"Neo Limiter CPU: {speed:F0}× real time (stereo, limiting drums)");
-            // 50× is 2 % of a core; shared CI runners vary (measured 120× there).
-            Assert.That(speed, Is.GreaterThan(50));
+            // 50× is 2 % of a core. Timed against the reference workload in the same run (Throughput.cs): 1 s played untimed, then 2 s.
+            var (l, r) = Drums(Measure.Rate * 3);
+            const int Warm = Measure.Rate;
+            Throughput.Guard("Neo Limiter CPU (stereo, limiting drums)", Throughput.Floor(x64: 150, arm64: 110), 2, Measure.Rate, LimiterEngine.MaxBlock, () =>
+            {
+                var (e, _) = Make(v => Set(v, P.InputGain, 12));
+                var bl = new float[LimiterEngine.MaxBlock];
+                var br = new float[LimiterEngine.MaxBlock];
+                void Block(int pos, int n)
+                {
+                    Array.Copy(l, pos, bl, 0, n);
+                    Array.Copy(r, pos, br, 0, n);
+                    e.Process(bl, br, n);
+                }
+                for (int pos = 0; pos < Warm; pos += LimiterEngine.MaxBlock) Block(pos, LimiterEngine.MaxBlock);
+                return Throughput.InBlocks(LimiterEngine.MaxBlock, (pos, n) => Block(Warm + pos, n));
+            }, Measure.Report);
         }
 
         [Test]

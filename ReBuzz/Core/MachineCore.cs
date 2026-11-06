@@ -734,6 +734,13 @@ namespace ReBuzz.Core
         }
         public bool Ready { get; internal set; }
 
+        /// <summary>
+        /// Fork (machine keyboard): the notes the machine plays now, for the keyboards under its windows to
+        /// light up; made by the first of them (UI thread) and kept, fed by MachineManager's MIDI and the
+        /// tick's Note track values. Null until then: the feeds skip it.
+        /// </summary>
+        internal volatile Keyboards.NoteMonitor NoteMonitor;
+
 
         public long CMachineHost { get; internal set; }
         public List<CMachineEvent> CMachineEventType { get; internal set; }

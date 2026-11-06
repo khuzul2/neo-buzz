@@ -101,6 +101,19 @@ namespace ReBuzz.Agent
                 return;
             }
 
+            // Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): --keyboard-check <folder> opens, plays and checks the
+            // keyboard under machine windows (ReBuzzTests on the package run), then exits.
+            if (KeyboardCheck.Folder(args) is string keyboardCheck)
+            {
+                Step("keyboard check");
+                try { KeyboardCheck.Run(core, Path.GetFullPath(keyboardCheck), Step); }
+                catch (Exception e) { Console.Error.WriteLine(Product.LogPrefix + "keyboard check: " + e); }
+                try { init.ShutDownReBuzzEngine(); } catch (Exception) { }
+                hidden.Dispose();
+                app.Shutdown();
+                return;
+            }
+
             string song = args.SkipWhile(a => !string.Equals(a, Switch, StringComparison.OrdinalIgnoreCase)).Skip(1).FirstOrDefault(a => !a.StartsWith("-"));
             if (song != null)
             {

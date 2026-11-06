@@ -29,6 +29,9 @@
     <UseWindowsForms>true</UseWindowsForms>
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
+  <!-- Fork (docs/specs/daw-modes.md §8.1): its runtimeconfig.json ships beside the app; a native host that loads
+       it first starts .NET with it, so it says what the app's does (tools/msbuild/AudioThreadRuntime.props). -->
+  <Import Project="..\tools\msbuild\AudioThreadRuntime.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>

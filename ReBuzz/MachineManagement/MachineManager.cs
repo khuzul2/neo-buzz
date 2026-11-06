@@ -708,6 +708,8 @@ namespace ReBuzz.MachineManagement
         {
             if (machine == null)
                 return;
+            // Fork (machine keyboard): the keys of the keyboard under its window light up (Core/Keyboards/NoteMonitor.cs).
+            (machine as MachineCore)?.NoteMonitor?.Midi(data);
             //lock (machine)
             //lock (ReBuzzCore.AudioLock)
             {
@@ -1096,6 +1098,7 @@ namespace ReBuzz.MachineManagement
 
         internal void SendMIDINote(MachineCore machine, int channel, int value, int velocity)
         {
+            machine.NoteMonitor?.Note(channel, value, velocity);     // fork (machine keyboard)
             if (machine.DLL.IsManaged && managedMachines.ContainsKey(machine))
             {
                 var machineHost = ManagedMachines[machine];

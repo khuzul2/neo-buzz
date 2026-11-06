@@ -39,6 +39,22 @@ namespace NeoBuzz.Drums
             else pending.Set(track, parameter - TP.HitBD, value);
         }
 
+        static readonly IReadOnlyDictionary<int, string> keyNames = KeysByName();
+
+        static Dictionary<int, string> KeysByName()
+        {
+            var names = new Dictionary<int, string>();
+            for (int key = 0; key < 128; key++)
+                if (DrumsEngine.VoiceOfKey(key) is int voice and >= 0) names[key] = DrumsEngine.Names[voice];
+            return names;
+        }
+
+        /// <summary>
+        /// Hosts (the keyboard under the machine's window, docs/specs/studio-mvp.md §3.12): the name of the voice each
+        /// key plays, General MIDI's drum keys with the TR-909's pairs (DrumsEngine.VoiceOfKey); keys not listed play nothing.
+        /// </summary>
+        public IReadOnlyDictionary<int, string> KeyNames => keyNames;
+
         /// <summary>The editor's pads (any thread): a hit at the next block, as a MIDI note on the voice's key.</summary>
         internal void Audition(int voice, int velocity)
         {

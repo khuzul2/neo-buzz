@@ -103,6 +103,8 @@ namespace NeoBuzz.Editor
             DockPanel.SetDock(title, Dock.Left);
             header.Children.Add(title);
             Presets = new PresetBar(machine, Accent);
+            // The bar names the preset the sound is, and marks it edited once a parameter moves off it.
+            ctx.Changed += Presets.Refresh;
             DockPanel.SetDock(Presets, Dock.Right);
             header.Children.Add(Presets);
             DockPanel.SetDock(header, Dock.Top);
@@ -139,15 +141,17 @@ namespace NeoBuzz.Editor
     }
 
     /// <summary>
-    /// ReBuzz presets for the machine: the current name (click for the list), previous / next,
-    /// and save. Factory presets ship as "Machine.prs.xml" next to the DLL.
+    /// ReBuzz presets for the machine: the current preset's name (click for the list), with an "edited" mark once the
+    /// parameters differ from it (PresetState), previous / next, and save. Factory presets ship as "Machine.prs.xml"
+    /// next to the DLL.
     /// </summary>
     internal sealed class PresetBar : NeoElement
     {
         readonly IMachine machine;
         readonly NeoColor accent;
         readonly AvaloniaCanvas canvas;
-        string current = "Presets";
+        string current;   // the preset the sound is (ReBuzz's name; null: none known)
+        bool edited;
 
         public PresetBar(IMachine machine, NeoColor accent)
         {
@@ -159,10 +163,24 @@ namespace NeoBuzz.Editor
             Cursor = Cursors.Hand;
             ToolTip = "Presets: click the name for the list, arrows to step, Save to store the current sound";
             AutomationProperties.SetName(this, "Presets");
+            Refresh();
         }
 
-        /// <summary>The preset loaded last ("Presets" before any).</summary>
-        public string Current => current;
+        /// <summary>The preset the bar names: the one loaded last or the one the sound matches ("Init": the defaults; "Presets": none).</summary>
+        public string Current => PresetState.Display(current);
+
+        /// <summary>Whether the parameters differ from that preset (the bar marks it "edited").</summary>
+        public bool Edited => edited;
+
+        /// <summary>Reads again which preset the sound is (a parameter changed).</summary>
+        public void Refresh()
+        {
+            var (name, e) = PresetState.Current(machine);
+            if (name == current && e == edited) return;
+            current = name;
+            edited = e;
+            InvalidateVisual();
+        }
 
         /// <summary>The list, while it is open (for tests).</summary>
         public ContextMenu Menu { get; private set; }
@@ -188,7 +206,7 @@ namespace NeoBuzz.Editor
             {
                 edits?.TouchAll();
                 machine.GetPreset(name).Apply(machine, true);
-                current = name;
+                PresetState.Loaded(machine, name);
             }
             catch (Exception e)
             {
@@ -198,6 +216,7 @@ namespace NeoBuzz.Editor
             {
                 edits?.End();
             }
+            Refresh();
             InvalidateVisual();
         }
 
@@ -251,17 +270,18 @@ namespace NeoBuzz.Editor
 
         async void Save()
         {
-            string name = await NameDialog.Ask(TopLevel.GetTopLevel(this) as Window, current == "Presets" || current == "<default>" ? "" : current);
+            string name = await NameDialog.Ask(TopLevel.GetTopLevel(this) as Window, current == null || current == PresetState.Defaults ? "" : current);
             if (string.IsNullOrWhiteSpace(name)) return;
             try
             {
                 machine.SetPreset(name.Trim(), new Preset(machine, false, true));
-                current = name.Trim();
+                PresetState.Loaded(machine, name.Trim());
             }
             catch (Exception e)
             {
                 MessageBox.Show(e.Message, "Save preset");
             }
+            Refresh();
             InvalidateVisual();
         }
 
@@ -278,7 +298,7 @@ namespace NeoBuzz.Editor
         }
 
         protected override void OnRender(DrawingContext dc) =>
-            PresetBarFace.Draw(canvas.On(dc), current == "<default>" ? "Init" : current, accent);
+            PresetBarFace.Draw(canvas.On(dc), PresetState.Display(current), accent, edited);
     }
 
     /// <summary>A small dialog asking for a preset name.</summary>

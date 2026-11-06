@@ -566,7 +566,7 @@ namespace ReBuzz.Studio.Tests
             var window = StudioMachineUiHost.ParameterWindowOf(m);
             Assert.That(window, Is.Not.Null);
             Pump();
-            var row = ((ParameterWindowView)window!.Content!).Rows.Single(r => r.ParameterName == "F1 cutoff");
+            var row = ((ParameterWindowView)StudioMachineUiHost.ContentOf(window)!).Rows.Single(r => r.ParameterName == "F1 cutoff");
             var told = new List<int>();
             Action<IParameter, int> listener = (p, t) => told.Add(p.GetValue(t));
             cutoff.SubscribeEvents(0, listener, null);

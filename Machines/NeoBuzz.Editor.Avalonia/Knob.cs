@@ -31,6 +31,7 @@ namespace NeoBuzz.Editor
         public NeoColor Accent { get; }
         public double Diameter => model.Diameter;
 
+        /// <summary>Its label; the knob grows to its width (KnobModel.Width).</summary>
         public string Label
         {
             get => model.Label;
@@ -38,13 +39,39 @@ namespace NeoBuzz.Editor
             {
                 model.Label = value;
                 AutomationProperties.SetName(this, value);
+                Fit();
             }
+        }
+
+        /// <summary>The widest its label goes on a line before it wraps onto a second (KnobModel.MaxLabelWidth).</summary>
+        public double MaxLabelWidth
+        {
+            get => model.MaxLabelWidth;
+            set
+            {
+                model.MaxLabelWidth = value;
+                Fit();
+            }
+        }
+
+        /// <summary>The label's width as drawn (its widest line).</summary>
+        public double LabelWidth => model.LabelWidth;
+
+        /// <summary>The label's lines as drawn.</summary>
+        public string[] LabelLines => model.LabelLines;
+
+        void Fit()
+        {
+            model.FitLabel(canvas);
+            Width = model.Width;
+            Height = model.Height;
+            InvalidateVisual();
         }
 
         /// <summary>Text of the current value (set by the owner).</summary>
         public string ValueText { get => model.ValueText; set => model.ValueText = value; }
-        /// <summary>The value arc grows from the centre (for −/+ parameters).</summary>
-        public bool Bipolar { get => model.Bipolar; set => model.Bipolar = value; }
+        /// <summary>Where the value arc starts, a position 0 … 1 (the value 0 for −/+ parameters, else the minimum).</summary>
+        public double Origin { get => model.Origin; set => model.Origin = value; }
         public double Default { get => model.Default; set => model.Default = value; }
         /// <summary>Steps for wheel and arrow keys: the parameter's range.</summary>
         public int Steps { get => model.Steps; set => model.Steps = value; }

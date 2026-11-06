@@ -29,6 +29,26 @@ namespace NeoBuzz.Editor
             }
             c.PopClip();
         }
+
+        /// <summary>
+        /// Draws <paramref name="body"/> clipped to <paramref name="plot"/>, a graph's plot inside its frame (what lies
+        /// outside it, a caption or axis labels, stays clear). The clip is always popped.
+        /// </summary>
+        public static void Clipped(INeoCanvas c, NeoRect plot, Action body)
+        {
+            c.PushClip(plot);
+            try
+            {
+                body?.Invoke();
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                c.PopClip();
+            }
+        }
     }
 
     /// <summary>A vertical level meter in dB (−60 … +6), or a gain-reduction bar growing down (0 … 30 dB).</summary>

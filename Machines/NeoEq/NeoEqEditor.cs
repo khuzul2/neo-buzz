@@ -429,18 +429,22 @@ namespace NeoBuzz.Eq
             if (machine != null)
             {
                 spectrum.Update(machine.Engine);
-                g.Path(graph.Spectrum(spectrum.Hz, spectrum.Db, 0, 96), Palette.Track.WithAlpha(0x90), NeoStroke.None);
+                graph.InPlot(g, () => g.Path(graph.Spectrum(spectrum.Hz, spectrum.Db, 0, 96), Palette.Track.WithAlpha(0x90), NeoStroke.None));
             }
             graph.DrawGrid(g);
             sliders.DrawTracks(g);
             var solver = curve.For(ctx, machine?.Engine.SampleRate ?? 48000);
             double output = ctx.Value(P.Output);
-            g.Path(graph.Curve(hz => solver.ResponseDb(hz) + output), NeoFill.None, new NeoStroke(AccentColor, 2.2));
-            sliders.DrawCaps(g, AccentColor);
             int i = sliders.Hover >= 0 ? sliders.Hover : sliders.Selected;
             string text = "Graphic · " + sliders.Caption(i);
             if (output != 0) text += " · " + Params.Table[P.Output].Name + " " + Params.Table[P.Output].Describe(ctx.Raw(P.Output));
-            g.Text(text, graph.Plot.Left + 6, graph.Plot.Top + 2, 10.5, AccentColor);
+            graph.InPlot(g, () =>
+            {
+                g.Path(graph.Curve(hz => solver.ResponseDb(hz) + output), NeoFill.None, new NeoStroke(AccentColor, 2.2));
+                g.Text(text, graph.Plot.Left + 6, graph.Plot.Top + 2, 10.5, AccentColor);
+            });
+            // The caps over the curve, in the room kept around the plot (never over the axis labels).
+            sliders.DrawCaps(g, AccentColor);
         }
 
         static void Draw(INeoCanvas g, NeoRect r, EditorContext ctx, ResponseGraph graph, BandHandleInput handles, NeoEqMachine machine, SpectrumView spectrum)
@@ -449,7 +453,7 @@ namespace NeoBuzz.Eq
             if (machine != null)
             {
                 spectrum.Update(machine.Engine);
-                g.Path(graph.Spectrum(spectrum.Hz, spectrum.Db, 0, 96), Palette.Track.WithAlpha(0x90), NeoStroke.None);
+                graph.InPlot(g, () => g.Path(graph.Spectrum(spectrum.Hz, spectrum.Db, 0, 96), Palette.Track.WithAlpha(0x90), NeoStroke.None));
             }
             graph.DrawGrid(g);
 
@@ -466,42 +470,6 @@ namespace NeoBuzz.Eq
                 now[b] = EqDesign.Settings(values, b);
                 now[b].GainDb += machine?.Engine.DynamicDb(b) ?? 0;
             }
-            if (values.On(EqDesign.On(sel)))
-            {
-                var s = EqDesign.Settings(values, sel);
-                if (values.Choice(EqDesign.Dynamic(sel)) != 0 && s.HasGain)
-                {
-                    // The dynamic range: between the band at its setting and moved by Range, down or up.
-                    double range = values.Value(EqDesign.Range(sel)) * (values.Choice(EqDesign.Dynamic(sel)) == 1 ? -1 : 1);
-                    var moved = s;
-                    moved.GainDb = Math.Clamp(s.GainDb + range, -EqEngine.MaxDynamicDb, EqEngine.MaxDynamicDb);
-                    Func<double, double> at = hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(s, hz, rate)));
-                    Func<double, double> far = hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(moved, hz, rate)));
-                    g.Path(graph.Curve(far, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(0x70), 1));
-                    g.Path(graph.Curve(at, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(0x70), 1));
-                }
-                var live = now[sel];
-                Func<double, double> own = hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(live, hz, rate)));
-                g.Path(graph.Area(own), colour.WithAlpha(0x2C), NeoStroke.None);
-                g.Path(graph.Curve(own, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(0xB0), 1.2));
-            }
-            g.Path(graph.Curve(hz =>
-            {
-                double db = values.Value(P.Output);
-                for (int b = 0; b < EqDesign.Bands; b++)
-                    if (values.On(EqDesign.On(b))) db += 20 * Math.Log10(Math.Max(1e-12, EqDesign.Magnitude(now[b], hz, rate)));
-                return db;
-            }), NeoFill.None, new NeoStroke(AccentColor, 2.2));
-            handles.Draw(g, BandColors);
-            // v2: a band on one channel or half carries its letter beside its handle.
-            for (int b = 0; b < EqDesign.Bands; b++)
-            {
-                int chan = values.Choice(EqDesign.Channel(b));
-                if (chan == 0 || !values.On(EqDesign.On(b))) continue;
-                var at = handles.Position(b);
-                g.Text(ChannelLetters[chan], at.X + BandHandleInput.Radius + 1, at.Y - 16, 9.5, BandColors[b]);
-            }
-
             var cur = EqDesign.Settings(values, sel);
             string text = $"Band {sel + 1} · {Params.Table[EqDesign.TypeOf(sel)].Describe(values[EqDesign.TypeOf(sel)])} · {ParamDef.Freq(cur.Hz)}";
             if (cur.HasGain) text += $" · {Params.Table[EqDesign.Gain(sel)].Describe(values[EqDesign.Gain(sel)])}";
@@ -509,10 +477,49 @@ namespace NeoBuzz.Eq
             if (cur.Type is BandType.LowCut or BandType.HighCut) text += $" · {Params.Table[EqDesign.Slope(sel)].Describe(values[EqDesign.Slope(sel)])}";
             if (cur.Shape != BandShape.Standard) text += $" · {Params.Table[EqDesign.ShapeOf(sel)].Describe(values[EqDesign.ShapeOf(sel)])}";
             if (values.Choice(EqDesign.Channel(sel)) != 0) text += $" · {Params.Table[EqDesign.Channel(sel)].Describe(values[EqDesign.Channel(sel)])}";
-            if (values.Choice(EqDesign.Dynamic(sel)) != 0 && cur.HasGain)
+            bool dynamic = values.Choice(EqDesign.Dynamic(sel)) != 0 && cur.HasGain;
+            if (dynamic)
                 text += $" · dynamic {Params.Table[EqDesign.Dynamic(sel)].Describe(values[EqDesign.Dynamic(sel)]).ToLowerInvariant()} {(machine?.Engine.DynamicDb(sel) ?? 0).ToString("+0.0;−0.0;0.0")} dB";
             if (!values.On(EqDesign.On(sel))) text += " (off)";
-            g.Text(text, graph.Plot.Left + 6, graph.Plot.Top + 2, 10.5, values.On(EqDesign.On(sel)) ? colour : Palette.DimText);
+            // The curves inside the plot, never over the axis labels; the handles over them, in the room kept around it.
+            graph.InPlot(g, () =>
+            {
+                if (values.On(EqDesign.On(sel)))
+                {
+                    if (dynamic)
+                    {
+                        // The dynamic range: between the band at its setting and moved by Range, down or up.
+                        double range = values.Value(EqDesign.Range(sel)) * (values.Choice(EqDesign.Dynamic(sel)) == 1 ? -1 : 1);
+                        var moved = cur;
+                        moved.GainDb = Math.Clamp(cur.GainDb + range, -EqEngine.MaxDynamicDb, EqEngine.MaxDynamicDb);
+                        Func<double, double> at = hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(cur, hz, rate)));
+                        Func<double, double> far = hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(moved, hz, rate)));
+                        g.Path(graph.Curve(far, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(0x70), 1));
+                        g.Path(graph.Curve(at, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(0x70), 1));
+                    }
+                    var live = now[sel];
+                    Func<double, double> own = hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(live, hz, rate)));
+                    g.Path(graph.Area(own), colour.WithAlpha(0x2C), NeoStroke.None);
+                    g.Path(graph.Curve(own, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(0xB0), 1.2));
+                }
+                g.Path(graph.Curve(hz =>
+                {
+                    double db = values.Value(P.Output);
+                    for (int b = 0; b < EqDesign.Bands; b++)
+                        if (values.On(EqDesign.On(b))) db += 20 * Math.Log10(Math.Max(1e-12, EqDesign.Magnitude(now[b], hz, rate)));
+                    return db;
+                }), NeoFill.None, new NeoStroke(AccentColor, 2.2));
+                g.Text(text, graph.Plot.Left + 6, graph.Plot.Top + 2, 10.5, values.On(EqDesign.On(sel)) ? colour : Palette.DimText);
+            });
+            handles.Draw(g, BandColors);
+            // v2: a band on one channel or half carries its letter beside its handle.
+            for (int b = 0; b < EqDesign.Bands; b++)
+            {
+                int chan = values.Choice(EqDesign.Channel(b));
+                if (chan == 0 || !values.On(EqDesign.On(b))) continue;
+                var pos = handles.Position(b);
+                g.Text(ChannelLetters[chan], pos.X + BandHandleInput.Radius + 1, pos.Y - 16, 9.5, BandColors[b]);
+            }
         }
     }
 }

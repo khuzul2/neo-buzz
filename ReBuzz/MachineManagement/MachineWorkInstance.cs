@@ -688,8 +688,14 @@ namespace ReBuzz.MachineManagement
                 // unconditional. Empty invoke/clear were no-ops, so this is bit-exact.
                 if (changed)
                 {
+                    // Fork (machine keyboard): the notes its tracks play light up the keyboard under its window.
+                    var monitor = Machine.NoteMonitor;
                     foreach (var (par, track) in changes)
+                    {
                         par.InvokeEvents(buzz, track);
+                        if (monitor != null && par.Type == ParameterType.Note && par.Group.Type == ParameterGroupType.Track)
+                            monitor.TrackNote(track, par.GetPValue(track));
+                    }
 
                     // Clear pvals only for parameters that changed this tick (was: a full sweep
                     // over every parameter). SetValue writes pvalues[track] and records the

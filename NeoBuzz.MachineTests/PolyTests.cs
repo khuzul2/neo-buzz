@@ -211,23 +211,24 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void SixteenVoicesRunFarFasterThanRealTime()
         {
-            var (e, _) = Make(v =>
+            // A regression guard, timed against the reference workload in the same run (Throughput.cs).
+            Throughput.Guard("Neo Poly, 16 voices (3 osc, noise, ladder, SVF)", Throughput.Floor(x64: 10, arm64: 7.4), 2, Measure.Rate, PolyEngine.MaxBlock, () =>
             {
-                v.Set(P.Polyphony, 16);
-                v.Set(P.O2Level, 800);
-                v.Set(P.O3Level, 600);
-                v.Set(P.NoiseLevel, 100);
-                v.Set(P.F1Reso, 600);
-                v.Set(P.F2Type, 1);
-            });
-            for (int k = 0; k < 16; k++) e.NoteOn(k, 40 + 3 * k, 1f);
-            Render(e, 4800);
-            var sw = Stopwatch.StartNew();
-            Render(e, 10 * Measure.Rate);
-            double factor = 10 / sw.Elapsed.TotalSeconds;
-            Measure.Report($"Neo Poly, 16 voices (3 osc, noise, ladder, SVF): {factor:F1}× real time");
-            // A regression guard: the figure itself is reported (shared CI runners vary widely).
-            Assert.That(factor, Is.GreaterThan(5));
+                var (e, _) = Make(v =>
+                {
+                    v.Set(P.Polyphony, 16);
+                    v.Set(P.O2Level, 800);
+                    v.Set(P.O3Level, 600);
+                    v.Set(P.NoiseLevel, 100);
+                    v.Set(P.F1Reso, 600);
+                    v.Set(P.F2Type, 1);
+                });
+                for (int k = 0; k < 16; k++) e.NoteOn(k, 40 + 3 * k, 1f);
+                Render(e, 4800);
+                var l = new float[PolyEngine.MaxBlock];
+                var r = new float[PolyEngine.MaxBlock];
+                return Throughput.InBlocks(PolyEngine.MaxBlock, (pos, n) => e.Process(l, r, n));
+            }, Measure.Report);
         }
 
         [Test]

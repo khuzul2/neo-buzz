@@ -80,6 +80,25 @@ namespace NeoBuzz.Editor
 
         public double Value(int index) => Table[index].Value(Raw(index));
 
+        /// <summary>
+        /// The song's tempo (BPM), playing or stopped: what editors show and time things by. A machine's engine hears
+        /// the tempo only in the blocks it works, so with the transport stopped (or before it has run) it can still
+        /// hold its start-up 120 while the song is at 124 (UI gallery review, mac-402, mac-413). <paramref name="fallback"/>
+        /// without a song.
+        /// </summary>
+        public double SongTempo(double fallback = 120)
+        {
+            try
+            {
+                int bpm = Machine?.Graph?.Buzz?.BPM ?? 0;
+                return bpm > 0 ? bpm : fallback;
+            }
+            catch (Exception)
+            {
+                return fallback;
+            }
+        }
+
         public void Set(int index, int raw)
         {
             var p = Parameter(index);

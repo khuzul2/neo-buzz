@@ -162,6 +162,12 @@ namespace NeoBuzz.Scope
         /// <summary>The correlation over the last 400 ms (the meter).</summary>
         public double CorrelationNow = 1;
 
+        /// <summary>
+        /// Whether the 3 s and the 400 ms windows held sound (above −100 dBFS): in silence there is nothing to
+        /// correlate, so the editor shows no reading ("—") where the library's correlation (1, the reading agents get) stands.
+        /// </summary>
+        public bool Stereo, StereoNow;
+
         public void CopyTo(ScopeSnapshot o)
         {
             o.Sequence = Sequence; o.Samples = Samples; o.Rate = Rate; o.Bpm = Bpm;
@@ -173,6 +179,7 @@ namespace NeoBuzz.Scope
             Array.Copy(VectorR, o.VectorR, VectorCount);
             o.VectorCount = VectorCount;
             o.PeakDb = PeakDb; o.RmsDb = RmsDb; o.Correlation = Correlation; o.CorrelationNow = CorrelationNow;
+            o.Stereo = Stereo; o.StereoNow = StereoNow;
         }
 
         /// <summary>
@@ -259,6 +266,9 @@ namespace NeoBuzz.Scope
         float peak;
         int inStep, stepLength, stepPos, stepsFilled;
         double peakDb = double.NegativeInfinity, rmsDb = double.NegativeInfinity, correlation = 1, correlationNow = 1;
+        bool stereo, stereoNow;
+        /// <summary>A window's mean square below this (−100 dBFS) is silence: no correlation to show.</summary>
+        const double SilentMeanSquare = 1e-10;
 
         // The vectorscope's samples.
         readonly float[] vectorL = new float[ScopeSnapshot.VectorPoints], vectorR = new float[ScopeSnapshot.VectorPoints];
@@ -287,6 +297,7 @@ namespace NeoBuzz.Scope
             inStep = stepPos = stepsFilled = 0;
             peakDb = rmsDb = double.NegativeInfinity;
             correlation = correlationNow = 1;
+            stereo = stereoNow = false;
             Array.Clear(vectorL); Array.Clear(vectorR);
             vectorPos = 0;
             vectorTotal = 0;
@@ -594,9 +605,14 @@ namespace NeoBuzz.Scope
                 c += stepLR[j];
                 count += stepCount[j];
                 if (stepPeak[j] > high) high = stepPeak[j];
-                if (k == Math.Min(NowSteps, stepsFilled)) correlationNow = Stereo.Measures(a, b, c).Correlation;
+                if (k == Math.Min(NowSteps, stepsFilled))
+                {
+                    correlationNow = Stereo.Measures(a, b, c).Correlation;
+                    stereoNow = count > 0 && (a + b) / (2 * count) > SilentMeanSquare;
+                }
             }
             correlation = Stereo.Measures(a, b, c).Correlation;
+            stereo = count > 0 && (a + b) / (2 * count) > SilentMeanSquare;
             peakDb = high > 0 ? 20 * PortableMath.Log10(high) : double.NegativeInfinity;
             double meanSquare = count > 0 ? (a + b) / (2 * count) : 0;
             rmsDb = meanSquare > 1e-20 ? 10 * PortableMath.Log10(meanSquare) : double.NegativeInfinity;
@@ -631,6 +647,8 @@ namespace NeoBuzz.Scope
             s.RmsDb = rmsDb;
             s.Correlation = correlation;
             s.CorrelationNow = correlationNow;
+            s.Stereo = stereo;
+            s.StereoNow = stereoNow;
             exchange.Publish();
         }
 

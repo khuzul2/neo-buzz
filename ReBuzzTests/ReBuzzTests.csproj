@@ -11,6 +11,10 @@
 	<IntermediateOutputPath>$(SolutionDir)build\$(Configuration)\$(Platform)\$(MSBuildProjectName)\obj</IntermediateOutputPath>
   </PropertyGroup>
 
+  <!-- Fork (docs/specs/daw-modes.md §8.1): methods with loops compiled fully optimised at once, so the audio
+       thread never compiles an on-stack replacement (tools/msbuild/AudioThreadRuntime.props). -->
+  <Import Project="..\tools\msbuild\AudioThreadRuntime.props" />
+
   <ItemGroup>
     <PackageReference Include="AtmaFileSystem" Version="8.1.0" />
     <PackageReference Include="coverlet.collector" Version="6.0.4">
@@ -53,6 +57,11 @@
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+  <!-- Fork (machine keyboard): MachineKeyboardTests hear the pitch a key plays with the analysis library's YIN (as the agent's analyze does). -->
+  <ItemGroup>
+    <Compile Include="..\Machines\NeoBuzz.Analysis\Yin.cs;..\Machines\NeoBuzz.Analysis\Fft.cs" Link="Analysis\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

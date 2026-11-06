@@ -777,14 +777,23 @@ namespace NeoBuzz.MachineTests
             // Stereo at 48 kHz, every part working: both filters, the wow, drive, ducking; in each mode.
             foreach (int mode in new[] { 0, 1, 2 })
             {
-                var (e, _) = Make(v => { v.Set(P.Mode, mode); v.Set(P.ModDepth, 400); v.Set(P.Duck, 120); v.Set(P.Drive, 120); Set(v, P.Feedback, 70); });
-                var x = Noise(10 * Rate, 0.2, 4);
-                Run(e, x, x);   // warm
-                var sw = Stopwatch.StartNew();
-                Run(e, x, x);
-                double speed = 10 / sw.Elapsed.TotalSeconds;
-                Measure.Report($"Neo Delay CPU ({(DelayMode)mode}, everything on): {speed:F0}× real time");
-                Assert.That(speed, Is.GreaterThan(50));
+                // Timed against the reference workload in the same run (Throughput.cs): 0.5 s played untimed, then 2 s.
+                var x = Noise(3 * Rate, 0.2, 4);
+                const int Warm = Rate / 2;
+                Throughput.Guard($"Neo Delay CPU ({(DelayMode)mode}, everything on)", Throughput.Floor(x64: 220, arm64: 150), 2, Rate, DelayEngine.MaxBlock, () =>
+                {
+                    var (e, _) = Make(v => { v.Set(P.Mode, mode); v.Set(P.ModDepth, 400); v.Set(P.Duck, 120); v.Set(P.Drive, 120); Set(v, P.Feedback, 70); });
+                    var bl = new float[DelayEngine.MaxBlock];
+                    var br = new float[DelayEngine.MaxBlock];
+                    void Block(int pos, int n)
+                    {
+                        Array.Copy(x, pos, bl, 0, n);
+                        Array.Copy(x, pos, br, 0, n);
+                        e.Process(bl, br, n);
+                    }
+                    for (int pos = 0; pos < Warm; pos += DelayEngine.MaxBlock) Block(pos, DelayEngine.MaxBlock);
+                    return Throughput.InBlocks(DelayEngine.MaxBlock, (pos, n) => Block(Warm + pos, n));
+                }, Measure.Report);
             }
         }
     }
