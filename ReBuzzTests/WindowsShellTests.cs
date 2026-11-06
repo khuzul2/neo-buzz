@@ -250,40 +250,50 @@ namespace ReBuzzTests
             var settings = BuzzGUI.SequenceEditor.SequenceEditor.Settings;
             bool autoSelect = settings.AutoSelectPattern;
             settings.AutoSelectPattern = true;
-            // The default theme's resources, as the app gives them (its XAML names them).
+            // The default theme's resources, as the app gives them (its XAML names them), and the UI thread's synchronization
+            // context, which the app's UI thread has (its track controls ask for a scheduler on it).
             var themed = UiUtils.GetUserControlXAML<ResourceDictionary>("SequenceEditor\\SequenceEditor.xaml", UiGalleryBugTests.FindRunTime());
-            var sequenceEditor = new BuzzGUI.SequenceEditor.SequenceEditor(core, themed);
-            var editorView = new ReBuzz.EditorView(core, new FakeInMemoryRegistry()) { SequenceEditor = sequenceEditor };
+            var context = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(new System.Windows.Threading.DispatcherSynchronizationContext(System.Windows.Threading.Dispatcher.CurrentDispatcher));
             try
             {
-                sequenceEditor.Song = song;
-                core.SetPatternEditorPattern(breakPattern);   // shown before: the editor view keeps it as Drums' pattern
-                Pump();
-                core.ActiveView = BuzzView.MachineView;
-                core.SetPatternEditorPattern(lineA);          // a pattern opened from the Machine View, a menu or the agent
-                core.ActivatePatternEditor();
-                Pump();
-                Assert.Multiple(() =>
+                var sequenceEditor = new BuzzGUI.SequenceEditor.SequenceEditor(core, themed);
+                var editorView = new ReBuzz.EditorView(core, new FakeInMemoryRegistry()) { SequenceEditor = sequenceEditor };
+                try
                 {
-                    Assert.That(core.ActiveView, Is.EqualTo(BuzzView.PatternView));
-                    Assert.That(core.PatternEditorPattern?.Name, Is.EqualTo("Line A"), "the pattern editor's pattern");
-                    Assert.That(core.PatternEditorMachine?.Name, Is.Not.EqualTo("Drums"), "the pattern editor's machine");
-                    Assert.That(editorView.SelectedMachine?.Machine?.Name, Is.EqualTo("Bass"), "the editor view's Machine box");
-                    Assert.That(editorView.SelectedMachine?.SelectedPattern?.Name, Is.EqualTo("Line A"), "the editor view's Pattern box");
-                });
+                    sequenceEditor.Song = song;
+                    core.SetPatternEditorPattern(breakPattern);   // shown before: the editor view keeps it as Drums' pattern
+                    Pump();
+                    core.ActiveView = BuzzView.MachineView;
+                    core.SetPatternEditorPattern(lineA);          // a pattern opened from the Machine View, a menu or the agent
+                    core.ActivatePatternEditor();
+                    Pump();
+                    Assert.Multiple(() =>
+                    {
+                        Assert.That(core.ActiveView, Is.EqualTo(BuzzView.PatternView));
+                        Assert.That(core.PatternEditorPattern?.Name, Is.EqualTo("Line A"), "the pattern editor's pattern");
+                        Assert.That(core.PatternEditorMachine?.Name, Is.Not.EqualTo("Drums"), "the pattern editor's machine");
+                        Assert.That(editorView.SelectedMachine?.Machine?.Name, Is.EqualTo("Bass"), "the editor view's Machine box");
+                        Assert.That(editorView.SelectedMachine?.SelectedPattern?.Name, Is.EqualTo("Line A"), "the editor view's Pattern box");
+                    });
 
-                // Moving the cursor still selects what it moves to (MoveCursor's UpdateSelectedRow).
-                sequenceEditor.UpdateSelectedRow();
-                Pump();
-                Assert.That(editorView.SelectedMachine?.Machine?.Name, Is.EqualTo("Drums"), "the cursor's machine");
-                if (cursorOnAPattern)
-                    Assert.That(core.PatternEditorPattern?.Name, Is.EqualTo("Break"), "the cursor's pattern");
+                    // Moving the cursor still selects what it moves to (MoveCursor's UpdateSelectedRow).
+                    sequenceEditor.UpdateSelectedRow();
+                    Pump();
+                    Assert.That(editorView.SelectedMachine?.Machine?.Name, Is.EqualTo("Drums"), "the cursor's machine");
+                    if (cursorOnAPattern)
+                        Assert.That(core.PatternEditorPattern?.Name, Is.EqualTo("Break"), "the cursor's pattern");
+                }
+                finally
+                {
+                    sequenceEditor.Song = null;
+                    sequenceEditor.Release();
+                }
             }
             finally
             {
-                sequenceEditor.Song = null;
-                sequenceEditor.Release();
                 settings.AutoSelectPattern = autoSelect;
+                SynchronizationContext.SetSynchronizationContext(context);
             }
 
             static void Pump() => System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
