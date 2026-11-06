@@ -25,6 +25,8 @@ namespace ReBuzz.AppViews
     /// keyboard under its content (NeoBuzz.Editor.MachineKeyboardFrame), the window grown by its height; songs keep the
     /// windows' sizes without it, so a GUI opens at its own size with or without it. Space plays and stops the song in these
     /// windows (TransportKeys, as in the main window), so a focused keyboard never takes it.
+    /// Fork (UI gallery review): each of these windows is kept inside the screen's work area; a managed GUI of a fixed layout
+    /// (a Neo editor) and the manifest editor scroll where the window is smaller than them, and may be resized (MachineWindowFit).
     /// </summary>
     internal sealed class WpfMachineUiHost : IMachineUiHost
     {
@@ -88,13 +90,16 @@ namespace ReBuzz.AppViews
                 var window = new Window
                 {
                     Title = mc.Name + " \u2014 editor",
+                    // Its layout is fixed: it scrolls where the window is smaller than it (the screen's work area, or resized),
+                    // above the keyboard where the machine has one.
                     Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(mc, editor, scroll: true),
                     SizeToContent = SizeToContent.WidthAndHeight,
-                    ResizeMode = ResizeMode.CanMinimize,
+                    ResizeMode = ResizeMode.CanResize,
                     ShowInTaskbar = false,
                     Background = editor.Background,
                 };
                 TakeTransportKeys(window, mc);
+                MachineWindowFit.Clamp(window);
                 // Kept for the machine's life, as its other windows: closing hides it.
                 window.Closing += (s, e) =>
                 {
@@ -139,6 +144,8 @@ namespace ReBuzz.AppViews
                     parameterWindow.Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(mc, themed);
                 }
                 TakeTransportKeys(parameterWindow, mc);
+                // Never taller than the screen's work area: its rows scroll (they have their own scroll viewer).
+                MachineWindowFit.Clamp(parameterWindow);
                 parameterWindow.Closing += (s, e) =>
                 {
                     if (w.Parameters != null)
@@ -265,9 +272,15 @@ namespace ReBuzz.AppViews
                     }
                     else
                     {
-                        machineGUIWindow.Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(mc, guiUIElement, scroll: true);
+                        // A GUI of a fixed layout (a Neo editor) scrolls where the screen can't hold it (above the keyboard,
+                        // where the machine has one), in a window that may be resized; a resizable one fills its window, as
+                        // before. Either never larger than the work area.
+                        bool fixedLayout = !DLL.GUIFactoryDecl.IsGUIResizable;
+                        machineGUIWindow.Content = NeoBuzz.Editor.MachineKeyboardFrame.Wrap(mc, guiUIElement, scroll: fixedLayout);
+                        if (fixedLayout) machineGUIWindow.ResizeMode = ResizeMode.CanResize;
                         // A GUI of a fixed size: the window is that and the keyboard.
                         if (machineGUIWindow.SizeToContent == SizeToContent.Manual) machineGUIWindow.Height += KeyboardHeight(machineGUIWindow);
+                        MachineWindowFit.Clamp(machineGUIWindow);
                     }
                 }
                 catch (Exception ex)

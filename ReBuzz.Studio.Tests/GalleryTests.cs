@@ -1082,6 +1082,10 @@ namespace ReBuzz.Studio.Tests
             var demo = LoadDemo();
             var window = Open("Machines");
             var made = new List<MachineCore>();
+            // The machine windows on the Mac the gallery draws (1440 × 900 pt, less its 25 pt menu bar): the headless
+            // platform's screen is 1920 × 1280, and it cuts windows off at 1080. They keep inside the work area and scroll.
+            var workArea = MachineWindowFit.WorkArea;
+            MachineWindowFit.WorkArea = _ => new Size(Width, Height - 25);
             try
             {
                 MachineCore Add(string gear, string name)
@@ -1209,6 +1213,7 @@ namespace ReBuzz.Studio.Tests
             }
             finally
             {
+                MachineWindowFit.WorkArea = workArea;
                 foreach (var m in made) Core.UiHost.ReleaseMachine(m);
                 Close(window);
             }

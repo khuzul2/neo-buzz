@@ -298,6 +298,47 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void LongLabelsTakeTwoLinesAndNotesForDevelopersStayBehindAnInfoMark()
+        {
+            // UI gallery review: long labels were cut with "…" (mac-460 "Pulse width / PWM d…", win-901, win-903, win-909),
+            // and notes for whoever checks the manifest stood in the editor ("Curated manifest: names, units and roles
+            // checked…", "markers only … no known design to compute it from"). Labels show whole (a knob's on two lines);
+            // the notes are an ⓘ's tooltip.
+            var sh = Add("Pedal SH101", "Label SH");
+            var eq = Add("Pedal EQ", "Label EQ", 0.5f, 0.3f);
+            try
+            {
+                var (w, editor) = Open(sh);
+                Studio.Screenshot(w, "manifest-editor-pedal-sh101-labels");
+                var texts = All(w, "TextBlock").Select(t => ((TextBlock)t).Text ?? "").ToList();
+                Assert.That(texts, Has.None.Contains("Curated manifest").And.None.Contains("Markers only").And.None.Contains("Computed from"), "no notes for developers on show");
+                var about = All(w, "TextBlock").Where(t => AutomationProperties.GetName(t) == "About").ToList();
+                Assert.That(about, Has.Count.EqualTo(1), "an ⓘ by the summary");
+                Assert.That(ToolTip.GetTip(about[0]) as string, Does.StartWith("Curated manifest"), "the manifest's provenance in its tooltip");
+                var knobs = editor.Controls.Values.OfType<Knob>().ToList();
+                Assert.That(knobs.Select(k => k.Label), Has.None.Contains("…"), "no label cut");
+                var pwm = knobs.Single(k => k.Label == "Pulse width / PWM depth");
+                Assert.That(pwm.LabelLines, Has.Length.EqualTo(2), "a long label on two lines");
+                Assert.That(pwm.Bounds.Width, Is.LessThanOrEqualTo(ManifestEditor.KnobLabelWidth + 6.5), "and the knob keeps its width");
+                Assert.That(pwm.Bounds.Height, Is.EqualTo(pwm.Diameter + 34 + KnobModel.LineHeight).Within(0.5));
+                w.Close();
+
+                var (w2, eqEditor) = Open(eq);
+                string caption = eqEditor.Face.Response!.Caption;
+                Assert.That(caption, Does.StartWith("Computed from"));
+                Assert.That(All(w2, "TextBlock").Select(t => ((TextBlock)t).Text ?? ""), Has.None.Contains("Computed from"), "the plot's caption isn't on show");
+                var plot = All(w2, "GraphView").Single(g => AutomationProperties.GetName(g) == "Response");
+                Assert.That(ToolTip.GetTip(plot), Is.EqualTo(caption), "the plot's tooltip says how it is made");
+                Assert.That(All(w2, "TextBlock").Count(t => AutomationProperties.GetName(t) == "About" && ToolTip.GetTip(t) as string == caption), Is.EqualTo(1), "and an ⓘ under it");
+                w2.Close();
+            }
+            finally
+            {
+                Remove(sh, eq);
+            }
+        }
+
+        [AvaloniaTest]
         public void EnvelopesGetPicturesAndOnlyKnownDesignsGetACurve()
         {
             var juno = Add("Pedal Juno106", "Env Juno");

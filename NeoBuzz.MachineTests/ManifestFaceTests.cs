@@ -172,7 +172,8 @@ namespace NeoBuzz.MachineTests
             Assert.That(face.Response.Caption, Does.StartWith("Markers only"));
             var canvas = new RecordingCanvas();
             FacePainters.Response(canvas, new NeoRect(0, 0, FacePainters.ResponseWidth, FacePainters.ResponseHeight), face.Response, values.Raw, Accent);
-            Assert.That(canvas.Of(NeoDrawKind.Text).Select(t => t.Text), Has.Some.EqualTo("markers only: no curve"));
+            // UI gallery review (win-912): no notes for developers in the plot; the caption goes to the editor's ⓘ.
+            Assert.That(canvas.Of(NeoDrawKind.Text).Select(t => t.Text), Has.None.Contains("markers only").And.None.Contains("curve"), "no note in the plot");
             Assert.That(canvas.Of(NeoDrawKind.Path).Any(p => p.Stroke.Width >= 2), Is.False, "no curve drawn");
 
             var bare = Linear(0, "Cutoff", "Filter", "filter.cutoff", 0, 128, 64, 0, 128);
@@ -444,7 +445,7 @@ namespace NeoBuzz.MachineTests
             FacePainters.Response(canvas, frame, face.Response!, values.Raw, Accent);
             var curve = canvas.Of(NeoDrawKind.Path).Single(p => p.Stroke.Width >= 2);
             Assert.That(curve.Path!.PointCount, Is.GreaterThan(100));
-            Assert.That(canvas.Of(NeoDrawKind.Text).Select(t => t.Text), Has.None.EqualTo("markers only: no curve"));
+            Assert.That(canvas.Of(NeoDrawKind.Text).Select(t => t.Text), Has.None.Contains("markers only"));
             Assert.That(canvas.Of(NeoDrawKind.Line).Count(l => l.Stroke.Color.R == Accent.R && l.Stroke.Color.A == 0x50), Is.EqualTo(4), "a line at each band");
         }
     }

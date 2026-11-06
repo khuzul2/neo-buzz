@@ -940,9 +940,10 @@ namespace NeoBuzz.Editor
     /// A machine window's content with the keyboard under it, for machines that play notes (others keep
     /// their content as it is). Grows the window by the keyboard's height when the keys show or hide, so
     /// the GUI above keeps its size; Ctrl+K (⌘K) in the window shows or hides them. A GUI of a fixed layout
-    /// (a Neo editor, a managed GUI, a manifest editor) sits in a scroll viewer: where the screen can't hold
-    /// it and the keyboard (Neo Poly's editor is 972 px tall), it keeps its size and scrolls rather than being
-    /// cut. A parameter window scrolls its rows itself.
+    /// (a Neo editor, a managed GUI, a manifest editor) sits in a scroll viewer, with or without a keyboard:
+    /// where the window is smaller than it and the keyboard (the screen's work area holds machine windows,
+    /// MachineWindowFit, and a user may resize them; Neo Poly's editor is 972 px tall), it keeps its layout and
+    /// scrolls rather than being cut or squashed. A parameter window scrolls its rows itself.
     /// </summary>
     internal sealed class MachineKeyboardFrame : Grid
     {
@@ -964,12 +965,19 @@ namespace NeoBuzz.Editor
                     HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
                     VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                     Focusable = false,
+                    // A window resized larger than the GUI shows the GUI's own background around it.
+#if AVALONIA
+                    Background = (content as Avalonia.Controls.Primitives.TemplatedControl)?.Background,
+#else
+                    Background = (content as System.Windows.Controls.Control)?.Background,
+#endif
                 };
             }
             Top = top;
             Grid.SetRow(top, 0);
-            Grid.SetRow(keyboard, 1);
             Children.Add(top);
+            if (keyboard == null) return;          // a GUI of a fixed layout on a machine that plays no notes: the scroller alone
+            Grid.SetRow(keyboard, 1);
             Children.Add(keyboard);
             keyboard.HeightChanged += Grow;
 #if AVALONIA
@@ -981,6 +989,7 @@ namespace NeoBuzz.Editor
 #endif
         }
 
+        /// <summary>The keyboard, or null in the frame of a machine that plays no notes (its GUI only scrolls).</summary>
         public MachineKeyboard Keyboard { get; }
 
         public UIElement Content => content;
@@ -988,16 +997,20 @@ namespace NeoBuzz.Editor
         /// <summary>What shows the content above the keyboard: the content, or the scroller it's in.</summary>
         public UIElement Top { get; }
 
-        /// <summary>The content with the keyboard under it when the machine plays notes, else the content itself.</summary>
-        /// <param name="scroll">A GUI of a fixed layout: scrolled where the screen can't hold it and the keyboard.</param>
+        /// <summary>
+        /// A machine window's content: with the keyboard under it when the machine plays notes, in a scroll viewer when
+        /// <paramref name="scroll"/>; else the content itself.
+        /// </summary>
+        /// <param name="scroll">A GUI of a fixed layout: scrolled where the window is smaller than it (and the keyboard).</param>
         public static UIElement Wrap(IMachine machine, UIElement content, bool scroll = false)
         {
-            if (content == null || machine is not MachineCore m || !KeyboardRoute.For(m).Shows) return content;
-            return new MachineKeyboardFrame(content, new MachineKeyboard(m, AccentOf(content)), scroll);
+            if (content == null) return null;
+            if (machine is MachineCore m && KeyboardRoute.For(m).Shows) return new MachineKeyboardFrame(content, new MachineKeyboard(m, AccentOf(content)), scroll);
+            return scroll ? new MachineKeyboardFrame(content, null, true) : content;
         }
 
         /// <summary>The height a window's keyboard takes (0 without one): songs keep the GUI's own size without it.</summary>
-        public static double ExtraHeightOf(object windowContent) => windowContent is MachineKeyboardFrame f ? f.Keyboard.ExtraHeight : 0;
+        public static double ExtraHeightOf(object windowContent) => windowContent is MachineKeyboardFrame f && f.Keyboard != null ? f.Keyboard.ExtraHeight : 0;
 
         /// <summary>A window's own content: inside the frame when it has one.</summary>
         public static object ContentOf(object windowContent) => windowContent is MachineKeyboardFrame f ? f.Content : windowContent;

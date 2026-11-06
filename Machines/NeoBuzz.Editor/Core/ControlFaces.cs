@@ -63,6 +63,46 @@ namespace NeoBuzz.Editor
         }
     }
 
+    /// <summary>
+    /// An Off/On switch as one toggle named for its function ("Solo", "Auto makeup"): lit in the accent, with its lamp
+    /// on, when on; plain when off. It stands where a row of choice buttons would (the same height, the button on
+    /// the buttons' line), so layouts keep their places. UI gallery review: drawn as "Off | On" segments, the lit
+    /// segment was often "Off", so an accent-lit control could mean off.
+    /// </summary>
+    internal sealed class ToggleFace
+    {
+        public const double TextSize = 11, Lamp = 3, Padding = 6, Gap = 4;
+
+        /// <param name="minWidth">The least width (a row of two choice cells' width keeps a layout's place).</param>
+        public ToggleFace(string label, double minWidth, INeoTextMeasure measure)
+        {
+            Label = label ?? "";
+            double text = measure?.MeasureText(Label, TextSize, bold: true) ?? Label.Length * 6;
+            Width = Math.Ceiling(Math.Max(Math.Max(minWidth, 34), Padding + 2 * Lamp + Gap + text + Padding + 2));
+        }
+
+        public string Label { get; }
+        public double Width { get; }
+        public double Height => ChoiceStrip.LabelHeight + 24;
+
+        /// <summary>The button (on the line choice buttons stand on).</summary>
+        public NeoRect Button => new NeoRect(0, ChoiceStrip.LabelHeight, Width - 2, 22);
+
+        public bool Hit(double x, double y) => Button.Contains(x, y);
+
+        public void Draw(INeoCanvas c, bool on, bool hover, NeoColor accent)
+        {
+            var r = Button;
+            c.Rect(r, on ? accent.WithAlpha(0x38) : hover ? Palette.Track : Palette.Panel, new NeoStroke(on ? accent : Palette.PanelEdge, 1), 3);
+            double cy = r.Y + r.Height / 2;
+            var lamp = new NeoPoint(r.X + Padding + Lamp, cy);
+            if (on) c.Ellipse(lamp, Lamp, Lamp, accent, NeoStroke.None);
+            else c.Ellipse(lamp, Lamp, Lamp, NeoFill.None, new NeoStroke(Palette.DimText, 1));
+            double textX = r.X + Padding + 2 * Lamp + Gap;
+            c.Text(Label, textX, r.Y + (r.Height - 15) / 2, TextSize, on ? accent : Palette.Text, on, NeoAlign.Left, maxWidth: Math.Max(1, r.Right - textX - 2));
+        }
+    }
+
     /// <summary>A label over a box showing the current choice (the list itself is the toolkit's menu).</summary>
     internal static class DropdownFace
     {
@@ -94,10 +134,16 @@ namespace NeoBuzz.Editor
         }
     }
 
-    /// <summary>The preset bar: previous, the current name (click for the list), next, and Save.</summary>
+    /// <summary>
+    /// The preset bar: previous, the current preset's name (click for the list) with an "edited" mark once the
+    /// parameters differ from it, next, and Save.
+    /// </summary>
     internal static class PresetBarFace
     {
         public const double ArrowW = 22, NameW = 170, SaveW = 44, H = 24;
+        /// <summary>The mark after the name when the parameters differ from the preset.</summary>
+        public const string EditedMark = "edited";
+        const double MarkSize = 10;
         public const double Width = ArrowW * 2 + NameW + SaveW + 8;
         const double SaveX = ArrowW * 2 + NameW + 8;
 
@@ -112,7 +158,7 @@ namespace NeoBuzz.Editor
             return Zone.None;
         }
 
-        public static void Draw(INeoCanvas c, string label, NeoColor accent)
+        public static void Draw(INeoCanvas c, string label, NeoColor accent, bool edited = false)
         {
             var edge = new NeoStroke(Palette.PanelEdge, 1);
             c.Rect(new NeoRect(0, 0, ArrowW * 2 + NameW, H), Palette.Panel, edge, 4);
@@ -120,7 +166,15 @@ namespace NeoBuzz.Editor
             c.Text("▶", ArrowW * 1.5 + NameW, 4, 11, Palette.DimText, align: NeoAlign.Center);
             c.Line(new NeoPoint(ArrowW, 3), new NeoPoint(ArrowW, H - 3), edge);
             c.Line(new NeoPoint(ArrowW + NameW, 3), new NeoPoint(ArrowW + NameW, H - 3), edge);
-            c.Text(label, ArrowW + 6, 4, 12, Palette.Text, maxWidth: NameW - 12);
+            double nameRoom = NameW - 12;
+            if (edited)
+            {
+                // "edited" at the right of the name's field, in the accent; the name gives way to it.
+                double mark = c.MeasureText(EditedMark, MarkSize);
+                c.Text(EditedMark, ArrowW + NameW - 6, 6, MarkSize, accent, align: NeoAlign.Right);
+                nameRoom -= mark + 6;
+            }
+            c.Text(label, ArrowW + 6, 4, 12, Palette.Text, maxWidth: nameRoom);
             double sx = SaveX;
             c.Rect(new NeoRect(sx, 0, SaveW, H), Palette.Panel, new NeoStroke(accent, 1), 4);
             c.Text("Save", sx + SaveW / 2, 4, 11, accent, align: NeoAlign.Center);

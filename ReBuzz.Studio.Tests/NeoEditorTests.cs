@@ -38,7 +38,7 @@ namespace ReBuzz.Studio.Tests
             ("Neo Drive", "NeoDriveEditor", "neo-drive-editor", 746, 322),
             ("Neo EQ", "NeoEqEditor", "neo-eq-editor", 822, 508),
             ("Neo Limiter", "NeoLimiterEditor", "neo-limiter-editor", 718, 292),
-            ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 627, 296),
+            ("Neo Utility", "NeoUtilityEditor", "neo-utility-editor", 675, 296),   // its switches as toggles, 92 px each (627 before)
             ("Neo Verb", "NeoVerbEditor", "neo-verb-editor", 880, 332),
             ("Neo Analyzer", "NeoAnalyzerEditor", "neo-analyzer-editor", 1118, 398),
             ("Neo Ensemble", "NeoEnsembleEditor", "neo-ensemble-editor", 978, 338),
@@ -327,6 +327,143 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
+        public void ThePresetBarNamesTheSoundsPresetAndMarksItEdited()
+        {
+            // UI gallery review: the bar said "Presets" until a preset was picked in the open editor, so a reopened editor
+            // never named the sound. It names the preset loaded last (or the one the sound matches), marked "edited" once
+            // a parameter moves off it.
+            var m = Add("Neo Comp", "Named Comp");
+            try
+            {
+                var window = OpenEditor(m);
+                var bar = Find(window, "PresetBar", "Presets");
+                Assert.That(Get(bar, "Current"), Is.EqualTo("Init"), "at its defaults: Init");
+                Assert.That(Get(bar, "Edited"), Is.False);
+
+                // A preset from the list.
+                var names = m.GetPresetNames().Where(n => n != "<default>").OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
+                string pick = names.First(n => n.StartsWith("Glue"));
+                Click(window, At(bar, window, 100, 12));
+                var menu = (ContextMenu)Get(bar, "Menu");
+                var item = menu.Items.OfType<MenuItem>().Single(i => (string)i.Header! == "Glue").Items.OfType<MenuItem>().Single(i => (string)i.Header! == pick);
+                item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                menu.Close();
+                Assert.That(Get(bar, "Current"), Is.EqualTo(pick));
+
+                // Closed and opened again: the bar still names it.
+                Core.UiHost.CloseWindows(m);
+                window = OpenEditor(m);
+                bar = Find(window, "PresetBar", "Presets");
+                Assert.That(Get(bar, "Current"), Is.EqualTo(pick), "a reopened editor names the sound's preset");
+                Assert.That(Get(bar, "Edited"), Is.False);
+
+                // A parameter moved off it: edited; back: not.
+                var threshold = Global(m, "Threshold");
+                int was = threshold.GetValue(0);
+                threshold.SetValue(0, was + 50);
+                Run(0.05);
+                Assert.That(Get(bar, "Current"), Is.EqualTo(pick), "still that preset …");
+                Assert.That(Get(bar, "Edited"), Is.True, "… edited");
+                Frame(window, "neo-comp-editor-preset-edited");
+                threshold.SetValue(0, was);
+                Run(0.05);
+                Assert.That(Get(bar, "Edited"), Is.False, "its own values again: not edited");
+
+                // Undoing the load: the defaults again.
+                Core.SongCore.Undo();
+                Run(0.05);
+                Assert.That(Get(bar, "Current"), Is.EqualTo("Init"), "undo: the sound is the defaults again");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
+        public void SwitchesAreTogglesThatLightOnlyWhenOn()
+        {
+            // UI gallery review (mac-401, mac-410, mac-414): a switch was drawn "Off | On" with the lit segment "Off", so an
+            // accent-lit control could mean off. One toggle named for its function, lit only when on; one click, one step.
+            var m = Add("Neo Comp", "Toggle Comp");
+            try
+            {
+                var window = OpenEditor(m);
+                var makeup = Find(window, "ParamChoice", "Auto makeup");
+                Assert.That((bool)Get(makeup, "IsToggle"), Is.True, "Auto makeup is a toggle");
+                Assert.That(Controls(window, "ParamChoice").Where(c => (bool)Get(c, "IsToggle")).Select(c => AutomationProperties.GetName(c)),
+                    Is.EquivalentTo(new[] { "Auto release", "Auto makeup" }), "Neo Comp's two switches; its choices stay rows");
+                var area = BoundsIn(makeup, window);
+                var param = Global(m, "Auto makeup");
+                Assert.That(param.GetValue(0), Is.EqualTo(0));
+                var off = Frame(window);
+                Assert.That(Count(off, area, 0x2EC4B6, 60), Is.EqualTo(0), "off: nothing in the accent");
+                var stack = Core.SongCore.ActionStack;
+                int steps = stack.Actions.Count();
+                var button = (Rect)makeup.GetType().GetMethod("CellBounds")!.Invoke(makeup, new object[] { 0 })!;
+                Click(window, At(makeup, window, button.Center.X, button.Center.Y));
+                Assert.That(param.GetValue(0), Is.EqualTo(1), "a click switches it on");
+                Assert.That(stack.Actions.Count(), Is.EqualTo(steps + 1), "one undo step");
+                Assert.That((bool)Get(makeup, "IsOn"), Is.True);
+                var on = Frame(window, "neo-comp-editor-toggle-on");
+                Assert.That(Count(on, area, 0x2EC4B6, 60), Is.GreaterThan(30), "on: lit in the accent");
+                Click(window, At(makeup, window, button.Center.X, button.Center.Y));
+                Assert.That(param.GetValue(0), Is.EqualTo(0), "and off again");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
+        public void MachineWindowsStayInsideTheScreensWorkAreaAndScroll()
+        {
+            // UI gallery review: Neo FM6's, Neo Poly's and Neo Wave's editors (942–1000 pt tall) were fixed in size and the
+            // parameter window 1080 pt, taller than a laptop's screen. On a 1280 × 720 work area each window stays inside it
+            // and can be resized; an editor keeps its own layout and scrolls.
+            var area = MachineWindowFit.WorkArea;
+            MachineWindowFit.WorkArea = w => new Size(1280, 720);
+            var wave = Add("Neo Wave", "Fit Wave");
+            var poly = Add("Neo Poly", "Fit Poly", 0.3f, 0.6f);
+            try
+            {
+                double maxH = 720 - MachineWindowFit.FrameHeight;
+                var window = OpenEditor(wave);
+                WaitReady(wave, window);
+                window.UpdateLayout();
+                var editor = StudioMachineUiHost.ContentOf(window)!;
+                Assert.That(editor.GetType().Name, Is.EqualTo("NeoWaveEditor"));
+                Assert.That(window.ClientSize.Height, Is.LessThanOrEqualTo(maxH + 0.5), "the window inside the work area");
+                Assert.That(window.CanResize, Is.True, "and resizable");
+                editor.Measure(Size.Infinity);
+                Assert.That(editor.Bounds.Height, Is.EqualTo(editor.DesiredSize.Height).Within(1), "the editor at its own height: never squashed");
+                Assert.That(editor.Bounds.Height, Is.GreaterThan(window.ClientSize.Height + 100), "taller than the window");
+                var scroller = editor.GetVisualParent() as ScrollViewer ?? editor.GetVisualAncestors().OfType<ScrollViewer>().First();
+                Assert.That(scroller.Extent.Height, Is.EqualTo(editor.Bounds.Height).Within(1), "all of it can be scrolled to");
+                scroller.Offset = new Vector(0, editor.Bounds.Height);
+                Dispatcher.UIThread.RunJobs();
+                window.UpdateLayout();
+                Assert.That(scroller.Offset.Y, Is.EqualTo(scroller.Extent.Height - scroller.Viewport.Height).Within(1), "scrolled to its bottom");
+                Studio.Screenshot(window, "neo-wave-editor-small-screen");
+
+                Core.UiHost.OpenParameterWindow(poly, null);
+                var parameters = StudioMachineUiHost.ParameterWindowOf(poly)!;
+                Dispatcher.UIThread.RunJobs();
+                parameters.UpdateLayout();
+                parameters.CaptureRenderedFrame();
+                Assert.That(parameters.ClientSize.Height, Is.LessThanOrEqualTo(maxH + 0.5), "the parameter window inside the work area");
+                Assert.That(parameters.CanResize, Is.True);
+                Studio.Screenshot(parameters, "parameters-neo-poly-small-screen");
+            }
+            finally
+            {
+                MachineWindowFit.WorkArea = area;
+                Remove(poly, wave);
             }
         }
 
@@ -723,9 +860,10 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(knob.IsEffectivelyVisible && knob.Opacity > 0 && knob.IsHitTestVisible, Is.True, "the selected slider's knob shows");
 
                 // Draw: press beside the 1 kHz cap at +12 dB and drag right to the 2 kHz track at the same height.
-                // The plot inside the graph: 30 px in, 8 down, 642 × 272 for 20 Hz – 20 kHz and ±24 dB.
-                double X(double hz) => 30 + Math.Log(hz / 20) / Math.Log(1000) * (graph.Bounds.Width - 38);
-                double Y(double db) => 8 + (graph.Bounds.Height - 26) * (24 - db) / 48;
+                // The plot inside the graph, with the handles' room (11 px) around it: 41 px in, 12 down, 627 × 257 for
+                // 20 Hz – 20 kHz and ±24 dB.
+                double X(double hz) => 41 + Math.Log(hz / 20) / Math.Log(1000) * (graph.Bounds.Width - 53);
+                double Y(double db) => 12 + (graph.Bounds.Height - 41) * (24 - db) / 48;
                 double y12 = Y(12);
                 window.MouseDown(At(graph, window, X(1000), y12), MouseButton.Left);
                 for (double hz = 1000; hz <= 2000; hz *= Math.Pow(2, 1 / 12.0)) window.MouseMove(At(graph, window, X(hz), y12));
@@ -973,15 +1111,15 @@ namespace ReBuzz.Studio.Tests
                     var c = Frame(window, "neo-filter-editor-envelope");
                     Assert.That(Count(c, envelope, 0xD4E157), Is.GreaterThan(30), "the envelope meter shows the chord");
 
-                    // The handle: at the cutoff (2 kHz) and 20·log10 Q (−3 dB at Q 0.71) on the graph (ResponseGraph's plot: 30 px in,
-                    // 8 down, −42 … +24 dB).
+                    // The handle: at the cutoff (2 kHz) and 20·log10 Q (−3 dB at Q 0.71) on the graph (ResponseGraph's plot with the
+                    // handles' room, 11 px, kept around it: 41 px in, 12 down, 53 px narrower and 41 lower, −42 … +24 dB).
                     Global(filter, "Env amount").SetValue(0, 600);
                     Run(0.1);
                     var cutoff = Global(filter, "Cutoff");
                     var resonance = Global(filter, "Resonance");
                     int cutoff0 = cutoff.GetValue(0), resonance0 = resonance.GetValue(0), steps = Core.SongCore.ActionStack.Actions.Count();
-                    double plotW = area.Width - 38, plotH = area.Height - 26;
-                    var handle = new Point(area.Left + 30 + Math.Log(2000.9 / 20) / Math.Log(1000) * plotW, area.Top + 8 + (24 + 3) / 66.0 * plotH);
+                    double plotW = area.Width - 53, plotH = area.Height - 41;
+                    var handle = new Point(area.Left + 41 + Math.Log(2000.9 / 20) / Math.Log(1000) * plotW, area.Top + 12 + (24 + 3) / 66.0 * plotH);
                     var before = Frame(window);
                     window.MouseDown(handle, MouseButton.Left);
                     for (int d = 8; d <= 40; d += 8) window.MouseMove(handle + new Point(d, -d));
@@ -1001,6 +1139,118 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 Remove(filter, poly);
+            }
+        }
+
+        /// <summary>Pixels in <paramref name="area"/> of a saturated colour: a curve or a trace, not the grey of labels, grid, frame or background.</summary>
+        static int Coloured((uint[] Pixels, int Width, int Height) f, Rect area, int spread = 60)
+        {
+            int n = 0;
+            for (int y = Math.Max(0, (int)area.Top); y < (int)area.Bottom && y < f.Height; y++)
+                for (int x = Math.Max(0, (int)area.Left); x < (int)area.Right && x < f.Width; x++)
+                {
+                    uint p = f.Pixels[y * f.Width + x];
+                    int r = (int)((p >> 16) & 0xFF), g = (int)((p >> 8) & 0xFF), b = (int)(p & 0xFF);
+                    if (Math.Max(r, Math.Max(g, b)) - Math.Min(r, Math.Min(g, b)) > spread) n++;
+                }
+            return n;
+        }
+
+        [AvaloniaTest]
+        public void GraphsKeepToTheirPlotsAndLeaveTheirLabelsAndCaptionsClear()
+        {
+            // UI gallery review (mac-408, win-808, mac-410, win-811, mac-416): Neo Filter's and Neo Multiband's response curves
+            // ran past the plot's floor over the frequency labels, and Neo Wave's traces over its caption. At their defaults
+            // each curve falls below the plot's floor; the strip of labels under the plot keeps only their grey.
+            var filter = Add("Neo Filter", "Clip Filter", -0.3f, -0.3f);
+            var multiband = Add("Neo Multiband", "Clip Multiband", 0.3f, -0.3f);
+            var wave = Add("Neo Wave", "Clip Wave", 0, 0.5f);
+            try
+            {
+                Assert.Multiple(() =>
+                {
+                    foreach (var (m, width) in new[] { (filter, 586.0), (multiband, 600.0) })
+                    {
+                        var window = OpenEditor(m);
+                        var graph = Controls(window, "InteractiveGraph").Single(g => Math.Abs(g.Bounds.Width - width) < 1);
+                        var area = BoundsIn(graph, window);
+                        var f = Frame(window);
+                        var plot = new Rect(area.Left + 50, area.Top + 30, area.Width - 70, area.Height - 70);
+                        Assert.That(Coloured(f, plot), Is.GreaterThan(200), $"{m.Name}: its curves are drawn");
+                        var labels = new Rect(area.Left + 2, area.Bottom - 16, area.Width - 4, 14);
+                        Assert.That(Coloured(f, labels), Is.EqualTo(0), $"{m.Name}: nothing but the labels' grey under the plot");
+                        Core.UiHost.CloseWindows(m);
+                    }
+
+                    var waveWindow = OpenEditor(wave);
+                    WaitReady(wave, waveWindow);
+                    var tables = Controls(waveWindow, "GraphView").Where(g => Math.Abs(g.Bounds.Width - 384) < 1).ToList();
+                    Assert.That(tables, Has.Count.EqualTo(2), "Neo Wave: a picture per oscillator");
+                    var w = Frame(waveWindow, "neo-wave-editor-captions");
+                    foreach (var t in tables)
+                    {
+                        var area = BoundsIn(t, waveWindow);
+                        Assert.That(Coloured(w, new Rect(area.Left + 2, area.Top + 24, area.Width - 4, area.Height - 26)), Is.GreaterThan(200), "Neo Wave: the traces are drawn");
+                        Assert.That(Coloured(w, new Rect(area.Left + 2, area.Top + 2, area.Width - 4, 17)), Is.EqualTo(0), "Neo Wave: the caption's strip holds only the caption");
+                    }
+                });
+            }
+            finally
+            {
+                Remove(wave, multiband, filter);
+            }
+        }
+
+        [AvaloniaTest]
+        public void EditorsShowTheSongsTempoWhileItIsStopped()
+        {
+            // UI gallery review (mac-402, mac-413): with the song at 124 BPM and the transport stopped, Neo Delay's and Neo
+            // Scope's editors said 120 BPM, their engines' start-up tempo: an engine hears the tempo only while it runs.
+            int bpm = Core.BPM;
+            var delay = Add("Neo Delay", "Tempo Delay", -0.3f, 0.4f);
+            var scope = Add("Neo Scope", "Tempo Scope", 0.3f, 0.4f);
+            try
+            {
+                Core.BPM = 124;
+                Assert.That(Core.Playing, Is.False, "the transport is stopped");
+                var dw = OpenEditor(delay);
+                Frame(dw);
+                var delayEditor = Controls(dw, "NeoDelayEditor").Single();
+                Assert.That((string)Get(delayEditor, "Caption"), Does.EndWith("· 124 BPM"), "Neo Delay's echoes say the song's tempo");
+                var sw = OpenEditor(scope);
+                Frame(sw);
+                var view = Get(Controls(sw, "NeoScopeEditor").Single(), "View");
+                string left = (string)view.GetType().GetField("Left")!.GetValue(view)!;
+                Assert.That(left, Does.Contain("124 BPM"), "Neo Scope's time base says the song's tempo");
+            }
+            finally
+            {
+                Core.BPM = bpm;
+                Remove(scope, delay);
+            }
+        }
+
+        [AvaloniaTest]
+        public void NeoDelaysDuckThresholdLabelClearsTheDuckMeter()
+        {
+            // UI gallery review (mac-402, win-802): the duck meter cut off the "Duck threshold" label, wider than its knob.
+            var m = Add("Neo Delay", "Label Delay");
+            try
+            {
+                var window = OpenEditor(m);
+                var knob = Find(window, "ParamKnob", "Duck threshold");
+                double label = (double)Get(knob, "LabelWidth");
+                Assert.That(label, Is.GreaterThan(60), "the label was measured");
+                Assert.That(knob.Bounds.Width, Is.GreaterThanOrEqualTo(label), "the knob is as wide as its label");
+                var k = BoundsIn(knob, window);
+                var meter = BoundsIn(Find(window, "Meter", "Ducking"), window);
+                Assert.That(meter.Left, Is.GreaterThanOrEqualTo(k.Center.X + label / 2), "the label ends before the meter");
+                foreach (var other in Controls(window, "ParamKnob"))
+                    Assert.That(other.Bounds.Width, Is.GreaterThanOrEqualTo((double)Get(other, "LabelWidth") - 0.5), $"{AutomationProperties.GetName(other)}: as wide as its label");
+            }
+            finally
+            {
+                Remove(m);
             }
         }
 

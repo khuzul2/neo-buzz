@@ -20,6 +20,9 @@ namespace NeoBuzz.Utility
         protected override NeoColor Accent => AccentColor;
         internal override ParamDef[] Table => Params.Table;
 
+        /// <summary>Half a toggle's width: the switches' toggles stand 92 px wide.</summary>
+        const double ToggleCell = 46;
+
         internal override UIElement BuildBody(EditorContext ctx)
         {
             var machine = ctx.Machine?.ManagedMachine as NeoUtilityMachine;
@@ -40,15 +43,16 @@ namespace NeoBuzz.Utility
                 Layout.Gap(6),
                 Layout.Column(
                     new ParamKnob(ctx, P.Width),
-                    new ParamChoice(ctx, P.BassMono, "Bass mono", 34),
+                    new ParamChoice(ctx, P.BassMono, "Bass mono", ToggleCell),
                     Layout.Gap(1, 4),
                     new ParamKnob(ctx, P.BassFreq, "Mono below")));
 
+            // The switches are toggles (the kit's ToggleFace), all as wide, so the column lines up.
             var channels = Layout.Column(
-                new ParamChoice(ctx, P.InvertL, "Invert L", 34),
-                new ParamChoice(ctx, P.InvertR, "Invert R", 34),
-                new ParamChoice(ctx, P.Swap, "Swap L/R", 34),
-                new ParamChoice(ctx, P.DcRemove, "DC removal", 34));
+                new ParamChoice(ctx, P.InvertL, "Invert L", ToggleCell),
+                new ParamChoice(ctx, P.InvertR, "Invert R", ToggleCell),
+                new ParamChoice(ctx, P.Swap, "Swap L/R", ToggleCell),
+                new ParamChoice(ctx, P.DcRemove, "DC removal", ToggleCell));
 
             var meters = Layout.Row(
                 new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 196),

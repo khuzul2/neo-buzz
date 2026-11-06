@@ -291,7 +291,7 @@ namespace NeoBuzz.Multiband
             if (machine != null)
             {
                 spectrum.Update(machine.Engine);
-                g.Path(graph.Spectrum(spectrum.Hz, spectrum.Db, 0, 96), Palette.Track.WithAlpha(0x90), NeoStroke.None);
+                graph.InPlot(g, () => g.Path(graph.Spectrum(spectrum.Hz, spectrum.Db, 0, 96), Palette.Track.WithAlpha(0x90), NeoStroke.None));
             }
             graph.DrawGrid(g);
 
@@ -314,18 +314,22 @@ namespace NeoBuzz.Multiband
             }
 
             int sel = handles.Selected;
-            foreach (var (b, left, right) in handles.Spans())
-                if (b == sel) g.Rect(new NeoRect(left, graph.Plot.Top, Math.Max(0, right - left), graph.Plot.Height), BandColors[b].WithAlpha(0x14), NeoStroke.None);
-            for (int b = 0; b < bands; b++)
+            // The bands' shapes and the response inside the plot: steep slopes end at its floor, never over the frequency labels.
+            graph.InPlot(g, () =>
             {
-                int band = b;
-                var colour = BandColors[b];
-                Func<double, double> shape = hz => 20 * Math.Log10(Math.Max(1e-9, MultibandDesign.Band(band, bands, hz, xo, rate))) + gainDb[band];
-                bool heard = linear[b] > 0;
-                g.Path(graph.Curve(shape, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(heard ? (byte)(b == sel ? 0xE0 : 0x90) : (byte)0x40), b == sel ? 1.6 : 1.1));
-            }
-            g.Path(graph.Curve(hz => 20 * Math.Log10(Math.Max(1e-9, MultibandDesign.Response(bands, hz, xo, rate, linear[0], linear[1], linear[2], linear[3])))),
-                NeoFill.None, new NeoStroke(AccentColor, 2.2));
+                foreach (var (b, left, right) in handles.Spans())
+                    if (b == sel) g.Rect(new NeoRect(left, graph.Plot.Top, Math.Max(0, right - left), graph.Plot.Height), BandColors[b].WithAlpha(0x14), NeoStroke.None);
+                for (int b = 0; b < bands; b++)
+                {
+                    int band = b;
+                    var colour = BandColors[b];
+                    Func<double, double> shape = hz => 20 * Math.Log10(Math.Max(1e-9, MultibandDesign.Band(band, bands, hz, xo, rate))) + gainDb[band];
+                    bool heard = linear[b] > 0;
+                    g.Path(graph.Curve(shape, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(heard ? (byte)(b == sel ? 0xE0 : 0x90) : (byte)0x40), b == sel ? 1.6 : 1.1));
+                }
+                g.Path(graph.Curve(hz => 20 * Math.Log10(Math.Max(1e-9, MultibandDesign.Response(bands, hz, xo, rate, linear[0], linear[1], linear[2], linear[3])))),
+                    NeoFill.None, new NeoStroke(AccentColor, 2.2));
+            });
             handles.Draw(g, AccentColor);
 
             // Each band's number and gain change at the bottom of its span.

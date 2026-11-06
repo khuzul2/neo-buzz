@@ -200,23 +200,6 @@ namespace ReBuzz
                 : " Under it, the machine keyboard: it plays the machine's Note track parameter, a note per track.";
         }
 
-        /// <summary>A machine's GUI window at the GUI's own size and its keyboard's, however small the runner's screen
-        /// (where the screen is smaller, a user scrolls the GUI above the keys).</summary>
-        static async Task AtOwnSize(Window w)
-        {
-            HwndSource.FromHwnd(new WindowInteropHelper(w).Handle)?.AddHook(LargeWindowHook);
-            w.UpdateLayout();
-            if (w.Content is not FrameworkElement frame || WpfMachineUiHost.ContentOf(w) is not FrameworkElement content) return;
-            content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            double chromeWidth = w.ActualWidth - frame.ActualWidth, chromeHeight = w.ActualHeight - frame.ActualHeight;
-            w.SizeToContent = SizeToContent.Manual;
-            w.Left = 0;
-            w.Top = 0;
-            w.Width = Math.Max(frame.DesiredSize.Width, content.DesiredSize.Width) + chromeWidth;
-            w.Height = content.DesiredSize.Height + NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(frame) + chromeHeight;
-            await Idle(300);
-        }
-
         /// <summary>Runs a step whose shots may fail on their own: a failure is listed and the gallery goes on.</summary>
         async Task Step(string name, Func<Task> step)
         {
@@ -615,8 +598,8 @@ namespace ReBuzz
                 {
                     Buzz.UiHost.OpenGui(m, null);
                     await Idle(800);
+                    // As the app shows it: inside the screen's work area (MachineWindowFit), a taller editor scrolled above the keys.
                     var w = (Window)WpfMachineUiHost.GuiWindowOf(m) ?? throw new InvalidOperationException($"{m.Name}'s editor didn't open");
-                    await AtOwnSize(w);
                     return (w, WpfMachineUiHost.KeyboardOf(w) ?? throw new InvalidOperationException($"no keyboard under {m.Name}'s editor"));
                 }
 

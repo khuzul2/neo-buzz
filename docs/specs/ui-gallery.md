@@ -47,6 +47,7 @@ Every package run of every branch overwrites `ci-artifacts`: fetch it as soon as
 - No window frame or title bar; text is in the headless platform's fonts, greyscale-antialiased; shortcuts that the code spells by platform (`OperatingSystem.IsMacOS()`) show Ctrl off a Mac.
 - No audio device: the engine is run offline (a WorkManager filling buffers) for the playing and recording states; the Audio page's device lists are injected. Native (Windows) machines don't load: an old Windows song shows their placeholders.
 - Tooltips are off in the headless tests (HeadlessInput), except where a shot turns them on.
+- Machine windows (4xx) are kept inside the work area of the Mac drawn, 1440 × 875 pt (its screen less the menu bar), as the app keeps them inside a real screen's (`MachineWindowFit`): an editor taller than that scrolls. The headless platform's own screen is 1920 × 1280 and it cuts windows off at 1080 pt.
 
 **Windows (NeoBuzzLive.exe).**
 - The app starts normally (`--ui-shots` changes only: no autosave recovery question, no update check, message boxes go to stderr instead of waiting for a click), builds the demo song, draws, writes `index-windows.md` and `done.txt`, and kills itself.
@@ -54,7 +55,7 @@ Every package run of every branch overwrites `ci-artifacts`: fetch it as soon as
 - Windows limits a window to its screen's size; the runner's screen may be smaller than 1440×900, so the gallery lets the window be larger (WM_GETMINMAXINFO). A popup near a small screen's edge is moved by Windows, as it would be for a user with that screen.
 - The runner has no audio device: the playing state is run offline, as on the Mac.
 - A native machine's own GUI is a Win32 window in the native host process; RenderTargetBitmap can't draw it, so it isn't in the gallery.
-- Machine windows are drawn at their GUI's own size and the machine keyboard's under it (win-610 to 612), however small the runner's screen: the gallery lets them be larger than it, as the main window. A user with a smaller screen scrolls the GUI above the keys.
+- Machine windows (6xx) are drawn as the app shows them on the runner's screen: inside its work area (`MachineWindowFit`), an editor taller than that scrolled above its keyboard (win-610, win-611).
 
 **The machine keyboard** (docs/specs/studio-mvp.md §3.12) is in both: under every Neo synth's editor and the parameter windows of machines that play notes (mac-4xx, mac-450, mac-451; win-600, win-602, win-603), Neo Poly's and Neo Drums' editors on Windows (win-610, win-612), playing, with a key held by the pointer and a chord lit from MIDI (mac-470, win-611), and hidden (mac-471).
 

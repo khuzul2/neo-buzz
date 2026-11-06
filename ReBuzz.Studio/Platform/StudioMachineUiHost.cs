@@ -12,6 +12,9 @@
 // has the keyboard under its content (MachineKeyboardFrame), the window grown by its height; songs keep the
 // windows' sizes without it, so a GUI opens at its own size with or without it. Space plays and stops the
 // song in these windows too (TransportKeys, as in the main window), so a focused keyboard never takes it.
+// Fork (UI gallery review): each of these windows is kept inside the screen's work area and can be resized; a GUI of
+// a fixed layout (a Neo editor, the manifest editor) scrolls where the window is smaller than it, above the keyboard
+// where it has one (MachineKeyboardFrame's scroller; MachineWindowFit keeps the window inside the work area).
 
 using System;
 using System.Runtime.CompilerServices;
@@ -60,8 +63,9 @@ namespace ReBuzz.Studio.Platform
         public void OpenParameterWindow(IMachine machine, WindowPlacement? at)
         {
             var w = windows.GetValue(machine, _ => new Windows());
+            // The parameter window scrolls its rows itself.
             w.Parameters ??= Make(machine, $"{machine.Name} — parameters",
-                ParameterWindowContent?.Invoke(machine) ?? Note("The parameter window comes in step S2."), () => w.Parameters = null);
+                ParameterWindowContent?.Invoke(machine) ?? Note("The parameter window comes in step S2."), () => w.Parameters = null, scroll: false);
             Show(w.Parameters, at);
         }
 
@@ -79,8 +83,8 @@ namespace ReBuzz.Studio.Platform
                     OpenParameterWindow(machine, at);
                     return;
                 }
-                w.Gui = Make(machine, machine.Name, content, () => w.Gui = null, scroll: true);
-                w.Gui.CanResize = MachineGuis.Resizable(machine);
+                // A GUI of a fixed layout (the factory says so: the Neo editors) scrolls where the screen can't hold it.
+                w.Gui = Make(machine, machine.Name, content, () => w.Gui = null, scroll: !MachineGuis.Resizable(machine));
             }
             Show(w.Gui, at);
         }
@@ -93,7 +97,6 @@ namespace ReBuzz.Studio.Platform
                 var editor = ReBuzz.Agent.MachineFaces.Editor(machine, () => OpenParameterWindow(machine, null));
                 if (editor == null) return false;
                 w.Editor = Make(machine, $"{machine.Name} — editor", editor, () => w.Editor = null, scroll: true);
-                w.Editor.CanResize = false;
             }
             Show(w.Editor, null);
             return true;
@@ -124,8 +127,9 @@ namespace ReBuzz.Studio.Platform
         public string AskName(string title, string current, int x, int y) =>
             Dialogs.Modal(() => Dialogs.AskText(title, current));
 
-        /// <param name="scroll">A GUI of a fixed layout (a Neo editor, a manifest editor): scrolled where the screen can't hold it and the keyboard.</param>
-        static Window Make(IMachine machine, string title, Control content, Action closed, bool scroll = false)
+        /// <param name="scroll">A GUI of a fixed layout (a Neo editor, a manifest editor): in a scroll viewer, for where the
+        /// window is smaller than it (above the keyboard, where the machine has one).</param>
+        static Window Make(IMachine machine, string title, Control content, Action closed, bool scroll)
         {
             var window = new Window
             {
@@ -135,14 +139,16 @@ namespace ReBuzz.Studio.Platform
                 ShowInTaskbar = false,
             };
             _ = new TransportKeys(window, () => machine.Graph?.Buzz as ReBuzzCore, () => false);
+            // Never larger than the screen's work area (the editor and its keyboard together); resizable (the content scrolls).
+            MachineWindowFit.Clamp(window);
             window.Closed += (s, e) => closed();
             return window;
         }
 
-        /// <summary>A machine window's own content (its GUI, parameter window or editor), without the keyboard under it.</summary>
+        /// <summary>A machine window's own content (its GUI, parameter window or editor), without the keyboard under it or the scroll viewer around it.</summary>
         public static Control ContentOf(Window window) => NeoBuzz.Editor.MachineKeyboardFrame.ContentOf(window?.Content) as Control;
 
-        /// <summary>The keyboard under a machine window's content, or null (for tests).
+        /// <summary>The keyboard under a machine window's content, or null (for tests).</summary>
         public static NeoBuzz.Editor.MachineKeyboard KeyboardOf(Window window) => NeoBuzz.Editor.MachineKeyboardFrame.Of(window?.Content);
 
         static void Show(Window window, WindowPlacement? at)
