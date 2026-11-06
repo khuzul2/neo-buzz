@@ -38,8 +38,10 @@ namespace ReBuzz.AgentTests
             string drafts = Path.Combine(RepoRoot(), "Machines", "Manifests") + Path.DirectorySeparatorChar;
             var files = Directory.GetFiles(Path.Combine(RepoRoot(), "Machines"), "*" + MachineManifest.Suffix, SearchOption.AllDirectories)
                 .Where(f => !f.StartsWith(drafts, StringComparison.Ordinal)).ToArray();
-            // One per Neo machine: every machine folder with a Params.def (the core six, the mix and master batch, …).
-            int machines = Directory.GetDirectories(Path.Combine(RepoRoot(), "Machines"), "Neo*").Count(d => File.Exists(Path.Combine(d, "Params.def")));
+            // One per Neo machine: every machine folder with a Params.def (the core six, the mix and master batch, …),
+            // Dye Essence among them (a Neo-family machine with its own name, docs/specs/dye-essence.md).
+            int machines = Directory.GetDirectories(Path.Combine(RepoRoot(), "Machines"), "Neo*").Append(Path.Combine(RepoRoot(), "Machines", "DyeEssence"))
+                .Count(d => File.Exists(Path.Combine(d, "Params.def")));
             Assert.That(machines, Is.AtLeast(10));
             Assert.That(files.Length, Is.EqualTo(machines), "one manifest per Neo machine");
             foreach (var file in files)

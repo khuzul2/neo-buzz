@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v0.2 — P0 (the G0 gate) built on `machines/dye-essence-p0`: measured, recommendation go (§5.3) |
+| Status | Draft v0.3 — P0 (the G0 gate) merged (#104); P1a, the playable machine, built on `machines/dye-essence-p1` and measured (§4.3, §5.4) |
 | Date | 2026-11-06 |
 | Scope | A hybrid wavetable and multi-engine synth machine of the class of today's flagship software synths, built as a Neo-family machine: managed C#, the same bits on every platform, no allocation on the audio thread, every sound parameter a Buzz parameter in real units, one editor source for WPF and Avalonia |
 | Design basis | The feasibility analysis of 2026-11-06 (feature inventories, build plan, CPU budget model, architecture, parameter model, IP limits); this spec carries its decisions forward and records what was built and measured |
@@ -76,6 +76,18 @@ Files: `Machines/DyeEssence/` (the machine, its editor, `Params.def`, `Presets.t
 - **Control grid**: every 16 base-rate samples on a grid that runs across blocks; control values (pitches, levels, frames, coefficients, the envelopes' levels) change only on it and ramp across the whole tick, and a note started mid-tick gets its values for the rest of it, so blocks of any size give the same samples.
 - **Envelopes** (G0): NeoBuzz.Dsp's ADSR stepped at the voice rate per tick, the amp's gain ramped linearly across the tick. P1 replaces them with envelopes with curves (§6).
 
+### 4.3 P1a: the playable machine (as built)
+
+- **The machine** (`Machines/DyeEssence/`): `DyeEssenceMachine` on the Neo glue (16 tracks of Note and Velocity, MIDI, transport stop), `DyeEngine` (parameters in units → the bank's settings at a block's start; Neo's `VoiceAllocator` for poly, mono, legato, glide, sustain and steals; pitch bend), a user wavetable per slot in the machine state (`ImportData("wavetable", path, item)`: item 0–2 is slot A–C, and the slot's table is set to User), `Busy` while the built-in tables build. Neo Wave's table recipes and WAV reader are linked as source (`TableBank` keeps them as arenas, built in the background). WPF, portable and studio projects; in `ReBuzz.sln`.
+- **The bank** (`NoteBank.cs`): 32 note slots; three engine slots per note (`SlotType` Off or Wavetable, room for the engines to come); a sub (sine, triangle, saw, square; 0, −1, −2 octaves) and a noise (a one-pole colour from 100 Hz to white, at white noise's power) rendered across notes, notes as lanes; each source's level, pan and share between filter 1 and filter 2; the two filters across notes (Off, Ladder 24/12, SVF LP/BP/HP 12 and 24, Notch, Peak, Comb+ and Comb−, the comb's delay read between samples, 8192 samples a note); `Filter routing` from serial (filter 2 hears its own sources and filter 1) to parallel; the amp and filter envelopes in closed form per tick (`NoteEnvelope.cs`: NeoBuzz.Dsp's ADSR shapes); steals fade out over 3 ms before the next note starts; glide per note.
+- **Packing** (§5.3): a note's oscillators with no warp share lane groups whatever their tables, levels and frames (each lane at its own mip level through variable shifts, its own frame pair through its own table reference); a warped oscillator has groups of its own, placed after the oscillator that modulates it (a ring of modulators is broken at its first member). A modulator's lanes keep their outputs for its carriers (carrier voice *l* takes modulator voice *l* mod *U*); the sub and the noise modulate per note.
+- **Warps** (`Warps.cs`): None, Bend+, Bend−, Squeeze, Mirror, Asym, Sync, Window sync, FM, PM, AM, Ring; two in series per oscillator; FM, PM, AM and Ring take a modulator (another slot, the sub or the noise; a silent slot still renders when it modulates). FM is linear and through zero (±4 × the pitch at full amount), PM ±1 cycle. Mirror crossfades the plain read with a palindrome read (forward to the half and back, turning smoothly), so it adds no edge; Bend, Squeeze and Sync are *edged* (their read turns a corner or jumps at the cycle's wrap: §5.4). A warped oscillator's mip level allows for how fast its warps read (Carson's rule for FM), up to the voice rate's Nyquist.
+- **Control**: on the tick grid as in P0; settings glide across ticks (τ 4 ms: levels, shares, positions, warp amounts, cutoffs in octaves, resonance, drive, routing, volume), so a jumping knob or automation never steps. A tick on which nothing a held note's voices depend on has moved (the settings, the smoothed values, its pitch) keeps its lanes as they are and only stops their ramps; a filter whose cutoff and resonance stand still keeps its coefficients. After 100 ms of silence the bank rests (only the grid's ticks run).
+- **Kernels**: lane sums eight samples at a time through a transpose (`Sum8`), into the filters' inputs and out of the amp; the comb's reads per lane in scalar (no gathers), its writes clamped and flushed.
+- **Parameters** (97, append-only from this phase's merge): voice (8), slots A, B, C (19 each), sub (5), noise (4), filter 1 and 2 (7 each) and the routing, amp and filter envelopes (4 each). The manifest is generated as for every Neo machine; 12 factory presets in units (`Presets.txt`), levelled by the preset tools; the agent's page `ReBuzz.Agent/Guides/machines/Dye Essence.md`; null-test cases (`tools/null-test.py`, `dye-*` and `long-dye`).
+- **Editor, first page** (`DyeEssenceEditor.cs`, one source for WPF and Avalonia): the three slots, each with its table in 3-D and a loader, the sub and noise, both filters and the routing, the voice, the envelopes and the meter.
+- **Not in P1a** (moved, with the reason): the `IEngine` interface behind the slots comes with the second engine (P1b's Analog), when there is something to abstract over; the WPF hand check of §5.3 (the WPF parameter window and pattern editor at 704 parameters in the package run) needs a WPF host for them in ReBuzzTests that doesn't exist yet and goes with P1b; the preset generator's `state` line comes with routes (P1c).
+
 ## 5. The G0 gate
 
 ### 5.1 Renderer
@@ -135,9 +147,45 @@ Runs 42212607166 (Linux x64) and 42212610289 (macOS arm64), on 7f266231; the run
 
 - **Go.** The renderer runs the gate's case at 11–17× real time on x64 and 9–10× on arm64 (target 2×), the same bits on both, and ReBuzz carries 704 parameters and 8 MB of state through songs, presets, patterns, MIDI learn and the agent, with the two fixes above.
 - **Unison budget: 16 per oscillator**, as the targets have: 16 notes × 3 × 16 runs at 7–10× on x64 and 5–6× on arm64, and still at 5.5× and 2.9× at 4×.
-- **Quality modes**: **Standard 2×** (the default; the measured figures), **High 4×** for audio-rate FM/PM and the sync-type warps (half the speed of 2×, measured above; P1a measures the warps' alias floors at 2× and 4× and decides per warp, and whether 4× applies to the voice or only to the warped oscillator), and no 1× mode for users: at 1× the top octave of harmonics goes (nothing above 14 kHz at 440 Hz), which is not this machine's quality, and 2× is affordable.
-- **P1a optimisations, measured as they land**: lane sums across eight samples at once (a transpose instead of a horizontal sum per sample); envelopes in closed form per tick; unison stacks of 1–4 lanes in a 4-lane group, or lanes of several oscillators packed into one group.
+- **Quality modes**: **Standard 2×** (the default; the measured figures), **High 4×** for audio-rate FM/PM and the sync-type warps (half the speed of 2×, measured above; P1a measures the warps' alias floors at 2× and 4× and decides per warp, and whether 4× applies to the voice or only to the warped oscillator), and no 1× mode for users: at 1× the top octave of harmonics goes (nothing above 14 kHz at 440 Hz), which is not this machine's quality, and 2× is affordable. *Decided in P1a (§5.4)*: FM, PM, AM, Ring, Asym, Window sync and Mirror are clean at Standard (−88 to −98 dB); the edged warps (Bend, Squeeze, Sync) alias at −39 to −71 dB at Standard and 7–15 dB less at High. High applies to the whole voice (the `Quality` parameter); a per-oscillator rate would cost a second decimator and a second accumulator set per note for a case High already covers.
+- **P1a optimisations, measured as they land**: lane sums across eight samples at once (a transpose instead of a horizontal sum per sample); envelopes in closed form per tick; unison stacks of 1–4 lanes in a 4-lane group, or lanes of several oscillators packed into one group. *Built in P1a* (§4.3, §5.4): the transposed sums, the closed-form envelopes and packing across oscillators (the 4-lane group was not needed), plus steady ticks.
 - **Before Dye Essence ships (P1c)**: the large-machine `machine_describe` (agent server); the WPF parameter window and pattern editor checked by hand in NeoBuzz Live with Dye Essence; optionally the studio's parameter window virtualised.
+
+### 5.4 P1a measurements
+
+`NeoBuzz.MachineTests/DyeEssenceTests.cs` on the CI runners: Linux x64 (Fork CI) and macOS arm64 (Fork Mac), runs 42244708034 and 42244712153 (1d1a12f7; the same code as the final head, which adds main and this table); P0's figures on the same runners in §5.1 were 11.2×, 16.7× (x64) and 9.7×, 8.8× (arm64) for the first row. "× real time" is wall clock on one core.
+
+| Criterion | Target | x64 (AVX2) | arm64 (2 × Vector128) |
+|---|---|---|---|
+| CPU, 16 notes × 3 osc × 8 unison + ladder and SVF, 2× | ≥ 2× real time (G0's target, kept) | **9.4× (11 % of a core)** | **7.5× (13 %)** |
+| CPU, the same with 16 unison | reported | 5.2× | 4.9× |
+| CPU, 8 unison at High 4× | reported | 5.2× | 4.0× |
+| CPU, 1 voice per oscillator (three oscillators packed into one group) | reported | 20.3× (P0: 12.4×, 17.7×) | 12.6× (P0: 8.6×, 9.1×) |
+| CPU, the warped patch (FM + Bend, PM from the sub + Window sync, sub, noise, a ladder and a comb), 8 unison | reported | 4.9× | 2.8× |
+| CPU, 32 notes × 3 osc × 4 unison | reported | 6.7× | 4.9× |
+| CPU, without the oscillators (filters, envelopes, control, decimation) | reported | 60.9× (1.6 %; P0: 2.5–3.5 %) | 34.4× (2.9 %; P0: 3.8–4.1 %) |
+| CPU, 8 unison, the Vector128 path on x64 | reported | 6.5× | — |
+| CPU, resting (nothing sounding for 100 ms) | reported | 5.3 µs a block of 256 (0.10 %) | 11.3 µs (0.21 %) |
+| Same bits | the three lane implementations, every sample, 11 settings (every filter model, every warp, packing, the sub and noise, 1×, 2×, 4×, notes stolen mid-render) | scalar = Pair = AVX2 | scalar = Pair |
+| Same on every platform | two renders' checksums pinned (the gate's patch; everything P1a adds), the same on both runners | `852B6940C3C1FF68`, `56547DF10D4EE17A` | the same |
+| Alias floor, plain saw | ≤ −80 dB at 2× and 4× | −92.2 … −98.6 dB (55 Hz – 1.9 kHz); 4×: −93.0, −101.0 dB | the same (same bits) |
+| Alias floor per warp, 70 % at 880 Hz, on a sine and a saw, modulator an octave up | smooth warps ≤ −80 dB at 2×; edged warps ≥ 5 dB lower at 4× | FM −91.6 … −92.2, PM −92.3, AM −88.4 … −92.2, Ring −90.7 … −92.2, Asym −92.2, Window sync −97.7, Mirror −94.3 dB at 2×; Bend −71.3 / −54.7 dB (2×) → −85.6 / −62.8 (4×), Squeeze −62.0 / −39.4 → −76.9 / −48.7, Sync −53.1 / −44.9 → −60.4 / −51.6 (sine / saw) | the same |
+| Bandwidth | the harmonic nearest 18 kHz within 1.5 dB of a saw's, 110 Hz – 3.5 kHz, 2× and 4× | within 1.4 dB | the same |
+| Pitch | a voice, two voices detuned ±50 ct, and the sub, within 0.05 cent | −0.009, −0.009, +0.008; the sub +0.016 cent | the same |
+| Filters against their design | at a 1 kHz cutoff: ladder 24 −12.04, ladder 12 −6.02, LP/HP 12 −6.02, LP/HP 24 −12.04, BP 0 dB within 0.3 dB; 24 dB/oct an octave up under −20 dB; the notch under −30 dB | all on the design to 0.01 dB; an octave up −28.0 dB; the notch −128 dB | the same |
+| Comb | peaks at 220 Hz and its multiples (Comb+), at the odd multiples of 110 Hz (Comb−), each above the level 2 cents either side; gain √(1 − fb²) | all six peaks within 2 cents; +23.0 dB at 99 % feedback | the same |
+| Zipper | cutoff (300 Hz – 3 kHz) and level moved every block on a 220 Hz sine: energy above 2 kHz under −80 dB | cutoff −99.1 dB, level −89.5 dB | the same |
+| Envelopes | a 20 ms attack peaks at 20 ms within 1 ms; a 0.5 s release −60 dB at 0.5 s within 0.5 dB | 20.6 ms; −60.0 dB | the same |
+| Steals | the slot's new note: no step larger than the sines' own steepest | 0.0144 against 0.0144 (no click) | the same |
+| Glide | A3 → A4 in 0.1 s: within 5 % of the interval at 0.1 s, a cent at 0.3 s | 11.39 of 12 st; −0.5 ct | the same |
+| Blocks | 256, 117 and 16, notes starting mid-tick and stolen, the gate's patch and the warped one: the same samples | identical | identical |
+| Extremes | each of the 97 parameters at its minimum and maximum, a held chord: finite, under +12 dBFS | finite; loudest 0 dBFS (Volume +6 dB) | the same |
+| Audio thread | 2000 blocks through the engine, notes started, ended and stolen, unison, positions, warps, filter models and quality moving: 0 bytes | 0 bytes (AVX2 and Pair) | 0 bytes |
+| Presets | 12, a chord's loudest 50 ms between −30 and −6 dB, peaks between −20 and −1 dBFS | −20.0 … −23.9 dB RMS, peaks −11.3 … −17.4 dBFS | |
+| Null test | the Windows reference renders matched by rebuzz-headless on Linux and macOS (`dye-*`, `long-dye`) | match | match |
+| Machine profile (Windows, `tools/machine-profiler.py`) | health ok | ok: no problems or warnings; 7.1 ms of CPU a second playing A4 (polyphony 8 heard), −28 LUFS for one note of the init sound (package run 42244703390) | |
+
+On one machine (a two-core container, P0's renderer and P1a's built side by side, best of five), the 16 × 3 × 8 case runs 10.2× against P0's 8.8× and one voice per oscillator 19.8× against 9.4×; before steady ticks, per-tick control took over a third of the time and P1a ran 26 % slower than P0. On the runners the 8-unison row reads below P0's: x64 9.4× against 11.2× and 16.7× (its runners vary from run to run by that much), arm64 7.5× against 9.7× and 8.8×, which looks real: the per-lane table references and variable shifts that packing needs cost more on two Vector128 halves. A group whose eight lanes share one table and level could take P0's single-table kernel again (P1b).
 
 ## 6. Phases
 

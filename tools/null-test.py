@@ -146,6 +146,16 @@ CASES = [
     gen("wave-grit-motion", "Neo Wave", "Texture — Grit Motion", [], [n("D3", 0, 3.5), n("A3", 1, 2.5)]),
     gen("wave-reso-pluck", "Neo Wave", "Bass — Reso Pluck", [], BASS),
     gen("wave-mirror-bell", "Neo Wave", "Pluck — Mirror Bell", [], BELLS),
+    # Dye Essence: unison lanes, warps (FM from a silent slot, PM from the sub, window sync, mirror, squeeze at
+    # High 4×), the sub and noise, the comb, two filters in parallel.
+    gen("dye-init", "Dye Essence", "Init — Basic", [], CHORDS),
+    gen("dye-wide-unison", "Dye Essence", "Lead — Wide Unison", [], KEYS),
+    gen("dye-fm-growl", "Dye Essence", "Bass — FM Growl", [], BASS),
+    gen("dye-sub-pm", "Dye Essence", "Lead — Sub PM", [], KEYS),
+    gen("dye-two-filters", "Dye Essence", "Pad — Two Filters", [], CHORDS),
+    gen("dye-comb-noise", "Dye Essence", "Texture — Comb Noise", [], KEYS),
+    gen("dye-mirror-bell", "Dye Essence", "Pluck — Mirror Bell", [], BELLS),
+    gen("dye-squeeze-high", "Dye Essence", "FX — Squeeze Sweep", [], [n("A2", 0, 3.5)]),
     # Neo FM6: algorithms, feedback, the Clean 2x and Raw 1x engines, envelopes, LFO.
     gen("fm6-tine-piano", "Neo FM6", "Keys — Tine Piano", [], KEYS),
     gen("fm6-glass-bell", "Neo FM6", "Bell — Glass Bell", [], BELLS, tail=2.0),
@@ -290,6 +300,7 @@ CASES = [
     # Long: what drifts with time (oscillator and LFO phases, modulated delays) shows here. 16 s each.
     gen("long-poly", "Neo Poly", "Pad — Evolving PWM", [], LONG, beats=32),
     gen("long-wave", "Neo Wave", "Pad — Organ Drift", [], LONG, beats=32),
+    gen("long-dye", "Dye Essence", "Pad — Glass Choir", [], LONG, beats=32),
     gen("long-fm6", "Neo FM6", "Pad — FM Strings", [], LONG, beats=32),
     fx("long-verb", "Neo Verb", "Ambient — Long Dark Hall", tail=3.0, beats=32,
        source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 2) for p in ("C4", "E4", "G4")])),

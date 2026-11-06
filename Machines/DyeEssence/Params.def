@@ -1,0 +1,125 @@
+# Dye Essence parameters (docs/specs/dye-essence.md §7). The order is permanent once a phase merges:
+# songs and presets store values by position. New parameters go at the end; an enum's maximum may
+# grow, its values never move. Regenerate: python3 tools/gen-machine-params.py Machines/DyeEssence
+namespace NeoBuzz.DyeEssence
+class DyeEssenceMachine
+tracks 16
+summary Hybrid wavetable synth: three engine slots, each a morphing wavetable with 1–16 unison voices and two warps (bend, sync, FM, PM, AM, ring and more), a sub and a noise, two filters per note (ladder, state-variable, comb; serial to parallel), oversampled 2× or 4×. Use it for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
+import wavetable .wav | A WAV wavetable: frames of 2048 samples (or a clm chunk saying the frame size), or one short single cycle. Becomes a slot's "User" table: item 0 is slot A, 1 slot B, 2 slot C.
+
+group Voice
+VoiceMode   "Voice mode"    0 2    0    enum Poly Mono Legato           | Poly; Mono retriggers; Legato glides without retriggering
+Polyphony   "Polyphony"     1 32   8    int 0                           | Notes that sound at once
+GlideMode   "Glide mode"    0 2    0    enum Off Always Legato          | When notes glide
+Glide       "Glide"         0 1000 200  pow 0 2 3 s 3                   | Glide time
+BendRange   "Bend range"    0 24   2    int 0 st                        | Pitch bend range
+Quality     "Quality"       0 1    0    enum Standard_2× High_4×        | Voices at 2× or 4× the sample rate: High keeps hard FM, PM and sync cleaner at twice the CPU
+VelAmp      "Vel → amp"     0 1000 700  pct                             | How much velocity changes loudness
+Volume      "Volume"        0 1000 739  db -40 6 inf                    | Output level
+
+group Osc A
+AType      "A engine"      0 1    1    enum Off Wavetable              | What slot A plays (more engines to come)
+ATable     "A table"       0 10   0    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
+APos       "A position"    0 1000 667  pct                             | Position in the table (frames morph smoothly)
+AOct       "A octave"      0 8    4    int -4 oct signed               | Octave
+ASemi      "A semi"        0 24   12   int -12 st signed               | Semitones
+AFine      "A fine"        0 1000 500  lin -100 100 ct 0               | Fine tune
+ALevel     "A level"       0 1000 1000 pct                             | Level
+APan       "A pan"         0 1000 500  bip                             | Pan
+AUnison    "A unison"      1 16   1    int 0                           | Unison voices
+ADetune    "A detune"      0 1000 447  pow 0 100 2 ct 1                | The outermost unison voices sit this far either side of the note
+ASpread    "A spread"      0 1000 700  pct                             | Stereo spread of the unison voices
+APhase     "A phase"       0 1000 0    lin 0 360 ° 0                   | Start phase
+ARandom    "A random"      0 1000 1000 pct                             | How much of a random phase each voice starts with
+AWarp1     "A warp 1"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | First warp: how the cycle is read (FM, PM, AM and Ring take the modulator)
+AWarp1Amt  "A warp 1 amt"  0 1000 0    pct                             | First warp's amount
+AWarp2     "A warp 2"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | Second warp, after the first
+AWarp2Amt  "A warp 2 amt"  0 1000 0    pct                             | Second warp's amount
+AMod       "A modulator"   0 4    1    enum Osc_A Osc_B Osc_C Sub Noise | What FM, PM, AM and Ring take (not the slot itself)
+AToF2      "A → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+
+group Osc B
+BType      "B engine"      0 1    0    enum Off Wavetable              | What slot B plays (more engines to come)
+BTable     "B table"       0 10   2    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
+BPos       "B position"    0 1000 0  pct                             | Position in the table (frames morph smoothly)
+BOct       "B octave"      0 8    4    int -4 oct signed               | Octave
+BSemi      "B semi"        0 24   12   int -12 st signed               | Semitones
+BFine      "B fine"        0 1000 500  lin -100 100 ct 0               | Fine tune
+BLevel     "B level"       0 1000 1000 pct                             | Level
+BPan       "B pan"         0 1000 500  bip                             | Pan
+BUnison    "B unison"      1 16   1    int 0                           | Unison voices
+BDetune    "B detune"      0 1000 447  pow 0 100 2 ct 1                | The outermost unison voices sit this far either side of the note
+BSpread    "B spread"      0 1000 700  pct                             | Stereo spread of the unison voices
+BPhase     "B phase"       0 1000 0    lin 0 360 ° 0                   | Start phase
+BRandom    "B random"      0 1000 1000 pct                             | How much of a random phase each voice starts with
+BWarp1     "B warp 1"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | First warp: how the cycle is read (FM, PM, AM and Ring take the modulator)
+BWarp1Amt  "B warp 1 amt"  0 1000 0    pct                             | First warp's amount
+BWarp2     "B warp 2"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | Second warp, after the first
+BWarp2Amt  "B warp 2 amt"  0 1000 0    pct                             | Second warp's amount
+BMod       "B modulator"   0 4    0    enum Osc_A Osc_B Osc_C Sub Noise | What FM, PM, AM and Ring take (not the slot itself)
+BToF2      "B → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+
+group Osc C
+CType      "C engine"      0 1    0    enum Off Wavetable              | What slot C plays (more engines to come)
+CTable     "C table"       0 10   3    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
+CPos       "C position"    0 1000 0  pct                             | Position in the table (frames morph smoothly)
+COct       "C octave"      0 8    4    int -4 oct signed               | Octave
+CSemi      "C semi"        0 24   12   int -12 st signed               | Semitones
+CFine      "C fine"        0 1000 500  lin -100 100 ct 0               | Fine tune
+CLevel     "C level"       0 1000 1000 pct                             | Level
+CPan       "C pan"         0 1000 500  bip                             | Pan
+CUnison    "C unison"      1 16   1    int 0                           | Unison voices
+CDetune    "C detune"      0 1000 447  pow 0 100 2 ct 1                | The outermost unison voices sit this far either side of the note
+CSpread    "C spread"      0 1000 700  pct                             | Stereo spread of the unison voices
+CPhase     "C phase"       0 1000 0    lin 0 360 ° 0                   | Start phase
+CRandom    "C random"      0 1000 1000 pct                             | How much of a random phase each voice starts with
+CWarp1     "C warp 1"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | First warp: how the cycle is read (FM, PM, AM and Ring take the modulator)
+CWarp1Amt  "C warp 1 amt"  0 1000 0    pct                             | First warp's amount
+CWarp2     "C warp 2"      0 11   0    enum None Bend+ Bend− Squeeze Mirror Asym Sync Window_sync FM PM AM Ring | Second warp, after the first
+CWarp2Amt  "C warp 2 amt"  0 1000 0    pct                             | Second warp's amount
+CMod       "C modulator"   0 4    0    enum Osc_A Osc_B Osc_C Sub Noise | What FM, PM, AM and Ring take (not the slot itself)
+CToF2      "C → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+
+group Sub
+SubShape    "Sub shape"     0 3    0    enum Sine Triangle Saw Square   | Sub oscillator wave
+SubOct      "Sub octave"    0 2    1    enum 0 -1 -2                    | Octaves from the note
+SubLevel    "Sub level"     0 1000 0    pct                             | Sub level
+SubPan      "Sub pan"       0 1000 500  bip                             | Sub pan
+SubToF2     "Sub → filter 2" 0 1000 0   pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+
+group Noise
+NoiseColor  "Noise color"   0 1000 1000 pct                             | 0 %: dark (lowpassed from 100 Hz); 100 %: white
+NoiseLevel  "Noise level"   0 1000 0    pct                             | Noise level
+NoisePan    "Noise pan"     0 1000 500  bip                             | Noise pan
+NoiseToF2   "Noise → filter 2" 0 1000 0 pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
+
+group Filter 1
+F1Type      "F1 type"       0 12   1    enum Off Ladder_24 Ladder_12 LP_12 LP_24 BP_12 BP_24 HP_12 HP_24 Notch Peak Comb+ Comb− | Filter model (Comb: the cutoff is its pitch)
+F1Cutoff    "F1 cutoff"     0 1000 750  freq 20 20000                   | Cutoff
+F1Reso      "F1 reso"       0 1000 150  pct                             | Resonance (comb: feedback)
+F1Drive     "F1 drive"      0 1000 0    lin 0 24 dB 1                   | Drive into the filter
+F1Env       "F1 env"        0 1000 600  lin -6 6 oct 1                  | Filter envelope amount
+F1Key       "F1 key track"  0 1000 500  pct                             | Cutoff follows the keyboard (100 %: an octave per octave)
+F1Vel       "F1 vel"        0 1000 250  lin 0 4 oct 1                   | Softer notes close the filter by up to this
+
+group Filter 2
+F2Type      "F2 type"       0 12   0    enum Off Ladder_24 Ladder_12 LP_12 LP_24 BP_12 BP_24 HP_12 HP_24 Notch Peak Comb+ Comb− | Filter model (Comb: the cutoff is its pitch)
+F2Cutoff    "F2 cutoff"     0 1000 750  freq 20 20000                   | Cutoff
+F2Reso      "F2 reso"       0 1000 150  pct                             | Resonance (comb: feedback)
+F2Drive     "F2 drive"      0 1000 0    lin 0 24 dB 1                   | Drive into the filter
+F2Env       "F2 env"        0 1000 500  lin -6 6 oct 1                  | Filter envelope amount
+F2Key       "F2 key track"  0 1000 500  pct                             | Cutoff follows the keyboard (100 %: an octave per octave)
+F2Vel       "F2 vel"        0 1000 0  lin 0 4 oct 1                   | Softer notes close the filter by up to this
+Routing     "Filter routing" 0 1000 0   pct                             | 0 %: filter 1 into filter 2 (serial); 100 %: side by side (parallel)
+
+group Amp env
+AmpA        "Amp attack"    0 1000 100  time 0.0005 20                  | Attack time
+AmpD        "Amp decay"     0 1000 500  time 0.0005 20                  | Decay time
+AmpS        "Amp sustain"   0 1000 800  pct                             | Sustain level
+AmpR        "Amp release"   0 1000 450  time 0.0005 20                  | Release time
+
+group Filter env
+FltA        "Flt attack"    0 1000 100  time 0.0005 20                  | Attack time
+FltD        "Flt decay"     0 1000 520  time 0.0005 20                  | Decay time
+FltS        "Flt sustain"   0 1000 300  pct                             | Sustain level
+FltR        "Flt release"   0 1000 450  time 0.0005 20                  | Release time

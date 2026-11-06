@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Dye Essence, studio flavour (docs/specs/studio-mvp.md S1): see ../NeoStudio.targets. -->
+  <PropertyGroup>
+    <NeoFolder>DyeEssence</NeoFolder>
+    <NeoName>Dye Essence</NeoName>
+    <NeoKind>Generators</NeoKind>
+  </PropertyGroup>
+  <Import Project="../NeoStudio.targets" />
+  <ItemGroup>
+    <!-- Neo Wave's table recipes and WAV reader (the built-in tables and user tables). -->
+    <Compile Include="$(M)NeoWave\Engine\Tables.cs;$(M)NeoWave\Engine\WavReader.cs" Link="Shared\NeoWave\%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>
