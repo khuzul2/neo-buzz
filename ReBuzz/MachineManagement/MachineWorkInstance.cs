@@ -54,8 +54,11 @@ namespace ReBuzz.MachineManagement
             Machine.setMachineTrackCountList.Clear();
 
             // Some machines expect Tick() before Work()
+            bypassLatent = false;
             if (TickSent)
             {
+                if (!Machine.IsBypassed && Machine.BypassRing != null) bypassLatent = Machine.BypassLatent(engineSettings.MachineDelayCompensation);
+
                 // Fork (machine-safety.md §3.2): a diverged machine is silent, and isn't worked, until it is reset.
                 if (Machine.IsDiverged)
                 {
@@ -66,8 +69,10 @@ namespace ReBuzz.MachineManagement
                         (output as MachineConnectionCore).DoTap(silentBuffer, nSamples, true, buzz);
                     }
                 }
-                // Don't call Work() if bypassed
-                else if (Machine.IsBypassed || Machine.IsSeqThru || Machine.MachineDLL.IsMissing)
+                // Don't call Work() if bypassed. Fork (docs/specs/mastering-tools.md §4.1): an effect with latency
+                // keeps working while bypassed, its dry input delayed by its latency (MachineCore.BypassMix).
+                else if (Machine.IsSeqThru || Machine.MachineDLL.IsMissing ||
+                         (Machine.IsBypassed && !(bypassLatent = Machine.BypassLatent(engineSettings.MachineDelayCompensation))))
                 {
                     Sample[] samples = Machine.GetStereoSamples(nSamples);
                     MachineGuard.Check(Machine, samples, nSamples);     // fork (machine-safety.md §3.2): placeholders too
@@ -99,6 +104,9 @@ namespace ReBuzz.MachineManagement
 
             return isActive;
         }
+
+        // Fork (mastering-tools.md §4.1): this block goes through the latency-keeping bypass (MachineCore.BypassLatent).
+        bool bypassLatent;
 
         readonly List<Sample[]> multiSamplesOut = new List<Sample[]>();
         readonly Sample[][] multiSamplesOutBuffers = new Sample[256][];
@@ -241,6 +249,7 @@ namespace ReBuzz.MachineManagement
                 }
 
                 samples = Machine.GetStereoSamples(nSamples);
+                if (bypassLatent) Machine.BypassCapture(samples, nSamples);
 
                 BuzzWorkMode wm = isReadWriteFlag ? BuzzWorkMode.WM_READWRITE : BuzzWorkMode.WM_WRITE;
                 // Mono
@@ -254,6 +263,10 @@ namespace ReBuzz.MachineManagement
                 if (Machine.IsMuted || Machine.IsSeqMute || (buzz.SongCore.SoloMode && !Machine.IsSoloed && Machine.DLL.Info.Type == MachineType.Generator))
                 {
                     samples = silentBuffer;
+                }
+                else if (bypassLatent)
+                {
+                    samples = Machine.BypassMix(samples, nSamples);
                 }
                 Machine.UpdateOutputs(samples, nSamples);
                 foreach (var output in Machine.AllOutputs)
@@ -356,6 +369,7 @@ namespace ReBuzz.MachineManagement
             else
             {
                 Sample[] samples = Machine.GetStereoSamples(nSamples);
+                if (bypassLatent) Machine.BypassCapture(samples, nSamples);
 
                 if (type == MachineType.Generator)
                 {
@@ -383,6 +397,7 @@ namespace ReBuzz.MachineManagement
                 }
                 else
                 {
+                    if (bypassLatent) samples = Machine.BypassMix(samples, nSamples);
                     Machine.UpdateOutputs(samples, nSamples);
 
                     foreach (var output in Machine.AllOutputs)

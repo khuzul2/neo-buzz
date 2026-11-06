@@ -14,7 +14,8 @@
         [BuzzSetting(true, Description = "Enable low latency garbage collector mode while the engine is running. Only affects .NET machines.")]
         public bool LowLatencyGC { get; set; }
 
-        [BuzzSetting(false, Description = "Compensate latency of machines by delaying other machines.")]
+        // Fork (docs/specs/mastering-tools.md §4.1): on by default. Settings keep only what a user changed, so a stored choice stays.
+        [BuzzSetting(true, Description = "Compensate latency of machines by delaying other machines.")]
         public bool MachineDelayCompensation { get; set; }
 
         [BuzzSetting(true, Description = "Use multiple threads to render audio. Incompatible with many old machines. Use it.")]
