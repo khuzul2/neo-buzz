@@ -4687,7 +4687,7 @@
   "FSM WahManPro": {
    "gear": "FSM WahManPro",
    "kind": "effect",
-   "load_seconds": 0.01,
+   "load_seconds": 0.02,
    "gear_info": {
     "file": "Effects/FSM WahManPro.x64.dll",
     "managed": false,
@@ -4699,30 +4699,32 @@
    "inferred": 8,
    "from_description": 0,
    "effect": {
-    "gain_db": 12.64,
+    "gain_db": 10.09,
     "latency_samples": 0,
     "latency_ms": 0.0,
     "tail_seconds": 0.01,
+    "tail_hz": 1013.2,
     "echoes": 0,
     "output_correlation": 1.0,
-    "spectrum_spread_db": 20.4,
-    "tilt_db": 0.2,
+    "spectrum_spread_db": 21.5,
+    "tilt_db": -0.6,
     "sine": {
      "loud": {
-      "gain_db": 6.83,
-      "thd_percent": 6.04,
+      "gain_db": 6.55,
+      "thd_percent": 3.73,
       "thd_in_percent": 1.96,
-      "movement_db": 0.13
+      "movement_db": 0.17
      },
      "quiet": {
-      "gain_db": 6.83,
-      "thd_percent": 6.04,
+      "gain_db": 28.1,
+      "thd_percent": 0.2,
       "thd_in_percent": 1.96,
-      "movement_db": 0.12
+      "movement_db": 3.96
      }
     },
     "traits": [
      "distortion",
+     "modulation",
      "filter or EQ"
     ],
     "response": [
@@ -5039,32 +5041,32 @@
     },
     "thd_percent": 1.78
    },
-   "cpu_ms_per_s": 0.3,
+   "cpu_ms_per_s": 20.9,
    "type": "distortion",
    "level_test": {
     "defaults": {
-     "peak_dbfs": 6.59,
-     "growth_db": 0.3,
+     "peak_dbfs": 4.27,
+     "growth_db": 1.56,
      "verdict": "hot"
     },
     "all_at_once": {},
     "swept_because": [
      "an effect with Resonance"
     ],
-    "renders": 16
+    "renders": 18
    },
    "sweeps": {
     "Cutoff": {
      "min": {
-      "peak_dbfs": 1.47,
-      "growth_db": -0.21,
+      "peak_dbfs": 1.33,
+      "growth_db": 0.25,
       "verdict": "hot",
       "raw": 0,
       "text": "0"
      },
      "max": {
-      "peak_dbfs": 12.86,
-      "growth_db": -0.54,
+      "peak_dbfs": 11.17,
+      "growth_db": 0.66,
       "verdict": "hot",
       "raw": 240,
       "text": "240"
@@ -5072,8 +5074,9 @@
     },
     "Resonance": {
      "max": {
-      "peak_dbfs": 12.29,
-      "growth_db": 0.52,
+      "peak_dbfs": 13.73,
+      "growth_db": 0.14,
+      "over_seconds": 30,
       "verdict": "hot",
       "raw": 240,
       "text": "240"
@@ -5081,15 +5084,15 @@
     },
     "Filter": {
      "min": {
-      "peak_dbfs": 2.86,
-      "growth_db": -0.51,
+      "peak_dbfs": 1.03,
+      "growth_db": 1.74,
       "verdict": "hot",
       "raw": 0,
       "text": "2pole LP"
      },
      "max": {
-      "peak_dbfs": 8.0,
-      "growth_db": -0.1,
+      "peak_dbfs": 7.47,
+      "growth_db": 0.93,
       "verdict": "hot",
       "raw": 4,
       "text": "4pole Peak"
@@ -5097,15 +5100,15 @@
     },
     "LFO rate": {
      "min": {
-      "peak_dbfs": 6.98,
-      "growth_db": 1.08,
+      "peak_dbfs": 2.81,
+      "growth_db": 0.67,
       "verdict": "hot",
       "raw": 0,
       "text": "0.050 Hz"
      },
      "max": {
-      "peak_dbfs": 6.61,
-      "growth_db": 0.07,
+      "peak_dbfs": 7.28,
+      "growth_db": 1.37,
       "verdict": "hot",
       "raw": 240,
       "text": "26.995 Hz"
@@ -5113,15 +5116,16 @@
     },
     "LFO mod": {
      "min": {
-      "peak_dbfs": 6.66,
-      "growth_db": 0.98,
+      "peak_dbfs": 7.27,
+      "growth_db": 1.27,
       "verdict": "hot",
       "raw": 0,
       "text": "0"
      },
      "max": {
-      "peak_dbfs": 8.81,
-      "growth_db": 1.01,
+      "peak_dbfs": 11.52,
+      "growth_db": 0.59,
+      "over_seconds": 30,
       "verdict": "hot",
       "raw": 240,
       "text": "240"
@@ -5129,15 +5133,15 @@
     },
     "LFO Shape": {
      "min": {
-      "peak_dbfs": 4.9,
-      "growth_db": -0.29,
+      "peak_dbfs": 7.66,
+      "growth_db": -0.03,
       "verdict": "hot",
       "raw": 0,
       "text": "sine"
      },
      "max": {
-      "peak_dbfs": 5.7,
-      "growth_db": 0.55,
+      "peak_dbfs": 9.23,
+      "growth_db": 0.56,
       "verdict": "hot",
       "raw": 8,
       "text": "weird 4"
@@ -5145,15 +5149,15 @@
     },
     "Inertia": {
      "min": {
-      "peak_dbfs": 7.84,
-      "growth_db": 0.46,
+      "peak_dbfs": 4.31,
+      "growth_db": 1.5,
       "verdict": "hot",
       "raw": 0,
       "text": "0"
      },
      "max": {
-      "peak_dbfs": 7.79,
-      "growth_db": 0.19,
+      "peak_dbfs": 7.3,
+      "growth_db": 0.41,
       "verdict": "hot",
       "raw": 60,
       "text": "60"
@@ -5161,8 +5165,8 @@
     },
     "Set phase": {
      "min": {
-      "peak_dbfs": 6.55,
-      "growth_db": 1.73,
+      "peak_dbfs": 4.69,
+      "growth_db": -0.08,
       "verdict": "hot",
       "raw": 0,
       "text": "0"
@@ -5171,30 +5175,32 @@
    },
    "roles": {
     "default": {
-     "level_db": 12.93,
-     "spread_db": 15.9,
-     "centroid_oct": 0.316,
-     "max_hz": 1480.0,
-     "prominence_db": 11.43,
-     "low_corner_hz": 1480.0,
-     "high_corner_hz": 1480.0,
+     "level_db": 13.87,
+     "spread_db": 17.41,
+     "centroid_oct": -0.545,
+     "max_hz": 740.0,
+     "prominence_db": 12.98,
+     "low_corner_hz": 740.0,
+     "high_corner_hz": 740.0,
      "width_oct": 0.0,
-     "wobble_db": 0.02,
+     "wobble_db": 0.01,
      "latency_samples": 0,
-     "direct_db": 8.97,
-     "early_db": 6.19,
-     "late_db": -135.36,
-     "t60_s": 0.013,
-     "ring_s": 0.015,
+     "direct_db": 5.64,
+     "early_db": 4.15,
+     "late_db": -34.08,
+     "t60_s": 0.052,
+     "ring_s": 0.048,
      "late_onset_s": 0.003,
-     "thd": 1.44,
-     "peak_dbfs": 11.86
+     "tail_zcr_hz": 441.1,
+     "tail_low_db": -11.63,
+     "thd": 0.99,
+     "peak_dbfs": 13.23
     },
     "type_from_click": "distortion",
     "params": {
      "track Cutoff": {
       "suggested_role": "filter.cutoff",
-      "evidence": "the response's upper corner moves 262 Hz → 8.37 kHz",
+      "evidence": "the response's upper corner moves 131 Hz → 4.19 kHz",
       "min": {
        "raw": 0,
        "text": "0"
@@ -5206,7 +5212,7 @@
      },
      "track Resonance": {
       "suggested_role": "filter.resonance",
-      "evidence": "a peak at 1.48 kHz: its prominence +0 → +13 dB over the response",
+      "evidence": "a peak at 740 Hz: its prominence +0 → +21 dB over the response",
       "min": {
        "raw": 0,
        "text": "0"
@@ -5218,7 +5224,7 @@
      },
      "track Filter": {
       "suggested_role": "filter.type",
-      "evidence": "its choices change the response's shape (up to 46 dB), corners 1.48 kHz–1.48 kHz → 1.05 kHz–1.48 kHz",
+      "evidence": "its choices change the response's shape (up to 59 dB), corners 740 Hz–740 Hz → 523 Hz–740 Hz",
       "min": {
        "raw": 0,
        "text": "2pole LP"
@@ -5229,8 +5235,8 @@
       }
      },
      "track LFO rate": {
-      "suggested_role": null,
-      "evidence": "no measurable change between its ends with the others at their defaults",
+      "suggested_role": "mix.wet",
+      "evidence": "the late sound -34 → -91 dB, the direct sound unchanged",
       "min": {
        "raw": 0,
        "text": "0.050 Hz"
@@ -5241,8 +5247,8 @@
       }
      },
      "track LFO mod": {
-      "suggested_role": "drive",
-      "evidence": "harmonics 1.1 → 4.0 % on a sine",
+      "suggested_role": "filter.resonance",
+      "evidence": "a peak at 1.48 kHz: its prominence +21 → +12 dB over the response",
       "min": {
        "raw": 0,
        "text": "0"
@@ -5278,7 +5284,7 @@
      },
      "track Set phase": {
       "suggested_role": "filter.resonance",
-      "evidence": "a peak at 740 Hz: its prominence +20 → +11 dB over the response",
+      "evidence": "a peak at 740 Hz: its prominence +20 → +13 dB over the response",
       "min": {
        "raw": 0,
        "text": "0"
@@ -5289,34 +5295,34 @@
       }
      }
     },
-    "renders": 44
+    "renders": 38
    },
    "denormal": {
-    "playing_ms_per_s": 8.711,
-    "silent_ms_per_s": 8.816,
-    "silent_worst_ms_per_s": 8.933,
+    "playing_ms_per_s": 15.69,
+    "silent_ms_per_s": 14.99,
+    "silent_worst_ms_per_s": 18.318,
     "windows_ms_per_s": [
-     8.711,
-     8.714,
-     8.933,
-     8.816,
-     8.644,
-     8.901,
-     8.612,
-     8.711,
-     8.731,
-     8.878,
-     8.857
+     15.69,
+     14.594,
+     14.821,
+     15.272,
+     17.958,
+     18.318,
+     16.066,
+     14.99,
+     14.674,
+     14.968,
+     14.711
     ]
    },
-   "seconds": 14.4,
+   "seconds": 25.1,
    "platform": "windows",
-   "date": "2026-11-05",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
    "hot": [
-    "hot at its defaults (+6.6 dBFS peak)",
-    "hot (loud but steady) with Cutoff at its minimum (0): +1.5 dBFS peak; Cutoff at its maximum (240): +12.9 dBFS peak; Resonance at its maximum (240): +12.3 dBFS peak; Filter at its minimum (2pole LP): +2.9 dBFS peak; Filter at its maximum (4pole Peak): +8.0 dBFS peak; LFO rate at its minimum (0.050 Hz): +7.0 dBFS peak; LFO rate at its maximum (26.995 Hz): +6.6 dBFS peak; LFO mod at its minimum (0): +6.7 dBFS peak; and 6 more"
+    "hot at its defaults (+4.3 dBFS peak)",
+    "hot (loud but steady) with Cutoff at its minimum (0): +1.3 dBFS peak; Cutoff at its maximum (240): +11.2 dBFS peak; Resonance at its maximum (240): +13.7 dBFS peak over 30 s; Filter at its minimum (2pole LP): +1.0 dBFS peak; Filter at its maximum (4pole Peak): +7.5 dBFS peak; LFO rate at its minimum (0.050 Hz): +2.8 dBFS peak; LFO rate at its maximum (26.995 Hz): +7.3 dBFS peak; LFO mod at its minimum (0): +7.3 dBFS peak; and 6 more"
    ],
    "notes_profiler": [],
    "generated": false,
@@ -8550,7 +8556,7 @@
    "kind": "effect",
    "load_seconds": 0.02,
    "gear_info": {
-    "file": "Effects/Jeskola Distortion.dll",
+    "file": "Effects/Jeskola Distortion.x64.dll",
     "managed": false,
     "min_tracks": 0,
     "max_tracks": 0
@@ -8898,7 +8904,7 @@
     },
     "thd_percent": 17.01
    },
-   "cpu_ms_per_s": 0.0,
+   "cpu_ms_per_s": 1.5,
    "type": "distortion",
    "level_test": {
     "defaults": {
@@ -9006,26 +9012,26 @@
     "renders": 20
    },
    "denormal": {
-    "playing_ms_per_s": 7.652,
-    "silent_ms_per_s": 7.27,
-    "silent_worst_ms_per_s": 7.351,
+    "playing_ms_per_s": 14.278,
+    "silent_ms_per_s": 12.291,
+    "silent_worst_ms_per_s": 13.237,
     "windows_ms_per_s": [
-     7.652,
-     7.322,
-     7.227,
-     7.16,
-     7.27,
-     7.325,
-     7.267,
-     7.075,
-     7.322,
-     7.187,
-     7.351
+     14.278,
+     13.237,
+     12.988,
+     12.138,
+     12.373,
+     12.291,
+     12.406,
+     11.984,
+     11.883,
+     12.011,
+     12.279
     ]
    },
-   "seconds": 13.3,
+   "seconds": 19.1,
    "platform": "windows",
-   "date": "2026-11-05",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
    "hot": [
@@ -12548,7 +12554,7 @@
    "kind": "generator",
    "load_seconds": 0.02,
    "gear_info": {
-    "file": "Generators/Jeskola Noise Generator.dll",
+    "file": "Generators/Jeskola Noise Generator.x64.dll",
     "managed": false,
     "min_tracks": 1,
     "max_tracks": 8,
@@ -12672,26 +12678,26 @@
     "renders": 10
    },
    "denormal": {
-    "playing_ms_per_s": 5.917,
-    "silent_ms_per_s": 5.287,
-    "silent_worst_ms_per_s": 6.556,
+    "playing_ms_per_s": 12.474,
+    "silent_ms_per_s": 9.689,
+    "silent_worst_ms_per_s": 12.832,
     "windows_ms_per_s": [
-     5.917,
-     5.26,
-     5.354,
-     5.287,
-     5.254,
-     5.352,
-     5.199,
-     5.184,
-     6.556,
-     5.392,
-     5.253
+     12.474,
+     9.54,
+     9.421,
+     11.267,
+     12.832,
+     9.547,
+     9.689,
+     9.451,
+     9.835,
+     9.516,
+     9.699
     ]
    },
-   "seconds": 1.6,
+   "seconds": 2.6,
    "platform": "windows",
-   "date": "2026-11-05",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
    "hot": [],
@@ -14706,7 +14712,7 @@
    "kind": "generator",
    "load_seconds": 0.02,
    "gear_info": {
-    "file": "Generators/Jeskola Trilok.dll",
+    "file": "Generators/Jeskola Trilok.x64.dll",
     "managed": false,
     "min_tracks": 0,
     "max_tracks": 0,
@@ -14843,26 +14849,26 @@
     "renders": 7
    },
    "denormal": {
-    "playing_ms_per_s": 5.741,
-    "silent_ms_per_s": 5.515,
-    "silent_worst_ms_per_s": 9.693,
+    "playing_ms_per_s": 10.422,
+    "silent_ms_per_s": 9.663,
+    "silent_worst_ms_per_s": 11.857,
     "windows_ms_per_s": [
-     5.741,
-     5.845,
-     5.629,
-     5.41,
-     5.296,
-     4.9,
-     5.263,
-     9.693,
-     9.631,
-     5.515,
-     5.299
+     10.422,
+     11.857,
+     11.283,
+     9.305,
+     9.292,
+     9.663,
+     9.732,
+     9.842,
+     9.46,
+     9.362,
+     9.54
     ]
    },
-   "seconds": 1.9,
+   "seconds": 3.0,
    "platform": "windows",
-   "date": "2026-11-05",
+   "date": "2026-11-06",
    "problems": [],
    "warnings": [],
    "hot": [
