@@ -202,8 +202,11 @@ namespace PedalJuno106
             Description = "Filter cutoff frequency")]
         public int VcfFrequency  { get; set; } = 100;
 
-        [ParameterDecl(Name = "VCF Reso",      MinValue = 0, MaxValue = 127, DefValue = 30)]
-        public int VcfResonance  { get; set; } = 30;
+        // Fork (neo-buzz, §12.15): 0, was 30. With VCF Env Amt 80 the envelope opens the filter to its ceiling
+        // (0.45 × the rate), where any resonance from about 20 up rings on at 0.41 × the rate; a new instance
+        // shouldn't. A song keeps the value it saved, the bank lists its own.
+        [ParameterDecl(Name = "VCF Reso",      MinValue = 0, MaxValue = 127, DefValue = 0)]
+        public int VcfResonance  { get; set; } = 0;
 
         [ParameterDecl(Name = "VCF Env Amt",   MinValue = 0, MaxValue = 127, DefValue = 80)]
         public int VcfEnvAmount  { get; set; } = 80;

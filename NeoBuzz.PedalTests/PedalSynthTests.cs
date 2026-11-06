@@ -577,7 +577,9 @@ namespace NeoBuzz.PedalTests
             yield return C("Pedal Juno106", "VcaLevel", 100, 50, true, "VcfFrequency=55 VcfEnvAmount=0 VcfResonance=0");   // a smooth wave
             // Into the filter's soft clip, which shapes a square's edges by its level: measured as it comes in.
             yield return C("Pedal Juno106", "DcoSubLevel", 60, 127, false, "DcoSawOn=0 VcfFrequency=60 VcfEnvAmount=0 VcfResonance=0");
-            yield return C("Pedal Juno106", "DcoPulseWidth", 0, 127, false, "DcoSawOn=0 DcoPulseOn=1");
+            // The filter at 6.4 kHz, under the edge's top (the old defaults' VCF Reso 30 rang at 19.8 kHz; open, at the
+            // new defaults, the step's first 5 ms measure −4.3 dB, the edge sharp as it starts to move).
+            yield return C("Pedal Juno106", "DcoPulseWidth", 0, 127, false, "DcoSawOn=0 DcoPulseOn=1 VcfFrequency=70 VcfEnvAmount=0");
             yield return C("Pedal Juno106", "VcfFrequency", 40, 90, false, "VcfEnvAmount=0");
             yield return C("Pedal Juno106", "VcfResonance", 0, 110, false, "VcfEnvAmount=0 VcfFrequency=70");
             yield return C("Pedal SH101", "Volume", 96, 48, true);
@@ -709,6 +711,47 @@ namespace NeoBuzz.PedalTests
             PedalReport.Report($"{name}: {property} {from} → {to} in silence, with the next note: its first 50 ms " +
                                (diff == 0 ? "the same as set before" : $"{db:F1} dB from it"));
             Assert.That(diff, Is.EqualTo(0), "the next note starts at the setting");
+        }
+
+        // ── The follow-ups (§12.15) ─────────────────────────────────────────────────────────────────────────────
+
+        /// <summary>The share of a span's energy above <paramref name="hz"/> (a Hann window over 8192 samples).</summary>
+        static double ShareAbove(float[] x, int from, double hz)
+        {
+            const int n = 8192;
+            var w = new float[n];
+            for (int i = 0; i < n; i++) w[i] = (float)(x[from + i] * (0.5 - 0.5 * Math.Cos(2 * Math.PI * i / n)));
+            var m = Measure.Spectrum(w, 0, n);
+            double all = 0, high = 0;
+            for (int k = 1; k < m.Length; k++)
+            {
+                all += m[k] * m[k];
+                if (Measure.BinFrequency(k, n) >= hz) high += m[k] * m[k];
+            }
+            return all > 0 ? high / all : 0;
+        }
+
+        /// <summary>
+        /// A new Juno106 (every parameter at its declared default) doesn't ring: held from C2 to C7, no 8192-sample span of
+        /// its first second has more than 5 % of its energy above 16 kHz. At the old defaults (VCF Reso 30) the envelope
+        /// opened the filter to its ceiling, where the resonance rang on at 0.41 × the rate: 39 % (C2) to 83 % (C7).
+        /// </summary>
+        [Test]
+        public void TheJuno106sDefaultPatchDoesNotRing()
+        {
+            var s = Synth.Named("Pedal Juno106");
+            var worst = new List<string>();
+            double most = 0;
+            foreach (int key in new[] { 36, 48, 60, 72, 84, 96 })
+            {
+                var o = SynthRunner.Render(s, Rate, 256, Events((0, r => r.Note(0, key))));
+                double share = 0;
+                for (int at = 0; at + 8192 <= Rate; at += 8192) share = Math.Max(share, ShareAbove(o.L, at, 16000));
+                worst.Add($"{key}: {share * 100:F2} %");
+                most = Math.Max(most, share);
+            }
+            PedalReport.Report($"Pedal Juno106 at its defaults: its energy above 16 kHz, the most in any 8192 samples of a held note's first second, by key: {string.Join(", ", worst)}");
+            Assert.That(most, Is.LessThan(0.05), "no ring at the top of the band");
         }
     }
 }
