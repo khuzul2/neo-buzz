@@ -1,6 +1,6 @@
 #nullable disable
 // Neo Utility's editor (docs/specs/machines.md §4): level and pan, the stereo image (width, pan,
-// bass mono) with the live correlation, the channel switches and output meters. WPF lays the
+// bass mono) with the live correlation, the channel switches with the mid/side matrix, and output meters. WPF lays the
 // editor out; the image and the correlation bar draw on the kit's canvas (INeoCanvas).
 
 using System;
@@ -48,7 +48,9 @@ namespace NeoBuzz.Utility
                 new ParamChoice(ctx, P.InvertL, "Invert L", 34),
                 new ParamChoice(ctx, P.InvertR, "Invert R", 34),
                 new ParamChoice(ctx, P.Swap, "Swap L/R", 34),
-                new ParamChoice(ctx, P.DcRemove, "DC removal", 34));
+                new ParamChoice(ctx, P.DcRemove, "DC removal", 34),
+                // The mid/side matrix (docs/specs/mastering-tools.md, M1): a drop-down keeps the column's width.
+                new ParamDropdown(ctx, P.Matrix, "Matrix", 96));
 
             var meters = Layout.Row(
                 new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 196),
@@ -103,7 +105,8 @@ namespace NeoBuzz.Utility
                 g.Text("mono < " + ParamDef.Freq(ctx.Value(P.BassFreq)), r.X + 6, r.Y + 4, 10, Palette.DimText);
             }
             string tags = (ctx.Value(P.InvertL) > 0 ? "Ø L  " : "") + (ctx.Value(P.InvertR) > 0 ? "Ø R  " : "") +
-                (ctx.Value(P.Swap) > 0 ? "L⇄R  " : "") + (ctx.Value(P.DcRemove) > 0 ? "DC" : "");
+                (ctx.Value(P.Swap) > 0 ? "L⇄R  " : "") + (ctx.Value(P.DcRemove) > 0 ? "DC  " : "") +
+                (ctx.Value(P.Matrix) == (int)Matrix.Encode ? "→ M/S" : ctx.Value(P.Matrix) == (int)Matrix.Decode ? "M/S →" : "");
             if (tags.Length > 0) g.Text(tags.Trim(), r.Right - 6, r.Y + 4, 10, AccentColor, align: NeoAlign.Right);
             string gain = Params.Table[P.Gain].Describe(ctx.Raw(P.Gain));
             g.Text(gain, c.X, c.Y + 2, 10.5, Palette.Text, align: NeoAlign.Center);

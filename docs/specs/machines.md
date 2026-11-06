@@ -30,7 +30,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Machine | Kind | One line |
 |---|---|---|
 | Neo EQ | effect | 8-band parametric EQ: bell, shelves, cuts at 12/24/48 dB/oct, notch; minimum phase; response graph with draggable bands over the spectrum |
-| Neo Utility | effect | Gain, balance or mono pan, width, bass mono, polarity, swap and DC removal, each exact |
+| Neo Utility | effect | Gain, balance or mono pan, width, bass mono, polarity, swap and DC removal, each exact; a mid/side matrix (encode, decode) for M/S work with any stereo machine |
 | Neo Limiter | effect | True-peak lookahead limiter: a ceiling in dBTP as BS.1770 measures it, auto or set release, stereo link |
 | Neo Analyzer | effect | Spectrum (FFT with peak hold, third-octave bars), loudness (momentary, short-term, integrated LUFS, range, true peak) and stereo (correlation, width, goniometer) with the analysis library's numbers; readings for agents; audio untouched |
 
@@ -302,9 +302,9 @@ As built:
 
 ### Neo Utility (gain, pan, width)
 
-DC removal → polarity invert → channel swap → width (mid/side) → bass mono → pan → gain. Zero latency. Every move is a linear ramp that lands exactly on its value (gain, pan and width over 20 ms, switches over 5 ms), and a stage at its identity is skipped, so settled values are exact and the defaults pass the input bit for bit.
+Matrix decode (M/S in) → DC removal → polarity invert → channel swap → width (mid/side) → bass mono → pan → gain → matrix encode (M/S out). Zero latency. Every move is a linear ramp that lands exactly on its value (gain, pan and width over 20 ms, switches over 5 ms), and a stage at its identity is skipped, so settled values are exact and the defaults pass the input bit for bit.
 
-Parameters: Gain (−∞, −60 … +24 dB in 0.1 dB steps), Pan (−100 … +100 %), Pan law (**Balance**: the far side fades linearly to silence, 0 dB at centre, for stereo sources; **Mono pan**: sums to mono, then the sine/cosine law, −3 dB per side at centre), Width (0 – 200 %: the side signal times the width; 0 % is mono), Bass mono (Off/On) and Bass mono freq (20 – 500 Hz: the side signal through a 4th-order Butterworth high-pass; the mid is untouched, so the lows become mono), Invert L and Invert R (the inputs, before the swap), Swap, DC removal (2nd-order Butterworth high-pass at 5 Hz). The editor shows the stereo image (width and pan as a wedge, the mono lows, polarity and swap tags) and the live output correlation.
+Parameters: Gain (−∞, −60 … +24 dB in 0.1 dB steps), Pan (−100 … +100 %), Pan law (**Balance**: the far side fades linearly to silence, 0 dB at centre, for stereo sources; **Mono pan**: sums to mono, then the sine/cosine law, −3 dB per side at centre), Width (0 – 200 %: the side signal times the width; 0 % is mono), Bass mono (Off/On) and Bass mono freq (20 – 500 Hz: the side signal through a 4th-order Butterworth high-pass; the mid is untouched, so the lows become mono), Invert L and Invert R (the inputs, before the swap), Swap, DC removal (2nd-order Butterworth high-pass at 5 Hz), and (mastering-tools.md M1, the last parameter) Matrix: Off, Encode M/S (after everything else, the output is mid (L + R)/2 on the left and side (L − R)/2 on the right) or Decode M/S (before everything else, the input is read as mid and side and turned back into L = M + S, R = M − S), each computed in double and switched over 5 ms, so any stereo machine between an encoding and a decoding Utility works on mid and side. The editor shows the stereo image (width and pan as a wedge, the mono lows, polarity and swap tags) and the live output correlation.
 
 | Criterion | Target | Measured |
 |---|---|---|
@@ -316,6 +316,7 @@ Parameters: Gain (−∞, −60 … +24 dB in 0.1 dB steps), Pan (−100 … +10
 | DC removal | a DC offset falls below −100 dB within 1 s; 20 Hz passes within ±0.05 dB | below −100 dB after 534 ms; 20 Hz −0.017 dB |
 | Moves | no steps: a −24 dB gain move and a polarity flip on DC move at most 0.001 per sample | 0.00049 per sample |
 | Default | the input bit for bit, zero latency | bit for bit, latency 0 |
+| Matrix (M1) | encode: mid and side exactly as defined; an encode then a decode give back the input within one float rounding; halving the side between them equals Width 50 %; a switch glides over 5 ms | as defined; within 1.00 ulp of the larger channel (null −151.9 dB); equal (difference 0); largest step 2.08·10⁻³ per sample |
 
 ### Neo Limiter (true-peak limiter)
 

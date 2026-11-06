@@ -105,6 +105,15 @@ namespace NeoBuzz.Analysis
 
     internal static class Bands
     {
+        /// <summary>
+        /// The mastering assistant's four bands (Ozone's), split at 120 Hz, 2 kHz and 10 kHz: microdynamics and the side/mid
+        /// ratio are measured in these (docs/specs/mastering-tools.md §6).
+        /// </summary>
+        public static readonly (string Name, double Lo, double Hi)[] Mastering =
+        {
+            ("below_120", 0, 120), ("120_2k", 120, 2000), ("2k_10k", 2000, 10000), ("above_10k", 10000, double.PositiveInfinity),
+        };
+
         /// <summary>ISO 266 nominal third-octave centres, 20 Hz – 20 kHz.</summary>
         public static readonly double[] ThirdOctaveNominal =
         {
@@ -270,15 +279,16 @@ namespace NeoBuzz.Analysis
         /// A smooth curve for plots: the third-octave band level centred on each of
         /// <paramref name="perOctave"/> points per octave from <paramref name="fromHz"/> to
         /// <paramref name="toHz"/>, so it passes through the third-octave readings and pink noise draws flat.
+        /// <paramref name="widthOctaves"/> other than a third (the tonal curve's sixth, Tonal) sums bands that wide.
         /// </summary>
-        public static (double[] Hz, double[] Db) Curve(Psd psd, double[] p = null, double fromHz = 20, double toHz = 20000, int perOctave = 24)
+        public static (double[] Hz, double[] Db) Curve(Psd psd, double[] p = null, double fromHz = 20, double toHz = 20000, int perOctave = 24, double widthOctaves = 0)
         {
             p ??= psd.Mean;
-            toHz = Math.Min(toHz, psd.Nyquist / Math.Pow(10, 0.05));
+            double edge = widthOctaves > 0 ? Math.Pow(2, widthOctaves / 2) : Math.Pow(10, 0.05);
+            toHz = Math.Min(toHz, psd.Nyquist / edge);
             int count = Math.Max(2, (int)Math.Floor(Math.Log2(toHz / fromHz) * perOctave) + 1);
             var hz = new double[count];
             var db = new double[count];
-            double edge = Math.Pow(10, 0.05);
             for (int i = 0; i < count; i++)
             {
                 double f = fromHz * Math.Pow(2, i / (double)perOctave);

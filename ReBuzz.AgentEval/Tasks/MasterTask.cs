@@ -14,7 +14,7 @@ namespace ReBuzz.AgentEval
         public override string Name => "master";
         public override string Title => "Master";
 
-        static readonly string[] Parts = { "Kick", "Hats", "Bass", "Pad", "Lead" };
+        internal static readonly string[] Parts = { "Kick", "Hats", "Bass", "Pad", "Lead" };
 
         public override string Brief(TaskContext ctx) =>
             "The open song is a finished but unmastered mix: 8 bars at 120 BPM (Kick, Hats, Bass, Pad, Lead). Master it for streaming: " +
@@ -24,7 +24,10 @@ namespace ReBuzz.AgentEval
             "guide(topic=\"mastering\") has the chain). Measure with render and analyze after each change. When it's done, " +
             $"save it with song_save(path=\"{ctx.ResultSong.Replace("\\", "/")}\", overwrite=true).";
 
-        public override void Setup(Studio s, TaskContext ctx)
+        public override void Setup(Studio s, TaskContext ctx) => Mix(s);
+
+        /// <summary>The unmastered 8-bar mix (also the starting song of the M1 mastering briefs, MasteringTasks.cs).</summary>
+        internal static void Mix(Studio s)
         {
             s.C.Ok("song_set", new JsonObject { ["tempo_bpm"] = 120 });
             Recipes.Kick(s, "Kick", -14);
@@ -59,8 +62,8 @@ namespace ReBuzz.AgentEval
 
         public override Facts Measure(Studio s, TaskContext ctx) => MeasureMaster(s, Parts);
 
-        /// <summary>The master's loudness, peaks and crest, and each part's level against the others.</summary>
-        internal static Facts MeasureMaster(Studio s, IEnumerable<string> parts, Facts f = null)
+        /// <summary>The master's loudness, peaks and crest, and each part's level against the others; <paramref name="more"/> measures the master's audio further.</summary>
+        internal static Facts MeasureMaster(Studio s, IEnumerable<string> parts, Facts f = null, Action<ReBuzz.Agent.Audio.StereoAudio, Facts> more = null)
         {
             f ??= new Facts();
             var g = s.Graph();
@@ -75,6 +78,7 @@ namespace ReBuzz.AgentEval
             f["crest_db"] = d.CrestDb;
             f["plr_db"] = d.PlrDb;
             f["silent"] = Meters.Silent(mix.Audio) ? 1 : 0;
+            more?.Invoke(mix.Audio, f);
             var levels = new Dictionary<string, double>();
             foreach (var p in parts)
             {

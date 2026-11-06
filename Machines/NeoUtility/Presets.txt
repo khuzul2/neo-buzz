@@ -51,3 +51,9 @@ Swap = On
 
 preset "Fix — DC Offset"
 DC removal = On
+
+preset "Mid/Side — Encode (Before a Stereo Machine)"
+Matrix = Encode M/S
+
+preset "Mid/Side — Decode (After It)"
+Matrix = Decode M/S

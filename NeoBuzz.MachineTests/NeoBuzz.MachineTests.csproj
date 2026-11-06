@@ -26,7 +26,7 @@
     <Compile Include="..\Machines\Neo*\Engine\**\*.cs" Link="Engines\%(RecursiveDir)%(Filename)%(Extension)" />
     <!-- Neo Analyzer measures with the analysis library (docs/specs/mcp-server.md §7): its streaming
          meters, FFT, bands and stereo measures, checked here against the library's batch measures. -->
-    <Compile Include="..\Machines\NeoBuzz.Analysis\LoudnessMeter.cs;..\Machines\NeoBuzz.Analysis\Fft.cs;..\Machines\NeoBuzz.Analysis\Spectrum.cs;..\Machines\NeoBuzz.Analysis\Stereo.cs" Link="Analysis\%(Filename)%(Extension)" />
+    <Compile Include="..\Machines\NeoBuzz.Analysis\LoudnessMeter.cs;..\Machines\NeoBuzz.Analysis\Fft.cs;..\Machines\NeoBuzz.Analysis\Spectrum.cs;..\Machines\NeoBuzz.Analysis\Stereo.cs;..\Machines\NeoBuzz.Analysis\GainMatch.cs" Link="Analysis\%(Filename)%(Extension)" />
     <!-- The editor kit's toolkit-free core (docs/specs/cross-platform.md §8.3): canvas, layout,
          hit-testing and graphs. Compiling it here keeps it free of WPF. -->
     <Compile Include="..\Machines\NeoBuzz.Editor\Core\**\*.cs" Link="EditorCore\%(RecursiveDir)%(Filename)%(Extension)" />

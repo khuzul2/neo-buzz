@@ -72,6 +72,42 @@
         "no_silent_gaps": 1,
         "parts": 1
       }
+    },
+    "master_match": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "tonal_match": 1,
+        "width_match": 1,
+        "plr_match": 1,
+        "loudness_match": 1,
+        "true_peak": 1,
+        "no_clipping": 1,
+        "balance_kept": 1
+      }
+    },
+    "master_loud": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "loudness": 1,
+        "true_peak": 1,
+        "spotify_loud_untouched": 1,
+        "dynamics": 1,
+        "no_clipping": 1,
+        "balance_kept": 1
+      }
+    },
+    "fix_harshness": {
+      "total": 1,
+      "passed": true,
+      "criteria": {
+        "harshness_reduced": 1,
+        "tilt_kept": 1,
+        "loudness_kept": 1,
+        "no_clipping": 1,
+        "balance_kept": 1
+      }
     }
   }
 }
