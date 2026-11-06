@@ -22,7 +22,7 @@ namespace ReBuzzTests
     [Apartment(ApartmentState.STA)]
     public class UiGalleryBugTests
     {
-        static string FindRunTime()
+        internal static string FindRunTime()
         {
             for (var dir = new DirectoryInfo(TestContext.CurrentContext.TestDirectory); dir != null; dir = dir.Parent)
             {
