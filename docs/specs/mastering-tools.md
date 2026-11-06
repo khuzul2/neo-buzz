@@ -299,16 +299,16 @@ Decisions taken in M0 that the user may want differently are listed in §8 with 
 | Latency change | Neo Limiter's lookahead 2 → 5 ms (99 → 231 samples at 44.1 kHz) under a sine, the other path alone: no step larger than the sine's own ×1.2, no gap; the null back after | largest step 1.001×; the quietest 64 samples at 0.79 of the level (the 10 ms comb of two copies 132 samples apart); the null back exactly; the delay moved without the UI thread |
 | Ring | 0 → 4607 samples under a 1 kHz sine: direct, then the curve, then the new tap, sample for sample; shorter at once; back to direct; silence switches at once; growing keeps what is in flight; clamped beyond capacity until grown; no allocation | all exact; largest step 1.003× the sine's own |
 | Plan | delays against the recursive walk on 300 random graphs; a diamond; a cycle cut; no allocation | equal on all 300; 0 bytes |
-| Bypass | the parallel null held through bypass and back; compressing hard, bypass and back: no step over ×1.5 the louder signal's own | null exact throughout; see the CI notice |
+| Bypass | the parallel null held through bypass and back; compressing hard (−20.6 dB), bypass and back: no step over ×1.5 the louder signal's own | null exact throughout; largest step 1.000× |
 | Inserted machine | Neo Drive inserted into a connection: the parallel path delayed by its 62 samples, nothing else asked | 62 |
-| Unchanged | the null test, bit for bit | 91 of 91 identical |
+| Unchanged | the null test, bit for bit; ReBuzzTests' latency tests | 91 of 91 identical (Linux, against renders made before M0); ReBuzzTests pass |
 
 **Library** (`Machines/NeoBuzz.Dsp/`).
 
 | Block | Measured |
 |---|---|
-| `ComplexFft`, `PartitionedConvolver`, `SteppedFirDesign`, `LinearPhaseFilters` (moved from Neo Multiband) | Neo Multiband bit for bit: its 59 tests (`CpuIsSmall` aside, under load on a shared machine: 19×), the null test's five Multiband cases (the crossover moves included); one and two FIRs against direct convolution within −137.4 and −130.9 dB |
-| `Stft` (N = 512, 2048, 4096; hop N/4) | unit spectrum: the input N − 1 samples back within −137.7 … −139.3 dB; a gain on the left alone (Unpack, Pack): left within −137.5 dB, right −139.2 dB; blocks of 256, 128, 117, 16 and 1 bit-identical; 65× real time at N = 2048 stereo (the transforms alone, a loaded runner); no allocation |
+| `ComplexFft`, `PartitionedConvolver`, `SteppedFirDesign`, `LinearPhaseFilters` (moved from Neo Multiband) | Neo Multiband bit for bit: its 59 tests, the null test's five Multiband cases (the crossover moves included); its CPU as before on the Linux runner (linear 56×, three bands 62×, minimum 65×, mid/side unlinked 50×, a crossover moving 28×; main's slower-runner figures: 57×, 66×, 65×, 50×, 28×); one and two FIRs against direct convolution within −137.4 and −130.9 dB |
+| `Stft` (N = 512, 2048, 4096; hop N/4) | unit spectrum: the input N − 1 samples back within −137.7 … −139.3 dB; a gain on the left alone (Unpack, Pack): left within −137.5 dB, right −139.2 dB; blocks of 256, 128, 117, 16 and 1 bit-identical; 283× real time at N = 2048 stereo on the Linux runner (the transforms alone); no allocation |
 | `QuadratureAllpass` | 90° within ±0.098° (44.1 kHz, 12 coefficients), ±0.108° (48 kHz, 12), ±0.129° (96 kHz, 13) from 20 Hz to 20 kHz; magnitude 1 within 4·10⁻¹⁴; the envelope of sines from 25 Hz to 19 kHz flat within 0.015 dB |
 | `TransientSplit` | steady sines at 25, 40, 100, 1000 and 10 000 Hz: weight exactly 0 after 300 ms; 200 Hz hits decaying with 60 ms: 0.55 at 1 ms, 0.78 at 2, 0.82 at 3, 0.80 at 5, 0.64 at 10, 0.41 at 20, 0.16 at 40, 0 from 60 ms on; unity gain exactly 1; blocks of 256, 128, 117 and 16 identical; no allocation |
 

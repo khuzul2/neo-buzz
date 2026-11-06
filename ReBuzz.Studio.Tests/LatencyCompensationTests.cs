@@ -171,8 +171,10 @@ namespace ReBuzz.Studio.Tests
             source.SendMIDINote(0, 60, 100);
             using var engine = new Engine();
 
-            // The parallel path alone (the limiter's muted: its latency still counts), its delay changing under a sine.
-            limiter.IsMuted = true;
+            // The parallel path alone (the limiter's connection at 0: its latency still counts; muted, it wouldn't be worked
+            // where ProcessMutedMachines is off, and its lookahead wouldn't change), its delay changing under a sine.
+            var limiterOut = limiter.Outputs.Single();
+            limiterOut.Amp = 0;
             engine.Read(0.5);
             var steady = engine.Read(0.3);
             double ownStep = LargestStep(steady);
@@ -187,7 +189,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(quietest / 1e6, Is.GreaterThan(0.5 * Rms(steady)), "no gap");
 
             // Both paths, the other inverted: the null comes back once the change is through.
-            limiter.IsMuted = false;
+            limiterOut.Amp = 0x4000;
             Param(parallel, "Invert L").SetValue(0, 1);
             Param(parallel, "Invert R").SetValue(0, 1);
             engine.Read(0.3);

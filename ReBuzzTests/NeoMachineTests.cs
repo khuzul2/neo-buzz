@@ -788,11 +788,12 @@ namespace ReBuzzTests
             }
 
             // Neo Limiter's lookahead changed while playing (2 → 5 ms): the parallel path's delay follows by a crossfade,
-            // without a gap or a click (heard on the parallel path alone: the limiter muted, its latency still counted).
+            // without a gap or a click (heard on the parallel path alone: the limiter's connection at 0, its latency still
+            // counted; muting would stop its work here, where ProcessMutedMachines is off, so its lookahead wouldn't change).
             using (var rig = new Rig(Limiter, Utility))
             {
                 rig.Param("Ceiling").SetValue(0, 120);                                   // 0 dBTP
-                rig.Effect.IsMuted = true;
+                rig.Effect.Outputs.Single().Amp = 0;
                 rig.Play(0.5);
                 var steady = rig.Play(0.3);
                 double own = 0;
