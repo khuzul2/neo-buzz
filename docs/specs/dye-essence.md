@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | Draft v0.4 — P0 merged (#104); P1a accepted (`machines/dye-essence-p1`, §4.3, §5.4); P1b's first step built on `machines/dye-essence-p1b`: the WPF hand check (§5.5), engines behind `IEngine` and the Analog engine (§4.4) |
+| Status | Draft v0.4 — P0 merged (#104); P1a accepted (`machines/dye-essence-p1`, §4.3, §5.4); P1b built on `machines/dye-essence-p1b`: the WPF hand check (§5.5), engines behind `IEngine` and the Analog engine (§4.4), modulation (§4.5, §5.6) |
 | Date | 2026-11-06 |
 | Scope | A hybrid wavetable and multi-engine synth machine of the class of today's flagship software synths, built as a Neo-family machine: managed C#, the same bits on every platform, no allocation on the audio thread, every sound parameter a Buzz parameter in real units, one editor source for WPF and Avalonia |
 | Design basis | The feasibility analysis of 2026-11-06 (feature inventories, build plan, CPU budget model, architecture, parameter model, IP limits); this spec carries its decisions forward and records what was built and measured |
@@ -94,7 +94,14 @@ Files: `Machines/DyeEssence/` (the machine, its editor, `Params.def`, `Presets.t
 - **The Analog engine** (`SlotType.Analog`, appended to the slot enum): sine, triangle, saw and square read from the built-in Basic table's exact frames (0, 21, 42, 63 of 64), pulses of 3–50 % from the PWM table, so the classic waves are as band-limited as the tables (−92 to −101 dB alias floors at 880 Hz and 1.9 kHz); each voice gets its own fixed detune for the note (`drift`, up to ±12 cents at 100 %, seeded, from a stream of its own so the phases stay as they were). It takes the slot's tuning, unison, warps, modulator and routing. Parameters appended per slot: `shape`, `pulse width`, `drift` (106 in all).
 - **P0's kernel again for uniform groups** (`UnisonKernel.Uniform`): a plain group one oscillator fills alone (all eight lanes, one table, one level, one frame pair) reads through constant shifts and a single table reference instead of eight; the same operations, so the same bits (the pinned renders did not change). Oscillators whose unison fills whole groups are packed first, so a 16 + 3 patch has two uniform groups. A frame position within 10⁻⁴ of a frame reads that frame alone (no morph to pay for).
 - **The WPF hand check** (`ReBuzzTests/NeoMachineTests.DyeStressWpf.cs`, in the package run): ReBuzzTests builds the 704-parameter stress machine beside itself (not into the app's Gear) and opens it, and Dye Essence, in the WPF parameter window (the theme's `ParameterWindow.xaml` with `ParameterWindowVM`, as the app opens it) and in the app's own Modern Pattern Editor on a pattern of the machine (the repository's theme copied beside the tests, as the app has it beside itself): §5.5.
-- **Still to come in P1b**: envelopes with curves, LFOs, macros and the modulation engine (§6).
+
+### 4.5 P1b, second step: modulation (as built)
+
+- **Sources** (`Modulation.cs`): two DAHDSR envelopes with a curve per segment (attack, decay, release: −100 % a fast start, 0 straight, +100 % a slow start; `(e^{kx} − 1)/(e^k − 1)`, k = 6 × curve) and tempo sync (times read as beats); four LFOs (sine, triangle, saw up and down, square, sample and hold, smooth random; a rate or a synced period from 1/32 to 4 bars; one per note from its start phase, or one free LFO for every note; a fade-in); the amp and filter envelopes; velocity, key (±1 over ±5 octaves round C4), the mod wheel, aftertouch; four macros; a random value per note.
+- **Routes**: sixteen, each a source, a destination and an amount, all three **parameters** (48). §2 and §7 put routes in the state with only their amounts as parameters; P1b keeps them as parameters while nothing else can carry state in units (the preset generator has no `state` line, the agent no route tool, the editor no route list): presets write them in units, agents set them with `param_set`, songs automate them. Moving them into the state with P1c's route list stays possible (the source and destination parameters would then mirror the state).
+- **Destinations**: pitch (±12 st at full amount), each slot's pitch, position, both warp amounts and level, the sub and noise levels, both cutoffs (±6 octaves) and resonances, the amp (gain × (1 + amount)), and each LFO's rate (±4 octaves; per-note LFOs only, from the last tick's routes). Pan and the filter routing are not destinations: both are shared by a group of notes in the kernels.
+- **Evaluation**: per note on the control grid (every 16 samples), the destinations' sums ramping across the tick as every control value does; envelopes and LFOs advance in closed form with portable maths, so the same bits everywhere and any block size; random values from per-note seeds. A note whose modulation moved leaves the steady path for that tick. Audio-rate modulation stays the warps' (FM, PM, AM, Ring). Breakpoint LFO shapes (drawn, in the state) come with P1c's editor pages.
+- **Parameters**: 96 appended (202 in all): the two envelopes (10 each), the LFOs (6 each), the macros (4), the routes (48).
 
 ## 5. The G0 gate
 
@@ -205,6 +212,17 @@ Package run 42266048469 (99bd76f6) (Windows, `windows-latest`), ReBuzzTests `Dye
 | WPF Modern Pattern Editor | every column, the last reachable; a frame well under 100 ms | every column (extent 22 107 px), the last reached (offset 20 589 of 20 589 px) in 198 ms; opened in 1.1 s; a frame as drawn 201 ms, a full redraw 279 ms at the first columns, 228 ms at the last | extent 3 263 px, the last reached; opened in 136 ms; a frame as drawn 86 ms, a full redraw 97 ms and 88 ms |
 
 **Verdict: ReBuzz's WPF views carry Dye Essence (106 parameters) within the targets but not 704.** Frames here are drawn by `RenderTargetBitmap`, in software on the runner, so they read slower than the app's own; what matters is the ratio: at 704 parameters a frame of the pattern editor costs 2.3× the 106-parameter one with the same pixels on screen, because the WPF editor, like the studio's before P0's fix, lays out and draws every column of a column set, not only those in view; and the parameter window builds every row up front (2.5–3.7 s at 704). Before the table grows past a few hundred parameters (P1c onwards): cull columns horizontally in the WPF pattern editor's column renderer (as `PatternGrid.DrawBeat` does in the studio) and virtualise the WPF parameter window's rows. Both are outside Dye Essence; to schedule.
+
+### 5.6 Modulation measurements (P1b)
+
+| Criterion | Target | Result (the same bits on both runners) |
+|---|---|---|
+| DAHDSR envelope | delay 50 ms, straight attack 100 ms, hold 50 ms, decay 200 ms to 30 %, release 200 ms: each point within 10⁻⁴ | 0, 0.5, 1, 0.65, 0.3, 0.15, 0, 0 at the expected points |
+| Curves | +100 % below 0.1 half way, −100 % above 0.9 | as targeted |
+| Synced envelope | a 1-beat attack at 120 BPM half way at 0.25 s | 0.5 |
+| LFO rates | 2 Hz free; 1/4 at 120 BPM (2 Hz) and at 90 BPM (1.5 Hz): within 1 % | 2.000, 2.000, 1.500 Hz |
+| Zipper | an LFO moving a cutoff ±1 octave at 3 Hz on a 220 Hz sine: energy above 2 kHz under −80 dB | −137 dB |
+| Same bits, blocks, allocation | routes onto every kind of destination in the lane-identity and block-size tests; routes changing source and destination in the allocation test | identical; 0 bytes |
 
 ## 6. Phases
 
