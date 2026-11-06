@@ -138,6 +138,16 @@ namespace PedalFM
                 Ops[i].Env.NoteOff();
         }
 
+        /// <summary>
+        /// Fork (neo-buzz, docs/specs/mcp-server.md §12.15): the transport stopped. A held note is released, and a
+        /// retrigger waiting for the fade-out is dropped (the old note fades out, the new one never starts).
+        /// </summary>
+        public void ReleaseForStop()
+        {
+            _pendingTrigger = false;
+            if (Held) Release();
+        }
+
         public void Stop()
         {
             _targetGain = 0f;

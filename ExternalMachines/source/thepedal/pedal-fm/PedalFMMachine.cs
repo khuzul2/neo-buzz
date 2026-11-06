@@ -92,7 +92,8 @@ namespace PedalFM
         // else the one released longest ago, else the oldest; its velocity is a track Velocity's (velocity / 127).
         // Glide applies when it takes a voice still held (legato, as a track's note). Pitch bend ±2 semitones, the
         // mod wheel brings in the LFO's vibrato up to ±1 semitone (LFO Pitch's full depth), the sustain pedal holds
-        // MIDI notes; the transport stopping releases them. A track's note plays exactly as before.
+        // MIDI notes; the transport stopping releases them, and a track's note too. A track's note otherwise plays
+        // exactly as before.
         readonly MidiIn     _midi          = new MidiIn();
         readonly MidiVoices _midiVoices    = new MidiVoices(MAX_TRACKS);
         readonly bool[]     _voiceFree     = new bool[MAX_TRACKS];
@@ -426,10 +427,12 @@ namespace PedalFM
             for (int i = 0; i < MAX_TRACKS; i++)
                 if (!_voices[i].IsIdle() && !_voices[i].Finished) { wasIdle = false; break; }
 
+            // Fork (neo-buzz, §12.15): Stop releases every note; before the tracks' notes, which it drops (stale).
+            CheckTransport();
+
             // 1. Apply pending note events. Once at the start of each buffer —
             //    sub-buffer timing isn't worth the complexity for v1.
             ApplyPendingNotes(glideSamples);
-            CheckTransport();                 // fork (neo-buzz, §12.15): releases MIDI notes on Stop
             ProcessMidi(glideSamples);        // fork (neo-buzz, §12.15): after the tracks' notes
 
             // 2. Refresh per-op configs and voice frequencies.
@@ -668,13 +671,22 @@ namespace PedalFM
             }
         }
 
-        // The transport stopping releases MIDI notes (a track's note rings on, as before).
+        // The transport stopping releases every note, MIDI's and (fork, follow-ups: they rang on) the tracks', as
+        // Juno106, M1 and Tracker do; track notes queued in the same tick are stale and dropped, as Juno106 drops them.
         void CheckTransport()
         {
             bool nowPlaying;
             try { nowPlaying = Buzz?.Playing ?? false; }
             catch { nowPlaying = _wasPlaying; }
-            if (_wasPlaying && !nowPlaying) ReleaseMidiVoices();
+            if (_wasPlaying && !nowPlaying)
+            {
+                for (int t = 0; t < MAX_TRACKS; t++) _hasPendingNote[t] = false;
+                for (int v = 0; v < MAX_TRACKS; v++)
+                {
+                    _voices[v].ReleaseForStop();
+                    _midiVoices.Clear(v);
+                }
+            }
             _wasPlaying = nowPlaying;
         }
 

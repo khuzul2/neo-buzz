@@ -2,7 +2,7 @@
 // run on their own Work (SynthHarness.cs), and their MIDI input:
 //  - a MIDI note plays as a track's note does (the same samples where the voices are alike), at its velocity; chords
 //    take a voice each (SH101: last-note priority), pitch bend moves ±2 semitones, the mod wheel brings in vibrato,
-//    the sustain pedal holds, the transport stopping releases MIDI notes (a track's note rings on where it did);
+//    the sustain pedal holds, the transport stopping releases MIDI notes and a track's notes;
 //  - silence after sound settles to exact zero, with no denormal number on the way, and the machine says it is silent
 //    once it is, and only then;
 //  - silence costs no more than before the first note;
@@ -239,20 +239,25 @@ namespace NeoBuzz.PedalTests
             Assert.That(Measure.Peak(o.L, 4 * q + Tail(s), Rate), Is.EqualTo(0), "released when it comes up");
         }
 
+        /// <summary>
+        /// The transport stopping releases a MIDI note, and a track's note (on SH101 and FM it rang on after Stop until the
+        /// follow-ups; Juno106, M1 and Tracker released it already): silent once its release has run, at its defaults.
+        /// </summary>
         [TestCaseSource(nameof(Synths))]
-        public void TheTransportStoppingReleasesMidiNotes(Synth s)
+        public void TheTransportStoppingReleasesNotes(Synth s)
         {
             int q = Rate / 2;
             var r = new SynthRunner(s, withSong: true);
             var o = r.Run(q + Tail(s) + Rate, 256, Events((0, x => { x.Playing = true; x.Midi(A4, 100); }), (q, x => x.Playing = false)));
             Assert.That(Measure.Peak(o.L, 0, q), Is.GreaterThan(0.01), "playing");
-            Assert.That(Measure.Peak(o.L, q + Tail(s), Rate), Is.EqualTo(0), "released when the transport stops");
-            // A track's note on the SH101 and FM rang on after Stop, and still does (as before); the others release it.
+            Assert.That(Measure.Peak(o.L, q + Tail(s), Rate), Is.EqualTo(0), "a MIDI note released when the transport stops");
             var t = new SynthRunner(s, withSong: true);
             var ot = t.Run(q + Tail(s) + Rate, 256, Events((0, x => { x.Playing = true; x.Note(0, A4); }), (q, x => x.Playing = false)));
-            bool ringsOn = Measure.Peak(ot.L, q + Tail(s), Rate) > 0.001;
-            PedalReport.Report($"{s.Name}: the transport stopping releases a MIDI note; a track's note {(ringsOn ? "rings on, as before" : "is released, as before")}");
-            Assert.That(ringsOn, Is.EqualTo(s.Name == "Pedal SH101" || s.Name == "Pedal FM"), "a track's note as before");
+            double rest = Measure.Peak(ot.L, q + Tail(s), Rate);
+            PedalReport.Report($"{s.Name}: the transport stopping releases a MIDI note and a track's note: " +
+                               (rest == 0 ? "silent once its release has run" : $"a track's note still at {Measure.Db(rest):F1} dBFS {Tail(s) / (double)Rate:F0} s after Stop"));
+            Assert.That(Measure.Peak(ot.L, 0, q), Is.GreaterThan(0.01), "playing");
+            Assert.That(rest, Is.EqualTo(0), "a track's note released when the transport stops");
         }
 
         [TestCaseSource(nameof(Synths))]
