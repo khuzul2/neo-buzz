@@ -322,6 +322,60 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void ThePresetBarNamesTheSoundsPresetAndMarksItEdited()
+        {
+            // UI gallery review: the bar said "Presets" until a preset was picked in the open editor, so a reopened editor
+            // never named the sound. It names the preset loaded last (or the one the sound matches), marked "edited" once
+            // a parameter moves off it.
+            var m = Add("Neo Comp", "Named Comp");
+            try
+            {
+                var window = OpenEditor(m);
+                var bar = Find(window, "PresetBar", "Presets");
+                Assert.That(Get(bar, "Current"), Is.EqualTo("Init"), "at its defaults: Init");
+                Assert.That(Get(bar, "Edited"), Is.False);
+
+                // A preset from the list.
+                var names = m.GetPresetNames().Where(n => n != "<default>").OrderBy(n => n, StringComparer.OrdinalIgnoreCase).ToList();
+                string pick = names.First(n => n.StartsWith("Glue"));
+                Click(window, At(bar, window, 100, 12));
+                var menu = (ContextMenu)Get(bar, "Menu");
+                var item = menu.Items.OfType<MenuItem>().Single(i => (string)i.Header! == "Glue").Items.OfType<MenuItem>().Single(i => (string)i.Header! == pick);
+                item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                menu.Close();
+                Assert.That(Get(bar, "Current"), Is.EqualTo(pick));
+
+                // Closed and opened again: the bar still names it.
+                Core.UiHost.CloseWindows(m);
+                window = OpenEditor(m);
+                bar = Find(window, "PresetBar", "Presets");
+                Assert.That(Get(bar, "Current"), Is.EqualTo(pick), "a reopened editor names the sound's preset");
+                Assert.That(Get(bar, "Edited"), Is.False);
+
+                // A parameter moved off it: edited; back: not.
+                var threshold = Global(m, "Threshold");
+                int was = threshold.GetValue(0);
+                threshold.SetValue(0, was + 50);
+                Run(0.05);
+                Assert.That(Get(bar, "Current"), Is.EqualTo(pick), "still that preset …");
+                Assert.That(Get(bar, "Edited"), Is.True, "… edited");
+                Frame(window, "neo-comp-editor-preset-edited");
+                threshold.SetValue(0, was);
+                Run(0.05);
+                Assert.That(Get(bar, "Edited"), Is.False, "its own values again: not edited");
+
+                // Undoing the load: the defaults again.
+                Core.SongCore.Undo();
+                Run(0.05);
+                Assert.That(Get(bar, "Current"), Is.EqualTo("Init"), "undo: the sound is the defaults again");
+            }
+            finally
+            {
+                Remove(m);
+            }
+        }
+
+        [AvaloniaTest]
         public void TheLivePartsDrawWhatTheAudioDoes()
         {
             // Neo Poly → Neo EQ → Neo Analyzer → Master, a chord held.

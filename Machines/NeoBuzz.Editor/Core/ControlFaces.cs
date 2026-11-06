@@ -94,10 +94,16 @@ namespace NeoBuzz.Editor
         }
     }
 
-    /// <summary>The preset bar: previous, the current name (click for the list), next, and Save.</summary>
+    /// <summary>
+    /// The preset bar: previous, the current preset's name (click for the list) with an "edited" mark once the
+    /// parameters differ from it, next, and Save.
+    /// </summary>
     internal static class PresetBarFace
     {
         public const double ArrowW = 22, NameW = 170, SaveW = 44, H = 24;
+        /// <summary>The mark after the name when the parameters differ from the preset.</summary>
+        public const string EditedMark = "edited";
+        const double MarkSize = 10;
         public const double Width = ArrowW * 2 + NameW + SaveW + 8;
         const double SaveX = ArrowW * 2 + NameW + 8;
 
@@ -112,7 +118,7 @@ namespace NeoBuzz.Editor
             return Zone.None;
         }
 
-        public static void Draw(INeoCanvas c, string label, NeoColor accent)
+        public static void Draw(INeoCanvas c, string label, NeoColor accent, bool edited = false)
         {
             var edge = new NeoStroke(Palette.PanelEdge, 1);
             c.Rect(new NeoRect(0, 0, ArrowW * 2 + NameW, H), Palette.Panel, edge, 4);
@@ -120,7 +126,15 @@ namespace NeoBuzz.Editor
             c.Text("▶", ArrowW * 1.5 + NameW, 4, 11, Palette.DimText, align: NeoAlign.Center);
             c.Line(new NeoPoint(ArrowW, 3), new NeoPoint(ArrowW, H - 3), edge);
             c.Line(new NeoPoint(ArrowW + NameW, 3), new NeoPoint(ArrowW + NameW, H - 3), edge);
-            c.Text(label, ArrowW + 6, 4, 12, Palette.Text, maxWidth: NameW - 12);
+            double nameRoom = NameW - 12;
+            if (edited)
+            {
+                // "edited" at the right of the name's field, in the accent; the name gives way to it.
+                double mark = c.MeasureText(EditedMark, MarkSize);
+                c.Text(EditedMark, ArrowW + NameW - 6, 6, MarkSize, accent, align: NeoAlign.Right);
+                nameRoom -= mark + 6;
+            }
+            c.Text(label, ArrowW + 6, 4, 12, Palette.Text, maxWidth: nameRoom);
             double sx = SaveX;
             c.Rect(new NeoRect(sx, 0, SaveW, H), Palette.Panel, new NeoStroke(accent, 1), 4);
             c.Text("Save", sx + SaveW / 2, 4, 11, accent, align: NeoAlign.Center);

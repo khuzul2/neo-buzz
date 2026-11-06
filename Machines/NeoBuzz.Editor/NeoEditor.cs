@@ -72,6 +72,8 @@ namespace NeoBuzz.Editor
             DockPanel.SetDock(title, Dock.Left);
             header.Children.Add(title);
             var presets = new PresetBar(machine, Accent);
+            // The bar names the preset the sound is, and marks it edited once a parameter moves off it.
+            ctx.Changed += presets.Refresh;
             DockPanel.SetDock(presets, Dock.Right);
             header.Children.Add(presets);
             DockPanel.SetDock(header, Dock.Top);
@@ -92,15 +94,17 @@ namespace NeoBuzz.Editor
     }
 
     /// <summary>
-    /// ReBuzz presets for the machine: the current name (click for the list), previous / next,
-    /// and save. Factory presets ship as "Machine.prs.xml" next to the DLL.
+    /// ReBuzz presets for the machine: the current preset's name (click for the list), with an "edited" mark once the
+    /// parameters differ from it (PresetState), previous / next, and save. Factory presets ship as "Machine.prs.xml"
+    /// next to the DLL.
     /// </summary>
     internal sealed class PresetBar : FrameworkElement
     {
         readonly IMachine machine;
         readonly NeoColor accent;
         readonly WpfCanvas canvas;
-        string current = "Presets";
+        string current;   // the preset the sound is (ReBuzz's name; null: none known)
+        bool edited;
 
         public PresetBar(IMachine machine, NeoColor accent)
         {
@@ -111,6 +115,23 @@ namespace NeoBuzz.Editor
             Height = PresetBarFace.H;
             Cursor = Cursors.Hand;
             ToolTip = "Presets: click the name for the list, arrows to step, Save to store the current sound";
+            Refresh();
+        }
+
+        /// <summary>The preset the bar names: the one loaded last or the one the sound matches ("Init": the defaults; "Presets": none).</summary>
+        public string Current => PresetState.Display(current);
+
+        /// <summary>Whether the parameters differ from that preset (the bar marks it "edited").</summary>
+        public bool Edited => edited;
+
+        /// <summary>Reads again which preset the sound is (a parameter changed).</summary>
+        public void Refresh()
+        {
+            var (name, e) = PresetState.Current(machine);
+            if (name == current && e == edited) return;
+            current = name;
+            edited = e;
+            InvalidateVisual();
         }
 
         List<string> Names()
@@ -130,12 +151,13 @@ namespace NeoBuzz.Editor
             try
             {
                 machine.GetPreset(name).Apply(machine, true);
-                current = name;
+                PresetState.Loaded(machine, name);
             }
             catch (Exception e)
             {
                 MessageBox.Show(e.Message, "Preset");
             }
+            Refresh();
             InvalidateVisual();
         }
 
@@ -187,17 +209,18 @@ namespace NeoBuzz.Editor
 
         void Save()
         {
-            var dlg = new NameDialog(current == "Presets" || current == "<default>" ? "" : current) { Owner = Window.GetWindow(this) };
+            var dlg = new NameDialog(current == null || current == PresetState.Defaults ? "" : current) { Owner = Window.GetWindow(this) };
             if (dlg.ShowDialog() != true || string.IsNullOrWhiteSpace(dlg.Value)) return;
             try
             {
                 machine.SetPreset(dlg.Value.Trim(), new Preset(machine, false, true));
-                current = dlg.Value.Trim();
+                PresetState.Loaded(machine, dlg.Value.Trim());
             }
             catch (Exception e)
             {
                 MessageBox.Show(e.Message, "Save preset");
             }
+            Refresh();
             InvalidateVisual();
         }
 
@@ -214,7 +237,7 @@ namespace NeoBuzz.Editor
         }
 
         protected override void OnRender(DrawingContext dc) =>
-            PresetBarFace.Draw(canvas.On(dc), current == "<default>" ? "Init" : current, accent);
+            PresetBarFace.Draw(canvas.On(dc), PresetState.Display(current), accent, edited);
     }
 
     /// <summary>A small dialog asking for a preset name.</summary>
