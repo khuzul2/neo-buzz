@@ -4,19 +4,21 @@
 # tools/native-compare.py, on the package as built:
 #
 #   phase A  upstream's binary of each such machine (RunTime/Gear: Jeskola's 32-bit DLLs, the FSM and Oomek x64 ones) in
-#            Gear in place of the package's; two songs built with them through ReBuzz.exe --agent (every machine fed by the
-#            null test's Neo FM6 phrase or playing its notes or triggers, its global and track parameters a quarter or three
-#            quarters of the way up their raw ranges, a second track the other way where it has tracks, its first
-#            parameter automated in its pattern), each saved as .bmx and .bmxml; every saved song then opened again and
-#            rendered (each machine probed), its parameters read, and saved once more. So do the songs in the repository
-#            that classic Buzz saved with these machines (ExternalMachines/source, *.bmx), from their start.
+#            Gear in place of the package's; three songs built with them through ReBuzz.exe --agent (every machine fed by
+#            the null test's Neo FM6 phrase or playing its notes or triggers, at its defaults, or its global and track
+#            parameters a quarter or three quarters of the way up their raw ranges and a second track the other way where it
+#            has tracks; its first parameter automated in its pattern), each saved as .bmx and .bmxml; every saved song then
+#            opened again and rendered (each machine probed; the first song is rendered once before, as a native host can
+#            start silent in a process's first render), its parameters read, and saved once more. So do the songs in the
+#            repository that classic Buzz saved with these machines (ExternalMachines/source, *.bmx), from their start.
 #   phase B  the package's own Gear (the rebuilt DLLs); the same files opened, read, rendered and saved again.
 #
 # For each machine and song: the file ReBuzz loaded (gear_info: upstream's in A, the package's in B, and a *.x64.dll is an
 # AMD64 DLL, which ReBuzz runs in its 64-bit host, bin64/ReBuzzEngine64.exe), every parameter of every track the same raw
 # value in A and B, and the probe's samples the same bits, or within -100 dBFS (native-compare's line). A song saved again
 # in B is the same file as in A (BMXML: but its root's name and build stamps). The run fails on any of these for a machine
-# shipped rebuilt; a machine with a source fix ("fix": upstream's binary starts state as its heap happens to be) is reported
+# shipped rebuilt, and on one that sounds in none of the songs built here (a silent probe proves nothing; FSM Infector is
+# silent at both fractions); a machine with a source fix ("fix": upstream's binary starts state as its heap happens to be) is reported
 # for its sound, not judged; so is a machine's sound in a classic song where a machine of that kind feeds it.
 #
 # --candidate DIR: the x64 rebuilds (build-natives.ps1's x64 Gear) of the natives the package keeps upstream's 32-bit
@@ -50,7 +52,7 @@ nc = _load("native_compare", "native-compare.py")
 rt = _load("song_roundtrip", "song-roundtrip.py")
 nt = nc.nt
 
-SETTINGS = (("quarter", 0.25), ("three-quarters", 0.75))
+SETTINGS = (("defaults", None), ("quarter", 0.25), ("three-quarters", 0.75))
 FORMATS = (".bmx", ".bmxml")
 CLASSIC_BEATS = 16
 JUDGED = ("rebuilt",)          # roles whose sound is judged; "fixed" and "candidate" are reported
@@ -156,7 +158,9 @@ def forget_cache():
 # ---- the songs ----------------------------------------------------------------------------------------------------------
 
 def build_song(c, entries, gear_root, frac):
-    """A song with each machine (named N1, N2…) at frac of its raw ranges (a second track at 1 - frac)."""
+    """A song with each machine (named N1, N2…) at frac of its raw ranges (a second track at 1 - frac), or at its
+    defaults (frac None), where every one of them sounds: FSM Infector is silent at both fractions (native-compare's cases
+    too), so each machine must sound in one of the songs, not in each."""
     c.call("song_new", discard_unsaved=True, tempo_bpm=nc.TEMPO)
     c.call("song_set", song_end_beats=nc.BEATS)
     gear, preset, params, notes = nt.SOURCE
@@ -172,8 +176,9 @@ def build_song(c, entries, gear_root, frac):
         d, glob, track = nc.describe(c, m)
         if track and ((d.get("gear_info") or {}).get("max_tracks") or 1) > 1:
             c.call("machine_set", machine=m, tracks=2)
-        changes = nc.raw_changes(glob, track, frac)
-        changes += [dict(x, track=1) for x in nc.raw_changes([], track, 1 - frac)] if track and ((d.get("gear_info") or {}).get("max_tracks") or 1) > 1 else []
+        changes = nc.raw_changes(glob, track, frac) if frac is not None else []
+        if frac is not None and track and ((d.get("gear_info") or {}).get("max_tracks") or 1) > 1:
+            changes += [dict(x, track=1) for x in nc.raw_changes([], track, 1 - frac)]
         if changes:
             c.call("param_set", machine=m, changes=changes, allow_unsafe=True)
         if e["kind"] == "effect":
@@ -182,7 +187,7 @@ def build_song(c, entries, gear_root, frac):
             p = glob[0] if glob else track[0]
             lo, hi = p["min"], p["max"]
             args = {"machine": m, "pattern": "P", "param": f"#{p['index']}" if glob else p["name"], "shape": "step", "allow_unsafe": True,
-                    "points": [{"at": 2, "value": f"raw:{lo + int((hi - lo) * (1 - frac))}"}]}
+                    "points": [{"at": 2, "value": f"raw:{lo + int((hi - lo) * (1 - (frac if frac is not None else 0.25)))}"}]}
             if not glob:
                 args["track"] = 0
             c.call("automation_write", **args)
@@ -278,10 +283,10 @@ def fed_by(graph, name, roles):
 
 # ---- the verdicts -------------------------------------------------------------------------------------------------------
 
-def judge(entry, a, b, sound, classic_feeders=(), must_sound=True):
+def judge(entry, a, b, sound, classic_feeders=()):
     """One machine in one song: (failures, notes). a, b: read_song's entry of it in phase A and B; sound: the probes'
-    [the same bits, max difference dBFS, first differing s] or None. Failures fail the run only for a judged role.
-    must_sound: the song plays the machine (the songs built here), so a silent probe is a failure, not a match."""
+    [the same bits, max difference dBFS, first differing s] or None. Failures fail the run only for a judged role. A
+    silent probe is a note ("silent in phase …"): the run fails a machine that sounds in none of the songs built here."""
     fails, notes = [], []
     up_file = entry["folder"] + "/" + entry["upstream"][1]
     our_file = entry["folder"] + "/" + entry["ours"][1]
@@ -303,11 +308,7 @@ def judge(entry, a, b, sound, classic_feeders=(), must_sound=True):
     for ph, e in (("A", a), ("B", b)):
         peak = e.get("peak_dbfs")
         if peak is not None and peak < SILENT_DBFS:
-            text = f"silent in phase {ph} (peak {pk(peak)} dBFS): nothing to compare"
-            if must_sound and not (entry["role"] == "fixed" and ph == "A"):
-                fails.append(text)
-            else:
-                notes.append(text)
+            notes.append(f"silent in phase {ph} (peak {pk(peak)} dBFS): nothing to compare")
     if a.get("params") != b.get("params"):
         diff = [k for k in sorted(set(a["params"]) | set(b["params"])) if a["params"].get(k) != b["params"].get(k)]
         fails.append("parameters differ: " + ", ".join(f"{k} {a['params'].get(k)} -> {b['params'].get(k)}" for k in diff[:8]))
@@ -468,6 +469,7 @@ def main(argv):
 
     # ---- report
     rows, failed, notes_out, results = [], [], [], {}
+    sounded = set()      # the machines that sounded in phase B (and A, but for a fixed one) of a song built here
     for e in entries:
         want = "x64" if e["ours"][1].lower().endswith(".x64.dll") else "x86"
         got = pe_machine(e["ours"][0])
@@ -491,7 +493,9 @@ def main(argv):
                 same, worst, _, first = nc.diff(a["wav"], b["wav"])
                 sound = [same, worst, first]
             feeders = fed_by(a_song.get("graph") or {}, name, {n for n, r in song_roles.items() if r not in JUDGED}) if classic else []
-            fails, notes = judge(entry, a, b, sound, feeders, must_sound=not classic)
+            fails, notes = judge(entry, a, b, sound, feeders)
+            if not classic and not fails and not any(n.startswith("silent in phase B") or (n.startswith("silent in phase A") and entry["role"] != "fixed") for n in notes):
+                sounded.add(gear)
             peak = f" (peak {pk((a or {}).get('peak_dbfs'))} dBFS)"
             verdict = "; ".join(fails) if fails else ("the same parameters, the same bits" + peak if sound and sound[0] and not notes
                                                       else "the same parameters; " + "; ".join(notes) + peak)
@@ -519,6 +523,9 @@ def main(argv):
             else:
                 failed.append(f"{label}: saved again with the package's machines, it isn't the file upstream's save")
                 rows.append((label, "the song saved again", "-", "DIFFERS from the save with upstream's binaries"))
+    for e in entries:
+        if e["role"] != "candidate" and e["gear"] not in sounded:
+            failed.append(f"{e['gear']}: silent (or failed) in every song built here: its sound was never compared")
     if profile:
         pf, pn = check_profile(entries, profile)
         failed += pf

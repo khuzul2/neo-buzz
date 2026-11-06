@@ -197,13 +197,12 @@ class NativeSongsTests(unittest.TestCase):
         self.assertIn("fed by N2", notes[0])
 
     def test_silence_proves_nothing(self):
-        # run 42181254466: a process's first render left the natives silent in both phases, the same bits
+        # run 42181254466: a process's first render left the natives silent in both phases, the same bits; and FSM Infector
+        # is silent at both fractions of its ranges (run 42184661818): noted per song, failed when silent in every song
         silent = dict(self.read("Effects/Jeskola Distortion.x64.dll"), peak_dbfs=float("-inf"))
-        self.assertEqual(self.judge(b=silent)[0], ["silent in phase B (peak -inf dBFS): nothing to compare"])
-        e = dict(self.E)
-        fails, notes = ns.judge(e, self.read("Effects/Jeskola Distortion.dll"), silent, [True, float("-inf"), None], (), must_sound=False)
+        fails, notes = self.judge(b=silent)
         self.assertEqual(fails, [])
-        self.assertIn("silent in phase B", notes[0])
+        self.assertEqual(notes, ["silent in phase B (peak -inf dBFS): nothing to compare"])
 
     def test_a_parameter_that_moved_fails(self):
         fails, _ = self.judge(b=self.read("Effects/Jeskola Distortion.x64.dll", {"Threshold@-": 100, "Amount@-": 95}))

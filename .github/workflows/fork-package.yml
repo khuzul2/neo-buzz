@@ -221,7 +221,7 @@ jobs:
           --zeroed Z64=build/ExternalMachines/natives-zeroed/x64/Gear
         exit $LASTEXITCODE
 
-    # §12.14: songs saved with upstream's binaries of the natives the package ships rebuilt (two songs built with them here,
+    # §12.14: songs saved with upstream's binaries of the natives the package ships rebuilt (three songs built with them here,
     # and the classic Buzz songs in ExternalMachines/source that use them) open with the rebuilt ones, Jeskola's x64 builds
     # in place of the 32-bit originals among them: the same parameters on every track, the same bits (or within -100 dBFS)
     # from every machine, the same file saved again (tools/native-songs.py). The x64 rebuilds of the natives the package keeps
