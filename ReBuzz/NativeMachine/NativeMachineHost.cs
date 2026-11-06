@@ -117,6 +117,7 @@ namespace ReBuzz.NativeMachine
                                 var machineCore = machine as MachineCore;
                                 machineCore.MachineDLL.IsCrashed = true;
                                 machineCore.Ready = false;
+                                buzz.ReportMachineCrashed(machineCore, $"its host process exited (0x{childProcess.ExitCode:X8})");
                             }
                         }
                     }
@@ -129,6 +130,7 @@ namespace ReBuzz.NativeMachine
                         {
                             machine.MachineDLL.IsCrashed = true;
                             machine.Ready = false;
+                            buzz.ReportMachineCrashed(machine, $"its host process exited (0x{childProcess.ExitCode:X8})");
                         }
                     }
 

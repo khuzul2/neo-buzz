@@ -1451,6 +1451,8 @@ namespace BuzzGUI.MachineView
             {
                 bool songwasempty = machineGraph.Machines.Count == 1;
 
+                // Fork: not on top of another machine (the Master, gallery mac-510).
+                (x, y) = BuzzGUI.Common.MachinePlacement.Free(machineGraph.Machines, x, y);
                 machineGraph.CreateMachine(instrument.MachineDLL.Name, instrument.Name, null, null, null, null, -1, x, y);
 
                 var machine = machineGraph.Machines.Last();

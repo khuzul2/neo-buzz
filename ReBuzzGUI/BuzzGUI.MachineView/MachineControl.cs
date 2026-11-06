@@ -429,17 +429,7 @@ namespace BuzzGUI.MachineView
 
             if (machine.DLL.Info.Type == MachineType.Master)
             {
-                ContextMenu.ItemsSource = new List<MenuItemVM>()
-                {
-                    new MenuItemVM() { Text = "Parameters...", Command = ShowDialogCommand, CommandParameter = MachineDialog.Parameters },
-                    new MenuItemVM() { Text = "Patterns", Command = ShowDialogCommand, CommandParameter = MachineDialog.Patterns, GestureText = "Return" },
-                    new MenuItemVM() { IsSeparator = true },
-                    new MenuItemVM() { Text = "Signal Analysis...", Command = ShowDialogCommand, CommandParameter = MachineDialog.SignalAnalysis },
-                    new MenuItemVM() { IsSeparator = true },
-                    new MenuItemVM() { Text = "Cut", Command = view.CutCommand, GestureText = "Ctrl+X" },
-                    new MenuItemVM() { Text = "Copy", Command = view.CopyCommand, GestureText = "Ctrl+C" },
-                    new MenuItemVM() { Text = "Paste", Command = view.PasteCommand, GestureText = "Ctrl+V" },
-                };
+                ContextMenu.ItemsSource = MasterMenu(ShowDialogCommand, view.CopyCommand, view.PasteCommand);
             }
             else
             {
@@ -515,6 +505,22 @@ namespace BuzzGUI.MachineView
             }
 
         }
+
+        /// <summary>
+        /// Fork: the Master's menu. No Cut (gallery win-203): the Master can't be deleted, so Cut
+        /// only copied it, under a name that says it goes away. Copy (with machines around it) and
+        /// Paste stay.
+        /// </summary>
+        public static List<MenuItemVM> MasterMenu(ICommand showDialog, ICommand copy, ICommand paste) => new List<MenuItemVM>()
+        {
+            new MenuItemVM() { Text = "Parameters...", Command = showDialog, CommandParameter = MachineDialog.Parameters },
+            new MenuItemVM() { Text = "Patterns", Command = showDialog, CommandParameter = MachineDialog.Patterns, GestureText = "Return" },
+            new MenuItemVM() { IsSeparator = true },
+            new MenuItemVM() { Text = "Signal Analysis...", Command = showDialog, CommandParameter = MachineDialog.SignalAnalysis },
+            new MenuItemVM() { IsSeparator = true },
+            new MenuItemVM() { Text = "Copy", Command = copy, GestureText = "Ctrl+C" },
+            new MenuItemVM() { Text = "Paste", Command = paste, GestureText = "Ctrl+V" },
+        };
 
         List<MenuItemVM> MIDIInputChannelMenu
         {

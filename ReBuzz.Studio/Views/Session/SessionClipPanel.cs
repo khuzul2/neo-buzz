@@ -90,7 +90,8 @@ namespace ReBuzz.Studio.Views.Session
 
                 title = new TextBlock { FontWeight = FontWeight.SemiBold, FontSize = 13, TextTrimming = TextTrimming.CharacterEllipsis, Text = "Clip" };
                 info = new TextBlock { Foreground = SessionPalette.DimText, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
-                status = new TextBlock { Foreground = SessionPalette.DimText, Margin = new Thickness(0, 2, 0, 6), FontFamily = Mono };
+                // Wraps: "▶ playing 21/1024 follow in 12 ● recording" is wider than the panel (gallery mac-046).
+                status = new TextBlock { Foreground = SessionPalette.DimText, Margin = new Thickness(0, 2, 0, 6), FontFamily = Mono, TextWrapping = TextWrapping.Wrap };
                 hint = new TextBlock { Foreground = SessionPalette.DimText, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) };
 
                 mode = Combo(Modes, () => Commit(c => c.Mode = Modes[mode.SelectedIndex].Value),
@@ -214,6 +215,7 @@ namespace ReBuzz.Studio.Views.Session
             internal MixerBar VelocityBar => velocity;
             internal string RegionText => region.Text;
             internal string StatusText => status.Text;
+            internal TextBlock StatusBlock => status;
             internal string TitleText => title.Text;
             internal string InfoText => info.Text;
             internal void CommitTypedMarkers() => CommitMarkers();
@@ -283,12 +285,14 @@ namespace ReBuzz.Studio.Views.Session
                     velocity.ValueText = $"{c.Velocity}%";
                     start.Text = c.Start.ToString();
                     loopStart.Text = c.LoopStart.ToString();
-                    loopEnd.Text = c.LoopEnd == 0 ? "" : c.LoopEnd.ToString();
+                    // The end it plays to, the clip's own end when the setting is 0 (as the text below says);
+                    // committed unchanged, the clip's end stays 0 and follows the pattern's length.
+                    var (s, ls, end) = new ClipShape(c.Start, c.LoopStart, c.LoopEnd, c.Loop).Resolve(shownLength);
+                    loopEnd.Text = end.ToString();
                     loopStartLabel.Opacity = c.Loop ? 1 : 0.4;
                     loopStart.IsEnabled = c.Loop;
                     loopEndLabel.Text = c.Loop ? "Loop end" : "End";
 
-                    var (s, ls, end) = new ClipShape(c.Start, c.LoopStart, c.LoopEnd, c.Loop).Resolve(shownLength);
                     region.Text = c.Loop
                         ? $"Plays from {s}, loops {ls}–{end} of {shownLength} ticks."
                         : $"Plays {s}–{end} of {shownLength} ticks once.";
@@ -362,7 +366,7 @@ namespace ReBuzz.Studio.Views.Session
                     return;
                 }
                 var session = view.session;
-                var state = session.GetState(shownSequence, shownPattern);
+                var state = shownSlot is { } at ? view.layout.SlotState(shownSequence, shownPattern, at.Track, at.Scene) : session.GetState(shownSequence, shownPattern);
                 string text = state switch
                 {
                     ClipState.Playing => "▶ playing",

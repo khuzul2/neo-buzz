@@ -124,15 +124,38 @@ namespace BuzzGUI.FileBrowser
 
 
 
+        /// <summary>
+        /// Fork: the "Date modified" column as wide as the longest date and time this locale writes
+        /// (28 December, 22:59:59): at 120 px "11/6/2026 9:17:27 AM" lost its last letter (gallery win-050).
+        /// </summary>
+        void FitDateColumn()
+        {
+            if (listView.View is not GridView view || view.Columns.Count < 3) return;
+            var column = view.Columns[2];
+            column.Width = Math.Max(120, DateColumnWidth(listView));
+        }
+
+        /// <summary>The width a list's date column needs for the longest date and time of the current culture, with the cell's margins.</summary>
+        public static double DateColumnWidth(Control list)
+        {
+            string longest = new DateTime(2026, 12, 28, 22, 59, 59).ToString();
+            var text = new FormattedText(longest, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
+                new Typeface(list.FontFamily, list.FontStyle, list.FontWeight, list.FontStretch), list.FontSize, Brushes.Black,
+                VisualTreeHelper.GetDpi(list).PixelsPerDip);
+            return Math.Ceiling(text.WidthIncludingTrailingWhitespace) + 24;
+        }
+
         public FileBrowser()
         {
             InitializeComponent();
             grid.DataContext = this;
+            FitDateColumn();
 
             Global.GeneralSettings.PropertyChanged += new PropertyChangedEventHandler(GeneralSettings_PropertyChanged);
 
             this.Loaded += (sender, e) =>
             {
+                FitDateColumn();        // in the theme's font now
                 SetSortColumn((listView.View as GridView).Columns[0].Header as GridViewColumnHeader);
                 NavigateTo("");
             };

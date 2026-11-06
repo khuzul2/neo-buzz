@@ -227,6 +227,7 @@ namespace ReBuzz.Common
             {
                 IsControllerSelected = lvControllers.SelectedIndex != -1;
                 PropertyChanged.Raise(this, "IsControllerSelected");
+                UpdateControllerButtons();
             };
 
             foreach (var controller in buzz.MidiControllerAssignments.PredefinedMIDIControllers)
@@ -309,6 +310,7 @@ namespace ReBuzz.Common
             {
                 IsControllerSelected = lvDAWControllers.SelectedIndex != -1;
                 PropertyChanged.Raise(this, "IsControllerSelected");
+                UpdateControllerButtons();
             };
 
             lvDAWControllers.MouseDoubleClick += (sender, e) =>
@@ -329,6 +331,16 @@ namespace ReBuzz.Common
 
                 lvDAWControllers.Items.Add(cVM);
             }
+        }
+
+        /// <summary>
+        /// Fork: each list's Modify and Remove work on its selection, so they're off without one
+        /// (Remove was on with an empty list, gallery win-401/403; the lists shared one flag).
+        /// </summary>
+        void UpdateControllerButtons()
+        {
+            btModifyController.IsEnabled = btRemoveController.IsEnabled = lvControllers.SelectedIndex != -1;
+            btModifyDAWController.IsEnabled = btRemoveDAWController.IsEnabled = lvDAWControllers.SelectedIndex != -1;
         }
 
         void ModifyController(ListView lv, List<string> bindList = null, bool hideValue = false, bool hideNote = false)

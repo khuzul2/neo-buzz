@@ -456,140 +456,30 @@ namespace ReBuzz.Studio.Views.Notes
             store.EndTyping();
         }
 
-        internal void Bold() => Emphasis(2);
-
-        internal void Italic() => Emphasis(1);
-
-        internal void Strike() => Wrap("~~", "~~");
-
-        internal void Underline() => Wrap("<u>", "</u>");
-
-        /// <summary>The word at the caret when nothing is selected.</summary>
-        static (int From, int To) Word(string t, int a, int b)
-        {
-            if (a != b) return (a, b);
-            int from = a, to = a;
-            while (from > 0 && char.IsLetterOrDigit(t[from - 1])) from--;
-            while (to < t.Length && char.IsLetterOrDigit(t[to])) to++;
-            return (from, to);
-        }
-
-        /// <summary>Stars around the selection: <paramref name="stars"/> 2 for bold, 1 for italic; again takes them off.</summary>
-        void Emphasis(int stars)
+        /// <summary>A formatting command (NotesFormatting, shared with the Windows app) on the selection: one step.</summary>
+        void Format(Func<string, int, int, NotesFormatting.Result> format)
         {
             var (t, a, b) = Selection();
-            (a, b) = Word(t, a, b);
-            int before = 0, after = 0;
-            while (a - before > 0 && t[a - before - 1] == '*') before++;
-            while (b + after < t.Length && t[b + after] == '*') after++;
-            int inside = 0;
-            while (inside < (b - a) / 2 && t[a + inside] == '*' && t[b - 1 - inside] == '*') inside++;
-            bool has(int n) => stars == 1 ? n % 2 == 1 : n >= 2;
-            if (has(before) && has(after))
-            {
-                Apply(t.Remove(b, stars).Remove(a - stars, stars), a - stars, b - stars);
-                return;
-            }
-            if (has(inside) && b - a > 2 * stars)
-            {
-                Apply(t.Remove(b - stars, stars).Remove(a, stars), a, b - 2 * stars);
-                return;
-            }
-            string mark = new string('*', stars);
-            Apply(t.Insert(b, mark).Insert(a, mark), a + stars, b + stars);
+            var r = format(t, a, b);
+            Apply(r.Text, r.From, r.To);
         }
 
-        void Wrap(string open, string close)
-        {
-            var (t, a, b) = Selection();
-            (a, b) = Word(t, a, b);
-            if (a >= open.Length && b + close.Length <= t.Length && t.Substring(a - open.Length, open.Length) == open && t.Substring(b, close.Length) == close)
-            {
-                Apply(t.Remove(b, close.Length).Remove(a - open.Length, open.Length), a - open.Length, b - open.Length);
-                return;
-            }
-            if (b - a >= open.Length + close.Length && t.Substring(a, open.Length) == open && t.Substring(b - close.Length, close.Length) == close)
-            {
-                Apply(t.Remove(b - close.Length, close.Length).Remove(a, open.Length), a, b - open.Length - close.Length);
-                return;
-            }
-            Apply(t.Insert(b, close).Insert(a, open), a + open.Length, b + open.Length);
-        }
+        internal void Bold() => Format(NotesFormatting.Bold);
+
+        internal void Italic() => Format(NotesFormatting.Italic);
+
+        internal void Strike() => Format(NotesFormatting.Strike);
+
+        internal void Underline() => Format(NotesFormatting.Underline);
 
         /// <summary>[selection](https://) with the address selected, to type over.</summary>
-        internal void Link()
-        {
-            var (t, a, b) = Selection();
-            (a, b) = Word(t, a, b);
-            string label = t.Substring(a, b - a);
-            string url = "https://";
-            if (Regex.IsMatch(label, @"^(https?://|www\.)\S+$", RegexOptions.IgnoreCase))
-            {
-                url = label;
-                label = "link";
-            }
-            if (label.Length == 0) label = "link";
-            string link = "[" + label + "](" + url + ")";
-            int urlAt = a + label.Length + 3;
-            Apply(t.Substring(0, a) + link + t.Substring(b), urlAt, urlAt + url.Length);
-        }
+        internal void Link() => Format(NotesFormatting.Link);
 
-        static readonly Regex Marker = new(@"^(\s*)(#{1,6}\s+|[-*+]\s+|\d{1,9}[.)]\s+)?", RegexOptions.Compiled);
+        internal void Heading() => Format(NotesFormatting.Heading);
 
-        /// <summary>Changes the start of each line the selection touches.</summary>
-        void Lines(Func<IReadOnlyList<string>, IReadOnlyList<string>> change)
-        {
-            var (t, a, b) = Selection();
-            int from = t.LastIndexOf('\n', Math.Max(0, a - 1)) + 1;
-            if (a == 0) from = 0;
-            int end = b > a && b > 0 && t[b - 1] == '\n' ? b - 1 : b;
-            int to = t.IndexOf('\n', end);
-            if (to < 0) to = t.Length;
-            var lines = t.Substring(from, to - from).Split('\n');
-            var changed = change(lines);
-            string joined = string.Join("\n", changed);
-            Apply(t.Substring(0, from) + joined + t.Substring(to), from, from + joined.Length);
-        }
+        internal void Bullets() => Format(NotesFormatting.Bullets);
 
-        internal void Heading()
-        {
-            Lines(lines =>
-            {
-                var m = Regex.Match(lines[0], @"^\s*(#{1,6})\s");
-                int level = m.Success ? m.Groups[1].Length : 0;
-                int next = level >= 3 ? 0 : level + 1;
-                return lines.Select(l =>
-                {
-                    string rest = Marker.Replace(l, "", 1).TrimStart();
-                    return next == 0 ? rest : new string('#', next) + " " + rest;
-                }).ToList();
-            });
-        }
-
-        internal void Bullets() => Lines(lines =>
-        {
-            bool all = lines.Where(l => l.Trim().Length > 0).All(l => Regex.IsMatch(l, @"^\s*[-*+]\s"));
-            return lines.Select(l =>
-            {
-                if (l.Trim().Length == 0) return l;
-                var m = Marker.Match(l);
-                string rest = l.Substring(m.Length);
-                return all ? m.Groups[1].Value + rest : m.Groups[1].Value + "- " + rest;
-            }).ToList();
-        });
-
-        internal void Numbers() => Lines(lines =>
-        {
-            bool all = lines.Where(l => l.Trim().Length > 0).All(l => Regex.IsMatch(l, @"^\s*\d{1,9}[.)]\s"));
-            int n = 0;
-            return lines.Select(l =>
-            {
-                if (l.Trim().Length == 0) return l;
-                var m = Marker.Match(l);
-                string rest = l.Substring(m.Length);
-                return all ? m.Groups[1].Value + rest : m.Groups[1].Value + (++n) + ". " + rest;
-            }).ToList();
-        });
+        internal void Numbers() => Format(NotesFormatting.Numbers);
 
         // ------------------------------------------------------------------ edit commands
 
