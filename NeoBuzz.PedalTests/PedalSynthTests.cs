@@ -395,9 +395,10 @@ namespace NeoBuzz.PedalTests
         }
 
         /// <summary>
-        /// Silence after notes costs about what silence before the first did (within 2×: M1 keeps its ended voices' LFOs
-        /// in time, about half a millisecond a second for four): a decaying state among the denormal floats (Juno106's HPF
-        /// and chorus), or voices that stayed active after their notes (FM, M1, rendering silence), cost as much as playing.
+        /// Silence after notes costs about what silence before the first did (within 1.3×: M1 keeps its ended voices' LFOs
+        /// in time, now in runs of equal steps; sample by sample it cost 1.5× before the follow-ups): a decaying state among
+        /// the denormal floats (Juno106's HPF and chorus), or voices that stayed active after their notes (FM, M1, rendering
+        /// silence), cost as much as playing.
         /// </summary>
         [TestCaseSource(nameof(Slowdowns))]
         public void SilenceCostsNoMoreAfterNotesThanBefore(string name, string setting, bool midi)
@@ -413,7 +414,7 @@ namespace NeoBuzz.PedalTests
             var t = WorkMsPerSecond(fresh, played, playing);
             double before = t[0], after = t[1], during = t[2];
             PedalReport.Report($"{name} ({setting}{(midi ? ", tracks and MIDI" : "")}): work {before:F2} ms/s before its first note, {during:F2} playing, {after:F2} after silence ({after / Math.Max(before, 1e-9):F2}× before)");
-            Assert.That(after, Is.LessThanOrEqualTo(2 * before + 0.1), "silence after notes costs about what silence before them did");
+            Assert.That(after, Is.LessThanOrEqualTo(1.3 * before + 0.05), "silence after notes costs about what silence before them did");
         }
 
         // ── The audio thread ────────────────────────────────────────────────────────────────────────────────────
@@ -788,6 +789,41 @@ namespace NeoBuzz.PedalTests
             Assert.That(differ, Is.EqualTo(0), "a released voice retriggers, as with Glide off");
             Assert.That(afterIt, Is.EqualTo(first).Within(1), "the note after the release plays");
             Assert.That(moved, Is.GreaterThan(0.01), "legato still glides");
+        }
+
+        /// <summary>
+        /// Pedal M1's ended voices skip their LFOs' time in runs of equal float steps (Lfo.Skip): the same phase and the
+        /// same random values as ticking them sample by sample, at every LFO speed at 44.1, 48 and 96 kHz, with and without
+        /// a delay and a fade still counting, over blocks of 1 to 256 samples; checked by the next note's S&H values and
+        /// the phase the triangle reads.
+        /// </summary>
+        [Test]
+        public void AnEndedM1VoicesLfosKeepTheirTimeAndRandomValues()
+        {
+            var rnd = new Random(1);
+            int checkedBlocks = 0;
+            foreach (int sr in new[] { 44100, 48000, 96000 })
+                for (int speed = 0; speed <= 127; speed++)
+                    foreach (bool counting in new[] { false, true })
+                    {
+                        float hz = 0.05f * MathF.Pow(30f / 0.05f, speed / 127f);   // M1's LFO speed
+                        float delay = counting ? 3f : 0f, fade = counting ? 5f : 0f;
+                        WDE.PedalM1.Lfo Make(WDE.PedalM1.LfoWave w) { var l = new WDE.PedalM1.Lfo(); l.UpdateCoefs(hz, delay, fade, w, sr); l.NoteOn(); return l; }
+                        var ta = Make(WDE.PedalM1.LfoWave.Triangle); var tb = Make(WDE.PedalM1.LfoWave.SampleHold);   // ticked
+                        var sa = Make(WDE.PedalM1.LfoWave.Triangle); var sb = Make(WDE.PedalM1.LfoWave.SampleHold);   // skipped
+                        for (int block = 0; block < 300; block++)
+                        {
+                            int n = 1 + rnd.Next(256);
+                            for (int i = 0; i < n; i++) { ta.Tick(); tb.Tick(); }
+                            WDE.PedalM1.Lfo.Skip(sa, sb, n);
+                            checkedBlocks++;
+                        }
+                        // The phase, as the triangle reads it, and the S&H's values over the next note.
+                        for (int i = 0; i < 64; i++) Assert.That(sa.Tick(), Is.EqualTo(ta.Tick()), $"phase at {sr} Hz, speed {speed}");
+                        tb.NoteOn(); sb.NoteOn();
+                        for (int i = 0; i < 2 * sr; i++) Assert.That(sb.Tick(), Is.EqualTo(tb.Tick()), $"random values at {sr} Hz, speed {speed}");
+                    }
+            PedalReport.Report($"Pedal M1: an ended voice's LFOs skipped in runs over {checkedBlocks} blocks: the same phases and random values as ticked");
         }
     }
 }

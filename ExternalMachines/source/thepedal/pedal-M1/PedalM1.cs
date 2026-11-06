@@ -63,7 +63,7 @@ namespace WDE.PedalM1
         readonly MidiVoices _midiVoices    = new MidiVoices(MAX_VOICES_CONST);
         readonly bool[]     _voiceFree     = new bool[MAX_VOICES_CONST];
         readonly bool[]     _voiceReleased = new bool[MAX_VOICES_CONST];
-        readonly bool[]     _voiceSkip     = new bool[MAX_VOICES_CONST];   // finished for this whole block (Voice.Finished)
+        readonly bool[]     _voiceSkip     = new bool[MAX_VOICES_CONST];   // idle or finished for this whole block (Voice.Finished)
 
         // ── Fork (neo-buzz, §12.15): Volume, the oscillators' levels, Cutoff (as its 0…1 position) and Resonance
         // glide to a new setting over 20 ms (ParamGlide, below); a setting that doesn't move is the same number as
@@ -725,12 +725,16 @@ namespace WDE.PedalM1
             bool any = false;
 
             // Fork (neo-buzz, §12.15): a voice whose note has ended plays exact silence until its next note (which
-            // only comes at a block's start): left out of the loop, only its LFOs keep time.
+            // only comes at a block's start): left out of the loop, only its LFOs keep time (Lfo.Skip, in a few runs
+            // of equal steps). A voice idle at the block's start stays idle through it (only a note starts one), so
+            // it is left out by the same flag, one load a sample, not IsActive's four tests (follow-ups: that
+            // and Skip's per-sample adds made silence after notes cost 1.5× silence before them).
             for (int vi = 0; vi < MAX_VOICES_CONST; vi++)
             {
                 var v = _voices[vi];
-                _voiceSkip[vi] = v.IsActive && v.Finished;
-                if (_voiceSkip[vi]) Lfo.Skip(v.Lfo1, v.Lfo2, n);
+                bool active = v.IsActive, finished = active && v.Finished;
+                _voiceSkip[vi] = !active || finished;
+                if (finished) Lfo.Skip(v.Lfo1, v.Lfo2, n);
             }
 
             for (int i = 0; i < n; i++)
@@ -751,7 +755,7 @@ namespace WDE.PedalM1
                 for (int vi = 0; vi < MAX_VOICES_CONST; vi++)
                 {
                     var v = _voices[vi];
-                    if (!v.IsActive || _voiceSkip[vi]) continue;
+                    if (_voiceSkip[vi] || !v.IsActive) continue;
                     any = true;
 
                     // ── Per-voice modulation sources ────────────────────
