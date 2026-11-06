@@ -1,0 +1,30 @@
+# Neo Clipper parameters (docs/specs/mastering-tools.md §5.1). The order is permanent: songs and presets
+# store values by position. Regenerate: python3 tools/gen-machine-params.py Machines/NeoClipper
+namespace NeoBuzz.Clipper
+class NeoClipperMachine
+summary Clipper for drums, buses and masters: drive into a ceiling in dBFS, with a hard, soft (cubic), tanh or knee curve, 1× to 8× oversampling with antiderivative anti-aliasing, up to three bands (zero-latency Linkwitz–Riley crossovers, each band driven on its own), left/right or mid/side, mix, output, Delta (hear what it takes away) and a gain-match reading. No sample leaves above the ceiling at Mix 100 %; its latency is the same at every setting. Use it before a true-peak limiter to shave transients the limiter would pump on, or on drums for weight.
+
+group Clip
+Drive      "Drive"        0 360   120   db -12 24                          | Gain into the clipper in 0.1 dB steps
+Ceiling    "Ceiling"      0 240   237   db -24 0                           | Where it clips, dBFS (0.1 dB steps): no sample leaves above it at Mix 100 %
+Shape      "Shape"        0 3     3     enum Hard Soft Tanh Knee           | Hard: flat at the ceiling. Soft: a cubic that bends from 0 and reaches the ceiling at 1.5× it. Tanh: the tanh curve, the ceiling its asymptote. Knee: straight up to Knee under the ceiling, then a quadratic bend into it
+Knee       "Knee"         0 120   30    lin 0 12 dB 1                      | Knee shape: where the bend starts, this far under the ceiling (0: hard)
+Oversample "Oversampling" 0 3     2     enum 1× 2× 4× 8×                   | Oversampling, with first-order antiderivative anti-aliasing from 2× (1×: the curve as it is, aliasing). The latency is the same at every setting
+group Bands
+Bands      "Bands"        0 2     0     enum 1_band 2_bands 3_bands        | One band, or two or three split by Linkwitz–Riley crossovers (zero latency), each clipped on its own and summed, then clipped again
+Xo1        "Crossover 1"  0 10000 2594  freq 20 20000                      | Between the low and the next band (−6 dB here)
+Xo2        "Crossover 2"  0 10000 6667  freq 20 20000                      | Between the mid and the high band with three bands (never below Crossover 1)
+LowDrive   "Low drive"    0 240   120   db -12 12                          | The low band's drive against Drive (bands only)
+MidDrive   "Mid drive"    0 240   120   db -12 12                          | The middle band's drive against Drive (three bands)
+HighDrive  "High drive"   0 240   120   db -12 12                          | The high band's drive against Drive (bands only)
+group Output
+Stereo     "Stereo"       0 1     0     enum L/R M/S                       | What is clipped: left and right, or mid and side (then left and right again at the ceiling)
+Mix        "Mix"          0 1000  1000  pct                                | Dry/wet (the dry signal is delayed to match). Below 100 % the dry signal can pass the ceiling
+Output     "Output"       0 480   240   db -24 24                          | Gain after the clipper, 0.1 dB steps (the editor's Match sets it from the gain-match reading)
+Delta      "Delta"        0 1     0     switch                             | Hear only what the clipper changes: the output minus the input, delayed to match (gliding over 10 ms)
+
+# What the clipper measures (NeoClipperMachine.Readings, machine_readings), over the last 3 s.
+reading gain_match_db     dB    | Short-term loudness out − in (K-weighted, 3 s): what Output would have to take back for equal loudness
+reading clip_db           dB    | How far the driven signal went over the ceiling, at most
+reading clipped_percent   %     | Samples the curve bent (over the knee, or the ceiling in Hard)
+reading latency_samples   samples | The clipper's latency, reported to NeoBuzz Live

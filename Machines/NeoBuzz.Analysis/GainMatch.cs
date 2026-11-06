@@ -9,7 +9,8 @@
 //    silent input or a muted output never suggests a jump.
 //  - The output lags the input by the machine's latency: over a 3 s window that is a few hundredths of a dB
 //    on music, under the 0.1 dB step Output moves in.
-// Allocation-free after construction (two K-weighting pairs and two rings of 30 steps), for the audio thread.
+// Allocation-free after construction (two K-weighting pairs and two rings of 30 steps), for the audio thread;
+// the portable maths throughout, so the reading is the same on every platform.
 
 using System;
 
@@ -21,7 +22,7 @@ namespace NeoBuzz.Analysis
         const double Gate = -70;         // LUFS
 
         Loudness.KWeighting inL, inR, outL, outR;
-        readonly int hop;
+        int hop;
         readonly double[] inSteps = new double[Steps], outSteps = new double[Steps];
         double inSum, outSum;
         int inStep, stepPos;
@@ -39,7 +40,15 @@ namespace NeoBuzz.Analysis
             InputLufs = OutputLufs = double.NegativeInfinity;
         }
 
-        public int Rate { get; }
+        public int Rate { get; private set; }
+
+        /// <summary>A new rate: the filters and the step follow it, and measuring starts again.</summary>
+        public void SetRate(int rate)
+        {
+            Rate = rate;
+            hop = (int)Math.Round(rate * 0.1);
+            Reset();
+        }
 
         /// <summary>Output − input short-term loudness, dB; NaN while unknown.</summary>
         public double Db { get; private set; }
@@ -95,10 +104,13 @@ namespace NeoBuzz.Analysis
                 a += inSteps[i];
                 b += outSteps[i];
             }
-            InputLufs = Loudness.Lufs(a / Steps);
-            OutputLufs = Loudness.Lufs(b / Steps);
-            Db = InputLufs > Gate && OutputLufs > Gate ? OutputLufs - InputLufs : double.NaN;
+            // With the portable maths: a machine may take the reading into its audio (Neo Limiter's Unity listen).
+            InputLufs = Lufs(a / Steps);
+            OutputLufs = Lufs(b / Steps);
+            Db = InputLufs > Gate && OutputLufs > Gate ? 10 * NeoBuzz.Dsp.PortableMath.Log10(b / a) : double.NaN;
         }
+
+        static double Lufs(double meanSquare) => meanSquare > 0 ? -0.691 + 10 * NeoBuzz.Dsp.PortableMath.Log10(meanSquare) : double.NegativeInfinity;
 
         /// <summary>
         /// The Output setting that matches the loudness: <paramref name="outputDb"/> − <paramref name="db"/>, on Output's

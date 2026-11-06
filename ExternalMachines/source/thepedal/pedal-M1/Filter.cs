@@ -57,6 +57,10 @@ namespace WDE.PedalM1
             float v2 = _ic2eq + _a2 * _ic1eq + _a3 * v3;
             _ic1eq   = 2f * v1 - _ic1eq;
             _ic2eq   = 2f * v2 - _ic2eq;
+            // Fork (neo-buzz, docs/specs/mcp-server.md §12.15): settle to exact zero below −300 dBFS. When a voice's
+            // wave ends while its note is held, the filter rang down into the denormal floats and stayed there.
+            if (_ic1eq > -1e-15f && _ic1eq < 1e-15f) _ic1eq = 0f;
+            if (_ic2eq > -1e-15f && _ic2eq < 1e-15f) _ic2eq = 0f;
             return v2;     // lowpass tap
         }
     }

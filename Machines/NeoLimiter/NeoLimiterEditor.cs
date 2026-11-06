@@ -1,6 +1,7 @@
 #nullable disable
 // Neo Limiter's editor (docs/specs/machines.md §4): drive and ceiling, the last four seconds of
-// input, output and gain reduction, release and detector settings, and true-peak meters. WPF lays
+// input, output and gain reduction, release and detector settings, v2's stages (mastering-tools.md §5.2),
+// and true-peak meters. WPF lays
 // the editor out; the history draws on the kit's canvas (INeoCanvas).
 
 using System;
@@ -39,6 +40,19 @@ namespace NeoBuzz.Limiter
                 Layout.Gap(1, 8),
                 Layout.Row(new ParamKnob(ctx, P.Lookahead), new ParamKnob(ctx, P.Link)));
 
+            // v2's stages (mastering-tools.md §5.2), each off by default.
+            var unityText = new GraphView(96, 18, (g, r) =>
+            {
+                double db = machine?.Engine.GainMatchDb ?? double.NaN;
+                g.Text(double.IsFinite(db) ? $"match {(-db).ToString("+0.0;−0.0;0.0")} dB" : "match: 3 s…", r.X + 2, r.Y + 2, 9.5, Palette.DimText);
+            }, animate: true);
+            var stages = Layout.Column(
+                Layout.Row(new ParamKnob(ctx, P.Upward, diameter: 40), new ParamKnob(ctx, P.UpThreshold, "Up thresh", 40), new ParamKnob(ctx, P.Transients, diameter: 40)),
+                Layout.Row(new ParamDropdown(ctx, P.SoftClip, "Soft clip", 72), new ParamKnob(ctx, P.ClipMix, diameter: 40)),
+                Layout.Row(new ParamKnob(ctx, P.SlowStage, "Slow", 40), new ParamKnob(ctx, P.SlowRelease, "Slow rel", 40), new ParamKnob(ctx, P.Unlink, "Unlink", 40)),
+                Layout.Row(new ParamChoice(ctx, P.Unity, "Unity", 34), new ParamChoice(ctx, P.Delta, "Delta", 34)),
+                unityText);
+
             var meters = Layout.Row(
                 new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 196),
                 Layout.Gap(4),
@@ -50,6 +64,7 @@ namespace NeoBuzz.Limiter
                 new Section("Drive", AccentColor, drive),
                 new Section("History", AccentColor, graph),
                 new Section("Release", AccentColor, release),
+                new Section("Stages", AccentColor, stages),
                 new Section("Meters", AccentColor, meters));
         }
 

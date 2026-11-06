@@ -146,6 +146,16 @@ CASES = [
     gen("wave-grit-motion", "Neo Wave", "Texture — Grit Motion", [], [n("D3", 0, 3.5), n("A3", 1, 2.5)]),
     gen("wave-reso-pluck", "Neo Wave", "Bass — Reso Pluck", [], BASS),
     gen("wave-mirror-bell", "Neo Wave", "Pluck — Mirror Bell", [], BELLS),
+    # Dye Essence: unison lanes, warps (FM from a silent slot, PM from the sub, window sync, mirror, squeeze at
+    # High 4×), the sub and noise, the comb, two filters in parallel.
+    gen("dye-init", "Dye Essence", "Init — Basic", [], CHORDS),
+    gen("dye-wide-unison", "Dye Essence", "Lead — Wide Unison", [], KEYS),
+    gen("dye-fm-growl", "Dye Essence", "Bass — FM Growl", [], BASS),
+    gen("dye-sub-pm", "Dye Essence", "Lead — Sub PM", [], KEYS),
+    gen("dye-two-filters", "Dye Essence", "Pad — Two Filters", [], CHORDS),
+    gen("dye-comb-noise", "Dye Essence", "Texture — Comb Noise", [], KEYS),
+    gen("dye-mirror-bell", "Dye Essence", "Pluck — Mirror Bell", [], BELLS),
+    gen("dye-squeeze-high", "Dye Essence", "FX — Squeeze Sweep", [], [n("A2", 0, 3.5)]),
     # Neo FM6: algorithms, feedback, the Clean 2x and Raw 1x engines, envelopes, LFO.
     gen("fm6-tine-piano", "Neo FM6", "Keys — Tine Piano", [], KEYS),
     gen("fm6-glass-bell", "Neo FM6", "Bell — Glass Bell", [], BELLS, tail=2.0),
@@ -183,6 +193,15 @@ CASES = [
     # Neo Limiter: pushed hard, auto and set release; Neo Analyzer after it (audio passes through).
     fx("limiter-loud", "Neo Limiter", "Mastering — Loud", [("Input gain", "+18 dB")], extra=[("Neo Analyzer", "Mix", [])]),
     fx("limiter-smash", "Neo Limiter", "Creative — Smash", [("Input gain", "+24 dB"), ("Auto release", "off")]),
+    # Neo Limiter v2 (docs/specs/mastering-tools.md §5.2, M2): each style's stages; the soft clip switched on while playing
+    # (its latency moving through the engine's crossfade); upward compression and the slow stage on a quiet passage.
+    fx("limiter-v2-transparent", "Neo Limiter", "Style — Transparent", [("Input gain", "+12 dB")]),
+    fx("limiter-v2-punchy", "Neo Limiter", "Style — Punchy", [("Input gain", "+9 dB")]),
+    fx("limiter-v2-dense", "Neo Limiter", "Style — Dense (Soft Clip 9 dB, Upward)", [("Clip mix", "70%")]),
+    fx("limiter-v2-loud-switched", "Neo Limiter", "Style — Loud (Soft Clip 3 dB)", [("Input gain", "+9 dB")],
+       auto=[("Soft clip", [(0, "Off"), (2, "3 dB")])]),
+    fx("limiter-v2-upward-quiet", "Neo Limiter", "Style — Classic", [("Input gain", "-12 dB"), ("Upward", "6 dB"), ("Upward threshold", "-10 dB"),
+                                                                       ("Slow stage", "60%")]),
     # Neo Utility: gain, pan law, width, bass mono, polarity, swap, DC removal.
     fx("utility-bass-mono-wide", "Neo Utility", "Mastering — Bass Mono 120 Hz", [("Width", "180%"), ("Gain", "-3.5 dB")]),
     fx("utility-pan-dc-swap", "Neo Utility", "Mastering — Clean Up (Bass Mono 80 Hz, DC)",
@@ -192,6 +211,14 @@ CASES = [
     fx("utility-ms-eq-chain", "Neo Utility", "Mid/Side — Encode (Before a Stereo Machine)", [("Width", "120%")],
        extra=[("Neo EQ", "Mastering — Air Shelf", []), ("Neo Utility", "Mid/Side — Decode (After It)", [])],
        auto=[("Matrix", [(2, "Off"), (3, "Encode M/S")])]),
+    # Neo Clipper (docs/specs/mastering-tools.md §5.1, M2): the knee at 4× before a limiter; hard at 1×; three bands in
+    # mid/side with the drive automated (its ramps, the second stage, the ceiling guard); Delta switched on by automation.
+    fx("clipper-knee-limiter", "Neo Clipper", "Mastering — Transparent (Before a Limiter)", [("Drive", "+9 dB")],
+       extra=[("Neo Limiter", "Mastering — Streaming (−1 dBTP)", [])]),
+    fx("clipper-hard-1x", "Neo Clipper", "Character — 1× Grit", [("Mix", "100%")]),
+    fx("clipper-bands-ms", "Neo Clipper", "Mastering — Three Bands", [("Stereo", "M/S"), ("Oversampling", "8×")],
+       auto=[("Drive", [(0, "+12 dB"), (1.5, "+3 dB"), (2.5, "+18 dB")])]),
+    fx("clipper-delta", "Neo Clipper", "Drums — Hard Snap", [("Drive", "+12 dB")], auto=[("Delta", [(2, "On")])]),
     # Neo Verb: the four algorithms, modulation, shimmer, a 20-second decay, and freeze switched on
     # mid-render by automation (the tail held with no loss).
     fx("verb-hall", "Neo Verb", "Hall — Concert", tail=2.5),
@@ -290,6 +317,7 @@ CASES = [
     # Long: what drifts with time (oscillator and LFO phases, modulated delays) shows here. 16 s each.
     gen("long-poly", "Neo Poly", "Pad — Evolving PWM", [], LONG, beats=32),
     gen("long-wave", "Neo Wave", "Pad — Organ Drift", [], LONG, beats=32),
+    gen("long-dye", "Dye Essence", "Pad — Glass Choir", [], LONG, beats=32),
     gen("long-fm6", "Neo FM6", "Pad — FM Strings", [], LONG, beats=32),
     fx("long-verb", "Neo Verb", "Ambient — Long Dark Hall", tail=3.0, beats=32,
        source=("Neo FM6", "Keys — Tine Piano", [], [n(p, b, 0.5, 100) for b in range(0, 32, 2) for p in ("C4", "E4", "G4")])),

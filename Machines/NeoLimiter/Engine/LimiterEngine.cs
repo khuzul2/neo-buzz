@@ -4,6 +4,17 @@
 // or program-dependent) → two box filters over the lookahead → gain on the audio, delayed so the
 // gain reaches the needed value exactly when the peak arrives. All gain maths in dB of reduction
 // (≥ 0). Pure: tested by NeoBuzz.MachineTests.
+// v2 (docs/specs/mastering-tools.md §5.2), each stage after the existing parameters and off by default, so
+// v1's renders stay bit for bit ("Classic"; LimiterClassicTests pins v1's hashes). In signal order:
+//  - Upward: a slow RMS detector (3 s, linked), quiet passages lifted by half a dB for each dB under the
+//    threshold, at most Upward (≤ 6 dB), never below −60 dBFS (no noise floor raised), the lift gliding (0.5 s);
+//  - Transients: the shared TransientSplit on the driven signal, its transient weight raising hits by up to 6 dB;
+//  - Soft clip: 4× FirOversampler with first-order ADAA on the shared Knee curve (3, 9 or 30 dB under the
+//    ceiling), wet/dry, 58 samples of latency while on (the guarantee still holds: the limiter is after it);
+//  - the limiter, with a slow stage beside the release (a one-pole on the reduction, 50 ms up, Slow release down,
+//    holding Slow stage of it) and Transient unlink (the stereo link lowered by the transient weight);
+//  - Delta (the output minus the driven input, delayed to match, at the input's level: ÷ input gain) and Unity
+//    listen (the output trimmed by the gain-match reading, gliding over 0.3 s; until it is known, by the input gain).
 
 using System;
 using System.Runtime.Intrinsics;
@@ -122,6 +133,31 @@ namespace NeoBuzz.Limiter
         readonly ParamValues values;
         float sampleRate = 48000;
 
+        // ---- v2 ----------------------------------------------------------------------------------
+        const double UpwardSeconds = 3, UpwardGlideSeconds = 0.5, UpwardFloorDb = -60;
+        const double SlowAttackSeconds = 0.05, UnityGlideSeconds = 0.3;
+        static readonly double[] ClipKnees = { 0, 3, 9, 30 };
+        /// <summary>The soft clip's latency while it is on: the 4× oversampler's.</summary>
+        public static int ClipLatency => FirOversampler.LatencyFor(4);
+        readonly float[] drivenL = new float[MaxBlock], drivenR = new float[MaxBlock], ceilBuf = new float[MaxBlock];
+        readonly float[] weights = new float[MaxBlock];
+        readonly FirOversampler[] clipOs = { new FirOversampler(MaxBlock), new FirOversampler(MaxBlock) };
+        readonly DelayLineF[] clipDry = { new DelayLineF(64), new DelayLineF(64) };
+        readonly float[] clipL = new float[MaxBlock], clipR = new float[MaxBlock];
+        ClipAdaa clipAdaaL, clipAdaaR;
+        ClipCurve clipCurve;
+        TransientSplit split;
+        bool upwardOn, transientsOn, clipOn, slowOn, unlinkOn, unityOn;
+        double upwardMax, upwardThreshold, upwardMs, upwardLiftDb, upwardA, upwardGlideA;
+        double transientsGain, unlink, slowAmount, slowAttackA, slowReleaseA, unityTrim = 1, unityA;
+        LinearRamp clipMix;
+        public readonly DeltaListen Delta;
+        public readonly NeoBuzz.Analysis.GainMatch Match;
+        float grWindow;
+        readonly float[] grSteps = new float[30];
+        int grStep, grStepLeft;
+        double pubGr, pubMatch = double.NaN;
+
         sealed class Channel
         {
             public readonly TruePeakInterpolator Detector = new TruePeakInterpolator();
@@ -134,6 +170,8 @@ namespace NeoBuzz.Limiter
             public int DqHead, DqCount;
             // Release state.
             public double Gr, GrAvg;
+            // v2's slow stage.
+            public double Slow;
             // Box filters: rings of past values and their running sums.
             public double[] Box1, Box2;
             public double Sum1, Sum2;
@@ -161,6 +199,7 @@ namespace NeoBuzz.Limiter
                 }
                 DqHead = DqCount = 0;
                 Gr = GrAvg = Sum1 = Sum2 = 0;
+                Slow = 0;
             }
         }
 
@@ -186,6 +225,8 @@ namespace NeoBuzz.Limiter
         public LimiterEngine(ParamValues values)
         {
             this.values = values;
+            Delta = new DeltaListen(2048, 48000);
+            Match = new NeoBuzz.Analysis.GainMatch(48000);
             SetSampleRate(48000);
         }
 
@@ -196,8 +237,8 @@ namespace NeoBuzz.Limiter
         /// <summary>Gain reduction now, dB (≥ 0), for the editor.</summary>
         public float GainReductionDb => grNow;
 
-        /// <summary>Samples the audio is delayed by: the lookahead and the true-peak interpolator.</summary>
-        public int Latency => hold + TruePeakInterpolator.Delay - 1;
+        /// <summary>Samples the audio is delayed by: the lookahead and the true-peak interpolator (and the soft clip's oversampling, when on).</summary>
+        public int Latency => hold + TruePeakInterpolator.Delay - 1 + (clipOn ? ClipLatency : 0);
 
         /// <summary>The hold (lookahead) in samples.</summary>
         public int LookaheadSamples => hold;
@@ -217,7 +258,34 @@ namespace NeoBuzz.Limiter
             OutMeter.SetSampleRate(sr);
             chunk = Math.Max(1, (int)Math.Round(HistoryStep * sr));
             chunkLeft = chunk;
+            split = new TransientSplit(sr);
+            foreach (var os in clipOs) os.SetFactor(4);
+            clipMix.Setup(GlideSeconds, sr);
+            upwardA = PortableMath.Exp(-1.0 / (UpwardSeconds * sr));
+            upwardGlideA = PortableMath.Exp(-1.0 / (UpwardGlideSeconds * sr));
+            slowAttackA = PortableMath.Exp(-1.0 / (SlowAttackSeconds * sr));
+            unityA = PortableMath.Exp(-1.0 / (UnityGlideSeconds * sr));
+            Delta.SetSampleRate(sr);
+            Match.SetRate((int)Math.Round(sr));
+            grStepLeft = Math.Max(1, (int)Math.Round(sr * 0.1));
             Update(true);
+            ResetV2();
+        }
+
+        void ResetV2()
+        {
+            split.Reset();
+            foreach (var os in clipOs) os.Reset();
+            foreach (var d in clipDry) d.Reset();
+            clipAdaaL.Reset();
+            clipAdaaR.Reset();
+            upwardMs = 0;
+            upwardLiftDb = 0;
+            unityTrim = 1;
+            Delta.Reset();
+            Match.Reset();
+            Array.Clear(grSteps);
+            grWindow = 0;
         }
 
         public void Reset()
@@ -225,6 +293,7 @@ namespace NeoBuzz.Limiter
             foreach (var c in ch) c.Reset();
             index = 0;
             grNow = 0;
+            ResetV2();
         }
 
         static double Coef(double seconds, double sr) => seconds <= 0 ? 0 : PortableMath.Exp(-1.0 / (seconds * sr));
@@ -257,6 +326,36 @@ namespace NeoBuzz.Limiter
             hold = Math.Clamp((int)Math.Round(values.Value(P.Lookahead) * 0.001 * sampleRate), 2, maxHold);
             box1 = (hold + 1) / 2;
             box2 = hold - box1 + 1;
+
+            // v2.
+            upwardMax = values.Value(P.Upward);
+            upwardOn = upwardMax > 0;
+            upwardThreshold = values.Value(P.UpThreshold);
+            transientsGain = DspMath.DbToGain(values.Value(P.Transients));
+            transientsOn = values.Value(P.Transients) > 0;
+            int clip = values.Choice(P.SoftClip);
+            bool wasClip = clipOn;
+            clipOn = clip > 0;
+            if (clipOn) clipCurve = ClipCurve.Make(ClipShape.Knee, ClipKnees[clip]);
+            if (clipOn != wasClip)
+            {
+                foreach (var os in clipOs) os.Reset();
+                foreach (var d in clipDry) d.Reset();
+                clipAdaaL.Reset();
+                clipAdaaR.Reset();
+            }
+            if (force) clipMix.Reset(values.F(P.ClipMix));
+            else clipMix.SetTarget(values.F(P.ClipMix));
+            slowAmount = values.Value(P.SlowStage);
+            slowOn = slowAmount > 0;
+            slowReleaseA = Coef(values.Value(P.SlowRelease), sampleRate);
+            unlink = values.Value(P.Unlink);
+            unlinkOn = unlink > 0;
+            bool unity = values.On(P.Unity);
+            if (unity && !unityOn) unityTrim = 1;
+            unityOn = unity;
+            if (force) Delta.Set(values.On(P.Delta));
+            else Delta.On = values.On(P.Delta);
             values.Clean();
         }
 
@@ -283,6 +382,13 @@ namespace NeoBuzz.Limiter
                 r = c.Gr = Math.Max(h, c.Gr * (fastA + (relA - fastA) * sustained));
                 c.GrAvg += (r - c.GrAvg) * (1 - avgA);
             }
+            if (slowOn)
+            {
+                // The slow stage: up in 50 ms, down at Slow release; the reduction never falls under its share of it.
+                c.Slow = r > c.Slow ? r + (c.Slow - r) * slowAttackA : r + (c.Slow - r) * slowReleaseA;
+                double floor = slowAmount * c.Slow;
+                if (floor > r) r = floor;
+            }
             c.Sum1 += r - c.Box1[(slot - box1) & mask];
             c.Box1[slot] = r;
             double b1 = c.Sum1 * inv1;
@@ -301,6 +407,7 @@ namespace NeoBuzz.Limiter
             to.DqCount = from.DqCount;
             to.Gr = from.Gr;
             to.GrAvg = from.GrAvg;
+            to.Slow = from.Slow;
         }
 
         void Push(Channel c, double v, long j)
@@ -322,8 +429,9 @@ namespace NeoBuzz.Limiter
         {
             if (n > MaxBlock) throw new ArgumentOutOfRangeException(nameof(n));
             Update(false);
-            int delay = Latency;
-            bool shared = link >= 1;
+            // The limiter's own delay (the soft clip's is before it, in the signal).
+            int delay = hold + TruePeakInterpolator.Delay - 1;
+            bool shared = link >= 1 && !unlinkOn;
             // Leaving full link, the right channel's chain carries on from the shared one.
             if (!shared && wasShared) CopyChain(ch[0], ch[1]);
             wasShared = shared;
@@ -337,15 +445,46 @@ namespace NeoBuzz.Limiter
                 c.Sum1 = s1;
                 c.Sum2 = s2;
             }
+
+            // The input gain and the ceiling per sample; then v2's stages, each skipped when off (v1's bits).
+            for (int i = 0; i < n; i++)
+            {
+                float g = inGain.Next();
+                ceilBuf[i] = ceiling.Next();
+                rawL[i] = left[i];
+                rawR[i] = right[i];
+                drivenL[i] = left[i] * g;
+                drivenR[i] = right[i] * g;
+            }
+            // The driven input, for Delta's ring (written every block, so a switch to On has it at once).
+            Array.Copy(drivenL, dryL, n);
+            Array.Copy(drivenR, dryR, n);
+            if (upwardOn) Upward(n);
+            if (transientsOn || unlinkOn) split.Process(drivenL, drivenR, 0, n, weights);
+            if (transientsOn)
+                for (int i = 0; i < n; i++)
+                {
+                    float tg = (float)TransientSplit.Gain(transientsGain, 1, weights[i]);
+                    drivenL[i] *= tg;
+                    drivenR[i] *= tg;
+                }
+            if (clipOn) SoftClip(n);
+            if (unlinkOn && clipOn)
+                // The weights follow the signal through the soft clip's latency.
+                for (int i = 0; i < n; i++)
+                {
+                    weightDelay.Write(weights[i]);
+                    weights[i] = weightDelay.Read(ClipLatency);
+                }
+
             var c0 = ch[0];
             var c1 = ch[1];
             float blockGr = 0, blockIn = 0;
             double inv1 = 1.0 / box1, inv2 = 1.0 / box2;
             for (int i = 0; i < n; i++)
             {
-                float g = inGain.Next();
-                float ceil = ceiling.Next();
-                float x0 = left[i] * g, x1 = right[i] * g;
+                float ceil = ceilBuf[i];
+                float x0 = drivenL[i], x1 = drivenR[i];
                 c0.Audio.Write(x0);
                 c1.Audio.Write(x1);
                 float a = MathF.Max(MathF.Abs(x0), MathF.Abs(x1));
@@ -359,8 +498,18 @@ namespace NeoBuzz.Limiter
                 if (link > 0)
                 {
                     double m = Math.Max(n0, n1);
-                    n0 += link * (m - n0);
-                    n1 += link * (m - n1);
+                    if (unlinkOn)
+                    {
+                        // Transient unlink (v2): on hits the link drops by Unlink of the transient weight.
+                        double lk = link * (1 - unlink * weights[i]);
+                        n0 += lk * (m - n0);
+                        n1 += lk * (m - n1);
+                    }
+                    else
+                    {
+                        n0 += link * (m - n0);
+                        n1 += link * (m - n1);
+                    }
                 }
 
                 long j = index++;
@@ -397,9 +546,124 @@ namespace NeoBuzz.Limiter
             {
                 c.Gr = DspMath.Flush(c.Gr);
                 c.GrAvg = DspMath.Flush(c.GrAvg);
+                c.Slow = DspMath.Flush(c.Slow);
             }
             grNow = blockGr;
             InMeter.FeedValue(blockIn, n);
+
+            // v2's monitoring: Delta, the gain match (always, a reading), Unity listen.
+            // Delta: what the limiting removes, at the input's level (the drive taken back off).
+            Delta.Latency = Latency;
+            Delta.Process(dryL, dryR, left, right, n, 1f / Math.Max(1e-6f, inGain.Value));
+            if (!Delta.Active) Match.Process(rawL, rawR, left, right, 0, n);
+            if (unityOn || unityTrim != 1) Unity(left, right, n);
+            Readings(blockGr, n);
+        }
+
+        readonly float[] rawL = new float[MaxBlock], rawR = new float[MaxBlock];
+        readonly float[] dryL = new float[MaxBlock], dryR = new float[MaxBlock];
+        readonly DelayLineF weightDelay = new DelayLineF(64);
+
+        /// <summary>Upward compression (v2): the lift from a slow linked RMS, gliding, never on silence.</summary>
+        void Upward(int n)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                double l = drivenL[i], r = drivenR[i];
+                double ms = 0.5 * (l * l + r * r);
+                upwardMs = ms + (upwardMs - ms) * upwardA;
+                double level = upwardMs > 1e-12 ? 10 * PortableMath.Log10(upwardMs) : -120;
+                double target = level > UpwardFloorDb ? Math.Min(upwardMax, Math.Max(0, upwardThreshold - level) * 0.5) : 0;
+                upwardLiftDb = target + (upwardLiftDb - target) * upwardGlideA;
+                float gain = upwardLiftDb > 1e-6 ? (float)DspMath.DbToGain(upwardLiftDb) : 1f;
+                drivenL[i] *= gain;
+                drivenR[i] *= gain;
+            }
+            upwardMs = DspMath.Flush(upwardMs);
+            upwardLiftDb = DspMath.Flush(upwardLiftDb);
+        }
+
+        /// <summary>The soft clip (v2): ÷ ceiling, 4× up, the Knee curve with ADAA, down, × ceiling, mixed with the signal delayed to match.</summary>
+        void SoftClip(int n)
+        {
+            for (int c = 0; c < 2; c++)
+            {
+                var x = c == 0 ? drivenL : drivenR;
+                var y = c == 0 ? clipL : clipR;
+                for (int i = 0; i < n; i++) y[i] = x[i] / ceilBuf[i];
+                var hi = clipOs[c].Up(y, 0, n);
+                var curve = clipCurve;
+                if (c == 0)
+                    for (int i = 0; i < 4 * n; i++) hi[i] = (float)clipAdaaL.Process(in curve, hi[i]);
+                else
+                    for (int i = 0; i < 4 * n; i++) hi[i] = (float)clipAdaaR.Process(in curve, hi[i]);
+                clipOs[c].Down(y, 0, n);
+                var dry = clipDry[c];
+                int lat = ClipLatency;
+                for (int i = 0; i < n; i++)
+                {
+                    dry.Write(x[i]);
+                    float d = dry.Read(lat);
+                    float wet = y[i] * ceilBuf[i];
+                    float m = c == 0 ? clipMix.Next() : mixRight[i];
+                    if (c == 0) mixRight[i] = m;
+                    x[i] = d + m * (wet - d);
+                }
+            }
+        }
+
+        readonly float[] mixRight = new float[MaxBlock];
+
+        /// <summary>Unity listen (v2): the output trimmed by the gain-match reading (or the input gain until it is known), gliding.</summary>
+        void Unity(float[] left, float[] right, int n)
+        {
+            // With Delta on, Delta is the monitor: no trim. The trim stays within −24 … +12 dB.
+            double target = 1;
+            if (unityOn && !Delta.Active)
+            {
+                double db = Match.Db;
+                double trimDb = double.IsFinite(db) ? -db : -values.Value(P.InputGain);
+                target = DspMath.DbToGain(Math.Clamp(trimDb, -24, 12));
+            }
+            for (int i = 0; i < n; i++)
+            {
+                unityTrim = target + (unityTrim - target) * unityA;
+                float t = (float)unityTrim;
+                left[i] *= t;
+                right[i] *= t;
+            }
+            if (!unityOn && Math.Abs(unityTrim - 1) < 1e-7) unityTrim = 1;
+        }
+
+        void Readings(float blockGr, int n)
+        {
+            if (blockGr > grWindow) grWindow = blockGr;
+            grStepLeft -= n;
+            if (grStepLeft > 0) return;
+            grStepLeft += Math.Max(1, (int)Math.Round(sampleRate * 0.1));
+            grSteps[grStep] = grWindow;
+            grStep = (grStep + 1) % grSteps.Length;
+            grWindow = 0;
+            float most = 0;
+            foreach (var v in grSteps) most = MathF.Max(most, v);
+            System.Threading.Volatile.Write(ref pubGr, most);
+            System.Threading.Volatile.Write(ref pubMatch, Match.Db);
+        }
+
+        /// <summary>The gain-match reading, dB (NaN until 3 s of sound).</summary>
+        public double GainMatchDb => System.Threading.Volatile.Read(ref pubMatch);
+
+        /// <summary>For agents (machine_readings): gain_match_db (once known), gain_reduction_db (the most in the last 3 s), latency_samples.</summary>
+        public System.Collections.Generic.IReadOnlyDictionary<string, double> Readings()
+        {
+            var d = new System.Collections.Generic.Dictionary<string, double>
+            {
+                ["gain_reduction_db"] = Math.Round(System.Threading.Volatile.Read(ref pubGr), 2),
+                ["latency_samples"] = Latency,
+            };
+            double m = GainMatchDb;
+            if (double.IsFinite(m)) d["gain_match_db"] = Math.Round(m, 2);
+            return d;
         }
 
         /// <summary>
