@@ -176,16 +176,22 @@ namespace ReBuzz.Studio.Tests
                 window.RefreshNow();
                 Studio.Screenshot(window, "studio-autosave-recovered");
 
-                // No deletes it.
+                // Discard… (No) deletes it once confirmed.
                 Assert.That(Core.Autosave.SaveNow(System.DateTime.Now), Is.True);
                 data = File.ReadAllBytes(Core.Autosave.Current);
                 autosave = Core.Autosave.Current;
                 NewSong();
                 File.WriteAllBytes(autosave, data);
                 File.WriteAllText(autosave + ".txt", song);
-                Dialogs.Responder = (m, c, b) => UserAnswer.No;
+                var questions = new System.Collections.Generic.List<string>();
+                Dialogs.Responder = (m, c, b) => { questions.Add(c); return UserAnswer.No; };
                 Assert.That(Autosave.OfferRecovery(Core).Result, Is.False);
-                Assert.That(SongAutosave.FindLeftovers(), Is.Empty);
+                Assert.That(questions, Is.EqualTo(new[] { "Recover unsaved changes", "Discard unsaved changes" }), "asked again before it deletes");
+                Assert.That(SongAutosave.FindLeftovers().Count, Is.EqualTo(1), "Keep keeps it");
+                questions.Clear();
+                Dialogs.Responder = (m, c, b) => { questions.Add(c); return questions.Count == 1 ? UserAnswer.No : UserAnswer.Yes; };
+                Assert.That(Autosave.OfferRecovery(Core).Result, Is.False);
+                Assert.That(SongAutosave.FindLeftovers(), Is.Empty, "Discard deletes it");
             }
             finally
             {

@@ -238,7 +238,7 @@ namespace ReBuzz.Studio.Views.Session
             {
                 var answer = await Dialogs.Ask(
                     $"Pattern '{pattern.Name}' is also used in the arrangement. Deleting it removes it there too, and undo only brings the pattern back.\n\nDelete it?",
-                    "Delete pattern", UserButtons.YesNo);
+                    "Delete pattern", UserButtons.YesNo, DialogChoices.Delete);
                 if (answer != UserAnswer.Yes) return;
             }
             layout.DeleteClip(pattern);

@@ -186,7 +186,7 @@ namespace ReBuzz.Studio.Shell.Preferences
             {
                 Refresh();      // stays on until confirmed
                 var answer = await Dialogs.Ask("Turn the safety limiter off? Then nothing stops a loud or broken signal from reaching your " +
-                                               "speakers or headphones at full scale and beyond.", "Safety limiter", UserButtons.YesNo);
+                                               "speakers or headphones at full scale and beyond.", "Safety limiter", UserButtons.YesNo, DialogChoices.TurnOff);
                 if (answer != UserAnswer.Yes) return;
             }
             safe.LimiterOn = on;
@@ -202,7 +202,7 @@ namespace ReBuzz.Studio.Shell.Preferences
                 Refresh();
                 var answer = await Dialogs.Ask("Turn the machine guard off for this song? A machine that goes wild (NaN, infinity or more than " +
                                                "+60 dBFS) then plays on into the rest of the song; only the safety limiter stands between it and " +
-                                               "your speakers. A new or opened song turns the guard on again.", "Machine guard", UserButtons.YesNo);
+                                               "your speakers. A new or opened song turns the guard on again.", "Machine guard", UserButtons.YesNo, DialogChoices.TurnOff);
                 if (answer != UserAnswer.Yes) return;
             }
             MachineGuard.Enabled = on;
