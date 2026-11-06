@@ -80,33 +80,35 @@ Files: `Machines/DyeEssence/` (the machine, its editor, `Params.def`, `Presets.t
 
 ### 5.1 Renderer
 
-Measured on the CI runners: Linux x64 (Fork CI, GitHub's `ubuntu-latest`, AVX2) and macOS arm64 (Fork Mac, `macos-15`), runs 42206819392 and 42206823024. "× real time" is wall clock on one core; the CPU-time figure beside it agreed within 2 % on both runners.
+Measured on the CI runners: Linux x64 (Fork CI, GitHub's `ubuntu-latest`, AVX2) and macOS arm64 (Fork Mac, `macos-15`), runs 42206819392 and 42206823024 (40e523ff), and 42215997536 and 42216001294 (5aecbb21, with 4×). "× real time" is wall clock on one core; the CPU-time figure beside it agreed within 2 %. Where two figures are given they are the two runs: the x64 runners differ from run to run (the 8-voice Neo Wave test read 34.4× in the second, against 15.3–32.7× in machines.md).
 
 | Criterion | Target | x64 (AVX2) | arm64 (2 × Vector128) |
 |---|---|---|---|
-| CPU, 16 notes × 3 osc × 8 unison + ladder and SVF per note, stereo, 2× | ≥ 2× real time | **11.2×** (8.9 % of a core) | **9.7×** (10.4 %) |
-| CPU, the same with 16 unison | reported | **7.0×** | **5.9×** |
-| CPU, 8 unison at 1× | reported | 20.1× | 18.3× |
-| CPU, 1 voice per oscillator (a group of eight lanes, seven idle) | reported | 12.4× | 8.6× |
-| CPU, without the oscillators (filters, envelopes, control, decimation) | reported | 28.8× (3.5 %) | 26.2× (3.8 %) |
-| CPU, 8 unison, the Vector128 path on x64 (a CPU without AVX2) | reported | 8.9× | — |
-| Same bits | the three lane implementations, every sample, 6 settings (unison 1, 3, 5, 8, 16; 1× and 2×; serial, parallel, half; LP12, band-pass, high-pass, notch; drive; on a frame; bypassed) | scalar = Pair = AVX2 | scalar = Pair |
+| CPU, 16 notes × 3 osc × 8 unison + ladder and SVF per note, stereo, 2× | ≥ 2× real time | **11.2×, 16.7×** (6–9 % of a core) | **9.7×, 8.8×** (10–11 %) |
+| CPU, the same with 16 unison | reported | **7.0×, 10.1×** | **5.9×, 5.0×** |
+| CPU, 8 unison at 4× | reported | 9.1× | 4.5× |
+| CPU, 16 unison at 4× | reported | 5.5× | 2.9× |
+| CPU, 8 unison at 1× | reported | 20.1×, 29.0× | 18.3×, 16.2× |
+| CPU, 1 voice per oscillator (a group of eight lanes, seven idle) | reported | 12.4×, 17.7× | 8.6×, 9.1× |
+| CPU, without the oscillators (filters, envelopes, control, decimation) | reported | 28.8×, 40.0× (2.5–3.5 %) | 26.2×, 24.4× (3.8–4.1 %) |
+| CPU, 8 unison, the Vector128 path on x64 (a CPU without AVX2) | reported | 8.9×, 12.7× | — |
+| Same bits | the three lane implementations, every sample, 7 settings (unison 1, 3, 5, 6, 8, 16; 1×, 2× and 4×; serial, parallel, half; LP12, band-pass, high-pass, notch; drive; on a frame; bypassed) | scalar = Pair = AVX2 | scalar = Pair |
 | Same on every platform | one render's checksum pinned, the same on both runners | `6B53E8A804EE8673` | `6B53E8A804EE8673` |
-| Alias floor, saw, unison 1 | ≤ −80 dB, 2× and 1× | 2×: −92.2 … −98.6 dB (55 Hz – 1.9 kHz); 1×: −93.0, −101.0 dB | the same (same bits) |
-| Bandwidth at 2× | the harmonic nearest 18 kHz within 1.5 dB of a saw's, 110 Hz – 3.5 kHz | within 1.4 dB (−44.5 for −44.2 at 110 Hz … −18.6 for −20.0 at 1.76 kHz) | the same |
+| Alias floor, saw, unison 1 | ≤ −80 dB, 1×, 2× and 4× | 2×: −92.2 … −98.6 dB (55 Hz – 1.9 kHz); 1× and 4×: −93.0 dB (220 Hz), −101.0 dB (1.9 kHz) | the same (same bits) |
+| Bandwidth at 2× and 4× | the harmonic nearest 18 kHz within 1.5 dB of a saw's, 110 Hz – 3.5 kHz | within 1.4 dB (−44.5 for −44.2 at 110 Hz … −18.6 for −20.0 at 1.76 kHz; 4× at 1.76 kHz: −18.6) | the same |
 | Bandwidth at 1× | reported | the top octave is gone: at 440 Hz and 1.76 kHz nothing above 14 kHz (the level that keeps every harmonic under Nyquist halves them) | the same |
 | Pitch | a lane, and two detuned lanes, within 0.05 cent | −0.009, −0.009, +0.008 cent | the same |
 | Blocks | 256, 117 and 16, notes starting mid-tick: the same samples | identical | identical |
 | Audio thread | 2000 blocks, notes, unison and positions moving: 0 bytes | 0 bytes (AVX2 and Pair) | 0 bytes |
 | Memory | reported | a 256-frame table 19.7 MB (11 mip levels) | |
 
-The analysis estimated 25–55 % of a core for the 8-unison case with SIMD; the renderer takes 9–10 %. What remains of the fixed cost (3.5–3.8 %) is mostly the per-sample sums across lanes and the envelopes stepped sample by sample at each tick (§6, P1a).
+The analysis estimated 25–55 % of a core for the 8-unison case with SIMD; the renderer takes 6–11 %. What remains of the fixed cost (2.5–4 %) is mostly the per-sample sums across lanes and the envelopes stepped sample by sample at each tick (§6, P1a).
 
 ### 5.2 ReBuzz with ~700 parameters and large state
 
 **Dye Stress** (`ReBuzz.Studio.Tests/TestMachines/DyeStress/`, not shipped): 704 parameters shaped as Dye Essence's table will be (option A: three slots of 99, utility, two filters, amp, four envelopes, ten LFOs, functions, randoms and combinators, eight macros, 64 route amounts, ten FX slots of ten, arpeggiator, MPE and tuning), its `Params.def` written by `make-params.py` and its code and manifest by `tools/gen-machine-params.py`; 16 tracks of Note and Velocity; a machine state of 8.4 MB (three 256-frame tables as base64 floats, as Neo Wave keeps a user table, and 64 routes as text). Measured in the studio, headless (`DyeStressTests`), on both runners:
 
-Runs 42212607166 (Linux x64) and 42212610289 (macOS arm64), on 7f266231:
+Runs 42212607166 (Linux x64) and 42212610289 (macOS arm64), on 7f266231; the runs on 5aecbb21 (42215997536, 42216001294) read the same or faster (704 changes in a tick 0.35 ms and 0.76 ms; the grid 2.3–11.5 ms):
 
 | Criterion | Target | Linux x64 | macOS arm64 |
 |---|---|---|---|
@@ -131,9 +133,9 @@ Runs 42212607166 (Linux x64) and 42212610289 (macOS arm64), on 7f266231:
 
 ### 5.3 Recommendation: go, with these adjustments
 
-- **Go.** The renderer runs the gate's case at 11× real time on x64 and 10× on arm64 (target 2×), the same bits on both, and ReBuzz carries 704 parameters and 8 MB of state through songs, presets, patterns, MIDI learn and the agent, with the two fixes above.
-- **Unison budget: 16 per oscillator**, as the targets have: 16 notes × 3 × 16 runs at 7× and 6×.
-- **Quality modes**: **Standard 2×** (the default; the measured figures), **High 4×** for audio-rate FM/PM and the sync-type warps (P1a measures their alias floors at 2× and 4× and sets the mode per warp), and no 1× mode for users: at 1× the top octave of harmonics goes (nothing above 14 kHz at 440 Hz), which is not this machine's quality, and 2× is affordable.
+- **Go.** The renderer runs the gate's case at 11–17× real time on x64 and 9–10× on arm64 (target 2×), the same bits on both, and ReBuzz carries 704 parameters and 8 MB of state through songs, presets, patterns, MIDI learn and the agent, with the two fixes above.
+- **Unison budget: 16 per oscillator**, as the targets have: 16 notes × 3 × 16 runs at 7–10× on x64 and 5–6× on arm64, and still at 5.5× and 2.9× at 4×.
+- **Quality modes**: **Standard 2×** (the default; the measured figures), **High 4×** for audio-rate FM/PM and the sync-type warps (half the speed of 2×, measured above; P1a measures the warps' alias floors at 2× and 4× and decides per warp, and whether 4× applies to the voice or only to the warped oscillator), and no 1× mode for users: at 1× the top octave of harmonics goes (nothing above 14 kHz at 440 Hz), which is not this machine's quality, and 2× is affordable.
 - **P1a optimisations, measured as they land**: lane sums across eight samples at once (a transpose instead of a horizontal sum per sample); envelopes in closed form per tick; unison stacks of 1–4 lanes in a 4-lane group, or lanes of several oscillators packed into one group.
 - **Before Dye Essence ships (P1c)**: the large-machine `machine_describe` (agent server); the WPF parameter window and pattern editor checked by hand in NeoBuzz Live with Dye Essence; optionally the studio's parameter window virtualised.
 
