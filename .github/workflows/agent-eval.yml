@@ -1,8 +1,8 @@
 name: Agent evaluation (real agent)
 
 # The agent server's periodic evaluation with a real agent (docs/specs/mcp-server.md §10, A6).
-# For each task brief, Claude Code runs headless (claude -p) with only the rebuzz MCP tools, on the
-# package's ReBuzz.exe --agent; ReBuzz.AgentEval then scores the song it saved with the same scorers
+# For each task brief, Claude Code runs headless (claude -p) with only the app's MCP tools (the server
+# neobuzz-live), on the package's NeoBuzzLive.exe --agent; ReBuzz.AgentEval then scores the song it saved with the same scorers
 # as the scripted suite. Transcripts, songs and scores are uploaded; the step summary has the table.
 #
 # Needs the repository secret ANTHROPIC_API_KEY (Settings → Secrets and variables → Actions). Without
@@ -11,7 +11,7 @@ name: Agent evaluation (real agent)
 # Claude Code flags (checked against the CLI's own help, 2.1.316): -p (non-interactive), --bare
 # (no hooks, plugins, memory or CLAUDE.md discovery; auth strictly ANTHROPIC_API_KEY), --mcp-config
 # with --strict-mcp-config (only our server), --tools "" (no built-in tools: no shell, no files)
-# with --allowedTools "mcp__rebuzz__*" and --permission-mode dontAsk (the rebuzz tools run, anything
+# with --allowedTools "mcp__neobuzz-live__*" and --permission-mode dontAsk (the app's tools run, anything
 # else is denied without a prompt), --max-turns and --max-budget-usd (caps), --output-format
 # stream-json with --verbose (the transcript), --no-session-persistence.
 
@@ -117,7 +117,7 @@ jobs:
       shell: bash
       env:
         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        # ReBuzz's headless start-up (the gear scan) can take longer than the CLI's 30 s default for an
+        # NeoBuzz Live's headless start-up (the gear scan) can take longer than the CLI's 30 s default for an
         # MCP server to answer, and a 2-minute song renders in tens of seconds.
         MCP_TIMEOUT: '240000'
         MCP_TOOL_TIMEOUT: '600000'
@@ -127,7 +127,7 @@ jobs:
         MAX_BUDGET: ${{ inputs.max_budget_usd || '5' }}
       run: |
         # Paths as D:/a/… : both bash and the Windows programs read them.
-        EXE="$(cygpath -m "$(find "$PWD/bin" -name ReBuzz.exe -not -path '*/obj/*' | head -n 1)")"
+        EXE="$(cygpath -m "$(find "$PWD/bin" -name NeoBuzzLive.exe -not -path '*/obj/*' | head -n 1)")"
         EVAL="dotnet ReBuzz.AgentEval/bin/Release/net10.0/ReBuzz.AgentEval.dll"
         OUT="$(cygpath -m "$PWD/agent-eval")"
         mkdir -p "$OUT" "$RUNNER_TEMP/agent-cwd"
@@ -141,7 +141,7 @@ jobs:
           # The agent works in an empty folder: no repository context, only the brief and the tools.
           ( cd "$RUNNER_TEMP/agent-cwd" && claude -p "$(cat "$dir/brief.md")" \
               --bare --mcp-config "$dir/mcp.json" --strict-mcp-config \
-              --tools "" --allowedTools "mcp__rebuzz__*" --permission-mode dontAsk \
+              --tools "" --allowedTools "mcp__neobuzz-live__*" --permission-mode dontAsk \
               --max-turns "$MAX_TURNS" --max-budget-usd "$MAX_BUDGET" \
               --output-format stream-json --verbose --no-session-persistence "${MODEL_ARGS[@]}" \
               > "$dir/transcript.jsonl" 2> "$dir/claude-stderr.txt" ) || echo "::warning title=Agent evaluation::claude exited with $? on $t"

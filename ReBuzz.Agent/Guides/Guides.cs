@@ -19,10 +19,27 @@ namespace ReBuzz.Agent.Guides
     {
         public const string UriPrefix = "rebuzz://guides/";
 
+        /// <summary>What initialize says to an agent first: what the app is, how to begin, the units, undo.</summary>
+        public const string ServerInstructions =
+            Product.Name + " is a modular music studio (Buzz-style, a fork of ReBuzz): generators and effects connected in a graph, patterns placed in an arrangement. " +
+            "Start every session with studio_status, and read guide(topic=\"workflow\") once. Times are in beats from the song start " +
+            "(or \"bar.beat\" text); pitches are MIDI numbers or names (60 = C4); levels in dB. Every changing call is one undo step " +
+            "(undo reverts it); a call that fails changes nothing. Hear your work with render and check it with analyze. In studio and live mode the user " +
+            "listens live too: transport, session_launch and meters_read play with them. Errors say what to do next.";
+
+        /// <summary>The app's server as initialize announces it: named after the app (Product), with <see cref="ServerInstructions"/>.</summary>
+        public static ServerInfo AppServer(string version) => new ServerInfo
+        {
+            Name = Product.McpName,
+            Title = Product.Name,
+            Version = version,
+            Instructions = ServerInstructions,
+        };
+
         static readonly (string Topic, string Title, string Description)[] Topics =
         {
-            ("workflow", "Working in ReBuzz", "The loop (build, render, measure, adjust), which tool for what, which guide for what, undo, and the checks before calling something done. Read first."),
-            ("concepts", "ReBuzz in five minutes", "Machines and the graph, parameters and tracks, patterns, the arrangement and the session grid, beats, pitches and levels."),
+            ("workflow", "Working in " + Product.Name, "The loop (build, render, measure, adjust), which tool for what, which guide for what, undo, and the checks before calling something done. Read first."),
+            ("concepts", Product.Name + " in five minutes","Machines and the graph, parameters and tracks, patterns, the arrangement and the session grid, beats, pitches and levels."),
             ("composition", "Composition", "Forms and section lengths by genre, harmony and voice leading, melody, drum grids with swing and humanizing, arrangement energy, and templates (tempo, key, structure) for house, techno, DnB, synthwave, hip-hop, ambient, pop and lo-fi."),
             ("sound-design", "Sound design", "Reading a sound (envelope, spectrum, movement, space) and recipes with exact values for Neo Poly, Neo Wave and Neo FM6: pads, basses, leads, plucks, keys, bells, drums, textures, wavetable sweeps; Neo Drive, Comp, Verb, Ensemble (chorus, flanger, phaser) and Delay (tempo, dub and tape echoes) as sound tools."),
             ("mixing", "Mixing", "Gain staging targets, balance by reference, frequency slots per instrument, EQ and compression starting points by source, sidechain, sends and pre-delay against tempo, mono lows, and the checks with render probes and analyze."),

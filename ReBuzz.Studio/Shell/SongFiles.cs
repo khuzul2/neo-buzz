@@ -11,7 +11,7 @@ namespace ReBuzz.Studio.Shell
 {
     internal static class SongFiles
     {
-        static readonly FilePickerFileType Songs = new FilePickerFileType("ReBuzz songs") { Patterns = new[] { "*.bmx", "*.bmxml", "*.bmw" } };
+        static readonly FilePickerFileType Songs = new FilePickerFileType("Songs (.bmx, .bmxml, .bmw)") { Patterns = new[] { "*.bmx", "*.bmxml", "*.bmw" } };
         static readonly FilePickerFileType Bmx = new FilePickerFileType("Song with waves (.bmx)") { Patterns = new[] { "*.bmx" } };
         static readonly FilePickerFileType Bmxml = new FilePickerFileType("ReBuzz XML (.bmxml)") { Patterns = new[] { "*.bmxml" } };
 
@@ -53,7 +53,7 @@ namespace ReBuzz.Studio.Shell
             var core = Core;
             if (core == null || !core.Modified) return true;
             string name = core.SongCore.SongName == null ? "Untitled" : System.IO.Path.GetFileName(core.SongCore.SongName);
-            var answer = await Dialogs.Ask($"Save changes to {name}?", "ReBuzz", UserButtons.YesNoCancel);
+            var answer = await Dialogs.Ask($"Save changes to {name}?", Product.Name, UserButtons.YesNoCancel);
             if (answer == UserAnswer.Cancel) return false;
             if (answer == UserAnswer.Yes) return await Save();
             core.Modified = false;

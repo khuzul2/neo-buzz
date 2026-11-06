@@ -9,7 +9,7 @@
  "quirks": [
   "Each track is its own tap (delay line) with its own length, feedback and level (8 at most).",
   "Lengths count in Length unit, ticks by default, so echoes follow the tempo; the Max Delay attribute (1 s by default) caps them.",
-  "Mono: ReBuzz feeds it left + right summed, so a centred signal comes out about 6 dB louder with Dry thru on (profile: +6.2 dB), and the output is mono.",
+  "Mono: NeoBuzz Live feeds it left + right summed, so a centred signal comes out about 6 dB louder with Dry thru on (profile: +6.2 dB), and the output is mono.",
   "Feedback at −100% never decays (+30 dBFS after 30 s): param_set keeps it at −98.4% or above."
  ],
  "evidence": [

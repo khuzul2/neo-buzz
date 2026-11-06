@@ -7,7 +7,7 @@
 // tools (transport, midi_play, meters_read…) play for whoever listens to that device.
 //
 // On macOS (M6) MIDI goes through CoreMIDI: --midi-in and --midi-out open devices, --clock-out
-// sends MIDI clock, and other apps reach ReBuzz through its virtual "ReBuzz" ports. --link joins
+// sends MIDI clock, and other apps reach it through its virtual "NeoBuzz Live" ports. --link joins
 // Ableton Link through the ReBuzzLink helper beside the app.
 //
 //   rebuzz-headless --agent [song.bmxml] [--settings <folder>]
@@ -22,6 +22,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using BuzzGUI.Common;
 using ReBuzz.Agent;
+using ReBuzz.Agent.Mcp;
 using ReBuzz.Host;
 using ReBuzz.Platform;
 
@@ -29,8 +30,8 @@ namespace ReBuzz.Headless
 {
     internal static class Program
     {
-        const string Usage =
-            "rebuzz-headless: ReBuzz's engine with its MCP server on stdio (docs/specs/mcp-server.md).\n" +
+        static readonly string Usage =
+            $"rebuzz-headless: {Product.Name}'s engine with its MCP server on stdio (docs/specs/mcp-server.md).\n" +
             "  rebuzz-headless --agent [song.bmxml] [--settings <folder>]\n" +
             "      [--audio [--device <name>] [--input <name|default>] [--buffer <frames>] [--rate <hz>]]\n" +
             "      [--midi-in <name|all|none>]... [--midi-out <name|all|none>]... [--clock-out <name|none>]... [--link|--no-link]\n" +
@@ -38,14 +39,14 @@ namespace ReBuzz.Headless
             "--audio plays through PortAudio (the default output, or --device), so the live tools work.\n" +
             "--midi-in plays MIDI inputs into the machine last added or armed tracks; --midi-out opens outputs for\n" +
             "MIDI out machines; --clock-out sends MIDI clock; --link joins Ableton Link (the ReBuzzLink helper\n" +
-            "beside this program). They are kept in the settings, as ReBuzz's MIDI and sync settings are; none\n" +
-            "and --no-link turn them off. On macOS other apps also reach ReBuzz through its virtual \"ReBuzz\" ports.\n" +
-            "Point an MCP client at it, e.g. claude mcp add rebuzz -- rebuzz-headless --agent";
+            $"beside this program). They are kept in the settings, as {Product.Name}'s MIDI and sync settings are; none\n" +
+            $"and --no-link turn them off. On macOS other apps also reach it through its virtual \"{Product.Name}\" ports.\n" +
+            "Point an MCP client at it, e.g. " + ClaudeCode.StdioCommand("rebuzz-headless");
 
         /// <summary>The options that take a value (the song is the argument that is neither).</summary>
         static readonly string[] Valued = { "--settings", "--device", "--input", "--buffer", "--rate", "--midi-in", "--midi-out", "--clock-out" };
 
-        static void Log(string message) => Console.Error.WriteLine("[ReBuzz] " + message);
+        static void Log(string message) => Console.Error.WriteLine(Product.LogPrefix + message);
 
         static int Main(string[] args)
         {

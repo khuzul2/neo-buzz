@@ -20,7 +20,7 @@ namespace ReBuzz.Studio
         {
             Styles.Add(new FluentTheme());
             RequestedThemeVariant = ThemeVariant.Dark;
-            Name = "ReBuzz";
+            Name = Product.Name;     // the macOS app menu: About, Hide and Quit NeoBuzz Live
         }
 
         public override void OnFrameworkInitializationCompleted()
@@ -62,7 +62,7 @@ namespace ReBuzz.Studio
             catch (Exception e)
             {
                 host.Log("start-up failed: " + e);
-                window.ShowStep("ReBuzz couldn't start: " + e.Message);
+                window.ShowStep(Product.Name + " couldn't start: " + e.Message);
                 if (Program.Smoke) desktop.Shutdown(1);
             }
         }

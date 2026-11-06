@@ -138,7 +138,7 @@ namespace ReBuzz.Agent
                             o["tracks"] = m.TrackCount;
                         }
                         if (m.ParameterGroups.Count > 2 && m.ParameterGroups[2].Parameters.Any(p => p.Type == BuzzGUI.Interfaces.ParameterType.Note))
-                            o["notes"] = "Plays notes: notes_write puts them in patterns, and ReBuzz sends them to it as MIDI. Neo machines and most " +
+                            o["notes"] = "Plays notes: notes_write puts them in patterns, and " + Product.Name + " sends them to it as MIDI. Neo machines and most " +
                                          "managed machines play MIDI; some older native machines ignore it (render and check).";
                         return o;
                     }, c.Cancellation);
@@ -284,7 +284,7 @@ namespace ReBuzz.Agent
 
         /// <summary>What gear_list and machine_describe say about a machine that needs a window (machine-safety.md §3.1).</summary>
         internal static string WindowNote(ManifestHealth health) =>
-            "Works in ReBuzz on Windows with its window" + (health.Window.Length > 0 ? $" ({health.Window})" : "") + "; it can't be built headless.";
+            "Works in " + Product.Name + " on Windows with its window" + (health.Window.Length > 0 ? $" ({health.Window})" : "") + "; it can't be built headless.";
 
         /// <summary>A parameter's safe range as tools show it: the machine's texts, raw values and why.</summary>
         internal static JsonObject SafeRangeJson(SafeRange s, Func<int, string> describe)

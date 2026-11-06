@@ -504,7 +504,7 @@
     "Neo Sampler plays every track's note: Pedal M1, as profiled, played one voice of a chord (its multi-track note workaround), so chords sound fuller after the move.",
     "Pedal M1 mixes a stereo wave to mono; Neo Sampler keeps it stereo (uncorrelated channels read about 3 dB louder).",
     "Pedal M1 reads a wave's first layer and caches it; Neo Sampler picks a layer by its root and follows the wavetable as it changes.",
-    "ReBuzz holds a wave parameter at 1 or more, so Pedal M1's zones 2–4 always play (wave 1 at its defaults, from Buzz C-4, C-5 and C-6 up): the conversion keeps them as zones 2–4, the same wave, so it sounds the same.",
+    "NeoBuzz Live holds a wave parameter at 1 or more, so Pedal M1's zones 2–4 always play (wave 1 at its defaults, from Buzz C-4, C-5 and C-6 up): the conversion keeps them as zones 2–4, the same wave, so it sounds the same.",
     "Its LFOs and portamento have no counterpart (listed as unmapped); Pedal M1's resonance is a 2-pole SVF's (Q 0.5 to 4), Neo Sampler's LP 12 a ladder's 2-pole output, the same at 0 % and near it in peak height above (it passes more above the cutoff)."
   ],
   "tolerance": {

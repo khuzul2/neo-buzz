@@ -12,7 +12,7 @@ namespace ReBuzzTests
 {
     /// <summary>
     /// Fork addition (docs/specs/mcp-server.md §3.1, A0/A1): the real thing an MCP client runs,
-    /// <c>ReBuzz.exe --agent</c>, with the package's own gear: it answers on stdio, makes a sound
+    /// <c>NeoBuzzLive.exe --agent</c>, with the package's own gear: it answers on stdio, makes a sound
     /// with a Neo synth through the tools, and exits when stdin closes.
     /// </summary>
     public partial class AgentHeadlessTests
@@ -41,6 +41,18 @@ namespace ReBuzzTests
             }
 
             public string Errors => string.Join("\n", stderr.TakeLast(40)) + Windows();
+
+            /// <summary>Whether a line on stderr has had <paramref name="text"/>, waiting up to 10 s for it (stderr is read as it comes).</summary>
+            public bool Said(string text)
+            {
+                var clock = Stopwatch.StartNew();
+                while (!stderr.Any(l => l.Contains(text)))
+                {
+                    if (clock.Elapsed.TotalSeconds > 10) return false;
+                    System.Threading.Thread.Sleep(50);
+                }
+                return true;
+            }
 
             /// <summary>The process's windows and their texts (a dialog nobody can answer shows up here).</summary>
             string Windows()
@@ -94,7 +106,7 @@ namespace ReBuzzTests
                     var line = process.StandardOutput.ReadLineAsync();
                     if (!line.Wait(TimeSpan.FromSeconds(Math.Max(1, (deadline - DateTime.UtcNow).TotalSeconds))))
                         break;
-                    if (line.Result == null) Assert.Fail($"ReBuzz closed stdout. stderr:\n{Errors}");
+                    if (line.Result == null) Assert.Fail($"NeoBuzz Live closed stdout. stderr:\n{Errors}");
                     JsonObject node = null;
                     try { node = JsonNode.Parse(line.Result) as JsonObject; }
                     catch (Exception) { Assert.Fail($"stdout carried a line that isn't the protocol: {line.Result}"); }
@@ -126,12 +138,35 @@ namespace ReBuzzTests
             }
         }
 
+        /// <summary>
+        /// Fork (rename): the app people launch is NeoBuzzLive.exe, the apphost ReBuzz.csproj names so; the assembly it
+        /// starts stays ReBuzz.dll (machines, plugins and these tests load it by name), and the file says NeoBuzz Live
+        /// (Task Manager and the volume mixer show its description).
+        /// </summary>
+        [Test]
+        public void TheAppIsNeoBuzzLiveExeAndItsAssemblyStaysReBuzz()
+        {
+            string bin = File.ReadLines(TestAssemblyDirectory.Value.AddFileName("ReBuzzLocation.txt").ToString()).First();
+            string exe = Path.Combine(bin, "NeoBuzzLive.exe");
+            Assert.That(File.Exists(exe), Is.True, $"{exe} is built");
+            Assert.That(File.Exists(Path.Combine(bin, "ReBuzz.exe")), Is.False, "no ReBuzz.exe beside it");
+            Assert.That(ReBuzz.Product.WindowsExe, Is.EqualTo("NeoBuzzLive.exe"));
+            string dll = Path.Combine(bin, "ReBuzz.dll");
+            Assert.That(System.Reflection.AssemblyName.GetAssemblyName(dll).Name, Is.EqualTo("ReBuzz"), "the assembly keeps its name");
+            Assert.That(File.Exists(Path.Combine(bin, "ReBuzz.runtimeconfig.json")), Is.True);
+            foreach (var file in new[] { exe, dll })
+            {
+                var info = FileVersionInfo.GetVersionInfo(file);
+                Assert.That((info.FileDescription, info.ProductName), Is.EqualTo(("NeoBuzz Live", "NeoBuzz Live")), Path.GetFileName(file));
+            }
+        }
+
         [Test]
         public void HeadlessReBuzzServesMcpOnStdioAndMakesASound()
         {
             string bin = File.ReadLines(TestAssemblyDirectory.Value.AddFileName("ReBuzzLocation.txt").ToString()).First();
-            string exe = Path.Combine(bin, "ReBuzz.exe");
-            if (!File.Exists(exe)) Assert.Inconclusive($"ReBuzz.exe not built ({exe})");
+            string exe = Path.Combine(bin, ReBuzz.Product.WindowsExe);
+            if (!File.Exists(exe)) Assert.Inconclusive($"{ReBuzz.Product.WindowsExe} not built ({exe})");
             if (!File.Exists(Path.Combine(bin, "Gear", "Generators", "Neo Poly.NET.dll"))) Assert.Inconclusive("Neo Poly not built");
 
             using var client = new Client(exe, "--agent");
@@ -141,7 +176,9 @@ namespace ReBuzzTests
                 ["capabilities"] = new JsonObject(),
                 ["clientInfo"] = new JsonObject { ["name"] = "ci", ["version"] = "1" },
             }, seconds: 180);
-            Assert.That(init["result"]!["serverInfo"]!["name"]!.GetValue<string>(), Is.EqualTo("rebuzz"), client.Errors);
+            Assert.That(init["result"]!["serverInfo"]!["name"]!.GetValue<string>(), Is.EqualTo("neobuzz-live"), client.Errors);
+            Assert.That(init["result"]!["serverInfo"]!["title"]!.GetValue<string>(), Is.EqualTo("NeoBuzz Live"));
+            Assert.That(client.Said("[NeoBuzz Live] Headless agent server ready"), Is.True, "the console's banner names the app. stderr:\n" + client.Errors);
             client.Send(new JsonObject { ["jsonrpc"] = "2.0", ["method"] = "notifications/initialized" });
 
             var status = client.Tool("studio_status");
@@ -170,7 +207,7 @@ namespace ReBuzzTests
             client.Tool("song_save", new JsonObject { ["path"] = song });
             Assert.That(new FileInfo(song).Length, Is.GreaterThan(0));
 
-            Assert.That(client.CloseAndWait(60), Is.True, "ReBuzz exits when stdin closes. stderr:\n" + client.Errors);
+            Assert.That(client.CloseAndWait(60), Is.True, "NeoBuzz Live exits when stdin closes. stderr:\n" + client.Errors);
         }
 
         /// <summary>
@@ -182,8 +219,8 @@ namespace ReBuzzTests
         public void EveryMachineInTheGearHasAManifestAndAManual()
         {
             string bin = File.ReadLines(TestAssemblyDirectory.Value.AddFileName("ReBuzzLocation.txt").ToString()).First();
-            string exe = Path.Combine(bin, "ReBuzz.exe");
-            if (!File.Exists(exe)) Assert.Inconclusive($"ReBuzz.exe not built ({exe})");
+            string exe = Path.Combine(bin, ReBuzz.Product.WindowsExe);
+            if (!File.Exists(exe)) Assert.Inconclusive($"{ReBuzz.Product.WindowsExe} not built ({exe})");
             if (!File.Exists(Path.Combine(bin, "Gear", "Effects", "Jeskola Delay.machine.json"))) Assert.Inconclusive("Machines/Manifests not copied into Gear (build.ps1 step 5b)");
 
             using var client = new Client(exe, "--agent");
@@ -235,7 +272,7 @@ namespace ReBuzzTests
             Assert.That(describe["quirks"]!.AsArray().Count, Is.GreaterThan(0));
             Assert.That(describe["parameters"]!.AsArray().Any(p => p!["role"]?.GetValue<string>() == "delay.feedback"), Is.True);
 
-            Assert.That(client.CloseAndWait(60), Is.True, "ReBuzz exits when stdin closes. stderr:\n" + client.Errors);
+            Assert.That(client.CloseAndWait(60), Is.True, "NeoBuzz Live exits when stdin closes. stderr:\n" + client.Errors);
         }
     }
 }

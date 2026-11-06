@@ -998,7 +998,7 @@ namespace ReBuzz
             if (Buzz.Modified)
             {
                 var song = Buzz.Song;
-                var result = UiUtils.MessageBox("Save changes to " + (song.SongName == null ? "Untitled" : song.SongName), "ReBuzz", MessageBoxButton.YesNoCancel);
+                var result = UiUtils.MessageBox("Save changes to " + (song.SongName == null ? "Untitled" : song.SongName), Product.Name, MessageBoxButton.YesNoCancel);
                 if (result == MessageBoxResult.Yes)
                 {
                     Buzz.SaveSongFile(song.SongName);
@@ -1107,7 +1107,7 @@ namespace ReBuzz
                     var newest = leftovers[0];
                     string song = string.IsNullOrEmpty(newest.Song) ? "an untitled song" : "'" + Path.GetFileName(newest.Song) + "'";
                     var answer = MessageBox.Show(this,
-                        $"ReBuzz didn't close normally last time. There are unsaved changes to {song}, autosaved at {newest.Saved:g}.\n\n" +
+                        $"{Product.Name} didn't close normally last time. There are unsaved changes to {song}, autosaved at {newest.Saved:g}.\n\n" +
                         "Yes: open them (then save to keep them)\nNo: delete them\nCancel: keep them for next time",
                         "Recover unsaved changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
                     if (answer == MessageBoxResult.Yes)
@@ -1344,7 +1344,7 @@ namespace ReBuzz
             else if (Buzz.ActiveView == BuzzView.SessionView)
                 currentView = "[Session]";
 
-            this.Title = (Buzz.SongCore.SongName == null ? "Untitled" : Buzz.SongCore.SongName) + (Buzz.Modified == true ? "*" : "") + " | " + "ReBuzz Digital Audio Workstation | " + currentView;
+            this.Title = (Buzz.SongCore.SongName == null ? "Untitled" : Buzz.SongCore.SongName) + (Buzz.Modified == true ? "*" : "") + " | " + Product.Name + " | " + currentView;
         }
 
         internal void SetStatusBarText(string text, int item)

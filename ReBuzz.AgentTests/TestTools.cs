@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using ReBuzz.Agent.Mcp;
+using ReBuzz.Agent.Guides;
 using static ReBuzz.Agent.Mcp.Schema;
 
 namespace ReBuzz.AgentTests
@@ -77,7 +78,7 @@ namespace ReBuzz.AgentTests
             {
                 new ResourceDef { Uri = "rebuzz://guides/workflow", Name = "workflow", Title = "Workflow", Description = "The loop", Read = () => "# Workflow" },
             };
-            var server = new McpServer(new ServerInfo { Name = "rebuzz", Title = "ReBuzz", Version = "test", Instructions = "Start with studio_status." }, tools, prompts, resources);
+            var server = new McpServer(GuideLibrary.AppServer("test"), tools, prompts, resources);     // the app's identity (neobuzz-live) and instructions
             server.AddResolver(uri => uri == "rebuzz://renders/r1.wav" ? new ResourceContent(uri, "audio/wav", Blob: new byte[] { 1, 2, 3 }) : null);
             return server;
         }

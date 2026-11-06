@@ -1,4 +1,4 @@
-# Working in ReBuzz: the loop
+# Working in NeoBuzz Live: the loop
 
 Build, listen, measure, adjust. Never claim a result you haven't rendered and measured.
 
@@ -25,7 +25,7 @@ Build, listen, measure, adjust. Never claim a result you haven't rendered and me
 - Compare versions: `snapshot_save(name=…)` before a change, `snapshot_diff(a=…)` after, `snapshot_restore(name=…)` or `undo` when it measured worse.
 
 ## Live, with the user (studio mode)
-`studio_status` says the mode. In studio mode the user listens through ReBuzz's audio output, and these tools play with them; live mode is the same with no window (rebuzz-headless playing through a device). Headless, they answer with the way to hear instead, so use render there.
+`studio_status` says the mode. In studio mode the user listens through NeoBuzz Live's audio output, and these tools play with them; live mode is the same with no window (rebuzz-headless playing through a device). Headless, they answer with the way to hear instead, so use render there.
 - `transport(action="play", at="9.1")`, `transport(action="stop")`, `transport(action="status")`: the song as it plays, with the session's clips.
 - `session_launch(scene=2)` launches a scene on the next bar (or at the clip's quantization). `session_launch(machine="Bass", pattern="Fill")` launches one clip; `session_launch(stop=true)` stops everything.
 - `meters_read(machines=["Bass"], window_seconds=2)`: loudness and peaks now, measured as analyze measures renders.
@@ -40,7 +40,7 @@ Read the one for the job with `guide(topic=…)` (or the resource rebuzz://guide
 
 | Topic | When |
 |---|---|
-| `concepts` | how ReBuzz works: machines, patterns, time, pitch, levels |
+| `concepts` | how NeoBuzz Live works: machines, patterns, time, pitch, levels |
 | `composition` | forms, harmony, melody, drum grids, arrangement, genre templates |
 | `sound-design` | describing a sound in numbers; recipes for the Neo synths and effects |
 | `mixing` | gain staging, balance, EQ, compression, sidechain, space, stereo |

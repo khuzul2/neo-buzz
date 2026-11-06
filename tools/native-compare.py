@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Fork (docs/specs/mcp-server.md §12.14, U7): the natives with sources, rebuilt, against the binaries songs play
-# today. Every build of a machine plays the same cases side by side in one render through ReBuzz.exe --agent:
+# today. Every build of a machine plays the same cases side by side in one render through NeoBuzzLive.exe --agent:
 # effects each fed the same Neo FM6 phrase (a stab, a bass note, a high note, then silence for the tails),
 # generators each playing the same notes or triggers; each instance is probed (render's probes), so every one
 # hears exactly the same input in the same render. Cases: the defaults, then every global and track parameter
@@ -38,7 +38,7 @@
 # render, heard by analyze's pitch (YIN) or, where that hears none (a 303's squelch), the profiler's harmonic sieve
 # (tools/machine_roles.py) on the note's first 0.37 s. A note heard a semitone or more away fails the script.
 #
-#   python tools/native-compare.py <ReBuzz.exe> <work> [--variant LABEL=DIR ...] [--zeroed LABEL=DIR] [--only gear,...]
+#   python tools/native-compare.py <NeoBuzzLive.exe> <work> [--variant LABEL=DIR ...] [--zeroed LABEL=DIR] [--only gear,...]
 #                                  [--gate] [--shipped RunTime/Gear] [--json out.json] [--pitch] [--no-compare]
 
 import hashlib
@@ -360,7 +360,7 @@ def main(argv):
     except AttributeError:
         pass
     if len(argv) < 2:
-        print(__doc__ or "usage: native-compare.py <ReBuzz.exe> <work> [--variant LABEL=DIR] [--zeroed LABEL=DIR] [--only a,b] [--gate]")
+        print(__doc__ or "usage: native-compare.py <NeoBuzzLive.exe> <work> [--variant LABEL=DIR] [--zeroed LABEL=DIR] [--only a,b] [--gate]")
         return 2
     exe, work = os.path.abspath(argv[0]), os.path.abspath(argv[1])
     variants, only, gate, shipped_dir, json_out = [], None, False, os.path.join(ROOT, "RunTime", "Gear"), None

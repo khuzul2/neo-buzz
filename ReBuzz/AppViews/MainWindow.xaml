@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ReBuzz"
         mc:Ignorable="d"
         x:Name="mainWindow"
-        Title="ReBuzz Digital Audio Workstation" Height="800" Width="1500" UseLayoutRounding="True" TextOptions.TextFormattingMode="{Binding TextFormattingMode}"
+        Title="NeoBuzz Live" Height="800" Width="1500" UseLayoutRounding="True" TextOptions.TextFormattingMode="{Binding TextFormattingMode}"
 		Style="{DynamicResource ThemeWindowStyle}">
   
     <Grid x:Name="mainGrid">

@@ -18,7 +18,7 @@ namespace ReBuzz.AgentTests
             var session = new McpSession();
             var r = await Send(s, session, Initialize(1, "2025-06-18"));
             Assert.That(r!["result"]!["protocolVersion"]!.GetValue<string>(), Is.EqualTo("2025-06-18"));
-            Assert.That(r["result"]!["serverInfo"]!["name"]!.GetValue<string>(), Is.EqualTo("rebuzz"));
+            Assert.That(r["result"]!["serverInfo"]!["name"]!.GetValue<string>(), Is.EqualTo("neobuzz-live"));
             Assert.That(r["result"]!["capabilities"]!["tools"], Is.Not.Null);
             Assert.That(r["result"]!["instructions"]!.GetValue<string>(), Does.Contain("studio_status"));
 
@@ -83,7 +83,7 @@ namespace ReBuzz.AgentTests
 
             r = await Send(s, new McpSession(), Call(9, "boom"));
             Assert.That(r!["result"]!["isError"]!.GetValue<bool>(), Is.True);
-            Assert.That(Text(r), Does.Contain("boom failed inside ReBuzz: InvalidOperationException: collection was modified"));
+            Assert.That(Text(r), Does.Contain("boom failed inside NeoBuzz Live: InvalidOperationException: collection was modified"));
         }
 
         [Test]

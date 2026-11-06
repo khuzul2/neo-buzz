@@ -125,7 +125,7 @@ namespace ReBuzz.Agent.Guides
             if (bars == null && seconds is double s && bpm is double b) bars = (int)(Math.Round(s * b / 240 / 4) * 4);
 
             var sb = new StringBuilder();
-            sb.Append($"Compose a {(mood != null ? mood + " " : "")}{genre} track in ReBuzz");
+            sb.Append($"Compose a {(mood != null ? mood + " " : "")}{genre} track in {Product.Name}");
             if (bpm != null) sb.Append($" at {bpm.Value.ToString("0", Inv)} BPM");
             if (length != null) sb.Append($", {length} long");
             sb.Append(".\n\n");
@@ -166,7 +166,7 @@ Report the form (sections and bars), key, tempo, the sounds, and the measured lo
                 MachineManual.Slug(c) == MachineManual.Slug(machine) || machine.IndexOf(c, StringComparison.OrdinalIgnoreCase) >= 0);
 
             var sb = new StringBuilder();
-            sb.Append($"Design this sound in ReBuzz: \"{description}\"");
+            sb.Append($"Design this sound in {Product.Name}: \"{description}\"");
             sb.Append(machine == null ? ".\n\n" : gear != null ? $", on {gear}.\n\n" : $", on the machine \"{machine}\".\n\n");
             sb.Append(@"Plan. Render and measure every version; don't describe a sound you haven't measured.
 1. Translate the description into targets on the four axes of the sound-design guide (envelope, spectrum, movement, space), each with a number you can measure: attack and decay in ms, spectral centroid and tilt, which band leads, modulation rate, stereo correlation.
@@ -199,7 +199,7 @@ Report the final parameters that matter (with units), the measured targets, and 
         {
             string goals = Arg(args, "goals");
             var sb = new StringBuilder();
-            sb.Append("Mix the current song in ReBuzz").Append(goals != null ? $" with these goals: {goals}.\n\n" : ": clean, balanced and ready for mastering.\n\n");
+            sb.Append($"Mix the current song in {Product.Name}").Append(goals != null ? $" with these goals: {goals}.\n\n" : ": clean, balanced and ready for mastering.\n\n");
             sb.Append(@"Plan. Change one thing at a time and measure it; keep a snapshot of the mix before each stage.
 1. Inventory: `studio_status`, `machine_list` (every source, effect and connection gain), `arrangement_markers` (the loudest section to work on).
 2. Baseline: `snapshot_save(name=""mix 0"")`; `analyze_mix(section=…)` on the loudest section (per-track levels and bands, masking pairs, headroom, the worst problems first); `analyze` its master render with metrics loudness, peaks, spectrum, stereo, dynamics.
@@ -238,7 +238,7 @@ Report each change with its before and after numbers, and anything you couldn't 
             var (name, lufs, tol, ceiling) = MasterTarget(target);
             string L(double x) => x.ToString("0.#", Inv);
             var sb = new StringBuilder();
-            sb.Append($"Master the current song in ReBuzz for {name}: integrated {L(lufs)} LUFS ±{L(tol)}, true peak at or below {L(ceiling)} dBTP");
+            sb.Append($"Master the current song in {Product.Name} for {name}: integrated {L(lufs)} LUFS ±{L(tol)}, true peak at or below {L(ceiling)} dBTP");
             if (target != null && !name.StartsWith(target, StringComparison.OrdinalIgnoreCase)) sb.Append($" (from \"{target}\")");
             sb.Append(".\n\n");
             sb.Append(@"Plan. Measure after every change; loudness-match before you compare two versions.
@@ -270,7 +270,7 @@ Report each change with its before and after numbers, and anything you couldn't 
             };
             bool named = !new[] { "all", "composition", "arrangement", "song", "sound", "sounds", "sound design", "sound-design", "mix", "mixing", "master", "mastering" }.Contains(s);
             var sb = new StringBuilder();
-            sb.Append("Critique the current song in ReBuzz").Append(s == "all" ? "" : named ? $", focusing on \"{scope}\" (a section or a machine)" : $", scope: {scope}").Append(".\n\n");
+            sb.Append($"Critique the current song in {Product.Name}").Append(s == "all" ? "" : named ? $", focusing on \"{scope}\" (a section or a machine)" : $", scope: {scope}").Append(".\n\n");
             sb.Append(@"Rules: read-only. Change nothing in the song (render and analyze change nothing). Every finding needs evidence: a number from a tool, a note, a bar.
 Plan.
 1. Read: `studio_status`, `machine_list`, `arrangement_get`, `arrangement_markers`, `pattern_list`.

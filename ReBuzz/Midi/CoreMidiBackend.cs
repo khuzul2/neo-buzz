@@ -15,14 +15,25 @@ namespace ReBuzz.Midi
     ///    agree between changes, as WinMM's numbering does on Windows. Names are CoreMIDI's display
     ///    names; a second device of the same name is "Name (2)".
     ///  - Hot-plug: each change reports the names that came and went.
-    ///  - The MIDI 2 endpoint's place: a virtual destination "ReBuzz", whose messages play as a
-    ///    keyboard's do (what Windows' virtual device is for), and a virtual source "ReBuzz",
+    ///  - The MIDI 2 endpoint's place: a virtual destination "NeoBuzz Live", whose messages play as a
+    ///    keyboard's do (what Windows' virtual device is for), and a virtual source "NeoBuzz Live",
     ///    offered as an output, so clock out and MIDI out machines reach other apps. They aren't
     ///    offered as an input or as an output to themselves.
     /// </summary>
     internal sealed class CoreMidiBackend : IMidiBackend
     {
-        public const string VirtualName = "ReBuzz";
+        /// <summary>The virtual ports' name, as other apps list them: the app's.</summary>
+        public const string VirtualName = Product.Name;
+
+        /// <summary>
+        /// Their name before the app was NeoBuzz Live. A MIDI setting saved with it (the MIDI Out List, clock out,
+        /// --clock-out) still means them; the settings aren't rewritten. Their unique IDs stay as they were
+        /// (CoreMidi.KeepId), so other apps that remember them by ID find them again.
+        /// </summary>
+        public const string FormerVirtualName = "ReBuzz";
+
+        /// <summary>A saved output name as the ports are named now (<see cref="FormerVirtualName"/> is <see cref="VirtualName"/>).</summary>
+        public static string Current(string saved) => saved == FormerVirtualName ? VirtualName : saved;
 
         readonly Action<int> toCore;
         readonly Action<string> log;
@@ -103,7 +114,7 @@ namespace ReBuzz.Midi
         CoreMidi.Sender Sender(Port port)
         {
             if (!port.Virtual) return new CoreMidi.Output(port.Ref);
-            return virtualOut ?? throw new InvalidOperationException("The ReBuzz virtual source is gone.");
+            return virtualOut ?? throw new InvalidOperationException($"The {VirtualName} virtual source is gone.");
         }
 
         public IControllerPort OpenControllerPort(int inputIndex, int outputIndex)
@@ -183,7 +194,7 @@ namespace ReBuzz.Midi
                 }
                 catch (Exception e)
                 {
-                    log("The ReBuzz virtual MIDI ports didn't open: " + e.Message);
+                    log($"The {VirtualName} virtual MIDI ports didn't open: " + e.Message);
                     ReleaseMidi2();
                     return false;
                 }

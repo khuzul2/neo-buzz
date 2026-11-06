@@ -626,7 +626,7 @@ namespace ReBuzz.Core
         }
 
         public int BuildNumber { get => int.Parse(BuildInfo.Number); }
-        public string BuildString { get => "ReBuzz Build " + BuildNumber + " " + BuildInfo.Date; }
+        public string BuildString { get => Product.Name + " Build " + BuildNumber + " " + BuildInfo.Date; }
 
         Dictionary<string, MachineDLL> machineDLLsList = new Dictionary<string, MachineDLL>();
         internal Dictionary<string, MachineDLL> MachineDLLsList { get => machineDLLsList; set => machineDLLsList = value; }
@@ -1452,7 +1452,7 @@ namespace ReBuzz.Core
         {
             if (Modified)
             {
-                var result = userMessages.Ask("Save changes to " + (SongCore.SongName == null ? "Untitled" : SongCore.SongName), "ReBuzz", UserButtons.YesNoCancel);
+                var result = userMessages.Ask("Save changes to " + (SongCore.SongName == null ? "Untitled" : SongCore.SongName), Product.Name, UserButtons.YesNoCancel);
                 if (result == UserAnswer.Yes)
                 {
                     SaveSongFile(SongCore.SongName);

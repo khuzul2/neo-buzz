@@ -140,7 +140,7 @@ namespace ReBuzz.Agent
                         RefuseUnsaved(core, c.Bool("discard_unsaved") == true, "open another song");
                         core.Modified = false;
                         if (!core.OpenSongForAgent(path))
-                            throw new ToolError($"Couldn't open {path}." + (messages.Count > 0 ? " ReBuzz said: " + string.Join(" | ", messages) : " The file may be damaged or from a newer ReBuzz.") +
+                            throw new ToolError($"Couldn't open {path}." + (messages.Count > 0 ? $" {Product.Name} said: " + string.Join(" | ", messages) : $" The file may be damaged or from a newer {Product.Name}.") +
                                                 " The studio now has an empty song.");
                         return Status(host);
                     }, c.Cancellation);
@@ -179,7 +179,7 @@ namespace ReBuzz.Agent
                             core.SongCore.SongName = path;
                         }
                         core.SaveSongFile(path);
-                        if (messages.Count > 0) throw new ToolError($"Saving {path} failed. ReBuzz said: " + string.Join(" | ", messages));
+                        if (messages.Count > 0) throw new ToolError($"Saving {path} failed. {Product.Name} said: " + string.Join(" | ", messages));
                         return new JsonObject { ["file"] = path, ["bytes"] = new FileInfo(path).Length };
                     }, c.Cancellation);
                     return ToolResult.Ok($"Saved {r["file"]} ({r["bytes"]} bytes).", r);
@@ -274,11 +274,11 @@ namespace ReBuzz.Agent
                 Req("latency_ms", Number("From a rendered sample to the speaker")),
                 Req("render_threads", Integer("Threads rendering machines (1: the device's own thread only)")),
                 Opt("workgroup_threads", Integer("Render threads in the device's audio workgroup now (macOS)")),
-                Req("dropouts", Integer("Buffers that missed their deadline since ReBuzz started")),
+                Req("dropouts", Integer("Buffers that missed their deadline since " + Product.Name + " started")),
                 Req("worst_overrun_ms", Number("How far past its deadline the slowest of those buffers ran")),
-                Req("played_seconds", Number("Audio the device has taken since ReBuzz started: its clock, which runs in real time while it plays")))),
+                Req("played_seconds", Number("Audio the device has taken since " + Product.Name + " started: its clock, which runs in real time while it plays")))),
             Opt("safety", SafetySchema()),
-            Opt("warnings", Array(String("A message"), "Messages ReBuzz raised during the call")));
+            Opt("warnings", Array(String("A message"), "Messages " + Product.Name + " raised during the call")));
 
         // Fork (machine-safety.md §3.2–3.3): the guard on every machine and the safe master.
 
