@@ -103,6 +103,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Drums = new("Neo Drums", "Drums", true);
         // The filter effect (docs/specs/mcp-server.md §12.5): Neo Poly's filters with an envelope follower and an LFO.
         internal static readonly NeoInfo Filter = new("Neo Filter", "Filter", false);
+        // The hybrid wavetable synth (docs/specs/dye-essence.md): a Neo-family machine with its own name.
+        internal static readonly NeoInfo Dye = new("Dye Essence", "Dye", true);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -1266,6 +1268,51 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void DyeEssencePlaysItsTablesAndAUserTableAndShowsItsEditor()
+        {
+            using var rig = new Rig(Dye);
+            rig.Notes(BuzzNote(4, 0), BuzzNote(4, 7));
+            var basic = rig.PlayUntilSound(0.3);
+            TestContext.Out.WriteLine($"init {Db(Rms(basic)):F1} dB");
+            Assert.That(Rms(basic), Is.GreaterThan(1e-3), "the built-in table sounds once built");
+
+            // A user table for slot B: four frames from a WAV file, kept in the machine state.
+            var machine = rig.Effect.ManagedMachine;
+            var asm = machine.GetType().Assembly;
+            var frames = new float[4 * 2048];
+            for (int f = 0; f < 4; f++)
+                for (int i = 0; i < 2048; i++)
+                    for (int h = 1; h <= 1 + 4 * f; h++) frames[f * 2048 + i] += (float)(Math.Sin(2 * Math.PI * h * i / 2048) / h);
+            var wav = (byte[])asm.GetType("NeoBuzz.Wave.WavReader")!.GetMethod("Write")!.Invoke(null, new object[] { frames, 48000, 2048 })!;
+            var path = Path.Combine(Path.GetTempPath(), "Dye Essence test table.wav");
+            File.WriteAllBytes(path, wav);
+            machine.GetType().GetMethod("LoadUserTable", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(machine, new object[] { 1, path });
+            var stateProperty = machine.GetType().GetProperty("MachineState")!;
+            var state = stateProperty.GetValue(machine)!;
+            Assert.That((string)state.GetType().GetProperty("TableBName")!.GetValue(state)!, Is.EqualTo("Dye Essence test table"));
+            Assert.That(((string)state.GetType().GetProperty("TableBData")!.GetValue(state)!).Length, Is.GreaterThan(4 * 2048 * 4));
+
+            // Through XML, as songs store it, into the machine again.
+            var xml = new System.Xml.Serialization.XmlSerializer(state.GetType());
+            using var ms = new MemoryStream();
+            xml.Serialize(ms, state);
+            ms.Position = 0;
+            stateProperty.SetValue(machine, xml.Deserialize(ms));
+
+            rig.Param("A engine").SetValue(0, 0);   // Off: only slot B sounds
+            rig.Param("B engine").SetValue(0, 1);
+            rig.Param("B table").SetValue(0, 10);   // User
+            rig.Param("B position").SetValue(0, 1000);
+            rig.Play(0.1);
+            var user = rig.Play(0.3);
+            TestContext.Out.WriteLine($"slot B's user table {Db(Rms(user)):F1} dB");
+            Assert.That(Rms(user), Is.GreaterThan(1e-3), "the user table sounds after a state round trip");
+
+            var size = ShootEditor(rig.Effect, "dye-essence-editor");
+            TestContext.Out.WriteLine($"Dye Essence's WPF editor: {size.Width:0} x {size.Height:0}");
+        }
+
+        [Test]
         public void NeoFm6PlaysLoadsADx7BankAndShowsItsEditor()
         {
             using var rig = new Rig(Fm6);
@@ -1458,7 +1505,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");
