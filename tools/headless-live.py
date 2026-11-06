@@ -175,7 +175,7 @@ if studio:
             time.sleep(1)
 else:
     init = request("initialize", init_params)
-check(init.get("result", {}).get("serverInfo", {}).get("name") == "rebuzz", "initialize")
+check(init.get("result", {}).get("serverInfo", {}).get("name") == "neobuzz-live", "initialize")
 transport.send({"jsonrpc": "2.0", "method": "notifications/initialized"}, answer=False)
 
 mode = "live" if isinstance(transport, Stdio) else "studio"

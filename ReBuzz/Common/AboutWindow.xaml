@@ -8,7 +8,7 @@
                                 WindowStyle="ToolWindow"
         TextOptions.TextFormattingMode="{Binding TextFormattingMode}"
         Style="{DynamicResource ThemeWindowStyle}" ResizeMode="NoResize"
-        Title="About ReBuzz" Height="400" Width="700" WindowStartupLocation="CenterOwner">
+        Title="About NeoBuzz Live" Height="400" Width="700" WindowStartupLocation="CenterOwner">
     <Window.Resources>
         <Storyboard x:Key="StoryboardText" BeginTime="00:00:00.000">
             <ThicknessAnimationUsingKeyFrames Name="taText" Storyboard.TargetName="AboutText" Storyboard.TargetProperty="Margin" RepeatBehavior="Forever">

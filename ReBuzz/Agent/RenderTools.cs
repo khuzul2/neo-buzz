@@ -95,7 +95,7 @@ namespace ReBuzz.Agent
                     "the end (default 2). solo and mute hear parts without changing the song (solo keeps what feeds a soloed effect). probes also " +
                     "capture chosen machines' outputs (after their connection gain), each with its own id \"r3:Bass\" for analyze. Follows the " +
                     "song's tempo changes. Returns a render id for analyze, the file and the measurements. Changes nothing in the song, but stops " +
-                    "playback if it's running; in studio mode ReBuzz pauses while it renders. Example: render(from=0, to=32, solo=[\"Bass\", \"Drums\"]).",
+                    "playback if it's running; in studio mode " + Product.Name + " pauses while it renders. Example: render(from=0, to=32, solo=[\"Bass\", \"Drums\"]).",
                 Input = Object(null,
                     Opt("from", AnyOf("Start", Number("Beats", 0), String("\"bar.beat\""))),
                     Opt("to", AnyOf("End (exclusive)", Number("Beats", 0), String("\"bar.beat\""))),
@@ -379,7 +379,7 @@ namespace ReBuzz.Agent
                         int n = pos == 0 ? 1 : Math.Clamp(info.SamplesPerTick - pos, 1, 256);
                         wm.MainAudioFillBuffer(buffer, 0, n * 2);
                     }
-                    if (!core.Playing) throw new ToolError("Playback didn't start (is ReBuzz following an external clock?).");
+                    if (!core.Playing) throw new ToolError($"Playback didn't start (is {Product.Name} following an external clock?).");
 
                     foreach (var t in taps) t.Start();
                     // U2 in depth: each machine's work time from here (cpu=true).

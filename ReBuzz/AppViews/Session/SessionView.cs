@@ -117,7 +117,7 @@ namespace ReBuzz.AppViews.Session
             var left = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(6, 4, 6, 4) };
             left.Children.Add(new FlatButton("■  Stop all", () => session.StopAll(), "Stop every clip at the next launch point"));
             recordButton = new FlatButton("●  Rec", () => buzz.Recording = !buzz.Recording,
-                "Record into the arrangement (ReBuzz's Record, F7): every launch and stop is written into the sequences\n" +
+                "Record into the arrangement (" + Product.Name + "'s Record, F7): every launch and stop is written into the sequences\n" +
                 "at the song position where it happens. With looping off, the song grows while you record.\n" +
                 "Undo removes a whole recording pass (↶ here).");
             left.Children.Add(recordButton);
@@ -719,7 +719,7 @@ namespace ReBuzz.AppViews.Session
             dropoutButton.SetLit(count > 0 ? SessionPalette.Record : null);
             double latency = session is SessionCore core ? core.CompensatedLatencyMs : 0;
             dropoutButton.ToolTip =
-                "Audio dropouts since ReBuzz started or since you last clicked here:\n" +
+                "Audio dropouts since " + Product.Name + " started or since you last clicked here:\n" +
                 $"  late buffers (the engine took longer than the buffer lasts): {buzz.DeadlineMissCount}\n" +
                 $"  driver resets: {buzz.DriverResetCount}\n" +
                 $"  worst overrun: {buzz.DeadlineWorstOverrunMicros / 1000.0:F1} ms\n" +

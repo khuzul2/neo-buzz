@@ -50,7 +50,7 @@ namespace ReBuzz.Platform
 
         void Write(string kind, string caption, string message)
         {
-            string text = $"[ReBuzz] {kind}: " + (string.IsNullOrEmpty(caption) ? "" : caption + ": ") + (message ?? "").Replace('\r', ' ').Replace('\n', ' ');
+            string text = $"{Product.LogPrefix}{kind}: " + (string.IsNullOrEmpty(caption) ? "" : caption + ": ") + (message ?? "").Replace('\r', ' ').Replace('\n', ' ');
             lock (gate) output.WriteLine(text);
         }
     }

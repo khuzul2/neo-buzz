@@ -33,8 +33,8 @@ def draw(scale):
     d = ImageDraw.Draw(img)
 
     # The heading.
-    d.text((s(W / 2), s(44)), "Install ReBuzz", font=font("SemiBold", 22, scale), fill=INK, anchor="mm")
-    d.text((s(W / 2), s(72)), "Drag ReBuzz onto the Applications folder.", font=font("Regular", 14, scale),
+    d.text((s(W / 2), s(44)), "Install NeoBuzz Live", font=font("SemiBold", 22, scale), fill=INK, anchor="mm")
+    d.text((s(W / 2), s(72)), "Drag NeoBuzz Live onto the Applications folder.", font=font("Regular", 14, scale),
            fill=SOFT, anchor="mm")
 
     # The arrow between the two icons.
@@ -48,11 +48,11 @@ def draw(scale):
     d.rounded_rectangle((s(left), s(top), s(W - left), s(H - 28)), radius=s(12), fill=PANEL)
     d.text((s(left + 20), s(top + 22)), "The first time you open it", font=font("SemiBold", 13, scale), fill=INK)
     lines = [
-        "macOS says it can't verify ReBuzz, because the app isn't",
-        "notarized by Apple. Close that message (not Move to Trash),",
-        "then go to System Settings → Privacy & Security and click",
-        "Open Anyway. You only do this once. (Read me first.txt has",
-        "the Terminal alternative.)",
+        "macOS says it can't verify NeoBuzz Live, because the app",
+        "isn't notarized by Apple. Close that message (not Move to",
+        "Trash), then go to System Settings → Privacy & Security and",
+        "click Open Anyway. You only do this once. (Read me first.txt",
+        "has the Terminal alternative.)",
     ]
     body = font("Regular", 12.5, scale)
     for i, line in enumerate(lines):

@@ -4,7 +4,7 @@
 # tools/native-compare.py, on the package as built:
 #
 #   phase A  upstream's binary of each such machine (RunTime/Gear: Jeskola's 32-bit DLLs, the FSM and Oomek x64 ones) in
-#            Gear in place of the package's; three songs built with them through ReBuzz.exe --agent (every machine fed by
+#            Gear in place of the package's; three songs built with them through NeoBuzzLive.exe --agent (every machine fed by
 #            the null test's Neo FM6 phrase or playing its notes or triggers, at its defaults, or its global and track
 #            parameters a quarter or three quarters of the way up their raw ranges and a second track the other way where it
 #            has tracks; its first parameter automated in its pattern), each saved as .bmx and .bmxml; every saved song then
@@ -13,8 +13,8 @@
 #            repository that classic Buzz saved with these machines (ExternalMachines/source, *.bmx), start to end.
 #   phase B  the package's own Gear (the rebuilt DLLs); the same files opened, read, rendered and saved again.
 #
-# For each machine and song: the file ReBuzz loaded (gear_info: upstream's in A, the package's in B, and a *.x64.dll is an
-# AMD64 DLL, which ReBuzz runs in its 64-bit host, bin64/ReBuzzEngine64.exe), every parameter of every track the same raw
+# For each machine and song: the file the app loaded (gear_info: upstream's in A, the package's in B, and a *.x64.dll is an
+# AMD64 DLL, which the app runs in its 64-bit host, bin64/ReBuzzEngine64.exe), every parameter of every track the same raw
 # value in A and B, and the probe's samples the same bits, or within -100 dBFS (native-compare's line). A song saved again
 # in B is the same file as in A (BMXML: but its root's name and build stamps). The run fails on any of these for a machine
 # shipped rebuilt, and on one that sounds in none of the songs built here (a silent probe proves nothing; FSM Infector is
@@ -27,7 +27,7 @@
 # --profile FILE: the package run's machine profile (machine-profile.json): every machine shipped rebuilt profiled from
 # the package's file, with no crash or hang; its problems against the committed profile's are reported.
 #
-#   python tools/native-songs.py <ReBuzz.exe> <work> [--candidate DIR] [--profile FILE] [--only gear,...] [--json out.json]
+#   python tools/native-songs.py <NeoBuzzLive.exe> <work> [--candidate DIR] [--profile FILE] [--only gear,...] [--json out.json]
 
 import importlib.util
 import json
@@ -67,7 +67,7 @@ def pk(x):
 
 
 def gear_key(name):
-    """'Foo.x64.dll' and 'Foo.dll' are the same machine to ReBuzz's scanner."""
+    """'Foo.x64.dll' and 'Foo.dll' are the same machine to the app's scanner (ReBuzz's MachineDLLScanner)."""
     n = name.lower()
     for ext in (".x64.dll", ".dll"):
         if n.endswith(ext):
@@ -386,7 +386,7 @@ def main(argv):
     except AttributeError:
         pass
     if len(argv) < 2:
-        print("usage: native-songs.py <ReBuzz.exe> <work> [--candidate DIR] [--profile FILE] [--only a,b] [--json out.json]")
+        print("usage: native-songs.py <NeoBuzzLive.exe> <work> [--candidate DIR] [--profile FILE] [--only a,b] [--json out.json]")
         return 2
     exe, work = os.path.abspath(argv[0]), os.path.abspath(argv[1])
     candidate, profile, only, json_out, shipped = None, None, None, None, os.path.join(ROOT, "RunTime", "Gear")
@@ -480,7 +480,7 @@ def main(argv):
         want = "x64" if e["ours"][1].lower().endswith(".x64.dll") else "x86"
         got = pe_machine(e["ours"][0])
         if got != want:
-            (notes_out if e["role"] == "candidate" else failed).append(f"{e['gear']}: {e['ours'][1]} is {got}, not {want}: ReBuzz hosts it by its name")
+            (notes_out if e["role"] == "candidate" else failed).append(f"{e['gear']}: {e['ours'][1]} is {got}, not {want}: the app hosts it by its name")
     for label, path, names, beats in songs:
         a_song, b_song = reads["A"].get(label) or {}, reads["B"].get(label) or {}
         classic = beats is CLASSIC_BEATS

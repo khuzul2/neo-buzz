@@ -218,7 +218,7 @@ namespace ReBuzz.Host
             static bool IsNone(string name) => string.Equals(name, "none", StringComparison.OrdinalIgnoreCase);
             static Dictionary<string, int> Turn(IEnumerable<string> names, int on) => names.Distinct().ToDictionary(n => n, n => on);
             IEnumerable<string> Expand(IEnumerable<string> names, int count, Func<int, string> name) =>
-                names.Where(n => !IsNone(n)).SelectMany(n => string.Equals(n, "all", StringComparison.OrdinalIgnoreCase) ? Enumerable.Range(0, count).Select(name) : new[] { n });
+                names.Where(n => !IsNone(n)).SelectMany(n => string.Equals(n, "all", StringComparison.OrdinalIgnoreCase) ? Enumerable.Range(0, count).Select(name) : new[] { CoreMidiBackend.Current(n) });
 
             // Inputs: "none" turns every input in the settings off; names (or "all") turn them on.
             if (sync.MidiIn.Any(IsNone))
@@ -252,7 +252,7 @@ namespace ReBuzz.Host
                 if (sync.ClockOut.Any(IsNone))
                     foreach (var name in session.ClockOutNames.ToList()) session.SetClockOut(name, false);
                 foreach (var name in sync.ClockOut.Where(n => !IsNone(n)))
-                    session.SetClockOut(name, true);
+                    session.SetClockOut(CoreMidiBackend.Current(name), true);
                 if (sync.Link is bool link)
                 {
                     session.SetLink(link);
@@ -304,7 +304,7 @@ namespace ReBuzz.Host
                 for (int i = 0; i < midi.InputCount; i++) output.WriteLine("  " + midi.InputName(i));
                 output.WriteLine("MIDI outputs (--midi-out, --clock-out):");
                 for (int i = 0; i < midi.OutputCount; i++) output.WriteLine("  " + midi.OutputName(i));
-                output.WriteLine($"  {CoreMidiBackend.VirtualName} (virtual: other apps receive from it while ReBuzz runs; they send to its \"{CoreMidiBackend.VirtualName}\" destination)");
+                output.WriteLine($"  {CoreMidiBackend.VirtualName} (virtual: other apps receive from it while {Product.Name} runs; they send to its \"{CoreMidiBackend.VirtualName}\" destination)");
             }
             return exit;
         }

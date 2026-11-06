@@ -712,7 +712,7 @@ namespace ReBuzz.AppViews.Session
                     Header = $"{script.Name} ({candidate.InputName})" + (on && !connected ? " (not answering)" : ""),
                     IsChecked = on,
                     ToolTip = "On: its pads launch the slots in its session ring (the red box), its lights follow the session.\n" +
-                              "Its MIDI ports are then its own: leave them off in ReBuzz's MIDI settings.",
+                              "Its MIDI ports are then its own: leave them off in " + Product.Name + "'s MIDI settings.",
                     Command = new RelayCommand(() =>
                     {
                         if (on) controllers.TurnOff(script);
@@ -738,7 +738,7 @@ namespace ReBuzz.AppViews.Session
                     Header = "No controller found",
                     IsEnabled = false,
                     ToolTip = "Known: " + string.Join(", ", controllers.Scripts.Select(s => s.Name)) +
-                              ".\nMore can be added as scripts (.dll) in the Controllers folder next to ReBuzz.exe."
+                              ".\nMore can be added as scripts (.dll) in the Controllers folder next to " + Product.WindowsExe + "."
                 });
             foreach (var problem in controllers.ScriptProblems)
                 item.Items.Add(new MenuItem { Header = "Script not loaded: " + problem, IsEnabled = false });

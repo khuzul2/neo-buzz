@@ -128,8 +128,8 @@ namespace ReBuzz.Agent
                         }
                         try { AgentActions.Do(core, new DelegateAction(Load, Restore)); }
                         catch (Exception e) { throw new ToolError($"Couldn't load {Path.GetFileName(path)}: {e.Message}"); }
-                        var wave = table.Waves[index] ?? throw new ToolError($"ReBuzz didn't load {Path.GetFileName(path)}." + (messages.Count > 0 ? " " + string.Join(" | ", messages) : ""));
-                        if (layer && wave.Layers.Count <= layersBefore) throw new ToolError($"ReBuzz didn't add {Path.GetFileName(path)} as a layer." + (messages.Count > 0 ? " " + string.Join(" | ", messages) : ""));
+                        var wave = table.Waves[index] ?? throw new ToolError($"{Product.Name} didn't load {Path.GetFileName(path)}." + (messages.Count > 0 ? " " + string.Join(" | ", messages) : ""));
+                        if (layer && wave.Layers.Count <= layersBefore) throw new ToolError($"{Product.Name} didn't add {Path.GetFileName(path)} as a layer." + (messages.Count > 0 ? " " + string.Join(" | ", messages) : ""));
                         return new JsonObject { ["wave"] = WaveJson(wave, index), ["replaced"] = layer ? null : oldName, ["layered"] = layer };
                     }, c.Cancellation);
                     var w = r["wave"]!;

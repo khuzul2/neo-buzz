@@ -87,7 +87,7 @@
     }
   ],
   "remarks": [
-    "NiNjA dElaY is mono: ReBuzz gives it left + right summed (+6 dB for a centred sound, taken on the output connections so the line keeps the input's level); Neo Delay in Stereo mode keeps the input's image.",
+    "NiNjA dElaY is mono: NeoBuzz Live gives it left + right summed (+6 dB for a centred sound, taken on the output connections so the line keeps the input's level); Neo Delay in Stereo mode keeps the input's image.",
     "Each of its tracks is a tap of its own with its own filter (up to 8); Neo Delay has one: the first track's settings move.",
     "Its Max Delay attribute (1 s by default) caps its lengths; the mapping doesn't read attributes."
   ],

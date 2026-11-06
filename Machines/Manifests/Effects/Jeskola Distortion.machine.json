@@ -10,7 +10,7 @@
   "Hot at its defaults: +clamp is 200% of full scale (+6 dBFS), so clipped parts come out at +6 dBFS (profile: +6.0 dBFS peak, +19.6 dB on noise). Set +clamp and −clamp to 100% or less to stay at or under 0 dBFS.",
   "Levels are in percent of full scale: 100% is 0 dBFS, 25% is −12 dBFS.",
   "−threshold and −clamp act only with the Symmetric attribute off (the default); with it on, the positive ones are mirrored.",
-  "Mono: ReBuzz feeds it left + right summed (+6 dB for a centred signal)."
+  "Mono: NeoBuzz Live feeds it left + right summed (+6 dB for a centred signal)."
  ],
  "evidence": [
   "ExternalMachines/source/buzztrax-buzzmachines/Jeskola/Distortion/Distortion.cpp — parameters (thresholds and clamps ×16 sample units), Amount, Work",

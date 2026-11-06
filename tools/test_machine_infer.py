@@ -226,13 +226,13 @@ class HealthTests(unittest.TestCase):
         self.assertIn("WPF", mi.needs_window("Info", "TargetInvocationException: Exception has been thrown by the target of an invocation."))
 
     def test_wpf_in_the_exception_needs_a_window(self):
-        why = mi.needs_window("Some Notes", "machine_add failed inside ReBuzz: TargetInvocationException: … → "
+        why = mi.needs_window("Some Notes", "machine_add failed inside NeoBuzz Live: TargetInvocationException: … → "
                                             "System.InvalidOperationException: The calling thread must be STA, because many UI components require this.")
         self.assertIsNotNone(why)
         self.assertIsNotNone(mi.needs_window("X", "→ System.Windows.Markup.XamlParseException: 'Initialization of System.Windows.Controls.RichTextBox' threw"))
 
     def test_other_load_failures_are_problems(self):
-        self.assertIsNone(mi.needs_window("Broken", "machine_add failed inside ReBuzz: DllNotFoundException: libfoo.so"))
+        self.assertIsNone(mi.needs_window("Broken", "machine_add failed inside NeoBuzz Live: DllNotFoundException: libfoo.so"))
 
     def test_status(self):
         self.assertEqual(mi.health_status(["feedback diverges at its maximum"], []), "unhealthy")

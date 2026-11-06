@@ -1,4 +1,4 @@
-# ReBuzz in five minutes
+# NeoBuzz Live in five minutes
 
 ## Machines and the graph
 - A song is a graph of **machines**. **Generators** make sound (synths, samplers, drum machines). **Effects** process the sound fed into them. **Master** is the output; whatever reaches it is heard.
@@ -29,8 +29,8 @@
 - Loudness in LUFS (integrated over the render), peaks in dBTP (true peak) and dBFS (sample peak). Streaming masters sit near -14 LUFS with true peaks at or below -1 dBTP.
 
 ## Headless and studio
-- **Headless** (`ReBuzz.exe --agent`): no window and no audio device. You hear only through `render`.
-- **Studio**: the user's ReBuzz with its window open; they see every change and share the undo history. Rendering pauses their audio output for its duration.
+- **Headless** (`NeoBuzzLive.exe --agent`, or `rebuzz-headless --agent`): no window and no audio device. You hear only through `render`.
+- **Studio**: the user's NeoBuzz Live with its window open; they see every change and share the undo history. Rendering pauses their audio output for its duration.
 
 ## Checklist
 - [ ] You know the tempo, beats per bar and ticks per beat: `studio_status`.

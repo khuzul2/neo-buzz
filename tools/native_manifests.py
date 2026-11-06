@@ -241,7 +241,7 @@ def entry(spec, p, case, body, text):
          "min": p["min"], "max": p["max"], "default": p["default"]}
     notes = []
     if p["declared_default"] != p["default"]:
-        notes.append(f"Declared default {p['declared_default']} is outside its range; ReBuzz takes {p['default']}")
+        notes.append(f"Declared default {p['declared_default']} is outside its range; NeoBuzz Live takes {p['default']}")
     if case is None:
         if p["type"] == "switch":
             e.update(kind="switch", choices=["Off", "On"], own_texts=False)

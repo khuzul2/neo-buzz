@@ -509,7 +509,7 @@ class Headless:
                                      stdout=subprocess.PIPE, stderr=self.err, text=True, bufsize=1, env=env)
         self.next_id = 0
         init = self.request("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "roundtrip", "version": "1"}})
-        if init.get("result", {}).get("serverInfo", {}).get("name") != "rebuzz":
+        if init.get("result", {}).get("serverInfo", {}).get("name") != "neobuzz-live":
             raise SystemExit(f"initialize failed: {init}")
         self.proc.stdin.write(json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n")
         self.proc.stdin.flush()

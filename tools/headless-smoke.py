@@ -58,7 +58,12 @@ def call(tool, **args):
 
 started = time.time()
 init = request("initialize", {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "smoke", "version": "1"}})
-check(init.get("result", {}).get("serverInfo", {}).get("name") == "rebuzz", f"initialize ({time.time() - started:.1f} s from start)")
+info = init.get("result", {}).get("serverInfo", {})
+check(info.get("name") == "neobuzz-live" and info.get("title") == "NeoBuzz Live",
+      f"initialize: the server is {info.get('name')} ({info.get('title')}), {time.time() - started:.1f} s from start")
+check("NeoBuzz Live is a modular music studio" in init.get("result", {}).get("instructions", ""), "the instructions name the app")
+banner = open(os.path.join(work, "stderr.txt")).read()
+check("[NeoBuzz Live] Headless agent server ready" in banner, "the console banner names the app")
 proc.stdin.write(json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized"}) + "\n")
 proc.stdin.flush()
 

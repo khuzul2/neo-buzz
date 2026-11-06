@@ -218,8 +218,8 @@ namespace ReBuzz.Agent.Mcp
             if (!LocalOrigin(r.Header("Origin"))) return await WriteText(stream, 403, "Forbidden: requests from web pages are not allowed.", close: true).ConfigureAwait(false);
             if (target != path) return await WriteText(stream, 404, $"Not found. The MCP endpoint is {path}.").ConfigureAwait(false);
             if (!Authorized(r.Header("Authorization")))
-                return await Write(stream, 401, "text/plain; charset=utf-8", Encoding.UTF8.GetBytes("Unauthorized: send the token shown in ReBuzz (Settings → Agent) as a bearer token."),
-                    new[] { ("WWW-Authenticate", "Bearer realm=\"ReBuzz\"") }).ConfigureAwait(false);
+                return await Write(stream, 401, "text/plain; charset=utf-8", Encoding.UTF8.GetBytes($"Unauthorized: send the token shown in {Product.Name} (Settings → Agent, Preferences ▸ Agent) as a bearer token."),
+                    new[] { ("WWW-Authenticate", $"Bearer realm=\"{Product.Name}\"") }).ConfigureAwait(false);
 
             switch (r.Method)
             {
