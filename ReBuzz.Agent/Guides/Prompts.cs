@@ -76,10 +76,11 @@ namespace ReBuzz.Agent.Guides
             {
                 Name = "master",
                 Title = "Master the song",
-                Description = "Masters to a platform's loudness and true-peak target with corrective EQ, glue compression, saturation and a limiter, measuring after every change. Includes the mastering guide.",
+                Description = "Masters to a platform's loudness and true-peak target, or to a reference, with corrective EQ, glue compression, saturation and a limiter, measuring after every change. Includes the mastering guide.",
                 Arguments = new[]
                 {
                     new PromptArgument { Name = "target", Description = "The target platform: streaming (default), club, broadcast (EBU R128), broadcast-us (ATSC A/85), apple, cd, podcast, or a level such as \"-12 LUFS\"" },
+                    new PromptArgument { Name = "reference", Description = "Optional: a mastered track to match (a WAV file's full path), or a style target (target_build's name or a *.target.json)" },
                 },
                 Render = RenderMaster,
             },
@@ -240,13 +241,15 @@ Report each change with its before and after numbers, and anything you couldn't 
             var sb = new StringBuilder();
             sb.Append($"Master the current song in {Product.Name} for {name}: integrated {L(lufs)} LUFS ±{L(tol)}, true peak at or below {L(ceiling)} dBTP");
             if (target != null && !name.StartsWith(target, StringComparison.OrdinalIgnoreCase)) sb.Append($" (from \"{target}\")");
+            string reference = Arg(args, "reference");
+            if (reference != null) sb.Append($", matching \"{reference}\" in tone, dynamics and width (its loudness only if that fits the target)");
             sb.Append(".\n\n");
             sb.Append(@"Plan. Measure after every change; loudness-match before you compare two versions.
-1. Check the mix first: `render()` of the whole song and `analyze(source=…, metrics=[""loudness"", ""peaks"", ""dynamics"", ""spectrum"", ""stereo""])`. It needs true peak at or below -3 dBTP (better -6), no clipped samples, lows mono. If not, fix the mix (lower the master's inputs with `connection_set`) before mastering.
+1. Check the mix first: `render()` of the whole song and `analyze(source=…, metrics=[""loudness"", ""peaks"", ""dynamics"", ""spectrum"", ""stereo"", ""microdynamics"", ""platform""])`, with `target=` the reference when there is one (it adds the tonal difference and reads each measure against the reference). It needs true peak at or below -3 dBTP (better -6), no clipped samples, lows mono. If not, fix the mix (lower the master's inputs with `connection_set`) before mastering.
 2. Chain: route every machine that feeds Master into the first chain stage instead (`machine_list` for the gains; `disconnect`, then `connect` with the same gain), then add each stage with `machine_add(gear=…, name=…, insert_after=…)`: corrective EQ → glue compression (Neo Comp, Glue) → saturation (Neo Drive, Tape) → limiter (Neo Limiter; Neo Comp ""Clean — Brickwall"" if there is none). `machine_describe` gives the exact parameter names of Neo EQ and Neo Limiter.
-3. `snapshot_save(name=""master 0"")` before each stage; after it, `render(section=…)` of the loudest section, `analyze` it and `compare(a=…, b=…)` with the render before the stage (bands level-matched); keep the change only if it measures as intended.
+3. `snapshot_save(name=""master 0"")` before each stage; after it, `render(section=…)` of the loudest section, `analyze` it and `compare(a=…, b=…)` with the render before the stage (bands level-matched); keep the change only if it measures as intended. With a reference, the corrective EQ comes from `eq_fit(source=…, target=…, machine=<the chain's Neo EQ>)`: a few bands, within ±3 dB, one undo step.
 4. Loudness: raise the gain into the limiter by (target − measured) dB, render the whole song, re-measure; repeat until within the tolerance (usually two or three passes).
-5. Final checks on the whole song: integrated loudness and true peak on target; PLR and loudness range in the guide's range for the genre; spectrum tilt and stereo unchanged from the mix except as intended.
+5. Final checks on the whole song: integrated loudness and true peak on target; PLR and loudness range in the guide's range for the genre (or the reference's); spectrum tilt and stereo unchanged from the mix except as intended (against a reference: the tonal difference under 1.5 dB RMS, LDR and side/mid per band near its); `analyze(metrics=[""platform""])` shows what each service will do to it.
 6. `song_save`. Report the chain with each stage's settings, and the before and after numbers.
 ");
             AppendGuides(sb, "mastering");

@@ -732,30 +732,52 @@ namespace ReBuzzTests
                 if (i % 2 == 0)
                     rig.Session.Launch(rig.Track(i), patterns[0]);
             }
-            rig.Song.LoopEnd = 32 * Bar;
+            // The song loops over its first two bars (each track's pattern changes at the second, the session clips
+            // are a bar long), so every pass of the loop is the same work: the guard's reps (Throughput.cs).
+            rig.Song.LoopEnd = 2 * Bar;
             var reader = rig.Driver.CreateAudioReader(256);
             rig.Core.Playing = true;
             for (int i = 0; i < 100; i++)
                 reader.Read(256);
 
+            // Each buffer's time over a stretch, for the record.
             const int buffers = 2000;
             var times = new double[buffers];
-            var total = Stopwatch.StartNew();
             for (int i = 0; i < buffers; i++)
             {
                 long t0 = Stopwatch.GetTimestamp();
                 reader.Read(256);
                 times[i] = (Stopwatch.GetTimestamp() - t0) * 1000.0 / Stopwatch.Frequency;
             }
-            total.Stop();
-
-            double audioMs = buffers * 256 * 1000.0 / ReBuzzCore.masterInfo.SamplesPerSec;
             double budgetMs = 256 * 1000.0 / ReBuzzCore.masterInfo.SamplesPerSec;
             var sorted = times.OrderBy(t => t).ToArray();
             TestContext.Out.WriteLine($"[notice] {machines} machines, {machines} tracks x 32 events, half playing session clips: " +
-                $"{audioMs / total.Elapsed.TotalMilliseconds:F1}x real time; per 256-frame buffer (budget {budgetMs:F2} ms): " +
-                $"median {sorted[buffers / 2]:F3} ms, 99th {sorted[buffers * 99 / 100]:F3} ms, max {sorted[^1]:F3} ms");
-            Assert.That(total.Elapsed.TotalMilliseconds, Is.LessThan(audioMs), "slower than real time");
+                $"per 256-frame buffer (budget {budgetMs:F2} ms): median {sorted[buffers / 2]:F3} ms, 99th {sorted[buffers * 99 / 100]:F3} ms, max {sorted[^1]:F3} ms");
+
+            // The guard: a pass of the loop (less a buffer) in chunks of whole buffers, each rep from the loop's start,
+            // timed against the reference workload in the same run.
+            var mi = ReBuzzCore.masterInfo;
+            int rate = mi.SamplesPerSec;
+            int loop = 2 * Bar * mi.SamplesPerTick;
+            void ReadFrames(int frames)
+            {
+                for (; frames > 0; frames -= 256) reader.Read(Math.Min(256, frames));
+            }
+            (int Tick, int InTick)? first = null;
+            Throughput.Guard($"{machines} machines, {machines} tracks x 32 events, half playing session clips, the song's first two bars looping",
+                Throughput.Floor(x64: 25, arm64: 25), (loop - 256) / (double)rate, rate, 256, () =>
+            {
+                // To the loop's start: the next tick boundary, then whole ticks until the song is back at it, so that
+                // every rep starts in the same place.
+                var now = ReBuzzCore.masterInfo;
+                ReadFrames(now.PosInTick == 0 ? 0 : now.SamplesPerTick - now.PosInTick);
+                for (int guard = 0; rig.Song.PlayPosition != rig.Song.LoopStart && guard < 4 * Bar; guard++)
+                    ReadFrames(ReBuzzCore.masterInfo.SamplesPerTick);
+                var here = (rig.Song.PlayPosition, ReBuzzCore.masterInfo.PosInTick);
+                first ??= here;
+                Assert.That(here, Is.EqualTo(first.Value), "every rep starts at the loop's start");
+                return Throughput.InBlocks(256, (pos, n) => reader.Read(n));
+            }, line => TestContext.Out.WriteLine("[notice] " + line));
         }
 
         // ------------------------------------------------------------------ 10. autosave

@@ -168,7 +168,8 @@ namespace NeoBuzz.Scope
                     view.MajorEvery = 5;
                     view.Right = DisplayNames[Math.Clamp(ctx.Raw(P.Display), 0, 4)];
                 }
-                string tempo = s.Bpm.ToString("0.#", ci) + " BPM";
+                // The song's tempo, also while it is stopped (the engine hears it only while it runs).
+                string tempo = ctx.SongTempo(s.Bpm > 0 ? s.Bpm : 120).ToString("0.#", ci) + " BPM";
                 view.Left = sync == 0
                     ? $"{Params.Table[P.Time].Describe(ctx.Raw(P.Time))}/div"
                     : f.Synced || !s.HasFrame ? $"{Params.Table[P.Sync].Describe(sync)} · {tempo}"
@@ -209,7 +210,7 @@ namespace NeoBuzz.Scope
             var correlation = new GraphView(240, 34, (g, r) =>
             {
                 var s = live.Get();
-                CorrelationBar.Draw(g, r, s.CorrelationNow, s.Correlation, AccentColor);
+                CorrelationBar.Draw(g, r, StereoReadout.Bar(s.CorrelationNow, s.StereoNow), StereoReadout.Bar(s.Correlation, s.Stereo), AccentColor);
             }, animate: true)
             {
                 ToolTip = "Correlation over 400 ms (bar) and 3 s (marker): +1 mono, 0 unrelated, −1 opposed",
@@ -224,7 +225,7 @@ namespace NeoBuzz.Scope
                 }
                 static string Db(double db, string unit, CultureInfo c) =>
                     double.IsNegativeInfinity(db) ? "−∞ " + unit : db.ToString("+0.0;−0.0;0.0", c) + " " + unit;
-                Row(0, "Correlation (3 s)", s.Correlation.ToString("+0.00;−0.00;0.00", ci));
+                Row(0, "Correlation (3 s)", StereoReadout.Correlation(s.Correlation, s.Stereo));
                 Row(1, "Peak (3 s)", Db(s.PeakDb, "dBFS", ci));
                 Row(2, "RMS (3 s)", Db(s.RmsDb, "dB", ci));
             }, animate: true);

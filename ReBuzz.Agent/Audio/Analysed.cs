@@ -52,6 +52,14 @@ namespace ReBuzz.Agent.Audio
         KeyResult key;
         public KeyResult KeyResult => key ??= KeyFinder.Find(KeyFinder.Chroma(Psd));
 
+        TonalCurve tonal;
+        /// <summary>The long-term 1/6-octave curve (docs/specs/mastering-tools.md §6).</summary>
+        public TonalCurve Tonal => tonal ??= NeoBuzz.Analysis.Tonal.Measure(Psd);
+
+        MicrodynamicsResult microdynamics;
+        /// <summary>LDR in Ozone's four bands (docs/specs/mastering-tools.md §6).</summary>
+        public MicrodynamicsResult Microdynamics => microdynamics ??= NeoBuzz.Analysis.Microdynamics.Measure(Mono, Rate);
+
         public bool Silent => double.IsNegativeInfinity(LoudnessResult.SamplePeakDb) || LoudnessResult.SamplePeakDb < -90;
     }
 }

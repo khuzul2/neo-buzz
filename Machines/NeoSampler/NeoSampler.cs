@@ -69,6 +69,29 @@ namespace NeoBuzz.Sampler
 
         public void Dispose() => Source.Dispose();
 
+        /// <summary>
+        /// Hosts (the keyboard under the machine's window, docs/specs/studio-mvp.md §3.12): in Kit mode, the key each zone
+        /// with a wave plays (Kit base + zone − 1) by its wave's name ("Kick", a song wave's own); null in Instrument mode,
+        /// where every key plays.
+        /// </summary>
+        public IReadOnlyDictionary<int, string> KeyNames
+        {
+            get
+            {
+                if (Values.Choice(P.Mode) != 1) return null;
+                int first = (int)Values.Value(P.KitBase);
+                var names = new Dictionary<int, string>();
+                for (int z = 0; z < SamplerEngine.ZoneCount; z++)
+                {
+                    int raw = Values[SamplerEngine.ZoneParam(z, SamplerEngine.FWave)], key = first + z;
+                    if (raw <= 0 || key < 0 || key > 127) continue;
+                    string name = SamplerText.Wave(raw);
+                    names[key] = name.StartsWith("Built-in ", StringComparison.Ordinal) ? name.Substring("Built-in ".Length) : name;
+                }
+                return names;
+            }
+        }
+
         IParameter[] zoneWaves;
 
         /// <summary>

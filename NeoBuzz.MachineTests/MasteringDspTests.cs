@@ -349,6 +349,123 @@ namespace NeoBuzz.MachineTests
             }
         }
 
+        // ── Delta and gain match (the house conventions, §2) ───────────────
+
+        /// <summary>A stand-in machine: the input delayed by <paramref name="latency"/> and scaled by <paramref name="gain"/>.</summary>
+        static float[] Delayed(float[] x, int latency, float gain)
+        {
+            var y = new float[x.Length];
+            for (int i = latency; i < x.Length; i++) y[i] = gain * x[i - latency];
+            return y;
+        }
+
+        static (float[] L, float[] R) DeltaRun(float[] l, float[] r, float[] wl, float[] wr, int latency, int block, Func<int, bool?> switchAt)
+        {
+            var delta = new DeltaListen(1024, 48000) { Latency = latency };
+            var ol = (float[])wl.Clone();
+            var or = (float[])wr.Clone();
+            var bl = new float[block];
+            var br = new float[block];
+            var dl = new float[block];
+            var dr = new float[block];
+            for (int at = 0; at < l.Length; at += block)
+            {
+                int n = Math.Min(block, l.Length - at);
+                if (switchAt(at) is bool on) delta.On = on;
+                Array.Copy(l, at, dl, 0, n);
+                Array.Copy(r, at, dr, 0, n);
+                Array.Copy(ol, at, bl, 0, n);
+                Array.Copy(or, at, br, 0, n);
+                delta.Process(dl, dr, bl, br, n);
+                Array.Copy(bl, 0, ol, at, n);
+                Array.Copy(br, 0, or, at, n);
+            }
+            return (ol, or);
+        }
+
+        [Test]
+        public void DeltaIsWetMinusTheDelayedDryAndOffIsBitForBit()
+        {
+            const int rate = 48000, latency = 300;
+            var l = Measure.PinkNoise(rate, 0.2, 31);
+            var r = Measure.PinkNoise(rate, 0.2, 32);
+            var wl = Delayed(l, latency, 0.5f);
+            var wr = Delayed(r, latency, 0.5f);
+            // Off: the wet signal untouched.
+            var (offL, offR) = DeltaRun(l, r, wl, wr, latency, 256, _ => null);
+            Assert.That(offL, Is.EqualTo(wl));
+            Assert.That(offR, Is.EqualTo(wr));
+            // On from the start (so no glide inside the signal): wet − dry delayed = −0.5 × the delayed dry.
+            var (onL, onR) = DeltaRun(l, r, wl, wr, latency, 256, at => at == 0 ? true : null);
+            int glide = (int)Math.Round(DeltaListen.SwitchSeconds * rate);
+            double worst = 0;
+            for (int i = glide; i < l.Length; i++)
+                worst = Math.Max(worst, Math.Max(Math.Abs(onL[i] - (wl[i] - (i >= latency ? l[i - latency] : 0))), Math.Abs(onR[i] - (wr[i] - (i >= latency ? r[i - latency] : 0)))));
+            Assert.That(worst, Is.EqualTo(0), "after the glide, exactly wet − dry");
+            // A machine that changes nothing: Delta is silence, exactly.
+            var (nullL, _) = DeltaRun(l, r, Delayed(l, latency, 1), Delayed(r, latency, 1), latency, 256, at => at == 0 ? true : null);
+            Assert.That(nullL.Skip(glide).Max(Math.Abs), Is.EqualTo(0), "an unchanged signal's delta is exactly 0");
+            Measure.Report($"Delta: off passes the wet signal bit for bit; on, wet − dry exactly after the {DeltaListen.SwitchSeconds * 1000:0} ms glide, at {latency} samples of latency");
+        }
+
+        [Test]
+        public void DeltaGlidesAndDoesntDependOnBlocks()
+        {
+            const int rate = 48000, latency = 77;
+            var l = Measure.PinkNoise(rate / 2, 0.2, 33);
+            var r = Measure.PinkNoise(rate / 2, 0.2, 34);
+            var wl = Delayed(l, latency, 0.7f);
+            var wr = Delayed(r, latency, 0.7f);
+            // Switch on at sample 4096 and off at 12000, whatever the blocks (the switches land on block starts for each size).
+            float[] reference = null;
+            foreach (int block in new[] { 1, 16, 117, 256, 1024 })
+            {
+                var (ol, _) = DeltaRun(l, r, wl, wr, latency, block, at => at <= 4096 && at + block > 4096 ? true : at <= 12000 && at + block > 12000 ? false : null);
+                if (block == 1) reference = ol;
+                else if (4096 % block == 0 && 12000 % block == 0) Assert.That(ol, Is.EqualTo(reference), $"blocks of {block}");
+            }
+            // The glide: linear over 10 ms, from wet to wet − dry, no step bigger than the signal's own.
+            int glide = (int)Math.Round(DeltaListen.SwitchSeconds * rate);
+            double step = 0, own = 0;
+            for (int i = 4097; i < 4096 + glide; i++)
+            {
+                step = Math.Max(step, Math.Abs(reference[i] - reference[i - 1]));
+                own = Math.Max(own, Math.Max(Math.Abs(wl[i] - wl[i - 1]), Math.Abs((wl[i] - l[i - latency]) - (wl[i - 1] - l[i - 1 - latency]))));
+            }
+            Assert.That(step, Is.LessThanOrEqualTo(own * 1.05 + 1e-6), "the glide adds no step");
+            Assert.That(reference.Skip(12000 + glide).ToArray(), Is.EqualTo(wl.Skip(12000 + glide).ToArray()), "off again: the wet signal bit for bit");
+        }
+
+        [Test]
+        public void GainMatchReadsOutputMinusInputShortTermLoudness()
+        {
+            const int rate = 48000, block = 256;
+            var l = Measure.PinkNoise(rate * 4, 0.1, 35);
+            var r = Measure.PinkNoise(rate * 4, 0.1, 36);
+            var match = new NeoBuzz.Analysis.GainMatch(rate);
+            var ol = l.Select(v => v * 0.5f).ToArray();
+            var or = r.Select(v => v * 0.5f).ToArray();
+            double before = double.NaN;
+            for (int at = 0; at < l.Length; at += block)
+            {
+                match.Process(l, r, ol, or, at, Math.Min(block, l.Length - at));
+                if (at + block <= rate * 29 / 10) before = match.Db;
+            }
+            Assert.That(before, Is.NaN, "unknown before 3 s");
+            Assert.That(match.Db, Is.EqualTo(20 * Math.Log10(0.5)).Within(1e-6), "half the level reads −6.02 dB");
+            Assert.That(match.InputLufs - match.OutputLufs, Is.EqualTo(-match.Db).Within(1e-12));
+            Assert.That(NeoBuzz.Analysis.GainMatch.Match(0, match.Db, -24, 24), Is.EqualTo(6.0), "Match sets Output +6.0 dB");
+            Assert.That(NeoBuzz.Analysis.GainMatch.Match(20, match.Db, -24, 24), Is.EqualTo(24), "within Output's range");
+            Assert.That(NeoBuzz.Analysis.GainMatch.Match(-1.5, double.NaN, -24, 24), Is.EqualTo(-1.5), "unknown: unchanged");
+
+            // A silent input never suggests a jump.
+            var silent = new NeoBuzz.Analysis.GainMatch(rate);
+            var zero = new float[rate * 4];
+            for (int at = 0; at < zero.Length; at += block) silent.Process(zero, zero, l, r, at, block);
+            Assert.That(silent.Db, Is.NaN);
+            Measure.Report($"Gain match: output − input short-term loudness (K-weighted, 3 s), {match.Db:F4} dB for a −6.0206 dB change; unknown for the first 3 s and on silence");
+        }
+
         // ── the audio thread ────────────────────────────────────────────────
 
         [Test]
@@ -358,6 +475,12 @@ namespace NeoBuzz.MachineTests
             var split = new TransientSplit(rate);
             var stft = new Stft(2048);
             var unity = new Unity();
+            var delta = new DeltaListen(4096, rate) { Latency = 1000, On = true };
+            var match = new NeoBuzz.Analysis.GainMatch(rate);
+            var wl = new float[block];
+            var wr = new float[block];
+            var dl = new float[block];
+            var dr = new float[block];
             var l = Measure.PinkNoise(block * 2100, 0.1, 21);
             var r = Measure.PinkNoise(block * 2100, 0.1, 22);
             var w = new float[block];
@@ -365,6 +488,12 @@ namespace NeoBuzz.MachineTests
             {
                 split.Process(l, r, b * block, block, w);
                 stft.Process(l, r, b * block, block, unity);
+                Array.Copy(l, b * block, dl, 0, block);
+                Array.Copy(r, b * block, dr, 0, block);
+                Array.Copy(dl, wl, block);
+                Array.Copy(dr, wr, block);
+                delta.Process(dl, dr, wl, wr, block);
+                match.Process(dl, dr, wl, wr, 0, block);
             }
             for (int b = 0; b < 50; b++) Block(b);
             var (bytes, why) = AllocationCheck.Run(2000, b => Block(b + 50));

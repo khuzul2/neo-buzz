@@ -18,7 +18,8 @@ namespace NeoBuzz.Utility
         public const int InvertR = 7;
         public const int Swap = 8;
         public const int DcRemove = 9;
-        public const int Count = 10;
+        public const int Matrix = 10;
+        public const int Count = 11;
     }
 
     internal static class Params
@@ -38,6 +39,7 @@ namespace NeoBuzz.Utility
             new ParamDef(P.InvertR, "InvertR", "Invert R", 0, 1, 0, MapKind.Switch, group: "Channels", description: "Flips the polarity of the right input (before Swap)"),
             new ParamDef(P.Swap, "Swap", "Swap", 0, 1, 0, MapKind.Switch, group: "Channels", description: "Swaps left and right"),
             new ParamDef(P.DcRemove, "DcRemove", "DC removal", 0, 1, 0, MapKind.Switch, group: "Channels", description: "Removes DC offset: 2nd-order high-pass at 5 Hz (20 Hz passes within 0.02 dB)"),
+            new ParamDef(P.Matrix, "Matrix", "Matrix", 0, 2, 0, MapKind.Enum, names: new[] { "Off", "Encode M/S", "Decode M/S" }, group: "Matrix", description: "Mid/side for the machines between two Utilities. Encode M/S: after the other stages, the output carries mid (L + R)/2 on the left and side (L − R)/2 on the right. Decode M/S: before them, the input is read as mid and side and turned back into L = M + S, R = M − S. Off: left and right as they are"),
         };
     }
 }

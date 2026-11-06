@@ -20,6 +20,10 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
+  <!-- Fork (docs/specs/daw-modes.md §8.1): methods with loops compiled fully optimised at once, so the audio
+       thread never compiles an on-stack replacement (tools/msbuild/AudioThreadRuntime.props). -->
+  <Import Project="..\tools\msbuild\AudioThreadRuntime.props" />
+
   <ItemGroup>
     <!-- The engine's start-up off WPF, shared with the studio (docs/specs/studio-mvp.md §2). -->
     <ProjectReference Include="..\ReBuzz.Host\ReBuzz.Host.csproj" />

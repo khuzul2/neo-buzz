@@ -36,5 +36,8 @@ namespace NeoBuzz.Utility
 
         [ParameterDecl(Name = "DC removal", Description = "Removes DC offset: 2nd-order high-pass at 5 Hz (20 Hz passes within 0.02 dB)", MinValue = 0, MaxValue = 1, DefValue = 0)]
         public int DcRemove { get => Values[P.DcRemove]; set => Values.Set(P.DcRemove, value); }
+
+        [ParameterDecl(Name = "Matrix", Description = "Mid/side for the machines between two Utilities. Encode M/S: after the other stages, the output carries mid (L + R)/2 on the left and side (L − R)/2 on the right. Decode M/S: before them, the input is read as mid and side and turned back into L = M + S, R = M − S. Off: left and right as they are", MinValue = 0, MaxValue = 2, DefValue = 0)]
+        public int Matrix { get => Values[P.Matrix]; set => Values.Set(P.Matrix, value); }
     }
 }

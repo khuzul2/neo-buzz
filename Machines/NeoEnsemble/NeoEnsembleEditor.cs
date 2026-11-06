@@ -88,7 +88,8 @@ namespace NeoBuzz.Ensemble
                 values.Set(i, raw);
                 key = unchecked(key * 31 + raw);
             }
-            double rate = 48000, tempo = machine?.Engine.Tempo ?? 120;
+            double rate = 48000, tempo = ctx.SongTempo(machine?.Engine.Tempo ?? 120);
+            key = unchecked(key * 31 + (int)Math.Round(tempo * 100));
             var s = EnsembleDesign.From(values, tempo, rate);
             var plot = new NeoRect(r.X + 4, r.Y + 18, r.Width - 8, r.Height - 50);
             double phase = machine?.Engine.Phase ?? 0;

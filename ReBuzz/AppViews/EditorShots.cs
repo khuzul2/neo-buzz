@@ -99,7 +99,9 @@ namespace ReBuzz.AppViews
                 if (!core.UiHost.OpenEditor(m)) throw new InvalidOperationException("OpenEditor gave no editor");
                 window = WpfMachineUiHost.EditorWindowOf(m);
             }
-            if (window?.Content is not ManifestEditor editor) throw new InvalidOperationException("its editor window holds no manifest editor");
+            if (WpfMachineUiHost.ContentOf(window) is not ManifestEditor editor) throw new InvalidOperationException("its editor window holds no manifest editor");
+            // The machine keyboard under a generator's editor (docs/specs/studio-mvp.md §3.12), in the picture too.
+            r["keyboard"] = WpfMachineUiHost.KeyboardOf(window) is { } keyboard ? keyboard.Player.Route.Input.ToString() : "none";
             window.UpdateLayout();
             editor.UpdateLayout();
             var face = editor.Face;

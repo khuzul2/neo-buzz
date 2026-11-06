@@ -27,6 +27,7 @@ using Avalonia.VisualTree;
 using BuzzGUI.Interfaces;
 using ReBuzz.Audio;
 using ReBuzz.Core;
+using ReBuzz.Core.Keyboards;
 using ReBuzz.Core.Session;
 using ReBuzz.Gallery;
 using ReBuzz.Studio.Platform;
@@ -186,6 +187,16 @@ namespace ReBuzz.Studio.Tests
             Save(target, file);
             Record(file, what, how, $"{SizeText(main, back)}; dialog {SizeText(dialog, front)}", song,
                 (notes == null ? "" : notes + " ") + "The dialog is its own window: drawn here over the main window, centred, with a shadow (the harness's composite; macOS adds its title bar).");
+        }
+
+        /// <summary>A sentence on the machine keyboard under a machine's window, where it has one (a machine that plays notes).</summary>
+        static string KeyboardUnder(MachineCore m)
+        {
+            var route = KeyboardRoute.For(m);
+            if (!route.Shows) return "";
+            return route.Input == KeyboardInput.Midi
+                ? " Under it, the machine keyboard: it plays the machine by MIDI, as a MIDI keyboard does."
+                : " Under it, the machine keyboard: it plays the machine's Note track parameter, a note per track.";
         }
 
         /// <summary>Takes a shot, or lists why not and goes on.</summary>
@@ -1069,6 +1080,10 @@ namespace ReBuzz.Studio.Tests
             var demo = LoadDemo();
             var window = Open("Machines");
             var made = new List<MachineCore>();
+            // The machine windows on the Mac the gallery draws (1440 × 900 pt, less its 25 pt menu bar): the headless
+            // platform's screen is 1920 × 1280, and it cuts windows off at 1080. They keep inside the work area and scroll.
+            var workArea = MachineWindowFit.WorkArea;
+            MachineWindowFit.WorkArea = _ => new Size(Width, Height - 25);
             try
             {
                 MachineCore Add(string gear, string name)
@@ -1096,7 +1111,7 @@ namespace ReBuzz.Studio.Tests
                         var clock = System.Diagnostics.Stopwatch.StartNew();
                         while (busy?.GetValue(m.ManagedMachine) is true && clock.ElapsedMilliseconds < 5000) Thread.Sleep(20);
                         Wait(200);
-                        Shot(editor!, id, $"{gear}'s editor ({m.Name}), as a double click opens it: a window of its own.", "Double-click the machine in the Machine View.");
+                        Shot(editor!, id, $"{gear}'s editor ({m.Name}), as a double click opens it: a window of its own." + KeyboardUnder(m), "Double-click the machine in the Machine View.");
                         Core.UiHost.CloseWindows(m);
                     });
                 }
@@ -1110,7 +1125,7 @@ namespace ReBuzz.Studio.Tests
                         var w = StudioMachineUiHost.ParameterWindowOf(m);
                         Assert.That(w, Is.Not.Null, "the parameter window opened");
                         Settle();
-                        Shot(w!, id, what, how);
+                        Shot(w!, id, what + KeyboardUnder(m), how);
                         Core.UiHost.CloseWindows(m);
                     });
                 }
@@ -1131,6 +1146,55 @@ namespace ReBuzz.Studio.Tests
                     Shot(w, "453-parameters-menu", "A parameter's menu in the parameter window (right-click on a row).", "Right-click a parameter in the parameter window.");
                     Core.UiHost.CloseWindows(demo.Bass);
                 });
+
+                // The machine keyboard (docs/specs/studio-mvp.md §3.12): playing, and hidden.
+                Try("470-keyboard-playing", () =>
+                {
+                    Core.UiHost.OpenGui(demo.Bass, null);
+                    var w = StudioMachineUiHost.GuiWindowOf(demo.Bass)!;
+                    Wait(200);
+                    var kb = StudioMachineUiHost.KeyboardOf(w);
+                    Assert.That(kb, Is.Not.Null, "Bass's editor has the keyboard");
+                    var key = kb!.Keys.ElementOf(69);
+                    Assert.That(key, Is.Not.Null, "A4 is on the keyboard");
+                    var at = key!.TranslatePoint(new Point(key.Bounds.Width / 2, key.Bounds.Height * 0.85), w)!.Value;
+                    w.MouseMove(at);
+                    w.MouseDown(at, MouseButton.Left);
+                    foreach (var note in new[] { 48, 55, 64 }) Core.MachineManager.SendMidiInput(demo.Bass, 0x90 | (note << 8) | (72 << 16), false);
+                    try
+                    {
+                        for (int i = 0; i < 4; i++) kb.Poll();
+                        Wait(100);
+                        Shot(w, "470-keyboard-playing", "Bass's editor (Neo Poly) with its keyboard playing: A4 held with the pointer low on the key (loud: the readout names the note and its velocity, the fill shows it), and C3, G3 and E4 lit from a MIDI keyboard. Keys light whatever plays them (a pointer, MIDI, the machine's own patterns).",
+                            "Click and hold a key under a machine's window; drag across the keys to glide. Lower on a key plays louder.");
+                    }
+                    finally
+                    {
+                        w.MouseUp(at, MouseButton.Left);
+                        foreach (var note in new[] { 48, 55, 64 }) Core.MachineManager.SendMidiInput(demo.Bass, 0x80 | (note << 8), false);
+                        Settle();
+                        Core.UiHost.CloseWindows(demo.Bass);
+                    }
+                });
+                Try("471-keyboard-hidden", () =>
+                {
+                    Core.UiHost.OpenParameterWindow(demo.Bass, null);
+                    var w = StudioMachineUiHost.ParameterWindowOf(demo.Bass)!;
+                    Settle();
+                    var kb = StudioMachineUiHost.KeyboardOf(w)!;
+                    kb.SetShown(false);                    // not remembered: the gallery leaves the machine type's choice alone
+                    try
+                    {
+                        Settle();
+                        Shot(w, "471-keyboard-hidden", "Bass's parameter window with its keyboard hidden: the strip stays, its ▸ Keyboard button shows the keys again (the window shrinks and grows by them; the choice is kept per machine type).",
+                            $"The ▾ Keyboard button over the keys, or {(System.OperatingSystem.IsMacOS() ? "⌘K" : "Ctrl+K")} in the window. Preferences ▸ General ▸ Machine Keyboard sets the default.");
+                    }
+                    finally
+                    {
+                        kb.SetShown(true);
+                        Core.UiHost.CloseWindows(demo.Bass);
+                    }
+                });
                 if (synth != null)
                 {
                     Try("460-manifest-editor-pedal-synth", () =>
@@ -1147,6 +1211,7 @@ namespace ReBuzz.Studio.Tests
             }
             finally
             {
+                MachineWindowFit.WorkArea = workArea;
                 foreach (var m in made) Core.UiHost.ReleaseMachine(m);
                 Close(window);
             }

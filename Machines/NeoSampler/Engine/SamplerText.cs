@@ -35,6 +35,15 @@ namespace NeoBuzz.Sampler
             return string.IsNullOrWhiteSpace(name) ? $"Slot {raw}" : name.Trim();
         }
 
+        /// <summary>
+        /// What the wave picture says when a zone has nothing to show, in a user's words (the review found the agent
+        /// tool's name here, mac-412): off, an empty slot of the song's wavetable, or a sample still being made.
+        /// </summary>
+        public static string NoWave(int raw) =>
+            raw <= 0 ? "Off: choose a wave below"
+            : raw <= SampleBank.SongSlots ? "Empty slot: load a sound file into it with Load… below"
+            : "Being made…";
+
         static bool installed;
 
         /// <summary>Sets the table's texts for keys, roots, waves and choke groups (once).</summary>

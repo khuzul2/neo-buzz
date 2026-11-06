@@ -295,7 +295,7 @@ namespace ReBuzz.Studio.Tests
                 DoubleClick(window, view.PointOf(poly, window));
                 var editor = StudioMachineUiHost.GuiWindowOf(poly);
                 Assert.That(editor?.IsVisible, Is.True, "a double click opens Neo Poly's editor");
-                Assert.That(editor!.Content?.GetType().Name, Is.EqualTo("NeoPolyEditor"));
+                Assert.That(StudioMachineUiHost.ContentOf(editor)?.GetType().Name, Is.EqualTo("NeoPolyEditor"));
                 SessionRig.Quiet(editor);
                 Dispatcher.UIThread.RunJobs();
                 editor.UpdateLayout();
@@ -321,7 +321,7 @@ namespace ReBuzz.Studio.Tests
                 DoubleClick(window, view.PointOf(bass, window) + new Vector(12, 8));
                 var face = StudioMachineUiHost.EditorWindowOf(bass);
                 Assert.That(face?.IsVisible, Is.True, "a double click opens SH101's manifest editor");
-                Assert.That(face!.Content?.GetType().Name, Is.EqualTo("ManifestEditor"));
+                Assert.That(StudioMachineUiHost.ContentOf(face)?.GetType().Name, Is.EqualTo("ManifestEditor"));
                 face.Close();
                 Settle();
                 Menu(window, view, view.PointOf(bass, window) + new Vector(12, 8), null, "Parameters...");
@@ -330,7 +330,7 @@ namespace ReBuzz.Studio.Tests
                 SessionRig.Quiet(parameters!);
                 Dispatcher.UIThread.RunJobs();
                 parameters.UpdateLayout();
-                var rows = ((ParameterWindowView)parameters.Content!).Rows;
+                var rows = ((ParameterWindowView)StudioMachineUiHost.ContentOf(parameters)!).Rows;
                 var cutoff = rows.Single(r => r.ParameterName == "Cutoff");
                 int cutoffBefore = cutoff.Parameter.GetValue(0);
                 var thumb = cutoff.Slider.TranslatePoint(cutoff.Slider.ThumbBounds.Center, parameters)!.Value;

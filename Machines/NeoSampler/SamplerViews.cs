@@ -246,7 +246,7 @@ namespace NeoBuzz.Sampler
             g.Text($"Zone {z + 1} · {SamplerText.Wave(zs.Wave)}", r.X + 2, r.Y, 11, color, true, maxWidth: r.Width * 0.62);
             if (layer == null)
             {
-                g.Text(zs.Wave == 0 ? "Off: choose a wave below" : zs.Wave <= SampleBank.SongSlots ? "Empty slot: load a file into it below, or wave_import" : "Being made…",
+                g.Text(SamplerText.NoWave(zs.Wave),
                     r.X + r.Width / 2, bounds.Y + bounds.Height / 2 - 7, 11, Palette.DimText, align: NeoAlign.Center);
                 return;
             }

@@ -223,6 +223,46 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void BeforeAndInSilenceTheSpectrumIsEmptyAndTheStereoReadingsWait()
+        {
+            // UI gallery review (mac-400): with no signal yet every spectrum band read 0 dB (the engine's arrays before
+            // its first frame), and correlation +1.00 / width 0.00. The spectrum starts empty (−∞, at the floor), and the
+            // stereo readings wait for sound ("—"); the readings agents get keep the library's numbers.
+            var (e, _) = Make();
+            var fresh = Snapshot(e);
+            Assert.That(fresh.Thirds.All(float.IsNegativeInfinity) && fresh.ThirdsPeak.All(float.IsNegativeInfinity), Is.True, "no frame yet: no bars");
+            Assert.That(fresh.Curve.All(float.IsNegativeInfinity) && fresh.CurvePeak.All(float.IsNegativeInfinity), Is.True, "and no curve");
+            Assert.That(fresh.Stereo || fresh.StereoNow, Is.False, "nothing to correlate yet");
+            Assert.That(StereoReadout.Correlation(fresh.Correlation, fresh.Stereo), Is.EqualTo("—"));
+            Assert.That(StereoReadout.Width(fresh.Width, fresh.Stereo), Is.EqualTo("—"));
+            Assert.That(double.IsNaN(StereoReadout.Bar(fresh.CorrelationNow, fresh.StereoNow)), Is.True, "no bar");
+
+            // Drawn: nothing in the plot but the grid.
+            var c = new RecordingCanvas();
+            SpectrumGraph.Draw(c, new NeoRect(0, 0, 600, 240), AnalyzerEngine.CurveHz, fresh.Curve, fresh.CurvePeak, AnalyzerEngine.ThirdLo, AnalyzerEngine.ThirdHi,
+                fresh.Thirds, fresh.ThirdsPeak, 0, Accent);
+            Assert.That(c.Of(NeoDrawKind.Rect), Is.Empty, "no bar drawn");
+            Assert.That(c.Of(NeoDrawKind.Path).SelectMany(p => p.Points).All(p => p.Y >= SpectrumGraph.Plot(new NeoRect(0, 0, 600, 240)).Bottom), Is.True, "the curve lies at the floor");
+
+            // Seconds of silence: the same.
+            var z = new float[4 * Rate];
+            Run(e, z, z);
+            var quiet = Snapshot(e);
+            Assert.That(quiet.Thirds.All(float.IsNegativeInfinity), Is.True);
+            Assert.That(quiet.Stereo || quiet.StereoNow, Is.False);
+            Assert.That(quiet.ToReadings()["correlation"], Is.EqualTo(1), "agents keep the library's reading");
+
+            // Sound: readings.
+            var x = Measure.Sine(1000, 2 * Rate, 0.5);
+            Run(e, x, x);
+            var loud = Snapshot(e);
+            Assert.That(loud.Stereo && loud.StereoNow, Is.True);
+            Assert.That(StereoReadout.Correlation(loud.Correlation, loud.Stereo), Is.EqualTo("+1.00"));
+            Assert.That(StereoReadout.Width(loud.Width, loud.Stereo), Is.EqualTo("0.00"));
+            Assert.That(loud.Thirds.Count(float.IsFinite), Is.GreaterThan(20));
+        }
+
+        [Test]
         public void ResetStartsTheIntegratedMeasuresAgain()
         {
             var (e, v) = Make();
@@ -663,20 +703,24 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void AnalysisCostsUnderTwoPercentOfRealTime()
         {
-            var (e, _) = Make();
-            var l = Measure.PinkNoise(10 * Rate, 0.2, 51);
-            var r = Measure.PinkNoise(10 * Rate, 0.2, 52);
-            Run(e, l, r);   // warm up
-            // The best of three 10 s passes: other work on a shared runner only ever adds time.
-            double share = double.MaxValue;
-            for (int k = 0; k < 3; k++)
+            // Under 2 % of real time: over 50×, timed against the reference workload in the same run (Throughput.cs): 1 s
+            // played untimed, then 2 s.
+            var l = Measure.PinkNoise(3 * Rate, 0.2, 51);
+            var r = Measure.PinkNoise(3 * Rate, 0.2, 52);
+            Throughput.Guard("Neo Analyzer: stereo at 48 kHz (8192-point FFT every 2048 samples, loudness, true peak, stereo)", Throughput.Floor(x64: 140, arm64: 99), 2, Rate, AnalyzerEngine.MaxBlock, () =>
             {
-                var sw = Stopwatch.StartNew();
-                Run(e, l, r);
-                share = Math.Min(share, sw.Elapsed.TotalSeconds / 10);
-            }
-            Measure.Report($"Neo Analyzer: stereo at 48 kHz (8192-point FFT every 2048 samples, loudness, true peak, stereo): {100 * share:F2} % of real time ({1 / share:F0}× real time)");
-            Assert.That(share, Is.LessThan(0.02));
+                var (e, _) = Make();
+                var bl = new float[AnalyzerEngine.MaxBlock];
+                var br = new float[AnalyzerEngine.MaxBlock];
+                void Block(int pos, int n)
+                {
+                    Array.Copy(l, pos, bl, 0, n);
+                    Array.Copy(r, pos, br, 0, n);
+                    e.Process(bl, br, n);
+                }
+                for (int pos = 0; pos < Rate; pos += AnalyzerEngine.MaxBlock) Block(pos, AnalyzerEngine.MaxBlock);
+                return Throughput.InBlocks(AnalyzerEngine.MaxBlock, (pos, n) => Block(Rate + pos, n));
+            }, Measure.Report);
         }
     }
 }

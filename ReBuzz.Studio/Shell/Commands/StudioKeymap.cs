@@ -191,6 +191,10 @@ namespace ReBuzz.Studio.Shell.Commands
 
             const string N = "Song Notes";
             yield return new ViewKey(N, K("Cmd+B") + " " + K("Cmd+I") + " " + K("Cmd+K"), "bold, italic, link");
+
+            const string W = "Machine windows";
+            yield return new ViewKey(W, K("Cmd+K"), "show / hide the keyboard under a machine's window (for that machine type)");
+            yield return new ViewKey(W, K("Left") + " / " + K("Right"), "the keyboard an octave down / up (with its keys focused)");
         }
 
         /// <summary>The Pattern editor's own keys (its help panel's, from the editor's view), or a pointer to them.</summary>

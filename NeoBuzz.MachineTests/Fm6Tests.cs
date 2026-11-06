@@ -430,18 +430,20 @@ namespace NeoBuzz.MachineTests
         [Test]
         public void SixteenVoicesOfSixOperatorsRunFasterThanRealTime()
         {
-            var (e, _) = Make(v =>
+            // Timed against the reference workload in the same run (Throughput.cs).
+            Throughput.Guard("Neo FM6: 16 voices × 6 operators, Clean 2×", Throughput.Floor(x64: 7.9, arm64: 7), 2, Measure.Rate, FmEngine.MaxBlock, () =>
             {
-                v.Set(P.Polyphony, 16);
-                for (int op = 1; op <= 6; op++) v.Set(O(op, P.O1Level), 80);
-            });
-            for (int k = 0; k < 16; k++) e.NoteOn(k, 40 + 3 * k, 0.8f);
-            Render(e, 4800);
-            var sw = Stopwatch.StartNew();
-            Render(e, Measure.Rate * 10);
-            double factor = 10.0 / sw.Elapsed.TotalSeconds;
-            Measure.Report($"Neo FM6: 16 voices × 6 operators, Clean 2×: {factor:F1}× real time");
-            Assert.That(factor, Is.GreaterThan(2), "a guard; the figure is reported");
+                var (e, _) = Make(v =>
+                {
+                    v.Set(P.Polyphony, 16);
+                    for (int op = 1; op <= 6; op++) v.Set(O(op, P.O1Level), 80);
+                });
+                for (int k = 0; k < 16; k++) e.NoteOn(k, 40 + 3 * k, 0.8f);
+                Render(e, 4800);
+                var l = new float[FmEngine.MaxBlock];
+                var r = new float[FmEngine.MaxBlock];
+                return Throughput.InBlocks(FmEngine.MaxBlock, (pos, n) => e.Process(l, r, n));
+            }, Measure.Report);
         }
 
         // ------------------------------------------------------------------ DX7 data

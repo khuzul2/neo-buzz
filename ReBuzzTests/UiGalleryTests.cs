@@ -58,6 +58,19 @@ namespace ReBuzzTests
             foreach (var line in index.Split('\n').Where(l => l.StartsWith("- "))) TestContext.Out.WriteLine("[notice] not captured " + line.Substring(2));
             foreach (var view in new[] { "win-020-machines.png", "win-030-pattern.png", "win-040-sequence.png", "win-050-wavetable.png", "win-060-song-info.png", "win-070-session.png" })
                 Assert.That(File.Exists(Path.Combine(folder, view)), Is.True, $"{view} drawn");
+
+            // UI gallery review: Neo Poly's parameter window was 410 × 1100 px on the runner's 1080 px screen. Machine windows
+            // stay inside the screen's work area (MachineWindowFit); the parameter windows' rows scroll.
+            double workArea = System.Windows.SystemParameters.WorkArea.Height;
+            int machineWindows = 0;
+            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(index, @"\| (win-6\d\d-[^|]*\.png) \|[^\n]*?\| window (\d+)×(\d+),"))
+            {
+                machineWindows++;
+                int height = int.Parse(m.Groups[3].Value);
+                TestContext.Out.WriteLine($"{m.Groups[1].Value}: {m.Groups[2].Value} × {height} px, work area {workArea:0} px high");
+                Assert.That(height, Is.LessThanOrEqualTo(workArea + 1), $"{m.Groups[1].Value}: inside the screen's work area");
+            }
+            Assert.That(machineWindows, Is.GreaterThanOrEqualTo(3), "the parameter windows were drawn");
         }
     }
 }
