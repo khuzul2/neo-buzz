@@ -145,7 +145,7 @@ namespace ReBuzz.Studio.Tests
                 Core.UiHost.OpenParameterWindow(machine, null);
                 var window = StudioMachineUiHost.ParameterWindowOf(machine);
                 Assert.That(window, Is.Not.Null);
-                var view = (ParameterWindowView)window!.Content!;
+                var view = (ParameterWindowView)StudioMachineUiHost.ContentOf(window!)!;   // inside the machine keyboard's frame (a generator that takes notes)
                 Dispatcher.UIThread.RunJobs();
                 window.UpdateLayout();
                 double openMs = sw.Elapsed.TotalMilliseconds;

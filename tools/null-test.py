@@ -197,6 +197,11 @@ CASES = [
     fx("utility-bass-mono-wide", "Neo Utility", "Mastering — Bass Mono 120 Hz", [("Width", "180%"), ("Gain", "-3.5 dB")]),
     fx("utility-pan-dc-swap", "Neo Utility", "Mastering — Clean Up (Bass Mono 80 Hz, DC)",
        [("Pan law", "Mono pan"), ("Pan", "-30%"), ("Swap", "on"), ("Invert R", "on")]),
+    # The mid/side matrix (docs/specs/mastering-tools.md, M1): encode, a Neo EQ on mid and side, decode; the encoder
+    # switched off and on again by automation (its 5 ms crossfades).
+    fx("utility-ms-eq-chain", "Neo Utility", "Mid/Side — Encode (Before a Stereo Machine)", [("Width", "120%")],
+       extra=[("Neo EQ", "Mastering — Air Shelf", []), ("Neo Utility", "Mid/Side — Decode (After It)", [])],
+       auto=[("Matrix", [(2, "Off"), (3, "Encode M/S")])]),
     # Neo Verb: the four algorithms, modulation, shimmer, a 20-second decay, and freeze switched on
     # mid-render by automation (the tail held with no loss).
     fx("verb-hall", "Neo Verb", "Hall — Concert", tail=2.5),

@@ -352,6 +352,7 @@ namespace ReBuzz.Studio.Shell
                    "F2 / F3 / F4\tPattern / Machines / Sequence\n" +
                    "Ctrl+Tab\tSession View (again: back to Sequence)\n" +
                    "F10\tSong Notes\n" +
+                   $"{c}K\tshow / hide the keyboard under a machine's window (for that machine type)\n" +
                    $"{c},\tPreferences\n" +
                    $"{s}{c}A\tagent connection (Preferences ▸ Agent)" +
                    (mac ? "\n⌘M\tminimize the window\nM\tmute the selected machines (Machines)" : "");

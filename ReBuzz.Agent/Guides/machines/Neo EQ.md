@@ -49,6 +49,7 @@ Bands 2–7 start on at 0 dB, so they change nothing until given a gain. Bands 1
 | B3 Q | 1.4 | |
 
 - **Check after each move:** render and `compare` against the render before. A cut that also loses the part's character is too wide.
+- **Matching a reference or a curve:** `eq_fit(source="r4", target="C:/Refs/track.wav", machine="M EQ")` fits a few bells and shelves to the tonal difference on this EQ's own response and writes them into B2–B7 (Mode Parametric, the bands left over at 0 dB, B1 and B8 untouched) as one undo step; `eq_fit(curve=[{"hz": 200, "db": 0}, {"hz": 400, "db": -2}, {"hz": 800, "db": 0}], bands=1, machine="M EQ")` does it for a change you describe. Without `machine` it only returns the bands and their `param_set` changes. Its `rms_after_db` is what the bands leave.
 
 ## Graphic mode
 

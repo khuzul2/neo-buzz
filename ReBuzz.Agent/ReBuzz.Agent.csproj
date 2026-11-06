@@ -37,6 +37,9 @@
   <ItemGroup>
     <!-- The analysis library (docs/specs/mcp-server.md §7), shared with the analysis machines. -->
     <Compile Include="..\Machines\NeoBuzz.Analysis\**\*.cs" Link="Analysis\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- Neo EQ's design (docs/specs/mastering-tools.md §6): eq_fit fits the bands the machine runs, with the parts of the DSP library it needs. -->
+    <Compile Include="..\Machines\NeoEq\Engine\EqDesign.cs;..\Machines\NeoEq\Engine\Params.g.cs" Link="NeoEq\%(Filename)%(Extension)" />
+    <Compile Include="..\Machines\NeoBuzz.Dsp\ParamDef.cs;..\Machines\NeoBuzz.Dsp\PortableMath.cs;..\Machines\NeoBuzz.Dsp\Sections.cs;..\Machines\NeoBuzz.Dsp\DspMath.cs" Link="Dsp\%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>

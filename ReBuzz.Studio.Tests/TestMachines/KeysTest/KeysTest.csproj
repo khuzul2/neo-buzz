@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Fork (machine keyboard, docs/specs/studio-mvp.md §3.12): a synth that takes notes only in its Note track
+    parameter (KeysTest.cs), built for net10.0 into the studio tests' Gear/Generators as "Keys Test.NET.dll",
+    as GuardTest.csproj builds the guard's. The tests' project builds it.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>Keys Test.NET</AssemblyName>
+    <RootNamespace>ReBuzz.Studio.Tests.TestMachines</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <GearDir Condition="'$(GearDir)' == ''">$(MSBuildThisFileDirectory)bin\Gear\</GearDir>
+    <OutDir>$([MSBuild]::EnsureTrailingSlash('$(GearDir)'))Generators\</OutDir>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="KeysTest.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The engine's portable machine API; the host provides it at run time (not copied). -->
+    <ProjectReference Include="..\..\..\ReBuzzGUI\BuzzGUI.Common\BuzzGUI.Common.csproj" Private="false" GlobalPropertiesToRemove="GearDir" />
+    <ProjectReference Include="..\..\..\ReBuzzGUI\BuzzGUI.Interfaces\BuzzGUI.Interfaces.csproj" Private="false" GlobalPropertiesToRemove="GearDir" />
+  </ItemGroup>
+</Project>

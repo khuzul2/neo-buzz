@@ -1,8 +1,11 @@
 #nullable disable
-// Neo Utility (docs/specs/machines.md §5): DC removal → polarity → channel swap → width (mid/side)
-// → bass mono → pan → gain. Every move is a linear ramp that lands exactly on its value, so a
-// settled stage is exact and a stage at its identity is skipped: the defaults pass the input bit
-// for bit. Pure: tested by NeoBuzz.MachineTests.
+// Neo Utility (docs/specs/machines.md §5): (matrix decode) → DC removal → polarity → channel swap →
+// width (mid/side) → bass mono → pan → gain → (matrix encode). Every move is a linear ramp that lands
+// exactly on its value, so a settled stage is exact and a stage at its identity is skipped: the
+// defaults pass the input bit for bit. The matrix (docs/specs/mastering-tools.md, M1) puts mid on the
+// left and side on the right (Encode M/S, the last stage) or reads them back as left and right
+// (Decode M/S, the first), so any stereo machine between two Utilities works on mid and side; it
+// computes in double, so a round trip is within an ulp of the input. Pure: tested by NeoBuzz.MachineTests.
 
 using System;
 using NeoBuzz.Dsp;
@@ -10,6 +13,9 @@ using NeoBuzz.Dsp;
 namespace NeoBuzz.Utility
 {
     internal enum PanLaw { Balance, MonoPan }
+
+    /// <summary>The mid/side matrix (Params' Matrix): off, encode after the other stages, decode before them.</summary>
+    internal enum Matrix { Off, Encode, Decode }
 
     internal sealed class UtilityEngine
     {
@@ -22,8 +28,8 @@ namespace NeoBuzz.Utility
         readonly ParamValues values;
         float sampleRate = 48000;
 
-        // Ramps: gain, pan gains, mono amount (pan law), width, bass mono, swap, polarity, DC.
-        LinearRamp gain, panL, panR, mono, width, bass, swap, polL, polR, dc;
+        // Ramps: gain, pan gains, mono amount (pan law), width, bass mono, swap, polarity, DC, the matrix's encode and decode.
+        LinearRamp gain, panL, panR, mono, width, bass, swap, polL, polR, dc, encode, decode;
 
         // Filters: DC (one section per channel), bass mono (two sections on the side signal).
         SvfSection dcL, dcR, side1, side2;
@@ -62,6 +68,8 @@ namespace NeoBuzz.Utility
             polL.Setup(SwitchSeconds, sr);
             polR.Setup(SwitchSeconds, sr);
             dc.Setup(SwitchSeconds, sr);
+            encode.Setup(SwitchSeconds, sr);
+            decode.Setup(SwitchSeconds, sr);
             double g = SvfSection.Prewarp(DcHz, sr);
             dcL.SetHighPass(g, Math.Sqrt(0.5));
             dcR.SetHighPass(g, Math.Sqrt(0.5));
@@ -116,6 +124,9 @@ namespace NeoBuzz.Utility
             Target(ref polL, values.On(P.InvertL) ? -1f : 1f, force);
             Target(ref polR, values.On(P.InvertR) ? -1f : 1f, force);
             Target(ref dc, values.On(P.DcRemove) ? 1f : 0f, force);
+            var matrix = (Matrix)values.Choice(P.Matrix);
+            Target(ref encode, matrix == Matrix.Encode ? 1f : 0f, force);
+            Target(ref decode, matrix == Matrix.Decode ? 1f : 0f, force);
             bassTargetHz = values.Value(P.BassFreq);
             if (force || bassHz <= 0)
             {
@@ -146,6 +157,7 @@ namespace NeoBuzz.Utility
             InMeter.Feed(left, right, n);
 
             // Stages at their identity (and settled) are skipped: exact passthrough.
+            bool decodeOn = !decode.At(0), encodeOn = !encode.At(0);
             bool dcOn = !dc.At(0);
             bool polOn = !(polL.At(1) && polR.At(1));
             bool swapOn = !swap.At(0);
@@ -161,6 +173,19 @@ namespace NeoBuzz.Utility
             {
                 float l = left[i], r = right[i];
                 // Crossfades (switches) take the exact path once settled: l + 1·(x − l) is not x in floats.
+                if (decodeOn)
+                {
+                    // Mid on the left, side on the right: L = M + S, R = M − S.
+                    float e = decode.Next();
+                    float dl = (float)((double)l + r), dr = (float)((double)l - r);
+                    if (e == 1) { l = dl; r = dr; }
+                    else
+                    {
+                        float nl = l + e * (dl - l);
+                        r += e * (dr - r);
+                        l = nl;
+                    }
+                }
                 if (dcOn)
                 {
                     float d = dc.Next();
@@ -224,6 +249,19 @@ namespace NeoBuzz.Utility
                     float g = gain.Next();
                     l *= g;
                     r *= g;
+                }
+                if (encodeOn)
+                {
+                    // M = (L + R)/2 on the left, S = (L − R)/2 on the right.
+                    float e = encode.Next();
+                    float el = (float)(0.5 * ((double)l + r)), er = (float)(0.5 * ((double)l - r));
+                    if (e == 1) { l = el; r = er; }
+                    else
+                    {
+                        float nl = l + e * (el - l);
+                        r += e * (er - r);
+                        l = nl;
+                    }
                 }
                 left[i] = l;
                 right[i] = r;

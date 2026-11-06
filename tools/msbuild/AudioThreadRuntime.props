@@ -1,0 +1,21 @@
+<Project>
+  <!--
+    Fork (docs/specs/daw-modes.md §8.1, audio hygiene): how .NET compiles code in every app we ship and every test
+    host the audio thread runs in. Imported by ReBuzz.csproj (NeoBuzzLive.exe), the studio (ReBuzz.Studio, the Mac app),
+    rebuzz-headless, NativeMachineFramework (C++/CLI: its runtimeconfig.json ships beside the exe, and a native host that
+    loads it first starts .NET with it), ReBuzzTests, ReBuzz.Studio.Tests and ReBuzz.SessionTests; a new app or test host
+    that plays audio imports it too. (NeoBuzz.MachineTests and NeoBuzz.PedalTests turn tiered compilation off altogether.)
+
+    TieredCompilationQuickJitForLoops=false: a method with a loop is compiled fully optimised the first time, never
+    at tier 0. A tier-0 method whose loop runs long is replaced while it runs (on-stack replacement), by code
+    compiled on the thread running it: on the audio thread, a likely dropout. The audio path's long loops are
+    marked [MethodImpl(MethodImplOptions.AggressiveOptimization)] too (AudioWarmUp.cs), which does the same for
+    each of them; this does it for every method with a loop, ours and any a machine brings, so none is left to
+    chance. It becomes System.Runtime.TieredCompilation.QuickJitForLoops in the app's runtimeconfig.json (CI checks the
+    shipped ones); the environment variable DOTNET_TC_QuickJitForLoops=1 overrides it (measurements). What it costs and
+    saves, measured: docs/specs/daw-modes.md §8.1.
+  -->
+  <PropertyGroup>
+    <TieredCompilationQuickJitForLoops>false</TieredCompilationQuickJitForLoops>
+  </PropertyGroup>
+</Project>

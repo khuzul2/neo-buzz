@@ -131,6 +131,8 @@ jobs:
       if: always()
       run: |
         dotnet build ReBuzz.Headless/ReBuzz.Headless.csproj -c Release -nologo -v:q
+        # Methods with loops compiled fully optimised at once (daw-modes.md §8.1, tools/msbuild/AudioThreadRuntime.props).
+        grep -Eq '"System.Runtime.TieredCompilation.QuickJitForLoops": *false' ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless.runtimeconfig.json || { echo "::error::rebuzz-headless.runtimeconfig.json doesn't turn quick JIT for loops off"; exit 1; }
         python3 tools/headless-smoke.py ReBuzz.Headless/bin/Release/net10.0/rebuzz-headless "$RUNNER_TEMP/smoke"
 
     # The Pedal machines (docs/specs/studio-mvp.md S2), built for net10.0 without their WPF GUIs:
@@ -236,6 +238,7 @@ jobs:
         PULSE_LATENCY_MSEC: 100
       run: |
         dotnet build ReBuzz.Studio/ReBuzz.Studio.csproj -c Release -nologo -v:q
+        grep -Eq '"System.Runtime.TieredCompilation.QuickJitForLoops": *false' ReBuzz.Studio/bin/Release/net10.0/ReBuzz.Studio.runtimeconfig.json || { echo "::error::ReBuzz.Studio.runtimeconfig.json doesn't turn quick JIT for loops off"; exit 1; }
         xvfb-run -a python3 tools/headless-live.py --studio ReBuzz.Studio/bin/Release/net10.0/ReBuzz.Studio "$RUNNER_TEMP/studio-live"
 
     - name: Studio screenshots

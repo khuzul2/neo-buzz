@@ -5,7 +5,7 @@
  "status": "curated",
  "source": "curated by hand (2026-11-03, mcp-server.md §12.9) from the profile by tools/machine-profiler.py on windows, 2026-11-03 and the evidence listed",
  "type": "drums",
- "summary": "TR-909 drum machine (bass drum, snare, toms, rim shot, clap, hi-hats, crash and ride) with per-voice level, tune and decay, and shuffle. The most used machine in the repo's Buzz songs.",
+ "summary": "TR-909 drum machine (bass drum, snare, toms, rim shot, clap, hi-hats, crash and ride) with per-voice level, tune and decay, and shuffle.",
  "quirks": [
   "It plays from trigger columns, not notes: each track has BD Trigger … RC Trigger switches (a 1 hits that drum). notes_write can't play it, and param_set can't set the triggers; songs that use it carry their own patterns.",
   "Silent at its defaults until a trigger fires (profile).",

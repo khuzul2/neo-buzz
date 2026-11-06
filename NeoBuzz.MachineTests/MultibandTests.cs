@@ -1112,25 +1112,34 @@ namespace NeoBuzz.MachineTests
             // Stereo at 48 kHz on noise, every band compressing (the defaults); linear and minimum phase, four bands, and the
             // worst case: mid/side unlinked (two detectors a band), and crossovers moving every block in linear phase (a redesign
             // every 43 ms).
-            var x = Noise(10 * Rate, 0.2, 4);
+            // Timed against the reference workload in the same run (Throughput.cs): 0.5 s played untimed, then 2 s.
+            var x = Noise(3 * Rate, 0.2, 4);
+            const int Warm = Rate / 2;
             var cases = new (string Name, Action<ParamValues> Setup, PhaseMode Phase, bool Move, double Floor)[]
             {
-                ("linear, 4 bands", null, PhaseMode.Linear, false, 20),
-                ("minimum, 4 bands", null, PhaseMode.Minimum, false, 20),
-                ("linear, 3 bands", v => v.Set(P.Bands, 0), PhaseMode.Linear, false, 20),
-                ("linear, mid/side unlinked", v => { v.Set(P.Stereo, 1); v.Set(P.Link, 0); }, PhaseMode.Linear, false, 12),
-                ("linear, crossovers moving", null, PhaseMode.Linear, true, 10),
+                ("linear, 4 bands", null, PhaseMode.Linear, false, Throughput.Floor(x64: 51, arm64: 32)),
+                ("minimum, 4 bands", null, PhaseMode.Minimum, false, Throughput.Floor(x64: 60, arm64: 45)),
+                ("linear, 3 bands", v => v.Set(P.Bands, 0), PhaseMode.Linear, false, Throughput.Floor(x64: 58, arm64: 37)),
+                ("linear, mid/side unlinked", v => { v.Set(P.Stereo, 1); v.Set(P.Link, 0); }, PhaseMode.Linear, false, Throughput.Floor(x64: 45, arm64: 30)),
+                ("linear, crossovers moving", null, PhaseMode.Linear, true, Throughput.Floor(x64: 24, arm64: 16)),
             };
             foreach (var c in cases)
             {
-                var (e, v) = Make(c.Setup, phase: c.Phase);
-                Action<int> move = c.Move ? pos => v.Set(P.Xo2, 4000 + (pos / 256) % 200) : null;
-                Run(e, x, x, before: move);   // warm
-                var sw = Stopwatch.StartNew();
-                Run(e, x, x, before: move);
-                double speed = 10 / sw.Elapsed.TotalSeconds;
-                Measure.Report($"Neo Multiband CPU ({c.Name}): {speed:F0}× real time");
-                Assert.That(speed, Is.GreaterThan(c.Floor), c.Name);
+                Throughput.Guard($"Neo Multiband CPU ({c.Name})", c.Floor, 2, Rate, MultibandEngine.MaxBlock, () =>
+                {
+                    var (e, v) = Make(c.Setup, phase: c.Phase);
+                    var bl = new float[MultibandEngine.MaxBlock];
+                    var br = new float[MultibandEngine.MaxBlock];
+                    void Block(int pos, int n)
+                    {
+                        if (c.Move) v.Set(P.Xo2, 4000 + (pos / 256) % 200);
+                        Array.Copy(x, pos, bl, 0, n);
+                        Array.Copy(x, pos, br, 0, n);
+                        e.Process(bl, br, n);
+                    }
+                    for (int pos = 0; pos < Warm; pos += MultibandEngine.MaxBlock) Block(pos, MultibandEngine.MaxBlock);
+                    return Throughput.InBlocks(MultibandEngine.MaxBlock, (pos, n) => Block(Warm + pos, n));
+                }, Measure.Report);
             }
         }
     }

@@ -37,7 +37,10 @@ namespace NeoBuzz.Editor
             EnvelopePainter.Adsr(c, r, Time(env.Attack), Time(env.Decay), sustain, Time(env.Release), accent);
         }
 
-        /// <summary>The response plot: a grid in Hz and dB, the curve (computed plots), and a line at each marked frequency.</summary>
+        /// <summary>
+        /// The response plot: a grid in Hz and dB, the curve (computed plots), and a line at each marked frequency. How it
+        /// was made (FaceResponse.Caption) is the editor's tooltip, not text in the plot.
+        /// </summary>
         public static void Response(INeoCanvas c, NeoRect r, FaceResponse response, Func<FaceParam, int> raw, NeoColor accent)
         {
             var graph = new ResponseGraph(response.MinDb, response.MaxDb, response.DbStep);
@@ -61,14 +64,15 @@ namespace NeoBuzz.Editor
             }
             if (response.Computed && response.DbAt != null)
             {
-                var area = graph.Area(hz => Clamp(response.DbAt(hz), response));
-                c.Path(area, accent.WithAlpha(0x22), NeoStroke.None);
-                c.Path(graph.Curve(hz => Clamp(response.DbAt(hz), response)), NeoFill.None, new NeoStroke(accent, 2));
+                // Inside the plot, never over the frequency labels.
+                graph.InPlot(c, () =>
+                {
+                    var area = graph.Area(hz => Clamp(response.DbAt(hz), response));
+                    c.Path(area, accent.WithAlpha(0x22), NeoStroke.None);
+                    c.Path(graph.Curve(hz => Clamp(response.DbAt(hz), response)), NeoFill.None, new NeoStroke(accent, 2));
+                });
             }
-            else
-            {
-                c.Text("markers only: no curve", plot.Right - 4, plot.Bottom - 15, 10, Palette.DimText, align: NeoAlign.Right);
-            }
+            // Markers only: the section says "Frequencies" and the ⓘ why; nothing more in the plot.
         }
 
         static double Clamp(double db, FaceResponse r) => double.IsFinite(db) ? Math.Clamp(db, r.MinDb - 6, r.MaxDb + 6) : r.MinDb - 6;

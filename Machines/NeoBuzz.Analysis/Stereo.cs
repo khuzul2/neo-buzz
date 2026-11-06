@@ -40,6 +40,11 @@ namespace NeoBuzz.Analysis
         /// <summary>Left level over right level, dB.</summary>
         public double BalanceDb;
         public StereoBand[] Bands;
+        /// <summary>
+        /// Width in Ozone's four bands, split at 120 Hz, 2 kHz and 10 kHz (Bands.Mastering): the mid/side ratio the
+        /// Master Assistant matches (docs/specs/mastering-tools.md §6).
+        /// </summary>
+        public StereoBand[] MsBands;
     }
 
     internal static class Stereo
@@ -63,6 +68,7 @@ namespace NeoBuzz.Analysis
                 int windows = n / Math.Max(1, (int)Math.Round(window * rate));
                 r.CorrelationOverTime = Enumerable.Repeat(1.0, windows).ToArray();
                 r.Bands = Bands.Named.Select(b => new StereoBand { Name = b.Name, Lo = b.Lo, Hi = b.Hi, Correlation = 1, LevelDb = Spectrum.Db(psd.Band(psd.Mean, b.Lo, b.Hi)) }).ToArray();
+                r.MsBands = Bands.Mastering.Select(b => new StereoBand { Name = b.Name, Lo = b.Lo, Hi = Math.Min(b.Hi, psd.Nyquist), Correlation = 1, LevelDb = Spectrum.Db(psd.Band(psd.Mean, b.Lo, Math.Min(b.Hi, psd.Nyquist))) }).ToArray();
                 return r;
             }
 
@@ -109,6 +115,15 @@ namespace NeoBuzz.Analysis
                 double pl = psd.Band(psd.Left, band.Lo, band.Hi), pr = psd.Band(psd.Right, band.Lo, band.Hi), px = psd.Band(psd.Cross, band.Lo, band.Hi);
                 var (corr, width, loss) = Measures(pl, pr, px);
                 r.Bands[i] = new StereoBand { Name = band.Name, Lo = band.Lo, Hi = band.Hi, Correlation = corr, Width = width, MonoLossDb = loss, LevelDb = Spectrum.Db(0.5 * (pl + pr)) };
+            }
+            r.MsBands = new StereoBand[Bands.Mastering.Length];
+            for (int i = 0; i < r.MsBands.Length; i++)
+            {
+                var (name, lo, hi) = Bands.Mastering[i];
+                hi = Math.Min(hi, psd.Nyquist);
+                double pl = psd.Band(psd.Left, lo, hi), pr = psd.Band(psd.Right, lo, hi), px = psd.Band(psd.Cross, lo, hi);
+                var (corr, width, loss) = Measures(pl, pr, px);
+                r.MsBands[i] = new StereoBand { Name = name, Lo = lo, Hi = hi, Correlation = corr, Width = width, MonoLossDb = loss, LevelDb = Spectrum.Db(0.5 * (pl + pr)) };
             }
             return r;
         }

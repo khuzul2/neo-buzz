@@ -213,13 +213,18 @@ namespace ReBuzz.Agent
                 Description =
                     "Measures a render, a probe (\"r3:Bass\") or a WAV file (a full path, e.g. a reference track), each number with a plain read: " +
                     "loudness (LUFS, range), peaks (true peak dBTP, clipping), dynamics (crest, PLR), spectrum (bands, third octaves, tilt, centroid), " +
-                    "stereo (correlation, width per band, mono loss), pitch (monophonic notes and cents), key, tempo. Default: all; pick metrics to be " +
-                    "quick. Optionally a part, from_seconds to to_seconds. Read-only. Example: analyze(source=\"r3\", metrics=[\"spectrum\", \"stereo\"]).",
+                    "stereo (correlation, width per band, mono loss, side/mid in four bands), pitch (monophonic notes and cents), key, tempo, " +
+                    "microdynamics (LDR, the short-term punch, in four bands), tonal (the long-term curve, 1/6 octave) and platform (what Spotify, " +
+                    "Apple Music, YouTube and others do to its level). With target (a style target from target_build, a *.target.json, or a " +
+                    "reference render or WAV), each measure also reads against it: the tonal difference, loudness, PLR, side/mid and LDR. " +
+                    "Default: all; pick metrics to be quick. Optionally a part, from_seconds to to_seconds. Read-only. " +
+                    "Example: analyze(source=\"r3\", metrics=[\"spectrum\", \"stereo\"]); analyze(source=\"r5\", target=\"deep house\").",
                 Input = Object(null,
                     Req("source", String("A render id (\"r1\") or a WAV file's full path")),
                     Opt("metrics", Array(String("A metric", AudioReport.Metrics), "Which measures (default all)")),
                     Opt("from_seconds", Number("From here", 0)),
-                    Opt("to_seconds", Number("To here", 0))),
+                    Opt("to_seconds", Number("To here", 0)),
+                    Opt("target", String("Measure against: a style target's name (target_build) or file (*.target.json), or a reference render or WAV"))),
                 Output = Object(null,
                     Req("source", String("What was measured")),
                     Req("seconds", Number("Length measured")),
@@ -234,7 +239,8 @@ namespace ReBuzz.Agent
                     double? fromS = c.Number("from_seconds"), toS = c.Number("to_seconds");
                     if (fromS.HasValue && toS.HasValue && toS <= fromS) throw new ToolError("to_seconds must be after from_seconds.");
                     var part = AudioReport.Slice(audio, fromS, toS);
-                    var m = await System.Threading.Tasks.Task.Run(() => AudioReport.Measure(part, metrics), c.Cancellation);
+                    var target = c.String("target") is string t && t.Trim().Length > 0 ? await MasteringTools.Target(host, t, c) : null;
+                    var m = await System.Threading.Tasks.Task.Run(() => MasteringReport.Measure(part, metrics, target), c.Cancellation);
                     m["source"] = label == file ? file : $"{label} ({file})";
                     return ToolResult.Ok($"{label}: {m["seconds"]} s, {AudioReport.Line(m)}. " +
                                          string.Join(" ", m["reads"]!.AsArray().Select(x => x!.GetValue<string>())), m);

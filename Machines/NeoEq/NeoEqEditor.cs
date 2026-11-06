@@ -385,18 +385,22 @@ namespace NeoBuzz.Eq
             if (machine != null)
             {
                 spectrum.Update(machine.Engine);
-                g.Path(graph.Spectrum(spectrum.Hz, spectrum.Db, 0, 96), Palette.Track.WithAlpha(0x90), NeoStroke.None);
+                graph.InPlot(g, () => g.Path(graph.Spectrum(spectrum.Hz, spectrum.Db, 0, 96), Palette.Track.WithAlpha(0x90), NeoStroke.None));
             }
             graph.DrawGrid(g);
             sliders.DrawTracks(g);
             var solver = curve.For(ctx, machine?.Engine.SampleRate ?? 48000);
             double output = ctx.Value(P.Output);
-            g.Path(graph.Curve(hz => solver.ResponseDb(hz) + output), NeoFill.None, new NeoStroke(AccentColor, 2.2));
-            sliders.DrawCaps(g, AccentColor);
             int i = sliders.Hover >= 0 ? sliders.Hover : sliders.Selected;
             string text = "Graphic · " + sliders.Caption(i);
             if (output != 0) text += " · " + Params.Table[P.Output].Name + " " + Params.Table[P.Output].Describe(ctx.Raw(P.Output));
-            g.Text(text, graph.Plot.Left + 6, graph.Plot.Top + 2, 10.5, AccentColor);
+            graph.InPlot(g, () =>
+            {
+                g.Path(graph.Curve(hz => solver.ResponseDb(hz) + output), NeoFill.None, new NeoStroke(AccentColor, 2.2));
+                g.Text(text, graph.Plot.Left + 6, graph.Plot.Top + 2, 10.5, AccentColor);
+            });
+            // The caps over the curve, in the room kept around the plot (never over the axis labels).
+            sliders.DrawCaps(g, AccentColor);
         }
 
         static void Draw(INeoCanvas g, NeoRect r, EditorContext ctx, ResponseGraph graph, BandHandleInput handles, NeoEqMachine machine, SpectrumView spectrum)
@@ -405,7 +409,7 @@ namespace NeoBuzz.Eq
             if (machine != null)
             {
                 spectrum.Update(machine.Engine);
-                g.Path(graph.Spectrum(spectrum.Hz, spectrum.Db, 0, 96), Palette.Track.WithAlpha(0x90), NeoStroke.None);
+                graph.InPlot(g, () => g.Path(graph.Spectrum(spectrum.Hz, spectrum.Db, 0, 96), Palette.Track.WithAlpha(0x90), NeoStroke.None));
             }
             graph.DrawGrid(g);
 
@@ -415,23 +419,26 @@ namespace NeoBuzz.Eq
 
             int sel = handles.Selected;
             var colour = BandColors[sel];
-            if (values.On(EqDesign.On(sel)))
-            {
-                var s = EqDesign.Settings(values, sel);
-                Func<double, double> own = hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(s, hz, rate)));
-                g.Path(graph.Area(own), colour.WithAlpha(0x2C), NeoStroke.None);
-                g.Path(graph.Curve(own, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(0xB0), 1.2));
-            }
-            g.Path(graph.Curve(hz => EqDesign.ResponseDb(values, hz, rate)), NeoFill.None, new NeoStroke(AccentColor, 2.2));
-            handles.Draw(g, BandColors);
-
             var b = EqDesign.Settings(values, sel);
             string text = $"Band {sel + 1} · {Params.Table[EqDesign.TypeOf(sel)].Describe(values[EqDesign.TypeOf(sel)])} · {ParamDef.Freq(b.Hz)}";
             if (b.HasGain) text += $" · {Params.Table[EqDesign.Gain(sel)].Describe(values[EqDesign.Gain(sel)])}";
             text += $" · Q {b.Q:0.00}";
             if (b.Type is BandType.LowCut or BandType.HighCut) text += $" · {Params.Table[EqDesign.Slope(sel)].Describe(values[EqDesign.Slope(sel)])}";
             if (!values.On(EqDesign.On(sel))) text += " (off)";
-            g.Text(text, graph.Plot.Left + 6, graph.Plot.Top + 2, 10.5, values.On(EqDesign.On(sel)) ? colour : Palette.DimText);
+            // The curves inside the plot, never over the axis labels; the handles over them, in the room kept around it.
+            graph.InPlot(g, () =>
+            {
+                if (values.On(EqDesign.On(sel)))
+                {
+                    var s = EqDesign.Settings(values, sel);
+                    Func<double, double> own = hz => 20 * Math.Log10(Math.Max(1e-9, EqDesign.Magnitude(s, hz, rate)));
+                    g.Path(graph.Area(own), colour.WithAlpha(0x2C), NeoStroke.None);
+                    g.Path(graph.Curve(own, 160), NeoFill.None, new NeoStroke(colour.WithAlpha(0xB0), 1.2));
+                }
+                g.Path(graph.Curve(hz => EqDesign.ResponseDb(values, hz, rate)), NeoFill.None, new NeoStroke(AccentColor, 2.2));
+                g.Text(text, graph.Plot.Left + 6, graph.Plot.Top + 2, 10.5, values.On(EqDesign.On(sel)) ? colour : Palette.DimText);
+            });
+            handles.Draw(g, BandColors);
         }
     }
 }

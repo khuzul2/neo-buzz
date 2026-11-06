@@ -31,7 +31,7 @@ namespace NeoBuzz.Wave
             UIElement Osc(string title, int osc, int table, int pos, int warp, int warpAmt, int oct, int semi, int fine, int level) => S(title, Layout.Column(
                 Layout.Row(new ParamDropdown(ctx, table, width: 120), Layout.Gap(8), new ParamDropdown(ctx, warp, width: 110)),
                 Layout.Gap(1, 6),
-                TableView(ctx, machine, osc, 6 * 64, 104),
+                TableView(ctx, machine, osc, 6 * 64, 112),
                 Layout.Gap(1, 4),
                 Build.Knobs(ctx, 6, D, pos, warpAmt, oct, semi, fine, level)));
 
@@ -139,9 +139,13 @@ namespace NeoBuzz.Wave
         static string UserLabel(NeoWaveMachine machine) =>
             string.IsNullOrEmpty(machine?.UserTableName) ? "No table loaded" : machine.UserTableName;
 
+        /// <summary>The strip at the top of a table's picture that holds its caption (the traces stay below it).</summary>
+        internal const double CaptionHeight = 20;
+
         /// <summary>
         /// A table in perspective: up to 20 of its frames from front (first) to back (last), and the
-        /// frame playing now (modulated position and warp of the loudest voice, else the knobs).
+        /// frame playing now (modulated position and warp of the loudest voice, else the knobs), under
+        /// its caption and clipped to the picture below it, so the traces never run over the caption.
         /// </summary>
         static GraphView TableView(EditorContext ctx, NeoWaveMachine machine, int osc, double width, double height)
         {
@@ -164,11 +168,13 @@ namespace NeoBuzz.Wave
                     g.Text(isUser ? "No user table: load a WAV" : "Building…", r.Width / 2, r.Height / 2 - 8, 11.5, Palette.DimText, align: NeoAlign.Center);
                     return;
                 }
-                double depthX = r.Width * 0.24, depthY = r.Height * 0.36;
-                double frameWidth = r.Width - depthX - 12;
-                double amp = (r.Height - depthY - 14) * 0.45;
+                // The traces' area: below the caption's strip.
+                var plot = new NeoRect(r.Left, r.Top + CaptionHeight, r.Width, Math.Max(1, r.Height - CaptionHeight));
+                double depthX = plot.Width * 0.24, depthY = plot.Height * 0.36;
+                double frameWidth = plot.Width - depthX - 12;
+                double amp = (plot.Height - depthY - 14) * 0.45;
                 NeoPoint At(double depth, double t, double y) =>
-                    new NeoPoint(r.Left + 6 + depth * depthX + t * frameWidth, r.Bottom - 7 - amp - depth * depthY - y * amp);
+                    new NeoPoint(plot.Left + 6 + depth * depthX + t * frameWidth, plot.Bottom - 7 - amp - depth * depthY - y * amp);
 
                 if (!ReferenceEquals(table, cached) || cachedWidth != r.Width || cachedHeight != r.Height)
                 {
@@ -191,7 +197,6 @@ namespace NeoBuzz.Wave
                     cachedWidth = r.Width;
                     cachedHeight = r.Height;
                 }
-                g.Path(back, NeoFill.None, new NeoStroke(ctx.Accent.WithAlpha(0x48), 1));
 
                 float pos = (float)ctx.Value(posParam);
                 float warp = (float)ctx.Value(warpAmtParam);
@@ -211,7 +216,11 @@ namespace NeoBuzz.Wave
                     if (mode == Warp.WindowSync) y *= (float)(0.5 - 0.5 * Math.Cos(2 * Math.PI * t));
                     now.LineTo(At(pos, t, y));
                 }
-                g.Path(now, NeoFill.None, new NeoStroke(ctx.Accent, 2));
+                GraphFrame.Clipped(g, plot, () =>
+                {
+                    g.Path(back, NeoFill.None, new NeoStroke(ctx.Accent.WithAlpha(0x48), 1));
+                    g.Path(now, NeoFill.None, new NeoStroke(ctx.Accent, 2));
+                });
                 g.Text($"{table.Name} · frame {(int)Math.Round(framePos) + 1} of {table.FrameCount}", r.Left + 7, r.Top + 4, 10.5, Palette.DimText);
             }, animate: true);
         }

@@ -60,6 +60,7 @@ namespace ReBuzz.Agent
             PatternTools.Register(tools, this);
             RenderTools.Register(tools, this);
             AnalysisTools.Register(tools, this);
+            MasteringTools.Register(tools, this);   // mastering-tools.md §6: target_build, eq_fit
             StateTools.Register(tools, this);
             CompositionTools.Register(tools, this);
             WaveTools.Register(tools, this);
@@ -121,6 +122,8 @@ namespace ReBuzz.Agent
 
         /// <summary>This session's renders by id ("r1"…).</summary>
         internal ConcurrentDictionary<string, RenderInfo> Renders { get; } = new();
+        /// <summary>The style targets target_build made in this session, by name (each also saved as a file).</summary>
+        internal ConcurrentDictionary<string, ReBuzz.Agent.Audio.TargetHandle> Targets { get; } = new(StringComparer.OrdinalIgnoreCase);
         internal int ActionsAfterLastAgentCall { get; private set; } = -1;
 
         /// <summary>

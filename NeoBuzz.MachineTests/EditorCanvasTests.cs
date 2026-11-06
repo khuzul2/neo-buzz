@@ -257,12 +257,175 @@ namespace NeoBuzz.MachineTests
             Assert.That(c.Calls[4].Text == "Drive" && c.Calls[4].Align == NeoAlign.Center, Is.True);
             Assert.That(c.Calls[5].Color, Is.EqualTo(Palette.DimText), "the value is dim until hovered");
 
-            // Bipolar at the centre: no value arc.
-            var b = new KnobModel(46) { Bipolar = true };
+            // At its origin (the middle, for a symmetric −/+ range): no value arc.
+            var b = new KnobModel(46) { Origin = 0.5 };
             b.Set(0.5);
             var c2 = new RecordingCanvas();
             b.Draw(c2, 64, Accent);
             Assert.That(c2.Of(NeoDrawKind.Arc).Count(), Is.EqualTo(1));
+        }
+
+        [Test]
+        public void AKnobIsAsWideAsItsLabel()
+        {
+            // mac-402, win-802: Neo Delay's "Duck threshold" label, wider than its knob, ran under the duck meter beside it.
+            var measure = new RecordingCanvas();
+            var k = new KnobModel(46) { Label = "Duck threshold", ValueText = "−30.0 dB" };
+            Assert.That(k.Width, Is.EqualTo(64), "unmeasured: the knob's own width");
+            k.FitLabel(measure);
+            double label = measure.MeasureText("Duck threshold", KnobModel.LabelSize);
+            Assert.That(label, Is.GreaterThan(64), "the label is wider than the knob");
+            Assert.That(k.Width, Is.GreaterThanOrEqualTo(label + 6), "the knob takes its label's width");
+            var c = new RecordingCanvas();
+            k.Draw(c, k.Width, Accent);
+            foreach (var t in c.Of(NeoDrawKind.Text))
+                Assert.That(t.Bounds.Left >= 0 && t.Bounds.Right <= k.Width, Is.True, $"\"{t.Text}\" inside the knob's width");
+
+            var mix = new KnobModel(46) { Label = "Mix" };
+            mix.FitLabel(measure);
+            Assert.That(mix.Width, Is.EqualTo(64), "a short label keeps the knob's own width");
+        }
+
+        [Test]
+        public void ALongLabelWrapsOntoASecondLineWhereTheKnobHasAWidthToKeep()
+        {
+            // UI gallery review (mac-460, win-901, win-903, win-909): the manifest editor cut long labels with "…"
+            // ("Pulse width / PWM d…"). With a width to keep, a label wraps at a space onto a second line, whole.
+            var measure = new RecordingCanvas();
+            var k = new KnobModel(46) { Label = "Pulse width / PWM depth", ValueText = "0%", MaxLabelWidth = 104 };
+            k.FitLabel(measure);
+            Assert.That(measure.MeasureText(k.Label, KnobModel.LabelSize), Is.GreaterThan(104), "too long for one line");
+            Assert.That(k.LabelLines, Is.EqualTo(new[] { "Pulse width / PWM", "depth" }));
+            Assert.That(k.Width, Is.LessThanOrEqualTo(104 + 6), "the knob keeps its width");
+            Assert.That(k.Height, Is.EqualTo(46 + 34 + KnobModel.LineHeight), "one line taller");
+            var c = new RecordingCanvas();
+            k.Draw(c, k.Width, Accent);
+            var texts = c.Of(NeoDrawKind.Text).ToList();
+            Assert.That(texts.Select(t => t.Text), Is.EqualTo(new[] { "Pulse width / PWM", "depth", "0%" }), "both lines, then the value");
+            Assert.That(texts.All(t => !t.Text.Contains('…')), Is.True);
+            Assert.That(texts[1].Points[0].Y - texts[0].Points[0].Y, Is.EqualTo(KnobModel.LineHeight));
+            Assert.That(texts[2].Bounds.Bottom, Is.LessThanOrEqualTo(k.Height + 1), "the value inside the knob's height");
+            foreach (var t in texts) Assert.That(t.Bounds.Left >= 0 && t.Bounds.Right <= k.Width, Is.True, $"\"{t.Text}\" inside the knob");
+
+            var shortOne = new KnobModel(46) { Label = "Cutoff", MaxLabelWidth = 104 };
+            shortOne.FitLabel(measure);
+            Assert.That(shortOne.LabelLines, Is.EqualTo(new[] { "Cutoff" }));
+            Assert.That(shortOne.Height, Is.EqualTo(80), "a short label: one line");
+            var noLimit = new KnobModel(46) { Label = "Pulse width / PWM depth" };
+            noLimit.FitLabel(measure);
+            Assert.That(noLimit.LabelLines, Has.Length.EqualTo(1), "without a width to keep (the Neo editors): one line, the knob as wide");
+        }
+
+        [Test]
+        public void TheKnobsUnfilledTrackStandsOutFromThePanel()
+        {
+            // UI gallery review: the unfilled track was 1.39:1 against the panel; a control's parts need 3:1 (WCAG 1.4.11).
+            Assert.That(Contrast.Ratio(Palette.Track, Palette.Panel), Is.LessThan(1.5), "the old track colour");
+            Assert.That(Contrast.Ratio(NeoColor.FromRgb(0xFF, 0xFF, 0xFF), NeoColor.FromRgb(0, 0, 0)), Is.EqualTo(21).Within(1e-9));
+            var k = new KnobModel(46);
+            k.Set(0.3);
+            var c = new RecordingCanvas();
+            k.Draw(c, 64, Accent);
+            var track = c.Of(NeoDrawKind.Arc).First();
+            Assert.That(track.FromDegrees, Is.EqualTo(-KnobModel.Sweep).Within(1e-9), "the whole sweep: the track");
+            double ratio = Contrast.Ratio(track.Stroke.Color, Palette.Panel);
+            TestContext.Out.WriteLine($"track {track.Stroke.Color} on the panel {Palette.Panel}: {ratio:F2}:1");
+            Assert.That(ratio, Is.GreaterThanOrEqualTo(3), "3:1 against the panel");
+            Assert.That(Contrast.Ratio(track.Stroke.Color, Palette.Background), Is.GreaterThanOrEqualTo(3), "and the window's background");
+        }
+
+        [Test]
+        public void AnOffOnSwitchIsOneToggleThatLightsWhenOn()
+        {
+            // UI gallery review (mac-401, mac-410, mac-414): switches were "Off | On" segments, the lit one often "Off",
+            // so an accent-lit control could mean off. A switch is one toggle named for its function, lit only when on.
+            var makeup = NeoBuzz.Comp.Params.Table[NeoBuzz.Comp.P.AutoMakeup];
+            var dcRemove = NeoBuzz.Utility.Params.Table[NeoBuzz.Utility.P.DcRemove];
+            Assert.That(ParamMapping.IsToggle(makeup) && ParamMapping.IsToggle(dcRemove), Is.True, "Off/On switches");
+            Assert.That(ParamMapping.IsToggle(NeoBuzz.Utility.Params.Table[NeoBuzz.Utility.P.PanLaw]), Is.False, "a choice with names stays a row");
+            var named = new ParamDef(0, "Phase", "Phase", 0, 1, 0, MapKind.Switch, 0, 1, names: new[] { "Linear", "Minimum" });
+            Assert.That(ParamMapping.IsToggle(named), Is.False, "a two-state choice with names of its own stays a row");
+
+            var measure = new RecordingCanvas();
+            var toggle = new ToggleFace("Auto makeup", 72, measure);
+            Assert.That(toggle.Height, Is.EqualTo(new ChoiceStrip("x", new[] { "Off", "On" }, 36, false, measure).Height), "where a row of buttons stood");
+            Assert.That(toggle.Width, Is.GreaterThanOrEqualTo(72));
+            Assert.That(toggle.Hit(toggle.Width / 2, ChoiceStrip.LabelHeight + 11), Is.True);
+            Assert.That(toggle.Hit(toggle.Width / 2, 5), Is.False, "above the button");
+
+            NeoDrawCall[] Drawn(bool on)
+            {
+                var c = new RecordingCanvas();
+                toggle.Draw(c, on, false, Accent);
+                return c.Calls.ToArray();
+            }
+            bool Lit(NeoDrawCall x) => x.Fill.Color.R == Accent.R && x.Fill.Color.G == Accent.G && x.Fill.Color.B == Accent.B && x.Fill.Color.IsVisible
+                                       || x.Stroke.Color == Accent || x.Color == Accent;
+            var off = Drawn(false);
+            var on = Drawn(true);
+            Assert.That(off.Where(x => x.Kind == NeoDrawKind.Text).Select(x => x.Text), Is.EqualTo(new[] { "Auto makeup" }), "named for its function: no Off, no On");
+            Assert.That(off.Any(Lit), Is.False, "off: nothing in the accent");
+            Assert.That(on.Single(x => x.Kind == NeoDrawKind.Rect).Fill.Color, Is.EqualTo(Accent.WithAlpha(0x38)), "on: lit");
+            Assert.That(on.Single(x => x.Kind == NeoDrawKind.Text).Color, Is.EqualTo(Accent));
+            Assert.That(on.Single(x => x.Kind == NeoDrawKind.Ellipse).Fill.Color, Is.EqualTo(Accent), "its lamp on");
+            Assert.That(off.Single(x => x.Kind == NeoDrawKind.Ellipse).Fill.IsNone, Is.True, "and off");
+        }
+
+        [Test]
+        public void KnobArcsStartAtTheValueZeroOrTheMinimum()
+        {
+            // mac-409: Neo Limiter's Input gain (−12 … +24 dB) at 0.0 dB lit an arc from +6 dB, the knob's middle.
+            var gain = NeoBuzz.Limiter.Params.Table[NeoBuzz.Limiter.P.InputGain];
+            Assert.That(gain.Value(gain.Default), Is.EqualTo(0).Within(1e-9), "its default is 0 dB");
+            double origin = ParamMapping.ArcOrigin(gain);
+            Assert.That(origin, Is.EqualTo(1 / 3.0).Within(1e-9), "0 dB is a third of the way round");
+
+            KnobModel Knob(ParamDef def, int raw)
+            {
+                var k = new KnobModel(46) { Origin = ParamMapping.ArcOrigin(def) };
+                k.Set(ParamMapping.Normalized(def, raw));
+                return k;
+            }
+            List<NeoDrawCall> ValueArcs(KnobModel k)
+            {
+                var c = new RecordingCanvas();
+                k.Draw(c, 64, Accent);
+                return c.Of(NeoDrawKind.Arc).Where(a => a.Stroke.Color == Accent).ToList();
+            }
+            double Angle(double position) => -KnobModel.Sweep + 2 * KnobModel.Sweep * position;
+
+            Assert.That(ValueArcs(Knob(gain, gain.Default)), Is.Empty, "at 0 dB: no arc");
+            var up = ValueArcs(Knob(gain, gain.Raw(6))).Single();
+            Assert.That(up.FromDegrees, Is.EqualTo(Angle(origin)).Within(1e-6), "+6 dB: from 0 dB …");
+            Assert.That(up.ToDegrees, Is.EqualTo(Angle(ParamMapping.Normalized(gain, gain.Raw(6)))).Within(1e-6), "… to +6 dB");
+            var down = ValueArcs(Knob(gain, gain.Raw(-6))).Single();
+            Assert.That(down.ToDegrees, Is.EqualTo(Angle(origin)).Within(1e-6), "−6 dB: from −6 dB up to 0 dB");
+
+            // A symmetric −/+ range starts in the middle; a one-sided one at its minimum.
+            var pan = NeoBuzz.Utility.Params.Table[NeoBuzz.Utility.P.Pan];
+            Assert.That(ParamMapping.IsBipolar(pan), Is.True);
+            Assert.That(ParamMapping.ArcOrigin(pan), Is.EqualTo(0.5).Within(1e-3), "Pan: the middle");
+            var ceiling = NeoBuzz.Limiter.Params.Table[NeoBuzz.Limiter.P.Ceiling];
+            Assert.That(ParamMapping.ArcOrigin(ceiling), Is.EqualTo(0), "Ceiling, −12 … 0 dB: from its minimum");
+            var lookahead = NeoBuzz.Limiter.Params.Table[NeoBuzz.Limiter.P.Lookahead];
+            Assert.That(ParamMapping.ArcOrigin(lookahead), Is.EqualTo(0));
+            var low = ValueArcs(Knob(ceiling, ceiling.Raw(-6))).Single();
+            Assert.That(low.FromDegrees, Is.EqualTo(-KnobModel.Sweep).Within(1e-9));
+            // Any range across 0, whatever its kind: a ±50 ct fine tune, ±99 % feedback, Neo Delay's −50 … +100 % offset.
+            var fine = NeoBuzz.Wave.Params.Table[NeoBuzz.Wave.P.AFine];
+            Assert.That(ParamMapping.ArcOrigin(fine), Is.EqualTo(0.5).Within(1e-9), "A fine (±50 ct): the middle");
+            Assert.That(ValueArcs(Knob(fine, fine.Default)), Is.Empty, "at 0 ct: no arc");
+            var offset = NeoBuzz.Delay.Params.Table[NeoBuzz.Delay.P.Offset];
+            Assert.That(ParamMapping.ArcOrigin(offset), Is.EqualTo(1 / 3.0).Within(1e-3), "Offset: from 0 %");
+            // A level whose bottom is silence is one-sided: from the minimum.
+            var volume = NeoBuzz.Wave.Params.Table[NeoBuzz.Wave.P.Volume];
+            Assert.That(volume.Value(volume.Min), Is.EqualTo(double.NegativeInfinity));
+            Assert.That(ParamMapping.ArcOrigin(volume), Is.EqualTo(0), "Volume (−∞ … +6 dB): from the minimum");
+
+            // The crossing between two raw values, and ranges that fall.
+            Assert.That(ParamMapping.ZeroPosition(r => r - 2.5, 0, 10), Is.EqualTo(0.25).Within(1e-12));
+            Assert.That(ParamMapping.ZeroPosition(r => 5 - r, 0, 10), Is.EqualTo(0.5).Within(1e-12));
+            Assert.That(ParamMapping.ZeroPosition(r => r + 1, 0, 10), Is.EqualTo(0), "never 0: the minimum");
         }
 
         [Test]

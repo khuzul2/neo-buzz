@@ -2,7 +2,8 @@
 // reviews. The app starts as it always does (main window, Gear with the natives, themes), loads the demo song both galleries
 // share (GallerySong.cs), and draws its windows to <folder>/win-NNN-*.png at 1440×900: the main window in every view,
 // the main menu's menus, the Machine View's context menus, both shipped themes, Preferences and Settings (every page),
-// About, the agent connection, rename, the parameter windows of native and Pedal machines, the tool windows. Then
+// About, the agent connection, rename, the parameter windows of native and Pedal machines, a Neo synth's editor and the
+// machine keyboard under machine windows, the tool windows. Then
 // index-windows.md (what each shows, how a user gets there) and done.txt, and the app ends. ReBuzzTests'
 // UiGalleryTests runs it on the package run; the pictures go to the ci-artifacts branch with the others.
 //
@@ -187,6 +188,16 @@ namespace ReBuzz
                 shotFailures.Add($"{file}: {e.GetType().Name}: {e.Message}");
                 ShotLog($"{file} failed: {e}");
             }
+        }
+
+        /// <summary>A sentence on the machine keyboard under a machine's window, where it has one (a machine that plays notes).</summary>
+        static string KeyboardUnder(MachineCore m)
+        {
+            var route = ReBuzz.Core.Keyboards.KeyboardRoute.For(m);
+            if (!route.Shows) return "";
+            return route.Input == ReBuzz.Core.Keyboards.KeyboardInput.Midi
+                ? " Under it, the machine keyboard: it plays the machine by MIDI, as a MIDI keyboard does."
+                : " Under it, the machine keyboard: it plays the machine's Note track parameter, a note per track.";
         }
 
         /// <summary>Runs a step whose shots may fail on their own: a failure is listed and the gallery goes on.</summary>
@@ -562,7 +573,7 @@ namespace ReBuzz
                     await Idle(600);
                     var w = WpfMachineUiHost.ParameterWindowOf(m);
                     if (w == null) { shotFailures.Add($"win-{id}: no parameter window"); return; }
-                    await Shot(w, id, what, "Right-click a machine ▸ Parameters… (or double-click one without a GUI).");
+                    await Shot(w, id, what + KeyboardUnder(m), "Right-click a machine ▸ Parameters… (or double-click one without a GUI).");
                     Buzz.UiHost.CloseWindows(m);
                     await Idle(200);
                 }
@@ -577,6 +588,47 @@ namespace ReBuzz
                     await Parameters(m, "603-parameters-pedal", $"The parameter window of a Pedal machine ({pedal}).");
                 }
                 else shotFailures.Add("win-603-parameters-pedal: no Pedal machine in Gear (a quick package leaves them out)");
+            });
+
+            // A Neo synth's editor and the machine keyboard under machine windows (docs/specs/studio-mvp.md §3.12).
+            await Step("machine keyboard", async () =>
+            {
+                async Task<(Window, NeoBuzz.Editor.MachineKeyboard)> Gui(MachineCore m)
+                {
+                    Buzz.UiHost.OpenGui(m, null);
+                    await Idle(800);
+                    // As the app shows it: inside the screen's work area (MachineWindowFit), a taller editor scrolled above the keys.
+                    var w = (Window)WpfMachineUiHost.GuiWindowOf(m) ?? throw new InvalidOperationException($"{m.Name}'s editor didn't open");
+                    return (w, WpfMachineUiHost.KeyboardOf(w) ?? throw new InvalidOperationException($"no keyboard under {m.Name}'s editor"));
+                }
+
+                var (bass, kb) = await Gui(song.Bass);
+                await Shot(bass, "610-editor-neo-poly", "Bass's editor (Neo Poly), as a double click opens it: a window of its own, the machine keyboard under it (it plays Bass by MIDI, as a MIDI keyboard does).",
+                    "Double-click the machine in the Machine View.");
+                // Playing: A4 held with the pointer low on its key (loud), and a chord from a MIDI keyboard lit.
+                var chord = new[] { 48, 55, 64 };
+                try
+                {
+                    var rect = kb.Keys.Layout.Rect(69);
+                    kb.Keys.Down(rect.X + rect.Width / 2, rect.Y + rect.Height * 0.85);
+                    foreach (var note in chord) Buzz.MachineManager.SendMidiInput(song.Bass, 0x90 | (note << 8) | (72 << 16), false);
+                    for (int i = 0; i < 4; i++) kb.Poll();
+                    await Shot(bass, "611-keyboard-playing", "Bass's editor with its keyboard playing: A4 held with the pointer low on the key (loud: the readout names the note and its velocity, the fill shows it), and C3, G3 and E4 lit from a MIDI keyboard. Keys light whatever plays them (a pointer, MIDI, the machine's own patterns).",
+                        "Click and hold a key under a machine's window; drag across the keys to glide. Lower on a key plays louder.", settle: 200);
+                }
+                finally
+                {
+                    kb.Keys.Up();
+                    foreach (var note in chord) Buzz.MachineManager.SendMidiInput(song.Bass, 0x80 | (note << 8), false);
+                    Buzz.UiHost.CloseWindows(song.Bass);
+                }
+                await Idle(200);
+
+                var (drums, _) = await Gui(song.Drums);
+                await Shot(drums, "612-editor-neo-drums", "Drums' editor (Neo Drums) and its keyboard: a drum machine's keys are wider and named for their sounds, those without one dimmed.",
+                    "Double-click the machine in the Machine View.");
+                Buzz.UiHost.CloseWindows(song.Drums);
+                await Idle(200);
             });
 
             // The tool windows, each on its own.

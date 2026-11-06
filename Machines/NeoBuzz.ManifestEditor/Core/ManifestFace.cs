@@ -61,7 +61,7 @@ namespace NeoBuzz.Editor
         /// <summary>The choices of a choice or switch; null for a knob.</summary>
         public string[] Choices { get; init; }
         public bool IsSwitch { get; init; }
-        /// <summary>A −/+ value: the knob's arc grows from the centre.</summary>
+        /// <summary>A −/+ value: the knob's arc grows from its value 0 (<see cref="ArcOrigin"/>).</summary>
         public bool Bipolar { get; init; }
         /// <summary>The quantity of its value: "Hz", "s", "dB", "%", "st"… ("" for a bare number or a choice).</summary>
         public string Dimension { get; init; } = "";
@@ -89,6 +89,21 @@ namespace NeoBuzz.Editor
 
         /// <summary>A raw value as a position 0 … 1 in its range.</summary>
         public double Position(int raw) => Max == Min ? 0 : Math.Clamp((raw - Min) / (double)(Max - Min), 0, 1);
+
+        /// <summary>
+        /// Where its knob's value arc starts (0 … 1): where a −/+ value is 0 (the middle only for a symmetric range), else
+        /// the range's minimum. A value with no physical reading starts at the middle, as before.
+        /// </summary>
+        public double ArcOrigin
+        {
+            get
+            {
+                if (!Bipolar) return 0;
+                double lo = SafeValue(Min), hi = SafeValue(Max);
+                if (double.IsNaN(lo) || double.IsNaN(hi)) return 0.5;
+                return ParamMapping.ZeroPosition(SafeValue, Min, Max);
+            }
+        }
 
         /// <summary>The safe range as knob positions, or null.</summary>
         public (double From, double To)? SafePositions =>

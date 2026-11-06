@@ -220,5 +220,105 @@ namespace NeoBuzz.MachineTests
             Assert.That(input.Capturing, Is.False);
             Assert.That(input.Caption(10), Does.EndWith("0.0 dB"));
         }
+
+        // ------------------------------------------------------------------ the plot's clip and the labels' room
+
+        /// <summary>The axis labels DrawGrid writes (frequencies below the plot, dB at its left).</summary>
+        static List<NeoDrawCall> Labels(ResponseGraph g)
+        {
+            var canvas = new RecordingCanvas();
+            g.DrawGrid(canvas);
+            return canvas.Of(NeoDrawKind.Text).ToList();
+        }
+
+        [Test]
+        public void BandHandlesAtThePlotsEdgesNeverCoverTheAxisLabels()
+        {
+            // UI gallery review: a handle at 20 Hz, or at the top or bottom of the range, sat on the labels. Handles at
+            // every corner and edge, the selected one (the largest) among them.
+            var (g, bands, input) = Make();
+            (double Hz, double Db)[] at = { (20, 24), (20, -24), (20000, 24), (20000, -24), (20, 6), (1000, -24), (1000, 24) };
+            for (int k = 0; k < at.Length; k++)
+            {
+                bands.Hz[k] = at[k].Hz;
+                bands.Db[k] = at[k].Db;
+                bands.On[k] = bands.HasGain[k] = true;
+            }
+            input.Select(1);
+            var labels = Labels(g);
+            var canvas = new RecordingCanvas();
+            input.Draw(canvas, new[] { NeoColor.FromRgb(0x4F, 0xB3, 0xFF) });
+            var handles = canvas.Of(NeoDrawKind.Ellipse).ToList();
+            Assert.That(handles, Has.Count.EqualTo(8));
+            foreach (var h in handles)
+            {
+                // The handle with its outline.
+                double reach = h.Stroke.Width / 2;
+                var b = new NeoRect(h.Bounds.X - reach, h.Bounds.Y - reach, h.Bounds.Width + 2 * reach, h.Bounds.Height + 2 * reach);
+                foreach (var l in labels)
+                    Assert.That(b.Overlaps(l.Bounds), Is.False, $"the handle at ({h.Points[0].X:0}, {h.Points[0].Y:0}) covers the label \"{l.Text}\"");
+            }
+            Assert.That(g.HandleRoom, Is.GreaterThanOrEqualTo(BandHandleInput.Room), "the graph keeps the handles' room");
+        }
+
+        [Test]
+        public void GraphicCapsAtThePlotsEdgesNeverCoverTheAxisLabels()
+        {
+            // win-806: the 20 Hz slider's cap at +6 dB covered the "+6" label.
+            var (g, s, input) = MakeSliders();
+            s.Values[0] = 6;
+            s.Values[1] = -18;
+            s.Values[30] = 18;
+            var labels = Labels(g);
+            var canvas = new RecordingCanvas();
+            input.DrawCaps(canvas, NeoColor.FromRgb(0x4F, 0xB3, 0xFF));
+            var caps = canvas.Of(NeoDrawKind.Rect).ToList();
+            Assert.That(caps, Has.Count.EqualTo(31));
+            foreach (var c in caps)
+            {
+                double reach = c.Stroke.Width / 2;
+                var b = new NeoRect(c.Bounds.X - reach, c.Bounds.Y - reach, c.Bounds.Width + 2 * reach, c.Bounds.Height + 2 * reach);
+                foreach (var l in labels)
+                    Assert.That(b.Overlaps(l.Bounds), Is.False, $"the cap at ({c.Bounds.Centre.X:0}, {c.Bounds.Centre.Y:0}) covers the label \"{l.Text}\"");
+            }
+        }
+
+        [Test]
+        public void CurvesAreDrawnClippedToThePlot()
+        {
+            // mac-408, mac-410: steep curves ran past the plot's floor over the frequency labels. InPlot clips them to
+            // the plot; the clip is popped even when the drawing fails.
+            var (g, _, _) = Make();
+            var canvas = new RecordingCanvas();
+            var curve = g.Curve(hz => hz < 1000 ? 0 : -200);
+            Assert.That(curve.Points.Max(p => p.Y), Is.GreaterThan(g.Plot.Bottom), "the curve itself runs below the plot (−200 dB)");
+            g.InPlot(canvas, () => canvas.Path(curve, NeoFill.None, new NeoStroke(Palette.Text, 2)));
+            Assert.That(canvas.Calls.Select(c => c.Kind), Is.EqualTo(new[] { NeoDrawKind.PushClip, NeoDrawKind.Path, NeoDrawKind.PopClip }));
+            Assert.That(canvas.Calls[0].Bounds, Is.EqualTo(g.Plot), "clipped to the plot itself");
+            var frequencyLabels = Labels(g).Where(l => l.Bounds.Top >= g.Plot.Bottom).ToList();
+            Assert.That(frequencyLabels, Has.Count.EqualTo(10));
+            Assert.That(frequencyLabels.All(l => !l.Bounds.Overlaps(canvas.Calls[0].Bounds)), Is.True, "the clip leaves the labels out");
+
+            canvas.Clear();
+            g.InPlot(canvas, () => throw new InvalidOperationException("a drawing error"));
+            Assert.That(canvas.ClipDepth, Is.EqualTo(0), "popped after an error");
+            Assert.That(canvas.Unbalanced, Is.False);
+        }
+
+        [Test]
+        public void TheHandleRoomMovesTheLabelsOutNotThePlotsMapping()
+        {
+            var g = new ResponseGraph(-24, 24, 6);
+            var frame = new NeoRect(0, 0, 680, 298);
+            g.Layout(frame);
+            var plain = g.Plot;
+            Assert.That(plain, Is.EqualTo(new NeoRect(30, 8, 642, 272)), "no room: the layout as before");
+            g.NeedRoom(11);
+            Assert.That(g.Plot, Is.EqualTo(new NeoRect(41, 12, 627, 257)), "laid out again with the room");
+            g.NeedRoom(5);
+            Assert.That(g.HandleRoom, Is.EqualTo(11), "the largest room asked for");
+            Assert.That(g.X(20), Is.EqualTo(g.Plot.Left).Within(1e-9));
+            Assert.That(g.Y(-24), Is.EqualTo(g.Plot.Bottom).Within(1e-9));
+        }
     }
 }

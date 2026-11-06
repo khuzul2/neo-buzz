@@ -349,7 +349,29 @@ namespace ReBuzz.Core.Session
             return true;
         }
 
-        void Stamp(int data, RecordWindow[] windows, ArmState state)
+        /// <summary>
+        /// Fork (machine keyboard): the keyboard under a machine's window, played while a track of that
+        /// machine is armed: the machine plays it and its armed tracks record it (takes, overdubs, Capture
+        /// MIDI), as from a MIDI keyboard; other armed machines don't hear it (the keyboard is this
+        /// machine's). False when no track of the machine is armed: the caller plays it then. The keyboard
+        /// sends its releases here itself, so held notes aren't routed (<see cref="OnMidiInput"/>'s are a device's).
+        /// </summary>
+        internal bool OnMidiInputFor(MachineCore machine, int data)
+        {
+            var state = arm;
+            if (machine == null || Array.IndexOf(state.Machines, machine) < 0) return false;
+            int kind = data & 0xF0;
+            var dll = machine.DLL;
+            if (dll != null && !dll.IsMissing && !dll.IsCrashed && machine.Ready)
+                buzz.MachineManager.SendMidiInput(machine, data, dll.Name == "Polac VSTi 1.1" || dll.Name == "Polac VST 1.1");
+            bool kept = kind == 0x80 || kind == 0x90 || kind == 0xA0 || kind == 0xB0 || kind == 0xD0 || kind == 0xE0;
+            if (kept && !buzz.SongLoading)
+                Stamp(data & 0xFFFFFF, recordWindows, state, machine);
+            return true;
+        }
+
+        /// <param name="only">The machine whose armed tracks take it (the machine keyboard); null: every armed track.</param>
+        void Stamp(int data, RecordWindow[] windows, ArmState state, MachineCore only = null)
         {
             bool queued = false;
             lock (gate)
@@ -360,7 +382,8 @@ namespace ReBuzz.Core.Session
                     // Stopped: Capture MIDI (0.7.1) places a phrase by when it was played.
                     long now = Timestamp();
                     for (int i = 0; i < state.Rings.Length; i++)
-                        state.Rings[i].Add(data, long.MinValue, now);
+                        if (only == null || ReferenceEquals(state.Tracks[i].MachineCore, only))
+                            state.Rings[i].Add(data, long.MinValue, now);
                     return;
                 }
                 long time = (long)Math.Floor(heard * TakeTime.TimeBase);
@@ -368,10 +391,12 @@ namespace ReBuzz.Core.Session
                 int fraction = (int)(time - tick * TakeTime.TimeBase);
                 // Capture MIDI: every armed track keeps what it is played, recording or not.
                 for (int i = 0; i < state.Rings.Length; i++)
-                    state.Rings[i].Add(data, time);
+                    if (only == null || ReferenceEquals(state.Tracks[i].MachineCore, only))
+                        state.Rings[i].Add(data, time);
                 for (int i = 0; i < windows.Length; i++)
                 {
                     var w = windows[i];
+                    if (only != null && !ReferenceEquals(w.Track.MachineCore, only)) continue;
                     if (time < w.From || time >= w.Until) continue;
                     if (!scheduler.TryGetPlayingAt(w.Track, tick, out var clip, out int position, out int end, out long start)) continue;
                     if (w.Take != null && !ReferenceEquals(clip, w.Take)) continue;

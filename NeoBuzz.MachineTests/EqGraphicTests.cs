@@ -660,30 +660,39 @@ namespace NeoBuzz.MachineTests
         public void CpuIsSmall()
         {
             // Stereo at 48 kHz, every band busy (a random setting): ≥ 30× real time, 3.3 % of a core (31 sections; the
-            // parametric test's 50× is for 14). And the solve a slider move costs. Each the best of three passes: other work
-            // on a shared runner only ever adds time.
+            // parametric test's 50× is for 14), timed against the reference workload in the same run (Throughput.cs): 1 s
+            // played untimed, then 2 s. And the solve a slider move costs, the best of three passes: other work on a shared
+            // runner only ever adds time.
             const int rate = Measure.Rate;
-            var (e, v) = Make(p => Sliders(p, Random(new Random(11))));
-            var l = Measure.PinkNoise(10 * rate, 0.2, 31);
-            var r = Measure.PinkNoise(10 * rate, 0.2, 32);
-            Run(e, l.Take(rate).ToArray(), r.Take(rate).ToArray());
+            var l = Measure.PinkNoise(3 * rate, 0.2, 31);
+            var r = Measure.PinkNoise(3 * rate, 0.2, 32);
+            Throughput.Guard("Neo EQ graphic CPU (31 bands, stereo)", Throughput.Floor(x64: 97, arm64: 42), 2, rate, EqEngine.MaxBlock, () =>
+            {
+                var (e, _) = Make(p => Sliders(p, Random(new Random(11))));
+                var bl = new float[EqEngine.MaxBlock];
+                var br = new float[EqEngine.MaxBlock];
+                void Block(int pos, int n)
+                {
+                    Array.Copy(l, pos, bl, 0, n);
+                    Array.Copy(r, pos, br, 0, n);
+                    e.Process(bl, br, n);
+                }
+                for (int pos = 0; pos < rate; pos += EqEngine.MaxBlock) Block(pos, EqEngine.MaxBlock);
+                return Throughput.InBlocks(EqEngine.MaxBlock, (pos, n) => Block(rate + pos, n));
+            }, Measure.Report);
             var solver = new GraphicSolver(rate);
             var rng = new Random(12);
             var settings = Enumerable.Range(0, 50).Select(_ => Random(rng)).ToArray();
             foreach (var s in settings) solver.Solve(s);
             GC.Collect();
-            double speed = 0, solveMs = double.MaxValue;
+            double solveMs = double.MaxValue;
             for (int pass = 0; pass < 3; pass++)
             {
                 var sw = Stopwatch.StartNew();
-                Run(e, l, r);
-                speed = Math.Max(speed, 10.0 / sw.Elapsed.TotalSeconds);
-                sw.Restart();
                 for (int i = 0; i < 200; i++) solver.Solve(settings[i % settings.Length]);
                 solveMs = Math.Min(solveMs, sw.Elapsed.TotalMilliseconds / 200);
             }
-            Measure.Report($"Neo EQ graphic CPU: {speed:F0}× real time (31 bands, stereo); a slider move's solve {solveMs:F3} ms ({solveMs / (256000.0 / rate) * 100:F1} % of a 256-sample block)");
-            Assert.That(speed, Is.GreaterThan(30));
+            Measure.Report($"Neo EQ graphic: a slider move's solve {solveMs:F3} ms ({solveMs / (256000.0 / rate) * 100:F1} % of a 256-sample block)");
             Assert.That(solveMs, Is.LessThan(2));
         }
     }

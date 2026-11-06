@@ -281,6 +281,23 @@ namespace NeoBuzz.Editor
         }
     }
 
+    /// <summary>The stereo readings' texts: "—" until there is a reading (in silence there is nothing to correlate).</summary>
+    internal static class StereoReadout
+    {
+        public const string None = "—";
+
+        /// <summary>"+0.87", or "—" without a reading.</summary>
+        public static string Correlation(double correlation, bool reading) =>
+            reading && !double.IsNaN(correlation) ? correlation.ToString("+0.00;−0.00;0.00", CultureInfo.InvariantCulture) : None;
+
+        /// <summary>Side over mid energy, "0.42" ("∞": side only), or "—" without a reading.</summary>
+        public static string Width(double width, bool reading) =>
+            !reading || double.IsNaN(width) ? None : double.IsPositiveInfinity(width) ? "∞" : width.ToString("0.00", CultureInfo.InvariantCulture);
+
+        /// <summary>A correlation for the bar: NaN (no bar, no marker) without a reading.</summary>
+        public static double Bar(double correlation, bool reading) => reading ? correlation : double.NaN;
+    }
+
     /// <summary>A correlation bar, −1 … +1: filled from 0 towards the value, red below 0.</summary>
     internal static class CorrelationBar
     {

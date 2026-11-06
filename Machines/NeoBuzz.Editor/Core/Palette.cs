@@ -12,6 +12,11 @@ namespace NeoBuzz.Editor
         public static readonly NeoColor Panel = NeoColor.FromRgb(0x1E, 0x21, 0x27);
         public static readonly NeoColor PanelEdge = NeoColor.FromRgb(0x2B, 0x2F, 0x37);
         public static readonly NeoColor Track = NeoColor.FromRgb(0x34, 0x39, 0x44);
+        /// <summary>
+        /// A knob's unfilled track: 3:1 against the panel, as WCAG asks of a control's parts (Track was 1.39:1, UI
+        /// gallery review).
+        /// </summary>
+        public static readonly NeoColor KnobTrack = NeoColor.FromRgb(0x64, 0x6B, 0x7A);
         public static readonly NeoColor Text = NeoColor.FromRgb(0xE4, 0xE7, 0xEC);
         public static readonly NeoColor DimText = NeoColor.FromRgb(0x8A, 0x92, 0xA0);
         public static readonly NeoColor KnobTop = NeoColor.FromRgb(0x33, 0x37, 0x40);
@@ -24,6 +29,25 @@ namespace NeoBuzz.Editor
 
         /// <summary>The kit's font; backends map it to what the platform has.</summary>
         public const string FontFamily = "Segoe UI";
+    }
+
+    /// <summary>WCAG 2's contrast between two colours (1 … 21).</summary>
+    internal static class Contrast
+    {
+        static double Channel(byte v)
+        {
+            double c = v / 255.0;
+            return c <= 0.03928 ? c / 12.92 : Math.Pow((c + 0.055) / 1.055, 2.4);
+        }
+
+        /// <summary>Relative luminance, 0 (black) … 1 (white).</summary>
+        public static double Luminance(NeoColor c) => 0.2126 * Channel(c.R) + 0.7152 * Channel(c.G) + 0.0722 * Channel(c.B);
+
+        public static double Ratio(NeoColor a, NeoColor b)
+        {
+            double la = Luminance(a), lb = Luminance(b);
+            return (Math.Max(la, lb) + 0.05) / (Math.Min(la, lb) + 0.05);
+        }
     }
 
     internal static class NeoGeometry

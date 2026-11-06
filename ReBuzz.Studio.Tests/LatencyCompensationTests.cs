@@ -186,7 +186,9 @@ namespace ReBuzz.Studio.Tests
             int quietest = Enumerable.Range(0, moving.Length / 64).Min(w => (int)(Rms(moving[(w * 64)..(w * 64 + 64)]) * 1e6));
             TestContext.Out.WriteLine($"[notice] A latency change ({Latency(2)} → {Latency(5)} samples) while a sine plays: largest step {step / ownStep:F3}× the sine's own; quietest 64 samples {quietest / 1e6:F5} RMS (steady {Rms(steady):F5})");
             Assert.That(step, Is.LessThan(1.2 * ownStep), "no click");
-            Assert.That(quietest / 1e6, Is.GreaterThan(0.5 * Rms(steady)), "no gap");
+            // The crossfade between the old and the new tap briefly sums two copies of the sine a few samples apart, which
+            // comb-filter each other: a dip, not a gap (0.79 of the level measured here, 0.51 on Windows). A gap is silence.
+            Assert.That(quietest / 1e6, Is.GreaterThan(0.25 * Rms(steady)), "no gap");
 
             // Both paths, the other inverted: the null comes back once the change is through.
             limiterOut.Amp = 0x4000;

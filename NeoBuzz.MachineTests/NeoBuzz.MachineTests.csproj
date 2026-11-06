@@ -28,7 +28,7 @@
     <Compile Include="..\Machines\DyeEssence\Engine\**\*.cs" Link="Engines\DyeEssence\%(RecursiveDir)%(Filename)%(Extension)" />
     <!-- Neo Analyzer measures with the analysis library (docs/specs/mcp-server.md §7): its streaming
          meters, FFT, bands and stereo measures, checked here against the library's batch measures. -->
-    <Compile Include="..\Machines\NeoBuzz.Analysis\LoudnessMeter.cs;..\Machines\NeoBuzz.Analysis\Fft.cs;..\Machines\NeoBuzz.Analysis\Spectrum.cs;..\Machines\NeoBuzz.Analysis\Stereo.cs" Link="Analysis\%(Filename)%(Extension)" />
+    <Compile Include="..\Machines\NeoBuzz.Analysis\LoudnessMeter.cs;..\Machines\NeoBuzz.Analysis\Fft.cs;..\Machines\NeoBuzz.Analysis\Spectrum.cs;..\Machines\NeoBuzz.Analysis\Stereo.cs;..\Machines\NeoBuzz.Analysis\GainMatch.cs" Link="Analysis\%(Filename)%(Extension)" />
     <!-- The editor kit's toolkit-free core (docs/specs/cross-platform.md §8.3): canvas, layout,
          hit-testing and graphs. Compiling it here keeps it free of WPF. -->
     <Compile Include="..\Machines\NeoBuzz.Editor\Core\**\*.cs" Link="EditorCore\%(RecursiveDir)%(Filename)%(Extension)" />
@@ -40,6 +40,8 @@
     <Compile Include="..\Machines\NeoBuzz.Analysis\Loudness.cs" Link="Analysis\Loudness.cs" />
     <!-- The zero-allocation tests measure each block with the engine tests' AllocationWindow (AllocationCheck.cs). -->
     <Compile Include="..\ReBuzzTests\Automation\AllocationWindow.cs" Link="Automation\AllocationWindow.cs" />
+    <!-- The throughput guards time a render against a reference workload in the same run (Throughput.cs; machines.md §6). -->
+    <Compile Include="..\ReBuzzTests\Automation\Throughput.cs" Link="Automation\Throughput.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -50,6 +52,7 @@
 
   <ItemGroup>
     <Using Include="NUnit.Framework" />
+    <Using Include="ReBuzzTests.Automation" />
   </ItemGroup>
 
 </Project>
