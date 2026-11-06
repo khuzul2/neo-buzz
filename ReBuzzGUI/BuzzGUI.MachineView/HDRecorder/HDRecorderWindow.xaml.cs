@@ -12,6 +12,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 //using PropertyChanged;
 
@@ -76,7 +77,33 @@ namespace BuzzGUI.MachineView.HDRecorder
                 if (!buzz.Playing && IsRecording && driveTask != null)
                     Stop();
             }
+            UpdateOutput();
+        }
 
+        // Fork (docs/specs/ui-gallery.md): with no audio output device the engine has no output to record (recording
+        // taps it; Render Loop renders through it), and the window threw as it opened (ReBuzzCore.OutputChannels). It
+        // opens, says so and waits for a device.
+        bool hasOutput;
+
+        /// <summary>Whether an audio output device is open: there's something to record.</summary>
+        public bool HasOutput => hasOutput;
+
+        public bool NoOutput => !hasOutput;
+
+        public string NoOutputText =>
+            "No audio output is open, so there's nothing to record. Choose an output device (the toolbar's audio driver, or Preferences), then record here.";
+
+        public bool CanRecord => hasOutput && !IsRecording;
+
+        void UpdateOutput()
+        {
+            bool now = Global.Buzz?.OutputChannels > 0;
+            if (now == hasOutput) return;
+            hasOutput = now;
+            PropertyChanged.Raise(this, "HasOutput");
+            PropertyChanged.Raise(this, "NoOutput");
+            PropertyChanged.Raise(this, "CanRecord");
+            CommandManager.InvalidateRequerySuggested();
         }
 
         public SimpleCommand SaveAsCommand { get; private set; }
@@ -97,6 +124,7 @@ namespace BuzzGUI.MachineView.HDRecorder
                 isRecording = value;
                 PropertyChanged.Raise(this, "IsRecording");
                 PropertyChanged.Raise(this, "IsNotRecording");
+                PropertyChanged.Raise(this, "CanRecord");
             }
         }
 
@@ -181,26 +209,26 @@ namespace BuzzGUI.MachineView.HDRecorder
 
             RecordCommand = new SimpleCommand
             {
-                CanExecuteDelegate = x => true,
-                ExecuteDelegate = x => Record()
+                CanExecuteDelegate = x => CanRecord,
+                ExecuteDelegate = x => { if (CanRecord) Record(); }
             };
 
             RecordLoopCommand = new SimpleCommand
             {
-                CanExecuteDelegate = x => true,
-                ExecuteDelegate = x => RecordLoop(false, 0)
+                CanExecuteDelegate = x => CanRecord,
+                ExecuteDelegate = x => { if (CanRecord) RecordLoop(false, 0); }
             };
 
             RenderLoopCommand = new SimpleCommand
             {
-                CanExecuteDelegate = x => true,
-                ExecuteDelegate = x => RecordLoop(true, 0)
+                CanExecuteDelegate = x => CanRecord,
+                ExecuteDelegate = x => { if (CanRecord) RecordLoop(true, 0); }
             };
 
             RenderLoop2Command = new SimpleCommand
             {
-                CanExecuteDelegate = x => true,
-                ExecuteDelegate = x => RecordLoop(true, 1)
+                CanExecuteDelegate = x => CanRecord,
+                ExecuteDelegate = x => { if (CanRecord) RecordLoop(true, 1); }
             };
 
             StopCommand = new SimpleCommand
@@ -229,8 +257,10 @@ namespace BuzzGUI.MachineView.HDRecorder
                 }
             };
 
+            hasOutput = Global.Buzz?.OutputChannels > 0;
             DataContext = this;
             InitializeComponent();
+            Activated += (sender, e) => UpdateOutput();
 
             this.Closing += (sender, e) =>
             {

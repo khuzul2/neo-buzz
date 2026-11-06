@@ -176,16 +176,22 @@ namespace ReBuzz.Studio.Tests
                 window.RefreshNow();
                 Studio.Screenshot(window, "studio-autosave-recovered");
 
-                // No deletes it.
+                // Discard… (No) deletes it once confirmed.
                 Assert.That(Core.Autosave.SaveNow(System.DateTime.Now), Is.True);
                 data = File.ReadAllBytes(Core.Autosave.Current);
                 autosave = Core.Autosave.Current;
                 NewSong();
                 File.WriteAllBytes(autosave, data);
                 File.WriteAllText(autosave + ".txt", song);
-                Dialogs.Responder = (m, c, b) => UserAnswer.No;
+                var questions = new System.Collections.Generic.List<string>();
+                Dialogs.Responder = (m, c, b) => { questions.Add(c); return UserAnswer.No; };
                 Assert.That(Autosave.OfferRecovery(Core).Result, Is.False);
-                Assert.That(SongAutosave.FindLeftovers(), Is.Empty);
+                Assert.That(questions, Is.EqualTo(new[] { "Recover unsaved changes", "Discard unsaved changes" }), "asked again before it deletes");
+                Assert.That(SongAutosave.FindLeftovers().Count, Is.EqualTo(1), "Keep keeps it");
+                questions.Clear();
+                Dialogs.Responder = (m, c, b) => { questions.Add(c); return questions.Count == 1 ? UserAnswer.No : UserAnswer.Yes; };
+                Assert.That(Autosave.OfferRecovery(Core).Result, Is.False);
+                Assert.That(SongAutosave.FindLeftovers(), Is.Empty, "Discard deletes it");
             }
             finally
             {
@@ -244,9 +250,17 @@ namespace ReBuzz.Studio.Tests
             var window = Open();
             try
             {
+                // Fork (ui-gallery.md): the app menu whole, as Mac apps have it (Avalonia's standard items left out: their
+                // Quit had no name and Hide Others was on ⌥⌘Q).
                 var app = window.AppMenuModel().Where(e => !e.IsSeparator).ToList();
-                Assert.That(app.Select(e => e.Text), Is.EqualTo(new[] { "About NeoBuzz Live", "Preferences…" }));
-                Assert.That(app[1].Gesture, Is.EqualTo(new KeyGesture(Key.OemComma, KeyModifiers.Meta)), "Command+,");
+                Assert.That(app.Select(e => e.Text), Is.EqualTo(new[] { "About NeoBuzz Live", "Preferences…", "Services", "Hide NeoBuzz Live", "Hide Others", "Show All", "Quit NeoBuzz Live" }));
+                Assert.That(app.Select(e => e.Gesture), Is.EqualTo(new[] { null, new KeyGesture(Key.OemComma, KeyModifiers.Meta), null,
+                    new KeyGesture(Key.H, KeyModifiers.Meta), new KeyGesture(Key.H, KeyModifiers.Meta | KeyModifiers.Alt), null, new KeyGesture(Key.Q, KeyModifiers.Meta) }),
+                    "⌘, ⌘H ⌥⌘H ⌘Q");
+                Assert.That(app.Single(e => e.Text == "Services").IsServices, Is.True, "the system's Services submenu");
+                var early = AppMenu.ToNativeMenu(MainWindow.AppMenuModel(null)).Items.OfType<NativeMenuItem>().Single(i => i.Header == "Preferences…");
+                Assert.That(early.IsEnabled, Is.True, "Preferences… on though the menu is made before the engine runs (it was greyed out on the Mac)");
+                Assert.That(window.AppMenuModel().Select(e => e.IsSeparator), Is.EqualTo(new[] { false, true, false, true, false, true, false, false, false, true, false }), "grouped as macOS groups them");
 
                 var mac = window.MenuModel(mac: true).ToList();
                 Assert.That(mac.Select(e => e.Text), Is.EqualTo(new[] { "File", "Edit", "Transport", "View", "Window", "Help" }));
@@ -266,7 +280,10 @@ namespace ReBuzz.Studio.Tests
                 Assert.That(fileMenu.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Open Recent").Menu, Is.Not.Null);
                 var viewMenu = bar.Items.OfType<NativeMenuItem>().Single(i => i.Header == "View").Menu;
                 Assert.That(viewMenu.Items.OfType<NativeMenuItem>().Select(i => i.Header), Is.EqualTo(new[] { "Machines", "Sequence", "Session", "Pattern", "Song Notes" }));
-                Assert.That(viewMenu.Items.OfType<NativeMenuItem>().All(i => i.Gesture == null), "view keys stay with the window (F2 renames in the Session View)");
+                Assert.That(viewMenu.Items.OfType<NativeMenuItem>().Select(i => i.Gesture), Is.EqualTo(new[] { new KeyGesture(Key.F3), new KeyGesture(Key.F4),
+                    new KeyGesture(Key.Tab, KeyModifiers.Control), new KeyGesture(Key.F2), new KeyGesture(Key.F10) }), "the view keys, key equivalents too (ui-gallery.md)");
+                var windowMenu = bar.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Window").Menu;
+                Assert.That(windowMenu.Items.OfType<NativeMenuItem>().First(i => i.Header == "Minimize").Gesture, Is.EqualTo(new KeyGesture(Key.M, KeyModifiers.Meta)), "⌘M");
                 var appMenu = AppMenu.ToNativeMenu(window.AppMenuModel());
                 var preferences = appMenu.Items.OfType<NativeMenuItem>().Single(i => i.Header == "Preferences…");
                 Assert.That(preferences.Gesture, Is.EqualTo(new KeyGesture(Key.OemComma, KeyModifiers.Meta)));
@@ -367,6 +384,44 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void TheWindowFitsTheScreensVisibleArea()
+        {
+            // Fork (ui-gallery.md): the default 1280×820 window ran off a 1024×768 screen. On opening, a window is moved and
+            // shrunk into its screen's visible area (the Mac's without the menu bar and the Dock), title bar included.
+            using var restore = Studio.AfterTest(Reset);
+            var area = new Rect(0, 25, 1024, 680);                  // a 1024×768 Mac: the menu bar above, the Dock below
+            Assert.That(WindowBounds.Fit(new Rect(128, 50, 1280, 848), area), Is.EqualTo(area), "the default frame on a small screen");
+            Assert.That(WindowBounds.Fit(new Rect(100, 50, 600, 400), area), Is.EqualTo(new Rect(100, 50, 600, 400)), "a window that fits stays");
+            Assert.That(WindowBounds.Fit(new Rect(900, 500, 600, 400), area), Is.EqualTo(new Rect(424, 305, 600, 400)), "one that hangs off is moved in");
+            Assert.That(WindowBounds.Fit(new Rect(-50, 0, 600, 400), area), Is.EqualTo(new Rect(0, 25, 600, 400)), "or up and left");
+
+            // The main window, kept at a size larger than the (headless, 1920×1280) screen.
+            var registry = Host.Registry;
+            registry.Write("MainWindowWidth", 5000.0, "Studio");
+            registry.Write("MainWindowHeight", 4000.0, "Studio");
+            registry.Write("MainWindowX", 300, "Studio");
+            registry.Write("MainWindowY", 200, "Studio");
+            MainWindow window = null;
+            try
+            {
+                window = new MainWindow(Host);
+                window.Show();
+                Settle(window);
+                var screen = window.Screens.Primary!.WorkingArea;
+                Assert.That((window.Width, window.Height), Is.EqualTo(((double)screen.Width, (double)screen.Height)), "as large as the screen, no larger");
+                Assert.That(window.Position, Is.EqualTo(new PixelPoint(screen.X, screen.Y)), "on it");
+                window.Close();
+                Settle();
+                Assert.That(registry.Read("MainWindowWidth", 0.0, "Studio"), Is.EqualTo(screen.Width), "the size it has is the one kept");
+            }
+            finally
+            {
+                window?.Close();
+                foreach (var key in new[] { "Width", "Height", "X", "Y", "Maximized" }) registry.DeleteCurrentUserValue("MainWindow" + key, "Studio");
+            }
+        }
+
+        [AvaloniaTest]
         public void AboutShowsTheBuildAndTheCredits()
         {
             using var restore = Studio.AfterTest(Reset);
@@ -430,6 +485,135 @@ namespace ReBuzz.Studio.Tests
             finally
             {
                 sync.SetFollowMidiClock(false);
+            }
+        }
+
+        [AvaloniaTest]
+        public void OnAMacEveryWindowHasTheMenuBarsMenus()
+        {
+            // Fork (ui-gallery.md): macOS shows the key window's menus. Preferences, About and the other windows had none,
+            // so while one was the key window the menu bar showed the app menu alone.
+            using var restore = Studio.AfterTest(Reset);
+            bool mac = App.MacMenus;
+            App.MacMenus = true;
+            MainWindow window = null;
+            try
+            {
+                window = Open();
+                Assert.That(NativeMenu.GetMenu(window), Is.Not.Null, "the main window's own");
+                var prefs = PreferencesWindow.Open(Host);
+                Settle(prefs);
+                var menu = NativeMenu.GetMenu(prefs);
+                Assert.That(menu, Is.Not.Null, "Preferences has the menus");
+                Assert.That(menu.Items.OfType<NativeMenuItem>().Select(i => i.Header), Is.EqualTo(new[] { "File", "Edit", "Transport", "View", "Window", "Help" }));
+                prefs.Close();
+                var about = AboutWindow.Open();
+                Settle(about);
+                Assert.That(NativeMenu.GetMenu(about)?.Items.Count, Is.EqualTo(6), "About too");
+                about.Close();
+
+                var own = new NativeMenu();
+                var other = new Window();
+                NativeMenu.SetMenu(other, own);
+                other.Show();
+                Assert.That(NativeMenu.GetMenu(other), Is.SameAs(own), "a window with menus of its own keeps them");
+                other.Close();
+                if (System.OperatingSystem.IsMacOS())
+                    Assert.That(NativeMenu.GetMenu(Application.Current!)?.Items.OfType<NativeMenuItem>().First().Header, Is.EqualTo("About NeoBuzz Live"),
+                        "the app menu, set on the application as it starts (before Avalonia's exporter made its own)");
+            }
+            finally
+            {
+                App.MacMenus = mac;
+                window?.Close();
+            }
+        }
+
+        [AvaloniaTest]
+        public void PreferencesDrawsBeforeItAsksForTheDevices()
+        {
+            // Fork (ui-gallery.md): 2 s after ⌘, the real Mac's Preferences was still blank. The page's state (PortAudio's
+            // devices, CoreMIDI's) comes once the window has drawn.
+            using var restore = Studio.AfterTest(Reset);
+            var window = Open();
+            int asked = 0;
+            bool shown = false;
+            AudioPage.OutputSource = () =>
+            {
+                asked++;
+                shown = PreferencesWindow.Current?.IsVisible == true;
+                return new[] { "PortAudio: default", "PortAudio: Test Speakers (Core Audio)" };
+            };
+            try
+            {
+                var prefs = PreferencesWindow.Open(Host, PreferencesWindow.AudioPageName);
+                Assert.That(prefs.IsVisible, Is.True);
+                Assert.That(prefs.Selected?.Title, Is.EqualTo(PreferencesWindow.AudioPageName), "on its page");
+                Assert.That(asked, Is.EqualTo(0), "the devices aren't asked for before the window shows");
+                var audio = prefs.Page<AudioPage>();
+                Assert.That(audio.LimiterBox.IsChecked, Is.True, "the rest of the page is there as it shows (no limiter shown off)");
+                Assert.That(audio.SaysPortAudioIsMissing, Is.False, "nor PortAudio missing before it has been asked");
+                Assert.That(audio.OutputBox.Items.OfType<string>(), Has.None.Contains("not connected"), "nor the device not connected");
+                Settle(prefs);
+                Assert.That(asked, Is.EqualTo(1), "then once");
+                Assert.That(shown, Is.True, "with the window shown");
+                Assert.That(prefs.Page<AudioPage>().OutputBox.ItemCount, Is.GreaterThanOrEqualTo(2), "and the page filled");
+            }
+            finally
+            {
+                AudioPage.OutputSource = null;
+                PreferencesWindow.Current?.Close();
+                window.Close();
+            }
+        }
+
+        [AvaloniaTest]
+        public void TheViewItemsKeyEquivalentsDoWhatTheirKeysDoAndMinimizeIsTheKeyWindows()
+        {
+            // Fork (ui-gallery.md): the macOS menu bar's View items have their keys as key equivalents. The menu bar takes
+            // them before the window, so an item chosen by its key does what the key does in the window (Ctrl+Tab goes back
+            // from the Session View; F2 renames a clip there), and a click chooses the view. Minimize (⌘M) minimizes the
+            // key window.
+            using var restore = Studio.AfterTest(Reset);
+            var window = Open();
+            try
+            {
+                string Shown() => (window.Tabs.SelectedItem as TabItem)?.Header as string;
+                var menus = window.MenuModel(mac: true).ToList();
+                var session = AppMenu.Find(menus, "View/Session");
+                window.ShowView("Session");
+                MacApp.KeyDownSource = () => Key.Tab;               // chosen by Ctrl+Tab
+                session.Run();
+                Assert.That(Shown(), Is.EqualTo("Sequence"), "Ctrl+Tab from the Session View goes back, as in the window");
+                MacApp.KeyDownSource = () => null;                  // a click
+                session.Run();
+                session.Run();
+                Assert.That(Shown(), Is.EqualTo("Session"), "a click chooses the Session View");
+                MacApp.KeyDownSource = () => Key.F3;
+                AppMenu.Find(menus, "View/Machines").Run();
+                Assert.That(Shown(), Is.EqualTo("Machines"), "F3, which nothing in the Session View takes: the Machine View");
+
+                var prefs = PreferencesWindow.Open(Host);
+                Settle(prefs);
+                prefs.Activate();
+                Settle(prefs);
+                Assert.That(prefs.IsActive, Is.True, "Preferences is the key window");
+                AppMenu.Find(menus, "Window/Minimize").Run();
+                Assert.That(prefs.WindowState, Is.EqualTo(WindowState.Minimized), "the key window minimized");
+                Assert.That(window.WindowState, Is.Not.EqualTo(WindowState.Minimized), "not the main window");
+                prefs.Close();
+
+                // The Machine View's mute: M on a Mac (⌘M minimizes there), Ctrl+M elsewhere.
+                var machines = window.Tabs.Items.OfType<TabItem>().Select(t => t.Content).OfType<ReBuzz.Studio.Views.Machines.MachineView>().First();
+                bool macMute = machines.Canvas.KeyBindings.Any(b => b.Gesture.Equals(new KeyGesture(Key.M)));
+                bool ctrlMute = machines.KeyBindings.Any(b => b.Gesture.Equals(new KeyGesture(Key.M, KeyModifiers.Control)));
+                Assert.That((macMute, ctrlMute), Is.EqualTo(System.OperatingSystem.IsMacOS() ? (true, false) : (false, true)));
+            }
+            finally
+            {
+                MacApp.KeyDownSource = null;
+                PreferencesWindow.Current?.Close();
+                window.Close();
             }
         }
     }

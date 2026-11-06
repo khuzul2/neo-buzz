@@ -31,8 +31,14 @@ namespace ReBuzz.Studio.Shell.Preferences
         {
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+            AllowAutoHide = false;          // a bar that shows there's more (macOS's and Fluent's hide until scrolled)
             Content = Body;
         }
+
+        // Fork (UX review): a ScrollViewer's look and template, which a subclass doesn't get by itself (Avalonia finds a
+        // control's theme by its own type). Without it a page didn't scroll at all: the Audio and General pages ran past
+        // the window, their last settings cut off, with nothing to show there was more.
+        protected override Type StyleKeyOverride => typeof(ScrollViewer);
 
         /// <summary>The page's tab.</summary>
         public abstract string Title { get; }
@@ -56,6 +62,12 @@ namespace ReBuzz.Studio.Shell.Preferences
         }
 
         protected virtual void OnShown() => Refresh();
+
+        /// <summary>
+        /// Fork (ui-gallery.md): while set, a page leaves out what is slow to ask for (PortAudio's devices) when it is
+        /// shown: the window shows the page that way first, draws, and shows it again whole.
+        /// </summary>
+        public bool LeaveOutSlowState { get; set; }
 
         /// <summary>The window closes.</summary>
         public virtual void Closed() { }
