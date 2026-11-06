@@ -426,7 +426,7 @@
   "Dye Essence": {
    "gear": "Dye Essence",
    "kind": "generator",
-   "load_seconds": 0.28,
+   "load_seconds": 0.39,
    "gear_info": {
     "file": "Generators/Dye Essence.NET.dll",
     "managed": true,
@@ -435,13 +435,13 @@
     "note_parameter": "Note",
     "takes_midi": true
    },
-   "parameters": 97,
+   "parameters": 106,
    "track_parameters": 0,
-   "inferred": 97,
+   "inferred": 106,
    "from_description": 1,
    "inference_check": {
-    "agree": 96,
-    "of": 97
+    "agree": 105,
+    "of": 106
    },
    "notes": {
     "input": "midi",
@@ -467,7 +467,7 @@
     "sample_peak_dbfs": -21.7,
     "true_peak_dbtp": -21.64
    },
-   "cpu_ms_per_s": 7.1,
+   "cpu_ms_per_s": 11.8,
    "type": "polysynth",
    "level_test": {
     "defaults": {
@@ -481,8 +481,8 @@
       "verdict": "silent"
      },
      "max": {
-      "peak_dbfs": -19.79,
-      "growth_db": -24.15,
+      "peak_dbfs": -19.51,
+      "growth_db": -26.52,
       "verdict": "ok"
      }
     }
@@ -513,24 +513,24 @@
     }
    },
    "denormal": {
-    "playing_ms_per_s": 9.134,
-    "silent_ms_per_s": 4.687,
-    "silent_worst_ms_per_s": 5.184,
+    "playing_ms_per_s": 12.484,
+    "silent_ms_per_s": 6.34,
+    "silent_worst_ms_per_s": 7.608,
     "windows_ms_per_s": [
-     9.134,
-     5.184,
-     4.374,
-     4.687,
-     4.752,
-     4.269,
-     5.034,
-     4.914,
-     4.508,
-     4.474,
-     4.594
+     12.484,
+     7.071,
+     7.608,
+     6.34,
+     6.142,
+     6.132,
+     6.128,
+     6.197,
+     6.324,
+     7.006,
+     6.762
     ]
    },
-   "seconds": 3.2,
+   "seconds": 4.7,
    "platform": "windows",
    "date": "2026-11-06",
    "problems": [],
