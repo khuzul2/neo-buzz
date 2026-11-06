@@ -22,6 +22,16 @@ namespace ReBuzzTests
     [Apartment(ApartmentState.STA)]
     public class UiGalleryBugTests
     {
+        static string FindRunTime()
+        {
+            for (var dir = new DirectoryInfo(TestContext.CurrentContext.TestDirectory); dir != null; dir = dir.Parent)
+            {
+                var runTime = Path.Combine(dir.FullName, "RunTime");
+                if (File.Exists(Path.Combine(runTime, "Themes", "Default", "MachineView", "MachineView.xaml"))) return runTime;
+            }
+            throw new DirectoryNotFoundException("RunTime/Themes above " + TestContext.CurrentContext.TestDirectory);
+        }
+
         [Test]
         public void TheSettingsWindowOpensWithAFreeTextSettingAndEditsIt()
         {
@@ -75,6 +85,46 @@ namespace ReBuzzTests
             finally
             {
                 window.Close();
+            }
+        }
+
+        [Test]
+        public void TheMachineViewMadeAgainWithASongOpenLeavesOutWiresItCannotDraw()
+        {
+            // A theme switch makes the Machine View again and adds every shown machine's inputs. An input from a machine
+            // the view doesn't show (one that isn't ready: a machine whose start didn't finish in time is left so when a
+            // song opens, and a deleted one on its way out) had no control: Connection.UpdateVisuals threw a
+            // NullReferenceException, and the theme switch failed with the song open.
+            using var driver = new Driver();
+            var synth = SynthController.NewInstance("Wired");
+            driver.Gear.AddDynamicGenerator(SynthController.Info);
+            driver.Start();
+            driver.MachineGraph.InsertMachineInstanceConnectedToMasterFor(synth);
+            var machine = driver.MachineFor(synth);
+            var song = driver.Core.SongCore;
+
+            var rd = UiUtils.GetUserControlXAML<ResourceDictionary>("MachineView\\MachineView.xaml", FindRunTime());
+            var view = new MachineView(driver.Core, rd);
+            try
+            {
+                view.MachineGraph = song;
+                Assert.That(view.Connections.Count(), Is.EqualTo(1), "the wire to the Master");
+                view.MachineGraph = null;
+
+                machine.Ready = false;
+                Assert.DoesNotThrow(() => view.MachineGraph = song, "the view made again with the song open");
+                Assert.That(view.Machines.Select(m => m.Machine), Does.Not.Contain(machine), "a machine that isn't ready isn't shown");
+                Assert.That(view.Connections, Is.Empty, "nor its wire");
+                view.MachineGraph = null;
+                machine.Ready = true;
+                view.MachineGraph = song;
+                Assert.That(view.Connections.Count(), Is.EqualTo(1), "shown again once it is");
+            }
+            finally
+            {
+                machine.Ready = true;
+                view.MachineGraph = null;
+                view.Release();
             }
         }
     }

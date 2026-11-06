@@ -619,41 +619,31 @@ namespace ReBuzz
                 debugWindow.Dispatcher.Invoke(() => debugWindow.Hide());
             });
 
-            // The shipped themes.
+            // The shipped themes, switched with the demo song open (it threw in the Machine View, made again, before:
+            // ui-gallery.md).
             await Step("themes", async () =>
             {
-                // The theme chosen on an empty song, then the song opened: switching it with the demo song open throws
-                // here (NullReferenceException in BuzzGUI.MachineView.Connection.UpdateVisuals as the Machine View is made again).
-                const string ThemeNote = "The theme was chosen on a new song and the demo song opened after it (switching with the song open threw in the harness: see the spec).";
+                foreach (var m in Buzz.SongCore.MachinesList.Where(m => !m.Ready && !m.Hidden))
+                    ShotLog($"themes: {m.Name} ({m.DLL?.Name}) isn't ready: the Machine View leaves it and its wires out");
                 foreach (var theme in Buzz.Themes.Where(t => t != "<default>" && t != "Default").ToList())
                 {
                     string slug = new string(theme.ToLowerInvariant().Where(char.IsLetterOrDigit).ToArray());
-                    Buzz.Modified = false;
-                    Buzz.ExecuteCommand(BuzzCommand.NewFile);
-                    await Idle(800);
                     Buzz.SelectedTheme = theme;
                     await Idle(1500);
-                    Buzz.Modified = false;
-                    Buzz.OpenSongFile(songPath);
-                    await Idle(2000);
-                    song = GallerySong.Find(Buzz);
                     Buzz.ActiveView = BuzzView.MachineView;
-                    await Shot(this, $"300-theme-{slug}-machines", $"The {theme} theme: Machine View and its toolbar.", $"Theme ▸ {theme}.", notes: ThemeNote, settle: 1000);
+                    await Shot(this, $"300-theme-{slug}-machines", $"The {theme} theme: Machine View and its toolbar.", $"Theme ▸ {theme}.", settle: 1000);
                     Buzz.ActiveView = BuzzView.SequenceView;
-                    await Shot(this, $"301-theme-{slug}-sequence", $"The {theme} theme: Sequence View.", $"Theme ▸ {theme}, then F4.", notes: ThemeNote, settle: 800);
+                    await Shot(this, $"301-theme-{slug}-sequence", $"The {theme} theme: Sequence View.", $"Theme ▸ {theme}, then F4.", settle: 800);
                     Buzz.SetPatternEditorPattern(song.LineA);
                     Buzz.ActivatePatternEditor();
                     await Idle(800);
                     ScrollRight(EditorView);
-                    await Shot(this, $"302-theme-{slug}-pattern", $"The {theme} theme: Pattern View (Bass's Line A, scrolled to its note lanes).", $"Theme ▸ {theme}, then F2.", notes: ThemeNote, settle: 600);
+                    await Shot(this, $"302-theme-{slug}-pattern", $"The {theme} theme: Pattern View (Bass's Line A, scrolled to its note lanes).", $"Theme ▸ {theme}, then F2.", settle: 600);
                     Buzz.ActiveView = BuzzView.SessionView;
-                    await Shot(this, $"303-theme-{slug}-session", $"The {theme} theme: Session View (its clip colours are the theme's pattern colours).", $"Theme ▸ {theme}, then Ctrl+Tab.", notes: ThemeNote, settle: 1000);
+                    await Shot(this, $"303-theme-{slug}-session", $"The {theme} theme: Session View (its clip colours are the theme's pattern colours).", $"Theme ▸ {theme}, then Ctrl+Tab.", settle: 1000);
                     Buzz.ActiveView = BuzzView.WaveTableView;
-                    await Shot(this, $"304-theme-{slug}-wavetable", $"The {theme} theme: Wavetable View with the file browser.", $"Theme ▸ {theme}, then F9.", notes: ThemeNote, settle: 1000);
+                    await Shot(this, $"304-theme-{slug}-wavetable", $"The {theme} theme: Wavetable View with the file browser.", $"Theme ▸ {theme}, then F9.", settle: 1000);
                 }
-                Buzz.Modified = false;
-                Buzz.ExecuteCommand(BuzzCommand.NewFile);
-                await Idle(800);
                 Buzz.SelectedTheme = "<default>";
                 await Idle(1500);
                 Buzz.ActiveView = BuzzView.MachineView;
