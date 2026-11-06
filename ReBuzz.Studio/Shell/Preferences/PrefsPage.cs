@@ -178,7 +178,7 @@ namespace ReBuzz.Studio.Shell.Preferences
                 else if (s.Options != null)
                 {
                     var combo = Choices(240);
-                    combo.ItemsSource = s.Options.Select(o => new ComboBoxItem { Content = o.Replace('_', ' '), FontWeight = o == s.Default ? FontWeight.Bold : FontWeight.Normal }).ToList();
+                    combo.ItemsSource = s.Options.Select(o => new ComboBoxItem { Content = OptionLabel(s, o), FontWeight = o == s.Default ? FontWeight.Bold : FontWeight.Normal }).ToList();
                     OnPick(combo, i => Set(s.Options[i]));
                     settingRefreshes.Add(() => combo.SelectedIndex = Array.IndexOf(s.Options, s.Value));
                     Row(Pretty(s.Name), combo, s.Description);
@@ -197,6 +197,18 @@ namespace ReBuzz.Studio.Shell.Preferences
                     settingControls[key] = text;
                 }
             }
+        }
+
+        /// <summary>
+        /// An option as the list shows it: an enum value's [Description] (General ▸ Note names: "C3 = MIDI 60",
+        /// ux-overhaul.md §3.5), else its name with spaces for underscores.
+        /// </summary>
+        internal static string OptionLabel(BuzzGUI.Common.Settings.Setting s, string option)
+        {
+            if (s.ValueObject is Enum e && e.GetType().GetField(option) is { } field &&
+                Attribute.GetCustomAttribute(field, typeof(System.ComponentModel.DescriptionAttribute)) is System.ComponentModel.DescriptionAttribute d)
+                return d.Description;
+            return option.Replace('_', ' ');
         }
 
         /// <summary>A setting's control by "Class/Name" ("EngineSettings/AccurateBPM"), for tests.</summary>

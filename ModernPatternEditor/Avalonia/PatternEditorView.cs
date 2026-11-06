@@ -7,6 +7,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
@@ -128,12 +129,28 @@ namespace WDE.ModernPatternEditor.AvaloniaView
                     case "KeyboardMapping": mappingBox.IsDropDownOpen = true; break;
                 }
             };
+            // Fork (ux-overhaul.md §3.5): the base octave as Preferences name notes (Buzz's 4 is 2 when C3 is 60).
+            octaveBox.ItemTemplate = new FuncDataTemplate<int>((o, _) => new TextBlock { Text = NoteNames.Octave(o).ToString(System.Globalization.CultureInfo.InvariantCulture) });
+            NoteNames.Changed += OnNoteNames;
             Follow(editor.SelectedMachine);
             UpdateAll();
         }
 
+        /// <summary>Preferences name notes another way: the base octaves again (the grid draws its notes again itself).</summary>
+        void OnNoteNames() => Dispatcher.UIThread.Post(() =>
+        {
+            updating = true;
+            try { octaveBox.ItemsSource = Enumerable.Range(0, 10).ToArray(); }
+            finally { updating = false; }
+            UpdateAll();
+        });
+
+        /// <summary>The base octaves as the list shows them, for tests.</summary>
+        public IEnumerable<string> OctaveTexts => octaveBox.Items.OfType<int>().Select(o => NoteNames.Octave(o).ToString(System.Globalization.CultureInfo.InvariantCulture));
+
         public void Dispose()
         {
+            NoteNames.Changed -= OnNoteNames;
             editor.PropertyChanged -= Editor_PropertyChanged;
             Follow(null);
             grid.Release();

@@ -11,7 +11,7 @@ namespace BuzzGUI.Common.InterfaceExtensions
                 case ParameterType.Switch: return v.ToString("X1");
                 case ParameterType.Byte: return parameter.Flags.HasFlag(ParameterFlags.Ascii) ? ((char)v).ToString() : v.ToString("X2");
                 case ParameterType.Word: return v.ToString("X4");
-                case ParameterType.Note: return BuzzNote.TryToString(v) ?? "<invalid>";
+                case ParameterType.Note: return NoteNames.TryTracker(v) ?? "<invalid>";    // Fork: as Preferences name notes (ux-overhaul.md §3.5)
                 default: return "?";
             }
 

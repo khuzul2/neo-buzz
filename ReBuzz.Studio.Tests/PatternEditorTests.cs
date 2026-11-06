@@ -165,6 +165,57 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
+        public void NotesShowAndTypeAsPreferencesNameThem()
+        {
+            // Fork (ux-overhaul.md §3.5): Preferences ▸ General ▸ Note names names the tracker's notes (three characters in each
+            // naming) and its base octaves; an octave typed is the octave shown. The pattern's values are Buzz's, unchanged.
+            var naming = NoteNames.Naming;
+            var s = Open("PE Names");
+            try
+            {
+                TypeChord(s);       // Buzz's C-4, E-4, G-4 (MIDI 48, 52, 55) and an off
+                dynamic vm = ((dynamic)s.EditorView).Editor.SelectedMachine.SelectedPattern;
+                string[] NoteColumn()
+                {
+                    System.Collections.Generic.Dictionary<string, string[]> shown = Shown(vm);
+                    return shown.Where(kv => kv.Key.EndsWith("/Note")).Select(kv => kv.Value).First();
+                }
+                string FirstOctave() => ((System.Collections.Generic.IEnumerable<string>)((dynamic)s.EditorView).OctaveTexts).First();
+                foreach (var (n, want, lowest) in new[]
+                {
+                    (NoteNaming.Buzz, new[] { "C-4", "E-4", "G-4", "off" }, "0"),
+                    (NoteNaming.Scientific, new[] { "C-3", "E-3", "G-3", "off" }, "-1"),
+                    (NoteNaming.C3, new[] { "C-2", "E-2", "G-2", "off" }, "-2"),
+                })
+                {
+                    NoteNames.Naming = n;
+                    Pump();
+                    Assert.That(NoteColumn(), Is.EqualTo(want), $"{n}: the Note column");
+                    Assert.That(FirstOctave(), Is.EqualTo(lowest), $"{n}: the base octaves");
+                }
+                var values = new[] { BuzzNote.Parse("C-4"), BuzzNote.Parse("E-4"), BuzzNote.Parse("G-4"), BuzzNote.Off };
+                Assert.That(Events(s.Pattern, "Note").Select(e => e.Value), Is.EqualTo(values), "the pattern's values don't change");
+                Studio.Screenshot(s.Window, "pattern-editor-note-names");
+
+                // 5 typed on the first note's octave digit (C3 naming): C-5 as shown, Buzz's C-7.
+                Key(s, PhysicalKey.PageUp);
+                Key(s, PhysicalKey.ArrowRight);
+                Key(s, PhysicalKey.Digit5);
+                Assert.That(Events(s.Pattern, "Note")[0].Value, Is.EqualTo(BuzzNote.Parse("C-7")), "the octave shown is the octave typed");
+                Assert.That(NoteColumn()[0], Is.EqualTo("C-5"));
+                // 9 is past Buzz's highest octave in C3 naming (its 11): nothing changes.
+                Key(s, PhysicalKey.PageUp);
+                Key(s, PhysicalKey.Digit9);
+                Assert.That(Events(s.Pattern, "Note")[0].Value, Is.EqualTo(BuzzNote.Parse("C-7")), "an octave Buzz doesn't have is refused");
+            }
+            finally
+            {
+                NoteNames.Naming = naming;
+                Close(s);
+            }
+        }
+
+        [AvaloniaTest]
         public void TransposeInterpolateCopyPasteAndUndo()
         {
             var s = Open("PE Edits");
@@ -710,8 +761,8 @@ namespace ReBuzz.Studio.Tests
                 System.Collections.Generic.Dictionary<string, string[]> shown = Shown(vm);
                 var lane = shown.Where(kv => kv.Key.EndsWith("/MIDI Note")).Select(kv => kv.Value).FirstOrDefault();
                 Assert.That(lane, Is.Not.Null, "A's view has its MIDI Note lane (columns: " + string.Join(", ", shown.Keys) + ")");
-                Assert.That(shown.Where(kv => kv.Key.EndsWith("/MIDI Note")).SelectMany(kv => kv.Value).Where(v => v != "off"), Is.EqualTo(new[] { "C-5", "E-5", "G-5", "C-6" }),
-                    "and the notes on it (MIDI 60 is the editor's C-5; each ends in an off), as the song opened again would show them");
+                Assert.That(shown.Where(kv => kv.Key.EndsWith("/MIDI Note")).SelectMany(kv => kv.Value).Where(v => v != "off"), Is.EqualTo(new[] { "C-3", "E-3", "G-3", "C-4" }),
+                    "and the notes on it (MIDI 60 is C-3 as Preferences name notes by default; each ends in an off), as the song opened again would show them");
                 Studio.Screenshot(window, "pattern-editor-unseen-lanes");
             }
             finally

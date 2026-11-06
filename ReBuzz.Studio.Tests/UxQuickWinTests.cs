@@ -656,5 +656,44 @@ namespace ReBuzz.Studio.Tests
             Assert.That(StudioTokens.Contrast(StudioTokens.Accent, bg), Is.GreaterThanOrEqualTo(3.0), "the outline, 3:1");
             Assert.That(StudioTokens.Contrast(over, bg), Is.GreaterThan(1.4), "the fill");
         }
+
+        // ------------------------------------------------------------------ note names (§3.5)
+
+        [Test]
+        public void NotesAreNamedOneWayInEachNaming()
+        {
+            // The coordinator's three namings: Buzz (C-5 = 60, three characters), C3 = 60 (the default) and scientific
+            // (C4 = 60). The tracker keeps three characters in each; BuzzNote's own names (what Parse reads) don't change.
+            const int C5 = (5 << 4) + 1, Cs5 = (5 << 4) + 2, C0 = 1, Cs0 = 2, B9 = (9 << 4) + 12;
+            Assert.That(BuzzGUI.Common.NoteNames.Default, Is.EqualTo(BuzzGUI.Common.NoteNaming.C3));
+            var cases = new[]
+            {
+                (BuzzGUI.Common.NoteNaming.Buzz, "C-5", "C#5", "C-0", "C#0", "B-9", "C-5", "C#5", "C-0", "G-10"),
+                (BuzzGUI.Common.NoteNaming.C3, "C-3", "C#3", "C--2", "C#-2", "B-7", "C3", "C#3", "C-2", "G8"),
+                (BuzzGUI.Common.NoteNaming.Scientific, "C-4", "C#4", "C--1", "C#-1", "B-8", "C4", "C#4", "C-1", "G9"),
+            };
+            foreach (var (n, c5, cs5, c0, cs0, b9, m60, m61, m0, m127) in cases)
+            {
+                Assert.That(BuzzGUI.Common.NoteNames.TryTracker(C5, n), Is.EqualTo(c5), $"{n}: Buzz's C-5 in the tracker");
+                Assert.That(BuzzGUI.Common.NoteNames.TryTracker(Cs5, n), Is.EqualTo(cs5));
+                Assert.That(BuzzGUI.Common.NoteNames.TryTracker(C0, n), Is.EqualTo(c0), $"{n}: the lowest");
+                Assert.That(BuzzGUI.Common.NoteNames.TryTracker(Cs0, n), Is.EqualTo(cs0));
+                Assert.That(BuzzGUI.Common.NoteNames.TryTracker(B9, n), Is.EqualTo(b9), $"{n}: the highest");
+                Assert.That(BuzzGUI.Common.NoteNames.TryTracker(BuzzGUI.Common.BuzzNote.Off, n), Is.EqualTo("off"));
+                Assert.That(BuzzGUI.Common.NoteNames.TryTracker(0x0D, n), Is.Null, "not a note");
+                Assert.That(BuzzGUI.Common.NoteNames.Name(60, n), Is.EqualTo(m60), $"{n}: MIDI 60");
+                Assert.That(BuzzGUI.Common.NoteNames.Name(61, n), Is.EqualTo(m61));
+                Assert.That(BuzzGUI.Common.NoteNames.Name(0, n), Is.EqualTo(m0));
+                Assert.That(BuzzGUI.Common.NoteNames.Name(127, n), Is.EqualTo(m127));
+                Assert.That(BuzzGUI.Common.NoteNames.TryTracker(C5, n)!.Length, Is.EqualTo(3), "three characters");
+            }
+            Assert.That(BuzzGUI.Common.BuzzNote.TryToString(C5), Is.EqualTo("C-5"), "BuzzNote's names stay Buzz's");
+            Assert.That(BuzzGUI.Common.BuzzNote.Parse("C-5"), Is.EqualTo(C5));
+            Assert.That(BuzzGUI.Common.NoteNames.Octave(4, BuzzGUI.Common.NoteNaming.C3), Is.EqualTo(2), "the base octave 4 is 2 when C3 is 60");
+            Assert.That(Enum.GetValues<BuzzGUI.Common.NoteNaming>().Select(BuzzGUI.Common.NoteNames.Label),
+                Is.EqualTo(new[] { "Buzz: C-5 = MIDI 60", "C3 = MIDI 60", "Scientific: C4 = MIDI 60" }));
+            // Drawing a grid of notes allocates nothing: the names are made once.
+            Assert.That(ReferenceEquals(BuzzGUI.Common.NoteNames.TryTracker(C5, BuzzGUI.Common.NoteNaming.C3), BuzzGUI.Common.NoteNames.TryTracker(C5, BuzzGUI.Common.NoteNaming.C3)), Is.True);
+        }
     }
 }

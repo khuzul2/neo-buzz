@@ -101,6 +101,18 @@ Dark (default); Light (P4); Classic Buzz, the beige machine canvas and brown arr
 
 Clip, track and scene colours are indices into the theme's PatternColors (`SessionColourChoices`), saved in songs. They keep their index and their colour. The overhaul changes only which entries the menus offer (§3.1) and, in P3, the default when a clip has none (its machine's colour, worked out at draw time, never written into the song unless the user picks it).
 
+### 3.5 Note names
+
+MIDI note 60 was "C-5" in the pattern editor, "C3" in the piano roll and "C4" on the machine keyboards. One setting now names notes wherever they are shown: Preferences ▸ General ▸ Note names (`GeneralSettings.NoteNames`, a new key; `BuzzGUI.Common.NoteNames` holds it for the code that can't read settings and for the test projects that link that code). Three namings, by what middle C (MIDI 60) is called:
+
+| Naming (Preferences' label) | MIDI 60 | 61 | 0 | 127 | The pattern editor (three characters) |
+|---|---|---|---|---|---|
+| Buzz: C-5 = MIDI 60 | C-5 | C#5 | C-0 | G-10 | C-5 |
+| **C3 = MIDI 60** (the default) | C3 | C#3 | C-2 | G8 | C-3 (MIDI 0: C--2) |
+| Scientific: C4 = MIDI 60 | C4 | C#4 | C-1 | G9 | C-4 |
+
+Read by: the pattern editor (both apps' editor, shared code: its cells, the status bar's value, the base octaves, the octave digit typed: 3 is Buzz's 5 when C3 is 60), the piano roll (both apps), the keyboards under machine windows (the octave, the C labels, the readout, the keys' screen-reader names), MIDI mappings, the piano roll's messages on tracker tracks, the UI's Replace report, and the classic sequence editor's tooltips. A change redraws every open window. Display only: patterns hold Buzz's values; `BuzzNote.Parse`/`ToString` keep Buzz's names (constants, chord files, and the classic app's wavetable and MIDI controller lists, which parse their text back); the agent server keeps MIDI numbers and scientific names (`mcp-server.md`; its guides now tell it the apps may name notes another way). Machines' own value texts (Neo Sampler's keys, Neo FM6's, Neo Drums', the Pedal machines') stay scientific, since the agent reads them too; the device view (P3e) and the editors (P5) format notes from values with this setting.
+
 ## 4. Keymap
 
 One keymap for the whole app, generated into the menus, the shortcuts window and the tooltips from one command model (`Shell/Commands`, P1). ⌘ is Ctrl off a Mac. F-keys stay as Buzz's alternates (on a Mac they need fn, and F3, F4, F7–F12 are media keys there, so they are never the only key).
@@ -129,6 +141,7 @@ One keymap for the whole app, generated into the menus, the shortcuts window and
 | Show Mixer | ⌥⌘M | Ctrl+Alt+M | | Session |
 | Mute, Solo, Bypass the selected machines | M, S, B | M, S, B | Ctrl+M (Windows) | Machines |
 | Minimize | ⌘M | – | | Window |
+| Show or hide the keyboard under a machine's window | ⌘K | Ctrl+K | | machine windows (for that machine type) |
 
 Single-key transport keys (R, C, K, Home) act where the view doesn't take letters: Machines, Session, Song Notes outside its editor. The Arrangement types pattern letters and the Pattern editor types notes, so there the F-keys and the buttons do it; the shortcuts window says so. They are not macOS key equivalents (those would take the key from text boxes and the tracker), so the menu shows them in the item's text, as it shows Space.
 
@@ -161,6 +174,7 @@ The review's quick-win list, less what the bug branches (#105 `fix/ui-gallery-bu
 | Pattern editor block selection visible | The accent at 35 % with an accent outline (was 1.06:1) | mac-052 |
 | One time unit | The Arrangement ruler counts bars from 1 (ticks in its tooltip); the clip tooltip and clip panel say bars.beats (ticks as a second line); the clip panel's progress "bar 2.1 of 2" | mac-030, mac-031, mac-041…043 |
 | Tab order | Arrangement (Sequence), Session, Machines, Pattern, Song Notes, so ⌘1–⌘3 already are the three main views; the app still opens on Machines | every main-window shot's tab bar |
+| Note names (§3.5; asked for during P1) | One setting, Preferences ▸ General ▸ Note names, names notes in the pattern editor, the piano roll, the machine keyboards and MIDI mappings; C3 = 60 by default | the pattern editor's shots, the keyboard shots, Preferences ▸ General |
 
 Not in P1: Windows' labelled view tabs (WPF is bug-fix only, §1.1); the knob and switch fixes (already in `integrate/keyboard-kit-core`).
 
@@ -240,3 +254,40 @@ What WPF has that the studio needs before it replaces it on Windows: native (Win
 6. **Clip text** is pure white or pure black, whichever has more contrast (≥4.58:1 on any colour), not the nearly-white/nearly-black pair (which can't reach 4.5:1 on mid-tones).
 7. **Tab order now, names later:** the tabs are reordered to the target order in P1, so ⌘1–3 never change meaning; the "Sequence" tab is renamed "Arrangement" in P3a with the new switcher.
 8. **Windows-only machines:** the problem bar offers [Show Them]; replacing them all at once (each with its Neo successor) is P3d's browser work, as the per-machine Replace with… exists.
+9. **Note names' labels** (§3.5): "Buzz: C-5 = MIDI 60", "C3 = MIDI 60", "Scientific: C4 = MIDI 60". The C3 naming isn't labelled after the app that made it common (no third-party names in the UI, and "Live" is in this app's own name); the setting's value is `C3`.
+10. **Octaves below 0 in the tracker** (MIDI 0–23 in C3 naming, 0–11 in scientific) add their minus sign: "C--2", "C#-2", four characters, drawn over the column's gap. They are rare (below 33 Hz), and three characters can't tell them from octave 2.
+11. **An octave typed is the octave shown**: in C3 naming, 5 on a note's octave digit is C-5 as shown (Buzz's C-7); an octave Buzz doesn't have (8 and 9 in C3 naming) changes nothing. The base octave list shows the named octaves (−2…7 in C3 naming); the machine's value stays Buzz's.
+12. **The agent server stays scientific**: a display setting must not change what a tool means. The UI's Replace report and the piano roll's tracker messages, which the user reads, follow the setting.
+
+## 11. Progress
+
+### P1: quick wins (`ux/overhaul-1-quick-wins`)
+
+Built: everything in §5 P1's table, and (asked for during P1, with `integrate/keyboard-kit-core` on main) §3.5's note names. Where it lives:
+
+| Part | Code | Tests |
+|---|---|---|
+| Tokens, contrast, the reserved state colours | `ReBuzz.Studio/Shell/Design/StudioTokens.cs`; `SessionPalette` reads them | `UxQuickWinTests` (every palette colour's text ≥4.5:1; the tokens' ratios; the reserved colours never offered) |
+| Clip states | `SessionCells.SlotCell.Refresh`: the fill stays, a dark chip under ▶/●, a 2 pt outline, the progress bar | `SessionViewTests` (playing, only the slot it plays from) |
+| One keymap | `Shell/Commands/StudioKeymap.cs` (commands and the views' keys), `KeyText.cs` (one spelling per platform), `ShortcutsWindow.cs`; `MainWindow` builds its menus and key bindings from it | `UxQuickWinTests` (no two commands share a key; every menu key is the keymap's; the shortcuts window lists and searches; the tracker keeps ⌘R, ⌘W, ⌘1–⌘9), `StudioShellTests`, `TransportKeysTests` |
+| Duplicate, Delete, Deselect, Rename in every view | `IStudioEditTarget` grew them; the Machine View (clone with an offset, one undo step), the arrangement (the block again after itself), the Session View | `UxQuickWinTests`, `MachineViewTests`, `SequenceEditorTests` |
+| Problems in plain words | `Shell/ProblemBar.cs`, `Shell/AudioHealthBadge.cs`; the canvas says "muted: blew up", "Windows only" | `SafetyTests` (the bar's Reset and Unmute), `UxQuickWinTests` |
+| One time unit | `Shell/TimeText.cs`; the arrangement ruler, the clip panel and the slots' tooltips | `SessionViewTests` (the clip panel), `UxQuickWinTests` |
+| The tracker's block selection | `ModernPatternEditor/Avalonia/PatternTheme.cs` | `UxQuickWinTests` |
+| Note names | `ReBuzzGUI/BuzzGUI.Common/NoteNames.cs`, `GeneralSettings.NoteNames`; read in the pattern editor (`ParameterExtensions`, `PortableShims`, `MPEParameter`, `ParameterColumn.EditDigit`, the Avalonia view's base octaves), `ClipNotes.Name`, `MidiControl.NoteName`, `KeyboardFace.NoteName`, `MachineReplace` (the UI's report) | `UxQuickWinTests` (the three namings), `PreferencesTests` (the setting, saved, read by each display), `PatternEditorTests` (cells, base octaves, the typed octave), `MachineKeyboardTests` (keys and octave follow a change), `DawModesSeamTests`, `ClipNotesTests`, `SessionMidiMapTests`, `KeyboardFaceTests` |
+
+Measured (Mac gallery, headless, scale 2; `tools/ux-measure.py`):
+
+| What | Before | After |
+|---|---|---|
+| Session clip text on its colour (mac-040, "Hook" on green) | 2.88:1 | 5.97:1 |
+| Session clip text ("Fill" on orange) | 2.96:1 | 5.81:1 |
+| Session header chip label (M/S/●), size | 3.54:1, 18×16 pt | 4.55:1, 20×20 pt |
+| Song Notes placeholder (mac-014) | 2.54:1 | 4.95:1 |
+| Song Notes "Saved with the song" | 4.10:1 | 5.46:1 |
+| Pattern editor block selection against the grid (mac-052) | ΔE 4.4 (1.08:1) | ΔE 28.0 (1.58:1), accent outline 4.11:1 |
+| Transport Play vs Record when lit (mac-071/072) | both #0078D7, ΔE 0 | #34C759 vs #FF453A, ΔE 130; glyphs black 9.46:1 and 6.16:1 |
+| Arrangement playhead (mac-071) | 1 pt yellow, 2.10:1 on the lightest lane | 2 pt with a dark edge, 5.96:1 there |
+| Pattern list selection text | 5.36:1 | 6.44:1 |
+
+Frame times (headless, Linux, the gallery's demo song, 1440×900; medians of 3 runs before and 4 after, `UxFrameTimeTests`): Machines drawn 5.29 → 5.19 ms, Sequence 54.2 → 56.7 ms (+4.6 %), Session with a scene launched 4.70 → 4.64 ms, the Session View's state refresh (20 a second) 0.060 → 0.067 ms, the window's status refresh (10 a second, now with the problem bar and the badge) 0.004 → 0.008 ms.

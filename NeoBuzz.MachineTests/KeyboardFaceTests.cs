@@ -100,21 +100,34 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
-        public void NamesAreScientificAndLabelsShortenToFit()
+        public void NamesAreThePreferencesAndLabelsShortenToFit()
         {
-            Assert.That(KeyboardFace.NoteName(60), Is.EqualTo("C4"));
-            Assert.That(KeyboardFace.NoteName(69), Is.EqualTo("A4"));
-            Assert.That(KeyboardFace.NoteName(0), Is.EqualTo("C-1"));
-            Assert.That(KeyboardFace.NoteName(61), Is.EqualTo("C#4"));
-            Assert.That(KeyboardFace.AccessibleName(38, "Snare"), Is.EqualTo("D2, Snare"));
-            Assert.That(KeyboardFace.AccessibleName(61, null), Is.EqualTo("C#4"));
+            // As Preferences name notes (BuzzGUI.Common.NoteNames, ux-overhaul.md §3.5), as the pattern editor and the piano
+            // roll do: C3 is 60 by default.
+            Assert.That(KeyboardFace.NoteName(60), Is.EqualTo("C3"));
+            Assert.That(KeyboardFace.NoteName(69), Is.EqualTo("A3"));
+            Assert.That(KeyboardFace.NoteName(0), Is.EqualTo("C-2"));
+            Assert.That(KeyboardFace.NoteName(61), Is.EqualTo("C#3"));
+            Assert.That(KeyboardFace.AccessibleName(38, "Snare"), Is.EqualTo("D1, Snare"));
+            Assert.That(KeyboardFace.AccessibleName(61, null), Is.EqualTo("C#3"));
+            var naming = BuzzGUI.Common.NoteNames.Naming;
+            try
+            {
+                BuzzGUI.Common.NoteNames.Naming = BuzzGUI.Common.NoteNaming.Scientific;
+                Assert.That(KeyboardFace.NoteName(60), Is.EqualTo("C4"));
+                Assert.That(KeyboardFace.NoteName(0), Is.EqualTo("C-1"));
+                BuzzGUI.Common.NoteNames.Naming = BuzzGUI.Common.NoteNaming.Buzz;
+                Assert.That(KeyboardFace.NoteName(60), Is.EqualTo("C-5"));
+                Assert.That(KeyboardFace.AccessibleName(61, null), Is.EqualTo("C#5"));
+            }
+            finally { BuzzGUI.Common.NoteNames.Naming = naming; }
             var m = new RecordingCanvas();      // 0.55 × size per character
             Assert.That(KeyboardFace.Fit("Kick", 40, 8.5, m), Is.EqualTo("Kick"), "fits whole");
             Assert.That(KeyboardFace.Fit("Closed hat", 24, 8.5, m), Is.EqualTo("CH"), "words: their initials");
             Assert.That(KeyboardFace.Fit("Low tom", 24, 8.5, m), Is.EqualTo("LT"));
             Assert.That(KeyboardFace.Fit("Cowbell", 20, 8.5, m), Is.EqualTo("Cowb"), "a word: as much as fits");
             Assert.That(KeyboardFace.Fit("Snare", 6, 8.5, m), Is.EqualTo("S"));
-            Assert.That(KeyboardFace.Readout(38, "Snare", 96), Is.EqualTo("D2 · Snare · velocity 96"));
+            Assert.That(KeyboardFace.Readout(38, "Snare", 96), Is.EqualTo("D1 · Snare · velocity 96"));
             Assert.That(KeyboardFace.Readout(-1, null, 0), Is.Empty);
         }
 
@@ -123,7 +136,7 @@ namespace NeoBuzz.MachineTests
         {
             var c = new RecordingCanvas();
             KeyboardFace.DrawKey(c, 24, 76, 60, new KeyLook(true, false, 0, false, false), null, Accent);
-            Assert.That(c.Of(NeoDrawKind.Text).Select(t => t.Text), Is.EqualTo(new[] { "C4" }), "each C is named");
+            Assert.That(c.Of(NeoDrawKind.Text).Select(t => t.Text), Is.EqualTo(new[] { "C3" }), "each C is named");
             Assert.That(c.Of(NeoDrawKind.Rect).Any(r => r.Fill.Color.R == Accent.R && r.Fill.Color.G == Accent.G), Is.False, "silent: not lit");
 
             c.Clear();

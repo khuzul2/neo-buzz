@@ -47,8 +47,18 @@ namespace ReBuzz.SessionTests
         [Test]
         public void DescribesControls()
         {
-            Assert.That(Note(60).ToString(), Is.EqualTo("Note C4, ch 1"));
-            Assert.That(Note(37, 9).ToString(), Is.EqualTo("Note C#2, ch 10"));
+            // As Preferences name notes (BuzzGUI.Common.NoteNames): C3 is 60 by default.
+            Assert.That(Note(60).ToString(), Is.EqualTo("Note C3, ch 1"));
+            Assert.That(Note(37, 9).ToString(), Is.EqualTo("Note C#1, ch 10"));
+            var naming = BuzzGUI.Common.NoteNames.Naming;
+            try
+            {
+                BuzzGUI.Common.NoteNames.Naming = BuzzGUI.Common.NoteNaming.Scientific;
+                Assert.That(Note(60).ToString(), Is.EqualTo("Note C4, ch 1"));
+                BuzzGUI.Common.NoteNames.Naming = BuzzGUI.Common.NoteNaming.Buzz;
+                Assert.That(Note(37, 9).ToString(), Is.EqualTo("Note C#3, ch 10"));
+            }
+            finally { BuzzGUI.Common.NoteNames.Naming = naming; }
             Assert.That(Controller(20).ToString(), Is.EqualTo("CC 20, ch 1"));
         }
 

@@ -74,7 +74,7 @@ Reproduce, measure, isolate, fix one thing, measure again. Each section: what yo
 - `notes_write` puts notes in each pattern's engine MIDI column, and NeoBuzz Live sends them to the machine as MIDI. Neo machines and most managed machines play them; some older native machines ignore MIDI.
 - Check: `machine_describe(machine=…)` (its notes field), then one note rendered solo and `analyze(source=…, metrics=["pitch"])`.
 - Fix: use a Neo synth or another machine. For a tracker-only machine the user can move the notes to the Pattern View's note lanes (Session View slot menu, "Move notes to the Pattern View").
-- An octave off: the tools use C4 = 60, which the Pattern View shows as C-5. Some older machines play an octave away; measure the pitch and shift with `notes_transform(machine=…, pattern=…, transforms=[{"op": "transpose", "semitones": 12}])`.
+- An octave off: the tools use C4 = 60, which the Pattern View shows as C-3 by default (C-5 when Preferences ▸ General ▸ Note names is Buzz's). Some older machines play an octave away; measure the pitch and shift with `notes_transform(machine=…, pattern=…, transforms=[{"op": "transpose", "semitones": 12}])`.
 
 ## Hanging notes
 

@@ -46,6 +46,22 @@ namespace ReBuzz.Studio
                 GiveMenus(w);
             }, RoutingStrategies.Direct, handledEventsToo: true);
             Window.WindowClosedEvent.AddClassHandler<Window>((w, e) => windows.Remove(w), RoutingStrategies.Direct, handledEventsToo: true);
+            // Fork (ux-overhaul.md §3.5): Preferences name notes another way: every window draws its notes again.
+            if (!namingWatched)
+            {
+                namingWatched = true;
+                BuzzGUI.Common.NoteNames.Changed += () => Dispatcher.UIThread.Post(RedrawAll);
+            }
+        }
+
+        static bool namingWatched;
+
+        /// <summary>Every open window's controls draw themselves again (the names they draw changed).</summary>
+        internal static void RedrawAll()
+        {
+            foreach (var w in windows.ToList())
+                foreach (var v in Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(w))
+                    v.InvalidateVisual();
         }
 
         static readonly System.Collections.Generic.List<Window> windows = new System.Collections.Generic.List<Window>();

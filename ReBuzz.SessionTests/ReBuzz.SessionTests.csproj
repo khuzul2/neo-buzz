@@ -30,6 +30,7 @@
     <Compile Include="..\ReBuzz\Core\Session\SessionTake.cs" Link="Engine\SessionTake.cs" />
     <Compile Include="..\ReBuzz\Core\Session\ClipNotes.cs" Link="Engine\ClipNotes.cs" />
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Common\TrackerNotes.cs" Link="Engine\TrackerNotes.cs" />
+    <Compile Include="..\ReBuzzGUI\BuzzGUI.Common\NoteNames.cs" Link="Engine\NoteNames.cs" />
     <!-- The machine delay compensation's ring and plan (docs/specs/mastering-tools.md §4.1), with the Sample they carry. -->
     <Compile Include="..\ReBuzz\Core\LatencyRing.cs;..\ReBuzz\Core\LatencyPlan.cs" Link="Engine\%(Filename)%(Extension)" />
     <Compile Include="..\ReBuzzGUI\BuzzGUI.Interfaces\MachineInterface\Sample.cs" Link="Engine\Sample.cs" />
