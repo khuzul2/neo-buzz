@@ -99,10 +99,27 @@ namespace ReBuzz.NativeMachine
 
         public void MachineCrashed(MachineCore machine, Exception e)
         {
-            this.ChannelListener.buzz.DCWriteLine(e.Message, DCLogLevel.Error);
+            var buzz = this.ChannelListener.buzz;
+            buzz.DCWriteLine(e.Message, DCLogLevel.Error);
             machine.MachineDLL.IsCrashed = true;
             machine.Ready = false;
+            // Fork: and a line that names the machine ("Process hang. No response after 2000ms." named none,
+            // gallery win-704), told to the user too.
+            buzz.ReportMachineCrashed(machine, e.Message.StartsWith(machine.Name) ? e.Message.Substring(machine.Name.Length).TrimStart(':', ' ') : e.Message);
         }
+
+        /// <summary>Fork: a message the host didn't answer, named for the log (its type is the message's first int).</summary>
+        string HangMessage(MachineCore machine, int message) =>
+            $"{machine.Name} stopped responding: its host process didn't answer {MessageName(message)} within {waitTime} ms";
+
+        string MessageName(int id) => id < 0 ? "a message" : Channel switch
+        {
+            ChannelType.AudioChannel when Enum.IsDefined(typeof(AudioMessages), id) => ((AudioMessages)id).ToString(),
+            ChannelType.UIChannel when Enum.IsDefined(typeof(UIMessages), id) => ((UIMessages)id).ToString(),
+            ChannelType.HostChannel when Enum.IsDefined(typeof(HostMessages), id) => ((HostMessages)id).ToString(),
+            ChannelType.MidiChannel when Enum.IsDefined(typeof(MIDIMessages), id) => ((MIDIMessages)id).ToString(),
+            _ => $"message {id} on the {Channel}",
+        };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void DoReceiveIncomingMessage()
@@ -175,6 +192,8 @@ namespace ReBuzz.NativeMachine
 
         public MessageContent DoSendMessage(MachineCore machine = null)
         {
+            // Fork: which message this is (its first int), for a named hang (read without allocating).
+            int sending = sendMessageData.Count >= 4 ? System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(CollectionsMarshal.AsSpan(sendMessageData)) : -1;
             MessageContent msg;
             while (true)
             {
@@ -188,7 +207,7 @@ namespace ReBuzz.NativeMachine
                     {
                         bool success = ChannelListener.WaitHandlePongWaitOne(machine, waitTime);
                         if (!success)
-                            throw new Exception("Process hang. No response after " + waitTime + "ms.");
+                            throw new Exception(HangMessage(machine, sending));
                     }
 
                     msg = DoReceiveReply(); // Reply read
@@ -209,7 +228,7 @@ namespace ReBuzz.NativeMachine
                     {
                         bool success = ChannelListener.WaitHandlePongWaitOne(machine, waitTime);
                         if (!success)
-                            throw new Exception("Process hang. No response after " + waitTime + "ms.");
+                            throw new Exception(HangMessage(machine, sending));
                     }
                 }
             }

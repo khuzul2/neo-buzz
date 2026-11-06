@@ -404,6 +404,9 @@ namespace ReBuzz.Studio.Shell
         {
             var diverged = core.SongCore.MachinesList.Where(m => m.IsDiverged).Select(m => $"{m.Name} ({m.DivergedReason})").ToList();
             string text = diverged.Count > 0 ? " · Diverged: muted: " + string.Join(", ", diverged) : "";
+            // Fork: machines that stopped working (a host that hung or exited, gallery win-704), named.
+            var stopped = core.SongCore.MachinesList.Where(core.IsReportedCrashed).Select(m => m.Name).ToList();
+            if (stopped.Count > 0) text += " · Stopped working: " + string.Join(", ", stopped);
             if (!ReBuzz.Audio.MachineGuard.Enabled) text += " · machine guard off";
             return text;
         }

@@ -101,6 +101,40 @@ namespace ReBuzz.Studio.Tests
             }
         }
 
+        // ------------------------------------------------------------------ a machine that stops working
+
+        [AvaloniaTest]
+        public void AMachineThatStopsWorkingIsToldByNameInTheStatusLine()
+        {
+            // Gallery win-704: a native machine's host stopped answering; only the debug console said so,
+            // and its "Process hang" line named no machine.
+            NewSong();
+            var window = Open();
+            var told = new System.Collections.Generic.List<string>();
+            System.Action<MachineCore, string> handler = (m, reason) => told.Add($"{m.Name}: {reason}");
+            Core.MachineCrashed += handler;
+            try
+            {
+                Core.SongCore.CreateMachine("Neo Poly", null, "Delay", null, null, null, -1, 0.2f, 0.2f);
+                var delay = Core.SongCore.MachinesList.Single(m => m.Name == "Delay");
+                Core.ReportMachineCrashed(delay, "its host process didn't answer within 2000 ms");
+                Core.ReportMachineCrashed(delay, "again");
+                Settle(window);
+                Assert.That(told, Is.EqualTo(new[] { "Delay: its host process didn't answer within 2000 ms" }), "told once, by name");
+                window.RefreshNow();
+                Assert.That(window.StatusText, Does.Contain(" · Stopped working: Delay"));
+                NewSong();
+                window.RefreshNow();
+                Assert.That(window.StatusText, Does.Not.Contain("Stopped working"), "a new song starts clean");
+            }
+            finally
+            {
+                Core.MachineCrashed -= handler;
+                NewSong();
+                window.Close();
+            }
+        }
+
         // ------------------------------------------------------------------ a song that can't be opened
 
         [AvaloniaTest]

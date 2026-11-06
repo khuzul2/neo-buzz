@@ -314,6 +314,8 @@ namespace ReBuzz
 
                 // Fork (docs/specs/machine-safety.md §3.2): a machine whose guard tripped shows muted; say why.
                 Buzz.MachineDiverged += m => SetStatusBarText($"{m.Name} diverged ({m.DivergedReason}): the guard silenced, stopped and muted it. Unmute it to reset it.", 0);
+                // Fork: a machine that stopped working (its host process hung or exited) is told here, named (gallery win-704).
+                Buzz.MachineCrashed += (m, reason) => SetStatusBarText($"{m.Name} stopped working ({reason}): it is left out of the sound. The debug console has the details.", 0);
 
                 UpdateTitle();
 

@@ -1,6 +1,8 @@
 using BuzzGUI.Interfaces;
 using ReBuzz.Common;
 using ReBuzzTests.Automation;
+using ReBuzzTests.Automation.TestMachines;
+using ReBuzzTests.Automation.TestMachinesControllers;
 using System;
 using System.Globalization;
 using System.Linq;
@@ -160,6 +162,26 @@ namespace ReBuzzTests
             Assert.That(window.DetailsBox.Text, Does.Contain("EndOfStreamException"));
             window.Details.IsExpanded = true;
             SessionViewTests.Screenshot((FrameworkElement)window.Content, "error-open-details", 520, 360);
+        }
+
+        // ------------------------------------------------------------------ a machine that stops working (win-704)
+
+        [Test]
+        public void ANativeMachineThatCrashesIsReportedByName()
+        {
+            // The debug console said "Jeskola Delay crashed." and then a "Process hang" naming no machine; the user wasn't told.
+            using var driver = new Driver();
+            var crashing = FakeNativeGeneratorStereoController.NewInstance("crashingGen");
+            driver.Gear.AddPrecompiledGenerator(FakeNativeGeneratorInfo.StereoGeneratorInstance);
+            driver.Start();
+            var told = new System.Collections.Generic.List<string>();
+            driver.Core.MachineCrashed += (m, reason) => told.Add(m.Name);
+            driver.Gear.EnableGeneratorCrashingFor(crashing, MethodsToCrashOn.WorkMonoToStereo);
+            driver.MachineGraph.InsertMachineInstanceConnectedToMasterFor(crashing);
+            driver.ReadStereoSamples(1);
+            driver.ReadStereoSamples(1);
+            driver.AssertMachineIsCrashed(crashing);
+            Assert.That(told, Is.EqualTo(new[] { "crashingGen" }), "the app is told, by name, once");
         }
 
         [Test]

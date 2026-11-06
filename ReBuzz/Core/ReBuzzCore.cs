@@ -1192,6 +1192,34 @@ namespace ReBuzz.Core
 
         internal void RaiseMachineDiverged(MachineCore machine) => MachineDiverged?.Invoke(machine);
 
+        /// <summary>
+        /// Fork: a machine stopped working (a native machine's host process stopped answering or
+        /// exited): the apps tell the user (on the UI thread, once a machine), not only the debug
+        /// console, which said "Jeskola Delay crashed." and then a "Process hang" that named no
+        /// machine (gallery win-704).
+        /// </summary>
+        internal event Action<MachineCore, string> MachineCrashed;
+
+        readonly HashSet<MachineCore> reportedCrashes = new HashSet<MachineCore>();
+
+        /// <summary>Any thread: logs that a machine stopped working, named, and tells the apps once.</summary>
+        internal void ReportMachineCrashed(MachineCore machine, string reason)
+        {
+            if (machine == null) return;
+            lock (reportedCrashes)
+            {
+                if (!reportedCrashes.Add(machine)) return;
+            }
+            DCWriteLine($"{machine.Name} ({machine.DLL?.Name}) stopped working: {reason}. It is left out of the sound.", DCLogLevel.Fatal);
+            dispatcher?.BeginInvoke(() => MachineCrashed?.Invoke(machine, reason));
+        }
+
+        /// <summary>The machine was reported as stopped working (<see cref="ReportMachineCrashed"/>).</summary>
+        internal bool IsReportedCrashed(MachineCore machine)
+        {
+            lock (reportedCrashes) return reportedCrashes.Contains(machine);
+        }
+
         /// <summary>WPF's toolbar lamp: the latched over ("+3.2 dB"), empty when there is none.</summary>
         public string MasterOverText { get; private set; } = "";
 
@@ -2468,6 +2496,7 @@ namespace ReBuzz.Core
 
         void NewSongCore()
         {
+            lock (reportedCrashes) reportedCrashes.Clear();     // fork: a new song's machines are new
             Autosave?.Discard();   // fork (0.4.1)
             MachineGuard.Enabled = true;        // fork (machine-safety.md §3.2): off only for a song's session
             Playing = false;
