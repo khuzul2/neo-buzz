@@ -32,6 +32,9 @@ namespace NeoBuzz.DyeEssence
             {
                 int b = slot == 0 ? P.AType : slot == 1 ? P.BType : P.CType;
                 int I(int aParam) => b + (aParam - P.AType);
+                // The Analog engine's parameters (appended in P1b, a block of their own per slot).
+                int a = slot == 0 ? P.AShape : slot == 1 ? P.BShape : P.CShape;
+                int J(int aParam) => a + (aParam - P.AShape);
                 var userName = new TextBlock
                 {
                     Foreground = Theme.DimText,
@@ -78,7 +81,8 @@ namespace NeoBuzz.DyeEssence
                     Layout.Row(new ParamDropdown(ctx, I(P.AWarp1), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp1Amt), "amount", 30),
                                Layout.Gap(10), new ParamDropdown(ctx, I(P.AWarp2), width: 104), Layout.Gap(4), new ParamKnob(ctx, I(P.AWarp2Amt), "amount", 30)),
                     Layout.Gap(1, 4),
-                    new ParamDropdown(ctx, I(P.AMod), width: 104)));
+                    Layout.Row(new ParamDropdown(ctx, I(P.AMod), width: 104), Layout.Gap(10), new ParamDropdown(ctx, J(P.AShape), width: 92),
+                               Layout.Gap(4), new ParamKnob(ctx, J(P.APw), "width", 30), Layout.Gap(4), new ParamKnob(ctx, J(P.ADrift), "drift", 30))));
             }
 
             UIElement Filter(int f)

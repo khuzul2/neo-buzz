@@ -18,7 +18,7 @@ VelAmp      "Vel → amp"     0 1000 700  pct                             | How 
 Volume      "Volume"        0 1000 739  db -40 6 inf                    | Output level
 
 group Osc A
-AType      "A engine"      0 1    1    enum Off Wavetable              | What slot A plays (more engines to come)
+AType      "A engine"      0 2    1    enum Off Wavetable Analog       | What slot A plays (more engines to come)
 ATable     "A table"       0 10   0    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
 APos       "A position"    0 1000 667  pct                             | Position in the table (frames morph smoothly)
 AOct       "A octave"      0 8    4    int -4 oct signed               | Octave
@@ -39,7 +39,7 @@ AMod       "A modulator"   0 4    1    enum Osc_A Osc_B Osc_C Sub Noise | What F
 AToF2      "A → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
 
 group Osc B
-BType      "B engine"      0 1    0    enum Off Wavetable              | What slot B plays (more engines to come)
+BType      "B engine"      0 2    0    enum Off Wavetable Analog       | What slot B plays (more engines to come)
 BTable     "B table"       0 10   2    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
 BPos       "B position"    0 1000 0  pct                             | Position in the table (frames morph smoothly)
 BOct       "B octave"      0 8    4    int -4 oct signed               | Octave
@@ -60,7 +60,7 @@ BMod       "B modulator"   0 4    0    enum Osc_A Osc_B Osc_C Sub Noise | What F
 BToF2      "B → filter 2"  0 1000 0    pct                             | Balance between filter 1 (0 %) and filter 2 (100 %)
 
 group Osc C
-CType      "C engine"      0 1    0    enum Off Wavetable              | What slot C plays (more engines to come)
+CType      "C engine"      0 2    0    enum Off Wavetable Analog       | What slot C plays (more engines to come)
 CTable     "C table"       0 10   3    enum Basic PWM Harmonics Formants Sync_sweep FM_sweep Organ Resonant Digital Grit User | Wavetable (User: a table loaded for this slot)
 CPos       "C position"    0 1000 0  pct                             | Position in the table (frames morph smoothly)
 COct       "C octave"      0 8    4    int -4 oct signed               | Octave
@@ -123,3 +123,17 @@ FltA        "Flt attack"    0 1000 100  time 0.0005 20                  | Attack
 FltD        "Flt decay"     0 1000 520  time 0.0005 20                  | Decay time
 FltS        "Flt sustain"   0 1000 300  pct                             | Sustain level
 FltR        "Flt release"   0 1000 450  time 0.0005 20                  | Release time
+
+# P1b (appended): the Analog engine's parameters for each slot.
+group Osc A
+AShape     "A shape"       0 4    2    enum Sine Triangle Saw Square Pulse | The Analog engine's wave
+APw        "A pulse width" 0 1000 1000 lin 3 50 % 1                   | The Analog engine's pulse width (Pulse)
+ADrift     "A drift"       0 1000 200  pct                             | The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are
+group Osc B
+BShape     "B shape"       0 4    2    enum Sine Triangle Saw Square Pulse | The Analog engine's wave
+BPw        "B pulse width" 0 1000 1000 lin 3 50 % 1                   | The Analog engine's pulse width (Pulse)
+BDrift     "B drift"       0 1000 200  pct                             | The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are
+group Osc C
+CShape     "C shape"       0 4    2    enum Sine Triangle Saw Square Pulse | The Analog engine's wave
+CPw        "C pulse width" 0 1000 1000 lin 3 50 % 1                   | The Analog engine's pulse width (Pulse)
+CDrift     "C drift"       0 1000 200  pct                             | The Analog engine's voices each a little out of tune (up to ±12 cents), as analog oscillators are

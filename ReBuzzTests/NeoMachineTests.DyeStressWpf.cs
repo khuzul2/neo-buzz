@@ -104,6 +104,17 @@ namespace ReBuzzTests
             var bin = File.ReadLines(TestAssemblyDirectory.Value.AddFileName("ReBuzzLocation.txt").ToString()).First();
             var path = Path.Combine(bin, "Gear", "Generators", "Modern Pattern Editor.NET.dll");
             if (!File.Exists(path)) Assert.Inconclusive($"the Modern Pattern Editor isn't built ({path})");
+            // The editor takes its look from the app's theme (Themes\Default\ModernPatternEditor\*.xaml beside
+            // the app); here the app is the tests' folder, so the repository's theme goes there first.
+            var theme = Path.Combine(RepoRoot(), "RunTime", "Themes", "Default");
+            var themeHere = Path.Combine(TestAssemblyDirectory.Value.ToString(), "Themes", "Default");
+            foreach (var file in Directory.GetFiles(theme, "*", SearchOption.AllDirectories))
+            {
+                var to = Path.Combine(themeHere, Path.GetRelativePath(theme, file));
+                if (File.Exists(to)) continue;
+                Directory.CreateDirectory(Path.GetDirectoryName(to)!);
+                File.Copy(file, to);
+            }
             machine.CreatePattern("Stress", 16);
             var pattern = machine.Patterns.Last();
 
@@ -173,9 +184,10 @@ namespace ReBuzzTests
                 var machine = rig.Effect;
                 Assert.That(machine.ParameterGroups.Single(g => g.Type == ParameterGroupType.Global).Parameters.Count, Is.EqualTo(globals), info.Name);
                 string window = MeasureParameterWindow(machine, name + "-wpf-parameters", globals);
+                TestContext.Out.WriteLine($"[notice] {info.Name} in WPF: {window}");
                 string editor = MeasurePatternEditor(machine, name + "-wpf-pattern-editor", globals);
                 lines.Add($"{info.Name}: {window}; {editor}");
-                TestContext.Out.WriteLine($"[notice] {info.Name} in WPF: {window}; {editor}");
+                TestContext.Out.WriteLine($"[notice] {info.Name} in WPF: {editor}");
             }
             Assert.That(lines, Has.Count.EqualTo(2));
         }

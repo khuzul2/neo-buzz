@@ -102,6 +102,8 @@ namespace NeoBuzz.DyeEssence
         /// vectors (one 16-byte load per lane, then a transpose: data movement only, so exact).
         /// </summary>
         static abstract void Read4(in LaneRefs tables, TU index, out TF p0, out TF p1, out TF p2, out TF p3);
+        /// <summary>The same with one table for every lane (a uniform group: fewer live references).</summary>
+        static abstract void Read4(ref float table, TU index, out TF p0, out TF p1, out TF p2, out TF p3);
         /// <summary>a[at + index[l]] per lane (one load per lane: exact).</summary>
         static abstract TF Gather(float[] a, int at, TU index);
         /// <summary>The lanes' sum in one fixed order: ((0+4) + (1+5)) + ((2+6) + (3+7)).</summary>
@@ -149,6 +151,18 @@ namespace NeoBuzz.DyeEssence
             var r1 = Vector256.Create(Vector128.LoadUnsafe(ref t.R1, lo.GetElement(1)), Vector128.LoadUnsafe(ref t.R5, hi.GetElement(1)));
             var r2 = Vector256.Create(Vector128.LoadUnsafe(ref t.R2, lo.GetElement(2)), Vector128.LoadUnsafe(ref t.R6, hi.GetElement(2)));
             var r3 = Vector256.Create(Vector128.LoadUnsafe(ref t.R3, lo.GetElement(3)), Vector128.LoadUnsafe(ref t.R7, hi.GetElement(3)));
+            Transpose(r0, r1, r2, r3, out p0, out p1, out p2, out p3);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Read4(ref float t, Vector256<uint> index, out Vector256<float> p0, out Vector256<float> p1, out Vector256<float> p2, out Vector256<float> p3)
+        {
+            var lo = index.GetLower();
+            var hi = index.GetUpper();
+            var r0 = Vector256.Create(Vector128.LoadUnsafe(ref t, lo.GetElement(0)), Vector128.LoadUnsafe(ref t, hi.GetElement(0)));
+            var r1 = Vector256.Create(Vector128.LoadUnsafe(ref t, lo.GetElement(1)), Vector128.LoadUnsafe(ref t, hi.GetElement(1)));
+            var r2 = Vector256.Create(Vector128.LoadUnsafe(ref t, lo.GetElement(2)), Vector128.LoadUnsafe(ref t, hi.GetElement(2)));
+            var r3 = Vector256.Create(Vector128.LoadUnsafe(ref t, lo.GetElement(3)), Vector128.LoadUnsafe(ref t, hi.GetElement(3)));
             Transpose(r0, r1, r2, r3, out p0, out p1, out p2, out p3);
         }
 
@@ -292,6 +306,23 @@ namespace NeoBuzz.DyeEssence
             p3 = new Pair<float>(a3, b3);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Read4(ref float t, Pair<uint> index, out Pair<float> p0, out Pair<float> p1, out Pair<float> p2, out Pair<float> p3)
+        {
+            var lo = index.Lo;
+            var hi = index.Hi;
+            Transpose(Vector128.LoadUnsafe(ref t, lo.GetElement(0)), Vector128.LoadUnsafe(ref t, lo.GetElement(1)),
+                Vector128.LoadUnsafe(ref t, lo.GetElement(2)), Vector128.LoadUnsafe(ref t, lo.GetElement(3)),
+                out var a0, out var a1, out var a2, out var a3);
+            Transpose(Vector128.LoadUnsafe(ref t, hi.GetElement(0)), Vector128.LoadUnsafe(ref t, hi.GetElement(1)),
+                Vector128.LoadUnsafe(ref t, hi.GetElement(2)), Vector128.LoadUnsafe(ref t, hi.GetElement(3)),
+                out var b0, out var b1, out var b2, out var b3);
+            p0 = new Pair<float>(a0, b0);
+            p1 = new Pair<float>(a1, b1);
+            p2 = new Pair<float>(a2, b2);
+            p3 = new Pair<float>(a3, b3);
+        }
+
         /// <summary>Four rows of four to four columns (data movement only).</summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static void Transpose(Vector128<float> r0, Vector128<float> r1, Vector128<float> r2, Vector128<float> r3,
@@ -412,6 +443,19 @@ namespace NeoBuzz.DyeEssence
             for (int l = 0; l < 8; l++)
             {
                 ref float r = ref Unsafe.Add(ref t.At(l), index[l]);
+                p0[l] = r;
+                p1[l] = Unsafe.Add(ref r, 1);
+                p2[l] = Unsafe.Add(ref r, 2);
+                p3[l] = Unsafe.Add(ref r, 3);
+            }
+        }
+
+        public static void Read4(ref float t, Eight<uint> index, out Eight<float> p0, out Eight<float> p1, out Eight<float> p2, out Eight<float> p3)
+        {
+            p0 = new Eight<float>(); p1 = new Eight<float>(); p2 = new Eight<float>(); p3 = new Eight<float>();
+            for (int l = 0; l < 8; l++)
+            {
+                ref float r = ref Unsafe.Add(ref t, index[l]);
                 p0[l] = r;
                 p1[l] = Unsafe.Add(ref r, 1);
                 p2[l] = Unsafe.Add(ref r, 2);
