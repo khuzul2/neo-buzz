@@ -531,7 +531,16 @@ namespace ReBuzz.Studio.Tests
             try
             {
                 var sw = Stopwatch.StartNew();
-                var all = Call("machine_describe", new JsonObject { ["machine"] = "Stress Agent" });
+                // Without a group a large machine answers with its groups only; all=true reads every parameter.
+                var overview = Call("machine_describe", new JsonObject { ["machine"] = "Stress Agent" });
+                var oData = overview["structuredContent"]!.AsObject();
+                Assert.That(oData["parameters"]!.AsArray(), Is.Empty, "no parameter list without a group");
+                Assert.That(oData["parameter_count"]!.GetValue<int>(), Is.EqualTo(Globals));
+                Assert.That(oData["group_sizes"]!.AsArray().Sum(g => g!["parameters"]!.GetValue<int>()), Is.EqualTo(Globals), "the groups hold every parameter");
+                int overviewChars = overview.ToJsonString().Length;
+                Assert.That(overviewChars, Is.LessThan(16 * 1024), "a short summary");
+                sw.Restart();
+                var all = Call("machine_describe", new JsonObject { ["machine"] = "Stress Agent", ["all"] = true });
                 double allMs = sw.Elapsed.TotalMilliseconds;
                 int allChars = all.ToJsonString().Length;
                 var slot = Call("machine_describe", new JsonObject { ["machine"] = "Stress Agent", ["group"] = "Slot 1" });
@@ -549,7 +558,7 @@ namespace ReBuzz.Studio.Tests
                 var globals = GlobalsOf(machine);
                 Assert.That(globals.Single(p => p.Name == "Arp scale").GetValue(0), Is.EqualTo(3), "an enum near the end, by its name");
                 Assert.That(globals.Single(p => p.Name == "Route 64 amount").GetValue(0), Is.EqualTo(375), "a bipolar amount in %");
-                Report($"machine_describe: all {Globals} parameters {allChars / 1024.0:F0} KB of JSON in {allMs:F0} ms; one group (Slot 1) {slotChars / 1024.0:F0} KB; param_set in units on parameters 600–704");
+                Report($"machine_describe: without a group {overviewChars / 1024.0:F1} KB; all {Globals} parameters {allChars / 1024.0:F0} KB of JSON in {allMs:F0} ms; one group (Slot 1) {slotChars / 1024.0:F0} KB; param_set in units on parameters 600–704");
             }
             finally
             {
