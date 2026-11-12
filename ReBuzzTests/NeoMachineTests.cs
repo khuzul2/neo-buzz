@@ -1650,7 +1650,10 @@ namespace ReBuzzTests
         {
             using var rig = new Rig(DeEsser);
             rig.Play(0.05);
-            Assert.That(rig.Effect.Latency, Is.EqualTo(0), "no lookahead, the minimum-phase split");
+            Assert.That(rig.Effect.Latency, Is.EqualTo((int)Math.Round(0.001 * rig.Rate)), "the default 1 ms of lookahead, the minimum-phase split");
+            rig.Param("Lookahead").SetValue(0, 0);
+            rig.Play(0.5);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(0), "no lookahead");
             rig.Param("Lookahead").SetValue(0, 400);
             rig.Play(0.5);
             Assert.That(rig.Effect.Latency, Is.EqualTo((int)Math.Round(0.002 * rig.Rate)), "2 ms of lookahead");
