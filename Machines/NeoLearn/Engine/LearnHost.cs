@@ -120,7 +120,7 @@ namespace NeoBuzz.Learn
             }
             gain = target;
             meter.Feed(left, right, n);
-            double k = 1 - Math.Exp(-n / (RmsSeconds * rate));
+            double k = 1 - PortableMath.Exp(-n / (RmsSeconds * rate));
             meanSquare += (sum / n - meanSquare) * k;
             if (meanSquare < 1e-30) meanSquare = 0;
             if (peak > 1f) clipLeft = (long)(ClipHoldSeconds * rate);
@@ -142,8 +142,8 @@ namespace NeoBuzz.Learn
         /// <summary>What the agent reads (machine_readings): the output's RMS over about half a second and its peak, in dBFS, and the voices sounding.</summary>
         public IReadOnlyDictionary<string, double> Readings()
         {
-            double rms = meanSquare > 0 ? 10 * Math.Log10(meanSquare) : double.NegativeInfinity;
-            double peak = peakReading > 1e-9f ? 20 * Math.Log10(peakReading) : double.NegativeInfinity;
+            double rms = meanSquare > 0 ? 10 * PortableMath.Log10(meanSquare) : double.NegativeInfinity;
+            double peak = peakReading > 1e-9f ? 20 * PortableMath.Log10(peakReading) : double.NegativeInfinity;
             return new Dictionary<string, double> { ["rms_db"] = rms, ["peak_db"] = peak, ["active_voices"] = lastNotes };
         }
 
