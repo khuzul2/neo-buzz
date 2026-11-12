@@ -1,0 +1,56 @@
+# Neo Low End factory presets. Rebuild: python3 tools/gen-machine-presets.py Machines/NeoLowEnd
+machine "Neo Low End"
+
+preset "Mastering — Tighten the Low End"
+Crossover = 100
+Punch = 2
+Sustain = -2
+
+preset "Mastering — Focus (Keep the Strongest)"
+Crossover = 120
+Contrast = 40
+
+preset "Mastering — Mono Below 90 Hz"
+Crossover = 150
+Mono = On
+Mono freq = 90
+
+preset "Mastering — Balance to the Mids (+6 dB)"
+Crossover = 150
+Target = 6
+Balance = 70
+
+preset "Mastering — Peak Control (−3 dBFS)"
+Crossover = 150
+Peak control = On
+Peak level = -3
+
+preset "Mastering — Linear Phase Split"
+Phase = Linear
+Crossover = 120
+Punch = 1
+Contrast = 20
+
+preset "Drums — Kick Punch"
+Crossover = 120
+Punch = 4
+Sustain = -3
+Speed = Punchy
+
+preset "Drums — Kick Weight"
+Crossover = 120
+Punch = 0
+Sustain = 4
+Speed = Smooth
+
+preset "Bass — Even Out"
+Crossover = 200
+Contrast = -50
+Sustain = 1
+
+preset "Mixing — Clean Up the Sub"
+Crossover = 100
+Sustain = -3
+Contrast = 30
+Mono = On
+Mono freq = 100

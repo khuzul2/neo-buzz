@@ -23,6 +23,7 @@ using Avalonia.VisualTree;
 using BuzzGUI.Interfaces;
 using ReBuzz.Core;
 using ReBuzz.Studio.Shell;
+using ReBuzz.Studio.Shell.Design;
 
 namespace ReBuzz.Studio.Views.Sequence
 {
@@ -59,16 +60,42 @@ namespace ReBuzz.Studio.Views.Sequence
             IsSnapToTickEnabled = true, Margin = new Thickness(6, 0), VerticalAlignment = VerticalAlignment.Center,
         };
         readonly ComboBox steps = new ComboBox { Width = 58, Height = 24, MinHeight = 0, FontSize = 12, Padding = new Thickness(6, 0, 0, 0), Margin = new Thickness(2, 0), VerticalAlignment = VerticalAlignment.Center };
-        readonly Button addTrack = new Button { Content = "+", Width = 24, Height = 24, MinHeight = 0, Padding = new Thickness(0), FontSize = 14, Margin = new Thickness(2, 0), VerticalAlignment = VerticalAlignment.Center, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
+        readonly Button addTrack = new Button { Content = "+", Width = 24, Height = 24, MinHeight = 0, Padding = new Thickness(0), FontSize = StudioTokens.FontTitle, Margin = new Thickness(2, 0), VerticalAlignment = VerticalAlignment.Center, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
         readonly ToggleButton follow = new ToggleButton { Content = "Follow", Height = 24, MinHeight = 0, FontSize = 11, Padding = new Thickness(5, 0), Margin = new Thickness(2, 0), VerticalAlignment = VerticalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center, IsChecked = true };
         readonly ListBox patternList = new ListBox
         {
-            Background = new SolidColorBrush(Color.Parse("#F7F7F3")), Foreground = Brushes.Black, FontSize = 12,
-            BorderBrush = new SolidColorBrush(Color.Parse("#8000")), BorderThickness = new Thickness(1),
+            FontSize = 12, BorderThickness = new Thickness(1),
         };
         readonly List<(char Char, IPattern Pattern)> patterns = new List<(char, IPattern)>();
         bool syncing;
         bool attached;
+        DockPanel right, root;
+        readonly List<Style> listStates = new List<Style>();
+
+        /// <summary>
+        /// Fork (ux-overhaul.md §3.3): the theme's colours for the view's own controls (the canvas draws itself): the pattern
+        /// list and the corner's buttons. The dark theme's are the tokens'; Classic Buzz's are the editor's light ones.
+        /// </summary>
+        void ApplyLook()
+        {
+            var look = StudioTheme.Sequence;
+            root.Background = right.Background = look.Background;
+            patternList.Background = Shell.Design.StudioTheme.Solid(look.PatternList);
+            patternList.Foreground = look.ListText;
+            patternList.BorderBrush = look.ListBorder;
+            foreach (var c in new TemplatedControl[] { addTrack, steps, follow })
+            {
+                c.Background = look.ControlBack;
+                c.Foreground = look.ControlText;
+                c.BorderBrush = look.ControlBorder;
+                c.BorderThickness = new Thickness(1);
+            }
+            foreach (var style in listStates) patternList.Styles.Remove(style);
+            listStates.Clear();
+            ListStates(patternList, look, listStates);
+        }
+
+        void OnThemeChanged() => Dispatcher.UIThread.Post(() => { if (root != null) ApplyLook(); });
 
         public SequenceView(ReBuzzCore core)
         {
@@ -77,16 +104,6 @@ namespace ReBuzz.Studio.Views.Sequence
             Canvas = new SequenceCanvas(core, state);
             Focusable = true;
 
-            // The corner's controls in the editor's light colours (the studio's theme is dark).
-            var light = new SolidColorBrush(Color.Parse("#E8E8E2"));
-            var edge = new SolidColorBrush(Color.Parse("#8000"));
-            foreach (var c in new TemplatedControl[] { addTrack, steps, follow })
-            {
-                c.Background = light;
-                c.Foreground = Brushes.Black;
-                c.BorderBrush = edge;
-                c.BorderThickness = new Thickness(1);
-            }
             patternList.Styles.Add(new Style(x => x.OfType<ListBoxItem>())
             {
                 Setters =
@@ -95,11 +112,6 @@ namespace ReBuzz.Studio.Views.Sequence
                     new Setter(MinHeightProperty, 0.0),
                 },
             });
-            // The list is light in a dark theme: its items' states get light-list colours. The dark
-            // theme's pointer-over drew white text on a near-white tint ("1. Arp" at 1.06:1, gallery
-            // mac-070), and its selection white on light blue.
-            ListStates(patternList);
-
             foreach (var s in Steps) steps.Items.Add(s);
             steps.SelectedItem = state.TimeSignatures.GetBarLengthAt(0);
             ToolTip.SetTip(steps, "Bar length (ticks): the cursor's and the selection's step");
@@ -119,17 +131,18 @@ namespace ReBuzz.Studio.Views.Sequence
             };
             var timeline = new Panel { Children = { Canvas, Canvas.Overlay, horizontal, vertical, corner } };
 
-            var right = new DockPanel { Width = 120, Background = SequenceCanvas.BackgroundBrush };
+            right = new DockPanel { Width = 120 };
             var zoomRow = new Border { Height = SequenceGeometry.RulerHeight, Child = zoom };
             DockPanel.SetDock(zoomRow, Dock.Top);
             right.Children.Add(zoomRow);
             right.Children.Add(patternList);
 
-            var root = new DockPanel { Background = SequenceCanvas.BackgroundBrush };
+            root = new DockPanel();
             DockPanel.SetDock(right, Dock.Right);
             root.Children.Add(right);
             root.Children.Add(timeline);
             Content = root;
+            ApplyLook();
 
             zoom.Value = state.Zoom;
             Canvas.ViewChanged += Sync;
@@ -168,7 +181,7 @@ namespace ReBuzz.Studio.Views.Sequence
         public ComboBox StepsBox => steps;
         public ListBox PatternList => patternList;
         /// <summary>The list's own background (its items' states draw on it).</summary>
-        internal static Color PatternListBackground => Color.Parse("#F7F7F3");
+        internal static Color PatternListBackground => StudioTheme.Sequence.PatternList;
         public Button AddTrackButton => addTrack;
 
         /// <summary>The menu a right click (or the add-track button) opened last (tests click through it).</summary>
@@ -181,6 +194,8 @@ namespace ReBuzz.Studio.Views.Sequence
         {
             base.OnAttachedToVisualTree(e);
             attached = true;
+            StudioTheme.Changed += OnThemeChanged;
+            ApplyLook();
             state.Changed += OnStateChanged;
             OnStateChanged();
             RefreshPatternList();
@@ -191,6 +206,7 @@ namespace ReBuzz.Studio.Views.Sequence
         protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
         {
             attached = false;
+            StudioTheme.Changed -= OnThemeChanged;
             state.Changed -= OnStateChanged;
             base.OnDetachedFromVisualTree(e);
         }
@@ -234,31 +250,30 @@ namespace ReBuzz.Studio.Views.Sequence
 
         // ------------------------------------------------------------------ the pattern list
 
-        static readonly IBrush ItemHover = new SolidColorBrush(Color.Parse("#E0E0D8"));
-        static readonly IBrush ItemPressed = new SolidColorBrush(Color.Parse("#D0D0C6"));
-        // Fork (ux-overhaul.md §3.1): the selection fill token, white text on it at 6.4:1.
-        static readonly IBrush ItemSelected = ReBuzz.Studio.Shell.Design.StudioTokens.SelectionFillBrush;
-        static readonly IBrush ItemSelectedHover = new SolidColorBrush(Color.Parse("#1A528F"));
-
-        /// <summary>Every state of a light list's items readable: dark text on light, white on the selection's blue (4.5:1 and more).</summary>
-        internal static void ListStates(ListBox list)
+        /// <summary>Every state of the list's items readable in the theme (4.5:1 and more): text on the list, on the pointer's tint, on the selection.</summary>
+        internal static void ListStates(ListBox list, SequenceLook look, List<Style> added = null)
         {
-            void State(Func<Selector, Selector> state, IBrush background, IBrush foreground) =>
-                list.Styles.Add(new Style(x => state(x.OfType<ListBoxItem>()).Template().OfType<ContentPresenter>().Name("PART_ContentPresenter"))
+            void State(Func<Selector, Selector> state, IBrush background, IBrush foreground)
+            {
+                var style = new Style(x => state(x.OfType<ListBoxItem>()).Template().OfType<ContentPresenter>().Name("PART_ContentPresenter"))
                 {
                     Setters =
                     {
                         new Setter(ContentPresenter.BackgroundProperty, background),
                         new Setter(ContentPresenter.ForegroundProperty, foreground),
                     },
-                });
-            State(x => x, Brushes.Transparent, Brushes.Black);
-            State(x => x.Class(":pointerover"), ItemHover, Brushes.Black);
-            State(x => x.Class(":pressed"), ItemPressed, Brushes.Black);
-            State(x => x.Class(":selected"), ItemSelected, Brushes.White);
-            State(x => x.Class(":selected").Class(":focus"), ItemSelected, Brushes.White);
-            State(x => x.Class(":selected").Class(":pointerover"), ItemSelectedHover, Brushes.White);
-            State(x => x.Class(":selected").Class(":pressed"), ItemSelectedHover, Brushes.White);
+                };
+                list.Styles.Add(style);
+                added?.Add(style);
+            }
+            var white = ReBuzz.Studio.Shell.Design.StudioTokens.White;
+            State(x => x, Brushes.Transparent, look.ListText);
+            State(x => x.Class(":pointerover"), look.ListHover, look.ListHoverText);
+            State(x => x.Class(":pressed"), look.ListPressed, look.ListHoverText);
+            State(x => x.Class(":selected"), look.ListSelected, white);
+            State(x => x.Class(":selected").Class(":focus"), look.ListSelected, white);
+            State(x => x.Class(":selected").Class(":pointerover"), look.ListSelectedHover, white);
+            State(x => x.Class(":selected").Class(":pressed"), look.ListSelectedHover, white);
         }
 
         /// <summary>The n-th pattern's key: 0–9, then a–z, then A–Z (TrackHeaderControl.UpdatePatternList).</summary>

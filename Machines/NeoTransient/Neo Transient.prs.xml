@@ -1,0 +1,303 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<PresetDictionary>
+  <Item Key="Drums — More Snap">
+    <Preset Machine="Neo Transient">
+      <Parameters>
+        <Parameter Name="Attack" Group="1" Index="0" Track="0" Value="180" />
+        <Parameter Name="Sustain" Group="1" Index="1" Track="0" Value="100" />
+        <Parameter Name="Speed" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Mode" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="5" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="6" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="7" Track="0" Value="8257" />
+        <Parameter Name="Impact 1" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Impact 2" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Impact 3" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Impact 4" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Auto gain" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="16" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drums — Tighter (Less Room)">
+    <Preset Machine="Neo Transient">
+      <Parameters>
+        <Parameter Name="Attack" Group="1" Index="0" Track="0" Value="140" />
+        <Parameter Name="Sustain" Group="1" Index="1" Track="0" Value="60" />
+        <Parameter Name="Speed" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Mode" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="5" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="6" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="7" Track="0" Value="8257" />
+        <Parameter Name="Impact 1" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Impact 2" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Impact 3" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Impact 4" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Auto gain" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="16" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drums — Bigger Tails">
+    <Preset Machine="Neo Transient">
+      <Parameters>
+        <Parameter Name="Attack" Group="1" Index="0" Track="0" Value="120" />
+        <Parameter Name="Sustain" Group="1" Index="1" Track="0" Value="170" />
+        <Parameter Name="Speed" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Lookahead" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Mode" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="5" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="6" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="7" Track="0" Value="8257" />
+        <Parameter Name="Impact 1" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Impact 2" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Impact 3" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Impact 4" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Auto gain" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="16" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Drums — Hit Harder, Keep the Tail">
+    <Preset Machine="Neo Transient">
+      <Parameters>
+        <Parameter Name="Attack" Group="1" Index="0" Track="0" Value="200" />
+        <Parameter Name="Sustain" Group="1" Index="1" Track="0" Value="120" />
+        <Parameter Name="Speed" Group="1" Index="2" Track="0" Value="0" />
+        <Parameter Name="Lookahead" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Mode" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="5" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="6" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="7" Track="0" Value="8257" />
+        <Parameter Name="Impact 1" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Impact 2" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Impact 3" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Impact 4" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Auto gain" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="16" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Gentle Punch">
+    <Preset Machine="Neo Transient">
+      <Parameters>
+        <Parameter Name="Attack" Group="1" Index="0" Track="0" Value="135" />
+        <Parameter Name="Sustain" Group="1" Index="1" Track="0" Value="120" />
+        <Parameter Name="Speed" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Lookahead" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Mode" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="5" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="6" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="7" Track="0" Value="8257" />
+        <Parameter Name="Impact 1" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Impact 2" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Impact 3" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Impact 4" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Auto gain" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="16" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Soften the Hits">
+    <Preset Machine="Neo Transient">
+      <Parameters>
+        <Parameter Name="Attack" Group="1" Index="0" Track="0" Value="100" />
+        <Parameter Name="Sustain" Group="1" Index="1" Track="0" Value="130" />
+        <Parameter Name="Speed" Group="1" Index="2" Track="0" Value="2" />
+        <Parameter Name="Lookahead" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Mode" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="5" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="6" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="7" Track="0" Value="8257" />
+        <Parameter Name="Impact 1" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Impact 2" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Impact 3" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Impact 4" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Auto gain" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="16" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Impact (Lows Up, Highs Calm)">
+    <Preset Machine="Neo Transient">
+      <Parameters>
+        <Parameter Name="Attack" Group="1" Index="0" Track="0" Value="120" />
+        <Parameter Name="Sustain" Group="1" Index="1" Track="0" Value="120" />
+        <Parameter Name="Speed" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Mode" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Crossover 1" Group="1" Index="5" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="6" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="7" Track="0" Value="8257" />
+        <Parameter Name="Impact 1" Group="1" Index="8" Track="0" Value="650" />
+        <Parameter Name="Impact 2" Group="1" Index="9" Track="0" Value="575" />
+        <Parameter Name="Impact 3" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Impact 4" Group="1" Index="11" Track="0" Value="400" />
+        <Parameter Name="Auto gain" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="16" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Impact (Tighten the Mids)">
+    <Preset Machine="Neo Transient">
+      <Parameters>
+        <Parameter Name="Attack" Group="1" Index="0" Track="0" Value="120" />
+        <Parameter Name="Sustain" Group="1" Index="1" Track="0" Value="120" />
+        <Parameter Name="Speed" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Mode" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Crossover 1" Group="1" Index="5" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="6" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="7" Track="0" Value="8257" />
+        <Parameter Name="Impact 1" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Impact 2" Group="1" Index="9" Track="0" Value="625" />
+        <Parameter Name="Impact 3" Group="1" Index="10" Track="0" Value="625" />
+        <Parameter Name="Impact 4" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Auto gain" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="16" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mastering — Impact (Flatten the Dynamics a Little)">
+    <Preset Machine="Neo Transient">
+      <Parameters>
+        <Parameter Name="Attack" Group="1" Index="0" Track="0" Value="120" />
+        <Parameter Name="Sustain" Group="1" Index="1" Track="0" Value="120" />
+        <Parameter Name="Speed" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Mode" Group="1" Index="4" Track="0" Value="1" />
+        <Parameter Name="Crossover 1" Group="1" Index="5" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="6" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="7" Track="0" Value="8257" />
+        <Parameter Name="Impact 1" Group="1" Index="8" Track="0" Value="375" />
+        <Parameter Name="Impact 2" Group="1" Index="9" Track="0" Value="375" />
+        <Parameter Name="Impact 3" Group="1" Index="10" Track="0" Value="375" />
+        <Parameter Name="Impact 4" Group="1" Index="11" Track="0" Value="375" />
+        <Parameter Name="Auto gain" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="16" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Bus — Glue the Sustain">
+    <Preset Machine="Neo Transient">
+      <Parameters>
+        <Parameter Name="Attack" Group="1" Index="0" Track="0" Value="110" />
+        <Parameter Name="Sustain" Group="1" Index="1" Track="0" Value="150" />
+        <Parameter Name="Speed" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Mode" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="5" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="6" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="7" Track="0" Value="8257" />
+        <Parameter Name="Impact 1" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Impact 2" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Impact 3" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Impact 4" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Auto gain" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="700" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="16" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Mid/Side — Punch the Mid">
+    <Preset Machine="Neo Transient">
+      <Parameters>
+        <Parameter Name="Attack" Group="1" Index="0" Track="0" Value="160" />
+        <Parameter Name="Sustain" Group="1" Index="1" Track="0" Value="120" />
+        <Parameter Name="Speed" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="3" Track="0" Value="30" />
+        <Parameter Name="Mode" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="5" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="6" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="7" Track="0" Value="8257" />
+        <Parameter Name="Impact 1" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Impact 2" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Impact 3" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Impact 4" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Auto gain" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="13" Track="0" Value="1" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="16" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+  <Item Key="Live — No Latency">
+    <Preset Machine="Neo Transient">
+      <Parameters>
+        <Parameter Name="Attack" Group="1" Index="0" Track="0" Value="150" />
+        <Parameter Name="Sustain" Group="1" Index="1" Track="0" Value="110" />
+        <Parameter Name="Speed" Group="1" Index="2" Track="0" Value="1" />
+        <Parameter Name="Lookahead" Group="1" Index="3" Track="0" Value="0" />
+        <Parameter Name="Mode" Group="1" Index="4" Track="0" Value="0" />
+        <Parameter Name="Crossover 1" Group="1" Index="5" Track="0" Value="2594" />
+        <Parameter Name="Crossover 2" Group="1" Index="6" Track="0" Value="5663" />
+        <Parameter Name="Crossover 3" Group="1" Index="7" Track="0" Value="8257" />
+        <Parameter Name="Impact 1" Group="1" Index="8" Track="0" Value="500" />
+        <Parameter Name="Impact 2" Group="1" Index="9" Track="0" Value="500" />
+        <Parameter Name="Impact 3" Group="1" Index="10" Track="0" Value="500" />
+        <Parameter Name="Impact 4" Group="1" Index="11" Track="0" Value="500" />
+        <Parameter Name="Auto gain" Group="1" Index="12" Track="0" Value="1" />
+        <Parameter Name="Stereo" Group="1" Index="13" Track="0" Value="0" />
+        <Parameter Name="Mix" Group="1" Index="14" Track="0" Value="1000" />
+        <Parameter Name="Output" Group="1" Index="15" Track="0" Value="240" />
+        <Parameter Name="Delta" Group="1" Index="16" Track="0" Value="0" />
+      </Parameters>
+      <Attributes />
+      <Comment></Comment>
+    </Preset>
+  </Item>
+</PresetDictionary>

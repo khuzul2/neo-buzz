@@ -229,6 +229,24 @@ CASES = [
     fx("clipper-bands-ms", "Neo Clipper", "Mastering — Three Bands", [("Stereo", "M/S"), ("Oversampling", "8×")],
        auto=[("Drive", [(0, "+12 dB"), (1.5, "+3 dB"), (2.5, "+18 dB")])]),
     fx("clipper-delta", "Neo Clipper", "Drums — Hard Snap", [("Drive", "+12 dB")], auto=[("Delta", [(2, "On")])]),
+    # Neo Transient (docs/specs/mastering-tools.md §5.4, M4): the onset/body gains with a lookahead (Attack automated: its
+    # smoothed ramps); mid/side with a lookahead of 0; Impact mode (its four bands, the knobs and the mode automated:
+    # the 20 ms crossfades); Delta switched on by automation.
+    fx("transient-drums", "Neo Transient", "Drums — More Snap", [("Sustain", "-3 dB")],
+       auto=[("Attack", [(0, "+9 dB"), (1.5, "-4 dB"), (2.5, "+12 dB")])]),
+    fx("transient-ms-live", "Neo Transient", "Mid/Side — Punch the Mid", [("Lookahead", "0.0 ms")]),
+    fx("transient-impact", "Neo Transient", "Mastering — Impact (Lows Up, Highs Calm)", [("Stereo", "M/S")],
+       auto=[("Impact 2", [(0, "+15%"), (1.5, "-60%"), (2.5, "+80%")]), ("Mode", [(0.5, "Attack Sustain"), (1, "Impact")])]),
+    fx("transient-delta", "Neo Transient", "Drums — Tighter (Less Room)", [], auto=[("Delta", [(2, "On")])]),
+    # Neo Low End (§5.5, M4): minimum phase with the kick preset (Punch automated); linear phase (the FIR's 96 ms: a
+    # longer tail); mono below a frequency with peak control; Balance toward the mids, the crossover moved.
+    fx("lowend-kick", "Neo Low End", "Drums — Kick Punch", [],
+       auto=[("Punch", [(0, "+4 dB"), (1.5, "-3 dB"), (2.5, "+8 dB")])]),
+    fx("lowend-linear", "Neo Low End", "Mastering — Linear Phase Split", [("Sustain", "-2 dB")], tail=1.5),
+    fx("lowend-mono-peak", "Neo Low End", "Mastering — Peak Control (−3 dBFS)", [("Mono", "On"), ("Mono freq", "90 Hz")],
+       auto=[("Peak level", [(0, "-3 dB"), (2, "-9 dB")])]),
+    fx("lowend-balance", "Neo Low End", "Mastering — Balance to the Mids (+6 dB)", [],
+       auto=[("Crossover", [(0, "150 Hz"), (2, "80 Hz")])]),
     # Neo Verb: the four algorithms, modulation, shimmer, a 20-second decay, and freeze switched on
     # mid-render by automation (the tail held with no loss).
     fx("verb-hall", "Neo Verb", "Hall — Concert", tail=2.5),

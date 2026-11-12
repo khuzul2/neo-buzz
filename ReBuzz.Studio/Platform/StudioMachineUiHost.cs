@@ -174,6 +174,6 @@ namespace ReBuzz.Studio.Platform
             window == null ? default : new WindowPlacement(window.Position.X, window.Position.Y, window.Bounds.Width,
                 Math.Max(0, window.Bounds.Height - NeoBuzz.Editor.MachineKeyboardFrame.ExtraHeightOf(window.Content)));
 
-        static Control Note(string text) => new TextBlock { Text = text, Margin = new Thickness(24), Foreground = Brushes.Gray };
+        static Control Note(string text) => new TextBlock { Text = text, Margin = new Thickness(24), Foreground = ReBuzz.Studio.Shell.Design.StudioTokens.TextSecondaryBrush };
     }
 }

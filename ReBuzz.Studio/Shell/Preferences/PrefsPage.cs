@@ -20,10 +20,10 @@ namespace ReBuzz.Studio.Shell.Preferences
 
     internal abstract class PrefsPage : ScrollViewer
     {
-        public static readonly IBrush Dim = new SolidColorBrush(Color.FromRgb(0x9a, 0x9a, 0x9a));
-        public static readonly IBrush Problem = new SolidColorBrush(Color.FromRgb(0xe0, 0x8a, 0x6a));
+        public static readonly IBrush Dim = ReBuzz.Studio.Shell.Design.StudioTokens.TextSecondaryBrush;
+        public static readonly IBrush Problem = ReBuzz.Studio.Shell.Design.StudioTokens.Brush(ReBuzz.Studio.Shell.Design.StudioTokens.Warning);
 
-        protected readonly StackPanel Body = new StackPanel { Margin = new Thickness(24, 12, 24, 20), Spacing = 6 };
+        protected readonly StackPanel Body = new StackPanel { Margin = new Thickness(24, 16, 24, 24), Spacing = 8 };
         readonly List<Action> settingRefreshes = new List<Action>();
         readonly List<Action> relabels = new List<Action>();
         readonly Dictionary<string, Control> settingControls = new Dictionary<string, Control>();
@@ -108,7 +108,7 @@ namespace ReBuzz.Studio.Shell.Preferences
 
         protected TextBlock Heading(string text)
         {
-            var t = new TextBlock { Text = text, FontWeight = FontWeight.SemiBold, FontSize = 14, Margin = new Thickness(0, Body.Children.Count == 0 ? 0 : 14, 0, 2) };
+            var t = new TextBlock { Text = text, FontWeight = FontWeight.SemiBold, FontSize = Design.StudioTokens.FontTitle, Margin = new Thickness(0, Body.Children.Count == 0 ? 0 : 16, 0, 4) };
             Body.Children.Add(t);
             return t;
         }
@@ -116,7 +116,7 @@ namespace ReBuzz.Studio.Shell.Preferences
         /// <summary>A line of text under a heading.</summary>
         protected TextBlock Note(string text, IBrush brush = null)
         {
-            var t = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, Foreground = brush ?? Dim, FontSize = 12, Margin = new Thickness(0, 0, 0, 2) };
+            var t = new TextBlock { Text = text, TextWrapping = TextWrapping.Wrap, Foreground = brush ?? Dim, FontSize = 12, Margin = new Thickness(0, 0, 0, 4) };
             Body.Children.Add(t);
             return t;
         }
@@ -124,13 +124,13 @@ namespace ReBuzz.Studio.Shell.Preferences
         /// <summary>A labelled row; the hint goes under the control.</summary>
         protected Grid Row(string label, Control control, string hint = null)
         {
-            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("200,*"), Margin = new Thickness(0, 1) };
-            var name = new TextBlock { Text = label, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 6, 12, 0), TextWrapping = TextWrapping.Wrap };
+            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("200,*"), Margin = new Thickness(0, 4) };
+            var name = new TextBlock { Text = label, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 8, 12, 0), TextWrapping = TextWrapping.Wrap };
             grid.Children.Add(name);
-            var right = new StackPanel { Spacing = 2 };
+            var right = new StackPanel { Spacing = 4 };
             if (control is not TextBox || !double.IsNaN(control.Width)) control.HorizontalAlignment = HorizontalAlignment.Left;
             right.Children.Add(control);
-            if (!string.IsNullOrEmpty(hint)) right.Children.Add(new TextBlock { Text = hint, TextWrapping = TextWrapping.Wrap, Foreground = Dim, FontSize = 11.5 });
+            if (!string.IsNullOrEmpty(hint)) right.Children.Add(new TextBlock { Text = hint, TextWrapping = TextWrapping.Wrap, Foreground = Dim, FontSize = 12 });
             Grid.SetColumn(right, 1);
             grid.Children.Add(right);
             Body.Children.Add(grid);

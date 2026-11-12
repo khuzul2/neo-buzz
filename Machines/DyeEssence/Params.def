@@ -4,8 +4,9 @@
 namespace NeoBuzz.DyeEssence
 class DyeEssenceMachine
 tracks 16
-summary Hybrid wavetable synth: three engine slots, each a morphing wavetable with 1–16 unison voices and two warps (bend, sync, FM, PM, AM, ring and more), a sub and a noise, two filters per note (ladder, state-variable, comb; serial to parallel), oversampled 2× or 4×. Use it for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
+summary Hybrid wavetable synth: three engine slots, each a morphing wavetable or an analog oscillator with 1–16 unison voices and two warps (bend, sync, FM, PM, AM, ring and more), a sub and a noise, two filters per note (ladder, state-variable, comb; serial to parallel), oversampled 2× or 4×; two modulation envelopes, four LFOs (built-in or drawn shapes), four macros and sixteen routes. Use it for wide unison leads, evolving pads, FM and sync basses, plucks and bells.
 import wavetable .wav | A WAV wavetable: frames of 2048 samples (or a clm chunk saying the frame size), or one short single cycle. Becomes a slot's "User" table: item 0 is slot A, 1 slot B, 2 slot C.
+import lfo_shape .txt | A drawn LFO shape: a text file of breakpoints "phase,value[,curve]" separated by spaces (phase 0–1 across one cycle, value −1–1, curve −1–1: 0 straight, below 0 a fast start, above a slow one; a point at 0 and one at 1 make a jump at the wrap). item 0–3 picks LFO 1–4; its shape is set to Drawn.
 
 group Voice
 VoiceMode   "Voice mode"    0 2    0    enum Poly Mono Legato           | Poly; Mono retriggers; Legato glides without retriggering
@@ -163,28 +164,28 @@ E2DCurve   "Env2 dec curve" 0 1000 200 bip                             | Decay s
 E2RCurve   "Env2 rel curve" 0 1000 200 bip                             | Release shape: −100 % fast start, 0 straight, +100 % slow start
 E2Sync     "Env2 sync"     0 1    0    switch Seconds Beats            | Beats: each time is read as beats of the song's tempo (1 s = 1 beat)
 group LFO 1
-L1Shape    "LFO1 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L1Shape    "LFO1 shape"    0 7    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth Drawn | Waveform (Drawn: the LFO's own breakpoints, drawn in the editor)
 L1Rate     "LFO1 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
 L1Sync     "LFO1 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
 L1Retrig   "LFO1 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
 L1Phase    "LFO1 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
 L1Fade     "LFO1 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
 group LFO 2
-L2Shape    "LFO2 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L2Shape    "LFO2 shape"    0 7    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth Drawn | Waveform (Drawn: the LFO's own breakpoints, drawn in the editor)
 L2Rate     "LFO2 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
 L2Sync     "LFO2 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
 L2Retrig   "LFO2 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
 L2Phase    "LFO2 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
 L2Fade     "LFO2 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
 group LFO 3
-L3Shape    "LFO3 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L3Shape    "LFO3 shape"    0 7    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth Drawn | Waveform (Drawn: the LFO's own breakpoints, drawn in the editor)
 L3Rate     "LFO3 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
 L3Sync     "LFO3 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
 L3Retrig   "LFO3 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes
 L3Phase    "LFO3 phase"    0 1000 0    lin 0 360 ° 0                   | Start phase (retrig)
 L3Fade     "LFO3 fade"     0 1000 0    pow 0 5 2 s 2                   | Fade-in time after the note starts
 group LFO 4
-L4Shape    "LFO4 shape"    0 6    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth | Waveform
+L4Shape    "LFO4 shape"    0 7    0    enum Sine Triangle Saw_up Saw_down Square S&H Smooth Drawn | Waveform (Drawn: the LFO's own breakpoints, drawn in the editor)
 L4Rate     "LFO4 rate"     0 1000 500  freq 0.02 50                    | Rate (free)
 L4Sync     "LFO4 sync"     0 11   0    enum Free 1/32 1/16T 1/16 1/8T 1/8 1/4T 1/4 1/2 1_bar 2_bars 4_bars | Tempo sync (overrides the rate)
 L4Retrig   "LFO4 retrig"   0 1    1    switch                          | Restart with each note (one per note); off: one free LFO for all notes

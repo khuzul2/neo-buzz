@@ -387,3 +387,39 @@ The lookahead test's "no gap" threshold (M0) is relaxed from half the level to a
 | Limiter CPU | ≥ 50× with every stage | 88, 91, 66 (M2: 30× as timed on the Xeon); floors 64 (x64), 50 (arm64) |
 
 **Decisions the user may want otherwise.** (1) "L+R bit for bit" for a Side band holds at rest and within one rounding when it works (float outputs can't do better); the test checks that. (2) The dynamic detector is the exact (Hilbert) envelope, 0.5–0.9 ms late, rather than a peak follower; attacks under 10 ms run a little slow (5 ms reads 5.5–5.9 ms). (3) The coefficients follow a spline between the grid's designs, not straight lines (Neo Filter's), for the zipper target; 8 samples more lag. (4) A dynamic band's gain stays within ±30 dB (setting ± range). (5) A switch of a band's channel, shape or dynamic fades it out and in like a type switch. (6) The slope fix changes renders that automate a live cut's slope. (7) Vintage's dip is fixed (half the gain, Q 1, an octave inside); Proportional Q is Q × 10^(|gain|/40). (8) The CPU tests are throughput guards (main's `Throughput.cs`, against a reference workload in the same run), their floors from the Xeon's, the Linux runner's and the Mac runner's figures; each at or above its card's target. (9) NeoScope's studio test starts from a new song: after ExitTests' songs a loop's first wrap came 82 samples late (on main too); the cause, in the engine or the session, is left to its owners.
+
+### M4 (2026-11-12, `machines/mastering-m4`)
+
+**Neo Transient** (`Machines/NeoTransient/`) and **Neo Low End** (`Machines/NeoLowEnd/`), as the cards §5.4 and §5.5; machines.md has the descriptions. New shared blocks in `NeoBuzz.Dsp`: `LrBands` (zero-latency 2 – 4 band Linkwitz–Riley cascade), `MicroGain` (microdynamics gain with auto gain) and `SmoothRamp` (a linear ramp plus a 4 ms one-pole). Registered in the same lists as Neo Clipper (solution, Studio and Portable projects, presets, guides, null-test cases, profile entries, editor tests, audio hygiene test).
+
+Neo Transient:
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Attack | the first 5 ms peak moves by the set gain ±0.5 dB (3 ms lookahead) | kick and snare at ±12, 6, 3, −6, −12 dB: exact (±0.02 dB); 0 ms lookahead +12: kick +11.99, snare +11.85 |
+| Steady tones | Attack leaves a held sine alone | 100 / 1000 / 8000 Hz at Attack +12: 0.0000 dB; Sustain −9 on a kick tail: −9.00 dB |
+| M/S | a side-only hit shaped, the mid untouched | side kick +12.00 dB, mid bed unchanged |
+| Impact | one knob per band moves the burst-to-bed ratio, energy kept | ±100 %: 20.00 → 31.13 / 5.68 dB; ±50 %: 26.36 / 12.79 dB; energy within 0.42 dB; four zeros pass the audio |
+| Bands | sum flat | 0.0000 dB at 44.1, 48 and 96 kHz |
+| Zipper | parameters stepped per block, 220 Hz sine, above 2 kHz ≤ −90 dB | −109.8 dB |
+| Switches | Mode and Impact switches without a step | 1.00× the sine's own step |
+| Blk, Alloc, Mix0 | blocks of 256/128/117/16/1 identical; 0 bytes; neutral = input delayed bit for bit | hold |
+| Latency | the lookahead | 144 samples at 3 ms (44.1 kHz) |
+| CPU | ≥ 100× attack/sustain | at the reference's speed on the 2-core Xeon: A/S L/R 559×, M/S 313×, Impact L/R 70×, M/S 66×; floors (x64/arm64) 250/150, 140/90, 30/20, 28/18 |
+
+Neo Low End:
+
+| Criterion | Target | Measured |
+|---|---|---|
+| Punch | the first 8 ms peak moves by the set gain ±0.5 dB (kick below the crossover) | +12 dB: +12.00; +6: +6.01 (minimum) / +5.99 (linear); −6: −5.93 / −5.97 |
+| Sustain, crest | tail follows Sustain, the low crest rises with Punch | Sustain −9, Punch +3: tail −8.23 dB, low crest 13.53 → 16.54 dB |
+| Contrast | ±100 % widens or narrows loud against quiet, energy kept | 13.98 → 22.07 / 8.93 dB, energy ±1.10 dB |
+| Balance | the low band moves toward the target, the mids stay | +6.03 / +3.00 / −5.66 dB, mid within 0.071 dB |
+| Peak control | the low band under the level | −6 dB: −5.975 dBFS (crossover 300 Hz) |
+| Mono | the side removed below the frequency | 100 Hz: 40 Hz −32.0, 100 Hz −6.3, 200 Hz −1.8, 1 kHz 0.00 dB |
+| Split | flat sum; the linear FIR against the Linkwitz–Riley 24 design | minimum phase 0.0000 dB; linear within 0.0001 dB at 60/120/300 Hz, 0.52 dB at 20 Hz |
+| Isolation | above the crossover untouched (card: 1e-6) | not met literally: the 24 dB/octave skirt passes ~6 % of the low band's gain one octave up, 0.0002 % at 8×; the linear option is exact |
+| Latency | minimum phase the lookahead; linear reported | 240 samples (5 ms) minimum; 4607 (D+P) linear at 48 kHz |
+| CPU | ≥ 50× | at the reference's speed on the 2-core Xeon: minimum phase 139×, linear 116×; floors (x64/arm64) 70/45 and 55/35 |
+
+**Decisions the user may want otherwise.** (1) Neo Transient's default lookahead is 3 ms (latency 144 samples), so the card's first-5-ms figure holds; 0 ms is the live setting. (2) Neo Low End has an added Lookahead parameter (default 5 ms), which is its minimum-phase latency. (3) The card's 1e-6 isolation above the crossover is not met literally by a 24 dB/octave Linkwitz–Riley split; the linear option is exact, the minimum-phase figures are in the table. (4) The linear FIR is 0.52 dB off the design at 20 Hz (8192 taps). (5) Peak control is not an absolute ceiling for content just under the crossover. (6) The Punch target holds when the kick sits below the crossover. (7) Neo Transient's Impact mode is gated by the live blend, so all four knobs at 0 pass the audio unchanged. (8) `SmoothRamp` was added for the zipper target. (9) The CPU floors were set from the 2-core Xeon and need confirming on the Linux and Mac runners; the editors' sizes are the Avalonia sizes (1020 x 311 and 1032 x 277).

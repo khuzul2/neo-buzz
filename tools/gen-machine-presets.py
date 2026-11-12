@@ -15,14 +15,21 @@ file ReBuzz loads presets from (next to the machine DLL). Presets.txt:
   Mix = 60                       percentages are 0–100; bipolar −100…100
   Cutoff = raw:512               or a raw parameter value
 
+  state DyeEssenceState          (once, before the presets) the class of the machine's MachineState, for:
+  state Lfo1Shape = 0,1 0.5,-1   a preset's machine state as text: the property and its value. A preset
+                                 with state lines carries its data (ReBuzz applies it with the parameters),
+                                 the properties it doesn't name empty; one without keeps the machine's
+
 Parameters a preset doesn't name take their defaults when it loads.
 """
+import base64
 import importlib.util
 import math
 import os
 import shlex
+import struct
 import sys
-from xml.sax.saxutils import quoteattr
+from xml.sax.saxutils import escape, quoteattr
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location('genparams', os.path.join(HERE, 'gen-machine-params.py'))
@@ -79,6 +86,15 @@ def to_raw(p, text):
     raise ValueError(f'unknown kind {kind}')
 
 
+def machine_data(state_class, state):
+    """A managed machine's data as ReBuzz stores it (MachineManager.GetMachineData): a version byte (2), the size
+    (little-endian int32), then the MachineState object as the XmlSerializer writes it; base64 for the preset file."""
+    xml = '<?xml version="1.0" encoding="utf-8"?>\n<' + state_class + '>' + \
+          ''.join(f'<{k}>{escape(v)}</{k}>' for k, v in state.items()) + '</' + state_class + '>'
+    body = xml.encode('utf-8')
+    return base64.b64encode(bytes([2]) + struct.pack('<i', len(body)) + body).decode('ascii')
+
+
 def build(folder):
     params = genparams.parse(os.path.join(folder, 'Params.def'))['params']
     by_name = {}
@@ -87,6 +103,7 @@ def build(folder):
         by_name[p['id'].lower()] = p
         by_name[p['name'].lower()] = p
     machine = None
+    state_class = None
     presets = []
     cur = None
     with open(os.path.join(folder, 'Presets.txt'), encoding='utf-8') as f:
@@ -98,8 +115,22 @@ def build(folder):
                 machine = shlex.split(s)[1]
                 continue
             if s.startswith('preset '):
-                cur = {'name': shlex.split(s)[1], 'values': {}}
+                cur = {'name': shlex.split(s)[1], 'values': {}, 'state': {}}
                 presets.append(cur)
+                continue
+            if s.startswith('state '):
+                rest = s[len('state '):].strip()
+                if cur is None:
+                    if '=' in rest or not rest.isidentifier():
+                        sys.exit(f'{folder}/Presets.txt:{lineno}: before the presets, "state <MachineState class>"')
+                    state_class = rest
+                    continue
+                if state_class is None:
+                    sys.exit(f'{folder}/Presets.txt:{lineno}: a state line needs "state <MachineState class>" before the presets')
+                k, sep, v = (x.strip() for x in rest.partition('='))
+                if not sep or not k.isidentifier():
+                    sys.exit(f'{folder}/Presets.txt:{lineno}: expected "state Property = text"')
+                cur['state'][k] = v
                 continue
             if '=' not in s or cur is None:
                 sys.exit(f'{folder}/Presets.txt:{lineno}: expected "Param = value"')
@@ -129,6 +160,8 @@ def build(folder):
         out.append('      </Parameters>')
         out.append('      <Attributes />')
         out.append('      <Comment></Comment>')
+        if pr['state']:
+            out.append(f'      <Data>{machine_data(state_class, pr["state"])}</Data>')
         out.append('    </Preset>')
         out.append('  </Item>')
     out.append('</PresetDictionary>')

@@ -122,6 +122,10 @@ After it: PLR 0.5–1 dB lower, tilt within ±0.3 dB/oct, `high_mid` up no more 
 
 A clipper before the limiter shaves the first milliseconds of the loudest transients, which the limiter would otherwise pump on, so the master gets louder for the same limiting. Start from "Mastering — Transparent (Before a Limiter)" (+2 dB into −0.3 dB, a 3 dB knee, 4×) and raise `Drive` until `machine_readings(machine="M Clip")` shows `clip_db` 1–3 dB on the loudest hits. Then lower the limiter's `Input gain` by about the same and measure: PLR within 0.5 dB, the loudness at least as high. `Delta` On plays what it removes: clicks or a buzz mean too much. The clipper's "Match" (or `Output` set to minus `gain_match_db`) compares it at equal loudness. Three bands ("Mastering — Three Bands") clip the lows less if the kick breaks up.
 
+### 3c. Low end and punch (Neo Low End, Neo Transient, optional)
+
+Neo Low End shapes only the band below its crossover (`Punch`, `Sustain`, `Contrast`, `Balance` to the mids, mono below a frequency, `Peak control`): put it after "M EQ" when a kick or bass is muddy, uneven or too wide. Neo Transient shapes the attack and sustain of the whole signal (or four bands in Impact mode): small moves after "M Glue" when a mix lacks snap. Both report `gain_match_db` and a `Delta` listen; read `machine_readings` after a few seconds of playback.
+
 ### 4. Limiter
 
 Neo Limiter: `Ceiling` (dBTP), `Input gain` (how hard it is driven), `Auto release` or `Release`, `Lookahead` (default is fine), `Stereo link` 100 %. Set:

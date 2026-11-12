@@ -6,6 +6,7 @@
 // machines' text and the song's info text come in when a song opens, marked as imported; the Info
 // machine stays in the song as it was. F10 shows the tab, as Buzz's Info view.
 
+using ReBuzz.Studio.Shell.Design;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,13 +51,13 @@ namespace ReBuzz.Studio.Views.Notes
 
     internal sealed class SongNotesView : DockPanel, IStudioEditTarget
     {
-        static readonly IBrush PageBrush = new SolidColorBrush(Color.FromRgb(0x1E, 0x1F, 0x22));
-        static readonly IBrush BarBrush = new SolidColorBrush(Color.FromRgb(0x2B, 0x2B, 0x2B));
-        static readonly IBrush TextBrush = new SolidColorBrush(Color.FromRgb(0xE4, 0xE4, 0xE4));
-        static readonly IBrush DimBrush = new SolidColorBrush(Color.FromRgb(0x8A, 0x8A, 0x8A));
-        static readonly IBrush LinkBrush = new SolidColorBrush(Color.FromRgb(0x6C, 0xB4, 0xFF));
-        static readonly IBrush CodeBrush = new SolidColorBrush(Color.FromRgb(0x33, 0x34, 0x38));
-        static readonly IBrush BannerBrush = new SolidColorBrush(Color.FromRgb(0x23, 0x3A, 0x55));
+        static readonly IBrush PageBrush = StudioTokens.SurfaceViewBrush;
+        static readonly IBrush BarBrush = StudioTokens.SurfacePanelBrush;
+        static readonly IBrush TextBrush = StudioTokens.TextPrimaryBrush;
+        static readonly IBrush DimBrush = StudioTokens.TextSecondaryBrush;
+        static readonly IBrush LinkBrush = StudioTokens.Brush(StudioTokens.Link);
+        static readonly IBrush CodeBrush = StudioTokens.SurfaceControlBrush;
+        static readonly IBrush BannerBrush = StudioTokens.Brush(StudioTokens.BannerBack);
         static Cursor hand;
         static Cursor Hand => hand ??= new Cursor(StandardCursorType.Hand);     // made once the platform runs
         static readonly FontFamily Mono = new FontFamily("Cascadia Mono, Menlo, Consolas, DejaVu Sans Mono, monospace");
@@ -91,7 +92,7 @@ namespace ReBuzz.Studio.Views.Notes
                 TextWrapping = TextWrapping.Wrap,
                 IsUndoEnabled = false,      // the song's history has the steps
                 PlaceholderText = "The song's notes. **bold**, *italic*, # heading, - list, 1. numbered, [link](https://…)",
-                FontSize = 14,
+                FontSize = StudioTokens.FontBody,
                 Padding = new Thickness(10, 8),
                 BorderThickness = new Thickness(0),
                 Background = PageBrush,
@@ -288,9 +289,9 @@ namespace ReBuzz.Studio.Views.Notes
                 case BlockKind.Heading:
                 {
                     var t = Text(b);
-                    t.FontSize = b.Level switch { 1 => 24, 2 => 19, _ => 16 };
+                    t.FontSize = b.Level switch { 1 => StudioTokens.FontHeading, 2 => StudioTokens.FontTitle, _ => StudioTokens.FontBody };
                     t.FontWeight = FontWeight.Bold;
-                    t.Foreground = Brushes.White;
+                    t.Foreground = StudioTokens.White;
                     return t;
                 }
                 case BlockKind.Bullet:
@@ -298,7 +299,7 @@ namespace ReBuzz.Studio.Views.Notes
                 {
                     string marker = b.Kind == BlockKind.Bullet ? (b.Level % 3 == 0 ? "•" : b.Level % 3 == 1 ? "◦" : "▪") : b.Number + ".";
                     var row = new Grid { ColumnDefinitions = new ColumnDefinitions("26,*"), Margin = new Thickness(22 * b.Level, 0, 0, 0) };
-                    var m = new TextBlock { Text = marker, Foreground = TextBrush, FontSize = 14, HorizontalAlignment = HorizontalAlignment.Left };
+                    var m = new TextBlock { Text = marker, Foreground = TextBrush, FontSize = StudioTokens.FontBody, HorizontalAlignment = HorizontalAlignment.Left };
                     var t = Text(b);
                     Grid.SetColumn(t, 1);
                     row.Children.Add(m);
@@ -320,7 +321,7 @@ namespace ReBuzz.Studio.Views.Notes
 
         SelectableTextBlock Text(Block b)
         {
-            var t = new SelectableTextBlock { TextWrapping = TextWrapping.Wrap, Foreground = TextBrush, FontSize = 14, Inlines = new InlineCollection() };
+            var t = new SelectableTextBlock { TextWrapping = TextWrapping.Wrap, Foreground = TextBrush, FontSize = StudioTokens.FontBody, Inlines = new InlineCollection() };
             var links = new List<(int, int, string)>();
             int at = 0;
             foreach (var s in b.Spans)
