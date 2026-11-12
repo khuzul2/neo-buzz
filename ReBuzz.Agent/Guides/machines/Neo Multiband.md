@@ -6,8 +6,11 @@ A multiband compressor and upward expander: the input split into 3 or 4 bands, e
 |---|---|---|
 | Linear (the default) | the bands sum back to the input exactly, with no phase shift; about 96 ms of latency (4607 samples at 44.1 and 48 kHz), which NeoBuzz Live compensates | mastering, and any bus where phase matters (parallel paths, mid/side) |
 | Minimum | zero latency, the same band shapes (Linkwitz–Riley, 24 dB/oct, −6 dB at a crossover), the crossovers' phase shift | live playing, buses where the latency would be in the way |
+| Dynamic | zero latency and no static phase shift: the output is the input plus each band's gain change times the band, so a band that isn't changing leaves the input exactly as it was (bit for bit with every band at 1:1) | mastering where latency matters, or where the crossovers' phase shift would show on a mono or parallel path |
 
 Each band's ratio works above its threshold: above 1:1 it compresses (∞:1 limits), below 1:1 it expands upward (0.5:1 doubles how far a peak rises over the threshold), 1:1 does nothing. `Range` caps the change either way. Measured: a band's static curve is Neo Comp's gain computer to 0.0003 dB; attack and release times within 2.5 % of their settings; with every band at 1:1 the input comes out bit for bit, 4607 samples later at 44.1 and 48 kHz.
+
+Added in M6b: `Lookahead` (0–10 ms; the bands and the dry are delayed so each detector sees what is coming; the latency is reported and compensated), `Detector` Peak or RMS (3 ms mean square on the peak scale), per band `B1 upward ratio` … (below the threshold the band is raised by (threshold − level) × (1 − 1/ratio), within `Range`, on the same knee; nothing is raised under −80 dBFS) and `B1 sidechain` … (Internal, or External: the band's detector hears input 2 through the same crossovers). Existing songs render as before bit for bit: the new parameters sit at the end and default to off.
 
 ## Signal flow
 
@@ -15,6 +18,8 @@ Input → crossovers (`Crossover 1`, `Crossover 2`, and with 4 bands `Crossover 
 
 - Band 1 is everything below `Crossover 1`, band 2 between `Crossover 1` and `Crossover 2`, and so on; the top band is everything above the last crossover.
 - `Attack` is the time to 63 % of the gain change, `Release` back to 37 %, either way (compression or expansion).
+- With `Lookahead` above 0 the latency is the phase's own plus the lookahead (a constant: 0.5 ms is 24 samples at 48 kHz); it changes only through a 10 ms fade out and in, never as a click. In Dynamic phase `Solo` blends the dry from the input to the bands' sum so the soloed band is heard alone.
+- External sidechain: connect a machine to the second input ("Sidechain", the way Neo Comp, Neo EQ and Neo Gate take theirs), set `B1 sidechain` (or any band's) to External. The key goes through its own minimum-phase crossovers at the same frequencies and each band's detector reads that band of the key; in linear phase the key's bands are held back by the same delay as the signal's, so a kick on input 2 ducks the lows exactly at the kick. Nothing connected: an external band hears silence (nothing is compressed).
 - `Solo` on any band plays only the soloed bands (`Mix` is ignored meanwhile); `Bypass` passes a band untouched.
 - Changing `Phase` while playing fades out, switches and fades back in (into linear phase, after its latency); NeoBuzz Live realigns the other paths.
 - `machine_readings(machine=…)` gives each band's gain change now (`b1_gr_db` …), its largest over the last 3 s (`b1_gr_peak_db`) and its peak level (`b1_level_db`, what the threshold compares against), and `latency_samples`.
@@ -26,6 +31,9 @@ Input → crossovers (`Crossover 1`, `Crossover 2`, and with 4 bands `Crossover 
 - Fix one band and leave the rest: set the others to 1:1 (`B2 ratio` "1:1") and only the band that misbehaves compresses.
 - Put a crossover at the problem: a de-esser is the top band above 5–8 kHz, mud control a band around 200–500 Hz, boom control band 1 below 80–100 Hz.
 - Upward expansion (ratio under 1:1, `Range` 3–6 dB) restores transients a mix lost, or lifts the air band only when it is there.
+- Upward compression (`B2 upward ratio` 2:1, a threshold under the band's typical level, `Range` 3–6 dB) lifts quiet detail without touching loud parts; set it where `bN_level_db` sits 10 dB over the quiet passages. It never lifts under −80 dBFS, so silence and noise floors stay as they are.
+- A kick-keyed duck of the lows: a send from the kick to the multiband's second input, `B1 sidechain` External, `B1 threshold` around −30 dB, 4:1, a short attack and 120–200 ms release; `Lookahead` 2 ms lets the duck start before the kick. Preset "Bus — Kick Duck on the Lows (Sidechain)".
+- RMS (`Detector`) follows a band's loudness rather than its peaks: a steadier gain for glue; Peak catches the transients.
 - Check: render, `analyze(source=…, metrics=["loudness", "dynamics", "spectrum"])` against the input: loudness within 0.5 LU after makeup, the fixed band 1–4 dB lower on its peaks.
 
 Mastering, gentle control of the lows (one band working):
@@ -78,6 +86,9 @@ Parallel multiband squash on drums:
 
 ## Gotchas
 
+- Dynamic phase's cut is shallower than the setting: a band's change reaches the output through the band's phase against the input, so a 14 dB cut at the middle of a band measured 8.7 dB, and a 6 dB cut about 5 dB. Gentle control (1–4 dB) is close; for deep cuts use Linear or Minimum. Its onset is also less clean: a burst's first millisecond isn't cancelled as in the others.
+- `Lookahead` adds latency in every phase (in Dynamic and Minimum it is the only latency): the parallel paths are compensated, but a live input monitored through it arrives late.
+
 - The defaults compress (every band 2:1 at −20 dB): set the bands you don't want to 1:1, or start from a preset.
 - Linear phase delays by about 96 ms. NeoBuzz Live delays the other paths to match (its machine delay compensation, on by default: Preferences ▸ Engine on Windows, Preferences ▸ General in the studio); bypassed, it still delays by that much, so the other paths stay lined up. If the user turned the compensation off, a parallel path around it combs; a live input monitored through it arrives late either way. Use `Phase` Minimum there. Renders start that much later: give them the tail.
 - The linear-phase crossovers ring a little before a transient below about 100 Hz (pre-echo, the price of no phase shift); minimum phase rings after it instead.
@@ -107,3 +118,6 @@ Parallel multiband squash on drums:
 | "Fix — Boom Control Below 90 Hz" | only band 1 (under 90 Hz), 6:1, at most 9 dB |
 | "Creative — Heavy Squash (Parallel 50 %)" | 10:1 on every band, +12 dB makeup, half wet |
 | "Utility — Linear-Phase Split (Transparent)" | every band 1:1: the input, delayed, bit for bit |
+| "Mastering — Dynamic-Phase Glue (Zero Latency)" | the gentle glue in Dynamic phase |
+| "Mastering — Quiet Detail Lift (Upward)" | bands 2–4 lifted up to 4 dB under −42 dB (upward 2:1), nothing compressed |
+| "Bus — Kick Duck on the Lows (Sidechain)" | band 1 keyed by input 2, minimum phase, 2 ms lookahead |

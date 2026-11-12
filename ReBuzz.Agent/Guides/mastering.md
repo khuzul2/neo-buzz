@@ -170,6 +170,10 @@ Without Neo Limiter, Neo Comp as the last stage (it catches peaks within about 1
 
 Neo Dither is the last machine after the limiter: `Bits` 16, TPDF, `Shaping` Off ("16 bit — TPDF (Standard)"). The simpler way is `render(bits=16, dither="tpdf")`, which writes the master as 16 bit PCM through the same dither and measures what is in the file; do not use both. A 32-bit float file needs no dither.
 
+### 6. Hear it lossy (the Opus preview)
+
+Streaming services re-encode the master, so check what a lossy codec does to it before you deliver: `render(opus_kbps=128)` (or `analyze(source="r4", opus_kbps=128)`) encodes and decodes it with Opus (64 to 256 kb/s) and measures the decoded audio: the true peak (a master at -1 dBTP can come back over 0), where the spectrum is cut off and how far down above it, and the loudness of the null residual (original minus decoded). Opus is a proxy for lossy coding in general (the platforms use Vorbis and AAC); it is not their encoder. With render, the decoded audio is the render `rN:opus`, which `analyze` and `compare` read. If the true peak comes back above -0.5 dBTP, lower the limiter's ceiling by the difference.
+
 ## Against a reference
 
 - A reference measured on the fly: `analyze(source="r4", target="C:/Refs/track.wav")`. Several references, averaged and kept with their spread: `target_build(name="deep house", sources=[…])` (1 to 20, a few minutes each, in the style wanted), then `analyze(source="r4", target="deep house")`. A value inside the references' own range is a match.

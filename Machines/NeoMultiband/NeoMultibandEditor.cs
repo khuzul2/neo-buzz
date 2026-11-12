@@ -76,10 +76,12 @@ namespace NeoBuzz.Multiband
                     new ParamKnob(ctx, MultibandEngine.Param(b, BP.Knee), "Knee"),
                     new ParamKnob(ctx, MultibandEngine.Param(b, BP.Range), "Range"),
                     new ParamKnob(ctx, MultibandEngine.Param(b, BP.Makeup), "Makeup", 50),
+                    new ParamKnob(ctx, MultibandEngine.ExtParam(b, MultibandEngine.ExtraParam.UpRatio), "Upward"),
                     Layout.Gap(6),
                     Layout.Column(
                         new ParamChoice(ctx, MultibandEngine.Param(b, BP.Solo), "Solo", 34),
-                        new ParamChoice(ctx, MultibandEngine.Param(b, BP.Bypass), "Bypass", 34)));
+                        new ParamChoice(ctx, MultibandEngine.Param(b, BP.Bypass), "Bypass", 34),
+                        new ParamChoice(ctx, MultibandEngine.ExtParam(b, MultibandEngine.ExtraParam.Key), "Key", 34)));
                 row.Visibility = b == handles.Selected ? Visibility.Visible : Visibility.Collapsed;
                 rowOf[b] = row;
                 rows.Children.Add(row);
@@ -100,9 +102,12 @@ namespace NeoBuzz.Multiband
                 new ParamChoice(ctx, P.Phase, "Phase", 64),
                 Layout.Row(new ParamKnob(ctx, P.Xo1, "XO 1"), new ParamKnob(ctx, P.Xo2, "XO 2"), new ParamKnob(ctx, P.Xo3, "XO 3")));
 
-            var detector = Layout.Column(
-                new ParamChoice(ctx, P.Stereo, "Stereo", 44),
-                new ParamKnob(ctx, P.Link, diameter: 46));
+            var detector = Layout.Row(
+                Layout.Column(
+                    new ParamChoice(ctx, P.Stereo, "Stereo", 44),
+                    new ParamChoice(ctx, P.Detector, "Detector", 44),
+                    new ParamKnob(ctx, P.Link, diameter: 46)),
+                new ParamKnob(ctx, P.Lookahead, "Lookahead", 46));
 
             return Layout.Column(
                 Layout.Row(
@@ -342,7 +347,10 @@ namespace NeoBuzz.Multiband
                 if (right - left > 60 && Math.Abs(change) >= 0.05) text += (change > 0 ? "  −" : "  +") + Math.Abs(change).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " dB";
                 g.Text(text, (left + right) / 2, graph.Plot.Bottom - 15, 10, BandColors[b], true, NeoAlign.Center);
             }
-            string mode = values.Choice(P.Phase) == 0 ? $"Linear phase · {MultibandDesign.LinearLatency(rate) * 1000.0 / rate:0} ms latency" : "Minimum phase · no latency";
+            int phaseMode = values.Choice(P.Phase), lookSamples = (int)Math.Round(values.Value(P.Lookahead) * 0.001 * rate);
+            double latencyMs = ((phaseMode == 0 ? MultibandDesign.LinearLatency(rate) : 0) + lookSamples) * 1000.0 / rate;
+            string mode = (phaseMode == 0 ? "Linear phase" : phaseMode == 1 ? "Minimum phase" : "Dynamic phase") +
+                          (latencyMs < 0.05 ? " · no latency" : $" · {latencyMs:0} ms latency");
             if (values.Choice(P.Stereo) == 1) mode += " · mid/side";
             if (anySolo) mode += " · solo";
             g.Text(mode, graph.Plot.Right - 4, graph.Plot.Top + 16, 9.5, Palette.DimText, align: NeoAlign.Right);

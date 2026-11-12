@@ -69,8 +69,8 @@ namespace ReBuzz.AgentTests
             ["arrangement_get"] = new[] { "from", "to" },
             ["arrangement_place"] = new[] { "machine", "pattern", "at", "repeat_every_beats", "times" },
             ["arrangement_clear"] = new[] { "machine", "from", "to" },
-            ["render"] = new[] { "from", "to", "range", "section", "tail_seconds", "solo", "mute", "probes", "name", "bits", "dither", "cpu", "cpu_window_seconds" },
-            ["analyze"] = new[] { "source", "metrics", "from_seconds", "to_seconds", "target" },
+            ["render"] = new[] { "from", "to", "range", "section", "tail_seconds", "solo", "mute", "probes", "name", "bits", "dither", "cpu", "cpu_window_seconds", "opus_kbps" },
+            ["analyze"] = new[] { "source", "metrics", "from_seconds", "to_seconds", "target", "opus_kbps" },
             // A2 (main: ReBuzz/Agent/AnalysisTools.cs, StateTools.cs, WaveTools.cs)
             ["analyze_mix"] = new[] { "from", "to", "section", "machines" },
             ["compare"] = new[] { "a", "b", "from_seconds", "to_seconds" },

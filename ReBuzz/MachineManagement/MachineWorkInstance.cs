@@ -332,9 +332,14 @@ namespace ReBuzz.MachineManagement
                     }
                 }
 
+                // Fork (mastering-tools.md §4.1): a one-output effect with latency keeps it bypassed: input 0 is the dry.
+                bool multiBypass = bypassLatent && multiSamplesIn.Count > 0 && multiSamplesIn[0] != null && multiSamplesOut.Count == 1;
+                if (multiBypass) Machine.BypassCapture(multiSamplesIn[0], nSamples);
+
                 isActive = machineHost.MultiWork(multiSamplesOut, multiSamplesIn, nSamples, WorkModes.WM_WRITE);
                 // Fork (machine-safety.md §3.2): the guard, before the output reaches any input.
                 if (!MachineGuard.Check(Machine, multiSamplesOut, nSamples)) isActive = false;
+                if (multiBypass && multiSamplesOut[0] != null) Machine.BypassMix(multiSamplesOut[0], nSamples);
                 Machine.UpdateOutputs(multiSamplesOut, nSamples);
 
                 // For muted machines, call Work() but send empty buffer
