@@ -23,7 +23,9 @@
 //    envelope moving the cutoff, the cutoff moved every buffer and the type switched now and then):
 //    0 bytes a buffer, with each work algorithm; it is in the first play's chain too;
 //  - a pattern through a Neo Clipper (three bands, mid/side, its drive moved every buffer, Delta switched) and a Neo
-//    Limiter with every v2 stage (its soft clip switched, so its latency moves): 0 bytes a buffer, each algorithm.
+//    Limiter with every v2 stage (its soft clip switched, so its latency moves): 0 bytes a buffer, each algorithm;
+//  - a pattern through a Neo Transient (mid/side, Impact mode now and then, its gains moved every buffer) and a Neo Low End
+//    (every control working, the phase mode switched now and then, so its latency moves): 0 bytes a buffer, each algorithm.
 // The tests build in Debug, where the JIT doesn't optimize: no allocation here is one that only an
 // optimizing compiler (tier 1) would remove.
 
@@ -850,6 +852,59 @@ namespace ReBuzz.Studio.Tests
             song.ConnectMachines(source, fx, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
             song.ConnectMachines(fx, to, new[] { 0 }, new[] { 0 }, 0x4000, 0x4000);
             return fx;
+        }
+
+        [AvaloniaTest]
+        public void ANeoTransientAndANeoLowEndWithEveryControlAllocateNothing()
+        {
+            // mastering-tools.md §5.4, §5.5: a pattern through Neo Transient (mid/side, Attack and Sustain moved every buffer,
+            // Impact mode switched now and then) and Neo Low End (every control working, its punch moved every buffer, its
+            // phase mode switched now and then: the engine's latency moves through its crossfade).
+            NewSong();
+            var m = AddPoly("Hygiene Shaper Poly");
+            m.CreatePattern("00", 16);
+            var pattern = (PatternCore)m.Patterns.First();
+            Core.SessionLayout.EditNotes(pattern, null, Enumerable.Range(0, 16).Select(i => new ClipNote(i * TB, TB / 2, 36 + (i * 5) % 24, 100)).ToArray());
+            Arrange(m, pattern);
+            var transient = InsertAfter(m, "Neo Transient", "Hygiene Transient");
+            var lowEnd = InsertAfter(transient, "Neo Low End", "Hygiene Low End");
+            var tg = transient.ParameterGroupsList[1].ParametersList;
+            tg.First(p => p.Name == "Stereo").SetValue(0, 1);
+            tg.First(p => p.Name == "Impact 1").SetValue(0, 800);
+            tg.First(p => p.Name == "Impact 3").SetValue(0, 200);
+            var attack = tg.First(p => p.Name == "Attack");
+            var mode = tg.First(p => p.Name == "Mode");
+            var lg = lowEnd.ParameterGroupsList[1].ParametersList;
+            lg.First(p => p.Name == "Sustain").SetValue(0, 100);
+            lg.First(p => p.Name == "Contrast").SetValue(0, 800);
+            lg.First(p => p.Name == "Balance").SetValue(0, 500);
+            lg.First(p => p.Name == "Peak control").SetValue(0, 1);
+            lg.First(p => p.Name == "Mono").SetValue(0, 1);
+            var punch = lg.First(p => p.Name == "Punch");
+            var phase = lg.First(p => p.Name == "Phase");
+            try
+            {
+                int n = 0;
+                foreach (int algorithm in new[] { 0, 1, 2 })
+                {
+                    using var audio = new AudioThread(algorithm);
+                    lock (ReBuzzCore.AudioLock) Core.Playing = true;
+                    var cost = Steady(audio, perBuffer: () =>
+                    {
+                        attack.SetValue(1 << 16, 120 + (n % 40) * 3);
+                        punch.SetValue(1 << 16, 130 + (n % 30) * 3);
+                        if (++n % 120 == 0) mode.SetValue(1 << 16, (n / 120) % 2);
+                        if (n % 200 == 0) phase.SetValue(1 << 16, (n / 200) % 2);
+                    });
+                    AssertNoAllocation(cost, $"a pattern through a Neo Transient and a Neo Low End with every control (algorithm {algorithm})");
+                    lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                }
+            }
+            finally
+            {
+                lock (ReBuzzCore.AudioLock) Core.Playing = false;
+                NewSong();
+            }
         }
 
         [AvaloniaTest]
