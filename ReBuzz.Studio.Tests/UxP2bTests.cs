@@ -109,9 +109,9 @@ namespace ReBuzz.Studio.Tests
                 var frame = Capture(window);
                 var area = ContentArea(window, view);
                 // Dark: the track area is the view surface, the ruler and the pattern list the panel's (measured, not seen).
-                var tracks = view.Canvas.TranslatePoint(new Point(SequenceGeometry.HeaderWidth + 400, SequenceGeometry.RulerHeight + 300), window)!.Value;
+                var tracks = view.Canvas.TranslatePoint(new Point(SequenceGeometry.HeaderWidth + 400, SequenceGeometry.RulerHeight + 200), window)!.Value;
                 Assert.That(frame.At((int)tracks.X, (int)tracks.Y), Is.EqualTo(StudioTokens.SurfaceView), "the track area");
-                var ruler = view.Canvas.TranslatePoint(new Point(SequenceGeometry.HeaderWidth + 700, 2), window)!.Value;
+                var ruler = view.Canvas.TranslatePoint(new Point(SequenceGeometry.HeaderWidth + 600, 2), window)!.Value;
                 Assert.That(frame.At((int)ruler.X, (int)ruler.Y), Is.EqualTo(StudioTokens.SurfacePanel), "the ruler");
                 var list = view.PatternList.TranslatePoint(new Point(40, 200), window)!.Value;
                 Assert.That(frame.At((int)list.X, (int)list.Y), Is.EqualTo(StudioTokens.SurfacePanel), "the pattern list");
@@ -162,7 +162,7 @@ namespace ReBuzz.Studio.Tests
                 window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == "Sequence").IsSelected = true;
                 var sequence = (SequenceView)window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == "Sequence").Content!;
                 frame = Capture(window);
-                var ruler = sequence.Canvas.TranslatePoint(new Point(SequenceGeometry.HeaderWidth + 700, 2), window)!.Value;
+                var ruler = sequence.Canvas.TranslatePoint(new Point(SequenceGeometry.HeaderWidth + 600, 2), window)!.Value;
                 Assert.That(frame.At((int)ruler.X, (int)ruler.Y), Is.EqualTo(Color.Parse("#BBAA99")), "Buzz's ruler");
                 var list = sequence.PatternList.TranslatePoint(new Point(40, 200), window)!.Value;
                 Assert.That(frame.At((int)list.X, (int)list.Y), Is.EqualTo(Color.Parse("#F7F7F3")), "Buzz's pattern list");

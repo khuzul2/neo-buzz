@@ -50,6 +50,12 @@ namespace ReBuzz.Studio.Tests
 
             public Avalonia.Controls.Control Show(string tab)
             {
+                if (tab == "Pattern")
+                {
+                    Window.ShowView("Pattern");         // the Tracker: the detail panel's page (P3a)
+                    Settle();
+                    return Window.Detail.Page;
+                }
                 var item = Window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == tab);
                 item.IsSelected = true;
                 Settle();

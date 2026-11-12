@@ -52,6 +52,12 @@ namespace ReBuzz.Studio.Tests
 
             public Avalonia.Controls.Control Show(string tab)
             {
+                if (tab == "Pattern")
+                {
+                    Window.ShowView("Pattern");         // the Tracker: the detail panel's page (P3a)
+                    Settle();
+                    return Window.Detail.Page;
+                }
                 var item = Window.Tabs.Items.Cast<TabItem>().Single(t => (string)t.Header == tab);
                 item.IsSelected = true;
                 Settle();
@@ -128,7 +134,7 @@ namespace ReBuzz.Studio.Tests
             Assert.That(panel.Facts.Single(f => f.Label == "Length").Value, Does.StartWith("16 ticks"));
             Assert.That(panel.PatternButton.IsVisible, Is.True);
             rig.Click(panel.PatternButton);
-            Assert.That(((TabItem)rig.Window.Tabs.SelectedItem!).Header, Is.EqualTo("Pattern"));
+            Assert.That(rig.Window.Detail.IsOpen, Is.True, "the Tracker opens");
             Assert.That(rig.Selection.Pattern, Is.SameAs(rig.Beat), "the selection stays");
         }
 

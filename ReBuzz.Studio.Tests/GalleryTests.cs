@@ -478,7 +478,9 @@ namespace ReBuzz.Studio.Tests
                     $"Start {Product.Name} (or File ▸ New, ⌘N).", song: "none (new song)", notes: Headless));
                 Try("011-start-sequence-empty", () => { window.ShowView("Sequence"); Shot(window, "011-start-sequence-empty", "The Sequence tab on a new song: no tracks yet.", "F4, or the Sequence tab.", song: "none (new song)"); });
                 Try("012-start-session-empty", () => { window.ShowView("Session"); Shot(window, "012-start-session-empty", "The Session tab on a new song: an empty launch grid with its toolbar and mixer.", "Ctrl+Tab, or the Session tab.", song: "none (new song)"); });
-                Try("013-start-pattern-empty", () => { window.ShowView("Pattern"); Shot(window, "013-start-pattern-empty", "The Pattern tab on a new song: no machine with patterns yet.", "F2, or the Pattern tab.", song: "none (new song)"); });
+                Try("013-start-pattern-empty", () => { window.ShowView("Pattern"); Shot(window, "013-start-pattern-empty", "The Tracker docked in the detail panel on a new song: no machine with patterns yet (P3a).", "Cmd+4, Alt+Cmd+D, or the Tracker button under the view.", song: "none (new song)"); });
+                Try("015-start-tracker-maximised", () => { window.Detail.Show(true); Shot(window, "015-start-tracker-maximised", "The Tracker maximised over the window (P3a).", "F2, Shift+Cmd+F, or the button in the detail bar.", song: "none (new song)"); });
+                Try("016-start-browser", () => { window.Detail.Close(); window.ShowView("Machines"); window.Browser.Open(); Shot(window, "016-start-browser", "The browser on the left (P3a): a search box over the installed machines, the patterns of the selection first.", "Alt+Cmd+B, or the rail's button.", song: "none (new song)"); window.Browser.Close(); });
                 Try("014-start-notes-empty", () => { window.ShowView("Song Notes"); Shot(window, "014-start-notes-empty", "The Song Notes tab on a new song: the empty notes editor and its toolbar.", "F10, or the Song Notes tab.", song: "none (new song)"); });
             }
             finally
@@ -611,12 +613,13 @@ namespace ReBuzz.Studio.Tests
                 Core.SongCore.PlayPosition = 0;
                 Try("050-pattern", () =>
                 {
+                    window.Detail.Show(true);       // the Tracker over the window, as the tab was
                     PatternView.Edit(demo.LineA);
                     window.ShowView("Pattern");
                     Wait(200);
                     ToNotes(window);
                     Shot(window, "050-pattern", "Pattern: Bass's Line A in the Modern Pattern Editor (machine and pattern choosers, toolbar, the global columns, the notes on the MIDI note lanes on the right).",
-                        "F2, or the Pattern tab; or double-click a pattern in the Sequence View.");
+                        "F2 (the Tracker over the window), or double-click a pattern in the Sequence View.");
                 });
                 Try("051-pattern-drums", () =>
                 {
@@ -686,6 +689,7 @@ namespace ReBuzz.Studio.Tests
 
                 Try("060-song-notes", () =>
                 {
+                    window.Detail.Restore();
                     window.ShowView("Song Notes");
                     Shot(window, "060-song-notes", "Song Notes: the demo song's notes (Markdown: headings, a list, bold), with the formatting toolbar.", "F10, or the Song Notes tab.");
                 });

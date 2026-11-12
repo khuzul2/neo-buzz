@@ -133,17 +133,25 @@ namespace ReBuzz.Studio.Tests
             window.Show();
             Settle();
             var tabs = window.Tabs.Items.Cast<TabItem>().ToList();
-            Assert.That(tabs.Select(t => t.Header), Is.EqualTo(new[] { "Sequence", "Session", "Machines", "Pattern" }));
+            Assert.That(tabs.Select(t => t.Header), Is.EqualTo(new[] { "Sequence", "Session", "Machines" }));
             if (showEveryTab)
                 foreach (var tab in tabs)
                 {
                     tab.IsSelected = true;
                     Settle();
                 }
+            if (showEveryTab)
+            {
+                window.ShowView("Pattern");     // the Tracker, in the detail panel
+                window.Browser.Open();
+                Settle();
+            }
             window.Tabs.SelectedIndex = 0;
             Settle();
             var views = tabs.ToDictionary(t => (string)t.Header, t => new System.WeakReference<object>(t.Content));
             views["Inspector"] = new System.WeakReference<object>(window.Inspector);       // P3a: with Song Notes and the clip panel in it
+            views["Tracker"] = new System.WeakReference<object>(window.Detail.Page);
+            views["Browser"] = new System.WeakReference<object>(window.Browser);
             views["Song Notes"] = new System.WeakReference<object>(window.Inspector.SongNotes);
             window.Close();
             Settle();

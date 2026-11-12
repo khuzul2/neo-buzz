@@ -221,7 +221,7 @@ namespace ReBuzz.Studio.Tests
                 var cmd = MainWindow.CommandModifiers;
                 window.ShowView("Pattern");
                 Settle();
-                var page = (Avalonia.Controls.Control)((TabItem)window.Tabs.SelectedItem!).Content!;
+                var page = window.Detail.Page;
                 var inside = page.GetVisualDescendants().OfType<InputElement>().First(c => c.Focusable && c.IsEffectivelyVisible);
                 inside.Focus();
                 Settle();
@@ -235,6 +235,8 @@ namespace ReBuzz.Studio.Tests
                 }
                 Assert.That(window.EditorKeepsKey(new KeyGesture(Key.D, cmd)), Is.False, "⌘D isn't the tracker's");
                 window.ShowView("Machines");
+                Settle();
+                ((ReBuzz.Studio.Views.Machines.MachineView)window.Tabs.SelectedContent!).Canvas.Focus();     // the keyboard is where the user clicked
                 Settle();
                 Assert.That(window.EditorKeepsKey(new KeyGesture(Key.R, cmd)), Is.False, "elsewhere ⌘R renames");
             }

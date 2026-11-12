@@ -249,10 +249,21 @@ namespace ReBuzz.Studio.Views
         }
 
         /// <summary>Brings the Pattern tab to the front and gives the editor the keyboard (ReBuzz: ActivatePatternEditor).</summary>
+        /// <summary>Shows the page: the window sets it to open the detail panel (P3a); without it the page is a tab's.</summary>
+        internal Action Reveal { get; set; }
+
+        /// <summary>The editor's Return key: to the arrangement; the window sets it, else the tab control's tab is used.</summary>
+        internal Action ShowSequence { get; set; }
+
         internal void Activate()
         {
-            var tab = this.FindLogicalAncestorOfType<TabItem>();
-            if (tab != null) tab.IsSelected = true;
+            // In the studio's window the Tracker is the detail panel's (Reveal opens it); elsewhere a tab.
+            if (Reveal != null) Reveal();
+            else
+            {
+                var tab = this.FindLogicalAncestorOfType<TabItem>();
+                if (tab != null) tab.IsSelected = true;
+            }
             Dispatcher.UIThread.Post(() =>
             {
                 if (pattern != null) core.ActivatePatternEditor();
@@ -311,6 +322,11 @@ namespace ReBuzz.Studio.Views
         void OnSequenceEditorActivated()
         {
             // The editor's Return key: to the sequence editor's tab, if the studio has one.
+            if (ShowSequence != null)
+            {
+                ShowSequence();
+                return;
+            }
             var tabs = this.FindLogicalAncestorOfType<TabControl>();
             var sequence = tabs?.Items.OfType<TabItem>().FirstOrDefault(t => t.Header as string == "Sequence");
             if (sequence != null) sequence.IsSelected = true;
