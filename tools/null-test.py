@@ -156,6 +156,11 @@ CASES = [
     gen("dye-comb-noise", "Dye Essence", "Texture — Comb Noise", [], KEYS),
     gen("dye-mirror-bell", "Dye Essence", "Pluck — Mirror Bell", [], BELLS),
     gen("dye-squeeze-high", "Dye Essence", "FX — Squeeze Sweep", [], [n("A2", 0, 3.5)]),
+    # Neo Learn L0: the Subtractive pilot (one Dye Essence patch behind 12 controls), four presets and the init.
+    gen("learn-sub-init", "Neo Learn Subtractive", None, [], CHORDS),
+    gen("learn-sub-pluck-bass", "Neo Learn Subtractive", "Bass — Sub Pluck", [], BASS),
+    gen("learn-sub-wide-pad", "Neo Learn Subtractive", "Pad — Unison Wash", [], CHORDS),
+    gen("learn-sub-morph-lead", "Neo Learn Subtractive", "Lead — Pulse Morph", [], LEAD),
     # Dye Essence P2: the Sample engine (looped, eight-voice unison, one-shot, reversed, two slots) and the
     # Granular engine (frozen, scanning, a spray of pitched grains with reversed ones); the grain clouds and
     # the sample recipes are built from the portable maths, so every platform renders the same.

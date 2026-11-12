@@ -7,6 +7,7 @@
 // active_voices.
 
 using System;
+using System.Threading;
 using System.Collections.Generic;
 using NeoBuzz.Dsp;
 using NeoBuzz.DyeEssence;
@@ -77,6 +78,19 @@ namespace NeoBuzz.Learn
         }
 
         /// <summary>One block: Dye's controls follow the machine's when one changed, the engine plays, then Output.</summary>
+        /// <summary>The picture's scope: the last ScopeSize samples of the output (mono), a ring the audio thread writes.</summary>
+        public const int ScopeSize = 4096;
+        readonly float[] scope = new float[ScopeSize];
+        int scopeAt;
+
+        /// <summary>Copies the last <paramref name="dst"/>.Length samples (at most ScopeSize), oldest first; the UI thread's, racing the audio thread harmlessly.</summary>
+        public void CopyScope(float[] dst)
+        {
+            int n = Math.Min(dst.Length, ScopeSize);
+            int at = Volatile.Read(ref scopeAt);
+            for (int i = 0; i < n; i++) dst[i] = scope[(at - n + i) & (ScopeSize - 1)];
+        }
+
         public bool Process(float[] left, float[] right, int n)
         {
             if (controls.AnyDirty)
@@ -101,6 +115,8 @@ namespace NeoBuzz.Learn
                 float a = MathF.Max(MathF.Abs(l), MathF.Abs(r));
                 if (a > peak) peak = a;
                 sum += 0.5 * ((double)l * l + (double)r * r);
+                scope[scopeAt] = 0.5f * (l + r);
+                scopeAt = (scopeAt + 1) & (ScopeSize - 1);
             }
             gain = target;
             meter.Feed(left, right, n);

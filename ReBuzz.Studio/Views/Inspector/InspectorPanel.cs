@@ -410,6 +410,25 @@ namespace ReBuzz.Studio.Views.Inspector
             }
         }
 
+        // The editor's strip changes with the pointer, not with the selection: the card follows it (4 times a second, while the panel is shown).
+        DispatcherTimer explainTimer;
+
+        protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            base.OnAttachedToVisualTree(e);
+            explainTimer ??= new DispatcherTimer(TimeSpan.FromMilliseconds(250), DispatcherPriority.Background, (_, _) =>
+            {
+                if (open && !disposed) RefreshExplain(selection.Machine);
+            });
+            explainTimer.Start();
+        }
+
+        protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+        {
+            explainTimer?.Stop();
+            base.OnDetachedFromVisualTree(e);
+        }
+
         /// <summary>The Explain card: the control last focused in the machine's editor, as its strip shows it.</summary>
         void RefreshExplain(IMachine machine)
         {

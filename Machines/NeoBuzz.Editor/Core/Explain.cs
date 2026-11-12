@@ -47,6 +47,7 @@ namespace NeoBuzz.Editor
         int focus = -1, focus2 = -1;
         int hover = -1;
         int dragging = -1;
+        bool pictureDrag;
         long touchedAt = long.MinValue / 2;
         long automationAt = long.MinValue / 2;
         ExplainSource shown = ExplainSource.Manual;
@@ -132,12 +133,17 @@ namespace NeoBuzz.Editor
         {
             if (!Valid(x) || !Valid(y)) return;
             dragging = x;
+            pictureDrag = true;
             touchedAt = clock();
             last[x] = last[y] = ExplainSource.Manual;
             Show(x, y, ExplainSource.Manual);
         }
 
-        public void PictureDragEnd() => dragging = -1;
+        public void PictureDragEnd()
+        {
+            dragging = -1;
+            pictureDrag = false;
+        }
 
         /// <summary>
         /// A control's value was written. A hand edit (the editor's own) is Manual and shows at once; an agent's write
@@ -153,6 +159,8 @@ namespace NeoBuzz.Editor
             {
                 case ExplainSource.Manual:
                     touchedAt = now;
+                    // The picture's drag writes both its controls: the strip keeps naming both.
+                    if (pictureDrag && (index == focus || index == focus2)) return;
                     Show(index, -1, source);
                     break;
                 case ExplainSource.Agent:

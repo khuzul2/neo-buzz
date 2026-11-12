@@ -22,6 +22,7 @@ This project adds a family of machines, **Neo**, built on one shared DSP library
 | Neo Comp | effect | Compressor: clean VCA, glue bus, FET and opto, with sidechain filter, lookahead and mix |
 | Neo Verb | effect | Algorithmic reverb: hall, room, chamber and plate, modulated, with freeze and shimmer |
 | Neo Poly | generator | Polyphonic virtual analog: 3 oscillators with sync, FM and ring, 2 filters, mod matrix |
+| Neo Learn Subtractive | generator | Teaching synth (box name Learn Sub): one Dye Essence patch behind 12 controls (wave morph, sub, 24 dB ladder low-pass, drive, ADSR, unison, output) with an Explain strip |
 | Neo Wave | generator | Wavetable synth: 2 morphing oscillators with warp modes, table import, mod matrix |
 | Neo FM6 | generator | 6-operator FM: the 32 DX7 algorithms, DX7 envelopes, DX7 SysEx import |
 

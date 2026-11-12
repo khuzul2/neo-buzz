@@ -70,6 +70,19 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void TheHandEditsOfAPictureDragKeepNamingBothControls()
+        {
+            var e = Make();
+            e.PictureDrag(0, 1);
+            e.Written(0, ExplainSource.Manual);
+            e.Written(1, ExplainSource.Manual);
+            Assert.That(e.Current.Name, Is.EqualTo("Cutoff + Resonance"), "the writes the drag makes do not narrow the strip to one");
+            e.PictureDragEnd();
+            e.Written(1, ExplainSource.Manual);
+            Assert.That(e.Current.Name, Is.EqualTo("Resonance"), "after the drag a write names its control");
+        }
+
+        [Test]
         public void AnAgentWriteShowsAtOnceWithTheAgentBadge()
         {
             var e = Make();
