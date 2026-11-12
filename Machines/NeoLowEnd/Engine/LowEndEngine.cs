@@ -545,7 +545,7 @@ namespace NeoBuzz.LowEnd
         double pubCrestIn, pubCrestOut, pubBalance = double.NaN, pubBalanceGain, pubClip, pubMatch = double.NaN;
 
         static double Crest(float peak, double power, long count) =>
-            count > 0 && power > 1e-20 && peak > 0 ? 20 * Math.Log10(peak / Math.Sqrt(power / count)) : double.NaN;
+            count > 0 && power > 1e-20 && peak > 0 ? 20 * PortableMath.Log10(peak / Math.Sqrt(power / count)) : double.NaN;
 
         void PublishReadings()
         {
