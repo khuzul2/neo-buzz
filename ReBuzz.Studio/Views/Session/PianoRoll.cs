@@ -123,7 +123,15 @@ namespace ReBuzz.Studio.Views.Session
 
         int BeatTime => Math.Max(1, buzz.TPB) * ClipNotes.TimeBase;
 
-        int BarTime => BeatTime * Math.Max(1, session.BeatsPerBar);
+        /// <summary>
+        /// Fork (ux-overhaul.md P3b2): the bar's length in ticks when the host knows the song's (the docked roll takes the
+        /// bar of the song's list where its pattern lies); 0: the Session View's beats a bar.
+        /// </summary>
+        public int BarTicks { get; set; }
+
+        internal int BarTime => BarTicks > 0 ? BarTicks * ClipNotes.TimeBase : BeatTime * Math.Max(1, session.BeatsPerBar);
+
+        internal int BeatLength => BeatTime;
 
         // ------------------------------------------------------------------ geometry
 
@@ -131,7 +139,7 @@ namespace ReBuzz.Studio.Views.Session
 
         internal double Y(int note) => (127 - note) * RowHeight;
 
-        int TimeAt(double x) => (int)Math.Round(Math.Max(0, x - KeysWidth) / TickWidth * ClipNotes.TimeBase);
+        internal int TimeAt(double x) => (int)Math.Round(Math.Max(0, x - KeysWidth) / TickWidth * ClipNotes.TimeBase);
 
         int NoteAt(double y) => Math.Clamp(127 - (int)Math.Floor(y / RowHeight), 0, 127);
 
@@ -210,6 +218,86 @@ namespace ReBuzz.Studio.Views.Session
             if (copies.Count > 0) Commit(Array.Empty<ClipNote>(), copies);
         }
 
+        // ---- Fork (P3b2): the clipboard of notes. One per app, so a copy can be pasted in another pattern; the notes keep their pitch
+        // and their distances in time (the first one at the paste time).
+
+        static List<ClipNote> clipboard = new List<ClipNote>();
+
+        /// <summary>The notes the last Copy or Cut took, the first at time 0 (tests).</summary>
+        internal static IReadOnlyList<ClipNote> Clipboard => clipboard;
+
+        internal static void ClearClipboard() => clipboard = new List<ClipNote>();
+
+        /// <summary>Where the keyboard's paste goes when the pointer is elsewhere: the last click on the roll or its ruler.</summary>
+        public int InsertTime { get; set; }
+
+        /// <summary>Where the pointer is over the grid (pattern time), or -1.</summary>
+        int hoverTime = -1;
+
+        /// <summary>The pattern time the roll plays now (the host sets it), or -1: pasting goes there while it plays.</summary>
+        public int PlayheadTime { get; set; } = -1;
+
+        /// <summary>Copies the selected notes to the clipboard; false when none is selected.</summary>
+        internal bool CopySelected()
+        {
+            var from = SelectedNotes();
+            if (from.Count == 0) return false;
+            int start = from.Min(n => n.Time);
+            clipboard = from.Select(n => n with { Time = n.Time - start }).ToList();
+            return true;
+        }
+
+        /// <summary>Copies the selected notes and deletes them (one undo step).</summary>
+        internal bool CutSelected()
+        {
+            if (!CopySelected()) return false;
+            DeleteSelected();
+            return true;
+        }
+
+        /// <summary>
+        /// Where a paste lands: under the pointer when it is over the grid, else at the playhead while the pattern plays, else at the
+        /// last click; on the grid.
+        /// </summary>
+        internal int PasteTime()
+        {
+            int t = hoverTime >= 0 ? hoverTime : PlayheadTime >= 0 ? PlayheadTime : InsertTime;
+            int grid = Math.Max(1, Grid);
+            return Math.Max(0, (int)Math.Round(t / (double)grid) * grid);
+        }
+
+        /// <summary>Pastes the clipboard at <paramref name="at"/> (else <see cref="PasteTime"/>); the new notes are selected. One undo step.</summary>
+        internal bool Paste(int? at = null)
+        {
+            if (clipboard.Count == 0) return false;
+            int time = at ?? PasteTime();
+            var added = clipboard.Select(n => n with { Time = n.Time + time }).Where(n => n.Time < Length).ToList();
+            if (added.Count == 0) return false;
+            added = added.Select(n => n.End > Length ? n with { Duration = Math.Max(1, Length - n.Time) } : n).ToList();
+            Commit(Array.Empty<ClipNote>(), added);
+            return Refusal == null;
+        }
+
+        /// <summary>Writes notes for others (the velocity lane): the one edit of a gesture, on the source's undo history.</summary>
+        internal void ApplyEdit(IReadOnlyList<ClipNote> removed, IReadOnlyList<ClipNote> added) => Commit(removed, added);
+
+        /// <summary>Selects exactly these notes by index (the velocity lane's click).</summary>
+        internal void SelectOnly(IEnumerable<int> indexes)
+        {
+            selected.Clear();
+            foreach (int i in indexes) if (i >= 0 && i < notes.Count) selected.Add(i);
+            InvalidateVisual();
+            Changed?.Invoke();
+        }
+
+        internal void ToggleSelect(int index)
+        {
+            if (index < 0 || index >= notes.Count) return;
+            if (!selected.Remove(index)) selected.Add(index);
+            InvalidateVisual();
+            Changed?.Invoke();
+        }
+
         /// <summary>Selects nothing.</summary>
         internal void DeselectAll()
         {
@@ -269,8 +357,8 @@ namespace ReBuzz.Studio.Views.Session
         static readonly IBrush BlackKeyRow = SessionPalette.Make("#19191C");
         static readonly IBrush WhiteKey = SessionPalette.Make("#D9D9DE");
         static readonly IBrush BlackKey = SessionPalette.Make("#2A2A30");
-        static readonly IBrush NoteFill = SessionPalette.Make("#E0457B");
-        static readonly IBrush NoteSelected = SessionPalette.Make("#F0C24B");
+        internal static readonly IBrush NoteFill = SessionPalette.Make("#E0457B");
+        internal static readonly IBrush NoteSelected = SessionPalette.Make("#F0C24B");
         static readonly IBrush OutOfClip = SessionPalette.Make("#141417");
         static readonly IPen RowLine = new ImmutablePen(Color.Parse("#26262B").ToUInt32(), 1);
         static readonly IPen TickLine = new ImmutablePen(Color.Parse("#24242A").ToUInt32(), 1);
@@ -393,6 +481,7 @@ namespace ReBuzz.Studio.Views.Session
             var p = e.GetPosition(this);
             down = p;
             downTime = TimeAt(p.X);
+            if (p.X >= KeysLeft + KeysWidth) InsertTime = Math.Min(downTime, Math.Max(0, Length - 1));
             downNote = NoteAt(p.Y);
             var mods = e.KeyModifiers;
             bool additive = Additive(mods);
@@ -467,6 +556,7 @@ namespace ReBuzz.Studio.Views.Session
             base.OnPointerMoved(e);
             var p = e.GetPosition(this);
             var mods = e.KeyModifiers;
+            hoverTime = p.X >= KeysLeft + KeysWidth ? TimeAt(p.X) : -1;
             if (drag == Drag.None)
             {
                 int hit = p.X >= KeysLeft + KeysWidth ? ClipNotes.HitTest(notes, TimeAt(p.X), NoteAt(p.Y)) : -1;
@@ -523,6 +613,12 @@ namespace ReBuzz.Studio.Views.Session
             if (e.InitialPressMouseButton != MouseButton.Left) return;
             EndDrag(commit: true);
             e.Handled = true;
+        }
+
+        protected override void OnPointerExited(PointerEventArgs e)
+        {
+            base.OnPointerExited(e);
+            hoverTime = -1;
         }
 
         protected override void OnPointerCaptureLost(PointerCaptureLostEventArgs e)
@@ -606,6 +702,15 @@ namespace ReBuzz.Studio.Views.Session
                     break;
                 case Key.Q:
                     Quantize();
+                    break;
+                case Key.X when mods == KeyModifiers.Control:
+                    CutSelected();
+                    break;
+                case Key.C when mods == KeyModifiers.Control:
+                    CopySelected();
+                    break;
+                case Key.V when mods == KeyModifiers.Control:
+                    Paste();
                     break;
                 case Key.Z when mods == KeyModifiers.Control:
                     Source.Undo();
