@@ -27255,10 +27255,261 @@
    "generated": true,
    "health": "warn"
   },
+  "Neo Learn Additive": {
+   "gear": "Neo Learn Additive",
+   "kind": "generator",
+   "load_seconds": 0.72,
+   "gear_info": {
+    "file": "Generators/Neo Learn Additive.NET.dll",
+    "managed": true,
+    "min_tracks": 1,
+    "max_tracks": 16,
+    "note_parameter": "Note",
+    "takes_midi": true
+   },
+   "parameters": 12,
+   "track_parameters": 0,
+   "inferred": 11,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 12,
+    "of": 12
+   },
+   "notes": {
+    "input": "midi",
+    "pitched": true,
+    "pitch_offset": 0,
+    "cents": 0.0,
+    "heard": {
+     "A4": 69.0,
+     "A3": 57.0,
+     "A5": 81.0
+    },
+    "polyphony": 8,
+    "polyphony_levels": {
+     "1": -27.8,
+     "2": -24.6,
+     "4": -21.2,
+     "8": -18.5
+    }
+   },
+   "level": {
+    "note": "A4 at velocity 100, 1.5 beats",
+    "integrated_lufs": -27.3,
+    "sample_peak_dbfs": -20.1,
+    "true_peak_dbtp": -19.9
+   },
+   "cpu_ms_per_s": 0.0,
+   "type": "polysynth",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -20.1,
+     "growth_db": 0.0,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -56.2,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 1.83,
+      "growth_db": -0.02,
+      "over_seconds": 30,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 25
+   },
+   "sweeps": {},
+   "envelope": {
+    "peak_db": -26.29,
+    "attack_s": 0.005,
+    "final_db": -3.24,
+    "half_s": 0.04,
+    "length_s": null,
+    "release_s": 0.17,
+    "release_past_window": false,
+    "bright_mid_hz": 1801.5,
+    "bright_early_hz": 1807.6,
+    "bright_late_hz": 1801.5,
+    "level_wobble_db": 0.135,
+    "bright_wobble": 0.017,
+    "note": "A4 at velocity 100, held 2 s"
+   },
+   "velocity": {
+    "range_db": 7.99,
+    "db_per_doubling": 2.68,
+    "curve": "gentle (less than linear)",
+    "levels_db": {
+     "16": -33.52,
+     "32": -31.98,
+     "64": -29.18,
+     "127": -25.53
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 15.518,
+    "silent_ms_per_s": 2.099,
+    "silent_worst_ms_per_s": 5.112,
+    "windows_ms_per_s": [
+     15.518,
+     5.112,
+     2.871,
+     2.468,
+     2.099,
+     2.061,
+     2.076,
+     2.164,
+     2.055,
+     1.995,
+     2.009
+    ]
+   },
+   "seconds": 8.6,
+   "platform": "linux",
+   "date": "2026-11-13",
+   "problems": [],
+   "warnings": [],
+   "hot": [
+    "hot with every parameter at its maximum at once (+1.8 dBFS peak over 30 s), but with no parameter alone"
+   ],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "warn"
+  },
+  "Neo Learn FM": {
+   "gear": "Neo Learn FM",
+   "kind": "generator",
+   "load_seconds": 0.54,
+   "gear_info": {
+    "file": "Generators/Neo Learn FM.NET.dll",
+    "managed": true,
+    "min_tracks": 1,
+    "max_tracks": 16,
+    "note_parameter": "Note",
+    "takes_midi": true
+   },
+   "parameters": 12,
+   "track_parameters": 0,
+   "inferred": 11,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 12,
+    "of": 12
+   },
+   "notes": {
+    "input": "midi",
+    "pitched": true,
+    "pitch_offset": 0,
+    "cents": 0.0,
+    "heard": {
+     "A4": 69.0,
+     "A3": 57.0,
+     "A5": 81.0
+    },
+    "polyphony": 8,
+    "polyphony_levels": {
+     "1": -28.6,
+     "2": -25.5,
+     "4": -22.3,
+     "8": -19.5
+    }
+   },
+   "level": {
+    "note": "A4 at velocity 100, 1.5 beats",
+    "integrated_lufs": -28.4,
+    "sample_peak_dbfs": -25.47,
+    "true_peak_dbtp": -25.46
+   },
+   "cpu_ms_per_s": 0.0,
+   "type": "polysynth",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -25.49,
+     "growth_db": 0.0,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -51.47,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 4.97,
+      "growth_db": -0.03,
+      "over_seconds": 30,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 26
+   },
+   "sweeps": {},
+   "envelope": {
+    "peak_db": -28.06,
+    "attack_s": 0.005,
+    "final_db": -1.73,
+    "length_s": null,
+    "release_s": 0.175,
+    "release_past_window": false,
+    "bright_mid_hz": 525.4,
+    "bright_early_hz": 779.1,
+    "bright_late_hz": 512.2,
+    "level_wobble_db": 0.116,
+    "bright_wobble": 0.015,
+    "note": "A4 at velocity 100, held 2 s"
+   },
+   "velocity": {
+    "range_db": 7.26,
+    "db_per_doubling": 2.43,
+    "curve": "gentle (less than linear)",
+    "levels_db": {
+     "16": -34.21,
+     "32": -32.55,
+     "64": -30.06,
+     "127": -26.95
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 17.595,
+    "silent_ms_per_s": 2.581,
+    "silent_worst_ms_per_s": 5.565,
+    "windows_ms_per_s": [
+     17.595,
+     5.565,
+     3.182,
+     2.871,
+     2.705,
+     1.922,
+     2.581,
+     1.926,
+     2.066,
+     1.916,
+     2.111
+    ]
+   },
+   "seconds": 8.8,
+   "platform": "linux",
+   "date": "2026-11-13",
+   "problems": [],
+   "warnings": [],
+   "hot": [
+    "hot with every parameter at its maximum at once (+5.0 dBFS peak over 30 s), but with no parameter alone"
+   ],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "warn"
+  },
   "Neo Learn Subtractive": {
    "gear": "Neo Learn Subtractive",
    "kind": "generator",
-   "load_seconds": 0.77,
+   "load_seconds": 0.55,
    "gear_info": {
     "file": "Generators/Neo Learn Subtractive.NET.dll",
     "managed": true,
@@ -27309,12 +27560,14 @@
     },
     "all_at_once": {
      "min": {
-      "error": "param_set: changes[4]: Env to Filter: raw -100 is outside 0…1000.",
-      "verdict": "error"
+      "peak_dbfs": null,
+      "verdict": "silent"
      },
      "max": {
-      "error": "param_set: changes[0]: Cutoff: raw 20000 is outside 0…1000.",
-      "verdict": "error"
+      "peak_dbfs": -9.75,
+      "growth_db": -0.22,
+      "over_seconds": 30,
+      "verdict": "ok"
      }
     }
    },
@@ -27345,32 +27598,158 @@
     }
    },
    "denormal": {
-    "playing_ms_per_s": 14.809,
-    "silent_ms_per_s": 2.516,
-    "silent_worst_ms_per_s": 5.088,
+    "playing_ms_per_s": 11.737,
+    "silent_ms_per_s": 2.035,
+    "silent_worst_ms_per_s": 4.155,
     "windows_ms_per_s": [
-     14.809,
-     5.088,
-     2.747,
-     2.542,
-     2.512,
-     2.514,
-     2.473,
-     2.526,
-     2.513,
-     2.502,
-     2.516
+     11.737,
+     4.155,
+     2.072,
+     2.114,
+     2.04,
+     1.976,
+     2.035,
+     1.967,
+     2.003,
+     2.033,
+     1.988
     ]
    },
-   "seconds": 32.9,
+   "seconds": 3.8,
    "platform": "linux",
-   "date": "2026-11-12",
+   "date": "2026-11-13",
    "problems": [],
    "warnings": [],
    "hot": [],
    "notes_profiler": [],
    "generated": true,
    "health": "ok"
+  },
+  "Neo Learn Wavetable": {
+   "gear": "Neo Learn Wavetable",
+   "kind": "generator",
+   "load_seconds": 0.8,
+   "gear_info": {
+    "file": "Generators/Neo Learn Wavetable.NET.dll",
+    "managed": true,
+    "min_tracks": 1,
+    "max_tracks": 16,
+    "note_parameter": "Note",
+    "takes_midi": true
+   },
+   "parameters": 12,
+   "track_parameters": 0,
+   "inferred": 12,
+   "from_description": 0,
+   "inference_check": {
+    "agree": 12,
+    "of": 12
+   },
+   "notes": {
+    "input": "midi",
+    "pitched": true,
+    "pitch_offset": 0,
+    "cents": 0.0,
+    "heard": {
+     "A4": 69.0,
+     "A3": 57.0,
+     "A5": 81.0
+    },
+    "polyphony": 8,
+    "polyphony_levels": {
+     "1": -28.1,
+     "2": -24.9,
+     "4": -21.4,
+     "8": -18.5
+    }
+   },
+   "level": {
+    "note": "A4 at velocity 100, 1.5 beats",
+    "integrated_lufs": -27.4,
+    "sample_peak_dbfs": -17.31,
+    "true_peak_dbtp": -17.07
+   },
+   "cpu_ms_per_s": 0.0,
+   "type": "polysynth",
+   "level_test": {
+    "defaults": {
+     "peak_dbfs": -17.31,
+     "growth_db": 0.0,
+     "verdict": "ok"
+    },
+    "all_at_once": {
+     "min": {
+      "peak_dbfs": -53.57,
+      "verdict": "ok"
+     },
+     "max": {
+      "peak_dbfs": 8.93,
+      "growth_db": 0.19,
+      "over_seconds": 30,
+      "verdict": "hot"
+     }
+    },
+    "swept_because": [
+     "every parameter at its maximum at once: hot"
+    ],
+    "renders": 26
+   },
+   "sweeps": {},
+   "envelope": {
+    "peak_db": -27.36,
+    "attack_s": 0.005,
+    "final_db": -3.3,
+    "half_s": 0.03,
+    "length_s": null,
+    "release_s": 0.175,
+    "release_past_window": false,
+    "bright_mid_hz": 3036.9,
+    "bright_early_hz": 3038.7,
+    "bright_late_hz": 3037.0,
+    "level_wobble_db": 0.12,
+    "bright_wobble": 0.008,
+    "note": "A4 at velocity 100, held 2 s"
+   },
+   "velocity": {
+    "range_db": 8.2,
+    "db_per_doubling": 2.79,
+    "curve": "gentle (less than linear)",
+    "levels_db": {
+     "16": -34.48,
+     "32": -33.25,
+     "64": -30.08,
+     "127": -26.28
+    }
+   },
+   "denormal": {
+    "playing_ms_per_s": 17.679,
+    "silent_ms_per_s": 2.142,
+    "silent_worst_ms_per_s": 5.624,
+    "windows_ms_per_s": [
+     17.679,
+     5.624,
+     2.075,
+     1.971,
+     2.027,
+     2.064,
+     2.142,
+     2.195,
+     2.086,
+     2.184,
+     2.268
+    ]
+   },
+   "seconds": 8.8,
+   "platform": "linux",
+   "date": "2026-11-13",
+   "problems": [],
+   "warnings": [],
+   "hot": [
+    "hot with every parameter at its maximum at once (+8.9 dBFS peak over 30 s), but with no parameter alone"
+   ],
+   "notes_profiler": [],
+   "generated": true,
+   "health": "warn"
   },
   "Neo Limiter": {
    "gear": "Neo Limiter",

@@ -51,6 +51,10 @@ namespace NeoBuzz.MachineTests
                 var host = new NeoBuzz.Learn.LearnHost(new NeoBuzz.Learn.SubtractiveMap(NeoBuzz.LearnSub.Params.Table), v);
                 return RenderSynth(host.Engine, (e, l, r, n) => host.Process(l, r, n), x.Length);
             }),
+            // docs/specs/neo-learn.md L1a: Neo Learn FM, Wavetable and Additive, the same way.
+            ["Neo Learn FM"] = (NeoBuzz.LearnFm.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.FmMap(NeoBuzz.LearnFm.Params.Table), v, x.Length)),
+            ["Neo Learn Wavetable"] = (NeoBuzz.LearnWt.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.WavetableMap(NeoBuzz.LearnWt.Params.Table), v, x.Length)),
+            ["Neo Learn Additive"] = (NeoBuzz.LearnAdd.Params.Table, (v, x) => RenderLearn(new NeoBuzz.Learn.AdditiveMap(NeoBuzz.LearnAdd.Params.Table), v, x.Length)),
             // mastering-tools.md §5.1: the clipper.
             ["Neo Clipper"] = (NeoBuzz.Clipper.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Clipper.ClipperEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             // mastering-tools.md §5.4, §5.5: the transient shaper and the low-end shaper.
@@ -66,6 +70,14 @@ namespace NeoBuzz.MachineTests
             ["Neo Dither"] = (NeoBuzz.Dither.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Dither.DitherEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
             ["Neo Strip"] = (NeoBuzz.Strip.Params.Table, (v, x) => RenderEffect(x, (l, r, n) => Fresh(v, () => { var e = new NeoBuzz.Strip.StripEngine(v); e.SetSampleRate(Measure.Rate); return e; }).Process(l, r, n))),
         };
+
+        /// <summary>A Neo Learn machine's factory preset: its host plays the chord (the built-in tables are built first).</summary>
+        static float[] RenderLearn(NeoBuzz.Learn.MacroMap map, ParamValues v, int length)
+        {
+            for (int i = 0; i < NeoBuzz.DyeEssence.TableBank.Count; i++) NeoBuzz.DyeEssence.TableBank.GetNow(i);
+            var host = new NeoBuzz.Learn.LearnHost(map, v);
+            return RenderSynth(host.Engine, (e, l, r, n) => host.Process(l, r, n), length);
+        }
 
         /// <summary>The Neo-family machine folders: Neo* and Dye Essence (docs/specs/dye-essence.md §2).</summary>
         internal static bool IsNeoFamily(string folder) => Path.GetFileName(folder).StartsWith("Neo") || Path.GetFileName(folder) == "DyeEssence";
@@ -83,7 +95,7 @@ namespace NeoBuzz.MachineTests
             return (T)e;
         }
 
-        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive" };
+        static readonly HashSet<string> Synths = new() { "Neo Poly", "Neo Wave", "Neo FM6", "Neo Sampler", "Neo Drums", "Dye Essence", "Neo Learn Subtractive", "Neo Learn FM", "Neo Learn Wavetable", "Neo Learn Additive" };
 
         /// <summary>
         /// Neo Sampler: the song's slots 1–16 hold the built-in drums and the sine (the presets that

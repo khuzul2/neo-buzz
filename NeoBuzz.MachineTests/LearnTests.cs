@@ -222,6 +222,8 @@ namespace NeoBuzz.MachineTests
         {
             public readonly Dictionary<int, double> Values = new();
             public void Set(int dyeParam, double value) => Values[dyeParam] = value;
+            public readonly Dictionary<(int Slot, SlotExt What), double> Exts = new();
+            public void Ext(int slot, SlotExt what, double value) => Exts[(slot, what)] = value;
         }
 
         static double[] Controls(int[] raw)

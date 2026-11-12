@@ -47,6 +47,7 @@ namespace NeoBuzz.Learn
             Read();
             map.Map(c, sink);
             Engine = new DyeEngine(dyeValues);
+            sink.Push(Engine);
             SetSampleRate(48000);
             gain = TargetGain();
             controls.Clean();
@@ -97,6 +98,7 @@ namespace NeoBuzz.Learn
             {
                 Read();
                 map.Map(c, sink);
+                sink.Push(Engine);
                 controls.Clean();
             }
             bool any = Engine.Process(left, right, n);
@@ -151,6 +153,10 @@ namespace NeoBuzz.Learn
         sealed class Sink : IDyeSink
         {
             readonly ParamValues values;
+            // The engine's additions a map writes (OscSettings; a map that never writes one leaves it off), pushed to the engine after each Map.
+            readonly float[] ext = new float[3 * ExtCount];
+            const int ExtCount = 6;
+            bool extUsed;
 
             public Sink(ParamValues values)
             {
@@ -158,6 +164,29 @@ namespace NeoBuzz.Learn
             }
 
             public void Set(int dyeParam, double value) => values.Set(dyeParam, values.Table[dyeParam].Raw(value));
+
+            public void Ext(int slot, SlotExt what, double value)
+            {
+                ext[slot * ExtCount + (int)what] = (float)value;
+                extUsed = true;
+            }
+
+            /// <summary>Writes the additions into the engine's settings (Dye's own settings code never touches them).</summary>
+            public void Push(DyeEngine engine)
+            {
+                if (!extUsed) return;
+                for (int o = 0; o < 3; o++)
+                {
+                    var os = engine.Bank.S.Osc[o];
+                    int b = o * ExtCount;
+                    os.ExactRatio = ext[b + (int)SlotExt.ExactRatio];
+                    os.Feedback = ext[b + (int)SlotExt.Feedback];
+                    os.Comb = ext[b + (int)SlotExt.Comb];
+                    os.CombPeriod = ext[b + (int)SlotExt.CombPeriod] > 0 ? ext[b + (int)SlotExt.CombPeriod] : 8f;
+                    os.Shimmer = ext[b + (int)SlotExt.Shimmer];
+                    os.Inharm = ext[b + (int)SlotExt.Inharm];
+                }
+            }
         }
     }
 }
