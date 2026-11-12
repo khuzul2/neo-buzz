@@ -268,6 +268,22 @@ namespace NeoBuzz.MachineTests
         }
 
         [Test]
+        public void ARestingBankGivesTheSameBitsInEveryBlockSize()
+        {
+            // A note, its release, then two seconds of silence: the bank rests after 100 ms, decided on the control grid.
+            ulong want = 0;
+            foreach (int block in new[] { 256, 64, 255, 117, 16, 1 })
+            {
+                var b = Harm();
+                b.NoteOn(0, 60, 1f);
+                var y = Render(b, 2 * Rate, block, p => { if (p == 6000) b.NoteOff(0); }, 6000);
+                ulong h = Hash(y);
+                if (want == 0) want = h;
+                Assert.That(h, Is.EqualTo(want), $"blocks of {block}");
+            }
+        }
+
+        [Test]
         public void BlockSizesGiveTheSameSamples()
         {
             ulong want = 0;

@@ -589,38 +589,31 @@ namespace NeoBuzz.DyeEssence
                 decL.Reset(); decR.Reset(); dec4L.Reset(); dec4R.Reset();
                 controlCounter = 0;
             }
-            if (idle)
-            {
-                bool wake = false;
-                for (int note = 0; note < Notes && !wake; note++) wake = Active(note);
-                if (!wake)
-                {
-                    // Resting (nothing has sounded for a while): only the grid's ticks run, for the
-                    // settings' glides, and the output is silence.
-                    for (int at = 0; at < n;)
-                    {
-                        if (controlCounter <= 0)
-                        {
-                            controlCounter = ControlRate;
-                            Tick();
-                        }
-                        int step = Math.Min(controlCounter, n - at);
-                        controlCounter -= step;
-                        at += step;
-                    }
-                    Array.Clear(left, 0, n);
-                    Array.Clear(right, 0, n);
-                    return false;
-                }
-                idle = false;
-            }
             int os = oversample;
-            Array.Clear(hiL, 0, os * n);
-            Array.Clear(hiR, 0, os * n);
-            bool any = false;
+            bool anyAtAll = false;
             int pos = 0;
             while (pos < n)
             {
+                if (idle)
+                {
+                    if (!Awake() && controlCounter <= 0)
+                    {
+                        controlCounter = ControlRate;
+                        Tick();
+                    }
+                    if (!Awake())
+                    {
+                        // Resting (nothing has sounded for a while): only the grid's ticks run, for the
+                        // settings' glides, and the output is silence.
+                        int step = Math.Min(controlCounter, n - pos);
+                        controlCounter -= step;
+                        Array.Clear(left, pos, step);
+                        Array.Clear(right, pos, step);
+                        pos += step;
+                        continue;
+                    }
+                    idle = false;
+                }
                 if (controlCounter <= 0)
                 {
                     controlCounter = ControlRate;
@@ -634,49 +627,71 @@ namespace NeoBuzz.DyeEssence
                         Control(note, os * controlCounter);
                     }
                 int m = Math.Min(controlCounter, n - pos);
-                any |= Render<TL, TF, TU>(os * pos, os * m);
+                Array.Clear(hiL, os * pos, os * m);
+                Array.Clear(hiR, os * pos, os * m);
+                bool any = Render<TL, TF, TU>(os * pos, os * m);
+                anyAtAll |= any;
+                // The decimators are sample-by-sample: a segment at a time gives the bits of the whole block.
+                if (os == 4)
+                {
+                    for (int i = 2 * pos; i < 2 * (pos + m); i++)
+                    {
+                        hiL[i] = dec4L.Down(hiL[2 * i], hiL[2 * i + 1]);
+                        hiR[i] = dec4R.Down(hiR[2 * i], hiR[2 * i + 1]);
+                    }
+                }
+                if (os >= 2)
+                {
+                    for (int i = pos; i < pos + m; i++)
+                    {
+                        left[i] = decL.Down(hiL[2 * i], hiL[2 * i + 1]);
+                        right[i] = decR.Down(hiR[2 * i], hiR[2 * i + 1]);
+                    }
+                }
+                else
+                {
+                    Array.Copy(hiL, pos, left, pos, m);
+                    Array.Copy(hiR, pos, right, pos, m);
+                }
                 controlCounter -= m;
                 pos += m;
-            }
-            if (os == 4)
-            {
-                for (int i = 0; i < 2 * n; i++)
+                quietSamples = any ? 0 : quietSamples + m;
+                // What follows is decided on the control grid only, never at a block's end, so the bits
+                // do not depend on the block size.
+                if (controlCounter == 0)
                 {
-                    hiL[i] = dec4L.Down(hiL[2 * i], hiL[2 * i + 1]);
-                    hiR[i] = dec4R.Down(hiR[2 * i], hiR[2 * i + 1]);
+                    if (os == 4)
+                    {
+                        dec4L.Flush();
+                        dec4R.Flush();
+                    }
+                    if (os >= 2)
+                    {
+                        decL.Flush();
+                        decR.Flush();
+                    }
+                    for (int f = 0; f < 2; f++)
+                    {
+                        var st = filterState[f];
+                        for (int i = 0; i < st.Length; i++) st[i] = DspMath.Flush(st[i]);
+                    }
+                    // After 100 ms with nothing sounding the decimators' tails are long gone: rest.
+                    if (quietSamples >= sampleRate / 10)
+                    {
+                        idle = true;
+                        quietSamples = 0;
+                        decL.Reset(); decR.Reset(); dec4L.Reset(); dec4R.Reset();
+                    }
                 }
-                dec4L.Flush();
-                dec4R.Flush();
             }
-            if (os >= 2)
-            {
-                for (int i = 0; i < n; i++)
-                {
-                    left[i] = decL.Down(hiL[2 * i], hiL[2 * i + 1]);
-                    right[i] = decR.Down(hiR[2 * i], hiR[2 * i + 1]);
-                }
-                decL.Flush();
-                decR.Flush();
-            }
-            else
-            {
-                Array.Copy(hiL, left, n);
-                Array.Copy(hiR, right, n);
-            }
-            for (int f = 0; f < 2; f++)
-            {
-                var st = filterState[f];
-                for (int i = 0; i < st.Length; i++) st[i] = DspMath.Flush(st[i]);
-            }
-            // After 100 ms with nothing sounding the decimators' tails are long gone: rest.
-            quietSamples = any ? 0 : quietSamples + n;
-            if (quietSamples >= sampleRate / 10)
-            {
-                idle = true;
-                quietSamples = 0;
-                decL.Reset(); decR.Reset(); dec4L.Reset(); dec4R.Reset();
-            }
-            return any;
+            return anyAtAll;
+        }
+
+        bool Awake()
+        {
+            for (int note = 0; note < Notes; note++)
+                if (Active(note)) return true;
+            return false;
         }
 
         /// <summary>At each tick of the grid: what the settings decide for every note, then each sounding note's values.</summary>

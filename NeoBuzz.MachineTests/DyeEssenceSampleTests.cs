@@ -452,7 +452,7 @@ namespace NeoBuzz.MachineTests
             for (int n = 0; n < 6; n++) b.NoteOn(n, 48 + 5 * n, 0.5f + 0.1f * n);
         }
 
-        const ulong PinnedMixedHash = 0xDECA57A337545E20UL;
+        const ulong PinnedMixedHash = 0xA0CDDDCDFADA4572UL;
 
         [Test]
         public void EveryLaneImplementationGivesTheSameBitsAndTheyAreThePinnedOnes()
@@ -462,7 +462,7 @@ namespace NeoBuzz.MachineTests
             {
                 var b = Mixed(kind);
                 Notes(b);
-                var y = Render(b, 24000, 256, p => { if (p == 12000) { b.NoteOff(1); b.NoteOn(7, 80, 1f); } });
+                var y = Render(b, 24000, 256, p => { if (p == 12000) { b.NoteOff(1); b.NoteOn(7, 80, 1f); } }, 12000);
                 ulong h = Hash(y);
                 Measure.Report($"Dye Essence samples + grains + wavetable, {kind}: 0x{h:X16}");
                 if (first == 0) first = h;

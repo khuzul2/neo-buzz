@@ -250,18 +250,11 @@ namespace NeoBuzz.MachineTests
                 return h;
             }
             var want = Render(256, LaneKind.Auto);
-            double worst = 0;
-            foreach (int block in new[] { 117, 16, 200 })
-            {
-                var y = Render(block, LaneKind.Auto);
-                for (int i = 0; i < y.Length; i++) worst = Math.Max(worst, Math.Abs(y[i] - want[i]));
-            }
-            // Notes land on the same samples; what may differ is the tail of a silent bank (it rests after 100 ms of silence, decided at
-            // a block's end), a few parts in 10^15 of full scale.
-            Assert.That(worst, Is.LessThan(1e-9), "blocks of 117, 16, 200");
+            foreach (int block in new[] { 117, 16, 200, 64, 255 })
+                Assert.That(Hash(Render(block, LaneKind.Auto)), Is.EqualTo(Hash(want)), $"blocks of {block}");
             Assert.That(Hash(Render(256, LaneKind.Scalar)), Is.EqualTo(Hash(want)), "scalar lanes");
             if (Avx2Lanes.Supported) Assert.That(Hash(Render(256, LaneKind.Avx2)), Is.EqualTo(Hash(want)), "AVX2 lanes");
-            Measure.Report($"Dye Essence arpeggiator (up-down, 1/8, swing 30%, 3 unison): 0x{Hash(want):X16}; blocks of 117, 16 and 200 differ by {Measure.Db(worst):F0} dBFS at most (the resting bank's tails); lane implementations equal");
+            Measure.Report($"Dye Essence arpeggiator (up-down, 1/8, swing 30%, 3 unison): 0x{Hash(want):X16}; blocks of 16, 64, 117, 200, 255 and 256 give the same bits; lane implementations equal");
         }
 
         static Action<ParamValues> Seq(int mode, int length = 16, int rate = 1, int seed = 0, int slew = 0, int swing = 0) => v =>

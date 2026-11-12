@@ -359,6 +359,7 @@ namespace NeoBuzz.DyeEssence
             if (driver.Seq == SeqMode.Off) { s.SeqStep = 0; s.SeqVel = 0; s.SeqTau = 0; }
         }
 
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveOptimization)]
         bool ProcessDriven(float[] left, float[] right, int n)
         {
             var tr = Transport;
