@@ -267,6 +267,11 @@ CASES = [
     # Neo Dither (§5.9, M5): TPDF at 16 bits, psychoacoustic shaping, 24 bits with the shaping switched by automation.
     fx("dither-16", "Neo Dither", "16 bit — TPDF (Standard)", []),
     fx("dither-16-shaped", "Neo Dither", "16 bit — TPDF, Psychoacoustic Shaping", [], auto=[("Bits", [(0, "16"), (2, "20")])]),
+    # Neo Strip (docs/specs/mastering-tools.md §5.10, M5b): the five stages together, the gate, a stage switched on and off in a pattern, Delta.
+    fx("strip-vocal", "Neo Strip", "Vocal — Up Front"),
+    fx("strip-spoken-gate", "Neo Strip", "Vocal — Spoken Word (Gate and Tidy)", [("Gate threshold", "-30 dB")]),
+    fx("strip-drums", "Neo Strip", "Drums — Punch Bus", auto=[("Drive on", [(1, "Off"), (2, "On")]), ("Delta", [(3, "On")])]),
+    fx("strip-master", "Neo Strip", "Master — Gentle Glue and Ceiling"),
     # Neo Verb: the four algorithms, modulation, shimmer, a 20-second decay, and freeze switched on
     # mid-render by automation (the tail held with no loss).
     fx("verb-hall", "Neo Verb", "Hall — Concert", tail=2.5),

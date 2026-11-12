@@ -115,6 +115,8 @@ namespace ReBuzzTests
         internal static readonly NeoInfo Imager = new("Neo Imager", "Imager", false);
         internal static readonly NeoInfo Exciter = new("Neo Exciter", "Exciter", false);
         internal static readonly NeoInfo Dither = new("Neo Dither", "Dither", false);
+        // The strip (docs/specs/mastering-tools.md §5.10).
+        internal static readonly NeoInfo Strip = new("Neo Strip", "Strip", false);
 
         /// <summary>A test machine compiled from source held here.</summary>
         internal sealed class SourceInfo(string name, string source, bool generator) : IDynamicTestMachineInfo
@@ -1629,6 +1631,23 @@ namespace ReBuzzTests
         }
 
         [Test]
+        public void NeoStripReportsTheSameLatencyWhicheverStagesAreOnAndShowsItsEditor()
+        {
+            using var rig = new Rig(Strip);
+            rig.Play(0.05);
+            int latency = rig.Effect.Latency;
+            Assert.That(latency, Is.GreaterThan(0));
+            Assert.That(rig.Param("Ceiling").DescribeValue(rig.Param("Ceiling").DefValue), Is.EqualTo("−0.1 dB"));
+            foreach (var stage in new[] { "Gate on", "EQ on", "Comp on", "Drive on", "Clip on", "Limit on" }) rig.Param(stage).SetValue(0, 1);
+            rig.Play(0.3);
+            Assert.That(rig.Effect.Latency, Is.EqualTo(latency));
+            var instance = rig.Effect.ManagedMachine;
+            var readings = (System.Collections.Generic.IReadOnlyDictionary<string, double>)instance.GetType().GetProperty("Readings")!.GetValue(instance)!;
+            Assert.That(readings["latency_samples"], Is.EqualTo(latency));
+            ShootEditor(rig.Effect, "neo-strip-editor");
+        }
+
+        [Test]
         public void NeoLimiterHoldsTheCeilingReportsItsLatencyAndShowsItsEditor()
         {
             using var rig = new Rig(Limiter);
@@ -1689,7 +1708,7 @@ namespace ReBuzzTests
         [Test]
         public void NeoPresetsLoad()
         {
-            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, Clipper, Transient, LowEnd, Imager, Exciter, Dither })
+            foreach (var info in new[] { Drive, Comp, Verb, Poly, Wave, Fm6, Eq, Utility, Limiter, Analyzer, Ensemble, Delay, Multiband, Sampler, Scope, Drums, Filter, Dye, Clipper, Transient, LowEnd, Imager, Exciter, Dither, Strip })
             {
                 var prs = Path.Combine(Path.GetDirectoryName(info.BuiltPath)!, info.Name + ".prs.xml");
                 if (!File.Exists(info.BuiltPath)) Assert.Inconclusive($"{info.Name} not built");

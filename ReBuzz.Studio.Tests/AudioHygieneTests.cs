@@ -28,6 +28,7 @@
 //    (every control working, the phase mode switched now and then, so its latency moves): 0 bytes a buffer, each algorithm;
 //  - a pattern through a Neo Imager (every band shaped, Recover on), a Neo Exciter (its curve switched, mid/side, auto gain) and a
 //    Neo Dither (its shaping switched): 0 bytes a buffer, each algorithm.
+//    Neo Strip (every stage on, a bell's gain moved a buffer): 0 bytes a buffer, each algorithm.
 // The tests build in Debug, where the JIT doesn't optimize: no allocation here is one that only an
 // optimizing compiler (tier 1) would remove.
 
@@ -1004,7 +1005,7 @@ namespace ReBuzz.Studio.Tests
         }
 
         [AvaloniaTest]
-        public void ANeoImagerANeoExciterAndANeoDitherWithEveryControlAllocateNothing()
+        public void ANeoImagerANeoExciterANeoDitherAndANeoStripWithEveryControlAllocateNothing()
         {
             // mastering-tools.md §5.7 - §5.9: a pattern through Neo Imager (every band shaped, Recover on, a width moved every
             // buffer), Neo Exciter (its curve switched now and then, mid/side, auto gain) and Neo Dither (shaping switched).
@@ -1017,6 +1018,7 @@ namespace ReBuzz.Studio.Tests
             var imager = InsertAfter(m, "Neo Imager", "Hygiene Imager");
             var exciter = InsertAfter(imager, "Neo Exciter", "Hygiene Exciter");
             var dither = InsertAfter(exciter, "Neo Dither", "Hygiene Dither");
+            var strip = InsertAfter(dither, "Neo Strip", "Hygiene Strip");
             var ig = imager.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
             ig.First(p => p.Name == "Width 1").SetValue(0, 0);
             ig.First(p => p.Name == "Width 3").SetValue(0, 160);
@@ -1030,6 +1032,10 @@ namespace ReBuzz.Studio.Tests
             var curve = eg.First(p => p.Name == "Mode");
             var dg = dither.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
             var shaping = dg.First(p => p.Name == "Shaping");
+            var sg = strip.ParameterGroupsList.SelectMany(g => g.ParametersList).ToList();
+            foreach (var stageName in new[] { "Gate on", "EQ on", "Comp on", "Drive on", "Clip on", "Limit on" }) sg.First(p => p.Name == stageName).SetValue(0, 1);
+            sg.First(p => p.Name == "Low mid gain").SetValue(0, 280);
+            var lmGain = sg.First(p => p.Name == "Low mid gain");
             try
             {
                 int n = 0;
@@ -1042,8 +1048,9 @@ namespace ReBuzz.Studio.Tests
                         width.SetValue(1 << 16, 20 + (n % 60) * 3);
                         if (++n % 100 == 0) curve.SetValue(1 << 16, (n / 100) % 5);
                         if (n % 130 == 0) shaping.SetValue(1 << 16, (n / 130) % 3);
+                        lmGain.SetValue(1 << 16, 200 + (n % 80));
                     });
-                    AssertNoAllocation(cost, $"a pattern through a Neo Imager, a Neo Exciter and a Neo Dither with every control (algorithm {algorithm})");
+                    AssertNoAllocation(cost, $"a pattern through a Neo Imager, a Neo Exciter, a Neo Dither and a Neo Strip with every control (algorithm {algorithm})");
                     lock (ReBuzzCore.AudioLock) Core.Playing = false;
                 }
             }
