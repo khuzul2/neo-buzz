@@ -31,7 +31,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "Volume", Description = "Output level", MinValue = 0, MaxValue = 1000, DefValue = 739)]
         public int Volume { get => Values[P.Volume]; set => Values.Set(P.Volume, value); }
 
-        [ParameterDecl(Name = "A engine", Description = "What slot A plays: a morphing wavetable, an analog wave, a sample, or grains of a sample (samples and grains take no warps)", MinValue = 0, MaxValue = 4, DefValue = 1)]
+        [ParameterDecl(Name = "A engine", Description = "What slot A plays: a morphing wavetable, an analog wave, a sample, grains of a sample, or additive partials (samples, grains and partials take no warps)", MinValue = 0, MaxValue = 5, DefValue = 1)]
         public int AType { get => Values[P.AType]; set => Values.Set(P.AType, value); }
 
         [ParameterDecl(Name = "A table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 0)]
@@ -88,7 +88,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "A → filter 2", Description = "Balance between filter 1 (0 %) and filter 2 (100 %)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int AToF2 { get => Values[P.AToF2]; set => Values.Set(P.AToF2, value); }
 
-        [ParameterDecl(Name = "B engine", Description = "What slot B plays: a morphing wavetable, an analog wave, a sample, or grains of a sample (samples and grains take no warps)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        [ParameterDecl(Name = "B engine", Description = "What slot B plays: a morphing wavetable, an analog wave, a sample, grains of a sample, or additive partials (samples, grains and partials take no warps)", MinValue = 0, MaxValue = 5, DefValue = 0)]
         public int BType { get => Values[P.BType]; set => Values.Set(P.BType, value); }
 
         [ParameterDecl(Name = "B table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 2)]
@@ -145,7 +145,7 @@ namespace NeoBuzz.DyeEssence
         [ParameterDecl(Name = "B → filter 2", Description = "Balance between filter 1 (0 %) and filter 2 (100 %)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
         public int BToF2 { get => Values[P.BToF2]; set => Values.Set(P.BToF2, value); }
 
-        [ParameterDecl(Name = "C engine", Description = "What slot C plays: a morphing wavetable, an analog wave, a sample, or grains of a sample (samples and grains take no warps)", MinValue = 0, MaxValue = 4, DefValue = 0)]
+        [ParameterDecl(Name = "C engine", Description = "What slot C plays: a morphing wavetable, an analog wave, a sample, grains of a sample, or additive partials (samples, grains and partials take no warps)", MinValue = 0, MaxValue = 5, DefValue = 0)]
         public int CType { get => Values[P.CType]; set => Values.Set(P.CType, value); }
 
         [ParameterDecl(Name = "C table", Description = "Wavetable (User: a table loaded for this slot)", MinValue = 0, MaxValue = 10, DefValue = 3)]
@@ -747,6 +747,69 @@ namespace NeoBuzz.DyeEssence
 
         [ParameterDecl(Name = "C grain width", Description = "Granular engine: how far grains scatter across the stereo field", MinValue = 0, MaxValue = 1000, DefValue = 500)]
         public int CGrWidth { get => Values[P.CGrWidth]; set => Values.Set(P.CGrWidth, value); }
+
+        [ParameterDecl(Name = "A harmonics", Description = "Harmonic engine: the first set of partial levels (made by code; User: the first frame of the slot's loaded wavetable, analysed)", MinValue = 0, MaxValue = 13, DefValue = 0)]
+        public int AHSet { get => Values[P.AHSet]; set => Values.Set(P.AHSet, value); }
+
+        [ParameterDecl(Name = "A harmonics 2", Description = "Harmonic engine: the second set, which \"position\" morphs to (User: the last frame of the slot's loaded wavetable)", MinValue = 0, MaxValue = 13, DefValue = 1)]
+        public int AHSet2 { get => Values[P.AHSet2]; set => Values.Set(P.AHSet2, value); }
+
+        [ParameterDecl(Name = "A partials", Description = "Harmonic engine: how many partials sound (those above the Nyquist limit are dropped on high notes anyway); each added partial costs CPU", MinValue = 1, MaxValue = 128, DefValue = 32)]
+        public int AHPartials { get => Values[P.AHPartials]; set => Values.Set(P.AHPartials, value); }
+
+        [ParameterDecl(Name = "A tilt", Description = "Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int AHTilt { get => Values[P.AHTilt]; set => Values.Set(P.AHTilt, value); }
+
+        [ParameterDecl(Name = "A odd even", Description = "Harmonic engine: + weakens the even partials (towards a hollow, odd-only tone), − weakens the odd ones (towards the octave above)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int AHOddEven { get => Values[P.AHOddEven]; set => Values.Set(P.AHOddEven, value); }
+
+        [ParameterDecl(Name = "A stretch", Description = "Harmonic engine: spreads the partials from whole multiples of the pitch: + stretches them apart (bells, glass, plucked wire), − bunches them (clusters)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int AHStretch { get => Values[P.AHStretch]; set => Values.Set(P.AHStretch, value); }
+
+        [ParameterDecl(Name = "A damp", Description = "Harmonic engine: how fast the upper partials die away while a note is held (0: they last; 100%: a pluck)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int AHDamp { get => Values[P.AHDamp]; set => Values.Set(P.AHDamp, value); }
+
+        [ParameterDecl(Name = "B harmonics", Description = "Harmonic engine: the first set of partial levels (made by code; User: the first frame of the slot's loaded wavetable, analysed)", MinValue = 0, MaxValue = 13, DefValue = 0)]
+        public int BHSet { get => Values[P.BHSet]; set => Values.Set(P.BHSet, value); }
+
+        [ParameterDecl(Name = "B harmonics 2", Description = "Harmonic engine: the second set, which \"position\" morphs to (User: the last frame of the slot's loaded wavetable)", MinValue = 0, MaxValue = 13, DefValue = 1)]
+        public int BHSet2 { get => Values[P.BHSet2]; set => Values.Set(P.BHSet2, value); }
+
+        [ParameterDecl(Name = "B partials", Description = "Harmonic engine: how many partials sound (those above the Nyquist limit are dropped on high notes anyway); each added partial costs CPU", MinValue = 1, MaxValue = 128, DefValue = 32)]
+        public int BHPartials { get => Values[P.BHPartials]; set => Values.Set(P.BHPartials, value); }
+
+        [ParameterDecl(Name = "B tilt", Description = "Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int BHTilt { get => Values[P.BHTilt]; set => Values.Set(P.BHTilt, value); }
+
+        [ParameterDecl(Name = "B odd even", Description = "Harmonic engine: + weakens the even partials (towards a hollow, odd-only tone), − weakens the odd ones (towards the octave above)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int BHOddEven { get => Values[P.BHOddEven]; set => Values.Set(P.BHOddEven, value); }
+
+        [ParameterDecl(Name = "B stretch", Description = "Harmonic engine: spreads the partials from whole multiples of the pitch: + stretches them apart (bells, glass, plucked wire), − bunches them (clusters)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int BHStretch { get => Values[P.BHStretch]; set => Values.Set(P.BHStretch, value); }
+
+        [ParameterDecl(Name = "B damp", Description = "Harmonic engine: how fast the upper partials die away while a note is held (0: they last; 100%: a pluck)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int BHDamp { get => Values[P.BHDamp]; set => Values.Set(P.BHDamp, value); }
+
+        [ParameterDecl(Name = "C harmonics", Description = "Harmonic engine: the first set of partial levels (made by code; User: the first frame of the slot's loaded wavetable, analysed)", MinValue = 0, MaxValue = 13, DefValue = 0)]
+        public int CHSet { get => Values[P.CHSet]; set => Values.Set(P.CHSet, value); }
+
+        [ParameterDecl(Name = "C harmonics 2", Description = "Harmonic engine: the second set, which \"position\" morphs to (User: the last frame of the slot's loaded wavetable)", MinValue = 0, MaxValue = 13, DefValue = 1)]
+        public int CHSet2 { get => Values[P.CHSet2]; set => Values.Set(P.CHSet2, value); }
+
+        [ParameterDecl(Name = "C partials", Description = "Harmonic engine: how many partials sound (those above the Nyquist limit are dropped on high notes anyway); each added partial costs CPU", MinValue = 1, MaxValue = 128, DefValue = 32)]
+        public int CHPartials { get => Values[P.CHPartials]; set => Values.Set(P.CHPartials, value); }
+
+        [ParameterDecl(Name = "C tilt", Description = "Harmonic engine: brightness; each octave of partials louder (+) or softer (−) by this many dB on top of the set (loudness stays)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int CHTilt { get => Values[P.CHTilt]; set => Values.Set(P.CHTilt, value); }
+
+        [ParameterDecl(Name = "C odd even", Description = "Harmonic engine: + weakens the even partials (towards a hollow, odd-only tone), − weakens the odd ones (towards the octave above)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int CHOddEven { get => Values[P.CHOddEven]; set => Values.Set(P.CHOddEven, value); }
+
+        [ParameterDecl(Name = "C stretch", Description = "Harmonic engine: spreads the partials from whole multiples of the pitch: + stretches them apart (bells, glass, plucked wire), − bunches them (clusters)", MinValue = 0, MaxValue = 1000, DefValue = 500)]
+        public int CHStretch { get => Values[P.CHStretch]; set => Values.Set(P.CHStretch, value); }
+
+        [ParameterDecl(Name = "C damp", Description = "Harmonic engine: how fast the upper partials die away while a note is held (0: they last; 100%: a pluck)", MinValue = 0, MaxValue = 1000, DefValue = 0)]
+        public int CHDamp { get => Values[P.CHDamp]; set => Values.Set(P.CHDamp, value); }
 
         [ParameterDecl(Name = "Note", IsStateless = true, Description = "Note (off releases the track's note)")]
         public void SetNote(Note value, int track) => Notes.SetNote(track, value.Value);

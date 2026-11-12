@@ -88,11 +88,20 @@ namespace NeoBuzz.DyeEssence
         /// <summary>Grains a slot of a note may have sounding at once (further ones wait their turn).</summary>
         public const int MaxGrains = 32;
 
+        /// <summary>
+        /// The grain cap (spec §4.6): a slot of a note keeps at most <see cref="GrainCap"/> grains live, and the bank shares
+        /// <see cref="GrainBudget"/> live grains between its granular slots (never fewer than <see cref="GrainFloor"/> a slot).
+        /// A grain past the limit takes the place of the slot's oldest, which fades out over <see cref="GrainFade"/> samples.
+        /// </summary>
+        public const int GrainCap = 10, GrainBudget = 160, GrainFloor = 4, GrainFade = 64;
+
         struct Grain
         {
             public bool On;
             public double Pos, Step;           // in the level's samples
-            public float Phase, PhaseInc;      // through the window, 0 … 1
+            public int Left_, K;               // samples to go, samples played
+            public float WinStep;              // window points per sample
+            public float Fade, FadeStep;       // 1 and 0, or running down to 0 when the grain was taken over
             public float GainL, GainR;
             public float[] Left, Right, Kernel, Window;
             public bool Stereo;
@@ -100,7 +109,7 @@ namespace NeoBuzz.DyeEssence
 
         // Per note × slot (note · Oscillators + slot).
         readonly SampleLayer[] extLayer = new SampleLayer[Notes * Oscillators];
-        readonly int[] extKind = new int[Notes * Oscillators];            // 0 none, 1 sample, 2 granular
+        readonly int[] extKind = new int[Notes * Oscillators];            // 0 none, 1 sample, 2 granular, 3 harmonic
         readonly bool[] extActive = new bool[Notes * Oscillators], extFresh = new bool[Notes * Oscillators];
         readonly float[] extLvl = new float[Notes * Oscillators], extLvlStep = new float[Notes * Oscillators];
         readonly float[] extTo2 = new float[Notes * Oscillators], extTo2Step = new float[Notes * Oscillators];
@@ -126,6 +135,8 @@ namespace NeoBuzz.DyeEssence
         readonly float[] grSpray = new float[Notes * Oscillators], grJit = new float[Notes * Oscillators], grRev = new float[Notes * Oscillators],
             grWidth = new float[Notes * Oscillators], grAmp = new float[Notes * Oscillators], grPos = new float[Notes * Oscillators],
             grPan = new float[Notes * Oscillators], grSpread = new float[Notes * Oscillators];
+        readonly int[] grLive = new int[Notes * Oscillators];
+        int grCap = GrainCap;
         readonly float[] exL = new float[MaxTick], exR = new float[MaxTick];
 
         /// <summary>A note starts: its Sample and Granular slots begin again, silent.</summary>
@@ -152,9 +163,9 @@ namespace NeoBuzz.DyeEssence
             {
                 var os = s.Osc[o];
                 int no = note * Oscillators + o;
-                bool sample = os.Type == SlotType.Sample, grain = os.Type == SlotType.Granular;
-                var layer = os.Source;
-                bool play = (sample || grain) && layer != null && layer.Length >= 8;
+                bool sample = os.Type == SlotType.Sample, grain = os.Type == SlotType.Granular, harm = os.Type == SlotType.Harmonic;
+                var layer = harm ? null : os.Source;
+                bool play = harm || (sample || grain) && layer != null && layer.Length >= 8;
                 if (!play && extLvl[no] == 0f)
                 {
                     extActive[no] = false;
@@ -164,16 +175,26 @@ namespace NeoBuzz.DyeEssence
                 float lvlTarget = play ? Level(note, o) : 0f, to2Target = play ? OscToF2(o) : 0f;
                 if (play)
                 {
-                    int kind = sample ? 1 : 2;
+                    int kind = sample ? 1 : grain ? 2 : 3;
                     if (extFresh[no] || extKind[no] != kind || !ReferenceEquals(extLayer[no], layer)) ExtInit(note, o, no, kind, layer);
                     int u = Math.Clamp(os.Unison, 1, MaxUnison);
                     Shape(o, u, os);
-                    double rootHz = DspMath.NoteToHz(os.Root);
-                    double ratio0 = noteHz * oscRatio[o] / rootHz * layer.Rate / vr;
                     float pitchMod = Md(note, RouteDest.APitch + o);
-                    if (pitchMod != 0) ratio0 *= PortableMath.Exp2(pitchMod);
-                    if (sample) SampleControl(note, o, no, os, layer, u, ratio0, invCount);
-                    else GrainControl(note, o, no, os, layer, u, ratio0, vr);
+                    if (harm)
+                    {
+                        // Turns of the fundamental a sample at the voice rate.
+                        double inc0 = noteHz * oscRatio[o] / vr;
+                        if (pitchMod != 0) inc0 *= PortableMath.Exp2(pitchMod);
+                        HarmControl(note, o, no, os, u, inc0, invCount);
+                    }
+                    else
+                    {
+                        double rootHz = DspMath.NoteToHz(os.Root);
+                        double ratio0 = noteHz * oscRatio[o] / rootHz * layer.Rate / vr;
+                        if (pitchMod != 0) ratio0 *= PortableMath.Exp2(pitchMod);
+                        if (sample) SampleControl(note, o, no, os, layer, u, ratio0, invCount);
+                        else GrainControl(note, o, no, os, layer, u, ratio0, vr);
+                    }
                 }
                 float lv = extLvl[no];
                 if (lvlTarget == 0f && Math.Abs(lv) < 1e-7f) lv = extLvl[no] = 0f;
@@ -209,10 +230,12 @@ namespace NeoBuzz.DyeEssence
                     svGL[vb + l] = svGR[vb + l] = svDL[vb + l] = svDR[vb + l] = 0;
                 }
             }
+            else if (kind == 3) HarmInit(note, o, no);
             else
             {
                 int gb = no * MaxGrains;
                 for (int g = 0; g < MaxGrains; g++) grains[gb + g].On = false;
+                grLive[no] = 0;
                 grTimer[no] = 0;
                 grScan[no] = 0;
                 grNext[no] = 0;
@@ -288,8 +311,16 @@ namespace NeoBuzz.DyeEssence
             // Frames of the sample per voice-rate sample at the sample's own speed, as a share of its length.
             grScanStep[no] = Math.Clamp(os.Scan, -4f, 4f) * layer.Rate / vr / layer.Length;
             // Grains overlapping at random add in power: hold the cloud's loudness as the overlap grows.
-            double overlap = size * rate;
+            double overlap = Math.Min(size * rate, grCap);
             grAmp[no] = (float)(1.0 / Math.Sqrt(Math.Max(1.0, overlap * 0.4)));
+        }
+
+        /// <summary>Each tick: the cap for a slot's grains, the bank's budget shared between the granular slots sounding.</summary>
+        void GrainShare()
+        {
+            int slots = 0;
+            for (int no = 0; no < Notes * Oscillators; no++) if (extActive[no] && extKind[no] == 2) slots++;
+            grCap = Math.Clamp(GrainBudget / Math.Max(1, slots), GrainFloor, GrainCap);
         }
 
         /// <summary>The Sample and Granular slots of a note into the filters' inputs (they have summed the lanes' voices already).</summary>
@@ -304,6 +335,7 @@ namespace NeoBuzz.DyeEssence
                 Array.Clear(exR, 0, count);
                 if (extKind[no] == 1) SampleVoices(note, o, no, count);
                 else if (extKind[no] == 2) Grains(no, count);
+                else HarmVoices(note, o, no, count);
                 float lv = extLvl[no], ls = extLvlStep[no], t2 = extTo2[no], ts = extTo2Step[no];
                 bool f2 = extToF2[note];
                 for (int i = 0; i < count; i++)
@@ -446,49 +478,109 @@ namespace NeoBuzz.DyeEssence
         [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         void Grains(int no, int count)
         {
-            int gb = no * MaxGrains;
             double timer = grTimer[no], scan = grScan[no], scanStep = grScanStep[no], interval = grInterval[no];
+            int from = 0;
             for (int i = 0; i < count; i++)
             {
                 timer -= 1.0;
                 if (timer <= 0)
                 {
+                    // The grains sound up to here, then the new one joins (a clock tick is the only thing that changes the set).
+                    if (i > from) GrainSpan(no, from, i);
+                    from = i;
                     Spawn(no, scan);
                     timer += interval * (1.0 + 0.3 * grRng[no].NextBipolar());
                 }
                 scan += scanStep;
-                float aL = 0, aR = 0;
-                for (int g = 0; g < MaxGrains; g++)
-                {
-                    ref var gr = ref grains[gb + g];
-                    if (!gr.On) continue;
-                    float ph = gr.Phase;
-                    if (ph >= 1f) { gr.On = false; continue; }
-                    float fi = ph * GrainWindows.Size;
-                    int wi = (int)fi;
-                    float w = gr.Window[wi] + (fi - wi) * (gr.Window[wi + 1] - gr.Window[wi]);
-                    double y = gr.Pos;
-                    double ymax = gr.Left.Length - SampleLayer.Pad - Interpolation.Half - 1, ymin = -(SampleLayer.Pad - Interpolation.Half);
-                    y = y < ymin ? ymin : y > ymax ? ymax : y;
-                    float l, r;
-                    if (gr.Stereo) Interpolation.Read(gr.Left, gr.Right, y, gr.Kernel, out l, out r);
-                    else { l = Interpolation.Read(gr.Left, y, gr.Kernel); r = l; }
-                    aL += gr.GainL * w * l;
-                    aR += gr.GainR * w * r;
-                    gr.Pos += gr.Step;
-                    gr.Phase = ph + gr.PhaseInc;
-                }
-                exL[i] += aL;
-                exR[i] += aR;
             }
+            if (count > from) GrainSpan(no, from, count);
             grTimer[no] = timer;
             grScan[no] = scan;
+            int live = 0, gb = no * MaxGrains;
+            for (int g = 0; g < MaxGrains; g++) if (grains[gb + g].On && grains[gb + g].FadeStep == 0f) live++;
+            grLive[no] = live;
+        }
+
+        /// <summary>The slot's grains over samples [from, to), one grain at a time (no branch per sample); a grain's samples add in the pool's order.</summary>
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+        void GrainSpan(int no, int from, int to)
+        {
+            int gb = no * MaxGrains;
+            var xl = exL;
+            var xr = exR;
+            for (int g = 0; g < MaxGrains; g++)
+            {
+                ref var gr = ref grains[gb + g];
+                if (!gr.On) continue;
+                int n = Math.Min(to - from, gr.Left_);
+                var left = gr.Left;
+                var right = gr.Right;
+                var kernel = gr.Kernel;
+                var win = gr.Window;
+                double ymax = left.Length - SampleLayer.Pad - Interpolation.Half - 1, ymin = -(SampleLayer.Pad - Interpolation.Half);
+                double y = gr.Pos, step = gr.Step;
+                float gl = gr.GainL, grr = gr.GainR, fade = gr.Fade, fs = gr.FadeStep, ws = gr.WinStep;
+                int k = gr.K;
+                if (gr.Stereo)
+                {
+                    for (int i = 0; i < n; i++)
+                    {
+                        float fi = k++ * ws;
+                        int wi = (int)fi;
+                        float w = (win[wi] + (fi - wi) * (win[wi + 1] - win[wi])) * fade;
+                        fade += fs;
+                        double yc = y < ymin ? ymin : y > ymax ? ymax : y;
+                        Interpolation.Read(left, right, yc, kernel, out float l, out float r);
+                        xl[from + i] += gl * w * l;
+                        xr[from + i] += grr * w * r;
+                        y += step;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < n; i++)
+                    {
+                        float fi = k++ * ws;
+                        int wi = (int)fi;
+                        float w = (win[wi] + (fi - wi) * (win[wi + 1] - win[wi])) * fade;
+                        fade += fs;
+                        double yc = y < ymin ? ymin : y > ymax ? ymax : y;
+                        float l = Interpolation.Read(left, yc, kernel);
+                        xl[from + i] += gl * w * l;
+                        xr[from + i] += grr * w * l;
+                        y += step;
+                    }
+                }
+                gr.Pos = y;
+                gr.K = k;
+                gr.Fade = fade;
+                gr.Left_ -= n;
+                if (gr.Left_ <= 0) gr.On = false;
+            }
         }
 
         /// <summary>Starts a grain at the cloud's centre (plus its spray), in the next voice's pitch and place.</summary>
         void Spawn(int no, double scan)
         {
             int gb = no * MaxGrains, free = -1;
+            // Over the cap: the oldest live grain fades out and the new one takes its turn (the cap is never above the pool).
+            while (grLive[no] >= grCap)
+            {
+                int old = -1;
+                float oldest = -1f;
+                for (int g = 0; g < MaxGrains; g++)
+                {
+                    ref var c = ref grains[gb + g];
+                    if (!c.On || c.FadeStep != 0f) continue;
+                    float age = c.K / (float)(c.K + c.Left_);
+                    if (age > oldest) { oldest = age; old = g; }
+                }
+                if (old < 0) break;
+                ref var d = ref grains[gb + old];
+                if (d.Left_ > GrainFade) d.Left_ = GrainFade;
+                d.FadeStep = -d.Fade / Math.Max(1, d.Left_);
+                grLive[no]--;
+            }
             for (int g = 0; g < MaxGrains && free < 0; g++) if (!grains[gb + g].On) free = g;
             int o = no % Oscillators;
             int u = grU[no], j = grNext[no];
@@ -521,8 +613,12 @@ namespace NeoBuzz.DyeEssence
             gn.On = true;
             gn.Pos = start * scale;
             gn.Step = step * scale;
-            gn.Phase = 0f;
-            gn.PhaseInc = 1f / len;
+            gn.K = 0;
+            gn.Left_ = len;
+            gn.WinStep = GrainWindows.Size / (float)len;
+            gn.Fade = 1f;
+            gn.FadeStep = 0f;
+            grLive[no]++;
             gn.GainL = pl * grAmp[no];
             gn.GainR = pr * grAmp[no];
             gn.Left = layer.Left[lev];

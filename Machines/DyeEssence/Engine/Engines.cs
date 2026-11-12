@@ -11,7 +11,7 @@
 namespace NeoBuzz.DyeEssence
 {
     /// <summary>What an engine slot holds (append only: the engines to come take the next values).</summary>
-    internal enum SlotType { Off, Wavetable, Analog, Sample, Granular }
+    internal enum SlotType { Off, Wavetable, Analog, Sample, Granular, Harmonic }
 
     /// <summary>The Analog engine's waves (append only).</summary>
     internal enum AnalogShape { Sine, Triangle, Saw, Square, Pulse }

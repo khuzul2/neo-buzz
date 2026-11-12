@@ -545,3 +545,149 @@ Amp decay = 2.5
 Amp sustain = 100
 Amp release = 1.5
 Volume = 6
+
+preset "Pad — Additive Strings"
+A engine = Harmonic
+A harmonics = Strings
+A harmonics 2 = Brass
+A position = 25
+A partials = 64
+A tilt = -2
+A unison = 4
+A detune = 14
+A spread = 70
+F1 type = LP 12
+F1 cutoff = 9000
+Amp attack = 0.5
+Amp sustain = 100
+Amp release = 1.2
+Volume = -10
+
+preset "Keys — Drawbar Organ"
+A engine = Harmonic
+A harmonics = Organ
+A harmonics 2 = Square
+A partials = 16
+A damp = 25
+B engine = Harmonic
+B harmonics = Organ
+B partials = 16
+B octave = 1
+B level = 35
+Amp attack = 0.004
+Amp sustain = 100
+Amp release = 0.12
+Volume = -8.5
+
+preset "Lead — Reed Morph"
+A engine = Harmonic
+A harmonics = Reed
+A harmonics 2 = Brass
+A partials = 48
+A unison = 2
+A detune = 8
+A spread = 40
+LFO1 shape = Sine
+LFO1 rate = 5
+R1 source = LFO 1
+R1 dest = Pitch
+R1 amount = 0.12
+R2 source = Mod wheel
+R2 dest = A position
+R2 amount = 100
+Amp attack = 0.02
+Amp sustain = 100
+Amp release = 0.25
+Volume = -9
+
+preset "Pad — Vowel Choir"
+A engine = Harmonic
+A harmonics = Vowel A
+A harmonics 2 = Vowel O
+A partials = 64
+A unison = 3
+A detune = 9
+A spread = 90
+LFO1 shape = Triangle
+LFO1 rate = 0.12
+LFO1 retrig = Off
+R1 source = LFO 1
+R1 dest = A position
+R1 amount = 90
+Amp attack = 0.8
+Amp sustain = 100
+Amp release = 1.8
+Volume = -7
+
+preset "Bell — Stretched Glass"
+A engine = Harmonic
+A harmonics = Bright
+A harmonics 2 = Comb
+A partials = 24
+A stretch = 70
+A damp = 60
+A unison = 2
+A detune = 4
+A spread = 60
+Amp attack = 0.001
+Amp decay = 2.5
+Amp sustain = 0
+Amp release = 1.5
+Volume = -8
+
+preset "Pluck — Damped Wire"
+A engine = Harmonic
+A harmonics = Saw
+A harmonics 2 = Square
+A position = 30
+A partials = 96
+A tilt = -3
+A damp = 80
+Amp attack = 0.001
+Amp decay = 1.4
+Amp sustain = 0
+Amp release = 0.4
+Volume = -5
+
+preset "Bass — Hollow Pipe"
+A engine = Harmonic
+A harmonics = Reed
+A harmonics 2 = Square
+A octave = -1
+A partials = 32
+A odd even = 60
+A tilt = 2
+F1 type = Ladder 24
+F1 cutoff = 1800
+F1 env = 1.5
+Env1 decay = 0.4
+Amp attack = 0.003
+Amp sustain = 90
+Amp release = 0.15
+Volume = -5.5
+
+preset "Texture — Random Partials"
+A engine = Harmonic
+A harmonics = Random
+A harmonics 2 = Comb
+A partials = 80
+A stretch = 25
+A unison = 5
+A detune = 18
+A spread = 100
+LFO1 shape = Smooth
+LFO1 rate = 0.2
+R1 source = LFO 1
+R1 dest = A position
+R1 amount = 100
+R2 source = LFO 2
+R2 dest = F1 cutoff
+R2 amount = 30
+LFO2 shape = Triangle
+LFO2 rate = 0.07
+F1 type = LP 12
+F1 cutoff = 7000
+Amp attack = 1.5
+Amp sustain = 100
+Amp release = 2.5
+Volume = -5

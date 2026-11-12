@@ -58,6 +58,10 @@ namespace NeoBuzz.DyeEssence
         public float GrainSize = 0.05f, GrainRate = 25, Spray = 0.1f, Scan, GrainPitch;
         public GrainShape GrainShape;
         public float GrainReverse, GrainWidth = 0.5f;
+        /// <summary>The Harmonic engine (§4.7): partials sounding, tilt (dB an octave), odd/even (−1 … 1), stretch (−1 … 1), damp (0 … 1), and the two sets' levels (null: Saw and Square).</summary>
+        public int Partials = 32;
+        public float Tilt, OddEven, Stretch, Damp;
+        public float[] SetA, SetB;
     }
 
     internal sealed class SourceSettings
@@ -140,7 +144,7 @@ namespace NeoBuzz.DyeEssence
         public readonly BankSettings S = new BankSettings();
 
         /// <summary>The engines, by <see cref="SlotType"/> (Off has none).</summary>
-        public readonly IEngine[] Engines = { null, new WavetableEngine(), new AnalogEngine(), new SampleEngine(), new GranularEngine() };
+        public readonly IEngine[] Engines = { null, new WavetableEngine(), new AnalogEngine(), new SampleEngine(), new GranularEngine(), new HarmonicEngine() };
         public AnalogEngine Analog => (AnalogEngine)Engines[(int)SlotType.Analog];
 
         IEngine EngineOf(OscSettings os) => (int)os.Type < Engines.Length ? Engines[(int)os.Type] : null;
@@ -384,6 +388,17 @@ namespace NeoBuzz.DyeEssence
 
         /// <summary>The amp envelope's level now (steal priority).</summary>
         public float Loudness(int slot) => ampLevel[slot];
+
+        /// <summary>Grains sounding now (live and fading), across every note and slot: the cap's figure for the tests.</summary>
+        public int ActiveGrains
+        {
+            get
+            {
+                int n = 0;
+                for (int g = 0; g < grains.Length; g++) if (grains[g].On) n++;
+                return n;
+            }
+        }
 
         public int ActiveNotes
         {
@@ -637,6 +652,7 @@ namespace NeoBuzz.DyeEssence
         {
             var s = S;
             Smooth();
+            GrainShare();
             settingsMoved = SettingsMoved();
             tickDt = ControlRate / (double)sampleRate;
             NoteEnvelope.Factors(s.Amp, tickDt, out ampKa, out ampKd, out ampKr);

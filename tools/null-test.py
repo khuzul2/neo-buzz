@@ -167,6 +167,16 @@ CASES = [
     gen("dye-grains-frozen", "Dye Essence", "Texture — Frozen Cloud", [], CHORDS),
     gen("dye-grains-scan", "Dye Essence", "Pad — Scanning Strings", [], CHORDS),
     gen("dye-grains-rain", "Dye Essence", "FX — Bell Rain", [], BELLS),
+    # Dye Essence P3a: the Harmonic engine (morphs, odd/even, stretch, damp, a drawbar set, a wide unison); the
+    # phasor bank is rotations from polynomial sine and cosine, so every platform renders the same.
+    gen("dye-harm-strings", "Dye Essence", "Pad — Additive Strings", [], CHORDS),
+    gen("dye-harm-organ", "Dye Essence", "Keys — Drawbar Organ", [], KEYS),
+    gen("dye-harm-reed", "Dye Essence", "Lead — Reed Morph", [], KEYS),
+    gen("dye-harm-vowel", "Dye Essence", "Pad — Vowel Choir", [], CHORDS),
+    gen("dye-harm-glass", "Dye Essence", "Bell — Stretched Glass", [], BELLS),
+    gen("dye-harm-wire", "Dye Essence", "Pluck — Damped Wire", [], KEYS),
+    gen("dye-harm-pipe", "Dye Essence", "Bass — Hollow Pipe", [], BASS),
+    gen("dye-harm-random", "Dye Essence", "Texture — Random Partials", [], CHORDS),
     # Neo FM6: algorithms, feedback, the Clean 2x and Raw 1x engines, envelopes, LFO.
     gen("fm6-tine-piano", "Neo FM6", "Keys — Tine Piano", [], KEYS),
     gen("fm6-glass-bell", "Neo FM6", "Bell — Glass Bell", [], BELLS, tail=2.0),

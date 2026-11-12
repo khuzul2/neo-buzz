@@ -33,6 +33,10 @@ namespace NeoBuzz.DyeEssence
         readonly TableArena[] requestedUser = new TableArena[NoteBank.Oscillators];
         readonly TableArena[] userTable = new TableArena[NoteBank.Oscillators];
         readonly string[] userName = { "", "", "" };
+        // The Harmonic engine's "User" sets: the first and last frames of the slot's user table, analysed when it was loaded.
+        readonly float[][][] requestedPartials = new float[NoteBank.Oscillators][][];
+        readonly float[][][] userPartials = new float[NoteBank.Oscillators][][];
+        static readonly int[] HarmBase = { P.AHSet, P.BHSet, P.CHSet };
         readonly SampleLayer[] requestedSample = new SampleLayer[NoteBank.Oscillators];
         readonly SampleLayer[] userSample = new SampleLayer[NoteBank.Oscillators];
         readonly string[] sampleName = { "", "", "" };
@@ -74,11 +78,15 @@ namespace NeoBuzz.DyeEssence
         public void SetUserTable(int osc, TableArena table, string name)
         {
             userName[osc] = name ?? "";
+            Volatile.Write(ref requestedPartials[osc], table == null ? null : new[] { HarmonicSets.FromTable(table, 0), HarmonicSets.FromTable(table, table.FrameCount - 1) });
             Volatile.Write(ref requestedUser[osc], table);
             Volatile.Write(ref userChanged, 1);
         }
 
         public TableArena UserTable(int osc) => Volatile.Read(ref requestedUser[osc]);
+
+        /// <summary>The Harmonic engine's two "User" sets of slot <paramref name="osc"/> (its table's first and last frames; null: no table).</summary>
+        public float[][] UserPartials(int osc) => Volatile.Read(ref requestedPartials[osc]);
 
         /// <summary>Any thread: slot <paramref name="osc"/>'s "User" sample from the next block (null: none).</summary>
         public void SetUserSample(int osc, SampleLayer layer, string name)
@@ -118,6 +126,7 @@ namespace NeoBuzz.DyeEssence
                 for (int o = 0; o < userTable.Length; o++)
                 {
                     userTable[o] = Volatile.Read(ref requestedUser[o]);
+                    userPartials[o] = Volatile.Read(ref requestedPartials[o]);
                     userSample[o] = Volatile.Read(ref requestedSample[o]);
                 }
             var s = Bank.S;
@@ -193,6 +202,16 @@ namespace NeoBuzz.DyeEssence
                 os.GrainShape = (GrainShape)values.Choice(m + (P.AGrShape - P.ASmpSrc));
                 os.GrainReverse = values.F(m + (P.AGrRev - P.ASmpSrc));
                 os.GrainWidth = values.F(m + (P.AGrWidth - P.ASmpSrc));
+                int h = HarmBase[o];
+                int setA = values.Choice(h), setB = values.Choice(h + (P.AHSet2 - P.AHSet));
+                var user = userPartials[o];
+                os.SetA = setA == (int)HarmonicSet.User ? user?[0] ?? HarmonicSets.Get(0) : HarmonicSets.Get(setA);
+                os.SetB = setB == (int)HarmonicSet.User ? user?[1] ?? HarmonicSets.Get(1) : HarmonicSets.Get(setB);
+                os.Partials = (int)values.Value(h + (P.AHPartials - P.AHSet));
+                os.Tilt = values.F(h + (P.AHTilt - P.AHSet));
+                os.OddEven = values.F(h + (P.AHOddEven - P.AHSet)) / 100f;
+                os.Stretch = values.F(h + (P.AHStretch - P.AHSet)) / 100f;
+                os.Damp = values.F(h + (P.AHDamp - P.AHSet)) / 100f;
             }
             tablesPending = pendingNow;
 
