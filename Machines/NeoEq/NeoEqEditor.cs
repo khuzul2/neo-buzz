@@ -166,7 +166,9 @@ namespace NeoBuzz.Eq
                     Layout.Gap(1, 10),
                     new ParamChoice(ctx, P.Delta, "Delta", 40),
                     Layout.Gap(1, 8),
-                    match),
+                    match,
+                    Layout.Gap(1, 8),
+                    new ParamChoice(ctx, P.Phase, "Phase", 40)),
                 Layout.Gap(10),
                 new Meter("Input", () => machine?.Engine.InMeter.Peak ?? 0, Palette.DimText, 240),
                 Layout.Gap(6),
@@ -481,6 +483,22 @@ namespace NeoBuzz.Eq
             if (dynamic)
                 text += $" · dynamic {Params.Table[EqDesign.Dynamic(sel)].Describe(values[EqDesign.Dynamic(sel)]).ToLowerInvariant()} {(machine?.Engine.DynamicDb(sel) ?? 0).ToString("+0.0;−0.0;0.0")} dB";
             if (!values.On(EqDesign.On(sel))) text += " (off)";
+            // Linear phase: the curve layer added, a limited Q drawn as it is run, and a note saying so.
+            bool linear = values.Choice(P.Phase) == 1 && values.Choice(P.Mode) == 0;
+            var curveDb = new double[EqLinearDesign.CurvePoints];
+            var limited = new BandSettings[EqDesign.Bands];
+            string note = "";
+            if (linear)
+            {
+                for (int i = 0; i < curveDb.Length; i++) curveDb[i] = values.Value(P.Curve1 + i);
+                var capped = new System.Collections.Generic.List<int>();
+                for (int b = 0; b < EqDesign.Bands; b++)
+                {
+                    limited[b] = EqLinearDesign.Limit(now[b], rate, out bool c);
+                    if (c && values.On(EqDesign.On(b))) capped.Add(b + 1);
+                }
+                note = capped.Count == 0 ? "Linear phase" : $"Linear phase · Q limited at low frequencies in band{(capped.Count > 1 ? "s" : "")} {string.Join(", ", capped)} (its ringing must fit the FIR)";
+            }
             // The curves inside the plot, never over the axis labels; the handles over them, in the room kept around it.
             graph.InPlot(g, () =>
             {
@@ -506,9 +524,10 @@ namespace NeoBuzz.Eq
                 {
                     double db = values.Value(P.Output);
                     for (int b = 0; b < EqDesign.Bands; b++)
-                        if (values.On(EqDesign.On(b))) db += 20 * Math.Log10(Math.Max(1e-12, EqDesign.Magnitude(now[b], hz, rate)));
-                    return db;
+                        if (values.On(EqDesign.On(b))) db += 20 * Math.Log10(Math.Max(1e-12, EqDesign.Magnitude(linear ? limited[b] : now[b], hz, rate)));
+                    return linear ? db + EqLinearDesign.Curve(curveDb, EqLinearDesign.CurveX(hz)) : db;
                 }), NeoFill.None, new NeoStroke(AccentColor, 2.2));
+                if (note.Length > 0) g.Text(note, graph.Plot.Left + 6, graph.Plot.Top + 15, 10, Palette.DimText);
                 g.Text(text, graph.Plot.Left + 6, graph.Plot.Top + 2, 10.5, values.On(EqDesign.On(sel)) ? colour : Palette.DimText);
             });
             handles.Draw(g, BandColors);

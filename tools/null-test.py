@@ -200,6 +200,11 @@ CASES = [
        ("B5 channel", "Left"), ("B5 gain", "+4 dB"), ("B6 channel", "Right"), ("B6 gain", "-5 dB")]),
     fx("eq-v2-vintage-ms-delta", "Neo EQ", "Character — Vintage Low Boost", [("B1 on", "on"), ("B1 channel", "Side"), ("B1 freq", "150 Hz"),
        ("B8 on", "on"), ("B8 channel", "Mid"), ("B8 freq", "9 kHz")], auto=[("Delta", [(3, "On")])]),
+    # Neo EQ linear phase (docs/specs/mastering-tools.md §5.6, M5b): the FIR from the bands' magnitude, a Mid band and the curve layer
+    # in it, a parameter moving (a redesign, crossfaded), Delta (latency-compensated).
+    fx("eq-linear-tilt", "Neo EQ", "Linear — Master Tilt (+1.5 dB low, -1.5 dB air)"),
+    fx("eq-linear-cut-ms", "Neo EQ", "Linear — Bus Low Cut (28 Hz, 48 dB/oct)", [("B8 on", "on"), ("B8 channel", "Mid"), ("B8 freq", "9 kHz"), ("Curve 12", "+3 dB"), ("Curve 13", "+3 dB")],
+       auto=[("B2 gain", [(1, "+6 dB"), (2, "-3 dB")]), ("Delta", [(3, "On")])]),
     # Neo Limiter: pushed hard, auto and set release; Neo Analyzer after it (audio passes through).
     fx("limiter-loud", "Neo Limiter", "Mastering — Loud", [("Input gain", "+18 dB")], extra=[("Neo Analyzer", "Mix", [])]),
     fx("limiter-smash", "Neo Limiter", "Creative — Smash", [("Input gain", "+24 dB"), ("Auto release", "off")]),

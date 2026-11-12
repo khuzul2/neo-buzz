@@ -46,7 +46,7 @@ namespace NeoBuzz.Eq
             if (!hasInput)
             {
                 // Run until resonant bands have rung out (a Q 30 bell at 20 Hz takes a while), then rest.
-                if (quietBlocks > 2 * rate / Math.Max(1, n)) return false;
+                if (quietBlocks > (2 * rate + Engine.Latency) / Math.Max(1, n)) return false;
                 quietBlocks++;
                 Array.Clear(left, 0, n);
                 Array.Clear(right, 0, n);

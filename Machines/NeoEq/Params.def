@@ -190,6 +190,41 @@ B8Detect  "B8 detector"  0 1    0   enum Band Sidechain | Band 8 dynamic: Band: 
 group Monitor
 Delta    "Delta"   0 1   0   switch | Hear only what the EQ changes: the output minus the input, before Output (zero latency, nothing to delay), gliding over 10 ms. Off for rendering
 
+group Linear phase
+Phase    "Phase"   0 1   0   enum Minimum Linear | Minimum: the bands as always, zero latency. Linear: one FIR from the bands' zero-phase magnitude (same dB at every frequency from 30 Hz, no phase turning, constant delay of 4095 + 512 samples at 44.1/48 kHz, reported to the host); Parametric mode only; dynamic bands are static in it; the Curve layer applies; a very narrow band at a low frequency is limited in Q (the editor says so)
+Curve1  "Curve 1" 0 480 240 db -24 24 | Curve layer point 1 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve2  "Curve 2" 0 480 240 db -24 24 | Curve layer point 2 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve3  "Curve 3" 0 480 240 db -24 24 | Curve layer point 3 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve4  "Curve 4" 0 480 240 db -24 24 | Curve layer point 4 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve5  "Curve 5" 0 480 240 db -24 24 | Curve layer point 5 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve6  "Curve 6" 0 480 240 db -24 24 | Curve layer point 6 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve7  "Curve 7" 0 480 240 db -24 24 | Curve layer point 7 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve8  "Curve 8" 0 480 240 db -24 24 | Curve layer point 8 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve9  "Curve 9" 0 480 240 db -24 24 | Curve layer point 9 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve10 "Curve 10" 0 480 240 db -24 24 | Curve layer point 10 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve11 "Curve 11" 0 480 240 db -24 24 | Curve layer point 11 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve12 "Curve 12" 0 480 240 db -24 24 | Curve layer point 12 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve13 "Curve 13" 0 480 240 db -24 24 | Curve layer point 13 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve14 "Curve 14" 0 480 240 db -24 24 | Curve layer point 14 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve15 "Curve 15" 0 480 240 db -24 24 | Curve layer point 15 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve16 "Curve 16" 0 480 240 db -24 24 | Curve layer point 16 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve17 "Curve 17" 0 480 240 db -24 24 | Curve layer point 17 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve18 "Curve 18" 0 480 240 db -24 24 | Curve layer point 18 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve19 "Curve 19" 0 480 240 db -24 24 | Curve layer point 19 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve20 "Curve 20" 0 480 240 db -24 24 | Curve layer point 20 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve21 "Curve 21" 0 480 240 db -24 24 | Curve layer point 21 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve22 "Curve 22" 0 480 240 db -24 24 | Curve layer point 22 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve23 "Curve 23" 0 480 240 db -24 24 | Curve layer point 23 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve24 "Curve 24" 0 480 240 db -24 24 | Curve layer point 24 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve25 "Curve 25" 0 480 240 db -24 24 | Curve layer point 25 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve26 "Curve 26" 0 480 240 db -24 24 | Curve layer point 26 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve27 "Curve 27" 0 480 240 db -24 24 | Curve layer point 27 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve28 "Curve 28" 0 480 240 db -24 24 | Curve layer point 28 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve29 "Curve 29" 0 480 240 db -24 24 | Curve layer point 29 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve30 "Curve 30" 0 480 240 db -24 24 | Curve layer point 30 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve31 "Curve 31" 0 480 240 db -24 24 | Curve layer point 31 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+Curve32 "Curve 32" 0 480 240 db -24 24 | Curve layer point 32 of 32 (log-spaced 20 Hz to 20 kHz, joined by a smooth curve), in dB, added to the bands before the linear-phase design (a match curve; Linear phase only)
+
 # What the EQ measures (NeoEqMachine.Readings, machine_readings).
 reading gain_match_db  dB | Short-term loudness out − in (K-weighted, 3 s): the editor's Match sets Output by it
 reading b1_dynamic_db dB | Band 1's dynamic gain change now (negative: down), 0 while static
@@ -200,3 +235,5 @@ reading b5_dynamic_db dB | Band 5's dynamic gain change now (negative: down), 0 
 reading b6_dynamic_db dB | Band 6's dynamic gain change now (negative: down), 0 while static
 reading b7_dynamic_db dB | Band 7's dynamic gain change now (negative: down), 0 while static
 reading b8_dynamic_db dB | Band 8's dynamic gain change now (negative: down), 0 while static
+reading q_capped_bands  | Bands whose Q linear phase limits (a band too narrow for its frequency: its ringing would not fit the FIR), 0 in minimum phase
+reading pre_ringing_db  dB | Linear phase: the energy of the FIR's response before its centre, relative to all of it (left to left), -inf (-300) when the EQ is flat
