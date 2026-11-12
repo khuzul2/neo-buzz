@@ -93,15 +93,19 @@ namespace NeoBuzz.DyeEssence
                     {
                         try
                         {
-                            machine.LoadUserTable(slot, file);
-                            userName.Text = UserLabel(machine, slot, Streams());
-                            ctx.Set(I(P.ATable), DyeEssenceMachine.UserChoice);
-                            // The Harmonic engine reads the table's first and last frames as its two sets.
-                            if (ctx.Raw(I(P.AType)) == (int)SlotType.Harmonic)
+                            // One history step: the table, and the parameters that choose it.
+                            StateEdit.Run(ctx, "Load wavetable", machine, m => m.MachineState, (m, s) => m.MachineState = s, () =>
                             {
-                                ctx.Set(H(P.AHSet), (int)HarmonicSet.User);
-                                ctx.Set(H(P.AHSet2), (int)HarmonicSet.User);
-                            }
+                                machine.LoadUserTable(slot, file);
+                                userName.Text = UserLabel(machine, slot, Streams());
+                                ctx.Set(I(P.ATable), DyeEssenceMachine.UserChoice);
+                                // The Harmonic engine reads the table's first and last frames as its two sets.
+                                if (ctx.Raw(I(P.AType)) == (int)SlotType.Harmonic)
+                                {
+                                    ctx.Set(H(P.AHSet), (int)HarmonicSet.User);
+                                    ctx.Set(H(P.AHSet2), (int)HarmonicSet.User);
+                                }
+                            });
                             ctx.RaiseChanged();
                         }
                         catch (Exception e)
@@ -124,10 +128,13 @@ namespace NeoBuzz.DyeEssence
                     {
                         try
                         {
-                            machine.LoadUserSample(slot, file);
-                            ctx.Set(K(P.ASmpSrc), DyeEssenceMachine.UserSampleChoice);
-                            if (!Streams()) ctx.Set(I(P.AType), (int)SlotType.Sample);
-                            userName.Text = UserLabel(machine, slot, Streams());
+                            StateEdit.Run(ctx, "Load sample", machine, m => m.MachineState, (m, s) => m.MachineState = s, () =>
+                            {
+                                machine.LoadUserSample(slot, file);
+                                ctx.Set(K(P.ASmpSrc), DyeEssenceMachine.UserSampleChoice);
+                                if (!Streams()) ctx.Set(I(P.AType), (int)SlotType.Sample);
+                                userName.Text = UserLabel(machine, slot, Streams());
+                            });
                             ctx.RaiseChanged();
                         }
                         catch (Exception e)

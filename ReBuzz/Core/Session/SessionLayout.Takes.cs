@@ -828,6 +828,7 @@ namespace ReBuzz.Core.Session
     /// follows one an undo made again). <c>done</c>: already applied (an overdub, written as
     /// it was played), so the first Do does nothing.
     /// </summary>
+    [HistoryName("Edit clip events")]
     internal sealed class ClipEventsAction : IAction
     {
         readonly SessionLayout layout;

@@ -888,6 +888,21 @@ namespace ReBuzz.Core
         {
             if (p != null && !patterns.Any(x => x.Name == newName))
             {
+                string oldName = p.Name;
+                SetPatternName(p, newName);
+                // Fork (history-snapshots.md HS1): a rename from an editor is a step of the song's history; an undo or an
+                // action's own rename (the stack is applying) isn't recorded again.
+                var stack = (graph?.Buzz as ReBuzzCore)?.SongCore?.ActionStack;
+                if (stack != null && !stack.Applying)
+                    stack.Record(new ReBuzz.Core.Actions.GraphActions.RenamePatternStepAction(this, p, oldName, newName));
+            }
+        }
+
+        /// <summary>Renames a pattern with the events and flags a rename raises (no history step).</summary>
+        internal void SetPatternName(IPattern p, string newName)
+        {
+            if (p != null)
+            {
                 (p as PatternCore).Name = newName;
                 PropertyChanged?.Raise(this, "Patterns");
 

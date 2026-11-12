@@ -471,7 +471,7 @@ Order (D5 A):
 | Native machines' MIDI support can't be detected | medium | a silent piano roll on some machines | Managed: detected. Native: a test note and a per-machine switch; the song census (cross-platform.md §8) |
 | TPB ≠ 4 | low (unmeasured) | tracker and roll grids disagree | Count in the census; the projection follows MPE's rows |
 | Avalonia drawing of long arrangements with previews | medium | a sluggish view | Layers as in S4; previews cached per pattern |
-| Several undo histories (song, session, MPE, sequence editors) | medium | confusing undo | studio-mvp.md §3.10's rule; the arrangement and piano roll use the song's history |
+| Several undo histories (song, session, MPE, sequence editors) | medium | confusing undo | studio-mvp.md §3.10's rule; the arrangement and piano roll use the song's history. Done in [`history-snapshots.md`](history-snapshots.md) HS1: the Session View's edits are steps of the song's history too, so there is one |
 | Scope creep toward "a full DAW" | high | never finished | Each phase usable alone, with an exit check |
 
 ## 11. Sources

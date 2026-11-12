@@ -139,8 +139,11 @@ namespace ReBuzz.Agent
                 int steps = 0;
                 void Count(IEnumerable<BuzzGUI.Interfaces.IAction> actions, bool done) { if (done) steps++; }
                 bool failed = false;
+                IDisposable source = null;
                 if (changes)
                 {
+                    // history-snapshots.md HS1: the step is the agent's, named for the call.
+                    source = stack.BeginSource(BuzzGUI.Common.HistorySource.Agent, "Agent: " + what);
                     stack.BeginActionGroup();
                     stack.PostDoOrUndoGroup += Count;
                 }
@@ -164,6 +167,7 @@ namespace ReBuzz.Agent
                     {
                         stack.PostDoOrUndoGroup -= Count;
                         stack.EndActionGroup();
+                        source?.Dispose();
                         // A call that fails changes nothing: take back the steps it made before failing.
                         if (failed && steps > 0)
                         {

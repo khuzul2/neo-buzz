@@ -1,5 +1,7 @@
+using BuzzGUI.Common;
 using BuzzGUI.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -50,6 +52,7 @@ namespace ReBuzz.Core.Session
     /// Renames a pattern (0.6.1: holds the pattern, not its old name, and follows it if an undo
     /// brought it back as another object). Does nothing if the name it would take is taken.
     /// </summary>
+    [BuzzGUI.Common.HistoryName("Rename clip")]
     internal sealed class RenamePatternAction : IAction
     {
         readonly SessionLayout layout;
@@ -79,6 +82,7 @@ namespace ReBuzz.Core.Session
     }
 
     /// <summary>A pattern's colour (0.6.1: holds the pattern, not its name).</summary>
+    [BuzzGUI.Common.HistoryName("Clip colour")]
     internal sealed class PatternColorAction : IAction
     {
         readonly SessionLayout layout;
@@ -109,17 +113,23 @@ namespace ReBuzz.Core.Session
     /// settings, kept in step with the song by <see cref="SessionLayout"/>'s transforms). The
     /// edit has already been made when the action is pushed, so the first Do does nothing.
     /// </summary>
-    internal sealed class LayoutEditAction : IAction
+    internal sealed class LayoutEditAction : IAction, IHistoryAction
     {
         readonly SessionLayout layout;
+        readonly long bytes;
         bool skipDo = true;
 
-        public LayoutEditAction(SessionLayout layout, SessionDocument before, SessionDocument after)
+        public LayoutEditAction(SessionLayout layout, SessionDocument before, SessionDocument after, long bytes = 0)
         {
             this.layout = layout;
             Before = before;
             After = after;
+            this.bytes = bytes;
         }
+
+        string IHistoryAction.HistoryName => "Edit session grid";
+        long IHistoryAction.HistoryBytes => bytes;
+        IEnumerable<KeyValuePair<object, long>> IHistoryAction.HistoryBlobs => null;
 
         public SessionDocument Before { get; }
         public SessionDocument After { get; }
