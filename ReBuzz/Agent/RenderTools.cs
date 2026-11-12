@@ -108,6 +108,7 @@ namespace ReBuzz.Agent
                     Opt("name", String("A label for the file name")),
                     Opt("bits", Number("Write the master as 16 or 24 bit PCM, rounded with dither (default: 32-bit float). The measurements are of what is in the file", 16, 24)),
                     Opt("dither", String("With bits: off (plain rounding), tpdf (default), light or psychoacoustic (TPDF with noise shaping; Neo Dither's shapes)", "off", "tpdf", "light", "psychoacoustic")),
+                    Opt("opus_kbps", Number("Also encode and decode the master through Opus at this bitrate (kb/s, Concentus; a proxy for lossy coding) and measure what it did: true peak, loss above the codec's cutoff, the null residual's loudness. The decoded audio is a render \"<id>:opus\" for analyze", OpusPreview.MinKbps, OpusPreview.MaxKbps)),
                     Opt("cpu", Boolean("Also each machine's own work time per second of audio (ms/s), from the engine's counters")),
                     Opt("cpu_window_seconds", Number("With cpu: also window by window, this long each (a machine slowing down after its input stops: denormals)", 0.05, 60))),
                 Output = Object(null,
@@ -119,6 +120,7 @@ namespace ReBuzz.Agent
                     Req("measure", Object("Loudness and peaks", Req("silent", Boolean("Nothing above -90 dBFS")))),
                     Opt("diverged", Array(Object("A machine whose guard tripped in the render: silenced from there on and left muted (machine_set(reset=true))",
                         Req("machine", String("The machine")), Req("reason", String("NaN, infinity or its peak above +60 dBFS"))), "Machines that diverged")),
+                    Opt("opus", Object("The Opus preview (opus_kbps)", Req("kbps", Number("The bitrate")), Req("read", String("A plain-language read")))),
                     Opt("cpu", Array(Object("A machine's work time (cpu=true)",
                         Req("machine", String("The machine")), Req("ms_per_second", Number("Milliseconds of its Work per second of audio rendered"))), "Per machine"))),
                 Annotations = new ToolAnnotations(ReadOnly: true),
@@ -134,6 +136,7 @@ namespace ReBuzz.Agent
                     string dither = c.String("dither");
                     if (dither != null && bits == null) throw new ToolError("dither goes with bits.");
                     if (bits != null) Requantize.Validate(dither);
+                    int? opusKbps = c.Number("opus_kbps") is double ok ? OpusPreview.Validate(ok) : null;
                     double? cpuWindow = c.Number("cpu_window_seconds");
                     if (cpuWindow != null && c.Bool("cpu") != true) throw new ToolError("cpu_window_seconds goes with cpu=true.");
                     var meter = c.Bool("cpu") == true ? new CpuMeter(cpuWindow ?? 0) : null;
@@ -202,6 +205,22 @@ namespace ReBuzz.Agent
                         if (meter != null) result["cpu"] = meter.Json();
                         return result;
                     }, c.Cancellation);
+                    // Fork (mastering-tools.md §5.15): the Opus preview, off the engine thread: the song is back as it was by now.
+                    string opusLine = "";
+                    if (opusKbps != null)
+                    {
+                        string wavFile = r["file"]!.GetValue<string>();
+                        var encoded = await System.Threading.Tasks.Task.Run(() => OpusPreview.Run(Wav.Read(wavFile), opusKbps.Value, c.Cancellation), c.Cancellation);
+                        string rid = r["id"]!.GetValue<string>() + ":opus";
+                        string ofile = Path.Combine(Path.GetDirectoryName(wavFile)!, $"{Path.GetFileNameWithoutExtension(wavFile)}-opus{opusKbps}.wav");
+                        Write(ofile, encoded.Decoded);
+                        host.Renders[rid] = new RenderInfo(rid, ofile, r["from_beats"]!.GetValue<double>(), r["to_beats"]!.GetValue<double>(), encoded.Decoded.Seconds);
+                        var oj = OpusPreview.Json(encoded);
+                        oj["id"] = rid;
+                        oj["file"] = ofile;
+                        r["opus"] = oj;
+                        opusLine = " " + OpusPreview.Line(encoded) + $" The decoded audio is {rid}.";
+                    }
                     var m = r["measure"]!.AsObject();
                     var warn = r["warnings"]!.AsArray().Select(w => w!.GetValue<string>()).ToList();
                     var probeLines = r["probes"]!.AsArray().Select(pr => $"{pr!["id"]}: {AudioReport.Line(pr["measure"]!.AsObject())}").ToList();
@@ -209,7 +228,7 @@ namespace ReBuzz.Agent
                         ? " CPU: " + string.Join("; ", cpu.Select(x => $"{x!["machine"]} {x["ms_per_second"]} ms/s")) + "." : "";
                     return ToolResult.Ok($"Rendered {r["id"]}: beats {r["from_beats"]}–{r["to_beats"]}, {r["seconds"]} s → {r["file"]}. " +
                                          $"{AudioReport.Line(m)}. " + string.Join(" ", m["reads"]!.AsArray().Select(x => x!.GetValue<string>())) +
-                                         (probeLines.Count > 0 ? " Probes: " + string.Join("; ", probeLines) + "." : "") + cpuLine +
+                                         (probeLines.Count > 0 ? " Probes: " + string.Join("; ", probeLines) + "." : "") + cpuLine + opusLine +
                                          (warn.Count > 0 ? " " + string.Join(" ", warn) : ""), r)
                         .WithLink(new Uri(r["file"]!.GetValue<string>()).AbsoluteUri, Path.GetFileName(r["file"]!.GetValue<string>()), "audio/wav", "The render");
                 },
@@ -233,7 +252,8 @@ namespace ReBuzz.Agent
                     Opt("metrics", Array(String("A metric", AudioReport.Metrics), "Which measures (default all)")),
                     Opt("from_seconds", Number("From here", 0)),
                     Opt("to_seconds", Number("To here", 0)),
-                    Opt("target", String("Measure against: a style target's name (target_build) or file (*.target.json), or a reference render or WAV"))),
+                    Opt("target", String("Measure against: a style target's name (target_build) or file (*.target.json), or a reference render or WAV")),
+                    Opt("opus_kbps", Number("Also run it through Opus at this bitrate (kb/s, Concentus; a proxy for lossy coding): the decoded audio's true peak, the loss above the codec's cutoff and the null residual's loudness (\"opus\")", OpusPreview.MinKbps, OpusPreview.MaxKbps))),
                 Output = Object(null,
                     Req("source", String("What was measured")),
                     Req("seconds", Number("Length measured")),
@@ -251,8 +271,16 @@ namespace ReBuzz.Agent
                     var target = c.String("target") is string t && t.Trim().Length > 0 ? await MasteringTools.Target(host, t, c) : null;
                     var m = await System.Threading.Tasks.Task.Run(() => MasteringReport.Measure(part, metrics, target), c.Cancellation);
                     m["source"] = label == file ? file : $"{label} ({file})";
+                    string opusLine = "";
+                    if (c.Number("opus_kbps") is double kb)
+                    {
+                        // Fork (mastering-tools.md §5.15): off the engine thread (analyze never was on it).
+                        var encoded = await System.Threading.Tasks.Task.Run(() => OpusPreview.Run(part, OpusPreview.Validate(kb), c.Cancellation), c.Cancellation);
+                        m["opus"] = OpusPreview.Json(encoded);
+                        opusLine = " " + OpusPreview.Line(encoded);
+                    }
                     return ToolResult.Ok($"{label}: {m["seconds"]} s, {AudioReport.Line(m)}. " +
-                                         string.Join(" ", m["reads"]!.AsArray().Select(x => x!.GetValue<string>())), m);
+                                         string.Join(" ", m["reads"]!.AsArray().Select(x => x!.GetValue<string>())) + opusLine, m);
                 },
             });
         }
